@@ -1,0 +1,273 @@
+// ============================================================
+// Google Calendar 連携 (OAuth + REST API + 空き時間計算)
+// ============================================================
+// 既存の gmail.ts と Token Client を共有しつつ、Calendar スコープを追加
+// 必要スコープ:
+//   https://www.googleapis.com/auth/calendar.readonly
+//   https://www.googleapis.com/auth/calendar.events  (将来書込時)
+
+declare global {
+  interface Window {
+    google?: any;
+    __gisLoaded?: boolean;
+  }
+}
+
+const CAL_SCOPES = [
+  'https://www.googleapis.com/auth/calendar.readonly',
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/userinfo.profile',
+  'openid',
+].join(' ');
+
+const TOKEN_KEY = 'core_gcal_token';
+const TOKEN_EXPIRY_KEY = 'core_gcal_token_expires_at';
+const USER_INFO_KEY = 'core_gcal_user';
+
+export interface CalTokenInfo {
+  accessToken: string;
+  expiresAt: number;
+}
+export interface CalUserInfo {
+  email: string;
+  name?: string;
+  picture?: string;
+}
+export interface CalEvent {
+  id: string;
+  summary: string;
+  start: string; // ISO
+  end: string;
+  status?: string;
+  busy?: boolean;
+}
+export interface BusyInterval {
+  start: string;
+  end: string;
+}
+export interface FreeSlot {
+  start: Date;
+  end: Date;
+}
+
+function getClientId(): string {
+  return (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) || '';
+}
+
+export function isCalConfigured(): boolean {
+  return !!getClientId();
+}
+
+function loadGsiScript(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.reject(new Error('window unavailable'));
+  if (window.__gisLoaded) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-gis="1"]') as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener('load', () => { window.__gisLoaded = true; resolve(); });
+      existing.addEventListener('error', () => reject(new Error('GIS load error')));
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true; s.defer = true; s.dataset.gis = '1';
+    s.onload = () => { window.__gisLoaded = true; resolve(); };
+    s.onerror = () => reject(new Error('GIS load error'));
+    document.head.appendChild(s);
+  });
+}
+
+function loadToken(): CalTokenInfo | null {
+  try {
+    const t = localStorage.getItem(TOKEN_KEY);
+    const e = localStorage.getItem(TOKEN_EXPIRY_KEY);
+    if (!t || !e) return null;
+    const expiresAt = Number(e);
+    if (Date.now() > expiresAt - 30_000) return null;
+    return { accessToken: t, expiresAt };
+  } catch { return null; }
+}
+function saveToken(info: CalTokenInfo) {
+  localStorage.setItem(TOKEN_KEY, info.accessToken);
+  localStorage.setItem(TOKEN_EXPIRY_KEY, String(info.expiresAt));
+}
+export function clearCalToken() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(TOKEN_EXPIRY_KEY);
+  localStorage.removeItem(USER_INFO_KEY);
+}
+export function isCalConnected(): boolean { return !!loadToken(); }
+
+export function loadCalUser(): CalUserInfo | null {
+  try {
+    const raw = localStorage.getItem(USER_INFO_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function saveCalUser(info: CalUserInfo) {
+  localStorage.setItem(USER_INFO_KEY, JSON.stringify(info));
+}
+
+async function fetchUserInfo(token: string): Promise<CalUserInfo | null> {
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return { email: data.email, name: data.name, picture: data.picture };
+  } catch { return null; }
+}
+
+function translateError(code: string): string {
+  switch (code) {
+    case 'access_denied':
+    case 'popup_closed':
+    case 'popup_closed_by_user':
+      return 'Google 認証が完了しませんでした。もう一度お試しください。';
+    case 'admin_policy_enforced':
+      return 'お使いの Google アカウントの管理ポリシーにより外部アプリの利用が制限されています。';
+    default:
+      return `Google 認証エラー: ${code}`;
+  }
+}
+
+export async function connectCalendar(): Promise<{ token: CalTokenInfo; user: CalUserInfo | null }> {
+  const clientId = getClientId();
+  if (!clientId) throw new Error('Google Calendar 連携の準備ができていません (VITE_GOOGLE_CLIENT_ID 未設定)');
+  await loadGsiScript();
+  if (!window.google?.accounts?.oauth2) throw new Error('Google Identity Services が利用できません');
+
+  const token = await new Promise<CalTokenInfo>((resolve, reject) => {
+    const tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: CAL_SCOPES,
+      prompt: 'consent',
+      callback: (resp: any) => {
+        if (resp.error) { reject(new Error(translateError(resp.error))); return; }
+        const expiresAt = Date.now() + (Number(resp.expires_in) || 3600) * 1000;
+        const info: CalTokenInfo = { accessToken: resp.access_token, expiresAt };
+        saveToken(info);
+        resolve(info);
+      },
+      error_callback: (err: any) => reject(new Error(translateError(err?.type || 'unknown'))),
+    });
+    tokenClient.requestAccessToken();
+  });
+
+  const user = await fetchUserInfo(token.accessToken);
+  if (user) saveCalUser(user);
+  return { token, user };
+}
+
+async function getValidToken(): Promise<string> {
+  const t = loadToken();
+  if (t) return t.accessToken;
+  const fresh = await connectCalendar();
+  return fresh.token.accessToken;
+}
+
+async function calFetch(path: string, init: RequestInit = {}): Promise<any> {
+  const token = await getValidToken();
+  const res = await fetch(`https://www.googleapis.com${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...(init.headers || {}),
+    },
+  });
+  if (res.status === 401) {
+    clearCalToken();
+    throw new Error('Google Calendar 認証期限切れ。再接続してください。');
+  }
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`Google Calendar API ${res.status}: ${t.slice(0, 200)}`);
+  }
+  return res.json();
+}
+
+// ─── 空き時間取得 ────────────────────────────────
+export async function fetchBusy(timeMinISO: string, timeMaxISO: string, calendarId = 'primary'): Promise<BusyInterval[]> {
+  const data = await calFetch('/calendar/v3/freeBusy', {
+    method: 'POST',
+    body: JSON.stringify({
+      timeMin: timeMinISO,
+      timeMax: timeMaxISO,
+      items: [{ id: calendarId }],
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    }),
+  });
+  const cal = data?.calendars?.[calendarId];
+  return (cal?.busy as BusyInterval[]) || [];
+}
+
+// ─── 直近イベント取得 ───────────────────────────
+export async function fetchUpcomingEvents(maxDays = 14, calendarId = 'primary'): Promise<CalEvent[]> {
+  const now = new Date();
+  const future = new Date(now); future.setDate(now.getDate() + maxDays);
+  const params = new URLSearchParams({
+    timeMin: now.toISOString(),
+    timeMax: future.toISOString(),
+    singleEvents: 'true',
+    orderBy: 'startTime',
+    maxResults: '50',
+  });
+  const data = await calFetch(`/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`);
+  const items: any[] = data?.items || [];
+  return items.map(ev => ({
+    id: ev.id,
+    summary: ev.summary || '(無題)',
+    start: ev.start?.dateTime || ev.start?.date,
+    end: ev.end?.dateTime || ev.end?.date,
+    status: ev.status,
+    busy: ev.transparency !== 'transparent',
+  }));
+}
+
+// ─── イベント作成 (将来用) ──────────────────────
+export async function createEvent(opts: {
+  summary: string;
+  description?: string;
+  startISO: string;
+  endISO: string;
+  attendees?: { email: string }[];
+  location?: string;
+  calendarId?: string;
+}): Promise<{ id: string; htmlLink: string }> {
+  const calendarId = opts.calendarId || 'primary';
+  const data = await calFetch(`/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?sendUpdates=all`, {
+    method: 'POST',
+    body: JSON.stringify({
+      summary: opts.summary,
+      description: opts.description,
+      start: { dateTime: opts.startISO, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      end: { dateTime: opts.endISO, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      attendees: opts.attendees,
+      location: opts.location,
+    }),
+  });
+  return { id: data.id, htmlLink: data.htmlLink };
+}
+
+// ─── ゲスト用: Google Calendar イベント作成 deeplink ───────
+export function buildGcalDeeplink(opts: {
+  title: string;
+  startISO: string;
+  endISO: string;
+  details?: string;
+  location?: string;
+  attendees?: string[]; // email
+}): string {
+  const fmt = (iso: string) => iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const params = new URLSearchParams();
+  params.set('action', 'TEMPLATE');
+  params.set('text', opts.title);
+  params.set('dates', `${fmt(opts.startISO)}/${fmt(opts.endISO)}`);
+  if (opts.details) params.set('details', opts.details);
+  if (opts.location) params.set('location', opts.location);
+  if (opts.attendees && opts.attendees.length > 0) params.set('add', opts.attendees.join(','));
+  return `https://calendar.google.com/calendar/render?${params}`;
+}

@@ -1,0 +1,411 @@
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import type { Persona, AppSettings } from '../types/identity';
+import type { ExpenseCategory, ExpenseEntry, ExpenseTaxRate } from '../types/expense';
+import { EXPENSE_CATEGORIES } from '../types/expense';
+import { useExpenses } from '../hooks/useExpenses';
+import { extractFromReceipt, fileToDataUrl, calcExpenseAmounts } from '../lib/expenseOCR';
+import { fmtJpy } from '../lib/invoiceCalc';
+
+interface Props {
+  persona: Persona;
+  settings: AppSettings;
+  onClose: () => void;
+}
+
+type Tab = 'ocr' | 'list' | 'manual' | 'summary';
+
+export default function ExpenseStudio({ persona, settings, onClose }: Props) {
+  const exp = useExpenses();
+  const personaEntries = useMemo(() => exp.getForPersona(persona.id), [exp.entries, persona.id]);
+  const [tab, setTab] = useState<Tab>('ocr');
+
+  // ─── OCR タブ ─────────────
+  const [ocrPreview, setOcrPreview] = useState<string | null>(null);
+  const [ocrBusy, setOcrBusy] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const ocrFormRef = useRef<HTMLDivElement>(null);
+
+  // 編集中エントリ (OCR or 手動)
+  const today = new Date().toISOString().slice(0, 10);
+  const [draft, setDraft] = useState<Partial<ExpenseEntry>>({
+    date: today,
+    vendor: '',
+    category: '会議費',
+    description: '',
+    amountIncl: 0,
+    taxRate: 10,
+    payment: 'card',
+  });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = useCallback(async (file: File) => {
+    setOcrError(null);
+    const dataUrl = await fileToDataUrl(file);
+    setOcrPreview(dataUrl);
+    setOcrBusy(true);
+    try {
+      const result = await extractFromReceipt({ settings, imageDataUrl: dataUrl });
+      setDraft(prev => ({
+        ...prev,
+        date: result.date || prev.date,
+        vendor: result.vendor || prev.vendor,
+        amountIncl: result.amountIncl ?? prev.amountIncl,
+        taxRate: result.taxRate ?? prev.taxRate,
+        category: result.category || prev.category,
+        description: result.description || prev.description,
+        receiptDataUrl: dataUrl,
+      }));
+      // フォームへスクロール
+      setTimeout(() => ocrFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+    } catch (e) {
+      setOcrError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setOcrBusy(false);
+    }
+  }, [settings]);
+
+  const handleSave = useCallback((source: 'ocr' | 'manual') => {
+    if (!draft.vendor?.trim() || !draft.amountIncl || draft.amountIncl <= 0) {
+      setOcrError('店舗名と税込金額を入力してください');
+      return;
+    }
+    const taxRate = (draft.taxRate || 10) as ExpenseTaxRate;
+    const { amountExcl, taxAmount } = calcExpenseAmounts(draft.amountIncl, taxRate);
+    exp.add({
+      personaId: persona.id,
+      date: draft.date || today,
+      vendor: draft.vendor,
+      category: (draft.category || 'その他') as ExpenseCategory,
+      description: draft.description,
+      amountIncl: draft.amountIncl,
+      taxRate,
+      amountExcl,
+      taxAmount,
+      payment: draft.payment || 'card',
+      receiptDataUrl: source === 'ocr' ? draft.receiptDataUrl : undefined,
+      notes: draft.notes,
+      source,
+    });
+    // リセット
+    setDraft({ date: today, vendor: '', category: '会議費', description: '', amountIncl: 0, taxRate: 10, payment: 'card' });
+    setOcrPreview(null); setOcrError(null);
+    setTab('list');
+  }, [draft, exp, persona.id, today]);
+
+  const handleRemove = (id: string) => {
+    if (confirm('削除しますか?')) exp.remove(id);
+  };
+
+  // ─── サマリ ─────────────
+  const summary = useMemo(() => {
+    const thisMonth = today.slice(0, 7);
+    const filtered = personaEntries.filter(e => e.date.startsWith(thisMonth));
+    const total = filtered.reduce((s, e) => s + e.amountIncl, 0);
+    const byCategory = new Map<ExpenseCategory, number>();
+    for (const e of filtered) {
+      byCategory.set(e.category, (byCategory.get(e.category) || 0) + e.amountIncl);
+    }
+    const ranked = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
+    return { thisMonth, count: filtered.length, total, ranked };
+  }, [personaEntries, today]);
+
+  const handleExportCsv = () => {
+    const headers = ['日付', '店舗', '科目', '摘要', '税抜', '税率', '税額', '税込', '支払方法', 'ソース'];
+    const rows = personaEntries.map(e => [
+      e.date, e.vendor, e.category, e.description || '',
+      e.amountExcl, `${e.taxRate}%`, e.taxAmount, e.amountIncl,
+      e.payment || '', e.source,
+    ]);
+    const escape = (v: any) => {
+      const s = String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [headers, ...rows].map(r => r.map(escape).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `経費_${persona.name}_${summary.thisMonth}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <motion.div
+      className="cp-modal-bg"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="cp-modal"
+        style={{ maxWidth: '900px' }}
+        initial={{ scale: 0.97, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.97, y: 12 }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="cp-modal-header">
+          <div className="cp-row min-w-0">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+              style={{ background: persona.accentColorLight, color: persona.accentColor }}
+            >📷</div>
+            <div className="min-w-0">
+              <p className="cp-h2 truncate">経費管理</p>
+              <p className="cp-meta truncate">{persona.name} · レシート OCR で撮影即仕訳</p>
+            </div>
+          </div>
+          <div className="cp-row">
+            <button onClick={handleExportCsv} disabled={personaEntries.length === 0}
+              className="cp-btn cp-btn-sm">⬇ CSV</button>
+            <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm" aria-label="閉じる">✕</button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="cp-modal-tabs">
+          {([
+            { id: 'ocr' as Tab,    label: '📷 レシート読込' },
+            { id: 'manual' as Tab, label: '✍ 手動入力' },
+            { id: 'list' as Tab,   label: `🗂 一覧 (${personaEntries.length})` },
+            { id: 'summary' as Tab,label: '📊 月次サマリ' },
+          ]).map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="cp-modal-tab" data-active={tab === t.id}
+              style={{ color: tab === t.id ? persona.accentColor : undefined }}
+            >{t.label}</button>
+          ))}
+        </div>
+
+        <div className="cp-modal-body cp-stack">
+          {tab === 'ocr' && (
+            <>
+              {/* ファイル UP */}
+              <div className="cp-card-section text-center" style={{ borderStyle: 'dashed', borderColor: persona.accentColor + '60' }}>
+                <p className="text-3xl mb-2">📷</p>
+                <p className="cp-h3">レシート画像をアップロード</p>
+                <p className="cp-meta mt-1">JPG / PNG / HEIC · AI が自動で店舗・金額・科目を読み取ります</p>
+                <input
+                  ref={fileInputRef}
+                  type="file" accept="image/*" capture="environment"
+                  className="hidden"
+                  onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
+                />
+                <button onClick={() => fileInputRef.current?.click()} className="cp-btn cp-btn-primary mt-3"
+                  style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                  画像を選択 / 撮影
+                </button>
+              </div>
+
+              {ocrBusy && (
+                <div className="cp-card text-center">
+                  <p className="cp-body">🧠 AI がレシートを読み取り中...</p>
+                </div>
+              )}
+
+              {ocrError && (
+                <div className="cp-card" style={{ background: 'rgba(248,113,113,0.10)', borderColor: '#f87171' }}>
+                  <p className="cp-meta" style={{ color: '#f87171' }}>{ocrError}</p>
+                </div>
+              )}
+
+              {/* OCR 結果フォーム */}
+              {(ocrPreview || draft.amountIncl) && (
+                <div ref={ocrFormRef} className="cp-card-section cp-stack">
+                  <div className="cp-row-between">
+                    <p className="cp-h3">読取結果 (確認・修正)</p>
+                    {ocrPreview && (
+                      <a href={ocrPreview} target="_blank" rel="noopener noreferrer" className="cp-meta hover:opacity-70">画像を見る ↗</a>
+                    )}
+                  </div>
+                  <div className="cp-grid-2">
+                    <div>
+                      <label className="cp-label">日付</label>
+                      <input type="date" value={draft.date || ''} onChange={e => setDraft({ ...draft, date: e.target.value })} className="cp-input" />
+                    </div>
+                    <div>
+                      <label className="cp-label">店舗 *</label>
+                      <input value={draft.vendor || ''} onChange={e => setDraft({ ...draft, vendor: e.target.value })} placeholder="店舗名" className="cp-input" />
+                    </div>
+                    <div>
+                      <label className="cp-label">科目</label>
+                      <select value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value as ExpenseCategory })} className="cp-select">
+                        {EXPENSE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.value}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="cp-label">税込金額 *</label>
+                      <input type="number" value={draft.amountIncl || ''} onChange={e => setDraft({ ...draft, amountIncl: Number(e.target.value) })} className="cp-input" placeholder="0" />
+                    </div>
+                    <div>
+                      <label className="cp-label">税率</label>
+                      <select value={draft.taxRate} onChange={e => setDraft({ ...draft, taxRate: Number(e.target.value) as ExpenseTaxRate })} className="cp-select">
+                        <option value={10}>10%</option>
+                        <option value={8}>軽減 8%</option>
+                        <option value={0}>非課税</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="cp-label">支払方法</label>
+                      <select value={draft.payment} onChange={e => setDraft({ ...draft, payment: e.target.value as ExpenseEntry['payment'] })} className="cp-select">
+                        <option value="card">カード</option>
+                        <option value="cash">現金</option>
+                        <option value="bank">銀行振込</option>
+                        <option value="paypay">電子マネー</option>
+                        <option value="other">その他</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="cp-label">摘要</label>
+                    <input value={draft.description || ''} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="例: 取引先打ち合わせ コーヒー2杯" className="cp-input" />
+                  </div>
+                  <div className="cp-row-between">
+                    <p className="cp-meta">
+                      税抜 <strong className="text-fg">{fmtJpy(calcExpenseAmounts(draft.amountIncl || 0, (draft.taxRate || 10) as ExpenseTaxRate).amountExcl)}</strong>
+                      ・税額 <strong className="text-fg">{fmtJpy(calcExpenseAmounts(draft.amountIncl || 0, (draft.taxRate || 10) as ExpenseTaxRate).taxAmount)}</strong>
+                    </p>
+                    <button onClick={() => handleSave('ocr')} className="cp-btn cp-btn-primary"
+                      style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                      経費に追加
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {tab === 'manual' && (
+            <div className="cp-card-section cp-stack">
+              <p className="cp-h3">手動で経費を入力</p>
+              <div className="cp-grid-2">
+                <div>
+                  <label className="cp-label">日付</label>
+                  <input type="date" value={draft.date || today} onChange={e => setDraft({ ...draft, date: e.target.value })} className="cp-input" />
+                </div>
+                <div>
+                  <label className="cp-label">店舗 *</label>
+                  <input value={draft.vendor || ''} onChange={e => setDraft({ ...draft, vendor: e.target.value })} placeholder="例: スターバックス銀座店" className="cp-input" />
+                </div>
+                <div>
+                  <label className="cp-label">科目</label>
+                  <select value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value as ExpenseCategory })} className="cp-select">
+                    {EXPENSE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.value}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="cp-label">税込金額 *</label>
+                  <input type="number" value={draft.amountIncl || ''} onChange={e => setDraft({ ...draft, amountIncl: Number(e.target.value) })} className="cp-input" placeholder="0" />
+                </div>
+                <div>
+                  <label className="cp-label">税率</label>
+                  <select value={draft.taxRate} onChange={e => setDraft({ ...draft, taxRate: Number(e.target.value) as ExpenseTaxRate })} className="cp-select">
+                    <option value={10}>10%</option>
+                    <option value={8}>軽減 8%</option>
+                    <option value={0}>非課税</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="cp-label">支払方法</label>
+                  <select value={draft.payment} onChange={e => setDraft({ ...draft, payment: e.target.value as ExpenseEntry['payment'] })} className="cp-select">
+                    <option value="card">カード</option>
+                    <option value="cash">現金</option>
+                    <option value="bank">銀行振込</option>
+                    <option value="paypay">電子マネー</option>
+                    <option value="other">その他</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="cp-label">摘要</label>
+                <input value={draft.description || ''} onChange={e => setDraft({ ...draft, description: e.target.value })} className="cp-input" />
+              </div>
+              {ocrError && <p className="cp-meta" style={{ color: '#f87171' }}>{ocrError}</p>}
+              <div className="cp-row-between">
+                <p className="cp-meta">
+                  税抜 <strong className="text-fg">{fmtJpy(calcExpenseAmounts(draft.amountIncl || 0, (draft.taxRate || 10) as ExpenseTaxRate).amountExcl)}</strong>
+                  ・税額 <strong className="text-fg">{fmtJpy(calcExpenseAmounts(draft.amountIncl || 0, (draft.taxRate || 10) as ExpenseTaxRate).taxAmount)}</strong>
+                </p>
+                <button onClick={() => handleSave('manual')} className="cp-btn cp-btn-primary"
+                  style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                  経費に追加
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tab === 'list' && (
+            <div className="cp-stack-sm">
+              {personaEntries.length === 0 ? (
+                <div className="cp-empty">
+                  <p className="cp-empty-icon">📭</p>
+                  <p>経費がまだありません</p>
+                </div>
+              ) : personaEntries.map(e => {
+                const cat = EXPENSE_CATEGORIES.find(c => c.value === e.category);
+                return (
+                  <div key={e.id} className="cp-card cp-row-between">
+                    <div className="cp-row min-w-0">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
+                        style={{ background: (cat?.color || '#888') + '20', color: cat?.color || '#888' }}>
+                        {cat?.emoji || '📌'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="cp-h3 truncate">{e.vendor}</p>
+                        <p className="cp-meta truncate">
+                          <span className="font-mono">{e.date}</span> · {e.category}
+                          {e.description && ` · ${e.description}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="cp-row" style={{ flexShrink: 0 }}>
+                      <span className="font-mono text-fg">{fmtJpy(e.amountIncl)}</span>
+                      {e.source === 'ocr' && <span className="cp-pill" style={{ color: persona.accentColor, borderColor: persona.accentColor + '50' }}>OCR</span>}
+                      <button onClick={() => handleRemove(e.id)} className="cp-btn cp-btn-ghost cp-btn-sm" aria-label="削除">×</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {tab === 'summary' && (
+            <div className="cp-stack">
+              <div className="cp-card">
+                <p className="cp-section-head">{summary.thisMonth} の経費合計</p>
+                <p className="text-fg" style={{ fontSize: '1.6rem', fontWeight: 600, fontFamily: 'monospace' }}>
+                  {fmtJpy(summary.total)}
+                </p>
+                <p className="cp-meta">{summary.count}件 · この人格の今月分</p>
+              </div>
+
+              {summary.ranked.length > 0 && (
+                <div className="cp-card-section cp-stack-sm">
+                  <p className="cp-h3">科目別</p>
+                  {summary.ranked.map(([cat, amt]) => {
+                    const meta = EXPENSE_CATEGORIES.find(c => c.value === cat);
+                    const pct = summary.total > 0 ? (amt / summary.total) * 100 : 0;
+                    return (
+                      <div key={cat} className="cp-stack-sm" style={{ gap: 4 }}>
+                        <div className="cp-row-between">
+                          <span className="text-fg">
+                            <span className="mr-1">{meta?.emoji}</span>{cat}
+                          </span>
+                          <span className="font-mono cp-meta">
+                            {fmtJpy(amt)} <span className="cp-tiny">{pct.toFixed(0)}%</span>
+                          </span>
+                        </div>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface-3)' }}>
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: meta?.color || '#888' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
