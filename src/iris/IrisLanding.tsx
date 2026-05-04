@@ -18,157 +18,90 @@ export default function IrisLanding({ onEnter }: Props) {
       letterSpacing: '0.01em',
     }}>
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/* HERO ─ 全画面・ホットピンク × ゴールド ネオン爆発     */}
+      {/* HERO ─ Instagram (Edits) 風・白基調・控えめロゴ・安心感   */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section style={{
         position: 'relative',
         height: '100vh',
         minHeight: 600,
         overflow: 'hidden',
-        background: IRIS_COLORS.inkBlack,
+        background: '#FFFAF7',
         cursor: 'pointer',
       }}
       onClick={onEnter}
       >
-        {/* レイヤー1: 巨大なホットピンク・スポット */}
+        {/* やわらかいピンク・オレンジのグラデーションスポット (Instagram カラー) */}
         <motion.div
           animate={{
-            x: ['-15%', '8%', '-8%', '12%', '-15%'],
-            y: ['15%', '-8%', '8%', '-12%', '15%'],
-            scale: [1, 1.1, 0.95, 1.05, 1],
-          }}
-          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
-            position: 'absolute',
-            top: '10%',
-            left: '10%',
-            width: 'clamp(500px, 65vw, 1000px)',
-            height: 'clamp(500px, 65vw, 1000px)',
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${IRIS_COLORS.hotPink}ff 0%, ${IRIS_COLORS.magenta}cc 30%, transparent 65%)`,
-            filter: 'blur(50px)',
-            mixBlendMode: 'screen',
-          }}
-        />
-
-        {/* レイヤー2: ネオンパープル */}
-        <motion.div
-          animate={{
-            x: ['8%', '-12%', '15%', '-8%', '8%'],
-            y: ['-8%', '12%', '-15%', '8%', '-8%'],
-            scale: [1, 1.15, 0.9, 1.1, 1],
-          }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
-            position: 'absolute',
-            bottom: '5%',
-            right: '0%',
-            width: 'clamp(450px, 55vw, 850px)',
-            height: 'clamp(450px, 55vw, 850px)',
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${IRIS_COLORS.purple}ff 0%, ${IRIS_COLORS.purpleDeep}aa 35%, transparent 65%)`,
-            filter: 'blur(60px)',
-            mixBlendMode: 'screen',
-          }}
-        />
-
-        {/* レイヤー3: ゴールド (Versace 風) */}
-        <motion.div
-          animate={{
-            x: ['0%', '15%', '-10%', '5%', '0%'],
-            y: ['0%', '-15%', '10%', '-5%', '0%'],
+            x: ['-5%', '5%', '-3%', '4%', '-5%'],
+            y: ['5%', '-3%', '3%', '-4%', '5%'],
           }}
           transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
           style={{
             position: 'absolute',
-            top: '30%',
-            right: '20%',
-            width: 'clamp(300px, 40vw, 600px)',
-            height: 'clamp(300px, 40vw, 600px)',
+            top: '5%',
+            left: '15%',
+            width: 'clamp(450px, 55vw, 800px)',
+            height: 'clamp(450px, 55vw, 800px)',
             borderRadius: '50%',
-            background: `radial-gradient(circle, ${IRIS_COLORS.gold}dd 0%, ${IRIS_COLORS.goldRose}88 40%, transparent 65%)`,
-            filter: 'blur(70px)',
-            mixBlendMode: 'screen',
+            background: `radial-gradient(circle, ${IRIS_COLORS.pinkLt}66 0%, ${IRIS_COLORS.pinkSoft}33 40%, transparent 70%)`,
+            filter: 'blur(60px)',
           }}
         />
-
-        {/* レイヤー4: 回転するコニックグラデ (ディスコボール感) */}
         <motion.div
-          animate={{ rotate: [0, 360] }}
-          transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+          animate={{
+            x: ['3%', '-5%', '6%', '-3%', '3%'],
+            y: ['-3%', '5%', '-6%', '3%', '-3%'],
+          }}
+          transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
           style={{
             position: 'absolute',
-            top: '50%',
+            bottom: '5%',
+            right: '10%',
+            width: 'clamp(400px, 50vw, 750px)',
+            height: 'clamp(400px, 50vw, 750px)',
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${IRIS_COLORS.goldChampagne}88 0%, ${IRIS_COLORS.gold}33 40%, transparent 70%)`,
+            filter: 'blur(70px)',
+          }}
+        />
+        <motion.div
+          animate={{
+            x: ['0%', '6%', '-4%', '3%', '0%'],
+            y: ['0%', '-5%', '4%', '-2%', '0%'],
+          }}
+          transition={{ duration: 30, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute',
+            top: '40%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 'clamp(300px, 45vw, 700px)',
-            height: 'clamp(300px, 45vw, 700px)',
+            width: 'clamp(350px, 45vw, 650px)',
+            height: 'clamp(350px, 45vw, 650px)',
             borderRadius: '50%',
-            background: `conic-gradient(from 0deg, ${IRIS_COLORS.hotPink}66, ${IRIS_COLORS.gold}88, ${IRIS_COLORS.purple}77, ${IRIS_COLORS.magenta}66, ${IRIS_COLORS.gold}88, ${IRIS_COLORS.hotPink}66)`,
-            filter: 'blur(50px)',
-            opacity: 0.7,
-            mixBlendMode: 'screen',
+            background: `radial-gradient(circle, ${IRIS_COLORS.purpleLt}55 0%, transparent 70%)`,
+            filter: 'blur(80px)',
           }}
         />
 
-        {/* レイヤー5: スパークル (キラキラ点) */}
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{
-              opacity: [0, 1, 0],
-              scale: [0, 1.5, 0],
-            }}
-            transition={{
-              duration: 2 + Math.random() * 3,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-              ease: 'easeInOut',
-            }}
-            style={{
-              position: 'absolute',
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              width: 4 + Math.random() * 6,
-              height: 4 + Math.random() * 6,
-              borderRadius: '50%',
-              background: i % 3 === 0 ? IRIS_COLORS.gold : i % 3 === 1 ? IRIS_COLORS.hotPink : '#fff',
-              boxShadow: `0 0 20px ${i % 3 === 0 ? IRIS_COLORS.gold : i % 3 === 1 ? IRIS_COLORS.hotPink : '#fff'}`,
-              zIndex: 3,
-            }}
-          />
-        ))}
-
-        {/* 微細なフィルムグレイン */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          opacity: 0.06,
-          mixBlendMode: 'overlay',
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          pointerEvents: 'none',
-        }} />
-
-        {/* 上部マストヘッド */}
+        {/* 上部マストヘッド (極小・控えめ) */}
         <div style={{
           position: 'absolute', top: '1.5rem', left: 0, right: 0,
           padding: '0 1.5rem',
           display: 'flex', justifyContent: 'space-between',
-          fontFamily: IRIS_FONTS.serif,
-          fontSize: '0.7rem',
-          letterSpacing: '0.5em',
+          fontFamily: IRIS_FONTS.body,
+          fontSize: '0.65rem',
+          letterSpacing: '0.3em',
           textTransform: 'uppercase',
-          color: IRIS_COLORS.gold,
-          fontWeight: 600,
+          color: IRIS_COLORS.inkSoft,
+          fontWeight: 500,
           zIndex: 5,
-          textShadow: `0 0 12px ${IRIS_COLORS.gold}`,
         }}>
           <span>{IRIS_BRAND.issue}</span>
-          <span>Tokyo · Milan · Paris</span>
+          <span>Tokyo</span>
         </div>
 
-        {/* 中央: 巨大ロゴ — グラデーション + グロー */}
+        {/* 中央: 控えめロゴ + シンプルなタグライン */}
         <div style={{
           position: 'relative', zIndex: 10,
           height: '100%',
@@ -176,83 +109,99 @@ export default function IrisLanding({ onEnter }: Props) {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '0 1rem',
+          padding: '0 1.5rem',
         }}>
           <motion.h1
-            initial={{ opacity: 0, scale: 0.85, letterSpacing: '0.3em' }}
-            animate={{ opacity: 1, scale: 1, letterSpacing: '-0.05em' }}
-            transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              fontFamily: IRIS_FONTS.display,
-              fontSize: 'clamp(8rem, 30vw, 32rem)',
-              fontWeight: 900,
-              lineHeight: 0.85,
+              // Edits 風: 細めサンセリフ + Instagram グラデ + 控えめサイズ
+              fontFamily: IRIS_FONTS.body,
+              fontSize: 'clamp(3.5rem, 12vw, 8rem)',
+              fontWeight: 300,                   // ←細い (Edits アプリ風)
+              letterSpacing: '0.05em',
+              lineHeight: 1,
               margin: 0,
               textAlign: 'center',
-              background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink} 0%, ${IRIS_COLORS.gold} 35%, ${IRIS_COLORS.purpleLt} 70%, ${IRIS_COLORS.hotPink} 100%)`,
+              // Instagram 公式グラデ
+              background: `linear-gradient(135deg, ${IRIS_COLORS.purple} 0%, ${IRIS_COLORS.hotPink} 40%, ${IRIS_COLORS.goldDeep} 75%, ${IRIS_COLORS.gold} 100%)`,
               backgroundSize: '200% 200%',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              filter: `drop-shadow(0 0 40px ${IRIS_COLORS.hotPink}aa) drop-shadow(0 0 80px ${IRIS_COLORS.gold}55)`,
-              animation: 'iris-gradient 8s ease infinite',
+              animation: 'iris-gradient 12s ease infinite',
             }}>
-            IRIS
+            iris
           </motion.h1>
 
-          {/* タグライン: ゴールドのグロー文字 */}
+          {/* タグライン: 控えめなセリフ italic */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.4, duration: 1.2 }}
+            transition={{ delay: 0.6, duration: 1 }}
             style={{
-              fontFamily: IRIS_FONTS.serif,
-              fontStyle: 'italic',
-              fontSize: 'clamp(1rem, 2.2vw, 1.6rem)',
-              color: IRIS_COLORS.gold,
-              letterSpacing: '0.4em',
+              fontFamily: IRIS_FONTS.body,
+              fontSize: 'clamp(0.85rem, 1.5vw, 1.05rem)',
+              color: IRIS_COLORS.inkSoft,
+              letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              marginTop: 'clamp(0.5rem, 2vw, 1.5rem)',
+              marginTop: 'clamp(1rem, 2.5vw, 1.5rem)',
               fontWeight: 400,
-              textShadow: `0 0 25px ${IRIS_COLORS.gold}cc, 0 0 50px ${IRIS_COLORS.hotPink}55`,
             }}
           >
             {IRIS_BRAND.tagline}
           </motion.div>
 
-          {/* 下部の派手な ENTER ボタン */}
+          {/* 日本語サブコピー */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.0, duration: 1 }}
+            style={{
+              fontFamily: IRIS_FONTS.body,
+              fontSize: 'clamp(0.8rem, 1.2vw, 0.9rem)',
+              color: IRIS_COLORS.inkDim,
+              marginTop: '0.4rem',
+              fontWeight: 400,
+            }}
+          >
+            自分を、編集する。
+          </motion.div>
+
+          {/* CTA — Instagram の白丸ボタン風 */}
           <motion.button
             onClick={(e) => { e.stopPropagation(); onEnter(); }}
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 2.0, duration: 0.8 }}
-            whileHover={{ scale: 1.05 }}
+            transition={{ delay: 1.4, duration: 0.8 }}
+            whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             style={{
-              marginTop: 'clamp(2rem, 5vw, 4rem)',
-              background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purple})`,
+              marginTop: 'clamp(2.5rem, 5vw, 3.5rem)',
+              background: `linear-gradient(135deg, ${IRIS_COLORS.purple}, ${IRIS_COLORS.hotPink} 50%, ${IRIS_COLORS.goldDeep})`,
               color: '#fff',
-              border: `2px solid ${IRIS_COLORS.gold}`,
-              padding: '1.2rem 4rem',
-              fontSize: '0.85rem',
-              letterSpacing: '0.4em',
+              border: 'none',
+              padding: '0.95rem 3rem',
+              fontSize: '0.78rem',
+              letterSpacing: '0.25em',
               textTransform: 'uppercase',
               cursor: 'pointer',
               fontFamily: IRIS_FONTS.body,
-              fontWeight: 700,
+              fontWeight: 600,
               borderRadius: 999,
-              boxShadow: `0 0 30px ${IRIS_COLORS.hotPink}88, 0 0 60px ${IRIS_COLORS.gold}55, inset 0 0 20px rgba(255,255,255,0.2)`,
+              boxShadow: `0 8px 28px ${IRIS_COLORS.hotPink}33, 0 2px 8px ${IRIS_COLORS.purple}22`,
               zIndex: 10,
             }}>
-            ✨ Step Inside
+            はじめる
           </motion.button>
         </div>
 
-        {/* 下部: スクロールヒント */}
+        {/* 下部: スクロールヒント (極小・控えめ) */}
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 1, 0.4, 1] }}
-          transition={{ delay: 2.8, duration: 2.5, repeat: Infinity, repeatType: 'reverse' }}
+          animate={{ opacity: [0, 0.6, 0.3, 0.6] }}
+          transition={{ delay: 2, duration: 2.5, repeat: Infinity, repeatType: 'reverse' }}
           style={{
             position: 'absolute',
             bottom: '1.5rem',
@@ -262,18 +211,16 @@ export default function IrisLanding({ onEnter }: Props) {
           }}
         >
           <div style={{
-            fontFamily: IRIS_FONTS.serif,
-            fontSize: '0.7rem',
-            letterSpacing: '0.6em',
+            fontFamily: IRIS_FONTS.body,
+            fontSize: '0.65rem',
+            letterSpacing: '0.4em',
             textTransform: 'uppercase',
-            color: IRIS_COLORS.gold,
-            opacity: 0.85,
+            color: IRIS_COLORS.inkSoft,
           }}>
             ↓ Scroll
           </div>
         </motion.div>
 
-        {/* グラデーションアニメ用 keyframe */}
         <style>{`
           @keyframes iris-gradient {
             0%, 100% { background-position: 0% 50%; }
@@ -286,48 +233,47 @@ export default function IrisLanding({ onEnter }: Props) {
       {/* SECOND VIEW: マストヘッド + サブコピー (スクロール後)  */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <header style={{
-        background: `linear-gradient(135deg, ${IRIS_COLORS.pinkMist} 0%, ${IRIS_COLORS.ivory} 50%, ${IRIS_COLORS.pinkMist} 100%)`,
+        background: '#FFFFFF',
         color: IRIS_COLORS.ink,
-        borderTop: `3px solid ${IRIS_COLORS.hotPink}`,
-        borderBottom: `1px solid ${IRIS_COLORS.purple}33`,
+        borderBottom: `1px solid #F0E5EC`,
         padding: '1rem 1.5rem',
       }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: '2rem', alignItems: 'baseline' }}>
+          <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'baseline' }}>
             <div style={{
-              fontFamily: IRIS_FONTS.display,
-              fontSize: '1.6rem',
-              fontWeight: 900,
-              letterSpacing: '-0.02em',
-              background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purple})`,
+              fontFamily: IRIS_FONTS.body,
+              fontSize: '1.4rem',
+              fontWeight: 300,
+              letterSpacing: '0.05em',
+              background: `linear-gradient(135deg, ${IRIS_COLORS.purple}, ${IRIS_COLORS.hotPink} 50%, ${IRIS_COLORS.goldDeep})`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}>
-              IRIS
+              iris
             </div>
             <div style={{
-              fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem',
+              fontFamily: IRIS_FONTS.body, fontSize: '0.7rem',
               letterSpacing: '0.25em', textTransform: 'uppercase',
-              color: IRIS_COLORS.hotPink, fontWeight: 600,
+              color: IRIS_COLORS.inkSoft, fontWeight: 400,
             }}>
               {IRIS_BRAND.tagline}
             </div>
           </div>
           <button onClick={onEnter} style={{
-            background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purple})`,
+            background: `linear-gradient(135deg, ${IRIS_COLORS.purple}, ${IRIS_COLORS.hotPink} 50%, ${IRIS_COLORS.goldDeep})`,
             color: '#fff',
             border: 'none',
-            padding: '0.7rem 1.8rem',
-            fontSize: '0.72rem',
-            letterSpacing: '0.35em',
+            padding: '0.55rem 1.5rem',
+            fontSize: '0.7rem',
+            letterSpacing: '0.25em',
             textTransform: 'uppercase',
             cursor: 'pointer',
             fontFamily: IRIS_FONTS.body,
-            fontWeight: 700,
+            fontWeight: 600,
             borderRadius: 999,
-            boxShadow: `0 4px 16px ${IRIS_COLORS.hotPink}66`,
+            boxShadow: `0 4px 14px ${IRIS_COLORS.hotPink}33`,
           }}>
-            Enter
+            開く
           </button>
         </div>
       </header>

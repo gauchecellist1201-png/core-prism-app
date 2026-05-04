@@ -13,8 +13,13 @@ export const IRIS_BRAND = {
   publisher: 'CORE',
 };
 
-// IRIS パレット — プラダの世界観 (深み・洗練) × ホットピンク・ゴールド (女性の高揚感)
-// Barbie × Sephora × Versace × Vogue を鳥瞰した、女性が手に取りたくなる派手な配色
+// IRIS パレット — Instagram (Edits アプリ) の安心感あるグラデ + 上品なピンク&オレンジ
+// 白基調・柔らかいピンク〜パープル〜オレンジのグラデーション
+//
+// Instagram 公式グラデーション参考:
+//   #833AB4 (Royal Purple) → #FD1D1D (Red) → #FCB045 (Orange/Yellow)
+// より柔らかい派生:
+//   #E1306C (Instagram Pink) / #F77737 (Soft Orange) / #FFDC80 (Cream Yellow)
 export const IRIS_COLORS = {
   // ベース (リッチな深み)
   ivory:       '#FFF5F8',   // ピンクみのあるオフホワイト
@@ -28,24 +33,24 @@ export const IRIS_COLORS = {
   inkSoft:     '#5A4570',   // 本文 small
   inkDim:      '#8A7AA0',   // メタ情報
 
-  // ホットピンク (主役の派手色)
-  hotPink:     '#FF1493',   // ディープフューシャ
-  pink:        '#FF3D8E',   // ホットピンク
-  pinkLt:      '#FF6BA8',
-  pinkSoft:    '#FFB8D6',
-  pinkMist:    '#FFE0EC',
+  // Instagram 系ピンク (上品で柔らかい)
+  hotPink:     '#E1306C',   // Instagram Pink (公式)
+  pink:        '#FD7CB8',   // ソフトピンク
+  pinkLt:      '#FFB8D6',
+  pinkSoft:    '#FFD4E5',
+  pinkMist:    '#FFE5EE',
 
-  // パープル / マゼンタ (もう一つの主役)
-  magenta:     '#E91E63',
-  purple:      '#9D4EDD',   // ネオンパープル
-  purpleDeep:  '#6A0DAD',
-  purpleLt:    '#C77DFF',
+  // パープル (Instagram のもう一つの主役)
+  magenta:     '#E1306C',
+  purple:      '#833AB4',   // Instagram Royal Purple (公式)
+  purpleDeep:  '#5B2C8A',
+  purpleLt:    '#B07BD9',
 
-  // ゴールド (Versace 級のアクセント)
-  gold:        '#FFD700',   // ブライトゴールド
-  goldDeep:    '#FFC857',
-  goldRose:    '#FFA94D',
-  goldChampagne:'#F5D67E',
+  // オレンジ / ゴールド (Edits の暖かみ)
+  gold:        '#FCB045',   // Instagram Orange/Yellow (公式)
+  goldDeep:    '#F77737',   // 暖かいオレンジ
+  goldRose:    '#FCAF45',
+  goldChampagne:'#FFDC80',
 
   // 旧 ボルドー系 (互換用)
   bordeaux:    '#C8102E',   // よりビビッドな赤
@@ -122,99 +127,100 @@ export interface IrisBackgroundDef {
   cardBorder: string;
 }
 
-// LP HERO のネオン爆発をプリセット化したインパクト系背景
-// ホットピンク × ゴールド × ネオンパープル × マゼンタ — Versace × Barbie × Vogue
+// Instagram (Edits) 系の柔らかいグラデーション背景プリセット
+// 派手さより「安心感」を優先 — ピンク→オレンジ→パープルの上品な遷移
 export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
   {
-    id: 'neon-burst',
-    label: 'Neon Burst',
+    id: 'instagram-soft',
+    label: 'Instagram Soft',
     emoji: '✨',
-    // LP HERO と同じ多層ネオンスポット
-    background: 'radial-gradient(circle at 15% 25%, #FF1493cc 0%, transparent 50%), radial-gradient(circle at 80% 75%, #9D4EDDcc 0%, transparent 50%), radial-gradient(circle at 70% 25%, #FFD700aa 0%, transparent 45%), linear-gradient(135deg, #1A0A26 0%, #2A1A3A 100%)',
-    accent: '#FFD700',
-    ink: '#FFFAF5',
-    inkSoft: '#FFD6EE',
-    card: 'rgba(255,255,255,0.10)',
-    cardBorder: 'rgba(255,215,0,0.35)',
+    // Instagram 公式グラデの柔らかい派生 (パープル→ピンク→オレンジ)
+    background: 'radial-gradient(circle at 15% 20%, #833AB422 0%, transparent 50%), radial-gradient(circle at 85% 80%, #FCB04522 0%, transparent 50%), radial-gradient(circle at 60% 50%, #E1306C22 0%, transparent 45%), linear-gradient(135deg, #FFFAF7 0%, #FFE5EE 50%, #FFF5E5 100%)',
+    accent: '#E1306C',
+    ink: '#2A1F3F',
+    inkSoft: '#6E6577',
+    card: 'rgba(255,255,255,0.85)',
+    cardBorder: 'rgba(225,48,108,0.18)',
   },
   {
-    id: 'magenta-disco',
-    label: 'Magenta Disco',
-    emoji: '💃',
-    background: 'radial-gradient(circle at 25% 30%, #E91E63cc 0%, transparent 55%), radial-gradient(circle at 75% 70%, #9D4EDDcc 0%, transparent 55%), radial-gradient(circle at 50% 50%, #FFC857aa 0%, transparent 40%), linear-gradient(135deg, #1A0A26 0%, #3A1A4A 100%)',
-    accent: '#FFC857',
-    ink: '#FFFAF5',
-    inkSoft: '#FFD6EE',
-    card: 'rgba(255,255,255,0.10)',
-    cardBorder: 'rgba(255,200,87,0.35)',
-  },
-  {
-    id: 'sunset-drama',
-    label: 'Sunset Drama',
-    emoji: '🌅',
-    background: 'radial-gradient(circle at 20% 30%, #FF1493dd 0%, transparent 55%), radial-gradient(circle at 80% 80%, #FFA94Ddd 0%, transparent 55%), radial-gradient(circle at 70% 20%, #FFD700aa 0%, transparent 50%), linear-gradient(135deg, #2A0A26 0%, #3A1A2A 100%)',
-    accent: '#FFD700',
-    ink: '#FFFAF5',
-    inkSoft: '#FFD6EE',
-    card: 'rgba(255,255,255,0.10)',
-    cardBorder: 'rgba(255,169,77,0.4)',
-  },
-  {
-    id: 'purple-reign',
-    label: 'Purple Reign',
-    emoji: '👑',
-    background: 'radial-gradient(circle at 30% 20%, #9D4EDDee 0%, transparent 55%), radial-gradient(circle at 70% 80%, #C77DFFcc 0%, transparent 55%), radial-gradient(circle at 50% 50%, #FF1493aa 0%, transparent 45%), linear-gradient(135deg, #2A0A4A 0%, #1A0A26 100%)',
-    accent: '#FF1493',
-    ink: '#FFFAF5',
-    inkSoft: '#E0BFF5',
-    card: 'rgba(255,255,255,0.10)',
-    cardBorder: 'rgba(255,20,147,0.35)',
-  },
-  {
-    id: 'champagne-pop',
-    label: 'Champagne Pop',
-    emoji: '🥂',
-    // 派手だが少し明るめ (ライト派手)
-    background: 'radial-gradient(circle at 20% 20%, #FFD700aa 0%, transparent 50%), radial-gradient(circle at 80% 80%, #FF1493bb 0%, transparent 55%), radial-gradient(circle at 60% 50%, #FFC857cc 0%, transparent 45%), linear-gradient(135deg, #FFE0CC 0%, #FFF5F8 100%)',
-    accent: '#E91E63',
-    ink: '#2A1A3A',
-    inkSoft: '#5A4570',
-    card: 'rgba(255,255,255,0.55)',
-    cardBorder: 'rgba(233,30,99,0.3)',
-  },
-  {
-    id: 'rose-velvet',
-    label: 'Rose Velvet',
-    emoji: '🌹',
-    background: 'radial-gradient(circle at 25% 30%, #FF1493dd 0%, transparent 55%), radial-gradient(circle at 75% 70%, #FF6BA8cc 0%, transparent 55%), radial-gradient(circle at 50% 50%, #FFD700aa 0%, transparent 40%), linear-gradient(135deg, #2A0A1A 0%, #3A0A2A 100%)',
-    accent: '#FFD700',
-    ink: '#FFFAF5',
-    inkSoft: '#FFD6EE',
-    card: 'rgba(255,255,255,0.10)',
-    cardBorder: 'rgba(255,215,0,0.35)',
-  },
-  {
-    id: 'aurora-glam',
-    label: 'Aurora Glam',
-    emoji: '🌈',
-    background: 'conic-gradient(from 0deg at 50% 50%, #FF1493 0%, #9D4EDD 25%, #FFD700 50%, #E91E63 75%, #FF1493 100%)',
-    accent: '#FFFFFF',
-    ink: '#FFFAF5',
-    inkSoft: '#FFE0F5',
-    card: 'rgba(0,0,0,0.25)',
-    cardBorder: 'rgba(255,255,255,0.45)',
-  },
-  {
-    id: 'cherry-blossom',
-    label: 'Cherry Blossom',
+    id: 'rose-mist',
+    label: 'Rose Mist',
     emoji: '🌸',
-    // ライト系の派手 (ピンク基調)
-    background: 'radial-gradient(circle at 25% 25%, #FF1493cc 0%, transparent 45%), radial-gradient(circle at 75% 75%, #FFD700aa 0%, transparent 45%), radial-gradient(circle at 50% 50%, #FFB8D6dd 0%, transparent 50%), linear-gradient(135deg, #FFE0EC 0%, #FFF5F8 100%)',
-    accent: '#FF1493',
-    ink: '#2A1A3A',
-    inkSoft: '#7A5588',
-    card: 'rgba(255,255,255,0.55)',
-    cardBorder: 'rgba(255,20,147,0.3)',
+    background: 'radial-gradient(circle at 20% 30%, #FFB8D633 0%, transparent 55%), radial-gradient(circle at 80% 70%, #FCB04522 0%, transparent 50%), linear-gradient(180deg, #FFFAFB 0%, #FFEBF1 100%)',
+    accent: '#E1306C',
+    ink: '#2A1F3F',
+    inkSoft: '#6E6577',
+    card: 'rgba(255,255,255,0.85)',
+    cardBorder: 'rgba(225,48,108,0.18)',
+  },
+  {
+    id: 'peach-cream',
+    label: 'Peach Cream',
+    emoji: '🍑',
+    background: 'radial-gradient(circle at 25% 30%, #FCB04533 0%, transparent 50%), radial-gradient(circle at 75% 70%, #FFB8D622 0%, transparent 50%), linear-gradient(135deg, #FFF9F0 0%, #FFE5DC 100%)',
+    accent: '#F77737',
+    ink: '#2A1F3F',
+    inkSoft: '#6E6577',
+    card: 'rgba(255,255,255,0.85)',
+    cardBorder: 'rgba(247,119,55,0.2)',
+  },
+  {
+    id: 'lavender-haze',
+    label: 'Lavender Haze',
+    emoji: '💜',
+    background: 'radial-gradient(circle at 30% 20%, #B07BD933 0%, transparent 55%), radial-gradient(circle at 70% 80%, #FFB8D622 0%, transparent 50%), linear-gradient(180deg, #FAF5FF 0%, #FFEBF1 100%)',
+    accent: '#833AB4',
+    ink: '#2A1F3F',
+    inkSoft: '#6E6577',
+    card: 'rgba(255,255,255,0.85)',
+    cardBorder: 'rgba(131,58,180,0.18)',
+  },
+  {
+    id: 'sunrise-glow',
+    label: 'Sunrise Glow',
+    emoji: '🌅',
+    background: 'linear-gradient(135deg, #FFE5DC 0%, #FFD4E5 35%, #FFE5EE 70%, #FAF5FF 100%)',
+    accent: '#E1306C',
+    ink: '#2A1F3F',
+    inkSoft: '#6E6577',
+    card: 'rgba(255,255,255,0.88)',
+    cardBorder: 'rgba(225,48,108,0.2)',
+  },
+  {
+    id: 'cream-classic',
+    label: 'Cream Classic',
+    emoji: '🤍',
+    // 一番安心感のあるニュートラル
+    background: 'linear-gradient(180deg, #FFFAF7 0%, #FFF5F8 50%, #FFFAF7 100%)',
+    accent: '#E1306C',
+    ink: '#2A1F3F',
+    inkSoft: '#6E6577',
+    card: 'rgba(255,255,255,0.95)',
+    cardBorder: 'rgba(225,48,108,0.15)',
+  },
+  {
+    id: 'neon-night',
+    label: 'Neon Night',
+    emoji: '🌙',
+    // ダーク版 (派手好きの方向け)
+    background: 'radial-gradient(circle at 20% 30%, #833AB4cc 0%, transparent 55%), radial-gradient(circle at 80% 70%, #E1306Ccc 0%, transparent 55%), radial-gradient(circle at 60% 50%, #FCB04588 0%, transparent 45%), linear-gradient(135deg, #1A0A26 0%, #2A1A3A 100%)',
+    accent: '#FCB045',
+    ink: '#FFFAF5',
+    inkSoft: '#FFD6EE',
+    card: 'rgba(255,255,255,0.10)',
+    cardBorder: 'rgba(252,176,69,0.35)',
+  },
+  {
+    id: 'aurora-soft',
+    label: 'Aurora',
+    emoji: '🌈',
+    // Instagram グラデの主流派生
+    background: 'linear-gradient(135deg, #833AB433 0%, #E1306C33 25%, #F7773733 50%, #FCB04533 75%, #FFDC8033 100%), linear-gradient(180deg, #FFFAF7 0%, #FFF5F8 100%)',
+    accent: '#E1306C',
+    ink: '#2A1F3F',
+    inkSoft: '#6E6577',
+    card: 'rgba(255,255,255,0.85)',
+    cardBorder: 'rgba(225,48,108,0.2)',
   },
 ];
 

@@ -105,10 +105,17 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{
-              fontFamily: IRIS_FONTS.display, fontStyle: 'italic',
-              fontSize: '1.5rem', color: bg.ink, letterSpacing: '-0.02em',
+              // Edits アプリ風: 細いサンセリフ + Instagram グラデ
+              fontFamily: IRIS_FONTS.body,
+              fontWeight: 300,
+              fontSize: '1.4rem',
+              letterSpacing: '0.05em',
+              background: `linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
             }}>
-              Iris
+              iris
             </span>
           </div>
 
