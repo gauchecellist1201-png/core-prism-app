@@ -26,6 +26,7 @@ import IrisDirectorView from './IrisDirectorView';
 import IrisTriageView from './IrisTriageView';
 import IrisCommunityView from './IrisCommunityView';
 import IrisStrategistView from './IrisStrategistView';
+import { IrisLogo } from '../components/Logo';
 
 interface Props {
   settings: AppSettings;
@@ -105,12 +106,13 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
       }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <IrisLogo size={32} withWordmark={false} />
             <span style={{
-              // Cormorant Garamond italic + Instagram グラデ (上品な書体)
+              // Cormorant Garamond italic + Instagram グラデ
               fontFamily: IRIS_FONTS.serif,
               fontStyle: 'italic',
               fontWeight: 500,
-              fontSize: '1.7rem',
+              fontSize: '1.6rem',
               letterSpacing: '-0.01em',
               lineHeight: 1,
               background: `linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)`,

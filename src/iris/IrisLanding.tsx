@@ -4,6 +4,7 @@
 // ============================================================
 import { motion } from 'framer-motion';
 import { IRIS_BRAND, IRIS_COLORS, IRIS_FONTS } from './irisStyle';
+import { IrisLogo } from '../components/Logo';
 
 interface Props {
   onEnter: () => void;
@@ -111,26 +112,37 @@ export default function IrisLanding({ onEnter }: Props) {
           justifyContent: 'center',
           padding: '0 1.5rem',
         }}>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+          {/* 花のシンボルロゴ (透過) */}
+          <motion.img
+            src="/iris-flower.svg"
+            alt="Iris"
+            initial={{ opacity: 0, scale: 0.8, rotate: -20 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              // 上品なセリフ italic (Cormorant Garamond) + Instagram グラデ
+              width: 'clamp(180px, 30vw, 360px)',
+              height: 'clamp(180px, 30vw, 360px)',
+              filter: 'drop-shadow(0 8px 24px rgba(225,48,108,0.18))',
+            }}
+          />
+          {/* ワードマーク "Iris" (Cormorant italic、控えめ) */}
+          <motion.h1
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 1.0 }}
+            style={{
               fontFamily: IRIS_FONTS.serif,
               fontStyle: 'italic',
-              fontSize: 'clamp(4.5rem, 14vw, 10rem)',
+              fontSize: 'clamp(3rem, 8vw, 5.5rem)',
               fontWeight: 500,
               letterSpacing: '-0.01em',
               lineHeight: 1,
-              margin: 0,
+              margin: '1.25rem 0 0',
               textAlign: 'center',
-              background: `linear-gradient(135deg, ${IRIS_COLORS.purple} 0%, ${IRIS_COLORS.hotPink} 40%, ${IRIS_COLORS.goldDeep} 75%, ${IRIS_COLORS.gold} 100%)`,
-              backgroundSize: '200% 200%',
+              background: `linear-gradient(135deg, #F77737 0%, #E1306C 50%, #833AB4 100%)`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              animation: 'iris-gradient 12s ease infinite',
             }}>
             Iris
           </motion.h1>
@@ -239,7 +251,8 @@ export default function IrisLanding({ onEnter }: Props) {
         padding: '1rem 1.5rem',
       }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'baseline' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <IrisLogo size={36} withWordmark={false} />
             <div style={{
               fontFamily: IRIS_FONTS.serif,
               fontStyle: 'italic',
