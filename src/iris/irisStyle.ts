@@ -134,13 +134,12 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     id: 'instagram-soft',
     label: 'Instagram Soft',
     emoji: '✨',
-    // Instagram 公式グラデの柔らかい派生 (パープル→ピンク→オレンジ)
     background: 'radial-gradient(circle at 15% 20%, #833AB422 0%, transparent 50%), radial-gradient(circle at 85% 80%, #FCB04522 0%, transparent 50%), radial-gradient(circle at 60% 50%, #E1306C22 0%, transparent 45%), linear-gradient(135deg, #FFFAF7 0%, #FFE5EE 50%, #FFF5E5 100%)',
     accent: '#E1306C',
-    ink: '#2A1F3F',
-    inkSoft: '#6E6577',
-    card: 'rgba(255,255,255,0.85)',
-    cardBorder: 'rgba(225,48,108,0.18)',
+    ink: '#1F1A2E',          // 黒寄り強化 (もっとはっきり)
+    inkSoft: '#3D3247',      // サブも濃く
+    card: 'rgba(255,255,255,0.95)',  // ほぼ不透明白
+    cardBorder: 'rgba(225,48,108,0.22)',
   },
   {
     id: 'rose-mist',
@@ -148,9 +147,9 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '🌸',
     background: 'radial-gradient(circle at 20% 30%, #FFB8D633 0%, transparent 55%), radial-gradient(circle at 80% 70%, #FCB04522 0%, transparent 50%), linear-gradient(180deg, #FFFAFB 0%, #FFEBF1 100%)',
     accent: '#E1306C',
-    ink: '#2A1F3F',
-    inkSoft: '#6E6577',
-    card: 'rgba(255,255,255,0.85)',
+    ink: '#1F1A2E',
+    inkSoft: '#3D3247',
+    card: 'rgba(255,255,255,0.94)',
     cardBorder: 'rgba(225,48,108,0.18)',
   },
   {
@@ -159,9 +158,9 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '🍑',
     background: 'radial-gradient(circle at 25% 30%, #FCB04533 0%, transparent 50%), radial-gradient(circle at 75% 70%, #FFB8D622 0%, transparent 50%), linear-gradient(135deg, #FFF9F0 0%, #FFE5DC 100%)',
     accent: '#F77737',
-    ink: '#2A1F3F',
-    inkSoft: '#6E6577',
-    card: 'rgba(255,255,255,0.85)',
+    ink: '#1F1A2E',
+    inkSoft: '#3D3247',
+    card: 'rgba(255,255,255,0.94)',
     cardBorder: 'rgba(247,119,55,0.2)',
   },
   {
@@ -170,9 +169,9 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '💜',
     background: 'radial-gradient(circle at 30% 20%, #B07BD933 0%, transparent 55%), radial-gradient(circle at 70% 80%, #FFB8D622 0%, transparent 50%), linear-gradient(180deg, #FAF5FF 0%, #FFEBF1 100%)',
     accent: '#833AB4',
-    ink: '#2A1F3F',
-    inkSoft: '#6E6577',
-    card: 'rgba(255,255,255,0.85)',
+    ink: '#1F1A2E',
+    inkSoft: '#3D3247',
+    card: 'rgba(255,255,255,0.94)',
     cardBorder: 'rgba(131,58,180,0.18)',
   },
   {
@@ -181,9 +180,9 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '🌅',
     background: 'linear-gradient(135deg, #FFE5DC 0%, #FFD4E5 35%, #FFE5EE 70%, #FAF5FF 100%)',
     accent: '#E1306C',
-    ink: '#2A1F3F',
-    inkSoft: '#6E6577',
-    card: 'rgba(255,255,255,0.88)',
+    ink: '#1F1A2E',
+    inkSoft: '#3D3247',
+    card: 'rgba(255,255,255,0.94)',
     cardBorder: 'rgba(225,48,108,0.2)',
   },
   {
@@ -193,8 +192,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     // 一番安心感のあるニュートラル
     background: 'linear-gradient(180deg, #FFFAF7 0%, #FFF5F8 50%, #FFFAF7 100%)',
     accent: '#E1306C',
-    ink: '#2A1F3F',
-    inkSoft: '#6E6577',
+    ink: '#1F1A2E',
+    inkSoft: '#3D3247',
     card: 'rgba(255,255,255,0.95)',
     cardBorder: 'rgba(225,48,108,0.15)',
   },
@@ -205,9 +204,9 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     // ダーク版 (派手好きの方向け)
     background: 'radial-gradient(circle at 20% 30%, #833AB4cc 0%, transparent 55%), radial-gradient(circle at 80% 70%, #E1306Ccc 0%, transparent 55%), radial-gradient(circle at 60% 50%, #FCB04588 0%, transparent 45%), linear-gradient(135deg, #1A0A26 0%, #2A1A3A 100%)',
     accent: '#FCB045',
-    ink: '#FFFAF5',
-    inkSoft: '#FFD6EE',
-    card: 'rgba(255,255,255,0.10)',
+    ink: '#FFFFFF',
+    inkSoft: '#FFEAF5',
+    card: 'rgba(255,255,255,0.18)',
     cardBorder: 'rgba(252,176,69,0.35)',
   },
   {
@@ -217,9 +216,9 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     // Instagram グラデの主流派生
     background: 'linear-gradient(135deg, #833AB433 0%, #E1306C33 25%, #F7773733 50%, #FCB04533 75%, #FFDC8033 100%), linear-gradient(180deg, #FFFAF7 0%, #FFF5F8 100%)',
     accent: '#E1306C',
-    ink: '#2A1F3F',
-    inkSoft: '#6E6577',
-    card: 'rgba(255,255,255,0.85)',
+    ink: '#1F1A2E',
+    inkSoft: '#3D3247',
+    card: 'rgba(255,255,255,0.94)',
     cardBorder: 'rgba(225,48,108,0.2)',
   },
 ];

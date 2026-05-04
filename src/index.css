@@ -100,6 +100,15 @@
   border: 1px solid var(--border);
 }
 
+/* ──────────────── Iris カード内テキストの可読性向上 ──────────────── */
+/* 暗背景の上に白半透明カードを置く構造で、薄い文字色 (inkSoft) が読みにくいので
+   サブピクセルアンチエイリアスとフォントウェイト引き締めで視認性を上げる */
+.iris-card,
+.iris-text-soft {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
 /* ──────────────── input placeholder の可読性 (Light/Dark 両対応) ──────────────── */
 /* Light テーマ + Iris (派手背景に白入力カード) — placeholder は暗めで読みやすく */
 input::placeholder,
