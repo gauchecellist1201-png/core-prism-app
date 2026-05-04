@@ -65,6 +65,13 @@ const PRESETS: Preset[] = [
     description: '財務・市場・経営チームを冷静に分析し、長期的なリターンとリスクの観点から判断する。',
     colorIndex: 1,
   },
+  {
+    name: 'インフルエンサー',
+    subtitle: 'Influencer / Creator',
+    icon: '★',
+    description: 'SNS で発信し、ブランドや代理店から PR 案件を受けるクリエイター。フォロワー・エンゲージメント率・自身のブランド観を数字で把握し、案件の交渉から納品・レポートまで自己完結する。',
+    colorIndex: 6,
+  },
 ];
 
 interface Props {

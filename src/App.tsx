@@ -19,6 +19,7 @@ import LandingPage from './components/LandingPage';
 import LegalModal, { type LegalKind } from './components/LegalModal';
 import { PrismBackground } from './components/PrismBackground';
 import { useTheme } from './hooks/useTheme';
+import IrisApp from './iris/IrisApp';
 
 import type { AppSettings, ChatMessage } from './types/identity';
 
@@ -44,7 +45,20 @@ function getInitialView(onboardingComplete: boolean): View {
   return onboardingComplete ? 'selection' : 'onboarding';
 }
 
+function isIrisPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  if (p.startsWith('/iris')) return true;
+  if (window.location.search.includes('brand=iris')) return true;
+  return false;
+}
+
 export default function App() {
+  // CORE Iris (姉妹ブランド) ルート — /iris で別ブランドを起動
+  if (isIrisPath()) {
+    return <IrisApp />;
+  }
+
   // Theme初期化 (ライト既定)
   useTheme();
   const { settings, updateSettings, updateUsageStats, resetStats } = useSettings();

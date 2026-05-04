@@ -325,6 +325,11 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
             <button onClick={() => onOpenLegal('privacy')} style={{ ...footLink, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}>プライバシーポリシー</button>
             <button onClick={() => onOpenLegal('tokushou')} style={{ ...footLink, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}>特定商取引法に基づく表記</button>
           </div>
+          <div>
+            <div style={footHead}>姉妹ブランド</div>
+            <a href="/iris" style={{ ...footLink, color: ORANGE, fontWeight: 700 }}>🌸 CORE Iris</a>
+            <span style={{ ...footLink, opacity: 0.5, fontSize: '0.75rem' }}>女性インフルエンサー向け</span>
+          </div>
         </div>
         <div style={{ borderTop: '1px solid #1F2F4A', marginTop: '2rem', paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.8rem', color: '#7088A8' }}>
           © {new Date().getFullYear()} CORE 株式会社. All rights reserved.
