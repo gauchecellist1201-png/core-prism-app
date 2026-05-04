@@ -22,12 +22,12 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
   const [result, setResult] = useState<OfferTriageResult | null>(null);
 
   const inp = {
-    background: 'rgba(255,255,255,0.6)',
+    background: 'rgba(255,255,255,0.94)',
     border: `1px solid ${bg.cardBorder}`,
-    color: bg.ink,
-    padding: '0.65rem 0.9rem',
+    color: '#1F1A2E',
+    padding: '0.7rem 1rem',
     borderRadius: 12,
-    fontSize: '0.92rem',
+    fontSize: '0.95rem',
     fontFamily: IRIS_FONTS.body,
     outline: 'none',
   } as React.CSSProperties;

@@ -100,6 +100,24 @@
   border: 1px solid var(--border);
 }
 
+/* ──────────────── input placeholder の可読性 (Light/Dark 両対応) ──────────────── */
+/* Light テーマ + Iris (派手背景に白入力カード) — placeholder は暗めで読みやすく */
+input::placeholder,
+textarea::placeholder {
+  color: rgba(31, 26, 46, 0.5);
+  opacity: 1;
+}
+/* Dark テーマ (Prism Dark) では逆に薄めの白 */
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: rgba(240, 239, 242, 0.4);
+}
+/* select dropdown option を確実に読める色に */
+select option {
+  color: #1F1A2E;
+  background: #FFFFFF;
+}
+
 .glass-soft {
   background: var(--surface-2);
   backdrop-filter: blur(12px);

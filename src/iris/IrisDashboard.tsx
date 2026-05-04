@@ -1577,9 +1577,10 @@ function Card({ bg, children }: { bg: IrisBackgroundDef; children: React.ReactNo
 }
 
 const inp = (bg: IrisBackgroundDef): React.CSSProperties => ({
-  background: 'rgba(255,255,255,0.6)',
+  // 派手な背景の上でもしっかり読めるように、ほぼ不透明な白 + 黒系の文字に固定
+  background: 'rgba(255,255,255,0.94)',
   border: `1px solid ${bg.cardBorder}`,
-  color: bg.ink,
+  color: '#1F1A2E',
   padding: '0.6rem 0.9rem',
   borderRadius: 12,
   fontSize: '0.9rem',
