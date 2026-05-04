@@ -2,7 +2,7 @@
 // CORE Iris — メインダッシュボード
 // 案件 / 交渉 / 投稿下書き / 美容相談 / 画像生成 / 背景カスタム
 // ============================================================
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
 import {
@@ -22,13 +22,16 @@ import {
 import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMessage } from './beautyAdvisor';
 import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
+import IrisDirectorView from './IrisDirectorView';
+import IrisTriageView from './IrisTriageView';
+import IrisCommunityView from './IrisCommunityView';
 
 interface Props {
   settings: AppSettings;
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'deals' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'team' | 'brands' | 'kit';
+type Tab = 'home' | 'deals' | 'triage' | 'director' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit';
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
@@ -124,15 +127,18 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4,
         }}>
           {[
-            { id: 'home' as Tab,      e: '🌸', l: 'ホーム' },
-            { id: 'deals' as Tab,     e: '💌', l: '案件' },
-            { id: 'negotiate' as Tab, e: '💬', l: '交渉' },
-            { id: 'draft' as Tab,     e: '✍',  l: '投稿' },
-            { id: 'beauty' as Tab,    e: '💆‍♀️', l: '美容' },
-            { id: 'image' as Tab,     e: '🎨', l: '画像' },
-            { id: 'team' as Tab,      e: '🌷', l: 'チーム' },
-            { id: 'brands' as Tab,    e: '🤝', l: 'ブランドを探す' },
-            { id: 'kit' as Tab,       e: '📇', l: 'メディアキット' },
+            { id: 'home' as Tab,      e: '✦', l: 'Home' },
+            { id: 'triage' as Tab,    e: '🔍', l: 'Triage' },
+            { id: 'director' as Tab,  e: '🎬', l: 'Director' },
+            { id: 'deals' as Tab,     e: '💌', l: 'Deals' },
+            { id: 'negotiate' as Tab, e: '💬', l: 'Negotiate' },
+            { id: 'draft' as Tab,     e: '✍',  l: 'Caption' },
+            { id: 'image' as Tab,     e: '📷', l: 'Retouch' },
+            { id: 'beauty' as Tab,    e: '💆‍♀️', l: 'Beauty' },
+            { id: 'community' as Tab, e: '🌹', l: 'House' },
+            { id: 'team' as Tab,      e: '🌷', l: 'Roster' },
+            { id: 'brands' as Tab,    e: '🤝', l: 'Brands' },
+            { id: 'kit' as Tab,       e: '📇', l: 'Kit' },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               style={{
@@ -171,6 +177,28 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'draft' && <DraftView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'beauty' && <BeautyChatView bg={bg} settings={settings} />}
             {tab === 'image' && <ImageStudioView bg={bg} settings={settings} />}
+            {tab === 'triage' && (
+              <IrisTriageView bg={bg} settings={settings} mediaKit={mediaKit}
+                onSaveAsDeal={(ex) => {
+                  desk.addDeal(IRIS_PERSONA_ID, {
+                    brandName: ex.brandName || '不明',
+                    agencyName: ex.agencyName,
+                    productName: ex.productName,
+                    platform: 'instagram',
+                    contentType: 'post',
+                    fee: ex.fee || 0,
+                    deliverables: ex.deliverables || '',
+                    contactName: ex.contactName,
+                    contactEmail: ex.contactEmail,
+                    notes: '[Triage AI で精査済み]',
+                    stage: 'inquiry',
+                  });
+                  alert('案件として保存しました');
+                }}
+              />
+            )}
+            {tab === 'director' && <IrisDirectorView bg={bg} settings={settings} />}
+            {tab === 'community' && <IrisCommunityView bg={bg} myHandle={mediaKit?.handleName} />}
             {tab === 'team' && <TeamView bg={bg} team={team} desk={desk} myDeals={myDeals} />}
             {tab === 'brands' && <BrandMatchView bg={bg} desk={desk} mediaKit={mediaKit} settings={settings} />}
             {tab === 'kit' && <MediaKitView bg={bg} desk={desk} kit={mediaKit} />}
@@ -782,45 +810,300 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
   );
 }
 
-// ─── 画像生成 (簡易プロンプト保存) ─────────────
+// ─── 画像加工スタジオ (アップロード / クロップ / フィルター / 背景処理) ─
 function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings }) {
-  const [prompt, setPrompt] = useState('');
-  return (
-    <div style={{ display: 'grid', gap: '1rem' }}>
-      <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
-        画像 / 動画 のアイデア
-      </h2>
-      <Card bg={bg}>
-        <p style={{ color: bg.inkSoft, marginBottom: '0.75rem' }}>
-          イメージしてる画像を文字で描写してください。本家 Prism の画像生成スタジオで使えるプロンプトに整えます。
-        </p>
-        <textarea style={{ ...inp(bg), width: '100%', minHeight: 120, marginBottom: '0.5rem' }}
-          placeholder="例: 春のピンクの背景、白いコスメボトル、上から差し込む朝日、Instagram フィード用 1:1"
-          value={prompt} onChange={e => setPrompt(e.target.value)} />
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button onClick={() => navigator.clipboard?.writeText(prompt)} style={btnPrimary(bg)}>📋 プロンプトをコピー</button>
-          <a href="/?app=1" target="_blank" rel="noreferrer" style={{ ...btnSecondary(bg), display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
-            🎨 本家の画像スタジオを開く
-          </a>
-        </div>
-        <p style={{ color: bg.inkSoft, fontSize: '0.78rem', marginTop: '0.75rem' }}>
-          ※ Iris 内蔵の画像生成は近日リリース予定。今は本家 Prism の ImageStudio を使ってください。
-        </p>
-      </Card>
+  const [imgUrl, setImgUrl] = useState<string | null>(null);
+  const [imgEl, setImgEl] = useState<HTMLImageElement | null>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
-      <Card bg={bg}>
-        <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: bg.ink, marginBottom: '0.75rem' }}>
-          リール / ショート 構成テンプレ
+  // フィルターパラメータ
+  const [aspect, setAspect] = useState<'1:1' | '4:5' | '9:16' | 'free'>('1:1');
+  const [brightness, setBrightness] = useState(100);
+  const [contrast, setContrast] = useState(100);
+  const [saturate, setSaturate] = useState(100);
+  const [warmth, setWarmth] = useState(0);
+  const [blur, setBlur] = useState(0);
+  const [vignette, setVignette] = useState(0);
+
+  const presets = [
+    { id: 'editorial', label: 'Editorial', c: { brightness: 95, contrast: 115, saturate: 85, warmth: -5, vignette: 25 } },
+    { id: 'glow',      label: 'Glow',      c: { brightness: 108, contrast: 92, saturate: 105, warmth: 8, vignette: 0 } },
+    { id: 'film',      label: 'Film',      c: { brightness: 96, contrast: 108, saturate: 95, warmth: 12, vignette: 35 } },
+    { id: 'noir',      label: 'Noir',      c: { brightness: 90, contrast: 130, saturate: 0, warmth: -10, vignette: 50 } },
+    { id: 'rosy',      label: 'Rosy',      c: { brightness: 105, contrast: 102, saturate: 110, warmth: 18, vignette: 10 } },
+    { id: 'matte',     label: 'Matte',     c: { brightness: 100, contrast: 90, saturate: 88, warmth: 4, vignette: 8 } },
+    { id: 'reset',     label: 'Reset',     c: { brightness: 100, contrast: 100, saturate: 100, warmth: 0, vignette: 0 } },
+  ];
+
+  const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const url = ev.target?.result as string;
+      setImgUrl(url);
+      const img = new Image();
+      img.onload = () => setImgEl(img);
+      img.src = url;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 描画
+  React.useEffect(() => {
+    if (!imgEl || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // アスペクト比の決定
+    let w = imgEl.naturalWidth, h = imgEl.naturalHeight;
+    let cropW = w, cropH = h, cropX = 0, cropY = 0;
+    if (aspect !== 'free') {
+      const [aw, ah] = aspect.split(':').map(Number);
+      const targetRatio = aw / ah;
+      const imgRatio = w / h;
+      if (imgRatio > targetRatio) {
+        cropW = h * targetRatio;
+        cropX = (w - cropW) / 2;
+      } else {
+        cropH = w / targetRatio;
+        cropY = (h - cropH) / 2;
+      }
+    }
+
+    // キャンバスサイズ (出力)
+    const outMax = 1080;
+    const scale = Math.min(1, outMax / Math.max(cropW, cropH));
+    canvas.width = Math.round(cropW * scale);
+    canvas.height = Math.round(cropH * scale);
+
+    // フィルター適用
+    const filter = [
+      `brightness(${brightness}%)`,
+      `contrast(${contrast}%)`,
+      `saturate(${saturate}%)`,
+      blur > 0 ? `blur(${blur}px)` : '',
+      warmth !== 0 ? `sepia(${Math.abs(warmth) / 100 * 0.4})` : '',
+      warmth < 0 ? `hue-rotate(180deg)` : '',
+    ].filter(Boolean).join(' ');
+    ctx.filter = filter;
+
+    ctx.drawImage(imgEl, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+    ctx.filter = 'none';
+
+    // 暖色オーバーレイ (warmth が正)
+    if (warmth > 0) {
+      ctx.globalCompositeOperation = 'overlay';
+      ctx.fillStyle = `rgba(255, 180, 130, ${warmth / 200})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // 冷色オーバーレイ (warmth が負)
+    if (warmth < 0) {
+      ctx.globalCompositeOperation = 'overlay';
+      ctx.fillStyle = `rgba(180, 200, 255, ${-warmth / 200})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // ビネット
+    if (vignette > 0) {
+      const r = Math.max(canvas.width, canvas.height);
+      const grad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, r * 0.4, canvas.width / 2, canvas.height / 2, r * 0.85);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, `rgba(0,0,0,${vignette / 100 * 0.7})`);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }, [imgEl, aspect, brightness, contrast, saturate, warmth, blur, vignette]);
+
+  const applyPreset = (p: typeof presets[0]) => {
+    setBrightness(p.c.brightness);
+    setContrast(p.c.contrast);
+    setSaturate(p.c.saturate);
+    setWarmth(p.c.warmth);
+    setVignette(p.c.vignette);
+    setBlur(0);
+  };
+
+  const download = () => {
+    if (!canvasRef.current) return;
+    canvasRef.current.toBlob(blob => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `iris-edit-${Date.now()}.jpg`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/jpeg', 0.95);
+  };
+
+  const downloadPng = () => {
+    if (!canvasRef.current) return;
+    const url = canvasRef.current.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `iris-edit-${Date.now()}.png`;
+    a.click();
+  };
+
+  const copyToClipboard = async () => {
+    if (!canvasRef.current) return;
+    try {
+      const blob: Blob = await new Promise((resolve, reject) => {
+        canvasRef.current!.toBlob(b => b ? resolve(b) : reject(), 'image/png');
+      });
+      await (navigator.clipboard as any).write([new (window as any).ClipboardItem({ 'image/png': blob })]);
+      alert('クリップボードにコピーしました');
+    } catch {
+      alert('このブラウザはクリップボード画像コピーに対応していません');
+    }
+  };
+
+  return (
+    <div style={{ display: 'grid', gap: '1.25rem' }}>
+      <div>
+        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.4rem' }}>
+          The Retouch
         </p>
-        <ul style={{ paddingLeft: '1.2rem', color: bg.inkSoft, lineHeight: 1.9 }}>
-          <li>0–3 秒: フック (引きの一言 or 結論先出し)</li>
-          <li>3–10 秒: 課題提起 (誰の何を解決するか)</li>
-          <li>10–30 秒: 商品体験 / Before-After</li>
-          <li>30–45 秒: 推しポイント 3 つ</li>
-          <li>最後 5 秒: CTA「保存してね」or「コメントで○○教えて」</li>
-        </ul>
-      </Card>
+        <h2 style={{ fontFamily: IRIS_FONTS.display, fontSize: '2.4rem', color: bg.ink, margin: 0, fontWeight: 700, letterSpacing: '-0.01em' }}>
+          画像加工スタジオ
+        </h2>
+      </div>
+
+      {!imgUrl ? (
+        <Card bg={bg}>
+          <label style={{
+            display: 'block', textAlign: 'center', cursor: 'pointer',
+            padding: '4rem 2rem', border: `2px dashed ${bg.cardBorder}`,
+            borderRadius: 16, color: bg.inkSoft,
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>📷</div>
+            <div style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.4rem', color: bg.ink, marginBottom: '0.5rem' }}>
+              写真をアップロード
+            </div>
+            <div style={{ fontSize: '0.85rem' }}>
+              JPG / PNG / WebP / HEIC ・ クリックまたはドラッグ
+            </div>
+            <input type="file" accept="image/*" onChange={onUpload} style={{ display: 'none' }} />
+          </label>
+        </Card>
+      ) : (
+        <>
+          {/* プレビュー */}
+          <Card bg={bg}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 360 }}>
+              <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,0.15)' }} />
+            </div>
+          </Card>
+
+          {/* アスペクト比 */}
+          <Card bg={bg}>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>Crop</p>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+              {[
+                { id: '1:1' as const, label: '1:1 Feed' },
+                { id: '4:5' as const, label: '4:5 Portrait' },
+                { id: '9:16' as const, label: '9:16 Story' },
+                { id: 'free' as const, label: 'Free' },
+              ].map(a => (
+                <button key={a.id} onClick={() => setAspect(a.id)} style={{
+                  background: aspect === a.id ? bg.accent : 'rgba(255,255,255,0.5)',
+                  color: aspect === a.id ? '#fff' : bg.ink,
+                  border: `1px solid ${bg.cardBorder}`,
+                  borderRadius: 999, padding: '0.5rem 1rem',
+                  fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+                  fontFamily: IRIS_FONTS.body,
+                }}>
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          {/* プリセット */}
+          <Card bg={bg}>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>Filter</p>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+              {presets.map(p => (
+                <button key={p.id} onClick={() => applyPreset(p)} style={{
+                  background: 'rgba(255,255,255,0.5)',
+                  color: bg.ink,
+                  border: `1px solid ${bg.cardBorder}`,
+                  borderRadius: 999, padding: '0.5rem 1.1rem',
+                  fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer',
+                  fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
+                }}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          {/* 細かい調整 */}
+          <Card bg={bg}>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>Adjust</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+              <Slider label="明るさ" value={brightness} min={50} max={150} onChange={setBrightness} suffix="%" bg={bg} />
+              <Slider label="コントラスト" value={contrast} min={50} max={150} onChange={setContrast} suffix="%" bg={bg} />
+              <Slider label="彩度" value={saturate} min={0} max={200} onChange={setSaturate} suffix="%" bg={bg} />
+              <Slider label="暖色 (寒色)" value={warmth} min={-50} max={50} onChange={setWarmth} bg={bg} />
+              <Slider label="ぼかし" value={blur} min={0} max={10} onChange={setBlur} suffix="px" bg={bg} />
+              <Slider label="ビネット" value={vignette} min={0} max={100} onChange={setVignette} suffix="%" bg={bg} />
+            </div>
+          </Card>
+
+          {/* 背景処理 (外部 API への誘導) */}
+          <Card bg={bg}>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>Background</p>
+            <p style={{ color: bg.inkSoft, fontSize: '0.88rem', marginBottom: '0.75rem', lineHeight: 1.7 }}>
+              背景の自動削除は、現在の編集中画像を <strong>remove.bg</strong> や <strong>cutout.pro</strong> などの専用サービスへ送って処理する形に対応しています。<br />
+              下のボタンから加工後の画像をダウンロード → サービスにアップロード → 背景透過 PNG をまた読み込み直してください。
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <a href="https://www.remove.bg/" target="_blank" rel="noreferrer" style={{ ...btnSecondary(bg), textDecoration: 'none' }}>
+                🪄 remove.bg を開く
+              </a>
+              <a href="https://www.cutout.pro/" target="_blank" rel="noreferrer" style={{ ...btnSecondary(bg), textDecoration: 'none' }}>
+                ✂ cutout.pro を開く
+              </a>
+            </div>
+            <p style={{ color: bg.inkSoft, fontSize: '0.78rem', marginTop: '0.5rem', fontStyle: 'italic' }}>
+              ※ Iris 内蔵の AI 背景削除は次回アップデートで実装予定 (@imgly/background-removal を統合)
+            </p>
+          </Card>
+
+          {/* アクション */}
+          <Card bg={bg}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button onClick={download} style={btnPrimary(bg)}>📥 JPG ダウンロード</button>
+              <button onClick={downloadPng} style={btnSecondary(bg)}>🖼 PNG ダウンロード</button>
+              <button onClick={copyToClipboard} style={btnSecondary(bg)}>📋 コピー</button>
+              <button onClick={() => { setImgUrl(null); setImgEl(null); }} style={btnSecondary(bg)}>🔄 別の写真</button>
+            </div>
+          </Card>
+        </>
+      )}
     </div>
+  );
+}
+
+function Slider({ label, value, min, max, onChange, suffix, bg }: {
+  label: string; value: number; min: number; max: number; onChange: (v: number) => void; suffix?: string;
+  bg: IrisBackgroundDef;
+}) {
+  return (
+    <label style={{ display: 'block' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: bg.inkSoft, marginBottom: '0.3rem' }}>
+        <span>{label}</span>
+        <span style={{ fontWeight: 600, color: bg.ink }}>{value}{suffix}</span>
+      </div>
+      <input type="range" min={min} max={max} value={value} onChange={e => onChange(Number(e.target.value))}
+        style={{ width: '100%', accentColor: bg.accent }} />
+    </label>
   );
 }
 

@@ -4,46 +4,75 @@
 // ============================================================
 
 export const IRIS_BRAND = {
-  name: 'CORE Iris',
-  tagline: '自分の色で、咲く。',
-  taglineEn: 'Your Color. Your Bloom.',
-  description: 'インフルエンサーのための、もうひとつの脳。',
+  name: 'IRIS',                              // 短く、雑誌のロゴのように
+  tagline: 'Edit Yourself.',                 // 「自分を、編集する。」
+  taglineJa: '自分を、編集する。',
+  description: 'A magazine, a manager, a mirror — for women who edit their own story.',
   parent: 'CORE Prism',
+  issue: 'Vol. 01 · 2026',                   // VOGUE 風の号数
+  publisher: 'CORE',
 };
 
+// エディトリアル雑誌風パレット (VOGUE / ELLE / Devil Wears Prada inspired)
+// 彩度を抑えた洗練系 — アイボリー / インク / ボルドー / ローズゴールド
 export const IRIS_COLORS = {
-  // メインパレット
-  rose:        '#FF7AAE',  // 主色
-  roseDeep:    '#E84B97',
-  roseSoft:    '#FFD4E5',
-  roseMist:    '#FFF0F5',
+  // ベース
+  ivory:       '#F5F1EA',   // メインBG (温かみのあるオフホワイト)
+  ivoryDeep:   '#EDE7DD',
+  cream:       '#FAF7F2',
+  paper:       '#FFFFFF',
 
-  cream:       '#FFF9F0',
-  champagne:   '#F5E6D3',
+  // インク (純黒回避)
+  inkBlack:    '#1C1A22',   // 黒に最も近い色 (純黒より深みのある紫黒)
+  ink:         '#28252F',   // 本文・見出し
+  inkSoft:     '#5A5562',   // 本文 small
+  inkDim:      '#8A8593',   // メタ情報
+
+  // ボルドー / レッド (VOGUE のエディトリアル赤)
+  bordeaux:    '#7B1F2B',   // 深いワインレッド
+  bordeauxLt:  '#A8324A',
+  oxblood:     '#5C0E1B',
+  red:         '#C8102E',   // クラシックレッドリップ
+
+  // ヌード / シャンパン
+  nude:        '#E6D5C0',
+  nudeDeep:    '#C8A88A',
+  champagne:   '#D4B896',
+  blush:       '#F5DCD0',
+
+  // ローズゴールド (アクセント)
+  roseGold:    '#C8956D',
+  roseGoldLt:  '#E8C9B0',
+
+  // ネイビー / フォレスト (ファッション業界の差し色)
+  navy:        '#1A2540',   // ミッドナイトネイビー
+  forest:      '#2D3F2A',
+
+  // 残し: 旧 API 互換 (段階的に廃止予定)
+  rose:        '#A8324A',   // ↓旧コードからの移行用 alias
+  roseDeep:    '#7B1F2B',
+  roseSoft:    '#F5DCD0',
+  roseMist:    '#FAF7F2',
   pearl:       '#FAFAFC',
-
-  lavender:    '#C9A4F5',
-  lavenderSoft:'#E8DCFA',
-
-  peach:       '#FFB89A',
-  peachSoft:   '#FFE5D6',
-
-  gold:        '#D9A41A',
-  goldSoft:    '#F5E6A0',
-
-  // 文字色: 純黒 #000 / 純白 #fff を避けて目への負担を軽減
-  navy:        '#3A2F4F',  // 見出し・強アクセント (上品な紫黒、純黒より目に優しい)
-  ink:         '#403648',  // 本文 (柔らかい紫グレー、 #333 より暖かみ)
-  inkSoft:     '#6E6577',
-  inkDim:      '#9088A8',
-
-  white:       '#FFFFFF',
+  lavender:    '#A89AB5',
+  lavenderSoft:'#DDD3E0',
+  peach:       '#E6D5C0',
+  peachSoft:   '#F5DCD0',
+  gold:        '#C8956D',
+  goldSoft:    '#E8C9B0',
+  white:       '#FAF7F2',
 };
 
+// VOGUE / Devil Wears Prada 級のタイポグラフィ
+// Display: Playfair Display (Didot 系) — 大判タイトル
+// Serif:   Cormorant — 見出し・引用
+// Sans:    Inter — 本文
 export const IRIS_FONTS = {
-  display: '"Cormorant Garamond", "Noto Serif JP", "游明朝", serif',
-  body:    '"Inter", "Noto Sans JP", "游ゴシック", sans-serif',
-  accent:  '"Playfair Display", "Noto Serif JP", serif',
+  display: '"Playfair Display", "Bodoni Moda", "Didot", "Noto Serif JP", "游明朝", serif',
+  serif:   '"Cormorant Garamond", "Playfair Display", "Noto Serif JP", "游明朝", serif',
+  body:    '"Inter", "Helvetica Neue", "Noto Sans JP", "游ゴシック", sans-serif',
+  accent:  '"Cormorant Garamond", "Noto Serif JP", serif',
+  mono:    '"Cormorant Garamond", serif', // 数字・見出しナンバー用
 };
 
 // 背景パターンのプリセット (ユーザーが選択できる)
