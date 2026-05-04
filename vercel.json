@@ -1,5 +1,8 @@
 {
   "rewrites": [
+    { "source": "/iris", "destination": "/iris.html" },
+    { "source": "/iris/", "destination": "/iris.html" },
+    { "source": "/iris/(.*)", "destination": "/iris.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

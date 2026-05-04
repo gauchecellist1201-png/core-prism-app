@@ -101,12 +101,133 @@
 }
 
 /* ──────────────── Iris カード内テキストの可読性向上 ──────────────── */
-/* 暗背景の上に白半透明カードを置く構造で、薄い文字色 (inkSoft) が読みにくいので
-   サブピクセルアンチエイリアスとフォントウェイト引き締めで視認性を上げる */
 .iris-card,
 .iris-text-soft {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* ──────────────── iPhone / モバイルでのアニメ最適化 ──────────────── */
+/* 重い blur や conic-gradient のアニメで Mobile Safari がカクつく問題対策 */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* 巨大 blur を半減 (Mobile Safari は filter:blur が極端に重い) */
+  [style*="filter: blur(60px)"],
+  [style*="filter:blur(60px)"]  { filter: blur(28px) !important; }
+  [style*="filter: blur(70px)"],
+  [style*="filter:blur(70px)"]  { filter: blur(32px) !important; }
+  [style*="filter: blur(80px)"],
+  [style*="filter:blur(80px)"]  { filter: blur(36px) !important; }
+  [style*="filter: blur(120px)"],
+  [style*="filter:blur(120px)"] { filter: blur(48px) !important; }
+
+  /* mix-blend-mode は iOS Safari で激重 → 削除 (見た目の変化は最小限) */
+  [style*="mix-blend-mode: screen"]  { mix-blend-mode: normal !important; opacity: 0.55 !important; }
+  [style*="mix-blend-mode: overlay"] { mix-blend-mode: normal !important; }
+
+  /* conic-gradient のアニメは静的な linear-gradient に置換するのは難しいので
+     代わりに animation-duration を倍にして CPU 負荷を軽減 */
+  [style*="conic-gradient"] {
+    animation-duration: 90s !important;
+  }
+}
+
+/* 大きな装飾オーブを GPU レイヤーに強制 (合成のみで再描画なし) */
+.iris-orb,
+[data-animated-orb] {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  contain: layout style paint;
+}
+
+/* ──────────────── iPhone / モバイル レスポンシブ ──────────────── */
+/* iOS Safari: 100vh は実際のビューポートと違うので 100dvh (dynamic) を使う */
+html, body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-text-size-adjust: 100%;  /* 横向き時の自動拡大防止 */
+  text-size-adjust: 100%;
+  overscroll-behavior-y: none;     /* バウンス防止 */
+}
+
+/* iOS の safe-area (ノッチ・ホームバー) を考慮 */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* 入力欄でオートズーム防止 (iOS は 16px 未満でズームする) */
+input, textarea, select {
+  font-size: 16px !important;
+  font-family: inherit;
+}
+@media (min-width: 768px) {
+  /* PC 以上では本来のフォントサイズに戻す (override は inline style に任せる) */
+  input, textarea, select {
+    font-size: inherit !important;
+  }
+}
+
+/* タッチターゲット最小サイズ (Apple HIG: 44pt) */
+@media (max-width: 768px) {
+  button, a[role="button"], [role="button"], a {
+    min-height: 36px;
+  }
+
+  /* モーダル系は 100dvh に */
+  [class*="fixed"][class*="inset-0"] {
+    max-height: 100dvh;
+  }
+
+  /* タブバー: モバイルで折り返さず横スクロールにグリップ表示 */
+  nav[style*="overflowX: auto"], nav[style*="overflow-x: auto"] {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  nav[style*="overflowX: auto"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 大きな padding をモバイル時に縮小 */
+  [style*="padding: '1.5rem'"],
+  [style*="padding:'1.5rem'"]   { padding: 1rem !important; }
+  [style*="padding: '1.75rem'"],
+  [style*="padding:'1.75rem'"]  { padding: 1.1rem !important; }
+  [style*="padding: '2rem'"],
+  [style*="padding:'2rem'"]     { padding: 1.2rem !important; }
+}
+
+/* iOS: ボタンのデフォルトの見た目をリセット */
+button {
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS: input のデフォルト appearance リセット */
+input, textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+/* (radius は inline style で再適用される) */
+
+/* スクロール挙動 */
+* {
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ──────────────── input placeholder の可読性 (Light/Dark 両対応) ──────────────── */
