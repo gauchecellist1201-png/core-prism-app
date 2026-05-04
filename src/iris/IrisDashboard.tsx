@@ -27,6 +27,7 @@ import IrisTriageView from './IrisTriageView';
 import IrisCommunityView from './IrisCommunityView';
 import IrisStrategistView from './IrisStrategistView';
 import IrisQuickAdd from './IrisQuickAdd';
+import IrisVoiceHome from './IrisVoiceHome';
 import { IrisLogo } from '../components/Logo';
 
 interface Props {
@@ -191,7 +192,13 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            {tab === 'home' && <HomeView bg={bg} desk={desk} myDeals={myDeals} setTab={setTab} />}
+            {tab === 'home' && (
+              <IrisVoiceHome
+                bg={bg} settings={settings}
+                myDeals={myDeals} mediaKit={mediaKit}
+                onNavigate={(t) => setTab(t as Tab)}
+              />
+            )}
             {tab === 'deals' && <DealsView bg={bg} desk={desk} myDeals={myDeals} settings={settings} />}
             {tab === 'negotiate' && <NegotiateView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'draft' && <DraftView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
@@ -394,6 +401,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
 // ─── ホーム ──────────────────────────────────────
 type SetTabFn = (t: 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit') => void;
 
+// @ts-expect-error - 旧 HomeView は VoiceHome に置換済みだが将来用に残す
 function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; myDeals: InfluencerDeal[]; setTab?: SetTabFn }) {
   const upcoming = useMemo(() => {
     const events: { brand: string; type: string; date: Date; daysLeft: number }[] = [];
