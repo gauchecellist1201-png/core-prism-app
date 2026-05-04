@@ -69,24 +69,30 @@ export function PrismLogo({ size = 28, withWordmark = true, variant = 'default',
 
       {withWordmark && (
         <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
-          <span style={{
-            fontFamily: '"Inter", "Helvetica Neue", "Noto Sans JP", system-ui, sans-serif',
-            fontWeight: 700,
-            fontSize: size * 0.5,
-            letterSpacing: '0.18em',
-            color: isMono ? 'currentColor' : '#1F1D26',
-          }}>
+          <span
+            className={isMono ? '' : 'text-prism'}
+            style={{
+              fontFamily: '"Inter", "Helvetica Neue", "Noto Sans JP", system-ui, sans-serif',
+              fontWeight: 800,
+              fontSize: size * 0.5,
+              letterSpacing: '0.18em',
+              ...(isMono ? { color: 'currentColor' } : {}),
+            }}
+          >
             CORE
           </span>
-          <span style={{
-            fontFamily: '"Inter", "Helvetica Neue", "Noto Sans JP", system-ui, sans-serif',
-            fontWeight: 400,
-            fontSize: size * 0.34,
-            letterSpacing: '0.25em',
-            color: isMono ? 'currentColor' : '#FF6B35',
-            textTransform: 'uppercase',
-            marginTop: 2,
-          }}>
+          <span
+            className={isMono ? '' : 'text-prism'}
+            style={{
+              fontFamily: '"Inter", "Helvetica Neue", "Noto Sans JP", system-ui, sans-serif',
+              fontWeight: 500,
+              fontSize: size * 0.34,
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase',
+              marginTop: 2,
+              ...(isMono ? { color: 'currentColor' } : {}),
+            }}
+          >
             Prism
           </span>
         </span>
