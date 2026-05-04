@@ -11,15 +11,17 @@ interface LogoProps {
 }
 
 // ─────────────────────────────────────────────
-//  CORE Prism — プリズムから光が分散するシンボル
-//  5 波長 (logic / empathy / creative / action / ethics) を 5 本の光線で表現
+//  CORE Prism — プリズムから七色のスペクトルが分散するシンボル
+//  虹の七色 (赤・橙・黄・緑・青・藍・紫) で実物のプリズム分光を表現
 // ─────────────────────────────────────────────
 export function PrismLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
+  // 虹の七色 (波長順、長波長 → 短波長)
+  const RAINBOW = ['#FF1744', '#FF8A1A', '#FFD600', '#10C66B', '#2E6FFF', '#5C3FCF', '#9D2BE8'];
   const colors = variant === 'mono'
-    ? { triangle: 'currentColor', rays: ['currentColor', 'currentColor', 'currentColor', 'currentColor', 'currentColor'], text: 'currentColor', accent: 'currentColor' }
+    ? { triangle: 'currentColor', rays: Array(7).fill('currentColor'), text: 'currentColor', accent: 'currentColor' }
     : {
-        triangle: '#0033A0',
-        rays: ['#2E6FFF', '#E84B97', '#8E5CFF', '#FF7A1A', '#D9A41A'], // 5 波長カラー
+        triangle: '#0E1738',
+        rays: RAINBOW,
         text: '#1F1D26',
         accent: '#FF6B35',
       };
@@ -38,16 +40,24 @@ export function PrismLogo({ size = 28, withWordmark = true, variant = 'default',
         aria-label="CORE Prism"
         style={{ flexShrink: 0 }}
       >
-        {/* 入射光 (左から) */}
-        <line x1="2"  y1="32" x2="20" y2="32" stroke={colors.text} strokeWidth="1.5" strokeLinecap="round" />
-
-        {/* 三角形プリズム — グラデ塗り */}
         <defs>
+          {/* プリズム本体: ガラス感のあるダークブルーのグラデ */}
           <linearGradient id="prism-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%"  stopColor="#0033A0" />
-            <stop offset="100%" stopColor="#1A4FC4" />
+            <stop offset="0%"  stopColor="#1F2E5C" />
+            <stop offset="50%" stopColor="#0E1738" />
+            <stop offset="100%" stopColor="#2A3F7A" />
+          </linearGradient>
+          {/* 入射光: 白 → 透明 (光の道) */}
+          <linearGradient id="prism-incident" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
+            <stop offset="100%" stopColor="#F0F4FF" stopOpacity="1" />
           </linearGradient>
         </defs>
+
+        {/* 入射光 (左から、ベベル) */}
+        <line x1="2" y1="32" x2="20" y2="32" stroke="url(#prism-incident)" strokeWidth="2.5" strokeLinecap="round" />
+
+        {/* 三角形プリズム — ガラス調グラデ + ハイライト */}
         <polygon
           points="20,52 44,32 20,12"
           fill={variant === 'mono' ? 'currentColor' : 'url(#prism-grad)'}
@@ -55,24 +65,27 @@ export function PrismLogo({ size = 28, withWordmark = true, variant = 'default',
           strokeWidth="1.5"
           strokeLinejoin="round"
         />
+        {/* 三角形のハイライト (内側の白い面) */}
+        {variant !== 'mono' && (
+          <polygon
+            points="22,48 26,46 26,18 22,16"
+            fill="#FFFFFF"
+            opacity="0.18"
+          />
+        )}
 
-        {/* 屈折された 5 本の光線 (5 波長) */}
-        {[
-          { y2: 14, color: colors.rays[0] },
-          { y2: 22, color: colors.rays[1] },
-          { y2: 32, color: colors.rays[2] },
-          { y2: 42, color: colors.rays[3] },
-          { y2: 50, color: colors.rays[4] },
-        ].map((r, i) => (
+        {/* 屈折された 7 本の光線 (虹のスペクトル) — 出射点を上下に分散 */}
+        {[8, 16, 24, 32, 40, 48, 56].map((y2, i) => (
           <line
             key={i}
             x1="44"
             y1="32"
             x2="62"
-            y2={r.y2}
-            stroke={r.color}
-            strokeWidth="1.5"
+            y2={y2}
+            stroke={colors.rays[i]}
+            strokeWidth="1.8"
             strokeLinecap="round"
+            opacity={variant === 'mono' ? 0.6 : 0.95}
           />
         ))}
       </svg>
@@ -127,46 +140,73 @@ export function IrisLogo({ size = 28, withWordmark = true, variant = 'default', 
         style={{ flexShrink: 0 }}
       >
         <defs>
-          <linearGradient id="iris-grad-petal" x1="0" y1="0" x2="1" y2="1">
+          {/* Instagram 公式グラデを 4 段階で正確に */}
+          <linearGradient id="iris-petal-1" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%"   stopColor="#833AB4" />
-            <stop offset="40%"  stopColor="#E1306C" />
-            <stop offset="75%"  stopColor="#F77737" />
+            <stop offset="100%" stopColor="#C13584" />
+          </linearGradient>
+          <linearGradient id="iris-petal-2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stopColor="#E1306C" />
+            <stop offset="100%" stopColor="#F56040" />
+          </linearGradient>
+          <linearGradient id="iris-petal-3" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stopColor="#FD1D1D" />
             <stop offset="100%" stopColor="#FCB045" />
           </linearGradient>
-          <radialGradient id="iris-grad-pupil" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0.9" />
+          <radialGradient id="iris-center" cx="50%" cy="40%" r="60%">
+            <stop offset="0%"   stopColor="#FFFFFF" />
+            <stop offset="40%"  stopColor="#FCB045" />
             <stop offset="100%" stopColor="#E1306C" />
           </radialGradient>
         </defs>
 
-        {/* 上の花弁 */}
+        {/* 中央: 6 弁の花 (花のアイリス + 目の虹彩) — 各花弁を Instagram グラデで */}
+        {/* 上 */}
         <path
-          d="M 32,4 C 24,12 24,22 32,32 C 40,22 40,12 32,4 Z"
-          fill={isMono ? 'currentColor' : 'url(#iris-grad-petal)'}
-          opacity={isMono ? 0.85 : 0.95}
+          d="M 32 4 C 28 14, 28 24, 32 32 C 36 24, 36 14, 32 4 Z"
+          fill={isMono ? 'currentColor' : 'url(#iris-petal-1)'}
+          opacity={isMono ? 0.85 : 1}
         />
-        {/* 左下花弁 */}
+        {/* 右上 */}
         <path
-          d="M 4,38 C 14,34 24,36 32,32 C 28,42 18,46 8,44 Z"
-          fill={isMono ? 'currentColor' : 'url(#iris-grad-petal)'}
-          opacity={isMono ? 0.7 : 0.9}
+          d="M 56 12 C 46 16, 38 22, 32 32 C 42 30, 50 24, 56 12 Z"
+          fill={isMono ? 'currentColor' : 'url(#iris-petal-2)'}
+          opacity={isMono ? 0.78 : 0.95}
         />
-        {/* 右下花弁 */}
+        {/* 右下 */}
         <path
-          d="M 60,38 C 50,34 40,36 32,32 C 36,42 46,46 56,44 Z"
-          fill={isMono ? 'currentColor' : 'url(#iris-grad-petal)'}
-          opacity={isMono ? 0.7 : 0.9}
+          d="M 56 52 C 46 48, 38 42, 32 32 C 42 34, 50 40, 56 52 Z"
+          fill={isMono ? 'currentColor' : 'url(#iris-petal-3)'}
+          opacity={isMono ? 0.72 : 0.95}
+        />
+        {/* 下 */}
+        <path
+          d="M 32 60 C 28 50, 28 40, 32 32 C 36 40, 36 50, 32 60 Z"
+          fill={isMono ? 'currentColor' : 'url(#iris-petal-1)'}
+          opacity={isMono ? 0.68 : 0.95}
+        />
+        {/* 左下 */}
+        <path
+          d="M 8 52 C 18 48, 26 42, 32 32 C 22 34, 14 40, 8 52 Z"
+          fill={isMono ? 'currentColor' : 'url(#iris-petal-2)'}
+          opacity={isMono ? 0.72 : 0.95}
+        />
+        {/* 左上 */}
+        <path
+          d="M 8 12 C 18 16, 26 22, 32 32 C 22 30, 14 24, 8 12 Z"
+          fill={isMono ? 'currentColor' : 'url(#iris-petal-3)'}
+          opacity={isMono ? 0.78 : 0.95}
         />
 
-        {/* 中心の虹彩 (目) */}
+        {/* 中心の虹彩 (目) — グラデ */}
         <circle
-          cx="32" cy="32" r="6"
-          fill={isMono ? 'currentColor' : 'url(#iris-grad-pupil)'}
+          cx="32" cy="32" r="7"
+          fill={isMono ? 'currentColor' : 'url(#iris-center)'}
         />
-        {/* 中心ハイライト */}
-        {!isMono && (
-          <circle cx="34" cy="30" r="1.5" fill="#FFFFFF" opacity="0.85" />
-        )}
+        {/* 瞳 (黒に近いインク) */}
+        {!isMono && <circle cx="32" cy="32" r="2.5" fill="#1A0A26" />}
+        {/* ハイライト */}
+        {!isMono && <circle cx="33.5" cy="30.5" r="1.2" fill="#FFFFFF" />}
       </svg>
 
       {withWordmark && (

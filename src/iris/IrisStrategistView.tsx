@@ -10,8 +10,10 @@ import {
   usePostHistory, analyzePerformance, feedbackPost, suggestNextPosts, generateStoryArc,
   type PostHistoryItem, type PerformanceAnalysis, type NextPostSuggestion, type StoryArc,
 } from './strategist';
+import { extractInstagramHandle, analyzeInstagramProfile, type IGAnalysisResult } from './instagramAnalyzer';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
+import VoiceInputButton from '../components/VoiceInputButton';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -19,11 +21,11 @@ interface Props {
   mediaKit?: MediaKit;
 }
 
-type SubTab = 'history' | 'analyze' | 'suggest' | 'arc';
+type SubTab = 'ig' | 'history' | 'analyze' | 'suggest' | 'arc';
 
 export default function IrisStrategistView({ bg, settings, mediaKit }: Props) {
   const history = usePostHistory();
-  const [sub, setSub] = useState<SubTab>('history');
+  const [sub, setSub] = useState<SubTab>('ig');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -94,6 +96,7 @@ export default function IrisStrategistView({ bg, settings, mediaKit }: Props) {
       {/* サブタブ */}
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
         {[
+          { id: 'ig' as SubTab,       e: '📸', l: 'Instagram解析' },
           { id: 'history' as SubTab,  e: '📚', l: '投稿履歴' },
           { id: 'analyze' as SubTab,  e: '📊', l: '分析' },
           { id: 'suggest' as SubTab,  e: '✨', l: '次の提案' },
@@ -120,6 +123,10 @@ export default function IrisStrategistView({ bg, settings, mediaKit }: Props) {
         </div>
       )}
 
+      {sub === 'ig' && (
+        <IGAnalyzeTab bg={bg} settings={settings} card={card} btnPrimary={btnPrimary} inp={inp}
+          busy={busy} setBusy={setBusy} setErr={setErr} />
+      )}
       {sub === 'history' && (
         <HistoryTab bg={bg} history={history} inp={inp} card={card} btnPrimary={btnPrimary} />
       )}
@@ -587,6 +594,125 @@ function ArcTab({ bg, settings, history, mediaKit, card, btnPrimary, inp, busy, 
               {result.culmination}
             </p>
           </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+
+// ─── Instagram 解析タブ ──────────────────
+function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setErr }: any) {
+  const [input, setInput] = useState('');
+  const [pasted, setPasted] = useState('');
+  const [note, setNote] = useState('');
+  const [result, setResult] = useState<IGAnalysisResult | null>(null);
+
+  const run = async () => {
+    const handle = extractInstagramHandle(input);
+    if (!handle) { setErr('Instagram の URL または @handle を入力してください'); return; }
+    if (!pasted.trim()) { setErr('プロフィール文 / 投稿サンプルをペーストしてください'); return; }
+    setBusy(true); setErr(null);
+    try {
+      setResult(await analyzeInstagramProfile({ settings, handle, pasted, selfNote: note || undefined }));
+    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  return (
+    <div style={{ display: 'grid', gap: '1rem' }}>
+      <div style={card}>
+        <p style={{ color: bg.ink, marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+          Instagram の URL or @handle を入れて、プロフィール文と投稿サンプル数件をコピペすると、AI があなたのアカウントを分析して戦略を出します。
+        </p>
+        <p style={{ color: bg.inkSoft, fontSize: '0.78rem', marginBottom: '0.75rem', fontStyle: 'italic' }}>
+          ※ ブラウザのCORS制限のため自動取得は不可。プロフィール画面の文字を選択コピー → 下に貼り付けてください。
+        </p>
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+          <input style={{ ...inp, flex: 1 }}
+            placeholder='https://instagram.com/your_handle  または  @your_handle'
+            value={input} onChange={e => setInput(e.target.value)} />
+          <VoiceInputButton onText={t => setInput(t)} currentValue={input} accentColor={bg.accent} />
+        </div>
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+          <textarea style={{ ...inp, flex: 1, minHeight: 140 }}
+            placeholder='プロフィール文 + 投稿のキャプション 5-10 個を貼り付け (画面の文字を全選択コピーで OK)'
+            value={pasted} onChange={e => setPasted(e.target.value)} />
+          <VoiceInputButton onText={t => setPasted(t)} currentValue={pasted} accentColor={bg.accent} continuous />
+        </div>
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+          <input style={{ ...inp, flex: 1 }}
+            placeholder='補足メモ (例: 30 代女性, コスメ系, 月3-4 投稿)'
+            value={note} onChange={e => setNote(e.target.value)} />
+          <VoiceInputButton onText={t => setNote(t)} currentValue={note} accentColor={bg.accent} />
+        </div>
+        <button onClick={run} disabled={busy} style={btnPrimary}>
+          {busy ? '分析中…' : '✨ アカウントを解析'}
+        </button>
+      </div>
+
+      {result && (
+        <>
+          <div style={card}>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>Brand Identity</p>
+            <p style={{ color: bg.ink, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{result.brandIdentity}</p>
+          </div>
+          {result.strengths?.length > 0 && (
+            <div style={card}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#10B981', marginBottom: '0.5rem' }}>強み</p>
+              <ul style={{ paddingLeft: '1.2rem', color: bg.ink, lineHeight: 1.9 }}>
+                {result.strengths.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
+          )}
+          {result.weaknesses?.length > 0 && (
+            <div style={card}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#FFA94D', marginBottom: '0.5rem' }}>改善点</p>
+              <ul style={{ paddingLeft: '1.2rem', color: bg.ink, lineHeight: 1.9 }}>
+                {result.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            <div style={card}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>推定オーディエンス</p>
+              <p style={{ color: bg.ink, lineHeight: 1.7 }}>{result.estimatedAudience}</p>
+            </div>
+            {result.targetableBrands?.length > 0 && (
+              <div style={card}>
+                <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>狙えるブランド業界</p>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {result.targetableBrands.map((b, i) => (
+                    <span key={i} style={{ background: bg.accent + '22', color: bg.accent, padding: '0.3rem 0.8rem', borderRadius: 999, fontSize: '0.85rem', fontWeight: 600 }}>{b}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          {result.estimatedFee && (
+            <div style={card}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>想定報酬 (フィード 1 本)</p>
+              <p style={{ color: bg.ink, fontSize: '1.4rem', fontWeight: 700 }}>
+                ¥{result.estimatedFee.min.toLocaleString()} 〜 ¥{result.estimatedFee.max.toLocaleString()}
+              </p>
+              <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginTop: '0.25rem' }}>{result.estimatedFee.note}</p>
+            </div>
+          )}
+          {result.next30Days?.length > 0 && (
+            <div style={card}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>次の 30 日でやるべきこと</p>
+              <ol style={{ paddingLeft: '1.2rem', color: bg.ink, lineHeight: 1.9 }}>
+                {result.next30Days.map((s, i) => <li key={i}>{s}</li>)}
+              </ol>
+            </div>
+          )}
+          {result.cautions?.length > 0 && (
+            <div style={card}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#C8102E', marginBottom: '0.5rem' }}>注意</p>
+              <ul style={{ paddingLeft: '1.2rem', color: bg.ink, lineHeight: 1.9 }}>
+                {result.cautions.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
+          )}
         </>
       )}
     </div>
