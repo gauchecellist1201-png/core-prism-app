@@ -1,26 +1,15 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' width='1024' height='1024'>
-  <g transform='translate(20, 60) scale(1.6)'>
-    <defs>
-      <linearGradient id='glass' x1='0%' y1='0%' x2='100%' y2='100%'>
-        <stop offset='0%' stop-color='#CFE0FF' stop-opacity='0.45'/>
-        <stop offset='50%' stop-color='#6E8AC9' stop-opacity='0.22'/>
-        <stop offset='100%' stop-color='#CFE0FF' stop-opacity='0.4'/>
-      </linearGradient>
-      <linearGradient id='edge' x1='0%' y1='0%' x2='0%' y2='100%'>
-        <stop offset='0%' stop-color='#FFFFFF' stop-opacity='0.95'/>
-        <stop offset='100%' stop-color='#FFFFFF' stop-opacity='0.55'/>
-      </linearGradient>
-      <linearGradient id='incident' x1='0%' y1='0%' x2='100%' y2='0%'>
-        <stop offset='0%' stop-color='#FFFFFF' stop-opacity='0'/>
-        <stop offset='100%' stop-color='#FFFFFF' stop-opacity='0.95'/>
-      </linearGradient>
-    </defs>
-    <line x1='2' y1='32' x2='32' y2='32' stroke='url(#incident)' stroke-width='1.7' stroke-linecap='round'/>
-    <polygon points='50,8 28,52 72,52' fill='url(#glass)'/>
-    <line x1='50' y1='8' x2='28' y2='52' stroke='url(#edge)' stroke-width='1.7' stroke-linecap='round'/>
-    <line x1='50' y1='8' x2='72' y2='52' stroke='url(#edge)' stroke-width='1.7' stroke-linecap='round' opacity='0.85'/>
-    <line x1='28' y1='52' x2='72' y2='52' stroke='url(#edge)' stroke-width='1.5' stroke-linecap='round' opacity='0.55'/>
-    <line x1='60' y1='31' x2='98' y2='22' stroke='#E63946' stroke-width='2.4' stroke-linecap='round'/><line x1='60' y1='31.3' x2='98' y2='26' stroke='#F77F00' stroke-width='2.4' stroke-linecap='round'/><line x1='60' y1='31.6' x2='98' y2='30' stroke='#FFD60A' stroke-width='2.4' stroke-linecap='round'/><line x1='60' y1='31.9' x2='98' y2='34' stroke='#06A77D' stroke-width='2.4' stroke-linecap='round'/><line x1='60' y1='32.2' x2='98' y2='38' stroke='#118AB2' stroke-width='2.4' stroke-linecap='round'/><line x1='60' y1='32.5' x2='98' y2='42' stroke='#4361EE' stroke-width='2.4' stroke-linecap='round'/><line x1='60' y1='32.8' x2='98' y2='46' stroke='#7B2CBF' stroke-width='2.4' stroke-linecap='round'/>
-  </g>
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='1024' height='1024'>
+  
+    <polygon points='50,5 30,55 50,55' fill='#C13584'/>
+    <polygon points='50,5 50,55 65,32' fill='#7B2CBF'/>
+    <polygon points='65,32 50,55 78,55' fill='#06A77D'/>
+    <polygon points='65,32 78,55 88,38' fill='#118AB2'/>
+    <polygon points='30,55 50,55 40,75' fill='#E1306C'/>
+    <polygon points='50,55 78,55 60,75' fill='#833AB4'/>
+    <polygon points='10,92 30,55 40,75' fill='#FFD60A'/>
+    <polygon points='10,92 40,75 60,75' fill='#F77F00'/>
+    <polygon points='60,75 78,55 90,92' fill='#06A77D'/>
+    <polygon points='60,75 90,92 88,38' fill='#5B2C8A' opacity='0.7'/>
+  
 </svg>

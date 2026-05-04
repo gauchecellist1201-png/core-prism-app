@@ -11,24 +11,11 @@ interface LogoProps {
 }
 
 // ─────────────────────────────────────────────
-//  CORE Prism — Pink Floyd 「The Dark Side of the Moon」風
-//  ガラス三角プリズム + 七色の虹色光線が右に広がる
-//  虹の正しい順序: 赤 → 橙 → 黄 → 緑 → 青 → 藍 → 紫
+//  CORE Prism — 多面体三角プリズム (ポリゴン分割)
+//  虹色のパネルで構成される 3D 折り紙風の三角形
 // ─────────────────────────────────────────────
 export function PrismLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
-  // 虹の七色 (光のスペクトル順、長波長 → 短波長)
-  const RAINBOW = [
-    '#E63946',  // 赤
-    '#F77F00',  // 橙
-    '#FFD60A',  // 黄
-    '#06A77D',  // 緑
-    '#118AB2',  // 青
-    '#4361EE',  // 藍
-    '#7B2CBF',  // 紫
-  ];
-
   const isMono = variant === 'mono';
-  const gid = 'prism-grad-' + size;
 
   return (
     <span
@@ -36,83 +23,48 @@ export function PrismLogo({ size = 28, withWordmark = true, variant = 'default',
       style={{ display: 'inline-flex', alignItems: 'center', gap: withWordmark ? 10 : 0, lineHeight: 1 }}
     >
       <svg
-        width={size * 1.6}
+        width={size}
         height={size}
-        viewBox="0 0 100 64"
+        viewBox="0 0 100 100"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         aria-label="CORE Prism"
         style={{ flexShrink: 0 }}
       >
-        <defs>
-          {/* ガラスのグラデ (内側に行くほど透明、エッジが光る) */}
-          <linearGradient id={`${gid}-glass`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor="#9CB1D9" stopOpacity="0.38" />
-            <stop offset="50%"  stopColor="#3D5A9E" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="#9CB1D9" stopOpacity="0.32" />
-          </linearGradient>
-          {/* ガラスのエッジ (細い白いハイライト線) */}
-          <linearGradient id={`${gid}-edge`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.55" />
-          </linearGradient>
-          {/* 入射白色光: 左から三角形の左面に当たる */}
-          <linearGradient id={`${gid}-incident`} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%"  stopColor="#FFFFFF" stopOpacity="0" />
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.95" />
-          </linearGradient>
-        </defs>
+        {/*
+          多面体プリズム — 大三角形を 9 面のパネルに分割
+          頂点: top (50,5)、底辺左 (10,92)、底辺右 (90,92)
+          内部分割点で各パネルを配置、虹のスペクトル順に色を割当
+        */}
+        <g opacity={isMono ? 0.85 : 1}>
+          {/* 上部 左パネル (マゼンタ) */}
+          <polygon points="50,5 30,55 50,55" fill={isMono ? 'currentColor' : '#C13584'} />
+          {/* 上部 右上パネル (紫) */}
+          <polygon points="50,5 50,55 65,32" fill={isMono ? 'currentColor' : '#7B2CBF'} />
+          {/* 上部 右下 (ティール) */}
+          <polygon points="65,32 50,55 78,55" fill={isMono ? 'currentColor' : '#06A77D'} />
+          {/* 右上面 (青) */}
+          <polygon points="65,32 78,55 88,38" fill={isMono ? 'currentColor' : '#118AB2'} />
+          {/* 中央 (マゼンタ濃) */}
+          <polygon points="30,55 50,55 40,75" fill={isMono ? 'currentColor' : '#E1306C'} />
+          {/* 中央右 (パープル) */}
+          <polygon points="50,55 78,55 60,75" fill={isMono ? 'currentColor' : '#833AB4'} />
+          {/* 下左 (黄〜オレンジ) */}
+          <polygon points="10,92 30,55 40,75" fill={isMono ? 'currentColor' : '#FFD60A'} />
+          {/* 下中央 (オレンジ) */}
+          <polygon points="10,92 40,75 60,75" fill={isMono ? 'currentColor' : '#F77F00'} />
+          {/* 下右 (緑) */}
+          <polygon points="60,75 78,55 90,92" fill={isMono ? 'currentColor' : '#06A77D'} />
+          {/* 中央右下 (緑〜青のグラデ) */}
+          <polygon points="40,75 60,75 90,92 10,92" fill={isMono ? 'currentColor' : '#84C44A'} opacity="0.0" />
+          {/* 右下端の細い緑のライン */}
+          <polygon points="60,75 90,92 88,38" fill={isMono ? 'currentColor' : '#5B2C8A'} opacity="0.7" />
+        </g>
 
-        {/* 入射白色光 — 左から三角形の左斜面の中央に向かう */}
-        <line
-          x1="2" y1="32"
-          x2="32" y2="32"
-          stroke={isMono ? 'currentColor' : `url(#${gid}-incident)`}
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          opacity={isMono ? 0.7 : 1}
-        />
-
-        {/* 三角形プリズム (ガラス) */}
-        {/* 内側のガラス本体 */}
-        <polygon
-          points="50,8 28,52 72,52"
-          fill={isMono ? 'currentColor' : `url(#${gid}-glass)`}
-          opacity={isMono ? 0.18 : 1}
-        />
-        {/* 左エッジ (光が反射してる感じ) */}
-        <line x1="50" y1="8" x2="28" y2="52"
-          stroke={isMono ? 'currentColor' : `url(#${gid}-edge)`}
-          strokeWidth="1.6" strokeLinecap="round" />
-        {/* 右エッジ */}
-        <line x1="50" y1="8" x2="72" y2="52"
-          stroke={isMono ? 'currentColor' : `url(#${gid}-edge)`}
-          strokeWidth="1.6" strokeLinecap="round"
-          opacity={isMono ? 0.6 : 0.85} />
-        {/* 底辺 */}
-        <line x1="28" y1="52" x2="72" y2="52"
-          stroke={isMono ? 'currentColor' : `url(#${gid}-edge)`}
-          strokeWidth="1.4" strokeLinecap="round"
-          opacity={isMono ? 0.5 : 0.55} />
-
-        {/* 虹色のスペクトル光線 — 三角形の右下から右に広がる帯 (7 本) */}
-        {/* 屈折点: 右斜面の中央付近 (約 60, 32) から、右に向かって扇状に */}
-        {RAINBOW.map((color, i) => {
-          // 7 本を扇状に配置 (上→赤, 下→紫)
-          const startY = 32 - 1 + i * 0.3;       // 屈折点で密に
-          const endY   = 22 + i * 4;              // 出口で扇状に
-          return (
-            <line
-              key={i}
-              x1="60" y1={startY}
-              x2="98" y2={endY}
-              stroke={isMono ? 'currentColor' : color}
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              opacity={isMono ? (0.4 + i * 0.05) : 0.95}
-            />
-          );
-        })}
+        {/* 全体の輪郭をうっすら強調 (高級感を出すサブトルなライン) */}
+        <polygon points="50,5 90,92 10,92" fill="none"
+          stroke={isMono ? 'currentColor' : 'rgba(255,255,255,0.0)'}
+          strokeWidth="0" />
       </svg>
 
       {withWordmark && (
