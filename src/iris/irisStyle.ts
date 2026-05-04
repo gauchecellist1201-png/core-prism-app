@@ -31,9 +31,10 @@ export const IRIS_COLORS = {
   gold:        '#D9A41A',
   goldSoft:    '#F5E6A0',
 
-  navy:        '#2A1F3F',  // 文字用 (黒すぎない上品な紫黒)
-  ink:         '#1F1A2E',
-  inkSoft:     '#5C5470',
+  // 文字色: 純黒 #000 / 純白 #fff を避けて目への負担を軽減
+  navy:        '#3A2F4F',  // 見出し・強アクセント (上品な紫黒、純黒より目に優しい)
+  ink:         '#403648',  // 本文 (柔らかい紫グレー、 #333 より暖かみ)
+  inkSoft:     '#6E6577',
   inkDim:      '#9088A8',
 
   white:       '#FFFFFF',
@@ -82,8 +83,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '🌸',
     background: 'radial-gradient(circle at 20% 30%, #FFD4E5 0%, transparent 50%), radial-gradient(circle at 80% 70%, #C8F0E0 0%, transparent 50%), linear-gradient(135deg, #FFF0F5 0%, #F0FAF5 100%)',
     accent: '#10B981', // ピンク背景に対する補色 = ミントグリーン
-    ink: '#2A1F3F',
-    inkSoft: '#5C5470',
+    ink: '#3D3247',
+    inkSoft: '#6E6577',
     card: 'rgba(255,255,255,0.72)',
     cardBorder: 'rgba(16,185,129,0.22)',
   },
@@ -93,7 +94,7 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '🥂',
     background: 'radial-gradient(circle at 30% 20%, #FFE6B0 0%, transparent 55%), radial-gradient(circle at 75% 80%, #E8DCFA 0%, transparent 55%), linear-gradient(135deg, #FFF9F0 0%, #F5EFFF 100%)',
     accent: '#7B4FC9', // 黄系の補色 = 紫
-    ink: '#3A2F4F',
+    ink: '#3D3247',
     inkSoft: '#7A6F8F',
     card: 'rgba(255,255,255,0.75)',
     cardBorder: 'rgba(123,79,201,0.22)',
@@ -104,8 +105,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '💜',
     background: 'radial-gradient(circle at 70% 30%, #E8DCFA 0%, transparent 55%), radial-gradient(circle at 20% 80%, #FFF0C9 0%, transparent 55%), linear-gradient(180deg, #F5EFFF 0%, #FFF9E5 100%)',
     accent: '#D9A41A', // 紫の補色 = ゴールド
-    ink: '#2A1F3F',
-    inkSoft: '#5C5470',
+    ink: '#3D3247',
+    inkSoft: '#6E6577',
     card: 'rgba(255,255,255,0.74)',
     cardBorder: 'rgba(217,164,26,0.25)',
   },
@@ -115,8 +116,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '🐚',
     background: 'radial-gradient(circle at 25% 30%, #FFD4C8 0%, transparent 55%), radial-gradient(circle at 80% 80%, #C8E8E8 0%, transparent 55%), linear-gradient(135deg, #FFF5F0 0%, #F0FAFA 100%)',
     accent: '#0EA5E9', // コーラルの補色 = ティール
-    ink: '#2A1F3F',
-    inkSoft: '#5C5470',
+    ink: '#3D3247',
+    inkSoft: '#6E6577',
     card: 'rgba(255,255,255,0.78)',
     cardBorder: 'rgba(14,165,233,0.22)',
   },
@@ -126,8 +127,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '🌅',
     background: 'radial-gradient(circle at 80% 20%, #FFB89A 0%, transparent 55%), radial-gradient(circle at 20% 70%, #BFE5F0 0%, transparent 55%), linear-gradient(180deg, #FFE5D6 0%, #E8F4FA 100%)',
     accent: '#0284C7', // ピーチの補色 = スカイブルー
-    ink: '#2A1F3F',
-    inkSoft: '#5C5470',
+    ink: '#3D3247',
+    inkSoft: '#6E6577',
     card: 'rgba(255,255,255,0.72)',
     cardBorder: 'rgba(2,132,199,0.22)',
   },
@@ -137,7 +138,7 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '🌙',
     background: 'radial-gradient(circle at 30% 30%, #4A2F5C 0%, transparent 55%), radial-gradient(circle at 80% 70%, #2E2440 0%, transparent 60%), linear-gradient(135deg, #1F1A2E 0%, #2A1F3F 100%)',
     accent: '#FF7A6B', // 暗紫の補色 = 暖かいコーラル
-    ink: '#FFFFFF',
+    ink: '#F0EAF7',    // 純白 #fff を避けて柔らかいラベンダー白
     inkSoft: '#D8CCEA',
     card: 'rgba(255,255,255,0.08)',
     cardBorder: 'rgba(255,122,107,0.3)',
@@ -148,8 +149,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '🤍',
     background: 'linear-gradient(180deg, #FFF9F0 0%, #FFFFFF 50%, #FFF5FB 100%)',
     accent: '#E84B97', // クリームベースに対する強アクセント = マゼンタ
-    ink: '#2A1F3F',
-    inkSoft: '#5C5470',
+    ink: '#3D3247',
+    inkSoft: '#6E6577',
     card: 'rgba(255,255,255,0.95)',
     cardBorder: 'rgba(232,75,151,0.2)',
   },
@@ -159,8 +160,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '🌈',
     background: 'conic-gradient(from 220deg at 50% 50%, #FFD4E5 0%, #C8F0E0 25%, #FFE5D6 50%, #BFE5F0 75%, #FFD4E5 100%)',
     accent: '#10B981',
-    ink: '#2A1F3F',
-    inkSoft: '#5C5470',
+    ink: '#3D3247',
+    inkSoft: '#6E6577',
     card: 'rgba(255,255,255,0.7)',
     cardBorder: 'rgba(16,185,129,0.22)',
   },
@@ -305,7 +306,7 @@ export function buildComplementaryPalette(baseHex: string): { c1: string; c2: st
   };
 }
 
-/** 文字色を背景の明度から自動推定 */
+/** 文字色を背景の明度から自動推定 — 純黒/純白を避けて目に優しい色に */
 export function pickInkForBackground(c1: string): { ink: string; inkSoft: string; card: string; cardBorder: string } {
   // 単純な明度判定
   const hex = c1.replace('#', '');
@@ -314,7 +315,9 @@ export function pickInkForBackground(c1: string): { ink: string; inkSoft: string
   const b = parseInt(hex.slice(4, 6), 16);
   const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   if (lum < 0.5) {
-    return { ink: '#FFFFFF', inkSoft: '#D8CCEA', card: 'rgba(255,255,255,0.1)', cardBorder: 'rgba(255,255,255,0.25)' };
+    // 暗い背景: 純白を避けて柔らかい白
+    return { ink: '#F0EAF7', inkSoft: '#C8BCE0', card: 'rgba(255,255,255,0.1)', cardBorder: 'rgba(255,255,255,0.25)' };
   }
-  return { ink: '#2A1F3F', inkSoft: '#5C5470', card: 'rgba(255,255,255,0.7)', cardBorder: 'rgba(0,0,0,0.08)' };
+  // 明るい背景: 純黒を避けて柔らかい紫黒
+  return { ink: '#3D3247', inkSoft: '#6E6577', card: 'rgba(255,255,255,0.7)', cardBorder: 'rgba(0,0,0,0.08)' };
 }

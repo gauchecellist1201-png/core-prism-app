@@ -375,7 +375,7 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                   onClick={handleRoute}
                   disabled={!transcript.trim()}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 transition-all"
-                  style={{ background: persona.accentColor, color: '#000' }}
+                  style={{ background: persona.accentColor, color: '#1F1D26' }}
                   whileTap={{ scale: 0.97 }}
                 >
                   🤖 AI 振り分け
@@ -477,7 +477,7 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                   onClick={handleSave}
                   disabled={items.filter(i => i.checked).length === 0}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
-                  style={{ background: persona.accentColor, color: '#000' }}
+                  style={{ background: persona.accentColor, color: '#1F1D26' }}
                   whileTap={{ scale: 0.97 }}
                 >
                   💾 保存 ({items.filter(i => i.checked).length}件)

@@ -153,7 +153,7 @@ export default function LegalModal({ kind, onClose }: Props) {
           flex: 1,
           fontSize: '0.9rem',
           lineHeight: 1.8,
-          color: '#1F2937',
+          color: '#2D3142',
           fontFamily: '"游ゴシック", "Hiragino Kaku Gothic ProN", sans-serif',
           whiteSpace: 'pre-wrap',
         }}>

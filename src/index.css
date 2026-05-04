@@ -9,12 +9,13 @@
     --prism-action: #FF7A1A;
     --prism-ethics: #D9A41A;
 
-    /* Light theme (default) */
+    /* Light theme (default) — 目に優しい配色 (純黒・純白を避ける) */
     --bg: #F6F4EE;
     --bg-2: #ECE7DC;
-    --fg: #1A1A1F;
-    --fg-muted: #5A5A66;
-    --fg-subtle: #8A8A93;
+    --fg: #2D2A33;        /* ← softer than #1A1A1F (eye-friendly) */
+    --fg-strong: #1F1D26; /* 見出し・強調用 */
+    --fg-muted: #5A5564;
+    --fg-subtle: #8A8593;
     --surface: rgba(255, 255, 255, 0.78);
     --surface-2: rgba(255, 255, 255, 0.55);
     --surface-3: rgba(0, 0, 0, 0.04);
@@ -29,11 +30,12 @@
   }
 
   [data-theme="dark"] {
-    --bg: #0A0A0A;
-    --bg-2: #15151A;
-    --fg: #ffffff;
-    --fg-muted: rgba(255, 255, 255, 0.65);
-    --fg-subtle: rgba(255, 255, 255, 0.4);
+    --bg: #0E0E12;          /* 純黒 #000 を避けてやや明るい */
+    --bg-2: #18181F;
+    --fg: #F0EFF2;          /* 純白 #fff も避ける (グレア軽減) */
+    --fg-strong: #FFFFFF;   /* 強調・見出しのみ純白 OK */
+    --fg-muted: rgba(240, 239, 242, 0.72);
+    --fg-subtle: rgba(240, 239, 242, 0.45);
     --surface: rgba(255, 255, 255, 0.04);
     --surface-2: rgba(255, 255, 255, 0.025);
     --surface-3: rgba(255, 255, 255, 0.06);

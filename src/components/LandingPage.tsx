@@ -12,8 +12,9 @@ interface Props {
 const NAVY = '#0033A0';
 const ORANGE = '#FF6B35';
 const CREAM = '#FFF9F0';
-const INK = '#111827';
-const INK_SUB = '#4B5566';
+// 目に優しい配色 (純黒 #000 / #111 を避ける)
+const INK = '#2D3142';      // 旧: #111827 → 柔らかい紺グレー
+const INK_SUB = '#5C6378';  // 旧: #4B5566 → 少し明度を上げて読みやすく
 const BORDER = '#D8DDE8';
 
 // セクション共通: 上下パディング + 中央揃え
