@@ -31,6 +31,7 @@ import CRMStudio from './CRMStudio';
 import TaskHub from './TaskHub';
 import VoiceCaptureStudio from './VoiceCaptureStudio';
 import SalesAgentStudio from './SalesAgentStudio';
+import { PrismLogo } from './Logo';
 import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './CommandPalette';
 import PnLStudio from './PnLStudio';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
@@ -291,9 +292,8 @@ export default function IdentityDashboard({
         }}
       >
         <div className="px-2 mb-3">
-          <button onClick={onBackToSelection} className="group text-left">
-            <p className="text-prism text-sm tracking-[0.2em] font-light uppercase group-hover:opacity-70 transition-opacity">CORE</p>
-            <p className="text-fg-muted text-xs tracking-widest font-light">Prism OS</p>
+          <button onClick={onBackToSelection} className="group text-left flex items-center transition-opacity group-hover:opacity-70">
+            <PrismLogo size={32} withWordmark />
           </button>
         </div>
 

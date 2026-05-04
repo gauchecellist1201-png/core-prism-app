@@ -116,15 +116,15 @@ export default function IrisLanding({ onEnter }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              // Edits 風: 細めサンセリフ + Instagram グラデ + 控えめサイズ
-              fontFamily: IRIS_FONTS.body,
-              fontSize: 'clamp(3.5rem, 12vw, 8rem)',
-              fontWeight: 300,                   // ←細い (Edits アプリ風)
-              letterSpacing: '0.05em',
+              // 上品なセリフ italic (Cormorant Garamond) + Instagram グラデ
+              fontFamily: IRIS_FONTS.serif,
+              fontStyle: 'italic',
+              fontSize: 'clamp(4.5rem, 14vw, 10rem)',
+              fontWeight: 500,
+              letterSpacing: '-0.01em',
               lineHeight: 1,
               margin: 0,
               textAlign: 'center',
-              // Instagram 公式グラデ
               background: `linear-gradient(135deg, ${IRIS_COLORS.purple} 0%, ${IRIS_COLORS.hotPink} 40%, ${IRIS_COLORS.goldDeep} 75%, ${IRIS_COLORS.gold} 100%)`,
               backgroundSize: '200% 200%',
               WebkitBackgroundClip: 'text',
@@ -132,7 +132,7 @@ export default function IrisLanding({ onEnter }: Props) {
               backgroundClip: 'text',
               animation: 'iris-gradient 12s ease infinite',
             }}>
-            iris
+            Iris
           </motion.h1>
 
           {/* タグライン: 控えめなセリフ italic */}
@@ -241,15 +241,17 @@ export default function IrisLanding({ onEnter }: Props) {
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'baseline' }}>
             <div style={{
-              fontFamily: IRIS_FONTS.body,
-              fontSize: '1.4rem',
-              fontWeight: 300,
-              letterSpacing: '0.05em',
+              fontFamily: IRIS_FONTS.serif,
+              fontStyle: 'italic',
+              fontSize: '1.7rem',
+              fontWeight: 500,
+              letterSpacing: '-0.01em',
               background: `linear-gradient(135deg, ${IRIS_COLORS.purple}, ${IRIS_COLORS.hotPink} 50%, ${IRIS_COLORS.goldDeep})`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              lineHeight: 1,
             }}>
-              iris
+              Iris
             </div>
             <div style={{
               fontFamily: IRIS_FONTS.body, fontSize: '0.7rem',

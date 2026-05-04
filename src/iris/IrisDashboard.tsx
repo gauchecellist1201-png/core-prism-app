@@ -105,17 +105,19 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{
-              // Edits アプリ風: 細いサンセリフ + Instagram グラデ
-              fontFamily: IRIS_FONTS.body,
-              fontWeight: 300,
-              fontSize: '1.4rem',
-              letterSpacing: '0.05em',
+              // Cormorant Garamond italic + Instagram グラデ (上品な書体)
+              fontFamily: IRIS_FONTS.serif,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              fontSize: '1.7rem',
+              letterSpacing: '-0.01em',
+              lineHeight: 1,
               background: `linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
             }}>
-              iris
+              Iris
             </span>
           </div>
 
@@ -149,17 +151,23 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               style={{
-                background: tab === t.id ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)` : 'rgba(255,255,255,0.5)',
-                color: tab === t.id ? '#fff' : bg.ink,
-                border: 'none',
+                // 非アクティブタブも背景に埋もれないよう、白の不透明度を上げて文字を濃く固定
+                background: tab === t.id
+                  ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`
+                  : 'rgba(255,255,255,0.92)',
+                color: tab === t.id ? '#FFFFFF' : '#1F1A2E',
+                border: tab === t.id ? 'none' : `1px solid rgba(31,26,46,0.08)`,
                 borderRadius: 999,
                 padding: '0.55rem 1.15rem',
                 fontSize: '0.85rem',
-                fontWeight: 600,
+                fontWeight: tab === t.id ? 700 : 600,
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 fontFamily: IRIS_FONTS.body,
-                boxShadow: tab === t.id ? `0 6px 18px ${bg.accent}55` : 'none',
+                boxShadow: tab === t.id
+                  ? `0 6px 18px ${bg.accent}55`
+                  : '0 1px 3px rgba(31,26,46,0.06)',
+                transition: 'all 0.15s',
               }}>
               <span style={{ marginRight: 6 }}>{t.e}</span>
               {t.l}

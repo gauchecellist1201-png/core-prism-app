@@ -3,6 +3,7 @@
 // 商談プロ風: 大判タイトル + 課題 → 解決 → 機能 → 料金 → CTA
 // ============================================================
 import { motion } from 'framer-motion';
+import { PrismLogo } from './Logo';
 
 interface Props {
   onEnterApp: () => void;
@@ -31,10 +32,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
       {/* ── ヘッダ ────────────────────────────── */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: ORANGE, fontWeight: 700 }}>CORE PRISM</div>
-            <div style={{ fontSize: '0.65rem', color: INK_SUB }}>AI セールス OS</div>
-          </div>
+          <PrismLogo size={32} withWordmark />
           <nav style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }} className="lp-nav">
             <a href="#features" style={navLink}>機能</a>
             <a href="#pricing" style={navLink}>料金</a>
