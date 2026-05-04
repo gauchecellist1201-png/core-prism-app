@@ -26,6 +26,7 @@ import IrisDirectorView from './IrisDirectorView';
 import IrisTriageView from './IrisTriageView';
 import IrisCommunityView from './IrisCommunityView';
 import IrisStrategistView from './IrisStrategistView';
+import IrisQuickAdd from './IrisQuickAdd';
 import { IrisLogo } from '../components/Logo';
 
 interface Props {
@@ -191,7 +192,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             transition={{ duration: 0.25 }}
           >
             {tab === 'home' && <HomeView bg={bg} desk={desk} myDeals={myDeals} setTab={setTab} />}
-            {tab === 'deals' && <DealsView bg={bg} desk={desk} myDeals={myDeals} />}
+            {tab === 'deals' && <DealsView bg={bg} desk={desk} myDeals={myDeals} settings={settings} />}
             {tab === 'negotiate' && <NegotiateView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'draft' && <DraftView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'beauty' && <BeautyChatView bg={bg} settings={settings} />}
@@ -532,8 +533,9 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
 }
 
 // ─── 案件 (DealsView) ─────────────────────────
-function DealsView({ bg, desk, myDeals }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; myDeals: InfluencerDeal[] }) {
+function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; myDeals: InfluencerDeal[]; settings: AppSettings }) {
   const [open, setOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
   const [d, setD] = useState<Partial<InfluencerDeal>>({
     brandName: '', platform: 'instagram', contentType: 'post', fee: 0, deliverables: '', stage: 'inquiry',
   });
@@ -558,13 +560,36 @@ function DealsView({ bg, desk, myDeals }: { bg: IrisBackgroundDef; desk: ReturnT
 
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
+      {quickOpen && (
+        <IrisQuickAdd bg={bg} settings={settings}
+          onClose={() => setQuickOpen(false)}
+          onSave={(data) => { desk.addDeal(IRIS_PERSONA_ID, data); }} />
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <h2 style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0, fontWeight: 500 }}>
           案件
         </h2>
-        <button onClick={() => setOpen(!open)} style={btnPrimary(bg)}>
-          {open ? '閉じる' : '+ 追加'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button onClick={() => setQuickOpen(true)} style={{
+            background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+            color: '#fff', border: 'none', borderRadius: 999,
+            padding: '0.7rem 1.4rem', fontWeight: 700, cursor: 'pointer',
+            fontSize: '0.88rem', fontFamily: IRIS_FONTS.body,
+            boxShadow: `0 8px 22px ${bg.accent}55`,
+            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+          }}>
+            ✨ AI で追加
+          </button>
+          <button onClick={() => setOpen(!open)} style={{
+            background: 'rgba(255,255,255,0.85)', color: '#1F1A2E',
+            border: `1px solid ${bg.cardBorder}`, borderRadius: 999,
+            padding: '0.7rem 1.2rem', fontWeight: 600, cursor: 'pointer',
+            fontSize: '0.85rem', fontFamily: IRIS_FONTS.body,
+          }}>
+            {open ? '閉じる' : '✏ 手動'}
+          </button>
+        </div>
       </div>
 
       {open && (
