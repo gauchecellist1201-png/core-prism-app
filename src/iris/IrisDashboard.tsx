@@ -127,18 +127,18 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4,
         }}>
           {[
-            { id: 'home' as Tab,      e: '✦', l: 'Home' },
-            { id: 'triage' as Tab,    e: '🔍', l: 'Triage' },
-            { id: 'director' as Tab,  e: '🎬', l: 'Director' },
-            { id: 'deals' as Tab,     e: '💌', l: 'Deals' },
-            { id: 'negotiate' as Tab, e: '💬', l: 'Negotiate' },
-            { id: 'draft' as Tab,     e: '✍',  l: 'Caption' },
-            { id: 'image' as Tab,     e: '📷', l: 'Retouch' },
-            { id: 'beauty' as Tab,    e: '💆‍♀️', l: 'Beauty' },
-            { id: 'community' as Tab, e: '🌹', l: 'House' },
-            { id: 'team' as Tab,      e: '🌷', l: 'Roster' },
-            { id: 'brands' as Tab,    e: '🤝', l: 'Brands' },
-            { id: 'kit' as Tab,       e: '📇', l: 'Kit' },
+            { id: 'home' as Tab,      e: '✦', l: 'ホーム' },
+            { id: 'triage' as Tab,    e: '🔍', l: '案件精査' },
+            { id: 'director' as Tab,  e: '🎬', l: '丸投げ編集' },
+            { id: 'deals' as Tab,     e: '💌', l: '案件' },
+            { id: 'negotiate' as Tab, e: '💬', l: '交渉' },
+            { id: 'draft' as Tab,     e: '✍',  l: '投稿下書き' },
+            { id: 'image' as Tab,     e: '📷', l: '画像加工' },
+            { id: 'beauty' as Tab,    e: '💆‍♀️', l: '美容相談' },
+            { id: 'community' as Tab, e: '🌹', l: 'コミュニティ' },
+            { id: 'team' as Tab,      e: '🌷', l: 'チーム' },
+            { id: 'brands' as Tab,    e: '🤝', l: 'ブランド探し' },
+            { id: 'kit' as Tab,       e: '📇', l: 'メディアキット' },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               style={{

@@ -13,54 +13,72 @@ export const IRIS_BRAND = {
   publisher: 'CORE',
 };
 
-// エディトリアル雑誌風パレット (VOGUE / ELLE / Devil Wears Prada inspired)
-// 彩度を抑えた洗練系 — アイボリー / インク / ボルドー / ローズゴールド
+// IRIS パレット — プラダの世界観 (深み・洗練) × ホットピンク・ゴールド (女性の高揚感)
+// Barbie × Sephora × Versace × Vogue を鳥瞰した、女性が手に取りたくなる派手な配色
 export const IRIS_COLORS = {
-  // ベース
-  ivory:       '#F5F1EA',   // メインBG (温かみのあるオフホワイト)
-  ivoryDeep:   '#EDE7DD',
-  cream:       '#FAF7F2',
+  // ベース (リッチな深み)
+  ivory:       '#FFF5F8',   // ピンクみのあるオフホワイト
+  ivoryDeep:   '#FCE8EF',
+  cream:       '#FFFAF5',
   paper:       '#FFFFFF',
 
-  // インク (純黒回避)
-  inkBlack:    '#1C1A22',   // 黒に最も近い色 (純黒より深みのある紫黒)
-  ink:         '#28252F',   // 本文・見出し
-  inkSoft:     '#5A5562',   // 本文 small
-  inkDim:      '#8A8593',   // メタ情報
+  // インク (純黒回避、紫みで深み出す)
+  inkBlack:    '#1A0A26',   // 深紅紫 (プラダの暗黒×女性的紫)
+  ink:         '#2A1A3A',   // 本文・見出し
+  inkSoft:     '#5A4570',   // 本文 small
+  inkDim:      '#8A7AA0',   // メタ情報
 
-  // ボルドー / レッド (VOGUE のエディトリアル赤)
-  bordeaux:    '#7B1F2B',   // 深いワインレッド
-  bordeauxLt:  '#A8324A',
-  oxblood:     '#5C0E1B',
-  red:         '#C8102E',   // クラシックレッドリップ
+  // ホットピンク (主役の派手色)
+  hotPink:     '#FF1493',   // ディープフューシャ
+  pink:        '#FF3D8E',   // ホットピンク
+  pinkLt:      '#FF6BA8',
+  pinkSoft:    '#FFB8D6',
+  pinkMist:    '#FFE0EC',
 
-  // ヌード / シャンパン
-  nude:        '#E6D5C0',
-  nudeDeep:    '#C8A88A',
-  champagne:   '#D4B896',
-  blush:       '#F5DCD0',
+  // パープル / マゼンタ (もう一つの主役)
+  magenta:     '#E91E63',
+  purple:      '#9D4EDD',   // ネオンパープル
+  purpleDeep:  '#6A0DAD',
+  purpleLt:    '#C77DFF',
+
+  // ゴールド (Versace 級のアクセント)
+  gold:        '#FFD700',   // ブライトゴールド
+  goldDeep:    '#FFC857',
+  goldRose:    '#FFA94D',
+  goldChampagne:'#F5D67E',
+
+  // 旧 ボルドー系 (互換用)
+  bordeaux:    '#C8102E',   // よりビビッドな赤
+  bordeauxLt:  '#FF1493',   // ホットピンクで上書き
+  oxblood:     '#7B0E29',
+  red:         '#FF1744',   // クラシックレッドリップ
+
+  // ヌード (アクセント)
+  nude:        '#FFE0CC',
+  nudeDeep:    '#F5D67E',   // ゴールドに振る
+  champagne:   '#FFD700',
+  blush:       '#FFB8D6',
 
   // ローズゴールド (アクセント)
-  roseGold:    '#C8956D',
-  roseGoldLt:  '#E8C9B0',
+  roseGold:    '#FFA94D',   // よりビビッド
+  roseGoldLt:  '#FFD67E',
 
-  // ネイビー / フォレスト (ファッション業界の差し色)
-  navy:        '#1A2540',   // ミッドナイトネイビー
+  // ネイビー / フォレスト
+  navy:        '#1A0A26',   // インクと同化
   forest:      '#2D3F2A',
 
-  // 残し: 旧 API 互換 (段階的に廃止予定)
-  rose:        '#A8324A',   // ↓旧コードからの移行用 alias
-  roseDeep:    '#7B1F2B',
-  roseSoft:    '#F5DCD0',
-  roseMist:    '#FAF7F2',
-  pearl:       '#FAFAFC',
-  lavender:    '#A89AB5',
-  lavenderSoft:'#DDD3E0',
-  peach:       '#E6D5C0',
-  peachSoft:   '#F5DCD0',
-  gold:        '#C8956D',
-  goldSoft:    '#E8C9B0',
-  white:       '#FAF7F2',
+  // 残し: 旧 API 互換
+  rose:        '#FF1493',
+  roseDeep:    '#C8102E',
+  roseSoft:    '#FFB8D6',
+  roseMist:    '#FFE0EC',
+  pearl:       '#FFFAFA',
+  lavender:    '#C77DFF',
+  lavenderSoft:'#E0BFF5',
+  peach:       '#FFE0CC',
+  peachSoft:   '#FFD6BC',
+  goldSoft:    '#FFD67E',
+  white:       '#FFFAF5',
 };
 
 // VOGUE / Devil Wears Prada 級のタイポグラフィ

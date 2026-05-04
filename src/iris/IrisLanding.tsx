@@ -1,6 +1,6 @@
 // ============================================================
 // IRIS — Editorial Landing (Vogue / Devil Wears Prada inspired)
-// 余白 · タイポグラフィ · ボルドー · インク · アイボリー
+// 視覚最優先 · 文字は最小限 · インパクト
 // ============================================================
 import { motion } from 'framer-motion';
 import { IRIS_BRAND, IRIS_COLORS, IRIS_FONTS } from './irisStyle';
@@ -12,218 +12,408 @@ interface Props {
 export default function IrisLanding({ onEnter }: Props) {
   return (
     <div style={{
-      minHeight: '100vh',
-      background: IRIS_COLORS.ivory,
-      color: IRIS_COLORS.ink,
+      background: IRIS_COLORS.inkBlack,
+      color: IRIS_COLORS.cream,
       fontFamily: IRIS_FONTS.body,
       letterSpacing: '0.01em',
     }}>
-      {/* ── マストヘッド (雑誌の表紙の上) ─────────── */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/* HERO ─ 全画面・ホットピンク × ゴールド ネオン爆発     */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section style={{
+        position: 'relative',
+        height: '100vh',
+        minHeight: 600,
+        overflow: 'hidden',
+        background: IRIS_COLORS.inkBlack,
+        cursor: 'pointer',
+      }}
+      onClick={onEnter}
+      >
+        {/* レイヤー1: 巨大なホットピンク・スポット */}
+        <motion.div
+          animate={{
+            x: ['-15%', '8%', '-8%', '12%', '-15%'],
+            y: ['15%', '-8%', '8%', '-12%', '15%'],
+            scale: [1, 1.1, 0.95, 1.05, 1],
+          }}
+          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute',
+            top: '10%',
+            left: '10%',
+            width: 'clamp(500px, 65vw, 1000px)',
+            height: 'clamp(500px, 65vw, 1000px)',
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${IRIS_COLORS.hotPink}ff 0%, ${IRIS_COLORS.magenta}cc 30%, transparent 65%)`,
+            filter: 'blur(50px)',
+            mixBlendMode: 'screen',
+          }}
+        />
+
+        {/* レイヤー2: ネオンパープル */}
+        <motion.div
+          animate={{
+            x: ['8%', '-12%', '15%', '-8%', '8%'],
+            y: ['-8%', '12%', '-15%', '8%', '-8%'],
+            scale: [1, 1.15, 0.9, 1.1, 1],
+          }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute',
+            bottom: '5%',
+            right: '0%',
+            width: 'clamp(450px, 55vw, 850px)',
+            height: 'clamp(450px, 55vw, 850px)',
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${IRIS_COLORS.purple}ff 0%, ${IRIS_COLORS.purpleDeep}aa 35%, transparent 65%)`,
+            filter: 'blur(60px)',
+            mixBlendMode: 'screen',
+          }}
+        />
+
+        {/* レイヤー3: ゴールド (Versace 風) */}
+        <motion.div
+          animate={{
+            x: ['0%', '15%', '-10%', '5%', '0%'],
+            y: ['0%', '-15%', '10%', '-5%', '0%'],
+          }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute',
+            top: '30%',
+            right: '20%',
+            width: 'clamp(300px, 40vw, 600px)',
+            height: 'clamp(300px, 40vw, 600px)',
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${IRIS_COLORS.gold}dd 0%, ${IRIS_COLORS.goldRose}88 40%, transparent 65%)`,
+            filter: 'blur(70px)',
+            mixBlendMode: 'screen',
+          }}
+        />
+
+        {/* レイヤー4: 回転するコニックグラデ (ディスコボール感) */}
+        <motion.div
+          animate={{ rotate: [0, 360] }}
+          transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'clamp(300px, 45vw, 700px)',
+            height: 'clamp(300px, 45vw, 700px)',
+            borderRadius: '50%',
+            background: `conic-gradient(from 0deg, ${IRIS_COLORS.hotPink}66, ${IRIS_COLORS.gold}88, ${IRIS_COLORS.purple}77, ${IRIS_COLORS.magenta}66, ${IRIS_COLORS.gold}88, ${IRIS_COLORS.hotPink}66)`,
+            filter: 'blur(50px)',
+            opacity: 0.7,
+            mixBlendMode: 'screen',
+          }}
+        />
+
+        {/* レイヤー5: スパークル (キラキラ点) */}
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{
+              opacity: [0, 1, 0],
+              scale: [0, 1.5, 0],
+            }}
+            transition={{
+              duration: 2 + Math.random() * 3,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+              ease: 'easeInOut',
+            }}
+            style={{
+              position: 'absolute',
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              width: 4 + Math.random() * 6,
+              height: 4 + Math.random() * 6,
+              borderRadius: '50%',
+              background: i % 3 === 0 ? IRIS_COLORS.gold : i % 3 === 1 ? IRIS_COLORS.hotPink : '#fff',
+              boxShadow: `0 0 20px ${i % 3 === 0 ? IRIS_COLORS.gold : i % 3 === 1 ? IRIS_COLORS.hotPink : '#fff'}`,
+              zIndex: 3,
+            }}
+          />
+        ))}
+
+        {/* 微細なフィルムグレイン */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0.06,
+          mixBlendMode: 'overlay',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          pointerEvents: 'none',
+        }} />
+
+        {/* 上部マストヘッド */}
+        <div style={{
+          position: 'absolute', top: '1.5rem', left: 0, right: 0,
+          padding: '0 1.5rem',
+          display: 'flex', justifyContent: 'space-between',
+          fontFamily: IRIS_FONTS.serif,
+          fontSize: '0.7rem',
+          letterSpacing: '0.5em',
+          textTransform: 'uppercase',
+          color: IRIS_COLORS.gold,
+          fontWeight: 600,
+          zIndex: 5,
+          textShadow: `0 0 12px ${IRIS_COLORS.gold}`,
+        }}>
+          <span>{IRIS_BRAND.issue}</span>
+          <span>Tokyo · Milan · Paris</span>
+        </div>
+
+        {/* 中央: 巨大ロゴ — グラデーション + グロー */}
+        <div style={{
+          position: 'relative', zIndex: 10,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 1rem',
+        }}>
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.85, letterSpacing: '0.3em' }}
+            animate={{ opacity: 1, scale: 1, letterSpacing: '-0.05em' }}
+            transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              fontFamily: IRIS_FONTS.display,
+              fontSize: 'clamp(8rem, 30vw, 32rem)',
+              fontWeight: 900,
+              lineHeight: 0.85,
+              margin: 0,
+              textAlign: 'center',
+              background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink} 0%, ${IRIS_COLORS.gold} 35%, ${IRIS_COLORS.purpleLt} 70%, ${IRIS_COLORS.hotPink} 100%)`,
+              backgroundSize: '200% 200%',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              filter: `drop-shadow(0 0 40px ${IRIS_COLORS.hotPink}aa) drop-shadow(0 0 80px ${IRIS_COLORS.gold}55)`,
+              animation: 'iris-gradient 8s ease infinite',
+            }}>
+            IRIS
+          </motion.h1>
+
+          {/* タグライン: ゴールドのグロー文字 */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.4, duration: 1.2 }}
+            style={{
+              fontFamily: IRIS_FONTS.serif,
+              fontStyle: 'italic',
+              fontSize: 'clamp(1rem, 2.2vw, 1.6rem)',
+              color: IRIS_COLORS.gold,
+              letterSpacing: '0.4em',
+              textTransform: 'uppercase',
+              marginTop: 'clamp(0.5rem, 2vw, 1.5rem)',
+              fontWeight: 400,
+              textShadow: `0 0 25px ${IRIS_COLORS.gold}cc, 0 0 50px ${IRIS_COLORS.hotPink}55`,
+            }}
+          >
+            {IRIS_BRAND.tagline}
+          </motion.div>
+
+          {/* 下部の派手な ENTER ボタン */}
+          <motion.button
+            onClick={(e) => { e.stopPropagation(); onEnter(); }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2.0, duration: 0.8 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              marginTop: 'clamp(2rem, 5vw, 4rem)',
+              background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purple})`,
+              color: '#fff',
+              border: `2px solid ${IRIS_COLORS.gold}`,
+              padding: '1.2rem 4rem',
+              fontSize: '0.85rem',
+              letterSpacing: '0.4em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              fontFamily: IRIS_FONTS.body,
+              fontWeight: 700,
+              borderRadius: 999,
+              boxShadow: `0 0 30px ${IRIS_COLORS.hotPink}88, 0 0 60px ${IRIS_COLORS.gold}55, inset 0 0 20px rgba(255,255,255,0.2)`,
+              zIndex: 10,
+            }}>
+            ✨ Step Inside
+          </motion.button>
+        </div>
+
+        {/* 下部: スクロールヒント */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0.4, 1] }}
+          transition={{ delay: 2.8, duration: 2.5, repeat: Infinity, repeatType: 'reverse' }}
+          style={{
+            position: 'absolute',
+            bottom: '1.5rem',
+            left: 0, right: 0,
+            textAlign: 'center',
+            zIndex: 10,
+          }}
+        >
+          <div style={{
+            fontFamily: IRIS_FONTS.serif,
+            fontSize: '0.7rem',
+            letterSpacing: '0.6em',
+            textTransform: 'uppercase',
+            color: IRIS_COLORS.gold,
+            opacity: 0.85,
+          }}>
+            ↓ Scroll
+          </div>
+        </motion.div>
+
+        {/* グラデーションアニメ用 keyframe */}
+        <style>{`
+          @keyframes iris-gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+          }
+        `}</style>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/* SECOND VIEW: マストヘッド + サブコピー (スクロール後)  */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <header style={{
-        borderBottom: `1px solid ${IRIS_COLORS.ink}`,
-        padding: '0.75rem 1.5rem',
+        background: `linear-gradient(135deg, ${IRIS_COLORS.pinkMist} 0%, ${IRIS_COLORS.ivory} 50%, ${IRIS_COLORS.pinkMist} 100%)`,
+        color: IRIS_COLORS.ink,
+        borderTop: `3px solid ${IRIS_COLORS.hotPink}`,
+        borderBottom: `1px solid ${IRIS_COLORS.purple}33`,
+        padding: '1rem 1.5rem',
       }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '2rem', alignItems: 'baseline' }}>
             <div style={{
-              fontFamily: IRIS_FONTS.serif,
-              fontSize: '0.7rem',
-              letterSpacing: '0.4em',
-              textTransform: 'uppercase',
-              color: IRIS_COLORS.inkSoft,
+              fontFamily: IRIS_FONTS.display,
+              fontSize: '1.6rem',
+              fontWeight: 900,
+              letterSpacing: '-0.02em',
+              background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purple})`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
             }}>
-              {IRIS_BRAND.issue}
+              IRIS
             </div>
             <div style={{
-              fontFamily: IRIS_FONTS.serif,
-              fontSize: '0.7rem',
-              letterSpacing: '0.3em',
-              textTransform: 'uppercase',
-              color: IRIS_COLORS.inkSoft,
-              display: 'none',
-            }} className="show-md">
-              ¥0 — Free Trial Edition
+              fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem',
+              letterSpacing: '0.25em', textTransform: 'uppercase',
+              color: IRIS_COLORS.hotPink, fontWeight: 600,
+            }}>
+              {IRIS_BRAND.tagline}
             </div>
           </div>
           <button onClick={onEnter} style={{
-            background: 'transparent',
-            color: IRIS_COLORS.ink,
-            border: `1px solid ${IRIS_COLORS.ink}`,
-            padding: '0.4rem 1.1rem',
-            fontSize: '0.7rem',
-            letterSpacing: '0.3em',
+            background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purple})`,
+            color: '#fff',
+            border: 'none',
+            padding: '0.7rem 1.8rem',
+            fontSize: '0.72rem',
+            letterSpacing: '0.35em',
             textTransform: 'uppercase',
             cursor: 'pointer',
             fontFamily: IRIS_FONTS.body,
-            fontWeight: 500,
+            fontWeight: 700,
+            borderRadius: 999,
+            boxShadow: `0 4px 16px ${IRIS_COLORS.hotPink}66`,
           }}>
             Enter
           </button>
         </div>
       </header>
 
-      {/* ── COVER (HERO) ─────────────────────── */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/* COVER LINES (4 つの No.セクション)                    */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section style={{
-        position: 'relative',
-        padding: 'clamp(3rem, 8vw, 7rem) 1.5rem clamp(3rem, 6vw, 5rem)',
-        borderBottom: `1px solid ${IRIS_COLORS.ink}30`,
+        background: `linear-gradient(180deg, ${IRIS_COLORS.ivory} 0%, ${IRIS_COLORS.pinkMist} 100%)`,
+        color: IRIS_COLORS.ink,
+        padding: 'clamp(4rem, 8vw, 6rem) 1.5rem',
       }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          {/* 雑誌のロゴ — 巨大 */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2 }}
-            style={{
-              fontFamily: IRIS_FONTS.display,
-              fontSize: 'clamp(5rem, 22vw, 18rem)',
-              fontWeight: 900,
-              lineHeight: 0.85,
-              color: IRIS_COLORS.inkBlack,
-              letterSpacing: '-0.04em',
-              margin: 0,
-              fontStyle: 'normal',
-            }}>
-            IRIS
-          </motion.h1>
-
-          {/* サブヘッダ — 雑誌の表紙コピー */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
-            flexWrap: 'wrap', gap: '2rem',
-            marginTop: 'clamp(1rem, 3vw, 2.5rem)',
-          }}>
-            <div style={{ flex: '1 1 400px' }}>
-              <p style={{
-                fontFamily: IRIS_FONTS.serif,
-                fontStyle: 'italic',
-                fontSize: 'clamp(1.5rem, 3vw, 2.4rem)',
-                fontWeight: 400,
-                color: IRIS_COLORS.bordeaux,
-                lineHeight: 1.3,
-                marginBottom: '0.5rem',
-                letterSpacing: '-0.005em',
-              }}>
-                {IRIS_BRAND.tagline}
-              </p>
-              <p style={{
-                fontFamily: IRIS_FONTS.body,
-                fontSize: '0.95rem',
-                color: IRIS_COLORS.inkSoft,
-                lineHeight: 1.7,
-                maxWidth: 480,
-                fontWeight: 400,
-              }}>
-                {IRIS_BRAND.taglineJa}<br />
-                案件、写真、コミュニティ。<br />
-                女がひとりで、すべてを編集する時代へ。
-              </p>
-            </div>
-
-            <div style={{
+          <div style={{ textAlign: 'center', marginBottom: 'clamp(3rem, 5vw, 4rem)' }}>
+            <p style={{
               fontFamily: IRIS_FONTS.serif,
-              fontSize: '0.75rem',
-              letterSpacing: '0.25em',
+              fontStyle: 'italic',
+              fontSize: '0.78rem',
+              letterSpacing: '0.5em',
               textTransform: 'uppercase',
-              color: IRIS_COLORS.inkSoft,
-              textAlign: 'right',
-              flex: '0 0 auto',
+              color: IRIS_COLORS.hotPink,
+              marginBottom: '1rem',
+              fontWeight: 700,
             }}>
-              <div>By Editorial</div>
-              <div>Standards.</div>
-            </div>
+              ✦ In This Issue ✦
+            </p>
           </div>
-
-          {/* 表紙の Cover Lines (雑誌の表紙の文言) */}
           <div style={{
-            marginTop: 'clamp(3rem, 6vw, 5rem)',
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '1.5rem 2.5rem',
-            paddingTop: '1.5rem',
-            borderTop: `1px solid ${IRIS_COLORS.ink}20`,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '0',
           }}>
             {[
-              { num: '01', en: 'The Negotiation', ja: '広告代理店との交渉、AI が筆を取る。' },
-              { num: '02', en: 'Self-Edit', ja: '画像加工と背景処理を、指先で。' },
-              { num: '03', en: 'Roster', ja: 'マネージャー、編集、コラボ。チームを束ねる。' },
-              { num: '04', en: 'The Match', ja: 'ブランドが、向こうから探しにくる。' },
+              { num: '01', en: 'The Strategist',  ja: '次の一本を、AI が指図する。', color: IRIS_COLORS.hotPink },
+              { num: '02', en: 'The Negotiation', ja: '広告代理店との交渉、AI が筆を取る。', color: IRIS_COLORS.purple },
+              { num: '03', en: 'Self-Edit',       ja: '画像加工も、背景処理も、指先で。', color: IRIS_COLORS.gold },
+              { num: '04', en: 'The House',       ja: 'ブランド、チーム、仲間が集う。', color: IRIS_COLORS.magenta },
             ].map((item, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 + i * 0.1 }}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                style={{
+                  padding: '2.5rem 1.5rem',
+                  borderRight: i < 3 ? `1px solid ${IRIS_COLORS.hotPink}33` : 'none',
+                  cursor: 'default',
+                }}
               >
                 <div style={{
-                  fontFamily: IRIS_FONTS.serif,
-                  fontSize: '0.7rem',
-                  letterSpacing: '0.25em',
-                  color: IRIS_COLORS.bordeaux,
+                  fontFamily: IRIS_FONTS.display,
                   fontStyle: 'italic',
-                  marginBottom: '0.4rem',
+                  fontSize: '4rem',
+                  fontWeight: 700,
+                  background: `linear-gradient(135deg, ${item.color}, ${IRIS_COLORS.gold})`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  lineHeight: 1,
+                  marginBottom: '0.75rem',
+                  letterSpacing: '-0.02em',
                 }}>
-                  No. {item.num}
+                  {item.num}
                 </div>
                 <div style={{
                   fontFamily: IRIS_FONTS.display,
-                  fontSize: '1.3rem',
-                  fontWeight: 600,
+                  fontSize: '1.4rem',
+                  fontWeight: 700,
                   color: IRIS_COLORS.inkBlack,
                   lineHeight: 1.2,
-                  marginBottom: '0.3rem',
+                  marginBottom: '0.4rem',
+                  letterSpacing: '-0.01em',
                 }}>
                   {item.en}
                 </div>
                 <div style={{
                   fontFamily: IRIS_FONTS.body,
-                  fontSize: '0.82rem',
+                  fontSize: '0.88rem',
                   color: IRIS_COLORS.inkSoft,
-                  lineHeight: 1.6,
+                  lineHeight: 1.7,
                 }}>
                   {item.ja}
                 </div>
               </motion.div>
             ))}
-          </div>
-
-          {/* CTA */}
-          <div style={{
-            marginTop: 'clamp(3rem, 6vw, 5rem)',
-            display: 'flex',
-            gap: '1rem',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-          }}>
-            <button onClick={onEnter} style={{
-              background: IRIS_COLORS.inkBlack,
-              color: IRIS_COLORS.cream,
-              border: 'none',
-              padding: '1.1rem 3rem',
-              fontSize: '0.78rem',
-              letterSpacing: '0.35em',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              fontFamily: IRIS_FONTS.body,
-              fontWeight: 600,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = IRIS_COLORS.bordeaux; }}
-            onMouseLeave={e => { e.currentTarget.style.background = IRIS_COLORS.inkBlack; }}
-            >
-              Enter the Issue
-            </button>
-            <a href="#features" style={{
-              fontFamily: IRIS_FONTS.serif,
-              fontStyle: 'italic',
-              fontSize: '1rem',
-              color: IRIS_COLORS.bordeaux,
-              borderBottom: `1px solid ${IRIS_COLORS.bordeaux}`,
-              padding: '0.2rem 0',
-              textDecoration: 'none',
-            }}>
-              See the contents ↓
-            </a>
           </div>
         </div>
       </section>
