@@ -67,6 +67,8 @@ export interface InfluencerDeal {
   /** 担当者名 */
   contactName?: string;
   contactEmail?: string;
+  /** チームメンバーへの内部アサイン (Iris Team 機能) */
+  assignedToMemberId?: string;
   /** 自由メモ (商品の特徴、相手の好み等) */
   notes?: string;
   /** ハッシュタグ・必須記載事項 */

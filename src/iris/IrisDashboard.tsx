@@ -20,13 +20,15 @@ import {
   type InfluencerDeal, type MediaKit,
 } from '../types/influencerDeal';
 import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMessage } from './beautyAdvisor';
+import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
+import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 
 interface Props {
   settings: AppSettings;
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'deals' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'kit';
+type Tab = 'home' | 'deals' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'team' | 'brands' | 'kit';
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
@@ -40,6 +42,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const allBgs = useMemo(() => getAllBackgrounds(), [bgListVersion]);
 
   const desk = useInfluencerDesk();
+  const team = useIrisTeam();
   const myDeals = useMemo(() => desk.getDealsForPersona(IRIS_PERSONA_ID), [desk.deals]);
   const mediaKit = desk.getMediaKit(IRIS_PERSONA_ID);
 
@@ -127,6 +130,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             { id: 'draft' as Tab,     e: '✍',  l: '投稿' },
             { id: 'beauty' as Tab,    e: '💆‍♀️', l: '美容' },
             { id: 'image' as Tab,     e: '🎨', l: '画像' },
+            { id: 'team' as Tab,      e: '🌷', l: 'チーム' },
+            { id: 'brands' as Tab,    e: '🤝', l: 'ブランドを探す' },
             { id: 'kit' as Tab,       e: '📇', l: 'メディアキット' },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
@@ -166,6 +171,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'draft' && <DraftView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'beauty' && <BeautyChatView bg={bg} settings={settings} />}
             {tab === 'image' && <ImageStudioView bg={bg} settings={settings} />}
+            {tab === 'team' && <TeamView bg={bg} team={team} desk={desk} myDeals={myDeals} />}
+            {tab === 'brands' && <BrandMatchView bg={bg} desk={desk} mediaKit={mediaKit} settings={settings} />}
             {tab === 'kit' && <MediaKitView bg={bg} desk={desk} kit={mediaKit} />}
           </motion.div>
         </AnimatePresence>
@@ -857,6 +864,404 @@ function MediaKitView({ bg, desk, kit }: { bg: IrisBackgroundDef; desk: ReturnTy
 
         <button onClick={save} style={{ ...btnPrimary(bg), marginTop: '0.75rem' }}>💾 保存</button>
       </Card>
+    </div>
+  );
+}
+
+// ─── チーム ─────────────────────────────────
+function TeamView({ bg, team, desk, myDeals }: {
+  bg: IrisBackgroundDef;
+  team: ReturnType<typeof useIrisTeam>;
+  desk: ReturnType<typeof useInfluencerDesk>;
+  myDeals: InfluencerDeal[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [m, setM] = useState<Partial<IrisTeamMember>>({ role: 'creator' });
+  const [importText, setImportText] = useState('');
+
+  const add = () => {
+    if (!m.name?.trim()) return;
+    team.addMember({
+      name: m.name!,
+      handle: m.handle,
+      role: (m.role || 'creator') as MemberRole,
+      niches: m.niches,
+      primaryPlatform: m.primaryPlatform,
+      email: m.email,
+      line: m.line,
+      notes: m.notes,
+    });
+    setM({ role: 'creator' });
+    setOpen(false);
+  };
+
+  const exportJson = () => {
+    const json = team.exportTeam();
+    navigator.clipboard?.writeText(json);
+    alert('チーム情報を JSON でコピーしました。仲間に渡してください。');
+  };
+  const tryImport = () => {
+    if (!importText.trim()) return;
+    const r = team.importTeam(importText);
+    if (r.error) { alert('インポートエラー: ' + r.error); return; }
+    alert(`${r.added} 件追加しました`);
+    setImportText('');
+  };
+
+  // 各メンバーの稼働状況
+  const memberStats = team.members.map(member => {
+    const deals = myDeals.filter(d => d.assignedToMemberId === member.id);
+    return {
+      member,
+      activeCount: deals.filter(d => !['closed','declined','reported'].includes(d.stage)).length,
+      totalEarnings: deals.filter(d => ['posted','reported','closed'].includes(d.stage)).reduce((s, d) => s + (d.fee || 0), 0),
+    };
+  });
+
+  return (
+    <div style={{ display: 'grid', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>TEAM</p>
+          <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: '0.25rem 0 0' }}>
+            みんなで、咲く。
+          </h2>
+        </div>
+        <button onClick={() => setOpen(!open)} style={btnPrimary(bg)}>
+          {open ? '閉じる' : '+ メンバー追加'}
+        </button>
+      </div>
+
+      {open && (
+        <Card bg={bg}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.5rem' }}>
+            <input style={inp(bg)} placeholder="名前 *" value={m.name || ''} onChange={e => setM({ ...m, name: e.target.value })} />
+            <input style={inp(bg)} placeholder="@handle" value={m.handle || ''} onChange={e => setM({ ...m, handle: e.target.value })} />
+            <select style={inp(bg)} value={m.role} onChange={e => setM({ ...m, role: e.target.value as MemberRole })}>
+              {Object.entries(ROLE_META).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
+            </select>
+            <select style={inp(bg)} value={m.primaryPlatform || ''} onChange={e => setM({ ...m, primaryPlatform: e.target.value as any })}>
+              <option value="">主なプラットフォーム</option>
+              {Object.entries(PLATFORM_META).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
+            </select>
+            <input style={inp(bg)} placeholder="得意領域 (例: コスメ・旅)" onChange={e => setM({ ...m, niches: e.target.value.split(/[,、]/).map(s => s.trim()).filter(Boolean) })} />
+            <input style={inp(bg)} placeholder="email" value={m.email || ''} onChange={e => setM({ ...m, email: e.target.value })} />
+          </div>
+          <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="メモ" value={m.notes || ''} onChange={e => setM({ ...m, notes: e.target.value })} />
+          <button onClick={add} style={{ ...btnPrimary(bg), marginTop: '0.5rem' }}>追加</button>
+        </Card>
+      )}
+
+      {/* メンバー一覧 */}
+      {team.members.length === 0 && (
+        <Card bg={bg}>
+          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '2rem 0' }}>
+            🌷 まだメンバーがいません。<br />
+            一緒に動いてくれる人 (マネージャー / 編集 / コラボ仲間) を登録すると、案件の交通整理ができます。
+          </p>
+        </Card>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
+        {memberStats.map(({ member, activeCount, totalEarnings }) => {
+          const role = ROLE_META[member.role];
+          return (
+            <Card key={member.id} bg={bg}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${role.color}, ${role.color}80)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.4rem',
+                }}>
+                  {role.emoji}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 700, color: bg.ink, fontSize: '1.05rem' }}>{member.name}</p>
+                  {member.handle && <p style={{ fontSize: '0.8rem', color: bg.inkSoft }}>{member.handle}</p>}
+                </div>
+                <button onClick={() => { if (confirm('削除しますか?')) team.removeMember(member.id); }} style={btnIcon(bg)}>🗑</button>
+              </div>
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                <span style={{ background: role.color + '22', color: role.color, padding: '0.2rem 0.6rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 600 }}>
+                  {role.label}
+                </span>
+                {member.primaryPlatform && (
+                  <span style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.6rem', borderRadius: 999, fontSize: '0.75rem' }}>
+                    {PLATFORM_META[member.primaryPlatform].emoji} {PLATFORM_META[member.primaryPlatform].label}
+                  </span>
+                )}
+              </div>
+              {member.niches && member.niches.length > 0 && (
+                <p style={{ fontSize: '0.8rem', color: bg.inkSoft, marginBottom: '0.5rem' }}>
+                  {member.niches.join(' · ')}
+                </p>
+              )}
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: `1px solid ${bg.cardBorder}` }}>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: bg.inkSoft }}>進行中</div>
+                  <div style={{ fontWeight: 700, color: bg.accent }}>{activeCount} 件</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: bg.inkSoft }}>累計報酬</div>
+                  <div style={{ fontWeight: 700 }}>¥{totalEarnings.toLocaleString()}</div>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* 案件のアサイン UI */}
+      {team.members.length > 0 && myDeals.length > 0 && (
+        <Card bg={bg}>
+          <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: bg.ink, marginBottom: '0.75rem' }}>
+            案件のアサイン
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {myDeals.slice(0, 12).map(d => (
+              <div key={d.id} style={{
+                display: 'flex', gap: '0.5rem', alignItems: 'center',
+                padding: '0.6rem 0.8rem', borderRadius: 12,
+                background: 'rgba(255,255,255,0.5)',
+              }}>
+                <span style={{ fontSize: '1.2rem' }}>{PLATFORM_META[d.platform].emoji}</span>
+                <span style={{ flex: 1, fontWeight: 600, color: bg.ink }}>{d.brandName}</span>
+                <select
+                  value={d.assignedToMemberId || ''}
+                  onChange={e => desk.updateDeal(d.id, { assignedToMemberId: e.target.value || undefined })}
+                  style={inp(bg)}
+                >
+                  <option value="">— 未アサイン —</option>
+                  {team.members.map(member => (
+                    <option key={member.id} value={member.id}>
+                      {ROLE_META[member.role].emoji} {member.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* 共有 (Export / Import) */}
+      <Card bg={bg}>
+        <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: bg.ink, marginBottom: '0.75rem' }}>
+          チームと共有する
+        </p>
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginBottom: '0.75rem' }}>
+          仲間とテンプレ・案件情報を JSON 経由で共有できます (将来サーバ連携で同期予定)。
+        </p>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+          <button onClick={exportJson} style={btnPrimary(bg)}>📤 JSON でエクスポート</button>
+        </div>
+        <textarea
+          style={{ ...inp(bg), width: '100%', minHeight: 90, marginBottom: '0.5rem', fontFamily: 'monospace', fontSize: '0.78rem' }}
+          placeholder="ここに仲間からもらった JSON を貼り付け"
+          value={importText}
+          onChange={e => setImportText(e.target.value)}
+        />
+        <button onClick={tryImport} disabled={!importText.trim()} style={btnSecondary(bg)}>📥 インポート</button>
+      </Card>
+
+      {/* コミュニティ・テンプレ */}
+      <Card bg={bg}>
+        <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: bg.ink, marginBottom: '0.5rem' }}>
+          共有テンプレ
+        </p>
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginBottom: '0.75rem' }}>
+          交渉文や投稿テンプレを保存して、チーム内で再利用 (使用回数も記録)。
+        </p>
+        {team.templates.length === 0 ? (
+          <p style={{ color: bg.inkSoft, fontSize: '0.85rem' }}>まだテンプレはありません。交渉センターで生成した文を「テンプレ化」する機能は順次追加予定です。</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {team.templates.map(t => (
+              <div key={t.id} style={{
+                padding: '0.6rem 0.8rem', borderRadius: 12,
+                background: 'rgba(255,255,255,0.5)', border: `1px solid ${bg.cardBorder}`,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <span style={{ fontWeight: 700 }}>{t.label}</span>
+                  <span style={{ fontSize: '0.75rem', color: bg.inkSoft }}>{t.uses} 回使用</span>
+                </div>
+                <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '0.85rem', color: bg.inkSoft }}>{t.body.slice(0, 200)}{t.body.length > 200 ? '…' : ''}</pre>
+                <button onClick={() => { navigator.clipboard?.writeText(t.body); team.incrementTemplateUse(t.id); }} style={{ ...btnIcon(bg), width: 'auto', padding: '0.3rem 0.7rem', marginTop: '0.4rem' }}>📋 使う</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ─── ブランドマッチ (Prism の企業リスト ↔ Iris) ──
+function BrandMatchView({ bg, desk, mediaKit, settings }: {
+  bg: IrisBackgroundDef;
+  desk: ReturnType<typeof useInfluencerDesk>;
+  mediaKit?: MediaKit;
+  settings: AppSettings;
+}) {
+  const [companies, setCompanies] = useState(() => loadPrismCompanies());
+  const [search, setSearch] = useState('');
+  const [pitchTarget, setPitchTarget] = useState<typeof companies[0] | null>(null);
+  const [platform, setPlatform] = useState<Platform>('instagram');
+  const [contentType, setContentType] = useState<ContentType>('post');
+  const [proposedFee, setProposedFee] = useState('');
+  const [customNote, setCustomNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ subject: string; body: string; matchReason: string } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return companies;
+    return companies.filter(c =>
+      c.companyName.toLowerCase().includes(q) ||
+      (c.industry || '').toLowerCase().includes(q) ||
+      (c.overview || '').toLowerCase().includes(q)
+    );
+  }, [companies, search]);
+
+  const refresh = () => setCompanies(loadPrismCompanies());
+
+  const generatePitch = async () => {
+    if (!pitchTarget) return;
+    setBusy(true); setErr(null); setResult(null);
+    try {
+      const r = await generateTieupPitch({
+        settings, company: pitchTarget, mediaKit,
+        platform, contentType,
+        proposedFee: proposedFee ? Number(proposedFee) : undefined,
+        customNote: customNote || undefined,
+      });
+      setResult(r);
+    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  const saveAsDeal = () => {
+    if (!pitchTarget || !result) return;
+    desk.addDeal(IRIS_PERSONA_ID, {
+      brandName: pitchTarget.companyName,
+      productName: pitchTarget.industry,
+      platform, contentType,
+      fee: proposedFee ? Number(proposedFee) : 0,
+      deliverables: '初回打診済み (Iris ⇄ Prism Brand Match)',
+      stage: 'inquiry',
+      notes: `[Brand Match] ${result.matchReason}\n\n[初回打診メール]\n件名: ${result.subject}\n\n${result.body}`,
+    });
+    alert('案件として保存しました。「💌 案件」タブで確認できます。');
+    setPitchTarget(null);
+    setResult(null);
+  };
+
+  return (
+    <div style={{ display: 'grid', gap: '1rem' }}>
+      <div>
+        <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>BRAND × CREATOR</p>
+        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: '0.25rem 0 0' }}>
+          ブランドを、見つける。
+        </h2>
+        <p style={{ color: bg.inkSoft, marginTop: '0.5rem', fontSize: '0.9rem' }}>
+          CORE Prism 側で集めた企業リサーチから、相性のよさそうなブランドを探して、こちら (Iris) からタイアップを打診できます。
+        </p>
+      </div>
+
+      {companies.length === 0 ? (
+        <Card bg={bg}>
+          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1.5rem 0', lineHeight: 1.8 }}>
+            🌸 まだブランドリストがありません。<br />
+            <a href="/?app=1" target="_blank" rel="noreferrer" style={{ color: bg.accent, fontWeight: 700 }}>
+              CORE Prism (本家) →
+            </a>
+            の「商談 AI エージェント」で企業リサーチを行うと、ここに表示されます。
+          </p>
+        </Card>
+      ) : (
+        <>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              style={{ ...inp(bg), flex: 1, minWidth: 200 }}
+              placeholder="🔍 業界・社名で絞り込み"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <button onClick={refresh} style={btnSecondary(bg)}>🔄 更新</button>
+            <span style={{ color: bg.inkSoft, fontSize: '0.85rem' }}>{filtered.length} 社</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
+            {filtered.map(c => (
+              <Card key={c.id} bg={bg}>
+                <p style={{ fontSize: '1.05rem', fontWeight: 700, color: bg.ink, marginBottom: '0.25rem' }}>
+                  {c.companyName}
+                </p>
+                {c.industry && <p style={{ fontSize: '0.8rem', color: bg.inkSoft, marginBottom: '0.5rem' }}>{c.industry}</p>}
+                {c.overview && <p style={{ fontSize: '0.82rem', color: bg.inkSoft, lineHeight: 1.7, marginBottom: '0.5rem' }}>
+                  {c.overview.slice(0, 100)}{c.overview.length > 100 ? '…' : ''}
+                </p>}
+                {c.predictedChallenges && c.predictedChallenges.length > 0 && (
+                  <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                    {c.predictedChallenges.slice(0, 3).map((ch, i) => (
+                      <span key={i} style={{ background: bg.accent + '22', color: bg.accent, padding: '0.15rem 0.5rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 600 }}>
+                        {ch}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <button onClick={() => { setPitchTarget(c); setResult(null); setErr(null); }} style={{ ...btnPrimary(bg), width: '100%', marginTop: '0.4rem' }}>
+                  🤝 タイアップを打診
+                </button>
+              </Card>
+            ))}
+          </div>
+
+          {/* タイアップ打診モーダル風 */}
+          {pitchTarget && (
+            <Card bg={bg}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div>
+                  <p style={{ fontSize: '0.7rem', color: bg.inkSoft, letterSpacing: '0.15em' }}>PITCH TO</p>
+                  <p style={{ fontSize: '1.25rem', fontWeight: 700, color: bg.ink }}>{pitchTarget.companyName}</p>
+                </div>
+                <button onClick={() => { setPitchTarget(null); setResult(null); }} style={btnIcon(bg)}>✕</button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <select style={inp(bg)} value={platform} onChange={e => setPlatform(e.target.value as Platform)}>
+                  {Object.entries(PLATFORM_META).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
+                </select>
+                <select style={inp(bg)} value={contentType} onChange={e => setContentType(e.target.value as ContentType)}>
+                  {Object.entries(CONTENT_TYPE_META).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+                <input style={inp(bg)} type="number" placeholder="希望報酬 (円)" value={proposedFee} onChange={e => setProposedFee(e.target.value)} />
+              </div>
+              <textarea style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} rows={2} placeholder="追加指示 (例: ブランドに共感したポイント等)" value={customNote} onChange={e => setCustomNote(e.target.value)} />
+              <button onClick={generatePitch} disabled={busy} style={btnPrimary(bg)}>
+                {busy ? '生成中…' : '✨ 打診メールを生成'}
+              </button>
+
+              {err && <p style={{ color: '#FF5C5C', marginTop: '0.5rem' }}>⚠ {err}</p>}
+
+              {result && (
+                <div style={{ marginTop: '1rem', padding: '0.75rem', borderRadius: 12, background: 'rgba(255,255,255,0.5)', border: `1px solid ${bg.cardBorder}` }}>
+                  <p style={{ fontSize: '0.75rem', color: bg.inkSoft, letterSpacing: '0.15em', marginBottom: '0.25rem' }}>MATCH REASON</p>
+                  <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginBottom: '0.75rem' }}>{result.matchReason}</p>
+                  <p style={{ fontSize: '0.75rem', color: bg.inkSoft, letterSpacing: '0.15em', marginBottom: '0.25rem' }}>SUBJECT</p>
+                  <p style={{ fontWeight: 600, color: bg.ink, marginBottom: '0.5rem' }}>{result.subject}</p>
+                  <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '0.88rem', lineHeight: 1.7, color: bg.ink }}>{result.body}</pre>
+                  <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+                    <button onClick={() => navigator.clipboard?.writeText((result.subject ? `件名: ${result.subject}\n\n` : '') + result.body)} style={btnSecondary(bg)}>📋 コピー</button>
+                    <button onClick={saveAsDeal} style={btnPrimary(bg)}>💌 案件として保存</button>
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
+        </>
+      )}
     </div>
   );
 }
