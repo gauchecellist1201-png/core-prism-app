@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
 import { estimateMonthlyCost } from '../hooks/useClaude';
+import { OPENAI_VOICE_OPTIONS, isOpenAITTSConfigured, type OpenAIVoice } from '../lib/ttsOpenAI';
 
 interface Props {
   settings: AppSettings;
@@ -21,7 +22,11 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
   const [model, setModel] = useState(settings.preferredModel);
   const [userName, setUserName] = useState(settings.userName);
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
-  const [tab, setTab] = useState<'general' | 'ai' | 'usage'>('general');
+  const [aiTone, setAiTone] = useState<'gentle' | 'professional' | 'casual'>(settings.aiTone || 'gentle');
+  const [voiceEnabled, setVoiceEnabled] = useState(settings.voiceEnabled !== false);
+  const [openaiVoice, setOpenaiVoice] = useState<OpenAIVoice>((settings as any).openaiVoice || 'nova');
+  const openaiAvailable = isOpenAITTSConfigured();
+  const [tab, setTab] = useState<'general' | 'ai' | 'voice' | 'usage'>('general');
 
   const monthlyEst = estimateMonthlyCost(20, 800, 400, model);
   const jpy150 = (n: number) => Math.round(n * 150);
@@ -51,7 +56,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
 
         {/* Tabs */}
         <div className="flex gap-1 px-5 pt-3 pb-0">
-          {[['general', '一般'], ['ai', 'AIモデル'], ['usage', '使用状況']].map(([id, label]) => (
+          {[['general', '一般'], ['ai', 'AI設定'], ['voice', '音声'], ['usage', '使用状況']].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id as typeof tab)}
               className="px-3 py-1.5 rounded-lg text-xs transition-all"
               style={{
@@ -138,6 +143,71 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                     （サブスク収入¥1,000との差額 ¥{1000 - jpy150(monthlyEst.usd)} が運営利益）
                   </p>
                 </div>
+
+                {/* AI 文体 */}
+                <div className="pt-4">
+                  <p className="text-neutral-600 text-xs tracking-wider uppercase mb-2">AI の文体</p>
+                  <p className="text-fg-muted text-xs mb-3">提案・要約・返信ドラフトの語り口を選べます</p>
+                  <div className="space-y-2">
+                    {([
+                      { v: 'gentle', t: '🌸 やさしく (推奨)', d: '一文短く、専門用語に必ず日本語補足、励ます語り口' },
+                      { v: 'professional', t: '💼 プロ調', d: '簡潔・論理的、専門用語OK、断定的' },
+                      { v: 'casual', t: '☕ カジュアル', d: 'フランクで親しみやすい、絵文字少しあり' },
+                    ] as const).map(opt => (
+                      <button key={opt.v} onClick={() => setAiTone(opt.v)}
+                        className="w-full text-left p-3 rounded-xl transition-all"
+                        style={{
+                          background: aiTone === opt.v ? 'rgba(180,124,252,0.10)' : 'rgba(255,255,255,0.02)',
+                          border: `1px solid ${aiTone === opt.v ? 'rgba(180,124,252,0.50)' : 'rgba(255,255,255,0.06)'}`,
+                        }}>
+                        <p className="text-fg text-sm font-light">{opt.t}</p>
+                        <p className="text-fg-muted text-xs mt-0.5">{opt.d}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {tab === 'voice' && (
+              <motion.div key="voice" className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <div className="p-3 rounded-xl" style={{ background: openaiAvailable ? 'rgba(180,124,252,0.10)' : 'rgba(255,255,255,0.02)', border: `1px solid ${openaiAvailable ? 'rgba(180,124,252,0.40)' : 'rgba(255,255,255,0.06)'}` }}>
+                  <p className="text-fg text-sm font-medium mb-1">
+                    {openaiAvailable ? '🎙 OpenAI TTS が有効です' : '🔒 OpenAI TTS 未設定 (ブラウザ標準音声で再生)'}
+                  </p>
+                  <p className="text-fg-muted text-xs leading-relaxed">
+                    {openaiAvailable
+                      ? 'ChatGPT クラスの自然な音声で読み上げます。プランや時間帯に応じて声色を選べます。'
+                      : 'VITE_OPENAI_API_KEY を設定すると、ChatGPT 並みの自然な音声に切り替わります。未設定でもブラウザ標準音声で動作します。'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={voiceEnabled} onChange={e => setVoiceEnabled(e.target.checked)} />
+                    <span className="text-fg text-sm">音声読み上げを有効にする</span>
+                  </label>
+                  <p className="text-fg-muted text-xs mt-1 ml-6">「読み上げ」ボタンで提案・議事録・チャット応答を音声化</p>
+                </div>
+
+                {openaiAvailable && voiceEnabled && (
+                  <div>
+                    <p className="text-neutral-600 text-xs tracking-wider uppercase mb-2">声を選ぶ</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {OPENAI_VOICE_OPTIONS.map(v => (
+                        <button key={v.value} onClick={() => setOpenaiVoice(v.value)}
+                          className="text-left p-2.5 rounded-lg transition-all"
+                          style={{
+                            background: openaiVoice === v.value ? 'rgba(180,124,252,0.10)' : 'rgba(255,255,255,0.02)',
+                            border: `1px solid ${openaiVoice === v.value ? 'rgba(180,124,252,0.50)' : 'rgba(255,255,255,0.06)'}`,
+                          }}>
+                          <p className="text-fg text-sm font-medium">{v.label}</p>
+                          <p className="text-fg-muted text-xs mt-0.5">{v.tone}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -199,7 +269,17 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
             キャンセル
           </button>
           <motion.button
-            onClick={() => { onSave({ claudeApiKey: apiKey, preferredModel: model as AppSettings['preferredModel'], userName }); onClose(); }}
+            onClick={() => {
+              onSave({
+                claudeApiKey: apiKey,
+                preferredModel: model as AppSettings['preferredModel'],
+                userName,
+                aiTone,
+                voiceEnabled,
+                ...({ openaiVoice } as any),
+              });
+              onClose();
+            }}
             className="px-6 py-2 rounded-lg text-sm font-light"
             style={{ background: 'linear-gradient(135deg, #c9a96e, #a07840)', color: '#0a0a0f' }}
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

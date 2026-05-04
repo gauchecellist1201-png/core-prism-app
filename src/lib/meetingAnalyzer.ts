@@ -2,6 +2,7 @@
 // 議事録 AI — 音声/動画/テキストの議事録から構造化議事録を生成
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
+import { toneInstruction } from './aiTone';
 
 function getApiKey(s: AppSettings): string {
   return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
@@ -23,38 +24,41 @@ export interface MeetingMinutes {
   generatedAt: string;
 }
 
-const SYS = `あなたはプロの議事録作成アシスタントです。
-会議の文字起こしや録音メモから、整理された構造化議事録を生成します。
+function buildSys(tone?: 'gentle' | 'professional' | 'casual'): string {
+  return `あなたは「会議に出てなかった人でも一目で分かる」議事録を書く秘書です。
+会議の文字起こしから、読みやすく整理された議事録を作ります。
 
-返答は**JSONのみ**(コードブロック・説明文なし)。スキーマ:
+返答は **JSONのみ** (コードブロック・説明文なし)。スキーマ:
 {
-  "title": "会議タイトル (10-30文字、内容を反映)",
+  "title": "会議タイトル (10〜30文字、内容を反映)",
   "date": "YYYY-MM-DD HH:MM (テキストから推定、なければ今日)",
   "durationMin": 推定時間 (number、不明なら 0),
   "participants": ["参加者A", "参加者B"],
-  "summary": "全体要約 (3-5行、何が議論され何が決まったか)",
+  "summary": "全体の話を3〜5行で。何を話して、何が決まったか",
   "agenda": [
-    { "topic": "議題タイトル", "discussion": "議論内容の要約 (2-4行)" }
+    { "topic": "議題", "discussion": "どんな話があったか 2〜4行" }
   ],
-  "decisions": ["決定事項1", "決定事項2"],
+  "decisions": ["決まったこと1", "決まったこと2"],
   "actions": [
-    { "item": "アクション内容", "owner": "担当者名 or 不明", "due": "期限 or 不明" }
+    { "item": "やること", "owner": "誰が or 不明", "due": "いつまでに or 不明" }
   ],
   "questions": [
-    { "q": "質問内容", "a": "回答 or 持ち帰り or 未回答" }
+    { "q": "質問", "a": "答え or 持ち帰り or 未回答" }
   ],
-  "nextSteps": ["次回確認事項1"],
-  "insights": ["人格コンテキストから見た戦略的洞察1"],
-  "risks": ["懸念事項1"]
+  "nextSteps": ["次回までに確認したいこと1"],
+  "insights": ["この役割の人として大事な気づき1"],
+  "risks": ["気をつけたいこと1"]
 }
 
-ルール:
-- 推測ではなく文字起こしに基づいた内容のみ抽出
-- 人名/役職/日付/数字は元の表現を維持
-- "agenda" は議題ごとに 1 オブジェクト、最大 8 件
-- "actions" は明確に「やる」と言われたものだけ。期限は明記されたもののみ
-- "insights" は人格(役職・専門分野)から見て重要な戦略的気づき
-- すべて日本語、簡潔に`;
+${toneInstruction(tone)}
+
+## 大事なルール
+- 推測でなく、文字起こしに書かれていることだけを書く。
+- 人名・役職・日付・数字は元の表現のまま。
+- "agenda" は最大 8 件まで。話題ごとに1つ。
+- "actions" は「やる」と明確に言われたものだけ。期限も明記されたものだけ。
+- "insights" は、この役割 (役職・専門分野) の人にとって重要な気づきを書く。`;
+}
 
 export async function analyzeMeeting(
   settings: AppSettings,
@@ -93,7 +97,7 @@ ${truncated}
     body: JSON.stringify({
       model: settings.preferredModel,
       max_tokens: 4096,
-      system: SYS,
+      system: buildSys(settings.aiTone),
       messages: [{ role: 'user', content: userText }],
     }),
   });

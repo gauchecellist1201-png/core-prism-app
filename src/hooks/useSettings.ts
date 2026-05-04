@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   voiceEnabled: true,
   voiceLang: 'ja-JP',
   proactiveIntervalMin: 30,
+  aiTone: 'gentle',
 };
 
 function load(): AppSettings {

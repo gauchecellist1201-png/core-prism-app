@@ -3,6 +3,7 @@
 // ============================================================
 import type { AppSettings, KnowledgeAnalysis, Persona } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
+import { toneInstruction } from './aiTone';
 
 // 財務関連キーワード (タイトル/本文に含まれていたら財務データと判断)
 const FIN_KEYWORDS = [
@@ -108,19 +109,27 @@ function getApiKey(settings: AppSettings): string {
   return import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
 }
 
-const ANALYSIS_INSTRUCTIONS = `あなたは資料を読み込んで戦略的な提案を行うAIアナリストです。
-以下の資料を読み、必ず**JSONのみ**で返答してください(コードブロックや説明文は不要)。
+function buildAnalysisInstructions(tone?: 'gentle' | 'professional' | 'casual'): string {
+  return `あなたは資料を読んで「やさしく分かりやすく」提案する秘書です。
+以下の資料を読み、必ず **JSONのみ** で返答してください (コードブロックや説明文は不要)。
 
 スキーマ:
 {
-  "summary": "資料全体の要約 (3-5行、日本語)",
-  "insights": ["重要ポイント1", "重要ポイント2", ...] // 3-7項目
-  "strategy": ["この人格として取るべき戦略1", "戦略2", ...] // 3-5項目
-  "actions": ["具体的な次のアクション1", "アクション2", ...] // 3-5項目、すぐ実行できる粒度
-  "risks": ["リスク・懸念点1", ...] // 1-3項目、なければ空配列
+  "summary": "この資料は何の話か、3〜5行で説明 (日本語)",
+  "insights": ["気づき1", "気づき2", ...] // 3〜7個。一文ずつ短く
+  "strategy": ["この役割の人として、こう動いてはどうですか? 1", ...] // 3〜5個
+  "actions": ["今日・明日できる具体的なこと1", ...] // 3〜5個。すぐやれる粒度
+  "risks": ["気をつけたいこと1", ...] // 1〜3個、なければ空配列
 }
 
-すべて日本語、簡潔に。推測ではなく資料に基づいた提案をすること。`;
+${toneInstruction(tone)}
+
+## 大事な姿勢
+- ユーザーが資料を全部読まなくても、本質が分かる説明を心がけてください。
+- 「〜のはずです」「〜してみると良さそうです」のような、押し付けない語り口で。
+- 専門用語は必ず日本語で補足を添える。例) "ARR (毎年の継続収入)"
+- 推測ではなく資料に書かれていることを根拠に書く。`;
+}
 
 export async function analyzeKnowledge(
   settings: AppSettings,
@@ -170,7 +179,7 @@ ${truncated}${content.length > truncated.length ? '\n\n[...以降省略]' : ''}`
       body: JSON.stringify({
         model: settings.preferredModel,
         max_tokens: 2048,
-        system: ANALYSIS_INSTRUCTIONS,
+        system: buildAnalysisInstructions(settings.aiTone),
         messages: [{ role: 'user', content: userContent }],
       }),
     });

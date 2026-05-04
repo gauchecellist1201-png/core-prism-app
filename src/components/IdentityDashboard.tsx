@@ -30,6 +30,7 @@ import ExpenseStudio from './ExpenseStudio';
 import CRMStudio from './CRMStudio';
 import TaskHub from './TaskHub';
 import VoiceCaptureStudio from './VoiceCaptureStudio';
+import SalesAgentStudio from './SalesAgentStudio';
 import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './CommandPalette';
 import PnLStudio from './PnLStudio';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
@@ -126,6 +127,7 @@ export default function IdentityDashboard({
   const [showTaskHub, setShowTaskHub] = useState(false);
   const [showPnL, setShowPnL] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
+  const [showSalesAgent, setShowSalesAgent] = useState(false);
   const [showCmdK, setShowCmdK] = useState(false);
   const [financeEditFor, setFinanceEditFor] = useState<Persona | null>(null);
 
@@ -150,6 +152,7 @@ export default function IdentityDashboard({
       case 'crm':       setShowCRM(true); break;
       case 'tasks':     setShowTaskHub(true); break;
       case 'pnl':       setShowPnL(true); break;
+      case 'salesAgent': setShowSalesAgent(true); break;
       case 'settings':  onOpenSettings(); break;
       case 'voice': setShowVoice(true); break;
       case 'youtube':
@@ -457,6 +460,7 @@ export default function IdentityDashboard({
                   { id: 'pnl', emoji: '📊', label: 'P&L', desc: '損益計算書', onClick: () => setShowPnL(true) },
                   { id: 'expense', emoji: '📷', label: '経費 / OCR', desc: 'レシート読取', onClick: () => setShowExpense(true) },
                   { id: 'crm', emoji: '🤝', label: 'CRM', desc: '案件パイプライン', onClick: () => setShowCRM(true) },
+                  { id: 'sales-agent', emoji: '🎯', label: '商談 AI', desc: 'リサーチ→アプローチ自動化', primary: true, onClick: () => setShowSalesAgent(true) },
                   { id: 'tasks-hub', emoji: '✅', label: 'タスクハブ', desc: '全タスク統合', onClick: () => setShowTaskHub(true) },
                   { id: 'premium', emoji: '👑', label: 'プレミアム', desc: '戦略 / 法務 / 財務', primary: true, onClick: () => setShowPremium(true) },
                   { id: 'meet', emoji: '📅', label: '会議リンク', desc: 'Calendar', onClick: () => setShowMeeting(true) },
@@ -912,6 +916,14 @@ export default function IdentityDashboard({
             settings={settings}
             onClose={() => setShowVoice(false)}
             onAddKnowledgeNote={onAddKnowledgeNote}
+          />
+        )}
+        {showSalesAgent && (
+          <SalesAgentStudio
+            key="sales-agent"
+            persona={persona}
+            settings={settings}
+            onClose={() => setShowSalesAgent(false)}
           />
         )}
         {financeEditFor && (

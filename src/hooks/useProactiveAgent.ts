@@ -79,15 +79,18 @@ export function useProactiveAgent(
   const speakProposal = useCallback((p: Proposal) => {
     setIsSpeaking(true);
     const text = `${p.title}。${p.message}`;
+    const userOpenaiVoice = (settings as any).openaiVoice;
     speakNatural(text, {
       lang: settings.voiceLang || 'ja-JP',
-      rate: 0.95,
+      rate: 1.0,
       pitch: 1.0,
+      openaiVoice: userOpenaiVoice,
+      openaiInstructions: 'Speak in a warm, calm Japanese voice as a personal secretary giving a morning briefing to their employer. Natural prosody, gentle pace with subtle emphasis on key numbers and dates. Sound encouraging and composed.',
       onEnd: () => setIsSpeaking(false),
       onError: () => setIsSpeaking(false),
     });
     setProposals(prev => prev.map(x => x.id === p.id ? { ...x, spoken: true } : x));
-  }, [settings.voiceLang]);
+  }, [settings.voiceLang, (settings as any).openaiVoice]);
 
   const stopSpeak = useCallback(() => {
     stopSpeakingNatural();

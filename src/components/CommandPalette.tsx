@@ -12,7 +12,8 @@ export type CmdAction =
 export type ModalKey =
   | 'knowledge' | 'meeting' | 'health' | 'minutes' | 'slides' | 'nego'
   | 'decision' | 'email' | 'premium' | 'post' | 'image' | 'invoice'
-  | 'sales' | 'expense' | 'crm' | 'tasks' | 'pnl' | 'voice' | 'youtube' | 'settings';
+  | 'sales' | 'expense' | 'crm' | 'tasks' | 'pnl' | 'voice' | 'youtube'
+  | 'salesAgent' | 'settings';
 
 interface Props {
   open: boolean;
@@ -37,6 +38,7 @@ const MODAL_LIST: { key: ModalKey; label: string; emoji: string; group: string }
   { key: 'image',     label: '画像生成',            emoji: '🖼', group: 'AI' },
   { key: 'voice',     label: '音声メモ → 振り分け', emoji: '🎤', group: 'AI' },
   { key: 'youtube',   label: 'YouTube 取込',        emoji: '🎬', group: 'AI' },
+  { key: 'salesAgent', label: '商談 AI エージェント', emoji: '🎯', group: 'AI' },
   { key: 'email',     label: 'メールトリアージ',    emoji: '📬', group: 'AI' },
   { key: 'premium',   label: 'プレミアムHub',       emoji: '👑', group: '経営' },
   { key: 'invoice',   label: '請求書スタジオ',      emoji: '🧾', group: '経営' },

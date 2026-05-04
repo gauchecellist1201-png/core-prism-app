@@ -1,6 +1,10 @@
 // ============================================================
-// 自然な音声読み上げ — 高品質ボイス自動選択 + 文単位チャンク
+// 自然な音声読み上げ — OpenAI TTS 優先 + ブラウザ標準にフォールバック
 // ============================================================
+import {
+  speakWithOpenAI, stopOpenAISpeaking, isSpeakingOpenAI,
+  isOpenAITTSConfigured, type OpenAIVoice,
+} from './ttsOpenAI';
 
 let cachedVoices: SpeechSynthesisVoice[] | null = null;
 let preferredVoiceJa: SpeechSynthesisVoice | null = null;
@@ -151,6 +155,12 @@ export interface SpeakOptions {
   pitch?: number;
   volume?: number;
   voiceName?: string;
+  /** OpenAI TTS の音声 (nova / shimmer / alloy 等)。設定済みなら優先される */
+  openaiVoice?: OpenAIVoice;
+  /** OpenAI TTS への自由指示 (例: 「ゆっくり優しく」) */
+  openaiInstructions?: string;
+  /** 強制的にブラウザ標準を使う */
+  forceBrowserTTS?: boolean;
   onStart?: () => void;
   onEnd?: () => void;
   onError?: (err: string) => void;
@@ -159,8 +169,33 @@ export interface SpeakOptions {
 }
 
 export async function speakNatural(text: string, options: SpeakOptions = {}): Promise<void> {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return;
   if (!text.trim()) return;
+
+  // OpenAI TTS が利用可能なら優先 (ChatGPT 同等の自然さ)
+  if (!options.forceBrowserTTS && isOpenAITTSConfigured()) {
+    try {
+      // OpenAI には前処理控えめ (URL/メアド変換のみ)
+      const cleaned = text
+        .replace(/https?:\/\/\S+/g, 'リンク')
+        .replace(/\S+@\S+\.\S+/g, 'メールアドレス')
+        .replace(/[#`*_]/g, '')
+        .trim();
+      await speakWithOpenAI(cleaned, {
+        voice: options.openaiVoice,
+        speed: options.rate ?? 1.0,
+        instructions: options.openaiInstructions,
+        onStart: options.onStart,
+        onEnd: options.onEnd,
+        onError: options.onError,
+      });
+      return;
+    } catch (e) {
+      // OpenAI 失敗時はブラウザ TTS にフォールバック (通信エラー・割り込み等)
+      console.warn('[TTS] OpenAI failed, falling back to browser TTS:', e);
+    }
+  }
+
+  if (typeof window === 'undefined' || !window.speechSynthesis) return;
 
   // 既存読み上げをキャンセル
   window.speechSynthesis.cancel();
@@ -224,10 +259,16 @@ export async function speakNatural(text: string, options: SpeakOptions = {}): Pr
 
 export function stopSpeakingNatural() {
   isSpeakingFlag = false;
+  // OpenAI 側の再生も止める
+  stopOpenAISpeaking();
   if (typeof window === 'undefined' || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
 }
 
 export function isSpeakingNatural(): boolean {
-  return isSpeakingFlag;
+  return isSpeakingFlag || isSpeakingOpenAI();
+}
+
+export function isOpenAIVoiceAvailable(): boolean {
+  return isOpenAITTSConfigured();
 }

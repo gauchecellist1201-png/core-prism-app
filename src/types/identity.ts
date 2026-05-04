@@ -119,6 +119,8 @@ export interface AppSettings {
   voiceEnabled?: boolean;
   voiceLang?: string;
   proactiveIntervalMin?: number;
+  /** AI の文体 (デフォルト: gentle = やさしく) */
+  aiTone?: 'gentle' | 'professional' | 'casual';
 }
 
 // ── 能動提案 ─────────────────────────────────────────────

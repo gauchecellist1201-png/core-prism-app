@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { ChatMessage, KnowledgeChunk, Persona, AppSettings } from '../types/identity';
+import { toneInstruction } from '../lib/aiTone';
 
 const MODELS = {
   'claude-haiku-4-5': { input: 1.0, output: 5.0 },   // USD per MTok
@@ -17,23 +18,25 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 2);
 }
 
-function buildSystemPrompt(persona: Persona, knowledgeChunks: KnowledgeChunk[]): string {
+function buildSystemPrompt(persona: Persona, knowledgeChunks: KnowledgeChunk[], aiTone?: 'gentle' | 'professional' | 'casual'): string {
   const ragContext = knowledgeChunks.length > 0
-    ? `\n\n## あなたが参照すべきナレッジベース（RAG）:\n${knowledgeChunks.map((c, i) => `[${i + 1}] ${c.content}`).join('\n\n')}`
+    ? `\n\n## あなたが参照すべき資料 (蓄積されたナレッジ):\n${knowledgeChunks.map((c, i) => `[${i + 1}] ${c.content}`).join('\n\n')}`
     : '';
 
-  return `あなたはオーナーの**専属秘書 (Chief of Staff)** であり、「${persona.name}」人格のブレインです。
-オーナーの全資料・全数値・全タスク・全人格を把握しており、必要に応じて戦略立案・意思決定・文書作成・分析・代筆を即時に行います。
+  return `あなたはオーナーの **専属秘書** で、「${persona.name}」の役割をサポートしています。
+オーナーが蓄積してきた資料・数字・タスクを全部覚えていて、必要に応じて提案・代筆・分析・整理を即座に行います。
 
-## 担当人格について:
-${persona.description || `${persona.name}（${persona.subtitle}）`}
+## 担当している役割
+${persona.description || `${persona.name} (${persona.subtitle})`}
 
-## 振る舞い:
-- 質問への回答だけでなく、**踏み込んだ提案**と**次の一手**を毎回提示する
-- 数値・期日・固有名詞で具体化し、抽象論を避ける
-- 重要な打ち手は理由 → 行動 → 期日 の順で簡潔に
-- 健康・生活面の話題は要点を1文に圧縮し、本筋(事業/戦略)を中心に据える
-- 日本語。簡潔・断定的に。秘書は迷わない${ragContext}
+${toneInstruction(aiTone)}
+
+## 振る舞いの基本
+- 質問に答えるだけでなく、**「次にこうしてみては?」** という提案を必ず添える。
+- ただし押し付けない。「やってみますか?」「気になりますか?」のように、選択をオーナーに残す。
+- 大事な提案は **「理由 → やること → いつまでに」** の順で短く。
+- 体調・生活の話題は本文の最後に1文だけ。事業の話を中心にする。
+- 数字・期日・固有名詞を入れて具体的に。「がんばりましょう」だけは禁止。${ragContext}
 
 ---
 今日の日付: ${new Date().toLocaleDateString('ja-JP')}`;
@@ -63,7 +66,7 @@ export function useClaude(settings: AppSettings, onUpdateStats?: (tokens: number
     setIsLoading(true);
     setError(null);
 
-    const systemPrompt = buildSystemPrompt(persona, knowledgeChunks);
+    const systemPrompt = buildSystemPrompt(persona, knowledgeChunks, settings.aiTone);
     const model = settings.preferredModel;
 
     // 会話履歴（最新10件まで）
