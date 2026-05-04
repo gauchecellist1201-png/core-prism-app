@@ -29,6 +29,7 @@ import SalesLedger from './SalesLedger';
 import ExpenseStudio from './ExpenseStudio';
 import CRMStudio from './CRMStudio';
 import TaskHub from './TaskHub';
+import VoiceCaptureStudio from './VoiceCaptureStudio';
 import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './CommandPalette';
 import PnLStudio from './PnLStudio';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
@@ -124,6 +125,7 @@ export default function IdentityDashboard({
   const [showCRM, setShowCRM] = useState(false);
   const [showTaskHub, setShowTaskHub] = useState(false);
   const [showPnL, setShowPnL] = useState(false);
+  const [showVoice, setShowVoice] = useState(false);
   const [showCmdK, setShowCmdK] = useState(false);
   const [financeEditFor, setFinanceEditFor] = useState<Persona | null>(null);
 
@@ -149,9 +151,9 @@ export default function IdentityDashboard({
       case 'tasks':     setShowTaskHub(true); break;
       case 'pnl':       setShowPnL(true); break;
       case 'settings':  onOpenSettings(); break;
-      case 'voice': case 'youtube':
-        // 第2弾実装予定
-        alert(`${m === 'voice' ? '音声メモ' : 'YouTube取込'} は近日実装予定 (¥30k Exclusive 機能)`);
+      case 'voice': setShowVoice(true); break;
+      case 'youtube':
+        alert('YouTube取込 は近日実装予定');
         break;
     }
   }, [onOpenSettings]);
@@ -440,6 +442,7 @@ export default function IdentityDashboard({
                 persona={persona}
                 actions={[
                   { id: 'brief', emoji: '💡', label: '提案を生成', desc: 'AI が次の一手', primary: true, onClick: () => proactive.generate(settings.voiceEnabled !== false) },
+                  { id: 'voice', emoji: '🎤', label: '音声メモ', desc: 'AI が自動振り分け', onClick: () => setShowVoice(true) },
                   { id: 'kb', emoji: '📚', label: '資料を追加', desc: 'PDF / PPT / 画像', onClick: () => setShowKnowledge(true) },
                   { id: 'note', emoji: '📝', label: 'ノート作成', desc: 'メモ・議事録', onClick: () => setShowKnowledge(true) },
                   { id: 'minutes', emoji: '🎙', label: '議事録 AI', desc: '録音→構造化', onClick: () => setShowMinutes(true) },
@@ -900,6 +903,15 @@ export default function IdentityDashboard({
             key="pnl"
             persona={persona}
             onClose={() => setShowPnL(false)}
+          />
+        )}
+        {showVoice && (
+          <VoiceCaptureStudio
+            key="voice"
+            persona={persona}
+            settings={settings}
+            onClose={() => setShowVoice(false)}
+            onAddKnowledgeNote={onAddKnowledgeNote}
           />
         )}
         {financeEditFor && (
