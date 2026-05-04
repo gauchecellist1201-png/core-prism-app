@@ -15,16 +15,32 @@ import IdentitySelection from './components/IdentitySelection';
 import IdentityDashboard from './components/IdentityDashboard';
 import PersonaCreator from './components/PersonaCreator';
 import SettingsModal from './components/SettingsModal';
-import InviteGate, { isInviteAccepted } from './components/InviteGate';
+import LandingPage from './components/LandingPage';
+import LegalModal, { type LegalKind } from './components/LegalModal';
 import { PrismBackground } from './components/PrismBackground';
 import { useTheme } from './hooks/useTheme';
 
 import type { AppSettings, ChatMessage } from './types/identity';
 
-type View = 'invite' | 'onboarding' | 'selection' | 'dashboard';
+type View = 'landing' | 'onboarding' | 'selection' | 'dashboard';
+
+const APP_ENTERED_KEY = 'core_app_entered_v1';
+
+function hasEnteredApp(): boolean {
+  // URL ?app=1 か、過去にアプリを開いたことがあれば常にアプリ
+  if (typeof window !== 'undefined') {
+    if (window.location.search.includes('app=1')) return true;
+    if (window.location.pathname.startsWith('/app')) return true;
+  }
+  return localStorage.getItem(APP_ENTERED_KEY) === 'true';
+}
+
+function markAppEntered() {
+  localStorage.setItem(APP_ENTERED_KEY, 'true');
+}
 
 function getInitialView(onboardingComplete: boolean): View {
-  if (!isInviteAccepted()) return 'invite';
+  if (!hasEnteredApp()) return 'landing';
   return onboardingComplete ? 'selection' : 'onboarding';
 }
 
@@ -62,6 +78,12 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [showPersonaCreator, setShowPersonaCreator] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
+
+  const handleEnterApp = useCallback(() => {
+    markAppEntered();
+    setView(settings.onboardingComplete ? 'selection' : 'onboarding');
+  }, [settings.onboardingComplete]);
 
   const handleOnboardingComplete = useCallback((s: Partial<AppSettings>) => {
     updateSettings(s);
@@ -140,10 +162,11 @@ export default function App() {
     <>
       <PrismBackground intensity="low" />
       <AnimatePresence mode="wait">
-        {view === 'invite' && (
-          <InviteGate
-            key="invite"
-            onAccepted={() => setView(settings.onboardingComplete ? 'selection' : 'onboarding')}
+        {view === 'landing' && (
+          <LandingPage
+            key="landing"
+            onEnterApp={handleEnterApp}
+            onOpenLegal={(k) => setLegalKind(k)}
           />
         )}
 
@@ -208,6 +231,13 @@ export default function App() {
             onSave={updateSettings}
             onClose={() => setShowSettings(false)}
             onResetStats={resetStats}
+          />
+        )}
+        {legalKind && (
+          <LegalModal
+            key={`legal-${legalKind}`}
+            kind={legalKind}
+            onClose={() => setLegalKind(null)}
           />
         )}
       </AnimatePresence>
