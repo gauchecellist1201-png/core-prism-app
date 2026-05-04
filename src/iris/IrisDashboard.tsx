@@ -25,13 +25,14 @@ import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 import IrisDirectorView from './IrisDirectorView';
 import IrisTriageView from './IrisTriageView';
 import IrisCommunityView from './IrisCommunityView';
+import IrisStrategistView from './IrisStrategistView';
 
 interface Props {
   settings: AppSettings;
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'deals' | 'triage' | 'director' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit';
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
@@ -137,6 +138,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         }}>
           {[
             { id: 'home' as Tab,      e: '✦', l: 'ホーム' },
+            { id: 'strategy' as Tab,  e: '📈', l: '戦略' },
             { id: 'triage' as Tab,    e: '🔍', l: '案件精査' },
             { id: 'director' as Tab,  e: '🎬', l: '丸投げ編集' },
             { id: 'deals' as Tab,     e: '💌', l: '案件' },
@@ -186,11 +188,12 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            {tab === 'home' && <HomeView bg={bg} desk={desk} myDeals={myDeals} />}
+            {tab === 'home' && <HomeView bg={bg} desk={desk} myDeals={myDeals} setTab={setTab} />}
             {tab === 'deals' && <DealsView bg={bg} desk={desk} myDeals={myDeals} />}
             {tab === 'negotiate' && <NegotiateView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'draft' && <DraftView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'beauty' && <BeautyChatView bg={bg} settings={settings} />}
+            {tab === 'strategy' && <IrisStrategistView bg={bg} settings={settings} mediaKit={mediaKit} />}
             {tab === 'image' && <ImageStudioView bg={bg} settings={settings} />}
             {tab === 'triage' && (
               <IrisTriageView bg={bg} settings={settings} mediaKit={mediaKit}
@@ -386,7 +389,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
 }
 
 // ─── ホーム ──────────────────────────────────────
-function HomeView({ bg, myDeals }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; myDeals: InfluencerDeal[] }) {
+type SetTabFn = (t: 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit') => void;
+
+function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; myDeals: InfluencerDeal[]; setTab?: SetTabFn }) {
   const upcoming = useMemo(() => {
     const events: { brand: string; type: string; date: Date; daysLeft: number }[] = [];
     const now = new Date();
@@ -460,28 +465,61 @@ function HomeView({ bg, myDeals }: { bg: IrisBackgroundDef; desk: ReturnType<typ
         </Card>
       )}
 
+      {/* AI 提案カード (戦略タブへの誘導) */}
       <Card bg={bg}>
-        <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.4rem', marginBottom: '1rem', color: bg.ink }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, marginBottom: '0.25rem' }}>
+              AI Director
+            </p>
+            <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.5rem', color: bg.ink, margin: 0, fontWeight: 500 }}>
+              次の一本、AI に聞いてみる
+            </p>
+          </div>
+          {setTab && (
+            <button onClick={() => setTab('strategy')} style={{
+              background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+              color: '#fff', border: 'none', borderRadius: 999,
+              padding: '0.6rem 1.4rem', fontWeight: 700, cursor: 'pointer',
+              fontSize: '0.85rem', boxShadow: `0 6px 20px ${bg.accent}55`,
+            }}>
+              戦略を開く →
+            </button>
+          )}
+        </div>
+        <p style={{ color: bg.inkSoft, fontSize: '0.88rem', lineHeight: 1.7 }}>
+          投稿実績を入れたら、伸びパターンを分析して、次に出すべき投稿を AI が決めてくれる。30 日のストーリーアーク (シリーズ構成) も自動で。
+        </p>
+      </Card>
+
+      {/* 今、なにする — クイックアクション */}
+      <Card bg={bg}>
+        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.4rem', marginBottom: '1rem', color: bg.ink, fontWeight: 500 }}>
           今、なにする?
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.6rem' }}>
           {[
-            { e: '💌', l: '案件を追加', tab: 'deals' },
-            { e: '💬', l: '交渉文を書く', tab: 'negotiate' },
-            { e: '✍', l: '投稿下書き', tab: 'draft' },
-            { e: '💆‍♀️', l: '美容相談', tab: 'beauty' },
+            { e: '🔍', l: '案件を精査',     tab: 'triage' },
+            { e: '🎬', l: '丸投げ編集',     tab: 'director' },
+            { e: '💬', l: '交渉文を書く',   tab: 'negotiate' },
+            { e: '📷', l: '写真を加工',     tab: 'image' },
+            { e: '💆‍♀️', l: '美容相談',     tab: 'beauty' },
+            { e: '🌹', l: 'コミュニティ',   tab: 'community' },
           ].map((q) => (
-            <button key={q.l} style={{
-              background: 'rgba(255,255,255,0.5)',
+            <button key={q.l} onClick={() => setTab && setTab(q.tab as any)} style={{
+              background: 'rgba(255,255,255,0.85)',
               border: `1px solid ${bg.cardBorder}`,
               borderRadius: 16,
-              padding: '1rem 0.75rem',
+              padding: '1.1rem 0.75rem',
               cursor: 'pointer',
               textAlign: 'center',
-              color: bg.ink,
+              color: '#1F1A2E',
               fontFamily: IRIS_FONTS.body,
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.4rem' }}>{q.e}</div>
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 8px 22px ${bg.accent}33`; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+              <div style={{ fontSize: '2.2rem', marginBottom: '0.4rem' }}>{q.e}</div>
               <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{q.l}</div>
             </button>
           ))}
