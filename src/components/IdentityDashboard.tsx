@@ -31,6 +31,7 @@ import CRMStudio from './CRMStudio';
 import TaskHub from './TaskHub';
 import VoiceCaptureStudio from './VoiceCaptureStudio';
 import SalesAgentStudio from './SalesAgentStudio';
+import YouTubeImportStudio from './YouTubeImportStudio';
 import { PrismLogo } from './Logo';
 import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './CommandPalette';
 import PnLStudio from './PnLStudio';
@@ -129,6 +130,7 @@ export default function IdentityDashboard({
   const [showPnL, setShowPnL] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
   const [showSalesAgent, setShowSalesAgent] = useState(false);
+  const [showYouTube, setShowYouTube] = useState(false);
   const [showCmdK, setShowCmdK] = useState(false);
   const [financeEditFor, setFinanceEditFor] = useState<Persona | null>(null);
 
@@ -156,9 +158,7 @@ export default function IdentityDashboard({
       case 'salesAgent': setShowSalesAgent(true); break;
       case 'settings':  onOpenSettings(); break;
       case 'voice': setShowVoice(true); break;
-      case 'youtube':
-        alert('YouTube取込 は近日実装予定');
-        break;
+      case 'youtube': setShowYouTube(true); break;
     }
   }, [onOpenSettings]);
   const [globalDrag, setGlobalDrag] = useState(false);
@@ -446,6 +446,7 @@ export default function IdentityDashboard({
                 actions={[
                   { id: 'brief', emoji: '💡', label: '提案を生成', desc: 'AI が次の一手', primary: true, onClick: () => proactive.generate(settings.voiceEnabled !== false) },
                   { id: 'voice', emoji: '🎤', label: '音声メモ', desc: 'AI が自動振り分け', onClick: () => setShowVoice(true) },
+                  { id: 'youtube', emoji: '🎬', label: 'YouTube取込', desc: 'AI要約→ナレッジ化', onClick: () => setShowYouTube(true) },
                   { id: 'kb', emoji: '📚', label: '資料を追加', desc: 'PDF / PPT / 画像', onClick: () => setShowKnowledge(true) },
                   { id: 'note', emoji: '📝', label: 'ノート作成', desc: 'メモ・議事録', onClick: () => setShowKnowledge(true) },
                   { id: 'minutes', emoji: '🎙', label: '議事録 AI', desc: '録音→構造化', onClick: () => setShowMinutes(true) },
@@ -924,6 +925,15 @@ export default function IdentityDashboard({
             persona={persona}
             settings={settings}
             onClose={() => setShowSalesAgent(false)}
+          />
+        )}
+        {showYouTube && (
+          <YouTubeImportStudio
+            key="youtube"
+            persona={persona}
+            settings={settings}
+            onClose={() => setShowYouTube(false)}
+            onSaveAsKnowledge={(t, c) => onAddKnowledgeNote(t, c)}
           />
         )}
         {financeEditFor && (
