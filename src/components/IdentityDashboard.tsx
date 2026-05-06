@@ -32,6 +32,8 @@ import TaskHub from './TaskHub';
 import VoiceCaptureStudio from './VoiceCaptureStudio';
 import SalesAgentStudio from './SalesAgentStudio';
 import YouTubeImportStudio from './YouTubeImportStudio';
+import ShadowSecretaryPanel from './ShadowSecretaryPanel';
+import { useShadowSecretary } from '../hooks/useShadowSecretary';
 import { PrismLogo } from './Logo';
 import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './CommandPalette';
 import PnLStudio from './PnLStudio';
@@ -108,6 +110,7 @@ export default function IdentityDashboard({
   healthCtx,
 }: Props) {
   const proactive = useProactiveAgent(settings, persona, knowledgeForAgent, healthCtx);
+  const shadow = useShadowSecretary(settings, persona);
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [showMeeting, setShowMeeting] = useState(false);
   const [showHealth, setShowHealth] = useState(false);
@@ -131,6 +134,7 @@ export default function IdentityDashboard({
   const [showVoice, setShowVoice] = useState(false);
   const [showSalesAgent, setShowSalesAgent] = useState(false);
   const [showYouTube, setShowYouTube] = useState(false);
+  const [showShadow, setShowShadow] = useState(false);
   const [showCmdK, setShowCmdK] = useState(false);
   const [financeEditFor, setFinanceEditFor] = useState<Persona | null>(null);
 
@@ -438,6 +442,8 @@ export default function IdentityDashboard({
                 onSpeak={proactive.speakProposal}
                 onStopSpeak={proactive.stopSpeak}
                 onAcceptAction={onAcceptProactiveAction}
+                shadowDraftCount={shadow.drafts.length}
+                onOpenShadow={() => setShowShadow(true)}
               />
 
               {/* クイックアクション */}
@@ -447,6 +453,7 @@ export default function IdentityDashboard({
                   { id: 'brief', emoji: '💡', label: '提案を生成', desc: 'AI が次の一手', primary: true, onClick: () => proactive.generate(settings.voiceEnabled !== false) },
                   { id: 'voice', emoji: '🎤', label: '音声メモ', desc: 'AI が自動振り分け', onClick: () => setShowVoice(true) },
                   { id: 'youtube', emoji: '🎬', label: 'YouTube取込', desc: 'AI要約→ナレッジ化', onClick: () => setShowYouTube(true) },
+                  { id: 'shadow', emoji: '📬', label: '下書き済み', desc: `AI 事前下書き${shadow.drafts.length > 0 ? ` (${shadow.drafts.length})` : ''}`, onClick: () => setShowShadow(true) },
                   { id: 'kb', emoji: '📚', label: '資料を追加', desc: 'PDF / PPT / 画像', onClick: () => setShowKnowledge(true) },
                   { id: 'note', emoji: '📝', label: 'ノート作成', desc: 'メモ・議事録', onClick: () => setShowKnowledge(true) },
                   { id: 'minutes', emoji: '🎙', label: '議事録 AI', desc: '録音→構造化', onClick: () => setShowMinutes(true) },
@@ -934,6 +941,19 @@ export default function IdentityDashboard({
             settings={settings}
             onClose={() => setShowYouTube(false)}
             onSaveAsKnowledge={(t, c) => onAddKnowledgeNote(t, c)}
+          />
+        )}
+        {showShadow && (
+          <ShadowSecretaryPanel
+            key="shadow"
+            persona={persona}
+            drafts={shadow.drafts}
+            isPolling={shadow.isPolling}
+            lastPolledAt={shadow.lastPolledAt}
+            onRefresh={shadow.refresh}
+            onDismiss={shadow.dismissDraft}
+            onSend={shadow.sendDraft}
+            onClose={() => setShowShadow(false)}
           />
         )}
         {financeEditFor && (

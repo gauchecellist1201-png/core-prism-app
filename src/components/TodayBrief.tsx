@@ -11,6 +11,8 @@ interface Props {
   onSpeak: (p: Proposal) => void;
   onStopSpeak: () => void;
   onAcceptAction: (a: string) => void;
+  shadowDraftCount?: number;
+  onOpenShadow?: () => void;
 }
 
 export default function TodayBrief({
@@ -23,6 +25,8 @@ export default function TodayBrief({
   onSpeak,
   onStopSpeak,
   onAcceptAction,
+  shadowDraftCount = 0,
+  onOpenShadow,
 }: Props) {
   const hour = new Date().getHours();
   const greet = hour < 11 ? 'おはよう' : hour < 18 ? 'こんにちは' : 'こんばんは';
@@ -130,6 +134,21 @@ export default function TodayBrief({
                 🔊 読み上げ
               </button>
             )
+          )}
+          {shadowDraftCount > 0 && onOpenShadow && (
+            <motion.button
+              onClick={onOpenShadow}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium transition-all"
+              style={{
+                background: 'rgba(201,169,110,0.12)',
+                border: '1px solid rgba(201,169,110,0.35)',
+                color: '#c9a96e',
+              }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              📬 返信下書き済 {shadowDraftCount}件
+            </motion.button>
           )}
           {proposal && (
             <span className="text-fg-muted text-xs ml-auto">
