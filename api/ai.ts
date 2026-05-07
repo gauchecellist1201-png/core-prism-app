@@ -168,16 +168,9 @@ export default async function handler(req: Request) {
     });
   }
 
-  // API キー (サーバ側 env)
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return new Response(JSON.stringify({
-      error: { message: 'GEMINI_API_KEY が環境変数に設定されていません。Vercel の env に登録してください。' }
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
-  }
+  // ─── マスターキー判定 (GAUCHE2026 = Anthropic Claude を使う) ───
+  const masterKey = req.headers.get('x-master-key') || '';
+  const useClaude = masterKey === 'GAUCHE2026';
 
   // リクエストボディをパース
   let body: AnthropicRequest;
@@ -186,6 +179,48 @@ export default async function handler(req: Request) {
   } catch {
     return new Response(JSON.stringify({ error: { message: 'Invalid JSON body' } }), {
       status: 400,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+  }
+
+  // ─── 分岐: Claude (マスターキー) または Gemini (一般) ───
+  if (useClaude) {
+    const claudeKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
+    if (!claudeKey) {
+      return new Response(JSON.stringify({
+        error: { message: 'CLAUDE_API_KEY が未設定 (master モード)。Vercel env に登録してください。' }
+      }), { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': claudeKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify(body),
+      });
+      const txt = await r.text();
+      return new Response(txt, {
+        status: r.status,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    } catch (e: any) {
+      return new Response(JSON.stringify({ error: { message: e.message, type: 'claude_proxy_error' } }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+  }
+
+  // ─── デフォルト: Gemini ───
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return new Response(JSON.stringify({
+      error: { message: 'GEMINI_API_KEY が環境変数に設定されていません。Vercel の env に登録してください。' }
+    }), {
+      status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
