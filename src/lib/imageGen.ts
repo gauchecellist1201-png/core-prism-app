@@ -65,7 +65,7 @@ export async function generateImagePrompt(opts: {
   }
   const userPrompt = `## テキスト\n${opts.topic}\n\n${opts.context ? `## 文脈\n${opts.context}\n` : ''}\n上記の本質を視覚化する画像プロンプトを作ってください。`;
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

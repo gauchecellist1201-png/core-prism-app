@@ -96,7 +96,7 @@ ${relevantKb}
 
 上記を踏まえて、${FRAMEWORKS[framework].label} を実行してください。`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

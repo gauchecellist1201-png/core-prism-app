@@ -98,7 +98,7 @@ ${input.source.slice(0, 30000)}${input.source.length > 30000 ? '\n[...省略]' :
 
 上記素材から、力強く伝わるスライドデッキの設計を JSON で出力してください。`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

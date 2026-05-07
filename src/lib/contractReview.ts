@@ -97,7 +97,7 @@ export async function reviewContract(
     ? contractText.slice(0, 30000) + '\n\n[...以降省略]'
     : contractText;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

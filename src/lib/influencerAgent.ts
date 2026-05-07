@@ -107,7 +107,7 @@ ${opts.targetFee ? `\n## 希望報酬\n¥${opts.targetFee.toLocaleString()}` : '
 上記の案件に対して「${meta.label}」のメッセージを生成してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -196,7 +196,7 @@ ${opts.toneNote || '自然体・親しみやすく・押し売りしない'}
 上記の案件で投稿する下書きを作ってください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -276,7 +276,7 @@ ${fmtMediaKit(opts.mediaKit)}
 この提示は妥当ですか? 判定してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -378,7 +378,7 @@ ${opts.persona.name} (${opts.persona.subtitle})
 このデータで、ブランド/代理店に提出するレポートを作ってください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

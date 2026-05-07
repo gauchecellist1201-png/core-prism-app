@@ -128,7 +128,7 @@ ${opts.emailText}
 このメールを精査して、JSON で判定結果を返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

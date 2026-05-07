@@ -127,7 +127,7 @@ ${opts.posts.slice(0, 30).map(formatPost).join('\n\n')}
 これらを分析して、JSON で返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -203,7 +203,7 @@ ${opts.mediaKit ? `平均ER: ${JSON.stringify(opts.mediaKit.avgEngagementRate ||
 この投稿、フィードバックお願い。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -298,7 +298,7 @@ ${opts.mediaKit ? JSON.stringify({
 次の ${opts.count || 3} 本、提案してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -391,7 +391,7 @@ ${opts.posts.slice(0, 10).map(p => `- ${PLATFORM_META[p.platform].label}: "${p.t
 30 日のストーリーアーク、設計してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -137,7 +137,7 @@ ${healthBlock}${patrolInstruction}
 健康データは無視せず、本文末尾の1文だけで簡潔に触れる(中心テーマにしない)。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

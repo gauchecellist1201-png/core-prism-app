@@ -115,7 +115,7 @@ ${relevantKnowledge}
 
 上記を踏まえて、構造化された意思決定メモを JSON で出力してください。`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

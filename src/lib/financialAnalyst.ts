@@ -90,7 +90,7 @@ export async function analyzeFinancials(
     ? financialText.slice(0, 30000) + '\n\n[...省略]'
     : financialText;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -96,7 +96,7 @@ ${opts.customInstruction ? `## 追加指示\n${opts.customInstruction}\n` : ''}
 上記を踏まえて、note 記事の下書きを JSON で返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -191,7 +191,7 @@ ${opts.customInstruction ? `## 追加指示\n${opts.customInstruction}\n` : ''}
 ${isThread ? `${threadCount}本のスレッド` : '1ツイート'}を JSON で返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,0 +1,14 @@
+name = "iris-ai-proxy"
+main = "worker.ts"
+compatibility_date = "2025-05-01"
+
+# 環境変数 (秘匿は wrangler secret put で別途登録)
+# wrangler secret put GEMINI_API_KEY
+
+[vars]
+# 公開できる変数のみここに
+
+# カスタムドメイン (移行時)
+# routes = [
+#   { pattern = "api.your-domain.com/ai", custom_domain = true }
+# ]

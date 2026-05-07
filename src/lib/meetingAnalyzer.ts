@@ -86,7 +86,7 @@ ${truncated}
 
 上記の会議内容を構造化議事録に変換してください。`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

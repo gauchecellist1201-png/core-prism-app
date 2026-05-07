@@ -79,32 +79,34 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                     className="w-full bg-transparent text-fg text-sm font-light outline-none border-b py-2"
                     style={{ borderColor: 'rgba(255,255,255,0.1)' }} />
                 </div>
-                <div>
-                  <p className="text-neutral-600 text-xs tracking-wider uppercase mb-2">Claude APIキー</p>
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                <div className="p-4 rounded-xl" style={{
+                  background: 'linear-gradient(135deg, rgba(46,111,255,0.08), rgba(232,75,151,0.08))',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}>
+                  <p className="text-fg text-sm font-medium mb-2">✨ AI は自動で動きます</p>
+                  <p className="text-fg-muted text-xs leading-relaxed">
+                    API キー不要。サーバー側の Gemini で自動処理されます。<br />
+                    すぐに、戦略・交渉・分析・美容相談を始められます。
+                  </p>
+                </div>
+                {/* 旧 Claude API キー入力欄: 互換のため hidden で保持 (将来削除可) */}
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-neutral-700 hover:text-fg-subtle">
+                    Anthropic Claude を直接使う (上級者向け)
+                  </summary>
+                  <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl"
                     style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <input type={apiKeyVisible ? 'text' : 'password'} value={apiKey}
+                    <input type={apiKeyVisible ? 'text' : 'password'} value={apiKey === 'proxy' ? '' : apiKey}
                       onChange={e => setApiKey(e.target.value)}
                       placeholder="sk-ant-..."
                       className="flex-1 bg-transparent text-fg text-sm font-mono outline-none" />
                     <button onClick={() => setApiKeyVisible(!apiKeyVisible)}
                       className="text-neutral-600 text-xs hover:text-fg-subtle">{apiKeyVisible ? '隠す' : '表示'}</button>
                   </div>
-                  {apiKey && apiKey.startsWith('sk-ant-') && (
-                    <p className="text-xs mt-1" style={{ color: '#34d399' }}>✓ 有効な形式</p>
-                  )}
                   <p className="text-neutral-700 text-xs mt-1">
-                    <a href="https://console.anthropic.com" target="_blank" className="underline" style={{ color: '#c9a96e' }}>
-                      console.anthropic.com
-                    </a>{' '}で取得できます
+                    入力するとサーバー Gemini ではなく、ご自分の Claude キーで動作します。
                   </p>
-                </div>
-                <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  <p className="text-xs text-neutral-600 leading-relaxed">
-                    🔒 APIキーはあなたのブラウザ（localStorage）にのみ保存されます。<br />
-                    外部サーバーには一切送信されません。
-                  </p>
-                </div>
+                </details>
               </motion.div>
             )}
 

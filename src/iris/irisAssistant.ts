@@ -128,7 +128,7 @@ export async function chatWithIris(opts: {
   messages.push({ role: 'user', content: currentContent.length === 1 && opts.userImages?.length === 0 ? opts.userMessage : currentContent });
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

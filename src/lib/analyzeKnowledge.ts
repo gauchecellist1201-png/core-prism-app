@@ -74,7 +74,7 @@ export async function extractFinancialData(
     const truncated = content.slice(0, 12000);
     const userPrompt = `## タイトル\n${title}\n\n## 本文\n${truncated}\n\n金額を抽出してJSONで返してください。`;
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -168,7 +168,7 @@ ${truncated}${content.length > truncated.length ? '\n\n[...以降省略]' : ''}`
   userContent.push({ type: 'text', text: userText });
 
   return enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

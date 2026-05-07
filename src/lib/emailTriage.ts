@@ -121,7 +121,7 @@ ${limited.map(e => `=== ${e.id} ===\n${e.raw.slice(0, 3000)}`).join('\n\n')}
 上記メールを一括トリアージし、JSON で返してください。
 draftReply は ${persona.name} の口調に合わせて作成してください。`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -199,7 +199,7 @@ ${persona.description || ''}
 - 必要なら次のアクション/期日を提示
 返答は本文のみ (件名・宛名・署名は不要)`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

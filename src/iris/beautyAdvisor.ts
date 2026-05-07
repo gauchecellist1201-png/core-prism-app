@@ -72,7 +72,7 @@ export async function chatBeautyAdvisor(opts: {
     .concat([{ role: 'user' as const, content: opts.userMessage }]);
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
