@@ -55,10 +55,10 @@ function corsHeaders(origin: string) {
 }
 
 function pickGeminiModel(anthropic?: string): string {
-  if (!anthropic) return 'gemini-2.0-flash-exp';
+  if (!anthropic) return 'gemini-2.5-flash';
   const m = anthropic.toLowerCase();
   if (m.includes('opus') || m.includes('sonnet-4')) return 'gemini-2.5-pro';
-  return 'gemini-2.0-flash-exp';
+  return 'gemini-2.5-flash';
 }
 
 function anthropicToGemini(req: AnthropicRequest) {

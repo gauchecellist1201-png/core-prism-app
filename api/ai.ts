@@ -88,15 +88,21 @@ function anthropicToGemini(req: AnthropicRequest): {
 }
 
 // ─── モデルマッピング (Anthropic 名 → Gemini 名) ───
+// 2025-05 時点の安定モデル名:
+//   - gemini-2.5-pro   (高品質、Vision OK)
+//   - gemini-2.5-flash (高速・コスト最適、Vision OK) ← デフォルト推奨
+//   - gemini-2.0-flash (旧安定)
+//   ※ gemini-2.0-flash-exp は廃止
 function pickGeminiModel(anthropicModel?: string): string {
-  if (!anthropicModel) return 'gemini-2.0-flash-exp';
+  if (!anthropicModel) return 'gemini-2.5-flash';
   const m = anthropicModel.toLowerCase();
-  // opus / sonnet → 強力モデル
+  // opus / sonnet-4 → 高品質モデル
   if (m.includes('opus') || m.includes('sonnet-4')) return 'gemini-2.5-pro';
-  if (m.includes('sonnet')) return 'gemini-2.0-flash-exp';
-  // haiku → 軽量
-  if (m.includes('haiku')) return 'gemini-2.0-flash-exp';
-  return 'gemini-2.0-flash-exp';
+  // sonnet (3.5 系) → 高速バランス
+  if (m.includes('sonnet')) return 'gemini-2.5-flash';
+  // haiku → 軽量・高速
+  if (m.includes('haiku')) return 'gemini-2.5-flash';
+  return 'gemini-2.5-flash';
 }
 
 // ─── Gemini → Anthropic レスポンス変換 ───
