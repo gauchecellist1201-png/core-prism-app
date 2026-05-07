@@ -8,9 +8,10 @@ import { IrisLogo } from '../components/Logo';
 
 interface Props {
   onEnter: () => void;
+  onSelectPlan?: (planId: string) => void;
 }
 
-export default function IrisLanding({ onEnter }: Props) {
+export default function IrisLanding({ onEnter, onSelectPlan: _onSelectPlan }: Props) {
   return (
     <div style={{
       background: IRIS_COLORS.inkBlack,

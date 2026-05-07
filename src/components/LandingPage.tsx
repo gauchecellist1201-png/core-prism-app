@@ -55,15 +55,15 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
             transition={{ duration: 0.8 }}
           >
             <div style={{ fontSize: '0.75rem', letterSpacing: '0.2em', color: ORANGE, fontWeight: 700, marginBottom: '1.5rem' }}>
-              FOR JAPANESE SMB &amp; ENTREPRENEURS
+              AN AGENT FOR EVERY FOUNDER
             </div>
             <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, lineHeight: 1.1, marginBottom: '1rem' }}>
-              人を増やさず、<br />
-              <span style={{ color: ORANGE }}>売上を伸ばす。</span>
+              すべての事業家に、<br />
+              <span style={{ color: ORANGE }}>エージェントAIを。</span>
             </h1>
             <p style={{ fontSize: 'clamp(1rem, 1.5vw, 1.25rem)', lineHeight: 1.7, color: '#E8EEF8', marginBottom: '2.5rem', maxWidth: 700 }}>
               リサーチ・リスト作成・アプローチ・商談・案件管理。<br />
-              すべての営業工程を、5 つの AI エージェントが代行する次世代セールス OS。
+              人を増やさず売上を伸ばす、5 つの AI エージェントが、あなたの代わりに動く。
             </p>
 
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>

@@ -4,12 +4,12 @@
 // ============================================================
 
 export const IRIS_BRAND = {
-  name: 'IRIS',                              // 短く、雑誌のロゴのように
-  tagline: 'Edit Yourself.',                 // 「自分を、編集する。」
-  taglineJa: '自分を、編集する。',
-  description: 'A magazine, a manager, a mirror — for women who edit their own story.',
+  name: 'IRIS',
+  tagline: 'An Agent for Every Creator.',
+  taglineJa: 'すべてのインフルエンサーに、エージェントAIを。',
+  description: 'すべてのインフルエンサーのための、専属 AI エージェント。案件・交渉・投稿・分析を、声と画像で。',
   parent: 'CORE Prism',
-  issue: 'Vol. 01 · 2026',                   // VOGUE 風の号数
+  issue: 'Vol. 01 · 2026',
   publisher: 'CORE',
 };
 
