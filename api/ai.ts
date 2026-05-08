@@ -88,20 +88,41 @@ function anthropicToGemini(req: AnthropicRequest): {
 }
 
 // ─── モデルマッピング (Anthropic 名 → Gemini 名) ───
-// fallback リストから順に試す。最初のモデルが 404 等で失敗したら次へ。
-//   - gemini-2.0-flash (一般提供、Vision OK)
-//   - gemini-1.5-flash (確実に動く安定版、Vision OK、無料枠あり)
-//   ※ gemini-2.5-* は v1beta では未公開の場合がある
-//   ※ gemini-2.0-flash-exp は廃止
+// fallback リストから順に試す。404 / 429 (quota) で次のモデルへ。
+//   - gemini-1.5-flash         (無料枠 1,500req/日 — 一番堅実) ← デフォルト 1 番目
+//   - gemini-1.5-flash-latest  (1.5-flash の latest alias)
+//   - gemini-1.5-flash-002     (バージョン固定)
+//   - gemini-2.0-flash         (一部キーで limit:0 の場合あり、後ろに)
+//   - gemini-1.5-pro           (高品質、無料枠 50req/日)
 function pickGeminiModels(anthropicModel?: string): string[] {
-  if (!anthropicModel) return ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  if (!anthropicModel) {
+    return [
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-flash-002',
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-001',
+    ];
+  }
   const m = anthropicModel.toLowerCase();
-  // opus / sonnet-4 → 高品質モデル
+  // opus / sonnet-4 → 高品質モデル (Pro 系)
   if (m.includes('opus') || m.includes('sonnet-4')) {
-    return ['gemini-2.0-pro-exp', 'gemini-1.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    return [
+      'gemini-1.5-pro',
+      'gemini-1.5-pro-latest',
+      'gemini-1.5-pro-002',
+      'gemini-1.5-flash',
+      'gemini-2.0-flash',
+    ];
   }
   // sonnet / haiku → 高速バランス
-  return ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  return [
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-flash-002',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-001',
+  ];
 }
 
 // ─── Gemini → Anthropic レスポンス変換 ───
@@ -256,11 +277,19 @@ export default async function handler(req: Request) {
           message: errObj?.error?.message || `Gemini API error: ${r.status}`,
           model: geminiModel,
         };
-        // 404 (モデル未対応) と 400 (モデル不正) のみ次のモデルを試す
-        if (r.status === 404 || (r.status === 400 && lastError.message.includes('not found'))) {
-          continue;
-        }
-        // それ以外のエラー (認証・レート等) はそのまま返す
+        // 次のモデルにフォールバックする条件:
+        //  - 404 (モデル未対応)
+        //  - 400 + "not found"
+        //  - 429 (rate limit / quota exceeded)
+        //  - 403 (forbidden — 無料枠制限) かつ "quota" メッセージ
+        const msgLow = lastError.message.toLowerCase();
+        const isFallbackable =
+          r.status === 404 ||
+          (r.status === 400 && msgLow.includes('not found')) ||
+          r.status === 429 ||
+          (r.status === 403 && (msgLow.includes('quota') || msgLow.includes('limit')));
+        if (isFallbackable) continue;
+        // それ以外 (認証エラー等) はそのまま返す
         return new Response(JSON.stringify({
           error: { message: lastError.message, type: 'gemini_error', status: r.status, model: geminiModel },
         }), {
