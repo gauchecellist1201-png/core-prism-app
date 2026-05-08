@@ -4,6 +4,7 @@ import type { Persona, ChatMessage, AppSettings, KnowledgeItem } from '../types/
 import ModeSwitcher from './ModeSwitcher';
 import CognitiveDashboard from './CognitiveDashboard';
 import AISidebar from './AISidebar';
+import SupportChat from './SupportChat';
 import KnowledgeBase from './KnowledgeBase';
 import MeetingHub from './MeetingHub';
 import HealthHub from './health/HealthHub';
@@ -1092,6 +1093,17 @@ export default function IdentityDashboard({
         <span>横断検索</span>
         <span className="cp-pill" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>⌘K</span>
       </button>
+
+      {/* グローバルAIサポートチャット (右下FAB → 右ドロワー) */}
+      <SupportChat
+        brand="prism"
+        accentColor={persona.accentColor}
+        context={{
+          page: 'ダッシュボード',
+          personaName: persona.name,
+          knowledgeCount: personaKnowledge.length,
+        }}
+      />
     </motion.div>
   );
 }

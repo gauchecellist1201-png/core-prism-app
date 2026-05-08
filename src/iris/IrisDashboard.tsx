@@ -29,6 +29,7 @@ import IrisStrategistView from './IrisStrategistView';
 import IrisQuickAdd from './IrisQuickAdd';
 import IrisVoiceHome from './IrisVoiceHome';
 import { IrisLogo } from '../components/Logo';
+import SupportChat from '../components/SupportChat';
 
 interface Props {
   settings: AppSettings;
@@ -394,6 +395,16 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* グローバルAIサポートチャット (右下FAB → 右ドロワー) */}
+      <SupportChat
+        brand="iris"
+        accentColor={bg.accent}
+        context={{
+          page: 'Iris ダッシュボード',
+          dealCount: myDeals.length,
+        }}
+      />
     </div>
   );
 }
