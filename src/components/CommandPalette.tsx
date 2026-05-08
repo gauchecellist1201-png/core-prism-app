@@ -13,7 +13,7 @@ export type ModalKey =
   | 'knowledge' | 'meeting' | 'health' | 'minutes' | 'slides' | 'nego'
   | 'decision' | 'email' | 'premium' | 'post' | 'image' | 'invoice'
   | 'sales' | 'expense' | 'crm' | 'tasks' | 'pnl' | 'voice' | 'youtube'
-  | 'salesAgent' | 'settings';
+  | 'salesAgent' | 'settings' | 'documents' | 'people';
 
 interface Props {
   open: boolean;
@@ -46,6 +46,8 @@ const MODAL_LIST: { key: ModalKey; label: string; emoji: string; group: string }
   { key: 'expense',   label: '経費 / OCR',          emoji: '📷', group: '経営' },
   { key: 'pnl',       label: 'P&L 損益計算書',      emoji: '📊', group: '経営' },
   { key: 'crm',       label: 'CRM パイプライン',    emoji: '🗂', group: '経営' },
+  { key: 'documents', label: '書類スタジオ',         emoji: '📄', group: '経営' },
+  { key: 'people',    label: '人物ケア / 1on1',     emoji: '👥', group: '人材' },
   { key: 'meeting',   label: '会議リンク',          emoji: '📅', group: '経営' },
   { key: 'settings',  label: '環境設定',            emoji: '⚙',  group: 'その他' },
 ];

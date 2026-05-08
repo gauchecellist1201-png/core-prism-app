@@ -37,6 +37,8 @@ import { useShadowSecretary } from '../hooks/useShadowSecretary';
 import { PrismLogo } from './Logo';
 import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './CommandPalette';
 import PnLStudio from './PnLStudio';
+import DocumentStudio from './DocumentStudio';
+import PeopleStudio from './PeopleStudio';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
 import type { DailyHealth } from '../types/health';
 import type { HealthAnomaly } from '../data/healthAnomaly';
@@ -135,6 +137,8 @@ export default function IdentityDashboard({
   const [showSalesAgent, setShowSalesAgent] = useState(false);
   const [showYouTube, setShowYouTube] = useState(false);
   const [showShadow, setShowShadow] = useState(false);
+  const [showDocument, setShowDocument] = useState(false);
+  const [showPeople, setShowPeople] = useState(false);
   const [showCmdK, setShowCmdK] = useState(false);
   const [financeEditFor, setFinanceEditFor] = useState<Persona | null>(null);
 
@@ -162,7 +166,9 @@ export default function IdentityDashboard({
       case 'salesAgent': setShowSalesAgent(true); break;
       case 'settings':  onOpenSettings(); break;
       case 'voice': setShowVoice(true); break;
-      case 'youtube': setShowYouTube(true); break;
+      case 'youtube':    setShowYouTube(true); break;
+      case 'documents':  setShowDocument(true); break;
+      case 'people':     setShowPeople(true); break;
     }
   }, [onOpenSettings]);
   const [globalDrag, setGlobalDrag] = useState(false);
@@ -468,6 +474,8 @@ export default function IdentityDashboard({
                   { id: 'pnl', emoji: '📊', label: 'P&L', desc: '損益計算書', onClick: () => setShowPnL(true) },
                   { id: 'expense', emoji: '📷', label: '経費 / OCR', desc: 'レシート読取', onClick: () => setShowExpense(true) },
                   { id: 'crm', emoji: '🤝', label: 'CRM', desc: '案件パイプライン', onClick: () => setShowCRM(true) },
+                  { id: 'documents', emoji: '📄', label: '書類スタジオ', desc: '見積→発注→納品→請求', onClick: () => setShowDocument(true) },
+                  { id: 'people', emoji: '👥', label: '人物ケア', desc: '1on1履歴+AI分析', onClick: () => setShowPeople(true) },
                   { id: 'sales-agent', emoji: '🎯', label: '商談 AI', desc: 'リサーチ→アプローチ自動化', primary: true, onClick: () => setShowSalesAgent(true) },
                   { id: 'tasks-hub', emoji: '✅', label: 'タスクハブ', desc: '全タスク統合', onClick: () => setShowTaskHub(true) },
                   { id: 'premium', emoji: '👑', label: 'プレミアム', desc: '戦略 / 法務 / 財務', primary: true, onClick: () => setShowPremium(true) },
@@ -941,6 +949,22 @@ export default function IdentityDashboard({
             settings={settings}
             onClose={() => setShowYouTube(false)}
             onSaveAsKnowledge={(t, c) => onAddKnowledgeNote(t, c)}
+          />
+        )}
+        {showDocument && (
+          <DocumentStudio
+            key="document"
+            persona={persona}
+            settings={settings}
+            onClose={() => setShowDocument(false)}
+          />
+        )}
+        {showPeople && (
+          <PeopleStudio
+            key="people"
+            persona={persona}
+            settings={settings}
+            onClose={() => setShowPeople(false)}
           />
         )}
         {showShadow && (

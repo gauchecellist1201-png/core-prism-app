@@ -34,20 +34,23 @@ const AUTO_GROUP: Record<string, string> = {
   pnl:          '経営',
   expense:      '経営',
   crm:          '経営',
+  documents:    '経営',
   'sales-agent':'営業',
   'tasks-hub':  'タスク',
   premium:      'プレミアム',
   meet:         'スケジュール',
   health:       'ヘルス',
+  people:       '人材',
 };
 
-const GROUP_ORDER = ['今日', 'ナレッジ', '生成・分析', '営業', '経営', 'タスク', 'スケジュール', 'ヘルス', 'プレミアム', 'その他'];
+const GROUP_ORDER = ['今日', 'ナレッジ', '生成・分析', '営業', '経営', '人材', 'タスク', 'スケジュール', 'ヘルス', 'プレミアム', 'その他'];
 const GROUP_EMOJI: Record<string, string> = {
   '今日': '☀',
   'ナレッジ': '📚',
   '生成・分析': '✨',
   '営業': '🎯',
   '経営': '📊',
+  '人材': '👥',
   'タスク': '✅',
   'スケジュール': '📅',
   'ヘルス': '🩺',

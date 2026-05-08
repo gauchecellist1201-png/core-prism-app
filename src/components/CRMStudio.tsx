@@ -4,7 +4,9 @@ import type { Persona } from '../types/identity';
 import type { CRMDeal, CRMStage } from '../types/crm';
 import { STAGE_META, STAGE_ORDER } from '../types/crm';
 import { useCRM } from '../hooks/useCRM';
-import { fmtJpy } from '../lib/invoiceCalc';
+import { useInvoices } from '../hooks/useInvoices';
+import { fmtJpy, computeTotals } from '../lib/invoiceCalc';
+import type { BusinessDocument } from '../types/invoice';
 
 interface Props {
   persona: Persona;
@@ -225,7 +227,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
       {/* 案件編集モーダル */}
       <AnimatePresence>
         {editing && (
-          <DealEditor key={editing.id}
+          <DealEditorWithDocs key={editing.id}
             persona={persona} deal={editing}
             onClose={() => setEditingId(null)}
             onUpdate={(patch) => crm.updateDeal(editing.id, patch)}
@@ -238,13 +240,30 @@ export default function CRMStudio({ persona, onClose }: Props) {
   );
 }
 
-function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity }: {
+const DOC_KIND_LABEL: Record<string, string> = { estimate: '📋 見積書', order: '📦 発注書', delivery: '🚚 納品書', invoice: '🧾 請求書' };
+const DOC_STATUS_LABEL: Record<string, string> = { draft: '下書き', sent: '送付済', approved: '承認済', delivered: '納品済', paid: '支払済', cancelled: '取消' };
+
+function DealEditorWithDocs(props: {
   persona: Persona;
   deal: CRMDeal;
   onClose: () => void;
   onUpdate: (patch: Partial<CRMDeal>) => void;
   onDelete: () => void;
   onAddActivity: (a: { date: string; type: 'meeting' | 'email' | 'call' | 'note' | 'proposal' | 'invoice'; summary: string }) => void;
+}) {
+  const inv = useInvoices();
+  const relatedDocs = useMemo(() => inv.getDocumentsForDeal(props.deal.id), [inv.documents, props.deal.id]);
+  return <DealEditor {...props} relatedDocs={relatedDocs} />;
+}
+
+function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity, relatedDocs }: {
+  persona: Persona;
+  deal: CRMDeal;
+  onClose: () => void;
+  onUpdate: (patch: Partial<CRMDeal>) => void;
+  onDelete: () => void;
+  onAddActivity: (a: { date: string; type: 'meeting' | 'email' | 'call' | 'note' | 'proposal' | 'invoice'; summary: string }) => void;
+  relatedDocs?: BusinessDocument[];
 }) {
   const [actType, setActType] = useState<'meeting' | 'email' | 'call' | 'note' | 'proposal' | 'invoice'>('note');
   const [actSummary, setActSummary] = useState('');
@@ -357,6 +376,32 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity 
               ))}
             </div>
           </div>
+
+          {/* 関連文書 */}
+          {relatedDocs && (
+            <div className="cp-card-section cp-stack-sm">
+              <p className="cp-h3">関連文書 ({relatedDocs.length})</p>
+              {relatedDocs.length === 0 ? (
+                <p className="cp-tiny text-center py-2">書類スタジオで案件を紐付けると表示されます</p>
+              ) : (
+                relatedDocs.map(doc => {
+                  const tot = computeTotals(doc.lines);
+                  return (
+                    <div key={doc.id} className="cp-row-between">
+                      <div className="cp-row min-w-0">
+                        <span className="cp-pill flex-shrink-0">{DOC_KIND_LABEL[doc.kind]}</span>
+                        <span className="cp-body truncate">{doc.subject}</span>
+                      </div>
+                      <div className="cp-row flex-shrink-0">
+                        <span className="cp-meta">{DOC_STATUS_LABEL[doc.status]}</span>
+                        <span className="font-mono cp-meta">{fmtJpy(tot.total)}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
 
           <div className="cp-row-between pt-2">
             <button onClick={onDelete} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ color: '#f87171' }}>削除</button>

@@ -84,3 +84,46 @@ export interface InvoiceTotals {
   totalTax: number;             // 消費税合計
   total: number;                // 税込合計
 }
+
+// ============================================================
+// 書類シリーズ — 見積書 / 発注書 / 納品書 / 請求書 (第3弾)
+// ============================================================
+
+export type DocumentKind = 'estimate' | 'order' | 'delivery' | 'invoice';
+
+/**
+ * ステータス遷移:
+ *   estimate: draft → sent → approved
+ *   order:    draft → sent
+ *   delivery: draft → delivered
+ *   invoice:  draft → sent → paid → cancelled
+ */
+export type DocumentStatus = 'draft' | 'sent' | 'approved' | 'delivered' | 'paid' | 'cancelled';
+
+export interface BusinessDocument {
+  id: string;
+  personaId: string;
+  kind: DocumentKind;
+  status: DocumentStatus;
+  /** EST/ORD/DEL/INV-{SLUG}-{YYYY}-{SEQ} */
+  number: string;
+  /** 複製元ドキュメント ID (例: estimate → order のとき estimate の id) */
+  sourceDocumentId?: string;
+  /** CRMDeal との紐付け */
+  dealId?: string;
+  issuerSnapshot: IssuerProfile;
+  clientSnapshot: Client;
+  subject: string;
+  issueDate: string;            // YYYY-MM-DD
+  /** 見積有効期限 (estimate 用) */
+  validUntil?: string;
+  /** 納期 / 納品日 (order / delivery 用) */
+  deliveryDate?: string;
+  /** 支払期限 (invoice 用) */
+  dueDate?: string;
+  lines: InvoiceLine[];
+  notes?: string;
+  paymentTerms?: string;
+  createdAt: string;
+  updatedAt: string;
+}
