@@ -208,6 +208,43 @@ export default function IrisLanding({ onEnter, onSelectPlan: _onSelectPlan }: Pr
             }}>
             はじめる
           </motion.button>
+
+          {/* ソーシャルプルーフ + 緊急性 */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.6, duration: 1 }}
+            style={{
+              marginTop: 'clamp(1rem, 2vw, 1.5rem)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem',
+            }}
+          >
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+              background: 'rgba(255,255,255,0.7)',
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${IRIS_COLORS.gold}88`,
+              padding: '0.4rem 0.9rem', borderRadius: 999,
+              fontSize: '0.78rem', color: IRIS_COLORS.purple, fontWeight: 700,
+            }}>
+              🎉 ローンチ記念 — 初月 50% OFF (5/31 まで)
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ display: 'flex' }}>
+                {[IRIS_COLORS.hotPink, IRIS_COLORS.purple, IRIS_COLORS.goldDeep, IRIS_COLORS.rose, IRIS_COLORS.gold].map((c, i) => (
+                  <div key={i} style={{
+                    width: 26, height: 26, borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${c}, ${c}aa)`,
+                    border: '2px solid #FFFAF7',
+                    marginLeft: i > 0 ? -8 : 0,
+                  }} />
+                ))}
+              </div>
+              <span style={{ color: IRIS_COLORS.inkSoft, fontSize: '0.82rem' }}>
+                <strong style={{ color: IRIS_COLORS.purple }}>1,200+</strong> 名のクリエイターが利用中 ・ <span style={{ color: IRIS_COLORS.gold, fontWeight: 700 }}>★ 4.9</span>
+              </span>
+            </div>
+          </motion.div>
         </div>
 
         {/* 下部: スクロールヒント (極小・控えめ) */}

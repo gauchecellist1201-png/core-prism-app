@@ -88,21 +88,20 @@ function anthropicToGemini(req: AnthropicRequest): {
 }
 
 // ─── モデルマッピング (Anthropic 名 → Gemini 名) ───
-// 2025-05 時点の安定モデル名:
-//   - gemini-2.5-pro   (高品質、Vision OK)
-//   - gemini-2.5-flash (高速・コスト最適、Vision OK) ← デフォルト推奨
-//   - gemini-2.0-flash (旧安定)
+// fallback リストから順に試す。最初のモデルが 404 等で失敗したら次へ。
+//   - gemini-2.0-flash (一般提供、Vision OK)
+//   - gemini-1.5-flash (確実に動く安定版、Vision OK、無料枠あり)
+//   ※ gemini-2.5-* は v1beta では未公開の場合がある
 //   ※ gemini-2.0-flash-exp は廃止
-function pickGeminiModel(anthropicModel?: string): string {
-  if (!anthropicModel) return 'gemini-2.5-flash';
+function pickGeminiModels(anthropicModel?: string): string[] {
+  if (!anthropicModel) return ['gemini-2.0-flash', 'gemini-1.5-flash'];
   const m = anthropicModel.toLowerCase();
   // opus / sonnet-4 → 高品質モデル
-  if (m.includes('opus') || m.includes('sonnet-4')) return 'gemini-2.5-pro';
-  // sonnet (3.5 系) → 高速バランス
-  if (m.includes('sonnet')) return 'gemini-2.5-flash';
-  // haiku → 軽量・高速
-  if (m.includes('haiku')) return 'gemini-2.5-flash';
-  return 'gemini-2.5-flash';
+  if (m.includes('opus') || m.includes('sonnet-4')) {
+    return ['gemini-2.0-pro-exp', 'gemini-1.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  }
+  // sonnet / haiku → 高速バランス
+  return ['gemini-2.0-flash', 'gemini-1.5-flash'];
 }
 
 // ─── Gemini → Anthropic レスポンス変換 ───
@@ -231,49 +230,67 @@ export default async function handler(req: Request) {
     });
   }
 
-  // 変換 + 呼び出し
-  const geminiModel = pickGeminiModel(body.model);
+  // 変換 + フォールバック呼び出し
+  const candidateModels = pickGeminiModels(body.model);
   const geminiBody = anthropicToGemini(body);
 
-  try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(geminiBody),
-      }
-    );
+  let lastError: { status: number; message: string; model: string } | null = null;
 
-    if (!r.ok) {
-      const errText = await r.text();
-      let errObj: any;
-      try { errObj = JSON.parse(errText); } catch { errObj = { error: { message: errText } }; }
-      return new Response(JSON.stringify({
-        error: {
-          message: errObj?.error?.message || `Gemini API error: ${r.status}`,
-          type: 'gemini_error',
+  for (const geminiModel of candidateModels) {
+    try {
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(geminiBody),
+        }
+      );
+
+      if (!r.ok) {
+        const errText = await r.text();
+        let errObj: any;
+        try { errObj = JSON.parse(errText); } catch { errObj = { error: { message: errText } }; }
+        lastError = {
           status: r.status,
-        },
-      }), {
-        status: r.status,
+          message: errObj?.error?.message || `Gemini API error: ${r.status}`,
+          model: geminiModel,
+        };
+        // 404 (モデル未対応) と 400 (モデル不正) のみ次のモデルを試す
+        if (r.status === 404 || (r.status === 400 && lastError.message.includes('not found'))) {
+          continue;
+        }
+        // それ以外のエラー (認証・レート等) はそのまま返す
+        return new Response(JSON.stringify({
+          error: { message: lastError.message, type: 'gemini_error', status: r.status, model: geminiModel },
+        }), {
+          status: r.status,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
+      }
+
+      // 成功
+      const geminiResp = await r.json();
+      const anthropicResp = geminiToAnthropic(geminiResp, body.model || geminiModel);
+      return new Response(JSON.stringify(anthropicResp), {
+        status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
+    } catch (e: any) {
+      lastError = { status: 500, message: e.message || 'Unknown error', model: geminiModel };
+      continue;
     }
-
-    const geminiResp = await r.json();
-    const anthropicResp = geminiToAnthropic(geminiResp, body.model || geminiModel);
-
-    return new Response(JSON.stringify(anthropicResp), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
-  } catch (e: any) {
-    return new Response(JSON.stringify({
-      error: { message: e.message || 'Unknown error', type: 'proxy_error' },
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
   }
+
+  // すべての候補モデルが失敗
+  return new Response(JSON.stringify({
+    error: {
+      message: `すべての Gemini モデル候補が失敗しました。最後のエラー: ${lastError?.message} (モデル: ${lastError?.model})`,
+      type: 'all_models_failed',
+      candidates: candidateModels,
+    },
+  }), {
+    status: lastError?.status || 500,
+    headers: { 'Content-Type': 'application/json', ...corsHeaders },
+  });
 }

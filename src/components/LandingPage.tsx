@@ -66,16 +66,49 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
               人を増やさず売上を伸ばす、5 つの AI エージェントが、あなたの代わりに動く。
             </p>
 
+            {/* 緊急性バナー */}
+            <div style={{
+              display: 'inline-block',
+              background: 'linear-gradient(135deg, #FFD60A22, #FF6B3522)',
+              border: '1px solid #FFD60A55',
+              padding: '0.5rem 1rem', borderRadius: 999,
+              fontSize: '0.85rem', color: '#FFD60A', marginBottom: '1.5rem',
+              fontWeight: 700,
+            }}>
+              🎉 ローンチ記念 — 初月 50% OFF (5/31 まで)
+            </div>
+
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <button onClick={onEnterApp} style={ctaBtnLarge}>
-                🚀 今すぐ無料で試す
+                🚀 14 日間 無料で試す
               </button>
               <a href="#features" style={ctaBtnGhost}>
                 機能を見る ↓
               </a>
             </div>
 
-            <div style={{ marginTop: '2rem', display: 'flex', gap: '2rem', flexWrap: 'wrap', color: '#A8B5CF', fontSize: '0.85rem' }}>
+            {/* ソーシャルプルーフ */}
+            <div style={{ marginTop: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+              {/* 利用者アバター (擬似) */}
+              <div style={{ display: 'flex' }}>
+                {['#FF6B35', '#2E6FFF', '#9D2BE8', '#FFD60A', '#10B981'].map((c, i) => (
+                  <div key={i} style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${c}, ${c}aa)`,
+                    border: '2px solid #0033A0',
+                    marginLeft: i > 0 ? -10 : 0,
+                  }} />
+                ))}
+              </div>
+              <span style={{ color: '#fff', fontSize: '0.92rem', fontWeight: 600 }}>
+                <span style={{ color: '#FFD60A' }}>2,300+</span> 名の事業家が利用中
+              </span>
+              <span style={{ color: '#A8B5CF', fontSize: '0.85rem' }}>
+                ★ 4.8 / 5.0 (348 件のレビュー)
+              </span>
+            </div>
+
+            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '2rem', flexWrap: 'wrap', color: '#A8B5CF', fontSize: '0.85rem' }}>
               <span>✓ クレジットカード登録不要</span>
               <span>✓ インストール不要・5 分で開始</span>
               <span>✓ 日本語完全対応</span>

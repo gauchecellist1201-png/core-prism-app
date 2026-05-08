@@ -11,8 +11,15 @@ const MASTER_KEY_STORAGE = 'core_master_key_v1';
   const queryMaster = url.searchParams.get('master');
   if (queryMaster) {
     localStorage.setItem(MASTER_KEY_STORAGE, queryMaster);
-    // クエリパラメータを履歴から削除 (URL から master 文字列を消す)
     url.searchParams.delete('master');
+    window.history.replaceState({}, '', url.toString());
+  }
+
+  // ─── 紹介コード ?ref=XXX を sessionStorage に保留 (signup 時に適用) ───
+  const ref = url.searchParams.get('ref');
+  if (ref && ref.length >= 6) {
+    try { sessionStorage.setItem('pending_ref', ref); } catch { /* */ }
+    url.searchParams.delete('ref');
     window.history.replaceState({}, '', url.toString());
   }
 })();
