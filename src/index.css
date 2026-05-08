@@ -559,3 +559,115 @@ input, textarea, select { font-family: inherit; }
   padding-right: env(safe-area-inset-right, 0);
 }
 
+/* ============================================================
+   AI Support Chat Floating Button (FAB)
+   - Desktop: 画面中央より少し右、底上 32px (右パネルとメインの隙間)
+   - Mobile: 画面中央下、より大きく + 「AI と話す」ラベル
+   ============================================================ */
+.cp-ai-fab-wrap {
+  /* Default: モバイル想定 (中央下) */
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+  transform: translateX(-50%);
+  gap: 6px;
+}
+
+.cp-ai-fab {
+  width: 72px;
+  height: 72px;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.cp-ai-fab-ring {
+  width: 72px;
+  height: 72px;
+  pointer-events: none;
+}
+
+.cp-ai-fab-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  user-select: none;
+}
+.cp-ai-fab-label-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  animation: cp-ai-fab-dot-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cp-ai-fab-dot-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* デスクトップ: 中央より少し右 (右サイドパネルとメインの隙間) */
+@media (min-width: 769px) {
+  .cp-ai-fab-wrap {
+    /* 右パネルが 256px (w-64) の左隣あたり = 画面右から 320px〜 */
+    left: auto;
+    right: max(280px, calc(env(safe-area-inset-right, 0px) + 20%));
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
+    transform: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+  .cp-ai-fab {
+    width: 64px;
+    height: 64px;
+  }
+  .cp-ai-fab-ring {
+    width: 64px;
+    height: 64px;
+  }
+  /* デスクトップでは hover 時のみラベルが滑らかに出る */
+  .cp-ai-fab-label {
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+  }
+  .cp-ai-fab-wrap:hover .cp-ai-fab-label {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* タブレット〜大きいデスクトップ: 右パネル含むレイアウトに合わせて右側を確保 */
+@media (min-width: 1280px) {
+  .cp-ai-fab-wrap {
+    right: 320px; /* 右パネル (w-64=256px) + 余白 */
+  }
+}
+
+/* モバイル: より大きく + ラベル常時表示 + 横長のピル風に */
+@media (max-width: 768px) {
+  .cp-ai-fab {
+    width: 80px;
+    height: 80px;
+  }
+  .cp-ai-fab-ring {
+    width: 80px;
+    height: 80px;
+  }
+  .cp-ai-fab-label {
+    font-size: 12px;
+    padding: 6px 14px;
+    margin-top: 2px;
+  }
+  /* CmdK ヒントボタンと衝突しない位置に少し上げる */
+  .cp-ai-fab-wrap {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  }
+}
+

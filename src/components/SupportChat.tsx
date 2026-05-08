@@ -83,49 +83,102 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
 
   return (
     <>
-      {/* Floating Action Button (右下固定) */}
+      {/* Floating Action Button — デスクトップ: 中央右寄り / モバイル: 中央下で目立つ */}
       <AnimatePresence>
         {!open && (
-          <motion.button
-            key="fab"
-            onClick={() => setOpen(true)}
-            className="fixed z-40 flex items-center justify-center rounded-full shadow-lg"
-            style={{
-              right: 'calc(env(safe-area-inset-right, 0px) + 16px)',
-              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
-              width: 56,
-              height: 56,
-              background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
-              color: '#fff',
-              boxShadow: `0 8px 24px ${accentColor}66`,
-            }}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.07 }}
-            whileTap={{ scale: 0.92 }}
-            aria-label={`${aiName} を開く`}
-            title={`${aiName} に質問する (⌘/)`}
+          <motion.div
+            key="fab-wrap"
+            className="cp-ai-fab-wrap fixed z-40 flex flex-col items-center"
+            initial={{ scale: 0, opacity: 0, y: 12 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0, opacity: 0, y: 12 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 280 }}
           >
-            <BrandIcon size={28} withWordmark={false} />
-            {unreadAssistant > 0 && (
-              <span
-                className="absolute flex items-center justify-center rounded-full text-[10px] font-bold"
+            {/* breathing リング */}
+            <div className="relative">
+              <motion.div
+                aria-hidden
+                animate={{ scale: [1, 1.45], opacity: [0.55, 0] }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
+                className="cp-ai-fab-ring absolute inset-0 rounded-full"
+                style={{ background: `radial-gradient(circle, ${accentColor}77 0%, ${accentColor}00 70%)` }}
+              />
+              <motion.div
+                aria-hidden
+                animate={{ scale: [1, 1.7], opacity: [0.35, 0] }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut', delay: 0.7 }}
+                className="cp-ai-fab-ring absolute inset-0 rounded-full"
+                style={{ background: `radial-gradient(circle, ${accentColor}55 0%, ${accentColor}00 70%)` }}
+              />
+
+              <motion.button
+                onClick={() => setOpen(true)}
+                className="cp-ai-fab relative flex items-center justify-center rounded-full"
                 style={{
-                  top: -2,
-                  right: -2,
-                  minWidth: 20,
-                  height: 20,
-                  padding: '0 5px',
-                  background: '#fff',
-                  color: accentColor,
-                  border: `2px solid ${accentColor}`,
+                  background: `radial-gradient(circle at 30% 28%, rgba(255,255,255,0.22), transparent 55%), linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
+                  color: '#fff',
+                  boxShadow: `0 16px 44px ${accentColor}88, 0 6px 14px rgba(0,0,0,0.3), inset 0 0 18px rgba(255,255,255,0.12)`,
+                  border: `1px solid ${accentColor}aa`,
                 }}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.93 }}
+                aria-label={`${aiName} と話す`}
+                title={`${aiName} に質問・通話 (⌘/)`}
               >
-                {Math.min(unreadAssistant, 99)}
-              </span>
-            )}
-          </motion.button>
+                {/* 回転するスペクトル */}
+                <motion.span
+                  aria-hidden
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
+                  className="absolute inset-0 rounded-full pointer-events-none"
+                  style={{
+                    background: `conic-gradient(from 0deg, transparent 0deg, ${accentColor}66 60deg, transparent 130deg, transparent 360deg)`,
+                    filter: 'blur(6px)',
+                    opacity: 0.6,
+                  }}
+                />
+                <span className="relative z-10 flex items-center justify-center" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.45))' }}>
+                  <BrandIcon size={36} withWordmark={false} />
+                </span>
+
+                {unreadAssistant > 0 && (
+                  <span
+                    className="absolute flex items-center justify-center rounded-full text-[10px] font-bold"
+                    style={{
+                      top: -4,
+                      right: -4,
+                      minWidth: 22,
+                      height: 22,
+                      padding: '0 6px',
+                      background: '#fff',
+                      color: accentColor,
+                      border: `2px solid ${accentColor}`,
+                      boxShadow: `0 2px 8px ${accentColor}66`,
+                      zIndex: 11,
+                    }}
+                  >
+                    {Math.min(unreadAssistant, 99)}
+                  </span>
+                )}
+              </motion.button>
+            </div>
+
+            {/* ラベル (モバイルでは常時、デスクトップは hover で淡く表示) */}
+            <span
+              className="cp-ai-fab-label"
+              style={{
+                color: '#fff',
+                background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
+                boxShadow: `0 4px 12px ${accentColor}55`,
+              }}
+            >
+              <span
+                className="cp-ai-fab-label-dot"
+                style={{ background: '#fff', boxShadow: `0 0 6px #fff` }}
+              />
+              AI と話す
+            </span>
+          </motion.div>
         )}
       </AnimatePresence>
 
