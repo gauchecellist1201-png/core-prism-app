@@ -58,24 +58,24 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       overflowX: 'hidden',
     }}>
       {/* ── ヘッダ ────────────────────────────── */}
-      <header style={{
+      <header className="lp-safe" style={{
         position: 'sticky', top: 0, zIndex: 50,
         background: 'rgba(26,10,38,0.7)',
         backdropFilter: 'blur(18px)',
         borderBottom: `1px solid ${IRIS_COLORS.purpleDeep}40`,
       }}>
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <IrisLogo size={30} withWordmark />
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+          <IrisLogo size={28} withWordmark />
           <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-            <a href="#facets" style={navLink}>機能</a>
-            <a href="#pricing" style={navLink}>料金</a>
+            <a href="#facets" style={navLink} className="lp-nav-link">機能</a>
+            <a href="#pricing" style={navLink} className="lp-nav-link">料金</a>
             <button onClick={onEnter} style={ctaBtnSmall}>はじめる →</button>
           </nav>
         </div>
       </header>
 
       {/* ── HERO ────────────────────────────── */}
-      <section style={{ position: 'relative', padding: '8rem 1.25rem 7rem', overflow: 'hidden', textAlign: 'center' }}>
+      <section className="lp-hero-pad lp-safe" style={{ position: 'relative', padding: '8rem 1.25rem 7rem', overflow: 'hidden', textAlign: 'center' }}>
         <IrisAuroraBackdrop />
 
         <div style={{ maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 2 }}>
@@ -165,7 +165,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       </section>
 
       {/* ── 機能 (光彩のファセット) ────────────────────────────── */}
-      <section id="facets" style={{ padding: sectionPad, background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #2a0a3a 100%)` }}>
+      <section id="facets" className="lp-section-pad" style={{ padding: sectionPad, background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #2a0a3a 100%)` }}>
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
             <p style={{
@@ -244,7 +244,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       </section>
 
       {/* ── 「光は、受け取る人がいて初めて光になる」 ────────────────────────────── */}
-      <section style={{ padding: sectionPad, background: `linear-gradient(180deg, #2a0a3a 0%, ${IRIS_COLORS.inkBlack} 100%)` }}>
+      <section className="lp-section-pad" style={{ padding: sectionPad, background: `linear-gradient(180deg, #2a0a3a 0%, ${IRIS_COLORS.inkBlack} 100%)` }}>
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
           <p style={{
             fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 600, marginBottom: '1.5rem',
@@ -286,7 +286,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       </section>
 
       {/* ── 価格 ────────────────────────────── */}
-      <section id="pricing" style={{ padding: sectionPad, background: IRIS_COLORS.inkBlack }}>
+      <section id="pricing" className="lp-section-pad" style={{ padding: sectionPad, background: IRIS_COLORS.inkBlack }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <p style={{

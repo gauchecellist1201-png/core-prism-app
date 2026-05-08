@@ -111,7 +111,7 @@ export default function MasterEntry() {
         background:
           'radial-gradient(circle at 30% 20%, rgba(168,85,247,0.18), transparent 50%), radial-gradient(circle at 70% 80%, rgba(244,63,94,0.18), transparent 50%), #050510',
         color: '#fff',
-        padding: '24px',
+        padding: 'max(16px, env(safe-area-inset-top, 16px)) 16px max(16px, env(safe-area-inset-bottom, 16px))',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -128,7 +128,7 @@ export default function MasterEntry() {
           backdropFilter: 'blur(24px)',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 24,
-          padding: '32px 28px',
+          padding: 'clamp(20px, 5vw, 32px) clamp(16px, 5vw, 28px)',
           boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
         }}
       >
@@ -285,7 +285,7 @@ export default function MasterEntry() {
         </div>
 
         {/* アクション */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
           <button
             onClick={handleSave}
             style={{
@@ -376,7 +376,7 @@ export default function MasterEntry() {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button
             onClick={() => goToApp('prism')}
             style={{

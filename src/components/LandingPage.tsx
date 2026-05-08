@@ -29,20 +29,20 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
   return (
     <div style={{ background: BG_DARK, color: '#fff', minHeight: '100vh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
       {/* ── ヘッダ ────────────────────────────── */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,10,20,0.7)', backdropFilter: 'blur(18px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <PrismLogo size={30} withWordmark />
+      <header className="lp-safe" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,10,20,0.7)', backdropFilter: 'blur(18px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+          <PrismLogo size={28} withWordmark />
           <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-            <a href="#agents" style={navLink}>7つのエージェント</a>
-            <a href="#exec" style={navLink}>実行する AI</a>
-            <a href="#pricing" style={navLink}>料金</a>
+            <a href="#agents" style={navLink} className="lp-nav-link">7つのエージェント</a>
+            <a href="#exec" style={navLink} className="lp-nav-link">実行する AI</a>
+            <a href="#pricing" style={navLink} className="lp-nav-link">料金</a>
             <button onClick={onEnterApp} style={ctaBtnSmall}>解き放つ →</button>
           </nav>
         </div>
       </header>
 
       {/* ── HERO ────────────────────────────── */}
-      <section style={{ position: 'relative', padding: '8rem 1.25rem 7rem', overflow: 'hidden' }}>
+      <section className="lp-hero-pad lp-safe" style={{ position: 'relative', padding: '8rem 1.25rem 7rem', overflow: 'hidden' }}>
         <PrismHeroBackdrop />
 
         <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 2, textAlign: 'center' }}>
@@ -113,7 +113,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
       </section>
 
       {/* ── セクション: 7 つのエージェント ────────────────────────────── */}
-      <section id="agents" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#070712 0%,#0d0d1c 100%)' }}>
+      <section id="agents" className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#070712 0%,#0d0d1c 100%)' }}>
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
             <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#a78bfa', fontWeight: 700, marginBottom: '0.75rem' }}>
@@ -196,7 +196,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
       </section>
 
       {/* ── セクション: 提案じゃない、実行する ────────────────────────────── */}
-      <section id="exec" style={{ padding: sectionPad, background: '#0d0d1c' }}>
+      <section id="exec" className="lp-section-pad" style={{ padding: sectionPad, background: '#0d0d1c' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
             <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#fbbf24', fontWeight: 700, marginBottom: '0.75rem' }}>
@@ -254,7 +254,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
       </section>
 
       {/* ── セクション: 1 つの OS、すべての光 ────────────────────────────── */}
-      <section style={{ padding: sectionPad, background: 'linear-gradient(180deg,#0d0d1c 0%,#070712 100%)' }}>
+      <section className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#0d0d1c 0%,#070712 100%)' }}>
         <div className="lp-two-col" style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', alignItems: 'center' }}>
           <div>
             <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#60a5fa', fontWeight: 700, marginBottom: '0.75rem' }}>
@@ -280,7 +280,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
       </section>
 
       {/* ── 価格 ────────────────────────────── */}
-      <section id="pricing" style={{ padding: sectionPad, background: '#070712' }}>
+      <section id="pricing" className="lp-section-pad" style={{ padding: sectionPad, background: '#070712' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#f472b6', fontWeight: 700, marginBottom: '0.75rem' }}>
@@ -454,7 +454,7 @@ function PrismHeroBackdrop() {
 // ============================================================
 function PrismFanVisualization() {
   return (
-    <div style={{
+    <div className="lp-prism-fan" style={{
       position: 'relative',
       width: '100%', height: 320,
       display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
@@ -471,7 +471,7 @@ function PrismFanVisualization() {
           zIndex: 5,
         }}
       />
-      <div style={{
+      <div className="lp-prism-fan-cards" style={{
         display: 'flex', justifyContent: 'center', gap: '0.4rem',
         width: '100%', maxWidth: 880,
       }}>
@@ -481,6 +481,7 @@ function PrismFanVisualization() {
           return (
             <motion.div
               key={s.key}
+              className="lp-prism-fan-card-min"
               initial={{ opacity: 0, y: 20, rotate: 0 }}
               animate={{ opacity: 1, y: 0, rotate: rotateBase }}
               transition={{ duration: 0.7, delay: 0.4 + i * 0.08, ease: 'easeOut' }}
