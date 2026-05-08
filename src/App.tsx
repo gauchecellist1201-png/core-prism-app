@@ -17,7 +17,9 @@ import PersonaCreator from './components/PersonaCreator';
 import SettingsModal from './components/SettingsModal';
 import LandingPage from './components/LandingPage';
 import MasterEntry from './components/MasterEntry';
+import CheckoutModal from './components/CheckoutModal';
 import LegalModal, { type LegalKind } from './components/LegalModal';
+import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, type Plan } from './lib/billing';
 import { PrismBackground } from './components/PrismBackground';
 import { useTheme } from './hooks/useTheme';
 import IrisApp from './iris/IrisApp';
@@ -28,13 +30,18 @@ type View = 'landing' | 'onboarding' | 'selection' | 'dashboard';
 
 const APP_ENTERED_KEY = 'core_app_entered_v1';
 
+/**
+ * アプリへ入る権限チェック (ゲート)
+ * - マスターモード (GAUCHE2026) → OK
+ * - signup 済み + (有料プラン or トライアル有効) → OK
+ * - それ以外 → LP のみ
+ */
 function hasEnteredApp(): boolean {
-  // URL ?app=1 か、過去にアプリを開いたことがあれば常にアプリ
-  if (typeof window !== 'undefined') {
-    if (window.location.search.includes('app=1')) return true;
-    if (window.location.pathname.startsWith('/app')) return true;
-  }
-  return localStorage.getItem(APP_ENTERED_KEY) === 'true';
+  if (typeof window === 'undefined') return false;
+  // /master 経由のオーナー (Claude API キー有り) は無制限
+  if (isMasterAuth()) return true;
+  // billing user の有無 + プラン有効性をチェック
+  return isAuthorizedFn();
 }
 
 function markAppEntered() {
@@ -106,10 +113,34 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
 
+  // 課金フロー: 未 signup なら Checkout モーダルで signup → 入場
+  const { user: billingUser } = useBillingUser();
+  const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
+
   const handleEnterApp = useCallback(() => {
+    if (hasEnteredApp()) {
+      markAppEntered();
+      setView(settings.onboardingComplete ? 'selection' : 'onboarding');
+    } else {
+      // 未認証: 14 日無料トライアルプランで Checkout を起動
+      const trial = PRISM_PLANS.find(p => p.id === 'free') || PRISM_PLANS[0];
+      setCheckoutPlan(trial);
+    }
+  }, [settings.onboardingComplete]);
+
+  const handleCheckoutSuccess = useCallback(() => {
     markAppEntered();
+    setCheckoutPlan(null);
     setView(settings.onboardingComplete ? 'selection' : 'onboarding');
   }, [settings.onboardingComplete]);
+
+  // 既存ユーザーが signup 完了でアプリ表示状態に同期
+  useMemo(() => {
+    if (billingUser && view === 'landing') {
+      markAppEntered();
+      setView(settings.onboardingComplete ? 'selection' : 'onboarding');
+    }
+  }, [billingUser, view, settings.onboardingComplete]);
 
   const handleOnboardingComplete = useCallback((s: Partial<AppSettings>) => {
     updateSettings(s);
@@ -193,6 +224,16 @@ export default function App() {
             key="landing"
             onEnterApp={handleEnterApp}
             onOpenLegal={(k) => setLegalKind(k)}
+          />
+        )}
+
+        {checkoutPlan && (
+          <CheckoutModal
+            key="prism-checkout"
+            brand="prism"
+            plan={checkoutPlan}
+            onClose={() => setCheckoutPlan(null)}
+            onSuccess={handleCheckoutSuccess}
           />
         )}
 

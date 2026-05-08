@@ -395,6 +395,99 @@ export function captureReferralFromUrl() {
   } catch { /* */ }
 }
 
+// ============================================================
+//  アクセスゲート
+// ============================================================
+
+/** マスターキー (オーナー専用 GAUCHE2026) で全機能アクセス可能か */
+export function isMasterAuth(): boolean {
+  try {
+    if (typeof localStorage === 'undefined') return false;
+    return localStorage.getItem('core_master_key_v1') === 'GAUCHE2026';
+  } catch {
+    return false;
+  }
+}
+
+/** トライアル期限が切れていないか */
+export function isTrialActive(user: BillingUser | null): boolean {
+  if (!user) return false;
+  if (user.plan !== 'free') return true;
+  if (!user.trialEndsAt) return false;
+  return new Date(user.trialEndsAt).getTime() > Date.now();
+}
+
+/** アプリにアクセスできる状態か (master or 有効な signup) */
+export function isAuthorized(): boolean {
+  if (isMasterAuth()) return true;
+  const u = loadBillingUser();
+  if (!u) return false;
+  // free プランでトライアル切れならアクセス不可
+  if (u.plan === 'free' && !isTrialActive(u)) return false;
+  return true;
+}
+
+/** 有効プラン: master モードなら 'studio' 相当 (全機能解放) */
+export function getEffectivePlan(user: BillingUser | null): PlanId {
+  if (isMasterAuth()) return 'studio';
+  return user?.plan || 'free';
+}
+
+/**
+ * 機能を使う前に呼ぶ厳格チェック。
+ * - 許可: { ok: true } を返す
+ * - 拒否: { ok: false, reason, upgradeTo? } を返す
+ * - 許可された場合、自動でカウントアップする (count を増やしたくないなら dryRun: true)
+ */
+export function enforceFeature(
+  feature: FeatureKey,
+  options?: { dryRun?: boolean },
+): { ok: true; remaining?: number } | { ok: false; reason: string; upgradeTo?: PlanId } {
+  // マスターモードは無制限
+  if (isMasterAuth()) return { ok: true };
+
+  const user = loadBillingUser();
+  if (!user) {
+    return { ok: false, reason: 'ログインが必要です。アカウントを作成してください。' };
+  }
+
+  // free プラントライアル期限チェック
+  if (user.plan === 'free' && !isTrialActive(user)) {
+    return { ok: false, reason: '14 日間トライアルが終了しました。プランをアップグレードしてください。', upgradeTo: 'standard' };
+  }
+
+  const plan = user.plan;
+  const check = checkFeature(plan, feature);
+
+  if (check.unavailable) {
+    const meta = FEATURE_META[feature];
+    return {
+      ok: false,
+      reason: `「${meta.label}」は現在のプラン (${plan}) では利用できません。`,
+      upgradeTo: check.upgradeTo,
+    };
+  }
+
+  if (typeof check.limit === 'number') {
+    const used = getUsageCount(feature);
+    if (used >= check.limit) {
+      const meta = FEATURE_META[feature];
+      return {
+        ok: false,
+        reason: `「${meta.label}」の今月の利用上限 (${check.limit} 回) に達しました。`,
+        upgradeTo: 'standard',
+      };
+    }
+    if (!options?.dryRun) {
+      incrementUsage(feature);
+    }
+    return { ok: true, remaining: check.limit - used - (options?.dryRun ? 0 : 1) };
+  }
+
+  // unlimited
+  return { ok: true };
+}
+
 // ─── 現在のユーザー (テスト版: localStorage で管理) ───
 const KEY_USER = 'core_billing_user_v1';
 

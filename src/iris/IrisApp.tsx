@@ -7,12 +7,17 @@ import { useSettings } from '../hooks/useSettings';
 import IrisLanding from './IrisLanding';
 import IrisDashboard from './IrisDashboard';
 import CheckoutModal from '../components/CheckoutModal';
-import { useBillingUser, IRIS_PLANS, type Plan } from '../lib/billing';
+import { useBillingUser, IRIS_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, type Plan } from '../lib/billing';
 
 const ENTERED_KEY = 'core_iris_entered_v1';
 
+/**
+ * Iris にアクセスできる状態か (master or 有効な signup)
+ * 友人がリンクを踏んでも、未 signup ならアプリに入れない
+ */
 function hasEntered(): boolean {
-  return localStorage.getItem(ENTERED_KEY) === 'true';
+  if (isMasterAuth()) return true;
+  return isAuthorizedFn();
 }
 function markEntered() {
   localStorage.setItem(ENTERED_KEY, 'true');
@@ -21,7 +26,7 @@ function markEntered() {
 export default function IrisApp() {
   const { settings } = useSettings();
   const { user } = useBillingUser();
-  const [entered, setEntered] = useState(() => hasEntered() || !!useBillingUser().user);
+  const [entered, setEntered] = useState(() => hasEntered());
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
 
   // タイトル + theme-color を Iris に
