@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { enqueueClaudeCall } from '../lib/apiQueue';
+import { PrismLogo, IrisLogo } from './Logo';
 
 interface Props {
   open: boolean;
@@ -160,7 +161,7 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
   const ss = (elapsed % 60).toString().padStart(2, '0');
 
   const aiName = brand === 'iris' ? 'アイリス' : 'プリズム';
-  const aiEmoji = brand === 'iris' ? '🌸' : '✨';
+  const BrandIcon = brand === 'iris' ? IrisLogo : PrismLogo;
 
   const lastTurn = turns[turns.length - 1];
 
@@ -200,13 +201,15 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
             borderRadius: '50%',
             background: `radial-gradient(circle at 30% 30%, ${accentColor}, ${accentColor}88 60%, ${accentColor}33)`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 96,
             boxShadow: `0 0 80px ${accentColor}88, inset 0 0 60px rgba(255,255,255,0.2)`,
             position: 'relative',
             marginBottom: 32,
           }}
         >
-          {aiEmoji}
+          {/* ブランドロゴをアバターとして表示 */}
+          <div style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.3))', transform: 'scale(1.05)' }}>
+            <BrandIcon size={120} withWordmark={false} />
+          </div>
 
           {/* リング エフェクト */}
           {(phase === 'ai-speaking' || phase === 'listening') && (

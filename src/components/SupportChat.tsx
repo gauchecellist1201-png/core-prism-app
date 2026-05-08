@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSupportChat, type SupportContext } from '../hooks/useSupportChat';
 import VoiceConversation from './VoiceConversation';
+import { PrismLogo, IrisLogo } from './Logo';
 
 interface Props {
   brand: 'prism' | 'iris';
@@ -45,7 +46,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
   ].filter(Boolean).join(' / ');
 
   const aiName = brand === 'iris' ? 'アイリス' : 'プリズム';
-  const aiEmoji = brand === 'iris' ? '🌸' : '✨';
+  const BrandIcon = brand === 'iris' ? IrisLogo : PrismLogo;
   const suggestions = brand === 'iris' ? SUGGESTIONS_IRIS : SUGGESTIONS_PRISM;
 
   useEffect(() => {
@@ -106,7 +107,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
             aria-label={`${aiName} を開く`}
             title={`${aiName} に質問する (⌘/)`}
           >
-            <span style={{ fontSize: 22, lineHeight: 1 }}>{aiEmoji}</span>
+            <BrandIcon size={28} withWordmark={false} />
             {unreadAssistant > 0 && (
               <span
                 className="absolute flex items-center justify-center rounded-full text-[10px] font-bold"
@@ -179,7 +180,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                   boxShadow: `0 4px 12px ${accentColor}55`,
                 }}
               >
-                <span>{aiEmoji}</span>
+                <BrandIcon size={22} withWordmark={false} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-fg leading-tight">{aiName}</p>
@@ -238,7 +239,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                     }}
                   >
                     <p className="text-fg text-sm leading-relaxed">
-                      こんにちは、{aiName} です。{aiEmoji}
+                      こんにちは、{aiName} です。
                       <br />
                       {brand === 'iris'
                         ? '案件・投稿・分析・コミュニティのこと、何でも聞いてください。'
