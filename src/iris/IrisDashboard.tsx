@@ -30,6 +30,8 @@ import IrisQuickAdd from './IrisQuickAdd';
 import IrisVoiceHome from './IrisVoiceHome';
 import { IrisLogo } from '../components/Logo';
 import SupportChat from '../components/SupportChat';
+import ShortcutHelpModal from '../components/ShortcutHelpModal';
+import PwaInstallPrompt from '../components/PwaInstallPrompt';
 
 interface Props {
   settings: AppSettings;
@@ -405,6 +407,12 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           dealCount: myDeals.length,
         }}
       />
+
+      {/* キーボードショートカット (? キーで開閉) */}
+      <ShortcutHelpModal />
+
+      {/* PWA インストール促進 */}
+      <PwaInstallPrompt accentColor={bg.accent} />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import ModeSwitcher from './ModeSwitcher';
 import CognitiveDashboard from './CognitiveDashboard';
 import AISidebar from './AISidebar';
 import SupportChat from './SupportChat';
+import ShortcutHelpModal from './ShortcutHelpModal';
+import PwaInstallPrompt from './PwaInstallPrompt';
 import KnowledgeBase from './KnowledgeBase';
 import MeetingHub from './MeetingHub';
 import HealthHub from './health/HealthHub';
@@ -1104,6 +1106,12 @@ export default function IdentityDashboard({
           knowledgeCount: personaKnowledge.length,
         }}
       />
+
+      {/* キーボードショートカット (? キーで開閉) */}
+      <ShortcutHelpModal />
+
+      {/* PWA インストール促進 */}
+      <PwaInstallPrompt accentColor={persona.accentColor} />
     </motion.div>
   );
 }

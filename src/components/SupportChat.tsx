@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSupportChat, type SupportContext } from '../hooks/useSupportChat';
+import VoiceConversation from './VoiceConversation';
 
 interface Props {
   brand: 'prism' | 'iris';
@@ -32,8 +33,16 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
   const ctx: SupportContext = { brand, ...context };
   const { messages, open, setOpen, isLoading, error, send, clear } = useSupportChat(ctx);
   const [input, setInput] = useState('');
+  const [voiceCallOpen, setVoiceCallOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const ctxString = [
+    context?.page && `ページ: ${context.page}`,
+    context?.personaName && `ペルソナ: ${context.personaName}`,
+    typeof context?.taskCount === 'number' && `タスク: ${context.taskCount}件`,
+    typeof context?.dealCount === 'number' && `案件: ${context.dealCount}件`,
+  ].filter(Boolean).join(' / ');
 
   const aiName = brand === 'iris' ? 'アイリス' : 'プリズム';
   const aiEmoji = brand === 'iris' ? '🌸' : '✨';
@@ -179,6 +188,18 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                   {isLoading ? '考えています…' : 'オンライン'}
                 </p>
               </div>
+              <button
+                onClick={() => setVoiceCallOpen(true)}
+                className="text-[11px] px-2.5 py-1.5 rounded-full transition-all flex items-center gap-1 font-semibold"
+                style={{
+                  background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
+                  color: '#fff',
+                  boxShadow: `0 2px 8px ${accentColor}55`,
+                }}
+                title={`${aiName} に電話する`}
+              >
+                📞 通話
+              </button>
               {messages.length > 0 && (
                 <button
                   onClick={() => {
@@ -384,10 +405,23 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                 </motion.button>
               </div>
               <p className="text-[10px] text-fg-muted text-center mt-1.5 select-none">
-                ⌘/ または Ctrl+/ で開閉 · Enter で送信 · Shift+Enter で改行
+                ⌘/ で開閉 · Enter で送信 · 📞 通話で音声会話 · ? でショートカット
               </p>
             </form>
           </motion.aside>
+        )}
+      </AnimatePresence>
+
+      {/* 音声会話モーダル */}
+      <AnimatePresence>
+        {voiceCallOpen && (
+          <VoiceConversation
+            open={voiceCallOpen}
+            onClose={() => setVoiceCallOpen(false)}
+            brand={brand}
+            accentColor={accentColor}
+            context={ctxString || undefined}
+          />
         )}
       </AnimatePresence>
     </>
