@@ -456,8 +456,17 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
             </motion.button>
 
             {error && (
-              <div className="rounded-md p-2.5 text-xs" style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171' }}>
-                {error}
+              <div className="rounded-md p-2.5 text-xs space-y-1.5" style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171' }}>
+                <p>{error}</p>
+                {/(混みあって|quota|rate limit|429|503)/i.test(error) && (
+                  <a
+                    href="/master"
+                    className="inline-block underline font-semibold"
+                    style={{ color: '#fbbf24' }}
+                  >
+                    👑 マスターモードを設定して制限を解除する →
+                  </a>
+                )}
               </div>
             )}
           </div>

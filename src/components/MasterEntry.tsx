@@ -5,6 +5,7 @@
 // ============================================================
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { resetCircuit } from '../lib/apiQueue';
 
 const MASTER_KEY_STORAGE = 'core_master_key_v1';
 const CLAUDE_KEY_STORAGE = 'core_claude_api_key_v1';
@@ -15,6 +16,8 @@ export default function MasterEntry() {
   const [claudeKey, setClaudeKey] = useState('');
   const [showClaude, setShowClaude] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const [testMessage, setTestMessage] = useState('');
 
   useEffect(() => {
     setMaster(localStorage.getItem(MASTER_KEY_STORAGE) || '');
@@ -35,6 +38,8 @@ export default function MasterEntry() {
     } else {
       localStorage.removeItem(CLAUDE_KEY_STORAGE);
     }
+    // 保存と同時に Gemini 由来の Circuit Breaker を解除 (マスター経路は別)
+    resetCircuit();
     setSavedAt(Date.now());
   };
 
@@ -44,7 +49,48 @@ export default function MasterEntry() {
     localStorage.removeItem(CLAUDE_KEY_STORAGE);
     setMaster('');
     setClaudeKey('');
+    setTestStatus('idle');
+    setTestMessage('');
     setSavedAt(Date.now());
+  };
+
+  const handleTest = async () => {
+    handleSave(); // 先に保存
+    setTestStatus('testing');
+    setTestMessage('Claude API に接続中…');
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-master-key': master.trim(),
+          ...(claudeKey.trim() ? { 'x-claude-api-key': claudeKey.trim() } : {}),
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5',
+          max_tokens: 80,
+          system: 'Reply ONLY with the word "OK" — nothing else.',
+          messages: [{ role: 'user', content: 'ping' }],
+        }),
+      });
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try {
+          const j = await res.json();
+          detail = j?.error?.message || j?.userMessage || j?.message || detail;
+        } catch { /* ignore */ }
+        setTestStatus('fail');
+        setTestMessage(detail);
+        return;
+      }
+      const data = await res.json();
+      const text = data?.content?.[0]?.text || '';
+      setTestStatus('ok');
+      setTestMessage(`✓ Claude API 接続 OK (応答: "${text.slice(0, 30)}")`);
+    } catch (e) {
+      setTestStatus('fail');
+      setTestMessage(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const goToApp = (brand?: 'prism' | 'iris') => {
@@ -239,15 +285,14 @@ export default function MasterEntry() {
         </div>
 
         {/* アクション */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
           <button
             onClick={handleSave}
             style={{
               flex: 1,
               padding: '12px 0',
               borderRadius: 12,
-              background:
-                'linear-gradient(135deg, #f97316, #f59e0b)',
+              background: 'linear-gradient(135deg, #f97316, #f59e0b)',
               border: 'none',
               color: '#fff',
               fontSize: 14,
@@ -259,9 +304,32 @@ export default function MasterEntry() {
             {savedAt && Date.now() - savedAt < 2000 ? '✓ 保存しました' : '保存'}
           </button>
           <button
+            onClick={handleTest}
+            disabled={!isMasterValid || testStatus === 'testing'}
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              borderRadius: 12,
+              background:
+                testStatus === 'ok'
+                  ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                  : testStatus === 'fail'
+                  ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                  : 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+              border: 'none',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: !isMasterValid || testStatus === 'testing' ? 'not-allowed' : 'pointer',
+              opacity: !isMasterValid ? 0.4 : 1,
+            }}
+          >
+            {testStatus === 'testing' ? '接続中…' : testStatus === 'ok' ? '✓ 接続成功' : testStatus === 'fail' ? '× 失敗' : '接続テスト'}
+          </button>
+          <button
             onClick={handleClear}
             style={{
-              padding: '12px 16px',
+              padding: '12px 14px',
               borderRadius: 12,
               background: 'transparent',
               border: '1px solid rgba(255,255,255,0.12)',
@@ -273,6 +341,40 @@ export default function MasterEntry() {
             解除
           </button>
         </div>
+
+        {/* テスト結果 */}
+        {testStatus !== 'idle' && (
+          <div
+            style={{
+              padding: '10px 12px',
+              borderRadius: 10,
+              marginBottom: 14,
+              fontSize: 12,
+              lineHeight: 1.6,
+              background:
+                testStatus === 'ok'
+                  ? 'rgba(34,197,94,0.12)'
+                  : testStatus === 'fail'
+                  ? 'rgba(239,68,68,0.12)'
+                  : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${
+                testStatus === 'ok'
+                  ? 'rgba(34,197,94,0.35)'
+                  : testStatus === 'fail'
+                  ? 'rgba(239,68,68,0.35)'
+                  : 'rgba(255,255,255,0.1)'
+              }`,
+              color:
+                testStatus === 'ok'
+                  ? '#a3e635'
+                  : testStatus === 'fail'
+                  ? '#fca5a5'
+                  : 'rgba(255,255,255,0.7)',
+            }}
+          >
+            {testMessage}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button

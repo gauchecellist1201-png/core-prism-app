@@ -18,6 +18,17 @@ let circuitReason = '';
 function isCircuitOpen(): boolean {
   return Date.now() < circuitOpenUntil;
 }
+
+// マスターモード (オーナーが /master で入力した Claude API 経路) なら
+// Gemini の quota 由来の Circuit を無視する
+function isMasterMode(): boolean {
+  try {
+    if (typeof localStorage === 'undefined') return false;
+    return localStorage.getItem('core_master_key_v1') === 'GAUCHE2026';
+  } catch {
+    return false;
+  }
+}
 function openCircuit(reasonMsg: string, durationMs = 60_000) {
   circuitOpenUntil = Date.now() + durationMs;
   circuitReason = reasonMsg;
@@ -77,9 +88,13 @@ function backoff(attempt: number, isRateLimit: boolean): number {
  */
 export function enqueueClaudeCall<T>(task: Task<T>): Promise<T> {
   // Circuit が open なら即拒否 (大量エラー連発を防止)
-  if (isCircuitOpen()) {
+  // ただしマスターモード (Claude API 直叩き) なら Gemini quota とは別経路なので通す
+  if (isCircuitOpen() && !isMasterMode()) {
     const remain = Math.ceil((circuitOpenUntil - Date.now()) / 1000);
-    return Promise.reject(new Error(`AI が一時的に混みあっています。あと ${remain} 秒お待ちください。${circuitReason}`));
+    return Promise.reject(new Error(
+      `AI が一時的に混みあっています。あと ${remain} 秒お待ちください。${circuitReason}`
+      + ` ─── すぐに解除したい場合は /master を開いて Claude API キーを入力してください。`
+    ));
   }
 
   return new Promise<T>((resolve, reject) => {
@@ -94,9 +109,12 @@ export function enqueueClaudeCall<T>(task: Task<T>): Promise<T> {
           lastErr = err;
 
           // quota 超過なら即 circuit を開く + リトライしない
+          // ただしマスターモードでの quota は Claude 側の問題なので circuit に登録しない
           if (isQuotaError(err)) {
-            const errMsg = err instanceof Error ? err.message : String(err);
-            openCircuit(errMsg.slice(0, 80), 60_000);
+            if (!isMasterMode()) {
+              const errMsg = err instanceof Error ? err.message : String(err);
+              openCircuit(errMsg.slice(0, 80), 60_000);
+            }
             reject(err);
             return;
           }
