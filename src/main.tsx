@@ -24,7 +24,8 @@ const MASTER_KEY_STORAGE = 'core_master_key_v1';
   }
 })();
 
-// グローバル fetch interceptor — /api/ai 宛のリクエストに master key を自動付与
+// グローバル fetch interceptor — /api/ai 宛のリクエストにマスター系ヘッダーを自動付与
+const CLAUDE_KEY_STORAGE = 'core_claude_api_key_v1';
 const originalFetch = window.fetch;
 window.fetch = function patched(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   let url = '';
@@ -34,9 +35,11 @@ window.fetch = function patched(input: RequestInfo | URL, init?: RequestInit): P
 
   if (url.includes('/api/ai')) {
     const masterKey = localStorage.getItem(MASTER_KEY_STORAGE);
-    if (masterKey) {
+    const claudeKey = localStorage.getItem(CLAUDE_KEY_STORAGE);
+    if (masterKey || claudeKey) {
       const headers = new Headers(init?.headers || {});
-      headers.set('x-master-key', masterKey);
+      if (masterKey) headers.set('x-master-key', masterKey);
+      if (claudeKey) headers.set('x-claude-api-key', claudeKey);
       init = { ...init, headers };
     }
   }

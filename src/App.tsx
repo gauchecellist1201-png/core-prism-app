@@ -16,6 +16,7 @@ import IdentityDashboard from './components/IdentityDashboard';
 import PersonaCreator from './components/PersonaCreator';
 import SettingsModal from './components/SettingsModal';
 import LandingPage from './components/LandingPage';
+import MasterEntry from './components/MasterEntry';
 import LegalModal, { type LegalKind } from './components/LegalModal';
 import { PrismBackground } from './components/PrismBackground';
 import { useTheme } from './hooks/useTheme';
@@ -53,7 +54,18 @@ function isIrisPath(): boolean {
   return false;
 }
 
+function isMasterPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master' || p.startsWith('/master/');
+}
+
 export default function App() {
+  // /master — オーナー専用フル機能解放画面
+  if (isMasterPath()) {
+    return <MasterEntry />;
+  }
+
   // CORE Iris (姉妹ブランド) ルート — /iris で別ブランドを起動
   if (isIrisPath()) {
     return <IrisApp />;

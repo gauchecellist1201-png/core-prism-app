@@ -211,11 +211,19 @@ export default async function handler(req: Request) {
 
   // ─── 分岐: Claude (マスターキー) または Gemini (一般) ───
   if (useClaude) {
-    const claudeKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
+    // 優先順: ヘッダー x-claude-api-key (オーナーが /master 画面で入力) → Vercel env
+    const headerKey = req.headers.get('x-claude-api-key') || '';
+    const envKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY || '';
+    const claudeKey = headerKey || envKey;
     if (!claudeKey) {
       return new Response(JSON.stringify({
-        error: { message: 'CLAUDE_API_KEY が未設定 (master モード)。Vercel env に登録してください。' }
-      }), { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+        error: {
+          message: 'CLAUDE_API_KEY が未設定。/master 画面で Claude API キーを入力するか、Vercel env に CLAUDE_API_KEY を登録してください。',
+          type: 'auth_error',
+        },
+        userMessage: 'マスターモード用の Claude API キーが見つかりません。',
+        recovery: 'https://core-prism-app.vercel.app/master を開いて API キーを入力してください。',
+      }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
     }
     try {
       const r = await fetch('https://api.anthropic.com/v1/messages', {

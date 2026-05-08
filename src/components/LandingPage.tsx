@@ -1,6 +1,7 @@
 // ============================================================
 // CORE Prism OS — 公開ランディングページ (LP)
-// 商談プロ風: 大判タイトル + 課題 → 解決 → 機能 → 料金 → CTA
+// コンセプト: ひとつの白光が 7 つの人格に分散する「人格統合 OS」
+// 各人格には専属エージェント AI が付き、商談・財務・創作まで実行する
 // ============================================================
 import { motion } from 'framer-motion';
 import { PrismLogo } from './Logo';
@@ -10,554 +11,713 @@ interface Props {
   onOpenLegal: (kind: 'terms' | 'privacy' | 'tokushou') => void;
 }
 
-const NAVY = '#0033A0';
-const ORANGE = '#FF6B35';
-const CREAM = '#FFF9F0';
-// 目に優しい配色 (純黒 #000 / #111 を避ける)
-const INK = '#2D3142';      // 旧: #111827 → 柔らかい紺グレー
-const INK_SUB = '#5C6378';  // 旧: #4B5566 → 少し明度を上げて読みやすく
-const BORDER = '#D8DDE8';
+// ─── PRISM 7色 (虹のスペクトル) ─────────────────
+const SPECTRUM = [
+  { key: 'red', color: '#ff5757', name: '経営', icon: '🧭', role: 'CEO Agent', desc: '戦略立案・KPI 自動モニタリング・意思決定メモ生成' },
+  { key: 'orange', color: '#ff9842', name: '営業', icon: '💼', role: 'Sales Agent', desc: 'リード探索・商談スクリプト・提案書ドラフト・反論対応' },
+  { key: 'yellow', color: '#fbbf24', name: '財務', icon: '📊', role: 'CFO Agent', desc: 'P&L 自動生成・経費OCR・予算配分・キャッシュ予測' },
+  { key: 'green', color: '#4ade80', name: '創造', icon: '✨', role: 'Creative Agent', desc: '画像生成・キャプション・ブランド設計・スライド自動化' },
+  { key: 'blue', color: '#60a5fa', name: '学び', icon: '📚', role: 'Knowledge Agent', desc: 'YouTube 要約・読書ノート・知識グラフ・横断検索' },
+  { key: 'indigo', color: '#a78bfa', name: '人材', icon: '👥', role: 'People Agent', desc: '1on1 履歴・センチメント分析・採用面接・チームケア' },
+  { key: 'violet', color: '#f472b6', name: '生活', icon: '❤️‍🩹', role: 'Life Agent', desc: '健康・スケジュール・家族の予定・心の整え' },
+];
 
-// セクション共通: 上下パディング + 中央揃え
-const sectionStyle = (bg: string, color: string = INK): React.CSSProperties => ({
-  background: bg,
-  color,
-  padding: '6rem 1.5rem',
-  position: 'relative',
-});
+const BG_DARK = '#070712';
+const sectionPad = '5.5rem 1.25rem';
 
 export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
   return (
-    <div style={{ background: '#fff', minHeight: '100vh', fontFamily: '"游ゴシック", "Hiragino Kaku Gothic ProN", sans-serif' }}>
+    <div style={{ background: BG_DARK, color: '#fff', minHeight: '100vh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
       {/* ── ヘッダ ────────────────────────────── */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${BORDER}` }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <PrismLogo size={32} withWordmark />
-          <nav style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }} className="lp-nav">
-            <a href="#features" style={navLink}>機能</a>
+      <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,10,20,0.7)', backdropFilter: 'blur(18px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <PrismLogo size={30} withWordmark />
+          <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+            <a href="#agents" style={navLink}>7つのエージェント</a>
+            <a href="#exec" style={navLink}>実行する AI</a>
             <a href="#pricing" style={navLink}>料金</a>
-            <a href="#contact" style={navLink}>お問い合わせ</a>
-            <button onClick={onEnterApp} style={ctaBtnSmall}>今すぐ試す →</button>
+            <button onClick={onEnterApp} style={ctaBtnSmall}>解き放つ →</button>
           </nav>
         </div>
       </header>
 
       {/* ── HERO ────────────────────────────── */}
-      <section style={{ ...sectionStyle(NAVY, '#fff'), padding: '7rem 1.5rem 6rem' }}>
-        {/* 装飾円 */}
-        <div style={{ position: 'absolute', top: -150, left: -100, width: 500, height: 500, borderRadius: '50%', background: '#1A4FC4', opacity: 0.3, filter: 'blur(60px)' }} />
-        <div style={{ position: 'absolute', bottom: -200, right: -150, width: 600, height: 600, borderRadius: '50%', background: ORANGE, opacity: 0.15, filter: 'blur(80px)' }} />
+      <section style={{ position: 'relative', padding: '8rem 1.25rem 7rem', overflow: 'hidden' }}>
+        <PrismHeroBackdrop />
 
-        <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 2 }}>
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
+        <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 2, textAlign: 'center' }}>
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.6 }}
+            style={{ fontSize: '0.75rem', letterSpacing: '0.4em', fontWeight: 700, marginBottom: '1.25rem', background: 'linear-gradient(90deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
           >
-            <div style={{ fontSize: '0.75rem', letterSpacing: '0.2em', color: ORANGE, fontWeight: 700, marginBottom: '1.5rem' }}>
-              AN AGENT FOR EVERY FOUNDER
-            </div>
-            <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, lineHeight: 1.1, marginBottom: '1rem' }}>
-              すべての事業家に、<br />
-              <span style={{ color: ORANGE }}>エージェントAIを。</span>
-            </h1>
-            <p style={{ fontSize: 'clamp(1rem, 1.5vw, 1.25rem)', lineHeight: 1.7, color: '#E8EEF8', marginBottom: '2.5rem', maxWidth: 700 }}>
-              リサーチ・リスト作成・アプローチ・商談・案件管理。<br />
-              人を増やさず売上を伸ばす、5 つの AI エージェントが、あなたの代わりに動く。
-            </p>
+            CORE PRISM — AGENT OS FOR EVERY ROLE
+          </motion.p>
 
-            {/* 緊急性バナー */}
-            <div style={{
-              display: 'inline-block',
-              background: 'linear-gradient(135deg, #FFD60A22, #FF6B3522)',
-              border: '1px solid #FFD60A55',
-              padding: '0.5rem 1rem', borderRadius: 999,
-              fontSize: '0.85rem', color: '#FFD60A', marginBottom: '1.5rem',
-              fontWeight: 700,
-            }}>
-              🎉 ローンチ記念 — 初月 50% OFF (5/31 まで)
-            </div>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            style={{ fontSize: 'clamp(2.5rem, 6.5vw, 5.6rem)', fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '1.25rem' }}
+          >
+            あなたは、
+            <br />
+            <span style={{ background: 'linear-gradient(90deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              ひとつじゃない。
+            </span>
+          </motion.h1>
 
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-              <button onClick={onEnterApp} style={ctaBtnLarge}>
-                🚀 14 日間 無料で試す
-              </button>
-              <a href="#features" style={ctaBtnGhost}>
-                機能を見る ↓
-              </a>
-            </div>
+          <motion.p
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.25 }}
+            style={{ fontSize: 'clamp(1rem, 1.7vw, 1.25rem)', color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, marginBottom: '0.75rem' }}
+          >
+            経営者・営業・財務・創造者・先生・親 ── 役割の数だけ、思考が要る。
+          </motion.p>
+          <motion.p
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            style={{ fontSize: 'clamp(1rem, 1.7vw, 1.2rem)', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, marginBottom: '2.5rem', maxWidth: 720, margin: '0 auto 2.5rem' }}
+          >
+            <strong style={{ color: '#fff' }}>CORE Prism</strong> は、ひとつの白い光を
+            <br />
+            7つの人格に分散させる、エージェント AI の OS。
+          </motion.p>
 
-            {/* ソーシャルプルーフ */}
-            <div style={{ marginTop: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
-              {/* 利用者アバター (擬似) */}
-              <div style={{ display: 'flex' }}>
-                {['#FF6B35', '#2E6FFF', '#9D2BE8', '#FFD60A', '#10B981'].map((c, i) => (
-                  <div key={i} style={{
-                    width: 32, height: 32, borderRadius: '50%',
-                    background: `linear-gradient(135deg, ${c}, ${c}aa)`,
-                    border: '2px solid #0033A0',
-                    marginLeft: i > 0 ? -10 : 0,
-                  }} />
-                ))}
-              </div>
-              <span style={{ color: '#fff', fontSize: '0.92rem', fontWeight: 600 }}>
-                <span style={{ color: '#FFD60A' }}>2,300+</span> 名の事業家が利用中
-              </span>
-              <span style={{ color: '#A8B5CF', fontSize: '0.85rem' }}>
-                ★ 4.8 / 5.0 (348 件のレビュー)
-              </span>
-            </div>
-
-            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '2rem', flexWrap: 'wrap', color: '#A8B5CF', fontSize: '0.85rem' }}>
-              <span>✓ クレジットカード登録不要</span>
-              <span>✓ インストール不要・5 分で開始</span>
-              <span>✓ 日本語完全対応</span>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── 課題提起 (吹き出し) ─────────────────── */}
-      <section style={sectionStyle('#FAFBFD')}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <SectionHead eyebrow="営業組織の本音" title="こんな声、聞いたことありませんか?" />
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginTop: '3rem' }}>
-            {[
-              { t: '「リード探すだけで、半日が消える…」', who: '営業担当者 / 30 代' },
-              { t: '「AI に手紙書かせたら、返信率が下がりそう」', who: '営業マネージャ / 40 代' },
-              { t: '「結局、エース頼みになってる」', who: '経営者 / 50 代' },
-              { t: '「議事録、誰も書いてない…」', who: 'IS / 20 代' },
-              { t: '「ツール多すぎて、結局スプレッドシート」', who: 'マネージャ / 30 代' },
-              { t: '「シグナル拾える人材が、社内にいない」', who: 'CEO / 40 代' },
-            ].map((q, i) => (
-              <SpeechBubble key={i} text={q.t} who={q.who} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── ちょっと待って! ─────────────────── */}
-      <section style={sectionStyle(NAVY, '#fff')}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
           <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.55 }}
+            style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}
           >
-            <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 900, color: ORANGE, marginBottom: '1rem' }}>
-              ちょっと待って!
-            </h2>
-            <p style={{ fontSize: 'clamp(1.25rem, 2.5vw, 2rem)', fontWeight: 700, marginBottom: '1.5rem' }}>
-              それ、<span style={{ color: ORANGE }}>CORE Prism</span> なら、ぜんぶ AI が解決します。
-            </p>
-            <p style={{ fontSize: '1.1rem', color: '#C8D4E8', maxWidth: 700, margin: '0 auto' }}>
-              リード探し / リスト作成 / メール作成 / 議事録 / 案件管理 — すべてワンクリック。
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── 統計 ─────────────────────────────── */}
-      <section style={sectionStyle('#fff')}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <SectionHead eyebrow="導入企業の変化" title="数字が、語ります。" />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginTop: '3rem' }}>
-            {[
-              { v: '41%', l: 'リード獲得時間\n削減', c: ORANGE },
-              { v: '72%', l: '返信率\n向上', c: NAVY },
-              { v: '38%', l: '商談化率\n改善', c: '#10B981' },
-              { v: '92%', l: '担当者の\n満足度', c: '#3B82F6' },
-            ].map((s, i) => (
-              <StatCard key={i} value={s.v} label={s.l} color={s.c} />
-            ))}
-          </div>
-          <p style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.85rem', color: INK_SUB, fontStyle: 'italic' }}>
-            ※ 自社 β テスト 12 社、3 ヶ月間の試算 (2026 年 4 月)
-          </p>
-        </div>
-      </section>
-
-      {/* ── 5 機能 ───────────────────────────── */}
-      <section id="features" style={sectionStyle('#FAFBFD')}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <SectionHead eyebrow="1 分でわかる、CORE Prism" title="5 つの AI が、営業の全工程を伴走。" />
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '3rem' }}>
-            {[
-              { n: '01', t: 'リサーチ AI', d: '企業名を入れるだけで、業界・課題・キーパーソン・売り込み角度を生成。', c: ORANGE },
-              { n: '02', t: 'リスト・スコアリング AI', d: 'リードを 0–100 で自動採点。理由付き。優先順位をつけて動ける。', c: NAVY },
-              { n: '03', t: 'アプローチ AI', d: '相手・トーン・目的を指定するだけで、返信率の高い個別最適メールを生成。', c: '#10B981' },
-              { n: '04', t: 'シグナル予測 AI', d: '採用拡大・資金調達・新製品 — ホットな兆候を AI が常時監視。', c: '#3B82F6' },
-              { n: '05', t: '商談 AI / 議事録 AI', d: '議事録の自動生成・次アクション・受注確率まで、商談を構造化。', c: '#A855F7' },
-            ].map((f, i) => (
-              <FeatureRow key={i} {...f} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 70% 氷山 ────────────────────────── */}
-      <section style={sectionStyle(NAVY, '#fff')}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '3rem', alignItems: 'center' }}>
-          <div>
-            <div style={{ color: ORANGE, fontSize: '0.85rem', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '1rem' }}>
-              知っていましたか?
-            </div>
-            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, lineHeight: 1.2, marginBottom: '1rem' }}>
-              営業時間の<br />
-              <span style={{ fontSize: 'clamp(4rem, 10vw, 7rem)', color: ORANGE, display: 'inline-block', lineHeight: 1 }}>70%</span>は、<br />
-              <span style={{ fontSize: 'clamp(1.4rem, 3vw, 2rem)' }}>「探す・打ち込む・整える」に消えている。</span>
-            </h2>
-            <p style={{ fontSize: '1rem', color: '#C8D4E8', lineHeight: 1.8 }}>
-              CORE Prism は、灰色の <span style={{ color: ORANGE, fontWeight: 700 }}>70%</span> を AI に渡し、<br />
-              人間を「<span style={{ color: '#fff', fontWeight: 700 }}>顧客と話す</span>」時間に集中させます。
-            </p>
-          </div>
-
-          <div>
-            <div style={{ fontSize: '0.85rem', color: '#C8D4E8', marginBottom: '1rem' }}>営業 1 日の内訳 (時間)</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <div style={{ background: '#4A5A78', padding: '1.5rem 1rem', borderRadius: 8, fontWeight: 700 }}>
-                70%   リサーチ・入力・整理
-              </div>
-              <div style={{ background: ORANGE, padding: '0.75rem 1rem', borderRadius: 8, fontWeight: 700, width: '30%', minWidth: 180 }}>
-                30%   顧客と話す
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 安心ポイント ──────────────────────── */}
-      <section style={sectionStyle('#fff')}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <SectionHead eyebrow="ご安心を" title="日本のビジネスに、ぴったりフィット。" />
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginTop: '3rem' }}>
-            {[
-              { e: '🛡', t: 'データは、あなたの中に。', d: 'localStorage / 自社 DB に保存。学習にも使われません。' },
-              { e: '🇯🇵', t: '日本語の文体に、最適化。', d: '敬語・行間・取引慣習を理解。違和感のない仕上がり。' },
-              { e: '⚡', t: '5 分で、はじめられる。', d: 'インストール不要・ブラウザだけ。明日から使えます。' },
-            ].map((p, i) => (
-              <div key={i} style={{
-                background: CREAM,
-                border: `2px solid ${ORANGE}`,
-                borderRadius: 16,
-                padding: '2rem',
-                textAlign: 'center',
-              }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{p.e}</div>
-                <div style={{ fontSize: '1.15rem', fontWeight: 700, color: NAVY, marginBottom: '0.75rem' }}>{p.t}</div>
-                <div style={{ fontSize: '0.9rem', color: INK_SUB, lineHeight: 1.7 }}>{p.d}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 料金プラン ────────────────────────── */}
-      <section id="pricing" style={sectionStyle('#FAFBFD')}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <SectionHead eyebrow="料金プラン" title="事業フェーズに合わせて、3 段階。" />
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginTop: '3rem' }}>
-            <PricingCard
-              name="Starter" yen="¥4,980" tag="まず試したい個人・スタートアップに"
-              feats={['基本 AI 機能', '1 人格 / 1 ユーザー', 'ナレッジ 100 件まで', 'コミュニティサポート']}
-              accent={NAVY} popular={false}
-              onCta={onEnterApp}
-            />
-            <PricingCard
-              name="Standard" yen="¥9,800" tag="チームで本格活用"
-              feats={['全 AI 機能 (商談 AI 含)', '無制限人格 / 無制限ユーザー', 'ナレッジ 無制限', 'OpenAI TTS 音声秘書', 'メール / Chat サポート']}
-              accent={ORANGE} popular={true}
-              onCta={onEnterApp}
-            />
-            <PricingCard
-              name="Exclusive" yen="¥29,800" tag="プロフェッショナル / 経営者"
-              feats={['Standard 全機能', '専任カスタマーサクセス', '優先サポート (1 営業日)', 'カスタム連携 (Salesforce 等)', '社内研修 / 導入伴走']}
-              accent="#A855F7" popular={false}
-              onCta={onEnterApp}
-            />
-          </div>
-
-          <p style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.85rem', color: INK_SUB, fontStyle: 'italic' }}>
-            ※ 年間一括契約で 12 ヶ月分が 10 ヶ月分の料金になります (前半 3 プラン)<br />
-            ※ ローンチ記念 — 最初の 1 ヶ月は全プラン無料
-          </p>
-        </div>
-      </section>
-
-      {/* ── CTA ─────────────────────────────── */}
-      <section id="contact" style={{ ...sectionStyle(NAVY, '#fff'), padding: '6rem 1.5rem' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, marginBottom: '1rem' }}>
-            まずは、<br />
-            <span style={{ color: ORANGE }}>1 ヶ月の無料トライアルから。</span>
-          </h2>
-          <p style={{ fontSize: '1.1rem', color: '#E8EEF8', marginBottom: '3rem' }}>
-            クレジットカード登録不要。インストール不要。日本語完全対応。
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', maxWidth: 700, margin: '0 auto' }}>
-            <button onClick={onEnterApp} style={{
-              ...ctaBtnLarge,
-              background: ORANGE,
-              fontSize: '1.1rem',
-              padding: '1.25rem 2rem',
-            }}>
-              🚀 今すぐ試す
+            <button onClick={onEnterApp} style={ctaBtnHero}>
+              ✨ 7つの自分を解き放つ
             </button>
-            <a href="mailto:gauche.cellist1201@gmail.com?subject=CORE%20Prism%20%E3%83%87%E3%83%A2%E5%B8%8C%E6%9C%9B" style={{
-              background: '#fff',
-              color: NAVY,
-              padding: '1.25rem 2rem',
-              borderRadius: 12,
-              fontWeight: 700,
-              textDecoration: 'none',
-              display: 'inline-block',
-              fontSize: '1.1rem',
-            }}>
-              💬 デモ・相談予約
+            <a href="#agents" style={ctaBtnGhost}>
+              エージェントを見る
             </a>
+          </motion.div>
+
+          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '1.5rem' }}>
+            14 日間無料 · クレカ不要 · いつでも解約可
+          </p>
+        </div>
+
+        {/* 7色プリズム可視化 */}
+        <div style={{ maxWidth: 980, margin: '4rem auto 0', position: 'relative', zIndex: 2 }}>
+          <PrismFanVisualization />
+        </div>
+      </section>
+
+      {/* ── セクション: 7 つのエージェント ────────────────────────────── */}
+      <section id="agents" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#070712 0%,#0d0d1c 100%)' }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#a78bfa', fontWeight: 700, marginBottom: '0.75rem' }}>
+              7 AGENTS, 1 OS
+            </p>
+            <h2 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.75rem)', fontWeight: 800, lineHeight: 1.2, marginBottom: '1rem' }}>
+              7 つのあなたに、
+              <br />
+              <span style={{ background: 'linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                7 つのエージェント。
+              </span>
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.6)', maxWidth: 700, margin: '0 auto', fontSize: '1rem', lineHeight: 1.7 }}>
+              役割ごとに専属の AI エージェントが伴走し、考え・書き・調べ・整える。
+              <br />
+              提案で終わらない、<strong style={{ color: '#fff' }}>実行までやりきる</strong> 7 つの脳。
+            </p>
           </div>
 
-          <p style={{ marginTop: '2rem', color: '#A8B5CF', fontSize: '0.85rem' }}>
-            5 分で開始 / カード登録なし / オンラインデモ 30 分・無料
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '1.25rem',
+          }}>
+            {SPECTRUM.map((s, i) => (
+              <motion.div
+                key={s.key}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-50px' }}
+                transition={{ duration: 0.5, delay: i * 0.05 }}
+                style={{
+                  position: 'relative',
+                  background: 'rgba(255,255,255,0.025)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderRadius: 18,
+                  padding: '1.5rem 1.25rem',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  top: -40, right: -40,
+                  width: 140, height: 140,
+                  borderRadius: '50%',
+                  background: s.color,
+                  opacity: 0.18,
+                  filter: 'blur(40px)',
+                  pointerEvents: 'none',
+                }} />
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem',
+                  position: 'relative', zIndex: 2,
+                }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12,
+                    background: `linear-gradient(135deg, ${s.color}, ${s.color}aa)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '1.4rem',
+                    boxShadow: `0 8px 24px ${s.color}55`,
+                  }}>
+                    {s.icon}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: s.color, fontWeight: 700, marginBottom: 2 }}>
+                      {s.role.toUpperCase()}
+                    </p>
+                    <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
+                      {s.name}エージェント
+                    </p>
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, position: 'relative', zIndex: 2 }}>
+                  {s.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── セクション: 提案じゃない、実行する ────────────────────────────── */}
+      <section id="exec" style={{ padding: sectionPad, background: '#0d0d1c' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#fbbf24', fontWeight: 700, marginBottom: '0.75rem' }}>
+              EXECUTION, NOT JUST SUGGESTIONS
+            </p>
+            <h2 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.75rem)', fontWeight: 800, lineHeight: 1.2, marginBottom: '1rem' }}>
+              提案で終わらない。
+              <br />
+              <span style={{ background: 'linear-gradient(90deg,#fbbf24,#ff9842,#ff5757)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                書く、整える、提出する。
+              </span>
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.6)', maxWidth: 700, margin: '0 auto', fontSize: '1rem', lineHeight: 1.7 }}>
+              議事録・スライド・契約書・営業メール・商談ロールプレイ ──
+              <br />
+              エージェントが <strong style={{ color: '#fff' }}>仕事そのもの</strong> をやってくれる。
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '1rem',
+          }}>
+            {[
+              { emoji: '📝', label: '議事録 AI', desc: '会話を録音 → 要約・タスク抽出・送付メール' },
+              { emoji: '📑', label: 'スライド AI', desc: '構成・原稿・デザインまでワンコマンドで' },
+              { emoji: '⚖️', label: '契約書 AI', desc: 'NDA・業務委託・賃貸 — 雛形+リスク確認' },
+              { emoji: '🎯', label: '商談 AI', desc: '反論ロープレ・刺さるトーク・次の一手' },
+              { emoji: '💌', label: 'メール AI', desc: '受信トレイを 30 分間隔で巡回・下書き済' },
+              { emoji: '🧾', label: '請求 AI', desc: '見積→発注→納品→請求の一気通貫' },
+              { emoji: '🎨', label: '画像 AI', desc: 'ブランドに沿った投稿・サムネ・OG画像' },
+              { emoji: '🎤', label: '音声入力', desc: '思考をしゃべるだけで自動分類・整理' },
+            ].map((f, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.4, delay: (i % 4) * 0.05 }}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 14,
+                  padding: '1.25rem',
+                }}
+              >
+                <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{f.emoji}</div>
+                <p style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{f.label}</p>
+                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>{f.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── セクション: 1 つの OS、すべての光 ────────────────────────────── */}
+      <section style={{ padding: sectionPad, background: 'linear-gradient(180deg,#0d0d1c 0%,#070712 100%)' }}>
+        <div className="lp-two-col" style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', alignItems: 'center' }}>
+          <div>
+            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#60a5fa', fontWeight: 700, marginBottom: '0.75rem' }}>
+              ONE PRISM, ALL LIGHT
+            </p>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 3.2vw, 2.5rem)', fontWeight: 800, lineHeight: 1.2, marginBottom: '1.25rem' }}>
+              SaaS を切替える時代は、
+              <br />
+              もう終わった。
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1rem', lineHeight: 1.8, marginBottom: '1.5rem' }}>
+              CRM、議事録、画像生成、スライド、メール、健康記録 ──
+              <br />
+              ぜんぶ、<strong style={{ color: '#fff' }}>ひとつの PRISM の中</strong> に。
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', lineHeight: 1.7 }}>
+              ⌘+K で 7 つのエージェントを横断検索、人格を切替えれば文脈ごと一新。
+              入力は文字でも、音声でも、画像でも。
+            </p>
+          </div>
+          <PrismDashboardMock />
+        </div>
+      </section>
+
+      {/* ── 価格 ────────────────────────────── */}
+      <section id="pricing" style={{ padding: sectionPad, background: '#070712' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#f472b6', fontWeight: 700, marginBottom: '0.75rem' }}>
+              PRICING
+            </p>
+            <h2 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.5rem)', fontWeight: 800, marginBottom: '0.5rem' }}>
+              使うだけ広がる、<span style={{ background: 'linear-gradient(90deg,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>あなたの可能性</span>
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem' }}>
+              すべてのプランで Claude / Gemini / Stable Diffusion を内蔵。API キー不要。
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+            <PriceCard
+              name="Starter"
+              tag="個人事業 / 副業"
+              price="¥4,800"
+              suffix="/ 月"
+              features={[
+                '3 つの人格 (経営/営業/+1)',
+                '商談・議事録・スライド AI',
+                'Cmd+K 横断検索',
+                'PWA / オフライン対応',
+              ]}
+              cta="14 日無料で試す"
+              onClick={onEnterApp}
+            />
+            <PriceCard
+              name="Standard"
+              tag="フリーランス / 小規模"
+              price="¥9,800"
+              suffix="/ 月"
+              features={[
+                '7 つの人格 (全エージェント)',
+                '提案書・契約書・財務AI',
+                'Gmail シャドー秘書 (返信下書き)',
+                'YouTube 取込 → ナレッジ',
+                'CRM 案件・見積→請求一気通貫',
+              ]}
+              highlight
+              cta="14 日無料で試す"
+              onClick={onEnterApp}
+            />
+            <PriceCard
+              name="Exclusive"
+              tag="経営者 / チーム"
+              price="¥29,800"
+              suffix="/ 月"
+              features={[
+                'Standard 全機能',
+                '人物ケア (1on1 + センチメント)',
+                'API アクセス + Webhook',
+                'チーム共有 (5名まで)',
+                '優先サポート + 戦略コーチ',
+              ]}
+              cta="今すぐ申し込む"
+              onClick={onEnterApp}
+            />
+          </div>
+
+          <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '1.75rem' }}>
+            年払いで 2 ヶ月分割引 · 法人は別途お問い合わせください
           </p>
         </div>
       </section>
 
-      {/* ── フッタ ─────────────────────────── */}
-      <footer style={{ background: '#0A1628', color: '#fff', padding: '3rem 1.5rem 2rem' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
+      {/* ── 最終 CTA ────────────────────────────── */}
+      <section style={{ padding: '5rem 1.25rem', background: 'radial-gradient(ellipse at center, rgba(168,85,247,0.18) 0%, #070712 70%)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 50%, rgba(255,87,87,0.1) 0%, transparent 40%), radial-gradient(circle at 70% 50%, rgba(96,165,250,0.1) 0%, transparent 40%)' }} />
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: 760, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', fontWeight: 900, lineHeight: 1.2, marginBottom: '1.25rem' }}>
+            あなたの中の <span style={{ background: 'linear-gradient(90deg,#ff5757,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>7 つの可能性</span> に、
+            <br />
+            エージェント AI を。
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.7 }}>
+            14 日間、すべてのエージェントを無料でお試しできます。
+          </p>
+          <button onClick={onEnterApp} style={ctaBtnHero}>
+            ✨ いますぐ解き放つ
+          </button>
+        </div>
+      </section>
+
+      {/* ── フッタ ────────────────────────────── */}
+      <footer id="contact" style={{ background: '#040408', padding: '3rem 1.25rem 2rem', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
           <div>
-            <div style={{ fontSize: '0.85rem', letterSpacing: '0.2em', color: ORANGE, fontWeight: 700, marginBottom: '0.5rem' }}>CORE PRISM</div>
-            <p style={{ fontSize: '0.85rem', color: '#A8B5CF', lineHeight: 1.7 }}>
-              人を増やさず、売上を伸ばす AI セールス OS。<br />
-              CORE 株式会社
+            <PrismLogo size={28} withWordmark />
+            <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.75rem', lineHeight: 1.7 }}>
+              すべての事業家に、<br />エージェント AI を。
             </p>
           </div>
           <div>
-            <div style={footHead}>プロダクト</div>
-            <a href="#features" style={footLink}>機能</a>
+            <p style={footHead}>PRODUCT</p>
+            <a href="#agents" style={footLink}>7 つのエージェント</a>
+            <a href="#exec" style={footLink}>実行する AI</a>
             <a href="#pricing" style={footLink}>料金</a>
-            <button onClick={onEnterApp} style={{ ...footLink, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>アプリを開く</button>
+            <a href="/iris" style={footLink}>姉妹ブランド · CORE Iris</a>
           </div>
           <div>
-            <div style={footHead}>サポート</div>
-            <a href="#contact" style={footLink}>お問い合わせ</a>
-            <a href="mailto:gauche.cellist1201@gmail.com" style={footLink}>gauche.cellist1201@gmail.com</a>
+            <p style={footHead}>COMPANY</p>
+            <button onClick={() => onOpenLegal('terms')} style={footLinkBtn}>利用規約</button>
+            <button onClick={() => onOpenLegal('privacy')} style={footLinkBtn}>プライバシーポリシー</button>
+            <button onClick={() => onOpenLegal('tokushou')} style={footLinkBtn}>特定商取引法表記</button>
           </div>
           <div>
-            <div style={footHead}>規約</div>
-            <button onClick={() => onOpenLegal('terms')} style={{ ...footLink, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}>利用規約</button>
-            <button onClick={() => onOpenLegal('privacy')} style={{ ...footLink, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}>プライバシーポリシー</button>
-            <button onClick={() => onOpenLegal('tokushou')} style={{ ...footLink, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}>特定商取引法に基づく表記</button>
-          </div>
-          <div>
-            <div style={footHead}>姉妹ブランド</div>
-            <a href="/iris" style={{ ...footLink, color: ORANGE, fontWeight: 700 }}>🌸 CORE Iris</a>
-            <span style={{ ...footLink, opacity: 0.5, fontSize: '0.75rem' }}>女性インフルエンサー向け</span>
+            <p style={footHead}>CONTACT</p>
+            <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7 }}>
+              法人契約・カスタム導入のご相談は<br />
+              <a href="mailto:hello@coreprism.app" style={{ color: '#a78bfa', textDecoration: 'none' }}>hello@coreprism.app</a>
+            </p>
           </div>
         </div>
-        <div style={{ borderTop: '1px solid #1F2F4A', marginTop: '2rem', paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.8rem', color: '#7088A8' }}>
-          © {new Date().getFullYear()} CORE 株式会社. All rights reserved.
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>
+          © {new Date().getFullYear()} CORE Prism · Built with care
         </div>
       </footer>
     </div>
   );
 }
 
-// ── 小コンポーネント ─────────────────────────
-function SectionHead({ eyebrow, title }: { eyebrow: string; title: string }) {
+// ============================================================
+//  ヒーロー背景: PRISM の白光が虹に分散するアニメーション
+// ============================================================
+function PrismHeroBackdrop() {
   return (
-    <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-      <div style={{ color: ORANGE, fontSize: '0.8rem', letterSpacing: '0.2em', fontWeight: 700, marginBottom: '0.75rem' }}>
-        {eyebrow}
-      </div>
-      <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', fontWeight: 900, color: INK }}>
-        {title}
-      </h2>
-      <div style={{ width: 50, height: 4, background: ORANGE, margin: '1rem auto 0' }} />
+    <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
+      <motion.div
+        animate={{ opacity: [0.4, 0.7, 0.4], scale: [1, 1.1, 1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute',
+          left: '50%', top: '38%',
+          width: 380, height: 380,
+          marginLeft: -190, marginTop: -190,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 60%)',
+          filter: 'blur(40px)',
+        }}
+      />
+      {SPECTRUM.map((s, i) => {
+        const angle = -75 + i * 25;
+        return (
+          <motion.div
+            key={s.key}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.18, 0.35, 0.18] }}
+            transition={{ duration: 4 + i * 0.3, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 }}
+            style={{
+              position: 'absolute',
+              left: '50%', top: '38%',
+              width: 4, height: '70vh',
+              transformOrigin: 'top center',
+              transform: `translateX(-50%) rotate(${angle}deg)`,
+              background: `linear-gradient(180deg, ${s.color}cc 0%, ${s.color}00 80%)`,
+              filter: 'blur(8px)',
+            }}
+          />
+        );
+      })}
+      <div style={{ position: 'absolute', top: -200, right: -200, width: 600, height: 600, borderRadius: '50%', background: '#a78bfa', opacity: 0.12, filter: 'blur(80px)' }} />
+      <div style={{ position: 'absolute', bottom: -200, left: -200, width: 600, height: 600, borderRadius: '50%', background: '#60a5fa', opacity: 0.12, filter: 'blur(80px)' }} />
     </div>
   );
 }
 
-function SpeechBubble({ text, who }: { text: string; who: string }) {
+// ============================================================
+//  プリズム扇形: 中央の白光から 7 色のカードに分散する図
+// ============================================================
+function PrismFanVisualization() {
   return (
     <div style={{
-      background: '#fff',
-      border: `1px solid ${BORDER}`,
-      borderRadius: 16,
-      padding: '1.5rem',
       position: 'relative',
+      width: '100%', height: 320,
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
     }}>
-      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: INK, marginBottom: '0.75rem', lineHeight: 1.6 }}>
-        {text}
-      </div>
-      <div style={{ fontSize: '0.8rem', color: INK_SUB }}>{who}</div>
-    </div>
-  );
-}
-
-function StatCard({ value, label, color }: { value: string; label: string; color: string }) {
-  return (
-    <div style={{
-      background: '#fff',
-      border: `1px solid ${BORDER}`,
-      borderRadius: 16,
-      padding: '2rem 1rem',
-      textAlign: 'center',
-    }}>
-      <div style={{ fontSize: 'clamp(2.5rem, 5vw, 3.75rem)', fontWeight: 900, color, lineHeight: 1, marginBottom: '0.75rem' }}>
-        {value}
-      </div>
-      <div style={{ fontSize: '0.95rem', color: INK, whiteSpace: 'pre-line', lineHeight: 1.5 }}>
-        {label}
-      </div>
-      <div style={{ width: 50, height: 4, background: color, margin: '1rem auto 0' }} />
-    </div>
-  );
-}
-
-function FeatureRow({ n, t, d, c }: { n: string; t: string; d: string; c: string }) {
-  return (
-    <div style={{
-      background: '#fff',
-      border: `1px solid ${BORDER}`,
-      borderRadius: 12,
-      overflow: 'hidden',
-      display: 'grid',
-      gridTemplateColumns: '70px 1fr',
-    }}>
+      <motion.div
+        animate={{ scale: [1, 1.06, 1] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+          width: 80, height: 80,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, #fff 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+          boxShadow: '0 0 60px rgba(255,255,255,0.5)',
+          zIndex: 5,
+        }}
+      />
       <div style={{
-        background: c,
-        color: '#fff',
-        fontWeight: 900,
-        fontSize: '1.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: 'flex', justifyContent: 'center', gap: '0.4rem',
+        width: '100%', maxWidth: 880,
       }}>
-        {n}
-      </div>
-      <div style={{ padding: '1.25rem 1.5rem' }}>
-        <div style={{ fontWeight: 700, color: INK, fontSize: '1.05rem', marginBottom: '0.4rem' }}>{t}</div>
-        <div style={{ color: INK_SUB, fontSize: '0.95rem', lineHeight: 1.7 }}>{d}</div>
+        {SPECTRUM.map((s, i) => {
+          const offset = i - 3;
+          const rotateBase = offset * 8;
+          return (
+            <motion.div
+              key={s.key}
+              initial={{ opacity: 0, y: 20, rotate: 0 }}
+              animate={{ opacity: 1, y: 0, rotate: rotateBase }}
+              transition={{ duration: 0.7, delay: 0.4 + i * 0.08, ease: 'easeOut' }}
+              style={{
+                flex: '1 1 0',
+                minWidth: 70, maxWidth: 130,
+                aspectRatio: '3 / 5',
+                borderRadius: 14,
+                background: `linear-gradient(180deg, ${s.color} 0%, ${s.color}88 100%)`,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
+                padding: '0.6rem 0.4rem',
+                color: '#fff',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                textAlign: 'center',
+                boxShadow: `0 12px 32px ${s.color}55`,
+                transformOrigin: 'bottom center',
+              }}
+            >
+              <div style={{ fontSize: '1.5rem', marginBottom: 4 }}>{s.icon}</div>
+              <div style={{ opacity: 0.95 }}>{s.name}</div>
+              <div style={{ fontSize: '0.55rem', opacity: 0.75, marginTop: 2, letterSpacing: '0.05em' }}>
+                {s.role}
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function PricingCard({ name, yen, tag, feats, accent, popular, onCta }: {
-  name: string; yen: string; tag: string; feats: string[]; accent: string; popular: boolean;
-  onCta: () => void;
+// ============================================================
+//  ダッシュボードのモック
+// ============================================================
+function PrismDashboardMock() {
+  return (
+    <div style={{
+      borderRadius: 18,
+      background: 'linear-gradient(135deg, #15152a 0%, #0a0a18 100%)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      padding: '1.25rem',
+      boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, borderRadius: '50%', background: '#a78bfa', opacity: 0.18, filter: 'blur(50px)' }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5757' }} />
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24' }} />
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80' }} />
+        <div style={{ marginLeft: 'auto', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
+          coreprism.app
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+        {SPECTRUM.map(s => (
+          <div key={s.key} style={{
+            flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: '0.35rem',
+            background: `${s.color}25`,
+            color: s.color,
+            border: `1px solid ${s.color}50`,
+            borderRadius: 999, padding: '0.3rem 0.6rem',
+            fontSize: '0.7rem', fontWeight: 700,
+          }}>
+            <span>{s.icon}</span>
+            <span>{s.name}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(167,139,250,0.18), rgba(96,165,250,0.1))',
+        border: '1px solid rgba(167,139,250,0.3)',
+        borderRadius: 12, padding: '0.85rem 1rem',
+        marginBottom: '0.75rem',
+      }}>
+        <p style={{ fontSize: '0.6rem', letterSpacing: '0.2em', color: '#c4b5fd', fontWeight: 700, marginBottom: 4 }}>
+          今日のブリーフ
+        </p>
+        <p style={{ fontSize: '0.85rem', color: '#fff', fontWeight: 600, lineHeight: 1.4 }}>
+          午前は新規開拓、午後は提案書をエージェントが下書き済みです。
+        </p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+        {['＋ 株式会社○○ への提案書', '＋ 経費 OCR (3件)', '＋ Gmail 返信下書き 5件', '＋ 来週の P&L レビュー'].map((t, i) => (
+          <div key={i} style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 10, padding: '0.6rem 0.75rem',
+            fontSize: '0.7rem', color: 'rgba(255,255,255,0.85)',
+          }}>
+            {t}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+//  価格カード
+// ============================================================
+function PriceCard({
+  name, tag, price, suffix, features, highlight, cta, onClick,
+}: {
+  name: string; tag: string; price: string; suffix: string;
+  features: string[]; highlight?: boolean; cta: string; onClick: () => void;
 }) {
   return (
-    <div style={{
-      background: popular ? NAVY : '#fff',
-      color: popular ? '#fff' : INK,
-      border: popular ? `3px solid ${ORANGE}` : `1px solid ${BORDER}`,
-      borderRadius: 16,
-      padding: '2rem 1.5rem',
-      position: 'relative',
-      transform: popular ? 'scale(1.03)' : 'none',
-    }}>
-      {popular && (
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.2 }}
+      style={{
+        background: highlight ? 'linear-gradient(180deg, rgba(167,139,250,0.18), rgba(244,114,182,0.08))' : 'rgba(255,255,255,0.025)',
+        border: highlight ? '1px solid rgba(167,139,250,0.4)' : '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 18,
+        padding: '1.75rem 1.5rem',
+        position: 'relative',
+        boxShadow: highlight ? '0 16px 48px rgba(167,139,250,0.15)' : 'none',
+      }}
+    >
+      {highlight && (
         <div style={{
-          position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)',
-          background: ORANGE, color: '#fff', padding: '0.3rem 1rem', borderRadius: 8,
-          fontSize: '0.75rem', fontWeight: 700,
+          position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+          background: 'linear-gradient(135deg, #a78bfa, #f472b6)',
+          color: '#fff', fontSize: '0.65rem', fontWeight: 700,
+          padding: '0.3rem 0.75rem', borderRadius: 999,
+          letterSpacing: '0.1em',
         }}>
-          人気 No.1
+          人気
         </div>
       )}
-      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: accent, marginBottom: '0.5rem' }}>{name}</div>
-      <div style={{ fontSize: '0.85rem', color: popular ? '#C8D4E8' : INK_SUB, marginBottom: '1rem', minHeight: '2.5rem' }}>{tag}</div>
-      <div style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.25rem' }}>
-        {yen}
-        <span style={{ fontSize: '0.85rem', color: popular ? '#C8D4E8' : INK_SUB, marginLeft: '0.5rem' }}>/ 月</span>
-      </div>
-      <div style={{ height: 1, background: popular ? '#1A4FC4' : BORDER, margin: '1.5rem 0' }} />
-      <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', minHeight: '11rem' }}>
-        {feats.map((f, i) => (
-          <li key={i} style={{ marginBottom: '0.6rem', display: 'flex', gap: '0.5rem' }}>
-            <span style={{ color: accent, fontWeight: 900 }}>✓</span>
-            <span style={{ fontSize: '0.9rem' }}>{f}</span>
+      <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: 'rgba(255,255,255,0.5)', fontWeight: 700, marginBottom: '0.5rem' }}>
+        {tag.toUpperCase()}
+      </p>
+      <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>{name}</h3>
+      <p style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.25rem' }}>
+        {price}<span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{suffix}</span>
+      </p>
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '1rem 0' }} />
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0, marginBottom: '1.5rem' }}>
+        {features.map((f, i) => (
+          <li key={i} style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, marginBottom: '0.4rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+            <span style={{ color: highlight ? '#a78bfa' : '#4ade80', flexShrink: 0 }}>✓</span>
+            <span>{f}</span>
           </li>
         ))}
       </ul>
-      <button onClick={onCta} style={{
-        width: '100%',
-        background: popular ? ORANGE : 'transparent',
-        color: popular ? '#fff' : accent,
-        border: popular ? 'none' : `2px solid ${accent}`,
-        padding: '0.8rem',
-        borderRadius: 10,
-        fontWeight: 700,
-        fontSize: '0.95rem',
-        cursor: 'pointer',
-      }}>
-        このプランで試す →
+      <button
+        onClick={onClick}
+        style={{
+          width: '100%',
+          background: highlight ? 'linear-gradient(135deg, #a78bfa, #f472b6)' : 'rgba(255,255,255,0.06)',
+          color: '#fff',
+          border: highlight ? 'none' : '1px solid rgba(255,255,255,0.15)',
+          padding: '0.85rem 1rem',
+          borderRadius: 12,
+          fontSize: '0.9rem', fontWeight: 700,
+          cursor: 'pointer',
+          boxShadow: highlight ? '0 8px 24px rgba(167,139,250,0.4)' : 'none',
+        }}
+      >
+        {cta}
       </button>
-    </div>
+    </motion.div>
   );
 }
 
-// ── スタイル定数 ─────────────────────────────
+// ───────────── スタイル ─────────────
 const navLink: React.CSSProperties = {
-  color: INK,
-  fontSize: '0.9rem',
+  fontSize: '0.85rem',
+  color: 'rgba(255,255,255,0.7)',
   textDecoration: 'none',
   fontWeight: 500,
 };
 const ctaBtnSmall: React.CSSProperties = {
-  background: ORANGE,
+  background: 'linear-gradient(135deg, #a78bfa, #f472b6)',
   color: '#fff',
-  padding: '0.5rem 1.1rem',
-  borderRadius: 8,
+  padding: '0.55rem 1.1rem',
+  borderRadius: 10,
   fontSize: '0.85rem',
   fontWeight: 700,
   border: 'none',
   cursor: 'pointer',
+  boxShadow: '0 4px 12px rgba(167,139,250,0.35)',
 };
-const ctaBtnLarge: React.CSSProperties = {
-  background: ORANGE,
+const ctaBtnHero: React.CSSProperties = {
+  background: 'linear-gradient(135deg, #ff5757, #fbbf24, #4ade80, #60a5fa, #a78bfa, #f472b6)',
+  backgroundSize: '300% 100%',
   color: '#fff',
-  padding: '1rem 2rem',
-  borderRadius: 12,
-  fontSize: '1rem',
-  fontWeight: 700,
+  padding: '1.05rem 2.25rem',
+  borderRadius: 14,
+  fontSize: '1.05rem',
+  fontWeight: 800,
   border: 'none',
   cursor: 'pointer',
-  boxShadow: '0 8px 24px rgba(255,107,53,0.35)',
+  boxShadow: '0 12px 36px rgba(167,139,250,0.45)',
+  letterSpacing: '0.02em',
 };
 const ctaBtnGhost: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.1)',
+  background: 'rgba(255,255,255,0.05)',
   color: '#fff',
-  padding: '1rem 2rem',
-  borderRadius: 12,
+  padding: '1.05rem 2rem',
+  borderRadius: 14,
   fontSize: '1rem',
   fontWeight: 700,
-  border: '1px solid rgba(255,255,255,0.3)',
+  border: '1px solid rgba(255,255,255,0.15)',
   textDecoration: 'none',
   display: 'inline-block',
 };
 const footHead: React.CSSProperties = {
-  fontSize: '0.75rem',
-  letterSpacing: '0.15em',
-  color: '#A8B5CF',
+  fontSize: '0.7rem',
+  letterSpacing: '0.2em',
+  color: 'rgba(255,255,255,0.45)',
   marginBottom: '0.75rem',
   fontWeight: 700,
 };
 const footLink: React.CSSProperties = {
   display: 'block',
-  color: '#fff',
+  color: 'rgba(255,255,255,0.7)',
   fontSize: '0.85rem',
   textDecoration: 'none',
   marginBottom: '0.5rem',
-  opacity: 0.8,
+};
+const footLinkBtn: React.CSSProperties = {
+  display: 'block',
+  color: 'rgba(255,255,255,0.7)',
+  fontSize: '0.85rem',
+  background: 'transparent',
+  border: 'none',
+  padding: 0,
+  marginBottom: '0.5rem',
+  cursor: 'pointer',
+  textAlign: 'left',
 };
