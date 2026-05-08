@@ -76,7 +76,21 @@ export default function TodayBrief({
 
             {proposal.actions.length > 0 && (
               <div className="space-y-1.5 mb-3">
-                <p className="text-fg-muted text-xs tracking-widest uppercase">アクション提案</p>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-fg-muted text-xs tracking-widest uppercase">アクション提案 ({proposal.actions.length})</p>
+                  <button
+                    onClick={() => proposal.actions.forEach(a => onAcceptAction(a))}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
+                    style={{
+                      background: `linear-gradient(135deg, ${persona.accentColor}, ${persona.accentColor}cc)`,
+                      color: '#fff',
+                      boxShadow: `0 4px 12px ${persona.accentColor}55`,
+                    }}
+                    title="すべてのアクションを今日のタスクとして追加"
+                  >
+                    ✓ すべて追加
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                   {proposal.actions.map((a, i) => (
                     <button

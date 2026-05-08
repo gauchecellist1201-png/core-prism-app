@@ -79,6 +79,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                     className="w-full bg-transparent text-fg text-sm font-light outline-none border-b py-2"
                     style={{ borderColor: 'rgba(255,255,255,0.1)' }} />
                 </div>
+                <MasterModeBox />
                 <div className="p-4 rounded-xl" style={{
                   background: 'linear-gradient(135deg, rgba(46,111,255,0.08), rgba(232,75,151,0.08))',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -89,10 +90,10 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                     すぐに、戦略・交渉・分析・美容相談を始められます。
                   </p>
                 </div>
-                {/* 旧 Claude API キー入力欄: 互換のため hidden で保持 (将来削除可) */}
+                {/* 旧 Claude API キー入力欄: 上級者向け */}
                 <details className="text-xs">
                   <summary className="cursor-pointer text-neutral-700 hover:text-fg-subtle">
-                    Anthropic Claude を直接使う (上級者向け)
+                    Anthropic Claude キーを直接入力 (上級者向け)
                   </summary>
                   <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl"
                     style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -103,9 +104,6 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                     <button onClick={() => setApiKeyVisible(!apiKeyVisible)}
                       className="text-neutral-600 text-xs hover:text-fg-subtle">{apiKeyVisible ? '隠す' : '表示'}</button>
                   </div>
-                  <p className="text-neutral-700 text-xs mt-1">
-                    入力するとサーバー Gemini ではなく、ご自分の Claude キーで動作します。
-                  </p>
                 </details>
               </motion.div>
             )}
@@ -290,5 +288,77 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+// ─── マスターモード切替ボックス ───
+function MasterModeBox() {
+  const KEY = 'core_master_key_v1';
+  const [code, setCode] = useState(() => localStorage.getItem(KEY) || '');
+  const [edit, setEdit] = useState(false);
+  const isMaster = code === 'GAUCHE2026';
+
+  const apply = () => {
+    localStorage.setItem(KEY, code);
+    setEdit(false);
+    // ページリロードで反映
+    setTimeout(() => window.location.reload(), 200);
+  };
+  const clear = () => {
+    localStorage.removeItem(KEY);
+    setCode('');
+    setEdit(false);
+    setTimeout(() => window.location.reload(), 200);
+  };
+
+  return (
+    <div className="p-4 rounded-xl" style={{
+      background: isMaster
+        ? 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,107,53,0.10))'
+        : 'rgba(255,255,255,0.03)',
+      border: `1px solid ${isMaster ? 'rgba(255,215,0,0.35)' : 'rgba(255,255,255,0.08)'}`,
+    }}>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className="text-fg text-sm font-medium">
+          {isMaster ? '👑 マスターモード ON (Claude API)' : '⚙ マスターモード'}
+        </p>
+        {isMaster && (
+          <button onClick={clear}
+            className="text-xs px-2 py-1 rounded-full"
+            style={{ background: 'rgba(248,113,113,0.15)', color: '#F87171', border: '1px solid rgba(248,113,113,0.3)' }}>
+            解除
+          </button>
+        )}
+      </div>
+      {isMaster ? (
+        <p className="text-fg-muted text-xs leading-relaxed">
+          オーナー専用モード。すべての AI が Anthropic Claude (高品質) で動作します。
+        </p>
+      ) : edit ? (
+        <div className="space-y-2">
+          <input
+            type="text" value={code} onChange={e => setCode(e.target.value)}
+            placeholder="マスターキーを入力"
+            className="w-full bg-transparent text-fg text-sm font-mono outline-none border-b py-2"
+            style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+          />
+          <div className="flex gap-2">
+            <button onClick={apply} disabled={!code.trim()}
+              className="text-xs px-3 py-1.5 rounded-full disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg, #FFD60A, #FF8A1A)', color: '#1F1A2E', fontWeight: 700 }}>
+              適用 (リロード)
+            </button>
+            <button onClick={() => { setCode(''); setEdit(false); }}
+              className="text-xs px-3 py-1.5 rounded-full text-fg-muted">
+              キャンセル
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setEdit(true)} className="text-xs text-fg-muted hover:text-fg-subtle underline">
+          マスターキーを入力 →
+        </button>
+      )}
+    </div>
   );
 }

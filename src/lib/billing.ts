@@ -6,6 +6,167 @@ import { useCallback, useEffect, useState } from 'react';
 export type PlanId = 'free' | 'lite' | 'standard' | 'pro' | 'studio';
 export type Brand = 'iris' | 'prism';
 
+// ─── プラン別 機能制限 ───
+export type FeatureKey =
+  | 'ai-chat'           // AI 戦略相談・チャット
+  | 'screenshot-ai'     // スクショから AI で構造化
+  | 'caption-ai'        // 投稿構成・キャプション生成
+  | 'negotiation-ai'    // 交渉文 AI
+  | 'triage-ai'         // 案件精査 AI
+  | 'beauty-advice'     // 美容相談
+  | 'instagram-analyze' // Instagram 解析 (Vision)
+  | 'story-arc'         // 30日プラン
+  | 'community'         // コミュニティ参加
+  | 'team-members'      // 連携アカウント
+  | 'brand-match'       // ブランドマッチ (Pro+)
+  | 'api-access'        // API キー (Studio)
+  | 'white-label';      // ホワイトラベル (Studio)
+
+export type FeatureLimit = number | 'unlimited' | 'unavailable';
+
+/** プラン × 機能 = 月間使用上限 */
+export const PLAN_LIMITS: Record<PlanId, Partial<Record<FeatureKey, FeatureLimit>>> = {
+  free: {
+    'ai-chat': 30,
+    'screenshot-ai': 5,
+    'caption-ai': 5,
+    'negotiation-ai': 3,
+    'triage-ai': 5,
+    'beauty-advice': 10,
+    'instagram-analyze': 1,
+    'story-arc': 1,
+    'community': 'unlimited',
+    'team-members': 1,
+    'brand-match': 'unavailable',
+    'api-access': 'unavailable',
+    'white-label': 'unavailable',
+  },
+  lite: {
+    'ai-chat': 30,
+    'screenshot-ai': 10,
+    'caption-ai': 30,
+    'negotiation-ai': 20,
+    'triage-ai': 30,
+    'beauty-advice': 50,
+    'instagram-analyze': 3,
+    'story-arc': 1,
+    'community': 'unlimited',
+    'team-members': 1,
+    'brand-match': 'unavailable',
+    'api-access': 'unavailable',
+    'white-label': 'unavailable',
+  },
+  standard: {
+    'ai-chat': 'unlimited',
+    'screenshot-ai': 'unlimited',
+    'caption-ai': 'unlimited',
+    'negotiation-ai': 'unlimited',
+    'triage-ai': 'unlimited',
+    'beauty-advice': 'unlimited',
+    'instagram-analyze': 10,
+    'story-arc': 5,
+    'community': 'unlimited',
+    'team-members': 1,
+    'brand-match': 'unavailable',
+    'api-access': 'unavailable',
+    'white-label': 'unavailable',
+  },
+  pro: {
+    'ai-chat': 'unlimited',
+    'screenshot-ai': 'unlimited',
+    'caption-ai': 'unlimited',
+    'negotiation-ai': 'unlimited',
+    'triage-ai': 'unlimited',
+    'beauty-advice': 'unlimited',
+    'instagram-analyze': 'unlimited',
+    'story-arc': 'unlimited',
+    'community': 'unlimited',
+    'team-members': 5,
+    'brand-match': 'unlimited',
+    'api-access': 'unavailable',
+    'white-label': 'unavailable',
+  },
+  studio: {
+    'ai-chat': 'unlimited',
+    'screenshot-ai': 'unlimited',
+    'caption-ai': 'unlimited',
+    'negotiation-ai': 'unlimited',
+    'triage-ai': 'unlimited',
+    'beauty-advice': 'unlimited',
+    'instagram-analyze': 'unlimited',
+    'story-arc': 'unlimited',
+    'community': 'unlimited',
+    'team-members': 'unlimited',
+    'brand-match': 'unlimited',
+    'api-access': 'unlimited',
+    'white-label': 'unlimited',
+  },
+};
+
+export const FEATURE_META: Record<FeatureKey, { label: string; emoji: string }> = {
+  'ai-chat':           { label: 'AI 相談・チャット',  emoji: '💬' },
+  'screenshot-ai':     { label: 'スクショ AI 入力',    emoji: '📸' },
+  'caption-ai':        { label: '投稿構成・キャプション', emoji: '✍' },
+  'negotiation-ai':    { label: '交渉文 AI',          emoji: '🤝' },
+  'triage-ai':         { label: '案件精査 AI',        emoji: '🔍' },
+  'beauty-advice':     { label: '美容相談',           emoji: '💆' },
+  'instagram-analyze': { label: 'Instagram 解析',     emoji: '📊' },
+  'story-arc':         { label: '30 日プラン',        emoji: '🌙' },
+  'community':         { label: 'コミュニティ',       emoji: '🌹' },
+  'team-members':      { label: 'チームメンバー',     emoji: '🌷' },
+  'brand-match':       { label: 'ブランドマッチ',     emoji: '✨' },
+  'api-access':        { label: 'API アクセス',       emoji: '🔌' },
+  'white-label':       { label: 'ホワイトラベル',     emoji: '🎬' },
+};
+
+/** 現在のプランで feature が使えるか + 残り回数 */
+export function checkFeature(plan: PlanId, feature: FeatureKey): {
+  allowed: boolean;
+  limit: FeatureLimit;
+  unavailable: boolean;
+  upgradeTo?: PlanId;
+} {
+  const limit = PLAN_LIMITS[plan]?.[feature];
+  if (limit === 'unavailable' || limit === undefined) {
+    // どのプランで使えるか
+    const upgradeTo = (['lite', 'standard', 'pro', 'studio'] as PlanId[])
+      .find(p => {
+        const l = PLAN_LIMITS[p]?.[feature];
+        return l !== undefined && l !== 'unavailable';
+      });
+    return { allowed: false, limit: 'unavailable', unavailable: true, upgradeTo };
+  }
+  return { allowed: true, limit, unavailable: false };
+}
+
+// 使用量カウント (localStorage、月単位リセット)
+const USAGE_KEY = 'core_feature_usage_v1';
+interface UsageData { month: string; counts: Record<string, number>; }
+
+function currentMonth(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+}
+
+export function getUsageCount(feature: FeatureKey): number {
+  try {
+    const raw = localStorage.getItem(USAGE_KEY);
+    const data: UsageData = raw ? JSON.parse(raw) : { month: currentMonth(), counts: {} };
+    if (data.month !== currentMonth()) return 0;
+    return data.counts[feature] || 0;
+  } catch { return 0; }
+}
+
+export function incrementUsage(feature: FeatureKey) {
+  try {
+    const raw = localStorage.getItem(USAGE_KEY);
+    let data: UsageData = raw ? JSON.parse(raw) : { month: currentMonth(), counts: {} };
+    if (data.month !== currentMonth()) data = { month: currentMonth(), counts: {} };
+    data.counts[feature] = (data.counts[feature] || 0) + 1;
+    localStorage.setItem(USAGE_KEY, JSON.stringify(data));
+  } catch { /* */ }
+}
+
 export interface Plan {
   id: PlanId;
   brand: Brand | 'both';

@@ -311,11 +311,30 @@ export default async function handler(req: Request) {
     }
   }
 
-  // すべての候補モデルが失敗
+  // ─── すべての候補モデルが失敗 → やさしいメッセージに変換 ───
+  const errMsg = (lastError?.message || '').toLowerCase();
+  const isQuota = errMsg.includes('quota') || errMsg.includes('rate') || errMsg.includes('limit');
+  const isAuth = errMsg.includes('api key') || errMsg.includes('unauthorized') || errMsg.includes('forbidden');
+
+  let userMessage: string;
+  let recovery: string;
+
+  if (isQuota) {
+    userMessage = 'AI が一時的に混みあっています。';
+    recovery = '少し待ってからもう一度お試しください。または設定からマスターモード (高品質 AI) を有効化できます。';
+  } else if (isAuth) {
+    userMessage = 'AI の認証に失敗しました。';
+    recovery = 'サーバー設定の問題です。管理者へご連絡ください。';
+  } else {
+    userMessage = 'AI が応答しませんでした。';
+    recovery = '少し待ってからもう一度お試しください。';
+  }
+
   return new Response(JSON.stringify({
     error: {
-      message: `すべての Gemini モデル候補が失敗しました。最後のエラー: ${lastError?.message} (モデル: ${lastError?.model})`,
-      type: 'all_models_failed',
+      message: `${userMessage} ${recovery}`,
+      type: isQuota ? 'quota_exceeded' : isAuth ? 'auth_error' : 'all_models_failed',
+      detail: lastError?.message,
       candidates: candidateModels,
     },
   }), {
