@@ -1,6 +1,9 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, ChatMessage, AppSettings, KnowledgeItem } from '../types/identity';
+import { isOnboarded, isDemoActive, clearDemoData } from '../lib/onboarding';
+import OnboardingWizard from './OnboardingWizard';
+import DemoBanner from './DemoBanner';
 import ModeSwitcher from './ModeSwitcher';
 import CognitiveDashboard from './CognitiveDashboard';
 import AISidebar from './AISidebar';
@@ -116,6 +119,7 @@ export default function IdentityDashboard({
 }: Props) {
   const proactive = useProactiveAgent(settings, persona, knowledgeForAgent, healthCtx);
   const shadow = useShadowSecretary(settings, persona);
+  const [showOnboarding, setShowOnboarding] = useState(() => !isOnboarded());
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [showMeeting, setShowMeeting] = useState(false);
   const [showHealth, setShowHealth] = useState(false);
@@ -180,7 +184,6 @@ export default function IdentityDashboard({
   const personaKnowledge = knowledgeItems.filter(i => i.personaId === persona.id);
   const net = persona.cashflow.income + persona.cashflow.expense;
 
-  // ダッシュボード全体ドロップ -> 一括取り込み
   const SUPPORTED_EXT = new Set([
     'pdf','docx','pptx','xlsx','xls','csv','txt','md','markdown','json','html','htm',
     'xml','yaml','yml','log','tsv','png','jpg','jpeg','gif','webp','svg',
@@ -431,6 +434,16 @@ export default function IdentityDashboard({
             </div>
           </div>
 
+          {/* Demo Banner */}
+          <AnimatePresence>
+            {isDemoActive() && (
+              <DemoBanner
+                key="demo-banner"
+                onClearDemo={() => { clearDemoData(); window.location.reload(); }}
+              />
+            )}
+          </AnimatePresence>
+
           {/* Ambient glow */}
           <div className="absolute top-0 left-0 right-0 md:left-48 md:right-64 h-40 pointer-events-none opacity-10"
             style={{ background: `radial-gradient(ellipse at top center, ${persona.accentColor} 0%, transparent 70%)` }}
@@ -440,7 +453,6 @@ export default function IdentityDashboard({
           <div className="flex-1 overflow-auto p-3 md:p-4 relative">
             <div className="max-w-5xl space-y-3">
 
-              {/* 今日のブリーフ - ヒーローカード */}
               <TodayBrief
                 persona={persona}
                 proposal={proactive.latestProposal}
@@ -455,13 +467,12 @@ export default function IdentityDashboard({
                 onOpenShadow={() => setShowShadow(true)}
               />
 
-              {/* クイックアクション */}
               <QuickActions
                 persona={persona}
                 actions={[
                   { id: 'brief', emoji: '💡', label: '提案を生成', desc: 'AI が次の一手', primary: true, onClick: () => proactive.generate(settings.voiceEnabled !== false) },
                   { id: 'voice', emoji: '🎤', label: '音声メモ', desc: 'AI が自動振り分け', onClick: () => setShowVoice(true) },
-                  { id: 'youtube', emoji: '🎬', label: 'YouTube取込', desc: 'AI要約→ナレッジ化', onClick: () => setShowYouTube(true) },
+                  { id: 'youtube', emoji: '🎦', label: 'YouTube取込', desc: 'AI要約→ナレッジ化', onClick: () => setShowYouTube(true) },
                   { id: 'shadow', emoji: '📬', label: '下書き済み', desc: `AI 事前下書き${shadow.drafts.length > 0 ? ` (${shadow.drafts.length})` : ''}`, onClick: () => setShowShadow(true) },
                   { id: 'kb', emoji: '📚', label: '資料を追加', desc: 'PDF / PPT / 画像', onClick: () => setShowKnowledge(true) },
                   { id: 'note', emoji: '📝', label: 'ノート作成', desc: 'メモ・議事録', onClick: () => setShowKnowledge(true) },
@@ -487,7 +498,6 @@ export default function IdentityDashboard({
                 ]}
               />
 
-              {/* ヘルススナップショット */}
               <HealthSnapshot
                 today={healthCtx.today}
                 week={healthCtx.week}
@@ -495,7 +505,6 @@ export default function IdentityDashboard({
                 onOpen={() => setShowHealth(true)}
               />
 
-              {/* 2列レイアウト: 認知プロファイル + インサイト (デスクトップ) */}
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
                 <div className="lg:col-span-2 space-y-3">
                   <PrismFlow
@@ -525,7 +534,6 @@ export default function IdentityDashboard({
                 </div>
               </div>
 
-              {/* Tabs: Files / Tasks */}
               <div className="flex gap-1.5">
                 {[['files', `📄 資料 (${personaKnowledge.length})`], ['tasks', `✓ タスク (${persona.tasks.filter(t => !t.done).length})`]].map(([id, label]) => (
                   <button
@@ -689,7 +697,6 @@ export default function IdentityDashboard({
                 </div>
               </motion.button>
 
-              {/* 最近の動き */}
               <ActivityTimeline
                 persona={persona}
                 knowledge={personaKnowledge}
@@ -1059,7 +1066,6 @@ export default function IdentityDashboard({
         )}
       </AnimatePresence>
 
-      {/* 履歴・エラー専用の小型パネル (履歴ボタン用) */}
       {settings.proactiveEnabled !== false && proactive.error && (
         <div className="fixed bottom-4 right-4 z-30 max-w-sm w-[calc(100vw-2rem)] md:w-80">
           <div className="p-3 rounded-lg" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)' }}>
@@ -1068,7 +1074,6 @@ export default function IdentityDashboard({
         </div>
       )}
 
-      {/* 横断検索 Cmd+K */}
       <CommandPalette
         open={showCmdK}
         onClose={() => setShowCmdK(false)}
@@ -1079,7 +1084,6 @@ export default function IdentityDashboard({
         onOpenModal={handleCmdKOpen}
       />
 
-      {/* Cmd+K ヒントボタン */}
       <button
         onClick={() => setShowCmdK(true)}
         className="hidden md:flex fixed bottom-4 left-1/2 -translate-x-1/2 z-20 items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all hover:scale-105"
@@ -1096,7 +1100,6 @@ export default function IdentityDashboard({
         <span className="cp-pill" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>⌘K</span>
       </button>
 
-      {/* グローバルAIサポートチャット (右下FAB → 右ドロワー) */}
       <SupportChat
         brand="prism"
         accentColor={persona.accentColor}
@@ -1107,11 +1110,19 @@ export default function IdentityDashboard({
         }}
       />
 
-      {/* キーボードショートカット (? キーで開閉) */}
       <ShortcutHelpModal />
-
-      {/* PWA インストール促進 */}
       <PwaInstallPrompt accentColor={persona.accentColor} />
+
+      {/* オンボーディングウィザード */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingWizard
+            key="onboarding-wizard"
+            accentColor={persona.accentColor}
+            onComplete={() => setShowOnboarding(false)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

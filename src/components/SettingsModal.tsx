@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
 import { estimateMonthlyCost } from '../hooks/useClaude';
 import { OPENAI_VOICE_OPTIONS, isOpenAITTSConfigured, type OpenAIVoice } from '../lib/ttsOpenAI';
+import { resetOnboarding } from '../lib/onboarding';
 
 interface Props {
   settings: AppSettings;
@@ -48,13 +49,11 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
         exit={{ scale: 0.95 }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-5 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <p className="text-fg text-sm font-light tracking-wide">環境設定</p>
           <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle text-xl">×</button>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-1 px-5 pt-3 pb-0">
           {[['general', '一般'], ['ai', 'AI設定'], ['voice', '音声'], ['usage', '使用状況']].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id as typeof tab)}
@@ -80,6 +79,20 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                     style={{ borderColor: 'rgba(255,255,255,0.1)' }} />
                 </div>
                 <MasterModeBox />
+                <div className="flex items-center justify-between p-3 rounded-xl"
+                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div>
+                    <p className="text-fg text-sm">ガイドツアーを再表示</p>
+                    <p className="text-neutral-600 text-xs mt-0.5">オンボーディングウィザードをリセットします</p>
+                  </div>
+                  <motion.button
+                    onClick={() => { resetOnboarding(); window.location.reload(); }}
+                    className="text-xs px-3 py-1.5 rounded-full flex-shrink-0"
+                    style={{ background: 'rgba(201,169,110,0.12)', color: '#c9a96e', border: '1px solid rgba(201,169,110,0.3)' }}
+                    whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    再表示
+                  </motion.button>
+                </div>
                 <div className="p-4 rounded-xl" style={{
                   background: 'linear-gradient(135deg, rgba(46,111,255,0.08), rgba(232,75,151,0.08))',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -90,7 +103,6 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                     すぐに、戦略・交渉・分析・美容相談を始められます。
                   </p>
                 </div>
-                {/* 旧 Claude API キー入力欄: 上級者向け */}
                 <details className="text-xs">
                   <summary className="cursor-pointer text-neutral-700 hover:text-fg-subtle">
                     Anthropic Claude キーを直接入力 (上級者向け)
@@ -143,8 +155,6 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                     （サブスク収入¥1,000との差額 ¥{1000 - jpy150(monthlyEst.usd)} が運営利益）
                   </p>
                 </div>
-
-                {/* AI 文体 */}
                 <div className="pt-4">
                   <p className="text-neutral-600 text-xs tracking-wider uppercase mb-2">AI の文体</p>
                   <p className="text-fg-muted text-xs mb-3">提案・要約・返信ドラフトの語り口を選べます</p>
@@ -173,7 +183,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
               <motion.div key="voice" className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <div className="p-3 rounded-xl" style={{ background: openaiAvailable ? 'rgba(180,124,252,0.10)' : 'rgba(255,255,255,0.02)', border: `1px solid ${openaiAvailable ? 'rgba(180,124,252,0.40)' : 'rgba(255,255,255,0.06)'}` }}>
                   <p className="text-fg text-sm font-medium mb-1">
-                    {openaiAvailable ? '🎙 OpenAI TTS が有効です' : '🔒 OpenAI TTS 未設定 (ブラウザ標準音声で再生)'}
+                    {openaiAvailable ? '🎤 OpenAI TTS が有効です' : '🔒 OpenAI TTS 未設定 (ブラウザ標準音声で再生)'}
                   </p>
                   <p className="text-fg-muted text-xs leading-relaxed">
                     {openaiAvailable
@@ -181,7 +191,6 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                       : 'VITE_OPENAI_API_KEY を設定すると、ChatGPT 並みの自然な音声に切り替わります。未設定でもブラウザ標準音声で動作します。'}
                   </p>
                 </div>
-
                 <div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={voiceEnabled} onChange={e => setVoiceEnabled(e.target.checked)} />
@@ -189,7 +198,6 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                   </label>
                   <p className="text-fg-muted text-xs mt-1 ml-6">「読み上げ」ボタンで提案・議事録・チャット応答を音声化</p>
                 </div>
-
                 {openaiAvailable && voiceEnabled && (
                   <div>
                     <p className="text-neutral-600 text-xs tracking-wider uppercase mb-2">声を選ぶ</p>
@@ -230,8 +238,6 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                 <p className="text-neutral-700 text-xs">
                   集計開始: {new Date(settings.usageStats.lastReset).toLocaleDateString('ja-JP')}
                 </p>
-
-                {/* Pricing reference */}
                 <div className="p-3 rounded-xl space-y-2"
                   style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
                   <p className="text-neutral-500 text-xs font-light">モデル別料金（2025年4月現在）</p>
@@ -253,7 +259,6 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                   </table>
                   <p className="text-neutral-700 text-xs">キャッシュ読込: 90%引き</p>
                 </div>
-
                 <button onClick={onResetStats}
                   className="text-xs text-neutral-700 hover:text-red-400 transition-colors">
                   使用統計をリセット
@@ -263,7 +268,6 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
           </AnimatePresence>
         </div>
 
-        {/* Save */}
         <div className="flex justify-end gap-3 px-5 pb-5">
           <button onClick={onClose} className="px-4 py-2 text-sm text-neutral-600 hover:text-fg-subtle transition-colors">
             キャンセル
@@ -291,7 +295,6 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
   );
 }
 
-// ─── マスターモード切替ボックス ───
 function MasterModeBox() {
   const KEY = 'core_master_key_v1';
   const [code, setCode] = useState(() => localStorage.getItem(KEY) || '');
@@ -301,7 +304,6 @@ function MasterModeBox() {
   const apply = () => {
     localStorage.setItem(KEY, code);
     setEdit(false);
-    // ページリロードで反映
     setTimeout(() => window.location.reload(), 200);
   };
   const clear = () => {
