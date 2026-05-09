@@ -12,7 +12,7 @@ const COMPANY = {
   nameJa: '株式会社コア',
   founded: 'Founding in 2026',
   ceo: 'Naoki Ide',
-  ceoJa: '井出 直樹',
+  ceoJa: '井出 直毅',
   address: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0026, Japan',
   addressJa: '〒658-0026 兵庫県神戸市東灘区魚崎南町7丁目11-7',
   email: 'hello@core-inc.jp',
