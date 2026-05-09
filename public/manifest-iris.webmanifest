@@ -1,0 +1,30 @@
+{
+  "name": "CORE Iris — すべてのインフルエンサーに、エージェントAIを。",
+  "short_name": "CORE Iris",
+  "description": "あなたの光が、世界をつくる。インフルエンサーのためのエージェント AI。",
+  "start_url": "/iris?app=1",
+  "scope": "/iris",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1A0A26",
+  "theme_color": "#E1306C",
+  "lang": "ja",
+  "categories": ["productivity", "social", "lifestyle"],
+  "icons": [
+    { "src": "/iris-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/iris-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/iris-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "案件管理",
+      "url": "/iris?app=1&tab=deals",
+      "icons": [{ "src": "/iris-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI と話す",
+      "url": "/iris?app=1&action=voice",
+      "icons": [{ "src": "/iris-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

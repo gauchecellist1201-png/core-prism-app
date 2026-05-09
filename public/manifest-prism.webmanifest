@@ -1,0 +1,30 @@
+{
+  "name": "CORE Prism — すべての事業家に、エージェントAIを。",
+  "short_name": "CORE Prism",
+  "description": "ひとつの白い光を 7 つの人格に分散させる、エージェント AI の OS。",
+  "start_url": "/?app=1",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070712",
+  "theme_color": "#a78bfa",
+  "lang": "ja",
+  "categories": ["productivity", "business", "utilities"],
+  "icons": [
+    { "src": "/prism-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/prism-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/prism-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "今日のブリーフ",
+      "url": "/?app=1&action=brief",
+      "icons": [{ "src": "/prism-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI と話す",
+      "url": "/?app=1&action=voice",
+      "icons": [{ "src": "/prism-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
