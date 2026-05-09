@@ -1,6 +1,6 @@
 // ============================================================
 // CORE Inc. — 法人 LP (Corporate Landing)
-// 「In the core of every era, there is a CORE.」
+// 「すべての時代の、核となるものを。」
 // 配置: /corp ルート、noindex で検索エンジンには載せない
 // ============================================================
 import { useEffect } from 'react';
@@ -8,26 +8,29 @@ import { motion } from 'framer-motion';
 import { PrismLogo, IrisLogo } from '../components/Logo';
 
 const COMPANY = {
-  nameEn: 'CORE Inc.',
   nameJa: '株式会社コア',
-  founded: 'Founding in 2026',
-  ceo: 'Naoki Ide',
+  nameEn: 'CORE Inc.',
+  founded: '2026年 設立予定',
   ceoJa: '井出 直毅',
-  address: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0026, Japan',
+  ceoEn: 'Naoki Ide',
   addressJa: '〒658-0026 兵庫県神戸市東灘区魚崎南町7丁目11-7',
+  addressEn: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0026, Japan',
   email: 'hello@core-inc.jp',
 };
+
+// 荘厳系フォント
+const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
+const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
+const FONT_SERIF_EN = '"EB Garamond", "Cormorant Garamond", "Noto Serif JP", serif';
+const FONT_SANS = '"Noto Sans JP", "Inter", "游ゴシック", sans-serif';
 
 const SPECTRUM = ['#ff5757', '#ff9842', '#fbbf24', '#4ade80', '#60a5fa', '#a78bfa', '#f472b6'];
 
 export default function CoreSite() {
   useEffect(() => {
-    // タイトル + theme-color
-    document.title = 'CORE Inc. — In the core of every era.';
+    document.title = '株式会社コア — すべての時代の、核となるものを。';
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', '#000000');
-
-    // 検索エンジンには載せない (noindex)
     let robots = document.querySelector('meta[name="robots"]');
     if (!robots) {
       robots = document.createElement('meta');
@@ -43,29 +46,29 @@ export default function CoreSite() {
         background: '#000',
         color: '#fff',
         minHeight: '100vh',
-        fontFamily: '"Inter", "Helvetica Neue", "Noto Sans JP", "游ゴシック", sans-serif',
+        fontFamily: FONT_SANS,
         overflowX: 'hidden',
       }}
     >
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  HEADER (sticky, minimal)  */}
+      {/*  HEADER                     */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <header
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 50,
-          background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          background: 'rgba(0,0,0,0.78)',
+          backdropFilter: 'blur(24px)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
         <div
           className="lp-safe"
           style={{
-            maxWidth: 1280,
+            maxWidth: 1320,
             margin: '0 auto',
-            padding: '1.1rem 1.5rem',
+            padding: '1.15rem 1.5rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -74,21 +77,23 @@ export default function CoreSite() {
           <a
             href="#top"
             style={{
-              fontSize: '1.05rem',
-              fontWeight: 800,
-              letterSpacing: '0.4em',
+              fontFamily: FONT_DISPLAY,
+              fontSize: '1.35rem',
+              fontWeight: 700,
+              letterSpacing: '0.45em',
               color: '#fff',
               textDecoration: 'none',
-              fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
+              paddingLeft: '0.45em',
             }}
+            aria-label="株式会社コア"
           >
             CORE
           </a>
-          <nav style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-            <a href="#products" style={navLink} className="lp-nav-link">Products</a>
-            <a href="#mission" style={navLink} className="lp-nav-link">Mission</a>
-            <a href="#about" style={navLink} className="lp-nav-link">About</a>
-            <a href="#contact" style={ctaSmall}>Contact →</a>
+          <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
+            <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
+            <a href="#mission" style={navLink} className="lp-nav-link">理念</a>
+            <a href="#about" style={navLink} className="lp-nav-link">会社概要</a>
+            <a href="#contact" style={ctaSmall}>お問い合わせ</a>
           </nav>
         </div>
       </header>
@@ -101,46 +106,50 @@ export default function CoreSite() {
         className="lp-hero-pad lp-safe"
         style={{
           position: 'relative',
-          padding: '9rem 1.5rem 7rem',
+          padding: '7.5rem 1.5rem 7rem',
           overflow: 'hidden',
           textAlign: 'center',
+          minHeight: '88vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <CoreOrb />
+        <CoreWatermark />
 
-        <div style={{ maxWidth: 980, margin: '0 auto', position: 'relative', zIndex: 2 }}>
-          <motion.p
+        <div style={{ maxWidth: 1080, margin: '0 auto', position: 'relative', zIndex: 3, width: '100%' }}>
+          <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 0.8 }}
             style={{
-              fontSize: '0.7rem',
-              letterSpacing: '0.5em',
+              fontFamily: FONT_DISPLAY,
+              fontSize: '0.75rem',
+              letterSpacing: '0.55em',
               fontWeight: 600,
-              marginBottom: '1.75rem',
-              color: 'rgba(255,255,255,0.5)',
+              marginBottom: '2.25rem',
+              color: 'rgba(255,255,255,0.55)',
             }}
           >
-            CORE INC.  /  EST. 2026
-          </motion.p>
+            CORE&nbsp;&nbsp;INC.&nbsp;&nbsp;/&nbsp;&nbsp;EST.&nbsp;2026
+          </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.1, delay: 0.1 }}
+            transition={{ duration: 1.2, delay: 0.15 }}
             style={{
-              fontFamily: '"Playfair Display", "Cormorant Garamond", serif',
-              fontStyle: 'italic',
-              fontSize: 'clamp(2.6rem, 7vw, 6rem)',
-              fontWeight: 500,
-              lineHeight: 1.05,
-              letterSpacing: '-0.01em',
-              marginBottom: '1.75rem',
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(2.4rem, 6.5vw, 5.4rem)',
+              fontWeight: 700,
+              lineHeight: 1.25,
+              letterSpacing: '0.04em',
+              marginBottom: '1.5rem',
+              color: '#fff',
             }}
           >
-            In the core
-            <br />
-            of every era,
+            すべての時代の、
             <br />
             <span
               style={{
@@ -148,40 +157,61 @@ export default function CoreSite() {
                   'linear-gradient(90deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
+                fontWeight: 900,
               }}
             >
-              there is a CORE.
+              核となるものを。
             </span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.4 }}
+            transition={{ duration: 1, delay: 0.4 }}
             style={{
-              fontSize: 'clamp(0.95rem, 1.5vw, 1.1rem)',
-              color: 'rgba(255,255,255,0.65)',
-              lineHeight: 1.9,
+              fontFamily: FONT_SERIF_EN,
+              fontSize: 'clamp(0.85rem, 1.3vw, 1rem)',
+              letterSpacing: '0.18em',
+              color: 'rgba(255,255,255,0.45)',
+              marginBottom: '2.25rem',
+              fontStyle: 'italic',
+            }}
+          >
+            In the core of every era, there is a CORE.
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.55 }}
+            style={{
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(0.95rem, 1.45vw, 1.15rem)',
+              color: 'rgba(255,255,255,0.7)',
+              lineHeight: 2.1,
               maxWidth: 660,
-              margin: '0 auto 2.5rem',
+              margin: '0 auto 2.75rem',
+              fontWeight: 400,
             }}
           >
             時代がどれだけ変わっても、人の中心にあるものは変わらない。
             <br />
-            CORE は、その「核」となる体験を、テクノロジーで再定義する会社です。
+            私たちは、その<strong style={{ color: '#fff', fontWeight: 600 }}>「核」となる体験</strong>を、
+            <br />
+            次の世代に届けるための会社です。
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.55 }}
-            style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}
+            transition={{ duration: 1, delay: 0.7 }}
+            style={{ display: 'flex', gap: '0.85rem', justifyContent: 'center', flexWrap: 'wrap' }}
           >
             <a href="#products" style={ctaHero}>
-              Discover Products
+              プロダクトを見る
             </a>
             <a href="#about" style={ctaGhost}>
-              About CORE
+              会社概要
             </a>
           </motion.div>
         </div>
@@ -194,25 +224,29 @@ export default function CoreSite() {
         id="mission"
         className="lp-section-pad"
         style={{
-          padding: '6rem 1.5rem',
+          padding: '7rem 1.5rem',
           background: 'linear-gradient(180deg,#000 0%,#070712 100%)',
           textAlign: 'center',
+          position: 'relative',
         }}
       >
-        <div style={{ maxWidth: 880, margin: '0 auto' }}>
-          <p style={sectionLabel}>MISSION</p>
+        <div style={{ maxWidth: 920, margin: '0 auto' }}>
+          <p style={sectionLabel}>
+            <span style={sectionLabelMain}>理&nbsp;念</span>
+            <span style={sectionLabelSub}>MISSION</span>
+          </p>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.9 }}
             style={{
-              fontFamily: '"Playfair Display", serif',
-              fontStyle: 'italic',
-              fontSize: 'clamp(1.7rem, 3.5vw, 2.6rem)',
-              fontWeight: 500,
-              lineHeight: 1.45,
-              marginBottom: '1.75rem',
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(1.85rem, 3.6vw, 2.85rem)',
+              fontWeight: 700,
+              lineHeight: 1.6,
+              marginBottom: '2.25rem',
+              letterSpacing: '0.04em',
             }}
           >
             時代を超えて、
@@ -223,6 +257,7 @@ export default function CoreSite() {
                   'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
+                fontWeight: 900,
               }}
             >
               人の核となるものを。
@@ -231,11 +266,13 @@ export default function CoreSite() {
 
           <p
             style={{
-              fontFamily: '"Cormorant Garamond", serif',
-              fontSize: 'clamp(1rem, 1.6vw, 1.2rem)',
-              color: 'rgba(255,255,255,0.65)',
+              fontFamily: FONT_SERIF_EN,
+              fontSize: 'clamp(0.9rem, 1.4vw, 1.05rem)',
+              color: 'rgba(255,255,255,0.55)',
               lineHeight: 2,
               fontStyle: 'italic',
+              letterSpacing: '0.06em',
+              marginBottom: '2rem',
             }}
           >
             "We build what stays at the center —<br />
@@ -243,17 +280,20 @@ export default function CoreSite() {
           </p>
           <p
             style={{
-              fontSize: '0.95rem',
-              color: 'rgba(255,255,255,0.55)',
-              lineHeight: 2,
-              marginTop: '1.5rem',
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
+              color: 'rgba(255,255,255,0.7)',
+              lineHeight: 2.2,
               maxWidth: 720,
-              margin: '1.5rem auto 0',
+              margin: '0 auto',
+              fontWeight: 400,
             }}
           >
-            私たちは、流行や形ではなく
-            <strong style={{ color: '#fff' }}>本質に届くプロダクト</strong>を作ります。
-            技術は手段にすぎない。中心にあるのは、いつの時代も「人」です。
+            私たちが目指すのは、流行や形を追うことではありません。
+            <br />
+            <strong style={{ color: '#fff' }}>本質に届くプロダクトを、静かに、確かに。</strong>
+            <br />
+            技術は手段にすぎず、いつの時代も中心にあるのは「人」です。
           </p>
         </div>
       </section>
@@ -265,122 +305,181 @@ export default function CoreSite() {
         id="products"
         className="lp-section-pad"
         style={{
-          padding: '6rem 1.5rem',
+          padding: '7rem 1.5rem',
           background: '#070712',
         }}
       >
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <p style={sectionLabel}>PRODUCTS</p>
+        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '4.5rem' }}>
+            <p style={sectionLabel}>
+              <span style={sectionLabelMain}>プロダクト</span>
+              <span style={sectionLabelSub}>PRODUCTS</span>
+            </p>
             <h2
               style={{
-                fontFamily: '"Playfair Display", serif',
-                fontStyle: 'italic',
+                fontFamily: FONT_SERIF_JA,
                 fontSize: 'clamp(1.85rem, 3.8vw, 2.85rem)',
-                fontWeight: 500,
-                lineHeight: 1.2,
-                marginBottom: '1rem',
+                fontWeight: 700,
+                lineHeight: 1.5,
+                marginBottom: '1.25rem',
+                letterSpacing: '0.04em',
               }}
             >
-              Two halves of the same light.
+              ひとつの光が、二つの形に。
             </h2>
             <p
               style={{
-                color: 'rgba(255,255,255,0.55)',
-                fontSize: '1rem',
+                fontFamily: FONT_SERIF_JA,
+                color: 'rgba(255,255,255,0.65)',
+                fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
                 maxWidth: 640,
                 margin: '0 auto',
-                lineHeight: 1.8,
+                lineHeight: 2,
+                fontWeight: 400,
               }}
             >
               ひとつは光を分散し、もうひとつは光を受け止める。
               <br />
-              対をなす 2 つの AI が、人の核を照らし出します。
+              対をなす二つのAIが、人の核を照らし出します。
             </p>
           </div>
 
-          <div className="lp-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            <ProductCard
-              brand="prism"
-              tagline="Disperse the light."
-              jaTagline="光を、分散させる。"
-              description="ひとりの人間に宿る複数の人格を、AI エージェントとして外に取り出す OS。経営者・営業・財務・創造者 ─ 役割の数だけ、思考が要る。"
-              accentGradient="linear-gradient(135deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)"
-              accentColor="#a78bfa"
-              url="/"
-            />
-            <ProductCard
-              brand="iris"
-              tagline="Receive the light."
-              jaTagline="光を、受け止める。"
-              description="あらゆる情報・感情・反応を受け取り、解像度の高い洞察に変えるクリエイター AI。インフルエンサーの 6 つの仕事を、ひとつのアプリで。"
-              accentGradient="linear-gradient(135deg,#FCB045,#E1306C,#833AB4)"
-              accentColor="#E1306C"
-              url="/iris"
-            />
-          </div>
+          {/* PRISM (主力プロダクト・大きく) */}
+          <FeatureProduct
+            brand="prism"
+            badge="フラッグシップ"
+            tagline="光を、分散させる。"
+            taglineEn="Disperse the light."
+            description="ひとりの人間に宿る複数の人格を、エージェントAIとして外に取り出すOS。経営者・営業・財務・創造者 ── 役割の数だけ、思考が要る。すべての事業家のための、新しい知性のかたち。"
+            features={[
+              '7つの人格・7つの専属AIエージェント',
+              '商談、議事録、財務、契約書まで一気通貫',
+              '横断検索ひとつで、すべての文脈にアクセス',
+            ]}
+            accentColor="#a78bfa"
+            accentGradient="linear-gradient(135deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)"
+            url="/"
+          />
+
+          {/* IRIS (二番手・ペアで配置) */}
+          <FeatureProduct
+            brand="iris"
+            badge="クリエイター向け"
+            tagline="光を、受け止める。"
+            taglineEn="Receive the light."
+            description="あらゆる情報・反応・感情を受け取り、解像度の高い洞察に変えるクリエイターのためのAI。インフルエンサーの六つの仕事を、ひとつのアプリで束ねます。"
+            features={[
+              '案件管理・分析・創作・交渉まで一気通貫',
+              'Instagram 解析と投稿AIで戦略を自動化',
+              '美意識を共有する、招待制コミュニティ',
+            ]}
+            accentColor="#E1306C"
+            accentGradient="linear-gradient(135deg,#FCB045,#E1306C,#833AB4)"
+            url="/iris"
+            reversed
+          />
         </div>
       </section>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  PHILOSOPHY (Prism + Iris) */}
+      {/*  PHILOSOPHY                */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section
         className="lp-section-pad"
         style={{
-          padding: '6rem 1.5rem',
+          padding: '7rem 1.5rem',
           background: 'linear-gradient(180deg,#070712 0%,#000 100%)',
           textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <p style={sectionLabel}>PHILOSOPHY</p>
+        {/* 背景の薄い光 */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: 600,
+            height: 600,
+            marginLeft: -300,
+            marginTop: -300,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
+            filter: 'blur(40px)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div style={{ maxWidth: 940, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+          <p style={sectionLabel}>
+            <span style={sectionLabelMain}>思&nbsp;想</span>
+            <span style={sectionLabelSub}>PHILOSOPHY</span>
+          </p>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.9 }}
             style={{
-              fontFamily: '"Playfair Display", serif',
-              fontStyle: 'italic',
-              fontSize: 'clamp(1.7rem, 3.4vw, 2.5rem)',
-              fontWeight: 500,
-              lineHeight: 1.4,
-              marginBottom: '2rem',
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(1.85rem, 3.6vw, 2.75rem)',
+              fontWeight: 700,
+              lineHeight: 1.7,
+              marginBottom: '2.25rem',
+              letterSpacing: '0.05em',
             }}
           >
-            Light disperses.
+            光は、分かれる。
             <br />
-            Light is received.
+            光は、受け止められる。
             <br />
             <span
               style={{
                 background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
+                fontWeight: 900,
               }}
             >
-              Both, the CORE.
+              そのどちらもが、核。
             </span>
           </motion.h2>
 
           <p
             style={{
-              color: 'rgba(255,255,255,0.6)',
-              fontSize: 'clamp(0.95rem, 1.5vw, 1.1rem)',
-              lineHeight: 2,
-              maxWidth: 720,
-              margin: '0 auto',
+              fontFamily: FONT_SERIF_EN,
+              fontSize: 'clamp(0.85rem, 1.3vw, 1rem)',
+              color: 'rgba(255,255,255,0.45)',
+              fontStyle: 'italic',
+              letterSpacing: '0.1em',
+              marginBottom: '2rem',
             }}
           >
-            ひとりの中に複数の役割を解き放つ
-            <strong style={{ color: '#a78bfa' }}> Prism</strong>。<br />
+            Light disperses. Light is received. Both, the CORE.
+          </p>
+
+          <p
+            style={{
+              fontFamily: FONT_SERIF_JA,
+              color: 'rgba(255,255,255,0.7)',
+              fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
+              lineHeight: 2.2,
+              maxWidth: 760,
+              margin: '0 auto',
+              fontWeight: 400,
+            }}
+          >
+            ひとりの中に、複数の役割を解き放つ
+            <strong style={{ color: '#a78bfa', fontWeight: 600 }}> Prism</strong>。
+            <br />
             あらゆる情報を受け取り、伝わる形に変える
-            <strong style={{ color: '#E1306C' }}> Iris</strong>。<br />
+            <strong style={{ color: '#E1306C', fontWeight: 600 }}> Iris</strong>。
             <br />
-            この 2 つは、対立するように見えて、ひとつの真理の両面です。
             <br />
-            それが、<strong style={{ color: '#fff' }}>CORE</strong> という会社の核。
+            この二つは、対立するように見えて、ひとつの真理の両面です。
+            <br />
+            それが、<strong style={{ color: '#fff', fontWeight: 700, fontFamily: FONT_DISPLAY, letterSpacing: '0.15em' }}>CORE</strong> という会社の核。
           </p>
         </div>
       </section>
@@ -392,63 +491,45 @@ export default function CoreSite() {
         id="about"
         className="lp-section-pad"
         style={{
-          padding: '6rem 1.5rem',
+          padding: '7rem 1.5rem',
           background: '#000',
         }}
       >
-        <div style={{ maxWidth: 880, margin: '0 auto' }}>
-          <p style={{ ...sectionLabel, textAlign: 'center' }}>ABOUT</p>
-          <h2
-            style={{
-              fontFamily: '"Playfair Display", serif',
-              fontStyle: 'italic',
-              fontSize: 'clamp(1.85rem, 3.5vw, 2.6rem)',
-              fontWeight: 500,
-              textAlign: 'center',
-              marginBottom: '3rem',
-            }}
-          >
-            Company Information
-          </h2>
+        <div style={{ maxWidth: 920, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <p style={sectionLabel}>
+              <span style={sectionLabelMain}>会社概要</span>
+              <span style={sectionLabelSub}>ABOUT</span>
+            </p>
+            <h2
+              style={{
+                fontFamily: FONT_SERIF_JA,
+                fontSize: 'clamp(1.85rem, 3.5vw, 2.6rem)',
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+              }}
+            >
+              わたしたちについて
+            </h2>
+          </div>
 
           <dl
             style={{
               display: 'grid',
               gridTemplateColumns: '1fr',
               gap: 0,
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: 14,
               overflow: 'hidden',
               background: 'rgba(255,255,255,0.02)',
             }}
           >
-            <InfoRow label="Company" labelJa="会社名" value={COMPANY.nameEn} subValue={COMPANY.nameJa} />
-            <InfoRow label="Founded" labelJa="設立" value={COMPANY.founded} subValue="2026 年設立予定" />
-            <InfoRow
-              label="CEO"
-              labelJa="代表取締役"
-              value={COMPANY.ceo}
-              subValue={COMPANY.ceoJa}
-            />
-            <InfoRow
-              label="Headquarters"
-              labelJa="本社所在地"
-              value={COMPANY.address}
-              subValue={COMPANY.addressJa}
-            />
-            <InfoRow
-              label="Business"
-              labelJa="事業内容"
-              value="AI Agent OS — Development & Operation"
-              subValue="エージェント AI を中心とした SaaS の開発・運営"
-            />
-            <InfoRow
-              label="Products"
-              labelJa="提供サービス"
-              value="CORE Prism, CORE Iris"
-              subValue="事業家向け / クリエイター向け AI"
-              isLast
-            />
+            <InfoRow label="会社名"     subLabel="Company"      value={COMPANY.nameJa}  subValue={COMPANY.nameEn} />
+            <InfoRow label="設立"       subLabel="Founded"      value={COMPANY.founded} />
+            <InfoRow label="代表取締役" subLabel="CEO"           value={COMPANY.ceoJa}    subValue={COMPANY.ceoEn} />
+            <InfoRow label="本社所在地" subLabel="Headquarters" value={COMPANY.addressJa} subValue={COMPANY.addressEn} />
+            <InfoRow label="事業内容"   subLabel="Business"     value="エージェントAIを中心とした SaaS の開発・運営" />
+            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Prism（事業家向け）, CORE Iris（クリエイター向け）" isLast />
           </dl>
         </div>
       </section>
@@ -460,43 +541,38 @@ export default function CoreSite() {
         id="contact"
         className="lp-section-pad"
         style={{
-          padding: '6rem 1.5rem',
-          background: 'radial-gradient(ellipse at center, rgba(167,139,250,0.15) 0%, #000 70%)',
+          padding: '7rem 1.5rem',
+          background: 'radial-gradient(ellipse at center, rgba(167,139,250,0.18) 0%, #000 70%)',
           textAlign: 'center',
           position: 'relative',
           overflow: 'hidden',
         }}
       >
-        <div style={{ maxWidth: 720, margin: '0 auto', position: 'relative', zIndex: 2 }}>
-          <p style={sectionLabel}>CONTACT</p>
+        <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+          <p style={sectionLabel}>
+            <span style={sectionLabelMain}>お問い合わせ</span>
+            <span style={sectionLabelSub}>CONTACT</span>
+          </p>
           <h2
             style={{
-              fontFamily: '"Playfair Display", serif',
-              fontStyle: 'italic',
-              fontSize: 'clamp(1.85rem, 3.8vw, 2.75rem)',
-              fontWeight: 500,
-              marginBottom: '1.5rem',
-              lineHeight: 1.3,
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(1.95rem, 3.8vw, 2.85rem)',
+              fontWeight: 700,
+              marginBottom: '1.75rem',
+              lineHeight: 1.5,
+              letterSpacing: '0.05em',
             }}
           >
-            Let&apos;s build the core,
-            <br />
-            <span
-              style={{
-                background: 'linear-gradient(90deg,#ff9842,#a78bfa,#f472b6)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              together.
-            </span>
+            核を、共に。
           </h2>
           <p
             style={{
-              color: 'rgba(255,255,255,0.6)',
-              fontSize: '1rem',
-              lineHeight: 1.9,
-              marginBottom: '2.25rem',
+              fontFamily: FONT_SERIF_JA,
+              color: 'rgba(255,255,255,0.65)',
+              fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
+              lineHeight: 2.1,
+              marginBottom: '2.5rem',
+              fontWeight: 400,
             }}
           >
             法人契約・カスタム導入・取材・資本提携など、
@@ -507,8 +583,9 @@ export default function CoreSite() {
             href={`mailto:${COMPANY.email}`}
             style={{
               ...ctaHero,
-              fontFamily: 'monospace',
+              fontFamily: '"SF Mono", "Menlo", monospace',
               letterSpacing: '0.05em',
+              fontSize: '0.95rem',
             }}
           >
             ✉ {COMPANY.email}
@@ -522,27 +599,27 @@ export default function CoreSite() {
       <footer
         style={{
           background: '#000',
-          padding: '3rem 1.5rem 2rem',
-          borderTop: '1px solid rgba(255,255,255,0.04)',
+          padding: '3.5rem 1.5rem 2.5rem',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
         }}
       >
         <div
           style={{
-            maxWidth: 1200,
+            maxWidth: 1280,
             margin: '0 auto',
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: '2.5rem',
-            marginBottom: '2.5rem',
+            marginBottom: '2.75rem',
           }}
         >
           <div>
             <p
               style={{
-                fontSize: '1.05rem',
-                fontWeight: 800,
-                letterSpacing: '0.4em',
-                fontFamily: '"Cormorant Garamond", serif',
+                fontFamily: FONT_DISPLAY,
+                fontSize: '1.3rem',
+                fontWeight: 700,
+                letterSpacing: '0.45em',
                 marginBottom: '0.5rem',
               }}
             >
@@ -550,30 +627,38 @@ export default function CoreSite() {
             </p>
             <p
               style={{
-                fontSize: '0.75rem',
-                color: 'rgba(255,255,255,0.4)',
-                lineHeight: 1.7,
+                fontFamily: FONT_SERIF_JA,
+                fontSize: '0.78rem',
+                color: 'rgba(255,255,255,0.45)',
+                lineHeight: 1.9,
               }}
             >
-              In the core of every era,<br />
-              there is a CORE.
+              すべての時代の、<br />核となるものを。
             </p>
           </div>
           <div>
-            <p style={footHead}>PRODUCTS</p>
+            <p style={footHead}>プロダクト</p>
             <a href="/" style={footLink}>CORE Prism</a>
             <a href="/iris" style={footLink}>CORE Iris</a>
           </div>
           <div>
-            <p style={footHead}>COMPANY</p>
-            <a href="#mission" style={footLink}>Mission</a>
-            <a href="#about" style={footLink}>About</a>
-            <a href="#contact" style={footLink}>Contact</a>
+            <p style={footHead}>会社</p>
+            <a href="#mission" style={footLink}>理念</a>
+            <a href="#about" style={footLink}>会社概要</a>
+            <a href="#contact" style={footLink}>お問い合わせ</a>
           </div>
           <div>
-            <p style={footHead}>CONTACT</p>
+            <p style={footHead}>連絡先</p>
             <a href={`mailto:${COMPANY.email}`} style={footLink}>{COMPANY.email}</a>
-            <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.7, marginTop: '0.5rem' }}>
+            <p
+              style={{
+                fontSize: '0.72rem',
+                color: 'rgba(255,255,255,0.35)',
+                lineHeight: 1.8,
+                marginTop: '0.5rem',
+                fontFamily: FONT_SERIF_JA,
+              }}
+            >
               {COMPANY.addressJa}
             </p>
           </div>
@@ -581,16 +666,15 @@ export default function CoreSite() {
         <div
           style={{
             borderTop: '1px solid rgba(255,255,255,0.05)',
-            paddingTop: '1.5rem',
+            paddingTop: '1.75rem',
             textAlign: 'center',
             fontSize: '0.7rem',
             color: 'rgba(255,255,255,0.3)',
-            fontFamily: '"Cormorant Garamond", serif',
-            fontStyle: 'italic',
-            letterSpacing: '0.1em',
+            fontFamily: FONT_DISPLAY,
+            letterSpacing: '0.25em',
           }}
         >
-          © {new Date().getFullYear()} CORE Inc. — Founding in 2026.
+          © {new Date().getFullYear()} CORE INC. — FOUNDING IN 2026
         </div>
       </footer>
     </div>
@@ -598,127 +682,148 @@ export default function CoreSite() {
 }
 
 // ============================================================
-//  CoreOrb — 中心の白光が虹色に分散するヒーロー演出
+//  CoreOrb — 中央の白光と虹色光線 (荘厳に、控えめに)
 // ============================================================
 function CoreOrb() {
   return (
     <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
-      {/* 中央の核 */}
       <motion.div
-        animate={{ opacity: [0.5, 0.85, 0.5], scale: [1, 1.1, 1] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        animate={{ opacity: [0.45, 0.75, 0.45], scale: [1, 1.08, 1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
         style={{
           position: 'absolute',
           left: '50%',
-          top: '40%',
-          width: 360,
-          height: 360,
-          marginLeft: -180,
-          marginTop: -180,
+          top: '50%',
+          width: 420,
+          height: 420,
+          marginLeft: -210,
+          marginTop: -210,
           borderRadius: '50%',
           background:
-            'radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.15) 40%, transparent 70%)',
-          filter: 'blur(20px)',
+            'radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.18) 40%, transparent 70%)',
+          filter: 'blur(24px)',
         }}
       />
-      {/* 7 色の光線 (左右対称、外側に伸びる) */}
       {SPECTRUM.map((c, i) => {
         const angle = -75 + i * 25;
         return (
           <motion.div
             key={i}
             initial={{ opacity: 0 }}
-            animate={{ opacity: [0.18, 0.4, 0.18] }}
+            animate={{ opacity: [0.14, 0.32, 0.14] }}
             transition={{
-              duration: 4 + i * 0.3,
+              duration: 5 + i * 0.3,
               repeat: Infinity,
               ease: 'easeInOut',
-              delay: i * 0.15,
+              delay: i * 0.18,
             }}
             style={{
               position: 'absolute',
               left: '50%',
-              top: '40%',
+              top: '50%',
               width: 4,
-              height: '70vh',
+              height: '90vh',
               transformOrigin: 'top center',
               transform: `translateX(-50%) rotate(${angle}deg)`,
               background: `linear-gradient(180deg, ${c}cc 0%, ${c}00 80%)`,
-              filter: 'blur(10px)',
+              filter: 'blur(11px)',
             }}
           />
         );
       })}
-      {/* 周縁グロー */}
-      <div
-        style={{
-          position: 'absolute',
-          top: -200,
-          right: -200,
-          width: 600,
-          height: 600,
-          borderRadius: '50%',
-          background: '#a78bfa',
-          opacity: 0.1,
-          filter: 'blur(80px)',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          bottom: -200,
-          left: -200,
-          width: 600,
-          height: 600,
-          borderRadius: '50%',
-          background: '#E1306C',
-          opacity: 0.08,
-          filter: 'blur(80px)',
-        }}
-      />
+      <div style={{ position: 'absolute', top: -200, right: -200, width: 600, height: 600, borderRadius: '50%', background: '#a78bfa', opacity: 0.08, filter: 'blur(80px)' }} />
+      <div style={{ position: 'absolute', bottom: -200, left: -200, width: 600, height: 600, borderRadius: '50%', background: '#E1306C', opacity: 0.06, filter: 'blur(80px)' }} />
     </div>
   );
 }
 
 // ============================================================
-//  ProductCard — Prism / Iris のカード
+//  CoreWatermark — 巨大な「CORE」の透かし背景文字
 // ============================================================
-function ProductCard({
+function CoreWatermark() {
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'none',
+        zIndex: 2,
+        overflow: 'hidden',
+      }}
+    >
+      <motion.span
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 2, ease: 'easeOut' }}
+        style={{
+          fontFamily: FONT_DISPLAY,
+          fontSize: 'clamp(8rem, 28vw, 26rem)',
+          fontWeight: 800,
+          letterSpacing: '0.08em',
+          color: 'transparent',
+          WebkitTextStroke: '1px rgba(255,255,255,0.06)',
+          lineHeight: 1,
+          userSelect: 'none',
+        }}
+      >
+        CORE
+      </motion.span>
+    </div>
+  );
+}
+
+// ============================================================
+//  FeatureProduct — Prism / Iris をフィーチャーする横長カード
+// ============================================================
+function FeatureProduct({
   brand,
+  badge,
   tagline,
-  jaTagline,
+  taglineEn,
   description,
-  accentGradient,
+  features,
   accentColor,
+  accentGradient,
   url,
+  reversed,
 }: {
   brand: 'prism' | 'iris';
+  badge: string;
   tagline: string;
-  jaTagline: string;
+  taglineEn: string;
   description: string;
-  accentGradient: string;
+  features: string[];
   accentColor: string;
+  accentGradient: string;
   url: string;
+  reversed?: boolean;
 }) {
   const Logo = brand === 'iris' ? IrisLogo : PrismLogo;
   const productName = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
 
   return (
-    <motion.a
-      href={url}
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.25 }}
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-100px' }}
+      transition={{ duration: 0.7 }}
+      className="lp-feature-product"
       style={{
-        display: 'block',
         position: 'relative',
-        padding: '2.5rem 2rem',
-        background: `linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))`,
+        marginBottom: '2rem',
+        padding: 'clamp(2rem, 4vw, 3.5rem)',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))',
         border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 20,
-        textDecoration: 'none',
-        color: '#fff',
+        borderRadius: 24,
         overflow: 'hidden',
-        minHeight: 360,
+        display: 'grid',
+        gridTemplateColumns: reversed ? '1fr 0.85fr' : '0.85fr 1fr',
+        gap: 'clamp(2rem, 4vw, 4rem)',
+        alignItems: 'center',
       }}
     >
       {/* 装飾オーラ */}
@@ -726,87 +831,178 @@ function ProductCard({
         aria-hidden
         style={{
           position: 'absolute',
-          top: -80,
-          right: -80,
-          width: 280,
-          height: 280,
+          top: -100,
+          [reversed ? 'left' : 'right']: -100,
+          width: 380,
+          height: 380,
           borderRadius: '50%',
           background: accentColor,
           opacity: 0.18,
-          filter: 'blur(60px)',
+          filter: 'blur(80px)',
           pointerEvents: 'none',
         }}
       />
 
-      <div style={{ position: 'relative', zIndex: 2 }}>
-        <div style={{ marginBottom: '1.5rem', filter: `drop-shadow(0 4px 16px ${accentColor}55)` }}>
-          <Logo size={52} withWordmark={false} />
-        </div>
-
+      {/* ロゴ + 視覚要素 */}
+      <div
+        style={{
+          order: reversed ? 2 : 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+          position: 'relative',
+          zIndex: 2,
+        }}
+      >
+        <motion.div
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            filter: `drop-shadow(0 12px 32px ${accentColor}66)`,
+          }}
+        >
+          <Logo size={140} withWordmark={false} />
+        </motion.div>
         <p
           style={{
-            fontSize: '0.7rem',
-            letterSpacing: '0.3em',
+            fontFamily: FONT_DISPLAY,
+            fontSize: 'clamp(1.25rem, 2vw, 1.6rem)',
             fontWeight: 700,
+            letterSpacing: '0.4em',
+            marginTop: '1.5rem',
             background: accentGradient,
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            marginBottom: '0.5rem',
+            paddingLeft: '0.4em',
           }}
         >
-          {productName.toUpperCase()}
+          {brand.toUpperCase()}
         </p>
+        <p
+          style={{
+            fontSize: '0.7rem',
+            color: 'rgba(255,255,255,0.5)',
+            letterSpacing: '0.2em',
+            marginTop: 4,
+            fontFamily: FONT_SERIF_EN,
+            fontStyle: 'italic',
+          }}
+        >
+          {productName}
+        </p>
+      </div>
 
+      {/* テキストコンテンツ */}
+      <div style={{ order: reversed ? 1 : 2, position: 'relative', zIndex: 2 }}>
+        <span
+          style={{
+            display: 'inline-block',
+            fontSize: '0.7rem',
+            letterSpacing: '0.25em',
+            fontWeight: 700,
+            padding: '0.35rem 0.85rem',
+            borderRadius: 999,
+            background: `${accentColor}25`,
+            border: `1px solid ${accentColor}50`,
+            color: accentColor,
+            marginBottom: '1rem',
+            fontFamily: FONT_SERIF_JA,
+          }}
+        >
+          {badge}
+        </span>
         <h3
           style={{
-            fontFamily: '"Playfair Display", serif',
-            fontStyle: 'italic',
-            fontSize: 'clamp(1.6rem, 2.6vw, 2rem)',
-            fontWeight: 500,
-            marginBottom: '0.4rem',
-            lineHeight: 1.2,
+            fontFamily: FONT_SERIF_JA,
+            fontSize: 'clamp(1.85rem, 3.4vw, 2.5rem)',
+            fontWeight: 700,
+            lineHeight: 1.4,
+            marginBottom: '0.5rem',
+            letterSpacing: '0.04em',
           }}
         >
           {tagline}
         </h3>
         <p
           style={{
-            fontSize: '0.85rem',
-            color: 'rgba(255,255,255,0.55)',
-            marginBottom: '1.5rem',
-            fontFamily: '"Cormorant Garamond", serif',
+            fontFamily: FONT_SERIF_EN,
+            fontSize: '0.9rem',
+            color: 'rgba(255,255,255,0.45)',
             fontStyle: 'italic',
+            letterSpacing: '0.1em',
+            marginBottom: '1.5rem',
           }}
         >
-          {jaTagline}
+          {taglineEn}
         </p>
 
         <p
           style={{
-            fontSize: '0.9rem',
-            color: 'rgba(255,255,255,0.7)',
-            lineHeight: 1.85,
-            marginBottom: '2rem',
+            fontFamily: FONT_SERIF_JA,
+            fontSize: 'clamp(0.92rem, 1.4vw, 1rem)',
+            color: 'rgba(255,255,255,0.72)',
+            lineHeight: 2.1,
+            marginBottom: '1.5rem',
+            fontWeight: 400,
           }}
         >
           {description}
         </p>
 
-        <span
+        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.75rem' }}>
+          {features.map((f, i) => (
+            <li
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.6rem',
+                fontFamily: FONT_SERIF_JA,
+                fontSize: '0.92rem',
+                color: 'rgba(255,255,255,0.72)',
+                lineHeight: 1.9,
+                marginBottom: '0.5rem',
+              }}
+            >
+              <span
+                style={{
+                  color: accentColor,
+                  flexShrink: 0,
+                  fontSize: '0.7rem',
+                  marginTop: '0.45rem',
+                }}
+              >
+                ●
+              </span>
+              <span>{f}</span>
+            </li>
+          ))}
+        </ul>
+
+        <a
+          href={url}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.4rem',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            color: accentColor,
-            letterSpacing: '0.05em',
+            gap: '0.5rem',
+            fontFamily: FONT_SERIF_JA,
+            fontSize: '0.95rem',
+            fontWeight: 700,
+            color: '#fff',
+            textDecoration: 'none',
+            padding: '0.85rem 1.75rem',
+            borderRadius: 12,
+            background: accentGradient,
+            boxShadow: `0 8px 24px ${accentColor}55`,
+            letterSpacing: '0.08em',
           }}
         >
-          Learn more →
-        </span>
+          {productName} を見る →
+        </a>
       </div>
-    </motion.a>
+    </motion.div>
   );
 }
 
@@ -815,13 +1011,13 @@ function ProductCard({
 // ============================================================
 function InfoRow({
   label,
-  labelJa,
+  subLabel,
   value,
   subValue,
   isLast = false,
 }: {
   label: string;
-  labelJa: string;
+  subLabel: string;
   value: string;
   subValue?: string;
   isLast?: boolean;
@@ -831,8 +1027,8 @@ function InfoRow({
       style={{
         display: 'grid',
         gridTemplateColumns: '180px 1fr',
-        padding: '1.25rem 1.5rem',
-        borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
+        padding: '1.4rem 1.75rem',
+        borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.06)',
         alignItems: 'center',
         gap: '1rem',
       }}
@@ -841,28 +1037,43 @@ function InfoRow({
       <div>
         <p
           style={{
-            fontSize: '0.7rem',
-            letterSpacing: '0.2em',
-            color: 'rgba(255,255,255,0.45)',
+            fontFamily: FONT_SERIF_JA,
+            fontSize: '0.85rem',
             fontWeight: 700,
+            color: 'rgba(255,255,255,0.85)',
+            letterSpacing: '0.08em',
           }}
         >
-          {label.toUpperCase()}
+          {label}
         </p>
         <p
           style={{
-            fontSize: '0.7rem',
+            fontFamily: FONT_DISPLAY,
+            fontSize: '0.65rem',
+            letterSpacing: '0.25em',
             color: 'rgba(255,255,255,0.35)',
-            marginTop: 2,
+            marginTop: 4,
+            fontWeight: 600,
           }}
         >
-          {labelJa}
+          {subLabel.toUpperCase()}
         </p>
       </div>
       <div>
-        <p style={{ fontSize: '0.95rem', color: '#fff', lineHeight: 1.6 }}>{value}</p>
+        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', color: '#fff', lineHeight: 1.7, fontWeight: 500 }}>
+          {value}
+        </p>
         {subValue && (
-          <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', marginTop: 2, lineHeight: 1.6 }}>
+          <p
+            style={{
+              fontFamily: FONT_SERIF_EN,
+              fontSize: '0.78rem',
+              color: 'rgba(255,255,255,0.45)',
+              marginTop: 4,
+              lineHeight: 1.6,
+              fontStyle: 'italic',
+            }}
+          >
             {subValue}
           </p>
         )}
@@ -873,21 +1084,23 @@ function InfoRow({
 
 // ───────────── スタイル ─────────────
 const navLink: React.CSSProperties = {
-  fontSize: '0.85rem',
-  color: 'rgba(255,255,255,0.7)',
+  fontFamily: FONT_SERIF_JA,
+  fontSize: '0.88rem',
+  color: 'rgba(255,255,255,0.75)',
   textDecoration: 'none',
   fontWeight: 500,
-  letterSpacing: '0.05em',
+  letterSpacing: '0.1em',
 };
 const ctaSmall: React.CSSProperties = {
+  fontFamily: FONT_SERIF_JA,
   fontSize: '0.85rem',
   fontWeight: 600,
   color: '#fff',
   textDecoration: 'none',
-  padding: '0.55rem 1.1rem',
-  border: '1px solid rgba(255,255,255,0.2)',
+  padding: '0.6rem 1.25rem',
+  border: '1px solid rgba(255,255,255,0.25)',
   borderRadius: 999,
-  letterSpacing: '0.05em',
+  letterSpacing: '0.1em',
 };
 const ctaHero: React.CSSProperties = {
   display: 'inline-block',
@@ -895,42 +1108,60 @@ const ctaHero: React.CSSProperties = {
     'linear-gradient(135deg,#ff5757,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)',
   backgroundSize: '300% 100%',
   color: '#000',
-  padding: '1.05rem 2.25rem',
+  padding: '1.1rem 2.4rem',
   borderRadius: 14,
+  fontFamily: FONT_SERIF_JA,
   fontSize: '1rem',
   fontWeight: 800,
   textDecoration: 'none',
   boxShadow: '0 12px 36px rgba(167,139,250,0.45)',
-  letterSpacing: '0.04em',
+  letterSpacing: '0.12em',
 };
 const ctaGhost: React.CSSProperties = {
   display: 'inline-block',
-  background: 'rgba(255,255,255,0.05)',
+  background: 'rgba(255,255,255,0.06)',
   color: '#fff',
-  padding: '1.05rem 2rem',
+  padding: '1.1rem 2.1rem',
   borderRadius: 14,
+  fontFamily: FONT_SERIF_JA,
   fontSize: '0.95rem',
   fontWeight: 600,
   textDecoration: 'none',
-  border: '1px solid rgba(255,255,255,0.15)',
-  letterSpacing: '0.04em',
+  border: '1px solid rgba(255,255,255,0.18)',
+  letterSpacing: '0.1em',
 };
 const sectionLabel: React.CSSProperties = {
-  fontSize: '0.7rem',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: 6,
+  marginBottom: '1.25rem',
+};
+const sectionLabelMain: React.CSSProperties = {
+  fontFamily: FONT_SERIF_JA,
+  fontSize: '0.95rem',
   letterSpacing: '0.4em',
-  color: 'rgba(255,255,255,0.5)',
+  color: 'rgba(255,255,255,0.85)',
   fontWeight: 700,
-  marginBottom: '1rem',
+};
+const sectionLabelSub: React.CSSProperties = {
+  fontFamily: FONT_DISPLAY,
+  fontSize: '0.65rem',
+  letterSpacing: '0.45em',
+  color: 'rgba(255,255,255,0.35)',
+  fontWeight: 600,
 };
 const footHead: React.CSSProperties = {
-  fontSize: '0.65rem',
-  letterSpacing: '0.25em',
-  color: 'rgba(255,255,255,0.45)',
-  marginBottom: '0.75rem',
+  fontFamily: FONT_DISPLAY,
+  fontSize: '0.7rem',
+  letterSpacing: '0.3em',
+  color: 'rgba(255,255,255,0.5)',
+  marginBottom: '0.85rem',
   fontWeight: 700,
 };
 const footLink: React.CSSProperties = {
   display: 'block',
+  fontFamily: FONT_SERIF_JA,
   color: 'rgba(255,255,255,0.65)',
   fontSize: '0.85rem',
   textDecoration: 'none',
