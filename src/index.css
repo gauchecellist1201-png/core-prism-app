@@ -559,6 +559,14 @@ input, textarea, select { font-family: inherit; }
   padding-right: env(safe-area-inset-right, 0);
 }
 
+/* 法人サイト InfoRow モバイル: グリッドを 1 カラムに */
+@media (max-width: 640px) {
+  .lp-info-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+}
+
 /* ============================================================
    AI Support Chat Floating Button (FAB)
    - Desktop: 画面中央より少し右、底上 32px (右パネルとメインの隙間)

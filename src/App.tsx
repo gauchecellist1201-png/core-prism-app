@@ -19,6 +19,7 @@ import LandingPage from './components/LandingPage';
 import MasterEntry from './components/MasterEntry';
 import CheckoutModal from './components/CheckoutModal';
 import LegalModal, { type LegalKind } from './components/LegalModal';
+import CoreSite from './corporate/CoreSite';
 import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, type Plan } from './lib/billing';
 import { PrismBackground } from './components/PrismBackground';
 import { useTheme } from './hooks/useTheme';
@@ -67,7 +68,18 @@ function isMasterPath(): boolean {
   return p === '/master' || p.startsWith('/master/');
 }
 
+function isCorpPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/corp' || p.startsWith('/corp/') || p === '/company' || p.startsWith('/company/');
+}
+
 export default function App() {
+  // /corp — 株式会社コア (CORE Inc.) 法人 LP
+  if (isCorpPath()) {
+    return <CoreSite />;
+  }
+
   // /master — オーナー専用フル機能解放画面
   if (isMasterPath()) {
     return <MasterEntry />;
