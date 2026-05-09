@@ -20,6 +20,8 @@ import MasterEntry from './components/MasterEntry';
 import CheckoutModal from './components/CheckoutModal';
 import LegalModal, { type LegalKind } from './components/LegalModal';
 import CoreSite from './corporate/CoreSite';
+import StrategyDashboard from './corporate/StrategyDashboard';
+import PricingPage from './corporate/PricingPage';
 import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, type Plan } from './lib/billing';
 import { PrismBackground } from './components/PrismBackground';
 import { useTheme } from './hooks/useTheme';
@@ -74,7 +76,27 @@ function isCorpPath(): boolean {
   return p === '/corp' || p.startsWith('/corp/') || p === '/company' || p.startsWith('/company/');
 }
 
+function isStrategyPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.pathname.startsWith('/strategy');
+}
+
+function isPricingPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.pathname.startsWith('/pricing');
+}
+
 export default function App() {
+  // /strategy — オーナー専用 戦略ダッシュボード
+  if (isStrategyPath()) {
+    return <StrategyDashboard />;
+  }
+
+  // /pricing — 公開価格ページ + ROI 計算機
+  if (isPricingPath()) {
+    return <PricingPage />;
+  }
+
   // /corp — 株式会社コア (CORE Inc.) 法人 LP
   if (isCorpPath()) {
     return <CoreSite />;

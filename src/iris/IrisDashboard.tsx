@@ -32,13 +32,15 @@ import { IrisLogo } from '../components/Logo';
 import SupportChat from '../components/SupportChat';
 import ShortcutHelpModal from '../components/ShortcutHelpModal';
 import PwaInstallPrompt from '../components/PwaInstallPrompt';
+import IrisHealthView from './IrisHealthView';
+import { useHealth } from '../hooks/useHealth';
 
 interface Props {
   settings: AppSettings;
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health';
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
@@ -53,6 +55,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
 
   const desk = useInfluencerDesk();
   const team = useIrisTeam();
+  const health = useHealth();
   const myDeals = useMemo(() => desk.getDealsForPersona(IRIS_PERSONA_ID), [desk.deals]);
   const mediaKit = desk.getMediaKit(IRIS_PERSONA_ID);
 
@@ -153,6 +156,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             { id: 'draft' as Tab,     e: '✍',  l: '投稿下書き' },
             { id: 'image' as Tab,     e: '📷', l: '画像加工' },
             { id: 'beauty' as Tab,    e: '💆‍♀️', l: '美容相談' },
+            { id: 'health' as Tab,    e: '🌿', l: 'ヘルス' },
             { id: 'community' as Tab, e: '🌹', l: 'コミュニティ' },
             { id: 'team' as Tab,      e: '🌷', l: 'チーム' },
             { id: 'brands' as Tab,    e: '🤝', l: 'ブランド探し' },
@@ -206,6 +210,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'negotiate' && <NegotiateView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'draft' && <DraftView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'beauty' && <BeautyChatView bg={bg} settings={settings} />}
+            {tab === 'health' && <IrisHealthView bg={bg} health={health} />}
             {tab === 'strategy' && <IrisStrategistView bg={bg} settings={settings} mediaKit={mediaKit} />}
             {tab === 'image' && <ImageStudioView bg={bg} settings={settings} />}
             {tab === 'triage' && (
