@@ -57,6 +57,13 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       minHeight: '100vh',
       overflowX: 'hidden',
     }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap');
+        .iris-lp-cta:hover { transform: translateY(-3px) !important; box-shadow: 0 18px 50px rgba(225,48,108,0.65) !important; background-position: 100% 0 !important; }
+        .iris-lp-cta:active { transform: scale(0.96) !important; }
+        .iris-lp-ghost:hover { background: rgba(255,250,245,0.12) !important; border-color: rgba(255,250,245,0.4) !important; transform: translateY(-2px); }
+        .iris-lp-nav:hover { color: rgba(255,250,245,1) !important; }
+      `}</style>
       {/* ── ヘッダ ────────────────────────────── */}
       <header className="lp-safe" style={{
         position: 'sticky', top: 0, zIndex: 50,
@@ -67,9 +74,9 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
           <IrisLogo size={28} withWordmark />
           <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-            <a href="#facets" style={navLink} className="lp-nav-link">機能</a>
-            <a href="#pricing" style={navLink} className="lp-nav-link">料金</a>
-            <button onClick={onEnter} style={ctaBtnSmall}>はじめる →</button>
+            <a href="#facets" style={navLink} className="lp-nav-link iris-lp-nav">機能</a>
+            <a href="#pricing" style={navLink} className="lp-nav-link iris-lp-nav">料金</a>
+            <button onClick={onEnter} className="iris-lp-cta" style={ctaBtnSmall}>はじめる →</button>
           </nav>
         </div>
       </header>
@@ -150,10 +157,10 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             transition={{ duration: 0.8, delay: 0.6 }}
             style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}
           >
-            <button onClick={onEnter} style={ctaBtnHero}>
+            <button onClick={onEnter} className="iris-lp-cta" style={ctaBtnHero}>
               ✦ あなたの光をはじめる
             </button>
-            <a href="#facets" style={ctaBtnGhost}>
+            <a href="#facets" className="iris-lp-ghost" style={ctaBtnGhost}>
               機能を見る
             </a>
           </motion.div>
@@ -437,7 +444,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           }}>
             14 日間、すべての機能を無料でお試しできます。
           </p>
-          <button onClick={onEnter} style={ctaBtnHero}>
+          <button onClick={onEnter} className="iris-lp-cta" style={ctaBtnHero}>
             ✦ あなたの光をはじめる
           </button>
         </div>
@@ -566,41 +573,47 @@ const navLink: React.CSSProperties = {
   color: 'rgba(255,250,245,0.7)',
   textDecoration: 'none',
   fontWeight: 500,
+  transition: 'color 0.18s',
 };
 const ctaBtnSmall: React.CSSProperties = {
-  background: `linear-gradient(135deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`,
+  background: `linear-gradient(135deg, #E1306C 0%, #833AB4 55%, #FCB045 100%)`,
   color: '#fff',
-  padding: '0.55rem 1.1rem',
-  borderRadius: 10,
+  padding: '0.55rem 1.25rem',
+  borderRadius: 999,
   fontSize: '0.85rem',
   fontWeight: 700,
   border: 'none',
   cursor: 'pointer',
-  boxShadow: `0 4px 12px ${IRIS_COLORS.hotPink}45`,
+  boxShadow: `0 6px 18px rgba(225,48,108,0.42)`,
+  transition: 'all 0.22s',
+  letterSpacing: '0.02em',
 };
 const ctaBtnHero: React.CSSProperties = {
-  background: `linear-gradient(135deg, ${IRIS_COLORS.gold} 0%, ${IRIS_COLORS.hotPink} 50%, ${IRIS_COLORS.purpleLt} 100%)`,
+  background: `linear-gradient(135deg, #E1306C 0%, #833AB4 50%, #FCB045 100%)`,
   backgroundSize: '200% 100%',
   color: '#fff',
-  padding: '1.05rem 2.25rem',
-  borderRadius: 14,
+  padding: '1.1rem 2.5rem',
+  borderRadius: 999,
   fontSize: '1.05rem',
   fontWeight: 800,
   border: 'none',
   cursor: 'pointer',
-  boxShadow: `0 12px 36px ${IRIS_COLORS.hotPink}55`,
-  letterSpacing: '0.05em',
+  boxShadow: `0 12px 40px rgba(225,48,108,0.55)`,
+  letterSpacing: '0.04em',
+  transition: 'all 0.22s',
+  display: 'inline-block',
 };
 const ctaBtnGhost: React.CSSProperties = {
-  background: 'rgba(255,250,245,0.05)',
+  background: 'rgba(255,250,245,0.06)',
   color: IRIS_COLORS.cream,
-  padding: '1.05rem 2rem',
-  borderRadius: 14,
+  padding: '1.1rem 2rem',
+  borderRadius: 999,
   fontSize: '1rem',
   fontWeight: 700,
-  border: `1px solid ${IRIS_COLORS.gold}40`,
+  border: `1.5px solid rgba(255,250,245,0.22)`,
   textDecoration: 'none',
   display: 'inline-block',
+  transition: 'all 0.22s',
 };
 const footHead: React.CSSProperties = {
   fontSize: '0.7rem',

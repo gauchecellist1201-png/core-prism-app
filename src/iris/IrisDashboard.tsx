@@ -44,11 +44,29 @@ type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'negotiate' |
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
+// ── サイドバー / ドック ナビゲーション定義 ──────────────
+const NAV_ITEMS: { id: Tab; e: string; l: string; primary?: boolean }[] = [
+  { id: 'home',      e: '✦',   l: 'ホーム',        primary: true },
+  { id: 'strategy',  e: '📈',  l: '戦略',           primary: true },
+  { id: 'triage',    e: '🔍',  l: '案件精査',       primary: true },
+  { id: 'director',  e: '🎬',  l: '丸投げ編集' },
+  { id: 'deals',     e: '💌',  l: '案件',           primary: true },
+  { id: 'negotiate', e: '💬',  l: '交渉' },
+  { id: 'draft',     e: '✍',   l: '投稿下書き' },
+  { id: 'image',     e: '📷',  l: '画像加工' },
+  { id: 'beauty',    e: '💆',  l: '美容相談' },
+  { id: 'health',    e: '🌿',  l: 'ヘルス' },
+  { id: 'community', e: '🌹',  l: 'コミュニティ' },
+  { id: 'team',      e: '🌷',  l: 'チーム' },
+  { id: 'brands',    e: '🤝',  l: 'ブランド' },
+  { id: 'kit',       e: '📇',  l: 'メディアキット', primary: true },
+];
+
 export default function IrisDashboard({ settings, onLeave }: Props) {
   const [bg, setBg] = useState<IrisBackgroundDef | CustomIrisBackground>(() => loadIrisBackground());
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const [customEditorOpen, setCustomEditorOpen] = useState(false);
-  const [bgListVersion, setBgListVersion] = useState(0); // 再描画用
+  const [bgListVersion, setBgListVersion] = useState(0);
   const [tab, setTab] = useState<Tab>('home');
 
   const allBgs = useMemo(() => getAllBackgrounds(), [bgListVersion]);
@@ -58,6 +76,11 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const health = useHealth();
   const myDeals = useMemo(() => desk.getDealsForPersona(IRIS_PERSONA_ID), [desk.deals]);
   const mediaKit = desk.getMediaKit(IRIS_PERSONA_ID);
+
+  const activeDealsCount = useMemo(
+    () => myDeals.filter(d => !['closed', 'declined', 'reported'].includes(d.stage)).length,
+    [myDeals]
+  );
 
   const handlePickBg = (b: IrisBackgroundDef | CustomIrisBackground) => {
     setBg(b); saveIrisBackground(b.id); setBgPickerOpen(false);
@@ -72,7 +95,6 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
     }
   };
 
-  // CSS variables → 動的テーマ
   const themeStyle = {
     '--iris-accent': bg.accent,
     '--iris-ink': bg.ink,
@@ -96,108 +118,186 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
     timeAllocation: 0,
   }), [bg]);
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: bg.background,
-      color: bg.ink,
-      fontFamily: IRIS_FONTS.body,
-      ...themeStyle,
-    }}>
-      {/* ヘッダ */}
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 40,
-        padding: '0.85rem 1.25rem',
-        background: 'rgba(255,255,255,0.55)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: `1px solid ${bg.cardBorder}`,
-      }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <IrisLogo size={32} withWordmark={false} />
-            <span style={{
-              // Cormorant Garamond italic + Instagram グラデ
-              fontFamily: IRIS_FONTS.serif,
-              fontStyle: 'italic',
-              fontWeight: 500,
-              fontSize: '1.6rem',
-              letterSpacing: '-0.01em',
-              lineHeight: 1,
-              background: `linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>
-              Iris
-            </span>
-          </div>
+  const isDark = bg.id === 'neon-night';
+  const sidebarBg = isDark
+    ? 'rgba(26,10,38,0.92)'
+    : 'rgba(255,255,255,0.72)';
+  const sidebarBorder = isDark
+    ? 'rgba(131,58,180,0.22)'
+    : bg.cardBorder;
 
-          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-            <button onClick={() => setBgPickerOpen(true)} title="背景を変える"
-              style={btnIcon(bg)}>
-              {bg.emoji}
-            </button>
-            <button onClick={onLeave} title="戻る" style={btnIcon(bg)}>←</button>
+  const navItem = useCallback((t: { id: Tab; e: string; l: string }, badge?: number) => {
+    const active = tab === t.id;
+    return (
+      <button
+        key={t.id}
+        onClick={() => setTab(t.id)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '0.65rem',
+          width: '100%', padding: '0.65rem 0.85rem',
+          background: active
+            ? 'linear-gradient(135deg, #E1306C 0%, #833AB4 55%, #FCB045 100%)'
+            : 'transparent',
+          color: active ? '#fff' : bg.ink,
+          border: 'none', borderRadius: 12,
+          cursor: 'pointer', textAlign: 'left',
+          fontFamily: IRIS_FONTS.body,
+          fontSize: '0.88rem', fontWeight: active ? 700 : 500,
+          boxShadow: active ? '0 6px 20px rgba(225,48,108,0.38)' : 'none',
+          transition: 'all 0.18s',
+          position: 'relative',
+        }}
+        onMouseEnter={e => { if (!active) e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(225,48,108,0.07)'; }}
+        onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+      >
+        <span style={{ fontSize: '1.1rem', lineHeight: 1, flexShrink: 0 }}>{t.e}</span>
+        <span style={{ flex: 1, lineHeight: 1.2 }}>{t.l}</span>
+        {badge != null && badge > 0 && (
+          <span style={{
+            background: '#E1306C', color: '#fff',
+            borderRadius: 999, fontSize: '0.65rem', fontWeight: 700,
+            padding: '0.15rem 0.45rem', lineHeight: 1.2, flexShrink: 0,
+          }}>{badge}</span>
+        )}
+      </button>
+    );
+  }, [tab, bg.ink, isDark]);
+
+  return (
+    <div style={{ minHeight: '100vh', background: bg.background, color: bg.ink, fontFamily: IRIS_FONTS.body, ...themeStyle }}>
+
+      {/* ── グローバル CSS (レスポンシブ) ─────────────── */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap');
+
+        .iris-sidebar { display: flex; }
+        .iris-mobile-header { display: none !important; }
+        .iris-bottom-dock { display: none !important; }
+        .iris-content { margin-left: 220px; }
+
+        @media (max-width: 820px) {
+          .iris-sidebar { display: none !important; }
+          .iris-mobile-header { display: flex !important; }
+          .iris-bottom-dock { display: flex !important; }
+          .iris-content { margin-left: 0 !important; padding-bottom: 80px; }
+        }
+
+        .iris-nav-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+        .iris-cta-btn {
+          background: linear-gradient(135deg, #E1306C 0%, #833AB4 50%, #FCB045 100%);
+          background-size: 200% 100%;
+          transition: all 0.22s;
+          box-shadow: 0 8px 28px rgba(225,48,108,0.42);
+        }
+        .iris-cta-btn:hover {
+          background-position: 100% 0;
+          transform: translateY(-2px);
+          box-shadow: 0 14px 36px rgba(225,48,108,0.55);
+        }
+        .iris-cta-btn:active { transform: scale(0.96); }
+
+        .iris-card-hover { transition: all 0.22s; }
+        .iris-card-hover:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(26,10,38,0.12) !important; }
+      `}</style>
+
+      {/* ── 左サイドバー (デスクトップ) ────────────────── */}
+      <aside className="iris-sidebar" style={{
+        position: 'fixed', left: 0, top: 0, bottom: 0,
+        width: 220, zIndex: 40,
+        flexDirection: 'column',
+        background: sidebarBg,
+        backdropFilter: 'blur(24px)',
+        borderRight: `1px solid ${sidebarBorder}`,
+        overflowY: 'auto', overflowX: 'hidden',
+        scrollbarWidth: 'none',
+      }}>
+        {/* ロゴ */}
+        <div style={{ padding: '1.5rem 1rem 1rem', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.15rem' }}>
+            <IrisLogo size={28} withWordmark={false} />
+            <span style={{
+              fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontWeight: 600,
+              fontSize: '1.5rem', letterSpacing: '-0.01em', lineHeight: 1,
+              background: 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            }}>Iris</span>
           </div>
+          <p style={{ fontSize: '0.68rem', letterSpacing: '0.18em', color: bg.inkSoft, margin: 0, fontWeight: 600 }}>
+            CREATOR STUDIO
+          </p>
         </div>
 
-        {/* タブ */}
-        <nav style={{
-          maxWidth: 1280, margin: '0.5rem auto 0', display: 'flex', gap: '0.4rem',
-          overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4,
-        }}>
-          {[
-            { id: 'home' as Tab,      e: '✦', l: 'ホーム' },
-            { id: 'strategy' as Tab,  e: '📈', l: '戦略' },
-            { id: 'triage' as Tab,    e: '🔍', l: '案件精査' },
-            { id: 'director' as Tab,  e: '🎬', l: '丸投げ編集' },
-            { id: 'deals' as Tab,     e: '💌', l: '案件' },
-            { id: 'negotiate' as Tab, e: '💬', l: '交渉' },
-            { id: 'draft' as Tab,     e: '✍',  l: '投稿下書き' },
-            { id: 'image' as Tab,     e: '📷', l: '画像加工' },
-            { id: 'beauty' as Tab,    e: '💆‍♀️', l: '美容相談' },
-            { id: 'health' as Tab,    e: '🌿', l: 'ヘルス' },
-            { id: 'community' as Tab, e: '🌹', l: 'コミュニティ' },
-            { id: 'team' as Tab,      e: '🌷', l: 'チーム' },
-            { id: 'brands' as Tab,    e: '🤝', l: 'ブランド探し' },
-            { id: 'kit' as Tab,       e: '📇', l: 'メディアキット' },
-          ].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              style={{
-                // 非アクティブタブも背景に埋もれないよう、白の不透明度を上げて文字を濃く固定
-                background: tab === t.id
-                  ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`
-                  : 'rgba(255,255,255,0.92)',
-                color: tab === t.id ? '#FFFFFF' : '#1F1A2E',
-                border: tab === t.id ? 'none' : `1px solid rgba(31,26,46,0.08)`,
-                borderRadius: 999,
-                padding: '0.55rem 1.15rem',
-                fontSize: '0.85rem',
-                fontWeight: tab === t.id ? 700 : 600,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                fontFamily: IRIS_FONTS.body,
-                boxShadow: tab === t.id
-                  ? `0 6px 18px ${bg.accent}55`
-                  : '0 1px 3px rgba(31,26,46,0.06)',
-                transition: 'all 0.15s',
-              }}>
-              <span style={{ marginRight: 6 }}>{t.e}</span>
-              {t.l}
-            </button>
-          ))}
+        {/* ナビゲーション */}
+        <nav style={{ flex: 1, padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+          {NAV_ITEMS.map(t => navItem(t, t.id === 'deals' ? activeDealsCount : undefined))}
         </nav>
+
+        {/* 下部: bg ピッカー + 戻る */}
+        <div style={{ padding: '0.75rem', flexShrink: 0, borderTop: `1px solid ${sidebarBorder}` }}>
+          <button onClick={() => setBgPickerOpen(true)} style={{
+            display: 'flex', alignItems: 'center', gap: '0.6rem',
+            width: '100%', padding: '0.6rem 0.75rem',
+            background: 'transparent', border: `1px solid ${bg.cardBorder}`,
+            borderRadius: 10, cursor: 'pointer', color: bg.ink,
+            fontFamily: IRIS_FONTS.body, fontSize: '0.82rem', fontWeight: 500,
+            transition: 'all 0.18s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(225,48,108,0.07)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <span style={{ fontSize: '1rem' }}>{bg.emoji}</span>
+            <span>テーマ変更</span>
+          </button>
+          <button onClick={onLeave} style={{
+            display: 'flex', alignItems: 'center', gap: '0.6rem',
+            width: '100%', padding: '0.6rem 0.75rem', marginTop: '0.3rem',
+            background: 'transparent', border: 'none',
+            borderRadius: 10, cursor: 'pointer', color: bg.inkSoft,
+            fontFamily: IRIS_FONTS.body, fontSize: '0.82rem', fontWeight: 500,
+            transition: 'all 0.18s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = bg.ink}
+          onMouseLeave={e => e.currentTarget.style.color = bg.inkSoft}
+          >
+            <span style={{ fontSize: '1rem' }}>←</span>
+            <span>トップへ戻る</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── モバイル ヘッダ ──────────────────────────── */}
+      <header className="iris-mobile-header" style={{
+        position: 'sticky', top: 0, zIndex: 40,
+        padding: '0.85rem 1rem',
+        background: 'rgba(255,255,255,0.72)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: `1px solid ${bg.cardBorder}`,
+        alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <IrisLogo size={26} withWordmark={false} />
+          <span style={{
+            fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontWeight: 600,
+            fontSize: '1.4rem',
+            background: 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+          }}>Iris</span>
+        </div>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <button onClick={() => setBgPickerOpen(true)} style={btnIcon(bg)}>{bg.emoji}</button>
+          <button onClick={onLeave} style={btnIcon(bg)}>←</button>
+        </div>
       </header>
 
-      {/* メインコンテンツ */}
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem 1.25rem 4rem' }}>
+      {/* ── メインコンテンツ ─────────────────────────── */}
+      <main className="iris-content" style={{ padding: '1.75rem 1.5rem 4rem', maxWidth: 1100, margin: '0 auto' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
           >
             {tab === 'home' && (
               <IrisVoiceHome
@@ -242,7 +342,69 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         </AnimatePresence>
       </main>
 
-      {/* カスタム背景エディタ */}
+      {/* ── モバイル 下部ドック ──────────────────────── */}
+      <nav className="iris-bottom-dock" style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
+        background: 'rgba(255,255,255,0.88)',
+        backdropFilter: 'blur(24px)',
+        borderTop: `1px solid ${bg.cardBorder}`,
+        padding: '0.55rem 0.5rem calc(0.55rem + env(safe-area-inset-bottom))',
+        alignItems: 'center', justifyContent: 'space-around',
+        gap: '0.25rem',
+      }}>
+        {/* 主要 4 タブ (left 2) */}
+        {[NAV_ITEMS[0], NAV_ITEMS[4]].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem',
+            padding: '0.4rem 0.25rem', background: 'transparent', border: 'none', cursor: 'pointer',
+            color: tab === t.id ? bg.accent : bg.inkSoft,
+            fontFamily: IRIS_FONTS.body, fontSize: '0.65rem', fontWeight: tab === t.id ? 700 : 500,
+            transition: 'all 0.15s',
+            position: 'relative',
+          }}>
+            <span style={{ fontSize: '1.35rem', lineHeight: 1 }}>{t.e}</span>
+            <span>{t.l}</span>
+            {t.id === 'deals' && activeDealsCount > 0 && (
+              <span style={{
+                position: 'absolute', top: 2, right: '50%', transform: 'translateX(12px)',
+                background: '#E1306C', color: '#fff',
+                borderRadius: 999, fontSize: '0.55rem', fontWeight: 700,
+                padding: '0.1rem 0.35rem', lineHeight: 1.3,
+              }}>{activeDealsCount}</span>
+            )}
+          </button>
+        ))}
+
+        {/* FAB 中央: クイック追加 */}
+        <button
+          onClick={() => setTab('triage')}
+          className="iris-cta-btn"
+          style={{
+            width: 56, height: 56, borderRadius: '50%',
+            border: 'none', cursor: 'pointer',
+            fontSize: '1.6rem', lineHeight: 1,
+            color: '#fff', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 8,
+          }}
+        >＋</button>
+
+        {/* 主要 4 タブ (right 2) */}
+        {[NAV_ITEMS[1], NAV_ITEMS[13]].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem',
+            padding: '0.4rem 0.25rem', background: 'transparent', border: 'none', cursor: 'pointer',
+            color: tab === t.id ? bg.accent : bg.inkSoft,
+            fontFamily: IRIS_FONTS.body, fontSize: '0.65rem', fontWeight: tab === t.id ? 700 : 500,
+            transition: 'all 0.15s',
+          }}>
+            <span style={{ fontSize: '1.35rem', lineHeight: 1 }}>{t.e}</span>
+            <span>{t.l}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* ── カスタム背景エディタ ──────────────────────── */}
       <AnimatePresence>
         {customEditorOpen && (
           <IrisCustomBgEditor
@@ -256,7 +418,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         )}
       </AnimatePresence>
 
-      {/* 背景セレクタ モーダル */}
+      {/* ── 背景セレクタ モーダル ─────────────────────── */}
       <AnimatePresence>
         {bgPickerOpen && (
           <motion.div
@@ -264,30 +426,31 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             onClick={() => setBgPickerOpen(false)}
             style={{
               position: 'fixed', inset: 0, zIndex: 90,
-              background: 'rgba(20,15,30,0.5)', backdropFilter: 'blur(8px)',
+              background: 'rgba(20,15,30,0.55)', backdropFilter: 'blur(10px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '1rem',
             }}
           >
             <motion.div
-              initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }}
+              initial={{ scale: 0.92, y: 28 }} animate={{ scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 28 }}
               onClick={e => e.stopPropagation()}
               style={{
-                background: '#fff', borderRadius: 24, padding: '1.5rem',
-                maxWidth: 700, width: '100%', maxHeight: '85vh', overflow: 'auto',
+                background: '#fff', borderRadius: 28, padding: '1.75rem',
+                maxWidth: 700, width: '100%', maxHeight: '88vh', overflow: 'auto',
               }}
             >
-              <div style={{ marginBottom: '1.25rem' }}>
-                <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: IRIS_COLORS.roseDeep, fontWeight: 600 }}>
-                  BACKGROUND
+              <div style={{ marginBottom: '1.5rem' }}>
+                <p style={{ fontSize: '0.65rem', letterSpacing: '0.3em', color: IRIS_COLORS.hotPink, fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                  THEME
                 </p>
-                <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: IRIS_COLORS.navy, margin: '0.25rem 0 0' }}>
+                <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: IRIS_COLORS.inkBlack, margin: 0, fontWeight: 700 }}>
                   気分を変える。
                 </h3>
               </div>
 
-              <p style={{ fontSize: '0.75rem', color: IRIS_COLORS.inkSoft, marginBottom: '0.5rem' }}>
-                ✨ プリセット (補色ペア)
+              <p style={{ fontSize: '0.72rem', color: IRIS_COLORS.inkSoft, marginBottom: '0.6rem', letterSpacing: '0.1em', fontWeight: 600, textTransform: 'uppercase' }}>
+                ✨ プリセット
               </p>
               <div style={{
                 display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem',
@@ -297,8 +460,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   return (
                     <button key={b.id} onClick={() => handlePickBg(b)} style={{
                       background: b.background,
-                      border: active ? `3px solid ${IRIS_COLORS.roseDeep}` : `1px solid ${IRIS_COLORS.roseSoft}`,
-                      borderRadius: 16,
+                      border: active ? `2.5px solid #E1306C` : `1px solid rgba(225,48,108,0.18)`,
+                      borderRadius: 18,
                       padding: '1.25rem',
                       cursor: 'pointer',
                       minHeight: 110,
@@ -306,13 +469,14 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                       position: 'relative',
                       color: b.ink,
                       fontFamily: IRIS_FONTS.body,
-                      transition: 'transform 0.15s',
+                      transition: 'all 0.18s',
+                      boxShadow: active ? '0 8px 24px rgba(225,48,108,0.3)' : '0 2px 8px rgba(26,10,38,0.06)',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(26,10,38,0.12)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = active ? '0 8px 24px rgba(225,48,108,0.3)' : '0 2px 8px rgba(26,10,38,0.06)'; }}
                     >
                       <div style={{ fontSize: '1.6rem', marginBottom: '0.4rem' }}>{b.emoji}</div>
-                      <div style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.05rem', fontStyle: 'italic' }}>{b.label}</div>
+                      <div style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.05rem', fontStyle: 'italic', fontWeight: 600 }}>{b.label}</div>
                       <div style={{
                         position: 'absolute', bottom: 8, right: 8,
                         width: 16, height: 16, borderRadius: '50%',
@@ -321,7 +485,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                       {active && (
                         <div style={{
                           position: 'absolute', top: 8, right: 8,
-                          background: IRIS_COLORS.roseDeep, color: '#fff',
+                          background: 'linear-gradient(135deg, #E1306C, #833AB4)',
+                          color: '#fff',
                           borderRadius: 999, fontSize: '0.65rem',
                           padding: '0.15rem 0.5rem', fontWeight: 700,
                         }}>選択中</div>
@@ -378,23 +543,25 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 </>
               )}
 
-              <button onClick={() => { setBgPickerOpen(false); setCustomEditorOpen(true); }} style={{
-                marginTop: '1.25rem',
-                width: '100%',
-                background: `linear-gradient(135deg, ${IRIS_COLORS.rose}, ${IRIS_COLORS.roseDeep})`,
-                color: '#fff', border: 'none',
-                padding: '0.95rem', borderRadius: 999, fontWeight: 700, cursor: 'pointer',
-                fontSize: '0.9rem',
-                boxShadow: `0 8px 24px ${IRIS_COLORS.roseDeep}55`,
-              }}>
+              <button onClick={() => { setBgPickerOpen(false); setCustomEditorOpen(true); }}
+                className="iris-cta-btn"
+                style={{
+                  marginTop: '1.5rem',
+                  width: '100%',
+                  color: '#fff', border: 'none',
+                  padding: '0.95rem', borderRadius: 999, fontWeight: 700, cursor: 'pointer',
+                  fontSize: '0.9rem', fontFamily: IRIS_FONTS.body,
+                }}>
                 ✨ 自分だけの背景を作る
               </button>
 
               <button onClick={() => setBgPickerOpen(false)} style={{
                 marginTop: '0.5rem',
                 width: '100%',
-                background: 'transparent', color: IRIS_COLORS.navy, border: `1px solid ${IRIS_COLORS.roseSoft}`,
+                background: 'transparent', color: IRIS_COLORS.inkSoft,
+                border: `1px solid rgba(26,10,38,0.12)`,
                 padding: '0.85rem', borderRadius: 999, fontWeight: 600, cursor: 'pointer',
+                fontFamily: IRIS_FONTS.body,
               }}>
                 閉じる
               </button>
