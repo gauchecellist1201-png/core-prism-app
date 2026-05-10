@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, ChatMessage, AppSettings, KnowledgeItem, Proposal } from '../types/identity';
 import { isOnboarded, isDemoActive, clearDemoData } from '../lib/onboarding';
@@ -44,6 +44,7 @@ import { useShadowSecretary } from '../hooks/useShadowSecretary';
 import { PrismLogo } from './Logo';
 import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './CommandPalette';
 import PnLStudio from './PnLStudio';
+import BenchmarkStudio from './BenchmarkStudio';
 import DocumentStudio from './DocumentStudio';
 import PeopleStudio from './PeopleStudio';
 import TeamHub from './TeamHub';
@@ -53,6 +54,7 @@ import { useDailyCoach } from '../hooks/useDailyCoach';
 import IncomingBriefBanner from './IncomingBriefBanner';
 import type { CoachBrief } from '../lib/coachScheduler';
 import { speakNatural } from '../lib/tts';
+import { loadBenchmarkResult } from '../lib/benchmarkAnalyst';
 import type { DailyHealth } from '../types/health';
 import type { HealthAnomaly } from '../data/healthAnomaly';
 
@@ -149,6 +151,8 @@ export default function IdentityDashboard({
   const [showCRM, setShowCRM] = useState(false);
   const [showTaskHub, setShowTaskHub] = useState(false);
   const [showPnL, setShowPnL] = useState(false);
+  const [showBenchmark, setShowBenchmark] = useState(false);
+  const lastBenchmark = useMemo(() => loadBenchmarkResult(persona.id), [persona.id, showBenchmark]);
   const [showVoice, setShowVoice] = useState(false);
   const [showSalesAgent, setShowSalesAgent] = useState(false);
   const [showYouTube, setShowYouTube] = useState(false);
@@ -302,7 +306,6 @@ export default function IdentityDashboard({
       }}
       onDrop={handleGlobalDrop}
     >
-      {/* AI コーチ 新着ブリーフバナー */}
       <AnimatePresence>
         {coach.incoming && (
           <IncomingBriefBanner
@@ -317,7 +320,6 @@ export default function IdentityDashboard({
         )}
       </AnimatePresence>
 
-      {/* Persona transition overlay */}
       <AnimatePresence>
         {isTransitioning && (
           <motion.div
@@ -339,7 +341,6 @@ export default function IdentityDashboard({
         )}
       </AnimatePresence>
 
-      {/* Mobile sidebar drawer */}
       <AnimatePresence>
         {showMobileSidebar && (
           <motion.div
@@ -479,7 +480,6 @@ export default function IdentityDashboard({
               >
                 💬 AI
               </button>
-              {/* コーチブリーフ既読インジケーター (バナー消去後に残る) */}
               {coach.brief && !coach.incoming && (
                 <motion.button
                   onClick={() => { if (coach.brief) setBriefOverride(coachBriefToProposal(coach.brief)); }}
@@ -501,7 +501,6 @@ export default function IdentityDashboard({
             </div>
           </div>
 
-          {/* Demo Banner */}
           <AnimatePresence>
             {isDemoActive() && (
               <DemoBanner
@@ -511,12 +510,10 @@ export default function IdentityDashboard({
             )}
           </AnimatePresence>
 
-          {/* Ambient glow */}
           <div className="absolute top-0 left-0 right-0 md:left-48 md:right-64 h-40 pointer-events-none opacity-10"
             style={{ background: `radial-gradient(ellipse at top center, ${persona.accentColor} 0%, transparent 70%)` }}
           />
 
-          {/* Content */}
           <div className="flex-1 overflow-auto p-3 md:p-4 relative">
             <div className="max-w-5xl space-y-3">
 
@@ -538,7 +535,7 @@ export default function IdentityDashboard({
                 persona={persona}
                 actions={[
                   { id: 'brief', emoji: '💡', label: '提案を生成', desc: 'AI が次の一手', primary: true, onClick: () => proactive.generate(settings.voiceEnabled !== false) },
-                  { id: 'voice', emoji: '🎤', label: '音声メモ', desc: 'AI が自動振り分け', onClick: () => setShowVoice(true) },
+                  { id: 'voice', emoji: '🎙', label: '音声メモ', desc: 'AI が自動振り分け', onClick: () => setShowVoice(true) },
                   { id: 'youtube', emoji: '🎦', label: 'YouTube取込', desc: 'AI要約→ナレッジ化', onClick: () => setShowYouTube(true) },
                   { id: 'shadow', emoji: '📬', label: '下書き済み', desc: `AI 事前下書き${shadow.drafts.length > 0 ? ` (${shadow.drafts.length})` : ''}`, onClick: () => setShowShadow(true) },
                   { id: 'kb', emoji: '📚', label: '資料を追加', desc: 'PDF / PPT / 画像', onClick: () => setShowKnowledge(true) },
@@ -555,10 +552,11 @@ export default function IdentityDashboard({
                   { id: 'sales', emoji: '📒', label: '売上台帳', desc: '請求書と連動', onClick: () => setShowSales(true) },
                   { id: 'pnl', emoji: '📊', label: 'P&L', desc: '損益計算書', onClick: () => setShowPnL(true) },
                   { id: 'expense', emoji: '📷', label: '経費 / OCR', desc: 'レシート読取', onClick: () => setShowExpense(true) },
+                  { id: 'benchmark', emoji: '📊', label: 'ベンチマーク', desc: '業界比較分析', onClick: () => setShowBenchmark(true) },
                   { id: 'crm', emoji: '🤝', label: 'CRM', desc: '案件パイプライン', onClick: () => setShowCRM(true) },
                   { id: 'documents', emoji: '📄', label: '書類スタジオ', desc: '見積→発注→納品→請求', onClick: () => setShowDocument(true) },
                   { id: 'people', emoji: '👥', label: '人物ケア', desc: '1on1履歴+AI分析', onClick: () => setShowPeople(true) },
-                  { id: 'team', emoji: '🫂', label: 'チーム', desc: '招待・共同閲覧', onClick: () => setShowTeam(true) },
+                  { id: 'team', emoji: '🤺', label: 'チーム', desc: '招待・共同閲覧', onClick: () => setShowTeam(true) },
                   { id: 'sales-agent', emoji: '🎯', label: '商談 AI', desc: 'リサーチ→アプローチ自動化', primary: true, onClick: () => setShowSalesAgent(true) },
                   { id: 'tasks-hub', emoji: '✅', label: 'タスクハブ', desc: '全タスク統合', onClick: () => setShowTaskHub(true) },
                   { id: 'premium', emoji: '👑', label: 'プレミアム', desc: '戦略 / 法務 / 財務', primary: true, onClick: () => setShowPremium(true) },
@@ -754,7 +752,7 @@ export default function IdentityDashboard({
                       </span>
                     )}
                     {persona.cashflow.income === 0 && persona.cashflow.expense === 0 && (
-                      <span className="text-fg-muted text-sm">クリックして資料から自動抽出 / 手入力</span>
+                      <span className="text-fg-muted text-sm">クリックして資料から自動抜出 / 手入力</span>
                     )}
                   </div>
                   <div className="text-right px-3 py-1.5 rounded-lg flex-shrink-0" style={{ background: persona.accentColorLight }}>
@@ -778,6 +776,24 @@ export default function IdentityDashboard({
 
       {/* Right Panel (desktop) */}
       <div className="hidden md:flex w-64 flex-col flex-shrink-0" style={{ borderLeft: '1px solid rgba(255,255,255,0.04)' }}>
+        {lastBenchmark && (
+          <motion.button
+            onClick={() => setShowBenchmark(true)}
+            className="mx-3 mt-3 p-2.5 rounded-xl text-left transition-all"
+            style={{ background: `${persona.accentColor}12`, border: `1px solid ${persona.accentColor}35` }}
+            whileHover={{ scale: 1.02 }}
+            title="業界ベンチマークを開く"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-fg-muted">{lastBenchmark.industryLabel}業界</span>
+              <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+                style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                上位 {100 - lastBenchmark.overallPercentile}%
+              </span>
+            </div>
+            <p className="text-fg-muted text-[10px] mt-0.5 truncate">{lastBenchmark.rankings.length} KPI 分析済み ・ タップで詳細</p>
+          </motion.button>
+        )}
         <div className="overflow-y-auto" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', maxHeight: '42%' }}>
           <div className="p-3">
             <CognitiveDashboard activeId={persona.id} personas={allPersonas} onEditFinance={setFinanceEditFor} />
@@ -1013,6 +1029,14 @@ export default function IdentityDashboard({
             onClose={() => setShowPnL(false)}
           />
         )}
+        {showBenchmark && (
+          <BenchmarkStudio
+            key="benchmark"
+            persona={persona}
+            settings={settings}
+            onClose={() => setShowBenchmark(false)}
+          />
+        )}
         {showVoice && (
           <VoiceCaptureStudio
             key="voice"
@@ -1097,7 +1121,6 @@ export default function IdentityDashboard({
         )}
       </AnimatePresence>
 
-      {/* グローバル ドラッグオーバーレイ */}
       <AnimatePresence>
         {globalDrag && (
           <motion.div
@@ -1122,7 +1145,6 @@ export default function IdentityDashboard({
         )}
       </AnimatePresence>
 
-      {/* 一括取り込み進捗トースト */}
       <AnimatePresence>
         {bulkProgress && (
           <motion.div
@@ -1208,7 +1230,6 @@ export default function IdentityDashboard({
       <ShortcutHelpModal />
       <PwaInstallPrompt accentColor={persona.accentColor} />
 
-      {/* オンボーディングウィザード */}
       <AnimatePresence>
         {showOnboarding && (
           <OnboardingWizard
