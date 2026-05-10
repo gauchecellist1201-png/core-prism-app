@@ -3,10 +3,8 @@
 // コンセプト: ひとつの白光が 7 つの人格に分散する「人格統合 OS」
 // 各人格には専属エージェント AI が付き、商談・財務・創作まで実行する
 // ============================================================
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { PrismLogo } from './Logo';
-import { isMasterAuth } from '../lib/billing';
 
 interface Props {
   onEnterApp: () => void;
@@ -28,9 +26,6 @@ const BG_DARK = '#070712';
 const sectionPad = '5.5rem 1.25rem';
 
 export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
-  const [isMaster, setIsMaster] = useState(false);
-  useEffect(() => { setIsMaster(isMasterAuth()); }, []);
-
   return (
     <div style={{ background: BG_DARK, color: '#fff', minHeight: '100vh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
       {/* ── ヘッダ ────────────────────────────── */}
@@ -41,17 +36,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
             <a href="#agents" style={navLink} className="lp-nav-link">7つのエージェント</a>
             <a href="#exec" style={navLink} className="lp-nav-link">実行する AI</a>
             <a href="#pricing" style={navLink} className="lp-nav-link">料金</a>
-            {isMaster ? (
-              <button
-                onClick={onEnterApp}
-                style={{ ...ctaBtnSmall, background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}
-                title="マスターモード ON: 決済不要でアプリへ"
-              >
-                👑 アプリへ →
-              </button>
-            ) : (
-              <button onClick={onEnterApp} style={ctaBtnSmall}>解き放つ →</button>
-            )}
+            <button onClick={onEnterApp} style={ctaBtnSmall}>解き放つ →</button>
           </nav>
         </div>
       </header>
