@@ -9,13 +9,13 @@ export type AccountType = 'personal' | 'sub' | 'tieup' | 'business';
 export interface IrisAccount {
   id: string;
   type: AccountType;
-  handle: string;
+  handle: string;        // @username
   displayName: string;
-  avatarEmoji?: string;
+  avatarEmoji?: string;  // シンプルな絵文字アバター
   platform: 'instagram' | 'tiktok' | 'youtube' | 'x';
   followerCount?: number;
   bio?: string;
-  isActive: boolean;
+  isActive: boolean;     // 現在アクティブなアカウント
   createdAt: string;
 }
 
@@ -45,6 +45,7 @@ function loadAll(): IrisAccount[] {
     const r = localStorage.getItem(STORAGE_KEY);
     if (r) return JSON.parse(r);
   } catch { /* */ }
+  // デフォルト1アカウントをシード
   const def: IrisAccount = {
     id: genId(),
     type: 'personal',
@@ -63,6 +64,8 @@ function loadAll(): IrisAccount[] {
 function saveAll(list: IrisAccount[]) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch { /* */ }
 }
+
+// ─── CRUD ─────────────────────────────────────────────────────
 
 export function getAccounts(): IrisAccount[] {
   return loadAll();
@@ -97,6 +100,7 @@ export function updateAccount(id: string, patch: Partial<Omit<IrisAccount, 'id' 
 export function removeAccount(id: string): IrisAccount[] {
   const all = loadAll().filter(a => a.id !== id);
   saveAll(all);
+  // アクティブが削除された場合は先頭に切り替え
   const activeId = localStorage.getItem(ACTIVE_KEY);
   if (activeId === id && all.length > 0) {
     localStorage.setItem(ACTIVE_KEY, all[0].id);
@@ -105,6 +109,8 @@ export function removeAccount(id: string): IrisAccount[] {
   }
   return all;
 }
+
+// ─── React Hook ───────────────────────────────────────────────
 
 import { useState, useCallback } from 'react';
 
