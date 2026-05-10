@@ -116,7 +116,7 @@ export const FEATURE_META: Record<FeatureKey, { label: string; emoji: string }> 
   'team-members':      { label: 'チームメンバー',     emoji: '🌷' },
   'brand-match':       { label: 'ブランドマッチ',     emoji: '✨' },
   'api-access':        { label: 'API アクセス',       emoji: '🔌' },
-  'white-label':       { label: 'ホワイトラベル',     emoji: '🎬' },
+  'white-label':       { label: 'ホワイトラベル',     emoji: '🎦' },
 };
 
 /** 現在のプランで feature が使えるか + 残り回数 */
@@ -327,7 +327,7 @@ export interface ReferralData {
 }
 
 function generateReferralCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 紛らわしい O,0,I,1 除外
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 級らわしい O,0,I,1 除外
   let code = '';
   for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
@@ -355,7 +355,7 @@ export function saveReferralData(data: ReferralData) {
 export function applyReferralCode(code: string): { success: boolean; message: string } {
   const data = getReferralData();
   if (data.usedCode) {
-    return { success: false, message: 'すでに紹介コードを利用済みです' };
+    return { success: false, message: 'すでに紹介コードを利用済です' };
   }
   if (code === data.myCode) {
     return { success: false, message: '自分の紹介コードは使えません' };
@@ -529,6 +529,44 @@ export function saveBillingUser(u: BillingUser) {
 
 export function clearBillingUser() {
   try { localStorage.removeItem(KEY_USER); } catch { /* */ }
+}
+
+// ─── Stripe セッション同期 ───
+export interface StripeLookupResult {
+  plan: PlanId;
+  brand: Brand;
+  status: string;
+  customer_email: string | null;
+  subscription_id: string | null;
+  current_period_end: number | null;
+  cancel_at_period_end: boolean;
+}
+
+/**
+ * Stripe Checkout 完了後、session_id を使ってサーバから plan を取得し
+ * ローカルの BillingUser を更新する。
+ * マスターモード (GAUCHE2026) の場合はバイパスして即 resolve。
+ */
+export async function syncFromStripe(sessionId: string): Promise<StripeLookupResult | null> {
+  if (isMasterAuth()) return null;
+  try {
+    const res = await fetch(`/api/billing/lookup?session_id=${encodeURIComponent(sessionId)}`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as StripeLookupResult;
+    const user = loadBillingUser();
+    if (user) {
+      const updated: BillingUser = {
+        ...user,
+        plan: data.plan,
+        stripeCustomerId: data.subscription_id ?? user.stripeCustomerId,
+        isTestCheckout: false,
+      };
+      saveBillingUser(updated);
+    }
+    return data;
+  } catch {
+    return null;
+  }
 }
 
 export function useBillingUser(): {

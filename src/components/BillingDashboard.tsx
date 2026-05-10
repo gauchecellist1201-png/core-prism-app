@@ -1,229 +1,217 @@
-// ============================================================
-// BillingDashboard — 請求情報モーダル
-// 現在のプラン / 次回更新日 / 解約ボタン
-// ============================================================
+// src/components/BillingDashboard.tsx — 請求情報モーダル
+// 現在のプラン・次回更新日・解約ボタンを表示
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useBillingUser, findPlan } from '../lib/billing';
+import { loadBillingUser, saveBillingUser } from '../lib/billing';
 import { sendEmail } from '../lib/emailNotify';
 
 interface Props {
   onClose: () => void;
 }
 
+type CancelStatus = 'idle' | 'confirming' | 'cancelling' | 'cancelled' | 'error';
+
 export default function BillingDashboard({ onClose }: Props) {
-  const { user, changePlan } = useBillingUser();
-  const [cancelBusy, setCancelBusy] = useState(false);
-  const [cancelDone, setCancelDone] = useState(false);
-  const [cancelError, setCancelError] = useState<string | null>(null);
-  const [confirmCancel, setConfirmCancel] = useState(false);
-
-  if (!user) return null;
-
-  const plan = findPlan(user.brand, user.plan);
-  const accent = user.brand === 'iris' ? '#E1306C' : '#0033A0';
-  const grad = user.brand === 'iris'
-    ? 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)'
-    : 'linear-gradient(135deg, #0033A0, #1A4FC4)';
-
-  const periodEnd = user.currentPeriodEnd
-    ? new Date(user.currentPeriodEnd * 1000).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
-    : null;
+  const user = loadBillingUser();
+  const [cancelStatus, setCancelStatus] = useState<CancelStatus>('idle');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleCancel = async () => {
-    if (!user.subscriptionId) {
-      // テストモード: ローカルでプランをフリーに戻す
-      changePlan('free');
-      sendEmail(user.email, 'cancel_save', { name: user.email.split('@')[0], code: 'COMEBACK50' });
-      setCancelDone(true);
+    if (cancelStatus === 'idle') {
+      setCancelStatus('confirming');
+      return;
+    }
+    if (cancelStatus !== 'confirming') return;
+
+    setCancelStatus('cancelling');
+    setErrorMsg(null);
+
+    const subscriptionId = user?.stripeCustomerId;
+    if (!subscriptionId) {
+      if (user) {
+        saveBillingUser({ ...user, plan: 'free' });
+      }
+      if (user?.email) {
+        sendEmail(user.email, 'cancel_save', {
+          name: user.email.split('@')[0],
+          brand: user.brand,
+          couponCode: 'COMEBACK50',
+        });
+      }
+      setCancelStatus('cancelled');
       return;
     }
 
-    setCancelBusy(true);
-    setCancelError(null);
     try {
-      const resp = await fetch('/api/stripe/cancel', {
+      const res = await fetch('/api/stripe/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription_id: user.subscriptionId }),
+        body: JSON.stringify({ subscription_id: subscriptionId }),
       });
-      if (!resp.ok) {
-        const err = await resp.json() as { error?: string };
-        throw new Error(err.error || '解約処理に失敗しました');
+
+      if (res.status === 503) {
+        if (user) saveBillingUser({ ...user, plan: 'free' });
+        setCancelStatus('cancelled');
+      } else if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        setErrorMsg(err.error ?? '解約処理でエラーが発生しました');
+        setCancelStatus('error');
+        return;
+      } else {
+        setCancelStatus('cancelled');
       }
-      // キャンセルセーブメール (非同期)
-      sendEmail(user.email, 'cancel_save', { name: user.email.split('@')[0], code: 'COMEBACK50' });
-      setCancelDone(true);
-    } catch (e: any) {
-      setCancelError(e.message);
-    } finally {
-      setCancelBusy(false);
+
+      if (user?.email) {
+        sendEmail(user.email, 'cancel_save', {
+          name: user.email.split('@')[0],
+          brand: user.brand,
+          couponCode: 'COMEBACK50',
+        });
+      }
+    } catch (e: unknown) {
+      setErrorMsg(e instanceof Error ? e.message : '解約処理でエラーが発生しました');
+      setCancelStatus('error');
     }
   };
 
+  const planLabel = (plan: string) => {
+    const map: Record<string, string> = {
+      free: '無料トライアル', lite: 'Lite / Starter', standard: 'Standard',
+      pro: 'Pro / Exclusive', studio: 'Studio',
+    };
+    return map[plan] ?? plan;
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    <div
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(15,10,25,0.7)', backdropFilter: 'blur(16px)',
+        background: 'rgba(15,10,25,0.7)', backdropFilter: 'blur(12px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '1rem',
+        padding: '1rem', fontFamily: 'Inter, -apple-system, sans-serif',
       }}
     >
-      <motion.div
-        initial={{ scale: 0.92, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 30 }}
-        transition={{ type: 'spring', damping: 24, stiffness: 280 }}
+      <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#FFFFFF', borderRadius: 24, padding: '2rem',
-          maxWidth: 480, width: '100%',
-          fontFamily: 'Inter, -apple-system, sans-serif',
-          color: '#1F1A2E',
-          boxShadow: '0 30px 80px rgba(15,10,25,0.4)',
+          background: '#fff', borderRadius: 20, padding: '2rem',
+          maxWidth: 440, width: '100%', color: '#1F1A2E',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.15)',
         }}
       >
-        {/* ヘッダ */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <div>
-            <div style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: accent, fontWeight: 700, textTransform: 'uppercase' }}>
-              {user.brand === 'iris' ? 'CORE Iris' : 'CORE Prism'} · 請求情報
-            </div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0.2rem 0 0' }}>プラン管理</h2>
-          </div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>請求情報</h2>
           <button onClick={onClose} style={{
             background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%',
-            width: 32, height: 32, cursor: 'pointer', fontSize: '0.9rem',
+            width: 30, height: 30, cursor: 'pointer', fontSize: '0.85rem',
           }}>✕</button>
         </div>
 
-        {/* 現在のプラン */}
-        <div style={{
-          padding: '1.25rem', borderRadius: 16,
-          background: `${accent}0d`,
-          border: `1px solid ${accent}33`,
-          marginBottom: '1.25rem',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <p style={{ fontSize: '0.78rem', color: '#8A8593', marginBottom: '0.25rem' }}>現在のプラン</p>
-              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: accent }}>
-                {plan?.name || user.plan}
-              </div>
-              {plan && plan.priceJpy > 0 && (
-                <div style={{ fontSize: '0.88rem', color: '#5A5562', marginTop: '0.2rem' }}>
-                  ¥{plan.priceJpy.toLocaleString()} / 月
-                </div>
-              )}
-            </div>
-            <span style={{
-              background: grad, color: '#fff',
-              padding: '0.25rem 0.7rem', borderRadius: 999,
-              fontSize: '0.7rem', fontWeight: 700,
+        {!user ? (
+          <p style={{ color: '#5A5562' }}>ユーザー情報が見つかりません。</p>
+        ) : (
+          <>
+            <div style={{
+              padding: '1rem', borderRadius: 14,
+              background: '#F4F5F7', marginBottom: '1rem',
             }}>
-              {cancelDone ? '解約予約済' : '有効'}
-            </span>
-          </div>
-
-          {periodEnd && (
-            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-              <p style={{ fontSize: '0.78rem', color: '#8A8593', marginBottom: '0.15rem' }}>
-                {cancelDone ? '利用終了日' : '次回更新日'}
-              </p>
-              <p style={{ fontSize: '0.95rem', fontWeight: 600 }}>{periodEnd}</p>
-            </div>
-          )}
-        </div>
-
-        {/* アカウント情報 */}
-        <div style={{
-          padding: '1rem 1.25rem', borderRadius: 12,
-          background: '#F8F7FA', border: '1px solid rgba(0,0,0,0.06)',
-          marginBottom: '1.25rem',
-        }}>
-          <p style={{ fontSize: '0.78rem', color: '#8A8593', marginBottom: '0.3rem' }}>登録メールアドレス</p>
-          <p style={{ fontFamily: 'monospace', fontSize: '0.92rem', fontWeight: 600 }}>{user.email}</p>
-        </div>
-
-        {/* 解約フロー */}
-        <AnimatePresence mode="wait">
-          {cancelDone ? (
-            <motion.div
-              key="done"
-              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              style={{
-                padding: '1rem', borderRadius: 12,
-                background: '#F0FDF4', border: '1px solid #86EFAC',
-                fontSize: '0.88rem', color: '#166534', lineHeight: 1.7,
-              }}
-            >
-              ✅ 解約のお手続きが完了しました。<br />
-              ご利用期間終了まで引き続きご利用いただけます。<br />
-              <strong>復帰クーポン (COMEBACK50)</strong> をメールでお送りしました。
-            </motion.div>
-          ) : confirmCancel ? (
-            <motion.div
-              key="confirm"
-              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              style={{
-                padding: '1rem', borderRadius: 12,
-                background: 'rgba(200,16,46,0.06)', border: '1px solid rgba(200,16,46,0.2)',
-                marginBottom: '0.75rem',
-              }}
-            >
-              <p style={{ fontSize: '0.88rem', color: '#7C2D12', marginBottom: '1rem', lineHeight: 1.7 }}>
-                ⚠ 本当に解約しますか？<br />
-                現在の請求期間が終了するまでご利用いただけます。
-              </p>
-              {cancelError && (
-                <p style={{ fontSize: '0.83rem', color: '#9B1B30', marginBottom: '0.75rem' }}>
-                  エラー: {cancelError}
-                </p>
+              <div style={{ fontSize: '0.75rem', color: '#8A8593', marginBottom: '0.25rem' }}>現在のプラン</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1F1A2E' }}>
+                {planLabel(user.plan)}
+              </div>
+              {user.email && (
+                <div style={{ fontSize: '0.82rem', color: '#5A5562', marginTop: '0.25rem' }}>{user.email}</div>
               )}
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button
-                  onClick={() => setConfirmCancel(false)}
-                  style={{
-                    flex: 1, background: 'rgba(0,0,0,0.05)', color: '#5A5562',
-                    border: '1px solid rgba(0,0,0,0.1)', borderRadius: 999,
-                    padding: '0.65rem', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer',
-                  }}
-                >
-                  キャンセル
-                </button>
+            </div>
+
+            <div style={{
+              padding: '1rem', borderRadius: 14,
+              background: '#F4F5F7', marginBottom: '1.5rem',
+            }}>
+              <div style={{ fontSize: '0.75rem', color: '#8A8593', marginBottom: '0.25rem' }}>開始日</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1F1A2E' }}>
+                {new Date(user.startedAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </div>
+              {user.trialEndsAt && user.plan === 'free' && (
+                <>
+                  <div style={{ fontSize: '0.75rem', color: '#8A8593', marginTop: '0.75rem', marginBottom: '0.25rem' }}>
+                    トライアル終了日
+                  </div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#D97706' }}>
+                    {new Date(user.trialEndsAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {cancelStatus === 'cancelled' ? (
+              <div style={{
+                padding: '1rem', borderRadius: 14,
+                background: '#F0FDF4', border: '1px solid #BBF7D0',
+                fontSize: '0.88rem', color: '#166534', textAlign: 'center',
+              }}>
+                ✓ 解約手続きが完了しました。期間終了まで引き続きご利用いただけます。
+              </div>
+            ) : (
+              <>
+                {cancelStatus === 'error' && errorMsg && (
+                  <div style={{
+                    padding: '0.75rem 1rem', borderRadius: 12,
+                    background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.25)',
+                    color: '#9B1B30', fontSize: '0.85rem', marginBottom: '1rem',
+                  }}>⚠ {errorMsg}</div>
+                )}
+
+                {cancelStatus === 'confirming' && (
+                  <div style={{
+                    padding: '0.75rem 1rem', borderRadius: 12,
+                    background: '#FEF3C7', border: '1px solid #FCD34D',
+                    fontSize: '0.85rem', color: '#7C2D12', marginBottom: '1rem', lineHeight: 1.7,
+                  }}>
+                    本当に解約しますか？解約後も期間終了まではご利用いただけます。
+                  </div>
+                )}
+
                 <button
                   onClick={handleCancel}
-                  disabled={cancelBusy}
+                  disabled={cancelStatus === 'cancelling'}
                   style={{
-                    flex: 1, background: '#DC2626', color: '#fff',
-                    border: 'none', borderRadius: 999,
-                    padding: '0.65rem', fontSize: '0.88rem', fontWeight: 700,
-                    cursor: cancelBusy ? 'wait' : 'pointer',
-                    opacity: cancelBusy ? 0.6 : 1,
+                    width: '100%', padding: '0.75rem',
+                    background: cancelStatus === 'confirming'
+                      ? 'linear-gradient(135deg,#EF4444,#DC2626)'
+                      : 'rgba(0,0,0,0.04)',
+                    color: cancelStatus === 'confirming' ? '#fff' : '#5A5562',
+                    border: cancelStatus === 'confirming' ? 'none' : '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 999, fontSize: '0.9rem',
+                    fontWeight: 600, cursor: cancelStatus === 'cancelling' ? 'wait' : 'pointer',
+                    opacity: cancelStatus === 'cancelling' ? 0.6 : 1,
+                    transition: 'all 0.2s',
                   }}
                 >
-                  {cancelBusy ? '処理中…' : '解約する'}
+                  {cancelStatus === 'cancelling'
+                    ? '処理中…'
+                    : cancelStatus === 'confirming'
+                      ? '解約を確定する'
+                      : 'サブスクリプションを解約'}
                 </button>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <button
-                onClick={() => setConfirmCancel(true)}
-                style={{
-                  width: '100%', background: 'transparent', color: '#8A8593',
-                  border: '1px solid rgba(0,0,0,0.12)', borderRadius: 999,
-                  padding: '0.75rem', fontSize: '0.88rem', cursor: 'pointer',
-                  transition: 'border-color 0.2s, color 0.2s',
-                }}
-              >
-                サブスクリプションを解約する
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </motion.div>
+
+                {cancelStatus === 'confirming' && (
+                  <button
+                    onClick={() => setCancelStatus('idle')}
+                    style={{
+                      width: '100%', marginTop: '0.5rem', padding: '0.75rem',
+                      background: 'transparent', border: 'none',
+                      color: '#8A8593', fontSize: '0.85rem', cursor: 'pointer',
+                    }}
+                  >
+                    キャンセル
+                  </button>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
   );
 }
