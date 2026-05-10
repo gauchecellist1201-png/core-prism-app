@@ -22,6 +22,14 @@ const MASTER_KEY_STORAGE = 'core_master_key_v1';
     url.searchParams.delete('ref');
     window.history.replaceState({}, '', url.toString());
   }
+
+  // ─── 招待コード ?invite=CODE を sessionStorage に保留 (AcceptInviteModal がトリガー) ───
+  const invite = url.searchParams.get('invite');
+  if (invite && invite.length >= 6) {
+    try { sessionStorage.setItem('pending_invite', invite); } catch { /* */ }
+    url.searchParams.delete('invite');
+    window.history.replaceState({}, '', url.toString());
+  }
 })();
 
 // グローバル fetch interceptor — /api/ai 宛のリクエストにマスター系ヘッダーを自動付与

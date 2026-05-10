@@ -46,6 +46,8 @@ import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './Comman
 import PnLStudio from './PnLStudio';
 import DocumentStudio from './DocumentStudio';
 import PeopleStudio from './PeopleStudio';
+import TeamHub from './TeamHub';
+import AcceptInviteModal from './AcceptInviteModal';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
 import { useDailyCoach } from '../hooks/useDailyCoach';
 import IncomingBriefBanner from './IncomingBriefBanner';
@@ -153,6 +155,10 @@ export default function IdentityDashboard({
   const [showShadow, setShowShadow] = useState(false);
   const [showDocument, setShowDocument] = useState(false);
   const [showPeople, setShowPeople] = useState(false);
+  const [showTeam, setShowTeam] = useState(false);
+  const [pendingInviteCode] = useState<string | null>(() => {
+    try { return sessionStorage.getItem('pending_invite'); } catch { return null; }
+  });
   const [showCmdK, setShowCmdK] = useState(false);
   const [financeEditFor, setFinanceEditFor] = useState<Persona | null>(null);
   const [briefOverride, setBriefOverride] = useState<Proposal | null>(null);
@@ -552,6 +558,7 @@ export default function IdentityDashboard({
                   { id: 'crm', emoji: '🤝', label: 'CRM', desc: '案件パイプライン', onClick: () => setShowCRM(true) },
                   { id: 'documents', emoji: '📄', label: '書類スタジオ', desc: '見積→発注→納品→請求', onClick: () => setShowDocument(true) },
                   { id: 'people', emoji: '👥', label: '人物ケア', desc: '1on1履歴+AI分析', onClick: () => setShowPeople(true) },
+                  { id: 'team', emoji: '🫂', label: 'チーム', desc: '招待・共同閲覧', onClick: () => setShowTeam(true) },
                   { id: 'sales-agent', emoji: '🎯', label: '商談 AI', desc: 'リサーチ→アプローチ自動化', primary: true, onClick: () => setShowSalesAgent(true) },
                   { id: 'tasks-hub', emoji: '✅', label: 'タスクハブ', desc: '全タスク統合', onClick: () => setShowTaskHub(true) },
                   { id: 'premium', emoji: '👑', label: 'プレミアム', desc: '戦略 / 法務 / 財務', primary: true, onClick: () => setShowPremium(true) },
@@ -1059,6 +1066,23 @@ export default function IdentityDashboard({
             onDismiss={shadow.dismissDraft}
             onSend={shadow.sendDraft}
             onClose={() => setShowShadow(false)}
+          />
+        )}
+        {showTeam && (
+          <TeamHub
+            key="team"
+            accentColor={persona.accentColor}
+            onClose={() => setShowTeam(false)}
+          />
+        )}
+        {pendingInviteCode && !showTeam && (
+          <AcceptInviteModal
+            key="accept-invite"
+            code={pendingInviteCode}
+            onClose={() => {
+              try { sessionStorage.removeItem('pending_invite'); } catch { /* */ }
+              window.history.replaceState({}, '', window.location.pathname);
+            }}
           />
         )}
         {financeEditFor && (
