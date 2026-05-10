@@ -29,6 +29,7 @@ import EmailTriageModal from './EmailTriage';
 import PremiumHubModal from './PremiumHub';
 import FinanceEditor from './FinanceEditor';
 import AutoPostStudio from './AutoPostStudio';
+import ContentEngineStudio from './ContentEngineStudio';
 import InvoiceStudio from './InvoiceStudio';
 import ImageStudio from './ImageStudio';
 import SalesLedger from './SalesLedger';
@@ -138,6 +139,7 @@ export default function IdentityDashboard({
   const [showEmail, setShowEmail] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
   const [showPost, setShowPost] = useState(false);
+  const [showContentEngine, setShowContentEngine] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
   const [showImage, setShowImage] = useState(false);
   const [showSales, setShowSales] = useState(false);
@@ -542,6 +544,7 @@ export default function IdentityDashboard({
                   { id: 'email', emoji: '📬', label: 'メール処理', desc: '一括トリアージ', onClick: () => setShowEmail(true) },
                   { id: 'post', emoji: '📢', label: '投稿生成', desc: 'note / X', onClick: () => setShowPost(true) },
                   { id: 'image', emoji: '🎨', label: '画像生成', desc: 'AI ビジュアル', onClick: () => setShowImage(true) },
+                  { id: 'engine', emoji: '📡', label: '認知エンジン', desc: 'note × X 同時生成', onClick: () => setShowContentEngine(true) },
                   { id: 'invoice', emoji: '🧾', label: '請求書', desc: 'インボイス対応', onClick: () => setShowInvoice(true) },
                   { id: 'sales', emoji: '📒', label: '売上台帳', desc: '請求書と連動', onClick: () => setShowSales(true) },
                   { id: 'pnl', emoji: '📊', label: 'P&L', desc: '損益計算書', onClick: () => setShowPnL(true) },
@@ -936,6 +939,15 @@ export default function IdentityDashboard({
             knowledge={knowledgeForAgent}
             onClose={() => setShowPost(false)}
             onSaveAsKnowledge={(t, c) => onAddKnowledgeNote(t, c)}
+          />
+        )}
+        {showContentEngine && (
+          <ContentEngineStudio
+            key="content-engine"
+            persona={persona}
+            settings={settings}
+            knowledge={knowledgeForAgent}
+            onClose={() => setShowContentEngine(false)}
           />
         )}
         {showInvoice && (

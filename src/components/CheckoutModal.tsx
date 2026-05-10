@@ -10,6 +10,7 @@ import {
   type Plan, type Brand, useBillingUser,
 } from '../lib/billing';
 import { sendEmail } from '../lib/emailNotify';
+import { isBiometricAvailable, registerBiometric } from '../lib/biometricAuth';
 
 interface Props {
   brand: Brand;
@@ -101,6 +102,10 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
       await signup({ email, password, brand, plan: plan.id });
       // welcome メール (非同期・失敗無視)
       sendEmail(email, 'welcome', { name: email.split('@')[0], brand });
+      // Face ID / Touch ID 登録 (失敗しても続行)
+      if (await isBiometricAvailable()) {
+        registerBiometric({ email, displayName: email.split('@')[0] }).catch(() => { /* */ });
+      }
       setStep('success');
     } catch (e: any) {
       setError(e.message || 'エラーが発生しました');
@@ -262,7 +267,7 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={() => setStep('plan')} style={btnSecondary}>← 戺る</button>
                 <button onClick={proceedToPayment} style={{ ...btnPrimary(accent, accentGrad), flex: 2 }}>
-                  決済へ進む →
+                  ✨ 14日間 無料ではじめる →
                 </button>
               </div>
 
@@ -273,31 +278,33 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
             </motion.div>
           )}
 
-          {/* Step 3: 決済 */}
+          {/* Step 3: 14日間 無料トライアル開始 */}
           {step === 'payment' && (
             <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div style={{
                 padding: '1.25rem', borderRadius: 16,
-                background: '#F8F7FA', border: '1px solid rgba(0,0,0,0.06)',
+                background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5)',
+                border: '1px solid rgba(16,185,129,0.25)',
                 marginBottom: '1rem',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                  <span style={{ color: '#5A5562' }}>{plan.name} (1 ヶ月)</span>
-                  <span style={{ fontWeight: 700 }}>¥{plan.priceJpy.toLocaleString()}</span>
+                  <span style={{ color: '#065F46', fontWeight: 600 }}>{plan.name} プラン</span>
+                  <span style={{ fontWeight: 700, color: '#374151' }}>¥{plan.priceJpy.toLocaleString()} / 月</span>
                 </div>
-                {showingTestMode && plan.priceJpy > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                    <span style={{ color: '#10B981' }}>確認用モード割引</span>
-                    <span style={{ color: '#10B981', fontWeight: 700 }}>-¥{plan.priceJpy.toLocaleString()}</span>
-                  </div>
-                )}
-                <div style={{ height: 1, background: 'rgba(0,0,0,0.08)', margin: '0.5rem 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+                  <span style={{ color: '#10B981', fontWeight: 700 }}>14日間 無料トライアル</span>
+                  <span style={{ color: '#10B981', fontWeight: 800 }}>-¥{plan.priceJpy.toLocaleString()}</span>
+                </div>
+                <div style={{ height: 1, background: 'rgba(16,185,129,0.2)', margin: '0.6rem 0' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <span style={{ fontWeight: 700, fontSize: '1.05rem' }}>合計 (今回お支払い)</span>
-                  <span style={{ fontSize: '1.6rem', fontWeight: 900, color: accent }}>
-                    ¥{(showingTestMode ? 0 : plan.priceJpy).toLocaleString()}
-                  </span>
+                  <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#065F46' }}>本日のお支払い</span>
+                  <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981' }}>¥0</span>
                 </div>
+                <p style={{ fontSize: '0.78rem', color: '#065F46', marginTop: '0.5rem', lineHeight: 1.7 }}>
+                  ✓ 今すぐ全機能が使えます<br />
+                  ✓ 15 日目から ¥{plan.priceJpy.toLocaleString()}/月 を自動課金<br />
+                  ✓ いつでも 1 タップで解約可能（解約まで請求は発生しません）
+                </p>
               </div>
 
               {showingTestMode ? (
@@ -306,9 +313,8 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                   background: '#FEF3C7', border: '1px solid #FCD34D',
                   fontSize: '0.88rem', color: '#7C2D12', marginBottom: '1rem', lineHeight: 1.7,
                 }}>
-                  🧪 <strong>確認用モード</strong><br />
-                  実際の決済は発生しません。¥0 ですべての機能が使えます。
-                  本番リリース時に Stripe 決済が有効になります。
+                  🧪 <strong>ベータ確認モード</strong><br />
+                  カード情報は不要です。¥0 で 14 日間トライアル開始。
                 </div>
               ) : (
                 <div style={{
@@ -316,7 +322,8 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                   background: '#EBF8FF', border: '1px solid #90CDF4',
                   fontSize: '0.88rem', color: '#2A4365', marginBottom: '1rem', lineHeight: 1.7,
                 }}>
-                  💳 「決済する」を押すと Stripe の安全な決済ページに移動します。
+                  💳 次の画面で <strong>カード情報を 1 度だけ登録</strong>します（Stripe の安全な画面）。<br />
+                  今日の請求は <strong>¥0</strong>。15 日目から自動で月額が始まります。
                 </div>
               )}
 
@@ -331,8 +338,8 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                   {busy
                     ? '処理中…'
                     : showingTestMode
-                      ? '✓ ¥0 で決済する (確認用)'
-                      : `💳 ¥${plan.priceJpy.toLocaleString()} で決済する`}
+                      ? '✨ 無料トライアル開始 (¥0)'
+                      : '✨ 14日間 無料で始める →'}
                 </button>
               </div>
             </motion.div>
