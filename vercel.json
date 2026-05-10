@@ -3,6 +3,11 @@
     { "source": "/iris",     "destination": "/iris.html" },
     { "source": "/iris/",    "destination": "/iris.html" },
     { "source": "/iris/(.*)", "destination": "/iris.html" },
+    { "source": "/corp",     "destination": "/corp.html" },
+    { "source": "/corp/",    "destination": "/corp.html" },
+    { "source": "/corp/(.*)", "destination": "/corp.html" },
+    { "source": "/company",     "destination": "/corp.html" },
+    { "source": "/company/(.*)", "destination": "/corp.html" },
     { "source": "/(.*)",     "destination": "/index.html" }
   ]
 }

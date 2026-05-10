@@ -16,6 +16,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         iris: resolve(__dirname, 'iris.html'),
+        corp: resolve(__dirname, 'corp.html'),
       },
     },
   },
