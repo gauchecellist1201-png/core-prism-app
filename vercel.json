@@ -1,13 +1,16 @@
 {
+  "functions": {
+    "api/stripe/checkout.ts": { "runtime": "edge" },
+    "api/stripe/webhook.ts":  { "runtime": "edge" },
+    "api/stripe/cancel.ts":   { "runtime": "edge" },
+    "api/billing/lookup.ts":  { "runtime": "edge" },
+    "api/email/send.ts":      { "runtime": "edge" },
+    "api/ai.ts":              { "runtime": "edge" }
+  },
   "rewrites": [
-    { "source": "/api/stripe/checkout", "destination": "/api/stripe/checkout" },
-    { "source": "/api/stripe/webhook",  "destination": "/api/stripe/webhook"  },
-    { "source": "/api/stripe/cancel",   "destination": "/api/stripe/cancel"   },
-    { "source": "/api/billing/lookup",  "destination": "/api/billing/lookup"  },
-    { "source": "/api/email/send",      "destination": "/api/email/send"      },
-    { "source": "/iris",                "destination": "/iris.html"            },
-    { "source": "/iris/",               "destination": "/iris.html"            },
-    { "source": "/iris/(.*)",           "destination": "/iris.html"            },
-    { "source": "/(.*)",                "destination": "/index.html"           }
+    { "source": "/iris",     "destination": "/iris.html" },
+    { "source": "/iris/",    "destination": "/iris.html" },
+    { "source": "/iris/(.*)", "destination": "/iris.html" },
+    { "source": "/(.*)",     "destination": "/index.html" }
   ]
 }

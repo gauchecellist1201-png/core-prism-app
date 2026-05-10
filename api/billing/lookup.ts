@@ -1,69 +1,85 @@
-// api/billing/lookup.ts — Stripe Checkout Session 照会
-// GET ?session_id=cs_test_xxx
-// → { plan, status, customer_email, subscription_id, current_period_end }
+// ============================================================
+// /api/billing/lookup — Stripe セッション情報照会
+// GET ?session_id=cs_xxx → { plan, brand, status, customer_email, subscription_id }
+// ============================================================
 
 export const config = { runtime: 'edge' };
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+const ALLOWED_ORIGINS = [
+  'https://core-prism-app.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:4173',
+];
 
-function json(data: unknown, status = 200) {
+function corsHeaders(req: Request) {
+  const origin = req.headers.get('origin') || '';
+  const o = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': o,
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+function json(data: unknown, status: number, extra: Record<string, string> = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json', ...CORS },
+    headers: { 'Content-Type': 'application/json', ...extra },
   });
 }
 
 export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
-  if (req.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
+  const ch = corsHeaders(req);
+
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: ch });
+  }
+  if (req.method !== 'GET') {
+    return json({ error: 'Method not allowed' }, 405, ch);
+  }
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) return json({ error: 'STRIPE_NOT_CONFIGURED' }, 503);
+  if (!secretKey) {
+    return json({ error: 'STRIPE_NOT_CONFIGURED' }, 503, ch);
+  }
 
   const url = new URL(req.url);
   const sessionId = url.searchParams.get('session_id');
-  if (!sessionId) return json({ error: 'session_id required' }, 400);
+  if (!sessionId) {
+    return json({ error: 'Missing session_id' }, 400, ch);
+  }
 
-  // Checkout Session を expand して subscription を取得
-  const expandParams = new URLSearchParams();
-  expandParams.set('expand[]', 'line_items');
-  expandParams.set('expand[]', 'subscription');
+  let resp: Response;
+  try {
+    resp = await fetch(
+      `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}?expand[]=line_items&expand[]=subscription`,
+      { headers: { Authorization: `Bearer ${secretKey}` } },
+    );
+  } catch (e: any) {
+    return json({ error: `Stripe unreachable: ${e.message}` }, 502, ch);
+  }
 
-  const res = await fetch(
-    `https://api.stripe.com/v1/checkout/sessions/${sessionId}?${expandParams.toString()}`,
-    {
-      headers: { Authorization: `Bearer ${secretKey}` },
-    },
-  );
-
-  const session = await res.json() as {
+  const session = await resp.json() as {
     metadata?: { plan?: string; brand?: string };
-    payment_status?: string;
-    status?: string;
     customer_email?: string;
-    subscription?: {
-      id?: string;
-      status?: string;
-      current_period_end?: number;
-      cancel_at_period_end?: boolean;
-    } | null;
-    error?: { message: string };
+    customer_details?: { email?: string };
+    subscription?: { id?: string; status?: string; current_period_end?: number } | string;
+    error?: { message?: string };
   };
 
-  if (!res.ok) return json({ error: session.error?.message ?? 'Stripe error' }, res.status);
+  if (!resp.ok) {
+    return json({ error: session.error?.message || 'Session not found' }, 404, ch);
+  }
 
-  const sub = session.subscription;
+  const sub = typeof session.subscription === 'object' ? session.subscription : null;
+
   return json({
-    plan: session.metadata?.plan ?? 'free',
-    brand: session.metadata?.brand ?? 'prism',
-    status: sub?.status ?? session.payment_status ?? 'unknown',
-    customer_email: session.customer_email ?? null,
-    subscription_id: sub?.id ?? null,
+    plan: session.metadata?.plan ?? null,
+    brand: session.metadata?.brand ?? null,
+    status: sub?.status ?? 'incomplete',
+    customer_email: session.customer_email ?? session.customer_details?.email ?? null,
+    subscription_id: sub?.id ?? (typeof session.subscription === 'string' ? session.subscription : null),
     current_period_end: sub?.current_period_end ?? null,
-    cancel_at_period_end: sub?.cancel_at_period_end ?? false,
-  });
+  }, 200, ch);
 }

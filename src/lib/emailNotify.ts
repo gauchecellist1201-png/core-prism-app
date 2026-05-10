@@ -1,25 +1,31 @@
-// src/lib/emailNotify.ts — クライアントから /api/email/send を呼ぶヘルパー
-// 失敗時はコンソールログのみ (UI をブロックしない)
+// ============================================================
+// emailNotify — /api/email/send を叩くクライアントヘルパー
+// 失敗しても UI を止めない (fire-and-forget)
+// ============================================================
 
 type Template = 'welcome' | 'trial_ending' | 'cancel_save';
+
+interface EmailData {
+  name?: string;
+  brand?: string;
+  plan?: string;
+  code?: string;
+  days?: number;
+  upgradeUrl?: string;
+}
 
 export async function sendEmail(
   to: string,
   template: Template,
-  data: Record<string, unknown> = {},
+  data: EmailData = {},
 ): Promise<void> {
   try {
-    const res = await fetch('/api/email/send', {
+    await fetch('/api/email/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ to, template, data }),
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({})) as { error?: string };
-      if (err.error === 'EMAIL_NOT_CONFIGURED') return; // env 未設定は無視
-      console.warn('[emailNotify] send failed:', err.error);
-    }
-  } catch (e) {
-    console.warn('[emailNotify] network error:', e);
+  } catch {
+    // サイレント失敗 — UI を止めない
   }
 }
