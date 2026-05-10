@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Persona, ChatMessage, AppSettings, KnowledgeItem } from '../types/identity';
+import type { Persona, ChatMessage, AppSettings, KnowledgeItem, Proposal } from '../types/identity';
 import { isOnboarded, isDemoActive, clearDemoData } from '../lib/onboarding';
 import OnboardingWizard from './OnboardingWizard';
 import DemoBanner from './DemoBanner';
@@ -46,6 +46,10 @@ import PnLStudio from './PnLStudio';
 import DocumentStudio from './DocumentStudio';
 import PeopleStudio from './PeopleStudio';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
+import { useDailyCoach } from '../hooks/useDailyCoach';
+import IncomingBriefBanner from './IncomingBriefBanner';
+import type { CoachBrief } from '../lib/coachScheduler';
+import { speakNatural } from '../lib/tts';
 import type { DailyHealth } from '../types/health';
 import type { HealthAnomaly } from '../data/healthAnomaly';
 
@@ -119,6 +123,7 @@ export default function IdentityDashboard({
 }: Props) {
   const proactive = useProactiveAgent(settings, persona, knowledgeForAgent, healthCtx);
   const shadow = useShadowSecretary(settings, persona);
+  const coach = useDailyCoach(settings, persona, knowledgeForAgent, healthCtx);
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboarded());
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [showMeeting, setShowMeeting] = useState(false);
@@ -148,6 +153,32 @@ export default function IdentityDashboard({
   const [showPeople, setShowPeople] = useState(false);
   const [showCmdK, setShowCmdK] = useState(false);
   const [financeEditFor, setFinanceEditFor] = useState<Persona | null>(null);
+  const [briefOverride, setBriefOverride] = useState<Proposal | null>(null);
+
+  const coachBriefToProposal = useCallback((b: CoachBrief): Proposal => ({
+    id: b.id,
+    personaId: b.personaId,
+    title: b.title,
+    message: b.message,
+    actions: b.actions,
+    context: b.context,
+    generatedAt: b.generatedAt,
+  }), []);
+
+  const handleReadBrief = useCallback(() => {
+    if (coach.incoming) {
+      setBriefOverride(coachBriefToProposal(coach.incoming));
+    }
+    coach.read();
+  }, [coach, coachBriefToProposal]);
+
+  const handleSpeakBriefText = useCallback((text: string) => {
+    speakNatural(text, {
+      lang: settings.voiceLang || 'ja-JP',
+      rate: 1.0,
+      pitch: 1.0,
+    });
+  }, [settings.voiceLang]);
 
   useCommandPaletteHotkey(() => setShowCmdK(true));
 
@@ -263,6 +294,21 @@ export default function IdentityDashboard({
       }}
       onDrop={handleGlobalDrop}
     >
+      {/* AI コーチ 新着ブリーフバナー */}
+      <AnimatePresence>
+        {coach.incoming && (
+          <IncomingBriefBanner
+            key="coach-brief-banner"
+            brief={coach.incoming}
+            persona={persona}
+            onRead={handleReadBrief}
+            onDismiss={coach.dismiss}
+            voiceEnabled={settings.voiceEnabled !== false}
+            onSpeak={handleSpeakBriefText}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Persona transition overlay */}
       <AnimatePresence>
         {isTransitioning && (
@@ -425,6 +471,19 @@ export default function IdentityDashboard({
               >
                 💬 AI
               </button>
+              {/* コーチブリーフ既読インジケーター (バナー消去後に残る) */}
+              {coach.brief && !coach.incoming && (
+                <motion.button
+                  onClick={() => { if (coach.brief) setBriefOverride(coachBriefToProposal(coach.brief)); }}
+                  className="hidden md:flex text-xs px-2 py-1 rounded-full items-center gap-1 transition-all"
+                  style={{ background: `${persona.accentColor}18`, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
+                  animate={{ opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                  title="コーチブリーフを表示"
+                >
+                  🧠 ブリーフ
+                </motion.button>
+              )}
               <div
                 className="hidden md:block text-xs px-2 py-1 rounded-full"
                 style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}30` }}
@@ -455,11 +514,11 @@ export default function IdentityDashboard({
 
               <TodayBrief
                 persona={persona}
-                proposal={proactive.latestProposal}
-                isGenerating={proactive.isGenerating}
+                proposal={briefOverride ?? proactive.latestProposal}
+                isGenerating={proactive.isGenerating || coach.isGenerating}
                 isSpeaking={proactive.isSpeaking}
                 voiceEnabled={settings.voiceEnabled !== false}
-                onGenerate={proactive.generate}
+                onGenerate={(v) => { setBriefOverride(null); proactive.generate(v); }}
                 onSpeak={proactive.speakProposal}
                 onStopSpeak={proactive.stopSpeak}
                 onAcceptAction={onAcceptProactiveAction}
@@ -476,7 +535,7 @@ export default function IdentityDashboard({
                   { id: 'shadow', emoji: '📬', label: '下書き済み', desc: `AI 事前下書き${shadow.drafts.length > 0 ? ` (${shadow.drafts.length})` : ''}`, onClick: () => setShowShadow(true) },
                   { id: 'kb', emoji: '📚', label: '資料を追加', desc: 'PDF / PPT / 画像', onClick: () => setShowKnowledge(true) },
                   { id: 'note', emoji: '📝', label: 'ノート作成', desc: 'メモ・議事録', onClick: () => setShowKnowledge(true) },
-                  { id: 'minutes', emoji: '🎙', label: '議事録 AI', desc: '録音→構造化', onClick: () => setShowMinutes(true) },
+                  { id: 'minutes', emoji: '🎩', label: '議事録 AI', desc: '録音→構造化', onClick: () => setShowMinutes(true) },
                   { id: 'slides', emoji: '🎨', label: 'スライド生成', desc: '資料→PPTX', onClick: () => setShowSlides(true) },
                   { id: 'nego', emoji: '🤝', label: '交渉コーチ', desc: 'AIと練習', onClick: () => setShowNego(true) },
                   { id: 'decision', emoji: '💭', label: '意思決定', desc: '構造化判断', onClick: () => setShowDecision(true) },
