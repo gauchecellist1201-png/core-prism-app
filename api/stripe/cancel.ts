@@ -1,82 +1,50 @@
-// ============================================================
-// /api/stripe/cancel — サブスクリプション解約 (期間末に)
+// api/stripe/cancel.ts — サブスクリプション解約 (期末解約)
 // POST { subscription_id }
-// ============================================================
+// → subscriptions.update(id, { cancel_at_period_end: true })
 
-export const config = { runtime: 'edge' };
+import Stripe from 'stripe';
 
-const ALLOWED_ORIGINS = [
-  'https://core-prism-app.vercel.app',
-  'http://localhost:5173',
-  'http://localhost:4173',
-];
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
-function corsHeaders(req: Request) {
-  const origin = req.headers.get('origin') || '';
-  const o = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': o,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400',
-  };
-}
-
-function json(data: unknown, status: number, extra: Record<string, string> = {}) {
+function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json', ...extra },
+    headers: { 'Content-Type': 'application/json', ...CORS },
   });
 }
 
-export default async function handler(req: Request) {
-  const ch = corsHeaders(req);
-
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: ch });
-  }
-  if (req.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405, ch);
-  }
+export default async function handler(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    return json({ error: 'STRIPE_NOT_CONFIGURED' }, 503, ch);
-  }
+  if (!secretKey) return json({ error: 'STRIPE_NOT_CONFIGURED' }, 503);
 
-  let body: { subscription_id?: string };
+  let body: { subscription_id: string };
   try {
     body = await req.json();
   } catch {
-    return json({ error: 'Invalid JSON' }, 400, ch);
+    return json({ error: 'Invalid JSON' }, 400);
   }
 
   const { subscription_id } = body;
-  if (!subscription_id) {
-    return json({ error: 'Missing subscription_id' }, 400, ch);
-  }
+  if (!subscription_id) return json({ error: 'subscription_id required' }, 400);
 
-  let resp: Response;
   try {
-    resp = await fetch(
-      `https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscription_id)}`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${secretKey}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'cancel_at_period_end=true',
-      },
-    );
+    const stripe = new Stripe(secretKey);
+    const sub = await stripe.subscriptions.update(subscription_id, {
+      cancel_at_period_end: true,
+    });
+    return json({
+      cancelled:          true,
+      cancel_at:          sub.cancel_at,
+      current_period_end: sub.current_period_end,
+    });
   } catch (e: any) {
-    return json({ error: `Stripe unreachable: ${e.message}` }, 502, ch);
+    return json({ error: e.message }, 500);
   }
-
-  const result = await resp.json() as { cancel_at?: number; error?: { message?: string } };
-  if (!resp.ok) {
-    return json({ error: result.error?.message || 'Stripe error' }, 500, ch);
-  }
-
-  return json({ success: true, cancel_at: result.cancel_at ?? null }, 200, ch);
 }

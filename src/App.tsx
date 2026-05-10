@@ -22,11 +22,11 @@ import LegalModal, { type LegalKind } from './components/LegalModal';
 import CoreSite from './corporate/CoreSite';
 import StrategyDashboard from './corporate/StrategyDashboard';
 import PricingPage from './corporate/PricingPage';
+import BillingSuccess from './pages/BillingSuccess';
 import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, type Plan } from './lib/billing';
 import { PrismBackground } from './components/PrismBackground';
 import { useTheme } from './hooks/useTheme';
 import IrisApp from './iris/IrisApp';
-import BillingSuccess from './components/BillingSuccess';
 
 import type { AppSettings, ChatMessage } from './types/identity';
 
@@ -34,17 +34,9 @@ type View = 'landing' | 'onboarding' | 'selection' | 'dashboard';
 
 const APP_ENTERED_KEY = 'core_app_entered_v1';
 
-/**
- * アプリへ入る権限チェック (ゲート)
- * - マスターモード (GAUCHE2026) → OK
- * - signup 済み + (有料プラン or トライアル有効) → OK
- * - それ以外 → LP のみ
- */
 function hasEnteredApp(): boolean {
   if (typeof window === 'undefined') return false;
-  // /master 経由のオーナー (Claude API キー有り) は無制限
   if (isMasterAuth()) return true;
-  // billing user の有無 + プラン有効性をチェック
   return isAuthorizedFn();
 }
 
@@ -93,37 +85,13 @@ function isBillingSuccessPath(): boolean {
 }
 
 export default function App() {
-  // /strategy — オーナー専用 戦略ダッシュボード
-  if (isStrategyPath()) {
-    return <StrategyDashboard />;
-  }
+  if (isBillingSuccessPath()) return <BillingSuccess />;
+  if (isStrategyPath()) return <StrategyDashboard />;
+  if (isPricingPath()) return <PricingPage />;
+  if (isCorpPath()) return <CoreSite />;
+  if (isMasterPath()) return <MasterEntry />;
+  if (isIrisPath()) return <IrisApp />;
 
-  // /pricing — 公開価格ページ + ROI 計算機
-  if (isPricingPath()) {
-    return <PricingPage />;
-  }
-
-  // /corp — 株式会社コア (CORE Inc.) 法人 LP
-  if (isCorpPath()) {
-    return <CoreSite />;
-  }
-
-  // /master — オーナー専用フル機能解放画面
-  if (isMasterPath()) {
-    return <MasterEntry />;
-  }
-
-  // /billing/success — Stripe 決済完了ページ
-  if (isBillingSuccessPath()) {
-    return <BillingSuccess />;
-  }
-
-  // CORE Iris (姉妹ブランド) ルート — /iris で別ブランドを起動
-  if (isIrisPath()) {
-    return <IrisApp />;
-  }
-
-  // Theme初期化 (ライト既定)
   useTheme();
   const { settings, updateSettings, updateUsageStats, resetStats } = useSettings();
   const { personas, activePersona, createPersona, selectPersona, toggleTask, addTask, updateCashflow } = usePersonas();
@@ -158,7 +126,6 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
 
-  // 課金フロー: 未 signup なら Checkout モーダルで signup → 入場
   const { user: billingUser } = useBillingUser();
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
 
@@ -167,7 +134,6 @@ export default function App() {
       markAppEntered();
       setView(settings.onboardingComplete ? 'selection' : 'onboarding');
     } else {
-      // 未認証: 14 日無料トライアルプランで Checkout を起動
       const trial = PRISM_PLANS.find(p => p.id === 'free') || PRISM_PLANS[0];
       setCheckoutPlan(trial);
     }
@@ -179,7 +145,6 @@ export default function App() {
     setView(settings.onboardingComplete ? 'selection' : 'onboarding');
   }, [settings.onboardingComplete]);
 
-  // 既存ユーザーが signup 完了でアプリ表示状態に同期
   useMemo(() => {
     if (billingUser && view === 'landing') {
       markAppEntered();
@@ -216,7 +181,6 @@ export default function App() {
     if (!activePersona) return;
 
     const personaKnowledge = getForPersona(activePersona.id);
-    // RAG検索
     const relevantChunks = personaKnowledge.length > 0
       ? personaKnowledge
           .flatMap(item => item.chunks.map(chunk => ({
@@ -326,7 +290,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Global overlays */}
       <AnimatePresence>
         {showPersonaCreator && (
           <PersonaCreator

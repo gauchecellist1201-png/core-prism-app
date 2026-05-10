@@ -1,23 +1,12 @@
-// ============================================================
-// emailNotify — /api/email/send を叩くクライアントヘルパー
-// 失敗しても UI を止めない (fire-and-forget)
-// ============================================================
+// emailNotify.ts — クライアント側メール送信ヘルパー
+// /api/email/send を叩く。失敗時はログのみ (UI を止めない)
 
-type Template = 'welcome' | 'trial_ending' | 'cancel_save';
-
-interface EmailData {
-  name?: string;
-  brand?: string;
-  plan?: string;
-  code?: string;
-  days?: number;
-  upgradeUrl?: string;
-}
+export type EmailTemplate = 'welcome' | 'trial_ending' | 'cancel_save';
 
 export async function sendEmail(
   to: string,
-  template: Template,
-  data: EmailData = {},
+  template: EmailTemplate,
+  data: Record<string, string>,
 ): Promise<void> {
   try {
     await fetch('/api/email/send', {
@@ -25,7 +14,7 @@ export async function sendEmail(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ to, template, data }),
     });
-  } catch {
-    // サイレント失敗 — UI を止めない
+  } catch (e) {
+    console.warn('[emailNotify] failed to send email:', e);
   }
 }

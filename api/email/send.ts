@@ -1,226 +1,175 @@
-// ============================================================
-// /api/email/send — Resend メール送信 (3 テンプレート)
+// api/email/send.ts — Resend API でメール送信
 // POST { to, template: 'welcome'|'trial_ending'|'cancel_save', data: {...} }
-// env RESEND_API_KEY 未設定 → 503 EMAIL_NOT_CONFIGURED
-// ============================================================
+// env: RESEND_API_KEY, EMAIL_FROM (optional, default noreply@coreprism.app)
+// 未設定時: 503 + 'EMAIL_NOT_CONFIGURED'
 
 export const config = { runtime: 'edge' };
 
-const ALLOWED_ORIGINS = [
-  'https://core-prism-app.vercel.app',
-  'http://localhost:5173',
-  'http://localhost:4173',
-];
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
-function corsHeaders(req: Request) {
-  const origin = req.headers.get('origin') || '';
-  const o = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': o,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400',
-  };
-}
-
-function json(data: unknown, status: number, extra: Record<string, string> = {}) {
+function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json', ...extra },
+    headers: { 'Content-Type': 'application/json', ...CORS },
   });
 }
 
-// ─── メールテンプレート ───
-
-function baseHtml(title: string, body: string): string {
+function baseLayout(title: string, content: string): string {
   return `<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title}</title>
 <style>
-  body { margin: 0; padding: 0; background: #f4f4f7; font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif; }
-  .wrap { max-width: 600px; margin: 32px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-  .header { background: linear-gradient(135deg, #0033A0, #1A4FC4); padding: 32px 40px; color: #fff; }
-  .header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.3px; }
-  .header p { margin: 8px 0 0; font-size: 14px; opacity: 0.8; }
-  .body { padding: 32px 40px; color: #1F1A2E; }
-  .body p { line-height: 1.8; font-size: 15px; margin: 0 0 16px; }
-  .cta { display: inline-block; background: linear-gradient(135deg, #0033A0, #1A4FC4); color: #fff !important; text-decoration: none; padding: 14px 28px; border-radius: 999px; font-weight: 700; font-size: 15px; margin: 8px 0 24px; }
-  .highlight { background: #f0f4ff; border-left: 3px solid #0033A0; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 14px; }
-  .footer { padding: 20px 40px; background: #f4f4f7; font-size: 12px; color: #8A8593; text-align: center; line-height: 1.7; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif; background:#f5f5f7; }
+  .wrap { max-width:600px; margin:40px auto; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+  .header { background:linear-gradient(135deg,#0033A0,#1A4FC4); padding:32px; text-align:center; }
+  .header h1 { color:#fff; margin:0; font-size:22px; letter-spacing:.05em; }
+  .body { padding:32px; color:#1a1a2e; line-height:1.8; }
+  .cta { display:inline-block; background:linear-gradient(135deg,#0033A0,#1A4FC4); color:#fff!important; text-decoration:none; padding:14px 32px; border-radius:999px; font-weight:700; font-size:15px; margin:20px 0; }
+  .footer { padding:20px 32px; background:#f8f8fa; font-size:12px; color:#888; text-align:center; }
+  .highlight { background:#eff6ff; border-left:4px solid #0033A0; padding:12px 16px; border-radius:0 8px 8px 0; margin:16px 0; }
 </style>
 </head>
 <body>
 <div class="wrap">
-${body}
-<div class="footer">
-  © 2026 CORE Inc. | <a href="https://core-prism-app.vercel.app" style="color:#0033A0;">core-prism-app.vercel.app</a><br>
-  このメールに心当たりがない場合はご連絡ください。
-</div>
+${content}
+<div class="footer">© 2026 CORE Prism / CORE Iris — <a href="https://core-prism-app.vercel.app/" style="color:#0033A0">coreprism.app</a></div>
 </div>
 </body>
 </html>`;
 }
 
-interface TemplateData {
-  name?: string;
-  brand?: string;
-  plan?: string;
-  code?: string;
-  days?: number;
-  upgradeUrl?: string;
-}
-
-function welcomeHtml(data: TemplateData): string {
-  const name = data.name || 'お客様';
-  const brand = data.brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
-  const guideUrl = data.brand === 'iris'
+function welcomeTemplate(name: string, brand: string): string {
+  const brandLabel = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
+  const appUrl = brand === 'iris'
     ? 'https://core-prism-app.vercel.app/iris?app=1'
     : 'https://core-prism-app.vercel.app/?app=1';
+  const guideUrl = brand === 'iris'
+    ? 'https://core-prism-app.vercel.app/iris'
+    : 'https://core-prism-app.vercel.app/';
 
-  return baseHtml(`${brand} へようこそ`, `
-<div class="header">
-  <h1>ようこそ、${brand} へ</h1>
-  <p>アカウントが正常に作成されました</p>
-</div>
+  return baseLayout(`ようこそ ${brandLabel} へ！`, `
+<div class="header"><h1>✨ ようこそ、${brandLabel} へ</h1></div>
 <div class="body">
-  <p>${name} さん、${brand} にご登録いただきありがとうございます。</p>
-  <p>最初の <strong>3 分</strong> で ${brand} を体感する手順をご案内します。</p>
+  <p>${name} さん、はじめまして。</p>
+  <p>${brandLabel} へご登録いただき、ありがとうございます。<br>
+  最初の <strong>3 分</strong>でできることをご紹介します。</p>
   <div class="highlight">
-    <strong>ステップ 1</strong> — ダッシュボードを開く<br>
-    <strong>ステップ 2</strong> — 「AI 相談」でビジネス課題を入力<br>
-    <strong>ステップ 3</strong> — 提案を受け取り、次のアクションを決める
+    <strong>ステップ 1</strong> — アプリにログインする<br>
+    <strong>ステップ 2</strong> — AI に今日の課題を話しかける<br>
+    <strong>ステップ 3</strong> — 提案されたアクションを実行する
   </div>
-  <a class="cta" href="${guideUrl}">${brand} を今すぐ始める →</a>
-  <p style="font-size:13px;color:#8A8593;">ご不明な点はいつでもサポートまでご連絡ください。</p>
+  <p>困ったことがあれば、アプリ内のサポートチャットでいつでも聞いてください。</p>
+  <a href="${appUrl}" class="cta">${brandLabel} を始める →</a>
+  <p style="font-size:13px;color:#888">ガイドページ: <a href="${guideUrl}" style="color:#0033A0">${guideUrl}</a></p>
 </div>`);
 }
 
-function trialEndingHtml(data: TemplateData): string {
-  const name = data.name || 'お客様';
-  const days = data.days ?? 3;
-  const upgradeUrl = data.upgradeUrl || 'https://core-prism-app.vercel.app/?app=1';
+function trialEndingTemplate(name: string, brand: string): string {
+  const brandLabel = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
+  const upgradeUrl = brand === 'iris'
+    ? 'https://core-prism-app.vercel.app/iris?upgrade=1'
+    : 'https://core-prism-app.vercel.app/?upgrade=1';
 
-  return baseHtml('無料トライアル終了まであと少し', `
-<div class="header" style="background: linear-gradient(135deg, #7C3AED, #C026D3);">
-  <h1>トライアルがあと ${days} 日で終了</h1>
-  <p>引き続きご利用いただくにはプランのアップグレードを</p>
-</div>
+  return baseLayout('無料トライアルがもうすぐ終了します', `
+<div class="header"><h1>⏰ トライアル終了まであと3日</h1></div>
 <div class="body">
-  <p>${name} さん、こんにちは。</p>
-  <p>ご利用の無料トライアルは <strong>あと ${days} 日</strong> で終了します。</p>
-  <p>トライアル終了後もすべての機能を使い続けるには、有料プランへのアップグレードをお願いします。</p>
+  <p>${name} さん、</p>
+  <p>${brandLabel} の無料トライアルが <strong>あと 3 日</strong>で終了します。</p>
+  <p>これまでに体験した AI 機能をそのまま継続するには、プランへのアップグレードが必要です。</p>
   <div class="highlight">
-    <strong>Lite</strong> — ¥1,980/月 (Iris) または ¥4,980/月 (Prism)<br>
-    <strong>Standard</strong> — 人気 No.1。AI 機能が無制限に<br>
-    <strong>Pro / Studio</strong> — チーム・代理店向け
+    <strong>Lite プラン</strong> — ¥1,980/月〜<br>
+    <strong>Standard プラン</strong> — ¥4,980/月 (人気 No.1)<br>
+    <strong>Pro プラン</strong> — ¥9,800/月
   </div>
-  <a class="cta" href="${upgradeUrl}">プランをアップグレード →</a>
-  <p style="font-size:13px;color:#8A8593;">アップグレードしなかった場合、トライアル終了後もデータは保持されます。</p>
+  <p>今すぐアップグレードすると、これまでのデータがそのまま引き継がれます。</p>
+  <a href="${upgradeUrl}" class="cta">今すぐアップグレード →</a>
 </div>`);
 }
 
-function cancelSaveHtml(data: TemplateData): string {
-  const name = data.name || 'お客様';
-  const code = data.code || 'COMEBACK50';
-  const resubUrl = 'https://core-prism-app.vercel.app/?app=1';
-
-  return baseHtml('またいつでも戻ってきてください', `
-<div class="header" style="background: linear-gradient(135deg, #374151, #6B7280);">
-  <h1>ご利用ありがとうございました</h1>
-  <p>いつでも再開できます</p>
-</div>
+function cancelSaveTemplate(code: string): string {
+  return baseLayout('またいつでも戻ってきてください', `
+<div class="header"><h1>💙 ご利用ありがとうございました</h1></div>
 <div class="body">
-  <p>${name} さん、これまでのご利用、誠にありがとうございました。</p>
-  <p>解約のお手続きが完了しました。現在のご契約期間が終了するまでは引き続きご利用いただけます。</p>
-  <p>気が変わったときのために、<strong>50% OFF の復帰クーポン</strong> をご用意しました。</p>
-  <div class="highlight" style="border-color: #10B981; background: #f0fdf4;">
-    <strong>復帰クーポンコード:</strong><br>
-    <span style="font-size: 22px; font-weight: 900; letter-spacing: 3px; color: #065f46;">${code}</span><br>
-    <span style="font-size: 12px; color: #6B7280;">初月 50% OFF。有効期限: 30 日間</span>
+  <p>CORE をご利用いただき、ありがとうございました。</p>
+  <p>解約のお手続きが完了しました。現在の契約期間の終了まで、引き続きすべての機能をご利用いただけます。</p>
+  <div class="highlight">
+    <strong>🎁 特別オファー</strong><br>
+    もし再開をご検討の際は、以下のクーポンコードで <strong>50% OFF</strong> で復帰できます。
   </div>
-  <a class="cta" style="background: linear-gradient(135deg, #059669, #10B981);" href="${resubUrl}">再開する →</a>
-  <p style="font-size:13px;color:#8A8593;">またいつでもお待ちしております。</p>
+  <p style="font-size:28px;font-weight:900;text-align:center;letter-spacing:.12em;color:#0033A0">${code}</p>
+  <p>このコードはいつでも使用可能です。またのご利用をお待ちしております。</p>
+  <a href="https://core-prism-app.vercel.app/" class="cta">CORE を再開する →</a>
 </div>`);
 }
 
-type Template = 'welcome' | 'trial_ending' | 'cancel_save';
-
-function buildEmail(template: Template, data: TemplateData): { subject: string; html: string } {
-  switch (template) {
-    case 'welcome':
-      return {
-        subject: `ようこそ ${data.brand === 'iris' ? 'CORE Iris' : 'CORE Prism'} へ — はじめかたガイド`,
-        html: welcomeHtml(data),
-      };
-    case 'trial_ending':
-      return {
-        subject: `【重要】無料トライアルがあと ${data.days ?? 3} 日で終了します`,
-        html: trialEndingHtml(data),
-      };
-    case 'cancel_save':
-      return {
-        subject: 'ご利用ありがとうございました — 復帰クーポンをお届けします',
-        html: cancelSaveHtml(data),
-      };
-  }
+interface EmailBody {
+  to: string;
+  template: 'welcome' | 'trial_ending' | 'cancel_save';
+  data: Record<string, string>;
 }
 
-export default async function handler(req: Request) {
-  const ch = corsHeaders(req);
-
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: ch });
-  }
-  if (req.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405, ch);
-  }
+export default async function handler(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    return json({ error: 'EMAIL_NOT_CONFIGURED' }, 503, ch);
-  }
+  if (!apiKey) return json({ error: 'EMAIL_NOT_CONFIGURED' }, 503);
 
-  let body: { to?: string; template?: string; data?: TemplateData };
+  let body: EmailBody;
   try {
     body = await req.json();
   } catch {
-    return json({ error: 'Invalid JSON' }, 400, ch);
+    return json({ error: 'Invalid JSON' }, 400);
   }
 
-  const { to, template, data = {} } = body;
-  if (!to || !template) {
-    return json({ error: 'Missing to or template' }, 400, ch);
-  }
-
-  const validTemplates: Template[] = ['welcome', 'trial_ending', 'cancel_save'];
-  if (!validTemplates.includes(template as Template)) {
-    return json({ error: 'Unknown template' }, 400, ch);
-  }
-
+  const { to, template, data } = body;
   const from = process.env.EMAIL_FROM || 'noreply@coreprism.app';
-  const { subject, html } = buildEmail(template as Template, data);
 
-  let resp: Response;
+  let subject: string;
+  let html: string;
+
+  switch (template) {
+    case 'welcome':
+      subject = `ようこそ ${data.brand === 'iris' ? 'CORE Iris' : 'CORE Prism'} へ！`;
+      html = welcomeTemplate(data.name || '', data.brand || 'prism');
+      break;
+    case 'trial_ending':
+      subject = '無料トライアルがあと3日で終了します';
+      html = trialEndingTemplate(data.name || '', data.brand || 'prism');
+      break;
+    case 'cancel_save':
+      subject = 'またいつでも戻ってきてください — 50% OFF 復帰コード';
+      html = cancelSaveTemplate(data.code || 'COMEBACK50');
+      break;
+    default:
+      return json({ error: 'Unknown template' }, 400);
+  }
+
   try {
-    resp = await fetch('https://api.resend.com/emails', {
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ from, to, subject, html }),
     });
+
+    if (!res.ok) {
+      const err = await res.text();
+      return json({ error: err }, res.status);
+    }
+
+    const result = await res.json() as { id?: string };
+    return json({ ok: true, id: result.id });
   } catch (e: any) {
-    return json({ error: `Resend unreachable: ${e.message}` }, 502, ch);
+    return json({ error: e.message }, 500);
   }
-
-  const result = await resp.json() as { id?: string; error?: string };
-  if (!resp.ok) {
-    return json({ error: result.error || 'Send failed' }, 500, ch);
-  }
-
-  return json({ success: true, id: result.id }, 200, ch);
 }
