@@ -23,6 +23,7 @@ import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMess
 import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 import IrisDirectorView from './IrisDirectorView';
+import VideoStudio from '../components/VideoStudio';
 import IrisTriageView from './IrisTriageView';
 import IrisCommunityView from './IrisCommunityView';
 import IrisStrategistView from './IrisStrategistView';
@@ -40,7 +41,7 @@ interface Props {
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health';
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
@@ -151,6 +152,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             { id: 'strategy' as Tab,  e: '📈', l: '戦略' },
             { id: 'triage' as Tab,    e: '🔍', l: '案件精査' },
             { id: 'director' as Tab,  e: '🎬', l: '丸投げ編集' },
+            { id: 'video' as Tab,     e: '📹', l: '動画スタジオ' },
             { id: 'deals' as Tab,     e: '💌', l: '案件' },
             { id: 'negotiate' as Tab, e: '💬', l: '交渉' },
             { id: 'draft' as Tab,     e: '✍',  l: '投稿下書き' },
@@ -234,6 +236,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               />
             )}
             {tab === 'director' && <IrisDirectorView bg={bg} settings={settings} />}
+            {tab === 'video' && <VideoStudio bg={bg} settings={settings} />}
             {tab === 'community' && <IrisCommunityView bg={bg} myHandle={mediaKit?.handleName} />}
             {tab === 'team' && <TeamView bg={bg} team={team} desk={desk} myDeals={myDeals} />}
             {tab === 'brands' && <BrandMatchView bg={bg} desk={desk} mediaKit={mediaKit} settings={settings} />}
