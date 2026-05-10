@@ -1,36 +1,40 @@
 // ============================================================
 // CORE Iris — ブランドガイドライン管理
+// ブランドの色・トーン・NGワード・フォントを保存し
+// AI 投稿生成時のガイドとして活用する
 // ============================================================
 
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 
+// ─── 型定義 ─────────────────────────────────────────────────────
+
 export type BrandTone =
-  | 'friendly'
-  | 'luxury'
-  | 'casual'
-  | 'expert'
-  | 'playful'
-  | 'minimal';
+  | 'friendly'    // フレンドリー・親しみやすい
+  | 'luxury'      // 高級・上品
+  | 'casual'      // カジュアル・気軽
+  | 'expert'      // 専門家・信頼感
+  | 'playful'     // ポップ・遊び心
+  | 'minimal';    // ミニマル・洗練
 
 export interface BrandColor {
-  name: string;
-  hex: string;
+  name: string;   // 例: 'Primary', 'Accent'
+  hex: string;    // 例: '#E1306C'
 }
 
 export interface BrandGuideline {
   id: string;
-  name: string;
-  tagline?: string;
+  name: string;           // ブランド名 / アカウント名
+  tagline?: string;       // キャッチフレーズ
   tone: BrandTone;
   colors: BrandColor[];
   fonts: { display?: string; body?: string };
-  ngWords: string[];
-  mustWords: string[];
+  ngWords: string[];      // 使ってはいけない言葉
+  mustWords: string[];    // 必ず使いたいキーワード
   emojiStyle: 'rich' | 'minimal' | 'none';
-  hashtagSets: string[][];
-  bio?: string;
+  hashtagSets: string[][];  // よく使うハッシュタグセット
+  bio?: string;           // ブランドの世界観・説明
   updatedAt: string;
 }
 
@@ -55,6 +59,7 @@ function load(): BrandGuideline[] {
     const r = localStorage.getItem(STORAGE_KEY);
     if (r) return JSON.parse(r);
   } catch { /* */ }
+  // デフォルトガイドライン
   const def: BrandGuideline = {
     id: genId(),
     name: 'My Brand',
@@ -79,6 +84,8 @@ function load(): BrandGuideline[] {
 function saveAll(list: BrandGuideline[]) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch { /* */ }
 }
+
+// ─── CRUD ─────────────────────────────────────────────────────
 
 export function getGuidelines(): BrandGuideline[] {
   return load();
@@ -117,11 +124,13 @@ export function createGuideline(input: Omit<BrandGuideline, 'id' | 'updatedAt'>)
   return g;
 }
 
+// ─── AI スタイルチェック ────────────────────────────────────────
+
 export interface StyleCheckResult {
-  score: number;
-  violations: string[];
-  suggestions: string[];
-  revised?: string;
+  score: number;         // 0〜100
+  violations: string[];  // NGワード違反など
+  suggestions: string[]; // 改善提案
+  revised?: string;      // 修正後の文章
 }
 
 export async function runStyleCheck(opts: {
@@ -213,6 +222,8 @@ ${toneInstruction()}`;
   };
 }
 
+// ─── AI ポスト生成時のガイドライン注入 ────────────────────────
+
 export function buildGuidelinePrompt(g: BrandGuideline): string {
   const parts: string[] = [
     `## ブランドガイドライン (${g.name})`,
@@ -225,6 +236,8 @@ export function buildGuidelinePrompt(g: BrandGuideline): string {
   if (g.hashtagSets.length > 0) parts.push(`- 定番ハッシュタグ: ${g.hashtagSets[0].join(' ')}`);
   return parts.join('\n');
 }
+
+// ─── React Hook ───────────────────────────────────────────────
 
 import { useState, useCallback } from 'react';
 

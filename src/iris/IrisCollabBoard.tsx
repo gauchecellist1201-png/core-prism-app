@@ -54,6 +54,7 @@ function loadPosts(): CollabPost[] {
     const r = localStorage.getItem(STORAGE_KEY);
     if (r) return JSON.parse(r);
   } catch { /* */ }
+  // シードデータ
   const seeds: CollabPost[] = [
     {
       id: 'seed-1',
@@ -108,6 +109,7 @@ function savePosts(posts: CollabPost[]) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(posts)); } catch { /* */ }
 }
 
+// ─── AI マッチング (ローカル簡易版) ────────────────────────────
 function computeAiMatch(post: CollabPost, myCategory: CollabCategory | ''): { score: number; reason: string } {
   if (!myCategory) return { score: Math.floor(60 + Math.random() * 30), reason: 'プロフィール未設定' };
   if (post.category === myCategory) return { score: 88 + Math.floor(Math.random() * 12), reason: `同じ「${CATEGORY_META[myCategory].label}」カテゴリです！` };
@@ -125,6 +127,7 @@ function computeAiMatch(post: CollabPost, myCategory: CollabCategory | ''): { sc
   return { score: 40 + Math.floor(Math.random() * 25), reason: '異なるジャンルですが意外なコラボも話題を呼ぶことがあります。' };
 }
 
+// ─── コンポーネント ─────────────────────────────────────────────
 interface Props {
   bg: IrisBackgroundDef | CustomIrisBackground;
   myHandle?: string;
@@ -138,6 +141,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
   const [chatInput, setChatInput] = useState('');
   const [myCategory, setMyCategory] = useState<CollabCategory | ''>('');
 
+  // 新規投稿フォーム
   const [form, setForm] = useState({
     title: '', body: '', category: 'cosme' as CollabCategory,
     tags: '', location: '', dateRange: '', followerRange: '',
@@ -201,6 +205,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
 
   return (
     <div style={{ maxWidth: 840, margin: '0 auto' }}>
+      {/* ヘッダ */}
       <div style={{ marginBottom: '1.5rem' }}>
         <p style={{ fontSize: '0.7rem', letterSpacing: '0.28em', color: bg.accent, fontWeight: 700, marginBottom: 4 }}>
           COLLAB BOARD
@@ -213,6 +218,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
         </p>
       </div>
 
+      {/* 自分のカテゴリ設定 → AI マッチ精度アップ */}
       <div style={{ ...card, marginBottom: '1rem', padding: '0.85rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '0.8rem', color: bg.inkSoft, whiteSpace: 'nowrap' }}>🤖 AIマッチ精度を上げる: 自分のジャンル</span>
         {(['cosme', 'travel', 'food', 'fashion', 'fitness', 'lifestyle', 'other'] as CollabCategory[]).map(c => (
@@ -228,6 +234,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
         ))}
       </div>
 
+      {/* フィルタ + 投稿ボタン */}
       <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
         {(['all', 'cosme', 'travel', 'food', 'fashion', 'fitness', 'lifestyle', 'other'] as const).map(c => (
           <button key={c} onClick={() => setFilterCat(c)}
@@ -252,6 +259,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
         </button>
       </div>
 
+      {/* AI マッチ上位バッジ */}
       {myCategory && (
         <div style={{ ...card, marginBottom: '1rem', padding: '0.75rem 1rem', background: `${bg.accent}12`, border: `1px solid ${bg.accent}33` }}>
           <span style={{ fontSize: '0.8rem', color: bg.accent, fontWeight: 700 }}>
@@ -260,6 +268,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
         </div>
       )}
 
+      {/* 投稿リスト */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {displayed.map(post => {
           const meta = CATEGORY_META[post.category];
@@ -267,6 +276,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
           return (
             <motion.div key={post.id} layout
               style={{ ...card, position: 'relative' }}>
+              {/* AI マッチスコア */}
               {post.aiMatchScore != null && (
                 <div style={{
                   position: 'absolute', top: '1rem', right: '1rem',
@@ -280,6 +290,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
                 </div>
               )}
 
+              {/* カテゴリバッジ + 著者 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                 <span style={{
                   background: `${meta.color}18`, color: meta.color,
@@ -301,6 +312,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
                 {post.body}
               </p>
 
+              {/* タグ */}
               {post.tags.length > 0 && (
                 <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginBottom: '0.65rem' }}>
                   {post.tags.map(t => (
@@ -309,12 +321,14 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
                 </div>
               )}
 
+              {/* AI マッチ理由 */}
               {post.aiMatchReason && post.aiMatchScore && post.aiMatchScore >= 70 && (
                 <p style={{ fontSize: '0.75rem', color: bg.accent, background: `${bg.accent}0d`, borderRadius: 10, padding: '0.35rem 0.65rem', marginBottom: '0.65rem' }}>
                   💡 {post.aiMatchReason}
                 </p>
               )}
 
+              {/* アクション */}
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 {['💄', '✨', '🌸', '👍'].map(e => (
                   <button key={e} onClick={() => addReaction(post.id, e)}
@@ -333,6 +347,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
                 </button>
               </div>
 
+              {/* チャット */}
               <AnimatePresence>
                 {isOpen && (
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
@@ -370,6 +385,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
         })}
       </div>
 
+      {/* 新規投稿モーダル */}
       <AnimatePresence>
         {showNew && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

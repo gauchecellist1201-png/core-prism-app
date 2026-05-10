@@ -37,13 +37,16 @@ import IrisHealthView from './IrisHealthView';
 import IrisRevenueView from './IrisRevenueView';
 import IrisFanEngagement from './IrisFanEngagement';
 import { useHealth } from '../hooks/useHealth';
+import IrisCollabBoard from './IrisCollabBoard';
+import { useMultiAccount, ACCOUNT_TYPE_META, PLATFORM_META_ACCOUNT, type IrisAccount } from './multiAccount';
+import { useBrandGuidelines, TONE_META, type BrandGuideline, type BrandTone, runStyleCheck } from './brandGuidelines';
 
 interface Props {
   settings: AppSettings;
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline';
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
@@ -59,6 +62,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const desk = useInfluencerDesk();
   const team = useIrisTeam();
   const health = useHealth();
+  const multiAccount = useMultiAccount();
+  const brandGuide = useBrandGuidelines();
+  const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const myDeals = useMemo(() => desk.getDealsForPersona(IRIS_PERSONA_ID), [desk.deals]);
   const mediaKit = desk.getMediaKit(IRIS_PERSONA_ID);
 
@@ -135,6 +141,63 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           </div>
 
           <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+            {/* アカウントスイッチャー */}
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setAccountSwitcherOpen(v => !v)}
+                title="アカウント切り替え"
+                style={{
+                  ...btnIcon(bg),
+                  width: 'auto', padding: '0 0.75rem',
+                  gap: '0.4rem', display: 'inline-flex', alignItems: 'center',
+                  fontSize: '0.78rem', fontWeight: 700,
+                }}>
+                <span>{multiAccount.active?.avatarEmoji || '👤'}</span>
+                <span style={{ maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {multiAccount.active?.handle || '@me'}
+                </span>
+                <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>▼</span>
+              </button>
+              {accountSwitcherOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                  background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(31,26,46,0.15)',
+                  border: `1px solid ${bg.cardBorder}`, minWidth: 220, zIndex: 60, overflow: 'hidden',
+                }}>
+                  <div style={{ padding: '0.6rem 0.85rem', borderBottom: `1px solid ${bg.cardBorder}` }}>
+                    <p style={{ fontSize: '0.7rem', color: bg.inkSoft, fontWeight: 700, margin: 0 }}>アカウント切り替え</p>
+                  </div>
+                  {multiAccount.accounts.map(acct => (
+                    <button key={acct.id} onClick={() => { multiAccount.switchTo(acct.id); setAccountSwitcherOpen(false); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.6rem',
+                        width: '100%', padding: '0.65rem 0.85rem', textAlign: 'left',
+                        background: acct.id === multiAccount.active?.id ? `${bg.accent}12` : 'transparent',
+                        border: 'none', cursor: 'pointer', borderBottom: `1px solid ${bg.cardBorder}`,
+                      }}>
+                      <span style={{ fontSize: '1.1rem' }}>{acct.avatarEmoji || '👤'}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: bg.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acct.handle}</div>
+                        <div style={{ fontSize: '0.7rem', color: bg.inkSoft }}>
+                          {ACCOUNT_TYPE_META[acct.type].emoji} {ACCOUNT_TYPE_META[acct.type].label}
+                          {' · '}{PLATFORM_META_ACCOUNT[acct.platform].label}
+                        </div>
+                      </div>
+                      {acct.id === multiAccount.active?.id && (
+                        <span style={{ fontSize: '0.7rem', color: bg.accent, fontWeight: 700 }}>選択中</span>
+                      )}
+                    </button>
+                  ))}
+                  <button onClick={() => { setAccountSwitcherOpen(false); setTab('guideline'); }}
+                    style={{
+                      display: 'block', width: '100%', padding: '0.65rem 0.85rem', textAlign: 'left',
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      fontSize: '0.8rem', color: bg.accent, fontWeight: 700,
+                    }}>
+                    + アカウントを管理
+                  </button>
+                </div>
+              )}
+            </div>
             <button onClick={() => setBgPickerOpen(true)} title="背景を変える"
               style={btnIcon(bg)}>
               {bg.emoji}
@@ -166,6 +229,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             { id: 'kit' as Tab,       e: '📇', l: 'メディアキット' },
             { id: 'revenue' as Tab,   e: '💰', l: '収益' },
             { id: 'fans' as Tab,      e: '💌', l: 'ファンケア' },
+            { id: 'collab' as Tab,    e: '🔗', l: 'コラボ' },
+            { id: 'guideline' as Tab, e: '🎨', l: 'ブランドガイド' },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               style={{
@@ -245,6 +310,12 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'kit' && <MediaKitView bg={bg} desk={desk} kit={mediaKit} />}
             {tab === 'revenue' && <IrisRevenueView bg={bg} />}
             {tab === 'fans' && <IrisFanEngagement bg={bg} settings={settings} />}
+            {tab === 'collab' && (
+              <IrisCollabBoard bg={bg} myHandle={multiAccount.active?.handle} />
+            )}
+            {tab === 'guideline' && (
+              <BrandGuidelineView bg={bg} multiAccount={multiAccount} brandGuide={brandGuide} settings={settings} />
+            )}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -1722,3 +1793,337 @@ const btnIcon = (bg: IrisBackgroundDef): React.CSSProperties => ({
   cursor: 'pointer',
   padding: 0,
 });
+
+// ─── ブランドガイドライン View ─────────────────────────────────
+function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
+  bg: IrisBackgroundDef | CustomIrisBackground;
+  multiAccount: ReturnType<typeof useMultiAccount>;
+  brandGuide: ReturnType<typeof useBrandGuidelines>;
+  settings: AppSettings;
+}) {
+  const [editMode, setEditMode] = useState(false);
+  const [draft, setDraft] = useState<BrandGuideline | null>(null);
+  const [checkText, setCheckText] = useState('');
+  const [checkResult, setCheckResult] = useState<{ score: number; violations: string[]; suggestions: string[]; revised?: string } | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [showAddAccount, setShowAddAccount] = useState(false);
+  const [newAcct, setNewAcct] = useState<Partial<IrisAccount>>({
+    type: 'personal', platform: 'instagram', handle: '', displayName: '', avatarEmoji: '🌸',
+  });
+
+  const g = brandGuide.active;
+
+  function startEdit() {
+    setDraft(g ? { ...g } : null);
+    setEditMode(true);
+  }
+
+  function saveEdit() {
+    if (!draft) return;
+    brandGuide.save(draft);
+    setEditMode(false);
+    setDraft(null);
+  }
+
+  async function handleStyleCheck() {
+    if (!g || !checkText.trim()) return;
+    setChecking(true);
+    const res = await runStyleCheck({ settings, guideline: g, postText: checkText });
+    setCheckResult(res);
+    setChecking(false);
+  }
+
+  function addAccount() {
+    if (!newAcct.handle || !newAcct.displayName) return;
+    multiAccount.add({
+      type: newAcct.type as IrisAccount['type'],
+      platform: newAcct.platform as IrisAccount['platform'],
+      handle: newAcct.handle,
+      displayName: newAcct.displayName,
+      avatarEmoji: newAcct.avatarEmoji,
+    });
+    setNewAcct({ type: 'personal', platform: 'instagram', handle: '', displayName: '', avatarEmoji: '🌸' });
+    setShowAddAccount(false);
+  }
+
+  const card: React.CSSProperties = {
+    background: bg.card, border: `1px solid ${bg.cardBorder}`,
+    borderRadius: 20, padding: '1.25rem',
+    boxShadow: '0 4px 20px rgba(31,26,46,0.07)',
+  };
+
+  return (
+    <div style={{ maxWidth: 840, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {/* タイトル */}
+      <div>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.28em', color: bg.accent, fontWeight: 700, marginBottom: 4 }}>BRAND GUIDE</p>
+        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>ブランドの世界観。</h2>
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginTop: 4 }}>色・トーン・NGワードを保存し、AI が投稿生成時に自動でガイドします。</p>
+      </div>
+
+      {/* ── マルチアカウント管理 ── */}
+      <div style={card}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: 0 }}>📱 登録アカウント</h3>
+          <button onClick={() => setShowAddAccount(v => !v)}
+            style={{ ...btnPrimary(bg), padding: '0.45rem 1rem', fontSize: '0.8rem' }}>
+            + 追加
+          </button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {multiAccount.accounts.map(acct => (
+            <div key={acct.id} style={{
+              display: 'flex', alignItems: 'center', gap: '0.75rem',
+              padding: '0.65rem 0.85rem', borderRadius: 14,
+              background: acct.id === multiAccount.active?.id ? `${bg.accent}10` : 'rgba(255,255,255,0.5)',
+              border: `1px solid ${acct.id === multiAccount.active?.id ? bg.accent + '44' : bg.cardBorder}`,
+            }}>
+              <span style={{ fontSize: '1.4rem' }}>{acct.avatarEmoji || '👤'}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: bg.ink }}>{acct.handle}</div>
+                <div style={{ fontSize: '0.75rem', color: bg.inkSoft }}>
+                  {ACCOUNT_TYPE_META[acct.type].emoji} {ACCOUNT_TYPE_META[acct.type].label}
+                  {' · '}{PLATFORM_META_ACCOUNT[acct.platform].label}
+                  {acct.followerCount ? ` · ${acct.followerCount.toLocaleString()} フォロワー` : ''}
+                </div>
+              </div>
+              <button onClick={() => multiAccount.switchTo(acct.id)}
+                style={{
+                  padding: '0.3rem 0.75rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                  background: acct.id === multiAccount.active?.id ? bg.accent : 'rgba(255,255,255,0.7)',
+                  color: acct.id === multiAccount.active?.id ? '#fff' : bg.ink,
+                  border: `1px solid ${bg.cardBorder}`,
+                }}>
+                {acct.id === multiAccount.active?.id ? '使用中' : '切り替え'}
+              </button>
+              {multiAccount.accounts.length > 1 && (
+                <button onClick={() => { if (confirm(`${acct.handle} を削除しますか?`)) multiAccount.remove(acct.id); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: bg.inkSoft }}>🗑</button>
+              )}
+            </div>
+          ))}
+        </div>
+        {/* アカウント追加フォーム */}
+        <AnimatePresence>
+          {showAddAccount && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+              style={{ overflow: 'hidden' }}>
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid ${bg.cardBorder}` }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                  {[
+                    { label: 'ハンドル *', key: 'handle', placeholder: '@your_handle' },
+                    { label: '表示名 *', key: 'displayName', placeholder: 'サブ垢' },
+                    { label: '絵文字アバター', key: 'avatarEmoji', placeholder: '✨' },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label style={{ fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>{f.label}</label>
+                      <input value={(newAcct as unknown as Record<string, string>)[f.key] || ''} onChange={e => setNewAcct(p => ({ ...p, [f.key]: e.target.value }))}
+                        placeholder={f.placeholder}
+                        style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 10, border: `1px solid ${bg.cardBorder}`, fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                  <div>
+                    <label style={{ fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>種別</label>
+                    <select value={newAcct.type} onChange={e => setNewAcct(p => ({ ...p, type: e.target.value as IrisAccount['type'] }))}
+                      style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 10, border: `1px solid ${bg.cardBorder}`, fontSize: '0.85rem', boxSizing: 'border-box' }}>
+                      {(Object.keys(ACCOUNT_TYPE_META) as IrisAccount['type'][]).map(t => (
+                        <option key={t} value={t}>{ACCOUNT_TYPE_META[t].emoji} {ACCOUNT_TYPE_META[t].label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>プラットフォーム</label>
+                    <select value={newAcct.platform} onChange={e => setNewAcct(p => ({ ...p, platform: e.target.value as IrisAccount['platform'] }))}
+                      style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 10, border: `1px solid ${bg.cardBorder}`, fontSize: '0.85rem', boxSizing: 'border-box' }}>
+                      {(['instagram', 'tiktok', 'youtube', 'x'] as const).map(p => (
+                        <option key={p} value={p}>{PLATFORM_META_ACCOUNT[p].emoji} {PLATFORM_META_ACCOUNT[p].label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.75rem' }}>
+                  <button onClick={addAccount} style={{ ...btnPrimary(bg), fontSize: '0.85rem' }}>追加する</button>
+                  <button onClick={() => setShowAddAccount(false)} style={{ ...btnSecondary(bg), fontSize: '0.85rem' }}>キャンセル</button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── ブランドガイドライン ── */}
+      {g && (
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: 0 }}>🎨 {g.name}</h3>
+            <button onClick={editMode ? saveEdit : startEdit}
+              style={{ ...btnPrimary(bg), padding: '0.45rem 1rem', fontSize: '0.8rem' }}>
+              {editMode ? '💾 保存' : '✏️ 編集'}
+            </button>
+          </div>
+
+          {editMode && draft ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {[
+                { label: 'ブランド名', key: 'name' },
+                { label: 'キャッチフレーズ', key: 'tagline' },
+                { label: '世界観・説明', key: 'bio' },
+              ].map(f => (
+                <div key={f.key}>
+                  <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>{f.label}</label>
+                  <input value={(draft as unknown as Record<string, string>)[f.key] || ''} onChange={e => setDraft(p => p ? { ...p, [f.key]: e.target.value } : p)}
+                    style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: 10, border: `1px solid ${bg.cardBorder}`, fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                </div>
+              ))}
+              <div>
+                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>トーン</label>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {(Object.keys(TONE_META) as BrandTone[]).map(t => (
+                    <button key={t} onClick={() => setDraft(p => p ? { ...p, tone: t } : p)}
+                      style={{
+                        padding: '0.35rem 0.85rem', borderRadius: 999, fontSize: '0.78rem', cursor: 'pointer',
+                        background: draft.tone === t ? bg.accent : 'rgba(255,255,255,0.7)',
+                        color: draft.tone === t ? '#fff' : bg.ink,
+                        border: `1px solid ${bg.cardBorder}`, fontWeight: 600,
+                      }}>
+                      {TONE_META[t].emoji} {TONE_META[t].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>ブランドカラー (Primary Hex)</label>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input type="color" value={draft.colors[0]?.hex || '#E1306C'} onChange={e => setDraft(p => p ? { ...p, colors: [{ name: 'Primary', hex: e.target.value }, ...(p.colors.slice(1))] } : p)}
+                    style={{ width: 40, height: 36, borderRadius: 8, border: `1px solid ${bg.cardBorder}`, cursor: 'pointer' }} />
+                  <input type="color" value={draft.colors[1]?.hex || '#FCB045'} onChange={e => setDraft(p => p ? { ...p, colors: [p.colors[0], { name: 'Accent', hex: e.target.value }] } : p)}
+                    style={{ width: 40, height: 36, borderRadius: 8, border: `1px solid ${bg.cardBorder}`, cursor: 'pointer' }} />
+                  <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>Primary / Accent</span>
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>NGワード (カンマ区切り)</label>
+                <input value={draft.ngWords.join(', ')} onChange={e => setDraft(p => p ? { ...p, ngWords: e.target.value.split(/[,、]+/).map(s => s.trim()).filter(Boolean) } : p)}
+                  placeholder="例: 安い, 激安, プチプラ"
+                  style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: 10, border: `1px solid ${bg.cardBorder}`, fontSize: '0.85rem', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>必須キーワード (カンマ区切り)</label>
+                <input value={draft.mustWords.join(', ')} onChange={e => setDraft(p => p ? { ...p, mustWords: e.target.value.split(/[,、]+/).map(s => s.trim()).filter(Boolean) } : p)}
+                  placeholder="例: 上質, 大人, 洗練"
+                  style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: 10, border: `1px solid ${bg.cardBorder}`, fontSize: '0.85rem', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>絵文字スタイル</label>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  {(['rich', 'minimal', 'none'] as const).map(s => (
+                    <button key={s} onClick={() => setDraft(p => p ? { ...p, emojiStyle: s } : p)}
+                      style={{
+                        padding: '0.35rem 0.85rem', borderRadius: 999, fontSize: '0.78rem', cursor: 'pointer',
+                        background: draft.emojiStyle === s ? bg.accent : 'rgba(255,255,255,0.7)',
+                        color: draft.emojiStyle === s ? '#fff' : bg.ink,
+                        border: `1px solid ${bg.cardBorder}`, fontWeight: 600,
+                      }}>
+                      {s === 'rich' ? '😊 たっぷり' : s === 'minimal' ? '🤏 控えめ' : '🚫 なし'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.6rem' }}>
+                <button onClick={saveEdit} style={btnPrimary(bg)}>💾 保存</button>
+                <button onClick={() => { setEditMode(false); setDraft(null); }} style={btnSecondary(bg)}>キャンセル</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {g.tagline && <p style={{ fontSize: '0.9rem', fontStyle: 'italic', color: bg.inkSoft, margin: 0 }}>"{g.tagline}"</p>}
+              {g.bio && <p style={{ fontSize: '0.85rem', color: bg.inkSoft, margin: 0 }}>{g.bio}</p>}
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>トーン:</span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: bg.accent }}>{TONE_META[g.tone].emoji} {TONE_META[g.tone].label}</span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>カラー:</span>
+                {g.colors.map(c => (
+                  <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ width: 16, height: 16, borderRadius: 4, background: c.hex, border: '1px solid rgba(0,0,0,0.1)' }} />
+                    <span style={{ fontSize: '0.75rem', color: bg.inkSoft }}>{c.name} {c.hex}</span>
+                  </div>
+                ))}
+              </div>
+              {g.ngWords.length > 0 && (
+                <div>
+                  <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>NGワード: </span>
+                  {g.ngWords.map(w => (
+                    <span key={w} style={{ fontSize: '0.75rem', background: '#FFE5EE', color: '#C8102E', borderRadius: 999, padding: '0.15rem 0.55rem', marginRight: 4 }}>{w}</span>
+                  ))}
+                </div>
+              )}
+              {g.mustWords.length > 0 && (
+                <div>
+                  <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>必須KW: </span>
+                  {g.mustWords.map(w => (
+                    <span key={w} style={{ fontSize: '0.75rem', background: `${bg.accent}15`, color: bg.accent, borderRadius: 999, padding: '0.15rem 0.55rem', marginRight: 4 }}>{w}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── ブランドコンサル: スタイルチェック ── */}
+      <div style={card}>
+        <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: '0 0 0.85rem' }}>
+          🤖 ブランドコンサル — スタイルチェック
+        </h3>
+        <p style={{ fontSize: '0.83rem', color: bg.inkSoft, marginBottom: '0.85rem' }}>
+          投稿文をここに貼ると、AI がブランドガイドラインと照合してスコアと改善案を出してくれます。
+        </p>
+        <textarea value={checkText} onChange={e => setCheckText(e.target.value)} rows={5}
+          placeholder="チェックしたい投稿文を貼り付けてください…"
+          style={{
+            width: '100%', padding: '0.75rem 1rem', borderRadius: 14,
+            border: `1px solid ${bg.cardBorder}`, fontSize: '0.88rem',
+            resize: 'vertical', boxSizing: 'border-box', fontFamily: IRIS_FONTS.body,
+            background: 'rgba(255,255,255,0.9)', color: bg.ink,
+          }} />
+        <button onClick={handleStyleCheck} disabled={checking || !checkText.trim() || !g}
+          style={{ ...btnPrimary(bg), marginTop: '0.65rem', opacity: checking || !checkText.trim() || !g ? 0.5 : 1 }}>
+          {checking ? '⏳ 分析中…' : '🔍 ブランドコンサルを受ける'}
+        </button>
+        {checkResult && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            style={{ marginTop: '1rem', padding: '1rem', borderRadius: 14, background: `${bg.accent}0d`, border: `1px solid ${bg.accent}33` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
+              <span style={{ fontSize: '1.4rem', fontWeight: 700, color: bg.accent }}>{checkResult.score}</span>
+              <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>/ 100 pts</span>
+              <div style={{
+                marginLeft: 'auto', height: 8, width: 120, borderRadius: 999,
+                background: `linear-gradient(90deg, ${bg.accent} ${checkResult.score}%, rgba(0,0,0,0.08) ${checkResult.score}%)`,
+              }} />
+            </div>
+            {checkResult.violations.length > 0 && (
+              <div style={{ marginBottom: '0.5rem' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C8102E', marginBottom: 4 }}>⚠ 問題点</p>
+                {checkResult.violations.map((v, i) => <p key={i} style={{ fontSize: '0.82rem', color: '#C8102E', margin: '0 0 2px' }}>· {v}</p>)}
+              </div>
+            )}
+            {checkResult.suggestions.length > 0 && (
+              <div style={{ marginBottom: '0.5rem' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: bg.accent, marginBottom: 4 }}>💡 改善提案</p>
+                {checkResult.suggestions.map((s, i) => <p key={i} style={{ fontSize: '0.82rem', color: bg.inkSoft, margin: '0 0 2px' }}>· {s}</p>)}
+              </div>
+            )}
+            {checkResult.revised && (
+              <div style={{ marginTop: '0.5rem', padding: '0.75rem', borderRadius: 10, background: 'rgba(255,255,255,0.7)', border: `1px solid ${bg.cardBorder}` }}>
+                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: bg.accent, marginBottom: 6 }}>✨ 改善後の文章</p>
+                <p style={{ fontSize: '0.85rem', color: bg.ink, margin: 0, whiteSpace: 'pre-wrap' }}>{checkResult.revised}</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
