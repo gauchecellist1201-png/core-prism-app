@@ -13,7 +13,7 @@ export type ModalKey =
   | 'knowledge' | 'meeting' | 'health' | 'minutes' | 'slides' | 'nego'
   | 'decision' | 'email' | 'premium' | 'post' | 'image' | 'invoice'
   | 'sales' | 'expense' | 'crm' | 'tasks' | 'pnl' | 'voice' | 'youtube'
-  | 'salesAgent' | 'settings' | 'documents' | 'people';
+  | 'salesAgent' | 'saasAgent' | 'settings' | 'documents' | 'people';
 
 interface Props {
   open: boolean;
@@ -30,15 +30,16 @@ const MODAL_LIST: { key: ModalKey; label: string; emoji: string; group: string }
   { key: 'knowledge', label: 'ナレッジを開く',     emoji: '📚', group: '基本' },
   { key: 'tasks',     label: 'タスクハブ',         emoji: '✅', group: '基本' },
   { key: 'health',    label: 'ヘルスHub',           emoji: '🩺', group: '基本' },
-  { key: 'minutes',   label: '議事録 AI',           emoji: '🎙', group: 'AI' },
+  { key: 'minutes',   label: '議事録 AI',           emoji: '🎩', group: 'AI' },
   { key: 'slides',    label: 'スライド生成',        emoji: '🎨', group: 'AI' },
   { key: 'nego',      label: '交渉コーチ',          emoji: '🤝', group: 'AI' },
   { key: 'decision',  label: '意思決定メモ',        emoji: '💭', group: 'AI' },
   { key: 'post',      label: '投稿生成 (note/X)',   emoji: '📢', group: 'AI' },
   { key: 'image',     label: '画像生成',            emoji: '🖼', group: 'AI' },
   { key: 'voice',     label: '音声メモ → 振り分け', emoji: '🎤', group: 'AI' },
-  { key: 'youtube',   label: 'YouTube 取込',        emoji: '🎬', group: 'AI' },
-  { key: 'salesAgent', label: '商談 AI エージェント', emoji: '🎯', group: 'AI' },
+  { key: 'youtube',   label: 'YouTube 取込',        emoji: '🎤', group: 'AI' },
+  { key: 'salesAgent', label: '商談 AI エージェント',  emoji: '🎯', group: 'AI' },
+  { key: 'saasAgent',  label: 'SaaS エージェント',    emoji: '🤖', group: 'AI' },
   { key: 'email',     label: 'メールトリアージ',    emoji: '📬', group: 'AI' },
   { key: 'premium',   label: 'プレミアムHub',       emoji: '👑', group: '経営' },
   { key: 'invoice',   label: '請求書スタジオ',      emoji: '🧾', group: '経営' },
