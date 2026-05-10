@@ -38,6 +38,7 @@ import CRMStudio from './CRMStudio';
 import TaskHub from './TaskHub';
 import VoiceCaptureStudio from './VoiceCaptureStudio';
 import SalesAgentStudio from './SalesAgentStudio';
+import SaasAgentStudio from './SaasAgentStudio';
 import YouTubeImportStudio from './YouTubeImportStudio';
 import ShadowSecretaryPanel from './ShadowSecretaryPanel';
 import { useShadowSecretary } from '../hooks/useShadowSecretary';
@@ -155,6 +156,7 @@ export default function IdentityDashboard({
   const lastBenchmark = useMemo(() => loadBenchmarkResult(persona.id), [persona.id, showBenchmark]);
   const [showVoice, setShowVoice] = useState(false);
   const [showSalesAgent, setShowSalesAgent] = useState(false);
+  const [showSaasAgent, setShowSaasAgent] = useState(false);
   const [showYouTube, setShowYouTube] = useState(false);
   const [showShadow, setShowShadow] = useState(false);
   const [showDocument, setShowDocument] = useState(false);
@@ -214,6 +216,7 @@ export default function IdentityDashboard({
       case 'tasks':     setShowTaskHub(true); break;
       case 'pnl':       setShowPnL(true); break;
       case 'salesAgent': setShowSalesAgent(true); break;
+      case 'saasAgent':  setShowSaasAgent(true); break;
       case 'settings':  onOpenSettings(); break;
       case 'voice': setShowVoice(true); break;
       case 'youtube':    setShowYouTube(true); break;
@@ -558,6 +561,7 @@ export default function IdentityDashboard({
                   { id: 'people', emoji: '👥', label: '人物ケア', desc: '1on1履歴+AI分析', onClick: () => setShowPeople(true) },
                   { id: 'team', emoji: '🤺', label: 'チーム', desc: '招待・共同閲覧', onClick: () => setShowTeam(true) },
                   { id: 'sales-agent', emoji: '🎯', label: '商談 AI', desc: 'リサーチ→アプローチ自動化', primary: true, onClick: () => setShowSalesAgent(true) },
+                  { id: 'saas-agent', emoji: '🤖', label: 'SaaS エージェント', desc: 'Notion / HubSpot / Gmail 代理', primary: true, onClick: () => setShowSaasAgent(true) },
                   { id: 'tasks-hub', emoji: '✅', label: 'タスクハブ', desc: '全タスク統合', onClick: () => setShowTaskHub(true) },
                   { id: 'premium', emoji: '👑', label: 'プレミアム', desc: '戦略 / 法務 / 財務', primary: true, onClick: () => setShowPremium(true) },
                   { id: 'meet', emoji: '📅', label: '会議リンク', desc: 'Calendar', onClick: () => setShowMeeting(true) },
@@ -1052,6 +1056,14 @@ export default function IdentityDashboard({
             persona={persona}
             settings={settings}
             onClose={() => setShowSalesAgent(false)}
+          />
+        )}
+        {showSaasAgent && (
+          <SaasAgentStudio
+            key="saas-agent"
+            persona={persona}
+            settings={settings}
+            onClose={() => setShowSaasAgent(false)}
           />
         )}
         {showYouTube && (
