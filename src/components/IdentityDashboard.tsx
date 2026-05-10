@@ -43,6 +43,7 @@ import YouTubeImportStudio from './YouTubeImportStudio';
 import ShadowSecretaryPanel from './ShadowSecretaryPanel';
 import { useShadowSecretary } from '../hooks/useShadowSecretary';
 import { PrismLogo } from './Logo';
+import AnimatedAvatar from './AnimatedAvatar';
 import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './CommandPalette';
 import PnLStudio from './PnLStudio';
 import BenchmarkStudio from './BenchmarkStudio';
@@ -501,6 +502,22 @@ export default function IdentityDashboard({
               >
                 起動中
               </div>
+              {/* Mini AI avatar — クリックで SupportChat を開く */}
+              <button
+                onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: true, bubbles: true }))}
+                className="hidden md:flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden"
+                style={{ width: 40, height: 40, border: `1.5px solid ${persona.accentColor}50`, background: 'transparent', cursor: 'pointer', padding: 0 }}
+                title="AIアシスタントに話しかける (Ctrl+/)"
+                aria-label="AIアシスタントを開く"
+              >
+                <AnimatedAvatar
+                  brand="prism"
+                  accentColor={persona.accentColor}
+                  isSpeaking={false}
+                  mood="neutral"
+                  size={40}
+                />
+              </button>
             </div>
           </div>
 
