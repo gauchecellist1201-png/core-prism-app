@@ -322,6 +322,173 @@ export default function StrategyDashboard() {
       </Section>
 
       {/* ─── KPI ─── */}
+      {/* ─── 5/12 ベータ公開チェックリスト ─── */}
+      <Section title="5/12 ベータ公開 チェックリスト" subtitle="BETA LAUNCH CHECKLIST" desc="経営者集まりで決済が通常に動く状態に仕上げる" bg="linear-gradient(180deg,#0d0815 0%,#15052a 100%)">
+        <div style={{ display: 'grid', gap: '0.75rem' }}>
+          {[
+            {
+              priority: 'CRITICAL',
+              title: 'Stripe ダッシュボードで Product / Price を作成',
+              steps: [
+                'console.stripe.com にログイン (法人化前なので個人事業主アカウントで OK)',
+                'Products → 「Add product」 → CORE Prism Standard ¥9,800/月 を作成',
+                '同様に Starter ¥4,800、Exclusive ¥29,800、Iris Lite ¥2,800、Iris Standard ¥6,800 等',
+                '各 Price ID をコピー (price_xxx)',
+              ],
+              eta: '30 分',
+            },
+            {
+              priority: 'CRITICAL',
+              title: 'Vercel env に Stripe キーを設定',
+              steps: [
+                'vercel.com → core-prism-app → Settings → Environment Variables',
+                'STRIPE_SECRET_KEY=sk_live_xxx (本番用)',
+                'STRIPE_WEBHOOK_SECRET=whsec_xxx',
+                'STRIPE_PRICE_PRISM_STARTER / STANDARD / EXCLUSIVE',
+                'STRIPE_PRICE_LITE / STANDARD / PRO / STUDIO (Iris)',
+                '各設定後 Redeploy (Production)',
+              ],
+              eta: '15 分',
+            },
+            {
+              priority: 'CRITICAL',
+              title: 'Stripe Webhook エンドポイント登録',
+              steps: [
+                'Stripe → Developers → Webhooks → 「Add endpoint」',
+                'URL: https://core-prism-app.vercel.app/api/stripe/webhook',
+                'イベント: checkout.session.completed, customer.subscription.* を選択',
+                'Signing secret (whsec_xxx) をコピーして上記 env に設定',
+              ],
+              eta: '10 分',
+            },
+            {
+              priority: 'HIGH',
+              title: 'テストカードで決済フロー検証',
+              steps: [
+                'シークレットウィンドウで https://core-prism-app.vercel.app/ を開く',
+                '「今すぐ試す」 → CheckoutModal → Stripe Checkout 画面に遷移するか',
+                'Stripe テストカード 4242 4242 4242 4242 / 任意の将来日 / 任意 3 桁',
+                '決済成功 → 自動でアプリに入場、user.plan が反映されているか確認',
+                'Stripe ダッシュボード Payments で取引が見えるか',
+              ],
+              eta: '20 分',
+            },
+            {
+              priority: 'HIGH',
+              title: 'オーナー (井出) のバイパス動作確認',
+              steps: [
+                'シークレットウィンドウで /master を開く',
+                'マスターキー GAUCHE2026 + Claude API キーを入力',
+                '「Prism へ進む」をクリック → CheckoutModal なしで直接アプリへ',
+                'LP の右上に「👑 アプリへ →」が表示されているか',
+              ],
+              eta: '5 分',
+            },
+            {
+              priority: 'HIGH',
+              title: 'Resend (メール) のドメイン認証',
+              steps: [
+                'resend.com にサインアップ',
+                'Domains → 「Add Domain」 → core-inc.jp など (法人化前なら個人ドメイン)',
+                'DNS に TXT / DKIM レコード追加 → 認証',
+                'API Keys → 作成 → RESEND_API_KEY を Vercel env へ',
+              ],
+              eta: '20 分 (DNS 反映含めて 1-24h)',
+            },
+            {
+              priority: 'MEDIUM',
+              title: 'ベータ用招待コードを発行',
+              steps: [
+                '集まりの参加者数分、招待リンクを生成 (BETA50, FOUNDERS50 等)',
+                '/master でリファラル設定機能から発行',
+                '50% OFF の永久クーポン化を Stripe Coupons で実現',
+              ],
+              eta: '15 分',
+            },
+            {
+              priority: 'MEDIUM',
+              title: '当日デモ用シナリオの最終リハーサル',
+              steps: [
+                '「3 分で価値を見せる」シナリオを 1 つ用意 (例: 商談議事録 → スライド)',
+                'デモ用ペルソナを seedDemoData で投入済み確認',
+                'マイク・スピーカー・ネット環境のチェック',
+              ],
+              eta: '30 分',
+            },
+            {
+              priority: 'LOW',
+              title: 'バックアッププラン (もし Stripe が間に合わない)',
+              steps: [
+                '一時的に CheckoutModal を test mode (¥0) に固定 → 後で本番切替',
+                '当日参加者は招待コード経由で 30 日延長扱い',
+                '請求は手動 (Stripe Invoice) で別途送付',
+              ],
+              eta: '即時',
+            },
+          ].map((task, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -10 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.04 }}
+              style={{
+                padding: '1.25rem 1.5rem',
+                background: 'rgba(255,255,255,0.03)',
+                border: `1px solid ${task.priority === 'CRITICAL' ? 'rgba(239,68,68,0.4)' : task.priority === 'HIGH' ? 'rgba(251,191,36,0.35)' : 'rgba(167,139,250,0.25)'}`,
+                borderRadius: 14,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                <span
+                  style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.2em',
+                    padding: '3px 9px',
+                    borderRadius: 4,
+                    background: task.priority === 'CRITICAL' ? 'rgba(239,68,68,0.2)' : task.priority === 'HIGH' ? 'rgba(251,191,36,0.18)' : 'rgba(167,139,250,0.15)',
+                    color: task.priority === 'CRITICAL' ? '#fca5a5' : task.priority === 'HIGH' ? '#fcd34d' : '#c4b5fd',
+                    border: `1px solid ${task.priority === 'CRITICAL' ? 'rgba(239,68,68,0.4)' : task.priority === 'HIGH' ? 'rgba(251,191,36,0.4)' : 'rgba(167,139,250,0.4)'}`,
+                  }}
+                >
+                  {task.priority}
+                </span>
+                <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1rem', fontWeight: 700, flex: 1 }}>{task.title}</p>
+                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>所要 {task.eta}</span>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 0' }}>
+                {task.steps.map((s, j) => (
+                  <li
+                    key={j}
+                    style={{
+                      fontFamily: FONT_SERIF_JA,
+                      fontSize: '0.82rem',
+                      color: 'rgba(255,255,255,0.72)',
+                      lineHeight: 1.85,
+                      paddingLeft: '1.2rem',
+                      position: 'relative',
+                    }}
+                  >
+                    <span style={{ position: 'absolute', left: 0, color: '#a78bfa', fontWeight: 700 }}>{j + 1}.</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(132,204,22,0.08)', border: '1px solid rgba(132,204,22,0.3)', borderRadius: 14 }}>
+          <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', color: '#bef264', fontWeight: 700, marginBottom: 8, letterSpacing: '0.05em' }}>
+            ⏱ 合計所要時間 約 2 時間半 (DNS 反映待ち除く)
+          </p>
+          <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', lineHeight: 2 }}>
+            5/12 朝の集まり前に <strong style={{ color: '#fff' }}>5/11 までに CRITICAL 3 件を完了</strong>させれば、当日は決済が通常に動きます。HIGH 以下は当日中の調整で OK。
+          </p>
+        </div>
+      </Section>
+
       <Section title="KPI" subtitle="KEY PERFORMANCE INDICATORS" desc="この数字を毎週見て、判断する" >
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
           {KPIS.map((k, i) => (
