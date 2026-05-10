@@ -176,3 +176,113 @@ export function IrisLogo({ size = 28, withWordmark = true, variant = 'default', 
     </span>
   );
 }
+
+// ─────────────────────────────────────────────
+//  CORE Inc. — 法人ロゴ (同心円 + 8 本スポーク + 中央の核)
+//  「核」の本質: 中心から世界へ放射する光
+//  青白いシアン基調の発光、Apple Vision/SF 的な精緻さ
+// ─────────────────────────────────────────────
+export function CoreLogo({ size = 32, withWordmark = true, variant = 'default', className }: LogoProps) {
+  const isMono = variant === 'mono';
+  const filterId = `coreGlow-${size}`;
+  const gradId = `coreGrad-${size}`;
+  const coreGradId = `coreCenter-${size}`;
+
+  return (
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: withWordmark ? 12 : 0, lineHeight: 1 }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="CORE Inc."
+        style={{ flexShrink: 0 }}
+      >
+        <defs>
+          {/* 外周リング グラデーション (シアン → ホワイト) */}
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stopColor="#7DD3FC" />
+            <stop offset="50%"  stopColor="#E0F2FE" />
+            <stop offset="100%" stopColor="#38BDF8" />
+          </linearGradient>
+          {/* 中央核: 高輝度の球体 */}
+          <radialGradient id={coreGradId} cx="50%" cy="40%" r="60%">
+            <stop offset="0%"  stopColor="#FFFFFF" stopOpacity="1" />
+            <stop offset="55%" stopColor="#BAE6FD" stopOpacity="1" />
+            <stop offset="100%" stopColor="#0EA5E9" stopOpacity="1" />
+          </radialGradient>
+          {/* グロー効果 (光のにじみ) */}
+          <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <g
+          stroke={isMono ? 'currentColor' : `url(#${gradId})`}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+          filter={isMono ? undefined : `url(#${filterId})`}
+          opacity={isMono ? 0.92 : 1}
+        >
+          {/* 外周大円 (太め) */}
+          <circle cx="50" cy="50" r="44" strokeWidth="3.4" />
+          {/* 中円 */}
+          <circle cx="50" cy="50" r="28" strokeWidth="2.4" />
+          {/* 小円 (核を包む) */}
+          <circle cx="50" cy="50" r="12" strokeWidth="1.8" />
+
+          {/* 8 本スポーク (45° 刻み)
+               外周 r=44 から 中円 r=28 までを描画 (中央は核を残す) */}
+          {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => {
+            const rad = (deg * Math.PI) / 180;
+            const x1 = 50 + Math.cos(rad) * 44;
+            const y1 = 50 + Math.sin(rad) * 44;
+            const x2 = 50 + Math.cos(rad) * 12;
+            const y2 = 50 + Math.sin(rad) * 12;
+            return <line key={deg} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="1.6" />;
+          })}
+        </g>
+
+        {/* 中央の核 (発光する球) */}
+        <circle
+          cx="50" cy="50" r="7"
+          fill={isMono ? 'currentColor' : `url(#${coreGradId})`}
+          opacity={isMono ? 0.95 : 1}
+        />
+        {/* ハイライト */}
+        {!isMono && (
+          <circle cx="48" cy="47" r="2.2" fill="#FFFFFF" opacity="0.85" />
+        )}
+      </svg>
+
+      {withWordmark && (
+        <span
+          aria-hidden
+          style={{
+            fontFamily: '"Cinzel", "Noto Serif JP", serif',
+            fontSize: size * 0.62,
+            fontWeight: 700,
+            letterSpacing: '0.42em',
+            paddingLeft: '0.42em',
+            color: isMono ? 'inherit' : '#E0F2FE',
+            background: isMono ? undefined : 'linear-gradient(135deg, #FFFFFF, #BAE6FD, #38BDF8)',
+            WebkitBackgroundClip: isMono ? undefined : 'text',
+            WebkitTextFillColor: isMono ? undefined : 'transparent',
+            lineHeight: 1,
+          }}
+        >
+          CORE
+        </span>
+      )}
+    </span>
+  );
+}

@@ -31,7 +31,7 @@ export default function BillingSuccess() {
       const result = await syncFromStripe(sessionId);
       if (cancelled) return;
 
-      if (result && result.plan && result.status !== 'cancelled') {
+      if (result && result.ok && result.plan) {
         setPlanLabel(result.plan);
         setStatus('success');
         // 2 秒後にアプリへリダイレクト

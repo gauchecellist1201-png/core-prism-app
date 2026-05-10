@@ -5,7 +5,7 @@
 // ============================================================
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { PrismLogo, IrisLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, CoreLogo } from '../components/Logo';
 
 const COMPANY = {
   nameJa: '株式会社コア',
@@ -13,7 +13,7 @@ const COMPANY = {
   founded: '2026年 設立予定',
   ceoJa: '井出 直毅',
   ceoEn: 'Naoki Ide',
-  addressJa: '〒658-0026 兵庫県神戸市東灘区魚崎南町7丁目11-7',
+  addressJa: '〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11-7',
   addressEn: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0026, Japan',
   email: 'hello@core-inc.jp',
 };
@@ -29,8 +29,49 @@ const SPECTRUM = ['#ff5757', '#ff9842', '#fbbf24', '#4ade80', '#60a5fa', '#a78bf
 export default function CoreSite() {
   useEffect(() => {
     document.title = '株式会社コア — すべての時代の、核となるものを。';
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', '#000000');
+
+    // theme-color
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.setAttribute('content', '#0a0e1a');
+
+    // favicon を CORE 専用に
+    const links = document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]');
+    links.forEach(l => l.parentElement?.removeChild(l));
+    const setLink = (rel: string, href: string, type?: string, sizes?: string) => {
+      const l = document.createElement('link');
+      l.rel = rel; l.href = href;
+      if (type) l.type = type;
+      if (sizes) l.setAttribute('sizes', sizes);
+      document.head.appendChild(l);
+    };
+    setLink('icon', '/core-icon.svg', 'image/svg+xml');
+    setLink('icon', '/core-192.png', 'image/png', '192x192');
+    setLink('icon', '/core-512.png', 'image/png', '512x512');
+    setLink('apple-touch-icon', '/core-180.png', undefined, '180x180');
+
+    // OG / Twitter Card メタを CORE 専用に
+    const setMeta = (selector: string, attr: string, value: string) => {
+      let m = document.querySelector(selector);
+      if (!m) {
+        m = document.createElement('meta');
+        const s = selector.match(/\[(?:property|name)="([^"]+)"\]/);
+        if (s) m.setAttribute(selector.includes('property=') ? 'property' : 'name', s[1]);
+        document.head.appendChild(m);
+      }
+      m.setAttribute(attr, value);
+    };
+    setMeta('meta[property="og:title"]', 'content', '株式会社コア — CORE Inc.');
+    setMeta('meta[property="og:description"]', 'content', 'すべての時代の、核となるものを。AI エージェント OS を提供する CORE。');
+    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core.png');
+    setMeta('meta[property="og:url"]', 'content', 'https://core-prism-app.vercel.app/corp');
+    setMeta('meta[property="og:type"]', 'content', 'website');
+    setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
+    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core.png');
+    setMeta('meta[name="twitter:title"]', 'content', '株式会社コア — CORE Inc.');
+    setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。');
+    setMeta('meta[name="description"]', 'content', '株式会社コア (CORE Inc.) — すべての時代の、核となるものを。AI エージェント OS を提供する会社。');
+
+    // 検索エンジンには載せない (noindex)
     let robots = document.querySelector('meta[name="robots"]');
     if (!robots) {
       robots = document.createElement('meta');
@@ -76,18 +117,10 @@ export default function CoreSite() {
         >
           <a
             href="#top"
-            style={{
-              fontFamily: FONT_DISPLAY,
-              fontSize: '1.35rem',
-              fontWeight: 700,
-              letterSpacing: '0.45em',
-              color: '#fff',
-              textDecoration: 'none',
-              paddingLeft: '0.45em',
-            }}
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
             aria-label="株式会社コア"
           >
-            CORE
+            <CoreLogo size={36} withWordmark />
           </a>
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
             <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
@@ -614,23 +647,14 @@ export default function CoreSite() {
           }}
         >
           <div>
-            <p
-              style={{
-                fontFamily: FONT_DISPLAY,
-                fontSize: '1.3rem',
-                fontWeight: 700,
-                letterSpacing: '0.45em',
-                marginBottom: '0.5rem',
-              }}
-            >
-              CORE
-            </p>
+            <CoreLogo size={32} withWordmark />
             <p
               style={{
                 fontFamily: FONT_SERIF_JA,
                 fontSize: '0.78rem',
                 color: 'rgba(255,255,255,0.45)',
                 lineHeight: 1.9,
+                marginTop: '0.85rem',
               }}
             >
               すべての時代の、<br />核となるものを。

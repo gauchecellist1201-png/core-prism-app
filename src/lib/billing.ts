@@ -488,44 +488,6 @@ export function enforceFeature(
   return { ok: true };
 }
 
-// ─── Stripe Checkout の Lookup 結果 (api/billing/lookup から返却) ───
-export interface StripeLookupResult {
-  plan: PlanId;
-  status: 'active' | 'incomplete' | 'cancelled';
-  customer_email?: string;
-  subscription_id?: string;
-  current_period_end?: number;
-}
-
-/**
- * Stripe Checkout 完了後、session_id をサーバに照会して
- * ローカルの BillingUser を Stripe のサブスクリプション状態と同期する
- */
-export async function syncFromStripe(sessionId: string): Promise<StripeLookupResult | null> {
-  if (isMasterAuth()) return null; // master は Stripe をバイパス
-  try {
-    const res = await fetch(`/api/billing/lookup?session_id=${encodeURIComponent(sessionId)}`);
-    if (!res.ok) return null;
-    const data = await res.json() as StripeLookupResult;
-
-    // ローカルの BillingUser を更新
-    const user = loadBillingUser();
-    if (user && data.plan) {
-      const updated: BillingUser = {
-        ...user,
-        plan: data.plan,
-        stripeCustomerId: data.subscription_id,
-        isTestCheckout: false,
-      };
-      saveBillingUser(updated);
-    }
-    return data;
-  } catch (e) {
-    console.warn('syncFromStripe failed:', e);
-    return null;
-  }
-}
-
 // ─── 現在のユーザー (テスト版: localStorage で管理) ───
 const KEY_USER = 'core_billing_user_v1';
 
@@ -642,6 +604,8 @@ export function useBillingUser(): {
 }
 
 // ─── Stripe セッション照会によるプラン同期 ───
+
+export type StripeLookupResult = { ok: boolean; plan?: PlanId; info?: StripeSessionInfo };
 
 export interface StripeSessionInfo {
   plan: PlanId | null;
