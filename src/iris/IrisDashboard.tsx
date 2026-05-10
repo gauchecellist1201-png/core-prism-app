@@ -34,6 +34,8 @@ import SupportChat from '../components/SupportChat';
 import ShortcutHelpModal from '../components/ShortcutHelpModal';
 import PwaInstallPrompt from '../components/PwaInstallPrompt';
 import IrisHealthView from './IrisHealthView';
+import IrisRevenueView from './IrisRevenueView';
+import IrisFanEngagement from './IrisFanEngagement';
 import { useHealth } from '../hooks/useHealth';
 
 interface Props {
@@ -41,7 +43,7 @@ interface Props {
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans';
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
@@ -117,7 +119,6 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <IrisLogo size={32} withWordmark={false} />
             <span style={{
-              // Cormorant Garamond italic + Instagram グラデ
               fontFamily: IRIS_FONTS.serif,
               fontStyle: 'italic',
               fontWeight: 500,
@@ -163,10 +164,11 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             { id: 'team' as Tab,      e: '🌷', l: 'チーム' },
             { id: 'brands' as Tab,    e: '🤝', l: 'ブランド探し' },
             { id: 'kit' as Tab,       e: '📇', l: 'メディアキット' },
+            { id: 'revenue' as Tab,   e: '💰', l: '収益' },
+            { id: 'fans' as Tab,      e: '💌', l: 'ファンケア' },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               style={{
-                // 非アクティブタブも背景に埋もれないよう、白の不透明度を上げて文字を濃く固定
                 background: tab === t.id
                   ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`
                   : 'rgba(255,255,255,0.92)',
@@ -241,6 +243,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'team' && <TeamView bg={bg} team={team} desk={desk} myDeals={myDeals} />}
             {tab === 'brands' && <BrandMatchView bg={bg} desk={desk} mediaKit={mediaKit} settings={settings} />}
             {tab === 'kit' && <MediaKitView bg={bg} desk={desk} kit={mediaKit} />}
+            {tab === 'revenue' && <IrisRevenueView bg={bg} />}
+            {tab === 'fans' && <IrisFanEngagement bg={bg} settings={settings} />}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -925,13 +929,12 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
   );
 }
 
-// ─── 画像加工スタジオ (アップロード / クロップ / フィルター / 背景処理) ─
+// ─── 画像加工スタジオ ─
 function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings }) {
   const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [imgEl, setImgEl] = useState<HTMLImageElement | null>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
-  // フィルターパラメータ
   const [aspect, setAspect] = useState<'1:1' | '4:5' | '9:16' | 'free'>('1:1');
   const [brightness, setBrightness] = useState(100);
   const [contrast, setContrast] = useState(100);
@@ -964,14 +967,12 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
     reader.readAsDataURL(file);
   };
 
-  // 描画
   React.useEffect(() => {
     if (!imgEl || !canvasRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // アスペクト比の決定
     let w = imgEl.naturalWidth, h = imgEl.naturalHeight;
     let cropW = w, cropH = h, cropX = 0, cropY = 0;
     if (aspect !== 'free') {
@@ -987,13 +988,11 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
       }
     }
 
-    // キャンバスサイズ (出力)
     const outMax = 1080;
     const scale = Math.min(1, outMax / Math.max(cropW, cropH));
     canvas.width = Math.round(cropW * scale);
     canvas.height = Math.round(cropH * scale);
 
-    // フィルター適用
     const filter = [
       `brightness(${brightness}%)`,
       `contrast(${contrast}%)`,
@@ -1007,7 +1006,6 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
     ctx.drawImage(imgEl, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
     ctx.filter = 'none';
 
-    // 暖色オーバーレイ (warmth が正)
     if (warmth > 0) {
       ctx.globalCompositeOperation = 'overlay';
       ctx.fillStyle = `rgba(255, 180, 130, ${warmth / 200})`;
@@ -1015,7 +1013,6 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
       ctx.globalCompositeOperation = 'source-over';
     }
 
-    // 冷色オーバーレイ (warmth が負)
     if (warmth < 0) {
       ctx.globalCompositeOperation = 'overlay';
       ctx.fillStyle = `rgba(180, 200, 255, ${-warmth / 200})`;
@@ -1023,7 +1020,6 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
       ctx.globalCompositeOperation = 'source-over';
     }
 
-    // ビネット
     if (vignette > 0) {
       const r = Math.max(canvas.width, canvas.height);
       const grad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, r * 0.4, canvas.width / 2, canvas.height / 2, r * 0.85);
@@ -1108,14 +1104,12 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
         </Card>
       ) : (
         <>
-          {/* プレビュー */}
           <Card bg={bg}>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 360 }}>
               <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,0.15)' }} />
             </div>
           </Card>
 
-          {/* アスペクト比 */}
           <Card bg={bg}>
             <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>Crop</p>
             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -1139,7 +1133,6 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
             </div>
           </Card>
 
-          {/* プリセット */}
           <Card bg={bg}>
             <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>Filter</p>
             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -1158,7 +1151,6 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
             </div>
           </Card>
 
-          {/* 細かい調整 */}
           <Card bg={bg}>
             <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>Adjust</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
@@ -1171,7 +1163,6 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
             </div>
           </Card>
 
-          {/* 背景処理 (外部 API への誘導) */}
           <Card bg={bg}>
             <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>Background</p>
             <p style={{ color: bg.inkSoft, fontSize: '0.88rem', marginBottom: '0.75rem', lineHeight: 1.7 }}>
@@ -1191,7 +1182,6 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
             </p>
           </Card>
 
-          {/* アクション */}
           <Card bg={bg}>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button onClick={download} style={btnPrimary(bg)}>📥 JPG ダウンロード</button>
@@ -1226,7 +1216,7 @@ function Slider({ label, value, min, max, onChange, suffix, bg }: {
 function MediaKitView({ bg, desk, kit }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; kit?: MediaKit }) {
   const [d, setD] = useState<MediaKit>(kit || { personaId: IRIS_PERSONA_ID });
   const save = () => desk.setMediaKit(IRIS_PERSONA_ID, { ...d, personaId: IRIS_PERSONA_ID });
-  void desk; // keep ref
+  void desk;
 
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
@@ -1306,7 +1296,6 @@ function TeamView({ bg, team, desk, myDeals }: {
     setImportText('');
   };
 
-  // 各メンバーの稼働状況
   const memberStats = team.members.map(member => {
     const deals = myDeals.filter(d => d.assignedToMemberId === member.id);
     return {
@@ -1350,7 +1339,6 @@ function TeamView({ bg, team, desk, myDeals }: {
         </Card>
       )}
 
-      {/* メンバー一覧 */}
       {team.members.length === 0 && (
         <Card bg={bg}>
           <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '2rem 0' }}>
@@ -1410,7 +1398,6 @@ function TeamView({ bg, team, desk, myDeals }: {
         })}
       </div>
 
-      {/* 案件のアサイン UI */}
       {team.members.length > 0 && myDeals.length > 0 && (
         <Card bg={bg}>
           <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: bg.ink, marginBottom: '0.75rem' }}>
@@ -1443,7 +1430,6 @@ function TeamView({ bg, team, desk, myDeals }: {
         </Card>
       )}
 
-      {/* 共有 (Export / Import) */}
       <Card bg={bg}>
         <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: bg.ink, marginBottom: '0.75rem' }}>
           チームと共有する
@@ -1463,7 +1449,6 @@ function TeamView({ bg, team, desk, myDeals }: {
         <button onClick={tryImport} disabled={!importText.trim()} style={btnSecondary(bg)}>📥 インポート</button>
       </Card>
 
-      {/* コミュニティ・テンプレ */}
       <Card bg={bg}>
         <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: bg.ink, marginBottom: '0.5rem' }}>
           共有テンプレ
@@ -1495,7 +1480,7 @@ function TeamView({ bg, team, desk, myDeals }: {
   );
 }
 
-// ─── ブランドマッチ (Prism の企業リスト ↔ Iris) ──
+// ─── ブランドマッチ ──
 function BrandMatchView({ bg, desk, mediaKit, settings }: {
   bg: IrisBackgroundDef;
   desk: ReturnType<typeof useInfluencerDesk>;
@@ -1616,7 +1601,6 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
             ))}
           </div>
 
-          {/* タイアップ打診モーダル風 */}
           {pitchTarget && (
             <Card bg={bg}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
@@ -1692,7 +1676,6 @@ function Card({ bg, children }: { bg: IrisBackgroundDef; children: React.ReactNo
 }
 
 const inp = (bg: IrisBackgroundDef): React.CSSProperties => ({
-  // 派手な背景の上でもしっかり読めるように、ほぼ不透明な白 + 黒系の文字に固定
   background: 'rgba(255,255,255,0.94)',
   border: `1px solid ${bg.cardBorder}`,
   color: '#1F1A2E',
