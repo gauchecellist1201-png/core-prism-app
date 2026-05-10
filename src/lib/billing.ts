@@ -116,7 +116,7 @@ export const FEATURE_META: Record<FeatureKey, { label: string; emoji: string }> 
   'team-members':      { label: 'チームメンバー',     emoji: '🌷' },
   'brand-match':       { label: 'ブランドマッチ',     emoji: '✨' },
   'api-access':        { label: 'API アクセス',       emoji: '🔌' },
-  'white-label':       { label: 'ホワイトラベル',     emoji: '🎬' },
+  'white-label':       { label: 'ホワイトラベル',     emoji: '🎨' },
 };
 
 /** 現在のプランで feature が使えるか + 残り回数 */
@@ -128,6 +128,7 @@ export function checkFeature(plan: PlanId, feature: FeatureKey): {
 } {
   const limit = PLAN_LIMITS[plan]?.[feature];
   if (limit === 'unavailable' || limit === undefined) {
+    // どのプランで使えるか
     const upgradeTo = (['lite', 'standard', 'pro', 'studio'] as PlanId[])
       .find(p => {
         const l = PLAN_LIMITS[p]?.[feature];
@@ -174,6 +175,7 @@ export interface Plan {
   badge?: string;
   tagline: string;
   features: string[];
+  /** 正式リリース時に Stripe Checkout URL を入れる (env 経由) */
   stripeUrlEnvKey?: string;
 }
 
@@ -303,25 +305,29 @@ export function findPlan(brand: Brand, id: PlanId): Plan | undefined {
   return getPlans(brand).find(p => p.id === id);
 }
 
-/** 環境変数から Stripe URL を取得 (後方互換、VITE_STRIPE_*_URL 経由) */
+/** 環境変数から Stripe URL を取得 (本番リリース時に値を入れる) */
 export function getStripeCheckoutUrl(plan: Plan): string | null {
   if (!plan.stripeUrlEnvKey) return null;
   const url = (import.meta.env as Record<string, string | undefined>)[plan.stripeUrlEnvKey];
   return url || null;
 }
 
-// ─── 紹介プログラム ───
+// ─── 紹介プログラム (1 人紹介 → 両者 1 ヶ月無料) ───
 const KEY_REFERRAL = 'core_referral_v1';
 
 export interface ReferralData {
+  /** あなたの紹介コード (8 文字、ランダム) */
   myCode: string;
+  /** 紹介経由でサインアップした人数 */
   referredCount: number;
+  /** あなたが利用した紹介コード (誰の紹介で来たか) */
   usedCode?: string;
+  /** 累計の延長月数 (1 紹介 = 1 ヶ月) */
   bonusMonths: number;
 }
 
 function generateReferralCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 級らわしい O,0,I,1 除外
   let code = '';
   for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
@@ -332,6 +338,7 @@ export function getReferralData(): ReferralData {
     const r = localStorage.getItem(KEY_REFERRAL);
     if (r) return JSON.parse(r);
   } catch { /* */ }
+  // 初期化
   const initial: ReferralData = {
     myCode: generateReferralCode(),
     referredCount: 0,
@@ -348,7 +355,7 @@ export function saveReferralData(data: ReferralData) {
 export function applyReferralCode(code: string): { success: boolean; message: string } {
   const data = getReferralData();
   if (data.usedCode) {
-    return { success: false, message: 'すでに紹介コードを利用済みです' };
+    return { success: false, message: 'すでに紹介コードを利用済です' };
   }
   if (code === data.myCode) {
     return { success: false, message: '自分の紹介コードは使えません' };
@@ -369,6 +376,7 @@ export function getReferralUrl(brand: 'iris' | 'prism', code: string): string {
   return `${base}?ref=${code}`;
 }
 
+// URL クエリの ?ref=XXX を読み取って自動適用
 export function captureReferralFromUrl() {
   if (typeof window === 'undefined') return;
   try {
@@ -377,8 +385,10 @@ export function captureReferralFromUrl() {
     if (ref && ref.length >= 6) {
       const data = getReferralData();
       if (!data.usedCode) {
+        // 一旦保存 (サインアップ完了時に確定)
         sessionStorage.setItem('pending_ref', ref);
       }
+      // URL から ref パラメータを除去 (キレイに見せる)
       url.searchParams.delete('ref');
       window.history.replaceState({}, '', url.toString());
     }
@@ -389,6 +399,7 @@ export function captureReferralFromUrl() {
 //  アクセスゲート
 // ============================================================
 
+/** マスターキー (オーナー専用 GAUCHE2026) で全機能アクセス可能か */
 export function isMasterAuth(): boolean {
   try {
     if (typeof localStorage === 'undefined') return false;
@@ -398,6 +409,7 @@ export function isMasterAuth(): boolean {
   }
 }
 
+/** トライアル期限が切れていないか */
 export function isTrialActive(user: BillingUser | null): boolean {
   if (!user) return false;
   if (user.plan !== 'free') return true;
@@ -405,23 +417,33 @@ export function isTrialActive(user: BillingUser | null): boolean {
   return new Date(user.trialEndsAt).getTime() > Date.now();
 }
 
+/** アプリにアクセスできる状態か (master or 有効な signup) */
 export function isAuthorized(): boolean {
   if (isMasterAuth()) return true;
   const u = loadBillingUser();
   if (!u) return false;
+  // free プランでトライアル切れならアクセス不可
   if (u.plan === 'free' && !isTrialActive(u)) return false;
   return true;
 }
 
+/** 有効プラン: master モードなら 'studio' 相当 (全機能解放) */
 export function getEffectivePlan(user: BillingUser | null): PlanId {
   if (isMasterAuth()) return 'studio';
   return user?.plan || 'free';
 }
 
+/**
+ * 機能を使う前に呼ぶ厳格チェック。
+ * - 許可: { ok: true } を返す
+ * - 拒否: { ok: false, reason, upgradeTo? } を返す
+ * - 許可された場合、自動でカウントアップする (count を増やしたくないなら dryRun: true)
+ */
 export function enforceFeature(
   feature: FeatureKey,
   options?: { dryRun?: boolean },
 ): { ok: true; remaining?: number } | { ok: false; reason: string; upgradeTo?: PlanId } {
+  // マスターモードは無制限
   if (isMasterAuth()) return { ok: true };
 
   const user = loadBillingUser();
@@ -429,6 +451,7 @@ export function enforceFeature(
     return { ok: false, reason: 'ログインが必要です。アカウントを作成してください。' };
   }
 
+  // free プラントライアル期限チェック
   if (user.plan === 'free' && !isTrialActive(user)) {
     return { ok: false, reason: '14 日間トライアルが終了しました。プランをアップグレードしてください。', upgradeTo: 'standard' };
   }
@@ -461,24 +484,30 @@ export function enforceFeature(
     return { ok: true, remaining: check.limit - used - (options?.dryRun ? 0 : 1) };
   }
 
+  // unlimited
   return { ok: true };
 }
 
-// ─── 現在のユーザー (localStorage で管理) ───
+// ─── 現在のユーザー (テスト版: localStorage で管理) ───
 const KEY_USER = 'core_billing_user_v1';
 
 export interface BillingUser {
   email: string;
+  /** SHA-256 ハッシュで保存 (簡易) */
   passwordHash: string;
   brand: Brand;
   plan: PlanId;
+  /** 開始日 (ISO) */
   startedAt: string;
+  /** トライアル終了日 (ISO) — free のみ */
   trialEndsAt?: string;
+  /** Stripe Customer ID (本番のみ) */
   stripeCustomerId?: string;
   /** Stripe Subscription ID */
   subscriptionId?: string;
-  /** 次回更新日 (Unix timestamp) */
+  /** サブスクリプション次回更新日 (Unix タイムスタンプ秒) */
   currentPeriodEnd?: number;
+  /** テスト版で ¥0 で進めたか */
   isTestCheckout?: boolean;
 }
 
@@ -506,38 +535,6 @@ export function clearBillingUser() {
   try { localStorage.removeItem(KEY_USER); } catch { /* */ }
 }
 
-/**
- * Stripe Checkout 完了後に session_id で API を叩きプランを同期。
- * マスターモード時はバイパスして現在のユーザーをそのまま返す。
- */
-export async function syncFromStripe(sessionId: string): Promise<BillingUser | null> {
-  if (isMasterAuth()) return loadBillingUser();
-  try {
-    const res = await fetch(`/api/billing/lookup?session_id=${encodeURIComponent(sessionId)}`);
-    if (!res.ok) return null;
-    const data = await res.json() as {
-      plan: string;
-      status: string;
-      customer_email: string;
-      subscription_id: string;
-      current_period_end: number | null;
-    };
-    const user = loadBillingUser();
-    if (!user) return null;
-    const updated: BillingUser = {
-      ...user,
-      plan: (data.plan as PlanId) || user.plan,
-      subscriptionId: data.subscription_id || user.subscriptionId,
-      currentPeriodEnd: data.current_period_end ?? user.currentPeriodEnd,
-      isTestCheckout: false,
-    };
-    saveBillingUser(updated);
-    return updated;
-  } catch {
-    return null;
-  }
-}
-
 export function useBillingUser(): {
   user: BillingUser | null;
   signup: (input: { email: string; password: string; brand: Brand; plan: PlanId }) => Promise<BillingUser>;
@@ -546,6 +543,7 @@ export function useBillingUser(): {
 } {
   const [user, setUser] = useState<BillingUser | null>(() => loadBillingUser());
 
+  // 他タブとの同期
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === KEY_USER) setUser(loadBillingUser());
@@ -558,6 +556,7 @@ export function useBillingUser(): {
     const passwordHash = await hashPassword(input.password);
     const now = new Date();
 
+    // 保留中の紹介コードがあれば適用 (URL 経由 ?ref=XXX)
     let bonusDays = 0;
     try {
       const pendingRef = sessionStorage.getItem('pending_ref');
@@ -580,7 +579,7 @@ export function useBillingUser(): {
       plan: input.plan,
       startedAt: now.toISOString(),
       trialEndsAt,
-      isTestCheckout: input.plan !== 'free',
+      isTestCheckout: input.plan !== 'free',  // ¥0 でテスト購入したフラグ
     };
     saveBillingUser(u);
     setUser(u);
@@ -602,4 +601,45 @@ export function useBillingUser(): {
   }, []);
 
   return { user, signup, signout, changePlan };
+}
+
+// ─── Stripe セッション照会によるプラン同期 ───
+
+export interface StripeSessionInfo {
+  plan: PlanId | null;
+  brand: Brand | null;
+  status: string;
+  customer_email: string | null;
+  subscription_id: string | null;
+  current_period_end: number | null;
+}
+
+/**
+ * /api/billing/lookup を叩いてプランを確定し localStorage を更新する。
+ * マスターモードはバイパス。
+ */
+export async function syncFromStripe(sessionId: string): Promise<{ ok: boolean; plan?: PlanId; info?: StripeSessionInfo }> {
+  if (isMasterAuth()) return { ok: true };
+  try {
+    const resp = await fetch(`/api/billing/lookup?session_id=${encodeURIComponent(sessionId)}`);
+    if (!resp.ok) return { ok: false };
+    const info: StripeSessionInfo = await resp.json();
+    if (info.plan) {
+      const user = loadBillingUser();
+      if (user) {
+        const updated: BillingUser = {
+          ...user,
+          plan: info.plan,
+          isTestCheckout: false,
+          subscriptionId: info.subscription_id ?? user.subscriptionId,
+          currentPeriodEnd: info.current_period_end ?? user.currentPeriodEnd,
+        };
+        saveBillingUser(updated);
+      }
+      return { ok: true, plan: info.plan, info };
+    }
+    return { ok: false, info };
+  } catch {
+    return { ok: false };
+  }
 }

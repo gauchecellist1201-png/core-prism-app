@@ -1,7 +1,8 @@
 // ============================================================
-// CheckoutModal — Stripe 本番接続 + テストモードフォールバック
-// /api/stripe/checkout を叩き session.url へリダイレクト。
-// 503 (STRIPE_NOT_CONFIGURED) 時は ¥0 確認モードで続行。
+// CheckoutModal — 4ステップ決済フロー
+//
+// env 設定済み: /api/stripe/checkout を叩き Stripe Checkout へリダイレクト
+// env 未設定 (503): テストモード (¥0) にフォールバック
 // ============================================================
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,15 +28,16 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isTestMode, setIsTestMode] = useState(false);
+  // true = Stripe 本番セッション確立済み、false = テストモード
+  const [isTestMode, setIsTestMode] = useState<boolean>(false);
   const { signup } = useBillingUser();
 
   const isFree = plan.priceJpy === 0;
 
-  const proceedToAccount = () => {
-    setStep('account');
-  };
+  // ステップ 1 → 2
+  const proceedToAccount = () => setStep('account');
 
+  // ステップ 2 → 3: バリデーション
   const proceedToPayment = () => {
     setError(null);
     if (!email.trim() || !email.includes('@')) {
@@ -53,65 +55,74 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
     setStep('payment');
   };
 
+  // ステップ 3: 決済実行
   const completePayment = async () => {
     setError(null);
     setBusy(true);
     try {
-      if (isFree) {
-        await signup({ email, password, brand, plan: plan.id });
-        sendEmail(email, 'welcome', { name: email.split('@')[0], brand });
-        setBusy(false);
-        setStep('success');
-        return;
-      }
-
-      let sessionUrl: string | null = null;
-      try {
-        const res = await fetch('/api/stripe/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: plan.id, brand, email }),
-        });
-        if (res.status === 503) {
-          setIsTestMode(true);
-        } else if (res.ok) {
-          const data = await res.json() as { url: string };
-          sessionUrl = data.url;
-        } else {
-          const err = await res.json() as { error?: string };
-          throw new Error(err.error || '決済セッションの作成に失敗しました');
+      if (!isFree) {
+        // Stripe セッション作成を試みる
+        let stripeUrl: string | null = null;
+        try {
+          const resp = await fetch('/api/stripe/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan: plan.id, brand, email }),
+          });
+          if (resp.status === 503) {
+            // env 未設定 → テストモードにフォールバック
+            setIsTestMode(true);
+          } else if (resp.ok) {
+            const data = await resp.json() as { url?: string };
+            stripeUrl = data.url ?? null;
+          } else {
+            const err = await resp.json() as { error?: string };
+            throw new Error(err.error || 'Stripe エラーが発生しました');
+          }
+        } catch (fetchErr: any) {
+          if (fetchErr.message?.includes('STRIPE_NOT_CONFIGURED') || fetchErr.message?.includes('503')) {
+            setIsTestMode(true);
+          } else {
+            throw fetchErr;
+          }
         }
-      } catch (fetchErr: any) {
-        if (fetchErr.message?.includes('決済セッション')) throw fetchErr;
-        setIsTestMode(true);
+
+        if (stripeUrl) {
+          // 先に signup してから Stripe へ
+          await signup({ email, password, brand, plan: plan.id });
+          // welcome メール (非同期・失敗無視)
+          sendEmail(email, 'welcome', { name: email.split('@')[0], brand });
+          window.location.href = stripeUrl;
+          return;
+        }
       }
 
+      // テストモード / 無料プラン: 即 signup → success
       await signup({ email, password, brand, plan: plan.id });
+      // welcome メール (非同期・失敗無視)
       sendEmail(email, 'welcome', { name: email.split('@')[0], brand });
-
-      if (sessionUrl) {
-        window.location.href = sessionUrl;
-        return;
-      }
-      setBusy(false);
       setStep('success');
     } catch (e: any) {
       setError(e.message || 'エラーが発生しました');
+    } finally {
       setBusy(false);
     }
   };
 
+  // 完了 → アプリへ
   const goToApp = () => {
     onSuccess?.();
     onClose();
-    const target = brand === 'iris' ? '/iris?app=1' : '/?app=1';
-    window.location.href = target;
+    window.location.href = brand === 'iris' ? '/iris?app=1' : '/?app=1';
   };
 
   const accent = brand === 'iris' ? '#E1306C' : '#0033A0';
   const accentGrad = brand === 'iris'
     ? 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)'
     : 'linear-gradient(135deg, #0033A0, #1A4FC4)';
+
+  // 決済画面でテストモードかどうか (isFree は常にテスト扱い)
+  const showingTestMode = isTestMode || isFree;
 
   return (
     <motion.div
@@ -136,6 +147,7 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
           boxShadow: '0 30px 80px rgba(15,10,25,0.4)',
         }}
       >
+        {/* ヘッダ */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
           <div>
             <div style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: accent, fontWeight: 700, textTransform: 'uppercase' }}>
@@ -151,11 +163,12 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
           }}>✕</button>
         </div>
 
+        {/* ステッパー */}
         <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.5rem' }}>
           {(['plan', 'account', 'payment', 'success'] as Step[]).map((s, i) => (
             <div key={s} style={{
               flex: 1, height: 4, borderRadius: 2,
-              background: ['plan', 'account', 'payment', 'success'].indexOf(step) >= i
+              background: (['plan', 'account', 'payment', 'success'] as Step[]).indexOf(step) >= i
                 ? accentGrad
                 : 'rgba(0,0,0,0.08)',
               transition: 'background 0.3s',
@@ -164,6 +177,7 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
         </div>
 
         <AnimatePresence mode="wait">
+          {/* Step 1: プラン詳細 */}
           {step === 'plan' && (
             <motion.div key="plan" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div style={{
@@ -194,16 +208,6 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                 </ul>
               </div>
 
-              {isTestMode && (
-                <div style={{
-                  padding: '0.75rem 1rem', borderRadius: 12,
-                  background: '#FEF3C7', border: '1px solid #FCD34D',
-                  fontSize: '0.82rem', color: '#7C2D12', marginBottom: '1rem',
-                }}>
-                  🧪 <strong>確認用モード</strong>: 実際の決済は発生しません。¥0 でアカウント発行できます。
-                </div>
-              )}
-
               <button onClick={proceedToAccount} style={{
                 width: '100%',
                 background: accentGrad, color: '#fff',
@@ -217,6 +221,7 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
             </motion.div>
           )}
 
+          {/* Step 2: アカウント作成 */}
           {step === 'account' && (
             <motion.div key="account" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <p style={{ marginBottom: '1rem', color: '#5A5562', fontSize: '0.92rem' }}>
@@ -252,16 +257,10 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                   style={inp} />
               </Field>
 
-              {error && (
-                <div style={{
-                  background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.25)',
-                  padding: '0.6rem 0.85rem', borderRadius: 12, marginBottom: '0.75rem',
-                  color: '#9B1B30', fontSize: '0.85rem',
-                }}>⚠ {error}</div>
-              )}
+              {error && <ErrorBox msg={error} />}
 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={() => setStep('plan')} style={btnSecondary}>← 戻る</button>
+                <button onClick={() => setStep('plan')} style={btnSecondary}>← 戺る</button>
                 <button onClick={proceedToPayment} style={{ ...btnPrimary(accent, accentGrad), flex: 2 }}>
                   決済へ進む →
                 </button>
@@ -274,6 +273,7 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
             </motion.div>
           )}
 
+          {/* Step 3: 決済 */}
           {step === 'payment' && (
             <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div style={{
@@ -285,7 +285,7 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                   <span style={{ color: '#5A5562' }}>{plan.name} (1 ヶ月)</span>
                   <span style={{ fontWeight: 700 }}>¥{plan.priceJpy.toLocaleString()}</span>
                 </div>
-                {isTestMode && plan.priceJpy > 0 && (
+                {showingTestMode && plan.priceJpy > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
                     <span style={{ color: '#10B981' }}>確認用モード割引</span>
                     <span style={{ color: '#10B981', fontWeight: 700 }}>-¥{plan.priceJpy.toLocaleString()}</span>
@@ -295,12 +295,12 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <span style={{ fontWeight: 700, fontSize: '1.05rem' }}>合計 (今回お支払い)</span>
                   <span style={{ fontSize: '1.6rem', fontWeight: 900, color: accent }}>
-                    ¥{(isTestMode ? 0 : plan.priceJpy).toLocaleString()}
+                    ¥{(showingTestMode ? 0 : plan.priceJpy).toLocaleString()}
                   </span>
                 </div>
               </div>
 
-              {isTestMode ? (
+              {showingTestMode ? (
                 <div style={{
                   padding: '0.95rem 1.1rem', borderRadius: 14,
                   background: '#FEF3C7', border: '1px solid #FCD34D',
@@ -308,6 +308,7 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                 }}>
                   🧪 <strong>確認用モード</strong><br />
                   実際の決済は発生しません。¥0 ですべての機能が使えます。
+                  本番リリース時に Stripe 決済が有効になります。
                 </div>
               ) : (
                 <div style={{
@@ -319,23 +320,17 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                 </div>
               )}
 
-              {error && (
-                <div style={{
-                  background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.25)',
-                  padding: '0.6rem 0.85rem', borderRadius: 12, marginBottom: '0.75rem',
-                  color: '#9B1B30', fontSize: '0.85rem',
-                }}>⚠ {error}</div>
-              )}
+              {error && <ErrorBox msg={error} />}
 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={() => setStep('account')} style={btnSecondary}>← 戻る</button>
+                <button onClick={() => setStep('account')} style={btnSecondary}>← 戺る</button>
                 <button onClick={completePayment} disabled={busy} style={{
                   ...btnPrimary(accent, accentGrad),
                   flex: 2, opacity: busy ? 0.6 : 1, cursor: busy ? 'wait' : 'pointer',
                 }}>
                   {busy
                     ? '処理中…'
-                    : isTestMode
+                    : showingTestMode
                       ? '✓ ¥0 で決済する (確認用)'
                       : `💳 ¥${plan.priceJpy.toLocaleString()} で決済する`}
                 </button>
@@ -343,6 +338,7 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
             </motion.div>
           )}
 
+          {/* Step 4: 完了 */}
           {step === 'success' && (
             <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
               <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
@@ -385,6 +381,16 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
         </AnimatePresence>
       </motion.div>
     </motion.div>
+  );
+}
+
+function ErrorBox({ msg }: { msg: string }) {
+  return (
+    <div style={{
+      background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.25)',
+      padding: '0.6rem 0.85rem', borderRadius: 12, marginBottom: '0.75rem',
+      color: '#9B1B30', fontSize: '0.85rem',
+    }}>⚠ {msg}</div>
   );
 }
 
