@@ -6,3 +6,4 @@ dist
 .vercel
 *.log
 .cache
+.claude/settings.local.json
