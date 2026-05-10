@@ -17,16 +17,16 @@ export interface Persona {
   calendarColor?: string;        // Googleカレンダー連携カラー
   tasks: Task[];
   cashflow: CashflowData;
-  timeAllocation: number;        // %（全人格合計100%）
+  timeAllocation: number;        // %（全人格合計1%）
 }
 
-// ── ナレッジベース ──────────────────────────────────────
+// ── ナレッジベース ──────────────────────────────
 export interface KnowledgeAnalysis {
   summary: string;               // 3-5行の要約
   insights: string[];            // 重要ポイント
   strategy: string[];            // 戦略提案
   actions: string[];             // 推奨アクション
-  risks: string[];               // リスク・懸念
+  risks: string[];               // リスク・憶念
   generatedAt: string;
 }
 
@@ -55,7 +55,7 @@ export interface KnowledgeChunk {
   score?: number;                // 検索スコア
 }
 
-// ── タスク ────────────────────────────────────────────────
+// ── タスク ──────────────────────────────────────────
 export interface Task {
   id: string;
   title: string;
@@ -66,14 +66,14 @@ export interface Task {
   calendarEventId?: string;      // Googleカレンダー連携ID
 }
 
-// ── 財務 ──────────────────────────────────────────────────
+// ── 財務 ──────────────────────────────────────────
 export interface CashflowData {
   income: number;
   expense: number;
   label: string;
 }
 
-// ── チャット ──────────────────────────────────────────────
+// ── チャット ──────────────────────────────────────────
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -105,7 +105,7 @@ export interface CalendarEvent {
   description?: string;
 }
 
-// ── アプリ設定 ────────────────────────────────────────────
+// ── アプリ設定 ────────────────────────────────────────
 export interface AppSettings {
   claudeApiKey: string;
   preferredModel: 'claude-haiku-4-5' | 'claude-sonnet-4-5' | 'claude-opus-4-5';
@@ -121,9 +121,11 @@ export interface AppSettings {
   proactiveIntervalMin?: number;
   /** AI の文体 (デフォルト: gentle = やさしく) */
   aiTone?: 'gentle' | 'professional' | 'casual';
+  /** UI 表示言語 */
+  uiLanguage?: 'ja' | 'en' | 'zh';
 }
 
-// ── 能動提案 ─────────────────────────────────────────────
+// ── 能動提案 ─────────────────────────────────────────
 export interface Proposal {
   id: string;
   personaId: PersonaId;

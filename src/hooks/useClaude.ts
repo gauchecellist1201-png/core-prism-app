@@ -18,14 +18,23 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 2);
 }
 
-function buildSystemPrompt(persona: Persona, knowledgeChunks: KnowledgeChunk[], aiTone?: 'gentle' | 'professional' | 'casual'): string {
+function buildSystemPrompt(
+  persona: Persona,
+  knowledgeChunks: KnowledgeChunk[],
+  aiTone?: 'gentle' | 'professional' | 'casual',
+  uiLanguage?: 'ja' | 'en' | 'zh',
+): string {
   const ragContext = knowledgeChunks.length > 0
     ? `\n\n## あなたが参照すべき資料 (蓄積されたナレッジ):\n${knowledgeChunks.map((c, i) => `[${i + 1}] ${c.content}`).join('\n\n')}`
     : '';
 
+  const localeLine = uiLanguage && uiLanguage !== 'ja'
+    ? `\nユーザーの表示言語: ${uiLanguage === 'en' ? 'English' : '中文 (简体)'}。応答もその言語に合わせる。`
+    : '';
+
   return `あなたはオーナーの **専属秘書** で、「${persona.name}」の役割をサポートしています。
 オーナーが蓄積してきた資料・数字・タスクを全部覚えていて、必要に応じて提案・代筆・分析・整理を即座に行います。
-
+${localeLine}
 ## 担当している役割
 ${persona.description || `${persona.name} (${persona.subtitle})`}
 
@@ -66,7 +75,7 @@ export function useClaude(settings: AppSettings, onUpdateStats?: (tokens: number
     setIsLoading(true);
     setError(null);
 
-    const systemPrompt = buildSystemPrompt(persona, knowledgeChunks, settings.aiTone);
+    const systemPrompt = buildSystemPrompt(persona, knowledgeChunks, settings.aiTone, settings.uiLanguage);
     const model = settings.preferredModel;
 
     // 会話履歴（最新10件まで）
@@ -126,7 +135,7 @@ export function useClaude(settings: AppSettings, onUpdateStats?: (tokens: number
   return { sendMessage, isLoading, error };
 }
 
-// ── コスト計算ユーティリティ ──────────────────────────────
+// ── コスト計算ユーティリティ ────────────────────────────
 export function formatCost(usd: number): string {
   if (usd < 0.01) return `$${(usd * 100).toFixed(3)}¢`;
   return `$${usd.toFixed(4)}`;
