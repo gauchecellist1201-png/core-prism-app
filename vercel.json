@@ -1,9 +1,16 @@
 {
+  "functions": {
+    "api/stripe/checkout.ts": { "runtime": "edge" },
+    "api/stripe/webhook.ts":  { "runtime": "edge" },
+    "api/stripe/cancel.ts":   { "runtime": "edge" },
+    "api/billing/lookup.ts":  { "runtime": "edge" },
+    "api/email/send.ts":      { "runtime": "edge" },
+    "api/ai.ts":              { "runtime": "edge" }
+  },
   "rewrites": [
-    { "source": "/iris", "destination": "/iris.html" },
-    { "source": "/iris/", "destination": "/iris.html" },
+    { "source": "/iris",     "destination": "/iris.html" },
+    { "source": "/iris/",    "destination": "/iris.html" },
     { "source": "/iris/(.*)", "destination": "/iris.html" },
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/(.*)",     "destination": "/index.html" }
   ]
 }
