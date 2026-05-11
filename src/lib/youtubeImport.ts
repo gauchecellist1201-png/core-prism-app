@@ -67,21 +67,15 @@ export async function fetchOEmbed(url: string): Promise<VideoMeta> {
  * 呼び出し側で手動入力 UI にフォールバックする。
  */
 export async function fetchTranscript(videoId: string): Promise<string | null> {
-  // youtubetranscript.com API (CORS 制約があるため失敗することが多い)
+  // Vercel Edge Function 経由で字幕を取得 (CORS 回避)
   try {
-    const url = `https://youtubetranscript.com/?server_vid2=${videoId}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    const res = await fetch(`/api/youtube/transcript?v=${encodeURIComponent(videoId)}`, {
+      signal: AbortSignal.timeout(15000),
+    });
     if (!res.ok) return null;
-    const text = await res.text();
-    // XMLレスポンスからテキストを抽出
-    const matches = text.match(/<text[^>]*>([\s\S]*?)<\/text>/g);
-    if (!matches || matches.length === 0) return null;
-    const cleaned = matches
-      .map(m => m.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"'))
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    return cleaned.length > 50 ? cleaned : null;
+    const data = await res.json();
+    if (!data?.ok || !data.transcript) return null;
+    return typeof data.transcript === 'string' && data.transcript.length > 50 ? data.transcript : null;
   } catch {
     return null;
   }
