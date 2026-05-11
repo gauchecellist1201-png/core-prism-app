@@ -65,12 +65,20 @@ export default async function handler(req: Request) {
 
   if (nps < 0) return json({ error: 'nps required (0-10)' }, 400, ch);
 
+  // Vercel Functions Logs に必ず構造化記録 (mail 設定の有無に関わらず)
+  // → `vercel logs --prod | grep '\[feedback\]'` で全件抽出可能
+  // localStorage しか頼れない問題への保険 (Day1 振り返り 5/14 で追加)
+  console.log('[feedback]', JSON.stringify({
+    brand, nps, comment, email, url, userAgent,
+    ts: typeof body.ts === 'number' ? body.ts : Date.now(),
+  }));
+
   const apiKey = process.env.RESEND_API_KEY;
   const ownerEmail = process.env.FEEDBACK_TO_EMAIL || process.env.EMAIL_FROM;
 
-  // env が無ければ noop で 200 を返す (フロントの localStorage に蓄積される)
+  // env が無ければ noop で 200 を返す (localStorage + サーバ logs に蓄積済み)
   if (!apiKey || !ownerEmail) {
-    return json({ success: true, delivered: false, reason: 'mail_not_configured' }, 200, ch);
+    return json({ success: true, delivered: false, reason: 'mail_not_configured', logged: true }, 200, ch);
   }
 
   const from = process.env.EMAIL_FROM || 'noreply@coreprism.app';
