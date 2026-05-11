@@ -10,6 +10,7 @@ import AISidebar from './AISidebar';
 import SupportChat from './SupportChat';
 import ShortcutHelpModal from './ShortcutHelpModal';
 import PwaInstallPrompt from './PwaInstallPrompt';
+import FeedbackWidget from './FeedbackWidget';
 import KnowledgeBase from './KnowledgeBase';
 import MeetingHub from './MeetingHub';
 import HealthHub from './health/HealthHub';
@@ -1258,6 +1259,7 @@ export default function IdentityDashboard({
 
       <ShortcutHelpModal />
       <PwaInstallPrompt accentColor={persona.accentColor} />
+      <FeedbackWidget brand="prism" />
 
       <AnimatePresence>
         {showOnboarding && (

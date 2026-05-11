@@ -58,6 +58,7 @@ import { IrisLogo } from '../components/Logo';
 import SupportChat from '../components/SupportChat';
 import ShortcutHelpModal from '../components/ShortcutHelpModal';
 import PwaInstallPrompt from '../components/PwaInstallPrompt';
+import FeedbackWidget from '../components/FeedbackWidget';
 import IrisHealthView from './IrisHealthView';
 import IrisRevenueView from './IrisRevenueView';
 import IrisFanEngagement from './IrisFanEngagement';
@@ -634,6 +635,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
 
       {/* PWA インストール促進 */}
       <PwaInstallPrompt accentColor={bg.accent} />
+
+      {/* ベータ初日フィードバック */}
+      <FeedbackWidget brand="iris" />
     </div>
   );
 }

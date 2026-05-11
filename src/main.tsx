@@ -3,9 +3,14 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { migrateLegacyKeysOnce } from './lib/tenant'
+import { installErrorCapture } from './lib/errorCapture'
 
 // Phase A: tenant prefix への 1 回限りの自動マイグレーション
 migrateLegacyKeysOnce();
+
+// ベータ初日: console.error / window.onerror を 1 度だけインストール
+// (オプトインしたユーザーのみ /api/log/error に送られる)
+installErrorCapture();
 
 // ─── マスターキー判定 (GAUCHE2026) → /api/ai に x-master-key ヘッダー自動付与 ───
 // URL クエリ ?master=GAUCHE2026 で初回有効化、以降は localStorage に保存
