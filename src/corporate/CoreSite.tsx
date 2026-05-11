@@ -564,6 +564,91 @@ export default function CoreSite() {
             </h2>
           </div>
 
+          {/* CEO 紹介ブロック */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '2.5rem',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '3.5rem',
+              padding: '2.5rem',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 16,
+              background: 'rgba(255,255,255,0.02)',
+            }}
+          >
+            <picture>
+              <source srcSet="/ceo-naoki-ide.webp" type="image/webp" />
+              <img
+                src="/ceo-naoki-ide.jpg"
+                alt="井出 直毅 / Naoki Ide — Founder & CEO"
+                width={240}
+                height={320}
+                loading="lazy"
+                decoding="async"
+                style={{
+                  width: 240,
+                  height: 320,
+                  objectFit: 'cover',
+                  borderRadius: 16,
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.06)',
+                  display: 'block',
+                  flexShrink: 0,
+                }}
+              />
+            </picture>
+            <div style={{ flex: '1 1 280px', minWidth: 0 }}>
+              <p
+                style={{
+                  fontFamily: FONT_SERIF_EN,
+                  fontSize: '0.78rem',
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,0.55)',
+                  marginBottom: '0.6rem',
+                }}
+              >
+                Founder &amp; CEO
+              </p>
+              <p
+                style={{
+                  fontFamily: FONT_SERIF_JA,
+                  fontSize: 'clamp(1.4rem, 2.2vw, 1.75rem)',
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  marginBottom: '0.2rem',
+                  color: '#fff',
+                }}
+              >
+                井出 直毅
+              </p>
+              <p
+                style={{
+                  fontFamily: FONT_SERIF_EN,
+                  fontSize: '1rem',
+                  color: 'rgba(255,255,255,0.7)',
+                  letterSpacing: '0.06em',
+                  marginBottom: '1.25rem',
+                }}
+              >
+                Naoki Ide
+              </p>
+              <p
+                style={{
+                  fontFamily: FONT_SERIF_EN,
+                  fontSize: '0.95rem',
+                  color: 'rgba(255,255,255,0.65)',
+                  lineHeight: 1.7,
+                  fontStyle: 'italic',
+                }}
+              >
+                Multidisciplinary creator at the intersection of business, music, dentistry, and AI.
+              </p>
+            </div>
+          </div>
+
           <dl
             style={{
               display: 'grid',
