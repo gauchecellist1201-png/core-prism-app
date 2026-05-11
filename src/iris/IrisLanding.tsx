@@ -4,6 +4,8 @@
 // 「あなたの光が、世界をつくる」 ── 影響力という光を、AI が広げる
 // ============================================================
 import { motion } from 'framer-motion';
+import { Mail, BarChart3, Sparkle, MessageSquare, Palette, UsersRound, Camera, Mic, HeartPulse, Check } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { IRIS_COLORS, IRIS_FONTS } from './irisStyle';
 import { IrisLogo } from '../components/Logo';
 import { useLocale } from '../hooks/useLocale';
@@ -16,13 +18,13 @@ interface Props {
 
 const sectionPad = '5.5rem 1.25rem';
 
-const FACETS = [
-  { icon: '✦', name: '案件',     desc: '受注 → 下書き → 投稿 → レポートまで AI が一気通㛧で伴走',           color: IRIS_COLORS.hotPink },
-  { icon: '◐', name: '分析',     desc: 'Instagram アカウント解析 — 投稿時間・反応率・伸びるテーマを学習', color: IRIS_COLORS.purple },
-  { icon: '✶', name: '創作',     desc: 'キャプション・サムネ・OG 画像 — 雰囲気に合わせて即生成',           color: IRIS_COLORS.gold },
-  { icon: '◇', name: '交渉',     desc: '料金交渉ロープレ・媒体資料・ブランド提案文を AI がドラフト',       color: IRIS_COLORS.roseGold },
-  { icon: '✣', name: 'ブランド', desc: '世界観に合うフォント・カラー・トーンをパーソナル AI が提案',       color: IRIS_COLORS.purpleLt },
-  { icon: '❋', name: '仲間',     desc: '同じ志のクリエイター同士が繋がる、招待制コミュニティ',             color: IRIS_COLORS.pink },
+const FACETS: { Icon: LucideIcon; name: string; desc: string; color: string }[] = [
+  { Icon: Mail,         name: '案件',     desc: '受注 → 下書き → 投稿 → レポートまで AI が一気通貫で伴走',           color: IRIS_COLORS.hotPink },
+  { Icon: BarChart3,    name: '分析',     desc: 'Instagram アカウント解析 — 投稿時間・反応率・伸びるテーマを学習', color: IRIS_COLORS.purple },
+  { Icon: Sparkle,      name: '創作',     desc: 'キャプション・サムネ・OG 画像 — 雰囲気に合わせて即生成',           color: IRIS_COLORS.gold },
+  { Icon: MessageSquare, name: '交渉',    desc: '料金交渉ロープレ・媒体資料・ブランド提案文を AI がドラフト',       color: IRIS_COLORS.roseGold },
+  { Icon: Palette,      name: 'ブランド', desc: '世界観に合うフォント・カラー・トーンをパーソナル AI が提案',       color: IRIS_COLORS.purpleLt },
+  { Icon: UsersRound,   name: '仲間',     desc: '同じ志のクリエイター同士が繋がる、招待制コミュニティ',             color: IRIS_COLORS.pink },
 ];
 
 const PLANS = [
@@ -60,7 +62,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         position: 'relative',
         zIndex: 60,
       }}>
-        ✨ 2026/05/12 ベータ公開 — 14 日間無料 / クレカ不要 / 先着で 30 日延長
+        2026/05/12 ベータ公開 — 14 日間無料 / クレカ不要 / 先着で 30 日延長
       </div>
 
       {/* ── ヘッダ ────────────────────────────── */}
@@ -144,26 +146,26 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem',
             maxWidth: 1080, margin: '0 auto',
           }}>
-            {[
+            {([
               {
-                emoji: '📸', tag: 'スクショから',
+                Icon: Camera, tag: 'スクショから',
                 before: 'PR 依頼の DM を見たけど、料金交渉が苦手で 3 日寝かせてしまう',
                 after: 'スクショを撮って投げる → 媒体資料・希望ギャラ・断り文 3 案を 30 秒で',
                 accent: IRIS_COLORS.hotPink,
               },
               {
-                emoji: '🎙', tag: '声で',
+                Icon: Mic, tag: '声で',
                 before: '撮影帰りで疲れてキャプションが書けない、ハッシュタグも考えられない',
                 after: '一言だけ吹き込む → 投稿文・ストーリー台本・サムネ案を一括ドラフト',
                 accent: IRIS_COLORS.gold,
               },
               {
-                emoji: '💆‍♀️', tag: '美容相談',
+                Icon: HeartPulse, tag: '美容相談',
                 before: '肌が荒れて何を使えばいいかわからない、検索しても情報が多すぎる',
                 after: '荒れた肌を撮って一言 → 原因仮説・スキンケア順序・受診目安まで',
                 accent: IRIS_COLORS.purpleLt,
               },
-            ].map((c, i) => (
+            ] as { Icon: LucideIcon; tag: string; before: string; after: string; accent: string }[]).map((c, i) => (
               <motion.div
                 key={c.tag}
                 className="iris-wow-card"
@@ -185,8 +187,16 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                   borderRadius: '50%', background: c.accent, opacity: 0.18, filter: 'blur(60px)',
                 }} />
                 <div style={{ position: 'relative', zIndex: 2 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
-                    <span style={{ fontSize: '1.55rem' }}>{c.emoji}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: '1rem' }}>
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 10,
+                      background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)`,
+                      boxShadow: `0 6px 16px ${c.accent}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <c.Icon size={20} color="#FFFFFF" strokeWidth={2.2} />
+                    </div>
                     <span style={{
                       fontSize: '0.65rem', letterSpacing: '0.25em', fontWeight: 700,
                       color: c.accent, textTransform: 'uppercase',
@@ -253,7 +263,15 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
               <motion.div key={f.name} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.5, delay: i * 0.07 }} style={{ position: 'relative', background: 'rgba(255,250,245,0.04)', border: `1px solid ${f.color}30`, borderRadius: 18, padding: '1.75rem 1.5rem', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', background: f.color, opacity: 0.16, filter: 'blur(50px)' }} />
                 <div style={{ position: 'relative', zIndex: 2 }}>
-                  <div style={{ fontSize: '2.25rem', color: f.color, marginBottom: '0.6rem', fontFamily: IRIS_FONTS.serif, lineHeight: 1 }}>{f.icon}</div>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: 14,
+                    background: `linear-gradient(135deg, ${f.color}, ${f.color}cc)`,
+                    boxShadow: `0 8px 22px ${f.color}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: '0.85rem',
+                  }}>
+                    <f.Icon size={26} color="#FFFFFF" strokeWidth={2.2} />
+                  </div>
                   <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.5rem', fontWeight: 500, marginBottom: '0.5rem', color: IRIS_COLORS.ivory }}>{f.name}</h3>
                   <p style={{ fontSize: '0.9rem', color: 'rgba(255,250,245,0.7)', lineHeight: 1.7, fontFamily: IRIS_FONTS.body }}>{f.desc}</p>
                 </div>
@@ -291,7 +309,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 <p style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem', fontFamily: IRIS_FONTS.body }}>{p.price}<span style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.5)', fontWeight: 500 }}>{p.suffix}</span></p>
                 <div style={{ height: 1, background: `${IRIS_COLORS.purpleDeep}40`, margin: '1rem 0' }} />
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem' }}>
-                  {p.features.map((f, i) => <li key={i} style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.78)', lineHeight: 1.7, marginBottom: '0.4rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}><span style={{ color: p.highlight ? IRIS_COLORS.gold : IRIS_COLORS.hotPink, flexShrink: 0 }}>✦</span><span>{f}</span></li>)}
+                  {p.features.map((f, i) => <li key={i} style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.78)', lineHeight: 1.7, marginBottom: '0.4rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}><Check size={14} color={p.highlight ? IRIS_COLORS.gold : IRIS_COLORS.hotPink} strokeWidth={2.6} style={{ flexShrink: 0, marginTop: 3 }} /><span>{f}</span></li>)}
                 </ul>
                 <button
                   onClick={() => handlePlan(p.id)}

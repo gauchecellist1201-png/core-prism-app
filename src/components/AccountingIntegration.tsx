@@ -5,13 +5,14 @@
 // ============================================================
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 
 type ProviderId = 'freee' | 'mf' | 'yayoi';
 
 interface Provider {
   id: ProviderId;
   name: string;
-  emoji: string;
+  initials: string;
   color: string;
   oauthUrl: string;
   envHint: string;
@@ -22,7 +23,7 @@ const PROVIDERS: Provider[] = [
   {
     id: 'freee',
     name: 'freee 会計',
-    emoji: '🟢',
+    initials: 'fr',
     color: '#00B58E',
     oauthUrl: 'https://accounts.secure.freee.co.jp/public_api/authorize',
     envHint: 'FREEE_CLIENT_ID + FREEE_CLIENT_SECRET',
@@ -31,7 +32,7 @@ const PROVIDERS: Provider[] = [
   {
     id: 'mf',
     name: 'マネーフォワード クラウド',
-    emoji: '🟡',
+    initials: 'MF',
     color: '#FFA500',
     oauthUrl: 'https://api.biz.moneyforward.com/authorize',
     envHint: 'MF_CLIENT_ID + MF_CLIENT_SECRET',
@@ -40,7 +41,7 @@ const PROVIDERS: Provider[] = [
   {
     id: 'yayoi',
     name: '弥生会計オンライン',
-    emoji: '🔵',
+    initials: '弥',
     color: '#2E6FD9',
     oauthUrl: 'https://api.yayoi-kk.co.jp/oauth/authorize',
     envHint: 'YAYOI_CLIENT_ID + YAYOI_CLIENT_SECRET',
@@ -138,19 +139,33 @@ export default function AccountingIntegration() {
                 <div className="flex items-center gap-3 min-w-0">
                   <div
                     style={{
+                      position: 'relative',
                       width: 40, height: 40, borderRadius: 12,
-                      background: p.color + '22', color: p.color,
+                      background: `linear-gradient(135deg, ${p.color}, ${p.color}cc)`,
+                      boxShadow: `0 6px 16px ${p.color}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
+                      color: '#fff',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 20, flexShrink: 0,
+                      fontSize: 13, fontWeight: 800, letterSpacing: '-0.02em',
+                      flexShrink: 0,
                     }}
                   >
-                    {p.emoji}
+                    {p.initials}
+                    {connected && (
+                      <span style={{
+                        position: 'absolute', right: -3, bottom: -3,
+                        width: 16, height: 16, borderRadius: '50%',
+                        background: '#10B981', border: '2px solid var(--surface-3)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <Check size={9} color="#fff" strokeWidth={3.5} />
+                      </span>
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className="text-fg text-sm font-medium">{p.name}</p>
                     <p className="text-xs text-fg-muted">
                       {connected
-                        ? '✓ 接続中 (双方向同期 ON)'
+                        ? '接続中 (双方向同期 ON)'
                         : available
                           ? '未接続 (タップして OAuth 開始)'
                           : `管理者の env 設定が必要 (${p.envHint})`}

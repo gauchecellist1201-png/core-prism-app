@@ -1,73 +1,41 @@
-# React + TypeScript + Vite
+# CORE — Identity OS
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+すべての時代の、核となるものを。AI エージェント OS を提供する **株式会社コア (CORE Inc.)** のプロダクトモノレポ。
 
-Currently, two official plugins are available:
+## 🌅 ベータ公開 — 2026/05/12
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+CORE Prism / CORE Iris のベータ版を **2026 年 5 月 12 日** に同時公開します。
 
-## React Compiler
+| プロダクト | 対象 | 月額 | ベータ特典 |
+| --- | --- | --- | --- |
+| **CORE Prism** | 事業家 / 経営者 / 営業 | ¥4,980〜 | 14 日間無料 · クレカ不要 · 先着 30 日延長 |
+| **CORE Iris** | インフルエンサー / クリエイター | ¥1,980〜 | 14 日間無料 · クレカ不要 · 先着 30 日延長 |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Prism LP: https://core-prism-app.vercel.app/
+- Iris LP: https://core-prism-app.vercel.app/iris
+- Corp サイト: https://core-prism-app.vercel.app/corp
 
-## Expanding the ESLint configuration
+## スタック
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+React 18 + TypeScript + Vite。本番は Vercel にデプロイ。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev      # ローカル開発 (http://localhost:5173)
+npm run build    # 本番ビルド
+npx vercel --prod --yes   # 本番デプロイ
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## エントリ
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `index.html` → CORE Prism LP / アプリ (`/`)
+- `iris.html`  → CORE Iris LP / アプリ (`/iris`)
+- `corp.html`  → 株式会社コア コーポレートサイト (`/corp`)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## OG / SNS シェア
+
+各ページで OG 画像は v2 シリーズを配信:
+
+- `/og-prism-v2.png`
+- `/og-iris-v2.png`
+- `/og-core-v2.png`

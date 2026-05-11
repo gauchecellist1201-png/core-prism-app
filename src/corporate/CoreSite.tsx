@@ -5,6 +5,7 @@
 // ============================================================
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Mail as MailIcon } from 'lucide-react';
 import { PrismLogo, IrisLogo, CoreLogo } from '../components/Logo';
 
 const COMPANY = {
@@ -636,9 +637,13 @@ export default function CoreSite() {
               fontFamily: '"SF Mono", "Menlo", monospace',
               letterSpacing: '0.05em',
               fontSize: '0.95rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.6rem',
             }}
           >
-            ✉ {COMPANY.email}
+            <MailIcon size={17} strokeWidth={2.2} />
+            {COMPANY.email}
           </a>
         </div>
       </section>

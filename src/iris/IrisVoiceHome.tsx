@@ -11,7 +11,7 @@ import { shareToInstagram } from './instagramShare';
 import ApiErrorCard from '../components/ApiErrorCard';
 import {
   Film, Camera, MessageSquare, BarChart3, HeartPulse, Mic, Mail,
-  Image as ImageIcon, Calendar, Wallet,
+  Image as ImageIcon, Calendar, Wallet, Sparkles, Trash2, ArrowUp,
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -199,7 +199,15 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
       }}>
         {history.length === 0 ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>✨</div>
+            <div style={{
+              width: 64, height: 64, borderRadius: 18,
+              background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+              boxShadow: `0 10px 28px ${bg.accent}66, inset 0 1px 0 rgba(255,255,255,0.22)`,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: '0.85rem',
+            }}>
+              <Sparkles size={30} color="#fff" strokeWidth={2.2} />
+            </div>
             <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.15rem', color: bg.ink, marginBottom: '1rem' }}>
               何から、はなしましょうか?
             </p>
@@ -478,9 +486,10 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
               flexShrink: 0,
               boxShadow: `0 6px 16px ${bg.accent}55`,
               opacity: busy || (!textInput.trim() && pendingImages.length === 0) ? 0.5 : 1,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            {busy ? '⋯' : '➤'}
+            {busy ? '···' : <ArrowUp size={20} strokeWidth={2.6} />}
           </button>
         </div>
 
@@ -489,8 +498,9 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
             <button onClick={clearChat} style={{
               background: 'transparent', color: subtleColor,
               border: 'none', cursor: 'pointer', fontSize: '0.78rem', padding: '0.2rem 0.5rem',
+              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
             }}>
-              🗑 履歴を消す
+              <Trash2 size={13} strokeWidth={2.2} /> 履歴を消す
             </button>
           </div>
         )}

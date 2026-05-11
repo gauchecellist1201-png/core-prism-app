@@ -4,6 +4,8 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Waves, Key, Wifi, AlertTriangle, Settings as SettingsIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface Props {
   /** エラーメッセージ。null/空なら何も出さない */
@@ -45,14 +47,15 @@ function signature(error: string): string {
 
 function classifyError(error: string): {
   kind: 'quota' | 'auth' | 'network' | 'other';
-  emoji: string;
+  Icon: LucideIcon;
+  iconColor: string;
   title: string;
   steps: string[];
 } {
   const e = error.toLowerCase();
   if (/quota|混みあって|rate|429|503/i.test(error)) {
     return {
-      kind: 'quota', emoji: '🌊',
+      kind: 'quota', Icon: Waves, iconColor: '#5BA8FF',
       title: 'AI が今、混みあっています',
       steps: [
         '60 秒待ってから、もう一度送信してみる',
@@ -63,7 +66,7 @@ function classifyError(error: string): {
   }
   if (/api key|unauthorized|forbidden|認証/i.test(error)) {
     return {
-      kind: 'auth', emoji: '🔑',
+      kind: 'auth', Icon: Key, iconColor: '#FACC15',
       title: 'AI の認証に失敗しました',
       steps: [
         '設定 → API キー を確認する',
@@ -74,13 +77,13 @@ function classifyError(error: string): {
   }
   if (/network|fetch|offline|connection/i.test(e)) {
     return {
-      kind: 'network', emoji: '📡',
+      kind: 'network', Icon: Wifi, iconColor: '#4ADE80',
       title: 'ネットワークが不安定です',
       steps: ['Wi-Fi / モバイル通信を確認', '再接続後にもう一度送信', 'ページ再読み込みも有効'],
     };
   }
   return {
-    kind: 'other', emoji: '⚠️',
+    kind: 'other', Icon: AlertTriangle, iconColor: '#FFA94D',
     title: 'AI が応答しませんでした',
     steps: ['少し時間をおいてもう一度お試しください', '繰り返す場合はページを再読み込み', '解消しないときはサポートへ連絡'],
   };
@@ -135,8 +138,16 @@ export default function ApiErrorCard({ error, onOpenSettings, className, variant
           fontSize: 13,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
-          <span style={{ fontSize: 22, lineHeight: 1, marginTop: 1 }}>{c.emoji}</span>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.7rem' }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: 9,
+            background: `linear-gradient(135deg, ${c.iconColor}, ${c.iconColor}cc)`,
+            boxShadow: `0 4px 12px ${c.iconColor}55, inset 0 1px 0 rgba(255,255,255,0.2)`,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, marginTop: 1,
+          }}>
+            <c.Icon size={17} color="#FFFFFF" strokeWidth={2.4} />
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', marginBottom: '0.35rem' }}>
               <p style={{ fontWeight: 700, fontSize: 13, color: fg, margin: 0 }}>{c.title}</p>
@@ -166,8 +177,9 @@ export default function ApiErrorCard({ error, onOpenSettings, className, variant
                   color: fg,
                   borderRadius: 999, padding: '0.4rem 0.95rem',
                   fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
                 }}
-              >⚙ 設定でマスターモードを有効化</button>
+              ><SettingsIcon size={13} strokeWidth={2.2} /> 設定でマスターモードを有効化</button>
             )}
           </div>
         </div>

@@ -1,10 +1,65 @@
 import { motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
+import {
+  Lightbulb, Mic, Film, MailOpen, BookOpen, FileText, Quote, Palette,
+  Handshake, MessagesSquare, Send, Image as ImageIcon, Radio, Receipt,
+  ScrollText, BarChart3, Camera, ClipboardList, Files, FolderKanban,
+  Users, Sword, Target, Bot, CheckSquare, Crown, Calendar, HeartPulse,
+  Sun, Sparkles, BarChart2, Zap,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { Persona } from '../types/identity';
+
+const QUICK_ICON_MAP: Record<string, { Icon: LucideIcon; color: string }> = {
+  brief:        { Icon: Lightbulb,     color: '#F59E0B' },
+  voice:        { Icon: Mic,           color: '#FF5C9C' },
+  youtube:      { Icon: Film,          color: '#FF0033' },
+  shadow:       { Icon: MailOpen,      color: '#A78BFA' },
+  kb:           { Icon: BookOpen,      color: '#5BA8FF' },
+  note:         { Icon: FileText,      color: '#5BA8FF' },
+  minutes:      { Icon: Quote,         color: '#9088A8' },
+  slides:       { Icon: Palette,       color: '#C084FC' },
+  nego:         { Icon: Handshake,     color: '#FFA94D' },
+  decision:     { Icon: MessagesSquare,color: '#A78BFA' },
+  email:        { Icon: MailOpen,      color: '#A78BFA' },
+  post:         { Icon: Send,          color: '#FF6FB5' },
+  image:        { Icon: ImageIcon,     color: '#C084FC' },
+  engine:       { Icon: Radio,         color: '#4ADE80' },
+  invoice:      { Icon: Receipt,       color: '#5BA8FF' },
+  sales:        { Icon: ScrollText,    color: '#10B981' },
+  pnl:          { Icon: BarChart3,     color: '#10B981' },
+  expense:      { Icon: Camera,        color: '#FFA94D' },
+  benchmark:    { Icon: BarChart2,     color: '#5BA8FF' },
+  crm:          { Icon: FolderKanban,  color: '#FFA94D' },
+  documents:    { Icon: Files,         color: '#9CA3AF' },
+  people:       { Icon: Users,         color: '#FF6FB5' },
+  team:         { Icon: Sword,         color: '#9088A8' },
+  'sales-agent':{ Icon: Target,        color: '#10B981' },
+  'saas-agent': { Icon: Bot,           color: '#A78BFA' },
+  'tasks-hub':  { Icon: CheckSquare,   color: '#4ADE80' },
+  premium:      { Icon: Crown,         color: '#FACC15' },
+  meet:         { Icon: Calendar,      color: '#5BA8FF' },
+  health:       { Icon: HeartPulse,    color: '#F472B6' },
+};
+
+const GROUP_ICONS: Record<string, { Icon: LucideIcon; color: string }> = {
+  '今日':       { Icon: Sun,        color: '#FACC15' },
+  'ナレッジ':   { Icon: BookOpen,   color: '#5BA8FF' },
+  '生成・分析': { Icon: Sparkles,   color: '#C084FC' },
+  '営業':       { Icon: Target,     color: '#10B981' },
+  '経営':       { Icon: BarChart3,  color: '#5BA8FF' },
+  '人材':       { Icon: Users,      color: '#FF6FB5' },
+  'タスク':     { Icon: CheckSquare,color: '#4ADE80' },
+  'スケジュール':{ Icon: Calendar,  color: '#5BA8FF' },
+  'ヘルス':     { Icon: HeartPulse, color: '#F472B6' },
+  'SaaS連携':   { Icon: Bot,        color: '#A78BFA' },
+  'プレミアム': { Icon: Crown,      color: '#FACC15' },
+  'その他':     { Icon: ClipboardList, color: '#9CA3AF' },
+};
 
 interface Action {
   id: string;
-  emoji: string;
+  emoji?: string;
   label: string;
   desc: string;
   onClick: () => void;
@@ -45,20 +100,6 @@ const AUTO_GROUP: Record<string, string> = {
 };
 
 const GROUP_ORDER = ['今日', 'ナレッジ', '生成・分析', '営業', 'SaaS連携', '経営', '人材', 'タスク', 'スケジュール', 'ヘルス', 'プレミアム', 'その他'];
-const GROUP_EMOJI: Record<string, string> = {
-  '今日': '☀',
-  'ナレッジ': '📚',
-  '生成・分析': '✨',
-  '営業': '🎯',
-  '経営': '📊',
-  '人材': '👥',
-  'タスク': '✅',
-  'スケジュール': '📅',
-  'ヘルス': '🩺',
-  'SaaS連携':  '🤖',
-  'プレミアム': '👑',
-  'その他': '·',
-};
 
 export default function QuickActions({ persona, actions }: Props) {
   // すべて表示 / フィルタ
@@ -94,7 +135,10 @@ export default function QuickActions({ persona, actions }: Props) {
       transition={{ delay: 0.05 }}
     >
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <p className="text-fg text-base font-medium">⚡ クイックアクション</p>
+        <p className="text-fg text-base font-medium inline-flex items-center gap-2">
+          <Zap size={16} color={persona.accentColor} strokeWidth={2.4} />
+          クイックアクション
+        </p>
         <p className="text-fg-muted text-xs">{filtered.length} / {actions.length} 件</p>
       </div>
 
@@ -111,45 +155,67 @@ export default function QuickActions({ persona, actions }: Props) {
         >
           すべて
         </button>
-        {grouped.map(g => (
-          <button
-            key={g.name}
-            onClick={() => setActiveGroup(g.name)}
-            className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap"
-            style={{
-              background: activeGroup === g.name ? persona.accentColor : 'var(--surface)',
-              color: activeGroup === g.name ? '#fff' : 'var(--fg-muted)',
-              border: `1px solid ${activeGroup === g.name ? persona.accentColor : 'var(--border)'}`,
-            }}
-          >
-            {GROUP_EMOJI[g.name]} {g.name} ({g.actions.length})
-          </button>
-        ))}
+        {grouped.map(g => {
+          const gIcon = GROUP_ICONS[g.name];
+          const GIcon = gIcon?.Icon;
+          const active = activeGroup === g.name;
+          return (
+            <button
+              key={g.name}
+              onClick={() => setActiveGroup(g.name)}
+              className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap inline-flex items-center gap-1.5"
+              style={{
+                background: active ? persona.accentColor : 'var(--surface)',
+                color: active ? '#fff' : 'var(--fg-muted)',
+                border: `1px solid ${active ? persona.accentColor : 'var(--border)'}`,
+              }}
+            >
+              {GIcon && <GIcon size={13} strokeWidth={2.2} color={active ? '#fff' : (gIcon.color)} />}
+              {g.name} ({g.actions.length})
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-        {filtered.map((a, i) => (
-          <motion.button
-            key={a.id}
-            onClick={a.onClick}
-            className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl transition-all"
-            style={{
-              background: a.primary
-                ? `linear-gradient(135deg, ${persona.accentColor}25, ${persona.accentColor}10)`
-                : 'var(--surface)',
-              border: `1px solid ${a.primary ? persona.accentColor + '50' : 'var(--border)'}`,
-            }}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.03 }}
-            whileHover={{ scale: 1.03, y: -1 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            <span className="text-2xl leading-none">{a.emoji}</span>
-            <span className="text-fg text-sm font-medium leading-tight text-center">{a.label}</span>
-            <span className="text-fg-muted text-[11px] leading-tight text-center hidden md:block">{a.desc}</span>
-          </motion.button>
-        ))}
+        {filtered.map((a, i) => {
+          const map = QUICK_ICON_MAP[a.id];
+          const Icon = map?.Icon;
+          const color = map?.color || persona.accentColor;
+          return (
+            <motion.button
+              key={a.id}
+              onClick={a.onClick}
+              className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl transition-all"
+              style={{
+                background: a.primary
+                  ? `linear-gradient(135deg, ${persona.accentColor}25, ${persona.accentColor}10)`
+                  : 'var(--surface)',
+                border: `1px solid ${a.primary ? persona.accentColor + '50' : 'var(--border)'}`,
+              }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.03 }}
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              {Icon ? (
+                <div style={{
+                  width: 38, height: 38, borderRadius: 10,
+                  background: `linear-gradient(135deg, ${color}, ${color}cc)`,
+                  boxShadow: `0 6px 14px ${color}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Icon size={20} color="#fff" strokeWidth={2.2} />
+                </div>
+              ) : (
+                <span className="text-2xl leading-none">{a.emoji}</span>
+              )}
+              <span className="text-fg text-sm font-medium leading-tight text-center">{a.label}</span>
+              <span className="text-fg-muted text-[11px] leading-tight text-center hidden md:block">{a.desc}</span>
+            </motion.button>
+          );
+        })}
       </div>
     </motion.div>
   );
