@@ -1,8 +1,8 @@
 // ============================================================
-// AnimatedAvatar v2 — 親しみやすい AI 分身マスコット
-// 大きな丸い目 + キラキラハイライト + チーク + 笑顔ベース
-// isSpeaking 中は口がふんわり動く / まばたき 4-6s / mood で表情変化
-// brand: prism = ライラックブルー系 / iris = ピーチピンク系
+// AnimatedAvatar v3 — 親しみやすい「精霊マスコット」
+// 人間顔ではなく、丸いオーブ (オーラ + 大きな瞳 + ニッコリ口)
+// brand: prism = ライラックブルー / iris = ピーチピンク
+// isSpeaking で口がパクパク、4-6s でまばたき、mood で表情変化
 // ============================================================
 import { useEffect, useId, useRef, useState } from 'react';
 
@@ -10,38 +10,56 @@ export type AvatarMood = 'neutral' | 'thinking' | 'happy' | 'curious';
 
 interface Props {
   brand: 'prism' | 'iris';
-  /** 互換のため受け取るが、内部のキャラ色は brand から自動決定 */
+  /** 互換のため受け取るが、内部色は brand から自動 */
   accentColor?: string;
   isSpeaking: boolean;
   mood?: AvatarMood;
-  /** 既定 240。「分身」を見せるシーンでは 360-480 推奨 */
   size?: number;
   className?: string;
   style?: React.CSSProperties;
-  /** 名前ラベルを下に出す (任意) */
   name?: string;
 }
 
-// 表情パラメータ (mouth shape, blush opacity, eye sparkle scale, brow tilt)
+const PALETTE = {
+  prism: {
+    body1: '#A0B5FF',  // 明るいライラック
+    body2: '#7A8AFF',
+    body3: '#5A6BD8',
+    cheek: '#FFB6C8',
+    mouth: '#5A6BD8',
+    halo:  '#C8D5FF',
+    accent: '#FFFFFF',
+  },
+  iris: {
+    body1: '#FFD4E5',  // 明るいピーチピンク
+    body2: '#FF9CB5',
+    body3: '#E1306C',
+    cheek: '#FF6FA9',
+    mouth: '#9C3A5C',
+    halo:  '#FFE4D9',
+    accent: '#FFFFFF',
+  },
+} as const;
+
+// 表情パラメータ
 type Expression = {
-  mouth: string;        // d 属性
-  mouthFill: string;
-  blush: number;        // 0-1
-  sparkle: number;      // 0-1
-  browTilt: number;     // -1 ~ 1
+  mouthD: string;       // 口の SVG path
+  mouthFilled: boolean; // 中を塗るか
+  cheek: number;        // 0-1
+  brow: number;         // -1 怒り ~ +1 嬉しい (今は飾りで使う)
+  bounceDur: number;    // body bounce 周期
 };
 
 function speakingMouth(open: number): Expression {
-  // やわらかいオーバル「あ・い・う・え」っぽい
-  const cy = 70;
-  const w = 6 + open * 5;
-  const h = 2 + open * 5;
+  // 「あ」っぽい楕円
+  const w = 5 + open * 6;
+  const h = 1.5 + open * 5.5;
   return {
-    mouth: `M ${50 - w} ${cy} Q 50 ${cy + h} ${50 + w} ${cy} Q 50 ${cy - h * 0.5} ${50 - w} ${cy}`,
-    mouthFill: '#9C3A5C',
-    blush: 0.55,
-    sparkle: 1,
-    browTilt: -0.1,
+    mouthD: `M 50 ${65} m -${w} 0 a ${w} ${h} 0 1 0 ${w * 2} 0 a ${w} ${h} 0 1 0 -${w * 2} 0`,
+    mouthFilled: true,
+    cheek: 0.7,
+    brow: 0.3,
+    bounceDur: 1.6,
   };
 }
 
@@ -49,53 +67,38 @@ function expressionForMood(mood: AvatarMood): Expression {
   switch (mood) {
     case 'happy':
       return {
-        mouth: 'M 38 67 Q 50 78 62 67',
-        mouthFill: 'transparent',
-        blush: 0.85, sparkle: 1, browTilt: 0.4,
+        mouthD: 'M 40 62 Q 50 76 60 62',
+        mouthFilled: false,
+        cheek: 0.95,
+        brow: 0.7,
+        bounceDur: 2.4,
       };
     case 'thinking':
       return {
-        mouth: 'M 42 70 Q 48 67 54 70',
-        mouthFill: 'transparent',
-        blush: 0.25, sparkle: 0.5, browTilt: -0.5,
+        mouthD: 'M 44 67 Q 50 65 56 67',
+        mouthFilled: false,
+        cheek: 0.3,
+        brow: -0.3,
+        bounceDur: 4,
       };
     case 'curious':
       return {
-        mouth: 'M 44 69 Q 50 73 56 69',
-        mouthFill: 'transparent',
-        blush: 0.5, sparkle: 0.9, browTilt: 0.6,
+        mouthD: 'M 45 65 Q 50 70 55 65',
+        mouthFilled: false,
+        cheek: 0.6,
+        brow: 0.5,
+        bounceDur: 3,
       };
-    default: // neutral
+    default:
       return {
-        mouth: 'M 41 69 Q 50 74 59 69',
-        mouthFill: 'transparent',
-        blush: 0.45, sparkle: 0.8, browTilt: 0.1,
+        mouthD: 'M 42 64 Q 50 71 58 64',
+        mouthFilled: false,
+        cheek: 0.55,
+        brow: 0.2,
+        bounceDur: 3.5,
       };
   }
 }
-
-const PALETTE = {
-  prism: {
-    bg1: '#E8EBFF', bg2: '#C8D5FF', bg3: '#A0B5FF',
-    skin: '#FFE9E0', skinShade: '#F8D5C7',
-    hair: '#5A6BD8',
-    accent: '#7A8AFF',
-    blush: '#FFB6C8',
-    eyeIris: '#3D4FB5',
-    sparkle: '#FFFFFF',
-    glow: '#A0B5FF',
-  },
-  iris: {
-    bg1: '#FFF0F5', bg2: '#FFD4E5', bg3: '#FFB6C8',
-    skin: '#FFE4D9', skinShade: '#F5C9B8',
-    hair: '#E1306C',
-    accent: '#FF6FA9',
-    blush: '#FF95B5',
-    eyeIris: '#B23A6E',
-    sparkle: '#FFFFFF',
-    glow: '#FFB6D5',
-  },
-} as const;
 
 export default function AnimatedAvatar({
   brand,
@@ -108,30 +111,48 @@ export default function AnimatedAvatar({
 }: Props) {
   const [mouthOpen, setMouthOpen] = useState(0);
   const [isBlinking, setIsBlinking] = useState(false);
+  const [bounceY, setBounceY] = useState(0);
   const speakingRef = useRef(isSpeaking);
   speakingRef.current = isSpeaking;
 
   const rawId = useId().replace(/:/g, '');
-  const bgGradId = `mas-bg-${rawId}`;
-  const skinGradId = `mas-skin-${rawId}`;
-  const hairGradId = `mas-hair-${rawId}`;
-  const irisGradId = `mas-iris-${rawId}`;
-  const haloGradId = `mas-halo-${rawId}`;
+  const bodyGradId = `mas3-body-${rawId}`;
+  const haloGradId = `mas3-halo-${rawId}`;
+  const eyeGradId = `mas3-eye-${rawId}`;
+  const shineGradId = `mas3-shine-${rawId}`;
 
   const c = PALETTE[brand];
+  const expr = isSpeaking ? speakingMouth(mouthOpen) : expressionForMood(mood);
 
+  // しゃべる時の口アニメ
   useEffect(() => {
     if (!isSpeaking) { setMouthOpen(0); return; }
     let timer: ReturnType<typeof setTimeout>;
     const tick = () => {
       if (!speakingRef.current) return;
       setMouthOpen(Math.random() * 0.85 + 0.15);
-      timer = setTimeout(tick, 90 + Math.random() * 70);
+      timer = setTimeout(tick, 100 + Math.random() * 90);
     };
     timer = setTimeout(tick, 80);
     return () => clearTimeout(timer);
   }, [isSpeaking]);
 
+  // ふわふわ上下 (常時)
+  useEffect(() => {
+    let frame: number;
+    let start = performance.now();
+    const animate = (now: number) => {
+      const t = (now - start) / 1000;
+      const period = expr.bounceDur;
+      const y = Math.sin((t / period) * Math.PI * 2) * 1.5;
+      setBounceY(y);
+      frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [expr.bounceDur]);
+
+  // まばたき
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     const scheduleBlink = () => {
@@ -140,28 +161,21 @@ export default function AnimatedAvatar({
         setTimeout(() => {
           setIsBlinking(false);
           scheduleBlink();
-        }, 160);
-      }, 3500 + Math.random() * 2500);
+        }, 130);
+      }, 3000 + Math.random() * 2500);
     };
     scheduleBlink();
     return () => clearTimeout(timer);
   }, []);
 
-  const expr = isSpeaking ? speakingMouth(mouthOpen) : expressionForMood(mood);
   const eyeScaleY = isBlinking ? 0.08 : 1;
-  const eyeTransition = `transform ${isBlinking ? '0.06s' : '0.13s'} ease`;
-
-  // 眉の傾き (-1 sad → +1 happy) — y 座標で表現
-  const browLY1 = 36 - expr.browTilt * 1.5;
-  const browLY2 = 36 + expr.browTilt * 1.0;
-  const browRY1 = 36 + expr.browTilt * 1.0;
-  const browRY2 = 36 - expr.browTilt * 1.5;
+  const eyeTransition = `transform ${isBlinking ? '0.05s' : '0.12s'} ease`;
 
   return (
     <div
       className={className}
       style={{
-        width: size, height: name ? size + 28 : size,
+        width: size, height: name ? size + 32 : size,
         flexShrink: 0,
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         ...style,
@@ -169,122 +183,105 @@ export default function AnimatedAvatar({
     >
       <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label={brand === 'iris' ? 'アイリス' : 'プリズム'}>
         <defs>
-          <radialGradient id={bgGradId} cx="50%" cy="48%" r="58%">
-            <stop offset="0%" stopColor={c.bg1} />
-            <stop offset="60%" stopColor={c.bg2} />
-            <stop offset="100%" stopColor={c.bg3} />
+          {/* 体のラジアルグラデ (上方が明るい、下方が深い) */}
+          <radialGradient id={bodyGradId} cx="42%" cy="35%" r="68%">
+            <stop offset="0%" stopColor={c.body1} />
+            <stop offset="55%" stopColor={c.body2} />
+            <stop offset="100%" stopColor={c.body3} />
           </radialGradient>
+          {/* ふわっとしたハロー */}
           <radialGradient id={haloGradId} cx="50%" cy="50%" r="55%">
-            <stop offset="0%" stopColor={c.glow} stopOpacity="0" />
-            <stop offset="60%" stopColor={c.glow} stopOpacity="0.35" />
-            <stop offset="100%" stopColor={c.glow} stopOpacity="0" />
+            <stop offset="0%" stopColor={c.halo} stopOpacity="0" />
+            <stop offset="55%" stopColor={c.halo} stopOpacity="0.5" />
+            <stop offset="100%" stopColor={c.halo} stopOpacity="0" />
           </radialGradient>
-          <radialGradient id={skinGradId} cx="42%" cy="40%" r="62%">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
-            <stop offset="40%" stopColor={c.skin} />
-            <stop offset="100%" stopColor={c.skinShade} />
+          {/* 瞳のラジアル (中心が明るい白) */}
+          <radialGradient id={eyeGradId} cx="35%" cy="30%" r="80%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="35%" stopColor={c.body1} />
+            <stop offset="100%" stopColor="#0E0824" />
           </radialGradient>
-          <linearGradient id={hairGradId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={c.hair} />
-            <stop offset="100%" stopColor={c.accent} />
+          {/* 体の上のハイライト (光沢) */}
+          <linearGradient id={shineGradId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
           </linearGradient>
-          <radialGradient id={irisGradId} cx="35%" cy="35%" r="70%">
-            <stop offset="0%" stopColor={c.accent} />
-            <stop offset="60%" stopColor={c.eyeIris} />
-            <stop offset="100%" stopColor="#1A0E2E" />
-          </radialGradient>
         </defs>
 
-        {/* ふんわり光るハロー (背景) */}
+        {/* ハロー (ふわっと光る背景) */}
         <circle cx="50" cy="50" r="48" fill={`url(#${haloGradId})`} />
 
-        {/* 背景円 */}
-        <circle cx="50" cy="50" r="44" fill={`url(#${bgGradId})`} />
+        {/* 全体を上下にふわふわ */}
+        <g transform={`translate(0 ${bounceY})`}>
+          {/* 影 (体の下にぽつんと) */}
+          <ellipse cx="50" cy="86" rx="22" ry="3" fill="#000" opacity="0.18" />
 
-        {/* 髪 (頭の後ろ) — ふわっとしたアウトライン */}
-        <path
-          d="M 22 42 Q 18 28 30 18 Q 50 6 70 18 Q 82 28 78 42 Q 80 52 73 56 L 73 50 Q 71 38 50 32 Q 29 38 27 50 L 27 56 Q 20 52 22 42 Z"
-          fill={`url(#${hairGradId})`}
-        />
+          {/* 体 (オーブ) */}
+          <circle cx="50" cy="50" r="36" fill={`url(#${bodyGradId})`} />
 
-        {/* 顔 (肌) */}
-        <ellipse cx="50" cy="55" rx="22" ry="24" fill={`url(#${skinGradId})`} />
+          {/* 上のハイライト (球体感) */}
+          <ellipse cx="42" cy="32" rx="18" ry="14" fill={`url(#${shineGradId})`} />
 
-        {/* チーク (頬の赤み) */}
-        <ellipse cx="34" cy="60" rx="5.5" ry="3" fill={c.blush} opacity={expr.blush} />
-        <ellipse cx="66" cy="60" rx="5.5" ry="3" fill={c.blush} opacity={expr.blush} />
+          {/* チーク */}
+          <ellipse cx="32" cy="58" rx="6" ry="3.5" fill={c.cheek} opacity={expr.cheek * 0.8} />
+          <ellipse cx="68" cy="58" rx="6" ry="3.5" fill={c.cheek} opacity={expr.cheek * 0.8} />
 
-        {/* 眉 */}
-        <g stroke={c.hair} strokeWidth="2.2" strokeLinecap="round" fill="none">
-          <path d={`M 32 ${browLY1} Q 37 ${browLY1 - 0.5} 41 ${browLY2}`} />
-          <path d={`M 59 ${browRY1} Q 63 ${browRY1 - 0.5} 68 ${browRY2}`} />
-        </g>
-
-        {/* 左目 */}
-        <g style={{ transform: `scaleY(${eyeScaleY})`, transformOrigin: '37px 47px', transition: eyeTransition }}>
-          {/* 白目 */}
-          <ellipse cx="37" cy="47" rx="5.2" ry="6.2" fill="#FFFFFF" />
-          {/* 虹彩 */}
-          <ellipse cx="37.5" cy="47.5" rx="3.3" ry="4.0" fill={`url(#${irisGradId})`} />
-          {/* 瞳孔 */}
-          <ellipse cx="37.6" cy="48" rx="1.4" ry="1.7" fill="#0E0824" />
-          {/* キラキラ大ハイライト */}
-          <ellipse cx="36.0" cy="45.6" rx={1.6 * expr.sparkle} ry={2.0 * expr.sparkle} fill="#FFFFFF" />
-          {/* 小さい光 */}
-          <circle cx="38.7" cy="49.0" r={0.55 * expr.sparkle} fill="#FFFFFF" />
-        </g>
-
-        {/* 右目 */}
-        <g style={{ transform: `scaleY(${eyeScaleY})`, transformOrigin: '63px 47px', transition: eyeTransition }}>
-          <ellipse cx="63" cy="47" rx="5.2" ry="6.2" fill="#FFFFFF" />
-          <ellipse cx="63.5" cy="47.5" rx="3.3" ry="4.0" fill={`url(#${irisGradId})`} />
-          <ellipse cx="63.6" cy="48" rx="1.4" ry="1.7" fill="#0E0824" />
-          <ellipse cx="62.0" cy="45.6" rx={1.6 * expr.sparkle} ry={2.0 * expr.sparkle} fill="#FFFFFF" />
-          <circle cx="64.7" cy="49.0" r={0.55 * expr.sparkle} fill="#FFFFFF" />
-        </g>
-
-        {/* 鼻 (極小、控えめ) */}
-        <ellipse cx="50" cy="61" rx="0.9" ry="0.5" fill={c.skinShade} opacity="0.6" />
-
-        {/* 口 */}
-        <path
-          d={expr.mouth}
-          stroke={brand === 'iris' ? '#9C3A5C' : '#5A4A8A'}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill={expr.mouthFill}
-        />
-
-        {/* ブランドマーク (頭の上、控えめなアクセサリー) */}
-        {brand === 'iris' ? (
-          // 小さい花
-          <g transform="translate(50 16)">
-            {[0, 60, 120, 180, 240, 300].map((deg, i) => (
-              <ellipse key={i} cx="0" cy="-3" rx="1.6" ry="3.2"
-                fill={c.accent}
-                transform={`rotate(${deg})`}
-                opacity="0.85" />
-            ))}
-            <circle cx="0" cy="0" r="1.4" fill="#FFE4D9" />
+          {/* 左目 (大きな丸) */}
+          <g style={{ transform: `scaleY(${eyeScaleY})`, transformOrigin: '37px 45px', transition: eyeTransition }}>
+            <ellipse cx="37" cy="45" rx="6.5" ry="7.5" fill="#0E0824" />
+            <ellipse cx="37" cy="45" rx="5.5" ry="6.5" fill={`url(#${eyeGradId})`} />
+            {/* 瞳孔 */}
+            <ellipse cx="37" cy="46.5" rx="2.2" ry="2.6" fill="#0E0824" />
+            {/* 大きな白いハイライト */}
+            <ellipse cx="35" cy="42.5" rx="2.4" ry="3.0" fill="#FFFFFF" />
+            {/* 小さい光 */}
+            <circle cx="39" cy="48" r="0.9" fill="#FFFFFF" />
           </g>
-        ) : (
-          // 小さい星
-          <g transform="translate(50 16)">
-            <path
-              d="M 0 -4 L 1.2 -1.2 L 4 -1 L 1.6 1.0 L 2.4 4 L 0 2.2 L -2.4 4 L -1.6 1.0 L -4 -1 L -1.2 -1.2 Z"
-              fill={c.accent}
-            />
+
+          {/* 右目 */}
+          <g style={{ transform: `scaleY(${eyeScaleY})`, transformOrigin: '63px 45px', transition: eyeTransition }}>
+            <ellipse cx="63" cy="45" rx="6.5" ry="7.5" fill="#0E0824" />
+            <ellipse cx="63" cy="45" rx="5.5" ry="6.5" fill={`url(#${eyeGradId})`} />
+            <ellipse cx="63" cy="46.5" rx="2.2" ry="2.6" fill="#0E0824" />
+            <ellipse cx="61" cy="42.5" rx="2.4" ry="3.0" fill="#FFFFFF" />
+            <circle cx="65" cy="48" r="0.9" fill="#FFFFFF" />
           </g>
-        )}
+
+          {/* 口 (ニッコリ or パクパク) */}
+          <path
+            d={expr.mouthD}
+            stroke={c.mouth}
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill={expr.mouthFilled ? c.mouth : 'none'}
+          />
+
+          {/* ブランドの小さなアクセサリー (頭の上) */}
+          {brand === 'iris' ? (
+            // 小さな葉っぱ / 花のつぼみ
+            <g transform="translate(50 10)">
+              <path d="M 0 0 C -3 -2 -3 -7 0 -10 C 3 -7 3 -2 0 0 Z" fill={c.body3} />
+              <circle cx="0" cy="-3" r="1.2" fill="#FFE4D9" opacity="0.9" />
+            </g>
+          ) : (
+            // 小さな星 / クリスタル
+            <g transform="translate(50 10)">
+              <path
+                d="M 0 -10 L 2 -3 L 8 -3 L 3 1 L 5 7 L 0 3 L -5 7 L -3 1 L -8 -3 L -2 -3 Z"
+                fill={c.body1}
+              />
+            </g>
+          )}
+        </g>
       </svg>
       {name && (
         <div style={{
-          marginTop: 6,
-          fontSize: Math.max(11, size * 0.06),
-          fontWeight: 700,
-          letterSpacing: '0.1em',
-          color: c.hair,
+          marginTop: 8,
+          fontSize: Math.max(11, size * 0.055),
+          fontWeight: 800,
+          letterSpacing: '0.18em',
+          color: c.body3,
           fontFamily: '"Inter","Noto Sans JP",sans-serif',
         }}>
           {name}
