@@ -205,7 +205,8 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
             accentColor={accentColor}
             isSpeaking={tts.state === 'speaking'}
             mood={avatarMood}
-            size={220}
+            size={320}
+            name={brand === 'iris' ? 'IRIS' : 'PRISM'}
           />
 
           {/* パルス リング エフェクト */}

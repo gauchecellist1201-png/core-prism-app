@@ -27,6 +27,7 @@ import { PrismBackground } from './components/PrismBackground';
 import { useTheme } from './hooks/useTheme';
 import IrisApp from './iris/IrisApp';
 import BillingSuccess from './components/BillingSuccess';
+import KeynoteLanding from './keynote/KeynoteLanding';
 
 import type { AppSettings, ChatMessage } from './types/identity';
 
@@ -92,7 +93,18 @@ function isBillingSuccessPath(): boolean {
   return window.location.pathname === '/billing/success';
 }
 
+function isKeynotePath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/keynote' || p.startsWith('/keynote/');
+}
+
 export default function App() {
+  // /keynote — 講演会限定 先行案内 LP
+  if (isKeynotePath()) {
+    return <KeynoteLanding />;
+  }
+
   // /strategy — オーナー専用 戦略ダッシュボード
   if (isStrategyPath()) {
     return <StrategyDashboard />;

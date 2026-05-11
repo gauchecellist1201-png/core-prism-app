@@ -8,6 +8,9 @@
     { "source": "/corp/(.*)", "destination": "/corp.html" },
     { "source": "/company",     "destination": "/corp.html" },
     { "source": "/company/(.*)", "destination": "/corp.html" },
+    { "source": "/keynote",     "destination": "/keynote.html" },
+    { "source": "/keynote/",    "destination": "/keynote.html" },
+    { "source": "/keynote/(.*)", "destination": "/keynote.html" },
     { "source": "/(.*)",     "destination": "/index.html" }
   ]
 }
