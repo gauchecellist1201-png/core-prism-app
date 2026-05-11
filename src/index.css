@@ -525,6 +525,9 @@ input, textarea, select { font-family: inherit; }
 
   /* 2 カラム → 1 カラム */
   .lp-two-col { grid-template-columns: 1fr !important; gap: 2rem !important; }
+
+  /* VALUES 3カラム → 縦積み */
+  .lp-values-grid { grid-template-columns: 1fr !important; gap: 1.25rem !important; }
 }
 
 /* ─── スマホ縦 (640px) ─── */

@@ -5,7 +5,7 @@
 // ============================================================
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mail as MailIcon } from 'lucide-react';
+import { Mail as MailIcon, Compass, Heart, Shield } from 'lucide-react';
 import { PrismLogo, IrisLogo, CoreLogo } from '../components/Logo';
 
 const COMPANY = {
@@ -142,6 +142,7 @@ export default function CoreSite() {
           </a>
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
             <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
+            <a href="#values" style={navLink} className="lp-nav-link">信条</a>
             <a href="#mission" style={navLink} className="lp-nav-link">理念</a>
             <a href="#about" style={navLink} className="lp-nav-link">会社概要</a>
             <a href="#contact" style={ctaSmall}>お問い合わせ</a>
@@ -265,6 +266,184 @@ export default function CoreSite() {
               会社概要
             </a>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  VALUES (信条 / 道徳)        */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section
+        id="values"
+        className="lp-section-pad"
+        style={{
+          padding: '6rem 1.5rem',
+          background: 'linear-gradient(180deg,#000 0%,#050510 60%,#000 100%)',
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* 背景の細い水平アクセント */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: 720,
+            height: 720,
+            marginLeft: -360,
+            marginTop: -360,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(252,176,69,0.07) 0%, transparent 65%)',
+            filter: 'blur(60px)',
+            pointerEvents: 'none',
+          }}
+        />
+
+        <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+          <p style={sectionLabel}>
+            <span style={sectionLabelMain}>信&nbsp;条</span>
+            <span style={sectionLabelSub}>PHILOSOPHY&nbsp;/&nbsp;VALUES</span>
+          </p>
+
+          {/* ゴールドの細い水平線 */}
+          <div
+            aria-hidden
+            style={{
+              width: 64,
+              height: 1,
+              margin: '1.5rem auto 2.5rem',
+              background: 'linear-gradient(90deg, transparent, #FCB045, transparent)',
+            }}
+          />
+
+          {/* メインステートメント */}
+          <motion.h2
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1 }}
+            style={{
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(2.4rem, 6vw, 4.5rem)',
+              fontWeight: 700,
+              lineHeight: 1.35,
+              letterSpacing: '0.05em',
+              marginBottom: '2.25rem',
+              color: '#fff',
+            }}
+          >
+            変わらないものに、
+            <br />
+            <span
+              style={{
+                background: 'linear-gradient(90deg,#FCB045,#FBBF24,#F59E0B)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 900,
+              }}
+            >
+              向き合う。
+            </span>
+          </motion.h2>
+
+          {/* リード文 */}
+          <p
+            style={{
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(0.98rem, 1.4vw, 1.1rem)',
+              color: 'rgba(255,255,255,0.75)',
+              lineHeight: 2.3,
+              maxWidth: 760,
+              margin: '0 auto 4.5rem',
+              fontWeight: 400,
+            }}
+          >
+            時代は加速する。テクノロジーは古びる。流行は通り過ぎる。
+            <br />
+            けれど、人間が人間であるかぎり、変わらないものがある。
+            <br />
+            人を愛し、仲間を信じ、誠実であること。
+            <br />
+            株式会社 CORE は、その
+            <strong style={{ color: '#fff', fontWeight: 600 }}>「変わらない核」</strong>
+            を中心に据える会社です。
+          </p>
+
+          {/* 3 つの柱 */}
+          <div
+            className="lp-values-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '2rem',
+              maxWidth: 1080,
+              margin: '0 auto 3.75rem',
+              textAlign: 'left',
+            }}
+          >
+            <ValuePillar
+              icon={<Compass size={28} strokeWidth={1.8} color="#FCB045" />}
+              accentColor="#FCB045"
+              titleEn="THE UNCHANGING CORE"
+              titleJa="変わらない核"
+              body="時代がどれほど変わっても、人を想う気持ち、信じる勇気、誠実であろうとする意志は変わらない。私たちは、その普遍を見失わないために存在する。"
+            />
+            <ValuePillar
+              icon={<Heart size={28} strokeWidth={1.8} color="#E1306C" />}
+              accentColor="#E1306C"
+              titleEn="LOVE & FELLOWSHIP"
+              titleJa="人を愛し、仲間を大切に"
+              body="すべての事業は、人と人の信頼の上にある。顧客もチームメンバーも、出会うすべての人を尊び、共に育つこと。それが私たちの最初の決まりごと。"
+            />
+            <ValuePillar
+              icon={<Shield size={28} strokeWidth={1.8} color="#4ADE80" />}
+              accentColor="#4ADE80"
+              titleEn="INTEGRITY FIRST"
+              titleJa="道徳を、利益より先に"
+              body="効率や速さは尊い。けれど、誠実さの前に置いてはならない。私たちは「正しいか」を「速いか」より先に問う。時代が早くなるほど、その順序を守り続ける。"
+            />
+          </div>
+
+          {/* フッターステートメント (引用デザイン) */}
+          <div
+            style={{
+              maxWidth: 720,
+              margin: '0 auto',
+              padding: '2.25rem 1.75rem',
+              borderTop: '1px solid rgba(252,176,69,0.25)',
+              borderBottom: '1px solid rgba(252,176,69,0.25)',
+              position: 'relative',
+            }}
+          >
+            <p
+              style={{
+                fontFamily: FONT_SERIF_EN,
+                fontSize: 'clamp(1.05rem, 1.8vw, 1.4rem)',
+                fontStyle: 'italic',
+                letterSpacing: '0.05em',
+                color: '#FCB045',
+                lineHeight: 1.6,
+                marginBottom: '0.85rem',
+                fontWeight: 500,
+              }}
+            >
+              "Speed is borrowed. Integrity is owned."
+            </p>
+            <p
+              style={{
+                fontFamily: FONT_SERIF_JA,
+                fontSize: 'clamp(0.9rem, 1.3vw, 1rem)',
+                color: 'rgba(255,255,255,0.7)',
+                letterSpacing: '0.06em',
+                fontWeight: 400,
+                lineHeight: 1.9,
+              }}
+            >
+              時代から借りるのは速度、自分のものは誠実さだけ。
+            </p>
+          </div>
         </div>
       </section>
 
@@ -1210,6 +1389,95 @@ function InfoRow({
         )}
       </div>
     </div>
+  );
+}
+
+// ───────────── 価値観の柱 ─────────────
+function ValuePillar({
+  icon,
+  accentColor,
+  titleEn,
+  titleJa,
+  body,
+}: {
+  icon: React.ReactNode;
+  accentColor: string;
+  titleEn: string;
+  titleJa: string;
+  body: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.7 }}
+      style={{
+        padding: '2rem 1.75rem',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 18,
+        background: 'rgba(255,255,255,0.015)',
+        backdropFilter: 'blur(4px)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.1rem',
+      }}
+      className="lp-value-pillar"
+    >
+      <div
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: '50%',
+          background: `radial-gradient(circle, ${accentColor}22 0%, transparent 70%)`,
+          border: `1px solid ${accentColor}55`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+        aria-hidden
+      >
+        {icon}
+      </div>
+      <div>
+        <p
+          style={{
+            fontFamily: FONT_DISPLAY,
+            fontSize: '0.7rem',
+            letterSpacing: '0.28em',
+            color: accentColor,
+            fontWeight: 700,
+            marginBottom: 6,
+          }}
+        >
+          {titleEn}
+        </p>
+        <p
+          style={{
+            fontFamily: FONT_SERIF_JA,
+            fontSize: 'clamp(1.05rem, 1.5vw, 1.18rem)',
+            color: '#fff',
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+            lineHeight: 1.5,
+          }}
+        >
+          {titleJa}
+        </p>
+      </div>
+      <p
+        style={{
+          fontFamily: FONT_SERIF_JA,
+          fontSize: 'clamp(0.88rem, 1.15vw, 0.95rem)',
+          color: 'rgba(255,255,255,0.72)',
+          lineHeight: 2,
+          fontWeight: 400,
+        }}
+      >
+        {body}
+      </p>
+    </motion.div>
   );
 }
 
