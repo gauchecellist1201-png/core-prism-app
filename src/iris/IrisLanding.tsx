@@ -72,11 +72,12 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
           <IrisLogo size={28} withWordmark />
-          <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+          <nav style={{ display: 'flex', gap: '0.85rem', alignItems: 'center' }}>
             <a href="#wow" style={navLink} className="lp-nav-link iris-lp-nav-link">体験</a>
             <a href="#facets" style={navLink} className="lp-nav-link iris-lp-nav-link">機能</a>
             <a href="#pricing" style={navLink} className="lp-nav-link iris-lp-nav-link">料金</a>
-            <button onClick={onEnter} style={ctaBtnSmall}>はじめる →</button>
+            <IrisLocaleToggle locale={locale} setLocale={setLocale} />
+            <button onClick={onEnter} style={ctaBtnSmall}>{t('iris.nav.cta')}</button>
           </nav>
         </div>
       </header>
