@@ -92,6 +92,23 @@ export default function CoreSite() {
       }}
     >
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  ベータ公開告知バー         */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div style={{
+        background: 'linear-gradient(90deg, #6FA8FF, #B07BD9, #FF6FA9)',
+        color: '#fff',
+        textAlign: 'center',
+        padding: '0.5rem 1rem',
+        fontSize: '0.78rem',
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        position: 'relative',
+        zIndex: 60,
+      }}>
+        ◎ 2026/05/12 — CORE Prism / Iris ベータ同時公開
+      </div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  HEADER                     */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <header

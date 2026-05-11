@@ -169,13 +169,17 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
         </p>
         <h2 style={{
           fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
-          fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
-          color: bg.ink, margin: 0, fontWeight: 500, lineHeight: 1.3,
+          fontSize: 'clamp(1.5rem, 5.5vw, 2.4rem)',
+          color: bg.ink, margin: 0, fontWeight: 500, lineHeight: 1.25,
+          textWrap: 'balance' as any,
+          wordBreak: 'keep-all',
+          overflowWrap: 'break-word',
+          padding: '0 0.5rem',
         }}>
-          おかえり。なんでも、話して。
+          おかえり。<br className="iris-okaeri-br" />なんでも話して。
         </h2>
-        <p style={{ color: subtleColor, fontSize: '0.85rem', marginTop: '0.4rem' }}>
-          スクショを撮るか、声で話すか、書くだけ。
+        <p style={{ color: subtleColor, fontSize: '0.85rem', marginTop: '0.5rem', lineHeight: 1.5 }}>
+          スクショ・声・テキスト ── どれでも OK
         </p>
       </div>
 
@@ -445,21 +449,28 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
 }
 
 function SummaryCard({ bg, label, value, icon }: { bg: IrisBackgroundDef; label: string; value: string; icon: string }) {
+  // 数字部分とサフィックス (例: '3 件' / '¥12K') を分離して、数字を強く目立たせる
+  const m = value.match(/^([¥]?[\d.,]+)\s*(.*)$/);
+  const num = m ? m[1] : value;
+  const suffix = m ? m[2] : '';
   return (
     <div style={{
       background: bg.card, backdropFilter: 'blur(8px)',
       border: `1px solid ${bg.cardBorder}`, borderRadius: 16,
       padding: '0.7rem 0.85rem',
+      minHeight: 76,
     }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.3rem' }}>
         <span style={{ fontSize: '0.95rem' }}>{icon}</span>
-        <span style={{ fontSize: '0.7rem', color: bg.inkSoft, letterSpacing: '0.08em' }}>{label}</span>
+        <span style={{ fontSize: '0.68rem', color: bg.inkSoft, letterSpacing: '0.06em', fontWeight: 600 }}>{label}</span>
       </div>
       <div style={{
-        fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
-        fontSize: '1.4rem', fontWeight: 600, color: bg.ink, marginTop: '0.15rem', lineHeight: 1.1,
+        fontFamily: IRIS_FONTS.body,
+        color: bg.ink, lineHeight: 1.1,
+        display: 'flex', alignItems: 'baseline', gap: '0.2rem',
       }}>
-        {value}
+        <span style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>{num}</span>
+        {suffix && <span style={{ fontSize: '0.78rem', fontWeight: 600, color: bg.inkSoft }}>{suffix}</span>}
       </div>
     </div>
   );

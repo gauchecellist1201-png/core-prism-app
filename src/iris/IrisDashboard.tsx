@@ -50,6 +50,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const [customEditorOpen, setCustomEditorOpen] = useState(false);
   const [bgListVersion, setBgListVersion] = useState(0); // 再描画用
   const [tab, setTab] = useState<Tab>('home');
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const allBgs = useMemo(() => getAllBackgrounds(), [bgListVersion]);
 
@@ -137,34 +138,36 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               style={btnIcon(bg)}>
               {bg.emoji}
             </button>
+            <button onClick={() => setMoreOpen(true)} title="メニュー" className="iris-tab-more-trigger"
+              style={btnIcon(bg)}>≡</button>
             <button onClick={onLeave} title="戻る" style={btnIcon(bg)}>←</button>
           </div>
         </div>
 
-        {/* タブ */}
-        <nav style={{
+        {/* タブ — モバイルでは「主要タブのみ」、PC ではスクロールで全表示 */}
+        <nav className="iris-tabs" style={{
           maxWidth: 1280, margin: '0.5rem auto 0', display: 'flex', gap: '0.4rem',
           overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4,
         }}>
           {[
-            { id: 'home' as Tab,      e: '✦', l: 'ホーム' },
-            { id: 'strategy' as Tab,  e: '📈', l: '戦略' },
-            { id: 'triage' as Tab,    e: '🔍', l: '案件精査' },
-            { id: 'director' as Tab,  e: '🎬', l: '丸投げ編集' },
-            { id: 'deals' as Tab,     e: '💌', l: '案件' },
-            { id: 'negotiate' as Tab, e: '💬', l: '交渉' },
-            { id: 'draft' as Tab,     e: '✍',  l: '投稿下書き' },
-            { id: 'image' as Tab,     e: '📷', l: '画像加工' },
-            { id: 'beauty' as Tab,    e: '💆‍♀️', l: '美容相談' },
-            { id: 'health' as Tab,    e: '🌿', l: 'ヘルス' },
-            { id: 'community' as Tab, e: '🌹', l: 'コミュニティ' },
-            { id: 'team' as Tab,      e: '🌷', l: 'チーム' },
-            { id: 'brands' as Tab,    e: '🤝', l: 'ブランド探し' },
-            { id: 'kit' as Tab,       e: '📇', l: 'メディアキット' },
+            { id: 'home' as Tab,      e: '✦', l: 'ホーム',       primary: true },
+            { id: 'strategy' as Tab,  e: '📈', l: '戦略',         primary: true },
+            { id: 'triage' as Tab,    e: '🔍', l: '案件精査',     primary: true },
+            { id: 'deals' as Tab,     e: '💌', l: '案件',         primary: true },
+            { id: 'director' as Tab,  e: '🎬', l: '丸投げ編集',   primary: false },
+            { id: 'negotiate' as Tab, e: '💬', l: '交渉',         primary: false },
+            { id: 'draft' as Tab,     e: '✍',  l: '投稿下書き',   primary: false },
+            { id: 'image' as Tab,     e: '📷', l: '画像加工',     primary: false },
+            { id: 'beauty' as Tab,    e: '💆‍♀️', l: '美容相談',  primary: false },
+            { id: 'health' as Tab,    e: '🌿', l: 'ヘルス',       primary: false },
+            { id: 'community' as Tab, e: '🌹', l: 'コミュニティ', primary: false },
+            { id: 'team' as Tab,      e: '🌷', l: 'チーム',       primary: false },
+            { id: 'brands' as Tab,    e: '🤝', l: 'ブランド探し', primary: false },
+            { id: 'kit' as Tab,       e: '📇', l: 'メディアキット', primary: false },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
+              className={t.primary ? 'iris-tab-primary' : 'iris-tab-secondary'}
               style={{
-                // 非アクティブタブも背景に埋もれないよう、白の不透明度を上げて文字を濃く固定
                 background: tab === t.id
                   ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`
                   : 'rgba(255,255,255,0.92)',
@@ -186,11 +189,108 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               {t.l}
             </button>
           ))}
+          {/* モバイル用 「もっと」 トリガー: タブ末尾に配置 */}
+          <button onClick={() => setMoreOpen(true)} className="iris-tab-more"
+            style={{
+              background: 'rgba(255,255,255,0.92)',
+              color: '#1F1A2E',
+              border: `1px solid rgba(31,26,46,0.08)`,
+              borderRadius: 999,
+              padding: '0.55rem 1.05rem',
+              fontSize: '0.85rem', fontWeight: 700,
+              cursor: 'pointer', whiteSpace: 'nowrap',
+              fontFamily: IRIS_FONTS.body,
+              boxShadow: '0 1px 3px rgba(31,26,46,0.06)',
+            }}>
+            ⋯ メニュー
+          </button>
         </nav>
       </header>
 
-      {/* メインコンテンツ */}
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem 1.25rem 4rem' }}>
+      {/* モバイル用 「もっと」シート */}
+      <AnimatePresence>
+        {moreOpen && (
+          <motion.div
+            key="more-overlay"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setMoreOpen(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 60,
+              background: 'rgba(31,26,46,0.45)', backdropFilter: 'blur(8px)',
+            }}>
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'absolute', left: 0, right: 0, bottom: 0,
+                background: '#FFFFFF', borderRadius: '24px 24px 0 0',
+                padding: '1rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+                maxHeight: '78vh', overflowY: 'auto',
+                boxShadow: '0 -16px 60px rgba(31,26,46,0.25)',
+              }}>
+              <div style={{
+                width: 44, height: 4, borderRadius: 2,
+                background: 'rgba(31,26,46,0.15)', margin: '0 auto 1rem',
+              }} />
+              <p style={{
+                textAlign: 'center', fontSize: '0.7rem', letterSpacing: '0.3em',
+                color: bg.accent, fontWeight: 700, margin: '0 0 1rem',
+              }}>
+                ALL FEATURES
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.6rem' }}>
+                {[
+                  { id: 'home' as Tab,      e: '✦', l: 'ホーム' },
+                  { id: 'strategy' as Tab,  e: '📈', l: '戦略' },
+                  { id: 'triage' as Tab,    e: '🔍', l: '案件精査' },
+                  { id: 'deals' as Tab,     e: '💌', l: '案件' },
+                  { id: 'director' as Tab,  e: '🎬', l: '丸投げ編集' },
+                  { id: 'negotiate' as Tab, e: '💬', l: '交渉' },
+                  { id: 'draft' as Tab,     e: '✍',  l: '投稿下書き' },
+                  { id: 'image' as Tab,     e: '📷', l: '画像加工' },
+                  { id: 'beauty' as Tab,    e: '💆‍♀️', l: '美容相談' },
+                  { id: 'health' as Tab,    e: '🌿', l: 'ヘルス' },
+                  { id: 'community' as Tab, e: '🌹', l: 'コミュニティ' },
+                  { id: 'team' as Tab,      e: '🌷', l: 'チーム' },
+                  { id: 'brands' as Tab,    e: '🤝', l: 'ブランド探し' },
+                  { id: 'kit' as Tab,       e: '📇', l: 'メディアキット' },
+                ].map(t => (
+                  <button key={t.id}
+                    onClick={() => { setTab(t.id); setMoreOpen(false); }}
+                    style={{
+                      background: tab === t.id ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}dd)` : 'rgba(248,244,252,1)',
+                      color: tab === t.id ? '#fff' : '#1F1A2E',
+                      border: 'none', borderRadius: 14,
+                      padding: '0.85rem 0.5rem', fontSize: '0.85rem', fontWeight: 600,
+                      cursor: 'pointer', textAlign: 'center',
+                      boxShadow: tab === t.id ? `0 6px 18px ${bg.accent}45` : 'none',
+                      minHeight: 56,
+                    }}>
+                    <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{t.e}</div>
+                    {t.l}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setMoreOpen(false)}
+                style={{
+                  width: '100%', marginTop: '1rem',
+                  background: 'transparent', border: '1px solid rgba(31,26,46,0.12)',
+                  borderRadius: 12, padding: '0.85rem',
+                  fontSize: '0.85rem', color: '#5A4570', fontWeight: 600, cursor: 'pointer',
+                }}>
+                閉じる
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* メインコンテンツ — モバイルではフローティング AI ボタン分の余白を確保 */}
+      <main className="iris-main" style={{
+        maxWidth: 1100, margin: '0 auto',
+        padding: '2rem 1.25rem calc(8.5rem + env(safe-area-inset-bottom, 0px))',
+      }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}

@@ -57,6 +57,21 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       minHeight: '100vh',
       overflowX: 'hidden',
     }}>
+      {/* ── ベータ公開告知バー ────────────────────────────── */}
+      <div className="iris-beta-bar" style={{
+        background: `linear-gradient(90deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purpleLt})`,
+        color: '#fff',
+        textAlign: 'center',
+        padding: '0.5rem 1rem',
+        fontSize: '0.78rem',
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        position: 'relative',
+        zIndex: 60,
+      }}>
+        ✨ 2026/05/12 ベータ公開 — 14 日間無料 / クレカ不要 / 先着で 30 日延長
+      </div>
+
       {/* ── ヘッダ ────────────────────────────── */}
       <header className="lp-safe" style={{
         position: 'sticky', top: 0, zIndex: 50,
@@ -67,8 +82,9 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
           <IrisLogo size={28} withWordmark />
           <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-            <a href="#facets" style={navLink} className="lp-nav-link">機能</a>
-            <a href="#pricing" style={navLink} className="lp-nav-link">料金</a>
+            <a href="#wow" style={navLink} className="lp-nav-link iris-lp-nav-link">体験</a>
+            <a href="#facets" style={navLink} className="lp-nav-link iris-lp-nav-link">機能</a>
+            <a href="#pricing" style={navLink} className="lp-nav-link iris-lp-nav-link">料金</a>
             <button onClick={onEnter} style={ctaBtnSmall}>はじめる →</button>
           </nav>
         </div>
@@ -161,6 +177,136 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           <p style={{ fontSize: '0.75rem', color: 'rgba(255,250,245,0.4)', marginTop: '1.5rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
             14 日間無料 · クレカ不要 · いつでも解約可
           </p>
+        </div>
+      </section>
+
+      {/* ── 30 秒の Wow (Before / After) ────────────────────────── */}
+      <section id="wow" className="lp-section-pad" style={{
+        padding: '5rem 1.25rem 5.5rem',
+        background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #240b32 100%)`,
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <p style={{
+              fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 700, marginBottom: '0.9rem',
+              color: IRIS_COLORS.gold,
+            }}>
+              30 SECONDS WITH IRIS
+            </p>
+            <h2 style={{
+              fontFamily: IRIS_FONTS.display, fontStyle: 'italic',
+              fontSize: 'clamp(1.7rem, 4.2vw, 2.65rem)',
+              fontWeight: 500, lineHeight: 1.25, marginBottom: '0.85rem',
+              background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink} 55%, ${IRIS_COLORS.purpleLt})`,
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>
+              スクショを投げる、それだけ。
+            </h2>
+            <p style={{ color: 'rgba(255,250,245,0.65)', fontSize: '0.95rem', fontFamily: IRIS_FONTS.serif, lineHeight: 1.85, maxWidth: 620, margin: '0 auto' }}>
+              DM、案件依頼、撮影現場、肌の悩み ── ぜんぶ写真と一言で。<br />
+              Iris が読み取って、次の一手まで用意する。
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem',
+            maxWidth: 1080, margin: '0 auto',
+          }}>
+            {[
+              {
+                emoji: '📸', tag: 'スクショから',
+                before: 'PR 依頼の DM を見たけど、料金交渉が苦手で 3 日寝かせてしまう',
+                after: 'スクショを撮って投げる → 媒体資料・希望ギャラ・断り文 3 案を 30 秒で',
+                accent: IRIS_COLORS.hotPink,
+              },
+              {
+                emoji: '🎙', tag: '声で',
+                before: '撮影帰りで疲れてキャプションが書けない、ハッシュタグも考えられない',
+                after: '一言だけ吹き込む → 投稿文・ストーリー台本・サムネ案を一括ドラフト',
+                accent: IRIS_COLORS.gold,
+              },
+              {
+                emoji: '💆‍♀️', tag: '美容相談',
+                before: '肌が荒れて何を使えばいいかわからない、検索しても情報が多すぎる',
+                after: '荒れた肌を撮って一言 → 原因仮説・スキンケア順序・受診目安まで',
+                accent: IRIS_COLORS.purpleLt,
+              },
+            ].map((c, i) => (
+              <motion.div
+                key={c.tag}
+                className="iris-wow-card"
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.55, delay: i * 0.1 }}
+                style={{
+                  position: 'relative',
+                  background: 'rgba(255,250,245,0.045)',
+                  border: `1px solid ${c.accent}40`,
+                  borderRadius: 22,
+                  padding: '1.6rem 1.4rem 1.7rem',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{
+                  position: 'absolute', top: -60, right: -60, width: 200, height: 200,
+                  borderRadius: '50%', background: c.accent, opacity: 0.18, filter: 'blur(60px)',
+                }} />
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+                    <span style={{ fontSize: '1.55rem' }}>{c.emoji}</span>
+                    <span style={{
+                      fontSize: '0.65rem', letterSpacing: '0.25em', fontWeight: 700,
+                      color: c.accent, textTransform: 'uppercase',
+                    }}>
+                      {c.tag}
+                    </span>
+                  </div>
+                  <div style={{ marginBottom: '0.85rem' }}>
+                    <p style={{
+                      fontSize: '0.62rem', letterSpacing: '0.2em', fontWeight: 700,
+                      color: 'rgba(255,250,245,0.4)', marginBottom: '0.35rem',
+                    }}>
+                      BEFORE
+                    </p>
+                    <p style={{ fontSize: '0.88rem', color: 'rgba(255,250,245,0.62)', lineHeight: 1.6 }}>
+                      {c.before}
+                    </p>
+                  </div>
+                  <div style={{
+                    height: 1, background: `linear-gradient(90deg, transparent, ${c.accent}66, transparent)`,
+                    margin: '0.85rem 0 0.85rem',
+                  }} />
+                  <div>
+                    <p style={{
+                      fontSize: '0.62rem', letterSpacing: '0.2em', fontWeight: 700,
+                      color: c.accent, marginBottom: '0.35rem',
+                    }}>
+                      WITH IRIS
+                    </p>
+                    <p style={{ fontSize: '0.92rem', color: IRIS_COLORS.ivory, lineHeight: 1.7, fontWeight: 500 }}>
+                      {c.after}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
+            <button onClick={onEnter} style={{
+              ...ctaBtnHero,
+              fontSize: '0.95rem',
+              padding: '0.9rem 1.85rem',
+            }}>
+              ✦ 30 秒、自分で試す
+            </button>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255,250,245,0.45)', marginTop: '0.85rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
+              14 日間無料 · クレカ不要
+            </p>
+          </div>
         </div>
       </section>
 
@@ -378,24 +524,40 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 </ul>
                 <button
                   onClick={() => handlePlan(p.id)}
+                  className="iris-plan-cta"
                   style={{
+                    position: 'relative',
+                    overflow: 'hidden',
                     width: '100%',
                     background: p.highlight
                       ? `linear-gradient(135deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`
                       : 'rgba(255,250,245,0.06)',
                     color: '#fff',
                     border: p.highlight ? 'none' : `1px solid ${IRIS_COLORS.purpleDeep}50`,
-                    padding: '0.85rem 1rem',
+                    padding: '0.95rem 1rem',
                     borderRadius: 12,
                     fontSize: '0.9rem',
                     fontWeight: 700,
                     cursor: 'pointer',
-                    boxShadow: p.highlight ? `0 8px 24px ${IRIS_COLORS.hotPink}50` : 'none',
+                    boxShadow: p.highlight ? `0 10px 30px ${IRIS_COLORS.hotPink}55` : 'none',
                     fontFamily: IRIS_FONTS.body,
+                    letterSpacing: '0.02em',
                   }}
                 >
-                  {p.id === 'studio' ? 'お問い合わせ' : '14 日無料で試す'}
+                  <span style={{ position: 'relative', zIndex: 2 }}>
+                    {p.id === 'studio' ? 'チームでの導入を相談' :
+                     p.id === 'pro' ? '👑 Pro を 14 日無料で' :
+                     p.id === 'standard' ? '✦ Standard を 14 日無料で (人気)' :
+                     '✨ Lite ではじめる (14 日無料)'}
+                  </span>
                 </button>
+                <p style={{
+                  textAlign: 'center', fontSize: '0.7rem',
+                  color: 'rgba(255,250,245,0.45)', marginTop: '0.55rem',
+                  fontFamily: IRIS_FONTS.body, letterSpacing: '0.04em',
+                }}>
+                  {p.id === 'studio' ? '専任コンサルが伴走' : 'クレカ不要 · いつでも解約'}
+                </p>
               </motion.div>
             ))}
           </div>
@@ -556,6 +718,44 @@ function IrisAuroraBackdrop() {
           border: `1px solid ${IRIS_COLORS.purpleLt}50`,
         }}
       />
+
+      {/* 浮遊する光の粒子 — 5 個、ふわっと縦移動 */}
+      {[
+        { x: '12%', delay: 0,   color: IRIS_COLORS.gold,     size: 6 },
+        { x: '30%', delay: 2.5, color: IRIS_COLORS.hotPink,  size: 4 },
+        { x: '52%', delay: 1.2, color: IRIS_COLORS.purpleLt, size: 5 },
+        { x: '74%', delay: 3.4, color: IRIS_COLORS.roseGold, size: 4 },
+        { x: '88%', delay: 0.8, color: IRIS_COLORS.gold,     size: 6 },
+      ].map((p, i) => (
+        <motion.div
+          key={`particle-${i}`}
+          animate={{
+            y: ['100%', '-15%'],
+            opacity: [0, 0.85, 0.85, 0],
+          }}
+          transition={{
+            duration: 9,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: p.delay,
+            times: [0, 0.15, 0.85, 1],
+          }}
+          style={{
+            position: 'absolute',
+            left: p.x,
+            top: 0, height: '100%',
+            width: p.size, marginLeft: -p.size / 2,
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{
+            width: p.size, height: p.size,
+            borderRadius: '50%',
+            background: p.color,
+            boxShadow: `0 0 ${p.size * 4}px ${p.color}, 0 0 ${p.size * 8}px ${p.color}80`,
+          }} />
+        </motion.div>
+      ))}
     </div>
   );
 }

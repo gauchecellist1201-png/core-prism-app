@@ -559,6 +559,70 @@ input, textarea, select { font-family: inherit; }
   padding-right: env(safe-area-inset-right, 0);
 }
 
+/* Iris おかえり: モバイル幅では <br> で改行を制御し、480px 以上では消す */
+.iris-okaeri-br { display: inline; }
+@media (min-width: 480px) {
+  .iris-okaeri-br { display: none; }
+}
+
+/* Iris LP モバイル: ヘッダの「機能」「料金」リンクは狭幅では隠して CTA だけ */
+@media (max-width: 480px) {
+  .iris-lp-nav-link { display: none !important; }
+}
+
+/* Iris プラン CTA: hover で光が右へ走るエフェクト */
+.iris-plan-cta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.45) 50%, transparent 100%);
+  transform: skewX(-20deg);
+  transition: left 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+.iris-plan-cta:hover::before { left: 130%; }
+.iris-plan-cta:hover { transform: translateY(-2px); }
+.iris-plan-cta { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+
+/* Iris Wow カード: hover でほんのり浮く */
+.iris-wow-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.iris-wow-card:hover { transform: translateY(-4px); }
+
+/* Iris Dashboard タブ: モバイルでは「主要のみ + メニュー」、PC では全部表示 */
+.iris-tab-more { display: none; }
+@media (max-width: 768px) {
+  .iris-tab-secondary { display: none !important; }
+  .iris-tab-more { display: inline-flex !important; }
+}
+/* PC ではヘッダの ≡ メニュー (もう一つのトリガー) を非表示 */
+@media (min-width: 769px) {
+  .iris-tab-more-trigger { display: none !important; }
+}
+
+/* Iris: 768px 超では FAB が中央下に来ないので main の余白を通常に戻す */
+@media (min-width: 769px) {
+  .iris-main { padding-bottom: 4rem !important; }
+}
+
+/* iPhone 共通: 入力フィールドのフォントサイズを 16px 以上に固定 (Safari の auto zoom 防止) */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* 法人サイト InfoRow モバイル: グリッドを 1 カラムに */
 @media (max-width: 640px) {
   .lp-info-row {
@@ -587,11 +651,13 @@ input, textarea, select { font-family: inherit; }
    - Mobile: 画面中央下、より大きく + 「AI と話す」ラベル
    ============================================================ */
 .cp-ai-fab-wrap {
-  /* Default: モバイル想定 (中央下) */
-  left: 50%;
+  /* モバイル: 右下に寄せる (中央下だとクイックアクション右端と被る) */
+  right: calc(env(safe-area-inset-right, 0px) + 16px);
   bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
-  transform: translateX(-50%);
+  left: auto;
+  transform: none;
   gap: 6px;
+  align-items: flex-end;
 }
 
 .cp-ai-fab {

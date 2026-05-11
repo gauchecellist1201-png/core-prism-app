@@ -28,6 +28,21 @@ const sectionPad = '5.5rem 1.25rem';
 export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
   return (
     <div style={{ background: BG_DARK, color: '#fff', minHeight: '100vh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
+      {/* ── ベータ公開告知バー ────────────────────────────── */}
+      <div style={{
+        background: 'linear-gradient(90deg, #FFB347, #FF6FA9, #B07BD9)',
+        color: '#fff',
+        textAlign: 'center',
+        padding: '0.5rem 1rem',
+        fontSize: '0.78rem',
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        position: 'relative',
+        zIndex: 60,
+      }}>
+        ✦ 2026/05/12 ベータ公開 — 14 日間無料 / クレカ不要 / 先着で 30 日延長
+      </div>
+
       {/* ── ヘッダ ────────────────────────────── */}
       <header className="lp-safe" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,10,20,0.7)', backdropFilter: 'blur(18px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
