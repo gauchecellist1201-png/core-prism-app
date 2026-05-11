@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ChatMessage, Persona, AppSettings } from '../types/identity';
+import ApiErrorCard from './ApiErrorCard';
+import { readableTextColor } from '../lib/contrast';
 
 interface Props {
   persona: Persona;
@@ -102,20 +104,8 @@ export default function AISidebar({
         </div>
       )}
 
-      {/* Error */}
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            className="p-3 mx-3 mt-2 rounded-xl"
-            style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)' }}
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-          >
-            <p className="text-xs text-red-400">{error}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Error — ポップ + dismiss 永続化 (60秒) + 解消手順 */}
+      <ApiErrorCard error={error} onOpenSettings={onOpenSettings} variant="auto" />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
@@ -154,7 +144,7 @@ export default function AISidebar({
                   : 'max-w-[88%] px-3 py-2 rounded-xl text-sm leading-relaxed bg-surface-3 border-edge border text-fg'}
                 style={
                   msg.role === 'user'
-                    ? { background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }
+                    ? { background: persona.accentColor, color: readableTextColor(persona.accentColor), border: `1px solid ${persona.accentColor}` }
                     : undefined
                 }
               >

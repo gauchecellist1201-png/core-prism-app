@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { AppSettings } from '../types/identity';
+import type { AppSettings, Persona } from '../types/identity';
 import { estimateMonthlyCost } from '../hooks/useClaude';
 import { OPENAI_VOICE_OPTIONS, isOpenAITTSConfigured, type OpenAIVoice } from '../lib/ttsOpenAI';
 import { resetOnboarding } from '../lib/onboarding';
@@ -11,6 +11,10 @@ interface Props {
   onSave: (s: Partial<AppSettings>) => void;
   onClose: () => void;
   onResetStats: () => void;
+  /** ペルソナ一覧 (省略可。あれば「人格」タブで一覧+編集ボタン表示) */
+  personas?: Persona[];
+  /** 編集ボタン押下時の handler。クリック後 SettingsModal は閉じ、PersonaCreator が edit mode で開く */
+  onEditPersona?: (id: string) => void;
 }
 
 const MODELS = [
@@ -19,7 +23,7 @@ const MODELS = [
   { id: 'claude-opus-4-5', name: 'Opus 4.5', note: '最高性能', input: 5.0, output: 25.0 },
 ];
 
-export default function SettingsModal({ settings, onSave, onClose, onResetStats }: Props) {
+export default function SettingsModal({ settings, onSave, onClose, onResetStats, personas, onEditPersona }: Props) {
   const [apiKey, setApiKey] = useState(settings.claudeApiKey);
   const [model, setModel] = useState(settings.preferredModel);
   const [userName, setUserName] = useState(settings.userName);
@@ -28,7 +32,8 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
   const [voiceEnabled, setVoiceEnabled] = useState(settings.voiceEnabled !== false);
   const [openaiVoice, setOpenaiVoice] = useState<OpenAIVoice>((settings as any).openaiVoice || 'nova');
   const openaiAvailable = isOpenAITTSConfigured();
-  const [tab, setTab] = useState<'general' | 'ai' | 'voice' | 'usage' | 'integrations'>('general');
+  type Tab = 'general' | 'ai' | 'voice' | 'usage' | 'integrations' | 'personas';
+  const [tab, setTab] = useState<Tab>('general');
 
   const monthlyEst = estimateMonthlyCost(20, 800, 400, model);
   const jpy150 = (n: number) => Math.round(n * 150);
@@ -56,7 +61,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
         </div>
 
         <div className="flex gap-1 px-5 pt-3 pb-0">
-          {[['general', '一般'], ['ai', 'AI設定'], ['voice', '音声'], ['usage', '使用状況'], ['integrations', '連携']].map(([id, label]) => (
+          {[['general', '一般'], ['personas', '人格'], ['ai', 'AI設定'], ['voice', '音声'], ['usage', '使用状況'], ['integrations', '連携']].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id as typeof tab)}
               className="px-3 py-1.5 rounded-lg text-xs transition-all"
               style={{
@@ -223,6 +228,45 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
             {tab === 'integrations' && (
               <motion.div key="integrations" className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <IntegrationsHub />
+              </motion.div>
+            )}
+
+            {tab === 'personas' && (
+              <motion.div key="personas" className="space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <p className="text-xs text-fg-muted">登録済みの人格 (アイコン・名前・色の編集はここから)</p>
+                {(!personas || personas.length === 0) ? (
+                  <div className="text-sm text-fg-muted p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    まだ人格が作成されていません。ダッシュボードから「人格を追加」してください。
+                  </div>
+                ) : personas.map(p => (
+                  <div key={p.id}
+                    className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: '50%',
+                      background: p.accentColor, color: '#0A0814',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 18, fontWeight: 700, flexShrink: 0,
+                    }}>
+                      {p.icon || '✦'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-fg truncate">{p.name}</p>
+                      <p className="text-xs text-fg-muted truncate">{p.subtitle || '—'}</p>
+                    </div>
+                    <button
+                      onClick={() => onEditPersona?.(p.id)}
+                      className="text-xs px-3 py-1.5 rounded-lg"
+                      style={{
+                        background: 'rgba(201,169,110,0.14)',
+                        color: '#c9a96e',
+                        border: '1px solid rgba(201,169,110,0.25)',
+                        cursor: 'pointer',
+                      }}>
+                      編集
+                    </button>
+                  </div>
+                ))}
               </motion.div>
             )}
 

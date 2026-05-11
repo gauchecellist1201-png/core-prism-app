@@ -78,16 +78,21 @@ interface Props {
   existingPersonas: Persona[];
   onSave: (name: string, subtitle: string, icon: string, description: string, accentColor: string, accentColorLight: string) => void;
   onCancel: () => void;
+  /** 既存ペルソナ編集モード (省略時は新規作成) */
+  editing?: Persona;
 }
 
-export default function PersonaCreator({ existingPersonas, onSave, onCancel }: Props) {
-  const defaultColor = getNextAccentColor(existingPersonas);
-  const [name, setName] = useState('');
-  const [subtitle, setSubtitle] = useState('');
-  const [icon, setIcon] = useState(ICON_OPTIONS[existingPersonas.length % ICON_OPTIONS.length]);
-  const [description, setDescription] = useState('');
+export default function PersonaCreator({ existingPersonas, onSave, onCancel, editing }: Props) {
+  const defaultColor = editing
+    ? (ACCENT_COLORS.find(c => c.color === editing.accentColor) || getNextAccentColor(existingPersonas))
+    : getNextAccentColor(existingPersonas);
+  const [name, setName] = useState(editing?.name ?? '');
+  const [subtitle, setSubtitle] = useState(editing?.subtitle ?? '');
+  const [icon, setIcon] = useState(editing?.icon ?? ICON_OPTIONS[existingPersonas.length % ICON_OPTIONS.length]);
+  const [description, setDescription] = useState(editing?.description ?? '');
   const [selectedColor, setSelectedColor] = useState(defaultColor);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const isEdit = !!editing;
 
   const canSave = name.trim().length > 0;
 
@@ -124,8 +129,8 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel }: P
         {/* ヘッダー */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <div>
-            <h3 className="text-white text-lg font-medium tracking-wide">新しい人格を作成</h3>
-            <p className="text-white/50 text-xs mt-0.5">プリセットから選ぶか、自分でカスタマイズ</p>
+            <h3 className="text-white text-lg font-medium tracking-wide">{isEdit ? `「${editing!.name}」を編集` : '新しい人格を作成'}</h3>
+            <p className="text-white/50 text-xs mt-0.5">{isEdit ? '名前・アイコン・色を変更できます' : 'プリセットから選ぶか、自分でカスタマイズ'}</p>
           </div>
           <button
             onClick={onCancel}

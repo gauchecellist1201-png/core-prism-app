@@ -8,6 +8,7 @@ import type { AppSettings } from '../types/identity';
 import type { MediaKit, InfluencerDeal } from '../types/influencerDeal';
 import { chatWithIris, type AssistantMessage } from './irisAssistant';
 import { shareToInstagram } from './instagramShare';
+import ApiErrorCard from '../components/ApiErrorCard';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { useVoiceInput } from '../hooks/useVoiceInput';
@@ -347,13 +348,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
         )}
       </div>
 
-      {err && (
-        <div style={{
-          background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.25)',
-          padding: '0.6rem 0.85rem', borderRadius: 12,
-          color: '#9B1B30', fontSize: '0.85rem',
-        }}>⚠ {err}</div>
-      )}
+      <ApiErrorCard error={err} variant="light" />
 
       {/* 入力エリア (中央に大きいマイク + 補助テキスト + 画像添付) */}
       <div style={{

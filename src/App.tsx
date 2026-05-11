@@ -138,7 +138,7 @@ export default function App() {
   // Theme初期化 (ライト既定)
   useTheme();
   const { settings, updateSettings, updateUsageStats, resetStats } = useSettings();
-  const { personas, activePersona, createPersona, selectPersona, toggleTask, addTask, updateCashflow } = usePersonas();
+  const { personas, activePersona, createPersona, updatePersona, selectPersona, toggleTask, addTask, updateCashflow } = usePersonas();
   const { items: knowledgeItems, getForPersona, addFromFile, addNote, deleteItem, reanalyze, recomputeCashflow } = useKnowledge(
     settings,
     useCallback(() => activePersona, [activePersona]),
@@ -167,6 +167,7 @@ export default function App() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [showPersonaCreator, setShowPersonaCreator] = useState(false);
+  const [editingPersonaId, setEditingPersonaId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
 
@@ -258,9 +259,14 @@ export default function App() {
     name: string, subtitle: string, icon: string,
     description: string, accentColor: string, accentColorLight: string
   ) => {
-    createPersona(name, subtitle, icon, description, accentColor, accentColorLight);
+    if (editingPersonaId) {
+      updatePersona(editingPersonaId, { name, subtitle, icon, description, accentColor, accentColorLight });
+      setEditingPersonaId(null);
+    } else {
+      createPersona(name, subtitle, icon, description, accentColor, accentColorLight);
+    }
     setShowPersonaCreator(false);
-  }, [createPersona]);
+  }, [createPersona, updatePersona, editingPersonaId]);
 
   const handleAddKnowledgeFile = useCallback(async (file: File) => {
     if (!activePersona) throw new Error('No active persona');
@@ -344,14 +350,17 @@ export default function App() {
           <PersonaCreator
             key="creator"
             existingPersonas={personas}
+            editing={editingPersonaId ? personas.find(p => p.id === editingPersonaId) : undefined}
             onSave={handleCreatePersona}
-            onCancel={() => setShowPersonaCreator(false)}
+            onCancel={() => { setShowPersonaCreator(false); setEditingPersonaId(null); }}
           />
         )}
         {showSettings && (
           <SettingsModal
             key="settings"
             settings={settings}
+            personas={personas}
+            onEditPersona={(id) => { setEditingPersonaId(id); setShowPersonaCreator(true); setShowSettings(false); }}
             onSave={updateSettings}
             onClose={() => setShowSettings(false)}
             onResetStats={resetStats}
