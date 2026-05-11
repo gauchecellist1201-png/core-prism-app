@@ -19,8 +19,9 @@
     --surface: rgba(255, 255, 255, 0.78);
     --surface-2: rgba(255, 255, 255, 0.55);
     --surface-3: rgba(0, 0, 0, 0.04);
-    --border: rgba(20, 20, 30, 0.08);
-    --border-2: rgba(20, 20, 30, 0.05);
+    --border: rgba(20, 20, 30, 0.16);
+    --border-2: rgba(20, 20, 30, 0.10);
+    --border-strong: rgba(20, 20, 30, 0.28);
     --shadow: 0 30px 80px -50px rgba(20, 20, 40, 0.2);
     --orb-blend: multiply;
     --orb-opacity-low: 0.18;
@@ -39,8 +40,9 @@
     --surface: rgba(255, 255, 255, 0.04);
     --surface-2: rgba(255, 255, 255, 0.025);
     --surface-3: rgba(255, 255, 255, 0.06);
-    --border: rgba(255, 255, 255, 0.08);
-    --border-2: rgba(255, 255, 255, 0.05);
+    --border: rgba(255, 255, 255, 0.18);
+    --border-2: rgba(255, 255, 255, 0.10);
+    --border-strong: rgba(255, 255, 255, 0.35);
     --shadow: 0 60px 120px -50px rgba(0, 0, 0, 0.7);
     --orb-blend: screen;
     --orb-opacity-low: 0.35;
@@ -568,6 +570,61 @@ input, textarea, select { font-family: inherit; }
 /* Iris LP モバイル: ヘッダの「機能」「料金」リンクは狭幅では隠して CTA だけ */
 @media (max-width: 480px) {
   .iris-lp-nav-link { display: none !important; }
+}
+
+/* ────────────────────────────────────────
+   モーダルカード共通強化 — 縁を明瞭、影を強く、フォント可読性 UP
+   既存モーダルの外枠は className に "modal-card" を追加するだけで適用される。
+   既に inline style で border 指定がある場合は CSS specificity で適用されない
+   可能性があるので、index.css 側の !important で上書き。
+   ──────────────────────────────────────── */
+.modal-card {
+  border: 1.5px solid var(--border-strong) !important;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+/* fixed inset-0 z-50 のモーダルオーバーレイ内の主要カード (max-w-* を持つ) に自動適用 */
+.fixed.inset-0.z-50 [class*="max-w-"][class*="rounded"] {
+  border: 1.5px solid var(--border-strong) !important;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+/* モーダル内部のフォントサイズを少し大きく (デフォルト 14px → 16px) */
+.modal-card,
+.modal-card p,
+.modal-card label,
+.modal-card span:not(.text-xs):not(.text-[10px]):not(.text-[11px]):not(.text-[9px]) {
+  font-size: 1rem;
+}
+.modal-card h1, .modal-card h2, .modal-card h3 {
+  letter-spacing: 0.01em;
+}
+.modal-card input[type="text"],
+.modal-card input[type="email"],
+.modal-card input[type="number"],
+.modal-card input[type="search"],
+.modal-card input[type="url"],
+.modal-card input[type="tel"],
+.modal-card textarea,
+.modal-card select {
+  font-size: 16px !important;
+  border: 1px solid var(--border) !important;
+}
+.modal-card input:focus,
+.modal-card textarea:focus,
+.modal-card select:focus {
+  border-color: var(--border-strong) !important;
+  outline: none !important;
+}
+/* モーダル背景のスクリム強化 (オーバーレイ) */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(14px) !important;
 }
 
 /* Iris プラン CTA: hover で光が右へ走るエフェクト */

@@ -128,14 +128,13 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3"
-      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)' }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 modal-overlay"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
     >
       <motion.div
-        className="w-full max-w-4xl rounded-2xl overflow-hidden flex flex-col"
-        style={{ background: 'var(--bg, #15151c)', border: '1px solid var(--border)', maxHeight: 'calc(100dvh - 1.5rem)' }}
+        className="w-full max-w-4xl rounded-2xl overflow-hidden flex flex-col modal-card"
+        style={{ background: 'var(--bg, #15151c)', maxHeight: 'calc(100dvh - 1.5rem)' }}
         initial={{ scale: 0.96, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 12 }}
         onClick={e => e.stopPropagation()}
       >

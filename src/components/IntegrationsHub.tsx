@@ -7,6 +7,7 @@ import {
   sendBrief,
   type IntegrationConfig,
 } from '../lib/integrations';
+import AccountingIntegration from './AccountingIntegration';
 
 const SAMPLE_BRIEF = {
   title: 'テスト送信 — CORE Prism',
@@ -60,7 +61,18 @@ export default function IntegrationsHub() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* 会計サービス連携 (freee / マネーフォワード / 弥生) */}
+      <section className="space-y-3">
+        <h4 className="text-fg text-sm font-medium">💰 会計サービス連携</h4>
+        <AccountingIntegration />
+      </section>
+
+      <div className="h-px" style={{ background: 'var(--border)' }} />
+
+      {/* Slack / Discord Webhook */}
+      <section className="space-y-3">
+        <h4 className="text-fg text-sm font-medium">🔔 通知 Webhook</h4>
       <div className="flex items-center justify-between">
         <p className="text-fg-muted text-xs">Slack / Discord Webhook でブリーフを送信します</p>
         {!adding && (
@@ -206,6 +218,7 @@ export default function IntegrationsHub() {
           </motion.div>
         );
       })}
+      </section>
     </div>
   );
 }
