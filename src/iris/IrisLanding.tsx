@@ -231,7 +231,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
               fontSize: '0.95rem',
               padding: '0.9rem 1.85rem',
             }}>
-              ✦ 30 秒、自分で試す
+              無料で Iris を試す
             </button>
             <p style={{ fontSize: '0.75rem', color: 'rgba(255,250,245,0.45)', marginTop: '0.85rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
               14 日間無料 · クレカ不要
@@ -317,9 +317,9 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 >
                   <span style={{ position: 'relative', zIndex: 2 }}>
                     {p.id === 'studio' ? 'チームでの導入を相談' :
-                     p.id === 'pro' ? '👑 Pro を 14 日無料で' :
-                     p.id === 'standard' ? '✦ Standard を 14 日無料で (人気)' :
-                     '✨ Lite ではじめる (14 日無料)'}
+                     p.id === 'pro' ? 'Pro を 14 日無料で試す' :
+                     p.id === 'standard' ? 'Standard を 14 日無料で試す' :
+                     'Lite を 14 日無料で試す'}
                   </span>
                 </button>
                 <p style={{
@@ -345,7 +345,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purpleLt})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>いま、世界へ。</span>
           </h2>
           <p style={{ color: 'rgba(255,250,245,0.6)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.8, fontFamily: IRIS_FONTS.serif }}>14 日間、すべての機能を無料でお試しできます。</p>
-          <button onClick={onEnter} style={ctaBtnHero}>✦ あなたの光をはじめる</button>
+          <button onClick={onEnter} style={ctaBtnHero}>Iris を試す</button>
         </div>
       </section>
 

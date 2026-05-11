@@ -212,10 +212,10 @@ export default function KeynoteLanding() {
         </p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <a href="/" style={ctaBtnPrism}>
-            ✦ Prism ではじめる
+            Prism を試す
           </a>
           <a href="/iris" style={ctaBtnIris}>
-            ✶ Iris ではじめる
+            Iris を試す
           </a>
         </div>
         <p style={{ marginTop: '2rem', fontSize: '0.78rem', color: 'rgba(255,250,245,0.4)' }}>
@@ -290,7 +290,7 @@ function BrandCard({ brand, pick, setPick, tag, title, line, desc, href }: {
         fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.04em',
         boxShadow: `0 6px 20px ${accent}55`,
       }}>
-        この扉を開く →
+        試してみる →
       </span>
     </a>
   );

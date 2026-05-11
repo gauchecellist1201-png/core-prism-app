@@ -273,8 +273,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.7 }}>14 日間、すべてのエージェントを無料でお試しできます。</p>
           <button onClick={onEnterApp} style={{ ...ctaBtnHero, display: 'inline-flex', alignItems: 'center', gap: '0.55rem' }}>
-            <Sparkles size={18} strokeWidth={2.4} />
-            いますぐ解き放つ
+            無料で Prism を試す
           </button>
         </div>
       </section>

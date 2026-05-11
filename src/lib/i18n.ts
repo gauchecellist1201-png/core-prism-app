@@ -16,7 +16,7 @@ const TRANSLATIONS: Translations = {
   'lp.nav.agents':  { ja: '7つのエージェント', en: '7 Agents',     zh: '7个智能体' },
   'lp.nav.exec':    { ja: '実行する AI',        en: 'Execution AI', zh: '执行AI' },
   'lp.nav.pricing': { ja: '料金',               en: 'Pricing',      zh: '价格' },
-  'lp.nav.cta':     { ja: '解き放つ →',          en: 'Launch →',     zh: '开始 →' },
+  'lp.nav.cta':     { ja: '無料で試す →',        en: 'Try free →',   zh: '免费试用 →' },
 
   'lp.hero.eyebrow': {
     ja: 'CORE PRISM — AGENT OS FOR EVERY ROLE',
@@ -35,7 +35,7 @@ const TRANSLATIONS: Translations = {
     en: 'CORE Prism — the business edition of Core Identity OS. Seven agents take over your left-brain work so you can fully unleash your right-brain creation.',
     zh: 'CORE Prism 是 Core Identity OS 的事业家版。7 个分身代你处理左脑工作，把右脑彻底解放给"创造"。',
   },
-  'lp.hero.cta':  { ja: '✨ 7つの自分を解き放つ', en: '✨ Unlock Your 7 Selves', zh: '✨ 解放你的7重自我' },
+  'lp.hero.cta':  { ja: 'Prism を試す', en: 'Try Prism', zh: '试用 Prism' },
   'lp.hero.cta2': { ja: 'エージェントを見る',      en: 'See Agents',              zh: '查看智能体' },
   'lp.hero.free': {
     ja: '14 日間無料 · クレカ不要 · いつでも解約可',
@@ -77,7 +77,7 @@ const TRANSLATIONS: Translations = {
   'lp.final.h2.accent': { ja: '7 つの可能性',               en: '7 possibilities',     zh: '7种可能' },
   'lp.final.h2.line2':  { ja: 'に、\nエージェント AI を。', en: 'within you,\nagent AI awaits.', zh: '，\n注入智能体AI。' },
   'lp.final.sub':       { ja: '14 日間、すべてのエージェントを無料でお試しできます。', en: 'Try all agents free for 14 days.', zh: '14天免费体验所有智能体。' },
-  'lp.final.cta':       { ja: '✨ いますぐ解き放つ', en: '✨ Unlock now', zh: '✨ 立即解放' },
+  'lp.final.cta':       { ja: '無料で Prism を試す', en: 'Try Prism for free', zh: '免费试用 Prism' },
 
   'lp.footer.tagline':      { ja: 'すべての事業家に、\nエージェント AI を。', en: 'Agent AI\nfor every entrepreneur.', zh: '为每一位创业者，\n注入智能体AI。' },
   'lp.footer.product':      { ja: 'PRODUCT', en: 'PRODUCT', zh: 'PRODUCT' },
@@ -113,7 +113,7 @@ const TRANSLATIONS: Translations = {
     en: 'CORE Iris — the creator edition of Core Identity OS.\nA second you that handles DMs, negotiations, and posts — delivering your warmth to every single fan.',
     zh: 'CORE Iris 是 Core Identity OS 的创作者版。\nDM 回复、商务谈判、内容生成 —— 用你的温度，把"另一个你"传达给每一位粉丝。',
   },
-  'iris.hero.cta':  { ja: '✦ あなたの光をはじめる', en: '✦ Begin Your Light', zh: '✦ 开启你的光芒' },
+  'iris.hero.cta':  { ja: 'Iris を試す', en: 'Try Iris', zh: '试用 Iris' },
   'iris.hero.cta2': { ja: '機能を見る',              en: 'See Features',       zh: '查看功能' },
   'iris.hero.free': {
     ja: '14 日間無料 · クレカ不要 · いつでも解約可',
@@ -132,7 +132,7 @@ const TRANSLATIONS: Translations = {
   'iris.final.h2.line1': { ja: 'あなたの光を、', en: 'Your light,',        zh: '你的光芒，' },
   'iris.final.h2.line2': { ja: 'いま、世界へ。', en: 'to the world, now.', zh: '现在，释放到世界。' },
   'iris.final.sub':      { ja: '14 日間、すべての機能を無料でお試しできます。', en: 'Try all features free for 14 days.', zh: '14天免费体验所有功能。' },
-  'iris.final.cta':      { ja: '✦ あなたの光をはじめる', en: '✦ Begin Your Light', zh: '✦ 开启你的光芒' },
+  'iris.final.cta':      { ja: '無料で Iris を試す', en: 'Try Iris for free', zh: '免费试用 Iris' },
   'iris.footer.tagline': { ja: 'すべてのインフルエンサーに、\nエージェント AI を。', en: 'Agent AI\nfor every creator.', zh: '为每一位创作者，\n注入智能体AI。' },
 
   'settings.title':          { ja: '設定',           en: 'Settings',              zh: '设置' },

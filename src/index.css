@@ -573,6 +573,46 @@ input, textarea, select { font-family: inherit; }
 }
 
 /* ────────────────────────────────────────
+   iPhone 専用 — タッチ対象 44px 確保 + 余白圧縮 + 横スクロール抑制
+   ──────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* 主要 CTA を画面幅近くまで広げる */
+  .iris-cta-mobile, .prism-cta-mobile {
+    width: 100% !important;
+    max-width: 360px !important;
+    min-height: 52px !important;
+    font-size: 1rem !important;
+  }
+  /* LP セクションの padding を圧縮 */
+  .lp-section-pad {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  /* タブの padding 圧縮 (Iris) */
+  .iris-tabs button {
+    padding: 0.5rem 0.85rem !important;
+    font-size: 0.82rem !important;
+  }
+  /* Iris ヘッダの戻る/メニューボタンを 44px 確保 */
+  .iris-header-btn {
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+  /* 全ボタンの最低タッチ対象 (44px) */
+  button:not(.iris-tabs button):not(.lp-nav-link) {
+    min-height: 44px;
+  }
+  /* iPhone Safari の安全な水平スクロール抑制 */
+  html, body {
+    overflow-x: hidden;
+  }
+  /* 7 エージェントカードの padding 圧縮 */
+  .lp-section-pad [style*="rgba(255,255,255,0.025)"] {
+    padding: 1.1rem 1rem !important;
+  }
+}
+
+/* ────────────────────────────────────────
    モーダルカード共通強化 — 縁を明瞭、影を強く、フォント可読性 UP
    既存モーダルの外枠は className に "modal-card" を追加するだけで適用される。
    既に inline style で border 指定がある場合は CSS specificity で適用されない
