@@ -4,6 +4,7 @@ import type { AppSettings } from '../types/identity';
 import { estimateMonthlyCost } from '../hooks/useClaude';
 import { OPENAI_VOICE_OPTIONS, isOpenAITTSConfigured, type OpenAIVoice } from '../lib/ttsOpenAI';
 import { resetOnboarding } from '../lib/onboarding';
+import IntegrationsHub from './IntegrationsHub';
 
 interface Props {
   settings: AppSettings;
@@ -27,7 +28,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
   const [voiceEnabled, setVoiceEnabled] = useState(settings.voiceEnabled !== false);
   const [openaiVoice, setOpenaiVoice] = useState<OpenAIVoice>((settings as any).openaiVoice || 'nova');
   const openaiAvailable = isOpenAITTSConfigured();
-  const [tab, setTab] = useState<'general' | 'ai' | 'voice' | 'usage'>('general');
+  const [tab, setTab] = useState<'general' | 'ai' | 'voice' | 'usage' | 'integrations'>('general');
 
   const monthlyEst = estimateMonthlyCost(20, 800, 400, model);
   const jpy150 = (n: number) => Math.round(n * 150);
@@ -55,7 +56,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
         </div>
 
         <div className="flex gap-1 px-5 pt-3 pb-0">
-          {[['general', '一般'], ['ai', 'AI設定'], ['voice', '音声'], ['usage', '使用状況']].map(([id, label]) => (
+          {[['general', '一般'], ['ai', 'AI設定'], ['voice', '音声'], ['usage', '使用状況'], ['integrations', '連携']].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id as typeof tab)}
               className="px-3 py-1.5 rounded-lg text-xs transition-all"
               style={{
@@ -216,6 +217,12 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats 
                     </div>
                   </div>
                 )}
+              </motion.div>
+            )}
+
+            {tab === 'integrations' && (
+              <motion.div key="integrations" className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <IntegrationsHub />
               </motion.div>
             )}
 

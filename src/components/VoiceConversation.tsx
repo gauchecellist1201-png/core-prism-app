@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { enqueueClaudeCall } from '../lib/apiQueue';
-import { PrismLogo, IrisLogo } from './Logo';
+import AnimatedAvatar, { type AvatarMood } from './AnimatedAvatar';
 
 interface Props {
   open: boolean;
@@ -161,7 +161,11 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
   const ss = (elapsed % 60).toString().padStart(2, '0');
 
   const aiName = brand === 'iris' ? 'アイリス' : 'プリズム';
-  const BrandIcon = brand === 'iris' ? IrisLogo : PrismLogo;
+
+  const avatarMood: AvatarMood =
+    phase === 'processing' ? 'thinking' :
+    phase === 'ai-speaking' ? 'happy' :
+    phase === 'listening' ? 'curious' : 'neutral';
 
   const lastTurn = turns[turns.length - 1];
 
@@ -190,38 +194,31 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
 
       {/* AI アバター */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        {/* アニメーション SVG アバター */}
         <motion.div
-          animate={{
-            scale: phase === 'ai-speaking' ? [1, 1.08, 1] : phase === 'listening' ? [1, 1.04, 1] : 1,
-          }}
-          transition={{ duration: phase === 'ai-speaking' ? 0.7 : 1.4, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
-            width: 220,
-            height: 220,
-            borderRadius: '50%',
-            background: `radial-gradient(circle at 30% 30%, ${accentColor}, ${accentColor}88 60%, ${accentColor}33)`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 0 80px ${accentColor}88, inset 0 0 60px rgba(255,255,255,0.2)`,
-            position: 'relative',
-            marginBottom: 32,
-          }}
+          animate={{ scale: phase === 'ai-speaking' ? [1, 1.06, 1] : phase === 'listening' ? [1, 1.03, 1] : 1 }}
+          transition={{ duration: phase === 'ai-speaking' ? 0.8 : 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ position: 'relative', marginBottom: 32 }}
         >
-          {/* ブランドロゴをアバターとして表示 */}
-          <div style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.3))', transform: 'scale(1.05)' }}>
-            <BrandIcon size={120} withWordmark={false} />
-          </div>
+          <AnimatedAvatar
+            brand={brand}
+            accentColor={accentColor}
+            isSpeaking={tts.state === 'speaking'}
+            mood={avatarMood}
+            size={220}
+          />
 
-          {/* リング エフェクト */}
+          {/* パルス リング エフェクト */}
           {(phase === 'ai-speaking' || phase === 'listening') && (
             <>
               <motion.div
-                animate={{ scale: [1, 1.45], opacity: [0.6, 0] }}
+                animate={{ scale: [1, 1.45], opacity: [0.55, 0] }}
                 transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
                 style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `2px solid ${accentColor}`, pointerEvents: 'none' }}
               />
               <motion.div
-                animate={{ scale: [1, 1.7], opacity: [0.4, 0] }}
-                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
+                animate={{ scale: [1, 1.7], opacity: [0.35, 0] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut', delay: 0.45 }}
                 style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `2px solid ${accentColor}`, pointerEvents: 'none' }}
               />
             </>

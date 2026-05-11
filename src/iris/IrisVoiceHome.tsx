@@ -198,6 +198,17 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
               何から、はなしましょうか?
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', maxWidth: 600, width: '100%' }}>
+              {/* 動画スタジオへの直接ナビ */}
+              <button onClick={() => onNavigate?.('video')} style={{
+                background: `linear-gradient(135deg, ${bg.accent}22, ${bg.accent}11)`,
+                border: `1px solid ${bg.accent}55`,
+                borderRadius: 12, padding: '0.65rem 0.75rem',
+                cursor: 'pointer', fontSize: '0.85rem',
+                color: bg.ink, fontFamily: IRIS_FONTS.body, textAlign: 'left',
+                fontWeight: 600,
+              }}>
+                🎬 動画スタジオを開く
+              </button>
               {[
                 { e: '📸', t: 'スクショから案件追加' },
                 { e: '💬', t: '断り文を書いて' },

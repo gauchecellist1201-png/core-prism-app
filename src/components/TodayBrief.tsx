@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Persona, Proposal } from '../types/identity';
+import { listIntegrations, sendBrief } from '../lib/integrations';
 
 interface Props {
   persona: Persona;
@@ -28,6 +30,25 @@ export default function TodayBrief({
   shadowDraftCount = 0,
   onOpenShadow,
 }: Props) {
+  const [briefSending, setBriefSending] = useState(false);
+  const [briefSent, setBriefSent] = useState(false);
+  const enabledIntegrations = listIntegrations().filter(i => i.enabled);
+
+  const handleSendToIntegrations = async () => {
+    if (!proposal || briefSending) return;
+    setBriefSending(true);
+    const brief = {
+      title: proposal.title,
+      message: proposal.message,
+      actions: proposal.actions,
+      generatedAt: proposal.generatedAt,
+    };
+    await Promise.all(enabledIntegrations.map(i => sendBrief(i, brief)));
+    setBriefSending(false);
+    setBriefSent(true);
+    setTimeout(() => setBriefSent(false), 3000);
+  };
+
   const hour = new Date().getHours();
   const greet = hour < 11 ? 'おはよう' : hour < 18 ? 'こんにちは' : 'こんばんは';
 
@@ -163,6 +184,20 @@ export default function TodayBrief({
             >
               📬 返信下書き済 {shadowDraftCount}件
             </motion.button>
+          )}
+          {proposal && enabledIntegrations.length > 0 && (
+            <button
+              onClick={handleSendToIntegrations}
+              disabled={briefSending}
+              className="text-sm px-4 py-2.5 rounded-lg transition-all disabled:opacity-50"
+              style={{
+                background: briefSent ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${briefSent ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                color: briefSent ? '#4ade80' : '#a0a0c0',
+              }}
+            >
+              {briefSending ? '送信中…' : briefSent ? '送信完了' : '📤 Slack に送信'}
+            </button>
           )}
           {proposal && (
             <span className="text-fg-muted text-xs ml-auto">
