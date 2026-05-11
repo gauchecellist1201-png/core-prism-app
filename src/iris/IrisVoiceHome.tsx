@@ -9,6 +9,10 @@ import type { MediaKit, InfluencerDeal } from '../types/influencerDeal';
 import { chatWithIris, type AssistantMessage } from './irisAssistant';
 import { shareToInstagram } from './instagramShare';
 import ApiErrorCard from '../components/ApiErrorCard';
+import {
+  Film, Camera, MessageSquare, BarChart3, HeartPulse, Mic, Mail,
+  Image as ImageIcon, Calendar, Wallet,
+} from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { useVoiceInput } from '../hooks/useVoiceInput';
@@ -159,9 +163,9 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem',
       }}>
-        <SummaryCard bg={bg} label="進行中"   value={activeCount + ' 件'}   icon="💌" />
-        <SummaryCard bg={bg} label="今週納期" value={upcomingThisWeek + ' 件'} icon="📅" />
-        <SummaryCard bg={bg} label="今月報酬" value={'¥' + (earnings / 1000).toFixed(0) + 'K'} icon="💰" />
+        <SummaryCard bg={bg} label="進行中"   value={activeCount + ' 件'}      Icon={Mail} />
+        <SummaryCard bg={bg} label="今週納期" value={upcomingThisWeek + ' 件'} Icon={Calendar} />
+        <SummaryCard bg={bg} label="今月報酬" value={'¥' + (earnings / 1000).toFixed(0) + 'K'} Icon={Wallet} />
       </div>
 
       {/* AI 名前 + 開始メッセージ */}
@@ -204,27 +208,31 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
               <button onClick={() => onNavigate?.('video')} style={{
                 background: `linear-gradient(135deg, ${bg.accent}22, ${bg.accent}11)`,
                 border: `1px solid ${bg.accent}55`,
-                borderRadius: 12, padding: '0.65rem 0.75rem',
-                cursor: 'pointer', fontSize: '0.85rem',
+                borderRadius: 12, padding: '0.7rem 0.9rem',
+                cursor: 'pointer', fontSize: '0.88rem',
                 color: bg.ink, fontFamily: IRIS_FONTS.body, textAlign: 'left',
                 fontWeight: 600,
+                display: 'inline-flex', alignItems: 'center', gap: '0.55rem',
               }}>
-                🎬 動画スタジオを開く
+                <Film size={16} color={bg.accent} strokeWidth={2.2} />
+                動画スタジオを開く
               </button>
               {[
-                { e: '📸', t: 'スクショから案件追加' },
-                { e: '💬', t: '断り文を書いて' },
-                { e: '📊', t: '今週、何投稿すべき?' },
-                { e: '💆', t: '肌が荒れて困ってる' },
+                { Ico: Camera, t: 'スクショから案件追加' },
+                { Ico: MessageSquare, t: '断り文を書いて' },
+                { Ico: BarChart3, t: '今週、何投稿すべき?' },
+                { Ico: HeartPulse, t: '肌が荒れて困ってる' },
               ].map(s => (
                 <button key={s.t} onClick={() => setTextInput(s.t)} style={{
                   background: 'rgba(255,255,255,0.85)',
                   border: `1px solid ${bg.cardBorder}`,
-                  borderRadius: 12, padding: '0.65rem 0.75rem',
-                  cursor: 'pointer', fontSize: '0.85rem',
+                  borderRadius: 12, padding: '0.7rem 0.9rem',
+                  cursor: 'pointer', fontSize: '0.88rem',
                   color: '#1F1A2E', fontFamily: IRIS_FONTS.body, textAlign: 'left',
+                  display: 'inline-flex', alignItems: 'center', gap: '0.55rem',
                 }}>
-                  {s.e} {s.t}
+                  <s.Ico size={16} color={bg.accent} strokeWidth={2.2} />
+                  {s.t}
                 </button>
               ))}
             </div>
@@ -295,12 +303,14 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
                       style={{
                         background: 'linear-gradient(135deg, #FCB045 0%, #E1306C 50%, #833AB4 100%)',
                         color: '#fff', border: 'none',
-                        borderRadius: 999, padding: '0.45rem 1.05rem',
+                        borderRadius: 999, padding: '0.5rem 1.1rem',
                         fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer',
                         fontFamily: IRIS_FONTS.body,
                         boxShadow: '0 4px 14px rgba(225,48,108,0.32)',
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
                       }}>
-                      📸 Instagram で投稿 →
+                      <Camera size={14} strokeWidth={2.4} />
+                      Instagram で投稿
                     </button>
                     <button
                       onClick={async () => {
@@ -311,11 +321,13 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
                         background: 'rgba(255,255,255,0.94)',
                         border: `1px solid ${bg.accent}55`,
                         color: bg.accent,
-                        borderRadius: 999, padding: '0.45rem 1.05rem',
+                        borderRadius: 999, padding: '0.5rem 1.1rem',
                         fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
                         fontFamily: IRIS_FONTS.body,
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
                       }}>
-                      ⏱ ストーリーへ
+                      <ImageIcon size={14} strokeWidth={2.4} />
+                      ストーリーへ
                     </button>
                   </div>
                 )}
@@ -393,7 +405,11 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
               opacity: voiceAvailable ? 1 : 0.5,
             }}
           >
-            {listening ? '⏹' : '🎙'}
+            {listening ? (
+              <span style={{ display: 'inline-block', width: 28, height: 28, background: '#fff', borderRadius: 4 }} />
+            ) : (
+              <Mic size={38} strokeWidth={2.0} color="#fff" />
+            )}
           </motion.button>
           <p style={{ marginTop: '0.5rem', color: subtleColor, fontSize: '0.78rem' }}>
             {listening ? '聞いてます…' : voiceAvailable ? '押して話す or 下に書く' : '(音声非対応)'}
@@ -412,9 +428,9 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
             border: `1px solid ${bg.cardBorder}`,
             borderRadius: 14, width: 44, height: 44,
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', fontSize: '1.2rem', flexShrink: 0,
+            cursor: 'pointer', flexShrink: 0,
           }}>
-            📷
+            <Camera size={20} color={bg.accent} strokeWidth={2.2} />
             <input type="file" accept="image/*" multiple style={{ display: 'none' }}
               onChange={e => handleAddImages(e.target.files)} />
           </label>
@@ -490,7 +506,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
   );
 }
 
-function SummaryCard({ bg, label, value, icon }: { bg: IrisBackgroundDef; label: string; value: string; icon: string }) {
+function SummaryCard({ bg, label, value, Icon }: { bg: IrisBackgroundDef; label: string; value: string; Icon: any }) {
   // 数字部分とサフィックス (例: '3 件' / '¥12K') を分離して、数字を強く目立たせる
   const m = value.match(/^([¥]?[\d.,]+)\s*(.*)$/);
   const num = m ? m[1] : value;
@@ -503,7 +519,7 @@ function SummaryCard({ bg, label, value, icon }: { bg: IrisBackgroundDef; label:
       minHeight: 76,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.3rem' }}>
-        <span style={{ fontSize: '0.95rem' }}>{icon}</span>
+        <Icon size={14} color={bg.accent} strokeWidth={2.2} />
         <span style={{ fontSize: '0.68rem', color: bg.inkSoft, letterSpacing: '0.06em', fontWeight: 600 }}>{label}</span>
       </div>
       <div style={{

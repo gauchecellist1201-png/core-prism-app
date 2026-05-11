@@ -7,21 +7,30 @@ import { motion } from 'framer-motion';
 import { PrismLogo } from './Logo';
 import { useLocale } from '../hooks/useLocale';
 import type { Locale } from '../lib/i18n';
+import {
+  Compass, Briefcase, TrendingUp, Sparkles, BookOpen, Users, Heart,
+  FileText, FileSpreadsheet, ScrollText, Target, Mail, Receipt, Palette, Mic,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface Props {
   onEnterApp: () => void;
   onOpenLegal: (kind: 'terms' | 'privacy' | 'tokushou') => void;
 }
 
-// ─── PRISM 7色 (虹のスペクトル) ─────────────────
-const SPECTRUM = [
-  { key: 'red',    color: '#ff5757', name: '経営', icon: '🧭', role: 'CEO Agent',       desc: '戦略立案・KPI 自動モニタリング・意思決定メモ生成' },
-  { key: 'orange', color: '#ff9842', name: '営業', icon: '💼', role: 'Sales Agent',     desc: 'リード探索・商談スクリプト・提案書ドラフト・反論対応' },
-  { key: 'yellow', color: '#fbbf24', name: '財務', icon: '📊', role: 'CFO Agent',       desc: 'P&L 自動生成・経費OCR・予算配分・キャッシュ予測' },
-  { key: 'green',  color: '#4ade80', name: '創造', icon: '✨',    role: 'Creative Agent', desc: '画像生成・キャプション・ブランド設計・スライド自動化' },
-  { key: 'blue',   color: '#60a5fa', name: '学び', icon: '📚', role: 'Knowledge Agent', desc: 'YouTube 要約・読書ノート・知識グラフ・横断検索' },
-  { key: 'indigo', color: '#a78bfa', name: '人材', icon: '👥', role: 'People Agent',   desc: '1on1 履歴・センチメント分析・採用面接・チームケア' },
-  { key: 'violet', color: '#f472b6', name: '生活', icon: '❤️‍🩹', role: 'Life Agent',     desc: '健康・スケジュール・家族の予定・心の整え' },
+// ─── PRISM 7色 (虹のスペクトル) — Lucide アイコン化済み ─────────────────
+type AgentSpec = {
+  key: string; color: string; name: string;
+  Icon: LucideIcon; role: string; desc: string;
+};
+const SPECTRUM: AgentSpec[] = [
+  { key: 'red',    color: '#ff5757', name: '経営', Icon: Compass,    role: 'CEO Agent',       desc: '戦略立案・KPI 自動モニタリング・意思決定メモ生成' },
+  { key: 'orange', color: '#ff9842', name: '営業', Icon: Briefcase,  role: 'Sales Agent',     desc: 'リード探索・商談スクリプト・提案書ドラフト・反論対応' },
+  { key: 'yellow', color: '#fbbf24', name: '財務', Icon: TrendingUp, role: 'CFO Agent',       desc: 'P&L 自動生成・経費OCR・予算配分・キャッシュ予測' },
+  { key: 'green',  color: '#4ade80', name: '創造', Icon: Sparkles,   role: 'Creative Agent',  desc: '画像生成・キャプション・ブランド設計・スライド自動化' },
+  { key: 'blue',   color: '#60a5fa', name: '学び', Icon: BookOpen,   role: 'Knowledge Agent', desc: 'YouTube 要約・読書ノート・知識グラフ・横断検索' },
+  { key: 'indigo', color: '#a78bfa', name: '人材', Icon: Users,      role: 'People Agent',    desc: '1on1 履歴・センチメント分析・採用面接・チームケア' },
+  { key: 'violet', color: '#f472b6', name: '生活', Icon: Heart,      role: 'Life Agent',      desc: '健康・スケジュール・家族の予定・心の整え' },
 ];
 
 const BG_DARK = '#070712';
@@ -151,7 +160,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
             {SPECTRUM.map((s, i) => (
               <motion.div
                 key={s.key}
@@ -163,8 +172,8 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
               >
                 <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: s.color, opacity: 0.18, filter: 'blur(40px)', pointerEvents: 'none' }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', position: 'relative', zIndex: 2 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${s.color}, ${s.color}aa)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', boxShadow: `0 8px 24px ${s.color}55` }}>
-                    {s.icon}
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${s.color}, ${s.color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 24px ${s.color}55, inset 0 1px 0 rgba(255,255,255,0.2)` }}>
+                    <s.Icon size={22} color="#FFFFFF" strokeWidth={2.2} />
                   </div>
                   <div>
                     <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: s.color, fontWeight: 700, marginBottom: 2 }}>{s.role.toUpperCase()}</p>
@@ -196,17 +205,25 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
             {[
-              { emoji: '📝', label: '議事録 AI', desc: '会話を録音 → 要約・タスク抽出・送付メール' },
-              { emoji: '📑', label: 'スライド AI', desc: '構成・原稿・デザインまでワンコマンドで' },
-              { emoji: '⚖️', label: '契約書 AI', desc: 'NDA・業務委託・購貸 — 雛形+リスク確認' },
-              { emoji: '🎯', label: '商談 AI', desc: '反論ロープレ・刺さるトーク・次の一手' },
-              { emoji: '💌', label: 'メール AI', desc: '受信トレイを 30 分間隔で巡回・下書き済' },
-              { emoji: '🧾', label: '請求 AI', desc: '見積→発注→納品→請求の一気通㛧' },
-              { emoji: '🎨', label: '画像 AI', desc: 'ブランドに沿った投稿・サムネ・OG画像' },
-              { emoji: '🎤', label: '音声入力', desc: '思考をしゃべるだけで自動分類・整理' },
+              { Icon: FileText, color: '#60a5fa', label: '議事録 AI', desc: '会話を録音 → 要約・タスク抽出・送付メール' },
+              { Icon: FileSpreadsheet, color: '#a78bfa', label: 'スライド AI', desc: '構成・原稿・デザインまでワンコマンドで' },
+              { Icon: ScrollText, color: '#f472b6', label: '契約書 AI', desc: 'NDA・業務委託・購貸 — 雛形+リスク確認' },
+              { Icon: Target, color: '#ff5757', label: '商談 AI', desc: '反論ロープレ・刺さるトーク・次の一手' },
+              { Icon: Mail, color: '#ff9842', label: 'メール AI', desc: '受信トレイを 30 分間隔で巡回・下書き済' },
+              { Icon: Receipt, color: '#fbbf24', label: '請求 AI', desc: '見積→発注→納品→請求の一気通貫' },
+              { Icon: Palette, color: '#4ade80', label: '画像 AI', desc: 'ブランドに沿った投稿・サムネ・OG画像' },
+              { Icon: Mic, color: '#60a5fa', label: '音声入力', desc: '思考をしゃべるだけで自動分類・整理' },
             ].map((f, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.4, delay: (i % 4) * 0.05 }} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '1.25rem' }}>
-                <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{f.emoji}</div>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: `linear-gradient(135deg, ${f.color}, ${f.color}cc)`,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '0.75rem',
+                  boxShadow: `0 6px 16px ${f.color}44, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                }}>
+                  <f.Icon size={20} color="#fff" strokeWidth={2.2} />
+                </div>
                 <p style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{f.label}</p>
                 <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>{f.desc}</p>
               </motion.div>
@@ -255,7 +272,10 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
             エージェント AI を。
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.7 }}>14 日間、すべてのエージェントを無料でお試しできます。</p>
-          <button onClick={onEnterApp} style={ctaBtnHero}>✨ いますぐ解き放つ</button>
+          <button onClick={onEnterApp} style={{ ...ctaBtnHero, display: 'inline-flex', alignItems: 'center', gap: '0.55rem' }}>
+            <Sparkles size={18} strokeWidth={2.4} />
+            いますぐ解き放つ
+          </button>
         </div>
       </section>
 
@@ -314,7 +334,7 @@ function PrismFanVisualization() {
         {SPECTRUM.map((s, i) => {
           const offset = i - 3;
           const rotateBase = offset * 8;
-          return <motion.div key={s.key} className="lp-prism-fan-card-min" initial={{ opacity: 0, y: 20, rotate: 0 }} animate={{ opacity: 1, y: 0, rotate: rotateBase }} transition={{ duration: 0.7, delay: 0.4 + i * 0.08, ease: 'easeOut' }} style={{ flex: '1 1 0', minWidth: 70, maxWidth: 130, aspectRatio: '3 / 5', borderRadius: 14, background: `linear-gradient(180deg, ${s.color} 0%, ${s.color}88 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0.6rem 0.4rem', color: '#fff', fontSize: '0.7rem', fontWeight: 700, textAlign: 'center', boxShadow: `0 12px 32px ${s.color}55`, transformOrigin: 'bottom center' }}><div style={{ fontSize: '1.5rem', marginBottom: 4 }}>{s.icon}</div><div style={{ opacity: 0.95 }}>{s.name}</div><div style={{ fontSize: '0.55rem', opacity: 0.75, marginTop: 2, letterSpacing: '0.05em' }}>{s.role}</div></motion.div>;
+          return <motion.div key={s.key} className="lp-prism-fan-card-min" initial={{ opacity: 0, y: 20, rotate: 0 }} animate={{ opacity: 1, y: 0, rotate: rotateBase }} transition={{ duration: 0.7, delay: 0.4 + i * 0.08, ease: 'easeOut' }} style={{ flex: '1 1 0', minWidth: 70, maxWidth: 130, aspectRatio: '3 / 5', borderRadius: 14, background: `linear-gradient(180deg, ${s.color} 0%, ${s.color}88 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0.6rem 0.4rem', color: '#fff', fontSize: '0.7rem', fontWeight: 700, textAlign: 'center', boxShadow: `0 12px 32px ${s.color}55`, transformOrigin: 'bottom center' }}><div style={{ marginBottom: 6, display: 'flex' }}><s.Icon size={22} color="#FFFFFF" strokeWidth={2.2} /></div><div style={{ opacity: 0.95 }}>{s.name}</div><div style={{ fontSize: '0.55rem', opacity: 0.75, marginTop: 2, letterSpacing: '0.05em' }}>{s.role}</div></motion.div>;
         })}
       </div>
     </div>
@@ -332,7 +352,7 @@ function PrismDashboardMock() {
         <div style={{ marginLeft: 'auto', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>coreprism.app</div>
       </div>
       <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-        {SPECTRUM.map(s => <div key={s.key} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', background: `${s.color}25`, color: s.color, border: `1px solid ${s.color}50`, borderRadius: 999, padding: '0.3rem 0.6rem', fontSize: '0.7rem', fontWeight: 700 }}><span>{s.icon}</span><span>{s.name}</span></div>)}
+        {SPECTRUM.map(s => <div key={s.key} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', background: `${s.color}25`, color: s.color, border: `1px solid ${s.color}50`, borderRadius: 999, padding: '0.3rem 0.6rem', fontSize: '0.7rem', fontWeight: 700 }}><s.Icon size={12} strokeWidth={2.4} /><span>{s.name}</span></div>)}
       </div>
       <div style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.18), rgba(96,165,250,0.1))', border: '1px solid rgba(167,139,250,0.3)', borderRadius: 12, padding: '0.85rem 1rem', marginBottom: '0.75rem' }}>
         <p style={{ fontSize: '0.6rem', letterSpacing: '0.2em', color: '#c4b5fd', fontWeight: 700, marginBottom: 4 }}>今日のブリーフ</p>

@@ -21,6 +21,30 @@ import {
 } from '../types/influencerDeal';
 import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMessage } from './beautyAdvisor';
 import { shareToInstagram } from './instagramShare';
+import {
+  Sparkles, TrendingUp, Search, Mail, Film, MessageSquare, Edit3,
+  Camera, HeartPulse, Leaf, UsersRound, Users, Handshake, FileText,
+  Menu as MenuIcon,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+// ─── タブ用 Lucide アイコンマップ ──────────────
+const IRIS_TAB_ICON: Record<string, LucideIcon> = {
+  home: Sparkles,
+  strategy: TrendingUp,
+  triage: Search,
+  deals: Mail,
+  director: Film,
+  negotiate: MessageSquare,
+  draft: Edit3,
+  image: Camera,
+  beauty: HeartPulse,
+  health: Leaf,
+  community: UsersRound,
+  team: Users,
+  brands: Handshake,
+  kit: FileText,
+};
 import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 import IrisDirectorView from './IrisDirectorView';
@@ -216,45 +240,49 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4,
         }}>
           {[
-            { id: 'home' as Tab,      e: '✦', l: 'ホーム',       primary: true },
-            { id: 'strategy' as Tab,  e: '📈', l: '戦略',         primary: true },
-            { id: 'triage' as Tab,    e: '🔍', l: '案件精査',     primary: true },
-            { id: 'deals' as Tab,     e: '💌', l: '案件',         primary: true },
-            { id: 'director' as Tab,  e: '🎬', l: '丸投げ編集',   primary: false },
-            { id: 'negotiate' as Tab, e: '💬', l: '交渉',         primary: false },
-            { id: 'draft' as Tab,     e: '✍',  l: '投稿下書き',   primary: false },
-            { id: 'image' as Tab,     e: '📷', l: '画像加工',     primary: false },
-            { id: 'beauty' as Tab,    e: '💆‍♀️', l: '美容相談',  primary: false },
-            { id: 'health' as Tab,    e: '🌿', l: 'ヘルス',       primary: false },
-            { id: 'community' as Tab, e: '🌹', l: 'コミュニティ', primary: false },
-            { id: 'team' as Tab,      e: '🌷', l: 'チーム',       primary: false },
-            { id: 'brands' as Tab,    e: '🤝', l: 'ブランド探し', primary: false },
-            { id: 'kit' as Tab,       e: '📇', l: 'メディアキット', primary: false },
-          ].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={t.primary ? 'iris-tab-primary' : 'iris-tab-secondary'}
-              style={{
-                background: tab === t.id
-                  ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`
-                  : 'rgba(255,255,255,0.92)',
-                color: tab === t.id ? '#FFFFFF' : '#1F1A2E',
-                border: tab === t.id ? 'none' : `1px solid rgba(31,26,46,0.08)`,
-                borderRadius: 999,
-                padding: '0.55rem 1.15rem',
-                fontSize: '0.85rem',
-                fontWeight: tab === t.id ? 700 : 600,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                fontFamily: IRIS_FONTS.body,
-                boxShadow: tab === t.id
-                  ? `0 6px 18px ${bg.accent}55`
-                  : '0 1px 3px rgba(31,26,46,0.06)',
-                transition: 'all 0.15s',
-              }}>
-              <span style={{ marginRight: 6 }}>{t.e}</span>
-              {t.l}
-            </button>
-          ))}
+            { id: 'home' as Tab,      l: 'ホーム',         primary: true },
+            { id: 'strategy' as Tab,  l: '戦略',           primary: true },
+            { id: 'triage' as Tab,    l: '案件精査',       primary: true },
+            { id: 'deals' as Tab,     l: '案件',           primary: true },
+            { id: 'director' as Tab,  l: '丸投げ編集',     primary: false },
+            { id: 'negotiate' as Tab, l: '交渉',           primary: false },
+            { id: 'draft' as Tab,     l: '投稿下書き',     primary: false },
+            { id: 'image' as Tab,     l: '画像加工',       primary: false },
+            { id: 'beauty' as Tab,    l: '美容相談',       primary: false },
+            { id: 'health' as Tab,    l: 'ヘルス',         primary: false },
+            { id: 'community' as Tab, l: 'コミュニティ',   primary: false },
+            { id: 'team' as Tab,      l: 'チーム',         primary: false },
+            { id: 'brands' as Tab,    l: 'ブランド探し',   primary: false },
+            { id: 'kit' as Tab,       l: 'メディアキット', primary: false },
+          ].map(t => {
+            const Ico = IRIS_TAB_ICON[t.id] || Sparkles;
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={t.primary ? 'iris-tab-primary' : 'iris-tab-secondary'}
+                style={{
+                  background: tab === t.id
+                    ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`
+                    : 'rgba(255,255,255,0.92)',
+                  color: tab === t.id ? '#FFFFFF' : '#1F1A2E',
+                  border: tab === t.id ? 'none' : `1px solid rgba(31,26,46,0.08)`,
+                  borderRadius: 999,
+                  padding: '0.55rem 1.05rem',
+                  fontSize: '0.85rem',
+                  fontWeight: tab === t.id ? 700 : 600,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  fontFamily: IRIS_FONTS.body,
+                  boxShadow: tab === t.id
+                    ? `0 6px 18px ${bg.accent}55`
+                    : '0 1px 3px rgba(31,26,46,0.06)',
+                  transition: 'all 0.15s',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}>
+                <Ico size={14} strokeWidth={2.4} />
+                {t.l}
+              </button>
+            );
+          })}
           {/* モバイル用 「もっと」 トリガー: タブ末尾に配置 */}
           <button onClick={() => setMoreOpen(true)} className="iris-tab-more"
             style={{
@@ -267,8 +295,10 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               cursor: 'pointer', whiteSpace: 'nowrap',
               fontFamily: IRIS_FONTS.body,
               boxShadow: '0 1px 3px rgba(31,26,46,0.06)',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
             }}>
-            ⋯ メニュー
+            <MenuIcon size={14} strokeWidth={2.4} />
+            メニュー
           </button>
         </nav>
       </header>
@@ -307,36 +337,47 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.6rem' }}>
                 {[
-                  { id: 'home' as Tab,      e: '✦', l: 'ホーム' },
-                  { id: 'strategy' as Tab,  e: '📈', l: '戦略' },
-                  { id: 'triage' as Tab,    e: '🔍', l: '案件精査' },
-                  { id: 'deals' as Tab,     e: '💌', l: '案件' },
-                  { id: 'director' as Tab,  e: '🎬', l: '丸投げ編集' },
-                  { id: 'negotiate' as Tab, e: '💬', l: '交渉' },
-                  { id: 'draft' as Tab,     e: '✍',  l: '投稿下書き' },
-                  { id: 'image' as Tab,     e: '📷', l: '画像加工' },
-                  { id: 'beauty' as Tab,    e: '💆‍♀️', l: '美容相談' },
-                  { id: 'health' as Tab,    e: '🌿', l: 'ヘルス' },
-                  { id: 'community' as Tab, e: '🌹', l: 'コミュニティ' },
-                  { id: 'team' as Tab,      e: '🌷', l: 'チーム' },
-                  { id: 'brands' as Tab,    e: '🤝', l: 'ブランド探し' },
-                  { id: 'kit' as Tab,       e: '📇', l: 'メディアキット' },
-                ].map(t => (
-                  <button key={t.id}
-                    onClick={() => { setTab(t.id); setMoreOpen(false); }}
-                    style={{
-                      background: tab === t.id ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}dd)` : 'rgba(248,244,252,1)',
-                      color: tab === t.id ? '#fff' : '#1F1A2E',
-                      border: 'none', borderRadius: 14,
-                      padding: '0.85rem 0.5rem', fontSize: '0.85rem', fontWeight: 600,
-                      cursor: 'pointer', textAlign: 'center',
-                      boxShadow: tab === t.id ? `0 6px 18px ${bg.accent}45` : 'none',
-                      minHeight: 56,
-                    }}>
-                    <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{t.e}</div>
-                    {t.l}
-                  </button>
-                ))}
+                  { id: 'home' as Tab,      l: 'ホーム' },
+                  { id: 'strategy' as Tab,  l: '戦略' },
+                  { id: 'triage' as Tab,    l: '案件精査' },
+                  { id: 'deals' as Tab,     l: '案件' },
+                  { id: 'director' as Tab,  l: '丸投げ編集' },
+                  { id: 'negotiate' as Tab, l: '交渉' },
+                  { id: 'draft' as Tab,     l: '投稿下書き' },
+                  { id: 'image' as Tab,     l: '画像加工' },
+                  { id: 'beauty' as Tab,    l: '美容相談' },
+                  { id: 'health' as Tab,    l: 'ヘルス' },
+                  { id: 'community' as Tab, l: 'コミュニティ' },
+                  { id: 'team' as Tab,      l: 'チーム' },
+                  { id: 'brands' as Tab,    l: 'ブランド探し' },
+                  { id: 'kit' as Tab,       l: 'メディアキット' },
+                ].map(t => {
+                  const Ico = IRIS_TAB_ICON[t.id] || Sparkles;
+                  const isActive = tab === t.id;
+                  return (
+                    <button key={t.id}
+                      onClick={() => { setTab(t.id); setMoreOpen(false); }}
+                      style={{
+                        background: isActive ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}dd)` : 'rgba(248,244,252,1)',
+                        color: isActive ? '#fff' : '#1F1A2E',
+                        border: 'none', borderRadius: 14,
+                        padding: '0.95rem 0.5rem 0.85rem', fontSize: '0.85rem', fontWeight: 600,
+                        cursor: 'pointer', textAlign: 'center',
+                        boxShadow: isActive ? `0 6px 18px ${bg.accent}45` : 'none',
+                        minHeight: 76,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10,
+                        background: isActive ? 'rgba(255,255,255,0.22)' : `${bg.accent}18`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <Ico size={18} color={isActive ? '#fff' : bg.accent} strokeWidth={2.2} />
+                      </div>
+                      <span>{t.l}</span>
+                    </button>
+                  );
+                })}
               </div>
               <button onClick={() => setMoreOpen(false)}
                 style={{
