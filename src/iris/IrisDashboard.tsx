@@ -24,8 +24,9 @@ import { shareToInstagram } from './instagramShare';
 import {
   Sparkles, TrendingUp, Search, Mail, Film, MessageSquare, Edit3,
   Camera, HeartPulse, Leaf, UsersRound, Users, Handshake, FileText,
-  Menu as MenuIcon,
+  Menu as MenuIcon, Gift,
 } from 'lucide-react';
+import InviteShareCard from '../components/InviteShareCard';
 import type { LucideIcon } from 'lucide-react';
 
 // ─── タブ用 Lucide アイコンマップ ──────────────
@@ -44,6 +45,7 @@ const IRIS_TAB_ICON: Record<string, LucideIcon> = {
   team: Users,
   brands: Handshake,
   kit: FileText,
+  invite: Gift,
 };
 import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
@@ -72,7 +74,7 @@ interface Props {
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite';
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
@@ -245,6 +247,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             { id: 'strategy' as Tab,  l: '戦略',           primary: true },
             { id: 'triage' as Tab,    l: '案件精査',       primary: true },
             { id: 'deals' as Tab,     l: '案件',           primary: true },
+            { id: 'invite' as Tab,    l: '招待 +30日',     primary: true },
             { id: 'director' as Tab,  l: '丸投げ編集',     primary: false },
             { id: 'negotiate' as Tab, l: '交渉',           primary: false },
             { id: 'draft' as Tab,     l: '投稿下書き',     primary: false },
@@ -342,6 +345,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   { id: 'strategy' as Tab,  l: '戦略' },
                   { id: 'triage' as Tab,    l: '案件精査' },
                   { id: 'deals' as Tab,     l: '案件' },
+                  { id: 'invite' as Tab,    l: '招待 +30日' },
                   { id: 'director' as Tab,  l: '丸投げ編集' },
                   { id: 'negotiate' as Tab, l: '交渉' },
                   { id: 'draft' as Tab,     l: '投稿下書き' },
@@ -454,6 +458,18 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             )}
             {tab === 'guideline' && (
               <BrandGuidelineView bg={bg} multiAccount={multiAccount} brandGuide={brandGuide} settings={settings} />
+            )}
+            {tab === 'invite' && (
+              <div style={{ maxWidth: 560, margin: '0 auto' }}>
+                <InviteShareCard
+                  brand="iris"
+                  palette={{
+                    accent: bg.accent, ink: bg.ink,
+                    inkSoft: bg.inkSoft, card: bg.card,
+                    border: bg.cardBorder,
+                  }}
+                />
+              </div>
             )}
           </motion.div>
         </AnimatePresence>

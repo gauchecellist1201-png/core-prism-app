@@ -1,9 +1,21 @@
 // ============================================================
 // /strategy — 販売戦略ダッシュボード (オーナー専用)
 // 販売チャネル / 集客動線 / 売上シミュレーション / 実行ロードマップ / KPI
+// + /master/strategy/plan — 事業計画 (マスター専用)
 // ============================================================
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import BusinessPlanView from './BusinessPlanView';
+import { isMasterAuth } from '../lib/billing';
+
+type StrategyTab = 'sales' | 'plan';
+
+function getInitialTab(): StrategyTab {
+  if (typeof window === 'undefined') return 'sales';
+  const p = window.location.pathname;
+  if (/\/plan(\/|$)/.test(p)) return 'plan';
+  return 'sales';
+}
 
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", serif';
@@ -94,6 +106,8 @@ export default function StrategyDashboard() {
   const [scenario, setScenario] = useState<Scenario>('base');
   const [months, _setMonths] = useState(12);
   void _setMonths;
+  const [tab, setTab] = useState<StrategyTab>(() => getInitialTab());
+  const masterMode = isMasterAuth();
 
   useEffect(() => {
     document.title = '株式会社コア — 戦略ダッシュボード';
@@ -106,6 +120,11 @@ export default function StrategyDashboard() {
     robots.setAttribute('content', 'noindex, nofollow');
   }, []);
 
+  // 非マスター時に /plan が直リン時は sales へフォールバック
+  useEffect(() => {
+    if (tab === 'plan' && !masterMode) setTab('sales');
+  }, [tab, masterMode]);
+
   const sim = useMemo(() => simulate(scenario, months), [scenario, months]);
   const peak = sim[sim.length - 1];
 
@@ -113,8 +132,17 @@ export default function StrategyDashboard() {
     <div style={{ background: '#000', color: '#fff', minHeight: '100vh', fontFamily: FONT_SANS, overflowX: 'hidden' }}>
       {/* ヘッダ */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="lp-safe" style={{ maxWidth: 1320, margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="lp-safe" style={{ maxWidth: 1320, margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
           <a href="/corp" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.2rem', fontWeight: 700, letterSpacing: '0.4em', color: '#fff', textDecoration: 'none' }}>CORE</a>
+
+          {/* タブ */}
+          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+            <TabBtn active={tab === 'sales'} onClick={() => setTab('sales')}>販売戦略</TabBtn>
+            {masterMode && (
+              <TabBtn active={tab === 'plan'} onClick={() => setTab('plan')}>事業計画</TabBtn>
+            )}
+          </div>
+
           <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', fontFamily: FONT_SERIF_JA }}>
             <span style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>OWNER ONLY</span>
             <a href="/corp" style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>← 法人サイトへ</a>
@@ -122,6 +150,15 @@ export default function StrategyDashboard() {
         </div>
       </header>
 
+      {tab === 'plan' && masterMode && (
+        <section style={{ padding: '2rem 1.5rem 4rem', background: 'linear-gradient(180deg,#000 0%,#070712 100%)' }}>
+          <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+            <BusinessPlanView />
+          </div>
+        </section>
+      )}
+
+      {tab === 'sales' && <>
       {/* HERO */}
       <section className="lp-section-pad" style={{ padding: '4.5rem 1.5rem 3rem', textAlign: 'center', background: 'linear-gradient(180deg,#000 0%,#070712 100%)' }}>
         <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.45em', color: 'rgba(255,255,255,0.5)', fontWeight: 600, marginBottom: '1.25rem' }}>STRATEGY DASHBOARD</p>
@@ -347,12 +384,36 @@ export default function StrategyDashboard() {
         </p>
       </section>
 
+      </>}
+
       <footer style={{ background: '#000', padding: '2rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
         <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.3)' }}>
           © {new Date().getFullYear()} CORE INC. — STRATEGY DASHBOARD
         </p>
       </footer>
     </div>
+  );
+}
+
+function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '0.45rem 0.9rem',
+        borderRadius: 999,
+        background: active ? 'linear-gradient(135deg, rgba(167,139,250,0.3), rgba(96,165,250,0.18))' : 'rgba(255,255,255,0.04)',
+        border: active ? '1px solid rgba(167,139,250,0.55)' : '1px solid rgba(255,255,255,0.1)',
+        color: active ? '#fff' : 'rgba(255,255,255,0.65)',
+        fontFamily: FONT_SERIF_JA,
+        fontSize: '0.78rem',
+        fontWeight: 700,
+        letterSpacing: '0.08em',
+        cursor: 'pointer',
+      }}
+    >
+      {children}
+    </button>
   );
 }
 

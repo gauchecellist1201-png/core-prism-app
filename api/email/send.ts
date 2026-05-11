@@ -146,7 +146,35 @@ function cancelSaveHtml(data: TemplateData): string {
 </div>`);
 }
 
-type Template = 'welcome' | 'trial_ending' | 'cancel_save';
+function reengagementHtml(data: TemplateData): string {
+  const name = data.name || 'お客様';
+  const brand = data.brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
+  const days = data.days ?? 1;
+  const url = data.brand === 'iris'
+    ? 'https://core-prism-app.vercel.app/iris?app=1'
+    : 'https://core-prism-app.vercel.app/?app=1';
+
+  return baseHtml(`${brand} があなたを待っています`, `
+<div class="header" style="background: linear-gradient(135deg, #E1306C, #F77737);">
+  <h1>${name} さん、おかえりなさい</h1>
+  <p>${days} 日ぶりのご訪問をお待ちしています</p>
+</div>
+<div class="body">
+  <p>${name} さん、おはようございます。</p>
+  <p>${brand} に最後にログインしてから <strong>${days} 日</strong> が経ちました。</p>
+  <p>今日の朝のブリーフ、あなたの AI マネージャがすでに準備しています。</p>
+  <div class="highlight" style="border-color: #E1306C; background: #fff0f5;">
+    <strong>今すぐ開くと…</strong><br>
+    ・今日フォーカスすべき 3 アクション<br>
+    ・進行中の案件 / 納期サマリー<br>
+    ・連続日数のストリーク復帰チャンス
+  </div>
+  <a class="cta" style="background: linear-gradient(135deg, #E1306C, #F77737);" href="${url}">${brand} を開く →</a>
+  <p style="font-size:13px;color:#8A8593;">通知が不要な場合は設定からオフにできます。</p>
+</div>`);
+}
+
+type Template = 'welcome' | 'trial_ending' | 'cancel_save' | 'reengagement';
 
 function buildEmail(template: Template, data: TemplateData): { subject: string; html: string } {
   switch (template) {
@@ -164,6 +192,11 @@ function buildEmail(template: Template, data: TemplateData): { subject: string; 
       return {
         subject: 'ご利用ありがとうございました — 復帰クーポンをお届けします',
         html: cancelSaveHtml(data),
+      };
+    case 'reengagement':
+      return {
+        subject: `${data.brand === 'iris' ? 'CORE Iris' : 'CORE Prism'} があなたを待っています — 今日のブリーフが準備できました`,
+        html: reengagementHtml(data),
       };
   }
 }
@@ -195,7 +228,7 @@ export default async function handler(req: Request) {
     return json({ error: 'Missing to or template' }, 400, ch);
   }
 
-  const validTemplates: Template[] = ['welcome', 'trial_ending', 'cancel_save'];
+  const validTemplates: Template[] = ['welcome', 'trial_ending', 'cancel_save', 'reengagement'];
   if (!validTemplates.includes(template as Template)) {
     return json({ error: 'Unknown template' }, 400, ch);
   }

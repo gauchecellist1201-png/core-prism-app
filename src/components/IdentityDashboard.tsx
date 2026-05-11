@@ -52,8 +52,12 @@ import DocumentStudio from './DocumentStudio';
 import PeopleStudio from './PeopleStudio';
 import TeamHub from './TeamHub';
 import AcceptInviteModal from './AcceptInviteModal';
+import InviteShareCard from './InviteShareCard';
+import { Gift } from 'lucide-react';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
 import { useDailyCoach } from '../hooks/useDailyCoach';
+import { useDailyStreak } from '../hooks/useDailyStreak';
+import { useReengagement } from '../hooks/useReengagement';
 import IncomingBriefBanner from './IncomingBriefBanner';
 import type { CoachBrief } from '../lib/coachScheduler';
 import { speakNatural } from '../lib/tts';
@@ -132,6 +136,8 @@ export default function IdentityDashboard({
   const proactive = useProactiveAgent(settings, persona, knowledgeForAgent, healthCtx);
   const shadow = useShadowSecretary(settings, persona);
   const coach = useDailyCoach(settings, persona, knowledgeForAgent, healthCtx);
+  const dailyStreak = useDailyStreak();
+  useReengagement(dailyStreak, { brand: 'prism' });
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboarded());
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [showMeeting, setShowMeeting] = useState(false);
@@ -168,6 +174,7 @@ export default function IdentityDashboard({
     try { return sessionStorage.getItem('pending_invite'); } catch { return null; }
   });
   const [showCmdK, setShowCmdK] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
   const [financeEditFor, setFinanceEditFor] = useState<Persona | null>(null);
   const [briefOverride, setBriefOverride] = useState<Proposal | null>(null);
 
@@ -388,6 +395,17 @@ export default function IdentityDashboard({
         </div>
 
         <div className="space-y-0.5">
+          <button
+            onClick={() => setShowInvite(true)}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors"
+            style={{
+              background: `${persona.accentColor}1a`,
+              border: `1px solid ${persona.accentColor}44`,
+            }}
+          >
+            <Gift size={14} style={{ color: persona.accentColor }} strokeWidth={2.4} />
+            <span className="text-sm font-semibold" style={{ color: persona.accentColor }}>招待 +30日</span>
+          </button>
           <button
             onClick={onOpenSettings}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
@@ -1268,6 +1286,46 @@ export default function IdentityDashboard({
             accentColor={persona.accentColor}
             onComplete={() => setShowOnboarding(false)}
           />
+        )}
+        {showInvite && (
+          <motion.div
+            key="invite-modal"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setShowInvite(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 90,
+              background: 'rgba(8, 5, 15, 0.72)', backdropFilter: 'blur(12px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '1rem',
+            }}>
+            <motion.div
+              initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{ width: '100%', maxWidth: 480 }}>
+              <InviteShareCard
+                brand="prism"
+                palette={{
+                  accent: persona.accentColor,
+                  ink: '#F4ECFF',
+                  inkSoft: 'rgba(244,236,255,0.65)',
+                  card: '#1A1426',
+                  border: 'rgba(255,255,255,0.10)',
+                }}
+              />
+              <button onClick={() => setShowInvite(false)}
+                style={{
+                  marginTop: '0.75rem', width: '100%',
+                  background: 'rgba(255,255,255,0.06)',
+                  color: 'rgba(244,236,255,0.85)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 12, padding: '0.7rem',
+                  fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+                }}>
+                閉じる
+              </button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </motion.div>

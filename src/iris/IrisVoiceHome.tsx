@@ -16,6 +16,14 @@ import {
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { useVoiceInput } from '../hooks/useVoiceInput';
+import { useDailyStreak } from '../hooks/useDailyStreak';
+import { useReengagement } from '../hooks/useReengagement';
+import {
+  notificationPermission,
+  notificationSupported,
+  notificationAlreadyAsked,
+  requestNotificationPermission,
+} from '../lib/pushNotify';
 
 const STORAGE_KEY = 'core_iris_voicehome_history_v1';
 
@@ -62,6 +70,22 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [history.length, busy]);
+
+  // デイリーストリーク (リテンション計測)
+  const streakInfo = useDailyStreak();
+  // 1 日以上空いた再訪なら朝メールをキック (Resend 未設定なら no-op)
+  useReengagement(streakInfo, { brand: 'iris' });
+
+  // 通知パーミッション (default のとき軽い CTA を出す)
+  const [notifPerm, setNotifPerm] = useState<NotificationPermission>(() =>
+    notificationSupported() ? notificationPermission() : 'denied'
+  );
+  const [notifDismissed, setNotifDismissed] = useState(notificationAlreadyAsked());
+  const askNotifPerm = async () => {
+    const next = await requestNotificationPermission();
+    setNotifPerm(next);
+    setNotifDismissed(true);
+  };
 
   // 統計
   const activeCount = myDeals.filter(d => !['closed', 'declined', 'reported'].includes(d.stage)).length;
@@ -159,6 +183,57 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
+      {/* 通知 opt-in CTA (default & 未提示) */}
+      {notificationSupported() && notifPerm === 'default' && !notifDismissed && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          onClick={askNotifPerm}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+            padding: '0.5rem 0.9rem', borderRadius: 999,
+            background: isDarkBg ? 'rgba(255,255,255,0.08)' : 'rgba(225,48,108,0.08)',
+            border: `1px dashed ${bg.accent}77`, color: bg.ink,
+            fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+            width: 'fit-content', margin: '0 auto',
+          }}
+          aria-label="ブリーフ通知をオンにする"
+        >
+          🔔 朝・昼・晩のブリーフを通知で受け取る
+        </motion.button>
+      )}
+
+      {/* デイリーストリーク (リテンション・バッジ) */}
+      {streakInfo.streak >= 1 && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.55rem',
+            padding: '0.55rem 1rem',
+            borderRadius: 999,
+            background: isDarkBg
+              ? 'linear-gradient(135deg, rgba(255,140,90,0.22), rgba(225,48,108,0.22))'
+              : 'linear-gradient(135deg, rgba(255,140,90,0.14), rgba(225,48,108,0.14))',
+            border: `1px solid ${bg.accent}55`,
+            color: bg.ink,
+            fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.02em',
+            width: 'fit-content', margin: '0 auto',
+          }}
+          aria-label={`連続起動 ${streakInfo.streak} 日`}
+          title={streakInfo.best > streakInfo.streak ? `最高記録: ${streakInfo.best} 日` : '最高記録更新中'}
+        >
+          <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>🔥</span>
+          <span>
+            {streakInfo.streak === 1
+              ? '今日も Iris 開いた!'
+              : `今日も Iris 開いた! ${streakInfo.streak} 日連続`}
+          </span>
+        </motion.div>
+      )}
+
       {/* 上部: 数字サマリー (極小) */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem',

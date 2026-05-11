@@ -80,7 +80,8 @@ function isCorpPath(): boolean {
 
 function isStrategyPath(): boolean {
   if (typeof window === 'undefined') return false;
-  return window.location.pathname.startsWith('/strategy');
+  const p = window.location.pathname;
+  return p.startsWith('/strategy') || p.startsWith('/master/strategy');
 }
 
 function isPricingPath(): boolean {

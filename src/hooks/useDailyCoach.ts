@@ -14,6 +14,7 @@ import {
   generateBrief,
   markBriefRead,
 } from '../lib/coachScheduler';
+import { showLocalNotification } from '../lib/pushNotify';
 
 interface HealthCtx {
   today: DailyHealth | null;
@@ -47,6 +48,14 @@ export function useDailyCoach(
       });
       setBrief(result);
       setIncoming(result);
+      // PWA 通知: ブリーフ生成完了をシステム通知でも届ける (権限が許可済みのとき)
+      showLocalNotification({
+        title: result.title || (slot === 'morning' ? '朝のブリーフ' : slot === 'noon' ? '昼のブリーフ' : '夜のブリーフ'),
+        body: result.message.slice(0, 140),
+        url: window.location.pathname.startsWith('/iris') ? '/iris?app=1' : '/?app=1',
+        tag: `coach-${slot}`,
+        dedupeKey: `coach-${result.date}-${slot}-${persona.id}`,
+      });
     } catch {
       // 自動生成のエラーは UI をクラッシュさせない
     } finally {
