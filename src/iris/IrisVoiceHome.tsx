@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
 import type { MediaKit, InfluencerDeal } from '../types/influencerDeal';
 import { chatWithIris, type AssistantMessage } from './irisAssistant';
+import { shareToInstagram } from './instagramShare';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { useVoiceInput } from '../hooks/useVoiceInput';
@@ -280,6 +281,41 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
                         {a.emoji ? a.emoji + ' ' : ''}{a.label} →
                       </button>
                     ))}
+                  </div>
+                )}
+                {/* Instagram 投稿ボタン: AI 応答が投稿系コピーを含む場合に表示 */}
+                {m.role === 'assistant' && /(?:キャプション|投稿|ハッシュタグ|ストーリー|caption|hashtag)/i.test(m.content) && (
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={async () => {
+                        const r = await shareToInstagram({ caption: m.content, filename: `iris-voice-${Date.now()}.png` });
+                        alert(r.message);
+                      }}
+                      style={{
+                        background: 'linear-gradient(135deg, #FCB045 0%, #E1306C 50%, #833AB4 100%)',
+                        color: '#fff', border: 'none',
+                        borderRadius: 999, padding: '0.45rem 1.05rem',
+                        fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer',
+                        fontFamily: IRIS_FONTS.body,
+                        boxShadow: '0 4px 14px rgba(225,48,108,0.32)',
+                      }}>
+                      📸 Instagram で投稿 →
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const r = await shareToInstagram({ caption: m.content, filename: `iris-story-${Date.now()}.png`, asStory: true });
+                        alert(r.message);
+                      }}
+                      style={{
+                        background: 'rgba(255,255,255,0.94)',
+                        border: `1px solid ${bg.accent}55`,
+                        color: bg.accent,
+                        borderRadius: 999, padding: '0.45rem 1.05rem',
+                        fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+                        fontFamily: IRIS_FONTS.body,
+                      }}>
+                      ⏱ ストーリーへ
+                    </button>
                   </div>
                 )}
               </motion.div>

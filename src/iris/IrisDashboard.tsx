@@ -20,6 +20,7 @@ import {
   type InfluencerDeal, type MediaKit,
 } from '../types/influencerDeal';
 import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMessage } from './beautyAdvisor';
+import { shareToInstagram } from './instagramShare';
 import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 import IrisDirectorView from './IrisDirectorView';
@@ -1000,11 +1001,46 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona }: any) {
 
       {myDeals.filter((d: InfluencerDeal) => d.draftCopy).map((d: InfluencerDeal) => (
         <Card key={d.id} bg={bg}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <p style={{ fontWeight: 700 }}>{PLATFORM_META[d.platform].emoji} {d.brandName}</p>
-            <button onClick={() => navigator.clipboard?.writeText(d.draftCopy || '')} style={btnIcon(bg)}>📋</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', gap: '0.4rem' }}>
+            <p style={{ fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {PLATFORM_META[d.platform].emoji} {d.brandName}
+            </p>
+            <button onClick={() => navigator.clipboard?.writeText(d.draftCopy || '')} style={btnIcon(bg)} title="コピー">📋</button>
           </div>
-          <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{d.draftCopy}</pre>
+          <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', marginBottom: '0.85rem' }}>{d.draftCopy}</pre>
+          {/* Instagram シェアボタン群 */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={async () => {
+                const r = await shareToInstagram({ caption: d.draftCopy || '', filename: `iris-${d.brandName || 'post'}.png` });
+                alert(r.message);
+              }}
+              style={{
+                flex: '1 1 auto', minWidth: 140,
+                background: 'linear-gradient(135deg, #FCB045 0%, #E1306C 50%, #833AB4 100%)',
+                color: '#fff', border: 'none', borderRadius: 12,
+                padding: '0.75rem 1rem', fontSize: '0.88rem', fontWeight: 700,
+                cursor: 'pointer', boxShadow: '0 6px 18px rgba(225,48,108,0.35)',
+              }}
+            >
+              📸 Instagram で投稿
+            </button>
+            <button
+              onClick={async () => {
+                const r = await shareToInstagram({ caption: d.draftCopy || '', filename: `iris-story-${d.brandName || 'post'}.png`, asStory: true });
+                alert(r.message);
+              }}
+              style={{
+                flex: '1 1 auto', minWidth: 120,
+                background: 'rgba(255,255,255,0.85)', color: '#1F1A2E',
+                border: `1px solid ${bg.cardBorder}`, borderRadius: 12,
+                padding: '0.75rem 1rem', fontSize: '0.85rem', fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              ⏱ ストーリーで
+            </button>
+          </div>
         </Card>
       ))}
     </div>
