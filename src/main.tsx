@@ -2,6 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { migrateLegacyKeysOnce } from './lib/tenant'
+
+// Phase A: tenant prefix への 1 回限りの自動マイグレーション
+migrateLegacyKeysOnce();
 
 // ─── マスターキー判定 (GAUCHE2026) → /api/ai に x-master-key ヘッダー自動付与 ───
 // URL クエリ ?master=GAUCHE2026 で初回有効化、以降は localStorage に保存
