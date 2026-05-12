@@ -75,11 +75,14 @@ export async function importAppleHealthXml(
 ): Promise<DailyHealth[]> {
   onProgress?.({ phase: 'parsing', recordsRead: 0, daysProduced: 0 });
 
-  // 1. ストリーム的に <Record .../> を抽出（巨大XMLのため正規表現で進める）
-  const recordRegex = /<Record\s+([^/>]+?)\/>/g;
+  // 1. ストリーム的に <Record .../> または <Record ...>...</Record> を抽出
+  //    Apple Health は metadata 子要素を持つ Record (睡眠など) を非自己閉じで出力する。
+  //    [^>]+? で属性のみマッチ、その後 /> または > のいずれにも対応。
+  const recordRegex = /<Record\s+([^>]+?)\/?>/g;
   const records: RawRecord[] = [];
   let m: RegExpExecArray | null;
   let count = 0;
+  const typeCounts = new Map<string, number>(); // 診断用
 
   while ((m = recordRegex.exec(text))) {
     const attrs = parseAttrs(m[1]);
@@ -92,11 +95,18 @@ export async function importAppleHealthXml(
       value: attrs.value ?? '',
       unit: attrs.unit,
     });
+    typeCounts.set(type, (typeCounts.get(type) || 0) + 1);
     count++;
     if (count % 5000 === 0) {
       onProgress?.({ phase: 'parsing', recordsRead: count, daysProduced: 0 });
       await yieldFrame();
     }
+  }
+
+  if (count === 0) {
+    // 致命的: XML 中に Record が 1 件も見つからない → 別形式の可能性
+    const headSample = text.slice(0, 500).replace(/\s+/g, ' ');
+    throw new Error(`Apple Health export.xml の Record が見つかりませんでした。先頭プレビュー: ${headSample.slice(0, 200)}`);
   }
 
   onProgress?.({ phase: 'aggregating', recordsRead: count, daysProduced: 0 });
@@ -114,7 +124,11 @@ export async function importAppleHealthXml(
   };
 
   for (const r of records) {
-    const dayKey = r.startDate.slice(0, 10);
+    // 睡眠は記録の終わり日(=朝起きた日)に寄せる、他は開始日
+    const isSleep = r.type === APPLE_TYPE.SLEEP;
+    const refDateRaw = isSleep ? r.endDate : r.startDate;
+    // "YYYY-MM-DD HH:MM:SS +0900" or "YYYY-MM-DDTHH:MM:SS..." どちらも対応
+    const dayKey = refDateRaw.slice(0, 10);
     const b = bucketFor(dayKey);
     const v = Number(r.value);
 
