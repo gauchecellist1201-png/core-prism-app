@@ -1207,6 +1207,11 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
   const [blur, setBlur] = useState(0);
   const [vignette, setVignette] = useState(0);
 
+  // AI プロンプト
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState<string>('');
+
   const presets = [
     { id: 'editorial', label: 'Editorial', c: { brightness: 95, contrast: 115, saturate: 85, warmth: -5, vignette: 25 } },
     { id: 'glow',      label: 'Glow',      c: { brightness: 108, contrast: 92, saturate: 105, warmth: 8, vignette: 0 } },
@@ -1338,6 +1343,59 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
     }
   };
 
+  // AI に「こうして」と頼んで、パラメータを返してもらう
+  const applyAiPrompt = async () => {
+    if (!aiPrompt.trim() || aiBusy) return;
+    setAiBusy(true);
+    setAiNote('');
+    try {
+      const sys = `あなたは Instagram フォトレタッチの達人。ユーザーの自然言語要望から、CSS フィルタ値を JSON で返す。
+返す JSON のキー (省略可、未指定はそのまま):
+{
+  "brightness": number (50-150, %),
+  "contrast": number (50-150, %),
+  "saturate": number (0-200, %),
+  "warmth": number (-50 to 50, +は暖色, -は寒色),
+  "blur": number (0-10, px),
+  "vignette": number (0-100, %),
+  "aspect": "1:1" | "4:5" | "9:16" | "free",
+  "comment": "string (10-40字, 何をしたか)"
+}
+JSON だけを返し、説明文や \`\`\`json は不要。`;
+      const userMsg = `現在: 明るさ${brightness}%, コントラスト${contrast}%, 彩度${saturate}%, 暖色${warmth}, ぼかし${blur}px, ビネット${vignette}%, 比率${aspect}\n\n要望: ${aiPrompt}`;
+
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: userMsg }],
+          system: sys,
+          max_tokens: 300,
+        }),
+      });
+      const data = await res.json();
+      const text: string = data.text || data.content || data.message || '';
+      // JSON 抽出
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('AI 応答に JSON が含まれていません');
+      const j = JSON.parse(match[0]);
+
+      if (typeof j.brightness === 'number') setBrightness(Math.max(50, Math.min(150, j.brightness)));
+      if (typeof j.contrast === 'number') setContrast(Math.max(50, Math.min(150, j.contrast)));
+      if (typeof j.saturate === 'number') setSaturate(Math.max(0, Math.min(200, j.saturate)));
+      if (typeof j.warmth === 'number') setWarmth(Math.max(-50, Math.min(50, j.warmth)));
+      if (typeof j.blur === 'number') setBlur(Math.max(0, Math.min(10, j.blur)));
+      if (typeof j.vignette === 'number') setVignette(Math.max(0, Math.min(100, j.vignette)));
+      if (['1:1', '4:5', '9:16', 'free'].includes(j.aspect)) setAspect(j.aspect);
+      setAiNote(j.comment || '適用しました');
+      setAiPrompt('');
+    } catch (e: any) {
+      setAiNote(`エラー: ${e?.message || '不明'} — もう一度試してみてください`);
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
       <div>
@@ -1367,10 +1425,92 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
           </label>
         </Card>
       ) : (
-        <>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr)',
+          gap: '1.25rem',
+        }}
+        className="iris-image-studio-layout"
+        >
+          {/* プレビュー (スティッキー) */}
+          <div className="iris-image-studio-preview" style={{
+            position: 'sticky',
+            top: 'calc(env(safe-area-inset-top, 0px) + 96px)',
+            zIndex: 5,
+            alignSelf: 'start',
+          }}>
+            <Card bg={bg}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 280, maxHeight: '60vh' }}>
+                <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '56vh', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,0.15)' }} />
+              </div>
+              {/* AI ノート (操作直下) */}
+              {aiNote && (
+                <div style={{
+                  marginTop: '0.6rem', padding: '0.6rem 0.9rem',
+                  background: `${bg.accent}10`, borderRadius: 10,
+                  fontSize: '0.82rem', color: bg.ink,
+                  border: `1px solid ${bg.accent}30`,
+                }}>
+                  {aiNote}
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* コントロール群 */}
+          <div style={{ display: 'grid', gap: '1.25rem', minWidth: 0 }}>
+
+          {/* ─── AI 加工 ─── */}
           <Card bg={bg}>
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 360 }}>
-              <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,0.15)' }} />
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>AI に頼む</p>
+            <p style={{ fontSize: '0.85rem', color: bg.inkSoft, marginBottom: '0.6rem', lineHeight: 1.6 }}>
+              「もっと暖かく」「エディトリアル風に」「Instagram 映え重視で」のように話しかけてください。
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <input
+                value={aiPrompt}
+                onChange={e => setAiPrompt(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') applyAiPrompt(); }}
+                placeholder="例: 明るくふんわり、ピンクっぽく"
+                style={{
+                  flex: '1 1 240px', minWidth: 0,
+                  padding: '0.65rem 0.9rem',
+                  borderRadius: 10,
+                  border: `1px solid ${bg.cardBorder}`,
+                  background: 'rgba(255,255,255,0.7)',
+                  color: bg.ink,
+                  fontSize: '0.92rem',
+                  fontFamily: IRIS_FONTS.body,
+                }}
+              />
+              <button onClick={applyAiPrompt} disabled={!aiPrompt.trim() || aiBusy} style={{
+                ...btnPrimary(bg),
+                opacity: !aiPrompt.trim() || aiBusy ? 0.6 : 1,
+                cursor: !aiPrompt.trim() || aiBusy ? 'not-allowed' : 'pointer',
+              }}>
+                {aiBusy ? '考え中…' : 'AI に頼む'}
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.7rem' }}>
+              {[
+                'もっと明るく',
+                '暖かみを足して',
+                'エディトリアル風',
+                'ふんわりピンク',
+                'コントラスト強め',
+                'ノスタルジック',
+              ].map(s => (
+                <button key={s} onClick={() => { setAiPrompt(s); }} style={{
+                  background: 'rgba(255,255,255,0.5)',
+                  color: bg.ink,
+                  border: `1px solid ${bg.cardBorder}`,
+                  borderRadius: 999, padding: '0.35rem 0.85rem',
+                  fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer',
+                  fontFamily: IRIS_FONTS.body,
+                }}>
+                  {s}
+                </button>
+              ))}
             </div>
           </Card>
 
@@ -1454,7 +1594,8 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
               <button onClick={() => { setImgUrl(null); setImgEl(null); }} style={btnSecondary(bg)}>🔄 別の写真</button>
             </div>
           </Card>
-        </>
+          </div>
+        </div>
       )}
     </div>
   );

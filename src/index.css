@@ -692,6 +692,22 @@ input, textarea, select { font-family: inherit; }
 .iris-wow-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
 .iris-wow-card:hover { transform: translateY(-4px); }
 
+/* Iris 画像加工スタジオ: デスクトップは 2 カラム (プレビュー固定 + コントロール) */
+@media (min-width: 900px) {
+  .iris-image-studio-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) !important;
+    gap: 1.5rem !important;
+    align-items: start;
+  }
+}
+/* モバイル: プレビューがスクロールに追従して画面上部に貼り付く */
+@media (max-width: 899px) {
+  .iris-image-studio-preview {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+  }
+}
+
 /* Iris Dashboard タブ: モバイルでは「主要のみ + メニュー」、PC では全部表示 */
 .iris-tab-more { display: none; }
 @media (max-width: 768px) {
