@@ -399,7 +399,12 @@ export function captureReferralFromUrl() {
 //  アクセスゲート
 // ============================================================
 
-/** マスターキー (オーナー専用 GAUCHE2026) で全機能アクセス可能か */
+/**
+ * 旧「マスターモード」(GAUCHE2026) の判定。
+ * Phase D で Owner ロールに置換。後方互換のため localStorage キーがあれば true。
+ * Supabase 接続後は `markOwnerLocal()` が Owner ログイン時に同じキーを書き込み、
+ * このフラグが「現端末は Owner」を意味するようになる。
+ */
 export function isMasterAuth(): boolean {
   try {
     if (typeof localStorage === 'undefined') return false;
@@ -407,6 +412,21 @@ export function isMasterAuth(): boolean {
   } catch {
     return false;
   }
+}
+
+/** エイリアス: Phase D では「Owner ロール」と等価 */
+export function isOwnerLocal(): boolean {
+  return isMasterAuth();
+}
+
+/** Supabase で owner と判定された端末に Owner フラグを刻む */
+export function markOwnerLocal() {
+  try { localStorage.setItem('core_master_key_v1', 'GAUCHE2026'); } catch { /* */ }
+}
+
+/** Owner ロールから降りる (admin/member へのロール変更で呼ぶ) */
+export function clearOwnerLocal() {
+  try { localStorage.removeItem('core_master_key_v1'); } catch { /* */ }
 }
 
 /** トライアル期限が切れていないか */
@@ -601,6 +621,61 @@ export function useBillingUser(): {
   }, []);
 
   return { user, signup, signout, changePlan };
+}
+
+// ============================================================
+//  Phase D: Stripe 完全連携 (tenant 1:1)
+// ============================================================
+
+/** プランをアップグレード/ダウングレード (既存サブスクの price を差し替え) */
+export async function updateSubscriptionPlan(input: {
+  subscriptionId: string;
+  brand: Brand;
+  plan: PlanId;
+}): Promise<{ ok: boolean; message: string }> {
+  try {
+    const resp = await fetch('/api/stripe/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subscription_id: input.subscriptionId,
+        plan: input.plan,
+        brand: input.brand,
+      }),
+    });
+    const data = await resp.json() as { success?: boolean; error?: string; current_period_end?: number };
+    if (!resp.ok || !data.success) return { ok: false, message: data.error || 'プラン変更に失敗しました' };
+
+    // ローカル user を即時更新
+    const u = loadBillingUser();
+    if (u) {
+      saveBillingUser({
+        ...u,
+        plan: input.plan,
+        currentPeriodEnd: data.current_period_end ?? u.currentPeriodEnd,
+        isTestCheckout: false,
+      });
+    }
+    return { ok: true, message: 'プランを変更しました' };
+  } catch (e: any) {
+    return { ok: false, message: e.message || 'ネットワークエラー' };
+  }
+}
+
+/** Stripe Billing Portal セッションを発行して URL を返す */
+export async function openBillingPortal(customerId: string): Promise<{ ok: boolean; url?: string; message?: string }> {
+  try {
+    const resp = await fetch('/api/stripe/portal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customer_id: customerId, return_url: window.location.href }),
+    });
+    const data = await resp.json() as { url?: string; error?: string };
+    if (!resp.ok || !data.url) return { ok: false, message: data.error || 'ポータルを開けません' };
+    return { ok: true, url: data.url };
+  } catch (e: any) {
+    return { ok: false, message: e.message || 'ネットワークエラー' };
+  }
 }
 
 // ─── Stripe セッション照会によるプラン同期 ───

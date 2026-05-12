@@ -1,9 +1,10 @@
 // ============================================================
-// インフルエンサーデスク — localStorage CRUD
+// インフルエンサーデスク — localStorage (offline cache) + Supabase 同期
 // ============================================================
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { InfluencerDeal, NegotiationDraft, MediaKit } from '../types/influencerDeal';
+import { useCloudSync } from './useCloudSync';
 
 const KEY_DEALS  = 'core_inf_deals_v1';
 const KEY_NEGOS  = 'core_inf_negos_v1';
@@ -22,6 +23,10 @@ export function useInfluencerDesk() {
 
   useEffect(() => save(KEY_DEALS, deals), [deals]);
   useEffect(() => save(KEY_NEGOS, negos), [negos]);
+
+  // Supabase 同期 (未認証 / env 未設定なら no-op)
+  useCloudSync({ key: KEY_DEALS, value: deals, setValue: setDeals, isEmpty: v => v.length === 0 });
+  useCloudSync({ key: KEY_NEGOS, value: negos, setValue: setNegos, isEmpty: v => v.length === 0 });
 
   // 案件
   const addDeal = useCallback((personaId: string, data: Omit<InfluencerDeal, 'id' | 'personaId' | 'createdAt' | 'updatedAt'>): InfluencerDeal => {

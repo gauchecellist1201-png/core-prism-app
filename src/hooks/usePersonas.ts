@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Persona, Task } from '../types/identity';
+import { useCloudSync } from './useCloudSync';
 
 const STORAGE_KEY = 'core_personas';
 
@@ -48,10 +49,13 @@ export function usePersonas() {
   const [personas, setPersonas] = useState<Persona[]>(loadPersonas);
   const [activePersona, setActivePersona] = useState<Persona | null>(null);
 
-  // localStorageに永続化
+  // localStorageに永続化 (オフラインキャッシュ)
   useEffect(() => {
     savePersonas(personas);
   }, [personas]);
+
+  // Supabase 同期 (未認証 / env 未設定なら no-op)
+  useCloudSync({ key: STORAGE_KEY, value: personas, setValue: setPersonas, isEmpty: v => v.length === 0 });
 
   const createPersona = useCallback((
     name: string,

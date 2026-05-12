@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { KnowledgeItem, KnowledgeChunk, PersonaId, AppSettings, Persona, KnowledgeAnalysis } from '../types/identity';
 import { parseFile } from '../lib/fileParser';
 import { analyzeKnowledge, looksLikeFinancialData, extractFinancialData } from '../lib/analyzeKnowledge';
+import { useCloudSync } from './useCloudSync';
 
 const STORAGE_KEY = 'core_knowledge';
 const CHUNK_SIZE = 400; // characters per chunk
@@ -125,6 +126,11 @@ export function useKnowledge(
   const [items, setItems] = useState<KnowledgeItem[]>(load);
 
   useEffect(() => { save(items); }, [items]);
+
+  // Supabase 同期 (未認証 / env 未設定なら no-op)。
+  // ナレッジは個別アイテム最大 100KB 程度になりうるが user_state は jsonb で許容、
+  // 上限を超える場合は今後 storage bucket に切替。
+  useCloudSync({ key: STORAGE_KEY, value: items, setValue: setItems, isEmpty: v => v.length === 0 });
 
   const getForPersona = useCallback((personaId: PersonaId) =>
     items.filter(i => i.personaId === personaId),

@@ -5,6 +5,9 @@ import { estimateMonthlyCost } from '../hooks/useClaude';
 import { OPENAI_VOICE_OPTIONS, isOpenAITTSConfigured, type OpenAIVoice } from '../lib/ttsOpenAI';
 import { resetOnboarding } from '../lib/onboarding';
 import IntegrationsHub from './IntegrationsHub';
+import BillingDashboard from './BillingDashboard';
+import OrgPanel from './OrgPanel';
+import { useBillingUser } from '../lib/billing';
 
 interface Props {
   settings: AppSettings;
@@ -28,6 +31,9 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
   const [model, setModel] = useState(settings.preferredModel);
   const [userName, setUserName] = useState(settings.userName);
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  const [showBilling, setShowBilling] = useState(false);
+  const [showOrg, setShowOrg] = useState(false);
+  const { user: billingUser } = useBillingUser();
   const [aiTone, setAiTone] = useState<'gentle' | 'professional' | 'casual'>(settings.aiTone || 'gentle');
   const [voiceEnabled, setVoiceEnabled] = useState(settings.voiceEnabled !== false);
   const [openaiVoice, setOpenaiVoice] = useState<OpenAIVoice>((settings as any).openaiVoice || 'nova');
@@ -85,6 +91,36 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     style={{ borderColor: 'rgba(255,255,255,0.1)' }} />
                 </div>
                 <MasterModeBox />
+
+                {/* Phase D: 組織 + プラン管理 */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setShowOrg(true)}
+                    className="p-3 rounded-xl text-left transition-colors"
+                    style={{
+                      background: 'rgba(99,102,241,0.08)',
+                      border: '1px solid rgba(99,102,241,0.2)',
+                    }}
+                  >
+                    <div className="text-fg text-sm font-semibold">🏛️ 組織</div>
+                    <div className="text-fg-muted text-xs mt-0.5">メンバー招待・ロール管理</div>
+                  </button>
+                  <button
+                    onClick={() => setShowBilling(true)}
+                    disabled={!billingUser}
+                    className="p-3 rounded-xl text-left transition-colors disabled:opacity-40"
+                    style={{
+                      background: 'rgba(225,48,108,0.08)',
+                      border: '1px solid rgba(225,48,108,0.2)',
+                    }}
+                  >
+                    <div className="text-fg text-sm font-semibold">💳 プラン</div>
+                    <div className="text-fg-muted text-xs mt-0.5">
+                      {billingUser ? `現在: ${billingUser.plan}` : 'サインアップ後に利用可'}
+                    </div>
+                  </button>
+                </div>
+
                 <div className="flex items-center justify-between p-3 rounded-xl"
                   style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div>
@@ -342,15 +378,29 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
           </motion.button>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {showBilling && <BillingDashboard key="bd" onClose={() => setShowBilling(false)} />}
+        {showOrg && (
+          <OrgPanel
+            key="op"
+            brand={typeof window !== 'undefined' && window.location.pathname.startsWith('/iris') ? 'iris' : 'prism'}
+            onClose={() => setShowOrg(false)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
 
 function MasterModeBox() {
+  // Phase D: マスターモード → Owner ロールに改名。
+  // 既存の core_master_key_v1 = GAUCHE2026 は「現端末は Owner」を意味するフラグとして互換維持。
+  // Supabase 接続後は Owner ロールでログイン → 自動的にこのフラグが立つ。
   const KEY = 'core_master_key_v1';
   const [code, setCode] = useState(() => localStorage.getItem(KEY) || '');
   const [edit, setEdit] = useState(false);
-  const isMaster = code === 'GAUCHE2026';
+  const isOwner = code === 'GAUCHE2026';
 
   const apply = () => {
     localStorage.setItem(KEY, code);
@@ -366,16 +416,16 @@ function MasterModeBox() {
 
   return (
     <div className="p-4 rounded-xl" style={{
-      background: isMaster
+      background: isOwner
         ? 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,107,53,0.10))'
         : 'rgba(255,255,255,0.03)',
-      border: `1px solid ${isMaster ? 'rgba(255,215,0,0.35)' : 'rgba(255,255,255,0.08)'}`,
+      border: `1px solid ${isOwner ? 'rgba(255,215,0,0.35)' : 'rgba(255,255,255,0.08)'}`,
     }}>
       <div className="flex items-center justify-between gap-2 mb-2">
         <p className="text-fg text-sm font-medium">
-          {isMaster ? '👑 マスターモード ON (Claude API)' : '⚙ マスターモード'}
+          {isOwner ? '👑 Owner モード ON (Claude API · 全機能解放)' : '⚙ Owner モード'}
         </p>
-        {isMaster && (
+        {isOwner && (
           <button onClick={clear}
             className="text-xs px-2 py-1 rounded-full"
             style={{ background: 'rgba(248,113,113,0.15)', color: '#F87171', border: '1px solid rgba(248,113,113,0.3)' }}>
@@ -383,15 +433,16 @@ function MasterModeBox() {
           </button>
         )}
       </div>
-      {isMaster ? (
+      {isOwner ? (
         <p className="text-fg-muted text-xs leading-relaxed">
-          オーナー専用モード。すべての AI が Anthropic Claude (高品質) で動作します。
+          ワークスペースの Owner として全機能アクセス中。AI は Anthropic Claude で動作します。<br />
+          メンバー招待・ロール管理は「組織」メニューから。
         </p>
       ) : edit ? (
         <div className="space-y-2">
           <input
             type="text" value={code} onChange={e => setCode(e.target.value)}
-            placeholder="マスターキーを入力"
+            placeholder="Owner キーを入力"
             className="w-full bg-transparent text-fg text-sm font-mono outline-none border-b py-2"
             style={{ borderColor: 'rgba(255,255,255,0.1)' }}
           />
@@ -409,7 +460,7 @@ function MasterModeBox() {
         </div>
       ) : (
         <button onClick={() => setEdit(true)} className="text-xs text-fg-muted hover:text-fg-subtle underline">
-          マスターキーを入力 →
+          Owner キーを入力 →
         </button>
       )}
     </div>

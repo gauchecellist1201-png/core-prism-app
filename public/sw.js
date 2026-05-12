@@ -1,7 +1,8 @@
 // CORE Prism OS — Service Worker
 // 役割: オフラインキャッシュ + 将来のプッシュ通知対応
-const CACHE_VERSION = 'core-prism-v1';
-const STATIC_ASSETS = ['/', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+// v3: network-first 化 + 古い JS/CSS をフラッシュ (旧 SW 由来の真っ白問題を解消)
+const CACHE_VERSION = 'core-prism-v3';
+const STATIC_ASSETS = ['/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -24,6 +25,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
+  const url = new URL(req.url);
   // ナビゲーション要求はネットワーク優先 + 失敗時キャッシュ
   if (req.mode === 'navigate') {
     event.respondWith(
@@ -31,11 +33,25 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-  // 静的アセットはキャッシュ優先
+  // JS / CSS / フォント / SVG はネットワーク優先 (デプロイ更新を即反映)
+  const isCodeAsset = /\.(js|css|woff2?|ttf|svg)$/i.test(url.pathname) || url.pathname.startsWith('/assets/');
+  if (isCodeAsset) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        if (res.ok && url.origin === self.location.origin) {
+          const clone = res.clone();
+          caches.open(CACHE_VERSION).then((c) => c.put(req, clone));
+        }
+        return res;
+      }).catch(() => caches.match(req).then((cached) => cached || new Response('', { status: 504 })))
+    );
+    return;
+  }
+  // 画像など それ以外はキャッシュ優先 (高速 + オフライン対応)
   event.respondWith(
     caches.match(req).then((cached) =>
       cached || fetch(req).then((res) => {
-        if (res.ok && new URL(req.url).origin === self.location.origin) {
+        if (res.ok && url.origin === self.location.origin) {
           const clone = res.clone();
           caches.open(CACHE_VERSION).then((c) => c.put(req, clone));
         }

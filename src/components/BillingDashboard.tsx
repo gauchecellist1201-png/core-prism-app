@@ -4,7 +4,11 @@
 // ============================================================
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useBillingUser, findPlan } from '../lib/billing';
+import {
+  useBillingUser, findPlan, getPlans,
+  updateSubscriptionPlan, openBillingPortal,
+  type PlanId,
+} from '../lib/billing';
 import { sendEmail } from '../lib/emailNotify';
 
 interface Props {
@@ -17,8 +21,51 @@ export default function BillingDashboard({ onClose }: Props) {
   const [cancelDone, setCancelDone] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [showPlanSwitcher, setShowPlanSwitcher] = useState(false);
+  const [switchBusy, setSwitchBusy] = useState<PlanId | null>(null);
+  const [switchMsg, setSwitchMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [portalBusy, setPortalBusy] = useState(false);
 
   if (!user) return null;
+
+  const handleSwitchPlan = async (newPlan: PlanId) => {
+    setSwitchMsg(null);
+    if (newPlan === user.plan) return;
+    if (!user.subscriptionId) {
+      // テスト/ローカルモード: その場でプランだけ書き換え
+      changePlan(newPlan);
+      setSwitchMsg({ kind: 'ok', text: `${newPlan} に切り替えました (テスト)` });
+      return;
+    }
+    if (!confirm(`プランを「${newPlan}」に変更します。次回請求から反映されます。よろしいですか?`)) return;
+    setSwitchBusy(newPlan);
+    const r = await updateSubscriptionPlan({
+      subscriptionId: user.subscriptionId,
+      brand: user.brand,
+      plan: newPlan,
+    });
+    setSwitchBusy(null);
+    setSwitchMsg({ kind: r.ok ? 'ok' : 'err', text: r.message });
+    if (r.ok) {
+      changePlan(newPlan);
+      setShowPlanSwitcher(false);
+    }
+  };
+
+  const handleOpenPortal = async () => {
+    if (!user.stripeCustomerId) {
+      setSwitchMsg({ kind: 'err', text: 'カスタマー ID 未連携 — まず一度サブスクを開始してください' });
+      return;
+    }
+    setPortalBusy(true);
+    const r = await openBillingPortal(user.stripeCustomerId);
+    setPortalBusy(false);
+    if (r.ok && r.url) {
+      window.location.href = r.url;
+    } else {
+      setSwitchMsg({ kind: 'err', text: r.message || 'ポータルを開けません' });
+    }
+  };
 
   const plan = findPlan(user.brand, user.plan);
   const accent = user.brand === 'iris' ? '#E1306C' : '#0033A0';
@@ -145,6 +192,105 @@ export default function BillingDashboard({ onClose }: Props) {
           <p style={{ fontSize: '0.78rem', color: '#8A8593', marginBottom: '0.3rem' }}>登録メールアドレス</p>
           <p style={{ fontFamily: 'monospace', fontSize: '0.92rem', fontWeight: 600 }}>{user.email}</p>
         </div>
+
+        {/* プラン切替 / Stripe ポータル */}
+        {!cancelDone && (
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.6rem' }}>
+              <button
+                onClick={() => { setShowPlanSwitcher(s => !s); setSwitchMsg(null); }}
+                style={{
+                  flex: 1, background: showPlanSwitcher ? '#1F1A2E' : accent, color: '#fff',
+                  border: 'none', borderRadius: 999, padding: '0.7rem',
+                  fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                {showPlanSwitcher ? '閉じる' : 'プランを変更'}
+              </button>
+              <button
+                onClick={handleOpenPortal}
+                disabled={portalBusy || !user.stripeCustomerId}
+                title={!user.stripeCustomerId ? 'サブスク開始後に利用可能' : 'Stripe で詳細管理'}
+                style={{
+                  flex: 1, background: '#fff', color: accent,
+                  border: `1px solid ${accent}`, borderRadius: 999, padding: '0.7rem',
+                  fontSize: '0.88rem', fontWeight: 700,
+                  cursor: portalBusy ? 'wait' : 'pointer',
+                  opacity: !user.stripeCustomerId ? 0.5 : 1,
+                }}
+              >
+                {portalBusy ? '読み込み中…' : 'Stripe ポータル'}
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {switchMsg && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  style={{
+                    padding: '0.65rem 0.9rem', borderRadius: 10, marginBottom: '0.6rem',
+                    fontSize: '0.83rem',
+                    background: switchMsg.kind === 'ok' ? '#F0FDF4' : '#FEF2F2',
+                    border: switchMsg.kind === 'ok' ? '1px solid #86EFAC' : '1px solid #FCA5A5',
+                    color: switchMsg.kind === 'ok' ? '#166534' : '#9B1B30',
+                  }}
+                >
+                  {switchMsg.text}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {showPlanSwitcher && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.3rem' }}>
+                    {getPlans(user.brand)
+                      .filter(p => p.id !== 'free')
+                      .map(p => {
+                        const isCurrent = p.id === user.plan;
+                        const busy = switchBusy === p.id;
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => handleSwitchPlan(p.id)}
+                            disabled={isCurrent || busy}
+                            style={{
+                              textAlign: 'left', padding: '0.7rem 0.95rem', borderRadius: 12,
+                              background: isCurrent ? `${accent}1a` : '#F8F7FA',
+                              border: isCurrent ? `1px solid ${accent}` : '1px solid rgba(0,0,0,0.08)',
+                              cursor: isCurrent || busy ? 'default' : 'pointer',
+                              opacity: busy ? 0.6 : 1,
+                              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: isCurrent ? accent : '#1F1A2E' }}>
+                                {p.name}
+                              </div>
+                              <div style={{ fontSize: '0.72rem', color: '#8A8593' }}>{p.tagline}</div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: isCurrent ? accent : '#1F1A2E' }}>
+                                ¥{p.priceJpy.toLocaleString()}
+                                <span style={{ fontSize: '0.7rem', fontWeight: 500, color: '#8A8593' }}>/月</span>
+                              </div>
+                              {isCurrent && (
+                                <div style={{ fontSize: '0.65rem', color: accent, fontWeight: 700, letterSpacing: '0.1em' }}>現在</div>
+                              )}
+                              {busy && <div style={{ fontSize: '0.7rem', color: '#8A8593' }}>変更中…</div>}
+                            </div>
+                          </button>
+                        );
+                      })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {/* 解約フロー */}
         <AnimatePresence mode="wait">

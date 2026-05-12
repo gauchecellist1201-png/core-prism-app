@@ -12,6 +12,29 @@ migrateLegacyKeysOnce();
 // (オプトインしたユーザーのみ /api/log/error に送られる)
 installErrorCapture();
 
+// ─── 救済: 旧 Service Worker (lucide-react@1.x キャッシュで真っ白) を 1 回だけ強制更新 ───
+// SW_BUSTER_KEY を localStorage に置いて、未消化のブラウザだけ SW を unregister + reload
+(() => {
+  const KEY = 'core_sw_buster_v3';
+  if (typeof window === 'undefined') return;
+  if (localStorage.getItem(KEY) === '1') return;
+  if (!('serviceWorker' in navigator)) { localStorage.setItem(KEY, '1'); return; }
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    if (regs.length === 0) { localStorage.setItem(KEY, '1'); return; }
+    Promise.all(regs.map((r) => r.unregister()))
+      .then(() => caches?.keys?.().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))))
+      .then(() => {
+        localStorage.setItem(KEY, '1');
+        // 強制ハードリロード (Service Worker キャッシュも無視)
+        if (!sessionStorage.getItem('core_sw_reloaded_v3')) {
+          sessionStorage.setItem('core_sw_reloaded_v3', '1');
+          window.location.reload();
+        }
+      })
+      .catch(() => { localStorage.setItem(KEY, '1'); });
+  }).catch(() => { localStorage.setItem(KEY, '1'); });
+})();
+
 // ─── マスターキー判定 (GAUCHE2026) → /api/ai に x-master-key ヘッダー自動付与 ───
 // URL クエリ ?master=GAUCHE2026 で初回有効化、以降は localStorage に保存
 const MASTER_KEY_STORAGE = 'core_master_key_v1';
