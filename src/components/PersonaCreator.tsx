@@ -20,57 +20,74 @@ type Preset = {
   icon: string;
   description: string;
   colorIndex: number;
+  /** カード上に1行で見せる短い説明 */
+  oneLiner: string;
 };
 
 const PRESETS: Preset[] = [
   {
-    name: '不動産COO',
-    subtitle: 'Real Estate Operations',
-    icon: '◈',
-    description: '不動産投資のプロとして、数字とデータに基づいた戦略的な提案を行う。利回り・キャッシュフロー・法的リスクを考慮した実践的なアドバイスを提供する。',
+    name: 'IT会社CEO',
+    subtitle: 'Tech Startup CEO',
+    icon: '⬡',
+    oneLiner: 'プロダクト戦略・採用・資金調達を統括',
+    description: 'IT企業の経営者として、プロダクト方針・採用・資金調達・組織開発を統括する。仮説検証のスピードと顧客解像度を重視し、エンジニアリングと事業の両面から判断する。',
     colorIndex: 0,
   },
   {
-    name: '医師',
-    subtitle: 'Medical Advisor',
-    icon: '⚕',
-    description: '医学的知見に基づき、症状・原因・対処法を客観的に説明する。エビデンスを重視し、必要に応じて受診を促す慎重なアドバイザー。',
-    colorIndex: 4,
-  },
-  {
-    name: 'CTO',
-    subtitle: 'Chief Technology Officer',
-    icon: '⬡',
-    description: 'エンジニアリング全体を統括する立場で、アーキテクチャ・技術選定・チーム生産性の観点から戦略的に判断する。',
-    colorIndex: 2,
-  },
-  {
-    name: 'クリエイター',
-    subtitle: 'Creative Director',
+    name: '動画クリエイター',
+    subtitle: 'Video Creator',
     icon: '✦',
-    description: 'ブランド・世界観・ストーリーを軸に、感情に訴えるアウトプットを作る。デザインとコピーの両方に強い。',
+    oneLiner: '企画・撮影・編集・収益化を一人で回す',
+    description: 'YouTube / TikTok / Instagram で動画を発信するクリエイター。企画・撮影・編集・分析・案件交渉までを自己完結する。再生数とエンゲージメント、ブランドの世界観を数字で把握する。',
     colorIndex: 6,
   },
   {
-    name: '起業家',
-    subtitle: 'Entrepreneur',
+    name: '不動産会社社長',
+    subtitle: 'Real Estate CEO',
+    icon: '◈',
+    oneLiner: '物件取得・運営・資金繰りを判断',
+    description: '不動産会社の経営者として、物件取得・賃貸運営・資金繰り・法務リスクを総合的に判断する。利回り・キャッシュフロー・市場動向を数字で押さえた実践的な助言を行う。',
+    colorIndex: 1,
+  },
+  {
+    name: '人材会社社長',
+    subtitle: 'HR / Staffing CEO',
     icon: '★',
-    description: 'ゼロイチで事業を立ち上げる視点で、市場・顧客・実行可能性をシビアに見極める。仮説検証とスピードを重視。',
+    oneLiner: '求職者・クライアント・マッチング率を管理',
+    description: '人材紹介・派遣会社の経営者として、求職者プール・クライアント開拓・マッチング率・粗利率を最適化する。法令遵守と長期的な信頼関係を重視する。',
     colorIndex: 5,
   },
   {
-    name: '投資家',
-    subtitle: 'Investor',
+    name: 'EC ショップ運営',
+    subtitle: 'E-commerce Owner',
     icon: '◆',
-    description: '財務・市場・経営チームを冷静に分析し、長期的なリターンとリスクの観点から判断する。',
-    colorIndex: 1,
+    oneLiner: '商品開発・仕入れ・広告 ROI を最適化',
+    description: 'Shopify / 楽天 / Amazon などで自社ブランドを展開するオーナー。商品開発・仕入れ・在庫・広告 ROAS・LTV を一人で意思決定する。',
+    colorIndex: 7,
   },
   {
     name: 'インフルエンサー',
     subtitle: 'Influencer / Creator',
     icon: '★',
-    description: 'SNS で発信し、ブランドや代理店から PR 案件を受けるクリエイター。フォロワー・エンゲージメント率・自身のブランド観を数字で把握し、案件の交渉から納品・レポートまで自己完結する。',
+    oneLiner: 'SNS 発信 + PR 案件交渉まで自己完結',
+    description: 'SNS で発信し、ブランドや代理店から PR 案件を受けるクリエイター。フォロワー・エンゲージメント率・自身のブランド観を数字で把握し、交渉から納品・レポートまで自己完結する。',
     colorIndex: 6,
+  },
+  {
+    name: '飲食店オーナー',
+    subtitle: 'Restaurant Owner',
+    icon: '◆',
+    oneLiner: '原価率・人件費・来客サイクルを管理',
+    description: '飲食店の経営者として、メニュー設計・原価率・人件費・客単価・リピート率を管理する。仕込みからレビュー対応まで、現場とオフィスの両方を回す。',
+    colorIndex: 4,
+  },
+  {
+    name: 'コンサルタント',
+    subtitle: 'Consultant',
+    icon: '⬡',
+    oneLiner: '仮説立案・PJ 管理・提案書作成を高速化',
+    description: '経営・IT・マーケ等のコンサルタントとして、クライアント課題を構造化し、仮説・実行プラン・提案書を高速で作る。複数 PJ を並行管理する。',
+    colorIndex: 2,
   },
 ];
 
@@ -114,7 +131,7 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
       onClick={onCancel}
     >
       <motion.div
-        className="w-full max-w-lg rounded-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-xl rounded-2xl overflow-hidden flex flex-col"
         style={{
           background: '#15151c',
           border: '1px solid rgba(255,255,255,0.1)',
@@ -169,8 +186,11 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
 
           {/* プリセット */}
           <div>
-            <p className="text-white/70 text-xs tracking-wider uppercase mb-2">クイック選択</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-baseline justify-between mb-2">
+              <p className="text-white/80 text-xs tracking-wider uppercase">クイック選択</p>
+              <p className="text-white/40 text-[11px]">タップで自動入力</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {PRESETS.map(p => {
                 const c = ACCENT_COLORS[p.colorIndex];
                 const active = name === p.name && subtitle === p.subtitle;
@@ -178,21 +198,22 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
                   <button
                     key={p.name}
                     onClick={() => applyPreset(p)}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-all"
+                    className="flex items-start gap-2.5 px-3 py-3 rounded-xl text-left transition-all"
                     style={{
-                      background: active ? c.light : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${active ? c.color : 'rgba(255,255,255,0.08)'}`,
+                      background: active ? c.light : 'rgba(255,255,255,0.05)',
+                      border: `1px solid ${active ? c.color : 'rgba(255,255,255,0.10)'}`,
+                      minHeight: 64,
                     }}
                   >
                     <span
-                      className="w-7 h-7 rounded-md flex items-center justify-center text-sm flex-shrink-0"
+                      className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
                       style={{ background: `${c.color}25`, color: c.color }}
                     >
                       {p.icon}
                     </span>
-                    <span className="min-w-0">
-                      <span className="block text-white text-sm leading-tight truncate">{p.name}</span>
-                      <span className="block text-white/50 text-[10px] truncate">{p.subtitle}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-white text-[13px] font-medium leading-tight truncate">{p.name}</span>
+                      <span className="block text-white/55 text-[11px] mt-0.5 leading-snug line-clamp-2">{p.oneLiner}</span>
                     </span>
                   </button>
                 );
@@ -208,7 +229,7 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="例：不動産COO、医師、起業家..."
+                placeholder="例：IT会社CEO、動画クリエイター、人材会社社長..."
                 className="w-full bg-white/5 text-white text-sm font-light outline-none rounded-lg px-3 py-2.5 placeholder:text-white/30 transition-all"
                 style={{ border: `1px solid ${name ? selectedColor.color + '80' : 'rgba(255,255,255,0.08)'}` }}
                 autoFocus
@@ -220,7 +241,7 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
                 type="text"
                 value={subtitle}
                 onChange={e => setSubtitle(e.target.value)}
-                placeholder="例：Real Estate Operations"
+                placeholder="例：Tech Startup CEO"
                 className="w-full bg-white/5 text-white text-sm font-light outline-none rounded-lg px-3 py-2.5 placeholder:text-white/30 transition-all"
                 style={{ border: '1px solid rgba(255,255,255,0.08)' }}
               />
@@ -284,7 +305,7 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="例：不動産投資のプロとして、数字とデータに基づいた戦略的な提案を行う。利回り・キャッシュフロー・法的リスクを考慮した実践的なアドバイスを提供する。"
+                placeholder="例：IT企業の経営者として、プロダクト・採用・資金調達を統括する。仮説検証のスピードを重視。"
                 className="mt-2 w-full bg-white/5 text-white text-sm font-light outline-none rounded-lg px-3 py-2.5 placeholder:text-white/30 resize-none"
                 style={{ border: '1px solid rgba(255,255,255,0.08)', minHeight: '90px' }}
                 rows={4}
