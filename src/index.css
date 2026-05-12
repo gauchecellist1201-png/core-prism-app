@@ -697,6 +697,14 @@ input, textarea, select { font-family: inherit; }
 @media (max-width: 768px) {
   .iris-tab-secondary { display: none !important; }
   .iris-tab-more { display: inline-flex !important; }
+  /* タブの最後のボタンに右側余白を追加 (safe-area + 視認性) */
+  .iris-tabs {
+    padding-right: max(1rem, env(safe-area-inset-right)) !important;
+    padding-left: max(0.25rem, env(safe-area-inset-left)) !important;
+    scroll-padding-right: 1rem;
+  }
+  /* スクロール可能なことを示す右側フェード */
+  .iris-tabs::-webkit-scrollbar { display: none; }
 }
 /* PC ではヘッダの ≡ メニュー (もう一つのトリガー) を非表示 */
 @media (min-width: 769px) {

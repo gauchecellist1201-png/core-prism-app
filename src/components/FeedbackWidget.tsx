@@ -52,29 +52,31 @@ export default function FeedbackWidget({ brand }: Props) {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Floating button — 左下に配置 (右下は AI と話すボタンが占有) */}
       <button
         type="button"
         aria-label="フィードバックを送る"
         onClick={() => setOpen(true)}
+        className="cp-feedback-fab"
         style={{
           position: 'fixed',
-          right: 'max(16px, env(safe-area-inset-right))',
+          left: 'max(16px, env(safe-area-inset-left))',
           bottom: 'max(16px, env(safe-area-inset-bottom))',
           zIndex: 9998,
           background: `linear-gradient(135deg, ${accent}, ${accentLight})`,
           color: '#fff',
           border: 'none',
           borderRadius: 999,
-          padding: '12px 18px',
-          fontSize: 14,
+          padding: '10px 14px',
+          fontSize: 13,
           fontWeight: 700,
           letterSpacing: 0.2,
           cursor: 'pointer',
-          boxShadow: '0 6px 24px rgba(0,0,0,0.18)',
+          boxShadow: '0 6px 24px rgba(0,0,0,0.22)',
           display: 'inline-flex',
           alignItems: 'center',
-          gap: 8,
+          gap: 6,
+          maxWidth: 'calc(100vw - 32px)',
         }}
       >
         <span aria-hidden>💌</span>

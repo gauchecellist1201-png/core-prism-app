@@ -145,7 +145,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
       {/* ヘッダ */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 40,
-        padding: '0.85rem 1.25rem',
+        padding: '0.85rem max(1.25rem, env(safe-area-inset-right)) 0.85rem max(1.25rem, env(safe-area-inset-left))',
         background: 'rgba(255,255,255,0.55)',
         backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${bg.cardBorder}`,
