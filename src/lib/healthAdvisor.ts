@@ -35,6 +35,10 @@ interface AvgStats {
   hr: number;
   sleep: number;
   activeMin: number;
+  hrv: number;
+  deepSleepMin: number;
+  remSleepMin: number;
+  stress: number;
 }
 
 function avgOf(days: DailyHealth[]): AvgStats | null {
@@ -46,6 +50,10 @@ function avgOf(days: DailyHealth[]): AvgStats | null {
     hr: Math.round(sum('restingHR') / n),
     sleep: +(sum('sleepHours') / n).toFixed(1),
     activeMin: Math.round(sum('activeMinutes') / n),
+    hrv: Math.round(sum('hrv') / n),
+    deepSleepMin: Math.round(sum('deepSleepMin') / n),
+    remSleepMin: Math.round(sum('remSleepMin') / n),
+    stress: Math.round(sum('stressLevel') / n),
   };
 }
 
@@ -68,7 +76,10 @@ function buildSystemPrompt(tone: AdviceTone): string {
     ? 'クリエイター女性 (20-40代想定) 向けに「美しさは内側から」の観点で'
     : 'ビジネスパーソン (20-50代想定) 向けに「最高のパフォーマンスは整った身体から」の観点で';
   return `あなたは美容/健康/睡眠/運動栄養の専門家。Apple Health データを見て、${audience}実践的アドバイスを返す。
-データには「今日」「7日平均」「30日平均」「トレンド (improving / worsening / stable)」が含まれる。トレンドを必ず読み取り、悪化なら原因仮説と立て直しを、改善なら維持/加速の戦略を返すこと。
+データには「今日」「7日平均」「30日平均」「トレンド (improving / worsening / stable)」が含まれ、HRV (自律神経指標)・深睡眠分・レム睡眠分・ストレス推定 も含む。
+深睡眠 60 分未満 / レム 70 分未満 / HRV 40ms 未満 / ストレス 60 超 のときは必ず該当分野でケアを提示すること。
+トレンドを必ず読み取り、悪化なら原因仮説と立て直しを、改善なら維持/加速の戦略を返すこと。
+tonightAction / dinnerTiming / tomorrowWorkout は今日のデータから導く具体的な「時刻 + 行動」を含めること (例: 「23:30 までに入浴」「20:00 までに夕食、タンパク質 25g」)。
 返却 JSON のみ (説明やコードフェンス不要):
 {
   "score": number (0-100, 総合健康スコア),
@@ -85,15 +96,15 @@ function buildSystemPrompt(tone: AdviceTone): string {
 
 function statsToText(today: DailyHealth | null, week7: AvgStats | null, month30: AvgStats | null, trend: string): string {
   const todayStr = today
-    ? `今日: 安静時心拍 ${today.restingHR ?? '—'}bpm / 歩数 ${today.steps ?? '—'}歩 / 睡眠 ${today.sleepHours?.toFixed(1) ?? '—'}h / アクティブ ${today.activeMinutes ?? '—'}分 / HRV ${today.hrv ?? '—'}ms / リカバリー ${today.recoveryScore ?? '—'}`
+    ? `今日: 安静時心拍 ${today.restingHR ?? '—'}bpm / HRV ${today.hrv ?? '—'}ms / 歩数 ${today.steps ?? '—'}歩 / 睡眠 ${today.sleepHours?.toFixed(1) ?? '—'}h (深 ${today.deepSleepMin ?? '—'}分 / レム ${today.remSleepMin ?? '—'}分) / アクティブ ${today.activeMinutes ?? '—'}分 / リカバリー ${today.recoveryScore ?? '—'} / ストレス推定 ${today.stressLevel ?? '—'}`
     : '今日のデータなし';
   const w = week7
-    ? `7日平均: 心拍 ${week7.hr}bpm / 歩数 ${week7.steps}歩 / 睡眠 ${week7.sleep}h / 運動 ${week7.activeMin}分`
+    ? `7日平均: 心拍 ${week7.hr}bpm / HRV ${week7.hrv}ms / 歩数 ${week7.steps}歩 / 睡眠 ${week7.sleep}h (深 ${week7.deepSleepMin}分 / レム ${week7.remSleepMin}分) / 運動 ${week7.activeMin}分 / ストレス ${week7.stress}`
     : '7日平均データなし';
   const m = month30
-    ? `30日平均: 心拍 ${month30.hr}bpm / 歩数 ${month30.steps}歩 / 睡眠 ${month30.sleep}h / 運動 ${month30.activeMin}分`
+    ? `30日平均: 心拍 ${month30.hr}bpm / HRV ${month30.hrv}ms / 歩数 ${month30.steps}歩 / 睡眠 ${month30.sleep}h (深 ${month30.deepSleepMin}分 / レム ${month30.remSleepMin}分) / 運動 ${month30.activeMin}分 / ストレス ${month30.stress}`
     : '30日平均データなし';
-  const tr = `直近トレンド: ${trend === 'improving' ? '改善傾向' : trend === 'worsening' ? '悪化傾向' : '安定'}`;
+  const tr = `直近トレンド (7日 vs 30日): ${trend === 'improving' ? '改善傾向' : trend === 'worsening' ? '悪化傾向' : '安定'}`;
   return `${todayStr}\n${w}\n${m}\n${tr}`;
 }
 

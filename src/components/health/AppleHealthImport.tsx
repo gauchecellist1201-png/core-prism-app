@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { Upload, CheckCircle2, AlertTriangle, FileText, Loader2 } from 'lucide-react';
+import { Upload, CheckCircle2, AlertTriangle, FileText, Loader2, Sparkles } from 'lucide-react';
 import { PRISM, Pill } from '../prism/MockShell';
 import { importAppleHealthXml, importAppleHealthZip, type AppleImportProgress } from '../../data/appleHealthImport';
+import { generateMockHealth } from '../../data/mockHealth';
 import type { useHealth } from '../../hooks/useHealth';
 
 interface Props {
@@ -50,6 +51,21 @@ export function AppleHealthImport({ health }: Props) {
     setDraggingOver(false);
     const f = e.dataTransfer.files?.[0];
     if (f) handleFile(f);
+  };
+
+  const handleSampleData = async () => {
+    setError(null);
+    setProgress({ phase: 'parsing', recordsRead: 0, daysProduced: 0, message: 'サンプル PHR を生成中...' });
+    try {
+      const days = generateMockHealth(30);
+      health.mergeDays(days);
+      health.markAppleHealthImported(days.length);
+      setCompletedDays(days.length);
+      setProgress({ phase: 'done', recordsRead: days.length * 60, daysProduced: days.length });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'サンプル生成に失敗');
+      setProgress(null);
+    }
   };
 
   const isParsing = progress && progress.phase !== 'done' && progress.phase !== 'error';
@@ -124,6 +140,15 @@ export function AppleHealthImport({ health }: Props) {
             <AlertTriangle className="mr-1 inline h-3 w-3" />
             ファイルはブラウザ内のみで処理。サーバーへ送信しません。
           </div>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); handleSampleData(); }}
+            disabled={!!isParsing}
+            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[12px] font-medium text-fg hover:bg-white/10 disabled:opacity-60"
+          >
+            <Sparkles className="h-3 w-3" style={{ color: PRISM.creative }} />
+            サンプルデータで試す (30 日分)
+          </button>
         </div>
       </div>
 
