@@ -64,6 +64,7 @@ import { speakNatural } from '../lib/tts';
 import { loadBenchmarkResult } from '../lib/benchmarkAnalyst';
 import type { DailyHealth } from '../types/health';
 import type { HealthAnomaly } from '../data/healthAnomaly';
+import AutoAgentHero from './AutoAgentHero';
 
 interface Props {
   persona: Persona;
@@ -555,6 +556,24 @@ export default function IdentityDashboard({
 
           <div className="flex-1 overflow-auto p-3 md:p-4 relative">
             <div className="max-w-5xl space-y-3">
+
+              <AutoAgentHero
+                ctx={{
+                  brand: 'prism',
+                  user: persona.name,
+                  persona: `${persona.name} (${persona.subtitle || ''})`,
+                  now: new Date(),
+                  knowledge: knowledgeItems.length
+                    ? `${knowledgeItems.length} 件のナレッジ。最新: ${knowledgeItems.slice(-3).map((k: any) => k.title || k.fileName || '無題').join(' / ')}`
+                    : undefined,
+                  health: healthCtx?.today
+                    ? `今日 心拍${healthCtx.today.restingHR ?? '?'}/睡眠${healthCtx.today.sleepHours?.toFixed(1) ?? '?'}h/歩数${healthCtx.today.steps?.toLocaleString() ?? '?'}`
+                    : undefined,
+                }}
+                theme="dark"
+                brandLabel="PRISM"
+                brandGradient="linear-gradient(135deg, #2E6FFF 0%, #8E5CFF 50%, #E84B97 100%)"
+              />
 
               <TodayBrief
                 persona={persona}

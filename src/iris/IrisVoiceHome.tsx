@@ -17,6 +17,8 @@ import {
 import { IrisHeroGreeting } from './IrisWelcome';
 import IrisBondCard from './IrisBondCard';
 import { useIrisBond } from './useIrisBond';
+import AutoAgentHero from '../components/AutoAgentHero';
+import type { AgentContext } from '../lib/autoAgent';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { useVoiceInput } from '../hooks/useVoiceInput';
@@ -293,7 +295,24 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
         <SummaryCard bg={bg} label="今月報酬" value={'¥' + (earnings / 1000).toFixed(0) + 'K'} Icon={Wallet} />
       </div>
 
-      {/* ── AI 先回りヒーロー (スプラッシュは廃止: スムーズ導線優先) ── */}
+      {/* ── 自律エージェント: Iris が考えた次の一手 ── */}
+      <AutoAgentHero
+        ctx={{
+          brand: 'iris',
+          user: mediaKit?.handleName,
+          persona: mediaKit?.handleName,
+          now: new Date(),
+          bondContext: bond.aiContext,
+          deals: myDeals.length
+            ? `${myDeals.length} 件進行中。stage: ${[...new Set(myDeals.map((d: any) => d.stage))].join(', ')}`
+            : '案件まだなし',
+          postQueue: postQueue?.posts?.length
+            ? `${postQueue.posts.length} 件キュー中 (ready: ${postQueue.posts.filter((p: any) => p.status === 'ready').length})`
+            : '予約投稿まだなし',
+        } as AgentContext}
+        onJump={onNavigate}
+      />
+
       <IrisBondCard bg={bg} />
       <IrisHeroGreeting
         bg={bg}
