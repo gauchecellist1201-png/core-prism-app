@@ -17,6 +17,7 @@ import PersonaCreator from './components/PersonaCreator';
 import SettingsModal from './components/SettingsModal';
 import LandingPage from './components/LandingPage';
 import MasterEntry from './components/MasterEntry';
+import StripeStatusPage from './components/StripeStatusPage';
 import CheckoutModal from './components/CheckoutModal';
 import LegalModal, { type LegalKind } from './components/LegalModal';
 import CoreSite from './corporate/CoreSite';
@@ -72,6 +73,12 @@ function isMasterPath(): boolean {
   return p === '/master' || p.startsWith('/master/');
 }
 
+function isStripeStatusPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/stripe-status' || p === '/stripe-status';
+}
+
 function isCorpPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
@@ -119,6 +126,11 @@ export default function App() {
   // /corp — 株式会社コア (CORE Inc.) 法人 LP
   if (isCorpPath()) {
     return <CoreSite />;
+  }
+
+  // /master/stripe-status — オーナー専用 Stripe 接続診断
+  if (isStripeStatusPath()) {
+    return <StripeStatusPage />;
   }
 
   // /master — オーナー専用フル機能解放画面

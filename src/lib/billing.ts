@@ -167,16 +167,22 @@ export function incrementUsage(feature: FeatureKey) {
   } catch { /* */ }
 }
 
+export type BillingCycle = 'monthly' | 'yearly';
+
 export interface Plan {
   id: PlanId;
   brand: Brand | 'both';
   name: string;
   priceJpy: number;
+  /** 年額 (= 月額 × 10 = 2 ヶ月分お得) */
+  priceJpy_yearly?: number;
   badge?: string;
   tagline: string;
   features: string[];
-  /** 正式リリース時に Stripe Checkout URL を入れる (env 経由) */
+  /** 正式リリース時に Stripe Checkout URL を入れる (env 経由) — 月額 */
   stripeUrlEnvKey?: string;
+  /** 年額 URL の env キー */
+  stripeUrlEnvKey_yearly?: string;
 }
 
 export const IRIS_PLANS: Plan[] = [
@@ -188,7 +194,7 @@ export const IRIS_PLANS: Plan[] = [
   },
   {
     id: 'lite', brand: 'iris',
-    name: 'Lite', priceJpy: 1980,
+    name: 'Lite', priceJpy: 1980, priceJpy_yearly: 19800,
     tagline: '入門・副業クリエイター',
     features: [
       'AI 戦略相談 30 回/月',
@@ -199,10 +205,11 @@ export const IRIS_PLANS: Plan[] = [
       '分析履歴 90 日',
     ],
     stripeUrlEnvKey: 'VITE_STRIPE_IRIS_LITE_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_IRIS_LITE_YEARLY_URL',
   },
   {
     id: 'standard', brand: 'iris',
-    name: 'Standard', priceJpy: 4980,
+    name: 'Standard', priceJpy: 4980, priceJpy_yearly: 49800,
     badge: '人気 No.1',
     tagline: '本気のクリエイター',
     features: [
@@ -217,10 +224,11 @@ export const IRIS_PLANS: Plan[] = [
       'コミュニティ参加可',
     ],
     stripeUrlEnvKey: 'VITE_STRIPE_IRIS_STANDARD_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_IRIS_STANDARD_YEARLY_URL',
   },
   {
     id: 'pro', brand: 'iris',
-    name: 'Pro', priceJpy: 9800,
+    name: 'Pro', priceJpy: 9800, priceJpy_yearly: 98000,
     tagline: 'チーム / マネージャー',
     features: [
       'Standard 全機能',
@@ -232,10 +240,11 @@ export const IRIS_PLANS: Plan[] = [
       'データ無制限',
     ],
     stripeUrlEnvKey: 'VITE_STRIPE_IRIS_PRO_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_IRIS_PRO_YEARLY_URL',
   },
   {
     id: 'studio', brand: 'iris',
-    name: 'Studio', priceJpy: 29800,
+    name: 'Studio', priceJpy: 29800, priceJpy_yearly: 298000,
     tagline: '事務所・代理店',
     features: [
       'Pro 全機能',
@@ -246,6 +255,7 @@ export const IRIS_PLANS: Plan[] = [
       'API キー専有',
     ],
     stripeUrlEnvKey: 'VITE_STRIPE_IRIS_STUDIO_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_IRIS_STUDIO_YEARLY_URL',
   },
 ];
 
@@ -258,7 +268,7 @@ export const PRISM_PLANS: Plan[] = [
   },
   {
     id: 'lite', brand: 'prism',
-    name: 'Starter', priceJpy: 4980,
+    name: 'Starter', priceJpy: 4980, priceJpy_yearly: 49800,
     tagline: '個人・スタートアップ',
     features: [
       '基本 AI 機能',
@@ -267,10 +277,11 @@ export const PRISM_PLANS: Plan[] = [
       'コミュニティサポート',
     ],
     stripeUrlEnvKey: 'VITE_STRIPE_PRISM_STARTER_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_PRISM_STARTER_YEARLY_URL',
   },
   {
     id: 'standard', brand: 'prism',
-    name: 'Standard', priceJpy: 9800,
+    name: 'Standard', priceJpy: 9800, priceJpy_yearly: 98000,
     badge: '人気 No.1',
     tagline: 'チームで本格活用',
     features: [
@@ -281,10 +292,11 @@ export const PRISM_PLANS: Plan[] = [
       'メール / Chat サポート',
     ],
     stripeUrlEnvKey: 'VITE_STRIPE_PRISM_STANDARD_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_PRISM_STANDARD_YEARLY_URL',
   },
   {
     id: 'pro', brand: 'prism',
-    name: 'Exclusive', priceJpy: 29800,
+    name: 'Exclusive', priceJpy: 29800, priceJpy_yearly: 298000,
     tagline: 'プロフェッショナル / 経営者',
     features: [
       'Standard 全機能',
@@ -294,6 +306,7 @@ export const PRISM_PLANS: Plan[] = [
       '社内研修 / 導入伴走',
     ],
     stripeUrlEnvKey: 'VITE_STRIPE_PRISM_EXCLUSIVE_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_PRISM_EXCLUSIVE_YEARLY_URL',
   },
 ];
 
@@ -306,10 +319,17 @@ export function findPlan(brand: Brand, id: PlanId): Plan | undefined {
 }
 
 /** 環境変数から Stripe URL を取得 (本番リリース時に値を入れる) */
-export function getStripeCheckoutUrl(plan: Plan): string | null {
-  if (!plan.stripeUrlEnvKey) return null;
-  const url = (import.meta.env as Record<string, string | undefined>)[plan.stripeUrlEnvKey];
+export function getStripeCheckoutUrl(plan: Plan, cycle: BillingCycle = 'monthly'): string | null {
+  const key = cycle === 'yearly' ? plan.stripeUrlEnvKey_yearly : plan.stripeUrlEnvKey;
+  if (!key) return null;
+  const url = (import.meta.env as Record<string, string | undefined>)[key];
   return url || null;
+}
+
+/** プランの表示価格 (cycle に応じて月額/年額) */
+export function getPlanPrice(plan: Plan, cycle: BillingCycle = 'monthly'): number {
+  if (cycle === 'yearly' && plan.priceJpy_yearly !== undefined) return plan.priceJpy_yearly;
+  return plan.priceJpy;
 }
 
 // ─── 紹介プログラム (1 人紹介 → 両者 1 ヶ月無料) ───

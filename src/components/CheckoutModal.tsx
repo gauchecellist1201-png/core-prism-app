@@ -1,13 +1,19 @@
 // ============================================================
 // CheckoutModal — 4ステップ決済フロー
 //
+// Step 1: プラン選択 (ブランドタブ × 月額/年額トグル × プランカード)
+// Step 2: アカウント作成
+// Step 3: 決済 (Stripe Checkout or テストモード)
+// Step 4: 完了
+//
 // env 設定済み: /api/stripe/checkout を叩き Stripe Checkout へリダイレクト
 // env 未設定 (503): テストモード (¥0) にフォールバック
 // ============================================================
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  type Plan, type Brand, useBillingUser,
+  type Plan, type Brand, type BillingCycle,
+  useBillingUser, getPlans, getPlanPrice, findPlan, isMasterAuth,
 } from '../lib/billing';
 import { sendEmail } from '../lib/emailNotify';
 import { isBiometricAvailable, registerBiometric } from '../lib/biometricAuth';
@@ -21,24 +27,38 @@ interface Props {
 
 type Step = 'plan' | 'account' | 'payment' | 'success';
 
-export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props) {
+export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, onClose, onSuccess }: Props) {
   const [step, setStep] = useState<Step>('plan');
+  const [brand, setBrand] = useState<Brand>(initialBrand);
+  const [cycle, setCycle] = useState<BillingCycle>('monthly');
+  const [planId, setPlanId] = useState<string>(initialPlan.id);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // true = Stripe 本番セッション確立済み、false = テストモード
   const [isTestMode, setIsTestMode] = useState<boolean>(false);
   const { signup } = useBillingUser();
 
+  // 現在選択中の Plan
+  const plan = findPlan(brand, planId as any) || getPlans(brand)[0];
   const isFree = plan.priceJpy === 0;
+  const displayPrice = getPlanPrice(plan, cycle);
+  const monthlyEquivalent = cycle === 'yearly' && plan.priceJpy_yearly
+    ? Math.round(plan.priceJpy_yearly / 12)
+    : plan.priceJpy;
 
-  // ステップ 1 → 2
+  // ブランド切替時、free をデフォルトで選択
+  const handleBrandChange = (b: Brand) => {
+    setBrand(b);
+    const plans = getPlans(b);
+    const free = plans.find(p => p.id === 'free');
+    setPlanId(free?.id || plans[0].id);
+  };
+
   const proceedToAccount = () => setStep('account');
 
-  // ステップ 2 → 3: バリデーション
   const proceedToPayment = () => {
     setError(null);
     if (!email.trim() || !email.includes('@')) {
@@ -56,22 +76,19 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
     setStep('payment');
   };
 
-  // ステップ 3: 決済実行
   const completePayment = async () => {
     setError(null);
     setBusy(true);
     try {
       if (!isFree) {
-        // Stripe セッション作成を試みる
         let stripeUrl: string | null = null;
         try {
           const resp = await fetch('/api/stripe/checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ plan: plan.id, brand, email }),
+            body: JSON.stringify({ plan: plan.id, brand, email, cycle }),
           });
           if (resp.status === 503) {
-            // env 未設定 → テストモードにフォールバック
             setIsTestMode(true);
           } else if (resp.ok) {
             const data = await resp.json() as { url?: string };
@@ -89,20 +106,15 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
         }
 
         if (stripeUrl) {
-          // 先に signup してから Stripe へ
           await signup({ email, password, brand, plan: plan.id });
-          // welcome メール (非同期・失敗無視)
           sendEmail(email, 'welcome', { name: email.split('@')[0], brand });
           window.location.href = stripeUrl;
           return;
         }
       }
 
-      // テストモード / 無料プラン: 即 signup → success
       await signup({ email, password, brand, plan: plan.id });
-      // welcome メール (非同期・失敗無視)
       sendEmail(email, 'welcome', { name: email.split('@')[0], brand });
-      // Face ID / Touch ID 登録 (失敗しても続行)
       if (await isBiometricAvailable()) {
         registerBiometric({ email, displayName: email.split('@')[0] }).catch(() => { /* */ });
       }
@@ -114,7 +126,6 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
     }
   };
 
-  // 完了 → アプリへ
   const goToApp = () => {
     onSuccess?.();
     onClose();
@@ -126,8 +137,8 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
     ? 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)'
     : 'linear-gradient(135deg, #0033A0, #1A4FC4)';
 
-  // 決済画面でテストモードかどうか (isFree は常にテスト扱い)
   const showingTestMode = isTestMode || isFree;
+  const plans = getPlans(brand);
 
   return (
     <motion.div
@@ -146,7 +157,7 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
         onClick={e => e.stopPropagation()}
         style={{
           background: '#FFFFFF', borderRadius: 24, padding: '1.5rem',
-          maxWidth: 540, width: '100%',
+          maxWidth: step === 'plan' ? 920 : 540, width: '100%',
           maxHeight: 'calc(100dvh - 2rem)', overflow: 'auto',
           fontFamily: 'Inter, -apple-system, sans-serif',
           color: '#1F1A2E',
@@ -157,10 +168,10 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
           <div>
             <div style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: accent, fontWeight: 700, textTransform: 'uppercase' }}>
-              {brand === 'iris' ? 'CORE Iris' : 'CORE Prism'} · {step === 'plan' ? 'プラン確認' : step === 'account' ? 'アカウント作成' : step === 'payment' ? 'お支払い' : '完了'}
+              {brand === 'iris' ? 'CORE Iris' : 'CORE Prism'} · {step === 'plan' ? 'プラン選択' : step === 'account' ? 'アカウント作成' : step === 'payment' ? 'お支払い' : '完了'}
             </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0.3rem 0 0', lineHeight: 1.3 }}>
-              {plan.name}
+              {step === 'plan' ? 'あなたに合うプランは？' : plan.name}
             </h2>
           </div>
           <button onClick={onClose} style={{
@@ -183,35 +194,182 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
         </div>
 
         <AnimatePresence mode="wait">
-          {/* Step 1: プラン詳細 */}
           {step === 'plan' && (
             <motion.div key="plan" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              {/* ブランドタブ */}
               <div style={{
-                padding: '1.25rem', borderRadius: 16,
-                background: `${accent}11`,
-                border: `1px solid ${accent}33`,
-                marginBottom: '1rem',
+                display: 'flex', gap: '0.5rem', marginBottom: '1rem',
+                background: '#F4F1FA', padding: 4, borderRadius: 999,
               }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.4rem' }}>
-                  <span style={{ fontSize: '2rem', fontWeight: 900, color: accent }}>
-                    ¥{plan.priceJpy.toLocaleString()}
-                  </span>
-                  <span style={{ fontSize: '0.85rem', color: '#5A5562' }}>/ 月</span>
-                  {plan.badge && (
-                    <span style={{
-                      marginLeft: 'auto',
-                      background: accentGrad, color: '#fff',
-                      padding: '0.18rem 0.6rem', borderRadius: 999,
-                      fontSize: '0.7rem', fontWeight: 700,
+                {(['prism', 'iris'] as Brand[]).map(b => (
+                  <button key={b} onClick={() => handleBrandChange(b)} style={{
+                    flex: 1,
+                    background: brand === b
+                      ? (b === 'iris' ? 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)' : 'linear-gradient(135deg, #0033A0, #1A4FC4)')
+                      : 'transparent',
+                    color: brand === b ? '#fff' : '#5A5562',
+                    border: 'none', borderRadius: 999,
+                    padding: '0.6rem 1rem',
+                    fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}>
+                    {b === 'iris' ? 'CORE Iris (個人 / クリエイター)' : 'CORE Prism (法人 / チーム)'}
+                  </button>
+                ))}
+              </div>
+
+              {/* 月額 / 年額トグル */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: '0.5rem', marginBottom: '1.25rem',
+              }}>
+                <button onClick={() => setCycle('monthly')} style={{
+                  background: cycle === 'monthly' ? '#1F1A2E' : 'transparent',
+                  color: cycle === 'monthly' ? '#fff' : '#5A5562',
+                  border: '1px solid rgba(0,0,0,0.12)',
+                  borderRadius: 999, padding: '0.45rem 1rem',
+                  fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+                }}>月額</button>
+                <button onClick={() => setCycle('yearly')} style={{
+                  background: cycle === 'yearly' ? '#1F1A2E' : 'transparent',
+                  color: cycle === 'yearly' ? '#fff' : '#5A5562',
+                  border: '1px solid rgba(0,0,0,0.12)',
+                  borderRadius: 999, padding: '0.45rem 1rem',
+                  fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '0.4rem',
+                }}>
+                  年額
+                  <span style={{
+                    background: '#10B981', color: '#fff',
+                    fontSize: '0.65rem', padding: '0.1rem 0.4rem',
+                    borderRadius: 999, fontWeight: 700,
+                  }}>2ヶ月分お得</span>
+                </button>
+              </div>
+
+              {/* 14 日無料トライアル (Prism のみ別枠) */}
+              {brand === 'prism' && (() => {
+                const trial = plans.find(p => p.id === 'free');
+                if (!trial) return null;
+                const selected = planId === 'free';
+                return (
+                  <button onClick={() => setPlanId('free')} style={{
+                    width: '100%', textAlign: 'left',
+                    padding: '1rem 1.25rem', borderRadius: 16,
+                    background: selected
+                      ? 'linear-gradient(135deg, #F0FDF4, #ECFDF5)'
+                      : '#FAFAF8',
+                    border: selected
+                      ? '2px solid #10B981'
+                      : '1px solid rgba(0,0,0,0.08)',
+                    cursor: 'pointer', marginBottom: '1rem',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    gap: '1rem',
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                        <strong style={{ fontSize: '1rem', color: '#065F46' }}>{trial.name}</strong>
+                        <span style={{
+                          background: '#10B981', color: '#fff',
+                          padding: '0.15rem 0.5rem', borderRadius: 999,
+                          fontSize: '0.65rem', fontWeight: 700,
+                        }}>カード不要</span>
+                      </div>
+                      <p style={{ fontSize: '0.78rem', color: '#065F46', margin: 0, lineHeight: 1.6 }}>
+                        {trial.features.join(' · ')}
+                      </p>
+                    </div>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#10B981' }}>¥0</span>
+                  </button>
+                );
+              })()}
+
+              {/* プランカード (モバイル 1 列 / デスクトップ複数列) */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '0.75rem',
+              }}>
+                {plans.filter(p => p.id !== 'free').map(p => {
+                  const selected = p.id === planId;
+                  const price = getPlanPrice(p, cycle);
+                  const monthly = cycle === 'yearly' && p.priceJpy_yearly
+                    ? Math.round(p.priceJpy_yearly / 12)
+                    : p.priceJpy;
+                  return (
+                    <button key={p.id} onClick={() => setPlanId(p.id)} style={{
+                      textAlign: 'left',
+                      padding: '1.1rem 1rem',
+                      borderRadius: 16,
+                      background: selected ? `${accent}0F` : '#FAFAF8',
+                      border: selected ? `2px solid ${accent}` : '1px solid rgba(0,0,0,0.08)',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      transition: 'all 0.18s',
                     }}>
-                      {plan.badge}
-                    </span>
-                  )}
-                </div>
-                <p style={{ fontSize: '0.85rem', color: '#5A5562', marginBottom: '0.75rem' }}>{plan.tagline}</p>
-                <ul style={{ paddingLeft: '1.2rem', lineHeight: 1.9, fontSize: '0.88rem', color: '#1F1A2E' }}>
-                  {plan.features.map((f, i) => <li key={i}>{f}</li>)}
-                </ul>
+                      {p.badge && (
+                        <span style={{
+                          position: 'absolute', top: -10, right: 12,
+                          background: accentGrad, color: '#fff',
+                          padding: '0.2rem 0.6rem', borderRadius: 999,
+                          fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.05em',
+                        }}>
+                          {p.badge}
+                        </span>
+                      )}
+                      <div style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '0.25rem', color: '#1F1A2E' }}>
+                        {p.name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#8A8593', marginBottom: '0.6rem', minHeight: '1.2em' }}>
+                        {p.tagline}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', marginBottom: '0.6rem' }}>
+                        <span style={{ fontSize: '1.4rem', fontWeight: 900, color: accent }}>
+                          ¥{price.toLocaleString()}
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: '#5A5562' }}>
+                          / {cycle === 'yearly' ? '年' : '月'}
+                        </span>
+                      </div>
+                      {cycle === 'yearly' && (
+                        <div style={{ fontSize: '0.68rem', color: '#10B981', marginBottom: '0.5rem', fontWeight: 600 }}>
+                          月あたり ¥{monthly.toLocaleString()}
+                        </div>
+                      )}
+                      <ul style={{
+                        paddingLeft: '1rem', margin: 0,
+                        fontSize: '0.74rem', lineHeight: 1.6, color: '#1F1A2E',
+                      }}>
+                        {p.features.slice(0, 4).map((f, i) => <li key={i}>{f}</li>)}
+                        {p.features.length > 4 && (
+                          <li style={{ color: '#8A8593' }}>+ {p.features.length - 4} 項目</li>
+                        )}
+                      </ul>
+                      <div style={{
+                        marginTop: '0.8rem',
+                        padding: '0.4rem 0.6rem',
+                        borderRadius: 999,
+                        background: selected ? accentGrad : 'rgba(0,0,0,0.04)',
+                        color: selected ? '#fff' : '#5A5562',
+                        fontSize: '0.75rem', fontWeight: 700, textAlign: 'center',
+                      }}>
+                        {selected ? '✓ 選択中' : '選ぶ'}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={{
+                marginTop: '1.25rem',
+                padding: '0.85rem 1rem', borderRadius: 12,
+                background: '#F8F7FA', border: '1px solid rgba(0,0,0,0.06)',
+                fontSize: '0.78rem', color: '#5A5562', lineHeight: 1.7,
+              }}>
+                <strong style={{ color: '#1F1A2E' }}>選択中:</strong> {brand === 'iris' ? 'CORE Iris' : 'CORE Prism'} · {plan.name} · ¥{displayPrice.toLocaleString()} / {cycle === 'yearly' ? '年' : '月'}
+                {cycle === 'yearly' && plan.priceJpy_yearly && (
+                  <> ({plan.priceJpy * 12 - plan.priceJpy_yearly > 0 && <>¥{(plan.priceJpy * 12 - plan.priceJpy_yearly).toLocaleString()} お得</>})</>
+                )}
               </div>
 
               <button onClick={proceedToAccount} style={{
@@ -221,13 +379,13 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                 padding: '0.95rem 1.4rem',
                 fontSize: '1rem', fontWeight: 700, cursor: 'pointer',
                 boxShadow: `0 8px 24px ${accent}55`,
+                marginTop: '1rem',
               }}>
                 次へ →
               </button>
             </motion.div>
           )}
 
-          {/* Step 2: アカウント作成 */}
           {step === 'account' && (
             <motion.div key="account" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <p style={{ marginBottom: '1rem', color: '#5A5562', fontSize: '0.92rem' }}>
@@ -266,20 +424,19 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
               {error && <ErrorBox msg={error} />}
 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={() => setStep('plan')} style={btnSecondary}>← 戺る</button>
+                <button onClick={() => setStep('plan')} style={btnSecondary}>← 戻る</button>
                 <button onClick={proceedToPayment} style={{ ...btnPrimary(accent, accentGrad), flex: 2 }}>
-                  ✨ 14日間 無料ではじめる →
+                  {isFree ? '✨ 14日間 無料ではじめる →' : '次へ →'}
                 </button>
               </div>
 
               <p style={{ marginTop: '0.85rem', fontSize: '0.75rem', color: '#8A8593', lineHeight: 1.7 }}>
-                🔒 パスワードは SHA-256 でハッシュ化してブラウザ内に保存されます。
+                パスワードは SHA-256 でハッシュ化してブラウザ内に保存されます。
                 サーバーには平文で送信されません。
               </p>
             </motion.div>
           )}
 
-          {/* Step 3: 14日間 無料トライアル開始 */}
           {step === 'payment' && (
             <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div style={{
@@ -289,23 +446,35 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                 marginBottom: '1rem',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                  <span style={{ color: '#065F46', fontWeight: 600 }}>{plan.name} プラン</span>
-                  <span style={{ fontWeight: 700, color: '#374151' }}>¥{plan.priceJpy.toLocaleString()} / 月</span>
+                  <span style={{ color: '#065F46', fontWeight: 600 }}>{plan.name} プラン ({cycle === 'yearly' ? '年額' : '月額'})</span>
+                  <span style={{ fontWeight: 700, color: '#374151' }}>¥{displayPrice.toLocaleString()} / {cycle === 'yearly' ? '年' : '月'}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                  <span style={{ color: '#10B981', fontWeight: 700 }}>14日間 無料トライアル</span>
-                  <span style={{ color: '#10B981', fontWeight: 800 }}>-¥{plan.priceJpy.toLocaleString()}</span>
-                </div>
-                <div style={{ height: 1, background: 'rgba(16,185,129,0.2)', margin: '0.6rem 0' }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#065F46' }}>本日のお支払い</span>
-                  <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981' }}>¥0</span>
-                </div>
-                <p style={{ fontSize: '0.78rem', color: '#065F46', marginTop: '0.5rem', lineHeight: 1.7 }}>
-                  ✓ 今すぐ全機能が使えます<br />
-                  ✓ 15 日目から ¥{plan.priceJpy.toLocaleString()}/月 を自動課金<br />
-                  ✓ いつでも 1 タップで解約可能（解約まで請求は発生しません）
-                </p>
+                {isFree ? (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+                      <span style={{ color: '#10B981', fontWeight: 700 }}>14日間 無料トライアル</span>
+                      <span style={{ color: '#10B981', fontWeight: 800 }}>¥0</span>
+                    </div>
+                    <div style={{ height: 1, background: 'rgba(16,185,129,0.2)', margin: '0.6rem 0' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#065F46' }}>本日のお支払い</span>
+                      <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981' }}>¥0</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ height: 1, background: 'rgba(16,185,129,0.2)', margin: '0.6rem 0' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#065F46' }}>本日のお支払い</span>
+                      <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981' }}>¥{displayPrice.toLocaleString()}</span>
+                    </div>
+                    {cycle === 'yearly' && plan.priceJpy_yearly && (
+                      <p style={{ fontSize: '0.78rem', color: '#065F46', marginTop: '0.5rem', lineHeight: 1.7 }}>
+                        年間契約で月あたり ¥{monthlyEquivalent.toLocaleString()} ・ 月額契約より ¥{(plan.priceJpy * 12 - plan.priceJpy_yearly).toLocaleString()} お得
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
 
               {showingTestMode ? (
@@ -314,8 +483,17 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                   background: '#FEF3C7', border: '1px solid #FCD34D',
                   fontSize: '0.88rem', color: '#7C2D12', marginBottom: '1rem', lineHeight: 1.7,
                 }}>
-                  🧪 <strong>ベータ確認モード</strong><br />
-                  カード情報は不要です。¥0 で 14 日間トライアル開始。
+                  <strong>ベータ確認モード</strong><br />
+                  {isFree
+                    ? 'カード情報は不要です。¥0 で 14 日間トライアル開始。'
+                    : 'Stripe 接続準備中です。今回は ¥0 で登録 → 後日決済画面をご案内します。'}
+                  {isMasterAuth() && (
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <a href="/master/stripe-status" style={{ color: '#7C2D12', textDecoration: 'underline', fontWeight: 700 }}>
+                        → Stripe 接続診断を開く (オーナー)
+                      </a>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div style={{
@@ -323,15 +501,14 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                   background: '#EBF8FF', border: '1px solid #90CDF4',
                   fontSize: '0.88rem', color: '#2A4365', marginBottom: '1rem', lineHeight: 1.7,
                 }}>
-                  💳 次の画面で <strong>カード情報を 1 度だけ登録</strong>します（Stripe の安全な画面）。<br />
-                  今日の請求は <strong>¥0</strong>。15 日目から自動で月額が始まります。
+                  次の画面で <strong>カード情報を登録</strong>します (Stripe の安全な画面)。
                 </div>
               )}
 
               {error && <ErrorBox msg={error} />}
 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={() => setStep('account')} style={btnSecondary}>← 戺る</button>
+                <button onClick={() => setStep('account')} style={btnSecondary}>← 戻る</button>
                 <button onClick={completePayment} disabled={busy} style={{
                   ...btnPrimary(accent, accentGrad),
                   flex: 2, opacity: busy ? 0.6 : 1, cursor: busy ? 'wait' : 'pointer',
@@ -339,14 +516,13 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                   {busy
                     ? '処理中…'
                     : showingTestMode
-                      ? '✨ 無料トライアル開始 (¥0)'
-                      : '✨ 14日間 無料で始める →'}
+                      ? (isFree ? '✨ 無料トライアル開始 (¥0)' : '✨ 仮登録する (¥0)')
+                      : '✨ お支払いへ →'}
                 </button>
               </div>
             </motion.div>
           )}
 
-          {/* Step 4: 完了 */}
           {step === 'success' && (
             <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
               <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
@@ -382,7 +558,7 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
                 </div>
               </div>
               <button onClick={goToApp} style={{ ...btnPrimary(accent, accentGrad), width: '100%' }}>
-                {brand === 'iris' ? '🌹 Iris を始める' : '✨ CORE Prism を始める'}
+                {brand === 'iris' ? 'Iris を始める' : 'CORE Prism を始める'}
               </button>
             </motion.div>
           )}

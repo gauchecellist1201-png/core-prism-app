@@ -23,16 +23,25 @@ function corsHeaders(req: Request) {
   };
 }
 
-function getPriceId(plan: string, brand: string): string | undefined {
-  const key = `${brand}_${plan}`;
+function getPriceId(plan: string, brand: string, cycle: string): string | undefined {
+  const key = `${brand}_${plan}_${cycle}`;
   const map: Record<string, string | undefined> = {
-    iris_lite:       process.env.STRIPE_PRICE_LITE,
-    iris_standard:   process.env.STRIPE_PRICE_STANDARD,
-    iris_pro:        process.env.STRIPE_PRICE_PRO,
-    iris_studio:     process.env.STRIPE_PRICE_STUDIO,
-    prism_lite:      process.env.STRIPE_PRICE_PRISM_STARTER,
-    prism_standard:  process.env.STRIPE_PRICE_PRISM_STANDARD,
-    prism_pro:       process.env.STRIPE_PRICE_PRISM_EXCLUSIVE,
+    // ─── 月額 (monthly) ───
+    iris_lite_monthly:       process.env.STRIPE_PRICE_LITE,
+    iris_standard_monthly:   process.env.STRIPE_PRICE_STANDARD,
+    iris_pro_monthly:        process.env.STRIPE_PRICE_PRO,
+    iris_studio_monthly:     process.env.STRIPE_PRICE_STUDIO,
+    prism_lite_monthly:      process.env.STRIPE_PRICE_PRISM_STARTER,
+    prism_standard_monthly:  process.env.STRIPE_PRICE_PRISM_STANDARD,
+    prism_pro_monthly:       process.env.STRIPE_PRICE_PRISM_EXCLUSIVE,
+    // ─── 年額 (yearly = 月額 × 10 で 2 ヶ月分お得) ───
+    iris_lite_yearly:        process.env.STRIPE_PRICE_LITE_YEARLY,
+    iris_standard_yearly:    process.env.STRIPE_PRICE_STANDARD_YEARLY,
+    iris_pro_yearly:         process.env.STRIPE_PRICE_PRO_YEARLY,
+    iris_studio_yearly:      process.env.STRIPE_PRICE_STUDIO_YEARLY,
+    prism_lite_yearly:       process.env.STRIPE_PRICE_PRISM_STARTER_YEARLY,
+    prism_standard_yearly:   process.env.STRIPE_PRICE_PRISM_STANDARD_YEARLY,
+    prism_pro_yearly:        process.env.STRIPE_PRICE_PRISM_EXCLUSIVE_YEARLY,
   };
   return map[key];
 }
@@ -59,7 +68,7 @@ export default async function handler(req: Request) {
     return json({ error: 'STRIPE_NOT_CONFIGURED' }, 503, ch);
   }
 
-  let body: { plan?: string; brand?: string; email?: string };
+  let body: { plan?: string; brand?: string; email?: string; cycle?: string };
   try {
     body = await req.json();
   } catch {
@@ -67,11 +76,12 @@ export default async function handler(req: Request) {
   }
 
   const { plan, brand, email } = body;
+  const cycle = body.cycle === 'yearly' ? 'yearly' : 'monthly';
   if (!plan || !brand) {
     return json({ error: 'Missing plan or brand' }, 400, ch);
   }
 
-  const priceId = getPriceId(plan, brand);
+  const priceId = getPriceId(plan, brand, cycle);
   if (!priceId) {
     return json({ error: 'STRIPE_NOT_CONFIGURED' }, 503, ch);
   }
@@ -88,6 +98,7 @@ export default async function handler(req: Request) {
   params.append('cancel_url', cancelUrl);
   params.append('metadata[plan]', plan);
   params.append('metadata[brand]', brand);
+  params.append('metadata[cycle]', cycle);
   if (email) params.append('customer_email', email);
 
   let stripeResp: Response;
