@@ -250,6 +250,12 @@ export default async function handler(req: Request) {
       }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
     }
     try {
+      // body.model が 'claude-opus-4-5' 等の場合、Anthropic が現存モデルとして
+      // 受理しない可能性があるため、安全なデフォルトに正規化
+      const claudeBody = { ...body };
+      if (!claudeBody.model || /^claude-(opus|sonnet|haiku|3-)/.test(claudeBody.model) === false) {
+        claudeBody.model = 'claude-haiku-4-5';
+      }
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -257,19 +263,24 @@ export default async function handler(req: Request) {
           'x-api-key': claudeKey,
           'anthropic-version': '2023-06-01',
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(claudeBody),
       });
-      const txt = await r.text();
-      return new Response(txt, {
-        status: r.status,
-        headers: { 'Content-Type': 'application/json', 'x-ai-route': routeReason, ...corsHeaders },
-      });
+      // Claude が失敗したら Gemini にフォールバック (overload/rate-limit/サーバーエラー)
+      if (!r.ok && (r.status === 429 || r.status === 503 || r.status === 529 || r.status >= 500)) {
+        console.warn(`[ai] Claude failed with ${r.status}, falling back to Gemini`);
+        // fall-through: Gemini ブロックへ
+      } else {
+        const txt = await r.text();
+        return new Response(txt, {
+          status: r.status,
+          headers: { 'Content-Type': 'application/json', 'x-ai-route': routeReason, ...corsHeaders },
+        });
+      }
     } catch (e: any) {
-      return new Response(JSON.stringify({ error: { message: e.message, type: 'claude_proxy_error' } }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', 'x-ai-route': routeReason, ...corsHeaders },
-      });
+      console.warn('[ai] Claude exception, falling back to Gemini:', e?.message);
+      // フォールバック継続
     }
+    // ここに到達 = Claude 失敗。Gemini に流す (routeReason を上書き)
   }
 
   // ─── デフォルト: Gemini ───

@@ -152,14 +152,14 @@ export default function AutoAgentHero({
             backgroundClip: 'text',
             letterSpacing: '-0.01em',
           }}>
-            やる、それとも、直す。
+            今日やること、3 つ用意しました。
           </h2>
           <p style={{
             margin: '0.3rem 0 0',
             fontSize: 12.5, color: textSecondary,
             fontFamily: '"Noto Sans JP", sans-serif', lineHeight: 1.6,
           }}>
-            あなたの代わりに考えました。タップで実行、迷えば直してくださいと言うだけ。
+            タップでそのまま実行。違えば「もっとこうして」と言うだけ。
           </p>
         </div>
         <button onClick={() => load(true)} disabled={loading} title="再生成" style={{

@@ -31,6 +31,7 @@ import BillingSuccess from './components/BillingSuccess';
 import KeynoteLanding from './keynote/KeynoteLanding';
 import PrismTaskScheduler from './prism/PrismTaskScheduler';
 import PrismSplash from './prism/PrismWelcome';
+import TutorialOverlay from './components/TutorialOverlay';
 
 import type { AppSettings, ChatMessage } from './types/identity';
 
@@ -393,6 +394,8 @@ export default function App() {
       <PrismTaskScheduler />
       {/* Prism: シネマティック スプラッシュ (初回セッションのみ) */}
       <PrismSplash personaName={activePersona?.name} />
+      {/* Prism: チュートリアル (初回起動のみ表示、スキップ可) */}
+      <TutorialOverlay brand="prism" />
     </>
   );
 }

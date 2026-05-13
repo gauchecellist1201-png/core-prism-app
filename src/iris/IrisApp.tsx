@@ -6,6 +6,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useSettings } from '../hooks/useSettings';
 import IrisLanding from './IrisLanding';
 import IrisDashboard from './IrisDashboard';
+import TutorialOverlay from '../components/TutorialOverlay';
 import CheckoutModal from '../components/CheckoutModal';
 import { useBillingUser, IRIS_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, type Plan } from '../lib/billing';
 
@@ -78,5 +79,10 @@ export default function IrisApp() {
       </>
     );
   }
-  return <IrisDashboard settings={settings} onLeave={() => setEntered(false)} />;
+  return (
+    <>
+      <IrisDashboard settings={settings} onLeave={() => setEntered(false)} />
+      <TutorialOverlay brand="iris" />
+    </>
+  );
 }
