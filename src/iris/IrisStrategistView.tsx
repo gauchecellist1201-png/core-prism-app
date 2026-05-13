@@ -1,8 +1,9 @@
 // ============================================================
 // IRIS — Strategist View (戦略スタジオ)
-// 投稿履歴 / 分析 / 次の提案 / 30日プラン
+// 新 UX: 手入力ゼロのホーム + 旧 5 タブを上級者モードに格納
 // ============================================================
 import { useState } from 'react';
+import { ChevronLeft } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { MediaKit, Platform, ContentType } from '../types/influencerDeal';
 import { PLATFORM_META, CONTENT_TYPE_META } from '../types/influencerDeal';
@@ -14,6 +15,7 @@ import { extractInstagramHandle, analyzeInstagramProfile, type IGAnalysisResult 
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import VoiceInputButton from '../components/VoiceInputButton';
+import IrisStrategyHome from './IrisStrategyHome';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -24,6 +26,16 @@ interface Props {
 type SubTab = 'ig' | 'history' | 'analyze' | 'suggest' | 'arc';
 
 export default function IrisStrategistView({ bg, settings, mediaKit }: Props) {
+  const [mode, setMode] = useState<'home' | 'advanced'>('home');
+
+  if (mode === 'home') {
+    return <IrisStrategyHome bg={bg} settings={settings} mediaKit={mediaKit} onOpenAdvanced={() => setMode('advanced')} />;
+  }
+
+  return <AdvancedView bg={bg} settings={settings} mediaKit={mediaKit} onBack={() => setMode('home')} />;
+}
+
+function AdvancedView({ bg, settings, mediaKit, onBack }: Props & { onBack: () => void }) {
   const history = usePostHistory();
   const [sub, setSub] = useState<SubTab>('ig');
   const [busy, setBusy] = useState(false);
@@ -72,6 +84,16 @@ export default function IrisStrategistView({ bg, settings, mediaKit }: Props) {
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
+      <button onClick={onBack} style={{
+        background: 'transparent', color: bg.inkSoft,
+        border: `1px solid ${bg.cardBorder}`, borderRadius: 999,
+        padding: '0.35rem 0.85rem', fontSize: '0.78rem', fontWeight: 600,
+        fontFamily: IRIS_FONTS.body, cursor: 'pointer',
+        display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+        width: 'fit-content',
+      }}>
+        <ChevronLeft size={14} /> ホームに戻る
+      </button>
       {/* 見出し */}
       <div>
         <p style={{
@@ -79,17 +101,17 @@ export default function IrisStrategistView({ bg, settings, mediaKit }: Props) {
           fontSize: '0.78rem', letterSpacing: '0.3em',
           textTransform: 'uppercase', color: bg.accent, marginBottom: '0.4rem',
         }}>
-          The Strategist
+          The Strategist · Advanced
         </p>
         <h2 style={{
           fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
           fontSize: 'clamp(2rem, 4vw, 2.6rem)', color: bg.ink,
           margin: 0, fontWeight: 500, letterSpacing: '-0.01em',
         }}>
-          戦略スタジオ
+          戦略スタジオ (上級者モード)
         </h2>
         <p style={{ color: bg.inkSoft, fontSize: '0.92rem', marginTop: '0.4rem' }}>
-          投稿履歴を入れると、伸びた要因/苦戦要因/次の一本/30日プランを AI が出力します。
+          手で投稿を入力・詳細分析・30日プラン作成など、すべての旧機能を 1 画面で。
         </p>
       </div>
 

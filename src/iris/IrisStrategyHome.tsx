@@ -1,0 +1,1422 @@
+// ============================================================
+// IRIS — Strategy Home (新・戦略タブ)
+// 手入力ゼロ。スクショ貼って終わり。あとは美しく見るだけ。
+// 設計: Apple Photos / Linear / Things 3 / Spotify Wrapped の交差点
+// ============================================================
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Camera, Sparkles, TrendingUp, Bookmark, Share2, Eye, Heart,
+  MessageCircle, Clock, Flame, Loader2,
+  Image as ImageIcon, FileText, CheckCircle2, X, Upload, Wand2, BarChart3,
+  Sliders, Plus, Trash2,
+} from 'lucide-react';
+import type { AppSettings } from '../types/identity';
+import type { ContentType, MediaKit } from '../types/influencerDeal';
+import { CONTENT_TYPE_META } from '../types/influencerDeal';
+import { IRIS_FONTS } from './irisStyle';
+import {
+  usePostHistory, type PostHistoryItem,
+} from './strategist';
+import {
+  extractPostsFromScreenshots, fileToBase64Pair, computeStats, dayLabel,
+  generateStrategyInsights, parseInstagramCSV,
+  type ExtractedPost, type StrategyInsights,
+} from './screenshotExtractor';
+import { usePostQueue } from './usePostQueue';
+import type { IrisBackgroundDef } from './irisStyle';
+
+interface Props {
+  bg: IrisBackgroundDef;
+  settings: AppSettings;
+  mediaKit?: MediaKit;
+  onOpenAdvanced: () => void;
+}
+
+type Sort = 'recent' | 'reach' | 'er' | 'saves';
+
+export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, onOpenAdvanced }: Props) {
+  const history = usePostHistory();
+  const queue = usePostQueue();
+  const [extracted, setExtracted] = useState<ExtractedPost[]>([]);
+  const [extracting, setExtracting] = useState(false);
+  const [extractErr, setExtractErr] = useState<string | null>(null);
+  const [sort, setSort] = useState<Sort>('recent');
+  const [insights, setInsights] = useState<StrategyInsights | null>(null);
+  const [insightBusy, setInsightBusy] = useState(false);
+  const [insightErr, setInsightErr] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+
+  // posted リールスタジオの投稿を自動的に戦略タブの履歴に同期
+  useEffect(() => {
+    const postedFromQueue = queue.posts.filter(p => p.status === 'posted');
+    if (postedFromQueue.length === 0) return;
+    const existingIds = new Set(history.posts.map(h => h.id));
+    for (const q of postedFromQueue) {
+      const synthId = `q_${q.id}`;
+      if (existingIds.has(synthId)) continue;
+      const platform = q.platform === 'instagram_feed' || q.platform === 'instagram_reel' || q.platform === 'instagram_story'
+        ? 'instagram' : q.platform === 'tiktok' ? 'tiktok' : q.platform === 'x' ? 'x' : 'instagram';
+      const contentType: ContentType =
+        q.platform === 'instagram_reel' ? 'reel'
+        : q.platform === 'instagram_story' ? 'story'
+        : q.source === 'reel' ? 'reel'
+        : 'post';
+      history.add({
+        postedAt: q.scheduledAt,
+        platform,
+        contentType,
+        title: (q.caption || q.brandName || 'リールスタジオ投稿').slice(0, 40),
+        caption: q.caption,
+        tags: q.hashtags,
+        brand: q.brandName,
+        notes: 'リールスタジオから自動同期',
+        metrics: {},
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queue.posts.length]);
+
+  const stats = useMemo(() => computeStats(history.posts), [history.posts]);
+
+  const sorted = useMemo(() => {
+    const arr = [...history.posts];
+    if (sort === 'recent') return arr.sort((a, b) => b.postedAt.localeCompare(a.postedAt));
+    if (sort === 'reach') return arr.sort((a, b) => (b.metrics.reach || 0) - (a.metrics.reach || 0));
+    if (sort === 'er') return arr.sort((a, b) => (b.metrics.engagementRate || 0) - (a.metrics.engagementRate || 0));
+    if (sort === 'saves') return arr.sort((a, b) => (b.metrics.saves || 0) - (a.metrics.saves || 0));
+    return arr;
+  }, [history.posts, sort]);
+
+  const handleDropImages = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setExtracting(true);
+    setExtractErr(null);
+    try {
+      const images = await Promise.all(
+        Array.from(files).filter(f => f.type.startsWith('image/')).slice(0, 6)
+          .map(fileToBase64Pair)
+      );
+      if (images.length === 0) {
+        setExtractErr('画像ファイルが見つかりませんでした');
+        return;
+      }
+      const result = await extractPostsFromScreenshots({ settings, images });
+      if (result.length === 0) {
+        setExtractErr('投稿を検出できませんでした。インサイト画面のスクショを試してください。');
+        return;
+      }
+      setExtracted(result);
+    } catch (e: any) {
+      setExtractErr(e.message || 'スクショ解析に失敗しました');
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const handleDropCSV = async (file: File) => {
+    setExtracting(true); setExtractErr(null);
+    try {
+      const text = await file.text();
+      const result = parseInstagramCSV(text);
+      if (result.length === 0) {
+        setExtractErr('CSV から投稿を検出できませんでした');
+        return;
+      }
+      setExtracted(result);
+    } catch (e: any) {
+      setExtractErr(e.message);
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const acceptExtracted = (item: ExtractedPost) => {
+    history.add({
+      postedAt: item.postedAt || new Date().toISOString(),
+      platform: item.platform,
+      contentType: item.contentType,
+      title: item.title,
+      caption: item.caption,
+      tags: item.tags,
+      topic: item.topic,
+      notes: item.notes,
+      metrics: item.metrics,
+    });
+    setExtracted(prev => prev.filter(p => p !== item));
+  };
+
+  const acceptAllExtracted = () => {
+    for (const item of extracted) acceptExtracted(item);
+    setExtracted([]);
+  };
+
+  const runInsights = async () => {
+    if (history.posts.length === 0) {
+      setInsightErr('まず投稿を追加してください');
+      return;
+    }
+    setInsightBusy(true); setInsightErr(null);
+    try {
+      const r = await generateStrategyInsights({
+        settings,
+        stats,
+        recentTitles: history.posts.slice(0, 10).map(p => p.title),
+      });
+      setInsights(r);
+    } catch (e: any) {
+      setInsightErr(e.message);
+    } finally {
+      setInsightBusy(false);
+    }
+  };
+
+  const detail = detailId ? history.posts.find(p => p.id === detailId) : null;
+
+  // ─── スタイル定数 ──
+  const accentGradient = `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`;
+  const glassCard: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.72)',
+    backdropFilter: 'blur(18px) saturate(140%)',
+    WebkitBackdropFilter: 'blur(18px) saturate(140%)',
+    border: `1px solid ${bg.cardBorder}`,
+    borderRadius: 24,
+    padding: '1.5rem',
+  };
+
+  return (
+    <div style={{ display: 'grid', gap: '1.5rem' }}>
+      {/* ─── ヒーロー: 大きな数字 ─── */}
+      <HeroBanner bg={bg} stats={stats} />
+
+      {/* ─── キャプチャゾーン (手入力ゼロの中核) ─── */}
+      <CaptureZone
+        bg={bg}
+        glassCard={glassCard}
+        accentGradient={accentGradient}
+        extracting={extracting}
+        extractErr={extractErr}
+        onImages={handleDropImages}
+        onCSV={handleDropCSV}
+      />
+
+      {/* ─── 抽出プレビュー (確認 → 保存) ─── */}
+      <AnimatePresence>
+        {extracted.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+          >
+            <ExtractedReview
+              bg={bg}
+              extracted={extracted}
+              onAccept={acceptExtracted}
+              onAcceptAll={acceptAllExtracted}
+              onReject={(item) => setExtracted(prev => prev.filter(p => p !== item))}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── AI 戦略インサイト ─── */}
+      <InsightsHero
+        bg={bg}
+        glassCard={glassCard}
+        accentGradient={accentGradient}
+        insights={insights}
+        busy={insightBusy}
+        error={insightErr}
+        canRun={history.posts.length >= 3}
+        onRun={runInsights}
+      />
+
+      {/* ─── ダッシュボード (ヒートマップ + フォーマット + Top3) ─── */}
+      {history.posts.length > 0 && (
+        <Dashboard bg={bg} glassCard={glassCard} stats={stats} />
+      )}
+
+      {/* ─── 投稿ギャラリー (Instagram 風) ─── */}
+      <Gallery
+        bg={bg}
+        glassCard={glassCard}
+        posts={sorted}
+        sort={sort}
+        setSort={setSort}
+        onTap={setDetailId}
+      />
+
+      {/* ─── 上級者モード ─── */}
+      <button
+        onClick={onOpenAdvanced}
+        style={{
+          background: 'transparent',
+          color: bg.inkSoft,
+          border: `1px dashed ${bg.cardBorder}`,
+          borderRadius: 14,
+          padding: '0.8rem 1.4rem',
+          fontSize: '0.85rem',
+          fontFamily: IRIS_FONTS.body,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+        }}
+      >
+        <Sliders size={14} />
+        手で入力する / 詳細分析モード
+      </button>
+
+      {/* ─── 投稿詳細モーダル ─── */}
+      <AnimatePresence>
+        {detail && (
+          <DetailModal
+            bg={bg}
+            post={detail}
+            onClose={() => setDetailId(null)}
+            onDelete={() => { history.remove(detail.id); setDetailId(null); }}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ============================================================
+// ヒーロー — 大きな数字 (Apple Photos の年次振り返り風)
+// ============================================================
+function HeroBanner({ bg, stats }: { bg: IrisBackgroundDef; stats: ReturnType<typeof computeStats> }) {
+  const er = stats.avgER;
+  const reach = stats.avgReach;
+
+  return (
+    <div style={{
+      position: 'relative',
+      borderRadius: 28,
+      overflow: 'hidden',
+      background: `linear-gradient(135deg, ${bg.accent}22, ${bg.accent}08 60%, transparent)`,
+      border: `1px solid ${bg.cardBorder}`,
+      padding: 'clamp(1.4rem, 4vw, 2.4rem)',
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: -80,
+        right: -80,
+        width: 280,
+        height: 280,
+        background: `radial-gradient(circle, ${bg.accent}33, transparent 70%)`,
+        filter: 'blur(40px)',
+        pointerEvents: 'none',
+      }} />
+      <p style={{
+        fontFamily: IRIS_FONTS.serif,
+        fontStyle: 'italic',
+        fontSize: '0.72rem',
+        letterSpacing: '0.32em',
+        textTransform: 'uppercase',
+        color: bg.accent,
+        marginBottom: '0.4rem',
+      }}>
+        The Strategist
+      </p>
+      <h2 style={{
+        fontFamily: IRIS_FONTS.serif,
+        fontStyle: 'italic',
+        fontSize: 'clamp(1.9rem, 5.5vw, 2.8rem)',
+        color: bg.ink,
+        margin: 0,
+        fontWeight: 500,
+        letterSpacing: '-0.015em',
+        lineHeight: 1.1,
+      }}>
+        あなたの伸びパターン
+      </h2>
+      <p style={{
+        color: bg.inkSoft,
+        fontSize: '0.92rem',
+        marginTop: '0.6rem',
+        marginBottom: '1.4rem',
+        lineHeight: 1.6,
+      }}>
+        Instagram のインサイトをスクショで貼るだけ。AI が読み取って数字を可視化します。
+      </p>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+        gap: 'clamp(0.6rem, 2vw, 1.2rem)',
+        marginTop: '1rem',
+      }}>
+        <MetricBig bg={bg} value={stats.total.toString()} label="投稿" />
+        <MetricBig bg={bg} value={er > 0 ? `${er.toFixed(1)}%` : '—'} label="平均 ER" />
+        <MetricBig bg={bg} value={reach > 0 ? formatNumber(Math.round(reach)) : '—'} label="平均リーチ" />
+        <MetricBig bg={bg} value={stats.avgSaves > 0 ? formatNumber(Math.round(stats.avgSaves)) : '—'} label="平均保存" />
+      </div>
+    </div>
+  );
+}
+
+function MetricBig({ bg, value, label }: { bg: IrisBackgroundDef; value: string; label: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+    >
+      <div style={{
+        fontFamily: IRIS_FONTS.serif,
+        fontStyle: 'italic',
+        fontSize: 'clamp(1.8rem, 5vw, 2.6rem)',
+        color: bg.ink,
+        fontWeight: 600,
+        lineHeight: 1,
+        letterSpacing: '-0.02em',
+      }}>
+        {value}
+      </div>
+      <div style={{
+        fontSize: '0.7rem',
+        letterSpacing: '0.22em',
+        textTransform: 'uppercase',
+        color: bg.inkSoft,
+        marginTop: '0.4rem',
+        fontWeight: 600,
+      }}>
+        {label}
+      </div>
+    </motion.div>
+  );
+}
+
+// ============================================================
+// キャプチャゾーン — スクショ / CSV ドロップ
+// ============================================================
+function CaptureZone({
+  bg, glassCard, accentGradient, extracting, extractErr, onImages, onCSV,
+}: {
+  bg: IrisBackgroundDef;
+  glassCard: React.CSSProperties;
+  accentGradient: string;
+  extracting: boolean;
+  extractErr: string | null;
+  onImages: (files: FileList | null) => void;
+  onCSV: (file: File) => void;
+}) {
+  const [drag, setDrag] = useState(false);
+
+  return (
+    <div
+      style={{
+        ...glassCard,
+        borderColor: drag ? bg.accent : bg.cardBorder,
+        background: drag
+          ? `linear-gradient(135deg, ${bg.accent}18, ${bg.accent}06)`
+          : 'rgba(255,255,255,0.72)',
+        transition: 'all 0.2s',
+        position: 'relative',
+      }}
+      onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+      onDragLeave={() => setDrag(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDrag(false);
+        const files = e.dataTransfer.files;
+        if (!files || files.length === 0) return;
+        const csv = Array.from(files).find(f => f.name.endsWith('.csv'));
+        if (csv) onCSV(csv);
+        else onImages(files);
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem' }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 12,
+          background: accentGradient,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff', flexShrink: 0,
+          boxShadow: `0 6px 16px ${bg.accent}55`,
+        }}>
+          <Wand2 size={18} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{
+            fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
+            fontSize: '1.15rem', color: bg.ink, fontWeight: 600, lineHeight: 1.3,
+          }}>
+            スクショを貼るだけ
+          </p>
+          <p style={{ fontSize: '0.78rem', color: bg.inkSoft, lineHeight: 1.5 }}>
+            Instagram インサイトをドロップ。AI が数字を読み取って投稿カードを自動生成します。
+          </p>
+        </div>
+      </div>
+
+      <label style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.6rem',
+        flexDirection: 'column',
+        padding: '1.6rem 1rem',
+        border: `2px dashed ${drag ? bg.accent : bg.cardBorder}`,
+        borderRadius: 18,
+        cursor: extracting ? 'wait' : 'pointer',
+        background: 'rgba(255,255,255,0.4)',
+        transition: 'all 0.25s',
+        textAlign: 'center',
+      }}>
+        {extracting ? (
+          <>
+            <Loader2 size={28} style={{ color: bg.accent, animation: 'spin 1s linear infinite' }} />
+            <p style={{ fontWeight: 600, color: bg.ink, fontSize: '0.95rem' }}>
+              AI が画像を読み取っています...
+            </p>
+            <p style={{ fontSize: '0.75rem', color: bg.inkSoft }}>5〜20 秒</p>
+          </>
+        ) : (
+          <>
+            <Camera size={28} style={{ color: bg.accent }} />
+            <p style={{ fontWeight: 600, color: bg.ink, fontSize: '0.98rem' }}>
+              インサイト画面のスクショをドロップ
+            </p>
+            <p style={{ fontSize: '0.78rem', color: bg.inkSoft, lineHeight: 1.6 }}>
+              タップして選択も可 · 1 度に最大 6 枚 · CSV エクスポートも対応
+            </p>
+          </>
+        )}
+        <input
+          type="file"
+          accept="image/*,.csv"
+          multiple
+          disabled={extracting}
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const files = e.target.files;
+            if (!files) return;
+            const csv = Array.from(files).find(f => f.name.endsWith('.csv'));
+            if (csv) onCSV(csv);
+            else onImages(files);
+            e.target.value = '';
+          }}
+        />
+      </label>
+
+      {extractErr && (
+        <div style={{
+          marginTop: '0.8rem',
+          padding: '0.6rem 0.9rem',
+          background: 'rgba(200,16,46,0.08)',
+          borderRadius: 12,
+          color: '#C8102E',
+          fontSize: '0.82rem',
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+        }}>
+          <X size={14} /> {extractErr}
+        </div>
+      )}
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+// ============================================================
+// 抽出結果レビュー
+// ============================================================
+function ExtractedReview({
+  bg, extracted, onAccept, onAcceptAll, onReject,
+}: {
+  bg: IrisBackgroundDef;
+  extracted: ExtractedPost[];
+  onAccept: (item: ExtractedPost) => void;
+  onAcceptAll: () => void;
+  onReject: (item: ExtractedPost) => void;
+}) {
+  return (
+    <div style={{
+      background: `linear-gradient(135deg, ${bg.accent}11, ${bg.accent}05)`,
+      border: `1.5px solid ${bg.accent}55`,
+      borderRadius: 24,
+      padding: '1.4rem',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.6rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Sparkles size={16} style={{ color: bg.accent }} />
+          <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', color: bg.ink, fontWeight: 600 }}>
+            {extracted.length} 件 検出しました
+          </p>
+        </div>
+        <button
+          onClick={onAcceptAll}
+          style={{
+            background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+            color: '#fff',
+            border: 'none',
+            borderRadius: 999,
+            padding: '0.5rem 1.2rem',
+            fontWeight: 700,
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            fontFamily: IRIS_FONTS.body,
+            display: 'flex', alignItems: 'center', gap: '0.4rem',
+            boxShadow: `0 6px 16px ${bg.accent}66`,
+          }}
+        >
+          <CheckCircle2 size={14} /> すべて保存
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gap: '0.6rem' }}>
+        {extracted.map((p, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.04 }}
+            style={{
+              background: 'rgba(255,255,255,0.85)',
+              border: `1px solid ${bg.cardBorder}`,
+              borderRadius: 16,
+              padding: '0.9rem 1rem',
+              display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+              <p style={{ fontWeight: 700, color: bg.ink, fontSize: '0.92rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {p.title}
+              </p>
+              <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 2 }}>
+                {CONTENT_TYPE_META[p.contentType]} · {p.postedAt ? new Date(p.postedAt).toLocaleDateString('ja-JP') : '日時不明'} · 信頼度 {p.confidence === 'high' ? '高' : p.confidence === 'medium' ? '中' : '低'}
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem 0.9rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
+                {p.metrics.reach !== undefined && <Chip icon={<Eye size={12} />} text={formatNumber(p.metrics.reach)} bg={bg} />}
+                {p.metrics.engagementRate !== undefined && <Chip icon={<Flame size={12} />} text={`${p.metrics.engagementRate.toFixed(1)}%`} bg={bg} accent />}
+                {p.metrics.likes !== undefined && <Chip icon={<Heart size={12} />} text={formatNumber(p.metrics.likes)} bg={bg} />}
+                {p.metrics.saves !== undefined && <Chip icon={<Bookmark size={12} />} text={formatNumber(p.metrics.saves)} bg={bg} />}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <button
+                onClick={() => onAccept(p)}
+                style={{
+                  background: bg.accent + '22',
+                  color: bg.accent,
+                  border: `1px solid ${bg.accent}55`,
+                  borderRadius: 999,
+                  padding: '0.4rem 0.9rem',
+                  fontWeight: 700,
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  fontFamily: IRIS_FONTS.body,
+                  display: 'flex', alignItems: 'center', gap: '0.3rem',
+                }}
+              >
+                <Plus size={12} /> 保存
+              </button>
+              <button
+                onClick={() => onReject(p)}
+                style={{
+                  background: 'transparent',
+                  color: bg.inkSoft,
+                  border: `1px solid ${bg.cardBorder}`,
+                  borderRadius: 999,
+                  padding: '0.4rem 0.7rem',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  fontFamily: IRIS_FONTS.body,
+                }}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// AI 戦略インサイト
+// ============================================================
+function InsightsHero({
+  bg, glassCard, accentGradient, insights, busy, error, canRun, onRun,
+}: {
+  bg: IrisBackgroundDef;
+  glassCard: React.CSSProperties;
+  accentGradient: string;
+  insights: StrategyInsights | null;
+  busy: boolean;
+  error: string | null;
+  canRun: boolean;
+  onRun: () => void;
+}) {
+  return (
+    <div style={glassCard}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 12,
+          background: accentGradient,
+          color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+          boxShadow: `0 6px 16px ${bg.accent}55`,
+        }}>
+          <Sparkles size={18} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <p style={{
+            fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
+            fontSize: '1.15rem', color: bg.ink, fontWeight: 600, lineHeight: 1.3,
+          }}>
+            AI 戦略インサイト
+          </p>
+          <p style={{ fontSize: '0.78rem', color: bg.inkSoft }}>
+            データを 1 タップで読み解く
+          </p>
+        </div>
+        <button
+          onClick={onRun}
+          disabled={busy || !canRun}
+          style={{
+            background: canRun ? accentGradient : 'rgba(0,0,0,0.06)',
+            color: canRun ? '#fff' : bg.inkSoft,
+            border: 'none',
+            borderRadius: 999,
+            padding: '0.6rem 1.2rem',
+            fontWeight: 700,
+            fontSize: '0.82rem',
+            fontFamily: IRIS_FONTS.body,
+            cursor: canRun && !busy ? 'pointer' : 'not-allowed',
+            display: 'flex', alignItems: 'center', gap: '0.4rem',
+            boxShadow: canRun ? `0 6px 16px ${bg.accent}55` : 'none',
+          }}
+        >
+          {busy ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> 分析中</> : <><Wand2 size={14} /> AI で読み解く</>}
+        </button>
+      </div>
+
+      {!canRun && (
+        <p style={{ fontSize: '0.85rem', color: bg.inkSoft, lineHeight: 1.7 }}>
+          投稿が <strong>3 件以上</strong> 集まると、AI が「次に伸びそうな投稿」「リーチを倍にする方法」を提案します。
+        </p>
+      )}
+
+      {error && (
+        <div style={{ marginTop: '0.6rem', color: '#C8102E', fontSize: '0.82rem' }}>{error}</div>
+      )}
+
+      {insights && (
+        <div style={{ display: 'grid', gap: '1rem', marginTop: '0.6rem' }}>
+          {insights.oneLiner && (
+            <p style={{
+              fontFamily: IRIS_FONTS.serif,
+              fontStyle: 'italic',
+              fontSize: '1.3rem',
+              color: bg.ink,
+              fontWeight: 600,
+              lineHeight: 1.5,
+              paddingBottom: '0.5rem',
+              borderBottom: `1px solid ${bg.cardBorder}`,
+            }}>
+              "{insights.oneLiner}"
+            </p>
+          )}
+
+          {insights.doubleReachAdvice?.mainAction && (
+            <div style={{
+              background: `linear-gradient(135deg, ${bg.accent}11, transparent)`,
+              borderLeft: `3px solid ${bg.accent}`,
+              borderRadius: '0 16px 16px 0',
+              padding: '0.9rem 1.1rem',
+            }}>
+              <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, marginBottom: '0.3rem' }}>
+                リーチを倍にするには
+              </p>
+              <p style={{ fontSize: '1.05rem', fontWeight: 700, color: bg.ink, marginBottom: '0.4rem', lineHeight: 1.4 }}>
+                {insights.doubleReachAdvice.mainAction}
+              </p>
+              <p style={{ fontSize: '0.85rem', color: bg.inkSoft, lineHeight: 1.7 }}>
+                {insights.doubleReachAdvice.rationale}
+              </p>
+              {insights.doubleReachAdvice.subActions?.length > 0 && (
+                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.2rem', color: bg.inkSoft, fontSize: '0.82rem', lineHeight: 1.8 }}>
+                  {insights.doubleReachAdvice.subActions.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {insights.nextWinningPatterns?.length > 0 && (
+            <div>
+              <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, marginBottom: '0.6rem' }}>
+                次に伸びそうな 3 パターン
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.6rem' }}>
+                {insights.nextWinningPatterns.map((p, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                    whileHover={{ y: -3, boxShadow: `0 12px 28px ${bg.accent}33` }}
+                    style={{
+                      background: 'rgba(255,255,255,0.85)',
+                      border: `1px solid ${bg.cardBorder}`,
+                      borderRadius: 16,
+                      padding: '0.9rem 1rem',
+                      transition: 'all 0.25s',
+                    }}
+                  >
+                    <p style={{ fontSize: '0.68rem', color: bg.accent, fontWeight: 700, letterSpacing: '0.18em' }}>
+                      No.{String(i + 1).padStart(2, '0')}
+                    </p>
+                    <p style={{ fontWeight: 700, color: bg.ink, fontSize: '0.95rem', marginTop: '0.2rem', lineHeight: 1.4 }}>
+                      {p.headline}
+                    </p>
+                    <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: '0.4rem', lineHeight: 1.6 }}>
+                      {p.reason}
+                    </p>
+                    {p.example && (
+                      <p style={{ fontSize: '0.78rem', color: bg.accent, marginTop: '0.5rem', fontStyle: 'italic', lineHeight: 1.6 }}>
+                        例: {p.example}
+                      </p>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {insights.bestPostingTimes?.length > 0 && (
+            <div>
+              <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, marginBottom: '0.6rem' }}>
+                おすすめの時間帯
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {insights.bestPostingTimes.map((t, i) => (
+                  <div key={i} style={{
+                    background: 'rgba(255,255,255,0.85)',
+                    border: `1px solid ${bg.cardBorder}`,
+                    borderRadius: 12,
+                    padding: '0.5rem 0.9rem',
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  }}>
+                    <Clock size={14} style={{ color: bg.accent }} />
+                    <div>
+                      <p style={{ fontWeight: 700, color: bg.ink, fontSize: '0.85rem' }}>
+                        {t.day} {t.time}
+                      </p>
+                      <p style={{ fontSize: '0.72rem', color: bg.inkSoft }}>{t.reason}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {insights.bestFormatSummary && (
+            <p style={{
+              background: 'rgba(255,255,255,0.5)',
+              padding: '0.7rem 1rem',
+              borderRadius: 14,
+              fontSize: '0.88rem',
+              color: bg.ink,
+              lineHeight: 1.7,
+              borderLeft: `3px solid ${bg.accent}66`,
+            }}>
+              <strong style={{ color: bg.accent }}>ベストフォーマット:</strong> {insights.bestFormatSummary}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// ダッシュボード (ヒートマップ + Top3 + フォーマット)
+// ============================================================
+function Dashboard({
+  bg, glassCard, stats,
+}: {
+  bg: IrisBackgroundDef;
+  glassCard: React.CSSProperties;
+  stats: ReturnType<typeof computeStats>;
+}) {
+  return (
+    <div style={{ display: 'grid', gap: '1rem' }}>
+      {/* ヒートマップ */}
+      {stats.heatmapMax > 0 && (
+        <div style={glassCard}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
+            <BarChart3 size={16} style={{ color: bg.accent }} />
+            <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', fontWeight: 600, color: bg.ink }}>
+              曜日 × 時間帯 × ER
+            </p>
+          </div>
+          <Heatmap stats={stats} bg={bg} />
+          {stats.bestSlots.length > 0 && (
+            <div style={{ marginTop: '0.8rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.75rem', color: bg.inkSoft, lineHeight: 2 }}>ベスト: </span>
+              {stats.bestSlots.map((s, i) => (
+                <span key={i} style={{
+                  background: bg.accent + '15',
+                  color: bg.accent,
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: 999,
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                }}>
+                  {dayLabel(s.day)} {s.hour}時 · ER {s.er.toFixed(1)}%
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Top3 グリッド */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.8rem' }}>
+        <TopList bg={bg} glassCard={glassCard} title="保存数 TOP3" icon={<Bookmark size={14} />} items={stats.topBySaves.map(p => ({ title: p.title, value: formatNumber(p.saves) }))} />
+        <TopList bg={bg} glassCard={glassCard} title="シェア TOP3" icon={<Share2 size={14} />} items={stats.topByShares.map(p => ({ title: p.title, value: formatNumber(p.shares) }))} />
+        <TopList bg={bg} glassCard={glassCard} title="ER TOP3" icon={<Flame size={14} />} items={stats.topByER.map(p => ({ title: p.title, value: `${p.er.toFixed(1)}%` }))} />
+      </div>
+
+      {/* フォーマット別 */}
+      {stats.byFormat.length > 0 && (
+        <div style={glassCard}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
+            <TrendingUp size={16} style={{ color: bg.accent }} />
+            <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', fontWeight: 600, color: bg.ink }}>
+              フォーマット別パフォーマンス
+            </p>
+          </div>
+          <div style={{ display: 'grid', gap: '0.6rem' }}>
+            {stats.byFormat.map((f, i) => (
+              <div key={i} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.8rem',
+                padding: '0.6rem 0.8rem',
+                background: 'rgba(255,255,255,0.5)',
+                borderRadius: 12,
+              }}>
+                <div style={{ minWidth: 80, fontWeight: 700, color: bg.ink, fontSize: '0.88rem' }}>
+                  {CONTENT_TYPE_META[f.format] || f.format}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ background: 'rgba(0,0,0,0.06)', height: 6, borderRadius: 3, overflow: 'hidden' }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(100, (f.avgER / Math.max(...stats.byFormat.map(x => x.avgER || 0.01))) * 100)}%` }}
+                      transition={{ duration: 0.8, delay: i * 0.08 }}
+                      style={{
+                        height: '100%',
+                        background: `linear-gradient(90deg, ${bg.accent}, ${bg.accent}aa)`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.6rem', fontSize: '0.78rem', color: bg.inkSoft, minWidth: 130, textAlign: 'right', justifyContent: 'flex-end' }}>
+                  <span style={{ color: bg.accent, fontWeight: 700 }}>{f.avgER.toFixed(1)}%</span>
+                  <span>{f.count} 本</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Heatmap({ stats, bg }: { stats: ReturnType<typeof computeStats>; bg: IrisBackgroundDef }) {
+  const HOURS = [6, 9, 12, 15, 18, 21]; // 凝縮表示
+  return (
+    <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
+      <div style={{ display: 'inline-grid', gridTemplateColumns: 'auto repeat(' + HOURS.length + ', minmax(36px, 1fr))', gap: 4, minWidth: '100%' }}>
+        <div />
+        {HOURS.map(h => (
+          <div key={h} style={{
+            fontSize: '0.68rem', color: bg.inkSoft, textAlign: 'center', fontWeight: 600,
+          }}>
+            {h}時
+          </div>
+        ))}
+        {[1, 2, 3, 4, 5, 6, 0].map(d => (
+          <Fragment key={`row-${d}`}>
+            <div style={{
+              fontSize: '0.7rem', color: bg.inkSoft, fontWeight: 600,
+              display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+              paddingRight: '0.5rem',
+            }}>
+              {dayLabel(d)}
+            </div>
+            {HOURS.map(h => {
+              // 凝縮: h時±1時間の平均
+              let sum = 0; let n = 0;
+              for (let off = -1; off <= 1; off++) {
+                const hh = (h + off + 24) % 24;
+                if (stats.heatmap[d][hh] > 0) { sum += stats.heatmap[d][hh]; n += 1; }
+              }
+              const v = n ? sum / n : 0;
+              const intensity = stats.heatmapMax > 0 ? v / stats.heatmapMax : 0;
+              return (
+                <motion.div
+                  key={`${d}-${h}`}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: (d * 6 + h * 0.1) * 0.01 }}
+                  title={v > 0 ? `${dayLabel(d)} ${h}時: ER ${v.toFixed(2)}%` : '投稿なし'}
+                  style={{
+                    aspectRatio: '1.4 / 1',
+                    minHeight: 28,
+                    background: intensity > 0
+                      ? `linear-gradient(135deg, ${bg.accent}${alphaHex(0.15 + intensity * 0.85)}, ${bg.accent}${alphaHex(0.05 + intensity * 0.65)})`
+                      : 'rgba(0,0,0,0.04)',
+                    borderRadius: 6,
+                    border: `1px solid ${bg.cardBorder}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.68rem', fontWeight: 700,
+                    color: intensity > 0.5 ? '#fff' : bg.inkSoft,
+                  }}
+                >
+                  {v > 0 ? v.toFixed(1) : ''}
+                </motion.div>
+              );
+            })}
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function alphaHex(a: number): string {
+  const clamped = Math.max(0, Math.min(1, a));
+  return Math.round(clamped * 255).toString(16).padStart(2, '0');
+}
+
+function TopList({
+  bg, glassCard, title, icon, items,
+}: {
+  bg: IrisBackgroundDef;
+  glassCard: React.CSSProperties;
+  title: string;
+  icon: React.ReactNode;
+  items: { title: string; value: string }[];
+}) {
+  return (
+    <div style={glassCard}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.7rem' }}>
+        <span style={{ color: bg.accent }}>{icon}</span>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700 }}>
+          {title}
+        </p>
+      </div>
+      {items.length === 0 ? (
+        <p style={{ fontSize: '0.82rem', color: bg.inkSoft, lineHeight: 1.7 }}>データ不足</p>
+      ) : (
+        <ol style={{ paddingLeft: 0, listStyle: 'none', margin: 0 }}>
+          {items.map((item, i) => (
+            <li key={i} style={{
+              display: 'flex', alignItems: 'baseline', gap: '0.5rem',
+              padding: '0.4rem 0',
+              borderBottom: i < items.length - 1 ? `1px solid ${bg.cardBorder}` : 'none',
+            }}>
+              <span style={{
+                fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
+                fontSize: '1.1rem', color: bg.accent, fontWeight: 700, minWidth: 22,
+              }}>
+                {i + 1}
+              </span>
+              <span style={{ flex: 1, fontSize: '0.85rem', color: bg.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                {item.title}
+              </span>
+              <span style={{ fontSize: '0.85rem', color: bg.accent, fontWeight: 700, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
+                {item.value}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// ギャラリー (Instagram 風)
+// ============================================================
+function Gallery({
+  bg, glassCard, posts, sort, setSort, onTap,
+}: {
+  bg: IrisBackgroundDef;
+  glassCard: React.CSSProperties;
+  posts: PostHistoryItem[];
+  sort: Sort;
+  setSort: (s: Sort) => void;
+  onTap: (id: string) => void;
+}) {
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.8rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <ImageIcon size={16} style={{ color: bg.accent }} />
+          <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', fontWeight: 600, color: bg.ink }}>
+            投稿 ({posts.length})
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+          {([
+            ['recent', '新着'],
+            ['er', 'ER'],
+            ['reach', 'リーチ'],
+            ['saves', '保存'],
+          ] as [Sort, string][]).map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setSort(k)}
+              style={{
+                background: sort === k ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)` : 'rgba(255,255,255,0.7)',
+                color: sort === k ? '#fff' : bg.inkSoft,
+                border: sort === k ? 'none' : `1px solid ${bg.cardBorder}`,
+                borderRadius: 999,
+                padding: '0.32rem 0.85rem',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: IRIS_FONTS.body,
+                boxShadow: sort === k ? `0 4px 10px ${bg.accent}55` : 'none',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {posts.length === 0 ? (
+        <div style={{ ...glassCard, textAlign: 'center', padding: '2.4rem 1rem' }}>
+          <Upload size={28} style={{ color: bg.inkSoft, marginBottom: '0.6rem' }} />
+          <p style={{ color: bg.inkSoft, lineHeight: 1.8, fontSize: '0.88rem' }}>
+            投稿はまだありません。<br />
+            上のキャプチャゾーンに Instagram のスクショをドロップしてください。
+          </p>
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+          gap: 'clamp(0.5rem, 1.5vw, 0.8rem)',
+        }}>
+          {posts.slice(0, 60).map(p => (
+            <PostCard key={p.id} bg={bg} post={p} onTap={() => onTap(p.id)} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PostCard({ bg, post, onTap }: { bg: IrisBackgroundDef; post: PostHistoryItem; onTap: () => void }) {
+  const m = post.metrics;
+  const isReel = post.contentType === 'reel';
+
+  return (
+    <motion.button
+      onClick={onTap}
+      whileHover={{ y: -3, boxShadow: `0 16px 32px ${bg.accent}33` }}
+      whileTap={{ scale: 0.98 }}
+      style={{
+        position: 'relative',
+        aspectRatio: '4 / 5',
+        borderRadius: 18,
+        overflow: 'hidden',
+        border: `1px solid ${bg.cardBorder}`,
+        background: `linear-gradient(160deg, ${bg.accent}26, ${bg.accent}10 50%, rgba(255,255,255,0.65))`,
+        cursor: 'pointer',
+        padding: 0,
+        textAlign: 'left',
+        transition: 'all 0.25s',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+      }}
+    >
+      <div style={{
+        padding: '0.7rem 0.8rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: '0.4rem',
+      }}>
+        <span style={{
+          background: isReel ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.85)',
+          color: isReel ? '#fff' : bg.ink,
+          padding: '0.2rem 0.6rem',
+          borderRadius: 999,
+          fontSize: '0.62rem',
+          fontWeight: 700,
+          letterSpacing: '0.04em',
+          backdropFilter: 'blur(4px)',
+        }}>
+          {CONTENT_TYPE_META[post.contentType]}
+        </span>
+        {typeof m.engagementRate === 'number' && (
+          <span style={{
+            background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}dd)`,
+            color: '#fff',
+            padding: '0.2rem 0.55rem',
+            borderRadius: 999,
+            fontSize: '0.68rem',
+            fontWeight: 700,
+            boxShadow: `0 4px 10px ${bg.accent}66`,
+          }}>
+            {m.engagementRate.toFixed(1)}%
+          </span>
+        )}
+      </div>
+
+      <div style={{
+        padding: '0 0.8rem',
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+      }}>
+        <p style={{
+          fontFamily: IRIS_FONTS.serif,
+          fontStyle: 'italic',
+          fontSize: 'clamp(0.95rem, 2.6vw, 1.15rem)',
+          color: bg.ink,
+          fontWeight: 600,
+          lineHeight: 1.3,
+          display: '-webkit-box',
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}>
+          {post.title}
+        </p>
+      </div>
+
+      <div style={{
+        padding: '0.6rem 0.8rem',
+        background: 'linear-gradient(180deg, transparent, rgba(255,255,255,0.85))',
+        backdropFilter: 'blur(4px)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', flexWrap: 'wrap' }}>
+          {typeof m.reach === 'number' && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 600 }}>
+              <Eye size={11} /> {formatNumber(m.reach)}
+            </span>
+          )}
+          {typeof m.saves === 'number' && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 600 }}>
+              <Bookmark size={11} /> {formatNumber(m.saves)}
+            </span>
+          )}
+          {typeof m.likes === 'number' && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 600 }}>
+              <Heart size={11} /> {formatNumber(m.likes)}
+            </span>
+          )}
+        </div>
+        <p style={{ fontSize: '0.62rem', color: bg.inkSoft, marginTop: '0.3rem', textAlign: 'right' }}>
+          {new Date(post.postedAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+        </p>
+      </div>
+    </motion.button>
+  );
+}
+
+// ============================================================
+// 詳細モーダル
+// ============================================================
+function DetailModal({
+  bg, post, onClose, onDelete,
+}: {
+  bg: IrisBackgroundDef;
+  post: PostHistoryItem;
+  onClose: () => void;
+  onDelete: () => void;
+}) {
+  const m = post.metrics;
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(20,10,30,0.55)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1.2rem',
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 24, scale: 0.96 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#fff',
+          borderRadius: 24,
+          maxWidth: 480,
+          width: '100%',
+          maxHeight: '88vh',
+          overflowY: 'auto',
+          padding: '1.5rem',
+          boxShadow: '0 32px 80px rgba(20,10,30,0.4)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.6rem' }}>
+          <div>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, marginBottom: '0.3rem' }}>
+              {CONTENT_TYPE_META[post.contentType]} · {new Date(post.postedAt).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </p>
+            <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.4rem', fontWeight: 600, color: bg.ink, lineHeight: 1.3 }}>
+              {post.title}
+            </p>
+          </div>
+          <button onClick={onClose} style={{
+            background: 'rgba(0,0,0,0.05)',
+            border: 'none',
+            borderRadius: '50%',
+            width: 32, height: 32,
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
+          <Stat bg={bg} icon={<Eye size={14} />} label="リーチ" value={m.reach} />
+          <Stat bg={bg} icon={<Flame size={14} />} label="ER" value={m.engagementRate} suffix="%" />
+          <Stat bg={bg} icon={<Heart size={14} />} label="いいね" value={m.likes} />
+          <Stat bg={bg} icon={<MessageCircle size={14} />} label="コメント" value={m.comments} />
+          <Stat bg={bg} icon={<Bookmark size={14} />} label="保存" value={m.saves} />
+          <Stat bg={bg} icon={<Share2 size={14} />} label="シェア" value={m.shares} />
+          {typeof m.views === 'number' && <Stat bg={bg} icon={<Eye size={14} />} label="再生" value={m.views} />}
+        </div>
+
+        {post.caption && (
+          <div style={{ marginTop: '1rem', padding: '0.8rem 1rem', background: 'rgba(0,0,0,0.03)', borderRadius: 14 }}>
+            <p style={{ fontSize: '0.7rem', color: bg.inkSoft, marginBottom: '0.3rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700 }}>
+              キャプション
+            </p>
+            <p style={{ fontSize: '0.85rem', color: bg.ink, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{post.caption}</p>
+          </div>
+        )}
+
+        {post.tags && post.tags.length > 0 && (
+          <div style={{ marginTop: '0.7rem', display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+            {post.tags.map((t, i) => (
+              <span key={i} style={{
+                background: bg.accent + '15', color: bg.accent,
+                padding: '0.2rem 0.6rem', borderRadius: 999,
+                fontSize: '0.72rem', fontWeight: 600,
+              }}>{t}</span>
+            ))}
+          </div>
+        )}
+
+        {post.notes && (
+          <p style={{ marginTop: '0.7rem', fontSize: '0.78rem', color: bg.inkSoft, fontStyle: 'italic', lineHeight: 1.7 }}>
+            <FileText size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+            {post.notes}
+          </p>
+        )}
+
+        <button
+          onClick={() => { if (confirm('この投稿を削除しますか?')) onDelete(); }}
+          style={{
+            marginTop: '1.2rem',
+            width: '100%',
+            background: 'transparent',
+            color: '#C8102E',
+            border: '1px solid rgba(200,16,46,0.3)',
+            borderRadius: 12,
+            padding: '0.6rem',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+            fontFamily: IRIS_FONTS.body,
+          }}
+        >
+          <Trash2 size={14} /> 削除
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function Stat({ bg, icon, label, value, suffix }: {
+  bg: IrisBackgroundDef;
+  icon: React.ReactNode;
+  label: string;
+  value?: number;
+  suffix?: string;
+}) {
+  return (
+    <div style={{
+      background: typeof value === 'number' ? `linear-gradient(135deg, ${bg.accent}11, ${bg.accent}05)` : 'rgba(0,0,0,0.03)',
+      border: `1px solid ${typeof value === 'number' ? bg.accent + '33' : bg.cardBorder}`,
+      borderRadius: 14,
+      padding: '0.7rem 0.85rem',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: typeof value === 'number' ? bg.accent : bg.inkSoft, marginBottom: '0.3rem' }}>
+        {icon}
+        <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          {label}
+        </span>
+      </div>
+      <p style={{
+        fontFamily: IRIS_FONTS.serif,
+        fontStyle: 'italic',
+        fontSize: '1.4rem',
+        fontWeight: 600,
+        color: bg.ink,
+        lineHeight: 1,
+      }}>
+        {typeof value === 'number' ? `${formatNumber(value)}${suffix || ''}` : '—'}
+      </p>
+    </div>
+  );
+}
+
+// ============================================================
+// ヘルパー
+// ============================================================
+function Chip({ bg, icon, text, accent }: {
+  bg: IrisBackgroundDef;
+  icon: React.ReactNode;
+  text: string;
+  accent?: boolean;
+}) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 3,
+      color: accent ? bg.accent : bg.inkSoft,
+      fontSize: '0.74rem',
+      fontWeight: accent ? 700 : 600,
+    }}>
+      {icon} {text}
+    </span>
+  );
+}
+
+function formatNumber(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 10_000) return `${(n / 1_000).toFixed(1)}K`;
+  if (n >= 1_000) return n.toLocaleString();
+  return n.toString();
+}
