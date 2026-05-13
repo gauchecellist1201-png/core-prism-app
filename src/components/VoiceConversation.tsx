@@ -4,6 +4,7 @@
 // ============================================================
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Mic, PhoneOff, Volume2 } from 'lucide-react';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { enqueueClaudeCall } from '../lib/apiQueue';
@@ -335,12 +336,12 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
             background: phase === 'listening' ? accentColor : 'rgba(255,255,255,0.1)',
             border: '1px solid rgba(255,255,255,0.15)',
             color: '#fff',
-            fontSize: 24,
             cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
           }}
           aria-label="マイク toggle"
         >
-          🎙️
+          <Mic size={26} strokeWidth={2} />
         </button>
 
         {/* 終話 */}
@@ -353,13 +354,13 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
             background: 'linear-gradient(135deg, #ef4444, #dc2626)',
             border: 'none',
             color: '#fff',
-            fontSize: 30,
             cursor: 'pointer',
             boxShadow: '0 8px 24px rgba(239,68,68,0.5)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
           }}
           aria-label="終話"
         >
-          📴
+          <PhoneOff size={30} strokeWidth={2} />
         </button>
 
         {/* スピーカー (TTS) toggle */}
@@ -376,12 +377,12 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
             background: tts.state === 'speaking' ? accentColor : 'rgba(255,255,255,0.1)',
             border: '1px solid rgba(255,255,255,0.15)',
             color: '#fff',
-            fontSize: 24,
             cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
           }}
           aria-label="スピーカー停止"
         >
-          🔊
+          <Volume2 size={26} strokeWidth={2} />
         </button>
       </div>
     </motion.div>

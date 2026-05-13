@@ -143,7 +143,7 @@ export default function BusinessPlanView() {
           alignSelf: 'flex-start',
           position: 'sticky',
           top: 88,
-          maxHeight: 'calc(100vh - 120px)',
+          maxHeight: 'calc(100dvh - 120px)',
           overflowY: 'auto',
         }}>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>

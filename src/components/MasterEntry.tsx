@@ -190,7 +190,7 @@ export default function MasterEntry() {
               background: 'rgba(255,255,255,0.05)',
               border: `1px solid ${isMasterValid ? 'rgba(132,204,22,0.5)' : 'rgba(255,255,255,0.1)'}`,
               color: '#fff',
-              fontSize: 14,
+              fontSize: 16,
               fontFamily: 'monospace',
               outline: 'none',
               letterSpacing: '0.05em',
@@ -249,7 +249,7 @@ export default function MasterEntry() {
               background: 'rgba(255,255,255,0.05)',
               border: `1px solid ${claudeValid ? 'rgba(132,204,22,0.5)' : 'rgba(255,255,255,0.1)'}`,
               color: '#fff',
-              fontSize: 13,
+              fontSize: 16,
               fontFamily: 'monospace',
               outline: 'none',
             }}

@@ -47,7 +47,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       background: IRIS_COLORS.inkBlack,
       color: IRIS_COLORS.cream,
       fontFamily: IRIS_FONTS.body,
-      minHeight: '100vh',
+      minHeight: '100dvh',
       overflowX: 'hidden',
     }}>
       {/* ── ベータ公開告知バー ────────────────────────────── */}

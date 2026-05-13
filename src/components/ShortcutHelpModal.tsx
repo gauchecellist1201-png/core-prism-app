@@ -92,10 +92,11 @@ export default function ShortcutHelpModal({ open: openProp, onClose }: Props = {
                 <button
                   onClick={() => { setOpen(false); onClose?.(); }}
                   style={{
-                    width: 32, height: 32, borderRadius: '50%',
+                    width: 44, height: 44, borderRadius: '50%',
                     background: 'rgba(255,255,255,0.06)',
                     border: '1px solid rgba(255,255,255,0.1)',
-                    color: 'rgba(255,255,255,0.7)', fontSize: 18, cursor: 'pointer',
+                    color: 'rgba(255,255,255,0.7)', fontSize: 20, cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
                   }}
                   aria-label="閉じる"
                 >

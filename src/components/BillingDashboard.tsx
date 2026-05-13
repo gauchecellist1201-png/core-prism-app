@@ -141,8 +141,9 @@ export default function BillingDashboard({ onClose }: Props) {
           </div>
           <button onClick={onClose} style={{
             background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%',
-            width: 32, height: 32, cursor: 'pointer', fontSize: '0.9rem',
-          }}>✕</button>
+            width: 44, height: 44, cursor: 'pointer', fontSize: '1rem',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+          }} aria-label="閉じる">✕</button>
         </div>
 
         {/* 現在のプラン */}

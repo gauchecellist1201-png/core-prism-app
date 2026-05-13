@@ -18,7 +18,7 @@ export default function KeynoteLanding() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       background: 'radial-gradient(ellipse at 50% 30%, #1A1230 0%, #0a0a14 70%)',
       color: '#FFFAF5',
       fontFamily: '"Inter","Noto Sans JP",sans-serif',

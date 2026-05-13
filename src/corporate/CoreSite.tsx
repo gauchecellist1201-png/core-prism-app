@@ -87,7 +87,7 @@ export default function CoreSite() {
       style={{
         background: '#000',
         color: '#fff',
-        minHeight: '100vh',
+        minHeight: '100dvh',
         fontFamily: FONT_SANS,
         overflowX: 'hidden',
       }}

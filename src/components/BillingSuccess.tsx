@@ -56,7 +56,7 @@ export default function BillingSuccess() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       background: 'linear-gradient(135deg, #0f0a1e 0%, #1a0533 100%)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: 'Inter, -apple-system, sans-serif',

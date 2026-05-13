@@ -40,7 +40,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
   const { locale, setLocale, t } = useLocale();
 
   return (
-    <div style={{ background: BG_DARK, color: '#fff', minHeight: '100vh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
+    <div style={{ background: BG_DARK, color: '#fff', minHeight: '100dvh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
       {/* ── ベータ公開告知バー ────────────────────────────── */}
       <div style={{
         background: 'linear-gradient(90deg, #FFB347, #FF6FA9, #B07BD9)',

@@ -138,7 +138,7 @@ export default function PricingPage() {
   const breakeven = useMemo(() => Math.ceil(9800 / (hours * hourly)), [hours, hourly]); // Standard を回収するまでの週数
 
   return (
-    <div style={{ background: '#000', color: '#fff', minHeight: '100vh', fontFamily: FONT_SANS, overflowX: 'hidden' }}>
+    <div style={{ background: '#000', color: '#fff', minHeight: '100dvh', fontFamily: FONT_SANS, overflowX: 'hidden' }}>
       {/* ヘッダ */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="lp-safe" style={{ maxWidth: 1320, margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -3,7 +3,7 @@
 // 新 UX: 手入力ゼロのホーム + 旧 5 タブを上級者モードに格納
 // ============================================================
 import { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { MediaKit, Platform, ContentType } from '../types/influencerDeal';
 import { PLATFORM_META, CONTENT_TYPE_META } from '../types/influencerDeal';
@@ -846,9 +846,9 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
                 <button onClick={() => setImages(images.filter((_, idx) => idx !== i))} style={{
                   position: 'absolute', top: 4, right: 4,
                   background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none',
-                  borderRadius: '50%', width: 24, height: 24, cursor: 'pointer',
-                  fontSize: '0.85rem',
-                }}>✕</button>
+                  borderRadius: '50%', width: 26, height: 26, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                }} aria-label="画像を削除"><X size={14} strokeWidth={2.5} /></button>
               </div>
             ))}
           </div>

@@ -226,7 +226,7 @@ export default function FeedbackWidget({ brand }: Props) {
                       padding: '10px 12px',
                       border: '1px solid #E2DEF0',
                       borderRadius: 10,
-                      fontSize: 14,
+                      fontSize: 16,
                       fontFamily: 'inherit',
                       resize: 'vertical',
                       marginBottom: 16,
@@ -248,7 +248,7 @@ export default function FeedbackWidget({ brand }: Props) {
                       padding: '10px 12px',
                       border: '1px solid #E2DEF0',
                       borderRadius: 10,
-                      fontSize: 14,
+                      fontSize: 16,
                       marginBottom: 20,
                       boxSizing: 'border-box',
                     }}

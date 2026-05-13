@@ -3,6 +3,7 @@
 // ============================================================
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Mic, Square, X } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { Platform, ContentType, DealStage, InfluencerDeal } from '../types/influencerDeal';
 import { PLATFORM_META, CONTENT_TYPE_META, DEAL_STAGE_META } from '../types/influencerDeal';
@@ -222,8 +223,9 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
           </div>
           <button onClick={onClose} style={{
             background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%',
-            width: 36, height: 36, cursor: 'pointer', fontSize: '1rem',
-          }}>✕</button>
+            width: 44, height: 44, cursor: 'pointer', fontSize: '1rem',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+          }} aria-label="閉じる">✕</button>
         </div>
 
         <AnimatePresence mode="wait">
@@ -295,8 +297,9 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
                       <button onClick={() => setImages(images.filter((_, idx) => idx !== i))} style={{
                         position: 'absolute', top: 2, right: 2,
                         background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none',
-                        borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: '0.75rem',
-                      }}>✕</button>
+                        borderRadius: '50%', width: 24, height: 24, cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                      }} aria-label="画像を削除"><X size={12} strokeWidth={2.5} /></button>
                     </div>
                   ))}
                 </div>
@@ -326,19 +329,21 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
               <div style={{ textAlign: 'center', padding: '2rem 0' }}>
                 <button
                   onClick={listening ? voiceStop : voiceStart}
+                  aria-label={listening ? '録音停止' : '録音開始'}
                   style={{
                     width: 120, height: 120, borderRadius: '50%',
                     background: listening ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}aa)` : 'rgba(255,255,255,0.92)',
                     color: listening ? '#fff' : '#2A1F3F',
                     border: `3px solid ${listening ? bg.accent : 'rgba(31,26,46,0.12)'}`,
-                    fontSize: '3rem', cursor: 'pointer',
+                    cursor: 'pointer',
                     boxShadow: listening
                       ? `0 0 0 12px ${bg.accent}22, 0 12px 30px ${bg.accent}55`
                       : '0 4px 12px rgba(0,0,0,0.1)',
                     animation: listening ? 'voice-mega-pulse 1.6s ease-in-out infinite' : 'none',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
                   }}
                 >
-                  {listening ? '⏹' : '🎙'}
+                  {listening ? <Square size={48} strokeWidth={2} fill="currentColor" /> : <Mic size={56} strokeWidth={2} />}
                 </button>
                 <p style={{ marginTop: '1rem', color: '#5A4570', fontSize: '0.92rem' }}>
                   {listening ? '聞いています… (もう一度押すと停止)' : '押して、話すだけ。'}

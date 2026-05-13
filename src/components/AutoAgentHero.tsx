@@ -400,7 +400,7 @@ export default function AutoAgentHero({
                                 background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.7)',
                                 border: `1px solid ${cardBorder}`,
                                 borderRadius: 999,
-                                fontSize: 12, color: textPrimary,
+                                fontSize: 16, color: textPrimary,
                                 fontFamily: 'inherit',
                               }}
                             />

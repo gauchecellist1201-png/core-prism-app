@@ -1,8 +1,14 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
-import type { DecisionMemo, DecisionInput } from '../lib/decisionMemo';
-import { generateDecisionMemo, saveDecision, decisionToMarkdown, loadDecisions } from '../lib/decisionMemo';
+import type { DecisionMemo, DecisionInput, ExtractedDecisionFields } from '../lib/decisionMemo';
+import {
+  generateDecisionMemo,
+  saveDecision,
+  decisionToMarkdown,
+  loadDecisions,
+  extractDecisionFields,
+} from '../lib/decisionMemo';
 
 interface Props {
   persona: Persona;
@@ -12,36 +18,51 @@ interface Props {
   onSaveAsKnowledge: (title: string, content: string) => void;
 }
 
-type Phase = 'input' | 'result' | 'history';
+type Phase = 'speak' | 'confirm' | 'result' | 'history';
 
 export default function DecisionMemoModal({ persona, settings, knowledge, onClose, onSaveAsKnowledge }: Props) {
-  const [phase, setPhase] = useState<Phase>('input');
-  const [question, setQuestion] = useState('');
-  const [context, setContext] = useState('');
-  const [optionsText, setOptionsText] = useState('');
-  const [criteriaText, setCriteriaText] = useState('');
-  const [timeHorizon, setTimeHorizon] = useState('');
-  const [risk, setRisk] = useState<'low' | 'mid' | 'high'>('mid');
+  const [phase, setPhase] = useState<Phase>('speak');
+  const [rawText, setRawText] = useState('');
+  const [extracted, setExtracted] = useState<ExtractedDecisionFields | null>(null);
   const [memo, setMemo] = useState<DecisionMemo | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<DecisionMemo[]>(loadDecisions);
 
-  const handleGenerate = useCallback(async () => {
-    if (!question.trim()) {
-      setError('質問を入力してください');
+  const handleExtract = useCallback(async () => {
+    if (!rawText.trim()) {
+      setError('迷ってる内容を書いてください');
       return;
     }
     setError(null);
-    setIsGenerating(true);
+    setIsExtracting(true);
+    try {
+      const fields = await extractDecisionFields(settings, rawText, persona);
+      if (!fields.question) {
+        throw new Error('決めたい質問が読み取れませんでした。もう少し具体的に書いてみてください。');
+      }
+      setExtracted(fields);
+      setPhase('confirm');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsExtracting(false);
+    }
+  }, [rawText, settings, persona]);
+
+  const handleAnalyze = useCallback(async () => {
+    if (!extracted) return;
+    setError(null);
+    setIsAnalyzing(true);
     try {
       const input: DecisionInput = {
-        question: question.trim(),
-        context: context || undefined,
-        options: optionsText ? optionsText.split(/\n/).map(s => s.trim()).filter(Boolean) : undefined,
-        criteria: criteriaText ? criteriaText.split(/[,、\n]/).map(s => s.trim()).filter(Boolean) : undefined,
-        timeHorizon: timeHorizon || undefined,
-        riskTolerance: risk,
+        question: extracted.question,
+        context: extracted.context || undefined,
+        options: extracted.options.length ? extracted.options : undefined,
+        criteria: extracted.criteria.length ? extracted.criteria : undefined,
+        timeHorizon: extracted.timeHorizon || undefined,
+        riskTolerance: extracted.riskTolerance,
       };
       const result = await generateDecisionMemo(settings, persona, input, knowledge);
       saveDecision(result);
@@ -51,9 +72,9 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setIsGenerating(false);
+      setIsAnalyzing(false);
     }
-  }, [question, context, optionsText, criteriaText, timeHorizon, risk, persona, settings, knowledge]);
+  }, [extracted, persona, settings, knowledge]);
 
   const handleSaveToKnowledge = useCallback(() => {
     if (!memo) return;
@@ -76,7 +97,12 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-3"
-      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)' }}
+      style={{
+        background: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(20px)',
+        paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+      }}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
     >
@@ -90,94 +116,136 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}
+              className="rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+              style={{ width: 44, height: 44, background: persona.accentColorLight, color: persona.accentColor }}
             >💭</div>
             <div className="min-w-0">
               <p className="text-fg text-lg font-semibold leading-tight truncate">意思決定メモ AI</p>
-              <p className="text-fg-muted text-xs">構造化された判断フレームワーク</p>
+              <p className="text-fg-muted text-xs">話すだけで判断を構造化</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {history.length > 0 && phase !== 'history' && (
               <button
                 onClick={() => setPhase('history')}
-                className="text-xs px-3 py-1.5 rounded transition-all bg-surface-3 border-edge border text-fg-muted hover:text-fg"
+                className="text-xs rounded transition-all bg-surface-3 border-edge border text-fg-muted hover:text-fg"
+                style={{ minHeight: 36, padding: '0 12px' }}
               >📚 履歴 ({history.length})</button>
             )}
             <button
               onClick={onClose}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none"
+              aria-label="閉じる"
+              className="rounded-full flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none"
+              style={{ width: 44, height: 44 }}
             >×</button>
           </div>
         </div>
 
-        {/* Phase: Input */}
-        {phase === 'input' && (
+        {/* Phase: Speak (1 textarea) */}
+        {phase === 'speak' && (
           <div className="flex-1 overflow-y-auto p-5 space-y-3">
             <div>
-              <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">
-                決めたい質問 <span style={{ color: persona.accentColor }}>*</span>
-              </label>
-              <input
-                type="text" value={question} onChange={e => setQuestion(e.target.value)}
-                placeholder="例: 新規事業に投資すべきか / 採用候補Aを採るか"
-                className="w-full text-base rounded-lg px-3 py-2.5 outline-none bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
-              />
+              <p className="text-fg text-base font-semibold mb-1">迷ってることを話してください</p>
+              <p className="text-fg-muted text-xs leading-relaxed">
+                背景・選択肢・気がかり、思いつくままで OK。AI が要素を整理して、推奨を出します。
+              </p>
             </div>
-
-            <div>
-              <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">背景・制約 (任意)</label>
-              <textarea
-                value={context} onChange={e => setContext(e.target.value)}
-                placeholder="現在の状況、予算、期限、チーム構成、制約条件など..."
-                className="w-full text-sm rounded-lg px-3 py-2 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
-                style={{ minHeight: '80px' }}
-              />
+            <textarea
+              value={rawText}
+              onChange={e => setRawText(e.target.value)}
+              placeholder={`例)\n新規事業に投資すべきか迷ってる。手元資金は 3000 万、半年で結果を出したい。\n候補は A 案 (SaaS) と B 案 (D2C)。A の方が伸び代はあるけど開発に時間がかかる。失敗したら次の調達が厳しくなる。`}
+              className="w-full text-base rounded-lg px-3 py-3 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg leading-relaxed"
+              style={{ minHeight: 240, fontSize: 16 }}
+              autoFocus
+            />
+            {error && (
+              <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
+                {error}
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                onClick={onClose}
+                className="rounded-lg text-sm text-fg-muted hover:text-fg"
+                style={{ minHeight: 44, padding: '0 16px' }}
+              >キャンセル</button>
+              <motion.button
+                onClick={handleExtract}
+                disabled={!rawText.trim() || isExtracting}
+                className="rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
+                style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, padding: '0 20px' }}
+                whileHover={!isExtracting ? { scale: 1.02 } : {}}
+                whileTap={!isExtracting ? { scale: 0.98 } : {}}
+              >
+                {isExtracting ? '🧠 要素を整理中…' : '✨ 整理する'}
+              </motion.button>
             </div>
+          </div>
+        )}
 
+        {/* Phase: Confirm (extracted 6 elements) */}
+        {phase === 'confirm' && extracted && (
+          <div className="flex-1 overflow-y-auto p-5 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-fg text-base font-semibold">こう理解しました</p>
+              <button
+                onClick={() => setPhase('speak')}
+                className="text-fg-muted hover:text-fg text-sm rounded"
+                style={{ minHeight: 36, padding: '0 8px' }}
+              >← 書き直す</button>
+            </div>
+            <p className="text-fg-muted text-xs">違うところがあれば直接書き換えてください。問題なければ「分析する」へ。</p>
+
+            <ConfirmField
+              label="決めたい質問"
+              accent={persona.accentColor}
+              value={extracted.question}
+              onChange={v => setExtracted({ ...extracted, question: v })}
+              multiline
+            />
+            <ConfirmField
+              label="背景・制約"
+              accent={persona.accentColor}
+              value={extracted.context}
+              onChange={v => setExtracted({ ...extracted, context: v })}
+              multiline
+              placeholder="(なし)"
+            />
+            <ConfirmListField
+              label="選択肢"
+              accent={persona.accentColor}
+              hint="空ならAIが補完"
+              value={extracted.options}
+              onChange={v => setExtracted({ ...extracted, options: v })}
+            />
+            <ConfirmListField
+              label="評価軸"
+              accent={persona.accentColor}
+              hint="空なら人格に応じてAIが設定"
+              value={extracted.criteria}
+              onChange={v => setExtracted({ ...extracted, criteria: v })}
+            />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">選択肢 (1行ずつ・任意)</label>
-                <textarea
-                  value={optionsText} onChange={e => setOptionsText(e.target.value)}
-                  placeholder={'A: 投資する\nB: 投資しない\nC: 半分だけ投資'}
-                  className="w-full text-sm rounded-lg px-3 py-2 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
-                  style={{ minHeight: '70px' }}
-                />
-              </div>
-              <div>
-                <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">評価軸 (任意)</label>
-                <input
-                  type="text" value={criteriaText} onChange={e => setCriteriaText(e.target.value)}
-                  placeholder="例: ROI, リスク, 実行可能性"
-                  className="w-full text-sm rounded-lg px-3 py-2 outline-none bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
-                />
-                <p className="text-fg-muted text-xs mt-1">空欄なら AI が人格に応じて補完</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">時間軸</label>
-                <input
-                  type="text" value={timeHorizon} onChange={e => setTimeHorizon(e.target.value)}
-                  placeholder="例: 6ヶ月 / 1年 / 3年"
-                  className="w-full text-sm rounded-lg px-3 py-2 outline-none bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
-                />
-              </div>
+              <ConfirmField
+                label="時間軸"
+                accent={persona.accentColor}
+                value={extracted.timeHorizon}
+                onChange={v => setExtracted({ ...extracted, timeHorizon: v })}
+                placeholder="(未指定)"
+              />
               <div>
                 <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">リスク許容度</label>
                 <div className="flex gap-1">
                   {([['low', '低'], ['mid', '中'], ['high', '高']] as const).map(([id, label]) => (
                     <button
                       key={id}
-                      onClick={() => setRisk(id)}
-                      className="flex-1 text-sm py-2 rounded-lg transition-all"
+                      onClick={() => setExtracted({ ...extracted, riskTolerance: id })}
+                      className="flex-1 text-sm rounded-lg transition-all"
                       style={{
-                        background: risk === id ? persona.accentColorLight : 'var(--surface-3)',
-                        color: risk === id ? persona.accentColor : 'var(--fg-muted)',
-                        border: `1px solid ${risk === id ? persona.accentColor + '50' : 'var(--border)'}`,
+                        minHeight: 44,
+                        background: extracted.riskTolerance === id ? persona.accentColorLight : 'var(--surface-3)',
+                        color: extracted.riskTolerance === id ? persona.accentColor : 'var(--fg-muted)',
+                        border: `1px solid ${extracted.riskTolerance === id ? persona.accentColor + '50' : 'var(--border)'}`,
                       }}
                     >{label}</button>
                   ))}
@@ -192,16 +260,20 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
             )}
 
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={onClose} className="px-4 py-2 text-sm text-fg-muted hover:text-fg">キャンセル</button>
+              <button
+                onClick={() => setPhase('speak')}
+                className="rounded-lg text-sm text-fg-muted hover:text-fg"
+                style={{ minHeight: 44, padding: '0 16px' }}
+              >戻る</button>
               <motion.button
-                onClick={handleGenerate}
-                disabled={!question.trim() || isGenerating}
-                className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}
-                whileHover={!isGenerating ? { scale: 1.02 } : {}}
-                whileTap={!isGenerating ? { scale: 0.98 } : {}}
+                onClick={handleAnalyze}
+                disabled={!extracted.question.trim() || isAnalyzing}
+                className="rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
+                style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, padding: '0 20px' }}
+                whileHover={!isAnalyzing ? { scale: 1.02 } : {}}
+                whileTap={!isAnalyzing ? { scale: 0.98 } : {}}
               >
-                {isGenerating ? '🧠 解析中...' : '✨ 意思決定メモを生成'}
+                {isAnalyzing ? '🧠 解析中…' : '🔍 分析する'}
               </motion.button>
             </div>
           </div>
@@ -212,11 +284,10 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
           <div className="flex-1 overflow-y-auto p-5 space-y-3">
             <div>
               <p className="text-fg-muted text-xs tracking-wider uppercase mb-1">質問</p>
-              <p className="text-fg text-xl font-bold leading-tight">{memo.question}</p>
-              {memo.context && <p className="text-fg-muted text-sm mt-1.5">{memo.context}</p>}
+              <p className="text-fg text-xl font-bold leading-tight" style={{ wordBreak: 'break-word' }}>{memo.question}</p>
+              {memo.context && <p className="text-fg-muted text-sm mt-1.5" style={{ wordBreak: 'break-word' }}>{memo.context}</p>}
             </div>
 
-            {/* 推奨ヒーロー */}
             <div
               className="rounded-2xl p-4"
               style={{
@@ -228,7 +299,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
                 <p className="text-fg-muted text-xs tracking-widest uppercase">推奨</p>
                 <p className="text-fg text-xs">確度 <span style={{ color: persona.accentColor }} className="font-bold text-base">{memo.confidence}</span>%</p>
               </div>
-              <p className="text-fg text-xl font-semibold mb-2">→ {memo.recommended}</p>
+              <p className="text-fg text-xl font-semibold mb-2" style={{ wordBreak: 'break-word' }}>→ {memo.recommended}</p>
               <p className="text-fg/90 text-sm leading-relaxed whitespace-pre-wrap">{memo.rationale}</p>
               <div className="mt-2 pt-2 flex items-center gap-2 text-xs" style={{ borderTop: '1px solid var(--border)' }}>
                 <span className="text-fg-muted">可逆性:</span>
@@ -238,7 +309,6 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
               </div>
             </div>
 
-            {/* 比較マトリックス */}
             {memo.options.length > 0 && (
               <div className="rounded-xl p-3.5" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                 <p className="text-xs tracking-widest uppercase font-semibold mb-2" style={{ color: persona.accentColor }}>
@@ -254,19 +324,19 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
                         border: `1px solid ${o.name === memo.recommended ? persona.accentColor + '60' : 'var(--border)'}`,
                       }}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-fg text-base font-semibold">
+                      <div className="flex items-center justify-between mb-2 gap-2">
+                        <p className="text-fg text-base font-semibold" style={{ wordBreak: 'break-word' }}>
                           {o.name === memo.recommended && '⭐ '}
                           {o.name}
                         </p>
-                        <p className="text-fg text-xl font-bold">{o.totalScore}<span className="text-fg-muted text-xs">/100</span></p>
+                        <p className="text-fg text-xl font-bold flex-shrink-0">{o.totalScore}<span className="text-fg-muted text-xs">/100</span></p>
                       </div>
                       <div className="grid grid-cols-2 gap-2 mb-2">
                         <div>
                           <p className="text-xs mb-0.5" style={{ color: '#34d399' }}>メリット</p>
                           <ul className="space-y-0.5">
                             {o.pros.map((p, j) => (
-                              <li key={j} className="text-fg text-xs flex gap-1.5"><span style={{ color: '#34d399' }}>+</span><span>{p}</span></li>
+                              <li key={j} className="text-fg text-xs flex gap-1.5"><span style={{ color: '#34d399' }}>+</span><span style={{ wordBreak: 'break-word' }}>{p}</span></li>
                             ))}
                           </ul>
                         </div>
@@ -274,7 +344,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
                           <p className="text-xs mb-0.5" style={{ color: '#f87171' }}>デメリット</p>
                           <ul className="space-y-0.5">
                             {o.cons.map((c, j) => (
-                              <li key={j} className="text-fg text-xs flex gap-1.5"><span style={{ color: '#f87171' }}>−</span><span>{c}</span></li>
+                              <li key={j} className="text-fg text-xs flex gap-1.5"><span style={{ color: '#f87171' }}>−</span><span style={{ wordBreak: 'break-word' }}>{c}</span></li>
                             ))}
                           </ul>
                         </div>
@@ -310,18 +380,20 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
               <button
-                onClick={() => setPhase('input')}
-                className="text-fg-muted hover:text-fg text-sm"
-              >← 編集に戻る</button>
+                onClick={() => setPhase('confirm')}
+                className="text-fg-muted hover:text-fg text-sm rounded"
+                style={{ minHeight: 44, padding: '0 12px' }}
+              >← 修正に戻る</button>
               <div className="flex gap-2">
                 <button
                   onClick={handleDownload}
-                  className="px-4 py-2 rounded-lg text-sm bg-surface-3 border-edge border text-fg hover:bg-surface"
+                  className="rounded-lg text-sm bg-surface-3 border-edge border text-fg hover:bg-surface"
+                  style={{ minHeight: 44, padding: '0 16px' }}
                 >📥 .md</button>
                 <button
                   onClick={handleSaveToKnowledge}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                  className="rounded-lg text-sm font-semibold"
+                  style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, padding: '0 16px' }}
                 >📚 ナレッジに保存</button>
               </div>
             </div>
@@ -339,7 +411,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
                 <button
                   key={i}
                   onClick={() => { setMemo(m); setPhase('result'); }}
-                  className="w-full text-left p-3 rounded-xl transition-all"
+                  className="w-full text-left p-3 rounded-xl transition-all hover:bg-surface"
                   style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -355,14 +427,78 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
               ))
             )}
             <button
-              onClick={() => setPhase('input')}
-              className="w-full mt-3 py-2.5 rounded-lg text-sm font-semibold"
-              style={{ background: persona.accentColor, color: '#0a0a0f' }}
+              onClick={() => { setRawText(''); setExtracted(null); setMemo(null); setPhase('speak'); }}
+              className="w-full mt-3 rounded-lg text-sm font-semibold"
+              style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 48 }}
             >＋ 新しい意思決定を作成</button>
           </div>
         )}
       </motion.div>
     </motion.div>
+  );
+}
+
+function ConfirmField({
+  label, accent, value, onChange, multiline, placeholder,
+}: {
+  label: string;
+  accent: string;
+  value: string;
+  onChange: (v: string) => void;
+  multiline?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">
+        {label} {label === '決めたい質問' && <span style={{ color: accent }}>*</span>}
+      </label>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full rounded-lg px-3 py-2.5 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
+          style={{ minHeight: label === '決めたい質問' ? 64 : 80, fontSize: 16 }}
+        />
+      ) : (
+        <input
+          type="text"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full rounded-lg px-3 outline-none bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
+          style={{ minHeight: 44, fontSize: 16 }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ConfirmListField({
+  label, accent, hint, value, onChange,
+}: {
+  label: string;
+  accent: string;
+  hint?: string;
+  value: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const text = value.join('\n');
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="block text-fg-muted text-xs tracking-wider uppercase">{label}</label>
+        {hint && <span className="text-fg-subtle text-xs">{hint}</span>}
+      </div>
+      <textarea
+        value={text}
+        onChange={e => onChange(e.target.value.split('\n').map(s => s.trim()).filter(Boolean))}
+        placeholder="(1行ずつ)"
+        className="w-full rounded-lg px-3 py-2 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
+        style={{ minHeight: 70, fontSize: 16, borderLeftColor: value.length ? accent + '60' : undefined }}
+      />
+    </div>
   );
 }
 
@@ -374,7 +510,7 @@ function Section({ title, color, items }: { title: string; color: string; items:
         {items.map((s, i) => (
           <li key={i} className="text-fg text-sm flex gap-2 leading-relaxed">
             <span style={{ color }}>·</span>
-            <span>{s}</span>
+            <span style={{ wordBreak: 'break-word' }}>{s}</span>
           </li>
         ))}
       </ul>

@@ -162,6 +162,95 @@ ${relevantKnowledge}
   };
 }
 
+// ─── 自然文 → 構造化抽出 ──
+// 「迷ってることをそのまま書いた文章」から 6 要素を一発で抽出
+export interface ExtractedDecisionFields {
+  question: string;
+  context: string;
+  options: string[];
+  criteria: string[];
+  timeHorizon: string;
+  riskTolerance: 'low' | 'mid' | 'high';
+}
+
+export async function extractDecisionFields(
+  settings: AppSettings,
+  rawText: string,
+  persona: Persona,
+): Promise<ExtractedDecisionFields> {
+  const apiKey = getApiKey(settings);
+  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
+  if (!rawText.trim()) throw new Error('内容が空です');
+
+  const sys = `あなたは経営者の「迷い」を聞き取って、意思決定の要素に分解するエキスパートです。
+ユーザーが自然文で語った内容から、以下の 6 要素を抽出して JSON で返してください。
+返答は JSON のみ。前置きも後置きも、コードブロックも一切なし。
+
+{
+  "question": "決めたい質問 (50字以内、疑問形)",
+  "context": "背景・制約 (見えてる文脈をまとめる、200字以内)",
+  "options": ["選択肢A", "選択肢B"],
+  "criteria": ["評価軸1", "評価軸2"],
+  "timeHorizon": "判断の時間軸 (例: 3ヶ月 / 1年 / 5年)、不明なら空文字",
+  "riskTolerance": "low" | "mid" | "high"
+}
+
+ルール:
+- options: 文中に明示されていれば全て拾う。明示されていなければ [] を返す (AI 側で後で補完される)
+- criteria: 文中に評価基準が示唆されていれば拾う、なければ []
+- riskTolerance: 文脈から判断。攻めの表現 / 慎重さ / 不明 を high / low / mid に
+- 推測しすぎず、文中に根拠がある情報だけを拾う`;
+
+  const userText = `## 人格コンテキスト
+${persona.name} (${persona.subtitle || ''})
+
+## ユーザーが語った内容
+${rawText}
+
+上記から 6 要素を JSON で抽出してください。`;
+
+  const res = await fetch('/api/ai', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: settings.preferredModel,
+      max_tokens: 1500,
+      system: sys,
+      messages: [{ role: 'user', content: userText }],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message ?? `要素抽出 API エラー: ${res.status}`);
+  }
+
+  const data = await res.json();
+  const text = data.content?.[0]?.text ?? '';
+  let parsed: any = {};
+  try {
+    const m = text.match(/\{[\s\S]*\}/);
+    parsed = JSON.parse(m ? m[0] : text);
+  } catch {
+    throw new Error('AI からの応答を解析できませんでした');
+  }
+
+  const risk = parsed.riskTolerance;
+  return {
+    question: String(parsed.question || '').trim(),
+    context: String(parsed.context || '').trim(),
+    options: Array.isArray(parsed.options) ? parsed.options.map(String).filter(Boolean) : [],
+    criteria: Array.isArray(parsed.criteria) ? parsed.criteria.map(String).filter(Boolean) : [],
+    timeHorizon: String(parsed.timeHorizon || '').trim(),
+    riskTolerance: risk === 'low' || risk === 'high' ? risk : 'mid',
+  };
+}
+
 // 履歴管理 (LocalStorage)
 const STORAGE_KEY = 'core_decisions';
 const MAX_HISTORY = 50;

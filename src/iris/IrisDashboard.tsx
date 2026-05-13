@@ -146,7 +146,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       background: bg.background,
       color: bg.ink,
       fontFamily: IRIS_FONTS.body,

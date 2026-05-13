@@ -3,8 +3,8 @@
 // 手入力ゼロ。スクショ貼って終わり。あとは美しく見るだけ。
 // 設計: Apple Photos / Linear / Things 3 / Spotify Wrapped の交差点
 // ============================================================
-import { Fragment, useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence, useMotionValue, animate as fmAnimate } from 'framer-motion';
 import {
   Camera, Sparkles, TrendingUp, Bookmark, Share2, Eye, Heart,
   MessageCircle, Clock, Flame, Loader2,
@@ -348,16 +348,22 @@ function HeroBanner({ bg, stats }: { bg: IrisBackgroundDef; stats: ReturnType<ty
         gap: 'clamp(0.6rem, 2vw, 1.2rem)',
         marginTop: '1rem',
       }}>
-        <MetricBig bg={bg} value={stats.total.toString()} label="投稿" />
-        <MetricBig bg={bg} value={er > 0 ? `${er.toFixed(1)}%` : '—'} label="平均 ER" />
-        <MetricBig bg={bg} value={reach > 0 ? formatNumber(Math.round(reach)) : '—'} label="平均リーチ" />
-        <MetricBig bg={bg} value={stats.avgSaves > 0 ? formatNumber(Math.round(stats.avgSaves)) : '—'} label="平均保存" />
+        <MetricBig bg={bg} value={stats.total.toString()} numeric={stats.total} label="投稿" />
+        <MetricBig bg={bg} value={er > 0 ? `${er.toFixed(1)}%` : '—'} numeric={er} suffix="%" label="平均 ER" />
+        <MetricBig bg={bg} value={reach > 0 ? formatNumber(Math.round(reach)) : '—'} numeric={reach} label="平均リーチ" />
+        <MetricBig bg={bg} value={stats.avgSaves > 0 ? formatNumber(Math.round(stats.avgSaves)) : '—'} numeric={stats.avgSaves} label="平均保存" />
       </div>
     </div>
   );
 }
 
-function MetricBig({ bg, value, label }: { bg: IrisBackgroundDef; value: string; label: string }) {
+function MetricBig({ bg, value, label, numeric, suffix }: {
+  bg: IrisBackgroundDef;
+  value: string;
+  label: string;
+  numeric?: number;
+  suffix?: string;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -373,7 +379,9 @@ function MetricBig({ bg, value, label }: { bg: IrisBackgroundDef; value: string;
         lineHeight: 1,
         letterSpacing: '-0.02em',
       }}>
-        {value}
+        {typeof numeric === 'number' && numeric > 0
+          ? <CountUp value={numeric} suffix={suffix} />
+          : value}
       </div>
       <div style={{
         fontSize: '0.7rem',
@@ -387,6 +395,36 @@ function MetricBig({ bg, value, label }: { bg: IrisBackgroundDef; value: string;
       </div>
     </motion.div>
   );
+}
+
+function CountUp({ value, suffix }: { value: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const motionValue = useMotionValue(0);
+
+  useEffect(() => {
+    motionValue.set(0);
+    const controls = fmAnimate(motionValue, value, {
+      duration: 1.2,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (latest) => {
+        if (ref.current) ref.current.textContent = formatCounting(latest, value, suffix);
+      },
+    });
+    return controls.stop;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, suffix]);
+
+  return <span ref={ref}>{formatCounting(value, value, suffix)}</span>;
+}
+
+function formatCounting(latest: number, target: number, suffix?: string): string {
+  // Percent (ER): 1 decimal place
+  if (suffix === '%') return `${latest.toFixed(1)}%`;
+  // Large numbers: K/M abbreviation
+  if (target >= 1_000_000) return `${(latest / 1_000_000).toFixed(1)}M`;
+  if (target >= 10_000) return `${(latest / 1_000).toFixed(1)}K`;
+  // Otherwise round to int
+  return `${Math.round(latest).toLocaleString()}${suffix || ''}`;
 }
 
 // ============================================================
@@ -846,6 +884,21 @@ function Dashboard({
 }) {
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
+      {/* 山型グラフ (直近30日) */}
+      {stats.timeline.length >= 2 && (
+        <div style={glassCard}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem', flexWrap: 'wrap' }}>
+            <TrendingUp size={16} style={{ color: bg.accent }} />
+            <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', fontWeight: 600, color: bg.ink, margin: 0 }}>
+              直近 30 日の伸び
+            </p>
+            <span style={{ fontSize: '0.72rem', color: bg.inkSoft, marginLeft: 'auto' }}>
+              {stats.timeline.length} 日分
+            </span>
+          </div>
+          <TrendChart timeline={stats.timeline} bg={bg} />
+        </div>
+      )}
       {/* ヒートマップ */}
       {stats.heatmapMax > 0 && (
         <div style={glassCard}>
@@ -996,6 +1049,196 @@ function Heatmap({ stats, bg }: { stats: ReturnType<typeof computeStats>; bg: Ir
 function alphaHex(a: number): string {
   const clamped = Math.max(0, Math.min(1, a));
   return Math.round(clamped * 255).toString(16).padStart(2, '0');
+}
+
+// ============================================================
+// 山型グラフ — 直近 30 日の reach + ER 推移
+// (Stripe Revenue Dashboard 風の area + dot)
+// ============================================================
+function TrendChart({
+  timeline, bg,
+}: {
+  timeline: { date: string; reach: number; er: number; count: number }[];
+  bg: IrisBackgroundDef;
+}) {
+  // 30 日ぶんの bins を作る (歯抜けの日も含めて連続表示)
+  const series = useMemo(() => fillTimeline(timeline, 30), [timeline]);
+  const maxReach = Math.max(1, ...series.map(d => d.reach));
+  const maxER = Math.max(0.5, ...series.map(d => d.er));
+
+  const W = 600;
+  const H = 160;
+  const padL = 14;
+  const padR = 14;
+  const padT = 14;
+  const padB = 22;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+
+  const x = (i: number) => padL + (innerW * i) / Math.max(1, series.length - 1);
+  const yReach = (v: number) => padT + innerH - (innerH * v) / maxReach;
+  const yER = (v: number) => padT + innerH - (innerH * v) / maxER;
+
+  // area path (reach)
+  const areaPath = series.length === 0 ? '' :
+    `M ${x(0)},${padT + innerH} ` +
+    series.map((d, i) => `L ${x(i)},${yReach(d.reach)}`).join(' ') +
+    ` L ${x(series.length - 1)},${padT + innerH} Z`;
+
+  // line path (ER, scaled to its own y axis)
+  const linePath = series.length === 0 ? '' :
+    series.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(i)},${yER(d.er)}`).join(' ');
+
+  // Peak day (highest reach)
+  const peakIdx = series.reduce((best, d, i) =>
+    d.reach > series[best].reach ? i : best, 0);
+  const peak = series[peakIdx];
+
+  const gradId = `irisGrad-${bg.accent.replace(/[^a-zA-Z0-9]/g, '')}`;
+
+  return (
+    <div style={{ width: '100%', position: 'relative' }}>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        style={{ width: '100%', height: 'clamp(140px, 32vw, 180px)', display: 'block' }}
+      >
+        <defs>
+          <linearGradient id={gradId} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={bg.accent} stopOpacity="0.55" />
+            <stop offset="55%" stopColor={bg.accent} stopOpacity="0.18" />
+            <stop offset="100%" stopColor={bg.accent} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {/* baseline (薄いグリッド) */}
+        {[0.25, 0.5, 0.75].map(t => (
+          <line
+            key={t}
+            x1={padL} x2={W - padR}
+            y1={padT + innerH * t} y2={padT + innerH * t}
+            stroke={bg.cardBorder} strokeWidth="1" strokeDasharray="2 4"
+          />
+        ))}
+
+        {/* area (reach) */}
+        {areaPath && (
+          <motion.path
+            d={areaPath}
+            fill={`url(#${gradId})`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          />
+        )}
+
+        {/* line (ER) */}
+        {linePath && (
+          <motion.path
+            d={linePath}
+            fill="none"
+            stroke={bg.accent}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+          />
+        )}
+
+        {/* dots for post days */}
+        {series.map((d, i) => d.count > 0 ? (
+          <motion.circle
+            key={i}
+            cx={x(i)} cy={yER(d.er)} r={3}
+            fill="#fff"
+            stroke={bg.accent}
+            strokeWidth="1.8"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.5 + i * 0.015, duration: 0.3 }}
+          />
+        ) : null)}
+
+        {/* peak marker */}
+        {peak && peak.reach > 0 && (
+          <motion.g
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.5 }}
+          >
+            <circle cx={x(peakIdx)} cy={yReach(peak.reach)} r={5} fill={bg.accent} />
+            <circle cx={x(peakIdx)} cy={yReach(peak.reach)} r={5} fill="none" stroke={bg.accent} strokeOpacity={0.4} strokeWidth={6} />
+          </motion.g>
+        )}
+      </svg>
+
+      {/* axis labels (端 2 つ + peak) */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontSize: '0.66rem',
+        color: bg.inkSoft,
+        marginTop: 2,
+        paddingInline: 8,
+      }}>
+        <span>{formatShortDate(series[0]?.date)}</span>
+        {peak && peak.reach > 0 && (
+          <span style={{ color: bg.accent, fontWeight: 700 }}>
+            ピーク {formatShortDate(peak.date)} · リーチ {formatNumber(peak.reach)}
+          </span>
+        )}
+        <span>{formatShortDate(series[series.length - 1]?.date)}</span>
+      </div>
+
+      {/* 凡例 */}
+      <div style={{
+        display: 'flex', gap: '0.9rem', marginTop: '0.5rem',
+        fontSize: '0.7rem', color: bg.inkSoft,
+        flexWrap: 'wrap',
+      }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={{
+            display: 'inline-block', width: 10, height: 10, borderRadius: 2,
+            background: `linear-gradient(180deg, ${bg.accent}aa, ${bg.accent}22)`,
+          }} />
+          リーチ
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={{
+            display: 'inline-block', width: 16, height: 2, borderRadius: 2,
+            background: bg.accent,
+          }} />
+          エンゲージメント率
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function fillTimeline(
+  timeline: { date: string; reach: number; er: number; count: number }[],
+  days: number,
+): { date: string; reach: number; er: number; count: number }[] {
+  const map = new Map(timeline.map(t => [t.date, t]));
+  const out: { date: string; reach: number; er: number; count: number }[] = [];
+  const today = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const v = map.get(key);
+    out.push(v ?? { date: key, reach: 0, er: 0, count: 0 });
+  }
+  return out;
+}
+
+function formatShortDate(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 function TopList({
@@ -1270,7 +1513,7 @@ function DetailModal({
           borderRadius: 24,
           maxWidth: 480,
           width: '100%',
-          maxHeight: '88vh',
+          maxHeight: 'calc(100dvh - 1.5rem)',
           overflowY: 'auto',
           padding: '1.5rem',
           boxShadow: '0 32px 80px rgba(20,10,30,0.4)',

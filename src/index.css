@@ -185,9 +185,11 @@ input, textarea, select {
 
 /* タッチターゲット最小サイズ (Apple HIG: 44pt) */
 @media (max-width: 768px) {
-  button, a[role="button"], [role="button"], a {
-    min-height: 36px;
+  button, a[role="button"], [role="button"] {
+    min-height: 44px;
   }
+  /* テキストリンクは min-height を適用しない (本文と一緒に流れる時に困る)
+     代わりに role="button" を付けた a タグだけ 44px が当たる */
 
   /* モーダル系は 100dvh に */
   [class*="fixed"][class*="inset-0"] {
@@ -195,15 +197,24 @@ input, textarea, select {
   }
 
   /* どうしても vh が使われている残りのモーダル → dvh で上書き */
+  [style*="maxHeight: '95vh'"],
+  [style*="maxHeight:'95vh'"],
   [style*="maxHeight: '92vh'"],
   [style*="maxHeight:'92vh'"],
   [style*="maxHeight: '90vh'"],
   [style*="maxHeight:'90vh'"],
+  [style*="maxHeight: '88vh'"],
+  [style*="maxHeight:'88vh'"],
   [style*="maxHeight: '85vh'"],
   [style*="maxHeight:'85vh'"],
+  [style*="maxHeight: '80vh'"],
+  [style*="maxHeight:'80vh'"],
+  [style*="max-height: 95vh"],
   [style*="max-height: 92vh"],
   [style*="max-height: 90vh"],
-  [style*="max-height: 85vh"] {
+  [style*="max-height: 88vh"],
+  [style*="max-height: 85vh"],
+  [style*="max-height: 80vh"] {
     max-height: calc(100dvh - 1.5rem) !important;
   }
 

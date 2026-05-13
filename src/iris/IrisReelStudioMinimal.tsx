@@ -305,7 +305,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const removeClip = (id: string) => setClips(prev => prev.filter(c => c.id !== id));
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', paddingBottom: '6rem' }}>
+    <div style={{ position: 'relative', minHeight: '100dvh', paddingBottom: '6rem' }}>
       {/* AMBIENT BG */}
       <div style={{
         position: 'absolute', top: -120, left: '50%', transform: 'translateX(-50%)',
@@ -641,7 +641,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     background: 'rgba(255,255,255,0.7)',
                     border: `1px solid ${bg.cardBorder}`,
                     borderRadius: 14,
-                    fontSize: 15, fontFamily: 'inherit',
+                    fontSize: 16, fontFamily: 'inherit',
                     resize: 'vertical',
                     marginBottom: 14,
                   }}

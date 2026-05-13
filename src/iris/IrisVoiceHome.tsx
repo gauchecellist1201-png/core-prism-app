@@ -12,7 +12,7 @@ import ApiErrorCard from '../components/ApiErrorCard';
 import {
   Film, Camera, MessageSquare, BarChart3, HeartPulse, Mic, Mail,
   Image as ImageIcon, Calendar, Wallet, Sparkles, Trash2, ArrowUp,
-  Bell, Flame,
+  Bell, Flame, X,
 } from 'lucide-react';
 import { IrisHeroGreeting } from './IrisWelcome';
 import IrisBondCard from './IrisBondCard';
@@ -538,10 +538,11 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
               <div key={i} style={{ position: 'relative' }}>
                 <img src={img.preview} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 10, border: `1px solid ${bg.cardBorder}` }} />
                 <button onClick={() => setPendingImages(p => p.filter((_, idx) => idx !== i))} style={{
-                  position: 'absolute', top: -4, right: -4,
+                  position: 'absolute', top: -6, right: -6,
                   background: '#1F1A2E', color: '#fff', border: 'none',
-                  borderRadius: '50%', width: 18, height: 18, cursor: 'pointer', fontSize: '0.7rem', lineHeight: 1,
-                }}>✕</button>
+                  borderRadius: '50%', width: 22, height: 22, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                }} aria-label="画像を削除"><X size={12} strokeWidth={2.5} /></button>
               </div>
             ))}
           </div>
