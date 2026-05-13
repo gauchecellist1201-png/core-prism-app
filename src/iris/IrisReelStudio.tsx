@@ -124,7 +124,7 @@ type ViralPattern = {
   cta: string;
 };
 
-const VIRAL_PATTERNS: ViralPattern[] = [
+export const VIRAL_PATTERNS: ViralPattern[] = [
   {
     id: 'pov-storytime',
     name: 'POV ストーリーテリング',
@@ -312,7 +312,7 @@ const VIRAL_PATTERNS: ViralPattern[] = [
 ];
 
 // 2026 Q2 で今最も伸びてる format ID (Trend Pulse)
-const TREND_PULSE_2026_Q2 = ['pov-storytime', 'grwm', 'tell-me-why', 'voiceover-broll', 'myth-bust'];
+export const TREND_PULSE_2026_Q2 = ['pov-storytime', 'grwm', 'tell-me-why', 'voiceover-broll', 'myth-bust'];
 
 // ─── コミュニティ テンプレート (CapCut の参加型エコシステムを食う) ─────
 type CommunityTemplate = {
@@ -338,7 +338,7 @@ type CommunityTemplate = {
 };
 
 // 厳選キュレーション 12 種 (シード)
-const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
+export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   {
     id: 'ct-beauty-grwm',
     name: '🌸 朝の5分メイクGRWM',
@@ -658,7 +658,7 @@ const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
 ];
 
-const TEMPLATE_CATEGORIES: { id: string; label: string }[] = [
+export const TEMPLATE_CATEGORIES: { id: string; label: string }[] = [
   { id: 'all',       label: 'すべて' },
   { id: 'beauty',    label: '美容' },
   { id: 'food',      label: '料理' },
@@ -773,7 +773,7 @@ const SAVE_CTAS = [
 // ─── BGM ライブラリ (Pixabay Music ・ CC0 ロイヤリティフリー) ─────────────
 // CDN: cdn.pixabay.com の audio エンドポイントは CORS 許可済み
 type BgmTrack = { id: string; name: string; mood: string; bpm: number; sec: number; url: string };
-const BGM_LIBRARY: BgmTrack[] = [
+export const BGM_LIBRARY: BgmTrack[] = [
   { id: 'chill-pop',    name: 'Chill Pop',         mood: 'upbeat',    bpm: 110, sec: 138, url: 'https://cdn.pixabay.com/audio/2022/10/25/audio_946bc7a8f7.mp3' },
   { id: 'dreams',       name: 'Dreams',            mood: 'emotional', bpm: 70,  sec: 154, url: 'https://cdn.pixabay.com/audio/2023/06/28/audio_e44b1ccfa6.mp3' },
   { id: 'lofi-study',   name: 'Lo-Fi Study',       mood: 'ambient',   bpm: 80,  sec: 145, url: 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3' },
@@ -1246,6 +1246,9 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, myDeals = [], pos
   const [activeFormat, setActiveFormat] = useState<string | null>(null);
   // コミュニティテンプレ
   const [templateCategory, setTemplateCategory] = useState<string>('all');
+  // ステップ制 UI (V2 抜本リデザイン) — 旧 UI 残骸 (未使用)
+  const [_step, _setStep] = useState<'material' | 'edit' | 'subtitle' | 'export'>('material');
+  void _step; void _setStep;
   const [shareUrl, setShareUrl] = useState<string>('');
   const [shareCopied, setShareCopied] = useState(false);
   // 投稿予約モーダル

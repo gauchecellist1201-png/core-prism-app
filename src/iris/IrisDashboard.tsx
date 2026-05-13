@@ -55,7 +55,9 @@ import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 import IrisDirectorView from './IrisDirectorView';
 import VideoStudio from '../components/VideoStudio';
-const IrisReelStudio = React.lazy(() => import('./IrisReelStudio'));
+// 抜本リデザインされた美しい Minimal 版が default
+// 旧フル機能版は ./IrisReelStudio に残る (詳細モードで呼ぶ用)
+const IrisReelStudio = React.lazy(() => import('./IrisReelStudioMinimal'));
 import IrisPostQueueView from './IrisPostQueueView';
 import { usePostQueue } from './usePostQueue';
 import IrisTriageView from './IrisTriageView';
