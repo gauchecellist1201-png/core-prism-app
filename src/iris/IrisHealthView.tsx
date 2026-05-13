@@ -9,23 +9,14 @@ import { AppleHealthImport } from '../components/health/AppleHealthImport';
 import type { useHealth } from '../hooks/useHealth';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
+import { generateHealthAdvice, buildStatBundle, type HealthAdvice } from '../lib/healthAdvisor';
 
 interface Props {
   bg: IrisBackgroundDef;
   health: ReturnType<typeof useHealth>;
 }
 
-type HealthAdvice = {
-  score: number; // 0-100
-  summary: string;
-  sleep: string;
-  diet: string;
-  exercise: string;
-  beauty: string;
-  generatedAt: string;
-};
-
-const ADVICE_CACHE_KEY = 'iris_health_advice_v1';
+const ADVICE_CACHE_KEY = 'iris_health_advice_v2';
 
 export default function IrisHealthView({ bg, health }: Props) {
   const today = health.today;
@@ -64,46 +55,10 @@ export default function IrisHealthView({ bg, health }: Props) {
     setAdviceBusy(true);
     setAdviceError('');
     try {
-      const sys = `あなたは美容/健康/睡眠の専門家。Apple Health データを見て、クリエイター女性(20-40代想定)向けに「美しさは内側から」の観点で実践的アドバイスを返す。
-返却 JSON のみ (説明やコードフェンス不要):
-{
-  "score": number (0-100, 総合健康スコア),
-  "summary": "string (40-70字, 一言サマリー)",
-  "sleep": "string (60-100字, 睡眠への具体アドバイス)",
-  "diet": "string (60-100字, 食生活への具体アドバイス)",
-  "exercise": "string (60-100字, 運動への具体アドバイス)",
-  "beauty": "string (60-100字, 美容への具体アドバイス)"
-}`;
-      const todayStr = today
-        ? `今日: 安静時心拍 ${today.restingHR ?? '—'}bpm / 歩数 ${today.steps ?? '—'}歩 / 睡眠 ${today.sleepHours?.toFixed(1) ?? '—'}h / アクティブ ${today.activeMinutes ?? '—'}分`
-        : '今日のデータなし';
-      const avgStr = avg
-        ? `7日平均: 心拍 ${avg.hr}bpm / 歩数 ${avg.steps}歩 / 睡眠 ${avg.sleep}h / 運動 ${avg.activeMin}分`
-        : '7日平均データなし';
-
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: `${todayStr}\n${avgStr}\n\nこのデータを分析して、JSON で4分野のアドバイスを返してください。` }],
-          system: sys,
-          max_tokens: 700,
-        }),
+      const next = await generateHealthAdvice({
+        stats: buildStatBundle(today ?? null, health.days),
+        tone: 'iris',
       });
-      const data = await res.json();
-      const text: string = data.text || data.content || data.message || '';
-      const match = text.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error('AI 応答に JSON が含まれていません');
-      const j = JSON.parse(match[0]);
-      const next: HealthAdvice = {
-        score: Math.max(0, Math.min(100, Number(j.score) || 0)),
-        summary: String(j.summary || ''),
-        sleep: String(j.sleep || ''),
-        diet: String(j.diet || ''),
-        exercise: String(j.exercise || ''),
-        beauty: String(j.beauty || ''),
-        generatedAt: new Date().toISOString(),
-      };
       setAdvice(next);
       localStorage.setItem(ADVICE_CACHE_KEY, JSON.stringify(next));
     } catch (e: any) {
@@ -111,7 +66,7 @@ export default function IrisHealthView({ bg, health }: Props) {
     } finally {
       setAdviceBusy(false);
     }
-  }, [hasData, adviceBusy, today, avg]);
+  }, [hasData, adviceBusy, today, health.days]);
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem', fontFamily: IRIS_FONTS.body }}>
@@ -290,8 +245,37 @@ export default function IrisHealthView({ bg, health }: Props) {
                 ))}
               </div>
 
+              {/* 強化版: 今夜のアクション / 明日の運動 / 夕食 */}
+              {(advice.tonightAction || advice.tomorrowWorkout || advice.dinnerTiming) && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                  {advice.tonightAction && (
+                    <div style={{ padding: '0.95rem 1.05rem', background: `linear-gradient(135deg, ${bg.accent}1c, ${bg.accent}08)`, border: `1px solid ${bg.accent}40`, borderRadius: 12 }}>
+                      <p style={{ fontSize: '0.62rem', color: bg.accent, letterSpacing: '0.22em', fontWeight: 700, marginBottom: 4 }}>TONIGHT</p>
+                      <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.02rem', color: bg.ink, fontWeight: 500, marginBottom: 4 }}>今夜のアクション</p>
+                      <p style={{ fontSize: '0.83rem', color: bg.ink, lineHeight: 1.7 }}>{advice.tonightAction}</p>
+                    </div>
+                  )}
+                  {advice.tomorrowWorkout && (
+                    <div style={{ padding: '0.95rem 1.05rem', background: `linear-gradient(135deg, ${bg.accent}1c, ${bg.accent}08)`, border: `1px solid ${bg.accent}40`, borderRadius: 12 }}>
+                      <p style={{ fontSize: '0.62rem', color: bg.accent, letterSpacing: '0.22em', fontWeight: 700, marginBottom: 4 }}>TOMORROW</p>
+                      <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.02rem', color: bg.ink, fontWeight: 500, marginBottom: 4 }}>明日の運動</p>
+                      <p style={{ fontSize: '0.83rem', color: bg.ink, lineHeight: 1.7 }}>{advice.tomorrowWorkout}</p>
+                    </div>
+                  )}
+                  {advice.dinnerTiming && (
+                    <div style={{ padding: '0.95rem 1.05rem', background: `linear-gradient(135deg, ${bg.accent}1c, ${bg.accent}08)`, border: `1px solid ${bg.accent}40`, borderRadius: 12 }}>
+                      <p style={{ fontSize: '0.62rem', color: bg.accent, letterSpacing: '0.22em', fontWeight: 700, marginBottom: 4 }}>DINNER</p>
+                      <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.02rem', color: bg.ink, fontWeight: 500, marginBottom: 4 }}>夕食タイミング</p>
+                      <p style={{ fontSize: '0.83rem', color: bg.ink, lineHeight: 1.7 }}>{advice.dinnerTiming}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <p style={{ fontSize: '0.72rem', color: bg.inkSoft, textAlign: 'right', fontStyle: 'italic', fontFamily: IRIS_FONTS.serif }}>
-                生成: {new Date(advice.generatedAt).toLocaleString('ja-JP')} ・ AI は医療判断の代わりではありません
+                生成: {new Date(advice.generatedAt).toLocaleString('ja-JP')}
+                {advice.trend && ` ・ トレンド: ${advice.trend === 'improving' ? '改善傾向' : advice.trend === 'worsening' ? '悪化傾向' : '安定'}`}
+                ・ AI は医療判断の代わりではありません
               </p>
             </div>
           )}

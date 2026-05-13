@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Activity, BarChart3, MessageCircle, Stethoscope, FileText, Cable } from 'lucide-react';
+import { X, Activity, BarChart3, MessageCircle, Stethoscope, FileText, Cable, Pill } from 'lucide-react';
 import { MockShell, PRISM } from '../prism/MockShell';
 import { useHealth } from '../../hooks/useHealth';
 import { useMedicalHistory } from '../../hooks/useMedicalHistory';
@@ -11,14 +11,16 @@ import type { SymptomSeed } from '../../data/symptomDetect';
 import { HealthOverview } from './HealthOverview';
 import { HealthVitals } from './HealthVitals';
 import { HealthCoachView } from './HealthCoachView';
+import HealthPrescriptionView from './HealthPrescriptionView';
 import { HealthSymptomCheck } from './HealthSymptomCheck';
 import { HealthHistoryView } from './HealthHistoryView';
 import { HealthSourcesView } from './HealthSourcesView';
 
-type Tab = 'overview' | 'vitals' | 'coach' | 'symptoms' | 'history' | 'sources';
+type Tab = 'overview' | 'rx' | 'vitals' | 'coach' | 'symptoms' | 'history' | 'sources';
 
 const NAV = [
   { key: 'overview',  label: 'Overview',     Icon: BarChart3 },
+  { key: 'rx',        label: 'AI 処方箋',     Icon: Pill },
   { key: 'vitals',    label: 'Vitals',       Icon: Activity },
   { key: 'coach',     label: 'AI Coach',     Icon: MessageCircle },
   { key: 'symptoms',  label: 'Symptom Check',Icon: Stethoscope },
@@ -105,6 +107,12 @@ export default function HealthHub({ persona, settings, onClose }: Props) {
                 onAskCoach={askCoach}
                 userName={settings.userName || persona.name}
                 persona={persona}
+              />
+            )}
+            {tab === 'rx' && (
+              <HealthPrescriptionView
+                health={health}
+                userName={settings.userName || persona.name}
               />
             )}
             {tab === 'vitals' && <HealthVitals health={health} />}
