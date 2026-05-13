@@ -36,7 +36,7 @@ export interface CommunityPost {
   /** 関連報酬 (相場ポーリングなら) */
   feeContext?: { proposed?: number; bestGuess?: number };
   /** リアクション */
-  reactions: Record<string, number>; // { '🌸': 3, '✨': 1 }
+  reactions: Record<string, number>; // { '': 3, '': 1 }
   /** コメント */
   comments: { id: string; authorHandle: string; body: string; createdAt: string }[];
   createdAt: string;
@@ -50,12 +50,12 @@ function save<T>(k: string, v: T) {
 }
 
 export const POST_TYPE_META: Record<CommunityPostType, { label: string; emoji: string; color: string; hint: string }> = {
-  'collab-call':    { label: 'コラボ募集',     emoji: '🤝', color: '#A8324A', hint: 'こんなん一緒いきません?' },
-  'offer-share':    { label: '案件シェア',     emoji: '💌', color: '#7B1F2B', hint: '受けた案件の情報を匿名で共有' },
-  'rate-poll':      { label: '相場アンケ',     emoji: '💰', color: '#C8956D', hint: 'これ、いくらで受けるべき?' },
-  'recommendation': { label: 'おすすめ案件',   emoji: '🌹', color: '#E8C9B0', hint: '私には合わないけど、誰かに' },
-  'warning':        { label: '注意喚起',       emoji: '⚠',  color: '#5C0E1B', hint: 'この企業、ヤバいかも' },
-  'discussion':     { label: '雑談・相談',     emoji: '💬', color: '#1A2540', hint: 'なんでも話せる場所' },
+  'collab-call':    { label: 'コラボ募集',     emoji: '', color: '#A8324A', hint: 'こんなん一緒いきません?' },
+  'offer-share':    { label: '案件シェア',     emoji: '', color: '#7B1F2B', hint: '受けた案件の情報を匿名で共有' },
+  'rate-poll':      { label: '相場アンケ',     emoji: '', color: '#C8956D', hint: 'これ、いくらで受けるべき?' },
+  'recommendation': { label: 'おすすめ案件',   emoji: '', color: '#E8C9B0', hint: '私には合わないけど、誰かに' },
+  'warning':        { label: '注意喚起',       emoji: '',  color: '#5C0E1B', hint: 'この企業、ヤバいかも' },
+  'discussion':     { label: '雑談・相談',     emoji: '', color: '#1A2540', hint: 'なんでも話せる場所' },
 };
 
 const SEED_HANDLES = ['rose_paris', 'mio_tokyo', 'aimi_aoyama', 'noa_okinawa', 'rena_milan'];
@@ -68,11 +68,11 @@ function seedIfEmpty(): CommunityPost[] {
       authorHandle: '@aimi_aoyama',
       type: 'collab-call',
       title: '5月に京都行きます。一緒にコンテンツ撮りませんか?',
-      body: '5/20-22 で京都に滞在予定。リール / 写真の撮影、宿のお泊まりタイアップを2人以上で受けると交渉しやすいので、コラボ相手を探しています。コスメ・ライフスタイル系の方歓迎。\n\nDM ください 🌸',
+      body: '5/20-22 で京都に滞在予定。リール / 写真の撮影、宿のお泊まりタイアップを2人以上で受けると交渉しやすいので、コラボ相手を探しています。コスメ・ライフスタイル系の方歓迎。\n\nDM ください',
       tags: ['#京都', '#旅', '#コラボ募集'],
       location: '京都',
       date: '2026-05-20',
-      reactions: { '🌸': 4, '✨': 2 },
+      reactions: { '': 4, '': 2 },
       comments: [],
       createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
     },
@@ -83,7 +83,7 @@ function seedIfEmpty(): CommunityPost[] {
       title: '「Beauty xxx (株)」名義の案件、要注意です',
       body: '法人ドメインがなくて Gmail から連絡。3 万円で「投稿+ストーリー+二次利用」を当日中に求めてきました。契約書はなしと。同じところから連絡来た方いますか? 一応こちらは断りました。',
       tags: ['#警告', '#詐欺注意'],
-      reactions: { '⚠': 8, '🙏': 3 },
+      reactions: { '': 8, '': 3 },
       comments: [
         { id: uuidv4(), authorHandle: '@rose_paris', body: '私もこの会社からきました!断り済みです。共有ありがとう。', createdAt: new Date().toISOString() },
       ],
@@ -97,7 +97,7 @@ function seedIfEmpty(): CommunityPost[] {
       body: 'お声がかかってる某スキンケアブランド、リール1本 (二次利用なし)。私はフォロワー 30K で平均ER 5%。\n相場感、教えてくれる方いますか? 自分は 8 万円スタートかなと思ってます。',
       tags: ['#相場感'],
       feeContext: { bestGuess: 80000 },
-      reactions: { '💰': 6, '🌹': 1 },
+      reactions: { '': 6, '': 1 },
       comments: [
         { id: uuidv4(), authorHandle: '@mio_tokyo', body: 'ER 5% なら 10 万スタートで全然いけると思う!', createdAt: new Date().toISOString() },
       ],

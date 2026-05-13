@@ -123,8 +123,8 @@ export function generateInviteCode(memberName: string): string {
 }
 
 export const ROLE_META: Record<MemberRole, { label: string; emoji: string; color: string }> = {
-  'manager':      { label: 'マネージャー',  emoji: '👑', color: '#FFC857' },
-  'creator':      { label: 'クリエイター',  emoji: '🌸', color: '#FF7AAE' },
-  'editor':       { label: '編集 / 投稿担当', emoji: '✂', color: '#9B6FE8' },
-  'collaborator': { label: 'コラボ',        emoji: '🤝', color: '#10B981' },
+  'manager':      { label: 'マネージャー',  emoji: '', color: '#FFC857' },
+  'creator':      { label: 'クリエイター',  emoji: '', color: '#FF7AAE' },
+  'editor':       { label: '編集 / 投稿担当', emoji: '', color: '#9B6FE8' },
+  'collaborator': { label: 'コラボ',        emoji: '', color: '#10B981' },
 };

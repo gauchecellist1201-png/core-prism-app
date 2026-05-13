@@ -226,7 +226,7 @@ export function IrisHeroGreeting({ bg, handle, preparedReel, readyPostCount = 0,
         tab: 'deals',
       });
     }
-    // 何も無ければ「キレイな空 ✨」を演出
+    // 何も無ければ「キレイな空 」を演出
     if (items.length === 0) {
       items.push({
         icon: Sparkles,

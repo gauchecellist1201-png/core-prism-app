@@ -17,11 +17,11 @@ interface Props {
 }
 
 const PATTERNS: { id: GradientPattern; label: string; emoji: string }[] = [
-  { id: 'radial-soft', label: 'ふんわり',  emoji: '🌸' },
-  { id: 'linear',      label: 'グラデ',    emoji: '🌅' },
-  { id: 'conic',       label: 'オーロラ',  emoji: '🌈' },
-  { id: 'mesh',        label: 'メッシュ',  emoji: '✨' },
-  { id: 'minimal',     label: 'ミニマル',  emoji: '🤍' },
+  { id: 'radial-soft', label: 'ふんわり',  emoji: '' },
+  { id: 'linear',      label: 'グラデ',    emoji: '' },
+  { id: 'conic',       label: 'オーロラ',  emoji: '' },
+  { id: 'mesh',        label: 'メッシュ',  emoji: '' },
+  { id: 'minimal',     label: 'ミニマル',  emoji: '' },
 ];
 
 // 補色ベースのインパクトのあるパレット (色相環で対極を組ませる)
@@ -38,7 +38,7 @@ const SUGGESTED_PALETTES = [
   { label: 'ナイト × ローズ',     c: ['#1F1A2E', '#2E2440', '#FFB89A', '#FF7AAE'] },  // 暗↔暖色
 ];
 
-const EMOJI_OPTIONS = ['🌸', '🌷', '🌹', '🌻', '🌼', '🌺', '💐', '🪷', '🌿', '🍃', '✨', '💫', '⭐', '🌙', '☁', '🤍', '💖', '💝', '🎀', '🦄'];
+const EMOJI_OPTIONS = ['', '', '', '', '', '', '', '', '', '', '', '', '⭐', '', '', '', '', '', '', ''];
 
 export default function IrisCustomBgEditor({ onClose, onCreated }: Props) {
   const [c1, setC1] = useState('#FFD4E5');
@@ -47,7 +47,7 @@ export default function IrisCustomBgEditor({ onClose, onCreated }: Props) {
   const [accent, setAccent] = useState('#E84B97');
   const [pattern, setPattern] = useState<GradientPattern>('radial-soft');
   const [label, setLabel] = useState('');
-  const [emoji, setEmoji] = useState('🌸');
+  const [emoji, setEmoji] = useState('');
 
   const preview = useMemo(() => buildGradient(pattern, c1, c2, c3), [pattern, c1, c2, c3]);
 
@@ -162,7 +162,7 @@ export default function IrisCustomBgEditor({ onClose, onCreated }: Props) {
             fontFamily: IRIS_FONTS.body,
             boxShadow: '0 4px 14px rgba(255,122,174,0.35)',
           }}>
-            🎨 補色パレットを自動生成 (ベース2 から)
+            補色パレットを自動生成 (ベース2 から)
           </button>
           <button onClick={() => setAccent(complementaryColor(c2))} style={{
             background: '#fff',
@@ -171,7 +171,7 @@ export default function IrisCustomBgEditor({ onClose, onCreated }: Props) {
             fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
             fontFamily: IRIS_FONTS.body,
           }}>
-            ✨ アクセントだけ補色化
+            アクセントだけ補色化
           </button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.6rem', marginBottom: '1rem' }}>
@@ -255,7 +255,7 @@ export default function IrisCustomBgEditor({ onClose, onCreated }: Props) {
             fontFamily: IRIS_FONTS.body,
             boxShadow: `0 6px 20px ${IRIS_COLORS.roseDeep}55`,
           }}>
-            ✨ この背景を保存
+            この背景を保存
           </button>
         </div>
       </motion.div>

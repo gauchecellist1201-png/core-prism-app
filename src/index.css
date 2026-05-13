@@ -762,6 +762,71 @@ input, textarea, select { font-family: inherit; }
   .iris-tab-more-trigger { display: none !important; }
 }
 
+/* Iris Dashboard タブ v2 (Phase 2): グループ化されたナビ */
+.iris-tabs-v2 { padding-bottom: 4px; }
+.iris-tabs-v2::-webkit-scrollbar { display: none; }
+.iris-tabs-v2 .iris-tab-btn { min-height: 36px; }
+
+/* モバイル: アクティブ グループ以外のタブは非表示 (ラベル + アクティブ タブのみ表示) */
+@media (max-width: 768px) {
+  .iris-tabs-v2 {
+    padding-right: max(1rem, env(safe-area-inset-right)) !important;
+    padding-left: max(0.25rem, env(safe-area-inset-left)) !important;
+    gap: 8px !important;
+  }
+  .iris-tabs-v2 .iris-tab-group {
+    flex-shrink: 0;
+  }
+  .iris-tabs-v2 .iris-tab-group:not(.is-active) .iris-tab-btn {
+    display: none !important;
+  }
+  .iris-tabs-v2 .iris-tab-divider {
+    display: none !important;
+  }
+  .iris-tabs-v2 .iris-tab-btn {
+    min-height: 44px !important;
+    scroll-snap-align: start;
+  }
+}
+@media (min-width: 769px) {
+  .iris-tabs-v2 {
+    flex-wrap: wrap;
+    row-gap: 6px !important;
+  }
+}
+
+/* Iris Command Bar: トリガをモバイルではアイコンのみに */
+@media (max-width: 768px) {
+  .iris-command-trigger span:not([style*="background"]) {
+    display: none !important;
+  }
+  .iris-command-trigger {
+    padding: 0 0.6rem !important;
+    min-width: 36px;
+  }
+}
+
+/* スピン アニメ (Command Bar 用) */
+@keyframes iris-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.iris-spin { animation: iris-spin 1s linear infinite; }
+
+/* Iris デザイン トーン統一 (Phase 2) */
+:root {
+  --iris-spacing-1: 4px;
+  --iris-spacing-2: 8px;
+  --iris-spacing-3: 12px;
+  --iris-spacing-4: 16px;
+  --iris-spacing-6: 24px;
+  --iris-spacing-8: 32px;
+}
+.iris-card-hover {
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+.iris-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(31,26,46,0.12);
+}
+
 /* Iris: 768px 超では FAB が中央下に来ないので main の余白を通常に戻す */
 @media (min-width: 769px) {
   .iris-main { padding-bottom: 4rem !important; }

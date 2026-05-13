@@ -225,7 +225,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
             background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%',
             width: 44, height: 44, cursor: 'pointer', fontSize: '1rem',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-          }} aria-label="閉じる">✕</button>
+          }} aria-label="閉じる"></button>
         </div>
 
         <AnimatePresence mode="wait">
@@ -241,19 +241,19 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 <ModeBtn
-                  emoji="📸" label="スクショから" desc="メール / DM をパシャ"
+                  emoji="" label="スクショから" desc="メール / DM をパシャ"
                   accent="#E1306C" gradient="linear-gradient(135deg, #FCB045 0%, #E1306C 100%)"
                   onClick={() => setMode('screenshot')}
                   badge="一番ラク"
                 />
                 <ModeBtn
-                  emoji="🎙" label="声で話す" desc="ざっくり喋るだけ"
+                  emoji="" label="声で話す" desc="ざっくり喋るだけ"
                   accent="#833AB4" gradient="linear-gradient(135deg, #E1306C 0%, #833AB4 100%)"
                   onClick={() => setMode('voice')} disabled={!voiceAvailable}
                   badge="3 秒"
                 />
                 <ModeBtn
-                  emoji="✏" label="自分で入力" desc="きっちり手入力"
+                  emoji="" label="自分で入力" desc="きっちり手入力"
                   accent="#5A4570" gradient="linear-gradient(135deg, #C13584 0%, #5A4570 100%)"
                   onClick={() => setMode('manual')}
                 />
@@ -277,7 +277,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
                   background: 'rgba(255,255,255,0.6)',
                   marginBottom: '0.75rem',
                 }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📸</div>
+                  <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}></div>
                   <div style={{ color: '#1F1A2E', fontWeight: 700, fontSize: '1.05rem', marginBottom: '0.25rem' }}>
                     画像をドロップ / クリック / Cmd+V でペースト
                   </div>
@@ -313,7 +313,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
                 opacity: (busy || images.length === 0) ? 0.5 : 1,
                 cursor: (busy || images.length === 0) ? 'not-allowed' : 'pointer',
               }}>
-                {busy ? '🔮 AI が読み取ってます…' : '✨ AI に読み取らせる'}
+                {busy ? 'AI が読み取ってます…' : 'AI に読み取らせる'}
               </button>
             </motion.div>
           )}
@@ -370,7 +370,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
                 ...btnPrimary, width: '100%',
                 opacity: (busy || !voiceText.trim()) ? 0.5 : 1,
               }}>
-                {busy ? '🔮 構造化中…' : '✨ AI に構造化させる'}
+                {busy ? '構造化中…' : 'AI に構造化させる'}
               </button>
 
               <style>{`
@@ -391,7 +391,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
               }}>← 戻る</button>
               <div style={{ ...card, padding: '1.5rem', textAlign: 'center' }}>
                 <p style={{ color: '#5A4570', lineHeight: 1.8, marginBottom: '1rem' }}>
-                  画面を閉じて、上の「✏ 自分で入力」フォームを使ってください。
+                  画面を閉じて、上の「自分で入力」フォームを使ってください。
                 </p>
                 <button onClick={onClose} style={btnPrimary}>閉じる</button>
               </div>
@@ -405,7 +405,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
                 fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase',
                 color: bg.accent, fontWeight: 700, marginBottom: '0.5rem',
               }}>
-                ✨ AI の読み取り結果 — 編集して保存
+                AI の読み取り結果 — 編集して保存
               </p>
               {extracted.confidence !== undefined && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
@@ -424,7 +424,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
               {extracted.warnings && extracted.warnings.length > 0 && (
                 <div style={{ background: '#FEF3C7', padding: '0.6rem 0.85rem', borderRadius: 12, marginBottom: '0.75rem' }}>
                   {extracted.warnings.map((w, i) => (
-                    <p key={i} style={{ fontSize: '0.82rem', color: '#7C2D12', marginBottom: '0.2rem' }}>⚠ {w}</p>
+                    <p key={i} style={{ fontSize: '0.82rem', color: '#7C2D12', marginBottom: '0.2rem' }}>{w}</p>
                   ))}
                 </div>
               )}
@@ -478,7 +478,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
                   ← やり直す
                 </button>
                 <button onClick={handleSave} style={{ ...btnPrimary, flex: 2 }}>
-                  💾 案件として保存
+                  案件として保存
                 </button>
               </div>
             </motion.div>
@@ -491,7 +491,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
             padding: '0.6rem 0.85rem', borderRadius: 12, marginTop: '0.75rem',
             color: '#9B1B30', fontSize: '0.85rem',
           }}>
-            ⚠ {err}
+            {err}
           </div>
         )}
       </motion.div>

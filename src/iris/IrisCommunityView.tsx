@@ -68,7 +68,7 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
     setActiveCommentId(null);
   };
 
-  const reactions = ['🌸', '✨', '💭', '🌹', '⚠', '💰', '🤝'];
+  const reactions = ['', '', '', '', '', '', ''];
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
@@ -136,7 +136,7 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
       {filtered.length === 0 && (
         <div style={card}>
           <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '2rem 0' }}>
-            まだ投稿がありません 🌸 初めての一言を投げてみて。
+            まだ投稿がありません 初めての一言を投げてみて。
           </p>
         </div>
       )}

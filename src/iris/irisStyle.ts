@@ -133,7 +133,7 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
   {
     id: 'instagram-soft',
     label: 'Instagram Soft',
-    emoji: '✨',
+    emoji: '',
     background: 'radial-gradient(circle at 15% 20%, #833AB422 0%, transparent 50%), radial-gradient(circle at 85% 80%, #FCB04522 0%, transparent 50%), radial-gradient(circle at 60% 50%, #E1306C22 0%, transparent 45%), linear-gradient(135deg, #FFFAF7 0%, #FFE5EE 50%, #FFF5E5 100%)',
     accent: '#E1306C',
     ink: '#1F1A2E',          // 黒寄り強化 (もっとはっきり)
@@ -144,7 +144,7 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
   {
     id: 'rose-mist',
     label: 'Rose Mist',
-    emoji: '🌸',
+    emoji: '',
     background: 'radial-gradient(circle at 20% 30%, #FFB8D633 0%, transparent 55%), radial-gradient(circle at 80% 70%, #FCB04522 0%, transparent 50%), linear-gradient(180deg, #FFFAFB 0%, #FFEBF1 100%)',
     accent: '#E1306C',
     ink: '#1F1A2E',
@@ -155,7 +155,7 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
   {
     id: 'peach-cream',
     label: 'Peach Cream',
-    emoji: '🍑',
+    emoji: '',
     background: 'radial-gradient(circle at 25% 30%, #FCB04533 0%, transparent 50%), radial-gradient(circle at 75% 70%, #FFB8D622 0%, transparent 50%), linear-gradient(135deg, #FFF9F0 0%, #FFE5DC 100%)',
     accent: '#F77737',
     ink: '#1F1A2E',
@@ -166,7 +166,7 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
   {
     id: 'lavender-haze',
     label: 'Lavender Haze',
-    emoji: '💜',
+    emoji: '',
     background: 'radial-gradient(circle at 30% 20%, #B07BD933 0%, transparent 55%), radial-gradient(circle at 70% 80%, #FFB8D622 0%, transparent 50%), linear-gradient(180deg, #FAF5FF 0%, #FFEBF1 100%)',
     accent: '#833AB4',
     ink: '#1F1A2E',
@@ -177,7 +177,7 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
   {
     id: 'sunrise-glow',
     label: 'Sunrise Glow',
-    emoji: '🌅',
+    emoji: '',
     background: 'linear-gradient(135deg, #FFE5DC 0%, #FFD4E5 35%, #FFE5EE 70%, #FAF5FF 100%)',
     accent: '#E1306C',
     ink: '#1F1A2E',
@@ -188,7 +188,7 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
   {
     id: 'cream-classic',
     label: 'Cream Classic',
-    emoji: '🤍',
+    emoji: '',
     // 一番安心感のあるニュートラル
     background: 'linear-gradient(180deg, #FFFAF7 0%, #FFF5F8 50%, #FFFAF7 100%)',
     accent: '#E1306C',
@@ -200,7 +200,7 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
   {
     id: 'neon-night',
     label: 'Neon Night',
-    emoji: '🌙',
+    emoji: '',
     // ダーク版 (派手好きの方向け)
     background: 'radial-gradient(circle at 20% 30%, #833AB4cc 0%, transparent 55%), radial-gradient(circle at 80% 70%, #E1306Ccc 0%, transparent 55%), radial-gradient(circle at 60% 50%, #FCB04588 0%, transparent 45%), linear-gradient(135deg, #1A0A26 0%, #2A1A3A 100%)',
     accent: '#FCB045',
@@ -212,7 +212,7 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
   {
     id: 'aurora-soft',
     label: 'Aurora',
-    emoji: '🌈',
+    emoji: '',
     // Instagram グラデの主流派生
     background: 'linear-gradient(135deg, #833AB433 0%, #E1306C33 25%, #F7773733 50%, #FCB04533 75%, #FFDC8033 100%), linear-gradient(180deg, #FFFAF7 0%, #FFF5F8 100%)',
     accent: '#E1306C',

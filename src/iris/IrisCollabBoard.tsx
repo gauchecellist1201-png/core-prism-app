@@ -37,13 +37,13 @@ export interface CollabPost {
 }
 
 const CATEGORY_META: Record<CollabCategory, { label: string; emoji: string; color: string }> = {
-  cosme:     { label: 'コスメ',         emoji: '💄', color: '#E1306C' },
-  travel:    { label: '旅企画',         emoji: '✈️', color: '#F77737' },
-  food:      { label: 'グルメ',         emoji: '🍽️', color: '#FCB045' },
-  fashion:   { label: 'ファッション',   emoji: '👗', color: '#833AB4' },
-  fitness:   { label: 'フィットネス',   emoji: '🏃‍♀️', color: '#2D9CDB' },
-  lifestyle: { label: 'ライフスタイル', emoji: '🌿', color: '#27AE60' },
-  other:     { label: 'その他',         emoji: '✨', color: '#8A7AA0' },
+  cosme:     { label: 'コスメ',         emoji: '', color: '#E1306C' },
+  travel:    { label: '旅企画',         emoji: '', color: '#F77737' },
+  food:      { label: 'グルメ',         emoji: '', color: '#FCB045' },
+  fashion:   { label: 'ファッション',   emoji: '', color: '#833AB4' },
+  fitness:   { label: 'フィットネス',   emoji: '', color: '#2D9CDB' },
+  lifestyle: { label: 'ライフスタイル', emoji: '', color: '#27AE60' },
+  other:     { label: 'その他',         emoji: '', color: '#8A7AA0' },
 };
 
 const STORAGE_KEY = 'core_iris_collab_posts_v1';
@@ -61,10 +61,10 @@ function loadPosts(): CollabPost[] {
       authorHandle: '@hana_cosme',
       category: 'cosme',
       title: '一緒にコスメレビューしたい！韓国コスメ特集',
-      body: '韓国コスメの最新アイテムをダブルレビューしませんか？各自が購入して同日投稿、お互いをタグ付けする形で。フォロワー1万前後の方歓迎✨',
+      body: '韓国コスメの最新アイテムをダブルレビューしませんか？各自が購入して同日投稿、お互いをタグ付けする形で。フォロワー1万前後の方歓迎',
       tags: ['#コスメ', '#韓国コスメ', '#コラボ'],
       followerRange: '5K〜20K',
-      reactions: { '💄': 5, '✨': 3 },
+      reactions: { '': 5, '': 3 },
       chats: [],
       createdAt: new Date(Date.now() - 1000 * 3600 * 3).toISOString(),
       aiMatchScore: 92,
@@ -80,7 +80,7 @@ function loadPosts(): CollabPost[] {
       location: '沖縄',
       dateRange: '2026年7月',
       followerRange: '10K〜50K',
-      reactions: { '✈️': 7, '🌊': 4 },
+      reactions: { '': 7, '': 4 },
       chats: [],
       createdAt: new Date(Date.now() - 1000 * 3600 * 8).toISOString(),
       aiMatchScore: 78,
@@ -94,7 +94,7 @@ function loadPosts(): CollabPost[] {
       body: 'コーデ紹介とメイクを組み合わせたリール動画を一緒に作りたい！コスメ系クリエイターとコラボ企画を立てたいです。',
       tags: ['#ファッション', '#コスメ', '#リール'],
       followerRange: '3K〜15K',
-      reactions: { '👗': 3, '💄': 2 },
+      reactions: { '': 3, '': 2 },
       chats: [],
       createdAt: new Date(Date.now() - 1000 * 3600 * 24).toISOString(),
       aiMatchScore: 85,
@@ -220,7 +220,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
 
       {/* 自分のカテゴリ設定 → AI マッチ精度アップ */}
       <div style={{ ...card, marginBottom: '1rem', padding: '0.85rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.8rem', color: bg.inkSoft, whiteSpace: 'nowrap' }}>🤖 AIマッチ精度を上げる: 自分のジャンル</span>
+        <span style={{ fontSize: '0.8rem', color: bg.inkSoft, whiteSpace: 'nowrap' }}>AIマッチ精度を上げる: 自分のジャンル</span>
         {(['cosme', 'travel', 'food', 'fashion', 'fitness', 'lifestyle', 'other'] as CollabCategory[]).map(c => (
           <button key={c} onClick={() => setMyCategory(c === myCategory ? '' : c)}
             style={{
@@ -245,7 +245,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
               border: `1px solid ${bg.cardBorder}`, cursor: 'pointer', fontWeight: 600,
               boxShadow: filterCat === c ? `0 4px 12px ${bg.accent}44` : 'none',
             }}>
-            {c === 'all' ? '🔗 すべて' : `${CATEGORY_META[c].emoji} ${CATEGORY_META[c].label}`}
+            {c === 'all' ? 'すべて' : `${CATEGORY_META[c].emoji} ${CATEGORY_META[c].label}`}
           </button>
         ))}
         <button onClick={() => setShowNew(true)}
@@ -263,7 +263,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
       {myCategory && (
         <div style={{ ...card, marginBottom: '1rem', padding: '0.75rem 1rem', background: `${bg.accent}12`, border: `1px solid ${bg.accent}33` }}>
           <span style={{ fontSize: '0.8rem', color: bg.accent, fontWeight: 700 }}>
-            ✨ AIが「もしかして合うかも」と判断した順に並んでいます
+            AIが「もしかして合うかも」と判断した順に並んでいます
           </span>
         </div>
       )}
@@ -286,7 +286,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
                   fontSize: '0.72rem', fontWeight: 700,
                   color: post.aiMatchScore >= 80 ? bg.accent : bg.inkSoft,
                 }}>
-                  🤖 {post.aiMatchScore}% マッチ
+                  {post.aiMatchScore}% マッチ
                 </div>
               )}
 
@@ -300,9 +300,9 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
                   {meta.emoji} {meta.label}
                 </span>
                 <span style={{ fontSize: '0.8rem', color: bg.inkSoft }}>{post.authorHandle}</span>
-                {post.location && <span style={{ fontSize: '0.75rem', color: bg.inkSoft }}>📍{post.location}</span>}
-                {post.dateRange && <span style={{ fontSize: '0.75rem', color: bg.inkSoft }}>🗓 {post.dateRange}</span>}
-                {post.followerRange && <span style={{ fontSize: '0.75rem', color: bg.inkSoft }}>👥 {post.followerRange}</span>}
+                {post.location && <span style={{ fontSize: '0.75rem', color: bg.inkSoft }}>{post.location}</span>}
+                {post.dateRange && <span style={{ fontSize: '0.75rem', color: bg.inkSoft }}>{post.dateRange}</span>}
+                {post.followerRange && <span style={{ fontSize: '0.75rem', color: bg.inkSoft }}>{post.followerRange}</span>}
               </div>
 
               <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: '0 0 0.4rem', paddingRight: '5.5rem' }}>
@@ -324,13 +324,13 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
               {/* AI マッチ理由 */}
               {post.aiMatchReason && post.aiMatchScore && post.aiMatchScore >= 70 && (
                 <p style={{ fontSize: '0.75rem', color: bg.accent, background: `${bg.accent}0d`, borderRadius: 10, padding: '0.35rem 0.65rem', marginBottom: '0.65rem' }}>
-                  💡 {post.aiMatchReason}
+                  {post.aiMatchReason}
                 </p>
               )}
 
               {/* アクション */}
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                {['💄', '✨', '🌸', '👍'].map(e => (
+                {['', '', '', ''].map(e => (
                   <button key={e} onClick={() => addReaction(post.id, e)}
                     style={{ background: 'rgba(255,255,255,0.7)', border: `1px solid ${bg.cardBorder}`, borderRadius: 999, padding: '0.3rem 0.7rem', fontSize: '0.8rem', cursor: 'pointer' }}>
                     {e} {post.reactions[e] || ''}
@@ -343,7 +343,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
                     color: isOpen ? '#fff' : bg.ink,
                     border: `1px solid ${isOpen ? bg.accent : bg.cardBorder}`, cursor: 'pointer',
                   }}>
-                  💬 チャット開始 {post.chats.length > 0 ? `(${post.chats.length})` : ''}
+                  チャット開始 {post.chats.length > 0 ? `(${post.chats.length})` : ''}
                 </button>
               </div>
 

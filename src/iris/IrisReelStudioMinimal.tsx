@@ -615,7 +615,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, fontWeight: 800 }}>
-                            {p.name} <span style={{ fontSize: 10, opacity: 0.7 }}>{'★'.repeat(p.trend2026)}</span>
+                            {p.name} <span style={{ fontSize: 10, opacity: 0.7 }}>{''.repeat(p.trend2026)}</span>
                           </div>
                           <div style={{ fontSize: 10.5, opacity: 0.75, marginTop: 2 }}>{p.example}</div>
                         </div>

@@ -164,9 +164,9 @@ export default function IrisRevenueView({ bg }: Props) {
 
       {/* サマリーカード */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
-        <SummaryCard bg={bg} label="今月の収益" value={`¥${summary.monthlyTotal.toLocaleString()}`} emoji="📅" />
-        <SummaryCard bg={bg} label="年間累計" value={`¥${summary.yearTotal.toLocaleString()}`} emoji="📊" />
-        <SummaryCard bg={bg} label="トップ収入源" value={summary.topSource} emoji="🏆" />
+        <SummaryCard bg={bg} label="今月の収益" value={`¥${summary.monthlyTotal.toLocaleString()}`} emoji="" />
+        <SummaryCard bg={bg} label="年間累計" value={`¥${summary.yearTotal.toLocaleString()}`} emoji="" />
+        <SummaryCard bg={bg} label="トップ収入源" value={summary.topSource} emoji="" />
       </div>
 
       {/* 月次棒グラフ */}
@@ -228,7 +228,7 @@ export default function IrisRevenueView({ bg }: Props) {
             fontFamily: IRIS_FONTS.body,
           }}
         >
-          💰 収益を記録する
+          収益を記録する
         </button>
       </div>
 
@@ -296,7 +296,7 @@ export default function IrisRevenueView({ bg }: Props) {
                 </span>
                 <button onClick={() => deleteEntry(e.id)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: bg.inkSoft, fontSize: '0.9rem', padding: '0.2rem 0.3rem' }}>
-                  ✕
+
                 </button>
               </div>
             ))}

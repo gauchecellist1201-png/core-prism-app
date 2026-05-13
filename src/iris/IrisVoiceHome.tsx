@@ -1,6 +1,6 @@
 // ============================================================
 // IRIS Voice Home — Gemini Voice 風の対話型ホーム
-// 中央に大きい🎙、上部に数字サマリー、下部に AI とのチャット履歴
+// 中央に大きい、上部に数字サマリー、下部に AI とのチャット履歴
 // ============================================================
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,9 +13,18 @@ import {
   Film, Camera, MessageSquare, BarChart3, HeartPulse, Mic, Mail,
   Image as ImageIcon, Calendar, Wallet, Sparkles, Trash2, ArrowUp,
   Bell, Flame, X,
+  Flower, Eye, Moon, Gem, Zap,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import type { IrisPersonaIconId } from './useIrisBond';
+
+const PERSONA_ICON_MAP: Record<IrisPersonaIconId, LucideIcon> = {
+  flower: Flower, eye: Eye, sparkles: Sparkles, moon: Moon, gem: Gem, zap: Zap,
+};
 import { IrisHeroGreeting } from './IrisWelcome';
 import IrisBondCard from './IrisBondCard';
+import IrisPersonaPicker from './IrisPersonaPicker';
+import IrisBondLevelUp from './IrisBondLevelUp';
 import { useIrisBond } from './useIrisBond';
 import AutoAgentHero from '../components/AutoAgentHero';
 import type { AgentContext } from '../lib/autoAgent';
@@ -46,6 +55,7 @@ interface Props {
 
 export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQueue, onNavigate }: Props) {
   const bond = useIrisBond();
+  const [personaOpen, setPersonaOpen] = useState(false);
   // チャット履歴 (localStorage 永続化)
   const [history, setHistory] = useState<AssistantMessage[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
@@ -222,12 +232,12 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
     // 日付からハッシュして安定的にピック
     const day = new Date().getDate();
     const HINTS = [
-      { name: 'POV ストーリーテリング', why: '今日は内省的な日。共感×ストーリーで深いシェアを', emoji: '✦', mood: 'emotional' },
+      { name: 'POV ストーリーテリング', why: '今日は内省的な日。共感×ストーリーで深いシェアを', emoji: '', mood: 'emotional' },
       { name: '知っとくべき 3 つの◯◯',   why: '情報密度の高い保存型。保存率トップ',                emoji: '⌥', mood: 'inspiring' },
       { name: 'GRWM (Get Ready)',     why: '朝活コンテンツ。完視聴率 1.65×',                    emoji: '◊', mood: 'chill pop' },
       { name: 'Before / After 変化',  why: 'シェア率最高。視覚インパクトで拡散',                emoji: '⟁', mood: 'cinematic' },
       { name: '「正直に言うと…」型',    why: 'シェア性 5/5。今日は本音を出す日',                  emoji: '◉', mood: 'ambient' },
-      { name: '誤解バスター (逆張り)',  why: '保存・シェア・コメ三冠。逆張りで突き抜けろ',        emoji: '✕', mood: 'dramatic' },
+      { name: '誤解バスター (逆張り)',  why: '保存・シェア・コメ三冠。逆張りで突き抜けろ',        emoji: '', mood: 'dramatic' },
       { name: 'ボイスオーバー B-roll', why: 'アルゴ最適 (字幕 + 動画素材)',                      emoji: '⟿', mood: 'minimal' },
     ];
     return HINTS[day % HINTS.length];
@@ -314,6 +324,38 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
       />
 
       <IrisBondCard bg={bg} />
+
+      {/* Persona 切替 chip */}
+      <button
+        onClick={() => setPersonaOpen(true)}
+        style={{
+          alignSelf: 'flex-start',
+          display: 'inline-flex', alignItems: 'center', gap: 7,
+          padding: '0.45rem 0.85rem',
+          background: `linear-gradient(135deg, ${bond.persona.accentColor}1a, ${bond.persona.accentColor}08)`,
+          border: `1px solid ${bond.persona.accentColor}44`,
+          borderRadius: 999,
+          fontSize: '0.74rem', fontWeight: 700,
+          color: bg.ink,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}>
+        {(() => {
+          const PIcon = PERSONA_ICON_MAP[bond.persona.iconId];
+          return <PIcon size={14} color={bond.persona.accentColor} strokeWidth={2.4} />;
+        })()}
+        <span>キャラクター: {bond.persona.name}</span>
+        <span style={{
+          fontSize: '0.62rem', letterSpacing: '0.14em',
+          color: bond.persona.accentColor, fontWeight: 800,
+        }}>
+          変更
+        </span>
+      </button>
+
+      <IrisPersonaPicker bg={bg} open={personaOpen} onClose={() => setPersonaOpen(false)} />
+      <IrisBondLevelUp bg={bg} />
+
       <IrisHeroGreeting
         bg={bg}
         handle={mediaKit?.handleName}

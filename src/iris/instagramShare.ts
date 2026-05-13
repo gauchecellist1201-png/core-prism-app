@@ -128,13 +128,13 @@ export async function shareToInstagram(payload: InstagramSharePayload): Promise<
           text: caption,
           title: 'Iris で生成した投稿',
         });
-        return { method: 'webshare', message: '✓ 共有シートから Instagram を選んでね' };
+        return { method: 'webshare', message: '共有シートから Instagram を選んでね' };
       }
     }
     // 画像なし or files 未対応でも text だけなら share できる
     if (navAny.share && !image) {
       await navAny.share({ text: caption });
-      return { method: 'webshare', message: '✓ 共有先を選んでね' };
+      return { method: 'webshare', message: '共有先を選んでね' };
     }
   } catch (e: any) {
     // ユーザーがキャンセルした (AbortError) 場合はそれを返す
@@ -154,7 +154,7 @@ export async function shareToInstagram(payload: InstagramSharePayload): Promise<
     return {
       method: 'urlscheme',
       message: copied
-        ? '✓ キャプションをコピー + 画像保存 → Instagram を開きます'
+        ? 'キャプションをコピー + 画像保存 → Instagram を開きます'
         : '画像を保存しました。Instagram で投稿してね',
     };
   }
@@ -163,7 +163,7 @@ export async function shareToInstagram(payload: InstagramSharePayload): Promise<
   return {
     method: copied ? 'clipboard-only' : 'failed',
     message: copied
-      ? '✓ キャプションをコピーしました。スマホで Instagram を開いて貼り付けて'
+      ? 'キャプションをコピーしました。スマホで Instagram を開いて貼り付けて'
       : 'コピーに失敗しました。手動でテキストをコピーしてください',
   };
 }

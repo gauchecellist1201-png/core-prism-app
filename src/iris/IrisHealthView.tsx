@@ -86,10 +86,10 @@ export default function IrisHealthView({ bg, health }: Props) {
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem',
         }}>
-          <Stat bg={bg} label="安静時心拍" value={today.restingHR ? String(Math.round(today.restingHR)) : '—'} unit="bpm" emoji="❤️" />
-          <Stat bg={bg} label="歩数" value={today.steps?.toLocaleString('ja-JP') ?? '—'} unit="歩" emoji="👟" />
-          <Stat bg={bg} label="睡眠" value={today.sleepHours ? today.sleepHours.toFixed(1) : '—'} unit="時間" emoji="🌙" />
-          <Stat bg={bg} label="アクティブ時間" value={today.activeMinutes ? String(today.activeMinutes) : '—'} unit="分" emoji="🌸" />
+          <Stat bg={bg} label="安静時心拍" value={today.restingHR ? String(Math.round(today.restingHR)) : '—'} unit="bpm" emoji="" />
+          <Stat bg={bg} label="歩数" value={today.steps?.toLocaleString('ja-JP') ?? '—'} unit="歩" emoji="" />
+          <Stat bg={bg} label="睡眠" value={today.sleepHours ? today.sleepHours.toFixed(1) : '—'} unit="時間" emoji="" />
+          <Stat bg={bg} label="アクティブ時間" value={today.activeMinutes ? String(today.activeMinutes) : '—'} unit="分" emoji="" />
         </div>
       ) : (
         <div style={{
@@ -220,10 +220,10 @@ export default function IrisHealthView({ bg, health }: Props) {
               {/* 4 分野アドバイス */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
                 {[
-                  { key: 'sleep', title: '睡眠', label: 'SLEEP', text: advice.sleep, icon: '🌙' },
-                  { key: 'diet', title: '食生活', label: 'DIET', text: advice.diet, icon: '🥗' },
-                  { key: 'exercise', title: '運動', label: 'EXERCISE', text: advice.exercise, icon: '👟' },
-                  { key: 'beauty', title: '美容', label: 'BEAUTY', text: advice.beauty, icon: '🌸' },
+                  { key: 'sleep', title: '睡眠', label: 'SLEEP', text: advice.sleep, icon: '' },
+                  { key: 'diet', title: '食生活', label: 'DIET', text: advice.diet, icon: '' },
+                  { key: 'exercise', title: '運動', label: 'EXERCISE', text: advice.exercise, icon: '' },
+                  { key: 'beauty', title: '美容', label: 'BEAUTY', text: advice.beauty, icon: '' },
                 ].map(b => (
                   <div key={b.key} style={{
                     padding: '1rem 1.1rem',
@@ -326,10 +326,10 @@ export default function IrisHealthView({ bg, health }: Props) {
         </h3>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.5rem' }}>
           {[
-            { icon: '🌙', text: '睡眠 7 時間以上 — 肌のターンオーバーは寝ている時間に' },
-            { icon: '💧', text: '水 1.5L — 朝起きてすぐコップ 1 杯から' },
-            { icon: '👟', text: '歩数 8000 歩 — 短時間でも血流が変わる' },
-            { icon: '🌸', text: '深呼吸 5 分 — 自律神経が整い、表情が柔らかくなる' },
+            { icon: '', text: '睡眠 7 時間以上 — 肌のターンオーバーは寝ている時間に' },
+            { icon: '', text: '水 1.5L — 朝起きてすぐコップ 1 杯から' },
+            { icon: '', text: '歩数 8000 歩 — 短時間でも血流が変わる' },
+            { icon: '', text: '深呼吸 5 分 — 自律神経が整い、表情が柔らかくなる' },
           ].map((t, i) => (
             <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.85rem', color: bg.ink, lineHeight: 1.85, fontFamily: IRIS_FONTS.body }}>
               <span style={{ flexShrink: 0 }}>{t.icon}</span>

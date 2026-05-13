@@ -123,11 +123,11 @@ export default function IrisDirectorView({ bg, settings }: Props) {
           <input style={inp} placeholder="自分のトーン" value={tone} onChange={e => setTone(e.target.value)} />
         </div>
         <button onClick={generate} disabled={busy} style={btnPrimary}>
-          {busy ? '構成中…' : '✨ 全部おまかせ'}
+          {busy ? '構成中…' : '全部おまかせ'}
         </button>
       </div>
 
-      {err && <div style={card}><p style={{ color: '#C8102E' }}>⚠ {err}</p></div>}
+      {err && <div style={card}><p style={{ color: '#C8102E' }}>{err}</p></div>}
 
       {result && (
         <>
@@ -193,7 +193,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
           </div>
 
           <div style={card}>
-            <button onClick={fullExport} style={btnPrimary}>📋 全部 Markdown でコピー</button>
+            <button onClick={fullExport} style={btnPrimary}>全部 Markdown でコピー</button>
           </div>
         </>
       )}

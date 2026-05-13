@@ -21,14 +21,14 @@ export type BeautyTopic =
   | 'free';
 
 export const BEAUTY_TOPIC_META: Record<BeautyTopic, { label: string; emoji: string; hint: string }> = {
-  'skincare':  { label: 'スキンケア',     emoji: '💆‍♀️', hint: '肌悩み・成分・ルーティン' },
-  'makeup':    { label: 'メイク',         emoji: '💄', hint: 'シーン別・色選び・トレンド' },
-  'hair':      { label: 'ヘア',           emoji: '💇‍♀️', hint: 'スタイル・ケア・カラー' },
-  'nail':      { label: 'ネイル',         emoji: '💅', hint: 'デザイン・色・ケア' },
-  'cosmetics': { label: 'コスメ選び',     emoji: '💋', hint: 'プチプラ vs デパコス・成分比較' },
-  'body-mind': { label: 'ボディ&メンタル', emoji: '🌿', hint: 'ボディケア・睡眠・栄養' },
-  'pms':       { label: 'PMS / 生理',     emoji: '🌸', hint: '体調変化・対処・心の波' },
-  'free':      { label: 'なんでも',       emoji: '✨', hint: '雑談OK・気持ちのケア' },
+  'skincare':  { label: 'スキンケア',     emoji: '', hint: '肌悩み・成分・ルーティン' },
+  'makeup':    { label: 'メイク',         emoji: '', hint: 'シーン別・色選び・トレンド' },
+  'hair':      { label: 'ヘア',           emoji: '', hint: 'スタイル・ケア・カラー' },
+  'nail':      { label: 'ネイル',         emoji: '', hint: 'デザイン・色・ケア' },
+  'cosmetics': { label: 'コスメ選び',     emoji: '', hint: 'プチプラ vs デパコス・成分比較' },
+  'body-mind': { label: 'ボディ&メンタル', emoji: '', hint: 'ボディケア・睡眠・栄養' },
+  'pms':       { label: 'PMS / 生理',     emoji: '', hint: '体調変化・対処・心の波' },
+  'free':      { label: 'なんでも',       emoji: '', hint: '雑談OK・気持ちのケア' },
 };
 
 export interface BeautyMessage {

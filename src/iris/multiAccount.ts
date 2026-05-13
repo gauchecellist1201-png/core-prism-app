@@ -20,15 +20,15 @@ export interface IrisAccount {
 }
 
 export const ACCOUNT_TYPE_META: Record<AccountType, { label: string; emoji: string; color: string; hint: string }> = {
-  personal:  { label: '個人',       emoji: '🌸', color: '#E1306C', hint: 'メインの個人アカウント' },
-  sub:       { label: 'サブ',       emoji: '✨', color: '#833AB4', hint: 'サブアカウント・趣味用' },
-  tieup:     { label: 'タイアップ', emoji: '🤝', color: '#F77737', hint: 'ブランドタイアップ専用' },
-  business:  { label: 'ビジネス',   emoji: '💼', color: '#2D9CDB', hint: '法人・ビジネス用途' },
+  personal:  { label: '個人',       emoji: '', color: '#E1306C', hint: 'メインの個人アカウント' },
+  sub:       { label: 'サブ',       emoji: '', color: '#833AB4', hint: 'サブアカウント・趣味用' },
+  tieup:     { label: 'タイアップ', emoji: '', color: '#F77737', hint: 'ブランドタイアップ専用' },
+  business:  { label: 'ビジネス',   emoji: '', color: '#2D9CDB', hint: '法人・ビジネス用途' },
 };
 
 export const PLATFORM_META_ACCOUNT: Record<IrisAccount['platform'], { label: string; emoji: string }> = {
-  instagram: { label: 'Instagram', emoji: '📸' },
-  tiktok:    { label: 'TikTok',    emoji: '🎵' },
+  instagram: { label: 'Instagram', emoji: '' },
+  tiktok:    { label: 'TikTok',    emoji: '' },
   youtube:   { label: 'YouTube',   emoji: '▶️' },
   x:         { label: 'X (Twitter)', emoji: '𝕏' },
 };
@@ -51,7 +51,7 @@ function loadAll(): IrisAccount[] {
     type: 'personal',
     handle: '@your_handle',
     displayName: 'あなた',
-    avatarEmoji: '🌸',
+    avatarEmoji: '',
     platform: 'instagram',
     isActive: true,
     createdAt: new Date().toISOString(),

@@ -26,8 +26,13 @@ import {
   Camera, HeartPulse, Leaf, UsersRound, Users, Handshake, FileText,
   Menu as MenuIcon, Gift, Palette, ArrowLeft, Clapperboard, CalendarClock,
   Download, Image as ImageIcon, Clipboard, RefreshCw, Wand2, Scissors,
-  Eye, Bookmark, BookmarkPlus, Send, Trash2, Loader2, Brain,
+  Eye, Bookmark, BookmarkPlus, Send, Trash2, Loader2, Brain, User,
+  Wallet, Calendar, Hourglass, ShieldAlert,
+  CheckCircle2, AlertTriangle, Bot, Lightbulb, Sun,
+  Briefcase, Rocket, Heart, Smartphone, Ban,
+  Save, X,
 } from 'lucide-react';
+import IrisCommandBar from './IrisCommandBar';
 import InviteShareCard from '../components/InviteShareCard';
 import type { LucideIcon } from 'lucide-react';
 
@@ -50,7 +55,41 @@ const IRIS_TAB_ICON: Record<string, LucideIcon> = {
   invite: Gift,
   reel: Clapperboard,
   schedule: CalendarClock,
+  guideline: ShieldAlert,
 };
+
+// ─── タブ グループ (Phase 2 — 5 カテゴリ) ──────────
+interface TabDef { id: string; l: string }
+interface TabGroup { id: string; label: string; color: string; icon: LucideIcon; tabs: TabDef[] }
+const TAB_GROUPS: TabGroup[] = [
+  { id: 'today',  label: 'Today',  color: '#E1306C', icon: Sun,
+    tabs: [{ id: 'home', l: 'ホーム' }, { id: 'schedule', l: '投稿予約' }] },
+  { id: 'create', label: 'Create', color: '#833AB4', icon: Wand2,
+    tabs: [
+      { id: 'reel', l: 'リール作成' }, { id: 'draft', l: '投稿下書き' },
+      { id: 'director', l: '丸投げ編集' }, { id: 'image', l: '画像加工' },
+    ] },
+  { id: 'earn',   label: 'Earn',   color: '#F77737', icon: Briefcase,
+    tabs: [
+      { id: 'triage', l: '案件精査' }, { id: 'deals', l: '案件' },
+      { id: 'negotiate', l: '交渉' }, { id: 'brands', l: 'ブランド探し' },
+      { id: 'kit', l: 'メディアキット' },
+    ] },
+  { id: 'grow',   label: 'Grow',   color: '#3B82F6', icon: Rocket,
+    tabs: [
+      { id: 'strategy', l: '戦略' }, { id: 'invite', l: '招待 +30日' },
+      { id: 'community', l: 'コミュニティ' }, { id: 'team', l: 'チーム' },
+    ] },
+  { id: 'care',   label: 'Care',   color: '#10B981', icon: Heart,
+    tabs: [
+      { id: 'health', l: 'ヘルス' }, { id: 'beauty', l: '美容相談' },
+      { id: 'guideline', l: 'ガイドライン' },
+    ] },
+];
+const TAB_TO_GROUP: Record<string, string> = TAB_GROUPS.reduce((acc, g) => {
+  g.tabs.forEach(t => { acc[t.id] = g.id; });
+  return acc;
+}, {} as Record<string, string>);
 import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 import IrisDirectorView from './IrisDirectorView';
@@ -133,7 +172,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
     id: IRIS_PERSONA_ID,
     name: 'Creator',
     subtitle: 'Influencer / Creator',
-    icon: '🌸',
+    icon: '',
     description: 'インフルエンサー / クリエイター',
     accentColor: bg.accent,
     accentColorLight: bg.cardBorder,
@@ -180,21 +219,22 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           </div>
 
           <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+            <IrisCommandBar bg={bg} settings={settings} onRoute={(t) => setTab(t as Tab)} />
             {/* アカウントスイッチャー */}
             <div style={{ position: 'relative' }}>
               <button onClick={() => setAccountSwitcherOpen(v => !v)}
                 title="アカウント切り替え"
                 style={{
                   ...btnIcon(bg),
-                  width: 'auto', padding: '0 0.75rem',
-                  gap: '0.4rem', display: 'inline-flex', alignItems: 'center',
-                  fontSize: '0.78rem', fontWeight: 700,
+                  width: 'auto', padding: '0 0.7rem',
+                  gap: '0.35rem', display: 'inline-flex', alignItems: 'center',
+                  fontSize: '0.72rem', fontWeight: 700,
+                  minHeight: 36, height: 36,
                 }}>
-                <span>{multiAccount.active?.avatarEmoji || '👤'}</span>
-                <span style={{ maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <User size={14} strokeWidth={2.4} color={bg.accent} />
+                <span style={{ maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {multiAccount.active?.handle || '@me'}
                 </span>
-                <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>▼</span>
               </button>
               {accountSwitcherOpen && (
                 <div style={{
@@ -213,16 +253,23 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                         background: acct.id === multiAccount.active?.id ? `${bg.accent}12` : 'transparent',
                         border: 'none', cursor: 'pointer', borderBottom: `1px solid ${bg.cardBorder}`,
                       }}>
-                      <span style={{ fontSize: '1.1rem' }}>{acct.avatarEmoji || '👤'}</span>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        background: `${bg.accent}18`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>
+                        <User size={16} color={bg.accent} strokeWidth={2.2} />
+                      </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '0.8rem', fontWeight: 700, color: bg.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acct.handle}</div>
                         <div style={{ fontSize: '0.7rem', color: bg.inkSoft }}>
-                          {ACCOUNT_TYPE_META[acct.type].emoji} {ACCOUNT_TYPE_META[acct.type].label}
+                          {ACCOUNT_TYPE_META[acct.type].label}
                           {' · '}{PLATFORM_META_ACCOUNT[acct.platform].label}
                         </div>
                       </div>
                       {acct.id === multiAccount.active?.id && (
-                        <span style={{ fontSize: '0.7rem', color: bg.accent, fontWeight: 700 }}>選択中</span>
+                        <CheckCircle2 size={14} color={bg.accent} strokeWidth={2.4} />
                       )}
                     </button>
                   ))}
@@ -247,62 +294,81 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           </div>
         </div>
 
-        {/* タブ — モバイルでは「主要タブのみ」、PC ではスクロールで全表示 */}
-        <nav className="iris-tabs" style={{
-          maxWidth: 1280, margin: '0.5rem auto 0', display: 'flex', gap: '0.4rem',
+        {/* タブ (Phase 2) — 5 カテゴリ グループ化。PC は横並びグループ、モバイルはアクティブ グループのみ */}
+        <nav className="iris-tabs-v2" style={{
+          maxWidth: 1280, margin: '0.5rem auto 0',
+          display: 'flex', alignItems: 'center', gap: 14,
           overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4,
         }}>
-          {[
-            // === 入口 ===
-            { id: 'home' as Tab,      l: 'ホーム',         primary: true },
-            // === 作る (即アクション、最初に触りたいもの) ===
-            { id: 'reel' as Tab,      l: 'リール作成',     primary: true },
-            { id: 'schedule' as Tab,  l: '投稿予約',       primary: true },
-            { id: 'draft' as Tab,     l: '投稿下書き',     primary: true },
-            { id: 'image' as Tab,     l: '画像加工',       primary: true },
-            { id: 'director' as Tab,  l: '丸投げ編集',     primary: true },
-            // === 稼ぐ ===
-            { id: 'deals' as Tab,     l: '案件',           primary: true },
-            { id: 'triage' as Tab,    l: '案件精査',       primary: false },
-            { id: 'negotiate' as Tab, l: '交渉',           primary: false },
-            { id: 'kit' as Tab,       l: 'メディアキット', primary: false },
-            { id: 'brands' as Tab,    l: 'ブランド探し',   primary: false },
-            // === 伸ばす ===
-            { id: 'invite' as Tab,    l: '招待 +30日',     primary: false },
-            { id: 'community' as Tab, l: 'コミュニティ',   primary: false },
-            { id: 'team' as Tab,      l: 'チーム',         primary: false },
-            // === 相棒 ===
-            { id: 'beauty' as Tab,    l: '美容相談',       primary: false },
-            { id: 'health' as Tab,    l: 'ヘルス',         primary: false },
-            // === 中上級者用 (後ろに) ===
-            { id: 'strategy' as Tab,  l: '戦略',           primary: false },
-          ].map(t => {
-            const Ico = IRIS_TAB_ICON[t.id] || Sparkles;
+          {TAB_GROUPS.map((group, gi) => {
+            const isActiveGroup = TAB_TO_GROUP[tab] === group.id;
+            const GIco = group.icon;
             return (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                className={t.primary ? 'iris-tab-primary' : 'iris-tab-secondary'}
-                style={{
-                  background: tab === t.id
-                    ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`
-                    : 'rgba(255,255,255,0.92)',
-                  color: tab === t.id ? '#FFFFFF' : '#1F1A2E',
-                  border: tab === t.id ? 'none' : `1px solid rgba(31,26,46,0.08)`,
-                  borderRadius: 999,
-                  padding: '0.55rem 1.05rem',
-                  fontSize: '0.85rem',
-                  fontWeight: tab === t.id ? 700 : 600,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  fontFamily: IRIS_FONTS.body,
-                  boxShadow: tab === t.id
-                    ? `0 6px 18px ${bg.accent}55`
-                    : '0 1px 3px rgba(31,26,46,0.06)',
-                  transition: 'all 0.15s',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                }}>
-                <Ico size={14} strokeWidth={2.4} />
-                {t.l}
-              </button>
+              <React.Fragment key={group.id}>
+                {gi > 0 && (
+                  <span aria-hidden style={{
+                    width: 1, height: 22,
+                    background: 'rgba(31,26,46,0.12)',
+                    flexShrink: 0,
+                  }} className="iris-tab-divider" />
+                )}
+                <div
+                  className={`iris-tab-group${isActiveGroup ? ' is-active' : ''}`}
+                  data-group={group.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '0 4px',
+                    borderRadius: 14,
+                    background: isActiveGroup ? `${group.color}10` : 'transparent',
+                  }}
+                >
+                  <div
+                    title={group.label}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      padding: '0.3rem 0.55rem',
+                      fontSize: '0.62rem', letterSpacing: '0.18em',
+                      fontWeight: 800,
+                      color: isActiveGroup ? group.color : 'rgba(31,26,46,0.45)',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                    }}>
+                    <GIco size={12} strokeWidth={2.8} />
+                    {group.label}
+                  </div>
+                  {group.tabs.map(t => {
+                    const Ico = IRIS_TAB_ICON[t.id] || Sparkles;
+                    const active = tab === t.id;
+                    return (
+                      <button key={t.id}
+                        onClick={() => setTab(t.id as Tab)}
+                        className="iris-tab-btn"
+                        style={{
+                          background: active
+                            ? `linear-gradient(135deg, ${group.color}, ${group.color}cc)`
+                            : 'rgba(255,255,255,0.92)',
+                          color: active ? '#FFFFFF' : '#1F1A2E',
+                          border: active ? 'none' : '1px solid rgba(31,26,46,0.08)',
+                          borderRadius: 999,
+                          padding: '0.5rem 0.95rem',
+                          fontSize: '0.82rem',
+                          fontWeight: active ? 700 : 600,
+                          cursor: 'pointer', whiteSpace: 'nowrap',
+                          fontFamily: IRIS_FONTS.body,
+                          boxShadow: active
+                            ? `0 6px 18px ${group.color}55`
+                            : '0 1px 3px rgba(31,26,46,0.06)',
+                          transition: 'all 0.15s',
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          minHeight: 36,
+                        }}>
+                        <Ico size={13} strokeWidth={2.4} />
+                        {t.l}
+                      </button>
+                    );
+                  })}
+                </div>
+              </React.Fragment>
             );
           })}
           {/* モバイル用 「もっと」 トリガー: タブ末尾に配置 */}
@@ -318,9 +384,10 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               fontFamily: IRIS_FONTS.body,
               boxShadow: '0 1px 3px rgba(31,26,46,0.06)',
               display: 'inline-flex', alignItems: 'center', gap: 6,
+              flexShrink: 0,
             }}>
             <MenuIcon size={14} strokeWidth={2.4} />
-            メニュー
+            全機能
           </button>
         </nav>
       </header>
@@ -357,59 +424,51 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               }}>
                 ALL FEATURES
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.6rem' }}>
-                {[
-                  // 入口
-                  { id: 'home' as Tab,      l: 'ホーム' },
-                  // 作る
-                  { id: 'reel' as Tab,      l: 'リール作成' },
-                  { id: 'schedule' as Tab,  l: '投稿予約' },
-                  { id: 'draft' as Tab,     l: '投稿下書き' },
-                  { id: 'image' as Tab,     l: '画像加工' },
-                  { id: 'director' as Tab,  l: '丸投げ編集' },
-                  // 稼ぐ
-                  { id: 'deals' as Tab,     l: '案件' },
-                  { id: 'triage' as Tab,    l: '案件精査' },
-                  { id: 'negotiate' as Tab, l: '交渉' },
-                  // 伸ばす
-                  { id: 'invite' as Tab,    l: '招待 +30日' },
-                  { id: 'community' as Tab, l: 'コミュニティ' },
-                  { id: 'team' as Tab,      l: 'チーム' },
-                  // 相棒
-                  { id: 'beauty' as Tab,    l: '美容相談' },
-                  { id: 'health' as Tab,    l: 'ヘルス' },
-                  // 中上級者用
-                  { id: 'strategy' as Tab,  l: '戦略' },
-                  { id: 'brands' as Tab,    l: 'ブランド探し' },
-                  { id: 'kit' as Tab,       l: 'メディアキット' },
-                ].map(t => {
-                  const Ico = IRIS_TAB_ICON[t.id] || Sparkles;
-                  const isActive = tab === t.id;
-                  return (
-                    <button key={t.id}
-                      onClick={() => { setTab(t.id); setMoreOpen(false); }}
-                      style={{
-                        background: isActive ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}dd)` : 'rgba(248,244,252,1)',
-                        color: isActive ? '#fff' : '#1F1A2E',
-                        border: 'none', borderRadius: 14,
-                        padding: '0.95rem 0.5rem 0.85rem', fontSize: '0.85rem', fontWeight: 600,
-                        cursor: 'pointer', textAlign: 'center',
-                        boxShadow: isActive ? `0 6px 18px ${bg.accent}45` : 'none',
-                        minHeight: 76,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
-                      }}>
-                      <div style={{
-                        width: 36, height: 36, borderRadius: 10,
-                        background: isActive ? 'rgba(255,255,255,0.22)' : `${bg.accent}18`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <Ico size={18} color={isActive ? '#fff' : bg.accent} strokeWidth={2.2} />
-                      </div>
-                      <span>{t.l}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              {TAB_GROUPS.map(group => {
+                const GIco = group.icon;
+                return (
+                  <div key={group.id} style={{ marginBottom: '1.1rem' }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      margin: '0 0 0.55rem 0.25rem',
+                      fontSize: '0.65rem', letterSpacing: '0.22em', fontWeight: 800,
+                      color: group.color, textTransform: 'uppercase',
+                    }}>
+                      <GIco size={12} strokeWidth={2.8} />
+                      {group.label}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.55rem' }}>
+                      {group.tabs.map(t => {
+                        const Ico = IRIS_TAB_ICON[t.id] || Sparkles;
+                        const isActive = tab === t.id;
+                        return (
+                          <button key={t.id}
+                            onClick={() => { setTab(t.id as Tab); setMoreOpen(false); }}
+                            style={{
+                              background: isActive ? `linear-gradient(135deg, ${group.color}, ${group.color}dd)` : 'rgba(248,244,252,1)',
+                              color: isActive ? '#fff' : '#1F1A2E',
+                              border: 'none', borderRadius: 14,
+                              padding: '0.95rem 0.5rem 0.85rem', fontSize: '0.85rem', fontWeight: 600,
+                              cursor: 'pointer', textAlign: 'center',
+                              boxShadow: isActive ? `0 6px 18px ${group.color}45` : 'none',
+                              minHeight: 76,
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            }}>
+                            <div style={{
+                              width: 36, height: 36, borderRadius: 10,
+                              background: isActive ? 'rgba(255,255,255,0.22)' : `${group.color}18`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <Ico size={18} color={isActive ? '#fff' : group.color} strokeWidth={2.2} />
+                            </div>
+                            <span>{t.l}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
               <button onClick={() => setMoreOpen(false)}
                 style={{
                   width: '100%', marginTop: '1rem',
@@ -564,8 +623,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 </h3>
               </div>
 
-              <p style={{ fontSize: '0.75rem', color: IRIS_COLORS.inkSoft, marginBottom: '0.5rem' }}>
-                ✨ プリセット (補色ペア)
+              <p style={{ fontSize: '0.75rem', color: IRIS_COLORS.inkSoft, marginBottom: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Sparkles size={12} color={IRIS_COLORS.roseDeep} /> プリセット (補色ペア)
               </p>
               <div style={{
                 display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem',
@@ -612,8 +671,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               {/* カスタム一覧 */}
               {allBgs.filter(b => 'isCustom' in b && b.isCustom).length > 0 && (
                 <>
-                  <p style={{ fontSize: '0.75rem', color: IRIS_COLORS.inkSoft, marginTop: '1.25rem', marginBottom: '0.5rem' }}>
-                    🌟 マイ・カスタム
+                  <p style={{ fontSize: '0.75rem', color: IRIS_COLORS.inkSoft, marginTop: '1.25rem', marginBottom: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <Bookmark size={12} color={IRIS_COLORS.roseDeep} /> マイ・カスタム
                   </p>
                   <div style={{
                     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem',
@@ -642,13 +701,14 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                               background: b.accent, border: '2px solid #fff',
                             }} />
                           </button>
-                          <button onClick={() => handleRemoveCustom(b.id)} style={{
+                          <button onClick={() => handleRemoveCustom(b.id)} title="削除" aria-label="削除" style={{
                             position: 'absolute', top: 6, right: 6,
                             background: 'rgba(255,255,255,0.85)',
                             border: 'none', borderRadius: 999,
                             width: 26, height: 26,
-                            cursor: 'pointer', fontSize: '0.85rem',
-                          }}>🗑</button>
+                            cursor: 'pointer',
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          }}><Trash2 size={13} color="#1F1A2E" strokeWidth={2.2} /></button>
                         </div>
                       );
                     })}
@@ -665,7 +725,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 fontSize: '0.9rem',
                 boxShadow: `0 8px 24px ${IRIS_COLORS.roseDeep}55`,
               }}>
-                ✨ 自分だけの背景を作る
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Sparkles size={14} /> 自分だけの背景を作る
+                </span>
               </button>
 
               <button onClick={() => setBgPickerOpen(false)} style={{
@@ -742,10 +804,10 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-        <StatCard bg={bg} label="進行中" value={myDeals.filter(d => !['closed','declined'].includes(d.stage)).length + ' 件'} icon="💌" />
-        <StatCard bg={bg} label="今週納期" value={upcoming.filter(e => e.daysLeft <= 7).length + ' 件'} icon="📅" />
-        <StatCard bg={bg} label="総報酬" value={'¥' + earnings.toLocaleString()} icon="💰" />
-        <StatCard bg={bg} label="完了案件" value={myDeals.filter(d => d.stage === 'closed').length + ' 件'} icon="✨" />
+        <StatCard bg={bg} label="進行中" value={myDeals.filter(d => !['closed','declined'].includes(d.stage)).length + ' 件'} icon={Mail} />
+        <StatCard bg={bg} label="今週納期" value={upcoming.filter(e => e.daysLeft <= 7).length + ' 件'} icon={Calendar} />
+        <StatCard bg={bg} label="総報酬" value={'¥' + earnings.toLocaleString()} icon={Wallet} />
+        <StatCard bg={bg} label="完了案件" value={myDeals.filter(d => d.stage === 'closed').length + ' 件'} icon={CheckCircle2} />
       </div>
 
       {upcoming.length > 0 && (
@@ -814,31 +876,38 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
           今、なにする?
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.6rem' }}>
-          {[
-            { e: '🔍', l: '案件を精査',     tab: 'triage' },
-            { e: '🎬', l: '丸投げ編集',     tab: 'director' },
-            { e: '💬', l: '交渉文を書く',   tab: 'negotiate' },
-            { e: '📷', l: '写真を加工',     tab: 'image' },
-            { e: '💆‍♀️', l: '美容相談',     tab: 'beauty' },
-            { e: '🌹', l: 'コミュニティ',   tab: 'community' },
-          ].map((q) => (
-            <button key={q.l} onClick={() => setTab && setTab(q.tab as any)} style={{
-              background: 'rgba(255,255,255,0.85)',
-              border: `1px solid ${bg.cardBorder}`,
-              borderRadius: 16,
-              padding: '1.1rem 0.75rem',
-              cursor: 'pointer',
-              textAlign: 'center',
-              color: '#1F1A2E',
-              fontFamily: IRIS_FONTS.body,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 8px 22px ${bg.accent}33`; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
-              <div style={{ fontSize: '2.2rem', marginBottom: '0.4rem' }}>{q.e}</div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{q.l}</div>
-            </button>
-          ))}
+          {([
+            { I: Search,        l: '案件を精査',     tab: 'triage' },
+            { I: Film,          l: '丸投げ編集',     tab: 'director' },
+            { I: MessageSquare, l: '交渉文を書く',   tab: 'negotiate' },
+            { I: Camera,        l: '写真を加工',     tab: 'image' },
+            { I: HeartPulse,    l: '美容相談',       tab: 'beauty' },
+            { I: UsersRound,    l: 'コミュニティ',   tab: 'community' },
+          ] as const).map((q) => {
+            const Ico = q.I;
+            return (
+              <button key={q.l} onClick={() => setTab && setTab(q.tab as any)} className="iris-card-hover" style={{
+                background: 'rgba(255,255,255,0.85)',
+                border: `1px solid ${bg.cardBorder}`,
+                borderRadius: 16,
+                padding: '1.1rem 0.75rem',
+                cursor: 'pointer',
+                textAlign: 'center',
+                color: '#1F1A2E',
+                fontFamily: IRIS_FONTS.body,
+              }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 14,
+                  margin: '0 auto 0.5rem',
+                  background: `${bg.accent}15`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Ico size={22} color={bg.accent} strokeWidth={2.2} />
+                </div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{q.l}</div>
+              </button>
+            );
+          })}
         </div>
       </Card>
     </div>
@@ -892,7 +961,7 @@ function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; des
             boxShadow: `0 8px 22px ${bg.accent}55`,
             display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
           }}>
-            ✨ AI で追加
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> AI で追加</span>
           </button>
           <button onClick={() => setOpen(!open)} style={{
             background: 'rgba(255,255,255,0.85)', color: '#1F1A2E',
@@ -900,7 +969,7 @@ function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; des
             padding: '0.7rem 1.2rem', fontWeight: 600, cursor: 'pointer',
             fontSize: '0.85rem', fontFamily: IRIS_FONTS.body,
           }}>
-            {open ? '閉じる' : '✏ 手動'}
+            {open ? '閉じる' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Edit3 size={14} /> 手動</span>}
           </button>
         </div>
       </div>
@@ -929,7 +998,7 @@ function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; des
 
       {myDeals.length === 0 && (
         <Card bg={bg}>
-          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '2rem 0' }}>まだ案件はありません 🌸</p>
+          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '2rem 0' }}>まだ案件はありません</p>
         </Card>
       )}
 
@@ -960,7 +1029,7 @@ function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; des
                   <option key={k} value={k}>{v.emoji} {v.label}</option>
                 ))}
               </select>
-              <button onClick={() => { if (confirm('削除しますか?')) desk.removeDeal(deal.id); }} style={btnIcon(bg)}>🗑</button>
+              <button onClick={() => { if (confirm('削除しますか?')) desk.removeDeal(deal.id); }} title="削除" aria-label="削除" style={btnIcon(bg)}><Trash2 size={16} strokeWidth={2.2} /></button>
             </div>
           </Card>
         );
@@ -1030,18 +1099,18 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
         )}
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button onClick={gen} disabled={busy || !dealId} style={btnPrimary(bg)}>
-            {busy ? '生成中…' : '✨ 交渉文を作る'}
+            {busy ? '生成中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> 交渉文を作る</span>}
           </button>
-          <button onClick={ev} disabled={busy || !dealId} style={btnSecondary(bg)}>💴 報酬チェック</button>
+          <button onClick={ev} disabled={busy || !dealId} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Wallet size={14} /> 報酬チェック</span></button>
         </div>
       </Card>
 
-      {err && <Card bg={bg}><p style={{ color: '#FF5C5C' }}>⚠ {err}</p></Card>}
+      {err && <Card bg={bg}><p style={{ color: '#FF5C5C', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {err}</p></Card>}
 
       {evalRes && (
         <Card bg={bg}>
           <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: bg.ink }}>
-            判定: {evalRes.verdict === 'accept' ? '✅ 受諾OK' : evalRes.verdict === 'counter' ? '🟡 カウンター推奨' : '🔴 辞退推奨'}
+            判定: {evalRes.verdict === 'accept' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#10B981' }}><CheckCircle2 size={14} /> 受諾OK</span> : evalRes.verdict === 'counter' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#F59E0B' }}><AlertTriangle size={14} /> カウンター推奨</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#EF4444' }}><Ban size={14} /> 辞退推奨</span>}
           </p>
           <p style={{ color: bg.inkSoft, fontSize: '0.9rem' }}>妥当レンジ: ¥{evalRes.fairFee.min?.toLocaleString()} 〜 ¥{evalRes.fairFee.max?.toLocaleString()}</p>
           <p style={{ marginTop: '0.5rem', whiteSpace: 'pre-wrap' }}>{evalRes.reason}</p>
@@ -1057,7 +1126,7 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
           <Card key={n.id} bg={bg}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <p style={{ fontWeight: 700 }}>{m.emoji} {m.label} — {d.brandName}</p>
-              <button onClick={() => navigator.clipboard?.writeText((n.subject ? `件名: ${n.subject}\n\n` : '') + n.body)} style={btnIcon(bg)}>📋</button>
+              <button onClick={() => navigator.clipboard?.writeText((n.subject ? `件名: ${n.subject}\n\n` : '') + n.body)} title="コピー" aria-label="コピー" style={btnIcon(bg)}><Clipboard size={16} strokeWidth={2.2} /></button>
             </div>
             {n.subject && <p style={{ color: bg.inkSoft, fontSize: '0.85rem' }}>件名: {n.subject}</p>}
             <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', marginTop: '0.5rem' }}>{n.body}</pre>
@@ -1099,11 +1168,11 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona }: any) {
         </select>
         <input style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} placeholder="トーン (例: 親しみやすく)" value={tone} onChange={e => setTone(e.target.value)} />
         <button onClick={gen} disabled={busy || !dealId} style={btnPrimary(bg)}>
-          {busy ? '生成中…' : '✨ 下書きを作る'}
+          {busy ? '生成中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> 下書きを作る</span>}
         </button>
       </Card>
 
-      {err && <Card bg={bg}><p style={{ color: '#FF5C5C' }}>⚠ {err}</p></Card>}
+      {err && <Card bg={bg}><p style={{ color: '#FF5C5C', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {err}</p></Card>}
 
       {myDeals.filter((d: InfluencerDeal) => d.draftCopy).map((d: InfluencerDeal) => (
         <Card key={d.id} bg={bg}>
@@ -1111,7 +1180,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona }: any) {
             <p style={{ fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {PLATFORM_META[d.platform].emoji} {d.brandName}
             </p>
-            <button onClick={() => navigator.clipboard?.writeText(d.draftCopy || '')} style={btnIcon(bg)} title="コピー">📋</button>
+            <button onClick={() => navigator.clipboard?.writeText(d.draftCopy || '')} style={btnIcon(bg)} title="コピー" aria-label="コピー"><Clipboard size={16} strokeWidth={2.2} /></button>
           </div>
           <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', marginBottom: '0.85rem' }}>{d.draftCopy}</pre>
           {/* Instagram シェアボタン群 */}
@@ -1129,7 +1198,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona }: any) {
                 cursor: 'pointer', boxShadow: '0 6px 18px rgba(225,48,108,0.35)',
               }}
             >
-              📸 Instagram で投稿
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Camera size={14} /> Instagram で投稿</span>
             </button>
             <button
               onClick={async () => {
@@ -2149,7 +2218,7 @@ function MediaKitView({ bg, desk, kit }: { bg: IrisBackgroundDef; desk: ReturnTy
         <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="希望報酬レンジ" value={d.rateCard || ''} onChange={e => setD({ ...d, rateCard: e.target.value })} />
         <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="ブランド観・NG事項" value={d.brandValues || ''} onChange={e => setD({ ...d, brandValues: e.target.value })} />
 
-        <button onClick={save} style={{ ...btnPrimary(bg), marginTop: '0.75rem' }}>💾 保存</button>
+        <button onClick={save} style={{ ...btnPrimary(bg), marginTop: '0.75rem' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Save size={14} /> 保存</span></button>
       </Card>
     </div>
   );
@@ -2241,7 +2310,7 @@ function TeamView({ bg, team, desk, myDeals }: {
       {team.members.length === 0 && (
         <Card bg={bg}>
           <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '2rem 0' }}>
-            🌷 まだメンバーがいません。<br />
+            まだメンバーがいません。<br />
             一緒に動いてくれる人 (マネージャー / 編集 / コラボ仲間) を登録すると、案件の交通整理ができます。
           </p>
         </Card>
@@ -2265,7 +2334,7 @@ function TeamView({ bg, team, desk, myDeals }: {
                   <p style={{ fontWeight: 700, color: bg.ink, fontSize: '1.05rem' }}>{member.name}</p>
                   {member.handle && <p style={{ fontSize: '0.8rem', color: bg.inkSoft }}>{member.handle}</p>}
                 </div>
-                <button onClick={() => { if (confirm('削除しますか?')) team.removeMember(member.id); }} style={btnIcon(bg)}>🗑</button>
+                <button onClick={() => { if (confirm('削除しますか?')) team.removeMember(member.id); }} title="削除" aria-label="削除" style={btnIcon(bg)}><Trash2 size={16} strokeWidth={2.2} /></button>
               </div>
               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
                 <span style={{ background: role.color + '22', color: role.color, padding: '0.2rem 0.6rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 600 }}>
@@ -2337,7 +2406,7 @@ function TeamView({ bg, team, desk, myDeals }: {
           仲間とテンプレ・案件情報を JSON 経由で共有できます (将来サーバ連携で同期予定)。
         </p>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-          <button onClick={exportJson} style={btnPrimary(bg)}>📤 JSON でエクスポート</button>
+          <button onClick={exportJson} style={btnPrimary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Download size={14} /> JSON でエクスポート</span></button>
         </div>
         <textarea
           style={{ ...inp(bg), width: '100%', minHeight: 90, marginBottom: '0.5rem', fontFamily: 'monospace', fontSize: '0.78rem' }}
@@ -2345,7 +2414,7 @@ function TeamView({ bg, team, desk, myDeals }: {
           value={importText}
           onChange={e => setImportText(e.target.value)}
         />
-        <button onClick={tryImport} disabled={!importText.trim()} style={btnSecondary(bg)}>📥 インポート</button>
+        <button onClick={tryImport} disabled={!importText.trim()} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Send size={14} style={{ transform: 'rotate(90deg)' }} /> インポート</span></button>
       </Card>
 
       <Card bg={bg}>
@@ -2369,7 +2438,7 @@ function TeamView({ bg, team, desk, myDeals }: {
                   <span style={{ fontSize: '0.75rem', color: bg.inkSoft }}>{t.uses} 回使用</span>
                 </div>
                 <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '0.85rem', color: bg.inkSoft }}>{t.body.slice(0, 200)}{t.body.length > 200 ? '…' : ''}</pre>
-                <button onClick={() => { navigator.clipboard?.writeText(t.body); team.incrementTemplateUse(t.id); }} style={{ ...btnIcon(bg), width: 'auto', padding: '0.3rem 0.7rem', marginTop: '0.4rem' }}>📋 使う</button>
+                <button onClick={() => { navigator.clipboard?.writeText(t.body); team.incrementTemplateUse(t.id); }} style={{ ...btnIcon(bg), width: 'auto', padding: '0.3rem 0.7rem', marginTop: '0.4rem', gap: 4 }}><Clipboard size={13} /> 使う</button>
               </div>
             ))}
           </div>
@@ -2434,7 +2503,7 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
       stage: 'inquiry',
       notes: `[Brand Match] ${result.matchReason}\n\n[初回打診メール]\n件名: ${result.subject}\n\n${result.body}`,
     });
-    alert('案件として保存しました。「💌 案件」タブで確認できます。');
+    alert('案件として保存しました。「案件」タブで確認できます。');
     setPitchTarget(null);
     setResult(null);
   };
@@ -2454,7 +2523,7 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
       {companies.length === 0 ? (
         <Card bg={bg}>
           <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1.5rem 0', lineHeight: 1.8 }}>
-            🌸 まだブランドリストがありません。<br />
+            まだブランドリストがありません。<br />
             <a href="/?app=1" target="_blank" rel="noreferrer" style={{ color: bg.accent, fontWeight: 700 }}>
               CORE Prism (本家) →
             </a>
@@ -2466,11 +2535,11 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <input
               style={{ ...inp(bg), flex: 1, minWidth: 200 }}
-              placeholder="🔍 業界・社名で絞り込み"
+              placeholder="業界・社名で絞り込み"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            <button onClick={refresh} style={btnSecondary(bg)}>🔄 更新</button>
+            <button onClick={refresh} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><RefreshCw size={14} /> 更新</span></button>
             <span style={{ color: bg.inkSoft, fontSize: '0.85rem' }}>{filtered.length} 社</span>
           </div>
 
@@ -2494,7 +2563,7 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
                   </div>
                 )}
                 <button onClick={() => { setPitchTarget(c); setResult(null); setErr(null); }} style={{ ...btnPrimary(bg), width: '100%', marginTop: '0.4rem' }}>
-                  🤝 タイアップを打診
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Handshake size={14} /> タイアップを打診</span>
                 </button>
               </Card>
             ))}
@@ -2507,7 +2576,7 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
                   <p style={{ fontSize: '0.7rem', color: bg.inkSoft, letterSpacing: '0.15em' }}>PITCH TO</p>
                   <p style={{ fontSize: '1.25rem', fontWeight: 700, color: bg.ink }}>{pitchTarget.companyName}</p>
                 </div>
-                <button onClick={() => { setPitchTarget(null); setResult(null); }} style={btnIcon(bg)}>✕</button>
+                <button onClick={() => { setPitchTarget(null); setResult(null); }} title="閉じる" aria-label="閉じる" style={btnIcon(bg)}><X size={16} strokeWidth={2.4} /></button>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -2521,10 +2590,10 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
               </div>
               <textarea style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} rows={2} placeholder="追加指示 (例: ブランドに共感したポイント等)" value={customNote} onChange={e => setCustomNote(e.target.value)} />
               <button onClick={generatePitch} disabled={busy} style={btnPrimary(bg)}>
-                {busy ? '生成中…' : '✨ 打診メールを生成'}
+                {busy ? '生成中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> 打診メールを生成</span>}
               </button>
 
-              {err && <p style={{ color: '#FF5C5C', marginTop: '0.5rem' }}>⚠ {err}</p>}
+              {err && <p style={{ color: '#FF5C5C', marginTop: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {err}</p>}
 
               {result && (
                 <div style={{ marginTop: '1rem', padding: '0.75rem', borderRadius: 12, background: 'rgba(255,255,255,0.5)', border: `1px solid ${bg.cardBorder}` }}>
@@ -2534,8 +2603,8 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
                   <p style={{ fontWeight: 600, color: bg.ink, marginBottom: '0.5rem' }}>{result.subject}</p>
                   <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '0.88rem', lineHeight: 1.7, color: bg.ink }}>{result.body}</pre>
                   <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
-                    <button onClick={() => navigator.clipboard?.writeText((result.subject ? `件名: ${result.subject}\n\n` : '') + result.body)} style={btnSecondary(bg)}>📋 コピー</button>
-                    <button onClick={saveAsDeal} style={btnPrimary(bg)}>💌 案件として保存</button>
+                    <button onClick={() => navigator.clipboard?.writeText((result.subject ? `件名: ${result.subject}\n\n` : '') + result.body)} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Clipboard size={14} /> コピー</span></button>
+                    <button onClick={saveAsDeal} style={btnPrimary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Mail size={14} /> 案件として保存</span></button>
                   </div>
                 </div>
               )}
@@ -2548,14 +2617,21 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
 }
 
 // ─── 共通スタイル関数 ────────────────────────
-function StatCard({ bg, label, value, icon }: { bg: IrisBackgroundDef; label: string; value: string | number; icon: string }) {
+function StatCard({ bg, label, value, icon: Ico }: { bg: IrisBackgroundDef; label: string; value: string | number; icon: LucideIcon }) {
   return (
-    <div style={{
+    <div className="iris-card-hover" style={{
       background: bg.card, backdropFilter: 'blur(10px)',
       border: `1px solid ${bg.cardBorder}`, borderRadius: 18,
       padding: '1rem 1.2rem',
     }}>
-      <div style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}>{icon}</div>
+      <div style={{
+        width: 32, height: 32, borderRadius: 10,
+        background: `${bg.accent}18`,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: '0.5rem',
+      }}>
+        <Ico size={16} color={bg.accent} strokeWidth={2.2} />
+      </div>
       <div style={{ fontSize: '0.75rem', color: bg.inkSoft, letterSpacing: '0.1em', fontWeight: 600 }}>{label}</div>
       <div style={{ fontSize: '1.4rem', fontWeight: 700, color: bg.ink, marginTop: '0.15rem' }}>{value}</div>
     </div>
@@ -2637,7 +2713,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
   const [checking, setChecking] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [newAcct, setNewAcct] = useState<Partial<IrisAccount>>({
-    type: 'personal', platform: 'instagram', handle: '', displayName: '', avatarEmoji: '🌸',
+    type: 'personal', platform: 'instagram', handle: '', displayName: '', avatarEmoji: '',
   });
 
   const g = brandGuide.active;
@@ -2677,9 +2753,9 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
       platform: newAcct.platform as IrisAccount['platform'],
       handle: rawHandle,
       displayName,
-      avatarEmoji: newAcct.avatarEmoji || '🌸',
+      avatarEmoji: newAcct.avatarEmoji || '',
     });
-    setNewAcct({ type: 'personal', platform: 'instagram', handle: '', displayName: '', avatarEmoji: '🌸' });
+    setNewAcct({ type: 'personal', platform: 'instagram', handle: '', displayName: '', avatarEmoji: '' });
     setShowAddAccount(false);
   }
 
@@ -2701,7 +2777,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
       {/* ── マルチアカウント管理 ── */}
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: 0 }}>📱 登録アカウント</h3>
+          <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}><Smartphone size={16} color={bg.accent} /> 登録アカウント</h3>
           <button onClick={() => setShowAddAccount(v => !v)}
             style={{ ...btnPrimary(bg), padding: '0.45rem 1rem', fontSize: '0.8rem' }}>
             + 追加
@@ -2715,11 +2791,18 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
               background: acct.id === multiAccount.active?.id ? `${bg.accent}10` : 'rgba(255,255,255,0.5)',
               border: `1px solid ${acct.id === multiAccount.active?.id ? bg.accent + '44' : bg.cardBorder}`,
             }}>
-              <span style={{ fontSize: '1.4rem' }}>{acct.avatarEmoji || '👤'}</span>
+              <div style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: `${bg.accent}18`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <User size={18} color={bg.accent} strokeWidth={2.2} />
+              </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.88rem', fontWeight: 700, color: bg.ink }}>{acct.handle}</div>
                 <div style={{ fontSize: '0.75rem', color: bg.inkSoft }}>
-                  {ACCOUNT_TYPE_META[acct.type].emoji} {ACCOUNT_TYPE_META[acct.type].label}
+                  {ACCOUNT_TYPE_META[acct.type].label}
                   {' · '}{PLATFORM_META_ACCOUNT[acct.platform].label}
                   {acct.followerCount ? ` · ${acct.followerCount.toLocaleString()} フォロワー` : ''}
                 </div>
@@ -2735,7 +2818,8 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
               </button>
               {multiAccount.accounts.length > 1 && (
                 <button onClick={() => { if (confirm(`${acct.handle} を削除しますか?`)) multiAccount.remove(acct.id); }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: bg.inkSoft }}>🗑</button>
+                  title="削除" aria-label="削除"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: bg.inkSoft, padding: 4, display: 'inline-flex' }}><Trash2 size={14} strokeWidth={2.2} /></button>
               )}
             </div>
           ))}
@@ -2746,11 +2830,62 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
               style={{ overflow: 'hidden' }}>
               <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid ${bg.cardBorder}` }}>
+                <div style={{
+                  padding: '0.7rem 0.85rem',
+                  background: `linear-gradient(135deg, ${bg.accent}10, transparent)`,
+                  border: `1px dashed ${bg.accent}55`,
+                  borderRadius: 12,
+                  marginBottom: '0.85rem',
+                }}>
+                  <div style={{
+                    fontSize: '0.62rem', letterSpacing: '0.22em',
+                    color: bg.accent, fontWeight: 800, marginBottom: 6,
+                  }}>
+                    QUICK ADD &mdash; ハンドルだけで即追加
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input
+                      value={newAcct.handle || ''}
+                      onChange={e => setNewAcct(p => ({ ...p, handle: e.target.value }))}
+                      onKeyDown={e => { if (e.key === 'Enter' && (newAcct.handle || '').trim()) addAccount(); }}
+                      placeholder="@your_handle"
+                      style={{
+                        flex: 1, padding: '0.6rem 0.85rem', borderRadius: 10,
+                        border: `1px solid ${bg.cardBorder}`, fontSize: '0.92rem',
+                        background: '#fff', boxSizing: 'border-box',
+                      }}
+                    />
+                    <button
+                      onClick={addAccount}
+                      disabled={!(newAcct.handle || '').trim()}
+                      style={{
+                        padding: '0.55rem 1.1rem', borderRadius: 999,
+                        background: (newAcct.handle || '').trim()
+                          ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`
+                          : 'rgba(0,0,0,0.08)',
+                        color: (newAcct.handle || '').trim() ? '#fff' : '#999',
+                        border: 'none', fontSize: '0.85rem', fontWeight: 800,
+                        cursor: (newAcct.handle || '').trim() ? 'pointer' : 'not-allowed',
+                        boxShadow: (newAcct.handle || '').trim() ? `0 6px 16px ${bg.accent}55` : 'none',
+                      }}>
+                      追加
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: bg.inkSoft, marginTop: 6, lineHeight: 1.5 }}>
+                    Enter で即保存。名前・種別はあとで編集できる
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: '0.62rem', letterSpacing: '0.22em',
+                  color: bg.inkSoft, fontWeight: 800, marginBottom: 6,
+                }}>
+                  詳細を最初から入れたい場合 ↓
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
                   {[
                     { label: 'ハンドル (必須)', key: 'handle', placeholder: '例: your_handle (@は不要)' },
                     { label: 'ニックネーム (任意)', key: 'displayName', placeholder: '空欄でもOK' },
-                    { label: '絵文字アバター (任意)', key: 'avatarEmoji', placeholder: '✨' },
+                    { label: 'アバターの頭文字 (任意)', key: 'avatarEmoji', placeholder: '空欄でOK' },
                   ].map(f => (
                     <div key={f.key}>
                       <label style={{ fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>{f.label}</label>
@@ -2764,7 +2899,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                     <select value={newAcct.type} onChange={e => setNewAcct(p => ({ ...p, type: e.target.value as IrisAccount['type'] }))}
                       style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 10, border: `1px solid ${bg.cardBorder}`, fontSize: '0.85rem', boxSizing: 'border-box' }}>
                       {(Object.keys(ACCOUNT_TYPE_META) as IrisAccount['type'][]).map(t => (
-                        <option key={t} value={t}>{ACCOUNT_TYPE_META[t].emoji} {ACCOUNT_TYPE_META[t].label}</option>
+                        <option key={t} value={t}>{ACCOUNT_TYPE_META[t].label}</option>
                       ))}
                     </select>
                   </div>
@@ -2773,7 +2908,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                     <select value={newAcct.platform} onChange={e => setNewAcct(p => ({ ...p, platform: e.target.value as IrisAccount['platform'] }))}
                       style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 10, border: `1px solid ${bg.cardBorder}`, fontSize: '0.85rem', boxSizing: 'border-box' }}>
                       {(['instagram', 'tiktok', 'youtube', 'x'] as const).map(p => (
-                        <option key={p} value={p}>{PLATFORM_META_ACCOUNT[p].emoji} {PLATFORM_META_ACCOUNT[p].label}</option>
+                        <option key={p} value={p}>{PLATFORM_META_ACCOUNT[p].label}</option>
                       ))}
                     </select>
                   </div>
@@ -2797,10 +2932,12 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
       {g && (
         <div style={card}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: 0 }}>🎨 {g.name}</h3>
+            <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}><Palette size={16} color={bg.accent} /> {g.name}</h3>
             <button onClick={editMode ? saveEdit : startEdit}
               style={{ ...btnPrimary(bg), padding: '0.45rem 1rem', fontSize: '0.8rem' }}>
-              {editMode ? '💾 保存' : '✏️ 編集'}
+              {editMode
+                ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Save size={13} /> 保存</span>
+                : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Edit3 size={13} /> 編集</span>}
             </button>
           </div>
 
@@ -2866,13 +3003,13 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                         color: draft.emojiStyle === s ? '#fff' : bg.ink,
                         border: `1px solid ${bg.cardBorder}`, fontWeight: 600,
                       }}>
-                      {s === 'rich' ? '😊 たっぷり' : s === 'minimal' ? '🤏 控えめ' : '🚫 なし'}
+                      {s === 'rich' ? 'たっぷり' : s === 'minimal' ? '控えめ' : 'なし'}
                     </button>
                   ))}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.6rem' }}>
-                <button onClick={saveEdit} style={btnPrimary(bg)}>💾 保存</button>
+                <button onClick={saveEdit} style={btnPrimary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Save size={14} /> 保存</span></button>
                 <button onClick={() => { setEditMode(false); setDraft(null); }} style={btnSecondary(bg)}>キャンセル</button>
               </div>
             </div>
@@ -2917,7 +3054,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
       {/* ── ブランドコンサル: スタイルチェック ── */}
       <div style={card}>
         <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: '0 0 0.85rem' }}>
-          🤖 ブランドコンサル — スタイルチェック
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Bot size={16} color={bg.accent} /> ブランドコンサル — スタイルチェック</span>
         </h3>
         <p style={{ fontSize: '0.83rem', color: bg.inkSoft, marginBottom: '0.85rem' }}>
           投稿文をここに貼ると、AI がブランドガイドラインと照合してスコアと改善案を出してくれます。
@@ -2932,7 +3069,9 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
           }} />
         <button onClick={handleStyleCheck} disabled={checking || !checkText.trim() || !g}
           style={{ ...btnPrimary(bg), marginTop: '0.65rem', opacity: checking || !checkText.trim() || !g ? 0.5 : 1 }}>
-          {checking ? '⏳ 分析中…' : '🔍 ブランドコンサルを受ける'}
+          {checking
+            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Hourglass size={14} /> 分析中…</span>
+            : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Search size={14} /> ブランドコンサルを受ける</span>}
         </button>
         {checkResult && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -2947,19 +3086,19 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
             </div>
             {checkResult.violations.length > 0 && (
               <div style={{ marginBottom: '0.5rem' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C8102E', marginBottom: 4 }}>⚠ 問題点</p>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C8102E', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={12} /> 問題点</p>
                 {checkResult.violations.map((v, i) => <p key={i} style={{ fontSize: '0.82rem', color: '#C8102E', margin: '0 0 2px' }}>· {v}</p>)}
               </div>
             )}
             {checkResult.suggestions.length > 0 && (
               <div style={{ marginBottom: '0.5rem' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: bg.accent, marginBottom: 4 }}>💡 改善提案</p>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: bg.accent, marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Lightbulb size={12} /> 改善提案</p>
                 {checkResult.suggestions.map((s, i) => <p key={i} style={{ fontSize: '0.82rem', color: bg.inkSoft, margin: '0 0 2px' }}>· {s}</p>)}
               </div>
             )}
             {checkResult.revised && (
               <div style={{ marginTop: '0.5rem', padding: '0.75rem', borderRadius: 10, background: 'rgba(255,255,255,0.7)', border: `1px solid ${bg.cardBorder}` }}>
-                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: bg.accent, marginBottom: 6 }}>✨ 改善後の文章</p>
+                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: bg.accent, marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={12} /> 改善後の文章</p>
                 <p style={{ fontSize: '0.85rem', color: bg.ink, margin: 0, whiteSpace: 'pre-wrap' }}>{checkResult.revised}</p>
               </div>
             )}

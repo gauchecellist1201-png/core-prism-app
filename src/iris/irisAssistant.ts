@@ -66,7 +66,7 @@ const SYSTEM_PROMPT = (mediaKit?: MediaKit) => `あなたは「30代女性イン
   "intent": "add-deal|check-offer|write-pitch|plan-content|analyze-account|beauty-advice|general-strategy|small-talk|unclear",
   "reply": "あなたの返答 (Iris として)",
   "actions": [
-    { "label": "ボタン文言", "tab": "tab-id", "emoji": "🔍" }
+    { "label": "ボタン文言", "tab": "tab-id", "emoji": "" }
   ]
 }
 

@@ -118,11 +118,11 @@ function AdvancedView({ bg, settings, mediaKit, onBack }: Props & { onBack: () =
       {/* サブタブ */}
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
         {[
-          { id: 'ig' as SubTab,       e: '📸', l: 'Instagram解析' },
-          { id: 'history' as SubTab,  e: '📚', l: '投稿履歴' },
-          { id: 'analyze' as SubTab,  e: '📊', l: '分析' },
-          { id: 'suggest' as SubTab,  e: '✨', l: '次の提案' },
-          { id: 'arc' as SubTab,      e: '🌙', l: '30日プラン' },
+          { id: 'ig' as SubTab,       e: '', l: 'Instagram解析' },
+          { id: 'history' as SubTab,  e: '', l: '投稿履歴' },
+          { id: 'analyze' as SubTab,  e: '', l: '分析' },
+          { id: 'suggest' as SubTab,  e: '', l: '次の提案' },
+          { id: 'arc' as SubTab,      e: '', l: '30日プラン' },
         ].map(t => (
           <button key={t.id} onClick={() => setSub(t.id)} style={{
             background: sub === t.id ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)` : 'rgba(255,255,255,0.92)',
@@ -141,7 +141,7 @@ function AdvancedView({ bg, settings, mediaKit, onBack }: Props & { onBack: () =
 
       {err && (
         <div style={{ ...card, borderColor: '#C8102E' }}>
-          <p style={{ color: '#C8102E' }}>⚠ {err}</p>
+          <p style={{ color: '#C8102E' }}>{err}</p>
         </div>
       )}
 
@@ -254,7 +254,7 @@ function HistoryTab({ bg, history, inp, card, btnPrimary }: any) {
       {history.posts.length === 0 && (
         <div style={card}>
           <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '2rem 0', lineHeight: 1.8 }}>
-            📚 まだ投稿実績がありません。<br />
+            まだ投稿実績がありません。<br />
             過去 5-10 本の投稿を入れると、AI が伸びパターンを分析してくれます。
           </p>
         </div>
@@ -277,12 +277,12 @@ function HistoryTab({ bg, history, inp, card, btnPrimary }: any) {
                 {CONTENT_TYPE_META[p.contentType]}{p.topic ? ` · ${p.topic}` : ''}
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.3rem 0.6rem', fontSize: '0.78rem', marginTop: '0.4rem' }}>
-                {m.reach !== undefined && <span style={{ color: bg.inkSoft }}>👁 {m.reach.toLocaleString()}</span>}
+                {m.reach !== undefined && <span style={{ color: bg.inkSoft }}>{m.reach.toLocaleString()}</span>}
                 {m.engagementRate !== undefined && <span style={{ color: bg.accent, fontWeight: 700 }}>ER {m.engagementRate}%</span>}
-                {m.likes !== undefined && <span style={{ color: bg.inkSoft }}>❤ {m.likes.toLocaleString()}</span>}
-                {m.comments !== undefined && <span style={{ color: bg.inkSoft }}>💬 {m.comments.toLocaleString()}</span>}
-                {m.saves !== undefined && <span style={{ color: bg.inkSoft }}>🔖 {m.saves.toLocaleString()}</span>}
-                {m.shares !== undefined && <span style={{ color: bg.inkSoft }}>📤 {m.shares.toLocaleString()}</span>}
+                {m.likes !== undefined && <span style={{ color: bg.inkSoft }}>{m.likes.toLocaleString()}</span>}
+                {m.comments !== undefined && <span style={{ color: bg.inkSoft }}>{m.comments.toLocaleString()}</span>}
+                {m.saves !== undefined && <span style={{ color: bg.inkSoft }}>{m.saves.toLocaleString()}</span>}
+                {m.shares !== undefined && <span style={{ color: bg.inkSoft }}>{m.shares.toLocaleString()}</span>}
               </div>
               <button onClick={() => { if (confirm('削除しますか?')) history.remove(p.id); }} style={{
                 background: 'transparent', border: 'none', color: bg.inkSoft,
@@ -324,7 +324,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
           投稿履歴 {history.posts.length} 件を AI が分析します。
         </p>
         <button onClick={run} disabled={busy || history.posts.length === 0} style={btnPrimary}>
-          {busy ? '分析中…' : '✨ 全体パフォーマンスを分析'}
+          {busy ? '分析中…' : '全体パフォーマンスを分析'}
         </button>
       </div>
 
@@ -340,7 +340,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
           {result.topPosts.length > 0 && (
             <div style={card}>
               <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#10B981', marginBottom: '0.75rem' }}>
-                ✨ 伸びた投稿
+                伸びた投稿
               </p>
               {result.topPosts.map((p, i) => (
                 <div key={i} style={{ paddingBottom: '0.6rem', marginBottom: '0.6rem', borderBottom: `1px solid ${bg.cardBorder}` }}>
@@ -354,7 +354,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
           {result.underPosts.length > 0 && (
             <div style={card}>
               <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#FFA94D', marginBottom: '0.75rem' }}>
-                🤔 苦戦した投稿
+                苦戦した投稿
               </p>
               {result.underPosts.map((p, i) => (
                 <div key={i} style={{ paddingBottom: '0.6rem', marginBottom: '0.6rem', borderBottom: `1px solid ${bg.cardBorder}` }}>
@@ -389,7 +389,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
           {result.quickWins.length > 0 && (
             <div style={card}>
               <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>
-                💡 Quick Wins (今すぐやれる)
+                Quick Wins (今すぐやれる)
               </p>
               <ol style={{ paddingLeft: '1.2rem', color: bg.ink, lineHeight: 1.9 }}>
                 {result.quickWins.map((q, i) => <li key={i}>{q}</li>)}
@@ -431,7 +431,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
             <p style={{ fontWeight: 700, color: bg.ink }}>{singleFb.r.verdict}</p>
             {singleFb.r.goodPoints?.length > 0 && (
               <div style={{ marginTop: '0.5rem' }}>
-                <p style={{ fontSize: '0.78rem', color: '#10B981', fontWeight: 700 }}>👍 良い</p>
+                <p style={{ fontSize: '0.78rem', color: '#10B981', fontWeight: 700 }}>良い</p>
                 <ul style={{ paddingLeft: '1.2rem', color: bg.inkSoft, fontSize: '0.85rem' }}>
                   {singleFb.r.goodPoints.map((g: string, i: number) => <li key={i}>{g}</li>)}
                 </ul>
@@ -439,7 +439,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
             )}
             {singleFb.r.improvements?.length > 0 && (
               <div style={{ marginTop: '0.5rem' }}>
-                <p style={{ fontSize: '0.78rem', color: '#FFA94D', fontWeight: 700 }}>🔧 改善</p>
+                <p style={{ fontSize: '0.78rem', color: '#FFA94D', fontWeight: 700 }}>改善</p>
                 <ul style={{ paddingLeft: '1.2rem', color: bg.inkSoft, fontSize: '0.85rem' }}>
                   {singleFb.r.improvements.map((g: string, i: number) => <li key={i}>{g}</li>)}
                 </ul>
@@ -484,7 +484,7 @@ function SuggestTab({ bg, settings, history, mediaKit, card, btnPrimary, busy, s
             <option value={7}>7 本</option>
           </select>
           <button onClick={run} disabled={busy || history.posts.length === 0} style={btnPrimary}>
-            {busy ? '提案中…' : '✨ 次の投稿を提案'}
+            {busy ? '提案中…' : '次の投稿を提案'}
           </button>
         </div>
       </div>
@@ -510,16 +510,16 @@ function SuggestTab({ bg, settings, history, mediaKit, card, btnPrimary, busy, s
             HOOK: {s.hook}
           </p>
           <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-            <strong>📅 おすすめ投稿日時:</strong> {s.bestTimeJST}
+            <strong>おすすめ投稿日時:</strong> {s.bestTimeJST}
           </p>
           <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-            <strong>📍 トピック:</strong> {s.topic}
+            <strong>トピック:</strong> {s.topic}
           </p>
           <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginBottom: '0.5rem', lineHeight: 1.7 }}>
             <strong>なぜ今これ?</strong> {s.rationale}
           </p>
           <div style={{ background: 'rgba(255,255,255,0.5)', padding: '0.75rem', borderRadius: 12, marginTop: '0.5rem' }}>
-            <p style={{ fontSize: '0.78rem', color: bg.inkSoft, fontWeight: 700, marginBottom: '0.3rem' }}>📝 撮影ブリーフ</p>
+            <p style={{ fontSize: '0.78rem', color: bg.inkSoft, fontWeight: 700, marginBottom: '0.3rem' }}>撮影ブリーフ</p>
             <p style={{ color: bg.ink, fontSize: '0.88rem', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{s.brief}</p>
           </div>
           {s.hashtagsHint?.length > 0 && (
@@ -556,7 +556,7 @@ function ArcTab({ bg, settings, history, mediaKit, card, btnPrimary, inp, busy, 
           placeholder="30日でやり遂げたいゴール"
           value={goal} onChange={e => setGoal(e.target.value)} />
         <button onClick={run} disabled={busy} style={btnPrimary}>
-          {busy ? '脚本中…' : '✨ 30日プランを設計'}
+          {busy ? '脚本中…' : '30日プランを設計'}
         </button>
       </div>
 
@@ -723,8 +723,8 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
       {/* モード切替 */}
       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
         {[
-          { id: 'self' as const,  e: '🪞', l: '自分のアカウントを精密解析' },
-          { id: 'other' as const, e: '🔍', l: '他のアカウントをリサーチ' },
+          { id: 'self' as const,  e: '', l: '自分のアカウントを精密解析' },
+          { id: 'other' as const, e: '', l: '他のアカウントをリサーチ' },
         ].map(m => (
           <button key={m.id} onClick={() => setMode(m.id)} style={{
             background: mode === m.id ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)` : 'rgba(255,255,255,0.92)',
@@ -753,7 +753,7 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
               background: `linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '1.6rem', flexShrink: 0,
-            }}>📸</div>
+            }}></div>
             <div style={{ flex: 1, minWidth: 200 }}>
               <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.2rem', color: bg.ink, fontWeight: 600 }}>
                 Instagram と連携 (Coming Soon)
@@ -793,7 +793,7 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
       <div style={card}>
         <SectionHead bg={bg} step="02" title="数字 (Insights から確認)" optional />
         <p style={{ color: bg.inkSoft, fontSize: '0.82rem', marginBottom: '0.75rem' }}>
-          Instagram → プロフィール → ☰ → インサイト で見られる数値です。多いほど分析が深くなります。
+          Instagram → プロフィール → → インサイト で見られる数値です。多いほど分析が深くなります。
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
           {[
@@ -815,7 +815,7 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
         <SectionHead bg={bg} step="03" title="スクリーンショット (Vision で読み取り)" optional={mode === 'other'} />
         <p style={{ color: bg.inkSoft, fontSize: '0.82rem', marginBottom: '0.75rem', lineHeight: 1.7 }}>
           {mode === 'self'
-            ? '🪞 プロフィール画面、フィード 9 マス、インサイト、リール一覧、ストーリーズハイライト、過去の伸びた投稿などを <strong>5-8 枚</strong>添付すると、AI が画像を見て深く分析します。'
+            ? 'プロフィール画面、フィード 9 マス、インサイト、リール一覧、ストーリーズハイライト、過去の伸びた投稿などを <strong>5-8 枚</strong>添付すると、AI が画像を見て深く分析します。'
             : 'プロフィール画面、フィード、過去投稿を 1-3 枚添付すると精度が大幅アップ。'}
         </p>
 
@@ -826,7 +826,7 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
           background: 'rgba(255,255,255,0.4)',
           marginBottom: '0.75rem',
         }}>
-          <div style={{ fontSize: '1.8rem', marginBottom: '0.4rem' }}>📷</div>
+          <div style={{ fontSize: '1.8rem', marginBottom: '0.4rem' }}></div>
           <div style={{ color: bg.ink, fontWeight: 600, fontSize: '0.95rem', marginBottom: '0.2rem' }}>
             画像をアップロード ({images.length}/8)
           </div>
@@ -881,7 +881,7 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
               onChange={e => setSamples(samples.map((x, idx) => idx === i ? { ...x, metrics: e.target.value } : x))} />
             <button onClick={() => setSamples(samples.filter((_, idx) => idx !== i))} style={{
               background: 'transparent', border: 'none', color: bg.inkSoft, cursor: 'pointer',
-            }}>✕</button>
+            }}></button>
           </div>
         ))}
         {samples.length < 5 && (
@@ -907,7 +907,7 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
         ...btnPrimary,
         padding: '1rem 2rem', fontSize: '1rem',
       }}>
-        {busy ? '🔮 分析中… (画像を含む場合は 30-60 秒)' : `✨ ${mode === 'self' ? '自分のアカウントを精密解析' : 'アカウントをリサーチ'}`}
+        {busy ? '分析中… (画像を含む場合は 30-60 秒)' : `${mode === 'self' ? '自分のアカウントを精密解析' : 'アカウントをリサーチ'}`}
       </button>
 
       {/* 結果表示 */}
@@ -1038,7 +1038,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
         {result.strengths?.length > 0 && (
           <div style={card}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#10B981', marginBottom: '0.5rem' }}>✨ 強み</p>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#10B981', marginBottom: '0.5rem' }}>強み</p>
             <ul style={{ paddingLeft: '1.2rem', color: bg.ink, lineHeight: 1.9, fontSize: '0.92rem' }}>
               {result.strengths.map((s, i) => <li key={i}>{s}</li>)}
             </ul>
@@ -1046,7 +1046,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
         )}
         {result.weaknesses?.length > 0 && (
           <div style={card}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#FFA94D', marginBottom: '0.5rem' }}>🔧 改善点</p>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#FFA94D', marginBottom: '0.5rem' }}>改善点</p>
             <ul style={{ paddingLeft: '1.2rem', color: bg.ink, lineHeight: 1.9, fontSize: '0.92rem' }}>
               {result.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
             </ul>
@@ -1175,7 +1175,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
             <button onClick={() => navigator.clipboard?.writeText(result.bioSuggestion)} style={{
               background: 'transparent', color: bg.accent, border: `1px solid ${bg.accent}55`,
               borderRadius: 999, padding: '0.3rem 0.8rem', fontSize: '0.78rem', cursor: 'pointer',
-            }}>📋 コピー</button>
+            }}>コピー</button>
           </div>
           <pre style={{
             whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: bg.ink,
@@ -1232,7 +1232,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
       {/* 注意 */}
       {result.cautions?.length > 0 && (
         <div style={{ ...card, borderColor: '#C8102E44' }}>
-          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#C8102E', marginBottom: '0.5rem' }}>⚠ 注意</p>
+          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#C8102E', marginBottom: '0.5rem' }}>注意</p>
           <ul style={{ paddingLeft: '1.2rem', color: bg.ink, lineHeight: 1.9, fontSize: '0.9rem' }}>
             {result.cautions.map((s, i) => <li key={i}>{s}</li>)}
           </ul>

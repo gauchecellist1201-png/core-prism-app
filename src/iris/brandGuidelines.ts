@@ -39,11 +39,11 @@ export interface BrandGuideline {
 }
 
 export const TONE_META: Record<BrandTone, { label: string; emoji: string; description: string }> = {
-  friendly:  { label: 'フレンドリー', emoji: '😊', description: '親しみやすく、話しかけるような口調' },
-  luxury:    { label: '高級・上品',   emoji: '✨', description: 'エレガントで洗練された表現' },
-  casual:    { label: 'カジュアル',   emoji: '🌿', description: '気軽でリラックスした雰囲気' },
-  expert:    { label: '専門家',       emoji: '🔬', description: '信頼感・知識の深さをアピール' },
-  playful:   { label: 'ポップ・楽しい', emoji: '🎉', description: '遊び心があって賑やか' },
+  friendly:  { label: 'フレンドリー', emoji: '', description: '親しみやすく、話しかけるような口調' },
+  luxury:    { label: '高級・上品',   emoji: '', description: 'エレガントで洗練された表現' },
+  casual:    { label: 'カジュアル',   emoji: '', description: '気軽でリラックスした雰囲気' },
+  expert:    { label: '専門家',       emoji: '', description: '信頼感・知識の深さをアピール' },
+  playful:   { label: 'ポップ・楽しい', emoji: '', description: '遊び心があって賑やか' },
   minimal:   { label: 'ミニマル',     emoji: '◻️', description: 'シンプル・洗練・無駄を省く' },
 };
 

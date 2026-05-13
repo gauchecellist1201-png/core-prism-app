@@ -279,14 +279,14 @@ ${toneInstruction()}
           onClick={() => setShowAddFan(v => !v)}
           style={btnPrimary(bg)}
         >
-          💌 ファンを追加
+          ファンを追加
         </button>
         <button
           onClick={extractTop10}
           disabled={top10Loading}
           style={btnSecondary(bg)}
         >
-          {top10Loading ? '分析中…' : '✨ TOP10 を AI 分析'}
+          {top10Loading ? '分析中…' : 'TOP10 を AI 分析'}
         </button>
       </div>
 
@@ -327,7 +327,7 @@ ${toneInstruction()}
             style={{ padding: '1.5rem', background: `linear-gradient(135deg, ${bg.accent}12, ${bg.accent}06)`, border: `1px solid ${bg.accent}30`, borderRadius: 16 }}
           >
             <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: '0.75rem' }}>
-              ✨ 高エンゲージメント TOP10
+              高エンゲージメント TOP10
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem' }}>
               {top10.map((t, i) => (
@@ -408,7 +408,7 @@ ${toneInstruction()}
                 disabled={replyLoading && replyFanId === selectedFan.id}
                 style={btnSecondary(bg)}
               >
-                {replyLoading && replyFanId === selectedFan.id ? '生成中…' : '💬 返信テンプレ生成'}
+                {replyLoading && replyFanId === selectedFan.id ? '生成中…' : '返信テンプレ生成'}
               </button>
             </div>
 
@@ -538,7 +538,7 @@ function FanCard({ fan, bg, isSelected, onSelect, onDelete }: {
         <button
           onClick={e => { e.stopPropagation(); onDelete(); }}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: bg.inkSoft, fontSize: '0.8rem', padding: '0 0.2rem', flexShrink: 0 }}
-        >✕</button>
+        ></button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem' }}>
         <span style={{ background: tagColor.bg, color: tagColor.text, fontSize: '0.65rem', fontWeight: 700, borderRadius: 999, padding: '0.18rem 0.55rem' }}>

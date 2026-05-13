@@ -126,7 +126,7 @@ const HOOK_LIBRARY: HookPhrase[] = [
 type ViralPattern = {
   id: string;
   name: string;
-  trend2026: 1 | 2 | 3 | 4 | 5;       // 2026 Q2 トレンド度 (★)
+  trend2026: 1 | 2 | 3 | 4 | 5;       // 2026 Q2 トレンド度 ()
   bestFor: string;                     // 対象ニッチ
   watchMultiplier: number;             // 平均比 watch time (1.4 = +40%)
   saveScore: 1 | 2 | 3 | 4 | 5;
@@ -356,7 +356,7 @@ type CommunityTemplate = {
 export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   {
     id: 'ct-beauty-grwm',
-    name: '🌸 朝の5分メイクGRWM',
+    name: '朝の5分メイクGRWM',
     author: 'Aiko Beauty',
     authorHandle: '@aiko_beauty',
     category: 'beauty',
@@ -383,7 +383,7 @@ export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
   {
     id: 'ct-food-recipe',
-    name: '🍝 1分パスタレシピ',
+    name: '1分パスタレシピ',
     author: 'Cook Yuki',
     authorHandle: '@cook_yuki',
     category: 'food',
@@ -410,7 +410,7 @@ export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
   {
     id: 'ct-fitness-3things',
-    name: '💪 痩せるための3つの真実',
+    name: '痩せるための3つの真実',
     author: 'Fit Ryo',
     authorHandle: '@fit_ryo',
     category: 'fitness',
@@ -436,7 +436,7 @@ export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
   {
     id: 'ct-mental-pov',
-    name: '🌙 メンタルが軽くなった瞬間',
+    name: 'メンタルが軽くなった瞬間',
     author: 'Hana Soul',
     authorHandle: '@hana_soul',
     category: 'lifestyle',
@@ -462,7 +462,7 @@ export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
   {
     id: 'ct-business-myth',
-    name: '💼 副業の「嘘」3選',
+    name: '副業の「嘘」3選',
     author: 'Biz Ken',
     authorHandle: '@biz_ken',
     category: 'business',
@@ -488,7 +488,7 @@ export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
   {
     id: 'ct-edu-3wishes',
-    name: '📚 学生時代の自分に伝えたい3つ',
+    name: '学生時代の自分に伝えたい3つ',
     author: 'Yuki Edu',
     authorHandle: '@yuki_edu',
     category: 'education',
@@ -514,7 +514,7 @@ export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
   {
     id: 'ct-travel-day',
-    name: '✈️ 京都ひとり旅 1日',
+    name: '京都ひとり旅 1日',
     author: 'Miki Travels',
     authorHandle: '@miki_travels',
     category: 'lifestyle',
@@ -541,7 +541,7 @@ export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
   {
     id: 'ct-style-grwm',
-    name: '👗 デート前のGRWM',
+    name: 'デート前のGRWM',
     author: 'Style Lemon',
     authorHandle: '@style_lemon',
     category: 'beauty',
@@ -568,7 +568,7 @@ export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
   {
     id: 'ct-room-transform',
-    name: '🏠 6畳ワンルーム Before / After',
+    name: '6畳ワンルーム Before / After',
     author: 'Room Saya',
     authorHandle: '@room_saya',
     category: 'lifestyle',
@@ -595,7 +595,7 @@ export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
   {
     id: 'ct-money-mistake',
-    name: '💸 20代でやりがちな金欠の理由',
+    name: '20代でやりがちな金欠の理由',
     author: 'Money Sho',
     authorHandle: '@money_sho',
     category: 'business',
@@ -621,7 +621,7 @@ export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
   {
     id: 'ct-honest-pov',
-    name: '🔥 正直、フリーランス3年でわかった',
+    name: '正直、フリーランス3年でわかった',
     author: 'Free Rina',
     authorHandle: '@free_rina',
     category: 'business',
@@ -647,7 +647,7 @@ export const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
   },
   {
     id: 'ct-skincare-loop',
-    name: '🌟 夜スキンケアのループリビール',
+    name: '夜スキンケアのループリビール',
     author: 'Skin Maki',
     authorHandle: '@skin_maki',
     category: 'beauty',
@@ -2317,7 +2317,7 @@ JSON のみで返答。`;
     const res = await fetch(url);
     const blob = await res.blob();
     await shareToInstagram({
-      caption: 'CORE Iris で作ったリール 🎬',
+      caption: 'CORE Iris で作ったリール',
       image: blob,
       filename: `iris-reel-${Date.now()}.${convertedMp4 ? 'mp4' : 'webm'}`,
     });
@@ -2498,7 +2498,7 @@ JSON のみで返答。`;
                       flexShrink: 0, marginTop: 2,
                       color: it.kind === 'good' ? '#10B981' : it.kind === 'warn' ? '#F59E0B' : '#EF4444',
                       fontWeight: 800,
-                    }}>{it.kind === 'good' ? '✓' : it.kind === 'warn' ? '!' : '✗'}</span>
+                    }}>{it.kind === 'good' ? '' : it.kind === 'warn' ? '!' : ''}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ color: bg.ink }}>{it.msg}</div>
                       {it.fix && <div style={{ color: bg.inkSoft, fontSize: '0.72rem', marginTop: 2 }}>→ {it.fix}</div>}
@@ -2563,7 +2563,7 @@ JSON のみで返答。`;
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <div>
-                <p style={{ ...label, color: '#EA580C' }}>🔥 TREND PULSE</p>
+                <p style={{ ...label, color: '#EA580C' }}>TREND PULSE</p>
                 <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 2 }}>2026年 5月時点で最も伸びてる 5 フォーマット</p>
               </div>
             </div>
@@ -2583,7 +2583,7 @@ JSON のみで返答。`;
                   }}>
                     <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{p.name}</span>
                     <span style={{ fontSize: '0.68rem', color: bg.inkSoft }}>
-                      ★{p.trend2026} · watch ×{p.watchMultiplier}
+                      {p.trend2026} · watch ×{p.watchMultiplier}
                     </span>
                   </button>
                 );
@@ -2599,7 +2599,7 @@ JSON のみで返答。`;
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: '0.6rem', flexWrap: 'wrap' }}>
               <div>
-                <p style={{ ...label, color: '#BE185D' }}>🌸 コミュニティ テンプレート</p>
+                <p style={{ ...label, color: '#BE185D' }}>コミュニティ テンプレート</p>
                 <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 2 }}>
                   他のクリエイターが作って共有した型を1クリックで適用
                 </p>
@@ -2640,7 +2640,7 @@ JSON のみで返答。`;
                   padding: '0.25rem 0.6rem',
                   fontSize: '0.7rem',
                 }}>
-                  {shareCopied ? '✓ コピー済' : 'コピー'}
+                  {shareCopied ? 'コピー済' : 'コピー'}
                 </button>
               </div>
             )}
@@ -2720,9 +2720,9 @@ JSON のみで返答。`;
                       {t.thumbnailHint}
                     </div>
                     <div style={{ display: 'flex', gap: 8, fontSize: '0.66rem', color: bg.inkSoft, marginTop: 2 }}>
-                      <span>👁 {(t.uses / 1000).toFixed(1)}k</span>
-                      <span>💾 {(t.saves / 1000).toFixed(1)}k</span>
-                      <span>♪ {t.bgmMood}</span>
+                      <span>{(t.uses / 1000).toFixed(1)}k</span>
+                      <span>{(t.saves / 1000).toFixed(1)}k</span>
+                      <span>{t.bgmMood}</span>
                     </div>
                   </button>
                 ))}
@@ -2753,13 +2753,13 @@ JSON のみで返答。`;
                 }}>
                   <div style={{ display: 'grid', gap: 3, minWidth: 0 }}>
                     <div style={{ fontSize: '0.88rem', fontWeight: 800 }}>
-                      {p.name} <span style={{ color: '#EA580C', fontSize: '0.7rem' }}>{'★'.repeat(p.trend2026)}</span>
+                      {p.name} <span style={{ color: '#EA580C', fontSize: '0.7rem' }}>{''.repeat(p.trend2026)}</span>
                     </div>
                     <div style={{ fontSize: '0.7rem', color: bg.inkSoft, lineHeight: 1.5 }}>
                       {p.example} · 推奨 BGM: {p.musicMood}
                     </div>
                     <div style={{ fontSize: '0.66rem', color: bg.inkSoft, opacity: 0.85 }}>
-                      watch ×{p.watchMultiplier} · 保存★{p.saveScore} · シェア★{p.shareScore} · {p.bestFor}
+                      watch ×{p.watchMultiplier} · 保存{p.saveScore} · シェア{p.shareScore} · {p.bestFor}
                     </div>
                   </div>
                   <div style={{
@@ -2917,7 +2917,7 @@ JSON のみで返答。`;
             )}
             {bgmFile && (
               <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: '0.5rem' }}>
-                ♪ {bgmFile.name}{bpm ? ` ・推定 ${bpm} BPM` : ''}
+                {bgmFile.name}{bpm ? ` ・推定 ${bpm} BPM` : ''}
               </p>
             )}
             <div style={{ display: 'flex', gap: 8, marginTop: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -3549,7 +3549,7 @@ JSON のみで返答。`;
             {/* 保存後 */}
             {scheduleSaved ? (
               <div style={{ padding: '0.9rem 1rem', background: '#ECFDF5', color: '#065F46', borderRadius: 10, fontSize: '0.88rem', marginBottom: '0.7rem' }}>
-                <div style={{ fontWeight: 800, marginBottom: 4 }}>✓ 投稿予約を保存しました</div>
+                <div style={{ fontWeight: 800, marginBottom: 4 }}>投稿予約を保存しました</div>
                 <div style={{ fontSize: '0.78rem' }}>「投稿予約」タブから時刻に Instagram を開くだけで投稿できます。</div>
               </div>
             ) : (

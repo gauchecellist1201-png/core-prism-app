@@ -58,11 +58,11 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
 
   const verdictMeta = (v: OfferTriageResult['verdict']) => {
     switch (v) {
-      case 'accept':    return { label: '受けていい', color: '#4ADE80', emoji: '✅' };
-      case 'consider':  return { label: '検討の価値あり', color: '#A78BFA', emoji: '🤔' };
-      case 'negotiate': return { label: '交渉して受ける', color: '#FFA94D', emoji: '💬' };
-      case 'decline':   return { label: '丁寧に辞退',   color: '#C8956D', emoji: '🙏' };
-      case 'block':     return { label: '関わらない',   color: '#C8102E', emoji: '🚫' };
+      case 'accept':    return { label: '受けていい', color: '#4ADE80', emoji: '' };
+      case 'consider':  return { label: '検討の価値あり', color: '#A78BFA', emoji: '' };
+      case 'negotiate': return { label: '交渉して受ける', color: '#FFA94D', emoji: '' };
+      case 'decline':   return { label: '丁寧に辞退',   color: '#C8956D', emoji: '' };
+      case 'block':     return { label: '関わらない',   color: '#C8102E', emoji: '' };
     }
   };
 
@@ -85,11 +85,11 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
           placeholder={'件名: 【ご依頼】Instagram タイアップのご相談\n\n△△様\n\nいつも投稿を拝見しております。\n弊社では...'}
           value={emailText} onChange={e => setEmailText(e.target.value)} />
         <button onClick={triage} disabled={busy} style={{ ...btnPrimary, marginTop: '0.5rem' }}>
-          {busy ? '読んでます…' : '🔍 精査する'}
+          {busy ? '読んでます…' : '精査する'}
         </button>
       </div>
 
-      {err && <div style={card}><p style={{ color: '#C8102E' }}>⚠ {err}</p></div>}
+      {err && <div style={card}><p style={{ color: '#C8102E' }}>{err}</p></div>}
 
       {result && (
         <>
@@ -114,7 +114,7 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
           {result.redFlags.length > 0 && (
             <div style={{ ...card, border: `2px solid #C8102E` }}>
               <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#C8102E', marginBottom: '0.75rem' }}>
-                ⚠ Red Flags
+                Red Flags
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {result.redFlags.map((f, i) => (
@@ -187,7 +187,7 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
               </div>
               {onSaveAsDeal && (
                 <button onClick={() => onSaveAsDeal(result.extracted)} style={{ ...btnPrimary, marginTop: '1rem' }}>
-                  💌 案件として保存
+                  案件として保存
                 </button>
               )}
             </div>
