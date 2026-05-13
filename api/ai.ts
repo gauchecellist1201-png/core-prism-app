@@ -194,9 +194,15 @@ export default async function handler(req: Request) {
     });
   }
 
-  // ─── マスターキー判定 (GAUCHE2026 = Anthropic Claude を使う) ───
+  // ─── マスターキー判定 + 軽重ルーティング ─────────────────
+  // マスターキーがあっても「重い処理だけ Claude」「軽い処理は Gemini」に振る:
+  //   - 軽量: max_tokens <= 1500 かつ画像なし → Gemini (無料枠で十分)
+  //   - 重量: max_tokens > 1500 or 画像あり or 'x-ai-weight: heavy' → Claude
+  //   - 明示的に 'x-ai-weight: light' があれば常に Gemini (マスター含む)
+  // 目的: Claude クレジット消費を抑え、月額を 1/3-1/5 にする
   const masterKey = req.headers.get('x-master-key') || '';
-  const useClaude = masterKey === 'GAUCHE2026';
+  const isMaster = masterKey === 'GAUCHE2026';
+  const explicitWeight = (req.headers.get('x-ai-weight') || '').toLowerCase(); // 'heavy' | 'light' | ''
 
   // リクエストボディをパース
   let body: AnthropicRequest;
@@ -209,7 +215,25 @@ export default async function handler(req: Request) {
     });
   }
 
-  // ─── 分岐: Claude (マスターキー) または Gemini (一般) ───
+  // 重量判定
+  const requestedMaxTokens = body.max_tokens || 1024;
+  const hasImages = (body.messages || []).some(m =>
+    Array.isArray(m.content) && m.content.some(p => p && (p as any).type === 'image')
+  );
+  let isHeavy: boolean;
+  if (explicitWeight === 'heavy')      isHeavy = true;
+  else if (explicitWeight === 'light') isHeavy = false;
+  else                                  isHeavy = requestedMaxTokens > 1500 || hasImages;
+
+  // マスターでかつ重量 → Claude。それ以外 → Gemini。
+  const useClaude = isMaster && isHeavy;
+
+  // 診断ヘッダーで動作を可視化
+  const routeReason = !isMaster ? 'public:gemini'
+    : isHeavy ? `master:claude (tokens=${requestedMaxTokens}, images=${hasImages}, hint=${explicitWeight || 'auto'})`
+              : `master:gemini-light (tokens=${requestedMaxTokens}, hint=${explicitWeight || 'auto'})`;
+
+  // ─── 分岐: Claude または Gemini ───
   if (useClaude) {
     // 優先順: ヘッダー x-claude-api-key (オーナーが /master 画面で入力) → Vercel env
     const headerKey = req.headers.get('x-claude-api-key') || '';
@@ -238,12 +262,12 @@ export default async function handler(req: Request) {
       const txt = await r.text();
       return new Response(txt, {
         status: r.status,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        headers: { 'Content-Type': 'application/json', 'x-ai-route': routeReason, ...corsHeaders },
       });
     } catch (e: any) {
       return new Response(JSON.stringify({ error: { message: e.message, type: 'claude_proxy_error' } }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        headers: { 'Content-Type': 'application/json', 'x-ai-route': routeReason, ...corsHeaders },
       });
     }
   }
@@ -302,7 +326,7 @@ export default async function handler(req: Request) {
           error: { message: lastError.message, type: 'gemini_error', status: r.status, model: geminiModel },
         }), {
           status: r.status,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          headers: { 'Content-Type': 'application/json', 'x-ai-route': routeReason, ...corsHeaders },
         });
       }
 
@@ -311,7 +335,7 @@ export default async function handler(req: Request) {
       const anthropicResp = geminiToAnthropic(geminiResp, body.model || geminiModel);
       return new Response(JSON.stringify(anthropicResp), {
         status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        headers: { 'Content-Type': 'application/json', 'x-ai-route': routeReason, ...corsHeaders },
       });
     } catch (e: any) {
       lastError = { status: 500, message: e.message || 'Unknown error', model: geminiModel };

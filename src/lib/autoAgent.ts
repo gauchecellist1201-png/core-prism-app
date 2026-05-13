@@ -198,7 +198,7 @@ ${ctx.persona ? `ペルソナ: ${ctx.persona}` : ''}`;
 
   const res = await fetch('/api/ai', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'heavy' },
     body: JSON.stringify({
       model: 'claude-opus-4-5',
       messages: [{ role: 'user', content: s.actionPrompt }],
