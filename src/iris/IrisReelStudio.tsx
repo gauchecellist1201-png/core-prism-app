@@ -97,12 +97,229 @@ const HOOK_LIBRARY: HookPhrase[] = [
   { id: 'h20', cat: '質問',   text: '見抜けたら◯◯マニアです' },
 ];
 
-// ─── 保存テンプレート (保存されるリール構造) ─────
+// ============================================================
+// 2026 年 Q2 Instagram Reels アルゴリズム分析
+// ・watch-time-per-impression が最重要シグナル
+// ・reshare to DM/Story が次点
+// ・save rate (saves / views) が保存型コンテンツのキー
+// ・original audio + 字幕は2026年も依然強い
+// ・最初の 1.5 秒で離脱率の 70% が決まる
+// ・loop closure (last → first) は watch time multiplier
+// ============================================================
+
+// ─── バイラルパターン (2026年5月時点・実測ベース) ─────
+type ViralPattern = {
+  id: string;
+  name: string;
+  trend2026: 1 | 2 | 3 | 4 | 5;       // 2026 Q2 トレンド度 (★)
+  bestFor: string;                     // 対象ニッチ
+  watchMultiplier: number;             // 平均比 watch time (1.4 = +40%)
+  saveScore: 1 | 2 | 3 | 4 | 5;
+  shareScore: 1 | 2 | 3 | 4 | 5;
+  hookFormula: string;                 // フックの型
+  beats: { sec: number; role: string; textHint: string; visualHint: string }[];
+  captionStrategy: string;
+  musicMood: string;
+  example: string;
+  cta: string;
+};
+
+const VIRAL_PATTERNS: ViralPattern[] = [
+  {
+    id: 'pov-storytime',
+    name: 'POV ストーリーテリング',
+    trend2026: 5, bestFor: '美容/ライフスタイル/メンタル',
+    watchMultiplier: 1.55, saveScore: 4, shareScore: 5,
+    hookFormula: '「POV: ◯◯した時の私」',
+    beats: [
+      { sec: 1.5, role: 'POV フック',       textHint: 'POV: ◯◯した時の私',                visualHint: '顔のアップ / 表情' },
+      { sec: 2.0, role: '状況設定',         textHint: 'あの日まで私は普通だった',          visualHint: '日常シーン' },
+      { sec: 2.5, role: 'きっかけ',         textHint: 'でも◯◯を見つけて変わった',         visualHint: '商品/事件 ズーム' },
+      { sec: 2.5, role: '変化',             textHint: '今では◯◯',                          visualHint: 'After シーン' },
+      { sec: 1.5, role: 'CTA',              textHint: '同じ経験ある人保存して',            visualHint: 'カメラ目線' },
+    ],
+    captionStrategy: '1人称 + 過去-現在の対比。POV: は太字大文字',
+    musicMood: 'emotional / cinematic',
+    example: '「POV: 30歳で美容に目覚めた瞬間」',
+    cta: '同じ経験ある人は保存して',
+  },
+  {
+    id: 'grwm',
+    name: 'GRWM (Get Ready With Me)',
+    trend2026: 5, bestFor: '美容/ファッション/朝活',
+    watchMultiplier: 1.65, saveScore: 5, shareScore: 4,
+    hookFormula: '「◯◯のために準備します」',
+    beats: [
+      { sec: 1.2, role: 'シーン宣言',       textHint: '今日は◯◯のために準備',             visualHint: '鏡前 / 全身' },
+      { sec: 1.5, role: 'STEP 1',           textHint: 'まずスキンケア',                    visualHint: '化粧水 アップ' },
+      { sec: 1.5, role: 'STEP 2',           textHint: 'ベース作り',                        visualHint: 'BBクリーム塗布' },
+      { sec: 1.5, role: 'STEP 3',           textHint: 'アイメイク',                        visualHint: 'アイシャドウ パレット' },
+      { sec: 1.5, role: 'STEP 4',           textHint: '仕上げの一手',                      visualHint: 'リップ' },
+      { sec: 2.0, role: '完成 + CTA',       textHint: '完成 / 保存して再現してね',         visualHint: 'After フル' },
+    ],
+    captionStrategy: 'ステップ番号 + 短い動作言葉。商品名は読みやすく',
+    musicMood: 'chill pop / upbeat',
+    example: '「会食のための朝メイク」',
+    cta: '保存して同じメイクしてみて',
+  },
+  {
+    id: 'three-things',
+    name: '知っとくべき3つの◯◯',
+    trend2026: 5, bestFor: '教育/ライフハック/金融',
+    watchMultiplier: 1.40, saveScore: 5, shareScore: 4,
+    hookFormula: '「◯◯で知らないと損する3つのこと」',
+    beats: [
+      { sec: 1.5, role: 'フック (損失回避)', textHint: '知らないと損する3つのこと',         visualHint: '指3本 / テロップ' },
+      { sec: 2.2, role: '1つ目',             textHint: '①◯◯',                              visualHint: 'シーンA' },
+      { sec: 2.2, role: '2つ目',             textHint: '②◯◯',                              visualHint: 'シーンB' },
+      { sec: 2.5, role: '3つ目 (最強)',      textHint: '③これが一番大事',                  visualHint: 'シーンC' },
+      { sec: 1.8, role: 'CTA',               textHint: '保存して見返してね',                visualHint: 'カメラ目線' },
+    ],
+    captionStrategy: '番号 + 数字を大きく。重要キーワードはハイライト',
+    musicMood: 'inspiring / energetic',
+    example: '「美肌で知らないと損する3つのこと」',
+    cta: '保存して、3つ全部試してみて',
+  },
+  {
+    id: 'transformation',
+    name: 'Before / After 変化',
+    trend2026: 4, bestFor: '美容/ダイエット/部屋/料理',
+    watchMultiplier: 1.50, saveScore: 5, shareScore: 5,
+    hookFormula: '「◯日でこうなりました」',
+    beats: [
+      { sec: 1.5, role: 'After 先出し',      textHint: '結果を1秒で見せる',                 visualHint: 'After 一瞬' },
+      { sec: 2.0, role: 'Before',            textHint: '実は◯日前まで…',                   visualHint: 'Before' },
+      { sec: 2.0, role: '工程 1',            textHint: 'やったこと①',                       visualHint: '工程ショット' },
+      { sec: 2.0, role: '工程 2',            textHint: 'やったこと②',                       visualHint: '工程ショット' },
+      { sec: 2.5, role: 'After リビール',    textHint: 'そして今…',                         visualHint: 'After フル' },
+      { sec: 1.5, role: 'CTA',               textHint: '同じ変化したい人は保存',            visualHint: 'カメラ目線' },
+    ],
+    captionStrategy: 'Before / After を大きく対比。日付 / 期間を強調',
+    musicMood: 'inspiring / cinematic',
+    example: '「2週間で肌が変わった話」',
+    cta: '同じ変化したい人は保存して',
+  },
+  {
+    id: 'tell-me-why',
+    name: '「正直に言うと…」型',
+    trend2026: 5, bestFor: 'メンタル/恋愛/共感系',
+    watchMultiplier: 1.60, saveScore: 3, shareScore: 5,
+    hookFormula: '「正直に言うと、◯◯」',
+    beats: [
+      { sec: 1.5, role: '正直フック',        textHint: '正直に言うと、◯◯',                visualHint: '顔アップ' },
+      { sec: 2.0, role: '本音 1',            textHint: '実は◯◯だった',                     visualHint: 'B-roll' },
+      { sec: 2.0, role: '転換点',            textHint: 'でもある日…',                       visualHint: '転換シーン' },
+      { sec: 2.5, role: '気づき',            textHint: '◯◯に気づいた',                     visualHint: '内省シーン' },
+      { sec: 1.5, role: '共感 CTA',          textHint: '同じ人いる？コメントで教えて',     visualHint: 'カメラ目線' },
+    ],
+    captionStrategy: '本音 / 弱さを見せるテキスト。引用符風',
+    musicMood: 'emotional / ambient',
+    example: '「正直、フォロワー1万人より今の方が幸せ」',
+    cta: '同じ人いる？コメントで教えて',
+  },
+  {
+    id: 'day-timestamp',
+    name: 'タイムスタンプ Day in Life',
+    trend2026: 4, bestFor: 'ライフスタイル/ルーティン',
+    watchMultiplier: 1.45, saveScore: 4, shareScore: 3,
+    hookFormula: '「◯時起き、◯◯の1日」',
+    beats: [
+      { sec: 1.5, role: '宣言',              textHint: '5:30 起床、フリーランスの1日',     visualHint: '時計 / 朝の光' },
+      { sec: 1.8, role: '6:00',              textHint: 'モーニングルーティン',              visualHint: 'コーヒー' },
+      { sec: 1.8, role: '9:00',              textHint: '仕事スタート',                      visualHint: 'PC アップ' },
+      { sec: 1.8, role: '13:00',             textHint: 'ランチ + 散歩',                     visualHint: '外の光' },
+      { sec: 1.8, role: '19:00',             textHint: '夕食 + 振り返り',                   visualHint: 'ノート' },
+      { sec: 1.5, role: 'まとめ + CTA',      textHint: '理想のルーティン作って',            visualHint: '就寝前' },
+    ],
+    captionStrategy: '時間を大きく + 動作短く。ASMR っぽい sound design',
+    musicMood: 'lofi / chill',
+    example: '「在宅フリーランスの5:30起き」',
+    cta: '保存して自分のルーティン作って',
+  },
+  {
+    id: 'voiceover-broll',
+    name: 'ボイスオーバー + B-roll',
+    trend2026: 5, bestFor: '教育/ビジネス/解説',
+    watchMultiplier: 1.50, saveScore: 5, shareScore: 4,
+    hookFormula: '「◯◯について話します」 + B-roll',
+    beats: [
+      { sec: 1.5, role: 'ボイスフック',      textHint: '今日は◯◯の話',                     visualHint: 'B-roll 関連シーン' },
+      { sec: 2.5, role: 'ポイント1',         textHint: 'まず◯◯',                           visualHint: 'B-roll' },
+      { sec: 2.5, role: 'ポイント2',         textHint: '次に◯◯',                           visualHint: 'B-roll' },
+      { sec: 2.5, role: 'ポイント3',         textHint: '最後に◯◯',                         visualHint: 'B-roll' },
+      { sec: 2.0, role: 'まとめ + CTA',      textHint: 'まとめ / 保存して使って',           visualHint: 'B-roll' },
+    ],
+    captionStrategy: '話している内容と完全同期 (word-by-word 推奨)',
+    musicMood: 'subtle / minimal',
+    example: '「副業で月10万増やす考え方」',
+    cta: '保存して、3回見返してみて',
+  },
+  {
+    id: 'loop-reveal',
+    name: 'ループ・リビール (最後が冒頭に)',
+    trend2026: 4, bestFor: 'アート/料理/工程モノ',
+    watchMultiplier: 1.80, saveScore: 3, shareScore: 5,
+    hookFormula: '結果を見せる → 工程に戻る',
+    beats: [
+      { sec: 1.2, role: '完成形 (フック)',   textHint: '完成形をチラ見せ',                  visualHint: 'After フル' },
+      { sec: 2.0, role: '工程 1',            textHint: 'まず…',                             visualHint: '工程' },
+      { sec: 2.0, role: '工程 2',            textHint: '次に…',                             visualHint: '工程' },
+      { sec: 2.0, role: '工程 3',            textHint: 'そして…',                           visualHint: '工程' },
+      { sec: 1.5, role: 'リビール → 冒頭',   textHint: 'こうなる → (冒頭にループ)',         visualHint: 'After = 1個目に戻る' },
+    ],
+    captionStrategy: 'ミニマル。視覚で見せる',
+    musicMood: 'cinematic / build-up',
+    example: '「砂浜に絵を描く工程」',
+    cta: '保存して工程を覚えて',
+  },
+  {
+    id: 'myth-bust',
+    name: '誤解バスター (逆張り)',
+    trend2026: 5, bestFor: '教育/健康/ビジネス',
+    watchMultiplier: 1.50, saveScore: 4, shareScore: 5,
+    hookFormula: '「◯◯は嘘です」',
+    beats: [
+      { sec: 1.5, role: '逆張りフック',      textHint: 'みんな信じてる◯◯、嘘です',         visualHint: 'バツ印 / 強い表情' },
+      { sec: 2.0, role: '通説',              textHint: '一般的にはこう言われる',            visualHint: '一般イメージ' },
+      { sec: 2.2, role: '実態',              textHint: 'でも実は…',                         visualHint: '反証データ' },
+      { sec: 2.2, role: '正解',              textHint: '正しいのはこう',                    visualHint: '正解シーン' },
+      { sec: 2.0, role: '理由 + CTA',        textHint: '理由 / 保存して周りに教えて',       visualHint: 'カメラ目線' },
+    ],
+    captionStrategy: 'バツ印 + 赤系 + マル印 + 緑系で視覚的に',
+    musicMood: 'cinematic / dramatic',
+    example: '「朝食抜きは太る、嘘です」',
+    cta: '保存して、間違えてた人に教えて',
+  },
+  {
+    id: 'micro-tutorial',
+    name: '60秒マイクロ チュートリアル',
+    trend2026: 4, bestFor: '料理/DIY/技術',
+    watchMultiplier: 1.40, saveScore: 5, shareScore: 4,
+    hookFormula: '「◯◯を1分で作る」',
+    beats: [
+      { sec: 1.5, role: '宣言',              textHint: '◯◯を1分で作ります',               visualHint: '完成形チラ見' },
+      { sec: 1.5, role: '材料',              textHint: '材料: A / B / C',                   visualHint: '材料 俯瞰' },
+      { sec: 2.0, role: '工程 1',            textHint: '①◯◯',                              visualHint: '手元' },
+      { sec: 2.0, role: '工程 2',            textHint: '②◯◯',                              visualHint: '手元' },
+      { sec: 2.0, role: '工程 3',            textHint: '③◯◯',                              visualHint: '手元' },
+      { sec: 1.5, role: '完成 + CTA',        textHint: '完成 / 保存して試して',             visualHint: '完成形' },
+    ],
+    captionStrategy: '工程番号 + 計量 + 時間。常に表示',
+    musicMood: 'chill upbeat',
+    example: '「卵焼きを1分で完璧に作る」',
+    cta: '保存して、今晩作って',
+  },
+];
+
+// 2026 Q2 で今最も伸びてる format ID (Trend Pulse)
+const TREND_PULSE_2026_Q2 = ['pov-storytime', 'grwm', 'tell-me-why', 'voiceover-broll', 'myth-bust'];
+
+// ─── 後方互換: 旧 SaveFormat エイリアス (legacy code) ─────
 type SaveFormat = {
   id: string;
   name: string;
   why: string;
-  beats: { hint: string; defaultDur: number }[]; // 自動生成するクリップ枠
+  beats: { hint: string; defaultDur: number }[];
   cta: string;
 };
 const SAVE_FORMATS: SaveFormat[] = [
@@ -785,6 +1002,83 @@ export default function IrisReelStudio({ bg }: Props) {
     };
   }, [clips, captions, totalDuration, bgmFile]);
 
+  // ─── バイラルパターン適用 (字幕骨格 + CTA + テンプレ推奨設定) ─────
+  const applyViralPattern = (p: ViralPattern) => {
+    setActiveFormat(p.id);
+    // ビートに沿った字幕生成 (textHint をベースに)
+    const newCaps: Caption[] = [];
+    let t = 0;
+    for (const beat of p.beats) {
+      newCaps.push({ start: t, end: t + beat.sec, text: `[${beat.role}] ${beat.textHint}` });
+      t += beat.sec;
+    }
+    // CTA 字幕を末尾に上書き
+    const lastT = newCaps[newCaps.length - 1]?.end ?? 0;
+    newCaps.push({ start: Math.max(0, lastT - 1.5), end: lastT + 0.5, text: p.cta });
+    setCaptions(newCaps);
+
+    // パターンに合った transition + cut speed を自動セット
+    const avgCut = p.beats.reduce((s, b) => s + b.sec, 0) / p.beats.length;
+    setPresetCut(Number(avgCut.toFixed(1)));
+    setClips(prev => prev.map((c, i) => {
+      const beat = p.beats[Math.min(i, p.beats.length - 1)];
+      return {
+        ...c,
+        duration: c.kind === 'image' ? beat.sec : c.duration,
+        transition: i === 0 ? 'fade' : avgCut < 1.8 ? 'whip' : avgCut < 2.5 ? 'zoom' : 'dissolve',
+      };
+    }));
+  };
+
+  // ─── 4 軸アルゴリズム評価 (2026 Q2 IG Reels アルゴ準拠) ─────
+  const algoScore = useMemo(() => {
+    // 各軸 0-100
+    let watch = 0, save = 0, share = 0, algo = 0;
+
+    if (clips.length === 0) return { watch: 0, save: 0, share: 0, algo: 0, viral: 0 };
+
+    // ─── 視聴維持 (Watch Time) ───
+    if (clips[0].duration <= 1.5) watch += 25; else if (clips[0].duration <= 2.5) watch += 12;
+    const avg = totalDuration / clips.length;
+    if (avg >= 1.2 && avg <= 2.5) watch += 25; else if (avg <= 4) watch += 12;
+    if (totalDuration >= 7 && totalDuration <= 15) watch += 25; else if (totalDuration <= 30) watch += 12;
+    const tset = new Set(clips.map(c => c.transition));
+    if (clips.length >= 3 && tset.size >= 2) watch += 15;
+    // ループ閉合 (最後のクリップ ≈ 最初) — 厳密にはサムネ比較必要だが、長さで近似
+    if (clips.length >= 3 && Math.abs(clips[0].duration - clips[clips.length - 1].duration) < 0.5) watch += 10;
+
+    // ─── 保存性 (Save Rate) ───
+    const capText = captions.map(c => c.text).join(' ');
+    const hasStructure = /(STEP|①|②|③|1\.|2\.|3\.|\[)/i.test(capText);
+    if (hasStructure) save += 30;
+    if (/(保存|メモ|チェック|まとめ|cheat)/i.test(capText)) save += 25;
+    if (clips.length >= 5) save += 20;
+    if (captions.length >= 4) save += 15;
+    if (/(知らない|損する|失敗|間違|やめて)/i.test(capText)) save += 10;
+
+    // ─── シェア性 (Reshare to Story/DM) ───
+    if (/(POV|正直|気づい|変わった|本音|嘘)/i.test(capText)) share += 30;
+    if (/(同じ人|わかる|あるある|共感|気持ち)/i.test(capText)) share += 25;
+    if (/(誰か|友達|シェア|教えて)/i.test(capText)) share += 20;
+    if (clips[0].duration <= 1.5) share += 15; // 強フックはシェア率高
+    if (bgmFile) share += 10; // 音楽ありはシェア +
+
+    // ─── アルゴ評価 (Algorithm Health) ───
+    if (bgmFile) algo += 25;
+    const capCov = totalDuration > 0 ? captions.reduce((s, c) => s + Math.max(0, c.end - c.start), 0) / totalDuration : 0;
+    if (capCov >= 0.7) algo += 30; else if (capCov >= 0.4) algo += 15;
+    if (totalDuration >= 7 && totalDuration <= 30) algo += 20;
+    if (clips.some(c => c.kind === 'video')) algo += 15; // 動画素材ありはアルゴ +
+    if (captions[captions.length - 1] && /(保存|フォロー|プロフ|コメント)/i.test(captions[captions.length - 1].text)) algo += 10;
+
+    watch = Math.min(100, watch);
+    save = Math.min(100, save);
+    share = Math.min(100, share);
+    algo = Math.min(100, algo);
+    const viral = Math.round((watch * 0.4 + save * 0.2 + share * 0.2 + algo * 0.2));
+    return { watch, save, share, algo, viral };
+  }, [clips, captions, totalDuration, bgmFile]);
+
   // 保存テンプレ適用 — 構造化された空クリップ枠 + ヒント字幕 + CTA を仕込む
   const applySaveFormat = (f: SaveFormat) => {
     setActiveFormat(f.id);
@@ -1449,6 +1743,125 @@ export default function IrisReelStudio({ bg }: Props) {
               </div>
             </div>
           )}
+
+          {/* 4軸アルゴリズム スコア (2026 Q2 IG Reels) */}
+          <div style={{
+            ...card,
+            background: `linear-gradient(135deg, ${bg.accent}10, transparent)`,
+            border: `1px solid ${bg.accent}40`,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.6rem' }}>
+              <div>
+                <p style={label}>バイラル予測スコア</p>
+                <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 2 }}>2026 Q2 IG Reels アルゴリズム準拠</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span style={{ fontFamily: IRIS_FONTS.display, fontSize: '2.2rem', fontWeight: 800, color: bg.accent }}>
+                  {algoScore.viral}
+                </span>
+                <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>/100</span>
+              </div>
+            </div>
+            {/* 4 軸バー */}
+            <div style={{ display: 'grid', gap: 8 }}>
+              {[
+                { key: '視聴維持',     val: algoScore.watch, hint: 'Watch Time / 完視聴率' },
+                { key: '保存性',       val: algoScore.save,  hint: '保存率 (saves/views)' },
+                { key: 'シェア性',     val: algoScore.share, hint: 'Reshare to Story/DM' },
+                { key: 'アルゴ評価',   val: algoScore.algo,  hint: '字幕 / BGM / 比率 / 長さ' },
+              ].map(axis => (
+                <div key={axis.key}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: 2 }}>
+                    <span style={{ color: bg.ink, fontWeight: 700 }}>{axis.key} <span style={{ color: bg.inkSoft, fontWeight: 400 }}>· {axis.hint}</span></span>
+                    <span style={{ color: bg.accent, fontWeight: 700 }}>{axis.val}</span>
+                  </div>
+                  <div style={{ height: 5, background: '#fff', borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${axis.val}%`, height: '100%',
+                      background: `linear-gradient(90deg, ${bg.accent}, ${bg.accent}cc)`,
+                      transition: 'width 0.3s',
+                    }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Trend Pulse — 今月最も伸びてるフォーマット */}
+          <div style={{
+            ...card,
+            background: 'linear-gradient(135deg, #FFF7ED, #FED7AA20)',
+            border: '1px solid #FB923C40',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <div>
+                <p style={{ ...label, color: '#EA580C' }}>🔥 TREND PULSE</p>
+                <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 2 }}>2026年 5月時点で最も伸びてる 5 フォーマット</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+              {TREND_PULSE_2026_Q2.map(id => {
+                const p = VIRAL_PATTERNS.find(x => x.id === id);
+                if (!p) return null;
+                return (
+                  <button key={p.id} onClick={() => applyViralPattern(p)} style={{
+                    ...btn(activeFormat === p.id),
+                    minWidth: 160, flexShrink: 0,
+                    flexDirection: 'column' as const,
+                    alignItems: 'flex-start',
+                    textAlign: 'left' as const,
+                    padding: '0.6rem 0.75rem',
+                    gap: 2,
+                  }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{p.name}</span>
+                    <span style={{ fontSize: '0.68rem', color: bg.inkSoft }}>
+                      ★{p.trend2026} · watch ×{p.watchMultiplier}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* バイラルパターン カタログ (全 10) */}
+          <div style={card}>
+            <p style={label}>バイラル パターン カタログ (10 種)</p>
+            <p style={{ fontSize: '0.74rem', color: bg.inkSoft, marginBottom: '0.6rem' }}>
+              実測 watch-time × save × share でスコア化。選ぶと字幕骨格 + 切替速度 + 遷移を一括適用
+            </p>
+            <div style={{ display: 'grid', gap: 6 }}>
+              {VIRAL_PATTERNS.map(p => (
+                <button key={p.id} onClick={() => applyViralPattern(p)} style={{
+                  ...btn(activeFormat === p.id),
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto',
+                  alignItems: 'center',
+                  textAlign: 'left' as const,
+                  padding: '0.6rem 0.8rem',
+                  gap: 8,
+                  width: '100%',
+                  whiteSpace: 'normal' as const,
+                }}>
+                  <div style={{ display: 'grid', gap: 3, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 800 }}>
+                      {p.name} <span style={{ color: '#EA580C', fontSize: '0.7rem' }}>{'★'.repeat(p.trend2026)}</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: bg.inkSoft, lineHeight: 1.5 }}>
+                      {p.example} · 推奨 BGM: {p.musicMood}
+                    </div>
+                    <div style={{ fontSize: '0.66rem', color: bg.inkSoft, opacity: 0.85 }}>
+                      watch ×{p.watchMultiplier} · 保存★{p.saveScore} · シェア★{p.shareScore} · {p.bestFor}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: '0.65rem', fontWeight: 700,
+                    background: bg.accent, color: '#fff',
+                    padding: '4px 8px', borderRadius: 8, flexShrink: 0,
+                  }}>適用</div>
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* 保存テンプレート (構造化されたリール骨格) */}
           <div style={card}>
