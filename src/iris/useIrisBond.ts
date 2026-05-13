@@ -74,7 +74,7 @@ export const BOND_QUESTIONS: BondQuestion[] = [
     id: 'name_to_call',
     category: 'lifestyle', minLevel: 0,
     prompt: 'なんて呼ばれたい?',
-    hint: 'Iris があなたを呼ぶ呼び方。源氏名でも、本名でも、ニックネームでも',
+    hint: 'Iris があなたを呼ぶ呼び方。本名・ニックネーム・別名、なんでも',
     kind: 'text', placeholder: '例: ミナ / Lily / りこ',
     points: 3,
   },
@@ -130,15 +130,18 @@ export const BOND_QUESTIONS: BondQuestion[] = [
     id: 'work_style',
     category: 'lifestyle', minLevel: 2,
     prompt: '今の働き方を 1 つ選ぶなら?',
-    hint: '正直に。他人には言いたくないことも、Iris には伝えていい',
+    hint: 'Iris は端末内にだけ保存。他人には見られない',
     kind: 'select', points: 4,
     options: [
-      { value: 'nightwork',     label: '夜の仕事 (キャバ / クラブ / ラウンジ)' },
       { value: 'influencer',    label: '専業インフルエンサー' },
-      { value: 'creator',       label: 'クリエイター / フリーランス' },
-      { value: 'corporate',     label: '会社員 + 副業 SNS' },
+      { value: 'creator',       label: 'クリエイター / アーティスト' },
+      { value: 'freelance',     label: 'フリーランス (デザイン/ライティング等)' },
       { value: 'entrepreneur',  label: '自分の事業 / 経営者' },
-      { value: 'hybrid',        label: '昼間も夜も色々やってる' },
+      { value: 'corporate',     label: '会社員 + 副業 SNS' },
+      { value: 'professional',  label: '士業 / 専門職 / 医療系' },
+      { value: 'nightwork',     label: '夜の仕事 (キャバ / クラブ / ラウンジ)' },
+      { value: 'hybrid',        label: '色々やってる (複業 / 二足以上)' },
+      { value: 'other',         label: 'その他' },
     ],
   },
   {
@@ -311,12 +314,15 @@ export function buildAiContext(profile: BondProfile): string {
   if (a.fav_color) lines.push(`今惹かれる色: ${a.fav_color}`);
   if (a.work_style) {
     const map: Record<string, string> = {
-      nightwork: '夜の仕事 (高単価指向)',
       influencer: '専業インフルエンサー',
-      creator: 'クリエイター / フリーランス',
-      corporate: '会社員 + 副業 SNS',
+      creator: 'クリエイター / アーティスト',
+      freelance: 'フリーランス',
       entrepreneur: '自分の事業 / 経営者',
+      corporate: '会社員 + 副業 SNS',
+      professional: '士業 / 専門職',
+      nightwork: '夜の仕事 (高単価指向)',
       hybrid: '複数の顔を持つマルチワーカー',
+      other: 'その他',
     };
     lines.push(`働き方: ${map[a.work_style as string] || a.work_style}`);
   }

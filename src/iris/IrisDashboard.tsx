@@ -2648,14 +2648,22 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
     setChecking(false);
   }
 
+  const [addErr, setAddErr] = useState<string>('');
   function addAccount() {
-    if (!newAcct.handle || !newAcct.displayName) return;
+    // ハンドル必須 (表示名は任意 — 空ならハンドルで代用)
+    const rawHandle = (newAcct.handle || '').trim().replace(/^@+/, '');
+    if (!rawHandle) {
+      setAddErr('ハンドル (@より後の文字) を入力してください');
+      return;
+    }
+    setAddErr('');
+    const displayName = (newAcct.displayName || '').trim() || rawHandle;
     multiAccount.add({
       type: newAcct.type as IrisAccount['type'],
       platform: newAcct.platform as IrisAccount['platform'],
-      handle: newAcct.handle,
-      displayName: newAcct.displayName,
-      avatarEmoji: newAcct.avatarEmoji,
+      handle: rawHandle,
+      displayName,
+      avatarEmoji: newAcct.avatarEmoji || '🌸',
     });
     setNewAcct({ type: 'personal', platform: 'instagram', handle: '', displayName: '', avatarEmoji: '🌸' });
     setShowAddAccount(false);
@@ -2726,9 +2734,9 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
               <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid ${bg.cardBorder}` }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
                   {[
-                    { label: 'ハンドル *', key: 'handle', placeholder: '@your_handle' },
-                    { label: '表示名 *', key: 'displayName', placeholder: 'サブ垢' },
-                    { label: '絵文字アバター', key: 'avatarEmoji', placeholder: '✨' },
+                    { label: 'ハンドル (必須)', key: 'handle', placeholder: '例: your_handle (@は不要)' },
+                    { label: 'ニックネーム (任意)', key: 'displayName', placeholder: '空欄でもOK' },
+                    { label: '絵文字アバター (任意)', key: 'avatarEmoji', placeholder: '✨' },
                   ].map(f => (
                     <div key={f.key}>
                       <label style={{ fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>{f.label}</label>
@@ -2756,9 +2764,14 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                     </select>
                   </div>
                 </div>
+                {addErr && (
+                  <div style={{ marginTop: '0.6rem', padding: '0.5rem 0.7rem', background: '#FEE2E2', color: '#991B1B', borderRadius: 8, fontSize: '0.8rem' }}>
+                    {addErr}
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.75rem' }}>
                   <button onClick={addAccount} style={{ ...btnPrimary(bg), fontSize: '0.85rem' }}>追加する</button>
-                  <button onClick={() => setShowAddAccount(false)} style={{ ...btnSecondary(bg), fontSize: '0.85rem' }}>キャンセル</button>
+                  <button onClick={() => { setShowAddAccount(false); setAddErr(''); }} style={{ ...btnSecondary(bg), fontSize: '0.85rem' }}>キャンセル</button>
                 </div>
               </div>
             </motion.div>
