@@ -12,8 +12,72 @@ import { shareToInstagram } from './instagramShare';
 import {
   Image as ImageIcon, Film, Type, Music, Download, Share2,
   Play, Square, Trash2, ChevronUp, ChevronDown, Sparkles,
-  Mic, Loader2,
+  Mic, Loader2, Wand2, AlertCircle, UploadCloud,
 } from 'lucide-react';
+
+// ─── 編集テンプレート (型) ─────────────────────
+type ReelTemplate = {
+  id: string;
+  name: string;
+  subtitle: string;
+  presetCut: number;
+  transition: Transition;
+  kenBurns: KenBurns;
+  caption: Partial<CaptionStyle>;
+  bgmHint: string; // BGM選択時のヒント
+};
+const REEL_TEMPLATES: ReelTemplate[] = [
+  {
+    id: 'vlog',         name: 'テンポ良い Vlog',  subtitle: '1秒切替・whip',
+    presetCut: 1.0, transition: 'whip', kenBurns: 'in',
+    caption: { font: '"Noto Sans JP"', size: 60, color: '#FFFFFF', stroke: '#000000', strokeWidth: 6, anim: 'pop' },
+    bgmHint: 'upbeat',
+  },
+  {
+    id: 'lookbook',     name: '上品ルックブック', subtitle: '2.5秒・dissolve',
+    presetCut: 2.5, transition: 'dissolve', kenBurns: 'out',
+    caption: { font: '"Shippori Mincho"', size: 52, color: '#FFF8F0', stroke: '#3B2A2A', strokeWidth: 4, anim: 'fade-in' },
+    bgmHint: 'cinematic',
+  },
+  {
+    id: 'product',      name: '商品紹介',         subtitle: '1.5秒・zoom',
+    presetCut: 1.5, transition: 'zoom', kenBurns: 'in',
+    caption: { font: '"Bebas Neue"', size: 70, color: '#FFFFFF', stroke: '#E1306C', strokeWidth: 5, anim: 'slide-up' },
+    bgmHint: 'energetic',
+  },
+  {
+    id: 'storytelling', name: 'ストーリー風',     subtitle: '3秒・fade',
+    presetCut: 3.0, transition: 'fade', kenBurns: 'left',
+    caption: { font: '"Klee One"', size: 56, color: '#FFFFFF', stroke: '#1F1A2E', strokeWidth: 5, anim: 'fade-in' },
+    bgmHint: 'emotional',
+  },
+  {
+    id: 'tiktok',       name: 'TikTok ハイテンポ', subtitle: '0.5秒・glitch',
+    presetCut: 0.5, transition: 'glitch', kenBurns: 'in',
+    caption: { font: '"Dela Gothic One"', size: 72, color: '#FFFF00', stroke: '#000000', strokeWidth: 7, anim: 'pop' },
+    bgmHint: 'trap/pop',
+  },
+  {
+    id: 'asmr',         name: 'ASMR / 落ち着き',  subtitle: '4秒・slide',
+    presetCut: 4.0, transition: 'slide', kenBurns: 'down',
+    caption: { font: '"Noto Serif JP"', size: 48, color: '#FFFFFF', stroke: '#2A2A2A', strokeWidth: 3, anim: 'fade-in' },
+    bgmHint: 'ambient',
+  },
+];
+
+// ─── BGM ライブラリ (Pixabay Music ・ CC0 ロイヤリティフリー) ─────────────
+// CDN: cdn.pixabay.com の audio エンドポイントは CORS 許可済み
+type BgmTrack = { id: string; name: string; mood: string; bpm: number; sec: number; url: string };
+const BGM_LIBRARY: BgmTrack[] = [
+  { id: 'chill-pop',    name: 'Chill Pop',         mood: 'upbeat',    bpm: 110, sec: 138, url: 'https://cdn.pixabay.com/audio/2022/10/25/audio_946bc7a8f7.mp3' },
+  { id: 'dreams',       name: 'Dreams',            mood: 'emotional', bpm: 70,  sec: 154, url: 'https://cdn.pixabay.com/audio/2023/06/28/audio_e44b1ccfa6.mp3' },
+  { id: 'lofi-study',   name: 'Lo-Fi Study',       mood: 'ambient',   bpm: 80,  sec: 145, url: 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3' },
+  { id: 'cinematic',    name: 'Cinematic Reveal',  mood: 'cinematic', bpm: 90,  sec: 92,  url: 'https://cdn.pixabay.com/audio/2023/02/28/audio_550d815fde.mp3' },
+  { id: 'happy-uplift', name: 'Happy Uplifting',   mood: 'upbeat',    bpm: 128, sec: 132, url: 'https://cdn.pixabay.com/audio/2022/10/16/audio_dc39bb83a3.mp3' },
+  { id: 'trap-beat',    name: 'Trap Beat',         mood: 'trap/pop',  bpm: 140, sec: 119, url: 'https://cdn.pixabay.com/audio/2022/03/15/audio_d1718beaa9.mp3' },
+  { id: 'inspiring',    name: 'Inspiring Day',     mood: 'energetic', bpm: 120, sec: 142, url: 'https://cdn.pixabay.com/audio/2024/01/31/audio_28bb86e62e.mp3' },
+  { id: 'soft-piano',   name: 'Soft Piano',        mood: 'emotional', bpm: 65,  sec: 105, url: 'https://cdn.pixabay.com/audio/2022/05/16/audio_259a2c7f76.mp3' },
+];
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -451,6 +515,14 @@ export default function IrisReelStudio({ bg }: Props) {
   const [convertedMp4, setConvertedMp4] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0); // 0..1 録画/出力進捗
 
+  // アップロードエラー / D&D 表示
+  const [uploadError, setUploadError] = useState<string>('');
+  const [dragOver, setDragOver] = useState(false);
+  // BGM ライブラリ プレビュー
+  const [bgmPreviewId, setBgmPreviewId] = useState<string | null>(null);
+  const [bgmLoading, setBgmLoading] = useState<string | null>(null);
+  const bgmPreviewRef = useRef<HTMLAudioElement | null>(null);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const playStartRef = useRef<number>(0);
@@ -478,6 +550,7 @@ export default function IrisReelStudio({ bg }: Props) {
   const addImages = async (files: FileList | File[]) => {
     const arr = Array.from(files);
     const newClips: Clip[] = [];
+    const failed: string[] = [];
     for (const f of arr) {
       const url = URL.createObjectURL(f);
       try {
@@ -491,14 +564,20 @@ export default function IrisReelStudio({ bg }: Props) {
           transition: 'fade',
           el: img,
         });
-      } catch {/* skip */}
+      } catch {
+        failed.push(f.name);
+        URL.revokeObjectURL(url);
+      }
     }
     setClips(prev => [...prev, ...newClips]);
+    if (failed.length) setUploadError(`画像を読み込めませんでした: ${failed.join(', ')}`);
+    else if (newClips.length) setUploadError('');
   };
 
   const addVideos = async (files: FileList | File[]) => {
     const arr = Array.from(files);
     const newClips: Clip[] = [];
+    const failed: string[] = [];
     for (const f of arr) {
       const url = URL.createObjectURL(f);
       try {
@@ -512,10 +591,89 @@ export default function IrisReelStudio({ bg }: Props) {
           transition: 'whip',
           el: v,
         });
-      } catch {/* skip */}
+      } catch (err) {
+        failed.push(`${f.name} (${(err as any)?.message || 'デコード不能'})`);
+        URL.revokeObjectURL(url);
+      }
     }
     setClips(prev => [...prev, ...newClips]);
+    if (failed.length) {
+      setUploadError(
+        `動画を読み込めませんでした: ${failed.join(', ')}\n` +
+        `→ Safari/iPhone は .mov に弱いので、.mp4 (H.264) を試してください`
+      );
+    } else if (newClips.length) {
+      setUploadError('');
+    }
   };
+
+  // ─── 共通: ドロップされたファイルを画像/動画に振り分け ─────
+  const handleDroppedFiles = (files: FileList | File[]) => {
+    const arr = Array.from(files);
+    const imgs = arr.filter(f => f.type.startsWith('image/') || /\.(jpe?g|png|webp|heic|gif)$/i.test(f.name));
+    const vids = arr.filter(f => f.type.startsWith('video/') || /\.(mp4|mov|webm|m4v)$/i.test(f.name));
+    const auds = arr.filter(f => f.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg)$/i.test(f.name));
+    if (imgs.length) void addImages(imgs);
+    if (vids.length) void addVideos(vids);
+    if (auds.length) setBgmFile(auds[0]);
+    if (!imgs.length && !vids.length && !auds.length) {
+      setUploadError('対応形式: 画像 (jpg/png/webp), 動画 (mp4/mov/webm), 音楽 (mp3/wav/m4a)');
+    }
+  };
+
+  // ─── 編集テンプレート適用 ─────────────
+  const applyTemplate = (t: ReelTemplate) => {
+    setPresetCut(t.presetCut);
+    setBeatCut(false);
+    setClips(prev => prev.map(c => ({
+      ...c,
+      transition: t.transition,
+      kenBurns: c.kind === 'image' ? t.kenBurns : 'none',
+      duration: c.kind === 'image' ? t.presetCut : c.duration,
+    })));
+    setCapStyle(prev => ({ ...prev, ...t.caption }));
+  };
+
+  // ─── BGM ライブラリから適用 ─────────────
+  const applyBgmFromLibrary = async (track: BgmTrack) => {
+    setBgmLoading(track.id);
+    try {
+      const res = await fetch(track.url, { mode: 'cors' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const file = new File([blob], `${track.id}.mp3`, { type: 'audio/mpeg' });
+      setBgmFile(file);
+      setBpm(track.bpm); // BPM はメタデータから既知
+      setUploadError('');
+    } catch (e: any) {
+      setUploadError(`BGM 取得失敗: ${e?.message || 'ネットワーク'} — 「BGM」ボタンから自分の楽曲を試せます`);
+    } finally {
+      setBgmLoading(null);
+    }
+  };
+
+  // BGM プレビュー (短く再生して試聴)
+  const togglePreview = (track: BgmTrack) => {
+    const audio = bgmPreviewRef.current;
+    if (!audio) return;
+    if (bgmPreviewId === track.id) {
+      audio.pause();
+      setBgmPreviewId(null);
+    } else {
+      audio.src = track.url;
+      audio.volume = 0.4;
+      audio.currentTime = 0;
+      audio.play().catch(() => {/* CORS / autoplay block */});
+      setBgmPreviewId(track.id);
+    }
+  };
+  useEffect(() => {
+    const a = bgmPreviewRef.current;
+    if (!a) return;
+    const onEnd = () => setBgmPreviewId(null);
+    a.addEventListener('ended', onEnd);
+    return () => a.removeEventListener('ended', onEnd);
+  }, []);
 
   const removeClip = (id: string) => {
     setClips(prev => {
@@ -914,9 +1072,51 @@ export default function IrisReelStudio({ bg }: Props) {
 
         {/* 右: タブで切り替え */}
         <div style={{ display: 'grid', gap: '1rem' }}>
-          {/* 素材追加 */}
+          {/* 編集テンプレート (型) */}
           <div style={card}>
+            <p style={label}><Wand2 size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} />編集テンプレート</p>
+            <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginBottom: '0.6rem' }}>
+              選ぶだけで切替速度・遷移・字幕スタイルが一括適用されます
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 6 }}>
+              {REEL_TEMPLATES.map(t => (
+                <button key={t.id} onClick={() => applyTemplate(t)} style={{
+                  ...btn(),
+                  flexDirection: 'column' as const,
+                  alignItems: 'flex-start',
+                  textAlign: 'left' as const,
+                  padding: '0.6rem 0.7rem',
+                  gap: 2,
+                  minHeight: 56,
+                }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{t.name}</span>
+                  <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{t.subtitle} · BGM: {t.bgmHint}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 素材追加 + ドラッグ&ドロップ */}
+          <div
+            style={{
+              ...card,
+              border: dragOver ? `2px dashed ${bg.accent}` : card.border,
+              background: dragOver ? `${bg.accent}10` : card.background,
+              transition: 'all 0.15s',
+            }}
+            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => {
+              e.preventDefault();
+              setDragOver(false);
+              if (e.dataTransfer.files) handleDroppedFiles(e.dataTransfer.files);
+            }}
+          >
             <p style={label}>素材</p>
+            <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginBottom: '0.6rem' }}>
+              <UploadCloud size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} />
+              ボタンを押すか、ここに画像 / 動画 / 音楽をドロップ
+            </p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <label style={btn()}>
                 <ImageIcon size={14} /> 画像 (複数可)
@@ -925,7 +1125,7 @@ export default function IrisReelStudio({ bg }: Props) {
               </label>
               <label style={btn()}>
                 <Film size={14} /> 動画 (複数可)
-                <input type="file" accept="video/*" multiple style={{ display: 'none' }}
+                <input type="file" accept="video/*,.mp4,.mov,.webm,.m4v" multiple style={{ display: 'none' }}
                   onChange={e => { if (e.target.files) addVideos(e.target.files); e.target.value = ''; }} />
               </label>
               <label style={btn()}>
@@ -934,6 +1134,17 @@ export default function IrisReelStudio({ bg }: Props) {
                   onChange={e => setBgmFile(e.target.files?.[0] || null)} />
               </label>
             </div>
+            {uploadError && (
+              <div style={{
+                marginTop: '0.6rem', padding: '0.55rem 0.75rem',
+                background: '#FEE2E2', color: '#991B1B', borderRadius: 8,
+                fontSize: '0.78rem', display: 'flex', gap: 6, alignItems: 'flex-start',
+                whiteSpace: 'pre-wrap' as const,
+              }}>
+                <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                <span>{uploadError}</span>
+              </div>
+            )}
             {bgmFile && (
               <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: '0.5rem' }}>
                 ♪ {bgmFile.name}{bpm ? ` ・推定 ${bpm} BPM` : ''}
@@ -960,6 +1171,60 @@ export default function IrisReelStudio({ bg }: Props) {
                 <Sparkles size={13} /> 自動カット適用
               </button>
             </div>
+          </div>
+
+          {/* BGM ライブラリ (ロイヤリティフリー) */}
+          <div style={card}>
+            <p style={label}><Music size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} />BGM ライブラリ</p>
+            <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginBottom: '0.6rem' }}>
+              Pixabay Music の CC0 トラック。試聴 → 適用ですぐ使えます。
+            </p>
+            <audio ref={bgmPreviewRef} style={{ display: 'none' }} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 6 }}>
+              {BGM_LIBRARY.map(t => {
+                const isPreview = bgmPreviewId === t.id;
+                const isLoading = bgmLoading === t.id;
+                return (
+                  <div key={t.id} style={{
+                    border: `1px solid ${bg.cardBorder}`,
+                    borderRadius: 10,
+                    padding: '0.55rem 0.7rem',
+                    background: '#fff',
+                    display: 'grid',
+                    gap: 4,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: bg.ink }}>{t.name}</span>
+                      <span style={{ fontSize: '0.7rem', color: bg.inkSoft }}>{t.bpm} BPM</span>
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: bg.inkSoft }}>{t.mood} · {Math.floor(t.sec / 60)}:{String(t.sec % 60).padStart(2, '0')}</div>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button onClick={() => togglePreview(t)} style={{
+                        ...btn(),
+                        padding: '0.3rem 0.55rem',
+                        fontSize: '0.72rem',
+                        flex: 1,
+                      }}>
+                        {isPreview ? <Square size={11} /> : <Play size={11} />}
+                        {isPreview ? '停止' : '試聴'}
+                      </button>
+                      <button onClick={() => applyBgmFromLibrary(t)} disabled={isLoading} style={{
+                        ...btn(true),
+                        padding: '0.3rem 0.55rem',
+                        fontSize: '0.72rem',
+                        flex: 1,
+                      }}>
+                        {isLoading ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                        {isLoading ? '読込' : '適用'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: '0.7rem', color: bg.inkSoft, marginTop: '0.5rem', fontStyle: 'italic' }}>
+              ※ 全曲 CC0 / Pixabay Music 提供。商用利用・SNS 投稿可。
+            </p>
           </div>
 
           {/* タイムライン */}
