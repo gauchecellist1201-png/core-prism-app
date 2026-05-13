@@ -36,14 +36,17 @@ export default function PrismSplash({ personaName }: SplashProps) {
     return () => clearTimeout(t);
   }, [show]);
 
+  // 初回 (まだペルソナ無し) と再訪でメッセージを切替
+  const isFirstTime = !personaName;
   const hour = new Date().getHours();
-  const oneLiner =
-    hour < 5  ? '深夜の思考に光を' :
-    hour < 10 ? '朝、5つの自分が起き上がる' :
-    hour < 14 ? '昼の決断を、磨いていきましょう' :
-    hour < 18 ? '夕方の俯瞰、ここで' :
-    hour < 22 ? '夜の戦略、組み立てていきましょう' :
-                '明日の自分を、今ここで設計' ;
+  const oneLiner = isFirstTime
+    ? 'あなたの人格を、インストールしましょう'
+    : hour < 5  ? '深夜の自分、ここで整理しよう' :
+      hour < 10 ? '朝の自分を、起動してください' :
+      hour < 14 ? '今のあなた、どの人格でいきますか' :
+      hour < 18 ? '人格を切り替える、ちょうどいい時間' :
+      hour < 22 ? '今夜の自分を、選びにきましたね' :
+                  '明日の自分を、今ここで決める';
 
   const dismiss = () => {
     try { sessionStorage.setItem(SESSION_KEY, '1'); } catch {/* */}
@@ -159,7 +162,7 @@ export default function PrismSplash({ personaName }: SplashProps) {
                 marginBottom: '1rem',
                 position: 'relative', zIndex: 2,
               }}>
-              {personaName} として、今日も。
+              「{personaName}」を起動します
             </motion.div>
           )}
 
