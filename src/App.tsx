@@ -29,6 +29,7 @@ import { useTheme } from './hooks/useTheme';
 import IrisApp from './iris/IrisApp';
 import BillingSuccess from './components/BillingSuccess';
 import KeynoteLanding from './keynote/KeynoteLanding';
+import PrismTaskScheduler from './prism/PrismTaskScheduler';
 
 import type { AppSettings, ChatMessage } from './types/identity';
 
@@ -387,6 +388,8 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+      {/* Prism: 音声タスク予約 (FAB + モーダル + バックグラウンド自動実行) */}
+      <PrismTaskScheduler />
     </>
   );
 }
