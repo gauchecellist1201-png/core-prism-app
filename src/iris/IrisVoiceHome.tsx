@@ -14,7 +14,9 @@ import {
   Image as ImageIcon, Calendar, Wallet, Sparkles, Trash2, ArrowUp,
   Bell, Flame,
 } from 'lucide-react';
-import { IrisSplash, IrisHeroGreeting } from './IrisWelcome';
+import { IrisHeroGreeting } from './IrisWelcome';
+import IrisBondCard from './IrisBondCard';
+import { useIrisBond } from './useIrisBond';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { useVoiceInput } from '../hooks/useVoiceInput';
@@ -41,6 +43,7 @@ interface Props {
 }
 
 export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQueue, onNavigate }: Props) {
+  const bond = useIrisBond();
   // チャット履歴 (localStorage 永続化)
   const [history, setHistory] = useState<AssistantMessage[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
@@ -164,6 +167,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
         userMessage: userText || '(画像)',
         userImages: userMsg.images,
         mediaKit,
+        bondContext: bond.aiContext,
       });
       const aiMsg: AssistantMessage = {
         role: 'assistant',
@@ -289,8 +293,8 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
         <SummaryCard bg={bg} label="今月報酬" value={'¥' + (earnings / 1000).toFixed(0) + 'K'} Icon={Wallet} />
       </div>
 
-      {/* ── シネマティック ウェルカム + AI 先回りヒーロー ── */}
-      <IrisSplash bg={bg} handle={mediaKit?.handleName} />
+      {/* ── AI 先回りヒーロー (スプラッシュは廃止: スムーズ導線優先) ── */}
+      <IrisBondCard bg={bg} />
       <IrisHeroGreeting
         bg={bg}
         handle={mediaKit?.handleName}

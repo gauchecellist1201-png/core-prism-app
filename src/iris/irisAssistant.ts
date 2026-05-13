@@ -98,6 +98,8 @@ export async function chatWithIris(opts: {
   userMessage: string;
   userImages?: { data: string; mediaType: string }[];
   mediaKit?: MediaKit;
+  /** Bond プロファイル: 親密度 + 個人文脈 (四柱推命含む) */
+  bondContext?: string;
 }): Promise<{ intent: Intent; reply: string; actions?: { label: string; tab: string; emoji?: string }[] }> {
   const apiKey = getApiKey(opts.settings);
   if (!apiKey) throw new Error('Claude APIキーが設定されていません');
@@ -139,7 +141,7 @@ export async function chatWithIris(opts: {
       body: JSON.stringify({
         model: opts.settings.preferredModel,
         max_tokens: 1500,
-        system: SYSTEM_PROMPT(opts.mediaKit),
+        system: SYSTEM_PROMPT(opts.mediaKit) + (opts.bondContext ? `\n\n## あなたが知っているこの人について (彼女があなたに教えてくれたこと)\n${opts.bondContext}\n\n## 振る舞いの指示\n親密度レベルに応じてトーンを調整してください。彼女の四柱推命の傾向 / 渇望 / 不安 を参照して、当たり前のアドバイスじゃなく彼女に固有の言葉で返してください。距離感の取り方は LEVEL VIBE の指示に従って。` : ''),
         messages,
       }),
     });
