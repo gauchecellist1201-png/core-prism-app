@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
-import type { DecisionMemo, DecisionInput, ExtractedDecisionFields } from '../lib/decisionMemo';
+import type { DecisionMemo, DecisionInput } from '../lib/decisionMemo';
 import {
   generateDecisionMemo,
   saveDecision,
@@ -18,51 +18,37 @@ interface Props {
   onSaveAsKnowledge: (title: string, content: string) => void;
 }
 
-type Phase = 'speak' | 'confirm' | 'result' | 'history';
+type Phase = 'speak' | 'result' | 'history';
+type Step = 'idle' | 'extracting' | 'analyzing';
 
 export default function DecisionMemoModal({ persona, settings, knowledge, onClose, onSaveAsKnowledge }: Props) {
   const [phase, setPhase] = useState<Phase>('speak');
   const [rawText, setRawText] = useState('');
-  const [extracted, setExtracted] = useState<ExtractedDecisionFields | null>(null);
   const [memo, setMemo] = useState<DecisionMemo | null>(null);
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<DecisionMemo[]>(loadDecisions);
 
-  const handleExtract = useCallback(async () => {
+  const handleDecide = useCallback(async () => {
     if (!rawText.trim()) {
       setError('迷ってる内容を書いてください');
       return;
     }
     setError(null);
-    setIsExtracting(true);
+    setStep('extracting');
     try {
       const fields = await extractDecisionFields(settings, rawText, persona);
       if (!fields.question) {
         throw new Error('決めたい質問が読み取れませんでした。もう少し具体的に書いてみてください。');
       }
-      setExtracted(fields);
-      setPhase('confirm');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsExtracting(false);
-    }
-  }, [rawText, settings, persona]);
-
-  const handleAnalyze = useCallback(async () => {
-    if (!extracted) return;
-    setError(null);
-    setIsAnalyzing(true);
-    try {
+      setStep('analyzing');
       const input: DecisionInput = {
-        question: extracted.question,
-        context: extracted.context || undefined,
-        options: extracted.options.length ? extracted.options : undefined,
-        criteria: extracted.criteria.length ? extracted.criteria : undefined,
-        timeHorizon: extracted.timeHorizon || undefined,
-        riskTolerance: extracted.riskTolerance,
+        question: fields.question,
+        context: fields.context || undefined,
+        options: fields.options.length ? fields.options : undefined,
+        criteria: fields.criteria.length ? fields.criteria : undefined,
+        timeHorizon: fields.timeHorizon || undefined,
+        riskTolerance: fields.riskTolerance,
       };
       const result = await generateDecisionMemo(settings, persona, input, knowledge);
       saveDecision(result);
@@ -72,9 +58,9 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setIsAnalyzing(false);
+      setStep('idle');
     }
-  }, [extracted, persona, settings, knowledge]);
+  }, [rawText, settings, persona, knowledge]);
 
   const handleSaveToKnowledge = useCallback(() => {
     if (!memo) return;
@@ -93,6 +79,15 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
     a.click();
     URL.revokeObjectURL(url);
   }, [memo]);
+
+  const handleReset = useCallback(() => {
+    setRawText('');
+    setMemo(null);
+    setError(null);
+    setPhase('speak');
+  }, []);
+
+  const isBusy = step !== 'idle';
 
   return (
     <motion.div
@@ -141,24 +136,57 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
           </div>
         </div>
 
-        {/* Phase: Speak (1 textarea) */}
+        {/* Phase: Speak (1 textarea → 直接 result) */}
         {phase === 'speak' && (
           <div className="flex-1 overflow-y-auto p-5 space-y-3">
             <div>
               <p className="text-fg text-base font-semibold mb-1">迷ってることを話してください</p>
               <p className="text-fg-muted text-xs leading-relaxed">
-                背景・選択肢・気がかり、思いつくままで OK。AI が要素を整理して、推奨を出します。
+                背景・選択肢・気がかり、思いつくままで OK。AI が要素を読み取って、推奨を一気に出します。
               </p>
             </div>
             <textarea
               value={rawText}
               onChange={e => setRawText(e.target.value)}
+              disabled={isBusy}
               placeholder={`例)\n新規事業に投資すべきか迷ってる。手元資金は 3000 万、半年で結果を出したい。\n候補は A 案 (SaaS) と B 案 (D2C)。A の方が伸び代はあるけど開発に時間がかかる。失敗したら次の調達が厳しくなる。`}
-              className="w-full text-base rounded-lg px-3 py-3 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg leading-relaxed"
+              className="w-full text-base rounded-lg px-3 py-3 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg leading-relaxed disabled:opacity-60"
               style={{ minHeight: 240, fontSize: 16 }}
               autoFocus
             />
-            {error && (
+
+            <AnimatePresence>
+              {isBusy && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="rounded-lg p-3 flex items-center gap-3"
+                  style={{ background: persona.accentColorLight, border: `1px solid ${persona.accentColor}40` }}
+                >
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                    className="rounded-full flex-shrink-0"
+                    style={{
+                      width: 18, height: 18,
+                      border: `2px solid ${persona.accentColor}30`,
+                      borderTopColor: persona.accentColor,
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-fg text-sm font-semibold">
+                      {step === 'extracting' ? '要素を読み取り中…' : '推奨を組み立て中…'}
+                    </p>
+                    <p className="text-fg-muted text-xs">
+                      {step === 'extracting'
+                        ? '質問・背景・選択肢・評価軸を抽出しています'
+                        : 'ナレッジを参照して根拠を整理しています'}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {error && !isBusy && (
               <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
                 {error}
               </div>
@@ -166,114 +194,19 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
             <div className="flex justify-end gap-2 pt-1">
               <button
                 onClick={onClose}
-                className="rounded-lg text-sm text-fg-muted hover:text-fg"
+                disabled={isBusy}
+                className="rounded-lg text-sm text-fg-muted hover:text-fg disabled:opacity-50"
                 style={{ minHeight: 44, padding: '0 16px' }}
               >キャンセル</button>
               <motion.button
-                onClick={handleExtract}
-                disabled={!rawText.trim() || isExtracting}
+                onClick={handleDecide}
+                disabled={!rawText.trim() || isBusy}
                 className="rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
                 style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, padding: '0 20px' }}
-                whileHover={!isExtracting ? { scale: 1.02 } : {}}
-                whileTap={!isExtracting ? { scale: 0.98 } : {}}
+                whileHover={!isBusy ? { scale: 1.02 } : {}}
+                whileTap={!isBusy ? { scale: 0.98 } : {}}
               >
-                {isExtracting ? '🧠 要素を整理中…' : '✨ 整理する'}
-              </motion.button>
-            </div>
-          </div>
-        )}
-
-        {/* Phase: Confirm (extracted 6 elements) */}
-        {phase === 'confirm' && extracted && (
-          <div className="flex-1 overflow-y-auto p-5 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-fg text-base font-semibold">こう理解しました</p>
-              <button
-                onClick={() => setPhase('speak')}
-                className="text-fg-muted hover:text-fg text-sm rounded"
-                style={{ minHeight: 36, padding: '0 8px' }}
-              >← 書き直す</button>
-            </div>
-            <p className="text-fg-muted text-xs">違うところがあれば直接書き換えてください。問題なければ「分析する」へ。</p>
-
-            <ConfirmField
-              label="決めたい質問"
-              accent={persona.accentColor}
-              value={extracted.question}
-              onChange={v => setExtracted({ ...extracted, question: v })}
-              multiline
-            />
-            <ConfirmField
-              label="背景・制約"
-              accent={persona.accentColor}
-              value={extracted.context}
-              onChange={v => setExtracted({ ...extracted, context: v })}
-              multiline
-              placeholder="(なし)"
-            />
-            <ConfirmListField
-              label="選択肢"
-              accent={persona.accentColor}
-              hint="空ならAIが補完"
-              value={extracted.options}
-              onChange={v => setExtracted({ ...extracted, options: v })}
-            />
-            <ConfirmListField
-              label="評価軸"
-              accent={persona.accentColor}
-              hint="空なら人格に応じてAIが設定"
-              value={extracted.criteria}
-              onChange={v => setExtracted({ ...extracted, criteria: v })}
-            />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <ConfirmField
-                label="時間軸"
-                accent={persona.accentColor}
-                value={extracted.timeHorizon}
-                onChange={v => setExtracted({ ...extracted, timeHorizon: v })}
-                placeholder="(未指定)"
-              />
-              <div>
-                <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">リスク許容度</label>
-                <div className="flex gap-1">
-                  {([['low', '低'], ['mid', '中'], ['high', '高']] as const).map(([id, label]) => (
-                    <button
-                      key={id}
-                      onClick={() => setExtracted({ ...extracted, riskTolerance: id })}
-                      className="flex-1 text-sm rounded-lg transition-all"
-                      style={{
-                        minHeight: 44,
-                        background: extracted.riskTolerance === id ? persona.accentColorLight : 'var(--surface-3)',
-                        color: extracted.riskTolerance === id ? persona.accentColor : 'var(--fg-muted)',
-                        border: `1px solid ${extracted.riskTolerance === id ? persona.accentColor + '50' : 'var(--border)'}`,
-                      }}
-                    >{label}</button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {error && (
-              <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
-                {error}
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => setPhase('speak')}
-                className="rounded-lg text-sm text-fg-muted hover:text-fg"
-                style={{ minHeight: 44, padding: '0 16px' }}
-              >戻る</button>
-              <motion.button
-                onClick={handleAnalyze}
-                disabled={!extracted.question.trim() || isAnalyzing}
-                className="rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
-                style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, padding: '0 20px' }}
-                whileHover={!isAnalyzing ? { scale: 1.02 } : {}}
-                whileTap={!isAnalyzing ? { scale: 0.98 } : {}}
-              >
-                {isAnalyzing ? '🧠 解析中…' : '🔍 分析する'}
+                {isBusy ? '🧠 思考中…' : '✨ 判断する'}
               </motion.button>
             </div>
           </div>
@@ -380,10 +313,10 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
               <button
-                onClick={() => setPhase('confirm')}
+                onClick={handleReset}
                 className="text-fg-muted hover:text-fg text-sm rounded"
                 style={{ minHeight: 44, padding: '0 12px' }}
-              >← 修正に戻る</button>
+              >← もう一度話す</button>
               <div className="flex gap-2">
                 <button
                   onClick={handleDownload}
@@ -427,7 +360,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
               ))
             )}
             <button
-              onClick={() => { setRawText(''); setExtracted(null); setMemo(null); setPhase('speak'); }}
+              onClick={handleReset}
               className="w-full mt-3 rounded-lg text-sm font-semibold"
               style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 48 }}
             >＋ 新しい意思決定を作成</button>
@@ -435,70 +368,6 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
         )}
       </motion.div>
     </motion.div>
-  );
-}
-
-function ConfirmField({
-  label, accent, value, onChange, multiline, placeholder,
-}: {
-  label: string;
-  accent: string;
-  value: string;
-  onChange: (v: string) => void;
-  multiline?: boolean;
-  placeholder?: string;
-}) {
-  return (
-    <div>
-      <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">
-        {label} {label === '決めたい質問' && <span style={{ color: accent }}>*</span>}
-      </label>
-      {multiline ? (
-        <textarea
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full rounded-lg px-3 py-2.5 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
-          style={{ minHeight: label === '決めたい質問' ? 64 : 80, fontSize: 16 }}
-        />
-      ) : (
-        <input
-          type="text"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full rounded-lg px-3 outline-none bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
-          style={{ minHeight: 44, fontSize: 16 }}
-        />
-      )}
-    </div>
-  );
-}
-
-function ConfirmListField({
-  label, accent, hint, value, onChange,
-}: {
-  label: string;
-  accent: string;
-  hint?: string;
-  value: string[];
-  onChange: (v: string[]) => void;
-}) {
-  const text = value.join('\n');
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <label className="block text-fg-muted text-xs tracking-wider uppercase">{label}</label>
-        {hint && <span className="text-fg-subtle text-xs">{hint}</span>}
-      </div>
-      <textarea
-        value={text}
-        onChange={e => onChange(e.target.value.split('\n').map(s => s.trim()).filter(Boolean))}
-        placeholder="(1行ずつ)"
-        className="w-full rounded-lg px-3 py-2 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
-        style={{ minHeight: 70, fontSize: 16, borderLeftColor: value.length ? accent + '60' : undefined }}
-      />
-    </div>
   );
 }
 
