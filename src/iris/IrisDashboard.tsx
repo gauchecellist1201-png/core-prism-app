@@ -24,7 +24,9 @@ import { shareToInstagram } from './instagramShare';
 import {
   Sparkles, TrendingUp, Search, Mail, Film, MessageSquare, Edit3,
   Camera, HeartPulse, Leaf, UsersRound, Users, Handshake, FileText,
-  Menu as MenuIcon, Gift, Palette, ArrowLeft,
+  Menu as MenuIcon, Gift, Palette, ArrowLeft, Clapperboard,
+  Download, Image as ImageIcon, Clipboard, RefreshCw, Wand2, Scissors,
+  Eye, Bookmark, BookmarkPlus, Send, Trash2, Loader2, Brain,
 } from 'lucide-react';
 import InviteShareCard from '../components/InviteShareCard';
 import type { LucideIcon } from 'lucide-react';
@@ -46,11 +48,13 @@ const IRIS_TAB_ICON: Record<string, LucideIcon> = {
   brands: Handshake,
   kit: FileText,
   invite: Gift,
+  reel: Clapperboard,
 };
 import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 import IrisDirectorView from './IrisDirectorView';
 import VideoStudio from '../components/VideoStudio';
+const IrisReelStudio = React.lazy(() => import('./IrisReelStudio'));
 import IrisTriageView from './IrisTriageView';
 import IrisCommunityView from './IrisCommunityView';
 import IrisStrategistView from './IrisStrategistView';
@@ -74,7 +78,7 @@ interface Props {
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite';
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
@@ -248,6 +252,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             { id: 'triage' as Tab,    l: '案件精査',       primary: true },
             { id: 'deals' as Tab,     l: '案件',           primary: true },
             { id: 'invite' as Tab,    l: '招待 +30日',     primary: true },
+            { id: 'reel' as Tab,      l: 'リール作成',     primary: true },
             { id: 'director' as Tab,  l: '丸投げ編集',     primary: false },
             { id: 'negotiate' as Tab, l: '交渉',           primary: false },
             { id: 'draft' as Tab,     l: '投稿下書き',     primary: false },
@@ -346,6 +351,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   { id: 'triage' as Tab,    l: '案件精査' },
                   { id: 'deals' as Tab,     l: '案件' },
                   { id: 'invite' as Tab,    l: '招待 +30日' },
+                  { id: 'reel' as Tab,      l: 'リール作成' },
                   { id: 'director' as Tab,  l: '丸投げ編集' },
                   { id: 'negotiate' as Tab, l: '交渉' },
                   { id: 'draft' as Tab,     l: '投稿下書き' },
@@ -447,6 +453,15 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             )}
             {tab === 'director' && <IrisDirectorView bg={bg} settings={settings} />}
             {tab === 'video' && <VideoStudio bg={bg} settings={settings} />}
+            {tab === 'reel' && (
+              <React.Suspense fallback={
+                <div style={{ textAlign: 'center', padding: '4rem 0', color: bg.inkSoft }}>
+                  リールスタジオを読み込み中…
+                </div>
+              }>
+                <IrisReelStudio bg={bg} />
+              </React.Suspense>
+            )}
             {tab === 'community' && <IrisCommunityView bg={bg} myHandle={mediaKit?.handleName} />}
             {tab === 'team' && <TeamView bg={bg} team={team} desk={desk} myDeals={myDeals} />}
             {tab === 'brands' && <BrandMatchView bg={bg} desk={desk} mediaKit={mediaKit} settings={settings} />}
@@ -1194,10 +1209,41 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
 }
 
 // ─── 画像加工スタジオ ─
+type ImagePreset = {
+  id: string;
+  name: string;
+  brightness: number;
+  contrast: number;
+  saturate: number;
+  warmth: number;
+  blur: number;
+  vignette: number;
+};
+
+const USER_PRESETS_KEY = 'iris-image-user-presets-v1';
+
+function loadUserPresets(): ImagePreset[] {
+  try {
+    const raw = localStorage.getItem(USER_PRESETS_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveUserPresets(presets: ImagePreset[]) {
+  try {
+    localStorage.setItem(USER_PRESETS_KEY, JSON.stringify(presets));
+  } catch { /* ignore quota */ }
+}
+
 function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings }) {
   const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [imgEl, setImgEl] = useState<HTMLImageElement | null>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const beforeCanvasRef = React.useRef<HTMLCanvasElement>(null);
 
   const [aspect, setAspect] = useState<'1:1' | '4:5' | '9:16' | 'free'>('1:1');
   const [brightness, setBrightness] = useState(100);
@@ -1207,10 +1253,25 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
   const [blur, setBlur] = useState(0);
   const [vignette, setVignette] = useState(0);
 
-  // AI プロンプト
+  // AI プロンプト + Vision
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState<string>('');
+  const [omakaseBusy, setOmakaseBusy] = useState(false);
+
+  // Before/After 比較
+  const [compareMode, setCompareMode] = useState(false);
+  const [comparePos, setComparePos] = useState(50); // 0-100, 仕切り位置
+  const compareWrapRef = React.useRef<HTMLDivElement>(null);
+
+  // ユーザープリセット
+  const [userPresets, setUserPresets] = useState<ImagePreset[]>(() => loadUserPresets());
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
+
+  // Instagram シェア
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareNote, setShareNote] = useState('');
 
   const presets = [
     { id: 'editorial', label: 'Editorial', c: { brightness: 95, contrast: 115, saturate: 85, warmth: -5, vignette: 25 } },
@@ -1297,7 +1358,19 @@ function ImageStudioView({ bg }: { bg: IrisBackgroundDef; settings?: AppSettings
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-  }, [imgEl, aspect, brightness, contrast, saturate, warmth, blur, vignette]);
+
+    // Before キャンバス (フィルタなし、同じクロップ)
+    if (compareMode && beforeCanvasRef.current) {
+      const bc = beforeCanvasRef.current;
+      const bctx = bc.getContext('2d');
+      if (bctx) {
+        bc.width = canvas.width;
+        bc.height = canvas.height;
+        bctx.filter = 'none';
+        bctx.drawImage(imgEl, cropX, cropY, cropW, cropH, 0, 0, bc.width, bc.height);
+      }
+    }
+  }, [imgEl, aspect, brightness, contrast, saturate, warmth, blur, vignette, compareMode]);
 
   const applyPreset = (p: typeof presets[0]) => {
     setBrightness(p.c.brightness);
@@ -1396,6 +1469,142 @@ JSON だけを返し、説明文や \`\`\`json は不要。`;
     }
   };
 
+  // ─── Vision: AI が画像を「見て」最適化 ───
+  const omakaseOptimize = async () => {
+    if (!imgEl || omakaseBusy) return;
+    setOmakaseBusy(true);
+    setAiNote('');
+    try {
+      // 解析用に縮小した base64 を作成 (トークン節約)
+      const tmp = document.createElement('canvas');
+      const maxSide = 384;
+      const s = Math.min(1, maxSide / Math.max(imgEl.naturalWidth, imgEl.naturalHeight));
+      tmp.width = Math.round(imgEl.naturalWidth * s);
+      tmp.height = Math.round(imgEl.naturalHeight * s);
+      const tctx = tmp.getContext('2d');
+      if (!tctx) throw new Error('canvas ctx 取得失敗');
+      tctx.drawImage(imgEl, 0, 0, tmp.width, tmp.height);
+      const dataUrl = tmp.toDataURL('image/jpeg', 0.82);
+      const b64 = dataUrl.split(',')[1] || '';
+
+      const sys = `あなたは Instagram フォトレタッチの達人。送られた写真を見て、最も「映える」加工パラメータを JSON で返す。
+返すキー (すべて必須):
+{
+  "brightness": number (50-150, %),
+  "contrast": number (50-150, %),
+  "saturate": number (0-200, %),
+  "warmth": number (-50 to 50),
+  "blur": number (0-10, 通常 0),
+  "vignette": number (0-100),
+  "aspect": "1:1" | "4:5" | "9:16" | "free",
+  "comment": "string (15-50字, 写真の特徴と意図)"
+}
+判断材料: 暗い写真は brightness↑、コントラスト不足はcontrast↑、肌色は warmth+8〜+15、夜景・モダンは warmth-5〜-10、ポートレートは vignette 15-30、料理・物撮りは saturate 105-115。
+JSON だけ返し、\`\`\`json は不要。`;
+
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
+              { type: 'text', text: 'この写真に最適な加工パラメータを返してください。' },
+            ],
+          }],
+          system: sys,
+          max_tokens: 400,
+        }),
+      });
+      const data = await res.json();
+      const text: string =
+        data?.content?.[0]?.text ||
+        data?.text ||
+        data?.message ||
+        '';
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('AI 応答に JSON が含まれていません');
+      const j = JSON.parse(match[0]);
+
+      if (typeof j.brightness === 'number') setBrightness(Math.max(50, Math.min(150, j.brightness)));
+      if (typeof j.contrast === 'number') setContrast(Math.max(50, Math.min(150, j.contrast)));
+      if (typeof j.saturate === 'number') setSaturate(Math.max(0, Math.min(200, j.saturate)));
+      if (typeof j.warmth === 'number') setWarmth(Math.max(-50, Math.min(50, j.warmth)));
+      if (typeof j.blur === 'number') setBlur(Math.max(0, Math.min(10, j.blur)));
+      if (typeof j.vignette === 'number') setVignette(Math.max(0, Math.min(100, j.vignette)));
+      if (['1:1', '4:5', '9:16', 'free'].includes(j.aspect)) setAspect(j.aspect);
+      setAiNote(`おまかせ完了 — ${j.comment || '画像に合わせて最適化しました'}`);
+    } catch (e: any) {
+      setAiNote(`おまかせ失敗: ${e?.message || '不明'} — 通信状況を確認してもう一度`);
+    } finally {
+      setOmakaseBusy(false);
+    }
+  };
+
+  // ─── プリセット保存 ───
+  const saveCurrentAsPreset = () => {
+    const name = newPresetName.trim();
+    if (!name) return;
+    const next: ImagePreset = {
+      id: `up-${Date.now()}`,
+      name,
+      brightness, contrast, saturate, warmth, blur, vignette,
+    };
+    const updated = [...userPresets.filter(p => p.name !== name), next];
+    setUserPresets(updated);
+    saveUserPresets(updated);
+    setShowSaveDialog(false);
+    setNewPresetName('');
+    setAiNote(`「${name}」を保存しました`);
+  };
+
+  const applyUserPreset = (p: ImagePreset) => {
+    setBrightness(p.brightness);
+    setContrast(p.contrast);
+    setSaturate(p.saturate);
+    setWarmth(p.warmth);
+    setBlur(p.blur);
+    setVignette(p.vignette);
+  };
+
+  const removeUserPreset = (id: string) => {
+    const updated = userPresets.filter(p => p.id !== id);
+    setUserPresets(updated);
+    saveUserPresets(updated);
+  };
+
+  // ─── Instagram 直行 ───
+  const shareToInsta = async () => {
+    if (!canvasRef.current || shareBusy) return;
+    setShareBusy(true);
+    setShareNote('');
+    try {
+      const blob: Blob = await new Promise((resolve, reject) => {
+        canvasRef.current!.toBlob(b => b ? resolve(b) : reject(new Error('blob 生成失敗')), 'image/jpeg', 0.95);
+      });
+      const result = await shareToInstagram({
+        caption: '#iris で加工',
+        image: blob,
+        filename: `iris-${Date.now()}.jpg`,
+      });
+      setShareNote(result.message);
+    } catch (e: any) {
+      setShareNote(`シェア失敗: ${e?.message || '不明'}`);
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
+  // ─── 比較スライダーのドラッグ ───
+  const onCompareMove = (clientX: number) => {
+    const wrap = compareWrapRef.current;
+    if (!wrap) return;
+    const r = wrap.getBoundingClientRect();
+    const x = Math.max(0, Math.min(r.width, clientX - r.left));
+    setComparePos(Math.round((x / r.width) * 100));
+  };
+
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
       <div>
@@ -1410,11 +1619,11 @@ JSON だけを返し、説明文や \`\`\`json は不要。`;
       {!imgUrl ? (
         <Card bg={bg}>
           <label style={{
-            display: 'block', textAlign: 'center', cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', cursor: 'pointer',
             padding: '4rem 2rem', border: `2px dashed ${bg.cardBorder}`,
-            borderRadius: 16, color: bg.inkSoft,
+            borderRadius: 16, color: bg.inkSoft, minHeight: 44,
           }}>
-            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>📷</div>
+            <Camera size={48} color={bg.accent} style={{ marginBottom: '0.85rem' }} />
             <div style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.4rem', color: bg.ink, marginBottom: '0.5rem' }}>
               写真をアップロード
             </div>
@@ -1440,9 +1649,109 @@ JSON だけを返し、説明文や \`\`\`json は不要。`;
             alignSelf: 'start',
           }}>
             <Card bg={bg}>
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 280, maxHeight: '60dvh' }}>
-                <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '56dvh', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,0.15)' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <button
+                  onClick={() => setCompareMode(v => !v)}
+                  style={{
+                    ...btnSecondary(bg),
+                    padding: '0.45rem 0.9rem',
+                    fontSize: '0.8rem',
+                    minHeight: 36,
+                    background: compareMode ? bg.accent : 'rgba(255,255,255,0.6)',
+                    color: compareMode ? '#fff' : bg.ink,
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                  }}
+                  aria-pressed={compareMode}
+                >
+                  <Eye size={14} />
+                  {compareMode ? '比較中' : 'Before / After'}
+                </button>
+                {compareMode && (
+                  <span style={{ fontSize: '0.72rem', color: bg.inkSoft }}>
+                    左: 元画像 / 右: 加工後 — スライダーをドラッグ
+                  </span>
+                )}
               </div>
+
+              {compareMode ? (
+                <div
+                  ref={compareWrapRef}
+                  onMouseMove={e => { if (e.buttons === 1) onCompareMove(e.clientX); }}
+                  onMouseDown={e => onCompareMove(e.clientX)}
+                  onTouchMove={e => onCompareMove(e.touches[0].clientX)}
+                  onTouchStart={e => onCompareMove(e.touches[0].clientX)}
+                  style={{
+                    position: 'relative', width: '100%',
+                    minHeight: 280, maxHeight: '60dvh',
+                    borderRadius: 12, overflow: 'hidden',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+                    cursor: 'ew-resize', userSelect: 'none', touchAction: 'none',
+                  }}
+                >
+                  <canvas
+                    ref={canvasRef}
+                    style={{ display: 'block', width: '100%', maxHeight: '56dvh', objectFit: 'contain' }}
+                  />
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    width: `${comparePos}%`, height: '100%',
+                    overflow: 'hidden',
+                    pointerEvents: 'none',
+                  }}>
+                    <canvas
+                      ref={beforeCanvasRef}
+                      style={{
+                        display: 'block',
+                        width: `${100 / Math.max(comparePos, 0.001) * 100}%`,
+                        maxWidth: 'none',
+                        height: '100%',
+                        objectFit: 'contain',
+                      }}
+                    />
+                  </div>
+                  {/* 仕切り線 */}
+                  <div style={{
+                    position: 'absolute', top: 0, bottom: 0,
+                    left: `${comparePos}%`, width: 2,
+                    background: '#fff',
+                    boxShadow: '0 0 0 1px rgba(0,0,0,0.3)',
+                    pointerEvents: 'none',
+                  }} />
+                  {/* つまみ */}
+                  <div style={{
+                    position: 'absolute', top: '50%',
+                    left: `${comparePos}%`, transform: 'translate(-50%, -50%)',
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: '#fff',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: bg.accent,
+                    pointerEvents: 'none',
+                  }}>
+                    <Eye size={18} />
+                  </div>
+                  {/* ラベル */}
+                  <div style={{
+                    position: 'absolute', top: 8, left: 8,
+                    background: 'rgba(0,0,0,0.6)', color: '#fff',
+                    padding: '0.2rem 0.55rem', borderRadius: 6,
+                    fontSize: '0.7rem', letterSpacing: '0.1em',
+                    pointerEvents: 'none',
+                  }}>BEFORE</div>
+                  <div style={{
+                    position: 'absolute', top: 8, right: 8,
+                    background: bg.accent, color: '#fff',
+                    padding: '0.2rem 0.55rem', borderRadius: 6,
+                    fontSize: '0.7rem', letterSpacing: '0.1em',
+                    pointerEvents: 'none',
+                  }}>AFTER</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 280, maxHeight: '60dvh' }}>
+                  <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '56dvh', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,0.15)' }} />
+                </div>
+              )}
+
               {/* AI ノート (操作直下) */}
               {aiNote && (
                 <div style={{
@@ -1454,6 +1763,16 @@ JSON だけを返し、説明文や \`\`\`json は不要。`;
                   {aiNote}
                 </div>
               )}
+              {shareNote && (
+                <div style={{
+                  marginTop: '0.4rem', padding: '0.55rem 0.9rem',
+                  background: 'rgba(255,255,255,0.6)', borderRadius: 10,
+                  fontSize: '0.78rem', color: bg.ink,
+                  border: `1px solid ${bg.cardBorder}`,
+                }}>
+                  {shareNote}
+                </div>
+              )}
             </Card>
           </div>
 
@@ -1463,8 +1782,27 @@ JSON だけを返し、説明文や \`\`\`json は不要。`;
           {/* ─── AI 加工 ─── */}
           <Card bg={bg}>
             <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>AI に頼む</p>
+
+            {/* おまかせ最適化 (Vision) */}
+            <button
+              onClick={omakaseOptimize}
+              disabled={omakaseBusy}
+              style={{
+                ...btnPrimary(bg),
+                width: '100%',
+                marginBottom: '0.7rem',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                opacity: omakaseBusy ? 0.6 : 1,
+                cursor: omakaseBusy ? 'not-allowed' : 'pointer',
+                minHeight: 44,
+              }}
+            >
+              {omakaseBusy ? <Loader2 size={16} className="iris-spin" /> : <Brain size={16} />}
+              {omakaseBusy ? 'AI が画像を見ています…' : 'おまかせ最適化 (AI が写真を分析)'}
+            </button>
+
             <p style={{ fontSize: '0.85rem', color: bg.inkSoft, marginBottom: '0.6rem', lineHeight: 1.6 }}>
-              「もっと暖かく」「エディトリアル風に」「Instagram 映え重視で」のように話しかけてください。
+              または「もっと暖かく」「エディトリアル風に」のように話しかけてください。
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <input
@@ -1548,11 +1886,113 @@ JSON だけを返し、説明文や \`\`\`json は不要。`;
                   borderRadius: 999, padding: '0.5rem 1.1rem',
                   fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer',
                   fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
+                  minHeight: 36,
                 }}>
                   {p.label}
                 </button>
               ))}
             </div>
+          </Card>
+
+          {/* ─── マイプリセット ─── */}
+          <Card bg={bg}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, margin: 0 }}>
+                マイプリセット
+              </p>
+              <button
+                onClick={() => setShowSaveDialog(v => !v)}
+                style={{
+                  ...btnSecondary(bg),
+                  padding: '0.4rem 0.8rem',
+                  fontSize: '0.78rem',
+                  minHeight: 36,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <BookmarkPlus size={14} />
+                現在の調整を保存
+              </button>
+            </div>
+
+            {showSaveDialog && (
+              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.7rem', flexWrap: 'wrap' }}>
+                <input
+                  value={newPresetName}
+                  onChange={e => setNewPresetName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') saveCurrentAsPreset(); }}
+                  placeholder="プリセット名 (例: 朝ごはん用)"
+                  autoFocus
+                  style={{
+                    flex: '1 1 200px', minWidth: 0,
+                    padding: '0.55rem 0.85rem',
+                    borderRadius: 10,
+                    border: `1px solid ${bg.cardBorder}`,
+                    background: 'rgba(255,255,255,0.7)',
+                    color: bg.ink,
+                    fontSize: '0.88rem',
+                    fontFamily: IRIS_FONTS.body,
+                  }}
+                />
+                <button
+                  onClick={saveCurrentAsPreset}
+                  disabled={!newPresetName.trim()}
+                  style={{
+                    ...btnPrimary(bg),
+                    padding: '0.55rem 1.1rem',
+                    minHeight: 40,
+                    opacity: !newPresetName.trim() ? 0.6 : 1,
+                  }}
+                >
+                  保存
+                </button>
+              </div>
+            )}
+
+            {userPresets.length === 0 ? (
+              <p style={{ fontSize: '0.8rem', color: bg.inkSoft, lineHeight: 1.6 }}>
+                よく使う調整値を「マイプリセット」として保存できます。スライダーを調整した状態で「保存」ボタンを押してください。
+              </p>
+            ) : (
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                {userPresets.map(p => (
+                  <div key={p.id} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    background: 'rgba(255,255,255,0.55)',
+                    border: `1px solid ${bg.cardBorder}`,
+                    borderRadius: 999,
+                    paddingLeft: '0.85rem',
+                  }}>
+                    <button
+                      onClick={() => applyUserPreset(p)}
+                      style={{
+                        background: 'transparent', border: 'none',
+                        color: bg.ink, fontSize: '0.84rem', fontWeight: 500,
+                        cursor: 'pointer', padding: '0.45rem 0.2rem',
+                        fontFamily: IRIS_FONTS.body, minHeight: 36,
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                      }}
+                    >
+                      <Bookmark size={12} />
+                      {p.name}
+                    </button>
+                    <button
+                      onClick={() => removeUserPreset(p.id)}
+                      aria-label={`${p.name} を削除`}
+                      style={{
+                        background: 'transparent', border: 'none',
+                        color: bg.inkSoft, cursor: 'pointer',
+                        padding: '0.4rem 0.7rem 0.4rem 0.4rem',
+                        display: 'inline-flex', alignItems: 'center',
+                        minHeight: 36, minWidth: 36,
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           <Card bg={bg}>
@@ -1574,11 +2014,11 @@ JSON だけを返し、説明文や \`\`\`json は不要。`;
               下のボタンから加工後の画像をダウンロード → サービスにアップロード → 背景透過 PNG をまた読み込み直してください。
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <a href="https://www.remove.bg/" target="_blank" rel="noreferrer" style={{ ...btnSecondary(bg), textDecoration: 'none' }}>
-                🪄 remove.bg を開く
+              <a href="https://www.remove.bg/" target="_blank" rel="noreferrer" style={{ ...btnSecondary(bg), textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44 }}>
+                <Wand2 size={14} /> remove.bg を開く
               </a>
-              <a href="https://www.cutout.pro/" target="_blank" rel="noreferrer" style={{ ...btnSecondary(bg), textDecoration: 'none' }}>
-                ✂ cutout.pro を開く
+              <a href="https://www.cutout.pro/" target="_blank" rel="noreferrer" style={{ ...btnSecondary(bg), textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44 }}>
+                <Scissors size={14} /> cutout.pro を開く
               </a>
             </div>
             <p style={{ color: bg.inkSoft, fontSize: '0.78rem', marginTop: '0.5rem', fontStyle: 'italic' }}>
@@ -1588,10 +2028,34 @@ JSON だけを返し、説明文や \`\`\`json は不要。`;
 
           <Card bg={bg}>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button onClick={download} style={btnPrimary(bg)}>📥 JPG ダウンロード</button>
-              <button onClick={downloadPng} style={btnSecondary(bg)}>🖼 PNG ダウンロード</button>
-              <button onClick={copyToClipboard} style={btnSecondary(bg)}>📋 コピー</button>
-              <button onClick={() => { setImgUrl(null); setImgEl(null); }} style={btnSecondary(bg)}>🔄 別の写真</button>
+              <button
+                onClick={shareToInsta}
+                disabled={shareBusy}
+                style={{
+                  ...btnPrimary(bg),
+                  background: 'linear-gradient(135deg, #f58529 0%, #dd2a7b 50%, #8134af 100%)',
+                  boxShadow: '0 6px 18px rgba(221, 42, 123, 0.45)',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  minHeight: 44,
+                  opacity: shareBusy ? 0.6 : 1,
+                  cursor: shareBusy ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {shareBusy ? <Loader2 size={14} className="iris-spin" /> : <Send size={14} />}
+                {shareBusy ? '準備中…' : 'Instagram で投稿'}
+              </button>
+              <button onClick={download} style={{ ...btnPrimary(bg), display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44 }}>
+                <Download size={14} /> JPG ダウンロード
+              </button>
+              <button onClick={downloadPng} style={{ ...btnSecondary(bg), display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44 }}>
+                <ImageIcon size={14} /> PNG ダウンロード
+              </button>
+              <button onClick={copyToClipboard} style={{ ...btnSecondary(bg), display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44 }}>
+                <Clipboard size={14} /> コピー
+              </button>
+              <button onClick={() => { setImgUrl(null); setImgEl(null); }} style={{ ...btnSecondary(bg), display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44 }}>
+                <RefreshCw size={14} /> 別の写真
+              </button>
             </div>
           </Card>
           </div>

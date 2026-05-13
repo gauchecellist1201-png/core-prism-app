@@ -846,6 +846,15 @@ input, textarea, select { font-family: inherit; }
   50% { opacity: 1; transform: scale(1.2); }
 }
 
+@keyframes iris-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.iris-spin {
+  animation: iris-spin 1s linear infinite;
+  transform-origin: center;
+}
+
 /* デスクトップ: 中央より少し右 (右サイドパネルとメインの隙間) */
 @media (min-width: 769px) {
   .cp-ai-fab-wrap {
