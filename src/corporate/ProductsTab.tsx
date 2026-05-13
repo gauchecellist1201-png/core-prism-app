@@ -58,7 +58,7 @@ const PRODUCTS: Record<ProductId, {
     name: 'CORE Iris',
     tagline: 'クリエイターの目に映る、6 つの世界。',
     for: 'クリエイター / インフルエンサー / SNS マネジメント',
-    description: '案件・分析・創作・ブランディング・コミュニティ・財務 ── クリエイター活動の 6 ファセットを統合するエージェント群。Instagram / X / TikTok / YouTube に対応。',
+    description: 'クリエイター活動の 6 つの仕事を 1 つの AI 相棒に統合。案件管理 / Instagram 解析 / 投稿生成 / ブランド統一 / コミュニティ運営 / 収益管理 — Instagram・X・TikTok・YouTube すべてに対応。',
     color: { primary: '#f472b6', secondary: '#fbbf24' },
     agents: [
       { name: '案件', en: 'BRIEFS', role: '受注→投稿→レポート' },
@@ -142,7 +142,11 @@ export default function ProductsTab() {
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
         }}>{p.tagline}</h2>
-        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', maxWidth: 640, margin: '0 auto', lineHeight: 1.9 }}>{p.description}</p>
+        <p style={{
+          fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)',
+          maxWidth: 640, margin: '0 auto', lineHeight: 1.9,
+          wordBreak: 'keep-all', overflowWrap: 'break-word',
+        }}>{p.description}</p>
         <p style={{ marginTop: '1rem', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
           <strong style={{ color: '#fff' }}>対象:</strong> {p.for}
         </p>
