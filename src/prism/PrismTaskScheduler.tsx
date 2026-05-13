@@ -95,7 +95,8 @@ export default function PrismTaskScheduler() {
       const j = await parseVoiceCommand(text);
       setParsed(j);
     } catch (e: any) {
-      setParseErr(e?.message || 'AI パース失敗');
+      // parseVoiceCommand は内部でフォールバックするので通常ここに来ない
+      setParseErr(e?.message || '解析失敗。時刻と内容を直接入力してください。');
     } finally {
       setParsing(false);
     }

@@ -87,6 +87,78 @@ kind 推定:
 - 「思い出させて」「リマインド」 → reminder
 - それ以外 → general`;
 
+// ─── ローカル時刻パーサー (AI 失敗時のフォールバック) ─────
+export function parseLocalTime(text: string, now = new Date()): Date {
+  const t = text.replace(/\s+/g, ' ');
+
+  // N時間後 / N分後 / N秒後
+  let m: RegExpMatchArray | null;
+  if ((m = t.match(/(\d+)\s*時間後/))) {
+    return new Date(now.getTime() + Number(m[1]) * 3_600_000);
+  }
+  if ((m = t.match(/(\d+)\s*分後/))) {
+    return new Date(now.getTime() + Number(m[1]) * 60_000);
+  }
+  if ((m = t.match(/(\d+)\s*秒後/))) {
+    return new Date(now.getTime() + Number(m[1]) * 1000);
+  }
+  // 今すぐ / すぐに
+  if (/今すぐ|すぐに/.test(t)) {
+    return new Date(now.getTime() + 60_000);
+  }
+
+  // 「明日朝」「明後日朝」
+  const day = /明後日/.test(t) ? 2 : /明日/.test(t) ? 1 : 0;
+  // 時:分
+  let h: number | null = null;
+  let mi = 0;
+  if ((m = t.match(/(\d{1,2})\s*時\s*(\d{1,2})\s*分/))) {
+    h = Number(m[1]); mi = Number(m[2]);
+  } else if ((m = t.match(/(\d{1,2})[:時](\d{2})/))) {
+    h = Number(m[1]); mi = Number(m[2]);
+  } else if ((m = t.match(/(\d{1,2})\s*時/))) {
+    h = Number(m[1]);
+  } else if (/朝/.test(t)) {
+    h = 8;
+  } else if (/昼|お昼/.test(t)) {
+    h = 12;
+  } else if (/午後|昼過ぎ/.test(t)) {
+    h = 14;
+  } else if (/夕方/.test(t)) {
+    h = 17;
+  } else if (/夜/.test(t)) {
+    h = 20;
+  } else if (/深夜/.test(t)) {
+    h = 23;
+  }
+
+  if (h !== null) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + day);
+    d.setHours(h, mi, 0, 0);
+    // 今日の時刻が既に過去で、明日指定がなければ翌日に
+    if (day === 0 && d.getTime() <= now.getTime()) {
+      d.setDate(d.getDate() + 1);
+    }
+    return d;
+  }
+
+  // 何もマッチしなければ 30 分後
+  return new Date(now.getTime() + 30 * 60_000);
+}
+
+// ─── kind 推定 (ローカル) ─────
+function guessKindLocal(text: string): TaskKind {
+  if (/チラシ|フライヤー|ポスター|ビラ/.test(text)) return 'flyer';
+  if (/投稿|SNS|Instagram|インスタ|X|ツイート|TikTok|tiktok/.test(text)) return 'post';
+  if (/メール|返信|連絡/.test(text)) return 'email';
+  if (/報告書|議事録|資料|文書|レジュメ|ピッチ|スライド|講演|プレゼン|セミナー/.test(text)) return 'document';
+  if (/分析|レポート|調査|サマリ/.test(text)) return 'analysis';
+  if (/画像|イラスト|絵|ロゴ|バナー|サムネ/.test(text)) return 'image_brief';
+  if (/思い出させ|リマインド|アラーム|教えて/.test(text)) return 'reminder';
+  return 'general';
+}
+
 export async function parseVoiceCommand(rawInput: string, now = new Date()): Promise<{
   scheduledAt: string;
   kind: TaskKind;
@@ -94,31 +166,59 @@ export async function parseVoiceCommand(rawInput: string, now = new Date()): Pro
   description: string;
   prompt: string;
 }> {
+  // 1. AI パースを試す
   const userMsg = `現在時刻: ${now.toISOString()} (JST)
 入力: ${rawInput}
 
 JSON で返答してください。`;
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messages: [{ role: 'user', content: userMsg }],
-      system: PARSE_SYSTEM,
-      max_tokens: 800,
-    }),
-  });
-  if (!res.ok) throw new Error(`AI parse failed: ${res.status}`);
-  const data = await res.json();
-  const text: string = data.text || data.content || data.message || '';
-  const m = text.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('AI 応答に JSON が含まれていません');
-  const j = JSON.parse(m[0]);
+  let aiErr = '';
+  try {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',  // 互換ハンドル — 実際は Gemini にマップされる
+        messages: [{ role: 'user', content: userMsg }],
+        system: PARSE_SYSTEM,
+        max_tokens: 800,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text: string =
+        (data?.content && Array.isArray(data.content) ? data.content[0]?.text : '') ||
+        data?.text || data?.message || '';
+      const m = text.match(/\{[\s\S]*\}/);
+      if (m) {
+        const j = JSON.parse(m[0]);
+        return {
+          scheduledAt: String(j.scheduledAt),
+          kind: (j.kind || guessKindLocal(rawInput)) as TaskKind,
+          title: String(j.title || rawInput.slice(0, 30)),
+          description: String(j.description || rawInput),
+          prompt: String(j.prompt || rawInput),
+        };
+      }
+      aiErr = 'AI 応答に JSON が含まれていません';
+    } else {
+      const errJson = await res.json().catch(() => null);
+      aiErr = errJson?.error?.message || `AI API error: ${res.status}`;
+    }
+  } catch (e: any) {
+    aiErr = e?.message || 'ネットワークエラー';
+  }
+
+  // 2. AI が失敗 → ローカルパースでフォールバック (タスクは必ず作成できる)
+  console.warn('[Prism Task] AI parse failed, using local parser:', aiErr);
+  const scheduled = parseLocalTime(rawInput, now);
+  const kind = guessKindLocal(rawInput);
+  const title = rawInput.length > 30 ? rawInput.slice(0, 28) + '…' : rawInput;
   return {
-    scheduledAt: String(j.scheduledAt),
-    kind: (j.kind || 'general') as TaskKind,
-    title: String(j.title || rawInput.slice(0, 30)),
-    description: String(j.description || rawInput),
-    prompt: String(j.prompt || rawInput),
+    scheduledAt: scheduled.toISOString(),
+    kind,
+    title,
+    description: rawInput,
+    prompt: rawInput,
   };
 }
 
@@ -168,14 +268,21 @@ export async function executeTask(task: PrismTask): Promise<string> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      model: 'claude-opus-4-5',
       messages: [{ role: 'user', content: task.prompt }],
       system,
       max_tokens: 2500,
     }),
   });
-  if (!res.ok) throw new Error(`AI 実行失敗: ${res.status}`);
+  if (!res.ok) {
+    const errJson = await res.json().catch(() => null);
+    const msg = errJson?.error?.message || `AI API error: ${res.status}`;
+    throw new Error(msg);
+  }
   const data = await res.json();
-  return String(data.text || data.content || data.message || '');
+  // Anthropic compatible: { content: [{ type: 'text', text: '...' }] }
+  if (Array.isArray(data.content) && data.content[0]?.text) return String(data.content[0].text);
+  return String(data.text || data.message || '');
 }
 
 // ─── 通知 ─────
