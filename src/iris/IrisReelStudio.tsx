@@ -314,6 +314,360 @@ const VIRAL_PATTERNS: ViralPattern[] = [
 // 2026 Q2 で今最も伸びてる format ID (Trend Pulse)
 const TREND_PULSE_2026_Q2 = ['pov-storytime', 'grwm', 'tell-me-why', 'voiceover-broll', 'myth-bust'];
 
+// ─── コミュニティ テンプレート (CapCut の参加型エコシステムを食う) ─────
+type CommunityTemplate = {
+  id: string;
+  name: string;
+  author: string;          // クリエイター名
+  authorHandle?: string;   // @handle
+  category: string;        // 'beauty'|'food'|'fitness'|'lifestyle'|'business'|'education'
+  uses: number;            // 使用回数 (人気度)
+  saves: number;           // 保存数
+  reelVersion: 1;          // フォーマットバージョン
+  // 再現できる設定
+  patternId?: string;      // VIRAL_PATTERNS ID (ベース)
+  clipDurations: number[]; // 各クリップの秒
+  transitions: Transition[];
+  kenBurns: KenBurns[];
+  captions: { start: number; end: number; text: string }[];
+  captionStyle: Partial<CaptionStyle>;
+  bgmMood?: string;        // 推奨 BGM mood
+  presetCut: number;
+  thumbnailHint: string;   // 1行説明
+  hashtag?: string;        // 拡散用ハッシュタグ
+};
+
+// 厳選キュレーション 12 種 (シード)
+const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
+  {
+    id: 'ct-beauty-grwm',
+    name: '🌸 朝の5分メイクGRWM',
+    author: 'Aiko Beauty',
+    authorHandle: '@aiko_beauty',
+    category: 'beauty',
+    uses: 12450,
+    saves: 8920,
+    reelVersion: 1,
+    patternId: 'grwm',
+    clipDurations: [1.2, 1.5, 1.5, 1.5, 1.5, 2.0],
+    transitions: ['fade', 'whip', 'whip', 'whip', 'whip', 'dissolve'],
+    kenBurns: ['in', 'in', 'in', 'in', 'in', 'none'],
+    captions: [
+      { start: 0,    end: 1.2,  text: '5分で完成 / 通勤メイク' },
+      { start: 1.2,  end: 2.7,  text: '①トーンアップ下地' },
+      { start: 2.7,  end: 4.2,  text: '②ナチュラルブラウン' },
+      { start: 4.2,  end: 5.7,  text: '③涙袋でうるツヤ' },
+      { start: 5.7,  end: 7.2,  text: '④グロウチーク' },
+      { start: 7.2,  end: 9.2,  text: '保存して同じメイクしてね' },
+    ],
+    captionStyle: { font: '"Klee One"', size: 60, color: '#FFF', stroke: '#E1306C', strokeWidth: 5, anim: 'pop' },
+    bgmMood: 'chill pop',
+    presetCut: 1.5,
+    thumbnailHint: '5枚の画像 (準備→完成) を用意',
+    hashtag: '#5分メイク #GRWM #時短メイク',
+  },
+  {
+    id: 'ct-food-recipe',
+    name: '🍝 1分パスタレシピ',
+    author: 'Cook Yuki',
+    authorHandle: '@cook_yuki',
+    category: 'food',
+    uses: 9870,
+    saves: 14200,
+    reelVersion: 1,
+    patternId: 'micro-tutorial',
+    clipDurations: [1.5, 1.5, 2.0, 2.0, 2.0, 1.5],
+    transitions: ['fade', 'zoom', 'whip', 'whip', 'whip', 'dissolve'],
+    kenBurns: ['in', 'in', 'in', 'in', 'in', 'out'],
+    captions: [
+      { start: 0,    end: 1.5,  text: '1分で本格カルボナーラ' },
+      { start: 1.5,  end: 3.0,  text: '材料: パスタ200g / 卵2 / ベーコン100g' },
+      { start: 3.0,  end: 5.0,  text: '①パスタを茹でる (8分)' },
+      { start: 5.0,  end: 7.0,  text: '②ベーコンをカリッと' },
+      { start: 7.0,  end: 9.0,  text: '③火を止めて卵を絡める' },
+      { start: 9.0,  end: 10.5, text: '保存して、今夜作って' },
+    ],
+    captionStyle: { font: '"M PLUS Rounded 1c"', size: 56, color: '#FFF', stroke: '#1F1A2E', strokeWidth: 5, anim: 'slide-up' },
+    bgmMood: 'chill upbeat',
+    presetCut: 1.8,
+    thumbnailHint: '6枚: 完成→材料→工程3→完成',
+    hashtag: '#時短レシピ #カルボナーラ #1分料理',
+  },
+  {
+    id: 'ct-fitness-3things',
+    name: '💪 痩せるための3つの真実',
+    author: 'Fit Ryo',
+    authorHandle: '@fit_ryo',
+    category: 'fitness',
+    uses: 8540,
+    saves: 11800,
+    reelVersion: 1,
+    patternId: 'three-things',
+    clipDurations: [1.5, 2.2, 2.2, 2.5, 1.8],
+    transitions: ['fade', 'glitch', 'glitch', 'zoom', 'dissolve'],
+    kenBurns: ['in', 'in', 'in', 'in', 'none'],
+    captions: [
+      { start: 0,    end: 1.5,  text: '知らないと損する 3 つの痩せ習慣' },
+      { start: 1.5,  end: 3.7,  text: '①朝起きてすぐ水500ml' },
+      { start: 3.7,  end: 5.9,  text: '②階段で消費x2' },
+      { start: 5.9,  end: 8.4,  text: '③20時以降は食べない' },
+      { start: 8.4,  end: 10.2, text: '保存して、明日から実践' },
+    ],
+    captionStyle: { font: '"Bebas Neue"', size: 72, color: '#FFFF00', stroke: '#000', strokeWidth: 7, anim: 'pop' },
+    bgmMood: 'energetic',
+    presetCut: 2.0,
+    thumbnailHint: '5枚: フック→3シーン→CTA',
+    hashtag: '#ダイエット #痩せる #生活習慣',
+  },
+  {
+    id: 'ct-mental-pov',
+    name: '🌙 メンタルが軽くなった瞬間',
+    author: 'Hana Soul',
+    authorHandle: '@hana_soul',
+    category: 'lifestyle',
+    uses: 7320,
+    saves: 9500,
+    reelVersion: 1,
+    patternId: 'pov-storytime',
+    clipDurations: [1.5, 2.0, 2.5, 2.5, 1.5],
+    transitions: ['fade', 'dissolve', 'dissolve', 'dissolve', 'fade'],
+    kenBurns: ['in', 'left', 'left', 'right', 'out'],
+    captions: [
+      { start: 0,    end: 1.5,  text: 'POV: メンタルが軽くなった瞬間' },
+      { start: 1.5,  end: 3.5,  text: '頑張り続けてた日々' },
+      { start: 3.5,  end: 6.0,  text: '「やめていい」って言われて泣いた' },
+      { start: 6.0,  end: 8.5,  text: '休む勇気を持ってから人生変わった' },
+      { start: 8.5,  end: 10.0, text: '同じ経験ある人、保存して' },
+    ],
+    captionStyle: { font: '"Shippori Mincho"', size: 52, color: '#FFF8F0', stroke: '#3B2A2A', strokeWidth: 4, anim: 'fade-in' },
+    bgmMood: 'emotional / cinematic',
+    presetCut: 2.0,
+    thumbnailHint: '5枚: 顔→日常→転機→今→ラスト',
+    hashtag: '#メンタルケア #自分らしく #癒し',
+  },
+  {
+    id: 'ct-business-myth',
+    name: '💼 副業の「嘘」3選',
+    author: 'Biz Ken',
+    authorHandle: '@biz_ken',
+    category: 'business',
+    uses: 6890,
+    saves: 12300,
+    reelVersion: 1,
+    patternId: 'myth-bust',
+    clipDurations: [1.5, 2.0, 2.2, 2.2, 2.0],
+    transitions: ['fade', 'glitch', 'whip', 'zoom', 'dissolve'],
+    kenBurns: ['in', 'in', 'in', 'in', 'none'],
+    captions: [
+      { start: 0,    end: 1.5,  text: 'みんな信じてる副業の嘘、3つ' },
+      { start: 1.5,  end: 3.5,  text: '①「最初から月10万」は嘘' },
+      { start: 3.5,  end: 5.7,  text: '②「楽して稼げる」は嘘' },
+      { start: 5.7,  end: 7.9,  text: '③「副業=不労所得」は嘘' },
+      { start: 7.9,  end: 9.9,  text: '保存して、騙されないで' },
+    ],
+    captionStyle: { font: '"Dela Gothic One"', size: 64, color: '#FFF', stroke: '#E1306C', strokeWidth: 6, anim: 'pop' },
+    bgmMood: 'cinematic / dramatic',
+    presetCut: 2.0,
+    thumbnailHint: '5枚: フック→3つの嘘→正解',
+    hashtag: '#副業 #ビジネス #起業',
+  },
+  {
+    id: 'ct-edu-3wishes',
+    name: '📚 学生時代の自分に伝えたい3つ',
+    author: 'Yuki Edu',
+    authorHandle: '@yuki_edu',
+    category: 'education',
+    uses: 5670,
+    saves: 8900,
+    reelVersion: 1,
+    patternId: 'three-things',
+    clipDurations: [1.5, 2.2, 2.2, 2.5, 1.8],
+    transitions: ['fade', 'slide', 'slide', 'dissolve', 'fade'],
+    kenBurns: ['in', 'in', 'in', 'in', 'none'],
+    captions: [
+      { start: 0,    end: 1.5,  text: '学生時代の自分に伝えたい3つ' },
+      { start: 1.5,  end: 3.7,  text: '①英語は今すぐ始めて' },
+      { start: 3.7,  end: 5.9,  text: '②人脈は早めに作って' },
+      { start: 5.9,  end: 8.4,  text: '③お金の勉強を1分でも' },
+      { start: 8.4,  end: 10.2, text: '保存して、後悔しない選択を' },
+    ],
+    captionStyle: { font: '"Noto Sans JP"', size: 58, color: '#FFF', stroke: '#0033A0', strokeWidth: 5, anim: 'slide-up' },
+    bgmMood: 'inspiring',
+    presetCut: 2.0,
+    thumbnailHint: '5枚: フック→3シーン→CTA',
+    hashtag: '#自己投資 #学び #人生変える',
+  },
+  {
+    id: 'ct-travel-day',
+    name: '✈️ 京都ひとり旅 1日',
+    author: 'Miki Travels',
+    authorHandle: '@miki_travels',
+    category: 'lifestyle',
+    uses: 4920,
+    saves: 7800,
+    reelVersion: 1,
+    patternId: 'day-timestamp',
+    clipDurations: [1.5, 1.8, 1.8, 1.8, 1.8, 1.5],
+    transitions: ['fade', 'dissolve', 'dissolve', 'dissolve', 'dissolve', 'fade'],
+    kenBurns: ['in', 'left', 'right', 'left', 'right', 'out'],
+    captions: [
+      { start: 0,    end: 1.5,  text: '京都ひとり旅、24時間' },
+      { start: 1.5,  end: 3.3,  text: '7:00  伏見稲荷 朝の鳥居' },
+      { start: 3.3,  end: 5.1,  text: '11:00 嵐山 竹林の道' },
+      { start: 5.1,  end: 6.9,  text: '14:00 抹茶パフェ' },
+      { start: 6.9,  end: 8.7,  text: '17:00 祇園 夕暮れ' },
+      { start: 8.7,  end: 10.2, text: '保存して、同じルートで' },
+    ],
+    captionStyle: { font: '"Shippori Mincho"', size: 50, color: '#FFF', stroke: '#1F1A2E', strokeWidth: 4, anim: 'fade-in' },
+    bgmMood: 'lofi / chill',
+    presetCut: 1.8,
+    thumbnailHint: '6枚: 朝→昼→夕の風景',
+    hashtag: '#京都旅行 #ひとり旅 #トラベル',
+  },
+  {
+    id: 'ct-style-grwm',
+    name: '👗 デート前のGRWM',
+    author: 'Style Lemon',
+    authorHandle: '@style_lemon',
+    category: 'beauty',
+    uses: 4580,
+    saves: 6900,
+    reelVersion: 1,
+    patternId: 'grwm',
+    clipDurations: [1.2, 1.5, 1.5, 1.5, 1.5, 2.0],
+    transitions: ['fade', 'whip', 'whip', 'whip', 'whip', 'dissolve'],
+    kenBurns: ['in', 'in', 'in', 'in', 'in', 'none'],
+    captions: [
+      { start: 0,    end: 1.2,  text: '彼と会う日のフル準備' },
+      { start: 1.2,  end: 2.7,  text: '①香水: 甘めフローラル' },
+      { start: 2.7,  end: 4.2,  text: '②服: 白ワンピ + ベージュ' },
+      { start: 4.2,  end: 5.7,  text: '③ヘア: ふんわり巻き' },
+      { start: 5.7,  end: 7.2,  text: '④メイク: 血色UP' },
+      { start: 7.2,  end: 9.2,  text: '保存して、デート前に見返して' },
+    ],
+    captionStyle: { font: '"Klee One"', size: 58, color: '#FFF', stroke: '#E1306C', strokeWidth: 4, anim: 'pop' },
+    bgmMood: 'chill pop / dreamy',
+    presetCut: 1.5,
+    thumbnailHint: '6枚: 準備工程→完成',
+    hashtag: '#デート #GRWM #モテメイク',
+  },
+  {
+    id: 'ct-room-transform',
+    name: '🏠 6畳ワンルーム Before / After',
+    author: 'Room Saya',
+    authorHandle: '@room_saya',
+    category: 'lifestyle',
+    uses: 4120,
+    saves: 9200,
+    reelVersion: 1,
+    patternId: 'transformation',
+    clipDurations: [1.5, 2.0, 2.0, 2.0, 2.5, 1.5],
+    transitions: ['fade', 'whip', 'whip', 'whip', 'zoom', 'fade'],
+    kenBurns: ['none', 'in', 'in', 'in', 'out', 'none'],
+    captions: [
+      { start: 0,    end: 1.5,  text: '6畳ワンルーム、生まれ変わった' },
+      { start: 1.5,  end: 3.5,  text: 'Before: 散らかった部屋' },
+      { start: 3.5,  end: 5.5,  text: '①不要品を3袋分処分' },
+      { start: 5.5,  end: 7.5,  text: '②家具を白で統一' },
+      { start: 7.5,  end: 10.0, text: 'After: 開放感のある空間' },
+      { start: 10.0, end: 11.5, text: '保存して、同じ模様替えに' },
+    ],
+    captionStyle: { font: '"Noto Sans JP"', size: 54, color: '#FFF', stroke: '#3B2A2A', strokeWidth: 5, anim: 'fade-in' },
+    bgmMood: 'cinematic / inspiring',
+    presetCut: 2.0,
+    thumbnailHint: '6枚: Before→工程→After',
+    hashtag: '#一人暮らし #模様替え #ミニマル',
+  },
+  {
+    id: 'ct-money-mistake',
+    name: '💸 20代でやりがちな金欠の理由',
+    author: 'Money Sho',
+    authorHandle: '@money_sho',
+    category: 'business',
+    uses: 3890,
+    saves: 8400,
+    reelVersion: 1,
+    patternId: 'three-things',
+    clipDurations: [1.5, 2.2, 2.2, 2.5, 1.8],
+    transitions: ['fade', 'glitch', 'glitch', 'zoom', 'dissolve'],
+    kenBurns: ['in', 'in', 'in', 'in', 'none'],
+    captions: [
+      { start: 0,    end: 1.5,  text: '20代でやりがちな金欠の理由3つ' },
+      { start: 1.5,  end: 3.7,  text: '①コンビニ依存 (月3万損失)' },
+      { start: 3.7,  end: 5.9,  text: '②サブスク放置 (月8000円)' },
+      { start: 5.9,  end: 8.4,  text: '③お酒の付き合い (月2万)' },
+      { start: 8.4,  end: 10.2, text: '保存して、家計見直して' },
+    ],
+    captionStyle: { font: '"Dela Gothic One"', size: 60, color: '#FFFF00', stroke: '#000', strokeWidth: 6, anim: 'pop' },
+    bgmMood: 'energetic / trap',
+    presetCut: 2.0,
+    thumbnailHint: '5枚: フック→3理由→対策',
+    hashtag: '#貯金 #節約 #20代',
+  },
+  {
+    id: 'ct-honest-pov',
+    name: '🔥 正直、フリーランス3年でわかった',
+    author: 'Free Rina',
+    authorHandle: '@free_rina',
+    category: 'business',
+    uses: 3420,
+    saves: 6100,
+    reelVersion: 1,
+    patternId: 'tell-me-why',
+    clipDurations: [1.5, 2.0, 2.0, 2.5, 1.5],
+    transitions: ['fade', 'dissolve', 'dissolve', 'dissolve', 'fade'],
+    kenBurns: ['in', 'in', 'in', 'in', 'none'],
+    captions: [
+      { start: 0,    end: 1.5,  text: '正直、フリーランス3年でわかった真実' },
+      { start: 1.5,  end: 3.5,  text: '自由は幻想だった' },
+      { start: 3.5,  end: 5.5,  text: '会社員より働いてる日もある' },
+      { start: 5.5,  end: 8.0,  text: 'でも自分の時間を選べる幸せはある' },
+      { start: 8.0,  end: 9.5,  text: '迷ってる人、コメントで話そう' },
+    ],
+    captionStyle: { font: '"Shippori Mincho"', size: 50, color: '#FFF8F0', stroke: '#1F1A2E', strokeWidth: 4, anim: 'fade-in' },
+    bgmMood: 'ambient / emotional',
+    presetCut: 2.0,
+    thumbnailHint: '5枚: 顔→日常→葛藤→今→ラスト',
+    hashtag: '#フリーランス #働き方 #本音',
+  },
+  {
+    id: 'ct-skincare-loop',
+    name: '🌟 夜スキンケアのループリビール',
+    author: 'Skin Maki',
+    authorHandle: '@skin_maki',
+    category: 'beauty',
+    uses: 3120,
+    saves: 5800,
+    reelVersion: 1,
+    patternId: 'loop-reveal',
+    clipDurations: [1.2, 2.0, 2.0, 2.0, 1.5],
+    transitions: ['fade', 'whip', 'whip', 'whip', 'fade'],
+    kenBurns: ['none', 'in', 'in', 'in', 'none'],
+    captions: [
+      { start: 0,    end: 1.2,  text: '朝、肌がプルプルになる夜の手順' },
+      { start: 1.2,  end: 3.2,  text: '①ダブル洗顔ナシ・オイルクレンジング' },
+      { start: 3.2,  end: 5.2,  text: '②セラム1分パッティング' },
+      { start: 5.2,  end: 7.2,  text: '③オイル2滴で蓋' },
+      { start: 7.2,  end: 8.7,  text: '→翌朝こうなる (冒頭にループ)' },
+    ],
+    captionStyle: { font: '"Klee One"', size: 56, color: '#FFF', stroke: '#E1306C', strokeWidth: 5, anim: 'fade-in' },
+    bgmMood: 'chill / ASMR',
+    presetCut: 2.0,
+    thumbnailHint: '5枚: 完成肌→工程→ループ用に冒頭と末尾同じ',
+    hashtag: '#スキンケア #夜活 #美肌',
+  },
+];
+
+const TEMPLATE_CATEGORIES: { id: string; label: string }[] = [
+  { id: 'all',       label: 'すべて' },
+  { id: 'beauty',    label: '美容' },
+  { id: 'food',      label: '料理' },
+  { id: 'fitness',   label: 'フィットネス' },
+  { id: 'lifestyle', label: 'ライフスタイル' },
+  { id: 'business',  label: 'ビジネス' },
+  { id: 'education', label: '教育' },
+];
+
 // ─── 後方互換: 旧 SaveFormat エイリアス (legacy code) ─────
 type SaveFormat = {
   id: string;
@@ -535,6 +889,8 @@ interface Clip {
   transition: Transition;  // 次クリップへの切替
   /** メディア要素 (HTMLImageElement / HTMLVideoElement) — ロード後に格納 */
   el?: HTMLImageElement | HTMLVideoElement;
+  /** 速度ランプ (動画クリップのみ): 0.25-4.0. デフォルト 1.0 */
+  speed?: number;
 }
 
 interface Caption {
@@ -878,6 +1234,10 @@ export default function IrisReelStudio({ bg }: Props) {
   const [showScore] = useState(true);
   // フック / 保存テンプレ選択
   const [activeFormat, setActiveFormat] = useState<string | null>(null);
+  // コミュニティテンプレ
+  const [templateCategory, setTemplateCategory] = useState<string>('all');
+  const [shareUrl, setShareUrl] = useState<string>('');
+  const [shareCopied, setShareCopied] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
@@ -1029,6 +1389,81 @@ export default function IrisReelStudio({ bg }: Props) {
       };
     }));
   };
+
+  // ─── コミュニティ テンプレート 適用 ─────
+  const applyCommunityTemplate = (t: CommunityTemplate) => {
+    setActiveFormat(t.id);
+    setCaptions(t.captions);
+    setCapStyle(prev => ({ ...prev, ...t.captionStyle }));
+    setPresetCut(t.presetCut);
+    setBeatCut(false);
+    // 既存クリップに duration / transition / kenBurns を再マップ
+    setClips(prev => prev.map((c, i) => {
+      const idx = Math.min(i, t.clipDurations.length - 1);
+      return {
+        ...c,
+        duration: c.kind === 'image' ? t.clipDurations[idx] : c.duration,
+        transition: t.transitions[idx] || c.transition,
+        kenBurns: c.kind === 'image' ? (t.kenBurns[idx] || c.kenBurns) : 'none',
+      };
+    }));
+  };
+
+  // ─── テンプレートを共有 URL でエクスポート ─────
+  const exportAsTemplate = () => {
+    const tpl: Partial<CommunityTemplate> = {
+      reelVersion: 1,
+      clipDurations: clips.map(c => c.duration),
+      transitions: clips.map(c => c.transition),
+      kenBurns: clips.map(c => c.kenBurns),
+      captions,
+      captionStyle: capStyle,
+      presetCut,
+      patternId: activeFormat || undefined,
+    };
+    // Base64URL エンコード → 共有 URL
+    const json = JSON.stringify(tpl);
+    const b64 = btoa(unescape(encodeURIComponent(json)));
+    const url = `${window.location.origin}/iris?template=${b64}`;
+    setShareUrl(url);
+    // クリップボードに自動コピー
+    navigator.clipboard.writeText(url).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2500);
+    }).catch(() => {/* */});
+  };
+
+  // ─── URL のテンプレートを起動時に取り込み ─────
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const b64 = url.searchParams.get('template');
+    if (!b64) return;
+    try {
+      const json = decodeURIComponent(escape(atob(b64)));
+      const tpl = JSON.parse(json) as Partial<CommunityTemplate>;
+      if (tpl.reelVersion !== 1) return;
+      if (tpl.captions) setCaptions(tpl.captions);
+      if (tpl.captionStyle) setCapStyle(prev => ({ ...prev, ...tpl.captionStyle }));
+      if (typeof tpl.presetCut === 'number') setPresetCut(tpl.presetCut);
+      // 既存クリップに反映 (後から素材追加した時にも適用される構造で保存)
+      if (tpl.clipDurations) {
+        setClips(prev => prev.map((c, i) => {
+          const idx = Math.min(i, tpl.clipDurations!.length - 1);
+          return {
+            ...c,
+            duration: c.kind === 'image' ? tpl.clipDurations![idx] : c.duration,
+            transition: tpl.transitions?.[idx] || c.transition,
+            kenBurns: c.kind === 'image' ? (tpl.kenBurns?.[idx] || c.kenBurns) : 'none',
+          };
+        }));
+      }
+      // URL クリーンアップ (履歴汚さない)
+      url.searchParams.delete('template');
+      window.history.replaceState({}, '', url.toString());
+    } catch {/* invalid template */}
+    // 初回のみ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── 4 軸アルゴリズム評価 (2026 Q2 IG Reels アルゴ準拠) ─────
   const algoScore = useMemo(() => {
@@ -1292,13 +1727,20 @@ export default function IrisReelStudio({ bg }: Props) {
     }
     const local = (globalT - cur.start) / Math.max(cur.clip.duration, 0.001);
 
-    // 動画は currentTime を合わせる
+    // 動画は currentTime を合わせる + 速度ランプ反映
     if (cur.clip.kind === 'video' && cur.clip.el instanceof HTMLVideoElement) {
       const v = cur.clip.el;
+      const speed = cur.clip.speed ?? 1;
+      // 表示時間 (cur.clip.duration) で動画を speed 倍速で再生
+      const playableDur = (v.duration || cur.clip.duration) / speed;
       const target = clamp(local * (v.duration || cur.clip.duration), 0, (v.duration || cur.clip.duration) - 0.05);
       if (Math.abs(v.currentTime - target) > 0.1) {
         try { v.currentTime = target; } catch {/* */}
       }
+      if (v.playbackRate !== speed) {
+        try { v.playbackRate = speed; } catch {/* */}
+      }
+      void playableDur;
     }
 
     const el = cur.clip.el;
@@ -1823,6 +2265,106 @@ export default function IrisReelStudio({ bg }: Props) {
             </div>
           </div>
 
+          {/* コミュニティ テンプレート (CapCut 食う) */}
+          <div style={{
+            ...card,
+            background: 'linear-gradient(135deg, #FDF2F8, #FCE7F3 60%, transparent)',
+            border: '1px solid #F472B640',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: '0.6rem', flexWrap: 'wrap' }}>
+              <div>
+                <p style={{ ...label, color: '#BE185D' }}>🌸 コミュニティ テンプレート</p>
+                <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 2 }}>
+                  他のクリエイターが作って共有した型を1クリックで適用
+                </p>
+              </div>
+              <button onClick={exportAsTemplate} disabled={!clips.length && !captions.length} style={{
+                ...btn(true),
+                fontSize: '0.74rem',
+                padding: '0.4rem 0.85rem',
+              }}>
+                <Share2 size={12} /> 自分の型を共有
+              </button>
+            </div>
+            {/* 共有 URL 表示 */}
+            {shareUrl && (
+              <div style={{
+                padding: '0.6rem 0.75rem',
+                background: '#fff',
+                border: `1px solid ${bg.cardBorder}`,
+                borderRadius: 8,
+                marginBottom: '0.6rem',
+                fontSize: '0.74rem',
+                display: 'flex', gap: 8, alignItems: 'center',
+              }}>
+                <span style={{ color: bg.inkSoft, flexShrink: 0 }}>共有 URL:</span>
+                <input
+                  readOnly
+                  value={shareUrl}
+                  onClick={e => (e.target as HTMLInputElement).select()}
+                  style={{
+                    flex: 1, minWidth: 0,
+                    border: 'none', outline: 'none',
+                    fontSize: '0.74rem', fontFamily: 'monospace',
+                    background: 'transparent', color: bg.ink,
+                  }}
+                />
+                <button onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true); setTimeout(() => setShareCopied(false), 2000); }} style={{
+                  ...btn(),
+                  padding: '0.25rem 0.6rem',
+                  fontSize: '0.7rem',
+                }}>
+                  {shareCopied ? '✓ コピー済' : 'コピー'}
+                </button>
+              </div>
+            )}
+            {/* カテゴリフィルタ */}
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: '0.6rem' }}>
+              {TEMPLATE_CATEGORIES.map(c => (
+                <button key={c.id} onClick={() => setTemplateCategory(c.id)} style={{
+                  ...btn(templateCategory === c.id),
+                  fontSize: '0.72rem',
+                  padding: '0.3rem 0.65rem',
+                }}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            {/* テンプレートグリッド */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 6 }}>
+              {COMMUNITY_TEMPLATES
+                .filter(t => templateCategory === 'all' || t.category === templateCategory)
+                .sort((a, b) => b.uses - a.uses)
+                .map(t => (
+                  <button key={t.id} onClick={() => applyCommunityTemplate(t)} style={{
+                    ...btn(activeFormat === t.id),
+                    flexDirection: 'column' as const,
+                    alignItems: 'stretch',
+                    textAlign: 'left' as const,
+                    padding: '0.65rem 0.8rem',
+                    gap: 4,
+                    width: '100%',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, lineHeight: 1.3 }}>{t.name}</span>
+                      <span style={{ fontSize: '0.65rem', color: bg.inkSoft, flexShrink: 0 }}>{t.authorHandle}</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: bg.inkSoft, lineHeight: 1.4 }}>
+                      {t.thumbnailHint}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, fontSize: '0.66rem', color: bg.inkSoft, marginTop: 2 }}>
+                      <span>👁 {(t.uses / 1000).toFixed(1)}k</span>
+                      <span>💾 {(t.saves / 1000).toFixed(1)}k</span>
+                      <span>♪ {t.bgmMood}</span>
+                    </div>
+                  </button>
+                ))}
+            </div>
+            <p style={{ fontSize: '0.68rem', color: bg.inkSoft, marginTop: '0.5rem', fontStyle: 'italic' }}>
+              ※ 「自分の型を共有」で URL を作成すると、他のクリエイターと同じ構成を共有できます
+            </p>
+          </div>
+
           {/* バイラルパターン カタログ (全 10) */}
           <div style={card}>
             <p style={label}>バイラル パターン カタログ (10 種)</p>
@@ -2128,6 +2670,26 @@ export default function IrisReelStudio({ bg }: Props) {
                         style={{ ...inp, width: 'auto', padding: '0.25rem 0.4rem' }}>
                         {TRANSITIONS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                       </select>
+                      {c.kind === 'video' && (
+                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                          速度
+                          <select value={c.speed ?? 1} onChange={e => {
+                            const sp = Number(e.target.value);
+                            const v = c.el as HTMLVideoElement | undefined;
+                            if (v) v.playbackRate = sp;
+                            updateClip(c.id, { speed: sp });
+                          }} style={{ ...inp, width: 'auto', padding: '0.25rem 0.4rem' }}>
+                            <option value={0.25}>0.25×</option>
+                            <option value={0.5}>0.5×</option>
+                            <option value={0.75}>0.75×</option>
+                            <option value={1}>1×</option>
+                            <option value={1.5}>1.5×</option>
+                            <option value={2}>2×</option>
+                            <option value={3}>3×</option>
+                            <option value={4}>4×</option>
+                          </select>
+                        </label>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: 'grid', gap: 4 }}>
