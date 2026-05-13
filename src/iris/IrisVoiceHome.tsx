@@ -547,6 +547,10 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
                 : `0 12px 32px ${bg.accent}66`,
               animation: listening ? 'voice-home-pulse 1.6s ease-in-out infinite' : 'none',
               opacity: voiceAvailable ? 1 : 0.5,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
             }}
           >
             {listening ? (
