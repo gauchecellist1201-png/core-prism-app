@@ -561,10 +561,27 @@ export default function IdentityDashboard({
                 ctx={{
                   brand: 'prism',
                   user: persona.name,
-                  persona: `${persona.name} (${persona.subtitle || ''})`,
+                  persona: `${persona.name} (${persona.subtitle || ''})${persona.description ? ' - ' + persona.description : ''}`,
                   now: new Date(),
+                  // ナレッジは AI が「ある中身を見て」提案するための地盤
+                  // 直近 10 件の title + summary + 上位 actions + tags を投入
                   knowledge: knowledgeItems.length
-                    ? `${knowledgeItems.length} 件のナレッジ。最新: ${knowledgeItems.slice(-3).map((k: any) => k.title || k.fileName || '無題').join(' / ')}`
+                    ? knowledgeItems
+                        .slice()
+                        .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+                        .slice(0, 10)
+                        .map((k, i) => {
+                          const lines: string[] = [`[${i + 1}] ${k.title || k.fileName || '無題'}`];
+                          if (k.tags?.length) lines.push(`  tags: ${k.tags.slice(0, 5).join(', ')}`);
+                          if (k.analysis?.summary) lines.push(`  要約: ${k.analysis.summary.replace(/\s+/g, ' ').slice(0, 220)}`);
+                          if (k.analysis?.actions?.length) {
+                            lines.push(`  推奨アクション: ${k.analysis.actions.slice(0, 2).join(' / ')}`);
+                          } else if (k.content) {
+                            lines.push(`  抜粋: ${k.content.replace(/\s+/g, ' ').slice(0, 160)}…`);
+                          }
+                          return lines.join('\n');
+                        })
+                        .join('\n\n')
                     : undefined,
                   health: healthCtx?.today
                     ? `今日 心拍${healthCtx.today.restingHR ?? '?'}/睡眠${healthCtx.today.sleepHours?.toFixed(1) ?? '?'}h/歩数${healthCtx.today.steps?.toLocaleString() ?? '?'}`

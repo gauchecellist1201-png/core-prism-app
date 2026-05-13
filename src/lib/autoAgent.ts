@@ -62,29 +62,37 @@ export type AgentContext = {
 const SYSTEM_PROMPT_BASE = `あなたは CORE の自律エージェントです。
 あなたの役割: ユーザーに代わって考え、先回りで「やるべきこと」を提案し、許可があれば実行する。
 
+## 絶対ルール (これを破ると提案は却下される)
+1. **ユーザーから与えられたナレッジ・案件・データだけを根拠にする**
+2. ナレッジに無い情報を勝手に想像しない (例: ナレッジに飲食店の情報が無いのに「秋冬メニュー」と言わない)
+3. ペルソナ名から業種を推測して提案を作らない。ペルソナ説明とナレッジ本文を参照する
+4. 提案ごとに **どのナレッジ/案件/データが根拠か** を why の中で明示 (例: 「ナレッジ#3 の商標調査メモから」)
+5. データが薄い場合は「データから読める範囲」で 2-3 件だけ提案。無理に 5 件作らない
+6. 「資料を追加してください」「分析しましょう」など抽象的なメタ提案は禁止
+
 ## 振る舞いルール
 - ユーザーにフォームを埋めさせない
 - 「〜しましょうか」「〜を用意しました」と能動的に
-- 1 つ提案するごとに「なぜ今これか」を 1 行で
+- 1 つ提案するごとに「なぜ今これか + どのデータが根拠か」を 1-2 行で
 - ユーザーは Yes/No/もう少しこっち寄りで で答えるだけ
-- 抽象論ではなく、具体的なアクション (例: "Apple 案件返信下書きを作る" ✓ / "案件を整理する" ✗)
+- 抽象論ではなく、具体的なアクション (例: "ナレッジ#5 の競合分析から、Notion 動向への対策メモを書く" ✓ / "競合を分析する" ✗)
 
 ## 返答形式 (JSON のみ)
 {
   "suggestions": [
     {
-      "title": "アクション (15-30字, 動詞で始める)",
-      "why": "今これが必要な理由 (40-80字)",
+      "title": "アクション (15-30字, 動詞で始める, 具体的な固有名詞を含める)",
+      "why": "根拠のデータ + 今これが必要な理由 (60-100字, 例: 'ナレッジ#3 商標調査メモに保有予定 3 件あり、Q3 調達に間に合わせるなら今月中の出願が必要')",
       "category": "urgent|growth|content|admin|insight|sales|health",
       "priority": 1-5,
       "executable": true|false,
-      "actionPrompt": "実行時に AI に渡すプロンプト (具体的・自己完結)",
+      "actionPrompt": "実行時に AI に渡すプロンプト (具体的・自己完結・ナレッジ参照を含む)",
       "jumpTo": "tab名 or null"
     }
   ]
 }
 
-3-5 件提案。最も今すぐやるべきものを最初に。`;
+ナレッジが豊富なら 3-5 件、薄ければ 2-3 件。最も根拠が明確で今すぐやるべきものを最初に。`;
 
 const PRISM_FLAVOR = `
 ## プロダクト文脈: CORE Prism (経営者・事業家向け)
@@ -110,10 +118,24 @@ const IRIS_FLAVOR = `
   - "メディアキットを最新の数字で更新"
 `;
 
+/** 簡易ハッシュ: ナレッジが変わったらキャッシュ無効化 */
+function ctxHash(ctx: AgentContext): string {
+  const s = [
+    ctx.persona || '', ctx.bondContext || '',
+    ctx.knowledge || '', ctx.deals || '', ctx.postQueue || '',
+    ctx.kpis || '', ctx.health || '',
+  ].join('|');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+  return Math.abs(h).toString(36);
+}
+
 export async function generateSuggestions(ctx: AgentContext): Promise<Suggestion[]> {
-  // キャッシュ確認
+  const hash = ctxHash(ctx);
+  const cacheKey = STORAGE_KEY + ':' + ctx.brand + ':' + hash;
+  // キャッシュ確認 (ナレッジ変更時は別キーで fresh)
   try {
-    const cached = JSON.parse(localStorage.getItem(STORAGE_KEY + ':' + ctx.brand) || 'null');
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
     if (cached && Date.now() - new Date(cached.cachedAt).getTime() < CACHE_TTL) {
       return cached.suggestions;
     }
@@ -124,6 +146,7 @@ export async function generateSuggestions(ctx: AgentContext): Promise<Suggestion
   const hour = ctx.now.getHours();
   const timeContext = hour < 5 ? '深夜' : hour < 10 ? '朝' : hour < 14 ? '昼' : hour < 18 ? '夕方' : hour < 22 ? '夜' : '深夜';
 
+  const hasKnowledge = !!(ctx.knowledge || ctx.deals || ctx.postQueue || ctx.bondContext);
   const userMsg = `
 ## 現在
 - 時刻: ${ctx.now.toLocaleString('ja-JP')} (${timeContext})
@@ -133,11 +156,14 @@ ${ctx.bondContext ? `## あなたが知ってる本人について\n${ctx.bondCo
 ${ctx.recent ? `## 最近の活動\n${ctx.recent}\n` : ''}
 ${ctx.deals ? `## 案件状況\n${ctx.deals}\n` : ''}
 ${ctx.postQueue ? `## 投稿予約\n${ctx.postQueue}\n` : ''}
-${ctx.knowledge ? `## ナレッジ\n${ctx.knowledge}\n` : ''}
+${ctx.knowledge ? `## ナレッジ (ユーザーが与えた資料・メモ・分析結果)\n${ctx.knowledge}\n` : ''}
 ${ctx.kpis ? `## KPI\n${ctx.kpis}\n` : ''}
 ${ctx.health ? `## ヘルス\n${ctx.health}\n` : ''}
 
-今のこの人に最適な「次の一手」を 3-5 件、JSON で提案してください。`;
+${hasKnowledge
+  ? '上記のナレッジ / 案件 / データを **唯一の根拠** として、論理的に「次の一手」を提案してください。それ以外の情報 (業界の常識・憶測) を入れない。各提案に [ナレッジ#X] または該当データへの参照を必ず含める。'
+  : 'まだ何もデータが無い状態です。「資料をアップロード」「最初の案件を登録」など、ユーザーが最初に行うべき設定アクションを 2-3 件だけ提案してください。'}
+JSON で返答。`;
 
   const res = await fetch('/api/ai', {
     method: 'POST',
@@ -175,9 +201,9 @@ ${ctx.health ? `## ヘルス\n${ctx.health}\n` : ''}
     createdAt: new Date().toISOString(),
   }));
 
-  // キャッシュ
+  // キャッシュ (ハッシュ別キー)
   try {
-    localStorage.setItem(STORAGE_KEY + ':' + ctx.brand, JSON.stringify({
+    localStorage.setItem(cacheKey, JSON.stringify({
       cachedAt: new Date().toISOString(),
       suggestions,
     }));
@@ -190,11 +216,25 @@ ${ctx.health ? `## ヘルス\n${ctx.health}\n` : ''}
 export async function executeSuggestion(s: Suggestion, ctx: AgentContext): Promise<string> {
   const system = `あなたは CORE ${ctx.brand === 'prism' ? 'Prism (経営者向け)' : 'Iris (クリエイター向け)'} の実行エージェント。
 ユーザーから許可を得て、提案を実行している段階です。
-返答は実行結果のみ。前置きや謝辞は不要。Markdown で構造化して、すぐ使える成果物を返してください。
 
-ユーザー文脈:
+## 絶対ルール
+1. ユーザーから与えられたナレッジ・案件・データだけを根拠にする
+2. ナレッジに無い情報を勝手に作らない
+3. 一般論や業界の常識ではなく、具体的にナレッジ#X から引いて書く
+4. 数字を出すときは根拠データを明示
+
+## 出力
+- 前置きや謝辞は不要。実行結果のみ
+- Markdown で構造化、すぐコピペで使える形に
+- 該当する箇所に [ナレッジ#X より] のような出典を含める
+
+## ユーザー文脈
 ${ctx.bondContext || ''}
-${ctx.persona ? `ペルソナ: ${ctx.persona}` : ''}`;
+${ctx.persona ? `ペルソナ: ${ctx.persona}` : ''}
+
+${ctx.knowledge ? `## 参照可能なナレッジ\n${ctx.knowledge}\n` : ''}
+${ctx.deals ? `## 案件状況\n${ctx.deals}\n` : ''}
+${ctx.kpis ? `## KPI\n${ctx.kpis}\n` : ''}`;
 
   const res = await fetch('/api/ai', {
     method: 'POST',
@@ -250,5 +290,14 @@ export async function refineSuggestion(s: Suggestion, refinement: string, ctx: A
 }
 
 export function clearSuggestionCache(brand: 'prism' | 'iris') {
-  try { localStorage.removeItem(STORAGE_KEY + ':' + brand); } catch {/* */}
+  // 全てのハッシュキーを削除 (再生成強制)
+  try {
+    const prefix = STORAGE_KEY + ':' + brand;
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(prefix)) keys.push(k);
+    }
+    keys.forEach(k => localStorage.removeItem(k));
+  } catch {/* */}
 }
