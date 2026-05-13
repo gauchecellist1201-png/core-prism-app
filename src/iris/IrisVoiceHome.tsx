@@ -2,7 +2,7 @@
 // IRIS Voice Home — Gemini Voice 風の対話型ホーム
 // 中央に大きい🎙、上部に数字サマリー、下部に AI とのチャット履歴
 // ============================================================
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
 import type { MediaKit, InfluencerDeal } from '../types/influencerDeal';
@@ -12,6 +12,7 @@ import ApiErrorCard from '../components/ApiErrorCard';
 import {
   Film, Camera, MessageSquare, BarChart3, HeartPulse, Mic, Mail,
   Image as ImageIcon, Calendar, Wallet, Sparkles, Trash2, ArrowUp,
+  Bell, Flame, AlertCircle, Clapperboard, ChevronRight,
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -32,11 +33,13 @@ interface Props {
   settings: AppSettings;
   myDeals: InfluencerDeal[];
   mediaKit?: MediaKit;
+  /** 投稿予約キュー — 緊急アラートに使用 */
+  postQueue?: any;
   /** AI が action を返したときにタブ切替する */
   onNavigate?: (tab: string) => void;
 }
 
-export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavigate }: Props) {
+export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQueue, onNavigate }: Props) {
   // チャット履歴 (localStorage 永続化)
   const [history, setHistory] = useState<AssistantMessage[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
@@ -181,6 +184,48 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
   const isDarkBg = bg.id === 'neon-night';
   const subtleColor = isDarkBg ? 'rgba(255,255,255,0.7)' : '#5A4570';
 
+  // ─── 緊急アラート集計 (今日対応必須) ─────
+  const urgent = useMemo(() => {
+    const list: { kind: 'ready_post' | 'overdue_reply' | 'due_today' | 'due_24h'; label: string; tab: string; n?: number }[] = [];
+    // 1. 投稿予約 ready (時刻到達 / 過ぎ)
+    const readyPosts = postQueue?.posts?.filter((p: any) => p.status === 'ready') || [];
+    if (readyPosts.length) list.push({ kind: 'ready_post', label: `投稿時刻 ${readyPosts.length} 件`, tab: 'schedule', n: readyPosts.length });
+    // 2. 返信遅延 (inquiry のまま 48h+)
+    const overdue = myDeals.filter(d => {
+      if (d.stage !== 'inquiry') return false;
+      const ts = (d as any).createdAt ? new Date((d as any).createdAt).getTime() : 0;
+      return ts && Date.now() - ts > 48 * 3_600_000;
+    });
+    if (overdue.length) list.push({ kind: 'overdue_reply', label: `返信遅延 ${overdue.length} 件`, tab: 'deals', n: overdue.length });
+    // 3. 納期 24h 以内
+    const dueSoon = myDeals.filter(d => {
+      const dates = [d.draftDeadline, d.postDeadline, d.reportDeadline].filter(Boolean) as string[];
+      return dates.some(iso => {
+        const dt = new Date(iso).getTime();
+        const diff = dt - Date.now();
+        return diff > 0 && diff < 24 * 3_600_000;
+      });
+    });
+    if (dueSoon.length) list.push({ kind: 'due_24h', label: `納期 24h 以内 ${dueSoon.length} 件`, tab: 'deals', n: dueSoon.length });
+    return list;
+  }, [postQueue?.posts, myDeals]);
+
+  // ─── 今日のリール候補 (バイラルパターンから AI ピック / 簡易版) ─────
+  const todayReelHint = useMemo(() => {
+    // 日付からハッシュして安定的にピック
+    const day = new Date().getDate();
+    const HINTS = [
+      { name: 'POV ストーリーテリング', why: '今日は内省的な日。共感×ストーリーで深いシェアを', emoji: '✦', mood: 'emotional' },
+      { name: '知っとくべき 3 つの◯◯',   why: '情報密度の高い保存型。保存率トップ',                emoji: '⌥', mood: 'inspiring' },
+      { name: 'GRWM (Get Ready)',     why: '朝活コンテンツ。完視聴率 1.65×',                    emoji: '◊', mood: 'chill pop' },
+      { name: 'Before / After 変化',  why: 'シェア率最高。視覚インパクトで拡散',                emoji: '⟁', mood: 'cinematic' },
+      { name: '「正直に言うと…」型',    why: 'シェア性 5/5。今日は本音を出す日',                  emoji: '◉', mood: 'ambient' },
+      { name: '誤解バスター (逆張り)',  why: '保存・シェア・コメ三冠。逆張りで突き抜けろ',        emoji: '✕', mood: 'dramatic' },
+      { name: 'ボイスオーバー B-roll', why: 'アルゴ最適 (字幕 + 動画素材)',                      emoji: '⟿', mood: 'minimal' },
+    ];
+    return HINTS[day % HINTS.length];
+  }, []);
+
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
       {/* 通知 opt-in CTA (default & 未提示) */}
@@ -200,7 +245,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
           }}
           aria-label="ブリーフ通知をオンにする"
         >
-          🔔 朝・昼・晩のブリーフを通知で受け取る
+          <Bell size={13} /> 朝・昼・晩のブリーフを通知で受け取る
         </motion.button>
       )}
 
@@ -225,7 +270,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
           aria-label={`連続起動 ${streakInfo.streak} 日`}
           title={streakInfo.best > streakInfo.streak ? `最高記録: ${streakInfo.best} 日` : '最高記録更新中'}
         >
-          <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>🔥</span>
+          <Flame size={14} color={bg.accent} />
           <span>
             {streakInfo.streak === 1
               ? '今日も Iris 開いた!'
@@ -242,6 +287,74 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, onNavig
         <SummaryCard bg={bg} label="今週納期" value={upcomingThisWeek + ' 件'} Icon={Calendar} />
         <SummaryCard bg={bg} label="今月報酬" value={'¥' + (earnings / 1000).toFixed(0) + 'K'} Icon={Wallet} />
       </div>
+
+      {/* 緊急アラートストリップ */}
+      {urgent.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {urgent.map((u: { kind: string; label: string; tab: string }) => (
+            <button key={u.kind} onClick={() => onNavigate?.(u.tab)} style={{
+              flex: '1 1 200px', minWidth: 0,
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '0.6rem 0.85rem',
+              background: u.kind === 'ready_post'
+                ? 'linear-gradient(135deg, #FFEDD5, #FED7AA)'
+                : u.kind === 'overdue_reply'
+                ? 'linear-gradient(135deg, #FEE2E2, #FECACA)'
+                : 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
+              border: '1px solid rgba(0,0,0,0.06)',
+              borderRadius: 10,
+              color: '#1F1A2E',
+              cursor: 'pointer', textAlign: 'left',
+              fontFamily: IRIS_FONTS.body,
+            }}>
+              <AlertCircle size={16} color={u.kind === 'overdue_reply' ? '#DC2626' : u.kind === 'due_24h' ? '#B45309' : '#9A3412'} />
+              <span style={{ flex: 1, fontSize: '0.84rem', fontWeight: 700 }}>{u.label}</span>
+              <ChevronRight size={14} style={{ opacity: 0.5 }} />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* 今日のリール候補 (AI ピック) */}
+      <button
+        onClick={() => onNavigate?.('reel')}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '48px 1fr auto',
+          alignItems: 'center', gap: 12,
+          padding: '0.85rem 1rem',
+          background: `linear-gradient(135deg, ${bg.accent}18, ${bg.accent}06)`,
+          border: `1px solid ${bg.accent}40`,
+          borderRadius: 14,
+          cursor: 'pointer', textAlign: 'left',
+          color: bg.ink,
+          fontFamily: IRIS_FONTS.body,
+        }}
+      >
+        <div style={{
+          width: 44, height: 44, borderRadius: 12,
+          background: bg.accent, color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: IRIS_FONTS.display, fontSize: '1.4rem',
+        }}>
+          <Clapperboard size={22} />
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
+            <Flame size={11} color="#EA580C" />
+            <span style={{ fontSize: '0.62rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 800, textTransform: 'uppercase' }}>
+              今日のリール
+            </span>
+          </div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: 2 }}>
+            {todayReelHint.name}
+          </div>
+          <div style={{ fontSize: '0.76rem', color: subtleColor, lineHeight: 1.4 }}>
+            {todayReelHint.why} · BGM: {todayReelHint.mood}
+          </div>
+        </div>
+        <ChevronRight size={16} style={{ opacity: 0.6 }} />
+      </button>
 
       {/* AI 名前 + 開始メッセージ */}
       <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>

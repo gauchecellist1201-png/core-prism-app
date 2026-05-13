@@ -427,6 +427,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               <IrisVoiceHome
                 bg={bg} settings={settings}
                 myDeals={myDeals} mediaKit={mediaKit}
+                postQueue={postQueue}
                 onNavigate={(t) => setTab(t as Tab)}
               />
             )}
