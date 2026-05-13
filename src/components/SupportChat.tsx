@@ -236,8 +236,8 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                 <BrandIcon size={22} withWordmark={false} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-fg leading-tight">{aiName}</p>
-                <p className="text-[11px] text-fg-muted">
+                <p className="text-sm font-semibold leading-tight" style={{ color: '#fff' }}>{aiName}</p>
+                <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.7)' }}>
                   {brand === 'iris' ? 'CORE Iris サポート' : 'CORE Prism サポート'} ·{' '}
                   {isLoading ? '考えています…' : 'オンライン'}
                 </p>
@@ -291,7 +291,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                       border: `1px solid ${accentColor}30`,
                     }}
                   >
-                    <p className="text-fg text-sm leading-relaxed">
+                    <p className="text-sm leading-relaxed" style={{ color: '#fff' }}>
                       こんにちは、{aiName} です。
                       <br />
                       {brand === 'iris'
@@ -299,7 +299,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                         : '経営・営業・財務・機能の使い方、何でも聞いてください。'}
                     </p>
                   </div>
-                  <p className="text-fg-muted text-[11px] tracking-widest uppercase mt-4 mb-2">
+                  <p className="text-[11px] tracking-widest uppercase mt-4 mb-2" style={{ color: 'rgba(255,255,255,0.55)' }}>
                     よくある質問
                   </p>
                   <div className="space-y-1.5">
@@ -308,14 +308,18 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                         key={i}
                         onClick={() => handleSend(s)}
                         disabled={isLoading}
-                        className="w-full text-left text-sm px-3 py-2.5 rounded-lg transition-all bg-surface-3 border-edge border text-fg hover:border-fg-subtle disabled:opacity-50"
-                        whileHover={{ x: 3 }}
+                        className="w-full text-left text-sm px-3 py-2.5 rounded-lg transition-all disabled:opacity-50"
+                        whileHover={{ x: 3, background: 'rgba(255,255,255,0.08)' }}
                         initial={{ opacity: 0, x: -5 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.05 + i * 0.04 }}
-                        style={{ borderColor: `${accentColor}25` }}
+                        style={{
+                          background: 'rgba(255,255,255,0.05)',
+                          border: `1px solid ${accentColor}40`,
+                          color: '#fff',
+                        }}
                       >
-                        <span style={{ color: accentColor, marginRight: 6 }}>›</span>
+                        <span style={{ color: accentColor, marginRight: 6, fontWeight: 700 }}>›</span>
                         {s}
                       </motion.button>
                     ))}
@@ -342,9 +346,9 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                               borderBottomRightRadius: 4,
                             }
                           : {
-                              background: 'var(--surface-3)',
-                              border: '1px solid var(--border)',
-                              color: 'var(--fg)',
+                              background: 'rgba(255,255,255,0.06)',
+                              border: '1px solid rgba(255,255,255,0.12)',
+                              color: '#fff',
                               borderBottomLeftRadius: 4,
                             }
                       }
@@ -424,8 +428,8 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
               <div
                 className="flex items-end gap-2 px-3 py-2 rounded-2xl"
                 style={{
-                  background: 'var(--surface-3)',
-                  border: `1px solid ${accentColor}25`,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: `1px solid ${accentColor}55`,
                 }}
               >
                 <textarea
@@ -436,8 +440,8 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                   placeholder="何でも聞いてください…"
                   rows={1}
                   disabled={isLoading}
-                  className="flex-1 bg-transparent text-sm text-fg placeholder:text-fg-muted outline-none resize-none leading-relaxed"
-                  style={{ maxHeight: 120, minHeight: 24, fontSize: 16 }}
+                  className="flex-1 bg-transparent text-sm outline-none resize-none leading-relaxed support-chat-input"
+                  style={{ maxHeight: 120, minHeight: 24, fontSize: 16, color: '#fff' }}
                 />
                 <motion.button
                   type="submit"
