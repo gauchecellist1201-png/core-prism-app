@@ -12,8 +12,9 @@ import ApiErrorCard from '../components/ApiErrorCard';
 import {
   Film, Camera, MessageSquare, BarChart3, HeartPulse, Mic, Mail,
   Image as ImageIcon, Calendar, Wallet, Sparkles, Trash2, ArrowUp,
-  Bell, Flame, AlertCircle, Clapperboard, ChevronRight,
+  Bell, Flame,
 } from 'lucide-react';
+import { IrisSplash, IrisHeroGreeting } from './IrisWelcome';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { useVoiceInput } from '../hooks/useVoiceInput';
@@ -288,73 +289,16 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
         <SummaryCard bg={bg} label="今月報酬" value={'¥' + (earnings / 1000).toFixed(0) + 'K'} Icon={Wallet} />
       </div>
 
-      {/* 緊急アラートストリップ */}
-      {urgent.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {urgent.map((u: { kind: string; label: string; tab: string }) => (
-            <button key={u.kind} onClick={() => onNavigate?.(u.tab)} style={{
-              flex: '1 1 200px', minWidth: 0,
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '0.6rem 0.85rem',
-              background: u.kind === 'ready_post'
-                ? 'linear-gradient(135deg, #FFEDD5, #FED7AA)'
-                : u.kind === 'overdue_reply'
-                ? 'linear-gradient(135deg, #FEE2E2, #FECACA)'
-                : 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
-              border: '1px solid rgba(0,0,0,0.06)',
-              borderRadius: 10,
-              color: '#1F1A2E',
-              cursor: 'pointer', textAlign: 'left',
-              fontFamily: IRIS_FONTS.body,
-            }}>
-              <AlertCircle size={16} color={u.kind === 'overdue_reply' ? '#DC2626' : u.kind === 'due_24h' ? '#B45309' : '#9A3412'} />
-              <span style={{ flex: 1, fontSize: '0.84rem', fontWeight: 700 }}>{u.label}</span>
-              <ChevronRight size={14} style={{ opacity: 0.5 }} />
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* 今日のリール候補 (AI ピック) */}
-      <button
-        onClick={() => onNavigate?.('reel')}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '48px 1fr auto',
-          alignItems: 'center', gap: 12,
-          padding: '0.85rem 1rem',
-          background: `linear-gradient(135deg, ${bg.accent}18, ${bg.accent}06)`,
-          border: `1px solid ${bg.accent}40`,
-          borderRadius: 14,
-          cursor: 'pointer', textAlign: 'left',
-          color: bg.ink,
-          fontFamily: IRIS_FONTS.body,
-        }}
-      >
-        <div style={{
-          width: 44, height: 44, borderRadius: 12,
-          background: bg.accent, color: '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: IRIS_FONTS.display, fontSize: '1.4rem',
-        }}>
-          <Clapperboard size={22} />
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
-            <Flame size={11} color="#EA580C" />
-            <span style={{ fontSize: '0.62rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 800, textTransform: 'uppercase' }}>
-              今日のリール
-            </span>
-          </div>
-          <div style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: 2 }}>
-            {todayReelHint.name}
-          </div>
-          <div style={{ fontSize: '0.76rem', color: subtleColor, lineHeight: 1.4 }}>
-            {todayReelHint.why} · BGM: {todayReelHint.mood}
-          </div>
-        </div>
-        <ChevronRight size={16} style={{ opacity: 0.6 }} />
-      </button>
+      {/* ── シネマティック ウェルカム + AI 先回りヒーロー ── */}
+      <IrisSplash bg={bg} handle={mediaKit?.handleName} />
+      <IrisHeroGreeting
+        bg={bg}
+        handle={mediaKit?.handleName}
+        preparedReel={{ name: todayReelHint.name, reason: `${todayReelHint.why} · BGM: ${todayReelHint.mood}` }}
+        readyPostCount={(postQueue?.posts || []).filter((p: any) => p.status === 'ready' || p.status === 'scheduled').length}
+        pendingReplies={urgent.find((u: { kind: string }) => u.kind === 'overdue_reply')?.n || 0}
+        onJump={(t) => onNavigate?.(t)}
+      />
 
       {/* AI 名前 + 開始メッセージ */}
       <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
