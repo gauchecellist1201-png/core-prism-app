@@ -376,15 +376,15 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           </div>
           <div>
             <p style={footHead}>PRODUCT</p>
-            <a href="#facets" style={footLink}>機能</a>
-            <a href="#pricing" style={footLink}>料金</a>
-            <a href="/" style={footLink}>姉妹ブランド · CORE Prism</a>
+            <a href="#facets" style={footLink} className="lp-tap-link">機能</a>
+            <a href="#pricing" style={footLink} className="lp-tap-link">料金</a>
+            <a href="/" style={footLink} className="lp-tap-link">姉妹ブランド · CORE Prism</a>
           </div>
           <div>
             <p style={footHead}>COMPANY</p>
-            <a href="mailto:hello@coreprism.app" style={footLink}>お問い合わせ</a>
-            <a href="/?legal=terms" style={footLink}>利用規約</a>
-            <a href="/?legal=privacy" style={footLink}>プライバシー</a>
+            <a href="mailto:hello@coreprism.app" style={footLink} className="lp-tap-link">お問い合わせ</a>
+            <a href="/?legal=terms" style={footLink} className="lp-tap-link">利用規約</a>
+            <a href="/?legal=privacy" style={footLink} className="lp-tap-link">プライバシー</a>
           </div>
           <div>
             <p style={footHead}>CONNECT</p>
@@ -486,7 +486,7 @@ function IrisLocaleToggle({ locale, setLocale }: { locale: Locale; setLocale: (l
   return (
     <div style={{ display: 'flex', gap: 2, background: 'rgba(255,250,245,0.08)', borderRadius: 8, padding: 2 }}>
       {locales.map(l => (
-        <button key={l} onClick={() => setLocale(l)} style={{ background: locale === l ? 'rgba(255,250,245,0.18)' : 'transparent', color: locale === l ? IRIS_COLORS.cream : 'rgba(255,250,245,0.45)', border: 'none', borderRadius: 6, padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' }}>{labels[l]}</button>
+        <button key={l} onClick={() => setLocale(l)} aria-label={`Language: ${l.toUpperCase()}`} style={{ background: locale === l ? 'rgba(255,250,245,0.18)' : 'transparent', color: locale === l ? IRIS_COLORS.cream : 'rgba(255,250,245,0.45)', border: 'none', borderRadius: 6, padding: '0.5rem 0.75rem', minWidth: 44, minHeight: 44, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' }}>{labels[l]}</button>
       ))}
     </div>
   );

@@ -4,6 +4,7 @@
 // ============================================================
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Mail } from 'lucide-react';
 import { submitFeedback } from '../lib/feedback';
 
 interface Props {
@@ -79,7 +80,7 @@ export default function FeedbackWidget({ brand }: Props) {
           maxWidth: 'calc(100vw - 32px)',
         }}
       >
-        <span aria-hidden>💌</span>
+        <Mail size={16} strokeWidth={2.25} aria-hidden />
         <span>フィードバック</span>
       </button>
 

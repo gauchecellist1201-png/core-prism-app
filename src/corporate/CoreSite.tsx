@@ -135,8 +135,9 @@ export default function CoreSite() {
         >
           <a
             href="#top"
-            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}
             aria-label="株式会社コア"
+            className="lp-tap-link"
           >
             <CoreLogo size={36} withWordmark />
           </a>
@@ -948,18 +949,18 @@ export default function CoreSite() {
           </div>
           <div>
             <p style={footHead}>プロダクト</p>
-            <a href="/" style={footLink}>CORE Prism</a>
-            <a href="/iris" style={footLink}>CORE Iris</a>
+            <a href="/" style={footLink} className="lp-tap-link">CORE Prism</a>
+            <a href="/iris" style={footLink} className="lp-tap-link">CORE Iris</a>
           </div>
           <div>
             <p style={footHead}>会社</p>
-            <a href="#mission" style={footLink}>理念</a>
-            <a href="#about" style={footLink}>会社概要</a>
-            <a href="#contact" style={footLink}>お問い合わせ</a>
+            <a href="#mission" style={footLink} className="lp-tap-link">理念</a>
+            <a href="#about" style={footLink} className="lp-tap-link">会社概要</a>
+            <a href="#contact" style={footLink} className="lp-tap-link">お問い合わせ</a>
           </div>
           <div>
             <p style={footHead}>連絡先</p>
-            <a href={`mailto:${COMPANY.email}`} style={footLink}>{COMPANY.email}</a>
+            <a href={`mailto:${COMPANY.email}`} style={footLink} className="lp-tap-link">{COMPANY.email}</a>
             <p
               style={{
                 fontSize: '0.72rem',
@@ -1496,10 +1497,13 @@ const ctaSmall: React.CSSProperties = {
   fontWeight: 600,
   color: '#fff',
   textDecoration: 'none',
-  padding: '0.6rem 1.25rem',
+  padding: '0.75rem 1.25rem',
   border: '1px solid rgba(255,255,255,0.25)',
   borderRadius: 999,
   letterSpacing: '0.1em',
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: 44,
 };
 const ctaHero: React.CSSProperties = {
   display: 'inline-block',

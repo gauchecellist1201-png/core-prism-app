@@ -24,7 +24,7 @@ import { shareToInstagram } from './instagramShare';
 import {
   Sparkles, TrendingUp, Search, Mail, Film, MessageSquare, Edit3,
   Camera, HeartPulse, Leaf, UsersRound, Users, Handshake, FileText,
-  Menu as MenuIcon, Gift,
+  Menu as MenuIcon, Gift, Palette, ArrowLeft,
 } from 'lucide-react';
 import InviteShareCard from '../components/InviteShareCard';
 import type { LucideIcon } from 'lucide-react';
@@ -227,13 +227,13 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 </div>
               )}
             </div>
-            <button onClick={() => setBgPickerOpen(true)} title="背景を変える"
+            <button onClick={() => setBgPickerOpen(true)} title="背景を変える" aria-label="背景を変える"
               style={btnIcon(bg)}>
-              {bg.emoji}
+              <Palette size={18} strokeWidth={2} />
             </button>
-            <button onClick={() => setMoreOpen(true)} title="メニュー" className="iris-tab-more-trigger"
-              style={btnIcon(bg)}>≡</button>
-            <button onClick={onLeave} title="戻る" style={btnIcon(bg)}>←</button>
+            <button onClick={() => setMoreOpen(true)} title="メニュー" aria-label="メニュー" className="iris-tab-more-trigger"
+              style={btnIcon(bg)}><MenuIcon size={18} strokeWidth={2} /></button>
+            <button onClick={onLeave} title="戻る" aria-label="戻る" style={btnIcon(bg)}><ArrowLeft size={18} strokeWidth={2} /></button>
           </div>
         </div>
 
@@ -2121,7 +2121,8 @@ const btnIcon = (bg: IrisBackgroundDef): React.CSSProperties => ({
   color: bg.ink,
   border: `1px solid ${bg.cardBorder}`,
   borderRadius: 999,
-  width: 38, height: 38,
+  width: 44, height: 44,
+  minWidth: 44, minHeight: 44,
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
   fontSize: '1rem',
   cursor: 'pointer',
