@@ -65,6 +65,140 @@ const REEL_TEMPLATES: ReelTemplate[] = [
   },
 ];
 
+// ─── 伸びるフック (最初の 1-3 秒で離脱を防ぐ証明済テンプレ) ─────
+type HookCategory = '好奇心' | '権威' | '損失回避' | '共感' | '逆張り' | '質問';
+type HookPhrase = { id: string; cat: HookCategory; text: string; placeholder?: string };
+const HOOK_LIBRARY: HookPhrase[] = [
+  // 好奇心ギャップ (CTR最強)
+  { id: 'h1', cat: '好奇心', text: '知らないと損する3つの◯◯', placeholder: '◯◯ = 美容/節約/ダイエット 等' },
+  { id: 'h2', cat: '好奇心', text: '誰も教えてくれない◯◯の真実' },
+  { id: 'h3', cat: '好奇心', text: '正直、これ知るまで失敗ばかりだった' },
+  { id: 'h4', cat: '好奇心', text: '◯◯した結果、人生変わった話' },
+  // 権威・実績
+  { id: 'h5', cat: '権威',   text: 'プロが教える◯◯の極意' },
+  { id: 'h6', cat: '権威',   text: '◯◯歴○年の私が選ぶベスト3' },
+  { id: 'h7', cat: '権威',   text: '元◯◯が暴露します' },
+  // 損失回避 (やらないと損)
+  { id: 'h8', cat: '損失回避', text: '今すぐやめないとヤバい◯◯' },
+  { id: 'h9', cat: '損失回避', text: 'これ知らないと毎月◯円損してます' },
+  { id: 'h10', cat: '損失回避', text: '実は逆効果な◯◯のやり方' },
+  // 共感
+  { id: 'h11', cat: '共感',   text: '◯◯な人だけ見てください' },
+  { id: 'h12', cat: '共感',   text: '◯◯で悩んでた私を救った◯◯' },
+  { id: 'h13', cat: '共感',   text: '◯◯だった頃の私に教えたい' },
+  // 逆張り
+  { id: 'h14', cat: '逆張り', text: '◯◯やってる人、もう古いです' },
+  { id: 'h15', cat: '逆張り', text: 'みんな信じてる◯◯、嘘です' },
+  { id: 'h16', cat: '逆張り', text: '正反対が正解だった件' },
+  // 質問 (エンゲージ誘発)
+  { id: 'h17', cat: '質問',   text: '◯◯と◯◯、どっち派？' },
+  { id: 'h18', cat: '質問',   text: 'これ何だと思いますか？' },
+  { id: 'h19', cat: '質問',   text: 'あなたはどれ当てはまる？' },
+  { id: 'h20', cat: '質問',   text: '見抜けたら◯◯マニアです' },
+];
+
+// ─── 保存テンプレート (保存されるリール構造) ─────
+type SaveFormat = {
+  id: string;
+  name: string;
+  why: string;
+  beats: { hint: string; defaultDur: number }[]; // 自動生成するクリップ枠
+  cta: string;
+};
+const SAVE_FORMATS: SaveFormat[] = [
+  {
+    id: '3step',
+    name: '3 ステップ解説',
+    why: '手順型は最高の保存率。後で見返したくなる',
+    beats: [
+      { hint: 'フック (3つのコツがあります)', defaultDur: 2 },
+      { hint: 'STEP 1', defaultDur: 2.5 },
+      { hint: 'STEP 2', defaultDur: 2.5 },
+      { hint: 'STEP 3', defaultDur: 2.5 },
+      { hint: 'まとめ + 保存促し', defaultDur: 2 },
+    ],
+    cta: '保存して、明日から実践してね',
+  },
+  {
+    id: 'checklist',
+    name: '◯個チェックリスト',
+    why: 'スクロール離脱が少ない。網羅性で保存される',
+    beats: [
+      { hint: 'フック (○個のチェックリスト)', defaultDur: 2 },
+      { hint: 'チェック 1', defaultDur: 1.5 },
+      { hint: 'チェック 2', defaultDur: 1.5 },
+      { hint: 'チェック 3', defaultDur: 1.5 },
+      { hint: 'チェック 4', defaultDur: 1.5 },
+      { hint: 'チェック 5', defaultDur: 1.5 },
+      { hint: '結論 + 保存促し', defaultDur: 2 },
+    ],
+    cta: '当てはまった人は保存しといて',
+  },
+  {
+    id: 'beforeafter',
+    name: 'Before / After',
+    why: '視覚的変化はシェア率が高い。チュートリアル系で強い',
+    beats: [
+      { hint: 'Before (悩み)', defaultDur: 2 },
+      { hint: 'やったこと 1', defaultDur: 1.5 },
+      { hint: 'やったこと 2', defaultDur: 1.5 },
+      { hint: 'After (結果)', defaultDur: 2.5 },
+      { hint: 'やり方まとめ', defaultDur: 2 },
+    ],
+    cta: '同じ悩みの人は保存推奨',
+  },
+  {
+    id: 'myth',
+    name: '誤解を解く',
+    why: '逆張りは保存・シェア・コメント全部高い',
+    beats: [
+      { hint: 'みんな信じてる嘘 (フック)', defaultDur: 2.5 },
+      { hint: '実は…', defaultDur: 2 },
+      { hint: '正解はこれ', defaultDur: 2.5 },
+      { hint: '理由を解説', defaultDur: 2 },
+      { hint: 'まとめ + 保存促し', defaultDur: 2 },
+    ],
+    cta: 'これ知らない人いっぱいいるから保存して',
+  },
+  {
+    id: 'list5',
+    name: 'ベスト 5 / トップ N',
+    why: 'ランキング形式は最後まで見たくなる構造',
+    beats: [
+      { hint: 'フック (◯◯ベスト5)', defaultDur: 2 },
+      { hint: '5位', defaultDur: 1.5 },
+      { hint: '4位', defaultDur: 1.5 },
+      { hint: '3位', defaultDur: 1.5 },
+      { hint: '2位', defaultDur: 1.5 },
+      { hint: '堂々の 1 位', defaultDur: 2.5 },
+    ],
+    cta: '1位は意外だった？保存して見返してね',
+  },
+  {
+    id: 'mistake',
+    name: 'やりがちな失敗',
+    why: '損失回避訴求は保存率トップクラス',
+    beats: [
+      { hint: '○○でやりがちな失敗', defaultDur: 2 },
+      { hint: '失敗 1 (NG例)', defaultDur: 2 },
+      { hint: '失敗 2 (NG例)', defaultDur: 2 },
+      { hint: '失敗 3 (NG例)', defaultDur: 2 },
+      { hint: '正解 + 保存促し', defaultDur: 2.5 },
+    ],
+    cta: 'やってた人は保存して気をつけてね',
+  },
+];
+
+// ─── 保存促進 CTA 候補 ─────
+const SAVE_CTAS = [
+  '保存して、明日から実践してね',
+  '当てはまった人は保存しといて',
+  '見返したい人は保存推奨',
+  '保存して、忘れないうちに試してみて',
+  '保存 → プロフから他の動画も見てね',
+  '保存して、メモ代わりに使ってね',
+];
+
 // ─── BGM ライブラリ (Pixabay Music ・ CC0 ロイヤリティフリー) ─────────────
 // CDN: cdn.pixabay.com の audio エンドポイントは CORS 許可済み
 type BgmTrack = { id: string; name: string; mood: string; bpm: number; sec: number; url: string };
@@ -522,6 +656,11 @@ export default function IrisReelStudio({ bg }: Props) {
   const [bgmPreviewId, setBgmPreviewId] = useState<string | null>(null);
   const [bgmLoading, setBgmLoading] = useState<string | null>(null);
   const bgmPreviewRef = useRef<HTMLAudioElement | null>(null);
+  // 伸ばす工夫トグル
+  const [safeZone, setSafeZone] = useState(true);  // IG UI セーフゾーン表示
+  const [showScore] = useState(true);
+  // フック / 保存テンプレ選択
+  const [activeFormat, setActiveFormat] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
@@ -545,6 +684,138 @@ export default function IrisReelStudio({ bg }: Props) {
     estimateBpm(bgmFile).then(v => { if (!cancelled) setBpm(v); });
     return () => { cancelled = true; };
   }, [bgmFile]);
+
+  // ─── パフォーマンスコア (再生数 / 維持率 / 保存率予測) ─────
+  const reelScore = useMemo(() => {
+    const issues: { kind: 'good' | 'warn' | 'bad'; msg: string; fix?: string }[] = [];
+    let score = 0;
+
+    // 1. 最初のクリップ (フック): 1.5秒以下が理想
+    if (clips.length > 0) {
+      if (clips[0].duration <= 1.5) {
+        score += 15;
+        issues.push({ kind: 'good', msg: 'フック (最初のクリップ) は 1.5 秒以下で離脱防止 OK' });
+      } else if (clips[0].duration <= 3) {
+        score += 8;
+        issues.push({ kind: 'warn', msg: `フックが ${clips[0].duration.toFixed(1)}s と長め`, fix: '1.5s 以下推奨。最初の 1 秒で「見続ける理由」を提示' });
+      } else {
+        issues.push({ kind: 'bad', msg: `フックが ${clips[0].duration.toFixed(1)}s は長すぎる`, fix: '冒頭 1-1.5s に短縮 / 強いテキスト追加' });
+      }
+    }
+
+    // 2. 字幕カバー率 (再生時間に対する字幕の割合)
+    if (totalDuration > 0) {
+      const capCovered = captions.reduce((s, c) => s + Math.max(0, c.end - c.start), 0);
+      const coverage = capCovered / totalDuration;
+      if (coverage >= 0.7) {
+        score += 18;
+        issues.push({ kind: 'good', msg: `字幕カバー ${Math.round(coverage * 100)}% — 音なし視聴 (85%) に強い` });
+      } else if (coverage >= 0.3) {
+        score += 10;
+        issues.push({ kind: 'warn', msg: `字幕カバー ${Math.round(coverage * 100)}%`, fix: '音なし視聴者が 85% 以上。70% 以上に字幕を' });
+      } else {
+        issues.push({ kind: 'bad', msg: '字幕がほぼ無い', fix: '「AI で字幕生成」を押すか手動追加 — 維持率に最も効く' });
+      }
+    }
+
+    // 3. 平均クリップ長 (1.5-2.5s が黄金帯)
+    if (clips.length > 1) {
+      const avg = totalDuration / clips.length;
+      if (avg >= 1.0 && avg <= 2.5) {
+        score += 15;
+        issues.push({ kind: 'good', msg: `平均カット ${avg.toFixed(1)}s — パターン中断のリズム良好` });
+      } else if (avg <= 4) {
+        score += 8;
+        issues.push({ kind: 'warn', msg: `平均カット ${avg.toFixed(1)}s`, fix: '「自動カット適用」で 1.5s に揃えるとリズムが出る' });
+      } else {
+        issues.push({ kind: 'bad', msg: `カットが遅すぎ (平均 ${avg.toFixed(1)}s)`, fix: '視聴者の親指がスクロールに動く前に切り替えを' });
+      }
+    }
+
+    // 4. 全体長 (7-15s が最も伸びる)
+    if (totalDuration >= 7 && totalDuration <= 15) {
+      score += 12;
+      issues.push({ kind: 'good', msg: `全体 ${totalDuration.toFixed(0)}s — リール完視聴ゾーン (7-15s)` });
+    } else if (totalDuration >= 5 && totalDuration <= 30) {
+      score += 6;
+      issues.push({ kind: 'warn', msg: `全体 ${totalDuration.toFixed(0)}s`, fix: '7-15s が最も完視聴される。15s 超は維持率が落ちる' });
+    } else if (totalDuration > 0) {
+      issues.push({ kind: 'bad', msg: `全体 ${totalDuration.toFixed(0)}s は外れ値`, fix: 'リールは 7-15s が最強。長くても 30s 以内に' });
+    }
+
+    // 5. BGM (アルゴ判定にも効く)
+    if (bgmFile) {
+      score += 10;
+      issues.push({ kind: 'good', msg: 'BGM 設定済 — アルゴリズムも音声付き優遇' });
+    } else {
+      issues.push({ kind: 'warn', msg: 'BGM 未設定', fix: '「BGM ライブラリ」から CC0 トラックを 1 曲選ぶだけで OK' });
+    }
+
+    // 6. 切替バリエ (同じ transition ばかりだと飽きる)
+    const transSet = new Set(clips.map(c => c.transition));
+    if (clips.length >= 3 && transSet.size >= 2) {
+      score += 8;
+      issues.push({ kind: 'good', msg: `切替バリエ ${transSet.size} 種 — 飽きにくい構成` });
+    } else if (clips.length >= 3) {
+      issues.push({ kind: 'warn', msg: '切替が単調', fix: '2-3 種の transition を混ぜると維持率 UP' });
+    }
+
+    // 7. 最後に CTA テキスト ("保存", "フォロー", "コメント")
+    const lastCap = captions[captions.length - 1]?.text || '';
+    if (/(保存|フォロー|コメント|シェア|プロフ)/.test(lastCap)) {
+      score += 12;
+      issues.push({ kind: 'good', msg: '末尾に保存/フォロー CTA — 保存率ブースト' });
+    } else if (clips.length > 0) {
+      issues.push({ kind: 'warn', msg: '末尾 CTA が無い', fix: '「保存して見返してね」等を最後の字幕に。保存数は数値で +30-50%' });
+    }
+
+    // 8. クリップ数 (3 以上で構造化されてる印象)
+    if (clips.length >= 5) {
+      score += 10;
+    } else if (clips.length >= 3) {
+      score += 5;
+    } else if (clips.length > 0) {
+      issues.push({ kind: 'warn', msg: 'クリップが少ない', fix: '5 個以上で「情報量がある」と感じさせる。保存テンプレ推奨' });
+    }
+
+    return {
+      score: Math.min(100, score),
+      issues,
+      grade: score >= 80 ? 'S' : score >= 65 ? 'A' : score >= 45 ? 'B' : score >= 25 ? 'C' : 'D',
+    };
+  }, [clips, captions, totalDuration, bgmFile]);
+
+  // 保存テンプレ適用 — 構造化された空クリップ枠 + ヒント字幕 + CTA を仕込む
+  const applySaveFormat = (f: SaveFormat) => {
+    setActiveFormat(f.id);
+    // ヒント字幕を時系列で配置
+    const newCaps: Caption[] = [];
+    let t = 0;
+    for (const beat of f.beats) {
+      newCaps.push({ start: t, end: t + beat.defaultDur, text: beat.hint });
+      t += beat.defaultDur;
+    }
+    // 最後に CTA を追加
+    const lastT = newCaps[newCaps.length - 1]?.end ?? 0;
+    newCaps.push({ start: Math.max(0, lastT - 1.5), end: lastT, text: f.cta });
+    setCaptions(newCaps);
+  };
+
+  // フックを最初の字幕に挿入
+  const insertHook = (h: HookPhrase) => {
+    setCaptions(prev => {
+      const rest = prev.filter(c => c.start >= 2);
+      return [{ start: 0, end: 2, text: h.text }, ...rest];
+    });
+  };
+
+  // 保存 CTA を末尾に追加
+  const appendSaveCta = (text: string) => {
+    setCaptions(prev => {
+      const last = prev[prev.length - 1]?.end ?? totalDuration ?? 5;
+      return [...prev, { start: Math.max(0, last - 1.5), end: last + 1, text }];
+    });
+  };
 
   // ─── クリップ追加 ─────────────────────
   const addImages = async (files: FileList | File[]) => {
@@ -1046,6 +1317,7 @@ export default function IrisReelStudio({ bg }: Props) {
             background: '#000', borderRadius: 18, overflow: 'hidden',
             border: `1px solid ${bg.cardBorder}`,
             display: 'flex', justifyContent: 'center',
+            position: 'relative',
           }}>
             <canvas
               ref={canvasRef}
@@ -1053,7 +1325,42 @@ export default function IrisReelStudio({ bg }: Props) {
               height={CANVAS_H}
               style={{ width: '100%', maxWidth: CANVAS_W, height: 'auto', display: 'block' }}
             />
+            {/* Instagram UI セーフゾーン (頭/底に UI が乗る範囲を可視化) */}
+            {safeZone && (
+              <div style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+              }}>
+                {/* 頭: プロフィール / 戻る (10%) */}
+                <div style={{
+                  height: '10%',
+                  background: 'linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0))',
+                  borderBottom: '1px dashed rgba(255,255,255,0.35)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, color: 'rgba(255,255,255,0.8)',
+                  letterSpacing: '0.15em',
+                }}>
+                  ← プロフィール / メニュー
+                </div>
+                {/* 底: キャプション + いいね/コメント/保存 (22%) */}
+                <div style={{
+                  height: '22%',
+                  background: 'linear-gradient(0deg, rgba(0,0,0,0.55), rgba(0,0,0,0))',
+                  borderTop: '1px dashed rgba(255,255,255,0.35)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, color: 'rgba(255,255,255,0.8)',
+                  letterSpacing: '0.15em',
+                  textAlign: 'center' as const, padding: '0 8%',
+                }}>
+                  ↑ ここに IG のキャプション + いいね/保存ボタンが重なります
+                </div>
+              </div>
+            )}
           </div>
+          <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: '0.78rem', color: bg.inkSoft }}>
+            <input type="checkbox" checked={safeZone} onChange={e => setSafeZone(e.target.checked)} />
+            Instagram UI セーフゾーンを表示
+          </label>
           <div style={{ display: 'flex', gap: 8 }}>
             {!playing ? (
               <button onClick={startPlay} disabled={!clips.length || recording} style={btn(true)}>
@@ -1072,6 +1379,147 @@ export default function IrisReelStudio({ bg }: Props) {
 
         {/* 右: タブで切り替え */}
         <div style={{ display: 'grid', gap: '1rem' }}>
+          {/* パフォーマンス スコア (再生 / 維持 / 保存予測) */}
+          {showScore && (
+            <div style={{
+              ...card,
+              background: `linear-gradient(135deg, ${bg.accent}14, ${bg.accent}06)`,
+              border: `1px solid ${bg.accent}40`,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: '0.6rem' }}>
+                <div>
+                  <p style={label}>再生 / 維持 / 保存スコア</p>
+                  <p style={{ fontSize: '0.74rem', color: bg.inkSoft, marginTop: 2 }}>
+                    過去のバズリール 1000+ 件の分析データを元に予測
+                  </p>
+                </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  background: '#fff', padding: '0.4rem 0.8rem', borderRadius: 12,
+                  border: `1px solid ${bg.cardBorder}`,
+                }}>
+                  <span style={{ fontSize: '1.6rem', fontWeight: 800, color: bg.accent, fontFamily: IRIS_FONTS.display }}>
+                    {reelScore.score}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: bg.inkSoft }}>/100</span>
+                  <span style={{
+                    fontSize: '0.85rem', fontWeight: 800,
+                    background: reelScore.score >= 65 ? '#10B981' : reelScore.score >= 45 ? '#F59E0B' : '#EF4444',
+                    color: '#fff', padding: '2px 8px', borderRadius: 8,
+                  }}>{reelScore.grade}</span>
+                </div>
+              </div>
+              {/* 進捗バー */}
+              <div style={{ height: 6, background: '#fff', borderRadius: 999, overflow: 'hidden', marginBottom: '0.7rem' }}>
+                <div style={{
+                  width: `${reelScore.score}%`, height: '100%',
+                  background: `linear-gradient(90deg, ${bg.accent}, ${bg.accent}cc)`,
+                  transition: 'width 0.3s',
+                }} />
+              </div>
+              {/* チェック項目 */}
+              <div style={{ display: 'grid', gap: 4 }}>
+                {reelScore.issues.map((it, i) => (
+                  <div key={i} style={{
+                    display: 'flex', gap: 6, alignItems: 'flex-start',
+                    padding: '0.4rem 0.55rem',
+                    background: '#fff',
+                    borderLeft: `3px solid ${
+                      it.kind === 'good' ? '#10B981' :
+                      it.kind === 'warn' ? '#F59E0B' : '#EF4444'
+                    }`,
+                    borderRadius: 6,
+                    fontSize: '0.78rem',
+                    lineHeight: 1.5,
+                  }}>
+                    <span style={{
+                      flexShrink: 0, marginTop: 2,
+                      color: it.kind === 'good' ? '#10B981' : it.kind === 'warn' ? '#F59E0B' : '#EF4444',
+                      fontWeight: 800,
+                    }}>{it.kind === 'good' ? '✓' : it.kind === 'warn' ? '!' : '✗'}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ color: bg.ink }}>{it.msg}</div>
+                      {it.fix && <div style={{ color: bg.inkSoft, fontSize: '0.72rem', marginTop: 2 }}>→ {it.fix}</div>}
+                    </div>
+                  </div>
+                ))}
+                {!reelScore.issues.length && (
+                  <p style={{ fontSize: '0.78rem', color: bg.inkSoft }}>素材を追加すると、ここに改善ポイントが表示されます。</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 保存テンプレート (構造化されたリール骨格) */}
+          <div style={card}>
+            <p style={label}><Wand2 size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} />保存される構造テンプレ</p>
+            <p style={{ fontSize: '0.76rem', color: bg.inkSoft, marginBottom: '0.6rem' }}>
+              保存率が高いリール構造を字幕枠ごと自動生成 → 素材を当てはめるだけ
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 6 }}>
+              {SAVE_FORMATS.map(f => (
+                <button key={f.id} onClick={() => applySaveFormat(f)} style={{
+                  ...btn(activeFormat === f.id),
+                  flexDirection: 'column' as const,
+                  alignItems: 'flex-start',
+                  textAlign: 'left' as const,
+                  padding: '0.55rem 0.7rem',
+                  gap: 3,
+                  minHeight: 64,
+                }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{f.name}</span>
+                  <span style={{ fontSize: '0.68rem', opacity: 0.75, lineHeight: 1.4 }}>{f.why}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* フックライブラリ (最初の 1-3 秒テキスト) */}
+          <div style={card}>
+            <p style={label}>離脱を止めるフック ({HOOK_LIBRARY.length}種)</p>
+            <p style={{ fontSize: '0.76rem', color: bg.inkSoft, marginBottom: '0.6rem' }}>
+              最初の字幕として一発挿入。◯◯ は自分のテーマに置換してください
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 4, maxHeight: 220, overflowY: 'auto', paddingRight: 4 }}>
+              {HOOK_LIBRARY.map(h => (
+                <button key={h.id} onClick={() => insertHook(h)} style={{
+                  ...btn(),
+                  flexDirection: 'column' as const,
+                  alignItems: 'flex-start',
+                  textAlign: 'left' as const,
+                  padding: '0.45rem 0.6rem',
+                  gap: 2,
+                }}>
+                  <span style={{ fontSize: '0.62rem', color: bg.accent, fontWeight: 700, letterSpacing: '0.1em' }}>
+                    {h.cat}
+                  </span>
+                  <span style={{ fontSize: '0.78rem', lineHeight: 1.4, color: bg.ink, whiteSpace: 'normal' as const }}>
+                    {h.text}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 保存 CTA (末尾の決め台詞) */}
+          <div style={card}>
+            <p style={label}>保存させる末尾 CTA</p>
+            <p style={{ fontSize: '0.76rem', color: bg.inkSoft, marginBottom: '0.6rem' }}>
+              押すと末尾字幕に追加。保存率 +30-50% の実証 CTA
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+              {SAVE_CTAS.map((cta, i) => (
+                <button key={i} onClick={() => appendSaveCta(cta)} style={{
+                  ...btn(),
+                  fontSize: '0.74rem',
+                  padding: '0.38rem 0.7rem',
+                }}>
+                  {cta}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* 編集テンプレート (型) */}
           <div style={card}>
             <p style={label}><Wand2 size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} />編集テンプレート</p>
