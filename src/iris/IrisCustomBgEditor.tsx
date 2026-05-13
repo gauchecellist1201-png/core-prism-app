@@ -86,7 +86,7 @@ export default function IrisCustomBgEditor({ onClose, onCreated }: Props) {
         onClick={e => e.stopPropagation()}
         style={{
           background: '#fff', borderRadius: 24, padding: '1.5rem',
-          maxWidth: 720, width: '100%', maxHeight: '90vh', overflow: 'auto',
+          maxWidth: 720, width: '100%', maxHeight: 'calc(100dvh - 2rem)', overflow: 'auto',
           fontFamily: IRIS_FONTS.body, color: IRIS_COLORS.navy,
         }}
       >

@@ -145,8 +145,9 @@ export default function CheckoutModal({ brand, plan, onClose, onSuccess }: Props
         transition={{ type: 'spring', damping: 24, stiffness: 280 }}
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#FFFFFF', borderRadius: 24, padding: '1.75rem',
-          maxWidth: 540, width: '100%', maxHeight: '92vh', overflow: 'auto',
+          background: '#FFFFFF', borderRadius: 24, padding: '1.5rem',
+          maxWidth: 540, width: '100%',
+          maxHeight: 'calc(100dvh - 2rem)', overflow: 'auto',
           fontFamily: 'Inter, -apple-system, sans-serif',
           color: '#1F1A2E',
           boxShadow: '0 30px 80px rgba(15,10,25,0.4)',

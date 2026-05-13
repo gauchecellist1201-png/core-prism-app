@@ -121,7 +121,7 @@ export default function LegalModal({ kind, onClose }: Props) {
         style={{
           background: '#fff',
           border: '1px solid #D8DDE8',
-          maxHeight: 'calc(100vh - 4rem)',
+          maxHeight: 'calc(100dvh - 2rem)',
         }}
         initial={{ scale: 0.95, y: 20 }}
         animate={{ scale: 1, y: 0 }}

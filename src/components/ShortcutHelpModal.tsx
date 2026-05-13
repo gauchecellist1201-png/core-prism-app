@@ -71,7 +71,7 @@ export default function ShortcutHelpModal({ open: openProp, onClose }: Props = {
               style={{
                 width: '92%',
                 maxWidth: 540,
-                maxHeight: '85vh',
+                maxHeight: 'calc(100dvh - 2rem)',
                 overflowY: 'auto',
                 background: 'rgba(15,15,25,0.92)',
                 backdropFilter: 'blur(24px)',

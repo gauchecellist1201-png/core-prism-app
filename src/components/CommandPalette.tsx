@@ -191,7 +191,7 @@ export default function CommandPalette({
         >
           <motion.div
             className="w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col"
-            style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)', maxHeight: 'calc(100vh - 6rem)' }}
+            style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)', maxHeight: 'calc(100dvh - 4rem)' }}
             initial={{ scale: 0.96, y: -20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: -20 }}
             onClick={e => e.stopPropagation()}
           >

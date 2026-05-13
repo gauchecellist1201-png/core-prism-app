@@ -142,8 +142,8 @@ export default function SaasAgentStudio({ persona, settings, onClose }: Props) {
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden"
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        className="w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)', maxHeight: 'calc(100dvh - 2rem)' }}
         initial={{ scale: 0.96, y: 16 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.96, y: 16 }}

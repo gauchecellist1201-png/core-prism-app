@@ -75,8 +75,8 @@ export default function OrgPanel({ brand, onClose }: Props) {
         transition={{ type: 'spring', damping: 24, stiffness: 280 }}
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#FFFFFF', borderRadius: 24, padding: '2rem',
-          maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto',
+          background: '#FFFFFF', borderRadius: 24, padding: '1.5rem',
+          maxWidth: 560, width: '100%', maxHeight: 'calc(100dvh - 2rem)', overflowY: 'auto',
           fontFamily: 'Inter, -apple-system, sans-serif', color: '#1F1A2E',
           boxShadow: '0 30px 80px rgba(15,10,25,0.4)',
         }}

@@ -393,7 +393,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
             style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(20,15,30,0.5)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
             <motion.div initial={{ scale: 0.92, y: 24 }} animate={{ scale: 1, y: 0 }}
               onClick={e => e.stopPropagation()}
-              style={{ background: '#fff', borderRadius: 24, padding: '1.75rem', maxWidth: 560, width: '100%', maxHeight: '90vh', overflow: 'auto' }}>
+              style={{ background: '#fff', borderRadius: 24, padding: '1.5rem', maxWidth: 560, width: '100%', maxHeight: 'calc(100dvh - 2rem)', overflow: 'auto' }}>
               <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.5rem', color: '#1F1A2E', margin: '0 0 1.25rem' }}>
                 コラボ募集を出す
               </h3>

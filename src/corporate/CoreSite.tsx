@@ -161,7 +161,7 @@ export default function CoreSite() {
           padding: '7.5rem 1.5rem 7rem',
           overflow: 'hidden',
           textAlign: 'center',
-          minHeight: '88vh',
+          minHeight: '88dvh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

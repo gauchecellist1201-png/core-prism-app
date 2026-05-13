@@ -54,32 +54,42 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
       onClick={onClose}
     >
       <motion.div
-        className="w-full max-w-lg m-4 rounded-2xl overflow-hidden"
-        style={{ background: '#12121a', border: '1px solid rgba(255,255,255,0.08)' }}
+        className="w-full max-w-lg m-4 rounded-2xl overflow-hidden flex flex-col"
+        style={{
+          background: '#12121a',
+          border: '1px solid rgba(255,255,255,0.08)',
+          maxHeight: 'calc(100dvh - 2rem)',
+        }}
         initial={{ scale: 0.95, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95 }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-5 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="flex items-center justify-between p-5 pb-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <p className="text-fg text-sm font-light tracking-wide">環境設定</p>
-          <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle text-xl">×</button>
+          <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle text-xl" style={{ minWidth: 32, minHeight: 32 }} aria-label="閉じる">×</button>
         </div>
 
-        <div className="flex gap-1 px-5 pt-3 pb-0">
+        <div
+          className="flex gap-1 px-5 pt-3 pb-0 flex-shrink-0"
+          style={{ overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+        >
           {[['general', '一般'], ['personas', '人格'], ['ai', 'AI設定'], ['voice', '音声'], ['usage', '使用状況'], ['integrations', '連携']].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id as typeof tab)}
               className="px-3 py-1.5 rounded-lg text-xs transition-all"
               style={{
                 background: tab === id ? 'rgba(201,169,110,0.12)' : 'transparent',
                 color: tab === id ? '#c9a96e' : '#4a4a6a',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                minHeight: 36,
               }}>
               {label}
             </button>
           ))}
         </div>
 
-        <div className="p-5 space-y-4" style={{ minHeight: '320px' }}>
+        <div className="p-5 space-y-4 flex-1" style={{ minHeight: '320px', overflowY: 'auto' }}>
           <AnimatePresence mode="wait">
             {tab === 'general' && (
               <motion.div key="g" className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

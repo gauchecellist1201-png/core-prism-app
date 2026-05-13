@@ -326,7 +326,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 position: 'absolute', left: 0, right: 0, bottom: 0,
                 background: '#FFFFFF', borderRadius: '24px 24px 0 0',
                 padding: '1rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px))',
-                maxHeight: '78vh', overflowY: 'auto',
+                maxHeight: '78dvh', overflowY: 'auto',
                 boxShadow: '0 -16px 60px rgba(31,26,46,0.25)',
               }}>
               <div style={{
@@ -507,7 +507,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               onClick={e => e.stopPropagation()}
               style={{
                 background: '#fff', borderRadius: 24, padding: '1.5rem',
-                maxWidth: 700, width: '100%', maxHeight: '85vh', overflow: 'auto',
+                maxWidth: 700, width: '100%', maxHeight: 'calc(100dvh - 2rem)', overflow: 'auto',
               }}
             >
               <div style={{ marginBottom: '1.25rem' }}>
@@ -1440,8 +1440,8 @@ JSON だけを返し、説明文や \`\`\`json は不要。`;
             alignSelf: 'start',
           }}>
             <Card bg={bg}>
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 280, maxHeight: '60vh' }}>
-                <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '56vh', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,0.15)' }} />
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 280, maxHeight: '60dvh' }}>
+                <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '56dvh', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,0.15)' }} />
               </div>
               {/* AI ノート (操作直下) */}
               {aiNote && (

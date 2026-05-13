@@ -141,12 +141,13 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
       <motion.div
         initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }}
         onClick={e => e.stopPropagation()}
-        className="cp-modal w-full max-w-3xl max-h-[92vh] overflow-y-auto"
+        className="cp-modal w-full max-w-3xl overflow-y-auto"
         style={{
           background: 'var(--surface-1, #0e0e15)',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 18,
           color: 'var(--fg)',
+          maxHeight: 'calc(100dvh - 1.5rem)',
         }}
       >
         {/* ヘッダ */}

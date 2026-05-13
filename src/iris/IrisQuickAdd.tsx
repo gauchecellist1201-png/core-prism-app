@@ -202,7 +202,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
           backdropFilter: 'blur(40px)',
           borderRadius: 32,
           padding: '1.75rem',
-          maxWidth: 760, width: '100%', maxHeight: '92vh', overflow: 'auto',
+          maxWidth: 760, width: '100%', maxHeight: 'calc(100dvh - 2rem)', overflow: 'auto',
           fontFamily: IRIS_FONTS.body, color: '#2A1F3F',
           boxShadow: '0 40px 100px rgba(15,10,25,0.5), 0 0 0 1px rgba(255,255,255,0.4) inset',
           border: '1px solid rgba(225,48,108,0.15)',

@@ -194,6 +194,19 @@ input, textarea, select {
     max-height: 100dvh;
   }
 
+  /* どうしても vh が使われている残りのモーダル → dvh で上書き */
+  [style*="maxHeight: '92vh'"],
+  [style*="maxHeight:'92vh'"],
+  [style*="maxHeight: '90vh'"],
+  [style*="maxHeight:'90vh'"],
+  [style*="maxHeight: '85vh'"],
+  [style*="maxHeight:'85vh'"],
+  [style*="max-height: 92vh"],
+  [style*="max-height: 90vh"],
+  [style*="max-height: 85vh"] {
+    max-height: calc(100dvh - 1.5rem) !important;
+  }
+
   /* タブバー: モバイルで折り返さず横スクロールにグリップ表示 */
   nav[style*="overflowX: auto"], nav[style*="overflow-x: auto"] {
     -webkit-overflow-scrolling: touch;
@@ -598,12 +611,18 @@ input, textarea, select { font-family: inherit; }
   }
   /* Iris ヘッダの戻る/メニューボタンを 44px 確保 */
   .iris-header-btn {
-    min-width: 40px !important;
-    min-height: 40px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
   }
   /* 全ボタンの最低タッチ対象 (44px) */
   button:not(.iris-tabs button):not(.lp-nav-link) {
     min-height: 44px;
+  }
+  /* LP のスタンドアロンリンクをタッチ対象 44px に */
+  a.lp-tap-link {
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center;
   }
   /* iPhone Safari の安全な水平スクロール抑制 */
   html, body {
@@ -718,9 +737,14 @@ input, textarea, select { font-family: inherit; }
     padding-right: max(1rem, env(safe-area-inset-right)) !important;
     padding-left: max(0.25rem, env(safe-area-inset-left)) !important;
     scroll-padding-right: 1rem;
+    scroll-snap-type: x proximity;
   }
   /* スクロール可能なことを示す右側フェード */
   .iris-tabs::-webkit-scrollbar { display: none; }
+  .iris-tabs button {
+    scroll-snap-align: start;
+    min-height: 44px !important;
+  }
 }
 /* PC ではヘッダの ≡ メニュー (もう一つのトリガー) を非表示 */
 @media (min-width: 769px) {
