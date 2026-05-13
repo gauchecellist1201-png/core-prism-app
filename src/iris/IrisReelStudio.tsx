@@ -14,6 +14,20 @@ import {
   Play, Square, Trash2, ChevronUp, ChevronDown, Sparkles,
   Mic, Loader2, Wand2, AlertCircle, UploadCloud,
 } from 'lucide-react';
+import {
+  COLOR_GRADES, applyGradeOverlay, getGrade,
+  type GradeId,
+} from './reelStudio/Grading';
+import {
+  STICKER_ICONS, STICKER_ANIMS, drawSticker, makeStickerId,
+  type StickerInstance, type StickerAnim,
+} from './reelStudio/Stickers';
+import {
+  VOICE_PRESETS, waitForVoices, scheduleTtsDuringExport,
+  type VoiceStyle,
+} from './reelStudio/Tts';
+import { detectAudioPeaks } from './reelStudio/Highlight';
+import { translateCaptions, type TargetLang } from './reelStudio/Translate';
 
 // ─── 編集テンプレート (型) ─────────────────────
 type ReelTemplate = {
@@ -854,6 +868,17 @@ const FONTS: FontDef[] = [
   { family: 'Lobster',              cssName: '"Lobster"',              href: 'https://fonts.googleapis.com/css2?family=Lobster&display=swap' },
   { family: 'Oswald',               cssName: '"Oswald"',               href: 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap' },
   { family: 'Montserrat',           cssName: '"Montserrat"',           href: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap' },
+  // 追加プレミアム +10 種 (2026 CapCut Pro killer)
+  { family: 'Reggae One',           cssName: '"Reggae One"',           href: 'https://fonts.googleapis.com/css2?family=Reggae+One&display=swap' },
+  { family: 'Yusei Magic',          cssName: '"Yusei Magic"',          href: 'https://fonts.googleapis.com/css2?family=Yusei+Magic&display=swap' },
+  { family: 'Hina Mincho',          cssName: '"Hina Mincho"',          href: 'https://fonts.googleapis.com/css2?family=Hina+Mincho&display=swap' },
+  { family: 'Yomogi',               cssName: '"Yomogi"',               href: 'https://fonts.googleapis.com/css2?family=Yomogi&display=swap' },
+  { family: 'Sawarabi Mincho',      cssName: '"Sawarabi Mincho"',      href: 'https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap' },
+  { family: 'Great Vibes',          cssName: '"Great Vibes"',          href: 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap' },
+  { family: 'Lobster Two',          cssName: '"Lobster Two"',          href: 'https://fonts.googleapis.com/css2?family=Lobster+Two:wght@400;700&display=swap' },
+  { family: 'Pacifico',             cssName: '"Pacifico"',             href: 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap' },
+  { family: 'Caveat Brush',         cssName: '"Caveat Brush"',         href: 'https://fonts.googleapis.com/css2?family=Caveat+Brush&display=swap' },
+  { family: 'Bungee',               cssName: '"Bungee"',               href: 'https://fonts.googleapis.com/css2?family=Bungee&display=swap' },
 ];
 
 const loadedFontSet = new Set<string>();
@@ -901,6 +926,8 @@ interface Clip {
   el?: HTMLImageElement | HTMLVideoElement;
   /** 速度ランプ (動画クリップのみ): 0.25-4.0. デフォルト 1.0 */
   speed?: number;
+  /** カラーグレード LUT ID */
+  grade?: GradeId;
 }
 
 interface Caption {
@@ -1261,6 +1288,28 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, myDeals = [], pos
   const [scheduleGenerating, setScheduleGenerating] = useState(false);
   const [scheduleErr, setScheduleErr] = useState<string>('');
   const [scheduleSaved, setScheduleSaved] = useState<string | null>(null);
+
+  // ─── CapCut Pro killer 機能 (LUT / ステッカー / TTS / 翻訳 / 4K / ハイライト) ─────
+  const [stickers, setStickers] = useState<StickerInstance[]>([]);
+  const stickersRef = useRef<StickerInstance[]>([]);
+  useEffect(() => { stickersRef.current = stickers; }, [stickers]);
+
+  const [voicePreset, setVoicePreset] = useState<VoiceStyle>('female');
+  const [ttsLang, setTtsLang] = useState<'ja-JP' | 'en-US' | 'zh-CN' | 'ko-KR'>('ja-JP');
+  const [ttsEnabled, setTtsEnabled] = useState<boolean>(false);
+
+  const [translating, setTranslating] = useState<TargetLang | null>(null);
+  const [translateErr, setTranslateErr] = useState<string>('');
+  const [originalCaptions, setOriginalCaptions] = useState<Caption[] | null>(null);
+
+  const [export4K, setExport4K] = useState<boolean>(false);
+  const [highlightBusy, setHighlightBusy] = useState<boolean>(false);
+  const [highlightInfo, setHighlightInfo] = useState<string>('');
+
+  // 字幕生成エラー以外で TTS schedule に渡せるよう ref を持つ
+  const ttsScheduleRef = useRef<{ cancel: () => void } | null>(null);
+
+  useEffect(() => { waitForVoices().catch(() => {}); }, []);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
@@ -1927,10 +1976,15 @@ JSON のみで返答。`;
     }
 
     const el = cur.clip.el;
+    const grade = getGrade(cur.clip.grade);
     if (el) {
       const sw = el instanceof HTMLVideoElement ? (el.videoWidth || OUT_W) : (el as HTMLImageElement).naturalWidth;
       const sh = el instanceof HTMLVideoElement ? (el.videoHeight || OUT_H) : (el as HTMLImageElement).naturalHeight;
+      // LUT filter を素材描画にだけ適用 (字幕/ステッカーには影響しない)
+      ctx.filter = grade.filter || 'none';
       drawCover(ctx, el, sw, sh, canvas.width, canvas.height, cur.clip.kenBurns, local);
+      ctx.filter = 'none';
+      applyGradeOverlay(ctx, grade, canvas.width, canvas.height);
     }
 
     // クリップ末尾 0.4s 間は切替効果
@@ -1939,6 +1993,11 @@ JSON のみで返答。`;
     if (remaining < TRANS_SEC && cur !== tl[tl.length - 1]) {
       const p = 1 - remaining / TRANS_SEC;
       applyTransition(ctx, cur.clip.transition, p, canvas.width, canvas.height);
+    }
+
+    // ステッカー (字幕より下、最前面は字幕)
+    for (const st of stickersRef.current) {
+      drawSticker(ctx, st, globalT, canvas.width, canvas.height);
     }
 
     // 字幕
@@ -2078,6 +2137,17 @@ JSON のみで返答。`;
     setProgress(0);
     chunksRef.current = [];
 
+    // 4K 出力の場合は実出力解像度を 2x にする
+    const origW = canvas.width;
+    const origH = canvas.height;
+    if (export4K) {
+      canvas.width = 2160;
+      canvas.height = 3840;
+    } else {
+      canvas.width = OUT_W;
+      canvas.height = OUT_H;
+    }
+
     const stream = canvas.captureStream(FPS);
 
     // BGM があれば audio track をミックス
@@ -2122,7 +2192,18 @@ JSON のみで返答。`;
       }
     }
 
+    // TTS ナレーション: 字幕タイミングで speechSynthesis を発話する
+    // → スピーカー出力経由で MediaRecorder の audio track に乗る (BGM とミックス)
     const start = performance.now();
+    if (ttsEnabled && captions.length) {
+      const preset = VOICE_PRESETS.find(v => v.id === voicePreset) ?? VOICE_PRESETS[0];
+      ttsScheduleRef.current = scheduleTtsDuringExport(
+        captions.map(c => ({ start: c.start, text: c.text })),
+        preset,
+        ttsLang,
+        start,
+      );
+    }
     await new Promise<void>(resolve => {
       const step = (now: number) => {
         const t = (now - start) / 1000;
@@ -2143,6 +2224,15 @@ JSON のみで返答。`;
     for (const c of clips) {
       if (c.kind === 'video' && c.el instanceof HTMLVideoElement) c.el.pause();
     }
+    // TTS スケジュールをキャンセル
+    if (ttsScheduleRef.current) {
+      try { ttsScheduleRef.current.cancel(); } catch {/* */}
+      ttsScheduleRef.current = null;
+    }
+    // 4K 用に伸ばしたキャンバスを元の表示サイズに戻す
+    canvas.width = origW;
+    canvas.height = origH;
+    drawAt(0);
   };
 
   const convertToMp4 = async () => {
@@ -2853,6 +2943,10 @@ JSON のみで返答。`;
                         style={{ ...inp, width: 'auto', padding: '0.25rem 0.4rem' }}>
                         {TRANSITIONS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                       </select>
+                      <select value={c.grade || 'none'} onChange={e => updateClip(c.id, { grade: e.target.value as GradeId })}
+                        style={{ ...inp, width: 'auto', padding: '0.25rem 0.4rem' }} title="LUT カラーグレード">
+                        {COLOR_GRADES.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
+                      </select>
                       {c.kind === 'video' && (
                         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                           速度
@@ -2953,15 +3047,236 @@ JSON のみで返答。`;
                 </select>
               </div>
             </div>
+
+            {/* AI 翻訳: 日本語字幕 → 英 / 中 / 韓 */}
+            <p style={{ ...label, marginTop: '1rem' }}>AI 翻訳 (Gemini)</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              {(['en', 'zh', 'ko'] as TargetLang[]).map(lng => (
+                <button key={lng} disabled={!captions.length || translating !== null}
+                  onClick={async () => {
+                    setTranslateErr('');
+                    setTranslating(lng);
+                    try {
+                      if (!originalCaptions) setOriginalCaptions(captions);
+                      const texts = captions.map(c => c.text);
+                      const translated = await translateCaptions(texts, lng);
+                      setCaptions(prev => prev.map((c, i) => ({ ...c, text: translated[i] ?? c.text })));
+                    } catch (e: any) {
+                      setTranslateErr(e?.message || '翻訳失敗');
+                    } finally {
+                      setTranslating(null);
+                    }
+                  }} style={btn(translating === lng)}>
+                  {translating === lng ? <Loader2 size={12} className="spin" /> : null}
+                  {lng === 'en' ? '英語' : lng === 'zh' ? '中文' : '한국어'} に翻訳
+                </button>
+              ))}
+              {originalCaptions && (
+                <button onClick={() => { setCaptions(originalCaptions); setOriginalCaptions(null); }} style={btn()}>
+                  日本語に戻す
+                </button>
+              )}
+            </div>
+            {translateErr && <p style={{ color: '#C8385C', fontSize: '0.78rem', marginTop: 6 }}>{translateErr}</p>}
+
+            {/* AI ナレーション (Web Speech TTS) */}
+            <p style={{ ...label, marginTop: '1rem' }}>AI ナレーション (無料 TTS)</p>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.78rem' }}>
+                <input type="checkbox" checked={ttsEnabled} onChange={e => setTtsEnabled(e.target.checked)} />
+                書き出し時にナレーションを乗せる
+              </label>
+              <select value={voicePreset} onChange={e => setVoicePreset(e.target.value as VoiceStyle)}
+                style={{ ...inp, width: 'auto' }}>
+                {VOICE_PRESETS.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}
+              </select>
+              <select value={ttsLang} onChange={e => setTtsLang(e.target.value as typeof ttsLang)}
+                style={{ ...inp, width: 'auto' }}>
+                <option value="ja-JP">日本語</option>
+                <option value="en-US">English</option>
+                <option value="zh-CN">中文</option>
+                <option value="ko-KR">한국어</option>
+              </select>
+            </div>
+            <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 4 }}>
+              字幕テキストをそのまま読み上げ。ブラウザ標準の TTS なので完全無料・APIキー不要。
+            </p>
+          </div>
+
+          {/* ステッカー / 矢印 / 吹き出し */}
+          <div style={card}>
+            <p style={label}>ステッカー / アイコン / 矢印</p>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <button onClick={() => {
+                setStickers(prev => [...prev, {
+                  id: makeStickerId(), kind: 'icon', payload: 'sparkles',
+                  start: 0, end: Math.min(totalDuration || 3, 3),
+                  x: 0.5, y: 0.5, size: 140, rotation: 0, color: '#FFD24D',
+                  anim: 'pop',
+                }]);
+              }} style={btn(true)}>+ アイコン</button>
+              <button onClick={() => {
+                setStickers(prev => [...prev, {
+                  id: makeStickerId(), kind: 'arrow', payload: 'right',
+                  start: 0, end: Math.min(totalDuration || 3, 3),
+                  x: 0.3, y: 0.5, size: 160, rotation: 0, color: '#FF3D6E',
+                  anim: 'shake',
+                }]);
+              }} style={btn()}>+ 矢印</button>
+              <button onClick={() => {
+                setStickers(prev => [...prev, {
+                  id: makeStickerId(), kind: 'bubble', payload: 'ここ!',
+                  start: 0, end: Math.min(totalDuration || 3, 3),
+                  x: 0.5, y: 0.7, size: 140, rotation: 0, color: '#FFFFFF',
+                  anim: 'bounce',
+                }]);
+              }} style={btn()}>+ 吹き出し</button>
+              <button onClick={() => {
+                setStickers(prev => [...prev, {
+                  id: makeStickerId(), kind: 'badge', payload: 'NEW',
+                  start: 0, end: Math.min(totalDuration || 3, 3),
+                  x: 0.18, y: 0.18, size: 110, rotation: -8, color: '#FF3D6E',
+                  anim: 'pop',
+                }]);
+              }} style={btn()}>+ バッジ</button>
+              {stickers.length > 0 && (
+                <button onClick={() => setStickers([])} style={btn()}>
+                  <Trash2 size={12} /> すべて削除
+                </button>
+              )}
+            </div>
+            <div style={{ display: 'grid', gap: 6, marginTop: '0.6rem' }}>
+              {stickers.map((s, i) => (
+                <div key={s.id} style={{
+                  display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 6,
+                  alignItems: 'center', padding: 6, border: `1px solid ${bg.cardBorder}`, borderRadius: 10,
+                  background: '#fff',
+                }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: bg.ink }}>#{i + 1} {s.kind}</span>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {s.kind === 'icon' && (
+                      <select value={s.payload} onChange={e => setStickers(prev => prev.map(x => x.id === s.id ? { ...x, payload: e.target.value } : x))}
+                        style={{ ...inp, width: 'auto', padding: '0.2rem 0.3rem', fontSize: '0.75rem' }}>
+                        {STICKER_ICONS.map(ic => <option key={ic.id} value={ic.id}>{ic.label}</option>)}
+                      </select>
+                    )}
+                    {s.kind === 'arrow' && (
+                      <select value={s.payload} onChange={e => setStickers(prev => prev.map(x => x.id === s.id ? { ...x, payload: e.target.value } : x))}
+                        style={{ ...inp, width: 'auto', padding: '0.2rem 0.3rem', fontSize: '0.75rem' }}>
+                        <option value="up">↑</option>
+                        <option value="down">↓</option>
+                        <option value="left">←</option>
+                        <option value="right">→</option>
+                      </select>
+                    )}
+                    {(s.kind === 'bubble' || s.kind === 'badge') && (
+                      <input value={s.payload}
+                        onChange={e => setStickers(prev => prev.map(x => x.id === s.id ? { ...x, payload: e.target.value } : x))}
+                        style={{ ...inp, padding: '0.2rem 0.3rem', fontSize: '0.78rem', width: 100 }} />
+                    )}
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: '0.7rem' }}>
+                      開始
+                      <input type="number" min={0} step={0.1} value={s.start.toFixed(1)}
+                        onChange={e => setStickers(prev => prev.map(x => x.id === s.id ? { ...x, start: Number(e.target.value) } : x))}
+                        style={{ ...inp, width: 55, padding: '0.2rem 0.3rem', fontSize: '0.75rem' }} />
+                    </label>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: '0.7rem' }}>
+                      終了
+                      <input type="number" min={0} step={0.1} value={s.end.toFixed(1)}
+                        onChange={e => setStickers(prev => prev.map(x => x.id === s.id ? { ...x, end: Number(e.target.value) } : x))}
+                        style={{ ...inp, width: 55, padding: '0.2rem 0.3rem', fontSize: '0.75rem' }} />
+                    </label>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: '0.7rem' }}>
+                      X
+                      <input type="number" min={0} max={1} step={0.05} value={s.x.toFixed(2)}
+                        onChange={e => setStickers(prev => prev.map(x => x.id === s.id ? { ...x, x: Number(e.target.value) } : x))}
+                        style={{ ...inp, width: 55, padding: '0.2rem 0.3rem', fontSize: '0.75rem' }} />
+                    </label>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: '0.7rem' }}>
+                      Y
+                      <input type="number" min={0} max={1} step={0.05} value={s.y.toFixed(2)}
+                        onChange={e => setStickers(prev => prev.map(x => x.id === s.id ? { ...x, y: Number(e.target.value) } : x))}
+                        style={{ ...inp, width: 55, padding: '0.2rem 0.3rem', fontSize: '0.75rem' }} />
+                    </label>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: '0.7rem' }}>
+                      サイズ
+                      <input type="number" min={20} max={500} value={s.size}
+                        onChange={e => setStickers(prev => prev.map(x => x.id === s.id ? { ...x, size: Number(e.target.value) } : x))}
+                        style={{ ...inp, width: 55, padding: '0.2rem 0.3rem', fontSize: '0.75rem' }} />
+                    </label>
+                    <input type="color" value={s.color}
+                      onChange={e => setStickers(prev => prev.map(x => x.id === s.id ? { ...x, color: e.target.value } : x))}
+                      style={{ width: 28, height: 28, border: `1px solid ${bg.cardBorder}`, borderRadius: 6, padding: 0, background: '#fff' }} />
+                    <select value={s.anim} onChange={e => setStickers(prev => prev.map(x => x.id === s.id ? { ...x, anim: e.target.value as StickerAnim } : x))}
+                      style={{ ...inp, width: 'auto', padding: '0.2rem 0.3rem', fontSize: '0.75rem' }}>
+                      {STICKER_ANIMS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+                    </select>
+                  </div>
+                  <button onClick={() => setStickers(prev => prev.filter(x => x.id !== s.id))} style={btn()}>
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 6 }}>
+              Lucide アイコン {STICKER_ICONS.length} 種 + 矢印 / 吹き出し / バッジ。アニメ {STICKER_ANIMS.length} 種。
+            </p>
+          </div>
+
+          {/* AI ハイライト検出 + 一括 LUT */}
+          <div style={card}>
+            <p style={label}>AI ハイライト & 一括カラーグレード</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button onClick={async () => {
+                if (!bgmFile) { setHighlightInfo('BGM が必要です'); return; }
+                setHighlightBusy(true);
+                setHighlightInfo('');
+                try {
+                  const { peaks, duration } = await detectAudioPeaks(bgmFile, Math.max(3, Math.min(clips.length || 5, 8)));
+                  if (!peaks.length) { setHighlightInfo('ピーク検出ゼロ。別の BGM で試してください'); return; }
+                  // ピーク時刻にクリップ境界を合わせる
+                  const newDurs: number[] = [];
+                  let prev = 0;
+                  for (let i = 0; i < clips.length; i++) {
+                    const target = peaks[Math.min(i, peaks.length - 1)] ?? duration;
+                    const d = Math.max(0.6, target - prev);
+                    newDurs.push(d);
+                    prev = target;
+                  }
+                  setClips(prev => prev.map((c, i) => ({ ...c, duration: newDurs[i] ?? c.duration })));
+                  setHighlightInfo(`${peaks.length} 個のピークを検出 → カット点に反映 (BGM ${duration.toFixed(1)}s)`);
+                } catch (e: any) {
+                  setHighlightInfo('検出失敗: ' + (e?.message || 'unknown'));
+                } finally {
+                  setHighlightBusy(false);
+                }
+              }} disabled={highlightBusy || !clips.length} style={btn(true)}>
+                {highlightBusy ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />}
+                ハイライトを自動検出
+              </button>
+              <select onChange={e => {
+                const id = e.target.value as GradeId;
+                setClips(prev => prev.map(c => ({ ...c, grade: id })));
+              }} style={{ ...inp, width: 'auto' }} defaultValue="">
+                <option value="" disabled>全クリップに LUT を一括適用</option>
+                {COLOR_GRADES.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
+              </select>
+            </div>
+            {highlightInfo && <p style={{ fontSize: '0.75rem', color: bg.inkSoft, marginTop: 6 }}>{highlightInfo}</p>}
           </div>
 
           {/* 書き出し */}
           <div style={card}>
             <p style={label}>書き出し</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', color: bg.ink }}>
+                <input type="checkbox" checked={export4K}
+                  onChange={e => setExport4K(e.target.checked)} />
+                4K (2160×3840) で出力 — 重くなる可能性あり
+              </label>
               {!recording ? (
                 <button onClick={startExport} disabled={!clips.length} style={btn(true)}>
-                  <Download size={14} /> リール書き出し開始
+                  <Download size={14} /> リール書き出し開始 ({export4K ? '4K' : '1080p'})
                 </button>
               ) : (
                 <button disabled style={btn()}>
