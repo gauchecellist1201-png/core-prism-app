@@ -24,7 +24,7 @@ import { shareToInstagram } from './instagramShare';
 import {
   Sparkles, TrendingUp, Search, Mail, Film, MessageSquare, Edit3,
   Camera, HeartPulse, Leaf, UsersRound, Users, Handshake, FileText,
-  Menu as MenuIcon, Gift, Palette, ArrowLeft, Clapperboard,
+  Menu as MenuIcon, Gift, Palette, ArrowLeft, Clapperboard, CalendarClock,
   Download, Image as ImageIcon, Clipboard, RefreshCw, Wand2, Scissors,
   Eye, Bookmark, BookmarkPlus, Send, Trash2, Loader2, Brain,
 } from 'lucide-react';
@@ -49,12 +49,15 @@ const IRIS_TAB_ICON: Record<string, LucideIcon> = {
   kit: FileText,
   invite: Gift,
   reel: Clapperboard,
+  schedule: CalendarClock,
 };
 import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 import IrisDirectorView from './IrisDirectorView';
 import VideoStudio from '../components/VideoStudio';
 const IrisReelStudio = React.lazy(() => import('./IrisReelStudio'));
+import IrisPostQueueView from './IrisPostQueueView';
+import { usePostQueue } from './usePostQueue';
 import IrisTriageView from './IrisTriageView';
 import IrisCommunityView from './IrisCommunityView';
 import IrisStrategistView from './IrisStrategistView';
@@ -78,7 +81,7 @@ interface Props {
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite';
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
@@ -93,6 +96,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const allBgs = useMemo(() => getAllBackgrounds(), [bgListVersion]);
 
   const desk = useInfluencerDesk();
+  const postQueue = usePostQueue();
   const team = useIrisTeam();
   const health = useHealth();
   const multiAccount = useMultiAccount();
@@ -253,6 +257,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             { id: 'deals' as Tab,     l: '案件',           primary: true },
             { id: 'invite' as Tab,    l: '招待 +30日',     primary: true },
             { id: 'reel' as Tab,      l: 'リール作成',     primary: true },
+            { id: 'schedule' as Tab,  l: '投稿予約',       primary: true },
             { id: 'director' as Tab,  l: '丸投げ編集',     primary: false },
             { id: 'negotiate' as Tab, l: '交渉',           primary: false },
             { id: 'draft' as Tab,     l: '投稿下書き',     primary: false },
@@ -352,6 +357,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   { id: 'deals' as Tab,     l: '案件' },
                   { id: 'invite' as Tab,    l: '招待 +30日' },
                   { id: 'reel' as Tab,      l: 'リール作成' },
+                  { id: 'schedule' as Tab,  l: '投稿予約' },
                   { id: 'director' as Tab,  l: '丸投げ編集' },
                   { id: 'negotiate' as Tab, l: '交渉' },
                   { id: 'draft' as Tab,     l: '投稿下書き' },
@@ -459,9 +465,18 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   リールスタジオを読み込み中…
                 </div>
               }>
-                <IrisReelStudio bg={bg} />
+                <IrisReelStudio
+                  bg={bg}
+                  myDeals={myDeals}
+                  postQueue={postQueue}
+                  settings={settings}
+                  persona={irisPersonaStub}
+                  mediaKit={mediaKit}
+                  onJumpToSchedule={() => setTab('schedule')}
+                />
               </React.Suspense>
             )}
+            {tab === 'schedule' && <IrisPostQueueView bg={bg} queue={postQueue} />}
             {tab === 'community' && <IrisCommunityView bg={bg} myHandle={mediaKit?.handleName} />}
             {tab === 'team' && <TeamView bg={bg} team={team} desk={desk} myDeals={myDeals} />}
             {tab === 'brands' && <BrandMatchView bg={bg} desk={desk} mediaKit={mediaKit} settings={settings} />}

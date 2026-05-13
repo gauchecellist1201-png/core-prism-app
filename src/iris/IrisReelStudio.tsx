@@ -786,6 +786,16 @@ const BGM_LIBRARY: BgmTrack[] = [
 
 interface Props {
   bg: IrisBackgroundDef;
+  /** 投稿予約タブへ移動 (optional) */
+  onJumpToSchedule?: () => void;
+  /** 案件一覧 (オプション — 予約作成時に紐づけ) */
+  myDeals?: any[];
+  /** 予約キュー (オプション) */
+  postQueue?: ReturnType<typeof import('./usePostQueue').usePostQueue>;
+  /** AI 設定 (キャプション生成用) */
+  settings?: any;
+  persona?: any;
+  mediaKit?: any;
 }
 
 // ─── 出力解像度 (プレビュー用に縮小) ────────────────
@@ -1202,7 +1212,7 @@ async function convertWebmToMp4(webm: Blob): Promise<Blob | null> {
 // ============================================================
 // メインコンポーネント
 // ============================================================
-export default function IrisReelStudio({ bg }: Props) {
+export default function IrisReelStudio({ bg, onJumpToSchedule, myDeals = [], postQueue, settings, persona, mediaKit }: Props) {
   const [clips, setClips] = useState<Clip[]>([]);
   const [bgmFile, setBgmFile] = useState<File | null>(null);
   const [bpm, setBpm] = useState<number | null>(null);
@@ -1238,6 +1248,16 @@ export default function IrisReelStudio({ bg }: Props) {
   const [templateCategory, setTemplateCategory] = useState<string>('all');
   const [shareUrl, setShareUrl] = useState<string>('');
   const [shareCopied, setShareCopied] = useState(false);
+  // 投稿予約モーダル
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleDealId, setScheduleDealId] = useState<string>('');
+  const [scheduleAt, setScheduleAt] = useState<string>('');  // datetime-local 形式
+  const [scheduleCaption, setScheduleCaption] = useState<string>('');
+  const [scheduleHashtags, setScheduleHashtags] = useState<string>('');
+  const [scheduleCta, setScheduleCta] = useState<string>('');
+  const [scheduleGenerating, setScheduleGenerating] = useState(false);
+  const [scheduleErr, setScheduleErr] = useState<string>('');
+  const [scheduleSaved, setScheduleSaved] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
@@ -1388,6 +1408,166 @@ export default function IrisReelStudio({ bg }: Props) {
         transition: i === 0 ? 'fade' : avgCut < 1.8 ? 'whip' : avgCut < 2.5 ? 'zoom' : 'dissolve',
       };
     }));
+  };
+
+  // ─── 投稿予約: AI でキャプション生成 (リール文脈 + 案件文脈) ─────
+  const openScheduleModal = async () => {
+    // 推奨スロット
+    const { suggestNextSlot } = await import('./usePostQueue');
+    const slot = suggestNextSlot();
+    const iso = new Date(slot.getTime() - slot.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    setScheduleAt(iso);
+    setScheduleDealId('');
+    setScheduleCaption('');
+    setScheduleHashtags('');
+    setScheduleCta('');
+    setScheduleErr('');
+    setScheduleSaved(null);
+    setScheduleOpen(true);
+    // すぐに AI 生成走らせる
+    void generateScheduleDraft('');
+  };
+
+  const generateScheduleDraft = async (dealId: string) => {
+    setScheduleGenerating(true);
+    setScheduleErr('');
+    try {
+      // リール文脈の要約
+      const pattern = VIRAL_PATTERNS.find(p => p.id === activeFormat);
+      const reelSummary = pattern
+        ? `バイラルパターン「${pattern.name}」(${pattern.example}) を採用。フック「${pattern.hookFormula}」、推奨BGM ${pattern.musicMood}、watch×${pattern.watchMultiplier}`
+        : `${clips.length} クリップ ${totalDuration.toFixed(1)}s のリール`;
+      const captionsText = captions.map(c => c.text).join(' / ');
+
+      const deal = dealId ? myDeals.find((d: any) => d.id === dealId) : null;
+
+      // /api/ai 経由 (Claude key 必要)
+      const sys = `あなたは「Instagram リール本人の声で投稿キャプションを書くゴーストライター」。
+返答は JSON のみ。スキーマ:
+{
+  "caption": "本文 (3-5段落、絵文字活用、最初の1行で離脱防止フック)",
+  "hashtags": ["#tag1", "#tag2", "..."] (10-15個、リールで伸びやすい中規模を中心に),
+  "cta": "末尾の CTA 一文 (保存/フォロー/コメント誘導)"
+}
+
+ルール:
+- 1行目はフック (続きを読みたくなる強い一文)
+- 改行を活用、絵文字 2-5個
+- 本人の体験ベース、押し売りしない
+- ${deal ? '広告/PR 案件: ブランドガイドラインに従い「#PR」または「広告」表記を必ず含める' : '通常投稿: PR タグ不要'}
+- 末尾 CTA は具体的 (例「保存して見返してね」)
+- ハッシュタグはリール内容に強く関連、トレンドタグも 2-3 含める`;
+
+      const userMsg = `## このリールの内容
+${reelSummary}
+
+## 字幕の流れ
+${captionsText || '(まだ字幕なし)'}
+
+${deal ? `## 紐付け案件
+ブランド名: ${deal.brandName}
+プラットフォーム: ${deal.platform}
+納品物: ${deal.deliverables || '(未設定)'}
+ブリーフ: ${deal.brief || '(未設定)'}
+報酬: ${deal.fee ? `¥${deal.fee.toLocaleString('ja-JP')}` : '(未設定)'}` : '## 案件紐付けなし — 通常の自社投稿'}
+
+## 私の人格
+${persona?.name || '@me'} (${persona?.subtitle || ''})
+${persona?.description || ''}
+
+JSON のみで返答。`;
+
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: userMsg }],
+          system: sys,
+          max_tokens: 1200,
+        }),
+      });
+      const data = await res.json();
+      const text: string = data.text || data.content || data.message || '';
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('AI 応答に JSON が含まれていません');
+      const j = JSON.parse(match[0]);
+      setScheduleCaption(String(j.caption || ''));
+      setScheduleHashtags(Array.isArray(j.hashtags) ? j.hashtags.join(' ') : String(j.hashtags || ''));
+      setScheduleCta(String(j.cta || ''));
+    } catch (e: any) {
+      setScheduleErr(e?.message || '生成失敗。手動で記入してください。');
+    } finally {
+      setScheduleGenerating(false);
+    }
+    void settings; void mediaKit; // 将来 generateDraftCopy 直接利用時用
+  };
+
+  const saveSchedule = async () => {
+    if (!postQueue) {
+      setScheduleErr('postQueue が初期化されていません');
+      return;
+    }
+    if (!scheduleCaption.trim()) {
+      setScheduleErr('キャプションを入力してください');
+      return;
+    }
+    if (!scheduleAt) {
+      setScheduleErr('予約時刻を選んでください');
+      return;
+    }
+    // メディア: 既に書き出し済みなら data URL に変換
+    let mediaDataUrl: string | null = null;
+    let thumbDataUrl: string | null = null;
+    const mediaSrc = convertedMp4 || exportUrl;
+    if (mediaSrc) {
+      try {
+        const res = await fetch(mediaSrc);
+        const blob = await res.blob();
+        if (blob.size <= 5_500_000) {
+          mediaDataUrl = await new Promise<string>((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result as string);
+            r.readAsDataURL(blob);
+          });
+        } else {
+          // 大きすぎる場合はメタのみ保存。ユーザーはダウンロード済みファイルを使う想定
+          mediaDataUrl = null;
+        }
+      } catch {/* */}
+    }
+    // サムネ: canvas から
+    if (canvasRef.current) {
+      try {
+        thumbDataUrl = canvasRef.current.toDataURL('image/jpeg', 0.7);
+      } catch {/* */}
+    }
+
+    const deal = scheduleDealId ? myDeals.find((d: any) => d.id === scheduleDealId) : null;
+    const hashtagList = scheduleHashtags
+      .split(/\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0)
+      .map(s => s.startsWith('#') ? s : `#${s}`);
+
+    const isoLocal = scheduleAt; // datetime-local: YYYY-MM-DDTHH:MM
+    const scheduledAt = new Date(isoLocal).toISOString();
+
+    const saved = postQueue.add({
+      scheduledAt,
+      platform: 'instagram_reel',
+      source: 'reel',
+      dealId: deal?.id,
+      brandName: deal?.brandName,
+      caption: scheduleCaption.trim(),
+      hashtags: hashtagList,
+      cta: scheduleCta.trim() || undefined,
+      mediaDataUrl,
+      mediaKind: 'video',
+      thumbDataUrl,
+      reelTemplateId: activeFormat || undefined,
+      reelPattern: VIRAL_PATTERNS.find(p => p.id === activeFormat)?.name,
+    });
+    setScheduleSaved(saved.id);
   };
 
   // ─── コミュニティ テンプレート 適用 ─────
@@ -2799,7 +2979,16 @@ export default function IrisReelStudio({ bg }: Props) {
                   <button onClick={shareReel} style={btn()}>
                     <Share2 size={14} /> Instagram で開く
                   </button>
+                  <button onClick={openScheduleModal} style={btn(true)}>
+                    <Wand2 size={14} /> AI で投稿予約を作る
+                  </button>
                 </>
+              )}
+              {/* 書き出してなくても予約は作れる (素材は後で再生成) */}
+              {!exportUrl && (clips.length > 0 || captions.length > 0) && (
+                <button onClick={openScheduleModal} style={btn(true)}>
+                  <Wand2 size={14} /> AI で投稿予約を作る (素材なし)
+                </button>
               )}
             </div>
             {exportUrl && (
@@ -2814,6 +3003,153 @@ export default function IrisReelStudio({ bg }: Props) {
         @keyframes iris-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
         .spin { animation: iris-spin 0.9s linear infinite; }
       `}</style>
+
+      {/* ── 投稿予約モーダル ────────────────────────────── */}
+      {scheduleOpen && (
+        <div
+          onClick={() => setScheduleOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(15, 12, 30, 0.65)', backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16,
+          }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: 580,
+              maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto',
+              background: '#fff', borderRadius: 20,
+              padding: '1.4rem 1.3rem',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.32)',
+              color: '#1F1A2E',
+            }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.9rem' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>AI で投稿予約を作る</h3>
+                <p style={{ margin: '0.25rem 0 0', fontSize: '0.78rem', color: '#666' }}>
+                  リール内容 + 案件文脈から AI が Instagram キャプション + ハッシュタグを自動生成
+                </p>
+              </div>
+              <button onClick={() => setScheduleOpen(false)} style={{ background: 'transparent', border: 'none', fontSize: 22, cursor: 'pointer', color: '#888', padding: 0 }}>×</button>
+            </div>
+
+            {/* 案件選択 */}
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>
+              案件と紐づける (任意)
+            </label>
+            <div style={{ display: 'flex', gap: 6, marginBottom: '0.7rem' }}>
+              <select
+                value={scheduleDealId}
+                onChange={e => { setScheduleDealId(e.target.value); void generateScheduleDraft(e.target.value); }}
+                style={{ flex: 1, padding: '0.55rem 0.7rem', border: '1px solid #E2DEF0', borderRadius: 8, fontSize: '0.88rem' }}>
+                <option value="">— 自社投稿 (PR表記なし) —</option>
+                {myDeals.map((d: any) => (
+                  <option key={d.id} value={d.id}>{d.brandName} ({d.platform})</option>
+                ))}
+              </select>
+              <button
+                onClick={() => generateScheduleDraft(scheduleDealId)}
+                disabled={scheduleGenerating}
+                style={{
+                  padding: '0.55rem 0.85rem',
+                  background: bg.accent, color: '#fff',
+                  border: 'none', borderRadius: 8, fontWeight: 700,
+                  fontSize: '0.78rem', cursor: scheduleGenerating ? 'not-allowed' : 'pointer',
+                  opacity: scheduleGenerating ? 0.7 : 1,
+                  whiteSpace: 'nowrap',
+                }}>
+                {scheduleGenerating ? '生成中…' : '再生成'}
+              </button>
+            </div>
+
+            {/* 予約時刻 */}
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>
+              予約時刻 (Instagram ピークタイム提案済)
+            </label>
+            <input
+              type="datetime-local"
+              value={scheduleAt}
+              onChange={e => setScheduleAt(e.target.value)}
+              style={{ width: '100%', padding: '0.55rem 0.7rem', border: '1px solid #E2DEF0', borderRadius: 8, fontSize: '0.88rem', marginBottom: '0.7rem' }}
+            />
+
+            {/* キャプション */}
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>
+              キャプション {scheduleGenerating && <span style={{ color: bg.accent, fontWeight: 500 }}>(AI 生成中…)</span>}
+            </label>
+            <textarea
+              value={scheduleCaption}
+              onChange={e => setScheduleCaption(e.target.value)}
+              rows={7}
+              placeholder="ここに本文が自動生成されます…"
+              style={{ width: '100%', padding: '0.55rem 0.7rem', border: '1px solid #E2DEF0', borderRadius: 8, fontSize: '0.85rem', marginBottom: '0.7rem', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }}
+            />
+
+            {/* ハッシュタグ */}
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>
+              ハッシュタグ (スペース区切り、# は自動補完)
+            </label>
+            <textarea
+              value={scheduleHashtags}
+              onChange={e => setScheduleHashtags(e.target.value)}
+              rows={2}
+              placeholder="#美容 #朝活 #GRWM"
+              style={{ width: '100%', padding: '0.55rem 0.7rem', border: '1px solid #E2DEF0', borderRadius: 8, fontSize: '0.85rem', marginBottom: '0.7rem', fontFamily: 'inherit', resize: 'vertical' }}
+            />
+
+            {/* CTA */}
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>
+              末尾 CTA
+            </label>
+            <input
+              value={scheduleCta}
+              onChange={e => setScheduleCta(e.target.value)}
+              placeholder="保存して、明日から実践してね"
+              style={{ width: '100%', padding: '0.55rem 0.7rem', border: '1px solid #E2DEF0', borderRadius: 8, fontSize: '0.85rem', marginBottom: '0.9rem' }}
+            />
+
+            {/* エラー */}
+            {scheduleErr && (
+              <div style={{ padding: '0.55rem 0.75rem', background: '#FEE2E2', color: '#991B1B', borderRadius: 8, fontSize: '0.78rem', marginBottom: '0.7rem' }}>
+                {scheduleErr}
+              </div>
+            )}
+
+            {/* 保存後 */}
+            {scheduleSaved ? (
+              <div style={{ padding: '0.9rem 1rem', background: '#ECFDF5', color: '#065F46', borderRadius: 10, fontSize: '0.88rem', marginBottom: '0.7rem' }}>
+                <div style={{ fontWeight: 800, marginBottom: 4 }}>✓ 投稿予約を保存しました</div>
+                <div style={{ fontSize: '0.78rem' }}>「投稿予約」タブから時刻に Instagram を開くだけで投稿できます。</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setScheduleOpen(false)} style={{
+                  flex: 1, padding: '0.75rem',
+                  background: '#F4F0FA', color: '#1F1A2E',
+                  border: 'none', borderRadius: 10, fontWeight: 700,
+                  fontSize: '0.92rem', cursor: 'pointer',
+                }}>キャンセル</button>
+                <button onClick={saveSchedule} disabled={!scheduleCaption.trim() || scheduleGenerating} style={{
+                  flex: 2, padding: '0.75rem',
+                  background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+                  color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800,
+                  fontSize: '0.92rem', cursor: 'pointer',
+                  opacity: scheduleGenerating ? 0.6 : 1,
+                }}>予約キューに保存</button>
+              </div>
+            )}
+            {scheduleSaved && onJumpToSchedule && (
+              <button onClick={() => { setScheduleOpen(false); onJumpToSchedule(); }} style={{
+                width: '100%', padding: '0.75rem',
+                background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+                color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800,
+                fontSize: '0.92rem', cursor: 'pointer',
+              }}>予約一覧を開く</button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
