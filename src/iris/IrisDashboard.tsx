@@ -251,23 +251,29 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4,
         }}>
           {[
+            // === 入口 ===
             { id: 'home' as Tab,      l: 'ホーム',         primary: true },
-            { id: 'strategy' as Tab,  l: '戦略',           primary: true },
-            { id: 'triage' as Tab,    l: '案件精査',       primary: true },
-            { id: 'deals' as Tab,     l: '案件',           primary: true },
-            { id: 'invite' as Tab,    l: '招待 +30日',     primary: true },
+            // === 作る (即アクション、最初に触りたいもの) ===
             { id: 'reel' as Tab,      l: 'リール作成',     primary: true },
             { id: 'schedule' as Tab,  l: '投稿予約',       primary: true },
-            { id: 'director' as Tab,  l: '丸投げ編集',     primary: false },
+            { id: 'draft' as Tab,     l: '投稿下書き',     primary: true },
+            { id: 'image' as Tab,     l: '画像加工',       primary: true },
+            { id: 'director' as Tab,  l: '丸投げ編集',     primary: true },
+            // === 稼ぐ ===
+            { id: 'deals' as Tab,     l: '案件',           primary: true },
+            { id: 'triage' as Tab,    l: '案件精査',       primary: false },
             { id: 'negotiate' as Tab, l: '交渉',           primary: false },
-            { id: 'draft' as Tab,     l: '投稿下書き',     primary: false },
-            { id: 'image' as Tab,     l: '画像加工',       primary: false },
-            { id: 'beauty' as Tab,    l: '美容相談',       primary: false },
-            { id: 'health' as Tab,    l: 'ヘルス',         primary: false },
+            { id: 'kit' as Tab,       l: 'メディアキット', primary: false },
+            { id: 'brands' as Tab,    l: 'ブランド探し',   primary: false },
+            // === 伸ばす ===
+            { id: 'invite' as Tab,    l: '招待 +30日',     primary: false },
             { id: 'community' as Tab, l: 'コミュニティ',   primary: false },
             { id: 'team' as Tab,      l: 'チーム',         primary: false },
-            { id: 'brands' as Tab,    l: 'ブランド探し',   primary: false },
-            { id: 'kit' as Tab,       l: 'メディアキット', primary: false },
+            // === 相棒 ===
+            { id: 'beauty' as Tab,    l: '美容相談',       primary: false },
+            { id: 'health' as Tab,    l: 'ヘルス',         primary: false },
+            // === 中上級者用 (後ろに) ===
+            { id: 'strategy' as Tab,  l: '戦略',           primary: false },
           ].map(t => {
             const Ico = IRIS_TAB_ICON[t.id] || Sparkles;
             return (
@@ -351,21 +357,27 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.6rem' }}>
                 {[
+                  // 入口
                   { id: 'home' as Tab,      l: 'ホーム' },
-                  { id: 'strategy' as Tab,  l: '戦略' },
-                  { id: 'triage' as Tab,    l: '案件精査' },
-                  { id: 'deals' as Tab,     l: '案件' },
-                  { id: 'invite' as Tab,    l: '招待 +30日' },
+                  // 作る
                   { id: 'reel' as Tab,      l: 'リール作成' },
                   { id: 'schedule' as Tab,  l: '投稿予約' },
-                  { id: 'director' as Tab,  l: '丸投げ編集' },
-                  { id: 'negotiate' as Tab, l: '交渉' },
                   { id: 'draft' as Tab,     l: '投稿下書き' },
                   { id: 'image' as Tab,     l: '画像加工' },
-                  { id: 'beauty' as Tab,    l: '美容相談' },
-                  { id: 'health' as Tab,    l: 'ヘルス' },
+                  { id: 'director' as Tab,  l: '丸投げ編集' },
+                  // 稼ぐ
+                  { id: 'deals' as Tab,     l: '案件' },
+                  { id: 'triage' as Tab,    l: '案件精査' },
+                  { id: 'negotiate' as Tab, l: '交渉' },
+                  // 伸ばす
+                  { id: 'invite' as Tab,    l: '招待 +30日' },
                   { id: 'community' as Tab, l: 'コミュニティ' },
                   { id: 'team' as Tab,      l: 'チーム' },
+                  // 相棒
+                  { id: 'beauty' as Tab,    l: '美容相談' },
+                  { id: 'health' as Tab,    l: 'ヘルス' },
+                  // 中上級者用
+                  { id: 'strategy' as Tab,  l: '戦略' },
                   { id: 'brands' as Tab,    l: 'ブランド探し' },
                   { id: 'kit' as Tab,       l: 'メディアキット' },
                 ].map(t => {
