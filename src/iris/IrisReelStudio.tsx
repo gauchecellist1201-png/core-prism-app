@@ -28,6 +28,7 @@ import {
 } from './reelStudio/Tts';
 import { detectAudioPeaks } from './reelStudio/Highlight';
 import { translateCaptions, type TargetLang } from './reelStudio/Translate';
+import { removeBackgroundFromUrl } from './reelStudio/BgRemove';
 
 // ─── 編集テンプレート (型) ─────────────────────
 type ReelTemplate = {
@@ -876,9 +877,9 @@ const FONTS: FontDef[] = [
   { family: 'Sawarabi Mincho',      cssName: '"Sawarabi Mincho"',      href: 'https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap' },
   { family: 'Great Vibes',          cssName: '"Great Vibes"',          href: 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap' },
   { family: 'Lobster Two',          cssName: '"Lobster Two"',          href: 'https://fonts.googleapis.com/css2?family=Lobster+Two:wght@400;700&display=swap' },
-  { family: 'Pacifico',             cssName: '"Pacifico"',             href: 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap' },
   { family: 'Caveat Brush',         cssName: '"Caveat Brush"',         href: 'https://fonts.googleapis.com/css2?family=Caveat+Brush&display=swap' },
   { family: 'Bungee',               cssName: '"Bungee"',               href: 'https://fonts.googleapis.com/css2?family=Bungee&display=swap' },
+  { family: 'Press Start 2P',       cssName: '"Press Start 2P"',       href: 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap' },
 ];
 
 const loadedFontSet = new Set<string>();
@@ -1658,11 +1659,63 @@ JSON のみで返答。`;
     const b64 = btoa(unescape(encodeURIComponent(json)));
     const url = `${window.location.origin}/iris?template=${b64}`;
     setShareUrl(url);
+    // コミュニティ API にも POST (失敗してもサイレント、URL 共有はそのまま使える)
+    const title = activeFormat
+      ? (VIRAL_PATTERNS.find(p => p.id === activeFormat)?.name ?? 'リール型')
+      : `${clips.length} クリップのリール`;
+    fetch('/api/reel-templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        author: 'anonymous',
+        title,
+        body: b64,
+        tags: activeFormat ? [activeFormat] : [],
+      }),
+    }).catch(() => {/* */});
     // クリップボードに自動コピー
     navigator.clipboard.writeText(url).then(() => {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2500);
     }).catch(() => {/* */});
+  };
+
+  // ─── コミュニティ トレンド テンプレ ────────────
+  const [trendingTemplates, setTrendingTemplates] = useState<Array<{ id: string; title: string; author: string; body: string; uses: number; tags?: string[] }>>([]);
+  const [trendingLoading, setTrendingLoading] = useState(false);
+  const fetchTrending = useCallback(async () => {
+    setTrendingLoading(true);
+    try {
+      const res = await fetch('/api/reel-templates?limit=12');
+      if (res.ok) {
+        const d = await res.json();
+        setTrendingTemplates(d?.templates ?? []);
+      }
+    } catch {/* */}
+    finally { setTrendingLoading(false); }
+  }, []);
+  const applyTrendingTemplate = (b64: string, id: string) => {
+    try {
+      const json = decodeURIComponent(escape(atob(b64)));
+      const tpl = JSON.parse(json) as Partial<CommunityTemplate>;
+      if (tpl.reelVersion !== 1) return;
+      if (tpl.captions) setCaptions(tpl.captions);
+      if (tpl.captionStyle) setCapStyle(prev => ({ ...prev, ...tpl.captionStyle }));
+      if (typeof tpl.presetCut === 'number') setPresetCut(tpl.presetCut);
+      if (tpl.clipDurations) {
+        setClips(prev => prev.map((c, i) => {
+          const idx = Math.min(i, tpl.clipDurations!.length - 1);
+          return {
+            ...c,
+            duration: c.kind === 'image' ? tpl.clipDurations![idx] : c.duration,
+            transition: tpl.transitions?.[idx] || c.transition,
+            kenBurns: c.kind === 'image' ? (tpl.kenBurns?.[idx] || c.kenBurns) : 'none',
+          };
+        }));
+      }
+      // 使用カウンタ +1
+      fetch(`/api/reel-templates?use=${encodeURIComponent(id)}`).catch(() => {/* */});
+    } catch {/* */}
   };
 
   // ─── URL のテンプレートを起動時に取り込み ─────
@@ -2591,6 +2644,47 @@ JSON のみで返答。`;
                 </button>
               </div>
             )}
+            {/* コミュニティ トレンド テンプレ */}
+            <div style={{ marginBottom: '0.6rem' }}>
+              <button onClick={fetchTrending} disabled={trendingLoading} style={{
+                ...btn(),
+                fontSize: '0.74rem',
+                padding: '0.35rem 0.7rem',
+              }}>
+                {trendingLoading ? <Loader2 size={12} className="spin" /> : <Sparkles size={12} />}
+                トレンド型を見る ({trendingTemplates.length})
+              </button>
+              {trendingTemplates.length > 0 && (
+                <div style={{
+                  marginTop: '0.5rem',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                  gap: 6,
+                }}>
+                  {trendingTemplates.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => applyTrendingTemplate(t.body, t.id)}
+                      style={{
+                        ...btn(),
+                        flexDirection: 'column' as const,
+                        alignItems: 'flex-start',
+                        padding: '0.5rem 0.6rem',
+                        fontSize: '0.72rem',
+                        gap: 2,
+                        whiteSpace: 'normal' as const,
+                        textAlign: 'left' as const,
+                      }}
+                    >
+                      <span style={{ fontWeight: 700, lineHeight: 1.2 }}>{t.title}</span>
+                      <span style={{ color: bg.inkSoft, fontSize: '0.68rem' }}>
+                        @{t.author} ・ 採用 {t.uses}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {/* カテゴリフィルタ */}
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: '0.6rem' }}>
               {TEMPLATE_CATEGORIES.map(c => (
@@ -2966,6 +3060,24 @@ JSON のみで返答。`;
                             <option value={4}>4×</option>
                           </select>
                         </label>
+                      )}
+                      {c.kind === 'image' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const { blobUrl } = await removeBackgroundFromUrl(c.url);
+                              const img = new Image();
+                              img.onload = () => updateClip(c.id, { url: blobUrl, el: img });
+                              img.src = blobUrl;
+                            } catch (err) {
+                              console.warn('bg removal failed', err);
+                            }
+                          }}
+                          style={{ ...btn(), padding: '0.25rem 0.4rem', fontSize: '0.72rem' }}
+                          title="単色背景を透過 PNG として除去 (商品写真・ポートレート向き)"
+                        >
+                          背景除去
+                        </button>
                       )}
                     </div>
                   </div>
