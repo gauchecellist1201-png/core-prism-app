@@ -7,6 +7,7 @@ import type { HealthAnomaly } from '../data/healthAnomaly';
 import { v4 as uuidv4 } from 'uuid';
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
+import { buildIndustryContext } from '../prism/industryPacks';
 
 function getApiKey(settings: AppSettings): string {
   return import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
@@ -116,7 +117,9 @@ ${t.bp ? `- 血圧: ${t.bp.sys}/${t.bp.dia}` : ''}`;
       ? '\n\n## モード: 夜のレビュー\n今日の事業・数値の進捗を踏まえ、明日朝イチで動かす**ビジネス上の1手**を確定する。健康は末尾1文。'
       : '';
 
-  const userPrompt = `## 現在
+  const industryBlock = buildIndustryContext(settings.industry);
+
+  const userPrompt = `${industryBlock ? industryBlock + '\n' : ''}## 現在
 - 時刻: ${new Date().toLocaleString('ja-JP')} (${timeOfDay()})
 - アクティブ人格: ${persona.name} (${persona.subtitle})
 - 人格の役割: ${persona.description || '(未設定)'}

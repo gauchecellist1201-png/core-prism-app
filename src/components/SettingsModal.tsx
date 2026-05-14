@@ -8,6 +8,7 @@ import IntegrationsHub from './IntegrationsHub';
 import BillingDashboard from './BillingDashboard';
 import OrgPanel from './OrgPanel';
 import { useBillingUser } from '../lib/billing';
+import { INDUSTRY_LIST, type IndustryId } from '../prism/industryPacks';
 
 interface Props {
   settings: AppSettings;
@@ -35,6 +36,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
   const [showOrg, setShowOrg] = useState(false);
   const { user: billingUser } = useBillingUser();
   const [aiTone, setAiTone] = useState<'gentle' | 'professional' | 'casual'>(settings.aiTone || 'gentle');
+  const [industry, setIndustry] = useState<IndustryId | ''>(settings.industry || '');
   const [voiceEnabled, setVoiceEnabled] = useState(settings.voiceEnabled !== false);
   const [openaiVoice, setOpenaiVoice] = useState<OpenAIVoice>((settings as any).openaiVoice || 'nova');
   const openaiAvailable = isOpenAITTSConfigured();
@@ -208,6 +210,36 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                   </p>
                 </div>
                 <div className="pt-4">
+                  <p className="text-neutral-600 text-xs tracking-wider uppercase mb-2">業種 (業界パッケージ)</p>
+                  <p className="text-fg-muted text-xs mb-3">
+                    AI に業界別の KPI・悩み・施策・専門用語を渡します。提案がぐっと具体的に。
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    {INDUSTRY_LIST.map(ind => (
+                      <button key={ind.id} onClick={() => setIndustry(ind.id)}
+                        className="text-left p-2.5 rounded-lg transition-all"
+                        style={{
+                          background: industry === ind.id ? 'rgba(201,169,110,0.10)' : 'rgba(255,255,255,0.02)',
+                          border: `1px solid ${industry === ind.id ? 'rgba(201,169,110,0.45)' : 'rgba(255,255,255,0.06)'}`,
+                        }}>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-base">{ind.emoji}</span>
+                          <p className="text-fg text-xs font-medium">{ind.label}</p>
+                        </div>
+                        <p className="text-fg-muted text-[10px] mt-0.5 leading-snug">{ind.shortDescription}</p>
+                      </button>
+                    ))}
+                  </div>
+                  {industry && (
+                    <button
+                      onClick={() => setIndustry('')}
+                      className="text-[11px] text-neutral-600 hover:text-fg-subtle"
+                    >
+                      選択を解除する
+                    </button>
+                  )}
+                </div>
+                <div className="pt-4">
                   <p className="text-neutral-600 text-xs tracking-wider uppercase mb-2">AI の文体</p>
                   <p className="text-fg-muted text-xs mb-3">提案・要約・返信ドラフトの語り口を選べます</p>
                   <div className="space-y-2">
@@ -377,6 +409,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                 userName,
                 aiTone,
                 voiceEnabled,
+                industry: (industry || undefined) as AppSettings['industry'],
                 ...({ openaiVoice } as any),
               });
               onClose();

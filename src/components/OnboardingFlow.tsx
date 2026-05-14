@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
+import { INDUSTRY_LIST, type IndustryId } from '../prism/industryPacks';
 
 interface Props {
   onComplete: (settings: Partial<AppSettings>) => void;
@@ -42,17 +43,21 @@ export default function OnboardingFlow({ onComplete }: Props) {
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState<string>('claude-haiku-4-5');
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  const [industry, setIndustry] = useState<IndustryId | ''>('');
 
-  // 環境変数APIキーがあればステップ2（APIキー入力）をスキップ
+  // ENV有: 0=welcome, 1=name, 2=industry, 3=model
+  // ENV無: 0=welcome, 1=name, 2=industry, 3=apikey, 4=model
   const steps = HAS_ENV_API_KEY
     ? [
         { title: 'ようこそ', subtitle: 'CORE Identity OS へ' },
         { title: 'あなたのお名前', subtitle: '最初の一歩' },
+        { title: '業種を選ぶ', subtitle: 'AIをあなたの業界に最適化' },
         { title: 'AIモデル選択', subtitle: '予算と性能のバランス' },
       ]
     : [
         { title: 'ようこそ', subtitle: 'CORE Identity OS へ' },
         { title: 'あなたのお名前', subtitle: '最初の一歩' },
+        { title: '業種を選ぶ', subtitle: 'AIをあなたの業界に最適化' },
         { title: 'Claude APIキー', subtitle: 'AIを接続する' },
         { title: 'AIモデル選択', subtitle: '予算と性能のバランス' },
       ];
@@ -62,23 +67,20 @@ export default function OnboardingFlow({ onComplete }: Props) {
       userName: name,
       claudeApiKey: apiKey,
       preferredModel: model as AppSettings['preferredModel'],
+      industry: (industry || undefined) as AppSettings['industry'],
       onboardingComplete: true,
     });
   };
 
-  // ステップインデックスを論理的に対応付ける
-  // ENV有: 0=welcome, 1=name, 2=model
-  // ENV無: 0=welcome, 1=name, 2=apikey, 3=model
-  const logicalStep = HAS_ENV_API_KEY
-    ? step  // 0,1,2 → welcome, name, model
-    : step; // 0,1,2,3 → welcome, name, apikey, model
-
-  const isModelStep = HAS_ENV_API_KEY ? logicalStep === 2 : logicalStep === 3;
-  const isApiKeyStep = !HAS_ENV_API_KEY && logicalStep === 2;
+  const logicalStep = step;
   const isNameStep = logicalStep === 1;
+  const isIndustryStep = logicalStep === 2;
+  const isApiKeyStep = !HAS_ENV_API_KEY && logicalStep === 3;
+  const isModelStep = HAS_ENV_API_KEY ? logicalStep === 3 : logicalStep === 4;
 
   const canNext = () => {
     if (isNameStep) return name.trim().length > 0;
+    if (isIndustryStep) return industry !== '';
     if (isApiKeyStep) return apiKey.startsWith('sk-ant-');
     return true;
   };
@@ -166,6 +168,57 @@ export default function OnboardingFlow({ onComplete }: Props) {
               autoFocus
             />
             <p className="text-neutral-700 text-xs">Enterでも次へ進めます</p>
+          </motion.div>
+        )}
+
+        {isIndustryStep && (
+          <motion.div
+            key="step-industry"
+            className="max-w-2xl w-full px-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <h2 className="text-fg text-xl font-extralight mb-2">あなたの業種は？</h2>
+            <p className="text-neutral-600 text-xs mb-6 leading-relaxed">
+              業界に合わせて AI が「その業界の人がわかる言葉」で提案します。<br />
+              KPI・悩み・施策・専門用語をあらかじめ AI に教えておくため、
+              いきなり実用レベルの相談相手になります。
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto pr-1">
+              {INDUSTRY_LIST.map(ind => {
+                const selected = industry === ind.id;
+                return (
+                  <motion.button
+                    key={ind.id}
+                    onClick={() => setIndustry(ind.id)}
+                    className="text-left p-4 rounded-xl transition-all duration-200"
+                    style={{
+                      background: selected ? 'rgba(201,169,110,0.10)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${selected ? 'rgba(201,169,110,0.45)' : 'rgba(255,255,255,0.06)'}`,
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-2xl">{ind.emoji}</span>
+                      <span className="text-fg text-sm font-light">{ind.label}</span>
+                    </div>
+                    <p className="text-neutral-500 text-[11px] leading-snug mb-2">
+                      {ind.shortDescription}
+                    </p>
+                    <p className="text-[10px]" style={{ color: '#c9a96e' }}>
+                      月商目安 (中規模): {ind.revenue.mid}
+                    </p>
+                  </motion.button>
+                );
+              })}
+            </div>
+            {industry && (
+              <p className="text-neutral-500 text-xs mt-4">
+                ✓ あとから設定で変更できます
+              </p>
+            )}
           </motion.div>
         )}
 

@@ -7,6 +7,7 @@ import type { HealthAnomaly } from '../data/healthAnomaly';
 import { v4 as uuidv4 } from 'uuid';
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
+import { buildIndustryContext } from '../prism/industryPacks';
 
 export type CoachSlot = 'morning' | 'noon' | 'evening';
 
@@ -153,7 +154,9 @@ ${toneInstruction(settings.aiTone)}`;
 
   const slotJa = slot === 'morning' ? '朝' : slot === 'noon' ? '昼' : '夜';
 
-  const userPrompt = `## アクティブ人格
+  const industryBlock = buildIndustryContext(settings.industry);
+
+  const userPrompt = `${industryBlock ? industryBlock + '\n' : ''}## アクティブ人格
 ${persona.name} (${persona.subtitle})
 ${persona.description || ''}
 

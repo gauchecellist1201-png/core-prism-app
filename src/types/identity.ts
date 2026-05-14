@@ -123,6 +123,8 @@ export interface AppSettings {
   aiTone?: 'gentle' | 'professional' | 'casual';
   /** UI 表示言語 */
   uiLanguage?: 'ja' | 'en' | 'zh';
+  /** オーナーの業種 (業界別パッケージで AI 提案を最適化) */
+  industry?: 'food' | 'beauty' | 'it' | 'realestate' | 'ec' | 'medical' | 'education';
 }
 
 // ── 能動提案 ─────────────────────────────────────────
