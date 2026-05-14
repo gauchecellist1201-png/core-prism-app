@@ -29,7 +29,8 @@ type Step = 'plan' | 'account' | 'payment' | 'success';
 
 export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, onClose, onSuccess }: Props) {
   const [step, setStep] = useState<Step>('plan');
-  const [brand, setBrand] = useState<Brand>(initialBrand);
+  // ブランドは入った経路で固定 (Iris リンク→Iris、Prism リンク→Prism)
+  const brand: Brand = initialBrand;
   const [cycle, setCycle] = useState<BillingCycle>('monthly');
   const [planId, setPlanId] = useState<string>(initialPlan.id);
   const [email, setEmail] = useState('');
@@ -48,14 +49,6 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
   const monthlyEquivalent = cycle === 'yearly' && plan.priceJpy_yearly
     ? Math.round(plan.priceJpy_yearly / 12)
     : plan.priceJpy;
-
-  // ブランド切替時、free をデフォルトで選択
-  const handleBrandChange = (b: Brand) => {
-    setBrand(b);
-    const plans = getPlans(b);
-    const free = plans.find(p => p.id === 'free');
-    setPlanId(free?.id || plans[0].id);
-  };
 
   const proceedToAccount = () => setStep('account');
 
@@ -197,26 +190,36 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
         <AnimatePresence mode="wait">
           {step === 'plan' && (
             <motion.div key="plan" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              {/* ブランドタブ */}
+              {/* ブランド表示 (タブは廃止、入った経路のブランドで固定) */}
               <div style={{
-                display: 'flex', gap: '0.5rem', marginBottom: '1rem',
-                background: '#F4F1FA', padding: 4, borderRadius: 999,
+                marginBottom: '1rem',
+                padding: '0.7rem 1rem',
+                background: brand === 'iris'
+                  ? 'linear-gradient(135deg, rgba(225,48,108,0.10), rgba(247,119,55,0.06))'
+                  : 'linear-gradient(135deg, rgba(0,51,160,0.10), rgba(46,111,255,0.06))',
+                border: `1px solid ${brand === 'iris' ? 'rgba(225,48,108,0.30)' : 'rgba(0,51,160,0.25)'}`,
+                borderRadius: 14,
+                display: 'flex', alignItems: 'center', gap: 10,
               }}>
-                {(['prism', 'iris'] as Brand[]).map(b => (
-                  <button key={b} onClick={() => handleBrandChange(b)} style={{
-                    flex: 1,
-                    background: brand === b
-                      ? (b === 'iris' ? 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)' : 'linear-gradient(135deg, #0033A0, #1A4FC4)')
-                      : 'transparent',
-                    color: brand === b ? '#fff' : '#5A5562',
-                    border: 'none', borderRadius: 999,
-                    padding: '0.6rem 1rem',
-                    fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}>
-                    {b === 'iris' ? 'CORE Iris (個人 / クリエイター)' : 'CORE Prism (法人 / チーム)'}
-                  </button>
-                ))}
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: brand === 'iris'
+                    ? 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)'
+                    : 'linear-gradient(135deg, #0033A0, #1A4FC4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontWeight: 800, fontSize: 16,
+                  flexShrink: 0,
+                }}>
+                  {brand === 'iris' ? 'I' : 'P'}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#1F1A2E' }}>
+                    {brand === 'iris' ? 'CORE Iris' : 'CORE Prism'}
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: '#5A5562' }}>
+                    {brand === 'iris' ? 'クリエイター / インフルエンサー向け' : '経営者 / 事業家向け'}
+                  </div>
+                </div>
               </div>
 
               {/* 月額 / 年額トグル */}
@@ -224,14 +227,14 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 gap: '0.5rem', marginBottom: '1.25rem',
               }}>
-                <button onClick={() => setCycle('monthly')} style={{
+                <button type="button" onClick={() => setCycle('monthly')} style={{
                   background: cycle === 'monthly' ? '#1F1A2E' : 'transparent',
                   color: cycle === 'monthly' ? '#fff' : '#5A5562',
                   border: '1px solid rgba(0,0,0,0.12)',
                   borderRadius: 999, padding: '0.45rem 1rem',
                   fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
                 }}>月額</button>
-                <button onClick={() => setCycle('yearly')} style={{
+                <button type="button" onClick={() => setCycle('yearly')} style={{
                   background: cycle === 'yearly' ? '#1F1A2E' : 'transparent',
                   color: cycle === 'yearly' ? '#fff' : '#5A5562',
                   border: '1px solid rgba(0,0,0,0.12)',
@@ -248,13 +251,13 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 </button>
               </div>
 
-              {/* 14 日無料トライアル (Prism のみ別枠) */}
+              {/* 7 日無料トライアル (Prism のみ別枠) */}
               {brand === 'prism' && (() => {
                 const trial = plans.find(p => p.id === 'free');
                 if (!trial) return null;
                 const selected = planId === 'free';
                 return (
-                  <button onClick={() => setPlanId('free')} style={{
+                  <button type="button" onClick={() => setPlanId('free')} style={{
                     width: '100%', textAlign: 'left',
                     padding: '1rem 1.25rem', borderRadius: 16,
                     background: selected
@@ -298,7 +301,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                     ? Math.round(p.priceJpy_yearly / 12)
                     : p.priceJpy;
                   return (
-                    <button key={p.id} onClick={() => setPlanId(p.id)} style={{
+                    <button key={p.id} type="button" onClick={() => setPlanId(p.id)} style={{
                       textAlign: 'left',
                       padding: '1.1rem 1rem',
                       borderRadius: 16,
@@ -427,7 +430,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={() => setStep('plan')} style={btnSecondary}>← 戻る</button>
                 <button onClick={proceedToPayment} style={{ ...btnPrimary(accent, accentGrad), flex: 2 }}>
-                  {isFree ? '✨ 14日間 無料ではじめる →' : '次へ →'}
+                  {isFree ? '✨ 7日間 無料ではじめる →' : '次へ →'}
                 </button>
               </div>
 
@@ -453,7 +456,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 {isFree ? (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                      <span style={{ color: '#10B981', fontWeight: 700 }}>14日間 無料トライアル</span>
+                      <span style={{ color: '#10B981', fontWeight: 700 }}>7日間 無料トライアル</span>
                       <span style={{ color: '#10B981', fontWeight: 800 }}>¥0</span>
                     </div>
                     <div style={{ height: 1, background: 'rgba(16,185,129,0.2)', margin: '0.6rem 0' }} />
@@ -486,7 +489,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 }}>
                   <strong>ベータ確認モード</strong><br />
                   {isFree
-                    ? 'カード情報は不要です。¥0 で 14 日間トライアル開始。'
+                    ? 'カード情報は不要です。¥0 で 7 日間トライアル開始。'
                     : 'Stripe 接続準備中です。今回は ¥0 で登録 → 後日決済画面をご案内します。'}
                   {isMasterAuth() && (
                     <div style={{ marginTop: '0.5rem' }}>

@@ -188,9 +188,9 @@ export interface Plan {
 export const IRIS_PLANS: Plan[] = [
   {
     id: 'free', brand: 'iris',
-    name: '14 日間 無料トライアル', priceJpy: 0,
+    name: '7 日間 無料トライアル', priceJpy: 0,
     tagline: 'まずは試す',
-    features: ['全機能 14 日間 試せる', 'カード登録不要', '自動課金なし'],
+    features: ['全機能 7 日間 試せる', 'カード登録不要', '自動課金なし'],
   },
   {
     id: 'lite', brand: 'iris',
@@ -262,9 +262,9 @@ export const IRIS_PLANS: Plan[] = [
 export const PRISM_PLANS: Plan[] = [
   {
     id: 'free', brand: 'prism',
-    name: '14 日間 無料トライアル', priceJpy: 0,
+    name: '7 日間 無料トライアル', priceJpy: 0,
     tagline: 'まずは試す',
-    features: ['全機能 14 日間 試せる', 'カード登録不要', '自動課金なし'],
+    features: ['全機能 7 日間 試せる', 'カード登録不要', '自動課金なし'],
   },
   {
     id: 'lite', brand: 'prism',
@@ -493,7 +493,7 @@ export function enforceFeature(
 
   // free プラントライアル期限チェック
   if (user.plan === 'free' && !isTrialActive(user)) {
-    return { ok: false, reason: '14 日間トライアルが終了しました。プランをアップグレードしてください。', upgradeTo: 'standard' };
+    return { ok: false, reason: '7 日間トライアルが終了しました。プランをアップグレードしてください。', upgradeTo: 'standard' };
   }
 
   const plan = user.plan;
@@ -643,7 +643,7 @@ export function useBillingUser(): {
       }
     } catch { /* */ }
 
-    const trialDays = (input.plan === 'free' ? 14 : 0) + bonusDays;
+    const trialDays = (input.plan === 'free' ? 7 : 0) + bonusDays;
     const trialEndsAt = trialDays > 0
       ? new Date(now.getTime() + trialDays * 86400000).toISOString()
       : undefined;
