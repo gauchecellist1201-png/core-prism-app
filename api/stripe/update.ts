@@ -39,6 +39,7 @@ function getPriceId(plan: string, brand: string): string | undefined {
     prism_lite:     process.env.STRIPE_PRICE_PRISM_STARTER,
     prism_standard: process.env.STRIPE_PRICE_PRISM_STANDARD,
     prism_pro:      process.env.STRIPE_PRICE_PRISM_EXCLUSIVE,
+    prism_studio:   process.env.STRIPE_PRICE_PRISM_STUDIO,
   };
   return map[`${brand}_${plan}`];
 }

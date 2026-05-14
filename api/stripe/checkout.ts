@@ -34,6 +34,7 @@ function getPriceId(plan: string, brand: string, cycle: string): string | undefi
     prism_lite_monthly:      process.env.STRIPE_PRICE_PRISM_STARTER,
     prism_standard_monthly:  process.env.STRIPE_PRICE_PRISM_STANDARD,
     prism_pro_monthly:       process.env.STRIPE_PRICE_PRISM_EXCLUSIVE,
+    prism_studio_monthly:    process.env.STRIPE_PRICE_PRISM_STUDIO,
     // ─── 年額 (yearly = 月額 × 10 で 2 ヶ月分お得) ───
     iris_lite_yearly:        process.env.STRIPE_PRICE_LITE_YEARLY,
     iris_standard_yearly:    process.env.STRIPE_PRICE_STANDARD_YEARLY,
@@ -42,6 +43,7 @@ function getPriceId(plan: string, brand: string, cycle: string): string | undefi
     prism_lite_yearly:       process.env.STRIPE_PRICE_PRISM_STARTER_YEARLY,
     prism_standard_yearly:   process.env.STRIPE_PRICE_PRISM_STANDARD_YEARLY,
     prism_pro_yearly:        process.env.STRIPE_PRICE_PRISM_EXCLUSIVE_YEARLY,
+    prism_studio_yearly:     process.env.STRIPE_PRICE_PRISM_STUDIO_YEARLY,
   };
   return map[key];
 }

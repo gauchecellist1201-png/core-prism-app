@@ -308,6 +308,21 @@ export const PRISM_PLANS: Plan[] = [
     stripeUrlEnvKey: 'VITE_STRIPE_PRISM_EXCLUSIVE_URL',
     stripeUrlEnvKey_yearly: 'VITE_STRIPE_PRISM_EXCLUSIVE_YEARLY_URL',
   },
+  {
+    id: 'studio', brand: 'prism',
+    name: 'Studio', priceJpy: 98000, priceJpy_yearly: 980000,
+    tagline: '事業会社・エンタープライズ',
+    features: [
+      'Exclusive 全機能',
+      '専属導入チーム',
+      'SLA 99.9% / 24h サポート',
+      'API キー専有 / ホワイトラベル',
+      'カスタム AI モデル調整',
+      '監査ログ / SSO / セキュリティレビュー対応',
+    ],
+    stripeUrlEnvKey: 'VITE_STRIPE_PRISM_STUDIO_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_PRISM_STUDIO_YEARLY_URL',
+  },
 ];
 
 export function getPlans(brand: Brand): Plan[] {

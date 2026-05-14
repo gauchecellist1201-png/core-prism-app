@@ -53,10 +53,12 @@ const PRICE_KEYS: Array<{
   { env: 'STRIPE_PRICE_PRISM_STARTER',   label: 'Prism Starter (月額)',   brand: 'prism', plan: 'lite',     cycle: 'monthly' },
   { env: 'STRIPE_PRICE_PRISM_STANDARD',  label: 'Prism Standard (月額)',  brand: 'prism', plan: 'standard', cycle: 'monthly' },
   { env: 'STRIPE_PRICE_PRISM_EXCLUSIVE', label: 'Prism Exclusive (月額)', brand: 'prism', plan: 'pro',      cycle: 'monthly' },
+  { env: 'STRIPE_PRICE_PRISM_STUDIO',    label: 'Prism Studio (月額)',    brand: 'prism', plan: 'studio',   cycle: 'monthly' },
   // Prism yearly
   { env: 'STRIPE_PRICE_PRISM_STARTER_YEARLY',   label: 'Prism Starter (年額)',   brand: 'prism', plan: 'lite',     cycle: 'yearly' },
   { env: 'STRIPE_PRICE_PRISM_STANDARD_YEARLY',  label: 'Prism Standard (年額)',  brand: 'prism', plan: 'standard', cycle: 'yearly' },
   { env: 'STRIPE_PRICE_PRISM_EXCLUSIVE_YEARLY', label: 'Prism Exclusive (年額)', brand: 'prism', plan: 'pro',      cycle: 'yearly' },
+  { env: 'STRIPE_PRICE_PRISM_STUDIO_YEARLY',    label: 'Prism Studio (年額)',    brand: 'prism', plan: 'studio',   cycle: 'yearly' },
 ];
 
 function mask(value: string | undefined): string | null {
