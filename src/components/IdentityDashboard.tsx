@@ -590,6 +590,9 @@ export default function IdentityDashboard({
                 theme="dark"
                 brandLabel="PRISM"
                 brandGradient="linear-gradient(135deg, #2E6FFF 0%, #8E5CFF 50%, #E84B97 100%)"
+                onAddToKnowledge={(title, content) => {
+                  onAddKnowledgeNote(title, content);
+                }}
               />
 
               <TodayBrief

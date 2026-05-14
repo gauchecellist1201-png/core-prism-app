@@ -10,6 +10,7 @@ import {
   Sparkles, AlertCircle, Mail, TrendingUp, Image as ImageIcon,
   ClipboardList, Lightbulb, Target, HeartPulse,
   Check, X, MessageSquare, Loader2, RefreshCw, Copy, ChevronDown,
+  BookOpen, FileText, FileType, Recycle,
 } from 'lucide-react';
 import { generateSuggestions, executeSuggestion, refineSuggestion, clearSuggestionCache, type Suggestion, type AgentContext } from '../lib/autoAgent';
 
@@ -33,6 +34,8 @@ interface Props {
   onJump?: (tab: string) => void;
   /** カードのテーマ (white card on dark / dark card on light) */
   theme?: 'light' | 'dark';
+  /** 結果をナレッジ化するハンドラ (Prism のみ。提供されると「ナレッジに追加」ボタンが出る) */
+  onAddToKnowledge?: (title: string, content: string) => void;
 }
 
 export default function AutoAgentHero({
@@ -41,6 +44,7 @@ export default function AutoAgentHero({
   brandLabel = ctx.brand === 'prism' ? 'PRISM' : 'IRIS',
   onJump,
   theme = 'light',
+  onAddToKnowledge,
 }: Props) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -322,31 +326,75 @@ export default function AutoAgentHero({
                           </div>
                         )}
 
-                        {/* 結果表示 */}
+                        {/* 結果表示 + 資料化/ナレッジ化アクション */}
                         {s.result && (
-                          <div style={{
-                            padding: '0.8rem 0.95rem',
-                            background: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.55)',
-                            borderRadius: 12, marginBottom: 10,
-                            fontSize: 13, lineHeight: 1.7,
-                            color: textPrimary,
-                            whiteSpace: 'pre-wrap',
-                            maxHeight: 320, overflowY: 'auto',
-                            border: `1px solid ${cardBorder}`,
-                          }}>
-                            {s.result}
-                            <button
-                              onClick={() => navigator.clipboard?.writeText(s.result || '')}
-                              style={{
-                                marginTop: 10, padding: '5px 11px',
-                                background: 'transparent', border: `1px solid ${cardBorder}`,
-                                color: textPrimary, borderRadius: 6,
-                                fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                                display: 'inline-flex', gap: 4, alignItems: 'center',
+                          <>
+                            <div style={{
+                              padding: '0.8rem 0.95rem',
+                              background: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.55)',
+                              borderRadius: 12, marginBottom: 8,
+                              fontSize: 13, lineHeight: 1.7,
+                              color: textPrimary,
+                              whiteSpace: 'pre-wrap',
+                              maxHeight: 320, overflowY: 'auto',
+                              border: `1px solid ${cardBorder}`,
+                            }}>
+                              {s.result}
+                            </div>
+
+                            {/* 次のステップ: 資料化 + ナレッジ追加 */}
+                            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+                              <button
+                                onClick={() => navigator.clipboard?.writeText(s.result || '')}
+                                style={resultActionBtn(cardBorder, textPrimary)}>
+                                <Copy size={10} /> コピー
+                              </button>
+                              <button
+                                onClick={() => downloadMarkdown(s.title, s.result || '')}
+                                style={resultActionBtn(cardBorder, textPrimary)}>
+                                <FileText size={10} /> .md
+                              </button>
+                              <button
+                                onClick={() => downloadHtmlPrintable(s.title, s.result || '')}
+                                style={resultActionBtn(cardBorder, textPrimary)}
+                                title="HTML を新規タブで開く → ブラウザの印刷で PDF 保存できます">
+                                <FileType size={10} /> 印刷/PDF
+                              </button>
+                              {onAddToKnowledge && (
+                                <button
+                                  onClick={() => {
+                                    onAddToKnowledge(s.title, s.result || '');
+                                    updateOne(s.id, { status: 'done', result: (s.result || '') + '\n\n---\n✓ ナレッジに追加済み (次回の提案に反映されます)' });
+                                  }}
+                                  style={{
+                                    ...resultActionBtn(cardBorder, textPrimary),
+                                    background: `linear-gradient(135deg, ${meta.gradient[0]}, ${meta.gradient[1]})`,
+                                    color: '#fff', border: 'none',
+                                    fontWeight: 800,
+                                  }}>
+                                  <BookOpen size={10} /> ナレッジに追加
+                                </button>
+                              )}
+                            </div>
+
+                            {onAddToKnowledge && (
+                              <div style={{
+                                display: 'flex', gap: 6, alignItems: 'flex-start',
+                                padding: '0.55rem 0.75rem',
+                                background: `${meta.gradient[0]}10`,
+                                border: `1px dashed ${meta.gradient[0]}44`,
+                                borderRadius: 8,
+                                fontSize: 11, lineHeight: 1.55,
+                                color: textSecondary,
+                                marginBottom: 8,
                               }}>
-                              <Copy size={10} /> コピー
-                            </button>
-                          </div>
+                                <Recycle size={11} style={{ color: meta.gradient[0], marginTop: 2, flexShrink: 0 }} />
+                                <span>
+                                  <strong style={{ color: meta.gradient[0] }}>事業を前に進める循環:</strong> 「ナレッジに追加」すると、この成果物が次の提案の土台になります。
+                                </span>
+                              </div>
+                            )}
+                          </>
                         )}
 
                         {/* アクションボタン群 */}
@@ -480,4 +528,80 @@ export default function AutoAgentHero({
       `}</style>
     </div>
   );
+}
+
+// ─── Helpers ─────
+function resultActionBtn(border: string, color: string): React.CSSProperties {
+  return {
+    padding: '5px 11px',
+    background: 'transparent', border: `1px solid ${border}`,
+    color, borderRadius: 6,
+    fontSize: 11, fontWeight: 600, cursor: 'pointer',
+    display: 'inline-flex', gap: 4, alignItems: 'center',
+    fontFamily: 'inherit',
+  };
+}
+
+function downloadMarkdown(title: string, content: string) {
+  const safe = title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 60);
+  const blob = new Blob([`# ${title}\n\n${content}\n`], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${safe}-${new Date().toISOString().slice(0, 10)}.md`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadHtmlPrintable(title: string, content: string) {
+  // 印刷ダイアログを呼べる HTML を新タブで開く
+  const safe = title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 60);
+  // 簡易 Markdown → HTML
+  const html = content
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br/>')
+    .replace(/(<li>.*<\/li>)/gs, m => '<ul>' + m + '</ul>')
+    .replace(/(\|[^\n]+\|)/g, m => {
+      // テーブル簡易処理
+      return m;
+    });
+
+  const doc = `<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<title>${title}</title>
+<style>
+  body { font-family: "Hiragino Sans","Noto Sans JP",sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; line-height: 1.85; color: #1F1A2E; }
+  h1 { font-family: "Cinzel","Noto Serif JP",serif; font-size: 26px; border-bottom: 2px solid #E1306C; padding-bottom: 10px; margin-bottom: 22px; }
+  h2 { font-size: 18px; color: #E1306C; margin-top: 26px; }
+  h3 { font-size: 15px; color: #5A4570; margin-top: 18px; }
+  p { margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 13px; }
+  th, td { border: 1px solid #E2DEF0; padding: 6px 10px; }
+  th { background: #FFE5EE; font-weight: 700; }
+  ul { padding-left: 20px; }
+  li { margin: 4px 0; }
+  strong { color: #1F1A2E; }
+  .meta { color: #999; font-size: 11px; margin-bottom: 16px; }
+  @media print { body { margin: 20mm; } .no-print { display: none; } }
+</style></head>
+<body>
+<h1>${title}</h1>
+<p class="meta">生成: ${new Date().toLocaleString('ja-JP')} · by CORE Agent</p>
+<p>${html}</p>
+<button class="no-print" onclick="window.print()" style="position:fixed;bottom:20px;right:20px;padding:12px 20px;background:linear-gradient(135deg,#E1306C,#F77737);color:#fff;border:none;border-radius:999px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px rgba(225,48,108,0.3)">🖨 印刷 / PDF 保存</button>
+</body></html>`;
+  const blob = new Blob([doc], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  void safe;
 }
