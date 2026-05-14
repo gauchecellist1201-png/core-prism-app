@@ -30,7 +30,7 @@ import {
   Wallet, Calendar, Hourglass, ShieldAlert,
   CheckCircle2, AlertTriangle, Bot, Lightbulb, Sun,
   Briefcase, Rocket, Heart, Smartphone, Ban,
-  Save, X,
+  Save, X, Mic, MicOff,
 } from 'lucide-react';
 import IrisCommandBar from './IrisCommandBar';
 import InviteShareCard from '../components/InviteShareCard';
@@ -1900,9 +1900,10 @@ JSON だけ返し、\`\`\`json は不要。`;
             </button>
 
             <p style={{ fontSize: '0.85rem', color: bg.inkSoft, marginBottom: '0.6rem', lineHeight: 1.6 }}>
-              または「もっと暖かく」「エディトリアル風に」のように話しかけてください。
+              マイクで話しかけるか、文字で書いてください。「もっと暖かく」「エディトリアル風に」など。
             </p>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'stretch' }}>
+              <ImageVoiceMic value={aiPrompt} setValue={setAiPrompt} bg={bg} onSubmit={applyAiPrompt} disabled={aiBusy} />
               <input
                 value={aiPrompt}
                 onChange={e => setAiPrompt(e.target.value)}
@@ -2160,6 +2161,77 @@ JSON だけ返し、\`\`\`json は不要。`;
         </div>
       )}
     </div>
+  );
+}
+
+// ─── 画像加工の音声入力 (Web Speech API) ─────
+function ImageVoiceMic({ value, setValue, bg, onSubmit, disabled }: {
+  value: string;
+  setValue: (v: string) => void;
+  bg: IrisBackgroundDef;
+  onSubmit: () => void;
+  disabled?: boolean;
+}) {
+  const [listening, setListening] = React.useState(false);
+  const recogRef = React.useRef<any>(null);
+  const supported = typeof window !== 'undefined' && (!!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition);
+
+  const start = () => {
+    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+    const r = new SR();
+    r.lang = 'ja-JP';
+    r.continuous = false;
+    r.interimResults = true;
+    r.onresult = (e: any) => {
+      let finalT = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const res = e.results[i];
+        if (res.isFinal) finalT += res[0].transcript;
+      }
+      if (finalT) setValue((value ? value + ' ' : '') + finalT);
+    };
+    r.onend = () => {
+      setListening(false);
+      // 終了したら、何か入力があれば自動送信
+      setTimeout(() => { if (value.trim()) onSubmit(); }, 200);
+    };
+    r.onerror = () => setListening(false);
+    r.start();
+    recogRef.current = r;
+    setListening(true);
+  };
+  const stop = () => { try { recogRef.current?.stop(); } catch {/* */} setListening(false); };
+
+  if (!supported) return null;
+
+  return (
+    <button
+      onClick={() => listening ? stop() : start()}
+      disabled={disabled}
+      title={listening ? 'タップで停止' : '音声で話す'}
+      style={{
+        flexShrink: 0,
+        width: 44, height: 44, borderRadius: 999,
+        background: listening
+          ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`
+          : 'rgba(255,255,255,0.85)',
+        color: listening ? '#fff' : bg.accent,
+        border: `1.5px solid ${listening ? bg.accent : bg.accent + '55'}`,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        boxShadow: listening ? `0 0 0 6px ${bg.accent}22` : 'none',
+        animation: listening ? 'iris-mic-pulse 1.4s ease-in-out infinite' : 'none',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        padding: 0,
+      }}>
+      {listening ? <MicOff size={20} /> : <Mic size={20} />}
+      <style>{`
+        @keyframes iris-mic-pulse {
+          0%, 100% { box-shadow: 0 0 0 6px ${bg.accent}22; }
+          50%      { box-shadow: 0 0 0 14px ${bg.accent}08; }
+        }
+      `}</style>
+    </button>
   );
 }
 
