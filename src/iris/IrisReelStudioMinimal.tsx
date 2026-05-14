@@ -16,7 +16,13 @@ import {
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { BGM_LIBRARY, VIRAL_PATTERNS, TREND_PULSE_2026_Q2 } from './IrisReelStudio';
-import { generateReelCaptions, type ReelAiResult } from './reelAiCaption';
+import {
+  generateReelCaptions,
+  type ReelAiResult,
+  type BgmMood,
+  BGM_MOOD_DEFS,
+  snapDurationToBgm,
+} from './reelAiCaption';
 import { suggestNextSlot, type ScheduledPost } from './usePostQueue';
 
 interface Props {
@@ -52,6 +58,10 @@ interface Clip {
   aiContext?: string;
   /** 字幕の縦位置 (0=上 〜 1=下、デフォルト 0.78) */
   captionY?: number;
+  /** カット毎の BGM ジャンル (AI 提案 or 手動) */
+  bgmMood?: BgmMood;
+  /** カットに合う絵文字候補 */
+  emojiOptions?: string[];
 }
 
 const FONT_PRESETS = [
@@ -115,6 +125,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [playing, setPlaying] = useState(false);
   const [recording, setRecording] = useState(false);
   const [exportUrl, setExportUrl] = useState<string | null>(null);
+  const [exportMime, setExportMime] = useState<string>('video/webm');
   const [progress, setProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const [uploadErr, setUploadErr] = useState<string>('');
@@ -202,11 +213,13 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         themeHint: themeHint || undefined,
         onProgress: (phase) => setAiPhase(phase),
       });
-      // 各クリップに overlayText を反映
+      // 各クリップに overlayText / BGM ジャンル / 絵文字候補を反映
       setClips(prev => prev.map((c, i) => ({
         ...c,
         captionText: result.cuts[i]?.overlayText || c.captionText || '',
         aiContext: result.cuts[i]?.context || c.aiContext,
+        bgmMood: result.cuts[i]?.bgmMood || c.bgmMood,
+        emojiOptions: result.cuts[i]?.emojis?.length ? result.cuts[i].emojis : c.emojiOptions,
       })));
       setAiResult(result);
       setStep('subtitle');
@@ -351,6 +364,24 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     const clamped = Math.max(0.1, Math.min(0.95, y));
     setClips(prev => prev.map(c => c.id === id ? { ...c, captionY: clamped } : c));
   };
+  /** カットの BGM ジャンルを選択。同時にカット長をビートにスナップ (テンポ合わせ) */
+  const setClipBgmMood = (id: string, mood: BgmMood) => {
+    setClips(prev => prev.map(c => {
+      if (c.id !== id) return c;
+      const snapped = snapDurationToBgm(c.duration, mood);
+      return { ...c, bgmMood: mood, duration: snapped };
+    }));
+  };
+  /** カットの字幕に絵文字を追記 */
+  const appendEmojiToCaption = (id: string, emoji: string) => {
+    setClips(prev => prev.map(c => {
+      if (c.id !== id) return c;
+      const cur = c.captionText || '';
+      // 末尾に既に同じ絵文字があれば追加しない
+      if (cur.endsWith(emoji)) return c;
+      return { ...c, captionText: (cur + emoji).slice(0, 30) };
+    }));
+  };
   const seekToClip = (idx: number) => {
     let acc = 0;
     for (let i = 0; i < idx && i < clips.length; i++) acc += clips[i].duration;
@@ -409,10 +440,17 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       } catch {/* */}
     }
     chunksRef.current = [];
-    const rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+    // MP4 をまず試す (Safari / 新しめの Chrome で対応)。落ちたら WebM
+    const mime = (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4'))
+      ? 'video/mp4'
+      : (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/webm;codecs=vp9'))
+        ? 'video/webm;codecs=vp9'
+        : 'video/webm';
+    setExportMime(mime);
+    const rec = new MediaRecorder(stream, { mimeType: mime });
     rec.ondataavailable = e => { if (e.data.size) chunksRef.current.push(e.data); };
     rec.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+      const blob = new Blob(chunksRef.current, { type: mime });
       setExportUrl(URL.createObjectURL(blob));
       setRecording(false); setProgress(1);
     };
@@ -434,7 +472,26 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
 
   const download = () => {
     if (!exportUrl) return;
-    const a = document.createElement('a'); a.href = exportUrl; a.download = `iris-reel-${Date.now()}.webm`; a.click();
+    const ext = exportMime.startsWith('video/mp4') ? 'mp4' : 'webm';
+    const a = document.createElement('a');
+    a.href = exportUrl;
+    a.download = `iris-reel-${Date.now()}.${ext}`;
+    a.click();
+  };
+
+  /** Instagram Story 用の短いコピーをクリップボードへ */
+  const copyStoryText = async () => {
+    const fallback = clips.map(c => c.captionText).filter(Boolean).join(' / ').slice(0, 60);
+    const text = (aiResult?.storyText && aiResult.storyText.trim())
+      || (aiResult?.themeGuess ? `✨ ${aiResult.themeGuess}` : '')
+      || fallback
+      || '✨ 新しいリールができたよ';
+    try {
+      await navigator.clipboard.writeText(text);
+      setScheduledMsg('Story 用の文をコピーしました');
+    } catch {
+      setScheduledMsg('コピーに失敗しました');
+    }
   };
 
   // ─── 削除 ─────
@@ -634,13 +691,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             }}>
               {clips.map((c, i) => {
                 const selected = selectedClipId === c.id;
+                const mood = c.bgmMood ? BGM_MOOD_DEFS.find(m => m.id === c.bgmMood) : null;
                 return (
                   <button
                     key={c.id}
                     onClick={() => { setSelectedClipId(c.id); seekToClip(i); }}
                     style={{
                       flexShrink: 0, position: 'relative',
-                      width: 44, height: 70,
+                      width: 56, height: 92,
                       borderRadius: 8, overflow: 'hidden',
                       background: '#000',
                       border: `2px solid ${selected ? bg.accent : 'transparent'}`,
@@ -651,14 +709,40 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       ? <img src={c.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : <video src={c.url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     }
+                    {/* 上: BGM ジャンルバッジ */}
+                    {mood && (
+                      <div style={{
+                        position: 'absolute', top: 2, right: 2,
+                        padding: '1px 4px',
+                        background: 'rgba(225,48,108,0.92)', color: '#fff',
+                        fontSize: 8, fontWeight: 900,
+                        borderRadius: 4,
+                        letterSpacing: '0.02em',
+                      }}>{mood.label}</div>
+                    )}
+                    {/* 中央: 字幕プレビュー (短く) */}
+                    {c.captionText && (
+                      <div style={{
+                        position: 'absolute', left: 2, right: 2,
+                        top: '40%', transform: 'translateY(-50%)',
+                        color: '#fff', fontSize: 8.5, fontWeight: 800,
+                        lineHeight: 1.15,
+                        textShadow: '0 1px 3px rgba(0,0,0,0.95), 0 0 6px rgba(0,0,0,0.7)',
+                        textAlign: 'center',
+                        wordBreak: 'break-all',
+                      }}>
+                        {c.captionText.slice(0, 10)}{c.captionText.length > 10 ? '…' : ''}
+                      </div>
+                    )}
                     <div style={{
                       position: 'absolute', bottom: 0, left: 0, right: 0,
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.78), transparent)',
                       color: '#fff', fontSize: 9, fontWeight: 800,
                       padding: '8px 3px 2px', textAlign: 'left',
                     }}>
                       {i + 1}・{c.duration.toFixed(1)}s
                     </div>
+                    {/* 左上: AI 字幕済みドット */}
                     {c.captionText && (
                       <div style={{
                         position: 'absolute', top: 2, left: 2,
@@ -1000,7 +1084,52 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                                 resize: 'none', lineHeight: 1.4,
                               }}
                             />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                            {/* 絵文字提案 */}
+                            {c.emojiOptions && c.emojiOptions.length > 0 && (
+                              <div style={{
+                                display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap',
+                              }}>
+                                {c.emojiOptions.slice(0, 6).map((em, ei) => (
+                                  <button
+                                    key={ei}
+                                    onClick={() => appendEmojiToCaption(c.id, em)}
+                                    title={`字幕末尾に ${em} を追加`}
+                                    style={{
+                                      padding: '1px 6px',
+                                      background: 'rgba(255,255,255,0.85)',
+                                      border: `1px solid ${bg.cardBorder}`,
+                                      borderRadius: 999,
+                                      fontSize: 13, lineHeight: 1.4,
+                                      cursor: 'pointer',
+                                    }}
+                                  >{em}</button>
+                                ))}
+                              </div>
+                            )}
+                            {/* BGM ジャンル候補 (アップ/しっとり/ポップ/エモ) */}
+                            <div style={{ display: 'flex', gap: 3, marginTop: 5, flexWrap: 'wrap' }}>
+                              {BGM_MOOD_DEFS.map(m => {
+                                const active = c.bgmMood === m.id;
+                                return (
+                                  <button
+                                    key={m.id}
+                                    onClick={() => setClipBgmMood(c.id, m.id)}
+                                    title={`${m.desc} (${m.bpm} BPM) — 選択でカット長をビートに合わせる`}
+                                    style={{
+                                      padding: '2px 7px',
+                                      background: active ? IRIS_GRADIENT : 'rgba(255,255,255,0.8)',
+                                      color: active ? '#fff' : bg.ink,
+                                      border: `1px solid ${active ? 'transparent' : bg.cardBorder}`,
+                                      borderRadius: 999,
+                                      fontSize: 10, fontWeight: 800,
+                                      cursor: 'pointer',
+                                      boxShadow: active ? '0 2px 8px rgba(225,48,108,0.28)' : 'none',
+                                    }}
+                                  >♪{m.label}</button>
+                                );
+                              })}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5 }}>
                               <span style={{ fontSize: 10, color: bg.inkSoft, minWidth: 28 }}>位置</span>
                               <input
                                 type="range" min={0.1} max={0.95} step={0.01}
@@ -1110,12 +1239,45 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                             fontSize: 11, color: bg.ink, cursor: 'pointer',
                           }}
                         >本文 + ハッシュタグをコピー</button>
+                        {aiResult.storyText && (
+                          <div style={{
+                            marginTop: 8, padding: '0.55rem 0.7rem',
+                            background: 'rgba(251,191,36,0.10)',
+                            border: '1px solid rgba(251,191,36,0.35)',
+                            borderRadius: 10,
+                            fontSize: 12, color: bg.ink, lineHeight: 1.5,
+                          }}>
+                            <div style={{
+                              fontSize: 9, letterSpacing: '0.22em', fontWeight: 800,
+                              color: '#B45309', marginBottom: 4, textTransform: 'uppercase',
+                            }}>STORY 用</div>
+                            {aiResult.storyText}
+                          </div>
+                        )}
                       </div>
                     )}
 
                     <div style={{ display: 'grid', gap: 8 }}>
                       <button onClick={download} style={{ ...btnPri(), width: '100%' }}>
-                        <Download size={14} /> ダウンロード
+                        <Download size={14} /> {exportMime.startsWith('video/mp4') ? 'MP4 をダウンロード' : 'WebM をダウンロード'}
+                      </button>
+                      {!exportMime.startsWith('video/mp4') && (
+                        <div style={{
+                          padding: '0.4rem 0.6rem',
+                          background: 'rgba(251,191,36,0.12)',
+                          border: '1px solid rgba(251,191,36,0.4)',
+                          borderRadius: 8,
+                          fontSize: 10.5, color: bg.inkSoft, lineHeight: 1.4,
+                        }}>
+                          このブラウザは MP4 書き出しに非対応のため WebM になります。Instagram にそのまま上げると弾かれることがあるので、その場合は <b>Safari</b> で同じ操作を行うか、<b>CloudConvert / HandBrake</b> で MP4 に変換してください。
+                        </div>
+                      )}
+                      <button onClick={copyStoryText} style={{
+                        ...btnSec(bg), width: '100%',
+                        background: 'rgba(225,48,108,0.08)',
+                        borderColor: bg.accent + '55',
+                      }}>
+                        <Share2 size={14} /> Instagram Story 用テキストをコピー
                       </button>
                       {postQueue && !scheduled && (
                         <button onClick={sendToQueue} style={{
