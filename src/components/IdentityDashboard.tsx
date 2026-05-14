@@ -67,6 +67,7 @@ import { loadBenchmarkResult } from '../lib/benchmarkAnalyst';
 import type { DailyHealth } from '../types/health';
 import type { HealthAnomaly } from '../data/healthAnomaly';
 import AutoAgentHero from './AutoAgentHero';
+import SevenAgentsOrbit from '../prism/SevenAgentsOrbit';
 
 interface Props {
   persona: Persona;
@@ -558,6 +559,64 @@ export default function IdentityDashboard({
 
           <div className="flex-1 overflow-auto p-3 md:p-4 relative">
             <div className="max-w-5xl space-y-3">
+
+              {/* 7 つのエージェントが、それぞれ動いている可視化 (LP の 7 本柱と対応) */}
+              <SevenAgentsOrbit
+                agents={[
+                  {
+                    key: 'ceo',
+                    count: proactive.proposals.length,
+                    status: proactive.proposals.length
+                      ? `提案${proactive.proposals.length}件`
+                      : '一手を考案中',
+                    onClick: () => proactive.generate(settings.voiceEnabled !== false),
+                  },
+                  {
+                    key: 'sales',
+                    count: shadow.drafts.length,
+                    status: shadow.drafts.length
+                      ? `下書き${shadow.drafts.length}通`
+                      : '商談を準備',
+                    onClick: () => setShowSalesAgent(true),
+                  },
+                  {
+                    key: 'cfo',
+                    count: 0,
+                    status: '数字を整理中',
+                    onClick: () => setShowPnL(true),
+                  },
+                  {
+                    key: 'creative',
+                    count: 0,
+                    status: '原稿を考案中',
+                    onClick: () => setShowContentEngine(true),
+                  },
+                  {
+                    key: 'knowledge',
+                    count: personaKnowledge.length,
+                    status: personaKnowledge.length
+                      ? `資料${personaKnowledge.length}件 読了`
+                      : '資料を待機中',
+                    onClick: () => setShowKnowledge(true),
+                  },
+                  {
+                    key: 'people',
+                    count: persona.tasks.filter(t => !t.done).length,
+                    status: persona.tasks.filter(t => !t.done).length
+                      ? `タスク${persona.tasks.filter(t => !t.done).length}件`
+                      : 'チームを観察',
+                    onClick: () => setShowPeople(true),
+                  },
+                  {
+                    key: 'life',
+                    count: healthCtx.today ? 1 : 0,
+                    status: healthCtx.today
+                      ? `睡眠${healthCtx.today.sleepHours?.toFixed(1) ?? '?'}h`
+                      : 'カラダを見守り中',
+                    onClick: () => setShowHealth(true),
+                  },
+                ]}
+              />
 
               <AutoAgentHero
                 ctx={{
