@@ -354,10 +354,38 @@ export default async function handler(req: Request) {
     }
   }
 
-  // ─── すべての候補モデルが失敗 → やさしいメッセージに変換 ───
+  // ─── すべての候補モデルが失敗 → master なら Claude に最終フォールバック ───
   const errMsg = (lastError?.message || '').toLowerCase();
   const isQuota = errMsg.includes('quota') || errMsg.includes('rate') || errMsg.includes('limit');
   const isAuth = errMsg.includes('api key') || errMsg.includes('unauthorized') || errMsg.includes('forbidden');
+
+  // マスターモードかつ Gemini が枯渇 → Claude haiku に救済フォールバック
+  if (isMaster && isQuota) {
+    const headerKey = req.headers.get('x-claude-api-key') || '';
+    const envKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY || '';
+    const claudeKey = headerKey || envKey;
+    if (claudeKey) {
+      try {
+        const claudeBody = { ...body, model: 'claude-haiku-4-5' };
+        const r = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': claudeKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify(claudeBody),
+        });
+        if (r.ok) {
+          const txt = await r.text();
+          return new Response(txt, {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', 'x-ai-route': 'master:claude-rescue (gemini quota)', ...corsHeaders },
+          });
+        }
+      } catch {/* fall through to error */}
+    }
+  }
 
   let userMessage: string;
   let recovery: string;
