@@ -7,6 +7,7 @@ import { useSettings } from '../hooks/useSettings';
 import IrisLanding from './IrisLanding';
 import IrisDashboard from './IrisDashboard';
 import TutorialOverlay from '../components/TutorialOverlay';
+import WowOnboarding from '../components/WowOnboarding';
 import CheckoutModal from '../components/CheckoutModal';
 import { useBillingUser, IRIS_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, type Plan } from '../lib/billing';
 
@@ -29,6 +30,7 @@ export default function IrisApp() {
   const { user } = useBillingUser();
   const [entered, setEntered] = useState(() => hasEntered());
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
+  const [tutorialDoneTick, setTutorialDoneTick] = useState(0);
 
   // タイトル + theme-color を Iris に
   useEffect(() => {
@@ -82,7 +84,8 @@ export default function IrisApp() {
   return (
     <>
       <IrisDashboard settings={settings} onLeave={() => setEntered(false)} />
-      <TutorialOverlay brand="iris" />
+      <TutorialOverlay brand="iris" onClose={() => setTutorialDoneTick(t => t + 1)} />
+      <WowOnboarding brand="iris" trigger={tutorialDoneTick} />
     </>
   );
 }

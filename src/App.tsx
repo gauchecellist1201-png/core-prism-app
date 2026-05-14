@@ -32,6 +32,7 @@ import KeynoteLanding from './keynote/KeynoteLanding';
 import PrismTaskScheduler from './prism/PrismTaskScheduler';
 import PrismSplash from './prism/PrismWelcome';
 import TutorialOverlay from './components/TutorialOverlay';
+import WowOnboarding from './components/WowOnboarding';
 
 import type { AppSettings, ChatMessage } from './types/identity';
 
@@ -186,6 +187,7 @@ export default function App() {
   const [editingPersonaId, setEditingPersonaId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
+  const [tutorialDoneTick, setTutorialDoneTick] = useState(0);
 
   // 課金フロー: 未 signup なら Checkout モーダルで signup → 入場
   const { user: billingUser } = useBillingUser();
@@ -395,7 +397,9 @@ export default function App() {
       {/* Prism: シネマティック スプラッシュ (初回セッションのみ) */}
       <PrismSplash personaName={activePersona?.name} />
       {/* Prism: チュートリアル (初回起動のみ表示、スキップ可) */}
-      <TutorialOverlay brand="prism" />
+      <TutorialOverlay brand="prism" onClose={() => setTutorialDoneTick(t => t + 1)} />
+      {/* Prism: 3 分で「Wow」体験 (初回チュートリアル後のみ表示) */}
+      <WowOnboarding brand="prism" trigger={tutorialDoneTick} />
     </>
   );
 }
