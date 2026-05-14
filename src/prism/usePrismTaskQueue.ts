@@ -445,5 +445,32 @@ export function usePrismTaskQueue() {
     update(id, { status: 'cancelled' });
   }, [update]);
 
-  return { tasks, add, update, remove, cancel, requestPermission };
+  // 失敗 / 完了 / キャンセル を「もう一度試す」
+  const retry = useCallback((id: string, delaySec = 5) => {
+    const when = new Date(Date.now() + delaySec * 1000).toISOString();
+    setTasks(prev => {
+      const next = prev.map(p => p.id === id ? {
+        ...p,
+        status: 'scheduled' as TaskStatus,
+        scheduledAt: when,
+        error: undefined,
+        result: undefined,
+        resultGeneratedAt: undefined,
+        notified: false,
+      } : p);
+      persist(next);
+      return next;
+    });
+  }, []);
+
+  // 完了通知バッジを全て既読化
+  const markAllSeen = useCallback(() => {
+    setTasks(prev => {
+      const next = prev.map(p => p.notified ? p : { ...p, notified: true });
+      persist(next);
+      return next;
+    });
+  }, []);
+
+  return { tasks, add, update, remove, cancel, retry, markAllSeen, requestPermission };
 }
