@@ -152,14 +152,14 @@ export default function AutoAgentHero({
             backgroundClip: 'text',
             letterSpacing: '-0.01em',
           }}>
-            今日やること、3 つ用意しました。
+            売上を伸ばす、次の一手。
           </h2>
           <p style={{
             margin: '0.3rem 0 0',
             fontSize: 12.5, color: textSecondary,
             fontFamily: '"Noto Sans JP", sans-serif', lineHeight: 1.6,
           }}>
-            タップでそのまま実行。違えば「もっとこうして」と言うだけ。
+            あなたの事業を見て、伸び筋を見つけました。実務は私が動きます。
           </p>
         </div>
         <button onClick={() => load(true)} disabled={loading} title="再生成" style={{
@@ -303,6 +303,25 @@ export default function AutoAgentHero({
                     >
                       <div style={{ padding: '0 1rem 1rem', borderTop: `1px solid ${cardBorder}`, paddingTop: 12 }}>
 
+                        {/* AI が動く部分 (Agent Role) */}
+                        {s.agentRole && !s.result && (
+                          <div style={{
+                            padding: '0.65rem 0.85rem',
+                            background: `linear-gradient(135deg, ${meta.gradient[0]}10, transparent)`,
+                            border: `1px solid ${meta.gradient[0]}30`,
+                            borderRadius: 10,
+                            marginBottom: 10,
+                            display: 'flex', gap: 7, alignItems: 'flex-start',
+                          }}>
+                            <Sparkles size={12} style={{ color: meta.gradient[0], marginTop: 2, flexShrink: 0 }} />
+                            <span style={{
+                              fontSize: 11.5, lineHeight: 1.6, color: textPrimary,
+                            }}>
+                              <strong style={{ color: meta.gradient[0] }}>私が動く部分:</strong> {s.agentRole}
+                            </span>
+                          </div>
+                        )}
+
                         {/* 結果表示 */}
                         {s.result && (
                           <div style={{
@@ -350,9 +369,9 @@ export default function AutoAgentHero({
                                 fontFamily: 'inherit',
                               }}>
                               {running ? (
-                                <><Loader2 size={13} className="auto-agent-spin" /> 実行中…</>
+                                <><Loader2 size={13} className="auto-agent-spin" /> 私が進めています…</>
                               ) : (
-                                <><Check size={13} /> やる</>
+                                <><Check size={13} /> AI に任せる</>
                               )}
                             </button>
                           )}
