@@ -22,6 +22,8 @@ import MomentPulse from './MomentPulse';
 import QuickActions from './QuickActions';
 import ActivityTimeline from './ActivityTimeline';
 import HealthSnapshot from './HealthSnapshot';
+import TodaysBodyCard from '../prism/TodaysBodyCard';
+import { loadBillingUser } from '../lib/billing';
 import MeetingMinutesModal from './MeetingMinutes';
 import SlideGeneratorModal from './SlideGenerator';
 import NegotiationCoachModal from './NegotiationCoach';
@@ -643,6 +645,8 @@ export default function IdentityDashboard({
                   { id: 'health', emoji: '🩺', label: 'ヘルス', desc: '健康ダッシュボード', onClick: () => setShowHealth(true) },
                 ]}
               />
+
+              <TodaysBodyCard email={loadBillingUser()?.email ?? ''} />
 
               <HealthSnapshot
                 today={healthCtx.today}

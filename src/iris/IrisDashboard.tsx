@@ -92,6 +92,7 @@ const TAB_TO_GROUP: Record<string, string> = TAB_GROUPS.reduce((acc, g) => {
 import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 import { getAllBrandDeals, CATEGORY_META, type BrandDeal, type BrandCategory } from './brandDeals';
+import { getBrandLogoUrl, getDealImageUrl, getDealGradient } from './brandVisuals';
 import {
   computeMatchScore, generateApplicationDraft, addApplyRecord,
   loadApplyHistory, computeApplyKpi, updateApplyStatus,
@@ -2732,54 +2733,226 @@ function BrandDealCard({ bg, deal, score, onOpen }: {
   const meta = CATEGORY_META[deal.category];
   const daysLeft = Math.max(0, Math.ceil((new Date(deal.deadline).getTime() - Date.now()) / 86400000));
   const platMeta = PLATFORM_META[deal.platform];
+  const ctLabel = CONTENT_TYPE_META[deal.contentType];
+  const logoUrl = getBrandLogoUrl(deal.brandName);
+  const imageUrl = getDealImageUrl(deal);
+  const gradient = getDealGradient(deal, meta.color);
+  const urgent = daysLeft <= 14;
+  const followersLabel =
+    deal.minFollowers >= 10000
+      ? `${(deal.minFollowers / 10000).toFixed(deal.minFollowers % 10000 === 0 ? 0 : 1)}万`
+      : `${(deal.minFollowers / 1000).toFixed(deal.minFollowers % 1000 === 0 ? 0 : 1)}千`;
+
   return (
-    <button onClick={onOpen} className="iris-card-hover" style={{
+    <div className="iris-card-hover" style={{
       background: bg.card, backdropFilter: 'blur(10px)',
       border: `1px solid ${bg.cardBorder}`, borderRadius: 22,
-      padding: '1.1rem 1.2rem', textAlign: 'left',
-      cursor: 'pointer', fontFamily: 'inherit',
-      display: 'flex', flexDirection: 'column', gap: '0.6rem',
+      overflow: 'hidden',
+      display: 'flex', flexDirection: 'column',
       color: bg.ink,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+      {/* ── ビジュアル (商品画像 + ロゴ + カテゴリ) ── */}
+      <button
+        type="button"
+        onClick={onOpen}
+        style={{
+          position: 'relative',
+          padding: 0, border: 'none', cursor: 'pointer',
+          height: 160, width: '100%',
+          background: gradient,
+          overflow: 'hidden',
+          display: 'block',
+        }}
+      >
+        <img
+          src={imageUrl}
+          alt={deal.productName}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+          style={{
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%',
+            objectFit: 'cover',
+            opacity: 0.78,
+          }}
+        />
+        {/* 上から覆うグラデーション (テキスト読みやすさ用) */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 100%)',
+        }} />
+        {/* カテゴリチップ (左上) */}
         <span style={{
-          background: meta.color + '22', color: meta.color,
-          padding: '0.2rem 0.6rem', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700,
+          position: 'absolute', top: 10, left: 12,
+          background: 'rgba(255,255,255,0.92)', color: meta.color,
+          padding: '0.25rem 0.7rem', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
         }}>
           {meta.emoji} {meta.label}
         </span>
+        {/* マッチスコア (右上) */}
         <span style={{
-          background: score.color + (score.level === 'low' ? '22' : '33'),
-          color: score.color,
-          padding: '0.2rem 0.65rem', borderRadius: 999,
+          position: 'absolute', top: 10, right: 12,
+          background: score.color, color: 'white',
+          padding: '0.25rem 0.7rem', borderRadius: 999,
           fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
         }}>
-          {score.total}% · {score.label}
+          ⚡ {score.total}% {score.label}
         </span>
+        {/* ロゴ + ブランド名 (下部) */}
+        <div style={{
+          position: 'absolute', bottom: 10, left: 12, right: 12,
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10,
+            background: 'white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+            flexShrink: 0,
+            overflow: 'hidden',
+          }}>
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={deal.brandName + ' ロゴ'}
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const el = e.currentTarget as HTMLImageElement;
+                  el.style.display = 'none';
+                  if (el.parentElement) el.parentElement.textContent = deal.brandName.charAt(0);
+                }}
+                style={{ width: 28, height: 28, objectFit: 'contain' }}
+              />
+            ) : (
+              <span style={{ fontWeight: 800, fontSize: '1.1rem', color: meta.color }}>
+                {deal.brandName.charAt(0)}
+              </span>
+            )}
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{
+              margin: 0, color: 'white', fontWeight: 700, fontSize: '0.98rem',
+              textShadow: '0 1px 3px rgba(0,0,0,0.55)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {deal.brandName}
+            </p>
+            <p style={{
+              margin: 0, color: 'rgba(255,255,255,0.9)', fontSize: '0.75rem',
+              textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {deal.productName}
+            </p>
+          </div>
+        </div>
+      </button>
+
+      {/* ── 報酬 (大きく) ── */}
+      <div style={{
+        padding: '0.9rem 1.1rem 0.5rem',
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8,
+      }}>
+        <div>
+          <p style={{ fontSize: '0.65rem', letterSpacing: '0.15em', color: bg.inkSoft, fontWeight: 600, margin: 0 }}>
+            報酬
+          </p>
+          <p style={{
+            margin: '2px 0 0', fontWeight: 800,
+            fontSize: '1.6rem', color: meta.color, lineHeight: 1,
+            fontFeatureSettings: '"tnum"',
+          }}>
+            ¥{deal.fee.toLocaleString()}
+          </p>
+          {deal.feeNote && (
+            <p style={{ margin: '4px 0 0', fontSize: '0.68rem', color: bg.inkSoft }}>
+              {deal.feeNote}
+            </p>
+          )}
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <p style={{
+            margin: 0, fontSize: '0.7rem', fontWeight: 700,
+            color: urgent ? '#E11D48' : bg.inkSoft,
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+          }}>
+            <Calendar size={11} /> {urgent ? '⚡' : ''}あと {daysLeft} 日
+          </p>
+          <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: bg.inkSoft }}>
+            ~{deal.deadline}
+          </p>
+        </div>
       </div>
-      <div>
-        <p style={{ fontSize: '1.05rem', fontWeight: 700, color: bg.ink, marginBottom: '0.15rem', lineHeight: 1.35 }}>
-          {deal.brandName}
+
+      {/* ── 概要 ── */}
+      <div style={{ padding: '0 1.1rem 0.6rem' }}>
+        <p style={{
+          margin: 0, fontSize: '0.82rem', color: bg.inkSoft, lineHeight: 1.55,
+          display: '-webkit-box',
+          WebkitLineClamp: 2 as any,
+          WebkitBoxOrient: 'vertical' as any,
+          overflow: 'hidden',
+        }}>
+          {deal.summary}
         </p>
-        <p style={{ fontSize: '0.8rem', color: bg.inkSoft, lineHeight: 1.45 }}>
-          {deal.productName}
-        </p>
       </div>
-      <p style={{ fontSize: '0.83rem', color: bg.inkSoft, lineHeight: 1.6 }}>
-        {deal.summary}
-      </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: '0.78rem', color: bg.inkSoft }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <Wallet size={12} /> ¥{deal.fee.toLocaleString()}
+
+      {/* ── 条件チップ (フォロワー / プラットフォーム / 形式) ── */}
+      <div style={{
+        padding: '0 1.1rem 0.7rem',
+        display: 'flex', gap: 6, flexWrap: 'wrap',
+      }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          background: bg.cardBorder, color: bg.ink,
+          padding: '0.25rem 0.55rem', borderRadius: 999,
+          fontSize: '0.7rem', fontWeight: 600,
+        }}>
+          <Users size={11} /> {followersLabel}人〜
         </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <span>{platMeta.emoji}</span> {platMeta.label}
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          background: bg.cardBorder, color: bg.ink,
+          padding: '0.25rem 0.55rem', borderRadius: 999,
+          fontSize: '0.7rem', fontWeight: 600,
+        }}>
+          {platMeta.emoji} {platMeta.label}
         </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: daysLeft < 14 ? '#E11D48' : bg.inkSoft }}>
-          <Calendar size={12} /> あと {daysLeft} 日
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          background: bg.cardBorder, color: bg.ink,
+          padding: '0.25rem 0.55rem', borderRadius: 999,
+          fontSize: '0.7rem', fontWeight: 600,
+        }}>
+          🎬 {ctLabel || deal.contentType}
         </span>
       </div>
-    </button>
+
+      {/* ── 応募ボタン ── */}
+      <button
+        type="button"
+        onClick={onOpen}
+        style={{
+          margin: '0 1.1rem 1rem',
+          padding: '0.7rem 1rem',
+          border: 'none',
+          borderRadius: 12,
+          background: `linear-gradient(135deg, ${meta.color} 0%, ${bg.accent} 100%)`,
+          color: 'white',
+          fontWeight: 700,
+          fontSize: '0.9rem',
+          fontFamily: 'inherit',
+          cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          boxShadow: `0 4px 12px ${meta.color}40`,
+        }}
+      >
+        <Send size={14} /> 応募する
+      </button>
+    </div>
   );
 }
 

@@ -2,9 +2,11 @@
 // /api/health/ingest — Apple Health 自動連携エンドポイント
 //
 // iOS ショートカット が HealthKit データを毎日 POST する受け口。
-// Iris の Web アプリは GET でデータを取得し、ローカルにマージする。
+// Iris / Prism の Web アプリは GET でデータを取得し、ローカルにマージする。
 //
-// 認証: X-Health-Token (ユーザー固有、Iris の設定画面で発行)
+// 認証 (どちらか一方):
+//   - X-Health-Token: irs_xxxxxxxxxxxx 形式 (Iris 系)
+//   - X-User-Email-Hash: SHA-256 hex (Prism / 経営者向け)
 // 永続化: Upstash Redis REST (UPSTASH_REDIS_REST_URL/TOKEN が設定されていれば)
 //         未設定時は 202 Accepted + persisted:false を返し、運用者に env 設定を促す
 // ============================================================
@@ -25,7 +27,7 @@ function corsHeaders(req: Request): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': o,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Health-Token, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Health-Token, X-User-Email-Hash, Authorization',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin',
   };
@@ -38,16 +40,42 @@ function json(data: unknown, status: number, extra: Record<string, string> = {})
   });
 }
 
-// ---- Token --------------------------------------------------
+// ---- Identity (Token or Email Hash) -------------------------
 // 形式: irs_<base36 length 16..64>
 const TOKEN_RE = /^irs_[a-z0-9]{12,64}$/i;
+// SHA-256 hex (64 文字、16 進)
+const HASH_RE = /^[a-f0-9]{64}$/i;
 
 function validToken(t: string | null | undefined): t is string {
   return !!t && TOKEN_RE.test(t);
 }
 
+function validHash(h: string | null | undefined): h is string {
+  return !!h && HASH_RE.test(h);
+}
+
 function tokenKey(token: string): string {
   return `iris:health:${token}`;
+}
+
+function hashKey(hash: string): string {
+  return `prism:health:${hash.toLowerCase()}`;
+}
+
+/**
+ * Identity 抽出 — token または email-hash のどちらか。
+ * token が優先 (Iris 側で既に発行済みのケースを壊さない)。
+ */
+function extractIdentity(req: Request, url: URL): { kind: 'token' | 'hash'; id: string } | null {
+  const token = req.headers.get('x-health-token') || url.searchParams.get('token');
+  if (validToken(token)) return { kind: 'token', id: token };
+  const hash = req.headers.get('x-user-email-hash') || url.searchParams.get('hash');
+  if (validHash(hash)) return { kind: 'hash', id: hash.toLowerCase() };
+  return null;
+}
+
+function storeKey(ident: { kind: 'token' | 'hash'; id: string }): string {
+  return ident.kind === 'token' ? tokenKey(ident.id) : hashKey(ident.id);
 }
 
 // ---- Upstash REST -------------------------------------------
@@ -73,8 +101,8 @@ async function upstash(cmd: (string | number)[]): Promise<any> {
 }
 
 // 直近 60 日分の DailyHealth を JSON で保存
-async function storeDays(token: string, days: DailyMetric[]): Promise<number> {
-  const key = tokenKey(token);
+async function storeDays(ident: { kind: 'token' | 'hash'; id: string }, days: DailyMetric[]): Promise<number> {
+  const key = storeKey(ident);
   // 既存読み込み → マージ → 60 日に切り詰め
   let existing: DailyMetric[] = [];
   try {
@@ -100,9 +128,9 @@ async function storeDays(token: string, days: DailyMetric[]): Promise<number> {
   return merged.length;
 }
 
-async function loadDays(token: string): Promise<DailyMetric[]> {
+async function loadDays(ident: { kind: 'token' | 'hash'; id: string }): Promise<DailyMetric[]> {
   try {
-    const r = await upstash(['GET', tokenKey(token)]);
+    const r = await upstash(['GET', storeKey(ident)]);
     if (!r?.result) return [];
     const parsed = JSON.parse(r.result);
     return Array.isArray(parsed) ? parsed : [];
@@ -130,6 +158,8 @@ interface MetricBag {
   bpSys?: number;
   bpDia?: number;
   glucoseMgDl?: number;
+  /** 気分スコア 1 (悪) – 5 (絶好調) */
+  mood?: number;
   [k: string]: number | undefined;
 }
 
@@ -151,6 +181,11 @@ interface IngestBody {
   hrv?: number;
   sleepHours?: number;
   activeMinutes?: number;
+  // Prism 簡易フォーマット (経営者向けショートカット)
+  sleepMin?: number;        // 分単位 → sleepHours に自動変換
+  heartRateAvg?: number;    // 平均心拍 (heartRate にマップ)
+  weightKg?: number;
+  mood?: number;            // 1-5
 }
 
 function clampNum(v: unknown, lo: number, hi: number): number | undefined {
@@ -181,6 +216,7 @@ function sanitizeMetrics(raw: MetricBag | undefined): MetricBag {
     ['bpSys', 50, 260],
     ['bpDia', 30, 200],
     ['glucoseMgDl', 20, 1000],
+    ['mood', 1, 5],
   ];
   for (const [k, lo, hi] of map) {
     const v = clampNum(raw[k], lo, hi);
@@ -214,12 +250,20 @@ function normalizeBody(body: IngestBody): DailyMetric[] {
 
   // 単一日: { date, metrics: {...} } または { date, steps, sleepHours, ... } のフラット形式
   const date = typeof body.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : today();
+  // sleepMin (分) → sleepHours, heartRateAvg → heartRate へ正規化
+  const sleepHoursFromMin =
+    typeof body.sleepMin === 'number' && isFinite(body.sleepMin) && body.sleepMin > 0
+      ? body.sleepMin / 60
+      : undefined;
   const flat: MetricBag = {
     steps: body.steps,
     restingHR: body.restingHR,
+    heartRate: body.heartRateAvg,
     hrv: body.hrv,
-    sleepHours: body.sleepHours,
+    sleepHours: body.sleepHours ?? sleepHoursFromMin,
     activeMinutes: body.activeMinutes,
+    weightKg: body.weightKg,
+    mood: body.mood,
   };
   const combined = { ...flat, ...(body.metrics || {}) };
   const m = sanitizeMetrics(combined);
@@ -236,17 +280,17 @@ export default async function handler(req: Request): Promise<Response> {
 
   const url = new URL(req.url);
 
-  // GET: token に紐づく最近のデータを返す
+  // GET: 識別子 (token または email-hash) に紐づく最近のデータを返す
   if (req.method === 'GET') {
-    const token = req.headers.get('x-health-token') || url.searchParams.get('token');
-    if (!validToken(token)) {
-      return json({ ok: false, error: 'invalid_token' }, 401, ch);
+    const ident = extractIdentity(req, url);
+    if (!ident) {
+      return json({ ok: false, error: 'invalid_identity', hint: 'X-Health-Token (irs_...) または X-User-Email-Hash (SHA-256 hex) を指定してください' }, 401, ch);
     }
     if (!UPSTASH_CONFIGURED) {
       return json({ ok: true, configured: false, days: [], hint: 'UPSTASH_REDIS_REST_URL/TOKEN 未設定。env を追加すると永続化されます。' }, 200, ch);
     }
-    const days = await loadDays(token);
-    return json({ ok: true, configured: true, days, count: days.length }, 200, ch);
+    const days = await loadDays(ident);
+    return json({ ok: true, configured: true, identity: ident.kind, days, count: days.length }, 200, ch);
   }
 
   if (req.method !== 'POST') {
@@ -254,9 +298,9 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   // 認証
-  const token = req.headers.get('x-health-token') || url.searchParams.get('token');
-  if (!validToken(token)) {
-    return json({ ok: false, error: 'invalid_token', hint: 'X-Health-Token に irs_xxxxxxxxxxxx 形式を指定してください' }, 401, ch);
+  const ident = extractIdentity(req, url);
+  if (!ident) {
+    return json({ ok: false, error: 'invalid_identity', hint: 'X-Health-Token (irs_xxxxxxxxxxxx) または X-User-Email-Hash (SHA-256 hex 64 文字) を指定してください' }, 401, ch);
   }
 
   // body 解析
@@ -289,8 +333,8 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const total = await storeDays(token, days);
-    return json({ ok: true, persisted: true, configured: true, accepted: days.length, totalDays: total }, 200, ch);
+    const total = await storeDays(ident, days);
+    return json({ ok: true, persisted: true, configured: true, identity: ident.kind, accepted: days.length, totalDays: total }, 200, ch);
   } catch (e: any) {
     return json({ ok: false, error: 'store_failed', detail: String(e?.message || e).slice(0, 200) }, 500, ch);
   }
