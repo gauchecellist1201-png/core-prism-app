@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import './index.css';
 
@@ -24,7 +24,7 @@ import LegalModal, { type LegalKind } from './components/LegalModal';
 import CoreSite from './corporate/CoreSite';
 import StrategyDashboard from './corporate/StrategyDashboard';
 import PricingPage from './corporate/PricingPage';
-import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, type Plan } from './lib/billing';
+import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, syncSubscriptionState, type Plan } from './lib/billing';
 import { PrismBackground } from './components/PrismBackground';
 import { useTheme } from './hooks/useTheme';
 import IrisApp from './iris/IrisApp';
@@ -204,6 +204,20 @@ export default function App() {
   // 課金フロー: 未 signup なら Checkout モーダルで signup → 入場
   const { user: billingUser } = useBillingUser();
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
+
+  // 起動時に Stripe / webhook と localStorage を同期 (subscriptionId がある場合のみ)
+  useEffect(() => {
+    if (!billingUser?.subscriptionId) return;
+    syncSubscriptionState().catch(() => { /* silent */ });
+    // 別タブから戻ってきたとき (visibilitychange) も同期
+    const onVis = () => {
+      if (document.visibilityState === 'visible') {
+        syncSubscriptionState().catch(() => { /* */ });
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [billingUser?.subscriptionId]);
 
   const handleEnterApp = useCallback(() => {
     if (hasEnteredApp()) {

@@ -562,6 +562,10 @@ export interface BillingUser {
   subscriptionId?: string;
   /** サブスクリプション次回更新日 (Unix タイムスタンプ秒、Stripe webhook で同期) */
   currentPeriodEnd?: number;
+  /** プラン有効期限 (ISO) — /api/stripe/sync が更新。currentPeriodEnd と同義だが表示用 */
+  planExpiresAt?: string;
+  /** 課金停止中 (past_due / unpaid) — banner 表示用 */
+  delinquent?: boolean;
   /** テスト版で ¥0 で進めたか */
   isTestCheckout?: boolean;
 }
@@ -760,6 +764,90 @@ export interface StripeSessionInfo {
   customer_email: string | null;
   subscription_id: string | null;
   current_period_end: number | null;
+}
+
+// ─── /api/stripe/sync でローカル subscription 状態を同期 ───
+export interface SubscriptionSyncResult {
+  ok: boolean;
+  status?: string;
+  plan?: string | null;
+  brand?: string | null;
+  current_period_end?: number | null;
+  plan_expires_at?: string | null;
+  cancel_at_period_end?: boolean;
+  delinquent?: boolean;
+  downgrade_to_free?: boolean;
+  /** ローカル状態が変わったか (UI 再描画判定用) */
+  changed?: boolean;
+}
+
+const SYNC_THROTTLE_KEY = 'core_billing_last_sync_v1';
+const SYNC_MIN_INTERVAL_MS = 60 * 1000; // 1 分以内の再同期は省略
+
+/**
+ * フロント起動時に呼ぶ: webhook が記録した状態 + Stripe 真偽値で
+ * localStorage の core_user (plan / planExpiresAt / delinquent) を更新する。
+ * マスターモードは何もしない。
+ */
+export async function syncSubscriptionState(opts?: { force?: boolean }): Promise<SubscriptionSyncResult> {
+  if (isMasterAuth()) return { ok: true };
+  const user = loadBillingUser();
+  if (!user || !user.subscriptionId) return { ok: false };
+
+  // スロットル
+  if (!opts?.force) {
+    try {
+      const last = parseInt(localStorage.getItem(SYNC_THROTTLE_KEY) || '0', 10);
+      if (Date.now() - last < SYNC_MIN_INTERVAL_MS) return { ok: true };
+    } catch { /* */ }
+  }
+
+  let resp: Response;
+  try {
+    resp = await fetch('/api/stripe/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subscription_id: user.subscriptionId,
+        customer_id: user.stripeCustomerId,
+      }),
+    });
+  } catch {
+    return { ok: false };
+  }
+
+  let data: SubscriptionSyncResult & { plan_expires_at?: string | null } = { ok: false };
+  try { data = await resp.json(); } catch { /* */ }
+  if (!resp.ok || !data.ok) return { ok: false };
+
+  try { localStorage.setItem(SYNC_THROTTLE_KEY, String(Date.now())); } catch { /* */ }
+
+  // localStorage 反映
+  let changed = false;
+  const next: BillingUser = { ...user };
+
+  if (data.plan_expires_at && next.planExpiresAt !== data.plan_expires_at) {
+    next.planExpiresAt = data.plan_expires_at;
+    changed = true;
+  }
+  if (typeof data.current_period_end === 'number' && next.currentPeriodEnd !== data.current_period_end) {
+    next.currentPeriodEnd = data.current_period_end;
+    changed = true;
+  }
+  if (typeof data.delinquent === 'boolean' && next.delinquent !== data.delinquent) {
+    next.delinquent = data.delinquent;
+    changed = true;
+  }
+  if (data.downgrade_to_free && next.plan !== 'free') {
+    next.plan = 'free';
+    next.isTestCheckout = false;
+    next.subscriptionId = undefined;
+    changed = true;
+  }
+
+  if (changed) saveBillingUser(next);
+
+  return { ...data, changed };
 }
 
 /**

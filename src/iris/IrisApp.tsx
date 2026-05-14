@@ -9,7 +9,7 @@ import IrisDashboard from './IrisDashboard';
 import TutorialOverlay from '../components/TutorialOverlay';
 import WowOnboarding from '../components/WowOnboarding';
 import CheckoutModal from '../components/CheckoutModal';
-import { useBillingUser, IRIS_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, type Plan } from '../lib/billing';
+import { useBillingUser, IRIS_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, syncSubscriptionState, type Plan } from '../lib/billing';
 
 const ENTERED_KEY = 'core_iris_entered_v1';
 
@@ -46,6 +46,19 @@ export default function IrisApp() {
       setEntered(true);
     }
   }, [user, entered]);
+
+  // 起動時に Stripe / webhook と localStorage を同期 (subscriptionId があれば)
+  useEffect(() => {
+    if (!user?.subscriptionId) return;
+    syncSubscriptionState().catch(() => { /* */ });
+    const onVis = () => {
+      if (document.visibilityState === 'visible') {
+        syncSubscriptionState().catch(() => { /* */ });
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [user?.subscriptionId]);
 
   const handleEnter = () => {
     // ユーザーがすでにいるなら直接ダッシュボードへ
