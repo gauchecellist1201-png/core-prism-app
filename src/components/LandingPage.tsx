@@ -5,39 +5,47 @@
 // ============================================================
 import { motion } from 'framer-motion';
 import { PrismLogo } from './Logo';
-import { useLocale } from '../hooks/useLocale';
-import type { Locale } from '../lib/i18n';
+import { useT, type Lang, type Dictionary } from '../i18n';
 import {
   Compass, Briefcase, TrendingUp, Sparkles, BookOpen, Users, Heart,
   FileText, FileSpreadsheet, ScrollText, Target, Mail, Receipt, Palette, Mic,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useState } from 'react';
 
 interface Props {
   onEnterApp: () => void;
   onOpenLegal: (kind: 'terms' | 'privacy' | 'tokushou') => void;
 }
 
-// ─── PRISM 7色 (虹のスペクトル) — Lucide アイコン化済み ─────────────────
-type AgentSpec = {
-  key: string; color: string; name: string;
-  Icon: LucideIcon; role: string; desc: string;
-};
-const SPECTRUM: AgentSpec[] = [
-  { key: 'red',    color: '#ff5757', name: '経営', Icon: Compass,    role: 'CEO Agent',       desc: '戦略立案・KPI 自動モニタリング・意思決定メモ生成' },
-  { key: 'orange', color: '#ff9842', name: '営業', Icon: Briefcase,  role: 'Sales Agent',     desc: 'リード探索・商談スクリプト・提案書ドラフト・反論対応' },
-  { key: 'yellow', color: '#fbbf24', name: '財務', Icon: TrendingUp, role: 'CFO Agent',       desc: 'P&L 自動生成・経費OCR・予算配分・キャッシュ予測' },
-  { key: 'green',  color: '#4ade80', name: '創造', Icon: Sparkles,   role: 'Creative Agent',  desc: '画像生成・キャプション・ブランド設計・スライド自動化' },
-  { key: 'blue',   color: '#60a5fa', name: '学び', Icon: BookOpen,   role: 'Knowledge Agent', desc: 'YouTube 要約・読書ノート・知識グラフ・横断検索' },
-  { key: 'indigo', color: '#a78bfa', name: '人材', Icon: Users,      role: 'People Agent',    desc: '1on1 履歴・センチメント分析・採用面接・チームケア' },
-  { key: 'violet', color: '#f472b6', name: '生活', Icon: Heart,      role: 'Life Agent',      desc: '健康・スケジュール・家族の予定・心の整え' },
+// ─── PRISM 7色 (虹のスペクトル) — 色とアイコンのみここで定義、文字は i18n から ───────
+type AgentKey = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'indigo' | 'violet';
+const SPECTRUM: { key: AgentKey; color: string; Icon: LucideIcon }[] = [
+  { key: 'red',    color: '#ff5757', Icon: Compass    },
+  { key: 'orange', color: '#ff9842', Icon: Briefcase  },
+  { key: 'yellow', color: '#fbbf24', Icon: TrendingUp },
+  { key: 'green',  color: '#4ade80', Icon: Sparkles   },
+  { key: 'blue',   color: '#60a5fa', Icon: BookOpen   },
+  { key: 'indigo', color: '#a78bfa', Icon: Users      },
+  { key: 'violet', color: '#f472b6', Icon: Heart      },
+];
+
+const EXEC_ICONS: { key: keyof Dictionary['exec']['items']; color: string; Icon: LucideIcon }[] = [
+  { key: 'minutes',  color: '#60a5fa', Icon: FileText },
+  { key: 'slides',   color: '#a78bfa', Icon: FileSpreadsheet },
+  { key: 'contract', color: '#f472b6', Icon: ScrollText },
+  { key: 'deal',     color: '#ff5757', Icon: Target },
+  { key: 'email',    color: '#ff9842', Icon: Mail },
+  { key: 'invoice',  color: '#fbbf24', Icon: Receipt },
+  { key: 'image',    color: '#4ade80', Icon: Palette },
+  { key: 'voice',    color: '#60a5fa', Icon: Mic },
 ];
 
 const BG_DARK = '#070712';
 const sectionPad = '5.5rem 1.25rem';
 
 export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
-  const { locale, setLocale, t } = useLocale();
+  const { lang, setLang, t } = useT();
 
   return (
     <div style={{ background: BG_DARK, color: '#fff', minHeight: '100dvh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
@@ -53,7 +61,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
         position: 'relative',
         zIndex: 60,
       }}>
-        ✦ 2026/05/12 ベータ公開 — 14 日間無料 / クレカ不要 / 先着で 30 日延長
+        {t.banner}
       </div>
 
       {/* ── ヘッダ ────────────────────────────── */}
@@ -61,11 +69,12 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
           <PrismLogo size={28} withWordmark />
           <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-            <a href="#agents" style={navLink} className="lp-nav-link">{t('lp.nav.agents')}</a>
-            <a href="#exec" style={navLink} className="lp-nav-link">{t('lp.nav.exec')}</a>
-            <a href="#pricing" style={navLink} className="lp-nav-link">{t('lp.nav.pricing')}</a>
-            <LocaleToggle locale={locale} setLocale={setLocale} />
-            <button onClick={onEnterApp} style={ctaBtnSmall}>{t('lp.nav.cta')}</button>
+            <a href="#agents" style={navLink} className="lp-nav-link">{t.nav.agents}</a>
+            <a href="#exec" style={navLink} className="lp-nav-link">{t.nav.exec}</a>
+            <a href="#pricing" style={navLink} className="lp-nav-link">{t.nav.pricing}</a>
+            <a href="#faq" style={navLink} className="lp-nav-link">{t.nav.faq}</a>
+            <LangToggle lang={lang} setLang={setLang} />
+            <button onClick={onEnterApp} style={ctaBtnSmall}>{t.nav.cta}</button>
           </nav>
         </div>
       </header>
@@ -81,7 +90,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
             transition={{ duration: 0.6 }}
             style={{ fontSize: '0.75rem', letterSpacing: '0.4em', fontWeight: 700, marginBottom: '1.25rem', background: 'linear-gradient(90deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
           >
-            {t('lp.hero.eyebrow')}
+            {t.hero.eyebrow}
           </motion.p>
 
           <motion.h1
@@ -90,10 +99,10 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
             transition={{ duration: 0.8, delay: 0.1 }}
             style={{ fontSize: 'clamp(2.5rem, 6.5vw, 5.6rem)', fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '1.25rem' }}
           >
-            {t('lp.hero.h1.line1')}
+            {t.hero.h1Line1}
             <br />
             <span style={{ background: 'linear-gradient(90deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {t('lp.hero.h1.line2')}
+              {t.hero.h1Line2}
             </span>
           </motion.h1>
 
@@ -103,7 +112,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
             transition={{ duration: 0.8, delay: 0.25 }}
             style={{ fontSize: 'clamp(1rem, 1.7vw, 1.25rem)', color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, marginBottom: '0.75rem' }}
           >
-            {t('lp.hero.sub1')}
+            {t.hero.sub1}
           </motion.p>
           <motion.p
             initial={{ opacity: 0, y: 14 }}
@@ -111,7 +120,7 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
             transition={{ duration: 0.8, delay: 0.4 }}
             style={{ fontSize: 'clamp(1rem, 1.7vw, 1.2rem)', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, marginBottom: '2.5rem', maxWidth: 720, margin: '0 auto 2.5rem' }}
           >
-            {t('lp.hero.sub2')}
+            {t.hero.sub2}
           </motion.p>
 
           <motion.div
@@ -121,21 +130,21 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
             style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}
           >
             <button onClick={onEnterApp} style={ctaBtnHero}>
-              {t('lp.hero.cta')}
+              {t.hero.cta}
             </button>
             <a href="#agents" style={ctaBtnGhost}>
-              {t('lp.hero.cta2')}
+              {t.hero.cta2}
             </a>
           </motion.div>
 
           <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '1.5rem' }}>
-            {t('lp.hero.free')}
+            {t.hero.free}
           </p>
         </div>
 
         {/* 7色プリズム可視化 */}
         <div style={{ maxWidth: 980, margin: '4rem auto 0', position: 'relative', zIndex: 2 }}>
-          <PrismFanVisualization />
+          <PrismFanVisualization dict={t} />
         </div>
       </section>
 
@@ -144,45 +153,46 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
             <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#a78bfa', fontWeight: 700, marginBottom: '0.75rem' }}>
-              7 AGENTS, 1 OS
+              {t.agents.eyebrow}
             </p>
             <h2 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.75rem)', fontWeight: 800, lineHeight: 1.2, marginBottom: '1rem' }}>
-              7 つのあなたに、
+              {t.agents.h2Line1}
               <br />
               <span style={{ background: 'linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                7 つのエージェント。
+                {t.agents.h2Line2}
               </span>
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.6)', maxWidth: 700, margin: '0 auto', fontSize: '1rem', lineHeight: 1.7 }}>
-              役割ごとに専属の AI エージェントが伴走し、考え・書き・調べ・整える。
-              <br />
-              提案で終わらない、<strong style={{ color: '#fff' }}>実行までやりきる</strong> 7 つの脳。
+              {t.agents.sub}
             </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
-            {SPECTRUM.map((s, i) => (
-              <motion.div
-                key={s.key}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ duration: 0.5, delay: i * 0.05 }}
-                style={{ position: 'relative', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '1.5rem 1.25rem', overflow: 'hidden' }}
-              >
-                <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: s.color, opacity: 0.18, filter: 'blur(40px)', pointerEvents: 'none' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', position: 'relative', zIndex: 2 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${s.color}, ${s.color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 24px ${s.color}55, inset 0 1px 0 rgba(255,255,255,0.2)` }}>
-                    <s.Icon size={22} color="#FFFFFF" strokeWidth={2.2} />
+            {SPECTRUM.map((s, i) => {
+              const item = t.agents.items[s.key];
+              return (
+                <motion.div
+                  key={s.key}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-50px' }}
+                  transition={{ duration: 0.5, delay: i * 0.05 }}
+                  style={{ position: 'relative', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '1.5rem 1.25rem', overflow: 'hidden' }}
+                >
+                  <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: s.color, opacity: 0.18, filter: 'blur(40px)', pointerEvents: 'none' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', position: 'relative', zIndex: 2 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${s.color}, ${s.color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 24px ${s.color}55, inset 0 1px 0 rgba(255,255,255,0.2)` }}>
+                      <s.Icon size={22} color="#FFFFFF" strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: s.color, fontWeight: 700, marginBottom: 2 }}>{item.role.toUpperCase()}</p>
+                      <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{item.name}{t.agents.suffix}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: s.color, fontWeight: 700, marginBottom: 2 }}>{s.role.toUpperCase()}</p>
-                    <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{s.name}エージェント</p>
-                  </div>
-                </div>
-                <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, position: 'relative', zIndex: 2 }}>{s.desc}</p>
-              </motion.div>
-            ))}
+                  <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, position: 'relative', zIndex: 2 }}>{item.desc}</p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -191,43 +201,35 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
       <section id="exec" className="lp-section-pad" style={{ padding: sectionPad, background: '#0d0d1c' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#fbbf24', fontWeight: 700, marginBottom: '0.75rem' }}>EXECUTION, NOT JUST SUGGESTIONS</p>
+            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#fbbf24', fontWeight: 700, marginBottom: '0.75rem' }}>{t.exec.eyebrow}</p>
             <h2 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.75rem)', fontWeight: 800, lineHeight: 1.2, marginBottom: '1rem' }}>
-              提案で終わらない。
+              {t.exec.h2Line1}
               <br />
-              <span style={{ background: 'linear-gradient(90deg,#fbbf24,#ff9842,#ff5757)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>書く、整える、提出する。</span>
+              <span style={{ background: 'linear-gradient(90deg,#fbbf24,#ff9842,#ff5757)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.exec.h2Line2}</span>
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.6)', maxWidth: 700, margin: '0 auto', fontSize: '1rem', lineHeight: 1.7 }}>
-              議事録・スライド・契約書・営業メール・商談ロールプレイ ──
-              <br />
-              エージェントが <strong style={{ color: '#fff' }}>仕事そのもの</strong> をやってくれる。
+              {t.exec.sub}
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            {[
-              { Icon: FileText, color: '#60a5fa', label: '議事録 AI', desc: '会話を録音 → 要約・タスク抽出・送付メール' },
-              { Icon: FileSpreadsheet, color: '#a78bfa', label: 'スライド AI', desc: '構成・原稿・デザインまでワンコマンドで' },
-              { Icon: ScrollText, color: '#f472b6', label: '契約書 AI', desc: 'NDA・業務委託・購貸 — 雛形+リスク確認' },
-              { Icon: Target, color: '#ff5757', label: '商談 AI', desc: '反論ロープレ・刺さるトーク・次の一手' },
-              { Icon: Mail, color: '#ff9842', label: 'メール AI', desc: '受信トレイを 30 分間隔で巡回・下書き済' },
-              { Icon: Receipt, color: '#fbbf24', label: '請求 AI', desc: '見積→発注→納品→請求の一気通貫' },
-              { Icon: Palette, color: '#4ade80', label: '画像 AI', desc: 'ブランドに沿った投稿・サムネ・OG画像' },
-              { Icon: Mic, color: '#60a5fa', label: '音声入力', desc: '思考をしゃべるだけで自動分類・整理' },
-            ].map((f, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.4, delay: (i % 4) * 0.05 }} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '1.25rem' }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: `linear-gradient(135deg, ${f.color}, ${f.color}cc)`,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: '0.75rem',
-                  boxShadow: `0 6px 16px ${f.color}44, inset 0 1px 0 rgba(255,255,255,0.2)`,
-                }}>
-                  <f.Icon size={20} color="#fff" strokeWidth={2.2} />
-                </div>
-                <p style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{f.label}</p>
-                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>{f.desc}</p>
-              </motion.div>
-            ))}
+            {EXEC_ICONS.map((f, i) => {
+              const item = t.exec.items[f.key];
+              return (
+                <motion.div key={f.key} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.4, delay: (i % 4) * 0.05 }} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '1.25rem' }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 10,
+                    background: `linear-gradient(135deg, ${f.color}, ${f.color}cc)`,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: '0.75rem',
+                    boxShadow: `0 6px 16px ${f.color}44, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                  }}>
+                    <f.Icon size={20} color="#fff" strokeWidth={2.2} />
+                  </div>
+                  <p style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{item.label}</p>
+                  <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>{item.desc}</p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -236,12 +238,12 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
       <section className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#0d0d1c 0%,#070712 100%)' }}>
         <div className="lp-two-col" style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', alignItems: 'center' }}>
           <div>
-            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#60a5fa', fontWeight: 700, marginBottom: '0.75rem' }}>ONE PRISM, ALL LIGHT</p>
-            <h2 style={{ fontSize: 'clamp(1.75rem, 3.2vw, 2.5rem)', fontWeight: 800, lineHeight: 1.2, marginBottom: '1.25rem' }}>SaaS を切替える時代は、<br />もう終わった。</h2>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1rem', lineHeight: 1.8, marginBottom: '1.5rem' }}>CRM、議事録、画像生成、スライド、メール、健康記録 ──<br />ぜんぶ、<strong style={{ color: '#fff' }}>ひとつの PRISM の中</strong> に。</p>
-            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', lineHeight: 1.7 }}>⌘+K で 7 つのエージェントを横断検索、人格を切替えれば文脈ごと一新。入力は文字でも、音声でも、画像でも。</p>
+            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#60a5fa', fontWeight: 700, marginBottom: '0.75rem' }}>{t.prism.eyebrow}</p>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 3.2vw, 2.5rem)', fontWeight: 800, lineHeight: 1.2, marginBottom: '1.25rem' }}>{t.prism.h2Line1}<br />{t.prism.h2Line2}</h2>
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1rem', lineHeight: 1.8, marginBottom: '1.5rem' }}>{t.prism.body}<strong style={{ color: '#fff' }}>{t.prism.bodyEm}</strong>{t.prism.bodyTail}</p>
+            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', lineHeight: 1.7 }}>{t.prism.sub}</p>
           </div>
-          <PrismDashboardMock />
+          <PrismDashboardMock dict={t} />
         </div>
       </section>
 
@@ -249,16 +251,32 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
       <section id="pricing" className="lp-section-pad" style={{ padding: sectionPad, background: '#070712' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#f472b6', fontWeight: 700, marginBottom: '0.75rem' }}>PRICING</p>
-            <h2 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.5rem)', fontWeight: 800, marginBottom: '0.5rem' }}>使うだけ広がる、<span style={{ background: 'linear-gradient(90deg,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>あなたの可能性</span></h2>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem' }}>すべてのプランで Claude / Gemini / Stable Diffusion を内蔵。API キー不要。</p>
+            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#f472b6', fontWeight: 700, marginBottom: '0.75rem' }}>{t.pricing.eyebrow}</p>
+            <h2 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.5rem)', fontWeight: 800, marginBottom: '0.5rem' }}>{t.pricing.h2Lead}<span style={{ background: 'linear-gradient(90deg,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.pricing.h2Accent}</span></h2>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem' }}>{t.pricing.sub}</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
-            <PriceCard name="Starter" tag="個人事業 / 副業" price="¥4,800" suffix="/ 月" features={['3 つの人格 (経営/営業/+1)', '商談・議事録・スライド AI', 'Cmd+K 横断検索', 'PWA / オフライン対応']} cta="14 日無料で試す" onClick={onEnterApp} />
-            <PriceCard name="Standard" tag="フリーランス / 小規模" price="¥9,800" suffix="/ 月" features={['7 つの人格 (全エージェント)', '提案書・契約書・財務AI', 'Gmail シャドー秘書 (返信下書き)', 'YouTube 取込 → ナレッジ', 'CRM 案件・見積→請求一気通㛧']} highlight cta="14 日無料で試す" onClick={onEnterApp} />
-            <PriceCard name="Exclusive" tag="経営者 / チーム" price="¥29,800" suffix="/ 月" features={['Standard 全機能', '人物ケア (1on1 + センチメント)', 'API アクセス + Webhook', 'チーム共有 (5名まで)', '優先サポート + 戦略コーチ']} cta="今すぐ申し込む" onClick={onEnterApp} />
+            <PriceCard plan={t.pricing.plans.starter} suffix={t.pricing.suffixMonth} cta={t.pricing.ctaTrial} popularLabel={t.pricing.popular} onClick={onEnterApp} />
+            <PriceCard plan={t.pricing.plans.standard} suffix={t.pricing.suffixMonth} cta={t.pricing.ctaTrial} popularLabel={t.pricing.popular} highlight onClick={onEnterApp} />
+            <PriceCard plan={t.pricing.plans.exclusive} suffix={t.pricing.suffixMonth} cta={t.pricing.ctaApply} popularLabel={t.pricing.popular} onClick={onEnterApp} />
           </div>
-          <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '1.75rem' }}>年払いで 2 ヶ月分割引 · 法人は別途お問い合わせください</p>
+          <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '1.75rem' }}>{t.pricing.annual}</p>
+        </div>
+      </section>
+
+      {/* ── FAQ ──────────────────────────────────────────── */}
+      <section id="faq" className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#070712 0%,#0a0a18 100%)' }}>
+        <div style={{ maxWidth: 820, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#4ade80', fontWeight: 700, marginBottom: '0.75rem' }}>{t.faq.eyebrow}</p>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 3.2vw, 2.4rem)', fontWeight: 800, marginBottom: '0.75rem' }}>{t.faq.h2}</h2>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem' }}>{t.faq.sub}</p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {t.faq.items.map((item, i) => (
+              <FaqItem key={i} question={item.q} answer={item.a} />
+            ))}
+          </div>
         </div>
       </section>
 
@@ -267,13 +285,11 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 50%, rgba(255,87,87,0.1) 0%, transparent 40%), radial-gradient(circle at 70% 50%, rgba(96,165,250,0.1) 0%, transparent 40%)' }} />
         <div style={{ position: 'relative', zIndex: 2, maxWidth: 760, margin: '0 auto' }}>
           <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', fontWeight: 900, lineHeight: 1.2, marginBottom: '1.25rem' }}>
-            あなたの中の <span style={{ background: 'linear-gradient(90deg,#ff5757,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>7 つの可能性</span> に、
-            <br />
-            エージェント AI を。
+            {t.final.h2Lead} <span style={{ background: 'linear-gradient(90deg,#ff5757,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.final.h2Accent}</span> {t.final.h2Tail}
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.7 }}>14 日間、すべてのエージェントを無料でお試しできます。</p>
+          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.7 }}>{t.final.sub}</p>
           <button onClick={onEnterApp} style={{ ...ctaBtnHero, display: 'inline-flex', alignItems: 'center', gap: '0.55rem' }}>
-            無料で Prism を試す
+            {t.final.cta}
           </button>
         </div>
       </section>
@@ -283,28 +299,28 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
           <div>
             <PrismLogo size={28} withWordmark />
-            <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.75rem', lineHeight: 1.7 }}>すべての事業家に、<br />エージェント AI を。</p>
+            <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.75rem', lineHeight: 1.7 }}>{t.footer.tagline}</p>
           </div>
           <div>
-            <p style={footHead}>PRODUCT</p>
-            <a href="#agents" style={footLink}>7 つのエージェント</a>
-            <a href="#exec" style={footLink}>実行する AI</a>
-            <a href="#pricing" style={footLink}>料金</a>
-            <a href="/iris" style={footLink}>姉妹ブランド · CORE Iris</a>
+            <p style={footHead}>{t.footer.product}</p>
+            <a href="#agents" style={footLink}>{t.footer.agents}</a>
+            <a href="#exec" style={footLink}>{t.footer.exec}</a>
+            <a href="#pricing" style={footLink}>{t.footer.pricing}</a>
+            <a href="/iris" style={footLink}>{t.footer.iris}</a>
           </div>
           <div>
-            <p style={footHead}>COMPANY</p>
-            <button onClick={() => onOpenLegal('terms')} style={footLinkBtn}>利用規約</button>
-            <button onClick={() => onOpenLegal('privacy')} style={footLinkBtn}>プライバシーポリシー</button>
-            <button onClick={() => onOpenLegal('tokushou')} style={footLinkBtn}>特定商取引法表記</button>
+            <p style={footHead}>{t.footer.company}</p>
+            <button onClick={() => onOpenLegal('terms')} style={footLinkBtn}>{t.footer.terms}</button>
+            <button onClick={() => onOpenLegal('privacy')} style={footLinkBtn}>{t.footer.privacy}</button>
+            <button onClick={() => onOpenLegal('tokushou')} style={footLinkBtn}>{t.footer.tokushou}</button>
           </div>
           <div>
-            <p style={footHead}>CONTACT</p>
-            <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7 }}>法人契約・カスタム導入のご相談は<br /><a href="mailto:hello@coreprism.app" style={{ color: '#a78bfa', textDecoration: 'none' }}>hello@coreprism.app</a></p>
+            <p style={footHead}>{t.footer.contact}</p>
+            <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7 }}>{t.footer.contactText}<br /><a href="mailto:hello@coreprism.app" style={{ color: '#a78bfa', textDecoration: 'none' }}>hello@coreprism.app</a></p>
           </div>
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>
-          © {new Date().getFullYear()} CORE Prism · Built with care
+          {t.footer.copyright.replace('{year}', String(new Date().getFullYear()))}
         </div>
       </footer>
     </div>
@@ -325,7 +341,7 @@ function PrismHeroBackdrop() {
   );
 }
 
-function PrismFanVisualization() {
+function PrismFanVisualization({ dict }: { dict: Dictionary }) {
   return (
     <div className="lp-prism-fan" style={{ position: 'relative', width: '100%', height: 320, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <motion.div animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, #fff 0%, rgba(255,255,255,0.4) 50%, transparent 100%)', boxShadow: '0 0 60px rgba(255,255,255,0.5)', zIndex: 5 }} />
@@ -333,14 +349,15 @@ function PrismFanVisualization() {
         {SPECTRUM.map((s, i) => {
           const offset = i - 3;
           const rotateBase = offset * 8;
-          return <motion.div key={s.key} className="lp-prism-fan-card-min" initial={{ opacity: 0, y: 20, rotate: 0 }} animate={{ opacity: 1, y: 0, rotate: rotateBase }} transition={{ duration: 0.7, delay: 0.4 + i * 0.08, ease: 'easeOut' }} style={{ flex: '1 1 0', minWidth: 70, maxWidth: 130, aspectRatio: '3 / 5', borderRadius: 14, background: `linear-gradient(180deg, ${s.color} 0%, ${s.color}88 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0.6rem 0.4rem', color: '#fff', fontSize: '0.7rem', fontWeight: 700, textAlign: 'center', boxShadow: `0 12px 32px ${s.color}55`, transformOrigin: 'bottom center' }}><div style={{ marginBottom: 6, display: 'flex' }}><s.Icon size={22} color="#FFFFFF" strokeWidth={2.2} /></div><div style={{ opacity: 0.95 }}>{s.name}</div><div style={{ fontSize: '0.55rem', opacity: 0.75, marginTop: 2, letterSpacing: '0.05em' }}>{s.role}</div></motion.div>;
+          const item = dict.agents.items[s.key];
+          return <motion.div key={s.key} className="lp-prism-fan-card-min" initial={{ opacity: 0, y: 20, rotate: 0 }} animate={{ opacity: 1, y: 0, rotate: rotateBase }} transition={{ duration: 0.7, delay: 0.4 + i * 0.08, ease: 'easeOut' }} style={{ flex: '1 1 0', minWidth: 70, maxWidth: 130, aspectRatio: '3 / 5', borderRadius: 14, background: `linear-gradient(180deg, ${s.color} 0%, ${s.color}88 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0.6rem 0.4rem', color: '#fff', fontSize: '0.7rem', fontWeight: 700, textAlign: 'center', boxShadow: `0 12px 32px ${s.color}55`, transformOrigin: 'bottom center' }}><div style={{ marginBottom: 6, display: 'flex' }}><s.Icon size={22} color="#FFFFFF" strokeWidth={2.2} /></div><div style={{ opacity: 0.95 }}>{item.name}</div><div style={{ fontSize: '0.55rem', opacity: 0.75, marginTop: 2, letterSpacing: '0.05em' }}>{item.role}</div></motion.div>;
         })}
       </div>
     </div>
   );
 }
 
-function PrismDashboardMock() {
+function PrismDashboardMock({ dict }: { dict: Dictionary }) {
   return (
     <div style={{ borderRadius: 18, background: 'linear-gradient(135deg, #15152a 0%, #0a0a18 100%)', border: '1px solid rgba(255,255,255,0.08)', padding: '1.25rem', boxShadow: '0 24px 64px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, borderRadius: '50%', background: '#a78bfa', opacity: 0.18, filter: 'blur(50px)' }} />
@@ -351,42 +368,75 @@ function PrismDashboardMock() {
         <div style={{ marginLeft: 'auto', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>coreprism.app</div>
       </div>
       <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-        {SPECTRUM.map(s => <div key={s.key} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', background: `${s.color}25`, color: s.color, border: `1px solid ${s.color}50`, borderRadius: 999, padding: '0.3rem 0.6rem', fontSize: '0.7rem', fontWeight: 700 }}><s.Icon size={12} strokeWidth={2.4} /><span>{s.name}</span></div>)}
+        {SPECTRUM.map(s => {
+          const item = dict.agents.items[s.key];
+          return <div key={s.key} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', background: `${s.color}25`, color: s.color, border: `1px solid ${s.color}50`, borderRadius: 999, padding: '0.3rem 0.6rem', fontSize: '0.7rem', fontWeight: 700 }}><s.Icon size={12} strokeWidth={2.4} /><span>{item.name}</span></div>;
+        })}
       </div>
       <div style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.18), rgba(96,165,250,0.1))', border: '1px solid rgba(167,139,250,0.3)', borderRadius: 12, padding: '0.85rem 1rem', marginBottom: '0.75rem' }}>
-        <p style={{ fontSize: '0.6rem', letterSpacing: '0.2em', color: '#c4b5fd', fontWeight: 700, marginBottom: 4 }}>今日のブリーフ</p>
-        <p style={{ fontSize: '0.85rem', color: '#fff', fontWeight: 600, lineHeight: 1.4 }}>午前は新規開拓、午後は提案書をエージェントが下書き済みです。</p>
+        <p style={{ fontSize: '0.6rem', letterSpacing: '0.2em', color: '#c4b5fd', fontWeight: 700, marginBottom: 4 }}>{dict.prism.briefLabel}</p>
+        <p style={{ fontSize: '0.85rem', color: '#fff', fontWeight: 600, lineHeight: 1.4 }}>{dict.prism.briefBody}</p>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-        {['＋ 株式会社○○ への提案書', '＋ 経費 OCR (3件)', '＋ Gmail 返信下書き 5件', '＋ 来週の P&L レビュー'].map((t, i) => <div key={i} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '0.6rem 0.75rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.85)' }}>{t}</div>)}
+        {dict.prism.todoItems.map((tt, i) => <div key={i} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '0.6rem 0.75rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.85)' }}>{tt}</div>)}
       </div>
     </div>
   );
 }
 
-function PriceCard({ name, tag, price, suffix, features, highlight, cta, onClick }: { name: string; tag: string; price: string; suffix: string; features: string[]; highlight?: boolean; cta: string; onClick: () => void }) {
+type PlanT = { name: string; tag: string; price: string; features: readonly string[] };
+function PriceCard({ plan, suffix, cta, popularLabel, highlight, onClick }: { plan: PlanT; suffix: string; cta: string; popularLabel: string; highlight?: boolean; onClick: () => void }) {
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} style={{ background: highlight ? 'linear-gradient(180deg, rgba(167,139,250,0.18), rgba(244,114,182,0.08))' : 'rgba(255,255,255,0.025)', border: highlight ? '1px solid rgba(167,139,250,0.4)' : '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '1.75rem 1.5rem', position: 'relative', boxShadow: highlight ? '0 16px 48px rgba(167,139,250,0.15)' : 'none' }}>
-      {highlight && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #a78bfa, #f472b6)', color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '0.3rem 0.75rem', borderRadius: 999, letterSpacing: '0.1em' }}>人気</div>}
-      <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: 'rgba(255,255,255,0.5)', fontWeight: 700, marginBottom: '0.5rem' }}>{tag.toUpperCase()}</p>
-      <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>{name}</h3>
-      <p style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.25rem' }}>{price}<span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{suffix}</span></p>
+      {highlight && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #a78bfa, #f472b6)', color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '0.3rem 0.75rem', borderRadius: 999, letterSpacing: '0.1em' }}>{popularLabel}</div>}
+      <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: 'rgba(255,255,255,0.5)', fontWeight: 700, marginBottom: '0.5rem' }}>{plan.tag.toUpperCase()}</p>
+      <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>{plan.name}</h3>
+      <p style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.25rem' }}>{plan.price}<span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{suffix}</span></p>
       <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '1rem 0' }} />
       <ul style={{ listStyle: 'none', padding: 0, margin: 0, marginBottom: '1.5rem' }}>
-        {features.map((f, i) => <li key={i} style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, marginBottom: '0.4rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}><span style={{ color: highlight ? '#a78bfa' : '#4ade80', flexShrink: 0 }}>✓</span><span>{f}</span></li>)}
+        {plan.features.map((f, i) => <li key={i} style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, marginBottom: '0.4rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}><span style={{ color: highlight ? '#a78bfa' : '#4ade80', flexShrink: 0 }}>✓</span><span>{f}</span></li>)}
       </ul>
       <button onClick={onClick} style={{ width: '100%', background: highlight ? 'linear-gradient(135deg, #a78bfa, #f472b6)' : 'rgba(255,255,255,0.06)', color: '#fff', border: highlight ? 'none' : '1px solid rgba(255,255,255,0.15)', padding: '0.85rem 1rem', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', boxShadow: highlight ? '0 8px 24px rgba(167,139,250,0.4)' : 'none' }}>{cta}</button>
     </motion.div>
   );
 }
 
-function LocaleToggle({ locale, setLocale }: { locale: Locale; setLocale: (l: Locale) => void }) {
-  const locales: Locale[] = ['ja', 'en', 'zh'];
-  const labels: Record<Locale, string> = { ja: '日', en: 'EN', zh: '中' };
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, overflow: 'hidden' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ width: '100%', background: 'transparent', border: 'none', padding: '1.1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', textAlign: 'left', color: '#fff', fontSize: '0.95rem', fontWeight: 600, gap: '1rem' }}
+      >
+        <span>{question}</span>
+        <span style={{ flexShrink: 0, width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', transition: 'transform 0.2s', transform: open ? 'rotate(45deg)' : 'rotate(0deg)' }}>+</span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 1.25rem 1.1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', lineHeight: 1.75 }}>
+          {answer}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LangToggle({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
+  const opts: { key: Lang; label: string }[] = [
+    { key: 'ja', label: '日本語' },
+    { key: 'en', label: 'EN' },
+  ];
   return (
     <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.08)', borderRadius: 8, padding: 2 }}>
-      {locales.map(l => (
-        <button key={l} onClick={() => setLocale(l)} style={{ background: locale === l ? 'rgba(255,255,255,0.18)' : 'transparent', color: locale === l ? '#fff' : 'rgba(255,255,255,0.5)', border: 'none', borderRadius: 6, padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' }}>{labels[l]}</button>
+      {opts.map(o => (
+        <button
+          key={o.key}
+          onClick={() => setLang(o.key)}
+          aria-label={o.key === 'ja' ? 'Switch to Japanese' : 'Switch to English'}
+          style={{ background: lang === o.key ? 'rgba(255,255,255,0.18)' : 'transparent', color: lang === o.key ? '#fff' : 'rgba(255,255,255,0.5)', border: 'none', borderRadius: 6, padding: '0.25rem 0.55rem', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' }}
+        >
+          {o.label}
+        </button>
       ))}
     </div>
   );
