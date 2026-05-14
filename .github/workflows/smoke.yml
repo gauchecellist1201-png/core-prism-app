@@ -1,0 +1,44 @@
+name: E2E Smoke
+
+on:
+  # 手動実行
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'スモークテスト対象の本番 URL'
+        required: false
+        default: 'https://core-prism-app.vercel.app'
+  # Vercel deploy 完了通知から呼ばれる想定 (repository_dispatch type=vercel-deployment-success)
+  repository_dispatch:
+    types: [vercel-deployment-success, deployment_status]
+  # main への push 後にも軽く流す (本番反映後に再確認)
+  push:
+    branches: [main]
+  # 日次の定期実行 (UTC 21:00 = JST 06:00)
+  schedule:
+    - cron: '0 21 * * *'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run smoke
+        env:
+          SMOKE_BASE_URL: ${{ github.event.inputs.base_url || vars.SMOKE_BASE_URL || 'https://core-prism-app.vercel.app' }}
+          SMOKE_MASTER_KEY: ${{ secrets.SMOKE_MASTER_KEY }}
+        run: |
+          # main への push の場合、Vercel のデプロイが終わるまで少し待つ
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "Waiting 90s for Vercel to deploy..."
+            sleep 90
+          fi
+          npm run smoke
