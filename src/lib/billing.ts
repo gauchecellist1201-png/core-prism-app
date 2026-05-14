@@ -560,19 +560,55 @@ export async function hashPassword(password: string): Promise<string> {
     .join('');
 }
 
+// ─── Cookie 永続層 (Safari ITP / incognito localStorage 揮発対策) ─────
+// 400 日 (max-age 上限) で長期セッション
+const COOKIE_USER = 'core_user';
+function setCookie(name: string, value: string, maxAgeSec = 400 * 86400) {
+  try {
+    const v = encodeURIComponent(value);
+    document.cookie = `${name}=${v}; max-age=${maxAgeSec}; path=/; SameSite=Lax`;
+  } catch {/* */}
+}
+function getCookie(name: string): string | null {
+  try {
+    const m = document.cookie.split('; ').find(c => c.startsWith(name + '='));
+    return m ? decodeURIComponent(m.substring(name.length + 1)) : null;
+  } catch { return null; }
+}
+function delCookie(name: string) {
+  try { document.cookie = `${name}=; max-age=0; path=/; SameSite=Lax`; } catch {/* */}
+}
+
 export function loadBillingUser(): BillingUser | null {
+  // 1. localStorage 優先
   try {
     const r = localStorage.getItem(KEY_USER);
-    return r ? JSON.parse(r) : null;
-  } catch { return null; }
+    if (r) return JSON.parse(r);
+  } catch {/* */}
+  // 2. cookie フォールバック (Safari ITP / 揮発で localStorage が消えてもログイン状態を維持)
+  try {
+    const cookieVal = getCookie(COOKIE_USER);
+    if (cookieVal) {
+      const parsed = JSON.parse(cookieVal) as BillingUser;
+      // 復元成功 → localStorage に書き戻して以降は速い経路で
+      try { localStorage.setItem(KEY_USER, cookieVal); } catch {/* */}
+      console.info('[billing] localStorage missing — restored from cookie');
+      return parsed;
+    }
+  } catch {/* */}
+  return null;
 }
 
 export function saveBillingUser(u: BillingUser) {
-  try { localStorage.setItem(KEY_USER, JSON.stringify(u)); } catch { /* */ }
+  const json = JSON.stringify(u);
+  try { localStorage.setItem(KEY_USER, json); } catch {/* */}
+  // 二重保存: 400 日 cookie (localStorage が揮発しても復元可能)
+  setCookie(COOKIE_USER, json);
 }
 
 export function clearBillingUser() {
-  try { localStorage.removeItem(KEY_USER); } catch { /* */ }
+  try { localStorage.removeItem(KEY_USER); } catch {/* */}
+  delCookie(COOKIE_USER);
 }
 
 export function useBillingUser(): {
