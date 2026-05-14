@@ -1,11 +1,12 @@
 // ============================================================
-// Invite & Share Card — 1 紹介 = 30 日トライアル延長
-// LINE / X (Twitter) / Instagram / 共有シート / コピーに対応
+// Invite & Share Card — 1 紹介 = 両者に +7 日トライアル延長
+// LINE / X (Twitter) / メール / Instagram / 共有シート / コピーに対応
 // Iris と Prism 両ダッシュボードから利用
 // ============================================================
 import { useState, useMemo, useCallback } from 'react';
-import { Copy, Share2, Check, Gift, Users as UsersIcon, Sparkles } from 'lucide-react';
-import { getReferralData, getReferralUrl, type Brand } from '../lib/billing';
+import { Copy, Share2, Check, Gift, Users as UsersIcon, Sparkles, Mail } from 'lucide-react';
+import { type Brand } from '../lib/billing';
+import { getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS } from '../lib/referral';
 import { shareToInstagram } from '../iris/instagramShare';
 
 type Palette = {
@@ -42,9 +43,14 @@ const SHARE_TEMPLATE = (url: string, brand: Brand) => {
     ? 'クリエイター向け AI 戦略パートナー'
     : 'AI が経営判断を補助する人格 OS';
   return `${product} (${tagline}) を試してます。
-このリンクから登録すると 14 日無料トライアル + さらに 30 日延長 (合計 44 日無料)。
+このリンクから登録すると 7 日間の無料トライアル + さらに +${REFERRAL_BONUS_DAYS} 日延長 (合計 ${7 + REFERRAL_BONUS_DAYS} 日無料)。
 ${url}`;
 };
+
+const EMAIL_SUBJECT = (brand: Brand) =>
+  brand === 'iris'
+    ? 'CORE Iris に招待します — 14 日間 無料で試せます'
+    : 'CORE Prism に招待します — 14 日間 無料で試せます';
 
 export default function InviteShareCard({ brand, palette, compact = false }: Props) {
   const p = { ...DEFAULT_PALETTE, ...(palette || {}) };
@@ -108,6 +114,12 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
     window.open(xUrl, '_blank', 'noopener,noreferrer');
   }, [text]);
 
+  const shareEmail = useCallback(() => {
+    const subject = EMAIL_SUBJECT(brand);
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+    window.location.href = mailto;
+  }, [text, brand]);
+
   const shareInstagram = useCallback(async () => {
     // Instagram は URL 共有が公式に無いので、URL+text をクリップボードに入れて
     // アプリを起動 → ストーリーズかフィードに貼る前提
@@ -144,13 +156,13 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
             margin: 0, fontSize: compact ? '0.95rem' : '1.05rem',
             fontWeight: 800, color: p.ink, letterSpacing: '0.01em',
           }}>
-            招待してトライアル 30 日延長
+            友達を招待してトライアル +{REFERRAL_BONUS_DAYS} 日
           </h3>
           <p style={{
             margin: '0.15rem 0 0', fontSize: '0.78rem', color: p.inkSoft,
             lineHeight: 1.45,
           }}>
-            1 人紹介すると、あなたも相手も <strong>+30 日</strong> 無料利用
+            1 人紹介すると、あなたも相手も <strong>+{REFERRAL_BONUS_DAYS} 日</strong> 無料利用
           </p>
         </div>
       </div>
@@ -160,7 +172,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem',
       }}>
         <Stat icon={<UsersIcon size={14} />} label="紹介人数" value={`${referral.referredCount} 人`} palette={p} />
-        <Stat icon={<Sparkles size={14} />} label="累計延長" value={`+${referral.bonusMonths * 30} 日`} palette={p} />
+        <Stat icon={<Sparkles size={14} />} label="累計延長" value={`+${referral.bonusDays} 日`} palette={p} />
       </div>
 
       {/* 紹介 URL ボックス */}
@@ -219,10 +231,11 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
           共有シートを開く
         </button>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.45rem' }}>
           <SocialBtn label="LINE" bg="#06C755" onClick={shareLine} />
           <SocialBtn label="X" bg="#000000" onClick={shareX} />
-          <SocialBtn label="Instagram" bg="linear-gradient(135deg,#FEDA75,#FA7E1E 30%,#D62976 60%,#962FBF 80%,#4F5BD5)" onClick={shareInstagram} />
+          <SocialBtn label={<><Mail size={13} style={{ marginRight: 4 }} />メール</>} bg="#5A4570" onClick={shareEmail} />
+          <SocialBtn label="Insta" bg="linear-gradient(135deg,#FEDA75,#FA7E1E 30%,#D62976 60%,#962FBF 80%,#4F5BD5)" onClick={shareInstagram} />
         </div>
 
         <button onClick={() => copy(text, 'text')}
@@ -250,7 +263,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
       <p style={{
         margin: 0, fontSize: '0.7rem', color: p.inkSoft, lineHeight: 1.55,
       }}>
-        ※ 招待されたユーザーが新規登録した時点で両者にトライアル 30 日が自動付与されます。
+        ※ 招待されたユーザーが新規登録した時点で両者にトライアル +{REFERRAL_BONUS_DAYS} 日が自動付与されます。
         既存ユーザーへの再付与はありません。
       </p>
     </div>
@@ -280,13 +293,14 @@ function Stat({ icon, label, value, palette }: {
   );
 }
 
-function SocialBtn({ label, bg, onClick }: { label: string; bg: string; onClick: () => void }) {
+function SocialBtn({ label, bg, onClick }: { label: React.ReactNode; bg: string; onClick: () => void }) {
   return (
     <button onClick={onClick}
       style={{
         background: bg, color: '#fff', border: 'none', borderRadius: 12,
-        padding: '0.75rem 0.5rem', fontSize: '0.8rem', fontWeight: 700,
+        padding: '0.7rem 0.4rem', fontSize: '0.78rem', fontWeight: 700,
         cursor: 'pointer', whiteSpace: 'nowrap',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
       }}>
       {label}
     </button>

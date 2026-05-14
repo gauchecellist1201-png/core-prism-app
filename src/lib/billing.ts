@@ -347,88 +347,19 @@ export function getPlanPrice(plan: Plan, cycle: BillingCycle = 'monthly'): numbe
   return plan.priceJpy;
 }
 
-// ─── 紹介プログラム (1 人紹介 → 両者 1 ヶ月無料) ───
-const KEY_REFERRAL = 'core_referral_v1';
-
-export interface ReferralData {
-  /** あなたの紹介コード (8 文字、ランダム) */
-  myCode: string;
-  /** 紹介経由でサインアップした人数 */
-  referredCount: number;
-  /** あなたが利用した紹介コード (誰の紹介で来たか) */
-  usedCode?: string;
-  /** 累計の延長月数 (1 紹介 = 1 ヶ月) */
-  bonusMonths: number;
-}
-
-function generateReferralCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 級らわしい O,0,I,1 除外
-  let code = '';
-  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
-
-export function getReferralData(): ReferralData {
-  try {
-    const r = localStorage.getItem(KEY_REFERRAL);
-    if (r) return JSON.parse(r);
-  } catch { /* */ }
-  // 初期化
-  const initial: ReferralData = {
-    myCode: generateReferralCode(),
-    referredCount: 0,
-    bonusMonths: 0,
-  };
-  try { localStorage.setItem(KEY_REFERRAL, JSON.stringify(initial)); } catch { /* */ }
-  return initial;
-}
-
-export function saveReferralData(data: ReferralData) {
-  try { localStorage.setItem(KEY_REFERRAL, JSON.stringify(data)); } catch { /* */ }
-}
-
-export function applyReferralCode(code: string): { success: boolean; message: string } {
-  const data = getReferralData();
-  if (data.usedCode) {
-    return { success: false, message: 'すでに紹介コードを利用済です' };
-  }
-  if (code === data.myCode) {
-    return { success: false, message: '自分の紹介コードは使えません' };
-  }
-  if (code.length < 6) {
-    return { success: false, message: '紹介コードが短すぎます' };
-  }
-  data.usedCode = code;
-  data.bonusMonths += 1;
-  saveReferralData(data);
-  return { success: true, message: '🎉 1 ヶ月の無料延長が適用されました!' };
-}
-
-export function getReferralUrl(brand: 'iris' | 'prism', code: string): string {
-  const base = brand === 'iris'
-    ? 'https://core-prism-app.vercel.app/iris'
-    : 'https://core-prism-app.vercel.app/';
-  return `${base}?ref=${code}`;
-}
-
-// URL クエリの ?ref=XXX を読み取って自動適用
-export function captureReferralFromUrl() {
-  if (typeof window === 'undefined') return;
-  try {
-    const url = new URL(window.location.href);
-    const ref = url.searchParams.get('ref');
-    if (ref && ref.length >= 6) {
-      const data = getReferralData();
-      if (!data.usedCode) {
-        // 一旦保存 (サインアップ完了時に確定)
-        sessionStorage.setItem('pending_ref', ref);
-      }
-      // URL から ref パラメータを除去 (キレイに見せる)
-      url.searchParams.delete('ref');
-      window.history.replaceState({}, '', url.toString());
-    }
-  } catch { /* */ }
-}
+// ─── 紹介プログラム — 実装は src/lib/referral.ts へ分離 ───
+// 後方互換のため re-export (旧 import パスを壊さない)
+export {
+  getReferralData,
+  saveReferralData,
+  getReferralUrl,
+  captureReferralFromUrl,
+  redeemPendingReferral,
+  getPendingReferral,
+  REFERRAL_BONUS_DAYS,
+} from './referral';
+export type { ReferralData } from './referral';
+import { redeemPendingReferral as _redeemPendingReferral } from './referral';
 
 // ============================================================
 //  アクセスゲート
@@ -651,16 +582,12 @@ export function useBillingUser(): {
     const passwordHash = await hashPassword(input.password);
     const now = new Date();
 
-    // 保留中の紹介コードがあれば適用 (URL 経由 ?ref=XXX)
+    // 保留中の紹介コードがあれば API 経由で検証 → +7 日延長
     let bonusDays = 0;
     try {
-      const pendingRef = sessionStorage.getItem('pending_ref');
-      if (pendingRef) {
-        const r = applyReferralCode(pendingRef);
-        if (r.success) bonusDays = 30;
-        sessionStorage.removeItem('pending_ref');
-      }
-    } catch { /* */ }
+      const r = await _redeemPendingReferral(input.email);
+      if (r.ok) bonusDays = r.bonusDays;
+    } catch { /* UX を止めない */ }
 
     const trialDays = (input.plan === 'free' ? 7 : 0) + bonusDays;
     const trialEndsAt = trialDays > 0

@@ -9,12 +9,13 @@
 // env 設定済み: /api/stripe/checkout を叩き Stripe Checkout へリダイレクト
 // env 未設定 (503): テストモード (¥0) にフォールバック
 // ============================================================
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   type Plan, type Brand, type BillingCycle,
   useBillingUser, getPlans, getPlanPrice, findPlan, isMasterAuth,
 } from '../lib/billing';
+import { getPendingReferral, REFERRAL_BONUS_DAYS } from '../lib/referral';
 import { sendEmail } from '../lib/emailNotify';
 import { isBiometricAvailable, registerBiometric } from '../lib/biometricAuth';
 
@@ -41,6 +42,10 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
   const [error, setError] = useState<string | null>(null);
   const [isTestMode, setIsTestMode] = useState<boolean>(false);
   const { signup } = useBillingUser();
+
+  // 招待リンク経由かどうか (?ref=XXX が sessionStorage に保留されている)
+  const pendingReferral = useMemo(() => getPendingReferral(), []);
+  const hasReferralBonus = !!pendingReferral;
 
   // 現在選択中の Plan
   const plan = findPlan(brand, planId as any) || getPlans(brand)[0];
@@ -190,6 +195,30 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
         <AnimatePresence mode="wait">
           {step === 'plan' && (
             <motion.div key="plan" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              {/* 招待リンク経由ボーナス バナー */}
+              {hasReferralBonus && (
+                <div style={{
+                  marginBottom: '1rem',
+                  padding: '0.85rem 1rem',
+                  background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
+                  border: '1.5px solid #F59E0B',
+                  borderRadius: 14,
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  boxShadow: '0 4px 14px rgba(245,158,11,0.18)',
+                }}>
+                  <div style={{ fontSize: '1.5rem' }}>🎁</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#78350F' }}>
+                      友達招待ボーナス +{REFERRAL_BONUS_DAYS} 日
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#92400E', lineHeight: 1.45 }}>
+                      招待コード <strong style={{ letterSpacing: '0.08em' }}>{pendingReferral}</strong> が適用されます。
+                      通常 7 日 + 招待 {REFERRAL_BONUS_DAYS} 日 = <strong>合計 {7 + REFERRAL_BONUS_DAYS} 日 無料</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* ブランド表示 (タブは廃止、入った経路のブランドで固定) */}
               <div style={{
                 marginBottom: '1rem',
@@ -430,7 +459,11 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={() => setStep('plan')} style={btnSecondary}>← 戻る</button>
                 <button onClick={proceedToPayment} style={{ ...btnPrimary(accent, accentGrad), flex: 2 }}>
-                  {isFree ? '✨ 7日間 無料ではじめる →' : '次へ →'}
+                  {isFree
+                    ? (hasReferralBonus
+                        ? `✨ ${7 + REFERRAL_BONUS_DAYS}日間 無料ではじめる →`
+                        : '✨ 7日間 無料ではじめる →')
+                    : '次へ →'}
                 </button>
               </div>
 
@@ -459,9 +492,22 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                       <span style={{ color: '#10B981', fontWeight: 700 }}>7日間 無料トライアル</span>
                       <span style={{ color: '#10B981', fontWeight: 800 }}>¥0</span>
                     </div>
+                    {hasReferralBonus && (
+                      <div style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                        marginBottom: '0.5rem',
+                        padding: '0.5rem 0.65rem', borderRadius: 10,
+                        background: 'rgba(245,158,11,0.10)', border: '1px dashed #F59E0B',
+                      }}>
+                        <span style={{ color: '#92400E', fontWeight: 700 }}>🎁 友達招待ボーナス +{REFERRAL_BONUS_DAYS} 日</span>
+                        <span style={{ color: '#92400E', fontWeight: 800 }}>¥0</span>
+                      </div>
+                    )}
                     <div style={{ height: 1, background: 'rgba(16,185,129,0.2)', margin: '0.6rem 0' }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#065F46' }}>本日のお支払い</span>
+                      <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#065F46' }}>
+                        本日のお支払い {hasReferralBonus && <span style={{ fontSize: '0.78rem', color: '#92400E', fontWeight: 700 }}>(計 {7 + REFERRAL_BONUS_DAYS} 日無料)</span>}
+                      </span>
                       <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981' }}>¥0</span>
                     </div>
                   </>
