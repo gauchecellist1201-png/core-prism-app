@@ -56,6 +56,7 @@ const IRIS_TAB_ICON: Record<string, LucideIcon> = {
   reel: Clapperboard,
   schedule: CalendarClock,
   guideline: ShieldAlert,
+  knowledge: Brain,
 };
 
 // ─── タブ グループ (Phase 2 — 5 カテゴリ) ──────────
@@ -82,6 +83,7 @@ const TAB_GROUPS: TabGroup[] = [
   { id: 'care',   label: 'ととのえる', color: '#10B981', icon: Heart,
     tabs: [
       { id: 'health', l: 'カラダ管理' }, { id: 'beauty', l: '美容のはなし' },
+      { id: 'knowledge', l: 'ナレッジ' },
       { id: 'guideline', l: '私らしさ設定' },
     ] },
 ];
@@ -122,13 +124,15 @@ import { useHealth } from '../hooks/useHealth';
 import IrisCollabBoard from './IrisCollabBoard';
 import { useMultiAccount, ACCOUNT_TYPE_META, PLATFORM_META_ACCOUNT, type IrisAccount } from './multiAccount';
 import { useBrandGuidelines, TONE_META, type BrandGuideline, type BrandTone, runStyleCheck } from './brandGuidelines';
+import { useIrisKnowledge } from './irisKnowledge';
+import IrisKnowledgeView from './IrisKnowledgeView';
 
 interface Props {
   settings: AppSettings;
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite' | 'knowledge';
 
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
@@ -148,6 +152,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const health = useHealth();
   const multiAccount = useMultiAccount();
   const brandGuide = useBrandGuidelines();
+  const knowledge = useIrisKnowledge();
   const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const myDeals = useMemo(() => desk.getDealsForPersona(IRIS_PERSONA_ID), [desk.deals]);
   const mediaKit = desk.getMediaKit(IRIS_PERSONA_ID);
@@ -512,10 +517,11 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             )}
             {tab === 'deals' && <DealsView bg={bg} desk={desk} myDeals={myDeals} settings={settings} />}
             {tab === 'negotiate' && <NegotiateView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
-            {tab === 'draft' && <DraftView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
+            {tab === 'draft' && <DraftView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} knowledge={knowledge} />}
+            {tab === 'knowledge' && <IrisKnowledgeView bg={bg} knowledge={knowledge} />}
             {tab === 'beauty' && <BeautyChatView bg={bg} settings={settings} />}
             {tab === 'health' && <IrisHealthView bg={bg} health={health} />}
-            {tab === 'strategy' && <IrisStrategistView bg={bg} settings={settings} mediaKit={mediaKit} />}
+            {tab === 'strategy' && <IrisStrategistView bg={bg} settings={settings} mediaKit={mediaKit} knowledge={knowledge} />}
             {tab === 'image' && <ImageStudioView bg={bg} settings={settings} />}
             {tab === 'triage' && (
               <IrisTriageView bg={bg} settings={settings} mediaKit={mediaKit}
@@ -559,7 +565,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'schedule' && <IrisPostQueueView bg={bg} queue={postQueue} />}
             {tab === 'community' && <IrisCommunityView bg={bg} myHandle={mediaKit?.handleName} />}
             {tab === 'team' && <TeamView bg={bg} team={team} desk={desk} myDeals={myDeals} />}
-            {tab === 'brands' && <BrandMatchView bg={bg} desk={desk} mediaKit={mediaKit} settings={settings} />}
+            {tab === 'brands' && <BrandMatchView bg={bg} desk={desk} mediaKit={mediaKit} settings={settings} knowledge={knowledge} />}
             {tab === 'kit' && <MediaKitView bg={bg} desk={desk} kit={mediaKit} />}
             {tab === 'revenue' && <IrisRevenueView bg={bg} />}
             {tab === 'fans' && <IrisFanEngagement bg={bg} settings={settings} />}
@@ -1167,21 +1173,38 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
 }
 
 // ─── 投稿下書き ─────────────────────────────
-function DraftView({ bg, desk, myDeals, mediaKit, settings, persona }: any) {
+function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }: any) {
   const [dealId, setDealId] = useState('');
   const [tone, setTone] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
   const gen = async () => {
     const deal = myDeals.find((d: InfluencerDeal) => d.id === dealId);
     if (!deal) { setErr('案件を選んでください'); return; }
     setBusy(true); setErr(null);
     try {
-      const r = await generateDraftCopy({ settings, persona, deal, mediaKit, toneNote: tone || undefined });
+      const r = await generateDraftCopy({
+        settings, persona, deal, mediaKit, toneNote: tone || undefined,
+        knowledgeContext: knowledge?.getContext?.() || undefined,
+      });
       const full = r.caption + '\n\n' + r.hashtags.join(' ') + '\n\n' + r.cta;
       desk.updateDeal(deal.id, { draftCopy: full, stage: deal.stage === 'inquiry' || deal.stage === 'negotiating' ? 'drafting' : deal.stage });
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  const saveToKnowledge = (d: InfluencerDeal) => {
+    if (!knowledge || !d.draftCopy) return;
+    knowledge.add({
+      kind: 'caption',
+      title: `${d.brandName} ${d.productName || ''} キャプション`.trim(),
+      content: d.draftCopy,
+      tags: ['キャプション', d.platform, d.brandName].filter(Boolean),
+      source: d.brandName,
+    });
+    setSavedNotice(d.id);
+    setTimeout(() => setSavedNotice(null), 2000);
   };
 
   return (
@@ -1199,6 +1222,12 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona }: any) {
         <button onClick={gen} disabled={busy || !dealId} style={btnPrimary(bg)}>
           {busy ? '考え中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> 投稿を書いてもらう</span>}
         </button>
+        {knowledge?.count > 0 && (
+          <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: '0.5rem', lineHeight: 1.6 }}>
+            <Brain size={11} style={{ display: 'inline', marginRight: 4 }} />
+            あなたの {knowledge.count} 件の資料を読んで書きます。
+          </p>
+        )}
       </Card>
 
       {err && <Card bg={bg}><p style={{ color: '#FF5C5C', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {err}</p></Card>}
@@ -1209,8 +1238,17 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona }: any) {
             <p style={{ fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {PLATFORM_META[d.platform].emoji} {d.brandName}
             </p>
+            <button onClick={() => saveToKnowledge(d)} style={btnIcon(bg)} title="ナレッジに追加" aria-label="ナレッジに追加">
+              <BookmarkPlus size={16} strokeWidth={2.2} />
+            </button>
             <button onClick={() => navigator.clipboard?.writeText(d.draftCopy || '')} style={btnIcon(bg)} title="コピー" aria-label="コピー"><Clipboard size={16} strokeWidth={2.2} /></button>
           </div>
+          {savedNotice === d.id && (
+            <p style={{ fontSize: '0.78rem', color: '#10B981', marginBottom: '0.5rem' }}>
+              <CheckCircle2 size={11} style={{ display: 'inline', marginRight: 4 }} />
+              ナレッジに保存しました
+            </p>
+          )}
           <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', marginBottom: '0.85rem' }}>{d.draftCopy}</pre>
           {/* Instagram シェアボタン群 */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -2562,11 +2600,12 @@ function TeamView({ bg, team, desk, myDeals }: {
 }
 
 // ─── ブランドマッチ ──
-function BrandMatchView({ bg, desk, mediaKit, settings }: {
+function BrandMatchView({ bg, desk, mediaKit, settings, knowledge }: {
   bg: IrisBackgroundDef;
   desk: ReturnType<typeof useInfluencerDesk>;
   mediaKit?: MediaKit;
   settings: AppSettings;
+  knowledge?: ReturnType<typeof useIrisKnowledge>;
 }) {
   const allDeals = useMemo(() => getAllBrandDeals(), []);
   const [category, setCategory] = useState<BrandCategory | 'all'>('all');
@@ -2717,6 +2756,7 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
         {openDeal && (
           <BrandDealDetailModal
             bg={bg} deal={openDeal} mediaKit={mediaKit} settings={settings}
+            knowledge={knowledge}
             onClose={() => setOpenDeal(null)}
             onApplied={() => { refreshHistory(); }}
           />
@@ -2957,9 +2997,10 @@ function BrandDealCard({ bg, deal, score, onOpen }: {
 }
 
 // ─── 案件詳細 + 応募モーダル ────────────────────────────
-function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied }: {
+function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied, knowledge }: {
   bg: IrisBackgroundDef; deal: BrandDeal; mediaKit?: MediaKit; settings: AppSettings;
   onClose: () => void; onApplied: () => void;
+  knowledge?: ReturnType<typeof useIrisKnowledge>;
 }) {
   const score = useMemo(() => computeMatchScore(deal, mediaKit), [deal, mediaKit]);
   const [customNote, setCustomNote] = useState('');
@@ -2967,6 +3008,7 @@ function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied
   const [draft, setDraft] = useState<ApplicationDraft | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [savedToKnowledge, setSavedToKnowledge] = useState(false);
 
   const meta = CATEGORY_META[deal.category];
   const daysLeft = Math.max(0, Math.ceil((new Date(deal.deadline).getTime() - Date.now()) / 86400000));
@@ -2975,9 +3017,26 @@ function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied
   const handleGenerate = async () => {
     setBusy(true); setErr(null);
     try {
-      const d = await generateApplicationDraft({ settings, deal, mediaKit, customNote });
+      const d = await generateApplicationDraft({
+        settings, deal, mediaKit, customNote,
+        knowledgeContext: knowledge?.getContext?.() || undefined,
+      });
       setDraft(d);
+      setSavedToKnowledge(false);
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  const saveDraftToKnowledge = () => {
+    if (!draft || !knowledge) return;
+    knowledge.add({
+      kind: 'application',
+      title: `${deal.brandName} 応募文 — ${draft.subject || deal.productName}`,
+      content: `件名: ${draft.subject}\n\n${draft.body}${draft.reason ? `\n\n[メモ] ${draft.reason}` : ''}`,
+      tags: ['応募文', deal.brandName, deal.category],
+      source: deal.brandName,
+    });
+    setSavedToKnowledge(true);
+    setTimeout(() => setSavedToKnowledge(false), 2500);
   };
 
   const recordAndOpen = (channel: 'email' | 'form' | 'copy', action: () => void) => {
@@ -3146,6 +3205,12 @@ function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied
           >
             {busy ? '考え中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> AI で応募文を作る</span>}
           </button>
+          {knowledge && knowledge.count > 0 && (
+            <p style={{ fontSize: '0.78rem', color: bg.inkSoft, lineHeight: 1.6, margin: 0 }}>
+              <Brain size={11} style={{ display: 'inline', marginRight: 4 }} />
+              あなたの {knowledge.count} 件の資料を読んで書きます。
+            </p>
+          )}
 
           {err && <p style={{ color: '#B91C1C', fontSize: '0.85rem' }}><AlertTriangle size={14} style={{ display: 'inline', marginRight: 4 }} />{err}</p>}
 
@@ -3184,7 +3249,18 @@ function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied
                 <button onClick={copyDraft} style={btnSecondary(bg)}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Clipboard size={14} /> コピーして応募</span>
                 </button>
+                {knowledge && (
+                  <button onClick={saveDraftToKnowledge} style={btnSecondary(bg)}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><BookmarkPlus size={14} /> ナレッジに追加</span>
+                  </button>
+                )}
               </div>
+              {savedToKnowledge && (
+                <p style={{ fontSize: '0.82rem', color: '#10B981', marginTop: '0.4rem' }}>
+                  <CheckCircle2 size={12} style={{ display: 'inline', marginRight: 4 }} />
+                  ナレッジに保存しました。次回の応募文で参考にされます。
+                </p>
+              )}
 
               {done && (
                 <p style={{ fontSize: '0.82rem', color: '#059669', marginTop: '0.5rem' }}>

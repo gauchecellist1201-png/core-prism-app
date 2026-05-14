@@ -250,6 +250,7 @@ export async function suggestNextPosts(opts: {
   posts: PostHistoryItem[];
   mediaKit?: MediaKit;
   count?: number;             // デフォ 3
+  knowledgeContext?: string;  // Iris ナレッジ上位サマリ (自己強化学習)
 }): Promise<NextPostSuggestion[]> {
   const apiKey = getApiKey(opts.settings);
 
@@ -291,6 +292,12 @@ ${opts.mediaKit ? JSON.stringify({
   audience: opts.mediaKit.audienceProfile,
   brandValues: opts.mediaKit.brandValues,
 }, null, 2) : '(未設定)'}
+${opts.knowledgeContext ? `
+
+## 過去のあなた自身の資料 / 採用された投稿アイデア (Iris ナレッジ・最新順)
+${opts.knowledgeContext}
+
+↑ で「気に入って保存した」アイデア・トーンを踏まえて、新しい提案を出してください。` : ''}
 
 次の ${opts.count || 3} 本、提案してください。`;
 
@@ -341,6 +348,7 @@ export async function generateStoryArc(opts: {
   goal: string;               // 「フォロワー+5000」「コラボ案件3件獲得」等
   mediaKit?: MediaKit;
   posts?: PostHistoryItem[];
+  knowledgeContext?: string;  // Iris ナレッジ上位サマリ (自己強化学習)
 }): Promise<StoryArc> {
   const apiKey = getApiKey(opts.settings);
 
@@ -383,6 +391,12 @@ ${opts.mediaKit ? JSON.stringify({
 
 ${opts.posts && opts.posts.length > 0 ? `## 直近の投稿傾向
 ${opts.posts.slice(0, 10).map(p => `- ${PLATFORM_META[p.platform].label}: "${p.title}" ER ${p.metrics.engagementRate || '?'}%`).join('\n')}` : ''}
+${opts.knowledgeContext ? `
+
+## あなた自身の資料 / 過去のアイデア (Iris ナレッジ・最新順)
+${opts.knowledgeContext}
+
+↑ のテーマ・トーンを物語の核に活かしてください。` : ''}
 
 30 日のストーリーアーク、設計してください。`;
 

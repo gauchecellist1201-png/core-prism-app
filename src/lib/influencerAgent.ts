@@ -154,6 +154,7 @@ export async function generateDraftCopy(opts: {
   deal: InfluencerDeal;
   mediaKit?: MediaKit;
   toneNote?: string; // 自分のトーン (例: 親しみやすく / クール / 詩的)
+  knowledgeContext?: string; // Iris ナレッジ上位サマリ (自己強化学習)
 }): Promise<{ caption: string; hashtags: string[]; cta: string }> {
   const apiKey = getApiKey(opts.settings);
 
@@ -190,6 +191,12 @@ ${opts.persona.description || ''}
 
 ## このトーンで書いて
 ${opts.toneNote || '自然体・親しみやすく・押し売りしない'}
+${opts.knowledgeContext ? `
+
+## 過去のあなた自身の資料 (Iris ナレッジ・最新順)
+${opts.knowledgeContext}
+
+↑ の表現・トーン・成功した切り口を踏襲して書いてください。` : ''}
 
 上記の案件で投稿する下書きを作ってください。`;
 

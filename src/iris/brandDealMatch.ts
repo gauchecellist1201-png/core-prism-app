@@ -115,6 +115,7 @@ export async function generateApplicationDraft(opts: {
   deal: BrandDeal;
   mediaKit?: MediaKit;
   customNote?: string;
+  knowledgeContext?: string;     // Iris ナレッジ上位サマリ (自己強化学習)
 }): Promise<ApplicationDraft> {
   const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || opts.settings.claudeApiKey || '';
 
@@ -167,6 +168,12 @@ ${kitText.length ? kitText.join('\n') : '(未設定)'}
 
 ## 追加で伝えたいこと
 ${opts.customNote || '(なし)'}
+${opts.knowledgeContext ? `
+
+## 過去のあなた自身の応募文 / 投稿サンプル (Iris ナレッジ・最新順)
+${opts.knowledgeContext}
+
+↑ で過去に使った言い回し・自己紹介の切り口を活かしてください。` : ''}
 
 この案件に応募するメールを書いてください。`;
 

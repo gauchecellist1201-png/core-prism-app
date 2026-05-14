@@ -3,7 +3,8 @@
 // 新 UX: 手入力ゼロのホーム + 旧 5 タブを上級者モードに格納
 // ============================================================
 import { useState } from 'react';
-import { ChevronLeft, X } from 'lucide-react';
+import { ChevronLeft, X, Brain, BookmarkPlus, CheckCircle2 } from 'lucide-react';
+import { useIrisKnowledge } from './irisKnowledge';
 import type { AppSettings } from '../types/identity';
 import type { MediaKit, Platform, ContentType } from '../types/influencerDeal';
 import { PLATFORM_META, CONTENT_TYPE_META } from '../types/influencerDeal';
@@ -21,21 +22,22 @@ interface Props {
   bg: IrisBackgroundDef;
   settings: AppSettings;
   mediaKit?: MediaKit;
+  knowledge?: ReturnType<typeof useIrisKnowledge>;
 }
 
 type SubTab = 'ig' | 'history' | 'analyze' | 'suggest' | 'arc';
 
-export default function IrisStrategistView({ bg, settings, mediaKit }: Props) {
+export default function IrisStrategistView({ bg, settings, mediaKit, knowledge }: Props) {
   const [mode, setMode] = useState<'home' | 'advanced'>('home');
 
   if (mode === 'home') {
     return <IrisStrategyHome bg={bg} settings={settings} mediaKit={mediaKit} onOpenAdvanced={() => setMode('advanced')} />;
   }
 
-  return <AdvancedView bg={bg} settings={settings} mediaKit={mediaKit} onBack={() => setMode('home')} />;
+  return <AdvancedView bg={bg} settings={settings} mediaKit={mediaKit} knowledge={knowledge} onBack={() => setMode('home')} />;
 }
 
-function AdvancedView({ bg, settings, mediaKit, onBack }: Props & { onBack: () => void }) {
+function AdvancedView({ bg, settings, mediaKit, knowledge, onBack }: Props & { onBack: () => void }) {
   const history = usePostHistory();
   const [sub, setSub] = useState<SubTab>('ig');
   const [busy, setBusy] = useState(false);
@@ -159,12 +161,14 @@ function AdvancedView({ bg, settings, mediaKit, onBack }: Props & { onBack: () =
       )}
       {sub === 'suggest' && (
         <SuggestTab bg={bg} settings={settings} history={history} mediaKit={mediaKit}
-          card={card} btnPrimary={btnPrimary}
+          knowledge={knowledge}
+          card={card} btnPrimary={btnPrimary} btnSecondary={btnSecondary}
           busy={busy} setBusy={setBusy} setErr={setErr} />
       )}
       {sub === 'arc' && (
         <ArcTab bg={bg} settings={settings} history={history} mediaKit={mediaKit}
-          card={card} btnPrimary={btnPrimary} inp={inp}
+          knowledge={knowledge}
+          card={card} btnPrimary={btnPrimary} btnSecondary={btnSecondary} inp={inp}
           busy={busy} setBusy={setBusy} setErr={setErr} />
       )}
     </div>
@@ -458,16 +462,47 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
 }
 
 // ─── 次の提案タブ ────────────────────────
-function SuggestTab({ bg, settings, history, mediaKit, card, btnPrimary, busy, setBusy, setErr }: any) {
+function SuggestTab({ bg, settings, history, mediaKit, knowledge, card, btnPrimary, btnSecondary, busy, setBusy, setErr }: any) {
   const [count, setCount] = useState(3);
   const [result, setResult] = useState<NextPostSuggestion[] | null>(null);
+  const [savedIdx, setSavedIdx] = useState<number | null>(null);
 
   const run = async () => {
     if (history.posts.length === 0) { setErr('まず投稿実績を追加してください'); return; }
     setBusy(true); setErr(null);
     try {
-      setResult(await suggestNextPosts({ settings, posts: history.posts, mediaKit, count }));
+      setResult(await suggestNextPosts({
+        settings, posts: history.posts, mediaKit, count,
+        knowledgeContext: knowledge?.getContext?.() || undefined,
+      }));
+      setSavedIdx(null);
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  const saveSuggestion = (s: NextPostSuggestion, i: number) => {
+    if (!knowledge) return;
+    const content = [
+      `タイトル: ${s.title}`,
+      `HOOK: ${s.hook}`,
+      `プラットフォーム: ${PLATFORM_META[s.platform].label} / ${CONTENT_TYPE_META[s.contentType]}`,
+      `おすすめ投稿時間: ${s.bestTimeJST}`,
+      `トピック: ${s.topic}`,
+      `理由: ${s.rationale}`,
+      ``,
+      `[撮影ブリーフ]`,
+      s.brief,
+      ``,
+      s.hashtagsHint?.length ? `タグ: ${s.hashtagsHint.join(' ')}` : '',
+    ].filter(Boolean).join('\n');
+    knowledge.add({
+      kind: 'reel-idea',
+      title: s.title,
+      content,
+      tags: ['投稿アイデア', s.platform, s.topic].filter(Boolean),
+      source: PLATFORM_META[s.platform].label,
+    });
+    setSavedIdx(i);
+    setTimeout(() => setSavedIdx(null), 2500);
   };
 
   return (
@@ -487,6 +522,12 @@ function SuggestTab({ bg, settings, history, mediaKit, card, btnPrimary, busy, s
             {busy ? '提案中…' : '次の投稿を提案'}
           </button>
         </div>
+        {knowledge?.count > 0 && (
+          <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: '0.6rem', lineHeight: 1.6 }}>
+            <Brain size={11} style={{ display: 'inline', marginRight: 4 }} />
+            あなたの {knowledge.count} 件の資料を読んで提案します。
+          </p>
+        )}
       </div>
 
       {result && result.map((s, i) => (
@@ -527,6 +568,20 @@ function SuggestTab({ bg, settings, history, mediaKit, card, btnPrimary, busy, s
               {s.hashtagsHint.join(' ')}
             </p>
           )}
+          {knowledge && (
+            <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button onClick={() => saveSuggestion(s, i)} style={btnSecondary}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <BookmarkPlus size={13} /> ナレッジに追加
+                </span>
+              </button>
+              {savedIdx === i && (
+                <span style={{ fontSize: '0.78rem', color: '#10B981', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <CheckCircle2 size={12} /> 保存しました
+                </span>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -534,16 +589,46 @@ function SuggestTab({ bg, settings, history, mediaKit, card, btnPrimary, busy, s
 }
 
 // ─── 30日プランタブ ──────────────────────
-function ArcTab({ bg, settings, history, mediaKit, card, btnPrimary, inp, busy, setBusy, setErr }: any) {
+function ArcTab({ bg, settings, history, mediaKit, knowledge, card, btnPrimary, btnSecondary, inp, busy, setBusy, setErr }: any) {
   const [goal, setGoal] = useState('フォロワー +5,000 / コラボ案件 3 件獲得');
   const [result, setResult] = useState<StoryArc | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const run = async () => {
     if (!goal.trim()) return;
     setBusy(true); setErr(null);
     try {
-      setResult(await generateStoryArc({ settings, goal, posts: history.posts, mediaKit }));
+      setResult(await generateStoryArc({
+        settings, goal, posts: history.posts, mediaKit,
+        knowledgeContext: knowledge?.getContext?.() || undefined,
+      }));
+      setSaved(false);
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  const saveArc = () => {
+    if (!result || !knowledge) return;
+    const content = [
+      `コンセプト: ${result.conceptName}`,
+      ``,
+      result.conceptDescription,
+      ``,
+      ...result.weeks.map(w =>
+        `[Week ${w.weekNum}] ${w.theme}\n` +
+        w.posts.map(p => `  ${p.day} / ${p.type} — ${p.title} (${p.purpose})`).join('\n')
+      ),
+      ``,
+      `ゴール: ${result.culmination}`,
+    ].join('\n');
+    knowledge.add({
+      kind: 'story-arc',
+      title: result.conceptName || '30日ストーリーアーク',
+      content,
+      tags: ['ストーリー', '30日プラン'],
+      source: goal,
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
   };
 
   return (
@@ -558,6 +643,12 @@ function ArcTab({ bg, settings, history, mediaKit, card, btnPrimary, inp, busy, 
         <button onClick={run} disabled={busy} style={btnPrimary}>
           {busy ? '脚本中…' : '30日プランを設計'}
         </button>
+        {knowledge?.count > 0 && (
+          <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: '0.6rem', lineHeight: 1.6 }}>
+            <Brain size={11} style={{ display: 'inline', marginRight: 4 }} />
+            あなたの {knowledge.count} 件の資料を読んで脚本します。
+          </p>
+        )}
       </div>
 
       {result && (
@@ -615,6 +706,20 @@ function ArcTab({ bg, settings, history, mediaKit, card, btnPrimary, inp, busy, 
             <p style={{ color: bg.ink, fontSize: '1rem', lineHeight: 1.8 }}>
               {result.culmination}
             </p>
+            {knowledge && (
+              <div style={{ marginTop: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button onClick={saveArc} style={btnSecondary}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <BookmarkPlus size={13} /> このアークをナレッジに追加
+                  </span>
+                </button>
+                {saved && (
+                  <span style={{ fontSize: '0.82rem', color: '#10B981', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <CheckCircle2 size={12} /> 保存しました。次回の提案で参考にされます。
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
