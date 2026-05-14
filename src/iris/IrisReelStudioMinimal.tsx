@@ -10,16 +10,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Image as ImageIcon, Film, Music, Play, Square, Download, Share2,
   Sparkles, Wand2, ChevronRight, Plus, X, Trash2, Settings2, Loader2,
-  Flame,
+  Flame, Scissors, ArrowLeft, ArrowRight, Eye, Type as TypeIcon,
+  AlertCircle,
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { BGM_LIBRARY, VIRAL_PATTERNS, TREND_PULSE_2026_Q2 } from './IrisReelStudio';
+import { generateReelCaptions, type ReelAiResult } from './reelAiCaption';
+import { suggestNextSlot, type ScheduledPost } from './usePostQueue';
 
 interface Props {
   bg: IrisBackgroundDef;
   myDeals?: any[];
-  postQueue?: any;
+  postQueue?: {
+    add: (p: Omit<ScheduledPost, 'id' | 'createdAt' | 'status'> & Partial<Pick<ScheduledPost, 'status'>>) => ScheduledPost;
+    [k: string]: any;
+  };
   settings?: any;
   persona?: any;
   mediaKit?: any;
@@ -40,6 +46,12 @@ interface Clip {
   url: string;
   duration: number;
   el?: HTMLImageElement | HTMLVideoElement;
+  /** カット毎の字幕 (AI 生成または手動編集) */
+  captionText?: string;
+  /** カット毎の context (AI が読み取った文脈) */
+  aiContext?: string;
+  /** 字幕の縦位置 (0=上 〜 1=下、デフォルト 0.78) */
+  captionY?: number;
 }
 
 const FONT_PRESETS = [
@@ -91,14 +103,14 @@ function drawCover(ctx: CanvasRenderingContext2D, el: HTMLImageElement | HTMLVid
 }
 
 // ─── Main Component ─────
-export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdvanced }: Props) {
+export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdvanced, postQueue }: Props) {
   const [step, setStep] = useState<'material' | 'edit' | 'subtitle' | 'export'>('material');
   const [clips, setClips] = useState<Clip[]>([]);
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [bgmFile, setBgmFile] = useState<File | null>(null);
   const [bgmLoading, setBgmLoading] = useState<string | null>(null);
   const [bgmActiveId, setBgmActiveId] = useState<string | null>(null);
   const [activePattern, setActivePattern] = useState<string | null>(null);
-  const [captionText, setCaptionText] = useState<string>('');
   const [captionPreset, setCaptionPreset] = useState<typeof FONT_PRESETS[0]>(FONT_PRESETS[0]);
   const [playing, setPlaying] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -106,6 +118,16 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [progress, setProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const [uploadErr, setUploadErr] = useState<string>('');
+  // AI 自動字幕
+  const [themeHint, setThemeHint] = useState<string>('');
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiPhase, setAiPhase] = useState<string>('');
+  const [aiErr, setAiErr] = useState<string>('');
+  const [aiResult, setAiResult] = useState<ReelAiResult | null>(null);
+  // タイムライン
+  const [currentTime, setCurrentTime] = useState(0);
+  const [scheduled, setScheduled] = useState(false);
+  const [scheduledMsg, setScheduledMsg] = useState<string>('');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
@@ -155,18 +177,46 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   // ─── パターン適用 ─────
   const applyPattern = useCallback((p: typeof VIRAL_PATTERNS[0]) => {
     setActivePattern(p.id);
-    if (clips.length === 0) {
-      // クリップが無い時はデフォルトの字幕だけセット
-      setCaptionText(p.beats[0].textHint.replace(/\[.*?\]\s*/, ''));
-      return;
-    }
-    // 各クリップに beat の秒数を割り当て
+    if (clips.length === 0) return;
+    // 各クリップに beat の秒数 + 字幕ヒントを割り当て
     setClips(prev => prev.map((c, i) => {
       const beat = p.beats[Math.min(i, p.beats.length - 1)];
-      return { ...c, duration: beat.sec };
+      const hint = beat.textHint.replace(/\[.*?\]\s*/, '');
+      return {
+        ...c,
+        duration: beat.sec,
+        captionText: c.captionText || hint,
+      };
     }));
-    setCaptionText(p.beats[0].textHint.replace(/\[.*?\]\s*/, ''));
   }, [clips.length]);
+
+  // ─── AI 自動字幕 (CORE 機能) ─────
+  const runAiCaption = useCallback(async () => {
+    if (!clips.length) { setAiErr('先にクリップを追加してください'); return; }
+    setAiBusy(true); setAiErr(''); setAiPhase('準備中…');
+    try {
+      const inputs = clips
+        .filter(c => c.el)
+        .map(c => ({ kind: c.kind, el: c.el!, duration: c.duration }));
+      const result = await generateReelCaptions(inputs, {
+        themeHint: themeHint || undefined,
+        onProgress: (phase) => setAiPhase(phase),
+      });
+      // 各クリップに overlayText を反映
+      setClips(prev => prev.map((c, i) => ({
+        ...c,
+        captionText: result.cuts[i]?.overlayText || c.captionText || '',
+        aiContext: result.cuts[i]?.context || c.aiContext,
+      })));
+      setAiResult(result);
+      setStep('subtitle');
+    } catch (e: any) {
+      setAiErr(e?.message || 'AI 処理に失敗しました。少し待ってから再試行してください。');
+    } finally {
+      setAiBusy(false);
+      setAiPhase('');
+    }
+  }, [clips, themeHint]);
 
   // ─── キャンバス描画 ─────
   const drawAt = useCallback((t: number) => {
@@ -176,12 +226,19 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     if (!clips.length) return;
 
     // どのクリップ?
-    let acc = 0, cur = clips[0], localT = 0;
-    for (const c of clips) {
-      if (t >= acc && t < acc + c.duration) { cur = c; localT = (t - acc) / Math.max(c.duration, 0.001); break; }
+    let acc = 0, cur = clips[0], localT = 0, curIdx = 0;
+    for (let i = 0; i < clips.length; i++) {
+      const c = clips[i];
+      if (t >= acc && t < acc + c.duration) {
+        cur = c; localT = (t - acc) / Math.max(c.duration, 0.001); curIdx = i;
+        break;
+      }
       acc += c.duration;
     }
-    if (t >= totalDuration) { cur = clips[clips.length - 1]; localT = 1; }
+    if (t >= totalDuration) {
+      cur = clips[clips.length - 1]; localT = 1; curIdx = clips.length - 1;
+      acc = totalDuration - cur.duration;
+    }
 
     if (cur.kind === 'video' && cur.el instanceof HTMLVideoElement) {
       const v = cur.el;
@@ -203,19 +260,29 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // 字幕
-    if (captionText) {
+    // 字幕 (カット毎)。0.25s フェードイン / 0.25s フェードアウト
+    const overlay = cur.captionText || '';
+    if (overlay) {
+      const dur = cur.duration;
+      const fadeIn  = Math.min(1, (t - acc) / 0.25);
+      const fadeOut = Math.min(1, (acc + dur - t) / 0.25);
+      const alpha = Math.max(0, Math.min(1, fadeIn, fadeOut));
       ctx.save();
-      const x = canvas.width / 2, y = canvas.height * 0.78;
+      ctx.globalAlpha = alpha;
+      const yRatio = cur.captionY ?? 0.78;
+      const x = canvas.width / 2, y = canvas.height * yRatio;
       ctx.font = `bold ${captionPreset.size * (canvas.width / OUT_W)}px ${captionPreset.font}`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.strokeStyle = captionPreset.stroke;
       ctx.lineWidth = captionPreset.strokeWidth * (canvas.width / OUT_W);
       ctx.lineJoin = 'round';
-      // wrap to ~16 chars
-      const words = captionText.split('');
+      // wrap to ~14 chars
+      const chars = overlay.split('');
       const lines: string[] = []; let line = '';
-      for (const ch of words) { if (line.length >= 14 && /[\s、。!\?]/.test(ch)) { lines.push(line); line = ''; } else line += ch; }
+      for (const ch of chars) {
+        line += ch;
+        if (line.length >= 14 && /[\s、。!\?！？]/.test(ch)) { lines.push(line); line = ''; }
+      }
       if (line) lines.push(line);
       const lh = captionPreset.size * 1.15 * (canvas.width / OUT_W);
       lines.forEach((ln, i) => {
@@ -226,20 +293,23 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       });
       ctx.restore();
     }
-  }, [clips, captionText, captionPreset, totalDuration]);
+    // 進捗共有 (タイムライン UI 用)
+    void curIdx;
+  }, [clips, captionPreset, totalDuration]);
 
   // ─── 静止描画 (再生してない時) ─────
-  useEffect(() => { if (!playing) drawAt(0); }, [drawAt, playing, clips.length, captionText, captionPreset]);
+  useEffect(() => { if (!playing) drawAt(currentTime); }, [drawAt, playing, clips, captionPreset, currentTime]);
 
   // ─── 再生ループ ─────
   const startPlay = () => {
     if (!clips.length) return;
     setPlaying(true);
-    playStartRef.current = performance.now();
+    playStartRef.current = performance.now() - currentTime * 1000;
     const tick = () => {
       const t = (performance.now() - playStartRef.current) / 1000;
+      setCurrentTime(t);
       drawAt(t);
-      if (t >= totalDuration) { setPlaying(false); return; }
+      if (t >= totalDuration) { setPlaying(false); setCurrentTime(0); return; }
       animRef.current = requestAnimationFrame(tick);
     };
     if (bgmFile) {
@@ -254,7 +324,71 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     cancelAnimationFrame(animRef.current);
     if (audioRef.current) { try { audioRef.current.pause(); } catch {/* */} }
     setPlaying(false);
+    setCurrentTime(0);
     drawAt(0);
+  };
+
+  // ─── タイムライン操作 (クリップ並べ替え / 長さ調整 / 削除) ─────
+  const moveClip = (id: string, dir: -1 | 1) => {
+    setClips(prev => {
+      const idx = prev.findIndex(c => c.id === id);
+      if (idx < 0) return prev;
+      const ni = idx + dir;
+      if (ni < 0 || ni >= prev.length) return prev;
+      const next = prev.slice();
+      [next[idx], next[ni]] = [next[ni], next[idx]];
+      return next;
+    });
+  };
+  const setClipDuration = (id: string, d: number) => {
+    const clamped = Math.max(0.5, Math.min(15, d));
+    setClips(prev => prev.map(c => c.id === id ? { ...c, duration: clamped } : c));
+  };
+  const setClipCaption = (id: string, text: string) => {
+    setClips(prev => prev.map(c => c.id === id ? { ...c, captionText: text } : c));
+  };
+  const setClipCaptionY = (id: string, y: number) => {
+    const clamped = Math.max(0.1, Math.min(0.95, y));
+    setClips(prev => prev.map(c => c.id === id ? { ...c, captionY: clamped } : c));
+  };
+  const seekToClip = (idx: number) => {
+    let acc = 0;
+    for (let i = 0; i < idx && i < clips.length; i++) acc += clips[i].duration;
+    setCurrentTime(acc + 0.05);
+    setSelectedClipId(clips[idx]?.id || null);
+  };
+
+  // ─── 投稿予約に追加 (AI 結果と一緒に) ─────
+  const sendToQueue = async () => {
+    if (!exportUrl || !postQueue) return;
+    try {
+      const resp = await fetch(exportUrl);
+      const blob = await resp.blob();
+      const reader = new FileReader();
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      const when = suggestNextSlot();
+      const caption = aiResult?.caption || clips.map(c => c.captionText).filter(Boolean).join('\n');
+      const hashtags = aiResult?.hashtags || [];
+      postQueue.add({
+        scheduledAt: when.toISOString(),
+        platform: 'instagram_reel',
+        source: 'reel',
+        caption,
+        hashtags,
+        mediaDataUrl: dataUrl,
+        mediaKind: 'video',
+        reelPattern: activePattern || undefined,
+        note: aiResult?.themeGuess ? `AI テーマ: ${aiResult.themeGuess}` : undefined,
+      });
+      setScheduled(true);
+      setScheduledMsg(`${when.getMonth() + 1}/${when.getDate()} ${String(when.getHours()).padStart(2, '0')}:${String(when.getMinutes()).padStart(2, '0')} に予約しました`);
+    } catch (e: any) {
+      setScheduledMsg(`予約に失敗しました: ${e?.message || e}`);
+    }
   };
 
   // ─── 録画 → WebM 書き出し ─────
@@ -286,11 +420,13 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     rec.start();
     // 再生開始
     playStartRef.current = performance.now();
+    setCurrentTime(0);
     const tick = () => {
       const t = (performance.now() - playStartRef.current) / 1000;
       drawAt(t);
+      setCurrentTime(t);
       setProgress(t / totalDuration);
-      if (t >= totalDuration) { rec.stop(); return; }
+      if (t >= totalDuration) { rec.stop(); setCurrentTime(0); return; }
       animRef.current = requestAnimationFrame(tick);
     };
     tick();
@@ -426,6 +562,171 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             </button>
           )}
         </div>
+
+        {/* ✨ AI 自動字幕ボタン (一番目立つ位置) */}
+        {clips.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{ marginBottom: 14 }}
+          >
+            <button
+              onClick={runAiCaption}
+              disabled={aiBusy}
+              style={{
+                width: '100%', padding: '0.95rem 1rem',
+                background: aiBusy ? 'rgba(255,255,255,0.5)' : IRIS_GRADIENT,
+                color: '#fff', border: 'none', borderRadius: 18,
+                fontSize: 14.5, fontWeight: 800,
+                cursor: aiBusy ? 'wait' : 'pointer',
+                boxShadow: aiBusy ? 'none' : '0 12px 32px rgba(225,48,108,0.32)',
+                fontFamily: IRIS_FONTS.body,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              {aiBusy
+                ? <><Loader2 size={16} className="iris-spin" /> {aiPhase || '分析中…'}</>
+                : <><Sparkles size={16} /> AI が動画を見て字幕をつける</>}
+            </button>
+            {aiErr && (
+              <div style={{
+                marginTop: 8, padding: '0.65rem 0.8rem',
+                background: '#FEE2E2', color: '#991B1B',
+                borderRadius: 12, fontSize: 12,
+                display: 'flex', alignItems: 'flex-start', gap: 6,
+                lineHeight: 1.5,
+              }}>
+                <AlertCircle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+                <div style={{ flex: 1 }}>
+                  {aiErr}
+                  <button onClick={() => { setAiErr(''); runAiCaption(); }} style={{
+                    display: 'block', marginTop: 6,
+                    background: 'transparent', border: 'none',
+                    color: '#991B1B', textDecoration: 'underline',
+                    cursor: 'pointer', fontSize: 11, padding: 0,
+                  }}>もう一度試す</button>
+                </div>
+              </div>
+            )}
+            {aiResult && !aiBusy && !aiErr && (
+              <div style={{
+                marginTop: 8, padding: '0.55rem 0.7rem',
+                background: 'rgba(225,48,108,0.08)',
+                color: bg.ink,
+                borderRadius: 10, fontSize: 11,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <Eye size={12} color={bg.accent} />
+                <span><b>テーマ:</b> {aiResult.themeGuess || '—'}</span>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* タイムライン (キャンバス下) — Edits 風 */}
+        {clips.length > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <Label icon={<Scissors size={11} />}>タイムライン</Label>
+            <div style={{
+              display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 6,
+              scrollbarWidth: 'none',
+            }}>
+              {clips.map((c, i) => {
+                const selected = selectedClipId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => { setSelectedClipId(c.id); seekToClip(i); }}
+                    style={{
+                      flexShrink: 0, position: 'relative',
+                      width: 44, height: 70,
+                      borderRadius: 8, overflow: 'hidden',
+                      background: '#000',
+                      border: `2px solid ${selected ? bg.accent : 'transparent'}`,
+                      cursor: 'pointer', padding: 0,
+                      boxShadow: selected ? '0 4px 12px rgba(225,48,108,0.32)' : '0 1px 4px rgba(0,0,0,0.1)',
+                    }}>
+                    {c.kind === 'image'
+                      ? <img src={c.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <video src={c.url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    }
+                    <div style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
+                      color: '#fff', fontSize: 9, fontWeight: 800,
+                      padding: '8px 3px 2px', textAlign: 'left',
+                    }}>
+                      {i + 1}・{c.duration.toFixed(1)}s
+                    </div>
+                    {c.captionText && (
+                      <div style={{
+                        position: 'absolute', top: 2, left: 2,
+                        width: 6, height: 6, borderRadius: '50%',
+                        background: '#FBBF24',
+                        boxShadow: '0 0 6px #FBBF24',
+                      }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {/* 選択中クリップの操作 */}
+            {selectedClipId && (() => {
+              const idx = clips.findIndex(c => c.id === selectedClipId);
+              const c = clips[idx];
+              if (!c) return null;
+              return (
+                <div style={{
+                  marginTop: 8, padding: '0.7rem 0.8rem',
+                  background: 'rgba(255,255,255,0.7)',
+                  border: `1px solid ${bg.cardBorder}`,
+                  borderRadius: 12,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: bg.accent }}>カット {idx + 1}</span>
+                    <button onClick={() => moveClip(c.id, -1)} disabled={idx === 0} style={iconBtn(bg, idx === 0)}>
+                      <ArrowLeft size={11} />
+                    </button>
+                    <button onClick={() => moveClip(c.id, 1)} disabled={idx === clips.length - 1} style={iconBtn(bg, idx === clips.length - 1)}>
+                      <ArrowRight size={11} />
+                    </button>
+                    <div style={{ flex: 1 }} />
+                    <button onClick={() => { removeClip(c.id); setSelectedClipId(null); }} style={{
+                      ...iconBtn(bg, false),
+                      color: '#EF4444', borderColor: '#FCA5A5',
+                    }}>
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 10, color: bg.inkSoft, minWidth: 28 }}>長さ</span>
+                    <input
+                      type="range" min={0.5} max={8} step={0.1}
+                      value={c.duration}
+                      onChange={e => setClipDuration(c.id, Number(e.target.value))}
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: bg.ink, minWidth: 36, textAlign: 'right' }}>
+                      {c.duration.toFixed(1)}s
+                    </span>
+                  </div>
+                  {c.aiContext && (
+                    <div style={{
+                      marginTop: 6, padding: '0.4rem 0.55rem',
+                      background: 'rgba(225,48,108,0.06)',
+                      borderRadius: 8, fontSize: 10.5,
+                      color: bg.inkSoft, lineHeight: 1.4,
+                    }}>
+                      <Eye size={10} style={{ verticalAlign: '-1px', marginRight: 4 }} />
+                      {c.aiContext}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         {/* STEP TABS */}
         <div style={{
@@ -627,26 +928,98 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               </>
             )}
 
-            {/* === STEP 3: 字幕 === */}
+            {/* === STEP 3: 字幕 (カット毎) === */}
             {step === 'subtitle' && (
               <>
-                <Label>字幕テキスト</Label>
-                <textarea
-                  value={captionText}
-                  onChange={e => setCaptionText(e.target.value)}
-                  placeholder="例: 知らないと損する3つのこと"
-                  rows={2}
+                {/* AI ヒント (テーマ) */}
+                <Label icon={<Sparkles size={11} />}>テーマ (任意、AI のヒント)</Label>
+                <input
+                  type="text"
+                  value={themeHint}
+                  onChange={e => setThemeHint(e.target.value)}
+                  placeholder="例: 朝のスキンケア、新作レビュー"
                   style={{
-                    width: '100%', padding: '0.85rem 1rem',
+                    width: '100%', padding: '0.7rem 0.9rem',
                     background: 'rgba(255,255,255,0.7)',
                     border: `1px solid ${bg.cardBorder}`,
-                    borderRadius: 14,
-                    fontSize: 16, fontFamily: 'inherit',
-                    resize: 'vertical',
-                    marginBottom: 14,
+                    borderRadius: 12,
+                    fontSize: 14, fontFamily: 'inherit',
+                    marginBottom: 12,
                   }}
                 />
-                <Label>スタイル</Label>
+
+                {/* カット毎の字幕編集 */}
+                {clips.length === 0 ? (
+                  <div style={{
+                    padding: '1.5rem', textAlign: 'center',
+                    color: bg.inkSoft, fontSize: 13,
+                    fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
+                  }}>
+                    先に「素材」タブでクリップを追加してください
+                  </div>
+                ) : (
+                  <>
+                    <Label icon={<TypeIcon size={11} />}>カット毎の字幕 ({clips.length} 個)</Label>
+                    <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+                      {clips.map((c, i) => (
+                        <div key={c.id} style={{
+                          padding: '0.6rem 0.7rem',
+                          background: selectedClipId === c.id ? 'rgba(225,48,108,0.08)' : 'rgba(255,255,255,0.6)',
+                          border: `1px solid ${selectedClipId === c.id ? bg.accent + '66' : bg.cardBorder}`,
+                          borderRadius: 12,
+                          display: 'flex', gap: 8, alignItems: 'flex-start',
+                        }}>
+                          <div style={{
+                            width: 36, height: 60, flexShrink: 0,
+                            borderRadius: 6, overflow: 'hidden',
+                            background: '#000', position: 'relative',
+                          }}>
+                            {c.kind === 'image'
+                              ? <img src={c.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : <video src={c.url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            }
+                            <div style={{
+                              position: 'absolute', top: 1, left: 2,
+                              fontSize: 8, fontWeight: 800, color: '#fff',
+                              textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                            }}>{i + 1}</div>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <textarea
+                              value={c.captionText || ''}
+                              onChange={e => setClipCaption(c.id, e.target.value)}
+                              onFocus={() => { setSelectedClipId(c.id); seekToClip(i); }}
+                              placeholder={c.aiContext ? `「${c.aiContext.slice(0, 20)}…」に重ねる短文` : '8〜15字の字幕'}
+                              rows={2}
+                              style={{
+                                width: '100%', padding: '0.45rem 0.55rem',
+                                background: 'rgba(255,255,255,0.85)',
+                                border: `1px solid ${bg.cardBorder}`,
+                                borderRadius: 8,
+                                fontSize: 13, fontFamily: 'inherit',
+                                resize: 'none', lineHeight: 1.4,
+                              }}
+                            />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                              <span style={{ fontSize: 10, color: bg.inkSoft, minWidth: 28 }}>位置</span>
+                              <input
+                                type="range" min={0.1} max={0.95} step={0.01}
+                                value={c.captionY ?? 0.78}
+                                onChange={e => setClipCaptionY(c.id, Number(e.target.value))}
+                                style={{ flex: 1 }}
+                              />
+                              <span style={{ fontSize: 10, color: bg.inkSoft, minWidth: 30, textAlign: 'right' }}>
+                                {(c.captionText || '').length}字
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                <Label>スタイル (全カット共通)</Label>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {FONT_PRESETS.map(p => {
                     const active = captionPreset.id === p.id;
@@ -697,18 +1070,83 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       display: 'block', borderRadius: 18,
                       boxShadow: '0 12px 32px rgba(225,48,108,0.18)', background: '#000',
                     }} />
+
+                    {/* AI 生成キャプション + ハッシュタグ */}
+                    {aiResult && (
+                      <div style={{ marginBottom: 12 }}>
+                        <Label>AI が書いた投稿本文</Label>
+                        <div style={{
+                          padding: '0.7rem 0.85rem',
+                          background: 'rgba(255,255,255,0.7)',
+                          border: `1px solid ${bg.cardBorder}`,
+                          borderRadius: 12,
+                          fontSize: 12.5, lineHeight: 1.55,
+                          whiteSpace: 'pre-wrap',
+                          marginBottom: 8,
+                          color: bg.ink,
+                        }}>{aiResult.caption || '—'}</div>
+                        {aiResult.hashtags.length > 0 && (
+                          <div style={{
+                            padding: '0.55rem 0.7rem',
+                            background: 'rgba(225,48,108,0.06)',
+                            border: `1px solid ${bg.accent}33`,
+                            borderRadius: 10,
+                            fontSize: 11.5, lineHeight: 1.6,
+                            color: bg.accent, fontWeight: 700,
+                            wordBreak: 'break-all',
+                          }}>{aiResult.hashtags.join(' ')}</div>
+                        )}
+                        <button
+                          onClick={() => {
+                            const txt = aiResult.caption + (aiResult.hashtags.length ? '\n\n' + aiResult.hashtags.join(' ') : '');
+                            try { navigator.clipboard.writeText(txt); setScheduledMsg('本文をコピーしました'); }
+                            catch { setScheduledMsg('コピーに失敗しました'); }
+                          }}
+                          style={{
+                            marginTop: 6, padding: '0.4rem 0.8rem',
+                            background: 'transparent',
+                            border: `1px solid ${bg.cardBorder}`,
+                            borderRadius: 999,
+                            fontSize: 11, color: bg.ink, cursor: 'pointer',
+                          }}
+                        >本文 + ハッシュタグをコピー</button>
+                      </div>
+                    )}
+
                     <div style={{ display: 'grid', gap: 8 }}>
                       <button onClick={download} style={{ ...btnPri(), width: '100%' }}>
                         <Download size={14} /> ダウンロード
                       </button>
-                      {onJumpToSchedule && (
+                      {postQueue && !scheduled && (
+                        <button onClick={sendToQueue} style={{
+                          ...btnPri(), width: '100%',
+                          background: 'linear-gradient(135deg, #16A34A 0%, #22C55E 100%)',
+                          boxShadow: '0 6px 20px rgba(22, 163, 74, 0.28)',
+                        }}>
+                          <Share2 size={14} /> 投稿予約に追加 (キャプション付き)
+                        </button>
+                      )}
+                      {scheduled && onJumpToSchedule && (
+                        <button onClick={onJumpToSchedule} style={{ ...btnSec(bg), width: '100%' }}>
+                          <Share2 size={14} /> 予約一覧をひらく
+                        </button>
+                      )}
+                      {!postQueue && onJumpToSchedule && (
                         <button onClick={onJumpToSchedule} style={{ ...btnSec(bg), width: '100%' }}>
                           <Share2 size={14} /> 投稿予約をつくる
                         </button>
                       )}
-                      <button onClick={() => { setExportUrl(null); setProgress(0); }} style={{ ...btnSec(bg), width: '100%' }}>
+                      <button onClick={() => { setExportUrl(null); setProgress(0); setScheduled(false); setScheduledMsg(''); }} style={{ ...btnSec(bg), width: '100%' }}>
                         <Wand2 size={14} /> 別ver. を書き出す
                       </button>
+                      {scheduledMsg && (
+                        <div style={{
+                          padding: '0.55rem 0.7rem',
+                          background: scheduled ? 'rgba(22,163,74,0.1)' : 'rgba(225,48,108,0.06)',
+                          color: scheduled ? '#15803D' : bg.ink,
+                          borderRadius: 10, fontSize: 12, textAlign: 'center',
+                        }}>{scheduledMsg}</div>
+                      )}
                     </div>
                   </>
                 )}
@@ -797,6 +1235,19 @@ function btnSec(bg: IrisBackgroundDef): React.CSSProperties {
     border: `1.5px solid ${bg.accent}`, borderRadius: 999,
     fontSize: 13, fontWeight: 700, cursor: 'pointer',
     fontFamily: IRIS_FONTS.body,
+  };
+}
+
+function iconBtn(bg: IrisBackgroundDef, disabled: boolean): React.CSSProperties {
+  return {
+    width: 26, height: 26, borderRadius: 7,
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    padding: 0,
+    background: disabled ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.9)',
+    color: bg.ink,
+    border: `1px solid ${bg.cardBorder}`,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.4 : 1,
   };
 }
 
