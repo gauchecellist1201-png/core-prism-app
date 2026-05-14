@@ -25,6 +25,7 @@ import {
 } from './screenshotExtractor';
 import { usePostQueue } from './usePostQueue';
 import type { IrisBackgroundDef } from './irisStyle';
+import { computeApplyKpi, loadApplyHistory } from './brandDealMatch';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -188,6 +189,9 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
     <div style={{ display: 'grid', gap: '1.5rem' }}>
       {/* ─── ヒーロー: 大きな数字 ─── */}
       <HeroBanner bg={bg} stats={stats} />
+
+      {/* ─── ブランド応募 KPI ─── */}
+      <BrandApplyKpiBlock bg={bg} />
 
       {/* ─── キャプチャゾーン (手入力ゼロの中核) ─── */}
       <CaptureZone
@@ -1662,4 +1666,49 @@ function formatNumber(n: number): string {
   if (n >= 10_000) return `${(n / 1_000).toFixed(1)}K`;
   if (n >= 1_000) return n.toLocaleString();
   return n.toString();
+}
+
+// ============================================================
+// ブランド応募 KPI — 「お仕事を探す」タブからの応募状況をここに集約
+// ============================================================
+function BrandApplyKpiBlock({ bg }: { bg: IrisBackgroundDef }) {
+  const kpi = useMemo(() => computeApplyKpi(), []);
+  const history = useMemo(() => loadApplyHistory(), []);
+  if (kpi.total === 0) return null;
+
+  const tile = (label: string, value: string, color?: string): React.ReactNode => (
+    <div style={{
+      background: 'rgba(255,255,255,0.55)',
+      border: `1px solid ${bg.cardBorder}`, borderRadius: 16,
+      padding: '0.75rem 0.95rem', backdropFilter: 'blur(10px)',
+    }}>
+      <p style={{ fontSize: '0.7rem', letterSpacing: '0.12em', color: bg.inkSoft, fontWeight: 600, marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: '1.35rem', fontWeight: 700, color: color || bg.ink }}>{value}</p>
+    </div>
+  );
+
+  return (
+    <div style={{
+      background: bg.card, border: `1px solid ${bg.cardBorder}`,
+      borderRadius: 22, padding: '1.1rem 1.25rem', backdropFilter: 'blur(10px)',
+    }}>
+      <p style={{ fontSize: '0.7rem', letterSpacing: '0.22em', color: bg.accent, fontWeight: 700, marginBottom: 6 }}>BRAND APPLICATIONS</p>
+      <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.5rem', color: bg.ink, marginBottom: '0.85rem' }}>
+        応募の成果
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.55rem' }}>
+        {tile('応募した', kpi.total + ' 件')}
+        {tile('返信があった', kpi.replied + ' 件', '#A78BFA')}
+        {tile('成立', kpi.won + ' 件', '#10B981')}
+        {tile('応募合計報酬', '¥' + kpi.totalFeeApplied.toLocaleString())}
+        {tile('獲得報酬', '¥' + kpi.totalFeeWon.toLocaleString(), '#10B981')}
+        {kpi.total > 0 && tile('返信率', Math.round(kpi.responseRate * 100) + '%')}
+      </div>
+      {history[0] && (
+        <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: '0.75rem', lineHeight: 1.55 }}>
+          直近: <span style={{ color: bg.ink, fontWeight: 600 }}>{history[0].dealBrand}</span> · ¥{history[0].fee.toLocaleString()} ({new Date(history[0].appliedAt).toLocaleDateString('ja-JP')})
+        </p>
+      )}
+    </div>
+  );
 }
