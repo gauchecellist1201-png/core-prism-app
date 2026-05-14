@@ -250,10 +250,16 @@ export default async function handler(req: Request) {
     return json({ error: `Resend unreachable: ${e.message}` }, 502, ch);
   }
 
-  const result = await resp.json() as { id?: string; error?: string };
+  const result = await resp.json() as { id?: string; message?: string; name?: string; statusCode?: number };
   if (!resp.ok) {
-    return json({ error: result.error || 'Send failed' }, 500, ch);
+    return json({
+      error: 'Send failed',
+      from,
+      resend_status: resp.status,
+      resend_name: result.name,
+      resend_message: result.message,
+    }, resp.status === 401 || resp.status === 403 ? 502 : 500, ch);
   }
 
-  return json({ success: true, id: result.id }, 200, ch);
+  return json({ success: true, id: result.id, from }, 200, ch);
 }
