@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
 
+# 法人化前の暫定公開ページは検索除外
+Disallow: /corp
+Disallow: /keynote
+
 Sitemap: https://core-prism-app.vercel.app/sitemap.xml
