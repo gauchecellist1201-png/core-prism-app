@@ -57,7 +57,6 @@ export async function generateNoteArticle(opts: {
   customInstruction?: string;
 }): Promise<SocialDraft> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude API キーが未設定です');
   const targetWords = opts.targetWords || 1500;
 
   const SYS = `あなたは ${opts.persona.name} (${opts.persona.subtitle}) として、note.com に公開する記事を執筆します。
@@ -149,7 +148,6 @@ export async function generateXPost(opts: {
   customInstruction?: string;
 }): Promise<SocialDraft> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude API キーが未設定です');
   const threadCount = Math.max(1, Math.min(10, opts.threadCount || 1));
   const isThread = threadCount > 1;
 

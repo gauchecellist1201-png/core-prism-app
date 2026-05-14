@@ -117,7 +117,6 @@ export async function generateApplicationDraft(opts: {
   customNote?: string;
 }): Promise<ApplicationDraft> {
   const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || opts.settings.claudeApiKey || '';
-  if (!apiKey) throw new Error('AI 設定 (Claude API キー) が必要です。「私らしさ設定」から登録してください。');
 
   const kit = opts.mediaKit;
   const kitText: string[] = [];

@@ -73,7 +73,6 @@ export async function runStrategicAnalysis(
   knowledge: KnowledgeItem[],
 ): Promise<StrategicAnalysis> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const relevantKb = knowledge
     .filter(k => k.personaId === persona.id)

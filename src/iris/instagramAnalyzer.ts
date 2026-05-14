@@ -132,7 +132,6 @@ export async function analyzeInstagramProfile(opts: {
   goal?: string;
 }): Promise<IGAnalysisResult> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたは「世界トップクラスのインフルエンサーマーケティングストラテジスト」。
 日本市場の Instagram 文化・相場・PR 案件慣行に精通し、過去に 1,000 アカウント以上を分析してきた経験を持つ。

@@ -68,7 +68,6 @@ export async function extractFinancialData(
   content: string,
 ): Promise<ExtractedFinancials> {
   const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   return enqueueClaudeCall(async () => {
     const truncated = content.slice(0, 12000);
@@ -139,9 +138,6 @@ export async function analyzeKnowledge(
   imageBase64?: string,
 ): Promise<KnowledgeAnalysis> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) {
-    throw new Error('Claude APIキーが設定されていません');
-  }
 
   const truncated = content.slice(0, 30000);
   const userText = `## 資料タイトル

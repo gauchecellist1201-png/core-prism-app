@@ -20,7 +20,6 @@ export async function researchCompany(opts: {
   publicInfo?: string;        // ユーザーが貼り付けた追加情報
 }): Promise<Omit<CompanyResearch, 'id' | 'personaId' | 'createdAt' | 'updatedAt'>> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude API キーが未設定です');
 
   const sys = `あなたは敏腕の営業リサーチアナリストです。
 ユーザーが指定した企業について、公開情報や一般的な業界知識から「営業に役立つ情報」を構造化して返します。
@@ -112,7 +111,6 @@ export async function scoreLead(opts: {
   research?: CompanyResearch;
 }): Promise<{ score: number; scoreReason: string }> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude API キーが未設定です');
 
   const sys = `あなたは営業のリードスコアリングを専門にする AI です。
 「このリードは買ってくれそうか」を 0〜100 で評価し、理由を1文で説明します。
@@ -189,7 +187,6 @@ export async function generateApproachEmail(opts: {
   tone?: string;             // "親しみやすく" "格式高く" "直球" 等
 }): Promise<Omit<ApproachDraft, 'id'>> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude API キーが未設定です');
 
   const sys = `あなたは「個別最適化された営業メール」を書くプロです。
 相手企業のリサーチを踏まえて、相手の心に響くパーソナライズメールを作ります。

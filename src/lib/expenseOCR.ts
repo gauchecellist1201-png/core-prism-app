@@ -40,7 +40,6 @@ export async function extractFromReceipt(opts: {
   imageDataUrl: string; // data:image/...;base64,...
 }): Promise<OCRResult> {
   const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || opts.settings.claudeApiKey || '';
-  if (!apiKey) throw new Error('Claude API キーが未設定です');
 
   const match = opts.imageDataUrl.match(/^data:(image\/[^;]+);base64,(.+)$/);
   if (!match) throw new Error('画像データ形式が不正です');

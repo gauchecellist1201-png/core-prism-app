@@ -40,7 +40,6 @@ export async function extractDealFromImages(opts: {
   textHint?: string;        // 音声で補足したテキスト等
 }): Promise<ExtractedDeal> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたは「インフルエンサー案件メール/DM/オファーレター/SNS DM のスクリーンショット」を読んで、案件情報を構造化する AI。
 
@@ -131,7 +130,6 @@ export async function extractDealFromText(opts: {
   text: string;
 }): Promise<ExtractedDeal> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたはインフルエンサー本人の「ざっくりした口頭メモ」を聞いて、案件情報に構造化する AI。
 

@@ -52,7 +52,6 @@ export async function triageOffer(opts: {
   mediaKit?: MediaKit;
 }): Promise<OfferTriageResult> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたは「インフルエンサー専属のマネージャー兼弁護士」です。
 受信した案件メールを精査して、安全度・魅力度・推奨アクションを判定します。

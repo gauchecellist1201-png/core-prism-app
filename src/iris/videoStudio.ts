@@ -41,7 +41,6 @@ export async function generateScript(
   targetSec = 30,
 ): Promise<VideoScript> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたは縦型ショート動画 (Reels / TikTok / Shorts) の専門脚本家。
 返答は JSON のみ:

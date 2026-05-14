@@ -84,7 +84,6 @@ export async function analyzeFinancials(
   financialText: string,
 ): Promise<FinancialAnalysis> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const truncated = financialText.length > 30000
     ? financialText.slice(0, 30000) + '\n\n[...省略]'

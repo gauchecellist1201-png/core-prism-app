@@ -63,7 +63,6 @@ export async function routeVoiceMemo(
   settings: AppSettings,
 ): Promise<VoiceRoutingResult> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude API キーが未設定です');
 
   const result = await enqueueClaudeCall(async () => {
     const res = await fetch('/api/ai', {

@@ -17,10 +17,6 @@ export async function analyzePerson(
   interactions: PersonInteraction[],
   recentDays = 90,
 ): Promise<PersonAnalysis> {
-  if (!settings.claudeApiKey) {
-    throw new Error('APIキーが設定されていません');
-  }
-
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - recentDays);
   const recent = interactions.filter(i => new Date(i.date) >= cutoff);

@@ -67,7 +67,6 @@ export async function analyzeMeeting(
   meta?: { title?: string; participants?: string[]; date?: string }
 ): Promise<MeetingMinutes> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
   if (!transcript.trim()) throw new Error('議事録の入力が空です');
 
   const truncated = transcript.length > 50000 ? transcript.slice(0, 50000) + '\n\n[...以降省略]' : transcript;

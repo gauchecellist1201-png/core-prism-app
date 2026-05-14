@@ -34,7 +34,6 @@ export async function generateTieupPitch(opts: {
   customNote?: string;
 }): Promise<{ subject: string; body: string; matchReason: string }> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたは「インフルエンサーの代わりにブランドへタイアップを打診するエージェント」です。
 返答は JSON のみ:

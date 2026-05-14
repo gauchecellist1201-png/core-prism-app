@@ -923,12 +923,18 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
 function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; myDeals: InfluencerDeal[]; settings: AppSettings }) {
   const [open, setOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addedFlash, setAddedFlash] = useState(false);
   const [d, setD] = useState<Partial<InfluencerDeal>>({
     brandName: '', platform: 'instagram', contentType: 'post', fee: 0, deliverables: '', stage: 'inquiry',
   });
 
   const add = () => {
-    if (!d.brandName?.trim()) return;
+    setAddError(null);
+    if (!d.brandName?.trim()) {
+      setAddError('ブランド名を入れてください (★ がついている項目は必須です)');
+      return;
+    }
     desk.addDeal(IRIS_PERSONA_ID, {
       brandName: d.brandName!, agencyName: d.agencyName, productName: d.productName,
       platform: (d.platform || 'instagram') as Platform,
@@ -943,6 +949,8 @@ function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; des
     });
     setD({ brandName: '', platform: 'instagram', contentType: 'post', fee: 0, deliverables: '', stage: 'inquiry' });
     setOpen(false);
+    setAddedFlash(true);
+    setTimeout(() => setAddedFlash(false), 2400);
   };
 
   return (
@@ -997,8 +1005,23 @@ function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; des
             <input style={inp(bg)} type="datetime-local" placeholder="投稿期限" value={d.postDeadline || ''} onChange={e => setD({ ...d, postDeadline: e.target.value })} />
             <input style={inp(bg)} type="datetime-local" placeholder="レポート期限" value={d.reportDeadline || ''} onChange={e => setD({ ...d, reportDeadline: e.target.value })} />
           </div>
+          {addError && (
+            <div role="alert" style={{
+              marginTop: '0.6rem', padding: '0.55rem 0.85rem',
+              background: 'rgba(225,29,72,0.10)', border: '1px solid rgba(225,29,72,0.3)',
+              color: '#9F1239', borderRadius: 10, fontSize: '0.85rem',
+            }}>⚠ {addError}</div>
+          )}
           <button onClick={add} style={{ ...btnPrimary(bg), marginTop: '0.75rem' }}>保存</button>
         </Card>
+      )}
+
+      {addedFlash && (
+        <div role="status" style={{
+          padding: '0.6rem 0.9rem',
+          background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)',
+          color: '#065F46', borderRadius: 10, fontSize: '0.85rem',
+        }}>✓ 案件を追加しました</div>
       )}
 
       {myDeals.length === 0 && (
@@ -2311,9 +2334,14 @@ function TeamView({ bg, team, desk, myDeals }: {
   const [open, setOpen] = useState(false);
   const [m, setM] = useState<Partial<IrisTeamMember>>({ role: 'creator' });
   const [importText, setImportText] = useState('');
+  const [memberError, setMemberError] = useState<string | null>(null);
 
   const add = () => {
-    if (!m.name?.trim()) return;
+    setMemberError(null);
+    if (!m.name?.trim()) {
+      setMemberError('名前を入れてください (必須項目です)');
+      return;
+    }
     team.addMember({
       name: m.name!,
       handle: m.handle,
@@ -2380,6 +2408,13 @@ function TeamView({ bg, team, desk, myDeals }: {
             <input style={inp(bg)} placeholder="email" value={m.email || ''} onChange={e => setM({ ...m, email: e.target.value })} />
           </div>
           <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="メモ" value={m.notes || ''} onChange={e => setM({ ...m, notes: e.target.value })} />
+          {memberError && (
+            <div role="alert" style={{
+              marginTop: '0.55rem', padding: '0.5rem 0.8rem',
+              background: 'rgba(225,29,72,0.10)', border: '1px solid rgba(225,29,72,0.3)',
+              color: '#9F1239', borderRadius: 10, fontSize: '0.82rem',
+            }}>⚠ {memberError}</div>
+          )}
           <button onClick={add} style={{ ...btnPrimary(bg), marginTop: '0.5rem' }}>追加</button>
         </Card>
       )}

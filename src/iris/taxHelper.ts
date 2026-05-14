@@ -112,7 +112,6 @@ export async function generateTaxChecklist(opts: {
   targetYear: number;
 }): Promise<string[]> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたは日本在住のインフルエンサー/フリーランスクリエイターの確定申告を手伝う税務アドバイザー AI。
 専門用語は日本語で補足。結論から書く。${toneInstruction()}

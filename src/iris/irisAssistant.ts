@@ -122,7 +122,6 @@ export async function chatWithIris(opts: {
   bondContext?: string;
 }): Promise<{ intent: Intent; reply: string; actions?: { label: string; tab: string; emoji?: string }[] }> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   // Claude Messages API のフォーマット (画像対応)
   const messages: any[] = opts.history

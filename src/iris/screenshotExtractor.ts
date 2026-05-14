@@ -39,7 +39,6 @@ export async function extractPostsFromScreenshots(opts: {
   images: { data: string; mediaType: string }[];
 }): Promise<ExtractedPost[]> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('APIキーが設定されていません');
   if (opts.images.length === 0) return [];
 
   const sys = `あなたは Instagram インサイト画面のスクリーンショットを読み取って、投稿の生データを構造化する OCR + ビジョン解析エキスパートです。
@@ -341,7 +340,6 @@ export async function generateStrategyInsights(opts: {
   recentTitles: string[];
 }): Promise<StrategyInsights> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('APIキーが設定されていません');
 
   const sys = `あなたは Instagram グロースを 5 年間追ってきた敏腕ストラテジスト。
 データを見て、ぱっと「次のアクション」を 3 つ言い切ります。

@@ -88,9 +88,6 @@ export async function runSaasTask(
   settings: AppSettings,
 ): Promise<SaasTaskResult> {
   const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-  if (!apiKey) {
-    throw new Error('Claude API キーが設定されていません。設定 → 一般 → Claude API Key を入力してください。');
-  }
 
   const tool = MCP_TOOL_MAP[target]?.[action] ?? 'unknown';
   const targetLabel = TARGET_LABELS[target];

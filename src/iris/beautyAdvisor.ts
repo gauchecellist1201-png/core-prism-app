@@ -64,7 +64,6 @@ export async function chatBeautyAdvisor(opts: {
   userMessage: string;
 }): Promise<string> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const messages = opts.history
     .slice(-12) // 直近12発言

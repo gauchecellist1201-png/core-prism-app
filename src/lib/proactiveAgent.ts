@@ -59,7 +59,6 @@ export async function generateProposal(
   input: GenInput,
 ): Promise<Proposal> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const { persona, knowledge, recentProposals, health, patrolMode } = input;
 

@@ -111,7 +111,6 @@ export async function generateBrief(
   input: GenInput,
 ): Promise<CoachBrief> {
   const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const { persona, slot, knowledge, health } = input;
 

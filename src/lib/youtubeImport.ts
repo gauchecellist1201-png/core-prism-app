@@ -88,7 +88,6 @@ export async function summarizeWithClaude(
   meta: VideoMeta,
 ): Promise<YouTubeSummary> {
   const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません。環境設定で入力してください。');
 
   const SYSTEM = `あなたは動画コンテンツを構造化してナレッジ化する専門家です。
 提供された字幕・テキストを分析し、以下の JSON を返してください。

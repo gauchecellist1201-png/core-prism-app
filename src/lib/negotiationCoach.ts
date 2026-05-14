@@ -141,9 +141,6 @@ export async function counterpartReply(
   scene: NegotiationScene,
   history: NegoTurn[],
 ): Promise<string> {
-  const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
-
   const messages = history
     .filter(t => t.role !== 'coach')
     .map(t => ({
@@ -165,9 +162,6 @@ export async function evaluateNegotiation(
   scene: NegotiationScene,
   history: NegoTurn[],
 ): Promise<NegoEvaluation> {
-  const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
-
   const transcript = history
     .filter(t => t.role !== 'coach')
     .map(t => `${t.role === 'user' ? 'ユーザー' : '相手'}: ${t.content}`)

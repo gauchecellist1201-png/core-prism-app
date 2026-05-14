@@ -50,7 +50,6 @@ export async function aiSuggestInvoice(opts: {
   issueDate?: string;
 }): Promise<AISuggestedInvoice> {
   const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || opts.settings.claudeApiKey || '';
-  if (!apiKey) throw new Error('Claude APIキーが未設定です');
 
   const userPrompt = `## 依頼内容
 ${opts.prompt}

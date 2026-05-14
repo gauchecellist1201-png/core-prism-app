@@ -46,7 +46,6 @@ export async function generateBlueprint(opts: {
   selfTone?: string;            // 自分のキャラ
 }): Promise<ContentBlueprint> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたは「ファッション誌のクリエイティブディレクター」。インフルエンサーの代わりに、撮影台本・テロップ・投稿文を一気に作ります。
 

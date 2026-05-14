@@ -105,7 +105,6 @@ export async function triageEmails(
   rawText: string,
 ): Promise<TriageBatch> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
   if (!rawText.trim()) throw new Error('メール内容を貼り付けてください');
 
   const emails = splitEmails(rawText);
@@ -187,7 +186,6 @@ export async function regenerateDraft(
   toneHint?: string,
 ): Promise<string> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたは ${persona.name} (${persona.subtitle}) として返信を書きます。
 ${persona.description || ''}

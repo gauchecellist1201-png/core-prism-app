@@ -91,7 +91,6 @@ export async function reviewContract(
   stance: ContractStance,
 ): Promise<ContractReview> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const truncated = contractText.length > 30000
     ? contractText.slice(0, 30000) + '\n\n[...以降省略]'

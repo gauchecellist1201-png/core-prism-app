@@ -63,7 +63,6 @@ export async function generateNegotiation(opts: {
   customNote?: string;    // 任意追加指示
 }): Promise<Omit<NegotiationDraft, 'id' | 'dealId' | 'status'>> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const meta = NEGOTIATION_TYPE_META[opts.type];
 
@@ -157,7 +156,6 @@ export async function generateDraftCopy(opts: {
   toneNote?: string; // 自分のトーン (例: 親しみやすく / クール / 詩的)
 }): Promise<{ caption: string; hashtags: string[]; cta: string }> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたは「インフルエンサー本人の声で SNS 投稿の下書きを作るゴーストライター」です。
 返答は JSON のみ、説明文・コードブロック禁止。スキーマ:
@@ -244,7 +242,6 @@ export async function evaluateOffer(opts: {
   counterScript?: string;
 }> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたは「インフルエンサーマーケティングの相場に詳しいエージェント」です。
 日本市場のフォロワー単価・ER 別の相場を踏まえて、提示報酬が妥当かを判定します。
@@ -323,7 +320,6 @@ export async function generateBrandReport(opts: {
   reflection?: string; // 自分の振り返りコメント
 }): Promise<{ markdown: string; summary: string }> {
   const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const sys = `あなたは「インフルエンサーがブランド/代理店に提出する案件レポートを書く秘書」です。
 返答は JSON のみ:

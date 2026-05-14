@@ -78,7 +78,6 @@ export async function generateDeckSpec(
   input: GenInput,
 ): Promise<DeckSpec> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   const userPrompt = `## 人格コンテキスト (発表者)
 ${persona.name} (${persona.subtitle})

@@ -79,7 +79,6 @@ export async function generateDecisionMemo(
   knowledge: KnowledgeItem[],
 ): Promise<DecisionMemo> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
 
   // 関連ナレッジを軽く検索
   const relevantKnowledge = knowledge
@@ -179,7 +178,6 @@ export async function extractDecisionFields(
   persona: Persona,
 ): Promise<ExtractedDecisionFields> {
   const apiKey = getApiKey(settings);
-  if (!apiKey) throw new Error('Claude APIキーが設定されていません');
   if (!rawText.trim()) throw new Error('内容が空です');
 
   const sys = `あなたは経営者の「迷い」を聞き取って、意思決定の要素に分解するエキスパートです。
