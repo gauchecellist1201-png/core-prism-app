@@ -73,6 +73,35 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
         </p>
       </div>
 
+      {/* 保存失敗バナー */}
+      {queue.saveError && (
+        <div
+          role="alert"
+          style={{
+            border: '1px solid rgba(220,80,80,0.4)',
+            background: 'rgba(255,200,200,0.15)',
+            color: '#8B0000',
+            borderRadius: 12,
+            padding: '0.6rem 0.8rem',
+            display: 'flex',
+            gap: 8,
+            alignItems: 'flex-start',
+            fontSize: '0.78rem',
+            lineHeight: 1.6,
+          }}
+        >
+          <AlertCircle size={16} style={{ marginTop: 2, flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>{queue.saveError}</span>
+          <button
+            onClick={queue.dismissSaveError}
+            style={{ background: 'transparent', border: 'none', color: '#8B0000', cursor: 'pointer', fontSize: '0.8rem' }}
+            aria-label="閉じる"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 統計 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
         {([

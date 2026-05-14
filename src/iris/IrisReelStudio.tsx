@@ -1263,6 +1263,8 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, myDeals = [], pos
   // アップロードエラー / D&D 表示
   const [uploadError, setUploadError] = useState<string>('');
   const [dragOver, setDragOver] = useState(false);
+  // 背景除去の進捗・失敗をクリップ単位で持つ
+  const [bgRemoval, setBgRemoval] = useState<Record<string, 'busy' | { error: string } | undefined>>({});
   // BGM ライブラリ プレビュー
   const [bgmPreviewId, setBgmPreviewId] = useState<string | null>(null);
   const [bgmLoading, setBgmLoading] = useState<string | null>(null);
@@ -2216,8 +2218,11 @@ JSON のみで返答。`;
         src.connect(dest); src.connect(ac.destination);
         dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
         await audio.play();
-      } catch (e) {
+      } catch (e: any) {
         console.warn('audio mix failed', e);
+        setUploadError(
+          `BGM の合成に失敗しました: ${e?.message || 'AudioContext エラー'} — 音楽なしのまま書き出しを続けます。`
+        );
       }
     }
 
@@ -3061,24 +3066,51 @@ JSON のみで返答。`;
                           </select>
                         </label>
                       )}
-                      {c.kind === 'image' && (
-                        <button
-                          onClick={async () => {
-                            try {
-                              const { blobUrl } = await removeBackgroundFromUrl(c.url);
-                              const img = new Image();
-                              img.onload = () => updateClip(c.id, { url: blobUrl, el: img });
-                              img.src = blobUrl;
-                            } catch (err) {
-                              console.warn('bg removal failed', err);
-                            }
-                          }}
-                          style={{ ...btn(), padding: '0.25rem 0.4rem', fontSize: '0.72rem' }}
-                          title="単色背景を透過 PNG として除去 (商品写真・ポートレート向き)"
-                        >
-                          背景除去
-                        </button>
-                      )}
+                      {c.kind === 'image' && (() => {
+                        const state = bgRemoval[c.id];
+                        const busy = state === 'busy';
+                        const errMsg = typeof state === 'object' && state ? state.error : '';
+                        const runBgRemove = async () => {
+                          setBgRemoval(prev => ({ ...prev, [c.id]: 'busy' }));
+                          try {
+                            const { blobUrl } = await removeBackgroundFromUrl(c.url);
+                            const img = new Image();
+                            img.onload = () => {
+                              updateClip(c.id, { url: blobUrl, el: img });
+                              setBgRemoval(prev => {
+                                const next = { ...prev };
+                                delete next[c.id];
+                                return next;
+                              });
+                            };
+                            img.onerror = () => {
+                              setBgRemoval(prev => ({ ...prev, [c.id]: { error: '画像の再読込に失敗しました' } }));
+                            };
+                            img.src = blobUrl;
+                          } catch (err: any) {
+                            const msg = err?.message || '背景除去に失敗しました';
+                            console.warn('bg removal failed', err);
+                            setBgRemoval(prev => ({ ...prev, [c.id]: { error: msg } }));
+                          }
+                        };
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <button
+                              onClick={runBgRemove}
+                              disabled={busy}
+                              style={{ ...btn(), padding: '0.25rem 0.4rem', fontSize: '0.72rem', opacity: busy ? 0.6 : 1 }}
+                              title="単色背景を透過 PNG として除去 (商品写真・ポートレート向き)"
+                            >
+                              {busy ? '除去中…' : errMsg ? '再試行' : '背景除去'}
+                            </button>
+                            {errMsg && (
+                              <span style={{ fontSize: '0.65rem', color: '#ff8a8a', maxWidth: 140 }}>
+                                {errMsg}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div style={{ display: 'grid', gap: 4 }}>

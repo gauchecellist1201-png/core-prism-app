@@ -47,7 +47,15 @@ function load(): ScheduledPost[] {
   } catch { return []; }
 }
 
-function save(list: ScheduledPost[]) {
+const SAVE_FAIL_EVENT = 'iris:post-queue-save-failed';
+
+function notifySaveFailed(message: string) {
+  try {
+    window.dispatchEvent(new CustomEvent(SAVE_FAIL_EVENT, { detail: { message } }));
+  } catch {/* SSR or sandboxed */}
+}
+
+function save(list: ScheduledPost[]): boolean {
   try {
     // 各エントリのメディアが巨大すぎる場合は警告
     const json = JSON.stringify(list);
@@ -58,11 +66,15 @@ function save(list: ScheduledPost[]) {
         trimmed.shift();
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-      return;
+      notifySaveFailed('予約が多すぎたため、古い投稿を一部削除しました。長持ちさせるには「投稿済み」の予約を消してください。');
+      return false;
     }
     localStorage.setItem(STORAGE_KEY, json);
-  } catch (e) {
+    return true;
+  } catch (e: any) {
     console.warn('usePostQueue: save failed', e);
+    notifySaveFailed(`予約の保存に失敗しました: ${e?.message || 'ストレージ容量'} — 古い投稿を削除して再試行してください。`);
+    return false;
   }
 }
 
@@ -72,6 +84,7 @@ function makeId() {
 
 export function usePostQueue() {
   const [posts, setPosts] = useState<ScheduledPost[]>(() => load());
+  const [saveError, setSaveError] = useState<string>('');
 
   // 他タブの変更を反映
   useEffect(() => {
@@ -79,8 +92,18 @@ export function usePostQueue() {
       if (e.key === STORAGE_KEY) setPosts(load());
     };
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    const onSaveFail = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.message) setSaveError(detail.message);
+    };
+    window.addEventListener(SAVE_FAIL_EVENT, onSaveFail);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(SAVE_FAIL_EVENT, onSaveFail);
+    };
   }, []);
+
+  const dismissSaveError = useCallback(() => setSaveError(''), []);
 
   // ステータス自動更新 (scheduled → ready)
   useEffect(() => {
@@ -147,7 +170,7 @@ export function usePostQueue() {
     return [...ready, ...scheduled, ...drafts];
   }, [posts]);
 
-  return { posts, add, update, remove, markPosted, upcoming };
+  return { posts, add, update, remove, markPosted, upcoming, saveError, dismissSaveError };
 }
 
 // ─── スマートタイミング推奨 ─────
