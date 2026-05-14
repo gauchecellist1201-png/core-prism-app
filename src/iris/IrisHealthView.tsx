@@ -6,10 +6,13 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { AppleHealthImport } from '../components/health/AppleHealthImport';
+import { HealthAutoSyncModal } from '../components/health/HealthAutoSyncModal';
 import type { useHealth } from '../hooks/useHealth';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { generateHealthAdvice, buildStatBundle, type HealthAdvice } from '../lib/healthAdvisor';
+import { getHealthToken, getLastPullAt, pullIngestedDays } from '../lib/healthIngest';
+import type { DailyHealth } from '../types/health';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -40,13 +43,50 @@ export default function IrisHealthView({ bg, health }: Props) {
   const [adviceBusy, setAdviceBusy] = useState(false);
   const [adviceError, setAdviceError] = useState<string>('');
 
-  // 起動時にキャッシュ読み込み
+  // 自動同期 (iOS ショートカット)
+  const [syncOpen, setSyncOpen] = useState(false);
+  const [autoSyncToken, setAutoSyncToken] = useState<string | null>(null);
+  const [autoSyncBusy, setAutoSyncBusy] = useState(false);
+  const [autoSyncMsg, setAutoSyncMsg] = useState<string>('');
+  const [lastPullAt, setLastPullAt] = useState<number | null>(null);
+
+  // 起動時にキャッシュ読み込み + token 状態
   useEffect(() => {
     try {
       const raw = localStorage.getItem(ADVICE_CACHE_KEY);
       if (raw) setAdvice(JSON.parse(raw));
     } catch { /* ignore */ }
+    setAutoSyncToken(getHealthToken());
+    setLastPullAt(getLastPullAt());
   }, []);
+
+  // トークンがある場合: マウント時に 1 度だけサーバーから取り込み
+  const runAutoPull = useCallback(async (silent: boolean = true) => {
+    const t = getHealthToken();
+    if (!t) return;
+    setAutoSyncBusy(true);
+    try {
+      const r = await pullIngestedDays(t);
+      setLastPullAt(getLastPullAt());
+      if (r.merged.length > 0) {
+        health.mergeDays(r.merged as DailyHealth[]);
+        health.markAppleHealthImported(r.merged.length);
+        setAutoSyncMsg(`✓ ${r.merged.length} 日分を取り込みました`);
+      } else if (!silent) {
+        setAutoSyncMsg(r.configured ? 'まだサーバーにデータがありません' : 'サーバー永続化が未設定です (運用者: UPSTASH を設定してください)');
+      }
+    } catch {
+      if (!silent) setAutoSyncMsg('取り込みに失敗しました');
+    } finally {
+      setAutoSyncBusy(false);
+      setTimeout(() => setAutoSyncMsg(''), 4000);
+    }
+  }, [health]);
+
+  useEffect(() => {
+    if (autoSyncToken) runAutoPull(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSyncToken]);
 
   const hasData = !!today || !!avg;
 
@@ -288,6 +328,87 @@ export default function IrisHealthView({ bg, health }: Props) {
         </div>
       )}
 
+      {/* 自動連携 (iOS ショートカット) */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          padding: '1.5rem',
+          background: `linear-gradient(135deg, ${bg.accent}14, ${bg.accent}05)`,
+          border: `1px solid ${bg.accent}40`,
+          borderRadius: 16,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.85rem', marginBottom: '0.7rem' }}>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600, marginBottom: 6 }}>AUTO SYNC ✦ NEW</p>
+            <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.4rem', color: bg.ink, fontWeight: 500, marginBottom: 4 }}>
+              ZIP は、もう要らない。
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: bg.inkSoft, lineHeight: 1.8 }}>
+              iOS ショートカットで毎朝の Apple Health データを自動で Iris に届けます。
+              書き出しの手間が消え、AI 処方箋も毎日更新されます。
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+            <button
+              onClick={() => setSyncOpen(true)}
+              style={{
+                background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+                color: '#fff', border: 'none', borderRadius: 999,
+                padding: '0.6rem 1.2rem', fontSize: '0.84rem', fontWeight: 700,
+                cursor: 'pointer', whiteSpace: 'nowrap',
+                fontFamily: IRIS_FONTS.body,
+                boxShadow: '0 6px 18px rgba(0,0,0,0.1)',
+              }}
+            >
+              {autoSyncToken ? '⚙ 設定を見直す' : '✦ 自動連携を始める'}
+            </button>
+            {autoSyncToken && (
+              <button
+                onClick={() => runAutoPull(false)}
+                disabled={autoSyncBusy}
+                style={{
+                  background: 'transparent',
+                  border: `1px solid ${bg.cardBorder}`,
+                  borderRadius: 999,
+                  padding: '0.4rem 0.9rem',
+                  fontSize: '0.74rem',
+                  color: bg.ink,
+                  cursor: autoSyncBusy ? 'not-allowed' : 'pointer',
+                  fontFamily: IRIS_FONTS.body,
+                }}
+              >
+                {autoSyncBusy ? '取得中…' : '今すぐ取り込む'}
+              </button>
+            )}
+          </div>
+        </div>
+        {autoSyncToken && (
+          <div style={{ fontSize: '0.74rem', color: bg.inkSoft, lineHeight: 1.7 }}>
+            状態: <span style={{ color: bg.ink, fontWeight: 600 }}>連携トークン発行済</span>
+            {lastPullAt && (
+              <>
+                {' · '}最終取得: {new Date(lastPullAt).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </>
+            )}
+          </div>
+        )}
+        {autoSyncMsg && (
+          <div style={{
+            marginTop: '0.6rem',
+            padding: '0.55rem 0.8rem',
+            background: 'rgba(255,255,255,0.55)',
+            border: `1px solid ${bg.cardBorder}`,
+            borderRadius: 10,
+            fontSize: '0.78rem',
+            color: bg.ink,
+          }}>
+            {autoSyncMsg}
+          </div>
+        )}
+      </motion.div>
+
       {/* Apple Health インポート */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -312,6 +433,31 @@ export default function IrisHealthView({ bg, health }: Props) {
 
         <AppleHealthImport health={health} />
       </motion.div>
+
+      {/* 自動連携モーダル */}
+      <HealthAutoSyncModal
+        bg={bg}
+        open={syncOpen}
+        onClose={() => {
+          setSyncOpen(false);
+          setAutoSyncToken(getHealthToken());
+          setLastPullAt(getLastPullAt());
+        }}
+        onPulled={(count) => {
+          // モーダル内で取り込んだ場合、ヘルスフックにマージ
+          if (count > 0) {
+            const t = getHealthToken();
+            if (t) {
+              pullIngestedDays(t).then((r) => {
+                if (r.merged.length > 0) {
+                  health.mergeDays(r.merged as DailyHealth[]);
+                  health.markAppleHealthImported(r.merged.length);
+                }
+              });
+            }
+          }
+        }}
+      />
 
       {/* セルフケアのヒント (Iris らしい) */}
       <div style={{

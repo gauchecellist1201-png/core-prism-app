@@ -107,6 +107,24 @@ export function AppleHealthImport({ health }: Props) {
               <div className="mt-1 font-mono text-[13px] text-fg-subtle">
                 {progress!.recordsRead.toLocaleString()} records · {progress!.daysProduced} 日分
               </div>
+              {/* フェーズバー */}
+              <div className="mt-3 w-full max-w-[260px]">
+                <div className="flex justify-between text-[10px] tracking-[0.2em] text-fg-subtle">
+                  <span style={{ opacity: phaseStep(progress!.phase) >= 1 ? 1 : 0.35 }}>UNZIP</span>
+                  <span style={{ opacity: phaseStep(progress!.phase) >= 2 ? 1 : 0.35 }}>PARSE</span>
+                  <span style={{ opacity: phaseStep(progress!.phase) >= 3 ? 1 : 0.35 }}>AGGREGATE</span>
+                  <span style={{ opacity: phaseStep(progress!.phase) >= 4 ? 1 : 0.35 }}>MERGE</span>
+                </div>
+                <div className="mt-1 h-1 rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full transition-[width] duration-500"
+                    style={{
+                      width: `${(phaseStep(progress!.phase) / 4) * 100}%`,
+                      background: 'linear-gradient(90deg, #ec4899, #a78bfa)',
+                    }}
+                  />
+                </div>
+              </div>
             </>
           ) : completedDays !== null ? (
             <>
@@ -115,6 +133,13 @@ export function AppleHealthImport({ health }: Props) {
                 インポート完了 · {completedDays} 日分の PHR を追加
               </div>
               <div className="mt-1 text-[12px] text-fg-subtle">既存データとマージしました</div>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setCompletedDays(null); setProgress(null); }}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[12px] text-fg hover:bg-white/10"
+              >
+                もう一度取込む
+              </button>
             </>
           ) : (
             <>
@@ -200,5 +225,15 @@ function phaseLabel(p: AppleImportProgress['phase']): string {
     case 'merging':     return '既存データにマージ中...';
     case 'done':        return '完了';
     case 'error':       return 'エラー';
+  }
+}
+
+function phaseStep(p: AppleImportProgress['phase']): number {
+  switch (p) {
+    case 'parsing':     return 2;  // ZIP は parser 側で解凍済 / XML パース中
+    case 'aggregating': return 3;
+    case 'merging':     return 4;
+    case 'done':        return 4;
+    default:            return 1;
   }
 }
