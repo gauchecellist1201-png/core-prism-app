@@ -161,6 +161,12 @@ html, body {
   -webkit-text-size-adjust: 100%;  /* 横向き時の自動拡大防止 */
   text-size-adjust: 100%;
   overscroll-behavior-y: none;     /* バウンス防止 */
+  overflow-x: hidden;              /* 横スクロール暴発を全画面で抑止 */
+  max-width: 100vw;
+}
+#root {
+  overflow-x: clip;                /* root 直下のはみ出しも遮断 (clip は scroll なし) */
+  max-width: 100vw;
 }
 
 /* iOS の safe-area (ノッチ・ホームバー) を考慮 */
@@ -185,8 +191,57 @@ input, textarea, select {
 
 /* タッチターゲット最小サイズ (Apple HIG: 44pt) */
 @media (max-width: 768px) {
-  button, a[role="button"], [role="button"] {
+  /* 全ての click 可能 UI に 44x44 タップ対象を保証
+     ただし visual に小さいアイコンボタン (width/height inline 指定済み) は
+     padding を持つ pseudo 拡張で hit-area を確保 (デザイン崩れ回避) */
+  button:not([data-no-min-touch]),
+  a[role="button"],
+  [role="button"]:not([data-no-min-touch]),
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"],
+  label[role="button"],
+  select {
     min-height: 44px;
+    min-width: 44px;
+  }
+  /* 検索系のラジオ/チェックボックスは min-* 強制すると崩れる */
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 0;
+    min-width: 0;
+    width: 18px;
+    height: 18px;
+  }
+  /* inline で width/height を指定済みのコンパクト icon ボタンは
+     pseudo で 44px hit area だけ広げ、見た目は維持 */
+  button[style*="width: 22"],
+  button[style*="width: 24"],
+  button[style*="width: 26"],
+  button[style*="width: 28"],
+  button[style*="width: 32"],
+  button[style*="width: 36"],
+  button[style*="width: 38"],
+  button[style*="width: 40"] {
+    position: relative;
+    min-width: 0 !important;
+    min-height: 0 !important;
+  }
+  button[style*="width: 22"]::after,
+  button[style*="width: 24"]::after,
+  button[style*="width: 26"]::after,
+  button[style*="width: 28"]::after,
+  button[style*="width: 32"]::after,
+  button[style*="width: 36"]::after,
+  button[style*="width: 38"]::after,
+  button[style*="width: 40"]::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 44px; height: 44px;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    z-index: 0;
   }
   /* テキストリンクは min-height を適用しない (本文と一緒に流れる時に困る)
      代わりに role="button" を付けた a タグだけ 44px が当たる */
@@ -593,6 +648,30 @@ input, textarea, select { font-family: inherit; }
   padding-right: env(safe-area-inset-right, 0);
 }
 
+/* ────────────────────────────────────────
+   Fixed UI: ホームバー (iOS) で隠れないよう safe-area-inset-bottom を足す
+   - Tailwind の bottom-{n} クラス + fixed のセットを検出
+   - 既に safe-area を inline で指定している要素は影響しない
+   ──────────────────────────────────────── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .fixed.bottom-0 { bottom: env(safe-area-inset-bottom, 0) !important; }
+  .fixed.bottom-1 { bottom: calc(env(safe-area-inset-bottom, 0) + 0.25rem) !important; }
+  .fixed.bottom-2 { bottom: calc(env(safe-area-inset-bottom, 0) + 0.5rem) !important; }
+  .fixed.bottom-3 { bottom: calc(env(safe-area-inset-bottom, 0) + 0.75rem) !important; }
+  .fixed.bottom-4 { bottom: calc(env(safe-area-inset-bottom, 0) + 1rem) !important; }
+  .fixed.bottom-5 { bottom: calc(env(safe-area-inset-bottom, 0) + 1.25rem) !important; }
+  .fixed.bottom-6 { bottom: calc(env(safe-area-inset-bottom, 0) + 1.5rem) !important; }
+  .fixed.bottom-8 { bottom: calc(env(safe-area-inset-bottom, 0) + 2rem) !important; }
+  /* fixed inset-x-0 bottom-0 (フルワイド底固定 sheet) は bottom 0 のまま、
+     代わりに padding-bottom で home indicator 分を確保 */
+  .fixed.inset-x-0.bottom-0,
+  .fixed.left-0.right-0.bottom-0 {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  /* fixed top-{n} も ノッチ分の安全マージン */
+  .fixed.top-0 { top: env(safe-area-inset-top, 0) !important; }
+}
+
 /* Iris おかえり: モバイル幅では <br> で改行を制御し、480px 以上では消す */
 .iris-okaeri-br { display: inline; }
 @media (min-width: 480px) {
@@ -637,12 +716,14 @@ input, textarea, select { font-family: inherit; }
   /* LP のスタンドアロンリンクをタッチ対象 44px に */
   a.lp-tap-link {
     min-height: 44px !important;
+    min-width: 44px !important;
     display: flex !important;
     align-items: center;
   }
   /* iPhone Safari の安全な水平スクロール抑制 */
   html, body {
     overflow-x: hidden;
+    max-width: 100vw;
   }
   /* 7 エージェントカードの padding 圧縮 */
   .lp-section-pad [style*="rgba(255,255,255,0.025)"] {

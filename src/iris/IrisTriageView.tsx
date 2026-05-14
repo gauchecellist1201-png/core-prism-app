@@ -81,7 +81,7 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
       </div>
 
       <div style={card}>
-        <textarea style={{ ...inp, width: '100%', minHeight: 200, fontFamily: 'monospace', fontSize: '0.85rem' }}
+        <textarea style={{ ...inp, width: '100%', minHeight: 200, fontFamily: 'monospace', fontSize: '1rem' }}
           placeholder={'件名: 【ご依頼】Instagram タイアップのご相談\n\n△△様\n\nいつも投稿を拝見しております。\n弊社では...'}
           value={emailText} onChange={e => setEmailText(e.target.value)} />
         <button onClick={triage} disabled={busy} style={{ ...btnPrimary, marginTop: '0.5rem' }}>
