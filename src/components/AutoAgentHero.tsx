@@ -15,13 +15,13 @@ import {
 import { generateSuggestions, executeSuggestion, refineSuggestion, clearSuggestionCache, type Suggestion, type AgentContext } from '../lib/autoAgent';
 
 const CATEGORY_META = {
-  urgent:  { Icon: AlertCircle,   label: '緊急',   gradient: ['#EF4444', '#F87171'] },
+  urgent:  { Icon: AlertCircle,   label: 'いそぎ', gradient: ['#EF4444', '#F87171'] },
   growth:  { Icon: TrendingUp,    label: '伸ばす', gradient: ['#10B981', '#34D399'] },
-  content: { Icon: ImageIcon,     label: '創作',   gradient: ['#E1306C', '#F77737'] },
-  admin:   { Icon: ClipboardList, label: '管理',   gradient: ['#6366F1', '#818CF8'] },
+  content: { Icon: ImageIcon,     label: 'つくる', gradient: ['#E1306C', '#F77737'] },
+  admin:   { Icon: ClipboardList, label: '段取り', gradient: ['#6366F1', '#818CF8'] },
   insight: { Icon: Lightbulb,     label: '気づき', gradient: ['#FBBF24', '#FCD34D'] },
-  sales:   { Icon: Mail,          label: '営業',   gradient: ['#2E6FFF', '#60A5FA'] },
-  health:  { Icon: HeartPulse,    label: '健康',   gradient: ['#EC4899', '#F472B6'] },
+  sales:   { Icon: Mail,          label: 'お仕事', gradient: ['#2E6FFF', '#60A5FA'] },
+  health:  { Icon: HeartPulse,    label: 'カラダ', gradient: ['#EC4899', '#F472B6'] },
 } as const;
 
 interface Props {
@@ -67,7 +67,7 @@ export default function AutoAgentHero({
       const list = await generateSuggestions(ctx);
       setSuggestions(list);
     } catch (e: any) {
-      setError(e?.message || '提案の生成に失敗しました');
+      setError(e?.message || 'おすすめを作れませんでした');
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export default function AutoAgentHero({
       setExpandedId(s.id);
     } catch (e: any) {
       updateOne(s.id, { status: 'idle' });
-      setError(e?.message || '実行に失敗しました');
+      setError(e?.message || 'うまくいきませんでした');
     }
   };
 
@@ -105,7 +105,7 @@ export default function AutoAgentHero({
       });
       setRefineInput('');
     } catch (e: any) {
-      setError(e?.message || '修正に失敗しました');
+      setError(e?.message || '直せませんでした');
     } finally {
       setRefining(false);
     }
@@ -143,7 +143,7 @@ export default function AutoAgentHero({
               fontSize: 10, letterSpacing: '0.3em', fontWeight: 800,
               color: '#E1306C', textTransform: 'uppercase',
             }}>
-              {brandLabel} が考えた次の一手
+              {brandLabel} からの今日のひと言
             </span>
           </div>
           <h2 style={{
@@ -156,14 +156,14 @@ export default function AutoAgentHero({
             backgroundClip: 'text',
             letterSpacing: '-0.01em',
           }}>
-            売上を伸ばす、次の一手。
+今日、何からはじめる?
           </h2>
           <p style={{
             margin: '0.3rem 0 0',
             fontSize: 12.5, color: textSecondary,
             fontFamily: '"Noto Sans JP", sans-serif', lineHeight: 1.6,
           }}>
-            あなたの事業を見て、伸び筋を見つけました。実務は私が動きます。
+いまのあなたを見て、おすすめを並べました。あとは私が動きます。
           </p>
         </div>
         <button onClick={() => load(true)} disabled={loading} title="再生成" style={{
@@ -321,7 +321,7 @@ export default function AutoAgentHero({
                             <span style={{
                               fontSize: 11.5, lineHeight: 1.6, color: textPrimary,
                             }}>
-                              <strong style={{ color: meta.gradient[0] }}>私が動く部分:</strong> {s.agentRole}
+                              <strong style={{ color: meta.gradient[0] }}>私がやること:</strong> {s.agentRole}
                             </span>
                           </div>
                         )}
@@ -364,7 +364,7 @@ export default function AutoAgentHero({
                                 <button
                                   onClick={() => {
                                     onAddToKnowledge(s.title, s.result || '');
-                                    updateOne(s.id, { status: 'done', result: (s.result || '') + '\n\n---\n✓ ナレッジに追加済み (次回の提案に反映されます)' });
+                                    updateOne(s.id, { status: 'done', result: (s.result || '') + '\n\n---\n✓ 覚えました (次のおすすめに反映されます)' });
                                   }}
                                   style={{
                                     ...resultActionBtn(cardBorder, textPrimary),
@@ -372,7 +372,7 @@ export default function AutoAgentHero({
                                     color: '#fff', border: 'none',
                                     fontWeight: 800,
                                   }}>
-                                  <BookOpen size={10} /> ナレッジに追加
+                                  <BookOpen size={10} /> 覚えておく
                                 </button>
                               )}
                             </div>
@@ -390,7 +390,7 @@ export default function AutoAgentHero({
                               }}>
                                 <Recycle size={11} style={{ color: meta.gradient[0], marginTop: 2, flexShrink: 0 }} />
                                 <span>
-                                  <strong style={{ color: meta.gradient[0] }}>事業を前に進める循環:</strong> 「ナレッジに追加」すると、この成果物が次の提案の土台になります。
+                                  <strong style={{ color: meta.gradient[0] }}>覚えておくと得をします:</strong> 「覚えておく」を押すと、この結果が次のおすすめの土台になります。
                                 </span>
                               </div>
                             )}
@@ -417,9 +417,9 @@ export default function AutoAgentHero({
                                 fontFamily: 'inherit',
                               }}>
                               {running ? (
-                                <><Loader2 size={13} className="auto-agent-spin" /> 私が進めています…</>
+                                <><Loader2 size={13} className="auto-agent-spin" /> やっています…</>
                               ) : (
-                                <><Check size={13} /> AI に任せる</>
+                                <><Check size={13} /> おまかせする</>
                               )}
                             </button>
                           )}
@@ -436,7 +436,7 @@ export default function AutoAgentHero({
                                 cursor: 'pointer', fontFamily: 'inherit',
                                 display: 'inline-flex', alignItems: 'center', gap: 5,
                               }}>
-                              <Target size={12} /> 画面で開く
+                              <Target size={12} /> 画面で見る
                             </button>
                           )}
                           <button
@@ -450,7 +450,7 @@ export default function AutoAgentHero({
                               fontFamily: 'inherit',
                               display: 'inline-flex', alignItems: 'center', gap: 4,
                             }}>
-                            <X size={12} /> 却下
+                            <X size={12} /> 今回はパス
                           </button>
                         </div>
 
@@ -461,7 +461,7 @@ export default function AutoAgentHero({
                               value={refineInput}
                               onChange={e => setRefineInput(e.target.value)}
                               onKeyDown={e => { if (e.key === 'Enter') onRefine(s); }}
-                              placeholder="もう少しこっち寄りで… (例: もっと攻めて / より丁寧に)"
+                              placeholder="もうちょっとこうしてほしい… (例: もっと優しく / もっと攻めて)"
                               style={{
                                 flex: 1, padding: '0.55rem 0.85rem',
                                 background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.7)',
@@ -485,7 +485,7 @@ export default function AutoAgentHero({
                                 fontFamily: 'inherit',
                                 display: 'inline-flex', alignItems: 'center', gap: 4,
                               }}>
-                              <MessageSquare size={11} /> 直す
+                              <MessageSquare size={11} /> 直してもらう
                             </button>
                           </div>
                         )}
@@ -510,7 +510,7 @@ export default function AutoAgentHero({
               background: 'transparent', border: `1px solid ${cardBorder}`,
               color: textPrimary, borderRadius: 999,
               fontSize: 11, fontWeight: 600, cursor: 'pointer',
-            }}>新しい提案を作る</button>
+            }}>新しいおすすめをもらう</button>
           </div>
         )}
       </div>

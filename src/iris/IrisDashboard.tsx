@@ -62,27 +62,27 @@ const IRIS_TAB_ICON: Record<string, LucideIcon> = {
 interface TabDef { id: string; l: string }
 interface TabGroup { id: string; label: string; color: string; icon: LucideIcon; tabs: TabDef[] }
 const TAB_GROUPS: TabGroup[] = [
-  { id: 'today',  label: 'Today',  color: '#E1306C', icon: Sun,
-    tabs: [{ id: 'home', l: 'ホーム' }, { id: 'schedule', l: '投稿予約' }] },
-  { id: 'create', label: 'Create', color: '#833AB4', icon: Wand2,
+  { id: 'today',  label: '今日',   color: '#E1306C', icon: Sun,
+    tabs: [{ id: 'home', l: 'ホーム' }, { id: 'schedule', l: '予約投稿' }] },
+  { id: 'create', label: 'つくる', color: '#833AB4', icon: Wand2,
     tabs: [
-      { id: 'reel', l: 'リール作成' }, { id: 'draft', l: '投稿下書き' },
-      { id: 'director', l: '丸投げ編集' }, { id: 'image', l: '画像加工' },
+      { id: 'reel', l: 'リール' }, { id: 'draft', l: '投稿を書く' },
+      { id: 'director', l: '動画おまかせ' }, { id: 'image', l: '写真を直す' },
     ] },
-  { id: 'earn',   label: 'Earn',   color: '#F77737', icon: Briefcase,
+  { id: 'earn',   label: '稼ぐ',   color: '#F77737', icon: Briefcase,
     tabs: [
-      { id: 'triage', l: '案件精査' }, { id: 'deals', l: '案件' },
-      { id: 'negotiate', l: '交渉' }, { id: 'brands', l: 'ブランド探し' },
+      { id: 'triage', l: 'お仕事確認' }, { id: 'deals', l: 'お仕事' },
+      { id: 'negotiate', l: 'お返事' }, { id: 'brands', l: 'お仕事を探す' },
     ] },
-  { id: 'grow',   label: 'Grow',   color: '#3B82F6', icon: Rocket,
+  { id: 'grow',   label: '伸ばす', color: '#3B82F6', icon: Rocket,
     tabs: [
-      { id: 'strategy', l: '戦略' }, { id: 'invite', l: '招待 +30日' },
-      { id: 'community', l: 'コミュニティ' }, { id: 'team', l: 'チーム' },
+      { id: 'strategy', l: '伸ばす作戦' }, { id: 'invite', l: '友達紹介' },
+      { id: 'community', l: 'みんなの広場' }, { id: 'team', l: '仲間' },
     ] },
-  { id: 'care',   label: 'Care',   color: '#10B981', icon: Heart,
+  { id: 'care',   label: 'ととのえる', color: '#10B981', icon: Heart,
     tabs: [
-      { id: 'health', l: 'ヘルス' }, { id: 'beauty', l: '美容相談' },
-      { id: 'guideline', l: 'ガイドライン' },
+      { id: 'health', l: 'カラダ管理' }, { id: 'beauty', l: '美容のはなし' },
+      { id: 'guideline', l: '私らしさ設定' },
     ] },
 ];
 const TAB_TO_GROUP: Record<string, string> = TAB_GROUPS.reduce((acc, g) => {
@@ -804,15 +804,15 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
         <StatCard bg={bg} label="進行中" value={myDeals.filter(d => !['closed','declined'].includes(d.stage)).length + ' 件'} icon={Mail} />
-        <StatCard bg={bg} label="今週納期" value={upcoming.filter(e => e.daysLeft <= 7).length + ' 件'} icon={Calendar} />
-        <StatCard bg={bg} label="総報酬" value={'¥' + earnings.toLocaleString()} icon={Wallet} />
-        <StatCard bg={bg} label="完了案件" value={myDeals.filter(d => d.stage === 'closed').length + ' 件'} icon={CheckCircle2} />
+        <StatCard bg={bg} label="今週まで" value={upcoming.filter(e => e.daysLeft <= 7).length + ' 件'} icon={Calendar} />
+        <StatCard bg={bg} label="売上合計" value={'¥' + earnings.toLocaleString()} icon={Wallet} />
+        <StatCard bg={bg} label="終わった分" value={myDeals.filter(d => d.stage === 'closed').length + ' 件'} icon={CheckCircle2} />
       </div>
 
       {upcoming.length > 0 && (
         <Card bg={bg}>
           <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.4rem', marginBottom: '1rem', color: bg.ink }}>
-            直近の納期
+            まもなく締め切り
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {upcoming.map((e, i) => (
@@ -847,7 +847,7 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
             <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, marginBottom: '0.25rem' }}>
-              AI Director
+              AI からの提案
             </p>
             <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.5rem', color: bg.ink, margin: 0, fontWeight: 500 }}>
               次の一本、AI に聞いてみる
@@ -860,12 +860,12 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
               padding: '0.6rem 1.4rem', fontWeight: 700, cursor: 'pointer',
               fontSize: '0.85rem', boxShadow: `0 6px 20px ${bg.accent}55`,
             }}>
-              戦略を開く →
+              作戦を見る →
             </button>
           )}
         </div>
         <p style={{ color: bg.inkSoft, fontSize: '0.88rem', lineHeight: 1.7 }}>
-          投稿実績を入れたら、伸びパターンを分析して、次に出すべき投稿を AI が決めてくれる。30 日のストーリーアーク (シリーズ構成) も自動で。
+          これまでの投稿を入れると、よく反応された型を見つけて、次に書くといい投稿を AI が決めてくれます。30 日ぶんの流れも自動で。
         </p>
       </Card>
 
@@ -876,12 +876,12 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.6rem' }}>
           {([
-            { I: Search,        l: '案件を精査',     tab: 'triage' },
-            { I: Film,          l: '丸投げ編集',     tab: 'director' },
-            { I: MessageSquare, l: '交渉文を書く',   tab: 'negotiate' },
-            { I: Camera,        l: '写真を加工',     tab: 'image' },
-            { I: HeartPulse,    l: '美容相談',       tab: 'beauty' },
-            { I: UsersRound,    l: 'コミュニティ',   tab: 'community' },
+            { I: Search,        l: 'お仕事を確認',   tab: 'triage' },
+            { I: Film,          l: '動画おまかせ',   tab: 'director' },
+            { I: MessageSquare, l: 'お返事を書く',   tab: 'negotiate' },
+            { I: Camera,        l: '写真を直す',     tab: 'image' },
+            { I: HeartPulse,    l: '美容のはなし',   tab: 'beauty' },
+            { I: UsersRound,    l: 'みんなの広場',   tab: 'community' },
           ] as const).map((q) => {
             const Ico = q.I;
             return (
@@ -949,7 +949,7 @@ function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; des
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <h2 style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0, fontWeight: 500 }}>
-          案件
+          お仕事一覧
         </h2>
         <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => setQuickOpen(true)} style={{
@@ -1068,7 +1068,7 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
       <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
-        交渉センター
+        お返事を作る
       </h2>
 
       <Card bg={bg}>
@@ -1098,9 +1098,9 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
         )}
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button onClick={gen} disabled={busy || !dealId} style={btnPrimary(bg)}>
-            {busy ? '生成中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> 交渉文を作る</span>}
+            {busy ? '考え中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> お返事を作る</span>}
           </button>
-          <button onClick={ev} disabled={busy || !dealId} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Wallet size={14} /> 報酬チェック</span></button>
+          <button onClick={ev} disabled={busy || !dealId} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Wallet size={14} /> 金額を見てもらう</span></button>
         </div>
       </Card>
 
@@ -1109,9 +1109,9 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
       {evalRes && (
         <Card bg={bg}>
           <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: bg.ink }}>
-            判定: {evalRes.verdict === 'accept' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#10B981' }}><CheckCircle2 size={14} /> 受諾OK</span> : evalRes.verdict === 'counter' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#F59E0B' }}><AlertTriangle size={14} /> カウンター推奨</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#EF4444' }}><Ban size={14} /> 辞退推奨</span>}
+            おすすめ: {evalRes.verdict === 'accept' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#10B981' }}><CheckCircle2 size={14} /> 受けてOK</span> : evalRes.verdict === 'counter' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#F59E0B' }}><AlertTriangle size={14} /> 値段相談したい</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#EF4444' }}><Ban size={14} /> 今回は見送り</span>}
           </p>
-          <p style={{ color: bg.inkSoft, fontSize: '0.9rem' }}>妥当レンジ: ¥{evalRes.fairFee.min?.toLocaleString()} 〜 ¥{evalRes.fairFee.max?.toLocaleString()}</p>
+          <p style={{ color: bg.inkSoft, fontSize: '0.9rem' }}>このくらいが妥当: ¥{evalRes.fairFee.min?.toLocaleString()} 〜 ¥{evalRes.fairFee.max?.toLocaleString()}</p>
           <p style={{ marginTop: '0.5rem', whiteSpace: 'pre-wrap' }}>{evalRes.reason}</p>
           {evalRes.counterScript && <p style={{ marginTop: '0.5rem', fontStyle: 'italic', color: bg.accent }}>→ {evalRes.counterScript}</p>}
         </Card>
@@ -1157,7 +1157,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona }: any) {
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
       <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
-        投稿下書き
+        投稿を書く
       </h2>
 
       <Card bg={bg}>
@@ -1167,7 +1167,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona }: any) {
         </select>
         <input style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} placeholder="トーン (例: 親しみやすく)" value={tone} onChange={e => setTone(e.target.value)} />
         <button onClick={gen} disabled={busy || !dealId} style={btnPrimary(bg)}>
-          {busy ? '生成中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> 下書きを作る</span>}
+          {busy ? '考え中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> 投稿を書いてもらう</span>}
         </button>
       </Card>
 
@@ -2260,9 +2260,9 @@ function MediaKitView({ bg, desk, kit }: { bg: IrisBackgroundDef; desk: ReturnTy
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
       <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
-        メディアキット
+        私のプロフィール
       </h2>
-      <p style={{ color: bg.inkSoft }}>この情報は AI が交渉文や下書きを作るときに、すべての判断材料として使います。</p>
+      <p style={{ color: bg.inkSoft }}>ここに書いた内容を、AI がお返事や投稿を書くときに参考にします。</p>
 
       <Card bg={bg}>
         <input style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} placeholder="表示名 (例: @hanako_official)" value={d.handleName || ''} onChange={e => setD({ ...d, handleName: e.target.value })} />
@@ -2276,7 +2276,7 @@ function MediaKitView({ bg, desk, kit }: { bg: IrisBackgroundDef; desk: ReturnTy
           ))}
         </div>
 
-        <p style={{ marginTop: '0.75rem', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600 }}>平均ER (%)</p>
+        <p style={{ marginTop: '0.75rem', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600 }}>平均の反応率 (%)</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.4rem' }}>
           {(['instagram','tiktok','youtube','x'] as Platform[]).map(p => (
             <input key={p} style={inp(bg)} type="number" step="0.1" placeholder={PLATFORM_META[p].label}
@@ -2285,9 +2285,9 @@ function MediaKitView({ bg, desk, kit }: { bg: IrisBackgroundDef; desk: ReturnTy
           ))}
         </div>
 
-        <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="主なオーディエンス (例: 25-34歳女性)" value={d.audienceProfile || ''} onChange={e => setD({ ...d, audienceProfile: e.target.value })} />
-        <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="希望報酬レンジ" value={d.rateCard || ''} onChange={e => setD({ ...d, rateCard: e.target.value })} />
-        <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="ブランド観・NG事項" value={d.brandValues || ''} onChange={e => setD({ ...d, brandValues: e.target.value })} />
+        <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="よく見てくれる人 (例: 25-34歳の女性)" value={d.audienceProfile || ''} onChange={e => setD({ ...d, audienceProfile: e.target.value })} />
+        <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="希望する金額の目安" value={d.rateCard || ''} onChange={e => setD({ ...d, rateCard: e.target.value })} />
+        <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="大切にしたいこと・NGなこと" value={d.brandValues || ''} onChange={e => setD({ ...d, brandValues: e.target.value })} />
 
         <button onClick={save} style={{ ...btnPrimary(bg), marginTop: '0.75rem' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Save size={14} /> 保存</span></button>
       </Card>
@@ -2582,23 +2582,23 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
       <div>
-        <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>BRAND × CREATOR</p>
+        <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>お仕事を、自分から</p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: '0.25rem 0 0' }}>
-          ブランドを、見つける。
+          お仕事を、見つける。
         </h2>
         <p style={{ color: bg.inkSoft, marginTop: '0.5rem', fontSize: '0.9rem' }}>
-          CORE Prism 側で集めた企業リサーチから、相性のよさそうなブランドを探して、こちら (Iris) からタイアップを打診できます。
+          相性の良さそうな会社を一覧から選んで、Iris からお仕事のお願いメールが送れます。
         </p>
       </div>
 
       {companies.length === 0 ? (
         <Card bg={bg}>
           <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1.5rem 0', lineHeight: 1.8 }}>
-            まだブランドリストがありません。<br />
+            まだ会社の一覧がありません。<br />
             <a href="/?app=1" target="_blank" rel="noreferrer" style={{ color: bg.accent, fontWeight: 700 }}>
               CORE Prism (本家) →
             </a>
-            の「商談 AI エージェント」で企業リサーチを行うと、ここに表示されます。
+            で気になる会社を調べると、ここに出てきます。
           </p>
         </Card>
       ) : (
@@ -2606,11 +2606,11 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <input
               style={{ ...inp(bg), flex: 1, minWidth: 200 }}
-              placeholder="業界・社名で絞り込み"
+              placeholder="ジャンル・会社名で絞り込み"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            <button onClick={refresh} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><RefreshCw size={14} /> 更新</span></button>
+            <button onClick={refresh} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><RefreshCw size={14} /> 最新にする</span></button>
             <span style={{ color: bg.inkSoft, fontSize: '0.85rem' }}>{filtered.length} 社</span>
           </div>
 
@@ -2634,7 +2634,7 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
                   </div>
                 )}
                 <button onClick={() => { setPitchTarget(c); setResult(null); setErr(null); }} style={{ ...btnPrimary(bg), width: '100%', marginTop: '0.4rem' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Handshake size={14} /> タイアップを打診</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Handshake size={14} /> お仕事を相談する</span>
                 </button>
               </Card>
             ))}
@@ -2644,7 +2644,7 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
             <Card bg={bg}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                 <div>
-                  <p style={{ fontSize: '0.7rem', color: bg.inkSoft, letterSpacing: '0.15em' }}>PITCH TO</p>
+                  <p style={{ fontSize: '0.7rem', color: bg.inkSoft, letterSpacing: '0.15em' }}>お相手</p>
                   <p style={{ fontSize: '1.25rem', fontWeight: 700, color: bg.ink }}>{pitchTarget.companyName}</p>
                 </div>
                 <button onClick={() => { setPitchTarget(null); setResult(null); }} title="閉じる" aria-label="閉じる" style={btnIcon(bg)}><X size={16} strokeWidth={2.4} /></button>
@@ -2657,25 +2657,25 @@ function BrandMatchView({ bg, desk, mediaKit, settings }: {
                 <select style={inp(bg)} value={contentType} onChange={e => setContentType(e.target.value as ContentType)}>
                   {Object.entries(CONTENT_TYPE_META).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
-                <input style={inp(bg)} type="number" placeholder="希望報酬 (円)" value={proposedFee} onChange={e => setProposedFee(e.target.value)} />
+                <input style={inp(bg)} type="number" placeholder="希望する金額 (円)" value={proposedFee} onChange={e => setProposedFee(e.target.value)} />
               </div>
-              <textarea style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} rows={2} placeholder="追加指示 (例: ブランドに共感したポイント等)" value={customNote} onChange={e => setCustomNote(e.target.value)} />
+              <textarea style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} rows={2} placeholder="伝えたいこと (例: 共感したポイント など)" value={customNote} onChange={e => setCustomNote(e.target.value)} />
               <button onClick={generatePitch} disabled={busy} style={btnPrimary(bg)}>
-                {busy ? '生成中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> 打診メールを生成</span>}
+                {busy ? '考え中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> お願いメールを作る</span>}
               </button>
 
               {err && <p style={{ color: '#FF5C5C', marginTop: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {err}</p>}
 
               {result && (
                 <div style={{ marginTop: '1rem', padding: '0.75rem', borderRadius: 12, background: 'rgba(255,255,255,0.5)', border: `1px solid ${bg.cardBorder}` }}>
-                  <p style={{ fontSize: '0.75rem', color: bg.inkSoft, letterSpacing: '0.15em', marginBottom: '0.25rem' }}>MATCH REASON</p>
+                  <p style={{ fontSize: '0.75rem', color: bg.inkSoft, letterSpacing: '0.15em', marginBottom: '0.25rem' }}>合う理由</p>
                   <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginBottom: '0.75rem' }}>{result.matchReason}</p>
-                  <p style={{ fontSize: '0.75rem', color: bg.inkSoft, letterSpacing: '0.15em', marginBottom: '0.25rem' }}>SUBJECT</p>
+                  <p style={{ fontSize: '0.75rem', color: bg.inkSoft, letterSpacing: '0.15em', marginBottom: '0.25rem' }}>件名</p>
                   <p style={{ fontWeight: 600, color: bg.ink, marginBottom: '0.5rem' }}>{result.subject}</p>
                   <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '0.88rem', lineHeight: 1.7, color: bg.ink }}>{result.body}</pre>
                   <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
                     <button onClick={() => navigator.clipboard?.writeText((result.subject ? `件名: ${result.subject}\n\n` : '') + result.body)} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Clipboard size={14} /> コピー</span></button>
-                    <button onClick={saveAsDeal} style={btnPrimary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Mail size={14} /> 案件として保存</span></button>
+                    <button onClick={saveAsDeal} style={btnPrimary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Mail size={14} /> お仕事として保存</span></button>
                   </div>
                 </div>
               )}
@@ -2840,15 +2840,15 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
     <div style={{ maxWidth: 840, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* タイトル */}
       <div>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.28em', color: bg.accent, fontWeight: 700, marginBottom: 4 }}>BRAND GUIDE</p>
-        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>ブランドの世界観。</h2>
-        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginTop: 4 }}>色・トーン・NGワードを保存し、AI が投稿生成時に自動でガイドします。</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.28em', color: bg.accent, fontWeight: 700, marginBottom: 4 }}>私らしさ設定</p>
+        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>私らしさを決める。</h2>
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginTop: 4 }}>色・話しかた・使わない言葉を覚えさせると、AI が投稿を書くときにそろえてくれます。</p>
       </div>
 
       {/* ── マルチアカウント管理 ── */}
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}><Smartphone size={16} color={bg.accent} /> 登録アカウント</h3>
+          <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}><Smartphone size={16} color={bg.accent} /> 私のアカウント</h3>
           <button onClick={() => setShowAddAccount(v => !v)}
             style={{ ...btnPrimary(bg), padding: '0.45rem 1rem', fontSize: '0.8rem' }}>
             + 追加
@@ -3015,9 +3015,9 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
           {editMode && draft ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {[
-                { label: 'ブランド名', key: 'name' },
-                { label: 'キャッチフレーズ', key: 'tagline' },
-                { label: '世界観・説明', key: 'bio' },
+                { label: '私のお名前', key: 'name' },
+                { label: '一言で言うと', key: 'tagline' },
+                { label: 'どんな雰囲気か', key: 'bio' },
               ].map(f => (
                 <div key={f.key}>
                   <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>{f.label}</label>
@@ -3026,7 +3026,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                 </div>
               ))}
               <div>
-                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>トーン</label>
+                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>話しかた</label>
                 <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                   {(Object.keys(TONE_META) as BrandTone[]).map(t => (
                     <button key={t} onClick={() => setDraft(p => p ? { ...p, tone: t } : p)}
@@ -3042,7 +3042,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>ブランドカラー (Primary Hex)</label>
+                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>好きな色</label>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <input type="color" value={draft.colors[0]?.hex || '#E1306C'} onChange={e => setDraft(p => p ? { ...p, colors: [{ name: 'Primary', hex: e.target.value }, ...(p.colors.slice(1))] } : p)}
                     style={{ width: 40, height: 36, borderRadius: 8, border: `1px solid ${bg.cardBorder}`, cursor: 'pointer' }} />
@@ -3052,19 +3052,19 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>NGワード (カンマ区切り)</label>
+                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>使いたくない言葉 (カンマ区切り)</label>
                 <input value={draft.ngWords.join(', ')} onChange={e => setDraft(p => p ? { ...p, ngWords: e.target.value.split(/[,、]+/).map(s => s.trim()).filter(Boolean) } : p)}
                   placeholder="例: 安い, 激安, プチプラ"
                   style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: 10, border: `1px solid ${bg.cardBorder}`, fontSize: '0.85rem', boxSizing: 'border-box' }} />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>必須キーワード (カンマ区切り)</label>
+                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>必ず入れたい言葉 (カンマ区切り)</label>
                 <input value={draft.mustWords.join(', ')} onChange={e => setDraft(p => p ? { ...p, mustWords: e.target.value.split(/[,、]+/).map(s => s.trim()).filter(Boolean) } : p)}
                   placeholder="例: 上質, 大人, 洗練"
                   style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: 10, border: `1px solid ${bg.cardBorder}`, fontSize: '0.85rem', boxSizing: 'border-box' }} />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>絵文字スタイル</label>
+                <label style={{ fontSize: '0.75rem', color: bg.inkSoft, fontWeight: 700, display: 'block', marginBottom: 3 }}>絵文字の量</label>
                 <div style={{ display: 'flex', gap: '0.4rem' }}>
                   {(['rich', 'minimal', 'none'] as const).map(s => (
                     <button key={s} onClick={() => setDraft(p => p ? { ...p, emojiStyle: s } : p)}
@@ -3089,11 +3089,11 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
               {g.tagline && <p style={{ fontSize: '0.9rem', fontStyle: 'italic', color: bg.inkSoft, margin: 0 }}>"{g.tagline}"</p>}
               {g.bio && <p style={{ fontSize: '0.85rem', color: bg.inkSoft, margin: 0 }}>{g.bio}</p>}
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>トーン:</span>
+                <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>話しかた:</span>
                 <span style={{ fontSize: '0.82rem', fontWeight: 700, color: bg.accent }}>{TONE_META[g.tone].emoji} {TONE_META[g.tone].label}</span>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>カラー:</span>
+                <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>色:</span>
                 {g.colors.map(c => (
                   <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <div style={{ width: 16, height: 16, borderRadius: 4, background: c.hex, border: '1px solid rgba(0,0,0,0.1)' }} />
@@ -3103,7 +3103,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
               </div>
               {g.ngWords.length > 0 && (
                 <div>
-                  <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>NGワード: </span>
+                  <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>使わない言葉: </span>
                   {g.ngWords.map(w => (
                     <span key={w} style={{ fontSize: '0.75rem', background: '#FFE5EE', color: '#C8102E', borderRadius: 999, padding: '0.15rem 0.55rem', marginRight: 4 }}>{w}</span>
                   ))}
@@ -3111,7 +3111,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
               )}
               {g.mustWords.length > 0 && (
                 <div>
-                  <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>必須KW: </span>
+                  <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>必ず入れる: </span>
                   {g.mustWords.map(w => (
                     <span key={w} style={{ fontSize: '0.75rem', background: `${bg.accent}15`, color: bg.accent, borderRadius: 999, padding: '0.15rem 0.55rem', marginRight: 4 }}>{w}</span>
                   ))}
@@ -3122,16 +3122,16 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
         </div>
       )}
 
-      {/* ── ブランドコンサル: スタイルチェック ── */}
+      {/* ── 投稿チェック ── */}
       <div style={card}>
         <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: '0 0 0.85rem' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Bot size={16} color={bg.accent} /> ブランドコンサル — スタイルチェック</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Bot size={16} color={bg.accent} /> 私らしい文章か見てもらう</span>
         </h3>
         <p style={{ fontSize: '0.83rem', color: bg.inkSoft, marginBottom: '0.85rem' }}>
-          投稿文をここに貼ると、AI がブランドガイドラインと照合してスコアと改善案を出してくれます。
+          書いた投稿をここに貼ると、私らしさ設定とくらべて点数と直しどころを教えてくれます。
         </p>
         <textarea value={checkText} onChange={e => setCheckText(e.target.value)} rows={5}
-          placeholder="チェックしたい投稿文を貼り付けてください…"
+          placeholder="見てもらいたい投稿を貼り付けてください…"
           style={{
             width: '100%', padding: '0.75rem 1rem', borderRadius: 14,
             border: `1px solid ${bg.cardBorder}`, fontSize: '0.88rem',
@@ -3141,8 +3141,8 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
         <button onClick={handleStyleCheck} disabled={checking || !checkText.trim() || !g}
           style={{ ...btnPrimary(bg), marginTop: '0.65rem', opacity: checking || !checkText.trim() || !g ? 0.5 : 1 }}>
           {checking
-            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Hourglass size={14} /> 分析中…</span>
-            : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Search size={14} /> ブランドコンサルを受ける</span>}
+            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Hourglass size={14} /> 読んでいます…</span>
+            : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Search size={14} /> 見てもらう</span>}
         </button>
         {checkResult && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -3157,19 +3157,19 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
             </div>
             {checkResult.violations.length > 0 && (
               <div style={{ marginBottom: '0.5rem' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C8102E', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={12} /> 問題点</p>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C8102E', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={12} /> 気になるところ</p>
                 {checkResult.violations.map((v, i) => <p key={i} style={{ fontSize: '0.82rem', color: '#C8102E', margin: '0 0 2px' }}>· {v}</p>)}
               </div>
             )}
             {checkResult.suggestions.length > 0 && (
               <div style={{ marginBottom: '0.5rem' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: bg.accent, marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Lightbulb size={12} /> 改善提案</p>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: bg.accent, marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Lightbulb size={12} /> こうしてみては</p>
                 {checkResult.suggestions.map((s, i) => <p key={i} style={{ fontSize: '0.82rem', color: bg.inkSoft, margin: '0 0 2px' }}>· {s}</p>)}
               </div>
             )}
             {checkResult.revised && (
               <div style={{ marginTop: '0.5rem', padding: '0.75rem', borderRadius: 10, background: 'rgba(255,255,255,0.7)', border: `1px solid ${bg.cardBorder}` }}>
-                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: bg.accent, marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={12} /> 改善後の文章</p>
+                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: bg.accent, marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={12} /> 直してみたもの</p>
                 <p style={{ fontSize: '0.85rem', color: bg.ink, margin: 0, whiteSpace: 'pre-wrap' }}>{checkResult.revised}</p>
               </div>
             )}

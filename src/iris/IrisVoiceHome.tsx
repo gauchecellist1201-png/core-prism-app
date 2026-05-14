@@ -301,8 +301,8 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
         display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem',
       }}>
         <SummaryCard bg={bg} label="進行中"   value={activeCount + ' 件'}      Icon={Mail} />
-        <SummaryCard bg={bg} label="今週納期" value={upcomingThisWeek + ' 件'} Icon={Calendar} />
-        <SummaryCard bg={bg} label="今月報酬" value={'¥' + (earnings / 1000).toFixed(0) + 'K'} Icon={Wallet} />
+        <SummaryCard bg={bg} label="今週まで" value={upcomingThisWeek + ' 件'} Icon={Calendar} />
+        <SummaryCard bg={bg} label="今月の売上" value={'¥' + (earnings / 1000).toFixed(0) + 'K'} Icon={Wallet} />
       </div>
 
       {/* ── 自律エージェント: Iris が考えた次の一手 ── */}
@@ -368,7 +368,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
       {/* AI 名前 + 開始メッセージ */}
       <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
         <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.8rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 700, marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-          Your AI Manager
+          あなたの相棒
         </p>
         <h2 style={{
           fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
@@ -423,9 +423,9 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
                 動画スタジオを開く
               </button>
               {[
-                { Ico: Camera, t: 'スクショから案件追加' },
-                { Ico: MessageSquare, t: '断り文を書いて' },
-                { Ico: BarChart3, t: '今週、何投稿すべき?' },
+                { Ico: Camera, t: 'スクショからお仕事を追加' },
+                { Ico: MessageSquare, t: 'やわらかい断り文を書いて' },
+                { Ico: BarChart3, t: '今週、何を投稿しよう?' },
                 { Ico: HeartPulse, t: '肌が荒れて困ってる' },
               ].map(s => (
                 <button key={s.t} onClick={() => setTextInput(s.t)} style={{
