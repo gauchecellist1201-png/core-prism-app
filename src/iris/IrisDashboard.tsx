@@ -73,7 +73,6 @@ const TAB_GROUPS: TabGroup[] = [
     tabs: [
       { id: 'triage', l: '案件精査' }, { id: 'deals', l: '案件' },
       { id: 'negotiate', l: '交渉' }, { id: 'brands', l: 'ブランド探し' },
-      { id: 'kit', l: 'メディアキット' },
     ] },
   { id: 'grow',   label: 'Grow',   color: '#3B82F6', icon: Rocket,
     tabs: [

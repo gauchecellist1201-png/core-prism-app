@@ -127,7 +127,27 @@ export default function IrisDirectorView({ bg, settings }: Props) {
         </button>
       </div>
 
-      {err && <div style={card}><p style={{ color: '#C8102E' }}>{err}</p></div>}
+      {err && (
+        <div style={{ ...card, background: '#FFF1F3', border: '1px solid #FECDD3' }}>
+          <p style={{ color: '#9F1239', fontWeight: 700, marginBottom: '0.5rem', fontSize: '0.92rem' }}>
+            生成できませんでした
+          </p>
+          <p style={{ color: '#7F1D1D', fontSize: '0.85rem', marginBottom: '0.8rem', lineHeight: 1.6 }}>
+            {err}
+          </p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={() => { setErr(null); generate(); }} style={btnPrimary}>
+              もう一度試す
+            </button>
+            <button onClick={() => setErr(null)} style={{
+              ...btnPrimary, background: 'transparent', color: bg.ink,
+              border: `1px solid ${bg.cardBorder}`,
+            }}>
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
 
       {result && (
         <>
