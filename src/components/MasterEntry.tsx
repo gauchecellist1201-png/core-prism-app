@@ -413,6 +413,43 @@ export default function MasterEntry() {
           </button>
         </div>
 
+        <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+          <a
+            href="/master/ai-stats"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(16,185,129,0.12)',
+              border: '1px solid rgba(16,185,129,0.35)',
+              color: '#a7f3d0',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            📊 AI 使用量ダッシュボード
+          </a>
+          <a
+            href="/master/stripe-status"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(99,102,241,0.12)',
+              border: '1px solid rgba(99,102,241,0.35)',
+              color: '#c7d2fe',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            💳 Stripe 接続診断
+          </a>
+        </div>
+
         <p
           style={{
             fontSize: 10,

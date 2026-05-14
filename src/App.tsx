@@ -17,6 +17,7 @@ import PersonaCreator from './components/PersonaCreator';
 import SettingsModal from './components/SettingsModal';
 import LandingPage from './components/LandingPage';
 import MasterEntry from './components/MasterEntry';
+import AiStats from './master/AiStats';
 import StripeStatusPage from './components/StripeStatusPage';
 import CheckoutModal from './components/CheckoutModal';
 import LegalModal, { type LegalKind } from './components/LegalModal';
@@ -83,6 +84,12 @@ function isStripeStatusPath(): boolean {
   return p === '/master/stripe-status' || p === '/stripe-status';
 }
 
+function isAiStatsPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/ai-stats' || p === '/ai-stats';
+}
+
 function isCorpPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
@@ -135,6 +142,11 @@ export default function App() {
   // /master/stripe-status — オーナー専用 Stripe 接続診断
   if (isStripeStatusPath()) {
     return <StripeStatusPage />;
+  }
+
+  // /master/ai-stats — オーナー専用 AI 使用量ダッシュボード
+  if (isAiStatsPath()) {
+    return <AiStats />;
   }
 
   // /master — オーナー専用フル機能解放画面

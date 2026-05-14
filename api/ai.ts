@@ -14,6 +14,37 @@
 
 export const config = { runtime: 'edge' };
 
+import { logAiUsage } from './ai/stats';
+
+// ─── usage 記録 (失敗しても本処理を止めない) ───
+async function recordUsage(
+  route: string,
+  model: string,
+  tokens_in: number,
+  tokens_out: number,
+  latency_ms: number,
+) {
+  try {
+    await logAiUsage({ route, model, tokens_in, tokens_out, latency_ms });
+  } catch (e) {
+    console.warn('[ai] usage log failed:', (e as any)?.message);
+  }
+}
+
+// Anthropic 形式のレスポンス文字列から usage を取り出す
+function parseAnthropicUsage(txt: string): { tokens_in: number; tokens_out: number; model: string } {
+  try {
+    const j = JSON.parse(txt);
+    return {
+      tokens_in: Number(j?.usage?.input_tokens) || 0,
+      tokens_out: Number(j?.usage?.output_tokens) || 0,
+      model: String(j?.model || ''),
+    };
+  } catch {
+    return { tokens_in: 0, tokens_out: 0, model: '' };
+  }
+}
+
 // ─── 簡易レート制限 (IP ベース、メモリ内) ───────────
 // (Edge は地理的に分散するので厳密ではないが、最低限の連投防止)
 const RATE_BUCKET = new Map<string, { count: number; ts: number }>();
@@ -229,7 +260,7 @@ export default async function handler(req: Request) {
   const useClaude = isMaster && isHeavy;
 
   // 診断ヘッダーで動作を可視化
-  const routeReason = !isMaster ? 'public:gemini'
+  let routeReason: string = !isMaster ? 'public:gemini'
     : isHeavy ? `master:claude (tokens=${requestedMaxTokens}, images=${hasImages}, hint=${explicitWeight || 'auto'})`
               : `master:gemini-light (tokens=${requestedMaxTokens}, hint=${explicitWeight || 'auto'})`;
 
@@ -249,6 +280,7 @@ export default async function handler(req: Request) {
         recovery: 'https://core-prism-app.vercel.app/master を開いて API キーを入力してください。',
       }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
     }
+    const claudeStart = Date.now();
     try {
       // body.model が 'claude-opus-4-5' 等の場合、Anthropic が現存モデルとして
       // 受理しない可能性があるため、安全なデフォルトに正規化
@@ -269,8 +301,18 @@ export default async function handler(req: Request) {
       if (!r.ok && (r.status === 429 || r.status === 503 || r.status === 529 || r.status >= 500)) {
         console.warn(`[ai] Claude failed with ${r.status}, falling back to Gemini`);
         // fall-through: Gemini ブロックへ
+        // 以降の Gemini 呼び出しは "fallback:claude" としてカウント
+        routeReason = `fallback:claude→gemini (claude=${r.status})`;
       } else {
         const txt = await r.text();
+        const u = parseAnthropicUsage(txt);
+        await recordUsage(
+          'master:claude',
+          u.model || claudeBody.model,
+          u.tokens_in,
+          u.tokens_out,
+          Date.now() - claudeStart,
+        );
         return new Response(txt, {
           status: r.status,
           headers: { 'Content-Type': 'application/json', 'x-ai-route': routeReason, ...corsHeaders },
@@ -278,9 +320,10 @@ export default async function handler(req: Request) {
       }
     } catch (e: any) {
       console.warn('[ai] Claude exception, falling back to Gemini:', e?.message);
+      routeReason = `fallback:claude→gemini (exception)`;
       // フォールバック継続
     }
-    // ここに到達 = Claude 失敗。Gemini に流す (routeReason を上書き)
+    // ここに到達 = Claude 失敗。Gemini に流す (routeReason を上書き済み)
   }
 
   // ─── デフォルト: Gemini ───
@@ -299,6 +342,7 @@ export default async function handler(req: Request) {
   const geminiBody = anthropicToGemini(body);
 
   let lastError: { status: number; message: string; model: string } | null = null;
+  const geminiStart = Date.now();
 
   for (const geminiModel of candidateModels) {
     try {
@@ -344,6 +388,14 @@ export default async function handler(req: Request) {
       // 成功
       const geminiResp = await r.json();
       const anthropicResp = geminiToAnthropic(geminiResp, body.model || geminiModel);
+      const routeBucket = routeReason.startsWith('fallback:claude') ? 'fallback:claude' : 'light:gemini';
+      await recordUsage(
+        routeBucket,
+        geminiModel,
+        anthropicResp.usage.input_tokens,
+        anthropicResp.usage.output_tokens,
+        Date.now() - geminiStart,
+      );
       return new Response(JSON.stringify(anthropicResp), {
         status: 200,
         headers: { 'Content-Type': 'application/json', 'x-ai-route': routeReason, ...corsHeaders },
@@ -365,6 +417,7 @@ export default async function handler(req: Request) {
     const envKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY || '';
     const claudeKey = headerKey || envKey;
     if (claudeKey) {
+      const rescueStart = Date.now();
       try {
         const claudeBody = { ...body, model: 'claude-haiku-4-5' };
         const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -378,6 +431,14 @@ export default async function handler(req: Request) {
         });
         if (r.ok) {
           const txt = await r.text();
+          const u = parseAnthropicUsage(txt);
+          await recordUsage(
+            'master:claude-rescue',
+            u.model || 'claude-haiku-4-5',
+            u.tokens_in,
+            u.tokens_out,
+            Date.now() - rescueStart,
+          );
           return new Response(txt, {
             status: 200,
             headers: { 'Content-Type': 'application/json', 'x-ai-route': 'master:claude-rescue (gemini quota)', ...corsHeaders },
