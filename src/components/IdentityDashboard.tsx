@@ -67,7 +67,8 @@ import { loadBenchmarkResult } from '../lib/benchmarkAnalyst';
 import type { DailyHealth } from '../types/health';
 import type { HealthAnomaly } from '../data/healthAnomaly';
 import AutoAgentHero from './AutoAgentHero';
-import SevenAgentsOrbit from '../prism/SevenAgentsOrbit';
+import AgentsOrbit from './AgentsOrbit';
+import { PRISM_SPECS, PRISM_ORDER, PRISM_CONVERSATIONS } from '../lib/agentSpecs';
 
 interface Props {
   persona: Persona;
@@ -561,7 +562,11 @@ export default function IdentityDashboard({
             <div className="max-w-5xl space-y-3">
 
               {/* 7 つのエージェントが、それぞれ動いている可視化 (LP の 7 本柱と対応) */}
-              <SevenAgentsOrbit
+              <AgentsOrbit
+                specs={PRISM_SPECS}
+                order={PRISM_ORDER}
+                conversations={PRISM_CONVERSATIONS}
+                footerLabel="あなたの 7 人の参謀が、いま動いています"
                 agents={[
                   {
                     key: 'ceo',
@@ -569,6 +574,9 @@ export default function IdentityDashboard({
                     status: proactive.proposals.length
                       ? `提案${proactive.proposals.length}件`
                       : '一手を考案中',
+                    advice: proactive.proposals.length
+                      ? `この提案を選ぶと、あなたの 1 週間が動き始めます`
+                      : `今日の最初の一手を、あなたの資料を見ながら準備中です`,
                     onClick: () => proactive.generate(settings.voiceEnabled !== false),
                   },
                   {
@@ -577,18 +585,23 @@ export default function IdentityDashboard({
                     status: shadow.drafts.length
                       ? `下書き${shadow.drafts.length}通`
                       : '商談を準備',
+                    advice: shadow.drafts.length
+                      ? `${shadow.drafts.length} 通の返信文が待機中。あなたは送り先を選ぶだけです`
+                      : `最初のお客さんを 1 件登録すると、私が下書きをはじめます`,
                     onClick: () => setShowSalesAgent(true),
                   },
                   {
                     key: 'cfo',
                     count: 0,
                     status: '数字を整理中',
+                    advice: `経費レシートを 1 枚撮ると、今月の数字が見える化されます`,
                     onClick: () => setShowPnL(true),
                   },
                   {
                     key: 'creative',
                     count: 0,
                     status: '原稿を考案中',
+                    advice: `note や X に出す原稿を、あなたの資料から自動で書き起こせます`,
                     onClick: () => setShowContentEngine(true),
                   },
                   {
@@ -597,6 +610,9 @@ export default function IdentityDashboard({
                     status: personaKnowledge.length
                       ? `資料${personaKnowledge.length}件 読了`
                       : '資料を待機中',
+                    advice: personaKnowledge.length
+                      ? `あなたの ${personaKnowledge.length} 件の資料を読み込み済み。次の提案に必ず反映します`
+                      : `最初の 1 件を入れると、私の精度が一気に上がります`,
                     onClick: () => setShowKnowledge(true),
                   },
                   {
@@ -605,6 +621,9 @@ export default function IdentityDashboard({
                     status: persona.tasks.filter(t => !t.done).length
                       ? `タスク${persona.tasks.filter(t => !t.done).length}件`
                       : 'チームを観察',
+                    advice: persona.tasks.filter(t => !t.done).length
+                      ? `今日のうちに片付けたい ${persona.tasks.filter(t => !t.done).length} 件、順番を整えました`
+                      : `チームメンバーを 1 人登録すると、1on1 の準備をはじめます`,
                     onClick: () => setShowPeople(true),
                   },
                   {
@@ -613,6 +632,9 @@ export default function IdentityDashboard({
                     status: healthCtx.today
                       ? `睡眠${healthCtx.today.sleepHours?.toFixed(1) ?? '?'}h`
                       : 'カラダを見守り中',
+                    advice: healthCtx.today
+                      ? `睡眠 ${healthCtx.today.sleepHours?.toFixed(1) ?? '?'} 時間、いいリズム。午後の集中時間は 14〜15 時がおすすめ`
+                      : `iPhone のショートカットを入れると、毎朝あなたのカラダを見守れます`,
                     onClick: () => setShowHealth(true),
                   },
                 ]}

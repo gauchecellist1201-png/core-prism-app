@@ -126,6 +126,8 @@ import { useMultiAccount, ACCOUNT_TYPE_META, PLATFORM_META_ACCOUNT, type IrisAcc
 import { useBrandGuidelines, TONE_META, type BrandGuideline, type BrandTone, runStyleCheck } from './brandGuidelines';
 import { useIrisKnowledge } from './irisKnowledge';
 import IrisKnowledgeView from './IrisKnowledgeView';
+import AgentsOrbit from '../components/AgentsOrbit';
+import { IRIS_SPECS, IRIS_ORDER, IRIS_CONVERSATIONS } from '../lib/agentSpecs';
 
 interface Props {
   settings: AppSettings;
@@ -508,12 +510,73 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             transition={{ duration: 0.25 }}
           >
             {tab === 'home' && (
-              <IrisVoiceHome
-                bg={bg} settings={settings}
-                myDeals={myDeals} mediaKit={mediaKit}
-                postQueue={postQueue}
-                onNavigate={(t) => setTab(t as Tab)}
-              />
+              <>
+                {/* 6 つのエージェントが、それぞれ動いている可視化 (LP の SIX FACETS と対応) */}
+                <div style={{ marginBottom: '0.85rem' }}>
+                  <AgentsOrbit
+                    specs={IRIS_SPECS}
+                    order={IRIS_ORDER}
+                    conversations={IRIS_CONVERSATIONS}
+                    footerLabel="あなたの 6 人の参謀が、いま動いています"
+                    agents={[
+                      {
+                        key: 'deals',
+                        count: myDeals.length,
+                        status: myDeals.length ? `案件 ${myDeals.length} 件` : '案件を探索中',
+                        advice: myDeals.length
+                          ? `${myDeals.length} 件の案件があります。優先順を整えて、今日動かす 1 件を選びました`
+                          : `案件タブで「ブランド探索」を開くと、私が条件に合う案件を拾ってきます`,
+                        onClick: () => setTab('deals'),
+                      },
+                      {
+                        key: 'analytics',
+                        count: postQueue.posts.length,
+                        status: postQueue.posts.length ? `予約 ${postQueue.posts.length} 本` : '伸びを分析中',
+                        advice: postQueue.posts.length
+                          ? `予約済み ${postQueue.posts.length} 本の伸びを予測しました。一番伸びそうなのを上に置いてあります`
+                          : `Instagram のリンクを貼ると、伸びる時間帯と保存される投稿の共通点を出します`,
+                        onClick: () => setTab('strategy'),
+                      },
+                      {
+                        key: 'creative',
+                        count: 0,
+                        status: '原稿を準備中',
+                        advice: `次の投稿のキャプション・サムネを、あなたの世界観に合わせて自動で作ります`,
+                        onClick: () => setTab('director'),
+                      },
+                      {
+                        key: 'nego',
+                        count: 0,
+                        status: '言葉を磨き中',
+                        advice: `Apple や UNIQLO など実在ブランドへの返信文を、強気 / ふつう / ていねい の 3 種で下書きします`,
+                        onClick: () => setTab('negotiate'),
+                      },
+                      {
+                        key: 'brand',
+                        count: knowledge.count,
+                        status: knowledge.count ? `資料 ${knowledge.count} 件` : '世界観を整え中',
+                        advice: knowledge.count
+                          ? `あなたの ${knowledge.count} 件の資料から、ブランドの色とフォントを統一しました`
+                          : `スクショ 3 枚をアップすると、あなた専用の色とフォントを提案します`,
+                        onClick: () => setTab('image'),
+                      },
+                      {
+                        key: 'community',
+                        count: 0,
+                        status: 'DM を確認中',
+                        advice: `仲間タブを開くと、同じ志のクリエイターと出会えます。コラボ候補も AI が探します`,
+                        onClick: () => setTab('beauty' as Tab),
+                      },
+                    ]}
+                  />
+                </div>
+                <IrisVoiceHome
+                  bg={bg} settings={settings}
+                  myDeals={myDeals} mediaKit={mediaKit}
+                  postQueue={postQueue}
+                  onNavigate={(t) => setTab(t as Tab)}
+                />
+              </>
             )}
             {tab === 'deals' && <DealsView bg={bg} desk={desk} myDeals={myDeals} settings={settings} />}
             {tab === 'negotiate' && <NegotiateView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
