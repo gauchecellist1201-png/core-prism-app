@@ -128,6 +128,9 @@ import { useIrisKnowledge } from './irisKnowledge';
 import IrisKnowledgeView from './IrisKnowledgeView';
 import AgentsOrbit from '../components/AgentsOrbit';
 import { IRIS_SPECS, IRIS_ORDER, IRIS_CONVERSATIONS } from '../lib/agentSpecs';
+import IrisEarnHero from './IrisEarnHero';
+import IgConnectModal from './IgConnectModal';
+import { loadIgProfile, type IgProfile } from './instagramConnect';
 
 interface Props {
   settings: AppSettings;
@@ -145,6 +148,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const [bgListVersion, setBgListVersion] = useState(0); // 再描画用
   const [tab, setTab] = useState<Tab>('home');
   const [moreOpen, setMoreOpen] = useState(false);
+  const [igProfile, setIgProfile] = useState<IgProfile | null>(() => loadIgProfile());
+  const [showIgConnect, setShowIgConnect] = useState(false);
 
   const allBgs = useMemo(() => getAllBackgrounds(), [bgListVersion]);
 
@@ -213,7 +218,21 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         borderBottom: `1px solid ${bg.cardBorder}`,
       }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Iris ロゴ・ワードマークタップでホーム (案件トップ) に戻る */}
+          <button
+            type="button"
+            onClick={() => setTab('home')}
+            aria-label="ホームに戻る"
+            title="ホームに戻る"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              padding: '0.2rem 0.4rem', borderRadius: 10,
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(225,48,108,0.06)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          >
             <IrisLogo size={32} withWordmark={false} />
             <span style={{
               fontFamily: IRIS_FONTS.serif,
@@ -229,7 +248,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             }}>
               Iris
             </span>
-          </div>
+          </button>
 
           <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
             <IrisCommandBar bg={bg} settings={settings} onRoute={(t) => setTab(t as Tab)} />
@@ -570,6 +589,15 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     ]}
                   />
                 </div>
+
+                {/* 仕事獲得を最優先 (オーナー指示 2026-05-15) — 6 エージェントの直下に「稼ぐ案件」 */}
+                <IrisEarnHero
+                  onOpenDeals={() => setTab('deals')}
+                  onConnectInstagram={() => setShowIgConnect(true)}
+                  igConnected={!!igProfile}
+                  igFollowers={igProfile?.followers}
+                />
+
                 <IrisVoiceHome
                   bg={bg} settings={settings}
                   myDeals={myDeals} mediaKit={mediaKit}
@@ -653,6 +681,16 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* Instagram 連携モーダル */}
+      <AnimatePresence>
+        {showIgConnect && (
+          <IgConnectModal
+            onClose={() => setShowIgConnect(false)}
+            onConnected={(p) => setIgProfile(p)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* カスタム背景エディタ */}
       <AnimatePresence>

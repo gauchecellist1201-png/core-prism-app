@@ -67,7 +67,12 @@ export default function AutoAgentHero({
       const list = await generateSuggestions(ctx);
       setSuggestions(list);
     } catch (e: any) {
-      setError(e?.message || 'おすすめを作れませんでした');
+      // やさしいエラー文に置換 (Agent API 404 / 504 / 429 などの生メッセージを隠す)
+      const raw = String(e?.message || '');
+      const friendly = /Agent API|429|404|504|503|500|fetch/i.test(raw)
+        ? 'いま少し混みあっています。「再試行」を押すか、しばらくしてからもう一度試してください'
+        : (raw || 'おすすめを作れませんでした');
+      setError(friendly);
     } finally {
       setLoading(false);
     }
