@@ -280,42 +280,24 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 </button>
               </div>
 
-              {/* 7 日無料トライアル (Prism のみ別枠) */}
-              {brand === 'prism' && (() => {
-                const trial = plans.find(p => p.id === 'free');
-                if (!trial) return null;
-                const selected = planId === 'free';
-                return (
-                  <button type="button" onClick={() => setPlanId('free')} style={{
-                    width: '100%', textAlign: 'left',
-                    padding: '1rem 1.25rem', borderRadius: 16,
-                    background: selected
-                      ? 'linear-gradient(135deg, #F0FDF4, #ECFDF5)'
-                      : '#FAFAF8',
-                    border: selected
-                      ? '2px solid #10B981'
-                      : '1px solid rgba(0,0,0,0.08)',
-                    cursor: 'pointer', marginBottom: '1rem',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    gap: '1rem',
-                  }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                        <strong style={{ fontSize: '1rem', color: '#065F46' }}>{trial.name}</strong>
-                        <span style={{
-                          background: '#10B981', color: '#fff',
-                          padding: '0.15rem 0.5rem', borderRadius: 999,
-                          fontSize: '0.65rem', fontWeight: 700,
-                        }}>カード不要</span>
-                      </div>
-                      <p style={{ fontSize: '0.78rem', color: '#065F46', margin: 0, lineHeight: 1.6 }}>
-                        {trial.features.join(' · ')}
-                      </p>
-                    </div>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#10B981' }}>¥0</span>
-                  </button>
-                );
-              })()}
+              {/* 7 日間 無料スタートの大きな帯 (全プラン共通) */}
+              <div style={{
+                marginBottom: '1.1rem',
+                padding: '0.85rem 1.1rem',
+                borderRadius: 14,
+                background: 'linear-gradient(135deg, #ECFDF5, #F0FDF4)',
+                border: '1.5px solid #10B981',
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                <span style={{
+                  fontSize: '0.7rem', fontWeight: 800, color: '#fff',
+                  background: '#10B981', padding: '0.2rem 0.55rem',
+                  borderRadius: 999, letterSpacing: '0.04em',
+                }}>7 日間 無料</span>
+                <span style={{ fontSize: '0.82rem', color: '#065F46', fontWeight: 600, lineHeight: 1.5 }}>
+                  どのプランも、最初の 7 日間は <strong>¥0</strong>。8 日目から自動でスタート。いつでも解約 OK。
+                </span>
+              </div>
 
               {/* プランカード (モバイル 1 列 / デスクトップ複数列) */}
               <div style={{
@@ -356,13 +338,19 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                       <div style={{ fontSize: '0.72rem', color: '#8A8593', marginBottom: '0.6rem', minHeight: '1.2em' }}>
                         {p.tagline}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', marginBottom: '0.6rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', marginBottom: '0.3rem' }}>
                         <span style={{ fontSize: '1.4rem', fontWeight: 900, color: accent }}>
                           ¥{price.toLocaleString()}
                         </span>
                         <span style={{ fontSize: '0.7rem', color: '#5A5562' }}>
                           / {cycle === 'yearly' ? '年' : '月'}
                         </span>
+                      </div>
+                      <div style={{
+                        fontSize: '0.68rem', color: '#10B981', fontWeight: 700, marginBottom: '0.5rem',
+                        display: 'flex', alignItems: 'center', gap: 4,
+                      }}>
+                        <span>✦</span> 最初の 7 日間 ¥0、その後 自動スタート
                       </div>
                       {cycle === 'yearly' && (
                         <div style={{ fontSize: '0.68rem', color: '#10B981', marginBottom: '0.5rem', fontWeight: 600 }}>
@@ -513,10 +501,29 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                   </>
                 ) : (
                   <>
+                    {/* 全プラン共通 7 日間 無料 (Stripe trial_period_days=7) */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+                      <span style={{ color: '#10B981', fontWeight: 700 }}>✦ 7 日間 無料トライアル</span>
+                      <span style={{ color: '#10B981', fontWeight: 800 }}>¥0</span>
+                    </div>
+                    {hasReferralBonus && (
+                      <div style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                        marginBottom: '0.5rem',
+                        padding: '0.5rem 0.65rem', borderRadius: 10,
+                        background: 'rgba(245,158,11,0.10)', border: '1px dashed #F59E0B',
+                      }}>
+                        <span style={{ color: '#92400E', fontWeight: 700 }}>🎁 友達招待ボーナス +{REFERRAL_BONUS_DAYS} 日</span>
+                        <span style={{ color: '#92400E', fontWeight: 800 }}>¥0</span>
+                      </div>
+                    )}
                     <div style={{ height: 1, background: 'rgba(16,185,129,0.2)', margin: '0.6rem 0' }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                       <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#065F46' }}>本日のお支払い</span>
-                      <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981' }}>¥{displayPrice.toLocaleString()}</span>
+                      <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981' }}>¥0</span>
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#065F46', marginTop: '0.5rem', lineHeight: 1.7 }}>
+                      {`8 日後 (${new Date(Date.now() + (7 + (hasReferralBonus ? REFERRAL_BONUS_DAYS : 0)) * 86400000).toLocaleDateString('ja-JP')}) から ¥${displayPrice.toLocaleString()} / ${cycle === 'yearly' ? '年' : '月'} で自動スタート。いつでも解約 OK。`}
                     </div>
                     {cycle === 'yearly' && plan.priceJpy_yearly && (
                       <p style={{ fontSize: '0.78rem', color: '#065F46', marginTop: '0.5rem', lineHeight: 1.7 }}>
@@ -567,7 +574,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                     ? '処理中…'
                     : showingTestMode
                       ? (isFree ? '✨ 無料トライアル開始 (¥0)' : '✨ 仮登録する (¥0)')
-                      : '✨ お支払いへ →'}
+                      : '✨ カードを登録して 7 日無料を始める (本日 ¥0)'}
                 </button>
               </div>
             </motion.div>

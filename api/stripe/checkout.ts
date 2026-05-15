@@ -101,6 +101,11 @@ export default async function handler(req: Request) {
   params.append('metadata[plan]', plan);
   params.append('metadata[brand]', brand);
   params.append('metadata[cycle]', cycle);
+  // 🎁 全プランに 7 日間無料トライアル (オーナー指示 2026-05-15)
+  // クレカ登録は必須 (オンボーディング簡素化のため)。8 日目から自動課金。
+  params.append('subscription_data[trial_period_days]', '7');
+  params.append('subscription_data[trial_settings][end_behavior][missing_payment_method]', 'cancel');
+  params.append('payment_method_collection', 'always');
   if (email) params.append('customer_email', email);
 
   let stripeResp: Response;
