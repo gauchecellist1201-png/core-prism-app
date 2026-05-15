@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import InAppNotificationToast from './components/InAppNotificationToast'
 import { migrateLegacyKeysOnce } from './lib/tenant'
 import { installErrorCapture } from './lib/errorCapture'
 
@@ -89,6 +90,7 @@ window.fetch = function patched(input: RequestInfo | URL, init?: RequestInit): P
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
+    <InAppNotificationToast />
   </StrictMode>,
 )
 

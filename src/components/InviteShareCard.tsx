@@ -1,10 +1,11 @@
 // ============================================================
 // Invite & Share Card — 1 紹介 = 両者に +7 日トライアル延長
-// LINE / X (Twitter) / メール / Instagram / 共有シート / コピーに対応
+// LINE / X (Twitter) / コピー&共有 / Instagram / 共有シート / コピーに対応
+// (メール送信ボタンは廃止 — Web Share API + クリップボードコピーに統合)
 // Iris と Prism 両ダッシュボードから利用
 // ============================================================
 import { useState, useMemo, useCallback } from 'react';
-import { Copy, Share2, Check, Gift, Users as UsersIcon, Sparkles, Mail, QrCode } from 'lucide-react';
+import { Copy, Share2, Check, Gift, Users as UsersIcon, Sparkles, QrCode } from 'lucide-react';
 import { type Brand } from '../lib/billing';
 import { getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS } from '../lib/referral';
 import { shareToInstagram } from '../iris/instagramShare';
@@ -46,11 +47,6 @@ const SHARE_TEMPLATE = (url: string, brand: Brand) => {
 このリンクから登録すると 7 日間の無料トライアル + さらに +${REFERRAL_BONUS_DAYS} 日延長 (合計 ${7 + REFERRAL_BONUS_DAYS} 日無料)。
 ${url}`;
 };
-
-const EMAIL_SUBJECT = (brand: Brand) =>
-  brand === 'iris'
-    ? 'CORE Iris に招待します — 14 日間 無料で試せます'
-    : 'CORE Prism に招待します — 14 日間 無料で試せます';
 
 export default function InviteShareCard({ brand, palette, compact = false }: Props) {
   const p = { ...DEFAULT_PALETTE, ...(palette || {}) };
@@ -121,11 +117,28 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
     window.open(xUrl, '_blank', 'noopener,noreferrer');
   }, [text]);
 
-  const shareEmail = useCallback(() => {
-    const subject = EMAIL_SUBJECT(brand);
-    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
-    window.location.href = mailto;
-  }, [text, brand]);
+  // コピー & 共有 — クリップボードコピー後に Web Share API を試す
+  // (旧 mailto: 経路は廃止。メールクライアントが無い iOS PWA でも動くため)
+  const shareCopyAndNative = useCallback(async () => {
+    await copy(text, 'text');
+    const navAny = navigator as any;
+    if (navAny.share) {
+      try {
+        await navAny.share({
+          title: brand === 'iris' ? 'CORE Iris' : 'CORE Prism',
+          text,
+          url,
+        });
+        setShareMsg('✓ コピー & 共有しました');
+      } catch (e: any) {
+        if (e?.name !== 'AbortError') setShareMsg('✓ 本文をコピーしました');
+        else setShareMsg('✓ 本文をコピーしました');
+      }
+    } else {
+      setShareMsg('✓ 本文をコピーしました');
+    }
+    setTimeout(() => setShareMsg(null), 2400);
+  }, [text, url, brand, copy]);
 
   const shareInstagram = useCallback(async () => {
     // Instagram は URL 共有が公式に無いので、URL+text をクリップボードに入れて
@@ -241,7 +254,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.45rem' }}>
           <SocialBtn label="LINE" bg="#06C755" onClick={shareLine} />
           <SocialBtn label="X" bg="#000000" onClick={shareX} />
-          <SocialBtn label={<><Mail size={13} style={{ marginRight: 4 }} />メール</>} bg="#5A4570" onClick={shareEmail} />
+          <SocialBtn label={<><Copy size={13} style={{ marginRight: 4 }} />コピー</>} bg="#5A4570" onClick={shareCopyAndNative} />
           <SocialBtn label="Insta" bg="linear-gradient(135deg,#FEDA75,#FA7E1E 30%,#D62976 60%,#962FBF 80%,#4F5BD5)" onClick={shareInstagram} />
         </div>
 
