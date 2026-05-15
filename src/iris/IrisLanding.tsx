@@ -68,8 +68,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       {/* ── ヘッダ ────────────────────────────── */}
       <header className="lp-safe" style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(26,10,38,0.7)',
-        backdropFilter: 'blur(18px)',
+        background: 'rgba(26,10,38,0.94)',
         borderBottom: `1px solid ${IRIS_COLORS.purpleDeep}40`,
       }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>

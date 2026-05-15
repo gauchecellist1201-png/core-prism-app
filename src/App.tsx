@@ -324,7 +324,8 @@ export default function App() {
 
   return (
     <>
-      <PrismBackground intensity="low" />
+      {/* LP では背景アニメを描画しない (iPhone Safari でスクロール固まる対策) */}
+      {view !== 'landing' && <PrismBackground intensity="low" />}
       <AnimatePresence mode="wait">
         {view === 'landing' && (
           <LandingPage
