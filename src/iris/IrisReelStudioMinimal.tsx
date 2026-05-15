@@ -1027,7 +1027,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     background: 'rgba(255,255,255,0.7)',
                     border: `1px solid ${bg.cardBorder}`,
                     borderRadius: 12,
-                    fontSize: 14, fontFamily: 'inherit',
+                    fontSize: 16, fontFamily: 'inherit',
                     marginBottom: 12,
                   }}
                 />
@@ -1080,7 +1080,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                                 background: 'rgba(255,255,255,0.85)',
                                 border: `1px solid ${bg.cardBorder}`,
                                 borderRadius: 8,
-                                fontSize: 13, fontFamily: 'inherit',
+                                fontSize: 16, fontFamily: 'inherit',
                                 resize: 'none', lineHeight: 1.4,
                               }}
                             />

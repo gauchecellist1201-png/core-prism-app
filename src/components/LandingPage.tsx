@@ -477,7 +477,7 @@ function LangToggle({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void 
           key={o.key}
           onClick={() => setLang(o.key)}
           aria-label={o.key === 'ja' ? 'Switch to Japanese' : 'Switch to English'}
-          style={{ background: lang === o.key ? 'rgba(255,255,255,0.18)' : 'transparent', color: lang === o.key ? '#fff' : 'rgba(255,255,255,0.5)', border: 'none', borderRadius: 6, padding: '0.25rem 0.55rem', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' }}
+          style={{ background: lang === o.key ? 'rgba(255,255,255,0.18)' : 'transparent', color: lang === o.key ? '#fff' : 'rgba(255,255,255,0.5)', border: 'none', borderRadius: 8, padding: '0.45rem 0.75rem', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s, color 0.2s', minHeight: 32 }}
         >
           {o.label}
         </button>

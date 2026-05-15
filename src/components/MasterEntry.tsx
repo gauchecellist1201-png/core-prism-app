@@ -222,13 +222,15 @@ export default function MasterEntry() {
               type="button"
               onClick={() => setShowClaude(s => !s)}
               style={{
-                fontSize: 10,
+                fontSize: 12,
                 background: 'transparent',
                 border: 'none',
-                color: 'rgba(255,255,255,0.5)',
+                color: 'rgba(255,255,255,0.6)',
                 cursor: 'pointer',
                 textTransform: 'none',
                 letterSpacing: 0,
+                padding: '6px 8px',
+                minHeight: 32,
               }}
             >
               {showClaude ? '隠す' : '表示'}

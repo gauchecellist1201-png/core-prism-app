@@ -460,7 +460,7 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.18)',
                   borderRadius: 14,
-                  color: '#fff', fontSize: 15, lineHeight: 1.6,
+                  color: '#fff', fontSize: 16, lineHeight: 1.6,
                   resize: 'none',
                   outline: 'none',
                   fontFamily: 'inherit',
