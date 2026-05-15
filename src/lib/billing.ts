@@ -561,6 +561,36 @@ export function clearBillingUser() {
   delCookie(COOKIE_USER);
 }
 
+/**
+ * ログアウト + アプリゲート解除。
+ * - billing user (localStorage + cookie) を削除
+ * - APP_ENTERED フラグを削除 → 次の表示で LP に戻す
+ * - 任意で全 localStorage を初期化 (= 完全リセット)
+ */
+export function signOutAndExit(opts?: { fullReset?: boolean }): void {
+  try {
+    clearBillingUser();
+    if (typeof localStorage !== 'undefined') {
+      // 必ず消すキー: アプリゲート + Owner フラグ
+      localStorage.removeItem('core_app_entered_v1');
+      localStorage.removeItem('core_master_key_v1');
+      // PrismSplash の SessionStorage は維持しない (再ログイン時の歓迎演出のため)
+      try { sessionStorage.removeItem('prism_welcome_seen_v2'); } catch {/* */}
+      if (opts?.fullReset) {
+        // 全ローカルデータ削除 (ナレッジ / 履歴 / 設定など)
+        const keys: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k) keys.push(k);
+        }
+        keys.forEach(k => {
+          try { localStorage.removeItem(k); } catch {/* */}
+        });
+      }
+    }
+  } catch {/* */}
+}
+
 export function useBillingUser(): {
   user: BillingUser | null;
   signup: (input: { email: string; password: string; brand: Brand; plan: PlanId }) => Promise<BillingUser>;

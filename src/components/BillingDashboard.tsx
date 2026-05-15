@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   useBillingUser, findPlan, getPlans,
   updateSubscriptionPlan, openBillingPortal,
+  signOutAndExit, isTrialActive,
   type PlanId,
 } from '../lib/billing';
 import { sendEmail } from '../lib/emailNotify';
@@ -25,8 +26,25 @@ export default function BillingDashboard({ onClose }: Props) {
   const [switchBusy, setSwitchBusy] = useState<PlanId | null>(null);
   const [switchMsg, setSwitchMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState<null | 'soft' | 'reset'>(null);
 
   if (!user) return null;
+
+  // ─── ログアウト ───
+  const handleLogout = (fullReset: boolean) => {
+    signOutAndExit({ fullReset });
+    // LP へ戻すために強制リロード (同タブ即時反映)
+    setTimeout(() => { window.location.href = '/'; }, 80);
+  };
+
+  // ─── トライアル残り日数 ───
+  const trialDaysLeft = (() => {
+    if (user.plan !== 'free' || !user.trialEndsAt) return null;
+    const ms = new Date(user.trialEndsAt).getTime() - Date.now();
+    if (ms <= 0) return 0;
+    return Math.ceil(ms / 86400000);
+  })();
+  const trialExpired = user.plan === 'free' && !isTrialActive(user);
 
   const handleSwitchPlan = async (newPlan: PlanId) => {
     setSwitchMsg(null);
@@ -182,7 +200,66 @@ export default function BillingDashboard({ onClose }: Props) {
               <p style={{ fontSize: '0.95rem', fontWeight: 600 }}>{periodEnd}</p>
             </div>
           )}
+
+          {/* プランに含まれる主な機能 (やさしい日本語で 4 つだけ) */}
+          {plan?.features && plan.features.length > 0 && (
+            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+              <p style={{ fontSize: '0.72rem', letterSpacing: '0.15em', color: '#8A8593', fontWeight: 700, marginBottom: '0.5rem' }}>
+                このプランで できること
+              </p>
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: '0.3rem' }}>
+                {plan.features.slice(0, 4).map((f, i) => (
+                  <li key={i} style={{
+                    fontSize: '0.82rem', color: '#1F1A2E', display: 'flex',
+                    alignItems: 'flex-start', gap: '0.45rem', lineHeight: 1.5,
+                  }}>
+                    <span style={{ color: accent, fontWeight: 800, flexShrink: 0 }}>✓</span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
+
+        {/* トライアル残り日数 / 期限切れ表示 */}
+        {trialDaysLeft !== null && !cancelDone && (
+          <div style={{
+            padding: '0.85rem 1rem', borderRadius: 12, marginBottom: '1.25rem',
+            background: trialExpired
+              ? 'linear-gradient(135deg, #FEF2F2, #FFE4E6)'
+              : trialDaysLeft <= 2
+                ? 'linear-gradient(135deg, #FFFBEB, #FEF3C7)'
+                : 'linear-gradient(135deg, #F0FDF4, #ECFDF5)',
+            border: `1px solid ${trialExpired ? '#FCA5A5' : trialDaysLeft <= 2 ? '#FCD34D' : '#86EFAC'}`,
+            display: 'flex', alignItems: 'center', gap: '0.7rem',
+          }}>
+            <div style={{ fontSize: '1.4rem', flexShrink: 0 }}>
+              {trialExpired ? '⏰' : trialDaysLeft <= 2 ? '⚠️' : '🎁'}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{
+                margin: 0, fontSize: '0.85rem', fontWeight: 700,
+                color: trialExpired ? '#9B1B30' : trialDaysLeft <= 2 ? '#92400E' : '#166534',
+              }}>
+                {trialExpired
+                  ? '無料お試しの期間がおわりました'
+                  : trialDaysLeft === 0
+                    ? '今日 無料お試しがおわります'
+                    : `無料お試し あと ${trialDaysLeft} 日`}
+              </p>
+              <p style={{
+                margin: '0.1rem 0 0', fontSize: '0.72rem',
+                color: trialExpired ? '#9B1B30' : trialDaysLeft <= 2 ? '#92400E' : '#166534',
+                opacity: 0.85, lineHeight: 1.45,
+              }}>
+                {trialExpired
+                  ? 'プランを選ぶと続けて使えます。カード登録は今までしていません。'
+                  : 'カード登録は不要。プラン選択で課金が始まります。'}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* アカウント情報 */}
         <div style={{
@@ -356,20 +433,119 @@ export default function BillingDashboard({ onClose }: Props) {
             </motion.div>
           ) : (
             <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <button
-                onClick={() => setConfirmCancel(true)}
-                style={{
-                  width: '100%', background: 'transparent', color: '#8A8593',
-                  border: '1px solid rgba(0,0,0,0.12)', borderRadius: 999,
-                  padding: '0.75rem', fontSize: '0.88rem', cursor: 'pointer',
-                  transition: 'border-color 0.2s, color 0.2s',
-                }}
-              >
-                サブスクリプションを解約する
-              </button>
+              {user.plan !== 'free' && (
+                <button
+                  onClick={() => setConfirmCancel(true)}
+                  style={{
+                    width: '100%', background: 'transparent', color: '#8A8593',
+                    border: '1px solid rgba(0,0,0,0.12)', borderRadius: 999,
+                    padding: '0.75rem', fontSize: '0.88rem', cursor: 'pointer',
+                    transition: 'border-color 0.2s, color 0.2s',
+                  }}
+                >
+                  サブスクリプションを解約する
+                </button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ─── アカウント / ログアウト ──────────────── */}
+        <div style={{
+          marginTop: '1.25rem', paddingTop: '1.25rem',
+          borderTop: '1px solid rgba(0,0,0,0.08)',
+        }}>
+          <p style={{
+            fontSize: '0.7rem', letterSpacing: '0.2em', color: '#8A8593',
+            fontWeight: 700, marginBottom: '0.6rem', textTransform: 'uppercase',
+          }}>
+            アカウント
+          </p>
+
+          {confirmLogout === null ? (
+            <div style={{ display: 'grid', gap: '0.5rem' }}>
+              <button
+                onClick={() => setConfirmLogout('soft')}
+                style={{
+                  width: '100%', background: '#F8F7FA', color: '#1F1A2E',
+                  border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12,
+                  padding: '0.75rem', fontSize: '0.88rem', fontWeight: 600,
+                  cursor: 'pointer', display: 'inline-flex',
+                  alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+                aria-label="ログアウト"
+              >
+                ↩ ログアウト
+              </button>
+              <button
+                onClick={() => setConfirmLogout('reset')}
+                style={{
+                  width: '100%', background: 'transparent', color: '#8A8593',
+                  border: '1px dashed rgba(0,0,0,0.15)', borderRadius: 12,
+                  padding: '0.6rem', fontSize: '0.78rem', cursor: 'pointer',
+                }}
+                aria-label="このブラウザの全データをリセットして最初から"
+              >
+                このブラウザのデータをぜんぶ消して最初から
+              </button>
+              <p style={{
+                margin: '0.2rem 0 0', fontSize: '0.7rem', color: '#A8A3B0',
+                lineHeight: 1.6, textAlign: 'center',
+              }}>
+                ※ ログアウトしてもプランや課金は止まりません。<br />
+                「データをぜんぶ消す」はナレッジや人格などローカル保存もすべて消えます。
+              </p>
+            </div>
+          ) : (
+            <motion.div
+              key={confirmLogout}
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              style={{
+                padding: '1rem', borderRadius: 12,
+                background: confirmLogout === 'reset' ? '#FEF2F2' : '#F8F7FA',
+                border: `1px solid ${confirmLogout === 'reset' ? '#FCA5A5' : 'rgba(0,0,0,0.1)'}`,
+              }}
+            >
+              <p style={{
+                margin: 0, fontSize: '0.85rem',
+                color: confirmLogout === 'reset' ? '#7C2D12' : '#1F1A2E',
+                lineHeight: 1.65, marginBottom: '0.8rem',
+              }}>
+                {confirmLogout === 'soft'
+                  ? <>ログアウトします。<br />同じメールアドレスでログインすればまた使えます。</>
+                  : <><strong>⚠ このブラウザの全データを消します</strong><br />
+                      ナレッジ・人格・履歴も含めて全部リセット。<br />
+                      クラウドに保存されていないデータは復元できません。</>
+                }
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={() => setConfirmLogout(null)}
+                  style={{
+                    flex: 1, background: 'rgba(0,0,0,0.05)', color: '#5A5562',
+                    border: '1px solid rgba(0,0,0,0.1)', borderRadius: 999,
+                    padding: '0.6rem', fontSize: '0.85rem', fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  やめる
+                </button>
+                <button
+                  onClick={() => handleLogout(confirmLogout === 'reset')}
+                  style={{
+                    flex: 1,
+                    background: confirmLogout === 'reset' ? '#DC2626' : '#1F1A2E',
+                    color: '#fff', border: 'none', borderRadius: 999,
+                    padding: '0.6rem', fontSize: '0.85rem', fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {confirmLogout === 'soft' ? 'ログアウトする' : 'すべて消す'}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </div>
       </motion.div>
     </motion.div>
   );
