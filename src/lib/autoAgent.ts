@@ -234,7 +234,7 @@ JSON で返答。`;
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-opus-4-5',
+      model: 'claude-haiku-4-5',
       messages: [{ role: 'user', content: userMsg }],
       system,
       max_tokens: 1600,
@@ -306,7 +306,7 @@ ${ctx.kpis ? `## KPI\n${ctx.kpis}\n` : ''}`;
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'heavy' },
     body: JSON.stringify({
-      model: 'claude-opus-4-5',
+      model: 'claude-haiku-4-5',
       messages: [{ role: 'user', content: s.actionPrompt }],
       system,
       max_tokens: 2200,
@@ -340,7 +340,7 @@ export async function refineSuggestion(s: Suggestion, refinement: string, ctx: A
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-opus-4-5',
+      model: 'claude-haiku-4-5',
       messages: [{ role: 'user', content: refinement }],
       system,
       max_tokens: 600,
