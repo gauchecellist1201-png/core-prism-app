@@ -53,35 +53,33 @@ export default function FeedbackWidget({ brand }: Props) {
 
   return (
     <>
-      {/* Floating button — 左下に配置 (右下は AI と話すボタンが占有) */}
+      {/* Floating button — 左下、アイコンのみの小さな丸 (UI を覆わない) */}
       <button
         type="button"
         aria-label="フィードバックを送る"
+        title="フィードバック"
         onClick={() => setOpen(true)}
         className="cp-feedback-fab"
         style={{
           position: 'fixed',
-          left: 'max(16px, env(safe-area-inset-left))',
-          bottom: 'max(16px, env(safe-area-inset-bottom))',
+          left: 'max(12px, env(safe-area-inset-left))',
+          bottom: 'max(12px, env(safe-area-inset-bottom))',
           zIndex: 9998,
           background: `linear-gradient(135deg, ${accent}, ${accentLight})`,
           color: '#fff',
           border: 'none',
-          borderRadius: 999,
-          padding: '10px 14px',
-          fontSize: 13,
-          fontWeight: 700,
-          letterSpacing: 0.2,
+          borderRadius: '50%',
+          width: 40, height: 40, padding: 0,
           cursor: 'pointer',
-          boxShadow: '0 6px 24px rgba(0,0,0,0.22)',
+          boxShadow: '0 4px 14px rgba(0,0,0,0.28)',
           display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-          maxWidth: 'calc(100vw - 32px)',
+          alignItems: 'center', justifyContent: 'center',
+          opacity: 0.72,
         }}
+        onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+        onMouseLeave={e => (e.currentTarget.style.opacity = '0.72')}
       >
         <Mail size={16} strokeWidth={2.25} aria-hidden />
-        <span>フィードバック</span>
       </button>
 
       <AnimatePresence>

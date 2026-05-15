@@ -526,15 +526,20 @@ function CaptureZone({
             </p>
           </>
         )}
+        {/* iOS Safari で display:none だと click が無視されることがあるため visibility 切替 */}
         <input
           type="file"
           accept="image/*,.csv"
           multiple
           disabled={extracting}
-          style={{ display: 'none' }}
+          style={{
+            position: 'absolute', width: 1, height: 1,
+            opacity: 0, pointerEvents: 'none',
+            top: 0, left: 0,
+          }}
           onChange={(e) => {
             const files = e.target.files;
-            if (!files) return;
+            if (!files || files.length === 0) return;
             const csv = Array.from(files).find(f => f.name.endsWith('.csv'));
             if (csv) onCSV(csv);
             else onImages(files);
@@ -542,6 +547,9 @@ function CaptureZone({
           }}
         />
       </label>
+
+      {/* アップロードした画像のプレビュー (即時表示) */}
+      <Previews onPaste={onImages} />
 
       {extractErr && (
         <div style={{
@@ -558,6 +566,58 @@ function CaptureZone({
       )}
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+// ============================================================
+// アップロード画像のプレビュー + ペースト対応
+// ============================================================
+function Previews({ onPaste }: { onPaste: (files: FileList | null) => void }) {
+  const [thumbs, setThumbs] = useState<string[]>([]);
+
+  useEffect(() => {
+    const handler = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const files: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        if (it.kind === 'file' && it.type.startsWith('image/')) {
+          const f = it.getAsFile();
+          if (f) files.push(f);
+        }
+      }
+      if (files.length === 0) return;
+      const dt = new DataTransfer();
+      files.forEach(f => dt.items.add(f));
+      // プレビュー化
+      Promise.all(files.map(f => new Promise<string>((res) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result as string);
+        r.readAsDataURL(f);
+      }))).then(urls => setThumbs(t => [...t, ...urls].slice(-6)));
+      onPaste(dt.files);
+    };
+    window.addEventListener('paste', handler);
+    return () => window.removeEventListener('paste', handler);
+  }, [onPaste]);
+
+  if (thumbs.length === 0) return null;
+
+  return (
+    <div style={{
+      marginTop: '0.7rem', display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+      gap: 6,
+    }}>
+      {thumbs.map((u, i) => (
+        <div key={i} style={{
+          width: '100%', aspectRatio: '1 / 1', borderRadius: 10,
+          background: `center / cover no-repeat url(${u})`,
+          border: '1px solid rgba(0,0,0,0.1)',
+        }} />
+      ))}
     </div>
   );
 }
