@@ -4,7 +4,7 @@
 // Iris と Prism 両ダッシュボードから利用
 // ============================================================
 import { useState, useMemo, useCallback } from 'react';
-import { Copy, Share2, Check, Gift, Users as UsersIcon, Sparkles, Mail } from 'lucide-react';
+import { Copy, Share2, Check, Gift, Users as UsersIcon, Sparkles, Mail, QrCode } from 'lucide-react';
 import { type Brand } from '../lib/billing';
 import { getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS } from '../lib/referral';
 import { shareToInstagram } from '../iris/instagramShare';
@@ -60,6 +60,13 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
 
   const [copied, setCopied] = useState<'url' | 'text' | null>(null);
   const [shareMsg, setShareMsg] = useState<string | null>(null);
+  const [showQr, setShowQr] = useState(false);
+
+  // 紹介 URL の QR コード (qrserver.com の無料 API、認証なし)
+  const qrUrl = useMemo(
+    () => `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=${encodeURIComponent(url)}`,
+    [url],
+  );
 
   const flashCopied = useCallback((kind: 'url' | 'text') => {
     setCopied(kind);
@@ -238,16 +245,54 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
           <SocialBtn label="Insta" bg="linear-gradient(135deg,#FEDA75,#FA7E1E 30%,#D62976 60%,#962FBF 80%,#4F5BD5)" onClick={shareInstagram} />
         </div>
 
-        <button onClick={() => copy(text, 'text')}
-          style={{
-            background: 'transparent', color: p.inkSoft,
-            border: `1px solid ${p.border}`, borderRadius: 12,
-            padding: '0.75rem', fontSize: '0.82rem', fontWeight: 600,
-            cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
-            justifyContent: 'center', gap: 6,
-          }}>
-          {copied === 'text' ? <><Check size={13} />本文コピー済</> : <><Copy size={13} />招待文をコピー</>}
-        </button>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+          <button onClick={() => copy(text, 'text')}
+            style={{
+              background: 'transparent', color: p.inkSoft,
+              border: `1px solid ${p.border}`, borderRadius: 12,
+              padding: '0.75rem', fontSize: '0.82rem', fontWeight: 600,
+              cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+              justifyContent: 'center', gap: 6,
+            }}>
+            {copied === 'text' ? <><Check size={13} />本文コピー済</> : <><Copy size={13} />招待文をコピー</>}
+          </button>
+          <button onClick={() => setShowQr(v => !v)}
+            aria-pressed={showQr}
+            style={{
+              background: showQr ? p.accent : 'transparent',
+              color: showQr ? '#fff' : p.inkSoft,
+              border: showQr ? 'none' : `1px solid ${p.border}`,
+              borderRadius: 12,
+              padding: '0.75rem', fontSize: '0.82rem', fontWeight: 600,
+              cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+              justifyContent: 'center', gap: 6,
+            }}>
+            <QrCode size={13} />{showQr ? 'QR を隠す' : 'QR コード表示'}
+          </button>
+        </div>
+
+        {showQr && (
+          <div
+            data-testid="referral-qr-panel"
+            style={{
+              display: 'grid', justifyItems: 'center', gap: '0.55rem',
+              background: '#fff', border: `1px dashed ${p.accent}55`,
+              borderRadius: 14, padding: '1rem',
+            }}>
+            <img
+              src={qrUrl}
+              alt="紹介リンクの QR コード"
+              width={200}
+              height={200}
+              loading="lazy"
+              style={{ borderRadius: 8, display: 'block' }}
+            />
+            <p style={{ margin: 0, fontSize: '0.72rem', color: p.inkSoft, textAlign: 'center', lineHeight: 1.55 }}>
+              友達のスマホで読み込むだけ。<br />
+              対面・カフェ・名刺裏にも貼れます
+            </p>
+          </div>
+        )}
       </div>
 
       {shareMsg && (

@@ -11,7 +11,8 @@ import {
   FileText, FileSpreadsheet, ScrollText, Target, Mail, Receipt, Palette, Mic,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { REFERRAL_BONUS_DAYS } from '../lib/referral';
 
 interface Props {
   onEnterApp: () => void;
@@ -46,9 +47,52 @@ const sectionPad = '5.5rem 1.25rem';
 
 export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
   const { lang, setLang, t } = useT();
+  const [pendingRef, setPendingRef] = useState<string | null>(null);
+  useEffect(() => {
+    try { setPendingRef(sessionStorage.getItem('pending_ref')); } catch { /* */ }
+  }, []);
 
   return (
     <div style={{ background: BG_DARK, color: '#fff', minHeight: '100dvh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
+      {/* ── 紹介リンク経由バナー (?ref=XXX 検出時のみ表示) ───────────── */}
+      {pendingRef && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          style={{
+            background: 'linear-gradient(90deg, #16A34A, #22C55E, #84CC16)',
+            color: '#fff', textAlign: 'center',
+            padding: '0.85rem 1rem',
+            fontSize: '0.92rem', fontWeight: 800,
+            letterSpacing: '0.02em',
+            position: 'relative', zIndex: 65,
+            boxShadow: '0 4px 18px rgba(22,163,74,0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: '0.55rem', flexWrap: 'wrap',
+          }}
+          data-testid="referral-welcome-banner"
+        >
+          <span style={{ fontSize: '1.15rem' }}>🎁</span>
+          <span>
+            友達からの招待で <strong style={{ background: 'rgba(255,255,255,0.22)', padding: '0.1rem 0.55rem', borderRadius: 8, letterSpacing: '0.06em' }}>+{REFERRAL_BONUS_DAYS} 日</strong> プレゼント中。
+            通常 7 日 → <strong>合計 {7 + REFERRAL_BONUS_DAYS} 日</strong> 無料でお試しできます
+          </span>
+          <button
+            onClick={onEnterApp}
+            style={{
+              background: '#fff', color: '#16A34A',
+              border: 'none', borderRadius: 999,
+              padding: '0.32rem 0.95rem', fontSize: '0.82rem', fontWeight: 800,
+              cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            登録して受け取る →
+          </button>
+        </motion.div>
+      )}
+
       {/* ── ベータ公開告知バー ────────────────────────────── */}
       <div style={{
         background: 'linear-gradient(90deg, #FFB347, #FF6FA9, #B07BD9)',
