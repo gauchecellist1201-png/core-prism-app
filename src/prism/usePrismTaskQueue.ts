@@ -177,7 +177,7 @@ JSON で返答してください。`;
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',  // 互換ハンドル — 実際は Gemini にマップされる
+        model: 'claude-haiku-4-5',  // 互換ハンドル — 実際は Gemini にマップされる
         messages: [{ role: 'user', content: userMsg }],
         system: PARSE_SYSTEM,
         max_tokens: 800,
@@ -268,7 +268,7 @@ export async function executeTask(task: PrismTask): Promise<string> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-opus-4-5',
+      model: 'claude-haiku-4-5',
       messages: [{ role: 'user', content: task.prompt }],
       system,
       max_tokens: 2500,

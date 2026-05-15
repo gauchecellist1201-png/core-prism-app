@@ -191,7 +191,7 @@ ${toneInstruction()}`;
           'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
-          model: settings.preferredModel || 'claude-sonnet-4-6',
+          model: settings.preferredModel || 'claude-haiku-4-5',
           max_tokens: 1500,
           messages: [{ role: 'user', content: prompt }],
         }),

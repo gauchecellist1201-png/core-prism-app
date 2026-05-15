@@ -288,6 +288,20 @@ export default async function handler(req: Request) {
       if (!claudeBody.model || /^claude-(opus|sonnet|haiku|3-)/.test(claudeBody.model) === false) {
         claudeBody.model = 'claude-haiku-4-5';
       }
+
+      // 🛡 Opus/Sonnet 課金ガード (オーナー指示 2026-05-15)
+      // Studio プラン (¥29,800/月以上) または Master 認証以外は、
+      // Opus / Sonnet をリクエストされても強制的に haiku-4-5 にダウングレード。
+      // 一般ユーザーが高額モデルを叩いて請求が爆発するのを防ぐ。
+      // 解禁したい場合は ALLOW_PREMIUM_MODELS=true を Vercel env に設定。
+      const planTier = (req.headers.get('x-plan-tier') || '').toLowerCase(); // 'free'|'lite'|'standard'|'pro'|'studio'
+      const allowPremium = process.env.ALLOW_PREMIUM_MODELS === 'true';
+      const isStudioOrMaster = isMaster || planTier === 'studio' || allowPremium;
+      if (!isStudioOrMaster && /opus|sonnet/i.test(claudeBody.model)) {
+        console.warn(`[ai-guard] downgrade ${claudeBody.model} → haiku-4-5 (plan: ${planTier || 'unknown'})`);
+        claudeBody.model = 'claude-haiku-4-5';
+        routeReason += ' [downgraded:non-studio]';
+      }
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {

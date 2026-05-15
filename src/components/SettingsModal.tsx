@@ -21,10 +21,12 @@ interface Props {
   onEditPersona?: (id: string) => void;
 }
 
+// オーナー指示 (2026-05-15): Sonnet/Opus は Studio (¥29,800/月以上) 限定。
+// 一般プランは Haiku のみ。サーバー側 (api/ai.ts) でも強制ガード済。
 const MODELS = [
-  { id: 'claude-haiku-4-5', name: 'Haiku 4.5', note: '高速・低コスト', input: 1.0, output: 5.0 },
-  { id: 'claude-sonnet-4-5', name: 'Sonnet 4.5', note: 'バランス型', input: 3.0, output: 15.0 },
-  { id: 'claude-opus-4-5', name: 'Opus 4.5', note: '最高性能', input: 5.0, output: 25.0 },
+  { id: 'claude-haiku-4-5', name: 'Haiku 4.5', note: '速くて軽い (全プラン)', input: 1.0, output: 5.0 },
+  { id: 'claude-sonnet-4-5', name: 'Sonnet 4.5', note: 'バランス型 (Studio 限定)', input: 3.0, output: 15.0, studioOnly: true },
+  { id: 'claude-opus-4-5', name: 'Opus 4.5', note: '最高性能 (Studio 限定)', input: 5.0, output: 25.0, studioOnly: true },
 ];
 
 export default function SettingsModal({ settings, onSave, onClose, onResetStats, personas, onEditPersona }: Props) {

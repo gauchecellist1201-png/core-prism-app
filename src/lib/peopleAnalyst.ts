@@ -60,7 +60,7 @@ ${all.map(i => `- [${i.date}] ${i.type}: ${i.summary}`).join('\n') || '記録な
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: settings.preferredModel || 'claude-sonnet-4-6',
+        model: settings.preferredModel || 'claude-haiku-4-5',
         max_tokens: 1024,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],

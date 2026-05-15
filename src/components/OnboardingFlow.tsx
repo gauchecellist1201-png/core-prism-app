@@ -7,30 +7,17 @@ interface Props {
   onComplete: (settings: Partial<AppSettings>) => void;
 }
 
+// オーナー指示 (2026-05-15): 現段階は Haiku のみ。
+// Sonnet / Opus は Studio プラン (¥29,800/月以上) で個別解禁する設計に。
+// ここでは Haiku のみを選択肢として提示。
 const MODELS = [
   {
     id: 'claude-haiku-4-5',
     name: 'Haiku 4.5',
-    description: '高速・低コスト。日常的なチャットに最適',
-    cost: '約¥15/月（20通/日想定）',
-    badge: '推奨',
+    description: '速くて軽い。すべてのプランで使えます',
+    cost: '約 ¥15/月（1日 20 回想定）',
+    badge: '今は全員これ',
     badgeColor: '#34d399',
-  },
-  {
-    id: 'claude-sonnet-4-5',
-    name: 'Sonnet 4.5',
-    description: 'バランス型。複雑な分析・長文に対応',
-    cost: '約¥45/月（20通/日想定）',
-    badge: 'スタンダード',
-    badgeColor: '#c9a96e',
-  },
-  {
-    id: 'claude-opus-4-5',
-    name: 'Opus 4.5',
-    description: '最高性能。深い洞察・高度な推論',
-    cost: '約¥75/月（20通/日想定）',
-    badge: 'プレミアム',
-    badgeColor: '#a78bfa',
   },
 ];
 
