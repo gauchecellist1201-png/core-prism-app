@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Persona } from '../types/identity';
+import { tactileTap, triggerHaptic, playClick } from '../lib/haptic';
 
 const QUICK_ICON_MAP: Record<string, { Icon: LucideIcon; color: string }> = {
   brief:        { Icon: Lightbulb,     color: '#F59E0B' },
@@ -145,8 +146,8 @@ export default function QuickActions({ persona, actions }: Props) {
       {/* カテゴリフィルタ */}
       <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
         <button
-          onClick={() => setActiveGroup('all')}
-          className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap"
+          onClick={() => { triggerHaptic('light'); playClick('tap'); setActiveGroup('all'); }}
+          className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap qa-chip"
           style={{
             background: activeGroup === 'all' ? persona.accentColor : 'var(--surface)',
             color: activeGroup === 'all' ? '#fff' : 'var(--fg-muted)',
@@ -162,8 +163,8 @@ export default function QuickActions({ persona, actions }: Props) {
           return (
             <button
               key={g.name}
-              onClick={() => setActiveGroup(g.name)}
-              className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap inline-flex items-center gap-1.5"
+              onClick={() => { triggerHaptic('light'); playClick('tap'); setActiveGroup(g.name); }}
+              className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap inline-flex items-center gap-1.5 qa-chip"
               style={{
                 background: active ? persona.accentColor : 'var(--surface)',
                 color: active ? '#fff' : 'var(--fg-muted)',
@@ -185,19 +186,22 @@ export default function QuickActions({ persona, actions }: Props) {
           return (
             <motion.button
               key={a.id}
-              onClick={a.onClick}
-              className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl transition-all"
+              onClick={() => { tactileTap(); a.onClick(); }}
+              className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl qa-tile"
               style={{
                 background: a.primary
                   ? `linear-gradient(135deg, ${persona.accentColor}25, ${persona.accentColor}10)`
                   : 'var(--surface)',
                 border: `1px solid ${a.primary ? persona.accentColor + '50' : 'var(--border)'}`,
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+                userSelect: 'none',
               }}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.03 }}
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
+              transition={{ delay: i * 0.03, type: 'spring', stiffness: 280, damping: 22 }}
+              whileHover={{ scale: 1.04, y: -2 }}
+              whileTap={{ scale: 0.93, y: 1, transition: { type: 'spring', stiffness: 500, damping: 18 } }}
             >
               {Icon ? (
                 <div style={{
@@ -217,6 +221,25 @@ export default function QuickActions({ persona, actions }: Props) {
           );
         })}
       </div>
+      <style>{`
+        .qa-tile {
+          transition: box-shadow 0.18s ease, border-color 0.18s ease;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        .qa-tile:hover {
+          box-shadow: 0 6px 18px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.04);
+        }
+        .qa-tile:active {
+          box-shadow: inset 0 1px 3px rgba(0,0,0,0.10), 0 1px 1px rgba(0,0,0,0.03);
+        }
+        .qa-chip {
+          transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .qa-chip:active {
+          transform: scale(0.94);
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+        }
+      `}</style>
     </motion.div>
   );
 }

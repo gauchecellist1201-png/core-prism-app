@@ -1,9 +1,11 @@
 // ============================================================
 // 🎙 音声入力ボタン — 任意の text input/textarea に並べて使う
 // 既存の useVoiceInput hook をラップ
+// 触感フィードバック (振動 + 微音 + 押下スケール + リップル) 対応
 // ============================================================
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVoiceInput } from '../hooks/useVoiceInput';
+import { triggerHaptic, playClick } from '../lib/haptic';
 
 interface Props {
   /** 認識結果を text として受け取る (現在値 + スペース + 結果) */
@@ -48,15 +50,40 @@ export default function VoiceInputButton({
     silenceTimeout: continuous ? 4000 : 2500,
   });
 
+  const [pressed, setPressed] = useState(false);
+  const [ripple, setRipple] = useState(0);
+  const wasListeningRef = useRef(false);
+
+  // 認識結果が確定した瞬間に「成功」のタクタイル
+  useEffect(() => {
+    if (wasListeningRef.current && state !== 'listening') {
+      triggerHaptic('success');
+      playClick('success');
+    }
+    wasListeningRef.current = state === 'listening';
+  }, [state]);
+
   if (!isAvailable) return null; // 非対応ブラウザではボタン非表示
 
   const isListening = state === 'listening';
 
+  const handleClick = () => {
+    triggerHaptic(isListening ? 'medium' : 'light');
+    playClick(isListening ? 'close' : 'open');
+    setRipple(r => r + 1);
+    if (isListening) stop(); else start();
+  };
+
   return (
     <button
       type="button"
-      onClick={isListening ? stop : start}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      onClick={handleClick}
       title={interim ? `🎙 認識中: ${interim}` : title}
+      aria-pressed={isListening}
+      aria-label={isListening ? '音声入力を止める' : '音声入力を開始'}
       className={className}
       style={{
         background: isListening
@@ -72,19 +99,46 @@ export default function VoiceInputButton({
         fontSize: size * 0.45,
         flexShrink: 0,
         position: 'relative',
+        overflow: 'visible',
+        WebkitTapHighlightColor: 'transparent',
+        userSelect: 'none',
+        touchAction: 'manipulation',
         boxShadow: isListening
           ? `0 0 0 4px ${accentColor}33, 0 4px 12px ${accentColor}55`
-          : '0 1px 3px rgba(0,0,0,0.08)',
+          : pressed
+            ? `0 1px 2px rgba(0,0,0,0.10), inset 0 1px 3px rgba(0,0,0,0.08)`
+            : '0 1px 3px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)',
         animation: isListening ? 'voice-pulse 1.6s ease-in-out infinite' : 'none',
-        transition: 'all 0.2s',
+        transform: pressed ? 'scale(0.92)' : 'scale(1)',
+        transition: 'transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, background 0.2s ease',
         ...style,
       }}
     >
-      {isListening ? '⏹' : '🎙'}
+      <span style={{ position: 'relative', zIndex: 1, transition: 'transform 0.2s', transform: isListening ? 'scale(1.08)' : 'scale(1)' }}>
+        {isListening ? '⏹' : '🎙'}
+      </span>
+      {/* リップル波紋 */}
+      <span
+        key={ripple}
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '50%',
+          pointerEvents: 'none',
+          background: `radial-gradient(circle, ${accentColor}55 0%, transparent 70%)`,
+          opacity: 0,
+          animation: ripple > 0 ? 'voice-ripple 0.5s ease-out' : 'none',
+        }}
+      />
       <style>{`
         @keyframes voice-pulse {
           0%, 100% { box-shadow: 0 0 0 4px ${accentColor}33, 0 4px 12px ${accentColor}55; }
           50%      { box-shadow: 0 0 0 10px ${accentColor}11, 0 4px 16px ${accentColor}88; }
+        }
+        @keyframes voice-ripple {
+          0%   { transform: scale(0.6); opacity: 0.9; }
+          100% { transform: scale(2.2); opacity: 0; }
         }
       `}</style>
     </button>
