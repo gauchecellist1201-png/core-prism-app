@@ -71,7 +71,7 @@ export default function AgentProposalCard({
       </div>
 
       <div
-        className="rounded-md"
+        className="rounded-lg"
         style={{
           padding: '10px 12px',
           background: 'var(--surface-2)',

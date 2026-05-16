@@ -163,7 +163,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--fg-muted)', fontWeight: 600 }}>CONTENT ENGINE</p>
-            <h2 style={{ fontSize: '0.98rem', fontWeight: 700, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>note × X 同時生成</h2>
+            <h2 style={{ fontSize: '0.95rem', fontWeight: 700, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>note × X 同時生成</h2>
           </div>
           <button onClick={onClose} aria-label="閉じる" className="hover:text-fg" style={{ width: 40, height: 40, minWidth: 40, borderRadius: 999, color: 'var(--fg)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontSize: 20, lineHeight: 1, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </header>
@@ -229,7 +229,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
               {TONE_OPTIONS.map(t => (
                 <button key={t.value} onClick={() => setTone(t.value)} style={{
-                  fontSize: '0.82rem', padding: '0.5rem 0.9rem', borderRadius: 8,
+                  fontSize: '0.82rem', padding: '0.5rem 0.9rem', borderRadius: 999,
                   background: tone === t.value ? accent : 'rgba(255,255,255,0.04)',
                   border: tone === t.value ? 'none' : '1px solid rgba(255,255,255,0.1)',
                   color: tone === t.value ? '#fff' : 'var(--fg)',

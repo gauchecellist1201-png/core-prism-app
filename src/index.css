@@ -488,7 +488,7 @@ select option {
 .cp-input:focus,
 .cp-textarea:focus,
 .cp-select:focus {
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--border-strong);
   background: var(--surface);
 }
 .cp-textarea { resize: vertical; min-height: 80px; line-height: 1.65; }

@@ -233,7 +233,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               display: 'flex', alignItems: 'center', gap: '0.5rem',
               background: 'transparent', border: 'none', cursor: 'pointer',
               padding: '0.2rem 0.4rem', borderRadius: 10,
-              transition: 'background 0.2s',
+              transition: 'background 0.15s',
             }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(225,48,108,0.06)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
