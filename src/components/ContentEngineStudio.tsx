@@ -152,19 +152,20 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
       >
         {/* ヘッダ */}
         <header style={{
-          padding: '1.25rem 1.5rem',
+          padding: 'max(1rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) max(1rem, calc(env(safe-area-inset-right, 0px) + 0.75rem)) 1rem 1.25rem',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
           background: `linear-gradient(135deg, ${accent}18, transparent 60%)`,
-          display: 'flex', alignItems: 'center', gap: '0.85rem',
+          display: 'flex', alignItems: 'center', gap: '0.75rem',
+          position: 'sticky', top: 0, zIndex: 5, backdropFilter: 'blur(12px)',
         }}>
-          <div style={{ width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', background: `linear-gradient(135deg, ${accent}, ${accent}99)`, boxShadow: `0 6px 18px ${accent}55` }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', background: `linear-gradient(135deg, ${accent}, ${accent}99)`, boxShadow: `0 6px 18px ${accent}55`, flexShrink: 0 }}>
             📡
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 11, letterSpacing: '0.2em', color: 'var(--fg-muted)', fontWeight: 600 }}>CONTENT ENGINE</p>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginTop: 2 }}>認知エンジン — note × X 同時生成</h2>
+            <p style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--fg-muted)', fontWeight: 600 }}>CONTENT ENGINE</p>
+            <h2 style={{ fontSize: '0.98rem', fontWeight: 700, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>note × X 同時生成</h2>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-full text-fg-muted hover:text-fg" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', fontSize: 18 }}>×</button>
+          <button onClick={onClose} aria-label="閉じる" className="hover:text-fg" style={{ width: 40, height: 40, minWidth: 40, borderRadius: 999, color: 'var(--fg)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontSize: 20, lineHeight: 1, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </header>
 
         {/* ステップインジケータ */}

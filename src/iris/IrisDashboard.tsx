@@ -2,7 +2,7 @@
 // CORE Iris — メインダッシュボード
 // 案件 / 交渉 / 投稿下書き / 美容相談 / 画像生成 / 背景カスタム
 // ============================================================
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
 import {
@@ -131,7 +131,7 @@ import AgentsOrbit from '../components/AgentsOrbit';
 import { IRIS_SPECS, IRIS_ORDER, IRIS_CONVERSATIONS } from '../lib/agentSpecs';
 import IrisEarnHero from './IrisEarnHero';
 import IgConnectModal from './IgConnectModal';
-import { loadIgProfile, type IgProfile } from './instagramConnect';
+import { loadIgProfile, consumeOauthCallback, type IgProfile } from './instagramConnect';
 
 interface Props {
   settings: AppSettings;
@@ -151,6 +151,10 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [igProfile, setIgProfile] = useState<IgProfile | null>(() => loadIgProfile());
   const [showIgConnect, setShowIgConnect] = useState(false);
+
+  useEffect(() => {
+    consumeOauthCallback().then(p => { if (p) setIgProfile(p); }).catch(() => {});
+  }, []);
 
   const allBgs = useMemo(() => getAllBackgrounds(), [bgListVersion]);
 
@@ -211,9 +215,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
       ...themeStyle,
     }}>
       {/* ヘッダ */}
-      <header style={{
+      <header className="iris-header-sticky" style={{
         position: 'sticky', top: 0, zIndex: 40,
-        padding: '0.85rem max(1.25rem, env(safe-area-inset-right)) 0.85rem max(1.25rem, env(safe-area-inset-left))',
+        padding: 'max(0.85rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) max(1.25rem, env(safe-area-inset-right)) 0.85rem max(1.25rem, env(safe-area-inset-left))',
         background: 'rgba(255,255,255,0.55)',
         backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${bg.cardBorder}`,

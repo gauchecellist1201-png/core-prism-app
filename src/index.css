@@ -1078,3 +1078,114 @@ input, textarea, select { font-family: inherit; }
   }
 }
 
+/* ============================================================
+   iPhone Audit 2026-05-16
+   - モーダルは safe-area ノッチ・ホームバーを必ず避ける
+   - 閉じる X ボタンは常に safe-area 外で操作可能に
+   - タブが押し合わずスクロールできる
+   - ダーク背景の薄テキスト (neutral-700) を強化 (WCAG AA)
+   - 固定 FAB / 通知ヒントを重ねない
+   ============================================================ */
+
+/* モーダル全般: safe-area を内側に確保 */
+.cp-modal-bg {
+  padding: max(12px, env(safe-area-inset-top, 0px))
+           max(12px, env(safe-area-inset-right, 0px))
+           max(12px, env(safe-area-inset-bottom, 0px))
+           max(12px, env(safe-area-inset-left, 0px));
+}
+.cp-modal {
+  /* 上下ノッチを除いた高さに収める */
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 16px);
+}
+
+/* モーダルヘッダ: 閉じるボタンが常に押せる + タイトル truncate */
+.cp-modal-header {
+  position: relative;
+  padding-right: max(20px, calc(env(safe-area-inset-right, 0px) + 12px));
+}
+.cp-modal-header > button:last-child {
+  flex-shrink: 0;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+/* モーダルタブ: iPhone で押し合わない・スクロールできる */
+.cp-modal-tabs {
+  flex-wrap: nowrap;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+.cp-modal-tabs::-webkit-scrollbar { display: none; }
+.cp-modal-tab {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+/* iPhone (768px 以下) の追加防御 */
+@media (max-width: 768px) {
+  .cp-modal {
+    border-radius: 14px;
+  }
+  .cp-modal-header {
+    padding: 14px 18px;
+    padding-right: max(18px, calc(env(safe-area-inset-right, 0px) + 12px));
+    gap: 8px;
+  }
+  .cp-modal-header > button:last-child {
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 1rem;
+    /* 親パディングよりさらに右へ寄らないよう保証 */
+    position: relative;
+    z-index: 2;
+  }
+  .cp-modal-tabs {
+    padding: 8px 12px 0;
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+    gap: 2px;
+  }
+  .cp-modal-tab {
+    font-size: 0.78rem;
+    padding: 8px 10px;
+    min-height: 40px;
+    /* 絵文字+テキストが詰まらないよう */
+    letter-spacing: 0;
+  }
+  .cp-modal-body {
+    padding: 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* IrisDashboard ヘッダ: sticky top の safe-area-inset-top を必ず確保 */
+.iris-main {
+  /* 上余白も safe-area 分加算 (ノッチに食い込ませない) */
+  padding-top: calc(2rem + env(safe-area-inset-top, 0px)) !important;
+}
+@media (min-width: 769px) {
+  .iris-main {
+    padding-top: 2rem !important;
+  }
+}
+
+/* IrisDashboard ヘッダ: ノッチを避ける */
+.iris-header-sticky {
+  padding-top: max(0.85rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) !important;
+}
+
+/* OnboardingFlow: 薄すぎる neutral-700 / neutral-600 を WCAG AA 比に補強 */
+@media (max-width: 768px) {
+  .text-neutral-700 { color: rgb(180 180 200) !important; }
+  .text-neutral-600 { color: rgb(200 200 215) !important; }
+  .text-neutral-500 { color: rgb(215 215 225) !important; }
+}
+
+/* iPhone 専用: 全ての固定ヘッダ / モーダルでテキストが切れないようにフォントサイズ下限 */
+@media (max-width: 480px) {
+  .cp-h2 { font-size: 0.95rem !important; line-height: 1.4 !important; }
+  .cp-h3 { font-size: 0.88rem !important; }
+  .cp-meta { font-size: 0.72rem !important; }
+}
+

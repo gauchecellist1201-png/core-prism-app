@@ -115,11 +115,11 @@ export default function OnboardingFlow({ onComplete }: Props) {
             exit={{ opacity: 0, y: -20 }}
           >
             <p className="text-prism text-5xl font-extralight mb-2">CORE</p>
-            <p className="text-neutral-500 text-sm tracking-widest uppercase mb-8">Prism OS</p>
+            <p className="text-sm tracking-widest uppercase mb-8" style={{ color: 'rgba(255,255,255,0.7)' }}>Prism OS</p>
             <h2 className="text-fg text-2xl font-extralight mb-4 leading-relaxed">
               あなたの複数の人格を、<br />ひとつのOSで統合する。
             </h2>
-            <p className="text-neutral-600 text-sm font-light leading-relaxed mb-12">
+            <p className="text-sm font-light leading-relaxed mb-12" style={{ color: 'rgba(255,255,255,0.7)' }}>
               事業ごとに人格を作り、<br />
               それぞれに専用のAI・ナレッジ・カレンダーを持つ。<br />
               「今日は誰として在るか」を、システムが支える。
@@ -127,7 +127,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
             <div className="grid grid-cols-3 gap-3 mb-12 text-center">
               {['AIアシスタント', 'ナレッジRAG', 'カレンダー連携'].map((f, i) => (
                 <div key={i} className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <p className="text-xs text-neutral-500 font-light">{f}</p>
+                  <p className="text-xs font-light" style={{ color: 'rgba(255,255,255,0.78)' }}>{f}</p>
                 </div>
               ))}
             </div>
@@ -143,7 +143,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
             exit={{ opacity: 0, y: -20 }}
           >
             <h2 className="text-fg text-xl font-extralight mb-2">あなたのお名前は？</h2>
-            <p className="text-neutral-600 text-xs mb-8">AIがあなたに合わせた対話を行います</p>
+            <p className="text-xs mb-8" style={{ color: 'rgba(255,255,255,0.65)' }}>AIがあなたに合わせた対話を行います</p>
             <input
               type="text"
               value={name}
@@ -154,7 +154,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
               onKeyDown={e => e.key === 'Enter' && canNext() && setStep(s => s + 1)}
               autoFocus
             />
-            <p className="text-neutral-700 text-xs">Enterでも次へ進めます</p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>Enterでも次へ進めます</p>
           </motion.div>
         )}
 
@@ -167,7 +167,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
             exit={{ opacity: 0, y: -20 }}
           >
             <h2 className="text-fg text-xl font-extralight mb-2">あなたの業種は？</h2>
-            <p className="text-neutral-600 text-xs mb-6 leading-relaxed">
+            <p className="text-xs mb-6 leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
               業界に合わせて AI が「その業界の人がわかる言葉」で提案します。<br />
               KPI・悩み・施策・専門用語をあらかじめ AI に教えておくため、
               いきなり実用レベルの相談相手になります。
@@ -191,7 +191,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
                       <span className="text-2xl">{ind.emoji}</span>
                       <span className="text-fg text-sm font-light">{ind.label}</span>
                     </div>
-                    <p className="text-neutral-500 text-[11px] leading-snug mb-2">
+                    <p className="text-[11px] leading-snug mb-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
                       {ind.shortDescription}
                     </p>
                     <p className="text-[10px]" style={{ color: '#c9a96e' }}>
@@ -202,7 +202,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
               })}
             </div>
             {industry && (
-              <p className="text-neutral-500 text-xs mt-4">
+              <p className="text-xs mt-4" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 ✓ あとから設定で変更できます
               </p>
             )}
@@ -218,7 +218,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
             exit={{ opacity: 0, y: -20 }}
           >
             <h2 className="text-fg text-xl font-extralight mb-2">Claude APIキーを入力</h2>
-            <p className="text-neutral-600 text-xs mb-6 leading-relaxed">
+            <p className="text-xs mb-6 leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
               <a
                 href="https://console.anthropic.com"
                 target="_blank"
@@ -243,7 +243,8 @@ export default function OnboardingFlow({ onComplete }: Props) {
               />
               <button
                 onClick={() => setApiKeyVisible(!apiKeyVisible)}
-                className="text-neutral-600 text-xs hover:text-fg-subtle"
+                className="text-xs hover:text-fg"
+                style={{ color: 'rgba(255,255,255,0.65)' }}
               >
                 {apiKeyVisible ? '隠す' : '表示'}
               </button>
@@ -258,7 +259,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
               className="mt-4 p-3 rounded-xl"
               style={{ background: 'rgba(201,169,110,0.05)', border: '1px solid rgba(201,169,110,0.15)' }}
             >
-              <p className="text-xs text-neutral-500 font-light leading-relaxed">
+              <p className="text-xs font-light leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 🔒 APIキーはあなたのブラウザのみに保存されます。<br />
                 サーバーには送信・保存されません。
               </p>
@@ -275,7 +276,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
             exit={{ opacity: 0, y: -20 }}
           >
             <h2 className="text-fg text-xl font-extralight mb-2">AIモデルを選択</h2>
-            <p className="text-neutral-600 text-xs mb-6">あとから設定で変更できます</p>
+            <p className="text-xs mb-6" style={{ color: 'rgba(255,255,255,0.65)' }}>あとから設定で変更できます</p>
             <div className="space-y-3">
               {MODELS.map(m => (
                 <motion.button
@@ -298,7 +299,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
                       {m.badge}
                     </span>
                   </div>
-                  <p className="text-neutral-500 text-xs mb-1">{m.description}</p>
+                  <p className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.7)' }}>{m.description}</p>
                   <p className="text-xs" style={{ color: '#c9a96e' }}>{m.cost}</p>
                 </motion.button>
               ))}
@@ -312,7 +313,8 @@ export default function OnboardingFlow({ onComplete }: Props) {
         {step > 0 && (
           <button
             onClick={() => setStep(s => s - 1)}
-            className="text-neutral-600 text-sm hover:text-fg-subtle transition-colors"
+            className="text-sm transition-colors hover:text-fg"
+            style={{ color: 'rgba(255,255,255,0.7)' }}
           >
             ← 戻る
           </button>

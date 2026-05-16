@@ -22,6 +22,11 @@ export interface AgentSpec {
   Icon: LucideIcon;
   /** ホバー時にタイプライターで表示される思考フレーズ (固定アドバイスが無いときのフォールバック) */
   thinking: string[];
+  /**
+   * 「これは何ができる?」3 行のやさしい説明。
+   * ホバー / タップで必ず表示される。初見の人がこのオーブの役割を 3 秒で掴めるレベルで書く。
+   */
+  whatItDoes?: string[];
 }
 
 export interface AgentLive {
@@ -63,9 +68,16 @@ export default function AgentsOrbit({
 
   const [convIdx, setConvIdx] = useState(0);
   const [hoverKey, setHoverKey] = useState<string | null>(null);
+  const [tappedKey, setTappedKey] = useState<string | null>(null);
   const [typed, setTyped] = useState('');
   const [bursts, setBursts] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
   const burstId = useRef(0);
+  // タッチ端末か (hover が無い端末は最初の 1 タップで説明を出し、2 タップ目で開く)
+  const isTouchRef = useRef(
+    typeof window !== 'undefined' && window.matchMedia?.('(hover: none)').matches,
+  );
+  // プレビュー対象: タッチでロックされていればそれ、無ければホバー中のオーブ
+  const previewKey = tappedKey || hoverKey;
 
   // 会話バナーローテーション
   useEffect(() => {
@@ -74,11 +86,11 @@ export default function AgentsOrbit({
     return () => clearInterval(t);
   }, [conversations.length]);
 
-  // ホバー時のタイプライター (advice 優先、無ければ thinking のランダム)
+  // プレビュー時のタイプライター (advice 優先、無ければ thinking のランダム)
   useEffect(() => {
-    if (!hoverKey) { setTyped(''); return; }
-    const live = liveMap.get(hoverKey);
-    const spec = specMap.get(hoverKey);
+    if (!previewKey) { setTyped(''); return; }
+    const live = liveMap.get(previewKey);
+    const spec = specMap.get(previewKey);
     const full = live?.advice || spec?.thinking[Math.floor(Math.random() * (spec?.thinking.length || 1))] || '';
     let i = 0;
     setTyped('');
@@ -88,7 +100,7 @@ export default function AgentsOrbit({
       if (i >= full.length) clearInterval(t);
     }, 28);
     return () => clearInterval(t);
-  }, [hoverKey, agents]);
+  }, [previewKey, agents]);
 
   const triggerBurst = (e: React.MouseEvent, color: string) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -218,7 +230,21 @@ export default function AgentsOrbit({
               onMouseLeave={() => setHoverKey(null)}
               onFocus={() => setHoverKey(key)}
               onBlur={() => setHoverKey(null)}
-              onClick={(e) => { triggerBurst(e, spec.color); live?.onClick?.(); }}
+              onClick={(e) => {
+                // タッチ端末: 1 タップ目は「説明を出す」、2 タップ目 (同じオーブ) で「開く」
+                if (isTouchRef.current) {
+                  if (tappedKey === key) {
+                    setTappedKey(null);
+                    triggerBurst(e, spec.color);
+                    live?.onClick?.();
+                  } else {
+                    setTappedKey(key);
+                  }
+                  return;
+                }
+                triggerBurst(e, spec.color);
+                live?.onClick?.();
+              }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: i * 0.07 }}
@@ -333,39 +359,121 @@ export default function AgentsOrbit({
         })}
       </div>
 
-      {/* ホバー時のアドバイス・タイプライター */}
+      {/* プレビュー: 「これは何ができる?」3 行 + ひと言アドバイス */}
       <AnimatePresence>
-        {hoverKey && typed && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.25 }}
-            style={{
-              margin: '0.5rem 0.8rem 0',
-              padding: '8px 14px',
-              borderRadius: 12,
-              background: `${specMap.get(hoverKey)?.color}1A`,
-              border: `1px solid ${specMap.get(hoverKey)?.color}66`,
-              fontSize: 12.5, color: '#fff',
-              fontFamily: '"SF Mono", Menlo, monospace',
-              lineHeight: 1.6,
-              textAlign: 'left',
-              boxShadow: `0 8px 24px ${specMap.get(hoverKey)?.color}33`,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <span style={{ color: specMap.get(hoverKey)?.color, fontWeight: 800, fontSize: 11, letterSpacing: '0.1em' }}>
-                {specMap.get(hoverKey)?.name.toUpperCase()}
-              </span>
-              <span style={{ opacity: 0.55, fontSize: 10 }}>からのひと言</span>
-            </div>
-            <div style={{ opacity: 0.97 }}>
-              {typed}
-              <span style={{ animation: 'agentsOrbitCaret 0.8s infinite' }}>▎</span>
-            </div>
-          </motion.div>
-        )}
+        {previewKey && (() => {
+          const pSpec = specMap.get(previewKey);
+          const pLive = liveMap.get(previewKey);
+          if (!pSpec) return null;
+          const showOpenCta = isTouchRef.current && tappedKey === previewKey;
+          return (
+            <motion.div
+              key={previewKey}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.25 }}
+              style={{
+                margin: '0.6rem 0.8rem 0',
+                padding: '12px 14px',
+                borderRadius: 14,
+                background: `linear-gradient(180deg, ${pSpec.color}1F 0%, ${pSpec.color}10 100%)`,
+                border: `1px solid ${pSpec.color}66`,
+                color: '#fff',
+                textAlign: 'left',
+                boxShadow: `0 10px 28px ${pSpec.color}33`,
+              }}
+            >
+              {/* ヘッダー: 名前 + 役割 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%',
+                  background: `radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3), ${pSpec.color}cc 60%, ${pSpec.color})`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: `0 0 14px ${pSpec.color}66`,
+                  flexShrink: 0,
+                }}>
+                  <pSpec.Icon size={13} color="#fff" strokeWidth={2.4} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flex: 1, minWidth: 0 }}>
+                  <span style={{ color: pSpec.color, fontWeight: 800, fontSize: 13, letterSpacing: '0.06em' }}>
+                    {pSpec.name}
+                  </span>
+                  <span style={{ opacity: 0.55, fontSize: 10, letterSpacing: '0.12em' }}>
+                    {pSpec.role}
+                  </span>
+                </div>
+                <span style={{ opacity: 0.5, fontSize: 10, fontWeight: 700 }}>これは何ができる?</span>
+              </div>
+
+              {/* できること 3 行 */}
+              {pSpec.whatItDoes && pSpec.whatItDoes.length > 0 && (
+                <ul style={{
+                  listStyle: 'none', padding: 0, margin: '0 0 6px',
+                  display: 'flex', flexDirection: 'column', gap: 4,
+                }}>
+                  {pSpec.whatItDoes.map((line, idx) => (
+                    <li key={idx} style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 8,
+                      fontSize: 12.5, lineHeight: 1.5, color: 'rgba(255,255,255,0.95)',
+                    }}>
+                      <span style={{
+                        color: pSpec.color, fontWeight: 800, fontSize: 12,
+                        flexShrink: 0, marginTop: 1,
+                      }}>✓</span>
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* ひと言アドバイス (タイプライター) */}
+              {typed && (
+                <div style={{
+                  marginTop: 8, paddingTop: 8,
+                  borderTop: `1px dashed ${pSpec.color}44`,
+                  display: 'flex', alignItems: 'baseline', gap: 8,
+                  fontFamily: '"SF Mono", Menlo, monospace',
+                  fontSize: 11.5, lineHeight: 1.5,
+                }}>
+                  <span style={{ color: pSpec.color, fontWeight: 700, fontSize: 10, letterSpacing: '0.08em', flexShrink: 0 }}>
+                    ひと言
+                  </span>
+                  <span style={{ opacity: 0.92 }}>
+                    {typed}
+                    <span style={{ animation: 'agentsOrbitCaret 0.8s infinite' }}>▎</span>
+                  </span>
+                </div>
+              )}
+
+              {/* タッチ端末: 2 タップ目で開く CTA */}
+              {showOpenCta && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTappedKey(null);
+                    pLive?.onClick?.();
+                  }}
+                  style={{
+                    marginTop: 10,
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: `linear-gradient(135deg, ${pSpec.color} 0%, ${pSpec.color}cc 100%)`,
+                    color: '#fff',
+                    fontSize: 13, fontWeight: 800, letterSpacing: '0.05em',
+                    cursor: 'pointer',
+                    boxShadow: `0 6px 18px ${pSpec.color}66`,
+                  }}
+                >
+                  {pSpec.name}を開く →
+                </button>
+              )}
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
 
       <p style={{
