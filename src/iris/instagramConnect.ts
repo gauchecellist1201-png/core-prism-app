@@ -98,20 +98,72 @@ export function createSelfReportedProfile(input: {
 
 /**
  * OAuth 経由の本格接続 (Meta App Review 完了後に有効化)
- * 現状は API 404 を返すスタブ、env META_APP_ID が入ったら有効化
+ * env META_APP_ID + META_APP_SECRET が揃っていれば Facebook ダイアログへ。
  */
 export async function tryOauthConnect(): Promise<{ ok: boolean; reason?: string }> {
   try {
     const resp = await fetch('/api/instagram/oauth-status', { method: 'GET' });
     if (!resp.ok) return { ok: false, reason: 'oauth_not_configured' };
-    const data = await resp.json() as { configured?: boolean };
+    const data = await resp.json() as { configured?: boolean; connected?: boolean };
     if (!data.configured) return { ok: false, reason: 'pending_meta_review' };
-    // 認証 URL に遷移
-    window.location.href = '/api/instagram/oauth-start';
+    if (data.connected) {
+      // 既に連携済み → プロフィールを fetch して反映
+      const p = await fetchOauthProfile();
+      if (p) saveIgProfile(p);
+      return { ok: true };
+    }
+    const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/api/instagram/oauth-start?return_to=${returnTo}`;
     return { ok: true };
   } catch (e: any) {
     return { ok: false, reason: e.message || 'unknown' };
   }
+}
+
+/**
+ * Cookie ベースで OAuth 連携済みなら IG プロフィールを取得して正規化
+ */
+export async function fetchOauthProfile(): Promise<IgProfile | null> {
+  try {
+    const resp = await fetch('/api/instagram/profile', { credentials: 'include' });
+    if (!resp.ok) return null;
+    const data = await resp.json() as Partial<IgProfile> & { handle?: string };
+    if (!data.handle) return null;
+    return {
+      handle: data.handle,
+      followers: data.followers || 0,
+      avgLikes: data.avgLikes || 0,
+      avgComments: data.avgComments || 0,
+      topPostCategories: data.topPostCategories || [],
+      bestPostTime: data.bestPostTime || '土 21:00',
+      saveRate: data.saveRate || 0,
+      storyViewRate: data.storyViewRate || 0,
+      audienceAge: data.audienceAge || [],
+      audienceGender: data.audienceGender || { female: 0, male: 0, other: 0 },
+      audienceTopCountries: data.audienceTopCountries || [],
+      source: 'oauth',
+      connectedAt: data.connectedAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  } catch { return null; }
+}
+
+/**
+ * URL に ig_oauth=ok が付いていたら OAuth 戻りとみなしてプロフィールを取り込む。
+ * IrisApp の初期化時に呼ぶ想定。
+ */
+export async function consumeOauthCallback(): Promise<IgProfile | null> {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get('ig_oauth');
+  if (status !== 'ok') return null;
+  const profile = await fetchOauthProfile();
+  if (profile) saveIgProfile(profile);
+  // URL から query を取り除く
+  params.delete('ig_oauth');
+  const clean = window.location.pathname + (params.toString() ? `?${params}` : '');
+  window.history.replaceState({}, '', clean);
+  return profile;
 }
 
 /**
