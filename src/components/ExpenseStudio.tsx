@@ -4,8 +4,9 @@ import type { Persona, AppSettings } from '../types/identity';
 import type { ExpenseCategory, ExpenseEntry, ExpenseTaxRate } from '../types/expense';
 import { EXPENSE_CATEGORIES } from '../types/expense';
 import { useExpenses } from '../hooks/useExpenses';
-import { extractFromReceipt, fileToDataUrl, calcExpenseAmounts } from '../lib/expenseOCR';
+import { extractFromReceipt, refineExpenseClassification, fileToDataUrl, calcExpenseAmounts } from '../lib/expenseOCR';
 import { fmtJpy } from '../lib/invoiceCalc';
+import AgentProposalCard from './AgentProposalCard';
 
 interface Props {
   persona: Persona;
@@ -24,6 +25,8 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
   const [ocrPreview, setOcrPreview] = useState<string | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const [ocrError, setOcrError] = useState<string | null>(null);
+  const [refineBusy, setRefineBusy] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const ocrFormRef = useRef<HTMLDivElement>(null);
 
   // 編集中エントリ (OCR or 手動)
@@ -66,6 +69,37 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
     }
   }, [settings]);
 
+  // 先回り提案カードの「✏️ 直す」: 1 行指示で AI が仕訳を直す
+  const handleRefine = useCallback(async (instruction: string) => {
+    setRefineBusy(true);
+    setOcrError(null);
+    try {
+      const fixed = await refineExpenseClassification({
+        settings,
+        current: {
+          date: draft.date,
+          vendor: draft.vendor,
+          amountIncl: draft.amountIncl,
+          taxRate: draft.taxRate as ExpenseTaxRate,
+          category: draft.category as ExpenseCategory,
+          description: draft.description,
+        },
+        instruction,
+      });
+      setDraft(prev => ({ ...prev, ...fixed }));
+    } catch (e) {
+      setOcrError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setRefineBusy(false);
+    }
+  }, [settings, draft]);
+
+  // 先回り提案カードの「✗ 却下」: 読取結果を破棄
+  const handleDismissProposal = useCallback(() => {
+    setDraft({ date: today, vendor: '', category: '会議費', description: '', amountIncl: 0, taxRate: 10, payment: 'card' });
+    setOcrPreview(null); setOcrError(null); setShowDetail(false);
+  }, [today]);
+
   const handleSave = useCallback((source: 'ocr' | 'manual') => {
     if (!draft.vendor?.trim() || !draft.amountIncl || draft.amountIncl <= 0) {
       setOcrError('店舗名と税込金額を入力してください');
@@ -90,7 +124,7 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
     });
     // リセット
     setDraft({ date: today, vendor: '', category: '会議費', description: '', amountIncl: 0, taxRate: 10, payment: 'card' });
-    setOcrPreview(null); setOcrError(null);
+    setOcrPreview(null); setOcrError(null); setShowDetail(false);
     setTab('list');
   }, [draft, exp, persona.id, today]);
 
@@ -110,6 +144,20 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
     const ranked = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
     return { thisMonth, count: filtered.length, total, ranked };
   }, [personaEntries, today]);
+
+  // 先回り提案カードに出す「仕訳案」テキスト
+  const proposalDraftText = useMemo(() => {
+    const tr = (draft.taxRate || 10) as ExpenseTaxRate;
+    const { amountExcl, taxAmount } = calcExpenseAmounts(draft.amountIncl || 0, tr);
+    const cat = EXPENSE_CATEGORIES.find(c => c.value === draft.category);
+    return [
+      `日付　${draft.date || '—'}`,
+      `店舗　${draft.vendor || '—'}`,
+      `科目　${cat?.emoji || ''} ${draft.category || 'その他'}`,
+      `金額　${fmtJpy(draft.amountIncl || 0)}（税抜 ${fmtJpy(amountExcl)} ／ 税${tr}% ${fmtJpy(taxAmount)}）`,
+      `摘要　${draft.description || '—'}`,
+    ].join('\n');
+  }, [draft]);
 
   const handleExportCsv = () => {
     const headers = ['日付', '店舗', '科目', '摘要', '税抜', '税率', '税額', '税込', '支払方法', 'ソース'];
@@ -208,15 +256,37 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
                 </div>
               )}
 
-              {/* OCR 結果フォーム */}
-              {(ocrPreview || draft.amountIncl) && (
-                <div ref={ocrFormRef} className="cp-card-section cp-stack">
-                  <div className="cp-row-between">
-                    <p className="cp-h3">読取結果 (確認・修正)</p>
+              {/* AI 先回り提案カード */}
+              {(ocrPreview || (draft.amountIncl ?? 0) > 0) && !ocrBusy && (
+                <div ref={ocrFormRef} className="cp-stack-sm">
+                  <AgentProposalCard
+                    icon="📷"
+                    title={draft.vendor || 'レシート読取結果'}
+                    reason="レシートを読みました — この経費、こう仕訳しましょうか?"
+                    accentColor={persona.accentColor}
+                    draft={proposalDraftText}
+                    meta="「✏️ 直す」に 1 行書くと AI が仕訳を直します (例: 科目を交際費に / 金額1500)"
+                    approveLabel="✓ 承認して経費に追加"
+                    busy={refineBusy}
+                    onApprove={() => handleSave('ocr')}
+                    onRefine={handleRefine}
+                    onDismiss={handleDismissProposal}
+                  />
+                  <div className="cp-row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                    <button onClick={() => setShowDetail(s => !s)} className="cp-btn cp-btn-ghost cp-btn-sm">
+                      {showDetail ? '▲ 詳細フォームを閉じる' : '▼ 自分で細かく直す'}
+                    </button>
                     {ocrPreview && (
-                      <a href={ocrPreview} target="_blank" rel="noopener noreferrer" className="cp-meta hover:opacity-70">画像を見る ↗</a>
+                      <a href={ocrPreview} target="_blank" rel="noopener noreferrer" className="cp-tiny hover:opacity-70">レシート画像を見る ↗</a>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* 詳細フォーム (任意) */}
+              {showDetail && (ocrPreview || (draft.amountIncl ?? 0) > 0) && (
+                <div className="cp-card-section cp-stack">
+                  <p className="cp-h3">細かく直す</p>
                   <div className="cp-grid-2">
                     <div>
                       <label className="cp-label">日付</label>

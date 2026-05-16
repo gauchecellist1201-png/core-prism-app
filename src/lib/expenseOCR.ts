@@ -92,6 +92,83 @@ export async function extractFromReceipt(opts: {
   };
 }
 
+// ─── 先回り提案の修正: ユーザーの 1 行指示で仕訳を AI が直す ───
+const REFINE_SYS = `あなたは経費仕訳アシスタントです。
+すでに提案済みの仕訳に対して、ユーザーの修正指示を反映した仕訳を返します。
+
+返答は **JSONのみ** (コードブロック・説明文なし):
+{
+  "date": "YYYY-MM-DD",
+  "vendor": "店舗名",
+  "amountIncl": 税込合計 (number),
+  "taxRate": 10 | 8 | 0,
+  "category": "会議費" | "交際費" | "旅費交通費" | "通信費" | "消耗品費" | "広告宣伝費" | "外注費" | "地代家賃" | "水道光熱費" | "新聞図書費" | "研修費" | "支払手数料" | "租税公課" | "保険料" | "その他",
+  "description": "摘要"
+}
+
+ルール:
+- ユーザーの指示で言及された項目だけ変える。それ以外は元のまま返す。
+- 金額は数値のみ。全フィールドを必ず返す。`;
+
+export async function refineExpenseClassification(opts: {
+  settings: AppSettings;
+  current: OCRResult;
+  instruction: string;
+}): Promise<OCRResult> {
+  const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || opts.settings.claudeApiKey || '';
+  const userMsg = `## 現在の仕訳案
+日付: ${opts.current.date || '(未設定)'}
+店舗: ${opts.current.vendor || '(未設定)'}
+科目: ${opts.current.category || 'その他'}
+税込金額: ${opts.current.amountIncl ?? 0}
+税率: ${opts.current.taxRate ?? 10}
+摘要: ${opts.current.description || '(なし)'}
+
+## ユーザーの修正指示
+${opts.instruction}
+
+修正を反映した仕訳を JSON で返してください。`;
+
+  const result = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: opts.settings.preferredModel,
+        max_tokens: 600,
+        system: REFINE_SYS,
+        messages: [{ role: 'user', content: userMsg }],
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message ?? `仕訳修正 API ${res.status}`);
+    }
+    return res.json();
+  });
+
+  const text = result.content?.[0]?.text ?? '';
+  let parsed: any = {};
+  try {
+    const m = text.match(/\{[\s\S]*\}/);
+    parsed = JSON.parse(m ? m[0] : text);
+  } catch { /* ignore */ }
+
+  return {
+    date: parsed.date || opts.current.date,
+    vendor: parsed.vendor || opts.current.vendor,
+    amountIncl: typeof parsed.amountIncl === 'number' ? parsed.amountIncl : opts.current.amountIncl,
+    taxRate: [10, 8, 0].includes(parsed.taxRate) ? parsed.taxRate : opts.current.taxRate,
+    category: parsed.category || opts.current.category,
+    description: parsed.description || opts.current.description,
+  };
+}
+
 export function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();

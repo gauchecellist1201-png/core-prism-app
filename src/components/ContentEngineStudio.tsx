@@ -3,10 +3,11 @@
 // 1 つのテーマから note 記事 + X スレッド を 1 クリックで同時生成
 // 「分かりやすさ」優先のシンプルな 3 ステップ UI
 // ============================================================
-import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
-import { generateNoteArticle, generateXPost, TONE_OPTIONS, type SocialTone } from '../lib/socialDraft';
+import { generateNoteArticle, generateXPost, proposeContentTopics, TONE_OPTIONS, type SocialTone, type ContentTopicProposal } from '../lib/socialDraft';
+import AgentProposalCard from './AgentProposalCard';
 
 interface Props {
   persona: Persona;
@@ -37,15 +38,6 @@ function saveHistory(items: History[]) {
   try { localStorage.setItem(KEY_HISTORY, JSON.stringify(items.slice(0, 30))); } catch { /* */ }
 }
 
-const SAMPLE_TOPICS = [
-  '昨日学んだ顧客の本音と気づき',
-  'AI で自動化したらビジネスが変わった瞬間',
-  '今週の決断とその理由',
-  '人を採用するときに見るたった 1 つのこと',
-  'ローンチ前夜に思ったこと',
-  '失敗から学んだお金の使い方',
-];
-
 export default function ContentEngineStudio({ persona, settings, knowledge, onClose }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [topic, setTopic] = useState('');
@@ -62,13 +54,44 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
   const [error, setError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  // 先回り提案: AI が起動時にテーマ 3 案を先出し
+  const [proposals, setProposals] = useState<ContentTopicProposal[]>([]);
+  const [proposalsBusy, setProposalsBusy] = useState(false);
+  const [showManual, setShowManual] = useState(false);
+
   const personaKnowledge = knowledge.filter(k => k.personaId === persona.id);
 
-  const handleGenerate = useCallback(async () => {
-    if (!topic.trim()) {
+  const loadProposals = useCallback(async () => {
+    setProposalsBusy(true);
+    setError(null);
+    try {
+      const list = await proposeContentTopics({
+        settings, persona,
+        knowledge: personaKnowledge.slice(0, 6),
+      });
+      setProposals(list);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setProposalsBusy(false);
+    }
+  }, [settings, persona, personaKnowledge]);
+
+  // 起動時に 1 回だけ自動で提案を取りに行く
+  useEffect(() => {
+    loadProposals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleGenerate = useCallback(async (overrideTopic?: string, overrideTone?: SocialTone) => {
+    const useTopic = (overrideTopic ?? topic).trim();
+    const useTone = overrideTone ?? tone;
+    if (!useTopic) {
       setError('テーマを入力してください');
       return;
     }
+    setTopic(useTopic);
+    setTone(useTone);
     setIsGen(true);
     setError(null);
     setStep(2);
@@ -76,18 +99,18 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
       // 1) note 記事生成
       setProgress('note');
       const noteDraft = await generateNoteArticle({
-        topic, tone,
+        topic: useTopic, tone: useTone,
         persona, settings,
         knowledge: personaKnowledge.slice(0, 6),
         targetWords: 1500,
       });
-      setNoteTitle(noteDraft.title || topic);
+      setNoteTitle(noteDraft.title || useTopic);
       setNoteBody(noteDraft.body);
 
       // 2) X スレッド生成
       setProgress('x');
       const xDraft = await generateXPost({
-        topic, tone,
+        topic: useTopic, tone: useTone,
         customInstruction: '同じテーマの note 記事と連動するスレッド形式で',
         persona, settings,
         knowledge: personaKnowledge.slice(0, 4),
@@ -100,8 +123,8 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
       // 3) 履歴に保存
       const item: History = {
         id: `h_${Date.now()}`,
-        topic,
-        noteTitle: noteDraft.title || topic,
+        topic: useTopic,
+        noteTitle: noteDraft.title || useTopic,
         noteBody: noteDraft.body,
         xThread: thread,
         hashtags: noteDraft.tags || [],
@@ -192,51 +215,74 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
           </div>
         </div>
 
-        {/* ─── STEP 1: テーマ入力 ─── */}
+        {/* ─── STEP 1: AI が先回りでテーマを 3 案提案 ─── */}
         {step === 1 && (
           <div style={{ padding: '1.5rem' }}>
-            <p style={{ fontSize: '0.85rem', color: 'var(--fg-muted)', marginBottom: '1rem', lineHeight: 1.7 }}>
-              テーマを 1 つ入れるだけ。AI が <strong style={{ color: 'var(--fg)' }}>note 記事</strong>と
-              <strong style={{ color: 'var(--fg)' }}> X スレッド</strong>を同時に作ります。
+            <p style={{ fontSize: '0.85rem', color: 'var(--fg-muted)', marginBottom: '1.1rem', lineHeight: 1.7 }}>
+              入力はいりません。AI が今日の投稿テーマを <strong style={{ color: 'var(--fg)' }}>3 案</strong>先に考えました。
+              気に入ったら <strong style={{ color: 'var(--fg)' }}>✓ 承認</strong>で note と X を同時に作ります。
             </p>
 
-            <label style={{ fontSize: 11, letterSpacing: '0.15em', color: 'var(--fg-muted)', fontWeight: 700 }}>テーマ</label>
-            <textarea
-              value={topic}
-              onChange={e => setTopic(e.target.value)}
-              placeholder="例: 昨日の商談で気づいた、刺さる提案の共通点"
-              rows={3}
-              style={{
-                width: '100%', marginTop: 6, padding: '0.85rem 1rem',
-                borderRadius: 10, background: 'var(--surface-3)', border: '1px solid var(--border)',
-                color: 'var(--fg)', resize: 'none', fontSize: '16px',
-              }}
-            />
+            {/* 提案を考え中 */}
+            {proposalsBusy && (
+              <div style={{ textAlign: 'center', padding: '2.2rem 0' }}>
+                <motion.div
+                  animate={{ scale: [1, 1.12, 1] }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{
+                    width: 64, height: 64, borderRadius: '50%', margin: '0 auto 1rem',
+                    background: `radial-gradient(circle, ${accent} 0%, ${accent}55 60%, transparent 100%)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
+                  }}
+                >📡</motion.div>
+                <p style={{ fontSize: '0.9rem', fontWeight: 700 }}>🧠 AI が投稿テーマを考えています…</p>
+              </div>
+            )}
 
-            {/* サンプル */}
-            <p style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 14, marginBottom: 6 }}>↓ ここから選んでもいいです</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {SAMPLE_TOPICS.map((s, i) => (
-                <button key={i} onClick={() => setTopic(s)} style={{
-                  fontSize: '0.78rem', padding: '0.45rem 0.75rem', borderRadius: 999,
-                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-                  color: 'var(--fg)', cursor: 'pointer',
-                }}>{s}</button>
-              ))}
-            </div>
+            {/* 3 案の提案カード */}
+            {!proposalsBusy && proposals.length > 0 && (
+              <div style={{ display: 'grid', gap: 10 }}>
+                <AnimatePresence>
+                  {proposals.map((p, i) => (
+                    <AgentProposalCard
+                      key={p.title + i}
+                      icon={['📝', '💡', '🎤'][i] || '✨'}
+                      title={p.title}
+                      reason={p.reason}
+                      accentColor={accent}
+                      draft={p.hook}
+                      meta={`トーン: ${TONE_OPTIONS.find(t => t.value === p.tone)?.label || p.tone}`}
+                      approveLabel="✓ これで note と X を作る"
+                      busy={isGen}
+                      onApprove={() => handleGenerate(p.title, p.tone)}
+                      onRefine={(ins) => handleGenerate(`${p.title}（${ins}）`, p.tone)}
+                      onDismiss={() => setProposals(prev => prev.filter((_, idx) => idx !== i))}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
 
-            <label style={{ fontSize: 11, letterSpacing: '0.15em', color: 'var(--fg-muted)', fontWeight: 700, display: 'block', marginTop: 18 }}>トーン</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-              {TONE_OPTIONS.map(t => (
-                <button key={t.value} onClick={() => setTone(t.value)} style={{
-                  fontSize: '0.82rem', padding: '0.5rem 0.9rem', borderRadius: 999,
-                  background: tone === t.value ? accent : 'rgba(255,255,255,0.04)',
-                  border: tone === t.value ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                  color: tone === t.value ? '#fff' : 'var(--fg)',
-                  cursor: 'pointer', fontWeight: 600,
-                }}>{t.emoji} {t.label}</button>
-              ))}
-            </div>
+            {/* 提案ゼロ */}
+            {!proposalsBusy && proposals.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--fg-muted)', marginBottom: 10 }}>提案がまだありません</p>
+                <button onClick={loadProposals} style={{
+                  padding: '0.6rem 1.1rem', background: accent, color: '#fff', border: 'none',
+                  borderRadius: 10, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
+                }}>🔄 AI に考えてもらう</button>
+              </div>
+            )}
+
+            {/* 別の 3 案 */}
+            {!proposalsBusy && proposals.length > 0 && (
+              <button onClick={loadProposals} disabled={isGen} style={{
+                width: '100%', marginTop: 12, padding: '0.65rem',
+                background: 'rgba(255,255,255,0.04)', color: 'var(--fg)',
+                border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10,
+                fontSize: '0.82rem', fontWeight: 700, cursor: isGen ? 'not-allowed' : 'pointer',
+              }}>🔄 別の 3 案を出してもらう</button>
+            )}
 
             {error && (
               <p style={{ marginTop: 12, padding: '0.6rem 0.85rem', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 8, color: '#fca5a5', fontSize: '0.82rem' }}>
@@ -244,21 +290,50 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
               </p>
             )}
 
-            <button
-              onClick={handleGenerate}
-              disabled={isGen || !topic.trim()}
-              style={{
-                width: '100%', marginTop: 22, padding: '0.95rem',
-                background: topic.trim() ? `linear-gradient(135deg, ${accent}, ${accent}cc)` : 'var(--surface-3)',
-                color: topic.trim() ? '#fff' : 'var(--fg-muted)',
-                border: 'none', borderRadius: 12,
-                fontSize: '0.95rem', fontWeight: 800, letterSpacing: '0.08em',
-                cursor: topic.trim() ? 'pointer' : 'not-allowed',
-                boxShadow: topic.trim() ? `0 8px 24px ${accent}55` : 'none',
-              }}
-            >
-              ✨ note と X を同時に生成する
-            </button>
+            {/* 自分でテーマを書く (折りたたみ) */}
+            <button onClick={() => setShowManual(s => !s)} style={{
+              marginTop: 16, background: 'none', border: 'none', color: 'var(--fg-muted)',
+              fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', padding: 0,
+            }}>{showManual ? '▲ 閉じる' : '✍ 自分でテーマを書く'}</button>
+
+            {showManual && (
+              <div style={{ marginTop: 10 }}>
+                <textarea
+                  value={topic}
+                  onChange={e => setTopic(e.target.value)}
+                  placeholder="例: 昨日の商談で気づいた、刺さる提案の共通点"
+                  rows={3}
+                  style={{
+                    width: '100%', padding: '0.85rem 1rem',
+                    borderRadius: 10, background: 'var(--surface-3)', border: '1px solid var(--border)',
+                    color: 'var(--fg)', resize: 'none', fontSize: '16px',
+                  }}
+                />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                  {TONE_OPTIONS.map(t => (
+                    <button key={t.value} onClick={() => setTone(t.value)} style={{
+                      fontSize: '0.82rem', padding: '0.5rem 0.9rem', borderRadius: 999,
+                      background: tone === t.value ? accent : 'rgba(255,255,255,0.04)',
+                      border: tone === t.value ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                      color: tone === t.value ? '#fff' : 'var(--fg)',
+                      cursor: 'pointer', fontWeight: 600,
+                    }}>{t.emoji} {t.label}</button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => handleGenerate()}
+                  disabled={isGen || !topic.trim()}
+                  style={{
+                    width: '100%', marginTop: 14, padding: '0.85rem',
+                    background: topic.trim() ? `linear-gradient(135deg, ${accent}, ${accent}cc)` : 'var(--surface-3)',
+                    color: topic.trim() ? '#fff' : 'var(--fg-muted)',
+                    border: 'none', borderRadius: 12,
+                    fontSize: '0.9rem', fontWeight: 800, letterSpacing: '0.06em',
+                    cursor: topic.trim() ? 'pointer' : 'not-allowed',
+                  }}
+                >✨ note と X を同時に生成する</button>
+              </div>
+            )}
           </div>
         )}
 

@@ -47,6 +47,87 @@ function buildKnowledgeContext(items: KnowledgeItem[]): string {
   }).join('\n\n');
 }
 
+// ─── 先回り提案: AI がナレッジから「次の投稿テーマ」を 3 案先出し ───
+export interface ContentTopicProposal {
+  title: string;       // 提案する投稿タイトル (そのままテーマに使える)
+  hook: string;        // どんな切り口の投稿になるか (1〜2文)
+  tone: SocialTone;
+  reason: string;      // AI がこのテーマを選んだ理由
+}
+
+export async function proposeContentTopics(opts: {
+  settings: AppSettings;
+  persona: Persona;
+  knowledge?: KnowledgeItem[];
+}): Promise<ContentTopicProposal[]> {
+  const apiKey = getApiKey(opts.settings);
+  const kbCtx = buildKnowledgeContext(opts.knowledge || []);
+
+  const SYS = `あなたは ${opts.persona.name} (${opts.persona.subtitle}) の発信を支える編集者です。
+ユーザーは何も入力しません。あなたが先回りで「次にこの投稿はどうですか?」を 3 案提案します。
+
+## 人格コンテキスト
+${opts.persona.description || '(なし)'}
+
+## 出力フォーマット (JSON のみ、コードブロック・説明文なし)
+{
+  "proposals": [
+    {
+      "title": "そのまま投稿テーマに使える 20〜35字の日本語",
+      "hook": "どんな切り口・読後感の投稿になるか (1〜2文)",
+      "tone": "professional | casual | promotional | storytelling | educational",
+      "reason": "なぜ今この投稿を勧めるか (ナレッジや人格を根拠に 1文)"
+    }
+  ]
+}
+
+## ルール
+- 3 案。切り口を散らす (体験談 / 学び共有 / 主張 など)。
+- ナレッジがあればその中身を根拠にする。なければ人格の役割から発想する。
+- やさしい日本語。専門用語は避ける。`;
+
+  const userMsg = kbCtx
+    ? `## 最近のナレッジ\n${kbCtx}\n\n上記をもとに、次に発信すると良い投稿を 3 案提案してください。`
+    : `ナレッジはまだありません。${opts.persona.name} の役割から、発信すると良い投稿を 3 案提案してください。`;
+
+  return enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: opts.settings.preferredModel,
+        max_tokens: 1200,
+        system: SYS,
+        messages: [{ role: 'user', content: userMsg }],
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message ?? `テーマ提案 API ${res.status}`);
+    }
+    const data = await res.json();
+    const text = data.content?.[0]?.text ?? '';
+    let parsed: any = {};
+    try {
+      const m = text.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(m ? m[0] : text);
+    } catch { /* ignore */ }
+    const valid: SocialTone[] = ['professional', 'casual', 'promotional', 'storytelling', 'educational'];
+    const list: any[] = Array.isArray(parsed.proposals) ? parsed.proposals : [];
+    return list.slice(0, 3).map((p) => ({
+      title: String(p.title || '').trim(),
+      hook: String(p.hook || '').trim(),
+      tone: (valid.includes(p.tone) ? p.tone : 'storytelling') as SocialTone,
+      reason: String(p.reason || '').trim(),
+    })).filter((p) => p.title);
+  });
+}
+
 export async function generateNoteArticle(opts: {
   settings: AppSettings;
   persona: Persona;
