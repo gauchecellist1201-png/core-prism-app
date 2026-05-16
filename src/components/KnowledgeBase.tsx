@@ -1,6 +1,15 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { KnowledgeItem, Persona } from '../types/identity';
+import type { KnowledgeItem, Persona, AppSettings } from '../types/identity';
+import AgentProposalCard from './AgentProposalCard';
+import {
+  proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse,
+  KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal,
+} from '../lib/analyzeKnowledge';
+
+const USE_ICON: Record<KnowledgeUseKind, string> = {
+  summary: '📋', action: '✅', share: '📤', decision: '⚖️', content: '✍️',
+};
 
 function Section({ title, items, color }: { title: string; items: string[]; color: string }) {
   return (
@@ -20,6 +29,7 @@ function Section({ title, items, color }: { title: string; items: string[]; colo
 
 interface Props {
   persona: Persona;
+  settings: AppSettings;
   items: KnowledgeItem[];
   onAddFile: (file: File) => Promise<KnowledgeItem>;
   onAddNote: (title: string, content: string) => KnowledgeItem;
@@ -72,9 +82,9 @@ function isSupported(name: string): boolean {
   return SUPPORTED_EXT.has(ext);
 }
 
-export default function KnowledgeBase({ persona, items, onAddFile, onAddNote, onDelete, onReanalyze, onClose }: Props) {
+export default function KnowledgeBase({ persona, settings, items, onAddFile, onAddNote, onDelete, onReanalyze, onClose }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [tab, setTab] = useState<'list' | 'add-file' | 'add-note'>('list');
+  const [tab, setTab] = useState<'propose' | 'list' | 'add-file' | 'add-note'>(items.length > 0 ? 'propose' : 'add-file');
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -83,6 +93,73 @@ export default function KnowledgeBase({ persona, items, onAddFile, onAddNote, on
   const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+
+  // ── 先回り提案: AI が「この資料こう活かせます」を 3 案先出し ──
+  const [proposals, setProposals] = useState<KnowledgeUseProposal[]>([]);
+  const [proposalsBusy, setProposalsBusy] = useState(false);
+  const [proposalError, setProposalError] = useState<string | null>(null);
+  const [busyIdx, setBusyIdx] = useState<number | null>(null);
+  const [result, setResult] = useState<{ title: string; body: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const loadProposals = useCallback(async () => {
+    if (items.length === 0) return;
+    setProposalsBusy(true);
+    setProposalError(null);
+    setResult(null);
+    try {
+      const list = await proposeKnowledgeUses({ settings, persona, knowledge: items });
+      setProposals(list);
+    } catch (e) {
+      setProposalError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setProposalsBusy(false);
+    }
+  }, [settings, persona, items]);
+
+  // 起動時に 1 回だけ自動で活用提案を取りに行く
+  useEffect(() => {
+    if (items.length > 0) loadProposals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleApprove = useCallback(async (idx: number) => {
+    const p = proposals[idx];
+    if (!p) return;
+    setBusyIdx(idx);
+    setProposalError(null);
+    try {
+      const body = await expandKnowledgeUse({ settings, persona, proposal: p, knowledge: items });
+      setResult({ title: p.title, body });
+    } catch (e) {
+      setProposalError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusyIdx(null);
+    }
+  }, [proposals, settings, persona, items]);
+
+  const handleRefine = useCallback(async (idx: number, instruction: string) => {
+    const p = proposals[idx];
+    if (!p) return;
+    setBusyIdx(idx);
+    setProposalError(null);
+    try {
+      const refined = await refineKnowledgeUse({ settings, persona, proposal: p, instruction, knowledge: items });
+      setProposals(prev => prev.map((x, i) => (i === idx ? refined : x)));
+    } catch (e) {
+      setProposalError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusyIdx(null);
+    }
+  }, [proposals, settings, persona, items]);
+
+  const handleCopyResult = useCallback(() => {
+    if (!result) return;
+    navigator.clipboard?.writeText(result.body).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }).catch(() => { /* クリップボード非対応でも表示は残るので無視 */ });
+  }, [result]);
 
   const handleFile = useCallback(async (file: File) => {
     setIsUploading(true);
@@ -200,7 +277,7 @@ export default function KnowledgeBase({ persona, items, onAddFile, onAddNote, on
 
         {/* Tabs */}
         <div className="flex gap-1 p-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-          {[['list', '一覧'], ['add-file', 'ファイル追加'], ['add-note', 'ノート追加']].map(([id, label]) => (
+          {[['propose', '✨ 活かし方'], ['list', '一覧'], ['add-file', 'ファイル追加'], ['add-note', 'ノート追加']].map(([id, label]) => (
             <button
               key={id}
               onClick={() => setTab(id as typeof tab)}
@@ -218,6 +295,118 @@ export default function KnowledgeBase({ persona, items, onAddFile, onAddNote, on
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <AnimatePresence mode="wait">
+            {tab === 'propose' && (
+              <motion.div key="propose" className="p-4 space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                {items.length === 0 ? (
+                  <div className="text-center py-16">
+                    <p className="text-4xl mb-4">✨</p>
+                    <p className="text-neutral-500 text-sm">まだ資料がありません</p>
+                    <p className="text-neutral-600 text-xs mt-1">資料を入れると、AI が「こう活かせます」を提案します</p>
+                    <button
+                      onClick={() => setTab('add-file')}
+                      className="mt-4 text-xs px-4 py-2 rounded-lg font-medium"
+                      style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
+                    >📂 資料を追加する</button>
+                  </div>
+                ) : result ? (
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-white text-sm font-medium flex-1 min-w-0">{result.title}</p>
+                      <button
+                        onClick={() => setResult(null)}
+                        className="text-xs text-white/60 hover:text-white flex-shrink-0"
+                      >← 提案にもどる</button>
+                    </div>
+                    <div
+                      className="rounded-xl p-3 text-xs leading-relaxed whitespace-pre-wrap text-white/85"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', maxHeight: '52vh', overflowY: 'auto' }}
+                    >
+                      {result.body}
+                    </div>
+                    <button
+                      onClick={handleCopyResult}
+                      className="w-full py-2.5 rounded-lg text-sm font-medium"
+                      style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
+                    >{copied ? '✓ コピーしました' : '📋 まるごとコピー'}</button>
+                  </motion.div>
+                ) : proposalsBusy ? (
+                  <div className="text-center py-12">
+                    <motion.div
+                      animate={{ scale: [1, 1.12, 1] }}
+                      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                      style={{
+                        width: 60, height: 60, borderRadius: '50%', margin: '0 auto 0.9rem',
+                        background: `radial-gradient(circle, ${persona.accentColor} 0%, ${persona.accentColor}55 60%, transparent 100%)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
+                      }}
+                    >🧠</motion.div>
+                    <p className="text-white text-sm font-medium">AI が資料の活かし方を考えています…</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-white/60 text-xs leading-relaxed">
+                      ためた {items.length} 件の資料から、AI が「こう活かせます」を先に提案します。
+                      よければ <strong style={{ color: persona.accentColor }}>✓ 承認</strong> で成果物まで作ります。
+                    </p>
+                    <AnimatePresence>
+                      {proposals.map((p, i) => (
+                        <AgentProposalCard
+                          key={p.title + i}
+                          icon={USE_ICON[p.kind] || '✨'}
+                          title={p.title}
+                          reason={p.reason}
+                          accentColor={persona.accentColor}
+                          draft={p.hook}
+                          meta={`活用: ${KNOWLEDGE_USE_LABEL[p.kind]}${p.sourceTitle ? ` ／ 資料: ${p.sourceTitle}` : ''}`}
+                          approveLabel="✓ 承認して成果物を作る"
+                          busy={busyIdx === i}
+                          onApprove={() => handleApprove(i)}
+                          onRefine={(ins) => handleRefine(i, ins)}
+                          onDismiss={() => setProposals(prev => prev.filter((_, idx) => idx !== i))}
+                        />
+                      ))}
+                    </AnimatePresence>
+
+                    {proposals.length === 0 && !proposalError && (
+                      <div className="text-center py-8">
+                        <p className="text-neutral-500 text-sm mb-3">提案がまだありません</p>
+                        <button
+                          onClick={loadProposals}
+                          className="text-xs px-4 py-2 rounded-lg font-medium"
+                          style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
+                        >🔄 AI に考えてもらう</button>
+                      </div>
+                    )}
+
+                    {proposalError && (
+                      <div className="p-3 rounded-lg space-y-2" style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)' }}>
+                        <p className="text-red-300 text-xs">うまくいきませんでした: {proposalError}</p>
+                        <button
+                          onClick={loadProposals}
+                          className="text-xs px-3 py-1.5 rounded-lg text-red-200"
+                          style={{ border: '1px solid rgba(248,113,113,0.4)' }}
+                        >🔄 もう一度ためす</button>
+                      </div>
+                    )}
+
+                    {proposals.length > 0 && (
+                      <button
+                        onClick={loadProposals}
+                        disabled={busyIdx !== null}
+                        className="w-full py-2.5 rounded-lg text-xs font-medium"
+                        style={{ background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.1)' }}
+                      >🔄 別の 3 案を出してもらう</button>
+                    )}
+
+                    <button
+                      onClick={() => setTab('list')}
+                      className="w-full text-xs text-white/45 hover:text-white/70 pt-1"
+                    >▸ 自分で資料を1件ずつ見る</button>
+                  </>
+                )}
+              </motion.div>
+            )}
+
             {tab === 'list' && (
               <motion.div key="list" className="p-4 space-y-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {items.length === 0 ? (

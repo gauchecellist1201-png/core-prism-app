@@ -1069,6 +1069,7 @@ export default function IdentityDashboard({
           <KnowledgeBase
             key="kb"
             persona={persona}
+            settings={settings}
             items={personaKnowledge}
             onAddFile={onAddKnowledgeFile}
             onAddNote={onAddKnowledgeNote}

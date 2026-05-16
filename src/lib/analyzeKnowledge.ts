@@ -1,7 +1,7 @@
 // ============================================================
 // アップロードされたナレッジを Claude で自動分析
 // ============================================================
-import type { AppSettings, KnowledgeAnalysis, Persona } from '../types/identity';
+import type { AppSettings, KnowledgeAnalysis, KnowledgeItem, Persona } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
 
@@ -211,4 +211,203 @@ ${truncated}${content.length > truncated.length ? '\n\n[...以降省略]' : ''}`
       generatedAt: new Date().toISOString(),
     };
   });
+}
+
+// ============================================================
+// 先回り提案: AI がたまった資料から「この資料こう活かせます」を 3 案先出し
+// 操作は ✓承認 (成果物を書き上げる) / ✏️直す (1行指示で再提案) / ✗却下 だけ。
+// ============================================================
+export type KnowledgeUseKind = 'summary' | 'action' | 'share' | 'decision' | 'content';
+
+export const KNOWLEDGE_USE_LABEL: Record<KnowledgeUseKind, string> = {
+  summary: 'まとめる',
+  action: 'やることに変える',
+  share: '共有用に整える',
+  decision: '判断のたたき台',
+  content: '発信ネタにする',
+};
+
+const KNOWLEDGE_USE_KINDS: KnowledgeUseKind[] = ['summary', 'action', 'share', 'decision', 'content'];
+
+export interface KnowledgeUseProposal {
+  title: string;        // そのまま実行できる活用アクション名 (20〜35字)
+  hook: string;         // 実行するとどんな成果物が手に入るか (1〜2文)
+  kind: KnowledgeUseKind;
+  sourceTitle: string;  // 根拠にした資料のタイトル (なければ '')
+  reason: string;       // なぜ今これを勧めるか (1文)
+}
+
+function buildKnowledgeContextForUse(items: KnowledgeItem[]): string {
+  return items.slice(0, 6).map((k, i) => {
+    const body = k.analysis?.summary || k.content.slice(0, 600);
+    return `[資料${i + 1}: ${k.title}]\n${body}`;
+  }).join('\n\n');
+}
+
+async function callKnowledgeAi(
+  settings: AppSettings,
+  system: string,
+  userMsg: string,
+  maxTokens: number,
+  label: string,
+): Promise<string> {
+  const apiKey = getApiKey(settings);
+  return enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: settings.preferredModel,
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: 'user', content: userMsg }],
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message ?? `${label} API ${res.status}`);
+    }
+    const data = await res.json();
+    return data.content?.[0]?.text ?? '';
+  });
+}
+
+function normalizeUseProposal(p: any): KnowledgeUseProposal {
+  const kind: KnowledgeUseKind = KNOWLEDGE_USE_KINDS.includes(p?.kind) ? p.kind : 'summary';
+  return {
+    title: String(p?.title || '').trim(),
+    hook: String(p?.hook || '').trim(),
+    kind,
+    sourceTitle: String(p?.sourceTitle || '').trim(),
+    reason: String(p?.reason || '').trim(),
+  };
+}
+
+/** たまった資料から「こう活かせます」を 3 案、AI が先回りで提案する */
+export async function proposeKnowledgeUses(opts: {
+  settings: AppSettings;
+  persona: Persona;
+  knowledge: KnowledgeItem[];
+}): Promise<KnowledgeUseProposal[]> {
+  const kbCtx = buildKnowledgeContextForUse(opts.knowledge);
+
+  const SYS = `あなたは ${opts.persona.name} (${opts.persona.subtitle}) の学びを支える秘書です。
+ユーザーがためた資料を読み、「この資料、こう活かせます」を 3 案、先回りで提案します。
+ユーザーは何も入力しません。あなたが具体的な活用アクションまで考えます。
+
+## 人格コンテキスト
+${opts.persona.description || '(なし)'}
+
+## 出力フォーマット (JSON のみ、コードブロック・説明文なし)
+{
+  "proposals": [
+    {
+      "title": "そのまま実行できる活用アクション (20〜35字の日本語)",
+      "hook": "実行するとどんな成果物が手に入るか (1〜2文)",
+      "kind": "summary | action | share | decision | content",
+      "sourceTitle": "根拠にした資料のタイトルを1つ (なければ空文字)",
+      "reason": "なぜ今これを勧めるか (資料の中身を根拠に1文)"
+    }
+  ]
+}
+
+## ルール
+- 3 案。活用の切り口を散らす (まとめる / やることに変える / 共有用に整える / 判断のたたき台 / 発信ネタ など)。
+- 必ず資料の中身を根拠にする。資料に書いていない話を作らない。
+- やさしい日本語。専門用語は使わず、使うときは括弧で和訳を添える。`;
+
+  const userMsg = `## たまっている資料\n${kbCtx}\n\n上記の資料をどう活かせるか、具体的な活用アクションを 3 案提案してください。`;
+
+  const text = await callKnowledgeAi(opts.settings, SYS, userMsg, 1200, '活用提案');
+  let parsed: any = {};
+  try {
+    const m = text.match(/\{[\s\S]*\}/);
+    parsed = JSON.parse(m ? m[0] : text);
+  } catch { /* ignore */ }
+  const list: any[] = Array.isArray(parsed.proposals) ? parsed.proposals : [];
+  return list.slice(0, 3).map(normalizeUseProposal).filter((p) => p.title);
+}
+
+/** ✏️直す: 1 行の自然文指示を受け、活用アクションを 1 案だけ作り直す */
+export async function refineKnowledgeUse(opts: {
+  settings: AppSettings;
+  persona: Persona;
+  proposal: KnowledgeUseProposal;
+  instruction: string;
+  knowledge: KnowledgeItem[];
+}): Promise<KnowledgeUseProposal> {
+  const kbCtx = buildKnowledgeContextForUse(opts.knowledge);
+
+  const SYS = `あなたは ${opts.persona.name} の学びを支える秘書です。
+すでに出した活用アクションの提案を、ユーザーの 1 行の指示にしたがって作り直します。
+
+## 出力フォーマット (JSON のみ)
+{
+  "title": "...", "hook": "...", "kind": "summary | action | share | decision | content",
+  "sourceTitle": "...", "reason": "..."
+}
+
+## ルール
+- ユーザーの指示を最優先で反映する。
+- 資料の中身を根拠にする。やさしい日本語で。`;
+
+  const userMsg = `## いまの提案
+タイトル: ${opts.proposal.title}
+成果物: ${opts.proposal.hook}
+理由: ${opts.proposal.reason}
+
+## たまっている資料
+${kbCtx}
+
+## ユーザーの直してほしい指示
+${opts.instruction}
+
+この指示を反映して、活用アクションの提案を作り直してください。`;
+
+  const text = await callKnowledgeAi(opts.settings, SYS, userMsg, 800, '提案修正');
+  let parsed: any = {};
+  try {
+    const m = text.match(/\{[\s\S]*\}/);
+    parsed = JSON.parse(m ? m[0] : text);
+  } catch {
+    return opts.proposal;
+  }
+  const refined = normalizeUseProposal(parsed);
+  return refined.title ? refined : opts.proposal;
+}
+
+/** ✓承認: 採用された活用アクションを実行し、すぐ使える成果物の本文を書き上げる */
+export async function expandKnowledgeUse(opts: {
+  settings: AppSettings;
+  persona: Persona;
+  proposal: KnowledgeUseProposal;
+  knowledge: KnowledgeItem[];
+}): Promise<string> {
+  const kbCtx = buildKnowledgeContextForUse(opts.knowledge);
+
+  const SYS = `あなたは ${opts.persona.name} (${opts.persona.subtitle}) の学びを支える秘書です。
+採用された活用アクションを実行し、ユーザーがそのまま使える成果物の本文を書き上げます。
+
+## ルール
+- 出力は成果物の本文そのもの。あいさつ・前置き・「承知しました」などは書かない。
+- 見出し (##) や箇条書き (-) を使って読みやすく。
+- 資料に書かれていることを根拠にする。推測は「〜のはずです」と明示。
+- やさしい日本語。専門用語は括弧で和訳を添える。`;
+
+  const userMsg = `## 実行する活用アクション
+${opts.proposal.title}
+${opts.proposal.hook}
+
+## たまっている資料
+${kbCtx}
+
+上記の資料をもとに、この活用アクションの成果物を本文として書き上げてください。`;
+
+  const text = await callKnowledgeAi(opts.settings, SYS, userMsg, 2048, '成果物生成');
+  return text.trim();
 }
