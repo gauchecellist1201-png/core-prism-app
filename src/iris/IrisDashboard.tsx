@@ -13,7 +13,7 @@ import IrisCustomBgEditor from './IrisCustomBgEditor';
 import IrisImageEditor from './IrisImageEditor';
 import { useInfluencerDesk } from '../hooks/useInfluencerDesk';
 import {
-  generateNegotiation, generateDraftCopy, evaluateOffer,
+  generateNegotiation, generateDraftCopy,
 } from '../lib/influencerAgent';
 import {
   PLATFORM_META, CONTENT_TYPE_META, DEAL_STAGE_META, NEGOTIATION_TYPE_META,
@@ -30,7 +30,7 @@ import {
   Bookmark, BookmarkPlus, Send, Trash2, Brain, User,
   Wallet, Calendar, Hourglass, ShieldAlert,
   CheckCircle2, AlertTriangle, Bot, Lightbulb, Sun,
-  Briefcase, Rocket, Heart, Smartphone, Ban,
+  Briefcase, Rocket, Heart, Smartphone,
   Save, X,
 } from 'lucide-react';
 import IrisCommandBar from './IrisCommandBar';
@@ -611,7 +611,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 />
               </>
             )}
-            {tab === 'deals' && <DealsView bg={bg} desk={desk} myDeals={myDeals} settings={settings} />}
+            {tab === 'deals' && <DealsView bg={bg} desk={desk} myDeals={myDeals} settings={settings} mediaKit={mediaKit} />}
             {tab === 'negotiate' && <NegotiateView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'draft' && <DraftView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} knowledge={knowledge} />}
             {tab === 'knowledge' && <IrisKnowledgeView bg={bg} knowledge={knowledge} />}
@@ -1032,38 +1032,132 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
   );
 }
 
-// ─── 案件 (DealsView) ─────────────────────────
-function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; myDeals: InfluencerDeal[]; settings: AppSettings }) {
-  const [open, setOpen] = useState(false);
+// ════════════════════════════════════════════════════════════
+// 先回り提案カード — AI が「これやりましょうか?」を先出し。
+// ユーザーは手入力せず ✓承認 / ✗却下 / ✏️修正 だけ。
+// ════════════════════════════════════════════════════════════
+function ProposalCard({
+  bg, title, sub, reason, reasonLabel, badge, busy,
+  approveLabel, onApprove, onReject, editArea,
+}: {
+  bg: IrisBackgroundDef;
+  title: React.ReactNode;
+  sub?: React.ReactNode;
+  reason: string;
+  reasonLabel?: string;
+  badge?: string;
+  busy?: boolean;
+  approveLabel: string;
+  onApprove: () => void;
+  onReject: () => void;
+  editArea?: React.ReactNode;
+}) {
+  const [editing, setEditing] = useState(false);
+  return (
+    <motion.div layout
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.96, x: -16 }}>
+      <Card bg={bg}>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          fontSize: 10, letterSpacing: '0.16em', fontWeight: 800,
+          color: bg.accent, marginBottom: 8,
+        }}>
+          <Sparkles size={11} /> {badge || 'AI からの提案'}
+        </div>
+        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: bg.ink, lineHeight: 1.45 }}>
+          {title}
+        </div>
+        {sub && <div style={{ fontSize: '0.82rem', color: bg.inkSoft, marginTop: 3 }}>{sub}</div>}
+        <div style={{
+          marginTop: 10, padding: '0.7rem 0.85rem', borderRadius: 12,
+          background: `${bg.accent}14`, border: `1px solid ${bg.accent}33`,
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: bg.accent, marginBottom: 3 }}>
+            {reasonLabel || '🤔 AI がこれをすすめる理由'}
+          </div>
+          <div style={{ fontSize: '0.86rem', color: bg.ink, lineHeight: 1.65 }}>{reason}</div>
+        </div>
+        {editing && editArea && (
+          <div style={{ marginTop: 10 }}>{editArea}</div>
+        )}
+        <div style={{ display: 'flex', gap: '0.4rem', marginTop: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button onClick={onReject} disabled={busy}
+            style={{ ...btnSecondary(bg), padding: '0.6rem 1rem', opacity: busy ? 0.5 : 1 }}>
+            ✗ 却下
+          </button>
+          {editArea && (
+            <button onClick={() => setEditing(e => !e)} disabled={busy}
+              style={{ ...btnSecondary(bg), padding: '0.6rem 1rem', opacity: busy ? 0.5 : 1 }}>
+              {editing ? '修正をとじる' : '✏️ 修正'}
+            </button>
+          )}
+          <button onClick={onApprove} disabled={busy}
+            style={{ ...btnPrimary(bg), padding: '0.6rem 1.2rem', opacity: busy ? 0.6 : 1 }}>
+            {busy ? '考え中…' : approveLabel}
+          </button>
+        </div>
+      </Card>
+    </motion.div>
+  );
+}
+
+// ─── 案件 (DealsView) — AI が「今日応募すべき案件」を先出し ───
+function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; myDeals: InfluencerDeal[]; settings: AppSettings; mediaKit?: MediaKit }) {
+  const [manualOpen, setManualOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
-  const [addedFlash, setAddedFlash] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
+  const [handled, setHandled] = useState<string[]>([]);
+  const [feeEdit, setFeeEdit] = useState<Record<string, number>>({});
   const [d, setD] = useState<Partial<InfluencerDeal>>({
     brandName: '', platform: 'instagram', contentType: 'post', fee: 0, deliverables: '', stage: 'inquiry',
   });
 
+  const showFlash = (msg: string) => { setFlash(msg); setTimeout(() => setFlash(null), 2400); };
+
+  // AI が実物カタログから合致度の高い案件を 3 件、先回りでピック
+  const picks = useMemo(() =>
+    getAllBrandDeals()
+      .map(deal => ({ deal, score: computeMatchScore(deal, mediaKit) }))
+      .filter(p => !handled.includes(p.deal.id))
+      .sort((a, b) => b.score.total - a.score.total)
+      .slice(0, 3),
+    [handled, mediaKit]
+  );
+
+  const approvePick = (deal: BrandDeal) => {
+    const fee = feeEdit[deal.id] ?? deal.fee;
+    desk.addDeal(IRIS_PERSONA_ID, {
+      brandName: deal.brandName, productName: deal.productName,
+      platform: deal.platform, contentType: deal.contentType,
+      fee, deliverables: deal.postExample || deal.summary,
+      stage: 'inquiry',
+      notes: `AI が見つけた案件 — ${deal.summary}`,
+      guidelines: deal.description,
+    });
+    setHandled(h => [...h, deal.id]);
+    showFlash(`${deal.brandName} をお仕事一覧に追加しました`);
+  };
+
   const add = () => {
     setAddError(null);
     if (!d.brandName?.trim()) {
-      setAddError('ブランド名を入れてください (★ がついている項目は必須です)');
+      setAddError('ブランド名を入れてください');
       return;
     }
     desk.addDeal(IRIS_PERSONA_ID, {
       brandName: d.brandName!, agencyName: d.agencyName, productName: d.productName,
       platform: (d.platform || 'instagram') as Platform,
       contentType: (d.contentType || 'post') as ContentType,
-      fee: Number(d.fee) || 0, usageFee: d.usageFee ? Number(d.usageFee) : undefined,
+      fee: Number(d.fee) || 0,
       deliverables: d.deliverables || '',
-      draftDeadline: d.draftDeadline || undefined,
-      postDeadline: d.postDeadline || undefined,
-      reportDeadline: d.reportDeadline || undefined,
       stage: (d.stage || 'inquiry') as DealStage,
-      contactName: d.contactName, contactEmail: d.contactEmail, notes: d.notes, guidelines: d.guidelines,
+      contactName: d.contactName, contactEmail: d.contactEmail, notes: d.notes,
     });
     setD({ brandName: '', platform: 'instagram', contentType: 'post', fee: 0, deliverables: '', stage: 'inquiry' });
-    setOpen(false);
-    setAddedFlash(true);
-    setTimeout(() => setAddedFlash(false), 2400);
+    setManualOpen(false);
+    showFlash('案件を追加しました');
   };
 
   return (
@@ -1071,40 +1165,71 @@ function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; des
       {quickOpen && (
         <IrisQuickAdd bg={bg} settings={settings}
           onClose={() => setQuickOpen(false)}
-          onSave={(data) => { desk.addDeal(IRIS_PERSONA_ID, data); }} />
+          onSave={(data) => { desk.addDeal(IRIS_PERSONA_ID, data); showFlash('案件を追加しました'); }} />
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div>
         <h2 style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0, fontWeight: 500 }}>
           お仕事一覧
         </h2>
-        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => setQuickOpen(true)} style={{
-            background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-            color: '#fff', border: 'none', borderRadius: 999,
-            padding: '0.7rem 1.4rem', fontWeight: 700, cursor: 'pointer',
-            fontSize: '0.88rem', fontFamily: IRIS_FONTS.body,
-            boxShadow: `0 8px 22px ${bg.accent}55`,
-            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-          }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> AI で追加</span>
-          </button>
-          <button onClick={() => setOpen(!open)} style={{
-            background: 'rgba(255,255,255,0.85)', color: '#1F1A2E',
-            border: `1px solid ${bg.cardBorder}`, borderRadius: 999,
-            padding: '0.7rem 1.2rem', fontWeight: 600, cursor: 'pointer',
-            fontSize: '0.85rem', fontFamily: IRIS_FONTS.body,
-          }}>
-            {open ? '閉じる' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Edit3 size={14} /> 手動</span>}
-          </button>
-        </div>
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', margin: '0.2rem 0 0' }}>
+          AI があなたに合いそうな案件を先に見つけています。✓ で追加するだけ。
+        </p>
       </div>
 
-      {open && (
+      {flash && (
+        <div role="status" style={{
+          padding: '0.6rem 0.9rem',
+          background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)',
+          color: '#065F46', borderRadius: 10, fontSize: '0.85rem',
+        }}>✓ {flash}</div>
+      )}
+
+      {/* AI が先出しした応募候補 */}
+      <AnimatePresence>
+        {picks.map(({ deal, score }) => (
+          <ProposalCard key={deal.id} bg={bg}
+            badge="AI が見つけた案件"
+            title={`${CATEGORY_META[deal.category].emoji} ${deal.brandName} に応募しましょうか?`}
+            sub={`${deal.summary} ・ 締切 ${deal.deadline}`}
+            reason={`${score.reasons.slice(0, 2).join('。') || 'あなたのジャンルと相性が良い案件です'}。報酬 ¥${(feeEdit[deal.id] ?? deal.fee).toLocaleString()}${deal.feeNote ? ` (${deal.feeNote})` : ''}。合致度 ${score.total} 点。`}
+            approveLabel="✓ お仕事に追加"
+            onApprove={() => approvePick(deal)}
+            onReject={() => setHandled(h => [...h, deal.id])}
+            editArea={
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: bg.ink, marginBottom: 4 }}>報酬を直す (円)</div>
+                <input type="number" style={{ ...inp(bg), width: '100%' }}
+                  value={feeEdit[deal.id] ?? deal.fee}
+                  onChange={e => setFeeEdit(f => ({ ...f, [deal.id]: Number(e.target.value) }))} />
+              </div>
+            }
+          />
+        ))}
+      </AnimatePresence>
+
+      {picks.length === 0 && (
+        <Card bg={bg}>
+          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1rem 0' }}>今日の提案はすべて見終わりました 🎉</p>
+        </Card>
+      )}
+
+      {/* 自分で追加 (補助) */}
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+        <button onClick={() => setQuickOpen(true)}
+          style={{ ...btnSecondary(bg), display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Sparkles size={14} /> もらった案件を AI で追加
+        </button>
+        <button onClick={() => setManualOpen(o => !o)}
+          style={{ ...btnSecondary(bg), display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Edit3 size={14} /> {manualOpen ? '閉じる' : '自分で入力'}
+        </button>
+      </div>
+
+      {manualOpen && (
         <Card bg={bg}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.6rem' }}>
             <input style={inp(bg)} placeholder="ブランド名 *" value={d.brandName || ''} onChange={e => setD({ ...d, brandName: e.target.value })} />
-            <input style={inp(bg)} placeholder="代理店名" value={d.agencyName || ''} onChange={e => setD({ ...d, agencyName: e.target.value })} />
             <input style={inp(bg)} placeholder="商品名" value={d.productName || ''} onChange={e => setD({ ...d, productName: e.target.value })} />
             <select style={inp(bg)} value={d.platform} onChange={e => setD({ ...d, platform: e.target.value as Platform })}>
               {Object.entries(PLATFORM_META).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
@@ -1114,9 +1239,6 @@ function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; des
             </select>
             <input style={inp(bg)} type="number" placeholder="報酬 (円)" value={d.fee || ''} onChange={e => setD({ ...d, fee: Number(e.target.value) })} />
             <input style={inp(bg)} placeholder="納品物 (例: フィード1本)" value={d.deliverables || ''} onChange={e => setD({ ...d, deliverables: e.target.value })} />
-            <input style={inp(bg)} type="datetime-local" placeholder="下書き期限" value={d.draftDeadline || ''} onChange={e => setD({ ...d, draftDeadline: e.target.value })} />
-            <input style={inp(bg)} type="datetime-local" placeholder="投稿期限" value={d.postDeadline || ''} onChange={e => setD({ ...d, postDeadline: e.target.value })} />
-            <input style={inp(bg)} type="datetime-local" placeholder="レポート期限" value={d.reportDeadline || ''} onChange={e => setD({ ...d, reportDeadline: e.target.value })} />
           </div>
           {addError && (
             <div role="alert" style={{
@@ -1129,18 +1251,8 @@ function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; des
         </Card>
       )}
 
-      {addedFlash && (
-        <div role="status" style={{
-          padding: '0.6rem 0.9rem',
-          background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)',
-          color: '#065F46', borderRadius: 10, fontSize: '0.85rem',
-        }}>✓ 案件を追加しました</div>
-      )}
-
-      {myDeals.length === 0 && (
-        <Card bg={bg}>
-          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '2rem 0' }}>まだ案件はありません</p>
-        </Card>
+      {myDeals.length > 0 && (
+        <p style={{ color: bg.inkSoft, fontSize: '0.8rem', margin: '0.2rem 0 0', fontWeight: 700 }}>追加済みのお仕事</p>
       )}
 
       {myDeals.map(deal => {
@@ -1179,83 +1291,99 @@ function DealsView({ bg, desk, myDeals, settings }: { bg: IrisBackgroundDef; des
   );
 }
 
-// ─── 交渉 ─────────────────────────────────────
-function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) {
-  const [dealId, setDealId] = useState('');
-  const [negoType, setNegoType] = useState<NegotiationType>('first-reply');
-  const [targetFee, setTargetFee] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [evalRes, setEvalRes] = useState<any>(null);
-  const [err, setErr] = useState<string | null>(null);
+// ─── 交渉 (NegotiateView) — AI が「この案件、◯◯で返信しましょうか?」を先出し ───
+// 案件の状況 (stage) から、いま必要な返信のしかたを AI が判断する
+const STAGE_NEGO_SUGGEST: Partial<Record<DealStage, NegotiationType>> = {
+  'inquiry':         'first-reply',
+  'negotiating':     'rate-counter',
+  'contracted':      'scope-clarify',
+  'draft-submitted': 'follow-up',
+  'posted':          'report-cover',
+  'reported':        'invoice-request',
+};
 
-  const gen = async () => {
-    const deal = myDeals.find((d: InfluencerDeal) => d.id === dealId);
-    if (!deal) { setErr('案件を選んでください'); return; }
-    setBusy(true); setErr(null);
-    try {
-      const r = await generateNegotiation({ settings, persona, deal, mediaKit, type: negoType, targetFee: targetFee ? Number(targetFee) : undefined });
-      desk.addNego({ ...r, dealId: deal.id, status: 'draft' });
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
-  };
-  const ev = async () => {
-    const deal = myDeals.find((d: InfluencerDeal) => d.id === dealId);
-    if (!deal) { setErr('案件を選んでください'); return; }
-    setBusy(true); setErr(null);
-    try { setEvalRes(await evaluateOffer({ settings, deal, mediaKit })); }
-    catch (e: any) { setErr(e.message); } finally { setBusy(false); }
-  };
+function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState<string[]>([]);
+  const [typeOverride, setTypeOverride] = useState<Record<string, NegotiationType>>({});
+  const [err, setErr] = useState<string | null>(null);
 
   const negos = desk.negos.filter((n: any) => myDeals.some((d: InfluencerDeal) => d.id === n.dealId));
 
+  // AI が「いま返事が必要な案件」を先回りで拾う
+  const proposals = useMemo(() =>
+    myDeals
+      .filter((d: InfluencerDeal) => STAGE_NEGO_SUGGEST[d.stage] && !dismissed.includes(d.id))
+      .slice(0, 4),
+    [myDeals, dismissed]
+  );
+
+  const approve = async (deal: InfluencerDeal, type: NegotiationType) => {
+    setBusyId(deal.id); setErr(null);
+    try {
+      const r = await generateNegotiation({ settings, persona, deal, mediaKit, type });
+      desk.addNego({ ...r, dealId: deal.id, status: 'draft' });
+      setDismissed(d => [...d, deal.id]);
+    } catch (e: any) {
+      setErr((e?.message || '文章の作成に失敗しました') + ' — 通信環境を確認して、もう一度 ✓ を押してください');
+    } finally { setBusyId(null); }
+  };
+
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
-      <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
-        お返事を作る
-      </h2>
-
-      <Card bg={bg}>
-        <select style={{ ...inp(bg), width: '100%', marginBottom: '0.6rem' }} value={dealId} onChange={e => setDealId(e.target.value)}>
-          <option value="">— 案件を選ぶ —</option>
-          {myDeals.map((d: InfluencerDeal) => <option key={d.id} value={d.id}>{d.brandName}</option>)}
-        </select>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.4rem', marginBottom: '0.6rem' }}>
-          {Object.entries(NEGOTIATION_TYPE_META).map(([k, v]) => (
-            <button key={k} onClick={() => setNegoType(k as NegotiationType)}
-              style={{
-                background: negoType === k ? bg.accent : 'rgba(255,255,255,0.5)',
-                color: negoType === k ? '#fff' : bg.ink,
-                border: `1px solid ${bg.cardBorder}`,
-                borderRadius: 12, padding: '0.5rem',
-                fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left',
-                fontFamily: IRIS_FONTS.body,
-              }}>
-              {v.emoji} {v.label}
-            </button>
-          ))}
-        </div>
-        {negoType === 'rate-counter' && (
-          <input style={{ ...inp(bg), width: '100%', marginBottom: '0.6rem' }} type="number" placeholder="希望報酬 (円)"
-            value={targetFee} onChange={e => setTargetFee(e.target.value)} />
-        )}
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button onClick={gen} disabled={busy || !dealId} style={btnPrimary(bg)}>
-            {busy ? '考え中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> お返事を作る</span>}
-          </button>
-          <button onClick={ev} disabled={busy || !dealId} style={btnSecondary(bg)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Wallet size={14} /> 金額を見てもらう</span></button>
-        </div>
-      </Card>
+      <div>
+        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
+          お返事を作る
+        </h2>
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', margin: '0.2rem 0 0' }}>
+          AI が「返事が必要な案件」を見つけて、返し方まで考えました。✓ で文章ができます。
+        </p>
+      </div>
 
       {err && <Card bg={bg}><p style={{ color: '#FF5C5C', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {err}</p></Card>}
 
-      {evalRes && (
+      <AnimatePresence>
+        {proposals.map((deal: InfluencerDeal) => {
+          const type = typeOverride[deal.id] || STAGE_NEGO_SUGGEST[deal.stage]!;
+          const m = NEGOTIATION_TYPE_META[type];
+          const sm = DEAL_STAGE_META[deal.stage];
+          return (
+            <ProposalCard key={deal.id} bg={bg}
+              badge="AI からの返信提案"
+              busy={busyId === deal.id}
+              title={`${deal.brandName} に「${m.emoji} ${m.label}」で返信しましょうか?`}
+              sub={`いまの状況: ${sm.emoji} ${sm.label}`}
+              reason={m.hint}
+              approveLabel="✓ この返事を作る"
+              onApprove={() => approve(deal, type)}
+              onReject={() => setDismissed(d => [...d, deal.id])}
+              editArea={
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: bg.ink, marginBottom: 6 }}>返し方を変える</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.35rem' }}>
+                    {Object.entries(NEGOTIATION_TYPE_META).map(([k, v]) => (
+                      <button key={k} onClick={() => setTypeOverride(t => ({ ...t, [deal.id]: k as NegotiationType }))}
+                        style={{
+                          background: type === k ? bg.accent : 'rgba(255,255,255,0.6)',
+                          color: type === k ? '#fff' : bg.ink,
+                          border: `1px solid ${bg.cardBorder}`, borderRadius: 10,
+                          padding: '0.4rem 0.5rem', fontSize: '0.78rem', cursor: 'pointer',
+                          textAlign: 'left', fontFamily: IRIS_FONTS.body,
+                        }}>
+                        {v.emoji} {v.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              }
+            />
+          );
+        })}
+      </AnimatePresence>
+
+      {proposals.length === 0 && (
         <Card bg={bg}>
-          <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: bg.ink }}>
-            おすすめ: {evalRes.verdict === 'accept' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#10B981' }}><CheckCircle2 size={14} /> 受けてOK</span> : evalRes.verdict === 'counter' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#F59E0B' }}><AlertTriangle size={14} /> 値段相談したい</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#EF4444' }}><Ban size={14} /> 今回は見送り</span>}
-          </p>
-          <p style={{ color: bg.inkSoft, fontSize: '0.9rem' }}>このくらいが妥当: ¥{evalRes.fairFee.min?.toLocaleString()} 〜 ¥{evalRes.fairFee.max?.toLocaleString()}</p>
-          <p style={{ marginTop: '0.5rem', whiteSpace: 'pre-wrap' }}>{evalRes.reason}</p>
-          {evalRes.counterScript && <p style={{ marginTop: '0.5rem', fontStyle: 'italic', color: bg.accent }}>→ {evalRes.counterScript}</p>}
+          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1rem 0' }}>いま返事が必要な案件はありません ☺ お仕事が増えると AI が提案します。</p>
         </Card>
       )}
 
@@ -1278,18 +1406,31 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
   );
 }
 
-// ─── 投稿下書き ─────────────────────────────
+// ─── 創作 (DraftView) — AI が「次はこの投稿を書きましょうか?」を先出し ───
+function suggestDraftTone(deal: InfluencerDeal): string {
+  if (deal.contentType === 'reel' || deal.contentType === 'short') return '最初の3秒で惹きつける、テンポの良い実演トーン';
+  if (deal.contentType === 'story') return 'リアルな日常の一コマとして、素直で軽やかなトーン';
+  return '親しみやすく自然体で、自分の言葉で語る体験談トーン';
+}
+
 function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }: any) {
-  const [dealId, setDealId] = useState('');
-  const [tone, setTone] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState<string[]>([]);
+  const [toneOverride, setToneOverride] = useState<Record<string, string>>({});
   const [err, setErr] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
-  const gen = async () => {
-    const deal = myDeals.find((d: InfluencerDeal) => d.id === dealId);
-    if (!deal) { setErr('案件を選んでください'); return; }
-    setBusy(true); setErr(null);
+  // AI が「まだ投稿文がない案件」を先回りで拾う
+  const proposals = useMemo(() =>
+    myDeals.filter((d: InfluencerDeal) =>
+      !d.draftCopy && !dismissed.includes(d.id) &&
+      ['inquiry', 'negotiating', 'contracted', 'drafting', 'approved'].includes(d.stage)
+    ).slice(0, 4),
+    [myDeals, dismissed]
+  );
+
+  const approve = async (deal: InfluencerDeal, tone: string) => {
+    setBusyId(deal.id); setErr(null);
     try {
       const r = await generateDraftCopy({
         settings, persona, deal, mediaKit, toneNote: tone || undefined,
@@ -1297,7 +1438,10 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
       });
       const full = r.caption + '\n\n' + r.hashtags.join(' ') + '\n\n' + r.cta;
       desk.updateDeal(deal.id, { draftCopy: full, stage: deal.stage === 'inquiry' || deal.stage === 'negotiating' ? 'drafting' : deal.stage });
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+      setDismissed(d => [...d, deal.id]);
+    } catch (e: any) {
+      setErr((e?.message || '文章の作成に失敗しました') + ' — 通信環境を確認して、もう一度 ✓ を押してください');
+    } finally { setBusyId(null); }
   };
 
   const saveToKnowledge = (d: InfluencerDeal) => {
@@ -1315,28 +1459,48 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
 
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
-      <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
-        投稿を書く
-      </h2>
-
-      <Card bg={bg}>
-        <select style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} value={dealId} onChange={e => setDealId(e.target.value)}>
-          <option value="">— 案件を選ぶ —</option>
-          {myDeals.map((d: InfluencerDeal) => <option key={d.id} value={d.id}>{d.brandName}</option>)}
-        </select>
-        <input style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} placeholder="トーン (例: 親しみやすく)" value={tone} onChange={e => setTone(e.target.value)} />
-        <button onClick={gen} disabled={busy || !dealId} style={btnPrimary(bg)}>
-          {busy ? '考え中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> 投稿を書いてもらう</span>}
-        </button>
-        {knowledge?.count > 0 && (
-          <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: '0.5rem', lineHeight: 1.6 }}>
-            <Brain size={11} style={{ display: 'inline', marginRight: 4 }} />
-            あなたの {knowledge.count} 件の資料を読んで書きます。
-          </p>
-        )}
-      </Card>
+      <div>
+        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
+          投稿を書く
+        </h2>
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', margin: '0.2rem 0 0' }}>
+          AI が「まだ投稿文がない案件」を見つけて、書き方まで考えました。✓ で文章ができます。
+        </p>
+      </div>
 
       {err && <Card bg={bg}><p style={{ color: '#FF5C5C', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {err}</p></Card>}
+
+      <AnimatePresence>
+        {proposals.map((deal: InfluencerDeal) => {
+          const tone = toneOverride[deal.id] ?? suggestDraftTone(deal);
+          return (
+            <ProposalCard key={deal.id} bg={bg}
+              badge="AI からの投稿提案"
+              busy={busyId === deal.id}
+              title={`${PLATFORM_META[deal.platform].emoji} ${deal.brandName} の${CONTENT_TYPE_META[deal.contentType]}を書きましょうか?`}
+              sub={deal.productName || deal.deliverables || undefined}
+              reason={`おすすめのトーン: ${tone}。${knowledge?.count ? `あなたの資料 ${knowledge.count} 件を読んで、らしさを合わせて書きます。` : 'あなたらしい言葉で書きます。'}`}
+              approveLabel="✓ この投稿を書く"
+              onApprove={() => approve(deal, tone)}
+              onReject={() => setDismissed(d => [...d, deal.id])}
+              editArea={
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: bg.ink, marginBottom: 4 }}>トーンを直す</div>
+                  <input style={{ ...inp(bg), width: '100%' }}
+                    value={toneOverride[deal.id] ?? suggestDraftTone(deal)}
+                    onChange={e => setToneOverride(t => ({ ...t, [deal.id]: e.target.value }))} />
+                </div>
+              }
+            />
+          );
+        })}
+      </AnimatePresence>
+
+      {proposals.length === 0 && (
+        <Card bg={bg}>
+          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1rem 0' }}>いま書く必要のある投稿はありません ☺ お仕事を追加すると AI が提案します。</p>
+        </Card>
+      )}
 
       {myDeals.filter((d: InfluencerDeal) => d.draftCopy).map((d: InfluencerDeal) => (
         <Card key={d.id} bg={bg}>
