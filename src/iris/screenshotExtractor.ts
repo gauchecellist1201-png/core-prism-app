@@ -98,6 +98,14 @@ export async function extractPostsFromScreenshots(opts: {
     { type: 'text', text: '上の画像から検出した投稿を、上述の JSON フォーマットで返してください。' },
   ];
 
+  // localStorage から master key を拾う (オーナーが /master で登録した場合のみ Claude 経路)
+  let masterKey = '';
+  try {
+    if (typeof localStorage !== 'undefined') {
+      masterKey = localStorage.getItem('core_master_key_v1') || '';
+    }
+  } catch { /* SSR / privacy mode */ }
+
   const data = await enqueueClaudeCall(async () => {
     const res = await fetch('/api/ai', {
       method: 'POST',
@@ -106,9 +114,14 @@ export async function extractPostsFromScreenshots(opts: {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true',
+        // 画像 Vision は必ず "重い" 経路: マスター登録ありなら Claude haiku-4-5、
+        // それ以外は Gemini Vision にフォールバック (api/ai 側で自動)。
+        'x-ai-weight': 'heavy',
+        ...(masterKey ? { 'x-master-key': masterKey } : {}),
       },
       body: JSON.stringify({
-        model: opts.settings.preferredModel,
+        // Haiku 4.5 を強制 (Vision 対応 + コスト最適)
+        model: 'claude-haiku-4-5',
         max_tokens: 4000,
         system: sys,
         messages: [{ role: 'user', content }],
@@ -116,12 +129,16 @@ export async function extractPostsFromScreenshots(opts: {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `スクショ解析エラー: ${res.status}`);
+      const msg = err.error?.message ?? err.userMessage ?? `スクショ解析エラー: ${res.status}`;
+      throw new Error(msg);
     }
     return res.json();
   });
 
   const text = data.content?.[0]?.text ?? '';
+  if (!text.trim()) {
+    throw new Error('AI が空の応答を返しました。もう一度試してください。');
+  }
   try {
     const m = text.match(/\{[\s\S]*\}/);
     const parsed = JSON.parse(m ? m[0] : text);
@@ -139,7 +156,9 @@ export async function extractPostsFromScreenshots(opts: {
       notes: p.notes,
     }));
   } catch {
-    return [];
+    // JSON 取れなかった場合でも空配列を返さず、明示的にエラーにして
+    // UI 側で "もう一度 / 手で入力" の復旧導線を見せる。
+    throw new Error('AI の応答を読み取れませんでした。別の画像で試すか、手で入力してください。');
   }
 }
 

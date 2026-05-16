@@ -9,7 +9,7 @@ import {
   Camera, Sparkles, TrendingUp, Bookmark, Share2, Eye, Heart,
   MessageCircle, Clock, Flame, Loader2,
   Image as ImageIcon, FileText, CheckCircle2, X, Upload, Wand2, BarChart3,
-  Sliders, Plus, Trash2,
+  Sliders, Plus, Trash2, RefreshCw, FilePlus2, Pencil,
 } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { ContentType, MediaKit } from '../types/influencerDeal';
@@ -47,6 +47,10 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
   const [insightBusy, setInsightBusy] = useState(false);
   const [insightErr, setInsightErr] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+
+  // アップロード中の画像 (プレビュー & リトライ用に Files を保持)
+  const [previewFiles, setPreviewFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
   // posted リールスタジオの投稿を自動的に戦略タブの履歴に同期
   useEffect(() => {
@@ -89,30 +93,60 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
     return arr;
   }, [history.posts, sort]);
 
-  const handleDropImages = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  const fileToDataUrl = (f: File) => new Promise<string>((res) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result as string);
+    r.readAsDataURL(f);
+  });
+
+  // 画像ファイル群を解析 (リトライからも呼べる)
+  const runExtraction = async (files: File[]) => {
+    if (files.length === 0) return;
     setExtracting(true);
     setExtractErr(null);
+    setExtracted([]);
     try {
-      const images = await Promise.all(
-        Array.from(files).filter(f => f.type.startsWith('image/')).slice(0, 6)
-          .map(fileToBase64Pair)
-      );
-      if (images.length === 0) {
-        setExtractErr('画像ファイルが見つかりませんでした');
-        return;
-      }
+      const images = await Promise.all(files.map(fileToBase64Pair));
       const result = await extractPostsFromScreenshots({ settings, images });
       if (result.length === 0) {
-        setExtractErr('投稿を検出できませんでした。インサイト画面のスクショを試してください。');
+        setExtractErr('投稿を検出できませんでした。インサイト画面のスクショ (リーチ・ER・保存数が見える画面) を試してみてください。');
         return;
       }
       setExtracted(result);
     } catch (e: any) {
-      setExtractErr(e.message || 'スクショ解析に失敗しました');
+      setExtractErr(e?.message || 'スクショ解析に失敗しました');
     } finally {
       setExtracting(false);
     }
+  };
+
+  const handleDropImages = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const fileArr = Array.from(files).filter(f => f.type.startsWith('image/')).slice(0, 6);
+    if (fileArr.length === 0) {
+      setExtractErr('画像ファイルが見つかりませんでした');
+      return;
+    }
+    // プレビューを即座に表示 (Vision 待ちで真っ白にならないように)
+    const urls = await Promise.all(fileArr.map(fileToDataUrl));
+    setPreviewFiles(fileArr);
+    setPreviewUrls(urls);
+    await runExtraction(fileArr);
+  };
+
+  const retryExtraction = () => {
+    if (previewFiles.length === 0) {
+      setExtractErr('再試行する画像がありません。もう一度ドロップしてください。');
+      return;
+    }
+    runExtraction(previewFiles);
+  };
+
+  const clearUploads = () => {
+    setPreviewFiles([]);
+    setPreviewUrls([]);
+    setExtracted([]);
+    setExtractErr(null);
   };
 
   const handleDropCSV = async (file: File) => {
@@ -200,8 +234,12 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
         accentGradient={accentGradient}
         extracting={extracting}
         extractErr={extractErr}
+        previewUrls={previewUrls}
         onImages={handleDropImages}
         onCSV={handleDropCSV}
+        onRetry={retryExtraction}
+        onClear={clearUploads}
+        onManualInput={onOpenAdvanced}
       />
 
       {/* ─── 抽出プレビュー (確認 → 保存) ─── */}
@@ -215,6 +253,7 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
             <ExtractedReview
               bg={bg}
               extracted={extracted}
+              previewUrls={previewUrls}
               onAccept={acceptExtracted}
               onAcceptAll={acceptAllExtracted}
               onReject={(item) => setExtracted(prev => prev.filter(p => p !== item))}
@@ -435,17 +474,28 @@ function formatCounting(latest: number, target: number, suffix?: string): string
 // キャプチャゾーン — スクショ / CSV ドロップ
 // ============================================================
 function CaptureZone({
-  bg, glassCard, accentGradient, extracting, extractErr, onImages, onCSV,
+  bg, glassCard, accentGradient, extracting, extractErr, previewUrls,
+  onImages, onCSV, onRetry, onClear, onManualInput,
 }: {
   bg: IrisBackgroundDef;
   glassCard: React.CSSProperties;
   accentGradient: string;
   extracting: boolean;
   extractErr: string | null;
+  previewUrls: string[];
   onImages: (files: FileList | null) => void;
   onCSV: (file: File) => void;
+  onRetry: () => void;
+  onClear: () => void;
+  onManualInput: () => void;
 }) {
   const [drag, setDrag] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const openPicker = () => {
+    if (extracting) return;
+    inputRef.current?.click();
+  };
 
   return (
     <div
@@ -493,20 +543,28 @@ function CaptureZone({
         </div>
       </div>
 
-      <label style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.6rem',
-        flexDirection: 'column',
-        padding: '1.6rem 1rem',
-        border: `2px dashed ${drag ? bg.accent : bg.cardBorder}`,
-        borderRadius: 18,
-        cursor: extracting ? 'wait' : 'pointer',
-        background: 'rgba(255,255,255,0.4)',
-        transition: 'all 0.25s',
-        textAlign: 'center',
-      }}>
+      <button
+        type="button"
+        onClick={openPicker}
+        disabled={extracting}
+        style={{
+          display: 'flex',
+          width: '100%',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.6rem',
+          flexDirection: 'column',
+          padding: '1.6rem 1rem',
+          border: `2px dashed ${drag ? bg.accent : bg.cardBorder}`,
+          borderRadius: 18,
+          cursor: extracting ? 'wait' : 'pointer',
+          background: 'rgba(255,255,255,0.4)',
+          transition: 'all 0.25s',
+          textAlign: 'center',
+          fontFamily: IRIS_FONTS.body,
+          color: 'inherit',
+        }}
+      >
         {extracting ? (
           <>
             <Loader2 size={28} style={{ color: bg.accent, animation: 'spin 1s linear infinite' }} />
@@ -526,43 +584,37 @@ function CaptureZone({
             </p>
           </>
         )}
-        {/* iOS Safari で display:none だと click が無視されることがあるため visibility 切替 */}
-        <input
-          type="file"
-          accept="image/*,.csv"
-          multiple
-          disabled={extracting}
-          style={{
-            position: 'absolute', width: 1, height: 1,
-            opacity: 0, pointerEvents: 'none',
-            top: 0, left: 0,
-          }}
-          onChange={(e) => {
-            const files = e.target.files;
-            if (!files || files.length === 0) return;
-            const csv = Array.from(files).find(f => f.name.endsWith('.csv'));
-            if (csv) onCSV(csv);
-            else onImages(files);
-            e.target.value = '';
-          }}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,.csv"
+        multiple
+        disabled={extracting}
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const files = e.target.files;
+          if (!files || files.length === 0) return;
+          const csv = Array.from(files).find(f => f.name.endsWith('.csv'));
+          if (csv) onCSV(csv);
+          else onImages(files);
+          e.target.value = '';
+        }}
+      />
+
+      {/* アップロード画像のプレビュー (即時) + クリップボードからの貼り付け */}
+      <Previews previewUrls={previewUrls} bg={bg} onPaste={onImages} onClear={onClear} />
+
+      {/* 失敗時の復旧パネル (もう一度 / 別の画像 / 手で入力) */}
+      {extractErr && !extracting && (
+        <ErrorRecovery
+          bg={bg}
+          message={extractErr}
+          canRetry={previewUrls.length > 0}
+          onRetry={onRetry}
+          onPickAgain={openPicker}
+          onManualInput={onManualInput}
         />
-      </label>
-
-      {/* アップロードした画像のプレビュー (即時表示) */}
-      <Previews onPaste={onImages} />
-
-      {extractErr && (
-        <div style={{
-          marginTop: '0.8rem',
-          padding: '0.6rem 0.9rem',
-          background: 'rgba(200,16,46,0.08)',
-          borderRadius: 12,
-          color: '#C8102E',
-          fontSize: '0.82rem',
-          display: 'flex', alignItems: 'center', gap: '0.5rem',
-        }}>
-          <X size={14} /> {extractErr}
-        </div>
       )}
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
@@ -570,12 +622,74 @@ function CaptureZone({
   );
 }
 
+// 失敗時の復旧 UI: 「もう一度」「別の画像で」「手で入力」
+function ErrorRecovery({
+  bg, message, canRetry, onRetry, onPickAgain, onManualInput,
+}: {
+  bg: IrisBackgroundDef;
+  message: string;
+  canRetry: boolean;
+  onRetry: () => void;
+  onPickAgain: () => void;
+  onManualInput: () => void;
+}) {
+  const btn = (icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean) => (
+    <button
+      onClick={onClick}
+      style={{
+        background: primary ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)` : 'rgba(255,255,255,0.9)',
+        color: primary ? '#fff' : bg.ink,
+        border: primary ? 'none' : `1px solid ${bg.cardBorder}`,
+        borderRadius: 999,
+        padding: '0.5rem 1rem',
+        fontWeight: 700,
+        fontSize: '0.82rem',
+        fontFamily: IRIS_FONTS.body,
+        cursor: 'pointer',
+        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+        boxShadow: primary ? `0 6px 16px ${bg.accent}55` : 'none',
+      }}
+    >
+      {icon} {label}
+    </button>
+  );
+
+  return (
+    <div style={{
+      marginTop: '0.9rem',
+      padding: '0.9rem 1rem',
+      background: 'rgba(200,16,46,0.06)',
+      border: '1px solid rgba(200,16,46,0.18)',
+      borderRadius: 14,
+      display: 'grid', gap: '0.6rem',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+        <X size={16} style={{ color: '#C8102E', marginTop: 2, flexShrink: 0 }} />
+        <p style={{ color: '#9B1024', fontSize: '0.85rem', lineHeight: 1.6 }}>
+          {message}
+        </p>
+      </div>
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+        {canRetry && btn(<RefreshCw size={14} />, 'もう一度ためす', onRetry, true)}
+        {btn(<FilePlus2 size={14} />, '別の画像でやり直す', onPickAgain)}
+        {btn(<Pencil size={14} />, '手で入力する', onManualInput)}
+      </div>
+    </div>
+  );
+}
+
 // ============================================================
 // アップロード画像のプレビュー + ペースト対応
+// 親で管理する previewUrls を受け取り、Cmd+V ペーストもサポート
 // ============================================================
-function Previews({ onPaste }: { onPaste: (files: FileList | null) => void }) {
-  const [thumbs, setThumbs] = useState<string[]>([]);
-
+function Previews({
+  previewUrls, bg, onPaste, onClear,
+}: {
+  previewUrls: string[];
+  bg: IrisBackgroundDef;
+  onPaste: (files: FileList | null) => void;
+  onClear: () => void;
+}) {
   useEffect(() => {
     const handler = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -591,45 +705,69 @@ function Previews({ onPaste }: { onPaste: (files: FileList | null) => void }) {
       if (files.length === 0) return;
       const dt = new DataTransfer();
       files.forEach(f => dt.items.add(f));
-      // プレビュー化
-      Promise.all(files.map(f => new Promise<string>((res) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result as string);
-        r.readAsDataURL(f);
-      }))).then(urls => setThumbs(t => [...t, ...urls].slice(-6)));
       onPaste(dt.files);
     };
     window.addEventListener('paste', handler);
     return () => window.removeEventListener('paste', handler);
   }, [onPaste]);
 
-  if (thumbs.length === 0) return null;
+  if (previewUrls.length === 0) return null;
 
   return (
-    <div style={{
-      marginTop: '0.7rem', display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-      gap: 6,
-    }}>
-      {thumbs.map((u, i) => (
-        <div key={i} style={{
-          width: '100%', aspectRatio: '1 / 1', borderRadius: 10,
-          background: `center / cover no-repeat url(${u})`,
-          border: '1px solid rgba(0,0,0,0.1)',
-        }} />
-      ))}
+    <div style={{ marginTop: '0.9rem' }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        marginBottom: 6,
+      }}>
+        <p style={{
+          fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 700,
+          letterSpacing: '0.16em', textTransform: 'uppercase',
+        }}>
+          アップロード画像 ({previewUrls.length})
+        </p>
+        <button
+          onClick={onClear}
+          style={{
+            background: 'transparent',
+            color: bg.inkSoft,
+            border: 'none',
+            fontSize: '0.72rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            fontFamily: IRIS_FONTS.body,
+          }}
+        >
+          <X size={12} /> クリア
+        </button>
+      </div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+        gap: 6,
+      }}>
+        {previewUrls.map((u, i) => (
+          <div key={i} style={{
+            width: '100%', aspectRatio: '1 / 1', borderRadius: 10,
+            background: `center / cover no-repeat url(${u})`,
+            border: `1px solid ${bg.cardBorder}`,
+            boxShadow: '0 4px 10px rgba(0,0,0,0.06)',
+          }} />
+        ))}
+      </div>
     </div>
   );
 }
 
 // ============================================================
-// 抽出結果レビュー
+// 抽出結果レビュー — プレビュー画像と数字を横並びで表示
 // ============================================================
 function ExtractedReview({
-  bg, extracted, onAccept, onAcceptAll, onReject,
+  bg, extracted, previewUrls, onAccept, onAcceptAll, onReject,
 }: {
   bg: IrisBackgroundDef;
   extracted: ExtractedPost[];
+  previewUrls: string[];
   onAccept: (item: ExtractedPost) => void;
   onAcceptAll: () => void;
   onReject: (item: ExtractedPost) => void;
@@ -668,72 +806,158 @@ function ExtractedReview({
         </button>
       </div>
 
-      <div style={{ display: 'grid', gap: '0.6rem' }}>
-        {extracted.map((p, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.04 }}
-            style={{
-              background: 'rgba(255,255,255,0.85)',
-              border: `1px solid ${bg.cardBorder}`,
-              borderRadius: 16,
-              padding: '0.9rem 1rem',
-              display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap',
-            }}
-          >
-            <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-              <p style={{ fontWeight: 700, color: bg.ink, fontSize: '0.92rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {p.title}
-              </p>
-              <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 2 }}>
-                {CONTENT_TYPE_META[p.contentType]} · {p.postedAt ? new Date(p.postedAt).toLocaleDateString('ja-JP') : '日時不明'} · 信頼度 {p.confidence === 'high' ? '高' : p.confidence === 'medium' ? '中' : '低'}
-              </p>
-              <div style={{ display: 'flex', gap: '0.5rem 0.9rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
-                {p.metrics.reach !== undefined && <Chip icon={<Eye size={12} />} text={formatNumber(p.metrics.reach)} bg={bg} />}
-                {p.metrics.engagementRate !== undefined && <Chip icon={<Flame size={12} />} text={`${p.metrics.engagementRate.toFixed(1)}%`} bg={bg} accent />}
-                {p.metrics.likes !== undefined && <Chip icon={<Heart size={12} />} text={formatNumber(p.metrics.likes)} bg={bg} />}
-                {p.metrics.saves !== undefined && <Chip icon={<Bookmark size={12} />} text={formatNumber(p.metrics.saves)} bg={bg} />}
+      <div style={{ display: 'grid', gap: '0.7rem' }}>
+        {extracted.map((p, i) => {
+          // 1 つの画像から複数投稿が取れるケースがあるので、画像数より検出数が多ければ
+          // 画像をローテーションして紐付け (画像 i % previewUrls.length 番目を使う)。
+          // 画像が無いケースは null (画像表示なし)。
+          const thumb = previewUrls.length > 0 ? previewUrls[i % previewUrls.length] : null;
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.04 }}
+              style={{
+                background: 'rgba(255,255,255,0.92)',
+                border: `1px solid ${bg.cardBorder}`,
+                borderRadius: 18,
+                padding: '0.9rem 1rem',
+                display: 'grid',
+                gridTemplateColumns: thumb ? '96px 1fr auto' : '1fr auto',
+                gap: '0.8rem',
+                alignItems: 'center',
+              }}
+            >
+              {thumb && (
+                <div
+                  aria-label={`元画像 ${(i % previewUrls.length) + 1}`}
+                  style={{
+                    width: 96, height: 120, borderRadius: 12,
+                    background: `center / cover no-repeat url(${thumb})`,
+                    border: `1px solid ${bg.cardBorder}`,
+                    boxShadow: '0 6px 14px rgba(0,0,0,0.08)',
+                  }}
+                />
+              )}
+              <div style={{ minWidth: 0 }}>
+                <p style={{
+                  fontWeight: 700, color: bg.ink, fontSize: '0.95rem',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  fontFamily: IRIS_FONTS.body,
+                }}>
+                  {p.title}
+                </p>
+                <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 3 }}>
+                  {CONTENT_TYPE_META[p.contentType]} · {p.postedAt ? new Date(p.postedAt).toLocaleDateString('ja-JP') : '日時不明'} · 信頼度 {p.confidence === 'high' ? '高' : p.confidence === 'medium' ? '中' : '低'}
+                </p>
+                {/* 数字を大きめに、見やすく */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(78px, 1fr))',
+                  gap: '0.45rem',
+                  marginTop: '0.55rem',
+                }}>
+                  {p.metrics.reach !== undefined && (
+                    <MiniStat bg={bg} icon={<Eye size={11} />} label="リーチ" value={formatNumber(p.metrics.reach)} />
+                  )}
+                  {p.metrics.engagementRate !== undefined && (
+                    <MiniStat bg={bg} icon={<Flame size={11} />} label="ER" value={`${p.metrics.engagementRate.toFixed(1)}%`} accent />
+                  )}
+                  {p.metrics.likes !== undefined && (
+                    <MiniStat bg={bg} icon={<Heart size={11} />} label="いいね" value={formatNumber(p.metrics.likes)} />
+                  )}
+                  {p.metrics.saves !== undefined && (
+                    <MiniStat bg={bg} icon={<Bookmark size={11} />} label="保存" value={formatNumber(p.metrics.saves)} />
+                  )}
+                  {p.metrics.comments !== undefined && (
+                    <MiniStat bg={bg} icon={<MessageCircle size={11} />} label="コメント" value={formatNumber(p.metrics.comments)} />
+                  )}
+                  {p.metrics.shares !== undefined && (
+                    <MiniStat bg={bg} icon={<Share2 size={11} />} label="シェア" value={formatNumber(p.metrics.shares)} />
+                  )}
+                </div>
+                {p.notes && (
+                  <p style={{ fontSize: '0.7rem', color: bg.inkSoft, marginTop: '0.4rem', fontStyle: 'italic' }}>
+                    <FileText size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />
+                    {p.notes}
+                  </p>
+                )}
               </div>
-            </div>
-            <div style={{ display: 'flex', gap: '0.4rem' }}>
-              <button
-                onClick={() => onAccept(p)}
-                style={{
-                  background: bg.accent + '22',
-                  color: bg.accent,
-                  border: `1px solid ${bg.accent}55`,
-                  borderRadius: 999,
-                  padding: '0.4rem 0.9rem',
-                  fontWeight: 700,
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  fontFamily: IRIS_FONTS.body,
-                  display: 'flex', alignItems: 'center', gap: '0.3rem',
-                }}
-              >
-                <Plus size={12} /> 保存
-              </button>
-              <button
-                onClick={() => onReject(p)}
-                style={{
-                  background: 'transparent',
-                  color: bg.inkSoft,
-                  border: `1px solid ${bg.cardBorder}`,
-                  borderRadius: 999,
-                  padding: '0.4rem 0.7rem',
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  fontFamily: IRIS_FONTS.body,
-                }}
-              >
-                <X size={12} />
-              </button>
-            </div>
-          </motion.div>
-        ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <button
+                  onClick={() => onAccept(p)}
+                  style={{
+                    background: bg.accent + '22',
+                    color: bg.accent,
+                    border: `1px solid ${bg.accent}55`,
+                    borderRadius: 999,
+                    padding: '0.4rem 0.9rem',
+                    fontWeight: 700,
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                    fontFamily: IRIS_FONTS.body,
+                    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <Plus size={12} /> 保存
+                </button>
+                <button
+                  onClick={() => onReject(p)}
+                  style={{
+                    background: 'transparent',
+                    color: bg.inkSoft,
+                    border: `1px solid ${bg.cardBorder}`,
+                    borderRadius: 999,
+                    padding: '0.3rem 0.7rem',
+                    fontSize: '0.74rem',
+                    cursor: 'pointer',
+                    fontFamily: IRIS_FONTS.body,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 3,
+                  }}
+                >
+                  <X size={11} /> 捨てる
+                </button>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
+    </div>
+  );
+}
+
+// 小さなメトリクスタイル — 画像横に並べる用
+function MiniStat({ bg, icon, label, value, accent }: {
+  bg: IrisBackgroundDef;
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div style={{
+      background: accent ? `linear-gradient(135deg, ${bg.accent}18, ${bg.accent}06)` : 'rgba(0,0,0,0.03)',
+      border: `1px solid ${accent ? bg.accent + '44' : bg.cardBorder}`,
+      borderRadius: 10,
+      padding: '0.35rem 0.5rem',
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 3,
+        color: accent ? bg.accent : bg.inkSoft,
+        fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.06em',
+      }}>
+        {icon}<span>{label}</span>
+      </div>
+      <p style={{
+        fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
+        fontSize: '1rem', fontWeight: 700,
+        color: accent ? bg.accent : bg.ink,
+        lineHeight: 1.1, marginTop: 1,
+      }}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -1703,23 +1927,6 @@ function Stat({ bg, icon, label, value, suffix }: {
 // ============================================================
 // ヘルパー
 // ============================================================
-function Chip({ bg, icon, text, accent }: {
-  bg: IrisBackgroundDef;
-  icon: React.ReactNode;
-  text: string;
-  accent?: boolean;
-}) {
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 3,
-      color: accent ? bg.accent : bg.inkSoft,
-      fontSize: '0.74rem',
-      fontWeight: accent ? 700 : 600,
-    }}>
-      {icon} {text}
-    </span>
-  );
-}
 
 function formatNumber(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
