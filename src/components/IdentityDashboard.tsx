@@ -66,7 +66,7 @@ import { speakNatural } from '../lib/tts';
 import { loadBenchmarkResult } from '../lib/benchmarkAnalyst';
 import type { DailyHealth } from '../types/health';
 import type { HealthAnomaly } from '../data/healthAnomaly';
-import AutoAgentHero from './AutoAgentHero';
+// AutoAgentHero は 2026-05-16 にオーナー指示で削除 (恒常的な JSON parse エラー)
 import AgentsOrbit from './AgentsOrbit';
 import { PRISM_SPECS, PRISM_ORDER, PRISM_CONVERSATIONS } from '../lib/agentSpecs';
 
@@ -640,57 +640,83 @@ export default function IdentityDashboard({
                 ]}
               />
 
-              <AutoAgentHero
-                ctx={{
-                  brand: 'prism',
-                  user: persona.name,
-                  persona: `${persona.name} (${persona.subtitle || ''})${persona.description ? ' - ' + persona.description : ''}`,
-                  now: new Date(),
-                  // ナレッジは AI が「ある中身を見て」提案するための地盤
-                  // 直近 10 件の title + summary + 上位 actions + tags を投入
-                  knowledge: knowledgeItems.length
-                    ? knowledgeItems
-                        .slice()
-                        .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
-                        .slice(0, 10)
-                        .map((k, i) => {
-                          const lines: string[] = [`[${i + 1}] ${k.title || k.fileName || '無題'}`];
-                          if (k.tags?.length) lines.push(`  tags: ${k.tags.slice(0, 5).join(', ')}`);
-                          if (k.analysis?.summary) lines.push(`  要約: ${k.analysis.summary.replace(/\s+/g, ' ').slice(0, 220)}`);
-                          if (k.analysis?.actions?.length) {
-                            lines.push(`  推奨アクション: ${k.analysis.actions.slice(0, 2).join(' / ')}`);
-                          } else if (k.content) {
-                            lines.push(`  抜粋: ${k.content.replace(/\s+/g, ' ').slice(0, 160)}…`);
-                          }
-                          return lines.join('\n');
-                        })
-                        .join('\n\n')
-                    : undefined,
-                  health: healthCtx?.today
-                    ? `今日 心拍${healthCtx.today.restingHR ?? '?'}/睡眠${healthCtx.today.sleepHours?.toFixed(1) ?? '?'}h/歩数${healthCtx.today.steps?.toLocaleString() ?? '?'}`
-                    : undefined,
-                }}
-                theme="dark"
-                brandLabel="PRISM"
-                brandGradient="linear-gradient(135deg, #2E6FFF 0%, #8E5CFF 50%, #E84B97 100%)"
-                onAddToKnowledge={(title, content) => {
-                  onAddKnowledgeNote(title, content);
-                }}
-              />
+              {/*
+                AutoAgentHero (今日のひと言) はオーナー指示で削除 (2026-05-16)。
+                JSON parse エラーが恒常的に出ていたため。
+                その美しい紫紺グラデの世界観だけを TodayBrief のラッパーに引き継ぐ。
+              */}
+              <div style={{
+                position: 'relative',
+                padding: '1.4rem 1.2rem 1.2rem',
+                borderRadius: 22,
+                background: 'linear-gradient(135deg, rgba(46,111,255,0.10), rgba(142,92,255,0.10) 50%, rgba(232,75,151,0.08))',
+                border: '1px solid rgba(142,92,255,0.25)',
+                overflow: 'hidden',
+              }}>
+                {/* 装飾オーブ (右上) */}
+                <div aria-hidden style={{
+                  position: 'absolute', top: -60, right: -60,
+                  width: 220, height: 220, borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(232,75,151,0.35) 0%, transparent 70%)',
+                  filter: 'blur(40px)', pointerEvents: 'none',
+                }} />
+                {/* 装飾オーブ (左下) */}
+                <div aria-hidden style={{
+                  position: 'absolute', bottom: -50, left: -50,
+                  width: 180, height: 180, borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(46,111,255,0.30) 0%, transparent 70%)',
+                  filter: 'blur(40px)', pointerEvents: 'none',
+                }} />
 
-              <TodayBrief
-                persona={persona}
-                proposal={briefOverride ?? proactive.latestProposal}
-                isGenerating={proactive.isGenerating || coach.isGenerating}
-                isSpeaking={proactive.isSpeaking}
-                voiceEnabled={settings.voiceEnabled !== false}
-                onGenerate={(v) => { setBriefOverride(null); proactive.generate(v); }}
-                onSpeak={proactive.speakProposal}
-                onStopSpeak={proactive.stopSpeak}
-                onAcceptAction={onAcceptProactiveAction}
-                shadowDraftCount={shadow.drafts.length}
-                onOpenShadow={() => setShowShadow(true)}
-              />
+                {/* ヘッダ — 旧 AutoAgentHero の見た目を踏襲 */}
+                <div style={{ position: 'relative', zIndex: 1, marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+                    <span style={{ color: '#E84B97', fontSize: 14, lineHeight: 1 }}>✦</span>
+                    <span style={{
+                      fontSize: 10, letterSpacing: '0.3em', fontWeight: 800,
+                      color: '#E84B97', textTransform: 'uppercase',
+                    }}>
+                      PRISM からの今日のひと言
+                    </span>
+                  </div>
+                  <h2 style={{
+                    margin: 0,
+                    fontFamily: '"Cinzel", "Noto Serif JP", serif', fontStyle: 'italic',
+                    fontSize: 'clamp(1.5rem, 4.5vw, 2rem)',
+                    fontWeight: 500, lineHeight: 1.2,
+                    background: 'linear-gradient(135deg, #2E6FFF 0%, #8E5CFF 50%, #E84B97 100%)',
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    letterSpacing: '-0.01em',
+                  }}>
+                    今日、何からはじめる?
+                  </h2>
+                  <p style={{
+                    margin: '0.3rem 0 0',
+                    fontSize: 12.5, color: 'rgba(255,255,255,0.65)',
+                    lineHeight: 1.6,
+                  }}>
+                    いまのあなたを見て、AI が次の一手を準備しました。
+                  </p>
+                </div>
+
+                {/* 中身は TodayBrief。背景は親の紫紺グラデで美しく */}
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <TodayBrief
+                    persona={persona}
+                    proposal={briefOverride ?? proactive.latestProposal}
+                    isGenerating={proactive.isGenerating || coach.isGenerating}
+                    isSpeaking={proactive.isSpeaking}
+                    voiceEnabled={settings.voiceEnabled !== false}
+                    onGenerate={(v) => { setBriefOverride(null); proactive.generate(v); }}
+                    onSpeak={proactive.speakProposal}
+                    onStopSpeak={proactive.stopSpeak}
+                    onAcceptAction={onAcceptProactiveAction}
+                    shadowDraftCount={shadow.drafts.length}
+                    onOpenShadow={() => setShowShadow(true)}
+                  />
+                </div>
+              </div>
 
               <QuickActions
                 persona={persona}
@@ -718,7 +744,7 @@ export default function IdentityDashboard({
                   { id: 'documents', emoji: '📄', label: '書類スタジオ', desc: '見積→発注→納品→請求', onClick: () => setShowDocument(true) },
                   { id: 'people', emoji: '👥', label: '人物ケア', desc: '1on1履歴+AI分析', onClick: () => setShowPeople(true) },
                   { id: 'team', emoji: '🤺', label: 'チーム', desc: '招待・共同閲覧', onClick: () => setShowTeam(true) },
-                  { id: 'sales-agent', emoji: '🎯', label: '商談 AI', desc: 'リサーチ→アプローチ自動化', primary: true, onClick: () => setShowSalesAgent(true) },
+                  { id: 'sales-agent', emoji: '🎯', label: '商談 AI', desc: '今日の 5 社を AI が先回り提案', primary: true, onClick: () => setShowSalesAgent(true) },
                   { id: 'saas-agent', emoji: '🤖', label: 'SaaS エージェント', desc: 'Notion / HubSpot / Gmail 代理', primary: true, onClick: () => setShowSaasAgent(true) },
                   { id: 'tasks-hub', emoji: '✅', label: 'タスクハブ', desc: '全タスク統合', onClick: () => setShowTaskHub(true) },
                   { id: 'premium', emoji: '👑', label: 'プレミアム', desc: '戦略 / 法務 / 財務', primary: true, onClick: () => setShowPremium(true) },

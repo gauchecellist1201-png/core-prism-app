@@ -1,10 +1,9 @@
-import { useState, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings } from '../types/identity';
-import type { SalesLead, CompanyResearch } from '../types/salesAgent';
-import { SALES_STAGE_LABELS } from '../types/salesAgent';
 import { useSalesAgent } from '../hooks/useSalesAgent';
-import { researchCompany, scoreLead, generateApproachEmail, predictSignals } from '../lib/salesAgent';
+import { pickTodaysCompanies, type AiPick } from '../lib/salesAgentMatch';
+import { todaySeed } from '../data/companies-jp';
 
 interface Props {
   persona: Persona;
@@ -12,105 +11,170 @@ interface Props {
   onClose: () => void;
 }
 
-type Tab = 'dashboard' | 'research' | 'leads' | 'approach' | 'signals' | 'product';
+type Tab = 'today' | 'history' | 'product';
+
+interface CachedPicks {
+  seed: number;
+  personaId: string;
+  picks: AiPick[];
+  approvedIds: string[];   // 採用済の companyId
+  rejectedIds: string[];   // 却下済の companyId
+}
+
+const CACHE_KEY = 'core_sales_today_picks_v2';
+
+function loadCache(): CachedPicks | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function saveCache(c: CachedPicks) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch { /* */ }
+}
+
+const SIZE_LABEL: Record<AiPick['size'], string> = {
+  large: '大手',
+  mid: '中堅',
+  startup: 'スタートアップ',
+};
 
 export default function SalesAgentStudio({ persona, settings, onClose }: Props) {
   const sa = useSalesAgent();
-  const [tab, setTab] = useState<Tab>('dashboard');
+  const [tab, setTab] = useState<Tab>('today');
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState<'pick' | 'edit' | null>(null);
 
-  const myCompanies = useMemo(() => sa.getCompaniesForPersona(persona.id), [sa.companies, persona.id]);
-  const myLeads     = useMemo(() => sa.getLeadsForPersona(persona.id), [sa.leads, persona.id]);
-  const mySignals   = useMemo(() => sa.getSignalsForPersona(persona.id), [sa.signals, persona.id]);
-  const ownProduct  = sa.getOwnProduct(persona.id);
+  const ownProduct = sa.getOwnProduct(persona.id);
+  const myLeads = useMemo(() => sa.getLeadsForPersona(persona.id), [sa.leads, persona.id]);
 
-  // ─── リサーチタブ ─────────
-  const [researchInput, setResearchInput] = useState({ name: '', url: '', extra: '' });
-  const [latestResearch, setLatestResearch] = useState<CompanyResearch | null>(null);
+  // ─── 今日のピックアップ ─────────
+  const [picks, setPicks] = useState<AiPick[]>([]);
+  const [approvedIds, setApprovedIds] = useState<string[]>([]);
+  const [rejectedIds, setRejectedIds] = useState<string[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{ subject: string; body: string }>({ subject: '', body: '' });
 
-  const handleResearch = useCallback(async () => {
-    if (!researchInput.name.trim()) { setError('企業名を入力してください'); return; }
-    setBusy('research'); setError(null);
+  // 起動時にキャッシュから復元 (同じ日 & 同じペルソナのみ)
+  useEffect(() => {
+    const cache = loadCache();
+    const seed = todaySeed();
+    if (cache && cache.seed === seed && cache.personaId === persona.id) {
+      setPicks(cache.picks);
+      setApprovedIds(cache.approvedIds || []);
+      setRejectedIds(cache.rejectedIds || []);
+    } else {
+      setPicks([]);
+      setApprovedIds([]);
+      setRejectedIds([]);
+    }
+  }, [persona.id]);
+
+  // 状態が変わったらキャッシュへ
+  useEffect(() => {
+    if (picks.length === 0) return;
+    saveCache({
+      seed: todaySeed(),
+      personaId: persona.id,
+      picks,
+      approvedIds,
+      rejectedIds,
+    });
+  }, [picks, approvedIds, rejectedIds, persona.id]);
+
+  // ─── AI に「今日の 5 社」を選ばせる ──────────
+  const runPick = useCallback(async (replace: boolean) => {
+    if (!ownProduct?.trim()) {
+      setTab('product');
+      setError('まず自社の商材タブで「うちの商品・サービス」を登録してね');
+      return;
+    }
+    setBusy('pick'); setError(null);
     try {
-      const result = await researchCompany({
-        settings, persona,
-        companyName: researchInput.name,
-        url: researchInput.url || undefined,
+      const exclude = replace ? [...approvedIds, ...rejectedIds, ...picks.map(p => p.companyId)] : [...approvedIds, ...rejectedIds];
+      const result = await pickTodaysCompanies({
+        settings,
+        persona,
         ownProduct,
-        publicInfo: researchInput.extra || undefined,
+        excludeIds: exclude,
       });
-      const saved = sa.addCompany(persona.id, result);
-      setLatestResearch(saved);
-      setResearchInput({ name: '', url: '', extra: '' });
+      if (replace) {
+        setPicks(result);
+      } else {
+        setPicks(result);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-    } finally { setBusy(null); }
-  }, [researchInput, settings, persona, ownProduct, sa]);
+    } finally {
+      setBusy(null);
+    }
+  }, [ownProduct, settings, persona, approvedIds, rejectedIds, picks]);
 
-  // ─── リードタブ ──────────
-  const [newLead, setNewLead] = useState({ companyName: '', contactName: '', contactRole: '', email: '', notes: '' });
-  const handleAddLead = useCallback(async () => {
-    if (!newLead.companyName.trim()) { setError('企業名を入れてください'); return; }
-    setBusy('lead'); setError(null);
-    try {
-      const company = myCompanies.find(c => c.companyName === newLead.companyName);
-      const { score, scoreReason } = await scoreLead({
-        settings, lead: { ...newLead }, ownProduct, research: company,
-      });
-      sa.addLead(persona.id, {
-        ...newLead,
-        companyId: company?.id,
-        score, scoreReason,
-        stage: 'new',
-      });
-      setNewLead({ companyName: '', contactName: '', contactRole: '', email: '', notes: '' });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally { setBusy(null); }
-  }, [newLead, settings, myCompanies, ownProduct, sa, persona.id]);
+  // ─── 承認 → リード追加 + アプローチ下書き保存 ──────────
+  const handleApprove = useCallback((pick: AiPick) => {
+    // 重複防止: 同じ companyId が既に承認済なら何もしない
+    if (approvedIds.includes(pick.companyId)) return;
+    // 1) リード追加
+    const lead = sa.addLead(persona.id, {
+      companyName: pick.companyName,
+      contactName: '担当者様',
+      contactRole: '',
+      notes: `AI ピックアップ: ${pick.reason}`,
+      score: pick.matchScore,
+      scoreReason: pick.reason,
+      stage: 'approached',
+      source: 'ai-pick',
+    });
+    // 2) アプローチ (メール下書き) 保存 → シャドー秘書がここから処理
+    sa.addApproach({
+      leadId: lead.id,
+      type: 'email',
+      subject: pick.emailSubject,
+      body: pick.emailBody,
+      tone: '先回り提案',
+      hitProbability: pick.matchScore,
+      status: 'draft',
+      generatedAt: new Date().toISOString(),
+    });
+    setApprovedIds(prev => [...prev, pick.companyId]);
+  }, [sa, persona.id, approvedIds]);
 
-  // ─── アプローチタブ ────
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
-  const [approachTone, setApproachTone] = useState('丁寧で温かい');
-  const [approachGoal, setApproachGoal] = useState('20分のオンライン面談の打診');
-  const handleGenerateEmail = useCallback(async () => {
-    if (!selectedLeadId) { setError('リードを選んでください'); return; }
-    const lead = myLeads.find(l => l.id === selectedLeadId);
-    if (!lead) return;
-    const company = lead.companyId ? myCompanies.find(c => c.id === lead.companyId) : undefined;
-    setBusy('approach'); setError(null);
-    try {
-      const draft = await generateApproachEmail({
-        settings, persona, lead, research: company, ownProduct,
-        goal: approachGoal, tone: approachTone,
-      });
-      sa.addApproach(draft);
-      sa.updateLead(lead.id, { stage: 'approached' });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally { setBusy(null); }
-  }, [selectedLeadId, myLeads, myCompanies, settings, persona, ownProduct, approachGoal, approachTone, sa]);
+  const handleReject = useCallback((pick: AiPick) => {
+    setRejectedIds(prev => [...prev, pick.companyId]);
+  }, []);
 
-  // ─── シグナルタブ ─────
-  const handlePredictSignals = useCallback(async () => {
-    if (myCompanies.length === 0) { setError('企業を1社以上リサーチしてからシグナル予測を実行できます'); return; }
-    setBusy('signals'); setError(null);
-    try {
-      const list = await predictSignals({
-        settings, persona,
-        companies: myCompanies.map(c => ({ name: c.companyName, url: c.url, industry: c.industry })),
-        ownProduct,
-      });
-      sa.upsertSignals(persona.id, list);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally { setBusy(null); }
-  }, [myCompanies, settings, persona, ownProduct, sa]);
+  const startEdit = useCallback((pick: AiPick) => {
+    setEditingId(pick.companyId);
+    setEditDraft({ subject: pick.emailSubject, body: pick.emailBody });
+  }, []);
 
-  // ─── 商材タブ ────────
+  const saveEdit = useCallback(() => {
+    if (!editingId) return;
+    setPicks(prev => prev.map(p =>
+      p.companyId === editingId
+        ? { ...p, emailSubject: editDraft.subject.trim(), emailBody: editDraft.body.trim() }
+        : p
+    ));
+    setEditingId(null);
+  }, [editingId, editDraft]);
+
+  // 表示用: 却下/承認したものは出さない
+  const visiblePicks = useMemo(
+    () => picks.filter(p => !approvedIds.includes(p.companyId) && !rejectedIds.includes(p.companyId)),
+    [picks, approvedIds, rejectedIds]
+  );
+
+  // ─── 自社の商材タブ ──────
   const [productDraft, setProductDraft] = useState(ownProduct);
-  const saveProduct = () => { sa.setOwnProduct(persona.id, productDraft); };
+  useEffect(() => setProductDraft(ownProduct), [ownProduct]);
+  const saveProduct = () => {
+    sa.setOwnProduct(persona.id, productDraft);
+    setError(null);
+  };
+
+  // ─── 履歴タブ: 採用済リードと送信履歴 ──────
+  const approvedLeadCount = myLeads.filter(l => l.source === 'ai-pick').length;
+  const draftCount = sa.approaches.filter(a => myLeads.some(l => l.id === a.leadId)).length;
 
   return (
     <motion.div
@@ -130,7 +194,7 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
               style={{ background: persona.accentColorLight, color: persona.accentColor }}>🎯</div>
             <div className="min-w-0">
               <p className="cp-h2 truncate">商談 AI エージェント</p>
-              <p className="cp-meta truncate">{persona.name} · リサーチ → リスト → アプローチ → シグナル を AI が代行</p>
+              <p className="cp-meta truncate">AI が今日の 5 社を選び、提案文まで先回りで用意します</p>
             </div>
           </div>
           <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
@@ -138,195 +202,228 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
 
         <div className="cp-modal-tabs">
           {([
-            { id: 'dashboard', label: '🏠 ホーム' },
-            { id: 'research',  label: `🔍 リサーチ (${myCompanies.length})` },
-            { id: 'leads',     label: `📋 リード (${myLeads.length})` },
-            { id: 'approach',  label: '📨 アプローチ' },
-            { id: 'signals',   label: `⚡ シグナル (${mySignals.filter(s => !s.read).length})` },
-            { id: 'product',   label: '🎁 自社の商材' },
+            { id: 'today',   emoji: '✨', label: '今日の5社' },
+            { id: 'history', emoji: '📂', label: `採用済 (${approvedLeadCount})` },
+            { id: 'product', emoji: '🎁', label: '自社の商材' },
           ] as const).map(t => (
             <button key={t.id} onClick={() => { setTab(t.id); setError(null); }}
               className="cp-modal-tab" data-active={tab === t.id}
-              style={{ color: tab === t.id ? persona.accentColor : undefined }}>{t.label}</button>
+              style={{ color: tab === t.id ? persona.accentColor : undefined, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span aria-hidden>{t.emoji}</span>
+              <span>{t.label}</span>
+            </button>
           ))}
         </div>
 
         <div className="cp-modal-body cp-stack">
           {error && (
-            <div className="rounded-md p-2.5 text-xs" style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171' }}>{error}</div>
+            <div className="rounded-md p-2.5 text-xs" style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171' }}>
+              {error}
+            </div>
           )}
 
-          {tab === 'dashboard' && (
+          {/* ─── 今日のピックアップ ─── */}
+          {tab === 'today' && (
             <>
-              <div className="cp-grid-2" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                {[
-                  { label: '企業リサーチ', value: myCompanies.length, color: persona.accentColor },
-                  { label: 'リード', value: myLeads.length, color: '#5BA8FF' },
-                  { label: '進行中商談', value: myLeads.filter(l => l.stage === 'meeting-set' || l.stage === 'replied').length, color: '#FFA94D' },
-                  { label: '未読シグナル', value: mySignals.filter(s => !s.read).length, color: '#FF6FB5' },
-                ].map(s => (
-                  <div key={s.label} className="cp-card text-center">
-                    <p className="cp-tiny">{s.label}</p>
-                    <p className="text-fg" style={{ fontSize: '1.5rem', fontWeight: 600, color: s.color }}>{s.value}</p>
+              <div className="cp-card-section cp-stack-sm">
+                <div className="cp-row-between" style={{ flexWrap: 'wrap', gap: 10 }}>
+                  <div className="min-w-0">
+                    <p className="cp-h3">✨ AI が選んだ 今日の 5 社</p>
+                    <p className="cp-meta">
+                      あなたの「自社の商材」をもとに、日本企業 {300}+ 社の中から AI が先回りで選びました。
+                      気に入ったら ✓ 承認、違うなと思ったら ✗ 却下、文面を直したいときは ✏️ で。
+                    </p>
                   </div>
-                ))}
-              </div>
-
-              {/* スコア上位リード */}
-              <div className="cp-card-section">
-                <p className="cp-h3 mb-2">🔥 スコアが高いリード TOP 5</p>
-                {myLeads.length === 0 ? (
-                  <p className="cp-meta">リードがまだ登録されていません</p>
-                ) : (
-                  <div className="cp-stack-sm">
-                    {myLeads.sort((a, b) => b.score - a.score).slice(0, 5).map(l => (
-                      <div key={l.id} className="cp-card cp-row-between">
-                        <div className="min-w-0">
-                          <p className="cp-h3 truncate">{l.companyName}</p>
-                          <p className="cp-meta truncate">{l.contactName || '担当者未設定'} · {SALES_STAGE_LABELS[l.stage].label}</p>
-                        </div>
-                        <div className="cp-row" style={{ flexShrink: 0 }}>
-                          <span className="cp-pill" style={{ color: l.score >= 70 ? '#10B981' : l.score >= 50 ? '#F59E0B' : '#9088A8' }}>
-                            {l.score}/100
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="cp-row" style={{ gap: 6, flexShrink: 0 }}>
+                    <button onClick={() => runPick(false)} disabled={busy === 'pick'}
+                      className="cp-btn cp-btn-primary"
+                      style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                      {busy === 'pick'
+                        ? '🧠 AI が選定中…'
+                        : picks.length === 0 ? '✨ 今日の 5 社を選んでもらう' : '🔄 もう一度選び直す'}
+                    </button>
                   </div>
+                </div>
+                {!ownProduct?.trim() && (
+                  <p className="cp-tiny" style={{ color: '#FBBF24' }}>
+                    まだ自社の商材が未登録です。「🎁 自社の商材」タブで一度だけ書いておくと、毎日 AI が自動で合う企業を探します。
+                  </p>
                 )}
               </div>
 
-              {/* 最新シグナル */}
-              {mySignals.length > 0 && (
-                <div className="cp-card-section">
-                  <p className="cp-h3 mb-2">⚡ 最近のシグナル</p>
-                  <div className="cp-stack-sm">
-                    {mySignals.slice(0, 4).map(s => (
-                      <div key={s.id} className="cp-card">
-                        <div className="cp-row-between">
-                          <span className="cp-h3">{s.companyName}</span>
-                          <span className="cp-pill" style={{ color: s.severity === 'high' ? '#F87171' : s.severity === 'medium' ? '#FBBF24' : '#9088A8' }}>
-                            {s.signalType}
+              {/* 5 社カード */}
+              {visiblePicks.length === 0 && picks.length === 0 && (
+                <div className="cp-empty">
+                  <p className="cp-empty-icon">🎯</p>
+                  <p>まだピックアップがありません</p>
+                  <p className="cp-meta">右上の「✨ 今日の 5 社を選んでもらう」を押してね</p>
+                </div>
+              )}
+
+              {visiblePicks.length === 0 && picks.length > 0 && (
+                <div className="cp-empty">
+                  <p className="cp-empty-icon">🎉</p>
+                  <p>今日の 5 社、全部さばき終わりました</p>
+                  <p className="cp-meta">「🔄 もう一度選び直す」で次の候補を出せます</p>
+                </div>
+              )}
+
+              <AnimatePresence>
+                {visiblePicks.map((p, idx) => {
+                  const isEditing = editingId === p.companyId;
+                  return (
+                    <motion.div
+                      key={p.companyId}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, x: -20 }}
+                      transition={{ delay: idx * 0.06 }}
+                      className="cp-card-section cp-stack-sm"
+                      style={{ borderColor: persona.accentColor + '30' }}
+                    >
+                      {/* ヘッダー */}
+                      <div className="cp-row-between" style={{ flexWrap: 'wrap', gap: 8 }}>
+                        <div className="cp-row min-w-0" style={{ gap: 10 }}>
+                          <div
+                            className="rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{
+                              width: 44, height: 44,
+                              background: `linear-gradient(135deg, ${persona.accentColor}33, ${persona.accentColor}11)`,
+                              color: persona.accentColor,
+                              fontWeight: 700,
+                              fontSize: '1.1rem',
+                              border: `1px solid ${persona.accentColor}44`,
+                            }}
+                          >
+                            {p.companyName.slice(0, 1)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="cp-h3 truncate">{p.companyName}</p>
+                            <div className="cp-row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                              <span className="cp-pill" style={{ borderColor: persona.accentColor, color: persona.accentColor }}>
+                                {p.industry}
+                              </span>
+                              <span className="cp-pill">{SIZE_LABEL[p.size]}</span>
+                              <span className="cp-pill">{p.region}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="cp-row" style={{ flexShrink: 0 }}>
+                          <span className="cp-pill" style={{
+                            color: p.matchScore >= 80 ? '#10B981' : p.matchScore >= 60 ? '#F59E0B' : '#9088A8',
+                            fontWeight: 700,
+                            fontSize: '0.95rem',
+                          }}>
+                            合致度 {p.matchScore}
                           </span>
                         </div>
-                        <p className="cp-body mt-1">{s.description}</p>
-                        {s.suggestedAction && <p className="cp-meta mt-1" style={{ color: persona.accentColor }}>→ {s.suggestedAction}</p>}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
 
-          {tab === 'research' && (
-            <>
-              <div className="cp-card-section cp-stack-sm">
-                <p className="cp-h3">🔍 企業を AI でリサーチ</p>
-                <p className="cp-meta">企業名と URL を入れるだけで、業界・課題予測・売り込み角度を AI が構造化します。</p>
-                <input value={researchInput.name} onChange={e => setResearchInput({...researchInput, name: e.target.value})}
-                  placeholder="例: 株式会社サンプル" className="cp-input" />
-                <input value={researchInput.url} onChange={e => setResearchInput({...researchInput, url: e.target.value})}
-                  placeholder="URL (任意)" className="cp-input" />
-                <textarea value={researchInput.extra} onChange={e => setResearchInput({...researchInput, extra: e.target.value})}
-                  placeholder="参考情報を貼り付け (任意・プレスリリース・IR等)" rows={3} className="cp-textarea" />
-                <button onClick={handleResearch} disabled={busy === 'research'}
-                  className="cp-btn cp-btn-primary" style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                  {busy === 'research' ? '🧠 リサーチ中…' : '✨ AI で調査開始'}
-                </button>
-              </div>
+                      {/* 理由 */}
+                      <div className="cp-card" style={{ background: persona.accentColorLight, borderColor: persona.accentColor + '55' }}>
+                        <p className="cp-tiny" style={{ color: persona.accentColor }}>🤔 AI がこの企業を選んだ理由</p>
+                        <p className="cp-body" style={{ color: 'var(--fg)' }}>{p.reason}</p>
+                      </div>
 
-              {latestResearch && (
-                <div className="cp-card-section cp-stack-sm">
-                  <p className="cp-h3">📑 {latestResearch.companyName}</p>
-                  {latestResearch.industry && <p className="cp-meta">{latestResearch.industry} · {latestResearch.revenueEstimate} · {latestResearch.employeeCount}</p>}
-                  {latestResearch.overview && <p className="cp-body">{latestResearch.overview}</p>}
-                  {latestResearch.pitchAngle && (
-                    <div className="cp-card" style={{ background: persona.accentColorLight, borderColor: persona.accentColor }}>
-                      <p className="cp-tiny">🎯 売り込み角度</p>
-                      <p className="cp-body" style={{ color: persona.accentColor }}>{latestResearch.pitchAngle}</p>
-                    </div>
-                  )}
-                  {(latestResearch.predictedChallenges || []).length > 0 && (
-                    <div>
-                      <p className="cp-tiny">想定される課題</p>
-                      {latestResearch.predictedChallenges!.map((c, i) => <p key={i} className="cp-body">・{c}</p>)}
-                    </div>
-                  )}
-                  {(latestResearch.recommendedSteps || []).length > 0 && (
-                    <div>
-                      <p className="cp-tiny">推奨アプローチ</p>
-                      {latestResearch.recommendedSteps!.map((s, i) => <p key={i} className="cp-body">{i + 1}. {s}</p>)}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {myCompanies.length > 0 && (
-                <div>
-                  <p className="cp-section-head">過去のリサーチ ({myCompanies.length} 社)</p>
-                  <div className="cp-stack-sm">
-                    {myCompanies.map(c => (
-                      <button key={c.id} onClick={() => setLatestResearch(c)}
-                        className="cp-card text-left w-full cp-row-between hover:opacity-80">
-                        <div className="min-w-0">
-                          <p className="cp-h3 truncate">{c.companyName}</p>
-                          <p className="cp-meta truncate">{c.industry} · {c.pitchAngle?.slice(0, 50)}</p>
+                      {/* 提案文プレビュー / 編集 */}
+                      {!isEditing ? (
+                        <div className="cp-stack-sm">
+                          <p className="cp-tiny">📧 提案文ドラフト</p>
+                          <div className="cp-card">
+                            <p className="cp-meta" style={{ marginBottom: 6 }}>件名: <span style={{ color: 'var(--fg)', fontWeight: 600 }}>{p.emailSubject}</span></p>
+                            <pre className="cp-body" style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{p.emailBody}</pre>
+                          </div>
                         </div>
-                        <button onClick={(e) => { e.stopPropagation(); if (confirm('削除?')) sa.removeCompany(c.id); }}
-                          className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                      ) : (
+                        <div className="cp-stack-sm">
+                          <p className="cp-tiny">✏️ 文面を直す</p>
+                          <input value={editDraft.subject} onChange={e => setEditDraft({ ...editDraft, subject: e.target.value })}
+                            placeholder="件名" className="cp-input" />
+                          <textarea value={editDraft.body} onChange={e => setEditDraft({ ...editDraft, body: e.target.value })}
+                            rows={8} className="cp-textarea" />
+                          <div className="cp-row" style={{ gap: 6 }}>
+                            <button onClick={saveEdit} className="cp-btn cp-btn-primary"
+                              style={{ background: persona.accentColor, color: '#0a0a0f' }}>保存</button>
+                            <button onClick={() => setEditingId(null)} className="cp-btn cp-btn-ghost">取消</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 操作 3 ボタン */}
+                      {!isEditing && (
+                        <div className="cp-row" style={{ gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                          <button onClick={() => handleReject(p)}
+                            className="cp-btn cp-btn-ghost cp-btn-sm">✗ 却下</button>
+                          <button onClick={() => startEdit(p)}
+                            className="cp-btn cp-btn-sm">✏️ 直す</button>
+                          <button onClick={() => handleApprove(p)}
+                            className="cp-btn cp-btn-primary cp-btn-sm"
+                            style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                            ✓ 承認 → メール下書きを保存
+                          </button>
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </>
           )}
 
-          {tab === 'leads' && (
+          {/* ─── 採用済リード ─── */}
+          {tab === 'history' && (
             <>
-              <div className="cp-card-section cp-stack-sm">
-                <p className="cp-h3">📋 リードを追加 (AI が自動スコアリング)</p>
-                <div className="cp-grid-2">
-                  <input placeholder="企業名 *" value={newLead.companyName} onChange={e => setNewLead({...newLead, companyName: e.target.value})} className="cp-input" />
-                  <input placeholder="担当者名" value={newLead.contactName} onChange={e => setNewLead({...newLead, contactName: e.target.value})} className="cp-input" />
-                  <input placeholder="役職" value={newLead.contactRole} onChange={e => setNewLead({...newLead, contactRole: e.target.value})} className="cp-input" />
-                  <input placeholder="メール" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} className="cp-input" />
-                </div>
-                <textarea placeholder="メモ" rows={2} value={newLead.notes} onChange={e => setNewLead({...newLead, notes: e.target.value})} className="cp-textarea" />
-                <button onClick={handleAddLead} disabled={busy === 'lead'}
-                  className="cp-btn cp-btn-primary" style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                  {busy === 'lead' ? '🧠 スコア計算中…' : '＋ リード追加 + AI 採点'}
-                </button>
+              <div className="cp-card-section">
+                <p className="cp-h3">📂 採用済のリード</p>
+                <p className="cp-meta">
+                  「✓ 承認」したものはここに溜まります。メール下書きは {draftCount} 件保存中。
+                  シャドー秘書 (毎朝の自動チェック) がこの一覧から優先度の高い相手に動きます。
+                </p>
               </div>
 
               <div className="cp-stack-sm">
                 {myLeads.length === 0 ? (
-                  <div className="cp-empty"><p className="cp-empty-icon">📭</p><p>リードがまだありません</p></div>
+                  <div className="cp-empty">
+                    <p className="cp-empty-icon">📭</p>
+                    <p>まだ採用したリードはありません</p>
+                    <p className="cp-meta">「✨ 今日のピックアップ」タブで AI が選んだ企業を承認すると、ここに追加されます</p>
+                  </div>
                 ) : myLeads.map(l => {
-                  const stage = SALES_STAGE_LABELS[l.stage];
+                  const drafts = sa.approaches.filter(a => a.leadId === l.id);
                   return (
-                    <div key={l.id} className="cp-card cp-row-between">
-                      <div className="min-w-0 cp-row" style={{ gap: 10 }}>
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-                          style={{ background: stage.color + '20', color: stage.color }}>{stage.emoji}</div>
+                    <div key={l.id} className="cp-card cp-stack-sm">
+                      <div className="cp-row-between" style={{ flexWrap: 'wrap', gap: 8 }}>
                         <div className="min-w-0">
                           <p className="cp-h3 truncate">{l.companyName}</p>
-                          <p className="cp-meta truncate">{l.contactName || '未設定'} {l.contactRole && `· ${l.contactRole}`}</p>
-                          {l.scoreReason && <p className="cp-tiny" style={{ textTransform: 'none' }}>{l.scoreReason}</p>}
+                          {l.scoreReason && (
+                            <p className="cp-meta" style={{ textTransform: 'none' }}>{l.scoreReason}</p>
+                          )}
+                        </div>
+                        <div className="cp-row" style={{ flexShrink: 0 }}>
+                          <span className="cp-pill" style={{
+                            color: l.score >= 80 ? '#10B981' : l.score >= 60 ? '#F59E0B' : '#9088A8',
+                            fontWeight: 600,
+                          }}>合致度 {l.score}</span>
+                          <button onClick={() => sa.removeLead(l.id)} className="cp-btn cp-btn-ghost cp-btn-sm">削除</button>
                         </div>
                       </div>
-                      <div className="cp-row" style={{ flexShrink: 0 }}>
-                        <span className="cp-pill" style={{ color: l.score >= 70 ? '#10B981' : l.score >= 50 ? '#F59E0B' : '#9088A8', fontWeight: 600 }}>
-                          {l.score}/100
-                        </span>
-                        <select value={l.stage} onChange={e => sa.updateLead(l.id, { stage: e.target.value as SalesLead['stage'] })} className="cp-select" style={{ width: 120 }}>
-                          {Object.entries(SALES_STAGE_LABELS).map(([k, v]) => (
-                            <option key={k} value={k}>{v.emoji} {v.label}</option>
+                      {drafts.length > 0 && (
+                        <div className="cp-stack-sm">
+                          {drafts.slice(0, 1).map(a => (
+                            <div key={a.id} className="cp-card" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                              <p className="cp-meta" style={{ marginBottom: 4 }}>件名: <span style={{ color: 'var(--fg)', fontWeight: 600 }}>{a.subject}</span></p>
+                              <pre className="cp-body" style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, fontSize: '0.85rem' }}>{a.body}</pre>
+                              <div className="cp-row" style={{ gap: 6, marginTop: 8 }}>
+                                <button onClick={() => navigator.clipboard.writeText(`${a.subject}\n\n${a.body}`)}
+                                  className="cp-btn cp-btn-sm">📋 コピー</button>
+                                <button onClick={() => sa.updateApproach(a.id, { status: 'sent' })}
+                                  className="cp-btn cp-btn-sm">送信済にする</button>
+                              </div>
+                            </div>
                           ))}
-                        </select>
-                        <button onClick={() => sa.removeLead(l.id)} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
-                      </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -334,99 +431,19 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
             </>
           )}
 
-          {tab === 'approach' && (
-            <>
-              <div className="cp-card-section cp-stack-sm">
-                <p className="cp-h3">📨 個別パーソナライズメールを生成</p>
-                <select value={selectedLeadId || ''} onChange={e => setSelectedLeadId(e.target.value)} className="cp-select">
-                  <option value="">リードを選択...</option>
-                  {myLeads.map(l => (
-                    <option key={l.id} value={l.id}>{l.companyName} / {l.contactName || '担当者未設定'} (スコア {l.score})</option>
-                  ))}
-                </select>
-                <div className="cp-grid-2">
-                  <input value={approachTone} onChange={e => setApproachTone(e.target.value)} placeholder="トーン" className="cp-input" />
-                  <input value={approachGoal} onChange={e => setApproachGoal(e.target.value)} placeholder="ゴール" className="cp-input" />
-                </div>
-                <button onClick={handleGenerateEmail} disabled={busy === 'approach' || !selectedLeadId}
-                  className="cp-btn cp-btn-primary" style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                  {busy === 'approach' ? '🧠 作成中…' : '✨ AI でメール下書き作成'}
-                </button>
-              </div>
-
-              <div className="cp-stack-sm">
-                {sa.approaches.length === 0 ? (
-                  <div className="cp-empty"><p className="cp-empty-icon">📨</p><p>下書きがまだありません</p></div>
-                ) : sa.approaches.slice(0, 10).map(a => {
-                  const lead = myLeads.find(l => l.id === a.leadId);
-                  if (!lead) return null;
-                  return (
-                    <div key={a.id} className="cp-card cp-stack-sm">
-                      <div className="cp-row-between">
-                        <span className="cp-h3 truncate">{lead.companyName} / {lead.contactName || '担当者様'}</span>
-                        <span className="cp-pill" style={{ color: (a.hitProbability || 0) >= 60 ? '#10B981' : '#9088A8' }}>反応率 {a.hitProbability}%</span>
-                      </div>
-                      <p className="cp-meta">件名: {a.subject}</p>
-                      <pre className="cp-body" style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{a.body}</pre>
-                      <div className="cp-row" style={{ gap: 6 }}>
-                        <button onClick={() => navigator.clipboard.writeText(`${a.subject}\n\n${a.body}`)} className="cp-btn cp-btn-sm">📋 コピー</button>
-                        <button onClick={() => sa.updateApproach(a.id, { status: 'sent' })} className="cp-btn cp-btn-sm">送信済にする</button>
-                        <button onClick={() => sa.removeApproach(a.id)} className="cp-btn cp-btn-ghost cp-btn-sm">削除</button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-
-          {tab === 'signals' && (
-            <>
-              <div className="cp-card-section cp-row-between">
-                <div>
-                  <p className="cp-h3">⚡ 売れるタイミングを AI が予測</p>
-                  <p className="cp-meta">登録企業の業界傾向から「今、動きがあるかも」を推定します</p>
-                </div>
-                <button onClick={handlePredictSignals} disabled={busy === 'signals' || myCompanies.length === 0}
-                  className="cp-btn cp-btn-primary" style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                  {busy === 'signals' ? '🧠 予測中…' : '🔮 シグナル予測'}
-                </button>
-              </div>
-
-              <div className="cp-stack-sm">
-                {mySignals.length === 0 ? (
-                  <div className="cp-empty"><p className="cp-empty-icon">⚡</p><p>シグナルがまだありません</p><p className="cp-meta">先にリサーチタブで企業を登録してから「シグナル予測」を実行してください</p></div>
-                ) : mySignals.map(s => (
-                  <div key={s.id} className="cp-card cp-stack-sm" style={{ opacity: s.read ? 0.6 : 1 }}>
-                    <div className="cp-row-between">
-                      <div className="cp-row" style={{ gap: 6 }}>
-                        <span className="cp-h3">{s.companyName}</span>
-                        <span className="cp-pill" style={{
-                          color: s.severity === 'high' ? '#F87171' : s.severity === 'medium' ? '#FBBF24' : '#9088A8',
-                          borderColor: s.severity === 'high' ? '#F87171' : s.severity === 'medium' ? '#FBBF24' : '#9088A8',
-                        }}>{s.signalType}</span>
-                      </div>
-                      <div className="cp-row" style={{ gap: 4 }}>
-                        {!s.read && <button onClick={() => sa.markSignalRead(s.id)} className="cp-btn cp-btn-sm">既読</button>}
-                        <button onClick={() => sa.removeSignal(s.id)} className="cp-btn cp-btn-ghost cp-btn-sm">×</button>
-                      </div>
-                    </div>
-                    <p className="cp-body">{s.description}</p>
-                    {s.suggestedAction && <p className="cp-meta" style={{ color: persona.accentColor }}>→ 次の一手: {s.suggestedAction}</p>}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
+          {/* ─── 自社の商材 ─── */}
           {tab === 'product' && (
             <div className="cp-card-section cp-stack-sm">
               <p className="cp-h3">🎁 自社の商材を登録</p>
-              <p className="cp-meta">この情報を使って AI が「相手企業との相性」「売り込み角度」を考えます。詳しく書くほど精度が上がります。</p>
+              <p className="cp-meta">
+                この情報をもとに AI が「合う企業」を毎日先回りで選びます。
+                何を売っていて、誰に向けて、どう刺さるかを 5〜10 行で。詳しいほど精度が上がります。
+              </p>
               <textarea value={productDraft} onChange={e => setProductDraft(e.target.value)}
                 placeholder={`例:\n弊社の商材: 飲食店向け予約管理 SaaS\n価格: 月¥9,800〜\nコア機能: 予約一元管理 / 顧客LTV分析 / LINE自動配信\nターゲット: 月50万円以上の売上がある飲食店\n強み: 月の客単価が3,500円以上の店で、リピート率を平均15%向上した実績`}
                 rows={10} className="cp-textarea" />
-              <button onClick={saveProduct} className="cp-btn cp-btn-primary" style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+              <button onClick={saveProduct} className="cp-btn cp-btn-primary"
+                style={{ background: persona.accentColor, color: '#0a0a0f' }}>
                 保存
               </button>
             </div>
