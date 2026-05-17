@@ -1195,8 +1195,11 @@ input, textarea, select { font-family: inherit; }
   padding-top: max(0.85rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) !important;
 }
 
-/* OnboardingFlow: 薄すぎる neutral-700 / neutral-600 を WCAG AA 比に補強 */
+/* 薄すぎる neutral テキストを WCAG AA 比に補強 (ダーク背景に暗い文字を撲滅)
+   neutral-800/900 はダーク背景でほぼ不可視のため必ず引き上げる */
 @media (max-width: 768px) {
+  .text-neutral-900 { color: rgb(165 165 188) !important; }
+  .text-neutral-800 { color: rgb(170 170 192) !important; }
   .text-neutral-700 { color: rgb(180 180 200) !important; }
   .text-neutral-600 { color: rgb(200 200 215) !important; }
   .text-neutral-500 { color: rgb(215 215 225) !important; }
@@ -1207,5 +1210,45 @@ input, textarea, select { font-family: inherit; }
   .cp-h2 { font-size: 0.95rem !important; line-height: 1.4 !important; }
   .cp-h3 { font-size: 0.88rem !important; }
   .cp-meta { font-size: 0.72rem !important; }
+}
+
+/* ============================================================
+   空状態の「お試しデータで触ってみる」CTA (2026-05-17)
+   ============================================================ */
+.cp-sample-cta-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+.cp-sample-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 24px;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #0a0a0f;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  -webkit-tap-highlight-color: transparent;
+}
+.cp-sample-cta-hint {
+  font-size: 0.72rem;
+  color: rgb(190 190 208);
+  text-align: center;
+  max-width: 22rem;
+  line-height: 1.5;
+}
+@media (max-width: 480px) {
+  .cp-sample-cta {
+    width: 100%;
+    max-width: 20rem;
+    font-size: 0.95rem;
+  }
 }
 

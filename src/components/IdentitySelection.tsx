@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import type { Persona } from '../types/identity';
+import SampleDataCTA from './SampleDataCTA';
 
 interface Props {
   personas: Persona[];
@@ -64,12 +65,16 @@ export default function IdentitySelection({ personas, userName, onSelect, onCrea
           <motion.button
             onClick={onCreatePersona}
             className="px-8 py-3 rounded-full text-sm font-light"
-            style={{ background: 'linear-gradient(135deg, #c9a96e, #a07840)', color: '#0a0a0f' }}
+            style={{ background: 'linear-gradient(135deg, #c9a96e, #a07840)', color: '#0a0a0f', minHeight: 44 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             ＋ 人格を作成する
           </motion.button>
+          <div className="mt-5 flex flex-col items-center">
+            <p className="text-neutral-600 text-xs mb-1">まだ何もないので、先に試したい方は</p>
+            <SampleDataCTA hint="カフェ経営者のサンプルが入り、全機能をすぐ触れます (あとで消せます)" />
+          </div>
         </motion.div>
       ) : (
         <div className={`grid gap-4 w-full relative z-10 px-8 ${

@@ -6,6 +6,7 @@ import type { BusinessDocument, DocumentKind, DocumentStatus, InvoiceLine, Clien
 import { useInvoices } from '../hooks/useInvoices';
 import { useCRM } from '../hooks/useCRM';
 import { computeTotals, fmtJpy, calcDueDate } from '../lib/invoiceCalc';
+import SampleDataCTA from './SampleDataCTA';
 
 interface Props {
   persona: Persona;
@@ -231,9 +232,10 @@ export default function DocumentStudio({ persona, settings: _settings, onClose }
                     <p>{KIND_META[tab].label}がまだありません</p>
                     <button onClick={openCompose}
                       className="cp-btn cp-btn-primary mt-3"
-                      style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                      style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
                       ＋ 最初の{KIND_META[tab].label}を作成
                     </button>
+                    <SampleDataCTA accent={persona.accentColor} hint="サンプルの見積書が入り、書類の作りをすぐ確認できます" />
                   </div>
                 ) : (
                   <div className="cp-stack-sm">

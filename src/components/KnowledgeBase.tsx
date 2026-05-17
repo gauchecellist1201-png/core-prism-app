@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { KnowledgeItem, Persona, AppSettings } from '../types/identity';
 import AgentProposalCard from './AgentProposalCard';
+import SampleDataCTA from './SampleDataCTA';
 import {
   proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse,
   KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal,
@@ -305,8 +306,9 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                     <button
                       onClick={() => setTab('add-file')}
                       className="mt-4 text-xs px-4 py-2 rounded-lg font-medium"
-                      style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
+                      style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40`, minHeight: 44 }}
                     >📂 資料を追加する</button>
+                    <SampleDataCTA accent={persona.accentColor} hint="サンプル資料が入り、AI 提案をすぐ体験できます" />
                   </div>
                 ) : result ? (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
@@ -414,6 +416,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                     <p className="text-4xl mb-4">📭</p>
                     <p className="text-neutral-600 text-sm">まだ資料がありません</p>
                     <p className="text-neutral-700 text-xs mt-1">ファイルかノートを追加しましょう</p>
+                    <SampleDataCTA accent={persona.accentColor} hint="サンプル資料が入り、すぐに中身を確認できます" />
                   </div>
                 ) : (
                   items.map(item => {

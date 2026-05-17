@@ -4,6 +4,7 @@ import type { Persona } from '../types/identity';
 import type { CRMDeal, CRMStage } from '../types/crm';
 import { STAGE_META, STAGE_ORDER } from '../types/crm';
 import { useCRM } from '../hooks/useCRM';
+import SampleDataCTA from './SampleDataCTA';
 import { useInvoices } from '../hooks/useInvoices';
 import { fmtJpy, computeTotals } from '../lib/invoiceCalc';
 import type { BusinessDocument } from '../types/invoice';
@@ -139,6 +140,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
                 <div className="cp-empty">
                   <p className="cp-empty-icon">📭</p>
                   <p>案件がまだありません</p>
+                  <SampleDataCTA accent={persona.accentColor} hint="サンプル案件が入り、商談の流れをすぐ試せます" />
                 </div>
               ) : dealsAll.map(d => {
                 const meta = STAGE_META[d.stage];

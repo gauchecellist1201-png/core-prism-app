@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Persona, KnowledgeItem } from '../types/identity';
+import SampleDataCTA from './SampleDataCTA';
 
 interface Props {
   persona: Persona;
@@ -216,7 +217,15 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
               <div className="cp-card-section">
                 <p className="cp-h3 mb-2">🎯 取り組むべきタスク</p>
                 {todayTasks.real.length === 0 ? (
-                  <p className="cp-meta">未完了のタスクがありません</p>
+                  persona.tasks.length === 0 ? (
+                    <div className="cp-empty">
+                      <p className="cp-empty-icon">📋</p>
+                      <p>タスクがまだありません</p>
+                      <SampleDataCTA accent={persona.accentColor} hint="サンプルのタスクが入り、優先度や提案機能をすぐ試せます" />
+                    </div>
+                  ) : (
+                    <p className="cp-meta">未完了のタスクがありません</p>
+                  )
                 ) : (
                   <div className="cp-stack-sm">
                     {todayTasks.real.map(t => (
