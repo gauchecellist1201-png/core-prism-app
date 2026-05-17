@@ -520,10 +520,13 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         )}
       </AnimatePresence>
 
-      {/* メインコンテンツ — モバイルではフローティング AI ボタン分の余白を確保 */}
+      {/* メインコンテンツ — モバイルではフローティング AI ボタン分の余白を確保
+          画像エディタは 1 画面完結なので余白を詰める (ページスクロール抑制) */}
       <main className="iris-main" style={{
-        maxWidth: 1100, margin: '0 auto',
-        padding: '2rem 1.25rem calc(8.5rem + env(safe-area-inset-bottom, 0px))',
+        maxWidth: tab === 'image' ? 1280 : 1100, margin: '0 auto',
+        padding: tab === 'image'
+          ? '0.75rem 0.7rem calc(0.75rem + env(safe-area-inset-bottom, 0px))'
+          : '2rem 1.25rem calc(8.5rem + env(safe-area-inset-bottom, 0px))',
       }}>
         <AnimatePresence mode="wait">
           <motion.div

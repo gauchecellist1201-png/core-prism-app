@@ -1,7 +1,7 @@
 // Canva 風 1 画面エディタ — Iris の画像加工
 // 左: ライブプレビュー / 右: タブ式ツールバー (Crop / Filter / Adjust / Text / Effects)
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import {
   Upload, Download, Type, Sliders, Wand2, Crop as CropIcon,
   Undo2, Redo2, Plus, Trash2, Eye, EyeOff, ZoomIn, ZoomOut, Loader2,
@@ -84,6 +84,10 @@ const FONTS: { family: string; label: string; sample: string; weights: number[] 
   { family: 'Shippori Mincho',      label: 'しっぽり明朝',     sample: 'Aa あ', weights: [400, 700] },
   { family: 'Zen Kaku Gothic New',  label: 'Zen 角ゴ',        sample: 'Aa あ', weights: [400, 700] },
   { family: 'Klee One',             label: 'Klee 鉛筆',        sample: 'Aa あ', weights: [400] },
+  { family: 'Zen Maru Gothic',      label: 'Zen 丸ゴ',         sample: 'Aa あ', weights: [400, 700] },
+  { family: 'Kosugi Maru',          label: '小杉 丸ゴ',        sample: 'Aa あ', weights: [400] },
+  { family: 'Yusei Magic',          label: '遊星 手書き',      sample: 'Aa あ', weights: [400] },
+  { family: 'Yomogi',               label: 'よもぎ 手書き',    sample: 'Aa あ', weights: [400] },
   { family: 'Playfair Display',     label: 'Playfair',        sample: 'Aa',    weights: [400, 700] },
   { family: 'Cinzel',               label: 'Cinzel',          sample: 'Aa',    weights: [400, 700] },
   { family: 'Cormorant Garamond',   label: 'Cormorant',       sample: 'Aa',    weights: [400, 700] },
@@ -149,6 +153,25 @@ export default function IrisImageEditor({ bg }: Props) {
   // 画面要素
   const stageRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  // 1 画面に収める — エディタ高さを画面に合わせて固定 (ページスクロールで写真を見失わない)
+  const [editorH, setEditorH] = useState(0);
+  useLayoutEffect(() => {
+    if (!imgUrl) { setEditorH(0); return; }
+    const recalc = () => {
+      const top = wrapRef.current?.getBoundingClientRect().top ?? 0;
+      const vh = window.visualViewport?.height ?? window.innerHeight;
+      setEditorH(Math.max(440, vh - Math.max(0, top) - 8));
+    };
+    recalc();
+    window.addEventListener('resize', recalc);
+    window.visualViewport?.addEventListener('resize', recalc);
+    return () => {
+      window.removeEventListener('resize', recalc);
+      window.visualViewport?.removeEventListener('resize', recalc);
+    };
+  }, [imgUrl]);
 
   useEffect(() => { loadGoogleFonts(); }, []);
 
@@ -636,19 +659,20 @@ JSON だけ返し、\`\`\`json は不要。`;
   }
 
   return (
-    <div style={wrap}>
-      {/* トップバー */}
+    <div ref={wrapRef} style={{ ...wrap, ...(editorH ? { height: editorH } : {}) }}>
+      {/* トップバー — 1 行固定・横スクロール */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap',
-        padding: '0.6rem 0.8rem', background: bg.card,
+        display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'nowrap',
+        padding: '0.45rem 0.6rem', background: bg.card,
         border: `1px solid ${bg.cardBorder}`, borderRadius: 16,
+        flex: 'none', overflowX: 'auto', scrollbarWidth: 'none',
       }}>
-        <label style={topBtn(bg)}>
+        <label style={{ ...topBtn(bg), flex: 'none' }}>
           <Upload size={14} /> 別の写真
           <input type="file" accept="image/*" onChange={onUpload} style={{ display: 'none' }} />
         </label>
 
-        <div style={{ display: 'inline-flex', gap: 4, marginLeft: '0.4rem' }}>
+        <div style={{ display: 'inline-flex', gap: 4, marginLeft: '0.2rem', flex: 'none' }}>
           <button
             style={{ ...iconBtn(bg), opacity: historyIdx <= 0 ? 0.4 : 1 }}
             onClick={undo}
@@ -665,9 +689,9 @@ JSON だけ返し、\`\`\`json は不要。`;
           ><Redo2 size={16} /></button>
         </div>
 
-        <div style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6, flexWrap: 'wrap' }}>
+        <div style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6, flexWrap: 'nowrap', flex: 'none' }}>
           <button onClick={omakase} disabled={!!busy} style={{
-            ...topBtn(bg),
+            ...topBtn(bg), flex: 'none',
             background: busy === 'omakase' ? bg.accent + '90' : `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
             color: '#fff',
             border: 'none',
@@ -676,14 +700,14 @@ JSON だけ返し、\`\`\`json は不要。`;
             {busy === 'omakase' ? <Loader2 size={14} className="iris-spin" /> : <Brain size={14} />}
             おまかせ
           </button>
-          <button onClick={() => downloadAs('png')} style={topBtn(bg)}>
+          <button onClick={() => downloadAs('png')} style={{ ...topBtn(bg), flex: 'none' }}>
             <Download size={14} /> PNG
           </button>
-          <button onClick={() => downloadAs('jpg')} style={topBtn(bg)}>
+          <button onClick={() => downloadAs('jpg')} style={{ ...topBtn(bg), flex: 'none' }}>
             <Download size={14} /> JPG
           </button>
           <button onClick={shareToInsta} disabled={!!busy} style={{
-            ...topBtn(bg),
+            ...topBtn(bg), flex: 'none',
             background: 'linear-gradient(135deg, #f58529 0%, #dd2a7b 50%, #8134af 100%)',
             color: '#fff',
             border: 'none',
@@ -695,26 +719,28 @@ JSON だけ返し、\`\`\`json は不要。`;
         </div>
       </div>
 
-      {/* メイン: プレビュー + ツールバー */}
+      {/* メイン: プレビュー + ツールバー (モバイル=縦 / PC=横2カラム) */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr)',
-        gap: '0.8rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.6rem',
         flex: 1,
         minHeight: 0,
       }}
       className="iris-canva-layout"
       >
-        {/* プレビュー */}
+        {/* プレビュー — 1 画面の上 約58%。スクロールしても写真は動かない */}
         <div
           ref={previewRef}
+          className="iris-canva-preview"
           style={{
             position: 'relative',
             background: 'linear-gradient(135deg, #1a1422, #2a1f30)',
             borderRadius: 18,
             overflow: 'hidden',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            minHeight: 320,
+            flex: '0 0 58%',
+            minHeight: 0,
             touchAction: 'none',
           }}
           onClick={() => setSelectedTextId(null)}
@@ -884,13 +910,14 @@ JSON だけ返し、\`\`\`json は不要。`;
           )}
         </div>
 
-        {/* 右パネル */}
-        <div style={{
+        {/* ツールバー — 1 画面の下。タブを切り替え、この中だけスクロール */}
+        <div className="iris-canva-panel" style={{
           background: bg.card,
           border: `1px solid ${bg.cardBorder}`,
           borderRadius: 18,
           display: 'flex',
           flexDirection: 'column',
+          flex: 1,
           minHeight: 0,
           overflow: 'hidden',
         }}>
@@ -1161,19 +1188,16 @@ JSON だけ返し、\`\`\`json は不要。`;
         </div>
       </div>
 
-      {/* レスポンシブ: PC 2 カラム / モバイル 縦 */}
+      {/* レスポンシブ: PC 2 カラム / モバイル 縦 (上プレビュー固定 + 下ツールバー) */}
       <style>{`
         @media (min-width: 900px) {
           .iris-canva-layout {
-            grid-template-columns: minmax(0, 1.4fr) minmax(280px, 320px) !important;
-            height: calc(100dvh - 220px);
-            min-height: 520px;
+            display: grid !important;
+            grid-template-columns: minmax(0, 1.5fr) minmax(300px, 360px) !important;
+            grid-auto-rows: minmax(0, 1fr);
           }
-        }
-        @media (max-width: 899px) {
-          .iris-canva-layout > div:first-child {
-            min-height: 50vh;
-          }
+          .iris-canva-preview { flex: 1 1 auto !important; }
+          .iris-canva-panel { flex: 1 1 auto !important; }
         }
         .iris-spin { animation: iris-spin 0.9s linear infinite; }
         @keyframes iris-spin { to { transform: rotate(360deg); } }
