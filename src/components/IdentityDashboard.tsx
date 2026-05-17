@@ -70,6 +70,7 @@ import type { HealthAnomaly } from '../data/healthAnomaly';
 import AgentsOrbit from './AgentsOrbit';
 import { PRISM_SPECS, PRISM_ORDER, PRISM_CONVERSATIONS } from '../lib/agentSpecs';
 import WellnessTracker from './WellnessTracker';
+import IntegrationCenter from './IntegrationCenter';
 
 interface Props {
   persona: Persona;
@@ -169,6 +170,7 @@ export default function IdentityDashboard({
   const [showBenchmark, setShowBenchmark] = useState(false);
   const lastBenchmark = useMemo(() => loadBenchmarkResult(persona.id), [persona.id, showBenchmark]);
   const [showVoice, setShowVoice] = useState(false);
+  const [showIntegrations, setShowIntegrations] = useState(false);
   const [showSalesAgent, setShowSalesAgent] = useState(false);
   const [showSaasAgent, setShowSaasAgent] = useState(false);
   const [showYouTube, setShowYouTube] = useState(false);
@@ -747,6 +749,7 @@ export default function IdentityDashboard({
                   { id: 'team', emoji: '🤺', label: 'メンバーを招く', desc: '仲間と画面を共有', onClick: () => setShowTeam(true) },
                   { id: 'sales-agent', emoji: '🎯', label: '今日の商談準備', desc: 'AI が攻める 5 社を提案', primary: true, onClick: () => setShowSalesAgent(true) },
                   { id: 'saas-agent', emoji: '🤖', label: 'アプリ操作を任す', desc: 'Notion・Gmail を代理操作', primary: true, onClick: () => setShowSaasAgent(true) },
+                  { id: 'integrations', emoji: '🔗', label: '連携センター', desc: 'Gmail・Watch を 3 ステップで', primary: true, onClick: () => setShowIntegrations(true) },
                   { id: 'tasks-hub', emoji: '✅', label: 'やる事を一覧', desc: '全タスクをここに集約', onClick: () => setShowTaskHub(true) },
                   { id: 'premium', emoji: '👑', label: '専門 AI に相談', desc: '戦略・法務・財務のプロ', primary: true, onClick: () => setShowPremium(true) },
                   { id: 'meet', emoji: '📅', label: '会議を予約', desc: 'カレンダーにリンク発行', onClick: () => setShowMeeting(true) },
@@ -1253,6 +1256,13 @@ export default function IdentityDashboard({
             persona={persona}
             settings={settings}
             onClose={() => setShowSalesAgent(false)}
+          />
+        )}
+        {showIntegrations && (
+          <IntegrationCenter
+            key="integration-center"
+            accent={persona.accentColor}
+            onClose={() => setShowIntegrations(false)}
           />
         )}
         {showSaasAgent && (
