@@ -23,7 +23,8 @@ import QuickActions from './QuickActions';
 import ActivityTimeline from './ActivityTimeline';
 import HealthSnapshot from './HealthSnapshot';
 import TodaysBodyCard from '../prism/TodaysBodyCard';
-import { loadBillingUser } from '../lib/billing';
+import { loadBillingUser, isMasterAuth } from '../lib/billing';
+import CoreRevenueCard from './CoreRevenueCard';
 import MeetingMinutesModal from './MeetingMinutes';
 import SlideGeneratorModal from './SlideGenerator';
 import NegotiationCoachModal from './NegotiationCoach';
@@ -999,6 +1000,8 @@ export default function IdentityDashboard({
         )}
         <div className="overflow-y-auto" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', maxHeight: '42%' }}>
           <div className="p-3">
+            {/* CORE の Stripe 実売上 (マスターのみ) */}
+            {isMasterAuth() && <CoreRevenueCard />}
             <CognitiveDashboard activeId={persona.id} personas={allPersonas} onEditFinance={setFinanceEditFor} />
           </div>
         </div>

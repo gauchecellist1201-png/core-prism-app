@@ -182,11 +182,9 @@ const CATALOG: Tool[] = [
   },
   {
     id: 'stripe', name: 'Stripe', color: '#635BFF', glyph: 'S', category: 'お金まわり',
-    can: '売上・サブスクの数字を Stripe からそのまま取り込み',
+    can: 'CORE 運営側で連携済み。売上はダッシュボード右側に自動表示',
     steps: [
-      { label: 'Stripe の API キー設定を開きます', action: { kind: 'openLink', url: 'https://dashboard.stripe.com/apikeys', btn: 'Stripe を開く' } },
-      { label: '「読み取り専用」の制限付きキーを作成し、コピー', action: { kind: 'info' } },
-      { label: 'キーを貼り付けて連携完了', action: { kind: 'input', placeholder: 'rk_live_…' } },
+      { label: 'Stripe は CORE 運営側で連携済みです。あなたの作業は不要です', action: { kind: 'info' } },
     ],
   },
   {
@@ -259,6 +257,8 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
   const isConnected = (t: Tool): boolean => {
     if (t.id === 'gmail') return isGmailConnected();
     if (t.id === 'gcal') return isCalConnected();
+    // Stripe は CORE 運営側で連携済み (Vercel env に Secret Key 設定済み)
+    if (t.id === 'stripe') return true;
     return !!loadToken(t.id);
   };
 
