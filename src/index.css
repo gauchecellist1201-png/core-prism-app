@@ -1017,6 +1017,26 @@ input, textarea, select { font-family: inherit; }
   transform-origin: center;
 }
 
+/* AI 思考中の骨組み (スケルトン) を流れる光 */
+@keyframes cp-shimmer {
+  0% { background-position: -160% 0; }
+  100% { background-position: 160% 0; }
+}
+.cp-skeleton-line {
+  border-radius: 7px;
+  background: linear-gradient(
+    100deg,
+    var(--surface-3) 30%,
+    rgba(255, 255, 255, 0.13) 50%,
+    var(--surface-3) 70%
+  );
+  background-size: 220% 100%;
+  animation: cp-shimmer 1.7s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-skeleton-line { animation: none; }
+}
+
 /* デスクトップ: 中央より少し右 (右サイドパネルとメインの隙間) */
 @media (min-width: 769px) {
   .cp-ai-fab-wrap {

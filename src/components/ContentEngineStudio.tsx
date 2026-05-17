@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import { generateNoteArticle, generateXPost, proposeContentTopics, TONE_OPTIONS, type SocialTone, type ContentTopicProposal } from '../lib/socialDraft';
 import AgentProposalCard from './AgentProposalCard';
+import ThinkingIndicator from './ThinkingIndicator';
 
 interface Props {
   persona: Persona;
@@ -225,18 +226,15 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
 
             {/* 提案を考え中 */}
             {proposalsBusy && (
-              <div style={{ textAlign: 'center', padding: '2.2rem 0' }}>
-                <motion.div
-                  animate={{ scale: [1, 1.12, 1] }}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{
-                    width: 64, height: 64, borderRadius: '50%', margin: '0 auto 1rem',
-                    background: `radial-gradient(circle, ${accent} 0%, ${accent}55 60%, transparent 100%)`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
-                  }}
-                >📡</motion.div>
-                <p style={{ fontSize: '0.9rem', fontWeight: 700 }}>🧠 AI が投稿テーマを考えています…</p>
-              </div>
+              <ThinkingIndicator
+                accent={accent}
+                variant="compact"
+                messages={[
+                  '🧠 今日の話題をさがしています…',
+                  '📚 あなたのナレッジを見ています…',
+                  '💡 刺さるテーマを 3 案えらんでいます…',
+                ]}
+              />
             )}
 
             {/* 3 案の提案カード */}
@@ -339,27 +337,22 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
 
         {/* ─── STEP 2: 生成中 ─── */}
         {step === 2 && (
-          <div style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
-            <motion.div
-              animate={{ scale: [1, 1.1, 1], rotate: [0, 4, 0] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-              style={{
-                width: 90, height: 90, borderRadius: '50%',
-                background: `radial-gradient(circle, ${accent} 0%, ${accent}66 60%, transparent 100%)`,
-                margin: '0 auto 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 36,
-              }}
-            >📡</motion.div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 8 }}>
-              {progress === 'note' ? '📝 note 記事を執筆中…'
-                : progress === 'x' ? '🐦 X スレッドを構成中…'
-                : '✓ 生成完了'}
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--fg-muted)', lineHeight: 1.9 }}>
-              人格「{persona.name}」の口調で、ナレッジを参照しています。
-              <br />30 秒〜 1 分ほどお待ちください。
-            </p>
-          </div>
+          <ThinkingIndicator
+            accent={accent}
+            variant="full"
+            messages={[
+              '🧠 あなたのナレッジを読み込んでいます…',
+              `🎭 人格「${persona.name}」の口調をなぞっています…`,
+              '📝 本文の流れを組み立てています…',
+              '🔍 言い回しをていねいに整えています…',
+              '✨ 最後の仕上げをしています…',
+            ]}
+            subtitle={
+              progress === 'note' ? 'いま note 記事を書いています'
+                : progress === 'x' ? 'いま X スレッドに整えています'
+                : '人格の口調で、ナレッジを参照しています'
+            }
+          />
         )}
 
         {/* ─── STEP 3: 結果 + コピー&投稿 ─── */}
