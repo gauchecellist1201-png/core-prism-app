@@ -9,6 +9,7 @@ import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import { generateNoteArticle, generateXPost, proposeContentTopics, TONE_OPTIONS, type SocialTone, type ContentTopicProposal } from '../lib/socialDraft';
 import AgentProposalCard from './AgentProposalCard';
 import ThinkingIndicator from './ThinkingIndicator';
+import GenerationReward from './GenerationReward';
 
 interface Props {
   persona: Persona;
@@ -52,6 +53,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
 
   const [progress, setProgress] = useState<'note' | 'x' | 'done' | null>(null);
   const [isGen, setIsGen] = useState(false);
+  const [showReward, setShowReward] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -136,6 +138,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
       saveHistory(next);
 
       setProgress('done');
+      setShowReward(true);
       setStep(3);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -167,6 +170,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
         onClick={e => e.stopPropagation()}
         className="cp-modal w-full max-w-3xl overflow-y-auto"
         style={{
+          position: 'relative',
           background: 'var(--surface-1, #0e0e15)',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 18,
@@ -174,6 +178,15 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
           maxHeight: 'calc(100dvh - 1.5rem)',
         }}
       >
+        {/* 生成が終わった瞬間のごほうび演出 (1.7 秒で自動的に消える) */}
+        {showReward && (
+          <GenerationReward
+            accent={accent}
+            label="できました！"
+            detail="note と X、両方そろいました"
+            onDone={() => setShowReward(false)}
+          />
+        )}
         {/* ヘッダ */}
         <header style={{
           padding: 'max(1rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) max(1rem, calc(env(safe-area-inset-right, 0px) + 0.75rem)) 1rem 1.25rem',
@@ -352,6 +365,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                 : progress === 'x' ? 'いま X スレッドに整えています'
                 : '人格の口調で、ナレッジを参照しています'
             }
+            onRetry={() => handleGenerate(topic, tone)}
           />
         )}
 

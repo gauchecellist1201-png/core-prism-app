@@ -13,17 +13,26 @@ type Props = {
   variant?: 'full' | 'compact';
   /** メッセージ下に固定で出す補足 (人格名やヒントなど) */
   subtitle?: string;
+  /** 指定すると 90 秒を超えたとき「もう一度ためす」救済導線を出す */
+  onRetry?: () => void;
 };
+
+/** これ以上待つと不安になるしきい値 (秒) */
+const RESCUE_AFTER = 90;
 
 export default function ThinkingIndicator({
   accent,
   messages,
   variant = 'full',
   subtitle,
+  onRetry,
 }: Props) {
   const [idx, setIdx] = useState(0);
   const [secs, setSecs] = useState(0);
+  const [rescueDismissed, setRescueDismissed] = useState(false);
   const startRef = useRef(Date.now());
+
+  const showRescue = !!onRetry && secs >= RESCUE_AFTER && !rescueDismissed;
 
   // メッセージは 2.6 秒ごとに次へ。最後まで来たら最後の文で止める
   useEffect(() => {
@@ -132,8 +141,72 @@ export default function ThinkingIndicator({
 
       {/* 経過秒数 — そっと、責めない大きさで */}
       <p style={{ fontSize: '0.72rem', color: 'var(--fg-subtle)', fontVariantNumeric: 'tabular-nums' }}>
-        {secs} 秒経過{secs >= 45 ? ' — もう少しです' : ''}
+        {secs} 秒経過{secs >= 45 && !showRescue ? ' — もう少しです' : ''}
       </p>
+
+      {/* 90 秒超の救済導線 — 責めず、選べる形で */}
+      <AnimatePresence>
+        {showRescue && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.32 }}
+            style={{
+              maxWidth: 340,
+              margin: '1.1rem auto 0',
+              padding: '0.9rem 1rem',
+              borderRadius: 12,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              textAlign: 'center',
+            }}
+          >
+            <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--fg)' }}>
+              ⏳ 思ったより時間がかかっています
+            </p>
+            <p style={{ fontSize: '0.74rem', color: 'var(--fg-muted)', lineHeight: 1.7, marginTop: 4 }}>
+              通信が混み合っているのかもしれません。
+              <br />
+              もう一度ためすか、このまま待つか選べます。
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <button
+                onClick={() => onRetry?.()}
+                style={{
+                  flex: 1,
+                  padding: '0.6rem',
+                  borderRadius: 10,
+                  background: accent,
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                🔄 もう一度ためす
+              </button>
+              <button
+                onClick={() => setRescueDismissed(true)}
+                style={{
+                  flex: 1,
+                  padding: '0.6rem',
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.06)',
+                  color: 'var(--fg)',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                このまま待つ
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* full のときだけ「文章が組み上がっていく」骨組みを見せる */}
       {variant === 'full' && (
