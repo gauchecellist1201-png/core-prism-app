@@ -1,20 +1,20 @@
 // ============================================================
-// IntegrationCenter — 有名アプリとの連携を「わかりやすい 3 ステップ」で
+// IntegrationCenter — タップして進むだけで連携完了するウィザード
 //
 // オーナー指示 (2026-05-17):
-//   Gmail / Google カレンダー / HubSpot / Notion / Google Drive など
-//   有名アプリ全部との連携を、アプリ名+アイコン付きで表示。
-//   それぞれちゃんと連携できるように。
+//   カードをタップしていくと そのまま連携完了まで持っていける形に。
 //
-// 連携方式:
-//   oauth   … ボタン一発で Google ログイン (Gmail / カレンダー)
-//   token   … API トークン / キーを貼り付けて保存
-//   webhook … Webhook URL を貼り付けて保存
-//   guide   … 3 ステップの手順を表示
+// 各アプリは「ステップウィザード」:
+//   カードをタップ → ステップ 1 → [アクション] → 次へ → ... → 連携完了
+// ステップのアクション種別:
+//   openLink … 必要な外部ページを新タブで開く
+//   input    … トークン / URL を貼り付ける
+//   oauth    … Google ログイン (Gmail / カレンダー)
+//   info     … 説明を読んで「次へ」
 // ============================================================
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { X, Check, ArrowRight, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Check, ArrowRight, Loader2, ExternalLink, PartyPopper } from 'lucide-react';
 import {
   isGmailConfigured, isGmailConnected, connectGmail, clearGmailToken,
 } from '../lib/gmail';
@@ -27,183 +27,223 @@ interface Props {
   accent?: string;
 }
 
-type ConnectKind = 'oauth' | 'token' | 'webhook' | 'guide';
-type ToolStatus = 'connected' | 'ready' | 'preparing';
+type StepAction =
+  | { kind: 'openLink'; url: string; btn: string }
+  | { kind: 'input'; placeholder: string }
+  | { kind: 'oauth'; provider: 'gmail' | 'gcal' }
+  | { kind: 'info' };
+
+interface Step {
+  label: string;
+  action: StepAction;
+}
 
 interface Tool {
   id: string;
   name: string;
-  /** ブランドカラー */
   color: string;
-  /** アイコンに描く頭文字 or 記号 (1〜2 文字) */
   glyph: string;
-  /** Instagram のようなグラデ背景にしたい場合 */
   gradient?: string;
   category: string;
   can: string;
-  kind: ConnectKind;
-  steps: string[];
-  /** token / webhook 入力のプレースホルダ */
-  inputHint?: string;
-  oauthConnect?: () => Promise<void>;
+  steps: Step[];
 }
 
-// localStorage キー: token/webhook 連携の保存先
 const tokenKey = (id: string) => `core_integration_${id}`;
 function loadToken(id: string): string { return localStorage.getItem(tokenKey(id)) || ''; }
 function saveTokenLS(id: string, v: string) { localStorage.setItem(tokenKey(id), v.trim()); }
 function clearTokenLS(id: string) { localStorage.removeItem(tokenKey(id)); }
+// guide 系: 読了フラグで「連携済み」扱い
+const isDone = (id: string) => localStorage.getItem(tokenKey(id)) === '__done__';
 
-// ─── 連携できる有名アプリ一覧 ───────────────────────
+// ─── 連携できる有名アプリ ───────────────────────
 const CATALOG: Tool[] = [
-  // Google ワークスペース
   {
     id: 'gmail', name: 'Gmail', color: '#EA4335', glyph: 'M', category: 'Google ワークスペース',
     can: '届いたメールに AI が返信を下書き。確認して送るだけ',
-    kind: 'oauth',
-    steps: ['「Gmail とつなぐ」を押す', 'Google アカウントでログイン', 'メールの読み取りを許可 → 完了'],
-    oauthConnect: async () => { await connectGmail(); },
+    steps: [
+      { label: 'Google アカウントでログインします', action: { kind: 'oauth', provider: 'gmail' } },
+    ],
   },
   {
     id: 'gcal', name: 'Google カレンダー', color: '#4285F4', glyph: '31', category: 'Google ワークスペース',
     can: '予定を AI が把握し、会議準備や移動を先回りで提案',
-    kind: 'oauth',
-    steps: ['「カレンダーとつなぐ」を押す', 'Google アカウントでログイン', '予定の読み取りを許可 → 完了'],
-    oauthConnect: async () => { await connectCalendar(); },
+    steps: [
+      { label: 'Google アカウントでログインします', action: { kind: 'oauth', provider: 'gcal' } },
+    ],
   },
   {
     id: 'gdrive', name: 'Google ドライブ', color: '#1FA463', glyph: '▲', category: 'Google ワークスペース',
     can: '資料を AI が読み込み、ナレッジとして活用',
-    kind: 'token',
-    inputHint: 'Google Drive 共有フォルダの URL',
-    steps: ['ドライブで対象フォルダを「リンクを知っている全員」に', 'フォルダの共有 URL をコピー', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: 'ドライブで対象フォルダを開きます', action: { kind: 'openLink', url: 'https://drive.google.com', btn: 'Google ドライブを開く' } },
+      { label: 'フォルダを「リンクを知っている全員」に共有し、URL をコピー', action: { kind: 'info' } },
+      { label: '共有 URL を貼り付けて連携完了', action: { kind: 'input', placeholder: 'https://drive.google.com/drive/folders/…' } },
+    ],
   },
   {
     id: 'gdocs', name: 'Google ドキュメント', color: '#4285F4', glyph: '≡', category: 'Google ワークスペース',
     can: '議事録や提案書を Google ドキュメントに自動で書き出し',
-    kind: 'guide',
-    steps: ['Gmail 連携を済ませる (同じ Google アカウント)', '書き出し先のフォルダを選ぶ', '以後 AI が自動で保存'],
+    steps: [
+      { label: 'まず Gmail 連携を済ませてください (同じ Google アカウント)', action: { kind: 'info' } },
+      { label: '書き出し先フォルダの URL をコピー', action: { kind: 'openLink', url: 'https://drive.google.com', btn: 'ドライブを開く' } },
+      { label: 'フォルダ URL を貼り付けて連携完了', action: { kind: 'input', placeholder: 'フォルダの共有 URL' } },
+    ],
   },
   {
     id: 'gsheets', name: 'Google スプレッドシート', color: '#0F9D58', glyph: '田', category: 'Google ワークスペース',
     can: '売上・経費の数字をスプレッドシートに自動集計',
-    kind: 'token',
-    inputHint: 'スプレッドシートの共有 URL',
-    steps: ['対象シートを「リンクを知っている全員」で共有', '共有 URL をコピー', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: '集計用シートを開きます', action: { kind: 'openLink', url: 'https://sheets.google.com', btn: 'スプレッドシートを開く' } },
+      { label: 'シートを「リンクを知っている全員」で共有し、URL をコピー', action: { kind: 'info' } },
+      { label: '共有 URL を貼り付けて連携完了', action: { kind: 'input', placeholder: 'シートの共有 URL' } },
+    ],
   },
-  // 営業・CRM
   {
     id: 'hubspot', name: 'HubSpot', color: '#FF7A59', glyph: 'H', category: '営業 / CRM',
     can: '見込み客と商談を CRM と同期。AI が次の一手を提案',
-    kind: 'token',
-    inputHint: 'HubSpot プライベートアプリのアクセストークン',
-    steps: ['HubSpot 設定 → 連携 → プライベートアプリ を作成', 'アクセストークンをコピー', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: 'HubSpot のプライベートアプリ作成ページを開きます', action: { kind: 'openLink', url: 'https://app.hubspot.com/private-apps', btn: 'HubSpot を開く' } },
+      { label: 'プライベートアプリを作成し、アクセストークンをコピー', action: { kind: 'info' } },
+      { label: 'トークンを貼り付けて連携完了', action: { kind: 'input', placeholder: 'pat-na1-…' } },
+    ],
   },
   {
     id: 'salesforce', name: 'Salesforce', color: '#00A1E0', glyph: '☁', category: '営業 / CRM',
     can: '商談データを Salesforce と双方向で同期',
-    kind: 'guide',
-    steps: ['Salesforce で接続アプリを作成', 'コンシューマー鍵を CORE サポートに連携', '審査後に自動で有効化'],
+    steps: [
+      { label: 'Salesforce の接続アプリ設定を開きます', action: { kind: 'openLink', url: 'https://login.salesforce.com', btn: 'Salesforce を開く' } },
+      { label: '接続アプリを作成し、コンシューマー鍵をコピー', action: { kind: 'info' } },
+      { label: 'コンシューマー鍵を貼り付けて連携完了', action: { kind: 'input', placeholder: 'Consumer Key' } },
+    ],
   },
-  // 仕事・整理
   {
     id: 'notion', name: 'Notion', color: '#0A0A0A', glyph: 'N', category: '仕事・整理',
     can: '議事録・メモ・ナレッジを Notion に自動保存',
-    kind: 'token',
-    inputHint: 'Notion インテグレーションのシークレットトークン',
-    steps: ['Notion の「インテグレーション」を新規作成', 'シークレット (secret_…) をコピー', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: 'Notion のインテグレーション作成ページを開きます', action: { kind: 'openLink', url: 'https://www.notion.so/my-integrations', btn: 'Notion を開く' } },
+      { label: '新しいインテグレーションを作成し、シークレットをコピー', action: { kind: 'info' } },
+      { label: 'シークレットを貼り付けて連携完了', action: { kind: 'input', placeholder: 'secret_…' } },
+    ],
   },
   {
     id: 'slack', name: 'Slack', color: '#4A154B', glyph: '#', category: '仕事・整理',
     can: 'AI の提案や重要通知を Slack に届ける',
-    kind: 'webhook',
-    inputHint: 'Slack の受信 Webhook URL (https://hooks.slack.com/…)',
-    steps: ['Slack アプリで「Incoming Webhook」を有効化', 'Webhook URL を発行・コピー', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: 'Slack の Incoming Webhook 設定を開きます', action: { kind: 'openLink', url: 'https://api.slack.com/messaging/webhooks', btn: 'Slack を開く' } },
+      { label: 'Webhook を有効化し、URL をコピー', action: { kind: 'info' } },
+      { label: 'Webhook URL を貼り付けて連携完了', action: { kind: 'input', placeholder: 'https://hooks.slack.com/services/…' } },
+    ],
   },
   {
     id: 'trello', name: 'Trello', color: '#0079BF', glyph: 'T', category: '仕事・整理',
     can: 'タスクを Trello ボードと同期',
-    kind: 'token',
-    inputHint: 'Trello API キー',
-    steps: ['trello.com/app-key で API キーを取得', 'キーをコピー', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: 'Trello の API キー取得ページを開きます', action: { kind: 'openLink', url: 'https://trello.com/app-key', btn: 'Trello を開く' } },
+      { label: 'API キーをコピー', action: { kind: 'info' } },
+      { label: 'API キーを貼り付けて連携完了', action: { kind: 'input', placeholder: 'Trello API キー' } },
+    ],
   },
   {
     id: 'asana', name: 'Asana', color: '#F06A6A', glyph: 'a', category: '仕事・整理',
     can: 'プロジェクトとタスクを Asana と同期',
-    kind: 'token',
-    inputHint: 'Asana パーソナルアクセストークン',
-    steps: ['Asana 設定 → アプリ → 開発者コンソール', 'アクセストークンを発行・コピー', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: 'Asana の開発者コンソールを開きます', action: { kind: 'openLink', url: 'https://app.asana.com/0/my-apps', btn: 'Asana を開く' } },
+      { label: 'パーソナルアクセストークンを発行し、コピー', action: { kind: 'info' } },
+      { label: 'トークンを貼り付けて連携完了', action: { kind: 'input', placeholder: 'Asana アクセストークン' } },
+    ],
   },
   {
     id: 'ms365', name: 'Microsoft 365', color: '#D83B01', glyph: '⊞', category: '仕事・整理',
     can: 'Outlook メール・予定・Teams を CORE と連携',
-    kind: 'guide',
-    steps: ['Microsoft Entra でアプリ登録', 'クライアント ID を CORE サポートに連携', '審査後に自動で有効化'],
+    steps: [
+      { label: 'Microsoft Entra のアプリ登録ページを開きます', action: { kind: 'openLink', url: 'https://entra.microsoft.com', btn: 'Microsoft を開く' } },
+      { label: 'アプリを登録し、クライアント ID をコピー', action: { kind: 'info' } },
+      { label: 'クライアント ID を貼り付けて連携完了', action: { kind: 'input', placeholder: 'Application (client) ID' } },
+    ],
   },
-  // 保存・会議
   {
     id: 'dropbox', name: 'Dropbox', color: '#0061FF', glyph: '▽', category: '保存・会議',
     can: 'Dropbox の資料を AI が読み込みナレッジ化',
-    kind: 'token',
-    inputHint: 'Dropbox アクセストークン',
-    steps: ['Dropbox App Console でアプリを作成', 'アクセストークンを生成・コピー', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: 'Dropbox App Console を開きます', action: { kind: 'openLink', url: 'https://www.dropbox.com/developers/apps', btn: 'Dropbox を開く' } },
+      { label: 'アプリを作成し、アクセストークンを生成・コピー', action: { kind: 'info' } },
+      { label: 'トークンを貼り付けて連携完了', action: { kind: 'input', placeholder: 'Dropbox アクセストークン' } },
+    ],
   },
   {
     id: 'zoom', name: 'Zoom', color: '#2D8CFF', glyph: 'Z', category: '保存・会議',
     can: '会議の録画を AI が議事録に自動変換',
-    kind: 'guide',
-    steps: ['Zoom Marketplace でアプリを作成', 'JWT / OAuth 情報を CORE サポートに連携', '審査後に自動で有効化'],
+    steps: [
+      { label: 'Zoom Marketplace を開きます', action: { kind: 'openLink', url: 'https://marketplace.zoom.us', btn: 'Zoom を開く' } },
+      { label: 'アプリを作成し、API トークンをコピー', action: { kind: 'info' } },
+      { label: 'トークンを貼り付けて連携完了', action: { kind: 'input', placeholder: 'Zoom API トークン' } },
+    ],
   },
-  // お金
   {
     id: 'stripe', name: 'Stripe', color: '#635BFF', glyph: 'S', category: 'お金まわり',
     can: '売上・サブスクの数字を Stripe からそのまま取り込み',
-    kind: 'token',
-    inputHint: 'Stripe 制限付き API キー (rk_live_… 推奨)',
-    steps: ['Stripe ダッシュボード → 開発者 → API キー', '「読み取り専用」の制限付きキーを作成', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: 'Stripe の API キー設定を開きます', action: { kind: 'openLink', url: 'https://dashboard.stripe.com/apikeys', btn: 'Stripe を開く' } },
+      { label: '「読み取り専用」の制限付きキーを作成し、コピー', action: { kind: 'info' } },
+      { label: 'キーを貼り付けて連携完了', action: { kind: 'input', placeholder: 'rk_live_…' } },
+    ],
   },
   {
     id: 'freee', name: 'freee 会計', color: '#0F8FE0', glyph: 'f', category: 'お金まわり',
     can: '会計データを freee と同期し P&L を自動生成',
-    kind: 'token',
-    inputHint: 'freee アクセストークン',
-    steps: ['freee アプリストアで開発者登録', 'アクセストークンを発行・コピー', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: 'freee アプリストアの開発者ページを開きます', action: { kind: 'openLink', url: 'https://app.secure.freee.co.jp/developers/apps', btn: 'freee を開く' } },
+      { label: 'アプリ登録し、アクセストークンを発行・コピー', action: { kind: 'info' } },
+      { label: 'トークンを貼り付けて連携完了', action: { kind: 'input', placeholder: 'freee アクセストークン' } },
+    ],
   },
   {
     id: 'mfcloud', name: 'マネーフォワード', color: '#1C9DD9', glyph: 'MF', category: 'お金まわり',
     can: '会計・経費データをマネーフォワードと同期',
-    kind: 'token',
-    inputHint: 'マネーフォワード API トークン',
-    steps: ['MF クラウド API の利用申請', 'トークンを発行・コピー', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: 'マネーフォワード API の申請ページを開きます', action: { kind: 'openLink', url: 'https://biz.moneyforward.com', btn: 'マネーフォワードを開く' } },
+      { label: 'API 利用を申請し、トークンを発行・コピー', action: { kind: 'info' } },
+      { label: 'トークンを貼り付けて連携完了', action: { kind: 'input', placeholder: 'MF API トークン' } },
+    ],
   },
-  // SNS
   {
     id: 'instagram', name: 'Instagram', color: '#E1306C',
     gradient: 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)',
     glyph: '◎', category: 'SNS',
     can: 'フォロワー分析と案件マッチに使用 (Iris と共通)',
-    kind: 'guide',
-    steps: ['Iris の「Instagram 連携」から接続', 'ユーザー名・フォロワー数を登録', '案件マッチと分析が自動で動きます'],
+    steps: [
+      { label: 'Iris アプリの「Instagram 連携」を開きます', action: { kind: 'openLink', url: '/iris?app=1', btn: 'Iris を開く' } },
+      { label: 'ユーザー名・フォロワー数・ジャンルを登録', action: { kind: 'info' } },
+      { label: '登録できたら「連携完了」を押してください', action: { kind: 'info' } },
+    ],
   },
   {
     id: 'x', name: 'X (Twitter)', color: '#0A0A0A', glyph: '𝕏', category: 'SNS',
     can: '投稿の予約と反応分析を X と連携',
-    kind: 'guide',
-    steps: ['X 開発者ポータルでアプリを作成', 'API キーを CORE サポートに連携', '審査後に自動で有効化'],
+    steps: [
+      { label: 'X 開発者ポータルを開きます', action: { kind: 'openLink', url: 'https://developer.twitter.com/en/portal/dashboard', btn: 'X を開く' } },
+      { label: 'アプリを作成し、API キーをコピー', action: { kind: 'info' } },
+      { label: 'API キーを貼り付けて連携完了', action: { kind: 'input', placeholder: 'X API キー' } },
+    ],
   },
   {
     id: 'line', name: 'LINE', color: '#06C755', glyph: 'L', category: 'SNS',
     can: 'AI の提案やリマインドを LINE に届ける',
-    kind: 'token',
-    inputHint: 'LINE Notify トークン',
-    steps: ['notify-bot.line.me でトークンを発行', 'トークンをコピー', '下に貼り付けて保存 → 完了'],
+    steps: [
+      { label: 'LINE Notify のトークン発行ページを開きます', action: { kind: 'openLink', url: 'https://notify-bot.line.me/my/', btn: 'LINE Notify を開く' } },
+      { label: 'トークンを発行し、コピー', action: { kind: 'info' } },
+      { label: 'トークンを貼り付けて連携完了', action: { kind: 'input', placeholder: 'LINE Notify トークン' } },
+    ],
   },
-  // 健康
   {
     id: 'apple-watch', name: 'Apple Watch / ヘルス', color: '#FF2D55', glyph: '♥', category: '健康',
     can: '心拍・睡眠・歩数を毎朝 自動で取り込み、体調を見守る',
-    kind: 'guide',
-    steps: ['iPhone「ショートカット」に CORE 用ショートカットを追加', '「オートメーション」で毎朝の自動実行を ON', '初回だけ手でタップ → 以後 毎朝 自動で届きます'],
+    steps: [
+      { label: 'iPhone の「ショートカット」アプリを開きます', action: { kind: 'openLink', url: 'https://www.icloud.com/shortcuts/', btn: 'ショートカットを開く' } },
+      { label: 'CORE 用ショートカットを追加し、「オートメーション」で毎朝の自動実行を ON', action: { kind: 'info' } },
+      { label: '初回だけ手でタップ → 以後 毎朝 自動。完了を押してください', action: { kind: 'info' } },
+    ],
   },
 ];
 
@@ -212,26 +252,23 @@ const CATEGORY_ORDER = [
 ];
 
 export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props) {
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState<{ id: string; msg: string } | null>(null);
-  const [, forceRender] = useState(0);
-  const refresh = () => forceRender(n => n + 1);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [, force] = useState(0);
+  const refresh = () => force(n => n + 1);
 
-  const statusOf = (t: Tool): ToolStatus => {
-    if (t.id === 'gmail') return isGmailConnected() ? 'connected' : isGmailConfigured() ? 'ready' : 'preparing';
-    if (t.id === 'gcal')  return isCalConnected() ? 'connected' : isCalConfigured() ? 'ready' : 'preparing';
-    if (t.kind === 'token' || t.kind === 'webhook') return loadToken(t.id) ? 'connected' : 'ready';
-    return 'ready'; // guide はいつでも手順表示
+  const isConnected = (t: Tool): boolean => {
+    if (t.id === 'gmail') return isGmailConnected();
+    if (t.id === 'gcal') return isCalConnected();
+    return !!loadToken(t.id);
   };
 
-  const connectedCount = CATALOG.filter(t => statusOf(t) === 'connected').length;
+  const connectedCount = CATALOG.filter(isConnected).length;
 
-  const handleOauth = async (t: Tool) => {
-    if (!t.oauthConnect) return;
-    setError(null); setBusyId(t.id);
-    try { await t.oauthConnect(); refresh(); }
-    catch (e: any) { setError({ id: t.id, msg: e?.message || '連携に失敗しました。もう一度お試しください。' }); }
-    finally { setBusyId(null); }
+  const disconnect = (t: Tool) => {
+    if (t.id === 'gmail') clearGmailToken();
+    else if (t.id === 'gcal') clearCalToken();
+    else clearTokenLS(t.id);
+    refresh();
   };
 
   return (
@@ -241,8 +278,7 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
       style={{
         position: 'fixed', inset: 0, zIndex: 100,
         background: 'rgba(8,8,18,0.8)', backdropFilter: 'blur(14px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '1rem',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
       }}
     >
       <motion.div
@@ -251,20 +287,15 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
         onClick={e => e.stopPropagation()}
         style={{
           background: '#12121E', borderRadius: 22, padding: '1.4rem',
-          maxWidth: 600, width: '100%',
-          maxHeight: 'calc(100dvh - 2rem)', overflow: 'auto',
+          maxWidth: 600, width: '100%', maxHeight: 'calc(100dvh - 2rem)', overflow: 'auto',
           color: '#fff', border: '1px solid rgba(255,255,255,0.08)',
           boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem' }}>
           <div>
-            <div style={{ fontSize: 10, letterSpacing: '0.3em', fontWeight: 800, color: accent }}>
-              INTEGRATIONS
-            </div>
-            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0.25rem 0 0' }}>
-              連携センター
-            </h2>
+            <div style={{ fontSize: 10, letterSpacing: '0.3em', fontWeight: 800, color: accent }}>INTEGRATIONS</div>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0.25rem 0 0' }}>連携センター</h2>
           </div>
           <button
             type="button" onClick={onClose} aria-label="閉じる"
@@ -276,14 +307,13 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
           ><X size={18} /></button>
         </div>
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: '1.1rem', lineHeight: 1.6 }}>
-          {CATALOG.length} のアプリと連携できます。
+          つなぎたいアプリをタップ → 案内どおり進むだけで連携完了。
           {connectedCount > 0 && <strong style={{ color: '#10B981' }}> 連携済み {connectedCount} 件。</strong>}
-          手順は 3 ステップだけ。
         </p>
 
         {CATEGORY_ORDER.map(cat => {
           const items = CATALOG.filter(t => t.category === cat);
-          if (items.length === 0) return null;
+          if (!items.length) return null;
           return (
             <div key={cat} style={{ marginBottom: '1.1rem' }}>
               <div style={{
@@ -295,18 +325,12 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
                   <ToolCard
                     key={t.id}
                     tool={t}
-                    status={statusOf(t)}
                     accent={accent}
-                    busy={busyId === t.id}
-                    error={error?.id === t.id ? error.msg : null}
-                    onOauth={() => handleOauth(t)}
-                    onSaveToken={(v) => { saveTokenLS(t.id, v); refresh(); }}
-                    onDisconnect={() => {
-                      if (t.id === 'gmail') clearGmailToken();
-                      else if (t.id === 'gcal') clearCalToken();
-                      else clearTokenLS(t.id);
-                      refresh();
-                    }}
+                    connected={isConnected(t)}
+                    open={openId === t.id}
+                    onToggle={() => setOpenId(openId === t.id ? null : t.id)}
+                    onConnected={refresh}
+                    onDisconnect={() => disconnect(t)}
                   />
                 ))}
               </div>
@@ -314,10 +338,7 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
           );
         })}
 
-        <p style={{
-          fontSize: 10.5, color: 'rgba(255,255,255,0.4)',
-          marginTop: '0.5rem', lineHeight: 1.7, textAlign: 'center',
-        }}>
+        <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem', lineHeight: 1.7, textAlign: 'center' }}>
           連携情報はあなたのブラウザ内にのみ保存されます。<br />
           パスワードを CORE が預かることはありません。
         </p>
@@ -326,7 +347,6 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
   );
 }
 
-// ─── ブランドアイコン ───────────────────────
 function BrandIcon({ tool, size = 40 }: { tool: Tool; size?: number }) {
   return (
     <div style={{
@@ -338,67 +358,92 @@ function BrandIcon({ tool, size = 40 }: { tool: Tool; size?: number }) {
       letterSpacing: tool.glyph.length > 1 ? '-0.04em' : 0,
       boxShadow: `0 4px 12px ${tool.color}55`,
       border: tool.color === '#0A0A0A' ? '1px solid rgba(255,255,255,0.15)' : 'none',
-    }}>
-      {tool.glyph}
-    </div>
+    }}>{tool.glyph}</div>
   );
 }
 
-const STATUS_META: Record<ToolStatus, { label: string; color: string; bg: string }> = {
-  connected: { label: '連携済み', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
-  ready:     { label: 'つなげます', color: '#60A5FA', bg: 'rgba(96,165,250,0.15)' },
-  preparing: { label: '準備中', color: '#FBBF24', bg: 'rgba(251,191,36,0.15)' },
-};
-
-function ToolCard({ tool, status, accent, busy, error, onOauth, onSaveToken, onDisconnect }: {
-  tool: Tool; status: ToolStatus; accent: string; busy: boolean; error: string | null;
-  onOauth: () => void; onSaveToken: (v: string) => void; onDisconnect: () => void;
+function ToolCard({ tool, accent, connected, open, onToggle, onConnected, onDisconnect }: {
+  tool: Tool; accent: string; connected: boolean; open: boolean;
+  onToggle: () => void; onConnected: () => void; onDisconnect: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [stepIdx, setStepIdx] = useState(0);
   const [tokenInput, setTokenInput] = useState('');
-  const s = STATUS_META[status];
-  const isConnected = status === 'connected';
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [justDone, setJustDone] = useState(false);
+
+  const total = tool.steps.length;
+  const step = tool.steps[stepIdx];
+  const isLast = stepIdx === total - 1;
+
+  const completeConnection = (token?: string) => {
+    if (token !== undefined) saveTokenLS(tool.id, token || '__done__');
+    else saveTokenLS(tool.id, '__done__');
+    setJustDone(true);
+    setTimeout(() => { onConnected(); }, 1400);
+  };
+
+  const next = () => { setErr(null); if (!isLast) setStepIdx(i => i + 1); };
+
+  const handleOauth = async (provider: 'gmail' | 'gcal') => {
+    setErr(null);
+    const configured = provider === 'gmail' ? isGmailConfigured() : isCalConfigured();
+    if (!configured) {
+      setErr('この連携は現在 準備中です。運営の Google 設定が済み次第、自動でつながります。');
+      return;
+    }
+    setBusy(true);
+    try {
+      if (provider === 'gmail') await connectGmail();
+      else await connectCalendar();
+      setJustDone(true);
+      setTimeout(onConnected, 1400);
+    } catch (e: any) {
+      setErr(e?.message || '連携に失敗しました。もう一度お試しください。');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div style={{
       borderRadius: 14,
       background: 'rgba(255,255,255,0.03)',
-      border: `1px solid ${isConnected ? '#10B98144' : 'rgba(255,255,255,0.08)'}`,
+      border: `1px solid ${connected ? '#10B98144' : open ? `${accent}55` : 'rgba(255,255,255,0.08)'}`,
       padding: '0.8rem 0.9rem',
     }}>
       {/* 上段 */}
       <button
         type="button"
-        onClick={() => !isConnected && setExpanded(e => !e)}
+        onClick={() => { if (!connected) { onToggle(); setStepIdx(0); setErr(null); } }}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-          background: 'transparent', border: 'none', cursor: isConnected ? 'default' : 'pointer',
-          color: '#fff', padding: 0, textAlign: 'left',
+          background: 'transparent', border: 'none', color: '#fff',
+          cursor: connected ? 'default' : 'pointer', padding: 0, textAlign: 'left',
         }}
       >
         <BrandIcon tool={tool} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13.5, fontWeight: 800 }}>{tool.name}</div>
-          <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.4, marginTop: 1 }}>
-            {tool.can}
-          </div>
+          <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.4, marginTop: 1 }}>{tool.can}</div>
         </div>
-        <span style={{
-          fontSize: 9.5, fontWeight: 800, color: s.color, background: s.bg,
-          padding: '4px 9px', borderRadius: 999, flexShrink: 0,
-        }}>{s.label}</span>
+        {connected ? (
+          <span style={{
+            fontSize: 9.5, fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.15)',
+            padding: '4px 9px', borderRadius: 999, flexShrink: 0,
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+          }}><Check size={11} /> 連携済み</span>
+        ) : (
+          <span style={{
+            fontSize: 10, fontWeight: 800, color: accent,
+            display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0,
+          }}>{open ? '閉じる' : 'つなぐ'}<ArrowRight size={11} /></span>
+        )}
       </button>
 
-      {/* 連携済み行 */}
-      {isConnected && (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginTop: 8, gap: 8,
-        }}>
-          <span style={{
-            fontSize: 11, color: '#10B981', fontWeight: 700,
-            display: 'flex', alignItems: 'center', gap: 4,
-          }}><Check size={12} /> 連携が有効です</span>
+      {/* 連携済み: 解除 */}
+      {connected && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
           <button
             type="button" onClick={onDisconnect}
             style={{
@@ -406,106 +451,181 @@ function ToolCard({ tool, status, accent, busy, error, onOauth, onSaveToken, onD
               background: 'rgba(255,255,255,0.05)', border: 'none',
               borderRadius: 999, padding: '5px 12px', cursor: 'pointer',
             }}
-          >解除</button>
+          >連携を解除</button>
         </div>
       )}
 
-      {/* 展開: ステップ + 接続 UI */}
-      {!isConnected && expanded && (
-        <div style={{ marginTop: 10 }}>
-          {tool.steps.map((step, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 5 }}>
-              <span style={{
-                width: 17, height: 17, borderRadius: '50%', flexShrink: 0,
-                background: accent, color: '#fff', fontSize: 10, fontWeight: 800,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1,
-              }}>{i + 1}</span>
-              <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>{step}</span>
-            </div>
-          ))}
-
-          {error && (
-            <div style={{
-              fontSize: 11, color: '#F87171', lineHeight: 1.5,
-              background: 'rgba(248,113,113,0.1)', borderRadius: 8,
-              padding: '6px 9px', margin: '8px 0',
-            }}>⚠ {error}</div>
-          )}
-
-          {/* OAuth ボタン */}
-          {tool.kind === 'oauth' && status === 'ready' && (
-            <button
-              type="button" onClick={onOauth} disabled={busy}
-              style={{
-                width: '100%', marginTop: 8,
-                fontSize: 12.5, fontWeight: 800, color: '#fff',
-                background: `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`,
-                border: 'none', borderRadius: 999, padding: '9px 16px',
-                cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              }}
-            >
-              {busy
-                ? <><Loader2 size={14} className="spin" /> つないでいます…</>
-                : <>{tool.name} とつなぐ <ArrowRight size={14} /></>}
-            </button>
-          )}
-          {tool.kind === 'oauth' && status === 'preparing' && (
-            <div style={{
-              fontSize: 10.5, color: '#FBBF24', lineHeight: 1.5,
-              background: 'rgba(251,191,36,0.08)', borderRadius: 8,
-              padding: '6px 9px', marginTop: 8,
-            }}>連携の準備中です。Google の設定が済み次第、自動で「つなぐ」ボタンが有効になります。</div>
-          )}
-
-          {/* token / webhook 入力 */}
-          {(tool.kind === 'token' || tool.kind === 'webhook') && (
-            <div style={{ marginTop: 8, display: 'flex', gap: 6 }}>
-              <input
-                type="text"
-                value={tokenInput}
-                onChange={e => setTokenInput(e.target.value)}
-                placeholder={tool.inputHint}
+      {/* ウィザード */}
+      <AnimatePresence>
+        {open && !connected && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ overflow: 'hidden' }}
+          >
+            {justDone ? (
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
                 style={{
-                  flex: 1, fontSize: 12, padding: '8px 10px', borderRadius: 9,
-                  background: 'rgba(255,255,255,0.06)', color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.12)', outline: 'none',
+                  marginTop: 12, padding: '14px',
+                  borderRadius: 12, textAlign: 'center',
+                  background: 'rgba(16,185,129,0.12)', border: '1px solid #10B98155',
                 }}
-              />
-              <button
-                type="button"
-                onClick={() => { if (tokenInput.trim()) onSaveToken(tokenInput); }}
-                style={{
-                  fontSize: 12, fontWeight: 800, color: '#fff',
-                  background: `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`,
-                  border: 'none', borderRadius: 9, padding: '8px 14px', cursor: 'pointer',
-                  flexShrink: 0,
-                }}
-              >保存</button>
-            </div>
-          )}
+              >
+                <PartyPopper size={24} color="#10B981" style={{ marginBottom: 4 }} />
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#10B981' }}>
+                  {tool.name} の連携が完了しました
+                </div>
+              </motion.div>
+            ) : (
+              <div style={{ marginTop: 12 }}>
+                {/* 進捗ドット */}
+                <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>
+                  {tool.steps.map((_, i) => (
+                    <div key={i} style={{
+                      flex: 1, height: 4, borderRadius: 2,
+                      background: i <= stepIdx ? accent : 'rgba(255,255,255,0.1)',
+                      transition: 'background 0.3s',
+                    }} />
+                  ))}
+                </div>
 
-          {/* guide のみ */}
-          {tool.kind === 'guide' && (
-            <div style={{
-              fontSize: 10.5, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5,
-              marginTop: 8,
-            }}>手順どおりに進めると連携できます。不明点は AI に聞いてください。</div>
-          )}
-        </div>
-      )}
+                {/* 現在ステップ */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                  <span style={{
+                    width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                    background: accent, color: '#fff', fontSize: 11, fontWeight: 800,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>{stepIdx + 1}</span>
+                  <span style={{ fontSize: 12.5, color: '#fff', lineHeight: 1.55, paddingTop: 1 }}>
+                    {step.label}
+                  </span>
+                </div>
 
-      {/* 折りたたみ時のヒント */}
-      {!isConnected && !expanded && (
-        <div style={{
-          fontSize: 10, color: accent, fontWeight: 700,
-          marginTop: 6, display: 'flex', alignItems: 'center', gap: 3,
-        }}>
-          タップして連携手順を見る <ArrowRight size={10} />
-        </div>
-      )}
+                {err && (
+                  <div style={{
+                    fontSize: 11, color: '#FBBF24', lineHeight: 1.5,
+                    background: 'rgba(251,191,36,0.1)', borderRadius: 8,
+                    padding: '7px 10px', marginBottom: 9,
+                  }}>{err}</div>
+                )}
+
+                {/* アクション */}
+                {step.action.kind === 'openLink' && (
+                  <div style={{ display: 'flex', gap: 7 }}>
+                    <a
+                      href={step.action.url} target="_blank" rel="noopener noreferrer"
+                      style={{
+                        flex: 1, textAlign: 'center', textDecoration: 'none',
+                        fontSize: 12, fontWeight: 800, color: '#fff',
+                        background: `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`,
+                        borderRadius: 9, padding: '9px 12px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                      }}
+                    >
+                      <ExternalLink size={13} /> {step.action.btn}
+                    </a>
+                    <button type="button" onClick={next} style={nextBtn(accent)}>
+                      次へ <ArrowRight size={12} />
+                    </button>
+                  </div>
+                )}
+
+                {step.action.kind === 'info' && (
+                  <button
+                    type="button"
+                    onClick={() => { if (isLast) completeConnection(); else next(); }}
+                    style={{ ...nextBtn(accent), width: '100%' }}
+                  >
+                    {isLast
+                      ? <>連携完了 <Check size={13} /></>
+                      : <>できた・次へ <ArrowRight size={12} /></>}
+                  </button>
+                )}
+
+                {step.action.kind === 'input' && (
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input
+                      type="text"
+                      value={tokenInput}
+                      onChange={e => setTokenInput(e.target.value)}
+                      placeholder={step.action.placeholder}
+                      style={{
+                        flex: 1, fontSize: 12, padding: '9px 10px', borderRadius: 9,
+                        background: 'rgba(255,255,255,0.06)', color: '#fff',
+                        border: '1px solid rgba(255,255,255,0.12)', outline: 'none',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!tokenInput.trim()) { setErr('上の欄に貼り付けてください'); return; }
+                        completeConnection(tokenInput.trim());
+                      }}
+                      style={{
+                        fontSize: 12, fontWeight: 800, color: '#fff', flexShrink: 0,
+                        background: `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`,
+                        border: 'none', borderRadius: 9, padding: '9px 14px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 4,
+                      }}
+                    >保存 <Check size={12} /></button>
+                  </div>
+                )}
+
+                {step.action.kind === 'oauth' && (
+                  <button
+                    type="button"
+                    onClick={() => handleOauth((step.action as any).provider)}
+                    disabled={busy}
+                    style={{
+                      width: '100%',
+                      fontSize: 12.5, fontWeight: 800, color: '#fff',
+                      background: `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`,
+                      border: 'none', borderRadius: 9, padding: '10px 16px',
+                      cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    {busy
+                      ? <><Loader2 size={14} className="spin" /> つないでいます…</>
+                      : <>Google でログインして連携 <ArrowRight size={13} /></>}
+                  </button>
+                )}
+
+                {/* 戻る */}
+                {stepIdx > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setStepIdx(i => i - 1); setErr(null); }}
+                    style={{
+                      marginTop: 8, fontSize: 10.5, fontWeight: 700,
+                      color: 'rgba(255,255,255,0.45)', background: 'transparent',
+                      border: 'none', cursor: 'pointer',
+                    }}
+                  >← 前のステップに戻る</button>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
+
+function nextBtn(accent: string): React.CSSProperties {
+  return {
+    fontSize: 12, fontWeight: 800, color: '#fff',
+    background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+    border: 'none', borderRadius: 9, padding: '9px 14px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+    flexShrink: 0,
+  };
+}
+
+// isDone は guide 系の連携判定に使用 (loadToken === '__done__')
+void isDone;
