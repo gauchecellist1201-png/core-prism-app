@@ -69,6 +69,7 @@ import type { HealthAnomaly } from '../data/healthAnomaly';
 // AutoAgentHero は 2026-05-16 にオーナー指示で削除 (恒常的な JSON parse エラー)
 import AgentsOrbit from './AgentsOrbit';
 import { PRISM_SPECS, PRISM_ORDER, PRISM_CONVERSATIONS } from '../lib/agentSpecs';
+import WellnessTracker from './WellnessTracker';
 
 interface Props {
   persona: Persona;
@@ -751,6 +752,14 @@ export default function IdentityDashboard({
                   { id: 'meet', emoji: '📅', label: '会議を予約', desc: 'カレンダーにリンク発行', onClick: () => setShowMeeting(true) },
                   { id: 'health', emoji: '🩺', label: '体調を確認', desc: '睡眠・活動をまとめて表示', onClick: () => setShowHealth(true) },
                 ]}
+              />
+
+              {/* 健康が積み上がっている実感を見せる (オーナー指示 2026-05-17) */}
+              <WellnessTracker
+                today={healthCtx.today}
+                accent="#8E5CFF"
+                accentSoft="rgba(142,92,255,0.10)"
+                onConnectHealth={() => setShowHealth(true)}
               />
 
               <TodaysBodyCard email={loadBillingUser()?.email ?? ''} />

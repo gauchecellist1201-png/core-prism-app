@@ -130,6 +130,7 @@ import IrisKnowledgeView from './IrisKnowledgeView';
 import AgentsOrbit from '../components/AgentsOrbit';
 import { IRIS_SPECS, IRIS_ORDER, IRIS_CONVERSATIONS } from '../lib/agentSpecs';
 import IrisEarnHero from './IrisEarnHero';
+import WellnessTracker from '../components/WellnessTracker';
 import IgConnectModal from './IgConnectModal';
 import { loadIgProfile, consumeOauthCallback, type IgProfile } from './instagramConnect';
 
@@ -605,6 +606,16 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   igConnected={!!igProfile}
                   igFollowers={igProfile?.followers}
                 />
+
+                {/* 健康が積み上がっている実感 (オーナー指示 2026-05-17) */}
+                <div style={{ marginBottom: '0.85rem' }}>
+                  <WellnessTracker
+                    today={health.today}
+                    accent="#E1306C"
+                    accentSoft="rgba(225,48,108,0.10)"
+                    onConnectHealth={() => setTab('health')}
+                  />
+                </div>
 
                 <IrisVoiceHome
                   bg={bg} settings={settings}
