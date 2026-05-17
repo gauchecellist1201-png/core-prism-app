@@ -9,6 +9,7 @@ import {
   entriesToCsv, downloadCsv,
 } from '../lib/salesLedger';
 import { fmtJpy } from '../lib/invoiceCalc';
+import { CountUp } from './visualFx';
 
 interface Props {
   persona: Persona;
@@ -337,22 +338,29 @@ export default function SalesLedger({ persona, onClose }: Props) {
 
 function SummaryCard({ title, summary, color }: { title: string; summary: ReturnType<typeof summarizeMonth>; color: string }) {
   return (
-    <div className="rounded-xl p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+    <motion.div
+      className="rounded-xl p-4"
+      style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', transition: 'box-shadow 0.2s ease' }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      whileHover={{ y: -3, boxShadow: `0 12px 26px ${color}26` }}
+    >
       <p className="text-fg-muted text-[10px] tracking-wider uppercase mb-2">{title}</p>
-      <p className="text-fg text-2xl font-mono font-light">{fmtJpy(summary.totalIncl)}</p>
+      <CountUp className="text-fg text-2xl font-mono font-light" value={summary.totalIncl} format={fmtJpy} />
       <p className="text-fg-muted text-xs mt-1">税抜 {fmtJpy(summary.totalExcl)} · 消費税 {fmtJpy(summary.totalTax)}</p>
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
         <div className="rounded p-2" style={{ background: 'rgba(74,222,128,0.10)', border: '1px solid rgba(74,222,128,0.25)' }}>
           <p className="text-[10px] text-fg-muted">入金済</p>
-          <p className="font-mono" style={{ color: '#4ADE80' }}>{fmtJpy(summary.paidIncl)}</p>
+          <CountUp className="font-mono" style={{ color: '#4ADE80' }} value={summary.paidIncl} format={fmtJpy} />
         </div>
         <div className="rounded p-2" style={{ background: `${color}10`, border: `1px solid ${color}40` }}>
           <p className="text-[10px] text-fg-muted">未入金</p>
-          <p className="font-mono" style={{ color }}>{fmtJpy(summary.unpaidIncl)}</p>
+          <CountUp className="font-mono" style={{ color }} value={summary.unpaidIncl} format={fmtJpy} />
         </div>
       </div>
       <p className="text-[10px] text-fg-subtle mt-2">{summary.count}件</p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -360,15 +368,22 @@ function MonthlyChart({ series, color }: { series: ReturnType<typeof monthlySeri
   const max = Math.max(...series.map(s => s.totalIncl), 1);
   return (
     <div className="flex items-end gap-1 h-32">
-      {series.map(s => {
+      {series.map((s, i) => {
         const h = (s.totalIncl / max) * 100;
         const paidH = (s.paidIncl / max) * 100;
         return (
           <div key={s.label} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-            <div className="w-full flex flex-col-reverse items-stretch h-24">
+            <motion.div
+              className="w-full flex flex-col-reverse items-stretch h-24"
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
+              transition={{ duration: 0.55, delay: 0.25 + i * 0.045, ease: [0.34, 1.2, 0.64, 1] }}
+              style={{ transformOrigin: 'bottom' }}
+              whileHover={{ scaleY: 1.04 }}
+            >
               <div
                 className="w-full rounded-sm"
-                style={{ background: color, height: `${paidH}%`, minHeight: paidH > 0 ? '2px' : 0 }}
+                style={{ background: color, height: `${paidH}%`, minHeight: paidH > 0 ? '2px' : 0, boxShadow: paidH > 0 ? `0 0 8px ${color}66` : 'none' }}
                 title={`入金済 ${fmtJpy(s.paidIncl)}`}
               />
               <div
@@ -376,7 +391,7 @@ function MonthlyChart({ series, color }: { series: ReturnType<typeof monthlySeri
                 style={{ background: `${color}40`, height: `${h - paidH}%`, minHeight: 0 }}
                 title={`未入金 ${fmtJpy(s.totalIncl - s.paidIncl)}`}
               />
-            </div>
+            </motion.div>
             <p className="text-[9px] text-fg-subtle font-mono">{s.label.slice(5)}</p>
           </div>
         );

@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
+import { CountUp, Sparkline } from '../components/visualFx';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Props {
@@ -116,7 +117,15 @@ export default function IrisRevenueView({ bg }: Props) {
     let topAmt = 0;
     for (const [src, amt] of srcMap) { if (amt > topAmt) { topAmt = amt; topSource = src; } }
 
-    return { monthlyTotal, yearTotal, topSource };
+    // 直近 12 ヶ月の月次合計 (スパークライン用)
+    const trend: number[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      trend.push(entries.filter(e => e.date.startsWith(m)).reduce((s, e) => s + e.amountJPY, 0));
+    }
+
+    return { monthlyTotal, yearTotal, topSource, trend };
   }, [entries, currentMonth]);
 
   // ─── 月次グラフデータ (12ヶ月) ───────────────────────────
@@ -164,9 +173,9 @@ export default function IrisRevenueView({ bg }: Props) {
 
       {/* サマリーカード */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
-        <SummaryCard bg={bg} label="今月の収益" value={`¥${summary.monthlyTotal.toLocaleString()}`} emoji="" />
-        <SummaryCard bg={bg} label="年間累計" value={`¥${summary.yearTotal.toLocaleString()}`} emoji="" />
-        <SummaryCard bg={bg} label="トップ収入源" value={summary.topSource} emoji="" />
+        <SummaryCard bg={bg} label="今月の収益" amount={summary.monthlyTotal} spark={summary.trend.slice(-6)} delay={0} />
+        <SummaryCard bg={bg} label="年間累計" amount={summary.yearTotal} spark={summary.trend} delay={0.08} />
+        <SummaryCard bg={bg} label="トップ収入源" text={summary.topSource} delay={0.16} />
       </div>
 
       {/* 月次棒グラフ */}
@@ -317,20 +326,34 @@ export default function IrisRevenueView({ bg }: Props) {
   );
 }
 
-function SummaryCard({ bg, label, value, emoji }: { bg: IrisBackgroundDef; label: string; value: string; emoji: string }) {
+function SummaryCard({ bg, label, amount, text, spark, delay = 0 }: {
+  bg: IrisBackgroundDef; label: string; amount?: number; text?: string; spark?: number[]; delay?: number;
+}) {
   return (
-    <div style={{
-      padding: '1.1rem 1rem', background: bg.card,
-      border: `1px solid ${bg.cardBorder}`, borderRadius: 12,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-        <span style={{ fontSize: '0.95rem' }}>{emoji}</span>
-        <p style={{ fontSize: '0.7rem', color: bg.inkSoft, letterSpacing: '0.05em', fontWeight: 600 }}>{label}</p>
-      </div>
-      <p style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.35rem', fontWeight: 700, color: bg.ink }}>
-        {value}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.45, ease: 'easeOut' }}
+      whileHover={{ y: -4, boxShadow: `0 14px 30px ${bg.accent}22` }}
+      style={{
+        padding: '1.1rem 1rem', background: bg.card,
+        border: `1px solid ${bg.cardBorder}`, borderRadius: 12,
+        position: 'relative', overflow: 'hidden',
+        transition: 'box-shadow 0.2s ease',
+      }}
+    >
+      <p style={{ fontSize: '0.7rem', color: bg.inkSoft, letterSpacing: '0.05em', fontWeight: 600, marginBottom: 6 }}>{label}</p>
+      <p style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.4rem', fontWeight: 700, color: bg.ink }}>
+        {amount !== undefined
+          ? <CountUp value={amount} format={(n) => `¥${Math.round(n).toLocaleString()}`} />
+          : text}
       </p>
-    </div>
+      {spark && spark.some(v => v > 0) && (
+        <div style={{ marginTop: 8 }}>
+          <Sparkline data={spark} color={bg.accent} width={110} height={26} />
+        </div>
+      )}
+    </motion.div>
   );
 }
 

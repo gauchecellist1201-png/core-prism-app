@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Persona, Proposal } from '../types/identity';
 import { listIntegrations, sendBrief } from '../lib/integrations';
+import { RewardBurst } from './visualFx';
 
 interface Props {
   persona: Persona;
@@ -32,6 +33,7 @@ export default function TodayBrief({
 }: Props) {
   const [briefSending, setBriefSending] = useState(false);
   const [briefSent, setBriefSent] = useState(false);
+  const [showReward, setShowReward] = useState(false);
   const enabledIntegrations = listIntegrations().filter(i => i.enabled);
 
   const handleSendToIntegrations = async () => {
@@ -100,7 +102,10 @@ export default function TodayBrief({
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <p className="text-fg-muted text-xs tracking-widest uppercase">アクション提案 ({proposal.actions.length})</p>
                   <button
-                    onClick={() => proposal.actions.forEach(a => onAcceptAction(a))}
+                    onClick={() => {
+                      proposal.actions.forEach(a => onAcceptAction(a));
+                      setShowReward(true);
+                    }}
                     className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
                     style={{
                       background: `linear-gradient(135deg, ${persona.accentColor}, ${persona.accentColor}cc)`,
@@ -206,6 +211,13 @@ export default function TodayBrief({
           )}
         </div>
       </div>
+
+      <RewardBurst
+        show={showReward}
+        accent={persona.accentColor}
+        message="今日のタスクに追加しました"
+        onDone={() => setShowReward(false)}
+      />
     </motion.div>
   );
 }

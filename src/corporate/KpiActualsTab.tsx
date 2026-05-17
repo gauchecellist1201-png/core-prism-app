@@ -4,6 +4,8 @@
 // オーナー専用 (StrategyDashboard 内で master モード時のみ呼ばれる)
 // ============================================================
 import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import { CountUp, RingProgress } from '../components/visualFx';
 import {
   fetchRevenueSnapshot,
   readOverride,
@@ -136,27 +138,36 @@ export default function KpiActualsTab({ scenarioMrrTargetJpy, scenario }: KpiAct
               基準: {SCENARIO_LABELS[scenario]} — 12 ヶ月後 {fmtJpyShort(mrrTarget)}
             </p>
           </div>
-          <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: mrrColor, fontWeight: 700 }}>
-            達成率 {mrrAchievement.toFixed(0)}%
-          </p>
+          <RingProgress percent={mrrAchievement} size={66} stroke={6} color={mrrColor}
+            trackColor="rgba(255,255,255,0.10)">
+            <div style={{ textAlign: 'center', lineHeight: 1 }}>
+              <CountUp value={mrrAchievement} format={(n) => `${Math.round(n)}`}
+                style={{ fontSize: '1.05rem', fontWeight: 800, color: mrrColor, fontFamily: 'monospace' }} />
+              <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', display: 'block', marginTop: 2 }}>達成%</span>
+            </div>
+          </RingProgress>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-          <Stat label="今月の実 MRR" value={fmtJpyShort(mrrActual)} sub={fmtJpy(mrrActual)} accent="#fff" />
+          <Stat label="今月の実 MRR" count={mrrActual} fmt={fmtJpyShort} sub={fmtJpy(mrrActual)} accent="#fff" />
           <Stat label="目標" value={fmtJpyShort(mrrTarget)} sub={`${SCENARIO_LABELS[scenario]}`} accent="#c4b5fd" />
-          <Stat label="ギャップ" value={(mrrGap >= 0 ? '+' : '−') + fmtJpyShort(Math.abs(mrrGap))} sub={mrrGap >= 0 ? '超過' : '不足'} accent={mrrColor} />
-          <Stat label="有料サブ数" value={(snap?.totals.paidCount || 0).toLocaleString('ja-JP')} sub="active subscriptions" accent="#a78bfa" />
+          <Stat label="ギャップ" count={Math.abs(mrrGap)} fmt={(n) => (mrrGap >= 0 ? '+' : '−') + fmtJpyShort(n)} sub={mrrGap >= 0 ? '超過' : '不足'} accent={mrrColor} />
+          <Stat label="有料サブ数" count={snap?.totals.paidCount || 0} fmt={(n) => Math.round(n).toLocaleString('ja-JP')} sub="active subscriptions" accent="#a78bfa" />
         </div>
 
         {/* 進捗バー */}
         <div style={{ marginTop: '1.25rem' }}>
           <div style={{ height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{
-              width: `${Math.min(100, mrrAchievement)}%`,
-              height: '100%',
-              background: `linear-gradient(90deg, ${mrrColor}, #a78bfa)`,
-              transition: 'width 0.6s ease',
-            }} />
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(100, mrrAchievement)}%` }}
+              transition={{ duration: 1.1, ease: 'easeOut' }}
+              style={{
+                height: '100%',
+                background: `linear-gradient(90deg, ${mrrColor}, #a78bfa)`,
+                boxShadow: `0 0 12px ${mrrColor}88`,
+              }}
+            />
           </div>
         </div>
       </div>
@@ -222,9 +233,14 @@ export default function KpiActualsTab({ scenarioMrrTargetJpy, scenario }: KpiAct
                   {total > 0 ? fmtJpyShort(total).replace('¥', '') : '—'}
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column-reverse', width: '100%', minHeight: 4 }}>
-                  <div style={{ height: pH, background: '#60a5fa' }} />
-                  <div style={{ height: iH, background: '#f472b6' }} />
-                  <div style={{ height: oH, background: '#a78bfa' }} />
+                  {[{ h: pH, c: '#60a5fa' }, { h: iH, c: '#f472b6' }, { h: oH, c: '#a78bfa' }].map((seg, si) => (
+                    <motion.div key={si}
+                      initial={{ height: 0 }}
+                      animate={{ height: seg.h }}
+                      transition={{ duration: 0.6, delay: 0.3 + i * 0.045, ease: 'easeOut' }}
+                      style={{ background: seg.c }}
+                    />
+                  ))}
                 </div>
                 <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
                   {m.month.slice(5)}
@@ -262,8 +278,13 @@ export default function KpiActualsTab({ scenarioMrrTargetJpy, scenario }: KpiAct
                 <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.62rem', letterSpacing: '0.25em', color: '#c4b5fd', fontWeight: 700 }}>{q.q}</p>
                 <p style={{ fontSize: '1.1rem', fontWeight: 800, marginTop: 4 }}>{fmtJpyShort(q.mrrJpy)}</p>
                 <p style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: c, marginTop: 4 }}>現在 {ach.toFixed(0)}%</p>
-                <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 999, marginTop: 6 }}>
-                  <div style={{ width: `${Math.min(100, ach)}%`, height: '100%', background: c, borderRadius: 999 }} />
+                <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 999, marginTop: 6, overflow: 'hidden' }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(100, ach)}%` }}
+                    transition={{ duration: 0.9, delay: 0.2 + i * 0.08, ease: 'easeOut' }}
+                    style={{ height: '100%', background: c, borderRadius: 999 }}
+                  />
                 </div>
               </div>
             );
@@ -361,13 +382,25 @@ export default function KpiActualsTab({ scenarioMrrTargetJpy, scenario }: KpiAct
   );
 }
 
-function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent: string }) {
+function Stat({ label, value, count, fmt, sub, accent }: {
+  label: string; value?: string; count?: number; fmt?: (n: number) => string; sub?: string; accent: string;
+}) {
   return (
-    <div style={{ padding: '0.9rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }}>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      whileHover={{ y: -3, background: 'rgba(255,255,255,0.06)' }}
+      style={{ padding: '0.9rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }}
+    >
       <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.6rem', letterSpacing: '0.28em', color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>{label}</p>
-      <p style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: 4, color: accent, fontFamily: FONT_SERIF_JA }}>{value}</p>
+      <p style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: 4, color: accent, fontFamily: FONT_SERIF_JA }}>
+        {count !== undefined && fmt
+          ? <CountUp value={count} format={fmt} />
+          : value}
+      </p>
       {sub && <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{sub}</p>}
-    </div>
+    </motion.div>
   );
 }
 
@@ -386,7 +419,12 @@ function ProductBar({ name, desc, mrr, paid, peak, color }: { name: string; desc
         </div>
       </div>
       <div style={{ height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden' }}>
-        <div style={{ width: `${w}%`, height: '100%', background: color, transition: 'width 0.6s ease' }} />
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${w}%` }}
+          transition={{ duration: 1, ease: 'easeOut' }}
+          style={{ height: '100%', background: color, boxShadow: `0 0 10px ${color}99` }}
+        />
       </div>
     </div>
   );
