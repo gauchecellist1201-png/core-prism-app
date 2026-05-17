@@ -196,9 +196,9 @@ export default function TodayBrief({
               disabled={briefSending}
               className="text-sm px-4 py-2.5 rounded-lg transition-all disabled:opacity-50"
               style={{
-                background: briefSent ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${briefSent ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                color: briefSent ? '#4ade80' : '#a0a0c0',
+                background: briefSent ? 'rgba(74,222,128,0.15)' : 'var(--surface-3)',
+                border: `1px solid ${briefSent ? 'rgba(74,222,128,0.4)' : 'var(--border)'}`,
+                color: briefSent ? '#4ade80' : 'var(--fg-muted)',
               }}
             >
               {briefSending ? '送信中…' : briefSent ? '送信完了' : '📤 Slack に送信'}

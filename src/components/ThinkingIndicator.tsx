@@ -157,8 +157,8 @@ export default function ThinkingIndicator({
               margin: '1.1rem auto 0',
               padding: '0.9rem 1rem',
               borderRadius: 12,
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'var(--surface-3)',
+              border: '1px solid var(--border)',
               textAlign: 'center',
             }}
           >
@@ -193,9 +193,9 @@ export default function ThinkingIndicator({
                   flex: 1,
                   padding: '0.6rem',
                   borderRadius: 10,
-                  background: 'rgba(255,255,255,0.06)',
+                  background: 'var(--surface-3)',
                   color: 'var(--fg)',
-                  border: '1px solid rgba(255,255,255,0.14)',
+                  border: '1px solid var(--border)',
                   fontSize: '0.82rem',
                   fontWeight: 700,
                   cursor: 'pointer',

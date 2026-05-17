@@ -693,7 +693,7 @@ export default function IdentityDashboard({
                   </h2>
                   <p style={{
                     margin: '0.3rem 0 0',
-                    fontSize: 12.5, color: 'rgba(255,255,255,0.65)',
+                    fontSize: 12.5, color: 'var(--fg-muted)',
                     lineHeight: 1.6,
                   }}>
                     いまのあなたを見て、AI が次の一手を準備しました。
@@ -762,8 +762,9 @@ export default function IdentityDashboard({
                 onOpen={() => setShowHealth(true)}
               />
 
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
-                <div className="lg:col-span-2 space-y-3">
+              {/* 認知プロファイルと回復スコアを横並びに (右の余白解消・高さ揃え) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
+                <div className="h-full [&>*]:h-full">
                   <PrismFlow
                     persona={persona}
                     knowledgeCount={personaKnowledge.length}
@@ -773,6 +774,8 @@ export default function IdentityDashboard({
                     }}
                     proposalCount={proactive.proposals.length}
                   />
+                </div>
+                <div className="h-full [&>*]:h-full">
                   <MomentPulse
                     persona={persona}
                     today={healthCtx.today}
@@ -781,15 +784,13 @@ export default function IdentityDashboard({
                     taskDone={persona.tasks.filter(t => t.done).length}
                   />
                 </div>
-                <div className="lg:col-span-3">
-                  <InsightsStream
-                    persona={persona}
-                    items={personaKnowledge}
-                    onAcceptAction={onAcceptProactiveAction}
-                    onOpenKnowledge={() => setShowKnowledge(true)}
-                  />
-                </div>
               </div>
+              <InsightsStream
+                persona={persona}
+                items={personaKnowledge}
+                onAcceptAction={onAcceptProactiveAction}
+                onOpenKnowledge={() => setShowKnowledge(true)}
+              />
 
               <div className="flex gap-1.5">
                 {[['files', `📄 資料 (${personaKnowledge.length})`], ['tasks', `✓ タスク (${persona.tasks.filter(t => !t.done).length})`]].map(([id, label]) => (

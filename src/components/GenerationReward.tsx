@@ -137,6 +137,7 @@ export default function GenerationReward({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={reduce ? { duration: 0.2 } : { delay: 0.22, type: 'spring', stiffness: 420, damping: 16 }}
+                style={{ color: '#fff', fontWeight: 900 }}
               >
                 ✓
               </motion.span>
