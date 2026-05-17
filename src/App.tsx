@@ -26,6 +26,7 @@ import StrategyDashboard from './corporate/StrategyDashboard';
 import PricingPage from './corporate/PricingPage';
 import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, syncSubscriptionState, type Plan } from './lib/billing';
 import { PrismBackground } from './components/PrismBackground';
+import GlobalVoiceInput from './components/GlobalVoiceInput';
 import { useTheme } from './hooks/useTheme';
 import IrisApp from './iris/IrisApp';
 import BillingSuccess from './components/BillingSuccess';
@@ -326,6 +327,8 @@ export default function App() {
     <>
       {/* LP では背景アニメを描画しない (iPhone Safari でスクロール固まる対策) */}
       {view !== 'landing' && <PrismBackground intensity="low" />}
+      {/* どの入力欄でも音声入力できる (フォーカス時にマイクが出現) */}
+      <GlobalVoiceInput />
       <AnimatePresence mode="wait">
         {view === 'landing' && (
           <LandingPage

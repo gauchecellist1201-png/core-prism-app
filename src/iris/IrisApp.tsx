@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useSettings } from '../hooks/useSettings';
 import IrisLanding from './IrisLanding';
+import GlobalVoiceInput from '../components/GlobalVoiceInput';
 import IrisDashboard from './IrisDashboard';
 import TutorialOverlay from '../components/TutorialOverlay';
 import WowOnboarding from '../components/WowOnboarding';
@@ -99,6 +100,8 @@ export default function IrisApp() {
       <IrisDashboard settings={settings} onLeave={() => setEntered(false)} />
       <TutorialOverlay brand="iris" onClose={() => setTutorialDoneTick(t => t + 1)} />
       <WowOnboarding brand="iris" trigger={tutorialDoneTick} />
+      {/* どの入力欄でも音声入力できる */}
+      <GlobalVoiceInput />
     </>
   );
 }
