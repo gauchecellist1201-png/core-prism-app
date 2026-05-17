@@ -546,31 +546,60 @@ function ToolCard({ tool, accent, connected, open, onToggle, onConnected, onDisc
                 )}
 
                 {step.action.kind === 'input' && (
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <input
-                      type="text"
-                      value={tokenInput}
-                      onChange={e => setTokenInput(e.target.value)}
-                      placeholder={step.action.placeholder}
-                      style={{
-                        flex: 1, fontSize: 12, padding: '9px 10px', borderRadius: 9,
-                        background: 'rgba(255,255,255,0.06)', color: '#fff',
-                        border: '1px solid rgba(255,255,255,0.12)', outline: 'none',
-                      }}
-                    />
+                  <div>
+                    {/* コピーした内容をワンタップで貼り付け → そのまま連携完了 */}
                     <button
                       type="button"
-                      onClick={() => {
-                        if (!tokenInput.trim()) { setErr('上の欄に貼り付けてください'); return; }
-                        completeConnection(tokenInput.trim());
+                      onClick={async () => {
+                        setErr(null);
+                        try {
+                          const text = (await navigator.clipboard.readText()).trim();
+                          if (!text) { setErr('クリップボードが空です。先にコピーしてください'); return; }
+                          completeConnection(text);
+                        } catch {
+                          setErr('自動貼り付けできませんでした。下の欄に手で貼り付けてください');
+                        }
                       }}
                       style={{
-                        fontSize: 12, fontWeight: 800, color: '#fff', flexShrink: 0,
+                        width: '100%', fontSize: 12.5, fontWeight: 800, color: '#fff',
                         background: `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`,
-                        border: 'none', borderRadius: 9, padding: '9px 14px', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: 4,
+                        border: 'none', borderRadius: 9, padding: '10px 14px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        marginBottom: 7,
                       }}
-                    >保存 <Check size={12} /></button>
+                    >
+                      📋 コピーした内容を貼り付けて連携完了
+                    </button>
+                    <div style={{
+                      fontSize: 9.5, color: 'rgba(255,255,255,0.4)',
+                      textAlign: 'center', marginBottom: 6,
+                    }}>― うまくいかないときは下に手で貼り付け ―</div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input
+                        type="text"
+                        value={tokenInput}
+                        onChange={e => setTokenInput(e.target.value)}
+                        placeholder={step.action.placeholder}
+                        style={{
+                          flex: 1, fontSize: 12, padding: '9px 10px', borderRadius: 9,
+                          background: 'rgba(255,255,255,0.06)', color: '#fff',
+                          border: '1px solid rgba(255,255,255,0.12)', outline: 'none',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!tokenInput.trim()) { setErr('上の欄に貼り付けてください'); return; }
+                          completeConnection(tokenInput.trim());
+                        }}
+                        style={{
+                          fontSize: 12, fontWeight: 800, color: '#fff', flexShrink: 0,
+                          background: 'rgba(255,255,255,0.1)',
+                          border: 'none', borderRadius: 9, padding: '9px 14px', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 4,
+                        }}
+                      >保存 <Check size={12} /></button>
+                    </div>
                   </div>
                 )}
 
