@@ -216,7 +216,7 @@ export default function QuickActions({ persona, actions }: Props) {
                 <span className="text-2xl leading-none">{a.emoji}</span>
               )}
               <span className="text-fg text-sm font-medium leading-tight text-center">{a.label}</span>
-              <span className="text-fg-muted text-[11px] leading-tight text-center hidden md:block">{a.desc}</span>
+              <span className="text-fg-muted text-[11px] leading-tight text-center">{a.desc}</span>
             </motion.button>
           );
         })}
