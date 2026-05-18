@@ -209,6 +209,7 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
   const [running, setRunning] = useState<number | null>(null);
   const [done, setDone] = useState<Set<number>>(new Set());
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [showFirstWin, setShowFirstWin] = useState(false);
 
   const shouldShow = useCallback(() => {
@@ -353,11 +354,31 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
 
   const copyResult = async () => {
     if (!activeResult) return;
+    const text = activeResult.body;
     try {
-      await navigator.clipboard.writeText(activeResult.body);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
-    } catch {/* */}
+      return;
+    } catch {/* 旧ブラウザ / 権限なし → フォールバックへ */}
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1600);
+        return;
+      }
+    } catch {/* 最終フォールバックへ */}
+    // どうしてもコピーできないとき: 沈黙させず、手動コピーを案内
+    setCopyFailed(true);
+    setTimeout(() => setCopyFailed(false), 4000);
   };
 
   if (!open) return null;
@@ -740,15 +761,19 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
                   style={{
                     marginTop: '0.8rem',
                     padding: '0.7rem 1rem',
-                    background: copied ? 'rgba(80,200,140,0.18)' : accent,
+                    background: copied ? 'rgba(80,200,140,0.18)' : copyFailed ? 'rgba(240,140,60,0.20)' : accent,
                     color: '#fff', border: 'none', borderRadius: 999,
                     fontSize: 13, fontWeight: 800,
                     cursor: 'pointer',
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     fontFamily: 'inherit',
-                    boxShadow: copied ? 'none' : `0 6px 18px ${accentSolid}40`,
+                    boxShadow: copied || copyFailed ? 'none' : `0 6px 18px ${accentSolid}40`,
                   }}>
-                  {copied ? <><Check size={14} /> コピーしました</> : <><Copy size={14} /> 全文コピー</>}
+                  {copied
+                    ? <><Check size={14} /> コピーしました</>
+                    : copyFailed
+                      ? <>上の文章を長押しで選んでコピーしてください</>
+                      : <><Copy size={14} /> 全文コピー</>}
                 </button>
               </motion.div>
             </motion.div>

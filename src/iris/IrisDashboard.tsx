@@ -2349,6 +2349,7 @@ function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [savedToKnowledge, setSavedToKnowledge] = useState(false);
+  const [copyState, setCopyState] = useState<'idle' | 'done' | 'fail'>('idle');
 
   const meta = CATEGORY_META[deal.category];
   const daysLeft = Math.max(0, Math.ceil((new Date(deal.deadline).getTime() - Date.now()) / 86400000));
@@ -2405,7 +2406,24 @@ function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied
   const copyDraft = async () => {
     if (!draft) return;
     const text = `件名: ${draft.subject}\n\n${draft.body}`;
-    try { await navigator.clipboard.writeText(text); } catch {}
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch { ok = false; }
+    }
+    setCopyState(ok ? 'done' : 'fail');
+    setTimeout(() => setCopyState('idle'), ok ? 1800 : 4000);
     recordAndOpen('copy', () => {});
   };
 
@@ -2587,7 +2605,14 @@ function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied
                   </button>
                 )}
                 <button onClick={copyDraft} style={btnSecondary(bg)}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Clipboard size={14} /> コピーして応募</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <Clipboard size={14} />
+                    {copyState === 'done'
+                      ? 'コピーしました'
+                      : copyState === 'fail'
+                        ? '長押しで文章を選んでコピーを'
+                        : 'コピーして応募'}
+                  </span>
                 </button>
                 {knowledge && (
                   <button onClick={saveDraftToKnowledge} style={btnSecondary(bg)}>

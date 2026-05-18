@@ -4,6 +4,7 @@ import type { Persona, ChatMessage, AppSettings, KnowledgeItem, Proposal } from 
 import { isOnboarded, isDemoActive, clearDemoData } from '../lib/onboarding';
 import OnboardingWizard from './OnboardingWizard';
 import DemoBanner from './DemoBanner';
+import SampleDataCTA from './SampleDataCTA';
 import ModeSwitcher from './ModeSwitcher';
 import CognitiveDashboard from './CognitiveDashboard';
 import AISidebar from './AISidebar';
@@ -845,6 +846,14 @@ export default function IdentityDashboard({
                         >
                           ＋ 最初の資料を追加
                         </button>
+                        {!isDemoActive() && (
+                          <div className="mt-3">
+                            <SampleDataCTA
+                              accent={persona.accentColor}
+                              hint="本物そっくりのサンプルで、今すぐ全機能を試せます（あとで消せます）"
+                            />
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -895,7 +904,16 @@ export default function IdentityDashboard({
                     exit={{ opacity: 0 }}
                   >
                     {persona.tasks.length === 0 ? (
-                      <p className="text-fg-muted text-sm text-center py-6">タスクなし</p>
+                      <div className="text-center py-6">
+                        <p className="text-fg-muted text-sm mb-2">やる事はまだありません</p>
+                        <button
+                          onClick={() => setShowTaskHub(true)}
+                          className="text-sm px-4 py-2 rounded-lg transition-all"
+                          style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
+                        >
+                          ＋ 最初のやる事を足す
+                        </button>
+                      </div>
                     ) : (
                       <div className="space-y-1.5">
                         {persona.tasks.map((task, i) => (
