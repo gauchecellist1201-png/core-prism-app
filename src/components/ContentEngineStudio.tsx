@@ -10,6 +10,7 @@ import { generateNoteArticle, generateXPost, proposeContentTopics, TONE_OPTIONS,
 import AgentProposalCard from './AgentProposalCard';
 import ThinkingIndicator from './ThinkingIndicator';
 import GenerationReward from './GenerationReward';
+import ApiErrorCard from './ApiErrorCard';
 
 interface Props {
   persona: Persona;
@@ -295,11 +296,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
               }}>🔄 別の 3 案を出してもらう</button>
             )}
 
-            {error && (
-              <p style={{ marginTop: 12, padding: '0.6rem 0.85rem', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 8, color: '#fca5a5', fontSize: '0.82rem' }}>
-                ⚠ {error}
-              </p>
-            )}
+            <ApiErrorCard error={error} onRetry={() => handleGenerate()} />
 
             {/* 自分でテーマを書く (折りたたみ) */}
             <button onClick={() => setShowManual(s => !s)} style={{

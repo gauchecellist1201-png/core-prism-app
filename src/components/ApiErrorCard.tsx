@@ -4,7 +4,7 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Waves, Key, Wifi, AlertTriangle, Settings as SettingsIcon } from 'lucide-react';
+import { Waves, Key, Wifi, AlertTriangle, Settings as SettingsIcon, RotateCcw } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 interface Props {
@@ -16,6 +16,8 @@ interface Props {
   className?: string;
   /** ダーク/ライト自動 (transparent 背景に対して読みやすく) */
   variant?: 'dark' | 'light' | 'auto';
+  /** 指定すると「もう一度ためす」ボタンを出し、押すと再実行する */
+  onRetry?: () => void;
 }
 
 const DISMISS_KEY = 'core_api_error_dismissed_until_v1';
@@ -89,7 +91,7 @@ function classifyError(error: string): {
   };
 }
 
-export default function ApiErrorCard({ error, onOpenSettings, className, variant = 'auto' }: Props) {
+export default function ApiErrorCard({ error, onOpenSettings, className, variant = 'auto', onRetry }: Props) {
   const [version, setVersion] = useState(0); // 再描画用
   const visible = !!error && !isDismissedNow(error);
 
@@ -167,19 +169,36 @@ export default function ApiErrorCard({ error, onOpenSettings, className, variant
             }}>
               {c.steps.map((s, i) => <li key={i}>{s}</li>)}
             </ol>
-            {c.kind === 'quota' && onOpenSettings && (
-              <button
-                onClick={onOpenSettings}
-                style={{
-                  marginTop: '0.3rem',
-                  background: 'rgba(255,255,255,0.12)',
-                  border: '1px solid ' + border,
-                  color: fg,
-                  borderRadius: 999, padding: '0.4rem 0.95rem',
-                  fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                }}
-              ><SettingsIcon size={13} strokeWidth={2.2} /> 設定でマスターモードを有効化</button>
+            {(onRetry || (c.kind === 'quota' && onOpenSettings)) && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.4rem' }}>
+                {onRetry && (
+                  <button
+                    onClick={() => onRetry()}
+                    style={{
+                      background: `linear-gradient(135deg, ${c.iconColor}, ${c.iconColor}cc)`,
+                      border: 'none',
+                      color: '#FFFFFF',
+                      borderRadius: 999, padding: '0.46rem 1.05rem',
+                      fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                      boxShadow: `0 4px 12px ${c.iconColor}55`,
+                    }}
+                  ><RotateCcw size={13} strokeWidth={2.6} /> もう一度ためす</button>
+                )}
+                {c.kind === 'quota' && onOpenSettings && (
+                  <button
+                    onClick={onOpenSettings}
+                    style={{
+                      background: 'rgba(255,255,255,0.12)',
+                      border: '1px solid ' + border,
+                      color: fg,
+                      borderRadius: 999, padding: '0.46rem 0.95rem',
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                    }}
+                  ><SettingsIcon size={13} strokeWidth={2.2} /> マスターモードにする</button>
+                )}
+              </div>
             )}
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
+import ApiErrorCard from './ApiErrorCard';
 import type { DecisionMemo, DecisionInput } from '../lib/decisionMemo';
 import {
   generateDecisionMemo,
@@ -186,11 +187,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
               )}
             </AnimatePresence>
 
-            {error && !isBusy && (
-              <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
-                {error}
-              </div>
-            )}
+            {!isBusy && <ApiErrorCard error={error} onRetry={handleDecide} />}
             <div className="flex justify-end gap-2 pt-1">
               <button
                 onClick={onClose}

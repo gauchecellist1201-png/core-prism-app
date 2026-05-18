@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
+import ApiErrorCard from './ApiErrorCard';
 import type { Persona, AppSettings } from '../types/identity';
 import {
   generateImage, generateImagePrompt, downloadImage,
@@ -371,11 +372,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                 )}
               </div>
 
-              {error && (
-                <div className="rounded-md p-2.5 text-xs" style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171' }}>
-                  {error}
-                </div>
-              )}
+              <ApiErrorCard error={error} onRetry={() => handleGenerate(false)} />
 
               {/* 結果表示 */}
               <AnimatePresence>

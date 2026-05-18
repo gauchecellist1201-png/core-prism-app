@@ -3,6 +3,7 @@
 // 9:16 縦動画を脚本→Canvas描画→WebMエクスポートまで一気通貫
 // ============================================================
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import ApiErrorCard from './ApiErrorCard';
 import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from '../iris/irisStyle';
 import { IRIS_FONTS } from '../iris/irisStyle';
@@ -417,7 +418,7 @@ export default function VideoStudio({ bg, settings }: Props) {
           <button onClick={handleGenerate} disabled={busy} style={btnPrimary}>
             {busy ? '⏳ 生成中…' : '🎬 AI 脚本を生成'}
           </button>
-          {err && <p style={{ color: '#C8102E', marginTop: '0.75rem', fontSize: '0.9rem' }}>⚠ {err}</p>}
+          <ApiErrorCard error={err} onRetry={handleGenerate} />
         </div>
       )}
 

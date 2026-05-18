@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings } from '../types/identity';
 import type { NegotiationScene, NegoTurn, NegoEvaluation } from '../lib/negotiationCoach';
 import { NEGO_PRESETS, counterpartReply, evaluateNegotiation } from '../lib/negotiationCoach';
+import ApiErrorCard from './ApiErrorCard';
 
 interface Props {
   persona: Persona;
@@ -78,6 +79,25 @@ export default function NegotiationCoachModal({ persona, settings, onClose }: Pr
       setIsThinking(false);
     }
   }, [input, scene, isThinking, history, settings, persona]);
+
+  // 返信取得が失敗したとき、いま溜まっている会話のまま相手の返事だけ取り直す
+  const retryRoleplay = useCallback(async () => {
+    if (!scene || isThinking) return;
+    setIsThinking(true);
+    setError(null);
+    try {
+      const reply = await counterpartReply(settings, persona, scene, history);
+      setHistory(prev => [...prev, {
+        role: 'counterpart',
+        content: reply,
+        timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+      }]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsThinking(false);
+    }
+  }, [scene, isThinking, history, settings, persona]);
 
   const handleEvaluate = useCallback(async () => {
     if (!scene || history.length < 2) return;
@@ -224,11 +244,7 @@ export default function NegotiationCoachModal({ persona, settings, onClose }: Pr
               )}
             </div>
 
-            {error && (
-              <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
-                {error}
-              </div>
-            )}
+            <ApiErrorCard error={error} onRetry={() => { if (scene) startScene(scene); }} />
           </div>
         )}
 
@@ -335,9 +351,7 @@ export default function NegotiationCoachModal({ persona, settings, onClose }: Pr
                   {isEvaluating ? '🧠 評価中…' : '🎯 評価を見る'}
                 </button>
               </div>
-              {error && (
-                <p className="mt-2 text-xs" style={{ color: '#f87171' }}>{error}</p>
-              )}
+              <ApiErrorCard error={error} onRetry={retryRoleplay} />
             </div>
           </>
         )}

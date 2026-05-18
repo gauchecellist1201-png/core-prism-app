@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ApiErrorCard from './ApiErrorCard';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import {
   generateNoteArticle, generateXPost, TONE_OPTIONS,
@@ -455,20 +456,11 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               {isGenerating ? '🧠 生成中…' : `✨ ${tab === 'note' ? 'note 記事' : threadCount > 1 ? 'X スレッド' : 'X ツイート'}を生成`}
             </motion.button>
 
-            {error && (
-              <div className="rounded-md p-2.5 text-xs space-y-1.5" style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171' }}>
-                <p>{error}</p>
-                {/(混みあって|quota|rate limit|429|503)/i.test(error) && (
-                  <a
-                    href="/master"
-                    className="inline-block underline font-semibold"
-                    style={{ color: '#fbbf24' }}
-                  >
-                    👑 マスターモードを設定して制限を解除する →
-                  </a>
-                )}
-              </div>
-            )}
+            <ApiErrorCard
+              error={error}
+              onRetry={handleGenerate}
+              onOpenSettings={() => { window.location.href = '/master'; }}
+            />
           </div>
 
           {/* 画像生成パネル (draft 生成後に表示) */}

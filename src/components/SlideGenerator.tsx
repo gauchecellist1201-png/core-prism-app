@@ -4,6 +4,7 @@ import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import type { DeckSpec } from '../lib/slideGenerator';
 import { generateDeckSpec, renderDeck } from '../lib/slideGenerator';
 import { parseFile } from '../lib/fileParser';
+import ApiErrorCard from './ApiErrorCard';
 
 interface Props {
   persona: Persona;
@@ -244,11 +245,7 @@ export default function SlideGeneratorModal({ persona, settings, knowledge, onCl
                 />
               </div>
 
-              {error && (
-                <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
-                  {error}
-                </div>
-              )}
+              <ApiErrorCard error={error} onRetry={handleGenerate} />
             </div>
 
             <div className="flex items-center justify-between gap-3 px-5 py-4" style={{ borderTop: '1px solid var(--border)' }}>
