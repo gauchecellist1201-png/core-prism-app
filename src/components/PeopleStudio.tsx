@@ -5,6 +5,7 @@ import type { Persona, AppSettings } from '../types/identity';
 import type { PersonRecord, PersonInteraction, SentimentType, InteractionType } from '../types/people';
 import { usePeople } from '../hooks/usePeople';
 import { analyzePerson, type PersonAnalysis } from '../lib/peopleAnalyst';
+import SampleDataCTA from './SampleDataCTA';
 
 interface Props {
   persona: Persona;
@@ -130,6 +131,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                         style={{ background: persona.accentColor, color: '#0a0a0f' }}>
                         ＋ 最初の人物を登録
                       </button>
+                      <SampleDataCTA accent={persona.accentColor} hint="サンプルの人物と面談記録が入り、ケア機能をすぐ試せます" />
                     </div>
                   ) : (
                     <div className="cp-stack-sm">

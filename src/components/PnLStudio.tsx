@@ -6,6 +6,7 @@ import { useSalesLedger } from '../hooks/useSalesLedger';
 import { useExpenses } from '../hooks/useExpenses';
 import { fmtJpy } from '../lib/invoiceCalc';
 import { EXPENSE_CATEGORIES } from '../types/expense';
+import SampleDataCTA from './SampleDataCTA';
 
 interface Props {
   persona: Persona;
@@ -251,6 +252,7 @@ export default function PnLStudio({ persona, onClose }: Props) {
               <p className="cp-empty-icon">📭</p>
               <p>この期間にデータがありません</p>
               <p className="cp-meta mt-2">請求書を発行するか、経費OCRで読み込むとここに反映されます</p>
+              <SampleDataCTA accent={persona.accentColor} hint="サンプルの売上・経費が入り、損益グラフをすぐ確認できます" />
             </div>
           )}
         </div>

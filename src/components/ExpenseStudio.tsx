@@ -7,6 +7,7 @@ import { useExpenses } from '../hooks/useExpenses';
 import { extractFromReceipt, refineExpenseClassification, fileToDataUrl, calcExpenseAmounts } from '../lib/expenseOCR';
 import { fmtJpy } from '../lib/invoiceCalc';
 import AgentProposalCard from './AgentProposalCard';
+import SampleDataCTA from './SampleDataCTA';
 
 interface Props {
   persona: Persona;
@@ -409,6 +410,7 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
                 <div className="cp-empty">
                   <p className="cp-empty-icon">📭</p>
                   <p>経費がまだありません</p>
+                  <SampleDataCTA accent={persona.accentColor} hint="サンプルの経費が入り、レポートやグラフをすぐ確認できます" />
                 </div>
               ) : personaEntries.map(e => {
                 const cat = EXPENSE_CATEGORIES.find(c => c.value === e.category);

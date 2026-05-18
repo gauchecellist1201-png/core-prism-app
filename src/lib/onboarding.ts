@@ -5,6 +5,9 @@ const PERSONA_STORE = 'core_personas';
 const KNOWLEDGE_STORE = 'core_knowledge';
 const CRM_STORE = 'core_crm_deals_v1';
 const DOC_STORE = 'core_documents_v1';
+const EXPENSE_STORE = 'core_expenses_v1';
+const PEOPLE_STORE = 'core_people_v1';
+const INTERACTION_STORE = 'core_people_interactions_v1';
 
 export function isOnboarded(): boolean {
   return localStorage.getItem(ONBOARDED_KEY) === 'true';
@@ -38,7 +41,7 @@ function saveArr(key: string, items: unknown[]) {
 }
 
 export function clearDemoData(): void {
-  for (const key of [KNOWLEDGE_STORE, CRM_STORE, DOC_STORE]) {
+  for (const key of [KNOWLEDGE_STORE, CRM_STORE, DOC_STORE, EXPENSE_STORE, PEOPLE_STORE, INTERACTION_STORE]) {
     const items = loadArr<{ id: string }>(key);
     saveArr(key, items.filter(i => !i.id.startsWith('demo:')));
   }
@@ -197,6 +200,74 @@ export function seedDemoData(): number {
     },
   ];
 
+  // ── Expenses (5) ──────────────────────────────────────────────
+  const mkExpense = (
+    id: string, dayOffset: number, vendor: string,
+    category: string, description: string, amountIncl: number,
+    payment: string,
+  ) => {
+    const d = new Date(Date.now() - dayOffset * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const amountExcl = Math.round(amountIncl / 1.1);
+    return {
+      id, personaId: pid, date: d, vendor, category, description,
+      amountIncl, taxRate: 10, amountExcl, taxAmount: amountIncl - amountExcl,
+      payment, source: 'manual', createdAt: now,
+    };
+  };
+  const expenses = [
+    mkExpense('demo:exp-1', 2,  '田島コーヒー商事',     '消耗品費',   'エチオピア産コーヒー豆 12kg',      50400, 'bank'),
+    mkExpense('demo:exp-2', 5,  '渋谷不動産管理',       '地代家賃',   '店舗家賃 (5月分)',                 220000, 'bank'),
+    mkExpense('demo:exp-3', 8,  '東京電力',             '水道光熱費', '店舗電気代 (4月使用分)',           38500, 'card'),
+    mkExpense('demo:exp-4', 11, 'カフェ用品オンライン', '消耗品費',   'テイクアウトカップ・ストロー補充', 14300, 'card'),
+    mkExpense('demo:exp-5', 14, 'Meta広告',             '広告宣伝費', 'Instagram リール広告 (秋メニュー)', 22000, 'card'),
+  ];
+
+  // ── People (3) + Interactions (2) ─────────────────────────────
+  const dayStr = (off: number) =>
+    new Date(Date.now() - off * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const people = [
+    {
+      id: 'demo:person-1', personaId: pid, name: '佐藤美咲',
+      role: 'バリスタ (リーダー)', company: 'CAFE TANAKA',
+      contactInfo: { email: 'misaki@cafe-tanaka.example.jp' },
+      lastInteraction: dayStr(3), createdAt: now,
+      notes: 'ラテアートが得意。2号店の店長候補。',
+      tags: ['スタッフ', '店長候補'],
+    },
+    {
+      id: 'demo:person-2', personaId: pid, name: '田島部長',
+      role: '営業部長', company: '田島コーヒー商事',
+      contactInfo: { phone: '03-2345-6789' },
+      lastInteraction: dayStr(6), createdAt: now,
+      notes: 'コーヒー豆の卸取引先。年間契約を交渉中。',
+      tags: ['取引先', '仕入'],
+    },
+    {
+      id: 'demo:person-3', personaId: pid, name: '山田太郎',
+      role: '不動産エージェント', company: '渋谷リアルエステート',
+      contactInfo: { phone: '090-1234-5678' },
+      lastInteraction: dayStr(10), createdAt: now,
+      notes: '2号店の物件を紹介してくれた担当。',
+      tags: ['取引先', '物件'],
+    },
+  ];
+  const interactions = [
+    {
+      id: 'demo:inter-1', personId: 'demo:person-1', date: dayStr(3),
+      type: '1on1', sentiment: 'positive',
+      summary: '2号店の店長候補として意欲を確認。秋メニューのアイデアも前向き。',
+      highlights: ['店長に挑戦したい意思あり', 'ラテアート講習を任せられそう'],
+      nextTopics: ['シフトリーダー研修の日程'],
+    },
+    {
+      id: 'demo:inter-2', personId: 'demo:person-2', date: dayStr(6),
+      type: 'meeting', sentiment: 'neutral',
+      summary: '年間卸契約の価格交渉。1kg 4,200円→3,800円を打診、検討中。',
+      concerns: ['他社相見積もりの可能性'],
+      nextTopics: ['6月中旬までに最終回答'],
+    },
+  ];
+
   // ── Write to localStorage (idempotent) ────────────────────────
   const upsert = (key: string, newItems: Array<{ id: string }>) => {
     const existing = loadArr<{ id: string }>(key);
@@ -212,7 +283,11 @@ export function seedDemoData(): number {
   upsert(KNOWLEDGE_STORE, knowledge);
   upsert(CRM_STORE, deals);
   upsert(DOC_STORE, documents);
+  upsert(EXPENSE_STORE, expenses);
+  upsert(PEOPLE_STORE, people);
+  upsert(INTERACTION_STORE, interactions);
 
-  // 1 persona + 5 tasks + 3 knowledge + 2 deals + 1 document = 12
-  return 12;
+  // 1 persona + 5 tasks + 3 knowledge + 2 deals + 1 document
+  //   + 5 expenses + 3 people + 2 interactions = 22
+  return 22;
 }

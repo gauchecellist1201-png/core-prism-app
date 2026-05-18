@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Mail, Calendar, FileText, Sparkles, ArrowRight, Check, Copy } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { buildGcalDeeplink } from '../lib/googleCalendar';
+import { tactileReward } from '../lib/haptic';
 
 const TUTORIAL_KEYS = {
   prism: 'core_tutorial_seen_prism_v1',
@@ -208,6 +209,7 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
   const [running, setRunning] = useState<number | null>(null);
   const [done, setDone] = useState<Set<number>>(new Set());
   const [copied, setCopied] = useState(false);
+  const [showFirstWin, setShowFirstWin] = useState(false);
 
   const shouldShow = useCallback(() => {
     if (force) return true;
@@ -232,6 +234,7 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
     setProposals([]);
     setActiveResult(null);
     setDone(new Set());
+    setShowFirstWin(false);
     onClose?.();
   };
 
@@ -332,7 +335,12 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
           : '📝 メモができました';
         setActiveResult({ title: heading, body: out });
       }
+      const wasFirstWin = done.size === 0;
       setDone(prev => new Set(prev).add(i));
+      if (wasFirstWin) {
+        try { tactileReward(); } catch {/* */}
+        setShowFirstWin(true);
+      }
     } catch (e: any) {
       setActiveResult({
         title: '⚠️ うまく動かせませんでした',
@@ -743,6 +751,111 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
                   {copied ? <><Check size={14} /> コピーしました</> : <><Copy size={14} /> 全文コピー</>}
                 </button>
               </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* 初めての成果を祝う演出 */}
+        <AnimatePresence>
+          {showFirstWin && (
+            <motion.div
+              key="wow-firstwin"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              onClick={(e) => { e.stopPropagation(); setShowFirstWin(false); }}
+              style={{
+                position: 'fixed', inset: 0, zIndex: 100000,
+                background: 'radial-gradient(ellipse at center, rgba(40,28,70,0.92) 0%, rgba(8,6,16,0.97) 70%)',
+                backdropFilter: 'blur(20px)',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                padding: 24, cursor: 'pointer',
+                fontFamily: '"Noto Sans JP", system-ui, sans-serif',
+                overflow: 'hidden',
+              }}>
+              {/* 放射する光の粒 */}
+              {Array.from({ length: 14 }).map((_, k) => (
+                <motion.div
+                  key={k}
+                  initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                  animate={{
+                    scale: [0, 1, 0.4],
+                    x: Math.cos((k / 14) * Math.PI * 2) * 220,
+                    y: Math.sin((k / 14) * Math.PI * 2) * 220,
+                    opacity: [1, 1, 0],
+                  }}
+                  transition={{ duration: 1.6, delay: 0.15 + k * 0.02, ease: 'easeOut' }}
+                  style={{
+                    position: 'absolute',
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: accent,
+                    pointerEvents: 'none',
+                  }}
+                />
+              ))}
+
+              <motion.div
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: [0, 1.25, 1], rotate: 0 }}
+                transition={{ duration: 0.7, ease: [0.34, 1.56, 0.64, 1] }}
+                style={{ fontSize: 'clamp(3.4rem, 14vw, 5rem)', marginBottom: '0.6rem', zIndex: 2 }}>
+                🎉
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.5 }}
+                style={{
+                  fontSize: 11, fontWeight: 800, letterSpacing: '0.18em',
+                  color: accentSolid, marginBottom: '0.7rem', zIndex: 2,
+                }}>
+                FIRST WIN
+              </motion.div>
+
+              <motion.h2
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45, duration: 0.55 }}
+                style={{
+                  margin: 0, textAlign: 'center',
+                  fontFamily: '"Cinzel", "Noto Serif JP", serif', fontStyle: 'italic',
+                  fontSize: 'clamp(1.4rem, 5.5vw, 2rem)', fontWeight: 500, lineHeight: 1.4,
+                  background: accent, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                  zIndex: 2,
+                }}>
+                CORE で初めての<br />成果が出ました
+              </motion.h2>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.82 }}
+                transition={{ delay: 0.7, duration: 0.5 }}
+                style={{
+                  margin: '0.9rem 0 1.6rem', textAlign: 'center',
+                  fontSize: 13.5, lineHeight: 1.8, color: '#fff',
+                  maxWidth: 320, zIndex: 2,
+                }}>
+                たった今、AI があなたの代わりに動きました。<br />この調子で、ほかの一手も試してみましょう。
+              </motion.p>
+
+              <motion.button
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.85, duration: 0.45 }}
+                onClick={() => setShowFirstWin(false)}
+                style={{
+                  padding: '0.85rem 2rem',
+                  background: accent, color: '#fff',
+                  border: 'none', borderRadius: 999,
+                  fontSize: 14, fontWeight: 800,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  boxShadow: `0 8px 24px ${accentSolid}55`,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  zIndex: 2,
+                }}>
+                <Sparkles size={14} /> 続ける
+              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>
