@@ -387,8 +387,20 @@ function ToolCard({ tool, accent, connected, open, onToggle, onConnected, onDisc
 
   // 貼り付けられた値が、そのアプリにふさわしい形か簡易チェック
   const validateInput = (v: string): string | null => {
-    if (tool.id === 'stripe' && !/^(rk|sk)_(live|test)_/.test(v)) {
-      return 'Stripe の読み取り専用キー (rk_live_… で始まる) を貼り付けてください。';
+    if (/\s/.test(v)) return 'キーに空白が含まれています。コピーし直してください。';
+    if (v.length < 12) return 'キーが短すぎます。正しいキーを丸ごとコピーしてください。';
+    const prefixRules: Record<string, { re: RegExp; hint: string }> = {
+      stripe:  { re: /^(rk|sk)_(live|test)_/, hint: 'Stripe の読み取り専用キー (rk_live_… で始まる)' },
+      notion:  { re: /^(secret_|ntn_)/,        hint: 'Notion のインテグレーションキー (secret_… または ntn_… で始まる)' },
+      slack:   { re: /^xox[bp]-/,              hint: 'Slack のトークン (xoxb-… で始まる)' },
+      hubspot: { re: /^pat-/,                  hint: 'HubSpot のプライベートアプリトークン (pat-… で始まる)' },
+      github:  { re: /^(ghp_|github_pat_)/,    hint: 'GitHub のトークン (ghp_… で始まる)' },
+      linear:  { re: /^lin_api_/,              hint: 'Linear の API キー (lin_api_… で始まる)' },
+      openai:  { re: /^sk-/,                   hint: 'OpenAI の API キー (sk-… で始まる)' },
+    };
+    const rule = prefixRules[tool.id];
+    if (rule && !rule.re.test(v)) {
+      return `${rule.hint} を貼り付けてください。`;
     }
     return null;
   };

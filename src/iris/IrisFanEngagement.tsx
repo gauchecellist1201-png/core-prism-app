@@ -322,6 +322,15 @@ ${toneInstruction()}
 
       {/* TOP10 結果 */}
       <AnimatePresence>
+        {top10 && top10.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            style={{ padding: '1.25rem', background: `${bg.accent}08`, border: `1px solid ${bg.cardBorder}`, borderRadius: 16, textAlign: 'center', color: bg.inkSoft, fontSize: '0.85rem' }}
+          >
+            該当するファンが見つかりませんでした。ファンとのやり取りを記録してから、もう一度お試しください。
+          </motion.div>
+        )}
+
         {top10 && top10.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}

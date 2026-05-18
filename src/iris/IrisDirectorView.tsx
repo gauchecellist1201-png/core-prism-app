@@ -87,8 +87,13 @@ export default function IrisDirectorView({ bg, settings }: Props) {
     md.push(`\n## CTA\n${result.cta}`);
     md.push(`\n## 撮影前準備`);
     result.prep.forEach(p => md.push(`- ${p}`));
-    navigator.clipboard?.writeText(md.join('\n'));
-    alert('Markdown 形式でクリップボードにコピーしました');
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(md.join('\n'))
+        .then(() => alert('Markdown 形式でクリップボードにコピーしました'))
+        .catch(() => alert('コピーできませんでした。お使いのブラウザで権限が許可されているかご確認ください。'));
+    } else {
+      alert('このブラウザはコピーに未対応です。テキストを手動で選択してコピーしてください。');
+    }
   };
 
   return (

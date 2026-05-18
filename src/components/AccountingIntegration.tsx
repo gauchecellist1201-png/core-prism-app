@@ -98,7 +98,7 @@ export default function AccountingIntegration() {
 
   const handleConnect = (p: Provider) => {
     if (!envAvailable[p.id]) {
-      alert(`管理者が ${p.envHint} を Vercel 環境変数に設定する必要があります。`);
+      alert(`${p.name} との連携は現在準備中です。使えるようになり次第アプリ内でお知らせします。`);
       return;
     }
     setOauthStatus(s => ({ ...s, [p.id]: 'checking' }));
@@ -168,7 +168,7 @@ export default function AccountingIntegration() {
                         ? '接続中 (双方向同期 ON)'
                         : available
                           ? '未接続 (タップして OAuth 開始)'
-                          : `管理者の env 設定が必要 (${p.envHint})`}
+                          : '準備中 — 近日対応予定'}
                     </p>
                   </div>
                 </div>

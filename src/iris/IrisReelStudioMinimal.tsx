@@ -181,7 +181,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       const blob = await res.blob();
       setBgmFile(new File([blob], `${track.id}.mp3`, { type: 'audio/mpeg' }));
       setBgmActiveId(track.id);
-    } catch { /* */ }
+    } catch {
+      alert('BGM を読み込めませんでした。通信状況を確認して、もう一度お試しください。');
+    }
     finally { setBgmLoading(null); }
   }, []);
 

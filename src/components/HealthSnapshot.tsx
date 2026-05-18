@@ -40,7 +40,7 @@ const METRICS: MetricSpec[] = [
     label: 'HRV',
     emoji: '❤',
     format: v => `${Math.round(v)}ms`,
-    color: (v, avg) => v >= avg * 0.95 ? '#34d399' : v >= avg * 0.85 ? '#c9a96e' : '#f87171',
+    color: (v, avg) => avg <= 0 ? '#c9a96e' : v >= avg * 0.95 ? '#34d399' : v >= avg * 0.85 ? '#c9a96e' : '#f87171',
     good: v => v > 0,
   },
   {
@@ -121,9 +121,11 @@ export default function HealthSnapshot({ today, week, anomalies, onOpen }: Props
 
       <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 px-3 pb-3">
         {METRICS.map((m, i) => {
-          const raw = (today as any)[m.key] ?? 0;
+          const rawVal = (today as any)[m.key];
+          const missing = rawVal == null || rawVal === 0;
+          const raw = rawVal ?? 0;
           const avg = avgs[m.key as string] ?? 0;
-          const color = m.color(raw, avg);
+          const color = missing ? 'var(--fg-muted)' : m.color(raw, avg);
           return (
             <motion.div
               key={m.key as string}
@@ -138,7 +140,7 @@ export default function HealthSnapshot({ today, week, anomalies, onOpen }: Props
             >
               <span className="text-lg leading-none">{m.emoji}</span>
               <span className="text-base font-semibold leading-tight mt-1" style={{ color }}>
-                {m.format(raw)}
+                {missing ? '—' : m.format(raw)}
               </span>
               <span className="text-fg-muted text-[10px] leading-tight">{m.label}</span>
             </motion.div>

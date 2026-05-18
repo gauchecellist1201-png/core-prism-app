@@ -152,7 +152,7 @@ function Tile({
   const iconSize = big ? 24 : 20;
   return (
     <motion.button
-      onClick={() => { tactileTap(); onTap(a.id); a.onClick(); }}
+      onClick={() => { tactileTap(); onTap(a.id); a.onClick?.(); }}
       className={`flex flex-col items-center justify-center gap-1.5 rounded-xl qa-tile ${big ? 'p-4' : 'p-3'}`}
       style={{
         background: big

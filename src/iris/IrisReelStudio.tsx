@@ -2301,7 +2301,9 @@ JSON のみで返答。`;
       const blob = await res.blob();
       const mp4 = await convertWebmToMp4(blob);
       if (mp4) setConvertedMp4(URL.createObjectURL(mp4));
-      else alert('MP4 変換に失敗しました (ffmpeg.wasm 未ロード)');
+      else alert('MP4 への変換ができませんでした。webm のままでもダウンロードできます。');
+    } catch (e) {
+      alert('MP4 への変換中にエラーが起きました。webm のままダウンロードできます。\n' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setConverting(false);
     }

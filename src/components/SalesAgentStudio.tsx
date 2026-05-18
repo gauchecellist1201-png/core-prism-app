@@ -99,11 +99,7 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
         ownProduct,
         excludeIds: exclude,
       });
-      if (replace) {
-        setPicks(result);
-      } else {
-        setPicks(result);
-      }
+      setPicks(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
