@@ -50,6 +50,7 @@ import { PrismLogo } from './Logo';
 import AnimatedAvatar from './AnimatedAvatar';
 import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './CommandPalette';
 import PnLStudio from './PnLStudio';
+import FinancialConsultant from './FinancialConsultant';
 import BenchmarkStudio from './BenchmarkStudio';
 import DocumentStudio from './DocumentStudio';
 import PeopleStudio from './PeopleStudio';
@@ -168,6 +169,7 @@ export default function IdentityDashboard({
   const [showCRM, setShowCRM] = useState(false);
   const [showTaskHub, setShowTaskHub] = useState(false);
   const [showPnL, setShowPnL] = useState(false);
+  const [showFinConsult, setShowFinConsult] = useState(false);
   const [showBenchmark, setShowBenchmark] = useState(false);
   const lastBenchmark = useMemo(() => loadBenchmarkResult(persona.id), [persona.id, showBenchmark]);
   const [showVoice, setShowVoice] = useState(false);
@@ -233,6 +235,7 @@ export default function IdentityDashboard({
       case 'crm':       setShowCRM(true); break;
       case 'tasks':     setShowTaskHub(true); break;
       case 'pnl':       setShowPnL(true); break;
+      case 'finConsult': setShowFinConsult(true); break;
       case 'salesAgent': setShowSalesAgent(true); break;
       case 'saasAgent':  setShowSaasAgent(true); break;
       case 'settings':  onOpenSettings(); break;
@@ -597,9 +600,9 @@ export default function IdentityDashboard({
                   {
                     key: 'cfo',
                     count: 0,
-                    status: '数字を整理中',
-                    advice: `経費レシートを 1 枚撮ると、今月の数字が見える化されます`,
-                    onClick: () => setShowPnL(true),
+                    status: '強い月 / 弱い月を分析中',
+                    advice: `月別の売上を読み解いて、繁忙期・閑散期と来月の一手を助言します`,
+                    onClick: () => setShowFinConsult(true),
                   },
                   {
                     key: 'creative',
@@ -742,6 +745,7 @@ export default function IdentityDashboard({
                   { id: 'invoice', emoji: '🧾', label: '請求書を作る', desc: 'インボイス対応で発行', onClick: () => setShowInvoice(true) },
                   { id: 'sales', emoji: '📒', label: '売上を記録', desc: '請求書と自動で連動', onClick: () => setShowSales(true) },
                   { id: 'pnl', emoji: '📊', label: '利益を確認', desc: '損益計算書 (P&L) を表示', onClick: () => setShowPnL(true) },
+                  { id: 'fin-consult', emoji: '🧮', label: '財務コンサルに相談', desc: '強い月・弱い月を AI が分析', primary: true, onClick: () => setShowFinConsult(true) },
                   { id: 'expense', emoji: '📷', label: '経費を登録', desc: 'レシート撮影で自動入力', onClick: () => setShowExpense(true) },
                   { id: 'benchmark', emoji: '📊', label: '同業と比べる', desc: '業界平均と数字を比較', onClick: () => setShowBenchmark(true) },
                   { id: 'crm', emoji: '🤝', label: '案件を管理', desc: '商談の進み具合を一覧', onClick: () => setShowCRM(true) },
@@ -1237,6 +1241,14 @@ export default function IdentityDashboard({
             key="pnl"
             persona={persona}
             onClose={() => setShowPnL(false)}
+          />
+        )}
+        {showFinConsult && (
+          <FinancialConsultant
+            key="fin-consult"
+            persona={persona}
+            settings={settings}
+            onClose={() => setShowFinConsult(false)}
           />
         )}
         {showBenchmark && (
