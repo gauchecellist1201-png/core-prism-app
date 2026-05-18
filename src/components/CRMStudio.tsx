@@ -5,6 +5,7 @@ import type { CRMDeal, CRMStage } from '../types/crm';
 import { STAGE_META, STAGE_ORDER } from '../types/crm';
 import { useCRM } from '../hooks/useCRM';
 import SampleDataCTA from './SampleDataCTA';
+import { StudioIntro } from './StudioIntro';
 import { useInvoices } from '../hooks/useInvoices';
 import { fmtJpy, computeTotals } from '../lib/invoiceCalc';
 import type { BusinessDocument } from '../types/invoice';
@@ -88,6 +89,14 @@ export default function CRMStudio({ persona, onClose }: Props) {
         </div>
 
         <div className="cp-modal-body">
+          <StudioIntro
+            id="crm"
+            accent={persona.accentColor}
+            emoji="🤝"
+            what="商談がいま どこまで進んでいるか を一覧で見える画面です。"
+            tryThis="右上の「＋ 案件追加」で、追いかけたい商談を 1 件登録します。"
+            example="「A社サイト制作」を“提案中”に置く → 受注できたら“受注”の列へドラッグ。"
+          />
           {view === 'kanban' && (
             <div className="flex gap-3 overflow-x-auto pb-2" style={{ minHeight: '500px' }}>
               {STAGE_ORDER.map(stage => {

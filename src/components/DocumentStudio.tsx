@@ -7,6 +7,7 @@ import { useInvoices } from '../hooks/useInvoices';
 import { useCRM } from '../hooks/useCRM';
 import { computeTotals, fmtJpy, calcDueDate } from '../lib/invoiceCalc';
 import SampleDataCTA from './SampleDataCTA';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -221,6 +222,14 @@ export default function DocumentStudio({ persona, settings: _settings, onClose }
         </div>
 
         <div className="cp-modal-body">
+          <StudioIntro
+            id="document"
+            accent={persona.accentColor}
+            emoji="📄"
+            what="見積書・発注書・納品書・請求書を、日本のルール（インボイス）に沿って作れる画面です。"
+            tryThis="上のタブで作りたい書類を選び、「＋ 新規」で 1 枚作ってみます。"
+            example="「Webサイト制作 30万円」の見積書を作る → そのまま請求書に変換。"
+          />
           <AnimatePresence mode="wait">
             {/* ─── 一覧 ─── */}
             {view === 'list' && (
