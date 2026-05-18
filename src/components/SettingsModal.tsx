@@ -9,6 +9,7 @@ import BillingDashboard from './BillingDashboard';
 import OrgPanel from './OrgPanel';
 import { useBillingUser } from '../lib/billing';
 import { INDUSTRY_LIST, type IndustryId } from '../prism/industryPacks';
+import { isSoundEnabled, setSoundEnabled, playChime, tactileTap } from '../lib/haptic';
 
 interface Props {
   settings: AppSettings;
@@ -149,6 +150,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     再表示
                   </motion.button>
                 </div>
+                <SoundToggleBox />
                 <div className="p-4 rounded-xl" style={{
                   background: 'linear-gradient(135deg, rgba(46,111,255,0.08), rgba(232,75,151,0.08))',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -435,6 +437,49 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+// 効果音の ON/OFF — タップ音や完了チャイムを鳴らすかどうか。
+// 音が苦手な人・静かな場所で使う人への配慮。切り替えた瞬間に試聴できる。
+function SoundToggleBox() {
+  const [on, setOn] = useState(() => isSoundEnabled());
+  const toggle = () => {
+    const next = !on;
+    setOn(next);
+    setSoundEnabled(next);
+    // 「ON にした」ことが耳で分かるよう、その場で一度だけ鳴らす
+    if (next) playChime('success');
+    else tactileTap();
+  };
+  return (
+    <div className="flex items-center justify-between p-3 rounded-xl"
+      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="pr-3">
+        <p className="text-fg text-sm">効果音 (タップ・完了のひびき)</p>
+        <p className="text-neutral-600 text-xs mt-0.5">
+          {on ? 'やわらかな音で操作の手ごたえをお返しします' : '音を消しています（振動だけ残ります）'}
+        </p>
+      </div>
+      <button
+        onClick={toggle}
+        aria-label={on ? '効果音をオフにする' : '効果音をオンにする'}
+        aria-pressed={on}
+        className="relative flex-shrink-0 rounded-full transition-colors"
+        style={{
+          width: 46,
+          height: 26,
+          background: on ? 'linear-gradient(135deg, #c9a96e, #a07840)' : 'rgba(255,255,255,0.12)',
+        }}
+      >
+        <motion.span
+          className="absolute rounded-full"
+          style={{ top: 3, left: 3, width: 20, height: 20, background: '#fff' }}
+          animate={{ x: on ? 20 : 0 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+        />
+      </button>
+    </div>
   );
 }
 

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { playChime } from '../lib/haptic';
 
 /**
  * AI 生成が終わった「その瞬間」を、ふわっとした光と小さな音で祝う演出。
  * 待った数十秒を「待ったかいがあった」で締めるための共通部品。
  * pointer-events: none なので結果画面の操作はさまたげない。
+ * 効果音は haptic.ts の共通エンジンに集約 — ローパスで温かみのある三和音。
  */
 type Props = {
   accent: string;
@@ -17,36 +19,6 @@ type Props = {
   onDone?: () => void;
 };
 
-/** ごく短く、やわらかい「できました」のチャイム。失敗しても無視する。 */
-function playChime() {
-  try {
-    const Ctx =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
-    const now = ctx.currentTime;
-    // 明るい長三度の上行 (E5 → G#5) をそっと重ねる
-    [659.25, 830.61].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      const t = now + i * 0.09;
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.06, t + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(t);
-      osc.stop(t + 0.55);
-    });
-    setTimeout(() => ctx.close().catch(() => {}), 900);
-  } catch {
-    /* 音が出せない端末・設定では静かに見送る */
-  }
-}
-
 export default function GenerationReward({
   accent,
   label = 'できました！',
@@ -58,7 +30,7 @@ export default function GenerationReward({
   const reduce = useReducedMotion();
 
   useEffect(() => {
-    if (sound) playChime();
+    if (sound) playChime('reward');
     const t = setTimeout(() => setShow(false), 1700);
     return () => clearTimeout(t);
   }, [sound]);
