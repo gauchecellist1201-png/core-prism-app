@@ -4,6 +4,7 @@ import type { Persona, AppSettings } from '../types/identity';
 import type { MeetingMinutes } from '../lib/meetingAnalyzer';
 import { analyzeMeeting, minutesToMarkdown } from '../lib/meetingAnalyzer';
 import { parseFile } from '../lib/fileParser';
+import { transcribeAudioFile, isAudioFile } from '../lib/audioTranscribe';
 
 interface Props {
   persona: Persona;
@@ -41,6 +42,11 @@ export default function MeetingMinutesModal({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [minutes, setMinutes] = useState<MeetingMinutes | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // ── 録音ファイルの文字起こし進捗 ──
+  const [transcribing, setTranscribing] = useState(false);
+  const [transcribeMsg, setTranscribeMsg] = useState('');
+  const [showPhoneTip, setShowPhoneTip] = useState(false);
 
   // ── 録音まわり ──
   const [isRecording, setIsRecording] = useState(false);
@@ -319,6 +325,31 @@ export default function MeetingMinutesModal({
   const handleFile = useCallback(async (file: File) => {
     setError(null);
     const ext = file.name.toLowerCase().match(/\.([^.]+)$/)?.[1] || '';
+    // 会議の録音ファイル (mp3 / m4a / mp4 など) → 文字起こし
+    if (isAudioFile(file.name)) {
+      if (!title) setTitle(file.name.replace(/\.[^.]+$/, ''));
+      setTranscribing(true);
+      setTranscribeMsg('録音を読み込んでいます…');
+      try {
+        const text = await transcribeAudioFile(file, {
+          model: settings.preferredModel,
+          onProgress: (done, total) => {
+            setTranscribeMsg(
+              done >= total
+                ? '文字起こしを仕上げています…'
+                : `文字起こし中… ${done}/${total}`,
+            );
+          },
+        });
+        setTranscript(text);
+        setTranscribeMsg('');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setTranscribing(false);
+      }
+      return;
+    }
     if (['vtt', 'srt'].includes(ext)) {
       const text = await file.text();
       setTranscript(parseSubtitle(text));
@@ -332,9 +363,9 @@ export default function MeetingMinutesModal({
       setTranscript(r.text);
       if (!title) setTitle(file.name.replace(/\.[^.]+$/, ''));
     } else {
-      setError(`未対応の形式: ${ext}\n対応: .vtt .srt .txt .md .pdf .docx`);
+      setError(`未対応の形式: ${ext}\n対応: 録音 (mp3/m4a/mp4/wav) / 字幕 (vtt/srt) / 文書 (txt/md/pdf/docx)`);
     }
-  }, [title]);
+  }, [title, settings.preferredModel]);
 
   // ── 解析実行 ──
   const handleAnalyze = useCallback(async () => {
@@ -452,8 +483,8 @@ export default function MeetingMinutesModal({
               ] as [Mode, string, boolean][]).map(([id, label, ok]) => (
                 <button
                   key={id}
-                  onClick={() => ok && !isRecording && setMode(id)}
-                  disabled={!ok || isRecording}
+                  onClick={() => ok && !isRecording && !transcribing && setMode(id)}
+                  disabled={!ok || isRecording || transcribing}
                   className="text-sm px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-40"
                   style={{
                     background: mode === id ? persona.accentColorLight : 'var(--surface-3)',
@@ -653,23 +684,81 @@ export default function MeetingMinutesModal({
               )}
 
               {mode === 'file' && (
-                <div
-                  className="rounded-xl p-6 text-center cursor-pointer"
-                  style={{ background: 'var(--surface-3)', border: '2px dashed var(--border)' }}
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={e => e.preventDefault()}
-                  onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-                >
-                  <p className="text-3xl mb-2">📂</p>
-                  <p className="text-fg text-base mb-1">ドロップ or クリックでアップロード</p>
-                  <p className="text-fg-muted text-xs">.vtt / .srt (Zoom字幕) / .txt / .md / .pdf / .docx</p>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".vtt,.srt,.txt,.md,.pdf,.docx"
-                    className="hidden"
-                    onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
-                  />
+                <div className="space-y-2.5">
+                  <div
+                    className="rounded-xl p-6 text-center"
+                    style={{
+                      background: 'var(--surface-3)',
+                      border: `2px dashed ${transcribing ? persona.accentColor : 'var(--border)'}`,
+                      cursor: transcribing ? 'default' : 'pointer',
+                    }}
+                    onClick={() => !transcribing && fileInputRef.current?.click()}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                      e.preventDefault();
+                      if (transcribing) return;
+                      const f = e.dataTransfer.files[0];
+                      if (f) handleFile(f);
+                    }}
+                  >
+                    {transcribing ? (
+                      <>
+                        <motion.div
+                          className="text-3xl mb-2"
+                          animate={{ opacity: [1, 0.4, 1] }}
+                          transition={{ duration: 1.2, repeat: Infinity }}
+                        >🎧</motion.div>
+                        <p className="text-fg text-base mb-1">{transcribeMsg || '文字起こし中…'}</p>
+                        <p className="text-fg-muted text-xs">録音の長さによって少し時間がかかります</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-3xl mb-2">🎙</p>
+                        <p className="text-fg text-base mb-1">会議の録音をドロップ or クリック</p>
+                        <p className="text-fg-muted text-xs">
+                          Zoom / Google Meet / Teams の録音 (mp3 / m4a / mp4 / wav)
+                        </p>
+                        <p className="text-fg-subtle text-xs mt-0.5">
+                          字幕 (vtt / srt) ・文書 (txt / md / pdf / docx) も OK
+                        </p>
+                      </>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".mp3,.m4a,.mp4,.wav,.aac,.ogg,.webm,.mov,.flac,.vtt,.srt,.txt,.md,.pdf,.docx,audio/*,video/*"
+                      className="hidden"
+                      onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
+                    />
+                  </div>
+
+                  {/* iPhone から送るときのヒント */}
+                  <div
+                    className="rounded-xl overflow-hidden"
+                    style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
+                  >
+                    <button
+                      onClick={() => setShowPhoneTip(v => !v)}
+                      className="w-full flex items-center justify-between px-3.5 py-2.5 text-left"
+                    >
+                      <span className="text-fg text-sm">📱 iPhone の録音を送るには</span>
+                      <span className="text-fg-muted text-sm">{showPhoneTip ? '−' : '+'}</span>
+                    </button>
+                    {showPhoneTip && (
+                      <div className="px-3.5 pb-3.5 text-fg-muted text-xs leading-relaxed space-y-1.5">
+                        <p>iPhone はドラッグできないので「クリック」で選びます。</p>
+                        <ol className="list-decimal pl-4 space-y-1">
+                          <li>会議アプリやボイスメモで録音を保存（共有 →「ファイルに保存」）。</li>
+                          <li>この画面の <span className="text-fg">🎙 枠をタップ</span>。</li>
+                          <li>「ブラウズ」から保存した録音を選ぶだけ。</li>
+                        </ol>
+                        <p className="text-fg-subtle">
+                          ヒント: ショートカットアプリで「共有シートから受け取る → ファイルに保存
+                          (フォルダ: CORE会議)」を作ると、毎回そのフォルダから選べて速いです。
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -712,7 +801,7 @@ export default function MeetingMinutesModal({
                 >キャンセル</button>
                 <motion.button
                   onClick={handleAnalyze}
-                  disabled={!canAnalyze || isAnalyzing || isRecording}
+                  disabled={!canAnalyze || isAnalyzing || isRecording || transcribing}
                   className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
                   style={{ background: persona.accentColor, color: '#0a0a0f' }}
                   whileHover={!isAnalyzing ? { scale: 1.02 } : {}}

@@ -172,12 +172,12 @@ const CATALOG: Tool[] = [
     ],
   },
   {
-    id: 'zoom', name: 'Zoom', color: '#2D8CFF', glyph: 'Z', category: '保存・会議',
-    can: '会議の録画を AI が議事録に自動変換',
+    id: 'zoom', name: 'Zoom 録音', color: '#2D8CFF', glyph: 'Z', category: '保存・会議',
+    can: '録音ファイルを「議事録 AI」に入れるだけで、文字起こし→要約→ToDo',
     steps: [
-      { label: 'Zoom Marketplace を開きます', action: { kind: 'openLink', url: 'https://marketplace.zoom.us', btn: 'Zoom を開く' } },
-      { label: 'アプリを作成し、API トークンをコピー', action: { kind: 'info' } },
-      { label: 'トークンを貼り付けて連携完了', action: { kind: 'input', placeholder: 'Zoom API トークン' } },
+      { label: 'Zoom の録音ファイルを用意します。パソコンのローカル録音は「書類 ▸ Zoom」フォルダの中、スマホ録音はボイスメモ等に保存されています。', action: { kind: 'info' } },
+      { label: 'クラウド録音を使っている場合は、ここから mp4 / m4a を保存できます。', action: { kind: 'openLink', url: 'https://zoom.us/recording', btn: 'Zoom 録音を開く' } },
+      { label: 'その録音を CORE の「議事録 AI ▸ ファイル」にドロップ（スマホはタップで選択）。文字起こし・要約・ToDo まで自動で出ます。これで連携完了です。', action: { kind: 'info' } },
     ],
   },
   {
