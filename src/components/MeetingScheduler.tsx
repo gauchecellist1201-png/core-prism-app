@@ -188,7 +188,7 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
                 <button
                   onClick={handleConnect}
                   disabled={!calReady || connecting}
-                  className="text-xs px-3 py-1.5 rounded-md font-semibold disabled:opacity-40 flex items-center gap-2"
+                  className="text-xs px-3 py-1.5 rounded-lg font-semibold disabled:opacity-40 flex items-center gap-2"
                   style={{ background: '#ffffff', color: '#1a1a1a', border: '1px solid #dadce0' }}
                 >
                   <svg width="14" height="14" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -200,12 +200,12 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
                   {connecting ? '認証中…' : 'Calendar を接続'}
                 </button>
               ) : (
-                <button onClick={handleDisconnect} className="text-xs px-3 py-1.5 rounded-md text-fg-muted hover:text-fg">解除</button>
+                <button onClick={handleDisconnect} className="text-xs px-3 py-1.5 rounded-lg text-fg-muted hover:text-fg">解除</button>
               )}
             </div>
           </div>
           {error && (
-            <div className="mt-2 p-2 rounded text-xs" style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171' }}>
+            <div className="mt-2 p-2.5 rounded-lg text-xs" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
               {error}
             </div>
           )}
@@ -327,7 +327,7 @@ function MeetingTypeRow({
           <button
             onClick={onGenerate}
             disabled={generating}
-            className="text-xs px-3 py-1.5 rounded-md font-semibold disabled:opacity-50"
+            className="text-xs px-3 py-1.5 rounded-lg font-semibold disabled:opacity-50"
             style={{ background: persona.accentColor, color: '#0a0a0f' }}
           >{generating ? '計算中…' : '🔗 URL生成'}</button>
           <button onClick={onEdit} className="text-xs px-2 py-1.5 rounded text-fg-muted hover:text-fg">{isEditing ? '閉じる' : '編集'}</button>
