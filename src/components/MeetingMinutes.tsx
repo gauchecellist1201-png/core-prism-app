@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import type { Persona, AppSettings } from '../types/identity';
 import type { MeetingMinutes } from '../lib/meetingAnalyzer';
@@ -15,7 +15,21 @@ interface Props {
 
 type Mode = 'paste' | 'file' | 'record';
 
-// MediaRecorder + Web Speech API でリアルタイム文字起こし
+// 会議の発言ひとかたまり（無音で区切る）
+interface Segment {
+  id: string;
+  speaker: number;   // 話者番号（1始まり）
+  text: string;
+  startMs: number;   // 録音開始からの経過ミリ秒
+}
+
+// 無音判定のしきい値（音量 RMS）と、話者が変わったとみなす無音の長さ
+const SILENCE_RMS = 0.012;
+const SPEAKER_GAP_MS = 1400;
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
 
 export default function MeetingMinutesModal({
   persona, settings, onClose, onSaveAsKnowledge, onAcceptAction,
@@ -27,22 +41,83 @@ export default function MeetingMinutesModal({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [minutes, setMinutes] = useState<MeetingMinutes | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // ── 録音まわり ──
   const [isRecording, setIsRecording] = useState(false);
   const [interimText, setInterimText] = useState('');
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const [speakerNames, setSpeakerNames] = useState<Record<number, string>>({});
+  const [recordingMs, setRecordingMs] = useState(0);
+  const [micLevel, setMicLevel] = useState(0);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  // 文字起こしの状態: live=順調 / audio-only=録音のみ続行中 / off=未対応
+  const [recStatus, setRecStatus] = useState<'live' | 'audio-only' | 'off'>('live');
+  const [recNote, setRecNote] = useState<string>('');
+
   const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const timerRef = useRef<number | null>(null);
   const startedAtRef = useRef<number>(0);
+  const recordingActiveRef = useRef(false);
+  const silenceStartRef = useRef(0);
+  const speakerGapRef = useRef(false);
+  const currentSpeakerRef = useRef(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const SR = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
-  const speechAvailable = !!SR;
 
-  // ── 録音 (Web Speech API でライブ文字起こし) ──
-  const startRecording = useCallback(() => {
+  // 話者の人数（参加者欄から推定、最低2人）
+  const speakerSlots = useMemo(() => {
+    const n = participants.split(/[,、]/).map(s => s.trim()).filter(Boolean).length;
+    return Math.max(2, n);
+  }, [participants]);
+  const speakerSlotsRef = useRef(speakerSlots);
+  useEffect(() => { speakerSlotsRef.current = speakerSlots; }, [speakerSlots]);
+
+  const speakerLabel = useCallback((n: number) => {
+    return speakerNames[n]?.trim() || `話者${n}`;
+  }, [speakerNames]);
+
+  // ── 録音停止（全リソースを片付ける） ──
+  const stopRecording = useCallback(() => {
+    recordingActiveRef.current = false;
+    setIsRecording(false);
+    setInterimText('');
+
+    const rec = recognitionRef.current;
+    recognitionRef.current = null;
+    if (rec) { try { rec.stop(); } catch { /* noop */ } }
+
+    const mr = mediaRecorderRef.current;
+    if (mr && mr.state !== 'inactive') { try { mr.stop(); } catch { /* noop */ } }
+
+    if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    if (timerRef.current != null) { clearInterval(timerRef.current); timerRef.current = null; }
+
+    const ctx = audioCtxRef.current;
+    audioCtxRef.current = null;
+    analyserRef.current = null;
+    if (ctx && ctx.state !== 'closed') { ctx.close().catch(() => {}); }
+
+    const stream = streamRef.current;
+    streamRef.current = null;
+    if (stream) stream.getTracks().forEach(t => t.stop());
+
+    setMicLevel(0);
+  }, []);
+
+  // ── 音声認識の起動（録音中は自動再起動して途切れさせない） ──
+  const startRecognition = useCallback(() => {
     if (!SR) {
-      setError('このブラウザは音声認識に対応していません。Chrome / Edge / Safari をお試しください。');
+      setRecStatus('off');
+      setRecNote('このブラウザは自動文字起こしに対応していません。録音だけ続けます（あとで聞き直せます）。');
       return;
     }
-    setError(null);
     const r = new SR();
     r.lang = 'ja-JP';
     r.continuous = true;
@@ -57,40 +132,188 @@ export default function MeetingMinutesModal({
         if (e.results[i].isFinal) final += t;
         else interim += t;
       }
-      if (final) setTranscript(prev => prev + (prev ? '\n' : '') + final);
       setInterimText(interim);
+      if (!final) return;
+      // 無音区切りが入っていれば「別の話者」とみなして新しい段落にする
+      const gap = speakerGapRef.current;
+      speakerGapRef.current = false;
+      setSegments(prev => {
+        if (prev.length === 0) {
+          currentSpeakerRef.current = 1;
+          return [{ id: uid(), speaker: 1, text: final, startMs: Date.now() - startedAtRef.current }];
+        }
+        if (gap) {
+          const slots = Math.max(2, speakerSlotsRef.current);
+          const next = currentSpeakerRef.current >= slots ? 1 : currentSpeakerRef.current + 1;
+          currentSpeakerRef.current = next;
+          return [...prev, { id: uid(), speaker: next, text: final, startMs: Date.now() - startedAtRef.current }];
+        }
+        const last = prev[prev.length - 1];
+        return [...prev.slice(0, -1), { ...last, text: last.text + final }];
+      });
     };
+
     r.onerror = (e: any) => {
-      if (e.error !== 'no-speech' && e.error !== 'aborted') {
-        setError(`音声認識エラー: ${e.error}`);
+      const err = e?.error;
+      if (err === 'not-allowed' || err === 'service-not-allowed') {
+        setRecStatus('audio-only');
+        setRecNote('マイクの文字起こしが拒否されました。録音は続いています。停止後に音声を保存できます。');
+      } else if (err === 'audio-capture') {
+        setRecStatus('audio-only');
+        setRecNote('マイクが見つかりません。録音は続行します。');
+      } else if (err === 'network') {
+        setRecStatus('audio-only');
+        setRecNote('文字起こしの通信が不安定です。録音は続いています（再接続を試みます）。');
       }
+      // no-speech / aborted などは onend の自動再起動にまかせる
     };
+
     r.onend = () => {
-      // 録音中なら自動再起動 (Web Speech API は数秒で勝手に止まる)
-      if (recognitionRef.current === r) {
-        try { r.start(); } catch {}
+      // 録音継続中なら即再起動（1人発話で止まらないように）
+      if (recordingActiveRef.current && recognitionRef.current === r) {
+        try {
+          r.start();
+        } catch {
+          // すぐに再起動できない場合は少し待ってリトライ
+          window.setTimeout(() => {
+            if (recordingActiveRef.current && recognitionRef.current === r) {
+              try { r.start(); } catch { /* noop */ }
+            }
+          }, 400);
+        }
       }
     };
 
     recognitionRef.current = r;
-    startedAtRef.current = Date.now();
     try {
       r.start();
-      setIsRecording(true);
-    } catch (err) {
-      setError('録音開始に失敗しました');
+      setRecStatus('live');
+    } catch {
+      setRecStatus('audio-only');
+      setRecNote('文字起こしの起動に失敗しました。録音は続行します。');
     }
   }, [SR]);
 
-  const stopRecording = useCallback(() => {
-    const r = recognitionRef.current;
-    recognitionRef.current = null;
-    if (r) try { r.stop(); } catch {}
-    setIsRecording(false);
+  // ── 録音開始 ──
+  const startRecording = useCallback(async () => {
+    setError(null);
+    setRecNote('');
+    setSegments([]);
+    setSpeakerNames({});
+    setAudioUrl(null);
     setInterimText('');
+    setRecordingMs(0);
+    silenceStartRef.current = 0;
+    speakerGapRef.current = false;
+    currentSpeakerRef.current = 1;
+
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+    } catch {
+      setError('マイクを使えませんでした。ブラウザのマイク許可を確認してください（アドレスバーの🔒→マイク→許可）。');
+      return;
+    }
+    streamRef.current = stream;
+    recordingActiveRef.current = true;
+    startedAtRef.current = Date.now();
+
+    // 1) 会議全体を録音（文字起こしが落ちても音声は丸ごと残る）
+    audioChunksRef.current = [];
+    try {
+      const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
+        .find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      mr.ondataavailable = (ev) => { if (ev.data.size > 0) audioChunksRef.current.push(ev.data); };
+      mr.onstop = () => {
+        if (audioChunksRef.current.length === 0) return;
+        const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || 'audio/webm' });
+        setAudioUrl(URL.createObjectURL(blob));
+      };
+      mr.start(1000); // 1秒ごとにデータ確定（長時間でも安全）
+      mediaRecorderRef.current = mr;
+    } catch {
+      // MediaRecorder 非対応でも文字起こしは続行
+      setRecNote('このブラウザは音声ファイル保存に未対応です。文字起こしのみ行います。');
+    }
+
+    // 2) 音量を監視して「無音＝話者の切れ目」を検出
+    try {
+      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new Ctx();
+      audioCtxRef.current = ctx;
+      const src = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      src.connect(analyser);
+      analyserRef.current = analyser;
+      const buf = new Uint8Array(analyser.fftSize);
+      const tick = () => {
+        const a = analyserRef.current;
+        if (!a) return;
+        a.getByteTimeDomainData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) {
+          const v = (buf[i] - 128) / 128;
+          sum += v * v;
+        }
+        const rms = Math.sqrt(sum / buf.length);
+        setMicLevel(rms);
+        const now = performance.now();
+        if (rms < SILENCE_RMS) {
+          if (silenceStartRef.current === 0) silenceStartRef.current = now;
+          else if (now - silenceStartRef.current > SPEAKER_GAP_MS) speakerGapRef.current = true;
+        } else {
+          silenceStartRef.current = 0;
+        }
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      rafRef.current = requestAnimationFrame(tick);
+    } catch {
+      // 音量監視が使えなくても文字起こし自体は動く
+    }
+
+    // 3) ライブ文字起こし
+    startRecognition();
+
+    // 4) 経過時間カウンタ
+    timerRef.current = window.setInterval(() => {
+      setRecordingMs(Date.now() - startedAtRef.current);
+    }, 1000);
+
+    setIsRecording(true);
+  }, [startRecognition]);
+
+  useEffect(() => () => {
+    stopRecording();
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => () => stopRecording(), [stopRecording]);
+  // 録音した発言を「話者: 発言」形式のテキストに変換
+  const segmentsToTranscript = useCallback((): string => {
+    return segments
+      .filter(s => s.text.trim())
+      .map(s => `${speakerLabel(s.speaker)}: ${s.text.trim()}`)
+      .join('\n');
+  }, [segments, speakerLabel]);
+
+  // 録音中に出てきた話者番号の一覧
+  const usedSpeakers = useMemo(() => {
+    const set = new Set<number>();
+    segments.forEach(s => set.add(s.speaker));
+    return [...set].sort((a, b) => a - b);
+  }, [segments]);
+
+  // 段落の話者を切り替える（タップでぐるぐる回す）
+  const cycleSpeaker = useCallback((id: string) => {
+    const max = Math.max(2, speakerSlots, ...usedSpeakers);
+    setSegments(prev => prev.map(s =>
+      s.id === id ? { ...s, speaker: s.speaker >= max ? 1 : s.speaker + 1 } : s
+    ));
+  }, [speakerSlots, usedSpeakers]);
 
   // ── ファイルからトランスクリプト抽出 ──
   const handleFile = useCallback(async (file: File) => {
@@ -115,18 +338,23 @@ export default function MeetingMinutesModal({
 
   // ── 解析実行 ──
   const handleAnalyze = useCallback(async () => {
-    if (!transcript.trim()) {
+    const text = mode === 'record' && segments.length > 0 ? segmentsToTranscript() : transcript;
+    if (!text.trim()) {
       setError('議事録の内容を入力してください');
       return;
     }
     setIsAnalyzing(true);
     setError(null);
     try {
-      const result = await analyzeMeeting(settings, persona, transcript, {
+      // 録音モードでは話者名も参加者として渡す
+      const speakerParts = usedSpeakers.map(n => speakerLabel(n));
+      const typed = participants
+        ? participants.split(/[,、]/).map(s => s.trim()).filter(Boolean)
+        : [];
+      const allParts = [...new Set([...typed, ...(mode === 'record' ? speakerParts : [])])];
+      const result = await analyzeMeeting(settings, persona, text, {
         title: title || undefined,
-        participants: participants
-          ? participants.split(/[,、]/).map(s => s.trim()).filter(Boolean)
-          : undefined,
+        participants: allParts.length ? allParts : undefined,
       });
       setMinutes(result);
     } catch (err) {
@@ -134,7 +362,7 @@ export default function MeetingMinutesModal({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [transcript, title, participants, persona, settings]);
+  }, [mode, segments, segmentsToTranscript, transcript, title, participants, usedSpeakers, speakerLabel, persona, settings]);
 
   // ── ナレッジ保存 ──
   const handleSaveToKnowledge = useCallback(() => {
@@ -156,6 +384,24 @@ export default function MeetingMinutesModal({
     a.click();
     URL.revokeObjectURL(url);
   }, [minutes]);
+
+  const handleDownloadAudio = useCallback(() => {
+    if (!audioUrl) return;
+    const a = document.createElement('a');
+    a.href = audioUrl;
+    a.download = `${(title || '会議録音').replace(/[\\/:*?"<>|]/g, '_')}.webm`;
+    a.click();
+  }, [audioUrl, title]);
+
+  const fmtTime = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  };
+
+  const hasRecordContent = segments.length > 0;
+  const canAnalyze = mode === 'record'
+    ? hasRecordContent || transcript.trim().length > 0
+    : transcript.trim().length > 0;
 
   return (
     <motion.div
@@ -200,14 +446,14 @@ export default function MeetingMinutesModal({
             {/* モード切替 */}
             <div className="flex gap-1.5 p-3" style={{ borderBottom: '1px solid var(--border)' }}>
               {([
-                ['record', '🎙 ライブ録音', speechAvailable],
+                ['record', '🎙 会議を録音', true],
                 ['paste',  '📝 テキスト貼付', true],
                 ['file',   '📂 ファイル', true],
               ] as [Mode, string, boolean][]).map(([id, label, ok]) => (
                 <button
                   key={id}
-                  onClick={() => ok && setMode(id)}
-                  disabled={!ok}
+                  onClick={() => ok && !isRecording && setMode(id)}
+                  disabled={!ok || isRecording}
                   className="text-sm px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-40"
                   style={{
                     background: mode === id ? persona.accentColorLight : 'var(--surface-3)',
@@ -245,45 +491,163 @@ export default function MeetingMinutesModal({
                 </div>
               </div>
 
-              {/* モード別 UI */}
+              {/* ── 録音モード ── */}
               {mode === 'record' && (
                 <div
-                  className="rounded-xl p-5 text-center"
+                  className="rounded-xl p-4"
                   style={{
-                    background: isRecording ? `${persona.accentColor}15` : 'var(--surface-3)',
+                    background: isRecording ? `${persona.accentColor}12` : 'var(--surface-3)',
                     border: `1px solid ${isRecording ? persona.accentColor : 'var(--border)'}`,
                   }}
                 >
-                  <motion.div
-                    className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3"
-                    style={{ background: isRecording ? persona.accentColor : 'var(--surface)' }}
-                    animate={isRecording ? { scale: [1, 1.08, 1] } : {}}
-                    transition={{ duration: 1.2, repeat: Infinity }}
-                  >
-                    <span className="text-3xl">{isRecording ? '🔴' : '🎙'}</span>
-                  </motion.div>
-                  {!isRecording ? (
-                    <>
-                      <p className="text-fg text-base font-medium mb-1">会議を録音 → ライブ文字起こし</p>
-                      <p className="text-fg-muted text-xs mb-3">マイクの音声を Web Speech API でリアルタイム認識</p>
+                  {!isRecording && !hasRecordContent ? (
+                    /* 録音前 */
+                    <div className="text-center">
+                      <div className="text-3xl mb-2">🎙</div>
+                      <p className="text-fg text-base font-medium mb-1">会議をまるごと録音</p>
+                      <p className="text-fg-muted text-xs mb-1">部屋全体の声を録音しながら、自動で文字起こしします。</p>
+                      <p className="text-fg-muted text-xs mb-3">話の切れ目で「話者1・話者2…」に分けます（あとで名前を付けられます）。</p>
                       <button
                         onClick={startRecording}
                         className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
                         style={{ background: persona.accentColor, color: '#0a0a0f' }}
-                      >▶ 録音開始</button>
-                    </>
+                      >▶ 録音をはじめる</button>
+                    </div>
                   ) : (
-                    <>
-                      <p style={{ color: persona.accentColor }} className="text-base font-medium mb-1">録音中…</p>
-                      {interimText && (
-                        <p className="text-fg-muted text-sm italic mb-3">{interimText}</p>
+                    <div className="space-y-3">
+                      {/* 録音ステータスバー */}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {isRecording && (
+                            <motion.span
+                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{ background: '#f87171' }}
+                              animate={{ opacity: [1, 0.3, 1] }}
+                              transition={{ duration: 1.1, repeat: Infinity }}
+                            />
+                          )}
+                          <span className="text-fg text-sm font-medium tabular-nums">{fmtTime(recordingMs)}</span>
+                          <span className="text-fg-muted text-xs truncate">
+                            {isRecording
+                              ? (recStatus === 'live' ? '録音＋文字起こし中' : '録音中（音声を保存します）')
+                              : '録音おわり'}
+                          </span>
+                        </div>
+                        {/* 音量メーター */}
+                        {isRecording && (
+                          <div className="flex items-center gap-0.5 h-5 flex-shrink-0">
+                            {Array.from({ length: 10 }).map((_, i) => (
+                              <div
+                                key={i}
+                                className="w-1 rounded-full transition-all"
+                                style={{
+                                  height: `${4 + (micLevel * 12 > i ? 14 : 0)}px`,
+                                  background: micLevel * 12 > i ? persona.accentColor : 'var(--border)',
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 文字起こしが不安定なときの案内 */}
+                      {recNote && (
+                        <div
+                          className="text-xs px-3 py-2 rounded-lg"
+                          style={{ background: 'rgba(201,169,110,0.12)', border: '1px solid rgba(201,169,110,0.35)', color: '#c9a96e' }}
+                        >
+                          {recNote}
+                        </div>
                       )}
-                      <button
-                        onClick={stopRecording}
-                        className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
-                        style={{ background: '#f87171', color: '#0a0a0f' }}
-                      >■ 停止</button>
-                    </>
+
+                      {/* 発言ログ（話者ごと） */}
+                      {(hasRecordContent || interimText) && (
+                        <div
+                          className="rounded-lg p-3 space-y-2 max-h-56 overflow-y-auto"
+                          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                        >
+                          {segments.map(seg => (
+                            <div key={seg.id} className="flex gap-2">
+                              <button
+                                onClick={() => !isRecording && cycleSpeaker(seg.id)}
+                                disabled={isRecording}
+                                className="text-xs font-semibold px-2 py-0.5 rounded-md flex-shrink-0 h-fit transition-all disabled:cursor-default"
+                                style={{
+                                  background: persona.accentColorLight,
+                                  color: persona.accentColor,
+                                  border: `1px solid ${persona.accentColor}40`,
+                                }}
+                                title={isRecording ? '' : 'タップで話者を切り替え'}
+                              >
+                                {speakerLabel(seg.speaker)}
+                              </button>
+                              {isRecording ? (
+                                <p className="text-fg text-sm leading-relaxed flex-1">{seg.text}</p>
+                              ) : (
+                                <textarea
+                                  value={seg.text}
+                                  onChange={e => setSegments(prev => prev.map(s =>
+                                    s.id === seg.id ? { ...s, text: e.target.value } : s
+                                  ))}
+                                  className="text-fg text-sm leading-relaxed flex-1 bg-transparent outline-none resize-y rounded px-1 -mx-1 focus:bg-surface-3"
+                                  rows={Math.max(1, Math.ceil(seg.text.length / 36))}
+                                />
+                              )}
+                            </div>
+                          ))}
+                          {interimText && (
+                            <p className="text-fg-muted text-sm italic">{interimText}…</p>
+                          )}
+                          {!hasRecordContent && !interimText && (
+                            <p className="text-fg-subtle text-sm">聞き取り中…</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* 録音中の操作 */}
+                      {isRecording ? (
+                        <button
+                          onClick={stopRecording}
+                          className="w-full px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
+                          style={{ background: '#f87171', color: '#0a0a0f' }}
+                        >■ 録音を停止</button>
+                      ) : (
+                        <>
+                          {/* 話者の名前付け */}
+                          {usedSpeakers.length > 0 && (
+                            <div>
+                              <p className="text-fg-muted text-xs mb-1.5">話者に名前をつける（任意・後でAIに渡します）</p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {usedSpeakers.map(n => (
+                                  <input
+                                    key={n}
+                                    type="text"
+                                    value={speakerNames[n] ?? ''}
+                                    onChange={e => setSpeakerNames(prev => ({ ...prev, [n]: e.target.value }))}
+                                    placeholder={`話者${n} の名前`}
+                                    className="w-full text-sm rounded-lg px-2.5 py-1.5 outline-none bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {/* 録音した音声 */}
+                          {audioUrl && (
+                            <div className="flex items-center gap-2">
+                              <audio src={audioUrl} controls className="flex-1 h-9" style={{ minWidth: 0 }} />
+                              <button
+                                onClick={handleDownloadAudio}
+                                className="text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 bg-surface-3 border-edge border text-fg"
+                              >💾 音声</button>
+                            </div>
+                          )}
+                          <button
+                            onClick={startRecording}
+                            className="w-full px-5 py-2 rounded-lg text-sm font-medium transition-all bg-surface-3 border-edge border text-fg"
+                          >🎙 録音をやり直す</button>
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -309,25 +673,25 @@ export default function MeetingMinutesModal({
                 </div>
               )}
 
-              {/* トランスクリプト共通エリア */}
-              <div>
-                <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">
-                  文字起こし {transcript.length > 0 && `(${transcript.length}文字)`}
-                </label>
-                <textarea
-                  value={transcript}
-                  onChange={e => setTranscript(e.target.value)}
-                  placeholder={
-                    mode === 'paste'
-                      ? '会議のメモや文字起こしを貼り付け...'
-                      : mode === 'record'
-                        ? '録音すると自動で文字起こしされます'
+              {/* トランスクリプト（貼付・ファイル用。録音モードは上の発言ログを使う） */}
+              {mode !== 'record' && (
+                <div>
+                  <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">
+                    文字起こし {transcript.length > 0 && `(${transcript.length}文字)`}
+                  </label>
+                  <textarea
+                    value={transcript}
+                    onChange={e => setTranscript(e.target.value)}
+                    placeholder={
+                      mode === 'paste'
+                        ? '会議のメモや文字起こしを貼り付け...'
                         : 'ファイルをアップロードすると自動で読み込まれます'
-                  }
-                  className="w-full text-sm rounded-lg px-3 py-2 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
-                  style={{ minHeight: '180px' }}
-                />
-              </div>
+                    }
+                    className="w-full text-sm rounded-lg px-3 py-2 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
+                    style={{ minHeight: '180px' }}
+                  />
+                </div>
+              )}
 
               {error && (
                 <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
@@ -338,7 +702,9 @@ export default function MeetingMinutesModal({
 
             {/* Footer */}
             <div className="flex items-center justify-between gap-3 px-5 py-4" style={{ borderTop: '1px solid var(--border)' }}>
-              <p className="text-fg-muted text-xs">{persona.name} 視点で議事録を構造化</p>
+              <p className="text-fg-muted text-xs">
+                {isRecording ? '停止すると議事録を生成できます' : `${persona.name} 視点で議事録を構造化`}
+              </p>
               <div className="flex gap-2">
                 <button
                   onClick={onClose}
@@ -346,7 +712,7 @@ export default function MeetingMinutesModal({
                 >キャンセル</button>
                 <motion.button
                   onClick={handleAnalyze}
-                  disabled={!transcript.trim() || isAnalyzing || isRecording}
+                  disabled={!canAnalyze || isAnalyzing || isRecording}
                   className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
                   style={{ background: persona.accentColor, color: '#0a0a0f' }}
                   whileHover={!isAnalyzing ? { scale: 1.02 } : {}}
