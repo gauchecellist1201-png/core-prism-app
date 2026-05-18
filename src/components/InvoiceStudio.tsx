@@ -86,6 +86,18 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
       if (result.notes) setNotes(result.notes);
       if (result.paymentTerms) setPaymentTerms(result.paymentTerms);
       if (result.dueKind) setDueDate(calcDueDate(issueDate, result.dueKind));
+      // AI が依頼文から抽出した宛先を反映 (既存顧客に無ければ新規顧客に)
+      if (result.clientName) {
+        const matched = inv.clients.find(c => c.name === result.clientName);
+        if (matched) {
+          setSelectedClientId(matched.id);
+        } else {
+          setSelectedClientId(null);
+          setNewClient(prev => ({ ...prev, name: result.clientName as string }));
+        }
+      }
+      // 明細が 1 行でも入ったらエラーを消す
+      if (result.lines.length > 0) setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
