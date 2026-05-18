@@ -9,6 +9,7 @@ import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { enqueueClaudeCall } from '../lib/apiQueue';
+import { copyText } from '../lib/clipboard';
 import { toneInstruction } from '../lib/aiTone';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -444,7 +445,7 @@ ${toneInstruction()}
                 <p style={{ fontSize: '0.7rem', color: bg.accent, fontWeight: 600, marginBottom: 6 }}>AI 返信テンプレ</p>
                 <p style={{ fontSize: '0.875rem', color: bg.ink, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{replyTemplate}</p>
                 <button
-                  onClick={() => navigator.clipboard.writeText(replyTemplate)}
+                  onClick={() => copyText(replyTemplate, '返信文')}
                   style={{ marginTop: 8, background: 'none', border: `1px solid ${bg.accent}40`, color: bg.accent, borderRadius: 999, padding: '0.3rem 0.85rem', fontSize: '0.75rem', cursor: 'pointer', fontFamily: IRIS_FONTS.body }}
                 >
                   コピー

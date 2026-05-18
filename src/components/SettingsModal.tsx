@@ -214,9 +214,9 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                   </p>
                 </div>
                 <div className="pt-4">
-                  <p className="text-neutral-600 text-xs tracking-wider uppercase mb-2">業種 (業界パッケージ)</p>
+                  <p className="text-neutral-600 text-xs tracking-wider uppercase mb-2">業種</p>
                   <p className="text-fg-muted text-xs mb-3">
-                    AI に業界別の KPI・悩み・施策・専門用語を渡します。提案がぐっと具体的に。
+                    業種を選ぶと、AI がその業界の言葉で具体的に提案します。
                   </p>
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     {INDUSTRY_LIST.map(ind => (

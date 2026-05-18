@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import ApiErrorCard from './ApiErrorCard';
+import { copyText } from '../lib/clipboard';
 import type { Persona, AppSettings } from '../types/identity';
 import {
   generateImage, generateImagePrompt, downloadImage,
@@ -144,7 +145,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
   };
 
   const handleCopyPrompt = (prompt: string) => {
-    navigator.clipboard.writeText(prompt).catch(() => {});
+    copyText(prompt, '指示文');
   };
 
   return (

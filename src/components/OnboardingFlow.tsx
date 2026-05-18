@@ -168,9 +168,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
           >
             <h2 className="text-fg text-xl font-extralight mb-2">あなたの業種は？</h2>
             <p className="text-xs mb-6 leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
-              業界に合わせて AI が「その業界の人がわかる言葉」で提案します。<br />
-              KPI・悩み・施策・専門用語をあらかじめ AI に教えておくため、
-              いきなり実用レベルの相談相手になります。
+              業種を選ぶと、AI がその業界の言葉で、すぐ使える提案をします。
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto pr-1">
               {INDUSTRY_LIST.map(ind => {

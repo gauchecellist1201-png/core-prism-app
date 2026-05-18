@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ApiErrorCard from './ApiErrorCard';
+import { copyText } from '../lib/clipboard';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import {
   generateNoteArticle, generateXPost, TONE_OPTIONS,
@@ -112,19 +113,19 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
   }, [tab, topic, tone, customInstr, settings, persona, personaKnowledge, selectedKnowledge, targetWords, threadCount]);
 
   const copyToClipboard = useCallback((text: string) => {
-    navigator.clipboard.writeText(text).catch(() => {});
+    copyText(text, '本文');
   }, []);
 
-  // note: クリップボードコピー → 新規記事ページを開く
+  // note: 本文をコピーしてから新規記事ページを開く
   const handleNoteOpen = useCallback(() => {
     const md = `# ${editedTitle}\n\n${editedBody}`;
-    navigator.clipboard.writeText(md).catch(() => {});
+    copyText(md, '記事');
     window.open('https://note.com/notes/new', '_blank', 'noopener');
   }, [editedTitle, editedBody]);
 
   const handleNoteCopy = useCallback(() => {
     const md = `# ${editedTitle}\n\n${editedBody}`;
-    navigator.clipboard.writeText(md).catch(() => {});
+    copyText(md, '記事');
   }, [editedTitle, editedBody]);
 
   const handleNoteDownload = useCallback(() => {

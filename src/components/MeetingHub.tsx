@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Persona } from '../types/identity';
+import { copyText } from '../lib/clipboard';
 
 interface Props {
   persona: Persona;
@@ -16,10 +17,12 @@ export default function MeetingHub({ persona, onClose }: Props) {
 
   const meetingUrl = `https://core-os.app/meet/${persona.meetingSlug}/${duration}min`;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(meetingUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    const ok = await copyText(meetingUrl, 'リンク', { silentSuccess: true });
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleGoogleCalendar = () => {
@@ -121,8 +124,9 @@ export default function MeetingHub({ persona, onClose }: Props) {
             <span>📅</span> Googleカレンダーへ
           </motion.button>
           <motion.button
-            onClick={() => navigator.clipboard.writeText(
-              `${title}\n時間: ${duration}分\nリンク: ${meetingUrl}`
+            onClick={() => copyText(
+              `${title}\n時間: ${duration}分\nリンク: ${meetingUrl}`,
+              'ミーティング情報',
             )}
             className="py-3 rounded-xl text-xs font-light flex items-center justify-center gap-2 transition-all"
             style={{

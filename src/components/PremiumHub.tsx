@@ -220,7 +220,7 @@ function StrategyPanel({ persona, settings, knowledge, onSave }: {
             </div>
           )}
           {result.risks.length > 0 && <Section title="⚠ リスク" color="#f87171" items={result.risks} />}
-          {result.metrics.length > 0 && <Section title="📊 計測 KPI" color="#a78bfa" items={result.metrics} />}
+          {result.metrics.length > 0 && <Section title="📊 見るべき数字" color="#a78bfa" items={result.metrics} />}
           <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid var(--border)' }}>
             <button onClick={() => setResult(null)} className="text-fg-muted hover:text-fg text-sm">← 別の分析</button>
             <div className="flex gap-2">

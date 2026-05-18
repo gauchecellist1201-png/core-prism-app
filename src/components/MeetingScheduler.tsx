@@ -8,6 +8,7 @@ import {
   type CalUserInfo, type CalEvent,
 } from '../lib/googleCalendar';
 import { computeFreeSlots, buildBookingUrl, formatSlot, groupSlotsByDay } from '../lib/scheduling';
+import { copyText } from '../lib/clipboard';
 
 interface Props {
   persona: Persona;
@@ -123,7 +124,7 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
   }, [calConnected, persona]);
 
   const copyUrl = useCallback(() => {
-    if (generatedUrl) navigator.clipboard.writeText(generatedUrl).catch(() => {});
+    if (generatedUrl) copyText(generatedUrl, 'リンク');
   }, [generatedUrl]);
 
   return (

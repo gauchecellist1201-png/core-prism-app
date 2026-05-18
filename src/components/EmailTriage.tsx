@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings } from '../types/identity';
 import type { TriageBatch, EmailTriaged } from '../lib/emailTriage';
+import { copyText } from '../lib/clipboard';
 import { triageEmails, regenerateDraft } from '../lib/emailTriage';
 import {
   isGmailConfigured,
@@ -185,7 +186,7 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
   }, [batch, settings, persona]);
 
   const copyToClipboard = useCallback((text: string) => {
-    navigator.clipboard.writeText(text).catch(() => {});
+    copyText(text, '返信文');
   }, []);
 
   const filtered = batch ? batch.emails.filter(e => {

@@ -4,6 +4,7 @@ import type { Persona, AppSettings } from '../types/identity';
 import { useSalesAgent } from '../hooks/useSalesAgent';
 import { pickTodaysCompanies, type AiPick } from '../lib/salesAgentMatch';
 import { todaySeed } from '../data/companies-jp';
+import { copyText } from '../lib/clipboard';
 
 interface Props {
   persona: Persona;
@@ -415,7 +416,7 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
                               <p className="cp-meta" style={{ marginBottom: 4 }}>件名: <span style={{ color: 'var(--fg)', fontWeight: 600 }}>{a.subject}</span></p>
                               <pre className="cp-body" style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, fontSize: '0.85rem' }}>{a.body}</pre>
                               <div className="cp-row" style={{ gap: 6, marginTop: 8 }}>
-                                <button onClick={() => navigator.clipboard.writeText(`${a.subject}\n\n${a.body}`)}
+                                <button onClick={() => copyText(`${a.subject}\n\n${a.body}`, '営業文')}
                                   className="cp-btn cp-btn-sm">📋 コピー</button>
                                 <button onClick={() => sa.updateApproach(a.id, { status: 'sent' })}
                                   className="cp-btn cp-btn-sm">送信済にする</button>
