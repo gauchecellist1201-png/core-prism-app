@@ -59,8 +59,8 @@ export default function CoreRevenueCard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <TrendingUp size={12} color="#8E5CFF" />
-          <span style={{ fontSize: 9.5, letterSpacing: '0.18em', fontWeight: 800, color: '#8E5CFF' }}>
-            CORE の売上 (STRIPE)
+          <span style={{ fontSize: 9.5, letterSpacing: '0.14em', fontWeight: 800, color: '#8E5CFF' }}>
+            CORE 事業の売上 · Prism + Iris
           </span>
         </div>
         <button
@@ -88,7 +88,21 @@ export default function CoreRevenueCard() {
         </div>
       )}
 
-      {totals && (
+      {/* 売上がまだ 0 のとき: 何が起きているか分かるメッセージ */}
+      {totals && totals.paidCount === 0 && (thisMonth?.gmvJpy || 0) === 0 && (
+        <div style={{
+          fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6,
+          background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 10px',
+        }}>
+          まだ有料のお客さんがいません。<br />
+          Prism / Iris の最初の契約が入ると、ここに自動で表示されます。
+          <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+            ※ これは「CORE という商品」が売れた金額です（あなた自身の事業の売上ではありません）
+          </div>
+        </div>
+      )}
+
+      {totals && !(totals.paidCount === 0 && (thisMonth?.gmvJpy || 0) === 0) && (
         <>
           {/* 今月の入金 (一番大きく) */}
           <div style={{ marginBottom: 8 }}>
