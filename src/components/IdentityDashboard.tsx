@@ -23,8 +23,8 @@ import QuickActions from './QuickActions';
 import ActivityTimeline from './ActivityTimeline';
 import HealthSnapshot from './HealthSnapshot';
 import TodaysBodyCard from '../prism/TodaysBodyCard';
-import { loadBillingUser, isMasterAuth } from '../lib/billing';
-import CoreRevenueCard from './CoreRevenueCard';
+import { loadBillingUser } from '../lib/billing';
+// CoreRevenueCard はマスター専用経営画面へ移設予定 (ペルソナ画面からは撤去)
 import MeetingMinutesModal from './MeetingMinutes';
 import SlideGeneratorModal from './SlideGenerator';
 import NegotiationCoachModal from './NegotiationCoach';
@@ -1000,8 +1000,11 @@ export default function IdentityDashboard({
         )}
         <div className="overflow-y-auto" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', maxHeight: '42%' }}>
           <div className="p-3">
-            {/* CORE の Stripe 実売上 (マスターのみ) */}
-            {isMasterAuth() && <CoreRevenueCard />}
+            {/*
+              CORE 事業の売上カードはここから撤去 (オーナー指摘 2026-05-18):
+              ペルソナの経営ダッシュボードに「CORE という商品の売上」が混ざるのは
+              文脈がズレている。マスター専用の経営画面へ移設予定。
+            */}
             <CognitiveDashboard activeId={persona.id} personas={allPersonas} onEditFinance={setFinanceEditFor} />
           </div>
         </div>

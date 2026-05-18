@@ -17,8 +17,60 @@ export async function importAppleHealthZip(
   if (!xmlEntry) {
     throw new Error('ZIP内に export.xml が見つかりません。Apple Health の正規エクスポートZIPか確認してください。');
   }
-  const text = await xmlEntry.async('string');
-  return importAppleHealthXml(text, onProgress);
+  // 巨大な export.xml を 1 つの文字列にすると "Invalid string length" になる。
+  // uint8array で取り出し、8MB ずつストリーミング解析する。
+  const bytes = await xmlEntry.async('uint8array');
+  const records = await extractRecordsStreaming(bytes, onProgress);
+  return aggregateRecords(records, onProgress);
+}
+
+/**
+ * Uint8Array を 8MB ずつ decode しながら <Record .../> を逐次抽出。
+ * 巨大ファイルでも 1 つの巨大文字列を作らないのでメモリ安全。
+ */
+async function extractRecordsStreaming(
+  bytes: Uint8Array,
+  onProgress?: (p: AppleImportProgress) => void,
+): Promise<RawRecord[]> {
+  const decoder = new TextDecoder('utf-8');
+  const CHUNK = 8 * 1024 * 1024; // 8MB
+  const records: RawRecord[] = [];
+  let carry = '';
+  let count = 0;
+  for (let off = 0; off < bytes.length; off += CHUNK) {
+    const end = Math.min(off + CHUNK, bytes.length);
+    const isLast = end >= bytes.length;
+    const piece = carry + decoder.decode(bytes.subarray(off, end), { stream: !isLast });
+    // チャンク末尾に途中で切れた <Record があれば次へ持ち越す
+    let scannable = piece;
+    const lastOpen = piece.lastIndexOf('<Record');
+    if (lastOpen >= 0 && piece.indexOf('>', lastOpen) === -1) {
+      scannable = piece.slice(0, lastOpen);
+      carry = piece.slice(lastOpen);
+    } else {
+      carry = '';
+    }
+    const re = /<Record\s+([^>]+?)\/?>/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(scannable))) {
+      const attrs = parseAttrs(m[1]);
+      if (!attrs.type || !attrs.startDate) continue;
+      records.push({
+        type: attrs.type,
+        startDate: attrs.startDate,
+        endDate: attrs.endDate ?? attrs.startDate,
+        value: attrs.value ?? '',
+        unit: attrs.unit,
+      });
+      count++;
+    }
+    onProgress?.({ phase: 'parsing', recordsRead: count, daysProduced: 0 });
+    await yieldFrame();
+  }
+  if (count === 0) {
+    throw new Error('Apple Health export.xml の Record が見つかりませんでした。iPhone「ヘルスケア」アプリの正規エクスポート ZIP か確認してください。');
+  }
+  return records;
 }
 
 // Apple Health Export.zip 内 export.xml の主要 HKQuantityTypeIdentifier
@@ -108,7 +160,15 @@ export async function importAppleHealthXml(
     const headSample = text.slice(0, 500).replace(/\s+/g, ' ');
     throw new Error(`Apple Health export.xml の Record が見つかりませんでした。先頭プレビュー: ${headSample.slice(0, 200)}`);
   }
+  return aggregateRecords(records, onProgress);
+}
 
+/** 抽出済み RawRecord[] を日次 DailyHealth[] に集計する */
+async function aggregateRecords(
+  records: RawRecord[],
+  onProgress?: (p: AppleImportProgress) => void,
+): Promise<DailyHealth[]> {
+  const count = records.length;
   onProgress?.({ phase: 'aggregating', recordsRead: count, daysProduced: 0 });
   await yieldFrame();
 
