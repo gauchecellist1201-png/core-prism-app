@@ -12,6 +12,7 @@
 // ============================================================
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import HealthQuickInput from '../components/HealthQuickInput';
 
 interface Props {
   /** ログイン中ユーザーの email (BillingUser から渡す) */
@@ -117,10 +118,10 @@ export default function HealthShortcutGuide({ email, onClose }: Props) {
     >
       <header className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[10px] tracking-[0.18em] font-semibold uppercase opacity-60">Apple Health 自動同期</div>
-          <h2 className="text-lg sm:text-xl font-semibold mt-1">毎朝、iPhone が体のデータを Prism に届けます</h2>
+          <div className="text-[10px] tracking-[0.18em] font-semibold uppercase opacity-60">体調を記録する</div>
+          <h2 className="text-lg sm:text-xl font-semibold mt-1">2 つの方法から、好きなほうで</h2>
           <p className="text-sm opacity-70 mt-1">
-            もう ZIP を書き出す必要はありません。iOS の「ショートカット」アプリで一度だけ設定すれば、起きたとき自動で歩数・睡眠・心拍・体重・気分が送られてきます。
+            むずかしい設定は不要です。まずは下の「かんたん入力」だけで十分。Apple Watch をお持ちの方は、自動同期も選べます。
           </p>
         </div>
         {onClose && (
@@ -134,6 +135,26 @@ export default function HealthShortcutGuide({ email, onClose }: Props) {
           </button>
         )}
       </header>
+
+      {/* おすすめ: かんたん入力 (5 秒・誰でも) */}
+      <section className="space-y-2">
+        <div className="text-sm font-semibold flex items-center gap-2">
+          <span style={{
+            fontSize: 9, fontWeight: 800, color: '#fff',
+            background: '#10B981', padding: '2px 7px', borderRadius: 999,
+          }}>おすすめ</span>
+          方法 A — かんたん入力（Apple Watch 不要・5 秒）
+        </div>
+        <HealthQuickInput accent="#8E5CFF" />
+      </section>
+
+      {/* くわしい方向け: Apple Watch 自動同期 */}
+      <div className="text-sm font-semibold pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
+        方法 B — Apple Watch 自動同期（くわしい方向け・一度だけ設定）
+      </div>
+      <p className="text-xs opacity-60">
+        以下は上級者向けです。設定すると、毎朝 iPhone が自動で歩数・睡眠・心拍・体重を届けます。むずかしければ、上の「かんたん入力」だけで OK です。
+      </p>
 
       {/* Step 0: あなたの識別子 */}
       <section className="space-y-2">
