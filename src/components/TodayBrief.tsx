@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { Persona, Proposal } from '../types/identity';
 import { listIntegrations, sendBrief } from '../lib/integrations';
 import { RewardBurst } from './visualFx';
+import ThinkingIndicator from './ThinkingIndicator';
 
 interface Props {
   persona: Persona;
@@ -136,11 +137,23 @@ export default function TodayBrief({
               <p className="text-fg-muted text-xs italic mb-2">{proposal.context}</p>
             )}
           </>
+        ) : isGenerating ? (
+          <div className="mb-3">
+            <ThinkingIndicator
+              accent={persona.accentColor}
+              variant="compact"
+              messages={[
+                'あなたのことを思い出しています…',
+                '集めた資料を見直しています…',
+                '今日のタスクと時間を照らし合わせています…',
+                'いちばん良い「次の一手」を考えています…',
+              ]}
+              onRetry={() => onGenerate(voiceEnabled)}
+            />
+          </div>
         ) : (
           <p className="text-fg-muted text-base mb-3 leading-relaxed">
-            {isGenerating
-              ? '人格・蓄積資料・タスク・時間帯から最適な提案を考えています…'
-              : '人格・蓄積した資料・現在のタスクをAIが分析し、今この瞬間に取り組むべきことを提案します。'}
+            あなたの人格・集めた資料・今のタスクを見て、いま取り組むといちばん良いことを提案します。
           </p>
         )}
 
