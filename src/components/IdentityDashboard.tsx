@@ -1005,7 +1005,7 @@ export default function IdentityDashboard({
               ペルソナの経営ダッシュボードに「CORE という商品の売上」が混ざるのは
               文脈がズレている。マスター専用の経営画面へ移設予定。
             */}
-            <CognitiveDashboard activeId={persona.id} personas={allPersonas} onEditFinance={setFinanceEditFor} />
+            <CognitiveDashboard activeId={persona.id} personas={allPersonas} onEditFinance={setFinanceEditFor} onOpenIntegrations={() => setShowIntegrations(true)} />
           </div>
         </div>
         <div className="flex-1 min-h-0">
@@ -1061,7 +1061,7 @@ export default function IdentityDashboard({
               </div>
               <div className="overflow-y-auto flex-shrink-0" style={{ maxHeight: '30%', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <div className="p-3">
-                  <CognitiveDashboard activeId={persona.id} personas={allPersonas} onEditFinance={setFinanceEditFor} />
+                  <CognitiveDashboard activeId={persona.id} personas={allPersonas} onEditFinance={setFinanceEditFor} onOpenIntegrations={() => setShowIntegrations(true)} />
                 </div>
               </div>
               <div className="flex-1 min-h-0">

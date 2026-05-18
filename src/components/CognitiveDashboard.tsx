@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion';
 import type { Persona, PersonaId } from '../types/identity';
+import MyBusinessRevenueCard from './MyBusinessRevenueCard';
 
 interface Props {
   activeId: PersonaId;
   personas: Persona[];
   onEditFinance?: (persona: Persona) => void;
+  onOpenIntegrations?: () => void;
 }
 
 function TimeRing({ persona, index }: { persona: Persona; index: number }) {
@@ -31,7 +33,7 @@ function TimeRing({ persona, index }: { persona: Persona; index: number }) {
   );
 }
 
-export default function CognitiveDashboard({ activeId, personas, onEditFinance }: Props) {
+export default function CognitiveDashboard({ activeId, personas, onEditFinance, onOpenIntegrations }: Props) {
   const totalIncome = personas.reduce((s, p) => s + Math.max(p.cashflow.income, 0), 0);
   const totalExpense = personas.reduce((s, p) => s + Math.abs(Math.min(p.cashflow.expense, 0)), 0);
   const netCashflow = totalIncome - totalExpense;
@@ -81,6 +83,9 @@ export default function CognitiveDashboard({ activeId, personas, onEditFinance }
             >資料から抽出</button>
           )}
         </div>
+
+        {/* あなた自身の事業の売上 (連携した Stripe から) */}
+        <MyBusinessRevenueCard onOpenIntegrations={onOpenIntegrations} />
 
         <motion.p className="text-lg font-extralight mb-2"
           style={{ color: netCashflow >= 0 ? '#34d399' : '#f87171' }}

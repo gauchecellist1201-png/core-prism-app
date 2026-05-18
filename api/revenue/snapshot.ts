@@ -25,7 +25,7 @@ function corsHeaders(req: Request) {
   return {
     'Access-Control-Allow-Origin': o,
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, x-master-key',
+    'Access-Control-Allow-Headers': 'Content-Type, x-master-key, x-stripe-key',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -140,13 +140,149 @@ function monthKey(unix: number): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
-function emptySnapshot(asOf: string) {
+function last12Months(): string[] {
   const months: string[] = [];
   const now = new Date();
   for (let i = 11; i >= 0; i--) {
     const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
     months.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
   }
+  return months;
+}
+
+// ─── ユーザー自身の事業の売上 (x-stripe-key) ───
+// Stripe の balance_transactions API で全入金を取得し、月次に集計する。
+// 売上 = 入金額の合計, 経費 = Stripe 手数料の合計, 利益 = 売上 - 経費。
+// 全通貨対応。JPY 以外はおおよその為替で JPY 換算する。
+interface StripeBalanceTxn {
+  id: string;
+  amount: number;
+  fee: number;
+  net: number;
+  currency: string;
+  created: number;
+  type: string;
+}
+
+// Stripe の「最小単位 = 主単位」な通貨 (1 = そのまま、100 で割らない)
+const ZERO_DECIMAL_CURRENCIES = new Set([
+  'bif', 'clp', 'djf', 'gnf', 'jpy', 'kmf', 'krw', 'mga',
+  'pyg', 'rwf', 'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf',
+]);
+
+// おおよその為替レート (1 通貨単位 = 何円か) — 2026 年 5 月時点の概算
+const FX_TO_JPY: Record<string, number> = {
+  jpy: 1, usd: 156, eur: 169, gbp: 198, aud: 101, cad: 113, chf: 175,
+  cny: 21.5, hkd: 20, krw: 0.11, sgd: 116, twd: 4.8, thb: 4.3,
+  inr: 1.85, idr: 0.0096, myr: 33, php: 2.7, vnd: 0.0061,
+  brl: 27, mxn: 9.1, nzd: 93, sek: 14.8, nok: 14.2, dkk: 22.6,
+};
+
+function toJpy(amount: number, currency: string): number {
+  const c = (currency || 'jpy').toLowerCase();
+  const major = ZERO_DECIMAL_CURRENCIES.has(c) ? amount : amount / 100;
+  const rate = FX_TO_JPY[c] ?? 1;
+  return major * rate;
+}
+
+async function listAllBalanceTxns(key: string, sinceUnix: number): Promise<StripeBalanceTxn[]> {
+  const out: StripeBalanceTxn[] = [];
+  let startingAfter: string | undefined;
+  for (let i = 0; i < 20; i++) {
+    const sp = new URLSearchParams({ limit: '100', 'created[gte]': String(sinceUnix) });
+    if (startingAfter) sp.set('starting_after', startingAfter);
+    const resp = await fetch(`https://api.stripe.com/v1/balance_transactions?${sp.toString()}`, {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!resp.ok) throw new Error(`Stripe balance_transactions ${resp.status}`);
+    const j = await resp.json() as StripeList<StripeBalanceTxn>;
+    out.push(...j.data);
+    if (!j.has_more || j.data.length === 0) break;
+    startingAfter = j.data[j.data.length - 1].id;
+  }
+  return out;
+}
+
+function emptyUserMonthly() {
+  return last12Months().map(m => ({ month: m, revenueJpy: 0, expenseJpy: 0, profitJpy: 0, txnCount: 0 }));
+}
+
+async function userRevenueSnapshot(key: string, asOf: string, ch: Record<string, string>) {
+  if (!/^(rk|sk)_(live|test)_/.test(key)) {
+    return json({
+      asOf, mode: 'user', stripeConfigured: false,
+      error: 'INVALID_KEY',
+      message: 'Stripe の読み取り専用キー (rk_live_… で始まる) を貼り付けてください。',
+      thisMonth: { revenueJpy: 0, expenseJpy: 0, profitJpy: 0, txnCount: 0 },
+      monthly: emptyUserMonthly(),
+      currencies: [],
+    }, 400, ch);
+  }
+
+  const now = new Date();
+  const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1));
+
+  try {
+    const txns = await listAllBalanceTxns(key, Math.floor(since.getTime() / 1000));
+
+    const map = new Map<string, { revenueJpy: number; expenseJpy: number; profitJpy: number; txnCount: number }>();
+    for (const m of last12Months()) map.set(m, { revenueJpy: 0, expenseJpy: 0, profitJpy: 0, txnCount: 0 });
+    const currencies = new Set<string>();
+
+    for (const t of txns) {
+      const slot = map.get(monthKey(t.created || 0));
+      if (!slot) continue;
+      // 口座への振替 (payout / transfer) は売上ではないので除外
+      if (t.type === 'payout' || t.type === 'transfer') continue;
+      const cur = (t.currency || 'jpy').toLowerCase();
+      currencies.add(cur);
+      const amtJpy = toJpy(t.amount || 0, cur);
+      const feeJpy = toJpy(t.fee || 0, cur);
+      slot.revenueJpy += amtJpy;
+      slot.expenseJpy += feeJpy;
+      slot.profitJpy += amtJpy - feeJpy;
+      if ((t.amount || 0) > 0) slot.txnCount += 1;
+    }
+
+    const monthly = last12Months().map(m => {
+      const v = map.get(m)!;
+      return {
+        month: m,
+        revenueJpy: Math.round(v.revenueJpy),
+        expenseJpy: Math.round(v.expenseJpy),
+        profitJpy: Math.round(v.profitJpy),
+        txnCount: v.txnCount,
+      };
+    });
+    const tm = monthly[monthly.length - 1];
+
+    return json({
+      asOf, mode: 'user', stripeConfigured: true,
+      thisMonth: {
+        revenueJpy: tm.revenueJpy, expenseJpy: tm.expenseJpy,
+        profitJpy: tm.profitJpy, txnCount: tm.txnCount,
+      },
+      monthly,
+      currencies: Array.from(currencies),
+    }, 200, { ...ch, 'Cache-Control': 'private, max-age=0, must-revalidate' });
+  } catch (e: any) {
+    const msg = String(e?.message || e);
+    const rejected = msg.includes('401') || msg.includes('403');
+    return json({
+      asOf, mode: 'user', stripeConfigured: false,
+      error: rejected ? 'KEY_REJECTED' : 'FETCH_FAILED',
+      message: rejected
+        ? 'このキーでは売上を読み取れませんでした。Stripe で「すべて読み取り」権限を付けて作り直してください。'
+        : 'いまは取得できませんでした。少し待ってから、更新ボタンでもう一度お試しください。',
+      thisMonth: { revenueJpy: 0, expenseJpy: 0, profitJpy: 0, txnCount: 0 },
+      monthly: emptyUserMonthly(),
+      currencies: [],
+    }, rejected ? 401 : 502, ch);
+  }
+}
+
+function emptySnapshot(asOf: string) {
+  const months = last12Months();
   return {
     asOf,
     stripeConfigured: false,
@@ -165,12 +301,20 @@ export default async function handler(req: Request) {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: ch });
   if (req.method !== 'GET') return json({ error: 'Method not allowed' }, 405, ch);
 
+  const asOf = new Date().toISOString();
+
+  // ユーザー自身の Stripe キーが来たら、そのユーザーの事業売上を返す
+  const userKey = (req.headers.get('x-stripe-key') || '').trim();
+  if (userKey) {
+    return userRevenueSnapshot(userKey, asOf, ch);
+  }
+
+  // それ以外は CORE 運営の集計 (オーナー専用)
   const masterKey = req.headers.get('x-master-key') || '';
   if (masterKey !== 'GAUCHE2026') {
     return json({ error: 'FORBIDDEN', message: 'Master key required' }, 403, ch);
   }
 
-  const asOf = new Date().toISOString();
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
     return json({ ...emptySnapshot(asOf), error: 'STRIPE_NOT_CONFIGURED' }, 503, ch);

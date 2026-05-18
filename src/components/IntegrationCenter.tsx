@@ -182,9 +182,11 @@ const CATALOG: Tool[] = [
   },
   {
     id: 'stripe', name: 'Stripe', color: '#635BFF', glyph: 'S', category: 'お金まわり',
-    can: 'CORE 運営側で連携済み。売上はダッシュボード右側に自動表示',
+    can: 'あなたの事業の Stripe をつなぐと、今月の売上・経費・利益が自動で出ます',
     steps: [
-      { label: 'Stripe は CORE 運営側で連携済みです。あなたの作業は不要です', action: { kind: 'info' } },
+      { label: 'Stripe の「キーを作成」ページを開きます (Stripe にログインしてください)', action: { kind: 'openLink', url: 'https://dashboard.stripe.com/apikeys/create', btn: 'Stripe を開く' } },
+      { label: '「制限付きキー」を選び、各項目を「読み取り」にして作成 → rk_live_… をコピー', action: { kind: 'info' } },
+      { label: 'コピーした読み取り専用キーを貼り付けて連携完了', action: { kind: 'input', placeholder: 'rk_live_…' } },
     ],
   },
   {
@@ -257,8 +259,6 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
   const isConnected = (t: Tool): boolean => {
     if (t.id === 'gmail') return isGmailConnected();
     if (t.id === 'gcal') return isCalConnected();
-    // Stripe は CORE 運営側で連携済み (Vercel env に Secret Key 設定済み)
-    if (t.id === 'stripe') return true;
     return !!loadToken(t.id);
   };
 
@@ -384,6 +384,14 @@ function ToolCard({ tool, accent, connected, open, onToggle, onConnected, onDisc
   };
 
   const next = () => { setErr(null); if (!isLast) setStepIdx(i => i + 1); };
+
+  // 貼り付けられた値が、そのアプリにふさわしい形か簡易チェック
+  const validateInput = (v: string): string | null => {
+    if (tool.id === 'stripe' && !/^(rk|sk)_(live|test)_/.test(v)) {
+      return 'Stripe の読み取り専用キー (rk_live_… で始まる) を貼り付けてください。';
+    }
+    return null;
+  };
 
   const handleOauth = async (provider: 'gmail' | 'gcal') => {
     setErr(null);
@@ -555,6 +563,8 @@ function ToolCard({ tool, accent, connected, open, onToggle, onConnected, onDisc
                         try {
                           const text = (await navigator.clipboard.readText()).trim();
                           if (!text) { setErr('クリップボードが空です。先にコピーしてください'); return; }
+                          const ve = validateInput(text);
+                          if (ve) { setErr(ve); return; }
                           completeConnection(text);
                         } catch {
                           setErr('自動貼り付けできませんでした。下の欄に手で貼り付けてください');
@@ -589,8 +599,11 @@ function ToolCard({ tool, accent, connected, open, onToggle, onConnected, onDisc
                       <button
                         type="button"
                         onClick={() => {
-                          if (!tokenInput.trim()) { setErr('上の欄に貼り付けてください'); return; }
-                          completeConnection(tokenInput.trim());
+                          const v = tokenInput.trim();
+                          if (!v) { setErr('上の欄に貼り付けてください'); return; }
+                          const ve = validateInput(v);
+                          if (ve) { setErr(ve); return; }
+                          completeConnection(v);
                         }}
                         style={{
                           fontSize: 12, fontWeight: 800, color: '#fff', flexShrink: 0,
