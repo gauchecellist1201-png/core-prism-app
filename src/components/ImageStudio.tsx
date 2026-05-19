@@ -58,6 +58,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
   const [style, setStyle] = useState<VisualStyle>('editorial');
   const [provider, setProvider] = useState<ImageProvider>(isOpenAIConfigured() ? 'dalle3' : 'pollinations');
   const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<'prompt' | 'render' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [current, setCurrent] = useState<GenerateImageResult | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>(loadHistory());
@@ -82,12 +83,14 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
           setBusy(false);
           return;
         }
+        setPhase('prompt');
         prompt = await generateImagePrompt({
           settings, topic,
           context: `生成元人格: ${persona.name} (${persona.subtitle})`,
         });
         setAdvancedPrompt(prompt);
       }
+      setPhase('render');
 
       // バッチ生成
       const targetCount = batchCount;
@@ -119,6 +122,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
+      setPhase(null);
     }
   }, [topic, advancedPrompt, aspect, style, provider, settings, persona, batchCount]);
 
@@ -373,6 +377,10 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                 )}
               </div>
 
+              {busy && phase && (
+                <GeneratingPanel phase={phase} count={batchCount} accent={persona.accentColor} />
+              )}
+
               <ApiErrorCard error={error} onRetry={() => handleGenerate(false)} />
 
               {/* 結果表示 */}
@@ -507,6 +515,92 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
           )}
         </div>
       </motion.div>
+    </motion.div>
+  );
+}
+
+// 生成を待つ十数秒を「無音の不安」にしないための実況パネル。
+// いま AI が何をしているかを、やさしい日本語でその場で言葉にする。
+function GeneratingPanel({
+  phase, count, accent,
+}: {
+  phase: 'prompt' | 'render';
+  count: 1 | 2 | 4;
+  accent: string;
+}) {
+  const steps = phase === 'prompt'
+    ? [
+        'あなたが入力した言葉を読み取っています…',
+        '絵にするための指示文に翻訳しています…',
+        '画風・色・構図のヒントを足しています…',
+      ]
+    : [
+        `${count}枚の下絵を起こしています…`,
+        '光と影を入れています…',
+        '色を重ねて仕上げています…',
+        'もうすぐ完成です…',
+      ];
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    setStep(0);
+    const t = setInterval(() => {
+      setStep(s => Math.min(s + 1, steps.length - 1));
+    }, 2400);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-xl p-4 flex items-center gap-3.5"
+      style={{ background: 'var(--surface-3)', border: `1px solid ${accent}40` }}
+    >
+      {/* 呼吸するオーブ — 「いま手を動かしている」感 */}
+      <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
+        {[0, 1].map(ring => (
+          <motion.div
+            key={ring}
+            animate={{ scale: [1, 1.7], opacity: [0.4, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeOut', delay: ring * 0.6 }}
+            style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1.5px solid ${accent}` }}
+          />
+        ))}
+        <motion.div
+          animate={{ scale: [1, 1.1, 1] }}
+          transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            background: `radial-gradient(circle, ${accent} 0%, ${accent}66 60%, transparent 100%)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+          }}
+        >
+          {phase === 'prompt' ? '🧠' : '🎨'}
+        </motion.div>
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p className="text-[11px] font-semibold" style={{ color: accent, letterSpacing: '0.08em' }}>
+          {phase === 'prompt' ? 'STEP 1 / 2 ・ 言葉を整える' : 'STEP 2 / 2 ・ 絵を描く'}
+        </p>
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={step}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.3 }}
+            className="text-fg text-sm font-semibold mt-0.5"
+          >
+            {steps[step]}
+          </motion.p>
+        </AnimatePresence>
+        <p className="text-fg-muted text-[11px] mt-0.5">
+          このまま少しお待ちください。完成すると下に画像が出ます。
+        </p>
+      </div>
     </motion.div>
   );
 }
