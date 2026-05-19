@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
@@ -1252,3 +1253,68 @@ input, textarea, select { font-family: inherit; }
   }
 }
 
+
+/* ============================================================
+   Iris 抹本リデザイン 2026-05-19 — サイドバー / Dock レイアウト
+   ============================================================ */
+
+/* デスクトップ: サイドバーを表示 / Dock を非表示 */
+.iris-sidebar-wrapper {
+  display: block;
+}
+.iris-dock-wrapper {
+  display: none;
+}
+/* モバイル用タブを非表示 (サイドバーで代替) */
+.iris-mobile-tabs {
+  display: none !important;
+}
+/* 戻るボタンはデスクトップではサイドバーにある */
+.iris-back-btn {
+  display: none;
+}
+
+/* モバイル: サイドバーを非表示 / Dock を表示 */
+@media (max-width: 900px) {
+  .iris-sidebar-wrapper {
+    display: none !important;
+  }
+  .iris-dock-wrapper {
+    display: block !important;
+  }
+  .iris-mobile-tabs {
+    display: flex !important;
+  }
+  .iris-back-btn {
+    display: inline-flex !important;
+  }
+}
+
+/* サイドバー分の左マージン (デスクトップ) */
+@media (min-width: 901px) {
+  .iris-header-sticky,
+  .iris-main {
+    margin-left: 0 !important;
+  }
+}
+
+/* スクロールバー非表示 */
+.iris-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+/* アニメーション: エディトリアル fade-up */
+@keyframes iris-fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.iris-fade-up {
+  animation: iris-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* モバイル main の下余白 (Dock 分) */
+@media (max-width: 900px) {
+  .iris-main {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

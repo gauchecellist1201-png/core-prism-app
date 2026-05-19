@@ -492,8 +492,21 @@ function IrisLocaleToggle({ locale, setLocale }: { locale: Locale; setLocale: (l
 }
 
 const navLink: React.CSSProperties = { fontSize: '0.85rem', color: 'rgba(255,250,245,0.7)', textDecoration: 'none', fontWeight: 500 };
-const ctaBtnSmall: React.CSSProperties = { background: `linear-gradient(135deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, color: '#fff', padding: '0.55rem 1.1rem', borderRadius: 10, fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: `0 4px 12px ${IRIS_COLORS.hotPink}45` };
-const ctaBtnHero: React.CSSProperties = { background: `linear-gradient(135deg, ${IRIS_COLORS.gold} 0%, ${IRIS_COLORS.hotPink} 50%, ${IRIS_COLORS.purpleLt} 100%)`, backgroundSize: '200% 100%', color: '#fff', padding: '1.05rem 2.25rem', borderRadius: 14, fontSize: '1.05rem', fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: `0 12px 36px ${IRIS_COLORS.hotPink}55`, letterSpacing: '0.05em' };
+const ctaBtnSmall: React.CSSProperties = {
+  background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink} 0%, ${IRIS_COLORS.purple} 60%, ${IRIS_COLORS.gold} 100%)`,
+  color: '#fff', padding: '0.6rem 1.25rem', borderRadius: 999, fontSize: '0.85rem', fontWeight: 700,
+  border: 'none', cursor: 'pointer',
+  boxShadow: `0 6px 20px ${IRIS_COLORS.hotPink}55`,
+  transition: 'transform 0.12s, box-shadow 0.12s',
+};
+const ctaBtnHero: React.CSSProperties = {
+  background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink} 0%, ${IRIS_COLORS.purple} 50%, ${IRIS_COLORS.gold} 100%)`,
+  color: '#fff', padding: '1.1rem 2.5rem', borderRadius: 999, fontSize: '1.05rem', fontWeight: 800,
+  border: 'none', cursor: 'pointer',
+  boxShadow: `0 14px 40px ${IRIS_COLORS.hotPink}60, 0 4px 12px ${IRIS_COLORS.purple}40`,
+  letterSpacing: '0.04em',
+  transition: 'transform 0.12s, box-shadow 0.12s',
+};
 const ctaBtnGhost: React.CSSProperties = { background: 'rgba(255,250,245,0.05)', color: IRIS_COLORS.cream, padding: '1.05rem 2rem', borderRadius: 14, fontSize: '1rem', fontWeight: 700, border: `1px solid ${IRIS_COLORS.gold}40`, textDecoration: 'none', display: 'inline-block' };
 const footHead: React.CSSProperties = { fontSize: '0.7rem', letterSpacing: '0.25em', color: IRIS_COLORS.gold, marginBottom: '0.75rem', fontWeight: 700 };
 const footLink: React.CSSProperties = { display: 'block', color: 'rgba(255,250,245,0.7)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '0.5rem' };

@@ -244,7 +244,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
   }, []);
 
   return (
-    <div style={{ display: 'grid', gap: '1.25rem' }}>
+    <div style={{ display: 'grid', gap: '1.5rem' }}>
       {/* 通知 opt-in CTA (default & 未提示) */}
       {notificationSupported() && notifPerm === 'default' && !notifDismissed && (
         <motion.button
@@ -297,8 +297,9 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
       )}
 
       {/* 上部: 数字サマリー (極小) */}
+      {/* エディトリアル サマリー行 */}
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem',
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem',
       }}>
         <SummaryCard bg={bg} label="進行中"   value={activeCount + ' 件'}      Icon={Mail} />
         <SummaryCard bg={bg} label="今週まで" value={upcomingThisWeek + ' 件'} Icon={Calendar} />
@@ -569,9 +570,12 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
 
       {/* 入力エリア (中央に大きいマイク + 補助テキスト + 画像添付) */}
       <div style={{
-        background: bg.card, backdropFilter: 'blur(12px)',
-        border: `1px solid ${bg.cardBorder}`, borderRadius: 24,
-        padding: '1rem',
+        background: 'rgba(255,255,255,0.94)',
+        backdropFilter: 'blur(20px)',
+        border: `1.5px solid rgba(31,26,46,0.08)`,
+        borderRadius: 28,
+        padding: '1.25rem 1.1rem',
+        boxShadow: '0 4px 24px rgba(31,26,46,0.08), 0 1px 0 rgba(255,255,255,0.9) inset',
       }}>
         {/* 添付画像プレビュー */}
         {pendingImages.length > 0 && (
@@ -591,24 +595,36 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
         )}
 
         {/* 中央のマイクボタン */}
-        <div style={{ textAlign: 'center', marginBottom: '0.85rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+          <div style={{ marginBottom: '0.5rem' }}>
+            <span style={{
+              fontFamily: IRIS_FONTS.serif,
+              fontStyle: 'italic',
+              fontSize: '0.85rem',
+              color: '#8A7AA0',
+              letterSpacing: '0.02em',
+            }}>
+              Iris に話しかける
+            </span>
+          </div>
           <motion.button
             onClick={listening ? voiceStop : (voiceAvailable ? voiceStart : undefined)}
             disabled={!voiceAvailable || busy}
-            whileTap={voiceAvailable && !busy ? { scale: 0.95 } : {}}
+            whileTap={voiceAvailable && !busy ? { scale: 0.94 } : {}}
+            whileHover={voiceAvailable && !busy ? { scale: 1.04 } : {}}
             style={{
-              width: 88, height: 88, borderRadius: '50%',
+              width: 80, height: 80, borderRadius: '50%',
               background: listening
-                ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`
-                : `linear-gradient(135deg, ${bg.accent}ee, ${bg.accent}aa)`,
+                ? `linear-gradient(135deg, ${bg.accent}, #833AB4)`
+                : `linear-gradient(135deg, #E1306C, #833AB4 50%, #FCB045)`,
               color: '#fff',
-              border: `3px solid rgba(255,255,255,0.4)`,
-              fontSize: '2.6rem', cursor: voiceAvailable && !busy ? 'pointer' : 'not-allowed',
+              border: `3px solid rgba(255,255,255,0.5)`,
+              cursor: voiceAvailable && !busy ? 'pointer' : 'not-allowed',
               boxShadow: listening
-                ? `0 0 0 14px ${bg.accent}22, 0 0 0 28px ${bg.accent}11, 0 12px 32px ${bg.accent}66`
-                : `0 12px 32px ${bg.accent}66`,
+                ? `0 0 0 12px ${bg.accent}20, 0 0 0 24px ${bg.accent}0e, 0 10px 28px ${bg.accent}60`
+                : `0 8px 28px rgba(225,48,108,0.45), 0 2px 8px rgba(131,58,180,0.25)`,
               animation: listening ? 'voice-home-pulse 1.6s ease-in-out infinite' : 'none',
-              opacity: voiceAvailable ? 1 : 0.5,
+              opacity: voiceAvailable ? 1 : 0.55,
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -616,16 +632,16 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
             }}
           >
             {listening ? (
-              <span style={{ display: 'inline-block', width: 28, height: 28, background: '#fff', borderRadius: 4 }} />
+              <span style={{ display: 'inline-block', width: 24, height: 24, background: '#fff', borderRadius: 4 }} />
             ) : (
-              <Mic size={38} strokeWidth={2.0} color="#fff" />
+              <Mic size={34} strokeWidth={2} color="#fff" />
             )}
           </motion.button>
-          <p style={{ marginTop: '0.5rem', color: subtleColor, fontSize: '0.78rem' }}>
-            {listening ? '聞いてます…' : voiceAvailable ? '押して話す or 下に書く' : '(音声非対応)'}
+          <p style={{ marginTop: '0.6rem', color: '#8A7AA0', fontSize: '0.76rem', fontFamily: IRIS_FONTS.body }}>
+            {listening ? '聞いています…' : voiceAvailable ? 'タップして話す' : '(音声非対応)'}
           </p>
           {interim && (
-            <p style={{ marginTop: '0.3rem', color: bg.accent, fontSize: '0.85rem', fontStyle: 'italic' }}>
+            <p style={{ marginTop: '0.3rem', color: bg.accent, fontSize: '0.85rem', fontStyle: 'italic', fontFamily: IRIS_FONTS.serif }}>
               {interim}
             </p>
           )}
@@ -676,19 +692,19 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
             onClick={send}
             disabled={busy || (!textInput.trim() && pendingImages.length === 0)}
             style={{
-              background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+              background: 'linear-gradient(135deg, #E1306C, #833AB4 50%, #FCB045)',
               color: '#fff',
               border: 'none',
               borderRadius: 14,
-              width: 44, height: 44,
+              width: 46, height: 46,
               cursor: busy ? 'wait' : 'pointer',
-              fontSize: '1.1rem',
               fontFamily: IRIS_FONTS.body,
               fontWeight: 700,
               flexShrink: 0,
-              boxShadow: `0 6px 16px ${bg.accent}55`,
-              opacity: busy || (!textInput.trim() && pendingImages.length === 0) ? 0.5 : 1,
+              boxShadow: '0 6px 18px rgba(225,48,108,0.45)',
+              opacity: busy || (!textInput.trim() && pendingImages.length === 0) ? 0.45 : 1,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 0.12s, opacity 0.12s',
             }}
           >
             {busy ? '···' : <ArrowUp size={20} strokeWidth={2.6} />}
@@ -719,28 +735,47 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
 }
 
 function SummaryCard({ bg, label, value, Icon }: { bg: IrisBackgroundDef; label: string; value: string; Icon: any }) {
-  // 数字部分とサフィックス (例: '3 件' / '¥12K') を分離して、数字を強く目立たせる
   const m = value.match(/^([¥]?[\d.,]+)\s*(.*)$/);
   const num = m ? m[1] : value;
   const suffix = m ? m[2] : '';
   return (
     <div style={{
-      background: bg.card, backdropFilter: 'blur(8px)',
-      border: `1px solid ${bg.cardBorder}`, borderRadius: 16,
-      padding: '0.7rem 0.85rem',
-      minHeight: 76,
+      background: 'rgba(255,255,255,0.92)',
+      backdropFilter: 'blur(12px)',
+      border: `1px solid rgba(31,26,46,0.07)`,
+      borderRadius: 18,
+      padding: '0.85rem 0.9rem',
+      minHeight: 84,
+      boxShadow: '0 2px 12px rgba(31,26,46,0.06)',
+      position: 'relative',
+      overflow: 'hidden',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.3rem' }}>
-        <Icon size={14} color={bg.accent} strokeWidth={2.2} />
-        <span style={{ fontSize: '0.68rem', color: bg.inkSoft, letterSpacing: '0.06em', fontWeight: 600 }}>{label}</span>
+      {/* アクセントライン */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+        background: `linear-gradient(90deg, ${bg.accent}, ${bg.accent}55)`,
+        borderRadius: '18px 18px 0 0',
+      }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
+        <div style={{
+          width: 22, height: 22, borderRadius: 7,
+          background: `${bg.accent}16`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Icon size={12} color={bg.accent} strokeWidth={2.4} />
+        </div>
+        <span style={{ fontSize: '0.65rem', color: bg.inkSoft, letterSpacing: '0.1em', fontWeight: 700, textTransform: 'uppercase' as const }}>
+          {label}
+        </span>
       </div>
       <div style={{
-        fontFamily: IRIS_FONTS.body,
-        color: bg.ink, lineHeight: 1.1,
+        fontFamily: IRIS_FONTS.display,
+        fontStyle: 'italic',
+        color: bg.ink, lineHeight: 1,
         display: 'flex', alignItems: 'baseline', gap: '0.2rem',
       }}>
-        <span style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>{num}</span>
-        {suffix && <span style={{ fontSize: '0.78rem', fontWeight: 600, color: bg.inkSoft }}>{suffix}</span>}
+        <span style={{ fontSize: '1.65rem', fontWeight: 800, letterSpacing: '-0.02em' }}>{num}</span>
+        {suffix && <span style={{ fontSize: '0.75rem', fontWeight: 600, color: bg.inkSoft, fontStyle: 'normal', fontFamily: IRIS_FONTS.body }}>{suffix}</span>}
       </div>
     </div>
   );

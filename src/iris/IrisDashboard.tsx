@@ -1,14 +1,15 @@
 // ============================================================
-// CORE Iris — メインダッシュボード
-// 案件 / 交渉 / 投稿下書き / 美容相談 / 画像生成 / 背景カスタム
+// CORE Iris — メインダッシュボード (抹本リデザイン 2026-05-19)
+// Pinterest / Vogue 参考。左サイドバー + 下部 Dock + エディトリアル グリッド。
 // ============================================================
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
 import {
   IRIS_BACKGROUNDS, type IrisBackgroundDef, loadIrisBackground, saveIrisBackground,
   IRIS_COLORS, IRIS_FONTS, getAllBackgrounds, removeCustomBackground, type CustomIrisBackground,
 } from './irisStyle';
+import { IRIS_TYPE, IRIS_SHADOW, IRIS_RADIUS, IRIS_GRADIENT, IRIS_MOTION, IRIS_SIDEBAR_W, IRIS_DOCK_H } from './irisDesign';
 import IrisCustomBgEditor from './IrisCustomBgEditor';
 import IrisImageEditor from './IrisImageEditor';
 import { useInfluencerDesk } from '../hooks/useInfluencerDesk';
@@ -141,6 +142,615 @@ interface Props {
 
 type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite' | 'knowledge';
 
+// ── デスクトップ左サイドバー ────────────────────────────────────
+function IrisSidebar({
+  tab, setTab, bg, onBgPicker, onLeave,
+}: {
+  tab: Tab;
+  setTab: (t: Tab) => void;
+  bg: IrisBackgroundDef;
+  onBgPicker: () => void;
+  onLeave: () => void;
+}) {
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const toggleGroup = (id: string) => setCollapsed(p => ({ ...p, [id]: !p[id] }));
+
+  return (
+    <aside style={{
+      position: 'fixed',
+      top: 0, left: 0, bottom: 0,
+      width: IRIS_SIDEBAR_W,
+      zIndex: 30,
+      background: 'rgba(255,255,255,0.82)',
+      backdropFilter: 'blur(24px)',
+      borderRight: `1px solid ${bg.cardBorder}`,
+      display: 'flex',
+      flexDirection: 'column',
+      boxShadow: IRIS_SHADOW.md,
+      overflowY: 'auto',
+      scrollbarWidth: 'none',
+    }} className="iris-sidebar">
+      {/* ロゴ */}
+      <div style={{
+        padding: '1.25rem 1rem 0.75rem',
+        borderBottom: `1px solid ${bg.cardBorder}`,
+        flexShrink: 0,
+      }}>
+        <button
+          onClick={() => setTab('home')}
+          style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.2rem 0.3rem',
+            borderRadius: 10, width: '100%',
+          }}
+        >
+          <IrisLogo size={28} withWordmark={false} />
+          <span style={{
+            fontFamily: IRIS_FONTS.serif,
+            fontStyle: 'italic',
+            fontWeight: 700,
+            fontSize: '1.5rem',
+            letterSpacing: '-0.01em',
+            lineHeight: 1,
+            background: IRIS_GRADIENT.instagram,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>Iris</span>
+        </button>
+      </div>
+
+      {/* ナビゲーション */}
+      <nav style={{ flex: 1, padding: '0.75rem 0.5rem', overflowY: 'auto', scrollbarWidth: 'none' }}>
+        {TAB_GROUPS.map(group => {
+          const GIco = group.icon;
+          const isOpen = !collapsed[group.id];
+          const isActiveGroup = TAB_TO_GROUP[tab] === group.id;
+          return (
+            <div key={group.id} style={{ marginBottom: '0.25rem' }}>
+              {/* グループヘッダ */}
+              <button
+                onClick={() => toggleGroup(group.id)}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.45rem 0.6rem', borderRadius: IRIS_RADIUS.md,
+                  background: isActiveGroup ? `${group.color}12` : 'transparent',
+                  border: 'none', cursor: 'pointer',
+                  color: isActiveGroup ? group.color : '#1F1A2E',
+                  marginBottom: '0.1rem',
+                  transition: 'background 0.15s',
+                }}
+              >
+                <GIco size={13} strokeWidth={2.8} color={isActiveGroup ? group.color : '#8A7AA0'} />
+                <span style={{
+                  ...IRIS_TYPE.label,
+                  color: isActiveGroup ? group.color : '#8A7AA0',
+                  flex: 1, textAlign: 'left',
+                }}>{group.label}</span>
+                <span style={{ fontSize: '0.6rem', color: '#8A7AA0', marginLeft: 'auto' }}>
+                  {isOpen ? '▾' : '▸'}
+                </span>
+              </button>
+              {/* タブアイテム */}
+              {isOpen && group.tabs.map(t => {
+                const Ico = IRIS_TAB_ICON[t.id] || Sparkles;
+                const active = tab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setTab(t.id as Tab)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem',
+                      padding: '0.5rem 0.6rem 0.5rem 1.75rem',
+                      borderRadius: IRIS_RADIUS.md,
+                      background: active
+                        ? `linear-gradient(135deg, ${group.color}18, ${group.color}0c)`
+                        : 'transparent',
+                      border: 'none', cursor: 'pointer',
+                      color: active ? group.color : '#2A1A3A',
+                      fontFamily: IRIS_FONTS.body,
+                      fontSize: '0.84rem',
+                      fontWeight: active ? 700 : 500,
+                      textAlign: 'left',
+                      transition: 'all 0.12s',
+                      borderLeft: active ? `2px solid ${group.color}` : '2px solid transparent',
+                      marginBottom: '0.05rem',
+                    }}
+                  >
+                    <Ico size={14} strokeWidth={active ? 2.5 : 2} color={active ? group.color : '#8A7AA0'} />
+                    <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {t.l}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </nav>
+
+      {/* 下部コントロール */}
+      <div style={{
+        padding: '0.75rem',
+        borderTop: `1px solid ${bg.cardBorder}`,
+        flexShrink: 0,
+        display: 'flex', flexDirection: 'column', gap: '0.4rem',
+      }}>
+        <button onClick={onBgPicker}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem',
+            padding: '0.5rem 0.75rem', borderRadius: IRIS_RADIUS.md,
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: '#5A4570', fontSize: '0.8rem', fontWeight: 500,
+            fontFamily: IRIS_FONTS.body, transition: 'background 0.12s',
+          }}>
+          <Palette size={14} strokeWidth={2} color="#8A7AA0" />
+          テーマを変える
+        </button>
+        <button onClick={onLeave}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem',
+            padding: '0.5rem 0.75rem', borderRadius: IRIS_RADIUS.md,
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: '#8A7AA0', fontSize: '0.8rem', fontWeight: 500,
+            fontFamily: IRIS_FONTS.body,
+          }}>
+          <ArrowLeft size={14} strokeWidth={2} color="#8A7AA0" />
+          戻る
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+// ── モバイル下部 Dock ───────────────────────────────────────────
+function IrisBottomDock({
+  tab, setTab, bg,
+}: {
+  tab: Tab;
+  setTab: (t: Tab) => void;
+  bg: IrisBackgroundDef;
+  onMore: () => void;
+}) {
+  const DOCK_ITEMS = [
+    { group: TAB_GROUPS[0], defaultTab: 'home' as Tab },
+    { group: TAB_GROUPS[2], defaultTab: 'triage' as Tab },
+    { group: TAB_GROUPS[1], defaultTab: 'reel' as Tab, isFab: true },
+    { group: TAB_GROUPS[3], defaultTab: 'strategy' as Tab },
+    { group: TAB_GROUPS[4], defaultTab: 'health' as Tab },
+  ];
+
+  return (
+    <nav
+      className="iris-bottom-dock"
+      style={{
+        position: 'fixed',
+        bottom: 0, left: 0, right: 0,
+        height: `calc(${IRIS_DOCK_H}px + env(safe-area-inset-bottom, 0px))`,
+        background: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(24px)',
+        borderTop: `1px solid ${bg.cardBorder}`,
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-around',
+        paddingTop: '0.5rem',
+        paddingLeft: 'env(safe-area-inset-left, 0px)',
+        paddingRight: 'env(safe-area-inset-right, 0px)',
+        zIndex: 30,
+        boxShadow: '0 -4px 20px rgba(31,26,46,0.08)',
+      }}
+    >
+      {DOCK_ITEMS.map(({ group, defaultTab, isFab }) => {
+        const GIco = group.icon;
+        const isActive = TAB_TO_GROUP[tab] === group.id;
+        if (isFab) {
+          return (
+            <button
+              key={group.id}
+              onClick={() => setTab(defaultTab)}
+              style={{
+                width: 52, height: 52,
+                borderRadius: IRIS_RADIUS.full,
+                background: IRIS_GRADIENT.cta,
+                border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: IRIS_SHADOW.glow(bg.accent),
+                transform: 'translateY(-12px)',
+                flexShrink: 0,
+                transition: 'transform 0.15s, box-shadow 0.15s',
+              }}
+            >
+              <GIco size={22} strokeWidth={2.2} color="#fff" />
+            </button>
+          );
+        }
+        return (
+          <button
+            key={group.id}
+            onClick={() => setTab(defaultTab)}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem',
+              padding: '0.1rem 0.8rem',
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: isActive ? group.color : '#8A7AA0',
+              transition: 'color 0.15s',
+            }}
+          >
+            <GIco size={20} strokeWidth={isActive ? 2.6 : 2} color={isActive ? group.color : '#8A7AA0'} />
+            <span style={{ fontSize: '0.6rem', fontWeight: isActive ? 700 : 500, fontFamily: IRIS_FONTS.body, letterSpacing: '0.04em' }}>
+              {group.label}
+            </span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+// ── エディトリアル ホームダッシュ ──────────────────────────────
+function IrisEditorialHome({
+  bg, myDeals, postQueue, igProfile,
+  onNavigate,
+  onConnectInstagram,
+}: {
+  bg: IrisBackgroundDef;
+  myDeals: any[];
+  postQueue: any;
+  knowledge?: any;
+  igProfile: any;
+  onNavigate: (t: Tab) => void;
+  settings?: any;
+  mediaKit: any;
+  onConnectInstagram: () => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const today = new Date();
+  const greeting = today.getHours() < 12 ? 'おはようございます' : today.getHours() < 18 ? 'こんにちは' : 'こんばんは';
+  const dateStr = today.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'long' });
+
+  const upcomingDeals = myDeals
+    .filter(d => d.stage !== 'closed')
+    .slice(0, 3);
+
+  const engagementPrediction = igProfile?.followingCount
+    ? Math.round((igProfile.followingCount || 10000) * 0.042)
+    : Math.round(12400 * 0.042);
+
+  return (
+    <div ref={scrollRef} style={{ position: 'relative' }}>
+      {/* パラックス背景アクセント */}
+      <div aria-hidden style={{
+        position: 'fixed', top: -80, right: -120, width: 480, height: 480,
+        borderRadius: '50%', pointerEvents: 'none', zIndex: 0,
+        background: `radial-gradient(circle, ${bg.accent}18 0%, transparent 70%)`,
+        filter: 'blur(40px)',
+      }} />
+      <div aria-hidden style={{
+        position: 'fixed', bottom: 80, left: -60, width: 320, height: 320,
+        borderRadius: '50%', pointerEvents: 'none', zIndex: 0,
+        background: `radial-gradient(circle, #833AB418 0%, transparent 70%)`,
+        filter: 'blur(40px)',
+      }} />
+
+      {/* ── ヒーロー カード ─────────────────────────────── */}
+      <motion.div
+        {...IRIS_MOTION.cinematic}
+        style={{ position: 'relative', zIndex: 1, marginBottom: '1.75rem' }}
+      >
+        <div style={{
+          borderRadius: IRIS_RADIUS['2xl'],
+          background: IRIS_GRADIENT.dark,
+          padding: 'clamp(1.5rem, 4vw, 2.5rem)',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: IRIS_SHADOW.xl,
+        }}>
+          {/* 背景グラデオーブ */}
+          <div aria-hidden style={{
+            position: 'absolute', inset: 0,
+            background: `radial-gradient(ellipse at 80% 50%, ${bg.accent}40 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, #833AB440 0%, transparent 55%)`,
+            pointerEvents: 'none',
+          }} />
+          {/* ラベル */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
+            padding: '0.3rem 0.85rem',
+            borderRadius: IRIS_RADIUS.full,
+            background: 'rgba(255,255,255,0.12)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            marginBottom: '1.25rem',
+            backdropFilter: 'blur(8px)',
+          }}>
+            <Sparkles size={12} color="#FCB045" strokeWidth={2.5} />
+            <span style={{ ...IRIS_TYPE.caption, color: '#FCB045', letterSpacing: '0.14em' }}>
+              {dateStr} · 今週のハイライト
+            </span>
+          </div>
+
+          <h1 style={{
+            ...IRIS_TYPE.hero,
+            color: '#FFFFFF',
+            margin: '0 0 0.6rem',
+            position: 'relative',
+          }}>
+            {greeting},<br />
+            <span style={{
+              background: IRIS_GRADIENT.cta,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              今日も輝いて。
+            </span>
+          </h1>
+
+          <p style={{
+            ...IRIS_TYPE.lead,
+            color: 'rgba(255,255,255,0.72)',
+            margin: '0 0 1.75rem',
+            maxWidth: 480,
+          }}>
+            {myDeals.length
+              ? `${myDeals.length} 件の案件が進行中。Iris が優先順を整えました。`
+              : 'Iris があなたの今日をサポートします。最初の案件を登録しましょう。'}
+          </p>
+
+          {/* ステータス行 */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', position: 'relative' }}>
+            {[
+              { label: '進行中の案件', value: `${myDeals.filter(d => d.stage !== 'closed').length} 件`, icon: Briefcase, color: '#FCB045' },
+              { label: '予約投稿', value: `${postQueue?.posts?.length ?? 0} 本`, icon: CalendarClock, color: '#FD7CB8' },
+              { label: 'エンゲージメント予測', value: `${engagementPrediction.toLocaleString()}`, icon: TrendingUp, color: '#B07BD9' },
+            ].map(({ label, value, icon: Ico, color }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: IRIS_RADIUS.md,
+                  background: 'rgba(255,255,255,0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Ico size={14} color={color} strokeWidth={2.2} />
+                </div>
+                <div>
+                  <div style={{ ...IRIS_TYPE.caption, color: 'rgba(255,255,255,0.55)', marginBottom: 1 }}>{label}</div>
+                  <div style={{ ...IRIS_TYPE.lead, color: '#fff', fontWeight: 700, lineHeight: 1 }}>{value}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ── 2カラムグリッド ──────────────────────────────── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '1.25rem',
+        marginBottom: '1.75rem',
+        position: 'relative', zIndex: 1,
+      }}>
+        {/* 今日の予定 */}
+        <motion.div {...IRIS_MOTION.stagger(0)}>
+          <EditorialCard title="今日の予定" icon={CalendarClock} accent={bg.accent}>
+            {upcomingDeals.length === 0 ? (
+              <p style={{ ...IRIS_TYPE.small, color: bg.inkSoft, textAlign: 'center', padding: '1rem 0' }}>
+                予定はありません。案件を追加しましょう。
+              </p>
+            ) : upcomingDeals.map((deal, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                padding: '0.65rem 0',
+                borderBottom: i < upcomingDeals.length - 1 ? `1px solid ${bg.cardBorder}` : 'none',
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: IRIS_RADIUS.md,
+                  background: `${bg.accent}14`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Handshake size={15} color={bg.accent} strokeWidth={2.2} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ ...IRIS_TYPE.small, fontWeight: 700, color: bg.ink, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{deal.brandName}</p>
+                  <p style={{ ...IRIS_TYPE.caption, color: bg.inkSoft, margin: 0 }}>
+                    {deal.stage === 'inquiry' ? '問い合わせ中' : deal.stage === 'negotiating' ? '交渉中' : deal.stage === 'contracted' ? '契約済み' : '進行中'}
+                  </p>
+                </div>
+                <span style={{
+                  ...IRIS_TYPE.caption,
+                  background: `${bg.accent}14`,
+                  color: bg.accent,
+                  padding: '0.25rem 0.6rem',
+                  borderRadius: IRIS_RADIUS.full,
+                  fontWeight: 700, whiteSpace: 'nowrap',
+                }}>
+                  ¥{(deal.fee || 0).toLocaleString()}
+                </span>
+              </div>
+            ))}
+            <button
+              onClick={() => onNavigate('deals')}
+              style={{ ...ctaButtonSm(bg), marginTop: '0.75rem', width: '100%' }}
+            >
+              案件を全部見る
+            </button>
+          </EditorialCard>
+        </motion.div>
+
+        {/* トレンド & AI インサイト */}
+        <motion.div {...IRIS_MOTION.stagger(1)}>
+          <EditorialCard title="AI インサイト" icon={Sparkles} accent="#833AB4">
+            {[
+              { title: 'リール投稿がピーク', desc: '火曜 20 時台が最もエンゲージが高い傾向です', color: '#E1306C' },
+              { title: 'ハッシュタグ最適化', desc: '#コーデ #ootd 系で保存数 +38% の予測', color: '#833AB4' },
+              { title: '案件獲得チャンス', desc: 'あなたのフォロワー層に合う案件が 3 件マッチしています', color: '#FCB045' },
+            ].map((item, i) => (
+              <div key={i} style={{
+                padding: '0.65rem 0',
+                borderBottom: i < 2 ? `1px solid ${bg.cardBorder}` : 'none',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: item.color, marginTop: 5, flexShrink: 0 }} />
+                  <div>
+                    <p style={{ ...IRIS_TYPE.small, fontWeight: 700, color: bg.ink, margin: '0 0 2px' }}>{item.title}</p>
+                    <p style={{ ...IRIS_TYPE.caption, color: bg.inkSoft, margin: 0 }}>{item.desc}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button onClick={() => onNavigate('strategy')} style={{ ...ctaButtonSm(bg), marginTop: '0.75rem', width: '100%' }}>
+              伸ばす作戦を見る
+            </button>
+          </EditorialCard>
+        </motion.div>
+
+        {/* Instagram ポスト */}
+        <motion.div {...IRIS_MOTION.stagger(2)}>
+          <EditorialCard title="Instagram ポスト" icon={Camera} accent="#F77737">
+            {igProfile ? (
+              <div>
+                <div style={{ display: 'flex', gap: '0.65rem', marginBottom: '0.75rem' }}>
+                  {[
+                    { label: 'フォロワー', value: (igProfile.followers || '---').toLocaleString() },
+                    { label: '投稿数', value: igProfile.mediaCount || '---' },
+                    { label: 'エンゲージ率', value: igProfile.engagementRate ? `${igProfile.engagementRate}%` : '---' },
+                  ].map(s => (
+                    <div key={s.label} style={{
+                      flex: 1, textAlign: 'center',
+                      padding: '0.65rem 0.25rem',
+                      borderRadius: IRIS_RADIUS.md,
+                      background: `${bg.accent}0a`,
+                      border: `1px solid ${bg.cardBorder}`,
+                    }}>
+                      <div style={{ ...IRIS_TYPE.lead, fontWeight: 800, color: bg.ink, lineHeight: 1 }}>{s.value}</div>
+                      <div style={{ ...IRIS_TYPE.caption, color: bg.inkSoft, marginTop: 2 }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => onNavigate('strategy')} style={{ ...ctaButtonSm(bg), width: '100%' }}>
+                  詳細分析を見る
+                </button>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '0.75rem 0' }}>
+                <p style={{ ...IRIS_TYPE.small, color: bg.inkSoft, marginBottom: '0.85rem' }}>
+                  Instagram を連携して分析を開始しましょう
+                </p>
+                <button onClick={onConnectInstagram} style={{
+                  ...IRIS_TYPE.small,
+                  background: IRIS_GRADIENT.instagram,
+                  color: '#fff', border: 'none',
+                  padding: '0.65rem 1.25rem',
+                  borderRadius: IRIS_RADIUS.full,
+                  cursor: 'pointer', fontWeight: 700,
+                  boxShadow: IRIS_SHADOW.glow('#E1306C'),
+                  display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                }}>
+                  <Camera size={13} strokeWidth={2.5} /> Instagram を連携する
+                </button>
+              </div>
+            )}
+          </EditorialCard>
+        </motion.div>
+
+        {/* 案件を探す */}
+        <motion.div {...IRIS_MOTION.stagger(3)}>
+          <EditorialCard title="案件マッチング" icon={Handshake} accent="#E1306C">
+            <p style={{ ...IRIS_TYPE.small, color: bg.inkSoft, marginBottom: '0.85rem' }}>
+              あなたのアカウントに合うブランド案件を AI が厳選します。
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {['コスメ / スキンケア', 'ファッション / アパレル', 'グルメ / フード'].map((cat, i) => (
+                <div key={cat} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '0.5rem 0.7rem',
+                  borderRadius: IRIS_RADIUS.md,
+                  background: `${bg.accent}0a`,
+                  border: `1px solid ${bg.cardBorder}`,
+                }}>
+                  <span style={{ ...IRIS_TYPE.small, color: bg.ink, fontWeight: 600 }}>{cat}</span>
+                  <span style={{
+                    ...IRIS_TYPE.caption,
+                    color: bg.accent, fontWeight: 700,
+                    background: `${bg.accent}14`,
+                    padding: '0.2rem 0.5rem', borderRadius: IRIS_RADIUS.full,
+                  }}>{[5, 3, 8][i]} 件</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => onNavigate('brands')} style={{ ...ctaButtonSm(bg), marginTop: '0.75rem', width: '100%' }}>
+              案件を探す
+            </button>
+          </EditorialCard>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+// ── エディトリアルカード (共通コンポーネント) ──────────────────
+function EditorialCard({
+  title, icon: Ico, accent, children,
+}: {
+  title: string;
+  icon: React.ElementType;
+  accent: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.92)',
+      borderRadius: IRIS_RADIUS.xl,
+      border: `1px solid rgba(31,26,46,0.07)`,
+      boxShadow: IRIS_SHADOW.card,
+      overflow: 'hidden',
+    }}>
+      <div style={{
+        padding: '1rem 1.1rem 0.7rem',
+        borderBottom: '1px solid rgba(31,26,46,0.06)',
+        display: 'flex', alignItems: 'center', gap: '0.55rem',
+      }}>
+        <div style={{
+          width: 30, height: 30, borderRadius: IRIS_RADIUS.md,
+          background: `${accent}14`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Ico size={14} color={accent} strokeWidth={2.3} />
+        </div>
+        <span style={{
+          fontFamily: IRIS_FONTS.serif,
+          fontStyle: 'italic',
+          fontWeight: 700,
+          fontSize: '0.95rem',
+          color: '#1F1A2E',
+          letterSpacing: '-0.005em',
+        }}>{title}</span>
+      </div>
+      <div style={{ padding: '0.85rem 1.1rem 1rem' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ctaButtonSm(bg: IrisBackgroundDef) {
+  return {
+    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+    color: '#fff',
+    border: 'none',
+    borderRadius: IRIS_RADIUS.full,
+    padding: '0.55rem 1rem',
+    fontSize: '0.8rem',
+    fontWeight: 700,
+    cursor: 'pointer',
+    fontFamily: IRIS_FONTS.body,
+    boxShadow: `0 4px 14px ${bg.accent}44`,
+    transition: 'transform 0.12s, box-shadow 0.12s',
+    display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+  } as React.CSSProperties;
+}
+
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
 export default function IrisDashboard({ settings, onLeave }: Props) {
@@ -213,14 +823,23 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
       background: bg.background,
       color: bg.ink,
       fontFamily: IRIS_FONTS.body,
+      display: 'flex',
       ...themeStyle,
     }}>
-      {/* ヘッダ */}
+      {/* デスクトップ左サイドバー */}
+      <div className="iris-sidebar-wrapper">
+        <IrisSidebar tab={tab} setTab={setTab} bg={bg} onBgPicker={() => setBgPickerOpen(true)} onLeave={onLeave} />
+      </div>
+
+      {/* 右コンテンツエリア */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+
+      {/* スリムヘッダ (ロゴ + 主要コントロールのみ) */}
       <header className="iris-header-sticky" style={{
         position: 'sticky', top: 0, zIndex: 40,
-        padding: 'max(0.85rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) max(1.25rem, env(safe-area-inset-right)) 0.85rem max(1.25rem, env(safe-area-inset-left))',
-        background: 'rgba(255,255,255,0.55)',
-        backdropFilter: 'blur(20px)',
+        padding: 'max(0.75rem, calc(env(safe-area-inset-top, 0px) + 0.4rem)) max(1.25rem, env(safe-area-inset-right)) 0.75rem max(1.25rem, env(safe-area-inset-left))',
+        background: 'rgba(255,255,255,0.72)',
+        backdropFilter: 'blur(24px)',
         borderBottom: `1px solid ${bg.cardBorder}`,
       }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
@@ -328,15 +947,15 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             </button>
             <button onClick={() => setMoreOpen(true)} title="メニュー" aria-label="メニュー" className="iris-tab-more-trigger"
               style={btnIcon(bg)}><MenuIcon size={18} strokeWidth={2} /></button>
-            <button onClick={onLeave} title="戻る" aria-label="戻る" style={btnIcon(bg)}><ArrowLeft size={18} strokeWidth={2} /></button>
+            <button onClick={onLeave} title="戻る" aria-label="戻る" style={btnIcon(bg)} className="iris-back-btn"><ArrowLeft size={18} strokeWidth={2} /></button>
           </div>
         </div>
 
-        {/* タブ (Phase 2) — 5 カテゴリ グループ化。PC は横並びグループ、モバイルはアクティブ グループのみ */}
-        <nav className="iris-tabs-v2" style={{
-          maxWidth: 1280, margin: '0.5rem auto 0',
-          display: 'flex', alignItems: 'center', gap: 14,
-          overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4,
+        {/* モバイル用 タブ ナビゲーション (コンパクト横スクロール) */}
+        <nav className="iris-tabs-v2 iris-mobile-tabs" style={{
+          maxWidth: 1280, margin: '0.4rem auto 0',
+          display: 'flex', alignItems: 'center', gap: 6,
+          overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2,
         }}>
           {TAB_GROUPS.map((group, gi) => {
             const isActiveGroup = TAB_TO_GROUP[tab] === group.id;
@@ -521,26 +1140,36 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         )}
       </AnimatePresence>
 
-      {/* メインコンテンツ — モバイルではフローティング AI ボタン分の余白を確保
-          画像エディタは 1 画面完結なので余白を詰める (ページスクロール抑制) */}
+      {/* メインコンテンツ */}
       <main className="iris-main" style={{
         maxWidth: tab === 'image' ? 1280 : 1100, margin: '0 auto',
         padding: tab === 'image'
           ? '0.75rem 0.7rem calc(0.75rem + env(safe-area-inset-bottom, 0px))'
-          : '2rem 1.25rem calc(8.5rem + env(safe-area-inset-bottom, 0px))',
+          : `1.75rem 1.25rem calc(${IRIS_DOCK_H + 24}px + env(safe-area-inset-bottom, 0px))`,
+        flex: 1,
       }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            {...IRIS_MOTION.gentle}
           >
             {tab === 'home' && (
               <>
-                {/* 6 つのエージェントが、それぞれ動いている可視化 (LP の SIX FACETS と対応) */}
-                <div style={{ marginBottom: '0.85rem' }}>
+                {/* エディトリアル ホームダッシュ */}
+                <IrisEditorialHome
+                  bg={bg}
+                  myDeals={myDeals}
+                  postQueue={postQueue}
+                  knowledge={knowledge}
+                  igProfile={igProfile}
+                  onNavigate={(t) => setTab(t as Tab)}
+                  settings={settings}
+                  mediaKit={mediaKit}
+                  onConnectInstagram={() => setShowIgConnect(true)}
+                />
+
+                {/* 6 エージェント オービット */}
+                <div style={{ marginBottom: '1.25rem' }}>
                   <AgentsOrbit
                     specs={IRIS_SPECS}
                     order={IRIS_ORDER}
@@ -599,7 +1228,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   />
                 </div>
 
-                {/* 仕事獲得を最優先 (オーナー指示 2026-05-15) — 6 エージェントの直下に「稼ぐ案件」 */}
+                {/* 仕事獲得を最優先 */}
                 <IrisEarnHero
                   onOpenDeals={() => setTab('deals')}
                   onConnectInstagram={() => setShowIgConnect(true)}
@@ -607,8 +1236,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   igFollowers={igProfile?.followers}
                 />
 
-                {/* 健康が積み上がっている実感 (オーナー指示 2026-05-17) */}
-                <div style={{ marginBottom: '0.85rem' }}>
+                {/* 健康が積み上がっている実感 */}
+                <div style={{ marginBottom: '1.25rem' }}>
                   <WellnessTracker
                     today={health.today}
                     accent="#E1306C"
@@ -617,6 +1246,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   />
                 </div>
 
+                {/* AI チャット */}
                 <IrisVoiceHome
                   bg={bg} settings={settings}
                   myDeals={myDeals} mediaKit={mediaKit}
@@ -893,6 +1523,13 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
 
       {/* ベータ初日フィードバック */}
       <FeedbackWidget brand="iris" />
+
+      {/* モバイル下部 Dock */}
+      <div className="iris-dock-wrapper">
+        <IrisBottomDock tab={tab} setTab={setTab} bg={bg} onMore={() => setMoreOpen(true)} />
+      </div>
+
+      </div>{/* /右コンテンツエリア */}
     </div>
   );
 }
