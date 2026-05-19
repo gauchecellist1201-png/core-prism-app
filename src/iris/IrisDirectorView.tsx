@@ -8,6 +8,7 @@ import { PLATFORM_META, CONTENT_TYPE_META } from '../types/influencerDeal';
 import { generateBlueprint, type ContentBlueprint } from './contentDirector';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
+import { notifyInApp } from '../lib/inAppNotify';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -89,10 +90,10 @@ export default function IrisDirectorView({ bg, settings }: Props) {
     result.prep.forEach(p => md.push(`- ${p}`));
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(md.join('\n'))
-        .then(() => alert('Markdown 形式でクリップボードにコピーしました'))
-        .catch(() => alert('コピーできませんでした。お使いのブラウザで権限が許可されているかご確認ください。'));
+        .then(() => notifyInApp({ kind: 'success', title: 'コピーしました', body: 'Markdown 形式でクリップボードに入りました。' }))
+        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'お使いのブラウザでコピーの権限が許可されているかご確認ください。' }));
     } else {
-      alert('このブラウザはコピーに未対応です。テキストを手動で選択してコピーしてください。');
+      notifyInApp({ kind: 'info', title: 'コピーに未対応のブラウザです', body: 'テキストを手動で選択してコピーしてください。' });
     }
   };
 

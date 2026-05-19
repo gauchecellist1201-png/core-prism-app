@@ -23,6 +23,7 @@ import {
 } from '../types/influencerDeal';
 import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMessage } from './beautyAdvisor';
 import { shareToInstagram } from './instagramShare';
+import { notifyInApp } from '../lib/inAppNotify';
 import {
   Sparkles, TrendingUp, Search, Mail, Film, MessageSquare, Edit3,
   Camera, HeartPulse, Leaf, UsersRound, Users, Handshake, FileText,
@@ -1279,7 +1280,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     notes: '[Triage AI で精査済み]',
                     stage: 'inquiry',
                   });
-                  alert('案件として保存しました');
+                  notifyInApp({ kind: 'success', title: '案件として保存しました', body: '商談リストに追加しました。' });
                 }}
               />
             )}
@@ -2176,7 +2177,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
             <button
               onClick={async () => {
                 const r = await shareToInstagram({ caption: d.draftCopy || '', filename: `iris-${d.brandName || 'post'}.png` });
-                alert(r.message);
+                notifyInApp({ kind: r.method === 'failed' ? 'warn' : 'success', title: 'Instagram シェア', body: r.message });
               }}
               style={{
                 flex: '1 1 auto', minWidth: 140,
@@ -2191,7 +2192,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
             <button
               onClick={async () => {
                 const r = await shareToInstagram({ caption: d.draftCopy || '', filename: `iris-story-${d.brandName || 'post'}.png`, asStory: true });
-                alert(r.message);
+                notifyInApp({ kind: r.method === 'failed' ? 'warn' : 'success', title: 'Instagram ストーリー', body: r.message });
               }}
               style={{
                 flex: '1 1 auto', minWidth: 120,
@@ -2375,13 +2376,13 @@ function TeamView({ bg, team, desk, myDeals }: {
   const exportJson = () => {
     const json = team.exportTeam();
     navigator.clipboard?.writeText(json);
-    alert('チーム情報を JSON でコピーしました。仲間に渡してください。');
+    notifyInApp({ kind: 'success', title: 'チーム情報をコピーしました', body: '仲間に渡してください。' });
   };
   const tryImport = () => {
     if (!importText.trim()) return;
     const r = team.importTeam(importText);
-    if (r.error) { alert('インポートエラー: ' + r.error); return; }
-    alert(`${r.added} 件追加しました`);
+    if (r.error) { notifyInApp({ kind: 'warn', title: 'インポートできませんでした', body: r.error }); return; }
+    notifyInApp({ kind: 'success', title: `${r.added} 件追加しました` });
     setImportText('');
   };
 

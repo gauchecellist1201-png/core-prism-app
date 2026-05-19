@@ -11,6 +11,7 @@ import { IRIS_FONTS } from './irisStyle';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { copyText } from '../lib/clipboard';
 import { toneInstruction } from '../lib/aiTone';
+import { notifyInApp } from '../lib/inAppNotify';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Props {
@@ -146,8 +147,8 @@ export default function IrisFanEngagement({ bg, settings }: Props) {
   // ─── AI: TOP10 抽出 ────────────────────────────────────
   const extractTop10 = useCallback(async () => {
     const apiKey = getApiKey(settings);
-    if (!apiKey) { alert('Claude APIキーが設定されていません'); return; }
-    if (fans.length === 0) { alert('ファンデータがありません'); return; }
+    if (!apiKey) { notifyInApp({ kind: 'warn', title: 'Claude API キーが未設定です', body: '設定画面で API キーを登録してください。' }); return; }
+    if (fans.length === 0) { notifyInApp({ kind: 'info', title: 'ファンデータがありません', body: '先にファンを追加してください。' }); return; }
 
     setTop10Loading(true);
     setTop10(null);
@@ -193,7 +194,7 @@ ${toneInstruction()}
       const parsed = JSON.parse(m ? m[0] : text);
       setTop10(Array.isArray(parsed.top10) ? parsed.top10 : []);
     } catch (e) {
-      alert('AI 分析に失敗しました: ' + String(e));
+      notifyInApp({ kind: 'warn', title: 'AI 分析に失敗しました', body: String(e) });
     } finally {
       setTop10Loading(false);
     }
@@ -202,7 +203,7 @@ ${toneInstruction()}
   // ─── AI: 返信テンプレ生成 ─────────────────────────────
   const generateReply = useCallback(async (fan: FanContact) => {
     const apiKey = getApiKey(settings);
-    if (!apiKey) { alert('Claude APIキーが設定されていません'); return; }
+    if (!apiKey) { notifyInApp({ kind: 'warn', title: 'Claude API キーが未設定です', body: '設定画面で API キーを登録してください。' }); return; }
 
     setReplyFanId(fan.id);
     setReplyLoading(true);
@@ -247,7 +248,7 @@ ${toneInstruction()}
 
       setReplyTemplate(data.content?.[0]?.text ?? '');
     } catch (e) {
-      alert('テンプレ生成に失敗しました: ' + String(e));
+      notifyInApp({ kind: 'warn', title: 'テンプレ生成に失敗しました', body: String(e) });
     } finally {
       setReplyLoading(false);
     }
