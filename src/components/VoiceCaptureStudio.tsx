@@ -68,6 +68,14 @@ function WaveformBars({ active }: { active: boolean }) {
   );
 }
 
+// ─── Time format ──────────────────────────────────────────────
+
+function fmtTime(s: number) {
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2, '0')}`;
+}
+
 // ─── Kind label helpers ───────────────────────────────────────
 
 const KIND_META: Record<string, { emoji: string; label: string; color: string }> = {
@@ -92,25 +100,24 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
   const [error, setError] = useState<string | null>(null);
   const [selectedDealId, setSelectedDealId] = useState<string>('');
   const [saveMsg, setSaveMsg] = useState('');
+  const [elapsed, setElapsed] = useState(0);
 
   const recognitionRef = useRef<any>(null);
   const finalRef = useRef('');
+  const accumulatedRef = useRef('');     // 自動再開をまたいで貯めた確定テキスト
+  const manualStopRef = useRef(false);   // ユーザーが意図的に止めたか
+  const lastLenRef = useRef(0);          // 直近の再開時点での文字数
+  const emptyRestartsRef = useRef(0);    // 無音のまま再開した連続回数
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const personaDeals = crm.getForPersona(persona.id);
 
   // ─── Speech Recognition ───────────────────────────────────
+  // Chrome は無音が続くと continuous=true でも勝手に録音を終了する。
+  // その場合は静かに自動再開し、ユーザーには「止まった」と感じさせない。
 
-  const startRecording = useCallback(() => {
+  const buildRecognition = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setError('このブラウザは音声認識に対応していません。Chrome をお試しください。');
-      return;
-    }
-    finalRef.current = '';
-    setTranscript('');
-    setInterim('');
-    setError(null);
-
     const rec = new SpeechRecognition();
     rec.lang = 'ja-JP';
     rec.continuous = true;
@@ -124,35 +131,98 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
         if (r.isFinal) fin += r[0].transcript;
         else intr += r[0].transcript;
       }
-      finalRef.current = fin;
-      setTranscript(fin);
+      finalRef.current = accumulatedRef.current + fin;
+      setTranscript(finalRef.current);
       setInterim(intr);
     };
 
     rec.onerror = (e: any) => {
-      if (e.error !== 'no-speech') {
-        setError(`音声認識エラー: ${e.error}`);
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        manualStopRef.current = true;
+        setError('マイクの使用が許可されていません。ブラウザのマイク設定で「許可」にしてから、もう一度お試しください。');
+      } else if (e.error === 'audio-capture') {
+        manualStopRef.current = true;
+        setError('マイクが見つかりませんでした。マイクが接続されているか確認して、もう一度お試しください。');
       }
+      // no-speech / aborted / network → onend が拾って自動で録音を続けます
     };
 
     rec.onend = () => {
+      if (!manualStopRef.current) {
+        const grew = finalRef.current.length > lastLenRef.current;
+        lastLenRef.current = finalRef.current.length;
+        emptyRestartsRef.current = grew ? 0 : emptyRestartsRef.current + 1;
+        accumulatedRef.current = finalRef.current;
+        setInterim('');
+        // 無音が続いた（4周）ら録音を終える。それ以外は静かに再開
+        if (emptyRestartsRef.current < 4) {
+          try {
+            const next = buildRecognition();
+            recognitionRef.current = next;
+            next.start();
+            return;
+          } catch { /* 再開できなければ下で preview へ */ }
+        }
+      }
       setPhase(p => p === 'recording' ? 'preview' : p);
       setInterim('');
     };
 
-    recognitionRef.current = rec;
-    rec.start();
-    setPhase('recording');
+    return rec;
   }, []);
 
+  const startRecording = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setError('このブラウザは音声認識に対応していません。Chrome をお試しください。');
+      return;
+    }
+    finalRef.current = '';
+    accumulatedRef.current = '';
+    manualStopRef.current = false;
+    lastLenRef.current = 0;
+    emptyRestartsRef.current = 0;
+    setTranscript('');
+    setInterim('');
+    setError(null);
+    setElapsed(0);
+
+    try {
+      const rec = buildRecognition();
+      recognitionRef.current = rec;
+      rec.start();
+      setPhase('recording');
+    } catch {
+      setError('録音を開始できませんでした。もう一度お試しください。');
+    }
+  }, [buildRecognition]);
+
   const stopRecording = useCallback(() => {
+    manualStopRef.current = true;
     recognitionRef.current?.stop();
     setPhase('preview');
     setInterim('');
   }, []);
 
+  // 経過時間タイマー
   useEffect(() => {
-    return () => { recognitionRef.current?.stop(); };
+    if (phase === 'recording') {
+      timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    return () => {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    };
+  }, [phase]);
+
+  useEffect(() => {
+    return () => {
+      manualStopRef.current = true;
+      recognitionRef.current?.stop();
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
 
   // ─── Routing ──────────────────────────────────────────────
@@ -313,6 +383,18 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
 
               {phase === 'recording' ? (
                 <>
+                  <div className="flex items-center gap-2">
+                    <motion.span
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: '#f87171' }}
+                      animate={{ opacity: [1, 0.25, 1] }}
+                      transition={{ duration: 1.2, repeat: Infinity }}
+                    />
+                    <span className="text-fg text-sm font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtTime(elapsed)}
+                    </span>
+                    <span className="text-fg-subtle text-xs">録音中</span>
+                  </div>
                   <div className="w-full min-h-[80px] rounded-xl p-3 text-sm"
                     style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                     <span className="text-fg">{transcript}</span>
@@ -329,6 +411,10 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                   >
                     ⏹ 録音停止
                   </motion.button>
+                  <p className="text-fg-subtle text-xs text-center leading-relaxed">
+                    少し黙っても大丈夫。録音は止まりません。<br />
+                    話し終わったら ⏹ を押してください。
+                  </p>
                 </>
               ) : (
                 <motion.button
@@ -355,31 +441,46 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
           {/* ─── Preview ─── */}
           {phase === 'preview' && (
             <div className="flex flex-col gap-4">
-              <div>
-                <p className="text-fg-muted text-xs mb-2">認識結果</p>
-                <div className="w-full min-h-[100px] rounded-xl p-3 text-sm text-fg"
-                  style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
-                  {transcript || '(音声が認識されませんでした)'}
+              {transcript.trim() ? (
+                <div>
+                  <p className="text-fg-muted text-xs mb-2">認識結果</p>
+                  <div className="w-full min-h-[100px] rounded-xl p-3 text-sm text-fg"
+                    style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+                    {transcript}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-xl p-5 text-center"
+                  style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+                  <div className="text-3xl mb-2">🤫</div>
+                  <p className="text-fg text-sm font-medium mb-1.5">声が聞き取れませんでした</p>
+                  <p className="text-fg-muted text-xs leading-relaxed">
+                    マイクに少し近づいて、もう一度ゆっくり話してみてください。<br />
+                    静かな場所だと、より正確に聞き取れます。
+                  </p>
+                </div>
+              )}
               {error && <p className="text-red-400 text-xs">{error}</p>}
               <div className="flex gap-2">
                 <button
                   onClick={startRecording}
-                  className="flex-1 py-2.5 rounded-xl text-sm transition-colors"
-                  style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg-muted)' }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                  style={transcript.trim()
+                    ? { background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg-muted)' }
+                    : { background: persona.accentColor, color: '#1F1D26' }}
                 >
-                  再録音
+                  {transcript.trim() ? '再録音' : '🎙 もう一度話す'}
                 </button>
-                <motion.button
-                  onClick={handleRoute}
-                  disabled={!transcript.trim()}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 transition-all"
-                  style={{ background: persona.accentColor, color: '#1F1D26' }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  🤖 AI 振り分け
-                </motion.button>
+                {transcript.trim() && (
+                  <motion.button
+                    onClick={handleRoute}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                    style={{ background: persona.accentColor, color: '#1F1D26' }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    🤖 AI 振り分け
+                  </motion.button>
+                )}
               </div>
             </div>
           )}
