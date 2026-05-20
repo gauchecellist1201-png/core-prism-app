@@ -8,6 +8,7 @@ import { useCRM } from '../hooks/useCRM';
 import { computeTotals, fmtJpy, calcDueDate } from '../lib/invoiceCalc';
 import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
+import { notifyInApp } from '../lib/inAppNotify';
 
 interface Props {
   persona: Persona;
@@ -131,7 +132,7 @@ export default function DocumentStudio({ persona, settings: _settings, onClose }
 
   // ─── 保存 ─────────────────────────────────────────────
   const handleSave = useCallback((status: DocumentStatus = 'draft') => {
-    if (!issuer) { alert('まず発行者プロファイルを請求書スタジオで設定してください'); return; }
+    if (!issuer) { notifyInApp({ kind: 'warn', title: '発行者プロファイルが未設定です', body: 'まず請求書スタジオで発行者プロファイルを設定してください。' }); return; }
     const client: Client = selectedClient || { id: uuidv4(), name: '(未設定)' };
 
     if (editingDoc) {

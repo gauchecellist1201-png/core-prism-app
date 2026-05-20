@@ -9,6 +9,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { shareToInstagram } from './instagramShare';
+import { notifyInApp } from '../lib/inAppNotify';
 import {
   Image as ImageIcon, Film, Type, Music, Download, Share2,
   Play, Square, Trash2, ChevronUp, ChevronDown, Sparkles,
@@ -2183,7 +2184,7 @@ JSON のみで返答。`;
     const canvas = canvasRef.current;
     if (!canvas || !clips.length) return;
     if (!('MediaRecorder' in window)) {
-      alert('このブラウザは MediaRecorder 非対応です');
+      notifyInApp({ kind: 'warn', title: 'このブラウザは録画に未対応です', body: 'Chrome / Safari の最新版でお試しください。' });
       return;
     }
     setRecording(true);
@@ -2301,9 +2302,9 @@ JSON のみで返答。`;
       const blob = await res.blob();
       const mp4 = await convertWebmToMp4(blob);
       if (mp4) setConvertedMp4(URL.createObjectURL(mp4));
-      else alert('MP4 への変換ができませんでした。webm のままでもダウンロードできます。');
+      else notifyInApp({ kind: 'warn', title: 'MP4 への変換ができませんでした', body: 'webm のままでもダウンロードできます。' });
     } catch (e) {
-      alert('MP4 への変換中にエラーが起きました。webm のままダウンロードできます。\n' + (e instanceof Error ? e.message : String(e)));
+      notifyInApp({ kind: 'warn', title: 'MP4 への変換中にエラーが起きました', body: 'webm のままダウンロードできます。' + (e instanceof Error ? ` (${e.message})` : '') });
     } finally {
       setConverting(false);
     }

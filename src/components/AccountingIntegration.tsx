@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { notifyInApp } from '../lib/inAppNotify';
 
 type ProviderId = 'freee' | 'mf' | 'yayoi';
 
@@ -98,7 +99,7 @@ export default function AccountingIntegration() {
 
   const handleConnect = (p: Provider) => {
     if (!envAvailable[p.id]) {
-      alert(`${p.name} との連携は現在準備中です。使えるようになり次第アプリ内でお知らせします。`);
+      notifyInApp({ kind: 'info', title: `${p.name} との連携は準備中です`, body: '使えるようになり次第アプリ内でお知らせします。' });
       return;
     }
     setOauthStatus(s => ({ ...s, [p.id]: 'checking' }));

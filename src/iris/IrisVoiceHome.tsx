@@ -8,6 +8,7 @@ import type { AppSettings } from '../types/identity';
 import type { MediaKit, InfluencerDeal } from '../types/influencerDeal';
 import { chatWithIris, type AssistantMessage } from './irisAssistant';
 import { shareToInstagram } from './instagramShare';
+import { notifyInApp } from '../lib/inAppNotify';
 import ApiErrorCard from '../components/ApiErrorCard';
 import {
   Film, Camera, MessageSquare, BarChart3, HeartPulse, Mic, Mail,
@@ -504,7 +505,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
                     <button
                       onClick={async () => {
                         const r = await shareToInstagram({ caption: m.content, filename: `iris-voice-${Date.now()}.png` });
-                        alert(r.message);
+                        notifyInApp({ kind: r.method === 'failed' ? 'warn' : 'success', title: 'Instagram シェア', body: r.message });
                       }}
                       style={{
                         background: 'linear-gradient(135deg, #FCB045 0%, #E1306C 50%, #833AB4 100%)',
@@ -521,7 +522,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
                     <button
                       onClick={async () => {
                         const r = await shareToInstagram({ caption: m.content, filename: `iris-story-${Date.now()}.png`, asStory: true });
-                        alert(r.message);
+                        notifyInApp({ kind: r.method === 'failed' ? 'warn' : 'success', title: 'Instagram ストーリー', body: r.message });
                       }}
                       style={{
                         background: 'rgba(255,255,255,0.94)',

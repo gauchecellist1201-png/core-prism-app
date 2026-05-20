@@ -4,6 +4,7 @@
 // ============================================================
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ApiErrorCard from './ApiErrorCard';
+import { notifyInApp } from '../lib/inAppNotify';
 import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from '../iris/irisStyle';
 import { IRIS_FONTS } from '../iris/irisStyle';
@@ -562,8 +563,9 @@ export default function VideoStudio({ bg, settings }: Props) {
             </p>
             <button
               onClick={() => {
-                navigator.clipboard?.writeText(script.caption + '\n\n' + script.hashtags.join(' '));
-                alert('クリップボードにコピーしました');
+                navigator.clipboard?.writeText(script.caption + '\n\n' + script.hashtags.join(' '))
+                  .then(() => notifyInApp({ kind: 'success', title: 'コピーしました', body: 'キャプションとハッシュタグをクリップボードに入れました。' }))
+                  .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'お使いのブラウザでコピーの権限が許可されているかご確認ください。' }));
               }}
               style={{ ...btnSecondary, marginTop: '0.85rem' }}
             >
