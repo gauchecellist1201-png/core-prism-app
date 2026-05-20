@@ -321,8 +321,8 @@ export default function CoreSite() {
 
           {/* メインステートメント */}
           <motion.h2
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ y: 24 }}
+            whileInView={{ y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 1 }}
             style={{
@@ -467,8 +467,8 @@ export default function CoreSite() {
             <span style={sectionLabelSub}>MISSION</span>
           </p>
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ y: 20 }}
+            whileInView={{ y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.9 }}
             style={{
@@ -648,8 +648,8 @@ export default function CoreSite() {
             <span style={sectionLabelSub}>PHILOSOPHY</span>
           </p>
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ y: 20 }}
+            whileInView={{ y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.9 }}
             style={{
@@ -1118,8 +1118,8 @@ function FeatureProduct({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ y: 24 }}
+      whileInView={{ y: 0 }}
       viewport={{ once: true, margin: '-100px' }}
       transition={{ duration: 0.7 }}
       className="lp-feature-product"
@@ -1409,8 +1409,8 @@ function ValuePillar({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ y: 24 }}
+      whileInView={{ y: 0 }}
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.7 }}
       style={{
