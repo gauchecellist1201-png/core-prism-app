@@ -27,21 +27,82 @@ export interface AgentLive {
   onClick: () => void;
 }
 
-const SPECS: Record<AgentKey, { name: string; role: string; color: string; Icon: LucideIcon; thinking: string[] }> = {
-  ceo:       { name: '経営', role: 'CEO',       color: '#ff5757', Icon: Compass,
-    thinking: ['次の一手を考えています', '今月の数字を見直しています', '優先順位を組み直しています', 'リスクを洗い出しています'] },
-  sales:     { name: '営業', role: 'Sales',     color: '#ff9842', Icon: Briefcase,
-    thinking: ['見込みのお客さんを探しています', '商談メモを整理しています', '提案文を下書きしています', '反論への返しを用意しています'] },
-  cfo:       { name: '財務', role: 'CFO',       color: '#fbbf24', Icon: TrendingUp,
-    thinking: ['今月の売上を集計しています', 'キャッシュを予測しています', '経費を分類しています', '請求書の発行待ちを確認しています'] },
-  creative:  { name: '創造', role: 'Creative',  color: '#4ade80', Icon: Sparkles,
-    thinking: ['画像を構図しています', '原稿の骨組みを考えています', 'ブランドの色を整えています', 'スライドの順番を組み直しています'] },
-  knowledge: { name: '学び', role: 'Knowledge', color: '#60a5fa', Icon: BookOpen,
-    thinking: ['資料を読み込んでいます', '関連する文脈を結びつけています', '要点を抜き出しています', '横断検索の道を作っています'] },
-  people:    { name: '人材', role: 'People',    color: '#a78bfa', Icon: Users,
-    thinking: ['チームの空気を読んでいます', '1on1 の話題を準備しています', '採用候補を整理しています', '言葉づかいを調整しています'] },
-  life:      { name: '生活', role: 'Life',      color: '#f472b6', Icon: Heart,
-    thinking: ['睡眠の質を見ています', '今日のリズムを設計しています', '心の余白を見守っています', '家族の予定を整えています'] },
+const SPECS: Record<AgentKey, {
+  name: string; role: string; color: string; Icon: LucideIcon;
+  tagline: string;          // 1 行で「この人は何屋さん?」
+  canDo: [string, string, string];  // 3 つの具体的にできること
+  thinking: string[];
+}> = {
+  ceo: {
+    name: '経営', role: 'CEO', color: '#ff5757', Icon: Compass,
+    tagline: 'あなたの代わりに「次、何やる?」を決める参謀',
+    canDo: [
+      '今月の数字を見て優先順位を組み直す',
+      '会社の方針を 3 行にまとめる',
+      'リスクや見落としを先に教えてくれる',
+    ],
+    thinking: ['次の一手を考えています', '今月の数字を見直しています', '優先順位を組み直しています', 'リスクを洗い出しています'],
+  },
+  sales: {
+    name: '営業', role: 'Sales', color: '#ff9842', Icon: Briefcase,
+    tagline: '見込み客を探して、提案文まで下書きしてくれる営業マン',
+    canDo: [
+      '新しい見込みのお客さんを探してリストにする',
+      '商談メモから提案文を 3 通り書き分ける',
+      '断られそうな反論への返しを用意しておく',
+    ],
+    thinking: ['見込みのお客さんを探しています', '商談メモを整理しています', '提案文を下書きしています', '反論への返しを用意しています'],
+  },
+  cfo: {
+    name: '財務', role: 'CFO', color: '#fbbf24', Icon: TrendingUp,
+    tagline: 'お金の流れを見張ってくれる経理部長',
+    canDo: [
+      '今月の売上を自動で集計してグラフにする',
+      '来月以降の現金残高を予測する',
+      '経費レシートを科目ごとに振り分ける',
+    ],
+    thinking: ['今月の売上を集計しています', 'キャッシュを予測しています', '経費を分類しています', '請求書の発行待ちを確認しています'],
+  },
+  creative: {
+    name: '創造', role: 'Creative', color: '#4ade80', Icon: Sparkles,
+    tagline: '画像・原稿・スライドをぱっと作るデザイン担当',
+    canDo: [
+      '指示 1 行から SNS 画像をその場で作る',
+      '原稿の骨組みと見出しを下書きする',
+      'プレゼン資料の構成を整える',
+    ],
+    thinking: ['画像を構図しています', '原稿の骨組みを考えています', 'ブランドの色を整えています', 'スライドの順番を組み直しています'],
+  },
+  knowledge: {
+    name: '学び', role: 'Knowledge', color: '#60a5fa', Icon: BookOpen,
+    tagline: '読んだ資料を全部覚えてくれる図書館の司書',
+    canDo: [
+      'PDF や議事録を読み込んで要点だけ抜く',
+      '「あの件、過去にどう言ってた?」を即答する',
+      '関連する社内の話を横断でつなげる',
+    ],
+    thinking: ['資料を読み込んでいます', '関連する文脈を結びつけています', '要点を抜き出しています', '横断検索の道を作っています'],
+  },
+  people: {
+    name: '人材', role: 'People', color: '#a78bfa', Icon: Users,
+    tagline: 'チームの空気と人間関係を見ているマネージャー',
+    canDo: [
+      '1on1 で何を話せばいいか準備する',
+      '採用候補のメモを整理して比較表を作る',
+      '相手に合わせて言葉づかいを直す',
+    ],
+    thinking: ['チームの空気を読んでいます', '1on1 の話題を準備しています', '採用候補を整理しています', '言葉づかいを調整しています'],
+  },
+  life: {
+    name: '生活', role: 'Life', color: '#f472b6', Icon: Heart,
+    tagline: 'あなた自身の調子と暮らしを整えるパートナー',
+    canDo: [
+      '今日の睡眠・体調から無理なリズムを警告する',
+      '休む時間と集中時間を 1 日に組み込む',
+      '家族や個人の予定も忘れずに教える',
+    ],
+    thinking: ['睡眠の質を見ています', '今日のリズムを設計しています', '心の余白を見守っています', '家族の予定を整えています'],
+  },
 };
 
 const ORDER: AgentKey[] = ['ceo', 'sales', 'cfo', 'creative', 'knowledge', 'people', 'life'];
@@ -72,11 +133,21 @@ export default function SevenAgentsOrbit({ agents }: Props) {
   const [bursts, setBursts] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
   const burstId = useRef(0);
 
+  // 「できること」自動ローテーション (4 秒ごとに 7 人を順に紹介)
+  const [spotIdx, setSpotIdx] = useState(0);
+
   // 会話を 3.5 秒ごとに切替
   useEffect(() => {
     const t = setInterval(() => setConvIdx(i => (i + 1) % CONVERSATIONS.length), 3500);
     return () => clearInterval(t);
   }, []);
+
+  // 「できること」紹介を 4 秒ごとに切替 (ホバー中は停止)
+  useEffect(() => {
+    if (hoverKey) return;
+    const t = setInterval(() => setSpotIdx(i => (i + 1) % ORDER.length), 4000);
+    return () => clearInterval(t);
+  }, [hoverKey]);
 
   // ホバー時のタイプライター
   useEffect(() => {
@@ -223,6 +294,7 @@ export default function SevenAgentsOrbit({ agents }: Props) {
               type="button"
               onMouseEnter={() => setHoverKey(key)}
               onMouseLeave={() => setHoverKey(null)}
+              onPointerEnter={() => setHoverKey(key)}
               onClick={(e) => { triggerBurst(e, spec.color); live?.onClick?.(); }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -348,43 +420,140 @@ export default function SevenAgentsOrbit({ agents }: Props) {
         })}
       </div>
 
-      {/* ホバー時の思考タイプライター */}
-      <AnimatePresence>
-        {hoverKey && hoverThinking && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.25 }}
-            style={{
-              margin: '0.4rem 0.8rem 0',
-              padding: '6px 12px',
-              borderRadius: 10,
-              background: `${SPECS[hoverKey].color}18`,
-              border: `1px solid ${SPECS[hoverKey].color}55`,
-              fontSize: 11.5, color: '#fff',
-              fontFamily: '"SF Mono", Menlo, monospace',
-              lineHeight: 1.5,
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ color: SPECS[hoverKey].color, fontWeight: 800 }}>{SPECS[hoverKey].name}</span>
-            <span style={{ opacity: 0.6 }}> · 今これを考えています</span>
-            <div style={{ marginTop: 3, opacity: 0.95 }}>
-              {hoverThinking}
-              <span style={{ animation: 'orbitCaretBlink 0.8s infinite' }}>▎</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* 「これは何ができる?」スポットライト
+          ホバー中 → ホバーしたエージェント
+          ホバー外 → 4 秒ごとに 7 人を順番に紹介 */}
+      {(() => {
+        const focusKey: AgentKey = hoverKey ?? ORDER[spotIdx];
+        const spec = SPECS[focusKey];
+        const live = map.get(focusKey);
+        return (
+          <div style={{
+            position: 'relative',
+            margin: '0.5rem 0.6rem 0.2rem',
+            padding: '0.7rem 0.95rem 0.75rem',
+            borderRadius: 14,
+            background: `linear-gradient(135deg, ${spec.color}18 0%, rgba(7,7,18,0.55) 100%)`,
+            border: `1px solid ${spec.color}55`,
+            overflow: 'hidden',
+            minHeight: 118,
+          }}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={focusKey}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.35 }}
+              >
+                {/* ヘッダ: 名前 + ロール + 今動いているか */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: `radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3), ${spec.color})`,
+                    boxShadow: `0 0 12px ${spec.color}aa`,
+                  }}>
+                    <spec.Icon size={12} color="#fff" strokeWidth={2.4} />
+                  </span>
+                  <span style={{ fontSize: 12.5, fontWeight: 800, color: '#fff' }}>
+                    {spec.name}エージェント
+                  </span>
+                  <span style={{
+                    fontSize: 9, fontWeight: 800, letterSpacing: '0.12em',
+                    color: spec.color, opacity: 0.9,
+                  }}>
+                    {spec.role.toUpperCase()}
+                  </span>
+                  {(live?.count ?? 0) > 0 && (
+                    <span style={{
+                      marginLeft: 'auto',
+                      fontSize: 10, fontWeight: 700,
+                      color: spec.color, opacity: 0.95,
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                    }}>
+                      <motion.span
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 1.4, repeat: Infinity }}
+                        style={{ width: 6, height: 6, borderRadius: '50%', background: spec.color, display: 'inline-block' }}
+                      />
+                      今動いています
+                    </span>
+                  )}
+                </div>
+
+                {/* タグライン: この人は何屋さんか */}
+                <div style={{
+                  fontSize: 11.5, color: 'rgba(255,255,255,0.85)',
+                  lineHeight: 1.45, marginBottom: 6,
+                }}>
+                  {spec.tagline}
+                </div>
+
+                {/* 3 つのできること */}
+                <ul style={{
+                  listStyle: 'none', padding: 0, margin: 0,
+                  display: 'grid', gap: 3,
+                }}>
+                  {spec.canDo.map((line, i) => (
+                    <li key={i} style={{
+                      display: 'flex', gap: 7, alignItems: 'flex-start',
+                      fontSize: 11, color: '#fff', opacity: 0.92, lineHeight: 1.45,
+                    }}>
+                      <span style={{
+                        flexShrink: 0, marginTop: 5,
+                        width: 4, height: 4, borderRadius: '50%',
+                        background: spec.color,
+                        boxShadow: `0 0 6px ${spec.color}`,
+                      }} />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* 思考タイプライター (ホバー時のみ) */}
+                {hoverKey && hoverThinking && (
+                  <div style={{
+                    marginTop: 7,
+                    fontSize: 10, color: spec.color, opacity: 0.85,
+                    fontFamily: '"SF Mono", Menlo, monospace',
+                    lineHeight: 1.4,
+                  }}>
+                    今ちょうど: {hoverThinking}
+                    <span style={{ animation: 'orbitCaretBlink 0.8s infinite' }}>▎</span>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* ローテーション進捗インジケーター (ホバー外のみ) */}
+            {!hoverKey && (
+              <div style={{
+                display: 'flex', gap: 3, justifyContent: 'center',
+                marginTop: 7,
+              }}>
+                {ORDER.map((k, i) => (
+                  <span key={k} style={{
+                    width: i === spotIdx ? 14 : 4,
+                    height: 3, borderRadius: 2,
+                    background: i === spotIdx ? SPECS[k].color : 'rgba(255,255,255,0.18)',
+                    transition: 'all 0.4s ease',
+                  }} />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <p style={{
-        marginTop: '0.6rem',
+        marginTop: '0.55rem',
         textAlign: 'center',
         fontSize: 10, color: 'rgba(255,255,255,0.5)',
-        letterSpacing: '0.25em', fontWeight: 700,
+        letterSpacing: '0.2em', fontWeight: 700,
+        lineHeight: 1.5,
       }}>
-        あなたの 7 人の参謀が、いま動いています
+        触ると詳しく見えます · タップでそのエージェントを開きます
       </p>
 
       {/* クリック爆発エフェクト */}
