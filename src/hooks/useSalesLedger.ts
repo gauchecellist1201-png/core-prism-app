@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { SalesEntry } from '../types/sales';
 import type { Invoice } from '../types/invoice';
 import { entryFromInvoice } from '../lib/salesLedger';
+import { safeSetJSON } from '../lib/storage';
 
 const KEY = 'core_sales_ledger_v1';
 
@@ -11,7 +12,7 @@ function load(): SalesEntry[] {
   catch { return []; }
 }
 function save(arr: SalesEntry[]) {
-  try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch { /* quota */ }
+  safeSetJSON(KEY, arr, { module: '売上台帳' });
 }
 
 /**

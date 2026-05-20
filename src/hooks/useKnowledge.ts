@@ -4,6 +4,7 @@ import type { KnowledgeItem, KnowledgeChunk, PersonaId, AppSettings, Persona, Kn
 import { parseFile } from '../lib/fileParser';
 import { analyzeKnowledge, looksLikeFinancialData, extractFinancialData } from '../lib/analyzeKnowledge';
 import { useCloudSync } from './useCloudSync';
+import { safeSetJSON } from '../lib/storage';
 
 const STORAGE_KEY = 'core_knowledge';
 const CHUNK_SIZE = 400; // characters per chunk
@@ -108,7 +109,7 @@ function load(): KnowledgeItem[] {
 }
 
 function save(items: KnowledgeItem[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  safeSetJSON(STORAGE_KEY, items, { module: 'ナレッジ' });
 }
 
 type UpdateCashflowFn = (

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { ExpenseEntry } from '../types/expense';
+import { safeSetJSON } from '../lib/storage';
 
 const KEY = 'core_expenses_v1';
 
@@ -9,7 +10,7 @@ function load(): ExpenseEntry[] {
   catch { return []; }
 }
 function save(arr: ExpenseEntry[]) {
-  try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch { /* quota */ }
+  safeSetJSON(KEY, arr, { module: '経費' });
 }
 
 export function useExpenses() {

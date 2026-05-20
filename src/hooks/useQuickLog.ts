@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { safeSetJSON } from '../lib/storage';
 
 export interface QuickLogEntry {
   id: string;
@@ -19,9 +20,7 @@ function load(): QuickLogEntry[] {
   }
 }
 function save(entries: QuickLogEntry[]) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(entries));
-  } catch {}
+  safeSetJSON(KEY, entries, { module: 'メモ' });
 }
 
 export function useQuickLog() {

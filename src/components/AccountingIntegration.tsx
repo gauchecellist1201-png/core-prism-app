@@ -3,9 +3,9 @@
 // Phase 1: OAuth 接続 UI + 接続状態表示 (env 未設定なら接続不可)
 // Phase 2 (予約): 売上自動同期、請求書取込、勘定科目マッピング
 // ============================================================
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { Check, RotateCcw } from 'lucide-react';
 import { notifyInApp } from '../lib/inAppNotify';
 
 type ProviderId = 'freee' | 'mf' | 'yayoi';
@@ -77,23 +77,36 @@ export default function AccountingIntegration() {
   const [connections, setConnections] = useState<Connection[]>(() => loadConnections());
   const [oauthStatus, setOauthStatus] = useState<Record<ProviderId, 'idle' | 'checking'>>({} as any);
   const [envAvailable, setEnvAvailable] = useState<Record<ProviderId, boolean>>({} as any);
+  // 状態取得が「通信障害」で失敗したのか「未設定 (404 等)」なのかを区別する
+  const [fetchState, setFetchState] = useState<'idle' | 'loading' | 'ok' | 'network-error'>('idle');
 
   // env 設定確認 (公開エンドポイント /api/accounting/status を叩く想定)
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/accounting/status');
-        if (res.ok) {
-          const data = await res.json();
-          setEnvAvailable({
-            freee: !!data.freee?.configured,
-            mf: !!data.mf?.configured,
-            yayoi: !!data.yayoi?.configured,
-          });
-        }
-      } catch {/* endpoint 未実装 → すべて未設定扱い */}
-    })();
+  const checkStatus = useCallback(async () => {
+    setFetchState('loading');
+    try {
+      const res = await fetch('/api/accounting/status');
+      if (res.ok) {
+        const data = await res.json();
+        setEnvAvailable({
+          freee: !!data.freee?.configured,
+          mf: !!data.mf?.configured,
+          yayoi: !!data.yayoi?.configured,
+        });
+        setFetchState('ok');
+      } else if (res.status === 404) {
+        // エンドポイント未実装は「未設定」と同義扱い (障害ではない)
+        setFetchState('ok');
+      } else {
+        // 5xx 等のサーバー側の一時不調 — 通信障害として扱う
+        setFetchState('network-error');
+      }
+    } catch {
+      // TypeError 等 (ネットワーク断・CORS・DNS 失敗) は通信障害
+      setFetchState('network-error');
+    }
   }, []);
+
+  useEffect(() => { checkStatus(); }, [checkStatus]);
 
   const isConnected = (id: ProviderId) => connections.some(c => c.provider === id && c.status === 'connected');
 
@@ -119,6 +132,37 @@ export default function AccountingIntegration() {
       <p className="text-xs text-fg-muted">
         会計サービスと API 連携 — 売上台帳・請求書・経費が双方向に自動同期されます
       </p>
+
+      {fetchState === 'network-error' && (
+        <div
+          role="alert"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.35)',
+            borderRadius: 12, padding: '0.7rem 0.9rem',
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p className="text-fg text-sm font-medium" style={{ margin: 0 }}>連携状況を一時的に取得できませんでした</p>
+            <p className="text-xs text-fg-muted" style={{ margin: '2px 0 0' }}>
+              通信状況を確認して、もう一度お試しください。
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={checkStatus}
+            disabled={(fetchState as string) === 'loading'}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: 'rgba(251,191,36,0.18)', border: '1px solid rgba(251,191,36,0.45)',
+              color: '#FBBF24', padding: '0.4rem 0.85rem', borderRadius: 999,
+              fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            <RotateCcw size={12} />再読み込み
+          </button>
+        </div>
+      )}
 
       <div className="space-y-2">
         {PROVIDERS.map(p => {

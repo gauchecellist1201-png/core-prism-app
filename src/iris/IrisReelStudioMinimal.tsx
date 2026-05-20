@@ -430,7 +430,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     if (!canvasRef.current || !clips.length) return;
     setRecording(true); setProgress(0); setExportUrl(null);
     const stream = (canvasRef.current as HTMLCanvasElement).captureStream(30);
-    // 音声トラックを混ぜる
+    // 音声トラックを混ぜる (失敗してもユーザーに気づかせる)
     if (bgmFile) {
       try {
         const ac = new AudioContext();
@@ -440,7 +440,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         const dest = ac.createMediaStreamDestination();
         src.connect(dest); src.start();
         dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
-      } catch {/* */}
+      } catch (e) {
+        notifyInApp({
+          kind: 'warn',
+          title: '音声の書き出しに失敗しました',
+          body: '音楽なしで書き出しを続けます。BGM を選び直してもう一度お試しください。',
+          duration: 7000,
+        });
+      }
     }
     chunksRef.current = [];
     // MP4 をまず試す (Safari / 新しめの Chrome で対応)。落ちたら WebM
@@ -456,6 +463,16 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       const blob = new Blob(chunksRef.current, { type: mime });
       setExportUrl(URL.createObjectURL(blob));
       setRecording(false); setProgress(1);
+    };
+    rec.onerror = () => {
+      setRecording(false); setProgress(0);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+      notifyInApp({
+        kind: 'warn',
+        title: '動画の書き出しに失敗しました',
+        body: 'もう一度「書き出す」ボタンを押してください。素材はそのまま残しています。',
+        duration: 7000,
+      });
     };
     recorderRef.current = rec;
     rec.start();

@@ -262,6 +262,13 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
     return !!loadToken(t.id);
   };
 
+  // 運営側 (CORE) の OAuth 設定がまだ用意できていない連携は「準備中」扱い
+  const isComingSoon = (t: Tool): boolean => {
+    if (t.id === 'gmail') return !isGmailConfigured();
+    if (t.id === 'gcal') return !isCalConfigured();
+    return false;
+  };
+
   const connectedCount = CATALOG.filter(isConnected).length;
 
   const disconnect = (t: Tool) => {
@@ -327,6 +334,7 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
                     tool={t}
                     accent={accent}
                     connected={isConnected(t)}
+                    comingSoon={isComingSoon(t)}
                     open={openId === t.id}
                     onToggle={() => setOpenId(openId === t.id ? null : t.id)}
                     onConnected={refresh}
@@ -362,8 +370,8 @@ function BrandIcon({ tool, size = 40 }: { tool: Tool; size?: number }) {
   );
 }
 
-function ToolCard({ tool, accent, connected, open, onToggle, onConnected, onDisconnect }: {
-  tool: Tool; accent: string; connected: boolean; open: boolean;
+function ToolCard({ tool, accent, connected, comingSoon = false, open, onToggle, onConnected, onDisconnect }: {
+  tool: Tool; accent: string; connected: boolean; comingSoon?: boolean; open: boolean;
   onToggle: () => void; onConnected: () => void; onDisconnect: () => void;
 }) {
   const [stepIdx, setStepIdx] = useState(0);
@@ -453,6 +461,14 @@ function ToolCard({ tool, accent, connected, open, onToggle, onConnected, onDisc
             padding: '4px 9px', borderRadius: 999, flexShrink: 0,
             display: 'inline-flex', alignItems: 'center', gap: 3,
           }}><Check size={11} /> 連携済み</span>
+        ) : comingSoon ? (
+          <span style={{
+            fontSize: 9.5, fontWeight: 800, color: 'rgba(255,255,255,0.55)',
+            background: 'rgba(255,255,255,0.08)',
+            padding: '4px 9px', borderRadius: 999, flexShrink: 0,
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}>準備中</span>
         ) : (
           <span style={{
             fontSize: 10, fontWeight: 800, color: accent,
