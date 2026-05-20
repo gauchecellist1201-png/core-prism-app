@@ -1149,11 +1149,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           : `1.75rem 1.25rem calc(${IRIS_DOCK_H + 24}px + env(safe-area-inset-bottom, 0px))`,
         flex: 1,
       }}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={tab}
-            {...IRIS_MOTION.gentle}
-          >
+        {/* タブ切替: アニメ無し (mode="wait" + 初期 opacity:0 の組合せで本文が見えなくなる事故が発生したため、確実に表示することを優先) */}
+        <div key={tab}>
             {tab === 'home' && (
               <>
                 {/* エディトリアル ホームダッシュ */}
@@ -1328,8 +1325,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 />
               </div>
             )}
-          </motion.div>
-        </AnimatePresence>
+          </div>
       </main>
 
       {/* Instagram 連携モーダル */}
