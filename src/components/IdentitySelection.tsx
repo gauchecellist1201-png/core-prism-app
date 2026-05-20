@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import type { Persona } from '../types/identity';
 import SampleDataCTA from './SampleDataCTA';
+import StreakBadge from './StreakBadge';
 
 interface Props {
   personas: Persona[];
@@ -52,6 +53,9 @@ export default function IdentitySelection({ personas, userName, onSelect, onCrea
         <p className="text-neutral-600 text-sm font-light tracking-wider">
           人格を選択して、最適化された環境へ入る
         </p>
+        <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center' }}>
+          <StreakBadge accent="#A78BFA" />
+        </div>
       </motion.div>
 
       {/* Persona grid */}

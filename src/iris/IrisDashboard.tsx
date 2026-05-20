@@ -12,6 +12,7 @@ import {
 import { IRIS_TYPE, IRIS_SHADOW, IRIS_RADIUS, IRIS_GRADIENT, IRIS_MOTION, IRIS_SIDEBAR_W, IRIS_DOCK_H } from './irisDesign';
 import IrisCustomBgEditor from './IrisCustomBgEditor';
 import IrisImageEditor from './IrisImageEditor';
+import StreakBadge from '../components/StreakBadge';
 import { useInfluencerDesk } from '../hooks/useInfluencerDesk';
 import {
   generateNegotiation, generateDraftCopy,
@@ -489,13 +490,18 @@ function IrisEditorialHome({
           <p style={{
             ...IRIS_TYPE.lead,
             color: 'rgba(255,255,255,0.72)',
-            margin: '0 0 1.75rem',
+            margin: '0 0 1rem',
             maxWidth: 480,
           }}>
             {myDeals.length
               ? `${myDeals.length} 件の案件が進行中。Iris が優先順を整えました。`
               : 'Iris があなたの今日をサポートします。最初の案件を登録しましょう。'}
           </p>
+
+          {/* 連続ログイン日数バッジ */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <StreakBadge accent="#E1306C" />
+          </div>
 
           {/* ステータス行 */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', position: 'relative' }}>
