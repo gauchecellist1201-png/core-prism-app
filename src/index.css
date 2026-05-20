@@ -1311,11 +1311,13 @@ input, textarea, select { font-family: inherit; }
   }
 }
 
-/* サイドバー分の左マージン (デスクトップ) */
+/* サイドバー分の左マージン (デスクトップ)
+   サイドバーは position:fixed / width:220px なので、本文を 220px 右に逃がす。
+   モバイル (900px 以下) はサイドバーが非表示なのでマージン無し。 */
 @media (min-width: 901px) {
   .iris-header-sticky,
   .iris-main {
-    margin-left: 0 !important;
+    margin-left: 220px !important;
   }
 }
 
