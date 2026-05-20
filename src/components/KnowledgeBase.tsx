@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { KnowledgeItem, Persona, AppSettings } from '../types/identity';
 import AgentProposalCard from './AgentProposalCard';
 import SampleDataCTA from './SampleDataCTA';
+import ContextualUpgradeCard from './ContextualUpgradeCard';
+import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
 import {
   proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse,
   KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal,
@@ -295,6 +297,24 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
+          {/* 文脈型アップグレード提案 — 成果物 (ナレッジ) が貯まってきた人向け */}
+          {items.length >= 20 && (() => {
+            const user = loadBillingUser();
+            const isOnFreePlan = !isAuthorizedFn() || (user?.plan === 'free');
+            if (!isOnFreePlan) return null;
+            return (
+              <div className="p-3">
+                <ContextualUpgradeCard
+                  trigger="artifact-volume"
+                  planName="標準プラン"
+                  context={`${persona.name}に ${items.length} 件の資料がたまっています。`}
+                  dismissKey={`kb-artifact-${persona.id}`}
+                  accent={persona.accentColor}
+                  onUpgrade={() => { window.location.href = '/pricing'; }}
+                />
+              </div>
+            );
+          })()}
           <AnimatePresence mode="wait">
             {tab === 'propose' && (
               <motion.div key="propose" className="p-4 space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

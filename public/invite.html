@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/core-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- SEO (招待リンク専用) -->
+    <title>CORE Prism に招待されました — +14 日 無料延長つき</title>
+    <meta name="description" content="友達からの招待で 14 日間ぶん追加。通常 7 日が合計 21 日間 無料で試せます。AI エージェントが営業・財務・案件管理まで代行する、すべての事業家のためのオールインワン AI。" />
+    <link rel="canonical" href="https://core-prism-app.vercel.app/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://core-prism-app.vercel.app/" />
+    <meta property="og:title" content="CORE Prism に招待されました — +14 日 無料延長つき" />
+    <meta property="og:description" content="友達からの招待で 14 日間ぶん追加。通常 7 日が合計 21 日間 無料で試せます。AI が事業を回す、すべての事業家の OS。" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:site_name" content="CORE Prism" />
+    <meta property="og:image" content="https://core-prism-app.vercel.app/og-referral-v1.png?v=20260520" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="CORE Prism に招待されました — +14 日 無料延長つき" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="CORE Prism に招待されました — +14 日 無料延長つき" />
+    <meta name="twitter:description" content="友達からの招待で 14 日間ぶん追加。通常 7 日が合計 21 日間 無料で試せます。AI が事業を回す、すべての事業家の OS。" />
+    <meta name="twitter:image" content="https://core-prism-app.vercel.app/og-referral-v1.png?v=20260520" />
+
+    <style>
+      html, body {
+        margin: 0; padding: 0;
+        background: linear-gradient(135deg, #0A0A14 0%, #1a0f2e 50%, #2e1456 100%);
+        color: #fff;
+        font-family: "Inter", "Hiragino Kaku Gothic ProN", system-ui, sans-serif;
+        min-height: 100dvh;
+        display: flex; align-items: center; justify-content: center;
+        padding: 1.5rem;
+      }
+      .card {
+        max-width: 480px; text-align: center;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 18px;
+        padding: 2rem 1.4rem;
+      }
+      .eyebrow {
+        font-size: 11px; letter-spacing: 0.3em; font-weight: 800;
+        color: #FBBF24; margin-bottom: 1rem;
+      }
+      h1 {
+        font-size: 1.5rem; font-weight: 900; line-height: 1.4;
+        margin: 0 0 1rem;
+      }
+      .sub {
+        font-size: 0.92rem; color: rgba(255,255,255,0.7);
+        line-height: 1.7; margin: 0 0 1.4rem;
+      }
+      .cta {
+        display: inline-block;
+        background: linear-gradient(135deg, #FBBF24, #FB923C);
+        color: #1F2937;
+        font-weight: 800; font-size: 0.95rem;
+        text-decoration: none;
+        padding: 0.85rem 1.6rem; border-radius: 999px;
+        box-shadow: 0 8px 24px rgba(251,191,36,0.4);
+      }
+      .small {
+        margin-top: 1rem; font-size: 11px;
+        color: rgba(255,255,255,0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <p class="eyebrow">CORE PRISM × INVITATION</p>
+      <h1>友達から招待されました<br/>+14 日 無料延長つき</h1>
+      <p class="sub">
+        通常 7 日 → 合計 <strong>21 日間</strong> 無料でお試しできます。<br/>
+        AI が事業を回す、すべての事業家の OS。
+      </p>
+      <a id="cta" class="cta" href="/">登録して受け取る →</a>
+      <p class="small">クレジットカード不要 · いつでも解約可</p>
+    </main>
+    <script>
+      // ?ref=CODE を引き継いで / に遷移 (短時間 SNS の OG プレビュー後、人間が踏むと自動で本体へ)
+      (function () {
+        try {
+          var url = new URL(window.location.href);
+          var ref = url.searchParams.get('ref');
+          var target = '/' + (ref ? '?ref=' + encodeURIComponent(ref) : '');
+          var a = document.getElementById('cta');
+          if (a) a.setAttribute('href', target);
+          // 自動遷移は 1.2 秒後 (SNS Bot は JS を実行しないので OG プレビューは維持される)
+          setTimeout(function () { window.location.replace(target); }, 1200);
+        } catch (e) { /* */ }
+      })();
+    </script>
+  </body>
+</html>

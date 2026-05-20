@@ -396,6 +396,24 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                   className="text-xs text-neutral-700 hover:text-red-400 transition-colors">
                   使用統計をリセット
                 </button>
+
+                <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <button
+                    type="button"
+                    onClick={() => { window.dispatchEvent(new CustomEvent('core:open-error-log')); }}
+                    style={{
+                      fontSize: 12, color: 'rgba(255,255,255,0.7)',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 999,
+                      padding: '7px 14px', cursor: 'pointer',
+                      minHeight: 36,
+                    }}
+                  >不具合ログを見る</button>
+                  <p className="text-xs text-neutral-700" style={{ marginTop: 6, lineHeight: 1.55 }}>
+                    画面で起きたエラーを直近 50 件まで保存しています。お問い合わせ時にコピーして添付できます。
+                  </p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

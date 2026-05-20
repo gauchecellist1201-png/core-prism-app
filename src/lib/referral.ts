@@ -106,11 +106,14 @@ export function saveReferralData(data: ReferralData) {
   try { localStorage.setItem(KEY_REFERRAL, JSON.stringify(data)); } catch { /* */ }
 }
 
-/** 招待 URL を生成 (?ref=CODE) */
+/** 招待 URL を生成 (?ref=CODE)
+ * Prism は SNS で見栄えの良い OG カードのために /invite.html を経由させる
+ * (静的ページの OG メタが SNS Bot に拾われ、人間は 1.2 秒後に / にリダイレクトされる)
+ */
 export function getReferralUrl(brand: 'iris' | 'prism', code: string): string {
   const base = brand === 'iris'
     ? 'https://core-prism-app.vercel.app/iris'
-    : 'https://core-prism-app.vercel.app/';
+    : 'https://core-prism-app.vercel.app/invite.html';
   return `${base}?ref=${code}`;
 }
 

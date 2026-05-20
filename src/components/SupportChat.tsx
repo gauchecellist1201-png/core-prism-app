@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSupportChat, type SupportContext } from '../hooks/useSupportChat';
+import { useTypewriter } from '../hooks/useTypewriter';
 import VoiceConversation from './VoiceConversation';
 import { PrismLogo, IrisLogo } from './Logo';
 
@@ -328,7 +329,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
               )}
 
               <AnimatePresence initial={false}>
-                {messages.map(msg => (
+                {messages.map((msg, mi) => (
                   <motion.div
                     key={msg.id}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -353,7 +354,9 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                             }
                       }
                     >
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      {msg.role === 'assistant' && mi === messages.length - 1
+                        ? <SupportStreamingText content={msg.content} />
+                        : <p className="whitespace-pre-wrap">{msg.content}</p>}
                       <p
                         className="opacity-50 mt-1"
                         style={{ fontSize: 10 }}
@@ -484,4 +487,10 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
       </AnimatePresence>
     </>
   );
+}
+
+// 最新の AI 返信をタイプライター風に逐次表示
+function SupportStreamingText({ content }: { content: string }) {
+  const { text } = useTypewriter(content);
+  return <p className="whitespace-pre-wrap">{text}</p>;
 }

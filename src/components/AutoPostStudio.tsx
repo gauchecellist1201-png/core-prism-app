@@ -24,6 +24,21 @@ interface Props {
   onSaveAsKnowledge?: (title: string, content: string) => void;
 }
 
+// 生成結果を 1 文字ずつ流し込んで、待ち時間の体感を短くする
+function animateInto(full: string, setter: (s: string) => void) {
+  if (!full) { setter(''); return; }
+  // 長すぎる本文は即時で渡す (体感が遅くなりすぎないように)
+  if (full.length > 3000) { setter(full); return; }
+  let i = 0;
+  const step = full.length > 800 ? 6 : full.length > 300 ? 3 : 2;
+  const interval = full.length > 800 ? 10 : 16;
+  const id = window.setInterval(() => {
+    i = Math.min(i + step, full.length);
+    setter(full.slice(0, i));
+    if (i >= full.length) window.clearInterval(id);
+  }, interval);
+}
+
 type Tab = 'note' | 'x';
 
 export default function AutoPostStudio({ persona, settings, knowledge, onClose, onSaveAsKnowledge }: Props) {
@@ -95,13 +110,15 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
           targetWords, customInstruction: customInstr,
         });
         setEditedTitle(result.title || '');
-        setEditedBody(result.body || '');
+        setEditedBody('');
+        animateInto(result.body || '', setEditedBody);
       } else {
         result = await generateXPost({
           settings, persona, topic, tone, knowledge: ks,
           threadCount, customInstruction: customInstr,
         });
-        setEditedBody(result.body);
+        setEditedBody('');
+        animateInto(result.body, setEditedBody);
         setEditedThread(result.posts || [result.body]);
       }
       setDraft(result);

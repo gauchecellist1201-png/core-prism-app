@@ -37,6 +37,7 @@ import TutorialOverlay from './components/TutorialOverlay';
 import WowOnboarding from './components/WowOnboarding';
 import OfflineNotice from './components/OfflineNotice';
 import SharedArtifactView from './components/SharedArtifactView';
+import ErrorLogViewer from './components/ErrorLogViewer';
 import { readSharedFromUrl } from './lib/shareLink';
 
 import type { AppSettings, ChatMessage } from './types/identity';
@@ -215,6 +216,14 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
   const [tutorialDoneTick, setTutorialDoneTick] = useState(0);
+  const [showErrorLog, setShowErrorLog] = useState(false);
+
+  // 設定モーダルや他コンポーネントから「不具合ログを開く」を発火できるよう、グローバル イベントを購読
+  useEffect(() => {
+    const open = () => setShowErrorLog(true);
+    window.addEventListener('core:open-error-log', open as EventListener);
+    return () => window.removeEventListener('core:open-error-log', open as EventListener);
+  }, []);
 
   // 課金フロー: 未 signup なら Checkout モーダルで signup → 入場
   const { user: billingUser } = useBillingUser();
@@ -446,6 +455,11 @@ export default function App() {
       <TutorialOverlay brand="prism" onClose={() => setTutorialDoneTick(t => t + 1)} />
       {/* Prism: 3 分で「Wow」体験 (初回チュートリアル後のみ表示) */}
       <WowOnboarding brand="prism" trigger={tutorialDoneTick} />
+      <AnimatePresence>
+        {showErrorLog && (
+          <ErrorLogViewer key="error-log" onClose={() => setShowErrorLog(false)} />
+        )}
+      </AnimatePresence>
     </>
   );
 }

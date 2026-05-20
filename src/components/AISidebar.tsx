@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ChatMessage, Persona, AppSettings } from '../types/identity';
+import { useTypewriter } from '../hooks/useTypewriter';
+import ContextualUpgradeCard from './ContextualUpgradeCard';
+import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
 import ApiErrorCard from './ApiErrorCard';
 import { readableTextColor } from '../lib/contrast';
 
@@ -148,7 +151,9 @@ export default function AISidebar({
                     : undefined
                 }
               >
-                <p className="whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === 'assistant' && i === messages.length - 1
+                  ? <AssistantStreamingText content={msg.content} />
+                  : <p className="whitespace-pre-wrap">{msg.content}</p>}
                 <div className="flex items-center justify-between mt-1 gap-2">
                   <span className="opacity-40" style={{ fontSize: '10px' }}>{msg.timestamp}</span>
                   {msg.tokensUsed && (
@@ -184,6 +189,25 @@ export default function AISidebar({
           <p className="text-xs text-neutral-800">{messages.length}通のメッセージ</p>
         </div>
       )}
+
+      {/* 文脈型アップグレード提案 — チャットを使い込んでいる無料/トライアル ユーザー向け */}
+      {messages.length >= 25 && (() => {
+        const user = loadBillingUser();
+        const isOnFreePlan = !isAuthorizedFn() || (user?.plan === 'free');
+        if (!isOnFreePlan) return null;
+        return (
+          <div className="px-3 pb-2">
+            <ContextualUpgradeCard
+              trigger="generation-cap"
+              planName="標準プラン"
+              context={`今日 ${messages.length} 通のメッセージを送りました。`}
+              dismissKey={`chat-cap-${persona.id}`}
+              accent={persona.accentColor}
+              onUpgrade={() => { window.location.href = '/pricing'; }}
+            />
+          </div>
+        );
+      })()}
 
       {/* Input */}
       <form
@@ -224,6 +248,12 @@ export default function AISidebar({
       </form>
     </div>
   );
+}
+
+// 最新のアシスタント返信をタイプライター風に逐次表示 (待ち時間の体感短縮)
+function AssistantStreamingText({ content }: { content: string }) {
+  const { text } = useTypewriter(content);
+  return <p className="whitespace-pre-wrap">{text}</p>;
 }
 
 function getSuggestions(persona: Persona): string[] {
