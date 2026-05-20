@@ -5,6 +5,7 @@ import type { DeckSpec } from '../lib/slideGenerator';
 import { generateDeckSpec, renderDeck } from '../lib/slideGenerator';
 import { parseFile } from '../lib/fileParser';
 import ApiErrorCard from './ApiErrorCard';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -141,6 +142,14 @@ export default function SlideGeneratorModal({ persona, settings, knowledge, onCl
             </div>
 
             <div className="p-5 space-y-4">
+              <StudioIntro
+                id="slide"
+                accent={persona.accentColor}
+                emoji="🪄"
+                what="メモや議事録を貼り付けるだけで、AI がプレゼン用のスライド構成を一気に作る画面です。"
+                tryThis="下の枠にスライド化したい文章を貼って「✨ スライド生成」を押します。"
+                example="5 行の事業メモ → タイトル・章立て付きで 8 枚のスライド構成が完成。"
+              />
               {/* Source UI */}
               {mode === 'paste' && (
                 <div>

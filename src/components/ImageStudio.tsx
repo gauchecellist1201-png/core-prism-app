@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import ApiErrorCard from './ApiErrorCard';
+import { StudioIntro } from './StudioIntro';
 import { copyText } from '../lib/clipboard';
 import type { Persona, AppSettings } from '../types/identity';
 import {
@@ -208,6 +209,14 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {tab === 'create' && (
             <>
+              <StudioIntro
+                id="image"
+                accent={persona.accentColor}
+                emoji="🎨"
+                what="テーマを日本語で 1 行書くだけで、AI が SNS や記事向けの画像を作る画面です。"
+                tryThis="下の「画像のテーマ」に作りたい絵を 1 行で書いて「✨ 生成」を押します。"
+                example="「秋のカフェのスペシャルティコーヒー」 → note のヘッダー画像が 1 枚完成。"
+              />
               {/* テーマ入力 */}
               <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                 <div>
