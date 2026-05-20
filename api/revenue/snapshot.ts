@@ -170,18 +170,15 @@ const ZERO_DECIMAL_CURRENCIES = new Set([
   'pyg', 'rwf', 'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf',
 ]);
 
-// おおよその為替レート (1 通貨単位 = 何円か) — 2026 年 5 月時点の概算
-const FX_TO_JPY: Record<string, number> = {
-  jpy: 1, usd: 156, eur: 169, gbp: 198, aud: 101, cad: 113, chf: 175,
-  cny: 21.5, hkd: 20, krw: 0.11, sgd: 116, twd: 4.8, thb: 4.3,
-  inr: 1.85, idr: 0.0096, myr: 33, php: 2.7, vnd: 0.0061,
-  brl: 27, mxn: 9.1, nzd: 93, sek: 14.8, nok: 14.2, dkk: 22.6,
-};
+import { getFxRates, FALLBACK_JPY_PER_UNIT } from '../_lib/fxRate';
 
-function toJpy(amount: number, currency: string): number {
+// おおよその為替レート (1 通貨単位 = 何円か) — フォールバック (API 失敗時)
+const FX_TO_JPY: Record<string, number> = FALLBACK_JPY_PER_UNIT;
+
+function toJpyWith(amount: number, currency: string, rates: Record<string, number>): number {
   const c = (currency || 'jpy').toLowerCase();
   const major = ZERO_DECIMAL_CURRENCIES.has(c) ? amount : amount / 100;
-  const rate = FX_TO_JPY[c] ?? 1;
+  const rate = rates[c] ?? FX_TO_JPY[c] ?? 1;
   return major * rate;
 }
 
@@ -223,7 +220,10 @@ async function userRevenueSnapshot(key: string, asOf: string, ch: Record<string,
   const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1));
 
   try {
-    const txns = await listAllBalanceTxns(key, Math.floor(since.getTime() / 1000));
+    const [txns, fx] = await Promise.all([
+      listAllBalanceTxns(key, Math.floor(since.getTime() / 1000)),
+      getFxRates(),
+    ]);
 
     const map = new Map<string, { revenueJpy: number; expenseJpy: number; profitJpy: number; txnCount: number }>();
     for (const m of last12Months()) map.set(m, { revenueJpy: 0, expenseJpy: 0, profitJpy: 0, txnCount: 0 });
@@ -236,8 +236,8 @@ async function userRevenueSnapshot(key: string, asOf: string, ch: Record<string,
       if (t.type === 'payout' || t.type === 'transfer') continue;
       const cur = (t.currency || 'jpy').toLowerCase();
       currencies.add(cur);
-      const amtJpy = toJpy(t.amount || 0, cur);
-      const feeJpy = toJpy(t.fee || 0, cur);
+      const amtJpy = toJpyWith(t.amount || 0, cur, fx.jpyPerUnit);
+      const feeJpy = toJpyWith(t.fee || 0, cur, fx.jpyPerUnit);
       slot.revenueJpy += amtJpy;
       slot.expenseJpy += feeJpy;
       slot.profitJpy += amtJpy - feeJpy;
@@ -264,6 +264,8 @@ async function userRevenueSnapshot(key: string, asOf: string, ch: Record<string,
       },
       monthly,
       currencies: Array.from(currencies),
+      fxSource: fx.source,
+      fxFetchedAt: new Date(fx.fetchedAt).toISOString(),
     }, 200, { ...ch, 'Cache-Control': 'private, max-age=0, must-revalidate' });
   } catch (e: any) {
     const msg = String(e?.message || e);

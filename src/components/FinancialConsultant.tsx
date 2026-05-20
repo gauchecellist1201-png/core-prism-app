@@ -188,6 +188,27 @@ export default function FinancialConsultant({ persona, settings, onClose }: Prop
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
+  // 経費をカテゴリ別に集計 (直近 6 ヶ月の合計) — AIが「広告費が高い」のような具体的な助言を出せるよう内訳を渡す
+  const expenseBreakdown = useMemo(() => {
+    if (source === 'cashflow') return null;
+    // series の対象月のうち、ローカル経費データがあるもの
+    const targetMonths = new Set(series.slice(-6).map(m => m.month));
+    const myEntries = exp.entries.filter(e =>
+      e.personaId === persona.id && targetMonths.has(e.date.slice(0, 7))
+    );
+    if (myEntries.length === 0) return null;
+    const byCat = new Map<string, number>();
+    for (const e of myEntries) {
+      byCat.set(e.category, (byCat.get(e.category) || 0) + e.amountExcl);
+    }
+    const total = Array.from(byCat.values()).reduce((s, v) => s + v, 0);
+    if (total === 0) return null;
+    const rows = Array.from(byCat.entries())
+      .map(([cat, amount]) => ({ cat, amount, pct: (amount / total) * 100 }))
+      .sort((a, b) => b.amount - a.amount);
+    return { rows, total, monthCount: targetMonths.size };
+  }, [exp.entries, persona.id, series, source]);
+
   const runConsult = async () => {
     setAiLoading(true);
     setAiError(null);
@@ -206,6 +227,15 @@ export default function FinancialConsultant({ persona, settings, onClose }: Prop
         ).join('\n');
       }
 
+      // 経費カテゴリ別の集計 (直近 6 ヶ月) を AI へ渡す
+      let breakdownBlock = '';
+      if (expenseBreakdown) {
+        const { rows, total, monthCount } = expenseBreakdown;
+        breakdownBlock = `\n## 直近 ${monthCount} ヶ月の経費カテゴリ別 (合計 ${total.toLocaleString('ja-JP')} 円)\n`
+          + rows.map(r => `${r.cat}  ${Math.round(r.amount).toLocaleString('ja-JP')} 円  (${r.pct.toFixed(1)} %)`).join('\n')
+          + `\n\n助言は上記の内訳に踏み込み、「どのカテゴリが売上比で重いか」「削るならどこか」「投資すべきカテゴリはどれか」を具体的に書いてください。\n`;
+      }
+
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: {
@@ -220,7 +250,7 @@ export default function FinancialConsultant({ persona, settings, onClose }: Prop
           system: SYS,
           messages: [{
             role: 'user',
-            content: `事業: ${persona.name}\nデータ源: ${sourceLabel}\n\n## 月次の売上・経費・利益\n${dataBlock}\n\n`
+            content: `事業: ${persona.name}\nデータ源: ${sourceLabel}\n\n## 月次の売上・経費・利益\n${dataBlock}\n${breakdownBlock}\n`
               + `この社長のために、強い月・弱い月・繁忙期・閑散期を読み解き、来月の見こみと打つべき一手を助言してください。`,
           }],
         }),
