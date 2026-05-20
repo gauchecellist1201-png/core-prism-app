@@ -6,6 +6,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useSettings } from '../hooks/useSettings';
 import IrisLanding from './IrisLanding';
 import GlobalVoiceInput from '../components/GlobalVoiceInput';
+import OfflineNotice from '../components/OfflineNotice';
 import IrisDashboard from './IrisDashboard';
 import TutorialOverlay from '../components/TutorialOverlay';
 import WowOnboarding from '../components/WowOnboarding';
@@ -81,6 +82,7 @@ export default function IrisApp() {
   if (!entered) {
     return (
       <>
+        <OfflineNotice />
         <IrisLanding onEnter={handleEnter} onSelectPlan={handleSelectPlan} />
         <AnimatePresence>
           {checkoutPlan && (
@@ -97,6 +99,7 @@ export default function IrisApp() {
   }
   return (
     <>
+      <OfflineNotice />
       <IrisDashboard settings={settings} onLeave={() => setEntered(false)} />
       <TutorialOverlay brand="iris" onClose={() => setTutorialDoneTick(t => t + 1)} />
       <WowOnboarding brand="iris" trigger={tutorialDoneTick} />

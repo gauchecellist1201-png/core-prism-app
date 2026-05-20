@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, ChatMessage, AppSettings, KnowledgeItem, Proposal } from '../types/identity';
 import { isOnboarded, isDemoActive, clearDemoData } from '../lib/onboarding';
@@ -13,8 +13,8 @@ import ShortcutHelpModal from './ShortcutHelpModal';
 import PwaInstallPrompt from './PwaInstallPrompt';
 import FeedbackWidget from './FeedbackWidget';
 import KnowledgeBase from './KnowledgeBase';
-import MeetingHub from './MeetingHub';
-import HealthHub from './health/HealthHub';
+const MeetingHub = lazy(() => import('./MeetingHub'));
+const HealthHub = lazy(() => import('./health/HealthHub'));
 import { ThemeToggle } from './ThemeToggle';
 import TodayBrief from './TodayBrief';
 import InsightsStream from './InsightsStream';
@@ -26,36 +26,36 @@ import HealthSnapshot from './HealthSnapshot';
 import TodaysBodyCard from '../prism/TodaysBodyCard';
 import { loadBillingUser } from '../lib/billing';
 // CoreRevenueCard はマスター専用経営画面へ移設予定 (ペルソナ画面からは撤去)
-import MeetingMinutesModal from './MeetingMinutes';
-import SlideGeneratorModal from './SlideGenerator';
-import NegotiationCoachModal from './NegotiationCoach';
-import DecisionMemoModal from './DecisionMemo';
-import EmailTriageModal from './EmailTriage';
-import PremiumHubModal from './PremiumHub';
-import FinanceEditor from './FinanceEditor';
-import AutoPostStudio from './AutoPostStudio';
-import ContentEngineStudio from './ContentEngineStudio';
-import InvoiceStudio from './InvoiceStudio';
-import ImageStudio from './ImageStudio';
-import SalesLedger from './SalesLedger';
-import ExpenseStudio from './ExpenseStudio';
-import CRMStudio from './CRMStudio';
-import TaskHub from './TaskHub';
-import VoiceCaptureStudio from './VoiceCaptureStudio';
-import SalesAgentStudio from './SalesAgentStudio';
-import SaasAgentStudio from './SaasAgentStudio';
-import YouTubeImportStudio from './YouTubeImportStudio';
+const MeetingMinutesModal = lazy(() => import('./MeetingMinutes'));
+const SlideGeneratorModal = lazy(() => import('./SlideGenerator'));
+const NegotiationCoachModal = lazy(() => import('./NegotiationCoach'));
+const DecisionMemoModal = lazy(() => import('./DecisionMemo'));
+const EmailTriageModal = lazy(() => import('./EmailTriage'));
+const PremiumHubModal = lazy(() => import('./PremiumHub'));
+const FinanceEditor = lazy(() => import('./FinanceEditor'));
+const AutoPostStudio = lazy(() => import('./AutoPostStudio'));
+const ContentEngineStudio = lazy(() => import('./ContentEngineStudio'));
+const InvoiceStudio = lazy(() => import('./InvoiceStudio'));
+const ImageStudio = lazy(() => import('./ImageStudio'));
+const SalesLedger = lazy(() => import('./SalesLedger'));
+const ExpenseStudio = lazy(() => import('./ExpenseStudio'));
+const CRMStudio = lazy(() => import('./CRMStudio'));
+const TaskHub = lazy(() => import('./TaskHub'));
+const VoiceCaptureStudio = lazy(() => import('./VoiceCaptureStudio'));
+const SalesAgentStudio = lazy(() => import('./SalesAgentStudio'));
+const SaasAgentStudio = lazy(() => import('./SaasAgentStudio'));
+const YouTubeImportStudio = lazy(() => import('./YouTubeImportStudio'));
 import ShadowSecretaryPanel from './ShadowSecretaryPanel';
 import { useShadowSecretary } from '../hooks/useShadowSecretary';
 import { PrismLogo } from './Logo';
 import AnimatedAvatar from './AnimatedAvatar';
 import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './CommandPalette';
-import PnLStudio from './PnLStudio';
-import FinancialConsultant from './FinancialConsultant';
-import BenchmarkStudio from './BenchmarkStudio';
-import DocumentStudio from './DocumentStudio';
-import PeopleStudio from './PeopleStudio';
-import TeamHub from './TeamHub';
+const PnLStudio = lazy(() => import('./PnLStudio'));
+const FinancialConsultant = lazy(() => import('./FinancialConsultant'));
+const BenchmarkStudio = lazy(() => import('./BenchmarkStudio'));
+const DocumentStudio = lazy(() => import('./DocumentStudio'));
+const PeopleStudio = lazy(() => import('./PeopleStudio'));
+const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
 import { Gift } from 'lucide-react';
@@ -1104,8 +1104,9 @@ export default function IdentityDashboard({
         )}
       </AnimatePresence>
 
-      {/* Overlays */}
+      {/* Overlays — 重い Studio は React.lazy で必要な時だけ読み込む */}
       <AnimatePresence>
+        <Suspense fallback={null}>
         {showKnowledge && (
           <KnowledgeBase
             key="kb"
@@ -1374,6 +1375,7 @@ export default function IdentityDashboard({
             onClose={() => setFinanceEditFor(null)}
           />
         )}
+        </Suspense>
       </AnimatePresence>
 
       <AnimatePresence>

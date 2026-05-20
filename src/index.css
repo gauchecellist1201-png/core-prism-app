@@ -650,6 +650,27 @@ input, textarea, select { font-family: inherit; }
 }
 
 /* ────────────────────────────────────────
+   タッチ対象 44px の最低保証 (Apple HIG / WCAG AAA)
+   pointer:coarse = タッチ操作端末でのみ適用 (デスクトップ密度は保つ)
+   data-mini="true" を付けた要素は対象外 (アイコンチップ等の細かい UI)
+   ──────────────────────────────────────── */
+@media (pointer: coarse) {
+  button:not([data-mini="true"]):not(.tap-mini),
+  a[role="button"]:not([data-mini="true"]),
+  [role="button"]:not([data-mini="true"]):not(.tap-mini) {
+    min-height: 44px;
+  }
+}
+
+/* ────────────────────────────────────────
+   Dock / ボトムタブ系: 下に常に safe-area-inset-bottom を確保
+   ──────────────────────────────────────── */
+.dock-safe-bottom,
+[data-dock="bottom"] {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+}
+
+/* ────────────────────────────────────────
    Fixed UI: ホームバー (iOS) で隠れないよう safe-area-inset-bottom を足す
    - Tailwind の bottom-{n} クラス + fixed のセットを検出
    - 既に safe-area を inline で指定している要素は影響しない

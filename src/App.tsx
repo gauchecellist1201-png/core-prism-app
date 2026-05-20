@@ -35,6 +35,9 @@ import PrismTaskScheduler from './prism/PrismTaskScheduler';
 import PrismSplash from './prism/PrismWelcome';
 import TutorialOverlay from './components/TutorialOverlay';
 import WowOnboarding from './components/WowOnboarding';
+import OfflineNotice from './components/OfflineNotice';
+import SharedArtifactView from './components/SharedArtifactView';
+import { readSharedFromUrl } from './lib/shareLink';
 
 import type { AppSettings, ChatMessage } from './types/identity';
 
@@ -120,6 +123,17 @@ function isKeynotePath(): boolean {
 }
 
 export default function App() {
+  // ?share=... — 友だちから届いた成果物プレビュー + 新規登録 CTA
+  const sharedArtifact = readSharedFromUrl();
+  if (sharedArtifact) {
+    return (
+      <SharedArtifactView
+        artifact={sharedArtifact}
+        onEnterApp={() => { window.location.href = '/'; }}
+      />
+    );
+  }
+
   // /keynote — 講演会限定 先行案内 LP
   if (isKeynotePath()) {
     return <KeynoteLanding />;
@@ -329,6 +343,8 @@ export default function App() {
       {view !== 'landing' && <PrismBackground intensity="low" />}
       {/* どの入力欄でも音声入力できる (フォーカス時にマイクが出現) */}
       <GlobalVoiceInput />
+      {/* 通信が切れたときだけ画面上部に案内バー */}
+      <OfflineNotice />
       <AnimatePresence mode="wait">
         {view === 'landing' && (
           <LandingPage
