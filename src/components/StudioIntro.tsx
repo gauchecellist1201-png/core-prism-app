@@ -102,7 +102,7 @@ export function StudioIntro({
                 </span>
                 <div
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
+                    background: 'var(--surface-3)',
                     border: `1px dashed ${accent}55`,
                     borderRadius: 10,
                     padding: 6,

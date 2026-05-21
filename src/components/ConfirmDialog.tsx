@@ -88,12 +88,13 @@ export default function ConfirmDialog() {
             aria-modal="true"
             aria-labelledby="confirm-dialog-title"
             style={{
-              background: '#FFFFFF',
-              color: '#1A1330',
+              background: 'var(--bg)',
+              color: 'var(--fg-strong)',
+              border: '1px solid var(--border)',
               borderRadius: 18,
               maxWidth: 'min(420px, calc(100vw - 32px))',
               width: '100%',
-              boxShadow: '0 30px 80px rgba(10, 6, 30, 0.45)',
+              boxShadow: 'var(--shadow), 0 30px 80px rgba(10, 6, 30, 0.45)',
               padding: '22px 22px 18px',
               fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
             }}
@@ -122,7 +123,7 @@ export default function ConfirmDialog() {
                   {current.title}
                 </div>
                 {current.body && (
-                  <div style={{ fontSize: 13.5, lineHeight: 1.6, color: '#4A4063', marginTop: 6 }}>
+                  <div style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--fg-muted)', marginTop: 6 }}>
                     {current.body}
                   </div>
                 )}
@@ -132,9 +133,9 @@ export default function ConfirmDialog() {
               <button
                 onClick={() => { triggerHaptic('light'); close(false); }}
                 style={{
-                  background: '#F1EEFB',
-                  color: '#322A55',
-                  border: 'none',
+                  background: 'var(--surface-3)',
+                  color: 'var(--fg)',
+                  border: '1px solid var(--border-2)',
                   borderRadius: 12,
                   padding: '11px 18px',
                   fontWeight: 700,

@@ -87,7 +87,7 @@ export default function StreakBadge({
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 3,
           fontSize: 10.5, fontWeight: 700,
-          color: 'rgba(255,255,255,0.45)',
+          color: 'var(--fg-subtle)',
         }}>
           <Trophy size={10} /> 最高 {best} 日
         </span>
@@ -100,13 +100,14 @@ export default function StreakBadge({
           aria-label="連続日数をシェア"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.10)',
+            background: `${accent}10`,
+            border: `1px solid ${accent}33`,
             color: accent,
             borderRadius: 999,
-            padding: isMd ? '5px 10px' : '4px 8px',
+            padding: isMd ? '6px 11px' : '5px 9px',
             fontSize: 10.5, fontWeight: 700,
             cursor: 'pointer',
+            minHeight: 32,
           }}
         >
           <Share2 size={11} /> シェア

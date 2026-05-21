@@ -176,10 +176,10 @@ export default function StreakShareModal({ streak, best, brand, accent, onClose 
           </div>
           <button onClick={onClose} aria-label="閉じる"
             style={{
-              background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '50%',
-              width: 38, height: 38, minHeight: 44, minWidth: 44, cursor: 'pointer', color: '#fff',
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '50%',
+              width: 44, height: 44, cursor: 'pointer', color: '#fff',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            }}><X size={16} /></button>
+            }}><X size={18} /></button>
         </div>
 
         {/* プレビュー */}
