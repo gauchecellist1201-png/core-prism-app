@@ -63,6 +63,7 @@ const CATALOG: Tool[] = [
     id: 'gmail', name: 'Gmail', color: '#EA4335', glyph: 'M', category: 'Google ワークスペース',
     can: '届いたメールに AI が返信を下書き。確認して送るだけ',
     steps: [
+      { label: 'まず「このアプリは Google で確認されていません」と出ても安全です。「詳細」→「(安全でないページに移動)」を 1 タップで通過してください (Google 審査前のため一時的に表示される正規の警告です)', action: { kind: 'info' } },
       { label: 'Google アカウントでログインします', action: { kind: 'oauth', provider: 'gmail' } },
     ],
   },
@@ -70,6 +71,7 @@ const CATALOG: Tool[] = [
     id: 'gcal', name: 'Google カレンダー', color: '#4285F4', glyph: '31', category: 'Google ワークスペース',
     can: '予定を AI が把握し、会議準備や移動を先回りで提案',
     steps: [
+      { label: 'まず「このアプリは Google で確認されていません」と出ても安全です。「詳細」→「(安全でないページに移動)」を 1 タップで通過してください (Google 審査前のため一時的に表示される正規の警告です)', action: { kind: 'info' } },
       { label: 'Google アカウントでログインします', action: { kind: 'oauth', provider: 'gcal' } },
     ],
   },

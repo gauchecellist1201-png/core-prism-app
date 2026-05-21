@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Flame, Trophy, Share2 } from 'lucide-react';
 import { useDailyStreak } from '../hooks/useDailyStreak';
 import StreakShareModal from './StreakShareModal';
+import StreakMilestoneCelebration from './StreakMilestoneCelebration';
 
 const MILESTONES = [3, 7, 30, 100, 365];
 const CELEBRATED_KEY = 'core_streak_celebrated_v1';
@@ -129,34 +130,16 @@ export default function StreakBadge({
         )}
       </AnimatePresence>
 
+      {/* 節目 (3/7/30/100/365 日) は 全画面 cinematic 祝祭 */}
       <AnimatePresence>
         {celebrate !== null && (
-          <motion.div
+          <StreakMilestoneCelebration
             key={celebrate}
-            initial={{ opacity: 0, y: 8, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            transition={{ duration: 0.4 }}
-            role="status"
-            aria-live="polite"
-            style={{
-              position: 'fixed',
-              top: 'max(72px, calc(env(safe-area-inset-top, 0px) + 60px))',
-              left: '50%', transform: 'translateX(-50%)',
-              zIndex: 9998,
-              background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-              color: '#fff',
-              padding: '12px 18px',
-              borderRadius: 14,
-              fontSize: 13, fontWeight: 800, letterSpacing: '0.02em',
-              boxShadow: `0 12px 32px ${accent}66`,
-              display: 'inline-flex', alignItems: 'center', gap: 7,
-              maxWidth: 'calc(100vw - 2rem)',
-            }}
-          >
-            <Flame size={16} fill="#fff" />
-            <span>{celebrate} 日連続おめでとう！この調子で続けていきましょう。</span>
-          </motion.div>
+            streak={celebrate}
+            brand={brand}
+            accent={accent}
+            onClose={() => setCelebrate(null)}
+          />
         )}
       </AnimatePresence>
     </div>
