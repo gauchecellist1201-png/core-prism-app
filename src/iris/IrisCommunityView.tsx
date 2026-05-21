@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useCommunity, POST_TYPE_META, type CommunityPostType } from './community';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -164,7 +165,7 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
                 </span>
               </div>
               {isMine && (
-                <button onClick={() => { if (confirm('削除しますか?')) c.removePost(p.id); }} style={{
+                <button onClick={async () => { if (await confirmAction({ title: 'この投稿を削除しますか?', tone: 'danger' })) c.removePost(p.id); }} style={{
                   background: 'transparent', border: 'none', cursor: 'pointer', color: bg.inkSoft, fontSize: '0.85rem',
                 }}>削除</button>
               )}

@@ -18,6 +18,7 @@ import { IRIS_FONTS } from './irisStyle';
 import {
   usePostHistory, type PostHistoryItem,
 } from './strategist';
+import { confirmAction } from '../lib/confirmDialog';
 import {
   extractPostsFromScreenshots, fileToBase64Pair, computeStats, dayLabel,
   generateStrategyInsights, parseInstagramCSV,
@@ -1867,7 +1868,7 @@ function DetailModal({
         )}
 
         <button
-          onClick={() => { if (confirm('この投稿を削除しますか?')) onDelete(); }}
+          onClick={async () => { if (await confirmAction({ title: 'この投稿を削除しますか?', tone: 'danger' })) onDelete(); }}
           style={{
             marginTop: '1.2rem',
             width: '100%',

@@ -9,6 +9,7 @@ import { StudioIntro } from './StudioIntro';
 import { useInvoices } from '../hooks/useInvoices';
 import { fmtJpy, computeTotals } from '../lib/invoiceCalc';
 import type { BusinessDocument } from '../types/invoice';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   persona: Persona;
@@ -242,7 +243,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
             persona={persona} deal={editing}
             onClose={() => setEditingId(null)}
             onUpdate={(patch) => crm.updateDeal(editing.id, patch)}
-            onDelete={() => { if (confirm('案件を削除しますか?')) { crm.removeDeal(editing.id); setEditingId(null); } }}
+            onDelete={async () => { if (await confirmAction({ title: 'この案件を削除しますか?', tone: 'danger' })) { crm.removeDeal(editing.id); setEditingId(null); } }}
             onAddActivity={(a) => crm.addActivity(editing.id, a)}
           />
         )}

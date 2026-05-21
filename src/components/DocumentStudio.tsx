@@ -9,6 +9,7 @@ import { computeTotals, fmtJpy, calcDueDate } from '../lib/invoiceCalc';
 import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
 import { notifyInApp } from '../lib/inAppNotify';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   persona: Persona;
@@ -289,8 +290,8 @@ export default function DocumentStudio({ persona, settings: _settings, onClose }
                                   🧾 請求化
                                 </button>
                               )}
-                              <button onClick={() => {
-                                if (confirm('削除しますか?')) inv.removeDocument(doc.id);
+                              <button onClick={async () => {
+                                if (await confirmAction({ title: 'この書類を削除しますか?', tone: 'danger' })) inv.removeDocument(doc.id);
                               }} className="cp-btn cp-btn-ghost cp-btn-sm text-xs" style={{ color: '#f87171' }}>削除</button>
                             </div>
                           </div>
@@ -432,7 +433,7 @@ export default function DocumentStudio({ persona, settings: _settings, onClose }
 
                   <div className="cp-row-between pt-2">
                     {editingDoc && (
-                      <button onClick={() => { if (confirm('削除しますか?')) { inv.removeDocument(editingDoc.id); setView('list'); setEditingDoc(null); } }}
+                      <button onClick={async () => { if (await confirmAction({ title: 'この書類を削除しますか?', tone: 'danger' })) { inv.removeDocument(editingDoc.id); setView('list'); setEditingDoc(null); } }}
                         className="cp-btn cp-btn-ghost cp-btn-sm" style={{ color: '#f87171' }}>削除</button>
                     )}
                     <div className="cp-row ml-auto">

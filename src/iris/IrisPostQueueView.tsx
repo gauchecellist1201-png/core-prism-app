@@ -8,6 +8,7 @@ import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image 
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { usePostQueue, buildCaptionText, type ScheduledPost } from './usePostQueue';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -249,7 +250,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                       <Check size={11} /> 完了
                     </button>
                   )}
-                  <button onClick={() => { if (confirm('この予約を削除しますか?')) queue.remove(p.id); }} title="削除" style={{
+                  <button onClick={async () => { if (await confirmAction({ title: 'この予約を削除しますか?', tone: 'danger' })) queue.remove(p.id); }} title="削除" style={{
                     padding: '0.4rem 0.7rem',
                     background: 'transparent', color: '#991B1B',
                     border: `1px solid #FCA5A5`, borderRadius: 8,

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Sparkles, X, Calendar, Check, Clock, Loader2, Trash2, AlertCircle, Copy, ListChecks, History, RefreshCw, Pencil, Zap } from 'lucide-react';
 import { usePrismTaskQueue, parseVoiceCommand, type PrismTask, type TaskKind } from './usePrismTaskQueue';
+import { confirmAction } from '../lib/confirmDialog';
 
 const KIND_LABEL: Record<TaskKind, string> = {
   flyer: 'チラシ', post: '投稿文', email: 'メール',
@@ -206,8 +207,8 @@ export default function PrismTaskScheduler() {
   };
 
   // タスク削除確認
-  const onDelete = (t: PrismTask) => {
-    if (confirm(`「${t.title}」を削除しますか?`)) queue.remove(t.id);
+  const onDelete = async (t: PrismTask) => {
+    if (await confirmAction({ title: `「${t.title}」を削除しますか?`, tone: 'danger' })) queue.remove(t.id);
   };
 
   return (
@@ -540,10 +541,14 @@ export default function PrismTaskScheduler() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                         <span style={{ fontSize: '0.74rem', color: '#6B7280' }}>新しい順 · {history.length} 件</span>
                         <button
-                          onClick={() => {
-                            if (confirm('履歴を全て削除しますか? (完了・失敗・キャンセル分のみ)')) {
-                              history.forEach(t => queue.remove(t.id));
-                            }
+                          onClick={async () => {
+                            const ok = await confirmAction({
+                              title: '履歴を全て削除しますか?',
+                              body: '完了・失敗・キャンセルになった分のみが対象です。',
+                              tone: 'danger',
+                              okLabel: '全て削除',
+                            });
+                            if (ok) history.forEach(t => queue.remove(t.id));
                           }}
                           style={{ ...btnGhost, color: '#991B1B', fontSize: '0.72rem' }}
                         >

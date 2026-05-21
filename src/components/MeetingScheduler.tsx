@@ -9,6 +9,7 @@ import {
 } from '../lib/googleCalendar';
 import { computeFreeSlots, buildBookingUrl, formatSlot, groupSlotsByDay } from '../lib/scheduling';
 import { copyText } from '../lib/clipboard';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   persona: Persona;
@@ -246,7 +247,7 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
                   isEditing={editingId === t.id}
                   onEdit={() => setEditingId(t.id === editingId ? null : t.id)}
                   onUpdate={(p) => update(t.id, p)}
-                  onDelete={() => { if (confirm('削除しますか?')) remove(t.id); }}
+                  onDelete={async () => { if (await confirmAction({ title: 'この会議タイプを削除しますか?', tone: 'danger' })) remove(t.id); }}
                   onGenerate={() => generateBookingUrl(t)}
                   generating={previewBusy && previewType?.id === t.id}
                 />

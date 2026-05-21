@@ -10,6 +10,8 @@ import {
   STYLE_OPTIONS, ASPECTS, isOpenAIConfigured,
   type VisualStyle, type ImageAspect, type ImageProvider, type GenerateImageResult,
 } from '../lib/imageGen';
+import { confirmAction } from '../lib/confirmDialog';
+import ShareArtifactButton from './ShareArtifactButton';
 
 interface Props {
   persona: Persona;
@@ -435,6 +437,22 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                               className="text-[11px] px-2.5 py-1 rounded text-fg-muted hover:text-fg"
                               style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
                             >📋 プロンプト</button>
+                            <ShareArtifactButton
+                              variant="pill"
+                              size="sm"
+                              accent={persona.accentColor || '#A78BFA'}
+                              label="送る"
+                              shareText={`「${r.prompt.slice(0, 60)}」で作った画像です`}
+                              artifact={{
+                                kind: 'image',
+                                title: `${persona.name} の AI 画像`,
+                                imageUrl: r.url,
+                                body: r.prompt,
+                                createdBy: persona.name,
+                                source: 'prism',
+                                createdAt: new Date().toISOString(),
+                              }}
+                            />
                           </div>
                         </div>
                       ))}
@@ -463,7 +481,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                   <div className="flex justify-between items-center">
                     <p className="text-fg-muted text-xs">最大 {MAX_HISTORY} 件まで自動保存</p>
                     <button
-                      onClick={() => { if (confirm('履歴をすべて削除しますか?')) setHistory([]); }}
+                      onClick={async () => { if (await confirmAction({ title: '画像生成の履歴をすべて削除しますか?', body: '保存した画像のサムネイル一覧が空になります。', tone: 'danger', okLabel: '全消去' })) setHistory([]); }}
                       className="text-xs text-fg-muted hover:text-red-400"
                     >全消去</button>
                   </div>

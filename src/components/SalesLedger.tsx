@@ -10,6 +10,7 @@ import {
 } from '../lib/salesLedger';
 import { fmtJpy } from '../lib/invoiceCalc';
 import { CountUp } from './visualFx';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   persona: Persona;
@@ -228,7 +229,7 @@ export default function SalesLedger({ persona, onClose }: Props) {
                     )}
                     {e.source === 'manual' && (
                       <button
-                        onClick={() => { if (confirm('削除しますか?')) ledger.removeEntry(e.id); }}
+                        onClick={async () => { if (await confirmAction({ title: 'この売上を削除しますか?', tone: 'danger' })) ledger.removeEntry(e.id); }}
                         className="text-[10px] px-2 py-1 rounded text-fg-muted hover:text-red-400"
                         style={{ background: 'var(--surface)' }}
                       >削除</button>

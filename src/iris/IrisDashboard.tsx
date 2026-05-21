@@ -13,6 +13,7 @@ import { IRIS_TYPE, IRIS_SHADOW, IRIS_RADIUS, IRIS_GRADIENT, IRIS_MOTION, IRIS_S
 import IrisCustomBgEditor from './IrisCustomBgEditor';
 import IrisImageEditor from './IrisImageEditor';
 import StreakBadge from '../components/StreakBadge';
+import { confirmAction } from '../lib/confirmDialog';
 import { useInfluencerDesk } from '../hooks/useInfluencerDesk';
 import {
   generateNegotiation, generateDraftCopy,
@@ -790,8 +791,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const handlePickBg = (b: IrisBackgroundDef | CustomIrisBackground) => {
     setBg(b); saveIrisBackground(b.id); setBgPickerOpen(false);
   };
-  const handleRemoveCustom = (id: string) => {
-    if (!confirm('この背景を削除しますか?')) return;
+  const handleRemoveCustom = async (id: string) => {
+    if (!(await confirmAction({ title: 'この背景を削除しますか?', tone: 'danger' }))) return;
     removeCustomBackground(id);
     setBgListVersion(v => v + 1);
     if (bg.id === id) {
@@ -1936,7 +1937,7 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
                   <option key={k} value={k}>{v.emoji} {v.label}</option>
                 ))}
               </select>
-              <button onClick={() => { if (confirm('削除しますか?')) desk.removeDeal(deal.id); }} title="削除" aria-label="削除" style={btnIcon(bg)}><Trash2 size={16} strokeWidth={2.2} /></button>
+              <button onClick={async () => { if (await confirmAction({ title: 'この案件を削除しますか?', tone: 'danger' })) desk.removeDeal(deal.id); }} title="削除" aria-label="削除" style={btnIcon(bg)}><Trash2 size={16} strokeWidth={2.2} /></button>
             </div>
           </Card>
         );
@@ -2465,7 +2466,7 @@ function TeamView({ bg, team, desk, myDeals }: {
                   <p style={{ fontWeight: 700, color: bg.ink, fontSize: '1.05rem' }}>{member.name}</p>
                   {member.handle && <p style={{ fontSize: '0.8rem', color: bg.inkSoft }}>{member.handle}</p>}
                 </div>
-                <button onClick={() => { if (confirm('削除しますか?')) team.removeMember(member.id); }} title="削除" aria-label="削除" style={btnIcon(bg)}><Trash2 size={16} strokeWidth={2.2} /></button>
+                <button onClick={async () => { if (await confirmAction({ title: 'このメンバーを削除しますか?', tone: 'danger' })) team.removeMember(member.id); }} title="削除" aria-label="削除" style={btnIcon(bg)}><Trash2 size={16} strokeWidth={2.2} /></button>
               </div>
               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
                 <span style={{ background: role.color + '22', color: role.color, padding: '0.2rem 0.6rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 600 }}>
@@ -3632,7 +3633,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                 {acct.id === multiAccount.active?.id ? '使用中' : '切り替え'}
               </button>
               {multiAccount.accounts.length > 1 && (
-                <button onClick={() => { if (confirm(`${acct.handle} を削除しますか?`)) multiAccount.remove(acct.id); }}
+                <button onClick={async () => { if (await confirmAction({ title: `${acct.handle} を削除しますか?`, tone: 'danger' })) multiAccount.remove(acct.id); }}
                   title="削除" aria-label="削除"
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: bg.inkSoft, padding: 4, display: 'inline-flex' }}><Trash2 size={14} strokeWidth={2.2} /></button>
               )}

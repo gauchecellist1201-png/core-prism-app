@@ -9,6 +9,7 @@ import { fmtJpy } from '../lib/invoiceCalc';
 import AgentProposalCard from './AgentProposalCard';
 import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   persona: Persona;
@@ -130,8 +131,8 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
     setTab('list');
   }, [draft, exp, persona.id, today]);
 
-  const handleRemove = (id: string) => {
-    if (confirm('削除しますか?')) exp.remove(id);
+  const handleRemove = async (id: string) => {
+    if (await confirmAction({ title: 'この経費を削除しますか?', tone: 'danger' })) exp.remove(id);
   };
 
   // ─── サマリ ─────────────

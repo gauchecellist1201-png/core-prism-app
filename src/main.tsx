@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import ErrorBoundary from './components/ErrorBoundary'
 import InAppNotificationToast from './components/InAppNotificationToast'
+import ConfirmDialog from './components/ConfirmDialog'
 import { migrateLegacyKeysOnce } from './lib/tenant'
 import { installErrorCapture } from './lib/errorCapture'
 
@@ -94,6 +95,7 @@ createRoot(document.getElementById('root')!).render(
       <App />
     </ErrorBoundary>
     <InAppNotificationToast />
+    <ConfirmDialog />
   </StrictMode>,
 )
 

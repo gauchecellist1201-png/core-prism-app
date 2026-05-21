@@ -8,6 +8,7 @@ import { useSupportChat, type SupportContext } from '../hooks/useSupportChat';
 import { useTypewriter } from '../hooks/useTypewriter';
 import VoiceConversation from './VoiceConversation';
 import { PrismLogo, IrisLogo } from './Logo';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   brand: 'prism' | 'iris';
@@ -257,8 +258,8 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
               </button>
               {messages.length > 0 && (
                 <button
-                  onClick={() => {
-                    if (window.confirm('チャット履歴を消去しますか？')) clear();
+                  onClick={async () => {
+                    if (await confirmAction({ title: 'チャット履歴を消去しますか?', body: '消すと元に戻せません。', tone: 'danger', okLabel: '消去する' })) clear();
                   }}
                   className="text-[11px] px-2 py-1 rounded transition-colors text-fg-muted hover:text-fg"
                   style={{ background: 'rgba(255,255,255,0.04)' }}

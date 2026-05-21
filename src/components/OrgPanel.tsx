@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOrg, inviteMember, changeRole, removeMember, type OrgRole } from '../lib/org';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   brand: 'iris' | 'prism';
@@ -52,7 +53,7 @@ export default function OrgPanel({ brand, onClose }: Props) {
   };
 
   const handleRemove = async (membershipId: string, email: string | null) => {
-    if (!confirm(`${email || 'このメンバー'} を組織から削除しますか?`)) return;
+    if (!(await confirmAction({ title: `${email || 'このメンバー'} を組織から削除しますか?`, tone: 'danger' }))) return;
     setBusy(true);
     const r = await removeMember(membershipId);
     setBusy(false);

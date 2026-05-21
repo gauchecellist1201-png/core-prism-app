@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Copy, Trash2, RefreshCw, Check } from 'lucide-react';
+import { confirmAction } from '../lib/confirmDialog';
 
 const LOCAL_BUFFER_KEY = 'core_error_log_v1';
 
@@ -80,8 +81,8 @@ export default function ErrorLogViewer({ onClose }: Props) {
   }, []);
 
   const refresh = () => setEntries(load());
-  const clear = () => {
-    if (!window.confirm('保存されている不具合ログをすべて消去します。続けますか？')) return;
+  const clear = async () => {
+    if (!(await confirmAction({ title: '不具合ログをすべて消去しますか?', body: '保存されているエラーログが空になります。', tone: 'danger', okLabel: '消去する' }))) return;
     try { localStorage.removeItem(LOCAL_BUFFER_KEY); } catch { /* */ }
     setEntries([]);
   };

@@ -6,6 +6,7 @@ import type { PersonRecord, PersonInteraction, SentimentType, InteractionType } 
 import { usePeople } from '../hooks/usePeople';
 import { analyzePerson, type PersonAnalysis } from '../lib/peopleAnalyst';
 import SampleDataCTA from './SampleDataCTA';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   persona: Persona;
@@ -190,7 +191,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                 persona={persona}
                 settings={settings}
                 onUpdate={(patch) => pp.upsertPerson({ ...selected, ...patch })}
-                onDelete={() => { if (confirm('削除しますか?')) { pp.removePerson(selected.id); setView('list'); } }}
+                onDelete={async () => { if (await confirmAction({ title: 'この人物を削除しますか?', body: 'やり取りの履歴も一緒に消えます。', tone: 'danger' })) { pp.removePerson(selected.id); setView('list'); } }}
                 onAddInteraction={(inter) => pp.addInteraction({ ...inter, personId: selected.id })}
                 onRemoveInteraction={pp.removeInteraction}
               />

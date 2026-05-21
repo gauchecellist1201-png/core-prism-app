@@ -9,6 +9,7 @@ import type { MediaKit, InfluencerDeal } from '../types/influencerDeal';
 import { chatWithIris, type AssistantMessage } from './irisAssistant';
 import { shareToInstagram } from './instagramShare';
 import { notifyInApp } from '../lib/inAppNotify';
+import { confirmAction } from '../lib/confirmDialog';
 import ApiErrorCard from '../components/ApiErrorCard';
 import {
   Film, Camera, MessageSquare, BarChart3, HeartPulse, Mic, Mail,
@@ -195,8 +196,14 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
     } finally { setBusy(false); }
   };
 
-  const clearChat = () => {
-    if (confirm('チャット履歴をクリアしますか?')) setHistory([]);
+  const clearChat = async () => {
+    const ok = await confirmAction({
+      title: 'チャット履歴をクリアしますか?',
+      body: '一度クリアすると元に戻せません。',
+      tone: 'danger',
+      okLabel: 'クリアする',
+    });
+    if (ok) setHistory([]);
   };
 
   const isDarkBg = bg.id === 'neon-night';

@@ -10,6 +10,7 @@ import {
   useIrisKnowledge,
 } from './irisKnowledge';
 import { BookmarkPlus, Trash2, Save, X, Search, Brain } from 'lucide-react';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -207,7 +208,7 @@ export default function IrisKnowledgeView({ bg, knowledge }: Props) {
                   <>
                     <button onClick={() => startEdit(item)} title="編集" style={btnIcon(bg)}>編集</button>
                     <button
-                      onClick={() => { if (confirm(`「${item.title}」を削除しますか?`)) knowledge.remove(item.id); }}
+                      onClick={async () => { if (await confirmAction({ title: `「${item.title}」を削除しますか?`, tone: 'danger' })) knowledge.remove(item.id); }}
                       title="削除"
                       style={btnIcon(bg, '#EF4444')}
                     ><Trash2 size={14} /></button>

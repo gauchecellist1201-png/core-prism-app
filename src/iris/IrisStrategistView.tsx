@@ -13,6 +13,7 @@ import {
   type PostHistoryItem, type PerformanceAnalysis, type NextPostSuggestion, type StoryArc,
 } from './strategist';
 import { extractInstagramHandle, analyzeInstagramProfile, type IGAnalysisResult } from './instagramAnalyzer';
+import { confirmAction } from '../lib/confirmDialog';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import VoiceInputButton from '../components/VoiceInputButton';
@@ -288,7 +289,7 @@ function HistoryTab({ bg, history, inp, card, btnPrimary }: any) {
                 {m.saves !== undefined && <span style={{ color: bg.inkSoft }}>{m.saves.toLocaleString()}</span>}
                 {m.shares !== undefined && <span style={{ color: bg.inkSoft }}>{m.shares.toLocaleString()}</span>}
               </div>
-              <button onClick={() => { if (confirm('削除しますか?')) history.remove(p.id); }} style={{
+              <button onClick={async () => { if (await confirmAction({ title: 'この投稿履歴を削除しますか?', tone: 'danger' })) history.remove(p.id); }} style={{
                 background: 'transparent', border: 'none', color: bg.inkSoft,
                 cursor: 'pointer', fontSize: '0.78rem', marginTop: '0.5rem', padding: 0,
               }}>削除</button>

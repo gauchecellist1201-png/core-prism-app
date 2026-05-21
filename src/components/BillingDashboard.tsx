@@ -11,6 +11,7 @@ import {
   type PlanId,
 } from '../lib/billing';
 import { sendEmail } from '../lib/emailNotify';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   onClose: () => void;
@@ -55,7 +56,7 @@ export default function BillingDashboard({ onClose }: Props) {
       setSwitchMsg({ kind: 'ok', text: `${newPlan} に切り替えました (テスト)` });
       return;
     }
-    if (!confirm(`プランを「${newPlan}」に変更します。次回請求から反映されます。よろしいですか?`)) return;
+    if (!(await confirmAction({ title: `プランを「${newPlan}」に変更しますか?`, body: '次回の請求から新しい料金で反映されます。', okLabel: '変更する' }))) return;
     setSwitchBusy(newPlan);
     const r = await updateSubscriptionPlan({
       subscriptionId: user.subscriptionId,

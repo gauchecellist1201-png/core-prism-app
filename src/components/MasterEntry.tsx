@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { resetCircuit } from '../lib/apiQueue';
+import { confirmAction } from '../lib/confirmDialog';
 
 const MASTER_KEY_STORAGE = 'core_master_key_v1';
 const CLAUDE_KEY_STORAGE = 'core_claude_api_key_v1';
@@ -43,8 +44,8 @@ export default function MasterEntry() {
     setSavedAt(Date.now());
   };
 
-  const handleClear = () => {
-    if (!window.confirm('マスター設定を全て解除しますか？')) return;
+  const handleClear = async () => {
+    if (!(await confirmAction({ title: 'マスター設定を全て解除しますか?', body: '保存されたマスターキーと Claude API キーが消えます。', tone: 'danger', okLabel: '解除する' }))) return;
     localStorage.removeItem(MASTER_KEY_STORAGE);
     localStorage.removeItem(CLAUDE_KEY_STORAGE);
     setMaster('');

@@ -12,6 +12,7 @@ import {
 } from '../types/influencerDeal';
 import { useInfluencerDesk } from '../hooks/useInfluencerDesk';
 import { generateNegotiation, generateDraftCopy, evaluateOffer, generateBrandReport } from '../lib/influencerAgent';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   persona: Persona;
@@ -305,7 +306,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                             <option key={k} value={k}>{v.emoji} {v.label}</option>
                           ))}
                         </select>
-                        <button onClick={() => { if (confirm('この案件を削除しますか?')) desk.removeDeal(d.id); }} className="cp-btn cp-btn-ghost cp-btn-sm">🗑</button>
+                        <button onClick={async () => { if (await confirmAction({ title: 'この案件を削除しますか?', tone: 'danger' })) desk.removeDeal(d.id); }} className="cp-btn cp-btn-ghost cp-btn-sm">🗑</button>
                       </div>
                     </div>
                   );

@@ -7,6 +7,7 @@ import { useInvoices } from '../hooks/useInvoices';
 import { computeTotals, fmtJpy, calcDueDate } from '../lib/invoiceCalc';
 import { aiSuggestInvoice } from '../lib/invoiceAI';
 import { InvoicePrintView } from './InvoicePrintView';
+import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   persona: Persona;
@@ -510,7 +511,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
                       {invItem.status !== 'paid' && (
                         <button onClick={() => inv.updateInvoice(invItem.id, { status: 'paid' })} className="text-xs px-2 py-1.5 rounded text-fg-muted hover:text-fg">入金済に</button>
                       )}
-                      <button onClick={() => { if (confirm('削除しますか?')) inv.removeInvoice(invItem.id); }} className="text-xs px-2 py-1.5 rounded text-fg-muted hover:text-red-400">削除</button>
+                      <button onClick={async () => { if (await confirmAction({ title: 'この請求書を削除しますか?', tone: 'danger' })) inv.removeInvoice(invItem.id); }} className="text-xs px-2 py-1.5 rounded text-fg-muted hover:text-red-400">削除</button>
                     </div>
                   </div>
                 );
@@ -588,7 +589,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
                     <p className="text-fg text-sm truncate">{c.name}</p>
                     <p className="text-fg-muted text-xs truncate">{c.contactName || ''} {c.email && `· ${c.email}`}</p>
                   </div>
-                  <button onClick={() => { if (confirm('削除しますか?')) inv.removeClient(c.id); }}
+                  <button onClick={async () => { if (await confirmAction({ title: 'この取引先を削除しますか?', tone: 'danger' })) inv.removeClient(c.id); }}
                     className="text-xs px-2 py-1 rounded text-fg-muted hover:text-red-400">削除</button>
                 </div>
               ))}
