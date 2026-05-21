@@ -151,30 +151,8 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                   </motion.button>
                 </div>
                 <SoundToggleBox />
-                <div className="p-4 rounded-xl" style={{
-                  background: 'linear-gradient(135deg, rgba(46,111,255,0.08), rgba(232,75,151,0.08))',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}>
-                  <p className="text-fg text-sm font-medium mb-2">✨ AI は自動で動きます</p>
-                  <p className="text-fg-muted text-xs leading-relaxed">
-                    API キー不要。サーバー側の Gemini で自動処理されます。<br />
-                    すぐに、戦略・交渉・分析・美容相談を始められます。
-                  </p>
-                </div>
-                <details className="text-xs">
-                  <summary className="cursor-pointer text-neutral-700 hover:text-fg-subtle">
-                    Anthropic Claude キーを直接入力 (上級者向け)
-                  </summary>
-                  <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl"
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <input type={apiKeyVisible ? 'text' : 'password'} value={apiKey === 'proxy' ? '' : apiKey}
-                      onChange={e => setApiKey(e.target.value)}
-                      placeholder="sk-ant-..."
-                      className="flex-1 bg-transparent text-fg text-sm font-mono outline-none" />
-                    <button onClick={() => setApiKeyVisible(!apiKeyVisible)}
-                      className="text-neutral-600 text-xs hover:text-fg-subtle">{apiKeyVisible ? '隠す' : '表示'}</button>
-                  </div>
-                </details>
+                <ApiKeySetupBox apiKey={apiKey} setApiKey={setApiKey}
+                  apiKeyVisible={apiKeyVisible} setApiKeyVisible={setApiKeyVisible} />
               </motion.div>
             )}
 
@@ -460,6 +438,134 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
 
 // 効果音の ON/OFF — タップ音や完了チャイムを鳴らすかどうか。
 // 音が苦手な人・静かな場所で使う人への配慮。切り替えた瞬間に試聴できる。
+/**
+ * AI キー設定ボックス — 「無料で AI を動かす鍵を 1 分で取得」を最も目立たせる
+ * Gemini を主、Claude を補助として扱う
+ */
+function ApiKeySetupBox({
+  apiKey, setApiKey, apiKeyVisible, setApiKeyVisible,
+}: {
+  apiKey: string;
+  setApiKey: (s: string) => void;
+  apiKeyVisible: boolean;
+  setApiKeyVisible: (b: boolean) => void;
+}) {
+  const GEMINI_KEY = 'core_gemini_api_key_v1';
+  const [geminiKey, setGeminiKeyState] = useState<string>(() => {
+    try { return localStorage.getItem(GEMINI_KEY) || ''; } catch { return ''; }
+  });
+  const [geminiVisible, setGeminiVisible] = useState(false);
+  const [saved, setSaved] = useState<'gemini' | 'claude' | null>(null);
+
+  const saveGemini = (v: string) => {
+    setGeminiKeyState(v);
+    try {
+      if (v) localStorage.setItem(GEMINI_KEY, v);
+      else localStorage.removeItem(GEMINI_KEY);
+    } catch { /* */ }
+    if (v) { setSaved('gemini'); setTimeout(() => setSaved(null), 2000); }
+  };
+
+  const hasGemini = !!geminiKey;
+  const hasClaude = !!apiKey && apiKey !== 'proxy';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* 状態表示 */}
+      <div style={{
+        padding: '0.85rem 1rem', borderRadius: 14,
+        background: hasGemini || hasClaude
+          ? 'linear-gradient(135deg, rgba(16,185,129,0.10), rgba(74,222,128,0.06))'
+          : 'linear-gradient(135deg, rgba(251,191,36,0.10), rgba(248,113,113,0.06))',
+        border: `1px solid ${hasGemini || hasClaude ? 'rgba(16,185,129,0.30)' : 'rgba(251,191,36,0.30)'}`,
+      }}>
+        <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg)', marginBottom: 2 }}>
+          {hasGemini || hasClaude ? '✓ AI 鍵が登録済みです' : '⚠ AI 鍵が未登録 — AI 機能が使えません'}
+        </p>
+        <p style={{ fontSize: 11, color: 'var(--fg-muted)', lineHeight: 1.65 }}>
+          {hasGemini || hasClaude
+            ? `${[hasGemini && 'Gemini', hasClaude && 'Claude'].filter(Boolean).join(' / ')} で AI が動作します`
+            : '無料の Gemini キーを 1 分で取得 → 下に貼り付けるだけで全 AI 機能が動きます'}
+        </p>
+      </div>
+
+      {/* Gemini 鍵 (おすすめ・無料) */}
+      <div style={{
+        padding: '1rem', borderRadius: 14,
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.08)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg)' }}>
+            🌟 Gemini キー <span style={{ fontSize: 10, color: '#10B981', fontWeight: 700, marginLeft: 6 }}>無料・おすすめ</span>
+          </p>
+          <a
+            href="https://aistudio.google.com/apikey"
+            target="_blank" rel="noopener noreferrer"
+            style={{
+              fontSize: 11, fontWeight: 800, padding: '6px 12px', borderRadius: 999,
+              background: 'linear-gradient(135deg, #4285F4, #34A853)',
+              color: '#fff', textDecoration: 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+            }}
+          >無料で取得 →</a>
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--fg-muted)', lineHeight: 1.65, marginBottom: 8 }}>
+          aistudio.google.com で Google アカウントでログイン → 「Create API key」をクリック → 出てきた <code style={{ background: 'rgba(255,255,255,0.05)', padding: '1px 4px', borderRadius: 4, fontFamily: 'monospace' }}>AIzaSy...</code> を下に貼り付け
+        </p>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
+          <input
+            type={geminiVisible ? 'text' : 'password'}
+            value={geminiKey}
+            onChange={(e) => saveGemini(e.target.value.trim())}
+            placeholder="AIzaSy..."
+            className="flex-1 bg-transparent text-fg text-sm font-mono outline-none"
+            style={{ minHeight: 28 }}
+          />
+          <button onClick={() => setGeminiVisible(!geminiVisible)}
+            className="text-neutral-600 text-xs hover:text-fg-subtle"
+            style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+            {geminiVisible ? '隠す' : '表示'}
+          </button>
+        </div>
+        {saved === 'gemini' && (
+          <p style={{ fontSize: 11, color: '#10B981', fontWeight: 700, marginTop: 6 }}>
+            ✓ 保存しました — もう AI 機能が使えます
+          </p>
+        )}
+      </div>
+
+      {/* Claude 鍵 (有料・高品質) */}
+      <details style={{ fontSize: 12 }}>
+        <summary style={{ cursor: 'pointer', color: 'var(--fg-muted)', padding: 4 }}>
+          🎯 Claude キーを登録 (有料・高品質) — 上級者向け
+        </summary>
+        <div style={{ marginTop: 8, padding: '0.85rem 1rem', borderRadius: 12,
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <p style={{ fontSize: 11, color: 'var(--fg-muted)', lineHeight: 1.65, marginBottom: 8 }}>
+            <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer"
+              style={{ color: '#A78BFA', textDecoration: 'underline' }}>console.anthropic.com</a> で
+            「Settings → API Keys → Create Key」→ <code>sk-ant-...</code> を貼り付け。重要な戦略文章で使われ、月数百円〜数千円程度の従量。
+          </p>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
+            <input type={apiKeyVisible ? 'text' : 'password'} value={apiKey === 'proxy' ? '' : apiKey}
+              onChange={e => setApiKey(e.target.value.trim())}
+              placeholder="sk-ant-..."
+              className="flex-1 bg-transparent text-fg text-sm font-mono outline-none" />
+            <button onClick={() => setApiKeyVisible(!apiKeyVisible)}
+              className="text-neutral-600 text-xs hover:text-fg-subtle"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+              {apiKeyVisible ? '隠す' : '表示'}
+            </button>
+          </div>
+        </div>
+      </details>
+    </div>
+  );
+}
+
 function SoundToggleBox() {
   const [on, setOn] = useState(() => isSoundEnabled());
   const toggle = () => {

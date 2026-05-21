@@ -341,15 +341,24 @@ export default async function handler(req: Request) {
   }
 
   // ─── デフォルト: Gemini ───
-  const apiKey = process.env.GEMINI_API_KEY;
+  // ユーザー個人のキーを優先 (x-gemini-api-key ヘッダ) → サーバー env に fallback。
+  // これでサーバー env が quota 切れでもユーザーは自分の無料キーを登録すれば即動く
+  const userGeminiKey = (req.headers.get('x-gemini-api-key') || '').trim();
+  const apiKey = userGeminiKey || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({
-      error: { message: 'GEMINI_API_KEY が環境変数に設定されていません。Vercel の env に登録してください。' }
+      error: {
+        message: 'AI を動かすための鍵が設定されていません。設定 → API キー で無料の Gemini キーを登録するか、Vercel env に GEMINI_API_KEY を設定してください。',
+        type: 'no_ai_key',
+      },
+      userMessage: '無料の AI 鍵を 1 分で登録できます',
+      recovery: 'Iris/Prism の右上 → 設定 → API キー → 「無料で取得」ボタン',
     }), {
-      status: 500,
+      status: 401,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
+  const usingUserKey = !!userGeminiKey;
 
   // 変換 + フォールバック呼び出し
   const candidateModels = pickGeminiModels(body.model);

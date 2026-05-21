@@ -67,8 +67,9 @@ const MASTER_KEY_STORAGE = 'core_master_key_v1';
   }
 })();
 
-// グローバル fetch interceptor — /api/ai 宛のリクエストにマスター系ヘッダーを自動付与
+// グローバル fetch interceptor — /api/ai と /api/iris/* 宛のリクエストに鍵ヘッダーを自動付与
 const CLAUDE_KEY_STORAGE = 'core_claude_api_key_v1';
+const GEMINI_KEY_STORAGE = 'core_gemini_api_key_v1';
 const originalFetch = window.fetch;
 window.fetch = function patched(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   let url = '';
@@ -76,13 +77,16 @@ window.fetch = function patched(input: RequestInfo | URL, init?: RequestInit): P
     url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
   } catch { /* ignore */ }
 
-  if (url.includes('/api/ai')) {
+  // AI 呼出し系すべてに鍵を自動付与 (/api/ai, /api/iris/*, /api/instagram/*)
+  if (url.includes('/api/ai') || url.includes('/api/iris/') || url.includes('/api/instagram/profile')) {
     const masterKey = localStorage.getItem(MASTER_KEY_STORAGE);
     const claudeKey = localStorage.getItem(CLAUDE_KEY_STORAGE);
-    if (masterKey || claudeKey) {
+    const geminiKey = localStorage.getItem(GEMINI_KEY_STORAGE);
+    if (masterKey || claudeKey || geminiKey) {
       const headers = new Headers(init?.headers || {});
       if (masterKey) headers.set('x-master-key', masterKey);
       if (claudeKey) headers.set('x-claude-api-key', claudeKey);
+      if (geminiKey) headers.set('x-gemini-api-key', geminiKey);
       init = { ...init, headers };
     }
   }

@@ -64,14 +64,15 @@ function classifyError(error: string): {
       steps: [],
     };
   }
-  if (/quota|混みあって|rate|429|503/i.test(error)) {
+  if (/quota|混みあって|rate|429|503|no_ai_key|無料の AI 鍵/i.test(error)) {
     return {
       kind: 'quota', Icon: Waves, iconColor: '#5BA8FF',
-      title: 'AI が今、混みあっています',
+      title: 'AI 鍵を 1 分で登録すれば動きます',
       steps: [
-        '60 秒待ってから、もう一度送信してみる',
-        '設定 → マスターモード で高品質 AI に切替える',
-        'それでも続くときは、ページを再読み込み',
+        '右上の歯車 → 「API キー」タブを開く',
+        '「無料で取得 →」を押し、Google アカウントでログイン',
+        '「Create API key」を押して出てきた AIzaSy... を貼り付け',
+        '保存後、すぐ全 AI 機能が使えます (¥0)',
       ],
     };
   }
