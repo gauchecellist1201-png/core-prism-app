@@ -668,6 +668,28 @@ function IrisEditorialHome({
             )}
             {strategy.data ? (
               <>
+                {/* データ取得状況バッジ — ユーザーに「何が実データ / 何が推測」を明示 */}
+                {igProfile && (() => {
+                  const src = igProfile.source as string;
+                  const label = src === 'oauth' ? '✓ Instagram から実データ取得済み'
+                    : src === 'screenshot-ai' ? 'スクショから基本データのみ (詳細は別途インサイト連携)'
+                    : src === 'self' ? 'あなたの申告値 (推測ベース)'
+                    : 'データ取得状況不明';
+                  const tone = src === 'oauth' ? { c: '#10B981', bg: '#10B98115' }
+                    : src === 'screenshot-ai' ? { c: '#F59E0B', bg: '#F59E0B15' }
+                    : { c: '#9CA3AF', bg: '#9CA3AF15' };
+                  return (
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      padding: '4px 9px', borderRadius: 999,
+                      background: tone.bg, border: `1px solid ${tone.c}33`,
+                      fontSize: 10.5, color: tone.c, fontWeight: 800,
+                      marginBottom: 10, letterSpacing: '0.02em',
+                    }}>
+                      {label}
+                    </div>
+                  );
+                })()}
                 {strategy.data.audienceInsight && (
                   <div style={{
                     padding: '0.55rem 0.75rem', marginBottom: '0.65rem',
