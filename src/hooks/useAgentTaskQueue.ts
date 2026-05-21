@@ -144,38 +144,52 @@ export function useAgentTaskQueue() {
     }));
   }, []);
 
-  /** タスク実行ループ (Phase 1: モック演出) */
+  /** タスク実行ループ — 各 CXO が実 AI 呼出しで動作 (失敗時はテンプレで継続) */
   const runTask = useCallback((id: string) => {
     const current = loadQueue().find(t => t.id === id);
     if (!current) return;
     let stepIdx = 0;
-    const advance = () => {
+    const fallbacks: Record<CxoRole, string> = {
+      CEO: '優先順を整理', CTO: 'コードを実装', CPO: '仕様を確定',
+      CDO: '見た目を磨き', CMO: '文章を生成', CSO: 'リードを探索',
+      CFO: '数字を集計', COO: 'ファイルを整理', CDS: 'データを分析',
+      CLO: '法務を確認', UIE: 'UI を実装', UXE: '操作感を磨き', QAE: '動作テスト',
+    };
+    const advance = async () => {
       const latest = loadQueue().find(t => t.id === id);
       if (!latest || latest.status !== 'running') return;
       if (stepIdx >= latest.steps.length) return;
-      const dwell = 1800 + Math.random() * 2200; // 各 CXO 1.8 〜 4 秒
-      window.setTimeout(() => {
-        // モック出力 (Phase 1) — 後で実 AI 出力に置換
-        const step = latest.steps[stepIdx];
-        const mockOutputs: Record<CxoRole, string> = {
-          CEO: '優先順を整理',
-          CTO: 'コードを実装',
-          CPO: '仕様を確定',
-          CDO: '見た目を磨き',
-          CMO: '文章を生成',
-          CSO: 'リードを探索',
-          CFO: '数字を集計',
-          COO: 'ファイルを整理',
-          CDS: 'データを分析',
-          CLO: '法務を確認',
-          UIE: 'UI を実装',
-          UXE: '操作感を磨き',
-          QAE: '動作テスト',
-        };
-        advanceStep(id, stepIdx, mockOutputs[step.cxo] || '完了');
-        stepIdx++;
-        advance();
-      }, dwell);
+      const step = latest.steps[stepIdx];
+
+      const sys = `あなたは CORE 株式会社の ${CXO_META[step.cxo].name} (${CXO_META[step.cxo].tagline}) です。
+ユーザーが承認したタスク「${latest.title}」を、自分の専門領域から実行に移します。
+返答は「実行結果」を 1 文 (40 字以内) で簡潔に。例: "保存率上位 3 投稿を抽出: チェックリスト型が +24% 強い"`;
+      const userPrompt = `# タスク\n${latest.title}\n\n# 概要\n${latest.summary}\n\n# あなたの担当ステップ\n${step.label}\n\n上記を実行し、結果を 1 文で報告してください。`;
+
+      let output = fallbacks[step.cxo] || '完了';
+      try {
+        const r = await fetch('/api/ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5',
+            max_tokens: 200,
+            system: sys,
+            messages: [{ role: 'user', content: userPrompt }],
+          }),
+        });
+        if (r.ok) {
+          const data = await r.json() as any;
+          const text = data.content?.[0]?.text || '';
+          if (text.trim()) output = text.trim().slice(0, 80);
+        }
+      } catch { /* fallback で継続 */ }
+
+      // 体感のため最低 1.5 秒表示
+      await new Promise(r => setTimeout(r, 1500));
+      advanceStep(id, stepIdx, output);
+      stepIdx++;
+      advance();
     };
     advance();
   }, [advanceStep]);

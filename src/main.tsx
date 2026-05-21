@@ -65,6 +65,28 @@ const MASTER_KEY_STORAGE = 'core_master_key_v1';
     url.searchParams.delete('invite');
     window.history.replaceState({}, '', url.toString());
   }
+
+  // ─── Chrome 拡張機能から ?capture=BASE64 で取り込み ───
+  // 拡張機能の popup/context メニューが投げてくる。payload は
+  // { title, url, selection?, source, kind } の JSON を base64 化したもの。
+  // localStorage に保存 + custom event を fire してダッシュボードが拾えるように。
+  const captureRaw = url.searchParams.get('capture');
+  if (captureRaw) {
+    try {
+      const decoded = decodeURIComponent(escape(atob(captureRaw)));
+      const payload = JSON.parse(decoded);
+      const record = { ...payload, receivedAt: Date.now() };
+      localStorage.setItem('core_extension_capture_v1', JSON.stringify(record));
+      // 別タブから dashboard が listen するために少し遅延して fire
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('core:extension-capture', { detail: record }));
+      }, 200);
+    } catch (e) {
+      console.warn('[CORE] ?capture= decode failed', e);
+    }
+    url.searchParams.delete('capture');
+    window.history.replaceState({}, '', url.toString());
+  }
 })();
 
 // グローバル fetch interceptor — /api/ai と /api/iris/* 宛のリクエストに鍵ヘッダーを自動付与

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CORE Prism</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="hdr">
+    <div class="logo">
+      <img src="icons/icon-48.png" alt="" width="28" height="28" />
+      <div>
+        <div class="brand">CORE Prism</div>
+        <div class="tag">AI 経営参謀（13 CXO）</div>
+      </div>
+    </div>
+    <a class="open" id="openApp" href="#" target="_blank" rel="noopener">アプリを開く →</a>
+  </header>
+
+  <section class="card" id="captureCard">
+    <div class="row">
+      <div class="label">いま見ているページ</div>
+      <div class="title" id="pageTitle">読み込み中…</div>
+      <div class="url" id="pageUrl"></div>
+    </div>
+
+    <div class="row" id="selRow" hidden>
+      <div class="label">選択中のテキスト</div>
+      <div class="sel" id="selText"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="saveBtn">
+        <span class="dot"></span> Prism に取り込む
+      </button>
+      <button class="btn ghost" id="cxoBtn">
+        13 CXO に相談する →
+      </button>
+    </div>
+    <div class="status" id="status" hidden></div>
+  </section>
+
+  <section class="card mini">
+    <div class="mini-row">
+      <span class="kbd">Alt</span>+<span class="kbd">P</span>
+      <span class="mini-text">でいつでも開きます</span>
+    </div>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>

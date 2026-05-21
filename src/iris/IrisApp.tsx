@@ -8,6 +8,7 @@ import IrisLanding from './IrisLanding';
 import GlobalVoiceInput from '../components/GlobalVoiceInput';
 import OfflineNotice from '../components/OfflineNotice';
 import AgentTeamMonitor from '../components/AgentTeamMonitor';
+import ExtensionCaptureToast from '../components/ExtensionCaptureToast';
 import IrisDashboard from './IrisDashboard';
 import TutorialOverlay from '../components/TutorialOverlay';
 import WowOnboarding from '../components/WowOnboarding';
@@ -104,6 +105,8 @@ export default function IrisApp() {
       <IrisDashboard settings={settings} onLeave={() => setEntered(false)} />
       {/* AI 会社 作戦本部 — Iris (CMO/CDS/CSO/UXE が活躍する場面が多い) */}
       <AgentTeamMonitor brand="iris" />
+      {/* Chrome 拡張機能から ?capture= で届いた取り込みのお知らせ */}
+      <ExtensionCaptureToast brand="iris" />
       <TutorialOverlay brand="iris" onClose={() => setTutorialDoneTick(t => t + 1)} />
       <WowOnboarding brand="iris" trigger={tutorialDoneTick} />
       {/* どの入力欄でも音声入力できる */}

@@ -17,6 +17,8 @@ const MeetingHub = lazy(() => import('./MeetingHub'));
 const HealthHub = lazy(() => import('./health/HealthHub'));
 import { ThemeToggle } from './ThemeToggle';
 import TodayBrief from './TodayBrief';
+import PrismProposalCard from './ProposalCard';
+import type { CxoRole as PrismCxoRole } from '../hooks/useAgentTaskQueue';
 import InsightsStream from './InsightsStream';
 import PrismFlow from './PrismFlow';
 import MomentPulse from './MomentPulse';
@@ -724,6 +726,52 @@ export default function IdentityDashboard({
                     onOpenShadow={() => setShowShadow(true)}
                   />
                 </div>
+
+                {/* AI 会社フロー — 「承認して実行」で 13 CXO のうち関係者が動く */}
+                {(briefOverride ?? proactive.latestProposal) && (() => {
+                  const p = briefOverride ?? proactive.latestProposal;
+                  if (!p) return null;
+                  const text = (p.title + ' ' + (p.message || '')).toLowerCase();
+                  const steps: Array<{ cxo: PrismCxoRole; label: string }> = [];
+                  if (/提案|営業|商談|顧客|アプローチ/i.test(text)) {
+                    steps.push({ cxo: 'CDS', label: 'ナレッジから関連情報を抽出' });
+                    steps.push({ cxo: 'CSO', label: '提案先と切り口を選定' });
+                    steps.push({ cxo: 'CMO', label: '提案文を AI 生成' });
+                    steps.push({ cxo: 'CTO', label: '送信準備を整える' });
+                  } else if (/議事録|会議|meeting/i.test(text)) {
+                    steps.push({ cxo: 'CDS', label: '音声/メモから論点を抽出' });
+                    steps.push({ cxo: 'CPO', label: 'アクション項目を構造化' });
+                    steps.push({ cxo: 'CMO', label: '議事録ドラフトを書く' });
+                    steps.push({ cxo: 'COO', label: 'ナレッジに保存' });
+                  } else if (/財務|経費|売上|p&l|予算/i.test(text)) {
+                    steps.push({ cxo: 'CFO', label: '数字を集計' });
+                    steps.push({ cxo: 'CDS', label: '異常値を検出' });
+                    steps.push({ cxo: 'CPO', label: '対策案を 3 つ整理' });
+                  } else if (/契約|nda|規約|法務/i.test(text)) {
+                    steps.push({ cxo: 'CLO', label: '条文をレビュー' });
+                    steps.push({ cxo: 'CPO', label: '修正点を整理' });
+                    steps.push({ cxo: 'CMO', label: '相手側への返信を生成' });
+                  } else {
+                    steps.push({ cxo: 'CPO', label: '実行計画を組み立て' });
+                    steps.push({ cxo: 'CMO', label: '必要な文章を生成' });
+                    steps.push({ cxo: 'CDS', label: '効果を測定' });
+                  }
+                  return (
+                    <div style={{ position: 'relative', zIndex: 1, marginTop: 12 }}>
+                      <PrismProposalCard
+                        brand="prism"
+                        dedupeKey={`prism_${(p as { id?: string }).id || p.title.slice(0, 12)}`}
+                        proposal={{
+                          title: p.title,
+                          summary: p.message || '',
+                          why: (p as { context?: string }).context || undefined,
+                          dueDays: 7,
+                          steps,
+                        }}
+                      />
+                    </div>
+                  );
+                })()}
               </div>
 
               <QuickActions

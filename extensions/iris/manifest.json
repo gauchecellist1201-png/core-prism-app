@@ -1,0 +1,57 @@
+{
+  "manifest_version": 3,
+  "name": "CORE Iris — Instagram 専属 AI マネージャー",
+  "short_name": "Iris",
+  "version": "0.1.0",
+  "description": "Instagram DM・プロフィールをワンクリックで Iris に取り込み。AI が交渉文を書き、案件を整理し、収益を可視化します。",
+  "default_locale": "ja",
+  "action": {
+    "default_title": "CORE Iris にキャプチャ",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://core-prism-app.vercel.app/*",
+    "https://*.instagram.com/*",
+    "http://localhost/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.instagram.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+I",
+        "mac": "Alt+I"
+      },
+      "description": "Iris のクイック保存を開く"
+    }
+  }
+}
