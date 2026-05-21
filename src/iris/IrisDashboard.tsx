@@ -42,6 +42,7 @@ import {
   Save, X,
 } from 'lucide-react';
 import IrisCommandBar from './IrisCommandBar';
+import IrisDealCaptureModal from './IrisDealCaptureModal';
 import InviteShareCard from '../components/InviteShareCard';
 import type { LucideIcon } from 'lucide-react';
 
@@ -141,6 +142,8 @@ import IrisEarnHero from './IrisEarnHero';
 import WellnessTracker from '../components/WellnessTracker';
 import IgConnectModal from './IgConnectModal';
 import { loadIgProfile, consumeOauthCallback, type IgProfile } from './instagramConnect';
+import IrisDmDraftModal from './IrisDmDraftModal';
+import type { DmDealInput } from './dmDraft';
 
 interface Props {
   settings: AppSettings;
@@ -399,6 +402,7 @@ function IrisEditorialHome({
   bg, myDeals, postQueue, igProfile,
   onNavigate,
   onConnectInstagram,
+  onOpenDmDraft,
 }: {
   bg: IrisBackgroundDef;
   myDeals: any[];
@@ -409,6 +413,7 @@ function IrisEditorialHome({
   settings?: any;
   mediaKit: any;
   onConnectInstagram: () => void;
+  onOpenDmDraft?: (deal: DmDealInput) => void;
 }) {
   // IG 実データから AI 戦略 3 案を取得 (igProfile があれば即時 fetch、24h キャッシュ)
   const strategy = useIgStrategy(igProfile || null);
@@ -885,14 +890,39 @@ function IrisEditorialHome({
                     borderRadius: IRIS_RADIUS.md,
                     background: `${bg.accent}0a`,
                     border: `1px solid ${bg.cardBorder}`,
+                    gap: '0.4rem',
                   }}>
-                    <span style={{ ...IRIS_TYPE.small, color: bg.ink, fontWeight: 600 }}>{cat}</span>
+                    <span style={{ ...IRIS_TYPE.small, color: bg.ink, fontWeight: 600, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat}</span>
                     <span style={{
                       ...IRIS_TYPE.caption,
                       color: bg.accent, fontWeight: 700,
                       background: `${bg.accent}14`,
                       padding: '0.2rem 0.5rem', borderRadius: IRIS_RADIUS.full,
+                      flexShrink: 0,
                     }}>{count} 件</span>
+                    {/* AI 交渉文 (DM 下書き) ボタン */}
+                    {onOpenDmDraft && igProfile && (
+                      <button
+                        onClick={() => onOpenDmDraft({
+                          brandName: `${cat}カテゴリのブランド`,
+                          category: cat,
+                        })}
+                        aria-label={`${cat} の AI 交渉文を作る`}
+                        title="AI 交渉文を作る"
+                        style={{
+                          width: 36, height: 36, minWidth: 36,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          border: 'none', cursor: 'pointer',
+                          borderRadius: IRIS_RADIUS.full,
+                          background: IRIS_GRADIENT.instagram,
+                          color: '#fff',
+                          boxShadow: IRIS_SHADOW.sm,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Sparkles size={15} strokeWidth={2.5} />
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -981,6 +1011,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [igProfile, setIgProfile] = useState<IgProfile | null>(() => loadIgProfile());
   const [showIgConnect, setShowIgConnect] = useState(false);
+  // AI 交渉文モーダル (案件カテゴリ → DM 下書き)
+  const [dmDraftDeal, setDmDraftDeal] = useState<DmDealInput | null>(null);
 
   useEffect(() => {
     consumeOauthCallback().then(p => { if (p) setIgProfile(p); }).catch(() => {});
@@ -1382,6 +1414,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   settings={settings}
                   mediaKit={mediaKit}
                   onConnectInstagram={() => setShowIgConnect(true)}
+                  onOpenDmDraft={(deal) => setDmDraftDeal(deal)}
                 />
 
                 {/* 6 エージェント オービット */}
@@ -1552,6 +1585,17 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           <IgConnectModal
             onClose={() => setShowIgConnect(false)}
             onConnected={(p) => setIgProfile(p)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* AI 交渉文 (初回 DM 下書き) モーダル */}
+      <AnimatePresence>
+        {dmDraftDeal && igProfile && (
+          <IrisDmDraftModal
+            igProfile={igProfile}
+            deal={dmDraftDeal}
+            onClose={() => setDmDraftDeal(null)}
           />
         )}
       </AnimatePresence>
@@ -1972,6 +2016,7 @@ function ProposalCard({
 function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; myDeals: InfluencerDeal[]; settings: AppSettings; mediaKit?: MediaKit }) {
   const [manualOpen, setManualOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
+  const [captureOpen, setCaptureOpen] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
   const [handled, setHandled] = useState<string[]>([]);
@@ -2034,6 +2079,12 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
           onSave={(data) => { desk.addDeal(IRIS_PERSONA_ID, data); showFlash('案件を追加しました'); }} />
       )}
 
+      {captureOpen && (
+        <IrisDealCaptureModal bg={bg}
+          onClose={() => setCaptureOpen(false)}
+          onSave={(data) => { desk.addDeal(IRIS_PERSONA_ID, data); showFlash('DM スクショから案件を追加しました'); }} />
+      )}
+
       <div>
         <h2 style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0, fontWeight: 500 }}>
           お仕事一覧
@@ -2042,6 +2093,38 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
           AI があなたに合いそうな案件を先に見つけています。✓ で追加するだけ。
         </p>
       </div>
+
+      {/* DM スクショから案件追加 (中核機能) — 最上段に大きく */}
+      <button
+        onClick={() => setCaptureOpen(true)}
+        style={{
+          width: '100%',
+          background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+          color: '#fff',
+          border: 'none',
+          borderRadius: 18,
+          padding: '0.95rem 1.2rem',
+          fontWeight: 700,
+          cursor: 'pointer',
+          fontSize: '1rem',
+          fontFamily: IRIS_FONTS.body,
+          boxShadow: `0 12px 30px ${bg.accent}55`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          minHeight: 56,
+        }}
+        aria-label="DM のスクショから案件を追加"
+      >
+        <span style={{ fontSize: '1.6rem', lineHeight: 1 }}></span>
+        <span style={{ flex: 1, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ fontSize: '1rem' }}>DM スクショから案件追加</span>
+          <span style={{ fontSize: '0.78rem', opacity: 0.92, fontWeight: 500 }}>
+            写真 1 枚で AI が案件名・報酬・締切を読み取ります
+          </span>
+        </span>
+        <span style={{ fontSize: '1.2rem' }}>→</span>
+      </button>
 
       {flash && (
         <div role="status" style={{
