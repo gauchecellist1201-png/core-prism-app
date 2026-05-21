@@ -101,6 +101,51 @@ export function createSelfReportedProfile(input: {
  * env META_APP_ID + META_APP_SECRET が揃っていれば Facebook ダイアログへ。
  */
 /**
+ * Instagram プロフィール画面のスクショ 1 枚から AI が OCR して連携。
+ * 一般のクリエイターでも 30 秒で完了する最も簡単な連携方法。
+ *
+ * @param file ユーザーがアップロードした画像ファイル (PNG/JPEG/WebP)
+ * @returns 成功時は IgProfile、失敗時は { error, message, recovery }
+ */
+export async function connectFromScreenshot(
+  file: File,
+): Promise<{ ok: true; profile: IgProfile } | { ok: false; error: string; message: string; recovery?: string }> {
+  try {
+    // FormData だと Edge ファンクションで扱いにくいので dataURL 経由で送る
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = () => reject(new Error('ファイル読み込みに失敗'));
+      r.readAsDataURL(file);
+    });
+    const resp = await fetch('/api/instagram/profile-from-screenshot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageDataUrl: dataUrl }),
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) {
+      return {
+        ok: false,
+        error: data.error || 'unknown',
+        message: data.message || `読み取りに失敗 (status ${resp.status})`,
+        recovery: data.recovery,
+      };
+    }
+    const profile = data.profile as IgProfile;
+    saveIgProfile(profile);
+    return { ok: true, profile };
+  } catch (e: any) {
+    return {
+      ok: false,
+      error: 'network',
+      message: e?.message || '通信エラー',
+      recovery: 'ネットワーク接続を確認してもう一度お試しください',
+    };
+  }
+}
+
+/**
  * ユーザーが developers.facebook.com で取得した Personal Access Token を直接渡して連携。
  * Meta App Review 前でも実データを取得できる advanced ユーザー向けの即時連携。
  *

@@ -1,10 +1,10 @@
 // ============================================================
 // IgConnectModal — Instagram 連携モーダル (即時利用可能版)
 // ============================================================
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, ArrowRight, Check, Camera, Key, ExternalLink, AlertCircle, Loader2 } from 'lucide-react';
-import { createSelfReportedProfile, saveIgProfile, tryOauthConnect, connectWithToken } from './instagramConnect';
+import { X, ArrowRight, Check, Camera, Key, ExternalLink, AlertCircle, Loader2, ImageUp, Sparkles } from 'lucide-react';
+import { createSelfReportedProfile, saveIgProfile, tryOauthConnect, connectWithToken, connectFromScreenshot } from './instagramConnect';
 import type { IgProfile } from './instagramConnect';
 
 interface Props {
@@ -18,10 +18,35 @@ const CATEGORIES = [
   'ガジェット', '本', '映画', 'アート', 'ハンドメイド',
 ];
 
-type Mode = 'self' | 'token';
+type Mode = 'screenshot' | 'self' | 'token';
 
 export default function IgConnectModal({ onClose, onConnected }: Props) {
-  const [mode, setMode] = useState<Mode>('self');
+  const [mode, setMode] = useState<Mode>('screenshot');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [shotStatus, setShotStatus] = useState<'idle' | 'reading' | 'success' | 'failed'>('idle');
+  const [shotRecovery, setShotRecovery] = useState<string | null>(null);
+
+  const handleScreenshotFile = async (file: File | null) => {
+    if (!file) return;
+    setShotRecovery(null);
+    setError(null);
+    setShotStatus('reading');
+    // プレビュー表示用 (UX 上「読み取り中」を見せる)
+    try {
+      const url = URL.createObjectURL(file);
+      setScreenshotPreview(url);
+    } catch { /* */ }
+    const res = await connectFromScreenshot(file);
+    if (res.ok) {
+      setShotStatus('success');
+      setTimeout(() => { onConnected(res.profile); onClose(); }, 1400);
+    } else {
+      setShotStatus('failed');
+      setError(res.message);
+      setShotRecovery(res.recovery || null);
+    }
+  };
   const [handle, setHandle] = useState('');
   const [followers, setFollowers] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
@@ -145,27 +170,156 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
           <ArrowRight size={16} />
         </button>
 
-        {/* モード切替: 自己申告 / アクセストークン直接入力 */}
+        {/* モード切替: スクショ / 自己申告 / アクセストークン */}
         <div style={{
-          display: 'flex', gap: 6, marginBottom: 12,
-          background: 'rgba(0,0,0,0.04)', padding: 4, borderRadius: 999,
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, marginBottom: 12,
+          background: 'rgba(0,0,0,0.04)', padding: 4, borderRadius: 14,
         }}>
+          <button type="button" onClick={() => setMode('screenshot')} style={{
+            padding: '8px 6px', borderRadius: 10, border: 'none',
+            background: mode === 'screenshot' ? '#fff' : 'transparent',
+            color: mode === 'screenshot' ? '#E1306C' : '#5A5562',
+            fontSize: 11, fontWeight: 800, cursor: 'pointer',
+            boxShadow: mode === 'screenshot' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+            lineHeight: 1.25,
+          }}>
+            <span>📸 スクショで連携</span>
+            <span style={{ fontSize: 9, color: mode === 'screenshot' ? '#E1306C' : '#8A8593', fontWeight: 700 }}>30 秒・おすすめ</span>
+          </button>
           <button type="button" onClick={() => setMode('self')} style={{
-            flex: 1, padding: '7px 10px', borderRadius: 999, border: 'none',
+            padding: '8px 6px', borderRadius: 10, border: 'none',
             background: mode === 'self' ? '#fff' : 'transparent',
             color: mode === 'self' ? '#E1306C' : '#5A5562',
             fontSize: 11, fontWeight: 800, cursor: 'pointer',
             boxShadow: mode === 'self' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-          }}>📝 自己申告で今すぐ</button>
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+            lineHeight: 1.25,
+          }}>
+            <span>📝 自己申告</span>
+            <span style={{ fontSize: 9, color: mode === 'self' ? '#E1306C' : '#8A8593', fontWeight: 700 }}>手入力</span>
+          </button>
           <button type="button" onClick={() => setMode('token')} style={{
-            flex: 1, padding: '7px 10px', borderRadius: 999, border: 'none',
+            padding: '8px 6px', borderRadius: 10, border: 'none',
             background: mode === 'token' ? '#fff' : 'transparent',
             color: mode === 'token' ? '#E1306C' : '#5A5562',
             fontSize: 11, fontWeight: 800, cursor: 'pointer',
             boxShadow: mode === 'token' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-          }}>🔑 アクセストークンで実データ</button>
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+            lineHeight: 1.25,
+          }}>
+            <span>🔑 上級者用</span>
+            <span style={{ fontSize: 9, color: mode === 'token' ? '#E1306C' : '#8A8593', fontWeight: 700 }}>API キー</span>
+          </button>
         </div>
+
+        {/* === スクショ連携モード (デフォルト・最も簡単) === */}
+        {mode === 'screenshot' && (
+          <>
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(225,48,108,0.06), rgba(252,176,69,0.04))',
+              border: '1px solid rgba(225,48,108,0.18)',
+              borderRadius: 14, padding: '0.85rem 1rem', marginBottom: '0.85rem',
+              fontSize: 11.5, color: '#5A5562', lineHeight: 1.7,
+            }}>
+              <div style={{ fontWeight: 800, color: '#E1306C', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+                <Sparkles size={13} /> 3 タップで完了します
+              </div>
+              <ol style={{ paddingLeft: 18, margin: 0 }}>
+                <li>Instagram アプリで <strong>自分のプロフィール画面</strong> を開く</li>
+                <li>スクリーンショットを撮る (iPhone はサイドボタン＋音量上)</li>
+                <li>下のボタンでアップロード → <strong>AI が自動で読み取ります</strong></li>
+              </ol>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => handleScreenshotFile(e.target.files?.[0] || null)}
+              style={{ display: 'none' }}
+            />
+
+            {/* プレビュー (アップロード後) */}
+            {screenshotPreview && (
+              <div style={{
+                marginBottom: '0.85rem', position: 'relative',
+                borderRadius: 12, overflow: 'hidden',
+                border: '1px solid rgba(0,0,0,0.10)',
+                maxHeight: 280,
+              }}>
+                <img src={screenshotPreview} alt="アップロードされたスクショ"
+                  style={{ width: '100%', display: 'block', maxHeight: 280, objectFit: 'cover' }} />
+                {shotStatus === 'reading' && (
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'rgba(15,10,25,0.55)', backdropFilter: 'blur(6px)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', gap: 8,
+                  }}>
+                    <Loader2 size={28} className="iris-spin" />
+                    <span style={{ fontSize: 12, fontWeight: 800 }}>AI が読み取り中…</span>
+                    <span style={{ fontSize: 10, opacity: 0.8 }}>あと数秒お待ちください</span>
+                  </div>
+                )}
+                {shotStatus === 'success' && (
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'rgba(16,185,129,0.85)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', gap: 6,
+                  }}>
+                    <Check size={36} strokeWidth={3} />
+                    <span style={{ fontSize: 13, fontWeight: 800 }}>読み取れました</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {error && shotStatus === 'failed' && (
+              <div style={{
+                background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.25)',
+                padding: '0.6rem 0.85rem', borderRadius: 10, marginBottom: '0.75rem',
+                color: '#9B1B30', fontSize: 12, lineHeight: 1.6,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                  <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <div style={{ flex: 1 }}>
+                    <strong>{error}</strong>
+                    {shotRecovery && <div style={{ marginTop: 4, fontSize: 11, color: '#5A5562', fontWeight: 500 }}>{shotRecovery}</div>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={shotStatus === 'reading' || shotStatus === 'success'}
+              style={{
+                width: '100%',
+                background: shotStatus === 'success'
+                  ? 'linear-gradient(135deg, #10B981, #059669)'
+                  : 'linear-gradient(135deg, #E1306C, #F77737)',
+                color: '#fff', border: 'none', borderRadius: 99,
+                padding: '1rem 1.4rem', fontSize: 15, fontWeight: 800,
+                cursor: (shotStatus === 'reading' || shotStatus === 'success') ? 'not-allowed' : 'pointer',
+                opacity: (shotStatus === 'reading' || shotStatus === 'success') ? 0.8 : 1,
+                boxShadow: '0 10px 28px rgba(225,48,108,0.4)',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}>
+              {shotStatus === 'reading' ? <><Loader2 size={16} className="iris-spin" /> 読み取り中…</>
+                : shotStatus === 'success' ? <><Check size={16} /> 連携できました</>
+                : screenshotPreview ? <><ImageUp size={16} /> 別のスクショで試す</>
+                : <><ImageUp size={16} /> スクショをアップロード</>}
+            </button>
+
+            <p style={{ fontSize: 10.5, color: '#8A8593', marginTop: 12, lineHeight: 1.75, textAlign: 'center' }}>
+              プロフィール画面の <strong style={{ color: '#5A5562' }}>ユーザー名・フォロワー数・投稿数</strong> が映ったスクショを選んでください。<br />
+              画像はあなたの端末から直接 AI に送られ、保存されません。
+            </p>
+          </>
+        )}
 
         {/* === トークン直接入力モード === */}
         {mode === 'token' && (
