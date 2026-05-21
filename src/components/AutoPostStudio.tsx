@@ -15,6 +15,7 @@ import {
   generateImage, generateImagePrompt, downloadImage,
   STYLE_OPTIONS, type VisualStyle, type GenerateImageResult, isOpenAIConfigured,
 } from '../lib/imageGen';
+import ShareArtifactButton from './ShareArtifactButton';
 
 interface Props {
   persona: Persona;
@@ -643,6 +644,22 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                       style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
                     >📚 ナレッジに保存</button>
                   )}
+                  <ShareArtifactButton
+                    variant="pill"
+                    size="sm"
+                    accent={persona.accentColor || '#A78BFA'}
+                    label="お友達に送る"
+                    shareText={editedTitle || editedBody.slice(0, 80)}
+                    artifact={{
+                      kind: 'text',
+                      title: editedTitle || '記事の下書き',
+                      body: editedBody,
+                      imageUrl: generatedImage?.url,
+                      createdBy: persona.name,
+                      source: 'prism',
+                      createdAt: new Date().toISOString(),
+                    }}
+                  />
                   <button
                     onClick={handleNoteOpen}
                     className="text-xs px-4 py-1.5 rounded font-semibold"
@@ -713,6 +730,22 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                     className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg"
                     style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
                   >📋 コピー</button>
+                  <ShareArtifactButton
+                    variant="pill"
+                    size="sm"
+                    accent={persona.accentColor || '#A78BFA'}
+                    label="お友達に送る"
+                    shareText={editedBody.slice(0, 80)}
+                    artifact={{
+                      kind: 'post',
+                      title: 'X 投稿の下書き',
+                      body: editedThread.length > 1 ? editedThread.join('\n\n---\n\n') : editedBody,
+                      imageUrl: generatedImage?.url,
+                      createdBy: persona.name,
+                      source: 'prism',
+                      createdAt: new Date().toISOString(),
+                    }}
+                  />
                   {onSaveAsKnowledge && (
                     <button
                       onClick={handleSaveKb}

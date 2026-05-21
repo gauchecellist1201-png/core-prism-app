@@ -25,6 +25,7 @@ import {
 } from './reelAiCaption';
 import { suggestNextSlot, type ScheduledPost } from './usePostQueue';
 import { notifyInApp } from '../lib/inAppNotify';
+import ShareArtifactButton from '../components/ShareArtifactButton';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -1318,6 +1319,20 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                           <Share2 size={14} /> 投稿予約をつくる
                         </button>
                       )}
+                      <ShareArtifactButton
+                        variant="pill"
+                        size="md"
+                        accent={bg.accent}
+                        label="お友達にリールを送る"
+                        shareText={aiResult?.caption || 'AI で作ったリール、見て'}
+                        artifact={{
+                          kind: 'reel',
+                          title: aiResult?.themeGuess ? `${aiResult.themeGuess} のリール` : 'AI が作ったリール',
+                          body: aiResult?.caption || '',
+                          source: 'iris',
+                          createdAt: new Date().toISOString(),
+                        }}
+                      />
                       <button onClick={() => { setExportUrl(null); setProgress(0); setScheduled(false); setScheduledMsg(''); }} style={{ ...btnSec(bg), width: '100%' }}>
                         <Wand2 size={14} /> 別ver. を書き出す
                       </button>

@@ -11,6 +11,7 @@ import AgentProposalCard from './AgentProposalCard';
 import ThinkingIndicator from './ThinkingIndicator';
 import GenerationReward from './GenerationReward';
 import ApiErrorCard from './ApiErrorCard';
+import ShareArtifactButton from './ShareArtifactButton';
 
 interface Props {
   persona: Persona;
@@ -403,6 +404,23 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                 >
                   ↗ note を開いて貼付け
                 </a>
+              </div>
+              <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-start' }}>
+                <ShareArtifactButton
+                  variant="pill"
+                  size="sm"
+                  accent={accent}
+                  label="お友達に下書きを送る"
+                  shareText={noteTitle || noteBody.slice(0, 80)}
+                  artifact={{
+                    kind: 'text',
+                    title: noteTitle || '記事の下書き',
+                    body: noteBody,
+                    createdBy: persona.name,
+                    source: 'prism',
+                    createdAt: new Date().toISOString(),
+                  }}
+                />
               </div>
             </section>
 
