@@ -231,6 +231,35 @@ export default function DocumentStudio({ persona, settings: _settings, onClose }
             what="見積書・発注書・納品書・請求書を、日本のルール（インボイス）に沿って作れる画面です。"
             tryThis="上のタブで作りたい書類を選び、「＋ 新規」で 1 枚作ってみます。"
             example="「Webサイト制作 30万円」の見積書を作る → そのまま請求書に変換。"
+            sampleLabel="出来上がりイメージ"
+            samplePreview={
+              <div
+                style={{
+                  width: 140,
+                  background: '#ffffff',
+                  color: '#0f172a',
+                  borderRadius: 6,
+                  padding: '8px 9px',
+                  fontSize: 8,
+                  lineHeight: 1.4,
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: `1.5px solid ${persona.accentColor}`, paddingBottom: 3, marginBottom: 4 }}>
+                  <strong style={{ fontSize: 10, letterSpacing: '0.05em' }}>請 求 書</strong>
+                  <span style={{ fontSize: 6, opacity: 0.6 }}>No.0001</span>
+                </div>
+                <div style={{ opacity: 0.8, marginBottom: 3 }}>株式会社サンプル 御中</div>
+                <div style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: 3, marginBottom: 3, fontSize: 7 }}>
+                  Webサイト制作 一式
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ opacity: 0.7 }}>合計</span>
+                  <strong style={{ color: persona.accentColor, fontSize: 10 }}>¥330,000</strong>
+                </div>
+              </div>
+            }
           />
           <AnimatePresence mode="wait">
             {/* ─── 一覧 ─── */}

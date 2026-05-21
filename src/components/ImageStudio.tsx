@@ -218,6 +218,46 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                 what="テーマを日本語で 1 行書くだけで、AI が SNS や記事向けの画像を作る画面です。"
                 tryThis="下の「画像のテーマ」に作りたい絵を 1 行で書いて「✨ 生成」を押します。"
                 example="「秋のカフェのスペシャルティコーヒー」 → note のヘッダー画像が 1 枚完成。"
+                sampleLabel="出来上がりイメージ"
+                samplePreview={
+                  <div
+                    style={{
+                      width: 140,
+                      height: 90,
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                      position: 'relative',
+                      background:
+                        'radial-gradient(circle at 25% 30%, #fde68a 0%, #f59e0b 22%, transparent 45%), ' +
+                        'radial-gradient(circle at 75% 70%, #fb7185 0%, #be185d 25%, transparent 50%), ' +
+                        'linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #0f172a 100%)',
+                      boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background:
+                          'linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.55) 100%)',
+                      }}
+                    />
+                    <span
+                      style={{
+                        position: 'absolute',
+                        left: 8,
+                        bottom: 6,
+                        fontSize: 8,
+                        color: '#fff',
+                        fontWeight: 600,
+                        letterSpacing: '0.04em',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+                      }}
+                    >
+                      秋のカフェ ☕
+                    </span>
+                  </div>
+                }
               />
               {/* テーマ入力 */}
               <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
