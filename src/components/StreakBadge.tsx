@@ -54,8 +54,11 @@ export default function StreakBadge({
     return () => window.clearTimeout(tid);
   }, [streak, freshOpen]);
 
+  // streak が 0 は理論上来ない (touchStreak は最低 1 を返す) が、保険として
   if (streak <= 0) return null;
 
+  // 初日 (streak === 1 && best === 1) は控えめに「ようこそ」を添える
+  const isFirstDay = streak === 1 && best === 1;
   const isMd = size === 'md';
   const fontSize = isMd ? 12.5 : 11;
   const padding = isMd ? '5px 11px' : '4px 9px';
@@ -80,7 +83,7 @@ export default function StreakBadge({
         aria-label={`連続 ${streak} 日`}
       >
         <Flame size={isMd ? 13 : 11} fill={accent} strokeWidth={2.2} />
-        <span>{streak}日連続</span>
+        <span>{isFirstDay ? '今日から続ける' : `${streak}日連続`}</span>
       </motion.div>
 
       {showBest && best > streak && (
