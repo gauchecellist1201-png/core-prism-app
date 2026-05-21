@@ -15,6 +15,8 @@ import IrisImageEditor from './IrisImageEditor';
 import StreakBadge from '../components/StreakBadge';
 import TodayCard, { type TodaySuggestion } from '../components/TodayCard';
 import { useIgStrategy } from './useIgStrategy';
+import AgentProposalCard from '../components/ProposalCard';
+import type { CxoRole } from '../hooks/useAgentTaskQueue';
 import { confirmAction } from '../lib/confirmDialog';
 import { useInfluencerDesk } from '../hooks/useInfluencerDesk';
 import {
@@ -703,10 +705,53 @@ function IrisEditorialHome({
                     {strategy.data.audienceInsight}
                   </div>
                 )}
-                {strategy.data.strategies.map((s, i) => (
+                {/* 1 案目は ProposalCard (承認で AI 軍団が動く) として強調表示 */}
+                {strategy.data.strategies[0] && (() => {
+                  const s = strategy.data.strategies[0];
+                  // 戦略テーマからどの CXO が動くか推測
+                  const allCxo = (s.title + ' ' + s.action).toLowerCase();
+                  const stepsByTheme: Array<{ cxo: CxoRole; label: string }> = [];
+                  if (/案件|マッチ|ブランド|交渉|dm/i.test(allCxo)) {
+                    stepsByTheme.push({ cxo: 'CDS', label: 'オーディエンス層と合致する案件を抽出' });
+                    stepsByTheme.push({ cxo: 'CSO', label: '優先順をつけて 3 件選定' });
+                    stepsByTheme.push({ cxo: 'CMO', label: 'AI が初回 DM の下書きを生成' });
+                    stepsByTheme.push({ cxo: 'CFO', label: '想定報酬と税率を計算' });
+                  } else if (/リール|動画|投稿|時間/i.test(allCxo)) {
+                    stepsByTheme.push({ cxo: 'CDS', label: '直近メディアのパフォーマンスを分析' });
+                    stepsByTheme.push({ cxo: 'CPO', label: '次の投稿テーマを 3 案組み立て' });
+                    stepsByTheme.push({ cxo: 'CMO', label: 'キャプション + ハッシュタグを生成' });
+                    stepsByTheme.push({ cxo: 'CDO', label: 'ビジュアル指針を出力' });
+                  } else if (/保存|エンゲージ|フォロワー/i.test(allCxo)) {
+                    stepsByTheme.push({ cxo: 'CDS', label: '保存率の上位投稿を分析' });
+                    stepsByTheme.push({ cxo: 'CPO', label: '"あとで見返したい" 型の投稿仕様を策定' });
+                    stepsByTheme.push({ cxo: 'CMO', label: '見出しコピーを 5 案生成' });
+                    stepsByTheme.push({ cxo: 'UXE', label: 'プロフィール導線をチェック' });
+                  } else {
+                    stepsByTheme.push({ cxo: 'CPO', label: '実行計画を組み立て' });
+                    stepsByTheme.push({ cxo: 'CMO', label: '必要な文章を生成' });
+                    stepsByTheme.push({ cxo: 'CDS', label: '実行後の効果を測定' });
+                  }
+                  return (
+                    <div style={{ marginBottom: 12 }}>
+                      <AgentProposalCard
+                        brand="iris"
+                        dedupeKey={`s0_${s.title.slice(0, 12)}`}
+                        proposal={{
+                          title: s.title,
+                          summary: s.action,
+                          why: s.why,
+                          expected: s.kpi,
+                          dueDays: s.dueDays,
+                          steps: stepsByTheme,
+                        }}
+                      />
+                    </div>
+                  );
+                })()}
+                {strategy.data.strategies.slice(1).map((s, i) => (
                   <div key={i} style={{
                     padding: '0.7rem 0',
-                    borderBottom: i < strategy.data!.strategies.length - 1 ? `1px solid ${bg.cardBorder}` : 'none',
+                    borderBottom: i < strategy.data!.strategies.slice(1).length - 1 ? `1px solid ${bg.cardBorder}` : 'none',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
                       <div style={{
@@ -714,7 +759,7 @@ function IrisEditorialHome({
                         background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
                         color: '#fff', fontSize: 11, fontWeight: 900,
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      }}>{i + 1}</div>
+                      }}>{i + 2}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ ...IRIS_TYPE.small, fontWeight: 800, color: bg.ink, margin: '0 0 2px' }}>
                           {s.title}

@@ -38,6 +38,7 @@ import WowOnboarding from './components/WowOnboarding';
 import OfflineNotice from './components/OfflineNotice';
 import SharedArtifactView from './components/SharedArtifactView';
 import ErrorLogViewer from './components/ErrorLogViewer';
+import AgentTeamMonitor from './components/AgentTeamMonitor';
 import { readSharedFromUrl } from './lib/shareLink';
 
 import type { AppSettings, ChatMessage } from './types/identity';
@@ -464,6 +465,8 @@ export default function App() {
           <ErrorLogViewer key="error-log" onClose={() => setShowErrorLog(false)} />
         )}
       </AnimatePresence>
+      {/* AI 会社 作戦本部 — 常駐ウィジェット (承認したタスクの実行を可視化) */}
+      {view === 'dashboard' && <AgentTeamMonitor brand="prism" />}
     </>
   );
 }
