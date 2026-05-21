@@ -325,6 +325,154 @@ export default function PricingPage() {
         </div>
       </section>
 
+      {/* 課金してよかったと思える理由 — 競合比較 + ROI */}
+      <section className="lp-section-pad" style={{ padding: '5rem 1.5rem', background: 'linear-gradient(180deg, #000 0%, #0a0420 100%)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.4em', color: '#fbbf24', fontWeight: 700 }}>WHY ¥9,800</p>
+            <h2 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.85rem, 3.5vw, 2.5rem)', fontWeight: 700, marginTop: 8, letterSpacing: '0.05em' }}>
+              月 1 万円で<span style={{ background: 'linear-gradient(90deg,#fbbf24,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>元が取れる根拠</span>
+            </h2>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', marginTop: 12, lineHeight: 1.85 }}>
+              ChatGPT も Notion も Linear も Hootsuite も、それぞれが部分を解いています。<br />
+              CORE はそれら全部を 1 つにして、AI が連動して「実行」まで進めます。
+            </p>
+          </div>
+
+          {/* Prism vs 個別ツール */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+            <div style={{
+              padding: '2rem 1.75rem',
+              background: 'linear-gradient(135deg, rgba(167,139,250,0.10) 0%, rgba(96,165,250,0.06) 100%)',
+              border: '1px solid rgba(167,139,250,0.30)',
+              borderRadius: 18,
+            }}>
+              <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: '#a78bfa', fontWeight: 700, marginBottom: 10 }}>CORE Prism</p>
+              <h3 style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.4rem', fontWeight: 800, marginBottom: 18, lineHeight: 1.45 }}>
+                雑務に消える週 12 時間を、AI が引き受けます
+              </h3>
+              <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse', marginBottom: 16 }}>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    <td style={{ padding: '8px 0', color: 'rgba(255,255,255,0.7)' }}>ChatGPT Plus</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>$20</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>万能 AI のみ</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    <td style={{ padding: '8px 0', color: 'rgba(255,255,255,0.7)' }}>Notion AI</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>$10</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>文章のみ</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    <td style={{ padding: '8px 0', color: 'rgba(255,255,255,0.7)' }}>Linear</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>$10</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>タスク管理のみ</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    <td style={{ padding: '8px 0', color: 'rgba(255,255,255,0.7)' }}>freee 会計</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>¥1,980</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>会計のみ</td>
+                  </tr>
+                  <tr style={{ background: 'rgba(167,139,250,0.10)' }}>
+                    <td style={{ padding: '12px 0 12px 8px', color: '#fff', fontWeight: 800 }}>合計 (4 ツール)</td>
+                    <td style={{ padding: '12px 0', textAlign: 'right', color: '#fff', fontWeight: 800 }}>≒ ¥7,920</td>
+                    <td style={{ padding: '12px 8px 12px 0', textAlign: 'right', color: '#a78bfa', fontSize: '0.75rem', fontWeight: 700 }}>各々バラバラ</td>
+                  </tr>
+                  <tr style={{ background: 'linear-gradient(90deg, rgba(167,139,250,0.18), rgba(244,114,182,0.12))' }}>
+                    <td style={{ padding: '14px 0 14px 8px', color: '#fff', fontWeight: 900, fontSize: '0.95rem' }}>✨ CORE Prism Standard</td>
+                    <td style={{ padding: '14px 0', textAlign: 'right', color: '#fff', fontWeight: 900, fontSize: '0.95rem' }}>¥9,800</td>
+                    <td style={{ padding: '14px 8px 14px 0', textAlign: 'right', color: '#f472b6', fontSize: '0.78rem', fontWeight: 800 }}>7 つの AI が連動 / 24h 自律実行</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.85 }}>
+                ほぼ同じ価格で、AI が <strong style={{ color: '#fff' }}>営業・議事録・提案・財務・案件管理</strong> を連動して動かします。
+                <br />
+                <strong style={{ color: '#a78bfa' }}>週 12 時間 × 時給 ¥5,000 = ¥240,000</strong> 相当の時間コストを<strong style={{ color: '#f472b6' }}> ¥9,800 に</strong>。
+              </p>
+            </div>
+
+            <div style={{
+              padding: '2rem 1.75rem',
+              background: 'linear-gradient(135deg, rgba(225,48,108,0.10) 0%, rgba(252,176,69,0.06) 100%)',
+              border: '1px solid rgba(225,48,108,0.30)',
+              borderRadius: 18,
+            }}>
+              <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: '#E1306C', fontWeight: 700, marginBottom: 10 }}>CORE Iris</p>
+              <h3 style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.4rem', fontWeight: 800, marginBottom: 18, lineHeight: 1.45 }}>
+                PR 案件 1 件取れれば、もう元が取れます
+              </h3>
+              <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse', marginBottom: 16 }}>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    <td style={{ padding: '8px 0', color: 'rgba(255,255,255,0.7)' }}>Hootsuite</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>$99</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>予約・分析のみ</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    <td style={{ padding: '8px 0', color: 'rgba(255,255,255,0.7)' }}>Later</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>$25</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>予約のみ</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    <td style={{ padding: '8px 0', color: 'rgba(255,255,255,0.7)' }}>Canva Pro</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>$13</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>画像のみ</td>
+                  </tr>
+                  <tr style={{ background: 'rgba(225,48,108,0.10)' }}>
+                    <td style={{ padding: '12px 0 12px 8px', color: '#fff', fontWeight: 800 }}>合計 (3 ツール)</td>
+                    <td style={{ padding: '12px 0', textAlign: 'right', color: '#fff', fontWeight: 800 }}>≒ ¥20,500</td>
+                    <td style={{ padding: '12px 8px 12px 0', textAlign: 'right', color: '#FCB045', fontSize: '0.75rem', fontWeight: 700 }}>案件は別途</td>
+                  </tr>
+                  <tr style={{ background: 'linear-gradient(90deg, rgba(225,48,108,0.18), rgba(252,176,69,0.12))' }}>
+                    <td style={{ padding: '14px 0 14px 8px', color: '#fff', fontWeight: 900, fontSize: '0.95rem' }}>✨ CORE Iris Pro</td>
+                    <td style={{ padding: '14px 0', textAlign: 'right', color: '#fff', fontWeight: 900, fontSize: '0.95rem' }}>¥9,800</td>
+                    <td style={{ padding: '14px 8px 14px 0', textAlign: 'right', color: '#FCB045', fontSize: '0.78rem', fontWeight: 800 }}>案件マッチ + AI 交渉文</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.85 }}>
+                Hootsuite は数字を見せます。Later は予約します。Canva は画像を作ります。
+                <br />
+                <strong style={{ color: '#fff' }}>Iris は、それを 1 つにして、AI があなたのフォロワー実データから「次の打ち手」と「マッチする案件」を出します</strong>。
+                <br />
+                平均 PR 案件報酬 <strong style={{ color: '#E1306C' }}>¥30,000〜100,000</strong>。<strong style={{ color: '#FCB045' }}>月 1 件取れれば 3〜10 ヶ月分の元が取れます</strong>。
+              </p>
+            </div>
+          </div>
+
+          {/* CORE が他社にできないこと */}
+          <div style={{
+            padding: '2rem 1.75rem',
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 18,
+            textAlign: 'center',
+          }}>
+            <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.5)', fontWeight: 700, marginBottom: 14 }}>
+              CORE ONLY
+            </p>
+            <h3 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.2rem, 2.4vw, 1.6rem)', fontWeight: 800, marginBottom: 22, lineHeight: 1.55 }}>
+              CORE が、他社のどのツールにもできないこと
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              {[
+                { icon: '🌈', title: '人格別 AI OS', desc: 'ChatGPT は文脈を混ぜる。Prism は人格別に AI を分離' },
+                { icon: '🌙', title: '24h 自律実行', desc: '夜中に AI がリサーチ → 朝レポート。対話だけで終わらない' },
+                { icon: '🎯', title: '案件マッチ + 交渉文', desc: 'IG 実データから次の案件を発見 → AI が初回 DM を下書き' },
+                { icon: '🔗', title: '一気通貫の連動', desc: '議事録 → 意思決定 → 提案書 → 請求書 → 入金確認' },
+              ].map((c, i) => (
+                <div key={i} style={{ padding: '1rem 0.85rem' }}>
+                  <div style={{ fontSize: '1.85rem', marginBottom: 8 }}>{c.icon}</div>
+                  <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', fontWeight: 800, color: '#fff', marginBottom: 6 }}>{c.title}</p>
+                  <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>{c.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className="lp-section-pad" style={{ padding: '5rem 1.5rem', background: '#070712' }}>
         <div style={{ maxWidth: 880, margin: '0 auto' }}>
