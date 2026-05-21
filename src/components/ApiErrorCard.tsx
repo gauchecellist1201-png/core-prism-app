@@ -4,7 +4,7 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Waves, Key, Wifi, AlertTriangle, Settings as SettingsIcon, RotateCcw } from 'lucide-react';
+import { Waves, Key, Wifi, AlertTriangle, Settings as SettingsIcon, RotateCcw, Info } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 interface Props {
@@ -48,13 +48,22 @@ function signature(error: string): string {
 }
 
 function classifyError(error: string): {
-  kind: 'quota' | 'auth' | 'network' | 'other';
+  kind: 'quota' | 'auth' | 'network' | 'validation' | 'other';
   Icon: LucideIcon;
   iconColor: string;
   title: string;
   steps: string[];
 } {
   const e = error.toLowerCase();
+  // バリデーション系 (「〜してください」「〜が必要です」「〜ませんでした」など)
+  // retry しても直らない or 「もう一度話す」など別アクションが必要 → 案内のみ
+  if (/してください。?$|入力してください|選択してください|指定してください|貼り付けてください|登録してね|必要です|認識されませんでした|まだ.*ません/i.test(error.trim())) {
+    return {
+      kind: 'validation', Icon: Info, iconColor: '#7B61FF',
+      title: 'もう一歩で完了です',
+      steps: [],
+    };
+  }
   if (/quota|混みあって|rate|429|503/i.test(error)) {
     return {
       kind: 'quota', Icon: Waves, iconColor: '#5BA8FF',
@@ -105,14 +114,23 @@ export default function ApiErrorCard({ error, onOpenSettings, className, variant
   if (!visible || !error) return null;
 
   const c = classifyError(error);
+  const isValidation = c.kind === 'validation';
 
-  // 色: dark or light 自動
-  const bg = variant === 'light'
-    ? 'rgba(255, 245, 240, 0.96)'
-    : 'rgba(48, 12, 18, 0.92)';
-  const fg = variant === 'light' ? '#7B0E29' : '#FFEAEC';
-  const fgDim = variant === 'light' ? '#9C3A5C' : '#FFB8C0';
-  const border = variant === 'light' ? 'rgba(225, 48, 108, 0.35)' : 'rgba(255, 184, 192, 0.30)';
+  // 色: dark or light 自動。バリデーションは紫の「ヒント」トーン
+  const bg = isValidation
+    ? (variant === 'light' ? 'rgba(245, 243, 255, 0.96)' : 'rgba(34, 26, 58, 0.92)')
+    : variant === 'light'
+      ? 'rgba(255, 245, 240, 0.96)'
+      : 'rgba(48, 12, 18, 0.92)';
+  const fg = isValidation
+    ? (variant === 'light' ? '#2E1A6E' : '#E8E2FF')
+    : variant === 'light' ? '#7B0E29' : '#FFEAEC';
+  const fgDim = isValidation
+    ? (variant === 'light' ? '#5A4A9C' : '#BFB4F0')
+    : variant === 'light' ? '#9C3A5C' : '#FFB8C0';
+  const border = isValidation
+    ? (variant === 'light' ? 'rgba(123, 97, 255, 0.30)' : 'rgba(191, 180, 240, 0.30)')
+    : variant === 'light' ? 'rgba(225, 48, 108, 0.35)' : 'rgba(255, 184, 192, 0.30)';
 
   const handleDismiss = () => {
     dismissFor(error, 60_000);
@@ -151,8 +169,8 @@ export default function ApiErrorCard({ error, onOpenSettings, className, variant
             <c.Icon size={17} color="#FFFFFF" strokeWidth={2.4} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', marginBottom: '0.35rem' }}>
-              <p style={{ fontWeight: 700, fontSize: 13, color: fg, margin: 0 }}>{c.title}</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', marginBottom: isValidation ? '0.2rem' : '0.35rem' }}>
+              <p style={{ fontWeight: 700, fontSize: 13, color: fg, margin: 0 }}>{isValidation ? error : c.title}</p>
               <button
                 onClick={handleDismiss}
                 title="60 秒間、表示しない"
@@ -163,13 +181,15 @@ export default function ApiErrorCard({ error, onOpenSettings, className, variant
                 }}
               >×</button>
             </div>
-            <ol style={{
-              margin: '0 0 0.4rem', padding: '0 0 0 1.1rem',
-              fontSize: 12, color: fgDim, lineHeight: 1.65,
-            }}>
-              {c.steps.map((s, i) => <li key={i}>{s}</li>)}
-            </ol>
-            {(onRetry || (c.kind === 'quota' && onOpenSettings)) && (
+            {!isValidation && (
+              <ol style={{
+                margin: '0 0 0.4rem', padding: '0 0 0 1.1rem',
+                fontSize: 12, color: fgDim, lineHeight: 1.65,
+              }}>
+                {c.steps.map((s, i) => <li key={i}>{s}</li>)}
+              </ol>
+            )}
+            {!isValidation && (onRetry || (c.kind === 'quota' && onOpenSettings)) && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.4rem' }}>
                 {onRetry && (
                   <button

@@ -5,6 +5,7 @@ import { useSalesAgent } from '../hooks/useSalesAgent';
 import { pickTodaysCompanies, type AiPick } from '../lib/salesAgentMatch';
 import { todaySeed } from '../data/companies-jp';
 import { copyText } from '../lib/clipboard';
+import ApiErrorCard from './ApiErrorCard';
 
 interface Props {
   persona: Persona;
@@ -213,11 +214,8 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
         </div>
 
         <div className="cp-modal-body cp-stack">
-          {error && (
-            <div className="rounded-md p-2.5 text-xs" style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171' }}>
-              {error}
-            </div>
-          )}
+          <ApiErrorCard error={error} onRetry={() => runPick(false)} variant="auto" />
+
 
           {/* ─── 今日のピックアップ ─── */}
           {tab === 'today' && (

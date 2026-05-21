@@ -18,6 +18,7 @@ import {
 import { useInvoices } from '../hooks/useInvoices';
 import { useSalesLedger } from '../hooks/useSalesLedger';
 import { useExpenses } from '../hooks/useExpenses';
+import ApiErrorCard from './ApiErrorCard';
 
 interface Props {
   persona: Persona;
@@ -509,9 +510,8 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
                   autoValues={autoValues}
                   accentColor={persona.accentColor}
                 />
-                {error && (
-                  <p className="text-red-400 text-sm mt-2">{error}</p>
-                )}
+                <ApiErrorCard error={error} onRetry={handleAnalyze} variant="auto" />
+
                 <div className="cp-row justify-between mt-4">
                   <button onClick={() => setStep(1)} className="cp-btn cp-btn-ghost cp-btn-sm">← 業界変更</button>
                   <button

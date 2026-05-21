@@ -8,6 +8,7 @@ import {
   type SaasAction,
   type SaasTaskResult,
 } from '../lib/saasAgent';
+import ApiErrorCard from './ApiErrorCard';
 
 interface Props {
   persona: Persona;
@@ -277,9 +278,8 @@ export default function SaasAgentStudio({ persona, settings, onClose }: Props) {
                   />
                 </div>
 
-                {error && (
-                  <p className="text-red-400 text-sm">{error}</p>
-                )}
+                <ApiErrorCard error={error} onRetry={handleGenerate} variant="auto" />
+
 
                 <motion.button
                   onClick={handleGenerate}

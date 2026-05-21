@@ -6,6 +6,7 @@ import { usePersonas } from '../hooks/usePersonas';
 import { useCRM } from '../hooks/useCRM';
 import { useExpenses } from '../hooks/useExpenses';
 import type { CRMDeal } from '../types/crm';
+import ApiErrorCard from './ApiErrorCard';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -432,9 +433,7 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                 </motion.button>
               )}
 
-              {error && (
-                <p className="text-red-400 text-xs text-center px-4">{error}</p>
-              )}
+              <ApiErrorCard error={error} onRetry={startRecording} variant="auto" />
             </div>
           )}
 
@@ -460,7 +459,7 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                   </p>
                 </div>
               )}
-              {error && <p className="text-red-400 text-xs">{error}</p>}
+              <ApiErrorCard error={error} onRetry={handleRoute} variant="auto" />
               <div className="flex gap-2">
                 <button
                   onClick={startRecording}

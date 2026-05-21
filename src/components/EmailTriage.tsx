@@ -4,6 +4,7 @@ import type { Persona, AppSettings } from '../types/identity';
 import type { TriageBatch, EmailTriaged } from '../lib/emailTriage';
 import { copyText } from '../lib/clipboard';
 import { triageEmails, regenerateDraft } from '../lib/emailTriage';
+import ApiErrorCard from './ApiErrorCard';
 import {
   isGmailConfigured,
   isGmailConnected,
@@ -438,11 +439,8 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
               </p>
             </div>
 
-            {error && (
-              <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
-                {error}
-              </div>
-            )}
+            <ApiErrorCard error={error} onRetry={handleAnalyze} variant="auto" />
+
 
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={onClose} className="px-4 py-2 text-sm text-fg-muted hover:text-fg">キャンセル</button>

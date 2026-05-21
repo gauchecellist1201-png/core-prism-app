@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings } from '../types/identity';
 import { fetchOEmbed, fetchTranscript, summarizeWithClaude, type VideoMeta, type YouTubeSummary } from '../lib/youtubeImport';
+import ApiErrorCard from './ApiErrorCard';
 
 interface Props {
   persona: Persona;
@@ -170,7 +171,7 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
                     </motion.button>
                   </div>
                 </div>
-                {error && <p className="text-red-400 text-xs">{error}</p>}
+                <ApiErrorCard error={error} onRetry={handleFetchMeta} variant="auto" />
                 <p className="text-fg-subtle text-xs">対応: youtube.com/watch?v=… / youtu.be/… / /shorts/…</p>
               </motion.div>
             )}
@@ -230,7 +231,7 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
                   <p className="text-fg-subtle text-xs mt-1">{transcript.length.toLocaleString()} 文字</p>
                 </div>
 
-                {error && <p className="text-red-400 text-xs">{error}</p>}
+                <ApiErrorCard error={error} onRetry={handleSummarize} variant="auto" />
 
                 <div className="flex gap-2">
                   <button

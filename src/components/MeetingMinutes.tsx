@@ -6,6 +6,7 @@ import { analyzeMeeting, minutesToMarkdown } from '../lib/meetingAnalyzer';
 import { parseFile } from '../lib/fileParser';
 import { transcribeAudioFile, isAudioFile } from '../lib/audioTranscribe';
 import { StudioIntro } from './StudioIntro';
+import ApiErrorCard from './ApiErrorCard';
 
 interface Props {
   persona: Persona;
@@ -791,11 +792,7 @@ export default function MeetingMinutesModal({
                 </div>
               )}
 
-              {error && (
-                <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
-                  {error}
-                </div>
-              )}
+              <ApiErrorCard error={error} onRetry={handleAnalyze} variant="auto" />
             </div>
 
             {/* Footer */}
