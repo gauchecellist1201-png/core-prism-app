@@ -100,6 +100,65 @@ export function createSelfReportedProfile(input: {
  * OAuth 経由の本格接続 (Meta App Review 完了後に有効化)
  * env META_APP_ID + META_APP_SECRET が揃っていれば Facebook ダイアログへ。
  */
+/**
+ * ユーザーが developers.facebook.com で取得した Personal Access Token を直接渡して連携。
+ * Meta App Review 前でも実データを取得できる advanced ユーザー向けの即時連携。
+ *
+ * @param token IG Access Token (long-lived 推奨)
+ * @param accountId IG Business Account ID (任意。空なら /me/accounts から自動推定)
+ * @returns 成功時は取得した IgProfile、失敗時は { error, message, recovery }
+ */
+export async function connectWithToken(
+  token: string,
+  accountId?: string,
+): Promise<{ ok: true; profile: IgProfile } | { ok: false; error: string; message: string; recovery?: string }> {
+  try {
+    const resp = await fetch('/api/instagram/profile-by-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-ig-token': token.trim(),
+        ...(accountId ? { 'x-ig-account-id': accountId.trim() } : {}),
+      },
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      return {
+        ok: false,
+        error: data.error || 'unknown',
+        message: data.message || `取得に失敗しました (status ${resp.status})`,
+        recovery: data.recovery,
+      };
+    }
+    // 正規化 (raw 等は除く)
+    const profile: IgProfile = {
+      handle: data.handle || '',
+      followers: data.followers || 0,
+      avgLikes: data.avgLikes || 0,
+      avgComments: data.avgComments || 0,
+      topPostCategories: data.topPostCategories || [],
+      bestPostTime: data.bestPostTime || '土 21:00',
+      saveRate: data.saveRate || 0,
+      storyViewRate: data.storyViewRate || 0,
+      audienceAge: data.audienceAge || [],
+      audienceGender: data.audienceGender || { female: 0, male: 0, other: 0 },
+      audienceTopCountries: data.audienceTopCountries || [],
+      source: 'oauth',
+      connectedAt: data.connectedAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    saveIgProfile(profile);
+    return { ok: true, profile };
+  } catch (e: any) {
+    return {
+      ok: false,
+      error: 'network',
+      message: e?.message || '通信エラー',
+      recovery: 'ネットワーク接続を確認してもう一度お試しください',
+    };
+  }
+}
+
 export async function tryOauthConnect(): Promise<{ ok: boolean; reason?: string }> {
   try {
     const resp = await fetch('/api/instagram/oauth-status', { method: 'GET' });
