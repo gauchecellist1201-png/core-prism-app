@@ -54,7 +54,7 @@ export default function IdentitySelection({ personas, userName, onSelect, onCrea
           人格を選択して、最適化された環境へ入る
         </p>
         <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center' }}>
-          <StreakBadge accent="#A78BFA" />
+          <StreakBadge accent="#A78BFA" brand="prism" />
         </div>
       </motion.div>
 

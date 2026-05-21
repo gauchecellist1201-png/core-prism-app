@@ -4,8 +4,9 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Trophy } from 'lucide-react';
+import { Flame, Trophy, Share2 } from 'lucide-react';
 import { useDailyStreak } from '../hooks/useDailyStreak';
+import StreakShareModal from './StreakShareModal';
 
 const MILESTONES = [3, 7, 30, 100, 365];
 const CELEBRATED_KEY = 'core_streak_celebrated_v1';
@@ -15,6 +16,10 @@ interface Props {
   accent?: string;
   size?: 'sm' | 'md';
   showBest?: boolean;
+  /** Iris か Prism — シェア画像の見た目に効く */
+  brand?: 'prism' | 'iris';
+  /** シェア導線を表示するか (デフォルト true) */
+  showShare?: boolean;
 }
 
 function loadCelebrated(): Set<number> {
@@ -29,9 +34,13 @@ function saveCelebrated(set: Set<number>) {
   try { localStorage.setItem(CELEBRATED_KEY, JSON.stringify(Array.from(set))); } catch { /* */ }
 }
 
-export default function StreakBadge({ accent = '#F97316', size = 'md', showBest = true }: Props) {
+export default function StreakBadge({
+  accent = '#F97316', size = 'md', showBest = true,
+  brand = 'prism', showShare = true,
+}: Props) {
   const { streak, best, freshOpen } = useDailyStreak();
   const [celebrate, setCelebrate] = useState<number | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     if (!freshOpen || streak <= 0) return;
@@ -83,6 +92,38 @@ export default function StreakBadge({ accent = '#F97316', size = 'md', showBest 
           <Trophy size={10} /> 最高 {best} 日
         </span>
       )}
+
+      {showShare && streak >= 2 && (
+        <button
+          type="button"
+          onClick={() => setShareOpen(true)}
+          aria-label="連続日数をシェア"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            color: accent,
+            borderRadius: 999,
+            padding: isMd ? '5px 10px' : '4px 8px',
+            fontSize: 10.5, fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          <Share2 size={11} /> シェア
+        </button>
+      )}
+
+      <AnimatePresence>
+        {shareOpen && (
+          <StreakShareModal
+            streak={streak}
+            best={best}
+            brand={brand}
+            accent={accent}
+            onClose={() => setShareOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {celebrate !== null && (

@@ -501,7 +501,7 @@ function IrisEditorialHome({
 
           {/* 連続ログイン日数バッジ */}
           <div style={{ marginBottom: '1.5rem' }}>
-            <StreakBadge accent="#E1306C" />
+            <StreakBadge accent="#E1306C" brand="iris" />
           </div>
 
           {/* ステータス行 */}
