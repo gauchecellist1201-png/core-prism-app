@@ -21,6 +21,7 @@ import {
 import {
   isCalConfigured, isCalConnected, connectCalendar, clearCalToken,
 } from '../lib/googleCalendar';
+import IntegrationCelebrate from './IntegrationCelebrate';
 
 interface Props {
   onClose: () => void;
@@ -254,6 +255,7 @@ const CATEGORY_ORDER = [
 export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [, force] = useState(0);
+  const [celebratedId, setCelebratedId] = useState<string | null>(null);
   const refresh = () => force(n => n + 1);
 
   const isConnected = (t: Tool): boolean => {
@@ -337,7 +339,7 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
                     comingSoon={isComingSoon(t)}
                     open={openId === t.id}
                     onToggle={() => setOpenId(openId === t.id ? null : t.id)}
-                    onConnected={refresh}
+                    onConnected={() => { refresh(); setCelebratedId(t.id); }}
                     onDisconnect={() => disconnect(t)}
                   />
                 ))}
@@ -351,6 +353,21 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
           パスワードを CORE が預かることはありません。
         </p>
       </motion.div>
+
+      {/* 連携完了 → 紙吹雪 + できること 3 つ */}
+      <AnimatePresence>
+        {celebratedId && (
+          <IntegrationCelebrate
+            integrationId={celebratedId}
+            onClose={() => setCelebratedId(null)}
+            onJump={() => {
+              setCelebratedId(null);
+              // 連携センター自体を閉じて、該当画面のヒントは whereVisible テキストで案内済み
+              onClose();
+            }}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

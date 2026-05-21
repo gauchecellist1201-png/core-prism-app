@@ -287,6 +287,9 @@ export function seedDemoData(): number {
   upsert(PEOPLE_STORE, people);
   upsert(INTERACTION_STORE, interactions);
 
+  // リロード後に demo 人格のダッシュボードへ直行できるよう、active persona を保存
+  try { localStorage.setItem('core_active_persona_id_v1', pid); } catch { /* */ }
+
   // 1 persona + 5 tasks + 3 knowledge + 2 deals + 1 document
   //   + 5 expenses + 3 people + 2 interactions = 22
   return 22;

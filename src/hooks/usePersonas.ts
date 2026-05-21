@@ -4,6 +4,7 @@ import type { Persona, Task } from '../types/identity';
 import { useCloudSync } from './useCloudSync';
 
 const STORAGE_KEY = 'core_personas';
+const ACTIVE_PERSONA_KEY = 'core_active_persona_id_v1';
 
 function generateSlug(name: string): string {
   return name
@@ -47,7 +48,15 @@ function savePersonas(personas: Persona[]) {
 
 export function usePersonas() {
   const [personas, setPersonas] = useState<Persona[]>(loadPersonas);
-  const [activePersona, setActivePersona] = useState<Persona | null>(null);
+  const [activePersona, setActivePersona] = useState<Persona | null>(() => {
+    // 初回マウント時、localStorage の active_persona_id があれば自動選択
+    try {
+      const savedId = localStorage.getItem(ACTIVE_PERSONA_KEY);
+      if (!savedId) return null;
+      const list = loadPersonas();
+      return list.find(p => p.id === savedId) || null;
+    } catch { return null; }
+  });
 
   // localStorageに永続化 (オフラインキャッシュ)
   useEffect(() => {
@@ -133,6 +142,10 @@ export function usePersonas() {
   const selectPersona = useCallback((id: string) => {
     const persona = personas.find(p => p.id === id) ?? null;
     setActivePersona(persona);
+    try {
+      if (persona) localStorage.setItem(ACTIVE_PERSONA_KEY, persona.id);
+      else localStorage.removeItem(ACTIVE_PERSONA_KEY);
+    } catch { /* */ }
   }, [personas]);
 
   // activePersonaを最新状態に同期

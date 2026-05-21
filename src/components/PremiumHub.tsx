@@ -41,7 +41,7 @@ export default function PremiumHubModal({ persona, settings, knowledge, onClose,
       onClick={onClose}
     >
       <motion.div
-        className="w-full max-w-4xl rounded-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-[1400px] rounded-2xl overflow-hidden flex flex-col"
         style={{ background: 'var(--bg, #15151c)', border: '1px solid var(--border)', maxHeight: 'calc(100dvh - 1.5rem)' }}
         initial={{ scale: 0.96, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 12 }}
         onClick={e => e.stopPropagation()}

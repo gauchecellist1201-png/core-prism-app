@@ -177,7 +177,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
       onClick={onClose}
     >
       <motion.div
-        className="cp-modal w-full max-w-6xl flex flex-col"
+        className="cp-modal w-full max-w-[1400px] flex flex-col"
         style={{ maxHeight: 'calc(100dvh - 1.5rem)' }}
         initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }}
         onClick={e => e.stopPropagation()}

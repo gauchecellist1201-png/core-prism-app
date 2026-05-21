@@ -444,7 +444,7 @@ export default function MeetingMinutesModal({
       onClick={onClose}
     >
       <motion.div
-        className="w-full max-w-3xl rounded-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-[1400px] rounded-2xl overflow-hidden flex flex-col"
         style={{
           background: 'var(--bg, #15151c)',
           border: '1px solid var(--border)',

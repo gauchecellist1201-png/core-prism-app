@@ -61,49 +61,116 @@ export default function ThinkingIndicator({
         padding: variant === 'full' ? '2.6rem 1.5rem' : '1.8rem 0',
       }}
     >
-      {/* 呼吸するオーブ — 三重の波紋で「生きて考えている」感 */}
+      {/* 呼吸するオーブ — 三重の波紋 + 周囲のパーティクル + 光線で「生きて考えている」感 */}
       <div
         style={{
           position: 'relative',
-          width: orbSize,
-          height: orbSize,
+          width: orbSize * 2.4,
+          height: orbSize * 2.4,
           margin: `0 auto ${variant === 'full' ? '1.5rem' : '1rem'}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        {[0, 1, 2].map((ring) => (
+        {/* 垂直の光線 — 上下に光が走る */}
+        {variant === 'full' && (
           <motion.div
-            key={ring}
-            animate={{ scale: [1, 1.7], opacity: [0.4, 0] }}
+            aria-hidden
+            animate={{ scaleY: [0.4, 1.3, 0.4], opacity: [0.15, 0.6, 0.15] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              position: 'absolute',
+              left: '50%', top: 0, bottom: 0,
+              width: 2, transform: 'translateX(-50%)',
+              background: `linear-gradient(180deg, transparent 0%, ${accent} 50%, transparent 100%)`,
+              filter: `blur(2px) drop-shadow(0 0 8px ${accent})`,
+              transformOrigin: 'center',
+            }}
+          />
+        )}
+
+        {/* 周囲を漂うパーティクル (8 粒) — 生きて呼吸している雰囲気 */}
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((p) => {
+          const angle = (p / 8) * Math.PI * 2;
+          const r = orbSize * 1.05;
+          const cx = Math.cos(angle) * r;
+          const cy = Math.sin(angle) * r;
+          return (
+            <motion.div
+              key={`p${p}`}
+              aria-hidden
+              animate={{
+                x: [cx, cx * 1.15, cx],
+                y: [cy, cy * 1.15, cy],
+                opacity: [0.3, 0.95, 0.3],
+                scale: [0.6, 1.15, 0.6],
+              }}
+              transition={{
+                duration: 3.2 + (p % 3) * 0.4,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: p * 0.18,
+              }}
+              style={{
+                position: 'absolute',
+                left: '50%', top: '50%',
+                width: variant === 'full' ? 5 : 3,
+                height: variant === 'full' ? 5 : 3,
+                borderRadius: '50%',
+                background: accent,
+                boxShadow: `0 0 8px ${accent}, 0 0 16px ${accent}88`,
+              }}
+            />
+          );
+        })}
+
+        {/* 三重波紋 */}
+        <div style={{ position: 'relative', width: orbSize, height: orbSize }}>
+          {[0, 1, 2].map((ring) => (
+            <motion.div
+              key={ring}
+              animate={{ scale: [1, 1.7], opacity: [0.4, 0] }}
+              transition={{
+                duration: 2.2,
+                repeat: Infinity,
+                ease: 'easeOut',
+                delay: ring * 0.55,
+              }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: '50%',
+                border: `1.5px solid ${accent}`,
+              }}
+            />
+          ))}
+          {/* 中心のオーブ — グラデが回転 */}
+          <motion.div
+            animate={{ scale: [1, 1.09, 1], rotate: [0, 360] }}
             transition={{
-              duration: 2.2,
-              repeat: Infinity,
-              ease: 'easeOut',
-              delay: ring * 0.55,
+              scale: { duration: 1.7, repeat: Infinity, ease: 'easeInOut' },
+              rotate: { duration: 8, repeat: Infinity, ease: 'linear' },
             }}
             style={{
               position: 'absolute',
               inset: 0,
               borderRadius: '50%',
-              border: `1.5px solid ${accent}`,
+              background: `conic-gradient(from 0deg, ${accent}, ${accent}88, ${accent}, ${accent}cc, ${accent})`,
+              filter: `drop-shadow(0 0 24px ${accent}aa)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: orbFont,
             }}
-          />
-        ))}
-        <motion.div
-          animate={{ scale: [1, 1.09, 1] }}
-          transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${accent} 0%, ${accent}66 58%, transparent 100%)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: orbFont,
-          }}
-        >
-          🧠
-        </motion.div>
+          >
+            <motion.span
+              animate={{ rotate: [0, -360] }}
+              transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+              style={{ display: 'inline-flex' }}
+            >🧠</motion.span>
+          </motion.div>
+        </div>
       </div>
 
       {/* 工程メッセージ — すっと入れ替わる */}

@@ -208,7 +208,11 @@ export default function App() {
   }, [activePersona, addTask]);
   const { sendMessage, isLoading: isChatLoading, error: chatError } = useClaude(settings, updateUsageStats);
 
-  const [view, setView] = useState<View>(() => getInitialView(settings.onboardingComplete));
+  const [view, setView] = useState<View>(() => {
+    // 復元された activePersona があれば、dashboard で直行
+    if (activePersona && hasEnteredApp()) return 'dashboard';
+    return getInitialView(settings.onboardingComplete);
+  });
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [showPersonaCreator, setShowPersonaCreator] = useState(false);
