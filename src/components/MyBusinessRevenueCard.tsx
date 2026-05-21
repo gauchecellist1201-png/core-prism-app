@@ -76,6 +76,26 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
     const k = readStripeKey();
     setKey(k);
     if (k) load(k);
+    // 他のコンポーネントで Stripe キーがセットされたら自動で再読込
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STRIPE_KEY_LS) {
+        const nk = readStripeKey();
+        setKey(nk);
+        if (nk) load(nk); else setData(null);
+      }
+    };
+    const onCustom = () => {
+      const nk = readStripeKey();
+      setKey(nk);
+      if (nk) load(nk); else setData(null);
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('core:stripe-connected', onCustom);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('core:stripe-connected', onCustom);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ─── 未連携: つなぐ案内 ───
@@ -98,8 +118,8 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>S</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 800 }}>あなたの事業の売上を表示</div>
-          <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.45, marginTop: 1 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--fg)' }}>あなたの事業の売上を表示</div>
+          <div style={{ fontSize: 9.5, color: 'var(--fg-muted)', lineHeight: 1.45, marginTop: 1 }}>
             Stripe をつなぐと、今月の売上・経費・利益が自動で出ます
           </div>
         </div>
@@ -117,6 +137,7 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
       borderRadius: 12, marginBottom: 8, padding: '0.8rem 0.85rem',
       background: 'linear-gradient(135deg, rgba(99,91,255,0.13), rgba(52,211,153,0.08))',
       border: '1px solid rgba(99,91,255,0.3)',
+      color: 'var(--fg)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -129,7 +150,7 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
           type="button" onClick={() => load(key)} aria-label="更新"
           style={{
             background: 'transparent', border: 'none', cursor: 'pointer',
-            color: 'rgba(255,255,255,0.4)', display: 'flex', padding: 2,
+            color: 'var(--fg-muted)', display: 'flex', padding: 2,
           }}
         >
           {loading ? <Loader2 size={12} className="mybiz-spin" /> : <RefreshCw size={12} />}
@@ -137,7 +158,7 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
       </div>
 
       {loading && !data && (
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', padding: '4px 0' }}>
+        <div style={{ fontSize: 11, color: 'var(--fg-muted)', padding: '4px 0' }}>
           売上を読み込んでいます…
         </div>
       )}
@@ -163,7 +184,7 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
         <>
           {/* 利益 (一番大きく) */}
           <div style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.5)' }}>今月の利益 (売上 − 経費)</div>
+            <div style={{ fontSize: 9.5, color: 'var(--fg-muted)' }}>今月の利益 (売上 − 経費)</div>
             <div style={{
               fontSize: 22, fontWeight: 900, lineHeight: 1.1,
               color: tm.profitJpy >= 0 ? '#34d399' : '#f87171',
@@ -181,10 +202,33 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
           {/* 6 ヶ月の利益推移 */}
           {trend.some(v => v !== 0) && <Sparkline data={trend} />}
 
-          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.38)', marginTop: 6, lineHeight: 1.5 }}>
-            Stripe の入金データから計算。{tm.txnCount} 件の入金。
-            {multiCurrency && ' 外貨はおおよその為替で円に換算。'}
-          </div>
+          {/* 売上 0 のとき: 原因を診断して提示 */}
+          {tm.revenueJpy === 0 && tm.txnCount === 0 && (
+            <div style={{
+              marginTop: 8, padding: '8px 10px',
+              background: 'rgba(251,191,36,0.10)',
+              border: '1px solid rgba(251,191,36,0.30)',
+              borderRadius: 8,
+              fontSize: 10.5, color: 'var(--fg)', lineHeight: 1.6,
+            }}>
+              <div style={{ fontWeight: 800, marginBottom: 3, color: '#FBBF24' }}>取引が見つかりません</div>
+              <div style={{ fontSize: 10, color: 'var(--fg-muted)' }}>
+                考えられる原因:<br />
+                ① <strong>テストモードのキー</strong>を貼っている (rk_test_… / sk_test_…)<br />
+                　→ 本番モードに切替えて <code>rk_live_…</code> を取得し直してください<br />
+                ② キーの権限が「Read-only」になっていない (custom restricted key の場合 balance_transactions:read が必要)<br />
+                ③ 過去 12 ヶ月にこの Stripe アカウントで入金がない
+              </div>
+            </div>
+          )}
+
+          {/* 売上はあるが手数料 0 = 取引はあったが手数料 0 (テストデータの可能性) */}
+          {tm.revenueJpy > 0 && (
+            <div style={{ fontSize: 9, color: 'var(--fg-subtle)', marginTop: 6, lineHeight: 1.5 }}>
+              Stripe の入金データから計算。{tm.txnCount} 件の入金。
+              {multiCurrency && ' 外貨はおおよその為替で円に換算。'}
+            </div>
+          )}
         </>
       )}
 

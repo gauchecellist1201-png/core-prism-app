@@ -1313,11 +1313,14 @@ input, textarea, select { font-family: inherit; }
 
 /* サイドバー分の左マージン (デスクトップ)
    サイドバーは position:fixed / width:220px なので、本文を 220px 右に逃がす。
-   モバイル (900px 以下) はサイドバーが非表示なのでマージン無し。 */
+   モバイル (900px 以下) はサイドバーが非表示なのでマージン無し。
+   ─ margin-right を 0 にして親いっぱいに広げ、max-width で実体を制御 */
 @media (min-width: 901px) {
   .iris-header-sticky,
   .iris-main {
     margin-left: 220px !important;
+    margin-right: auto !important;
+    width: calc(100% - 220px) !important;
   }
 }
 

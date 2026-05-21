@@ -407,6 +407,11 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, onToggle,
     if (token !== undefined) saveTokenLS(tool.id, token || '__done__');
     else saveTokenLS(tool.id, '__done__');
     setJustDone(true);
+    // 他のコンポーネント (MyBusinessRevenueCard 等) が即時反映できるよう通知
+    try {
+      window.dispatchEvent(new CustomEvent(`core:${tool.id}-connected`));
+      window.dispatchEvent(new CustomEvent('core:integration-connected', { detail: { id: tool.id } }));
+    } catch { /* */ }
     setTimeout(() => { onConnected(); }, 1400);
   };
 

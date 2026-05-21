@@ -1218,9 +1218,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         )}
       </AnimatePresence>
 
-      {/* メインコンテンツ */}
+      {/* メインコンテンツ — デスクトップでは max-w を広げて右側の空白を埋める */}
       <main className="iris-main" style={{
-        maxWidth: tab === 'image' ? 1280 : 1100, margin: '0 auto',
+        maxWidth: tab === 'image' ? 1720 : 1640, margin: '0 auto',
         padding: tab === 'image'
           ? '0.75rem 0.7rem calc(0.75rem + env(safe-area-inset-bottom, 0px))'
           : `1.75rem 1.25rem calc(${IRIS_DOCK_H + 24}px + env(safe-area-inset-bottom, 0px))`,
