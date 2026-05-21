@@ -5,8 +5,10 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Copy, Trash2, RefreshCw, Check } from 'lucide-react';
+import { X, Copy, Trash2, RefreshCw, Check, Mail } from 'lucide-react';
 import { confirmAction } from '../lib/confirmDialog';
+
+const SUPPORT_EMAIL = 'gauche.cellist1201@gmail.com';
 
 const LOCAL_BUFFER_KEY = 'core_error_log_v1';
 
@@ -94,6 +96,23 @@ export default function ErrorLogViewer({ onClose }: Props) {
     } catch { /* */ }
   };
 
+  /** メーラーを起動して整形済みログを件名+本文に乗せる (個人情報は最小化) */
+  const sendByEmail = async () => {
+    if (entries.length === 0) return;
+    if (!(await confirmAction({
+      title: '不具合ログをお問い合わせに送りますか?',
+      body: '端末のメールアプリが開きます。本文には直近 ' + entries.length + ' 件のログだけが入り、ご自身で送信ボタンを押すまで何も送信されません。',
+      tone: 'normal', okLabel: '送る準備をする',
+    }))) return;
+    const subject = `[CORE 不具合報告] ${new Date().toLocaleDateString('ja-JP')} ${entries.length} 件`;
+    const intro = `CORE スタッフ各位\n\n以下の不具合ログを共有します。確認のうえ対処をお願いします。\n\n--- ここからログ ---\n\n`;
+    const body = intro + entriesToText(entries);
+    // mailto: の URL 上限を超えないよう 6KB で切る
+    const safeBody = body.length > 6000 ? body.slice(0, 5900) + '\n\n(以降は長いため省略)' : body;
+    const href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(safeBody)}`;
+    window.location.href = href;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -123,7 +142,7 @@ export default function ErrorLogViewer({ onClose }: Props) {
               <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '4px 0 0' }}>不具合ログ</h2>
               <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', margin: '4px 0 0', lineHeight: 1.55 }}>
                 直近 50 件まで、あなたの端末内にだけ保存しています。<br />
-                お問い合わせの際は「ぜんぶコピー」を押して内容を添付してください。
+                「メールで送る」でお問い合わせメールの下書きが開きます (送信ボタンを押すまで送られません)。
               </p>
             </div>
             <button
@@ -138,6 +157,10 @@ export default function ErrorLogViewer({ onClose }: Props) {
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+            <button type="button" onClick={sendByEmail} disabled={entries.length === 0}
+              style={btnStyle('#10B981', entries.length === 0)}>
+              <Mail size={12} />メールで送る
+            </button>
             <button type="button" onClick={copyAll} disabled={entries.length === 0}
               style={btnStyle('#A78BFA', entries.length === 0)}>
               {copied ? <><Check size={12} />コピーしました</> : <><Copy size={12} />ぜんぶコピー</>}
