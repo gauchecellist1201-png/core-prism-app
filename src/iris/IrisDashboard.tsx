@@ -13,6 +13,7 @@ import { IRIS_TYPE, IRIS_SHADOW, IRIS_RADIUS, IRIS_GRADIENT, IRIS_MOTION, IRIS_S
 import IrisCustomBgEditor from './IrisCustomBgEditor';
 import IrisImageEditor from './IrisImageEditor';
 import StreakBadge from '../components/StreakBadge';
+import TodayCard, { type TodaySuggestion } from '../components/TodayCard';
 import { confirmAction } from '../lib/confirmDialog';
 import { useInfluencerDesk } from '../hooks/useInfluencerDesk';
 import {
@@ -528,6 +529,75 @@ function IrisEditorialHome({
           </div>
         </div>
       </motion.div>
+
+      {/* ── 今日の最初の一手 (3 ボタン) ─────────────────── */}
+      <div style={{ position: 'relative', zIndex: 1, marginBottom: '1.25rem' }}>
+        <TodayCard
+          heading="今日、Iris で何する?"
+          accent={bg.accent}
+          suggestions={(() => {
+            const out: TodaySuggestion[] = [];
+            if (!igProfile) {
+              out.push({
+                id: 'connect-ig',
+                icon: '🌷',
+                title: 'Instagram をつなぐ',
+                reason: 'アカウントを繋ぐと、伸ばし方が一気に具体的になります',
+                cta: 'つなぐ',
+                accent: '#E1306C',
+                onClick: () => onConnectInstagram(),
+              });
+            }
+            if (myDeals.length === 0) {
+              out.push({
+                id: 'add-deal',
+                icon: '💌',
+                title: '最初の案件を登録する',
+                reason: 'DM のスクショから 1 件追加するだけで、Iris が交渉文を準備します',
+                cta: '登録',
+                accent: '#FCB045',
+                onClick: () => onNavigate('brands'),
+              });
+            }
+            const pq = postQueue?.posts?.length ?? 0;
+            if (pq < 3) {
+              out.push({
+                id: 'make-reel',
+                icon: '🎬',
+                title: 'リールを 1 本作ってみる',
+                reason: '素材を入れるだけで AI が脚本・キャプション・ハッシュタグまで',
+                cta: '作る',
+                accent: '#833AB4',
+                onClick: () => onNavigate('reel'),
+              });
+            }
+            // 何もなくならないように 3 件確保
+            if (out.length < 3) {
+              out.push({
+                id: 'compose',
+                icon: '✍️',
+                title: '次の投稿を書く',
+                reason: 'お題を 1 つ入れるだけで、AI が note と SNS の文を同時に作ります',
+                cta: '書く',
+                accent: '#FD7CB8',
+                onClick: () => onNavigate('draft'),
+              });
+            }
+            if (out.length < 3) {
+              out.push({
+                id: 'inbox',
+                icon: '💖',
+                title: 'お返事をまとめて片付ける',
+                reason: '溜まった DM や案件の返信を AI が下書き',
+                cta: '見る',
+                accent: '#E1306C',
+                onClick: () => onNavigate('inbox' as Tab),
+              });
+            }
+            return out.slice(0, 3);
+          })()}
+        />
+      </div>
 
       {/* ── 2カラムグリッド ──────────────────────────────── */}
       <div style={{

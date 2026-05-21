@@ -100,8 +100,38 @@ function classifyError(error: string): {
   };
 }
 
+/** ライトテーマかどうかを判定 (data-theme="light" or prefers-color-scheme: light) */
+function useEffectiveLight(variant: 'dark' | 'light' | 'auto'): boolean {
+  const [light, setLight] = useState<boolean>(() => {
+    if (variant !== 'auto') return variant === 'light';
+    if (typeof document === 'undefined') return false;
+    const attr = document.documentElement.getAttribute('data-theme');
+    if (attr === 'light') return true;
+    if (attr === 'dark') return false;
+    return window.matchMedia?.('(prefers-color-scheme: light)').matches ?? false;
+  });
+  useEffect(() => {
+    if (variant !== 'auto') { setLight(variant === 'light'); return; }
+    const compute = () => {
+      const attr = document.documentElement.getAttribute('data-theme');
+      if (attr === 'light') return true;
+      if (attr === 'dark') return false;
+      return window.matchMedia?.('(prefers-color-scheme: light)').matches ?? false;
+    };
+    setLight(compute());
+    const obs = new MutationObserver(() => setLight(compute()));
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    const mq = window.matchMedia?.('(prefers-color-scheme: light)');
+    const onMq = () => setLight(compute());
+    mq?.addEventListener?.('change', onMq);
+    return () => { obs.disconnect(); mq?.removeEventListener?.('change', onMq); };
+  }, [variant]);
+  return light;
+}
+
 export default function ApiErrorCard({ error, onOpenSettings, className, variant = 'auto', onRetry }: Props) {
   const [version, setVersion] = useState(0); // 再描画用
+  const isLight = useEffectiveLight(variant);
   const visible = !!error && !isDismissedNow(error);
 
   // sessionStorage の TTL 切れに合わせて 5 秒ごとに再評価
@@ -116,21 +146,21 @@ export default function ApiErrorCard({ error, onOpenSettings, className, variant
   const c = classifyError(error);
   const isValidation = c.kind === 'validation';
 
-  // 色: dark or light 自動。バリデーションは紫の「ヒント」トーン
+  // 色: auto は data-theme / prefers-color-scheme を見て決定。バリデーションは紫の「ヒント」トーン
   const bg = isValidation
-    ? (variant === 'light' ? 'rgba(245, 243, 255, 0.96)' : 'rgba(34, 26, 58, 0.92)')
-    : variant === 'light'
+    ? (isLight ? 'rgba(245, 243, 255, 0.96)' : 'rgba(34, 26, 58, 0.92)')
+    : isLight
       ? 'rgba(255, 245, 240, 0.96)'
       : 'rgba(48, 12, 18, 0.92)';
   const fg = isValidation
-    ? (variant === 'light' ? '#2E1A6E' : '#E8E2FF')
-    : variant === 'light' ? '#7B0E29' : '#FFEAEC';
+    ? (isLight ? '#2E1A6E' : '#E8E2FF')
+    : isLight ? '#7B0E29' : '#FFEAEC';
   const fgDim = isValidation
-    ? (variant === 'light' ? '#5A4A9C' : '#BFB4F0')
-    : variant === 'light' ? '#9C3A5C' : '#FFB8C0';
+    ? (isLight ? '#5A4A9C' : '#BFB4F0')
+    : isLight ? '#9C3A5C' : '#FFB8C0';
   const border = isValidation
-    ? (variant === 'light' ? 'rgba(123, 97, 255, 0.30)' : 'rgba(191, 180, 240, 0.30)')
-    : variant === 'light' ? 'rgba(225, 48, 108, 0.35)' : 'rgba(255, 184, 192, 0.30)';
+    ? (isLight ? 'rgba(123, 97, 255, 0.30)' : 'rgba(191, 180, 240, 0.30)')
+    : isLight ? 'rgba(225, 48, 108, 0.35)' : 'rgba(255, 184, 192, 0.30)';
 
   const handleDismiss = () => {
     dismissFor(error, 60_000);
