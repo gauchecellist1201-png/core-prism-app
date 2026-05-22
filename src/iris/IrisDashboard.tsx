@@ -30,6 +30,7 @@ import {
 import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMessage } from './beautyAdvisor';
 import { shareToInstagram } from './instagramShare';
 import { notifyInApp } from '../lib/inAppNotify';
+import { LoaderDots, LoaderBlock } from '../components/MicroLoader';
 import {
   Sparkles, TrendingUp, Search, Mail, Film, MessageSquare, Edit3,
   Camera, HeartPulse, Leaf, UsersRound, Users, Handshake, FileText,
@@ -1536,9 +1537,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'video' && <VideoStudio bg={bg} settings={settings} />}
             {tab === 'reel' && (
               <React.Suspense fallback={
-                <div style={{ textAlign: 'center', padding: '4rem 0', color: bg.inkSoft }}>
-                  リールスタジオを読み込み中…
-                </div>
+                <LoaderBlock accent={bg.accent} message="リールスタジオを準備してます" padding="4rem 0" />
               }>
                 <IrisReelStudio
                   bg={bg}
@@ -2004,7 +2003,7 @@ function ProposalCard({
           )}
           <button onClick={onApprove} disabled={busy}
             style={{ ...btnPrimary(bg), padding: '0.6rem 1.2rem', opacity: busy ? 0.6 : 1 }}>
-            {busy ? '考え中…' : approveLabel}
+            {busy ? <LoaderDots label="考えてる" /> : approveLabel}
           </button>
         </div>
       </Card>
@@ -2575,7 +2574,11 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
               {m.content}
             </div>
           ))}
-          {busy && <div style={{ alignSelf: 'flex-start', padding: '0.7rem 1rem', color: bg.inkSoft }}>考え中…</div>}
+          {busy && (
+            <div style={{ alignSelf: 'flex-start', padding: '0.7rem 1rem', color: bg.inkSoft }}>
+              <LoaderDots color={bg.inkSoft} label="考えてる" />
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: '0.4rem' }}>
@@ -3496,7 +3499,7 @@ function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied
             disabled={busy || !score.applicable}
             style={{ ...btnPrimary(bg), opacity: (busy || !score.applicable) ? 0.5 : 1 }}
           >
-            {busy ? '考え中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> AI で応募文を作る</span>}
+            {busy ? <LoaderDots label="応募文を書いてる" /> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={14} /> AI で応募文を作る</span>}
           </button>
           {knowledge && knowledge.count > 0 && (
             <p style={{ fontSize: '0.78rem', color: bg.inkSoft, lineHeight: 1.6, margin: 0 }}>
@@ -3698,7 +3701,7 @@ function PrismResearchSection({ bg, desk, mediaKit, settings, companies }: {
             <input style={inp(bg)} type="number" placeholder="希望金額" value={proposedFee} onChange={e => setProposedFee(e.target.value)} />
           </div>
           <textarea style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} rows={2} value={customNote} onChange={e => setCustomNote(e.target.value)} placeholder="共感ポイントなど" />
-          <button onClick={generatePitch} disabled={busy} style={btnPrimary(bg)}>{busy ? '考え中…' : 'メールを作る'}</button>
+          <button onClick={generatePitch} disabled={busy} style={btnPrimary(bg)}>{busy ? <LoaderDots label="文を組み立ててる" /> : 'メールを作る'}</button>
           {err && <p style={{ color: '#B91C1C', fontSize: '0.85rem', marginTop: 4 }}>{err}</p>}
           {result && (
             <div style={{ marginTop: '0.85rem' }}>

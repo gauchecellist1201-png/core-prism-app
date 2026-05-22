@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useOrg, inviteMember, changeRole, removeMember, type OrgRole } from '../lib/org';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { confirmAction } from '../lib/confirmDialog';
+import { LoaderBlock } from './MicroLoader';
 
 interface Props {
   brand: 'iris' | 'prism';
@@ -192,7 +193,7 @@ export default function OrgPanel({ brand, onClose }: Props) {
           メンバー ({members.length})
         </div>
         {loading ? (
-          <div style={{ padding: '1rem', textAlign: 'center', color: '#8A8593' }}>読み込み中…</div>
+          <LoaderBlock accent={accent} message="メンバーを呼んでます" padding="1rem 0" />
         ) : members.length === 0 ? (
           <div style={{ padding: '1rem', textAlign: 'center', color: '#8A8593', fontSize: '0.85rem' }}>
             まだメンバーがいません

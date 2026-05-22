@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { isMasterAuth } from '../lib/billing';
+import { LoaderBlock } from '../components/MicroLoader';
 
 type RouteStats = {
   calls: number;
@@ -180,7 +181,11 @@ export default function AiStats() {
           </div>
         </header>
 
-        {loading && <div style={cardStyle}>読み込み中…</div>}
+        {loading && (
+          <div style={cardStyle}>
+            <LoaderBlock accent="#A78BFA" message="集計を取りに行ってます" padding="1rem 0" />
+          </div>
+        )}
         {error && (
           <div style={{ ...cardStyle, borderColor: '#7f1d1d', color: '#fca5a5' }}>
             読み込みに失敗しました: {error}
