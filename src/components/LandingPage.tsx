@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { REFERRAL_BONUS_DAYS } from '../lib/referral';
+import { REFERRAL_BONUS_DAYS, getPendingReferralInviter } from '../lib/referral';
 
 interface Props {
   onEnterApp: () => void;
@@ -48,8 +48,10 @@ const sectionPad = '5.5rem 1.25rem';
 export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
   const { lang, setLang, t } = useT();
   const [pendingRef, setPendingRef] = useState<string | null>(null);
+  const [pendingInviter, setPendingInviter] = useState<string>('');
   useEffect(() => {
     try { setPendingRef(sessionStorage.getItem('pending_ref')); } catch { /* */ }
+    setPendingInviter(getPendingReferralInviter());
   }, []);
 
   return (
@@ -75,7 +77,12 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
         >
           <span style={{ fontSize: '1.15rem' }}>🎁</span>
           <span>
-            友達からの招待で <strong style={{ background: 'rgba(255,255,255,0.22)', padding: '0.1rem 0.55rem', borderRadius: 8, letterSpacing: '0.06em' }}>+{REFERRAL_BONUS_DAYS} 日</strong> プレゼント中。
+            {pendingInviter ? (
+              <><strong style={{ background: 'rgba(255,255,255,0.22)', padding: '0.1rem 0.55rem', borderRadius: 8 }}>{pendingInviter} さん</strong>からの招待で </>
+            ) : (
+              <>友達からの招待で </>
+            )}
+            <strong style={{ background: 'rgba(255,255,255,0.22)', padding: '0.1rem 0.55rem', borderRadius: 8, letterSpacing: '0.06em' }}>+{REFERRAL_BONUS_DAYS} 日</strong> プレゼント中。
             通常 7 日 → <strong>合計 {7 + REFERRAL_BONUS_DAYS} 日</strong> 無料でお試しできます
           </span>
           <button

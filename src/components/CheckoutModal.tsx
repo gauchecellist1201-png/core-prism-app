@@ -15,7 +15,7 @@ import {
   type Plan, type Brand, type BillingCycle,
   useBillingUser, getPlans, getPlanPrice, findPlan, isMasterAuth,
 } from '../lib/billing';
-import { getPendingReferral, REFERRAL_BONUS_DAYS } from '../lib/referral';
+import { getPendingReferral, getPendingReferralInviter, REFERRAL_BONUS_DAYS } from '../lib/referral';
 import { sendEmail } from '../lib/emailNotify';
 import { isBiometricAvailable, registerBiometric } from '../lib/biometricAuth';
 
@@ -45,6 +45,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
 
   // 招待リンク経由かどうか (?ref=XXX が sessionStorage に保留されている)
   const pendingReferral = useMemo(() => getPendingReferral(), []);
+  const inviterName = useMemo(() => getPendingReferralInviter(), []);
   const hasReferralBonus = !!pendingReferral;
 
   // 現在選択中の Plan
@@ -209,7 +210,9 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                   <div style={{ fontSize: '1.5rem' }}>🎁</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#78350F' }}>
-                      友達招待ボーナス +{REFERRAL_BONUS_DAYS} 日
+                      {inviterName
+                        ? `${inviterName} さんからの招待で +${REFERRAL_BONUS_DAYS} 日`
+                        : `友達招待ボーナス +${REFERRAL_BONUS_DAYS} 日`}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#92400E', lineHeight: 1.45 }}>
                       招待コード <strong style={{ letterSpacing: '0.08em' }}>{pendingReferral}</strong> が適用されます。

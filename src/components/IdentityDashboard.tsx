@@ -60,6 +60,7 @@ const PeopleStudio = lazy(() => import('./PeopleStudio'));
 const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
+import { REFERRAL_BONUS_DAYS } from '../lib/referral';
 import { Gift } from 'lucide-react';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
 import { useDailyCoach } from '../hooks/useDailyCoach';
@@ -419,7 +420,7 @@ export default function IdentityDashboard({
             }}
           >
             <Gift size={14} style={{ color: persona.accentColor }} strokeWidth={2.4} />
-            <span className="text-sm font-semibold" style={{ color: persona.accentColor }}>招待 +30日</span>
+            <span className="text-sm font-semibold" style={{ color: persona.accentColor }}>友達招待 +{REFERRAL_BONUS_DAYS}日</span>
           </button>
           <button
             onClick={onOpenSettings}

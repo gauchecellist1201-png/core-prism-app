@@ -4,10 +4,13 @@
 // (メール送信ボタンは廃止 — Web Share API + クリップボードコピーに統合)
 // Iris と Prism 両ダッシュボードから利用
 // ============================================================
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Copy, Share2, Check, Gift, Users as UsersIcon, Sparkles, QrCode } from 'lucide-react';
 import { type Brand } from '../lib/billing';
-import { getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS } from '../lib/referral';
+import {
+  getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS,
+  getInviterName, saveInviterName, INVITER_NAME_MAX, sanitizeInviterName,
+} from '../lib/referral';
 import { shareToInstagram } from '../iris/instagramShare';
 
 type Palette = {
@@ -38,12 +41,15 @@ interface Props {
   compact?: boolean;
 }
 
-const SHARE_TEMPLATE = (url: string, brand: Brand) => {
+const SHARE_TEMPLATE = (url: string, brand: Brand, inviterName: string) => {
   const product = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
   const tagline = brand === 'iris'
     ? 'クリエイター向け AI 戦略パートナー'
     : 'AI が経営判断を補助する人格 OS';
-  return `${product} (${tagline}) を試してます。
+  const opener = inviterName
+    ? `${inviterName} です。${product} (${tagline}) を試してます。`
+    : `${product} (${tagline}) を試してます。`;
+  return `${opener}
 このリンクから登録すると 7 日間の無料トライアル + さらに +${REFERRAL_BONUS_DAYS} 日延長 (合計 ${7 + REFERRAL_BONUS_DAYS} 日無料)。
 ${url}`;
 };
@@ -51,12 +57,23 @@ ${url}`;
 export default function InviteShareCard({ brand, palette, compact = false }: Props) {
   const p = { ...DEFAULT_PALETTE, ...(palette || {}) };
   const referral = useMemo(() => getReferralData(), []);
-  const url = useMemo(() => getReferralUrl(brand, referral.myCode), [brand, referral.myCode]);
-  const text = useMemo(() => SHARE_TEMPLATE(url, brand), [url, brand]);
+  const [inviterName, setInviterName] = useState<string>(() => getInviterName());
+  const cleanName = useMemo(() => sanitizeInviterName(inviterName), [inviterName]);
+  const url = useMemo(
+    () => getReferralUrl(brand, referral.myCode, { from: cleanName }),
+    [brand, referral.myCode, cleanName],
+  );
+  const text = useMemo(() => SHARE_TEMPLATE(url, brand, cleanName), [url, brand, cleanName]);
 
   const [copied, setCopied] = useState<'url' | 'text' | null>(null);
   const [shareMsg, setShareMsg] = useState<string | null>(null);
   const [showQr, setShowQr] = useState(false);
+
+  // 名前を 600ms デバウンスで localStorage に保存 (タイプ毎に書かない)
+  useEffect(() => {
+    const id = setTimeout(() => saveInviterName(inviterName), 600);
+    return () => clearTimeout(id);
+  }, [inviterName]);
 
   // 紹介 URL の QR コード (qrserver.com の無料 API、認証なし)
   const qrUrl = useMemo(
@@ -193,6 +210,36 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
       }}>
         <Stat icon={<UsersIcon size={14} />} label="紹介人数" value={`${referral.referredCount} 人`} palette={p} />
         <Stat icon={<Sparkles size={14} />} label="累計延長" value={`+${referral.bonusDays} 日`} palette={p} />
+      </div>
+
+      {/* あなたの名前 (任意) — URL に乗せて LP で "○○ さんからの招待" と表示する */}
+      <div style={{ display: 'grid', gap: '0.35rem' }}>
+        <label style={{
+          fontSize: '0.7rem', letterSpacing: '0.06em', color: p.inkSoft,
+          fontWeight: 700,
+        }}>
+          あなたの名前 (任意 — 招待された人に表示されます)
+        </label>
+        <input
+          type="text"
+          value={inviterName}
+          onChange={(e) => setInviterName(e.target.value)}
+          placeholder="例: 直毅 / Naoki / なお"
+          maxLength={INVITER_NAME_MAX * 2}
+          autoComplete="nickname"
+          style={{
+            background: '#fff', color: p.ink,
+            border: `1px solid ${p.border}`, borderRadius: 10,
+            padding: '0.6rem 0.7rem', fontSize: '0.88rem',
+            outline: 'none',
+            fontFamily: 'inherit',
+          }}
+        />
+        {cleanName && (
+          <p style={{ margin: 0, fontSize: '0.7rem', color: p.inkSoft }}>
+            招待された人は「<strong style={{ color: p.accent }}>{cleanName} さんからの招待</strong>」と見えます
+          </p>
+        )}
       </div>
 
       {/* 紹介 URL ボックス */}
