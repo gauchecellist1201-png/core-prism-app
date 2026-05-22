@@ -10,7 +10,7 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, ExternalLink, Image, User2, Lightbulb } from 'lucide-react';
+import { Sparkles, X, ExternalLink, Image as ImageIcon, User2, Lightbulb } from 'lucide-react';
 
 const STORAGE_KEY = 'core_extension_capture_v1';
 
@@ -69,7 +69,7 @@ export default function ExtensionCaptureToast({ brand = 'prism' }: { brand?: 'pr
           style={{
             position: 'fixed',
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)',
-            left: 'max(14px, env(safe-area-inset-left, 0px))',
+            left: 'max(14px, calc(env(safe-area-inset-left, 0px) + 14px))',
             width: 'min(360px, calc(100vw - 28px))',
             zIndex: 70,
             background: 'linear-gradient(180deg, rgba(18,18,30,0.96) 0%, rgba(10,10,20,0.98) 100%)',
@@ -174,7 +174,7 @@ function getKindMeta(kind: string, brand: 'prism' | 'iris') {
   if (brand === 'iris') {
     switch (kind) {
       case 'deal-capture':
-        return { icon: <Image size={14} />, label: 'DM 案件として取り込む？', cta: '案件登録 →' };
+        return { icon: <ImageIcon size={14} />, label: 'DM 案件として取り込む？', cta: '案件登録 →' };
       case 'profile-import':
         return { icon: <User2 size={14} />, label: 'プロフィールを Iris に？', cta: '取り込む →' };
       case 'post-snapshot':
