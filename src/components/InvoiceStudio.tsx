@@ -8,6 +8,7 @@ import { computeTotals, fmtJpy, calcDueDate } from '../lib/invoiceCalc';
 import { aiSuggestInvoice } from '../lib/invoiceAI';
 import { InvoicePrintView } from './InvoicePrintView';
 import { confirmAction } from '../lib/confirmDialog';
+import ApiErrorCard from './ApiErrorCard';
 
 interface Props {
   persona: Persona;
@@ -227,11 +228,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {error && (
-            <div className="rounded-md p-2.5 text-xs" style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171' }}>
-              {error}
-            </div>
-          )}
+          <ApiErrorCard error={error} />
 
           {tab === 'compose' && (
             <>

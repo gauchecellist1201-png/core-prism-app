@@ -15,7 +15,10 @@ export default function MeetingHub({ persona, onClose }: Props) {
   const [title, setTitle] = useState(`${persona.name}とのミーティング`);
   const [copied, setCopied] = useState(false);
 
-  const meetingUrl = `https://core-os.app/meet/${persona.meetingSlug}/${duration}min`;
+  // ミーティングリンクは現状デモ用 (受信側の予約ページは未実装)
+  // 実装まではユーザーに「準備中」と明示し、Google カレンダー連携で実用は満たす
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://core-prism-app.vercel.app';
+  const meetingUrl = `${origin}/meet/${persona.meetingSlug || persona.id}/${duration}min`;
 
   const handleCopy = async () => {
     const ok = await copyText(meetingUrl, 'リンク', { silentSuccess: true });
@@ -144,11 +147,11 @@ export default function MeetingHub({ persona, onClose }: Props) {
         {/* 説明 */}
         <div
           className="mt-4 p-3 rounded-xl"
-          style={{ background: 'rgba(255,255,255,0.02)' }}
+          style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)' }}
         >
-          <p className="text-xs text-neutral-600 leading-relaxed">
-            このリンクを共有すると、相手は{persona.name}としてのあなたの空き時間を確認してミーティングを予約できます。
-            Googleカレンダーと連携することで自動的にスケジュールが管理されます。
+          <p className="text-xs text-amber-300 leading-relaxed">
+            ⚠️ 予約ページは現在準備中です。確実にミーティングを設定するには <b>Googleカレンダーへ</b> を押してください。
+            URL のコピー / シェアは予約ページ完成までは案内目的でお使いください。
           </p>
         </div>
       </motion.div>

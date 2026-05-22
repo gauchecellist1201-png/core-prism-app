@@ -10,6 +10,7 @@ import AgentProposalCard from './AgentProposalCard';
 import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
 import { confirmAction } from '../lib/confirmDialog';
+import ApiErrorCard from './ApiErrorCard';
 
 interface Props {
   persona: Persona;
@@ -261,11 +262,7 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
                 </div>
               )}
 
-              {ocrError && (
-                <div className="cp-card" style={{ background: 'rgba(248,113,113,0.10)', borderColor: '#f87171' }}>
-                  <p className="cp-meta" style={{ color: '#f87171' }}>{ocrError}</p>
-                </div>
-              )}
+              <ApiErrorCard error={ocrError} />
 
               {/* AI 先回り提案カード */}
               {(ocrPreview || (draft.amountIncl ?? 0) > 0) && !ocrBusy && (

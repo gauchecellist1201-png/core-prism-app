@@ -491,13 +491,40 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     tick();
   };
 
-  const download = () => {
+  const download = async () => {
     if (!exportUrl) return;
     const ext = exportMime.startsWith('video/mp4') ? 'mp4' : 'webm';
+    const filename = `iris-reel-${Date.now()}.${ext}`;
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && 'ontouchend' in document);
+
+    // iOS Safari は <a download> が効かないため、Web Share API か新規タブで誘導する
+    if (isIOS) {
+      try {
+        const res = await fetch(exportUrl);
+        const blob = await res.blob();
+        const file = new File([blob], filename, { type: exportMime });
+        // Web Share Level 2 (ファイル共有) — iOS 15+ Safari で対応
+        const nav: any = navigator;
+        if (nav.canShare && nav.canShare({ files: [file] }) && nav.share) {
+          await nav.share({ files: [file], title: 'リール', text: 'CORE Iris で作ったリール' });
+          setScheduledMsg('共有シートから「ビデオを保存」を選んでね');
+          return;
+        }
+      } catch {/* 共有失敗 → 新規タブで開いて手動保存に誘導 */}
+      // 共有不可なら新規タブで開く (長押し → ビデオを保存)
+      window.open(exportUrl, '_blank');
+      setScheduledMsg('動画を長押し → 「ビデオを保存」を選んでね');
+      return;
+    }
+
+    // PC / Android: 通常ダウンロード
     const a = document.createElement('a');
     a.href = exportUrl;
-    a.download = `iris-reel-${Date.now()}.${ext}`;
+    a.download = filename;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
   };
 
   /** Instagram Story 用の短いコピーをクリップボードへ */

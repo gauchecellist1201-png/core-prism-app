@@ -12,12 +12,13 @@
 //   3. 手入力した収支 … persona.cashflow (1点のみ。月別分析は不可)
 // ============================================================
 import { useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { Persona, AppSettings } from '../types/identity';
 import { useInvoices } from '../hooks/useInvoices';
 import { useSalesLedger } from '../hooks/useSalesLedger';
 import { useExpenses } from '../hooks/useExpenses';
 import { fmtJpy } from '../lib/invoiceCalc';
+import ApiErrorCard from './ApiErrorCard';
 
 const STRIPE_KEY_LS = 'core_integration_stripe';
 
@@ -426,20 +427,7 @@ export default function FinancialConsultant({ persona, settings, onClose }: Prop
               </p>
             )}
 
-            <AnimatePresence>
-              {aiError && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="cp-card" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.35)' }}>
-                  <p className="cp-body" style={{ color: '#f87171' }}>⚠ {aiError}</p>
-                  <button onClick={runConsult}
-                    className="cp-btn cp-btn-sm mt-2"
-                    style={{ background: accent, color: '#0a0a0f', borderColor: 'transparent' }}>
-                    もう一度ためす →
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <ApiErrorCard error={aiError} onRetry={runConsult} />
 
             {consult && (
               <motion.div className="cp-stack-sm"
