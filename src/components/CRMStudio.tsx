@@ -97,6 +97,46 @@ export default function CRMStudio({ persona, onClose }: Props) {
             what="商談がいま どこまで進んでいるか を一覧で見える画面です。"
             tryThis="右上の「＋ 案件追加」で、追いかけたい商談を 1 件登録します。"
             example="「A社サイト制作」を“提案中”に置く → 受注できたら“受注”の列へドラッグ。"
+            sampleLabel="出来上がりイメージ"
+            samplePreview={
+              <div
+                style={{
+                  width: 140,
+                  background: '#ffffff',
+                  color: '#0f172a',
+                  borderRadius: 6,
+                  padding: '8px 9px',
+                  fontSize: 8,
+                  lineHeight: 1.4,
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  borderLeft: `3px solid ${persona.accentColor}`,
+                }}
+                aria-label="顧客カードのサンプル"
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
+                  <strong style={{ fontSize: 9 }}>A社サイト制作</strong>
+                  <span
+                    style={{
+                      fontSize: 6,
+                      color: persona.accentColor,
+                      border: `1px solid ${persona.accentColor}55`,
+                      borderRadius: 8,
+                      padding: '1px 4px',
+                      letterSpacing: '0.04em',
+                    }}
+                  >提案中</span>
+                </div>
+                <div style={{ opacity: 0.75, marginBottom: 4 }}>田中 様 · 株式会社サンプル</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span style={{ opacity: 0.7, fontSize: 7 }}>想定 / 確度</span>
+                  <strong style={{ color: persona.accentColor, fontSize: 10 }}>¥330,000 · 60%</strong>
+                </div>
+                <div style={{ marginTop: 4, paddingTop: 3, borderTop: '1px dashed #e2e8f0', opacity: 0.6, fontSize: 6 }}>
+                  📝 5/22 価格再調整 / 📞 5/19 初回ヒアリング
+                </div>
+              </div>
+            }
           />
           {view === 'kanban' && (
             <div className="flex gap-3 overflow-x-auto pb-2" style={{ minHeight: '500px' }}>

@@ -236,6 +236,68 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
             what="レシートを撮るだけで、店名・金額・勘定科目をAIが読み取って経費に登録する画面です。"
             tryThis="下の枠にレシート写真を 1 枚アップロードしてみます。"
             example="コンビニのレシート → 「消耗品費 480円」と自動で仕訳されて一覧に追加。"
+            sampleLabel="出来上がりイメージ"
+            samplePreview={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 140 }}>
+                {/* 左: レシート写真の縮小 */}
+                <div
+                  style={{
+                    width: 36,
+                    height: 56,
+                    background: 'linear-gradient(180deg, #fafaf5 0%, #f3f0e7 100%)',
+                    borderRadius: 3,
+                    padding: '4px 3px',
+                    fontSize: 4,
+                    lineHeight: 1.3,
+                    color: '#3a3a2e',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                    fontFamily: 'monospace',
+                    transform: 'rotate(-3deg)',
+                    flexShrink: 0,
+                    border: '1px solid #e8e3d5',
+                  }}
+                  aria-label="レシート写真"
+                >
+                  <div style={{ textAlign: 'center', fontWeight: 700, marginBottom: 2 }}>セブン</div>
+                  <div style={{ borderTop: '1px dashed #999', borderBottom: '1px dashed #999', padding: '1px 0', marginBottom: 2 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>コピー</span><span>320</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>ペン</span><span>160</span></div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
+                    <span>合計</span><span>480</span>
+                  </div>
+                </div>
+                {/* 矢印 */}
+                <span style={{ color: persona.accentColor, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>→</span>
+                {/* 右: 仕訳 1 行 */}
+                <div
+                  style={{
+                    flex: 1,
+                    background: '#ffffff',
+                    color: '#0f172a',
+                    borderRadius: 5,
+                    padding: '6px 7px',
+                    fontSize: 7,
+                    lineHeight: 1.4,
+                    boxShadow: '0 3px 10px rgba(0,0,0,0.2)',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    borderLeft: `3px solid ${persona.accentColor}`,
+                    minWidth: 70,
+                  }}
+                  aria-label="仕訳 1 行"
+                >
+                  <div style={{ fontSize: 5, color: persona.accentColor, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 1 }}>
+                    AI 仕訳済み
+                  </div>
+                  <div style={{ fontWeight: 600, marginBottom: 1 }}>セブン-イレブン</div>
+                  <div style={{ opacity: 0.7, fontSize: 6, marginBottom: 2 }}>消耗品費 · 課税10%</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <span style={{ opacity: 0.6, fontSize: 6 }}>5/22</span>
+                    <strong style={{ color: persona.accentColor, fontSize: 9 }}>¥480</strong>
+                  </div>
+                </div>
+              </div>
+            }
           />
           {tab === 'ocr' && (
             <>
