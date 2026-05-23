@@ -11,7 +11,7 @@
 // ============================================================
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronUp, ChevronDown, Check, Loader2, Sparkles } from 'lucide-react';
+import { ChevronUp, ChevronDown, Check, Loader2, Sparkles, X } from 'lucide-react';
 import { useAgentTaskQueue, CXO_META, type CxoRole, type AgentTask } from '../hooks/useAgentTaskQueue';
 
 interface Props {
@@ -318,12 +318,13 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                         onClick={() => setOpenCxo(null)}
                         aria-label="閉じる"
                         style={{
-                          width: 22, height: 22, borderRadius: 6,
+                          width: 28, height: 28, borderRadius: 8,
                           background: 'rgba(255,255,255,0.06)', border: 'none',
-                          color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
-                          fontSize: 12, lineHeight: 1,
+                          color: 'rgba(255,255,255,0.6)', cursor: 'pointer',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
                         }}
-                      >×</button>
+                      ><X size={12} /></button>
                     </div>
                     <div style={{
                       fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',

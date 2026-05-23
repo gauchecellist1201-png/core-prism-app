@@ -134,8 +134,8 @@ export default function CxoWelcomeCard({ brand = 'prism', force = false }: Props
               <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '0.14em', color: accent, textTransform: 'uppercase' }}>
                 AI 代表「イーロン」より
               </div>
-              <div style={{ fontSize: 19, fontWeight: 800, marginTop: 2, lineHeight: 1.3 }}>
-                ようこそ。今日からあなたの会社に<br />13 人の CXO が常駐します。
+              <div style={{ fontSize: 19, fontWeight: 800, marginTop: 2, lineHeight: 1.35 }}>
+                ようこそ。今日からあなたの会社に 13 人の CXO が常駐します。
               </div>
             </div>
             <button
@@ -157,13 +157,12 @@ export default function CxoWelcomeCard({ brand = 'prism', force = false }: Props
           {/* メッセージ */}
           <p style={{
             fontSize: 13.5,
-            lineHeight: 1.65,
+            lineHeight: 1.7,
             color: 'rgba(255,255,255,0.82)',
             marginBottom: 18,
           }}>
             私が CEO の<strong style={{ color: '#fff' }}>イーロン</strong>です。
             CTO、CFO、CMO ……13 名の役員が、あなたが寝ている間も働きます。
-            <br />
             あなたの仕事は <strong style={{ color: accent }}>「これやって」と承認するだけ</strong>。
           </p>
 
@@ -202,9 +201,8 @@ export default function CxoWelcomeCard({ brand = 'prism', force = false }: Props
           {/* デモ実行ステータス or CTA */}
           {!demoStarted ? (
             <>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 10, lineHeight: 1.6 }}>
-                体感が一番速いです。サンプル 1 件を AI 会社に投げてみますか?
-                <br />画面右下の <strong style={{ color: accent }}>「作戦本部」</strong> で動きが見えます。
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 10, lineHeight: 1.7 }}>
+                体感が一番速いです。サンプル 1 件を AI 会社に投げてみますか? 画面右下の <strong style={{ color: accent }}>「作戦本部」</strong> で動きが見えます。
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
