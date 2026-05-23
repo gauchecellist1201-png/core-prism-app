@@ -6,9 +6,8 @@ import type { CompanyResearch, SalesLead, ApproachDraft, IntentSignal } from '..
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キー / master key / gemini key は main.tsx の fetch interceptor が
+// localStorage から自動付与する。手動で渡さない。
 
 // ─── 1. 企業リサーチ AI ─────────────────────────────
 export async function researchCompany(opts: {
@@ -19,7 +18,6 @@ export async function researchCompany(opts: {
   ownProduct?: string;        // 自社の商材説明
   publicInfo?: string;        // ユーザーが貼り付けた追加情報
 }): Promise<Omit<CompanyResearch, 'id' | 'personaId' | 'createdAt' | 'updatedAt'>> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは敏腕の営業リサーチアナリストです。
 ユーザーが指定した企業について、公開情報や一般的な業界知識から「営業に役立つ情報」を構造化して返します。
@@ -63,9 +61,6 @@ ${opts.persona.description || ''}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
@@ -110,7 +105,6 @@ export async function scoreLead(opts: {
   ownProduct?: string;
   research?: CompanyResearch;
 }): Promise<{ score: number; scoreReason: string }> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは営業のリードスコアリングを専門にする AI です。
 「このリードは買ってくれそうか」を 0〜100 で評価し、理由を1文で説明します。
@@ -146,9 +140,8 @@ ${ctx}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
+        // リードスコアリング (JSON {score, reason}) は軽量タスク。Master でも Gemini で十分
+        'x-ai-weight': 'light',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
@@ -186,7 +179,6 @@ export async function generateApproachEmail(opts: {
   goal?: string;
   tone?: string;             // "親しみやすく" "格式高く" "直球" 等
 }): Promise<Omit<ApproachDraft, 'id'>> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「個別最適化された営業メール」を書くプロです。
 相手企業のリサーチを踏まえて、相手の心に響くパーソナライズメールを作ります。
@@ -237,9 +229,6 @@ ${opts.tone || '丁寧で温かい'}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
@@ -281,8 +270,7 @@ export async function predictSignals(opts: {
   companies: { name: string; url?: string; industry?: string }[];
   ownProduct?: string;
 }): Promise<Omit<IntentSignal, 'id' | 'personaId' | 'detectedAt'>[]> {
-  const apiKey = getApiKey(opts.settings);
-  if (!apiKey || opts.companies.length === 0) return [];
+  if (opts.companies.length === 0) return [];
 
   const sys = `あなたは営業のための「ホットシグナル」検出 AI です。
 登録企業について、最近起きていそうな「動き」を一般的な業界トレンドから推定します。
@@ -320,9 +308,6 @@ ${opts.ownProduct || '(未指定)'}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
