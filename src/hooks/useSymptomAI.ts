@@ -12,9 +12,7 @@ import type {
   Urgency,
 } from '../types/health';
 
-function getApiKey(settings: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 function summarizePhr(days: DailyHealth[]) {
   const last = days[days.length - 1];
@@ -249,15 +247,8 @@ export function useSymptomAI(settings: AppSettings) {
     ): Promise<SymptomAnalysis> => {
       setIsLoading(true);
       setError(null);
-      const apiKey = getApiKey(settings);
-
-      // No API key — fall back to deterministic demo output
-      if (!apiKey) {
-        await new Promise((r) => setTimeout(r, 1100));
-        setIsLoading(false);
-        return deterministicAnalysis(symptoms);
-      }
-
+      // /api/ai は env Gemini で fallback できるので apiKey ガードは不要。
+      // deterministic は AI 失敗時の最終フォールバックとして try/catch で使う。
       const userBlock = `
 # 自覚症状
 ${symptoms.map(symptomToText).join('\n')}
@@ -274,9 +265,6 @@ ${summarizeHistory(history)}
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
           },
           body: JSON.stringify({
             model: settings.preferredModel,
@@ -356,9 +344,10 @@ export function useHealthCoach(settings: AppSettings) {
       phr: DailyHealth[],
       profile: MedicalProfile
     ): Promise<ChatMessage | null> => {
-      const apiKey = getApiKey(settings);
       setIsLoading(true);
       setError(null);
+      // /api/ai は env Gemini で fallback できるので apiKey ガード (デモモード)
+      // は廃止。AI 失敗時は下の catch でフォールバックメッセージを返す。
 
       const system = `${COACH_SYSTEM_BASE}
 
@@ -369,25 +358,11 @@ ${summarizePhr(phr)}
 ${summarizeHistory(profile)}
 `;
 
-      if (!apiKey) {
-        // Mock response
-        await new Promise((r) => setTimeout(r, 900));
-        setIsLoading(false);
-        return {
-          role: 'assistant',
-          content: '（デモモード）APIキー未設定のため固定応答です。実運用では PHR と既往歴を踏まえた個別アドバイスを返します。設定画面から Claude API キーを入力すると本物の応答に切り替わります。',
-          timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
-        };
-      }
-
       try {
         const res = await fetch('/api/ai', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
           },
           body: JSON.stringify({
             model: settings.preferredModel,

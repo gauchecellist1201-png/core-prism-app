@@ -51,10 +51,7 @@ ${toneInstruction(aiTone)}
 今日の日付: ${new Date().toLocaleDateString('ja-JP')}`;
 }
 
-// 環境変数のAPIキーを優先し、なければsettingsのキーを使う
-function getApiKey(settings: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 export function useClaude(settings: AppSettings, onUpdateStats?: (tokens: number, cost: number) => void) {
   const [isLoading, setIsLoading] = useState(false);
@@ -66,12 +63,7 @@ export function useClaude(settings: AppSettings, onUpdateStats?: (tokens: number
     history: ChatMessage[],
     knowledgeChunks: KnowledgeChunk[],
   ): Promise<ChatMessage | null> => {
-    const apiKey = getApiKey(settings);
-    if (!apiKey) {
-      setError('Claude APIキーが設定されていません。設定画面で入力してください。');
-      return null;
-    }
-
+    // API キーガードは不要 — /api/ai は env Gemini で fallback できる
     setIsLoading(true);
     setError(null);
 
@@ -89,9 +81,6 @@ export function useClaude(settings: AppSettings, onUpdateStats?: (tokens: number
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
           model,
