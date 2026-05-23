@@ -97,8 +97,7 @@ export async function aiSuggestInvoice(opts: {
   clientName?: string;
   issueDate?: string;
 }): Promise<AISuggestedInvoice> {
-  const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || opts.settings.claudeApiKey || '';
-
+  // API キーは main.tsx の fetch interceptor が localStorage から自動付与
   const userPrompt = `## 依頼内容
 ${opts.prompt}
 
@@ -111,9 +110,6 @@ ${opts.issueDate ? `## 発行日\n${opts.issueDate}\n` : ''}
   try {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     };
     // マスターなら Claude、一般ユーザーは Gemini に自動ルーティング
     if (isMasterAuth()) headers['x-master-key'] = 'GAUCHE2026';

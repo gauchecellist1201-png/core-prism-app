@@ -5,9 +5,7 @@
 import pptxgen from 'pptxgenjs';
 import type { AppSettings, Persona } from '../types/identity';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 export interface SlideSpec {
   layout:
@@ -77,7 +75,6 @@ export async function generateDeckSpec(
   persona: Persona,
   input: GenInput,
 ): Promise<DeckSpec> {
-  const apiKey = getApiKey(settings);
 
   const userPrompt = `## 人格コンテキスト (発表者)
 ${persona.name} (${persona.subtitle})
@@ -101,9 +98,6 @@ ${input.source.slice(0, 30000)}${input.source.length > 30000 ? '\n[...省略]' :
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: settings.preferredModel,

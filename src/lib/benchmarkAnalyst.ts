@@ -68,9 +68,7 @@ function getRank(entry: BenchmarkEntry, value: number): 'top' | 'mid' | 'low' {
   }
 }
 
-function getApiKey(settings: AppSettings): string {
-  return (import.meta.env.VITE_CLAUDE_API_KEY as string) || settings.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 const SYSTEM_PROMPT = `あなたは日本の中小企業専門の経営コンサルタントです。
 業界ベンチマークと自社KPIを比較し、経営改善アドバイスをJSON形式で提供します。
@@ -169,13 +167,8 @@ export async function analyzeAgainstIndustry(
     };
   }
 
-  const apiKey = getApiKey(settings);
-
-  if (!apiKey) {
-    const fb = buildRuleBased(rankings, industryInfo.label, overallPercentile);
-    return { industryId, industryLabel: industryInfo.label, rankings, overallPercentile, ...fb, generatedAt: new Date().toISOString() };
-  }
-
+  // /api/ai は env キーで fallback できるので、AI 失敗時の rule-based は
+  // 下の try/catch 側のみで担保 (apiKey ガードは不要)
   const metricsText = rankings.map(r => {
     const rankLabel = r.rank === 'top' ? '上位25%' : r.rank === 'mid' ? '中位50%' : '下位25%';
     return `- ${r.label}: ${r.userValue}${r.unit} [${rankLabel}] (業界中央値: ${r.p50}${r.unit})`;
@@ -189,9 +182,6 @@ export async function analyzeAgainstIndustry(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
           model: settings.preferredModel,

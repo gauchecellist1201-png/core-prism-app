@@ -3,9 +3,7 @@
 // ============================================================
 import type { AppSettings, Persona, KnowledgeItem } from '../types/identity';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 export interface DecisionInput {
   question: string;          // 「○○すべきか?」
@@ -78,7 +76,6 @@ export async function generateDecisionMemo(
   input: DecisionInput,
   knowledge: KnowledgeItem[],
 ): Promise<DecisionMemo> {
-  const apiKey = getApiKey(settings);
 
   // 関連ナレッジを軽く検索
   const relevantKnowledge = knowledge
@@ -118,9 +115,6 @@ ${relevantKnowledge}
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: settings.preferredModel,
@@ -177,7 +171,6 @@ export async function extractDecisionFields(
   rawText: string,
   persona: Persona,
 ): Promise<ExtractedDecisionFields> {
-  const apiKey = getApiKey(settings);
   if (!rawText.trim()) throw new Error('内容が空です');
 
   const sys = `あなたは経営者の「迷い」を聞き取って、意思決定の要素に分解するエキスパートです。
@@ -211,9 +204,6 @@ ${rawText}
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: settings.preferredModel,

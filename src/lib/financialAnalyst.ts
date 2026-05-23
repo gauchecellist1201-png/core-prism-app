@@ -3,9 +3,7 @@
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 export interface FinancialMetric {
   name: string;        // 例: "売上高総利益率"
@@ -83,7 +81,6 @@ export async function analyzeFinancials(
   _persona: Persona,
   financialText: string,
 ): Promise<FinancialAnalysis> {
-  const apiKey = getApiKey(settings);
 
   const truncated = financialText.length > 30000
     ? financialText.slice(0, 30000) + '\n\n[...省略]'
@@ -93,9 +90,6 @@ export async function analyzeFinancials(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: settings.preferredModel,
