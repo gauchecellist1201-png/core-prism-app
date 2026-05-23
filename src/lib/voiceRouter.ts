@@ -18,9 +18,8 @@ export interface VoiceRoutingResult {
   categories: VoiceRouteItem[];
 }
 
-function getApiKey(settings: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-}
+// API キー / master key / gemini key は main.tsx の fetch interceptor が
+// localStorage から自動付与する。手動で渡さない。
 
 const SYS = `あなたはユーザーの音声メモを分析して適切なカテゴリに振り分けるAIアシスタントです。
 日本語の書き起こしテキストを受け取り、以下の5つのカテゴリに分類します。
@@ -62,16 +61,13 @@ export async function routeVoiceMemo(
   transcript: string,
   settings: AppSettings,
 ): Promise<VoiceRoutingResult> {
-  const apiKey = getApiKey(settings);
-
   const result = await enqueueClaudeCall(async () => {
     const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
+        // 音声メモの 5 カテゴリ分類は軽量タスク。Master でも Gemini で十分
+        'x-ai-weight': 'light',
       },
       body: JSON.stringify({
         model: settings.preferredModel,
