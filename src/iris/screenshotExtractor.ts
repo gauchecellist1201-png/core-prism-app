@@ -7,9 +7,7 @@ import type { AppSettings } from '../types/identity';
 import type { Platform, ContentType, PlatformMetrics } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 export interface ExtractedPost {
   title: string;
@@ -38,7 +36,6 @@ export async function extractPostsFromScreenshots(opts: {
   settings: AppSettings;
   images: { data: string; mediaType: string }[];
 }): Promise<ExtractedPost[]> {
-  const apiKey = getApiKey(opts.settings);
   if (opts.images.length === 0) return [];
 
   const sys = `あなたは Instagram インサイト画面のスクリーンショットを読み取って、投稿の生データを構造化する OCR + ビジョン解析エキスパートです。
@@ -111,9 +108,6 @@ export async function extractPostsFromScreenshots(opts: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
         // 画像 Vision は必ず "重い" 経路: マスター登録ありなら Claude haiku-4-5、
         // それ以外は Gemini Vision にフォールバック (api/ai 側で自動)。
         'x-ai-weight': 'heavy',
@@ -358,7 +352,6 @@ export async function generateStrategyInsights(opts: {
   stats: PostStats;
   recentTitles: string[];
 }): Promise<StrategyInsights> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは Instagram グロースを 5 年間追ってきた敏腕ストラテジスト。
 データを見て、ぱっと「次のアクション」を 3 つ言い切ります。
@@ -411,9 +404,6 @@ ${opts.recentTitles.slice(0, 10).map(t => `- ${t}`).join('\n')}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,

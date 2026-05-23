@@ -5,9 +5,7 @@
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 export interface VideoScene {
   /** シーン表示秒数 */
@@ -40,7 +38,6 @@ export async function generateScript(
   settings: AppSettings,
   targetSec = 30,
 ): Promise<VideoScript> {
-  const apiKey = getApiKey(settings);
 
   const sys = `あなたは縦型ショート動画 (Reels / TikTok / Shorts) の専門脚本家。
 返答は JSON のみ:
@@ -65,9 +62,6 @@ export async function generateScript(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: settings.preferredModel,

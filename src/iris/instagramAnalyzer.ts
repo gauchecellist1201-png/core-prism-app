@@ -7,9 +7,7 @@ import type { MediaKit } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 /** URL → @handle 抽出 */
 export function extractInstagramHandle(input: string): string | null {
@@ -131,7 +129,6 @@ export async function analyzeInstagramProfile(opts: {
   /** 直近のゴール */
   goal?: string;
 }): Promise<IGAnalysisResult> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「世界トップクラスのインフルエンサーマーケティングストラテジスト」。
 日本市場の Instagram 文化・相場・PR 案件慣行に精通し、過去に 1,000 アカウント以上を分析してきた経験を持つ。
@@ -263,9 +260,6 @@ ${toneInstruction(opts.settings.aiTone)}`;
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         // Vision 対応モデルを優先 (claude-sonnet-4-5 は vision 対応)

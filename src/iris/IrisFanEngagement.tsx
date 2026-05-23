@@ -64,9 +64,7 @@ function saveFans(data: FanContact[]) {
   try { localStorage.setItem(FAN_STORAGE_KEY, JSON.stringify(data)); } catch { /* */ }
 }
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 const ALL_TAGS: FanTag[] = ['スーパーファン', '長期ファン', '新規', '個人的友人'];
 
@@ -147,9 +145,8 @@ export default function IrisFanEngagement({ bg, settings }: Props) {
   };
 
   // ─── AI: TOP10 抽出 ────────────────────────────────────
+  // 鍵チェックは不要 — /api/ai は env で fallback できる。
   const extractTop10 = useCallback(async () => {
-    const apiKey = getApiKey(settings);
-    if (!apiKey) { notifyInApp({ kind: 'warn', title: 'Claude API キーが未設定です', body: '設定画面で API キーを登録してください。' }); return; }
     if (fans.length === 0) { notifyInApp({ kind: 'info', title: 'ファンデータがありません', body: '先にファンを追加してください。' }); return; }
 
     setTop10Loading(true);
@@ -176,9 +173,6 @@ ${toneInstruction()}
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
           },
           body: JSON.stringify({
             model: settings.preferredModel,
@@ -203,10 +197,8 @@ ${toneInstruction()}
   }, [fans, settings]);
 
   // ─── AI: 返信テンプレ生成 ─────────────────────────────
+  // 鍵チェックは不要 — /api/ai は env で fallback できる。
   const generateReply = useCallback(async (fan: FanContact) => {
-    const apiKey = getApiKey(settings);
-    if (!apiKey) { notifyInApp({ kind: 'warn', title: 'Claude API キーが未設定です', body: '設定画面で API キーを登録してください。' }); return; }
-
     setReplyFanId(fan.id);
     setReplyLoading(true);
     setReplyTemplate('');
@@ -233,9 +225,6 @@ ${toneInstruction()}
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
           },
           body: JSON.stringify({
             model: settings.preferredModel,
