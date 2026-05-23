@@ -58,41 +58,45 @@ export async function generateImagePrompt(opts: {
   topic: string;
   context?: string;
 }): Promise<string> {
-  const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || opts.settings.claudeApiKey || '';
-  if (!apiKey) {
-    // Claude が無くてもざっくり英訳プロンプトを生成
-    return `An evocative editorial illustration capturing the essence of: ${opts.topic}. ${opts.context || ''}`;
-  }
+  // 英訳プロンプト生成は軽量タスクなので Gemini で十分。
+  // Master でも Claude を浪費しないように x-ai-weight: light を指定。
+  // (audit r2 で imageGen が Master Claude を浪費していると flagged)
+  // 失敗時はテンプレ英訳プロンプトに fallback (画像生成は止めない)
+  const fallback = `An evocative editorial illustration capturing the essence of: ${opts.topic}. ${opts.context || ''}`;
   const userPrompt = `## テキスト\n${opts.topic}\n\n${opts.context ? `## 文脈\n${opts.context}\n` : ''}\n上記の本質を視覚化する画像プロンプトを作ってください。`;
-  const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: opts.settings.preferredModel,
-        max_tokens: 600,
-        system: PROMPT_SYS,
-        messages: [{ role: 'user', content: userPrompt }],
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `画像プロンプト生成エラー: ${res.status}`);
-    }
-    return res.json();
-  });
-  const text = data.content?.[0]?.text ?? '';
   try {
-    const m = text.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(m ? m[0] : text);
-    return parsed.visual_prompt || text.slice(0, 500);
-  } catch {
-    return text.slice(0, 500);
+    const data = await enqueueClaudeCall(async () => {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-ai-weight': 'light',
+        },
+        body: JSON.stringify({
+          model: opts.settings.preferredModel,
+          max_tokens: 600,
+          system: PROMPT_SYS,
+          messages: [{ role: 'user', content: userPrompt }],
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message ?? `画像プロンプト生成エラー: ${res.status}`);
+      }
+      return res.json();
+    });
+    const text = data.content?.[0]?.text ?? '';
+    if (!text) return fallback;
+    try {
+      const m = text.match(/\{[\s\S]*\}/);
+      const parsed = JSON.parse(m ? m[0] : text);
+      return parsed.visual_prompt || text.slice(0, 500);
+    } catch {
+      return text.slice(0, 500);
+    }
+  } catch (e) {
+    console.warn('[imageGen] prompt 生成失敗、テンプレに fallback', e);
+    return fallback;
   }
 }
 
