@@ -52,11 +52,11 @@ ${all.map(i => `- [${i.date}] ${i.type}: ${i.summary}`).join('\n') || '記録な
 上記を踏まえ、JSONを返してください。`;
 
   return enqueueClaudeCall(async () => {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    // Anthropic 直叩き → /api/ai 経由 (env Gemini fallback / master ルーティング / CORS 安全)
+    // API キーは main.tsx interceptor が自動付与
+    const resp = await fetch('/api/ai', {
       method: 'POST',
       headers: {
-        'x-api-key': settings.claudeApiKey,
-        'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
       },
       body: JSON.stringify({
