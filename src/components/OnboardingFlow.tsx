@@ -21,8 +21,9 @@ const MODELS = [
   },
 ];
 
-// 環境変数にAPIキーが設定されていれば入力不要
-const HAS_ENV_API_KEY = !!import.meta.env.VITE_CLAUDE_API_KEY;
+// /api/ai サーバが env キー + Gemini fallback で動くため、
+// ユーザーが Claude API キーを入力するステップはオンボードから常に省く。
+const HAS_ENV_API_KEY = true;
 
 export default function OnboardingFlow({ onComplete }: Props) {
   const [step, setStep] = useState(0);

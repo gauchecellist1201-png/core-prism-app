@@ -246,14 +246,11 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
     setStep('thinking');
     setError(null);
     try {
-      const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
+      // API キーは main.tsx の interceptor が自動付与
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
           'x-ai-weight': 'light',
         },
         body: JSON.stringify({
@@ -310,14 +307,11 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
           body: `予定: ${p.payload.eventTitle || p.title}\n開始: ${formatJP(startISO)}\n所要: ${minutes} 分\n\n新しいタブで Google カレンダーが開きました。「保存」を押すと登録完了です。\n\n(タブが開かない場合は、ブラウザのポップアップを許可してください)`,
         });
       } else if (p.actionType === 'text_artifact') {
-        const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
+        // API キーは main.tsx の interceptor が自動付与
         const r = await fetch('/api/ai', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
             'x-ai-weight': 'light',
           },
           body: JSON.stringify({

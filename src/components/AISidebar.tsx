@@ -53,7 +53,9 @@ export default function AISidebar({
     }
   };
 
-  const hasApiKey = !!(import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey);
+  // /api/ai は env Gemini で fallback できるので、ユーザー鍵未設定でも AI が使える。
+  // hasApiKey は常に true で扱う (UX 上の「鍵を設定してください」ガードを撤廃)。
+  const hasApiKey = true;
 
   return (
     <div className="flex flex-col h-full">
