@@ -9,6 +9,7 @@ import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { usePostQueue, buildCaptionText, type ScheduledPost } from './usePostQueue';
 import { confirmAction } from '../lib/confirmDialog';
+import EmptyInvite from './EmptyInvite';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -129,19 +130,18 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
 
       {/* リスト */}
       {sorted.length === 0 ? (
-        <div style={{
-          padding: '2rem 1.5rem', background: bg.card,
-          border: `1px dashed ${bg.cardBorder}`, borderRadius: 14,
-          textAlign: 'center', color: bg.inkSoft, lineHeight: 1.85,
-        }}>
-          <Calendar size={32} style={{ opacity: 0.4, marginBottom: 8 }} />
-          <div style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', color: bg.ink }}>
-            予約はまだありません。
-          </div>
-          <div style={{ fontSize: '0.85rem', marginTop: 6 }}>
-            「リール作成」で動画を作って <strong>AI で投稿予約を作る</strong> を押すと、ここに並びます。
-          </div>
-        </div>
+        <EmptyInvite
+          bg={bg}
+          icon={Calendar}
+          title="予約はまだ並んでいません"
+          description={
+            <>
+              「リール作成」で動画を仕上げて、<strong>AI で投稿予約を作る</strong> を押すと、<br />
+              ここに「いつ・どこに出すか」が時系列で並びます。
+            </>
+          }
+          hint="一度入れた予約は時刻が近づくと自動で Instagram へ送り出します"
+        />
       ) : (
         <div style={{ display: 'grid', gap: 10 }}>
           {sorted.map(p => {

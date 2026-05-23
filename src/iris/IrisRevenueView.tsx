@@ -5,6 +5,7 @@
 // ============================================================
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Coins, Plus } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -13,6 +14,7 @@ import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { CountUp, Sparkline } from '../components/visualFx';
 import { v4 as uuidv4 } from 'uuid';
+import EmptyInvite from './EmptyInvite';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -314,13 +316,23 @@ export default function IrisRevenueView({ bg }: Props) {
       )}
 
       {entries.length === 0 && !showForm && (
-        <div style={{
-          padding: '2rem', background: bg.card, border: `1px dashed ${bg.cardBorder}`,
-          borderRadius: 16, textAlign: 'center', color: bg.inkSoft,
-          fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
-        }}>
-          まだ収益データがありません。「収益を記録する」から始めましょう。
-        </div>
+        <EmptyInvite
+          bg={bg}
+          icon={Coins}
+          title="収益の記録はまだありません"
+          description={
+            <>
+              案件 PR / スポンサー / アフィリエイト など、入ってきた金額を 1 件入れるだけで、<br />
+              月次の推移と「収入源の内訳」グラフがふわっと立ち上がります。
+            </>
+          }
+          primaryAction={{
+            label: '最初の 1 件を記録する',
+            onClick: () => setShowForm(true),
+            icon: Plus,
+          }}
+          hint="日付・収入源・金額の 3 つだけで OK。詳細は後から書けます"
+        />
       )}
     </div>
   );

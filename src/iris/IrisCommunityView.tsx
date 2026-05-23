@@ -2,10 +2,12 @@
 // IRIS — Community Board (案件シェア / コラボ募集 / 雑談)
 // ============================================================
 import { useState } from 'react';
+import { MessagesSquare, Plus } from 'lucide-react';
 import { useCommunity, POST_TYPE_META, type CommunityPostType } from './community';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { confirmAction } from '../lib/confirmDialog';
+import EmptyInvite from './EmptyInvite';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -135,11 +137,23 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
 
       {/* 投稿一覧 */}
       {filtered.length === 0 && (
-        <div style={card}>
-          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '2rem 0' }}>
-            まだ投稿がありません 初めての一言を投げてみて。
-          </p>
-        </div>
+        <EmptyInvite
+          bg={bg}
+          icon={MessagesSquare}
+          title="コミュニティはまだ静かです"
+          description={
+            <>
+              ここは案件シェア・コラボ募集・雑談の広場。<br />
+              最初のひと言が、誰かの背中を押すかもしれません。
+            </>
+          }
+          primaryAction={{
+            label: '最初の投稿をする',
+            onClick: () => setOpen(true),
+            icon: Plus,
+          }}
+          hint="気軽な「今日のひとこと」だけでも大丈夫"
+        />
       )}
 
       {filtered.map(p => {

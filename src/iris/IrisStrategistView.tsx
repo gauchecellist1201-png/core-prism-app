@@ -3,8 +3,9 @@
 // 新 UX: 手入力ゼロのホーム + 旧 5 タブを上級者モードに格納
 // ============================================================
 import { useState } from 'react';
-import { ChevronLeft, X, Brain, BookmarkPlus, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, X, Brain, BookmarkPlus, CheckCircle2, TrendingUp, Plus } from 'lucide-react';
 import { useIrisKnowledge } from './irisKnowledge';
+import EmptyInvite from './EmptyInvite';
 import type { AppSettings } from '../types/identity';
 import type { MediaKit, Platform, ContentType } from '../types/influencerDeal';
 import { PLATFORM_META, CONTENT_TYPE_META } from '../types/influencerDeal';
@@ -257,12 +258,23 @@ function HistoryTab({ bg, history, inp, card, btnPrimary }: any) {
       )}
 
       {history.posts.length === 0 && (
-        <div style={card}>
-          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '2rem 0', lineHeight: 1.8 }}>
-            まだ投稿実績がありません。<br />
-            過去 5-10 本の投稿を入れると、AI が伸びパターンを分析してくれます。
-          </p>
-        </div>
+        <EmptyInvite
+          bg={bg}
+          icon={TrendingUp}
+          title="投稿実績はまだ 0 本です"
+          description={
+            <>
+              過去の投稿を 5〜10 本入れるだけで、<br />
+              AI が「あなたの伸びパターン」を見つけて教えてくれます。
+            </>
+          }
+          primaryAction={{
+            label: '1 本目を追加する',
+            onClick: () => setOpen(true),
+            icon: Plus,
+          }}
+          hint="タイトルと数字 (リーチ・いいね数など) だけで OK。後で増やせます"
+        />
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>

@@ -5,6 +5,7 @@
 // ============================================================
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, UserPlus } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -13,6 +14,7 @@ import { copyText } from '../lib/clipboard';
 import { toneInstruction } from '../lib/aiTone';
 import { notifyInApp } from '../lib/inAppNotify';
 import { v4 as uuidv4 } from 'uuid';
+import EmptyInvite from './EmptyInvite';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -361,9 +363,23 @@ ${toneInstruction()}
 
       {/* タグ別ファンリスト */}
       {fans.length === 0 ? (
-        <div style={{ padding: '2rem', background: bg.card, border: `1px dashed ${bg.cardBorder}`, borderRadius: 16, textAlign: 'center', color: bg.inkSoft, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
-          まだファンデータがありません。「ファンを追加」から始めましょう。
-        </div>
+        <EmptyInvite
+          bg={bg}
+          icon={Heart}
+          title="まだファンの記録がありません"
+          description={
+            <>
+              よく絡んでくれる人を 1 人ずつ書き留めると、<br />
+              AI が「いま声をかけたい上位 10 人」を毎週そっと教えてくれます。
+            </>
+          }
+          primaryAction={{
+            label: '最初のファンを追加',
+            onClick: () => setShowAddFan(true),
+            icon: UserPlus,
+          }}
+          hint="@ハンドルと一言メモだけで OK。タグは後からつけられます"
+        />
       ) : (
         <div style={{ display: 'grid', gap: '1.25rem' }}>
           {ALL_TAGS.map(tag => {

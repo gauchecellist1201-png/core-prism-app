@@ -9,8 +9,9 @@ import {
   IRIS_KNOWLEDGE_KIND_META, type IrisKnowledgeItem, type IrisKnowledgeKind,
   useIrisKnowledge,
 } from './irisKnowledge';
-import { BookmarkPlus, Trash2, Save, X, Search, Brain } from 'lucide-react';
+import { BookmarkPlus, Trash2, Save, X, Search, Brain, BookOpen } from 'lucide-react';
 import { confirmAction } from '../lib/confirmDialog';
+import EmptyInvite from './EmptyInvite';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -163,12 +164,23 @@ export default function IrisKnowledgeView({ bg, knowledge }: Props) {
       )}
 
       {filtered.length === 0 && (
-        <div style={{ ...card(bg), textAlign: 'center', padding: '2.5rem 1rem' }}>
-          <p style={{ fontSize: '0.95rem', color: bg.inkSoft, lineHeight: 1.8 }}>
-            まだ資料がありません。<br/>
-            AI が作ったリール案 / キャプション / 応募文 / 30 日プランに付いている「ナレッジに追加」を押すと、ここに溜まっていきます。
-          </p>
-        </div>
+        <EmptyInvite
+          bg={bg}
+          icon={BookOpen}
+          title="ナレッジ棚はまだ空っぽです"
+          description={
+            <>
+              リール案 / キャプション / 応募文 / 30 日プランに付いている<br />
+              <strong>「ナレッジに追加」</strong> を押すと、ここに自分の資料がたまっていきます。
+            </>
+          }
+          primaryAction={{
+            label: '手書きメモを 1 枚足す',
+            onClick: () => setAddOpen(true),
+            icon: BookmarkPlus,
+          }}
+          hint="貯まるほど、AI の提案があなた色に近づきます"
+        />
       )}
 
       {filtered.map(item => {
