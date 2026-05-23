@@ -218,18 +218,100 @@ export function useAgentTaskQueue() {
 }
 
 /** CXO の表示名・色・絵文字 */
-export const CXO_META: Record<CxoRole, { name: string; emoji: string; color: string; tagline: string }> = {
-  CEO: { name: 'CEO イーロン', emoji: '🌟', color: '#FBBF24', tagline: '戦略・最終判断' },
-  CTO: { name: 'CTO テック',   emoji: '⚙️', color: '#60A5FA', tagline: 'コード・実装' },
-  CPO: { name: 'CPO プロダクト', emoji: '🎯', color: '#A78BFA', tagline: '仕様・優先順' },
-  CDO: { name: 'CDO デザイン', emoji: '🎨', color: '#F472B6', tagline: 'デザイン磨き' },
-  CMO: { name: 'CMO マーケ',   emoji: '📣', color: '#FB923C', tagline: 'コピー・拡散' },
-  CSO: { name: 'CSO セールス', emoji: '💼', color: '#34D399', tagline: '案件探索' },
-  CFO: { name: 'CFO 財務',     emoji: '📊', color: '#10B981', tagline: '数字・経費' },
-  COO: { name: 'COO オペレ',   emoji: '🗂', color: '#9CA3AF', tagline: '運用・整理' },
-  CDS: { name: 'CDS データ',   emoji: '🔬', color: '#06B6D4', tagline: '分析・洞察' },
-  CLO: { name: 'CLO 法務',     emoji: '⚖️', color: '#6366F1', tagline: '規約・遵守' },
-  UIE: { name: 'UIE UI エンジニア', emoji: '✨', color: '#EC4899', tagline: 'UI 細部' },
-  UXE: { name: 'UXE UX エンジニア', emoji: '👁', color: '#8B5CF6', tagline: '操作感' },
-  QAE: { name: 'QAE 品質',     emoji: '🛡', color: '#14B8A6', tagline: '動作テスト' },
+/**
+ * 各 CXO の詳細プロファイル:
+ *  - name / emoji / color / tagline: 表示用 (従来)
+ *  - shortLabel: アバター下に出る 3 文字以内の役職略号 (CEO/CFO/CMO 等)
+ *  - watching: 待機時に「いま何を監視しているか」を rotation 表示するためのフレーズ群
+ *  - canDo: 「いま任せられること」3 件 — ユーザーがクリックして即承認できるアクション
+ */
+export interface CxoMeta {
+  name: string;
+  emoji: string;
+  color: string;
+  tagline: string;
+  shortLabel: string;
+  watching: string[];
+  canDo: string[];
+}
+
+export const CXO_META: Record<CxoRole, CxoMeta> = {
+  CEO: {
+    name: 'CEO イーロン', emoji: '🌟', color: '#FBBF24', tagline: '戦略・最終判断',
+    shortLabel: 'CEO',
+    watching: ['全社の数字をチェック中', '今週の優先順位を再計算', '判断待ちの議題を棚卸し'],
+    canDo: ['今週の優先 3 つを決める', '判断保留の案件を整理する', '来月の方針を 1 ページに'],
+  },
+  CTO: {
+    name: 'CTO テック', emoji: '⚙️', color: '#60A5FA', tagline: 'コード・実装',
+    shortLabel: 'CTO',
+    watching: ['実装中タスクの進捗を確認', 'エラーログを巡回', '改善余地を洗い出し中'],
+    canDo: ['今のサイトの改善点を 5 つ', 'バグ報告から修正案を作る', '新機能の実装計画を起こす'],
+  },
+  CPO: {
+    name: 'CPO プロダクト', emoji: '🎯', color: '#A78BFA', tagline: '仕様・優先順',
+    shortLabel: 'CPO',
+    watching: ['機能の利用状況を観察', 'ユーザー要望を集約中', '次に作るべき物を考慮'],
+    canDo: ['次に作る機能を 3 つ提案', 'プロダクトロードマップを描く', 'ユーザー要望を優先順位化'],
+  },
+  CDO: {
+    name: 'CDO デザイン', emoji: '🎨', color: '#F472B6', tagline: 'デザイン磨き',
+    shortLabel: 'CDO',
+    watching: ['UI の違和感を巡回中', '配色とフォントを点検', 'スクリーンショットを審査'],
+    canDo: ['今の画面のデザイン改善案', 'ロゴ / 配色を見直す', '新しい OG 画像を作る'],
+  },
+  CMO: {
+    name: 'CMO マーケ', emoji: '📣', color: '#FB923C', tagline: 'コピー・拡散',
+    shortLabel: 'CMO',
+    watching: ['SNS の反応を観測', '新しい切り口を探索', '競合の発信を追跡'],
+    canDo: ['今週の SNS 投稿 5 本を書く', 'LP の見出しを 3 案出す', '友だち招待用の文面を作る'],
+  },
+  CSO: {
+    name: 'CSO セールス', emoji: '💼', color: '#34D399', tagline: '案件探索',
+    shortLabel: 'CSO',
+    watching: ['見込み顧客リストを更新', '今日アプローチすべき先を選定', '提案中の案件を追跡'],
+    canDo: ['今日アプローチする 5 社を選ぶ', '提案文を 1 通仕上げる', 'パイプラインを整理する'],
+  },
+  CFO: {
+    name: 'CFO 財務', emoji: '📊', color: '#10B981', tagline: '数字・経費',
+    shortLabel: 'CFO',
+    watching: ['未処理レシートを発見', '今月の収支を試算', '請求書の遅延を監視中'],
+    canDo: ['今月の損益を 1 枚にまとめる', '未処理レシートを処理する', '来月の予算を立てる'],
+  },
+  COO: {
+    name: 'COO オペレ', emoji: '🗂', color: '#9CA3AF', tagline: '運用・整理',
+    shortLabel: 'COO',
+    watching: ['積み残しタスクを巡回中', 'スケジュールの衝突を確認', '案件の遅延を検知'],
+    canDo: ['今週のタスクを整理する', '会議スケジュールを最適化', '滞留タスクを処理'],
+  },
+  CDS: {
+    name: 'CDS データ', emoji: '🔬', color: '#06B6D4', tagline: '分析・洞察',
+    shortLabel: 'CDS',
+    watching: ['今週のメトリクスを集計', '異常値を検出中', '傾向を可視化準備中'],
+    canDo: ['今週の数字を 1 枚に分析', '指標の異常を洗い出す', 'ダッシュボードを更新する'],
+  },
+  CLO: {
+    name: 'CLO 法務', emoji: '⚖️', color: '#6366F1', tagline: '規約・遵守',
+    shortLabel: 'CLO',
+    watching: ['契約書の期限を監視', '規約変更の影響を点検', 'リスクを洗い出し中'],
+    canDo: ['NDA を 1 通読む', '契約書の論点を抽出', '今のリスクを 3 つ挙げる'],
+  },
+  UIE: {
+    name: 'UIE UI エンジニア', emoji: '✨', color: '#EC4899', tagline: 'UI 細部',
+    shortLabel: 'UIE',
+    watching: ['余白とアイコンを点検', 'タップ対象サイズを確認', 'アニメ違和感を探索'],
+    canDo: ['今の画面の UI 細部を磨く', '新しいアニメを 1 つ提案', 'タップしづらい所を修正'],
+  },
+  UXE: {
+    name: 'UXE UX エンジニア', emoji: '👁', color: '#8B5CF6', tagline: '操作感',
+    shortLabel: 'UXE',
+    watching: ['ユーザー導線を観察', '迷い箇所を発見', '初回体験を再点検'],
+    canDo: ['操作で迷う箇所を洗い出す', '初回体験を 1 段階磨く', 'エラー文を優しく直す'],
+  },
+  QAE: {
+    name: 'QAE 品質', emoji: '🛡', color: '#14B8A6', tagline: '動作テスト',
+    shortLabel: 'QAE',
+    watching: ['新しい変更を試験中', '壊れた箇所を巡回', 'リリース前点検中'],
+    canDo: ['今のサイトを 5 シナリオで試す', '壊れた箇所を洗い出す', 'リリース前チェックリスト'],
+  },
 };

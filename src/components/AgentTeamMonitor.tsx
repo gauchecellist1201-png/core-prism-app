@@ -1,13 +1,17 @@
 // ============================================================
 // AgentTeamMonitor — AI 会社 (CEO + CXO 軍団) の「作戦本部」表示
 //
-// ユーザーは画面のどこかに常にこれが見えていて、
-// 「いま CXO 何人が動いているか」「誰がどの段階にいるか」が一目で分かる。
-// まるで会社の管制塔のように、AI エージェントが並列で働く様子を可視化する。
+// 設計指針 (2026-05-23 大改造):
+//  - 「STANDBY / お飾りマーク」感を完全排除
+//  - 待機中でも 13 人の CXO がそれぞれ「いま何を見ているか」を回転表示
+//  - 各アバターは emoji + 役職短ラベル (CEO/CFO/CMO 等) で意味を持つ
+//  - クリックすると「いま任せられる 3 件」のポップオーバー
+//  - 1 件選んで「任せる」 → propose + auto-approve → 軍団が即動き出す
+//  - 「今日 N 件 / 今週 N 件 完了」のミニ統計
 // ============================================================
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronUp, ChevronDown, Check, Loader2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, Check, Loader2, Sparkles } from 'lucide-react';
 import { useAgentTaskQueue, CXO_META, type CxoRole, type AgentTask } from '../hooks/useAgentTaskQueue';
 
 interface Props {
@@ -17,16 +21,63 @@ interface Props {
   initialOpen?: boolean;
 }
 
+const WATCH_ROTATE_MS = 4500;
+
 export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false }: Props) {
-  const { activeTask, recentDone, counts } = useAgentTaskQueue();
+  const { activeTask, recentDone, counts, propose, approve } = useAgentTaskQueue();
   const [open, setOpen] = useState<boolean>(initialOpen || !!activeTask);
+  const [openCxo, setOpenCxo] = useState<CxoRole | null>(null);
+  const [watchTick, setWatchTick] = useState(0);
 
-  // 動いている CXO を抽出 (最新の working ステップから)
-  const workingCxo: CxoRole | null = activeTask?.steps.find(s => s.status === 'working')?.cxo || null;
+  // 待機中の rotation tick (13 人 × 3 フレーズで巡回)
+  useEffect(() => {
+    if (activeTask) return;
+    const t = window.setInterval(() => setWatchTick(x => x + 1), WATCH_ROTATE_MS);
+    return () => window.clearInterval(t);
+  }, [activeTask]);
+
   const accent = brand === 'iris' ? '#E1306C' : '#A78BFA';
-
-  // 何も動いていないとき: 静かなアイドル表示
+  const workingCxo: CxoRole | null = activeTask?.steps.find(s => s.status === 'working')?.cxo || null;
   const hasActivity = !!activeTask || counts.proposed > 0 || counts.running > 0;
+
+  // 今日 / 今週の完了件数
+  const stats = useMemo(() => {
+    const now = Date.now();
+    const dayMs = 86400_000;
+    const tsOf = (t: AgentTask) => t.completedAt ? new Date(t.completedAt).getTime()
+      : t.approvedAt ? new Date(t.approvedAt).getTime()
+      : new Date(t.proposedAt).getTime();
+    const today = recentDone.filter(t => now - tsOf(t) < dayMs).length;
+    const week = recentDone.filter(t => now - tsOf(t) < dayMs * 7).length;
+    return { today, week };
+  }, [recentDone]);
+
+  // 待機中の「いま誰が何を見てるか」rotation
+  const watchInfo = useMemo(() => {
+    if (activeTask) return null;
+    const roles = Object.keys(CXO_META) as CxoRole[];
+    const role = roles[watchTick % roles.length];
+    const meta = CXO_META[role];
+    const phrase = meta.watching[Math.floor(watchTick / roles.length) % meta.watching.length];
+    return { role, meta, phrase };
+  }, [watchTick, activeTask]);
+
+  // CXO クリックで「任せること」を選んで承認 → propose + auto-approve
+  const assignToCxo = (role: CxoRole, task: string) => {
+    const meta = CXO_META[role];
+    const proposal = propose({
+      title: task,
+      summary: `${meta.name} が即実行します`,
+      why: `あなたが ${meta.shortLabel} に直接依頼したタスクです`,
+      steps: [
+        { cxo: role, label: task },
+        ...(role !== 'QAE' ? [{ cxo: 'QAE' as CxoRole, label: '結果を点検' }] : []),
+      ],
+    });
+    setTimeout(() => approve(proposal.id), 200);
+    setOpenCxo(null);
+    if (!open) setOpen(true);
+  };
 
   return (
     <motion.div
@@ -63,7 +114,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
           cursor: 'pointer',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
           <div style={{
             width: 32, height: 32, borderRadius: 10,
             background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
@@ -78,14 +129,27 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                 transition={{ duration: 2.8, repeat: Infinity, ease: 'linear' }}
                 style={{ display: 'inline-flex' }}
               ><Loader2 size={16} /></motion.span>
+            ) : watchInfo ? (
+              <span style={{ fontSize: 14 }}>{watchInfo.meta.emoji}</span>
             ) : '🏛'}
           </div>
-          <div style={{ minWidth: 0, textAlign: 'left' }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.18em', color: accent }}>
-              {activeTask ? 'IN PROGRESS' : counts.proposed > 0 ? 'AWAITING APPROVAL' : 'STANDBY'}
+          <div style={{ minWidth: 0, textAlign: 'left', flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.14em', color: accent }}>
+              {activeTask ? 'IN PROGRESS'
+                : counts.proposed > 0 ? 'AWAITING APPROVAL'
+                : 'AI 会社 稼働中'}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {activeTask?.title || (counts.proposed > 0 ? `${counts.proposed} 件の提案待ち` : 'AI 軍団は待機中')}
+            <div style={{
+              fontSize: 12.5, fontWeight: 700, color: '#fff',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {activeTask?.title
+                ? activeTask.title
+                : counts.proposed > 0
+                  ? `${counts.proposed} 件の提案待ち`
+                  : watchInfo
+                    ? <RotatingWatchPhrase phrase={`${watchInfo.meta.shortLabel} が ${watchInfo.phrase}`} tick={watchTick} />
+                    : '13 名 待機中'}
             </div>
           </div>
         </div>
@@ -114,61 +178,201 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
             transition={{ duration: 0.25 }}
             style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
           >
-            {/* CXO アバター 13 個並び — 動いてる人が光る */}
-            <div style={{
-              padding: '10px 12px',
-              display: 'flex', flexWrap: 'wrap', gap: 6,
-              background: 'rgba(255,255,255,0.02)',
-            }}>
-              {(Object.keys(CXO_META) as CxoRole[]).map((cxo) => {
-                const isWorking = workingCxo === cxo;
-                const isDoneOnActive = !!activeTask?.steps.find(s => s.cxo === cxo && s.status === 'done');
-                const meta = CXO_META[cxo];
-                return (
-                  <motion.div
-                    key={cxo}
-                    animate={isWorking ? {
-                      scale: [1, 1.12, 1],
-                      boxShadow: [
-                        `0 0 0 ${meta.color}66`,
-                        `0 0 12px ${meta.color}`,
-                        `0 0 0 ${meta.color}66`,
-                      ],
-                    } : { scale: 1 }}
-                    transition={isWorking ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
-                    title={`${meta.name} — ${meta.tagline}`}
-                    style={{
-                      width: 28, height: 28, borderRadius: 8,
-                      background: isWorking
-                        ? `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)`
-                        : isDoneOnActive
-                          ? `${meta.color}33`
-                          : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${isWorking ? meta.color : isDoneOnActive ? meta.color + '55' : 'rgba(255,255,255,0.08)'}`,
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 13,
-                      cursor: 'help',
-                      transition: 'background 0.2s, border 0.2s',
-                      position: 'relative',
-                    }}
-                    aria-label={`${meta.name}: ${isWorking ? '実行中' : isDoneOnActive ? '完了' : '待機'}`}
-                  >
-                    <span style={{
-                      filter: !isWorking && !isDoneOnActive ? 'grayscale(0.8) opacity(0.55)' : 'none',
-                    }}>{meta.emoji}</span>
-                    {isDoneOnActive && !isWorking && (
+            {/* 13 CXO アバター + 役職ラベル + クリックで「任せる」 */}
+            <div style={{ padding: '12px 12px 8px 12px', background: 'rgba(255,255,255,0.02)' }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
+                color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase',
+                marginBottom: 8, paddingLeft: 2,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <span>13 名の役員 — タップして任せる</span>
+                <span style={{ color: 'rgba(255,255,255,0.35)', textTransform: 'none', letterSpacing: 0 }}>
+                  今日 <span style={{ color: '#10B981', fontWeight: 800 }}>{stats.today}</span> 件 / 今週 <span style={{ color: accent, fontWeight: 800 }}>{stats.week}</span> 件
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+                {(Object.keys(CXO_META) as CxoRole[]).map((cxo) => {
+                  const isWorking = workingCxo === cxo;
+                  const isDoneOnActive = !!activeTask?.steps.find(s => s.cxo === cxo && s.status === 'done');
+                  const isWatching = watchInfo?.role === cxo && !activeTask;
+                  const meta = CXO_META[cxo];
+                  const isPopoverOpen = openCxo === cxo;
+                  return (
+                    <button
+                      key={cxo}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenCxo(p => p === cxo ? null : cxo);
+                      }}
+                      title={`${meta.name} — ${meta.tagline}`}
+                      style={{
+                        position: 'relative',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                        padding: '6px 2px',
+                        background: isPopoverOpen ? `${meta.color}22` : 'transparent',
+                        border: 'none', borderRadius: 8,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s',
+                      }}
+                      aria-label={`${meta.name} に頼む`}
+                    >
+                      <motion.div
+                        animate={isWorking ? {
+                          scale: [1, 1.14, 1],
+                          boxShadow: [
+                            `0 0 0 ${meta.color}66`,
+                            `0 0 14px ${meta.color}`,
+                            `0 0 0 ${meta.color}66`,
+                          ],
+                        } : isWatching ? {
+                          scale: [1, 1.06, 1],
+                          opacity: [0.85, 1, 0.85],
+                        } : { scale: 1, opacity: 1 }}
+                        transition={isWorking
+                          ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' }
+                          : isWatching
+                            ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }
+                            : { duration: 0.3 }
+                        }
+                        style={{
+                          width: 30, height: 30, borderRadius: 9,
+                          background: isWorking
+                            ? `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)`
+                            : isWatching
+                              ? `${meta.color}25`
+                              : isDoneOnActive
+                                ? `${meta.color}33`
+                                : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${
+                            isWorking ? meta.color
+                            : isWatching ? meta.color + '99'
+                            : isDoneOnActive ? meta.color + '55'
+                            : 'rgba(255,255,255,0.08)'
+                          }`,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 14,
+                          position: 'relative',
+                        }}
+                      >
+                        <span style={{
+                          filter: !isWorking && !isDoneOnActive && !isWatching ? 'grayscale(0.5) opacity(0.7)' : 'none',
+                        }}>{meta.emoji}</span>
+                        {isDoneOnActive && !isWorking && (
+                          <span style={{
+                            position: 'absolute', bottom: -2, right: -2,
+                            width: 12, height: 12, borderRadius: '50%',
+                            background: '#10B981', color: '#fff',
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            border: '2px solid #12121E',
+                          }}><Check size={6} strokeWidth={4} /></span>
+                        )}
+                      </motion.div>
                       <span style={{
-                        position: 'absolute', bottom: -2, right: -2,
-                        width: 12, height: 12, borderRadius: '50%',
-                        background: '#10B981', color: '#fff',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        border: '2px solid #12121E',
-                      }}><Check size={6} strokeWidth={4} /></span>
-                    )}
-                  </motion.div>
-                );
-              })}
+                        fontSize: 8.5, fontWeight: 800, letterSpacing: '0.02em',
+                        color: isWorking || isWatching ? meta.color : 'rgba(255,255,255,0.55)',
+                      }}>
+                        {meta.shortLabel}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* CXO クリック時のポップオーバー — 任せること 3 件 */}
+            <AnimatePresence>
+              {openCxo && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.22 }}
+                  style={{
+                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div style={{
+                    padding: '12px 14px',
+                    background: `linear-gradient(180deg, ${CXO_META[openCxo].color}11 0%, transparent 100%)`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 8,
+                        background: `linear-gradient(135deg, ${CXO_META[openCxo].color}, ${CXO_META[openCxo].color}cc)`,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 14, color: '#fff',
+                      }}>{CXO_META[openCxo].emoji}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>
+                          {CXO_META[openCxo].name}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)' }}>
+                          {CXO_META[openCxo].tagline}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setOpenCxo(null)}
+                        aria-label="閉じる"
+                        style={{
+                          width: 22, height: 22, borderRadius: 6,
+                          background: 'rgba(255,255,255,0.06)', border: 'none',
+                          color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
+                          fontSize: 12, lineHeight: 1,
+                        }}
+                      >×</button>
+                    </div>
+                    <div style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+                      color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase',
+                      marginBottom: 6,
+                    }}>
+                      いま任せられる 3 件
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {CXO_META[openCxo].canDo.map((task, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => assignToCxo(openCxo, task)}
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            gap: 8, padding: '8px 10px',
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: 8,
+                            color: '#fff', fontSize: 12, fontWeight: 600,
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            transition: 'background 0.15s, border 0.15s',
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLElement).style.background = `${CXO_META[openCxo].color}1a`;
+                            (e.currentTarget as HTMLElement).style.borderColor = `${CXO_META[openCxo].color}55`;
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                          }}
+                        >
+                          <span style={{ flex: 1, minWidth: 0 }}>{task}</span>
+                          <span style={{
+                            fontSize: 10, fontWeight: 800, color: CXO_META[openCxo].color,
+                            display: 'inline-flex', alignItems: 'center', gap: 3,
+                            flexShrink: 0,
+                          }}>
+                            <Sparkles size={10} />任せる
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* アクティブ タスクの詳細ログ */}
             {activeTask && (
@@ -180,7 +384,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
               </div>
             )}
 
-            {/* 完了履歴 (最大 3 件、コンパクト) */}
+            {/* 完了履歴 */}
             {!activeTask && recentDone.length > 0 && (
               <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                 <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)', marginBottom: 6, letterSpacing: '0.06em' }}>
@@ -204,19 +408,38 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
               </div>
             )}
 
-            {/* 待機中の控えめ表示 */}
+            {/* 待機中の補助 — 完了がまだ 0 件の人向け */}
             {!activeTask && counts.proposed === 0 && recentDone.length === 0 && (
               <div style={{
-                padding: '14px', textAlign: 'center',
-                color: 'rgba(255,255,255,0.5)', fontSize: 11.5, lineHeight: 1.6,
+                padding: '12px 14px', borderTop: '1px solid rgba(255,255,255,0.04)',
+                color: 'rgba(255,255,255,0.55)', fontSize: 11, lineHeight: 1.6,
+                background: `linear-gradient(180deg, ${accent}05 0%, transparent 100%)`,
               }}>
-                提案を承認すると、ここで AI 軍団が並列に動き出します
+                👆 上の役員アイコンを<strong style={{ color: accent }}>タップ</strong>すると、すぐ仕事を渡せます。
               </div>
             )}
           </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+/** ヘッダ内の rotation テキスト (fade) */
+function RotatingWatchPhrase({ phrase, tick }: { phrase: string; tick: number }) {
+  return (
+    <AnimatePresence mode="wait">
+      <motion.span
+        key={tick}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={{ duration: 0.3 }}
+        style={{ display: 'inline-block' }}
+      >
+        {phrase}
+      </motion.span>
+    </AnimatePresence>
   );
 }
 
