@@ -11,9 +11,8 @@ import {
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キー / master key / gemini key は main.tsx の fetch interceptor が
+// localStorage から自動付与する。手動で渡さない。
 
 function fmtMediaKit(k?: MediaKit): string {
   if (!k) return '(メディアキット未設定)';
@@ -62,7 +61,6 @@ export async function generateNegotiation(opts: {
   targetFee?: number;     // カウンターオファー時
   customNote?: string;    // 任意追加指示
 }): Promise<Omit<NegotiationDraft, 'id' | 'dealId' | 'status'>> {
-  const apiKey = getApiKey(opts.settings);
 
   const meta = NEGOTIATION_TYPE_META[opts.type];
 
@@ -110,9 +108,6 @@ ${opts.targetFee ? `\n## 希望報酬\n¥${opts.targetFee.toLocaleString()}` : '
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
@@ -156,7 +151,6 @@ export async function generateDraftCopy(opts: {
   toneNote?: string; // 自分のトーン (例: 親しみやすく / クール / 詩的)
   knowledgeContext?: string; // Iris ナレッジ上位サマリ (自己強化学習)
 }): Promise<{ caption: string; hashtags: string[]; cta: string }> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「インフルエンサー本人の声で SNS 投稿の下書きを作るゴーストライター」です。
 返答は JSON のみ、説明文・コードブロック禁止。スキーマ:
@@ -205,9 +199,6 @@ ${opts.knowledgeContext}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
@@ -248,7 +239,6 @@ export async function evaluateOffer(opts: {
   reason: string;
   counterScript?: string;
 }> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「インフルエンサーマーケティングの相場に詳しいエージェント」です。
 日本市場のフォロワー単価・ER 別の相場を踏まえて、提示報酬が妥当かを判定します。
@@ -284,9 +274,6 @@ ${fmtMediaKit(opts.mediaKit)}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
@@ -326,7 +313,6 @@ export async function generateBrandReport(opts: {
   metrics: PlatformMetrics;
   reflection?: string; // 自分の振り返りコメント
 }): Promise<{ markdown: string; summary: string }> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「インフルエンサーがブランド/代理店に提出する案件レポートを書く秘書」です。
 返答は JSON のみ:
@@ -385,9 +371,6 @@ ${opts.persona.name} (${opts.persona.subtitle})
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
