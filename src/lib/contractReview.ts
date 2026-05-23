@@ -3,9 +3,7 @@
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の interceptor が localStorage から自動付与
 
 export type ContractStance = 'buyer' | 'seller' | 'employer' | 'employee' | 'investor' | 'investee' | 'neutral';
 
@@ -90,7 +88,6 @@ export async function reviewContract(
   contractText: string,
   stance: ContractStance,
 ): Promise<ContractReview> {
-  const apiKey = getApiKey(settings);
 
   const truncated = contractText.length > 30000
     ? contractText.slice(0, 30000) + '\n\n[...以降省略]'
@@ -100,9 +97,6 @@ export async function reviewContract(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: settings.preferredModel,

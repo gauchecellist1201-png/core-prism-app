@@ -87,8 +87,7 @@ export async function summarizeWithClaude(
   transcript: string,
   meta: VideoMeta,
 ): Promise<YouTubeSummary> {
-  const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-
+  // API キーは main.tsx の interceptor が自動付与。Anthropic 直叩きから /api/ai 経由に統一
   const SYSTEM = `あなたは動画コンテンツを構造化してナレッジ化する専門家です。
 提供された字幕・テキストを分析し、以下の JSON を返してください。
 
@@ -108,13 +107,10 @@ export async function summarizeWithClaude(
   const userPrompt = `## 動画タイトル\n${meta.title}\n## チャンネル\n${meta.author}\n## URL\n${meta.url}\n\n## 字幕 / テキスト\n${transcript.slice(0, 15000)}`;
 
   return enqueueClaudeCall(async () => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: settings.preferredModel || 'claude-haiku-4-5-20251001',

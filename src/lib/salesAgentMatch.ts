@@ -26,9 +26,7 @@ export interface AiPick {
   emailBody: string;
 }
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の interceptor が localStorage から自動付与
 
 /**
  * 候補プールを生成。
@@ -81,8 +79,7 @@ export async function pickTodaysCompanies(opts: {
   ownProduct: string;
   excludeIds?: string[];
 }): Promise<AiPick[]> {
-  const apiKey = getApiKey(opts.settings);
-  if (!apiKey) throw new Error('Claude API キーが未設定です。設定タブから登録してください。');
+  // /api/ai は env Gemini で fallback できるので apiKey ガードは不要
   if (!opts.ownProduct?.trim()) {
     throw new Error('まず「自社の商材」を登録してください。AI はその情報をもとに合う企業を選びます。');
   }
@@ -139,9 +136,6 @@ ${pool.map(c => `- id: ${c.id} / 社名: ${c.name} / 業界: ${c.industry} / 規
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,

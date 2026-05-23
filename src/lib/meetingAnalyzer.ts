@@ -4,9 +4,7 @@
 import type { AppSettings, Persona } from '../types/identity';
 import { toneInstruction } from './aiTone';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の interceptor が localStorage から自動付与
 
 export interface MeetingMinutes {
   title: string;             // 自動生成タイトル
@@ -66,7 +64,6 @@ export async function analyzeMeeting(
   transcript: string,
   meta?: { title?: string; participants?: string[]; date?: string }
 ): Promise<MeetingMinutes> {
-  const apiKey = getApiKey(settings);
   if (!transcript.trim()) throw new Error('議事録の入力が空です');
 
   const truncated = transcript.length > 50000 ? transcript.slice(0, 50000) + '\n\n[...以降省略]' : transcript;
@@ -89,9 +86,6 @@ ${truncated}
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: settings.preferredModel,

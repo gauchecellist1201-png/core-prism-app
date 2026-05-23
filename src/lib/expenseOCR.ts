@@ -39,8 +39,7 @@ export async function extractFromReceipt(opts: {
   settings: AppSettings;
   imageDataUrl: string; // data:image/...;base64,...
 }): Promise<OCRResult> {
-  const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || opts.settings.claudeApiKey || '';
-
+  // API キーは main.tsx の interceptor が自動付与
   const match = opts.imageDataUrl.match(/^data:(image\/[^;]+);base64,(.+)$/);
   if (!match) throw new Error('画像データ形式が不正です');
   const mediaType = match[1];
@@ -51,9 +50,6 @@ export async function extractFromReceipt(opts: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
@@ -124,7 +120,7 @@ export async function refineExpenseClassification(opts: {
   current: OCRResult;
   instruction: string;
 }): Promise<OCRResult> {
-  const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || opts.settings.claudeApiKey || '';
+  // API キーは main.tsx の interceptor が自動付与
   const userMsg = `## 現在の仕訳案
 日付: ${opts.current.date || '(未設定)'}
 店舗: ${opts.current.vendor || '(未設定)'}
@@ -143,9 +139,6 @@ ${opts.instruction}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
