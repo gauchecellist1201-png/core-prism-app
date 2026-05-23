@@ -7,6 +7,7 @@ import { useCRM } from '../hooks/useCRM';
 import { useExpenses } from '../hooks/useExpenses';
 import type { CRMDeal } from '../types/crm';
 import ApiErrorCard from './ApiErrorCard';
+import { StudioIntro } from './StudioIntro';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -378,6 +379,79 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
         <div className="cp-modal-body cp-stack" style={{ gap: '16px' }}>
 
           {/* ─── Idle / Recording ─── */}
+          {phase === 'idle' && (
+            <StudioIntro
+              id="voice-capture"
+              accent={persona.accentColor}
+              emoji="🎤"
+              what="話すだけで「タスク / ナレッジ / CRM / 経費 / アイデア」に AI が自動で振り分けます。"
+              tryThis="🎙 録音開始 を押して、ふだんの口調で 10 秒話してみる。"
+              example="「明日 14 時に田中さんと打合せ。来週までに提案書」→ 予定 + タスク + CRM の 3 行が出来上がり。"
+              sampleLabel="出来上がる振り分け"
+              samplePreview={
+                <div
+                  style={{
+                    width: 160,
+                    background: 'var(--surface)',
+                    color: 'var(--fg)',
+                    borderRadius: 8,
+                    padding: '7px 8px',
+                    fontSize: 7,
+                    lineHeight: 1.45,
+                    boxShadow: '0 6px 14px rgba(0,0,0,0.25)',
+                    border: `1px solid ${persona.accentColor}40`,
+                  }}
+                  aria-label="自動振り分けのサンプル"
+                >
+                  <div
+                    style={{
+                      fontSize: 6,
+                      opacity: 0.7,
+                      marginBottom: 4,
+                      paddingBottom: 3,
+                      borderBottom: '1px dashed var(--border)',
+                    }}
+                  >
+                    「明日 14 時に田中さんと打合せ…」
+                  </div>
+                  {[
+                    { icon: '✅', label: 'タスク', text: '提案書を作成 (来週まで)', color: '#4ADE80' },
+                    { icon: '🤝', label: 'CRM', text: '田中さん 商談 14:00', color: '#FFA94D' },
+                    { icon: '📚', label: 'ナレッジ', text: '打合せメモ', color: '#5BA8FF' },
+                  ].map((r, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        gap: 4,
+                        alignItems: 'center',
+                        marginBottom: i === 2 ? 0 : 2,
+                        padding: '2px 4px',
+                        background: `${r.color}14`,
+                        borderRadius: 3,
+                        fontSize: 6,
+                      }}
+                    >
+                      <span style={{ fontSize: 8, flexShrink: 0 }}>{r.icon}</span>
+                      <span
+                        style={{
+                          fontWeight: 700,
+                          color: r.color,
+                          fontSize: 5,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {r.label}
+                      </span>
+                      <span style={{ opacity: 0.85, fontSize: 5.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {r.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              }
+            />
+          )}
           {(phase === 'idle' || phase === 'recording') && (
             <div className="flex flex-col items-center gap-6 py-4">
               <WaveformBars active={phase === 'recording'} />

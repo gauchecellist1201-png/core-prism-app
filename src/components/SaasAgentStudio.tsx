@@ -9,6 +9,7 @@ import {
   type SaasTaskResult,
 } from '../lib/saasAgent';
 import ApiErrorCard from './ApiErrorCard';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -206,6 +207,90 @@ export default function SaasAgentStudio({ persona, settings, onClose }: Props) {
                 exit={{ opacity: 0, x: -10 }}
                 className="space-y-4"
               >
+                <StudioIntro
+                  id="saas-agent"
+                  accent={persona.accentColor}
+                  emoji="🤖"
+                  what="Notion / HubSpot / Gmail などを「お願いごと 1 行」で代わりに操作してもらえる場所です。"
+                  tryThis="下の 3 つのデモから 1 つ押して「実行プランを生成」を押すだけ。"
+                  example="「今週のポストモーテムを Notion に追加」→ AI が 5 ステップの実行プラン + Claude にコピペ用のプロンプトを完成。"
+                  sampleLabel="出来上がる実行プラン"
+                  samplePreview={
+                    <div
+                      style={{
+                        width: 160,
+                        background: 'var(--surface)',
+                        color: 'var(--fg)',
+                        borderRadius: 6,
+                        padding: '7px 8px',
+                        fontSize: 7,
+                        lineHeight: 1.45,
+                        boxShadow: '0 6px 14px rgba(0,0,0,0.25)',
+                        border: `1px solid ${persona.accentColor}40`,
+                      }}
+                      aria-label="実行プランのサンプル"
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                        <span style={{ fontSize: 9 }}>📝</span>
+                        <span style={{ fontWeight: 800, fontSize: 7.5, letterSpacing: '0.02em' }}>
+                          Notion に追加する
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 5.5, opacity: 0.7, marginBottom: 4 }}>
+                        対象: Notion / 操作: append
+                      </div>
+                      {[
+                        { n: 1, t: 'API トークンを確認' },
+                        { n: 2, t: 'DB「振り返り」を検索' },
+                        { n: 3, t: '新規ページを作成' },
+                        { n: 4, t: 'プロパティを設定' },
+                        { n: 5, t: '本文をブロックで挿入' },
+                      ].map(s => (
+                        <div
+                          key={s.n}
+                          style={{
+                            display: 'flex',
+                            gap: 4,
+                            alignItems: 'flex-start',
+                            marginBottom: 1.5,
+                            fontSize: 6,
+                          }}
+                        >
+                          <span
+                            style={{
+                              flexShrink: 0,
+                              width: 9,
+                              height: 9,
+                              borderRadius: '50%',
+                              background: `${persona.accentColor}30`,
+                              color: persona.accentColor,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 5.5,
+                              fontWeight: 800,
+                            }}
+                          >
+                            {s.n}
+                          </span>
+                          <span style={{ opacity: 0.88 }}>{s.t}</span>
+                        </div>
+                      ))}
+                      <div
+                        style={{
+                          marginTop: 4,
+                          paddingTop: 3,
+                          borderTop: '1px dashed var(--border)',
+                          fontSize: 5.5,
+                          opacity: 0.65,
+                          textAlign: 'right',
+                        }}
+                      >
+                        Claude にコピペで実行 →
+                      </div>
+                    </div>
+                  }
+                />
                 {/* Demo scenarios */}
                 <div>
                   <p className="text-fg text-sm font-medium mb-2">💡 デモシナリオから選ぶ</p>

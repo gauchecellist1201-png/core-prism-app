@@ -7,6 +7,7 @@ import { useExpenses } from '../hooks/useExpenses';
 import { fmtJpy } from '../lib/invoiceCalc';
 import { EXPENSE_CATEGORIES } from '../types/expense';
 import SampleDataCTA from './SampleDataCTA';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -151,6 +152,73 @@ export default function PnLStudio({ persona, onClose }: Props) {
         </div>
 
         <div className="cp-modal-body cp-stack">
+          <StudioIntro
+            id="pnl"
+            accent={persona.accentColor}
+            emoji="📊"
+            what="売上 - 経費 = 利益 を、今月いくら? の 1 画面で見せる場所です。"
+            tryThis="期間ボタン (今月 / 先月 / 今四半期 / 今年) を 1 つ押すだけ。あとは自動で出ます。"
+            example="売上 1,250,000 - 経費 380,000 = 利益 870,000、利益率 69.6%。"
+            sampleLabel="出来上がる損益表"
+            samplePreview={
+              <div
+                style={{
+                  width: 140,
+                  background: '#ffffff',
+                  color: '#0f172a',
+                  borderRadius: 6,
+                  padding: '7px 8px',
+                  fontSize: 7,
+                  lineHeight: 1.4,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.22)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  borderTop: `3px solid ${persona.accentColor}`,
+                }}
+                aria-label="P&L サマリのサンプル"
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                  <strong style={{ fontSize: 8 }}>2026年5月</strong>
+                  <span style={{ fontSize: 5.5, opacity: 0.6 }}>今月</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '2px 0' }}>
+                  <span style={{ opacity: 0.7 }}>売上</span>
+                  <strong style={{ fontFamily: 'monospace', fontSize: 9 }}>¥1,250,000</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '2px 0' }}>
+                  <span style={{ opacity: 0.7 }}>経費</span>
+                  <strong style={{ fontFamily: 'monospace', fontSize: 9, color: '#dc2626' }}>-¥380,000</strong>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    marginTop: 4,
+                    paddingTop: 4,
+                    borderTop: `1px solid ${persona.accentColor}55`,
+                  }}
+                >
+                  <span style={{ fontWeight: 700 }}>利益</span>
+                  <strong style={{ fontFamily: 'monospace', fontSize: 11, color: persona.accentColor }}>¥870,000</strong>
+                </div>
+                <div style={{ marginTop: 3, textAlign: 'right' }}>
+                  <span
+                    style={{
+                      fontSize: 6,
+                      background: `${persona.accentColor}1a`,
+                      color: persona.accentColor,
+                      padding: '1px 5px',
+                      borderRadius: 8,
+                      fontWeight: 700,
+                    }}
+                  >
+                    利益率 69.6%
+                  </span>
+                </div>
+              </div>
+            }
+          />
+
           {/* 期間切替 */}
           <div className="cp-row" style={{ gap: 6, flexWrap: 'wrap' }}>
             {([
