@@ -11,6 +11,7 @@ import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
 import { confirmAction } from '../lib/confirmDialog';
 import ApiErrorCard from './ApiErrorCard';
+import AILoadingState from './AILoadingState';
 
 interface Props {
   persona: Persona;
@@ -325,6 +326,13 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
               )}
 
               <ApiErrorCard error={ocrError} />
+              <AILoadingState
+                active={ocrBusy}
+                label="レシートを読み取り中"
+                stages={['画像を解析', '店名・日付・金額を抽出', '勘定科目を推測', '入力を整形']}
+                brand="prism"
+                skeletonLines={4}
+              />
 
               {/* AI 先回り提案カード */}
               {(ocrPreview || (draft.amountIncl ?? 0) > 0) && !ocrBusy && (

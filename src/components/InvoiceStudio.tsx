@@ -9,6 +9,7 @@ import { aiSuggestInvoice } from '../lib/invoiceAI';
 import { InvoicePrintView } from './InvoicePrintView';
 import { confirmAction } from '../lib/confirmDialog';
 import ApiErrorCard from './ApiErrorCard';
+import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
 
 interface Props {
@@ -230,6 +231,13 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           <ApiErrorCard error={error} />
+          <AILoadingState
+            active={aiBusy}
+            label="請求書の明細を AI で組み立て中"
+            stages={['依頼内容を解析', '単価と数量を推定', '消費税を計算', '備考と振込先を整形']}
+            brand="prism"
+            skeletonLines={5}
+          />
 
           <StudioIntro
             id="invoice"

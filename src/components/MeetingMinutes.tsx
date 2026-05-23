@@ -7,6 +7,7 @@ import { parseFile } from '../lib/fileParser';
 import { transcribeAudioFile, isAudioFile } from '../lib/audioTranscribe';
 import { StudioIntro } from './StudioIntro';
 import ApiErrorCard from './ApiErrorCard';
+import AILoadingState from './AILoadingState';
 
 interface Props {
   persona: Persona;
@@ -793,6 +794,18 @@ export default function MeetingMinutesModal({
               )}
 
               <ApiErrorCard error={error} onRetry={handleAnalyze} variant="auto" />
+              <AILoadingState
+                active={isAnalyzing}
+                label="議事録を作っています"
+                stages={[
+                  '発言を読み込んでいます',
+                  '要点を抽出',
+                  '決定事項とアクションを整理',
+                  '議事録を整形',
+                ]}
+                brand="prism"
+                skeletonLines={5}
+              />
             </div>
 
             {/* Footer */}

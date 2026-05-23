@@ -6,6 +6,8 @@ import { pickTodaysCompanies, type AiPick } from '../lib/salesAgentMatch';
 import { todaySeed } from '../data/companies-jp';
 import { copyText } from '../lib/clipboard';
 import ApiErrorCard from './ApiErrorCard';
+import AILoadingState from './AILoadingState';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -215,7 +217,116 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
 
         <div className="cp-modal-body cp-stack">
           <ApiErrorCard error={error} onRetry={() => runPick(false)} variant="auto" />
+          <AILoadingState
+            active={busy === 'pick'}
+            label="AI が営業先を選定しています"
+            stages={[
+              '自社の商材を読み込み',
+              '日本企業 300+ 社からマッチング',
+              '優先順位を計算',
+              '提案文の下書きを作成',
+            ]}
+            brand="prism"
+            skeletonLines={6}
+          />
+          <AILoadingState
+            active={busy === 'edit'}
+            label="提案文を書き直しています"
+            stages={['指示を読み込み', '相手の文脈を整理', 'トーンを調整']}
+            brand="prism"
+            skeletonLines={4}
+          />
 
+          <StudioIntro
+            id="sales-agent"
+            accent={persona.accentColor}
+            emoji="🎯"
+            what="営業先を探す → 提案文を書く までを AI が先回りで終わらせておく場所です。"
+            tryThis="「✨ 今日の 5 社を選ぶ」を押すと、AI が候補 + 件名 + 本文まで用意します。"
+            example="「中堅メーカーの DX 担当」に響くメール 5 通を、朝の 10 秒で完成。"
+            sampleLabel="出来上がる今日の 1 社"
+            samplePreview={
+              <div
+                style={{
+                  width: 160,
+                  background: 'var(--surface)',
+                  color: 'var(--fg)',
+                  borderRadius: 8,
+                  padding: '8px 9px',
+                  fontSize: 7,
+                  lineHeight: 1.45,
+                  boxShadow: '0 6px 14px rgba(0,0,0,0.25)',
+                  border: `1px solid ${persona.accentColor}40`,
+                }}
+                aria-label="今日のピックアップのサンプル"
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 3,
+                  }}
+                >
+                  <span style={{ fontWeight: 800, fontSize: 8 }}>株式会社サンプル</span>
+                  <span
+                    style={{
+                      background: `${persona.accentColor}24`,
+                      color: persona.accentColor,
+                      borderRadius: 4,
+                      padding: '1px 4px',
+                      fontSize: 5,
+                      fontWeight: 700,
+                    }}
+                  >
+                    中堅
+                  </span>
+                </div>
+                <div style={{ fontSize: 5.5, opacity: 0.7, marginBottom: 4 }}>
+                  製造業 / 従業員 320 名 / DX 推進中
+                </div>
+                <div
+                  style={{
+                    background: `${persona.accentColor}14`,
+                    borderLeft: `2px solid ${persona.accentColor}`,
+                    padding: '3px 5px',
+                    marginBottom: 4,
+                  }}
+                >
+                  <div style={{ fontSize: 5, opacity: 0.65, marginBottom: 1 }}>件名</div>
+                  <div style={{ fontSize: 6, fontWeight: 700 }}>
+                    DX 推進 1 段目の手間、半分にしませんか
+                  </div>
+                </div>
+                <div
+                  style={{
+                    fontSize: 5.5,
+                    opacity: 0.85,
+                    background: 'var(--surface-3)',
+                    padding: '3px 5px',
+                    borderRadius: 3,
+                  }}
+                >
+                  ◯◯ 様、初めてご連絡いたします。DX 推進中とのこと…
+                </div>
+                <div
+                  style={{
+                    marginTop: 4,
+                    display: 'flex',
+                    gap: 3,
+                    fontSize: 5.5,
+                  }}
+                >
+                  <span style={{ flex: 1, textAlign: 'center', background: `${persona.accentColor}20`, color: persona.accentColor, padding: '2px 0', borderRadius: 3, fontWeight: 700 }}>
+                    ✓ 採用
+                  </span>
+                  <span style={{ flex: 1, textAlign: 'center', background: 'var(--surface-3)', opacity: 0.7, padding: '2px 0', borderRadius: 3 }}>
+                    却下
+                  </span>
+                </div>
+              </div>
+            }
+          />
 
           {/* ─── 今日のピックアップ ─── */}
           {tab === 'today' && (

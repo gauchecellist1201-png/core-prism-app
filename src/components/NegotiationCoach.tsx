@@ -4,6 +4,7 @@ import type { Persona, AppSettings } from '../types/identity';
 import type { NegotiationScene, NegoTurn, NegoEvaluation } from '../lib/negotiationCoach';
 import { NEGO_PRESETS, counterpartReply, evaluateNegotiation } from '../lib/negotiationCoach';
 import ApiErrorCard from './ApiErrorCard';
+import AILoadingState from './AILoadingState';
 
 interface Props {
   persona: Persona;
@@ -352,6 +353,13 @@ export default function NegotiationCoachModal({ persona, settings, onClose }: Pr
                 </button>
               </div>
               <ApiErrorCard error={error} onRetry={retryRoleplay} />
+              <AILoadingState
+                active={isEvaluating}
+                label="交渉の評価を作成中"
+                stages={['会話を解析', '弱点と強みを抽出', 'スコアと改善点を整理']}
+                brand="prism"
+                skeletonLines={5}
+              />
             </div>
           </>
         )}

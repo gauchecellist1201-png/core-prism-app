@@ -5,6 +5,7 @@ import type { TriageBatch, EmailTriaged } from '../lib/emailTriage';
 import { copyText } from '../lib/clipboard';
 import { triageEmails, regenerateDraft } from '../lib/emailTriage';
 import ApiErrorCard from './ApiErrorCard';
+import AILoadingState from './AILoadingState';
 import {
   isGmailConfigured,
   isGmailConnected,
@@ -441,6 +442,18 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
 
             <ApiErrorCard error={error} onRetry={handleAnalyze} variant="auto" />
 
+            <AILoadingState
+              active={isAnalyzing}
+              label="メールをトリアージしています"
+              stages={[
+                'メールを 1 通ずつ読み込み中',
+                '重要度・カテゴリ・期限を判定',
+                '返信が要るものに下書きを作成',
+                '一覧として整形',
+              ]}
+              brand="prism"
+              skeletonLines={6}
+            />
 
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={onClose} className="px-4 py-2 text-sm text-fg-muted hover:text-fg">キャンセル</button>
