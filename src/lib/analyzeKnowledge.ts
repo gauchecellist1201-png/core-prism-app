@@ -67,8 +67,7 @@ export async function extractFinancialData(
   title: string,
   content: string,
 ): Promise<ExtractedFinancials> {
-  const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-
+  // API キーは main.tsx の interceptor が自動付与
   return enqueueClaudeCall(async () => {
     const truncated = content.slice(0, 12000);
     const userPrompt = `## タイトル\n${title}\n\n## 本文\n${truncated}\n\n金額を抽出してJSONで返してください。`;
@@ -77,9 +76,6 @@ export async function extractFinancialData(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: settings.preferredModel,
@@ -104,9 +100,7 @@ export async function extractFinancialData(
   });
 }
 
-function getApiKey(settings: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-}
+// API キーは main.tsx の interceptor が localStorage から自動付与
 
 function buildAnalysisInstructions(tone?: 'gentle' | 'professional' | 'casual'): string {
   return `あなたは資料を読んで「やさしく分かりやすく」提案する秘書です。
@@ -137,7 +131,6 @@ export async function analyzeKnowledge(
   content: string,
   imageBase64?: string,
 ): Promise<KnowledgeAnalysis> {
-  const apiKey = getApiKey(settings);
 
   const truncated = content.slice(0, 30000);
   const userText = `## 資料タイトル
@@ -168,9 +161,6 @@ ${truncated}${content.length > truncated.length ? '\n\n[...以降省略]' : ''}`
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: settings.preferredModel,
@@ -251,15 +241,11 @@ async function callKnowledgeAi(
   maxTokens: number,
   label: string,
 ): Promise<string> {
-  const apiKey = getApiKey(settings);
   return enqueueClaudeCall(async () => {
     const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: settings.preferredModel,

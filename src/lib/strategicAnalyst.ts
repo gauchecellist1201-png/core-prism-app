@@ -3,9 +3,7 @@
 // ============================================================
 import type { AppSettings, Persona, KnowledgeItem } from '../types/identity';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の interceptor が localStorage から自動付与
 
 export type StrategyFramework = 'swot' | '3c' | '5forces' | 'value_chain' | 'bcg' | 'star' | 'pestel' | 'jobs_to_be_done';
 
@@ -72,7 +70,6 @@ export async function runStrategicAnalysis(
   context: string,
   knowledge: KnowledgeItem[],
 ): Promise<StrategicAnalysis> {
-  const apiKey = getApiKey(settings);
 
   const relevantKb = knowledge
     .filter(k => k.personaId === persona.id)
@@ -99,9 +96,6 @@ ${relevantKb}
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: settings.preferredModel,

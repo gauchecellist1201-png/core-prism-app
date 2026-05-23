@@ -9,9 +9,7 @@ import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
 import { buildIndustryContext } from '../prism/industryPacks';
 
-function getApiKey(settings: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-}
+// API キーは main.tsx の interceptor が localStorage から自動付与
 
 function timeOfDay(): string {
   const h = new Date().getHours();
@@ -68,7 +66,6 @@ export async function generateProposal(
   settings: AppSettings,
   input: GenInput,
 ): Promise<Proposal> {
-  const apiKey = getApiKey(settings);
 
   const { persona, knowledge, recentProposals, health, patrolMode } = input;
 
@@ -152,9 +149,6 @@ ${healthBlock}${patrolInstruction}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: settings.preferredModel,

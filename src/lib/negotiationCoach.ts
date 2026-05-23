@@ -3,9 +3,7 @@
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の interceptor が localStorage から自動付与
 
 export interface NegotiationScene {
   scenario: string;     // 「家賃の値下げ交渉」「給与アップ交渉」等
@@ -195,14 +193,10 @@ export async function evaluateNegotiation(
 }
 
 async function callClaude(settings: AppSettings, system: string, messages: Array<{ role: string; content: string }>): Promise<string> {
-  const apiKey = getApiKey(settings);
   const res = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: settings.preferredModel,
