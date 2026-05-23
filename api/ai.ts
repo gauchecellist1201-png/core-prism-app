@@ -302,7 +302,7 @@ export default async function handler(req: Request) {
         claudeBody.model = 'claude-haiku-4-5';
         routeReason += ' [downgraded:non-studio]';
       }
-      const r = await fetch('https://api.anthropic.com/v1/messages', {
+      let r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -311,6 +311,22 @@ export default async function handler(req: Request) {
         },
         body: JSON.stringify(claudeBody),
       });
+      // ─── 401/403 (ユーザー側の鍵が無効) → env 側の鍵で 1 度だけリトライ ───
+      // ユーザーが Settings に古い/無効な Claude キーを残しているとここに来る。
+      // env が有効なら救済する。これを入れないと「AI の認証に失敗」が画面に出る。
+      if (!r.ok && (r.status === 401 || r.status === 403) && headerKey && envKey && headerKey !== envKey) {
+        console.warn(`[ai] user claude key returned ${r.status}, retrying with env key`);
+        r = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': envKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify(claudeBody),
+        });
+        routeReason += ' [env-rescued-401]';
+      }
       // Claude が失敗したら Gemini にフォールバック (overload/rate-limit/サーバーエラー)
       if (!r.ok && (r.status === 429 || r.status === 503 || r.status === 529 || r.status >= 500)) {
         console.warn(`[ai] Claude failed with ${r.status}, falling back to Gemini`);
@@ -344,7 +360,9 @@ export default async function handler(req: Request) {
   // ユーザー個人のキーを優先 (x-gemini-api-key ヘッダ) → サーバー env に fallback。
   // これでサーバー env が quota 切れでもユーザーは自分の無料キーを登録すれば即動く
   const userGeminiKey = (req.headers.get('x-gemini-api-key') || '').trim();
-  const apiKey = userGeminiKey || process.env.GEMINI_API_KEY;
+  const envGeminiKey = process.env.GEMINI_API_KEY || '';
+  let apiKey = userGeminiKey || envGeminiKey;
+  let usedUserKeyFirst = !!userGeminiKey;
   if (!apiKey) {
     return new Response(JSON.stringify({
       error: {
@@ -358,8 +376,6 @@ export default async function handler(req: Request) {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
-  const usingUserKey = !!userGeminiKey;
-
   // 変換 + フォールバック呼び出し
   const candidateModels = pickGeminiModels(body.model);
   const geminiBody = anthropicToGemini(body);
@@ -369,7 +385,7 @@ export default async function handler(req: Request) {
 
   for (const geminiModel of candidateModels) {
     try {
-      const r = await fetch(
+      let r = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
         {
           method: 'POST',
@@ -377,6 +393,28 @@ export default async function handler(req: Request) {
           body: JSON.stringify(geminiBody),
         }
       );
+
+      // ─── ユーザー鍵が 400 invalid / 401 / 403 non-quota → env 鍵で 1 度だけリトライ ───
+      // ユーザーが Settings に間違った/失効した Gemini キーを残しているとここに来る。
+      // env が有効ならそちらに切り替えて続行。これを入れないと「AI の認証に失敗」が画面に出る。
+      if (!r.ok && usedUserKeyFirst && envGeminiKey && envGeminiKey !== apiKey &&
+          (r.status === 400 || r.status === 401 || r.status === 403)) {
+        const errPeek = await r.clone().text();
+        if (!/quota|rate|limit/i.test(errPeek)) {
+          console.warn(`[ai] user gemini key returned ${r.status}, retrying with env key`);
+          apiKey = envGeminiKey;
+          usedUserKeyFirst = false; // 二度目以降は env 固定
+          r = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(geminiBody),
+            }
+          );
+          routeReason += ' [env-rescued-gemini-auth]';
+        }
+      }
 
       if (!r.ok) {
         const errText = await r.text();

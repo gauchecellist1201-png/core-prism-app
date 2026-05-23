@@ -79,11 +79,12 @@ function classifyError(error: string): {
   if (/api key|unauthorized|forbidden|認証/i.test(error)) {
     return {
       kind: 'auth', Icon: Key, iconColor: '#FACC15',
-      title: 'AI の認証に失敗しました',
+      title: 'API キーが無効になっています',
       steps: [
-        '設定 → API キー を確認する',
-        '時間をおいて再試行する',
-        '解消しないときはサポートへ連絡',
+        '右上の歯車 → 「API キー」タブを開く',
+        '登録済みのキーを 1 度削除して保存 (空欄でも OK)',
+        '無料の Gemini キーを取得して貼り付け (1 分、¥0)',
+        '保存後、「もう一度ためす」を押す',
       ],
     };
   }

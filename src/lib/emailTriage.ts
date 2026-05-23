@@ -3,9 +3,8 @@
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// Note: API キーは main.tsx の fetch interceptor が localStorage から自動付与する。
+// このファイルから明示的に送る必要は無い (旧 x-api-key は不要)。
 
 export interface EmailTriaged {
   id: string;
@@ -104,7 +103,6 @@ export async function triageEmails(
   persona: Persona,
   rawText: string,
 ): Promise<TriageBatch> {
-  const apiKey = getApiKey(settings);
   if (!rawText.trim()) throw new Error('メール内容を貼り付けてください');
 
   const emails = splitEmails(rawText);
@@ -120,13 +118,12 @@ ${limited.map(e => `=== ${e.id} ===\n${e.raw.slice(0, 3000)}`).join('\n\n')}
 上記メールを一括トリアージし、JSON で返してください。
 draftReply は ${persona.name} の口調に合わせて作成してください。`;
 
+  // x-claude-api-key / x-gemini-api-key / x-master-key は main.tsx の fetch interceptor が
+  // localStorage から自動で付与する。ここでは何も付けない (古い x-api-key は Anthropic 直叩き名残)。
   const res = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: settings.preferredModel,
@@ -185,8 +182,6 @@ export async function regenerateDraft(
   email: EmailTriaged,
   toneHint?: string,
 ): Promise<string> {
-  const apiKey = getApiKey(settings);
-
   const sys = `あなたは ${persona.name} (${persona.subtitle}) として返信を書きます。
 ${persona.description || ''}
 
@@ -197,13 +192,12 @@ ${persona.description || ''}
 - 必要なら次のアクション/期日を提示
 返答は本文のみ (件名・宛名・署名は不要)`;
 
+  // x-claude-api-key / x-gemini-api-key / x-master-key は main.tsx の fetch interceptor が
+  // localStorage から自動で付与する。ここでは何も付けない (古い x-api-key は Anthropic 直叩き名残)。
   const res = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: settings.preferredModel,
