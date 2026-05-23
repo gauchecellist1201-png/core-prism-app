@@ -91,7 +91,7 @@ function friendlyError(raw: string): string {
     return 'AI サーバーが一時的に混雑中です。後ほど再分析できます。';
   }
   if (/api key|unauthorized|401/i.test(raw)) {
-    return 'API キーが無効です。設定画面で確認してください。';
+    return '右上の歯車 → API キーで、無料の Gemini キーを 1 分で登録すると即解消します。';
   }
   if (/network|fetch failed|timeout/i.test(raw)) {
     return 'ネットワーク接続エラー。再試行してください。';

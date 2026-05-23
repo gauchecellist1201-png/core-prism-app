@@ -99,15 +99,7 @@ export default function AISidebar({
         </p>
       </div>
 
-      {/* No API key warning */}
-      {!hasApiKey && (
-        <div className="p-3 mx-3 mt-2 rounded-xl" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)' }}>
-          <p className="text-xs text-red-400 leading-relaxed">
-            Claude APIキーが未設定です。<br />
-            <button onClick={onOpenSettings} className="underline">設定画面</button>で入力してください。
-          </p>
-        </div>
-      )}
+      {/* No API key warning は env Gemini fallback により不要になったので撤去 */}
 
       {/* Error — ポップ + dismiss 永続化 (60秒) + 解消手順 */}
       <ApiErrorCard error={error} onOpenSettings={onOpenSettings} variant="auto" />
