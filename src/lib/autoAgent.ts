@@ -320,6 +320,10 @@ ${ctx.kpis ? `## KPI\n${ctx.kpis}\n` : ''}`;
   const text: string =
     (Array.isArray(data.content) ? data.content[0]?.text : '') ||
     data.text || data.message || '';
+  // 空応答を「成功」として扱わない (ユーザーが空画面を見ないように)
+  if (!text.trim()) {
+    throw new Error('AI から空の応答が返りました。少し待ってから「もう一度」を押してください。');
+  }
   return text;
 }
 

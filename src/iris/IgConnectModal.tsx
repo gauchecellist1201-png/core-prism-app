@@ -1,7 +1,7 @@
 // ============================================================
 // IgConnectModal — Instagram 連携モーダル (即時利用可能版)
 // ============================================================
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, ArrowRight, Check, Camera, Key, ExternalLink, AlertCircle, Loader2, ImageUp, Sparkles } from 'lucide-react';
 import { createSelfReportedProfile, saveIgProfile, tryOauthConnect, connectWithToken, connectFromScreenshot } from './instagramConnect';
@@ -24,6 +24,8 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
   const [mode, setMode] = useState<Mode>('screenshot');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  // 最新の blob URL を保持して unmount 時に確実に revoke するための ref
+  const previewUrlRef = useRef<string | null>(null);
   const [shotStatus, setShotStatus] = useState<'idle' | 'reading' | 'success' | 'failed'>('idle');
   const [shotRecovery, setShotRecovery] = useState<string | null>(null);
 
@@ -33,8 +35,13 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
     setError(null);
     setShotStatus('reading');
     // プレビュー表示用 (UX 上「読み取り中」を見せる)
+    // 前回のプレビュー blob を必ず revoke してメモリリークを防ぐ
     try {
       const url = URL.createObjectURL(file);
+      if (previewUrlRef.current) {
+        try { URL.revokeObjectURL(previewUrlRef.current); } catch { /* */ }
+      }
+      previewUrlRef.current = url;
       setScreenshotPreview(url);
     } catch { /* */ }
     const res = await connectFromScreenshot(file);
@@ -47,6 +54,16 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
       setShotRecovery(res.recovery || null);
     }
   };
+
+  // モーダルを閉じる時に最後のプレビュー blob URL を解放 (ref ベースで stale closure を回避)
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        try { URL.revokeObjectURL(previewUrlRef.current); } catch { /* */ }
+        previewUrlRef.current = null;
+      }
+    };
+  }, []);
   const [handle, setHandle] = useState('');
   const [followers, setFollowers] = useState('');
   const [selected, setSelected] = useState<string[]>([]);

@@ -76,11 +76,20 @@ export async function extractFromReceipt(opts: {
   });
 
   const text = result.content?.[0]?.text ?? '';
+  if (!text.trim()) {
+    throw new Error('レシートから情報を読み取れませんでした。撮り直してもう一度試してください。');
+  }
   let parsed: any = {};
+  let parseOk = false;
   try {
     const m = text.match(/\{[\s\S]*\}/);
     parsed = JSON.parse(m ? m[0] : text);
-  } catch { /* ignore */ }
+    parseOk = true;
+  } catch { parseOk = false; }
+  // 全フィールド欠落 = 解析失敗 → 「成功扱いで空のレシート」を出さない
+  if (!parseOk || (!parsed.vendor && typeof parsed.amountIncl !== 'number')) {
+    throw new Error('レシートを認識できませんでした。明るい場所で全体が写るよう撮り直してください。');
+  }
 
   return {
     date: parsed.date || undefined,

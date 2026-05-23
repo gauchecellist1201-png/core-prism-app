@@ -59,6 +59,8 @@ export default function MeetingMinutesModal({
   const [recordingMs, setRecordingMs] = useState(0);
   const [micLevel, setMicLevel] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  // 最新の blob URL を ref で持って unmount/再録音時に確実に revoke (stale closure 回避)
+  const audioUrlRef = useRef<string | null>(null);
   // 文字起こしの状態: live=順調 / audio-only=録音のみ続行中 / off=未対応
   const [recStatus, setRecStatus] = useState<'live' | 'audio-only' | 'off'>('live');
   const [recNote, setRecNote] = useState<string>('');
@@ -209,6 +211,11 @@ export default function MeetingMinutesModal({
     setRecNote('');
     setSegments([]);
     setSpeakerNames({});
+    // 前回の録音 blob を破棄してから新規録音へ
+    if (audioUrlRef.current) {
+      try { URL.revokeObjectURL(audioUrlRef.current); } catch { /* */ }
+      audioUrlRef.current = null;
+    }
     setAudioUrl(null);
     setInterimText('');
     setRecordingMs(0);
@@ -239,7 +246,9 @@ export default function MeetingMinutesModal({
       mr.onstop = () => {
         if (audioChunksRef.current.length === 0) return;
         const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || 'audio/webm' });
-        setAudioUrl(URL.createObjectURL(blob));
+        const url = URL.createObjectURL(blob);
+        audioUrlRef.current = url;
+        setAudioUrl(url);
       };
       mr.start(1000); // 1秒ごとにデータ確定（長時間でも安全）
       mediaRecorderRef.current = mr;
@@ -297,7 +306,11 @@ export default function MeetingMinutesModal({
 
   useEffect(() => () => {
     stopRecording();
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    // ref ベースで「unmount 時点の最新 blob」を確実に解放
+    if (audioUrlRef.current) {
+      try { URL.revokeObjectURL(audioUrlRef.current); } catch { /* */ }
+      audioUrlRef.current = null;
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

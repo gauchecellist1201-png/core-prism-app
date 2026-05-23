@@ -112,11 +112,20 @@ export async function analyzeFinancials(
 
   const data = await res.json();
   const text = data.content?.[0]?.text ?? '';
+  if (!text.trim()) {
+    throw new Error('決算分析: AI から空の応答が返りました。もう一度試してください。');
+  }
   let parsed: any = {};
+  let parseOk = false;
   try {
     const m = text.match(/\{[\s\S]*\}/);
     parsed = JSON.parse(m ? m[0] : text);
-  } catch { parsed = {}; }
+    parseOk = true;
+  } catch { parseOk = false; }
+  // 全フィールド欠落 = 解析失敗 → 「成功扱いで空表示」を防ぐ
+  if (!parseOk || (!parsed.summary && !Array.isArray(parsed.keyMetrics) && !Array.isArray(parsed.recommendations))) {
+    throw new Error('決算分析: AI の応答を解釈できませんでした。PDF を画像化して再アップロードしてみてください。');
+  }
 
   return {
     documentTitle: parsed.documentTitle || '決算書',
