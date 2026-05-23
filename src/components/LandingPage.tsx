@@ -361,8 +361,8 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
           </div>
           <div>
             <p style={footHead}>{t.footer.company}</p>
-            <button onClick={() => onOpenLegal('terms')} style={footLinkBtn}>{t.footer.terms}</button>
-            <button onClick={() => onOpenLegal('privacy')} style={footLinkBtn}>{t.footer.privacy}</button>
+            <a href="/terms" style={footLink}>{t.footer.terms}</a>
+            <a href="/privacy" style={footLink}>{t.footer.privacy}</a>
             <button onClick={() => onOpenLegal('tokushou')} style={footLinkBtn}>{t.footer.tokushou}</button>
           </div>
           <div>

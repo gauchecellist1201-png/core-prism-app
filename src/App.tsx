@@ -21,6 +21,8 @@ import AiStats from './master/AiStats';
 import StripeStatusPage from './components/StripeStatusPage';
 import CheckoutModal from './components/CheckoutModal';
 import LegalModal, { type LegalKind } from './components/LegalModal';
+import PrivacyPolicy from './legal/PrivacyPolicy';
+import TermsOfService from './legal/TermsOfService';
 import CoreSite from './corporate/CoreSite';
 import StrategyDashboard from './corporate/StrategyDashboard';
 import PricingPage from './corporate/PricingPage';
@@ -125,6 +127,18 @@ function isKeynotePath(): boolean {
   return p === '/keynote' || p.startsWith('/keynote/');
 }
 
+function isPrivacyPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/privacy' || p === '/privacy/' || p === '/iris/privacy' || p === '/iris/privacy/';
+}
+
+function isTermsPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/terms' || p === '/terms/' || p === '/iris/terms' || p === '/iris/terms/';
+}
+
 export default function App() {
   // ?share=... — 友だちから届いた成果物プレビュー + 新規登録 CTA
   const sharedArtifact = readSharedFromUrl();
@@ -140,6 +154,16 @@ export default function App() {
   // /keynote — 講演会限定 先行案内 LP
   if (isKeynotePath()) {
     return <KeynoteLanding />;
+  }
+
+  // /privacy, /iris/privacy — プライバシーポリシー フルページ
+  if (isPrivacyPath()) {
+    return <PrivacyPolicy />;
+  }
+
+  // /terms, /iris/terms — 利用規約 フルページ
+  if (isTermsPath()) {
+    return <TermsOfService />;
   }
 
   // /strategy — オーナー専用 戦略ダッシュボード

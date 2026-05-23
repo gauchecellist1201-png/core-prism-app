@@ -1,5 +1,11 @@
 {
   "rewrites": [
+    { "source": "/privacy",      "destination": "/index.html" },
+    { "source": "/privacy/",     "destination": "/index.html" },
+    { "source": "/terms",        "destination": "/index.html" },
+    { "source": "/terms/",       "destination": "/index.html" },
+    { "source": "/iris/privacy", "destination": "/iris.html" },
+    { "source": "/iris/terms",   "destination": "/iris.html" },
     { "source": "/iris",     "destination": "/iris.html" },
     { "source": "/iris/",    "destination": "/iris.html" },
     { "source": "/iris/(.*)", "destination": "/iris.html" },

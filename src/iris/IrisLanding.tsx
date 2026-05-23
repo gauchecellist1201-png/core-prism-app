@@ -382,8 +382,8 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           <div>
             <p style={footHead}>COMPANY</p>
             <a href="mailto:hello@coreprism.app" style={footLink} className="lp-tap-link">お問い合わせ</a>
-            <a href="/?legal=terms" style={footLink} className="lp-tap-link">利用規約</a>
-            <a href="/?legal=privacy" style={footLink} className="lp-tap-link">プライバシー</a>
+            <a href="/iris/terms" style={footLink} className="lp-tap-link">利用規約</a>
+            <a href="/iris/privacy" style={footLink} className="lp-tap-link">プライバシー</a>
           </div>
           <div>
             <p style={footHead}>CONNECT</p>
