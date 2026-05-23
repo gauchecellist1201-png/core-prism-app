@@ -11,9 +11,7 @@ import { toneInstruction } from '../lib/aiTone';
 
 const KEY_POSTS = 'core_iris_posthistory_v1';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 /** 投稿実績 (1 投稿) */
 export interface PostHistoryItem {
@@ -86,7 +84,6 @@ export async function analyzePerformance(opts: {
   posts: PostHistoryItem[];
   mediaKit?: MediaKit;
 }): Promise<PerformanceAnalysis> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「インフルエンサーマーケティングのアナリスト + ブランドストラテジスト」です。
 投稿実績を分析して、伸びた要因・苦戦要因・パターンを抽出します。
@@ -130,9 +127,6 @@ ${opts.posts.slice(0, 30).map(formatPost).join('\n\n')}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
@@ -171,7 +165,6 @@ export async function feedbackPost(opts: {
   post: PostHistoryItem;
   mediaKit?: MediaKit;
 }): Promise<{ verdict: string; goodPoints: string[]; improvements: string[]; nextVariation: string }> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「投稿の壁打ち相手」。1 投稿を見て、よかった点と改善点と「次に試す変化」を返します。
 返答は JSON のみ:
@@ -205,9 +198,6 @@ ${opts.mediaKit ? `平均ER: ${JSON.stringify(opts.mediaKit.avgEngagementRate ||
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
@@ -252,7 +242,6 @@ export async function suggestNextPosts(opts: {
   count?: number;             // デフォ 3
   knowledgeContext?: string;  // Iris ナレッジ上位サマリ (自己強化学習)
 }): Promise<NextPostSuggestion[]> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「インフルエンサーの専属プロデューサー」。過去実績を見て、次に出すべき投稿を ${opts.count || 3} 本提案します。
 返答は JSON 配列のみ:
@@ -306,9 +295,6 @@ ${opts.knowledgeContext}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
@@ -350,7 +336,6 @@ export async function generateStoryArc(opts: {
   posts?: PostHistoryItem[];
   knowledgeContext?: string;  // Iris ナレッジ上位サマリ (自己強化学習)
 }): Promise<StoryArc> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「インフルエンサーのプロデューサー兼脚本家」。
 30 日 = 4 週で展開する「ストーリーアーク (シリーズ)」を設計します。
@@ -405,9 +390,6 @@ ${opts.knowledgeContext}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,

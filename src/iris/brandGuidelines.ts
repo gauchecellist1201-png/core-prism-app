@@ -139,16 +139,8 @@ export async function runStyleCheck(opts: {
   postText: string;
 }): Promise<StyleCheckResult> {
   const { settings, guideline, postText } = opts;
-  const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-
-  if (!apiKey) {
-    return {
-      score: 0,
-      violations: ['APIキーが設定されていません'],
-      suggestions: ['設定画面でClaude APIキーを入力してください'],
-    };
-  }
-
+  // API キーは main.tsx の fetch interceptor が localStorage から自動付与。
+  // /api/ai は env Gemini にも fallback できるので apiKey ガードは不要。
   const violations = guideline.ngWords.filter(w => postText.includes(w));
 
   const prompt = `あなたはブランドコンサルタントです。以下のブランドガイドラインに基づいて、投稿文章を評価・改善してください。
@@ -186,9 +178,6 @@ ${toneInstruction()}`;
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
           model: settings.preferredModel || 'claude-haiku-4-5',

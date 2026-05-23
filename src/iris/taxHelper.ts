@@ -6,9 +6,7 @@ import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 /** OCR で取り込んだ経費レコード */
 export interface ExpenseRecord {
@@ -111,7 +109,6 @@ export async function generateTaxChecklist(opts: {
   categories: { category: string; total: number }[];
   targetYear: number;
 }): Promise<string[]> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは日本在住のインフルエンサー/フリーランスクリエイターの確定申告を手伝う税務アドバイザー AI。
 専門用語は日本語で補足。結論から書く。${toneInstruction()}
@@ -142,9 +139,6 @@ ${opts.categories.map(c => `- ${c.category}: ¥${c.total.toLocaleString()}`).joi
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,

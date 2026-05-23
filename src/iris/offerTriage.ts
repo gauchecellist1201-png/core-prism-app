@@ -7,9 +7,7 @@ import type { MediaKit } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 export interface OfferTriageResult {
   /** 安全度 0-100 (高いほど安全、低いほど怪しい) */
@@ -51,7 +49,6 @@ export async function triageOffer(opts: {
   emailText: string;
   mediaKit?: MediaKit;
 }): Promise<OfferTriageResult> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「インフルエンサー専属のマネージャー兼弁護士」です。
 受信した案件メールを精査して、安全度・魅力度・推奨アクションを判定します。
@@ -131,9 +128,6 @@ ${opts.emailText}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,

@@ -6,9 +6,7 @@ import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 export type BeautyTopic =
   | 'skincare'
@@ -63,7 +61,6 @@ export async function chatBeautyAdvisor(opts: {
   history: BeautyMessage[];
   userMessage: string;
 }): Promise<string> {
-  const apiKey = getApiKey(opts.settings);
 
   const messages = opts.history
     .slice(-12) // 直近12発言
@@ -75,9 +72,6 @@ export async function chatBeautyAdvisor(opts: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
