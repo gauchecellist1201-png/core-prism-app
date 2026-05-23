@@ -42,6 +42,7 @@ import SharedArtifactView from './components/SharedArtifactView';
 import ErrorLogViewer from './components/ErrorLogViewer';
 import AgentTeamMonitor from './components/AgentTeamMonitor';
 import ExtensionCaptureToast from './components/ExtensionCaptureToast';
+import CxoWelcomeCard from './components/CxoWelcomeCard';
 import { readSharedFromUrl } from './lib/shareLink';
 
 import type { AppSettings, ChatMessage } from './types/identity';
@@ -494,6 +495,8 @@ export default function App() {
       {view === 'dashboard' && <AgentTeamMonitor brand="prism" />}
       {/* Chrome 拡張機能から ?capture= で届いた取り込みのお知らせ */}
       {view === 'dashboard' && <ExtensionCaptureToast brand="prism" />}
+      {/* 初回 dashboard 訪問時の AI 会社ウェルカム (13 CXO の自己紹介 + サンプルタスク投入) */}
+      {view === 'dashboard' && <CxoWelcomeCard brand="prism" />}
     </>
   );
 }

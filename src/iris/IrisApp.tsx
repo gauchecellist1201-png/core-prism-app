@@ -9,6 +9,7 @@ import GlobalVoiceInput from '../components/GlobalVoiceInput';
 import OfflineNotice from '../components/OfflineNotice';
 import AgentTeamMonitor from '../components/AgentTeamMonitor';
 import ExtensionCaptureToast from '../components/ExtensionCaptureToast';
+import CxoWelcomeCard from '../components/CxoWelcomeCard';
 import IrisDashboard from './IrisDashboard';
 import TutorialOverlay from '../components/TutorialOverlay';
 import WowOnboarding from '../components/WowOnboarding';
@@ -107,6 +108,8 @@ export default function IrisApp() {
       <AgentTeamMonitor brand="iris" />
       {/* Chrome 拡張機能から ?capture= で届いた取り込みのお知らせ */}
       <ExtensionCaptureToast brand="iris" />
+      {/* 初回訪問時の AI 会社ウェルカム (13 CXO 自己紹介 + サンプル戦略タスク) */}
+      <CxoWelcomeCard brand="iris" />
       <TutorialOverlay brand="iris" onClose={() => setTutorialDoneTick(t => t + 1)} />
       <WowOnboarding brand="iris" trigger={tutorialDoneTick} />
       {/* どの入力欄でも音声入力できる */}
