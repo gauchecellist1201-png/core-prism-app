@@ -1,0 +1,10 @@
+{
+  "name": "core-extensions-asset-builder",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Isolated workspace for Chrome Web Store asset generation. The root package.json has linux-pinned native deps that block npm install on darwin-arm64, so sharp lives here instead.",
+  "type": "module",
+  "dependencies": {
+    "sharp": "^0.34.5"
+  }
+}

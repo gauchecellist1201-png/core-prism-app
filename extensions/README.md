@@ -33,12 +33,25 @@
 
 ## ストア配布の前にやること (Phase 2)
 
-- [ ] 1024x500 のプロモタイル PNG
-- [ ] スクリーンショット 5 枚 (1280x800)
+- [x] 1024x500 のプロモタイル PNG → `extensions/{prism,iris}/store-assets/promo-1024x500.png`
+- [x] スクリーンショット 5 枚 (1280x800) → `extensions/{prism,iris}/store-assets/screenshot-{1..5}-1280x800.png`
+- [x] 440x280 マーケットタイル (任意) → `extensions/{prism,iris}/store-assets/promo-440x280.png`
 - [ ] privacy policy URL (現状 `https://core-prism-app.vercel.app/privacy` が必要)
 - [ ] manifest の version を 1.0.0 に
 - [ ] CWS デベロッパー登録 (US$5、1 回限り)
 - [ ] レビュー耐性のため `permissions` を最小化済み (activeTab + storage + contextMenus + scripting)
+
+### ストア用 PNG を再生成する
+
+ドラフト品質の SVG を sharp で PNG 化するスクリプトを同梱。
+
+```bash
+cd extensions && npm install   # 初回のみ (sharp を入れる)
+cd .. && npm run build:store-assets
+```
+
+出力先: `extensions/prism/store-assets/`, `extensions/iris/store-assets/`。
+スクリプトは `extensions/build-assets.mjs`。デザイナーが磨く前提のラフ。
 
 ## 規約注意
 
