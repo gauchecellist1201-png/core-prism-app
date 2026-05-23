@@ -111,8 +111,8 @@ export async function generateBrief(
   settings: AppSettings,
   input: GenInput,
 ): Promise<CoachBrief> {
-  const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-
+  // API キー / master key / gemini key は main.tsx の fetch interceptor が
+  // localStorage から自動で付与する。ここでは手動で渡さない。
   const { persona, slot, knowledge, health } = input;
 
   const kbSummary = knowledge
@@ -187,9 +187,8 @@ ${buildSlotInstruction(slot)}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
+        // ブリーフ生成は軽量タスク (max_tokens 600) なので Master でも Gemini で十分
+        'x-ai-weight': 'light',
       },
       body: JSON.stringify({
         model: settings.preferredModel,
