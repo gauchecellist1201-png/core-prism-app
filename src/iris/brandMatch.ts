@@ -19,9 +19,7 @@ export function loadPrismCompanies(): CompanyResearch[] {
   } catch { return []; }
 }
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 /** 企業 → インフルエンサーから「タイアップ打診」初回メールを生成 */
 export async function generateTieupPitch(opts: {
@@ -33,7 +31,6 @@ export async function generateTieupPitch(opts: {
   proposedFee?: number;
   customNote?: string;
 }): Promise<{ subject: string; body: string; matchReason: string }> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「インフルエンサーの代わりにブランドへタイアップを打診するエージェント」です。
 返答は JSON のみ:
@@ -91,9 +88,6 @@ ${opts.customNote || '(なし)'}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,

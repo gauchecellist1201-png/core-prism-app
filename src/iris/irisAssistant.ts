@@ -7,9 +7,7 @@ import type { MediaKit } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 export type Intent =
   | 'add-deal'           // 案件追加してほしい
@@ -121,7 +119,6 @@ export async function chatWithIris(opts: {
   /** Bond プロファイル: 親密度 + 個人文脈 (四柱推命含む) */
   bondContext?: string;
 }): Promise<{ intent: Intent; reply: string; actions?: { label: string; tab: string; emoji?: string }[] }> {
-  const apiKey = getApiKey(opts.settings);
 
   // Claude Messages API のフォーマット (画像対応)
   const messages: any[] = opts.history
@@ -153,9 +150,6 @@ export async function chatWithIris(opts: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,

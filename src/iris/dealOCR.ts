@@ -6,9 +6,7 @@ import type { Platform, ContentType, DealStage } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 export interface ExtractedDeal {
   brandName?: string;
@@ -39,7 +37,6 @@ export async function extractDealFromImages(opts: {
   images: { data: string; mediaType: string }[];
   textHint?: string;        // 音声で補足したテキスト等
 }): Promise<ExtractedDeal> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「インフルエンサー案件メール/DM/オファーレター/SNS DM のスクリーンショット」を読んで、案件情報を構造化する AI。
 
@@ -97,9 +94,6 @@ export async function extractDealFromImages(opts: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
@@ -129,7 +123,6 @@ export async function extractDealFromText(opts: {
   settings: AppSettings;
   text: string;
 }): Promise<ExtractedDeal> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたはインフルエンサー本人の「ざっくりした口頭メモ」を聞いて、案件情報に構造化する AI。
 
@@ -166,9 +159,6 @@ ${toneInstruction()}`;
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,

@@ -117,8 +117,7 @@ export async function generateApplicationDraft(opts: {
   customNote?: string;
   knowledgeContext?: string;     // Iris ナレッジ上位サマリ (自己強化学習)
 }): Promise<ApplicationDraft> {
-  const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || opts.settings.claudeApiKey || '';
-
+  // API キーは main.tsx の fetch interceptor が localStorage から自動付与
   const kit = opts.mediaKit;
   const kitText: string[] = [];
   if (kit?.handleName) kitText.push(`- 表示名: ${kit.handleName}`);
@@ -182,9 +181,6 @@ ${opts.knowledgeContext}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,

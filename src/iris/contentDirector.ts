@@ -8,9 +8,7 @@ import { PLATFORM_META, CONTENT_TYPE_META } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 
-function getApiKey(s: AppSettings): string {
-  return import.meta.env.VITE_CLAUDE_API_KEY || s.claudeApiKey || '';
-}
+// API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
 export interface ContentBlueprint {
   /** タイトル / コンセプト */
@@ -45,7 +43,6 @@ export async function generateBlueprint(opts: {
   durationSec?: number;         // 動画なら秒数
   selfTone?: string;            // 自分のキャラ
 }): Promise<ContentBlueprint> {
-  const apiKey = getApiKey(opts.settings);
 
   const sys = `あなたは「ファッション誌のクリエイティブディレクター」。インフルエンサーの代わりに、撮影台本・テロップ・投稿文を一気に作ります。
 
@@ -107,9 +104,6 @@ ${opts.ngWords?.join(', ') || '(なし)'}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
