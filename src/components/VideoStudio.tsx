@@ -135,6 +135,22 @@ export default function VideoStudio({ bg, settings }: Props) {
 
   const [recording, setRecording] = useState(false);
   const [exportUrl, setExportUrl] = useState<string | null>(null);
+  // exportUrl は blob URL なので、再生成 / null 化 / unmount のたびに revoke しないと
+  // メモリリーク (audit r2 で MeetingMinutes / IgConnectModal は対応済、ここは未対応だった)
+  const exportUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (exportUrlRef.current && exportUrlRef.current !== exportUrl) {
+      try { URL.revokeObjectURL(exportUrlRef.current); } catch { /* */ }
+    }
+    exportUrlRef.current = exportUrl;
+    return () => {
+      // unmount 時の最後の cleanup
+      if (exportUrlRef.current) {
+        try { URL.revokeObjectURL(exportUrlRef.current); } catch { /* */ }
+        exportUrlRef.current = null;
+      }
+    };
+  }, [exportUrl]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
