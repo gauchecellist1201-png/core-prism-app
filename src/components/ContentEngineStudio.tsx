@@ -12,6 +12,7 @@ import ThinkingIndicator from './ThinkingIndicator';
 import GenerationReward from './GenerationReward';
 import ApiErrorCard from './ApiErrorCard';
 import ShareArtifactButton from './ShareArtifactButton';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -230,6 +231,68 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
             })}
           </div>
         </div>
+
+        {step === 1 && (
+          <div style={{ padding: '1.25rem 1.5rem 0' }}>
+            <StudioIntro
+              id="content-engine"
+              accent={accent}
+              emoji="📡"
+              what="同じ話題から note 記事 (長文) と X 投稿 (140 字) を 同時に 作る場所です。"
+              tryThis="✓ で AI 提案テーマを承認するだけ。あとは生成 → コピー → 投稿の 3 ステップ。"
+              example="「来週イベント告知」を承認 → note 800 字 + X 投稿 1 本が一度に並ぶ。"
+              sampleLabel="この 2 本が同時に出ます"
+              samplePreview={
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 130 }}>
+                  <div
+                    style={{
+                      background: '#ffffff',
+                      color: '#0f172a',
+                      borderRadius: 4,
+                      padding: '5px 6px',
+                      fontSize: 6,
+                      lineHeight: 1.45,
+                      fontFamily: 'system-ui, -apple-system, sans-serif',
+                      boxShadow: '0 3px 10px rgba(0,0,0,0.2)',
+                      borderLeft: `2px solid ${accent}`,
+                    }}
+                    aria-label="note 記事のサンプル"
+                  >
+                    <div style={{ fontSize: 5, letterSpacing: '0.14em', color: '#10b981', fontWeight: 800, marginBottom: 1 }}>note</div>
+                    <div style={{ fontSize: 8, fontWeight: 800, marginBottom: 2, lineHeight: 1.3 }}>
+                      AI 経営って「考えなくていい」のがズルい
+                    </div>
+                    <div style={{ opacity: 0.7, fontSize: 5.5 }}>こんにちは、◯◯です。今日は「判断疲れ」をテーマに —</div>
+                    <div style={{ opacity: 0.45, fontSize: 5, marginTop: 2 }}>📖 約 4 分 / 826 字</div>
+                  </div>
+                  <div
+                    style={{
+                      background: '#000000',
+                      color: '#ffffff',
+                      borderRadius: 4,
+                      padding: '5px 6px',
+                      fontSize: 6,
+                      lineHeight: 1.5,
+                      fontFamily: 'system-ui, -apple-system, sans-serif',
+                      boxShadow: '0 3px 10px rgba(0,0,0,0.35)',
+                    }}
+                    aria-label="X 投稿のサンプル"
+                  >
+                    <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 2 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent }} />
+                      <span style={{ fontWeight: 800, fontSize: 6 }}>あなた</span>
+                      <span style={{ opacity: 0.5, fontSize: 5.5 }}>@you</span>
+                    </div>
+                    <div style={{ fontSize: 6.5, lineHeight: 1.5 }}>
+                      「考えなくていい」が一番のごほうび。AI に任せて空いた頭で、もっと本質を選ぶ。
+                    </div>
+                    <div style={{ opacity: 0.5, fontSize: 5, marginTop: 2 }}>♥ 32 · 🔁 8 · 💬 4</div>
+                  </div>
+                </div>
+              }
+            />
+          </div>
+        )}
 
         {/* ─── STEP 1: AI が先回りでテーマを 3 案提案 ─── */}
         {step === 1 && (

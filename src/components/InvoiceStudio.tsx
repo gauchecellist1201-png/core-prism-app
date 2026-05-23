@@ -9,6 +9,7 @@ import { aiSuggestInvoice } from '../lib/invoiceAI';
 import { InvoicePrintView } from './InvoicePrintView';
 import { confirmAction } from '../lib/confirmDialog';
 import ApiErrorCard from './ApiErrorCard';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -229,6 +230,61 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           <ApiErrorCard error={error} />
+
+          <StudioIntro
+            id="invoice"
+            accent={persona.accentColor}
+            emoji="🧾"
+            what="お金を「請求して、もらう」までを 1 画面で終わらせる場所です。"
+            tryThis="「✨ AI で明細を自動構成」に依頼内容を 1 行書くと、明細・金額・期日まで埋まります。"
+            example="「Web制作50万円、月末締翌月末払い」→ AI が御請求書 1 枚を完成。"
+            sampleLabel="出来上がる請求書"
+            samplePreview={
+              <div
+                style={{
+                  width: 150,
+                  background: '#ffffff',
+                  color: '#0f172a',
+                  borderRadius: 4,
+                  padding: '8px 9px',
+                  fontSize: 7,
+                  lineHeight: 1.4,
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  borderTop: `3px solid ${persona.accentColor}`,
+                }}
+                aria-label="請求書のサンプル"
+              >
+                <div style={{ textAlign: 'center', fontWeight: 800, fontSize: 9, letterSpacing: '0.18em', marginBottom: 4 }}>
+                  御 請 求 書
+                </div>
+                <div style={{ opacity: 0.7, fontSize: 6, marginBottom: 1 }}>株式会社サンプル 様</div>
+                <div style={{ textAlign: 'right', opacity: 0.6, fontSize: 5.5, marginBottom: 4 }}>発行 5/23 / 期日 6/30</div>
+                <div
+                  style={{
+                    background: `${persona.accentColor}14`,
+                    borderLeft: `2px solid ${persona.accentColor}`,
+                    padding: '3px 5px',
+                    marginBottom: 4,
+                  }}
+                >
+                  <div style={{ fontSize: 5.5, opacity: 0.7 }}>ご請求金額</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: persona.accentColor }}>¥550,000</div>
+                </div>
+                <div style={{ fontSize: 6, opacity: 0.85, borderTop: '1px dashed #e2e8f0', paddingTop: 3 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Web制作 一式</span><span>500,000</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.6 }}>
+                    <span>消費税 10%</span><span>50,000</span>
+                  </div>
+                </div>
+                <div style={{ marginTop: 3, paddingTop: 3, borderTop: '1px dashed #e2e8f0', opacity: 0.55, fontSize: 5.5 }}>
+                  振込: ◯◯銀行 普通 1234567
+                </div>
+              </div>
+            }
+          />
 
           {tab === 'compose' && (
             <>
