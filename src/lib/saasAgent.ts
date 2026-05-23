@@ -87,8 +87,7 @@ export async function runSaasTask(
   payload: string,
   settings: AppSettings,
 ): Promise<SaasTaskResult> {
-  const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || settings.claudeApiKey || '';
-
+  // API キーは main.tsx の fetch interceptor が localStorage から自動付与
   const tool = MCP_TOOL_MAP[target]?.[action] ?? 'unknown';
   const targetLabel = TARGET_LABELS[target];
 
@@ -106,9 +105,6 @@ ${payload}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: settings.preferredModel || 'claude-haiku-4-5-20251001',
