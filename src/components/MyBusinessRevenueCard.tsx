@@ -12,6 +12,7 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import { TrendingUp, Loader2, RefreshCw, ArrowRight } from 'lucide-react';
+import { ResponsiveContainer, LineChart, Line, Tooltip as RTooltip, YAxis } from 'recharts';
 
 const STRIPE_KEY_LS = 'core_integration_stripe';
 
@@ -129,7 +130,8 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
   }
 
   const tm = data?.thisMonth;
-  const trend = (data?.monthly || []).slice(-6).map(m => m.profitJpy);
+  const monthly12 = (data?.monthly || []).slice(-12);
+  const hasTrend = monthly12.some(m => m.revenueJpy !== 0);
   const multiCurrency = (data?.currencies || []).filter(c => c !== 'jpy').length > 0;
 
   return (
@@ -194,13 +196,13 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
           </div>
 
           {/* 売上 / 経費 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: trend.some(v => v !== 0) ? 8 : 0 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: hasTrend ? 8 : 0 }}>
             <Mini label="売上" value={yen(tm.revenueJpy)} color="#34d399" />
             <Mini label="経費 (Stripe 手数料)" value={yen(tm.expenseJpy)} color="#f87171" />
           </div>
 
-          {/* 6 ヶ月の利益推移 */}
-          {trend.some(v => v !== 0) && <Sparkline data={trend} />}
+          {/* 12 ヶ月の売上推移 (ホバーで月名 + 金額) */}
+          {hasTrend && <Sparkline12 monthly={monthly12} />}
 
           {/* 売上 0 のとき: 原因を診断して提示 */}
           {tm.revenueJpy === 0 && tm.txnCount === 0 && (
@@ -246,21 +248,51 @@ function Mini({ label, value, color }: { label: string; value: string; color: st
   );
 }
 
-function Sparkline({ data }: { data: number[] }) {
-  const w = 100, h = 22;
-  const min = Math.min(...data, 0), max = Math.max(...data, 0);
-  const range = max - min || 1;
-  const pts = data.map((v, i) => {
-    const x = data.length > 1 ? (i / (data.length - 1)) * w : 0;
-    const y = h - ((v - min) / range) * h;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
+function Sparkline12({ monthly }: { monthly: MonthPoint[] }) {
+  // 月 (YYYY-MM) を「5月」のように短く
+  const labelOf = (ym: string) => {
+    const m = ym.split('-')[1];
+    return m ? `${parseInt(m, 10)}月` : ym;
+  };
+  const chartData = monthly.map(m => ({
+    label: labelOf(m.month),
+    rev: m.revenueJpy,
+    txn: m.txnCount || 0,
+  }));
   return (
     <div>
-      <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>6 ヶ月の利益推移</div>
-      <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
-        <polyline points={pts} fill="none" stroke="#34d399" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>
+        12 ヶ月の売上推移
+      </div>
+      <div style={{ width: '100%', height: 44 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+            <YAxis hide domain={[0, 'dataMax']} />
+            <RTooltip
+              cursor={{ stroke: '#8E5CFF', strokeDasharray: '2 3', strokeWidth: 1 }}
+              contentStyle={{
+                background: 'rgba(20,20,32,0.96)',
+                border: '1px solid rgba(142,92,255,0.4)',
+                borderRadius: 8,
+                padding: '6px 9px',
+                fontSize: 11,
+              }}
+              labelStyle={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 2 }}
+              itemStyle={{ color: '#fff', padding: 0 }}
+              formatter={(v) => ['¥' + Math.round(Number(v) || 0).toLocaleString('ja-JP'), '売上']}
+            />
+            <Line
+              type="monotone"
+              dataKey="rev"
+              stroke="#34d399"
+              strokeWidth={1.8}
+              dot={false}
+              activeDot={{ r: 3, fill: '#34d399', stroke: '#0b0b14', strokeWidth: 1.5 }}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

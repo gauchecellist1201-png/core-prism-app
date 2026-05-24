@@ -80,6 +80,7 @@ import AgentsOrbit from './AgentsOrbit';
 import { PRISM_SPECS, PRISM_ORDER, PRISM_CONVERSATIONS } from '../lib/agentSpecs';
 import WellnessTracker from './WellnessTracker';
 import IntegrationCenter from './IntegrationCenter';
+import StripeConnectHero from './StripeConnectHero';
 
 interface Props {
   persona: Persona;
@@ -213,6 +214,8 @@ export default function IdentityDashboard({
   const lastBenchmark = useMemo(() => loadBenchmarkResult(persona.id), [persona.id, showBenchmark]);
   const [showVoice, setShowVoice] = useState(false);
   const [showIntegrations, setShowIntegrations] = useState(false);
+  // 連携センターを開いた瞬間にフォーカスしたいツール ID (Stripe Hero 経由など)
+  const [integrationsFocusId, setIntegrationsFocusId] = useState<string | undefined>(undefined);
   const [showSalesAgent, setShowSalesAgent] = useState(false);
   const [showSaasAgent, setShowSaasAgent] = useState(false);
   const [showYouTube, setShowYouTube] = useState(false);
@@ -819,6 +822,14 @@ export default function IdentityDashboard({
                 })()}
               </div>
 
+              {/* Stripe 未連携時のみ表示: 「30 秒で売上が見える」CTA */}
+              <StripeConnectHero
+                onOpenIntegrations={() => {
+                  setIntegrationsFocusId('stripe');
+                  setShowIntegrations(true);
+                }}
+              />
+
               <QuickActions
                 persona={persona}
                 actions={[
@@ -1401,7 +1412,8 @@ export default function IdentityDashboard({
           <IntegrationCenter
             key="integration-center"
             accent={persona.accentColor}
-            onClose={() => setShowIntegrations(false)}
+            focusToolId={integrationsFocusId}
+            onClose={() => { setShowIntegrations(false); setIntegrationsFocusId(undefined); }}
           />
         )}
         {showSaasAgent && (

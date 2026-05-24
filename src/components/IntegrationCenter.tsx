@@ -12,7 +12,7 @@
 //   oauth    … Google ログイン (Gmail / カレンダー)
 //   info     … 説明を読んで「次へ」
 // ============================================================
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, ArrowRight, Loader2, ExternalLink, PartyPopper } from 'lucide-react';
 import {
@@ -26,6 +26,8 @@ import IntegrationCelebrate from './IntegrationCelebrate';
 interface Props {
   onClose: () => void;
   accent?: string;
+  /** 起動時にウィザードを開いておきたい連携 ID (例: 'stripe') */
+  focusToolId?: string;
 }
 
 type StepAction =
@@ -254,8 +256,8 @@ const CATEGORY_ORDER = [
   'Google ワークスペース', '営業 / CRM', '仕事・整理', '保存・会議', 'お金まわり', 'SNS', '健康',
 ];
 
-export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props) {
-  const [openId, setOpenId] = useState<string | null>(null);
+export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusToolId }: Props) {
+  const [openId, setOpenId] = useState<string | null>(focusToolId ?? null);
   const [, force] = useState(0);
   const [celebratedId, setCelebratedId] = useState<string | null>(null);
   const refresh = () => force(n => n + 1);
@@ -340,6 +342,7 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF' }: Props
                     connected={isConnected(t)}
                     comingSoon={isComingSoon(t)}
                     open={openId === t.id}
+                    focused={focusToolId === t.id}
                     onToggle={() => setOpenId(openId === t.id ? null : t.id)}
                     onConnected={() => { refresh(); setCelebratedId(t.id); }}
                     onDisconnect={() => disconnect(t)}
@@ -389,15 +392,27 @@ function BrandIcon({ tool, size = 40 }: { tool: Tool; size?: number }) {
   );
 }
 
-function ToolCard({ tool, accent, connected, comingSoon = false, open, onToggle, onConnected, onDisconnect }: {
-  tool: Tool; accent: string; connected: boolean; comingSoon?: boolean; open: boolean;
+function ToolCard({ tool, accent, connected, comingSoon = false, open, focused = false, onToggle, onConnected, onDisconnect }: {
+  tool: Tool; accent: string; connected: boolean; comingSoon?: boolean; open: boolean; focused?: boolean;
   onToggle: () => void; onConnected: () => void; onDisconnect: () => void;
 }) {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (focused && cardRef.current) {
+      // Modal が描画されたあと、軽く待ってからスクロール
+      const t = window.setTimeout(() => {
+        cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 220);
+      return () => window.clearTimeout(t);
+    }
+  }, [focused]);
   const [stepIdx, setStepIdx] = useState(0);
   const [tokenInput, setTokenInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [justDone, setJustDone] = useState(false);
+  // Stripe テスト接続の結果メッセージ ("✓ つながった..." 等) を一瞬出すため
+  const [verifyOk, setVerifyOk] = useState<string | null>(null);
 
   const total = tool.steps.length;
   const step = tool.steps[stepIdx];
@@ -437,6 +452,54 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, onToggle,
     return null;
   };
 
+  // Stripe: 形式OK → /api/revenue/snapshot を叩いて、結果に応じて
+  // 「✓ つながった (N 件 / ¥X)」or 「✗ キーが違うかも」を 2 秒以内に返す。
+  // 成功時のみ localStorage に保存する。
+  const verifyStripeAndComplete = async (rawKey: string) => {
+    const k = rawKey.trim();
+    setErr(null);
+    setVerifyOk(null);
+    const ve = validateInput(k);
+    if (ve) { setErr(ve); return; }
+    setBusy(true);
+    try {
+      const r = await fetch('/api/revenue/snapshot', { headers: { 'x-stripe-key': k } });
+      const ct = r.headers.get('content-type') || '';
+      // API 未デプロイ等 (HTML が返るケース) — local dev 向けに優しく
+      if (!ct.includes('application/json')) {
+        // 形式 OK までは確認できているので、ローカル開発では保存して終了
+        completeConnection(k);
+        return;
+      }
+      const j = await r.json();
+      if (r.status === 200 && !j.error) {
+        // 直近 12 ヶ月の合計取引数で「先月の N 件」を計算
+        const monthly: Array<{ revenueJpy: number; txnCount: number }> = j.monthly || [];
+        const prev = monthly.length >= 2 ? monthly[monthly.length - 2] : null;
+        const yen = (n: number) => '¥' + Math.round(n).toLocaleString('ja-JP');
+        const msg = prev && prev.txnCount > 0
+          ? `先月の取引 ${prev.txnCount} 件、合計 ${yen(prev.revenueJpy)} が見えました`
+          : '売上データを読み取れました';
+        setVerifyOk(msg);
+        // 「✓ つながった」を 1.1 秒見せてから完了アニメへ
+        setTimeout(() => completeConnection(k), 1100);
+        return;
+      }
+      // エラー分岐 — API が返した status を最優先に解釈
+      if (r.status === 400 || j.error === 'INVALID_KEY') {
+        setErr('キーの形式が違うようです。`rk_live_…` で始まる文字列を貼ってください。');
+      } else if (r.status === 401 || r.status === 403 || j.error === 'KEY_REJECTED') {
+        setErr('キーの権限が足りません。Stripe で「すべて読み取り」を選んで作り直してください。');
+      } else {
+        setErr('いまは取得できませんでした、少し待ってからもう一度。');
+      }
+    } catch {
+      setErr('いまは取得できませんでした、少し待ってからもう一度。');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleOauth = async (provider: 'gmail' | 'gcal') => {
     setErr(null);
     const configured = provider === 'gmail' ? isGmailConfigured() : isCalConfigured();
@@ -468,11 +531,17 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, onToggle,
   };
 
   return (
-    <div style={{
+    <div ref={cardRef} style={{
       borderRadius: 14,
-      background: 'rgba(255,255,255,0.03)',
-      border: `1px solid ${connected ? '#10B98144' : open ? `${accent}55` : 'rgba(255,255,255,0.08)'}`,
+      background: focused ? `linear-gradient(135deg, ${tool.color}22, rgba(255,255,255,0.04))` : 'rgba(255,255,255,0.03)',
+      border: `1px solid ${
+        focused ? `${tool.color}88` :
+        connected ? '#10B98144' :
+        open ? `${accent}55` : 'rgba(255,255,255,0.08)'
+      }`,
+      boxShadow: focused ? `0 0 0 3px ${tool.color}22, 0 8px 22px ${tool.color}33` : undefined,
       padding: '0.8rem 0.9rem',
+      transition: 'box-shadow 0.3s, border-color 0.3s',
     }}>
       {/* 上段 */}
       <button
@@ -615,16 +684,45 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, onToggle,
                   </button>
                 )}
 
-                {step.action.kind === 'input' && (
+                {step.action.kind === 'input' && (() => {
+                  const isStripe = tool.id === 'stripe';
+                  const trimmed = tokenInput.trim();
+                  const formatOk = isStripe ? /^(rk|sk)_(live|test)_/.test(trimmed) && trimmed.length >= 12 : true;
+                  const submit = (v: string) => {
+                    if (isStripe) verifyStripeAndComplete(v);
+                    else {
+                      const ve = validateInput(v);
+                      if (ve) { setErr(ve); return; }
+                      completeConnection(v);
+                    }
+                  };
+                  return (
                   <div>
+                    {/* テストキーで試したい人向けの一行 (Stripe のみ) */}
+                    {isStripe && (
+                      <div style={{
+                        fontSize: 10.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.55,
+                        background: 'rgba(255,255,255,0.04)', borderRadius: 8,
+                        padding: '6px 9px', marginBottom: 8,
+                      }}>
+                        実キーがまだなくても、<strong style={{ color: '#fff' }}>テストキー</strong>
+                        (sk_test_…) で動作を確認できます。
+                      </div>
+                    )}
                     {/* コピーした内容をワンタップで貼り付け → そのまま連携完了 */}
                     <button
                       type="button"
+                      disabled={busy}
                       onClick={async () => {
                         setErr(null);
                         try {
                           const text = (await navigator.clipboard.readText()).trim();
                           if (!text) { setErr('クリップボードが空です。先にコピーしてください'); return; }
+                          if (isStripe) {
+                            setTokenInput(text);
+                            await verifyStripeAndComplete(text);
+                            return;
+                          }
                           const ve = validateInput(text);
                           if (ve) { setErr(ve); return; }
                           completeConnection(text);
@@ -635,12 +733,15 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, onToggle,
                       style={{
                         width: '100%', fontSize: 12.5, fontWeight: 800, color: '#fff',
                         background: `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`,
-                        border: 'none', borderRadius: 9, padding: '10px 14px', cursor: 'pointer',
+                        border: 'none', borderRadius: 9, padding: '10px 14px',
+                        cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1,
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                         marginBottom: 7,
                       }}
                     >
-                      📋 コピーした内容を貼り付けて連携完了
+                      {busy
+                        ? <><Loader2 size={14} className="spin" /> つないでいます…</>
+                        : <>📋 コピーした内容を貼り付けて{isStripe ? 'テスト接続' : '連携完了'}</>}
                     </button>
                     <div style={{
                       fontSize: 9.5, color: 'rgba(255,255,255,0.4)',
@@ -650,33 +751,72 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, onToggle,
                       <input
                         type="text"
                         value={tokenInput}
-                        onChange={e => setTokenInput(e.target.value)}
+                        onChange={e => { setTokenInput(e.target.value); setErr(null); setVerifyOk(null); }}
                         placeholder={step.action.placeholder}
                         style={{
                           flex: 1, fontSize: 12, padding: '9px 10px', borderRadius: 9,
                           background: 'rgba(255,255,255,0.06)', color: '#fff',
-                          border: '1px solid rgba(255,255,255,0.12)', outline: 'none',
+                          border: `1px solid ${
+                            isStripe && trimmed.length >= 4 && !formatOk
+                              ? 'rgba(248,113,113,0.6)'
+                              : isStripe && formatOk
+                                ? 'rgba(52,211,153,0.6)'
+                                : 'rgba(255,255,255,0.12)'
+                          }`,
+                          outline: 'none',
                         }}
                       />
                       <button
                         type="button"
+                        disabled={isStripe ? (busy || !formatOk) : busy}
                         onClick={() => {
                           const v = tokenInput.trim();
                           if (!v) { setErr('上の欄に貼り付けてください'); return; }
-                          const ve = validateInput(v);
-                          if (ve) { setErr(ve); return; }
-                          completeConnection(v);
+                          submit(v);
                         }}
                         style={{
                           fontSize: 12, fontWeight: 800, color: '#fff', flexShrink: 0,
-                          background: 'rgba(255,255,255,0.1)',
-                          border: 'none', borderRadius: 9, padding: '9px 14px', cursor: 'pointer',
+                          background: isStripe
+                            ? (formatOk
+                                ? `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`
+                                : 'rgba(255,255,255,0.06)')
+                            : 'rgba(255,255,255,0.1)',
+                          border: 'none', borderRadius: 9, padding: '9px 14px',
+                          cursor: isStripe && !formatOk ? 'not-allowed' : (busy ? 'wait' : 'pointer'),
+                          opacity: isStripe && !formatOk ? 0.55 : (busy ? 0.7 : 1),
                           display: 'flex', alignItems: 'center', gap: 4,
                         }}
-                      >保存 <Check size={12} /></button>
+                      >
+                        {isStripe
+                          ? (busy ? <><Loader2 size={12} className="spin" /> 接続中</> : <>テスト接続 <Check size={12} /></>)
+                          : <>保存 <Check size={12} /></>}
+                      </button>
                     </div>
+                    {/* 形式 OK のヒント */}
+                    {isStripe && trimmed.length >= 4 && !formatOk && !err && (
+                      <div style={{
+                        fontSize: 10.5, color: '#FBBF24', marginTop: 7, lineHeight: 1.5,
+                      }}>キーは <code>rk_live_…</code> または <code>sk_test_…</code> で始まる必要があります</div>
+                    )}
+                    {/* テスト接続成功メッセージ */}
+                    {verifyOk && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        style={{
+                          marginTop: 9, padding: '8px 11px', borderRadius: 9,
+                          fontSize: 11.5, fontWeight: 700, color: '#34D399',
+                          background: 'rgba(52,211,153,0.12)',
+                          border: '1px solid rgba(52,211,153,0.35)',
+                          display: 'flex', alignItems: 'center', gap: 6,
+                        }}
+                      >
+                        <Check size={13} /> つながりました。{verifyOk}
+                      </motion.div>
+                    )}
                   </div>
-                )}
+                  );
+                })()}
 
                 {step.action.kind === 'oauth' && (
                   <button
