@@ -782,6 +782,53 @@ input, textarea, select { font-family: inherit; }
   .lp-section-pad [style*="rgba(255,255,255,0.025)"] {
     padding: 1.1rem 1rem !important;
   }
+  /* ROI br をモバイルでは表示 (デフォルト動作) */
+}
+
+/* ─── ROI 計算機 (Day 2) ─── */
+/* デスクトップで入力 + 内訳を 2 列に */
+@media (min-width: 880px) {
+  .lp-roi-grid-2 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1.25rem !important;
+  }
+}
+/* モバイルでは ROI 内の改行を非表示 (横幅が狭いほうが自然に流れる) */
+@media (max-width: 640px) {
+  .lp-roi-br { display: none; }
+}
+/* range スライダーのタッチ対象 + サム拡大 (iOS / Android) */
+.lp-section-pad input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  outline: none;
+}
+.lp-section-pad input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fbbf24, #a78bfa);
+  border: 2px solid #fff;
+  box-shadow: 0 4px 12px rgba(167,139,250,0.45);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.lp-section-pad input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.15);
+}
+.lp-section-pad input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fbbf24, #a78bfa);
+  border: 2px solid #fff;
+  box-shadow: 0 4px 12px rgba(167,139,250,0.45);
+  cursor: pointer;
 }
 
 /* ────────────────────────────────────────

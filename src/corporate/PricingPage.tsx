@@ -150,20 +150,68 @@ const FAQS = [
   { q: '日本語以外の言語に対応していますか?', a: '今後対応予定です (日英中 順次)。AI への質問はすべての主要言語で可能です。' },
 ];
 
-const fmt = (n: number) => '¥' + n.toLocaleString('ja-JP');
+const fmt = (n: number) => '¥' + Math.round(n).toLocaleString('ja-JP');
+
+// ─── ROI 5 項目: AI 化前後 (分) と表示用メタ ─────────────────
+type RoiTaskKey = 'minutes' | 'sales' | 'receipts' | 'sns';
+type RoiTask = {
+  key: RoiTaskKey;
+  label: string;
+  sub: string;
+  emoji: string;
+  color: string;
+  before: number; // 分
+  after: number;  // 分
+  defaultCount: number;
+  max: number;
+  step: number;
+  unit: string;
+};
+const ROI_TASKS: RoiTask[] = [
+  { key: 'minutes',  label: '議事録 / 会議メモ',  sub: '30 分 → 3 分 (1 件 27 分の節約)',   emoji: '📝', color: '#a78bfa', before: 30, after: 3,   defaultCount: 10, max: 100, step: 1, unit: '件/月' },
+  { key: 'sales',    label: '営業の提案メール',    sub: '20 分 → 2 分 (1 件 18 分の節約)',   emoji: '💼', color: '#60a5fa', before: 20, after: 2,   defaultCount: 20, max: 200, step: 1, unit: '件/月' },
+  { key: 'receipts', label: 'レシート / 経費処理', sub: '3 分 → 0.5 分 (1 枚 2.5 分の節約)', emoji: '🧾', color: '#fbbf24', before: 3,  after: 0.5, defaultCount: 30, max: 300, step: 1, unit: '枚/月' },
+  { key: 'sns',      label: 'SNS 投稿の作成',      sub: '15 分 → 2 分 (1 件 13 分の節約)',   emoji: '🌸', color: '#E1306C', before: 15, after: 2,   defaultCount: 20, max: 200, step: 1, unit: '件/月' },
+];
+
+const PRISM_MONTHLY = 9800;
 
 export default function PricingPage() {
   const [yearly, setYearly] = useState(false);
-  const [hours, setHours] = useState(20); // 1週間あたりの自動化したい時間
-  const [hourly, setHourly] = useState(5000); // 時給 (円)
+
+  // 5 項目入力
+  const [minutesCount, setMinutesCount]   = useState(10);
+  const [salesCount, setSalesCount]       = useState(20);
+  const [receiptsCount, setReceiptsCount] = useState(30);
+  const [snsCount, setSnsCount]           = useState(20);
+  const [hourly, setHourly]               = useState(5000);
 
   useEffect(() => {
     document.title = '価格 — CORE Prism / Iris';
   }, []);
 
-  const monthlySaved = useMemo(() => hours * 4 * hourly, [hours, hourly]);
+  const counts: Record<RoiTaskKey, number> = {
+    minutes: minutesCount, sales: salesCount, receipts: receiptsCount, sns: snsCount,
+  };
+  const setters: Record<RoiTaskKey, (n: number) => void> = {
+    minutes: setMinutesCount, sales: setSalesCount, receipts: setReceiptsCount, sns: setSnsCount,
+  };
+
+  const perTask = useMemo(() => ROI_TASKS.map(t => {
+    const c = counts[t.key];
+    const savedMin = (t.before - t.after) * c;
+    const savedYen = (savedMin / 60) * hourly;
+    return { ...t, count: c, savedMin, savedYen };
+  }), [minutesCount, salesCount, receiptsCount, snsCount, hourly]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const totalSavedMin = perTask.reduce((s, t) => s + t.savedMin, 0);
+  const totalSavedHours = totalSavedMin / 60;
+  const monthlySaved = Math.round(totalSavedHours * hourly);
   const yearlySaved = monthlySaved * 12;
-  const breakeven = useMemo(() => Math.ceil(9800 / (hours * hourly)), [hours, hourly]); // Standard を回収するまでの週数
+  const yearlyCost = PRISM_MONTHLY * 12; // 117,600
+  const netYearly = yearlySaved - yearlyCost;
+  const roiMultiple = yearlySaved > 0 ? yearlySaved / yearlyCost : 0;
+  const maxBar = Math.max(yearlySaved, yearlyCost, 1);
 
   return (
     <div style={{ background: '#000', color: '#fff', minHeight: '100dvh', fontFamily: FONT_SANS, overflowX: 'hidden' }}>
@@ -234,61 +282,177 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* ROI 計算機 */}
+      {/* ROI 計算機 (Day 2) — あなた専用の月額換算 */}
       <section className="lp-section-pad" style={{ padding: '5rem 1.5rem', background: 'linear-gradient(180deg,#070712 0%,#000 100%)' }}>
-        <div style={{ maxWidth: 980, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+        <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
             <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>ROI CALCULATOR</p>
-            <h2 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.85rem, 3.5vw, 2.5rem)', fontWeight: 700, marginTop: 8, letterSpacing: '0.05em' }}>あなたの ROI を計算</h2>
+            <h2 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.85rem, 3.5vw, 2.6rem)', fontWeight: 700, marginTop: 8, letterSpacing: '0.05em' }}>
+              あなた専用の<span style={{ background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#E1306C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>月額換算</span>
+            </h2>
             <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', marginTop: 12, lineHeight: 1.9 }}>
-              Standard プラン (¥9,800/月) で何日で元が取れるか、すぐ分かります。
+              5 つの数字を動かすだけ。「今やってる作業」を AI に任せた瞬間、何円浮くか — その場で出ます。
             </p>
           </div>
 
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: 'clamp(1.5rem, 4vw, 2.5rem)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }} className="lp-roi-grid">
-              <SliderInput label="週に AI に任せたい時間" value={hours} setValue={setHours} min={1} max={60} unit="時間/週" />
-              <SliderInput label="あなたの時間単価" value={hourly} setValue={setHourly} min={1000} max={20000} step={500} unit="円/時間" />
+          {/* ヒーロー: 月の節約額 (動的に変わる) */}
+          <motion.div
+            key={monthlySaved}
+            initial={{ scale: 0.97, opacity: 0.85 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            style={{
+              padding: 'clamp(1.5rem, 4vw, 2.5rem)',
+              background: 'linear-gradient(135deg, rgba(167,139,250,0.18), rgba(225,48,108,0.12))',
+              border: '1px solid rgba(167,139,250,0.35)',
+              borderRadius: 22,
+              boxShadow: '0 24px 64px rgba(167,139,250,0.18)',
+              textAlign: 'center',
+              marginBottom: '1.5rem',
+            }}
+          >
+            <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.35em', color: 'rgba(255,255,255,0.6)', fontWeight: 700, marginBottom: 10 }}>YOUR MONTHLY SAVINGS</p>
+            <p style={{ fontFamily: '"JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace', fontSize: 'clamp(2.4rem, 8vw, 5rem)', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1.05, background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#E1306C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              {fmt(monthlySaved)}
+            </p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.85rem, 2vw, 1.05rem)', color: 'rgba(255,255,255,0.78)', marginTop: 14, lineHeight: 1.8 }}>
+              月 <strong style={{ color: '#fff', fontFamily: '"JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace' }}>{totalSavedHours.toFixed(1)}</strong> 時間 ぶんの作業を AI に任せると、<br className="lp-roi-br" />
+              <strong style={{ color: '#fbbf24' }}>月 {fmt(monthlySaved)} のリターン</strong>になります。
+              {monthlySaved >= PRISM_MONTHLY && (
+                <> ── Prism 月額 ¥9,800 の<strong style={{ color: '#86efac' }}> {roiMultiple.toFixed(1)} 倍</strong>。</>
+              )}
+            </p>
+          </motion.div>
+
+          {/* 入力 + 内訳 */}
+          <div className="lp-roi-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            {/* 入力カード */}
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: 'clamp(1.25rem, 3vw, 2rem)' }}>
+              <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.65rem', letterSpacing: '0.35em', color: '#a78bfa', fontWeight: 700, marginBottom: '1.25rem' }}>YOUR INPUTS</p>
+              <div style={{ display: 'grid', gap: '1.25rem' }}>
+                {ROI_TASKS.map(t => (
+                  <RoiSlider
+                    key={t.key}
+                    label={`${t.emoji} ${t.label}`}
+                    sub={t.sub}
+                    value={counts[t.key]}
+                    setValue={setters[t.key]}
+                    min={0}
+                    max={t.max}
+                    step={t.step}
+                    unit={t.unit}
+                    color={t.color}
+                  />
+                ))}
+                <RoiSlider
+                  label="💴 あなたの時給"
+                  sub="1 時間あたりに自分でいくら稼げるか"
+                  value={hourly}
+                  setValue={setHourly}
+                  min={1000}
+                  max={30000}
+                  step={500}
+                  unit="円/時"
+                  color="#fbbf24"
+                />
+              </div>
             </div>
 
-            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.3)', borderRadius: 14 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem', textAlign: 'center' }}>
-                <div>
-                  <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>月の節約価値</p>
-                  <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 800, marginTop: 8, color: '#fbbf24' }}>{fmt(monthlySaved)}</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>年間の節約価値</p>
-                  <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 800, marginTop: 8, color: '#a78bfa' }}>{fmt(yearlySaved)}</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>元が取れるまで</p>
-                  <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 800, marginTop: 8, color: '#86efac' }}>{breakeven} <span style={{ fontSize: '0.9rem' }}>時間</span></p>
+            {/* 内訳カード */}
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: 'clamp(1.25rem, 3vw, 2rem)' }}>
+              <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.65rem', letterSpacing: '0.35em', color: '#fbbf24', fontWeight: 700, marginBottom: '1.25rem' }}>BREAKDOWN</p>
+              <div style={{ display: 'grid', gap: '0.85rem' }}>
+                {perTask.map(t => (
+                  <div key={t.key} style={{ padding: '0.85rem 1rem', background: `${t.color}10`, border: `1px solid ${t.color}30`, borderRadius: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '0.5rem' }}>
+                      <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', fontWeight: 700, color: '#fff' }}>{t.emoji} {t.label}</p>
+                      <p style={{ fontFamily: '"JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace', fontSize: '1rem', fontWeight: 800, color: t.color, whiteSpace: 'nowrap' }}>
+                        {fmt(t.savedYen)}
+                      </p>
+                    </div>
+                    <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', marginTop: 4, lineHeight: 1.6 }}>
+                      {t.count} {t.unit} × {(t.before - t.after).toLocaleString('ja-JP')} 分節約 = <strong style={{ color: 'rgba(255,255,255,0.8)' }}>{t.savedMin.toLocaleString('ja-JP')} 分/月</strong>
+                    </p>
+                  </div>
+                ))}
+                <div style={{ padding: '0.95rem 1rem', background: 'linear-gradient(90deg, rgba(167,139,250,0.18), rgba(225,48,108,0.10))', border: '1px solid rgba(167,139,250,0.4)', borderRadius: 12, marginTop: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', fontWeight: 800, color: '#fff' }}>合計</p>
+                    <p style={{ fontFamily: '"JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace', fontSize: '1.15rem', fontWeight: 900, color: '#fff' }}>{fmt(monthlySaved)}</p>
+                  </div>
+                  <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>
+                    {totalSavedMin.toLocaleString('ja-JP')} 分 = {totalSavedHours.toFixed(1)} 時間 × ¥{hourly.toLocaleString('ja-JP')}
+                  </p>
                 </div>
               </div>
-              <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', textAlign: 'center', marginTop: '1rem', lineHeight: 1.8 }}>
-                Standard プラン (¥9,800) は<strong style={{ color: '#fff' }}>約 {breakeven} 時間の節約で元が取れます</strong>。
-                {breakeven < hours && <> ──設定どおりの利用なら<strong style={{ color: '#86efac' }}>初週で回収</strong>です。</>}
-              </p>
+            </div>
+          </div>
+
+          {/* 12 ヶ月対比グラフ */}
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: 'clamp(1.25rem, 3vw, 2rem)', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.65rem', letterSpacing: '0.35em', color: '#86efac', fontWeight: 700 }}>12-MONTH COMPARISON</p>
+              <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>年間で見ると、差はもっと大きい</p>
             </div>
 
-            <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-              <a href="/" style={{
-                display: 'inline-block',
-                background: 'linear-gradient(135deg,#a78bfa,#f472b6)',
-                color: '#fff',
-                padding: '1rem 2.5rem',
-                borderRadius: 12,
-                fontFamily: FONT_SERIF_JA,
-                fontSize: '1rem',
-                fontWeight: 800,
-                textDecoration: 'none',
-                boxShadow: '0 12px 32px rgba(167,139,250,0.45)',
-                letterSpacing: '0.1em',
-              }}>
-                14 日間 無料で試す →
-              </a>
+            <div style={{ display: 'grid', gap: '1.25rem' }}>
+              <BarRow
+                label="Prism Standard 年額"
+                sub="¥9,800 × 12 ヶ月"
+                value={yearlyCost}
+                max={maxBar}
+                fmtStr={fmt(yearlyCost)}
+                color="#60a5fa"
+                soft
+              />
+              <BarRow
+                label="あなたの年間節約額"
+                sub={`月 ${fmt(monthlySaved)} × 12 ヶ月`}
+                value={yearlySaved}
+                max={maxBar}
+                fmtStr={fmt(yearlySaved)}
+                color="#fbbf24"
+              />
             </div>
+
+            <div style={{ marginTop: '1.5rem', padding: '1.1rem 1.25rem', background: netYearly >= 0 ? 'linear-gradient(90deg, rgba(134,239,172,0.18), rgba(167,139,250,0.10))' : 'rgba(255,255,255,0.04)', border: `1px solid ${netYearly >= 0 ? 'rgba(134,239,172,0.4)' : 'rgba(255,255,255,0.12)'}`, borderRadius: 14, textAlign: 'center' }}>
+              <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.1em', fontWeight: 600 }}>
+                {netYearly >= 0 ? '年間ネット・リターン' : '節約額が月額に届くまで、もう少し件数が必要です'}
+              </p>
+              <p style={{ fontFamily: '"JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace', fontSize: 'clamp(1.6rem, 5vw, 2.6rem)', fontWeight: 900, marginTop: 6, color: netYearly >= 0 ? '#86efac' : 'rgba(255,255,255,0.85)' }}>
+                {netYearly >= 0 ? '+' : ''}{fmt(netYearly)}
+              </p>
+              {netYearly >= 0 && (
+                <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.82rem', color: 'rgba(255,255,255,0.7)', marginTop: 8, lineHeight: 1.7 }}>
+                  Prism を 12 ヶ月使うと、<strong style={{ color: '#86efac' }}>{fmt(netYearly)} の純利益</strong>。<br className="lp-roi-br" />
+                  投資 ¥{yearlyCost.toLocaleString('ja-JP')} → 回収 ¥{yearlySaved.toLocaleString('ja-JP')} ({roiMultiple.toFixed(1)} 倍)。
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div style={{ textAlign: 'center' }}>
+            <a href="/" style={{
+              display: 'inline-block',
+              background: 'linear-gradient(135deg,#a78bfa,#f472b6)',
+              color: '#fff',
+              padding: '1.15rem 2.75rem',
+              borderRadius: 14,
+              fontFamily: FONT_SERIF_JA,
+              fontSize: '1.05rem',
+              fontWeight: 800,
+              textDecoration: 'none',
+              boxShadow: '0 14px 38px rgba(167,139,250,0.5)',
+              letterSpacing: '0.1em',
+              minHeight: 56,
+              lineHeight: '1.5',
+            }}>
+              14 日間 無料で試す →
+            </a>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginTop: 12 }}>
+              クレカ登録不要 / いつでも 1 タップ解約
+            </p>
           </div>
         </div>
       </section>
@@ -588,16 +752,43 @@ function PlanCard({ plan, yearly, brand }: { plan: any; yearly: boolean; brand: 
 }
 
 // ============================================================
-//  SliderInput
+//  RoiSlider — Day 2 ROI 計算機用 (label + sub + slider + number input)
 // ============================================================
-function SliderInput({ label, value, setValue, min, max, step = 1, unit }: { label: string; value: number; setValue: (n: number) => void; min: number; max: number; step?: number; unit: string }) {
+function RoiSlider({ label, sub, value, setValue, min, max, step = 1, unit, color }: { label: string; sub?: string; value: number; setValue: (n: number) => void; min: number; max: number; step?: number; unit: string; color: string }) {
+  const clamp = (n: number) => Math.max(min, Math.min(max, isFinite(n) ? n : min));
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{label}</p>
-        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.05rem', fontWeight: 800, color: '#fff' }}>
-          {value.toLocaleString('ja-JP')}<span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginLeft: 4, fontWeight: 500 }}>{unit}</span>
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '0.75rem', marginBottom: 8, flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+          <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.92rem', color: '#fff', fontWeight: 700 }}>{label}</p>
+          {sub && <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginTop: 2, lineHeight: 1.5 }}>{sub}</p>}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            onChange={e => setValue(clamp(Number(e.target.value)))}
+            style={{
+              width: 84,
+              minHeight: 44,
+              padding: '0.5rem 0.6rem',
+              background: 'rgba(255,255,255,0.06)',
+              border: `1px solid ${color}55`,
+              borderRadius: 10,
+              color: '#fff',
+              fontFamily: '"JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace',
+              fontSize: '1rem',
+              fontWeight: 800,
+              textAlign: 'right',
+              outline: 'none',
+            }}
+          />
+          <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>{unit}</span>
+        </div>
       </div>
       <input
         type="range"
@@ -606,8 +797,41 @@ function SliderInput({ label, value, setValue, min, max, step = 1, unit }: { lab
         step={step}
         value={value}
         onChange={e => setValue(Number(e.target.value))}
-        style={{ width: '100%', accentColor: '#a78bfa' }}
+        style={{ width: '100%', accentColor: color, minHeight: 44 }}
+        aria-label={label}
       />
+    </div>
+  );
+}
+
+// ============================================================
+//  BarRow — 12 ヶ月対比グラフ用バー
+// ============================================================
+function BarRow({ label, sub, value, max, fmtStr, color, soft }: { label: string; sub?: string; value: number; max: number; fmtStr: string; color: string; soft?: boolean }) {
+  const pct = Math.max(0, Math.min(100, (value / max) * 100));
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '0.5rem', marginBottom: 6, flexWrap: 'wrap' }}>
+        <div>
+          <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.88rem', fontWeight: 800, color: '#fff' }}>{label}</p>
+          {sub && <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.7rem', color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>{sub}</p>}
+        </div>
+        <p style={{ fontFamily: '"JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace', fontSize: '1.1rem', fontWeight: 900, color }}>{fmtStr}</p>
+      </div>
+      <div style={{ position: 'relative', width: '100%', height: 14, background: 'rgba(255,255,255,0.05)', borderRadius: 999, overflow: 'hidden' }}>
+        <motion.div
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          style={{
+            height: '100%',
+            background: soft
+              ? `linear-gradient(90deg, ${color}55, ${color}88)`
+              : `linear-gradient(90deg, ${color}, #f472b6)`,
+            borderRadius: 999,
+            boxShadow: soft ? 'none' : `0 0 18px ${color}66`,
+          }}
+        />
+      </div>
     </div>
   );
 }
