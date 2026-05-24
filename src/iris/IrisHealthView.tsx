@@ -199,12 +199,13 @@ export default function IrisHealthView({ bg, health }: Props) {
               onClick={fetchAdvice}
               disabled={adviceBusy || !hasData}
               style={{
+                minHeight: 44,
                 background: adviceBusy ? `${bg.accent}80` : `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
                 color: '#fff',
                 border: 'none',
                 borderRadius: 999,
-                padding: '0.55rem 1.1rem',
-                fontSize: '0.82rem',
+                padding: '0.7rem 1.2rem',
+                fontSize: '0.9rem',
                 fontWeight: 700,
                 cursor: adviceBusy || !hasData ? 'not-allowed' : 'pointer',
                 opacity: !hasData ? 0.5 : 1,
@@ -354,9 +355,10 @@ export default function IrisHealthView({ bg, health }: Props) {
             <button
               onClick={() => setSyncOpen(true)}
               style={{
+                minHeight: 44,
                 background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
                 color: '#fff', border: 'none', borderRadius: 999,
-                padding: '0.6rem 1.2rem', fontSize: '0.84rem', fontWeight: 700,
+                padding: '0.75rem 1.3rem', fontSize: '0.9rem', fontWeight: 700,
                 cursor: 'pointer', whiteSpace: 'nowrap',
                 fontFamily: IRIS_FONTS.body,
                 boxShadow: '0 6px 18px rgba(0,0,0,0.1)',
@@ -369,11 +371,12 @@ export default function IrisHealthView({ bg, health }: Props) {
                 onClick={() => runAutoPull(false)}
                 disabled={autoSyncBusy}
                 style={{
+                  minHeight: 44,
                   background: 'transparent',
                   border: `1px solid ${bg.cardBorder}`,
                   borderRadius: 999,
-                  padding: '0.4rem 0.9rem',
-                  fontSize: '0.74rem',
+                  padding: '0.6rem 1rem',
+                  fontSize: '0.85rem',
                   color: bg.ink,
                   cursor: autoSyncBusy ? 'not-allowed' : 'pointer',
                   fontFamily: IRIS_FONTS.body,
@@ -459,6 +462,9 @@ export default function IrisHealthView({ bg, health }: Props) {
         }}
       />
 
+      {/* クリエイター向け 3 プリセット (撮影前 / 立ち仕事 / 徹夜後) */}
+      <CreatorRoutines bg={bg} />
+
       {/* セルフケアのヒント (Iris らしい) */}
       <div style={{
         padding: '1.5rem',
@@ -477,13 +483,139 @@ export default function IrisHealthView({ bg, health }: Props) {
             { icon: '', text: '歩数 8000 歩 — 短時間でも血流が変わる' },
             { icon: '', text: '深呼吸 5 分 — 自律神経が整い、表情が柔らかくなる' },
           ].map((t, i) => (
-            <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.85rem', color: bg.ink, lineHeight: 1.85, fontFamily: IRIS_FONTS.body }}>
+            <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.95rem', color: bg.ink, lineHeight: 1.85, fontFamily: IRIS_FONTS.body }}>
               <span style={{ flexShrink: 0 }}>{t.icon}</span>
               <span>{t.text}</span>
             </li>
           ))}
         </ul>
       </div>
+
+      {/* 免責 */}
+      <p style={{ textAlign: 'center', fontSize: '0.75rem', color: bg.inkSoft, fontStyle: 'italic', fontFamily: IRIS_FONTS.serif, paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+        これは医療アドバイスではありません。気になる症状は医師にご相談ください。
+      </p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// CreatorRoutines — 撮影前ルーティン / 立ち仕事疲労 / 徹夜後リカバリ
+// クリエイター女性向け固定プリセット (AI 不要、即表示)
+// ─────────────────────────────────────────────────────────────
+const ROUTINES = [
+  {
+    key: 'pre-shoot',
+    label: 'BEFORE SHOOT',
+    title: '撮影前ルーティン',
+    bullets: [
+      '前夜 23 時までに就寝、深睡眠 90 分を確保',
+      '当日朝に温水 + レモン 1 杯で代謝 ON',
+      '撮影 3 時間前に塩分カット (むくみ防止)',
+      '直前にチークと深呼吸 5 回で血色を整える',
+    ],
+  },
+  {
+    key: 'long-stand',
+    label: 'STANDING WORK',
+    title: '立ち仕事疲労ケア',
+    bullets: [
+      '60 分ごとに 1 分のふくらはぎポンプ (踵上げ 30 回)',
+      '昼休みに 5 分の壁ストレッチで腰を解放',
+      '帰宅後すぐ 38℃ 風呂 15 分 → むくみリセット',
+      '寝る前に脚を心臓より高く上げて 10 分',
+    ],
+  },
+  {
+    key: 'all-night-recover',
+    label: 'AFTER ALL-NIGHTER',
+    title: '徹夜後リカバリ',
+    bullets: [
+      '帰ったら即シャワー → 真っ暗で 90 分仮眠',
+      'カフェイン NG。代わりに水 + 塩で脱水を回復',
+      '昼食はタンパク質 30g (鶏 / 卵) + 緑黄色野菜',
+      '夜は 22 時に消灯、無理に眠ろうとせず横になる',
+    ],
+  },
+];
+
+function CreatorRoutines({ bg }: { bg: IrisBackgroundDef }) {
+  const [openKey, setOpenKey] = useState<string | null>('pre-shoot');
+  return (
+    <div style={{
+      padding: '1.5rem',
+      background: `linear-gradient(135deg, ${bg.accent}0E, ${bg.accent}04)`,
+      border: `1px solid ${bg.accent}38`,
+      borderRadius: 16,
+    }}>
+      <div style={{ marginBottom: '1rem' }}>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600, marginBottom: 6 }}>CREATOR ROUTINES</p>
+        <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.4rem', color: bg.ink, fontWeight: 500, marginBottom: 4 }}>
+          シーンに、整える。
+        </h3>
+        <p style={{ fontSize: '0.85rem', color: bg.inkSoft, lineHeight: 1.7 }}>
+          クリエイターの「明日」を支える 3 つの定番ルーティン。
+        </p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.55rem', marginBottom: openKey ? '0.85rem' : 0 }}>
+        {ROUTINES.map(r => {
+          const active = openKey === r.key;
+          return (
+            <button
+              key={r.key}
+              type="button"
+              onClick={() => setOpenKey(active ? null : r.key)}
+              style={{
+                minHeight: 44,
+                padding: '0.7rem 0.95rem',
+                background: active
+                  ? `linear-gradient(135deg, ${bg.accent}38, ${bg.accent}18)`
+                  : 'rgba(255,255,255,0.55)',
+                border: `1px solid ${active ? bg.accent : bg.cardBorder}`,
+                borderRadius: 12,
+                color: bg.ink,
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontFamily: IRIS_FONTS.body,
+              }}
+              aria-expanded={active}
+            >
+              <div style={{ fontSize: '0.6rem', letterSpacing: '0.22em', color: bg.accent, fontWeight: 700, marginBottom: 2 }}>{r.label}</div>
+              <div style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1rem', fontWeight: 500 }}>{r.title}</div>
+            </button>
+          );
+        })}
+      </div>
+      {openKey && (() => {
+        const r = ROUTINES.find(x => x.key === openKey)!;
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              padding: '1rem 1.2rem',
+              background: 'rgba(255,255,255,0.7)',
+              border: `1px solid ${bg.cardBorder}`,
+              borderRadius: 12,
+            }}
+          >
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.6rem' }}>
+              {r.bullets.map((b, i) => (
+                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', fontSize: '0.95rem', color: bg.ink, lineHeight: 1.7, fontFamily: IRIS_FONTS.body }}>
+                  <span style={{
+                    flexShrink: 0,
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: `${bg.accent}22`, color: bg.accent,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 700, fontSize: '0.72rem',
+                  }}>{i + 1}</span>
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        );
+      })()}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
-import { Upload, CheckCircle2, AlertTriangle, FileText, Loader2, Sparkles } from 'lucide-react';
+import { Upload, CheckCircle2, AlertTriangle, FileText, Loader2, Sparkles, FileSpreadsheet } from 'lucide-react';
 import { PRISM, Pill } from '../prism/MockShell';
 import { importAppleHealthXml, importAppleHealthZip, type AppleImportProgress } from '../../data/appleHealthImport';
 import { generateMockHealth } from '../../data/mockHealth';
+import { parseHealthCsv } from '../../data/healthCsvImport';
 import type { useHealth } from '../../hooks/useHealth';
 
 interface Props {
@@ -30,8 +31,23 @@ export function AppleHealthImport({ health }: Props) {
       } else if (lower.endsWith('.xml')) {
         const text = await file.text();
         days = await importAppleHealthXml(text, (p) => setProgress(p));
+      } else if (lower.endsWith('.csv')) {
+        // 簡易 CSV (1 行 = 1 日)
+        setProgress({ phase: 'aggregating', recordsRead: 0, daysProduced: 0, message: 'CSV を解析中...' });
+        const text = await file.text();
+        const r = parseHealthCsv(text);
+        if (r.warnings.length && r.days.length === 0) {
+          setError(r.warnings.join(' / '));
+          setProgress(null);
+          return;
+        }
+        if (r.unknownColumns.length > 0) {
+          // 警告として表示 (失敗扱いはしない)
+          setError(`未認識の列: ${r.unknownColumns.slice(0, 4).join(', ')}${r.unknownColumns.length > 4 ? ' …' : ''} (それ以外は取込みました)`);
+        }
+        days = r.days;
       } else {
-        setError('export.zip または export.xml を選択してください。');
+        setError('export.zip / export.xml / CSV のいずれかを選んでください。');
         setProgress(null);
         return;
       }
@@ -73,11 +89,11 @@ export function AppleHealthImport({ health }: Props) {
   return (
     <div className="glass rounded-2xl p-4">
       <div className="flex items-center justify-between">
-        <div className="text-[12px] tracking-[0.4em] text-fg-muted">APPLE HEALTH IMPORT</div>
-        <Pill color={PRISM.empathy}>export.zip / .xml</Pill>
+        <div className="text-[12px] tracking-[0.4em] text-fg-muted">健康データ取込</div>
+        <Pill color={PRISM.empathy}>.zip / .xml / .csv</Pill>
       </div>
 
-      <div className="mt-3 grid grid-cols-[1fr_220px] gap-3">
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_220px]">
         {/* Drop zone */}
         <div
           onDragOver={(e) => { e.preventDefault(); setDraggingOver(true); }}
@@ -93,7 +109,7 @@ export function AppleHealthImport({ health }: Props) {
           <input
             ref={fileRef}
             type="file"
-            accept=".xml,.zip"
+            accept=".xml,.zip,.csv,text/csv"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -136,7 +152,8 @@ export function AppleHealthImport({ health }: Props) {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setCompletedDays(null); setProgress(null); }}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[12px] text-fg hover:bg-white/10"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[13px] text-fg hover:bg-white/10"
+                style={{ minHeight: 44 }}
               >
                 もう一度取込む
               </button>
@@ -145,9 +162,11 @@ export function AppleHealthImport({ health }: Props) {
             <>
               <Upload className="h-6 w-6 text-fg-muted" />
               <div className="mt-3 text-[14px] text-fg">
-                Apple Health の <span className="text-fg">export.zip</span> をドロップ
+                <span className="text-fg">export.zip</span> / <span className="text-fg">.xml</span> / <span className="text-fg">.csv</span> をドロップ
               </div>
-              <div className="mt-1 text-[13px] text-fg-subtle">解凍不要 · ZIP/XML 両対応</div>
+              <div className="mt-1 flex items-center gap-1.5 text-[13px] text-fg-subtle">
+                <FileSpreadsheet className="h-3 w-3" /> 自分の表計算 CSV も OK · 解凍不要
+              </div>
             </>
           )}
         </div>
@@ -161,7 +180,11 @@ export function AppleHealthImport({ health }: Props) {
             <li>3. 出力された <span className="text-fg">.zip</span> をそのままここにドロップ</li>
             <li>4. ブラウザ内で自動展開・解析されます</li>
           </ol>
-          <div className="mt-3 rounded-md bg-amber-300/5 px-2 py-1.5 text-[12px] leading-relaxed text-amber-200/80">
+          <div className="mt-3 rounded-md border border-emerald-300/15 bg-emerald-300/5 px-2 py-1.5 text-[12px] leading-relaxed text-emerald-200/85">
+            <FileSpreadsheet className="mr-1 inline h-3 w-3" />
+            CSV も OK: 1 行目に <code className="rounded bg-black/30 px-1">date</code>, <code className="rounded bg-black/30 px-1">sleepHours</code>, <code className="rounded bg-black/30 px-1">steps</code>, <code className="rounded bg-black/30 px-1">restingHR</code> など (日本語ヘッダ・Apple Health → CSV 書出しも対応)。
+          </div>
+          <div className="mt-2 rounded-md bg-amber-300/5 px-2 py-1.5 text-[12px] leading-relaxed text-amber-200/80">
             <AlertTriangle className="mr-1 inline h-3 w-3" />
             ファイルはブラウザ内のみで処理。サーバーへ送信しません。
           </div>
@@ -169,7 +192,8 @@ export function AppleHealthImport({ health }: Props) {
             type="button"
             onClick={(e) => { e.stopPropagation(); handleSampleData(); }}
             disabled={!!isParsing}
-            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[12px] font-medium text-fg hover:bg-white/10 disabled:opacity-60"
+            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-2.5 text-[13px] font-medium text-fg hover:bg-white/10 disabled:opacity-60"
+            style={{ minHeight: 44 }}
           >
             <Sparkles className="h-3 w-3" style={{ color: PRISM.creative }} />
             サンプルデータで試す (30 日分)

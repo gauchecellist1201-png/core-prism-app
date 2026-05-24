@@ -135,8 +135,18 @@ export async function generateHealthAdvice({ stats, tone, endpoint = '/api/ai' }
       max_tokens: 900,
     }),
   });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `AI 応答エラー (${res.status})`);
+  }
   const data = await res.json();
-  const text: string = data.text || data.content || data.message || '';
+  // Anthropic 互換: { content: [{ type:'text', text:'...' }] }
+  const text: string =
+    (Array.isArray(data?.content) ? data.content?.[0]?.text : '') ||
+    data?.text ||
+    (typeof data?.content === 'string' ? data.content : '') ||
+    data?.message ||
+    '';
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('AI 応答に JSON が含まれていません');
   const j = JSON.parse(match[0]);

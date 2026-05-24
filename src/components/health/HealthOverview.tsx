@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, Moon, Activity, Brain, Apple, Sparkles, AlertTriangle, CheckCircle2, MessageCircle } from 'lucide-react';
 import { PRISM, Pill, StatCard } from '../prism/MockShell';
@@ -8,8 +9,10 @@ import { TodaysPrescription } from './TodaysPrescription';
 import { QuickLog } from './QuickLog';
 import { Achievements } from './Achievements';
 import { HealthHeatmap } from './HealthHeatmap';
+import WeeklyAiSummary from './WeeklyAiSummary';
+import { detectAnomalies } from '../../data/healthAnomaly';
 import type { useHealth } from '../../hooks/useHealth';
-import type { MedicalProfile } from '../../types/health';
+import type { MedicalProfile, DailyHealth } from '../../types/health';
 import type { HealthAnomaly } from '../../data/healthAnomaly';
 import type { Persona } from '../../types/identity';
 
@@ -44,6 +47,9 @@ export function HealthOverview({ health, med, anomalies = [], onAskCoach, userNa
       {/* Daily Brief — 朝の挨拶 + 状態1行サマリ */}
       <DailyBrief today={today} anomalies={anomalies} userName={userName} />
 
+      {/* 今週のサマリ — AI 1 日 1 回キャッシュ + Agent 委任 */}
+      <WeeklyAiSummary days={health.days} />
+
       {/* Today's Prescription — AI 1日プラン */}
       {persona && (
         <TodaysPrescription today={today} anomalies={anomalies} persona={persona} />
@@ -54,6 +60,9 @@ export function HealthOverview({ health, med, anomalies = [], onAskCoach, userNa
 
       {/* クイックログ */}
       <QuickLog profile={med} />
+
+      {/* 異常検知の可視化 — 7 日分のチップ */}
+      <DailyAnomalyChips days={health.days} />
 
       {/* 30日ヒートマップ */}
       <HealthHeatmap days={health.days} />
@@ -263,6 +272,113 @@ export function HealthOverview({ health, med, anomalies = [], onAskCoach, userNa
       <p className="text-center text-[12px] text-fg-subtle">
         本機能は予防医療の参考情報であり、医学的診断ではありません。
       </p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// 7 日分の「⚠ 注意 / ✓ 順調」チップ
+// 各日のサブセットを detectAnomalies に渡し、tap で詳細を開く
+// ─────────────────────────────────────────────────────────────
+function DailyAnomalyChips({ days }: { days: DailyHealth[] }) {
+  const week = days.slice(-7);
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  const perDay = useMemo(() => {
+    return week.map((d, i) => {
+      const upto = days.slice(0, days.length - (week.length - 1 - i));
+      // 直近 15 日のウィンドウで判定 (detectAnomalies の要件)
+      const window = upto.slice(-15);
+      const anomalies = detectAnomalies(window);
+      const hasAlert = anomalies.some(a => a.severity === 'alert');
+      const hasCaution = anomalies.some(a => a.severity === 'caution');
+      const status: 'alert' | 'caution' | 'ok' =
+        hasAlert ? 'alert' : hasCaution ? 'caution' : 'ok';
+      return { date: d.date, status, anomalies };
+    });
+  }, [week, days]);
+
+  if (week.length === 0) return null;
+  const open = openIdx !== null ? perDay[openIdx] : null;
+
+  return (
+    <div className="glass rounded-2xl p-4">
+      <div className="flex items-center justify-between">
+        <div className="text-[12px] tracking-[0.4em] text-fg-muted">7 日の調子</div>
+        <div className="text-[11px] text-fg-subtle">タップで詳細</div>
+      </div>
+      <div className="mt-3 grid grid-cols-7 gap-1.5 sm:gap-2">
+        {perDay.map((p, i) => {
+          const sev = p.status;
+          const color = sev === 'alert' ? '#FF6F6F' : sev === 'caution' ? '#FB923C' : '#10B981';
+          const icon = sev === 'ok' ? '✓' : '⚠';
+          const label = sev === 'alert' ? '注意' : sev === 'caution' ? '留意' : '順調';
+          const d = new Date(p.date);
+          const dayShort = `${d.getMonth() + 1}/${d.getDate()}`;
+          const active = openIdx === i;
+          return (
+            <button
+              key={p.date}
+              type="button"
+              onClick={() => setOpenIdx(active ? null : i)}
+              className="flex flex-col items-center gap-1 rounded-xl border bg-white/3 px-1 py-2 transition hover:bg-white/8"
+              style={{
+                borderColor: active ? color : 'rgba(255,255,255,0.08)',
+                boxShadow: active ? `0 0 0 1px ${color}` : undefined,
+                minHeight: 64,
+              }}
+              aria-label={`${dayShort} ${label}`}
+            >
+              <span
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold"
+                style={{ background: `${color}22`, color, border: `1px solid ${color}55` }}
+              >
+                {icon}
+              </span>
+              <span className="text-[10px] text-fg-subtle leading-none">{dayShort}</span>
+              <span className="text-[10px] font-medium" style={{ color }}>{label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {open && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-3 rounded-xl border border-white/10 bg-surface-2 p-3"
+        >
+          <div className="flex items-center justify-between">
+            <div className="text-[13px] font-medium text-fg">{open.date} の詳細</div>
+            <button
+              type="button"
+              onClick={() => setOpenIdx(null)}
+              className="text-[11px] text-fg-subtle hover:text-fg"
+              aria-label="閉じる"
+            >閉じる</button>
+          </div>
+          {open.anomalies.length === 0 ? (
+            <div className="mt-2 flex items-center gap-1.5 text-[13px] text-emerald-200">
+              <CheckCircle2 className="h-3 w-3" /> 異常なサインなし。コンディション良好です。
+            </div>
+          ) : (
+            <ul className="mt-2 grid gap-1.5">
+              {open.anomalies.slice(0, 3).map(a => {
+                const c = a.severity === 'alert' ? '#FF6F6F' : a.severity === 'caution' ? '#FB923C' : '#A78BFA';
+                return (
+                  <li key={a.id} className="flex items-start gap-2 text-[13px] text-fg">
+                    <span className="mt-1 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: c }} />
+                    <div>
+                      <div className="font-medium">{a.title}</div>
+                      <div className="mt-0.5 text-[12.5px] text-fg-muted leading-relaxed">{a.detail}</div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </motion.div>
+      )}
     </div>
   );
 }
