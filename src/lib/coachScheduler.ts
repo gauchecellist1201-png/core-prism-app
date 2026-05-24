@@ -100,11 +100,39 @@ function buildSlotInstruction(slot: CoachSlot): string {
   }
 }
 
+/**
+ * 業務情報のスナップショット — ブリーフを「具体的な数字 + 課題」ベースにする。
+ * 値が無い項目は呼び出し側で省略 OK (undefined 安全)。
+ */
+export interface BusinessSnapshot {
+  /** Stripe 実売上 (今月) — connect 済なら必ず渡す */
+  stripe?: {
+    thisMonthRevenueJpy: number;
+    thisMonthExpenseJpy: number;
+    thisMonthProfitJpy: number;
+    thisMonthTxnCount: number;
+    /** 前月比 (-0.10 = -10%) */
+    momGrowth?: number | null;
+    /** 直近 3 ヶ月の売上合計 */
+    last3mRevenueJpy?: number;
+    connected: boolean;
+  };
+  /** 未請求 / 未送付の請求書 */
+  invoices?: { unpaidCount: number; unpaidAmountJpy: number; overdueCount: number };
+  /** 未処理経費 (レシート未登録) */
+  expenses?: { uncategorizedCount: number; thisMonthAmountJpy: number };
+  /** 営業パイプライン */
+  deals?: { activeCount: number; weightedPipelineJpy: number; stalledCount: number };
+  /** ファン / 顧客 関連 */
+  people?: { staleContactCount: number; topFanCount: number };
+}
+
 interface GenInput {
   persona: Persona;
   slot: CoachSlot;
   knowledge: KnowledgeItem[];
   health?: { today: DailyHealth | null; week: DailyHealth[]; anomalies: HealthAnomaly[] };
+  business?: BusinessSnapshot;
 }
 
 export async function generateBrief(
@@ -113,7 +141,7 @@ export async function generateBrief(
 ): Promise<CoachBrief> {
   // API キー / master key / gemini key は main.tsx の fetch interceptor が
   // localStorage から自動で付与する。ここでは手動で渡さない。
-  const { persona, slot, knowledge, health } = input;
+  const { persona, slot, knowledge, health, business } = input;
 
   const kbSummary = knowledge
     .slice(0, 5)
@@ -130,18 +158,74 @@ export async function generateBrief(
     .map(t => `- [${t.priority}] ${t.title} (期限: ${t.due})`)
     .join('\n') || '(タスクなし)';
 
-  const cashflow = `収入: ¥${persona.cashflow.income.toLocaleString()} / 支出: ¥${Math.abs(persona.cashflow.expense).toLocaleString()} (${persona.cashflow.label})`;
+  // Stripe 実売上があれば最優先で使う。無ければ手入力 cashflow にフォールバック。
+  const yen = (n: number) => '¥' + Math.round(n).toLocaleString('ja-JP');
+  const pct = (g: number | null | undefined) => g == null ? '—' : `${g > 0 ? '+' : ''}${(g * 100).toFixed(0)}%`;
 
+  let cashflow: string;
+  if (business?.stripe?.connected && business.stripe.thisMonthRevenueJpy > 0) {
+    const s = business.stripe;
+    cashflow = `Stripe 実売上 (今月): ${yen(s.thisMonthRevenueJpy)} / 経費: ${yen(s.thisMonthExpenseJpy)} / 利益: ${yen(s.thisMonthProfitJpy)} / 取引 ${s.thisMonthTxnCount} 件 / 前月比 ${pct(s.momGrowth)}`;
+    if (s.last3mRevenueJpy && s.last3mRevenueJpy > 0) {
+      cashflow += ` / 直近 3 ヶ月合計 ${yen(s.last3mRevenueJpy)}`;
+    }
+  } else {
+    cashflow = `収入: ¥${persona.cashflow.income.toLocaleString()} / 支出: ¥${Math.abs(persona.cashflow.expense).toLocaleString()} (${persona.cashflow.label})`;
+    if (!business?.stripe?.connected) {
+      cashflow += '\n  (※ Stripe 未連携。連携すると実売上が反映されます)';
+    }
+  }
+
+  // 業務スナップショットを 1 ブロックに集約
+  const bizBlock: string[] = [];
+  if (business?.invoices) {
+    const i = business.invoices;
+    if (i.unpaidCount > 0 || i.overdueCount > 0) {
+      bizBlock.push(`- 未請求/未払: ${i.unpaidCount} 件 (合計 ${yen(i.unpaidAmountJpy)})${i.overdueCount > 0 ? ` うち期限超過 ${i.overdueCount} 件` : ''}`);
+    }
+  }
+  if (business?.expenses) {
+    const e = business.expenses;
+    if (e.uncategorizedCount > 0) {
+      bizBlock.push(`- 未処理レシート: ${e.uncategorizedCount} 枚 (今月経費 ${yen(e.thisMonthAmountJpy)})`);
+    }
+  }
+  if (business?.deals) {
+    const d = business.deals;
+    if (d.activeCount > 0) {
+      bizBlock.push(`- 進行中案件: ${d.activeCount} 件 (確度加重 ${yen(d.weightedPipelineJpy)})${d.stalledCount > 0 ? ` うち停滞 ${d.stalledCount} 件` : ''}`);
+    }
+  }
+  if (business?.people) {
+    const p = business.people;
+    if (p.staleContactCount > 0) {
+      bizBlock.push(`- 連絡が空いた相手: ${p.staleContactCount} 人 (30 日以上)`);
+    }
+  }
+  const businessOps = bizBlock.length > 0 ? bizBlock.join('\n') : '(業務情報の追加データなし)';
+
+  // 体調は「業務に影響する場合だけ」1 行で添える。最後に
   let healthBlock = '';
   if (health?.today) {
     const t = health.today;
-    healthBlock = `\n## 体調 (今日)\n- 睡眠: ${t.sleepHours.toFixed(1)}h (スコア${t.sleepScore}) / 回復: ${t.recoveryScore}/100 / ストレス: ${t.stressLevel}/100`;
-    if (health.anomalies.length > 0) {
-      healthBlock += '\n- 注意: ' + health.anomalies.slice(0, 2).map(a => a.title).join(', ');
+    const concern = t.sleepHours < 5 || t.recoveryScore < 40 || t.stressLevel > 70;
+    if (concern) {
+      healthBlock = `\n## 体調 (注意あり)\n- 睡眠 ${t.sleepHours.toFixed(1)}h / 回復 ${t.recoveryScore} / ストレス ${t.stressLevel}`;
+      if (health.anomalies.length > 0) {
+        healthBlock += ` / ${health.anomalies.slice(0, 1).map(a => a.title).join(', ')}`;
+      }
+    } else {
+      healthBlock = `\n## 体調 — 概ね良好 (睡眠 ${t.sleepHours.toFixed(1)}h / 回復 ${t.recoveryScore})`;
     }
   }
 
   const systemPrompt = `あなたはオーナーの **AI 戦略コーチ** です。1 日 3 回、自動的にお知らせを届けます。
+
+## 🟢 内容のルール (絶対遵守)
+1. **業務 (お金 / 案件 / タスク / 顧客) が常に最優先**。体調の話は、業務に影響しているとき "1 文だけ" 添える。
+2. **必ず数字を入れる**: Stripe 実売上 / 未請求金額 / 取引件数 / 残タスク件数 / 案件件数 など、与えられた数字を message と context に入れる。
+3. 抽象的な「がんばりましょう」「健康に気をつけて」だけは **禁止**。具体的な行動を 1 つ以上提示。
+4. ナレッジに書かれていることだけを根拠にする。推測で数字を作らない。
 
 ## 🟢 やさしい日本語で書くルール (絶対遵守)
 中学生でも読める言葉で書く。専門用語・横文字は使わない。やむを得ず使う場合は括弧で和訳。
@@ -149,8 +233,8 @@ export async function generateBrief(
 - 例: 「毎月の売上」「やめてしまう人の割合」「上のプランへの切替」「目標の数字」「集客ページ」「申込ボタン」
 - 「ブリーフィング」→「お知らせ」、「アクションアイテム」→「やること」、「コンテキスト」→「背景」
 - 文末は丁寧 (〜します / 〜できます / 〜してみてください)
-- 数字で示せることはすべて数字で
 
+## 出力フォーマット
 返答は **JSON のみ** (コードブロックなし、説明文なし)。スキーマ:
 {
   "title": "時間帯 + 今の中心テーマ (20 文字以内、やさしい日本語)",
@@ -169,8 +253,11 @@ ${toneInstruction(settings.aiTone)}`;
 ${persona.name} (${persona.subtitle})
 ${persona.description || ''}
 
-## 財務状況
+## 💰 業務状況 (この情報を必ず提案に活かす)
 ${cashflow}
+
+### 業務オペレーション (未処理 / 進行中)
+${businessOps}
 
 ## 未完了タスク
 ${openTasks}
@@ -180,7 +267,8 @@ ${kbSummary}${healthBlock}
 
 ${buildSlotInstruction(slot)}
 
-"${persona.name}" への${slotJa}のブリーフを生成してください。`;
+"${persona.name}" への${slotJa}のブリーフを生成してください。
+**業務 (お金 / 案件 / タスク) を必ず中心に。** 体調は業務に影響していなければ言及しない。`;
 
   const data = await enqueueClaudeCall(async () => {
     const res = await fetch('/api/ai', {

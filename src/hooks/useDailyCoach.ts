@@ -8,6 +8,7 @@ import type { HealthAnomaly } from '../data/healthAnomaly';
 import {
   type CoachBrief,
   type CoachSlot,
+  type BusinessSnapshot,
   getCurrentSlot,
   shouldRefresh,
   getTodayBrief,
@@ -27,6 +28,8 @@ export function useDailyCoach(
   persona: Persona | null,
   knowledge: KnowledgeItem[],
   health?: HealthCtx,
+  /** Stripe 実売上 / 案件 / タスク のスナップショット (オーナー指示: ブリーフを業務的に) */
+  business?: BusinessSnapshot,
 ) {
   const [brief, setBrief] = useState<CoachBrief | null>(null);
   const [incoming, setIncoming] = useState<CoachBrief | null>(null);
@@ -45,6 +48,7 @@ export function useDailyCoach(
         slot,
         knowledge: knowledge.filter(k => k.personaId === persona.id),
         health,
+        business,
       });
       setBrief(result);
       setIncoming(result);
@@ -62,7 +66,7 @@ export function useDailyCoach(
       generatingRef.current = false;
       setIsGenerating(false);
     }
-  }, [persona, knowledge, settings, health]);
+  }, [persona, knowledge, settings, health, business]);
 
   const checkAndGenerate = useCallback(async () => {
     if (!persona) return;

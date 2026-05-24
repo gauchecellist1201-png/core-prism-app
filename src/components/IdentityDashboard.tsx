@@ -25,6 +25,9 @@ import MomentPulse from './MomentPulse';
 import QuickActions from './QuickActions';
 import ActivityTimeline from './ActivityTimeline';
 import HealthSnapshot from './HealthSnapshot';
+import { useStripeRevenue } from '../hooks/useStripeRevenue';
+import { useInvoices } from '../hooks/useInvoices';
+import type { BusinessSnapshot } from '../lib/coachScheduler';
 import TodaysBodyCard from '../prism/TodaysBodyCard';
 import { loadBillingUser } from '../lib/billing';
 // CoreRevenueCard はマスター専用経営画面へ移設予定 (ペルソナ画面からは撤去)
@@ -148,7 +151,39 @@ export default function IdentityDashboard({
 }: Props) {
   const proactive = useProactiveAgent(settings, persona, knowledgeForAgent, healthCtx);
   const shadow = useShadowSecretary(settings, persona);
-  const coach = useDailyCoach(settings, persona, knowledgeForAgent, healthCtx);
+
+  // ── Stripe + Invoices を集めて useDailyCoach のブリーフ に「業務スナップショット」を渡す ──
+  // オーナー指示 (2026-05-25): ブリーフは体調話ばかりではなく、Stripe 実売上 / 未払請求書 /
+  // 進行中案件 等の実数字 + 課題ベースで提案する。
+  const _stripeForBrief = useStripeRevenue();
+  const _invoicesHook = useInvoices();
+  const _personaInvoices = _invoicesHook.getForPersona(persona.id);
+  const _today = new Date();
+  const _unpaid = _personaInvoices.filter(i => i.status === 'issued');
+  const _overdue = _unpaid.filter(i => i.dueDate && new Date(i.dueDate) < _today);
+  const _unpaidAmountJpy = _unpaid.reduce(
+    (sum, i) => sum + i.lines.reduce((s, l) => s + (l.quantity || 0) * (l.unitPrice || 0), 0),
+    0,
+  );
+  const _last3m = _stripeForBrief.sumMonths(3);
+  const briefBusiness: BusinessSnapshot = {
+    stripe: {
+      connected: _stripeForBrief.connected,
+      thisMonthRevenueJpy: _stripeForBrief.thisMonth.revenueJpy,
+      thisMonthExpenseJpy: _stripeForBrief.thisMonth.expenseJpy,
+      thisMonthProfitJpy: _stripeForBrief.thisMonth.profitJpy,
+      thisMonthTxnCount: _stripeForBrief.thisMonth.txnCount,
+      momGrowth: _stripeForBrief.momGrowth,
+      last3mRevenueJpy: _last3m.revenueJpy,
+    },
+    invoices: {
+      unpaidCount: _unpaid.length,
+      unpaidAmountJpy: _unpaidAmountJpy,
+      overdueCount: _overdue.length,
+    },
+  };
+
+  const coach = useDailyCoach(settings, persona, knowledgeForAgent, healthCtx, briefBusiness);
   const dailyStreak = useDailyStreak();
   useReengagement(dailyStreak, { brand: 'prism' });
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboarded());
@@ -253,7 +288,16 @@ export default function IdentityDashboard({
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number; current: string } | null>(null);
 
   const personaKnowledge = knowledgeItems.filter(i => i.personaId === persona.id);
-  const net = persona.cashflow.income + persona.cashflow.expense;
+
+  // 上で取得済の Stripe 実売上を「今月の収支」表示にも使う
+  const stripe = _stripeForBrief;
+  const stripeActive = stripe.connected && stripe.thisMonth.revenueJpy > 0;
+  const displayIncome = stripeActive ? stripe.thisMonth.revenueJpy : persona.cashflow.income;
+  const displayExpense = stripeActive ? -stripe.thisMonth.expenseJpy : persona.cashflow.expense;
+  const displayLabel = stripeActive
+    ? `Stripe 実売上 (${new Date().getMonth() + 1}月)${stripe.thisMonth.txnCount ? ` ・ ${stripe.thisMonth.txnCount} 件` : ''}`
+    : persona.cashflow.label;
+  const net = displayIncome + displayExpense;
 
   const SUPPORTED_EXT = new Set([
     'pdf','docx','pptx','xlsx','xls','csv','txt','md','markdown','json','html','htm',
@@ -1011,23 +1055,30 @@ export default function IdentityDashboard({
                 whileTap={{ scale: 0.995 }}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-fg-muted text-xs tracking-widest uppercase">{persona.cashflow.label}</p>
-                  <span className="text-[10px] text-fg-muted">編集 ✎</span>
+                  <p className="text-fg-muted text-xs tracking-widest uppercase" style={{ color: stripeActive ? '#635BFF' : undefined }}>
+                    {stripeActive && '⚡ '}
+                    {displayLabel}
+                  </p>
+                  <span className="text-[10px] text-fg-muted">{stripeActive ? '自動連動' : '編集 ✎'}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-baseline gap-3 flex-wrap">
-                    {persona.cashflow.income > 0 && (
+                    {displayIncome > 0 && (
                       <span className="text-xl font-light" style={{ color: '#34d399' }}>
-                        +¥{(persona.cashflow.income / 10000).toFixed(0)}万
+                        +¥{(displayIncome / 10000).toFixed(0)}万
                       </span>
                     )}
-                    {persona.cashflow.expense < 0 && (
+                    {displayExpense < 0 && (
                       <span className="text-base font-light text-fg-muted">
-                        -¥{(Math.abs(persona.cashflow.expense) / 10000).toFixed(0)}万
+                        -¥{(Math.abs(displayExpense) / 10000).toFixed(0)}万
                       </span>
                     )}
-                    {persona.cashflow.income === 0 && persona.cashflow.expense === 0 && (
-                      <span className="text-fg-muted text-sm">クリックして資料から自動抜出 / 手入力</span>
+                    {displayIncome === 0 && displayExpense === 0 && (
+                      <span className="text-fg-muted text-sm">
+                        {stripe.connected
+                          ? '今月の Stripe 取引はまだ 0 件です'
+                          : 'クリックして資料から自動抜出 / 手入力 / Stripe をつなぐ'}
+                      </span>
                     )}
                   </div>
                   <div className="text-right px-3 py-1.5 rounded-lg flex-shrink-0" style={{ background: persona.accentColorLight }}>
