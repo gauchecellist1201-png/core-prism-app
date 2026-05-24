@@ -4,12 +4,13 @@
 // 「あなたの光が、世界をつくる」 ── 影響力という光を、AI が広げる
 // ============================================================
 import { motion } from 'framer-motion';
-import { Mail, BarChart3, Sparkle, MessageSquare, Palette, UsersRound, Camera, Mic, HeartPulse, Check } from 'lucide-react';
+import { Mail, BarChart3, Sparkle, MessageSquare, Palette, UsersRound, Camera, Mic, HeartPulse, Check, ArrowRight, TrendingUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { IRIS_COLORS, IRIS_FONTS } from './irisStyle';
 import { IrisLogo } from '../components/Logo';
 import { useLocale } from '../hooks/useLocale';
 import type { Locale } from '../lib/i18n';
+import LiveAgentMock from '../components/LiveAgentMock';
 
 interface Props {
   onEnter: () => void;
@@ -62,7 +63,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         position: 'relative',
         zIndex: 60,
       }}>
-        2026/05/12 ベータ公開 — 14 日間無料 / クレカ不要 / 先着で 30 日延長
+        2026/05/12 ベータ公開 — 7 日間 完全無料 / クレカ登録不要 / 解約は 1 タップ
       </div>
 
       {/* ── ヘッダ ────────────────────────────── */}
@@ -84,30 +85,107 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       </header>
 
       {/* ── HERO */}
-      <section className="lp-hero-pad lp-safe" style={{ position: 'relative', padding: '8rem 1.25rem 7rem', overflow: 'hidden', textAlign: 'center' }}>
+      <section className="lp-hero-pad lp-safe" style={{ position: 'relative', padding: '6.5rem 1.25rem 5rem', overflow: 'hidden' }}>
         <IrisAuroraBackdrop />
-        <div style={{ maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 2 }}>
-          <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} style={{ fontSize: '0.7rem', letterSpacing: '0.5em', fontWeight: 600, marginBottom: '1.5rem', background: `linear-gradient(90deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purpleLt})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            {t('iris.hero.eyebrow')}
-          </motion.p>
-          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.1 }} style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(2.5rem, 7vw, 5.6rem)', fontWeight: 500, lineHeight: 1.05, letterSpacing: '-0.01em', marginBottom: '1.5rem' }}>
-            {t('iris.hero.h1.line1')}
-            <br />
-            <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold} 0%, ${IRIS_COLORS.hotPink} 50%, ${IRIS_COLORS.purpleLt} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {t('iris.hero.h1.line2')}
-            </span>
-          </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }} style={{ fontFamily: IRIS_FONTS.serif, fontSize: 'clamp(1.05rem, 1.9vw, 1.4rem)', color: IRIS_COLORS.ivoryDeep, lineHeight: 1.8, marginBottom: '0.75rem' }}>
-            {t('iris.hero.sub1')}
-          </motion.p>
-          <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.45 }} style={{ fontSize: 'clamp(0.95rem, 1.6vw, 1.1rem)', color: 'rgba(255,250,245,0.65)', lineHeight: 1.8, marginBottom: '2.5rem', maxWidth: 720, margin: '0 auto 2.5rem' }}>
-            {t('iris.hero.sub2')}
-          </motion.p>
-          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.6 }} style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={onEnter} style={ctaBtnHero}>{t('iris.hero.cta')}</button>
-            <a href="#facets" style={ctaBtnGhost}>{t('iris.hero.cta2')}</a>
+        <div className="iris-hero-grid" style={{ maxWidth: 1240, margin: '0 auto', position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: '1.05fr 0.95fr', gap: '3rem', alignItems: 'center' }}>
+          {/* ── 左: 文言 + CTA ───────── */}
+          <div className="iris-hero-copy">
+            <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} style={{ fontSize: '0.7rem', letterSpacing: '0.45em', fontWeight: 600, marginBottom: '1.25rem', background: `linear-gradient(90deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purpleLt})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              CORE IRIS — AGENT FOR INSTAGRAM CREATORS
+            </motion.p>
+            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.1 }} style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(2.2rem, 5.2vw, 4.6rem)', fontWeight: 500, lineHeight: 1.08, letterSpacing: '-0.01em', marginBottom: '1.25rem' }}>
+              <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold} 0%, ${IRIS_COLORS.hotPink} 50%, ${IRIS_COLORS.purpleLt} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                Instagram
+              </span> に、
+              <br />
+              専属マネージャー <span style={{ fontFamily: IRIS_FONTS.body, fontStyle: 'normal', fontWeight: 800 }}>AI</span> を雇おう。
+            </motion.h1>
+            <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }} style={{ fontFamily: IRIS_FONTS.serif, fontSize: 'clamp(1rem, 1.7vw, 1.25rem)', color: IRIS_COLORS.ivoryDeep, lineHeight: 1.8, marginBottom: '2rem', maxWidth: 560 }}>
+              DM スクショ → <strong style={{ color: IRIS_COLORS.gold }}>案件登録 30 秒</strong>。<br />
+              AI 交渉文、戦略まで全部やる。<strong style={{ color: IRIS_COLORS.cream }}>月 ¥9,800</strong> から。
+            </motion.p>
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.45 }} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button onClick={onEnter} style={ctaBtnHero} className="iris-hero-cta-primary">
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                  7 日間 無料で試す <ArrowRight size={18} strokeWidth={2.6} />
+                </span>
+              </button>
+              <a href="#pricing" style={ctaBtnGhost} className="iris-hero-cta-secondary">価格を見る</a>
+            </motion.div>
+            <p style={{ fontSize: '0.78rem', color: 'rgba(255,250,245,0.5)', marginTop: '1.1rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', lineHeight: 1.6 }}>
+              7 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ
+            </p>
+          </div>
+
+          {/* ── 右: Live AgentTeamMonitor 風モック ───────── */}
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.9, delay: 0.3, ease: 'easeOut' }}
+            className="iris-hero-mock"
+          >
+            <LiveAgentMock theme="iris" />
           </motion.div>
-          <p style={{ fontSize: '0.75rem', color: 'rgba(255,250,245,0.4)', marginTop: '1.5rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>{t('iris.hero.free')}</p>
+        </div>
+
+        {/* ── ヒーロー直下: 3 実例 ───────── */}
+        <div className="iris-hero-examples" style={{ maxWidth: 1100, margin: '3.5rem auto 0', position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
+            {([
+              {
+                Icon: Camera,
+                tag: 'DM 案件',
+                lead: 'スクショ 1 枚 → 30 秒で案件カード',
+                detail: 'PR 依頼 DM のスクショを送るだけ。条件・希望ギャラ・締切まで自動で抽出。',
+                color: IRIS_COLORS.hotPink,
+              },
+              {
+                Icon: MessageSquare,
+                tag: '交渉',
+                lead: '案件カテゴリ → AI が DM 4 トーン',
+                detail: '丁寧 / カジュアル / プロ / 断り ── 4 つの返信トーンを Iris が同時にドラフト。',
+                color: IRIS_COLORS.gold,
+              },
+              {
+                Icon: TrendingUp,
+                tag: '収益',
+                lead: 'フォロワーごとの広告単価で月収予測',
+                detail: 'あなたのジャンル × フォロワー数で、業界相場から月の見込み収入を試算。',
+                color: IRIS_COLORS.purpleLt,
+              },
+            ] as { Icon: LucideIcon; tag: string; lead: string; detail: string; color: string }[]).map((ex, i) => (
+              <motion.div
+                key={ex.tag}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-30px' }}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
+                style={{
+                  position: 'relative',
+                  background: 'rgba(255,250,245,0.04)',
+                  border: `1px solid ${ex.color}38`,
+                  borderRadius: 16,
+                  padding: '1.1rem 1.15rem 1.2rem',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{ position: 'absolute', top: -50, right: -50, width: 160, height: 160, borderRadius: '50%', background: ex.color, opacity: 0.16, filter: 'blur(50px)', pointerEvents: 'none' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.55rem', position: 'relative', zIndex: 2 }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: 9,
+                    background: `linear-gradient(135deg, ${ex.color}, ${ex.color}cc)`,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: `0 6px 14px ${ex.color}55, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                  }}>
+                    <ex.Icon size={18} color="#fff" strokeWidth={2.3} />
+                  </div>
+                  <span style={{ fontSize: '0.62rem', letterSpacing: '0.22em', fontWeight: 700, color: ex.color, textTransform: 'uppercase' }}>{ex.tag}</span>
+                </div>
+                <p style={{ position: 'relative', zIndex: 2, fontSize: '0.98rem', fontWeight: 700, color: IRIS_COLORS.ivory, marginBottom: '0.4rem', lineHeight: 1.4 }}>{ex.lead}</p>
+                <p style={{ position: 'relative', zIndex: 2, fontSize: '0.82rem', color: 'rgba(255,250,245,0.68)', lineHeight: 1.65, fontFamily: IRIS_FONTS.body }}>{ex.detail}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -243,7 +321,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
               無料で Iris を試す
             </button>
             <p style={{ fontSize: '0.75rem', color: 'rgba(255,250,245,0.45)', marginTop: '0.85rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
-              14 日間無料 · クレカ不要
+              7 日間無料 · クレカ不要
             </p>
           </div>
         </div>
@@ -334,9 +412,9 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 >
                   <span style={{ position: 'relative', zIndex: 2 }}>
                     {p.id === 'studio' ? 'チームでの導入を相談' :
-                     p.id === 'pro' ? 'Pro を 14 日無料で試す' :
-                     p.id === 'standard' ? 'Standard を 14 日無料で試す' :
-                     'Lite を 14 日無料で試す'}
+                     p.id === 'pro' ? 'Pro を 7 日無料で試す' :
+                     p.id === 'standard' ? 'Standard を 7 日無料で試す' :
+                     'Lite を 7 日無料で試す'}
                   </span>
                 </button>
                 <p style={{
@@ -361,7 +439,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             あなたの光を、<br />
             <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purpleLt})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>いま、世界へ。</span>
           </h2>
-          <p style={{ color: 'rgba(255,250,245,0.6)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.8, fontFamily: IRIS_FONTS.serif }}>14 日間、すべての機能を無料でお試しできます。</p>
+          <p style={{ color: 'rgba(255,250,245,0.6)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.8, fontFamily: IRIS_FONTS.serif }}>7 日間、すべての機能を無料でお試しできます。</p>
           <button onClick={onEnter} style={ctaBtnHero}>Iris を試す</button>
         </div>
       </section>

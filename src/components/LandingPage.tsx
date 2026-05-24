@@ -9,10 +9,12 @@ import { useT, type Lang, type Dictionary } from '../i18n';
 import {
   Compass, Briefcase, TrendingUp, Sparkles, BookOpen, Users, Heart,
   FileText, FileSpreadsheet, ScrollText, Target, Mail, Receipt, Palette, Mic,
+  Mic2, Handshake, Receipt as ReceiptIcon, ArrowRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { REFERRAL_BONUS_DAYS, getPendingReferralInviter } from '../lib/referral';
+import LiveAgentMock from './LiveAgentMock';
 
 interface Props {
   onEnterApp: () => void;
@@ -131,69 +133,135 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
       </header>
 
       {/* ── HERO ──────────────────────────────────────────── */}
-      <section className="lp-hero-pad lp-safe" style={{ position: 'relative', padding: '8rem 1.25rem 7rem', overflow: 'hidden' }}>
+      <section className="lp-hero-pad lp-safe" style={{ position: 'relative', padding: '6.5rem 1.25rem 5.5rem', overflow: 'hidden' }}>
         <PrismHeroBackdrop />
 
-        <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 2, textAlign: 'center' }}>
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            style={{ fontSize: '0.75rem', letterSpacing: '0.4em', fontWeight: 700, marginBottom: '1.25rem', background: 'linear-gradient(90deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-          >
-            {t.hero.eyebrow}
-          </motion.p>
+        <div className="lp-hero-grid" style={{ maxWidth: 1240, margin: '0 auto', position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: '1.05fr 0.95fr', gap: '3rem', alignItems: 'center' }}>
+          {/* ── 左: 文言 + CTA ───────── */}
+          <div className="lp-hero-copy">
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              style={{ fontSize: '0.72rem', letterSpacing: '0.35em', fontWeight: 700, marginBottom: '1.1rem', background: 'linear-gradient(90deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+            >
+              CORE PRISM — AI 役員 13 名があなたの会社になる
+            </motion.p>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            style={{ fontSize: 'clamp(2.5rem, 6.5vw, 5.6rem)', fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '1.25rem' }}
-          >
-            {t.hero.h1Line1}
-            <br />
-            <span style={{ background: 'linear-gradient(90deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {t.hero.h1Line2}
-            </span>
-          </motion.h1>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+              style={{ fontSize: 'clamp(2.2rem, 4.8vw, 4.4rem)', fontWeight: 900, lineHeight: 1.08, letterSpacing: '-0.02em', marginBottom: '1.25rem' }}
+            >
+              13 人の <span style={{ background: 'linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>AI 役員</span> が、
+              <br />
+              あなたの会社を <span style={{ background: 'linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>24 時間動かす</span>。
+            </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.25 }}
-            style={{ fontSize: 'clamp(1rem, 1.7vw, 1.25rem)', color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, marginBottom: '0.75rem' }}
-          >
-            {t.hero.sub1}
-          </motion.p>
-          <motion.p
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            style={{ fontSize: 'clamp(1rem, 1.7vw, 1.2rem)', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, marginBottom: '2.5rem', maxWidth: 720, margin: '0 auto 2.5rem' }}
-          >
-            {t.hero.sub2}
-          </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.25 }}
+              style={{ fontSize: 'clamp(1rem, 1.55vw, 1.18rem)', color: 'rgba(255,255,255,0.8)', lineHeight: 1.75, marginBottom: '2rem', maxWidth: 560 }}
+            >
+              ユーザーは <strong style={{ color: '#fff' }}>承認するだけ</strong>。
+              議事録 / 営業 / 財務 / コンテンツ ── 全部、勝手に進む。
+            </motion.p>
 
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}
+            >
+              <button onClick={onEnterApp} style={ctaBtnHero} className="lp-hero-cta-primary">
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                  7 日間 無料で試す <ArrowRight size={18} strokeWidth={2.6} />
+                </span>
+              </button>
+              <a href="/pricing" style={ctaBtnGhost} className="lp-hero-cta-secondary">
+                価格を見る
+              </a>
+            </motion.div>
+
+            <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginTop: '1.1rem', lineHeight: 1.6 }}>
+              7 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ
+            </p>
+          </div>
+
+          {/* ── 右: Live AgentTeamMonitor 風モック ───────── */}
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.55 }}
-            style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.9, delay: 0.3, ease: 'easeOut' }}
+            className="lp-hero-mock"
           >
-            <button onClick={onEnterApp} style={ctaBtnHero}>
-              {t.hero.cta}
-            </button>
-            <a href="#agents" style={ctaBtnGhost}>
-              {t.hero.cta2}
-            </a>
+            <LiveAgentMock theme="prism" />
           </motion.div>
-
-          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '1.5rem' }}>
-            {t.hero.free}
-          </p>
         </div>
 
-        {/* 7色プリズム可視化 */}
+        {/* ── ヒーロー直下: 3 実例 横並びカード ───────── */}
+        <div className="lp-hero-examples" style={{ maxWidth: 1100, margin: '3.5rem auto 0', position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
+            {([
+              {
+                Icon: Mic2,
+                tag: '議事録',
+                lead: '1 時間の録音 → 3 分で構造化',
+                detail: '会議の音声 → 要点・決定・アクションに自動で整理。AI が次の手まで提案。',
+                color: '#60a5fa',
+              },
+              {
+                Icon: Handshake,
+                tag: '営業',
+                lead: '5 社の見込み → AI が提案文 5 通',
+                detail: 'リスト共有 → CSO 役員 AI が業界を読み、5 社それぞれに合わせた提案文を起草。',
+                color: '#f472b6',
+              },
+              {
+                Icon: ReceiptIcon,
+                tag: '財務',
+                lead: 'レシート撮影 → 月次損益が勝手に',
+                detail: 'スマホで撮るだけ。CFO 役員 AI が仕訳・月次 PL ・税理士提出用まで自動化。',
+                color: '#4ade80',
+              },
+            ] as { Icon: LucideIcon; tag: string; lead: string; detail: string; color: string }[]).map((ex, i) => (
+              <motion.div
+                key={ex.tag}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-30px' }}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
+                style={{
+                  position: 'relative',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${ex.color}30`,
+                  borderRadius: 16,
+                  padding: '1.1rem 1.15rem 1.2rem',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{ position: 'absolute', top: -50, right: -50, width: 160, height: 160, borderRadius: '50%', background: ex.color, opacity: 0.15, filter: 'blur(50px)', pointerEvents: 'none' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.55rem', position: 'relative', zIndex: 2 }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: 9,
+                    background: `linear-gradient(135deg, ${ex.color}, ${ex.color}cc)`,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: `0 6px 14px ${ex.color}55, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                  }}>
+                    <ex.Icon size={18} color="#fff" strokeWidth={2.3} />
+                  </div>
+                  <span style={{ fontSize: '0.62rem', letterSpacing: '0.22em', fontWeight: 700, color: ex.color, textTransform: 'uppercase' }}>{ex.tag}</span>
+                </div>
+                <p style={{ position: 'relative', zIndex: 2, fontSize: '0.98rem', fontWeight: 700, color: '#fff', marginBottom: '0.4rem', lineHeight: 1.4 }}>{ex.lead}</p>
+                <p style={{ position: 'relative', zIndex: 2, fontSize: '0.82rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.65 }}>{ex.detail}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* 7色プリズム可視化 (元のまま、下に移動) */}
         <div style={{ maxWidth: 980, margin: '4rem auto 0', position: 'relative', zIndex: 2 }}>
           <PrismFanVisualization dict={t} />
         </div>
