@@ -506,7 +506,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
     <div style={{ maxWidth: 880, margin: '0 auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* ヘッダ */}
       <div style={{ marginBottom: '1.25rem' }}>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.28em', color: bg.accent, fontWeight: 700, marginBottom: 4 }}>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600, marginBottom: 4 }}>
           COLLAB
         </p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.6rem, 4vw, 2rem)', color: bg.ink, margin: 0 }}>

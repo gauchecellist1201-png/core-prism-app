@@ -370,7 +370,7 @@ export default function IrisRevenueView({ bg }: Props) {
       <div style={{ padding: '1.25rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           <Target size={16} color={bg.accent} />
-          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 700, margin: 0 }}>MONTHLY GOAL</p>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, margin: 0 }}>MONTHLY GOAL</p>
           <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: bg.inkSoft, fontFamily: IRIS_FONTS.mono }}>
             ¥{summary.monthlyTotal.toLocaleString()} / ¥{goal.toLocaleString()} ({Math.round(goalPct)}%)
           </span>
@@ -400,14 +400,14 @@ export default function IrisRevenueView({ bg }: Props) {
             step={10000}
           />
           {goalPct >= 100 && (
-            <span style={{ fontSize: '0.85rem', color: '#E1306C', fontWeight: 700 }}>目標達成 おめでとう！</span>
+            <span style={{ fontSize: '0.85rem', color: bg.accent, fontWeight: 700 }}>目標達成 おめでとう！</span>
           )}
         </div>
       </div>
 
       {/* 来月予測の内訳 */}
       <div style={{ padding: '1.25rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 700, marginBottom: 10 }}>NEXT MONTH FORECAST</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: 10 }}>NEXT MONTH FORECAST</p>
         <p style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.6rem', color: bg.ink, fontWeight: 700, margin: '0 0 6px' }}>
           <CountUp value={nextMonthForecast.forecast} format={(n) => `¥${Math.round(n).toLocaleString()}`} />
         </p>
@@ -420,7 +420,7 @@ export default function IrisRevenueView({ bg }: Props) {
 
       {/* 税金見積もり */}
       <div style={{ padding: '1.25rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 700, marginBottom: 10 }}>TAX ESTIMATE — 経費 0 円ベース (保守)</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: 10 }}>TAX ESTIMATE — 経費 0 円ベース (保守)</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
           <div>
             <p style={{ fontSize: '0.7rem', color: bg.inkSoft, marginBottom: 4 }}>年間概算所得税</p>
@@ -516,21 +516,21 @@ export default function IrisRevenueView({ bg }: Props) {
         >
           <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: '1rem' }}>NEW ENTRY</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-            <FieldWrap label="日付">
+            <FieldWrap label="日付" bg={bg}>
               <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                 style={inputStyle(bg)} />
             </FieldWrap>
-            <FieldWrap label="収入源">
+            <FieldWrap label="収入源" bg={bg}>
               <select value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value as RevenueSource }))}
                 style={inputStyle(bg)}>
                 {ALL_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </FieldWrap>
-            <FieldWrap label="金額 (税抜・円)">
+            <FieldWrap label="金額 (税抜・円)" bg={bg}>
               <input type="number" value={form.amountJPY} onChange={e => setForm(f => ({ ...f, amountJPY: e.target.value }))}
                 placeholder="50000" style={inputStyle(bg)} />
             </FieldWrap>
-            <FieldWrap label="詳細" style={{ gridColumn: '1 / -1' }}>
+            <FieldWrap label="詳細" bg={bg} style={{ gridColumn: '1 / -1' }}>
               <input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="例: SHISEIDO Instagram リール案件" style={inputStyle(bg)} />
             </FieldWrap>
@@ -653,10 +653,10 @@ function SummaryCard({ bg, label, amount, text, spark, delay = 0 }: {
   );
 }
 
-function FieldWrap({ label, children, style }: { label: string; children: React.ReactNode; style?: React.CSSProperties }) {
+function FieldWrap({ label, children, style, bg }: { label: string; children: React.ReactNode; style?: React.CSSProperties; bg?: IrisBackgroundDef }) {
   return (
     <div style={style}>
-      <label style={{ fontSize: '0.7rem', color: '#3D3247', letterSpacing: '0.05em', fontWeight: 600, display: 'block', marginBottom: 4, fontFamily: IRIS_FONTS.body }}>
+      <label style={{ fontSize: '0.7rem', color: bg?.inkSoft ?? '#3D3247', letterSpacing: '0.05em', fontWeight: 600, display: 'block', marginBottom: 4, fontFamily: IRIS_FONTS.body }}>
         {label}
       </label>
       {children}
