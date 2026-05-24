@@ -1594,6 +1594,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           <IrisDmDraftModal
             igProfile={igProfile}
             deal={dmDraftDeal}
+            mediaKit={mediaKit}
+            brandGuideline={brandGuide.active}
             onClose={() => setDmDraftDeal(null)}
           />
         )}
