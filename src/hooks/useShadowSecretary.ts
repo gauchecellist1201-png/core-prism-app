@@ -24,6 +24,8 @@ export interface ShadowDraft {
   generatedAt: string;
   sent?: boolean;
   dismissed?: boolean;
+  /** どの人格として下書きしたか — persona 切替後に他人格のドラフトを混ぜないため */
+  personaId?: string;
 }
 
 function loadDrafts(): ShadowDraft[] {
@@ -49,7 +51,11 @@ export function useShadowSecretary(settings: AppSettings, persona: Persona) {
   const [lastPolledAt, setLastPolledAt] = useState<Date | null>(null);
   const pollingRef = useRef(false);
 
-  const activeDrafts = drafts.filter(d => !d.sent && !d.dismissed);
+  // ユーザーに見せる drafts は当 persona のものだけ。
+  // 旧仕様 (personaId 無し) のドラフトは「全人格共有」とみなして表示 (互換)。
+  const activeDrafts = drafts.filter(d =>
+    !d.sent && !d.dismissed && (!d.personaId || d.personaId === persona.id)
+  );
 
   const runPoll = useCallback(async () => {
     if (!isGmailConnected()) return;
@@ -106,6 +112,7 @@ export function useShadowSecretary(settings: AppSettings, persona: Persona) {
           importance: triaged.importance,
           summary: triaged.summary,
           generatedAt: new Date().toISOString(),
+          personaId: persona.id,
         });
       }
 
