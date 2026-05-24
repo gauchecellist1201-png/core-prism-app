@@ -1,16 +1,27 @@
 // ============================================================
 // IRIS — DM スクショから案件カードを自動作成するモーダル
 //
-// 「DM のスクショを撮るだけで AI が案件名・条件・締切を読み取り、
-//  案件カードを自動作成」という Iris の中核プレゼンを実装。
+// 「DM のスクショ (1〜3 枚) を撮るだけで AI が案件名・条件・締切を読み取り、
+//  低信頼フィールドは追加質問で補完、過去案件があれば料金提案、
+//  詐欺シグナルがあれば警告 → 案件カードを自動作成」
+//
+// 中核プレゼン機能 — Day 1 アップグレード版
 // ============================================================
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Loader2, X, RefreshCw, CheckCircle2, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import {
+  Camera, X, RefreshCw, CheckCircle2, AlertTriangle, Image as ImageIcon,
+  Plus, Trash2, History, ShieldAlert, MessageCircleQuestion,
+} from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
-import { captureDealFromScreenshot, capturedDealToDealInput, type CapturedDeal } from './dealCapture';
+import {
+  captureDealFromScreenshots, capturedDealToDealInput,
+  findSimilarPastDeal, detectCaptureWarnings,
+  type CapturedDeal, type SimilarPastDeal, type CaptureWarning, type PastDealRef,
+} from './dealCapture';
 import type { InfluencerDeal } from '../types/influencerDeal';
+import AILoadingState from '../components/AILoadingState';
 
 type DealInput = Omit<InfluencerDeal, 'id' | 'personaId' | 'createdAt' | 'updatedAt'>;
 
@@ -19,45 +30,58 @@ interface Props {
   onClose: () => void;
   /** 抽出 → 編集確定後に呼ばれる。InfluencerDesk.addDeal に渡す形 */
   onSave: (deal: DealInput) => void;
+  /** 過去案件 — 似た案件があれば料金提案 */
+  pastDeals?: PastDealRef[];
 }
 
-type Step = 'pick' | 'extracting' | 'review' | 'error';
+type Step = 'pick' | 'extracting' | 'clarify' | 'review' | 'error';
 
 interface ErrorState { message: string; recovery: string; rawText?: string }
 
-export default function IrisDealCaptureModal({ bg, onClose, onSave }: Props) {
+const MAX_FILES = 3;
+
+export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = [] }: Props) {
   const [step, setStep] = useState<Step>('pick');
-  const [preview, setPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [deal, setDeal] = useState<CapturedDeal | null>(null);
   const [confidence, setConfidence] = useState<'high' | 'medium' | 'low'>('medium');
+  const [weakFields, setWeakFields] = useState<string[]>([]);
+  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
+  const [clarifyAnswers, setClarifyAnswers] = useState<string[]>([]);
+  const [warnings, setWarnings] = useState<CaptureWarning[]>([]);
+  const [similarDeal, setSimilarDeal] = useState<SimilarPastDeal | null>(null);
   const [errState, setErrState] = useState<ErrorState | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ink が薄色なら dark テーマ (背景が暗い前提) と判定
-  const isDark = (() => {
+  const isDark = useMemo(() => {
     const c = (bg.ink || '').replace('#', '');
     if (c.length < 3) return false;
-    // 短縮形 #fff → ffffff
     const full = c.length === 3 ? c.split('').map(x => x + x).join('') : c.padEnd(6, '0').slice(0, 6);
     const r = parseInt(full.slice(0, 2), 16);
     const g = parseInt(full.slice(2, 4), 16);
     const b = parseInt(full.slice(4, 6), 16);
-    // ink が明るい (輝度 > 180) なら dark テーマ
     return (r * 0.299 + g * 0.587 + b * 0.114) > 180;
-  })();
+  }, [bg.ink]);
   const panelBg = isDark ? 'rgba(28,22,42,0.96)' : 'rgba(255,250,247,0.96)';
   const ink = bg.ink;
   const inkSoft = bg.inkSoft;
 
-  const runExtract = useCallback(async (file: File) => {
+  const runExtract = useCallback(async (fs: File[]) => {
     setStep('extracting');
     setErrState(null);
-    // preview
-    const r = new FileReader();
-    r.onload = () => setPreview(r.result as string);
-    r.readAsDataURL(file);
+    // previews
+    setPreviews([]);
+    const newPreviews: string[] = await Promise.all(fs.map(f => new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = () => reject(new Error('読み込み失敗'));
+      r.readAsDataURL(f);
+    }))).catch(() => []);
+    setPreviews(newPreviews);
 
-    const result = await captureDealFromScreenshot(file);
+    const result = await captureDealFromScreenshots(fs);
     if (!result.ok) {
       setErrState({
         message: result.message,
@@ -69,13 +93,23 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave }: Props) {
     }
     setDeal(result.deal);
     setConfidence(result.confidence);
-    setStep('review');
-  }, []);
+    setWeakFields(result.weakFields);
+    setFollowUpQuestions(result.followUpQuestions);
+    setClarifyAnswers(new Array(result.followUpQuestions.length).fill(''));
+    setWarnings(detectCaptureWarnings(result.deal));
+    setSimilarDeal(findSimilarPastDeal(result.deal, pastDeals));
 
-  const onPick = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const f = files[0];
-    if (!f.type.startsWith('image/')) {
+    // 質問があれば clarify ステップへ、なければ review へ直行
+    if (result.followUpQuestions.length > 0 && result.confidence !== 'high') {
+      setStep('clarify');
+    } else {
+      setStep('review');
+    }
+  }, [pastDeals]);
+
+  const addFiles = (newFiles: FileList | File[]) => {
+    const incoming = Array.from(newFiles).filter(f => f.type.startsWith('image/'));
+    if (incoming.length === 0) {
       setErrState({
         message: '画像ファイルを選んでください',
         recovery: 'PNG / JPEG / WebP の画像のみ対応です',
@@ -83,15 +117,63 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave }: Props) {
       setStep('error');
       return;
     }
-    runExtract(f);
+    const merged = [...files, ...incoming].slice(0, MAX_FILES);
+    setFiles(merged);
+  };
+
+  const removeFile = (idx: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const startExtract = () => {
+    if (files.length === 0) return;
+    runExtract(files);
   };
 
   const reset = () => {
     setStep('pick');
-    setPreview(null);
+    setFiles([]);
+    setPreviews([]);
     setDeal(null);
+    setWeakFields([]);
+    setFollowUpQuestions([]);
+    setClarifyAnswers([]);
+    setWarnings([]);
+    setSimilarDeal(null);
     setErrState(null);
   };
+
+  const applyClarifyAnswersToDeal = () => {
+    if (!deal) return;
+    let next = { ...deal };
+    followUpQuestions.forEach((q, i) => {
+      const ans = (clarifyAnswers[i] || '').trim();
+      if (!ans) return;
+      const wf = weakFields[i]; // 同じ index で weakField とペア
+      // 報酬は数字に変換
+      if (wf === 'fee') {
+        const n = Number(ans.replace(/[^\d]/g, ''));
+        if (!isNaN(n) && n > 0) next.fee = n;
+      } else if (wf === 'brandName')    next.brandName = ans;
+      else if (wf === 'deadline')       next.deadline = ans;
+      else if (wf === 'requirements')   next.requirements = ans;
+      else if (wf === 'senderHandle')   next.senderHandle = ans;
+      else if (wf === 'contactName')    next.contactName = ans;
+      else if (wf === 'category')       next.category = ans;
+      else {
+        // 該当 weakField がなければ notes に追記する形 (rawText 末尾へ)
+        next.rawText = (next.rawText || '') + `\n[補足] ${q} → ${ans}`;
+      }
+      // 答えを反映したら summary にも追記
+      next.summary = (next.summary || '') + ` / ${ans}`;
+    });
+    setDeal(next);
+    setSimilarDeal(findSimilarPastDeal(next, pastDeals));
+    setWarnings(detectCaptureWarnings(next));
+    setStep('review');
+  };
+
+  const skipClarify = () => setStep('review');
 
   const handleSave = () => {
     if (!deal) return;
@@ -102,6 +184,11 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave }: Props) {
 
   const updateField = <K extends keyof CapturedDeal>(k: K, v: CapturedDeal[K]) => {
     setDeal(prev => prev ? { ...prev, [k]: v } : prev);
+  };
+
+  const applySimilarFee = () => {
+    if (!similarDeal || !deal) return;
+    updateField('fee', similarDeal.fee);
   };
 
   const inp: React.CSSProperties = {
@@ -140,6 +227,18 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave }: Props) {
     medium: { label: '一部 推定込み',       color: '#F59E0B', hint: '空欄が残っている場合は補ってください。' },
     low:    { label: '読み取り弱め',        color: '#EF4444', hint: '間違いがないか必ず確認してください。' },
   };
+
+  const highestSeverity = warnings.reduce<'high' | 'medium' | 'low' | null>((acc, w) => {
+    if (acc === 'high') return acc;
+    if (w.severity === 'high') return 'high';
+    if (w.severity === 'medium' && acc !== 'medium') return 'medium';
+    if (!acc) return w.severity;
+    return acc;
+  }, null);
+  const warningColor =
+    highestSeverity === 'high' ? '#EF4444' :
+    highestSeverity === 'medium' ? '#F59E0B' :
+    '#FFB020';
 
   return (
     <motion.div
@@ -195,40 +294,81 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave }: Props) {
         </div>
 
         <AnimatePresence mode="wait">
-          {/* ─── Step 1: ファイル選択 ─── */}
+          {/* ─── Step 1: ファイル選択 (最大 3 枚) ─── */}
           {step === 'pick' && (
             <motion.div key="pick" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <p style={{ color: inkSoft, fontSize: '0.95rem', lineHeight: 1.7, margin: '0 0 1.2rem' }}>
-                Instagram / X / メールの DM スクショを 1 枚送るだけで、
+                Instagram / X / メールの DM スクショを <strong>最大 3 枚</strong> 送るだけで、
                 AI が <strong>案件名・報酬・締切</strong> を読んで案件カードを作ります。
+                <br />
+                <span style={{ fontSize: '0.85rem' }}>長い DM は上→下の順で 2〜3 枚に分けると精度が上がります。</span>
               </p>
 
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
+                multiple
                 style={{ display: 'none' }}
-                onChange={e => onPick(e.target.files)}
+                onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ''; }}
               />
 
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  width: '100%',
-                  background: `linear-gradient(135deg, ${bg.accent}22, ${bg.accent}11)`,
-                  border: `2px dashed ${bg.accent}66`,
-                  borderRadius: 20,
-                  padding: '2rem 1rem',
-                  cursor: 'pointer',
-                  color: ink,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                  minHeight: 160,
-                }}
-              >
-                <Camera size={36} color={bg.accent} strokeWidth={1.8} />
-                <div style={{ fontSize: '1.05rem', fontWeight: 700 }}>スクショを選ぶ</div>
-                <div style={{ fontSize: '0.82rem', color: inkSoft }}>PNG / JPEG / WebP・1 枚まで</div>
-              </button>
+              {/* 選択済みプレビュー */}
+              {files.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 10, marginBottom: '1rem' }}>
+                  {files.map((f, i) => (
+                    <FilePreview key={i} file={f} onRemove={() => removeFile(i)} isDark={isDark} ink={ink} inkSoft={inkSoft} index={i} />
+                  ))}
+                  {files.length < MAX_FILES && (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      style={{
+                        background: 'transparent',
+                        border: `2px dashed ${bg.accent}66`,
+                        borderRadius: 14,
+                        minHeight: 110,
+                        cursor: 'pointer',
+                        color: bg.accent,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+                      }}>
+                      <Plus size={22} />
+                      <div style={{ fontSize: 11, fontWeight: 700 }}>追加 ({files.length}/{MAX_FILES})</div>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {files.length === 0 && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    width: '100%',
+                    background: `linear-gradient(135deg, ${bg.accent}22, ${bg.accent}11)`,
+                    border: `2px dashed ${bg.accent}66`,
+                    borderRadius: 20,
+                    padding: '2rem 1rem',
+                    cursor: 'pointer',
+                    color: ink,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                    minHeight: 160,
+                  }}
+                >
+                  <Camera size={36} color={bg.accent} strokeWidth={1.8} />
+                  <div style={{ fontSize: '1.05rem', fontWeight: 700 }}>スクショを選ぶ</div>
+                  <div style={{ fontSize: '0.82rem', color: inkSoft }}>PNG / JPEG / WebP・最大 {MAX_FILES} 枚</div>
+                </button>
+              )}
+
+              {files.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, marginTop: '0.8rem', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setFiles([])} style={btnSecondary}>
+                    <Trash2 size={14} /> 全部消す
+                  </button>
+                  <button onClick={startExtract} style={btnPrimary}>
+                    <Camera size={16} /> AI に読ませる ({files.length} 枚)
+                  </button>
+                </div>
+              )}
 
               <div style={{
                 marginTop: '1rem',
@@ -248,32 +388,151 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave }: Props) {
           {/* ─── Step 2: 抽出中 ─── */}
           {step === 'extracting' && (
             <motion.div key="ext" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-              {preview && (
-                <img src={preview} alt="" style={{
-                  maxWidth: 220, maxHeight: 280, borderRadius: 16,
-                  marginBottom: '1.2rem', boxShadow: '0 10px 28px rgba(0,0,0,0.18)',
-                }} />
+              style={{ textAlign: 'center', padding: '1rem 0.5rem' }}>
+              {previews.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap', marginBottom: '1rem' }}>
+                  {previews.map((p, i) => (
+                    <img key={i} src={p} alt="" style={{
+                      maxWidth: 140, maxHeight: 200, borderRadius: 12,
+                      boxShadow: '0 10px 28px rgba(0,0,0,0.18)',
+                    }} />
+                  ))}
+                </div>
               )}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, color: bg.accent, marginBottom: 8 }}>
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-                  style={{ display: 'inline-flex' }}
-                >
-                  <Loader2 size={20} />
-                </motion.div>
-                <span style={{ fontWeight: 700, fontSize: '1rem' }}>AI が DM を読んでいます…</span>
-              </div>
-              <p style={{ color: inkSoft, fontSize: '0.85rem', margin: '0.4rem 0 0' }}>
-                ふつう 5-15 秒くらい。少しお待ちください。
-              </p>
+              <AILoadingState
+                active={true}
+                brand="iris"
+                label={`AI が DM を読んでいます (${previews.length} 枚)`}
+                stages={[
+                  'スクショの文字を OCR',
+                  'ブランド名と担当者を特定',
+                  '報酬・締切・依頼内容を抽出',
+                  '案件カードに整形',
+                ]}
+                hint="ふつう 5-15 秒くらい"
+                skeletonLines={4}
+              />
             </motion.div>
           )}
 
-          {/* ─── Step 3: プレビュー (編集可) ─── */}
+          {/* ─── Step 3 (新): 追加質問で補完 ─── */}
+          {step === 'clarify' && deal && (
+            <motion.div key="clar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+                padding: '0.9rem 1rem',
+                background: `${bg.accent}14`,
+                border: `1px solid ${bg.accent}40`,
+                borderRadius: 14,
+                marginBottom: '1.2rem',
+              }}>
+                <MessageCircleQuestion size={22} color={bg.accent} style={{ flexShrink: 0, marginTop: 2 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, color: ink, fontSize: '1rem', marginBottom: 4 }}>
+                    あと少しだけ教えてください
+                  </div>
+                  <div style={{ color: inkSoft, fontSize: '0.86rem', lineHeight: 1.7 }}>
+                    AI が読み切れなかった部分を補えば、案件カードがもっと正確になります。
+                    分かる範囲で OK・分からなければスキップして手入力もできます。
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gap: '0.9rem' }}>
+                {followUpQuestions.map((q, i) => (
+                  <div key={i}>
+                    <label style={label}>
+                      <span style={{ color: bg.accent, fontWeight: 800 }}>{`Q${i + 1}.`}</span>{' '}
+                      {q}
+                    </label>
+                    <input
+                      style={inp}
+                      value={clarifyAnswers[i] || ''}
+                      onChange={e => setClarifyAnswers(prev => {
+                        const next = [...prev];
+                        next[i] = e.target.value;
+                        return next;
+                      })}
+                      placeholder="分かる範囲で OK"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: '1.4rem', flexWrap: 'wrap' }}>
+                <button onClick={skipClarify} style={btnSecondary}>スキップ</button>
+                <button onClick={applyClarifyAnswersToDeal} style={btnPrimary}>
+                  <CheckCircle2 size={16} /> 反映して確認へ
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ─── Step 4: プレビュー (編集可) ─── */}
           {step === 'review' && deal && (
             <motion.div key="rev" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {/* 警告 (NG ワード自動検出) */}
+              {warnings.length > 0 && (
+                <div style={{
+                  padding: '0.8rem 1rem',
+                  background: `${warningColor}1A`,
+                  border: `1px solid ${warningColor}55`,
+                  borderRadius: 14,
+                  marginBottom: '1rem',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <ShieldAlert size={18} color={warningColor} />
+                    <div style={{ fontWeight: 800, color: ink, fontSize: '0.94rem' }}>
+                      {highestSeverity === 'high' ? '注意: 詐欺の可能性があります' :
+                       highestSeverity === 'medium' ? '気をつけたい点があります' :
+                       '一応確認しておきましょう'}
+                    </div>
+                  </div>
+                  <ul style={{ margin: 0, padding: '0 0 0 1.2rem', color: inkSoft, fontSize: '0.84rem', lineHeight: 1.7 }}>
+                    {warnings.map((w, i) => (
+                      <li key={i}>
+                        <strong style={{ color: ink }}>{w.kind}</strong> — {w.description}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 過去案件サジェスト */}
+              {similarDeal && (
+                <div style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 10,
+                  padding: '0.8rem 1rem',
+                  background: `${bg.accent}10`,
+                  border: `1px solid ${bg.accent}30`,
+                  borderRadius: 14,
+                  marginBottom: '1rem',
+                }}>
+                  <History size={18} color={bg.accent} style={{ flexShrink: 0, marginTop: 3 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, color: ink, fontSize: '0.92rem', marginBottom: 2 }}>
+                      {similarDeal.reason}
+                    </div>
+                    <div style={{ color: inkSoft, fontSize: '0.83rem', lineHeight: 1.6 }}>
+                      前回は <strong style={{ color: ink }}>¥{similarDeal.fee.toLocaleString()}</strong> でした。
+                      {deal.fee == null || deal.fee === 0 ? '同じ料金でいきますか?' : (deal.fee === similarDeal.fee ? '今回も同じ料金です。' : `今回は ¥${(deal.fee).toLocaleString()} の提示です。`)}
+                    </div>
+                  </div>
+                  {(deal.fee == null || deal.fee === 0 || deal.fee !== similarDeal.fee) && (
+                    <button
+                      onClick={applySimilarFee}
+                      style={{
+                        background: bg.accent, color: '#fff', border: 'none',
+                        borderRadius: 999, padding: '0.5rem 0.9rem', fontWeight: 700,
+                        fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0,
+                      }}
+                    >
+                      ¥{similarDeal.fee.toLocaleString()} で揃える
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* confidence banner */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10,
@@ -287,6 +546,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave }: Props) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '0.92rem', fontWeight: 700, color: ink }}>
                     {confidenceMeta[confidence].label}
+                    {previews.length > 1 && <span style={{ marginLeft: 8, fontSize: '0.78rem', color: inkSoft, fontWeight: 600 }}>({previews.length} 枚統合)</span>}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: inkSoft }}>
                     {confidenceMeta[confidence].hint}
@@ -312,32 +572,29 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave }: Props) {
               )}
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.7rem' }}>
-                <div>
-                  <label style={label}>ブランド名 *</label>
+                <FieldGroup field="brandName" label="ブランド名 *" weak={weakFields} labelStyle={label}>
                   <input style={inp} value={deal.brandName || ''} onChange={e => updateField('brandName', e.target.value)} placeholder="例: SHISEIDO" />
-                </div>
-                <div>
-                  <label style={label}>送り主 (@ハンドル)</label>
+                </FieldGroup>
+                <FieldGroup field="senderHandle" label="送り主 (@ハンドル)" weak={weakFields} labelStyle={label}>
                   <input style={inp} value={deal.senderHandle || ''} onChange={e => updateField('senderHandle', e.target.value)} placeholder="@brand_official" />
-                </div>
-                <div>
-                  <label style={label}>担当者名</label>
+                </FieldGroup>
+                <FieldGroup field="contactName" label="担当者名" weak={weakFields} labelStyle={label}>
                   <input style={inp} value={deal.contactName || ''} onChange={e => updateField('contactName', e.target.value)} placeholder="田中" />
-                </div>
-                <div>
-                  <label style={label}>カテゴリ</label>
+                </FieldGroup>
+                <FieldGroup field="category" label="カテゴリ" weak={weakFields} labelStyle={label}>
                   <input style={inp} value={deal.category || ''} onChange={e => updateField('category', e.target.value)} placeholder="コスメ / ファッション / グルメ" />
-                </div>
-                <div>
-                  <label style={label}>報酬 (円)</label>
+                </FieldGroup>
+                <FieldGroup field="fee" label="報酬 (円)" weak={weakFields} labelStyle={label}>
                   <input style={inp} type="number" value={deal.fee ?? ''} onChange={e => updateField('fee', e.target.value === '' ? null : Number(e.target.value))} placeholder="50000" />
-                </div>
-                <div>
-                  <label style={label}>締切</label>
+                </FieldGroup>
+                <FieldGroup field="deadline" label="締切" weak={weakFields} labelStyle={label}>
                   <input style={inp} value={deal.deadline || ''} onChange={e => updateField('deadline', e.target.value)} placeholder="11/30 まで" />
-                </div>
+                </FieldGroup>
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={label}>依頼内容 / 納品物</label>
+                  <label style={label}>
+                    依頼内容 / 納品物
+                    {weakFields.includes('requirements') && <WeakBadge accent={bg.accent} />}
+                  </label>
                   <textarea
                     style={{ ...inp, minHeight: 70, resize: 'vertical' }}
                     value={deal.requirements || ''}
@@ -380,7 +637,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave }: Props) {
             </motion.div>
           )}
 
-          {/* ─── Step 4: エラー ─── */}
+          {/* ─── Step 5: エラー ─── */}
           {step === 'error' && errState && (
             <motion.div key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div style={{
@@ -433,5 +690,91 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave }: Props) {
         </AnimatePresence>
       </motion.div>
     </motion.div>
+  );
+}
+
+// 「自信が低い」フィールドにバッジ表示
+function WeakBadge({ accent }: { accent: string }) {
+  return (
+    <span style={{
+      display: 'inline-block', marginLeft: 6, padding: '2px 8px',
+      borderRadius: 999, background: `${accent}22`, color: accent,
+      fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
+      verticalAlign: 'middle',
+    }}>要確認</span>
+  );
+}
+
+function FieldGroup({
+  field, label, weak, labelStyle, children,
+}: {
+  field: string;
+  label: string;
+  weak: string[];
+  labelStyle: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label style={labelStyle}>
+        {label}
+        {weak.includes(field) && <WeakBadge accent="#E1306C" />}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+// 選択済みファイルのプレビュー (削除可)
+function FilePreview({
+  file, onRemove, isDark, ink, inkSoft, index,
+}: {
+  file: File; onRemove: () => void; isDark: boolean; ink: string; inkSoft: string; index: number;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  // 1 回だけ読み込み
+  useMemo(() => {
+    const r = new FileReader();
+    r.onload = () => setUrl(r.result as string);
+    r.readAsDataURL(file);
+  }, [file]);
+
+  return (
+    <div style={{
+      position: 'relative',
+      borderRadius: 14,
+      overflow: 'hidden',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)'}`,
+      background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+      minHeight: 110,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      {url ? (
+        <img src={url} alt="" style={{ width: '100%', height: 110, objectFit: 'cover' }} />
+      ) : (
+        <span style={{ fontSize: 11, color: inkSoft }}>読込中</span>
+      )}
+      <div style={{
+        position: 'absolute', top: 4, left: 4,
+        background: 'rgba(0,0,0,0.6)', color: '#fff',
+        fontSize: 10, fontWeight: 800,
+        padding: '2px 6px', borderRadius: 999,
+      }}>{index + 1}</div>
+      <button
+        onClick={onRemove}
+        aria-label="削除"
+        style={{
+          position: 'absolute', top: 4, right: 4,
+          background: 'rgba(0,0,0,0.6)', border: 'none',
+          color: '#fff',
+          width: 24, height: 24, borderRadius: '50%',
+          cursor: 'pointer',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+        <X size={12} />
+      </button>
+      {/* unused ink reference to satisfy lint when needed */}
+      <span style={{ display: 'none' }}>{ink}</span>
+    </div>
   );
 }

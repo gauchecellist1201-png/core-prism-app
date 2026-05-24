@@ -2081,6 +2081,17 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
       {captureOpen && (
         <IrisDealCaptureModal bg={bg}
           onClose={() => setCaptureOpen(false)}
+          pastDeals={myDeals.map(d => ({
+            brandName: d.brandName,
+            contactName: d.contactName,
+            senderHandle: undefined,
+            fee: d.fee,
+            contentType: d.contentType,
+            deliverables: d.deliverables,
+            category: undefined,
+            notes: d.notes,
+            createdAt: d.createdAt,
+          }))}
           onSave={(data) => { desk.addDeal(IRIS_PERSONA_ID, data); showFlash('DM スクショから案件を追加しました'); }} />
       )}
 
