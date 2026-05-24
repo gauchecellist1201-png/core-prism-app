@@ -283,7 +283,9 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 </button>
               </div>
 
-              {/* Day 2 アップグレード: 14 日無料 + クレカ不要 の大きな緑バナー (最優先で目に入る) */}
+              {/* Day 2 アップグレード: 「最初の 7 日 ¥0」の大きな緑バナー
+                  ※ 実装は Stripe trial_period_days=7 / payment_method_collection=always。
+                  「14 日」「カード不要」と書くと嘘になるので、実物に合わせた正直 UI に統一。 */}
               <div style={{
                 marginBottom: '0.9rem',
                 padding: '1rem 1.1rem',
@@ -298,11 +300,11 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 }} aria-hidden>🎁</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '1.02rem', fontWeight: 900, marginBottom: 4, letterSpacing: '0.01em' }}>
-                    最初の 14 日 ¥0 / クレジットカード登録は不要
+                    最初の 7 日 ¥0 — いつでも解約 OK
                   </div>
                   <div style={{ fontSize: '0.8rem', lineHeight: 1.55, color: 'rgba(255,255,255,0.95)' }}>
-                    14 日後の <strong>前日</strong>に「続けますか?」のメールが届きます。
-                    そのときに初めてカード情報を入れる/入れないを選べます。
+                    カード情報は次の画面 (Stripe) で登録します。
+                    <strong>7 日後の前日にメールが届く</strong>ので、そこで止めれば <strong>請求は 0 円</strong>。
                   </div>
                 </div>
               </div>
