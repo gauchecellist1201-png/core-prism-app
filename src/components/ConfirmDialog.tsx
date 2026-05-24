@@ -7,7 +7,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, HelpCircle } from 'lucide-react';
 import { CONFIRM_EVENT, notifyConfirmDialogMount, type ConfirmInternalDetail } from '../lib/confirmDialog';
-import { triggerHaptic } from '../lib/haptic';
+import { triggerHaptic, playClick, playChime } from '../lib/haptic';
 
 export default function ConfirmDialog() {
   const [current, setCurrent] = useState<ConfirmInternalDetail | null>(null);
@@ -23,6 +23,10 @@ export default function ConfirmDialog() {
     const onConfirm = (ev: Event) => {
       const detail = (ev as CustomEvent<ConfirmInternalDetail>).detail;
       if (!detail) return;
+      // ダイアログが現れた瞬間に「コツッ」と開く音 + 軽い振動。
+      // danger 確認は警告チャイムまでは付けない（出現で叱らない、押した瞬間だけに留める）
+      playClick('open');
+      triggerHaptic(detail.tone === 'danger' ? 'warning' : 'light');
       setCurrent(detail);
     };
     window.addEventListener(CONFIRM_EVENT, onConfirm as EventListener);
@@ -131,7 +135,7 @@ export default function ConfirmDialog() {
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 22 }}>
               <button
-                onClick={() => { triggerHaptic('light'); close(false); }}
+                onClick={() => { triggerHaptic('light'); playClick('close'); close(false); }}
                 style={{
                   background: 'var(--surface-3)',
                   color: 'var(--fg)',
@@ -149,7 +153,12 @@ export default function ConfirmDialog() {
               </button>
               <button
                 ref={okBtnRef}
-                onClick={() => { triggerHaptic(danger ? 'warning' : 'medium'); close(true); }}
+                onClick={() => {
+                  // 破壊的でない確定はふわっとした成功チャイム、削除確定は角のないやさしい下行音
+                  triggerHaptic(danger ? 'warning' : 'success');
+                  playChime(danger ? 'error' : 'success');
+                  close(true);
+                }}
                 style={{
                   background: danger
                     ? 'linear-gradient(135deg, #DC2626, #B91C1C)'

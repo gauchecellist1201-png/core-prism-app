@@ -7,6 +7,17 @@ import { useEffect, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Info, AlertTriangle, X } from 'lucide-react';
 import { NOTIFY_EVENT, type NotifyDetail, type NotifyKind } from '../lib/inAppNotify';
+import { playChime, playClick, triggerHaptic } from '../lib/haptic';
+
+// kind ごとに「現れた瞬間」に鳴らす音と振動を選ぶ
+//   success → ふわっとした上行 2 音 + やわらかい振動
+//   warn    → 角のない低め 2 音下行（叱る音にしない）+ 警告振動
+//   info    → 「コツッ」と開く音だけ。振動はしない（数が多いので静かに）
+function playForKind(kind: NotifyKind) {
+  if (kind === 'success') { triggerHaptic('success'); playChime('success'); return; }
+  if (kind === 'warn')    { triggerHaptic('warning'); playChime('error');   return; }
+  playClick('open');
+}
 
 interface Toast extends NotifyDetail {
   id: number;
@@ -34,6 +45,12 @@ export default function InAppNotificationToast() {
     setToasts(ts => ts.filter(t => t.id !== id));
   }, []);
 
+  const dismissByUser = useCallback((id: number) => {
+    playClick('close');
+    triggerHaptic('light');
+    dismiss(id);
+  }, [dismiss]);
+
   useEffect(() => {
     const onNotify = (ev: Event) => {
       const detail = (ev as CustomEvent<NotifyDetail>).detail;
@@ -41,6 +58,7 @@ export default function InAppNotificationToast() {
       const id = Date.now() + Math.floor(Math.random() * 1000);
       const t: Toast = { ...detail, id };
       setToasts(ts => [...ts, t].slice(-4)); // 同時最大 4 個
+      playForKind(detail.kind);
       const duration = detail.duration ?? DEFAULT_DURATION;
       window.setTimeout(() => dismiss(id), duration);
     };
@@ -99,7 +117,7 @@ export default function InAppNotificationToast() {
                 )}
               </div>
               <button
-                onClick={() => dismiss(t.id)}
+                onClick={() => dismissByUser(t.id)}
                 aria-label="閉じる"
                 style={{
                   background: 'transparent',
