@@ -546,7 +546,7 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
                 何を売っていて、誰に向けて、どう刺さるかを 5〜10 行で。詳しいほど精度が上がります。
               </p>
               <textarea value={productDraft} onChange={e => setProductDraft(e.target.value)}
-                placeholder={`例:\n弊社の商材: 飲食店向け予約管理 SaaS\n価格: 月¥9,800〜\nコア機能: 予約一元管理 / 顧客LTV分析 / LINE自動配信\nターゲット: 月50万円以上の売上がある飲食店\n強み: 月の客単価が3,500円以上の店で、リピート率を平均15%向上した実績`}
+                placeholder={`狙いたい企業を入れてください (例: 都内の Web 制作会社 / 従業員 10-50 名)\n\n商材も合わせて書くと精度が上がります:\n弊社の商材: 飲食店向け予約管理 SaaS\n価格: 月¥9,800〜\nコア機能: 予約一元管理 / 顧客LTV分析 / LINE自動配信\nターゲット: 月50万円以上の売上がある飲食店\n強み: 月の客単価が3,500円以上の店で、リピート率を平均15%向上した実績`}
                 rows={10} className="cp-textarea" />
               <button onClick={saveProduct} className="cp-btn cp-btn-primary"
                 style={{ background: persona.accentColor, color: '#0a0a0f' }}>

@@ -218,22 +218,22 @@ export default function NegotiationCoachModal({ persona, settings, onClose }: Pr
                 >
                   <input
                     type="text" value={customScenario} onChange={e => setCustomScenario(e.target.value)}
-                    placeholder="シナリオ (例: M&A 価格交渉)"
+                    placeholder="交渉相手と論点を入れてください (例: 家賃 30 万 → 25 万に下げたい)"
                     className="w-full text-sm rounded-lg px-3 py-2 outline-none bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
                   />
                   <input
                     type="text" value={customRole} onChange={e => setCustomRole(e.target.value)}
-                    placeholder="相手の役割 (例: 買収先のCEO)"
+                    placeholder="相手の役割 (例: 物件オーナー / 不動産屋)"
                     className="w-full text-sm rounded-lg px-3 py-2 outline-none bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
                   />
                   <input
                     type="text" value={customStance} onChange={e => setCustomStance(e.target.value)}
-                    placeholder="相手のスタンス (例: 高値を狙いたい)"
+                    placeholder="相手のスタンス (例: できれば値下げしたくない)"
                     className="w-full text-sm rounded-lg px-3 py-2 outline-none bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
                   />
                   <input
                     type="text" value={customGoal} onChange={e => setCustomGoal(e.target.value)}
-                    placeholder="あなたのゴール (例: 50億円以下で合意)"
+                    placeholder="あなたのゴール (例: 月額 25 万円以下で 2 年契約)"
                     className="w-full text-sm rounded-lg px-3 py-2 outline-none bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
                   />
                   <button

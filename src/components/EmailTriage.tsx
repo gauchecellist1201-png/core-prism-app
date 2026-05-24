@@ -449,7 +449,7 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
               <textarea
                 value={raw}
                 onChange={e => setRaw(e.target.value)}
-                placeholder="From: 田中様 <tanaka@example.com>&#10;件名: 来週のお打ち合わせについて&#10;本文: ...&#10;&#10;---&#10;&#10;From: 佐藤 <sato@example.com>&#10;件名: ..."
+                placeholder="Gmail を繋ぐか、メール本文を貼り付けてください (例: 受信トレイの上位 20 件)&#10;&#10;From: 田中様 <tanaka@example.com>&#10;件名: 来週のお打ち合わせについて&#10;本文: ...&#10;&#10;---&#10;&#10;From: 佐藤 <sato@example.com>&#10;件名: ..."
                 className="w-full text-sm rounded-lg px-3 py-2.5 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg leading-relaxed"
                 style={{ minHeight: '260px' }}
               />

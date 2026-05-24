@@ -150,7 +150,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
               value={rawText}
               onChange={e => setRawText(e.target.value)}
               disabled={isBusy}
-              placeholder={`例)\n新規事業に投資すべきか迷ってる。手元資金は 3000 万、半年で結果を出したい。\n候補は A 案 (SaaS) と B 案 (D2C)。A の方が伸び代はあるけど開発に時間がかかる。失敗したら次の調達が厳しくなる。`}
+              placeholder={`迷っている判断を 1 行で書いてみてください (例: A 社の提案を受けるべきか)\n\n背景や選択肢を足すと、AI の精度が上がります。\n例) 新規事業に投資すべきか迷ってる。手元資金は 3000 万、半年で結果を出したい。\n候補は A 案 (SaaS) と B 案 (D2C)。A の方が伸び代はあるけど開発に時間がかかる。`}
               className="w-full text-base rounded-lg px-3 py-3 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg leading-relaxed disabled:opacity-60"
               style={{ minHeight: 240, fontSize: 16 }}
               autoFocus

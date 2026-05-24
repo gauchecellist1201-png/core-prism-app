@@ -432,7 +432,7 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
                 </div>
                 <div>
                   <label className="cp-label">店舗 *</label>
-                  <input value={draft.vendor || ''} onChange={e => setDraft({ ...draft, vendor: e.target.value })} placeholder="例: スターバックス銀座店" className="cp-input" />
+                  <input value={draft.vendor || ''} onChange={e => setDraft({ ...draft, vendor: e.target.value })} placeholder="例: スターバックス 550 円 打合せ" className="cp-input" />
                 </div>
                 <div>
                   <label className="cp-label">科目</label>

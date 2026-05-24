@@ -28,7 +28,7 @@ export const DOC_TEMPLATE_META: Record<DocTemplateKind, DocTemplateMeta> = {
   proposal: {
     kind: 'proposal', label: '提案書', emoji: '📑',
     blurb: '背景 → 課題 → 解決 → 価格 の 4 章で意思決定者に届く形式',
-    inputHint: '例: ◯◯社向け Web リニューアル提案、現状の課題は SEO 流入低下、予算 200 万円想定',
+    inputHint: 'テンプレを選ぶか、テーマを書いてください (例: 取引先 A への提案書 / 現状の課題は SEO 流入低下、予算 200 万円想定)',
   },
   memo: {
     kind: 'memo', label: '会議外メモ', emoji: '🗒',

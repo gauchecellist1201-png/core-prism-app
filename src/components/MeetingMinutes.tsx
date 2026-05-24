@@ -863,8 +863,8 @@ export default function MeetingMinutesModal({
                     onChange={e => setTranscript(e.target.value)}
                     placeholder={
                       mode === 'paste'
-                        ? '会議のメモや文字起こしを貼り付け...'
-                        : 'ファイルをアップロードすると自動で読み込まれます'
+                        ? '録音テキストを貼り付けるか、音声ファイルをドロップしてください (例: 5/24 月次MTG / 田中・佐藤・鈴木 / 来月の販促キャンペーンの方向性を決めた…)'
+                        : '音声ファイルをドロップしてください (例: 会議の文字起こし mp3 / m4a / wav)'
                     }
                     className="w-full text-sm rounded-lg px-3 py-2 outline-none resize-y bg-surface-3 border-edge border placeholder:text-fg-subtle text-fg"
                     style={{ minHeight: '180px' }}

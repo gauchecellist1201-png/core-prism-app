@@ -391,7 +391,7 @@ export default function SaasAgentStudio({ persona, settings, onClose }: Props) {
                       <textarea
                         value={nlText}
                         onChange={e => setNlText(e.target.value)}
-                        placeholder="例: Notion の議事録に今日の actions を追加 / Linear にバグを Issue 化 / Asana に ToDo を 5 件作って / Calendly の商談 URL 発行"
+                        placeholder="やりたいことを書いてください (例: Notion の議事録 DB に今日のメモを追加) — 他にも Linear にバグを Issue 化 / Asana に ToDo を 5 件作って / Calendly の商談 URL 発行 など"
                         rows={3}
                         className="w-full px-3 py-2.5 rounded-lg text-sm text-fg resize-none"
                         style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', minHeight: 88 }}

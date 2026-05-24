@@ -688,7 +688,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               <input
                 type="text" value={topic}
                 onChange={e => setTopic(e.target.value)}
-                placeholder={tab === 'multi' ? '例: 起業 1 年目で学んだ顧客インタビューの本質' : tab === 'note' ? '例: 起業1年目で学んだ顧客インタビューの本質' : '例: 今日の経営判断の裏側を1ツイートで'}
+                placeholder={tab === 'multi' ? '投稿テーマを入れてください (例: 新サービスのお知らせ、25-34 歳女性向け)' : tab === 'note' ? '投稿テーマを入れてください (例: 起業 1 年目で学んだ顧客インタビューの本質)' : '投稿テーマを入れてください (例: 今日の経営判断の裏側を 1 ツイートで)'}
                 className="w-full px-3 rounded bg-surface-3 border-edge border text-fg placeholder:text-fg-subtle outline-none"
                 style={{ fontSize: 16, minHeight: 48 }}
               />

@@ -304,7 +304,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
                   <input
                     value={aiPrompt}
                     onChange={e => setAiPrompt(e.target.value)}
-                    placeholder="依頼内容を自然言語で..."
+                    placeholder="請求先と金額を 1 行で (例: 森川 太郎様 100,000 円 5/30 締)"
                     className="flex-1 text-sm px-3 py-2 rounded bg-surface-3 border-edge border text-fg outline-none placeholder:text-fg-subtle"
                   />
                   <button
