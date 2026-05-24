@@ -2,9 +2,10 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import type { Persona, AppSettings } from '../types/identity';
 import type { MeetingMinutes } from '../lib/meetingAnalyzer';
-import { analyzeMeeting, minutesToMarkdown } from '../lib/meetingAnalyzer';
+import { analyzeMeeting, minutesToMarkdown, minutesToSlack, minutesToNotion, extractAssignedActions } from '../lib/meetingAnalyzer';
 import { parseFile } from '../lib/fileParser';
 import { transcribeAudioFile, isAudioFile } from '../lib/audioTranscribe';
+import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { StudioIntro } from './StudioIntro';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
@@ -45,6 +46,12 @@ export default function MeetingMinutesModal({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [minutes, setMinutes] = useState<MeetingMinutes | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // AI 会社へのタスク提案 (議事録 → AgentTeamMonitor に propose)
+  const { propose } = useAgentTaskQueue();
+  const [proposedActionIds, setProposedActionIds] = useState<Set<number>>(new Set());
+  const [proposedAll, setProposedAll] = useState(false);
+  const [copyState, setCopyState] = useState<'md' | 'notion' | 'slack' | null>(null);
 
   // ── 録音ファイルの文字起こし進捗 ──
   const [transcribing, setTranscribing] = useState(false);
@@ -392,6 +399,8 @@ export default function MeetingMinutesModal({
     }
     setIsAnalyzing(true);
     setError(null);
+    setProposedActionIds(new Set());
+    setProposedAll(false);
     try {
       // 録音モードでは話者名も参加者として渡す
       const speakerParts = usedSpeakers.map(n => speakerLabel(n));
@@ -431,6 +440,63 @@ export default function MeetingMinutesModal({
     a.click();
     URL.revokeObjectURL(url);
   }, [minutes]);
+
+  // クリップボードコピー (Markdown / Notion / Slack)
+  const handleCopy = useCallback(async (format: 'md' | 'notion' | 'slack') => {
+    if (!minutes) return;
+    const text =
+      format === 'slack' ? minutesToSlack(minutes)
+      : format === 'notion' ? minutesToNotion(minutes)
+      : minutesToMarkdown(minutes);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyState(format);
+      window.setTimeout(() => setCopyState(null), 1600);
+    } catch {
+      setError('クリップボードへのコピーに失敗しました。ブラウザの権限を確認してください。');
+    }
+  }, [minutes]);
+
+  // 1 件のアクションを AI 会社の宿題として propose
+  const proposeActionToAgent = useCallback((idx: number) => {
+    if (!minutes) return;
+    const a = minutes.actions[idx];
+    if (!a) return;
+    const owner = a.owner && a.owner !== '不明' ? a.owner : '担当未定';
+    const due = a.due && a.due !== '不明' ? `期限: ${a.due}` : '期限: 未定';
+    propose({
+      title: `[議事録の宿題] ${a.item}`,
+      summary: `「${minutes.title}」で出た宿題。${owner} の担当 (${due})。AI 会社で下調べ・たたき台作成まで進めます。`,
+      why: `議事録「${minutes.title}」で確定したアクション。承認すると AI 会社が下調べと初稿まで進めます。`,
+      expected: a.item,
+      dueDays: 7,
+      steps: [
+        { cxo: 'CPO', label: `「${a.item}」の前提を整理` },
+        { cxo: 'CDS', label: '必要な数字・先行事例を集める' },
+        { cxo: 'CMO', label: 'たたき台 / 文面を 1 稿用意' },
+        { cxo: 'COO', label: `${owner} へのハンドオフメモを作成` },
+      ],
+    });
+    setProposedActionIds(prev => {
+      const next = new Set(prev);
+      next.add(idx);
+      return next;
+    });
+  }, [minutes, propose]);
+
+  // 担当者がついたアクションを一括で AI 会社にまわす
+  const proposeAllAssignedToAgent = useCallback(() => {
+    if (!minutes) return;
+    const assigned = extractAssignedActions(minutes);
+    if (assigned.length === 0) return;
+    minutes.actions.forEach((a, idx) => {
+      if (a.owner && a.owner !== '不明' && a.item && !proposedActionIds.has(idx)) {
+        proposeActionToAgent(idx);
+      }
+    });
+    setProposedAll(true);
+    window.setTimeout(() => setProposedAll(false), 2400);
+  }, [minutes, proposedActionIds, proposeActionToAgent]);
 
   const handleDownloadAudio = useCallback(() => {
     if (!audioUrl) return;
@@ -866,6 +932,44 @@ export default function MeetingMinutesModal({
                 <p className="text-fg text-sm leading-relaxed whitespace-pre-wrap">{minutes.summary}</p>
               </ResultSection>
 
+              {/* 章立て (30 分以上の会議で特に効く) */}
+              {minutes.chapters.length > 0 && (
+                <ResultSection title="📖 章立て" color="#60a5fa">
+                  <div className="space-y-2.5">
+                    {minutes.chapters.map((c, i) => (
+                      <div
+                        key={i}
+                        className="rounded-lg p-2.5"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                      >
+                        <div className="flex items-baseline gap-2 mb-1">
+                          <span
+                            className="text-xs font-bold flex-shrink-0"
+                            style={{ color: '#60a5fa' }}
+                          >Ch.{i + 1}</span>
+                          <p className="text-fg text-sm font-semibold leading-tight">{c.title}</p>
+                          {c.timeRange && (
+                            <span className="text-fg-subtle text-xs tabular-nums ml-auto flex-shrink-0">
+                              {c.timeRange}
+                            </span>
+                          )}
+                        </div>
+                        {c.points.length > 0 && (
+                          <ul className="space-y-0.5 mt-1 pl-3">
+                            {c.points.map((p, j) => (
+                              <li key={j} className="text-fg-muted text-xs flex gap-1.5 leading-relaxed">
+                                <span style={{ color: '#60a5fa' }}>·</span>
+                                <span>{p}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </ResultSection>
+              )}
+
               {/* 議題 */}
               {minutes.agenda.length > 0 && (
                 <ResultSection title="🗒 議題" color={persona.accentColor}>
@@ -897,8 +1001,32 @@ export default function MeetingMinutesModal({
               {/* アクション */}
               {minutes.actions.length > 0 && (
                 <ResultSection title="🎯 アクション" color="#34d399">
+                  {/* 担当者がついた宿題を一括で AI 会社へ */}
+                  {extractAssignedActions(minutes).length > 0 && (
+                    <div className="flex items-center justify-between gap-2 mb-2.5 px-1">
+                      <p className="text-fg-muted text-xs">
+                        担当が決まった宿題を AI 会社に下調べさせる
+                      </p>
+                      <button
+                        onClick={proposeAllAssignedToAgent}
+                        disabled={proposedAll || extractAssignedActions(minutes).every((_, i) => proposedActionIds.has(minutes.actions.findIndex(a => a.item === extractAssignedActions(minutes)[i].item)))}
+                        className="text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 font-medium transition-all disabled:opacity-50"
+                        style={{
+                          background: proposedAll ? 'rgba(52,211,153,0.25)' : 'rgba(167,139,250,0.18)',
+                          color: proposedAll ? '#34d399' : '#a78bfa',
+                          border: `1px solid ${proposedAll ? 'rgba(52,211,153,0.5)' : 'rgba(167,139,250,0.45)'}`,
+                        }}
+                        title="担当者が決まったアクションを AI 会社の宿題として一括で proposed に登録"
+                      >
+                        {proposedAll ? '✓ 全部 AI 会社へ送りました' : '🤖 全部 AI 会社の宿題に'}
+                      </button>
+                    </div>
+                  )}
                   <div className="space-y-2">
-                    {minutes.actions.map((a, i) => (
+                    {minutes.actions.map((a, i) => {
+                      const proposed = proposedActionIds.has(i);
+                      const hasOwner = !!(a.owner && a.owner !== '不明');
+                      return (
                       <div
                         key={i}
                         className="flex items-start gap-2 p-2.5 rounded-lg"
@@ -913,16 +1041,68 @@ export default function MeetingMinutesModal({
                             </p>
                           )}
                         </div>
-                        <button
-                          onClick={() => onAcceptAction(a.item)}
-                          className="text-xs px-2 py-1 rounded transition-all flex-shrink-0"
-                          style={{
-                            background: 'rgba(52,211,153,0.15)',
-                            color: '#34d399',
-                            border: '1px solid rgba(52,211,153,0.4)',
-                          }}
-                          title="タスクに追加"
-                        >＋追加</button>
+                        <div className="flex flex-col gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => onAcceptAction(a.item)}
+                            className="text-xs px-2 py-1 rounded transition-all"
+                            style={{
+                              background: 'rgba(52,211,153,0.15)',
+                              color: '#34d399',
+                              border: '1px solid rgba(52,211,153,0.4)',
+                            }}
+                            title="自分のタスクに追加"
+                          >＋自分</button>
+                          {hasOwner && (
+                            <button
+                              onClick={() => proposeActionToAgent(i)}
+                              disabled={proposed}
+                              className="text-xs px-2 py-1 rounded transition-all disabled:opacity-60"
+                              style={{
+                                background: proposed ? 'rgba(167,139,250,0.3)' : 'rgba(167,139,250,0.15)',
+                                color: '#a78bfa',
+                                border: '1px solid rgba(167,139,250,0.45)',
+                              }}
+                              title="AI 会社の宿題として propose"
+                            >{proposed ? '✓ 提案済' : '🤖 AI へ'}</button>
+                          )}
+                        </div>
+                      </div>
+                      );
+                    })}
+                  </div>
+                </ResultSection>
+              )}
+
+              {/* 発言者ごとの寄与サマリ */}
+              {Object.keys(minutes.speakerSummary).length > 0 && (
+                <ResultSection title="🎤 発言者ごとの要点" color="#f472b6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {Object.entries(minutes.speakerSummary).map(([name, s], i) => (
+                      <div
+                        key={i}
+                        className="rounded-lg p-2.5"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                      >
+                        <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                          <p className="text-fg text-sm font-semibold leading-tight">{name}</p>
+                          {s.totalMin ? (
+                            <span className="text-fg-subtle text-xs tabular-nums flex-shrink-0">
+                              約{s.totalMin}分
+                            </span>
+                          ) : null}
+                        </div>
+                        {s.keyPoints.length > 0 ? (
+                          <ul className="space-y-0.5">
+                            {s.keyPoints.map((p, j) => (
+                              <li key={j} className="text-fg-muted text-xs flex gap-1.5 leading-relaxed">
+                                <span style={{ color: '#f472b6' }}>·</span>
+                                <span>{p}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-fg-subtle text-xs">要点抽出なし</p>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -954,6 +1134,20 @@ export default function MeetingMinutesModal({
                 </ResultSection>
               )}
 
+              {/* 次回アジェンダ提案 */}
+              {minutes.nextAgenda.length > 0 && (
+                <ResultSection title="🗓 次回アジェンダ提案" color="#60a5fa">
+                  <ul className="space-y-1.5">
+                    {minutes.nextAgenda.map((n, i) => (
+                      <li key={i} className="text-fg text-sm flex gap-2 leading-relaxed">
+                        <span style={{ color: '#60a5fa' }} className="font-bold flex-shrink-0">{i + 1}.</span>
+                        <span>{n}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </ResultSection>
+              )}
+
               {/* インサイト */}
               {minutes.insights.length > 0 && (
                 <ResultSection title={`💡 ${persona.name} 視点のインサイト`} color="#c9a96e">
@@ -980,16 +1174,49 @@ export default function MeetingMinutesModal({
             </div>
 
             {/* Footer actions */}
-            <div className="flex items-center justify-between gap-3 px-5 py-4" style={{ borderTop: '1px solid var(--border)', background: 'var(--surface-3)' }}>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4" style={{ borderTop: '1px solid var(--border)', background: 'var(--surface-3)' }}>
               <button
                 onClick={() => setMinutes(null)}
                 className="text-sm text-fg-muted hover:text-fg"
               >← 編集に戻る</button>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 items-center">
+                {/* コピー (Markdown / Notion / Slack) */}
+                <div
+                  className="flex items-center gap-0 rounded-lg overflow-hidden"
+                  style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}
+                  title="クリップボードにコピー"
+                >
+                  <button
+                    onClick={() => handleCopy('md')}
+                    className="text-xs px-2.5 py-2 transition-all text-fg hover:bg-surface-3"
+                    style={{
+                      background: copyState === 'md' ? 'rgba(52,211,153,0.18)' : 'transparent',
+                      color: copyState === 'md' ? '#34d399' : undefined,
+                    }}
+                  >{copyState === 'md' ? '✓ コピー済' : '📋 Markdown'}</button>
+                  <span className="w-px h-5" style={{ background: 'var(--border)' }} />
+                  <button
+                    onClick={() => handleCopy('notion')}
+                    className="text-xs px-2.5 py-2 transition-all text-fg hover:bg-surface-3"
+                    style={{
+                      background: copyState === 'notion' ? 'rgba(52,211,153,0.18)' : 'transparent',
+                      color: copyState === 'notion' ? '#34d399' : undefined,
+                    }}
+                  >{copyState === 'notion' ? '✓ コピー済' : '📝 Notion'}</button>
+                  <span className="w-px h-5" style={{ background: 'var(--border)' }} />
+                  <button
+                    onClick={() => handleCopy('slack')}
+                    className="text-xs px-2.5 py-2 transition-all text-fg hover:bg-surface-3"
+                    style={{
+                      background: copyState === 'slack' ? 'rgba(52,211,153,0.18)' : 'transparent',
+                      color: copyState === 'slack' ? '#34d399' : undefined,
+                    }}
+                  >{copyState === 'slack' ? '✓ コピー済' : '💬 Slack'}</button>
+                </div>
                 <button
                   onClick={handleDownload}
-                  className="px-4 py-2 rounded-lg text-sm transition-all bg-surface-3 border-edge border text-fg hover:bg-surface"
-                >📥 .md ダウンロード</button>
+                  className="px-3 py-2 rounded-lg text-sm transition-all bg-surface-3 border-edge border text-fg hover:bg-surface"
+                >📥 .md</button>
                 <button
                   onClick={handleSaveToKnowledge}
                   className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
