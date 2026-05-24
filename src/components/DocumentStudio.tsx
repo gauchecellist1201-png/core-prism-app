@@ -6,10 +6,20 @@ import type { BusinessDocument, DocumentKind, DocumentStatus, InvoiceLine, Clien
 import { useInvoices } from '../hooks/useInvoices';
 import { useCRM } from '../hooks/useCRM';
 import { computeTotals, fmtJpy, calcDueDate } from '../lib/invoiceCalc';
+import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
 import { notifyInApp } from '../lib/inAppNotify';
 import { confirmAction } from '../lib/confirmDialog';
+import { copyText } from '../lib/clipboard';
+import {
+  DOC_TEMPLATE_META,
+  generateTemplateDoc,
+  markdownToHtml,
+  markdownToPlainText,
+  staticTemplate,
+  type DocTemplateKind,
+} from '../lib/documentTemplates';
 
 interface Props {
   persona: Persona;
@@ -53,10 +63,13 @@ function emptyLines(): InvoiceLine[] {
   return [{ id: uuidv4(), description: '', quantity: 1, unit: '式', unitPrice: 0, taxRate: 10 }];
 }
 
-export default function DocumentStudio({ persona, settings: _settings, onClose }: Props) {
+export default function DocumentStudio({ persona, settings, onClose }: Props) {
   const inv = useInvoices();
   const crm = useCRM();
   const deals = useMemo(() => crm.getForPersona(persona.id), [crm.deals, persona.id]);
+
+  // ─── トップ モード: 取引書類 ↔ テンプレ文書 ──────────
+  const [topMode, setTopMode] = useState<'invoice' | 'template'>('invoice');
 
   const [tab, setTab] = useState<Tab>('estimate');
   const [view, setView] = useState<View>('list');
@@ -208,22 +221,53 @@ export default function DocumentStudio({ persona, settings: _settings, onClose }
           </div>
         </div>
 
-        {/* タブ */}
-        <div className="cp-modal-tabs">
-          {(Object.keys(KIND_META) as DocumentKind[]).map(k => {
-            const m = KIND_META[k];
-            const cnt = inv.getDocumentsForPersona(persona.id).filter(d => d.kind === k).length;
-            return (
-              <button key={k} onClick={() => { setTab(k); setView('list'); }}
-                className="cp-modal-tab" data-active={tab === k}
-                style={{ color: tab === k ? m.color : undefined }}>
-                {m.emoji} {m.label} {cnt > 0 && <span className="cp-meta">({cnt})</span>}
-              </button>
-            );
-          })}
+        {/* トップ モード: 取引書類 / テンプレ文書 */}
+        <div className="flex gap-1.5 px-3 py-2" style={{ borderBottom: '1px solid var(--border)' }}>
+          <button
+            onClick={() => setTopMode('invoice')}
+            className="text-sm px-3 py-2 rounded-lg font-medium transition-all"
+            style={{
+              background: topMode === 'invoice' ? persona.accentColorLight : 'var(--surface-3)',
+              color: topMode === 'invoice' ? persona.accentColor : 'var(--fg-muted)',
+              border: `1px solid ${topMode === 'invoice' ? persona.accentColor + '50' : 'var(--border)'}`,
+              minHeight: 40,
+            }}
+          >🧾 取引書類</button>
+          <button
+            onClick={() => setTopMode('template')}
+            className="text-sm px-3 py-2 rounded-lg font-medium transition-all"
+            style={{
+              background: topMode === 'template' ? persona.accentColorLight : 'var(--surface-3)',
+              color: topMode === 'template' ? persona.accentColor : 'var(--fg-muted)',
+              border: `1px solid ${topMode === 'template' ? persona.accentColor + '50' : 'var(--border)'}`,
+              minHeight: 40,
+            }}
+          >📝 テンプレ文書</button>
         </div>
 
+        {/* タブ (取引書類モードのみ) */}
+        {topMode === 'invoice' && (
+          <div className="cp-modal-tabs">
+            {(Object.keys(KIND_META) as DocumentKind[]).map(k => {
+              const m = KIND_META[k];
+              const cnt = inv.getDocumentsForPersona(persona.id).filter(d => d.kind === k).length;
+              return (
+                <button key={k} onClick={() => { setTab(k); setView('list'); }}
+                  className="cp-modal-tab" data-active={tab === k}
+                  style={{ color: tab === k ? m.color : undefined }}>
+                  {m.emoji} {m.label} {cnt > 0 && <span className="cp-meta">({cnt})</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <div className="cp-modal-body">
+          {topMode === 'template' && (
+            <TemplateDocStudio persona={persona} settings={settings} onClose={onClose} />
+          )}
+          {topMode === 'invoice' && (
+          <>
           <StudioIntro
             id="document"
             accent={persona.accentColor}
@@ -497,6 +541,8 @@ export default function DocumentStudio({ persona, settings: _settings, onClose }
               </motion.div>
             )}
           </AnimatePresence>
+          </>
+          )}
         </div>
       </motion.div>
     </motion.div>
@@ -614,6 +660,291 @@ function DocDetail({ doc, persona, deals, onEdit, onDuplicate, onStatusChange }:
           <p className="cp-body" style={{ whiteSpace: 'pre-wrap' }}>{doc.notes}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// ============================================================
+// テンプレ文書 サブスタジオ
+// 6 種類のテンプレ × MD 編集/プレビュー × 3 種エクスポート × Agent 委任
+// ============================================================
+function TemplateDocStudio({
+  persona, settings, onClose: _onClose,
+}: { persona: Persona; settings: AppSettings; onClose: () => void }) {
+  const queue = useAgentTaskQueue();
+  const [kind, setKind] = useState<DocTemplateKind>('proposal');
+  const [topic, setTopic] = useState('');
+  const [markdown, setMarkdown] = useState(() => staticTemplate('proposal', persona, ''));
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [viewMode, setViewMode] = useState<'split' | 'edit' | 'preview'>('split');
+
+  // テンプレ切替: 内容が空 or 静的テンプレ完全一致なら新しい静的テンプレに差し替え
+  const handleKindChange = useCallback((next: DocTemplateKind) => {
+    setKind(next);
+    // 中身が初期状態 (空/初期テンプレ) っぽければ自動置換
+    const isPristine = !markdown.trim() ||
+      markdown === staticTemplate(kind, persona, topic) ||
+      markdown === staticTemplate(kind, persona, '');
+    if (isPristine) {
+      setMarkdown(staticTemplate(next, persona, topic));
+    }
+  }, [markdown, kind, persona, topic]);
+
+  const handleAIGenerate = useCallback(async () => {
+    if (isGenerating) return;
+    setIsGenerating(true);
+    try {
+      const result = await generateTemplateDoc(settings, persona, kind, topic);
+      setMarkdown(result.markdown);
+      notifyInApp({
+        kind: result.usedAI ? 'success' : 'info',
+        title: result.usedAI ? 'AI で初稿を生成しました' : 'AI に届かなかったので雛形を出しました',
+        body: result.usedAI ? '内容を編集して仕上げてください' : '再度ボタンを押すと AI 生成を再試行します',
+        duration: 4000,
+      });
+    } catch (err) {
+      notifyInApp({
+        kind: 'warn',
+        title: '生成に失敗しました',
+        body: err instanceof Error ? err.message : '雛形のみ表示しています',
+      });
+      setMarkdown(staticTemplate(kind, persona, topic));
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [isGenerating, settings, persona, kind, topic]);
+
+  const handleCopyMd = useCallback(() => {
+    copyText(markdown, 'Markdown 本文');
+  }, [markdown]);
+
+  const handleDownloadMd = useCallback(() => {
+    const safe = (DOC_TEMPLATE_META[kind].label + '_' + (topic || persona.name)).replace(/[\\/:*?"<>|]/g, '_');
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${safe}.md`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }, [markdown, kind, topic, persona.name]);
+
+  const handleDownloadTxt = useCallback(() => {
+    const safe = (DOC_TEMPLATE_META[kind].label + '_' + (topic || persona.name)).replace(/[\\/:*?"<>|]/g, '_');
+    const plain = markdownToPlainText(markdown);
+    const blob = new Blob([plain], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${safe}.txt`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }, [markdown, kind, topic, persona.name]);
+
+  // AgentTaskQueue 委任
+  const handleDelegate = useCallback((target: 'CMO' | 'CLO') => {
+    const meta = DOC_TEMPLATE_META[kind];
+    const taskTitle = target === 'CMO'
+      ? `${meta.label}の推敲 (${persona.name})`
+      : `${meta.label}の法的チェック (${persona.name})`;
+    const summary = target === 'CMO'
+      ? 'コピーの言い回し・誤字脱字・読み手目線で推敲'
+      : '法的リスク・契約上の論点・表現の妥当性を確認';
+    queue.propose({
+      title: taskTitle,
+      summary,
+      why: `「${topic || meta.label}」を本番送付前に専門家視点でチェック`,
+      expected: target === 'CMO'
+        ? '改善点 3 つと整えた版'
+        : 'リスク 3 つと法的に問題のない代替表現',
+      dueDays: 1,
+      steps: target === 'CMO'
+        ? [
+            { cxo: 'CMO', label: '言い回しを推敲し、読み手に刺さる版に' },
+            { cxo: 'CDS', label: '誤字脱字・冗長な箇所を検出' },
+          ]
+        : [
+            { cxo: 'CLO', label: '法的リスクを洗い出し' },
+            { cxo: 'CLO', label: '表現を法的に安全な形へ修正案を提示' },
+          ],
+    });
+    notifyInApp({
+      kind: 'success',
+      title: `${target} に依頼しました`,
+      body: 'AI 会社のタスクキューに追加。承認後に実行されます',
+      duration: 4000,
+    });
+  }, [kind, persona.name, topic, queue]);
+
+  const html = useMemo(() => markdownToHtml(markdown), [markdown]);
+
+  return (
+    <div className="cp-stack">
+      {/* テンプレ選択 (6 枚カード) */}
+      <div>
+        <p className="cp-section-head mb-2">📝 テンプレを選ぶ</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {(Object.keys(DOC_TEMPLATE_META) as DocTemplateKind[]).map(k => {
+            const meta = DOC_TEMPLATE_META[k];
+            const active = kind === k;
+            return (
+              <button
+                key={k}
+                onClick={() => handleKindChange(k)}
+                className="text-left p-3 rounded-xl transition-all"
+                style={{
+                  background: active ? persona.accentColorLight : 'var(--surface-3)',
+                  border: `2px solid ${active ? persona.accentColor : 'var(--border)'}`,
+                  minHeight: 80,
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">{meta.emoji}</span>
+                  <p className="font-semibold text-sm" style={{ color: active ? persona.accentColor : 'var(--fg)' }}>
+                    {meta.label}
+                  </p>
+                </div>
+                <p className="text-xs leading-snug" style={{ color: 'var(--fg-muted)' }}>{meta.blurb}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* テーマ入力 + AI 生成 */}
+      <div className="cp-card-section">
+        <label className="cp-label">テーマ / 状況 (AI に与える材料)</label>
+        <textarea
+          value={topic}
+          onChange={e => setTopic(e.target.value)}
+          placeholder={DOC_TEMPLATE_META[kind].inputHint}
+          className="cp-textarea"
+          rows={3}
+          style={{ fontSize: 16, minHeight: 72 }}
+        />
+        <div className="flex gap-2 mt-2 flex-wrap">
+          <button
+            onClick={handleAIGenerate}
+            disabled={isGenerating}
+            className="cp-btn cp-btn-primary"
+            style={{
+              background: persona.accentColor, color: '#0a0a0f',
+              minHeight: 48, opacity: isGenerating ? 0.6 : 1,
+            }}
+          >{isGenerating ? '✨ 生成中...' : '✨ AI で初稿を作る'}</button>
+          <button
+            onClick={() => setMarkdown(staticTemplate(kind, persona, topic))}
+            className="cp-btn cp-btn-ghost"
+            style={{ minHeight: 48 }}
+          >🧱 雛形だけ挿入</button>
+        </div>
+      </div>
+
+      {/* 表示モード切替 */}
+      <div className="flex gap-1 flex-wrap">
+        {(['split', 'edit', 'preview'] as const).map(v => (
+          <button
+            key={v}
+            onClick={() => setViewMode(v)}
+            className="text-xs px-3 py-2 rounded-md transition-all"
+            style={{
+              background: viewMode === v ? persona.accentColorLight : 'var(--surface-3)',
+              color: viewMode === v ? persona.accentColor : 'var(--fg-muted)',
+              border: `1px solid ${viewMode === v ? persona.accentColor : 'var(--border)'}`,
+              minHeight: 36,
+            }}
+          >
+            {v === 'split' ? '⚌ 並べて表示' : v === 'edit' ? '📝 編集のみ' : '👁 プレビュー'}
+          </button>
+        ))}
+      </div>
+
+      {/* エディタ + プレビュー */}
+      <div
+        className={viewMode === 'split' ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : ''}
+      >
+        {(viewMode === 'split' || viewMode === 'edit') && (
+          <div>
+            <p className="cp-meta mb-1">📝 Markdown 編集</p>
+            <textarea
+              value={markdown}
+              onChange={e => setMarkdown(e.target.value)}
+              className="cp-textarea font-mono"
+              rows={viewMode === 'edit' ? 22 : 16}
+              style={{
+                fontSize: 14, lineHeight: 1.6, minHeight: 320,
+                fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
+              }}
+            />
+            <p className="cp-tiny mt-1">{markdown.length} 文字</p>
+          </div>
+        )}
+
+        {(viewMode === 'split' || viewMode === 'preview') && (
+          <div>
+            <p className="cp-meta mb-1">👁 プレビュー</p>
+            <div
+              className="cp-card-section overflow-y-auto"
+              style={{
+                background: 'var(--surface-3)',
+                minHeight: 320,
+                maxHeight: viewMode === 'preview' ? 'calc(100vh - 400px)' : 480,
+                padding: '14px 18px',
+                fontSize: 14,
+              }}
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* エクスポート */}
+      <div className="cp-card-section">
+        <p className="cp-section-head mb-2">📤 エクスポート</p>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={handleCopyMd}
+            className="cp-btn cp-btn-ghost"
+            style={{ minHeight: 56 }}
+          >📋 MD コピー</button>
+          <button
+            onClick={handleDownloadMd}
+            className="cp-btn cp-btn-ghost"
+            style={{ minHeight: 56 }}
+          >📥 .md ダウンロード</button>
+          <button
+            onClick={handleDownloadTxt}
+            className="cp-btn cp-btn-ghost"
+            style={{ minHeight: 56 }}
+          >📄 .txt ダウンロード</button>
+        </div>
+      </div>
+
+      {/* Agent 委任 */}
+      <div className="cp-card-section">
+        <p className="cp-section-head mb-1">🤖 AI 会社の専門家に委ねる</p>
+        <p className="cp-meta mb-2">下書きを次の段階に進めます。タスクキューに「提案」が積まれ、承認すると実行が始まります。</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button
+            onClick={() => handleDelegate('CMO')}
+            className="cp-btn"
+            style={{
+              background: '#FB923C20',
+              borderColor: '#FB923C',
+              color: '#FB923C',
+              minHeight: 56,
+            }}
+          >📣 CMO に推敲を依頼</button>
+          <button
+            onClick={() => handleDelegate('CLO')}
+            className="cp-btn"
+            style={{
+              background: '#6366F120',
+              borderColor: '#6366F1',
+              color: '#6366F1',
+              minHeight: 56,
+            }}
+          >⚖️ CLO に法的チェックを依頼</button>
+        </div>
+      </div>
     </div>
   );
 }

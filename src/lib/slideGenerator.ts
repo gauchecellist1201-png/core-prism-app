@@ -26,12 +26,70 @@ export interface SlideSpec {
   notes?: string;
 }
 
+export type DeckTheme = 'dark' | 'light' | 'minimal' | 'colorful' | 'mono';
+
 export interface DeckSpec {
   title: string;
   subtitle: string;
   author: string;
   accentColor: string;       // hex like "4A9EFF" (no #)
   slides: SlideSpec[];
+  /** ビジュアルテーマ (省略時 dark) */
+  theme?: DeckTheme;
+}
+
+export interface ThemePalette {
+  bg: string;       // 全面背景
+  bg2: string;      // セクション扉や帯
+  card: string;     // カードの中
+  border: string;   // 罫線
+  primary: string;  // アクセント (spec.accentColor を上書き)
+  primary2: string; // アクセント明色
+  fg: string;       // 主文字色
+  fg2: string;      // 副文字色
+  muted: string;    // 補足
+  subtle: string;   // ページ番号など
+}
+
+export const DECK_THEMES: Record<DeckTheme, { label: string; emoji: string; preview: string }> = {
+  dark:     { label: 'ダーク',   emoji: '🌃', preview: '#0A0F1F' },
+  light:    { label: 'ライト',   emoji: '☀️',  preview: '#F8FAFC' },
+  minimal:  { label: 'ミニマル', emoji: '◻️',  preview: '#FFFFFF' },
+  colorful: { label: 'カラフル', emoji: '🎨', preview: '#1E1B4B' },
+  mono:     { label: 'モノクロ', emoji: '⬛', preview: '#111111' },
+};
+
+function buildPalette(theme: DeckTheme, accent: string): ThemePalette {
+  const acc = accent.replace(/^#/, '');
+  const primary2 = lightenHex(acc, 0.2);
+  switch (theme) {
+    case 'light':
+      return {
+        bg: 'FFFFFF', bg2: 'F1F5F9', card: 'FFFFFF', border: 'CBD5E1',
+        primary: acc, primary2, fg: '0F172A', fg2: '334155', muted: '64748B', subtle: '94A3B8',
+      };
+    case 'minimal':
+      return {
+        bg: 'FFFFFF', bg2: 'FAFAFA', card: 'FFFFFF', border: 'E5E5E5',
+        primary: '111111', primary2: '333333', fg: '111111', fg2: '444444', muted: '777777', subtle: 'AAAAAA',
+      };
+    case 'colorful':
+      return {
+        bg: '1E1B4B', bg2: '312E81', card: '3730A3', border: '6366F1',
+        primary: 'FBBF24', primary2: 'FCD34D', fg: 'FFFFFF', fg2: 'E0E7FF', muted: 'C7D2FE', subtle: '818CF8',
+      };
+    case 'mono':
+      return {
+        bg: '111111', bg2: '1A1A1A', card: '222222', border: '333333',
+        primary: 'FFFFFF', primary2: 'CCCCCC', fg: 'FFFFFF', fg2: 'DDDDDD', muted: '999999', subtle: '666666',
+      };
+    case 'dark':
+    default:
+      return {
+        bg: '0A0F1F', bg2: '121A2F', card: '1A2440', border: '2A3656',
+        primary: acc, primary2, fg: 'FFFFFF', fg2: 'C4CFE5', muted: '8B97B5', subtle: '5C6883',
+      };
+  }
 }
 
 const SYS = `あなたはプロのプレゼン資料デザイナーです。
@@ -133,18 +191,7 @@ ${input.source.slice(0, 30000)}${input.source.length > 30000 ? '\n[...省略]' :
 
 // ── PPTX レンダリング ─────────────────────────────────
 export async function renderDeck(spec: DeckSpec, opts?: { fileName?: string }): Promise<void> {
-  const C = {
-    bg:      '0A0F1F',
-    bg2:     '121A2F',
-    card:    '1A2440',
-    border:  '2A3656',
-    primary: spec.accentColor,
-    primary2: lightenHex(spec.accentColor, 0.2),
-    fg:      'FFFFFF',
-    fg2:     'C4CFE5',
-    muted:   '8B97B5',
-    subtle:  '5C6883',
-  };
+  const C = buildPalette(spec.theme || 'dark', spec.accentColor);
   const FH = 'Hiragino Sans';
   const FB = 'Hiragino Sans';
 
@@ -420,6 +467,40 @@ function renderClosing(slide: any, sl: SlideSpec, C: any, FH: string, FB: string
     x: 0.8, y: 6.6, w: 12, h: 0.4,
     fontFace: FB, fontSize: 11, color: C.subtle, charSpacing: 4, margin: 0,
   });
+}
+
+/** React プレビュー用に CSS で使える #付きパレットを返す */
+export function getPreviewPalette(theme: DeckTheme, accent: string): Record<keyof ThemePalette, string> {
+  const p = buildPalette(theme, accent);
+  const w: any = {};
+  (Object.keys(p) as (keyof ThemePalette)[]).forEach(k => { w[k] = '#' + p[k]; });
+  return w;
+}
+
+/** デッキを Markdown 箇条書きに変換 (export 用) */
+export function deckToMarkdown(spec: DeckSpec): string {
+  const lines: string[] = [];
+  lines.push(`# ${spec.title}`);
+  if (spec.subtitle) lines.push(`> ${spec.subtitle}`);
+  lines.push('');
+  spec.slides.forEach((sl, i) => {
+    lines.push(`## ${String(i + 1).padStart(2, '0')}. ${sl.title}`);
+    if (sl.subtitle) lines.push(`*${sl.subtitle}*`);
+    if (sl.body) lines.push(sl.body);
+    if (sl.bullets?.length) {
+      sl.bullets.forEach(b => lines.push(`- ${b}`));
+    }
+    if (sl.columns?.length) {
+      sl.columns.forEach(c => {
+        lines.push(`### ${c.heading}`);
+        lines.push(c.body);
+      });
+    }
+    if (sl.notes) lines.push(`\n_(話者ノート: ${sl.notes})_`);
+    lines.push('');
+  });
+  lines.push(`---\n${spec.author}`);
+  return lines.join('\n');
 }
 
 // ── ヘルパー ──────────────────────────────────────────
