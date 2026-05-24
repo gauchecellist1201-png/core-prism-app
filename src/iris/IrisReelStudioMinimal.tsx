@@ -11,7 +11,7 @@ import {
   Image as ImageIcon, Film, Music, Play, Square, Download, Share2,
   Sparkles, Wand2, ChevronRight, Plus, X, Trash2, Settings2, Loader2,
   Flame, Scissors, ArrowLeft, ArrowRight, Eye, Type as TypeIcon,
-  AlertCircle,
+  AlertCircle, Copy, MessageSquare, Layers, Camera,
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -23,9 +23,15 @@ import {
   BGM_MOOD_DEFS,
   snapDurationToBgm,
 } from './reelAiCaption';
+import { generateReelScript, generateReelCaption, type ReelScriptResult } from './reelAiScript';
 import { suggestNextSlot, type ScheduledPost } from './usePostQueue';
 import { notifyInApp } from '../lib/inAppNotify';
 import ShareArtifactButton from '../components/ShareArtifactButton';
+import { shareToInstagram } from './instagramShare';
+import {
+  REEL_PRESETS, getPreset, drawPresetDecorations, drawPresetBackground,
+  type PresetId,
+} from './reelStudio/Presets';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -141,6 +147,18 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [currentTime, setCurrentTime] = useState(0);
   const [scheduled, setScheduled] = useState(false);
   const [scheduledMsg, setScheduledMsg] = useState<string>('');
+  // 4 種プリセット (テンプレート)
+  const [presetId, setPresetId] = useState<PresetId | null>(null);
+  // AI 台本生成 (テーマ → 3 シーン)
+  const [scriptBusy, setScriptBusy] = useState(false);
+  const [scriptErr, setScriptErr] = useState<string>('');
+  const [scriptResult, setScriptResult] = useState<ReelScriptResult | null>(null);
+  // Instagram キャプション AI 生成
+  const [capBusy, setCapBusy] = useState(false);
+  const [capErr, setCapErr] = useState<string>('');
+  const [aiCaption, setAiCaption] = useState<{ caption: string; hashtags: string[] } | null>(null);
+  // Instagram 共有
+  const [igBusy, setIgBusy] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
@@ -235,11 +253,74 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     }
   }, [clips, themeHint]);
 
+  // ─── プリセット適用 (1 タップで全カットの長さ + 字幕位置を統一) ─────
+  const applyPreset = useCallback((id: PresetId) => {
+    setPresetId(id);
+    const preset = getPreset(id);
+    if (!preset) return;
+    setClips(prev => prev.map(c => ({
+      ...c,
+      captionY: preset.captionY,
+    })));
+  }, []);
+
+  // ─── AI 台本生成 (テーマ → 3 シーン × 4〜6 秒) ─────
+  const runAiScript = useCallback(async () => {
+    if (!themeHint || !themeHint.trim()) {
+      setScriptErr('上の入力欄にテーマを入れてからもう一度押してください');
+      return;
+    }
+    setScriptBusy(true); setScriptErr(''); setScriptResult(null);
+    try {
+      const result = await generateReelScript(themeHint);
+      setScriptResult(result);
+      // 既存クリップが 3 個以上あれば字幕を上書き、無ければプレースホルダー (色付き) クリップを 3 個作る
+      setClips(prev => {
+        if (prev.length >= 3) {
+          return prev.map((c, i) => ({
+            ...c,
+            captionText: result.scenes[i]?.caption || c.captionText || '',
+            duration: result.scenes[i]?.duration || c.duration,
+          }));
+        }
+        // 素材がまだ無い場合 — 字幕だけのプレースホルダー (色のみ) を 3 枚作る
+        const preset = getPreset(presetId);
+        const palette = preset ? [preset.bg, preset.accent + 'cc', preset.bg] : ['#1F1A2E', '#E1306C', '#0F172A'];
+        const placeholders: Clip[] = result.scenes.map((s, i) => {
+          // 色塗りキャンバスを画像化
+          const c = document.createElement('canvas');
+          c.width = OUT_W; c.height = OUT_H;
+          const cx = c.getContext('2d')!;
+          cx.fillStyle = palette[i % palette.length];
+          cx.fillRect(0, 0, OUT_W, OUT_H);
+          const url = c.toDataURL('image/png');
+          const img = new Image();
+          img.src = url;
+          return {
+            id: makeId(),
+            kind: 'image' as const,
+            url,
+            duration: s.duration,
+            el: img,
+            captionText: s.caption,
+          };
+        });
+        return [...prev, ...placeholders];
+      });
+      setStep('subtitle');
+    } catch (e: any) {
+      setScriptErr(e?.message || 'AI 処理に失敗しました。少し待ってから再試行してください。');
+    } finally {
+      setScriptBusy(false);
+    }
+  }, [themeHint, presetId]);
+
   // ─── キャンバス描画 ─────
   const drawAt = useCallback((t: number) => {
     const canvas = canvasRef.current; if (!canvas) return;
     const ctx = canvas.getContext('2d'); if (!ctx) return;
-    ctx.fillStyle = '#0a0a0f'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const preset = getPreset(presetId);
+    drawPresetBackground(ctx, preset, canvas.width, canvas.height);
     if (!clips.length) return;
 
     // どのクリップ?
@@ -270,12 +351,16 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       drawCover(ctx, el, sw, sh, canvas.width, canvas.height, localT);
     }
 
-    // フェード切替
+    // フェード切替 (プリセットの transition に応じて)
     const remaining = (acc + cur.duration) - t;
-    if (remaining < 0.4) {
-      ctx.fillStyle = `rgba(0,0,0,${(0.4 - remaining) / 0.4})`;
+    const fadeWindow = preset?.transition === 'cut' ? 0.12 : preset?.transition === 'dissolve' ? 0.5 : 0.4;
+    if (remaining < fadeWindow) {
+      ctx.fillStyle = `rgba(0,0,0,${(fadeWindow - remaining) / fadeWindow})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+
+    // プリセット装飾 (オーバーレイ + 下部バー)
+    if (preset) drawPresetDecorations(ctx, preset, canvas.width, canvas.height, t);
 
     // 字幕 (カット毎)。0.25s フェードイン / 0.25s フェードアウト
     const overlay = cur.captionText || '';
@@ -286,12 +371,18 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       const alpha = Math.max(0, Math.min(1, fadeIn, fadeOut));
       ctx.save();
       ctx.globalAlpha = alpha;
-      const yRatio = cur.captionY ?? 0.78;
+      // プリセットがあればそちらを優先 (色・フォント・位置)
+      const useFont    = preset?.captionFont    || captionPreset.font;
+      const useSize    = preset?.captionSize    ?? captionPreset.size;
+      const useColor   = preset?.captionColor   || captionPreset.color;
+      const useStroke  = preset?.captionStroke  || captionPreset.stroke;
+      const useStrokeW = preset?.captionStrokeWidth ?? captionPreset.strokeWidth;
+      const yRatio = cur.captionY ?? preset?.captionY ?? 0.78;
       const x = canvas.width / 2, y = canvas.height * yRatio;
-      ctx.font = `bold ${captionPreset.size * (canvas.width / OUT_W)}px ${captionPreset.font}`;
+      ctx.font = `bold ${useSize * (canvas.width / OUT_W)}px ${useFont}`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.strokeStyle = captionPreset.stroke;
-      ctx.lineWidth = captionPreset.strokeWidth * (canvas.width / OUT_W);
+      ctx.strokeStyle = useStroke;
+      ctx.lineWidth = useStrokeW * (canvas.width / OUT_W);
       ctx.lineJoin = 'round';
       // wrap to ~14 chars
       const chars = overlay.split('');
@@ -301,21 +392,21 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         if (line.length >= 14 && /[\s、。!\?！？]/.test(ch)) { lines.push(line); line = ''; }
       }
       if (line) lines.push(line);
-      const lh = captionPreset.size * 1.15 * (canvas.width / OUT_W);
+      const lh = useSize * 1.15 * (canvas.width / OUT_W);
       lines.forEach((ln, i) => {
         const yi = y - (lines.length - 1) * lh / 2 + i * lh;
         ctx.strokeText(ln, x, yi);
-        ctx.fillStyle = captionPreset.color;
+        ctx.fillStyle = useColor;
         ctx.fillText(ln, x, yi);
       });
       ctx.restore();
     }
     // 進捗共有 (タイムライン UI 用)
     void curIdx;
-  }, [clips, captionPreset, totalDuration]);
+  }, [clips, captionPreset, totalDuration, presetId]);
 
   // ─── 静止描画 (再生してない時) ─────
-  useEffect(() => { if (!playing) drawAt(currentTime); }, [drawAt, playing, clips, captionPreset, currentTime]);
+  useEffect(() => { if (!playing) drawAt(currentTime); }, [drawAt, playing, clips, captionPreset, currentTime, presetId]);
 
   // ─── 再生ループ ─────
   const startPlay = () => {
@@ -431,15 +522,24 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     if (!canvasRef.current || !clips.length) return;
     setRecording(true); setProgress(0); setExportUrl(null);
     const stream = (canvasRef.current as HTMLCanvasElement).captureStream(30);
-    // 音声トラックを混ぜる (失敗してもユーザーに気づかせる)
+    // 音声トラックを混ぜる + fade in/out (失敗してもユーザーに気づかせる)
     if (bgmFile) {
       try {
         const ac = new AudioContext();
         const buf = await bgmFile.arrayBuffer();
         const audioBuf = await ac.decodeAudioData(buf);
         const src = ac.createBufferSource(); src.buffer = audioBuf;
+        // GainNode で 最初 1s フェードイン + 最後 1s フェードアウト
+        const gain = ac.createGain();
+        const now = ac.currentTime;
+        const FADE = 1.0; // 秒
+        const fadeOutAt = Math.max(FADE + 0.05, totalDuration - FADE);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(1, now + FADE);
+        gain.gain.setValueAtTime(1, now + fadeOutAt);
+        gain.gain.linearRampToValueAtTime(0, now + Math.max(totalDuration, fadeOutAt + 0.1));
         const dest = ac.createMediaStreamDestination();
-        src.connect(dest); src.start();
+        src.connect(gain); gain.connect(dest); src.start();
         dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
       } catch (e) {
         notifyInApp({
@@ -527,6 +627,56 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     document.body.removeChild(a);
   };
 
+  /** リール用キャプションを AI 生成 (テーマ + 字幕から) */
+  const runCaptionGen = async () => {
+    setCapBusy(true); setCapErr('');
+    try {
+      const captionTexts = clips.map(c => c.captionText || '');
+      const themeForCap = themeHint || scriptResult?.title || 'リール投稿';
+      const out = await generateReelCaption(themeForCap, captionTexts);
+      setAiCaption(out);
+    } catch (e: any) {
+      setCapErr(e?.message || 'キャプション生成に失敗しました');
+    } finally {
+      setCapBusy(false);
+    }
+  };
+
+  /** 字幕を一括クリップボードへ */
+  const copyAllCaptions = async () => {
+    const text = clips.map(c => c.captionText).filter(Boolean).join('\n');
+    if (!text) { setScheduledMsg('コピーする字幕がありません'); return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      setScheduledMsg('字幕をコピーしました');
+    } catch {
+      setScheduledMsg('コピーに失敗しました');
+    }
+  };
+
+  /** Instagram で開く (Web Share API → URL スキーム → クリップボード) */
+  const openInInstagram = async () => {
+    if (!exportUrl) return;
+    setIgBusy(true);
+    try {
+      const res = await fetch(exportUrl);
+      const blob = await res.blob();
+      const ext = exportMime.startsWith('video/mp4') ? 'mp4' : 'webm';
+      const captionAll = (aiCaption?.caption || aiResult?.caption || clips.map(c => c.captionText).filter(Boolean).join('\n'))
+        + (aiCaption?.hashtags?.length ? '\n\n' + aiCaption.hashtags.join(' ') : (aiResult?.hashtags?.length ? '\n\n' + aiResult.hashtags.join(' ') : ''));
+      const result = await shareToInstagram({
+        caption: captionAll,
+        image: blob,
+        filename: `iris-reel-${Date.now()}.${ext}`,
+      });
+      setScheduledMsg(result.message);
+    } catch (e: any) {
+      setScheduledMsg(`Instagram への共有に失敗: ${e?.message || e}`);
+    } finally {
+      setIgBusy(false);
+    }
+  };
+
   /** Instagram Story 用の短いコピーをクリップボードへ */
   const copyStoryText = async () => {
     const fallback = clips.map(c => c.captionText).filter(Boolean).join(' / ').slice(0, 60);
@@ -546,7 +696,13 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const removeClip = (id: string) => setClips(prev => prev.filter(c => c.id !== id));
 
   return (
-    <div style={{ position: 'relative', minHeight: '100dvh', paddingBottom: '6rem' }}>
+    <div style={{
+      position: 'relative',
+      minHeight: '100dvh',
+      // safe-area-inset 配慮: 下部はホームインジケータ分余白を確保
+      paddingBottom: 'max(6rem, calc(4.5rem + env(safe-area-inset-bottom, 0px)))',
+      paddingTop: 'env(safe-area-inset-top, 0px)',
+    }}>
       {/* AMBIENT BG */}
       <div style={{
         position: 'absolute', top: -120, left: '50%', transform: 'translateX(-50%)',
@@ -589,6 +745,65 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             {clips.length === 0 ? '一本目の素材を入れて、はじめましょう' : `${clips.length} クリップ ・ ${totalDuration.toFixed(1)} 秒`}
           </p>
         </motion.div>
+
+        {/* PRESET TEMPLATES (4 種) — 1 タップで色/フォント/レイアウト切替 */}
+        <div style={{ marginBottom: '1.2rem' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 10, letterSpacing: '0.22em', fontWeight: 800,
+            color: bg.accent, textTransform: 'uppercase',
+            marginBottom: 7, paddingLeft: 2,
+          }}>
+            <Layers size={11} /> テンプレート
+            {presetId && (
+              <button onClick={() => setPresetId(null)} style={{
+                marginLeft: 'auto', background: 'transparent', border: 'none',
+                color: bg.inkSoft, fontSize: 10, cursor: 'pointer',
+                textDecoration: 'underline', letterSpacing: 0,
+              }}>解除</button>
+            )}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+            {REEL_PRESETS.map(p => {
+              const active = presetId === p.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => applyPreset(p.id)}
+                  title={p.tagline}
+                  style={{
+                    minHeight: 64,
+                    padding: '0.6rem 0.3rem',
+                    background: active ? IRIS_GRADIENT : 'rgba(255,255,255,0.7)',
+                    color: active ? '#fff' : bg.ink,
+                    border: `1.5px solid ${active ? 'transparent' : bg.cardBorder}`,
+                    borderRadius: 14,
+                    fontSize: 11, fontWeight: 800,
+                    cursor: 'pointer', fontFamily: IRIS_FONTS.body,
+                    boxShadow: active ? '0 6px 18px rgba(225,48,108,0.32)' : '0 1px 3px rgba(0,0,0,0.04)',
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center', gap: 2,
+                    transition: 'all 0.18s',
+                  }}
+                >
+                  <div style={{ fontSize: 20, lineHeight: 1 }}>{p.emoji}</div>
+                  <div style={{ fontSize: 11, lineHeight: 1.1 }}>{p.label}</div>
+                </button>
+              );
+            })}
+          </div>
+          {presetId && (() => {
+            const p = getPreset(presetId);
+            if (!p) return null;
+            return (
+              <div style={{
+                marginTop: 6, padding: '0.45rem 0.65rem',
+                background: 'rgba(225,48,108,0.06)', borderRadius: 8,
+                fontSize: 10.5, color: bg.inkSoft, lineHeight: 1.4,
+              }}>{p.tagline}</div>
+            );
+          })()}
+        </div>
 
         {/* PHONE CANVAS */}
         <motion.div
@@ -644,7 +859,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           {!playing && !recording ? (
             <button onClick={startPlay} disabled={!clips.length} style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '0.85rem 1.6rem',
+              minHeight: 48, padding: '0.85rem 1.6rem',
               background: clips.length ? IRIS_GRADIENT : 'rgba(255,255,255,0.4)',
               color: '#fff', border: 'none', borderRadius: 999,
               fontSize: 14, fontWeight: 800, cursor: clips.length ? 'pointer' : 'not-allowed',
@@ -657,7 +872,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           ) : (
             <button onClick={stopPlay} style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '0.85rem 1.6rem',
+              minHeight: 48, padding: '0.85rem 1.6rem',
               background: 'rgba(255,255,255,0.9)', color: bg.ink,
               border: `1.5px solid ${bg.accent}`, borderRadius: 999,
               fontSize: 14, fontWeight: 800, cursor: 'pointer',
@@ -1064,21 +1279,85 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             {step === 'subtitle' && (
               <>
                 {/* AI ヒント (テーマ) */}
-                <Label icon={<Sparkles size={11} />}>テーマ (任意、AI のヒント)</Label>
+                <Label icon={<Sparkles size={11} />}>テーマ (AI のヒント / 台本生成にも使う)</Label>
                 <input
                   type="text"
                   value={themeHint}
                   onChange={e => setThemeHint(e.target.value)}
                   placeholder="例: 朝のスキンケア、新作レビュー"
                   style={{
-                    width: '100%', padding: '0.7rem 0.9rem',
-                    background: 'rgba(255,255,255,0.7)',
+                    width: '100%', padding: '0.85rem 0.9rem',
+                    background: 'rgba(255,255,255,0.85)',
                     border: `1px solid ${bg.cardBorder}`,
                     borderRadius: 12,
-                    fontSize: 16, fontFamily: 'inherit',
-                    marginBottom: 12,
+                    fontSize: 16, // iOS Safari 自動ズーム回避 (16px+)
+                    fontFamily: 'inherit',
+                    marginBottom: 8,
+                    minHeight: 44, // タップ対象 (Apple HIG)
                   }}
                 />
+                {/* AI 台本生成 (3 シーン × 4-6 秒) */}
+                <button
+                  onClick={runAiScript}
+                  disabled={scriptBusy || !themeHint.trim()}
+                  style={{
+                    width: '100%', padding: '0.85rem 1rem',
+                    background: scriptBusy ? 'rgba(255,255,255,0.5)' : (themeHint.trim() ? IRIS_GRADIENT : 'rgba(255,255,255,0.4)'),
+                    color: '#fff', border: 'none', borderRadius: 14,
+                    fontSize: 14, fontWeight: 800,
+                    cursor: scriptBusy ? 'wait' : (themeHint.trim() ? 'pointer' : 'not-allowed'),
+                    boxShadow: themeHint.trim() && !scriptBusy ? '0 8px 22px rgba(225,48,108,0.28)' : 'none',
+                    fontFamily: IRIS_FONTS.body,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    minHeight: 48, marginBottom: 8,
+                    opacity: themeHint.trim() || scriptBusy ? 1 : 0.55,
+                  }}
+                >
+                  {scriptBusy
+                    ? <><Loader2 size={15} className="iris-spin" /> 台本を考え中…</>
+                    : <><Wand2 size={15} /> AI に 3 シーン台本を書いてもらう</>}
+                </button>
+                {scriptErr && (
+                  <div style={{
+                    marginBottom: 10, padding: '0.6rem 0.7rem',
+                    background: '#FEE2E2', color: '#991B1B', borderRadius: 10,
+                    fontSize: 11.5, display: 'flex', gap: 6, alignItems: 'flex-start', lineHeight: 1.5,
+                  }}>
+                    <AlertCircle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <div style={{ flex: 1 }}>
+                      {scriptErr}
+                      <button onClick={() => { setScriptErr(''); runAiScript(); }} style={{
+                        display: 'inline-block', marginLeft: 8,
+                        background: 'transparent', border: 'none',
+                        color: '#991B1B', textDecoration: 'underline',
+                        cursor: 'pointer', fontSize: 11, padding: 0,
+                      }}>もう一度</button>
+                      <button onClick={() => setScriptErr('')} style={{
+                        display: 'inline-block', marginLeft: 8,
+                        background: 'transparent', border: 'none',
+                        color: '#991B1B', textDecoration: 'underline',
+                        cursor: 'pointer', fontSize: 11, padding: 0,
+                      }}>手で書く</button>
+                    </div>
+                  </div>
+                )}
+                {scriptResult && !scriptBusy && !scriptErr && (
+                  <div style={{
+                    marginBottom: 12, padding: '0.6rem 0.75rem',
+                    background: 'rgba(22,163,74,0.08)',
+                    border: '1px solid rgba(22,163,74,0.25)',
+                    borderRadius: 10, fontSize: 11.5, color: bg.ink,
+                    lineHeight: 1.5,
+                  }}>
+                    <div style={{ fontWeight: 800, marginBottom: 3 }}>
+                      <Sparkles size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} />
+                      タイトル: {scriptResult.title}
+                    </div>
+                    <div style={{ fontSize: 10.5, color: bg.inkSoft }}>
+                      3 シーン ・ 合計 {scriptResult.scenes.reduce((s, x) => s + x.duration, 0).toFixed(1)} 秒 ・ CTA: {scriptResult.cta}
+                    </div>
+                  </div>
+                )}
 
                 {/* カット毎の字幕編集 */}
                 {clips.length === 0 ? (
@@ -1124,12 +1403,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                               placeholder={c.aiContext ? `「${c.aiContext.slice(0, 20)}…」に重ねる短文` : '8〜15字の字幕'}
                               rows={2}
                               style={{
-                                width: '100%', padding: '0.45rem 0.55rem',
+                                width: '100%', padding: '0.55rem 0.65rem',
                                 background: 'rgba(255,255,255,0.85)',
                                 border: `1px solid ${bg.cardBorder}`,
                                 borderRadius: 8,
-                                fontSize: 16, fontFamily: 'inherit',
+                                fontSize: 16, // iOS Safari の自動ズーム回避
+                                fontFamily: 'inherit',
                                 resize: 'none', lineHeight: 1.4,
+                                minHeight: 44,
                               }}
                             />
                             {/* 絵文字提案 */}
@@ -1226,7 +1507,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       準備ができたら、書き出して Instagram へ
                     </p>
                     <button onClick={startRecord} disabled={!clips.length || recording} style={{
-                      width: '100%', padding: '1.1rem',
+                      width: '100%', minHeight: 64, padding: '1.1rem',
                       background: clips.length && !recording ? IRIS_GRADIENT : 'rgba(255,255,255,0.4)',
                       color: '#fff', border: 'none', borderRadius: 18,
                       fontSize: 16, fontWeight: 800,
@@ -1320,6 +1601,118 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                           このブラウザは MP4 書き出しに非対応のため WebM になります。Instagram にそのまま上げると弾かれることがあるので、その場合は <b>Safari</b> で同じ操作を行うか、<b>CloudConvert / HandBrake</b> で MP4 に変換してください。
                         </div>
                       )}
+                      {/* ─── Instagram 共有導線 (3 ボタン) ─── */}
+                      <div style={{
+                        marginTop: 4, padding: '0.75rem 0.65rem',
+                        background: 'linear-gradient(135deg, rgba(225,48,108,0.06), rgba(247,119,55,0.08))',
+                        border: `1px solid ${bg.accent}33`,
+                        borderRadius: 14,
+                      }}>
+                        <div style={{
+                          fontSize: 10, letterSpacing: '0.22em', fontWeight: 800,
+                          color: bg.accent, textTransform: 'uppercase',
+                          marginBottom: 8, paddingLeft: 2,
+                          display: 'flex', alignItems: 'center', gap: 5,
+                        }}>
+                          <Camera size={11} /> Instagram にすぐ送る
+                        </div>
+                        <div style={{ display: 'grid', gap: 6 }}>
+                          <button
+                            onClick={openInInstagram}
+                            disabled={igBusy}
+                            style={{
+                              width: '100%', minHeight: 56,
+                              padding: '0.85rem 1rem',
+                              background: igBusy ? 'rgba(255,255,255,0.5)' : 'linear-gradient(135deg, #833AB4, #E1306C, #F77737)',
+                              color: '#fff', border: 'none', borderRadius: 14,
+                              fontSize: 14, fontWeight: 800,
+                              cursor: igBusy ? 'wait' : 'pointer',
+                              boxShadow: igBusy ? 'none' : '0 8px 22px rgba(225,48,108,0.32)',
+                              fontFamily: IRIS_FONTS.body,
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                            }}
+                          >
+                            {igBusy
+                              ? <><Loader2 size={15} className="iris-spin" /> 共有中…</>
+                              : <><Camera size={15} /> インスタで開く</>}
+                          </button>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                            <button
+                              onClick={copyAllCaptions}
+                              style={{
+                                minHeight: 44,
+                                padding: '0.6rem 0.4rem',
+                                background: 'rgba(255,255,255,0.85)',
+                                color: bg.ink,
+                                border: `1px solid ${bg.cardBorder}`,
+                                borderRadius: 12,
+                                fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                fontFamily: IRIS_FONTS.body,
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                              }}
+                            >
+                              <Copy size={12} /> 字幕コピー
+                            </button>
+                            <button
+                              onClick={runCaptionGen}
+                              disabled={capBusy}
+                              style={{
+                                minHeight: 44,
+                                padding: '0.6rem 0.4rem',
+                                background: capBusy ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.85)',
+                                color: bg.ink,
+                                border: `1px solid ${bg.cardBorder}`,
+                                borderRadius: 12,
+                                fontSize: 12, fontWeight: 700,
+                                cursor: capBusy ? 'wait' : 'pointer',
+                                fontFamily: IRIS_FONTS.body,
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                              }}
+                            >
+                              {capBusy
+                                ? <><Loader2 size={12} className="iris-spin" /> 生成中</>
+                                : <><MessageSquare size={12} /> 本文 AI 生成</>}
+                            </button>
+                          </div>
+                        </div>
+                        {capErr && (
+                          <div style={{
+                            marginTop: 6, padding: '0.45rem 0.6rem',
+                            background: '#FEE2E2', color: '#991B1B',
+                            borderRadius: 8, fontSize: 11, lineHeight: 1.4,
+                          }}>{capErr}</div>
+                        )}
+                        {aiCaption && (
+                          <div style={{
+                            marginTop: 8, padding: '0.6rem 0.7rem',
+                            background: 'rgba(255,255,255,0.85)',
+                            border: `1px solid ${bg.cardBorder}`,
+                            borderRadius: 10, fontSize: 12, lineHeight: 1.55,
+                            whiteSpace: 'pre-wrap', color: bg.ink,
+                          }}>
+                            {aiCaption.caption}
+                            {aiCaption.hashtags.length > 0 && (
+                              <div style={{
+                                marginTop: 6, color: bg.accent, fontWeight: 700,
+                                wordBreak: 'break-all', fontSize: 11.5,
+                              }}>{aiCaption.hashtags.join(' ')}</div>
+                            )}
+                            <button
+                              onClick={async () => {
+                                const txt = aiCaption.caption + (aiCaption.hashtags.length ? '\n\n' + aiCaption.hashtags.join(' ') : '');
+                                try { await navigator.clipboard.writeText(txt); setScheduledMsg('AI 本文をコピーしました'); }
+                                catch { setScheduledMsg('コピーに失敗しました'); }
+                              }}
+                              style={{
+                                marginTop: 6, padding: '0.4rem 0.8rem',
+                                background: 'transparent', border: `1px solid ${bg.cardBorder}`,
+                                borderRadius: 999, fontSize: 10.5, color: bg.ink,
+                                cursor: 'pointer',
+                              }}
+                            >この本文をコピー</button>
+                          </div>
+                        )}
+                      </div>
                       <button onClick={copyStoryText} style={{
                         ...btnSec(bg), width: '100%',
                         background: 'rgba(225,48,108,0.08)',
