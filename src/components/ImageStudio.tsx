@@ -2,11 +2,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import ApiErrorCard from './ApiErrorCard';
+import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
 import { copyText } from '../lib/clipboard';
 import type { Persona, AppSettings } from '../types/identity';
 import {
-  generateImage, generateImagePrompt, downloadImage,
+  generateImage, generateImagePrompt, downloadImage, urlToDataUrl,
   STYLE_OPTIONS, ASPECTS, isOpenAIConfigured,
   type VisualStyle, type ImageAspect, type ImageProvider, type GenerateImageResult,
 } from '../lib/imageGen';
@@ -33,6 +34,7 @@ interface HistoryItem {
 }
 
 const HISTORY_KEY = 'core_image_history_v1';
+const POST_QUEUE_KEY = 'iris_post_queue_v1';
 const MAX_HISTORY = 30;
 
 function loadHistory(): HistoryItem[] {
@@ -51,6 +53,108 @@ const ASPECT_GROUPS: { id: 'social' | 'free' | 'doc'; label: string; emoji: stri
   { id: 'doc',    label: '印刷',     emoji: '📄' },
 ];
 
+// ─── プリセット 6 種 ───────────────────────────────────────
+// 1 タップでテーマ・サイズ・スタイル・枚数を「使われやすい組合せ」にする
+interface Preset {
+  id: string;
+  emoji: string;
+  label: string;
+  hint: string;         // 入力欄プレースホルダー
+  aspect: ImageAspect;
+  aspectGroup: 'social' | 'free' | 'doc';
+  style: VisualStyle;
+  batch: 1 | 2 | 4;
+  /** 自動で頭に付けるテーマプレフィックス */
+  prefix?: string;
+}
+const PRESETS: Preset[] = [
+  {
+    id: 'ig-feed', emoji: '📷', label: 'Instagram 投稿サムネ',
+    hint: '例: ブランドの新商品 / カフェの新メニュー',
+    aspect: 'ig-square', aspectGroup: 'social', style: 'editorial', batch: 4,
+    prefix: 'Instagram feed post thumbnail, modern, brand-friendly:',
+  },
+  {
+    id: 'reel-cover', emoji: '🎬', label: 'リール表紙',
+    hint: '例: 朝のルーティン / 新作リール「3分で分かる…」',
+    aspect: 'ig-story', aspectGroup: 'social', style: 'cinematic', batch: 4,
+    prefix: 'Instagram reel cover image, bold large title space at top, vertical 9:16, eye-catching:',
+  },
+  {
+    id: 'blog-hero', emoji: '📰', label: 'ブログヘッダー',
+    hint: '例: AI 時代の働き方 / 副業で月10万円までのロードマップ',
+    aspect: 'note-hero', aspectGroup: 'social', style: 'photo', batch: 2,
+    prefix: 'Blog article hero header, photorealistic, editorial:',
+  },
+  {
+    id: 'icon', emoji: '⚫', label: 'アイコン',
+    hint: '例: AI アシスタント / 音楽ブランド「GAUCHE」',
+    aspect: 'square', aspectGroup: 'free', style: 'minimal', batch: 4,
+    prefix: 'Simple round profile icon, minimal flat design, centered subject, neutral background:',
+  },
+  {
+    id: 'og', emoji: '🔗', label: 'OG 画像',
+    hint: '例: ランディングページのタイトル / プロダクト名',
+    aspect: 'x-post', aspectGroup: 'social', style: 'editorial', batch: 2,
+    prefix: 'Open Graph share card, centered visual focus with title space, 16:9, professional:',
+  },
+  {
+    id: 'infographic', emoji: '📊', label: 'インフォグラフィック',
+    hint: '例: 3 ステップで分かる / 比較表 / プロセス図',
+    aspect: 'portrait', aspectGroup: 'free', style: 'pop', batch: 2,
+    prefix: 'Infographic-style illustration, clean visual diagram with abstract shapes representing data, modern:',
+  },
+];
+
+// ─── Iris 投稿キュー連携 ────────────────────────────────
+// usePostQueue は React hook なのでここからは呼べない。
+// localStorage 'iris_post_queue_v1' に直接 append して storage event を撃つ。
+function pushImageToIrisPostQueue(opts: {
+  imageDataUrl: string;
+  caption: string;
+  width: number;
+  height: number;
+}): boolean {
+  try {
+    const raw = localStorage.getItem(POST_QUEUE_KEY);
+    const list: any[] = raw ? JSON.parse(raw) : [];
+    const post = {
+      id: 'p_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4),
+      createdAt: new Date().toISOString(),
+      // 1時間後ぐらいに ready (1時間以内なので即 ready 扱い)
+      scheduledAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      status: 'draft',
+      // Instagram フィードに最適化されたサイズなら feed、それ以外は story
+      platform: opts.width === opts.height || Math.abs(opts.width - opts.height) < 100
+        ? 'instagram_feed'
+        : (opts.height > opts.width ? 'instagram_story' : 'instagram_feed'),
+      source: 'image',
+      caption: opts.caption,
+      hashtags: [],
+      mediaDataUrl: opts.imageDataUrl,
+      mediaKind: 'image',
+      thumbDataUrl: opts.imageDataUrl,
+      note: 'ImageStudio から送信',
+    };
+    const next = [post, ...list];
+    const json = JSON.stringify(next);
+    // 4.5MB を超えるなら新しい1件だけにする (古い投稿落とす)
+    if (json.length > 4_500_000) {
+      localStorage.setItem(POST_QUEUE_KEY, JSON.stringify([post]));
+    } else {
+      localStorage.setItem(POST_QUEUE_KEY, json);
+    }
+    // 他コンポーネントへ通知 (usePostQueue は storage event を購読)
+    try {
+      window.dispatchEvent(new StorageEvent('storage', { key: POST_QUEUE_KEY }));
+    } catch {/* legacy browsers */}
+    return true;
+  } catch (e) {
+    console.warn('[ImageStudio] iris post queue push failed', e);
+    return false;
+  }
+}
+
 export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowledge }: Props) {
   const [tab, setTab] = useState<'create' | 'history'>('create');
   const [topic, setTopic] = useState('');                       // 日本語の自然なテーマ
@@ -65,14 +169,38 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
   const [error, setError] = useState<string | null>(null);
   const [current, setCurrent] = useState<GenerateImageResult | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>(loadHistory());
-  const [batchCount, setBatchCount] = useState<1 | 2 | 4>(1);
+  const [batchCount, setBatchCount] = useState<1 | 2 | 4>(4);
   const [batchResults, setBatchResults] = useState<GenerateImageResult[]>([]);
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [topicHint, setTopicHint] = useState<string>('例: 朝の山の頂上から見渡す雲海、神々しい光、静謐な感覚');
+  const [lightbox, setLightbox] = useState<{ url: string; w: number; h: number } | null>(null);
+  const [toast, setToast] = useState<string>('');
+  const [pendingPromptPrefix, setPendingPromptPrefix] = useState<string>('');
 
   useEffect(() => { saveHistory(history); }, [history]);
+
+  // toast 自動消去
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(''), 2200);
+    return () => window.clearTimeout(id);
+  }, [toast]);
 
   const dalleAvailable = isOpenAIConfigured();
   const aspectOptions = (Object.entries(ASPECTS) as [ImageAspect, typeof ASPECTS[ImageAspect]][])
     .filter(([, info]) => info.group === aspectGroup);
+
+  const handlePresetClick = useCallback((p: Preset) => {
+    setActivePreset(p.id);
+    setAspect(p.aspect);
+    setAspectGroup(p.aspectGroup);
+    setStyle(p.style);
+    setBatchCount(p.batch);
+    setTopicHint(p.hint);
+    setPendingPromptPrefix(p.prefix || '');
+    // 詳細プロンプトをクリア (preset を変えたなら作り直す)
+    setAdvancedPrompt('');
+  }, []);
 
   const handleGenerate = useCallback(async (regenerate = false) => {
     setError(null);
@@ -91,6 +219,10 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
           settings, topic,
           context: `生成元人格: ${persona.name} (${persona.subtitle})`,
         });
+        // preset prefix があれば前に足す
+        if (pendingPromptPrefix) {
+          prompt = `${pendingPromptPrefix} ${prompt}`;
+        }
         setAdvancedPrompt(prompt);
       }
       setPhase('render');
@@ -127,7 +259,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
       setBusy(false);
       setPhase(null);
     }
-  }, [topic, advancedPrompt, aspect, style, provider, settings, persona, batchCount]);
+  }, [topic, advancedPrompt, aspect, style, provider, settings, persona, batchCount, pendingPromptPrefix]);
 
   const handleDownload = useCallback(async (img: HistoryItem | GenerateImageResult, idx?: number) => {
     const ext = img.url.includes('.png') ? 'png' : 'jpg';
@@ -141,7 +273,26 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
     const title = `[画像] ${topic.slice(0, 60) || '生成画像'}`;
     const content = `# ${title}\n\n![${topic}](${img.url})\n\n**プロンプト**: ${img.prompt}\n\n**サイズ**: ${img.width}×${img.height}\n**スタイル**: ${style}\n**生成日時**: ${img.generatedAt}`;
     onSaveAsKnowledge(title, content);
+    setToast('ナレッジに保存しました');
   }, [topic, style, onSaveAsKnowledge]);
+
+  const handleSendToInstagram = useCallback(async (img: HistoryItem | GenerateImageResult) => {
+    try {
+      setToast('Instagram 用にアップロード中…');
+      // data URL に変換 (localStorage に直接埋める)
+      const dataUrl = await urlToDataUrl(img.url).catch(() => img.url);
+      const ok = pushImageToIrisPostQueue({
+        imageDataUrl: dataUrl,
+        caption: topic || '',
+        width: img.width,
+        height: img.height,
+      });
+      setToast(ok ? '✅ Iris の投稿キューに追加しました' : '❌ 投稿キューへの追加に失敗しました');
+    } catch (e) {
+      console.warn('[ImageStudio] send to Instagram failed', e);
+      setToast('❌ 画像取得に失敗しました');
+    }
+  }, [topic]);
 
   const handleReuseFromHistory = (h: HistoryItem) => {
     setAdvancedPrompt(h.prompt);
@@ -155,21 +306,40 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
     copyText(prompt, '指示文');
   };
 
+  // ローディングのステージ表示 (AILoadingState に渡す)
+  const loadingStages = phase === 'prompt'
+    ? [
+        'あなたが入力した言葉を読み取っています…',
+        '絵にするための指示文に翻訳しています…',
+        '画風・色・構図のヒントを足しています…',
+      ]
+    : [
+        `${batchCount}枚の下絵を起こしています…`,
+        '光と影を入れています…',
+        '色を重ねて仕上げています…',
+        'もうすぐ完成です…',
+      ];
+
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3"
-      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)' }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+      style={{
+        background: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(20px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)',
+        paddingTop: 'max(env(safe-area-inset-top), 0.5rem)',
+      }}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
     >
       <motion.div
         className="w-full max-w-[1400px] rounded-2xl overflow-hidden flex flex-col"
-        style={{ background: 'var(--bg, #15151c)', border: '1px solid var(--border)', maxHeight: 'calc(100dvh - 1.5rem)' }}
+        style={{ background: 'var(--bg, #15151c)', border: '1px solid var(--border)', maxHeight: 'calc(100dvh - 1rem)' }}
         initial={{ scale: 0.96, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 12 }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
@@ -185,12 +355,14 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none"
+            className="flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none rounded-full"
+            style={{ width: 44, height: 44, minWidth: 44, fontSize: 22 }}
+            aria-label="閉じる"
           >×</button>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 px-5 pt-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex gap-1 px-4 sm:px-5 pt-3" style={{ borderBottom: '1px solid var(--border)' }}>
           {([
             { id: 'create' as const, label: '✨ 生成' },
             { id: 'history' as const, label: `🗂 履歴 (${history.length})` },
@@ -198,8 +370,9 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className="text-sm px-4 py-2 rounded-t-md font-medium"
+              className="text-sm px-4 rounded-t-md font-medium"
               style={{
+                minHeight: 44,
                 background: tab === t.id ? persona.accentColorLight : 'transparent',
                 color: tab === t.id ? persona.accentColor : 'var(--fg-muted)',
                 borderBottom: tab === t.id ? `2px solid ${persona.accentColor}` : '2px solid transparent',
@@ -208,7 +381,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
           ))}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           {tab === 'create' && (
             <>
               <StudioIntro
@@ -216,7 +389,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                 accent={persona.accentColor}
                 emoji="🎨"
                 what="テーマを日本語で 1 行書くだけで、AI が SNS や記事向けの画像を作る画面です。"
-                tryThis="下の「画像のテーマ」に作りたい絵を 1 行で書いて「✨ 生成」を押します。"
+                tryThis="まず下の「プリセット」を 1 つ選び、「画像のテーマ」に作りたい絵を書いて「✨ 生成」を押します。"
                 example="「秋のカフェのスペシャルティコーヒー」 → note のヘッダー画像が 1 枚完成。"
                 sampleLabel="出来上がりイメージ"
                 samplePreview={
@@ -259,16 +432,47 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                   </div>
                 }
               />
+
+              {/* ─── プリセット 6 種 ───── 1 タップで構成済 */}
+              <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+                <label className="block text-fg-muted text-xs tracking-wider uppercase mb-2">⚡ プリセット (1 タップで構成)</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
+                  {PRESETS.map(p => {
+                    const active = activePreset === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => handlePresetClick(p)}
+                        className="text-left rounded-lg px-3 py-2.5 transition-colors"
+                        style={{
+                          minHeight: 56,
+                          background: active ? persona.accentColorLight : 'var(--surface)',
+                          border: `1px solid ${active ? persona.accentColor : 'var(--border)'}`,
+                          color: active ? persona.accentColor : 'var(--fg)',
+                        }}
+                      >
+                        <div className="text-base leading-none mb-1">{p.emoji}</div>
+                        <div className="text-[12px] font-semibold leading-tight">{p.label}</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: active ? persona.accentColor : 'var(--fg-muted)', opacity: 0.7 }}>
+                          {ASPECTS[p.aspect].width}×{ASPECTS[p.aspect].height} · {p.batch}枚
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* テーマ入力 */}
-              <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+              <div className="rounded-xl p-3 sm:p-4 space-y-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                 <div>
                   <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">画像のテーマ (日本語)</label>
                   <textarea
                     value={topic}
                     onChange={e => setTopic(e.target.value)}
-                    placeholder="例: 朝の山の頂上から見渡す雲海、神々しい光、静謐な感覚"
+                    placeholder={topicHint}
                     rows={2}
-                    className="w-full text-sm px-3 py-2 rounded bg-surface-3 border-edge border text-fg placeholder:text-fg-subtle outline-none resize-none"
+                    className="w-full px-3 py-2.5 rounded bg-surface-3 border-edge border text-fg placeholder:text-fg-subtle outline-none resize-none"
+                    style={{ fontSize: 16 /* iOS auto-zoom prevention */ }}
                   />
                   <p className="text-fg-subtle text-[11px] mt-1">
                     AI が自動で英語の視覚プロンプトに変換します。詳細にこだわるなら下の「詳細プロンプト」を直接編集
@@ -291,7 +495,8 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                         onChange={e => setAdvancedPrompt(e.target.value)}
                         placeholder="A serene mountain peak at sunrise, sea of clouds, ethereal golden light..."
                         rows={3}
-                        className="w-full text-xs px-3 py-2 rounded bg-surface-3 border-edge border text-fg placeholder:text-fg-subtle font-mono outline-none resize-none"
+                        className="w-full px-3 py-2 rounded bg-surface-3 border-edge border text-fg placeholder:text-fg-subtle font-mono outline-none resize-none"
+                        style={{ fontSize: 16 }}
                       />
                       <p className="text-fg-subtle text-[11px] mt-1">
                         手動入力した場合は AI 自動変換をスキップします
@@ -302,15 +507,16 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
               </div>
 
               {/* スタイル */}
-              <div className="rounded-xl p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+              <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                 <label className="block text-fg-muted text-xs tracking-wider uppercase mb-2">ビジュアルスタイル</label>
                 <div className="flex gap-1.5 flex-wrap">
                   {STYLE_OPTIONS.map(s => (
                     <button
                       key={s.value}
                       onClick={() => setStyle(s.value)}
-                      className="text-xs px-3 py-2 rounded-md font-medium"
+                      className="text-xs px-3 rounded-md font-medium"
                       style={{
+                        minHeight: 40,
                         background: style === s.value ? persona.accentColorLight : 'var(--surface-3)',
                         color: style === s.value ? persona.accentColor : 'var(--fg-muted)',
                         border: `1px solid ${style === s.value ? persona.accentColor + '50' : 'var(--border)'}`,
@@ -321,7 +527,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
               </div>
 
               {/* アスペクト比 */}
-              <div className="rounded-xl p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+              <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                 <label className="block text-fg-muted text-xs tracking-wider uppercase mb-2">サイズ・用途</label>
                 <div className="flex gap-1.5 mb-2">
                   {ASPECT_GROUPS.map(g => (
@@ -334,8 +540,9 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                           .find(([, v]) => v.group === g.id);
                         if (first && ASPECTS[aspect].group !== g.id) setAspect(first[0]);
                       }}
-                      className="text-xs px-2.5 py-1 rounded-md font-medium"
+                      className="text-xs px-3 rounded-md font-medium"
                       style={{
+                        minHeight: 36,
                         background: aspectGroup === g.id ? persona.accentColor : 'var(--surface-3)',
                         color: aspectGroup === g.id ? '#0a0a0f' : 'var(--fg-muted)',
                         border: `1px solid ${aspectGroup === g.id ? persona.accentColor : 'var(--border)'}`,
@@ -350,6 +557,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                       onClick={() => setAspect(key)}
                       className="text-left text-xs px-3 py-2 rounded"
                       style={{
+                        minHeight: 44,
                         background: aspect === key ? persona.accentColorLight : 'var(--surface)',
                         color: aspect === key ? persona.accentColor : 'var(--fg)',
                         border: `1px solid ${aspect === key ? persona.accentColor + '50' : 'var(--border)'}`,
@@ -364,13 +572,14 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
 
               {/* プロバイダ + バッチ数 */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+                <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                   <label className="block text-fg-muted text-xs tracking-wider uppercase mb-2">エンジン</label>
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => setProvider('pollinations')}
-                      className="flex-1 text-xs px-3 py-2 rounded-md font-medium"
+                      className="flex-1 text-xs px-2 py-2 rounded-md font-medium"
                       style={{
+                        minHeight: 48,
                         background: provider === 'pollinations' ? persona.accentColorLight : 'var(--surface)',
                         color: provider === 'pollinations' ? persona.accentColor : 'var(--fg-muted)',
                         border: `1px solid ${provider === 'pollinations' ? persona.accentColor + '50' : 'var(--border)'}`,
@@ -379,8 +588,9 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                     <button
                       onClick={() => setProvider('dalle3')}
                       disabled={!dalleAvailable}
-                      className="flex-1 text-xs px-3 py-2 rounded-md font-medium disabled:opacity-40"
+                      className="flex-1 text-xs px-2 py-2 rounded-md font-medium disabled:opacity-40"
                       style={{
+                        minHeight: 48,
                         background: provider === 'dalle3' ? persona.accentColorLight : 'var(--surface)',
                         color: provider === 'dalle3' ? persona.accentColor : 'var(--fg-muted)',
                         border: `1px solid ${provider === 'dalle3' ? persona.accentColor + '50' : 'var(--border)'}`,
@@ -388,15 +598,16 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                     >✨ DALL-E 3{!dalleAvailable && '🔒'}<br /><span className="text-[10px] opacity-70">{dalleAvailable ? '高品質' : '要API設定'}</span></button>
                   </div>
                 </div>
-                <div className="rounded-xl p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+                <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                   <label className="block text-fg-muted text-xs tracking-wider uppercase mb-2">同時生成数</label>
                   <div className="flex gap-1.5">
                     {([1, 2, 4] as const).map(n => (
                       <button
                         key={n}
                         onClick={() => setBatchCount(n)}
-                        className="flex-1 text-xs px-3 py-2 rounded-md font-medium"
+                        className="flex-1 text-xs px-3 rounded-md font-medium"
                         style={{
+                          minHeight: 48,
                           background: batchCount === n ? persona.accentColor : 'var(--surface)',
                           color: batchCount === n ? '#0a0a0f' : 'var(--fg-muted)',
                           border: `1px solid ${batchCount === n ? persona.accentColor : 'var(--border)'}`,
@@ -407,13 +618,18 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                 </div>
               </div>
 
-              {/* 生成ボタン */}
-              <div className="flex gap-2">
+              {/* 生成ボタン — 56px+ で親指タップしやすく */}
+              <div className="flex gap-2 sticky bottom-0" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0px)' }}>
                 <motion.button
                   onClick={() => handleGenerate(false)}
                   disabled={busy || (!topic.trim() && !advancedPrompt.trim())}
-                  className="flex-1 py-3 rounded-lg text-sm font-semibold disabled:opacity-50"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                  className="flex-1 rounded-xl text-sm font-semibold disabled:opacity-50"
+                  style={{
+                    minHeight: 56,
+                    background: persona.accentColor,
+                    color: '#0a0a0f',
+                    boxShadow: `0 8px 24px ${persona.accentColor}50`,
+                  }}
                   whileTap={!busy ? { scale: 0.99 } : {}}
                 >
                   {busy ? '🎨 生成中…' : `✨ ${batchCount}枚 生成 (${ASPECTS[aspect].width}×${ASPECTS[aspect].height})`}
@@ -422,15 +638,21 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                   <button
                     onClick={() => handleGenerate(true)}
                     disabled={busy}
-                    className="px-4 py-3 rounded-lg text-sm font-medium disabled:opacity-50"
-                    style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)' }}
+                    className="px-4 rounded-xl text-sm font-medium disabled:opacity-50"
+                    style={{ minHeight: 56, background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)' }}
                   >🎲 別シードで</button>
                 )}
               </div>
 
-              {busy && phase && (
-                <GeneratingPanel phase={phase} count={batchCount} accent={persona.accentColor} />
-              )}
+              {/* AILoadingState 統一 (旧 GeneratingPanel から差替) */}
+              <AILoadingState
+                active={busy}
+                label={phase === 'prompt' ? '言葉を整えています' : `${batchCount}枚の画像を描いています`}
+                stages={loadingStages}
+                brand="prism"
+                skeletonLines={batchCount === 1 ? 3 : 5}
+                hint="長くて 30 秒くらい。"
+              />
 
               <ApiErrorCard error={error} onRetry={() => handleGenerate(false)} />
 
@@ -441,7 +663,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                     className="space-y-3"
                   >
-                    <div className={batchResults.length === 1 ? '' : 'grid grid-cols-2 gap-3'}>
+                    <div className={batchResults.length === 1 ? '' : 'grid grid-cols-1 sm:grid-cols-2 gap-3'}>
                       {batchResults.map((r, i) => (
                         <div
                           key={i}
@@ -452,30 +674,40 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                             src={r.url}
                             alt=""
                             loading="lazy"
-                            className="w-full h-auto block cursor-pointer"
-                            onClick={() => setCurrent(r)}
+                            className="w-full h-auto block cursor-zoom-in"
+                            onClick={() => { setCurrent(r); setLightbox({ url: r.url, w: r.width, h: r.height }); }}
                             style={{ aspectRatio: `${r.width}/${r.height}`, background: '#0a0a0f' }}
                           />
-                          <div className="flex flex-wrap gap-1.5 p-2 justify-end">
+                          <div className="flex flex-wrap gap-1.5 p-2 justify-end items-center">
                             <span className="text-[10px] text-fg-muted mr-auto self-center">
                               #{i + 1} · {r.width}×{r.height}
                             </span>
                             <button
                               onClick={() => handleDownload(r, i)}
-                              className="text-[11px] px-2.5 py-1 rounded text-fg-muted hover:text-fg"
-                              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                            >⬇</button>
+                              className="text-[11px] px-3 rounded text-fg-muted hover:text-fg"
+                              style={{ minHeight: 36, background: 'var(--surface)', border: '1px solid var(--border)' }}
+                            >⬇ DL</button>
+                            <button
+                              onClick={() => handleSendToInstagram(r)}
+                              className="text-[11px] px-3 rounded font-semibold"
+                              style={{
+                                minHeight: 36,
+                                background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+                                color: '#fff',
+                              }}
+                              title="Iris の投稿キューに追加して Instagram 投稿に使う"
+                            >📷 Instagram 投稿に使う</button>
                             {onSaveAsKnowledge && (
                               <button
                                 onClick={() => handleSaveToKb(r)}
-                                className="text-[11px] px-2.5 py-1 rounded text-fg-muted hover:text-fg"
-                                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                              >📚</button>
+                                className="text-[11px] px-3 rounded text-fg-muted hover:text-fg"
+                                style={{ minHeight: 36, background: 'var(--surface)', border: '1px solid var(--border)' }}
+                              >📚 ナレッジ</button>
                             )}
                             <button
                               onClick={() => handleCopyPrompt(r.prompt)}
-                              className="text-[11px] px-2.5 py-1 rounded text-fg-muted hover:text-fg"
-                              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                              className="text-[11px] px-3 rounded text-fg-muted hover:text-fg"
+                              style={{ minHeight: 36, background: 'var(--surface)', border: '1px solid var(--border)' }}
                             >📋 プロンプト</button>
                             <ShareArtifactButton
                               variant="pill"
@@ -523,6 +755,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                     <button
                       onClick={async () => { if (await confirmAction({ title: '画像生成の履歴をすべて削除しますか?', body: '保存した画像のサムネイル一覧が空になります。', tone: 'danger', okLabel: '全消去' })) setHistory([]); }}
                       className="text-xs text-fg-muted hover:text-red-400"
+                      style={{ minHeight: 36, padding: '0 12px' }}
                     >全消去</button>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -536,7 +769,8 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                           src={h.url}
                           alt=""
                           loading="lazy"
-                          className="w-full h-auto block"
+                          className="w-full h-auto block cursor-zoom-in"
+                          onClick={() => setLightbox({ url: h.url, w: h.width, h: h.height })}
                           style={{ aspectRatio: `${h.width}/${h.height}`, background: '#0a0a0f' }}
                         />
                         <div className="p-2 space-y-1">
@@ -551,25 +785,35 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                           <div className="flex gap-1 pt-1 flex-wrap">
                             <button
                               onClick={() => handleReuseFromHistory(h)}
-                              className="text-[10px] px-2 py-0.5 rounded text-fg-muted hover:text-fg"
-                              style={{ background: 'var(--surface)' }}
+                              className="text-[10px] px-2 rounded text-fg-muted hover:text-fg"
+                              style={{ minHeight: 32, background: 'var(--surface)' }}
                             >再利用</button>
                             <button
                               onClick={() => handleDownload(h)}
-                              className="text-[10px] px-2 py-0.5 rounded text-fg-muted hover:text-fg"
-                              style={{ background: 'var(--surface)' }}
+                              className="text-[10px] px-2 rounded text-fg-muted hover:text-fg"
+                              style={{ minHeight: 32, background: 'var(--surface)' }}
                             >⬇</button>
+                            <button
+                              onClick={() => handleSendToInstagram(h)}
+                              className="text-[10px] px-2 rounded font-semibold"
+                              style={{
+                                minHeight: 32,
+                                background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+                                color: '#fff',
+                              }}
+                              title="Instagram 投稿に使う"
+                            >📷 IG</button>
                             {onSaveAsKnowledge && (
                               <button
                                 onClick={() => handleSaveToKb(h)}
-                                className="text-[10px] px-2 py-0.5 rounded text-fg-muted hover:text-fg"
-                                style={{ background: 'var(--surface)' }}
+                                className="text-[10px] px-2 rounded text-fg-muted hover:text-fg"
+                                style={{ minHeight: 32, background: 'var(--surface)' }}
                               >📚</button>
                             )}
                             <button
                               onClick={() => setHistory(prev => prev.filter(x => x.id !== h.id))}
-                              className="text-[10px] px-2 py-0.5 rounded text-fg-muted hover:text-red-400"
-                              style={{ background: 'var(--surface)' }}
+                              className="text-[10px] px-2 rounded text-fg-muted hover:text-red-400"
+                              style={{ minHeight: 32, background: 'var(--surface)' }}
                             >×</button>
                           </div>
                         </div>
@@ -582,92 +826,78 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
           )}
         </div>
       </motion.div>
-    </motion.div>
-  );
-}
 
-// 生成を待つ十数秒を「無音の不安」にしないための実況パネル。
-// いま AI が何をしているかを、やさしい日本語でその場で言葉にする。
-function GeneratingPanel({
-  phase, count, accent,
-}: {
-  phase: 'prompt' | 'render';
-  count: 1 | 2 | 4;
-  accent: string;
-}) {
-  const steps = phase === 'prompt'
-    ? [
-        'あなたが入力した言葉を読み取っています…',
-        '絵にするための指示文に翻訳しています…',
-        '画風・色・構図のヒントを足しています…',
-      ]
-    : [
-        `${count}枚の下絵を起こしています…`,
-        '光と影を入れています…',
-        '色を重ねて仕上げています…',
-        'もうすぐ完成です…',
-      ];
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    setStep(0);
-    const t = setInterval(() => {
-      setStep(s => Math.min(s + 1, steps.length - 1));
-    }, 2400);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl p-4 flex items-center gap-3.5"
-      style={{ background: 'var(--surface-3)', border: `1px solid ${accent}40` }}
-    >
-      {/* 呼吸するオーブ — 「いま手を動かしている」感 */}
-      <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
-        {[0, 1].map(ring => (
+      {/* フルスクリーン ライトボックス — タップで原寸表示 */}
+      <AnimatePresence>
+        {lightbox && (
           <motion.div
-            key={ring}
-            animate={{ scale: [1, 1.7], opacity: [0.4, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeOut', delay: ring * 0.6 }}
-            style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1.5px solid ${accent}` }}
-          />
-        ))}
-        <motion.div
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
-            position: 'absolute', inset: 0, borderRadius: '50%',
-            background: `radial-gradient(circle, ${accent} 0%, ${accent}66 60%, transparent 100%)`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-          }}
-        >
-          {phase === 'prompt' ? '🧠' : '🎨'}
-        </motion.div>
-      </div>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p className="text-[11px] font-semibold" style={{ color: accent, letterSpacing: '0.08em' }}>
-          {phase === 'prompt' ? 'STEP 1 / 2 ・ 言葉を整える' : 'STEP 2 / 2 ・ 絵を描く'}
-        </p>
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={step}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.3 }}
-            className="text-fg text-sm font-semibold mt-0.5"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center"
+            style={{
+              background: 'rgba(0,0,0,0.96)',
+              padding: 'max(env(safe-area-inset-top), 8px) 8px max(env(safe-area-inset-bottom), 8px)',
+            }}
+            onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
           >
-            {steps[step]}
-          </motion.p>
-        </AnimatePresence>
-        <p className="text-fg-muted text-[11px] mt-0.5">
-          このまま少しお待ちください。完成すると下に画像が出ます。
-        </p>
-      </div>
+            <img
+              src={lightbox.url}
+              alt=""
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+                touchAction: 'pinch-zoom',
+              }}
+              onClick={e => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setLightbox(null)}
+              aria-label="閉じる"
+              style={{
+                position: 'absolute',
+                top: 'max(env(safe-area-inset-top), 12px)',
+                right: 12,
+                width: 44, height: 44,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: '#fff',
+                fontSize: 22,
+                lineHeight: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >×</button>
+            <p style={{
+              position: 'absolute',
+              bottom: 'max(env(safe-area-inset-bottom), 12px)',
+              left: 0, right: 0, textAlign: 'center',
+              color: 'rgba(255,255,255,0.6)', fontSize: 11,
+            }}>
+              タップで閉じる · ピンチで拡大
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* トースト */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }}
+            className="fixed z-[70] left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-full text-sm font-medium"
+            style={{
+              bottom: 'calc(max(env(safe-area-inset-bottom), 16px) + 16px)',
+              background: '#0a0a0f',
+              color: '#fff',
+              border: `1px solid ${persona.accentColor}66`,
+              boxShadow: `0 6px 20px ${persona.accentColor}40`,
+              maxWidth: 'calc(100vw - 32px)',
+            }}
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
