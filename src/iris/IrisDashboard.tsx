@@ -1568,7 +1568,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 <InviteShareCard
                   brand="iris"
                   palette={{
-                    accent: bg.accent, ink: bg.ink,
+                    accent: '#E1306C', // Iris ブランドアクセント (Instagram pink)
+                    ink: bg.ink,
                     inkSoft: bg.inkSoft, card: bg.card,
                     border: bg.cardBorder,
                   }}

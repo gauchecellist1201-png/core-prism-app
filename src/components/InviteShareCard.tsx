@@ -1,12 +1,35 @@
 // ============================================================
 // Invite & Share Card — 1 紹介 = 両者に +7 日トライアル延長
-// LINE / X (Twitter) / コピー&共有 / Instagram / 共有シート / コピーに対応
-// (メール送信ボタンは廃止 — Web Share API + クリップボードコピーに統合)
-// Iris と Prism 両ダッシュボードから利用
+// Day 2 upgrade:
+//   - 巨大ヒーロー (「友だちが登録すると、あなたも友だちも 7 日無料追加」)
+//   - 3 連スタッツ (紹介人数 / 累計獲得日数 / 現在の trial 残日数)
+//   - 5 シェア導線 (LINE / X / メール / リンクコピー / QR コード)
+//   - コピー成功スナックバー
+//   - 共有テキストの強化 (LINE / X / メールごとに最適化)
+// 触らない: CheckoutModal / billing.ts / StripeFailureBanner
 // ============================================================
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Copy, Share2, Check, Gift, Users as UsersIcon, Sparkles, QrCode } from 'lucide-react';
-import { type Brand } from '../lib/billing';
+import {
+  Copy, Share2, Check, Gift, Users as UsersIcon, Sparkles, QrCode, Mail,
+  Calendar, MessageCircle,
+} from 'lucide-react';
+
+// lucide-react から Twitter アイコンは削除されたため X glyph を inline SVG で実装
+function XIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M18.244 2H21.5l-7.5 8.575L22.5 22h-6.844l-5.36-6.99L4.16 22H.9l8.025-9.17L1 2h6.95l4.85 6.41L18.244 2Zm-1.2 18h1.78L7.045 4H5.158l11.886 16Z" />
+    </svg>
+  );
+}
+import { type Brand, loadBillingUser, isTrialActive } from '../lib/billing';
 import {
   getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS,
   getInviterName, saveInviterName, INVITER_NAME_MAX, sanitizeInviterName,
@@ -14,15 +37,10 @@ import {
 import { shareToInstagram } from '../iris/instagramShare';
 
 type Palette = {
-  /** 主アクセント色 (hex) */
   accent: string;
-  /** 文字主色 */
   ink: string;
-  /** 薄い文字色 */
   inkSoft: string;
-  /** カード背景 */
   card: string;
-  /** カード罫線 */
   border: string;
 };
 
@@ -41,18 +59,65 @@ interface Props {
   compact?: boolean;
 }
 
-const SHARE_TEMPLATE = (url: string, brand: Brand, inviterName: string) => {
+// ─────────────────────────────────────────────────────────────
+// 共有テキストテンプレ — チャネルごとに最適化
+// ─────────────────────────────────────────────────────────────
+function shareTextLine(url: string, brand: Brand, inviterName: string): string {
+  const product = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
+  const who = inviterName ? `${inviterName}です。` : '';
+  return `【共有】${who}${product} めっちゃ便利。これで AI 13 役員が代わりに働いてくれる。
+あなたも 7 日無料、さらに僕からの招待で +${REFERRAL_BONUS_DAYS} 日 (合計 ${7 + REFERRAL_BONUS_DAYS} 日無料) →
+${url}`;
+}
+
+function shareTextX(url: string, brand: Brand, inviterName: string): string {
+  const product = brand === 'iris' ? '@core_iris' : '@core_prism';
+  const who = inviterName ? `(${inviterName} の紹介) ` : '';
+  return `13 人の AI 役員が代わりに働く ${product}、めちゃ良い。${who}リンクから登録すると 7 日無料 +${REFERRAL_BONUS_DAYS} 日 →
+${url}`;
+}
+
+function shareTextMail(url: string, brand: Brand, inviterName: string): { subject: string; body: string } {
   const product = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
   const tagline = brand === 'iris'
-    ? 'クリエイター向け AI 戦略パートナー'
+    ? 'クリエイター向けの AI 戦略パートナー'
     : 'AI が経営判断を補助する人格 OS';
+  const sender = inviterName || 'わたし';
+  return {
+    subject: `${product} を試してみてほしい (${7 + REFERRAL_BONUS_DAYS} 日無料)`,
+    body: `こんにちは、
+
+最近使っている ${product} (${tagline}) がとても便利で、
+${sender} からの招待リンクから登録すると 7 日無料に +${REFERRAL_BONUS_DAYS} 日 (合計 ${7 + REFERRAL_BONUS_DAYS} 日) 無料で試せます。
+
+▼ 登録リンク
+${url}
+
+クレジットカードは不要、合わなければそのまま放置で OK です。
+よければ触ってみてください。
+
+— ${sender}`,
+  };
+}
+
+function shareTextGeneric(url: string, brand: Brand, inviterName: string): string {
+  const product = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
   const opener = inviterName
-    ? `${inviterName} です。${product} (${tagline}) を試してます。`
-    : `${product} (${tagline}) を試してます。`;
+    ? `${inviterName} です。${product} を試してます。`
+    : `${product} を試してます。`;
   return `${opener}
-このリンクから登録すると 7 日間の無料トライアル + さらに +${REFERRAL_BONUS_DAYS} 日延長 (合計 ${7 + REFERRAL_BONUS_DAYS} 日無料)。
+このリンクから登録すると 7 日間無料トライアル + さらに +${REFERRAL_BONUS_DAYS} 日延長 (合計 ${7 + REFERRAL_BONUS_DAYS} 日無料)。
 ${url}`;
-};
+}
+
+// 現在のトライアル残日数 (free プランの時のみ。それ以外は null)
+function getTrialDaysLeft(): number | null {
+  const u = loadBillingUser();
+  if (!u || !isTrialActive(u) || !u.trialEndsAt) return null;
+  const ms = new Date(u.trialEndsAt).getTime() - Date.now();
+  if (ms <= 0) return 0;
+  return Math.ceil(ms / 86400000);
+}
 
 export default function InviteShareCard({ brand, palette, compact = false }: Props) {
   const p = { ...DEFAULT_PALETTE, ...(palette || {}) };
@@ -63,13 +128,15 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
     () => getReferralUrl(brand, referral.myCode, { from: cleanName }),
     [brand, referral.myCode, cleanName],
   );
-  const text = useMemo(() => SHARE_TEMPLATE(url, brand, cleanName), [url, brand, cleanName]);
+  // 汎用 (Web Share API / Insta / 互換用) のテキスト
+  const text = useMemo(() => shareTextGeneric(url, brand, cleanName), [url, brand, cleanName]);
+  const trialDaysLeft = useMemo(() => getTrialDaysLeft(), []);
 
   const [copied, setCopied] = useState<'url' | 'text' | null>(null);
-  const [shareMsg, setShareMsg] = useState<string | null>(null);
+  const [snack, setSnack] = useState<string | null>(null);
   const [showQr, setShowQr] = useState(false);
 
-  // 名前を 600ms デバウンスで localStorage に保存 (タイプ毎に書かない)
+  // 名前を 600ms デバウンスで localStorage に保存
   useEffect(() => {
     const id = setTimeout(() => saveInviterName(inviterName), 600);
     return () => clearTimeout(id);
@@ -81,27 +148,71 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
     [url],
   );
 
-  const flashCopied = useCallback((kind: 'url' | 'text') => {
-    setCopied(kind);
-    setTimeout(() => setCopied(null), 1800);
+  const flashSnack = useCallback((message: string) => {
+    setSnack(message);
+    setTimeout(() => setSnack(null), 2200);
   }, []);
 
-  const copy = useCallback(async (value: string, kind: 'url' | 'text') => {
+  const flashCopied = useCallback((kind: 'url' | 'text', message: string) => {
+    setCopied(kind);
+    flashSnack(message);
+    setTimeout(() => setCopied(null), 1800);
+  }, [flashSnack]);
+
+  const copyText = useCallback(async (value: string): Promise<boolean> => {
     try {
       await navigator.clipboard.writeText(value);
-      flashCopied(kind);
+      return true;
     } catch {
-      const ta = document.createElement('textarea');
-      ta.value = value;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      flashCopied(kind);
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = value;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        return true;
+      } catch {
+        return false;
+      }
     }
-  }, [flashCopied]);
+  }, []);
+
+  const copyUrl = useCallback(async () => {
+    const ok = await copyText(url);
+    if (ok) flashCopied('url', '✓ リンクをコピーしました!');
+    else flashSnack('コピーに失敗しました');
+  }, [url, copyText, flashCopied, flashSnack]);
+
+  const copyInviteText = useCallback(async () => {
+    const ok = await copyText(text);
+    if (ok) flashCopied('text', '✓ 招待文をコピーしました!');
+    else flashSnack('コピーに失敗しました');
+  }, [text, copyText, flashCopied, flashSnack]);
+
+  const shareLine = useCallback(() => {
+    const lineText = shareTextLine(url, brand, cleanName);
+    const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`;
+    window.open(lineUrl, '_blank', 'noopener,noreferrer');
+    flashSnack('LINE を開きました');
+  }, [url, brand, cleanName, flashSnack]);
+
+  const shareX = useCallback(() => {
+    const xText = shareTextX(url, brand, cleanName);
+    const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(xText)}`;
+    window.open(xUrl, '_blank', 'noopener,noreferrer');
+    flashSnack('X を開きました');
+  }, [url, brand, cleanName, flashSnack]);
+
+  const shareMail = useCallback(() => {
+    const { subject, body } = shareTextMail(url, brand, cleanName);
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // PWA / iOS では mailto 起動を window.location に流すと標準クライアントが開く
+    window.location.href = mailto;
+    flashSnack('メールクライアントを開きました');
+  }, [url, brand, cleanName, flashSnack]);
 
   const shareNative = useCallback(async () => {
     const navAny = navigator as any;
@@ -112,61 +223,26 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
           text,
           url,
         });
-        setShareMsg('✓ 共有しました');
+        flashSnack('✓ 共有しました');
       } catch (e: any) {
-        if (e?.name !== 'AbortError') setShareMsg('共有がキャンセルされました');
+        if (e?.name !== 'AbortError') flashSnack('共有がキャンセルされました');
       }
     } else {
-      copy(text, 'text');
-      setShareMsg('共有 API 非対応。本文をコピーしました');
+      const ok = await copyText(text);
+      flashSnack(ok ? '✓ 本文をコピーしました (共有 API 非対応)' : 'コピーに失敗しました');
     }
-    setTimeout(() => setShareMsg(null), 2400);
-  }, [text, url, brand, copy]);
-
-  const shareLine = useCallback(() => {
-    // LINE 共有 URL — テキスト + URL を渡す
-    const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(text)}`;
-    window.open(lineUrl, '_blank', 'noopener,noreferrer');
-  }, [text]);
-
-  const shareX = useCallback(() => {
-    const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-    window.open(xUrl, '_blank', 'noopener,noreferrer');
-  }, [text]);
-
-  // コピー & 共有 — クリップボードコピー後に Web Share API を試す
-  // (旧 mailto: 経路は廃止。メールクライアントが無い iOS PWA でも動くため)
-  const shareCopyAndNative = useCallback(async () => {
-    await copy(text, 'text');
-    const navAny = navigator as any;
-    if (navAny.share) {
-      try {
-        await navAny.share({
-          title: brand === 'iris' ? 'CORE Iris' : 'CORE Prism',
-          text,
-          url,
-        });
-        setShareMsg('✓ コピー & 共有しました');
-      } catch (e: any) {
-        if (e?.name !== 'AbortError') setShareMsg('✓ 本文をコピーしました');
-        else setShareMsg('✓ 本文をコピーしました');
-      }
-    } else {
-      setShareMsg('✓ 本文をコピーしました');
-    }
-    setTimeout(() => setShareMsg(null), 2400);
-  }, [text, url, brand, copy]);
+  }, [text, url, brand, copyText, flashSnack]);
 
   const shareInstagram = useCallback(async () => {
-    // Instagram は URL 共有が公式に無いので、URL+text をクリップボードに入れて
-    // アプリを起動 → ストーリーズかフィードに貼る前提
     const r = await shareToInstagram({ caption: text });
-    setShareMsg(r.message);
-    setTimeout(() => setShareMsg(null), 3000);
-  }, [text]);
+    flashSnack(r.message);
+  }, [text, flashSnack]);
 
   const sectionPad = compact ? '1rem' : '1.5rem 1.25rem';
   const radius = 20;
+
+  // ヒーローのバナー色 (緑系で「無料」訴求)
+  const heroGradient = `linear-gradient(135deg, ${p.accent}, ${p.accent}aa)`;
 
   return (
     <div style={{
@@ -178,41 +254,78 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
       display: 'grid',
       gap: '1rem',
       color: p.ink,
+      position: 'relative',
     }}>
-      {/* ヘッダー */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 12,
-          background: `${p.accent}18`, display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Gift size={20} color={p.accent} strokeWidth={2.2} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{
-            margin: 0, fontSize: compact ? '0.95rem' : '1.05rem',
-            fontWeight: 800, color: p.ink, letterSpacing: '0.01em',
-          }}>
-            友達を招待してトライアル +{REFERRAL_BONUS_DAYS} 日
-          </h3>
-          <p style={{
-            margin: '0.15rem 0 0', fontSize: '0.78rem', color: p.inkSoft,
-            lineHeight: 1.45,
-          }}>
-            1 人紹介すると、あなたも相手も <strong>+{REFERRAL_BONUS_DAYS} 日</strong> 無料利用
-          </p>
-        </div>
-      </div>
-
-      {/* スタッツ */}
+      {/* ─── ヒーロー (巨大訴求) ─── */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem',
+        background: heroGradient,
+        borderRadius: 16,
+        padding: compact ? '1rem 1rem 1.1rem' : '1.35rem 1.2rem 1.5rem',
+        color: '#fff',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <Stat icon={<UsersIcon size={14} />} label="紹介人数" value={`${referral.referredCount} 人`} palette={p} />
-        <Stat icon={<Sparkles size={14} />} label="累計延長" value={`+${referral.bonusDays} 日`} palette={p} />
+        <div style={{
+          position: 'absolute', top: -20, right: -20,
+          width: 120, height: 120, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.12)',
+        }} />
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          background: 'rgba(255,255,255,0.18)',
+          padding: '0.25rem 0.65rem', borderRadius: 999,
+          marginBottom: '0.65rem',
+        }}>
+          <Gift size={12} strokeWidth={2.5} /> 友達招待プログラム
+        </div>
+        <h2 style={{
+          margin: 0,
+          fontSize: compact ? '1.15rem' : '1.45rem',
+          fontWeight: 900,
+          lineHeight: 1.3,
+          letterSpacing: '-0.01em',
+        }}>
+          友だちが登録すると、<br />
+          <span style={{
+            background: 'rgba(255,255,255,0.22)',
+            padding: '0.05rem 0.5rem',
+            borderRadius: 8,
+            display: 'inline-block',
+            marginTop: '0.2rem',
+          }}>
+            あなたも友だちも 7 日無料追加
+          </span>
+        </h2>
+        <p style={{
+          margin: '0.7rem 0 0', fontSize: '0.82rem',
+          color: 'rgba(255,255,255,0.92)',
+          lineHeight: 1.55,
+        }}>
+          通常 7 日 → 合計 <strong>{7 + REFERRAL_BONUS_DAYS} 日無料</strong>。
+          クレジットカード登録なしで試せます。
+        </p>
       </div>
 
-      {/* あなたの名前 (任意) — URL に乗せて LP で "○○ さんからの招待" と表示する */}
+      {/* ─── 3 連スタッツ ─── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '0.5rem',
+      }}>
+        <Stat icon={<UsersIcon size={13} />} label="紹介人数" value={`${referral.referredCount}`} suffix="人" palette={p} />
+        <Stat icon={<Sparkles size={13} />} label="獲得日数" value={`+${referral.bonusDays}`} suffix="日" palette={p} />
+        <Stat
+          icon={<Calendar size={13} />}
+          label="trial 残"
+          value={trialDaysLeft === null ? '—' : `${trialDaysLeft}`}
+          suffix={trialDaysLeft === null ? '' : '日'}
+          palette={p}
+        />
+      </div>
+
+      {/* ─── あなたの名前 (任意) ─── */}
       <div style={{ display: 'grid', gap: '0.35rem' }}>
         <label style={{
           fontSize: '0.7rem', letterSpacing: '0.06em', color: p.inkSoft,
@@ -231,8 +344,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
             background: '#fff', color: p.ink,
             border: `1px solid ${p.border}`, borderRadius: 10,
             padding: '0.6rem 0.7rem', fontSize: '0.88rem',
-            outline: 'none',
-            fontFamily: 'inherit',
+            outline: 'none', fontFamily: 'inherit',
           }}
         />
         {cleanName && (
@@ -242,7 +354,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         )}
       </div>
 
-      {/* 紹介 URL ボックス */}
+      {/* ─── 紹介 URL ボックス ─── */}
       <div style={{
         background: `${p.accent}0a`,
         border: `1px dashed ${p.accent}44`,
@@ -266,7 +378,8 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
           }}>{url}</code>
-          <button onClick={() => copy(url, 'url')}
+          <button
+            onClick={copyUrl}
             aria-label="紹介 URL をコピー"
             style={{
               background: copied === 'url' ? '#16A34A' : p.accent,
@@ -274,12 +387,12 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
               padding: '0.55rem 0.75rem', fontSize: '0.78rem', fontWeight: 700,
               cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
               whiteSpace: 'nowrap',
-              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              transition: 'transform 0.15s ease, background 0.2s ease',
             }}
             onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.96)')}
             onMouseUp={(e) => (e.currentTarget.style.transform = '')}
             onMouseLeave={(e) => (e.currentTarget.style.transform = '')}>
-            {copied === 'url' ? <><Check size={13} />コピー済</> : <><Copy size={13} />コピー</>}
+            {copied === 'url' ? <><Check size={13} />OK</> : <><Copy size={13} />コピー</>}
           </button>
         </div>
         <p style={{ margin: 0, fontSize: '0.7rem', color: p.inkSoft }}>
@@ -287,58 +400,79 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         </p>
       </div>
 
-      {/* 共有ボタン群 */}
-      <div style={{ display: 'grid', gap: '0.5rem' }}>
+      {/* ─── 5 シェア導線 (LINE / X / メール / リンクコピー / QR) ─── */}
+      <div style={{ display: 'grid', gap: '0.6rem' }}>
+        <p style={{
+          margin: 0, fontSize: '0.7rem', letterSpacing: '0.08em',
+          color: p.inkSoft, fontWeight: 700, textTransform: 'uppercase',
+        }}>
+          シェアして招待する
+        </p>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, 1fr)',
+          gap: '0.4rem',
+        }}>
+          <ShareIconBtn
+            label="LINE"
+            bg="#06C755"
+            icon={<MessageCircle size={18} strokeWidth={2.2} />}
+            onClick={shareLine}
+          />
+          <ShareIconBtn
+            label="X"
+            bg="#000000"
+            icon={<XIcon size={18} />}
+            onClick={shareX}
+          />
+          <ShareIconBtn
+            label="メール"
+            bg="#0EA5E9"
+            icon={<Mail size={18} strokeWidth={2.2} />}
+            onClick={shareMail}
+          />
+          <ShareIconBtn
+            label={copied === 'text' ? 'コピー済' : 'コピー'}
+            bg={copied === 'text' ? '#16A34A' : '#5A4570'}
+            icon={copied === 'text' ? <Check size={18} strokeWidth={2.5} /> : <Copy size={18} strokeWidth={2.2} />}
+            onClick={copyInviteText}
+          />
+          <ShareIconBtn
+            label={showQr ? 'QR 閉' : 'QR'}
+            bg={showQr ? p.accent : '#475569'}
+            icon={<QrCode size={18} strokeWidth={2.2} />}
+            onClick={() => setShowQr(v => !v)}
+          />
+        </div>
+
+        {/* 共有シート (ネイティブ) — モバイルでさらに広く配れる */}
         <button onClick={shareNative}
           style={{
-            background: `linear-gradient(135deg, ${p.accent}, ${p.accent}cc)`,
-            color: '#fff', border: 'none', borderRadius: 14,
-            padding: '0.9rem', fontSize: '0.92rem', fontWeight: 800,
+            background: 'transparent',
+            color: p.accent,
+            border: `1px solid ${p.accent}55`,
+            borderRadius: 12,
+            padding: '0.6rem',
+            fontSize: '0.82rem', fontWeight: 700,
             cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
-            justifyContent: 'center', gap: 8,
-            boxShadow: `0 8px 22px ${p.accent}45`,
-            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = '')}
-          onMouseDown={(e) => (e.currentTarget.style.transform = 'translateY(0) scale(0.98)')}
-          onMouseUp={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}>
-          <Share2 size={16} />
-          共有シートを開く
+            justifyContent: 'center', gap: 6,
+          }}>
+          <Share2 size={14} />
+          その他のアプリで共有 (Instagram, Slack 他)
         </button>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.45rem' }}>
-          <SocialBtn label="LINE" bg="#06C755" onClick={shareLine} />
-          <SocialBtn label="X" bg="#000000" onClick={shareX} />
-          <SocialBtn label={<><Copy size={13} style={{ marginRight: 4 }} />コピー</>} bg="#5A4570" onClick={shareCopyAndNative} />
-          <SocialBtn label="Insta" bg="linear-gradient(135deg,#FEDA75,#FA7E1E 30%,#D62976 60%,#962FBF 80%,#4F5BD5)" onClick={shareInstagram} />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-          <button onClick={() => copy(text, 'text')}
-            style={{
-              background: 'transparent', color: p.inkSoft,
-              border: `1px solid ${p.border}`, borderRadius: 12,
-              padding: '0.75rem', fontSize: '0.82rem', fontWeight: 600,
-              cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
-              justifyContent: 'center', gap: 6,
-            }}>
-            {copied === 'text' ? <><Check size={13} />本文コピー済</> : <><Copy size={13} />招待文をコピー</>}
-          </button>
-          <button onClick={() => setShowQr(v => !v)}
-            aria-pressed={showQr}
-            style={{
-              background: showQr ? p.accent : 'transparent',
-              color: showQr ? '#fff' : p.inkSoft,
-              border: showQr ? 'none' : `1px solid ${p.border}`,
-              borderRadius: 12,
-              padding: '0.75rem', fontSize: '0.82rem', fontWeight: 600,
-              cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
-              justifyContent: 'center', gap: 6,
-            }}>
-            <QrCode size={13} />{showQr ? 'QR を隠す' : 'QR コード表示'}
-          </button>
-        </div>
+        {/* Instagram は別ボタン (ストーリーズへ貼り付け前提) */}
+        <button onClick={shareInstagram}
+          style={{
+            background: 'linear-gradient(135deg,#FEDA75,#FA7E1E 30%,#D62976 60%,#962FBF 80%,#4F5BD5)',
+            color: '#fff', border: 'none', borderRadius: 12,
+            padding: '0.6rem', fontSize: '0.82rem', fontWeight: 700,
+            cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+            justifyContent: 'center', gap: 6,
+          }}>
+          Instagram ストーリーズに貼り付ける
+        </button>
 
         {showQr && (
           <div
@@ -364,63 +498,112 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         )}
       </div>
 
-      {shareMsg && (
-        <p style={{
-          margin: 0, fontSize: '0.78rem', color: p.accent,
-          textAlign: 'center', fontWeight: 700,
-        }}>
-          {shareMsg}
-        </p>
+      {/* ─── スナックバー (コピー成功時のマイクロインタラクション) ─── */}
+      {snack && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'absolute',
+            bottom: 12, left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#16A34A',
+            color: '#fff',
+            padding: '0.55rem 1rem',
+            borderRadius: 999,
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            boxShadow: '0 8px 24px rgba(22,163,74,0.45)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            whiteSpace: 'nowrap',
+            zIndex: 5,
+            animation: 'inviteSnack 0.25s ease-out',
+          }}
+        >
+          {snack}
+        </div>
       )}
 
-      {/* フッター */}
+      {/* ─── フッター ─── */}
       <p style={{
         margin: 0, fontSize: '0.7rem', color: p.inkSoft, lineHeight: 1.55,
       }}>
         ※ 招待されたユーザーが新規登録した時点で両者にトライアル +{REFERRAL_BONUS_DAYS} 日が自動付与されます。
         既存ユーザーへの再付与はありません。
       </p>
+
+      <style>{`
+        @keyframes inviteSnack {
+          from { opacity: 0; transform: translate(-50%, 6px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+      `}</style>
     </div>
   );
 }
 
-function Stat({ icon, label, value, palette }: {
-  icon: React.ReactNode; label: string; value: string; palette: Palette;
+function Stat({ icon, label, value, suffix, palette }: {
+  icon: React.ReactNode; label: string; value: string; suffix?: string; palette: Palette;
 }) {
   return (
     <div style={{
       background: `${palette.accent}08`, borderRadius: 12,
-      padding: '0.65rem 0.75rem', border: `1px solid ${palette.border}`,
+      padding: '0.6rem 0.55rem', border: `1px solid ${palette.border}`,
+      textAlign: 'center',
     }}>
       <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: 4,
-        fontSize: '0.7rem', color: palette.inkSoft, fontWeight: 700,
+        display: 'inline-flex', alignItems: 'center', gap: 3,
+        fontSize: '0.62rem', color: palette.inkSoft, fontWeight: 700,
         letterSpacing: '0.04em',
       }}>
         <span style={{ color: palette.accent }}>{icon}</span>{label}
       </div>
       <div style={{
-        marginTop: 2, fontSize: '1.15rem', fontWeight: 800,
+        marginTop: 2,
+        fontSize: '1.25rem', fontWeight: 900,
         color: palette.ink, letterSpacing: '-0.02em',
-      }}>{value}</div>
+        lineHeight: 1.1,
+      }}>
+        {value}
+        {suffix && (
+          <span style={{
+            fontSize: '0.7rem', fontWeight: 700, marginLeft: 2,
+            color: palette.inkSoft,
+          }}>{suffix}</span>
+        )}
+      </div>
     </div>
   );
 }
 
-function SocialBtn({ label, bg, onClick }: { label: React.ReactNode; bg: string; onClick: () => void }) {
+function ShareIconBtn({ label, bg, icon, onClick }: {
+  label: string;
+  bg: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+}) {
   return (
-    <button onClick={onClick}
+    <button
+      onClick={onClick}
+      aria-label={label}
       style={{
         background: bg, color: '#fff', border: 'none', borderRadius: 12,
-        padding: '0.7rem 0.4rem', fontSize: '0.78rem', fontWeight: 700,
+        padding: '0.7rem 0.3rem',
+        fontSize: '0.7rem', fontWeight: 700,
         cursor: 'pointer', whiteSpace: 'nowrap',
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', gap: 4,
         transition: 'transform 0.15s ease, opacity 0.15s ease',
+        minHeight: 60,
       }}
-      onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.96)')}
+      onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.94)')}
       onMouseUp={(e) => (e.currentTarget.style.transform = '')}
-      onMouseLeave={(e) => (e.currentTarget.style.transform = '')}>
-      {label}
+      onMouseLeave={(e) => (e.currentTarget.style.transform = '')}
+    >
+      {icon}
+      <span>{label}</span>
     </button>
   );
 }

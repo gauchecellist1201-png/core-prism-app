@@ -8,6 +8,7 @@ import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { confirmAction } from '../lib/confirmDialog';
 import EmptyInvite from './EmptyInvite';
+import InviteShareCard from '../components/InviteShareCard';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -86,6 +87,19 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
           案件シェア、コラボ募集、相場アンケ、警告。同じ立場の女性たちで支え合う場所。
         </p>
       </div>
+
+      {/* ─── 友達招待カード (コミュニティ拡大導線) ─── */}
+      <InviteShareCard
+        brand="iris"
+        compact
+        palette={{
+          accent: '#E1306C', // Iris ブランド (Instagram pink)
+          ink: bg.ink,
+          inkSoft: bg.inkSoft,
+          card: bg.card,
+          border: bg.cardBorder,
+        }}
+      />
 
       {/* タイプフィルタ */}
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
