@@ -702,6 +702,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       // safe-area-inset 配慮: 下部はホームインジケータ分余白を確保
       paddingBottom: 'max(6rem, calc(4.5rem + env(safe-area-inset-bottom, 0px)))',
       paddingTop: 'env(safe-area-inset-top, 0px)',
+      // iPhone 幅で ambient BG 円 (520x520, right: -100) が横にはみ出すのを抑制
+      overflowX: 'hidden',
     }}>
       {/* AMBIENT BG */}
       <div style={{

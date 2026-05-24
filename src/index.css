@@ -1521,3 +1521,22 @@ input, textarea, select { font-family: inherit; }
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+/* ============================================================
+   iPhone Safari 横オーバーフロー対策 (2026-05-25 横展開)
+   ============================================================ */
+
+/* AgentTeamMonitor: 13 CXO grid (PC=7列) を iPhone 幅で auto-fit に折り返す
+   1 セル 56px 以上 (タップ対象 44px + ラベル分の余白) を確保 */
+@media (max-width: 540px) {
+  .atm-cxo-grid {
+    grid-template-columns: repeat(auto-fit, minmax(54px, 1fr)) !important;
+    gap: 4px !important;
+  }
+}
+
+/* IrisReelStudio (Minimal) / ambient BG が画面外にはみ出して
+   横スクロールが発生するのを止める。video 編集中も同様 */
+.iris-reel-overflow-guard {
+  overflow-x: hidden;
+}

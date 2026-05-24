@@ -191,7 +191,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                   今日 <span style={{ color: '#10B981', fontWeight: 800 }}>{stats.today}</span> 件 / 今週 <span style={{ color: accent, fontWeight: 800 }}>{stats.week}</span> 件
                 </span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+              <div className="atm-cxo-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
                 {(Object.keys(CXO_META) as CxoRole[]).map((cxo) => {
                   const isWorking = workingCxo === cxo;
                   const isDoneOnActive = !!activeTask?.steps.find(s => s.cxo === cxo && s.status === 'done');
