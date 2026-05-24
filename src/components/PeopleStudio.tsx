@@ -6,6 +6,7 @@ import type { PersonRecord, PersonInteraction, SentimentType, InteractionType } 
 import { usePeople } from '../hooks/usePeople';
 import { analyzePerson, type PersonAnalysis } from '../lib/peopleAnalyst';
 import SampleDataCTA from './SampleDataCTA';
+import { StudioIntro } from './StudioIntro';
 import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
@@ -112,6 +113,97 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
         </div>
 
         <div className="cp-modal-body">
+          <StudioIntro
+            id="people"
+            accent={persona.accentColor}
+            emoji="👥"
+            what="関わる人 1 人 1 人の「いま元気か / 何を考えているか」を 1 画面で見守る場所です。"
+            tryThis="人物カードを開いて「🤖 AI 分析」を押す → 強み・懸念・次の 1on1 で話すテーマまで出ます。"
+            example="チームメンバーの過去 1on1 5 件 → 信頼トレンド・リスクフラグ・次の話題 3 案を 30 秒で。"
+            sampleLabel="出来上がる人物カード"
+            samplePreview={
+              <div
+                style={{
+                  width: 160,
+                  background: 'var(--surface-1)',
+                  borderRadius: 6,
+                  padding: '7px 8px',
+                  fontSize: 7,
+                  lineHeight: 1.4,
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+                  border: `1px solid ${persona.accentColor}30`,
+                }}
+                aria-label="人物分析のサンプル"
+              >
+                {/* ヘッダ: アバター + 名前 + センチメント */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                  <div
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: '50%',
+                      background: persona.accentColor,
+                      color: '#0a0a0f',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 7,
+                      fontWeight: 800,
+                      flexShrink: 0,
+                    }}
+                  >
+                    田
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 7, color: 'var(--fg)' }}>田中 さん</div>
+                    <div style={{ fontSize: 5, opacity: 0.65, color: 'var(--fg)' }}>営業部 リーダー</div>
+                  </div>
+                  <span style={{ fontSize: 7 }}>😊</span>
+                </div>
+
+                {/* トレンド + サマリ */}
+                <div
+                  style={{
+                    background: `${persona.accentColor}14`,
+                    borderLeft: `2px solid ${persona.accentColor}`,
+                    padding: '3px 4px',
+                    marginBottom: 3,
+                    fontSize: 5.5,
+                    color: 'var(--fg)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
+                    <span style={{ opacity: 0.7 }}>信頼</span>
+                    <span style={{ color: '#4ade80', fontWeight: 700 }}>📈 改善中</span>
+                  </div>
+                  <div style={{ opacity: 0.9 }}>業績の自信が戻りつつある</div>
+                </div>
+
+                {/* 強み + 懸念 */}
+                <div style={{ fontSize: 5.5, color: 'var(--fg)', marginBottom: 2 }}>
+                  <span style={{ color: '#4ade80' }}>✓</span> 数字の責任感が強い
+                </div>
+                <div style={{ fontSize: 5.5, color: 'var(--fg)', marginBottom: 3 }}>
+                  <span style={{ color: '#f59e0b' }}>⚠</span> 部下への共有量が少ない
+                </div>
+
+                {/* 次回トピック */}
+                <div
+                  style={{
+                    borderTop: `1px dashed ${persona.accentColor}30`,
+                    paddingTop: 3,
+                    fontSize: 5,
+                    color: 'var(--fg)',
+                  }}
+                >
+                  <div style={{ opacity: 0.6, marginBottom: 1 }}>次の 1on1 で話すと良いこと</div>
+                  <div style={{ color: persona.accentColor, fontWeight: 600 }}>① 部下への期待値の言語化</div>
+                </div>
+              </div>
+            }
+          />
+
           <AnimatePresence mode="wait">
             {/* ─── 人物一覧 ─── */}
             {view === 'list' && (

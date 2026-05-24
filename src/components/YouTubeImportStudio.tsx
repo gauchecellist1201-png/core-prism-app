@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings } from '../types/identity';
 import { fetchOEmbed, fetchTranscript, summarizeWithClaude, type VideoMeta, type YouTubeSummary } from '../lib/youtubeImport';
 import ApiErrorCard from './ApiErrorCard';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -140,6 +141,100 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
 
         {/* Body */}
         <div className="cp-modal-body cp-stack" style={{ gap: '16px' }}>
+
+          <StudioIntro
+            id="youtube-import"
+            accent={persona.accentColor}
+            emoji="🎬"
+            what="YouTube の URL を 1 本貼るだけで、AI が要約してナレッジに保存します。"
+            tryThis="動画 URL を入れて「取得」を押す → 字幕が自動で取れたら「AI 要約」。"
+            example="講義動画 1 本 → 結論 3 行 + ハイライト 5 つ + ナレッジ化で他の Studio から参照可能に。"
+            sampleLabel="出来上がる要約"
+            samplePreview={
+              <div
+                style={{
+                  width: 160,
+                  background: 'var(--surface-1)',
+                  borderRadius: 6,
+                  padding: '6px 7px',
+                  fontSize: 7,
+                  lineHeight: 1.4,
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+                  border: `1px solid ${persona.accentColor}30`,
+                }}
+                aria-label="YouTube 要約のサンプル"
+              >
+                {/* サムネ風ブロック */}
+                <div
+                  style={{
+                    aspectRatio: '16/9',
+                    background: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)',
+                    borderRadius: 3,
+                    marginBottom: 4,
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.92)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 6,
+                      color: '#FF0000',
+                    }}
+                  >
+                    ▶
+                  </div>
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: 2,
+                      right: 2,
+                      background: 'rgba(0,0,0,0.7)',
+                      color: '#fff',
+                      fontSize: 5,
+                      padding: '0 2px',
+                      borderRadius: 1,
+                    }}
+                  >
+                    24:13
+                  </span>
+                </div>
+                <div style={{ fontWeight: 700, fontSize: 6.5, marginBottom: 3, lineHeight: 1.3, color: 'var(--fg)' }}>
+                  AI 時代に伸びる事業の作り方
+                </div>
+                <div
+                  style={{
+                    background: `${persona.accentColor}14`,
+                    borderLeft: `2px solid ${persona.accentColor}`,
+                    padding: '3px 4px',
+                    marginBottom: 3,
+                    color: 'var(--fg)',
+                    fontSize: 6,
+                  }}
+                >
+                  <div style={{ fontSize: 5, opacity: 0.7, marginBottom: 1 }}>📌 結論</div>
+                  <div>顧客の「困った」を AI で 10 倍速で解く事業が勝つ</div>
+                </div>
+                <div style={{ fontSize: 5.5, opacity: 0.85, color: 'var(--fg)' }}>
+                  <div style={{ marginBottom: 1 }}>✓ AI は労働コスト 1/10</div>
+                  <div style={{ marginBottom: 1 }}>✓ 個人で年商 1 億も可能</div>
+                  <div>✓ 必要なのは課題の発見</div>
+                </div>
+                <div style={{ marginTop: 3, paddingTop: 3, borderTop: `1px dashed ${persona.accentColor}30`, fontSize: 5, opacity: 0.6, color: 'var(--fg)' }}>
+                  → ナレッジに保存済み
+                </div>
+              </div>
+            }
+          />
 
           <AnimatePresence mode="wait">
 

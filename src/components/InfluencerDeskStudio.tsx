@@ -13,6 +13,7 @@ import {
 import { useInfluencerDesk } from '../hooks/useInfluencerDesk';
 import { generateNegotiation, generateDraftCopy, evaluateOffer, generateBrandReport } from '../lib/influencerAgent';
 import { confirmAction } from '../lib/confirmDialog';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -221,6 +222,109 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
 
         {/* コンテンツ */}
         <div className="flex-1 overflow-y-auto p-5">
+
+          <StudioIntro
+            id="influencer-desk"
+            accent={persona.accentColor}
+            emoji="★"
+            what="ブランド案件の「依頼 → 交渉 → 投稿 → 報告」までを 1 画面で全部回す場所です。"
+            tryThis="「+ 新規案件を追加」でブランド名と報酬を入れる → 💬 交渉センターで返信文を AI 生成。"
+            example="案件 5 本 → 報酬合計・今週納期・交渉返信文・報告レポートまで全自動で並ぶ。"
+            sampleLabel="出来上がる案件ボード"
+            samplePreview={
+              <div
+                style={{
+                  width: 160,
+                  background: 'var(--surface-1)',
+                  borderRadius: 6,
+                  padding: '7px 8px',
+                  fontSize: 7,
+                  lineHeight: 1.4,
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+                  border: `1px solid ${persona.accentColor}30`,
+                }}
+                aria-label="案件ボードのサンプル"
+              >
+                {/* KPI 行 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, marginBottom: 4 }}>
+                  <div
+                    style={{
+                      background: `${persona.accentColor}14`,
+                      borderRadius: 3,
+                      padding: '3px 4px',
+                      color: 'var(--fg)',
+                    }}
+                  >
+                    <div style={{ fontSize: 5, opacity: 0.7 }}>進行中</div>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: persona.accentColor }}>5</div>
+                  </div>
+                  <div
+                    style={{
+                      background: 'rgba(74,222,128,0.12)',
+                      borderRadius: 3,
+                      padding: '3px 4px',
+                      color: 'var(--fg)',
+                    }}
+                  >
+                    <div style={{ fontSize: 5, opacity: 0.7 }}>今月報酬</div>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: '#4ade80' }}>¥850K</div>
+                  </div>
+                </div>
+
+                {/* 案件カード */}
+                <div
+                  style={{
+                    background: 'var(--surface-2)',
+                    borderRadius: 3,
+                    padding: '3px 4px',
+                    marginBottom: 2,
+                    color: 'var(--fg)',
+                    borderLeft: `2px solid ${persona.accentColor}`,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: 700, fontSize: 6.5 }}>SHISEIDO</span>
+                    <span style={{ fontSize: 5, color: '#4ade80' }}>✓ 投稿済</span>
+                  </div>
+                  <div style={{ fontSize: 5, opacity: 0.7 }}>Reels · ¥220,000</div>
+                </div>
+
+                <div
+                  style={{
+                    background: 'var(--surface-2)',
+                    borderRadius: 3,
+                    padding: '3px 4px',
+                    marginBottom: 2,
+                    color: 'var(--fg)',
+                    borderLeft: '2px solid #FFA94D',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: 700, fontSize: 6.5 }}>UNIQLO</span>
+                    <span style={{ fontSize: 5, color: '#FFA94D' }}>⏰ 5/28 納期</span>
+                  </div>
+                  <div style={{ fontSize: 5, opacity: 0.7 }}>Post + Story · ¥180,000</div>
+                </div>
+
+                <div
+                  style={{
+                    background: 'var(--surface-2)',
+                    borderRadius: 3,
+                    padding: '3px 4px',
+                    color: 'var(--fg)',
+                    borderLeft: '2px solid #60a5fa',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: 700, fontSize: 6.5 }}>NIKE</span>
+                    <span style={{ fontSize: 5, color: '#60a5fa' }}>💬 交渉中</span>
+                  </div>
+                  <div style={{ fontSize: 5, opacity: 0.7 }}>Reels × 2 · ¥450,000</div>
+                </div>
+              </div>
+            }
+          />
 
           {/* 案件ボード */}
           {tab === 'board' && (
