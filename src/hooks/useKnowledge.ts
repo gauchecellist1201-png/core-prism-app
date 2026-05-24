@@ -1,7 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { KnowledgeItem, KnowledgeChunk, PersonaId, AppSettings, Persona, KnowledgeAnalysis } from '../types/identity';
-import { parseFile } from '../lib/fileParser';
+// fileParser は pdfjs/mammoth/xlsx/jszip を抱える 1MB 級の重さ。
+// ファイル取り込みが発火した瞬間にだけ読むよう動的 import に寄せて、main から外す。
+async function parseFile(file: File) {
+  const mod = await import('../lib/fileParser');
+  return mod.parseFile(file);
+}
 import { analyzeKnowledge, looksLikeFinancialData, extractFinancialData } from '../lib/analyzeKnowledge';
 import { useCloudSync } from './useCloudSync';
 import { safeSetJSON } from '../lib/storage';

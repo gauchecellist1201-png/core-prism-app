@@ -10,8 +10,9 @@ import {
   IRIS_COLORS, IRIS_FONTS, getAllBackgrounds, removeCustomBackground, type CustomIrisBackground,
 } from './irisStyle';
 import { IRIS_TYPE, IRIS_SHADOW, IRIS_RADIUS, IRIS_GRADIENT, IRIS_MOTION, IRIS_SIDEBAR_W, IRIS_DOCK_H } from './irisDesign';
-import IrisCustomBgEditor from './IrisCustomBgEditor';
-import IrisImageEditor from './IrisImageEditor';
+// 重い「タブを開いたときだけ要る」エディタは lazy 化して main から切り出す
+const IrisCustomBgEditor = React.lazy(() => import('./IrisCustomBgEditor'));
+const IrisImageEditor = React.lazy(() => import('./IrisImageEditor'));
 import StreakBadge from '../components/StreakBadge';
 import TodayCard, { type TodaySuggestion } from '../components/TodayCard';
 import { useIgStrategy } from './useIgStrategy';
@@ -111,16 +112,17 @@ import {
   loadApplyHistory, computeApplyKpi, updateApplyStatus,
   type ApplicationDraft, type ApplicationRecord,
 } from './brandDealMatch';
-import IrisDirectorView from './IrisDirectorView';
-import VideoStudio from '../components/VideoStudio';
+// 各タブ専用 View は、そのタブを開いた瞬間にだけ読み込めばいい
+const IrisDirectorView = React.lazy(() => import('./IrisDirectorView'));
+const VideoStudio = React.lazy(() => import('../components/VideoStudio'));
 // 抜本リデザインされた美しい Minimal 版が default
 // 旧フル機能版は ./IrisReelStudio に残る (詳細モードで呼ぶ用)
 const IrisReelStudio = React.lazy(() => import('./IrisReelStudioMinimal'));
-import IrisPostQueueView from './IrisPostQueueView';
+const IrisPostQueueView = React.lazy(() => import('./IrisPostQueueView'));
 import { usePostQueue } from './usePostQueue';
-import IrisTriageView from './IrisTriageView';
-import IrisCommunityView from './IrisCommunityView';
-import IrisStrategistView from './IrisStrategistView';
+const IrisTriageView = React.lazy(() => import('./IrisTriageView'));
+const IrisCommunityView = React.lazy(() => import('./IrisCommunityView'));
+const IrisStrategistView = React.lazy(() => import('./IrisStrategistView'));
 import IrisQuickAdd from './IrisQuickAdd';
 import IrisVoiceHome from './IrisVoiceHome';
 import { IrisLogo } from '../components/Logo';
@@ -128,15 +130,15 @@ import SupportChat from '../components/SupportChat';
 import ShortcutHelpModal from '../components/ShortcutHelpModal';
 import PwaInstallPrompt from '../components/PwaInstallPrompt';
 import FeedbackWidget from '../components/FeedbackWidget';
-import IrisHealthView from './IrisHealthView';
-import IrisRevenueView from './IrisRevenueView';
-import IrisFanEngagement from './IrisFanEngagement';
+const IrisHealthView = React.lazy(() => import('./IrisHealthView'));
+const IrisRevenueView = React.lazy(() => import('./IrisRevenueView'));
+const IrisFanEngagement = React.lazy(() => import('./IrisFanEngagement'));
 import { useHealth } from '../hooks/useHealth';
-import IrisCollabBoard from './IrisCollabBoard';
+const IrisCollabBoard = React.lazy(() => import('./IrisCollabBoard'));
 import { useMultiAccount, ACCOUNT_TYPE_META, PLATFORM_META_ACCOUNT, type IrisAccount } from './multiAccount';
 import { useBrandGuidelines, TONE_META, type BrandGuideline, type BrandTone, runStyleCheck } from './brandGuidelines';
 import { useIrisKnowledge } from './irisKnowledge';
-import IrisKnowledgeView from './IrisKnowledgeView';
+const IrisKnowledgeView = React.lazy(() => import('./IrisKnowledgeView'));
 import AgentsOrbit from '../components/AgentsOrbit';
 import { IRIS_SPECS, IRIS_ORDER, IRIS_CONVERSATIONS } from '../lib/agentSpecs';
 import IrisEarnHero from './IrisEarnHero';
@@ -1401,6 +1403,10 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         flex: 1,
       }}>
         {/* タブ切替: アニメ無し (mode="wait" + 初期 opacity:0 の組合せで本文が見えなくなる事故が発生したため、確実に表示することを優先) */}
+        {/* 各 View は React.lazy で必要時のみ読込。Suspense で一括ラップして flash を抑える */}
+        <React.Suspense fallback={
+          <LoaderBlock accent={bg.accent} message="読み込み中…" padding="3rem 0" />
+        }>
         <div key={tab}>
             {tab === 'home' && (
               <>
@@ -1577,6 +1583,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               </div>
             )}
           </div>
+        </React.Suspense>
       </main>
 
       {/* Instagram 連携モーダル */}
@@ -1605,14 +1612,16 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
       {/* カスタム背景エディタ */}
       <AnimatePresence>
         {customEditorOpen && (
-          <IrisCustomBgEditor
-            onClose={() => setCustomEditorOpen(false)}
-            onCreated={(b) => {
-              setBgListVersion(v => v + 1);
-              handlePickBg(b);
-              setCustomEditorOpen(false);
-            }}
-          />
+          <React.Suspense fallback={null}>
+            <IrisCustomBgEditor
+              onClose={() => setCustomEditorOpen(false)}
+              onCreated={(b) => {
+                setBgListVersion(v => v + 1);
+                handlePickBg(b);
+                setCustomEditorOpen(false);
+              }}
+            />
+          </React.Suspense>
         )}
       </AnimatePresence>
 
