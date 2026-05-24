@@ -1132,7 +1132,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
             <IrisCommandBar bg={bg} settings={settings} onRoute={(t) => setTab(t as Tab)} />
             {/* アカウントスイッチャー */}
-            <div style={{ position: 'relative' }}>
+            <div className="iris-account-switcher" style={{ position: 'relative' }}>
               <button onClick={() => setAccountSwitcherOpen(v => !v)}
                 title="アカウント切り替え"
                 style={{
@@ -1143,7 +1143,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   minHeight: 36, height: 36,
                 }}>
                 <User size={14} strokeWidth={2.4} color={bg.accent} />
-                <span style={{ maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span className="iris-account-handle" style={{ maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {multiAccount.active?.handle || '@me'}
                 </span>
               </button>

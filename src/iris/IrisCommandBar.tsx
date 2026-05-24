@@ -167,8 +167,8 @@ export default function IrisCommandBar({ bg, settings, onRoute }: Props) {
         }}
       >
         <Sparkles size={14} color={bg.accent} strokeWidth={2.4} />
-        <span style={{ fontWeight: 600 }}>Iris に頼む</span>
-        <span style={{
+        <span className="iris-cmdbar-label" style={{ fontWeight: 600 }}>Iris に頼む</span>
+        <span className="iris-cmdbar-label" style={{
           fontSize: '0.65rem', fontWeight: 700,
           padding: '0.1rem 0.4rem',
           background: 'rgba(31,26,46,0.06)',

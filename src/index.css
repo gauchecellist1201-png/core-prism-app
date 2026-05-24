@@ -1346,6 +1346,54 @@ input, textarea, select { font-family: inherit; }
   padding-top: max(0.85rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) !important;
 }
 
+/* ============================================================
+   iPhone 横オーバーフロー対策 (オーナー指摘 2026-05-25):
+   ヘッダー右側に CommandBar + Account + Palette + Menu + Back が
+   並ぶが、iPhone 幅 (390-414px) では収まり切らず端が切れる。
+   ============================================================ */
+@media (max-width: 540px) {
+  /* ヘッダ全体の左右パディングを詰める */
+  .iris-header-sticky {
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px)) !important;
+  }
+  /* ヘッダの直下 flex 行 (ロゴ + 右クラスタ) のギャップを詰める */
+  .iris-header-sticky > div {
+    gap: 0.4rem !important;
+  }
+  /* 右クラスタ: gap を更に詰め、必要なら 2 段に折る */
+  .iris-header-sticky > div > div:nth-child(2) {
+    gap: 0.3rem !important;
+    flex-wrap: nowrap !important;
+    min-width: 0 !important;
+  }
+  /* アカウント切替のハンドル文字 (@your_ha…) を iPhone では隠して
+     アイコンだけにする。情報過密の解消が優先。 */
+  .iris-header-sticky .iris-account-handle {
+    display: none !important;
+  }
+  /* CommandBar の「⌘K」ヒントもアイコンのみに */
+  .iris-cmdbar-label {
+    display: none !important;
+  }
+  /* アイコンボタンを少し小さく (36→32) して全部入るように */
+  .iris-header-sticky button[aria-label="背景を変える"],
+  .iris-header-sticky button[aria-label="メニュー"],
+  .iris-header-sticky button[aria-label="戻る"] {
+    min-width: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+  }
+}
+
+/* さらに狭い (Galaxy Fold 等 < 360px) ではアカウントスイッチャー自体を隠す
+   (メニューから切替えれば OK) */
+@media (max-width: 360px) {
+  .iris-header-sticky .iris-account-switcher {
+    display: none !important;
+  }
+}
+
 /* 薄すぎる neutral テキストを WCAG AA 比に補強 (ダーク背景に暗い文字を撲滅)
    neutral-800/900 はダーク背景でほぼ不可視のため必ず引き上げる */
 @media (max-width: 768px) {
