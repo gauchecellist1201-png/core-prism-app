@@ -1088,6 +1088,7 @@ export default function IdentityDashboard({
             isLoading={isChatLoading}
             error={chatError}
             knowledgeCount={personaKnowledge.length}
+            knowledgeItems={personaKnowledge}
             onOpenKnowledge={() => setShowKnowledge(true)}
             onOpenSettings={onOpenSettings}
           />
@@ -1144,6 +1145,7 @@ export default function IdentityDashboard({
                   isLoading={isChatLoading}
                   error={chatError}
                   knowledgeCount={personaKnowledge.length}
+                  knowledgeItems={personaKnowledge}
                   onOpenKnowledge={() => setShowKnowledge(true)}
                   onOpenSettings={onOpenSettings}
                 />

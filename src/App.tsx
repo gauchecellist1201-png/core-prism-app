@@ -5,7 +5,7 @@ import './index.css';
 import { usePersonas } from './hooks/usePersonas';
 import { useKnowledge } from './hooks/useKnowledge';
 import { useSettings } from './hooks/useSettings';
-import { useClaude } from './hooks/useClaude';
+import { useClaude, selectRelevantKnowledge } from './hooks/useClaude';
 import { useHealth } from './hooks/useHealth';
 import { detectAnomalies } from './data/healthAnomaly';
 import { useMemo } from 'react';
@@ -328,13 +328,18 @@ export default function App() {
     if (!activePersona) return;
 
     const personaKnowledge = getForPersona(activePersona.id);
-    // RAG検索
-    const relevantChunks = personaKnowledge.length > 0
-      ? personaKnowledge
+
+    // Top-k 関連 item を選定 (タイトル + 要約 + タグでスコア)
+    const relevantItems = selectRelevantKnowledge(message, personaKnowledge, 5);
+
+    // チャンク単位の RAG (item で絞り込んだ後にチャンクを並べる → 精度↑)
+    const candidatePool = relevantItems.length > 0 ? relevantItems : personaKnowledge;
+    const queryWords = message.toLowerCase().split(/[\s　、。!?,.]+/).filter(w => w.length > 1);
+    const relevantChunks = candidatePool.length > 0
+      ? candidatePool
           .flatMap(item => item.chunks.map(chunk => ({
             ...chunk,
-            score: message.toLowerCase().split(/\s+/).filter(w => w.length > 1)
-              .reduce((s, w) => s + (chunk.content.toLowerCase().includes(w) ? 1 : 0), 0),
+            score: queryWords.reduce((s, w) => s + (chunk.content.toLowerCase().includes(w) ? 1 : 0), 0),
           })))
           .filter(c => c.score > 0)
           .sort((a, b) => b.score - a.score)
@@ -348,7 +353,7 @@ export default function App() {
     };
     setChatMessages(prev => [...prev, userMsg]);
 
-    const reply = await sendMessage(activePersona, message, chatMessages, relevantChunks);
+    const reply = await sendMessage(activePersona, message, chatMessages, relevantChunks, relevantItems);
     if (reply) {
       setChatMessages(prev => [...prev, reply]);
     }

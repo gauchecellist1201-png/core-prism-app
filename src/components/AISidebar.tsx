@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { ChatMessage, Persona, AppSettings } from '../types/identity';
+import type { ChatMessage, KnowledgeItem, Persona, AppSettings } from '../types/identity';
 import { useTypewriter } from '../hooks/useTypewriter';
 import ContextualUpgradeCard from './ContextualUpgradeCard';
 import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
 import ApiErrorCard from './ApiErrorCard';
+import AILoadingState from './AILoadingState';
 import { readableTextColor } from '../lib/contrast';
 
 interface Props {
@@ -15,6 +16,8 @@ interface Props {
   isLoading: boolean;
   error: string | null;
   knowledgeCount: number;
+  /** persona に紐づく KnowledgeItem 群 — 引用表示・動的サジェスト用 */
+  knowledgeItems?: KnowledgeItem[];
   onOpenKnowledge: () => void;
   onOpenSettings: () => void;
 }
@@ -27,12 +30,26 @@ export default function AISidebar({
   isLoading,
   error,
   knowledgeCount,
+  knowledgeItems,
   onOpenKnowledge,
   onOpenSettings,
 }: Props) {
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 引用表示用: ナレッジ ID → タイトル (短縮) のマップ
+  const knowledgeTitleById = useMemo(() => {
+    const map = new Map<string, string>();
+    (knowledgeItems ?? []).forEach(it => map.set(it.id, it.title));
+    return map;
+  }, [knowledgeItems]);
+
+  // 動的サジェスト: 最新のナレッジタイトル + 未完タスクから 3 件生成 (空ならフォールバック)
+  const suggestions = useMemo(
+    () => buildDynamicSuggestions(persona, knowledgeItems ?? []),
+    [persona, knowledgeItems],
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -108,8 +125,24 @@ export default function AISidebar({
       <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
         {messages.length === 0 && (
           <motion.div className="space-y-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <p className="text-fg-muted text-xs tracking-wider uppercase mb-2">よく使う質問</p>
-            {getSuggestions(persona).map((s, i) => (
+            <motion.div
+              className="px-3 py-2.5 rounded-lg mb-1"
+              style={{
+                background: `linear-gradient(135deg, ${persona.accentColor}18, ${persona.accentColor}06)`,
+                border: `1px solid ${persona.accentColor}30`,
+              }}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <p className="text-sm font-semibold" style={{ color: persona.accentColor }}>
+                ✨ Prism にようこそ
+              </p>
+              <p className="text-xs text-fg-muted mt-0.5 leading-relaxed">
+                {persona.name} の専属秘書として動きます。{knowledgeCount > 0 ? `${knowledgeCount} 件の資料を読了済み。` : ''}まずは下から相談を選んでください。
+              </p>
+            </motion.div>
+            <p className="text-fg-muted text-xs tracking-wider uppercase mb-1">最初の相談</p>
+            {suggestions.map((s, i) => (
               <motion.button
                 key={i}
                 onClick={() => onSend(s)}
@@ -123,6 +156,22 @@ export default function AISidebar({
                 {s}
               </motion.button>
             ))}
+            <motion.button
+              onClick={() => onSend(`AI 会社 (13 CXO 体制) として、私の「${persona.name}」を総合的に見直してください。CFO は数字、CMO は集客、COO はオペ、CDS はデータの観点で、それぞれ「次にやること」を 1 つずつ提案して。`)}
+              disabled={!hasApiKey || isLoading}
+              className="w-full text-left text-sm px-3 py-2.5 rounded-lg transition-all border"
+              style={{
+                background: `${persona.accentColor}10`,
+                borderColor: `${persona.accentColor}40`,
+                color: persona.accentColor,
+              }}
+              whileHover={hasApiKey ? { x: 3 } : {}}
+              initial={{ opacity: 0, x: -5 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 + suggestions.length * 0.05 }}
+            >
+              🏢 AI 会社 (13 CXO) に相談する →
+            </motion.button>
           </motion.div>
         )}
 
@@ -148,6 +197,38 @@ export default function AISidebar({
                 {msg.role === 'assistant' && i === messages.length - 1
                   ? <AssistantStreamingText content={msg.content} />
                   : <p className="whitespace-pre-wrap">{msg.content}</p>}
+                {msg.role === 'assistant' && msg.usedKnowledge && msg.usedKnowledge.length > 0 && (
+                  (() => {
+                    const titles = msg.usedKnowledge
+                      .map(id => knowledgeTitleById.get(id))
+                      .filter((t): t is string => !!t);
+                    if (titles.length === 0) return null;
+                    return (
+                      <div className="mt-2 pt-2 flex flex-wrap gap-1" style={{ borderTop: '1px dashed rgba(255,255,255,0.08)' }}>
+                        <span className="text-[10px] opacity-60 mr-1">📚 参照:</span>
+                        {titles.slice(0, 5).map((t, k) => (
+                          <button
+                            key={k}
+                            onClick={onOpenKnowledge}
+                            className="text-[10px] px-1.5 py-0.5 rounded transition-opacity hover:opacity-100"
+                            style={{
+                              background: persona.accentColorLight,
+                              color: persona.accentColor,
+                              opacity: 0.85,
+                              maxWidth: '160px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                            title={t}
+                          >
+                            {t.length > 20 ? t.slice(0, 20) + '…' : t}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()
+                )}
                 <div className="flex items-center justify-between mt-1 gap-2">
                   <span className="opacity-40" style={{ fontSize: '10px' }}>{msg.timestamp}</span>
                   {msg.tokensUsed && (
@@ -160,19 +241,18 @@ export default function AISidebar({
         </AnimatePresence>
 
         {isLoading && (
-          <motion.div className="flex justify-start" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="px-4 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div className="flex gap-1.5 items-center">
-                {[0, 1, 2].map(i => (
-                  <motion.div key={i} className="w-1 h-1 rounded-full"
-                    style={{ background: persona.accentColor }}
-                    animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.15 }}
-                  />
-                ))}
-              </div>
-            </div>
-          </motion.div>
+          <AILoadingState
+            active={isLoading}
+            label={`${persona.name} の AI が考えています`}
+            stages={[
+              '質問を解析中',
+              'ナレッジから関連資料を検索',
+              '過去の会話を踏まえて整理',
+              '回答を組み立て中',
+            ]}
+            brand="prism"
+            skeletonLines={3}
+          />
         )}
         <div ref={bottomRef} />
       </div>
@@ -250,7 +330,8 @@ function AssistantStreamingText({ content }: { content: string }) {
   return <p className="whitespace-pre-wrap">{text}</p>;
 }
 
-function getSuggestions(persona: Persona): string[] {
+// 業種フォールバックの基本サジェスト
+function fallbackSuggestions(persona: Persona): string[] {
   const desc = persona.description.toLowerCase();
   if (desc.includes('不動産') || desc.includes('物件')) {
     return ['今月の収益サマリーを分析して', '空室リスクを評価して', '新規投資の判断基準を教えて'];
@@ -266,4 +347,39 @@ function getSuggestions(persona: Persona): string[] {
     '現在の課題を整理して',
     '次のアクションを提案して',
   ];
+}
+
+// 動的サジェスト: 最新ナレッジ + 未完タスクから自然な相談文を組み立てる
+function buildDynamicSuggestions(persona: Persona, knowledgeItems: KnowledgeItem[]): string[] {
+  const out: string[] = [];
+
+  // 1) 最新ナレッジ (createdAt 降順) の上位 2 件をネタにする
+  const recent = [...knowledgeItems]
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+    .slice(0, 2);
+  for (const it of recent) {
+    const title = it.title.length > 22 ? it.title.slice(0, 22) + '…' : it.title;
+    if (it.analysis?.summary) {
+      out.push(`「${title}」の要点を踏まえて、次の一手を提案して`);
+    } else {
+      out.push(`「${title}」の中身を要約して`);
+    }
+  }
+
+  // 2) 未完タスクが多ければ整理を提案
+  const openTasks = persona.tasks?.filter(t => !t.done) ?? [];
+  if (openTasks.length >= 3) {
+    out.push(`未完タスクが ${openTasks.length} 件あります。優先順位を整理して`);
+  } else if (openTasks.length > 0) {
+    const head = openTasks[0].title.slice(0, 20);
+    out.push(`「${head}」を進めるための具体策を教えて`);
+  }
+
+  // 3) 不足分はフォールバックで埋める
+  const fallback = fallbackSuggestions(persona);
+  for (const s of fallback) {
+    if (out.length >= 3) break;
+    if (!out.includes(s)) out.push(s);
+  }
+  return out.slice(0, 3);
 }
