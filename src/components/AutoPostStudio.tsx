@@ -16,6 +16,7 @@ import {
   STYLE_OPTIONS, type VisualStyle, type GenerateImageResult, isOpenAIConfigured,
 } from '../lib/imageGen';
 import ShareArtifactButton from './ShareArtifactButton';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -302,6 +303,96 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <StudioIntro
+            id="auto-post"
+            accent={persona.accentColor}
+            emoji="📢"
+            what="あなたの口調のまま、note 記事 + X 投稿の下書きを AI が一発生成して、そのまま X に投稿まで出来る場所です。"
+            tryThis="テーマを入れて「✨ note 記事を生成」または「✨ X 投稿を生成」→ X 連携済なら 1 クリックで投稿。"
+            example="「今日の AI 経営の気付き」と入れる → note 1500 字 と X 140 字が同時に下書き完成、ワンタップ投稿可。"
+            sampleLabel="出来上がる note + X"
+            samplePreview={
+              <div
+                style={{
+                  width: 160,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 3,
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSize: 7,
+                  lineHeight: 1.4,
+                }}
+                aria-label="note と X のサンプル"
+              >
+                {/* note カード (白) */}
+                <div
+                  style={{
+                    background: '#ffffff',
+                    color: '#0f172a',
+                    borderRadius: 5,
+                    padding: '5px 6px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                    borderLeft: '3px solid #41C9B4',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <span style={{ background: '#41C9B4', color: '#fff', fontSize: 5, padding: '0 3px', borderRadius: 2, fontWeight: 700 }}>note</span>
+                    <span style={{ fontSize: 5, color: '#64748b' }}>📖 4 分</span>
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 7, marginBottom: 2 }}>
+                    考えなくていい、を仕組みにする
+                  </div>
+                  <div style={{ fontSize: 5.5, opacity: 0.8, lineHeight: 1.45 }}>
+                    AI に任せて空いた頭で、もっと本質を選ぶ。経営に必要なのは…
+                  </div>
+                </div>
+
+                {/* X カード (黒) */}
+                <div
+                  style={{
+                    background: '#0f1419',
+                    color: '#f7f9f9',
+                    borderRadius: 5,
+                    padding: '5px 6px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: 3, alignItems: 'center', marginBottom: 2 }}>
+                    <div style={{ width: 9, height: 9, borderRadius: '50%', background: persona.accentColor, flexShrink: 0 }} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 2 }}>
+                        <span style={{ fontWeight: 700, fontSize: 6 }}>あなた</span>
+                        <span style={{ fontSize: 5, opacity: 0.6 }}>@you · 5分</span>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 7, opacity: 0.8 }}>𝕏</span>
+                  </div>
+                  <div style={{ fontSize: 6, lineHeight: 1.45 }}>
+                    <span style={{ fontWeight: 600 }}>考えなくていいが一番のごほうび</span>。AI に任せた頭で、本質を選ぶ。
+                  </div>
+                  <div style={{ marginTop: 3, fontSize: 5, opacity: 0.55, display: 'flex', gap: 5 }}>
+                    <span>♥ 42</span><span>🔁 12</span><span>💬 6</span>
+                  </div>
+                </div>
+
+                {/* 投稿バー */}
+                <div
+                  style={{
+                    background: persona.accentColor,
+                    color: '#0a0a0f',
+                    borderRadius: 4,
+                    padding: '2px 5px',
+                    fontSize: 5.5,
+                    fontWeight: 700,
+                    textAlign: 'center',
+                  }}
+                >
+                  📤 1 タップで X に投稿
+                </div>
+              </div>
+            }
+          />
+
           {/* X 認証バー (X タブの時のみ) */}
           {tab === 'x' && (
             <div
