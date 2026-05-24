@@ -1,7 +1,7 @@
 // ============================================================
 // BenchmarkStudio — 業界ベンチマーク比較 (分析 / 履歴 / 競合 タブ + 自前業界 + Markdown 出力 + Agent 委任)
 // ============================================================
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip,
@@ -11,17 +11,26 @@ import type { Persona, AppSettings } from '../types/identity';
 import type { BenchmarkEntry } from '../lib/benchmarkData';
 import {
   analyzeAgainstIndustry, saveBenchmarkResult,
-  getAllIndustries, getBenchmarksForIndustry,
+  getAllIndustries, getBenchmarksForIndustry, getIndustryInfo,
   addCustomIndustry, deleteCustomIndustry, loadCustomIndustries,
   loadHistory, clearHistory,
   loadCompetitors, saveCompetitors,
   generateMarkdownReport,
+  inferIndustry, estimateMetricsFromQA,
   type BenchmarkResult, type KpiRanking, type UserMetrics,
   type CompetitorEntry, type BenchmarkSnapshot,
+  type IndustryInference, type QaAnswers,
 } from '../lib/benchmarkAnalyst';
+import {
+  generateCompetitorList, loadCompetitorList,
+  loadUserAddedCompetitors, addUserCompetitor, removeUserCompetitor,
+  type CompetitorBrand, type CompetitorListResult,
+} from '../lib/competitorList';
 import { useInvoices } from '../hooks/useInvoices';
 import { useSalesLedger } from '../hooks/useSalesLedger';
 import { useExpenses } from '../hooks/useExpenses';
+import { useKnowledge } from '../hooks/useKnowledge';
+import { useStripeRevenue } from '../hooks/useStripeRevenue';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { copyText } from '../lib/clipboard';
 import { notifyInApp } from '../lib/inAppNotify';
@@ -33,7 +42,8 @@ interface Props {
   onClose: () => void;
 }
 
-type ViewTab = 'analyze' | 'history' | 'competitor';
+type ViewTab = 'assist' | 'analyze' | 'history' | 'competitor';
+type AssistStage = 'industry' | 'qa' | 'review' | 'result';
 
 // ── ランクバッジ ─────────────────────────────────────────
 function RankBadge({ rank }: { rank: 'top' | 'mid' | 'low' }) {
@@ -622,6 +632,425 @@ function StepResult({
   );
 }
 
+// ============================================================
+// ── AI 補助モード — サブコンポーネント ──────────────────────
+// ============================================================
+
+// 同業他社カード (1 社)
+function CompetitorBrandCard({
+  brand, accentColor, onRemove,
+}: {
+  brand: CompetitorBrand;
+  accentColor: string;
+  onRemove?: () => void;
+}) {
+  const [iconBroken, setIconBroken] = useState(false);
+  const initial = brand.name.trim().slice(0, 1) || '?';
+  const sizeBadge = brand.sizeRough === 'L' ? '大手'
+    : brand.sizeRough === 'M' ? '中堅'
+    : brand.sizeRough === 'S' ? '小規模' : null;
+
+  return (
+    <div className="cp-card-section cp-stack-sm relative" style={{ minHeight: 130 }}>
+      <div className="flex items-center gap-2.5">
+        {brand.iconUrl && !iconBroken ? (
+          <img
+            src={brand.iconUrl}
+            alt=""
+            width={32}
+            height={32}
+            onError={() => setIconBroken(true)}
+            className="w-8 h-8 rounded-md flex-shrink-0"
+            style={{ background: 'var(--surface-3)' }}
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-md flex items-center justify-center text-sm font-bold flex-shrink-0"
+            style={{ background: accentColor + '20', color: accentColor }}>
+            {initial}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-fg truncate">{brand.name}</p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {sizeBadge && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded"
+                style={{ background: 'var(--surface-3)', color: 'var(--fg-muted)' }}>
+                {sizeBadge}
+              </span>
+            )}
+            {brand.foundYear && (
+              <span className="text-[10px] text-fg-muted">{brand.foundYear}年〜</span>
+            )}
+            {brand.isUserAdded && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded"
+                style={{ background: accentColor + '20', color: accentColor }}>自分で追加</span>
+            )}
+          </div>
+        </div>
+        {onRemove && (
+          <button onClick={onRemove} className="text-fg-muted hover:text-red-400 text-xs flex-shrink-0">×</button>
+        )}
+      </div>
+      {brand.oneLineNote && (
+        <p className="text-xs text-fg-muted leading-snug">{brand.oneLineNote}</p>
+      )}
+      <a href={brand.hpUrl} target="_blank" rel="noopener noreferrer"
+        className="text-xs underline truncate block"
+        style={{ color: accentColor }}>
+        {brand.hpUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+      </a>
+    </div>
+  );
+}
+
+// 同業他社セクション (一覧 + 追加 UI)
+function CompetitorBrandsSection({
+  industryId, personaName, settings, accentColor,
+  knowledgeTitles, knowledgeSummary,
+}: {
+  industryId: string;
+  personaName: string;
+  settings: AppSettings;
+  accentColor: string;
+  knowledgeTitles: string[];
+  knowledgeSummary: string;
+}) {
+  const [list, setList] = useState<CompetitorListResult | null>(() => loadCompetitorList(industryId));
+  const [userAdded, setUserAdded] = useState<CompetitorBrand[]>(() => loadUserAddedCompetitors(industryId));
+  const [loading, setLoading] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newUrl, setNewUrl] = useState('');
+  const [newNote, setNewNote] = useState('');
+
+  const load = useCallback(async (forceRefresh = false) => {
+    setLoading(true);
+    try {
+      const r = await generateCompetitorList(industryId, settings, {
+        personaName,
+        knowledgeTitles, knowledgeSummary,
+        forceRefresh,
+      });
+      setList(r);
+    } catch (e) {
+      notifyInApp({ kind: 'warn', title: '同業他社の取得に失敗', body: e instanceof Error ? e.message : '', duration: 4000 });
+    } finally {
+      setLoading(false);
+    }
+  }, [industryId, settings, personaName, knowledgeTitles, knowledgeSummary]);
+
+  useEffect(() => {
+    if (!list && industryId) load(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [industryId]);
+
+  const handleAddUser = () => {
+    if (!newName.trim() || !/^https?:\/\//.test(newUrl)) {
+      notifyInApp({ kind: 'warn', title: '入力エラー', body: '会社名と HP(https://〜) を入れてください', duration: 3500 });
+      return;
+    }
+    addUserCompetitor(industryId, {
+      name: newName.trim(),
+      hpUrl: newUrl.trim(),
+      oneLineNote: newNote.trim().slice(0, 60),
+    });
+    setUserAdded(loadUserAddedCompetitors(industryId));
+    setNewName(''); setNewUrl(''); setNewNote('');
+    setShowAddForm(false);
+  };
+
+  const handleRemoveUser = (name: string) => {
+    removeUserCompetitor(industryId, name);
+    setUserAdded(loadUserAddedCompetitors(industryId));
+  };
+
+  const all = [...userAdded, ...(list?.competitors ?? [])];
+
+  return (
+    <div className="cp-card-section cp-stack-sm">
+      <div className="cp-row-between flex-wrap gap-2">
+        <div className="min-w-0">
+          <p className="cp-h3">同業他社</p>
+          <p className="cp-tiny">{list?.industryLabel || ''} の代表的な会社。クリックで HP へ。</p>
+        </div>
+        <button onClick={() => load(true)} disabled={loading}
+          className="cp-btn cp-btn-ghost cp-btn-sm text-xs flex-shrink-0">
+          {loading ? '取得中…' : '🔄 更新'}
+        </button>
+      </div>
+
+      {loading && all.length === 0 && (
+        <div className="text-center py-8 text-fg-muted text-sm">同業他社を調べています…</div>
+      )}
+
+      {!loading && all.length === 0 && (
+        <div className="text-center py-6 text-fg-muted text-sm">
+          自動取得に失敗しました。手動で追加してください。
+        </div>
+      )}
+
+      {all.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {all.map((b, i) => (
+            <CompetitorBrandCard key={b.name + i} brand={b} accentColor={accentColor}
+              onRemove={b.isUserAdded ? () => handleRemoveUser(b.name) : undefined} />
+          ))}
+        </div>
+      )}
+
+      {list?.disclaimer && (
+        <p className="cp-tiny mt-1" style={{ opacity: 0.7 }}>※ {list.disclaimer}</p>
+      )}
+
+      {!showAddForm ? (
+        <button onClick={() => setShowAddForm(true)}
+          className="cp-btn cp-btn-ghost cp-btn-sm w-full mt-1">
+          + 自分が知ってる同業を追加
+        </button>
+      ) : (
+        <div className="cp-stack-sm p-2 rounded-lg" style={{ background: 'var(--surface-3)' }}>
+          <input value={newName} onChange={e => setNewName(e.target.value)}
+            placeholder="会社名 / サービス名"
+            className="px-3 py-2 rounded text-sm"
+            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '16px' }} />
+          <input value={newUrl} onChange={e => setNewUrl(e.target.value)}
+            placeholder="HP の URL (https://〜)"
+            className="px-3 py-2 rounded text-sm"
+            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '16px' }} />
+          <input value={newNote} onChange={e => setNewNote(e.target.value)}
+            placeholder="一言メモ (任意、50字まで)"
+            className="px-3 py-2 rounded text-sm"
+            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '16px' }} />
+          <div className="cp-row justify-between gap-2">
+            <button onClick={() => setShowAddForm(false)} className="cp-btn cp-btn-ghost cp-btn-sm">キャンセル</button>
+            <button onClick={handleAddUser} className="cp-btn cp-btn-sm"
+              style={{ background: accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+              追加
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 業界推定の確認カード
+function AssistIndustryStep({
+  inference, loading, error, accentColor,
+  onConfirm, onChange, onRetry,
+}: {
+  inference: IndustryInference | null;
+  loading: boolean;
+  error: string | null;
+  accentColor: string;
+  onConfirm: () => void;
+  onChange: (id: string) => void;
+  onRetry: () => void;
+}) {
+  const industries = useMemo(() => getAllIndustries(), []);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <motion.div className="text-5xl mb-3"
+          animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>🔍</motion.div>
+        <p className="text-fg font-medium">あなたの業種を推定中…</p>
+        <p className="cp-meta mt-1">ナレッジや事業内容から AI が判断しています</p>
+      </div>
+    );
+  }
+
+  if (error || !inference) {
+    return (
+      <div className="cp-card-section text-center py-8 cp-stack-sm">
+        <p className="text-3xl">😅</p>
+        <p className="text-fg">業種の自動推定ができませんでした</p>
+        <p className="cp-tiny">{error || '情報が不足しています'}</p>
+        <button onClick={onRetry} className="cp-btn cp-btn-sm"
+          style={{ background: accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+          もう一度試す
+        </button>
+      </div>
+    );
+  }
+
+  const confColor = inference.confidence === 'high' ? '#4ade80'
+    : inference.confidence === 'medium' ? '#facc15' : '#f87171';
+  const confLabel = inference.confidence === 'high' ? '確信あり'
+    : inference.confidence === 'medium' ? 'たぶん' : '自信なし';
+
+  return (
+    <div className="cp-stack">
+      <motion.div className="p-5 rounded-2xl"
+        style={{ background: `linear-gradient(135deg, ${accentColor}18, var(--surface-3))`, border: `1px solid ${accentColor}40` }}
+        initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+        <p className="cp-tiny mb-1">あなたの業種はこれですか？</p>
+        <p className="text-2xl font-bold text-fg mb-1">
+          {getIndustryInfo(inference.industryId)?.emoji || '🏢'} {inference.label}
+        </p>
+        <div className="cp-row gap-2 flex-wrap mt-2">
+          <span className="text-xs px-2 py-0.5 rounded-full"
+            style={{ background: confColor + '20', color: confColor, border: `1px solid ${confColor}60` }}>
+            {confLabel}
+          </span>
+          {inference.rationale && (
+            <p className="text-xs text-fg-muted flex-1 min-w-0 leading-snug">{inference.rationale}</p>
+          )}
+        </div>
+      </motion.div>
+
+      <div className="cp-card-section cp-stack-sm">
+        <p className="cp-h3">この業種で進める / 変更する</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {industries.map(ind => {
+            const selected = ind.id === inference.industryId;
+            return (
+              <button key={ind.id} onClick={() => onChange(ind.id)}
+                className="p-2 rounded-lg text-left transition-all min-h-[64px]"
+                style={selected
+                  ? { background: accentColor + '20', border: `2px solid ${accentColor}`, color: 'var(--fg)' }
+                  : { background: 'var(--surface-3)', border: '2px solid transparent', color: 'var(--fg-muted)' }}>
+                <span className="text-xl block mb-0.5">{ind.emoji}</span>
+                <span className="text-xs font-medium block leading-tight">{ind.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="cp-row justify-between gap-2">
+        <button onClick={onRetry} className="cp-btn cp-btn-ghost cp-btn-sm">🔄 再推定</button>
+        <button onClick={onConfirm} className="cp-btn cp-btn-sm"
+          style={{ background: accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+          この業種で進める →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Q&A ステップ (3-5 問)
+function AssistQaStep({
+  qa, onChange, onSubmit, onSkip, onBack, accentColor, hasKnowledgeHint,
+}: {
+  qa: QaAnswers;
+  onChange: (patch: Partial<QaAnswers>) => void;
+  onSubmit: () => void;
+  onSkip: () => void;
+  onBack: () => void;
+  accentColor: string;
+  hasKnowledgeHint: boolean;
+}) {
+  const fmt = (n?: number) => n === undefined ? '' : String(n);
+
+  const setNum = (key: keyof QaAnswers, raw: string) => {
+    if (raw.trim() === '') { onChange({ [key]: undefined } as Partial<QaAnswers>); return; }
+    const cleaned = raw.replace(/[,，]/g, '');
+    const n = Number(cleaned);
+    if (Number.isFinite(n)) onChange({ [key]: n } as Partial<QaAnswers>);
+  };
+
+  return (
+    <div className="cp-stack">
+      <div className="cp-card-section">
+        <p className="cp-h3">かんたんな質問だけ答えてください</p>
+        <p className="cp-tiny">わからない項目は空欄のままでも進められます。{hasKnowledgeHint && 'ナレッジから取れる値はあとで優先的に使います。'}</p>
+      </div>
+
+      {/* Q1 */}
+      <div className="cp-card-section cp-stack-sm">
+        <p className="text-sm text-fg">先月、月の売上はだいたいいくらでしたか？</p>
+        <p className="cp-tiny">ざっくりでOK。「だいたい100万」みたいな感覚で。</p>
+        <div className="flex items-center gap-2">
+          <input type="text" inputMode="numeric"
+            value={fmt(qa.monthlyRevenue)} onChange={e => setNum('monthlyRevenue', e.target.value)}
+            placeholder="例: 1000000"
+            className="flex-1 px-3 py-2 rounded-lg font-mono"
+            style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '16px' }} />
+          <span className="text-fg-muted text-sm flex-shrink-0">円</span>
+        </div>
+      </div>
+
+      {/* Q2 */}
+      <div className="cp-card-section cp-stack-sm">
+        <p className="text-sm text-fg">家賃や人件費など、毎月かかる固定費は？</p>
+        <p className="cp-tiny">給料・家賃・通信費など、売上に関わらずかかるもの合計</p>
+        <div className="flex items-center gap-2">
+          <input type="text" inputMode="numeric"
+            value={fmt(qa.monthlyFixedCost)} onChange={e => setNum('monthlyFixedCost', e.target.value)}
+            placeholder="例: 600000"
+            className="flex-1 px-3 py-2 rounded-lg font-mono"
+            style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '16px' }} />
+          <span className="text-fg-muted text-sm flex-shrink-0">円</span>
+        </div>
+      </div>
+
+      {/* Q3 */}
+      <div className="cp-card-section cp-stack-sm">
+        <p className="text-sm text-fg">仕入れや原材料など、売上に連動する経費は？</p>
+        <p className="cp-tiny">(サービス業で仕入れがほぼない場合は空欄で OK)</p>
+        <div className="flex items-center gap-2">
+          <input type="text" inputMode="numeric"
+            value={fmt(qa.monthlyVariableCost)} onChange={e => setNum('monthlyVariableCost', e.target.value)}
+            placeholder="例: 200000"
+            className="flex-1 px-3 py-2 rounded-lg font-mono"
+            style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '16px' }} />
+          <span className="text-fg-muted text-sm flex-shrink-0">円</span>
+        </div>
+      </div>
+
+      {/* Q4 */}
+      <div className="cp-card-section cp-stack-sm">
+        <p className="text-sm text-fg">月のお客さんは何人くらい？</p>
+        <p className="cp-tiny">わからなければ空欄で</p>
+        <div className="flex items-center gap-2">
+          <input type="text" inputMode="numeric"
+            value={fmt(qa.monthlyCustomers)} onChange={e => setNum('monthlyCustomers', e.target.value)}
+            placeholder="例: 50"
+            className="flex-1 px-3 py-2 rounded-lg font-mono"
+            style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '16px' }} />
+          <span className="text-fg-muted text-sm flex-shrink-0">人</span>
+        </div>
+      </div>
+
+      {/* Q5 */}
+      <div className="cp-card-section cp-stack-sm">
+        <p className="text-sm text-fg">同業と比べて、価格は？</p>
+        <div className="grid grid-cols-3 gap-2">
+          {([
+            { v: 'low' as const,  label: '安め', sub: '同業より低価格' },
+            { v: 'mid' as const,  label: '普通', sub: '同業並み' },
+            { v: 'high' as const, label: '高め', sub: '同業より高価格' },
+          ]).map(o => {
+            const selected = qa.priceRange === o.v;
+            return (
+              <button key={o.v} onClick={() => onChange({ priceRange: selected ? undefined : o.v })}
+                className="p-2 rounded-lg transition-all"
+                style={selected
+                  ? { background: accentColor + '20', border: `2px solid ${accentColor}`, color: 'var(--fg)' }
+                  : { background: 'var(--surface-3)', border: '2px solid transparent', color: 'var(--fg-muted)' }}>
+                <p className="text-sm font-medium">{o.label}</p>
+                <p className="text-[10px]">{o.sub}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="cp-row justify-between gap-2 flex-wrap">
+        <button onClick={onBack} className="cp-btn cp-btn-ghost cp-btn-sm">← 業界変更</button>
+        <div className="flex gap-2">
+          <button onClick={onSkip} className="cp-btn cp-btn-ghost cp-btn-sm">スキップ</button>
+          <button onClick={onSubmit} className="cp-btn cp-btn-sm"
+            style={{ background: accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+            この回答で分析する →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── 履歴タブ ───────────────────────────────────────────
 function HistoryTab({ personaId, accentColor }: { personaId: string; accentColor: string }) {
   const [history, setHistory] = useState<BenchmarkSnapshot[]>(() => loadHistory(personaId));
@@ -849,7 +1278,7 @@ function CompetitorTab({
 
 // ── メインコンポーネント ────────────────────────────────────
 export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
-  const [tab, setTab] = useState<ViewTab>('analyze');
+  const [tab, setTab] = useState<ViewTab>('assist');
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [industry, setIndustry] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<UserMetrics>({});
@@ -859,10 +1288,41 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
   const [industryRefresh, setIndustryRefresh] = useState(0);
   const [proposeBusy, setProposeBusy] = useState(false);
 
+  // ── AI 補助モード state ──
+  const [assistStage, setAssistStage] = useState<AssistStage>('industry');
+  const [inferring, setInferring] = useState(false);
+  const [inferError, setInferError] = useState<string | null>(null);
+  const [inference, setInference] = useState<IndustryInference | null>(null);
+  const [qa, setQa] = useState<QaAnswers>({});
+  const [qaNotes, setQaNotes] = useState<string[]>([]);
+
   const inv = useInvoices();
   const ledger = useSalesLedger(inv.invoices);
   const exp = useExpenses();
+  const knowledge = useKnowledge();
+  const stripeRev = useStripeRevenue();
   const queue = useAgentTaskQueue();
+
+  const knowledgeForPersona = useMemo(
+    () => knowledge.items.filter(i => i.personaId === persona.id),
+    [knowledge.items, persona.id],
+  );
+  const knowledgeTitles = useMemo(
+    () => knowledgeForPersona.map(i => i.title),
+    [knowledgeForPersona],
+  );
+  const knowledgeSummary = useMemo(
+    () => knowledgeForPersona.map(i => i.analysis?.summary || '').filter(Boolean).join(' ').slice(0, 1200),
+    [knowledgeForPersona],
+  );
+  const knowledgeFinancialHint = useMemo(() => {
+    const fin = knowledgeForPersona
+      .filter(i => i.tags?.includes('財務') && i.content)
+      .map(i => i.content)
+      .join('\n')
+      .slice(0, 600);
+    return fin;
+  }, [knowledgeForPersona]);
 
   const autoValues = useMemo<UserMetrics>(() => {
     const now = new Date();
@@ -944,6 +1404,82 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
 
   const canAnalyze = industry !== null && Object.keys(metrics).length > 0;
 
+  // ── AI 補助モード ハンドラ ──
+  const runInferIndustry = useCallback(async () => {
+    setInferring(true);
+    setInferError(null);
+    try {
+      const inf = await inferIndustry({
+        personaName: persona.name,
+        personaDescription: persona.description,
+        knowledgeTitles,
+        knowledgeSummary,
+        stripeCurrencies: stripeRev.currencies,
+        cashflowLabel: persona.cashflow?.label,
+      }, settings);
+      setInference(inf);
+    } catch (e) {
+      setInferError(e instanceof Error ? e.message : '推定に失敗しました');
+    } finally {
+      setInferring(false);
+    }
+  }, [persona, knowledgeTitles, knowledgeSummary, stripeRev.currencies, settings]);
+
+  // AI 補助タブを開いた / 業界推定がまだ未実行ならまず推定
+  useEffect(() => {
+    if (tab === 'assist' && assistStage === 'industry' && !inference && !inferring && !inferError) {
+      runInferIndustry();
+    }
+  }, [tab, assistStage, inference, inferring, inferError, runInferIndustry]);
+
+  const confirmIndustry = (id: string) => {
+    setIndustry(id);
+    setAssistStage('qa');
+  };
+
+  const updateQa = (patch: Partial<QaAnswers>) => setQa(prev => ({ ...prev, ...patch }));
+
+  const runEstimateAndAnalyze = async (skipQa: boolean) => {
+    if (!industry) return;
+    setIsAnalyzing(true);
+    setError(null);
+    setAssistStage('result');
+    try {
+      // metrics 推定 (skipQa の場合は空 qa)
+      const est = await estimateMetricsFromQA(
+        industry,
+        skipQa ? {} : qa,
+        settings,
+        knowledgeFinancialHint ? { knowledgeFinancialHint } : undefined,
+      );
+      const mergedMetrics = { ...est.metrics, ...autoValues }; // 実値があれば優先
+      setMetrics(mergedMetrics);
+      setQaNotes(est.notes);
+      if (Object.keys(mergedMetrics).length === 0) {
+        setError('数値を推定できませんでした。質問にもう少し答えてみてください。');
+        setAssistStage('qa');
+        return;
+      }
+      const res = await analyzeAgainstIndustry(industry, mergedMetrics, settings);
+      setResult(res);
+      saveBenchmarkResult(persona.id, res);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '分析中にエラーが発生しました');
+      setAssistStage('qa');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const resetAssist = () => {
+    setAssistStage('industry');
+    setInference(null);
+    setInferError(null);
+    setQa({});
+    setQaNotes([]);
+    setResult(null);
+  };
+
   return (
     <motion.div className="cp-modal-bg"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -967,7 +1503,8 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
         {/* タブ */}
         <div className="cp-row px-4 pt-3 gap-1 overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
           {([
-            { v: 'analyze' as const, label: '分析' },
+            { v: 'assist' as const, label: '✨ AI 補助' },
+            { v: 'analyze' as const, label: '手入力' },
             { v: 'history' as const, label: `履歴 (${historyCount})` },
             { v: 'competitor' as const, label: `競合 (${competitors.length})` },
           ]).map(t => (
@@ -1006,6 +1543,106 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
 
         <div className="cp-modal-body cp-stack">
           <AnimatePresence mode="wait">
+            {tab === 'assist' && (
+              <motion.div key={'assist-' + assistStage}
+                initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -15 }}>
+
+                {/* AI 補助モード説明 */}
+                <div className="cp-card-section mb-3" style={{ background: persona.accentColor + '10', border: `1px solid ${persona.accentColor}30` }}>
+                  <p className="text-sm text-fg">
+                    <strong>数字がわからなくても大丈夫。</strong>
+                  </p>
+                  <p className="cp-tiny mt-1">
+                    あなたの業種を AI が推定し、3〜5 個のかんたんな質問だけで業界比較ができます。
+                  </p>
+                </div>
+
+                {assistStage === 'industry' && (
+                  <AssistIndustryStep
+                    inference={inference}
+                    loading={inferring}
+                    error={inferError}
+                    accentColor={persona.accentColor}
+                    onConfirm={() => inference && confirmIndustry(inference.industryId)}
+                    onChange={id => setInference(prev => prev ? { ...prev, industryId: id, label: getIndustryInfo(id)?.label || id } : null)}
+                    onRetry={() => { setInference(null); setInferError(null); runInferIndustry(); }}
+                  />
+                )}
+
+                {assistStage === 'qa' && industry && (
+                  <>
+                    <AssistQaStep
+                      qa={qa}
+                      onChange={updateQa}
+                      onSubmit={() => runEstimateAndAnalyze(false)}
+                      onSkip={() => runEstimateAndAnalyze(true)}
+                      onBack={() => setAssistStage('industry')}
+                      accentColor={persona.accentColor}
+                      hasKnowledgeHint={!!knowledgeFinancialHint}
+                    />
+                    {error && (
+                      <div className="mt-3"><ApiErrorCard error={error} onRetry={() => runEstimateAndAnalyze(false)} variant="auto" /></div>
+                    )}
+                  </>
+                )}
+
+                {assistStage === 'result' && industry && (
+                  <>
+                    {isAnalyzing ? (
+                      <div className="text-center py-16">
+                        <motion.div className="text-5xl mb-4"
+                          animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>📊</motion.div>
+                        <p className="text-fg text-base font-medium">あなたの数字を AI が推定中…</p>
+                        <p className="cp-meta mt-1">回答とナレッジから KPI を逆算しています</p>
+                      </div>
+                    ) : result ? (
+                      <>
+                        {qaNotes.length > 0 && (
+                          <div className="cp-card-section mb-3" style={{ background: persona.accentColor + '10' }}>
+                            <p className="cp-tiny" style={{ color: persona.accentColor }}>
+                              ⚠️ これは AI 推定値です。{qaNotes.join(' / ')}
+                            </p>
+                          </div>
+                        )}
+
+                        <StepResult
+                          result={result}
+                          personaName={persona.name}
+                          accentColor={persona.accentColor}
+                          competitors={competitors}
+                          onProposeAgents={handleProposeAgents}
+                          proposeBusy={proposeBusy}
+                        />
+
+                        {/* 同業他社カード */}
+                        <CompetitorBrandsSection
+                          industryId={industry}
+                          personaName={persona.name}
+                          settings={settings}
+                          accentColor={persona.accentColor}
+                          knowledgeTitles={knowledgeTitles}
+                          knowledgeSummary={knowledgeSummary}
+                        />
+
+                        <div className="cp-row justify-between mt-2 gap-2 flex-wrap">
+                          <button onClick={resetAssist} className="cp-btn cp-btn-ghost cp-btn-sm">← やり直す</button>
+                          <button onClick={() => setAssistStage('qa')} className="cp-btn cp-btn-ghost cp-btn-sm">回答を修正 →</button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="cp-card-section text-center py-8">
+                        <p className="text-fg-muted text-sm">{error || '分析を開始してください'}</p>
+                        <button onClick={() => setAssistStage('qa')} className="cp-btn cp-btn-sm mt-3"
+                          style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+                          質問に戻る
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </motion.div>
+            )}
+
             {tab === 'analyze' && (
               <motion.div key={'analyze-' + step}
                 initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -15 }}>
