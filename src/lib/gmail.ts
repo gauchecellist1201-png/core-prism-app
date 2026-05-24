@@ -152,22 +152,39 @@ export async function connectGmail(): Promise<{ token: GmailTokenInfo; user: Gma
   if (!window.google?.accounts?.oauth2) throw new Error('Google Identity Services が利用できません');
 
   const token = await new Promise<GmailTokenInfo>((resolve, reject) => {
+    // ── 成功と popup_closed_by_user error が race することがあるための guard ──
+    // GSI は同意完了 → popup を自動で閉じる際、稀に error_callback('popup_closed_by_user')
+    // が callback の直後に発火し、本当は成功なのに「認証完了しませんでした」と出る
+    // (オーナー報告 2026-05-25)。
+    // 戦略: callback で settled=true、error_callback で settled なら無視。
+    let settled = false;
     const tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: GMAIL_SCOPES,
       // 'consent' で常に同意画面を表示してスコープを明示する (一般ユーザー向け)
       prompt: 'consent',
       callback: (resp: any) => {
+        if (settled) return;
         if (resp.error) {
+          settled = true;
           reject(new Error(translateGoogleError(resp.error)));
           return;
         }
         const expiresAt = Date.now() + (Number(resp.expires_in) || 3600) * 1000;
         const info: GmailTokenInfo = { accessToken: resp.access_token, expiresAt };
         saveToken(info);
+        settled = true;
         resolve(info);
       },
-      error_callback: (err: any) => reject(new Error(translateGoogleError(err?.type || 'unknown'))),
+      error_callback: (err: any) => {
+        if (settled) {
+          // 成功後に発火した stale な popup_closed は無視 (race 回避)
+          // console.warn('[gmail.connect] ignoring late error after success', err);
+          return;
+        }
+        settled = true;
+        reject(new Error(translateGoogleError(err?.type || 'unknown')));
+      },
     });
     tokenClient.requestAccessToken();
   });

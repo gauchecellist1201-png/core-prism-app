@@ -140,18 +140,26 @@ export async function connectCalendar(): Promise<{ token: CalTokenInfo; user: Ca
   if (!window.google?.accounts?.oauth2) throw new Error('Google Identity Services が利用できません');
 
   const token = await new Promise<CalTokenInfo>((resolve, reject) => {
+    // 成功と popup_closed_by_user の race を防ぐ (gmail.ts 側と同じ guard)
+    let settled = false;
     const tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: CAL_SCOPES,
       prompt: 'consent',
       callback: (resp: any) => {
-        if (resp.error) { reject(new Error(translateError(resp.error))); return; }
+        if (settled) return;
+        if (resp.error) { settled = true; reject(new Error(translateError(resp.error))); return; }
         const expiresAt = Date.now() + (Number(resp.expires_in) || 3600) * 1000;
         const info: CalTokenInfo = { accessToken: resp.access_token, expiresAt };
         saveToken(info);
+        settled = true;
         resolve(info);
       },
-      error_callback: (err: any) => reject(new Error(translateError(err?.type || 'unknown'))),
+      error_callback: (err: any) => {
+        if (settled) return; // 成功後の stale エラーは無視
+        settled = true;
+        reject(new Error(translateError(err?.type || 'unknown')));
+      },
     });
     tokenClient.requestAccessToken();
   });

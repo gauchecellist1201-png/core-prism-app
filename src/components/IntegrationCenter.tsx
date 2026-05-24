@@ -451,7 +451,17 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, onToggle,
       setJustDone(true);
       setTimeout(onConnected, 1400);
     } catch (e: any) {
-      setErr(e?.message || '連携に失敗しました。もう一度お試しください。');
+      // 防御策: connectGmail/Cal が popup_closed エラーを投げたとしても、
+      // 実際にはトークンが localStorage に書かれている事例 (race) がある。
+      // (オーナー報告 2026-05-25)
+      // 「認証完了しませんでした」と出してから接続済になる無限ループを止める。
+      const actuallyConnected = provider === 'gmail' ? isGmailConnected() : isCalConnected();
+      if (actuallyConnected) {
+        setJustDone(true);
+        setTimeout(onConnected, 1400);
+      } else {
+        setErr(e?.message || '連携に失敗しました。もう一度お試しください。');
+      }
     } finally {
       setBusy(false);
     }
