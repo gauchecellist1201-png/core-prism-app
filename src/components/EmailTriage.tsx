@@ -244,12 +244,30 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
                   ))}
                 </ul>
 
-                <div className="rounded-lg p-3 mb-4" style={{ background: '#e8f0fe' }}>
+                <div className="rounded-lg p-3 mb-3" style={{ background: '#e8f0fe' }}>
                   <p className="text-xs leading-relaxed text-[#1967d2]">
                     🔒 「次へ」を押すと <strong>Google の公式認証画面</strong>が開きます。
                     あなたのパスワードは CORE Prism に渡りません。
                     メール本文はサーバーに保存されず、AI 解析のみに使用されます。
                     連携はいつでも解除できます。
+                  </p>
+                </div>
+
+                {/* Google 審査中のため、現在 Testing モードで運用しています。
+                    ユーザーが「このアプリは Google で確認されていません」画面で詰まらないよう、
+                    明確に通り抜け方を案内する。 */}
+                <div className="rounded-lg p-3 mb-4 border" style={{ background: '#fef7e0', borderColor: '#f9ab00' }}>
+                  <p className="text-xs leading-relaxed text-[#b06000] font-semibold mb-1">
+                    ⚠️ 次の画面で「このアプリは Google で確認されていません」が出たら
+                  </p>
+                  <ol className="text-xs leading-relaxed text-[#5f4400] space-y-0.5 list-decimal pl-4">
+                    <li>左下の「<strong>詳細</strong>」をクリック</li>
+                    <li>「<strong>安全ではないページに移動 (CORE Prism)</strong>」をクリック</li>
+                    <li>続けて画面の指示に従う</li>
+                  </ol>
+                  <p className="text-[10px] leading-relaxed text-[#7a5800] mt-1.5">
+                    現在 Google の本番審査中です (6 月リリースに向け申請済)。
+                    審査が通れば この警告は出なくなります。
                   </p>
                 </div>
 
