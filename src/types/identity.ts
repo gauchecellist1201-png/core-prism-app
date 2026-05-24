@@ -45,7 +45,11 @@ export interface KnowledgeItem {
   createdAt: string;
   tags: string[];
   analysis?: KnowledgeAnalysis;
-  analysisStatus?: 'pending' | 'done' | 'error';
+  /**
+   * 取り込み進捗。'pending' は互換のため残置 (≈ 'parsing')。
+   * 'parsing' → 'tagging' → 'summarizing' → 'extracting' → 'done' / 'error'
+   */
+  analysisStatus?: 'pending' | 'parsing' | 'tagging' | 'summarizing' | 'extracting' | 'done' | 'error';
   analysisError?: string;
 }
 

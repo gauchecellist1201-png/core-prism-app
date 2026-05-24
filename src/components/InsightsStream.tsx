@@ -49,7 +49,13 @@ export default function InsightsStream({ persona, items, onAcceptAction, onOpenK
   }
 
   if (total === 0) {
-    const pending = items.some(i => i.analysisStatus === 'pending');
+    const pending = items.some(i =>
+      i.analysisStatus === 'pending' ||
+      i.analysisStatus === 'parsing' ||
+      i.analysisStatus === 'tagging' ||
+      i.analysisStatus === 'summarizing' ||
+      i.analysisStatus === 'extracting'
+    );
     return (
       <div
         className="rounded-2xl p-4"

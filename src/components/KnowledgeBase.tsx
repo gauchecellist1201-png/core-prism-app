@@ -14,6 +14,69 @@ const USE_ICON: Record<KnowledgeUseKind, string> = {
   summary: '📋', action: '✅', share: '📤', decision: '⚖️', content: '✍️',
 };
 
+// ── 取込進捗 4 セグメント ─────────────────────────────────
+// parsing(0-25) → tagging(25-50) → summarizing(50-85) → extracting(85-100) → done
+type IngestStage = 'parsing' | 'tagging' | 'summarizing' | 'extracting' | 'done';
+const STAGE_ORDER: IngestStage[] = ['parsing', 'tagging', 'summarizing', 'extracting'];
+const STAGE_LABEL: Record<IngestStage, string> = {
+  parsing:     'ファイル解析中…',
+  tagging:     'タグ生成中…',
+  summarizing: 'AI 要約生成中…',
+  extracting:  '数字を抽出中…',
+  done:        '完了',
+};
+
+function normalizeStage(s: KnowledgeItem['analysisStatus']): IngestStage | null {
+  if (!s) return null;
+  if (s === 'error') return null;
+  if (s === 'pending') return 'parsing';   // 旧データ互換
+  if (s === 'done') return 'done';
+  return s as IngestStage;
+}
+
+function KnowledgeProgressBar({ status, accent }: { status: KnowledgeItem['analysisStatus']; accent: string }) {
+  const stage = normalizeStage(status);
+  if (!stage) return null;
+  const currentIdx = stage === 'done' ? STAGE_ORDER.length : STAGE_ORDER.indexOf(stage);
+  return (
+    <div className="mt-1.5">
+      <div className="flex items-center gap-2 mb-1">
+        <p className="text-xs flex-1" style={{ color: stage === 'done' ? 'rgba(255,255,255,0.55)' : accent }}>
+          {stage === 'done' ? STAGE_LABEL.done : `🧠 ${STAGE_LABEL[stage]}`}
+        </p>
+        <p className="text-[10px] text-fg-subtle tabular-nums">
+          {Math.min(currentIdx + (stage === 'done' ? 0 : 1), STAGE_ORDER.length)}/{STAGE_ORDER.length}
+        </p>
+      </div>
+      <div className="flex gap-1" aria-hidden>
+        {STAGE_ORDER.map((s, i) => {
+          const done = stage === 'done' || i < currentIdx;
+          const active = stage !== 'done' && i === currentIdx;
+          return (
+            <div
+              key={s}
+              className="flex-1 rounded-full overflow-hidden"
+              style={{
+                height: 4,
+                background: done ? accent : active ? `${accent}55` : 'rgba(255,255,255,0.08)',
+              }}
+            >
+              {active && (
+                <motion.div
+                  initial={{ x: '-100%' }}
+                  animate={{ x: '100%' }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{ height: '100%', width: '60%', background: accent }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Section({ title, items, color }: { title: string; items: string[]; color: string }) {
   return (
     <div className="pt-3">
@@ -484,8 +547,8 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                                 )}
                                 {/* 分析ステータス */}
                                 <div className="mt-2">
-                                  {item.analysisStatus === 'pending' && (
-                                    <p className="text-xs" style={{ color: persona.accentColor }}>🧠 AI分析中...</p>
+                                  {item.analysisStatus && item.analysisStatus !== 'done' && item.analysisStatus !== 'error' && (
+                                    <KnowledgeProgressBar status={item.analysisStatus} accent={persona.accentColor} />
                                   )}
                                   {item.analysisStatus === 'error' && (
                                     <p className="text-xs text-red-400">分析エラー: {item.analysisError}</p>
@@ -525,7 +588,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                                       <Section title="⚠ リスク" color="#f87171" items={item.analysis.risks} />
                                     )}
                                   </>
-                                ) : item.analysisStatus !== 'pending' && (
+                                ) : (item.analysisStatus === 'done' || item.analysisStatus === 'error' || !item.analysisStatus) && (
                                   <p className="pt-3 text-white/60 text-xs">分析結果はまだありません</p>
                                 )}
                                 <div className="flex items-center gap-2 pt-2">

@@ -979,8 +979,18 @@ export default function IdentityDashboard({
                                 {item.tags.slice(0, 3).map(tag => (
                                   <span key={tag} className="text-xs px-1.5 py-0.5 rounded" style={{ background: persona.accentColorLight, color: persona.accentColor }}>{tag}</span>
                                 ))}
-                                {item.analysisStatus === 'pending' && (
-                                  <span className="text-xs" style={{ color: persona.accentColor }}>🧠 分析中</span>
+                                {(item.analysisStatus === 'pending' ||
+                                  item.analysisStatus === 'parsing' ||
+                                  item.analysisStatus === 'tagging' ||
+                                  item.analysisStatus === 'summarizing' ||
+                                  item.analysisStatus === 'extracting') && (
+                                  <span className="text-xs" style={{ color: persona.accentColor }}>
+                                    🧠 {item.analysisStatus === 'parsing' ? 'ファイル解析中'
+                                      : item.analysisStatus === 'tagging' ? 'タグ生成中'
+                                      : item.analysisStatus === 'summarizing' ? 'AI 要約中'
+                                      : item.analysisStatus === 'extracting' ? '数字を抽出中'
+                                      : '分析中'}
+                                  </span>
                                 )}
                                 {item.analysis?.actions && item.analysis.actions.length > 0 && (
                                   <span className="text-xs text-fg-muted">{item.analysis.actions.length}件のアクション</span>

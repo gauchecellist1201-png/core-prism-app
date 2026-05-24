@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { KnowledgeItem, KnowledgeChunk, PersonaId, AppSettings, Persona, KnowledgeAnalysis } from '../types/identity';
+import type { KnowledgeItem, KnowledgeChunk, PersonaId, AppSettings, Persona } from '../types/identity';
 // fileParser は pdfjs/mammoth/xlsx/jszip を抱える 1MB 級の重さ。
 // ファイル取り込みが発火した瞬間にだけ読むよう動的 import に寄せて、main から外す。
 async function parseFile(file: File) {
@@ -148,64 +148,103 @@ export function useKnowledge(
   }, []);
 
   // ファイルから追加 (パース → 自動AI分析 + 財務自動取り込み)
+  //
+  // 進捗を 4 段階に細分化してユーザーに体感させる:
+  //   pending  (item を一覧に挿入した直後 = 0%)
+  //   parsing  (parseFile 中: 文字起こし / OCR 待ち)
+  //   tagging  (inferTags 中: ローカル推定なので 200ms 程度表示)
+  //   summarizing (analyzeKnowledge 中: 一番時間がかかる)
+  //   extracting  (looksLikeFinancialData が true の場合のみ: 数字抽出中)
+  //   done / error
   const addFromFile = useCallback(async (personaId: PersonaId, file: File): Promise<KnowledgeItem> => {
-    const parsed = await parseFile(file);
-    const content = parsed.text;
-    const chunks = chunkText(content);
-    const item: KnowledgeItem = {
-      id: uuidv4(),
+    const id = uuidv4();
+    // パース前にプレースホルダ item を一覧に挿入 → ユーザーに「読み始めた」感を即座に出す
+    const placeholder: KnowledgeItem = {
+      id,
       personaId,
       title: file.name.replace(/\.[^/.]+$/, ''),
-      content,
-      chunks,
+      content: '',
+      chunks: [],
       sourceType: 'file',
-      fileKind: parsed.kind,
       fileName: file.name,
       fileSize: file.size,
-      pages: parsed.pages,
-      imageBase64: parsed.imageBase64,
       createdAt: new Date().toISOString(),
-      tags: inferTags(content),
-      analysisStatus: 'pending',
+      tags: [],
+      analysisStatus: 'parsing',
     };
-    setItems(prev => [item, ...prev]);
+    setItems(prev => [placeholder, ...prev]);
 
-    const persona = getActivePersona?.();
-
-    // バックグラウンドで AI 分析を実行
-    if (settings && persona && content.length > 50) {
-      analyzeKnowledge(settings, persona, item.title, content, parsed.imageBase64)
-        .then((analysis: KnowledgeAnalysis) => {
-          updateAnalysis(item.id, { analysis, analysisStatus: 'done' });
-        })
-        .catch((err: unknown) => {
-          const raw = err instanceof Error ? err.message : String(err);
-          const msg = friendlyError(raw);
-          updateAnalysis(item.id, { analysisStatus: 'error', analysisError: msg });
-        });
-    } else {
-      updateAnalysis(item.id, { analysisStatus: 'done' });
+    let parsed: Awaited<ReturnType<typeof parseFile>>;
+    try {
+      parsed = await parseFile(file);
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : String(err);
+      updateAnalysis(id, { analysisStatus: 'error', analysisError: friendlyError(raw) });
+      throw err;
     }
 
-    // 財務データを検出 → cashflow を自動更新
-    if (settings && persona && updateCashflow && looksLikeFinancialData(item.title, content)) {
-      extractFinancialData(settings, item.title, content)
-        .then(fin => {
-          if (!fin.isFinancial) return;
+    const content = parsed.text;
+    const chunks = chunkText(content);
+
+    // tagging ステージ — ローカル推定は瞬時に終わるので、可視化のため 200ms 表示
+    updateAnalysis(id, {
+      content,
+      chunks,
+      fileKind: parsed.kind,
+      pages: parsed.pages,
+      imageBase64: parsed.imageBase64,
+      analysisStatus: 'tagging',
+    });
+    const tags = inferTags(content);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    updateAnalysis(id, { tags });
+
+    const persona = getActivePersona?.();
+    const willExtract = !!(settings && persona && updateCashflow && looksLikeFinancialData(placeholder.title, content));
+
+    // summarizing ステージ — AI 要約 (一番長い)
+    if (settings && persona && content.length > 50) {
+      updateAnalysis(id, { analysisStatus: 'summarizing' });
+      try {
+        const analysis = await analyzeKnowledge(settings, persona, placeholder.title, content, parsed.imageBase64);
+        updateAnalysis(id, { analysis, analysisStatus: willExtract ? 'extracting' : 'done' });
+      } catch (err) {
+        const raw = err instanceof Error ? err.message : String(err);
+        const msg = friendlyError(raw);
+        updateAnalysis(id, { analysisStatus: 'error', analysisError: msg });
+        // 失敗しても財務抽出は続行できるので return しない
+      }
+    } else {
+      updateAnalysis(id, { analysisStatus: willExtract ? 'extracting' : 'done' });
+    }
+
+    // extracting ステージ — 財務データを検出 → cashflow を自動更新
+    if (willExtract && settings && persona && updateCashflow) {
+      try {
+        const fin = await extractFinancialData(settings, placeholder.title, content);
+        if (fin.isFinancial) {
           const income = Number(fin.income) || 0;
           const expenseRaw = Number(fin.expense) || 0;
           // 既存仕様: cashflow.expense は負値で保持
           const expense = expenseRaw > 0 ? -expenseRaw : expenseRaw;
-          if (income === 0 && expense === 0) return;
-          const label = fin.period
-            ? `${persona.name}・${fin.period}`
-            : `${persona.name}の収支`;
-          updateCashflow(personaId, income, expense, label);
-        })
-        .catch(() => { /* 財務抽出失敗は無視 */ });
+          if (income !== 0 || expense !== 0) {
+            const label = fin.period
+              ? `${persona.name}・${fin.period}`
+              : `${persona.name}の収支`;
+            updateCashflow(personaId, income, expense, label);
+          }
+        }
+      } catch {
+        // 財務抽出失敗は無視 (要約は既に完了しているので UX に影響しない)
+      }
+      // error 状態でなければ done に確定
+      setItems(prev => prev.map(i => i.id === id
+        ? (i.analysisStatus === 'error' ? i : { ...i, analysisStatus: 'done' })
+        : i));
     }
 
-    return item;
+    // 戻り値: 最新スナップショット (UI 側はストア参照する想定だが、互換のため返す)
+    return { ...placeholder, content, chunks, tags, fileKind: parsed.kind, pages: parsed.pages, imageBase64: parsed.imageBase64 };
   }, [settings, getActivePersona, updateAnalysis, updateCashflow]);
 
   // 指定人格の全資料から財務データを抽出して cashflow を再計算
@@ -249,12 +288,12 @@ export function useKnowledge(
     return { success: true, totalIncome, totalExpense, period: latestPeriod, sources: candidates.length, failed };
   }, [items, settings, updateCashflow]);
 
-  // 既存アイテムを再分析
+  // 既存アイテムを再分析 — パース済みコンテンツに対する summarizing のみ走らせる
   const reanalyze = useCallback(async (id: string) => {
     const item = items.find(i => i.id === id);
     const persona = getActivePersona?.();
     if (!item || !settings || !persona) return;
-    updateAnalysis(id, { analysisStatus: 'pending', analysisError: undefined });
+    updateAnalysis(id, { analysisStatus: 'summarizing', analysisError: undefined });
     try {
       const analysis = await analyzeKnowledge(settings, persona, item.title, item.content, item.imageBase64);
       updateAnalysis(id, { analysis, analysisStatus: 'done' });
