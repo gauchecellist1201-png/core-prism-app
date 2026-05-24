@@ -6,13 +6,21 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
-import { generateNoteArticle, generateXPost, proposeContentTopics, TONE_OPTIONS, type SocialTone, type ContentTopicProposal } from '../lib/socialDraft';
+import {
+  generateNoteArticle, generateXPost, proposeContentTopics, TONE_OPTIONS,
+  type SocialTone, type ContentTopicProposal,
+  generateWeeklyPlan, type WeeklyPlanDay,
+  generateMultiPlatformPost, type MultiPlatformDraft,
+  PLATFORM_META, type SocialPlatform,
+} from '../lib/socialDraft';
 import AgentProposalCard from './AgentProposalCard';
 import ThinkingIndicator from './ThinkingIndicator';
 import GenerationReward from './GenerationReward';
 import ApiErrorCard from './ApiErrorCard';
 import ShareArtifactButton from './ShareArtifactButton';
 import { StudioIntro } from './StudioIntro';
+import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
+import { notifyInApp } from '../lib/inAppNotify';
 
 interface Props {
   persona: Persona;
@@ -32,6 +40,24 @@ interface History {
 }
 
 const KEY_HISTORY = 'core_content_engine_history_v1';
+const KEY_WEEKLY = 'core_content_engine_weekly_v1';
+
+interface WeeklyDayWithDrafts extends WeeklyPlanDay {
+  /** AI が書いた本文 (生成済みの場合) */
+  draft?: MultiPlatformDraft;
+  /** その日の生成が進行中か */
+  drafting?: boolean;
+}
+
+function loadWeeklyPlan(): WeeklyDayWithDrafts[] {
+  try {
+    const raw = localStorage.getItem(KEY_WEEKLY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function saveWeeklyPlan(days: WeeklyDayWithDrafts[]) {
+  try { localStorage.setItem(KEY_WEEKLY, JSON.stringify(days)); } catch { /* */ }
+}
 
 function loadHistory(): History[] {
   try {
@@ -44,10 +70,21 @@ function saveHistory(items: History[]) {
 }
 
 export default function ContentEngineStudio({ persona, settings, knowledge, onClose }: Props) {
+  const [mode, setMode] = useState<'single' | 'weekly'>('single');
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [topic, setTopic] = useState('');
   const [tone, setTone] = useState<SocialTone>('storytelling');
   const [history, setHistory] = useState<History[]>(() => loadHistory());
+
+  // ─── 週次計画 ───
+  const [weeklyDays, setWeeklyDays] = useState<WeeklyDayWithDrafts[]>(() => loadWeeklyPlan());
+  const [weeklyBusy, setWeeklyBusy] = useState(false);
+  const [weeklyFocus, setWeeklyFocus] = useState('');
+  const [delegating, setDelegating] = useState(false);
+
+  const queue = useAgentTaskQueue();
+
+  useEffect(() => { saveWeeklyPlan(weeklyDays); }, [weeklyDays]);
 
   const [noteTitle, setNoteTitle] = useState('');
   const [noteBody, setNoteBody] = useState('');
@@ -159,6 +196,70 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
     } catch { /* */ }
   };
 
+  // ─── 週次計画ジェネレーター ───
+  const buildWeeklyPlan = useCallback(async () => {
+    setWeeklyBusy(true);
+    setError(null);
+    try {
+      const days = await generateWeeklyPlan({
+        settings, persona,
+        knowledge: personaKnowledge.slice(0, 6),
+        focus: weeklyFocus || undefined,
+      });
+      setWeeklyDays(days);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setWeeklyBusy(false);
+    }
+  }, [settings, persona, personaKnowledge, weeklyFocus]);
+
+  // ─── 各投稿カードの本文を AI に書いてもらう ───
+  const draftDay = useCallback(async (dayIdx: number) => {
+    setWeeklyDays(prev => prev.map((d, i) => i === dayIdx ? { ...d, drafting: true } : d));
+    try {
+      const day = weeklyDays[dayIdx];
+      if (!day) return;
+      const draft = await generateMultiPlatformPost({
+        settings, persona,
+        topic: day.title,
+        tone: day.tone,
+        knowledge: personaKnowledge.slice(0, 4),
+        platforms: day.platforms,
+        customInstruction: day.hook ? `切り口: ${day.hook}` : undefined,
+      });
+      setWeeklyDays(prev => prev.map((d, i) => i === dayIdx ? { ...d, draft, drafting: false } : d));
+    } catch (e) {
+      setWeeklyDays(prev => prev.map((d, i) => i === dayIdx ? { ...d, drafting: false } : d));
+      notifyInApp({ kind: 'warn', title: 'AI 本文生成に失敗', body: e instanceof Error ? e.message : String(e) });
+    }
+  }, [weeklyDays, settings, persona, personaKnowledge]);
+
+  // ─── 週次計画を CMO に委任 ───
+  const delegateToCMO = useCallback(() => {
+    if (weeklyDays.length === 0) {
+      notifyInApp({ kind: 'info', title: '先に週次計画を作ってください', body: '「今週の 7 日計画を AI に」ボタンから' });
+      return;
+    }
+    setDelegating(true);
+    const summary = weeklyDays.map(d => `${d.weekday}: ${d.title}`).join(' / ');
+    queue.propose({
+      title: `今週の SNS 投稿 7 本を仕上げる`,
+      summary: `${weeklyDays.length} 日分の投稿テーマ (${summary.slice(0, 120)}…) を CMO が本文化し、各プラットフォーム向けに最適化、ハッシュタグまで揃えます。`,
+      why: '計画があっても本文と画像が無ければ投稿できない。今週の 7 本を「投稿ボタンを押すだけ」状態にする。',
+      expected: `7 日分の投稿本文 (各プラットフォーム最適化) + ハッシュタグ + 投稿時刻 が 1 表に揃う`,
+      dueDays: 2,
+      steps: [
+        { cxo: 'CMO', label: '各日のテーマから多プラットフォーム本文を生成 (X / IG / note / LinkedIn)' },
+        { cxo: 'CDO', label: '各投稿のビジュアル指示 (画像 or 動画) を 1 枚に' },
+        { cxo: 'CDS', label: '過去投稿のエンゲージメントから投稿時刻を最適化' },
+        { cxo: 'CMO', label: '7 本を一覧表に整え、コピペで投稿可能な状態に' },
+      ],
+    });
+    notifyInApp({ kind: 'success', title: '週次計画を CMO に委任しました', body: 'AgentTaskQueue で進捗が見えます' });
+    setTimeout(() => setDelegating(false), 600);
+  }, [weeklyDays, queue]);
+
   const accent = persona.accentColor;
 
   return (
@@ -208,8 +309,24 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
           <button onClick={onClose} aria-label="閉じる" className="hover:text-fg" style={{ width: 40, height: 40, minWidth: 40, borderRadius: 999, color: 'var(--fg)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontSize: 20, lineHeight: 1, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </header>
 
-        {/* ステップインジケータ */}
-        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        {/* モード切替: 単発 / 週次 */}
+        <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: 6 }}>
+          <button onClick={() => setMode('single')} style={{
+            flex: 1, padding: '0.55rem', borderRadius: 8,
+            background: mode === 'single' ? accent : 'rgba(255,255,255,0.05)',
+            color: mode === 'single' ? '#fff' : 'var(--fg-muted)',
+            border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer',
+          }}>📝 単発投稿 (note × X)</button>
+          <button onClick={() => setMode('weekly')} style={{
+            flex: 1, padding: '0.55rem', borderRadius: 8,
+            background: mode === 'weekly' ? accent : 'rgba(255,255,255,0.05)',
+            color: mode === 'weekly' ? '#fff' : 'var(--fg-muted)',
+            border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer',
+          }}>📅 週次計画 (7 日 grid)</button>
+        </div>
+
+        {/* ステップインジケータ (単発モードのみ) */}
+        {mode === 'single' && <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {(['テーマを入力', '生成', 'コピー&投稿'] as const).map((label, i) => {
               const num = (i + 1) as 1 | 2 | 3;
@@ -230,9 +347,181 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
               );
             })}
           </div>
-        </div>
+        </div>}
 
-        {step === 1 && (
+        {/* ─── 週次計画モード ─── */}
+        {mode === 'weekly' && (
+          <div style={{ padding: '1.25rem 1.5rem 1.5rem' }}>
+            <div style={{ marginBottom: 14 }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--fg-muted)', lineHeight: 1.7 }}>
+                来週 7 日分の SNS 投稿テーマを AI が一気に組み立てます。
+                各カードの「✨ AI に書いてもらう」で本文も自動生成。
+                出来た計画は <strong style={{ color: 'var(--fg)' }}>CMO に委任</strong>して仕上げまで任せられます。
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+              <input
+                value={weeklyFocus}
+                onChange={e => setWeeklyFocus(e.target.value)}
+                placeholder="今週のフォーカス (任意 — 例: 新サービス告知)"
+                style={{
+                  flex: 1, minWidth: 200, padding: '0.7rem 0.95rem', borderRadius: 10,
+                  background: 'var(--surface-3)', border: '1px solid var(--border)',
+                  color: 'var(--fg)', fontSize: '0.88rem',
+                }}
+              />
+              <button
+                onClick={buildWeeklyPlan}
+                disabled={weeklyBusy}
+                style={{
+                  padding: '0.7rem 1.2rem',
+                  background: weeklyBusy ? 'rgba(255,255,255,0.06)' : `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                  color: '#fff', border: 'none', borderRadius: 10,
+                  fontSize: '0.85rem', fontWeight: 800, cursor: weeklyBusy ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >{weeklyBusy ? '計画中…' : '✨ 今週の 7 日計画を AI に'}</button>
+              <button
+                onClick={delegateToCMO}
+                disabled={delegating || weeklyDays.length === 0}
+                style={{
+                  padding: '0.7rem 1.1rem',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: weeklyDays.length === 0 ? 'var(--fg-muted)' : 'var(--fg)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 10, fontSize: '0.82rem', fontWeight: 700,
+                  cursor: delegating || weeklyDays.length === 0 ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >🤝 CMO に委任</button>
+            </div>
+
+            <ApiErrorCard error={error} onRetry={buildWeeklyPlan} />
+
+            {weeklyBusy && (
+              <ThinkingIndicator
+                accent={accent}
+                variant="compact"
+                messages={[
+                  '🗓 7 日間のリズムを設計しています…',
+                  '🎭 トーンを散らしています…',
+                  '📲 各日のプラットフォームを選んでいます…',
+                ]}
+              />
+            )}
+
+            {weeklyDays.length > 0 && !weeklyBusy && (
+              <div style={{ overflowX: 'auto' }}>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(7, minmax(180px, 1fr))',
+                  gap: 8,
+                  minWidth: 1260,
+                }}>
+                  {weeklyDays.map((d, i) => {
+                    const toneMeta = TONE_OPTIONS.find(t => t.value === d.tone);
+                    return (
+                      <div key={d.date} style={{
+                        background: 'var(--surface-3)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 12,
+                        padding: '0.7rem',
+                        display: 'flex', flexDirection: 'column', gap: 6,
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--fg-muted)', fontWeight: 700 }}>
+                            {d.weekday} / {d.date.slice(5)}
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: accent, fontWeight: 700 }}>{d.bestTime}</span>
+                        </div>
+                        <p style={{ fontSize: '0.85rem', fontWeight: 800, lineHeight: 1.35, color: 'var(--fg)' }}>
+                          {d.title}
+                        </p>
+                        {d.hook && (
+                          <p style={{ fontSize: '0.72rem', color: 'var(--fg-muted)', fontStyle: 'italic', lineHeight: 1.5 }}>
+                            {d.hook}
+                          </p>
+                        )}
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                          {toneMeta && (
+                            <span style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', background: `${accent}22`, color: accent, borderRadius: 999, fontWeight: 700 }}>
+                              {toneMeta.emoji} {toneMeta.label}
+                            </span>
+                          )}
+                          {d.platforms.map(p => (
+                            <span key={p} style={{
+                              fontSize: '0.65rem', padding: '0.15rem 0.4rem',
+                              background: 'rgba(255,255,255,0.05)', color: 'var(--fg)',
+                              borderRadius: 999, fontWeight: 600,
+                            }}>{PLATFORM_META[p as SocialPlatform]?.emoji ?? ''} {PLATFORM_META[p as SocialPlatform]?.label?.split(' ')[0] ?? p}</span>
+                          ))}
+                        </div>
+
+                        <button
+                          onClick={() => draftDay(i)}
+                          disabled={d.drafting}
+                          style={{
+                            marginTop: 'auto',
+                            padding: '0.5rem',
+                            background: d.draft ? 'rgba(34, 197, 94, 0.15)' : accent,
+                            color: d.draft ? '#22c55e' : '#fff',
+                            border: d.draft ? '1px solid rgba(34, 197, 94, 0.4)' : 'none',
+                            borderRadius: 8,
+                            fontSize: '0.72rem', fontWeight: 800,
+                            cursor: d.drafting ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {d.drafting ? '書いてます…' : d.draft ? '✓ 書き直す' : '✨ AI に書いてもらう'}
+                        </button>
+
+                        {d.draft && (
+                          <div style={{ marginTop: 4, display: 'grid', gap: 4 }}>
+                            {d.platforms.map(p => {
+                              const body = d.draft?.posts?.[p as SocialPlatform];
+                              if (!body) return null;
+                              return (
+                                <details key={p} style={{
+                                  fontSize: '0.7rem',
+                                  background: 'rgba(0,0,0,0.2)',
+                                  borderRadius: 6, padding: '0.35rem 0.5rem',
+                                }}>
+                                  <summary style={{ cursor: 'pointer', color: 'var(--fg-muted)', fontWeight: 700 }}>
+                                    {PLATFORM_META[p as SocialPlatform]?.emoji ?? ''} {PLATFORM_META[p as SocialPlatform]?.label?.split(' ')[0] ?? p}
+                                  </summary>
+                                  <p style={{ marginTop: 4, color: 'var(--fg)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                                    {body}
+                                  </p>
+                                  <button
+                                    onClick={() => copy(body, `wk-${i}-${p}`)}
+                                    style={{
+                                      marginTop: 4, padding: '0.2rem 0.5rem', fontSize: '0.65rem',
+                                      background: 'rgba(255,255,255,0.08)', color: 'var(--fg)',
+                                      border: '1px solid rgba(255,255,255,0.12)', borderRadius: 4, cursor: 'pointer',
+                                    }}
+                                  >{copiedKey === `wk-${i}-${p}` ? '✓' : 'コピー'}</button>
+                                </details>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {weeklyDays.length === 0 && !weeklyBusy && (
+              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--fg-muted)' }}>
+                <p style={{ fontSize: '0.85rem', marginBottom: 4 }}>まだ計画がありません</p>
+                <p style={{ fontSize: '0.78rem' }}>上のボタンで AI に来週の 7 日計画を作ってもらいましょう</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {mode === 'single' && step === 1 && (
           <div style={{ padding: '1.25rem 1.5rem 0' }}>
             <StudioIntro
               id="content-engine"
@@ -295,7 +584,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
         )}
 
         {/* ─── STEP 1: AI が先回りでテーマを 3 案提案 ─── */}
-        {step === 1 && (
+        {mode === 'single' && step === 1 && (
           <div style={{ padding: '1.5rem' }}>
             <p style={{ fontSize: '0.85rem', color: 'var(--fg-muted)', marginBottom: '1.1rem', lineHeight: 1.7 }}>
               入力はいりません。AI が今日の投稿テーマを <strong style={{ color: 'var(--fg)' }}>3 案</strong>先に考えました。
@@ -410,7 +699,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
         )}
 
         {/* ─── STEP 2: 生成中 ─── */}
-        {step === 2 && (
+        {mode === 'single' && step === 2 && (
           <ThinkingIndicator
             accent={accent}
             variant="full"
@@ -431,7 +720,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
         )}
 
         {/* ─── STEP 3: 結果 + コピー&投稿 ─── */}
-        {step === 3 && (
+        {mode === 'single' && step === 3 && (
           <div style={{ padding: '1.5rem' }}>
             {/* note セクション */}
             <section style={{ marginBottom: 24 }}>
@@ -556,7 +845,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
         )}
 
         {/* 履歴 */}
-        {history.length > 0 && step === 1 && (
+        {mode === 'single' && history.length > 0 && step === 1 && (
           <div style={{ padding: '0 1.5rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 0 }}>
             <p style={{ fontSize: 11, letterSpacing: '0.15em', color: 'var(--fg-muted)', fontWeight: 700, padding: '1rem 0 6px' }}>過去の生成履歴</p>
             <div style={{ display: 'grid', gap: 6 }}>
