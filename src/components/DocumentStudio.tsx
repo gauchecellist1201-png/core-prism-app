@@ -95,9 +95,11 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
   const [notes, setNotes] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('月末締・翌月末日払い');
 
+  // このペルソナで実際に取引した顧客だけを候補に (他人格の顧客が混入しないように)
+  const personaClients = useMemo(() => inv.getClientsForPersona(persona.id), [inv.clients, inv.invoices, inv.documents, persona.id]);
   const selectedClient = useMemo(() =>
-    inv.clients.find(c => c.id === selectedClientId) || null,
-    [inv.clients, selectedClientId]);
+    personaClients.find(c => c.id === selectedClientId) || null,
+    [personaClients, selectedClientId]);
 
   const totals = useMemo(() => computeTotals(lines), [lines]);
 
@@ -413,7 +415,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
                       <label className="cp-label">取引先</label>
                       <select value={selectedClientId || ''} onChange={e => setSelectedClientId(e.target.value || null)} className="cp-select">
                         <option value="">— 取引先を選択 —</option>
-                        {inv.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        {personaClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
                     </div>
                     {deals.length > 0 && (

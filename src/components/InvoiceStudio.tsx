@@ -39,9 +39,10 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
     representativeName: '',
   });
 
-  // 顧客選択
+  // 顧客選択 — このペルソナで実際に取引した顧客だけに限定 (他人格の顧客が混入しないように)
+  const personaClients = useMemo(() => inv.getClientsForPersona(persona.id), [inv.clients, inv.invoices, inv.documents, persona.id]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const selectedClient = useMemo(() => inv.clients.find(c => c.id === selectedClientId) || null, [inv.clients, selectedClientId]);
+  const selectedClient = useMemo(() => personaClients.find(c => c.id === selectedClientId) || null, [personaClients, selectedClientId]);
   const [newClient, setNewClient] = useState<Client>({ id: '', name: '', contactName: '', address: '', email: '', postalCode: '' });
 
   // 請求書内容
@@ -92,7 +93,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
       if (result.dueKind) setDueDate(calcDueDate(issueDate, result.dueKind));
       // AI が依頼文から抽出した宛先を反映 (既存顧客に無ければ新規顧客に)
       if (result.clientName) {
-        const matched = inv.clients.find(c => c.name === result.clientName);
+        const matched = personaClients.find(c => c.name === result.clientName);
         if (matched) {
           setSelectedClientId(matched.id);
         } else {
@@ -214,7 +215,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
             { id: 'compose' as Tab, label: '✍ 新規作成' },
             { id: 'history' as Tab, label: `🗂 履歴 (${personaInvoices.length})` },
             { id: 'issuer' as Tab, label: '🏢 発行者' },
-            { id: 'clients' as Tab, label: `👥 顧客 (${inv.clients.length})` },
+            { id: 'clients' as Tab, label: `👥 顧客 (${personaClients.length})` },
           ]).map(t => (
             <button
               key={t.id}
@@ -319,9 +320,9 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
               {/* 顧客 */}
               <div className="rounded-xl p-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                 <p className="text-fg-muted text-xs tracking-wider uppercase mb-2">宛先</p>
-                {inv.clients.length > 0 && (
+                {personaClients.length > 0 && (
                   <div className="flex gap-1.5 flex-wrap mb-2">
-                    {inv.clients.slice(0, 8).map(c => (
+                    {personaClients.slice(0, 8).map(c => (
                       <button
                         key={c.id}
                         onClick={() => { setSelectedClientId(c.id); setNewClient({ id: '', name: '', contactName: '', address: '', email: '', postalCode: '' }); }}
@@ -641,9 +642,9 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
 
           {tab === 'clients' && (
             <div className="space-y-1.5">
-              {inv.clients.length === 0 ? (
-                <p className="text-fg-muted text-sm text-center py-8">顧客が登録されていません。請求書発行時に自動で追加されます</p>
-              ) : inv.clients.map(c => (
+              {personaClients.length === 0 ? (
+                <p className="text-fg-muted text-sm text-center py-8">この人格で取引した顧客はまだありません。請求書を発行すると自動で追加されます</p>
+              ) : personaClients.map(c => (
                 <div key={c.id} className="rounded-lg p-2.5 flex items-center justify-between gap-2"
                   style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                   <div className="min-w-0 flex-1">

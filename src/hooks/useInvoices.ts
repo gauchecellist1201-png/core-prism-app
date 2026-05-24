@@ -220,6 +220,21 @@ export function useInvoices() {
     documents.filter(d => d.dealId === dealId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [documents]);
 
+  // 顧客マスター (Client) は personaId フィールドを持たない共通管理だが、
+  // UI 側では「この人格で実際に取引したことのある顧客」だけを見せたい
+  // (例: 不動産画面に音楽教室の顧客が出ない)。
+  // → 当人格の invoices / documents の clientSnapshot.id を集計して限定する。
+  const getClientsForPersona = useCallback((personaId: string) => {
+    const usedIds = new Set<string>();
+    for (const inv of invoices) {
+      if (inv.personaId === personaId && inv.clientSnapshot?.id) usedIds.add(inv.clientSnapshot.id);
+    }
+    for (const d of documents) {
+      if (d.personaId === personaId && d.clientSnapshot?.id) usedIds.add(d.clientSnapshot.id);
+    }
+    return clients.filter(c => usedIds.has(c.id));
+  }, [clients, invoices, documents]);
+
   // テンプレート
   const saveTemplate = useCallback((t: Omit<InvoiceTemplate, 'id' | 'createdAt'>) => {
     const tpl: InvoiceTemplate = {
@@ -241,5 +256,6 @@ export function useInvoices() {
     saveTemplate, removeTemplate, getTemplatesForPersona,
     createDocument, updateDocument, removeDocument, duplicateAsNext,
     getDocumentsForPersona, getDocumentsForDeal,
+    getClientsForPersona,
   };
 }
