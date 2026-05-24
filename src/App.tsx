@@ -44,6 +44,7 @@ import AgentTeamMonitor from './components/AgentTeamMonitor';
 import ExtensionCaptureToast from './components/ExtensionCaptureToast';
 import CxoWelcomeCard from './components/CxoWelcomeCard';
 import StripeFailureBanner from './components/StripeFailureBanner';
+import InstallPwaBanner from './components/InstallPwaBanner';
 import { readSharedFromUrl } from './lib/shareLink';
 
 import type { AppSettings, ChatMessage } from './types/identity';
@@ -505,6 +506,8 @@ export default function App() {
       {view === 'dashboard' && <ExtensionCaptureToast brand="prism" />}
       {/* 初回 dashboard 訪問時の AI 会社ウェルカム (13 CXO の自己紹介 + サンプルタスク投入) */}
       {view === 'dashboard' && <CxoWelcomeCard brand="prism" />}
+      {/* PWA インストール導線 — Android/Chrome prompt + iOS Safari ガイド */}
+      {view === 'dashboard' && <InstallPwaBanner brand="prism" />}
     </>
   );
 }

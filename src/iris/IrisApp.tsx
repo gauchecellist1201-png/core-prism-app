@@ -11,6 +11,7 @@ import AgentTeamMonitor from '../components/AgentTeamMonitor';
 import ExtensionCaptureToast from '../components/ExtensionCaptureToast';
 import CxoWelcomeCard from '../components/CxoWelcomeCard';
 import StripeFailureBanner from '../components/StripeFailureBanner';
+import InstallPwaBanner from '../components/InstallPwaBanner';
 import IrisDashboard from './IrisDashboard';
 import TutorialOverlay from '../components/TutorialOverlay';
 import WowOnboarding from '../components/WowOnboarding';
@@ -117,6 +118,8 @@ export default function IrisApp() {
       <WowOnboarding brand="iris" trigger={tutorialDoneTick} />
       {/* どの入力欄でも音声入力できる */}
       <GlobalVoiceInput />
+      {/* PWA インストール導線 — Android/Chrome prompt + iOS Safari ガイド */}
+      <InstallPwaBanner brand="iris" />
     </>
   );
 }
