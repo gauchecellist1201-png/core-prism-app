@@ -1,10 +1,15 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Legend, CartesianGrid } from 'recharts';
 import type { Persona, AppSettings } from '../types/identity';
 import type { PersonRecord, PersonInteraction, SentimentType, InteractionType } from '../types/people';
 import { usePeople } from '../hooks/usePeople';
-import { analyzePerson, type PersonAnalysis } from '../lib/peopleAnalyst';
+import { usePeopleMood, MOOD_LABEL, MOOD_COLOR, type MoodKind } from '../hooks/usePeopleMood';
+import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
+import {
+  analyzePerson, buildOneOnOneAgenda, buildReopenScript,
+  type PersonAnalysis, type OneOnOneAgenda, type ReopenScript,
+} from '../lib/peopleAnalyst';
 import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
 import { confirmAction } from '../lib/confirmDialog';
@@ -46,8 +51,78 @@ const TRUST_LABEL: Record<string, string> = {
   unknown:   '❓ 不明',
 };
 
+// ─── 連絡頻度チップの判定 ─────────────────────────────────────
+type ContactStatus = 'fresh' | 'warm' | 'cold' | 'silent';
+function getContactStatus(lastDateISO?: string): { status: ContactStatus; daysSince: number | null } {
+  if (!lastDateISO) return { status: 'silent', daysSince: null };
+  const last = new Date(lastDateISO);
+  if (isNaN(last.getTime())) return { status: 'silent', daysSince: null };
+  const now = new Date();
+  const days = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+  if (days < 7)   return { status: 'fresh', daysSince: days };
+  if (days < 30)  return { status: 'warm',  daysSince: days };
+  return            { status: 'cold',  daysSince: days };
+}
+const CONTACT_CHIP: Record<ContactStatus, { label: string; bg: string; fg: string }> = {
+  fresh:  { label: '最近やり取り済み', bg: '#1f3a2a', fg: '#4ade80' },
+  warm:   { label: '⚠ 連絡しましょう', bg: '#3a2f1a', fg: '#fbbf24' },
+  cold:   { label: '🚨 久しぶりに連絡', bg: '#3a1f1f', fg: '#f87171' },
+  silent: { label: '未接触',            bg: '#2a2a3a', fg: '#9ca3af' },
+};
+
+// ─── Markdown エクスポート ─────────────────────────────────────
+function buildMarkdownExport(
+  person: PersonRecord,
+  interactions: PersonInteraction[],
+  moods: { date: string; mood: MoodKind; note?: string }[],
+): string {
+  const lines: string[] = [];
+  lines.push(`# 👤 ${person.name}`);
+  if (person.role || person.company) {
+    lines.push(`> ${person.role || ''}${person.role && person.company ? ' · ' : ''}${person.company || ''}`);
+  }
+  lines.push('');
+  if (person.tags && person.tags.length > 0) lines.push(`**タグ**: ${person.tags.join(', ')}  `);
+  if (person.lastInteraction)                lines.push(`**最終接触**: ${person.lastInteraction}  `);
+  if (person.notes)                          lines.push(`\n**メモ**\n\n${person.notes}\n`);
+  lines.push('');
+
+  lines.push(`## 🤝 やり取り履歴 (${interactions.length}件)`);
+  lines.push('');
+  if (interactions.length === 0) lines.push('_記録なし_\n');
+  for (const i of interactions) {
+    lines.push(`### ${i.date} ${INTERACTION_LABEL[i.type] || i.type}`);
+    if (i.sentiment) lines.push(`**センチメント**: ${SENTIMENT_LABEL[i.sentiment]}  `);
+    lines.push(i.summary);
+    if (i.highlights && i.highlights.length > 0) {
+      lines.push('\n**良かった点**');
+      i.highlights.forEach(h => lines.push(`- ${h}`));
+    }
+    if (i.nextTopics && i.nextTopics.length > 0) {
+      lines.push('\n**次回の話題**');
+      i.nextTopics.forEach(t => lines.push(`- ${t}`));
+    }
+    lines.push('');
+  }
+
+  if (moods.length > 0) {
+    lines.push('## 🪶 感情ジャーナル');
+    lines.push('');
+    for (const m of moods) {
+      lines.push(`- **${m.date}** ${MOOD_LABEL[m.mood]}${m.note ? ` — ${m.note}` : ''}`);
+    }
+    lines.push('');
+  }
+
+  lines.push(`---`);
+  lines.push(`*CORE Prism PeopleStudio で書き出し — ${new Date().toISOString().slice(0, 10)}*`);
+  return lines.join('\n');
+}
+
 export default function PeopleStudio({ persona, settings, onClose }: Props) {
   const pp = usePeople();
+  const mood = usePeopleMood();
+  const queue = useAgentTaskQueue();
   const people = useMemo(() => pp.getForPersona(persona.id), [pp.people, persona.id]);
 
   const [view, setView] = useState<View>('list');
@@ -83,32 +158,32 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
     >
       <motion.div
         className="cp-modal"
-        style={{ maxWidth: '960px' }}
+        style={{ maxWidth: '960px', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         initial={{ scale: 0.97, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.97, y: 12 }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="cp-modal-header">
+        <div className="cp-modal-header" style={{ paddingTop: 'max(12px, env(safe-area-inset-top, 0px))' }}>
           <div className="cp-row min-w-0">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}>👥</div>
             <div className="min-w-0">
               <p className="cp-h2 truncate">人物ケア</p>
-              <p className="cp-meta truncate">{persona.name} · 1on1 履歴 + センチメント分析</p>
+              <p className="cp-meta truncate">{persona.name} · 1on1 アジェンダ + 連絡頻度 + 感情ジャーナル</p>
             </div>
           </div>
           <div className="cp-row">
             {view !== 'list' && (
               <button onClick={() => { setView('list'); setSelectedId(null); }}
-                className="cp-btn cp-btn-ghost cp-btn-sm">← 一覧</button>
+                className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 44, minWidth: 44 }}>← 一覧</button>
             )}
             {view === 'list' && (
               <button onClick={() => setView('compose')}
                 className="cp-btn cp-btn-primary cp-btn-sm"
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
                 ＋ 人物を追加
               </button>
             )}
-            <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
+            <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 44, minWidth: 44 }}>✕</button>
           </div>
         </div>
 
@@ -118,7 +193,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
             accent={persona.accentColor}
             emoji="👥"
             what="関わる人 1 人 1 人の「いま元気か / 何を考えているか」を 1 画面で見守る場所です。"
-            tryThis="人物カードを開いて「🤖 AI 分析」を押す → 強み・懸念・次の 1on1 で話すテーマまで出ます。"
+            tryThis="人物カードを開いて「🗒 1on1 アジェンダを作る」を押す → 雑談・進捗・課題・次の一歩・フィードバックの 5 ブロックが揃います。"
             example="チームメンバーの過去 1on1 5 件 → 信頼トレンド・リスクフラグ・次の話題 3 案を 30 秒で。"
             sampleLabel="出来上がる人物カード"
             samplePreview={
@@ -136,21 +211,13 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                 }}
                 aria-label="人物分析のサンプル"
               >
-                {/* ヘッダ: アバター + 名前 + センチメント */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
                   <div
                     style={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: '50%',
-                      background: persona.accentColor,
-                      color: '#0a0a0f',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 7,
-                      fontWeight: 800,
-                      flexShrink: 0,
+                      width: 14, height: 14, borderRadius: '50%',
+                      background: persona.accentColor, color: '#0a0a0f',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 7, fontWeight: 800, flexShrink: 0,
                     }}
                   >
                     田
@@ -161,16 +228,11 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                   </div>
                   <span style={{ fontSize: 7 }}>😊</span>
                 </div>
-
-                {/* トレンド + サマリ */}
                 <div
                   style={{
                     background: `${persona.accentColor}14`,
                     borderLeft: `2px solid ${persona.accentColor}`,
-                    padding: '3px 4px',
-                    marginBottom: 3,
-                    fontSize: 5.5,
-                    color: 'var(--fg)',
+                    padding: '3px 4px', marginBottom: 3, fontSize: 5.5, color: 'var(--fg)',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
@@ -179,22 +241,16 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                   </div>
                   <div style={{ opacity: 0.9 }}>業績の自信が戻りつつある</div>
                 </div>
-
-                {/* 強み + 懸念 */}
                 <div style={{ fontSize: 5.5, color: 'var(--fg)', marginBottom: 2 }}>
                   <span style={{ color: '#4ade80' }}>✓</span> 数字の責任感が強い
                 </div>
                 <div style={{ fontSize: 5.5, color: 'var(--fg)', marginBottom: 3 }}>
                   <span style={{ color: '#f59e0b' }}>⚠</span> 部下への共有量が少ない
                 </div>
-
-                {/* 次回トピック */}
                 <div
                   style={{
                     borderTop: `1px dashed ${persona.accentColor}30`,
-                    paddingTop: 3,
-                    fontSize: 5,
-                    color: 'var(--fg)',
+                    paddingTop: 3, fontSize: 5, color: 'var(--fg)',
                   }}
                 >
                   <div style={{ opacity: 0.6, marginBottom: 1 }}>次の 1on1 で話すと良いこと</div>
@@ -221,7 +277,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                       <p>人物がまだ登録されていません</p>
                       <button onClick={() => setView('compose')}
                         className="cp-btn cp-btn-primary mt-3"
-                        style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                        style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
                         ＋ 最初の人物を登録
                       </button>
                       <SampleDataCTA accent={persona.accentColor} hint="サンプルの人物と面談記録が入り、ケア機能をすぐ試せます" />
@@ -231,20 +287,31 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                       {filtered.map(p => {
                         const pInteractions = pp.getInteractionsForPerson(p.id);
                         const lastSentiment = pInteractions.find(i => i.sentiment)?.sentiment;
+                        const cs = getContactStatus(p.lastInteraction);
+                        const chip = CONTACT_CHIP[cs.status];
                         return (
                           <button key={p.id} onClick={() => openDetail(p.id)}
-                            className="cp-card cp-row-between text-left w-full hover:scale-[1.005] transition-transform">
+                            className="cp-card cp-row-between text-left w-full hover:scale-[1.005] transition-transform"
+                            style={{ minHeight: 56 }}>
                             <div className="cp-row min-w-0">
                               <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0"
                                 style={{ background: persona.accentColorLight, color: persona.accentColor }}>
                                 {p.name.charAt(0)}
                               </div>
                               <div className="min-w-0">
-                                <div className="cp-row" style={{ gap: 6 }}>
+                                <div className="cp-row" style={{ gap: 6, flexWrap: 'wrap' }}>
                                   <p className="cp-h3 truncate">{p.name}</p>
                                   {lastSentiment && (
                                     <span className="text-xs" style={{ color: SENTIMENT_COLOR[lastSentiment] }}>
                                       {SENTIMENT_LABEL[lastSentiment].split(' ')[0]}
+                                    </span>
+                                  )}
+                                  {(cs.status === 'warm' || cs.status === 'cold') && (
+                                    <span className="cp-pill" style={{
+                                      color: chip.fg, background: chip.bg, borderColor: chip.fg + '40',
+                                      fontSize: 10, fontWeight: 600,
+                                    }}>
+                                      {chip.label}{cs.daysSince != null ? ` (${cs.daysSince}日)` : ''}
                                     </span>
                                   )}
                                 </div>
@@ -252,7 +319,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                                   {p.role && `${p.role} `}{p.company && `· ${p.company}`}
                                 </p>
                                 {p.lastInteraction && (
-                                  <p className="cp-tiny">最終接触: {p.lastInteraction}</p>
+                                  <p className="cp-tiny">最終接触: {p.lastInteraction}{cs.daysSince != null ? ` (${cs.daysSince}日前)` : ''}</p>
                                 )}
                               </div>
                             </div>
@@ -282,6 +349,12 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                 interactions={interactions}
                 persona={persona}
                 settings={settings}
+                moods={mood.getMoodsForPerson(selected.id)}
+                monthlyTrend={mood.getMonthlyTrend(selected.id, 6)}
+                onAddMood={(m, note) => mood.addMood(selected.id, m, note)}
+                onRemoveMood={mood.removeMood}
+                recentAgentTaskTitles={queue.tasks.slice(0, 6).map(t => t.title)}
+                onProposeAgentTask={(draft) => queue.propose(draft)}
                 onUpdate={(patch) => pp.upsertPerson({ ...selected, ...patch })}
                 onDelete={async () => { if (await confirmAction({ title: 'この人物を削除しますか?', body: 'やり取りの履歴も一緒に消えます。', tone: 'danger' })) { pp.removePerson(selected.id); setView('list'); } }}
                 onAddInteraction={(inter) => pp.addInteraction({ ...inter, personId: selected.id })}
@@ -309,11 +382,23 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
 }
 
 // ─── 詳細コンポーネント ──────────────────────────────────────
-function PersonDetail({ person, interactions, persona, settings, onUpdate, onDelete, onAddInteraction, onRemoveInteraction }: {
+function PersonDetail({
+  person, interactions, persona, settings,
+  moods, monthlyTrend,
+  onAddMood, onRemoveMood,
+  recentAgentTaskTitles, onProposeAgentTask,
+  onUpdate, onDelete, onAddInteraction, onRemoveInteraction,
+}: {
   person: PersonRecord;
   interactions: PersonInteraction[];
   persona: Persona;
   settings: AppSettings;
+  moods: ReturnType<ReturnType<typeof usePeopleMood>['getMoodsForPerson']>;
+  monthlyTrend: ReturnType<ReturnType<typeof usePeopleMood>['getMonthlyTrend']>;
+  onAddMood: (m: MoodKind, note?: string) => void;
+  onRemoveMood: (id: string) => void;
+  recentAgentTaskTitles: string[];
+  onProposeAgentTask: (draft: Parameters<ReturnType<typeof useAgentTaskQueue>['propose']>[0]) => void;
   onUpdate: (patch: Partial<PersonRecord>) => void;
   onDelete: () => void;
   onAddInteraction: (i: Omit<PersonInteraction, 'id' | 'personId'>) => void;
@@ -327,6 +412,22 @@ function PersonDetail({ person, interactions, persona, settings, onUpdate, onDel
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState(person.notes || '');
+
+  // 1on1 アジェンダ
+  const [agenda, setAgenda] = useState<OneOnOneAgenda | null>(null);
+  const [agendaBusy, setAgendaBusy] = useState(false);
+  const [agendaError, setAgendaError] = useState<string | null>(null);
+
+  // 久しぶり連絡スクリプト
+  const [reopen, setReopen] = useState<ReopenScript | null>(null);
+  const [reopenBusy, setReopenBusy] = useState(false);
+
+  // エクスポート / 委任
+  const [exportToast, setExportToast] = useState<string | null>(null);
+  const [delegateToast, setDelegateToast] = useState<string | null>(null);
+
+  // 連絡頻度ステータス
+  const cs = useMemo(() => getContactStatus(person.lastInteraction), [person.lastInteraction]);
 
   // センチメントチャートデータ
   const chartData = useMemo(() => {
@@ -354,10 +455,93 @@ function PersonDetail({ person, interactions, persona, settings, onUpdate, onDel
     }
   }, [settings, person, interactions]);
 
+  const handleBuildAgenda = useCallback(async () => {
+    setAgendaBusy(true);
+    setAgendaError(null);
+    try {
+      const a = await buildOneOnOneAgenda(settings, person, interactions, {
+        daysSinceContact: cs.daysSince ?? undefined,
+        personaName: persona.name,
+        recentAgentTaskTitles,
+      });
+      setAgenda(a);
+    } catch (e) {
+      setAgendaError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAgendaBusy(false);
+    }
+  }, [settings, person, interactions, cs.daysSince, persona.name, recentAgentTaskTitles]);
+
+  const handleBuildReopen = useCallback(async () => {
+    if (cs.daysSince == null) return;
+    setReopenBusy(true);
+    try {
+      const r = await buildReopenScript(settings, person, interactions, cs.daysSince);
+      setReopen(r);
+    } catch (e) {
+      setReopen({ subject: '生成に失敗しました', body: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setReopenBusy(false);
+    }
+  }, [settings, person, interactions, cs.daysSince]);
+
+  const handleExport = useCallback(async () => {
+    const md = buildMarkdownExport(person, interactions, moods);
+    try {
+      await navigator.clipboard?.writeText(md);
+      setExportToast('📋 Markdown をコピーしました');
+    } catch {
+      setExportToast('コピーに失敗しました');
+    }
+    setTimeout(() => setExportToast(null), 2200);
+  }, [person, interactions, moods]);
+
+  // ─── AgentTaskQueue 連携 ─────────────────────────────
+  // 個人特定情報 (氏名 / 連絡先) を AI 会社のキューに送らない設計
+  // → タイトルは「あの方」、内部に必要な質問テキストのみ要約
+  const handleDelegateNextCheckIn = useCallback(() => {
+    const latest = interactions[0];
+    const topic = latest?.nextTopics?.[0]
+      || latest?.summary?.slice(0, 40)
+      || '次回 1on1 で確認したいテーマ';
+    onProposeAgentTask({
+      title: `[人物ケア] 次回 1on1 で確認するテーマを整える`,
+      summary: `担当の方 (${person.role || '対象人物'}) と次に話すべきテーマを COO が議題化、CSO が問いの設計まで仕上げます。テーマ候補: ${topic}`,
+      why: `関係を継続的に深め、約束したことをやり残さないため。`,
+      expected: `次回 1on1 用の議題 3 本 + 確認ポイント 5 個`,
+      dueDays: 7,
+      steps: [
+        { cxo: 'COO', label: '前回の next-topics と現状を棚卸し' },
+        { cxo: 'CSO', label: '相手起点の問いを 3 本に整える' },
+        { cxo: 'CPO', label: '次回までに自分側がやることを 1 件決める' },
+      ],
+    });
+    setDelegateToast('🤖 AI 会社 (COO + CSO) に委任しました');
+    setTimeout(() => setDelegateToast(null), 2400);
+  }, [interactions, person.role, onProposeAgentTask]);
+
+  const handleDelegateReopen = useCallback(() => {
+    onProposeAgentTask({
+      title: `[人物ケア] 久しぶりの方に連絡する文面を整える`,
+      summary: `${cs.daysSince ?? '?'} 日連絡のない方へ、押し付けない再開メッセージを CMO が 1 通仕上げます。`,
+      why: `関係が冷える前に、軽やかな一声で温め直すため。`,
+      expected: `メッセージ 1 通 (件名 + 本文 / 質問 1 つ)`,
+      dueDays: 3,
+      steps: [
+        { cxo: 'CSO', label: '相手の状況と前回トピックを踏まえた切り口を 1 つ決める' },
+        { cxo: 'CMO', label: '60-140 字の温かい再開メッセージを書く' },
+      ],
+    });
+    setDelegateToast('🤖 AI 会社 (CSO + CMO) に委任しました');
+    setTimeout(() => setDelegateToast(null), 2400);
+  }, [cs.daysSince, onProposeAgentTask]);
+
+  const chip = CONTACT_CHIP[cs.status];
+
   return (
     <div className="cp-stack">
       {/* プロフィールヘッダー */}
-      <div className="cp-row-between">
+      <div className="cp-row-between" style={{ flexWrap: 'wrap', gap: 8 }}>
         <div className="cp-row">
           <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl flex-shrink-0"
             style={{ background: persona.accentColorLight, color: persona.accentColor }}>
@@ -366,25 +550,156 @@ function PersonDetail({ person, interactions, persona, settings, onUpdate, onDel
           <div>
             <p className="cp-h2">{person.name}</p>
             <p className="cp-meta">{person.role && `${person.role}`}{person.company && ` · ${person.company}`}</p>
-            {(person.tags || []).length > 0 && (
-              <div className="cp-row mt-1" style={{ gap: 4 }}>
-                {person.tags!.map(t => (
-                  <span key={t} className="cp-pill text-[10px]"
-                    style={{ color: persona.accentColor, borderColor: persona.accentColor + '40' }}>{t}</span>
-                ))}
-              </div>
-            )}
+            <div className="cp-row mt-1" style={{ gap: 4, flexWrap: 'wrap' }}>
+              {(person.tags || []).map(t => (
+                <span key={t} className="cp-pill text-[10px]"
+                  style={{ color: persona.accentColor, borderColor: persona.accentColor + '40' }}>{t}</span>
+              ))}
+              <span className="cp-pill" style={{
+                color: chip.fg, background: chip.bg, borderColor: chip.fg + '40', fontSize: 11, fontWeight: 600,
+              }}>
+                {chip.label}{cs.daysSince != null ? ` (${cs.daysSince}日)` : ''}
+              </span>
+            </div>
           </div>
         </div>
-        <div className="cp-row">
-          <button onClick={handleAnalyze} disabled={analyzing}
+        <div className="cp-row" style={{ flexWrap: 'wrap', gap: 6 }}>
+          <button onClick={handleBuildAgenda} disabled={agendaBusy}
             className="cp-btn cp-btn-primary cp-btn-sm"
-            style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-            {analyzing ? '分析中…' : '🤖 AI 分析'}
+            style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
+            {agendaBusy ? '生成中…' : '🗒 1on1 アジェンダを作る'}
           </button>
-          <button onClick={onDelete} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ color: '#f87171' }}>削除</button>
+          <button onClick={handleAnalyze} disabled={analyzing}
+            className="cp-btn cp-btn-sm"
+            style={{ minHeight: 44 }}>
+            {analyzing ? '分析中…' : '🤖 AI 関係性分析'}
+          </button>
+          <button onClick={handleExport} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 44 }}>
+            📋 Markdown 書き出し
+          </button>
+          <button onClick={onDelete} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ color: '#f87171', minHeight: 44 }}>削除</button>
         </div>
       </div>
+
+      {/* 連絡頻度リマインドカード (warm / cold のとき) */}
+      <AnimatePresence>
+        {(cs.status === 'warm' || cs.status === 'cold') && (
+          <motion.div
+            className="cp-card cp-stack-sm"
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            style={{ borderColor: chip.fg + '60', background: chip.bg + '40' }}
+          >
+            <div className="cp-row-between" style={{ flexWrap: 'wrap', gap: 8 }}>
+              <div>
+                <p className="cp-h3" style={{ color: chip.fg }}>
+                  {cs.status === 'cold' ? '🚨 30 日以上 連絡が空いています' : '⚠ 1 週間 連絡していません'}
+                </p>
+                <p className="cp-meta">
+                  最終接触: {person.lastInteraction || '記録なし'}
+                  {cs.daysSince != null ? ` (${cs.daysSince}日前)` : ''}
+                </p>
+              </div>
+              <div className="cp-row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                {cs.status === 'cold' && (
+                  <button onClick={handleBuildReopen} disabled={reopenBusy}
+                    className="cp-btn cp-btn-primary cp-btn-sm"
+                    style={{ background: chip.fg, color: '#0a0a0f', minHeight: 44 }}>
+                    {reopenBusy ? '生成中…' : '✍ 再開メッセージを書く'}
+                  </button>
+                )}
+                <button onClick={handleDelegateReopen}
+                  className="cp-btn cp-btn-sm" style={{ minHeight: 44 }}>
+                  🤖 AI 会社に委任
+                </button>
+              </div>
+            </div>
+            {reopen && (
+              <div className="cp-card-section cp-stack-sm" style={{ background: 'var(--surface-1)' }}>
+                <div className="cp-row-between">
+                  <p className="cp-section-head">件名: {reopen.subject}</p>
+                  <button
+                    onClick={async () => {
+                      await navigator.clipboard?.writeText(`件名: ${reopen.subject}\n\n${reopen.body}`);
+                      setExportToast('📋 メッセージをコピーしました');
+                      setTimeout(() => setExportToast(null), 2000);
+                    }}
+                    className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 36 }}>📋 コピー</button>
+                </div>
+                <p className="cp-body" style={{ whiteSpace: 'pre-wrap' }}>{reopen.body}</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* トースト */}
+      <AnimatePresence>
+        {exportToast && (
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="cp-card" style={{ borderColor: persona.accentColor + '60', textAlign: 'center' }}>
+            <p className="cp-body" style={{ color: persona.accentColor }}>{exportToast}</p>
+          </motion.div>
+        )}
+        {delegateToast && (
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="cp-card" style={{ borderColor: '#a78bfa60', textAlign: 'center' }}>
+            <p className="cp-body" style={{ color: '#a78bfa' }}>{delegateToast}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 1on1 アジェンダ結果 */}
+      <AnimatePresence>
+        {agendaError && (
+          <motion.div className="cp-card" style={{ borderColor: '#f87171' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <p className="cp-meta" style={{ color: '#f87171' }}>{agendaError}</p>
+            <button onClick={handleBuildAgenda} className="cp-btn cp-btn-sm mt-2">再試行</button>
+          </motion.div>
+        )}
+        {agenda && (
+          <motion.div className="cp-card cp-stack-sm"
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            style={{ borderColor: persona.accentColor + '60' }}>
+            <div className="cp-row-between">
+              <p className="cp-h3">🗒 次回 1on1 アジェンダ</p>
+              <div className="cp-row" style={{ gap: 6 }}>
+                <button
+                  onClick={async () => {
+                    const lines = [
+                      `# 1on1 アジェンダ — ${person.name}`,
+                      '', '## ☕ 冒頭の雑談', ...agenda.smallTalk.map(s => `- ${s}`),
+                      '', '## 📈 進捗確認', ...agenda.progressCheck.map(s => `- ${s}`),
+                      '', '## 🧩 課題 / 困りごと', ...agenda.challenges.map(s => `- ${s}`),
+                      '', '## 👣 次の一歩', ...agenda.nextSteps.map(s => `- ${s}`),
+                      '', '## 💬 フィードバック', ...agenda.feedback.map(s => `- ${s}`),
+                    ];
+                    if (agenda.reopenScript) lines.push('', '## 🌱 久しぶり用オープニング', agenda.reopenScript);
+                    await navigator.clipboard?.writeText(lines.join('\n'));
+                    setExportToast('📋 アジェンダをコピーしました');
+                    setTimeout(() => setExportToast(null), 2000);
+                  }}
+                  className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 36 }}>📋 コピー</button>
+                <button onClick={handleDelegateNextCheckIn}
+                  className="cp-btn cp-btn-sm" style={{ minHeight: 36 }}>
+                  🤖 確認事項を AI 会社へ
+                </button>
+              </div>
+            </div>
+            <AgendaBlock title="☕ 冒頭の雑談"      items={agenda.smallTalk}     accent="#fbbf24" />
+            <AgendaBlock title="📈 進捗確認"        items={agenda.progressCheck} accent="#60a5fa" />
+            <AgendaBlock title="🧩 課題 / 困りごと" items={agenda.challenges}    accent="#f87171" />
+            <AgendaBlock title="👣 次の一歩"         items={agenda.nextSteps}     accent={persona.accentColor} />
+            <AgendaBlock title="💬 フィードバック"   items={agenda.feedback}      accent="#a78bfa" />
+            {agenda.reopenScript && (
+              <div className="cp-card-section" style={{ background: 'var(--surface-1)' }}>
+                <p className="cp-section-head">🌱 久しぶり用オープニング</p>
+                <p className="cp-body" style={{ whiteSpace: 'pre-wrap' }}>{agenda.reopenScript}</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* AI 分析結果 */}
       <AnimatePresence>
@@ -398,7 +713,7 @@ function PersonDetail({ person, interactions, persona, settings, onUpdate, onDel
           <motion.div className="cp-card cp-stack-sm"
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="cp-row-between">
-              <p className="cp-h3">🤖 AI 分析結果</p>
+              <p className="cp-h3">🤖 AI 関係性分析</p>
               <span className="cp-pill" style={{
                 color: analysis.trustTrend === 'improving' ? '#4ade80' : analysis.trustTrend === 'declining' ? '#f87171' : '#60a5fa',
               }}>{TRUST_LABEL[analysis.trustTrend]}</span>
@@ -442,10 +757,61 @@ function PersonDetail({ person, interactions, persona, settings, onUpdate, onDel
         )}
       </AnimatePresence>
 
+      {/* 感情ジャーナル — 1on1 後の 1 タップ記録 + 月次トレンド */}
+      <div className="cp-card cp-stack-sm">
+        <p className="cp-h3">🪶 感情ジャーナル</p>
+        <p className="cp-meta">1on1 のあとに、自分の気持ちを 1 タップで残せます。月次トレンドで自分の関わり方を振り返れます。</p>
+        <div className="cp-row" style={{ gap: 6, flexWrap: 'wrap' }}>
+          {(['positive', 'hopeful', 'anxious'] as MoodKind[]).map(m => (
+            <button key={m} onClick={() => onAddMood(m)}
+              className="cp-btn cp-btn-sm"
+              style={{
+                background: MOOD_COLOR[m] + '20',
+                borderColor: MOOD_COLOR[m] + '60',
+                color: MOOD_COLOR[m],
+                minHeight: 44, minWidth: 44, fontSize: 14,
+              }}>
+              {MOOD_LABEL[m]}
+            </button>
+          ))}
+        </div>
+        {monthlyTrend.some(b => b.total > 0) && (
+          <div style={{ height: 160, marginTop: 4 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyTrend} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                <CartesianGrid stroke="var(--border)" strokeDasharray="2 2" />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--fg-muted)' }} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--fg-muted)' }} allowDecimals={false} />
+                <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Line type="monotone" dataKey="positive" name="😊" stroke={MOOD_COLOR.positive} strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="hopeful"  name="🌱" stroke={MOOD_COLOR.hopeful}  strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="anxious"  name="😟" stroke={MOOD_COLOR.anxious}  strokeWidth={2} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        {moods.length > 0 && (
+          <div className="cp-stack-sm" style={{ maxHeight: 160, overflowY: 'auto' }}>
+            {moods.slice(0, 12).map(m => (
+              <div key={m.id} className="cp-row-between" style={{ fontSize: 13 }}>
+                <span>
+                  <span className="cp-meta font-mono" style={{ marginRight: 6 }}>{m.date}</span>
+                  <span style={{ color: MOOD_COLOR[m.mood] }}>{MOOD_LABEL[m.mood]}</span>
+                  {m.note && <span className="cp-meta" style={{ marginLeft: 6 }}>— {m.note}</span>}
+                </span>
+                <button onClick={() => onRemoveMood(m.id)}
+                  className="cp-btn cp-btn-ghost cp-btn-sm" style={{ color: '#f87171', minHeight: 28, padding: '0 8px' }}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* センチメントチャート */}
       {chartData.length > 0 && (
         <div className="cp-card">
-          <p className="cp-h3 mb-2">センチメント分布</p>
+          <p className="cp-h3 mb-2">センチメント分布 (やり取り)</p>
           <ResponsiveContainer width="100%" height={120}>
             <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--fg-muted)' }} />
@@ -469,7 +835,9 @@ function PersonDetail({ person, interactions, persona, settings, onUpdate, onDel
           {(Object.keys(INTERACTION_LABEL) as InteractionType[]).map(t => (
             <button key={t} onClick={() => setInterType(t)}
               className="cp-btn cp-btn-sm text-xs"
-              style={interType === t ? { background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' } : {}}>
+              style={interType === t
+                ? { background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent', minHeight: 40 }
+                : { minHeight: 40 }}>
               {INTERACTION_LABEL[t]}
             </button>
           ))}
@@ -496,7 +864,7 @@ function PersonDetail({ person, interactions, persona, settings, onUpdate, onDel
           onAddInteraction({ date: interDate, type: interType, summary: interSummary, sentiment: interSentiment });
           setInterSummary('');
         }} className="cp-btn cp-btn-primary cp-btn-sm"
-          style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+          style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
           記録を追加
         </button>
       </div>
@@ -517,7 +885,7 @@ function PersonDetail({ person, interactions, persona, settings, onUpdate, onDel
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="cp-row-between mb-0.5">
-                    <div className="cp-row" style={{ gap: 6 }}>
+                    <div className="cp-row" style={{ gap: 6, flexWrap: 'wrap' }}>
                       <span className="cp-meta font-mono">{i.date}</span>
                       <span className="cp-pill text-[10px]">{INTERACTION_LABEL[i.type]}</span>
                       {i.sentiment && (
@@ -528,7 +896,7 @@ function PersonDetail({ person, interactions, persona, settings, onUpdate, onDel
                     </div>
                     <button onClick={() => onRemoveInteraction(i.id)}
                       className="cp-btn cp-btn-ghost cp-btn-sm text-xs flex-shrink-0"
-                      style={{ color: '#f87171', padding: '0 4px' }}>✕</button>
+                      style={{ color: '#f87171', padding: '0 4px', minHeight: 32, minWidth: 32 }}>✕</button>
                   </div>
                   <p className="cp-body">{i.summary}</p>
                   {i.highlights && i.highlights.length > 0 && (
@@ -537,7 +905,7 @@ function PersonDetail({ person, interactions, persona, settings, onUpdate, onDel
                     </ul>
                   )}
                   {i.nextTopics && i.nextTopics.length > 0 && (
-                    <div className="cp-row mt-1" style={{ gap: 4 }}>
+                    <div className="cp-row mt-1" style={{ gap: 4, flexWrap: 'wrap' }}>
                       <span className="cp-tiny">次回:</span>
                       {i.nextTopics.map((t, idx) => (
                         <span key={idx} className="cp-pill text-[10px]">{t}</span>
@@ -557,8 +925,21 @@ function PersonDetail({ person, interactions, persona, settings, onUpdate, onDel
         <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)}
           className="cp-textarea" rows={3} placeholder="自由メモ…" />
         <button onClick={() => onUpdate({ notes: editNotes })}
-          className="cp-btn cp-btn-ghost cp-btn-sm mt-1">メモを保存</button>
+          className="cp-btn cp-btn-ghost cp-btn-sm mt-1" style={{ minHeight: 40 }}>メモを保存</button>
       </div>
+    </div>
+  );
+}
+
+// アジェンダ 1 ブロックの表示
+function AgendaBlock({ title, items, accent }: { title: string; items: string[]; accent: string }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="cp-card-section" style={{ background: 'var(--surface-1)', borderLeft: `3px solid ${accent}` }}>
+      <p className="cp-section-head" style={{ color: accent }}>{title}</p>
+      <ul className="cp-stack-sm" style={{ paddingLeft: 16, listStyle: 'disc' }}>
+        {items.map((t, i) => <li key={i} className="cp-body">{t}</li>)}
+      </ul>
     </div>
   );
 }
@@ -608,7 +989,7 @@ function PersonForm({ persona, onSave, onCancel }: {
           </div>
         </div>
         <div className="cp-row-between pt-2">
-          <button onClick={onCancel} className="cp-btn cp-btn-ghost">キャンセル</button>
+          <button onClick={onCancel} className="cp-btn cp-btn-ghost" style={{ minHeight: 44 }}>キャンセル</button>
           <button
             onClick={() => {
               if (!name.trim()) return;
@@ -622,7 +1003,7 @@ function PersonForm({ persona, onSave, onCancel }: {
               });
             }}
             className="cp-btn cp-btn-primary"
-            style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+            style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
             登録
           </button>
         </div>
