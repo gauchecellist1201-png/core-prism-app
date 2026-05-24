@@ -1,20 +1,22 @@
+// ============================================================
+// AutoPostStudio — 6 SNS 同時生成 + ハッシュタグ AI + 投稿予約
+// 旧 note 長文 / X 単独生成は残し、新しい「⚡ 6 SNS 同時」タブを追加
+// ============================================================
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ApiErrorCard from './ApiErrorCard';
 import { copyText } from '../lib/clipboard';
+import { notifyInApp } from '../lib/inAppNotify';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import {
-  generateNoteArticle, generateXPost, TONE_OPTIONS,
-  type SocialDraft, type SocialTone,
+  generateNoteArticle, generateXPost, generateMultiPlatformPost,
+  suggestHashtags, PLATFORM_META, ALL_PLATFORMS, TONE_OPTIONS,
+  type SocialDraft, type SocialTone, type SocialPlatform, type MultiPlatformDraft,
 } from '../lib/socialDraft';
 import {
   isXConfigured, isXConnected, startXAuth, handleXCallbackIfPresent,
   postTweet, postThread, loadXUser, clearXAuth, type XUser,
 } from '../lib/xPost';
-import {
-  generateImage, generateImagePrompt, downloadImage,
-  STYLE_OPTIONS, type VisualStyle, type GenerateImageResult, isOpenAIConfigured,
-} from '../lib/imageGen';
 import ShareArtifactButton from './ShareArtifactButton';
 import { StudioIntro } from './StudioIntro';
 
@@ -29,7 +31,6 @@ interface Props {
 // 生成結果を 1 文字ずつ流し込んで、待ち時間の体感を短くする
 function animateInto(full: string, setter: (s: string) => void) {
   if (!full) { setter(''); return; }
-  // 長すぎる本文は即時で渡す (体感が遅くなりすぎないように)
   if (full.length > 3000) { setter(full); return; }
   let i = 0;
   const step = full.length > 800 ? 6 : full.length > 300 ? 3 : 2;
@@ -41,21 +42,88 @@ function animateInto(full: string, setter: (s: string) => void) {
   }, interval);
 }
 
-type Tab = 'note' | 'x';
+type Tab = 'multi' | 'note' | 'x';
+
+// ─── localStorage キー ───
+const HISTORY_KEY = 'core_autopost_history_v2';
+const SCHEDULE_KEY = 'core_autopost_schedule_v1';
+const MAX_HISTORY = 30;
+
+interface PostHistory {
+  id: string;
+  topic: string;
+  tone: SocialTone;
+  platforms: SocialPlatform[];
+  posts: Record<SocialPlatform, string>;
+  hashtags: string[];
+  createdAt: number;
+}
+
+interface ScheduledPost {
+  id: string;
+  scheduledAt: string;  // ISO datetime
+  platform: SocialPlatform | 'all';
+  topic: string;
+  body: string;          // 投稿本文 (multi の場合は代表 1 platform)
+  posts?: Record<SocialPlatform, string>;
+  hashtags: string[];
+  createdAt: number;
+  status: 'pending' | 'sent' | 'missed';
+}
+
+function loadHistory(): PostHistory[] {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+}
+function saveHistory(items: PostHistory[]) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, MAX_HISTORY))); } catch { /* */ }
+}
+function loadSchedule(): ScheduledPost[] {
+  try { return JSON.parse(localStorage.getItem(SCHEDULE_KEY) || '[]'); } catch { return []; }
+}
+function saveSchedule(items: ScheduledPost[]) {
+  try { localStorage.setItem(SCHEDULE_KEY, JSON.stringify(items)); } catch { /* */ }
+}
 
 export default function AutoPostStudio({ persona, settings, knowledge, onClose, onSaveAsKnowledge }: Props) {
-  const [tab, setTab] = useState<Tab>('note');
+  const [tab, setTab] = useState<Tab>('multi');
   const [topic, setTopic] = useState('');
-  const [tone, setTone] = useState<SocialTone>('professional');
+  const [tone, setTone] = useState<SocialTone>('storytelling');
   const [customInstr, setCustomInstr] = useState('');
   const [selectedKnowledge, setSelectedKnowledge] = useState<Set<string>>(new Set());
   const [showKbPicker, setShowKbPicker] = useState(false);
 
-  // note 設定
-  const [targetWords, setTargetWords] = useState(1500);
-  // X 設定
-  const [threadCount, setThreadCount] = useState(1);
+  // ─── 6 SNS 同時 ───
+  const [enabledPlatforms, setEnabledPlatforms] = useState<Set<SocialPlatform>>(new Set(ALL_PLATFORMS));
+  const [multiDraft, setMultiDraft] = useState<MultiPlatformDraft | null>(null);
+  const [multiPosts, setMultiPosts] = useState<Record<SocialPlatform, string>>({} as any);
+  const [multiHashtags, setMultiHashtags] = useState<string[]>([]);
+  const [hashtagBusy, setHashtagBusy] = useState(false);
 
+  // ─── 予約投稿 ───
+  const [scheduleAt, setScheduleAt] = useState<string>('');
+  const [schedule, setSchedule] = useState<ScheduledPost[]>(() => {
+    const items = loadSchedule();
+    const now = Date.now();
+    let changed = false;
+    const next = items.map(s => {
+      if (s.status === 'pending' && new Date(s.scheduledAt).getTime() < now - 5 * 60 * 1000) {
+        changed = true;
+        return { ...s, status: 'missed' as const };
+      }
+      return s;
+    });
+    if (changed) saveSchedule(next);
+    return next;
+  });
+  const [showSchedule, setShowSchedule] = useState(false);
+
+  // ─── 履歴 ───
+  const [history, setHistory] = useState<PostHistory[]>(() => loadHistory());
+  const [showHistory, setShowHistory] = useState(false);
+
+  // 旧来 (note 長文 / X 単独)
+  const [targetWords, setTargetWords] = useState(1500);
+  const [threadCount, setThreadCount] = useState(1);
   const [draft, setDraft] = useState<SocialDraft | null>(null);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedBody, setEditedBody] = useState('');
@@ -70,36 +138,185 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
   const [xPosting, setXPosting] = useState(false);
   const [xPostResult, setXPostResult] = useState<{ ids: string[] } | null>(null);
 
-  // 画像生成
-  const [imgStyle, setImgStyle] = useState<VisualStyle>('editorial');
-  const [imgPrompt, setImgPrompt] = useState('');
-  const [imgBusy, setImgBusy] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<GenerateImageResult | null>(null);
-  const [imgError, setImgError] = useState<string | null>(null);
-  const dalleAvailable = isOpenAIConfigured();
-
   const personaKnowledge = useMemo(
     () => knowledge.filter(k => k.personaId === persona.id),
     [knowledge, persona.id]
   );
 
-  // X コールバック処理 (?code= 付きでこのコンポーネント表示時)
+  // X コールバック
   useEffect(() => {
     handleXCallbackIfPresent().then(user => {
-      if (user) {
-        setXUser(user);
-        setXConnected(true);
-      }
-    }).catch(e => {
-      setError(e instanceof Error ? e.message : String(e));
-    });
+      if (user) { setXUser(user); setXConnected(true); }
+    }).catch(e => setError(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  const handleGenerate = useCallback(async () => {
-    if (!topic.trim()) {
-      setError('テーマを入力してください');
-      return;
+  // ─── 6 SNS 同時生成 ───
+  const handleGenerateMulti = useCallback(async () => {
+    if (!topic.trim()) { setError('テーマを入力してください'); return; }
+    if (enabledPlatforms.size === 0) { setError('プラットフォームを 1 つ以上選んでください'); return; }
+    setIsGenerating(true);
+    setError(null);
+    setMultiDraft(null);
+    try {
+      const ks = personaKnowledge.filter(k => selectedKnowledge.has(k.id));
+      const result = await generateMultiPlatformPost({
+        settings, persona, topic, tone, knowledge: ks,
+        platforms: Array.from(enabledPlatforms),
+        customInstruction: customInstr,
+      });
+      setMultiDraft(result);
+      setMultiPosts(result.posts);
+      setMultiHashtags(result.hashtags);
+
+      // 履歴に保存
+      const item: PostHistory = {
+        id: `h_${Date.now()}`,
+        topic, tone,
+        platforms: Array.from(enabledPlatforms),
+        posts: result.posts,
+        hashtags: result.hashtags,
+        createdAt: Date.now(),
+      };
+      const next = [item, ...history];
+      setHistory(next);
+      saveHistory(next);
+      notifyInApp({
+        kind: 'success',
+        title: `${enabledPlatforms.size} SNS 分の下書きができました`,
+        body: result.hashtags.length > 0 ? `ハッシュタグも ${result.hashtags.length} 個提案済み` : undefined,
+        duration: 2500,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setIsGenerating(false);
     }
+  }, [topic, tone, enabledPlatforms, customInstr, settings, persona, personaKnowledge, selectedKnowledge, history]);
+
+  // ─── ハッシュタグだけ AI 提案 ───
+  const handleSuggestHashtags = useCallback(async () => {
+    if (!topic.trim()) { setError('テーマを入力してください'); return; }
+    setHashtagBusy(true);
+    setError(null);
+    try {
+      const tags = await suggestHashtags({ settings, persona, topic, count: 10 });
+      setMultiHashtags(tags);
+      notifyInApp({
+        kind: 'success',
+        title: `ハッシュタグを ${tags.length} 個提案しました`,
+        duration: 2200,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setHashtagBusy(false);
+    }
+  }, [topic, settings, persona]);
+
+  // ─── 過去投稿を再アレンジ ───
+  const handleRemix = useCallback(async (h: PostHistory) => {
+    setTopic(h.topic);
+    setTone(h.tone);
+    setEnabledPlatforms(new Set(h.platforms));
+    setTab('multi');
+    setShowHistory(false);
+    // 即生成
+    setTimeout(() => {
+      handleGenerateMulti();
+    }, 100);
+  }, [handleGenerateMulti]);
+
+  const handleLoadFromHistory = useCallback((h: PostHistory) => {
+    setTopic(h.topic);
+    setTone(h.tone);
+    setEnabledPlatforms(new Set(h.platforms));
+    setMultiPosts(h.posts);
+    setMultiHashtags(h.hashtags);
+    setMultiDraft({
+      topic: h.topic, tone: h.tone, hashtags: h.hashtags,
+      posts: h.posts, generatedAt: new Date(h.createdAt).toISOString(),
+    });
+    setTab('multi');
+    setShowHistory(false);
+  }, []);
+
+  // ─── 予約 ───
+  const handleSchedulePost = useCallback((platform: SocialPlatform) => {
+    if (!scheduleAt) { setError('予約日時を選んでください'); return; }
+    const body = multiPosts[platform] || '';
+    if (!body.trim()) { setError('本文がありません'); return; }
+    const item: ScheduledPost = {
+      id: `s_${Date.now()}_${platform}`,
+      scheduledAt: new Date(scheduleAt).toISOString(),
+      platform,
+      topic,
+      body,
+      hashtags: multiHashtags,
+      createdAt: Date.now(),
+      status: 'pending',
+    };
+    const next = [...schedule, item].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+    setSchedule(next);
+    saveSchedule(next);
+    setError(null);
+    setShowSchedule(true);
+    notifyInApp({
+      kind: 'success',
+      title: `${PLATFORM_META[platform].label} を予約しました`,
+      body: new Date(scheduleAt).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      duration: 2500,
+    });
+  }, [scheduleAt, multiPosts, multiHashtags, topic, schedule]);
+
+  const handleScheduleAll = useCallback(() => {
+    if (!scheduleAt) { setError('予約日時を選んでください'); return; }
+    if (Object.keys(multiPosts).length === 0) { setError('まず投稿を生成してください'); return; }
+    const item: ScheduledPost = {
+      id: `s_${Date.now()}_all`,
+      scheduledAt: new Date(scheduleAt).toISOString(),
+      platform: 'all',
+      topic,
+      body: multiPosts.x || multiPosts.threads || Object.values(multiPosts)[0] || '',
+      posts: multiPosts,
+      hashtags: multiHashtags,
+      createdAt: Date.now(),
+      status: 'pending',
+    };
+    const next = [...schedule, item].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+    setSchedule(next);
+    saveSchedule(next);
+    setError(null);
+    setShowSchedule(true);
+    notifyInApp({
+      kind: 'success',
+      title: `全 ${Object.keys(multiPosts).length} SNS を予約しました`,
+      body: new Date(scheduleAt).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      duration: 2800,
+    });
+  }, [scheduleAt, multiPosts, multiHashtags, topic, schedule]);
+
+  const handleDeleteSchedule = useCallback((id: string) => {
+    const next = schedule.filter(s => s.id !== id);
+    setSchedule(next);
+    saveSchedule(next);
+  }, [schedule]);
+
+  // ─── 画像生成連携 (ImageStudio を window event で起動) ───
+  const handleOpenImageStudio = useCallback((platform?: SocialPlatform) => {
+    const seed = platform ? multiPosts[platform] : topic;
+    window.dispatchEvent(new CustomEvent('core-prism:open-image-studio', {
+      detail: {
+        prompt: seed || topic,
+        topic,
+        aspect: platform === 'instagram' ? 'square' : platform === 'note' ? 'note-hero' : 'x-post',
+        source: 'AutoPostStudio',
+      },
+    }));
+  }, [multiPosts, topic]);
+
+  // ─── 旧 note / X 生成 ───
+  const handleGenerate = useCallback(async () => {
+    if (!topic.trim()) { setError('テーマを入力してください'); return; }
     setIsGenerating(true);
     setError(null);
     setDraft(null);
@@ -131,9 +348,13 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     }
   }, [tab, topic, tone, customInstr, settings, persona, personaKnowledge, selectedKnowledge, targetWords, threadCount]);
 
-  const copyToClipboard = useCallback((text: string) => {
-    copyText(text, '本文');
-  }, []);
+  const copyToClipboard = useCallback((text: string, label = '本文') => copyText(text, label), []);
+
+  const handleCopyPlatform = useCallback((p: SocialPlatform) => {
+    const body = multiPosts[p] || '';
+    const tags = multiHashtags.length > 0 ? '\n\n' + multiHashtags.map(t => '#' + t).join(' ') : '';
+    copyText(body + tags, PLATFORM_META[p].label);
+  }, [multiPosts, multiHashtags]);
 
   // note: 本文をコピーしてから新規記事ページを開く
   const handleNoteOpen = useCallback(() => {
@@ -159,54 +380,6 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     URL.revokeObjectURL(url);
   }, [editedTitle, editedBody]);
 
-  // ─── 画像生成 ─────────────────────────────
-  const handleGenerateImage = useCallback(async (regenerate = false) => {
-    setImgError(null);
-    setImgBusy(true);
-    try {
-      let prompt = imgPrompt.trim();
-      if (!prompt) {
-        // テキストから自動生成 (note: タイトル+本文先頭, X: 投稿本文)
-        const seed = tab === 'note' ? `${editedTitle}\n${editedBody.slice(0, 600)}` : (editedThread[0] || editedBody);
-        if (!seed) {
-          setImgError('先に下書きを生成するか、画像のテーマを入力してください');
-          setImgBusy(false);
-          return;
-        }
-        prompt = await generateImagePrompt({
-          settings,
-          topic: seed,
-          context: `投稿者: ${persona.name} (${persona.subtitle})`,
-        });
-        setImgPrompt(prompt);
-      }
-      const result = await generateImage({
-        prompt,
-        aspect: tab === 'note' ? 'note-hero' : 'x-post',
-        style: imgStyle,
-        seed: regenerate ? Math.floor(Math.random() * 1_000_000) : undefined,
-      });
-      setGeneratedImage(result);
-    } catch (e) {
-      setImgError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setImgBusy(false);
-    }
-  }, [imgPrompt, imgStyle, tab, editedTitle, editedBody, editedThread, settings, persona]);
-
-  const handleInsertImageToNote = useCallback(() => {
-    if (!generatedImage) return;
-    const md = `![${editedTitle || '見出し画像'}](${generatedImage.url})\n\n${editedBody}`;
-    setEditedBody(md);
-  }, [generatedImage, editedTitle, editedBody]);
-
-  const handleDownloadImage = useCallback(async () => {
-    if (!generatedImage) return;
-    const ext = generatedImage.url.includes('.png') ? 'png' : 'jpg';
-    const name = `${(editedTitle || 'core-prism-image').replace(/[\\/:*?"<>|]/g, '_').slice(0, 50)}-${Date.now()}.${ext}`;
-    await downloadImage(generatedImage.url, name);
-  }, [generatedImage, editedTitle]);
-
   const handleSaveKb = useCallback(() => {
     if (!onSaveAsKnowledge) return;
     const title = `[投稿草稿] ${editedTitle || 'X 投稿'}`;
@@ -219,22 +392,14 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
   // X 投稿
   const handleXConnect = useCallback(async () => {
     setError(null);
-    try {
-      await startXAuth();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
+    try { await startXAuth(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   }, []);
   const handleXDisconnect = useCallback(() => {
-    clearXAuth();
-    setXConnected(false);
-    setXUser(null);
+    clearXAuth(); setXConnected(false); setXUser(null);
   }, []);
 
   const handleXPost = useCallback(async () => {
-    setXPosting(true);
-    setError(null);
-    setXPostResult(null);
+    setXPosting(true); setError(null); setXPostResult(null);
     try {
       if (editedThread.length > 1) {
         const r = await postThread(editedThread.filter(t => t.trim().length > 0));
@@ -250,7 +415,24 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     }
   }, [editedBody, editedThread]);
 
+  const handleXPostMulti = useCallback(async () => {
+    const body = multiPosts.x;
+    if (!body) return;
+    setXPosting(true); setError(null); setXPostResult(null);
+    try {
+      const r = await postTweet(body + (multiHashtags.length > 0 ? '\n\n' + multiHashtags.slice(0, 2).map(t => '#' + t).join(' ') : ''));
+      setXPostResult({ ids: [r.id] });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setXPosting(false);
+    }
+  }, [multiPosts, multiHashtags]);
+
   const xReady = isXConfigured();
+
+  // 履歴の状態別件数
+  const pendingSchedules = schedule.filter(s => s.status === 'pending').length;
 
   return (
     <motion.div
@@ -274,26 +456,51 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
             >📢</div>
             <div className="min-w-0">
               <p className="text-fg text-base font-semibold leading-tight truncate">投稿スタジオ</p>
-              <p className="text-fg-muted text-xs truncate">{persona.name} の口調で note / X の下書きを AI 生成</p>
+              <p className="text-fg-muted text-xs truncate">6 SNS に最適化して同時生成 / 予約 / 履歴再利用</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none"
-          >×</button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowSchedule(s => !s)}
+              className="text-xs px-3 rounded-full font-semibold flex items-center gap-1"
+              style={{
+                height: 40, minHeight: 40,
+                background: pendingSchedules > 0 ? persona.accentColor : 'var(--surface-3)',
+                color: pendingSchedules > 0 ? '#0a0a0f' : 'var(--fg-muted)',
+                border: '1px solid var(--border)',
+              }}
+            >📅 予約{pendingSchedules > 0 && ` ${pendingSchedules}`}</button>
+            <button
+              onClick={() => setShowHistory(s => !s)}
+              className="text-xs px-3 rounded-full font-semibold"
+              style={{
+                height: 40, minHeight: 40,
+                background: 'var(--surface-3)', color: 'var(--fg-muted)',
+                border: '1px solid var(--border)',
+              }}
+            >🕰 履歴{history.length > 0 && ` ${history.length}`}</button>
+            <button
+              onClick={onClose}
+              className="rounded-full flex items-center justify-center text-fg-muted hover:text-fg text-xl leading-none"
+              style={{ width: 40, height: 40, minWidth: 40 }}
+              aria-label="閉じる"
+            >×</button>
+          </div>
         </div>
 
         {/* Platform Tabs */}
-        <div className="flex gap-1 px-5 pt-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex gap-1 px-5 pt-3 overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
           {([
-            { id: 'note' as Tab, label: '📝 note 記事' },
-            { id: 'x' as Tab, label: '🐦 X 投稿' },
+            { id: 'multi' as Tab, label: '⚡ 6 SNS 同時' },
+            { id: 'note' as Tab, label: '📝 note 記事 (長文)' },
+            { id: 'x' as Tab, label: '🐦 X 単独 / スレッド' },
           ]).map(t => (
             <button
               key={t.id}
               onClick={() => { setTab(t.id); setDraft(null); setError(null); }}
-              className="text-sm px-4 py-2 rounded-t-md font-medium"
+              className="text-sm px-4 rounded-t-md font-medium whitespace-nowrap"
               style={{
+                minHeight: 44,
                 background: tab === t.id ? persona.accentColorLight : 'transparent',
                 color: tab === t.id ? persona.accentColor : 'var(--fg-muted)',
                 borderBottom: tab === t.id ? `2px solid ${persona.accentColor}` : '2px solid transparent',
@@ -303,97 +510,137 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          <StudioIntro
-            id="auto-post"
-            accent={persona.accentColor}
-            emoji="📢"
-            what="あなたの口調のまま、note 記事 + X 投稿の下書きを AI が一発生成して、そのまま X に投稿まで出来る場所です。"
-            tryThis="テーマを入れて「✨ note 記事を生成」または「✨ X 投稿を生成」→ X 連携済なら 1 クリックで投稿。"
-            example="「今日の AI 経営の気付き」と入れる → note 1500 字 と X 140 字が同時に下書き完成、ワンタップ投稿可。"
-            sampleLabel="出来上がる note + X"
-            samplePreview={
-              <div
-                style={{
-                  width: 160,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 3,
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  fontSize: 7,
-                  lineHeight: 1.4,
-                }}
-                aria-label="note と X のサンプル"
+          {/* ─── 予約パネル ─── */}
+          <AnimatePresence>
+            {showSchedule && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                className="rounded-xl overflow-hidden"
+                style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}40` }}
               >
-                {/* note カード (白) */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    color: '#0f172a',
-                    borderRadius: 5,
-                    padding: '5px 6px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                    borderLeft: '3px solid #41C9B4',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                    <span style={{ background: '#41C9B4', color: '#fff', fontSize: 5, padding: '0 3px', borderRadius: 2, fontWeight: 700 }}>note</span>
-                    <span style={{ fontSize: 5, color: '#64748b' }}>📖 4 分</span>
-                  </div>
-                  <div style={{ fontWeight: 700, fontSize: 7, marginBottom: 2 }}>
-                    考えなくていい、を仕組みにする
-                  </div>
-                  <div style={{ fontSize: 5.5, opacity: 0.8, lineHeight: 1.45 }}>
-                    AI に任せて空いた頭で、もっと本質を選ぶ。経営に必要なのは…
-                  </div>
+                <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
+                  <p className="text-fg font-semibold text-sm">📅 予約済み投稿 ({schedule.length}件)</p>
+                  <p className="text-fg-muted text-[11px]">※ ローカル保存。自動投稿は今後のアップデートで対応</p>
                 </div>
+                {schedule.length === 0 ? (
+                  <p className="text-fg-muted text-sm text-center py-6">まだ予約はありません</p>
+                ) : (
+                  <div className="max-h-60 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
+                    {schedule.map(s => {
+                      const dt = new Date(s.scheduledAt);
+                      const past = dt.getTime() < Date.now();
+                      const meta = s.platform === 'all' ? '全 SNS' : PLATFORM_META[s.platform as SocialPlatform]?.label || s.platform;
+                      return (
+                        <div key={s.id} className="px-4 py-2.5 flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-xs font-mono" style={{ color: past ? '#f87171' : persona.accentColor }}>
+                                {dt.toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--surface)', color: 'var(--fg-muted)' }}>
+                                {meta}
+                              </span>
+                              {s.status === 'missed' && <span className="text-[10px] text-red-400">⏰ 未送信のまま期限切れ</span>}
+                              {past && s.status === 'pending' && <span className="text-[10px] text-red-400">⚠ 過去日時</span>}
+                              {s.status === 'sent' && <span className="text-[10px]" style={{ color: persona.accentColor }}>✓ 送信済</span>}
+                            </div>
+                            <p className="text-fg text-xs truncate">{s.topic}</p>
+                            <p className="text-fg-muted text-[11px] truncate">{s.body.slice(0, 80)}</p>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteSchedule(s.id)}
+                            className="text-fg-muted hover:text-fg text-xs px-2 py-1 rounded flex-shrink-0"
+                            style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 32 }}
+                          >削除</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                {/* X カード (黒) */}
-                <div
-                  style={{
-                    background: '#0f1419',
-                    color: '#f7f9f9',
-                    borderRadius: 5,
-                    padding: '5px 6px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: 3, alignItems: 'center', marginBottom: 2 }}>
-                    <div style={{ width: 9, height: 9, borderRadius: '50%', background: persona.accentColor, flexShrink: 0 }} />
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ display: 'flex', gap: 2 }}>
-                        <span style={{ fontWeight: 700, fontSize: 6 }}>あなた</span>
-                        <span style={{ fontSize: 5, opacity: 0.6 }}>@you · 5分</span>
+          {/* ─── 履歴パネル ─── */}
+          <AnimatePresence>
+            {showHistory && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                className="rounded-xl overflow-hidden"
+                style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}40` }}
+              >
+                <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                  <p className="text-fg font-semibold text-sm">🕰 過去の生成 ({history.length}件、最大 {MAX_HISTORY} 件)</p>
+                </div>
+                {history.length === 0 ? (
+                  <p className="text-fg-muted text-sm text-center py-6">まだ履歴はありません</p>
+                ) : (
+                  <div className="max-h-72 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
+                    {history.map(h => (
+                      <div key={h.id} className="px-4 py-2.5">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-fg text-sm font-medium truncate flex-1 mr-2">{h.topic}</p>
+                          <span className="text-fg-muted text-[11px] flex-shrink-0">
+                            {new Date(h.createdAt).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {h.platforms.map(p => (
+                            <span key={p} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--surface)', color: 'var(--fg-muted)' }}>
+                              {PLATFORM_META[p].emoji} {PLATFORM_META[p].label}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleLoadFromHistory(h)}
+                            className="text-xs px-3 rounded font-semibold"
+                            style={{ background: 'var(--surface)', color: 'var(--fg)', border: '1px solid var(--border)', minHeight: 36 }}
+                          >📥 読み込む</button>
+                          <button
+                            onClick={() => handleRemix(h)}
+                            className="text-xs px-3 rounded font-semibold"
+                            style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 36 }}
+                          >🔄 再アレンジ</button>
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {tab === 'multi' && (
+            <StudioIntro
+              id="auto-post-multi"
+              accent={persona.accentColor}
+              emoji="⚡"
+              what="1 つのテーマから X / Threads / Instagram / LinkedIn / note / Facebook 6 SNS 分の最適化された投稿文を同時生成します。"
+              tryThis="テーマを入力 → ✨ 6 SNS 同時生成 → 各カードでコピー or 投稿予約。"
+              example="「今月のミニ起業ジャーニー」→ 各 SNS の長さ・口調に合わせて 6 本同時に並ぶ。"
+              sampleLabel="同時に出来る 6 本"
+              samplePreview={
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3, width: 150 }}>
+                  {ALL_PLATFORMS.map(p => (
+                    <div
+                      key={p}
+                      style={{
+                        background: PLATFORM_META[p].color, color: '#fff',
+                        borderRadius: 4, padding: '4px 5px',
+                        fontSize: 6, lineHeight: 1.3, textAlign: 'center', fontWeight: 700,
+                      }}
+                    >
+                      <div style={{ fontSize: 8 }}>{PLATFORM_META[p].emoji}</div>
+                      <div style={{ marginTop: 2 }}>{PLATFORM_META[p].label.split(' ')[0]}</div>
                     </div>
-                    <span style={{ fontSize: 7, opacity: 0.8 }}>𝕏</span>
-                  </div>
-                  <div style={{ fontSize: 6, lineHeight: 1.45 }}>
-                    <span style={{ fontWeight: 600 }}>考えなくていいが一番のごほうび</span>。AI に任せた頭で、本質を選ぶ。
-                  </div>
-                  <div style={{ marginTop: 3, fontSize: 5, opacity: 0.55, display: 'flex', gap: 5 }}>
-                    <span>♥ 42</span><span>🔁 12</span><span>💬 6</span>
-                  </div>
+                  ))}
                 </div>
+              }
+            />
+          )}
 
-                {/* 投稿バー */}
-                <div
-                  style={{
-                    background: persona.accentColor,
-                    color: '#0a0a0f',
-                    borderRadius: 4,
-                    padding: '2px 5px',
-                    fontSize: 5.5,
-                    fontWeight: 700,
-                    textAlign: 'center',
-                  }}
-                >
-                  📤 1 タップで X に投稿
-                </div>
-              </div>
-            }
-          />
-
-          {/* X 認証バー (X タブの時のみ) */}
+          {/* X 認証バー (X タブのみ) */}
           {tab === 'x' && (
             <div
               className="rounded-xl p-3 flex items-center justify-between gap-3 flex-wrap"
@@ -424,11 +671,11 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                   <button
                     onClick={handleXConnect}
                     disabled={!xReady}
-                    className="text-xs px-3 py-1.5 rounded-md font-semibold disabled:opacity-40"
-                    style={{ background: '#000000', color: '#FFFFFF' }}
+                    className="text-xs px-3 rounded-md font-semibold disabled:opacity-40"
+                    style={{ background: '#000000', color: '#FFFFFF', minHeight: 40 }}
                   >𝕏 で続行</button>
                 ) : (
-                  <button onClick={handleXDisconnect} className="text-xs px-2 py-1.5 rounded text-fg-muted hover:text-fg">解除</button>
+                  <button onClick={handleXDisconnect} className="text-xs px-2 rounded text-fg-muted hover:text-fg" style={{ minHeight: 40 }}>解除</button>
                 )}
               </div>
             </div>
@@ -441,8 +688,9 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               <input
                 type="text" value={topic}
                 onChange={e => setTopic(e.target.value)}
-                placeholder={tab === 'note' ? '例: 起業1年目で学んだ顧客インタビューの本質' : '例: 今日の経営判断の裏側を1ツイートで'}
-                className="w-full text-sm px-3 py-2 rounded bg-surface-3 border-edge border text-fg placeholder:text-fg-subtle outline-none"
+                placeholder={tab === 'multi' ? '例: 起業 1 年目で学んだ顧客インタビューの本質' : tab === 'note' ? '例: 起業1年目で学んだ顧客インタビューの本質' : '例: 今日の経営判断の裏側を1ツイートで'}
+                className="w-full px-3 rounded bg-surface-3 border-edge border text-fg placeholder:text-fg-subtle outline-none"
+                style={{ fontSize: 16, minHeight: 48 }}
               />
             </div>
 
@@ -454,8 +702,9 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                   <button
                     key={t.value}
                     onClick={() => setTone(t.value)}
-                    className="text-xs px-3 py-1.5 rounded-md font-medium"
+                    className="text-xs px-3 rounded-md font-medium"
                     style={{
+                      minHeight: 40,
                       background: tone === t.value ? persona.accentColorLight : 'var(--surface-3)',
                       color: tone === t.value ? persona.accentColor : 'var(--fg-muted)',
                       border: `1px solid ${tone === t.value ? persona.accentColor + '50' : 'var(--border)'}`,
@@ -465,51 +714,106 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               </div>
             </div>
 
-            {/* note 文字数 / X スレッド数 */}
-            <div className="grid grid-cols-2 gap-2">
-              {tab === 'note' ? (
-                <div>
-                  <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">目標字数</label>
-                  <select
-                    value={targetWords}
-                    onChange={e => setTargetWords(Number(e.target.value))}
-                    className="w-full text-sm px-3 py-2 rounded bg-surface-3 border-edge border text-fg"
-                  >
-                    <option value={800}>短め (800字)</option>
-                    <option value={1500}>標準 (1,500字)</option>
-                    <option value={2500}>長め (2,500字)</option>
-                    <option value={3500}>超詳細 (3,500字)</option>
-                  </select>
+            {/* タブ別オプション */}
+            {tab === 'multi' && (
+              <div>
+                <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">
+                  生成する SNS ({enabledPlatforms.size}/6 個 選択中)
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {ALL_PLATFORMS.map(p => {
+                    const m = PLATFORM_META[p];
+                    const on = enabledPlatforms.has(p);
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => {
+                          const next = new Set(enabledPlatforms);
+                          if (on) next.delete(p); else next.add(p);
+                          setEnabledPlatforms(next);
+                        }}
+                        className="flex items-center gap-2 px-3 rounded-md text-left"
+                        style={{
+                          minHeight: 48,
+                          background: on ? `${m.color}25` : 'var(--surface)',
+                          border: `2px solid ${on ? m.color : 'var(--border)'}`,
+                          color: on ? 'var(--fg)' : 'var(--fg-muted)',
+                        }}
+                      >
+                        <span style={{ fontSize: 22, color: on ? m.color : undefined }}>{m.emoji}</span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold truncate">{m.label}</p>
+                          <p className="text-[10px] text-fg-muted">~{m.charBudget}字</p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-              ) : (
-                <div>
-                  <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">投稿数</label>
-                  <select
-                    value={threadCount}
-                    onChange={e => setThreadCount(Number(e.target.value))}
-                    className="w-full text-sm px-3 py-2 rounded bg-surface-3 border-edge border text-fg"
-                  >
-                    <option value={1}>単発 (1ツイート)</option>
-                    <option value={3}>ミニスレ (3本)</option>
-                    <option value={5}>スレ (5本)</option>
-                    <option value={7}>ロング (7本)</option>
-                    <option value={10}>マラソン (10本)</option>
-                  </select>
-                </div>
-              )}
+              </div>
+            )}
 
+            {tab !== 'multi' && (
+              <div className="grid grid-cols-2 gap-2">
+                {tab === 'note' ? (
+                  <div>
+                    <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">目標字数</label>
+                    <select
+                      value={targetWords}
+                      onChange={e => setTargetWords(Number(e.target.value))}
+                      className="w-full px-3 rounded bg-surface-3 border-edge border text-fg"
+                      style={{ fontSize: 16, minHeight: 48 }}
+                    >
+                      <option value={800}>短め (800字)</option>
+                      <option value={1500}>標準 (1,500字)</option>
+                      <option value={2500}>長め (2,500字)</option>
+                      <option value={3500}>超詳細 (3,500字)</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">投稿数</label>
+                    <select
+                      value={threadCount}
+                      onChange={e => setThreadCount(Number(e.target.value))}
+                      className="w-full px-3 rounded bg-surface-3 border-edge border text-fg"
+                      style={{ fontSize: 16, minHeight: 48 }}
+                    >
+                      <option value={1}>単発 (1ツイート)</option>
+                      <option value={3}>ミニスレ (3本)</option>
+                      <option value={5}>スレ (5本)</option>
+                      <option value={7}>ロング (7本)</option>
+                      <option value={10}>マラソン (10本)</option>
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">参照ナレッジ</label>
+                  <button
+                    onClick={() => setShowKbPicker(v => !v)}
+                    className="w-full px-3 rounded text-left flex items-center justify-between"
+                    style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)', minHeight: 48, fontSize: 14 }}
+                  >
+                    <span>{selectedKnowledge.size > 0 ? `${selectedKnowledge.size}件選択中` : `選択 (${personaKnowledge.length}件中)`}</span>
+                    <span className="text-fg-muted">▾</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {tab === 'multi' && (
               <div>
                 <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">参照ナレッジ</label>
                 <button
                   onClick={() => setShowKbPicker(v => !v)}
-                  className="w-full text-sm px-3 py-2 rounded text-left flex items-center justify-between"
-                  style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)' }}
+                  className="w-full px-3 rounded text-left flex items-center justify-between"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--fg)', minHeight: 48, fontSize: 14 }}
                 >
                   <span>{selectedKnowledge.size > 0 ? `${selectedKnowledge.size}件選択中` : `選択 (${personaKnowledge.length}件中)`}</span>
                   <span className="text-fg-muted">▾</span>
                 </button>
               </div>
-            </div>
+            )}
 
             <AnimatePresence>
               {showKbPicker && (
@@ -532,7 +836,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                               setSelectedKnowledge(next);
                             }}
                             className="w-full text-left px-2 py-1.5 rounded text-xs flex items-center gap-2"
-                            style={{ background: sel ? persona.accentColorLight : 'transparent', color: sel ? persona.accentColor : 'var(--fg)' }}
+                            style={{ background: sel ? persona.accentColorLight : 'transparent', color: sel ? persona.accentColor : 'var(--fg)', minHeight: 36 }}
                           >
                             <span>{sel ? '✓' : '○'}</span>
                             <span className="truncate">{k.title}</span>
@@ -552,331 +856,363 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                 onChange={e => setCustomInstr(e.target.value)}
                 placeholder="例: 結論を冒頭に / 数字を必ず3つ含める / 起業家の同志に向けて"
                 rows={2}
-                className="w-full text-sm px-3 py-2 rounded bg-surface-3 border-edge border text-fg placeholder:text-fg-subtle outline-none resize-none"
+                className="w-full px-3 py-2 rounded bg-surface-3 border-edge border text-fg placeholder:text-fg-subtle outline-none resize-none"
+                style={{ fontSize: 16 }}
               />
             </div>
 
+            {/* 予約日時 (multi タブのみ) */}
+            {tab === 'multi' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">📅 予約日時 (任意)</label>
+                  <input
+                    type="datetime-local"
+                    value={scheduleAt}
+                    onChange={e => setScheduleAt(e.target.value)}
+                    className="w-full px-3 rounded bg-surface-3 border-edge border text-fg"
+                    style={{ fontSize: 16, minHeight: 48 }}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={handleScheduleAll}
+                    disabled={!scheduleAt || Object.keys(multiPosts).length === 0}
+                    className="w-full rounded font-semibold disabled:opacity-40"
+                    style={{
+                      minHeight: 48,
+                      background: 'var(--surface)', color: 'var(--fg)',
+                      border: `1px solid ${persona.accentColor}50`, fontSize: 14,
+                    }}
+                  >📅 全 SNS をこの日時に予約</button>
+                </div>
+              </div>
+            )}
+
             <motion.button
-              onClick={handleGenerate}
-              disabled={!topic.trim() || isGenerating}
-              className="w-full py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
-              style={{ background: persona.accentColor, color: '#0a0a0f' }}
+              onClick={tab === 'multi' ? handleGenerateMulti : handleGenerate}
+              disabled={!topic.trim() || isGenerating || (tab === 'multi' && enabledPlatforms.size === 0)}
+              className="w-full rounded-lg font-semibold disabled:opacity-50"
+              style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 56, fontSize: 16 }}
               whileTap={!isGenerating ? { scale: 0.99 } : {}}
             >
-              {isGenerating ? '🧠 生成中…' : `✨ ${tab === 'note' ? 'note 記事' : threadCount > 1 ? 'X スレッド' : 'X ツイート'}を生成`}
+              {isGenerating
+                ? '🧠 生成中…'
+                : tab === 'multi'
+                  ? `✨ ${enabledPlatforms.size} SNS 同時生成`
+                  : `✨ ${tab === 'note' ? 'note 記事' : threadCount > 1 ? 'X スレッド' : 'X ツイート'}を生成`
+              }
             </motion.button>
+
+            {tab === 'multi' && (
+              <button
+                onClick={handleSuggestHashtags}
+                disabled={!topic.trim() || hashtagBusy}
+                className="w-full rounded-lg font-semibold disabled:opacity-50"
+                style={{
+                  minHeight: 48, fontSize: 14,
+                  background: 'var(--surface)', color: persona.accentColor,
+                  border: `1px solid ${persona.accentColor}50`,
+                }}
+              >{hashtagBusy ? '🏷 提案中…' : '🏷 ハッシュタグだけ AI に提案させる (10 個)'}</button>
+            )}
 
             <ApiErrorCard
               error={error}
-              onRetry={handleGenerate}
+              onRetry={tab === 'multi' ? handleGenerateMulti : handleGenerate}
               onOpenSettings={() => { window.location.href = '/master'; }}
             />
           </div>
 
-          {/* 画像生成パネル (draft 生成後に表示) */}
-          <AnimatePresence>
-            {draft && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className="rounded-xl p-4 space-y-3"
-                style={{ background: `${persona.accentColor}10`, border: `1px solid ${persona.accentColor}40` }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-fg text-sm font-semibold">🎨 アイキャッチ画像を生成</p>
-                    <p className="text-fg-muted text-[11px] mt-0.5">
-                      {tab === 'note' ? 'note 見出し画像 (1280×720)' : 'X 投稿画像 (1200×675)'} ·{' '}
-                      <span style={{ color: persona.accentColor }}>{dalleAvailable ? 'DALL-E 3 利用可' : 'Pollinations Flux (無料)'}</span>
-                    </p>
+          {/* ─── 6 SNS 同時生成結果 ─── */}
+          {tab === 'multi' && (multiDraft || multiHashtags.length > 0) && (
+            <div className="space-y-3">
+              {/* ハッシュタグ */}
+              {multiHashtags.length > 0 && (
+                <div className="rounded-xl p-3" style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}40` }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-fg-muted text-xs tracking-wider uppercase">🏷 提案ハッシュタグ ({multiHashtags.length})</p>
+                    <button
+                      onClick={() => copyToClipboard(multiHashtags.map(t => '#' + t).join(' '), 'ハッシュタグ')}
+                      className="text-[11px] px-2 py-1 rounded text-fg-muted hover:text-fg"
+                      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                    >📋 まとめてコピー</button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {multiHashtags.map((t, i) => (
+                      <span key={i} className="text-xs px-2 py-1 rounded" style={{ background: persona.accentColorLight, color: persona.accentColor }}>#{t}</span>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                {/* スタイル選択 */}
-                <div className="flex gap-1.5 flex-wrap">
-                  {STYLE_OPTIONS.map(s => (
-                    <button
-                      key={s.value}
-                      onClick={() => setImgStyle(s.value)}
-                      className="text-xs px-2.5 py-1.5 rounded-md font-medium"
-                      style={{
-                        background: imgStyle === s.value ? persona.accentColorLight : 'var(--surface-3)',
-                        color: imgStyle === s.value ? persona.accentColor : 'var(--fg-muted)',
-                        border: `1px solid ${imgStyle === s.value ? persona.accentColor + '50' : 'var(--border)'}`,
-                      }}
-                    >{s.emoji} {s.label}</button>
-                  ))}
-                </div>
+              {/* プラットフォームごとのカード */}
+              {ALL_PLATFORMS.filter(p => multiPosts[p] && multiPosts[p].length > 0).map(p => {
+                const m = PLATFORM_META[p];
+                const body = multiPosts[p] || '';
+                const over = body.length > m.charBudget;
+                return (
+                  <div key={p} className="rounded-xl overflow-hidden" style={{ background: 'var(--surface-3)', border: `2px solid ${m.color}55` }}>
+                    <div className="px-4 py-2.5 flex items-center justify-between gap-2" style={{ background: `${m.color}18`, borderBottom: `1px solid ${m.color}30` }}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="flex items-center justify-center rounded-lg flex-shrink-0"
+                          style={{ width: 32, height: 32, background: m.color, color: '#fff', fontSize: 16 }}>
+                          {m.emoji}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-fg text-sm font-semibold truncate">{m.label}</p>
+                          <p className="text-[10px]" style={{ color: over ? '#f87171' : 'var(--fg-muted)' }}>
+                            {body.length} / {m.charBudget} 字 {over && '⚠ 超過'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <textarea
+                      value={body}
+                      onChange={e => setMultiPosts(prev => ({ ...prev, [p]: e.target.value }))}
+                      rows={Math.min(8, Math.max(3, Math.ceil(body.length / 60)))}
+                      className="w-full px-3 py-2.5 bg-transparent text-fg outline-none resize-y leading-relaxed"
+                      style={{ fontSize: 14, minHeight: 100 }}
+                    />
+                    <div className="px-3 py-2.5 flex flex-wrap gap-1.5 justify-end" style={{ borderTop: '1px solid var(--border)' }}>
+                      <button
+                        onClick={() => handleCopyPlatform(p)}
+                        className="text-xs px-3 rounded text-fg hover:text-fg font-medium"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
+                      >📋 タグごとコピー</button>
+                      <button
+                        onClick={() => handleOpenImageStudio(p)}
+                        className="text-xs px-3 rounded font-medium"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--fg)', minHeight: 40 }}
+                      >🎨 画像生成</button>
+                      {scheduleAt && (
+                        <button
+                          onClick={() => handleSchedulePost(p)}
+                          className="text-xs px-3 rounded font-semibold"
+                          style={{ background: persona.accentColorLight, color: persona.accentColor, minHeight: 40 }}
+                        >📅 この SNS だけ予約</button>
+                      )}
+                      {m.postUrl && (
+                        <a
+                          href={m.postUrl(body + (multiHashtags.length > 0 ? '\n\n' + multiHashtags.slice(0, 3).map(t => '#' + t).join(' ') : ''))}
+                          target="_blank" rel="noopener noreferrer"
+                          className="text-xs px-3 rounded font-semibold inline-flex items-center"
+                          style={{ background: m.color, color: '#fff', minHeight: 40 }}
+                        >↗ {m.label.split(' ')[0]} で開く</a>
+                      )}
+                      {p === 'x' && xConnected && (
+                        <button
+                          onClick={handleXPostMulti}
+                          disabled={xPosting}
+                          className="text-xs px-3 rounded font-semibold disabled:opacity-40"
+                          style={{ background: '#000', color: '#fff', minHeight: 40 }}
+                        >{xPosting ? '送信中…' : '𝕏 直接投稿'}</button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
 
-                {/* プロンプト (任意。空ならテキストから AI 自動生成) */}
-                <div>
-                  <label className="block text-fg-muted text-[10px] tracking-wider uppercase mb-1">画像プロンプト (英語、空欄で AI 自動生成)</label>
-                  <textarea
-                    value={imgPrompt}
-                    onChange={e => setImgPrompt(e.target.value)}
-                    rows={2}
-                    placeholder="A serene mountain landscape at golden hour..."
-                    className="w-full text-xs px-2.5 py-1.5 rounded bg-surface-3 border-edge border text-fg placeholder:text-fg-subtle font-mono outline-none resize-none"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleGenerateImage(false)}
-                    disabled={imgBusy}
-                    className="text-sm px-4 py-2 rounded-lg font-semibold disabled:opacity-50"
-                    style={{ background: persona.accentColor, color: '#0a0a0f' }}
-                  >{imgBusy ? '🎨 生成中…' : generatedImage ? '🔄 再生成' : '✨ 画像を生成'}</button>
-                  {generatedImage && (
-                    <button
-                      onClick={() => handleGenerateImage(true)}
-                      disabled={imgBusy}
-                      className="text-sm px-3 py-2 rounded-lg text-fg-muted hover:text-fg"
-                      style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
-                    >🎲 別シード</button>
+              {xPostResult && (
+                <div className="rounded-xl px-4 py-2 text-xs" style={{ background: 'rgba(74,222,128,0.10)', color: '#4ADE80' }}>
+                  ✓ 投稿完了 ·{' '}
+                  {xUser && (
+                    <a href={`https://twitter.com/${xUser.username}/status/${xPostResult.ids[0]}`} target="_blank" rel="noopener noreferrer" className="underline">
+                      投稿を確認する →
+                    </a>
                   )}
                 </div>
+              )}
+            </div>
+          )}
 
-                {imgError && (
-                  <div className="rounded p-2 text-xs" style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171' }}>{imgError}</div>
+          {/* note タブ: 旧 UI */}
+          {tab === 'note' && draft && (
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}40` }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                <p className="text-fg-muted text-xs tracking-wider uppercase">下書きプレビュー (編集可)</p>
+              </div>
+              <div className="p-4 space-y-3">
+                <input
+                  value={editedTitle}
+                  onChange={e => setEditedTitle(e.target.value)}
+                  className="w-full text-base font-semibold px-3 py-2 rounded bg-surface-3 border-edge border text-fg outline-none"
+                  placeholder="タイトル"
+                  style={{ minHeight: 48, fontSize: 16 }}
+                />
+                <textarea
+                  value={editedBody}
+                  onChange={e => setEditedBody(e.target.value)}
+                  rows={14}
+                  className="w-full px-3 py-2 rounded bg-surface-3 border-edge border text-fg outline-none font-mono leading-relaxed resize-y"
+                  style={{ minHeight: 320, fontSize: 14 }}
+                />
+                <div className="flex gap-2 flex-wrap">
+                  {(draft.tags || []).map(t => (
+                    <span key={t} className="text-xs px-2 py-0.5 rounded" style={{ background: persona.accentColorLight, color: persona.accentColor }}>#{t}</span>
+                  ))}
+                  {draft.estimatedReadMin && (
+                    <span className="text-xs text-fg-muted ml-auto">推定読了 {draft.estimatedReadMin} 分</span>
+                  )}
+                </div>
+              </div>
+              <div className="px-4 py-3 flex flex-wrap gap-2 justify-end" style={{ borderTop: '1px solid var(--border)' }}>
+                <button
+                  onClick={handleNoteCopy}
+                  className="text-xs px-3 rounded text-fg-muted hover:text-fg"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
+                >📋 Markdown コピー</button>
+                <button
+                  onClick={handleNoteDownload}
+                  className="text-xs px-3 rounded text-fg-muted hover:text-fg"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
+                >⬇ .md ダウンロード</button>
+                <button
+                  onClick={() => handleOpenImageStudio()}
+                  className="text-xs px-3 rounded text-fg hover:text-fg"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
+                >🎨 アイキャッチ生成</button>
+                {onSaveAsKnowledge && (
+                  <button
+                    onClick={handleSaveKb}
+                    className="text-xs px-3 rounded text-fg-muted hover:text-fg"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
+                  >📚 ナレッジに保存</button>
+                )}
+                <ShareArtifactButton
+                  variant="pill"
+                  size="sm"
+                  accent={persona.accentColor || '#A78BFA'}
+                  label="お友達に送る"
+                  shareText={editedTitle || editedBody.slice(0, 80)}
+                  artifact={{
+                    kind: 'text',
+                    title: editedTitle || '記事の下書き',
+                    body: editedBody,
+                    createdBy: persona.name,
+                    source: 'prism',
+                    createdAt: new Date().toISOString(),
+                  }}
+                />
+                <button
+                  onClick={handleNoteOpen}
+                  className="text-xs px-4 rounded font-semibold"
+                  style={{ background: '#41C9B4', color: '#000000', minHeight: 40 }}
+                >📝 note を開いて貼り付け →</button>
+              </div>
+            </div>
+          )}
+
+          {/* X タブ: 旧 UI */}
+          {tab === 'x' && draft && (
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}40` }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                <p className="text-fg-muted text-xs tracking-wider uppercase">
+                  {editedThread.length > 1 ? `スレッド プレビュー (${editedThread.length}本)` : 'ツイート プレビュー'} (編集可)
+                </p>
+              </div>
+              <div className="p-4 space-y-2">
+                {editedThread.length > 1 ? (
+                  editedThread.map((p, i) => (
+                    <div key={i} className="rounded-lg p-2.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <span className="text-xs font-mono" style={{ color: persona.accentColor }}>{i + 1}/{editedThread.length}</span>
+                        <CharCounter text={p} />
+                      </div>
+                      <textarea
+                        value={p}
+                        onChange={e => {
+                          const next = [...editedThread];
+                          next[i] = e.target.value;
+                          setEditedThread(next);
+                        }}
+                        rows={3}
+                        className="w-full px-2 py-1.5 rounded bg-surface-3 border-edge border text-fg outline-none resize-none leading-relaxed"
+                        style={{ fontSize: 14 }}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <div>
+                    <div className="flex justify-end mb-1"><CharCounter text={editedBody} /></div>
+                    <textarea
+                      value={editedBody}
+                      onChange={e => setEditedBody(e.target.value)}
+                      rows={6}
+                      className="w-full px-3 py-2 rounded bg-surface-3 border-edge border text-fg outline-none resize-y leading-relaxed"
+                      style={{ minHeight: 120, fontSize: 14 }}
+                    />
+                  </div>
                 )}
 
-                <AnimatePresence>
-                  {generatedImage && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                      className="rounded-lg overflow-hidden"
-                      style={{ border: `1px solid ${persona.accentColor}40` }}
-                    >
-                      <img
-                        src={generatedImage.url}
-                        alt=""
-                        loading="lazy"
-                        className="w-full h-auto block"
-                        style={{ aspectRatio: `${generatedImage.width}/${generatedImage.height}`, background: '#0a0a0f' }}
-                      />
-                      <div className="flex flex-wrap gap-2 p-2 justify-end" style={{ background: 'var(--surface-3)' }}>
-                        <span className="text-[10px] text-fg-muted mr-auto self-center">
-                          {generatedImage.width}×{generatedImage.height} · {generatedImage.provider === 'dalle3' ? 'DALL-E 3' : 'Flux'}
-                        </span>
-                        <button
-                          onClick={handleDownloadImage}
-                          className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg"
-                          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                        >⬇ ダウンロード</button>
-                        {tab === 'note' && (
-                          <button
-                            onClick={handleInsertImageToNote}
-                            className="text-xs px-3 py-1.5 rounded font-semibold"
-                            style={{ background: persona.accentColor, color: '#0a0a0f' }}
-                          >📝 本文の冒頭に挿入</button>
-                        )}
-                        {tab === 'x' && (
-                          <span className="text-[11px] text-fg-muted self-center">
-                            ※ X 投稿時はダウンロードして添付してください
-                          </span>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* プレビュー & 編集 */}
-          <AnimatePresence>
-            {draft && tab === 'note' && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className="rounded-xl overflow-hidden"
-                style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}40` }}
-              >
-                <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <p className="text-fg-muted text-xs tracking-wider uppercase">下書きプレビュー (編集可)</p>
-                </div>
-                <div className="p-4 space-y-3">
-                  <input
-                    value={editedTitle}
-                    onChange={e => setEditedTitle(e.target.value)}
-                    className="w-full text-base font-semibold px-3 py-2 rounded bg-surface-3 border-edge border text-fg outline-none"
-                    placeholder="タイトル"
-                  />
-                  <textarea
-                    value={editedBody}
-                    onChange={e => setEditedBody(e.target.value)}
-                    rows={14}
-                    className="w-full text-sm px-3 py-2 rounded bg-surface-3 border-edge border text-fg outline-none font-mono leading-relaxed resize-y"
-                    style={{ minHeight: '320px' }}
-                  />
-                  <div className="flex gap-2 flex-wrap">
-                    {(draft.tags || []).map(t => (
-                      <span key={t} className="text-xs px-2 py-0.5 rounded" style={{ background: persona.accentColorLight, color: persona.accentColor }}>#{t}</span>
+                {(draft.tags || []).length > 0 && (
+                  <div className="flex gap-2 flex-wrap pt-1">
+                    {draft.tags.map(t => (
+                      <span key={t} className="text-xs px-2 py-0.5 rounded" style={{ background: persona.accentColorLight, color: persona.accentColor }}>{t}</span>
                     ))}
-                    {draft.estimatedReadMin && (
-                      <span className="text-xs text-fg-muted ml-auto">推定読了 {draft.estimatedReadMin} 分</span>
-                    )}
                   </div>
-                </div>
-                <div className="px-4 py-3 flex flex-wrap gap-2 justify-end" style={{ borderTop: '1px solid var(--border)' }}>
+                )}
+              </div>
+              <div className="px-4 py-3 flex flex-wrap gap-2 justify-end" style={{ borderTop: '1px solid var(--border)' }}>
+                <button
+                  onClick={() => copyToClipboard(editedThread.length > 1 ? editedThread.join('\n\n---\n\n') : editedBody)}
+                  className="text-xs px-3 rounded text-fg-muted hover:text-fg"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
+                >📋 コピー</button>
+                <button
+                  onClick={() => handleOpenImageStudio()}
+                  className="text-xs px-3 rounded text-fg hover:text-fg"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
+                >🎨 画像生成</button>
+                <ShareArtifactButton
+                  variant="pill"
+                  size="sm"
+                  accent={persona.accentColor || '#A78BFA'}
+                  label="お友達に送る"
+                  shareText={editedBody.slice(0, 80)}
+                  artifact={{
+                    kind: 'post',
+                    title: 'X 投稿の下書き',
+                    body: editedThread.length > 1 ? editedThread.join('\n\n---\n\n') : editedBody,
+                    createdBy: persona.name,
+                    source: 'prism',
+                    createdAt: new Date().toISOString(),
+                  }}
+                />
+                {onSaveAsKnowledge && (
                   <button
-                    onClick={handleNoteCopy}
-                    className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                  >📋 Markdown コピー</button>
-                  <button
-                    onClick={handleNoteDownload}
-                    className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                  >⬇ .md ダウンロード</button>
-                  {onSaveAsKnowledge && (
-                    <button
-                      onClick={handleSaveKb}
-                      className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg"
-                      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                    >📚 ナレッジに保存</button>
-                  )}
-                  <ShareArtifactButton
-                    variant="pill"
-                    size="sm"
-                    accent={persona.accentColor || '#A78BFA'}
-                    label="お友達に送る"
-                    shareText={editedTitle || editedBody.slice(0, 80)}
-                    artifact={{
-                      kind: 'text',
-                      title: editedTitle || '記事の下書き',
-                      body: editedBody,
-                      imageUrl: generatedImage?.url,
-                      createdBy: persona.name,
-                      source: 'prism',
-                      createdAt: new Date().toISOString(),
-                    }}
-                  />
-                  <button
-                    onClick={handleNoteOpen}
-                    className="text-xs px-4 py-1.5 rounded font-semibold"
-                    style={{ background: '#41C9B4', color: '#000000' }}
-                  >📝 note を開いて貼り付け →</button>
-                </div>
-                <div className="px-4 py-2 text-[11px] text-fg-muted" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
-                  💡 note は公式 API を提供していないため、自動でクリップボードにコピー → 新規記事ページを新タブで開きます。Cmd/Ctrl+V で貼り付けてください。
-                </div>
-              </motion.div>
-            )}
-
-            {draft && tab === 'x' && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className="rounded-xl overflow-hidden"
-                style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}40` }}
-              >
-                <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <p className="text-fg-muted text-xs tracking-wider uppercase">
-                    {editedThread.length > 1 ? `スレッド プレビュー (${editedThread.length}本)` : 'ツイート プレビュー'} (編集可)
-                  </p>
-                </div>
-                <div className="p-4 space-y-2">
-                  {editedThread.length > 1 ? (
-                    editedThread.map((p, i) => (
-                      <div key={i} className="rounded-lg p-2.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <span className="text-xs font-mono" style={{ color: persona.accentColor }}>{i + 1}/{editedThread.length}</span>
-                          <CharCounter text={p} />
-                        </div>
-                        <textarea
-                          value={p}
-                          onChange={e => {
-                            const next = [...editedThread];
-                            next[i] = e.target.value;
-                            setEditedThread(next);
-                          }}
-                          rows={3}
-                          className="w-full text-sm px-2 py-1.5 rounded bg-surface-3 border-edge border text-fg outline-none resize-none leading-relaxed"
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <div>
-                      <div className="flex justify-end mb-1"><CharCounter text={editedBody} /></div>
-                      <textarea
-                        value={editedBody}
-                        onChange={e => setEditedBody(e.target.value)}
-                        rows={6}
-                        className="w-full text-sm px-3 py-2 rounded bg-surface-3 border-edge border text-fg outline-none resize-y leading-relaxed"
-                        style={{ minHeight: '120px' }}
-                      />
-                    </div>
-                  )}
-
-                  {(draft.tags || []).length > 0 && (
-                    <div className="flex gap-2 flex-wrap pt-1">
-                      {draft.tags.map(t => (
-                        <span key={t} className="text-xs px-2 py-0.5 rounded" style={{ background: persona.accentColorLight, color: persona.accentColor }}>{t}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="px-4 py-3 flex flex-wrap gap-2 justify-end" style={{ borderTop: '1px solid var(--border)' }}>
-                  <button
-                    onClick={() => copyToClipboard(editedThread.length > 1 ? editedThread.join('\n\n---\n\n') : editedBody)}
-                    className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                  >📋 コピー</button>
-                  <ShareArtifactButton
-                    variant="pill"
-                    size="sm"
-                    accent={persona.accentColor || '#A78BFA'}
-                    label="お友達に送る"
-                    shareText={editedBody.slice(0, 80)}
-                    artifact={{
-                      kind: 'post',
-                      title: 'X 投稿の下書き',
-                      body: editedThread.length > 1 ? editedThread.join('\n\n---\n\n') : editedBody,
-                      imageUrl: generatedImage?.url,
-                      createdBy: persona.name,
-                      source: 'prism',
-                      createdAt: new Date().toISOString(),
-                    }}
-                  />
-                  {onSaveAsKnowledge && (
-                    <button
-                      onClick={handleSaveKb}
-                      className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg"
-                      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                    >📚 ナレッジに保存</button>
-                  )}
-                  {!xConnected && (
-                    <a
-                      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(editedBody)}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg"
-                      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                    >🌐 X で開く</a>
-                  )}
-                  <button
-                    onClick={handleXPost}
-                    disabled={!xConnected || xPosting}
-                    className="text-xs px-4 py-1.5 rounded font-semibold disabled:opacity-40"
-                    style={{ background: '#000000', color: '#FFFFFF' }}
-                  >{xPosting ? '送信中…' : `𝕏 ${editedThread.length > 1 ? 'スレッド投稿' : '今すぐ投稿'} →`}</button>
-                </div>
-                {xPostResult && (
-                  <div className="px-4 py-2 text-xs" style={{ background: 'rgba(74,222,128,0.10)', color: '#4ADE80', borderTop: '1px solid var(--border)' }}>
-                    ✓ 投稿完了 ({xPostResult.ids.length}本) ·{' '}
-                    {xUser && (
-                      <a href={`https://twitter.com/${xUser.username}/status/${xPostResult.ids[0]}`} target="_blank" rel="noopener noreferrer" className="underline">
-                        投稿を確認する →
-                      </a>
-                    )}
-                  </div>
+                    onClick={handleSaveKb}
+                    className="text-xs px-3 rounded text-fg-muted hover:text-fg"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
+                  >📚 ナレッジに保存</button>
                 )}
                 {!xConnected && (
-                  <div className="px-4 py-2 text-[11px] text-fg-muted" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
-                    💡 X に接続するとこのアプリから直接投稿できます。未接続の場合は「X で開く」で投稿画面を起動してください。
-                  </div>
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(editedBody)}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="text-xs px-3 rounded text-fg-muted hover:text-fg inline-flex items-center"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
+                  >🌐 X で開く</a>
                 )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <button
+                  onClick={handleXPost}
+                  disabled={!xConnected || xPosting}
+                  className="text-xs px-4 rounded font-semibold disabled:opacity-40"
+                  style={{ background: '#000000', color: '#FFFFFF', minHeight: 40 }}
+                >{xPosting ? '送信中…' : `𝕏 ${editedThread.length > 1 ? 'スレッド投稿' : '今すぐ投稿'} →`}</button>
+              </div>
+              {xPostResult && (
+                <div className="px-4 py-2 text-xs" style={{ background: 'rgba(74,222,128,0.10)', color: '#4ADE80', borderTop: '1px solid var(--border)' }}>
+                  ✓ 投稿完了 ({xPostResult.ids.length}本) ·{' '}
+                  {xUser && (
+                    <a href={`https://twitter.com/${xUser.username}/status/${xPostResult.ids[0]}`} target="_blank" rel="noopener noreferrer" className="underline">
+                      投稿を確認する →
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </motion.div>
     </motion.div>
