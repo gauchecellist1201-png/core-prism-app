@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
-import { routeVoiceMemo, type VoiceRouteItem } from '../lib/voiceRouter';
+import { routeVoiceMemo, type VoiceRouteItem, type VoiceCategory } from '../lib/voiceRouter';
 import { usePersonas } from '../hooks/usePersonas';
 import { useCRM } from '../hooks/useCRM';
 import { useExpenses } from '../hooks/useExpenses';
+import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import type { CRMDeal } from '../types/crm';
 import ApiErrorCard from './ApiErrorCard';
 import { StudioIntro } from './StudioIntro';
+import { notifyInApp } from '../lib/inAppNotify';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -45,6 +47,42 @@ function saveIdea(idea: VoiceIdea) {
   } catch { /* quota */ }
 }
 
+// ─── 未処理メモ (オフライン録音バッファ) ─────────────────────
+// ネット切断中でも録音を続け、復帰後に AI 振り分けできるようにする
+
+const PENDING_KEY = 'core_voice_pending_v1';
+const MAX_PENDING = 30;
+
+interface PendingMemo {
+  id: string;
+  transcript: string;
+  createdAt: string;
+  durationSec: number;
+}
+
+function loadPending(): PendingMemo[] {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    if (!raw) return [];
+    return (JSON.parse(raw) as PendingMemo[]).slice(0, MAX_PENDING);
+  } catch { return []; }
+}
+
+function savePending(arr: PendingMemo[]) {
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify(arr.slice(0, MAX_PENDING))); } catch { /* quota */ }
+}
+
+function pushPending(memo: PendingMemo) {
+  const arr = loadPending();
+  arr.unshift(memo);
+  savePending(arr);
+}
+
+function removePending(id: string) {
+  const arr = loadPending().filter(m => m.id !== id);
+  savePending(arr);
+}
+
 // ─── Waveform animation ───────────────────────────────────────
 
 function WaveformBars({ active }: { active: boolean }) {
@@ -78,6 +116,16 @@ function fmtTime(s: number) {
   return `${m}:${String(r).padStart(2, '0')}`;
 }
 
+function fmtElapsedSince(iso: string) {
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime());
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return 'たった今';
+  if (min < 60) return `${min}分前`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}時間前`;
+  return `${Math.floor(hr / 24)}日前`;
+}
+
 // ─── Kind label helpers ───────────────────────────────────────
 
 const KIND_META: Record<string, { emoji: string; label: string; color: string }> = {
@@ -88,12 +136,15 @@ const KIND_META: Record<string, { emoji: string; label: string; color: string }>
   idea:      { emoji: '💡', label: 'アイデア',  color: '#FACC15' },
 };
 
+const KIND_ORDER: VoiceCategory[] = ['task', 'knowledge', 'crm', 'expense', 'idea'];
+
 // ─── Main Component ───────────────────────────────────────────
 
 export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKnowledgeNote }: Props) {
   const { addTask } = usePersonas();
   const crm = useCRM();
   const expenses = useExpenses();
+  const queue = useAgentTaskQueue();
 
   const [phase, setPhase] = useState<Phase>('idle');
   const [transcript, setTranscript] = useState('');
@@ -103,6 +154,9 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
   const [selectedDealId, setSelectedDealId] = useState<string>('');
   const [saveMsg, setSaveMsg] = useState('');
   const [elapsed, setElapsed] = useState(0);
+  const [pending, setPending] = useState<PendingMemo[]>(loadPending);
+  const [online, setOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [processingPendingId, setProcessingPendingId] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
   const finalRef = useRef('');
@@ -111,8 +165,23 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
   const lastLenRef = useRef(0);          // 直近の再開時点での文字数
   const emptyRestartsRef = useRef(0);    // 無音のまま再開した連続回数
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const elapsedAtStopRef = useRef(0);    // 録音停止時の長さ (pending 保存用)
+  const chunkSavedAtRef = useRef(0);     // 直近で chunk 保存した時点 (long memory 対策)
+  const chunkSavedLenRef = useRef(0);    // 直近 chunk 保存時の文字数
 
   const personaDeals = crm.getForPersona(persona.id);
+
+  // ─── オンライン/オフライン検知 ─────────────────────────────
+  useEffect(() => {
+    const onOnline = () => setOnline(true);
+    const onOffline = () => setOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
 
   // ─── Speech Recognition ───────────────────────────────────
   // Chrome は無音が続くと continuous=true でも勝手に録音を終了する。
@@ -136,6 +205,29 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
       finalRef.current = accumulatedRef.current + fin;
       setTranscript(finalRef.current);
       setInterim(intr);
+
+      // ─── chunk safety: 30 分超 or 2,000 字超で一度 pending に退避 ──
+      // メモリ溢れ・ブラウザクラッシュで全部失うのを防ぐ
+      const now = Date.now();
+      const grew = finalRef.current.length - chunkSavedLenRef.current;
+      const elapsedSinceLastSave = (now - chunkSavedAtRef.current) / 1000;
+      if (grew > 2000 || elapsedSinceLastSave > 30 * 60) {
+        chunkSavedAtRef.current = now;
+        chunkSavedLenRef.current = finalRef.current.length;
+        try {
+          // 同一録音セッションは "session" で識別、再保存で上書き
+          const sessionId = (recognitionRef.current as any)?._sessionId || `session-${now}`;
+          (recognitionRef.current as any)._sessionId = sessionId;
+          const arr = loadPending().filter(m => m.id !== sessionId);
+          arr.unshift({
+            id: sessionId,
+            transcript: finalRef.current,
+            createdAt: new Date(now - elapsed * 1000).toISOString(),
+            durationSec: elapsed,
+          });
+          savePending(arr);
+        } catch { /* quota - 無視 */ }
+      }
     };
 
     rec.onerror = (e: any) => {
@@ -171,7 +263,7 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
     };
 
     return rec;
-  }, []);
+  }, [elapsed]);
 
   const startRecording = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -184,6 +276,8 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
     manualStopRef.current = false;
     lastLenRef.current = 0;
     emptyRestartsRef.current = 0;
+    chunkSavedAtRef.current = Date.now();
+    chunkSavedLenRef.current = 0;
     setTranscript('');
     setInterim('');
     setError(null);
@@ -201,10 +295,22 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
 
   const stopRecording = useCallback(() => {
     manualStopRef.current = true;
+    elapsedAtStopRef.current = elapsed;
     recognitionRef.current?.stop();
+
+    // chunk セッションの残骸を pending から取り除く (preview に出すので一旦消す)
+    try {
+      const sessionId = (recognitionRef.current as any)?._sessionId;
+      if (sessionId) {
+        const arr = loadPending().filter(m => m.id !== sessionId);
+        savePending(arr);
+        setPending(arr);
+      }
+    } catch { /* */ }
+
     setPhase('preview');
     setInterim('');
-  }, []);
+  }, [elapsed]);
 
   // 経過時間タイマー
   useEffect(() => {
@@ -227,11 +333,26 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
     };
   }, []);
 
-  // ─── Routing ──────────────────────────────────────────────
+  // ─── オフライン時 preview → pending に保存 ──────────────────
+  const stashAsPending = useCallback((text: string, durationSec: number) => {
+    const memo: PendingMemo = {
+      id: `pending-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      transcript: text,
+      createdAt: new Date().toISOString(),
+      durationSec,
+    };
+    pushPending(memo);
+    setPending(loadPending());
+    notifyInApp({
+      kind: 'info',
+      title: '未処理メモに保存',
+      body: 'ネット復帰後に「AI 振り分け」を押せます',
+      duration: 3500,
+    });
+  }, []);
 
-  const handleRoute = useCallback(async () => {
-    const text = finalRef.current || transcript;
-    if (!text.trim()) { setError('音声が認識されませんでした。'); return; }
+  // ─── Routing (現在の transcript) ──────────────────────────
+  const routeText = useCallback(async (text: string) => {
     setPhase('routing');
     setError(null);
     try {
@@ -245,7 +366,71 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
       setError(e instanceof Error ? e.message : '分類に失敗しました');
       setPhase('preview');
     }
-  }, [transcript, settings]);
+  }, [settings]);
+
+  const handleRoute = useCallback(async () => {
+    const text = finalRef.current || transcript;
+    if (!text.trim()) { setError('音声が認識されませんでした。'); return; }
+    if (!online) {
+      stashAsPending(text, elapsedAtStopRef.current || elapsed);
+      onClose();
+      return;
+    }
+    await routeText(text);
+  }, [transcript, online, elapsed, stashAsPending, routeText, onClose]);
+
+  // ─── Pending memo → AI route ───────────────────────────────
+  const processPending = useCallback(async (memo: PendingMemo) => {
+    if (!online) {
+      notifyInApp({ kind: 'warn', title: 'オフラインです', body: 'ネット復帰後にもう一度押してください' });
+      return;
+    }
+    setProcessingPendingId(memo.id);
+    finalRef.current = memo.transcript;
+    setTranscript(memo.transcript);
+    removePending(memo.id);
+    setPending(loadPending());
+    setProcessingPendingId(null);
+    await routeText(memo.transcript);
+  }, [online, routeText]);
+
+  const discardPending = useCallback((memo: PendingMemo) => {
+    removePending(memo.id);
+    setPending(loadPending());
+  }, []);
+
+  // ─── カテゴリ手動上書き ────────────────────────────────────
+  const overrideKind = useCallback((idx: number, kind: VoiceCategory) => {
+    setItems(prev => prev.map((p, i) => i === idx ? { ...p, kind, checked: true } : p));
+  }, []);
+
+  // ─── AgentTaskQueue 委任 ───────────────────────────────────
+  const handleDelegateTodos = useCallback(() => {
+    const text = finalRef.current || transcript;
+    if (!text.trim()) return;
+    const taskItems = items.filter(i => i.kind === 'task');
+    const summary = taskItems.length > 0
+      ? `音声メモから抽出した ToDo を AI 会社で分業実行:\n${taskItems.map(t => `- ${t.title}`).join('\n')}`
+      : `音声メモに含まれる ToDo を AI 会社で分業実行`;
+    queue.propose({
+      title: `音声メモの ToDo を AI 会社に委任`,
+      summary,
+      why: `オーナーの口頭メモを行動可能なタスクに変換し、CXO が並列で進める`,
+      expected: 'タスク完了 + 報告',
+      dueDays: 2,
+      steps: [
+        { cxo: 'CEO', label: 'ToDo を優先順位付け、担当 CXO に分配' },
+        { cxo: 'COO', label: '実行手順を細分化、必要な資料を準備' },
+        { cxo: 'CDS', label: '進捗と成果を集計、ダッシュボードに反映' },
+      ],
+    });
+    notifyInApp({
+      kind: 'success',
+      title: 'AI 会社に依頼しました',
+      body: `承認後に CEO → COO → CDS の順で実行`,
+      duration: 4000,
+    });
+  }, [transcript, items, queue]);
 
   // ─── Saving ───────────────────────────────────────────────
 
@@ -337,9 +522,37 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
     setTimeout(onClose, 1800);
   }, [items, transcript, selectedDealId, persona.id, addTask, onAddKnowledgeNote, crm, expenses, onClose]);
 
+  // ─── 全件をナレッジにエクスポート ──────────────────────────
+  const handleExportAllAsKnowledge = useCallback(() => {
+    const checked = items.filter(i => i.checked);
+    if (checked.length === 0) return;
+    const fullText = finalRef.current || transcript;
+    const ts = new Date().toLocaleString('ja-JP', { dateStyle: 'short', timeStyle: 'short' });
+    const lines: string[] = [
+      `# 音声メモ振り分け結果 (${ts})`,
+      '',
+      `## 含まれる項目 (${checked.length}件)`,
+      ...checked.map(c => {
+        const meta = KIND_META[c.kind];
+        return `- ${meta.emoji} **${meta.label}** — ${c.title}\n  ${c.summary}`;
+      }),
+      '',
+      '## 原文',
+      fullText,
+    ];
+    onAddKnowledgeNote(`🎤 音声メモ ${ts}`, lines.join('\n'));
+    notifyInApp({
+      kind: 'success',
+      title: 'ナレッジに保存しました',
+      body: `${checked.length}件をまとめて 1 件のノートに`,
+      duration: 3000,
+    });
+  }, [items, transcript, onAddKnowledgeNote]);
+
   // ─── Render ───────────────────────────────────────────────
 
   const hasCrmItem = items.some(i => i.checked && i.kind === 'crm');
+  const hasTaskItem = items.some(i => i.kind === 'task');
 
   return (
     <motion.div
@@ -363,7 +576,10 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
             <span className="text-xl">🎤</span>
             <div>
               <p className="text-fg font-semibold text-sm">音声メモ</p>
-              <p className="text-fg-muted text-xs">AI が自動振り分け</p>
+              <p className="text-fg-muted text-xs">
+                AI が自動振り分け
+                {!online && <span style={{ color: '#f87171', marginLeft: 6 }}>● オフライン</span>}
+              </p>
             </div>
           </div>
           <button
@@ -452,6 +668,53 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
               }
             />
           )}
+
+          {/* ─── 未処理メモ一覧 (idle 時のみ) ─── */}
+          {phase === 'idle' && pending.length > 0 && (
+            <div className="cp-card-section">
+              <div className="flex items-center justify-between mb-2">
+                <p className="cp-h3">📥 未処理メモ ({pending.length})</p>
+                {!online && (
+                  <span className="text-xs px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(248,113,113,0.15)', color: '#f87171' }}>
+                    オフライン
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2">
+                {pending.slice(0, 5).map(memo => (
+                  <div key={memo.id}
+                    className="rounded-lg p-2.5 text-xs"
+                    style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
+                  >
+                    <p className="text-fg-muted text-[10px] mb-1">
+                      {fmtElapsedSince(memo.createdAt)} · {fmtTime(memo.durationSec)} · {memo.transcript.length}文字
+                    </p>
+                    <p className="text-fg line-clamp-2 mb-2">{memo.transcript.slice(0, 120)}</p>
+                    <div className="flex gap-1.5">
+                      <motion.button
+                        onClick={() => processPending(memo)}
+                        disabled={!online || processingPendingId === memo.id}
+                        className="flex-1 py-1.5 rounded-md text-xs font-semibold disabled:opacity-40"
+                        style={{ background: persona.accentColor, color: '#1F1D26' }}
+                        whileTap={{ scale: 0.97 }}
+                      >
+                        🤖 AI 振り分け
+                      </motion.button>
+                      <button
+                        onClick={() => discardPending(memo)}
+                        className="px-2 py-1.5 rounded-md text-xs"
+                        style={{ background: 'transparent', color: 'var(--fg-subtle)', border: '1px solid var(--border)' }}
+                      >
+                        破棄
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {(phase === 'idle' || phase === 'recording') && (
             <div className="flex flex-col items-center gap-6 py-4">
               <WaveformBars active={phase === 'recording'} />
@@ -469,8 +732,14 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                       {fmtTime(elapsed)}
                     </span>
                     <span className="text-fg-subtle text-xs">録音中</span>
+                    {!online && (
+                      <span className="text-xs px-1.5 py-0.5 rounded-full"
+                        style={{ background: 'rgba(248,113,113,0.15)', color: '#f87171' }}>
+                        オフライン
+                      </span>
+                    )}
                   </div>
-                  <div className="w-full min-h-[80px] rounded-xl p-3 text-sm"
+                  <div className="w-full min-h-[80px] max-h-[200px] overflow-y-auto rounded-xl p-3 text-sm"
                     style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                     <span className="text-fg">{transcript}</span>
                     {interim && <span className="text-fg-muted italic"> {interim}</span>}
@@ -487,7 +756,7 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                     ⏹ 録音停止
                   </motion.button>
                   <p className="text-fg-subtle text-xs text-center leading-relaxed">
-                    少し黙っても大丈夫。録音は止まりません。<br />
+                    長時間録音 OK・少し黙っても止まりません。<br />
                     話し終わったら ⏹ を押してください。
                   </p>
                 </>
@@ -517,7 +786,7 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
               {transcript.trim() ? (
                 <div>
                   <p className="text-fg-muted text-xs mb-2">認識結果</p>
-                  <div className="w-full min-h-[100px] rounded-xl p-3 text-sm text-fg"
+                  <div className="w-full min-h-[100px] max-h-[280px] overflow-y-auto rounded-xl p-3 text-sm text-fg"
                     style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                     {transcript}
                   </div>
@@ -531,6 +800,12 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                     マイクに少し近づいて、もう一度ゆっくり話してみてください。<br />
                     静かな場所だと、より正確に聞き取れます。
                   </p>
+                </div>
+              )}
+              {!online && transcript.trim() && (
+                <div className="rounded-lg p-2.5 text-xs"
+                  style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
+                  オフライン中: 「未処理に保存」を押すと、ネット復帰後に振り分けできます。
                 </div>
               )}
               <ApiErrorCard error={error} onRetry={handleRoute} variant="auto" />
@@ -551,7 +826,7 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                     style={{ background: persona.accentColor, color: '#1F1D26' }}
                     whileTap={{ scale: 0.97 }}
                   >
-                    🤖 AI 振り分け
+                    {online ? '🤖 AI 振り分け' : '📥 未処理に保存'}
                   </motion.button>
                 )}
               </div>
@@ -575,7 +850,7 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
           {/* ─── Results ─── */}
           {phase === 'results' && (
             <div className="flex flex-col gap-4">
-              <p className="text-fg-muted text-xs">振り分け候補 (チェックして保存)</p>
+              <p className="text-fg-muted text-xs">振り分け候補 (チェックして保存・カテゴリは右で変更可)</p>
 
               <div className="space-y-2">
                 {items.map((item, idx) => {
@@ -583,18 +858,18 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                   return (
                     <motion.div
                       key={idx}
-                      className="flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all"
+                      className="flex items-start gap-3 p-3 rounded-xl transition-all"
                       style={{
                         background: item.checked ? `${meta.color}12` : 'var(--surface-3)',
                         border: `1px solid ${item.checked ? meta.color + '40' : 'var(--border)'}`,
                       }}
-                      onClick={() => setItems(prev => prev.map((p, i) => i === idx ? { ...p, checked: !p.checked } : p))}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.06 }}
                     >
                       <div
-                        className="w-5 h-5 rounded flex-shrink-0 flex items-center justify-center mt-0.5 border transition-all"
+                        onClick={() => setItems(prev => prev.map((p, i) => i === idx ? { ...p, checked: !p.checked } : p))}
+                        className="w-5 h-5 rounded flex-shrink-0 flex items-center justify-center mt-0.5 border transition-all cursor-pointer"
                         style={{
                           borderColor: item.checked ? meta.color : 'var(--border)',
                           background: item.checked ? meta.color + '30' : 'transparent',
@@ -605,10 +880,21 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-sm">{meta.emoji}</span>
-                          <span className="text-xs font-medium px-1.5 py-0.5 rounded"
-                            style={{ background: meta.color + '20', color: meta.color }}>
-                            {meta.label}
-                          </span>
+                          {/* カテゴリ手動上書き */}
+                          <select
+                            value={item.kind}
+                            onChange={e => overrideKind(idx, e.target.value as VoiceCategory)}
+                            onClick={e => e.stopPropagation()}
+                            className="text-xs font-medium px-1.5 py-0.5 rounded cursor-pointer"
+                            style={{ background: meta.color + '20', color: meta.color, border: 'none', outline: 'none' }}
+                            aria-label="カテゴリを変更"
+                          >
+                            {KIND_ORDER.map(k => (
+                              <option key={k} value={k} style={{ background: 'var(--surface)', color: 'var(--fg)' }}>
+                                {KIND_META[k].emoji} {KIND_META[k].label}
+                              </option>
+                            ))}
+                          </select>
                           <span className="text-fg text-sm font-medium truncate">{item.title}</span>
                         </div>
                         <p className="text-fg-muted text-xs mt-0.5 leading-relaxed">{item.summary}</p>
@@ -638,6 +924,27 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
                   </select>
                 </div>
               )}
+
+              {/* セカンダリアクション: エクスポート / AI 委任 */}
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={handleExportAllAsKnowledge}
+                  disabled={items.filter(i => i.checked).length === 0}
+                  className="flex-1 min-w-[120px] py-2 rounded-lg text-xs font-medium disabled:opacity-40"
+                  style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)' }}
+                >
+                  📤 まとめてナレッジ化
+                </button>
+                {hasTaskItem && (
+                  <button
+                    onClick={handleDelegateTodos}
+                    className="flex-1 min-w-[120px] py-2 rounded-lg text-xs font-medium"
+                    style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}60`, color: persona.accentColor }}
+                  >
+                    🏢 AI 会社に委任
+                  </button>
+                )}
+              </div>
 
               <div className="flex gap-2">
                 <button

@@ -84,6 +84,41 @@ function parseTimedTextJson3(json: string): string {
   } catch { return ''; }
 }
 
+/** YouTube watch ページ HTML から動画 description を抽出 */
+function extractDescription(html: string): string | null {
+  // ① ytInitialPlayerResponse.videoDetails.shortDescription
+  const playerMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});/s);
+  if (playerMatch) {
+    try {
+      const obj = JSON.parse(playerMatch[1]);
+      const sd = obj?.videoDetails?.shortDescription;
+      if (typeof sd === 'string' && sd.trim().length > 30) return sd.trim();
+    } catch { /* try next */ }
+  }
+  // ② meta description tag
+  const meta = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i);
+  if (meta && meta[1].length > 30) return meta[1];
+  // ③ OG description
+  const og = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i);
+  if (og && og[1].length > 30) return og[1];
+  return null;
+}
+
+async function fetchWatchPage(videoId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=ja`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15',
+        'Accept-Language': 'ja,en;q=0.9',
+      },
+    });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
+}
+
 async function fetchTranscriptForVideo(videoId: string): Promise<{
   ok: boolean;
   transcript?: string;
@@ -92,19 +127,8 @@ async function fetchTranscriptForVideo(videoId: string): Promise<{
   error?: string;
 }> {
   // 1. watch ページから captionTracks を取得
-  let html: string;
-  try {
-    const res = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=ja`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15',
-        'Accept-Language': 'ja,en;q=0.9',
-      },
-    });
-    if (!res.ok) return { ok: false, error: `watch page status ${res.status}` };
-    html = await res.text();
-  } catch (e: any) {
-    return { ok: false, error: `watch fetch failed: ${e.message}` };
-  }
+  const html = await fetchWatchPage(videoId);
+  if (!html) return { ok: false, error: 'watch fetch failed' };
 
   const tracks = extractCaptionTracks(html);
   if (tracks.length === 0) {
@@ -153,6 +177,7 @@ export default async function handler(req: Request) {
   }
   const url = new URL(req.url);
   const input = url.searchParams.get('v') || url.searchParams.get('videoId') || url.searchParams.get('url') || '';
+  const mode = url.searchParams.get('mode') || 'transcript';
   const videoId = extractVideoId(input);
   if (!videoId) {
     return new Response(JSON.stringify({ ok: false, error: 'videoId / url パラメータが必要です' }), {
@@ -160,6 +185,25 @@ export default async function handler(req: Request) {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
+
+  // description フォールバック専用モード (字幕が無い動画用)
+  if (mode === 'description') {
+    const html = await fetchWatchPage(videoId);
+    const desc = html ? extractDescription(html) : null;
+    return new Response(JSON.stringify({
+      ok: !!desc,
+      description: desc || undefined,
+      error: desc ? undefined : '説明文も取得できませんでした',
+    }), {
+      status: desc ? 200 : 404,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        ...corsHeaders,
+      },
+    });
+  }
+
   const result = await fetchTranscriptForVideo(videoId);
   return new Response(JSON.stringify(result), {
     status: result.ok ? 200 : 404,

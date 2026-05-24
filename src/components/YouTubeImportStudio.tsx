@@ -1,7 +1,20 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings } from '../types/identity';
-import { fetchOEmbed, fetchTranscript, summarizeWithClaude, type VideoMeta, type YouTubeSummary } from '../lib/youtubeImport';
+import {
+  fetchOEmbed,
+  fetchTranscript,
+  fetchDescriptionFallback,
+  summarizeWithClaude,
+  extractUrlList,
+  recordSeriesEntry,
+  groupSeriesByAuthor,
+  type VideoMeta,
+  type YouTubeSummary,
+  type SeriesEntry,
+} from '../lib/youtubeImport';
+import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
+import { notifyInApp } from '../lib/inAppNotify';
 import ApiErrorCard from './ApiErrorCard';
 import { StudioIntro } from './StudioIntro';
 
@@ -12,98 +25,279 @@ interface Props {
   onSaveAsKnowledge: (title: string, content: string) => void;
 }
 
-type Phase = 'input' | 'meta' | 'transcript' | 'summarizing' | 'result' | 'saved';
+type Phase = 'input' | 'meta' | 'transcript' | 'summarizing' | 'result' | 'saved' | 'bulk-running' | 'series';
+
+type TranscriptSource = 'transcript' | 'description' | 'manual' | 'meta-only';
+
+interface BulkRow {
+  url: string;
+  status: 'queued' | 'fetching' | 'summarizing' | 'done' | 'error';
+  meta?: VideoMeta;
+  source?: TranscriptSource;
+  summary?: YouTubeSummary;
+  error?: string;
+}
 
 export default function YouTubeImportStudio({ persona, settings, onClose, onSaveAsKnowledge }: Props) {
   const [url, setUrl] = useState('');
   const [phase, setPhase] = useState<Phase>('input');
   const [meta, setMeta] = useState<VideoMeta | null>(null);
   const [transcript, setTranscript] = useState('');
-  const [transcriptAuto, setTranscriptAuto] = useState(false);
+  const [transcriptSource, setTranscriptSource] = useState<TranscriptSource>('manual');
   const [summary, setSummary] = useState<YouTubeSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingMeta, setLoadingMeta] = useState(false);
+  const [bulkRows, setBulkRows] = useState<BulkRow[]>([]);
 
-  // Step 1: URLからメタデータ取得
+  const queue = useAgentTaskQueue();
+
+  // シリーズビュー (同チャンネル束ね)
+  const [seriesGroups, setSeriesGroups] = useState(() => groupSeriesByAuthor());
+  const refreshSeries = useCallback(() => setSeriesGroups(groupSeriesByAuthor()), []);
+
+  useEffect(() => { refreshSeries(); }, [refreshSeries]);
+
+  const isBulk = useMemo(() => {
+    const list = extractUrlList(url);
+    return list.length > 1;
+  }, [url]);
+
+  // ─── 単一動画: メタ + 字幕 fallback ───────────────────────
   const handleFetchMeta = useCallback(async () => {
     if (!url.trim()) return;
+    // 複数 URL なら bulk へ
+    const list = extractUrlList(url);
+    if (list.length > 1) {
+      handleBulk(list);
+      return;
+    }
+
     setLoadingMeta(true);
     setError(null);
     try {
       const m = await fetchOEmbed(url.trim());
       setMeta(m);
       setPhase('transcript');
-      // 字幕自動取得を試みる
+
+      // ① 字幕
       const auto = await fetchTranscript(m.videoId);
       if (auto) {
         setTranscript(auto);
-        setTranscriptAuto(true);
-      } else {
-        setTranscriptAuto(false);
+        setTranscriptSource('transcript');
+        return;
       }
+      // ② description フォールバック
+      const desc = await fetchDescriptionFallback(m.videoId);
+      if (desc) {
+        setTranscript(desc);
+        setTranscriptSource('description');
+        return;
+      }
+      // ③ 手動
+      setTranscript('');
+      setTranscriptSource('manual');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'メタデータ取得に失敗しました');
     } finally {
       setLoadingMeta(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
-  // Step 2: Claude で要約
+  // ─── 複数動画: 一括取込 ────────────────────────────────────
+  const handleBulk = useCallback(async (urls: string[]) => {
+    setPhase('bulk-running');
+    setError(null);
+    const initial: BulkRow[] = urls.map(u => ({ url: u, status: 'queued' }));
+    setBulkRows(initial);
+
+    // 並列処理 (最大 3 並列で API レート保護)
+    const updateRow = (idx: number, patch: Partial<BulkRow>) => {
+      setBulkRows(prev => prev.map((r, i) => i === idx ? { ...r, ...patch } : r));
+    };
+
+    const processOne = async (idx: number, u: string) => {
+      try {
+        updateRow(idx, { status: 'fetching' });
+        const m = await fetchOEmbed(u);
+        updateRow(idx, { meta: m });
+
+        let text: string | null = await fetchTranscript(m.videoId);
+        let src: TranscriptSource = 'transcript';
+        if (!text) {
+          text = await fetchDescriptionFallback(m.videoId);
+          src = text ? 'description' : 'meta-only';
+        }
+        if (!text) {
+          text = `タイトル: ${m.title}\nチャンネル: ${m.author}\n(字幕も説明文も無いため、タイトル等から推測)`;
+        }
+        updateRow(idx, { status: 'summarizing', source: src });
+
+        const sum = await summarizeWithClaude(settings, text, m);
+        // シリーズに記録
+        recordSeriesEntry({
+          videoId: m.videoId,
+          url: m.url,
+          title: m.title,
+          author: m.author,
+          authorUrl: m.authorUrl,
+          thumbnailUrl: m.thumbnailUrl,
+          importedAt: new Date().toISOString(),
+          summaryLine: (sum.summary || '').split(/\n|。/)[0]?.slice(0, 80),
+        });
+        updateRow(idx, { status: 'done', summary: sum });
+      } catch (e) {
+        updateRow(idx, { status: 'error', error: e instanceof Error ? e.message : 'failed' });
+      }
+    };
+
+    const concurrency = 3;
+    let cursor = 0;
+    const runners = Array.from({ length: Math.min(concurrency, urls.length) }, async () => {
+      while (cursor < urls.length) {
+        const idx = cursor++;
+        await processOne(idx, urls[idx]);
+      }
+    });
+    await Promise.all(runners);
+    refreshSeries();
+  }, [settings, refreshSeries]);
+
+  // ─── 単一: AI 要約 ─────────────────────────────────────────
   const handleSummarize = useCallback(async () => {
-    if (!meta || !transcript.trim()) {
-      setError('字幕・テキストを入力してください');
-      return;
-    }
+    if (!meta) return;
+    const text = transcript.trim() || `タイトル: ${meta.title}\nチャンネル: ${meta.author}\n(字幕も説明文も取得できなかったため、タイトルとチャンネル名のみから推測)`;
     setPhase('summarizing');
     setError(null);
     try {
-      const result = await summarizeWithClaude(settings, transcript, meta);
+      const result = await summarizeWithClaude(settings, text, meta);
       setSummary(result);
       setPhase('result');
+      // シリーズに記録
+      recordSeriesEntry({
+        videoId: meta.videoId,
+        url: meta.url,
+        title: meta.title,
+        author: meta.author,
+        authorUrl: meta.authorUrl,
+        thumbnailUrl: meta.thumbnailUrl,
+        importedAt: new Date().toISOString(),
+        summaryLine: (result.summary || '').split(/\n|。/)[0]?.slice(0, 80),
+      });
+      refreshSeries();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'AI 要約に失敗しました');
       setPhase('transcript');
     }
-  }, [meta, transcript, settings]);
+  }, [meta, transcript, settings, refreshSeries]);
 
-  // Step 3: ナレッジに保存
-  const handleSave = useCallback(() => {
-    if (!meta || !summary) return;
+  // ─── 単一: ナレッジに保存 ──────────────────────────────────
+  const buildKnowledgeContent = useCallback((m: VideoMeta, s: YouTubeSummary, srcText: string, src: TranscriptSource): string => {
     const lines: string[] = [
-      `# ${meta.title}`,
-      `チャンネル: ${meta.author}`,
-      `URL: ${meta.url}`,
+      `# ${m.title}`,
+      `チャンネル: ${m.author}`,
+      `URL: ${m.url}`,
+      `情報源: ${src === 'transcript' ? '字幕' : src === 'description' ? '動画説明文' : src === 'manual' ? '手動入力' : 'タイトルのみ'}`,
       '',
       '## 要約',
-      summary.summary,
+      s.summary,
       '',
     ];
-    if (summary.chapters.length > 0) {
+    if (s.chapters.length > 0) {
       lines.push('## 章立て');
-      for (const ch of summary.chapters) {
+      for (const ch of s.chapters) {
         lines.push(`### ${ch.title}`);
         lines.push(ch.content);
         lines.push('');
       }
     }
-    if (summary.quotes.length > 0) {
+    if (s.quotes.length > 0) {
       lines.push('## 印象的なフレーズ');
-      for (const q of summary.quotes) lines.push(`- ${q}`);
+      for (const q of s.quotes) lines.push(`- ${q}`);
       lines.push('');
     }
-    if (summary.actions.length > 0) {
+    if (s.actions.length > 0) {
       lines.push('## アクション');
-      for (const a of summary.actions) lines.push(`- ${a}`);
+      for (const a of s.actions) lines.push(`- ${a}`);
       lines.push('');
     }
-    if (transcript) {
-      lines.push('## 字幕 / 原文テキスト');
-      lines.push(transcript.slice(0, 8000));
+    if (srcText) {
+      lines.push('## 元テキスト (字幕 / 説明文)');
+      lines.push(srcText.slice(0, 8000));
     }
-    onSaveAsKnowledge(`🎬 ${meta.title}`, lines.join('\n'));
+    return lines.join('\n');
+  }, []);
+
+  const handleSave = useCallback(() => {
+    if (!meta || !summary) return;
+    const content = buildKnowledgeContent(meta, summary, transcript, transcriptSource);
+    onSaveAsKnowledge(`🎬 ${meta.title}`, content);
     setPhase('saved');
     setTimeout(onClose, 1600);
-  }, [meta, summary, transcript, onSaveAsKnowledge, onClose]);
+  }, [meta, summary, transcript, transcriptSource, onSaveAsKnowledge, onClose, buildKnowledgeContent]);
+
+  // ─── 単一: アクションを AgentTaskQueue に委任 ──────────────
+  const handleDelegateActions = useCallback(() => {
+    if (!meta || !summary) return;
+    const actions = summary.actions.filter(a => a.trim());
+    if (actions.length === 0) {
+      notifyInApp({ kind: 'warn', title: 'アクションが抽出されていません', body: '要約に actions が含まれていません' });
+      return;
+    }
+    queue.propose({
+      title: `動画「${meta.title.slice(0, 30)}」のアクションを実行`,
+      summary: `YouTube 動画から抽出した ${actions.length} 件のアクションを AI 会社で分業実行:\n${actions.map(a => `- ${a}`).join('\n')}`,
+      why: `${meta.author} の動画ナレッジを学びから行動に変換`,
+      expected: `${actions.length} 件のアクションの実行報告`,
+      dueDays: 3,
+      steps: [
+        { cxo: 'CEO', label: 'アクションに優先順位、各担当を決定' },
+        { cxo: 'COO', label: '各アクションを実行可能な小タスクに分解' },
+        { cxo: 'CMO', label: 'コピー / 文章系のアクションは下書きを生成' },
+        { cxo: 'CDS', label: '実行結果を集計、効果測定' },
+      ],
+    });
+    notifyInApp({
+      kind: 'success',
+      title: 'AI 会社に依頼しました',
+      body: `${actions.length} 件のアクションを承認後に実行`,
+      duration: 4000,
+    });
+  }, [meta, summary, queue]);
+
+  // ─── Bulk: 全件をまとめてナレッジに保存 ────────────────────
+  const handleSaveBulk = useCallback(() => {
+    const done = bulkRows.filter(r => r.status === 'done' && r.meta && r.summary);
+    if (done.length === 0) return;
+    for (const r of done) {
+      const content = buildKnowledgeContent(r.meta!, r.summary!, '', r.source || 'transcript');
+      onSaveAsKnowledge(`🎬 ${r.meta!.title}`, content);
+    }
+    notifyInApp({
+      kind: 'success',
+      title: `${done.length} 件をナレッジに保存`,
+      body: 'シリーズビューからいつでも参照できます',
+      duration: 3500,
+    });
+    setPhase('saved');
+    setTimeout(onClose, 1600);
+  }, [bulkRows, buildKnowledgeContent, onSaveAsKnowledge, onClose]);
+
+  // ─── シリーズ: 動画を選んで開く ────────────────────────────
+  const openFromSeries = useCallback((entry: SeriesEntry) => {
+    setUrl(entry.url);
+    setPhase('input');
+    setTimeout(() => handleFetchMeta(), 50);
+  }, [handleFetchMeta]);
+
+  const bulkProgress = useMemo(() => {
+    if (bulkRows.length === 0) return { done: 0, total: 0, allFinished: false };
+    const done = bulkRows.filter(r => r.status === 'done' || r.status === 'error').length;
+    return { done, total: bulkRows.length, allFinished: done === bulkRows.length };
+  }, [bulkRows]);
+
+  const sourceLabel = (s: TranscriptSource) =>
+    s === 'transcript' ? '✓ 字幕' : s === 'description' ? '✓ 説明文' : s === 'manual' ? '✎ 手動' : '⚠ タイトルのみ';
 
   return (
     <motion.div
@@ -130,111 +324,101 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
               <p className="text-fg-muted text-xs">AI 要約 → ナレッジ化</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-fg-muted hover:text-fg text-lg leading-none transition-colors"
-            aria-label="閉じる"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-1">
+            {seriesGroups.length > 0 && phase === 'input' && (
+              <button
+                onClick={() => setPhase('series')}
+                className="text-xs px-2.5 py-1 rounded-full"
+                style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)' }}
+              >
+                📚 シリーズ ({seriesGroups.reduce((s, g) => s + g.videos.length, 0)})
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-fg-muted hover:text-fg text-lg leading-none transition-colors"
+              aria-label="閉じる"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Body */}
         <div className="cp-modal-body cp-stack" style={{ gap: '16px' }}>
 
-          <StudioIntro
-            id="youtube-import"
-            accent={persona.accentColor}
-            emoji="🎬"
-            what="YouTube の URL を 1 本貼るだけで、AI が要約してナレッジに保存します。"
-            tryThis="動画 URL を入れて「取得」を押す → 字幕が自動で取れたら「AI 要約」。"
-            example="講義動画 1 本 → 結論 3 行 + ハイライト 5 つ + ナレッジ化で他の Studio から参照可能に。"
-            sampleLabel="出来上がる要約"
-            samplePreview={
-              <div
-                style={{
-                  width: 160,
-                  background: 'var(--surface-1)',
-                  borderRadius: 6,
-                  padding: '6px 7px',
-                  fontSize: 7,
-                  lineHeight: 1.4,
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
-                  border: `1px solid ${persona.accentColor}30`,
-                }}
-                aria-label="YouTube 要約のサンプル"
-              >
-                {/* サムネ風ブロック */}
+          {phase === 'input' && (
+            <StudioIntro
+              id="youtube-import"
+              accent={persona.accentColor}
+              emoji="🎬"
+              what="YouTube の URL を貼るだけで、AI が要約してナレッジに保存します。複数行で一括取込も。"
+              tryThis="URL を 1 本貼って「取得」、または改行で複数貼って「一括取込」。"
+              example="講義動画 5 本 → 各 3 行要約 + 同じチャンネルでシリーズ化 → 他の Studio から参照可能。"
+              sampleLabel="出来上がる要約"
+              samplePreview={
                 <div
                   style={{
-                    aspectRatio: '16/9',
-                    background: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)',
-                    borderRadius: 3,
-                    marginBottom: 4,
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    width: 160,
+                    background: 'var(--surface-1)',
+                    borderRadius: 6,
+                    padding: '6px 7px',
+                    fontSize: 7,
+                    lineHeight: 1.4,
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+                    border: `1px solid ${persona.accentColor}30`,
                   }}
+                  aria-label="YouTube 要約のサンプル"
                 >
                   <div
                     style={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: '50%',
-                      background: 'rgba(255,255,255,0.92)',
+                      aspectRatio: '16/9',
+                      background: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)',
+                      borderRadius: 3,
+                      marginBottom: 4,
+                      position: 'relative',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: 6,
-                      color: '#FF0000',
                     }}
                   >
-                    ▶
+                    <div
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.92)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 6,
+                        color: '#FF0000',
+                      }}
+                    >
+                      ▶
+                    </div>
                   </div>
-                  <span
+                  <div style={{ fontWeight: 700, fontSize: 6.5, marginBottom: 3, lineHeight: 1.3, color: 'var(--fg)' }}>
+                    AI 時代に伸びる事業の作り方
+                  </div>
+                  <div
                     style={{
-                      position: 'absolute',
-                      bottom: 2,
-                      right: 2,
-                      background: 'rgba(0,0,0,0.7)',
-                      color: '#fff',
-                      fontSize: 5,
-                      padding: '0 2px',
-                      borderRadius: 1,
+                      background: `${persona.accentColor}14`,
+                      borderLeft: `2px solid ${persona.accentColor}`,
+                      padding: '3px 4px',
+                      marginBottom: 3,
+                      color: 'var(--fg)',
+                      fontSize: 6,
                     }}
                   >
-                    24:13
-                  </span>
+                    <div style={{ fontSize: 5, opacity: 0.7, marginBottom: 1 }}>📌 結論</div>
+                    <div>顧客の「困った」を AI で 10 倍速で解く事業が勝つ</div>
+                  </div>
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 6.5, marginBottom: 3, lineHeight: 1.3, color: 'var(--fg)' }}>
-                  AI 時代に伸びる事業の作り方
-                </div>
-                <div
-                  style={{
-                    background: `${persona.accentColor}14`,
-                    borderLeft: `2px solid ${persona.accentColor}`,
-                    padding: '3px 4px',
-                    marginBottom: 3,
-                    color: 'var(--fg)',
-                    fontSize: 6,
-                  }}
-                >
-                  <div style={{ fontSize: 5, opacity: 0.7, marginBottom: 1 }}>📌 結論</div>
-                  <div>顧客の「困った」を AI で 10 倍速で解く事業が勝つ</div>
-                </div>
-                <div style={{ fontSize: 5.5, opacity: 0.85, color: 'var(--fg)' }}>
-                  <div style={{ marginBottom: 1 }}>✓ AI は労働コスト 1/10</div>
-                  <div style={{ marginBottom: 1 }}>✓ 個人で年商 1 億も可能</div>
-                  <div>✓ 必要なのは課題の発見</div>
-                </div>
-                <div style={{ marginTop: 3, paddingTop: 3, borderTop: `1px dashed ${persona.accentColor}30`, fontSize: 5, opacity: 0.6, color: 'var(--fg)' }}>
-                  → ナレッジに保存済み
-                </div>
-              </div>
-            }
-          />
+              }
+            />
+          )}
 
           <AnimatePresence mode="wait">
 
@@ -243,31 +427,39 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
               <motion.div key="input" className="flex flex-col gap-4"
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <div>
-                  <p className="cp-h3 mb-2">YouTube URL</p>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="cp-h3">YouTube URL</p>
+                    <span className="text-fg-subtle text-xs">{isBulk ? `${extractUrlList(url).length} 本まとめて` : '1 本貼って Enter'}</span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <textarea
                       value={url}
                       onChange={e => setUrl(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleFetchMeta()}
-                      placeholder="https://www.youtube.com/watch?v=..."
-                      className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey && !isBulk) {
+                          e.preventDefault();
+                          handleFetchMeta();
+                        }
+                      }}
+                      placeholder="https://www.youtube.com/watch?v=...&#10;改行で複数貼ると一括取込"
+                      rows={isBulk ? 4 : 2}
+                      className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
                       style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)' }}
                       autoFocus
                     />
                     <motion.button
                       onClick={handleFetchMeta}
                       disabled={!url.trim() || loadingMeta}
-                      className="px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 whitespace-nowrap"
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
                       style={{ background: persona.accentColor, color: '#1F1D26' }}
                       whileTap={{ scale: 0.97 }}
                     >
-                      {loadingMeta ? '取得中…' : '取得'}
+                      {loadingMeta ? '取得中…' : isBulk ? `🎬 ${extractUrlList(url).length} 本を一括取込` : '取得'}
                     </motion.button>
                   </div>
                 </div>
                 <ApiErrorCard error={error} onRetry={handleFetchMeta} variant="auto" />
-                <p className="text-fg-subtle text-xs">対応: youtube.com/watch?v=… / youtu.be/… / /shorts/…</p>
+                <p className="text-fg-subtle text-xs">対応: youtube.com/watch?v=… / youtu.be/… / /shorts/… ・字幕なしも説明文で要約</p>
               </motion.div>
             )}
 
@@ -303,22 +495,29 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="cp-h3">字幕 / テキスト</p>
-                    {transcriptAuto && (
-                      <span className="text-xs px-2 py-0.5 rounded-full"
-                        style={{ background: `${persona.accentColor}20`, color: persona.accentColor }}>
-                        ✓ 自動取得
-                      </span>
-                    )}
+                    <span className="text-xs px-2 py-0.5 rounded-full"
+                      style={{
+                        background: transcriptSource === 'manual' ? 'var(--surface-3)' : `${persona.accentColor}20`,
+                        color: transcriptSource === 'manual' ? 'var(--fg-muted)' : persona.accentColor,
+                        border: '1px solid var(--border)',
+                      }}>
+                      {sourceLabel(transcriptSource)}
+                    </span>
                   </div>
-                  {!transcriptAuto && (
+                  {transcriptSource === 'manual' && (
                     <p className="text-fg-muted text-xs mb-2">
-                      字幕の自動取得ができませんでした。動画の字幕をコピーして貼り付けてください。
+                      字幕も説明文も取得できませんでした。動画の概要を貼り付けるか、空のまま「AI 要約」でタイトル・著者から推測させることもできます。
+                    </p>
+                  )}
+                  {transcriptSource === 'description' && (
+                    <p className="text-fg-muted text-xs mb-2">
+                      字幕がなかったので動画の説明文を使います。手で編集することもできます。
                     </p>
                   )}
                   <textarea
                     value={transcript}
-                    onChange={e => setTranscript(e.target.value)}
-                    placeholder="字幕テキストをここに貼り付けてください…"
+                    onChange={e => { setTranscript(e.target.value); setTranscriptSource('manual'); }}
+                    placeholder="字幕テキストをここに貼り付け、または空のまま「AI 要約」で推測…"
                     rows={7}
                     className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
                     style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)' }}
@@ -338,12 +537,11 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
                   </button>
                   <motion.button
                     onClick={handleSummarize}
-                    disabled={!transcript.trim()}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
                     style={{ background: persona.accentColor, color: '#1F1D26' }}
                     whileTap={{ scale: 0.97 }}
                   >
-                    🤖 AI 要約
+                    🤖 AI 要約{!transcript.trim() && ' (タイトル推測)'}
                   </motion.button>
                 </div>
               </motion.div>
@@ -371,9 +569,9 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
                 <div className="cp-card-section flex gap-3 items-center">
                   <img src={meta.thumbnailUrl} alt={meta.title}
                     className="w-16 rounded-lg flex-shrink-0 object-cover" style={{ aspectRatio: '16/9' }} />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-fg text-sm font-semibold truncate">{meta.title}</p>
-                    <p className="text-fg-muted text-xs">{meta.author}</p>
+                    <p className="text-fg-muted text-xs">{meta.author} · {sourceLabel(transcriptSource)}</p>
                   </div>
                 </div>
 
@@ -418,7 +616,16 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
                 {/* アクション */}
                 {summary.actions.length > 0 && (
                   <div className="cp-card-section">
-                    <p className="cp-h3 mb-2">⚡ アクション</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="cp-h3">⚡ アクション</p>
+                      <button
+                        onClick={handleDelegateActions}
+                        className="text-xs px-2.5 py-1 rounded-full"
+                        style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}60`, color: persona.accentColor }}
+                      >
+                        🏢 AI 会社に委任
+                      </button>
+                    </div>
                     <div className="space-y-1.5">
                       {summary.actions.map((a, i) => (
                         <div key={i} className="flex items-start gap-2">
@@ -447,6 +654,127 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
                     📚 ナレッジに保存
                   </motion.button>
                 </div>
+              </motion.div>
+            )}
+
+            {/* ─── Phase: bulk-running ─── */}
+            {phase === 'bulk-running' && (
+              <motion.div key="bulk" className="flex flex-col gap-4"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <div className="flex items-center justify-between">
+                  <p className="cp-h3">🎬 一括取込 ({bulkProgress.done}/{bulkProgress.total})</p>
+                  {bulkProgress.allFinished && (
+                    <span className="text-xs px-2 py-0.5 rounded-full"
+                      style={{ background: `${persona.accentColor}20`, color: persona.accentColor }}>
+                      ✓ 完了
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                  {bulkRows.map((row, i) => (
+                    <div key={i} className="rounded-lg p-2.5 text-xs flex gap-2 items-start"
+                      style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
+                    >
+                      {row.meta?.thumbnailUrl ? (
+                        <img src={row.meta.thumbnailUrl} alt="" className="w-14 rounded flex-shrink-0 object-cover"
+                          style={{ aspectRatio: '16/9' }} />
+                      ) : (
+                        <div className="w-14 rounded flex-shrink-0"
+                          style={{ aspectRatio: '16/9', background: 'var(--surface)' }} />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-fg text-xs font-semibold line-clamp-1">
+                          {row.meta?.title || row.url}
+                        </p>
+                        <p className="text-fg-muted text-[10px] mt-0.5">
+                          {row.meta?.author}
+                          {row.source && <> · {sourceLabel(row.source)}</>}
+                        </p>
+                        <div className="mt-1">
+                          {row.status === 'queued' && <span className="text-fg-subtle">⏳ 待機中</span>}
+                          {row.status === 'fetching' && <span style={{ color: persona.accentColor }}>📥 取得中…</span>}
+                          {row.status === 'summarizing' && <span style={{ color: persona.accentColor }}>🤖 要約中…</span>}
+                          {row.status === 'done' && row.summary && (
+                            <span className="text-fg-muted line-clamp-1">{row.summary.summary.slice(0, 60)}</span>
+                          )}
+                          {row.status === 'error' && <span style={{ color: '#f87171' }}>⚠ {row.error}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setPhase('input'); setBulkRows([]); }}
+                    className="px-4 py-2.5 rounded-xl text-sm"
+                    style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg-muted)' }}
+                  >
+                    戻る
+                  </button>
+                  <motion.button
+                    onClick={handleSaveBulk}
+                    disabled={!bulkProgress.allFinished || bulkRows.filter(r => r.status === 'done').length === 0}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
+                    style={{ background: persona.accentColor, color: '#1F1D26' }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    📚 完了分をまとめて保存 ({bulkRows.filter(r => r.status === 'done').length})
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ─── Phase: series ─── */}
+            {phase === 'series' && (
+              <motion.div key="series" className="flex flex-col gap-4"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <div className="flex items-center justify-between">
+                  <p className="cp-h3">📚 同じ著者の動画</p>
+                  <button
+                    onClick={() => setPhase('input')}
+                    className="text-xs px-2.5 py-1 rounded-full"
+                    style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)' }}
+                  >
+                    ← 取込画面
+                  </button>
+                </div>
+                {seriesGroups.length === 0 ? (
+                  <div className="rounded-xl p-5 text-center"
+                    style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+                    <div className="text-3xl mb-2">📚</div>
+                    <p className="text-fg-muted text-xs">動画を取込むと、ここに著者ごとのシリーズが溜まります。</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-[480px] overflow-y-auto pr-1">
+                    {seriesGroups.map(g => (
+                      <div key={g.author + (g.authorUrl || '')}>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-fg text-sm font-semibold">{g.author}</p>
+                          <span className="text-fg-subtle text-xs">{g.videos.length} 本</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {g.videos.map(v => (
+                            <button
+                              key={v.videoId}
+                              onClick={() => openFromSeries(v)}
+                              className="w-full flex gap-2 items-start text-left rounded-lg p-2 transition-colors"
+                              style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
+                            >
+                              <img src={v.thumbnailUrl} alt="" className="w-16 rounded flex-shrink-0 object-cover"
+                                style={{ aspectRatio: '16/9' }} />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-fg text-xs font-semibold line-clamp-2">{v.title}</p>
+                                {v.summaryLine && (
+                                  <p className="text-fg-muted text-[10px] mt-0.5 line-clamp-1">{v.summaryLine}</p>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
 

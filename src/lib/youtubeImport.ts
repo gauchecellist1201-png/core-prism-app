@@ -9,6 +9,8 @@ export interface VideoMeta {
   url: string;
   title: string;
   author: string;
+  /** チャンネル URL (oEmbed の author_url, あれば) — シリーズ束ねに使う */
+  authorUrl?: string;
   thumbnailUrl: string;
 }
 
@@ -17,6 +19,51 @@ export interface YouTubeSummary {
   chapters: Array<{ title: string; content: string }>;
   quotes: string[];
   actions: string[];
+}
+
+/** ─── シリーズビュー (同チャンネル動画の蓄積) ────────── */
+
+const SERIES_KEY = 'core_youtube_series_v1';
+const MAX_SERIES_ITEMS = 200;
+
+export interface SeriesEntry {
+  videoId: string;
+  url: string;
+  title: string;
+  author: string;
+  authorUrl?: string;
+  thumbnailUrl: string;
+  importedAt: string;
+  /** AI 要約 1 行 (シリーズ一覧で読みやすくするため) */
+  summaryLine?: string;
+}
+
+export function loadSeriesArchive(): SeriesEntry[] {
+  try {
+    const raw = localStorage.getItem(SERIES_KEY);
+    if (!raw) return [];
+    return (JSON.parse(raw) as SeriesEntry[]).slice(0, MAX_SERIES_ITEMS);
+  } catch { return []; }
+}
+
+export function recordSeriesEntry(entry: SeriesEntry) {
+  try {
+    const arr = loadSeriesArchive().filter(e => e.videoId !== entry.videoId);
+    arr.unshift(entry);
+    localStorage.setItem(SERIES_KEY, JSON.stringify(arr.slice(0, MAX_SERIES_ITEMS)));
+  } catch { /* quota */ }
+}
+
+/** 同じ著者でグルーピング (件数 desc) */
+export function groupSeriesByAuthor(): Array<{ author: string; authorUrl?: string; videos: SeriesEntry[] }> {
+  const arr = loadSeriesArchive();
+  const map = new Map<string, { author: string; authorUrl?: string; videos: SeriesEntry[] }>();
+  for (const e of arr) {
+    const key = e.authorUrl || e.author;
+    if (!map.has(key)) map.set(key, { author: e.author, authorUrl: e.authorUrl, videos: [] });
+    map.get(key)!.videos.push(e);
+  }
+  return [...map.values()].sort((a, b) => b.videos.length - a.videos.length);
 }
 
 /** YouTube URL から videoId を抽出 */
@@ -42,6 +89,21 @@ export function parseYouTubeUrl(url: string): string | null {
   return null;
 }
 
+/** 複数行に貼られた URL を全部抽出 (1 行 1 URL でも、改行混在でも OK) */
+export function extractUrlList(input: string): string[] {
+  const tokens = input.split(/\s+/g).map(s => s.trim()).filter(Boolean);
+  const ids = new Set<string>();
+  const result: string[] = [];
+  for (const t of tokens) {
+    const id = parseYouTubeUrl(t);
+    if (id && !ids.has(id)) {
+      ids.add(id);
+      result.push(t);
+    }
+  }
+  return result;
+}
+
 /** oEmbed API でタイトル・投稿者・サムネを取得 (CORS OK) */
 export async function fetchOEmbed(url: string): Promise<VideoMeta> {
   const videoId = parseYouTubeUrl(url);
@@ -57,6 +119,7 @@ export async function fetchOEmbed(url: string): Promise<VideoMeta> {
     url,
     title: data.title ?? 'YouTube動画',
     author: data.author_name ?? '',
+    authorUrl: data.author_url ?? undefined,
     thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
   };
 }
@@ -81,6 +144,47 @@ export async function fetchTranscript(videoId: string): Promise<string | null> {
   }
 }
 
+/**
+ * 字幕が無い動画用のフォールバック: 動画ページから description を取得。
+ * Edge Function (/api/youtube/transcript) は description も返すように拡張済み (なくても
+ * keywords / shortDescription のような meta tag からの抽出で代替)。
+ * 失敗時は null。
+ */
+export async function fetchDescriptionFallback(videoId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`/api/youtube/transcript?v=${encodeURIComponent(videoId)}&mode=description`, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data?.description && typeof data.description === 'string' && data.description.length > 30) {
+      return data.description;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 字幕 → ダメなら description → それでもダメなら oEmbed のタイトル + 著者だけ。
+ * AI 要約は最低限の情報量があれば動かす方針。
+ */
+export async function fetchTranscriptOrFallback(meta: VideoMeta): Promise<{
+  text: string;
+  source: 'transcript' | 'description' | 'meta-only';
+}> {
+  const t = await fetchTranscript(meta.videoId);
+  if (t) return { text: t, source: 'transcript' };
+  const d = await fetchDescriptionFallback(meta.videoId);
+  if (d) return { text: d, source: 'description' };
+  // 最低限のフォールバック: タイトル + 著者だけで要約させる (極端に短い結果になるが諦めない)
+  return {
+    text: `タイトル: ${meta.title}\nチャンネル: ${meta.author}\n(字幕も説明文も取得できなかったため、タイトルとチャンネル名のみから推測してください)`,
+    source: 'meta-only',
+  };
+}
+
 /** Claude に要約・章立て・引用・アクションを依頼 */
 export async function summarizeWithClaude(
   settings: AppSettings,
@@ -102,7 +206,8 @@ export async function summarizeWithClaude(
 
 - chaptersは内容に応じて3〜7章
 - 日本語で回答
-- JSONのみ返す (前後のコードブロック記号不要)`;
+- JSONのみ返す (前後のコードブロック記号不要)
+- 情報が乏しい (タイトルだけ等) 場合は、無理に章立てを増やさず簡潔に。`;
 
   const userPrompt = `## 動画タイトル\n${meta.title}\n## チャンネル\n${meta.author}\n## URL\n${meta.url}\n\n## 字幕 / テキスト\n${transcript.slice(0, 15000)}`;
 
