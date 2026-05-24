@@ -46,6 +46,14 @@ function savePersonas(personas: Persona[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(personas));
 }
 
+// ─── 同一タブ内 broadcaster (複数 usePersonas() 間で state を同期) ─────
+const personaSubscribers = new Set<(p: Persona[]) => void>();
+function broadcastPersonas(next: Persona[]) {
+  personaSubscribers.forEach(fn => {
+    try { fn(next); } catch { /* */ }
+  });
+}
+
 export function usePersonas() {
   const [personas, setPersonas] = useState<Persona[]>(loadPersonas);
   const [activePersona, setActivePersona] = useState<Persona | null>(() => {
@@ -58,10 +66,25 @@ export function usePersonas() {
     } catch { return null; }
   });
 
-  // localStorageに永続化 (オフラインキャッシュ)
+  // localStorageに永続化 (オフラインキャッシュ) + 同一タブ broadcast
   useEffect(() => {
     savePersonas(personas);
+    broadcastPersonas(personas);
   }, [personas]);
+
+  // 他の usePersonas() インスタンス (TaskHub 等) からの更新を購読
+  useEffect(() => {
+    const sub = (next: Persona[]) => {
+      // 参照が違うときだけ更新 (自分が起こした更新は無視される — JSON 比較は重いので長さ + 最後 id でざっくり判定)
+      setPersonas(prev => {
+        if (prev === next) return prev;
+        if (prev.length === next.length && JSON.stringify(prev) === JSON.stringify(next)) return prev;
+        return next;
+      });
+    };
+    personaSubscribers.add(sub);
+    return () => { personaSubscribers.delete(sub); };
+  }, []);
 
   // Supabase 同期 (未認証 / env 未設定なら no-op)
   useCloudSync({ key: STORAGE_KEY, value: personas, setValue: setPersonas, isEmpty: v => v.length === 0 });
@@ -119,16 +142,49 @@ export function usePersonas() {
   }, [activePersona]);
 
   const addTask = useCallback((personaId: string, task: Omit<Task, 'id' | 'personaId'>) => {
-    const newTask: Task = { ...task, id: uuidv4(), personaId };
+    const newTask: Task = {
+      ...task,
+      id: uuidv4(),
+      personaId,
+      createdAt: task.createdAt ?? new Date().toISOString(),
+    };
     setPersonas(prev => prev.map(p =>
       p.id === personaId ? { ...p, tasks: [...p.tasks, newTask] } : p
     ));
+    return newTask;
   }, []);
 
   const toggleTask = useCallback((personaId: string, taskId: string) => {
     setPersonas(prev => prev.map(p =>
       p.id === personaId
-        ? { ...p, tasks: p.tasks.map(t => t.id === taskId ? { ...t, done: !t.done } : t) }
+        ? {
+            ...p,
+            tasks: p.tasks.map(t =>
+              t.id === taskId
+                ? {
+                    ...t,
+                    done: !t.done,
+                    completedAt: !t.done ? new Date().toISOString() : undefined,
+                  }
+                : t
+            ),
+          }
+        : p
+    ));
+  }, []);
+
+  const updateTask = useCallback((personaId: string, taskId: string, updates: Partial<Task>) => {
+    setPersonas(prev => prev.map(p =>
+      p.id === personaId
+        ? { ...p, tasks: p.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t) }
+        : p
+    ));
+  }, []);
+
+  const deleteTask = useCallback((personaId: string, taskId: string) => {
+    setPersonas(prev => prev.map(p =>
+      p.id === personaId
+        ? { ...p, tasks: p.tasks.filter(t => t.id !== taskId) }
         : p
     ));
   }, []);
@@ -164,6 +220,8 @@ export function usePersonas() {
     deletePersona,
     addTask,
     toggleTask,
+    updateTask,
+    deleteTask,
     updateCashflow,
     selectPersona,
   };

@@ -64,6 +64,14 @@ export interface Task {
   done: boolean;
   personaId?: PersonaId;
   calendarEventId?: string;      // Googleカレンダー連携ID
+  /** 完了予想時間 (分) — 時間ブロック表示用 */
+  estimatedMin?: number;
+  /** タスク作成時刻 (追加順ソート / streak 用) */
+  createdAt?: string;
+  /** 完了時刻 (streak 表示用) */
+  completedAt?: string;
+  /** AI 会社に委任した AgentTask の ID */
+  delegatedAgentTaskId?: string;
 }
 
 // ── 財務 ──────────────────────────────────────────
