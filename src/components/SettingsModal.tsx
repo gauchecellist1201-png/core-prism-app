@@ -10,6 +10,7 @@ import OrgPanel from './OrgPanel';
 import { useBillingUser } from '../lib/billing';
 import { INDUSTRY_LIST, type IndustryId } from '../prism/industryPacks';
 import { isSoundEnabled, setSoundEnabled, playChime, tactileTap } from '../lib/haptic';
+import { isTelemetryOptedIn, setTelemetryOptIn } from '../lib/errorCapture';
 
 interface Props {
   settings: AppSettings;
@@ -43,6 +44,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
   const [voiceEnabled, setVoiceEnabled] = useState(settings.voiceEnabled !== false);
   const [openaiVoice, setOpenaiVoice] = useState<OpenAIVoice>((settings as any).openaiVoice || 'nova');
   const openaiAvailable = isOpenAITTSConfigured();
+  const [telemetryOptIn, setTelemetryOptInState] = useState(isTelemetryOptedIn());
   type Tab = 'general' | 'ai' | 'voice' | 'usage' | 'integrations' | 'personas';
   const [tab, setTab] = useState<Tab>('general');
 
@@ -376,6 +378,39 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                 </button>
 
                 <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  {/* エラー報告オプトイン */}
+                  <label
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 12px',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: 12,
+                      cursor: 'pointer',
+                      marginBottom: 10,
+                      minHeight: 44,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={telemetryOptIn}
+                      onChange={(e) => {
+                        const v = e.target.checked;
+                        setTelemetryOptInState(v);
+                        setTelemetryOptIn(v);
+                      }}
+                      style={{ width: 18, height: 18, accentColor: '#A78BFA', cursor: 'pointer' }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12.5, color: '#fff', fontWeight: 600 }}>
+                        エラー報告を送る (匿名)
+                      </div>
+                      <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.5)', marginTop: 2, lineHeight: 1.5 }}>
+                        画面エラーを匿名でチームに送り、改善に使います。入力内容・メアドは送りません。
+                      </div>
+                    </div>
+                  </label>
+
                   <button
                     type="button"
                     onClick={() => { window.dispatchEvent(new CustomEvent('core:open-error-log')); }}

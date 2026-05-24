@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import './index.css';
 
@@ -16,36 +16,46 @@ import IdentityDashboard from './components/IdentityDashboard';
 import PersonaCreator from './components/PersonaCreator';
 import SettingsModal from './components/SettingsModal';
 import LandingPage from './components/LandingPage';
-import MasterEntry from './components/MasterEntry';
-import AiStats from './master/AiStats';
-import StripeStatusPage from './components/StripeStatusPage';
 import CheckoutModal from './components/CheckoutModal';
 import LegalModal, { type LegalKind } from './components/LegalModal';
-import PrivacyPolicy from './legal/PrivacyPolicy';
-import TermsOfService from './legal/TermsOfService';
-import CoreSite from './corporate/CoreSite';
-import StrategyDashboard from './corporate/StrategyDashboard';
-import PricingPage from './corporate/PricingPage';
+// 重い「別ルート専用」のページは React.lazy で main から切り出す。
+// (Prism ダッシュボードを開く一般ユーザーには、これらを読み込ませない)
+const MasterEntry = lazy(() => import('./components/MasterEntry'));
+const AiStats = lazy(() => import('./master/AiStats'));
+const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
+const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./legal/TermsOfService'));
+const CoreSite = lazy(() => import('./corporate/CoreSite'));
+const StrategyDashboard = lazy(() => import('./corporate/StrategyDashboard'));
+const PricingPage = lazy(() => import('./corporate/PricingPage'));
+const IrisApp = lazy(() => import('./iris/IrisApp'));
+const BillingSuccess = lazy(() => import('./components/BillingSuccess'));
+const KeynoteLanding = lazy(() => import('./keynote/KeynoteLanding'));
+const SharedArtifactView = lazy(() => import('./components/SharedArtifactView'));
+const ErrorLogViewer = lazy(() => import('./components/ErrorLogViewer'));
 import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, syncSubscriptionState, type Plan } from './lib/billing';
 import { PrismBackground } from './components/PrismBackground';
 import GlobalVoiceInput from './components/GlobalVoiceInput';
 import { useTheme } from './hooks/useTheme';
-import IrisApp from './iris/IrisApp';
-import BillingSuccess from './components/BillingSuccess';
-import KeynoteLanding from './keynote/KeynoteLanding';
 import PrismTaskScheduler from './prism/PrismTaskScheduler';
 import PrismSplash from './prism/PrismWelcome';
 import TutorialOverlay from './components/TutorialOverlay';
 import WowOnboarding from './components/WowOnboarding';
 import OfflineNotice from './components/OfflineNotice';
-import SharedArtifactView from './components/SharedArtifactView';
-import ErrorLogViewer from './components/ErrorLogViewer';
 import AgentTeamMonitor from './components/AgentTeamMonitor';
 import ExtensionCaptureToast from './components/ExtensionCaptureToast';
 import CxoWelcomeCard from './components/CxoWelcomeCard';
 import StripeFailureBanner from './components/StripeFailureBanner';
 import InstallPwaBanner from './components/InstallPwaBanner';
 import { readSharedFromUrl } from './lib/shareLink';
+
+// 別ルートを lazy 読み込みする際の共通フォールバック (シンプルな空白)
+// 即座に切り替わるルートが多いので、派手な spinner より flash を防ぐ薄い背景の方が落ち着く
+const RouteFallback = () => (
+  <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }} aria-hidden>
+    <span style={{ fontSize: 12, opacity: 0.6 }}>読み込み中…</span>
+  </div>
+);
 
 import type { AppSettings, ChatMessage } from './types/identity';
 
@@ -102,6 +112,12 @@ function isAiStatsPath(): boolean {
   return p === '/master/ai-stats' || p === '/ai-stats';
 }
 
+function isErrorLogPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/error-log' || p === '/error-log';
+}
+
 function isCorpPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
@@ -147,66 +163,73 @@ export default function App() {
   const sharedArtifact = readSharedFromUrl();
   if (sharedArtifact) {
     return (
-      <SharedArtifactView
-        artifact={sharedArtifact}
-        onEnterApp={() => { window.location.href = '/'; }}
-      />
+      <Suspense fallback={<RouteFallback />}>
+        <SharedArtifactView
+          artifact={sharedArtifact}
+          onEnterApp={() => { window.location.href = '/'; }}
+        />
+      </Suspense>
     );
   }
 
   // /keynote — 講演会限定 先行案内 LP
   if (isKeynotePath()) {
-    return <KeynoteLanding />;
+    return <Suspense fallback={<RouteFallback />}><KeynoteLanding /></Suspense>;
   }
 
   // /privacy, /iris/privacy — プライバシーポリシー フルページ
   if (isPrivacyPath()) {
-    return <PrivacyPolicy />;
+    return <Suspense fallback={<RouteFallback />}><PrivacyPolicy /></Suspense>;
   }
 
   // /terms, /iris/terms — 利用規約 フルページ
   if (isTermsPath()) {
-    return <TermsOfService />;
+    return <Suspense fallback={<RouteFallback />}><TermsOfService /></Suspense>;
   }
 
   // /strategy — オーナー専用 戦略ダッシュボード
   if (isStrategyPath()) {
-    return <StrategyDashboard />;
+    return <Suspense fallback={<RouteFallback />}><StrategyDashboard /></Suspense>;
   }
 
   // /pricing — 公開価格ページ + ROI 計算機
   if (isPricingPath()) {
-    return <PricingPage />;
+    return <Suspense fallback={<RouteFallback />}><PricingPage /></Suspense>;
   }
 
   // /corp — 株式会社コア (CORE Inc.) 法人 LP
   if (isCorpPath()) {
-    return <CoreSite />;
+    return <Suspense fallback={<RouteFallback />}><CoreSite /></Suspense>;
   }
 
   // /master/stripe-status — オーナー専用 Stripe 接続診断
   if (isStripeStatusPath()) {
-    return <StripeStatusPage />;
+    return <Suspense fallback={<RouteFallback />}><StripeStatusPage /></Suspense>;
   }
 
   // /master/ai-stats — オーナー専用 AI 使用量ダッシュボード
   if (isAiStatsPath()) {
-    return <AiStats />;
+    return <Suspense fallback={<RouteFallback />}><AiStats /></Suspense>;
+  }
+
+  // /master/error-log — エラーログ単独閲覧 (自端末のローカルログのみ)
+  if (isErrorLogPath()) {
+    return <ErrorLogViewer fullPage onClose={() => { window.location.href = '/'; }} />;
   }
 
   // /master — オーナー専用フル機能解放画面
   if (isMasterPath()) {
-    return <MasterEntry />;
+    return <Suspense fallback={<RouteFallback />}><MasterEntry /></Suspense>;
   }
 
   // /billing/success — Stripe 決済完了ページ
   if (isBillingSuccessPath()) {
-    return <BillingSuccess />;
+    return <Suspense fallback={<RouteFallback />}><BillingSuccess /></Suspense>;
   }
 
   // CORE Iris (姉妹ブランド) ルート — /iris で別ブランドを起動
   if (isIrisPath()) {
-    return <IrisApp />;
+    return <Suspense fallback={<RouteFallback />}><IrisApp /></Suspense>;
   }
 
   // Theme初期化 (ライト既定)
@@ -495,7 +518,9 @@ export default function App() {
       <WowOnboarding brand="prism" trigger={tutorialDoneTick} />
       <AnimatePresence>
         {showErrorLog && (
-          <ErrorLogViewer key="error-log" onClose={() => setShowErrorLog(false)} />
+          <Suspense fallback={null}>
+            <ErrorLogViewer key="error-log" onClose={() => setShowErrorLog(false)} />
+          </Suspense>
         )}
       </AnimatePresence>
       {/* 課金失敗 (past_due / unpaid) 救済バナー — dashboard 上部に固定表示 */}

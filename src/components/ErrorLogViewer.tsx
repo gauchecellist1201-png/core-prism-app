@@ -7,10 +7,9 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Copy, Trash2, RefreshCw, Check, Mail } from 'lucide-react';
 import { confirmAction } from '../lib/confirmDialog';
+import { readLocalErrors, clearLocalErrors } from '../lib/errorCapture';
 
 const SUPPORT_EMAIL = 'gauche.cellist1201@gmail.com';
-
-const LOCAL_BUFFER_KEY = 'core_error_log_v1';
 
 interface ErrorEntry {
   type: 'console' | 'window' | 'unhandledrejection';
@@ -18,19 +17,23 @@ interface ErrorEntry {
   stack?: string;
   url: string;
   ts: number;
+  // 追加メタ (errorCapture v2)
+  ua?: string;
+  viewport?: string;
+  referrer?: string;
+  brand?: string;
+  personaId?: string | null;
+  version?: string;
 }
 
 interface Props {
   onClose: () => void;
+  /** 画面全体に開くか (master ページ用)。指定しなければモーダル表示 */
+  fullPage?: boolean;
 }
 
 function load(): ErrorEntry[] {
-  try {
-    const raw = localStorage.getItem(LOCAL_BUFFER_KEY);
-    return raw ? (JSON.parse(raw) as ErrorEntry[]) : [];
-  } catch {
-    return [];
-  }
+  return readLocalErrors() as ErrorEntry[];
 }
 
 function formatTs(ts: number): string {
@@ -50,6 +53,8 @@ function entriesToText(entries: ErrorEntry[]): string {
   for (const e of entries) {
     lines.push(`[${formatTs(e.ts)}] ${e.type}`);
     lines.push(`  画面: ${e.url}`);
+    if (e.brand) lines.push(`  ブランド: ${e.brand}${e.version ? ` v${e.version}` : ''}`);
+    if (e.viewport) lines.push(`  画面サイズ: ${e.viewport}`);
     lines.push(`  内容: ${e.message}`);
     if (e.stack) lines.push(`  詳細: ${e.stack.split('\n').slice(0, 4).join(' / ')}`);
     lines.push('');
@@ -69,14 +74,14 @@ const TYPE_COLOR: Record<ErrorEntry['type'], string> = {
   unhandledrejection: '#A78BFA',
 };
 
-export default function ErrorLogViewer({ onClose }: Props) {
+export default function ErrorLogViewer({ onClose, fullPage = false }: Props) {
   const [entries, setEntries] = useState<ErrorEntry[]>(load);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     // 開いている間はストレージ変更を見て自動更新
     const onStorage = (e: StorageEvent) => {
-      if (e.key === LOCAL_BUFFER_KEY) setEntries(load());
+      if (e.key === 'core_error_log_v1') setEntries(load());
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -85,7 +90,7 @@ export default function ErrorLogViewer({ onClose }: Props) {
   const refresh = () => setEntries(load());
   const clear = async () => {
     if (!(await confirmAction({ title: '不具合ログをすべて消去しますか?', body: '保存されているエラーログが空になります。', tone: 'danger', okLabel: '消去する' }))) return;
-    try { localStorage.removeItem(LOCAL_BUFFER_KEY); } catch { /* */ }
+    clearLocalErrors();
     setEntries([]);
   };
   const copyAll = async () => {
@@ -113,28 +118,21 @@ export default function ErrorLogViewer({ onClose }: Props) {
     window.location.href = href;
   };
 
-  return (
+  const inner = (
     <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      onClick={onClose}
+      initial={fullPage ? false : { scale: 0.94, y: 18 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94, y: 18 }}
+      transition={{ type: 'spring', damping: 24, stiffness: 280 }}
+      onClick={(e) => e.stopPropagation()}
       style={{
-        position: 'fixed', inset: 0, zIndex: 110,
-        background: 'rgba(8,8,18,0.78)', backdropFilter: 'blur(12px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+        background: '#12121E', borderRadius: fullPage ? 0 : 18,
+        maxWidth: fullPage ? 'none' : 720, width: '100%',
+        maxHeight: fullPage ? '100dvh' : 'calc(100dvh - 2rem)',
+        minHeight: fullPage ? '100dvh' : undefined,
+        color: '#fff', border: fullPage ? 'none' : '1px solid rgba(255,255,255,0.08)',
+        boxShadow: fullPage ? 'none' : '0 30px 80px rgba(0,0,0,0.6)',
+        display: 'flex', flexDirection: 'column',
       }}
     >
-      <motion.div
-        initial={{ scale: 0.94, y: 18 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94, y: 18 }}
-        transition={{ type: 'spring', damping: 24, stiffness: 280 }}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#12121E', borderRadius: 18,
-          maxWidth: 720, width: '100%', maxHeight: 'calc(100dvh - 2rem)',
-          color: '#fff', border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
-          display: 'flex', flexDirection: 'column',
-        }}
-      >
         <header style={{ padding: '1.1rem 1.2rem 0.8rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <div>
@@ -210,6 +208,16 @@ export default function ErrorLogViewer({ onClose }: Props) {
                     fontSize: 11.5, color: '#fff', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
                     lineHeight: 1.5, wordBreak: 'break-word',
                   }}>{e.message}</div>
+                  {(e.url || e.brand || e.version || e.viewport) && (
+                    <div style={{
+                      marginTop: 4, fontSize: 10, color: 'rgba(255,255,255,0.45)',
+                      display: 'flex', flexWrap: 'wrap', gap: '4px 10px',
+                    }}>
+                      {e.url && <span>画面: {e.url}</span>}
+                      {e.brand && <span>brand: {e.brand}{e.version ? ` v${e.version}` : ''}</span>}
+                      {e.viewport && <span>{e.viewport}</span>}
+                    </div>
+                  )}
                   {e.stack && (
                     <details style={{ marginTop: 5 }}>
                       <summary style={{ cursor: 'pointer', fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>詳細</summary>
@@ -218,6 +226,11 @@ export default function ErrorLogViewer({ onClose }: Props) {
                         whiteSpace: 'pre-wrap', wordBreak: 'break-word',
                         fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
                       }}>{e.stack.slice(0, 1200)}</pre>
+                      {e.ua && (
+                        <div style={{ marginTop: 4, fontSize: 9.5, color: 'rgba(255,255,255,0.35)', wordBreak: 'break-all' }}>
+                          UA: {e.ua}
+                        </div>
+                      )}
                     </details>
                   )}
                 </li>
@@ -226,6 +239,27 @@ export default function ErrorLogViewer({ onClose }: Props) {
           )}
         </div>
       </motion.div>
+  );
+
+  if (fullPage) {
+    return (
+      <div style={{ minHeight: '100dvh', background: '#0a0a0f', color: '#fff' }}>
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 110,
+        background: 'rgba(8,8,18,0.78)', backdropFilter: 'blur(12px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+      }}
+    >
+      {inner}
     </motion.div>
   );
 }
