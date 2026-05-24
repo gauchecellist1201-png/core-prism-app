@@ -5,4 +5,16 @@ Allow: /
 Disallow: /corp
 Disallow: /keynote
 
+# オーナー / 管理者専用ページは検索除外
+Disallow: /master
+Disallow: /master/
+Disallow: /strategy
+Disallow: /billing/
+Disallow: /stripe-status
+Disallow: /ai-stats
+
+# 共有用一時 URL も noindex
+Disallow: /?share=
+Disallow: /?capture=
+
 Sitemap: https://core-prism-app.vercel.app/sitemap.xml
