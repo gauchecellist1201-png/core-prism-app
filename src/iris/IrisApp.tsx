@@ -10,6 +10,7 @@ import OfflineNotice from '../components/OfflineNotice';
 import AgentTeamMonitor from '../components/AgentTeamMonitor';
 import ExtensionCaptureToast from '../components/ExtensionCaptureToast';
 import CxoWelcomeCard from '../components/CxoWelcomeCard';
+import StripeFailureBanner from '../components/StripeFailureBanner';
 import IrisDashboard from './IrisDashboard';
 import TutorialOverlay from '../components/TutorialOverlay';
 import WowOnboarding from '../components/WowOnboarding';
@@ -103,6 +104,8 @@ export default function IrisApp() {
   return (
     <>
       <OfflineNotice />
+      {/* 課金失敗 (past_due / unpaid) 救済バナー — Iris ダッシュボード上部 */}
+      <StripeFailureBanner brand="iris" />
       <IrisDashboard settings={settings} onLeave={() => setEntered(false)} />
       {/* AI 会社 作戦本部 — Iris (CMO/CDS/CSO/UXE が活躍する場面が多い) */}
       <AgentTeamMonitor brand="iris" />

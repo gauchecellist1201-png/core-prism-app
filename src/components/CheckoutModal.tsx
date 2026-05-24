@@ -283,22 +283,59 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 </button>
               </div>
 
-              {/* 7 日間 無料スタートの大きな帯 (全プラン共通) */}
+              {/* Day 2 アップグレード: 14 日無料 + クレカ不要 の大きな緑バナー (最優先で目に入る) */}
+              <div style={{
+                marginBottom: '0.9rem',
+                padding: '1rem 1.1rem',
+                borderRadius: 16,
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                color: '#fff',
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                boxShadow: '0 10px 28px rgba(16,185,129,0.30)',
+              }}>
+                <div style={{
+                  fontSize: '1.6rem', lineHeight: 1, flexShrink: 0,
+                }} aria-hidden>🎁</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '1.02rem', fontWeight: 900, marginBottom: 4, letterSpacing: '0.01em' }}>
+                    最初の 14 日 ¥0 / クレジットカード登録は不要
+                  </div>
+                  <div style={{ fontSize: '0.8rem', lineHeight: 1.55, color: 'rgba(255,255,255,0.95)' }}>
+                    14 日後の <strong>前日</strong>に「続けますか?」のメールが届きます。
+                    そのときに初めてカード情報を入れる/入れないを選べます。
+                  </div>
+                </div>
+              </div>
+
+              {/* 他のサービスとの差別化 — 1 段で「コスパで選ぶならコレ」を伝える */}
+              <div style={{
+                marginBottom: '1rem',
+                padding: '0.7rem 1rem',
+                borderRadius: 12,
+                background: 'linear-gradient(135deg, #FFFBEB, #FEF3C7)',
+                border: '1px dashed #F59E0B',
+                fontSize: '0.82rem', color: '#78350F', lineHeight: 1.55,
+              }}>
+                <strong>Notion AI + ChatGPT + Granola</strong> を 1 つに、<strong style={{ color: '#92400E' }}>¥9,800〜</strong>。
+                <span style={{ color: '#92400E' }}>3 つ契約すると合計 ¥6,000+ / 月</span>
+              </div>
+
+              {/* 既存 7 日間 無料スタートの帯 (互換のため残す、サブ情報として小さく) */}
               <div style={{
                 marginBottom: '1.1rem',
-                padding: '0.85rem 1.1rem',
-                borderRadius: 14,
+                padding: '0.65rem 1rem',
+                borderRadius: 12,
                 background: 'linear-gradient(135deg, #ECFDF5, #F0FDF4)',
-                border: '1.5px solid #10B981',
+                border: '1px solid #A7F3D0',
                 display: 'flex', alignItems: 'center', gap: 10,
               }}>
                 <span style={{
-                  fontSize: '0.7rem', fontWeight: 800, color: '#fff',
-                  background: '#10B981', padding: '0.2rem 0.55rem',
+                  fontSize: '0.66rem', fontWeight: 800, color: '#fff',
+                  background: '#10B981', padding: '0.18rem 0.5rem',
                   borderRadius: 999, letterSpacing: '0.04em',
-                }}>7 日間 無料</span>
-                <span style={{ fontSize: '0.82rem', color: '#065F46', fontWeight: 600, lineHeight: 1.5 }}>
-                  どのプランも、最初の 7 日間は <strong>¥0</strong>。8 日目から自動でスタート。いつでも解約 OK。
+                }}>無料スタート</span>
+                <span style={{ fontSize: '0.78rem', color: '#065F46', fontWeight: 600, lineHeight: 1.5 }}>
+                  どのプランも最初は <strong>¥0</strong>。いつでも解約 OK・データも残ります。
                 </span>
               </div>
 
@@ -314,6 +351,8 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                   const monthly = cycle === 'yearly' && p.priceJpy_yearly
                     ? Math.round(p.priceJpy_yearly / 12)
                     : p.priceJpy;
+                  // 1 行で「何ができるか」が分かるサマリ (Day 2: spec 通り)
+                  const oneLiner = getPlanOneLiner(brand, p.id);
                   return (
                     <button key={p.id} type="button" onClick={() => setPlanId(p.id)} style={{
                       textAlign: 'left',
@@ -338,8 +377,15 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                       <div style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '0.25rem', color: '#1F1A2E' }}>
                         {p.name}
                       </div>
-                      <div style={{ fontSize: '0.72rem', color: '#8A8593', marginBottom: '0.6rem', minHeight: '1.2em' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#8A8593', marginBottom: '0.35rem', minHeight: '1.2em' }}>
                         {p.tagline}
+                      </div>
+                      {/* Day 2: 1 行サマリ — "Lite: 議事録AI使い放題" 形式 */}
+                      <div style={{
+                        fontSize: '0.74rem', color: accent, fontWeight: 700,
+                        marginBottom: '0.55rem', lineHeight: 1.4,
+                      }}>
+                        → {oneLiner}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', marginBottom: '0.3rem' }}>
                         <span style={{ fontSize: '1.4rem', fontWeight: 900, color: accent }}>
@@ -407,6 +453,9 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
               }}>
                 次へ →
               </button>
+
+              {/* Day 2: 不安解消の FAQ 3 件 (accordion) — 「やめられる?」「データ消える?」「請求書は?」 */}
+              <FaqAccordion />
             </motion.div>
           )}
 
@@ -681,4 +730,111 @@ function btnPrimary(_accent: string, gradient: string): React.CSSProperties {
     padding: '0.95rem 1.4rem',
     fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer',
   };
+}
+
+// ─── Day 2: プラン × 1 行サマリ (Iris / Prism 両対応) ───
+function getPlanOneLiner(brand: Brand, planId: string): string {
+  const iris: Record<string, string> = {
+    lite: '案件管理 + 投稿構成 AI を月 30 回まで',
+    standard: 'AI 戦略相談・キャプション・交渉文 すべて使い放題',
+    pro: 'チーム 5 名 + ブランドマッチで案件獲得を加速',
+    studio: 'ホワイトラベル + API 連携 (事務所向け)',
+  };
+  const prism: Record<string, string> = {
+    lite: '基本 AI + ナレッジ 100 件 (個人事業主向け)',
+    standard: '全 AI + 議事録 / 商談 AI 使い放題 + 音声秘書',
+    pro: '専任 CS + 優先サポート + カスタム連携',
+    studio: 'SLA 99.9% + API 専有 + ホワイトラベル',
+  };
+  const map = brand === 'iris' ? iris : prism;
+  return map[planId] || '全機能を試せます';
+}
+
+// ─── Day 2: 不安解消 FAQ 3 件 (accordion) ───
+function FaqAccordion() {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const faqs: Array<{ id: string; q: string; a: string }> = [
+    {
+      id: 'cancel',
+      q: '解約はいつでもできますか?',
+      a: 'はい、いつでもダッシュボード右上の「設定 → 課金」から 1 クリックで解約できます。違約金や引き止めの電話は一切ありません。解約後も契約期間の末日まではそのまま使えます。',
+    },
+    {
+      id: 'data',
+      q: '解約したら、データは消えますか?',
+      a: 'いいえ。保存したナレッジ・チャット履歴・人格 (ペルソナ) などはすべてあなたのアカウントに残ります。再契約すればその場でもとに戻ります。エクスポートも可能です。',
+    },
+    {
+      id: 'invoice',
+      q: '法人で使うのですが、請求書は出せますか?',
+      a: 'はい、適格請求書 (インボイス制度対応・登録番号入り) を毎月 PDF で自動発行します。Stripe Billing Portal からいつでもダウンロードでき、宛名・経理メールアドレスも変更できます。',
+    },
+  ];
+  return (
+    <div style={{
+      marginTop: '1.25rem',
+      paddingTop: '1rem',
+      borderTop: '1px solid rgba(0,0,0,0.08)',
+    }}>
+      <div style={{
+        fontSize: '0.78rem', fontWeight: 800, color: '#5A5562',
+        marginBottom: '0.6rem', letterSpacing: '0.05em',
+      }}>
+        よくある質問
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {faqs.map(f => {
+          const open = openId === f.id;
+          return (
+            <div key={f.id} style={{
+              border: '1px solid rgba(0,0,0,0.08)',
+              borderRadius: 12,
+              background: open ? '#FAFAF8' : '#FFFFFF',
+              overflow: 'hidden',
+            }}>
+              <button
+                type="button"
+                onClick={() => setOpenId(open ? null : f.id)}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '0.75rem 0.95rem',
+                  fontSize: '0.86rem',
+                  fontWeight: 700,
+                  color: '#1F1A2E',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                }}
+                aria-expanded={open}
+              >
+                <span>{f.q}</span>
+                <span style={{
+                  fontSize: '0.85rem',
+                  color: '#8A8593',
+                  transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s',
+                  flexShrink: 0,
+                }}>▾</span>
+              </button>
+              {open && (
+                <div style={{
+                  padding: '0 0.95rem 0.85rem',
+                  fontSize: '0.78rem',
+                  lineHeight: 1.7,
+                  color: '#5A5562',
+                }}>
+                  {f.a}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }

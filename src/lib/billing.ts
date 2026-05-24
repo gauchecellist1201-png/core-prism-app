@@ -710,6 +710,53 @@ export async function openBillingPortal(customerId: string): Promise<{ ok: boole
   }
 }
 
+/**
+ * 課金失敗 (past_due / unpaid / incomplete) 救済用 — 現ユーザーの Stripe Customer Portal URL を取得。
+ * - customer_id が無くても subscription_id から自動で逆引き
+ * - エラー時は null を返す (呼び出し側で alert / banner に出す)
+ */
+export async function getCustomerPortalUrl(): Promise<string | null> {
+  const u = loadBillingUser();
+  if (!u) return null;
+  try {
+    const resp = await fetch('/api/billing/portal-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer_id: u.stripeCustomerId,
+        subscription_id: u.subscriptionId,
+        return_url: typeof window !== 'undefined' ? window.location.href : undefined,
+      }),
+    });
+    const data = await resp.json() as { url?: string; error?: string };
+    if (!resp.ok || !data.url) return null;
+    return data.url;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Subscription の状態 (Stripe webhook で同期された値) を読む。
+ * 課金失敗のときに UI バナーを出すために使う。
+ */
+export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'unpaid' | 'incomplete' | 'incomplete_expired' | 'canceled' | 'paused' | 'unknown';
+
+export function getSubscriptionStatus(user: BillingUser | null): SubscriptionStatus {
+  if (!user) return 'unknown';
+  // delinquent フラグが webhook で立っていれば past_due 相当
+  if (user.delinquent) return 'past_due';
+  // それ以外は active 相当 (今のデータ構造では細かい status は保持していない)
+  if (user.subscriptionId) return 'active';
+  return 'unknown';
+}
+
+/** 課金失敗中か (past_due / unpaid / incomplete) */
+export function isBillingDelinquent(user: BillingUser | null): boolean {
+  if (!user) return false;
+  return user.delinquent === true;
+}
+
 // ─── Stripe セッション照会によるプラン同期 ───
 
 export type StripeLookupResult = { ok: boolean; plan?: PlanId; info?: StripeSessionInfo };

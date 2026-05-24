@@ -43,6 +43,7 @@ import ErrorLogViewer from './components/ErrorLogViewer';
 import AgentTeamMonitor from './components/AgentTeamMonitor';
 import ExtensionCaptureToast from './components/ExtensionCaptureToast';
 import CxoWelcomeCard from './components/CxoWelcomeCard';
+import StripeFailureBanner from './components/StripeFailureBanner';
 import { readSharedFromUrl } from './lib/shareLink';
 
 import type { AppSettings, ChatMessage } from './types/identity';
@@ -496,6 +497,8 @@ export default function App() {
           <ErrorLogViewer key="error-log" onClose={() => setShowErrorLog(false)} />
         )}
       </AnimatePresence>
+      {/* 課金失敗 (past_due / unpaid) 救済バナー — dashboard 上部に固定表示 */}
+      {view === 'dashboard' && <StripeFailureBanner brand="prism" />}
       {/* AI 会社 作戦本部 — 常駐ウィジェット (承認したタスクの実行を可視化) */}
       {view === 'dashboard' && <AgentTeamMonitor brand="prism" />}
       {/* Chrome 拡張機能から ?capture= で届いた取り込みのお知らせ */}
