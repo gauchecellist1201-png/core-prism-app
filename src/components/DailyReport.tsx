@@ -278,11 +278,12 @@ export default function DailyReport({
                 onClick={onClose}
                 aria-label="閉じる"
                 style={{
-                  width: 34, height: 34, borderRadius: 10,
+                  width: 44, height: 44, borderRadius: 12,
                   background: 'rgba(255,255,255,0.06)',
                   border: '1px solid rgba(255,255,255,0.12)',
-                  color: 'rgba(255,255,255,0.85)', fontSize: 18, cursor: 'pointer',
+                  color: 'rgba(255,255,255,0.85)', fontSize: 20, cursor: 'pointer',
                   flexShrink: 0,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >×</button>
             </div>

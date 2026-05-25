@@ -1215,7 +1215,7 @@ function FanCard({ fan, bg, bond, isSelected, onSelect, onDelete }: {
         <button
           onClick={e => { e.stopPropagation(); onDelete(); }}
           aria-label="削除"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: bg.inkSoft, fontSize: '0.8rem', padding: 4, flexShrink: 0, minWidth: 28, minHeight: 28 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: bg.inkSoft, fontSize: '0.8rem', padding: 4, flexShrink: 0, minWidth: 36, minHeight: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <Trash2 size={13} />
         </button>

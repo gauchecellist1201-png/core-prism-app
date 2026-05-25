@@ -1250,7 +1250,7 @@ const miniBtn: React.CSSProperties = {
   padding: '4px 8px',
   borderRadius: 999,
   fontSize: 11,
-  minWidth: 28, minHeight: 28,
+  minWidth: 36, minHeight: 36,
 };
 
 function listItem(bg: IrisBackgroundDef, active: boolean): React.CSSProperties {
