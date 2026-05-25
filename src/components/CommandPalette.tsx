@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Sparkles, Compass, Plus, Bot, Wrench, Settings as SettingsIcon,
-  Clock, ArrowRight, CornerDownLeft, Command,
+  Clock, ArrowRight, CornerDownLeft, Command, Play,
 } from 'lucide-react';
 import type { Persona, KnowledgeItem } from '../types/identity';
 import { useAgentTaskQueue, CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
@@ -453,6 +453,37 @@ export default function CommandPalette({
   }, [filtered, query]);
 
   // ────────────────────────────────────────────────────────
+  // 0 件時の「もしかして」候補 (bigram 重なりスコア)
+  // ────────────────────────────────────────────────────────
+  const fuzzySuggestions = useMemo<CmdAction[]>(() => {
+    const q = query.trim().toLowerCase();
+    if (!q || filtered.length > 0) return [];
+    // 1 文字 + 隣接 2 文字の n-gram で重なりカウント
+    const grams = new Set<string>();
+    for (const ch of q) grams.add(ch);
+    for (let i = 0; i < q.length - 1; i++) grams.add(q.slice(i, i + 2));
+    if (grams.size === 0) return [];
+
+    const scored: Array<{ item: CmdAction; score: number }> = [];
+    const seen = new Set<string>();
+    for (const { item } of allItems) {
+      // jump-knowledge / jump-task / persona は数が多すぎて雑音になるので除外
+      if (item.kind === 'jump-knowledge' || item.kind === 'jump-task' || item.kind === 'switch-persona') continue;
+      const id = actionId(item);
+      if (seen.has(id)) continue;
+      const hay = (item.label + ' ' + ('subtitle' in item && item.subtitle ? item.subtitle : '')).toLowerCase();
+      let score = 0;
+      for (const g of grams) if (hay.includes(g)) score += g.length;
+      if (score > 0) {
+        seen.add(id);
+        scored.push({ item, score });
+      }
+    }
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, 3).map(s => s.item);
+  }, [allItems, query, filtered.length]);
+
+  // ────────────────────────────────────────────────────────
   // selectedIdx を範囲内に保つ
   // ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -665,18 +696,73 @@ export default function CommandPalette({
             {/* 結果リスト */}
             <div ref={listRef} className="flex-1 overflow-y-auto py-2">
               {flatItems.length === 0 ? (
-                <div className="cp-empty">
-                  <p className="cp-empty-icon"><Search size={28} /></p>
-                  <p>該当なし</p>
-                  {query.trim() && (
-                    <button
-                      onClick={() => { onClose(); delegateToAi(query); }}
-                      className="mt-3 px-4 py-2 rounded-md text-sm inline-flex items-center gap-2"
-                      style={{ background: 'var(--prism-creative, #A78BFA)22', color: 'var(--prism-creative, #A78BFA)', border: '1px solid var(--prism-creative, #A78BFA)55' }}
-                    >
-                      <Bot size={14} /> AI 会社に「{query.slice(0, 30)}{query.length > 30 ? '…' : ''}」を依頼
-                    </button>
+                <div className="cp-zero">
+                  <p className="cp-empty-icon" style={{ marginTop: 8 }}><Search size={32} /></p>
+                  <p className="cp-zero-title">
+                    {query.trim() ? (
+                      <>「<span style={{ color: 'var(--fg)', fontWeight: 600 }}>{query.slice(0, 24)}{query.length > 24 ? '…' : ''}</span>」は見つかりませんでした</>
+                    ) : '該当なし'}
+                  </p>
+
+                  {/* もしかして？ — 近い候補 */}
+                  {query.trim() && fuzzySuggestions.length > 0 && (
+                    <div className="cp-zero-section">
+                      <div className="cp-zero-section-label">もしかして？</div>
+                      {fuzzySuggestions.map((item) => (
+                        <button
+                          key={'fz:' + actionId(item)}
+                          onClick={() => runItem(item)}
+                          className="cp-zero-row"
+                        >
+                          <span className="cp-zero-row-emoji">{item.emoji}</span>
+                          <span className="cp-zero-row-label">{item.label}</span>
+                          <ArrowRight size={14} style={{ color: 'var(--fg-subtle)' }} />
+                        </button>
+                      ))}
+                    </div>
                   )}
+
+                  {/* 最近使った 3 件 — クエリ無しでも常に出して行き止まりを作らない */}
+                  {recentItems.length > 0 && (
+                    <div className="cp-zero-section">
+                      <div className="cp-zero-section-label">
+                        <Clock size={11} style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} />
+                        最近使った
+                      </div>
+                      {recentItems.slice(0, 3).map((item) => (
+                        <button
+                          key={'rc:' + actionId(item)}
+                          onClick={() => runItem(item)}
+                          className="cp-zero-row"
+                        >
+                          <span className="cp-zero-row-emoji">{item.emoji}</span>
+                          <span className="cp-zero-row-label">{item.label}</span>
+                          <ArrowRight size={14} style={{ color: 'var(--fg-subtle)' }} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 復旧 CTA: AI 依頼 + デモ開始 */}
+                  <div className="cp-zero-ctas">
+                    {query.trim() && (
+                      <button
+                        onClick={() => { onClose(); delegateToAi(query); }}
+                        className="cp-zero-cta-primary"
+                      >
+                        <Bot size={14} />
+                        AI 会社に「{query.slice(0, 22)}{query.length > 22 ? '…' : ''}」を依頼
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { onClose(); fireGlobalEvent('core:demo-start'); }}
+                      className="cp-zero-cta-secondary"
+                    >
+                      <Play size={13} />
+                      デモで触ってみる
+                    </button>
+                  </div>
+                  <p className="cp-zero-hint">何も決めずに閉じてもOKです (Esc)</p>
                 </div>
               ) : (
                 grouped.map(([category, items]) => {
