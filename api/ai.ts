@@ -47,22 +47,97 @@ function parseAnthropicUsage(txt: string): { tokens_in: number; tokens_out: numb
 
 // ─── 簡易レート制限 (IP ベース、メモリ内) ───────────
 // (Edge は地理的に分散するので厳密ではないが、最低限の連投防止)
-const RATE_BUCKET = new Map<string, { count: number; ts: number }>();
-const RATE_WINDOW_MS = 60_000;       // 1 分
-const RATE_MAX_PER_WINDOW = 30;      // 1 分に最大 30 リクエスト
+//
+// 仕様 (6/1 リリース abuse 対策):
+//   - master key 所持者 (オーナー) は無制限
+//   - その他 IP: 1 分 30 回 / 1 時間 200 回
+//   - user 鍵 (x-claude-api-key or x-gemini-api-key) を送ってる人は両 cap を 2 倍に緩和
+//
+// 各 edge instance ごとに独立した Map (Vercel が複数 instance で動くと cap が実質緩む)。
+// 完全防御ではなく基礎防御。完全 abuse 対策は WAF / 認証層で。
 
-function checkRateLimit(ip: string): { ok: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const b = RATE_BUCKET.get(ip);
-  if (!b || now - b.ts > RATE_WINDOW_MS) {
-    RATE_BUCKET.set(ip, { count: 1, ts: now });
-    return { ok: true };
+type RateBucket = { count: number; resetAt: number };
+const RATE_MINUTE = (globalThis as any).__RATE_MINUTE ||= new Map<string, RateBucket>();
+const RATE_HOUR = (globalThis as any).__RATE_HOUR ||= new Map<string, RateBucket>();
+
+const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * 60_000;
+const BASE_MINUTE_LIMIT = 30;
+const BASE_HOUR_LIMIT = 200;
+
+interface RateLimitResult {
+  ok: boolean;
+  retryAfter?: number;          // 秒
+  limitMinute: number;
+  remainingMinute: number;
+  resetMinute: number;          // unix 秒
+  hitWhich?: 'minute' | 'hour';
+}
+
+function bumpBucket(
+  store: Map<string, RateBucket>,
+  key: string,
+  windowMs: number,
+  limit: number,
+  now: number,
+): { allowed: boolean; count: number; resetAt: number } {
+  const b = store.get(key);
+  if (!b || now >= b.resetAt) {
+    // 期限切れ -> 新規 (古いものは set 時に上書きで自然削除)
+    const fresh = { count: 1, resetAt: now + windowMs };
+    store.set(key, fresh);
+    return { allowed: true, count: 1, resetAt: fresh.resetAt };
   }
-  if (b.count >= RATE_MAX_PER_WINDOW) {
-    return { ok: false, retryAfter: Math.ceil((RATE_WINDOW_MS - (now - b.ts)) / 1000) };
+  if (b.count >= limit) {
+    return { allowed: false, count: b.count, resetAt: b.resetAt };
   }
   b.count++;
-  return { ok: true };
+  return { allowed: true, count: b.count, resetAt: b.resetAt };
+}
+
+function checkRateLimit(ip: string, relaxed: boolean): RateLimitResult {
+  const now = Date.now();
+  const minuteLimit = relaxed ? BASE_MINUTE_LIMIT * 2 : BASE_MINUTE_LIMIT;
+  const hourLimit = relaxed ? BASE_HOUR_LIMIT * 2 : BASE_HOUR_LIMIT;
+
+  // 期限切れ Map エントリを少しだけ掃除 (毎回ではなく確率的に)
+  if (Math.random() < 0.01) {
+    for (const [k, v] of RATE_MINUTE) if (v.resetAt < now) RATE_MINUTE.delete(k);
+    for (const [k, v] of RATE_HOUR) if (v.resetAt < now) RATE_HOUR.delete(k);
+  }
+
+  const minute = bumpBucket(RATE_MINUTE, ip, MINUTE_MS, minuteLimit, now);
+  if (!minute.allowed) {
+    console.warn(`[ai-ratelimit] ${ip} hit minute limit (count=${minute.count}, limit=${minuteLimit})`);
+    return {
+      ok: false,
+      retryAfter: Math.max(1, Math.ceil((minute.resetAt - now) / 1000)),
+      limitMinute: minuteLimit,
+      remainingMinute: 0,
+      resetMinute: Math.floor(minute.resetAt / 1000),
+      hitWhich: 'minute',
+    };
+  }
+
+  const hour = bumpBucket(RATE_HOUR, ip, HOUR_MS, hourLimit, now);
+  if (!hour.allowed) {
+    console.error(`[ai-ratelimit] ${ip} hit hourly limit — possible abuse (count=${hour.count}, limit=${hourLimit})`);
+    return {
+      ok: false,
+      retryAfter: Math.max(1, Math.ceil((hour.resetAt - now) / 1000)),
+      limitMinute: minuteLimit,
+      remainingMinute: Math.max(0, minuteLimit - minute.count),
+      resetMinute: Math.floor(minute.resetAt / 1000),
+      hitWhich: 'hour',
+    };
+  }
+
+  return {
+    ok: true,
+    limitMinute: minuteLimit,
+    remainingMinute: Math.max(0, minuteLimit - minute.count),
+    resetMinute: Math.floor(minute.resetAt / 1000),
+  };
 }
 
 // ─── 型 (Anthropic Messages API 互換) ───
@@ -190,10 +265,11 @@ export default async function handler(req: Request) {
   ];
   const corsOrigin = allowedOrigins.includes(origin) ? origin : 'https://core-prism-app.vercel.app';
 
-  const corsHeaders = {
+  const corsHeaders: Record<string, string> = {
     'Access-Control-Allow-Origin': corsOrigin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, x-master-key, x-claude-api-key, x-gemini-api-key, x-ai-weight, x-plan-tier',
+    'Access-Control-Expose-Headers': 'x-ai-route, x-ratelimit-limit-minute, x-ratelimit-remaining-minute, x-ratelimit-reset-minute, retry-after',
     'Access-Control-Max-Age': '86400',
   };
 
@@ -208,31 +284,48 @@ export default async function handler(req: Request) {
     });
   }
 
-  // レート制限
-  const ip = req.headers.get('cf-connecting-ip')
-          || req.headers.get('x-forwarded-for')?.split(',')[0]
+  // ─── マスターキー判定 (rate limit より先に確定。master は無制限) ───
+  const masterKey = req.headers.get('x-master-key') || '';
+  const isMaster = masterKey === 'GAUCHE2026';
+
+  // ─── レート制限 (master は無制限、user 鍵持ちは 2 倍緩和) ───
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+          || req.headers.get('cf-connecting-ip')
           || req.headers.get('x-real-ip')
           || 'unknown';
-  const rl = checkRateLimit(ip);
-  if (!rl.ok) {
-    return new Response(JSON.stringify({ error: { message: 'Rate limit exceeded' } }), {
-      status: 429,
-      headers: {
-        'Content-Type': 'application/json',
-        'Retry-After': String(rl.retryAfter || 60),
-        ...corsHeaders,
-      },
-    });
+  const hasUserClaudeKey = !!(req.headers.get('x-claude-api-key') || '').trim();
+  const hasUserGeminiKey = !!(req.headers.get('x-gemini-api-key') || '').trim();
+  const relaxed = hasUserClaudeKey || hasUserGeminiKey;
+
+  // 診断用 ratelimit ヘッダ (master は計測対象外。corsHeaders にマージして下流へ)
+  if (!isMaster) {
+    const rl = checkRateLimit(ip, relaxed);
+    corsHeaders['x-ratelimit-limit-minute'] = String(rl.limitMinute);
+    corsHeaders['x-ratelimit-remaining-minute'] = String(rl.remainingMinute);
+    corsHeaders['x-ratelimit-reset-minute'] = String(rl.resetMinute);
+    if (!rl.ok) {
+      return new Response(JSON.stringify({
+        error: {
+          message: 'アクセスが集中しています。1 分ほど待ってからもう一度お試しください。',
+          type: 'rate_limited',
+        },
+      }), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': String(rl.retryAfter || 60),
+          ...corsHeaders,
+        },
+      });
+    }
   }
 
-  // ─── マスターキー判定 + 軽重ルーティング ─────────────────
+  // ─── 軽重ルーティング ─────────────────
   // マスターキーがあっても「重い処理だけ Claude」「軽い処理は Gemini」に振る:
   //   - 軽量: max_tokens <= 1500 かつ画像なし → Gemini (無料枠で十分)
   //   - 重量: max_tokens > 1500 or 画像あり or 'x-ai-weight: heavy' → Claude
   //   - 明示的に 'x-ai-weight: light' があれば常に Gemini (マスター含む)
   // 目的: Claude クレジット消費を抑え、月額を 1/3-1/5 にする
-  const masterKey = req.headers.get('x-master-key') || '';
-  const isMaster = masterKey === 'GAUCHE2026';
   const explicitWeight = (req.headers.get('x-ai-weight') || '').toLowerCase(); // 'heavy' | 'light' | ''
 
   // リクエストボディをパース
