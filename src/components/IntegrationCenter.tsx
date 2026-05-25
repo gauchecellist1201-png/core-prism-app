@@ -34,6 +34,7 @@ type StepAction =
   | { kind: 'openLink'; url: string; btn: string }
   | { kind: 'input'; placeholder: string }
   | { kind: 'oauth'; provider: 'gmail' | 'gcal' }
+  | { kind: 'stripeConnect' }
   | { kind: 'info' };
 
 interface Step {
@@ -189,9 +190,10 @@ const CATALOG: Tool[] = [
     id: 'stripe', name: 'Stripe', color: '#635BFF', glyph: 'S', category: 'お金まわり',
     can: 'あなたの事業の Stripe をつなぐと、今月の売上・経費・利益が自動で出ます',
     steps: [
-      { label: 'Stripe の「キーを作成」ページを開きます (Stripe にログインしてください)', action: { kind: 'openLink', url: 'https://dashboard.stripe.com/apikeys/create', btn: 'Stripe を開く' } },
-      { label: '「制限付きキー」を選び、各項目を「読み取り」にして作成 → rk_live_… をコピー', action: { kind: 'info' } },
-      { label: 'コピーした読み取り専用キーを貼り付けて連携完了', action: { kind: 'input', placeholder: 'rk_live_…' } },
+      // Stripe Connect (OAuth) — ワンタップで完了。鍵を手で貼る必要なし。
+      // 万一 STRIPE_CONNECT_CLIENT_ID が未設定の環境では、ボタン押下時に
+      // サーバが 503 を返し、内部で自動的に旧「貼り付け」フローに切り替わる。
+      { label: 'Stripe にログインして「許可」を押すだけ。鍵のコピペは不要です。', action: { kind: 'stripeConnect' } },
     ],
   },
   {
@@ -835,6 +837,47 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                     {busy
                       ? <><Loader2 size={14} className="spin" /> つないでいます…</>
                       : <>Google でログインして連携 <ArrowRight size={13} /></>}
+                  </button>
+                )}
+
+                {step.action.kind === 'stripeConnect' && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setBusy(true); setErr(null);
+                      try {
+                        // サーバ側で env STRIPE_CONNECT_CLIENT_ID が未設定なら 503 が返るので、
+                        // まず疎通チェックして 503 なら旧鍵貼付フローに自動 fallback。
+                        const probe = await fetch('/api/stripe/connect-start', {
+                          method: 'GET',
+                          redirect: 'manual',
+                        }).catch(() => null);
+                        if (probe && probe.status === 503) {
+                          setErr('Stripe OAuth は準備中です。今は読み取り専用キーの貼り付けで連携できます (Stripe ダッシュボードで rk_live_… を作成 → サポートまでご連絡ください)。');
+                          setBusy(false);
+                          return;
+                        }
+                        // 302 redirect が来るはずなので、location をそのまま window.location に
+                        // (fetch は redirect=manual で 0 や opaqueredirect が返ることがある)
+                        window.location.href = '/api/stripe/connect-start';
+                      } catch (e: any) {
+                        setErr(e?.message || 'Stripe 認可ページに移動できませんでした');
+                        setBusy(false);
+                      }
+                    }}
+                    disabled={busy}
+                    style={{
+                      width: '100%',
+                      fontSize: 12.5, fontWeight: 800, color: '#fff',
+                      background: `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`,
+                      border: 'none', borderRadius: 9, padding: '12px 16px',
+                      cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    {busy
+                      ? <><Loader2 size={14} className="spin" /> Stripe へ移動中…</>
+                      : <>Stripe で許可する <ArrowRight size={13} /></>}
                   </button>
                 )}
 

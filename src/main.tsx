@@ -66,6 +66,33 @@ const MASTER_KEY_STORAGE = 'core_master_key_v1';
     window.history.replaceState({}, '', url.toString());
   }
 
+  // ─── Stripe Connect OAuth コールバックを受け取る ───
+  // /api/stripe/connect-callback が #stripe_connect=1&token=sk_xxx&stripe_user_id=acct_xxx&livemode=1
+  // のフラグメントを付けて redirect してくる。token を localStorage に保存して即連動。
+  if (window.location.hash.includes('stripe_connect=1')) {
+    try {
+      const frag = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const token = frag.get('token');
+      if (token && /^(rk|sk)_(live|test)_/.test(token)) {
+        localStorage.setItem('core_integration_stripe', token);
+        const sid = frag.get('stripe_user_id');
+        if (sid) {
+          try { localStorage.setItem('core_integration_stripe_account_id', sid); } catch { /* */ }
+        }
+        // クライアントの useStripeRevenue 等に「つながった」を即時通知
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('core:stripe-connected', {
+            detail: { stripeUserId: sid, livemode: frag.get('livemode') === '1' },
+          }));
+        }, 100);
+      }
+    } catch (e) {
+      console.warn('[CORE] Stripe Connect fragment parse failed', e);
+    }
+    // フラグメントを削除 (URL バーから token を消す)
+    history.replaceState({}, '', window.location.pathname + window.location.search);
+  }
+
   // ─── Chrome 拡張機能から ?capture=BASE64 で取り込み ───
   // 拡張機能の popup/context メニューが投げてくる。payload は
   // { title, url, selection?, source, kind } の JSON を base64 化したもの。
