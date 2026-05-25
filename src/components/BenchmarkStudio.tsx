@@ -35,6 +35,7 @@ import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { copyText } from '../lib/clipboard';
 import { notifyInApp } from '../lib/inAppNotify';
 import ApiErrorCard from './ApiErrorCard';
+import EmptyState from './EmptyState';
 
 interface Props {
   persona: Persona;
@@ -1091,10 +1092,15 @@ function HistoryTab({ personaId, accentColor }: { personaId: string; accentColor
 
   if (history.length === 0) {
     return (
-      <div className="cp-card-section text-center py-12">
-        <p className="text-4xl mb-2">📈</p>
-        <p className="cp-h3">履歴はまだありません</p>
-        <p className="cp-meta">分析を実行すると月次スナップショットが保存され、ここで時系列を見られます</p>
+      <div className="cp-card-section">
+        <EmptyState
+          icon="📈"
+          title="まだ業界ベンチマーク履歴はありません"
+          description={'分析タブで自分の数字を 1 回入れると、業界平均との比較が時系列で残ります。\n月ごとの伸びと弱点が一目で分かるようになります。'}
+          showSample={false}
+          accent="#c9a96e"
+          preview="2026-05　売上前年比 +18%　業界平均 +6%　強み: リピート率"
+        />
       </div>
     );
   }

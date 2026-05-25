@@ -772,14 +772,36 @@ function PlanBoard(props: {
       {/* 計画リスト */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {plansForStage.length === 0 && (
-          <div style={{ ...card, textAlign: 'center', color: bg.inkSoft, padding: '2rem 1rem' }}>
-            <p style={{ fontSize: '0.9rem' }}>このステージにはまだ計画がありません</p>
-            <p style={{ fontSize: '0.75rem', marginTop: 6 }}>
-              {activeStage === 'candidate' && '「AI コラボ候補を提案」または「手動で追加」から始めましょう'}
-              {activeStage === 'contacting' && '候補から DM 下書きを送ると、ここに自動で移動します'}
-              {activeStage === 'confirmed' && '相手から OK が出たら「確定」へ動かしましょう'}
-              {activeStage === 'done' && '投稿が終わったら効果を記録すると、次回の判断材料になります'}
+          <div style={{ ...card, textAlign: 'center', color: bg.inkSoft, padding: '2.4rem 1rem' }}>
+            <div style={{ fontSize: 56, lineHeight: 1, marginBottom: 10 }} aria-hidden>
+              {activeStage === 'candidate' ? '🤝' : activeStage === 'contacting' ? '✉️' : activeStage === 'confirmed' ? '🎯' : '🏁'}
+            </div>
+            <p style={{ fontSize: '0.95rem', color: bg.ink, fontWeight: 600 }}>
+              {activeStage === 'candidate' && 'コラボ候補はまだいません'}
+              {activeStage === 'contacting' && 'まだ連絡中の人はいません'}
+              {activeStage === 'confirmed' && '確定したコラボはまだありません'}
+              {activeStage === 'done' && 'まだ完了したコラボはありません'}
             </p>
+            <p style={{ fontSize: '0.78rem', marginTop: 8, lineHeight: 1.6 }}>
+              {activeStage === 'candidate' && (
+                <>あなたのジャンルで伸びそうな相手を AI が探します。<br />「AI コラボ候補を提案」を押すと 5 人ずつ出てきます。</>
+              )}
+              {activeStage === 'contacting' && '候補から DM 下書きを送ると、ここに自動で移動します。返信が来たら次の段へ。'}
+              {activeStage === 'confirmed' && '相手から OK が出たら「確定」へ動かしましょう。撮影日と内容を 1 枚にまとめられます。'}
+              {activeStage === 'done' && '投稿が終わったら効果 (フォロワー増、いいね) を残すと、次回の判断材料になります。'}
+            </p>
+            {activeStage === 'candidate' && (
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 14 }}>
+                <button onClick={fetchRecommendations} disabled={recLoading || !myCategory} style={btnPrimary(bg)}>
+                  <Sparkles size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
+                  AI に候補を出させる
+                </button>
+                <button onClick={() => setShowNewPlan(true)} style={btnSecondary(bg)}>
+                  <Plus size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
+                  手動で追加
+                </button>
+              </div>
+            )}
           </div>
         )}
         {plansForStage.map(plan => (

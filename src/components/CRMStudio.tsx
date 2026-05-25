@@ -15,7 +15,7 @@ import type { Persona } from '../types/identity';
 import type { CRMDeal, CRMStage } from '../types/crm';
 import { STAGE_META, STAGE_ORDER } from '../types/crm';
 import { useCRM } from '../hooks/useCRM';
-import SampleDataCTA from './SampleDataCTA';
+import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
 import { useInvoices } from '../hooks/useInvoices';
 import { fmtJpy, computeTotals } from '../lib/invoiceCalc';
@@ -307,11 +307,15 @@ export default function CRMStudio({ persona, onClose }: Props) {
                     );
                   })}
                   {dealsAll.length === 0 && (
-                    <div className="cp-empty">
-                      <p className="cp-empty-icon">📭</p>
-                      <p>案件がまだありません</p>
-                      <SampleDataCTA accent={persona.accentColor} hint="サンプル案件が入り、商談の流れをすぐ試せます" />
-                    </div>
+                    <EmptyState
+                      icon="🤝"
+                      title="まだ商談はありません"
+                      description={'名前と会社を入れるだけで、AI が「次の一手」を毎日提案します。\nメール返信案や見積もり試算も、案件カードから 1 タップで動きます。'}
+                      ctaLabel="最初の案件を作る"
+                      onCta={() => handleNewDeal('lead')}
+                      accent={persona.accentColor}
+                      preview="🌱 山田太郎 (株式会社サンプル)　→ 提案中　次の一手: 木曜にラフ案を送る"
+                    />
                   )}
                 </div>
               ) : (
@@ -374,11 +378,15 @@ export default function CRMStudio({ persona, onClose }: Props) {
           {view === 'list' && (
             <div className="cp-stack-sm">
               {dealsAll.length === 0 ? (
-                <div className="cp-empty">
-                  <p className="cp-empty-icon">📭</p>
-                  <p>案件がまだありません</p>
-                  <SampleDataCTA accent={persona.accentColor} hint="サンプル案件が入り、商談の流れをすぐ試せます" />
-                </div>
+                <EmptyState
+                  icon="🤝"
+                  title="まだ商談はありません"
+                  description={'名前と会社を入れるだけで、AI が「次の一手」を毎日提案します。\nメール返信案や見積もり試算も、案件カードから 1 タップで動きます。'}
+                  ctaLabel="最初の案件を作る"
+                  onCta={() => handleNewDeal('lead')}
+                  accent={persona.accentColor}
+                  preview="🌱 山田太郎 (株式会社サンプル)　→ 提案中　次の一手: 木曜にラフ案を送る"
+                />
               ) : [...dealsAll].sort((a, b) => priorityScore(b) - priorityScore(a)).map(d => {
                 const meta = STAGE_META[d.stage];
                 return (

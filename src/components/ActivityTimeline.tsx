@@ -76,8 +76,15 @@ export default function ActivityTimeline({ persona, knowledge, proposals }: Prop
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <p className="text-fg text-base font-medium mb-1">📜 最近の動き</p>
-        <p className="text-fg-muted text-sm">資料を追加・タスク完了・提案生成があるとここに記録されます。</p>
+        <p className="text-fg text-base font-medium mb-2">📜 最近の動き</p>
+        <p className="text-fg-muted text-sm leading-relaxed">
+          ここはあなたの「足跡」が積もる場所です。<br />
+          資料の取り込み、タスクの完了、AI 提案の受け入れ、3 つのどれかで線が伸びます。
+        </p>
+        <div className="mt-3 px-3 py-2 rounded-lg text-xs"
+          style={{ background: `${persona.accentColor}10`, border: `1px dashed ${persona.accentColor}40`, color: persona.accentColor }}>
+          ⏳ まず 1 つ動くと、ここがあなた専用の歴史になります
+        </div>
       </motion.div>
     );
   }

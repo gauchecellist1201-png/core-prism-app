@@ -13,7 +13,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, KnowledgeItem } from '../types/identity';
-import SampleDataCTA from './SampleDataCTA';
+import EmptyState from './EmptyState';
 import { usePersonas } from '../hooks/usePersonas';
 import { useAgentTaskQueue, CXO_META, type CxoRole, type ProposalDraft } from '../hooks/useAgentTaskQueue';
 import { RewardBurst } from './visualFx';
@@ -180,6 +180,13 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
   const [newEst, setNewEst] = useState<string>('30');
   const [newPriority, setNewPriority] = useState<'high' | 'mid' | 'low'>('mid');
   const [newDue, setNewDue] = useState('今日');
+  const newTitleRef = useRef<HTMLInputElement | null>(null);
+  const focusNewTitle = useCallback(() => {
+    setTimeout(() => {
+      newTitleRef.current?.focus();
+      newTitleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
+  }, []);
 
   // 集約タスク
   const tasks: AggregatedTask[] = useMemo(() => {
@@ -510,6 +517,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
             <p className="cp-h3 mb-2">+ 新しいタスクを追加</p>
             <div className="cp-stack-sm">
               <input
+                ref={newTitleRef}
                 type="text"
                 value={newTitle}
                 onChange={e => setNewTitle(e.target.value)}
@@ -558,11 +566,15 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
             <p className="cp-h3 mb-2">📌 タスク</p>
             {realOpen.length === 0 ? (
               persona.tasks.length === 0 ? (
-                <div className="cp-empty">
-                  <p className="cp-empty-icon">📋</p>
-                  <p>タスクがまだありません</p>
-                  <SampleDataCTA accent={persona.accentColor} hint="サンプルのタスクが入り、すぐ機能を試せます" />
-                </div>
+                <EmptyState
+                  icon="📋"
+                  title="今日のやることはまだありません"
+                  description={'Prism の AI が「あなたが手放したい仕事」を見つけて、ここに並べます。\n最初の 1 件を入れると、AI 会社 (CXO 9 人) に丸投げできるボタンが出ます。'}
+                  ctaLabel="最初の 1 件を書く"
+                  onCta={focusNewTitle}
+                  accent={persona.accentColor}
+                  preview="🔥 来週の提案資料を作る (60 分) → CSO に任せる"
+                />
               ) : (
                 <p className="cp-meta">この期間に取り組むタスクはありません</p>
               )

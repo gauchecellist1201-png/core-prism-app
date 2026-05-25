@@ -10,7 +10,7 @@ import {
   analyzePerson, buildOneOnOneAgenda, buildReopenScript,
   type PersonAnalysis, type OneOnOneAgenda, type ReopenScript,
 } from '../lib/peopleAnalyst';
-import SampleDataCTA from './SampleDataCTA';
+import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
 import { confirmAction } from '../lib/confirmDialog';
 
@@ -272,16 +272,15 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                     className="cp-input"
                   />
                   {filtered.length === 0 ? (
-                    <div className="cp-empty">
-                      <p className="cp-empty-icon">👥</p>
-                      <p>人物がまだ登録されていません</p>
-                      <button onClick={() => setView('compose')}
-                        className="cp-btn cp-btn-primary mt-3"
-                        style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
-                        ＋ 最初の人物を登録
-                      </button>
-                      <SampleDataCTA accent={persona.accentColor} hint="サンプルの人物と面談記録が入り、ケア機能をすぐ試せます" />
-                    </div>
+                    <EmptyState
+                      icon="👥"
+                      title="まだ「人物カルテ」はありません"
+                      description={'家族・取引先・恩人を 1 人ずつカルテにすると、AI が「最近連絡してない人」を教えてくれます。\n誕生日・好み・前回の会話メモも全部 1 箇所に。'}
+                      ctaLabel="最初の人物を登録"
+                      onCta={() => setView('compose')}
+                      accent={persona.accentColor}
+                      preview="🌸 森川美咲　最終接触: 12 日前　好み: 抹茶ラテ　次の一手: 来月の展示会に誘う"
+                    />
                   ) : (
                     <div className="cp-stack-sm">
                       {filtered.map(p => {

@@ -354,6 +354,26 @@ export default function IrisDirectorView({ bg, settings }: Props) {
           </div>
         </div>
 
+        {schedule.length === 0 && (
+          <div style={{
+            padding: '1.2rem 1rem',
+            marginBottom: '0.9rem',
+            background: `${bg.accent}11`,
+            border: `1px dashed ${bg.accent}55`,
+            borderRadius: 12,
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 48, lineHeight: 1, marginBottom: 8 }} aria-hidden>🎬</div>
+            <p style={{ fontSize: '0.95rem', color: bg.ink, fontWeight: 700, margin: 0 }}>
+              まだ撮影の予定はありません
+            </p>
+            <p style={{ fontSize: '0.8rem', color: bg.inkSoft, marginTop: 6, lineHeight: 1.6 }}>
+              下の grid の「＋ 追加」を押すと、撮影 / 編集 / 投稿 の予定を入れられます。<br />
+              「今週のクリエイティブを作る」を押すと、リール 3 本 + ストーリー 7 本 + 投稿 4 本を AI が一気に組み立てます。
+            </p>
+          </div>
+        )}
+
         <div style={{ overflowX: 'auto' }}>
           <div style={{
             display: 'grid',

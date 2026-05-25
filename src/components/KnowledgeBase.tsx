@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { KnowledgeItem, Persona, AppSettings } from '../types/identity';
 import AgentProposalCard from './AgentProposalCard';
-import SampleDataCTA from './SampleDataCTA';
+import EmptyState from './EmptyState';
 import ContextualUpgradeCard from './ContextualUpgradeCard';
 import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
 import {
@@ -382,17 +382,15 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
             {tab === 'propose' && (
               <motion.div key="propose" className="p-4 space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {items.length === 0 ? (
-                  <div className="text-center py-16">
-                    <p className="text-4xl mb-4">✨</p>
-                    <p className="text-neutral-500 text-sm">まだ資料がありません</p>
-                    <p className="text-neutral-600 text-xs mt-1">資料を入れると、AI が「こう活かせます」を提案します</p>
-                    <button
-                      onClick={() => setTab('add-file')}
-                      className="mt-4 text-xs px-4 py-2 rounded-lg font-medium"
-                      style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40`, minHeight: 44 }}
-                    >📂 資料を追加する</button>
-                    <SampleDataCTA accent={persona.accentColor} hint="サンプル資料が入り、AI 提案をすぐ体験できます" />
-                  </div>
+                  <EmptyState
+                    icon="📚"
+                    title="ナレッジはまだ空っぽです"
+                    description={'PDF・議事録・メモを 1 枚入れるだけで、AI が「こう活かせます」を 3 つ提案します。\n資料は何度も再利用され、別の案件にも自動で効きます。'}
+                    ctaLabel="資料を追加する"
+                    onCta={() => setTab('add-file')}
+                    accent={persona.accentColor}
+                    preview="📕 業界レポート.pdf　→ 提案 3 件、戦略 2 件、リスク 1 件を抽出"
+                  />
                 ) : result ? (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
@@ -495,12 +493,15 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
             {tab === 'list' && (
               <motion.div key="list" className="p-4 space-y-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {items.length === 0 ? (
-                  <div className="text-center py-16">
-                    <p className="text-4xl mb-4">📭</p>
-                    <p className="text-neutral-600 text-sm">まだ資料がありません</p>
-                    <p className="text-neutral-700 text-xs mt-1">ファイルかノートを追加しましょう</p>
-                    <SampleDataCTA accent={persona.accentColor} hint="サンプル資料が入り、すぐに中身を確認できます" />
-                  </div>
+                  <EmptyState
+                    icon="📂"
+                    title="一覧はまだ空っぽです"
+                    description={'ここには取り込んだ資料が並びます。PDF、画像、議事録、メモ、なんでも入ります。\n中身は AI が要約してくれるので、長い資料も読み返しが楽になります。'}
+                    ctaLabel="資料を追加する"
+                    onCta={() => setTab('add-file')}
+                    accent={persona.accentColor}
+                    preview="📊 4月の事業計画.pptx (24 枚)　→ 要約済み"
+                  />
                 ) : (
                   items.map(item => {
                     const isOpen = expanded === item.id;

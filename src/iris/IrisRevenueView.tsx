@@ -595,11 +595,11 @@ export default function IrisRevenueView({ bg }: Props) {
         <EmptyInvite
           bg={bg}
           icon={Coins}
-          title="収益の記録はまだありません"
+          title="まだ案件履歴はありません"
           description={
             <>
-              案件 PR / スポンサー / アフィリエイト など、入ってきた金額を 1 件入れるだけで、<br />
-              月次推移・来月予測・税金見積りがふわっと立ち上がります。
+              DM のスクショから AI が案件カードを 30 秒で作ります。<br />
+              金額を 1 件入れるだけで、月次推移・来月予測・税金見積りが立ち上がります。
             </>
           }
           primaryAction={{

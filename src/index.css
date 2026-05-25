@@ -668,6 +668,81 @@ select option {
 }
 .cp-empty-icon { font-size: 2rem; margin-bottom: 8px; opacity: 0.6; }
 
+/* 空状態 (Pro: 次の一手が見える) */
+.cp-empty-pro {
+  text-align: center;
+  padding: 40px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.cp-empty-pro-icon {
+  font-size: 64px;
+  line-height: 1;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.25));
+}
+.cp-empty-pro-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0;
+}
+.cp-empty-pro-desc {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  margin: 0;
+  max-width: 360px;
+  white-space: pre-line;
+}
+.cp-empty-pro-preview {
+  margin: 12px 0 4px;
+  padding: 10px 14px;
+  width: 100%;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px dashed rgba(255,255,255,0.08);
+  opacity: 0.7;
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+  text-align: left;
+}
+.cp-empty-pro-ctas {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+.cp-empty-pro-cta-primary {
+  border: none;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 13px 22px;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  letter-spacing: 0.02em;
+}
+.cp-empty-pro-cta-secondary {
+  background: transparent;
+  border: 1px solid;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 11px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.cp-empty-pro-hint {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  color: var(--fg-subtle);
+}
+
 /* グローバルベースの readability 微調整 */
 button { font-family: inherit; }
 input, textarea, select { font-family: inherit; }

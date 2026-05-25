@@ -7,7 +7,7 @@ import { useExpenses } from '../hooks/useExpenses';
 import { extractFromReceipt, refineExpenseClassification, fileToDataUrl, calcExpenseAmounts } from '../lib/expenseOCR';
 import { fmtJpy } from '../lib/invoiceCalc';
 import AgentProposalCard from './AgentProposalCard';
-import SampleDataCTA from './SampleDataCTA';
+import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
 import { confirmAction } from '../lib/confirmDialog';
 import ApiErrorCard from './ApiErrorCard';
@@ -484,11 +484,15 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
           {tab === 'list' && (
             <div className="cp-stack-sm">
               {personaEntries.length === 0 ? (
-                <div className="cp-empty">
-                  <p className="cp-empty-icon">📭</p>
-                  <p>経費がまだありません</p>
-                  <SampleDataCTA accent={persona.accentColor} hint="サンプルの経費が入り、レポートやグラフをすぐ確認できます" />
-                </div>
+                <EmptyState
+                  icon="🧾"
+                  title="今月のレシートはまだ 0 枚"
+                  description={'スマホで撮るだけ、AI が日付・金額・科目を自動で読み取ります。\n月末のまとめも自動。確定申告も「ボタンひとつ」を目指してます。'}
+                  ctaLabel="レシートを撮る / 取り込む"
+                  onCta={() => setTab('ocr')}
+                  accent={persona.accentColor}
+                  preview="📷 セブン-イレブン　2026-05-25　¥430　会議費 (打合せ用コーヒー)"
+                />
               ) : personaEntries.map(e => {
                 const cat = EXPENSE_CATEGORIES.find(c => c.value === e.category);
                 return (

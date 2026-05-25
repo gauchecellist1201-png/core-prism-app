@@ -11,6 +11,7 @@ import { confirmAction } from '../lib/confirmDialog';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
+import EmptyState from './EmptyState';
 
 interface Props {
   persona: Persona;
@@ -546,10 +547,15 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
           {tab === 'history' && (
             <div className="space-y-2">
               {personaInvoices.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-3xl mb-2">📭</p>
-                  <p className="text-fg-muted text-sm">発行済み請求書はまだありません</p>
-                </div>
+                <EmptyState
+                  icon="🧾"
+                  title="今月の請求書はゼロです"
+                  description={'「森川さんに 10 万円」と書くだけで AI が請求書を組み立てます。\n連番採番・税計算・印刷用 PDF も自動。源泉徴収にも対応します。'}
+                  ctaLabel="最初の請求書を作る"
+                  onCta={() => setTab('compose')}
+                  accent={persona.accentColor}
+                  preview="INV-2026-0001　森川美咲様　ロゴデザイン制作 ¥110,000　期限 6/30"
+                />
               ) : personaInvoices.map(invItem => {
                 const t = computeTotals(invItem.lines);
                 return (
