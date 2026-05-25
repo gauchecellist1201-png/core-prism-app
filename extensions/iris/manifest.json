@@ -4,7 +4,6 @@
   "short_name": "Iris",
   "version": "0.1.0",
   "description": "Instagram DM・プロフィールをワンクリックで Iris に取り込み。AI が交渉文を書き、案件を整理し、収益を可視化します。",
-  "default_locale": "ja",
   "action": {
     "default_title": "CORE Iris にキャプチャ",
     "default_popup": "popup.html",

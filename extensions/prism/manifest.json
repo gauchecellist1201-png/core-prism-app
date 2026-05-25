@@ -4,7 +4,6 @@
   "short_name": "Prism",
   "version": "0.1.0",
   "description": "今見ているページを一瞬で Prism に取り込み、AI 会社（13 CXO）に丸ごと相談。会議メモ・契約書・財務資料を秒で分析。",
-  "default_locale": "ja",
   "action": {
     "default_title": "CORE Prism に保存",
     "default_popup": "popup.html",
