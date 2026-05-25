@@ -35,6 +35,7 @@ import {
   type CapturedFanCandidate,
 } from './fanCapture';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
+import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -623,6 +624,14 @@ ${recent}
           DM・コメントを記録して、Iris が大切な人をそっと教えてくれます。
         </p>
       </div>
+
+      <DelegateToAgentTeamBanner
+        taskTitle="今週連絡すべきファンの案を CMO に出してもらう"
+        suggestedCxos={['CMO', 'CDS']}
+        why="絆スコアと最近の動きを見て「今声をかけるべき 5 人」を AI 会社が選びます"
+        expected="5 人リスト + 個別お礼 DM 下書き"
+        brand="iris"
+      />
 
       {/* 「今週連絡すべき 5 人」 */}
       <WeeklyFiveCard

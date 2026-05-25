@@ -9,10 +9,11 @@
 //  - 1 件選んで「任せる」 → propose + auto-approve → 軍団が即動き出す
 //  - 「今日 N 件 / 今週 N 件 完了」のミニ統計
 // ============================================================
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown, Check, Loader2, Sparkles, X } from 'lucide-react';
 import { useAgentTaskQueue, CXO_META, type CxoRole, type AgentTask } from '../hooks/useAgentTaskQueue';
+import { useCelebrate } from '../hooks/useCelebrate';
 
 interface Props {
   /** Iris か Prism — Iris は dock 上、Prism は別位置 */
@@ -25,9 +26,27 @@ const WATCH_ROTATE_MS = 4500;
 
 export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false }: Props) {
   const { activeTask, recentDone, counts, propose, approve } = useAgentTaskQueue();
+  const { celebrate, CelebratePortal } = useCelebrate();
   const [open, setOpen] = useState<boolean>(initialOpen || !!activeTask);
   const [openCxo, setOpenCxo] = useState<CxoRole | null>(null);
   const [watchTick, setWatchTick] = useState(0);
+
+  // 完了タスクが増えた瞬間に祝う (初回マウントは祝わない)
+  const seenDoneIdsRef = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (seenDoneIdsRef.current === null) {
+      // 初回: 既存の完了済みをスキップ集合に投入
+      seenDoneIdsRef.current = new Set(recentDone.map(t => t.id));
+      return;
+    }
+    const seen = seenDoneIdsRef.current;
+    const fresh = recentDone.filter(t => !seen.has(t.id));
+    if (fresh.length > 0) {
+      // 最新 1 件だけ祝う (バースト対策)
+      celebrate({ message: 'AI 軍団が完了しました' });
+      fresh.forEach(t => seen.add(t.id));
+    }
+  }, [recentDone, celebrate]);
 
   // 待機中の rotation tick (13 人 × 3 フレーズで巡回)
   useEffect(() => {
@@ -87,6 +106,8 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
   };
 
   return (
+    <>
+    {CelebratePortal}
     <motion.div
       initial={false}
       animate={{ height: open ? 'auto' : 56 }}
@@ -430,6 +451,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
         )}
       </AnimatePresence>
     </motion.div>
+    </>
   );
 }
 

@@ -22,6 +22,7 @@ import {
 } from './dealCapture';
 import type { InfluencerDeal } from '../types/influencerDeal';
 import AILoadingState from '../components/AILoadingState';
+import { useCelebrate } from '../hooks/useCelebrate';
 
 type DealInput = Omit<InfluencerDeal, 'id' | 'personaId' | 'createdAt' | 'updatedAt'>;
 
@@ -41,6 +42,7 @@ interface ErrorState { message: string; recovery: string; rawText?: string }
 const MAX_FILES = 3;
 
 export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = [] }: Props) {
+  const { celebrate, CelebratePortal } = useCelebrate();
   const [step, setStep] = useState<Step>('pick');
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -179,6 +181,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
     if (!deal) return;
     const input = capturedDealToDealInput(deal);
     onSave(input);
+    celebrate({ message: '新しい案件が届きました' });
     onClose();
   };
 
@@ -241,6 +244,8 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
     '#FFB020';
 
   return (
+    <>
+    {CelebratePortal}
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
@@ -690,6 +695,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
         </AnimatePresence>
       </motion.div>
     </motion.div>
+    </>
   );
 }
 

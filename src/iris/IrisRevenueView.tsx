@@ -24,6 +24,7 @@ import { v4 as uuidv4 } from 'uuid';
 import EmptyInvite from './EmptyInvite';
 import { useInfluencerDesk } from '../hooks/useInfluencerDesk';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
+import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
 import { estimateTax } from './taxHelper';
 import { notifyInApp } from '../lib/inAppNotify';
 import { copyText } from '../lib/clipboard';
@@ -357,6 +358,14 @@ export default function IrisRevenueView({ bg }: Props) {
           案件・スポンサー・アフィリ・グッズ — すべての収入と、来月予測・税金まで一か所に。
         </p>
       </div>
+
+      <DelegateToAgentTeamBanner
+        taskTitle="今月の収益を CFO に分析してもらう"
+        suggestedCxos={['CFO', 'CDS']}
+        why="どの収入源が伸びているか、来月どこを攻めるか — AI 会社が数字を読み解きます"
+        expected="月次レポート + 来月予測 + 増やすための施策 3 案"
+        brand="iris"
+      />
 
       {/* サマリーカード */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>

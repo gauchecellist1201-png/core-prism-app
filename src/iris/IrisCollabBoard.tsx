@@ -17,6 +17,7 @@ import type { IrisBackgroundDef } from './irisStyle';
 import type { CustomIrisBackground } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
+import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
 import { notifyInApp } from '../lib/inAppNotify';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { loadIgProfile } from './instagramConnect';
@@ -516,6 +517,14 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
           AI がコラボ相手を提案 → DM 下書き → ステージ管理 → 完了後の評価まで、一連の流れを 1 か所で。
         </p>
       </div>
+
+      <DelegateToAgentTeamBanner
+        taskTitle="コラボ候補を CSO + CMO に探してもらう"
+        suggestedCxos={['CSO', 'CMO']}
+        why="伸びるアカウントは「正しい相手とのコラボ」で加速。AI 会社が候補と DM 文面まで作ります"
+        expected="コラボ候補 5 件 + DM 下書き"
+        brand="iris"
+      />
 
       {/* モード切替 */}
       <div style={{ display: 'flex', gap: 8, marginBottom: '1rem', background: 'rgba(0,0,0,0.04)', padding: 4, borderRadius: 999, width: 'fit-content' }}>

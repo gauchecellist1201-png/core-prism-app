@@ -30,6 +30,7 @@ import {
 import { detectAudioPeaks } from './reelStudio/Highlight';
 import { translateCaptions, type TargetLang } from './reelStudio/Translate';
 import { removeBackgroundFromUrl } from './reelStudio/BgRemove';
+import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
 
 // ─── 編集テンプレート (型) ─────────────────────
 type ReelTemplate = {
@@ -2378,6 +2379,14 @@ JSON のみで返答。`;
           画像 / 動画 → 9:16 リール。Ken Burns + 切替 + AI 字幕 + 20+ フォント。素材はサーバーに送られません。
         </p>
       </div>
+
+      <DelegateToAgentTeamBanner
+        taskTitle="リール台本を CMO + CDO に書いてもらう"
+        suggestedCxos={['CMO', 'CDO']}
+        why="バズる動画は構成と編集が命。AI 会社が台本 + 画コンテ + 字幕案まで一気に作ります"
+        expected="3 案の台本 + フォント / 編集テンプレ推薦"
+        brand="iris"
+      />
 
       {/* レイアウト: 左にキャンバス、右に編集 */}
       <div style={{ display: 'grid', gap: '1.25rem', gridTemplateColumns: 'minmax(260px, 1fr) minmax(280px, 1.4fr)' }}>

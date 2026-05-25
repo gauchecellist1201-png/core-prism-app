@@ -10,6 +10,7 @@ import AgentProposalCard from './AgentProposalCard';
 import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
+import { useCelebrate } from '../hooks/useCelebrate';
 import { confirmAction } from '../lib/confirmDialog';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
@@ -23,6 +24,7 @@ interface Props {
 type Tab = 'ocr' | 'list' | 'manual' | 'summary';
 
 export default function ExpenseStudio({ persona, settings, onClose }: Props) {
+  const { celebrate, CelebratePortal } = useCelebrate();
   const exp = useExpenses();
   const personaEntries = useMemo(() => exp.getForPersona(persona.id), [exp.entries, persona.id]);
   const [tab, setTab] = useState<Tab>('ocr');
@@ -132,7 +134,8 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
     setDraft({ date: today, vendor: '', category: '会議費', description: '', amountIncl: 0, taxRate: 10, payment: 'card' });
     setOcrPreview(null); setOcrError(null); setShowDetail(false);
     setTab('list');
-  }, [draft, exp, persona.id, today]);
+    celebrate({ message: 'レシートを登録しました' });
+  }, [draft, exp, persona.id, today, celebrate]);
 
   const handleRemove = async (id: string) => {
     if (await confirmAction({ title: 'この経費を削除しますか?', tone: 'danger' })) exp.remove(id);
@@ -185,6 +188,8 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
   };
 
   return (
+    <>
+    {CelebratePortal}
     <motion.div
       className="cp-modal-bg"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -568,5 +573,6 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
         </div>
       </motion.div>
     </motion.div>
+    </>
   );
 }

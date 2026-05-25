@@ -21,6 +21,7 @@ import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { notifyInApp } from '../lib/inAppNotify';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
+import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -339,6 +340,14 @@ export default function IrisDirectorView({ bg, settings }: Props) {
           1 週間の撮影・編集・投稿を、AI と一緒に組み立てる。
         </p>
       </div>
+
+      <DelegateToAgentTeamBanner
+        taskTitle="来週の撮影計画を CDS + CDO に立ててもらう"
+        suggestedCxos={['CDS', 'CDO', 'CPO']}
+        why="撮影 → 編集 → 投稿の 7 日サイクルを AI 会社が組み立てます"
+        expected="7 日 grid + ロケ + 衣装 + 字幕プリセット"
+        brand="iris"
+      />
 
       {/* ── 7 日 grid スケジュール ── */}
       <div style={card}>

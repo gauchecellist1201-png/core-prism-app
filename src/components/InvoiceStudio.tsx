@@ -13,6 +13,7 @@ import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
 import EmptyState from './EmptyState';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
+import { useCelebrate } from '../hooks/useCelebrate';
 
 interface Props {
   persona: Persona;
@@ -23,6 +24,7 @@ interface Props {
 type Tab = 'compose' | 'history' | 'issuer' | 'clients';
 
 export default function InvoiceStudio({ persona, settings, onClose }: Props) {
+  const { celebrate, CelebratePortal } = useCelebrate();
   const inv = useInvoices();
   const [tab, setTab] = useState<Tab>('compose');
   const [error, setError] = useState<string | null>(null);
@@ -138,7 +140,8 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
       notes, paymentTerms,
     });
     setIssued(invoice);
-  }, [issuer, selectedClient, newClient, lines, subject, issueDate, dueDate, notes, paymentTerms, inv, persona]);
+    celebrate({ message: '請求書を発行しました', level: 'small' });
+  }, [issuer, selectedClient, newClient, lines, subject, issueDate, dueDate, notes, paymentTerms, inv, persona, celebrate]);
 
   const handlePrint = () => window.print();
 
@@ -147,6 +150,8 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
   // 印刷モードでは投票印刷ビューを全画面で表示
   if (issued) {
     return (
+      <>
+      {CelebratePortal}
       <div className="fixed inset-0 z-50 overflow-auto" style={{ background: '#222' }}>
         <div className="sticky top-0 z-10 bg-black/90 backdrop-blur px-5 py-3 flex items-center justify-between print:hidden">
           <div className="text-white">
@@ -177,10 +182,13 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
           </div>
         </div>
       </div>
+      </>
     );
   }
 
   return (
+    <>
+    {CelebratePortal}
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-3"
       style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)' }}
@@ -674,6 +682,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
         </div>
       </motion.div>
     </motion.div>
+    </>
   );
 }
 

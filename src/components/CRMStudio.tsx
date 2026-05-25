@@ -24,6 +24,7 @@ import { confirmAction } from '../lib/confirmDialog';
 import AILoadingState from './AILoadingState';
 import ApiErrorCard from './ApiErrorCard';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
+import { useCelebrate } from '../hooks/useCelebrate';
 import { suggestNextAction, heuristicNextAction, priorityScore, daysSinceLastActivity } from '../lib/crmNextAction';
 
 interface Props {
@@ -47,6 +48,15 @@ function useIsMobile() {
 export default function CRMStudio({ persona, onClose }: Props) {
   const crm = useCRM();
   const queue = useAgentTaskQueue();
+  const { celebrate, CelebratePortal } = useCelebrate();
+  // 受注 (won) に進ませた瞬間だけ祝う共通ヘルパ
+  const moveStageWithCelebrate = useCallback((id: string, nextStage: CRMStage) => {
+    const prev = crm.deals.find(d => d.id === id);
+    crm.moveStage(id, nextStage);
+    if (nextStage === 'won' && prev && prev.stage !== 'won') {
+      celebrate({ message: '受注おめでとうございます！', level: 'big' });
+    }
+  }, [crm, celebrate]);
   const dealsAll = useMemo(() => crm.getForPersona(persona.id), [crm.deals, persona.id]);
   const [view, setView] = useState<View>('kanban');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -102,7 +112,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
     if (!id) return;
     const deal = dealsAll.find(d => d.id === id);
     if (!deal || deal.stage === stage) return;
-    crm.moveStage(id, stage);
+    moveStageWithCelebrate(id, stage);
     // ステージ遷移を自動で活動履歴に追記
     crm.addActivity(id, {
       date: new Date().toISOString().slice(0, 10),
@@ -153,6 +163,8 @@ export default function CRMStudio({ persona, onClose }: Props) {
   }, [queue]);
 
   return (
+    <>
+    {CelebratePortal}
     <motion.div
       className="cp-modal-bg"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -296,7 +308,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
                           {dealsHere.map(d => (
                             <DealCard key={d.id} deal={d} accent={persona.accentColor}
                               onOpen={() => setEditingId(d.id)}
-                              onMove={(s) => crm.moveStage(d.id, s)}
+                              onMove={(s) => moveStageWithCelebrate(d.id, s)}
                               onPropose={(k) => proposeOutreach(d, k)}
                               proposing={proposeBusyId === d.id}
                               compact={false}
@@ -359,7 +371,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
                             >
                               <DealCard deal={d} accent={persona.accentColor}
                                 onOpen={() => setEditingId(d.id)}
-                                onMove={(s) => crm.moveStage(d.id, s)}
+                                onMove={(s) => moveStageWithCelebrate(d.id, s)}
                                 onPropose={(k) => proposeOutreach(d, k)}
                                 proposing={proposeBusyId === d.id}
                                 compact={true}
@@ -477,7 +489,13 @@ export default function CRMStudio({ persona, onClose }: Props) {
           <DealEditorWithDocs key={editing.id}
             persona={persona} deal={editing}
             onClose={() => setEditingId(null)}
-            onUpdate={(patch) => crm.updateDeal(editing.id, patch)}
+            onUpdate={(patch) => {
+              const prevStage = editing.stage;
+              crm.updateDeal(editing.id, patch);
+              if (patch.stage === 'won' && prevStage !== 'won') {
+                celebrate({ message: '受注おめでとうございます！', level: 'big' });
+              }
+            }}
             onDelete={async () => { if (await confirmAction({ title: 'この案件を削除しますか?', tone: 'danger' })) { crm.removeDeal(editing.id); setEditingId(null); } }}
             onAddActivity={(a) => crm.addActivity(editing.id, a)}
             onPropose={(kind) => proposeOutreach(editing, kind)}
@@ -486,6 +504,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
         )}
       </AnimatePresence>
     </motion.div>
+    </>
   );
 }
 
