@@ -9,12 +9,13 @@ import { useT, type Lang, type Dictionary } from '../i18n';
 import {
   Compass, Briefcase, TrendingUp, Sparkles, BookOpen, Users, Heart,
   FileText, FileSpreadsheet, ScrollText, Target, Mail, Receipt, Palette, Mic,
-  Mic2, Handshake, Receipt as ReceiptIcon, ArrowRight,
+  Mic2, Handshake, Receipt as ReceiptIcon, ArrowRight, Sparkles as SparklesIcon,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { REFERRAL_BONUS_DAYS, getPendingReferralInviter } from '../lib/referral';
 import LiveAgentMock from './LiveAgentMock';
+import { seedDemoData, setDemoActive } from '../lib/onboarding';
 
 interface Props {
   onEnterApp: () => void;
@@ -55,6 +56,15 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
     try { setPendingRef(sessionStorage.getItem('pending_ref')); } catch { /* */ }
     setPendingInviter(getPendingReferralInviter());
   }, []);
+
+  // 「サンプルで触ってみる」: 実物品質のデモデータを localStorage に投入してから入室
+  const handleSampleEnter = () => {
+    try {
+      seedDemoData();
+      setDemoActive(true);
+    } catch { /* quota — そのまま入室 */ }
+    onEnterApp();
+  };
 
   return (
     <div style={{ background: BG_DARK, color: '#fff', minHeight: '100dvh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
@@ -188,6 +198,29 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
             <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginTop: '1.1rem', lineHeight: 1.6 }}>
               7 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ
             </p>
+
+            <button
+              type="button"
+              onClick={handleSampleEnter}
+              style={{
+                marginTop: '0.85rem',
+                background: 'transparent',
+                color: 'rgba(255,255,255,0.78)',
+                border: '1px dashed rgba(167,139,250,0.55)',
+                borderRadius: 10,
+                padding: '0.55rem 1rem',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+              }}
+            >
+              <SparklesIcon size={14} color="#a78bfa" />
+              <span>サンプルで触ってみる</span>
+              <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>(架空カフェ経営者のデータで体験)</span>
+            </button>
           </div>
 
           {/* ── 右: Live AgentTeamMonitor 風モック ───────── */}
@@ -201,65 +234,8 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
           </motion.div>
         </div>
 
-        {/* ── ヒーロー直下: 3 実例 横並びカード ───────── */}
-        <div className="lp-hero-examples" style={{ maxWidth: 1100, margin: '3.5rem auto 0', position: 'relative', zIndex: 2 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
-            {([
-              {
-                Icon: Mic2,
-                tag: '議事録',
-                lead: '1 時間の録音 → 3 分で構造化',
-                detail: '会議の音声 → 要点・決定・アクションに自動で整理。AI が次の手まで提案。',
-                color: '#60a5fa',
-              },
-              {
-                Icon: Handshake,
-                tag: '営業',
-                lead: '5 社の見込み → AI が提案文 5 通',
-                detail: 'リスト共有 → CSO 役員 AI が業界を読み、5 社それぞれに合わせた提案文を起草。',
-                color: '#f472b6',
-              },
-              {
-                Icon: ReceiptIcon,
-                tag: '財務',
-                lead: 'レシート撮影 → 月次損益が勝手に',
-                detail: 'スマホで撮るだけ。CFO 役員 AI が仕訳・月次 PL ・税理士提出用まで自動化。',
-                color: '#4ade80',
-              },
-            ] as { Icon: LucideIcon; tag: string; lead: string; detail: string; color: string }[]).map((ex, i) => (
-              <motion.div
-                key={ex.tag}
-                initial={{ opacity: 0, y: 14 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-30px' }}
-                transition={{ duration: 0.5, delay: i * 0.08 }}
-                style={{
-                  position: 'relative',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${ex.color}30`,
-                  borderRadius: 16,
-                  padding: '1.1rem 1.15rem 1.2rem',
-                  overflow: 'hidden',
-                }}
-              >
-                <div style={{ position: 'absolute', top: -50, right: -50, width: 160, height: 160, borderRadius: '50%', background: ex.color, opacity: 0.15, filter: 'blur(50px)', pointerEvents: 'none' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.55rem', position: 'relative', zIndex: 2 }}>
-                  <div style={{
-                    width: 34, height: 34, borderRadius: 9,
-                    background: `linear-gradient(135deg, ${ex.color}, ${ex.color}cc)`,
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: `0 6px 14px ${ex.color}55, inset 0 1px 0 rgba(255,255,255,0.2)`,
-                  }}>
-                    <ex.Icon size={18} color="#fff" strokeWidth={2.3} />
-                  </div>
-                  <span style={{ fontSize: '0.62rem', letterSpacing: '0.22em', fontWeight: 700, color: ex.color, textTransform: 'uppercase' }}>{ex.tag}</span>
-                </div>
-                <p style={{ position: 'relative', zIndex: 2, fontSize: '0.98rem', fontWeight: 700, color: '#fff', marginBottom: '0.4rem', lineHeight: 1.4 }}>{ex.lead}</p>
-                <p style={{ position: 'relative', zIndex: 2, fontSize: '0.82rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.65 }}>{ex.detail}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+        {/* ── ヒーロー直下: Before → After 3 実例カード ───────── */}
+        <BeforeAfterShowcase />
 
         {/* 7色プリズム可視化 (元のまま、下に移動) */}
         <div style={{ maxWidth: 980, margin: '4rem auto 0', position: 'relative', zIndex: 2 }}>
@@ -442,6 +418,158 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
           {t.footer.copyright.replace('{year}', String(new Date().getFullYear()))}
         </div>
       </footer>
+    </div>
+  );
+}
+
+// ─── Before → After 3 実例ショーケース ──────────────────────────
+// オーナー指示: 動く例 + 数字 + 計算式の明示で「触らなくても伝わる」LP
+// 単価¥3,000/h ベースで節約金額を計算 (¥50/分 = ¥3,000/60)
+function BeforeAfterShowcase() {
+  const items: {
+    Icon: LucideIcon;
+    tag: string;
+    color: string;
+    before: { label: string; body: string };
+    after: { label: string; body: string };
+    save: { minutes: number; calcNote: string; monthlyHint?: string };
+  }[] = [
+    {
+      Icon: Mic2,
+      tag: '議事録',
+      color: '#60a5fa',
+      before: { label: '1 時間の会議録音 + 殴り書きメモ', body: '聞き直し → 整形 → 共有まで 60 分かかる' },
+      after:  { label: '3 分で章立て + アクション + 担当者付き', body: 'COO 役員 AI が要点・決定・宿題を自動構造化' },
+      save:   { minutes: 57, calcNote: '60 分 → 3 分 = 節約 57 分 (¥3,000/h 換算で約 ¥2,850 相当)' },
+    },
+    {
+      Icon: Handshake,
+      tag: 'DM 案件 (Iris)',
+      color: '#f472b6',
+      before: { label: 'ブランドからの DM スクショ 1 枚', body: '条件・希望ギャラ・締切を読み直し → 表に転記で 5 分' },
+      after:  { label: '30 秒で案件カード (ブランド/報酬/締切/1 文要約)', body: 'CSO 役員 AI が文面を読み取り、CRM に自動登録' },
+      save:   { minutes: 4.5, calcNote: '5 分 → 30 秒 = 節約 4.5 分 (¥3,000/h で約 ¥225/件)', monthlyHint: '月 10 件で ¥2,250 / 月' },
+    },
+    {
+      Icon: ReceiptIcon,
+      tag: '経費レシート',
+      color: '#4ade80',
+      before: { label: 'レシート 1 枚撮影 → 手で入力', body: '日付・店舗・科目・税率を手打ちで 3 分' },
+      after:  { label: '日付・店舗・科目・税率を自動入力', body: 'CFO 役員 AI が OCR + 仕訳 + freee/弥生 連携まで' },
+      save:   { minutes: 2.5, calcNote: '3 分 → 30 秒 = 節約 2.5 分 (¥3,000/h で約 ¥125/枚)', monthlyHint: '月 30 枚で ¥3,750 / 月' },
+    },
+  ];
+
+  return (
+    <div className="lp-hero-examples" style={{ maxWidth: 1100, margin: '3.5rem auto 0', position: 'relative', zIndex: 2 }}>
+      <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: '#a78bfa', fontWeight: 700, marginBottom: '0.55rem' }}>
+          3 EXAMPLES · BEFORE / AFTER
+        </p>
+        <h2 style={{ fontSize: 'clamp(1.4rem, 2.6vw, 1.95rem)', fontWeight: 800, lineHeight: 1.35, margin: 0 }}>
+          触らなくても伝わる、<span style={{ background: 'linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>3 つの実例</span>。
+        </h2>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1rem' }}>
+        {items.map((ex, i) => (
+          <motion.div
+            key={ex.tag}
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-30px' }}
+            transition={{ duration: 0.5, delay: i * 0.08 }}
+            style={{
+              position: 'relative',
+              background: 'rgba(255,255,255,0.035)',
+              border: `1px solid ${ex.color}38`,
+              borderRadius: 18,
+              padding: '1.2rem 1.2rem 1.3rem',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div aria-hidden style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', background: ex.color, opacity: 0.18, filter: 'blur(50px)', pointerEvents: 'none' }} />
+
+            {/* タグ */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.85rem', position: 'relative', zIndex: 2 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: `linear-gradient(135deg, ${ex.color}, ${ex.color}cc)`,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: `0 6px 14px ${ex.color}55, inset 0 1px 0 rgba(255,255,255,0.2)`,
+              }}>
+                <ex.Icon size={19} color="#fff" strokeWidth={2.3} />
+              </div>
+              <span style={{ fontSize: '0.66rem', letterSpacing: '0.22em', fontWeight: 700, color: ex.color, textTransform: 'uppercase' }}>{ex.tag}</span>
+            </div>
+
+            {/* Before */}
+            <div style={{ position: 'relative', zIndex: 2, marginBottom: '0.7rem' }}>
+              <p style={{ fontSize: '0.62rem', letterSpacing: '0.2em', fontWeight: 700, color: 'rgba(255,255,255,0.42)', marginBottom: '0.35rem' }}>
+                BEFORE · いま
+              </p>
+              <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.55, margin: 0 }}>
+                <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{ex.before.label}</strong>
+              </p>
+              <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, margin: '0.25rem 0 0' }}>
+                {ex.before.body}
+              </p>
+            </div>
+
+            {/* 矢印 */}
+            <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0.2rem 0 0.7rem' }}>
+              <motion.div
+                animate={{ y: [0, 4, 0] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                  fontSize: '0.7rem', fontWeight: 700, color: ex.color, letterSpacing: '0.1em',
+                }}
+              >
+                ↓ AI が引き受ける ↓
+              </motion.div>
+            </div>
+
+            {/* After */}
+            <div style={{ position: 'relative', zIndex: 2, marginBottom: '0.85rem' }}>
+              <p style={{ fontSize: '0.62rem', letterSpacing: '0.2em', fontWeight: 700, color: ex.color, marginBottom: '0.35rem' }}>
+                AFTER · Prism なら
+              </p>
+              <p style={{ fontSize: '0.95rem', color: '#fff', lineHeight: 1.5, margin: 0, fontWeight: 700 }}>
+                {ex.after.label}
+              </p>
+              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.72)', lineHeight: 1.65, margin: '0.3rem 0 0' }}>
+                {ex.after.body}
+              </p>
+            </div>
+
+            {/* 節約バッジ (計算式付き) */}
+            <div style={{
+              position: 'relative', zIndex: 2,
+              marginTop: 'auto',
+              background: `${ex.color}1a`,
+              border: `1px solid ${ex.color}40`,
+              borderRadius: 12,
+              padding: '0.6rem 0.75rem',
+            }}>
+              <p style={{ fontSize: '0.78rem', fontWeight: 800, color: ex.color, margin: 0, lineHeight: 1.35 }}>
+                {ex.save.calcNote}
+              </p>
+              {ex.save.monthlyHint && (
+                <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)', margin: '0.2rem 0 0', lineHeight: 1.4 }}>
+                  → {ex.save.monthlyHint}
+                </p>
+              )}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'rgba(255,255,255,0.42)', marginTop: '0.95rem', lineHeight: 1.6 }}>
+        ※ 時間単価 ¥3,000/h で試算した目安です。業種・スキルにより個人差があります。
+      </p>
     </div>
   );
 }

@@ -4,13 +4,15 @@
 // 「あなたの光が、世界をつくる」 ── 影響力という光を、AI が広げる
 // ============================================================
 import { motion } from 'framer-motion';
-import { Mail, BarChart3, Sparkle, MessageSquare, Palette, UsersRound, Camera, Mic, HeartPulse, Check, ArrowRight, TrendingUp } from 'lucide-react';
+import { Mail, BarChart3, Sparkle, MessageSquare, Palette, UsersRound, Camera, Mic, HeartPulse, Check, ArrowRight, TrendingUp, Clock, Sparkles as SparklesIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { IRIS_COLORS, IRIS_FONTS } from './irisStyle';
 import { IrisLogo } from '../components/Logo';
 import { useLocale } from '../hooks/useLocale';
 import type { Locale } from '../lib/i18n';
 import LiveAgentMock from '../components/LiveAgentMock';
+import { seedDemoData, setDemoActive, clearDemoData } from '../lib/onboarding';
 
 interface Props {
   onEnter: () => void;
@@ -41,6 +43,16 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
   const handlePlan = (id: string) => {
     if (onSelectPlan) onSelectPlan(id);
     else onEnter();
+  };
+
+  // 「サンプルで触ってみる」: 既存デモを掃除 → 投入 → 入室 (実物品質体験)
+  const handleSampleEnter = () => {
+    try {
+      clearDemoData();
+      seedDemoData();
+      setDemoActive(true);
+    } catch { /* quota — そのまま入室 */ }
+    onEnter();
   };
 
   return (
@@ -115,6 +127,30 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             <p style={{ fontSize: '0.78rem', color: 'rgba(255,250,245,0.5)', marginTop: '1.1rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', lineHeight: 1.6 }}>
               7 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ
             </p>
+
+            <button
+              type="button"
+              onClick={handleSampleEnter}
+              style={{
+                marginTop: '0.85rem',
+                background: 'transparent',
+                color: 'rgba(255,250,245,0.85)',
+                border: `1px dashed ${IRIS_COLORS.gold}80`,
+                borderRadius: 10,
+                padding: '0.55rem 1rem',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                fontFamily: IRIS_FONTS.body,
+              }}
+            >
+              <SparklesIcon size={14} color={IRIS_COLORS.gold} />
+              <span>サンプルで触ってみる</span>
+              <span style={{ fontSize: '0.7rem', color: 'rgba(255,250,245,0.55)' }}>(架空クリエイターのデータで体験)</span>
+            </button>
           </div>
 
           {/* ── 右: Live AgentTeamMonitor 風モック ───────── */}
@@ -327,6 +363,12 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         </div>
       </section>
 
+      {/* ── フォロワー → 月収予測 電卓 ────────────────────────────── */}
+      <FollowerEarningsCalculator onEnter={onEnter} />
+
+      {/* ── あなたが捨てる時間 ────────────────────────────── */}
+      <ReclaimTimeSection onEnter={onEnter} />
+
       {/* ── 機能 (光彩のファセット) ────────────────────────────── */}
       <section id="facets" className="lp-section-pad" style={{ padding: sectionPad, background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #2a0a3a 100%)` }}>
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
@@ -473,6 +515,356 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         </div>
       </footer>
     </div>
+  );
+}
+
+// ─── フォロワー → 月収予測 電卓 ──────────────────────────────
+// オーナー指示: 入力に応じて推定月収。実データではないので「目安です」明示
+// レンジ補間: 1k→¥10-30k / 10k→¥80-150k / 100k→¥400-900k
+function FollowerEarningsCalculator({ onEnter }: { onEnter: () => void }) {
+  const [followers, setFollowers] = useState<number>(10000);
+
+  // 対数補間で連続的に。1k〜100k+ をなめらかに繋ぐ
+  const { lo, hi } = useMemo(() => {
+    const f = Math.max(100, followers);
+    // アンカー: 1k → 10-30k, 10k → 80-150k, 100k → 400-900k
+    // 対数空間で log10(followers) を x として線形補間
+    const logF = Math.log10(f);
+    const anchors = [
+      { x: 3, lo: 10000,  hi: 30000  },   // 1k
+      { x: 4, lo: 80000,  hi: 150000 },   // 10k
+      { x: 5, lo: 400000, hi: 900000 },   // 100k
+      { x: 6, lo: 1500000, hi: 4000000 }, // 1M
+    ];
+    // 最寄り 2 アンカー間で線形補間
+    let lo = anchors[0].lo, hi = anchors[0].hi;
+    if (logF <= anchors[0].x) {
+      const r = f / 1000;
+      lo = Math.round(anchors[0].lo * r);
+      hi = Math.round(anchors[0].hi * r);
+    } else {
+      for (let i = 0; i < anchors.length - 1; i++) {
+        const a = anchors[i], b = anchors[i + 1];
+        if (logF >= a.x && logF <= b.x) {
+          const t = (logF - a.x) / (b.x - a.x);
+          lo = Math.round(a.lo + (b.lo - a.lo) * t);
+          hi = Math.round(a.hi + (b.hi - a.hi) * t);
+          break;
+        }
+        if (logF > anchors[anchors.length - 1].x) {
+          const last = anchors[anchors.length - 1];
+          lo = last.lo; hi = last.hi;
+        }
+      }
+    }
+    return { lo, hi };
+  }, [followers]);
+
+  const fmt = (n: number) => {
+    if (n >= 10000) return `¥${(n / 10000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '')}万`;
+    return `¥${n.toLocaleString('ja-JP')}`;
+  };
+
+  const presets: { label: string; value: number }[] = [
+    { label: '1千',  value: 1000 },
+    { label: '5千',  value: 5000 },
+    { label: '1万',  value: 10000 },
+    { label: '5万',  value: 50000 },
+    { label: '10万', value: 100000 },
+    { label: '50万', value: 500000 },
+  ];
+
+  return (
+    <section
+      id="earnings-calc"
+      className="lp-section-pad"
+      style={{
+        padding: sectionPad,
+        background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #1a0828 60%, ${IRIS_COLORS.inkBlack} 100%)`,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ maxWidth: 880, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 700, marginBottom: '0.9rem', color: IRIS_COLORS.gold }}>
+            EARNINGS CALCULATOR
+          </p>
+          <h2 style={{
+            fontFamily: IRIS_FONTS.display, fontStyle: 'italic',
+            fontSize: 'clamp(1.7rem, 4vw, 2.6rem)', fontWeight: 500, lineHeight: 1.25,
+            marginBottom: '0.85rem',
+            background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink} 55%, ${IRIS_COLORS.purpleLt})`,
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>
+            あなたの月収、いくらになる?
+          </h2>
+          <p style={{ color: 'rgba(255,250,245,0.6)', fontSize: '0.92rem', fontFamily: IRIS_FONTS.serif, lineHeight: 1.85 }}>
+            フォロワー数を動かすと、業界相場ベースの月収レンジが出ます。
+          </p>
+        </div>
+
+        <div style={{
+          background: 'rgba(255,250,245,0.04)',
+          border: `1px solid ${IRIS_COLORS.gold}38`,
+          borderRadius: 22,
+          padding: '1.75rem 1.5rem 1.85rem',
+          boxShadow: `0 24px 70px ${IRIS_COLORS.purpleDeep}55, 0 0 80px ${IRIS_COLORS.hotPink}18`,
+        }}>
+          {/* スライダー */}
+          <label style={{
+            display: 'block', fontSize: '0.72rem', letterSpacing: '0.2em', fontWeight: 700,
+            color: IRIS_COLORS.gold, marginBottom: '0.55rem',
+          }}>
+            FOLLOWERS · フォロワー数
+          </label>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginBottom: '0.85rem', flexWrap: 'wrap' }}>
+            <input
+              type="number"
+              min={100}
+              max={2000000}
+              step={100}
+              value={followers}
+              onChange={(e) => setFollowers(Math.max(100, Math.min(2000000, Number(e.target.value) || 0)))}
+              style={{
+                flex: '1 1 180px',
+                background: 'rgba(255,250,245,0.06)',
+                color: IRIS_COLORS.cream,
+                border: `1px solid ${IRIS_COLORS.purpleDeep}66`,
+                borderRadius: 12,
+                padding: '0.85rem 1rem',
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                fontFamily: IRIS_FONTS.body,
+                outline: 'none',
+                minHeight: 52,
+              }}
+              aria-label="フォロワー数を入力"
+            />
+            <span style={{ fontSize: '0.9rem', color: 'rgba(255,250,245,0.6)' }}>人</span>
+          </div>
+
+          <input
+            type="range"
+            min={3} max={6.3} step={0.05}
+            value={Math.log10(Math.max(100, followers))}
+            onChange={(e) => setFollowers(Math.round(Math.pow(10, Number(e.target.value))))}
+            style={{
+              width: '100%',
+              accentColor: IRIS_COLORS.hotPink,
+              marginBottom: '0.6rem',
+            }}
+            aria-label="フォロワー数スライダー"
+          />
+
+          {/* プリセット */}
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+            {presets.map(p => (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => setFollowers(p.value)}
+                style={{
+                  background: followers === p.value
+                    ? `linear-gradient(135deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`
+                    : 'rgba(255,250,245,0.05)',
+                  color: followers === p.value ? '#fff' : 'rgba(255,250,245,0.78)',
+                  border: followers === p.value ? 'none' : `1px solid ${IRIS_COLORS.purpleDeep}55`,
+                  borderRadius: 999,
+                  padding: '0.45rem 0.95rem',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  minHeight: 40,
+                  fontFamily: IRIS_FONTS.body,
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 結果 */}
+          <div style={{
+            background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink}1f, ${IRIS_COLORS.purpleLt}14)`,
+            border: `1px solid ${IRIS_COLORS.hotPink}38`,
+            borderRadius: 16,
+            padding: '1.25rem 1.1rem 1.35rem',
+            textAlign: 'center',
+          }}>
+            <p style={{
+              fontSize: '0.7rem', letterSpacing: '0.25em', fontWeight: 700,
+              color: IRIS_COLORS.hotPink, marginBottom: '0.55rem',
+            }}>
+              MONTHLY EARNINGS · 月収予測レンジ
+            </p>
+            <p style={{
+              fontFamily: IRIS_FONTS.display, fontStyle: 'italic',
+              fontSize: 'clamp(1.8rem, 5.5vw, 2.85rem)', fontWeight: 600,
+              lineHeight: 1.1, margin: 0,
+              background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink} 55%, ${IRIS_COLORS.purpleLt})`,
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>
+              {fmt(lo)} 〜 {fmt(hi)}
+            </p>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255,250,245,0.55)', marginTop: '0.45rem', fontFamily: IRIS_FONTS.body }}>
+              / 月 · PR 案件 + ギフティング + アフィリエイト合算の目安
+            </p>
+          </div>
+
+          <p style={{ fontSize: '0.72rem', color: 'rgba(255,250,245,0.48)', marginTop: '0.95rem', lineHeight: 1.65, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', textAlign: 'center' }}>
+            ※ 業界相場ベースの目安です。ジャンル・エンゲージメント率・実績で個別差があります。<br />
+            数字は保証ではなく、Iris は「この上限に近づくまで」並走します。
+          </p>
+
+          <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+            <button onClick={onEnter} style={{
+              ...ctaBtnHero,
+              fontSize: '0.95rem',
+              padding: '0.9rem 1.85rem',
+            }}>
+              この収入を Iris で目指す <ArrowRight size={16} strokeWidth={2.6} style={{ verticalAlign: 'middle', marginLeft: 6 }} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── あなたが捨てる時間 ──────────────────────────────
+// オーナー指示: DM 返信 50 件/月 × 15 分 = 12.5 時間 / コンテンツ企画 20 案/月 × 30 分 = 10 時間
+// 合計「毎月 22 時間取り戻せます」
+function ReclaimTimeSection({ onEnter }: { onEnter: () => void }) {
+  const items: { Icon: LucideIcon; label: string; calc: string; hours: number; color: string }[] = [
+    { Icon: MessageSquare, label: 'DM 返信',         calc: '50 件 / 月 × 15 分', hours: 12.5, color: IRIS_COLORS.hotPink },
+    { Icon: Sparkle,       label: 'コンテンツ企画',  calc: '20 案 / 月 × 30 分', hours: 10,   color: IRIS_COLORS.gold },
+    { Icon: BarChart3,     label: '分析・振り返り',  calc: '週 1 × 30 分',       hours: 2,    color: IRIS_COLORS.purpleLt },
+  ];
+  const total = items.reduce((s, i) => s + i.hours, 0);
+
+  return (
+    <section
+      className="lp-section-pad"
+      style={{
+        padding: '4rem 1.25rem 5rem',
+        background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #240b32 60%, ${IRIS_COLORS.inkBlack} 100%)`,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 700, marginBottom: '0.9rem', color: IRIS_COLORS.purpleLt }}>
+            TIME RECLAIMED
+          </p>
+          <h2 style={{
+            fontFamily: IRIS_FONTS.display, fontStyle: 'italic',
+            fontSize: 'clamp(1.7rem, 4vw, 2.6rem)', fontWeight: 500, lineHeight: 1.25,
+            marginBottom: '0.85rem',
+          }}>
+            あなたが、いま <span style={{
+              background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink} 55%, ${IRIS_COLORS.purpleLt})`,
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>捨てている時間</span>。
+          </h2>
+          <p style={{ color: 'rgba(255,250,245,0.6)', fontSize: '0.92rem', fontFamily: IRIS_FONTS.serif, lineHeight: 1.85 }}>
+            Iris が引き受ける作業を、時間に直してみました。
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
+          {items.map((it, i) => (
+            <motion.div
+              key={it.label}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.5, delay: i * 0.08 }}
+              style={{
+                position: 'relative',
+                background: 'rgba(255,250,245,0.04)',
+                border: `1px solid ${it.color}38`,
+                borderRadius: 18,
+                padding: '1.35rem 1.2rem 1.45rem',
+                overflow: 'hidden',
+              }}
+            >
+              <div aria-hidden style={{ position: 'absolute', top: -50, right: -50, width: 170, height: 170, borderRadius: '50%', background: it.color, opacity: 0.17, filter: 'blur(50px)' }} />
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 12,
+                  background: `linear-gradient(135deg, ${it.color}, ${it.color}cc)`,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '0.8rem',
+                  boxShadow: `0 6px 16px ${it.color}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
+                }}>
+                  <it.Icon size={20} color="#fff" strokeWidth={2.3} />
+                </div>
+                <p style={{ fontSize: '0.95rem', fontWeight: 700, color: IRIS_COLORS.ivory, margin: '0 0 0.25rem' }}>
+                  {it.label}
+                </p>
+                <p style={{ fontSize: '0.78rem', color: 'rgba(255,250,245,0.6)', margin: '0 0 0.7rem', lineHeight: 1.55 }}>
+                  {it.calc}
+                </p>
+                <p style={{
+                  fontFamily: IRIS_FONTS.display, fontStyle: 'italic',
+                  fontSize: 'clamp(1.8rem, 4vw, 2.4rem)', fontWeight: 600,
+                  color: it.color, margin: 0, lineHeight: 1,
+                }}>
+                  {it.hours} 時間
+                </p>
+                <p style={{ fontSize: '0.72rem', color: 'rgba(255,250,245,0.55)', margin: '0.25rem 0 0' }}>
+                  / 月
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* 合計バナー */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.6 }}
+          style={{
+            background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink}28, ${IRIS_COLORS.purpleLt}1a)`,
+            border: `1px solid ${IRIS_COLORS.hotPink}55`,
+            borderRadius: 22,
+            padding: '1.75rem 1.4rem',
+            textAlign: 'center',
+            boxShadow: `0 20px 60px ${IRIS_COLORS.hotPink}22`,
+          }}
+        >
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.55rem' }}>
+            <Clock size={20} color={IRIS_COLORS.gold} strokeWidth={2.4} />
+            <span style={{ fontSize: '0.7rem', letterSpacing: '0.3em', fontWeight: 700, color: IRIS_COLORS.gold }}>
+              TOTAL
+            </span>
+          </div>
+          <p style={{
+            fontFamily: IRIS_FONTS.display, fontStyle: 'italic',
+            fontSize: 'clamp(1.85rem, 5.5vw, 3rem)', fontWeight: 600, lineHeight: 1.15, margin: 0,
+          }}>
+            毎月 <span style={{
+              background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink} 55%, ${IRIS_COLORS.purpleLt})`,
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>{total} 時間</span> 取り戻せます。
+          </p>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.7)', margin: '0.85rem 0 1.25rem', lineHeight: 1.7, fontFamily: IRIS_FONTS.serif }}>
+            その時間で、撮影に出かけるか、寝るか、家族と過ごすか ── あなたが決める。
+          </p>
+          <button onClick={onEnter} style={{
+            ...ctaBtnHero,
+            fontSize: '0.95rem',
+            padding: '0.9rem 1.85rem',
+          }}>
+            時間を取り戻す <ArrowRight size={16} strokeWidth={2.6} style={{ verticalAlign: 'middle', marginLeft: 6 }} />
+          </button>
+        </motion.div>
+      </div>
+    </section>
   );
 }
 
