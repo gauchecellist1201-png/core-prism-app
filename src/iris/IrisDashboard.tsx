@@ -142,6 +142,7 @@ const IrisKnowledgeView = React.lazy(() => import('./IrisKnowledgeView'));
 import AgentsOrbit from '../components/AgentsOrbit';
 import { IRIS_SPECS, IRIS_ORDER, IRIS_CONVERSATIONS } from '../lib/agentSpecs';
 import IrisEarnHero from './IrisEarnHero';
+import IrisEarningsHero from './IrisEarningsHero';
 import WellnessTracker from '../components/WellnessTracker';
 import IgConnectModal from './IgConnectModal';
 import { loadIgProfile, consumeOauthCallback, type IgProfile } from './instagramConnect';
@@ -1410,6 +1411,14 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         <div key={tab}>
             {tab === 'home' && (
               <>
+                {/* 稼げる + 楽できるビジョン 3 連ヒーロー */}
+                <IrisEarningsHero
+                  myDeals={myDeals}
+                  igProfile={igProfile}
+                  onOpenDeals={() => setTab('deals')}
+                  onConnectInstagram={() => setShowIgConnect(true)}
+                />
+
                 {/* エディトリアル ホームダッシュ */}
                 <IrisEditorialHome
                   bg={bg}
