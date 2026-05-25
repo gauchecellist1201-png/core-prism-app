@@ -1590,3 +1590,204 @@ input, textarea, select { font-family: inherit; }
 .iris-reel-overflow-guard {
   overflow-x: hidden;
 }
+
+/* ============================================================
+   Microinteractions — 2026-05-25
+   触り心地を底上げするための共通レイヤー。
+   - CSS のみ。React 構造には触らない
+   - opt-out: [data-no-tactile] / [data-no-hover-lift]
+   - 既存スタイルとの衝突を避けるため、ほぼ末尾で適用
+   - prefers-reduced-motion 対応
+   ============================================================ */
+
+/* 共通 token (このセクション内だけで使う) */
+:root {
+  --mi-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --mi-dur-fast: 120ms;
+  --mi-dur: 200ms;
+  --mi-accent: #8E5CFF;          /* デフォルトは prism-creative */
+  --mi-accent-soft: rgba(142, 92, 255, 0.28);
+  --mi-ring: 0 0 0 2px rgba(142, 92, 255, 0.55), 0 0 0 4px rgba(142, 92, 255, 0.18);
+  --mi-lift-shadow: 0 8px 20px -10px rgba(20, 20, 40, 0.35), 0 2px 6px -2px rgba(20, 20, 40, 0.18);
+}
+[data-theme="dark"] {
+  --mi-lift-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.7), 0 4px 10px -4px rgba(0, 0, 0, 0.55);
+}
+/* Iris (ピンク) のページ配下では accent を切替 */
+[data-app="iris"], .iris-app, [data-persona="iris"] {
+  --mi-accent: #E1306C;
+  --mi-accent-soft: rgba(225, 48, 108, 0.28);
+  --mi-ring: 0 0 0 2px rgba(225, 48, 108, 0.55), 0 0 0 4px rgba(225, 48, 108, 0.18);
+}
+
+/* ───── A + E. ボタン共通の触感 (hover lift / active sink / flash) ───── */
+button:not([data-no-tactile]):not(:disabled),
+[role="button"]:not([data-no-tactile]):not(:disabled),
+input[type="submit"]:not([data-no-tactile]):not(:disabled),
+input[type="button"]:not([data-no-tactile]):not(:disabled) {
+  transition:
+    transform var(--mi-dur-fast) var(--mi-ease),
+    box-shadow var(--mi-dur) var(--mi-ease),
+    opacity var(--mi-dur-fast) var(--mi-ease),
+    filter var(--mi-dur-fast) var(--mi-ease);
+}
+
+@media (hover: hover) {
+  button:not([data-no-tactile]):not(:disabled):hover,
+  [role="button"]:not([data-no-tactile]):not(:disabled):hover,
+  input[type="submit"]:not([data-no-tactile]):not(:disabled):hover,
+  input[type="button"]:not([data-no-tactile]):not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: var(--mi-lift-shadow);
+  }
+}
+
+button:not([data-no-tactile]):not(:disabled):active,
+[role="button"]:not([data-no-tactile]):not(:disabled):active,
+input[type="submit"]:not([data-no-tactile]):not(:disabled):active,
+input[type="button"]:not([data-no-tactile]):not(:disabled):active {
+  transform: scale(0.96);
+  opacity: 0.92;
+  transition-duration: 60ms;
+}
+
+/* ───── B. リンク / a[href] hover の text-shadow ───── */
+@media (hover: hover) {
+  a[href]:not([data-no-tactile]):not([role="button"]):hover {
+    text-shadow: 0 4px 12px var(--mi-accent-soft);
+    transition: text-shadow var(--mi-dur) var(--mi-ease);
+  }
+}
+
+/* ───── F. フォーカス可視性 (focus ring, box-shadow ベース) ───── */
+button:not([data-no-tactile]):focus-visible,
+a[href]:not([data-no-tactile]):focus-visible,
+[role="button"]:not([data-no-tactile]):focus-visible,
+input:not([data-no-tactile]):focus-visible,
+textarea:not([data-no-tactile]):focus-visible,
+select:not([data-no-tactile]):focus-visible,
+[tabindex]:not([data-no-tactile]):focus-visible {
+  outline: none;
+  box-shadow: var(--mi-ring);
+  transition: box-shadow var(--mi-dur-fast) var(--mi-ease);
+}
+
+/* ───── G. カード hover lift (card を含むクラス名 / .glass / .iris-card) ───── */
+@media (hover: hover) {
+  [class*="card"]:not([data-no-hover-lift]):not(button):not(a):not(input):not([role="button"]):hover,
+  .glass:not([data-no-hover-lift]):not(button):not(a):not(input):not([role="button"]):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--mi-lift-shadow);
+    transition: transform var(--mi-dur) ease-out, box-shadow var(--mi-dur) ease-out;
+  }
+}
+
+/* ───── D. Skeleton loader ───── */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-3);
+  border-radius: 8px;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: mi-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+[data-theme="dark"] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  );
+}
+@keyframes mi-skeleton-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ───── H. トースト / 通知の登場 keyframe (framer-motion 未使用箇所用) ───── */
+@keyframes slide-up-fade {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.slide-up-fade {
+  animation: slide-up-fade 0.32s var(--mi-ease) both;
+}
+.fade-in {
+  animation: fade-in 0.24s var(--mi-ease) both;
+}
+
+/* ───── I. テキスト選択色 (persona accent) ───── */
+::selection {
+  background: rgba(167, 139, 250, 0.3);
+  color: inherit;
+}
+[data-app="iris"] ::selection,
+.iris-app ::selection,
+[data-persona="iris"] ::selection {
+  background: rgba(225, 48, 108, 0.3);
+  color: inherit;
+}
+
+/* ───── J. スクロールバー (デスクトップのみ・モバイルは触らない) ───── */
+@media (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: background var(--mi-dur) var(--mi-ease);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--mi-accent-soft);
+    background-clip: padding-box;
+  }
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+}
+
+/* ───── Reduced motion: マイクロインタラクションを抑制 ───── */
+@media (prefers-reduced-motion: reduce) {
+  button:not([data-no-tactile]):not(:disabled):hover,
+  [role="button"]:not([data-no-tactile]):not(:disabled):hover,
+  [class*="card"]:not([data-no-hover-lift]):hover,
+  .glass:not([data-no-hover-lift]):hover {
+    transform: none;
+  }
+  button:not([data-no-tactile]):not(:disabled):active,
+  [role="button"]:not([data-no-tactile]):not(:disabled):active {
+    transform: none;
+  }
+  .skeleton::after,
+  .slide-up-fade,
+  .fade-in {
+    animation: none;
+  }
+  a[href]:not([data-no-tactile]):hover {
+    text-shadow: none;
+  }
+}
