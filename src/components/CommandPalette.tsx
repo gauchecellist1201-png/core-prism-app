@@ -34,7 +34,8 @@ export type ModalKey =
   | 'knowledge' | 'meeting' | 'health' | 'minutes' | 'slides' | 'nego'
   | 'decision' | 'email' | 'premium' | 'post' | 'image' | 'invoice'
   | 'sales' | 'expense' | 'crm' | 'tasks' | 'pnl' | 'finConsult' | 'voice' | 'youtube'
-  | 'salesAgent' | 'saasAgent' | 'settings' | 'documents' | 'people';
+  | 'salesAgent' | 'saasAgent' | 'settings' | 'documents' | 'people'
+  | 'dailyReport';
 
 interface Props {
   open: boolean;
@@ -66,6 +67,7 @@ const CATEGORY_LABEL: Record<CategoryKey, string> = {
 
 // ナビ系 (既存 MODAL_LIST 拡張)
 const MODAL_LIST: { key: ModalKey; label: string; emoji: string; subtitle?: string }[] = [
+  { key: 'dailyReport', label: '今日のレポート',         emoji: '📊', subtitle: '売上・AI 完了・明日の 3 手を 1 枚で' },
   { key: 'knowledge', label: 'ナレッジを開く',          emoji: '📚', subtitle: '資料・メモ・PDF・画像を一覧' },
   { key: 'tasks',     label: 'タスクハブを開く',        emoji: '✅', subtitle: '全人格のタスクを横断管理' },
   { key: 'health',    label: 'ヘルス Hub を開く',       emoji: '🩺', subtitle: '体調・睡眠・運動の記録' },

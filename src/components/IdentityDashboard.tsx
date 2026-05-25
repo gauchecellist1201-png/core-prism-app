@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useState, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, ChatMessage, AppSettings, KnowledgeItem, Proposal } from '../types/identity';
 import { isOnboarded, isDemoActive, clearDemoData } from '../lib/onboarding';
@@ -55,6 +55,9 @@ import { useShadowSecretary } from '../hooks/useShadowSecretary';
 import { PrismLogo } from './Logo';
 import AnimatedAvatar from './AnimatedAvatar';
 import CommandPalette, { useCommandPaletteHotkey, type ModalKey } from './CommandPalette';
+import DailyReport from './DailyReport';
+import { useExpenses } from '../hooks/useExpenses';
+import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 const PnLStudio = lazy(() => import('./PnLStudio'));
 const FinancialConsultant = lazy(() => import('./FinancialConsultant'));
 const BenchmarkStudio = lazy(() => import('./BenchmarkStudio'));
@@ -229,6 +232,7 @@ export default function IdentityDashboard({
   });
   const [showCmdK, setShowCmdK] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  const [showDailyReport, setShowDailyReport] = useState(false);
   const [financeEditFor, setFinanceEditFor] = useState<Persona | null>(null);
   const [briefOverride, setBriefOverride] = useState<Proposal | null>(null);
 
@@ -286,8 +290,28 @@ export default function IdentityDashboard({
       case 'youtube':    setShowYouTube(true); break;
       case 'documents':  setShowDocument(true); break;
       case 'people':     setShowPeople(true); break;
+      case 'dailyReport': setShowDailyReport(true); break;
     }
   }, [onOpenSettings]);
+
+  // ── 今日のレポート: 経費 + AI タスクキューを集める
+  const expensesHook = useExpenses();
+  const agentQueueAll = useAgentTaskQueue();
+  const dailyReportExpenses = expensesHook.getForPersona(persona.id);
+
+  // ── 夜 20:00 以降に初回 dashboard アクセスで自動表示 (1 日 1 回、localStorage で抑止)
+  useEffect(() => {
+    try {
+      const now = new Date();
+      if (now.getHours() < 20) return;
+      const key = `core_daily_report_shown_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+      // マウント直後に被らないよう少し遅延
+      const t = setTimeout(() => setShowDailyReport(true), 1200);
+      return () => clearTimeout(t);
+    } catch { /* */ }
+  }, []);
   const [globalDrag, setGlobalDrag] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number; current: string } | null>(null);
 
@@ -522,6 +546,20 @@ export default function IdentityDashboard({
               </div>
             </div>
             <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+              <motion.button
+                onClick={() => setShowDailyReport(true)}
+                className="text-xs px-2 md:px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all"
+                style={{
+                  background: `${persona.accentColor}18`,
+                  border: `1px solid ${persona.accentColor}44`,
+                  color: persona.accentColor,
+                }}
+                whileHover={{ background: `${persona.accentColor}28` }}
+                aria-label="今日のレポート"
+                title="今日のレポート — 売上・AI 完了・明日の 3 手"
+              >
+                📊 <span className="hidden md:inline">今日のレポート</span>
+              </motion.button>
               <motion.button
                 onClick={() => setShowHealth(true)}
                 className="text-xs px-2 md:px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all"
@@ -1602,6 +1640,17 @@ export default function IdentityDashboard({
         activePersonaId={persona.id}
         onSwitchPersona={onSwitch}
         onOpenModal={handleCmdKOpen}
+      />
+
+      <DailyReport
+        open={showDailyReport}
+        onClose={() => setShowDailyReport(false)}
+        persona={persona}
+        stripeThisMonth={_stripeForBrief.thisMonth}
+        stripeConnected={_stripeForBrief.connected}
+        agentTasks={agentQueueAll.tasks}
+        expenses={dailyReportExpenses}
+        coachBrief={coach.brief}
       />
 
       <button
