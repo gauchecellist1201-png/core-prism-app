@@ -46,10 +46,11 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
   };
 
   // 「サンプルで触ってみる」: 既存デモを掃除 → 投入 → 入室 (実物品質体験)
+  // Iris は creator プロファイル (@hina_lifestyle 12 ヶ月) を seed
   const handleSampleEnter = () => {
     try {
       clearDemoData();
-      seedDemoData();
+      seedDemoData({ profile: 'creator' });
       setDemoActive(true);
     } catch { /* quota — そのまま入室 */ }
     onEnter();

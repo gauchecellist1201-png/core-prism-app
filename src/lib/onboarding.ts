@@ -20,6 +20,12 @@ import {
   buildDocuments,
   buildAgentTasks,
 } from './demoDataCafe';
+import {
+  seedDemoDataCreator,
+  clearDemoDataCreator,
+} from '../iris/demoDataCreator';
+
+export type DemoProfile = 'cafe' | 'creator';
 
 const ONBOARDED_KEY = 'core_onboarded_v2';
 const DEMO_KEY = 'core_demo_active_v1';
@@ -91,13 +97,29 @@ export function clearDemoData(): void {
       localStorage.removeItem(STRIPE_CACHE_STORE);
     }
   } catch { /* */ }
+  // Iris (クリエイター) デモも掃除
+  try { clearDemoDataCreator(); } catch { /* */ }
   setDemoActive(false);
 }
 
-/** Writes demo data for カフェ経営者・田中健一 directly to localStorage.
- *  12 ヶ月の経営ストーリーで全機能を確認できる規模に拡張済み。
- *  Returns total item count seeded. */
-export function seedDemoData(): number {
+/** Writes demo data to localStorage.
+ *  - profile: 'cafe' (既定): Prism カフェ経営者・田中健一 12 ヶ月ストーリー
+ *  - profile: 'creator':     Iris クリエイター @hina_lifestyle 12 ヶ月ストーリー
+ *
+ *  既存呼び出し (引数なし) は 'cafe' で互換維持。
+ *  Returns total item count seeded.
+ */
+export function seedDemoData(opts?: { profile?: DemoProfile }): number {
+  const profile: DemoProfile = opts?.profile ?? 'cafe';
+  if (profile === 'creator') {
+    const total = seedDemoDataCreator();
+    return total;
+  }
+  return seedDemoDataCafe();
+}
+
+/** Prism (cafe) 用のデモを seed する */
+function seedDemoDataCafe(): number {
   const now = new Date();
   const nowIso = now.toISOString();
   const today = now; // ローカル基準
