@@ -8,6 +8,8 @@ import { copyText } from '../lib/clipboard';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
+import SampleDataCTA from './SampleDataCTA';
+import { isDemoActive } from '../lib/onboarding';
 
 interface Props {
   persona: Persona;
@@ -363,6 +365,14 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
                   <p className="cp-empty-icon">🎯</p>
                   <p>まだピックアップがありません</p>
                   <p className="cp-meta">右上の「✨ 今日の 5 社を選んでもらう」を押してね</p>
+                  {!isDemoActive() && (
+                    <div style={{ marginTop: 14 }}>
+                      <SampleDataCTA
+                        accent={persona.accentColor}
+                        hint="サンプルの自社商材と 5 社のピックアップが入り、営業 AI の「攻め先選定」をすぐ体験できます"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -1027,6 +1027,14 @@ export default function IdentityDashboard({
                         >
                           ＋ 最初のやる事を足す
                         </button>
+                        {!isDemoActive() && (
+                          <div className="mt-3">
+                            <SampleDataCTA
+                              accent={persona.accentColor}
+                              hint="サンプルのやる事 (営業フォロー・請求書発行など) が入り、優先順位の付け方をすぐ体験できます"
+                            />
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="space-y-1.5">

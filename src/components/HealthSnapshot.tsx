@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import type { DailyHealth } from '../types/health';
 import type { HealthAnomaly } from '../data/healthAnomaly';
+import { isDemoActive } from '../lib/onboarding';
+import SampleDataCTA from './SampleDataCTA';
 
 interface Props {
   today: DailyHealth | null;
@@ -72,15 +74,29 @@ const METRICS: MetricSpec[] = [
 export default function HealthSnapshot({ today, week, anomalies, onOpen }: Props) {
   if (!today) {
     return (
-      <motion.button
-        onClick={onOpen}
-        className="w-full rounded-2xl p-3 text-left transition-all"
+      <motion.div
+        className="w-full rounded-2xl p-3"
         style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
-        whileHover={{ scale: 1.005 }}
       >
-        <p className="text-fg text-base font-medium mb-1">🩺 ヘルス</p>
-        <p className="text-fg-muted text-sm">データをインポートまたは手動入力すると、AIが健康状態を踏まえて提案します</p>
-      </motion.button>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="w-full text-left transition-all"
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+        >
+          <p className="text-fg text-base font-medium mb-1">🩺 ヘルス</p>
+          <p className="text-fg-muted text-sm">睡眠・回復・歩数を入れると、AI が体調を踏まえて「今日のリズム」を提案します</p>
+          <p className="text-fg-muted text-xs mt-1.5" style={{ opacity: 0.7 }}>タップで Apple Health 連携 / 手入力に進む →</p>
+        </button>
+        {!isDemoActive() && (
+          <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+            <SampleDataCTA
+              accent="#8E5CFF"
+              hint="サンプルの 7 日間データが入り、AI の体調アドバイス・異常検知をすぐ体験できます"
+            />
+          </div>
+        )}
+      </motion.div>
     );
   }
 
