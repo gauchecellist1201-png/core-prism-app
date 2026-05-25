@@ -81,6 +81,7 @@ import { PRISM_SPECS, PRISM_ORDER, PRISM_CONVERSATIONS } from '../lib/agentSpecs
 import WellnessTracker from './WellnessTracker';
 import IntegrationCenter from './IntegrationCenter';
 import StripeConnectHero from './StripeConnectHero';
+import EarningsAndTimeHero from './EarningsAndTimeHero';
 
 interface Props {
   persona: Persona;
@@ -696,6 +697,19 @@ export default function IdentityDashboard({
                     onClick: () => setShowHealth(true),
                   },
                 ]}
+              />
+
+              {/*
+                EarningsAndTimeHero (2026-05-25 オーナー指示):
+                「稼げそう / 楽できそう」を一目で。
+                ダッシュボード最上部 = TodayBrief 直前に置く。
+              */}
+              <EarningsAndTimeHero
+                persona={persona}
+                onConnectStripe={() => {
+                  setIntegrationsFocusId('stripe');
+                  setShowIntegrations(true);
+                }}
               />
 
               {/*
