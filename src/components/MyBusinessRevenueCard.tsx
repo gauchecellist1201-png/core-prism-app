@@ -10,11 +10,9 @@
 // このカードはそのキーで /api/revenue/snapshot を叩き、ユーザー自身の
 // 事業の「今月の売上・経費・利益」を表示する。
 // ============================================================
-import { useEffect, useState } from 'react';
 import { TrendingUp, Loader2, RefreshCw, ArrowRight } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, Tooltip as RTooltip, YAxis } from 'recharts';
-
-const STRIPE_KEY_LS = 'core_integration_stripe';
+import { useStripeRevenue } from '../hooks/useStripeRevenue';
 
 interface MonthPoint {
   month: string;
@@ -23,81 +21,26 @@ interface MonthPoint {
   profitJpy: number;
   txnCount?: number;
 }
-interface UserSnap {
-  mode?: string;
-  stripeConfigured?: boolean;
-  thisMonth?: { revenueJpy: number; expenseJpy: number; profitJpy: number; txnCount: number };
-  monthly?: MonthPoint[];
-  currencies?: string[];
-  error?: string;
-  message?: string;
-}
 
 const yen = (n: number) => '¥' + Math.round(n).toLocaleString('ja-JP');
-
-function readStripeKey(): string {
-  try {
-    const v = localStorage.getItem(STRIPE_KEY_LS) || '';
-    // ガイド完了フラグ等は無効。Stripe キーの形だけ受け付ける
-    return /^(rk|sk)_(live|test)_/.test(v) ? v : '';
-  } catch { return ''; }
-}
 
 interface Props {
   onOpenIntegrations?: () => void;
 }
 
 export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
-  const [key, setKey] = useState<string>(() => readStripeKey());
-  const [data, setData] = useState<UserSnap | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const load = (k: string) => {
-    if (!k) return;
-    setLoading(true);
-    setErr(null);
-    fetch('/api/revenue/snapshot', { headers: { 'x-stripe-key': k } })
-      .then(async r => {
-        const ct = r.headers.get('content-type') || '';
-        if (!ct.includes('application/json')) {
-          throw new Error('API 未デプロイ (開発モード)');
-        }
-        return r.json() as Promise<UserSnap>;
-      })
-      .then(d => {
-        if (d.error) { setErr(d.message || d.error); setData(null); }
-        else setData(d);
-      })
-      .catch(e => setErr(e?.message || '取得に失敗しました'))
-      .finally(() => setLoading(false));
+  // EarningsAndTimeHero と同じ共有フックを使う (重複 fetch を排除 + キャッシュ共有)
+  const stripe = useStripeRevenue();
+  const key = stripe.connected;
+  const tm = stripe.thisMonth;
+  const data = {
+    thisMonth: tm,
+    monthly: stripe.monthly,
+    currencies: stripe.currencies,
   };
-
-  useEffect(() => {
-    const k = readStripeKey();
-    setKey(k);
-    if (k) load(k);
-    // 他のコンポーネントで Stripe キーがセットされたら自動で再読込
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STRIPE_KEY_LS) {
-        const nk = readStripeKey();
-        setKey(nk);
-        if (nk) load(nk); else setData(null);
-      }
-    };
-    const onCustom = () => {
-      const nk = readStripeKey();
-      setKey(nk);
-      if (nk) load(nk); else setData(null);
-    };
-    window.addEventListener('storage', onStorage);
-    window.addEventListener('core:stripe-connected', onCustom);
-    return () => {
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener('core:stripe-connected', onCustom);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const err = stripe.error;
+  const loading = stripe.loading;
+  const reload = stripe.refresh;
 
   // ─── 未連携: つなぐ案内 ───
   if (!key) {
@@ -129,7 +72,6 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
     );
   }
 
-  const tm = data?.thisMonth;
   const monthly12 = (data?.monthly || []).slice(-12);
   const hasTrend = monthly12.some(m => m.revenueJpy !== 0);
   const multiCurrency = (data?.currencies || []).filter(c => c !== 'jpy').length > 0;
@@ -149,7 +91,7 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
           </span>
         </div>
         <button
-          type="button" onClick={() => load(key)} aria-label="更新"
+          type="button" onClick={() => reload()} aria-label="更新"
           style={{
             background: 'transparent', border: 'none', cursor: 'pointer',
             color: 'var(--fg-muted)', display: 'flex', padding: 2,
@@ -159,7 +101,7 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
         </button>
       </div>
 
-      {loading && !data && (
+      {loading && tm.revenueJpy === 0 && tm.txnCount === 0 && (
         <div style={{ fontSize: 11, color: 'var(--fg-muted)', padding: '4px 0' }}>
           売上を読み込んでいます…
         </div>
@@ -172,7 +114,7 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
         }}>
           {err}
           <button
-            type="button" onClick={() => load(key)}
+            type="button" onClick={() => reload()}
             style={{
               display: 'block', marginTop: 5, fontSize: 10, fontWeight: 800,
               color: '#FBBF24', background: 'transparent', border: 'none',
@@ -182,7 +124,7 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
         </div>
       )}
 
-      {tm && !err && (
+      {!err && (
         <>
           {/* 利益 (一番大きく) */}
           <div style={{ marginBottom: 8 }}>

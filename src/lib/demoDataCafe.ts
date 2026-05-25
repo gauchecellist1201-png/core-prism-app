@@ -43,6 +43,17 @@ const rand = mulberry32(20260525);
 const between = (min: number, max: number) => min + rand() * (max - min);
 const irand = (min: number, max: number) => Math.floor(between(min, max + 1));
 
+// 日付決定論的 PRNG — monthly と sales ledger で同じ日の売上を一致させるため。
+// 同じ日付に対して常に同じ乱数列を返す (呼出し順非依存)。
+function dayHash(d: Date): number {
+  const y = d.getFullYear(); const m = d.getMonth() + 1; const day = d.getDate();
+  // 大きめの素数で雑にミックス
+  return ((y * 73856093) ^ (m * 19349663) ^ (day * 83492791)) >>> 0;
+}
+function dayRand(d: Date): () => number {
+  return mulberry32(dayHash(d) ^ 0x20260525);
+}
+
 // ── 日付ユーティリティ ───────────────────────────────────
 function dateOnly(d: Date): string { return d.toISOString().slice(0, 10); }
 function addDays(d: Date, n: number): Date { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
@@ -56,40 +67,34 @@ function monthKey(d: Date): string {
 //   夏 (6-8月): 0.80-0.90 (閑散)
 //   秋 (9-11月): 1.05-1.20 (繁忙)
 //   冬 (12-2月): 0.90-1.00 (年末年始ムラ)
-function seasonalFactor(month1to12: number): number {
-  const map: Record<number, [number, number]> = {
-    1: [0.88, 0.96], 2: [0.85, 0.95], 3: [0.95, 1.03],
-    4: [0.98, 1.06], 5: [0.96, 1.05], 6: [0.82, 0.90],
-    7: [0.80, 0.88], 8: [0.78, 0.86], 9: [1.05, 1.15],
-    10: [1.08, 1.20], 11: [1.10, 1.20], 12: [0.92, 1.05],
-  };
-  const [lo, hi] = map[month1to12] || [0.95, 1.05];
-  return between(lo, hi);
-}
+const SEASONAL_RANGE: Record<number, [number, number]> = {
+  1: [0.88, 0.96], 2: [0.85, 0.95], 3: [0.95, 1.03],
+  4: [0.98, 1.06], 5: [0.96, 1.05], 6: [0.82, 0.90],
+  7: [0.80, 0.88], 8: [0.78, 0.86], 9: [1.05, 1.15],
+  10: [1.08, 1.20], 11: [1.10, 1.20], 12: [0.92, 1.05],
+};
 
-// 平日/週末/雨天の客数係数
-function dayTypeFactor(d: Date): { customers: number; isWeekend: boolean; isRainy: boolean } {
-  const dow = d.getDay(); // 0=Sun, 6=Sat
-  const isWeekend = dow === 0 || dow === 6;
-  const isRainy = rand() < 0.18; // 約 18% を雨天扱い
-  let customers = isWeekend ? irand(60, 90) : irand(30, 50);
-  if (isRainy) customers = Math.floor(customers * 0.7);
-  return { customers, isWeekend, isRainy };
-}
-
-// 客単価 (時期で変動)
-function avgTicket(d: Date): number {
-  // 2025年9月以降は秋メニュー値上げで 920-950 円、それ以前は 820-880 円
-  const cutoff = new Date(2025, 8, 1); // 2025-09-01
-  if (d >= cutoff) return Math.round(between(900, 950));
-  return Math.round(between(820, 880));
-}
-
-// ── 1 日の売上を生成 ─────────────────────────────────────
+// ── 1 日の売上を生成 (day-deterministic: 同じ日は呼出順に関わらず同じ値) ──
 function dailyRevenue(d: Date): { revenue: number; customers: number; weekend: boolean; rainy: boolean } {
-  const { customers, isWeekend, isRainy } = dayTypeFactor(d);
-  const ticket = avgTicket(d);
-  const factor = seasonalFactor(d.getMonth() + 1);
+  const dr = dayRand(d);
+  const dow = d.getDay();
+  const isWeekend = dow === 0 || dow === 6;
+  const isRainy = dr() < 0.18;
+  let customers = isWeekend
+    ? 60 + Math.floor(dr() * 31)   // 60-90
+    : 30 + Math.floor(dr() * 21);  // 30-50
+  if (isRainy) customers = Math.floor(customers * 0.7);
+
+  // 客単価
+  const cutoff = new Date(2025, 8, 1);
+  const ticket = d >= cutoff
+    ? Math.round(900 + dr() * 50)
+    : Math.round(820 + dr() * 60);
+
+  // 季節係数
+  const [lo, hi] = SEASONAL_RANGE[d.getMonth() + 1] || [0.95, 1.05];
+  const factor = lo + dr() * (hi - lo);
+
   const revenue = Math.round(customers * ticket * factor);
   return { revenue, customers, weekend: isWeekend, rainy: isRainy };
 }

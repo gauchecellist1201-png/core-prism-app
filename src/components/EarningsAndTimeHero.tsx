@@ -221,13 +221,22 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
   , [crm.deals, persona.id]);
 
   // (3) AI が取り戻した時間
+  //   recentDone は表示用に 5 件 cap されているので、count に使うと過少表示になる。
+  //   今月の done 全件を tasks から計算する。
   const aiSaved = useMemo(() => {
-    const done = queue.recentDone || [];
+    const monthStart = new Date();
+    monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+    const monthStartMs = monthStart.getTime();
+    const done = (queue.tasks || []).filter(t =>
+      t.status === 'done' &&
+      t.completedAt &&
+      new Date(t.completedAt).getTime() >= monthStartMs
+    );
     const totalMin = done.reduce((s, t) => s + estimateSavedMinutes(t.title || ''), 0);
     const hours = totalMin / 60;
     const moneyEq = (totalMin / 60) * DEFAULT_HOURLY_JPY;
     return { count: done.length, totalMin, hours, moneyEq };
-  }, [queue.recentDone]);
+  }, [queue.tasks]);
 
   // --- 数字が全く無い時は、「これから貯まります」モードで控えめに ---
   const hasAnything =

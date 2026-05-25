@@ -263,17 +263,23 @@ export default function IrisEarningsHero({ myDeals, igProfile, onOpenDeals, onCo
   );
 
   // (3) AI が動いた回数
+  //   recentDone は 5 件 cap なので、tasks 全件から「今月 done + Iris 関連 CXO」を絞り込む
   const aiActivity = useMemo(() => {
-    const done = queue.recentDone || [];
-    // Iris 関連 CXO がいずれか done になっている タスクのみ count
-    const irisDone = done.filter(t =>
+    const now = new Date();
+    const monthStartMs = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const allDone = (queue.tasks || []).filter(t =>
+      t.status === 'done' &&
+      t.completedAt &&
+      new Date(t.completedAt).getTime() >= monthStartMs
+    );
+    const irisDone = allDone.filter(t =>
       t.steps.some(s => IRIS_RELEVANT_CXO.has(s.cxo) && s.status === 'done')
     );
     const totalMin = irisDone.reduce((s, t) => s + estimateSavedMinutes(t.title || ''), 0);
     const hours = totalMin / 60;
     const moneyEq = hours * DEFAULT_HOURLY_JPY;
     return { count: irisDone.length, hours, moneyEq };
-  }, [queue.recentDone]);
+  }, [queue.tasks]);
 
   const hasAnything = thisMonthEarned > 0 || nextMonthForecast > 0 || aiActivity.count > 0;
 

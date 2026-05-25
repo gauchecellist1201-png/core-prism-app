@@ -17,6 +17,7 @@ import {
 import type { Persona, KnowledgeItem } from '../types/identity';
 import { useAgentTaskQueue, CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
 import { notifyInApp } from '../lib/inAppNotify';
+import { seedDemoData, setDemoActive, clearDemoData, isDemoActive } from '../lib/onboarding';
 
 export type CmdAction =
   | { kind: 'open-modal'; modal: ModalKey; label: string; emoji: string; subtitle?: string }
@@ -179,13 +180,6 @@ export default function CommandPalette({
   );
 
   // ────────────────────────────────────────────────────────
-  // データ操作 / ヘルプ系 (CustomEvent で各画面に伝える)
-  // ────────────────────────────────────────────────────────
-  const fireGlobalEvent = useCallback((eventName: string, detail?: any) => {
-    try { window.dispatchEvent(new CustomEvent(eventName, { detail })); } catch { /* */ }
-  }, []);
-
-  // ────────────────────────────────────────────────────────
   // CXO 直接呼出 (propose + auto-approve)
   // ────────────────────────────────────────────────────────
   const delegateToCxo = useCallback((cxo: CxoRole, actionLabel: string) => {
@@ -304,12 +298,35 @@ export default function CommandPalette({
       }
     });
 
-    // データ操作
+    // データ操作 — 直接ハンドラを実行 (CustomEvent ではリスナがおらず無音になっていた)
+    const handleStripeSync = () => {
+      // useStripeRevenue / MyBusinessRevenueCard が購読している接続イベントを再発火
+      try { window.dispatchEvent(new CustomEvent('core:stripe-connected')); } catch { /* */ }
+      notifyInApp({ kind: 'info', title: '💳 Stripe を再同期しました', body: '最新の取引を取得中…', duration: 2200 });
+    };
+    const handleDemoStart = () => {
+      try {
+        const n = seedDemoData();
+        setDemoActive(true);
+        notifyInApp({ kind: 'success', title: '▶️ デモを開始しました', body: `${n} 件のサンプルデータで体験`, duration: 2500 });
+        setTimeout(() => window.location.reload(), 600);
+      } catch (e: any) {
+        notifyInApp({ kind: 'warn', title: 'デモ開始に失敗', body: e?.message || 'もう一度お試しください', duration: 3500 });
+      }
+    };
+    const handleDemoEnd = () => {
+      try {
+        clearDemoData();
+        notifyInApp({ kind: 'success', title: '⏹ デモを片付けました', body: 'サンプルを削除', duration: 2200 });
+        setTimeout(() => window.location.reload(), 500);
+      } catch (e: any) {
+        notifyInApp({ kind: 'warn', title: 'デモ終了に失敗', body: e?.message || 'もう一度お試しください', duration: 3500 });
+      }
+    };
     const dataOps: Array<{ id: string; label: string; subtitle: string; emoji: string; onRun: () => void }> = [
-      { id: 'stripe-sync', label: 'Stripe を再同期', subtitle: '今月の売上を最新化', emoji: '💳', onRun: () => fireGlobalEvent('core:stripe-resync') },
-      { id: 'knowledge-reanalyze', label: 'ナレッジを全部再分析', subtitle: 'タグ付け / 要約をやり直す', emoji: '🔄', onRun: () => fireGlobalEvent('core:knowledge-reanalyze') },
-      { id: 'demo-start', label: 'デモを開始', subtitle: 'デモデータで体験する', emoji: '▶️', onRun: () => fireGlobalEvent('core:demo-start') },
-      { id: 'demo-end', label: 'デモを終了', subtitle: 'デモデータを片付ける', emoji: '⏹', onRun: () => fireGlobalEvent('core:demo-end') },
+      { id: 'stripe-sync', label: 'Stripe を再同期', subtitle: '今月の売上を最新化', emoji: '💳', onRun: handleStripeSync },
+      { id: 'demo-start', label: 'デモを開始', subtitle: 'デモデータで体験する', emoji: '▶️', onRun: handleDemoStart },
+      { id: 'demo-end', label: isDemoActive() ? 'デモを終了' : 'デモを終了 (現在オフ)', subtitle: 'デモデータを片付ける', emoji: '⏹', onRun: handleDemoEnd },
       { id: 'reload', label: 'ページを再読み込み', subtitle: '最新の状態を取得', emoji: '🔁', onRun: () => window.location.reload() },
     ];
     for (const d of dataOps) {
@@ -362,19 +379,28 @@ export default function CommandPalette({
       }
     }
 
-    // ヘルプ・設定
+    // ヘルプ・設定 — 設定モーダルへ集約 (専用画面のない項目はリスナが無くなる)
+    const handleThemeToggle = () => {
+      try {
+        const root = document.documentElement;
+        const cur = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        const next = cur === 'light' ? 'dark' : 'light';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('core_theme', next); } catch { /* */ }
+        notifyInApp({ kind: 'info', title: `🌓 テーマを ${next === 'light' ? 'ライト' : 'ダーク'} に切替`, duration: 1800 });
+      } catch { /* */ }
+    };
     const helpItems: Array<{ id: string; label: string; subtitle: string; emoji: string; onRun: () => void }> = [
-      { id: 'shortcuts', label: 'ショートカット表を見る', subtitle: 'Cmd+K の使い方', emoji: '⌨️', onRun: () => fireGlobalEvent('core:show-shortcuts') },
       { id: 'api-keys', label: 'API キー設定', subtitle: 'OpenAI / Stripe などの接続', emoji: '🔑', onRun: () => onOpenModal('settings') },
-      { id: 'theme', label: 'テーマ切替', subtitle: 'ライト / ダーク', emoji: '🌓', onRun: () => fireGlobalEvent('core:toggle-theme') },
-      { id: 'logout', label: 'ログアウト', subtitle: 'セッションを終了', emoji: '🚪', onRun: () => fireGlobalEvent('core:logout') },
+      { id: 'settings', label: '設定を開く', subtitle: 'すべての設定 (5 タブ + 検索)', emoji: '⚙️', onRun: () => onOpenModal('settings') },
+      { id: 'theme', label: 'テーマ切替', subtitle: 'ライト / ダーク', emoji: '🌓', onRun: handleThemeToggle },
     ];
     for (const h of helpItems) {
       out.push({ category: 'help', item: { kind: 'help', ...h } });
     }
 
     return out;
-  }, [personas, personaKnowledge, activePersona, activePersonaId, fireGlobalEvent, onOpenModal]);
+  }, [personas, personaKnowledge, activePersona, activePersonaId, onOpenModal]);
 
   // ────────────────────────────────────────────────────────
   // 最近使った (recent) を解決
@@ -755,7 +781,17 @@ export default function CommandPalette({
                       </button>
                     )}
                     <button
-                      onClick={() => { onClose(); fireGlobalEvent('core:demo-start'); }}
+                      onClick={() => {
+                        onClose();
+                        try {
+                          const n = seedDemoData();
+                          setDemoActive(true);
+                          notifyInApp({ kind: 'success', title: '▶️ デモを開始しました', body: `${n} 件のサンプル`, duration: 2200 });
+                          setTimeout(() => window.location.reload(), 500);
+                        } catch (e: any) {
+                          notifyInApp({ kind: 'warn', title: 'デモ開始に失敗', body: e?.message || '再試行してください', duration: 3000 });
+                        }
+                      }}
                       className="cp-zero-cta-secondary"
                     >
                       <Play size={13} />
