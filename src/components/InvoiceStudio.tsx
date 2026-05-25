@@ -12,6 +12,7 @@ import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
 import EmptyState from './EmptyState';
+import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 
 interface Props {
   persona: Persona;
@@ -209,6 +210,13 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
             className="w-9 h-9 rounded-full flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none"
           >×</button>
         </div>
+
+        <DelegateToAgentTeamBanner
+          taskTitle="未払請求書のリマインダーを CMO が送る"
+          suggestedCxos={['CFO', 'CSO']}
+          why="未回収を放置せず、AI 会社が督促文面を相手に合わせて出します"
+          expected="未払先別の督促メール下書きとフォロー予定"
+        />
 
         {/* Tabs */}
         <div className="flex gap-1 px-5 pt-3" style={{ borderBottom: '1px solid var(--border)' }}>

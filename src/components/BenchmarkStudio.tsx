@@ -36,6 +36,7 @@ import { copyText } from '../lib/clipboard';
 import { notifyInApp } from '../lib/inAppNotify';
 import ApiErrorCard from './ApiErrorCard';
 import EmptyState from './EmptyState';
+import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 
 interface Props {
   persona: Persona;
@@ -1505,6 +1506,13 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
           </div>
           <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm flex-shrink-0">✕</button>
         </div>
+
+        <DelegateToAgentTeamBanner
+          taskTitle="結果を CDS + CSO + CMO が分析して提案"
+          suggestedCxos={['CDS', 'CSO', 'CMO']}
+          why="競合との差を放置せず、AI 会社がデータ分析と打ち手まで一気に出します"
+          expected="ベンチマーク差異 + 改善打ち手 3 つ"
+        />
 
         {/* タブ */}
         <div className="cp-row px-4 pt-3 gap-1 overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>

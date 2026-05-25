@@ -5,6 +5,7 @@ import type { NegotiationScene, NegoTurn, NegoEvaluation } from '../lib/negotiat
 import { NEGO_PRESETS, counterpartReply, evaluateNegotiation } from '../lib/negotiationCoach';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
+import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 
 interface Props {
   persona: Persona;
@@ -172,6 +173,13 @@ export default function NegotiationCoachModal({ persona, settings, onClose }: Pr
             className="w-9 h-9 rounded-full flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none"
           >×</button>
         </div>
+
+        <DelegateToAgentTeamBanner
+          taskTitle="相手の反応 3 パターンを準備"
+          suggestedCxos={['CSO', 'CMO']}
+          why="本番で固まらないよう、AI 会社が想定問答を 3 通り用意します"
+          expected="強気 / 中庸 / 弱気それぞれに対応する切り返しメモ"
+        />
 
         {/* Phase: Select */}
         {phase === 'select' && (

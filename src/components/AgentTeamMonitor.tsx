@@ -36,6 +36,13 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
     return () => window.clearInterval(t);
   }, [activeTask]);
 
+  // Studio バナー等から「開いて見せて」と言われたら膨らむ
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener('core:agent-monitor-open', onOpen as EventListener);
+    return () => window.removeEventListener('core:agent-monitor-open', onOpen as EventListener);
+  }, []);
+
   const accent = brand === 'iris' ? '#E1306C' : '#A78BFA';
   const workingCxo: CxoRole | null = activeTask?.steps.find(s => s.status === 'working')?.cxo || null;
   const hasActivity = !!activeTask || counts.proposed > 0 || counts.running > 0;

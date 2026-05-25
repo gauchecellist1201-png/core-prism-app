@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import ApiErrorCard from './ApiErrorCard';
+import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import type { DecisionMemo, DecisionInput } from '../lib/decisionMemo';
 import {
   generateDecisionMemo,
@@ -136,6 +137,13 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
             >×</button>
           </div>
         </div>
+
+        <DelegateToAgentTeamBanner
+          taskTitle="この意思決定の各案を CXO 視点でも検討"
+          suggestedCxos={['CEO', 'CFO', 'CSO']}
+          why="判断の偏りを防ぐため、戦略・財務・営業の 3 視点で別角度の評価を出します"
+          expected="各 CXO からの賛否と根拠つきレビュー"
+        />
 
         {/* Phase: Speak (1 textarea → 直接 result) */}
         {phase === 'speak' && (

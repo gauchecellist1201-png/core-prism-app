@@ -9,6 +9,7 @@ import { fmtJpy } from '../lib/invoiceCalc';
 import AgentProposalCard from './AgentProposalCard';
 import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
+import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import { confirmAction } from '../lib/confirmDialog';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
@@ -213,6 +214,13 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
             <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm" aria-label="閉じる">✕</button>
           </div>
         </div>
+
+        <DelegateToAgentTeamBanner
+          taskTitle="今月の経費を CFO が分類 + 異常検知"
+          suggestedCxos={['CFO', 'CDS']}
+          why="月末に慌てないよう、AI 会社がレシートを科目別に整え異常値も洗います"
+          expected="科目別集計 + 異常値リストつきの月次まとめ"
+        />
 
         {/* Tabs */}
         <div className="cp-modal-tabs">

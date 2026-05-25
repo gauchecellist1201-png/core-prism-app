@@ -9,6 +9,7 @@ import { computeTotals, fmtJpy, calcDueDate } from '../lib/invoiceCalc';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
+import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import { notifyInApp } from '../lib/inAppNotify';
 import { confirmAction } from '../lib/confirmDialog';
 import { copyText } from '../lib/clipboard';
@@ -222,6 +223,13 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
             <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
           </div>
         </div>
+
+        <DelegateToAgentTeamBanner
+          taskTitle="ドラフトを CMO に推敲 + CLO に法的チェック"
+          suggestedCxos={['CMO', 'CLO']}
+          why="そのまま出して怒られないよう、AI 会社が表現と法的リスクを 2 段でチェックします"
+          expected="推敲版テキスト + 法的リスクメモ"
+        />
 
         {/* トップ モード: 取引書類 / テンプレ文書 */}
         <div className="flex gap-1.5 px-3 py-2" style={{ borderBottom: '1px solid var(--border)' }}>

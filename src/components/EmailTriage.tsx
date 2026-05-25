@@ -6,6 +6,7 @@ import { copyText } from '../lib/clipboard';
 import { triageEmails, regenerateDraft } from '../lib/emailTriage';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
+import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import {
   isGmailConfigured,
   isGmailConnected,
@@ -327,6 +328,13 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
             className="w-9 h-9 rounded-full flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none"
           >×</button>
         </div>
+
+        <DelegateToAgentTeamBanner
+          taskTitle="未読メールから AI 会社が緊急度判定"
+          suggestedCxos={['COO']}
+          why="返信漏れを防ぐため、AI 会社が緊急度別に並べて返信ドラフトまで先回りします"
+          expected="緊急 / 通常 / 後回しに仕分け済の受信トレイ"
+        />
 
         {!batch ? (
           /* 入力フェーズ */

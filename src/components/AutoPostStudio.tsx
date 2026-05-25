@@ -19,6 +19,7 @@ import {
 } from '../lib/xPost';
 import ShareArtifactButton from './ShareArtifactButton';
 import { StudioIntro } from './StudioIntro';
+import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 
 interface Props {
   persona: Persona;
@@ -487,6 +488,13 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
             >×</button>
           </div>
         </div>
+
+        <DelegateToAgentTeamBanner
+          taskTitle="今週の投稿 7 本を CMO が一括生成"
+          suggestedCxos={['CMO', 'CDO']}
+          why="毎日ネタを考える時間を消すため、AI 会社が 1 週間分を先回りで書きます"
+          expected="6 SNS 別に最適化された 7 日分の投稿ドラフト"
+        />
 
         {/* Platform Tabs */}
         <div className="flex gap-1 px-5 pt-3 overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>

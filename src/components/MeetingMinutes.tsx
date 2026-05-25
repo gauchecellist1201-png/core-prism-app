@@ -7,6 +7,7 @@ import { parseFile } from '../lib/fileParser';
 import { transcribeAudioFile, isAudioFile } from '../lib/audioTranscribe';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { StudioIntro } from './StudioIntro';
+import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 
@@ -552,6 +553,13 @@ export default function MeetingMinutesModal({
             className="w-9 h-9 rounded-full flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none"
           >×</button>
         </div>
+
+        <DelegateToAgentTeamBanner
+          taskTitle="議事録から actions を抽出して整理"
+          suggestedCxos={['COO', 'CPO']}
+          why="会議の決定事項を放置しないため、AI 会社が宿題を担当者別に切り出します"
+          expected="決定事項 / 宿題 / 要点が担当者別に整理されたメモ"
+        />
 
         {!minutes ? (
           /* 入力モード */

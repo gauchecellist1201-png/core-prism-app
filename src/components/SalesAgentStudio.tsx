@@ -9,6 +9,7 @@ import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
 import SampleDataCTA from './SampleDataCTA';
+import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import { isDemoActive } from '../lib/onboarding';
 
 interface Props {
@@ -201,6 +202,13 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
           </div>
           <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
         </div>
+
+        <DelegateToAgentTeamBanner
+          taskTitle="5 社に CSO が提案文を書く"
+          suggestedCxos={['CSO', 'CMO']}
+          why="営業の手を止めないよう、AI 会社が今日の 5 社に個別最適化した提案文を用意します"
+          expected="5 社それぞれに合わせた送付可能な提案文ドラフト"
+        />
 
         <div className="cp-modal-tabs">
           {([
