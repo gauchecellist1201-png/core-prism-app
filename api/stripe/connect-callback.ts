@@ -59,7 +59,11 @@ function htmlRedirect(targetWithFragment: string, statusText: string): Response 
 }
 
 function htmlError(message: string): Response {
-  const safe = message.replace(/</g, '&lt;');
+  // pre 表示用に改行を保持 (\n は &#10; で出す)
+  const safe = message
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
   const html = `<!doctype html>
 <html lang="ja">
 <head>
@@ -67,18 +71,22 @@ function htmlError(message: string): Response {
 <title>連携に失敗しました</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-  body { font-family: -apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif; background:#0E0E12; color:#F0EFF2; margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; }
-  .wrap { text-align:center; padding:2rem; max-width:420px; }
-  h1 { font-size:1.1rem; font-weight:700; margin:0 0 0.6rem; color:#FCA5A5; }
-  p { font-size:0.88rem; opacity:0.85; line-height:1.6; margin:0 0 1.5rem; }
-  a { display:inline-block; padding:10px 20px; border-radius:10px; background:#635BFF; color:#fff; text-decoration:none; font-weight:600; }
+  body { font-family: -apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif; background:#0E0E12; color:#F0EFF2; margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1rem; }
+  .wrap { padding:1.5rem; max-width:560px; }
+  h1 { font-size:1.1rem; font-weight:700; margin:0 0 0.8rem; color:#FCA5A5; text-align:center; }
+  pre { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 16px; font-size:0.78rem; line-height:1.65; white-space:pre-wrap; word-break:break-word; color:rgba(240,239,242,0.9); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin:0 0 1.2rem; }
+  a { display:inline-block; padding:10px 20px; border-radius:10px; background:#635BFF; color:#fff; text-decoration:none; font-weight:600; margin:0 6px 0 0; }
+  .row { text-align:center; }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Stripe 連携に失敗しました</h1>
-    <p>${safe}</p>
-    <a href="/">CORE Prism に戻る</a>
+    <h1>Stripe 連携が完了しませんでした</h1>
+    <pre>${safe}</pre>
+    <div class="row">
+      <a href="/">CORE Prism に戻る</a>
+      <a href="/api/stripe/connect-start">もう一度はじめから</a>
+    </div>
   </div>
 </body>
 </html>`;
@@ -101,7 +109,20 @@ export default async function handler(req: Request) {
   }
 
   if (!code || !state) {
-    return htmlError('認可情報が不足しています。もう一度お試しください。');
+    // 診断情報を含めて表示 (オーナーの設定確認用)
+    const diag: string[] = [];
+    diag.push(`受け取った URL クエリ: ${url.search || '(空)'}`);
+    diag.push(`code: ${code ? 'あり' : 'なし'}`);
+    diag.push(`state: ${state ? 'あり' : 'なし'}`);
+    diag.push(`referer: ${req.headers.get('referer') || '(なし)'}`);
+    return htmlError(
+      `Stripe から認可コードが返ってきませんでした。\n\n考えられる原因:\n` +
+      `1) このページに直接アクセスした (連携は /連携センターの「Stripe で許可する」から開始してください)\n` +
+      `2) Stripe ダッシュボードの Connect 設定で Redirect URI が一致していない\n` +
+      `   → 完全一致が必要: https://core-prism-app.vercel.app/api/stripe/connect-callback\n` +
+      `3) Stripe ダッシュボードで Connect が「アクティブ化」されていない\n\n` +
+      `診断:\n${diag.join('\n')}`
+    );
   }
 
   // state 検証 (cookie と一致するか)
