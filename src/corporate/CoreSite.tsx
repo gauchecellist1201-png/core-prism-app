@@ -90,6 +90,13 @@ export default function CoreSite() {
         minHeight: '100dvh',
         fontFamily: FONT_SANS,
         overflowX: 'hidden',
+        // 明示的に縦スクロール許可 + iOS Safari 慣性スクロール (オーナー報告 2026-05-27:
+        // /corp が下までスクロールできない問題の防御)
+        overflowY: 'visible',
+        WebkitOverflowScrolling: 'touch',
+        // body の safe-area padding と CoreSite の 100dvh が衝突して
+        // viewport をはみ出すのを防ぐ
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
