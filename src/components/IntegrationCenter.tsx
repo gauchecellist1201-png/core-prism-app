@@ -190,10 +190,13 @@ const CATALOG: Tool[] = [
     id: 'stripe', name: 'Stripe', color: '#635BFF', glyph: 'S', category: 'お金まわり',
     can: 'あなたの事業の Stripe をつなぐと、今月の売上・経費・利益が自動で出ます',
     steps: [
-      // Stripe Connect (OAuth) — ワンタップで完了。鍵を手で貼る必要なし。
-      // 万一 STRIPE_CONNECT_CLIENT_ID が未設定の環境では、ボタン押下時に
-      // サーバが 503 を返し、内部で自動的に旧「貼り付け」フローに切り替わる。
-      { label: 'Stripe にログインして「許可」を押すだけ。鍵のコピペは不要です。', action: { kind: 'stripeConnect' } },
+      // 推奨ルート: Stripe Connect OAuth (鍵を手で貼らなくて済む)
+      // 但し Stripe 側 Connect プラットフォーム承認が必要なため、未準備の環境では
+      // 503 が返るので、自動的に次のステップ (キー貼り付け) に進めるよう案内する。
+      { label: '【簡単】Stripe にログインして「許可」を押すだけ。鍵のコピペは不要です。', action: { kind: 'stripeConnect' } },
+      // フォールバック: 読み取り専用キーを手動で貼る (今すぐ確実に動く)
+      { label: '【上手くいかない場合】Stripe ダッシュボードを開いて、上の「制限付きキー」を新規作成 (権限: Charges / PaymentIntents / Customers / Balance / Payouts を「読み取り」)', action: { kind: 'openLink', url: 'https://dashboard.stripe.com/apikeys', btn: 'Stripe ダッシュボードを開く' } },
+      { label: '作った rk_live_… で始まるキーを下に貼り付けて連携完了', action: { kind: 'input', placeholder: 'rk_live_… で始まる読み取り専用キー' } },
     ],
   },
   {
@@ -853,7 +856,9 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                           redirect: 'manual',
                         }).catch(() => null);
                         if (probe && probe.status === 503) {
-                          setErr('Stripe OAuth は準備中です。今は読み取り専用キーの貼り付けで連携できます (Stripe ダッシュボードで rk_live_… を作成 → サポートまでご連絡ください)。');
+                          setErr('ワンタップ連携は準備中です。下の「Stripe ダッシュボードを開く」から制限付きキーを作って貼り付けてください (このまま「→ 前のステップに戻る」ではなく、画面の指示に従って次へ進めます)。');
+                          // 次ステップ (ダッシュボードを開く案内) へ自動で進める
+                          setStepIdx(i => i + 1);
                           setBusy(false);
                           return;
                         }
