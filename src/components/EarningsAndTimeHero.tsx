@@ -401,6 +401,51 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
   stripe: ReturnType<typeof useStripeRevenue>;
   onReconnect?: () => void;
 }) {
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [rawDiag, setRawDiag] = useState<string>('まだ取得していません');
+  const [diagLoading, setDiagLoading] = useState(false);
+
+  const fetchRawDiag = async () => {
+    setDiagLoading(true);
+    try {
+      const key = localStorage.getItem('core_integration_stripe') || '';
+      const masterKey = localStorage.getItem('core_master_key_v1') || '';
+      const headers: Record<string, string> = {};
+      if (key) headers['x-stripe-key'] = key;
+      if (masterKey) headers['x-master-key'] = masterKey;
+      // バスター付き URL でキャッシュ完全バイパス
+      const r = await fetch('/api/revenue/snapshot?_bust=' + Date.now(), { headers });
+      const text = await r.text();
+      let parsed: any;
+      try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
+      const summary = {
+        'HTTP ステータス': r.status,
+        'キー先頭': key.slice(0, 12) || '(空)',
+        'キー長さ': key.length,
+        'マスターキー有無': !!masterKey,
+        '今月の件数': parsed?.thisMonth?.txnCount,
+        '今月の売上 JPY': parsed?.thisMonth?.revenueJpy,
+        '通貨': parsed?.currencies,
+        '診断 (diag)': parsed?.diag || '(なし — 旧コードのレスポンス)',
+        'エラー': parsed?.error,
+        'エラーメッセージ': parsed?.message,
+        '取得時刻': new Date().toLocaleTimeString('ja-JP'),
+      };
+      setRawDiag(JSON.stringify(summary, null, 2));
+    } catch (e: any) {
+      setRawDiag('取得失敗: ' + String(e?.message || e));
+    } finally {
+      setDiagLoading(false);
+    }
+  };
+
+  // モーダル開いたら即診断
+  useEffect(() => {
+    if (detailOpen) fetchRawDiag();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailOpen]);
+
+
   const state: { tone: 'green' | 'yellow' | 'red' | 'gray'; line1: string; line2: string } = (() => {
     if (stripe.loading) {
       return { tone: 'yellow', line1: '⏳ Stripe から取得中…', line2: '数秒お待ちください' };
@@ -486,6 +531,16 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
             }}
           >🔄 再取得</button>
         )}
+        <button
+          type="button"
+          onClick={() => setDetailOpen(o => !o)}
+          style={{
+            fontSize: 10.5, fontWeight: 700, color: '#fff',
+            background: 'rgba(255,255,255,0.10)',
+            border: '1px solid rgba(255,255,255,0.18)',
+            borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+          }}
+        >🔍 詳細</button>
         {onReconnect && (
           <button
             type="button"
@@ -499,6 +554,57 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
           >連携センター</button>
         )}
       </div>
+      {detailOpen && (
+        <div style={{
+          width: '100%', marginTop: 8,
+          background: 'rgba(0,0,0,0.55)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 8, padding: '8px 10px',
+        }}>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            marginBottom: 6,
+          }}>
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: '#FBBF24' }}>
+              📋 詳細診断 (このテキストをコピーしてイーロンに送ってください)
+            </span>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                type="button"
+                onClick={fetchRawDiag}
+                disabled={diagLoading}
+                style={{
+                  fontSize: 10, fontWeight: 700, color: '#fff',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 5, padding: '2px 7px', cursor: diagLoading ? 'wait' : 'pointer',
+                }}
+              >{diagLoading ? '取得中…' : '🔄 再診断'}</button>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    navigator.clipboard.writeText(rawDiag);
+                  } catch { /* */ }
+                }}
+                style={{
+                  fontSize: 10, fontWeight: 700, color: '#fff',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 5, padding: '2px 7px', cursor: 'pointer',
+                }}
+              >📋 コピー</button>
+            </div>
+          </div>
+          <pre style={{
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            fontSize: 10.5, lineHeight: 1.55,
+            color: 'rgba(255,255,255,0.85)',
+            margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+            maxHeight: 280, overflowY: 'auto',
+          }}>{rawDiag}</pre>
+        </div>
+      )}
     </div>
   );
 }
