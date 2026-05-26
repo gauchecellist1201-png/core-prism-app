@@ -177,9 +177,17 @@ export function seedStripeCache(today: Date): MonthlyPoint {
     },
   };
   try {
-    localStorage.setItem('core_stripe_revenue_cache_v1', JSON.stringify(cache));
-    // Stripe key (test prefix で validate を通す)
-    localStorage.setItem('core_integration_stripe', 'rk_test_demo_cafe_tanaka_xxxxxxxx');
+    // 既に本物の Stripe キー (rk_live_ / sk_live_) が保存されている場合は、
+    // デモ seed では絶対に上書きしない (オーナー報告 2026-05-26: タブ閉じで rk_live_
+    // が消える根本原因)
+    const existing = localStorage.getItem('core_integration_stripe') || '';
+    const isRealKey = /^(rk|sk)_live_/.test(existing);
+    if (!isRealKey) {
+      // 本物キーが無い時のみ、demo cache + demo key をセットする
+      localStorage.setItem('core_stripe_revenue_cache_v1', JSON.stringify(cache));
+      localStorage.setItem('core_integration_stripe', 'rk_test_demo_cafe_tanaka_xxxxxxxx');
+    }
+    // 本物キーがある時はキャッシュも上書きしない (実データを優先)
   } catch { /* quota */ }
   return thisMonth;
 }
