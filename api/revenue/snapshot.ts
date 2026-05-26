@@ -200,6 +200,41 @@ async function listAllBalanceTxns(key: string, sinceUnix: number): Promise<Strip
   return out;
 }
 
+// ─── /v1/charges を直接叩く (Charges 権限だけで動く) ─────────
+// オーナー報告 (2026-05-26): rk_live_ の Balance 権限は /v1/balance しか
+// 許可せず、/v1/balance_transactions には別の専用権限が必要。
+// Charges 権限なら確実に動くので、まずこちらをプライマリ経路とする。
+interface StripeCharge {
+  id: string;
+  amount: number;
+  amount_refunded: number;
+  amount_captured?: number;
+  currency: string;
+  created: number;
+  status: string;          // 'succeeded' | 'pending' | 'failed'
+  paid: boolean;
+  refunded: boolean;
+  balance_transaction?: string | { fee?: number };
+}
+
+async function listAllCharges(key: string, sinceUnix: number, limit = 20): Promise<StripeCharge[]> {
+  const out: StripeCharge[] = [];
+  let startingAfter: string | undefined;
+  for (let i = 0; i < limit; i++) {
+    const sp = new URLSearchParams({ limit: '100', 'created[gte]': String(sinceUnix) });
+    if (startingAfter) sp.set('starting_after', startingAfter);
+    const resp = await fetch(`https://api.stripe.com/v1/charges?${sp.toString()}`, {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!resp.ok) throw new Error(`Stripe charges ${resp.status}`);
+    const j = await resp.json() as StripeList<StripeCharge>;
+    out.push(...j.data);
+    if (!j.has_more || j.data.length === 0) break;
+    startingAfter = j.data[j.data.length - 1].id;
+  }
+  return out;
+}
+
 function emptyUserMonthly() {
   return last12Months().map(m => ({ month: m, revenueJpy: 0, expenseJpy: 0, profitJpy: 0, txnCount: 0 }));
 }
@@ -218,69 +253,103 @@ async function userRevenueSnapshot(key: string, asOf: string, ch: Record<string,
 
   const now = new Date();
   const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1));
+  const sinceUnix = Math.floor(since.getTime() / 1000);
 
-  try {
-    const [txns, fx] = await Promise.all([
-      listAllBalanceTxns(key, Math.floor(since.getTime() / 1000)),
-      getFxRates(),
-    ]);
+  // 取得方針 (オーナー指示 2026-05-26):
+  // 1) /v1/charges を primary (Charges 権限だけで動く、ほとんどのユーザーで成功)
+  // 2) /v1/balance_transactions が動けば fee も拾えるが、別権限が必要なので best-effort
+  // 失敗時は片方が成功すれば返す。両方失敗時のみエラー。
+  const diag = { triedCharges: false, chargesOk: false, chargesCount: 0, triedBalanceTxns: false, balanceTxnsOk: false, balanceTxnsCount: 0, errors: [] as string[] };
 
-    const map = new Map<string, { revenueJpy: number; expenseJpy: number; profitJpy: number; txnCount: number }>();
-    for (const m of last12Months()) map.set(m, { revenueJpy: 0, expenseJpy: 0, profitJpy: 0, txnCount: 0 });
-    const currencies = new Set<string>();
+  const fxPromise = getFxRates().catch(() => null);
+  const chargesPromise = listAllCharges(key, sinceUnix).then(c => { diag.triedCharges = true; diag.chargesOk = true; diag.chargesCount = c.length; return c; }).catch(e => { diag.triedCharges = true; diag.errors.push(`charges:${String(e?.message || e)}`); return [] as StripeCharge[]; });
+  const balTxnPromise = listAllBalanceTxns(key, sinceUnix).then(t => { diag.triedBalanceTxns = true; diag.balanceTxnsOk = true; diag.balanceTxnsCount = t.length; return t; }).catch(e => { diag.triedBalanceTxns = true; diag.errors.push(`balance_txns:${String(e?.message || e)}`); return [] as StripeBalanceTxn[]; });
 
-    for (const t of txns) {
-      const slot = map.get(monthKey(t.created || 0));
-      if (!slot) continue;
-      // 口座への振替 (payout / transfer) は売上ではないので除外
-      if (t.type === 'payout' || t.type === 'transfer') continue;
-      const cur = (t.currency || 'jpy').toLowerCase();
-      currencies.add(cur);
-      const amtJpy = toJpyWith(t.amount || 0, cur, fx.jpyPerUnit);
-      const feeJpy = toJpyWith(t.fee || 0, cur, fx.jpyPerUnit);
-      slot.revenueJpy += amtJpy;
-      slot.expenseJpy += feeJpy;
-      slot.profitJpy += amtJpy - feeJpy;
-      if ((t.amount || 0) > 0) slot.txnCount += 1;
-    }
+  const [charges, balTxns, fx] = await Promise.all([chargesPromise, balTxnPromise, fxPromise]);
+  const fxRates = fx?.jpyPerUnit || {};
 
-    const monthly = last12Months().map(m => {
-      const v = map.get(m)!;
-      return {
-        month: m,
-        revenueJpy: Math.round(v.revenueJpy),
-        expenseJpy: Math.round(v.expenseJpy),
-        profitJpy: Math.round(v.profitJpy),
-        txnCount: v.txnCount,
-      };
-    });
-    const tm = monthly[monthly.length - 1];
-
-    return json({
-      asOf, mode: 'user', stripeConfigured: true,
-      thisMonth: {
-        revenueJpy: tm.revenueJpy, expenseJpy: tm.expenseJpy,
-        profitJpy: tm.profitJpy, txnCount: tm.txnCount,
-      },
-      monthly,
-      currencies: Array.from(currencies),
-      fxSource: fx.source,
-      fxFetchedAt: new Date(fx.fetchedAt).toISOString(),
-    }, 200, { ...ch, 'Cache-Control': 'private, max-age=0, must-revalidate' });
-  } catch (e: any) {
-    const msg = String(e?.message || e);
-    const rejected = msg.includes('401') || msg.includes('403');
+  // 両方とも失敗
+  if (!diag.chargesOk && !diag.balanceTxnsOk) {
+    const allRejected = diag.errors.every(e => e.includes('401') || e.includes('403'));
     return json({
       asOf, mode: 'user', stripeConfigured: false,
-      error: rejected ? 'KEY_REJECTED' : 'FETCH_FAILED',
-      message: rejected
-        ? 'このキーでは売上を読み取れませんでした。Stripe で「すべて読み取り」権限を付けて作り直してください。'
-        : 'いまは取得できませんでした。少し待ってから、更新ボタンでもう一度お試しください。',
+      error: allRejected ? 'KEY_REJECTED' : 'FETCH_FAILED',
+      message: allRejected
+        ? 'このキーでは売上を読み取れませんでした。Stripe で Charges 権限を「読み取り」にして作り直してください。'
+        : 'Stripe との通信に失敗しました。' + diag.errors.join(' / '),
+      diag,
       thisMonth: { revenueJpy: 0, expenseJpy: 0, profitJpy: 0, txnCount: 0 },
       monthly: emptyUserMonthly(),
       currencies: [],
-    }, rejected ? 401 : 502, ch);
+    }, allRejected ? 401 : 502, ch);
   }
+
+  const map = new Map<string, { revenueJpy: number; expenseJpy: number; profitJpy: number; txnCount: number }>();
+  for (const m of last12Months()) map.set(m, { revenueJpy: 0, expenseJpy: 0, profitJpy: 0, txnCount: 0 });
+  const currencies = new Set<string>();
+
+  // 1) Charges から売上 + 件数を集計 (確実な源)
+  for (const c of charges) {
+    if (c.status !== 'succeeded' || !c.paid) continue;
+    const slot = map.get(monthKey(c.created || 0));
+    if (!slot) continue;
+    const cur = (c.currency || 'jpy').toLowerCase();
+    currencies.add(cur);
+    const net = (c.amount || 0) - (c.amount_refunded || 0);
+    if (net <= 0) continue;
+    const amtJpy = toJpyWith(net, cur, fxRates);
+    slot.revenueJpy += amtJpy;
+    slot.profitJpy += amtJpy; // fee は次の段で引く
+    slot.txnCount += 1;
+  }
+
+  // 2) Balance Transactions から fee を補足 (権限あれば)。type='charge' の fee を加算
+  for (const t of balTxns) {
+    if (t.type !== 'charge') continue;
+    const slot = map.get(monthKey(t.created || 0));
+    if (!slot) continue;
+    const cur = (t.currency || 'jpy').toLowerCase();
+    const feeJpy = toJpyWith(t.fee || 0, cur, fxRates);
+    if (feeJpy > 0) {
+      slot.expenseJpy += feeJpy;
+      slot.profitJpy -= feeJpy;
+    }
+  }
+
+  // balance_txns が拾えなかった (fee 不明) 時は、概算 3.6% を経費として置く
+  if (!diag.balanceTxnsOk) {
+    for (const v of map.values()) {
+      if (v.expenseJpy === 0 && v.revenueJpy > 0) {
+        v.expenseJpy = Math.round(v.revenueJpy * 0.036);
+        v.profitJpy = v.revenueJpy - v.expenseJpy;
+      }
+    }
+  }
+
+  const monthly = last12Months().map(m => {
+    const v = map.get(m)!;
+    return {
+      month: m,
+      revenueJpy: Math.round(v.revenueJpy),
+      expenseJpy: Math.round(v.expenseJpy),
+      profitJpy: Math.round(v.profitJpy),
+      txnCount: v.txnCount,
+    };
+  });
+  const tm = monthly[monthly.length - 1];
+
+  return json({
+    asOf, mode: 'user', stripeConfigured: true,
+    thisMonth: {
+      revenueJpy: tm.revenueJpy, expenseJpy: tm.expenseJpy,
+      profitJpy: tm.profitJpy, txnCount: tm.txnCount,
+    },
+    monthly,
+    currencies: Array.from(currencies),
+    fxSource: fx?.source || 'fallback',
+    fxFetchedAt: fx ? new Date(fx.fetchedAt).toISOString() : null,
+    diag, // 診断情報 — クライアント側 StripeDiagnosticChip で活用
+  }, 200, { ...ch, 'Cache-Control': 'private, max-age=0, must-revalidate' });
 }
 
 function emptySnapshot(asOf: string) {

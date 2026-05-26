@@ -416,10 +416,28 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
     }
     const tm = stripe.thisMonth;
     if ((tm.txnCount || 0) === 0 && (tm.revenueJpy || 0) === 0) {
+      // 診断情報から具体的な原因を割り出す (オーナー指示 2026-05-26)
+      const d = stripe.diag;
+      if (d) {
+        if (d.chargesOk && (d.chargesCount || 0) === 0) {
+          return {
+            tone: 'yellow',
+            line1: `🟡 Stripe 連携中 (${stripe.keyMasked}) — Charges 12 ヶ月で 0 件`,
+            line2: '本当に取引が無いか、別の Stripe アカウントの可能性。ダッシュボード URL (acct_xxx) と一致するキーを使ってください',
+          };
+        }
+        if (!d.chargesOk) {
+          return {
+            tone: 'red',
+            line1: `🔴 Stripe — Charges 取得失敗`,
+            line2: `Stripe で「Charges → 読み取り」を有効にして作り直してください。詳細: ${(d.errors || []).join(' / ')}`,
+          };
+        }
+      }
       return {
         tone: 'yellow',
         line1: `🟡 Stripe 連携中 (${stripe.keyMasked}) — 取引 0 件`,
-        line2: '今月の取引がまだ無いか、キーの権限不足の可能性。Stripe で Charges / PaymentIntents / Balance を「読み取り」に',
+        line2: '今月の取引がまだ無いか、キーの権限不足の可能性。Stripe で Charges を「読み取り」に',
       };
     }
     return {

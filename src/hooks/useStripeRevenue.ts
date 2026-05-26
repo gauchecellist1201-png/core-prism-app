@@ -35,6 +35,16 @@ export interface StripeRevenue {
   currencies: string[];
   fxSource?: string;
   fetchedAt: number;
+  /** API 側の診断情報 (どの権限が通ったか) */
+  diag?: {
+    triedCharges?: boolean;
+    chargesOk?: boolean;
+    chargesCount?: number;
+    triedBalanceTxns?: boolean;
+    balanceTxnsOk?: boolean;
+    balanceTxnsCount?: number;
+    errors?: string[];
+  };
 }
 
 interface Cache {
@@ -151,6 +161,7 @@ export function useStripeRevenue() {
         currencies: Array.isArray(j.currencies) ? j.currencies : [],
         fxSource: j.fxSource,
         fetchedAt: Date.now(),
+        diag: j.diag,
       };
       setData(next);
       writeCache(k, next);
@@ -199,6 +210,8 @@ export function useStripeRevenue() {
     /** 取り込み元: 'stripe' (real API) / 'manual' (手動) / null */
     source: (key ? 'stripe' : manual ? 'manual' : null) as 'stripe' | 'manual' | null,
     keyMasked: key ? `${key.slice(0, 8)}…` : manual ? '手動入力' : '',
+    /** /api/revenue/snapshot が返した診断情報 (どの権限が通ったか) */
+    diag: data?.diag,
     thisMonth: data?.thisMonth || { revenueJpy: 0, expenseJpy: 0, profitJpy: 0, txnCount: 0 },
     monthly: data?.monthly || [],
     currencies: data?.currencies || [],
