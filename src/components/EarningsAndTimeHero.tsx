@@ -85,11 +85,13 @@ interface CardProps {
   value: number | null;          // null = データなし (— を出す)
   valueFormatter: (n: number) => string;
   subtitle: string;
+  /** 数字の真下に小さく出す補足 (例: 累計売上) — オーナー指示 2026-05-27 */
+  footnote?: { label: string; value: string } | null;
   emptyCta?: { text: string; onClick: () => void } | null;
   delay?: number;
 }
 
-function MetricCard({ accent, label, value, valueFormatter, subtitle, emptyCta, delay = 0 }: CardProps) {
+function MetricCard({ accent, label, value, valueFormatter, subtitle, footnote, emptyCta, delay = 0 }: CardProps) {
   const isEmpty = value === null || !Number.isFinite(value as number) || (value as number) <= 0;
   const clickable = !!(emptyCta && isEmpty);
 
@@ -162,8 +164,30 @@ function MetricCard({ accent, label, value, valueFormatter, subtitle, emptyCta, 
         }
       </div>
 
+      {/* 数字の真下に小さく補足 (例: 累計売上) — オーナー指示 2026-05-27 */}
+      {!isEmpty && footnote && (
+        <motion.div
+          initial={{ opacity: 0, y: 2 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: delay + 0.3, duration: 0.4 }}
+          style={{
+            marginTop: 4,
+            display: 'inline-flex',
+            alignItems: 'baseline',
+            gap: 4,
+            fontFamily: '"SF Mono", "JetBrains Mono", "Menlo", monospace',
+            fontSize: 10.5,
+            letterSpacing: '0.02em',
+            color: 'rgba(255,255,255,0.42)',
+          }}
+        >
+          <span style={{ fontFamily: 'inherit', opacity: 0.7 }}>{footnote.label}</span>
+          <span style={{ color: `${accent}cc`, fontWeight: 600 }}>{footnote.value}</span>
+        </motion.div>
+      )}
+
       <div style={{
-        marginTop: 8,
+        marginTop: footnote && !isEmpty ? 6 : 8,
         fontSize: 12.5,
         color: 'var(--fg-muted)',
         lineHeight: 1.5,
@@ -199,6 +223,8 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
   // (1) 今月稼いだ
   const thisMonthRev = stripe.connected ? (stripe.thisMonth.revenueJpy || 0) : 0;
   const momPct = stripe.momGrowth; // number | null
+  // 直近 12 ヶ月の累計売上 (オーナー指示 2026-05-27: 今月の数字の真下に小さく表示)
+  const total12mRev = stripe.connected ? (stripe.sumMonths(12).revenueJpy || 0) : 0;
 
   // (2) 来月の見込み
   //   直近 3 ヶ月平均 + 進行中案件 (won 以外 / lost 以外) の amount × probability/100
@@ -339,6 +365,9 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
           label="今月稼いだ"
           value={stripe.connected && thisMonthRev > 0 ? thisMonthRev : null}
           valueFormatter={formatJpy}
+          footnote={stripe.connected && total12mRev > 0
+            ? { label: '累計', value: `${formatJpy(total12mRev)} (直近 12 ヶ月)` }
+            : null}
           subtitle={
             !stripe.connected
               ? 'Stripe をつなぐと、今月の売上が出ます'
