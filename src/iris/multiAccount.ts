@@ -43,22 +43,15 @@ function genId(): string {
 function loadAll(): IrisAccount[] {
   try {
     const r = localStorage.getItem(STORAGE_KEY);
-    if (r) return JSON.parse(r);
+    if (r) {
+      const parsed = JSON.parse(r);
+      if (Array.isArray(parsed)) return parsed;
+    }
   } catch { /* */ }
-  // デフォルト1アカウントをシード
-  const def: IrisAccount = {
-    id: genId(),
-    type: 'personal',
-    handle: '@your_handle',
-    displayName: 'あなた',
-    avatarEmoji: '',
-    platform: 'instagram',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([def]));
-  localStorage.setItem(ACTIVE_KEY, def.id);
-  return [def];
+  // 初回起動時: @your_handle のプレースホルダは作らない。空配列を返して
+  // UI 側で「連携してください」モーダルを出させる。架空ハンドルの残骸を防ぐ。
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+  return [];
 }
 
 function saveAll(list: IrisAccount[]) {

@@ -431,9 +431,21 @@ function IrisEditorialHome({
     .filter(d => d.stage !== 'closed')
     .slice(0, 3);
 
-  const engagementPrediction = igProfile?.followingCount
-    ? Math.round((igProfile.followingCount || 10000) * 0.042)
-    : Math.round(12400 * 0.042);
+  // 嘘禁止: 実データが無い時は null を返し UI で「—」表示。架空のフォロワー数や
+  // エンゲージメント率で適当な数字を出さない。
+  // (旧: 12400 * 0.042 = 521 が常に表示されていた問題を修正)
+  const engagementPrediction: number | null = (() => {
+    if (!igProfile) return null;
+    const followers = igProfile.followers || 0;
+    if (followers <= 0) return null;
+    // スクショ読取または OAuth で実エンゲージメント率が分かる時はそれを使う。
+    const realRate = igProfile.avgLikes && igProfile.followers
+      ? igProfile.avgLikes / igProfile.followers
+      : null;
+    if (realRate && realRate > 0) return Math.round(followers * realRate);
+    // 自己申告 (followers のみ) ならフォロワー数だけを表示する形に倒し、推定を出さない
+    return null;
+  })();
 
   return (
     <div ref={scrollRef} style={{ position: 'relative' }}>
@@ -524,7 +536,7 @@ function IrisEditorialHome({
             {[
               { label: '進行中の案件', value: `${myDeals.filter(d => d.stage !== 'closed').length} 件`, icon: Briefcase, color: '#FCB045' },
               { label: '予約投稿', value: `${postQueue?.posts?.length ?? 0} 本`, icon: CalendarClock, color: '#FD7CB8' },
-              { label: 'エンゲージメント予測', value: `${engagementPrediction.toLocaleString()}`, icon: TrendingUp, color: '#B07BD9' },
+              { label: 'エンゲージメント予測', value: engagementPrediction != null ? `${engagementPrediction.toLocaleString()}` : '— (未連携)', icon: TrendingUp, color: '#B07BD9' },
             ].map(({ label, value, icon: Ico, color }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <div style={{
@@ -3961,11 +3973,52 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                 }}>
                 {acct.id === multiAccount.active?.id ? '使用中' : '切り替え'}
               </button>
-              {multiAccount.accounts.length > 1 && (
-                <button onClick={async () => { if (await confirmAction({ title: `${acct.handle} を削除しますか?`, tone: 'danger' })) multiAccount.remove(acct.id); }}
-                  title="削除" aria-label="削除"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: bg.inkSoft, padding: 4, display: 'inline-flex' }}><Trash2 size={14} strokeWidth={2.2} /></button>
-              )}
+              {/* 連携解除ボタン — 最後のアカウントでも消せるように (削除後は localStorage の
+                  ig profile も自動でクリアされ、次回ログイン時に再連携モーダルが出る) */}
+              <button
+                onClick={async () => {
+                  const isLast = multiAccount.accounts.length <= 1;
+                  const ok = await confirmAction({
+                    title: isLast
+                      ? `${acct.handle} の連携を解除しますか?`
+                      : `${acct.handle} を削除しますか?`,
+                    body: isLast
+                      ? 'これが最後のアカウントです。解除すると Instagram プロフィールも同時にリセットされ、再度連携が必要になります。'
+                      : 'このアカウントを Iris から外します。投稿や案件データは別アカウント側に残ります。',
+                    tone: 'danger',
+                    okLabel: isLast ? '連携を解除する' : '削除する',
+                  });
+                  if (!ok) return;
+                  multiAccount.remove(acct.id);
+                  if (isLast) {
+                    // 最後のアカウント → 関連 IG プロフィールもクリア (架空数字の残骸防止)
+                    try {
+                      localStorage.removeItem('core_iris_ig_profile_v1');
+                      localStorage.removeItem('core_iris_active_account_v1');
+                    } catch { /* */ }
+                    // 画面再読込で再連携モーダルが立ち上がる
+                    setTimeout(() => { window.location.reload(); }, 200);
+                  }
+                }}
+                title={multiAccount.accounts.length > 1 ? '削除' : '連携を解除'}
+                aria-label={multiAccount.accounts.length > 1 ? '削除' : '連携を解除'}
+                style={{
+                  background: 'rgba(220,38,38,0.08)',
+                  border: '1px solid rgba(220,38,38,0.2)',
+                  cursor: 'pointer',
+                  color: '#DC2626',
+                  padding: '0.3rem 0.6rem',
+                  borderRadius: 999,
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <Trash2 size={12} strokeWidth={2.4} />
+                {multiAccount.accounts.length > 1 ? '削除' : '解除'}
+              </button>
             </div>
           ))}
         </div>

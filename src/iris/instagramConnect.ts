@@ -51,8 +51,14 @@ export function clearIgProfile(): void {
 }
 
 /**
- * 自己申告ベースの即時プロフィール作成 (Meta 審査前のフォールバック)
- * handle と followers から、相場感のある初期値を推定して埋める
+ * 自己申告ベースの即時プロフィール作成
+ *
+ * 重要: ユーザーが入力した値のみを保存。エンゲージメント率や年齢層・性別比などの
+ * 「測れていない」項目は架空数字で埋めず、0 や空配列にする。UI 側は source==='self'
+ * かつ各値が空の時は「未測定」と表示する。
+ *
+ * 実データが必要な場合はスクショ読取 (connectFromScreenshot) か
+ * アクセストークン直接入力 (connectWithToken) を使う。
  */
 export function createSelfReportedProfile(input: {
   handle: string;
@@ -60,36 +66,20 @@ export function createSelfReportedProfile(input: {
   categories?: string[];
 }): IgProfile {
   const followers = Math.max(0, input.followers);
-  // 業界平均的なエンゲージメント率から推定 (フォロワー数で逆相関)
-  const engagementRate =
-    followers < 1000 ? 0.08 :
-    followers < 10000 ? 0.05 :
-    followers < 100000 ? 0.025 :
-    0.012;
-  const avgLikes = Math.round(followers * engagementRate);
-  const avgComments = Math.round(avgLikes * 0.06);
-
+  // 自己申告ではフォロワー数しか分からないので、それ以外の指標は「未測定」(0/空) にする。
+  // 推定値で埋めると「適当な数字が出る」とユーザーが混乱するため。
   return {
     handle: input.handle.replace(/^@/, ''),
     followers,
-    avgLikes,
-    avgComments,
-    topPostCategories: input.categories?.length ? input.categories : ['ライフスタイル'],
-    bestPostTime: '土 21:00',
-    saveRate: 3.2,
-    storyViewRate: 38,
-    audienceAge: [
-      { range: '18-24', pct: 22 },
-      { range: '25-34', pct: 41 },
-      { range: '35-44', pct: 24 },
-      { range: '45+',   pct: 13 },
-    ],
-    audienceGender: { female: 68, male: 30, other: 2 },
-    audienceTopCountries: [
-      { country: '日本', pct: 87 },
-      { country: '韓国', pct: 5 },
-      { country: '台湾', pct: 3 },
-    ],
+    avgLikes: 0,
+    avgComments: 0,
+    topPostCategories: input.categories?.length ? input.categories : [],
+    bestPostTime: '',
+    saveRate: 0,
+    storyViewRate: 0,
+    audienceAge: [],
+    audienceGender: { female: 0, male: 0, other: 0 },
+    audienceTopCountries: [],
     source: 'self',
     connectedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
