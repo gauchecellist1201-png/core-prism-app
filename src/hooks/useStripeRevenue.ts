@@ -107,6 +107,9 @@ function readCache(currentKey: string): StripeRevenue | null {
     const c = JSON.parse(raw) as Cache;
     if (c.key !== currentKey.slice(0, 8)) return null;
     if (Date.now() - c.fetchedAt > CACHE_TTL_MS) return null;
+    // 旧コード (2026-05-26 修正前) のキャッシュは diag 未保存。
+    // それを返すと「0 件」が永続化されるので破棄して再取得を促す。
+    if (!c.data.diag) return null;
     return c.data;
   } catch { return null; }
 }
@@ -142,11 +145,16 @@ export function useStripeRevenue() {
         setData(cached);
         return;
       }
+    } else {
+      // 強制更新時はキャッシュも消す (古い 0 件レスポンスが永続化されるのを防ぐ。
+      // オーナー報告 2026-05-26: 再取得を押しても何も変わらない問題の修正)
+      try { localStorage.removeItem(CACHE_LS); } catch { /* */ }
     }
     setLoading(true);
     setErr(null);
     try {
-      const r = await fetch('/api/revenue/snapshot', { headers: { 'x-stripe-key': k } });
+      // ?_bust= で CDN / ブラウザの全キャッシュをバイパス
+      const r = await fetch('/api/revenue/snapshot?_bust=' + Date.now(), { headers: { 'x-stripe-key': k } });
       const ct = r.headers.get('content-type') || '';
       if (!ct.includes('application/json')) throw new Error('API 未デプロイ');
       const j = await r.json();
