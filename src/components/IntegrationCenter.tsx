@@ -15,6 +15,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, ArrowRight, Loader2, ExternalLink, PartyPopper } from 'lucide-react';
+import EasyImportPanel from './EasyImportPanel';
 import {
   isGmailConfigured, isGmailConnected, connectGmail, clearGmailToken,
 } from '../lib/gmail';
@@ -328,6 +329,9 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
           つなぎたいアプリをタップ → 案内どおり進むだけで連携完了。
           {connectedCount > 0 && <strong style={{ color: '#10B981' }}> 連携済み {connectedCount} 件。</strong>}
         </p>
+
+        {/* API キー不要で取り込むためのショートカット (オーナー指示 2026-05-26) */}
+        <EasyImportPanel accent={accent} />
 
         {CATEGORY_ORDER.map(cat => {
           const items = CATALOG.filter(t => t.category === cat);

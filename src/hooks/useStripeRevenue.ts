@@ -19,6 +19,7 @@ import { useEffect, useState, useCallback } from 'react';
 const STRIPE_KEY_LS = 'core_integration_stripe';
 const CACHE_LS = 'core_stripe_revenue_cache_v1';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 分
+const MANUAL_LS = 'core_manual_revenue_v1'; // EasyImportPanel の手動入力 (オーナー指示 2026-05-26)
 
 export interface MonthRevenuePoint {
   month: string;       // 'YYYY-MM'
@@ -49,6 +50,46 @@ function readKey(): string {
   } catch { return ''; }
 }
 
+interface ManualRevenue {
+  thisMonthRevenueJpy: number;
+  thisMonthExpenseJpy: number;
+  pipelineDealCount: number;
+  enteredAt: string;
+}
+
+function readManualRevenue(): ManualRevenue | null {
+  try {
+    const raw = localStorage.getItem(MANUAL_LS);
+    if (!raw) return null;
+    return JSON.parse(raw) as ManualRevenue;
+  } catch { return null; }
+}
+
+/** 手動入力データから StripeRevenue 形に変換 (今月分のみ反映、月次推移は空) */
+function manualToStripeRevenue(m: ManualRevenue): StripeRevenue {
+  const profit = m.thisMonthRevenueJpy - m.thisMonthExpenseJpy;
+  const now = new Date();
+  const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  return {
+    thisMonth: {
+      revenueJpy: m.thisMonthRevenueJpy,
+      expenseJpy: m.thisMonthExpenseJpy,
+      profitJpy: profit,
+      txnCount: 0,
+    },
+    monthly: [{
+      month: thisMonthKey,
+      revenueJpy: m.thisMonthRevenueJpy,
+      expenseJpy: m.thisMonthExpenseJpy,
+      profitJpy: profit,
+      txnCount: 0,
+    }],
+    currencies: ['jpy'],
+    fxSource: 'manual:user-entry',
+    fetchedAt: new Date(m.enteredAt).getTime(),
+  };
+}
+
 function readCache(currentKey: string): StripeRevenue | null {
   try {
     const raw = localStorage.getItem(CACHE_LS);
@@ -69,9 +110,16 @@ function writeCache(key: string, data: StripeRevenue) {
 
 export function useStripeRevenue() {
   const [key, setKey] = useState<string>(() => readKey());
+  const [manual, setManual] = useState<ManualRevenue | null>(() => readManualRevenue());
   const [data, setData] = useState<StripeRevenue | null>(() => {
     const k = readKey();
-    return k ? readCache(k) : null;
+    if (k) {
+      const cached = readCache(k);
+      if (cached) return cached;
+    }
+    // Stripe 鍵が無く manual 入力があれば、それを使う
+    const m = readManualRevenue();
+    return m ? manualToStripeRevenue(m) : null;
   });
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -118,29 +166,39 @@ export function useStripeRevenue() {
     setKey(k);
     if (k) fetchNow(k, false);
 
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STRIPE_KEY_LS) {
-        const nk = readKey();
-        setKey(nk);
-        if (nk) fetchNow(nk, true); else setData(null);
+    const refreshAll = () => {
+      const nk = readKey();
+      const nm = readManualRevenue();
+      setKey(nk);
+      setManual(nm);
+      if (nk) {
+        fetchNow(nk, true);
+      } else if (nm) {
+        setData(manualToStripeRevenue(nm));
+      } else {
+        setData(null);
       }
     };
-    const onConn = () => {
-      const nk = readKey();
-      setKey(nk);
-      if (nk) fetchNow(nk, true); else setData(null);
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STRIPE_KEY_LS || e.key === MANUAL_LS) refreshAll();
     };
     window.addEventListener('storage', onStorage);
-    window.addEventListener('core:stripe-connected', onConn);
+    window.addEventListener('core:stripe-connected', refreshAll);
+    window.addEventListener('core:manual-revenue-updated', refreshAll);
     return () => {
       window.removeEventListener('storage', onStorage);
-      window.removeEventListener('core:stripe-connected', onConn);
+      window.removeEventListener('core:stripe-connected', refreshAll);
+      window.removeEventListener('core:manual-revenue-updated', refreshAll);
     };
   }, [fetchNow]);
 
   return {
-    connected: !!key,
-    keyMasked: key ? `${key.slice(0, 8)}…` : '',
+    /** Stripe 連携済み OR 手動入力あり */
+    connected: !!key || !!manual,
+    /** 取り込み元: 'stripe' (real API) / 'manual' (手動) / null */
+    source: (key ? 'stripe' : manual ? 'manual' : null) as 'stripe' | 'manual' | null,
+    keyMasked: key ? `${key.slice(0, 8)}…` : manual ? '手動入力' : '',
     thisMonth: data?.thisMonth || { revenueJpy: 0, expenseJpy: 0, profitJpy: 0, txnCount: 0 },
     monthly: data?.monthly || [],
     currencies: data?.currencies || [],
