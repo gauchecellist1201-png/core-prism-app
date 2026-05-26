@@ -4,6 +4,7 @@
 // ============================================================
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ApiErrorCard from './ApiErrorCard';
+import { StudioIntro } from './StudioIntro';
 import { notifyInApp } from '../lib/inAppNotify';
 import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from '../iris/irisStyle';
@@ -392,6 +393,38 @@ export default function VideoStudio({ bg, settings }: Props) {
           テーマを入れるだけ。脚本 → Canvas 描画 → WebM エクスポートまで全自動。
         </p>
       </div>
+
+      <StudioIntro
+        id="video"
+        accent={bg.accent}
+        emoji="🎬"
+        what="テーマを 1 行入れるだけで、縦長動画 (Reels・ショート向け) の脚本と画面を AI が組み立てて、そのまま .webm で書き出します。"
+        tryThis="下の枠に「春の新作リップ3本を比較」みたいに 1 行入れて、青いボタンを押す。脚本→シーン→プレビュー→書き出しの 4 ステップが順に進みます。"
+        example="「30秒で新作コスメを紹介」→ 6 シーンの脚本＋ナレーション＋BGM ヒント＋トランジション付きの 9:16 動画"
+        sampleLabel="完成イメージ"
+        samplePreview={
+          <div
+            style={{
+              width: 90,
+              height: 160,
+              borderRadius: 10,
+              background: 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              padding: 6,
+              color: '#fff',
+              fontSize: 9,
+            }}
+          >
+            <span style={{ fontWeight: 700 }}>Scene 1</span>
+            <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, lineHeight: 1.2 }}>
+              話題の<br />新作 3 本
+            </div>
+            <span style={{ opacity: 0.8 }}>9:16 · 30秒</span>
+          </div>
+        }
+      />
 
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
         {([

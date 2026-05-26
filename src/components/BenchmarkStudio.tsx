@@ -37,6 +37,7 @@ import { notifyInApp } from '../lib/inAppNotify';
 import ApiErrorCard from './ApiErrorCard';
 import EmptyState from './EmptyState';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -1505,6 +1506,34 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
             </div>
           </div>
           <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm flex-shrink-0">✕</button>
+        </div>
+
+        <div className="px-4 pt-3">
+          <StudioIntro
+            id="benchmark"
+            accent={persona.accentColor}
+            emoji="📊"
+            what="あなたの数字を「同じ業界の会社たち」と比べて、強い所と弱い所を 1 画面で見せます。"
+            tryThis="まず「✨ AI 補助」タブで AI に業界を当ててもらう。質問に 2-3 個答えるだけで結果が出ます。"
+            example="粗利率 38% → 業界の真ん中より上、上位 30% です。客単価は逆に下位 25%。"
+            sampleLabel="こんな結果が出ます"
+            samplePreview={
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 10.5, lineHeight: 1.3 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--fg-muted)' }}>粗利率</span>
+                  <span style={{ color: '#4ade80', fontWeight: 700 }}>上位 30%</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--fg-muted)' }}>客単価</span>
+                  <span style={{ color: '#facc15', fontWeight: 700 }}>中位</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--fg-muted)' }}>継続率</span>
+                  <span style={{ color: '#f87171', fontWeight: 700 }}>要改善</span>
+                </div>
+              </div>
+            }
+          />
         </div>
 
         <DelegateToAgentTeamBanner
