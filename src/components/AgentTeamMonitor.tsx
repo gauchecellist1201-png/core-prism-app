@@ -27,7 +27,21 @@ const WATCH_ROTATE_MS = 4500;
 export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false }: Props) {
   const { activeTask, recentDone, counts, propose, approve } = useAgentTaskQueue();
   const { celebrate, CelebratePortal } = useCelebrate();
-  const [open, setOpen] = useState<boolean>(initialOpen || !!activeTask);
+  // ユーザーが明示的に閉じた状態は localStorage に保存し、active task が来ても
+  // 勝手に開かないようにする (2026-05-26: オーナー報告でリール画面で widget が
+  // 開きっぱなしになりスクロールできなくなる問題を修正)
+  const OPEN_PREF_KEY = 'core_agent_monitor_open_v1';
+  const [open, setOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(OPEN_PREF_KEY);
+      if (saved === '0') return false;
+      if (saved === '1') return true;
+    } catch { /* */ }
+    return initialOpen || !!activeTask;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(OPEN_PREF_KEY, open ? '1' : '0'); } catch { /* */ }
+  }, [open]);
   const [openCxo, setOpenCxo] = useState<CxoRole | null>(null);
   const [watchTick, setWatchTick] = useState(0);
 
@@ -56,8 +70,20 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
   }, [activeTask]);
 
   // Studio バナー等から「開いて見せて」と言われたら膨らむ
+  // ただしユーザーが明示的に閉じた直後 (10 秒以内) は尊重 — 自動再展開で
+  // スクロールが阻害される問題を防ぐ
   useEffect(() => {
-    const onOpen = () => setOpen(true);
+    const onOpen = () => {
+      try {
+        const saved = localStorage.getItem(OPEN_PREF_KEY);
+        const closedAt = localStorage.getItem(OPEN_PREF_KEY + '_closed_at');
+        if (saved === '0' && closedAt) {
+          const since = Date.now() - parseInt(closedAt, 10);
+          if (since < 10 * 60 * 1000) return; // 直近 10 分以内に閉じられた → 尊重
+        }
+      } catch { /* */ }
+      setOpen(true);
+    };
     window.addEventListener('core:agent-monitor-open', onOpen as EventListener);
     return () => window.removeEventListener('core:agent-monitor-open', onOpen as EventListener);
   }, []);
@@ -117,6 +143,10 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
         bottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)',
         right: 'max(14px, env(safe-area-inset-right, 0px))',
         width: 'min(380px, calc(100vw - 28px))',
+        // 展開時でも画面の 60% 以上を覆わない (スクロール阻害防止)
+        maxHeight: open ? 'min(60vh, 600px)' : 56,
+        display: 'flex',
+        flexDirection: 'column',
         zIndex: 60,
         background: 'linear-gradient(180deg, rgba(18,18,30,0.92) 0%, rgba(10,10,20,0.95) 100%)',
         backdropFilter: 'blur(18px)',
@@ -194,17 +224,60 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
               {CXO_META[workingCxo].emoji} {workingCxo}
             </span>
           )}
-          {open ? <ChevronDown size={16} color="rgba(255,255,255,0.5)" /> : <ChevronUp size={16} color="rgba(255,255,255,0.5)" />}
+          {/* ヘッダのチェブロンを明示的なアイコンボタンに見せ、押せると分かるよう塗る */}
+          <span
+            aria-hidden
+            style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            title={open ? '最小化' : '展開'}
+          >
+            {open ? <ChevronDown size={14} color="#fff" /> : <ChevronUp size={14} color="#fff" />}
+          </span>
         </div>
       </button>
+      {open && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(false);
+            try {
+              localStorage.setItem(OPEN_PREF_KEY, '0');
+              localStorage.setItem(OPEN_PREF_KEY + '_closed_at', String(Date.now()));
+            } catch { /* */ }
+          }}
+          aria-label="作戦本部を閉じる"
+          title="閉じる"
+          style={{
+            position: 'absolute', top: 8, right: 8, zIndex: 2,
+            width: 28, height: 28, borderRadius: 8,
+            background: 'rgba(0,0,0,0.45)',
+            border: '1px solid rgba(255,255,255,0.16)',
+            color: '#fff', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <X size={14} strokeWidth={2.4} />
+        </button>
+      )}
 
-      {/* 展開時: CXO 列 + 詳細ログ */}
+      {/* 展開時: CXO 列 + 詳細ログ (内部スクロール可能、最大高さは外側の maxHeight で制御) */}
       <AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+            style={{
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+              overflowY: 'auto',
+              overscrollBehavior: 'contain',
+              flex: '1 1 auto',
+              minHeight: 0,
+            }}
           >
             {/* 13 CXO アバター + 役職ラベル + クリックで「任せる」 */}
             <div style={{ padding: '12px 12px 8px 12px', background: 'rgba(255,255,255,0.02)' }}>

@@ -193,6 +193,8 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
 
   // (2) 来月の見込み
   //   直近 3 ヶ月平均 + 進行中案件 (won 以外 / lost 以外) の amount × probability/100
+  //   嘘禁止: 過去売上 0 円 + pipeline も極小 (< ¥10,000) の時は「¥600」のような
+  //   誤解を招く数字を出さず null を返す (オーナー報告 2026-05-26)
   const next3Forecast = useMemo(() => {
     if (!stripe.connected) return null;
     const sum3 = stripe.sumMonths(3).revenueJpy;
@@ -209,6 +211,8 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
     );
 
     const total = base + pipelineWeighted;
+    // 過去 Stripe 売上が 0 で、pipeline の確度加重が 1 万円未満 → 数字としては誤解を招く
+    if (base === 0 && total < 10000) return null;
     return total > 0 ? total : null;
   }, [stripe, crm.deals, persona.id]);
 
