@@ -546,42 +546,166 @@ function RotatingWatchPhrase({ phrase, tick }: { phrase: string; tick: number })
   );
 }
 
-function TaskLogList({ task }: { task: AgentTask }) {
+// 各 CXO の作業を「ツール呼出し風」に見せるアクション辞書
+// (Claude Code が "Read", "Edit", "Bash" を見せるように、CXO ごとに動詞を割り当て)
+const CXO_TOOL_VERBS: Record<CxoRole, string[]> = {
+  CEO: ['戦略を整理', '優先順を決定', '判断軸を確認'],
+  CTO: ['コードを読む', 'ファイルを編集', 'ビルドを確認'],
+  CPO: ['仕様を整理', 'UI 案を比較', 'ユーザー導線を検証'],
+  CDO: ['カラーを選定', 'コンポーネントを磨き', 'ブランド統一を確認'],
+  CMO: ['コピーを生成', 'チャネルを選定', 'A/B 案を比較'],
+  CSO: ['案件をスコアリング', 'リードリストを参照', '提案文を作成'],
+  CFO: ['数字を集計', '利益率を計算', '予測モデルを構築'],
+  COO: ['ファイルを整理', 'タスクを並べ替え', '進捗を集計'],
+  CDS: ['データを読込', 'パターンを発見', '統計を計算'],
+  CLO: ['規約を確認', 'リスクを評価', '条文を生成'],
+  UIE: ['CSS を整える', 'アニメを微調整', 'アクセシビリティを点検'],
+  UXE: ['動線を試行', '操作感を測定', '改善案を発想'],
+  QAE: ['ケースを実行', 'バグを再現', 'リグレッションを点検'],
+};
+
+function formatElapsed(startIso?: string, endIso?: string): string {
+  if (!startIso) return '';
+  const start = new Date(startIso).getTime();
+  const end = endIso ? new Date(endIso).getTime() : Date.now();
+  const sec = Math.max(0, Math.round((end - start) / 1000));
+  if (sec < 60) return `${sec} 秒`;
+  const min = Math.floor(sec / 60);
+  return `${min}分${sec % 60}秒`;
+}
+
+function ThinkingStream({ cxo }: { cxo: CxoRole }) {
+  const [idx, setIdx] = useState(0);
+  const verbs = CXO_TOOL_VERBS[cxo] || ['作業中'];
+  useEffect(() => {
+    const t = window.setInterval(() => setIdx(i => i + 1), 1800);
+    return () => window.clearInterval(t);
+  }, []);
+  const verb = verbs[idx % verbs.length];
+  const meta = CXO_META[cxo];
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <motion.div
+      key={verb}
+      initial={{ opacity: 0, y: 2 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      style={{
+        marginTop: 4,
+        fontSize: 10.5,
+        color: meta.color,
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+      }}
+    >
+      <span style={{
+        display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+        background: meta.color,
+        animation: 'atm-pulse 1.2s ease-in-out infinite',
+      }} />
+      <span>$ {verb}…</span>
+    </motion.div>
+  );
+}
+
+function TaskLogList({ task }: { task: AgentTask }) {
+  // 1 秒ごとに再描画して「実行中 X 秒」を更新
+  const [, force] = useState(0);
+  useEffect(() => {
+    if (task.status !== 'running') return;
+    const t = window.setInterval(() => force(x => x + 1), 1000);
+    return () => window.clearInterval(t);
+  }, [task.status]);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {task.steps.map((s, i) => {
         const meta = CXO_META[s.cxo];
         const isWorking = s.status === 'working';
         const isDone = s.status === 'done';
+        const elapsed = formatElapsed(s.startedAt, s.finishedAt);
         return (
-          <div key={i} style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '4px 6px', borderRadius: 8,
-            background: isWorking ? `${meta.color}10` : 'transparent',
-            fontSize: 12, lineHeight: 1.4,
-          }}>
-            <span style={{ fontSize: 11, color: meta.color, fontWeight: 800, minWidth: 30 }}>
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -4 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: i * 0.04 }}
+            style={{
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+              padding: '6px 8px', borderRadius: 10,
+              background: isWorking
+                ? `linear-gradient(90deg, ${meta.color}18, ${meta.color}05)`
+                : isDone
+                  ? 'rgba(16,185,129,0.05)'
+                  : 'transparent',
+              border: isWorking
+                ? `1px solid ${meta.color}44`
+                : isDone
+                  ? '1px solid rgba(16,185,129,0.15)'
+                  : '1px solid transparent',
+              fontSize: 12, lineHeight: 1.45,
+            }}
+          >
+            <span style={{
+              fontSize: 13, color: meta.color, fontWeight: 800,
+              width: 24, textAlign: 'center',
+              filter: !isWorking && !isDone ? 'grayscale(0.7) opacity(0.5)' : 'none',
+            }}>
               {meta.emoji}
             </span>
-            <span style={{ flex: 1, minWidth: 0, color: isDone ? 'rgba(255,255,255,0.55)' : '#fff' }}>
-              {s.label}
-              {isDone && s.output && (
-                <span style={{ color: 'rgba(255,255,255,0.5)', marginLeft: 6, fontSize: 11 }}>
-                  → {s.output}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                color: isDone ? 'rgba(255,255,255,0.7)' : isWorking ? '#fff' : 'rgba(255,255,255,0.45)',
+                fontWeight: isWorking ? 700 : 500,
+                display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+              }}>
+                <span style={{
+                  fontSize: 9.5, fontWeight: 800, letterSpacing: '0.06em',
+                  padding: '1px 5px', borderRadius: 4,
+                  background: `${meta.color}22`, color: meta.color,
+                }}>
+                  {meta.shortLabel}
                 </span>
+                <span>{s.label}</span>
+                {elapsed && (
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+                    {isDone ? `✓ ${elapsed}` : `実行中 ${elapsed}`}
+                  </span>
+                )}
+              </div>
+              {isWorking && <ThinkingStream cxo={s.cxo} />}
+              {isDone && s.output && (
+                <div style={{
+                  marginTop: 4,
+                  padding: '5px 8px',
+                  background: 'rgba(0,0,0,0.25)',
+                  borderLeft: `2px solid ${meta.color}`,
+                  borderRadius: 4,
+                  fontSize: 11.5,
+                  color: 'rgba(255,255,255,0.82)',
+                  fontFamily: 'inherit',
+                }}>
+                  → {s.output}
+                </div>
               )}
-            </span>
+            </div>
             {isWorking && (
               <motion.span
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1.6, repeat: Infinity, ease: 'linear' }}
-                style={{ display: 'inline-flex' }}
-              ><Loader2 size={12} color={meta.color} /></motion.span>
+                style={{ display: 'inline-flex', flexShrink: 0, marginTop: 2 }}
+              ><Loader2 size={13} color={meta.color} /></motion.span>
             )}
-            {isDone && <Check size={12} color="#10B981" />}
-          </div>
+            {isDone && <Check size={13} color="#10B981" style={{ flexShrink: 0, marginTop: 2 }} />}
+          </motion.div>
         );
       })}
+      <style>{`
+        @keyframes atm-pulse {
+          0%, 100% { opacity: 0.4; transform: scale(0.9); }
+          50% { opacity: 1; transform: scale(1.15); }
+        }
+      `}</style>
     </div>
   );
 }
