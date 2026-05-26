@@ -390,6 +390,97 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
           ? 'AI が稼ぐ・楽にする。あなたは決めるだけ。'
           : '使えば使うほど、稼げる金額と取り戻した時間が積み上がります。'}
       </div>
+
+      {/* Stripe 接続診断 (オーナー指示 2026-05-26: 反映されないのに「成功」と出る問題を可視化) */}
+      <StripeDiagnosticChip stripe={stripe} onReconnect={onConnectStripe} />
     </motion.div>
+  );
+}
+
+function StripeDiagnosticChip({ stripe, onReconnect }: {
+  stripe: ReturnType<typeof useStripeRevenue>;
+  onReconnect?: () => void;
+}) {
+  const state: { tone: 'green' | 'yellow' | 'red' | 'gray'; line1: string; line2: string } = (() => {
+    if (stripe.loading) {
+      return { tone: 'yellow', line1: '⏳ Stripe から取得中…', line2: '数秒お待ちください' };
+    }
+    if (stripe.error) {
+      return { tone: 'red', line1: '🔴 Stripe エラー', line2: stripe.error };
+    }
+    if (!stripe.connected) {
+      return { tone: 'gray', line1: '⚪ Stripe 未連携', line2: '右上の連携センターから rk_live_ を貼ると数字が出ます' };
+    }
+    if (stripe.source === 'manual') {
+      return { tone: 'yellow', line1: '📝 手動入力データ (Stripe 未連携)', line2: 'rk_live_ を貼ると自動取得に切り替わります' };
+    }
+    const tm = stripe.thisMonth;
+    if ((tm.txnCount || 0) === 0 && (tm.revenueJpy || 0) === 0) {
+      return {
+        tone: 'yellow',
+        line1: `🟡 Stripe 連携中 (${stripe.keyMasked}) — 取引 0 件`,
+        line2: '今月の取引がまだ無いか、キーの権限不足の可能性。Stripe で Charges / PaymentIntents / Balance を「読み取り」に',
+      };
+    }
+    return {
+      tone: 'green',
+      line1: `✓ Stripe 連携中 (${stripe.keyMasked}) — 今月 ${tm.txnCount} 件`,
+      line2: `売上 ¥${Math.round(tm.revenueJpy).toLocaleString()} / 経費 ¥${Math.round(tm.expenseJpy).toLocaleString()}`,
+    };
+  })();
+
+  const colors = {
+    green:  { bg: 'rgba(16,185,129,0.10)', border: 'rgba(16,185,129,0.35)', fg: '#34D399' },
+    yellow: { bg: 'rgba(251,191,36,0.10)',  border: 'rgba(251,191,36,0.35)',  fg: '#FBBF24' },
+    red:    { bg: 'rgba(248,113,113,0.10)', border: 'rgba(248,113,113,0.40)', fg: '#F87171' },
+    gray:   { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.10)', fg: 'rgba(255,255,255,0.55)' },
+  }[state.tone];
+
+  return (
+    <div style={{
+      position: 'relative', zIndex: 1,
+      marginTop: '0.7rem',
+      padding: '8px 12px', borderRadius: 10,
+      background: colors.bg,
+      border: `1px solid ${colors.border}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+      flexWrap: 'wrap',
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: colors.fg, lineHeight: 1.4 }}>
+          {state.line1}
+        </div>
+        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.55, marginTop: 1 }}>
+          {state.line2}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+        {stripe.connected && stripe.source === 'stripe' && (
+          <button
+            type="button"
+            onClick={() => stripe.refresh?.()}
+            disabled={stripe.loading}
+            style={{
+              fontSize: 10.5, fontWeight: 700, color: colors.fg,
+              background: 'transparent',
+              border: `1px solid ${colors.border}`,
+              borderRadius: 6, padding: '4px 8px', cursor: stripe.loading ? 'wait' : 'pointer',
+            }}
+          >🔄 再取得</button>
+        )}
+        {onReconnect && (
+          <button
+            type="button"
+            onClick={onReconnect}
+            style={{
+              fontSize: 10.5, fontWeight: 700, color: '#fff',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+            }}
+          >連携センター</button>
+        )}
+      </div>
+    </div>
   );
 }

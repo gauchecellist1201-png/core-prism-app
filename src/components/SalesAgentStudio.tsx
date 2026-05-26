@@ -169,10 +169,23 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
 
   // ─── 自社の商材タブ ──────
   const [productDraft, setProductDraft] = useState(ownProduct);
+  const [productSavedMsg, setProductSavedMsg] = useState<string | null>(null);
   useEffect(() => setProductDraft(ownProduct), [ownProduct]);
   const saveProduct = () => {
+    if (!productDraft.trim()) {
+      setError('まず商材の内容を入れてください (5〜10 行で OK)');
+      return;
+    }
     sa.setOwnProduct(persona.id, productDraft);
     setError(null);
+    setProductSavedMsg('✓ 保存しました。AI が「今日の 5 社」を探しています…');
+    // 自動で「今日の5社」タブへ移動 + AI ピックを即発火
+    // (オーナー指示 2026-05-26: 保存しても何も起きないのは感動が無い)
+    setTimeout(() => {
+      setTab('today');
+      runPick(false);
+      setProductSavedMsg(null);
+    }, 800);
   };
 
   // ─── 履歴タブ: 採用済リードと送信履歴 ──────
@@ -567,9 +580,23 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
                 placeholder={`狙いたい企業を入れてください (例: 都内の Web 制作会社 / 従業員 10-50 名)\n\n商材も合わせて書くと精度が上がります:\n弊社の商材: 飲食店向け予約管理 SaaS\n価格: 月¥9,800〜\nコア機能: 予約一元管理 / 顧客LTV分析 / LINE自動配信\nターゲット: 月50万円以上の売上がある飲食店\n強み: 月の客単価が3,500円以上の店で、リピート率を平均15%向上した実績`}
                 rows={10} className="cp-textarea" />
               <button onClick={saveProduct} className="cp-btn cp-btn-primary"
+                disabled={!!productSavedMsg}
                 style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                保存
+                {productSavedMsg ? '✓ AI 起動中…' : '保存 → AI に今日の 5 社を選ばせる'}
               </button>
+              {productSavedMsg && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    marginTop: 8, padding: '8px 12px', borderRadius: 8,
+                    background: 'rgba(16,185,129,0.12)',
+                    border: '1px solid rgba(16,185,129,0.35)',
+                    color: '#34D399', fontSize: 12, fontWeight: 700,
+                  }}
+                >
+                  {productSavedMsg}
+                </motion.div>
+              )}
             </div>
           )}
         </div>
