@@ -91,26 +91,35 @@ interface CardProps {
 
 function MetricCard({ accent, label, value, valueFormatter, subtitle, emptyCta, delay = 0 }: CardProps) {
   const isEmpty = value === null || !Number.isFinite(value as number) || (value as number) <= 0;
+  const clickable = !!(emptyCta && isEmpty);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay, ease: 'easeOut' }}
-      whileHover={{ y: -2 }}
+      whileHover={clickable ? { y: -3, borderColor: `${accent}55` } : { y: -2 }}
       style={{
         position: 'relative',
         flex: 1,
         minWidth: 0,
         padding: '1.15rem 1rem 1.05rem 1.2rem',
         borderRadius: 16,
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        background: clickable ? `${accent}08` : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${clickable ? `${accent}30` : 'rgba(255,255,255,0.07)'}`,
         overflow: 'hidden',
-        cursor: emptyCta && isEmpty ? 'pointer' : 'default',
-        transition: 'background 0.2s ease',
+        cursor: clickable ? 'pointer' : 'default',
+        transition: 'background 0.2s ease, border-color 0.2s ease',
       }}
-      onClick={() => { if (emptyCta && isEmpty) emptyCta.onClick(); }}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={() => { if (clickable) emptyCta!.onClick(); }}
+      onKeyDown={(e) => {
+        if (clickable && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          emptyCta!.onClick();
+        }
+      }}
     >
       {/* 左端 4px アクセントバー (Stripe 風) */}
       <div

@@ -221,11 +221,11 @@ function ManualEntryForm({
         <button
           type="button" onClick={onClose} aria-label="閉じる"
           style={{
-            background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 6,
-            width: 24, height: 24, cursor: 'pointer', color: '#fff',
+            background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 8,
+            width: 32, height: 32, cursor: 'pointer', color: '#fff',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           }}
-        ><X size={12} /></button>
+        ><X size={14} /></button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {fields.map(f => (
@@ -242,10 +242,10 @@ function ManualEntryForm({
                 onChange={e => f.setter(e.target.value)}
                 placeholder={f.placeholder}
                 style={{
-                  width: '100%', padding: '8px 36px 8px 11px',
+                  width: '100%', padding: '11px 38px 11px 12px',
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 8,
+                  borderRadius: 9,
                   color: '#fff', fontSize: 13, fontFamily: 'inherit',
                   outline: 'none', boxSizing: 'border-box',
                 }}
@@ -263,27 +263,28 @@ function ManualEntryForm({
           type="button" onClick={handleSave}
           disabled={saved}
           style={{
-            flex: 1,
-            padding: '9px 12px', borderRadius: 8,
+            flex: 1, minHeight: 42,
+            padding: '11px 14px', borderRadius: 9,
             background: saved
               ? 'linear-gradient(135deg, #10B981, #059669)'
               : `linear-gradient(135deg, ${accent}, ${accent}cc)`,
             color: '#fff', border: 'none',
-            fontSize: 12, fontWeight: 800, cursor: saved ? 'default' : 'pointer',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+            fontSize: 12.5, fontWeight: 800, cursor: saved ? 'default' : 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
           }}
         >
-          {saved ? <><Check size={13} /> 反映しました</> : '保存して反映'}
+          {saved ? <><Check size={14} /> 反映しました</> : '保存して反映'}
         </button>
         {existing && !saved && (
           <button
             type="button" onClick={handleClear}
             style={{
-              padding: '9px 12px', borderRadius: 8,
+              minHeight: 42,
+              padding: '11px 14px', borderRadius: 9,
               background: 'transparent',
-              color: 'rgba(255,255,255,0.5)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              color: 'rgba(255,255,255,0.6)',
+              border: '1px solid rgba(255,255,255,0.14)',
+              fontSize: 11.5, fontWeight: 700, cursor: 'pointer',
             }}
           >削除</button>
         )}

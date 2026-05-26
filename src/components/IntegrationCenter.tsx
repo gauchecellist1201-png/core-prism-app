@@ -763,7 +763,7 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                         onChange={e => { setTokenInput(e.target.value); setErr(null); setVerifyOk(null); }}
                         placeholder={step.action.placeholder}
                         style={{
-                          flex: 1, fontSize: 12, padding: '9px 10px', borderRadius: 9,
+                          flex: 1, fontSize: 12, padding: '11px 12px', borderRadius: 9,
                           background: 'rgba(255,255,255,0.06)', color: '#fff',
                           border: `1px solid ${
                             isStripe && trimmed.length >= 4 && !formatOk
@@ -784,13 +784,14 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                           submit(v);
                         }}
                         style={{
+                          minHeight: 42,
                           fontSize: 12, fontWeight: 800, color: '#fff', flexShrink: 0,
                           background: isStripe
                             ? (formatOk
                                 ? `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`
                                 : 'rgba(255,255,255,0.06)')
                             : 'rgba(255,255,255,0.1)',
-                          border: 'none', borderRadius: 9, padding: '9px 14px',
+                          border: 'none', borderRadius: 9, padding: '11px 16px',
                           cursor: isStripe && !formatOk ? 'not-allowed' : (busy ? 'wait' : 'pointer'),
                           opacity: isStripe && !formatOk ? 0.55 : (busy ? 0.7 : 1),
                           display: 'flex', alignItems: 'center', gap: 4,
