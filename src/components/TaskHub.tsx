@@ -694,7 +694,8 @@ function TaskRow({
 
   return (
     <motion.div
-      className="cp-card cp-row"
+      className="cp-card cp-card-tap cp-row"
+      data-selected={highlighted ? 'true' : undefined}
       animate={{ x: dx, background: dx > 60 ? 'rgba(74,222,128,0.18)' : undefined }}
       transition={{ type: 'tween', duration: 0.15 }}
       style={{
