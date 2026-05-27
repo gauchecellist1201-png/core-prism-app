@@ -11,6 +11,7 @@ import { StudioIntro } from './StudioIntro';
 import SampleDataCTA from './SampleDataCTA';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import { isDemoActive } from '../lib/onboarding';
+import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 
 interface Props {
   persona: Persona;
@@ -48,6 +49,7 @@ const SIZE_LABEL: Record<AiPick['size'], string> = {
 
 export default function SalesAgentStudio({ persona, settings, onClose }: Props) {
   const sa = useSalesAgent();
+  const queue = useAgentTaskQueue();
   const [tab, setTab] = useState<Tab>('today');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'pick' | 'edit' | null>(null);
@@ -179,6 +181,19 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
     sa.setOwnProduct(persona.id, productDraft);
     setError(null);
     setProductSavedMsg('✓ 保存しました。AI が「今日の 5 社」を探しています…');
+    // AgentTeamMonitor に進捗を出す (CSO がメインで動く)
+    queue.propose({
+      title: '今日の 5 社を選び、提案メールまで下書き',
+      summary: `登録した商材から、合いそうな企業 5 社を CSO が選定。各社に合わせた提案メール下書きまで一気通貫で用意します。`,
+      why: '保存した商材情報は、毎日の営業先発掘に使う。手作業で 5 社探すと半日かかる所を AI が即出す。',
+      expected: '今日の 5 社 + 各社向け件名 + 本文下書き (60〜120 字)',
+      dueDays: 1,
+      steps: [
+        { cxo: 'CSO', label: '商材内容を分析、ターゲット業種・規模を抽出' },
+        { cxo: 'CDS', label: '社内データから条件に合う 5 社を選定' },
+        { cxo: 'CSO', label: '各社向けの件名と本文 (先回り提案) を下書き' },
+      ],
+    });
     // 自動で「今日の5社」タブへ移動 + AI ピックを即発火
     // (オーナー指示 2026-05-26: 保存しても何も起きないのは感動が無い)
     setTimeout(() => {
