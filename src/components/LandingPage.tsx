@@ -49,7 +49,7 @@ const EXEC_ICONS: { key: keyof Dictionary['exec']['items']; color: string; Icon:
 const BG_DARK = '#070712';
 const sectionPad = '5.5rem 1.25rem';
 
-export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
+export default function LandingPage({ onEnterApp }: Props) {
   const { lang, setLang, t } = useT();
   const [pendingRef, setPendingRef] = useState<string | null>(null);
   const [pendingInviter, setPendingInviter] = useState<string>('');
@@ -699,4 +699,3 @@ const ctaBtnHero: React.CSSProperties = { background: 'linear-gradient(135deg, #
 const ctaBtnGhost: React.CSSProperties = { background: 'rgba(255,255,255,0.05)', color: '#fff', padding: '1.05rem 2rem', borderRadius: 14, fontSize: '1rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.15)', textDecoration: 'none', display: 'inline-block' };
 const footHead: React.CSSProperties = { fontSize: '0.7rem', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.45)', marginBottom: '0.75rem', fontWeight: 700 };
 const footLink: React.CSSProperties = { display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '0.5rem' };
-const footLinkBtn: React.CSSProperties = { display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', background: 'transparent', border: 'none', padding: 0, marginBottom: '0.5rem', cursor: 'pointer', textAlign: 'left' };
