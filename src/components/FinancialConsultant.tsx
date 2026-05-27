@@ -11,16 +11,15 @@
 //   2. アプリに記録した売上 … 売上台帳 + 経費 (人格ごと, 直近24ヶ月)
 //   3. 手入力した収支 … persona.cashflow (1点のみ。月別分析は不可)
 // ============================================================
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Persona, AppSettings } from '../types/identity';
 import { useInvoices } from '../hooks/useInvoices';
 import { useSalesLedger } from '../hooks/useSalesLedger';
 import { useExpenses } from '../hooks/useExpenses';
+import { useStripeRevenue } from '../hooks/useStripeRevenue';
 import { fmtJpy } from '../lib/invoiceCalc';
 import ApiErrorCard from './ApiErrorCard';
-
-const STRIPE_KEY_LS = 'core_integration_stripe';
 
 interface Props {
   persona: Persona;
@@ -49,13 +48,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const monthLabel = (ym: string) => `${Number(ym.slice(5, 7))}月`;
 const yearOf = (ym: string) => ym.slice(0, 4);
 
-function readStripeKey(): string {
-  try {
-    const v = localStorage.getItem(STRIPE_KEY_LS) || '';
-    return /^(rk|sk)_(live|test)_/.test(v) ? v : '';
-  } catch { return ''; }
-}
-
 const SYS = `あなたは中小企業の社長によりそう、やさしい財務コンサルタントです。
 むずかしい専門用語は使わず、横文字には必ず日本語の言いかえを ( ) で添えます。
 （例: キャッシュフロー→お金の流れ、マージン→利益のうわまえ）
@@ -76,33 +68,20 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
   const ledger = useSalesLedger(inv.invoices);
   const exp = useExpenses();
 
-  const [stripeMonthly, setStripeMonthly] = useState<MPoint[] | null>(null);
-  const [stripeLoading, setStripeLoading] = useState(false);
-
-  // ─── Stripe 連携データ ───
-  useEffect(() => {
-    const key = readStripeKey();
-    if (!key) return;
-    setStripeLoading(true);
-    fetch('/api/revenue/snapshot', { headers: { 'x-stripe-key': key } })
-      .then(async r => {
-        const ct = r.headers.get('content-type') || '';
-        if (!ct.includes('application/json')) throw new Error('dev');
-        return r.json();
-      })
-      .then(d => {
-        if (d?.error || !Array.isArray(d?.monthly)) return;
-        setStripeMonthly(d.monthly.map((m: any) => ({
-          month: m.month,
-          revenue: Math.round(m.revenueJpy || 0),
-          expense: Math.round(m.expenseJpy || 0),
-          profit: Math.round(m.profitJpy || 0),
-          txnCount: m.txnCount || 0,
-        })));
-      })
-      .catch(() => { /* 取得できなければローカルデータにフォールバック */ })
-      .finally(() => setStripeLoading(false));
-  }, []);
+  // ─── Stripe 連携データ (useStripeRevenue 経由で右パネルと完全一致させる) ───
+  // オーナー指示 2026-05-27: 「右の Stripe 連携中 ¥255,000 と数字が一致しない」修正
+  const stripe = useStripeRevenue();
+  const stripeMonthly: MPoint[] | null = useMemo(() => {
+    if (!stripe.connected || !stripe.monthly || stripe.monthly.length === 0) return null;
+    return stripe.monthly.map(m => ({
+      month: m.month,
+      revenue: Math.round(m.revenueJpy || 0),
+      expense: Math.round(m.expenseJpy || 0),
+      profit: Math.round(m.profitJpy || 0),
+      txnCount: m.txnCount || 0,
+    }));
+  }, [stripe.connected, stripe.monthly]);
+  const stripeLoading = stripe.loading;
 
   // ─── アプリ記録データ (直近24ヶ月) ───
   const localTrend = useMemo<MPoint[]>(() => {
@@ -188,6 +167,9 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
   const [consult, setConsult] = useState<Consult | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  // モーダル開いて Stripe 実データが入った瞬間に AI 助言を自動発火 (1 回だけ)
+  // オーナー指示 2026-05-27: 「数字を反映するだけじゃなくて、傾向やパターンを掴んでほしい」
+  const autoConsultedRef = useRef(false);
 
   // 経費をカテゴリ別に集計 (直近 6 ヶ月の合計) — AIが「広告費が高い」のような具体的な助言を出せるよう内訳を渡す
   const expenseBreakdown = useMemo(() => {
@@ -276,6 +258,17 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
       setAiLoading(false);
     }
   };
+
+  // モーダル開いた時、Stripe データが揃ったら自動で AI 助言を 1 回発火
+  // (オーナー指示 2026-05-27: ボタン待たずに開いた瞬間から分析が始まる)
+  useEffect(() => {
+    if (autoConsultedRef.current) return;
+    if (source !== 'stripe' || !analysis) return;
+    if (aiLoading || consult) return;
+    autoConsultedRef.current = true;
+    runConsult();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source, analysis]);
 
   const accent = persona.accentColor;
 
