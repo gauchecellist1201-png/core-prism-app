@@ -162,7 +162,11 @@ html, body {
   -webkit-text-size-adjust: 100%;  /* 横向き時の自動拡大防止 */
   text-size-adjust: 100%;
   overscroll-behavior-y: none;     /* バウンス防止 */
-  overflow-x: hidden;              /* 横スクロール暴発を全画面で抑止 */
+  /* `overflow-x: hidden` は反対軸を auto 扱いにして iOS Safari でルートが
+     スクロール容器化しフッターまで届かない不具合を起こすので `clip` を使う。
+     clip は反対軸を触らないので body の通常スクロールが完全に動く。
+     (オーナー報告 2026-05-27/28 /corp 下までスクロールできない問題の修正) */
+  overflow-x: clip;
   max-width: 100vw;
 }
 

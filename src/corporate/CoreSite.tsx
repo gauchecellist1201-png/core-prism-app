@@ -89,14 +89,16 @@ export default function CoreSite() {
         color: '#fff',
         minHeight: '100dvh',
         fontFamily: FONT_SANS,
-        overflowX: 'hidden',
-        // 明示的に縦スクロール許可 + iOS Safari 慣性スクロール (オーナー報告 2026-05-27:
-        // /corp が下までスクロールできない問題の防御)
+        // 修正 (オーナー報告 2026-05-27 / 28):
+        // overflowX: 'hidden' + overflowY: 'visible' は CSS 仕様で「両方 auto」に
+        // 解釈され、iOS Safari でルート要素がスクロール容器化してフッターまで
+        // たどり着けない不具合を引き起こす。
+        // 解決: overflowX を 'clip' (modern alternative) に変更。clip は反対軸を
+        // 触らないので、body 側の通常スクロールが完全に効く。
+        overflowX: 'clip',
         overflowY: 'visible',
+        // iOS Safari 慣性スクロール
         WebkitOverflowScrolling: 'touch',
-        // body の safe-area padding と CoreSite の 100dvh が衝突して
-        // viewport をはみ出すのを防ぐ
-        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}

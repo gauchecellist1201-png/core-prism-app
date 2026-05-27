@@ -84,6 +84,21 @@ export const BUSINESS_PLAN_DOCS: BusinessPlanDoc[] = [
 
   const out = header + body + footer;
 
+  // 重要 (オーナー指示 2026-05-27):
+  // Vercel ビルド時は SRC_DIR が存在しないため docs=[] になる。
+  // その場合は既存ファイルを保持し、上書きしない (本番から計画書が消えるのを防ぐ)
+  if (docs.length === 0) {
+    try {
+      const existing = await fs.readFile(OUT_FILE, 'utf8');
+      // 既存ファイルに 1 件以上の slug があれば、そのまま温存
+      const hasContent = /slug:\s*"/.test(existing);
+      if (hasContent) {
+        console.log(`[syncBusinessPlan] SRC_DIR が空/不在のため、既存の ${OUT_FILE} を温存します`);
+        return;
+      }
+    } catch { /* 新規作成 OK */ }
+  }
+
   await fs.mkdir(path.dirname(OUT_FILE), { recursive: true });
   await fs.writeFile(OUT_FILE, out, 'utf8');
   console.log(`[syncBusinessPlan] ${docs.length} 件の計画書を ${path.relative(process.cwd(), OUT_FILE)} に embed`);
