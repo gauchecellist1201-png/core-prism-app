@@ -40,6 +40,7 @@ const PremiumHubModal = lazy(() => import('./PremiumHub'));
 const FinanceEditor = lazy(() => import('./FinanceEditor'));
 const AutoPostStudio = lazy(() => import('./AutoPostStudio'));
 const ContentEngineStudio = lazy(() => import('./ContentEngineStudio'));
+const CeoStudio = lazy(() => import('./CeoStudio'));
 const InvoiceStudio = lazy(() => import('./InvoiceStudio'));
 const ImageStudio = lazy(() => import('./ImageStudio'));
 const SalesLedger = lazy(() => import('./SalesLedger'));
@@ -195,6 +196,8 @@ export default function IdentityDashboard({
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [showMeeting, setShowMeeting] = useState(false);
   const [showHealth, setShowHealth] = useState(false);
+  // CeoStudio (経営アドバイザー) — 7 エージェントの最重要、現状分析 + 90 日方針 + 今週やること
+  const [showCeo, setShowCeo] = useState(false);
   const [activeTab, setActiveTab] = useState<'files' | 'tasks'>('files');
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showMobileAI, setShowMobileAI] = useState(false);
@@ -668,13 +671,9 @@ export default function IdentityDashboard({
                   {
                     key: 'ceo',
                     count: proactive.proposals.length,
-                    status: proactive.proposals.length
-                      ? `提案${proactive.proposals.length}件`
-                      : '一手を考案中',
-                    advice: proactive.proposals.length
-                      ? `この提案を選ぶと、あなたの 1 週間が動き始めます`
-                      : `今日の最初の一手を、あなたの資料を見ながら準備中です`,
-                    onClick: () => proactive.generate(settings.voiceEnabled !== false),
+                    status: '現状分析 + 90 日方針を出す',
+                    advice: `売上 / 案件 / 経費 / 資料 ${knowledgeForAgent.length} 件を全部読んで、いまの経営状態と 90 日の重点 + 今週やる 3 つを出します`,
+                    onClick: () => setShowCeo(true),
                   },
                   {
                     key: 'sales',
@@ -1312,6 +1311,15 @@ export default function IdentityDashboard({
             persona={persona}
             settings={settings}
             onClose={() => setShowHealth(false)}
+          />
+        )}
+        {showCeo && (
+          <CeoStudio
+            key="ceo"
+            persona={persona}
+            settings={settings}
+            knowledge={knowledgeForAgent}
+            onClose={() => setShowCeo(false)}
           />
         )}
         {showMinutes && (
