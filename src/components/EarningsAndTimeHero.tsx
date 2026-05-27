@@ -178,7 +178,7 @@ function MetricCard({ accent, label, value, valueFormatter, subtitle, footnote, 
             fontFamily: '"SF Mono", "JetBrains Mono", "Menlo", monospace',
             fontSize: 10.5,
             letterSpacing: '0.02em',
-            color: 'rgba(255,255,255,0.42)',
+            color: 'rgba(255,255,255,0.55)',
           }}
         >
           <span style={{ fontFamily: 'inherit', opacity: 0.7 }}>{footnote.label}</span>
@@ -565,7 +565,8 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
               fontSize: 10.5, fontWeight: 700, color: colors.fg,
               background: 'transparent',
               border: `1px solid ${colors.border}`,
-              borderRadius: 6, padding: '4px 8px', cursor: stripe.loading ? 'wait' : 'pointer',
+              borderRadius: 7, padding: '6px 11px', cursor: stripe.loading ? 'wait' : 'pointer',
+              minHeight: 30,
             }}
           >🔄 再取得</button>
         )}
@@ -576,7 +577,8 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
             fontSize: 10.5, fontWeight: 700, color: '#fff',
             background: 'rgba(255,255,255,0.10)',
             border: '1px solid rgba(255,255,255,0.18)',
-            borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+            borderRadius: 7, padding: '6px 11px', cursor: 'pointer',
+            minHeight: 30,
           }}
         >🔍 詳細</button>
         {onReconnect && (
@@ -587,7 +589,8 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
               fontSize: 10.5, fontWeight: 700, color: '#fff',
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+              borderRadius: 7, padding: '6px 11px', cursor: 'pointer',
+              minHeight: 30,
             }}
           >連携センター</button>
         )}

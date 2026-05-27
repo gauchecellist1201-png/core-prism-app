@@ -125,14 +125,14 @@ export default function EasyImportPanel({ accent }: { accent: string }) {
             {c.badge && (
               <span style={{
                 position: 'absolute', top: 4, right: 4,
-                fontSize: 8.5, fontWeight: 800, letterSpacing: '0.04em',
-                padding: '1px 5px', borderRadius: 4,
+                fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
+                padding: '2px 6px', borderRadius: 4,
                 background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)',
               }}>{c.badge}</span>
             )}
             <c.icon size={20} strokeWidth={2} />
-            <div style={{ fontSize: 11.5, fontWeight: 800, lineHeight: 1.3 }}>{c.title}</div>
-            <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.3 }}>{c.sub}</div>
+            <div style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.3 }}>{c.title}</div>
+            <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.3 }}>{c.sub}</div>
           </button>
         ))}
       </div>
