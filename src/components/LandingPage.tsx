@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { REFERRAL_BONUS_DAYS, getPendingReferralInviter } from '../lib/referral';
 import LiveAgentMock from './LiveAgentMock';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
+import LaunchCountdownBanner from './LaunchCountdownBanner';
 
 interface Props {
   onEnterApp: () => void;
@@ -68,6 +69,8 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
 
   return (
     <div style={{ background: BG_DARK, color: '#fff', minHeight: '100dvh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
+      {/* ── 6/1 一般公開カウントダウン ───────────── */}
+      <LaunchCountdownBanner kind="prism" />
       {/* ── 紹介リンク経由バナー (?ref=XXX 検出時のみ表示) ───────────── */}
       {pendingRef && (
         <motion.div
@@ -405,9 +408,10 @@ export default function LandingPage({ onEnterApp, onOpenLegal }: Props) {
           </div>
           <div>
             <p style={footHead}>{t.footer.company}</p>
+            <a href="/faq" style={footLink}>よくある質問</a>
             <a href="/terms" style={footLink}>{t.footer.terms}</a>
             <a href="/privacy" style={footLink}>{t.footer.privacy}</a>
-            <button onClick={() => onOpenLegal('tokushou')} style={footLinkBtn}>{t.footer.tokushou}</button>
+            <a href="/tokushoho" style={footLink}>{t.footer.tokushou}</a>
           </div>
           <div>
             <p style={footHead}>{t.footer.contact}</p>

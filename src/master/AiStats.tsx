@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { isMasterAuth } from '../lib/billing';
 import { LoaderBlock } from '../components/MicroLoader';
+import FinancialKpiCards from './FinancialKpiCards';
 
 type RouteStats = {
   calls: number;
@@ -180,6 +181,10 @@ export default function AiStats() {
             </button>
           </div>
         </header>
+
+        {/* 経営 3 指標 (上部固定): 粗利率 / 来月予測赤字 / 残ランウェイ
+            ── 実データのみ、無ければ「未設定」 (嘘禁止ルール) ── */}
+        <FinancialKpiCards />
 
         {loading && (
           <div style={cardStyle}>

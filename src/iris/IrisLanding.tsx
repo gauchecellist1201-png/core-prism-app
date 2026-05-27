@@ -13,6 +13,7 @@ import { useLocale } from '../hooks/useLocale';
 import type { Locale } from '../lib/i18n';
 import LiveAgentMock from '../components/LiveAgentMock';
 import { seedDemoData, setDemoActive, clearDemoData } from '../lib/onboarding';
+import LaunchCountdownBanner from '../components/LaunchCountdownBanner';
 
 interface Props {
   onEnter: () => void;
@@ -64,6 +65,8 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       minHeight: '100dvh',
       overflowX: 'hidden',
     }}>
+      {/* ── 6/1 一般公開カウントダウン ────────────────────────────── */}
+      <LaunchCountdownBanner kind="iris" />
       {/* ── ベータ公開告知バー ────────────────────────────── */}
       <div className="iris-beta-bar" style={{
         background: `linear-gradient(90deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purpleLt})`,
@@ -503,8 +506,10 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           <div>
             <p style={footHead}>COMPANY</p>
             <a href="mailto:hello@coreprism.app" style={footLink} className="lp-tap-link">お問い合わせ</a>
+            <a href="/faq" style={footLink} className="lp-tap-link">よくある質問</a>
             <a href="/iris/terms" style={footLink} className="lp-tap-link">利用規約</a>
             <a href="/iris/privacy" style={footLink} className="lp-tap-link">プライバシー</a>
+            <a href="/tokushoho" style={footLink} className="lp-tap-link">特商法表記</a>
           </div>
           <div>
             <p style={footHead}>CONNECT</p>

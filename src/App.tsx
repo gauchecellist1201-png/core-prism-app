@@ -33,6 +33,8 @@ const BillingSuccess = lazy(() => import('./components/BillingSuccess'));
 const KeynoteLanding = lazy(() => import('./keynote/KeynoteLanding'));
 const SharedArtifactView = lazy(() => import('./components/SharedArtifactView'));
 const ErrorLogViewer = lazy(() => import('./components/ErrorLogViewer'));
+const FAQPage = lazy(() => import('./pages/FAQPage'));
+const TokushohoPage = lazy(() => import('./pages/TokushohoPage'));
 import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, syncSubscriptionState, type Plan } from './lib/billing';
 import { PrismBackground } from './components/PrismBackground';
 import GlobalVoiceInput from './components/GlobalVoiceInput';
@@ -152,6 +154,18 @@ function isPrivacyPath(): boolean {
   return p === '/privacy' || p === '/privacy/' || p === '/iris/privacy' || p === '/iris/privacy/';
 }
 
+function isFaqPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/faq' || p === '/faq/' || p === '/iris/faq' || p === '/iris/faq/';
+}
+
+function isTokushohoPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/tokushoho' || p === '/tokushoho/' || p === '/iris/tokushoho' || p === '/iris/tokushoho/';
+}
+
 function isTermsPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
@@ -185,6 +199,16 @@ export default function App() {
   // /terms, /iris/terms — 利用規約 フルページ
   if (isTermsPath()) {
     return <Suspense fallback={<RouteFallback />}><TermsOfService /></Suspense>;
+  }
+
+  // /faq, /iris/faq — よくある質問 (15 問)
+  if (isFaqPath()) {
+    return <Suspense fallback={<RouteFallback />}><FAQPage /></Suspense>;
+  }
+
+  // /tokushoho, /iris/tokushoho — 特定商取引法に基づく表記
+  if (isTokushohoPath()) {
+    return <Suspense fallback={<RouteFallback />}><TokushohoPage /></Suspense>;
   }
 
   // /strategy — オーナー専用 戦略ダッシュボード
