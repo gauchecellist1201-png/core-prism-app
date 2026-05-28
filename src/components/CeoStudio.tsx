@@ -413,7 +413,7 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
       borderRadius: 10,
     }}>
       <div className="cp-tiny" style={{ color, fontWeight: 700, marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: '1.15rem', fontWeight: 700, fontFamily: '"SF Mono", monospace', color: '#fff' }}>{value}</div>
+      <div style={{ fontSize: '1.15rem', fontWeight: 700, fontFamily: '"SF Mono", monospace', color: 'var(--fg-strong)' }}>{value}</div>
     </div>
   );
 }

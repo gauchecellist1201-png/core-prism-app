@@ -117,7 +117,7 @@ export default function FocusHero({
           <>
             <h2 style={{
               margin: 0, fontSize: 'clamp(1.25rem, 4vw, 1.7rem)', fontWeight: 800,
-              lineHeight: 1.3, color: '#fff', letterSpacing: '-0.01em',
+              lineHeight: 1.3, color: 'var(--fg-strong)', letterSpacing: '-0.01em',
             }}>
               {proposal.title}
             </h2>
@@ -126,7 +126,7 @@ export default function FocusHero({
             {proposal.message && (
               <p style={{
                 margin: '6px 0 0', fontSize: 13.5, lineHeight: 1.6,
-                color: 'rgba(255,255,255,0.72)',
+                color: 'var(--fg-muted)',
                 display: '-webkit-box',
                 WebkitLineClamp: showDetail ? 99 : 2,
                 WebkitBoxOrient: 'vertical',
@@ -159,8 +159,8 @@ export default function FocusHero({
                   onClick={() => setShowDetail(v => !v)}
                   style={{
                     padding: '10px 14px', borderRadius: 10,
-                    background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.75)',
-                    border: '1px solid rgba(255,255,255,0.12)', fontSize: 12.5, fontWeight: 700,
+                    background: 'var(--surface-3)', color: 'var(--fg-muted)',
+                    border: '1px solid var(--border)', fontSize: 12.5, fontWeight: 700,
                     cursor: 'pointer',
                   }}
                 >
@@ -184,8 +184,8 @@ export default function FocusHero({
                         onClick={() => onPrimaryAction?.(a)}
                         style={{
                           textAlign: 'left', padding: '8px 12px', borderRadius: 8,
-                          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                          color: 'rgba(255,255,255,0.85)', fontSize: 12.5, cursor: 'pointer',
+                          background: 'var(--surface-3)', border: '1px solid var(--border-2)',
+                          color: 'var(--fg)', fontSize: 12.5, cursor: 'pointer',
                           display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
                         }}
                       >
@@ -196,7 +196,7 @@ export default function FocusHero({
                   </div>
                 )}
                 {(proposal as { context?: string }).context && (
-                  <p style={{ margin: '10px 0 0', fontSize: 11.5, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
+                  <p style={{ margin: '10px 0 0', fontSize: 11.5, color: 'var(--fg-subtle)', lineHeight: 1.6 }}>
                     なぜ: {(proposal as { context?: string }).context}
                   </p>
                 )}
@@ -205,10 +205,10 @@ export default function FocusHero({
           </>
         ) : (
           <>
-            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>
+            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'var(--fg-strong)', lineHeight: 1.3 }}>
               今日、何からはじめる?
             </h2>
-            <p style={{ margin: '6px 0 0', fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
+            <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--fg-muted)', lineHeight: 1.6 }}>
               ボタンを押すと、いまのあなたを見て AI が一番効く一手を 1 つ出します。
             </p>
             {onGenerate && (
@@ -234,7 +234,7 @@ export default function FocusHero({
       <div style={{
         display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
         padding: '10px 14px', borderRadius: 12,
-        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+        background: 'var(--surface-3)', border: '1px solid var(--border-2)',
         fontFamily: '"SF Mono", "JetBrains Mono", Menlo, monospace',
       }}>
         <NumChip label="今月" value={fmtJpy(thisRev)} color="#34D399" />
@@ -255,8 +255,8 @@ export default function FocusHero({
         style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
           padding: '9px 14px', borderRadius: 10,
-          background: expanded ? 'rgba(255,255,255,0.03)' : `${accent}12`,
-          border: `1px solid ${expanded ? 'rgba(255,255,255,0.08)' : accent + '33'}`,
+          background: expanded ? 'var(--surface-3)' : `${accent}12`,
+          border: `1px solid ${expanded ? 'var(--border-2)' : accent + '33'}`,
           color: expanded ? 'var(--fg-muted)' : accent,
           fontSize: 12.5, fontWeight: 700, cursor: 'pointer', width: '100%',
         }}
