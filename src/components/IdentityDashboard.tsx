@@ -86,6 +86,7 @@ import WellnessTracker from './WellnessTracker';
 import IntegrationCenter from './IntegrationCenter';
 import StripeConnectHero from './StripeConnectHero';
 import EarningsAndTimeHero from './EarningsAndTimeHero';
+import FocusHero from './FocusHero';
 
 interface Props {
   persona: Persona;
@@ -198,6 +199,18 @@ export default function IdentityDashboard({
   const [showHealth, setShowHealth] = useState(false);
   // CeoStudio (経営アドバイザー) — 7 エージェントの最重要、現状分析 + 90 日方針 + 今週やること
   const [showCeo, setShowCeo] = useState(false);
+  // 焦点モード (オーナー指示 2026-05-28): 開いた瞬間は「今日の最優先 1 つ + 数字」だけ。
+  // 残りは「すべての機能を見る」で展開。設定は localStorage に保存。
+  const [dashboardExpanded, setDashboardExpanded] = useState<boolean>(() => {
+    try { return localStorage.getItem('core_dashboard_expanded_v1') === '1'; } catch { return false; }
+  });
+  const toggleDashboardExpanded = useCallback(() => {
+    setDashboardExpanded(prev => {
+      const next = !prev;
+      try { localStorage.setItem('core_dashboard_expanded_v1', next ? '1' : '0'); } catch { /* */ }
+      return next;
+    });
+  }, []);
   const [activeTab, setActiveTab] = useState<'files' | 'tasks'>('files');
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showMobileAI, setShowMobileAI] = useState(false);
@@ -660,6 +673,21 @@ export default function IdentityDashboard({
 
           <div className="flex-1 overflow-auto p-3 md:p-4 relative">
             <div className="max-w-5xl space-y-3">
+
+              {/* 焦点モード: 今日の最優先 1 つ + 数字 1 行 (オーナー指示 2026-05-28) */}
+              <FocusHero
+                persona={persona}
+                proposal={briefOverride ?? proactive.latestProposal ?? (coach.brief ? coachBriefToProposal(coach.brief) : null)}
+                isGenerating={proactive.isGenerating || coach.isGenerating}
+                onPrimaryAction={onAcceptProactiveAction}
+                onGenerate={() => proactive.generate(settings.voiceEnabled !== false)}
+                expanded={dashboardExpanded}
+                onToggleExpanded={toggleDashboardExpanded}
+                hiddenCount={30}
+              />
+
+              {/* ↓ 「すべての機能を見る」で展開する全コンテンツ */}
+              {dashboardExpanded && (<>
 
               {/* 7 つのエージェントが、それぞれ動いている可視化 (LP の 7 本柱と対応) */}
               <AgentsOrbit
@@ -1175,6 +1203,9 @@ export default function IdentityDashboard({
                 knowledge={personaKnowledge}
                 proposals={proactive.proposals}
               />
+
+              </>)}
+              {/* ↑ 焦点モード展開ここまで */}
             </div>
           </div>
         </motion.div>
