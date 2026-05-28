@@ -20,6 +20,7 @@ import { useExpenses } from '../hooks/useExpenses';
 import { useStripeRevenue } from '../hooks/useStripeRevenue';
 import { fmtJpy } from '../lib/invoiceCalc';
 import ApiErrorCard from './ApiErrorCard';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -293,6 +294,23 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
         </div>
 
         <div className="cp-modal-body cp-stack">
+
+          <StudioIntro
+            id="fin-consult"
+            accent={accent}
+            emoji="🧮"
+            what="毎月の売上・経費・利益を並べて、『どの月が強い / 弱い』を AI が読み解く場所です。"
+            tryThis="開くと自動で集計します。下の「助言をもらう」で、数字をもとにした改善案が出ます。"
+            example="「3 月は経費が突出 → 外注費が原因。固定契約に切り替えると月 8 万円減らせます」のように。"
+            sampleLabel="出てくる助言"
+            samplePreview={
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.66rem', lineHeight: 1.35 }}>
+                <span style={{ fontWeight: 700 }}>改善案</span>
+                <span>3 月: 外注費が突出</span>
+                <span>→ 固定契約で月 −8 万円</span>
+              </div>
+            }
+          />
 
           {/* データ源 */}
           <div className="cp-row" style={{ gap: 8, flexWrap: 'wrap' }}>

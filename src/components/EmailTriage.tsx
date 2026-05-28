@@ -7,6 +7,7 @@ import { triageEmails, regenerateDraft } from '../lib/emailTriage';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
+import { StudioIntro } from './StudioIntro';
 import {
   isGmailConfigured,
   isGmailConnected,
@@ -339,6 +340,22 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
         {!batch ? (
           /* 入力フェーズ */
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            <StudioIntro
+              id="email"
+              accent={persona.accentColor}
+              emoji="📬"
+              what="受信トレイのメールを AI が『要返信 / 通常 / 後回し』に仕分けして、返信文の下書きまで作る場所です。"
+              tryThis="Gmail をつなぐか、メール本文を貼り付けて「仕分ける」を押すだけ。"
+              example="「請求書の件 → 要返信」「メルマガ → 後回し」に色分けされ、要返信には返信案が 3 通り付きます。"
+              sampleLabel="仕分け結果"
+              samplePreview={
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.66rem', lineHeight: 1.35 }}>
+                  <span style={{ color: '#f87171', fontWeight: 700 }}>● 要返信 — 請求書の件</span>
+                  <span style={{ color: '#fbbf24' }}>● 通常 — 打合せ日程</span>
+                  <span style={{ opacity: 0.7 }}>● 後回し — メルマガ</span>
+                </div>
+              }
+            />
             {/* LINE 連携 (将来対応) */}
             <div className="rounded-xl p-3 opacity-60" style={{ background: 'var(--surface-3)', border: '1px dashed var(--border)' }}>
               <div className="flex items-center justify-between gap-3">

@@ -20,6 +20,7 @@ import { useExpenses } from '../hooks/useExpenses';
 import { fmtJpy } from '../lib/invoiceCalc';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -244,6 +245,24 @@ ${kbBlock}`;
         </div>
 
         <div className="cp-modal-body cp-stack">
+
+          <StudioIntro
+            id="ceo"
+            accent={accent}
+            emoji="🧭"
+            what="あなたの会社の『今の状態』を AI が読み解いて、90 日の方針と『今週やる 3 つ』まで出す場所です。"
+            tryThis="開いた瞬間に AI が自動で分析を始めます。売上・案件・経費・資料を全部読んで、たたき台ができます。"
+            example="「粗利が落ち気味 → 高単価の案件 A に集中、B は値上げ交渉、C は来月へ」のように具体策が並びます。"
+            sampleLabel="出てくる方針"
+            samplePreview={
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.66rem', lineHeight: 1.35 }}>
+                <span style={{ fontWeight: 700 }}>今週やる 3 つ</span>
+                <span>① 案件 A に集中する</span>
+                <span>② B は値上げを交渉</span>
+                <span>③ C は来月にまわす</span>
+              </div>
+            }
+          />
 
           {/* ひと目サマリ */}
           <div className="cp-row" style={{ gap: 12, flexWrap: 'wrap' }}>
