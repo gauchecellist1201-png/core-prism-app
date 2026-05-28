@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import type { Persona, AppSettings } from '../types/identity';
@@ -63,6 +63,9 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
   // AI アシスト
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiBusy, setAiBusy] = useState(false);
+  // 構成成功フィードバック (オーナー報告 2026-05-28: 構成しても結果が見えず作れない)
+  const [aiSuccess, setAiSuccess] = useState<string | null>(null);
+  const linesRef = useRef<HTMLDivElement | null>(null);
 
   // 発行済プレビュー (印刷用)
   const [issued, setIssued] = useState<Invoice | null>(null);
@@ -105,8 +108,19 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
           setNewClient(prev => ({ ...prev, name: result.clientName as string }));
         }
       }
-      // 明細が 1 行でも入ったらエラーを消す
-      if (result.lines.length > 0) setError(null);
+      // 明細が 1 行でも入ったらエラーを消す + 成功フィードバック + 明細へスクロール
+      if (result.lines.length > 0) {
+        setError(null);
+        const total = result.lines.reduce((s, l) => s + Math.round(l.unitPrice * l.quantity * (1 + (l.taxRate || 0) / 100)), 0);
+        const who = result.clientName || selectedClient?.name || newClient.name || 'お客様';
+        setAiSuccess(`✓ ${who} 宛 / 合計 ¥${total.toLocaleString('ja-JP')} の明細ができました。下の「請求書を発行」で完成します。`);
+        // 明細が見えるようスクロール
+        setTimeout(() => {
+          linesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 150);
+      } else {
+        setError('金額を読み取れませんでした。「森川に 100 万円」のように金額を入れてください。');
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -332,6 +346,19 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
                     style={{ background: persona.accentColor, color: '#0a0a0f' }}
                   >{aiBusy ? '生成中…' : '✨ 構成'}</button>
                 </div>
+                {/* 構成成功フィードバック */}
+                {aiSuccess && (
+                  <div className="mt-2 text-xs font-semibold px-3 py-2 rounded"
+                    style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.4)', color: '#34D399' }}>
+                    {aiSuccess}
+                  </div>
+                )}
+                {error && tab === 'compose' && (
+                  <div className="mt-2 text-xs px-3 py-2 rounded"
+                    style={{ background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.35)', color: '#FCA5A5' }}>
+                    ⚠ {error}
+                  </div>
+                )}
               </div>
 
               {/* 顧客 */}
@@ -450,7 +477,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
               </div>
 
               {/* 明細 */}
-              <div className="rounded-xl p-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+              <div ref={linesRef} className="rounded-xl p-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-fg-muted text-xs tracking-wider uppercase">明細</p>
                   <button onClick={addLine} className="text-xs px-2 py-1 rounded bg-surface-3 border-edge border text-fg-muted hover:text-fg">+ 行を追加</button>
@@ -549,13 +576,29 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
                 </Field>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button onClick={onClose} className="text-xs px-4 py-2 rounded text-fg-muted hover:text-fg">キャンセル</button>
-                <button
-                  onClick={handleIssue}
-                  className="text-sm px-5 py-2 rounded-lg font-semibold"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}
-                >🧾 請求書を発行 (連番採番)</button>
+              {/* 発行フッター — 常に見える位置に固定 (オーナー報告 2026-05-28:
+                  構成しても発行ボタンが下すぎて作れない) */}
+              <div
+                className="flex items-center justify-between gap-2"
+                style={{
+                  position: 'sticky', bottom: 0, zIndex: 5,
+                  marginLeft: -16, marginRight: -16, marginBottom: -4,
+                  padding: '12px 16px',
+                  background: 'linear-gradient(180deg, transparent, var(--bg, #15151c) 30%)',
+                  backdropFilter: 'blur(6px)',
+                }}
+              >
+                <div className="text-xs text-fg-muted">
+                  合計 <span className="text-fg font-bold" style={{ fontSize: 15 }}>¥{totals.total.toLocaleString('ja-JP')}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={onClose} className="text-xs px-4 py-2.5 rounded text-fg-muted hover:text-fg">キャンセル</button>
+                  <button
+                    onClick={handleIssue}
+                    className="text-sm px-5 py-2.5 rounded-lg font-bold"
+                    style={{ background: persona.accentColor, color: '#0a0a0f', boxShadow: `0 6px 18px ${persona.accentColor}55` }}
+                  >🧾 請求書を発行</button>
+                </div>
               </div>
             </>
           )}
