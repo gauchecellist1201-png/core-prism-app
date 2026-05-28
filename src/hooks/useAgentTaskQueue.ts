@@ -30,6 +30,8 @@ export interface AgentStep {
   startedAt?: string;
   finishedAt?: string;
   output?: string;
+  /** failed 時の理由 (やさしい日本語で UI に出す) */
+  error?: string;
 }
 
 export type TaskStatus = 'proposed' | 'awaiting' | 'running' | 'done' | 'rejected' | 'failed';
@@ -144,11 +146,28 @@ export function useAgentTaskQueue() {
     }));
   }, []);
 
-  /** タスク実行ループ — 各 CXO が実 AI 呼出しで動作 (失敗時はテンプレで継続) */
-  const runTask = useCallback((id: string) => {
+  /** ステップを失敗させる (内部) — 黙らず task ごと failed にして停止 */
+  const markStepFailed = useCallback((taskId: string, stepIdx: number, reason: string) => {
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+      const steps = [...t.steps];
+      if (steps[stepIdx]) {
+        steps[stepIdx] = { ...steps[stepIdx], status: 'failed', finishedAt: new Date().toISOString(), error: reason };
+      }
+      return { ...t, steps, status: 'failed' as const };
+    }));
+  }, []);
+
+  /**
+   * タスク実行ループ — 各 CXO が実 AI 呼出しで動作。
+   * fromIdx から再開可 (retry 用)。
+   * 一時的な不調は自動で 2 回リトライ。それでもダメなら黙らず failed で停止し、
+   * UI の「やり直す」で復帰できる (沈黙する失敗ゼロ)。
+   */
+  const runTask = useCallback((id: string, fromIdx = 0) => {
     const current = loadQueue().find(t => t.id === id);
     if (!current) return;
-    let stepIdx = 0;
+    let stepIdx = fromIdx;
     const fallbacks: Record<CxoRole, string> = {
       CEO: '優先順を整理', CTO: 'コードを実装', CPO: '仕様を確定',
       CDO: '見た目を磨き', CMO: '文章を生成', CSO: 'リードを探索',
@@ -166,33 +185,61 @@ export function useAgentTaskQueue() {
 返答は「実行結果」を 1 文 (40 字以内) で簡潔に。例: "保存率上位 3 投稿を抽出: チェックリスト型が +24% 強い"`;
       const userPrompt = `# タスク\n${latest.title}\n\n# 概要\n${latest.summary}\n\n# あなたの担当ステップ\n${step.label}\n\n上記を実行し、結果を 1 文で報告してください。`;
 
-      let output = fallbacks[step.cxo] || '完了';
-      try {
-        const r = await fetch('/api/ai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-haiku-4-5',
-            max_tokens: 200,
-            system: sys,
-            messages: [{ role: 'user', content: userPrompt }],
-          }),
-        });
-        if (r.ok) {
+      // AI 呼び出し — 一時的なネット不調は最大 2 回まで自動リトライ
+      let output: string | null = null;
+      let lastErr = '';
+      for (let attempt = 0; attempt < 2 && output === null; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 450));
+        try {
+          const r = await fetch('/api/ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5',
+              max_tokens: 200,
+              system: sys,
+              messages: [{ role: 'user', content: userPrompt }],
+            }),
+          });
+          if (!r.ok) { lastErr = `AI が応答エラーを返しました (${r.status})`; continue; }
           const data = await r.json() as any;
           const text = data.content?.[0]?.text || '';
-          if (text.trim()) output = text.trim().slice(0, 80);
+          // 接続成功・本文が空なら担当領域のテンプレで継続 (これは失敗ではない)
+          output = text.trim() ? text.trim().slice(0, 80) : (fallbacks[step.cxo] || '完了');
+        } catch {
+          lastErr = 'AI への接続に失敗しました';
         }
-      } catch { /* fallback で継続 */ }
+      }
 
-      // 体感のため最低 1.5 秒表示
-      await new Promise(r => setTimeout(r, 1500));
+      // 2 回試してもダメ → 黙って「完了」にせず failed で停止 (やり直すで復帰)
+      if (output === null) {
+        markStepFailed(id, stepIdx, lastErr || 'AI 実行に失敗しました');
+        return;
+      }
+
+      // 体感のため最低 1.2 秒表示
+      await new Promise(r => setTimeout(r, 1200));
       advanceStep(id, stepIdx, output);
       stepIdx++;
       advance();
     };
     advance();
-  }, [advanceStep]);
+  }, [advanceStep, markStepFailed]);
+
+  /** 失敗したタスクを、失敗したステップから再実行 (救済導線) */
+  const retry = useCallback((id: string) => {
+    let resumeIdx = 0;
+    setTasks(prev => prev.map(t => {
+      if (t.id !== id) return t;
+      const idx = t.steps.findIndex(s => s.status === 'failed');
+      resumeIdx = idx >= 0 ? idx : 0;
+      const steps = t.steps.map((s, i) => i === resumeIdx
+        ? { ...s, status: 'working' as const, startedAt: new Date().toISOString(), finishedAt: undefined, error: undefined }
+        : s);
+      return { ...t, status: 'running' as const, steps };
+    }));
+    runTask(id, resumeIdx);
+  }, [runTask]);
 
   /** 履歴を消去 */
   const clear = useCallback(() => setTasks([]), []);
@@ -210,10 +257,12 @@ export function useAgentTaskQueue() {
     propose,
     approve,
     reject,
+    retry,
     clear,
     activeTask: tasks.find(t => t.status === 'running') || null,
     proposedTasks: tasks.filter(t => t.status === 'proposed'),
     recentDone: tasks.filter(t => t.status === 'done').slice(0, 5),
+    failedTasks: tasks.filter(t => t.status === 'failed'),
   };
 }
 

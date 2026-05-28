@@ -11,7 +11,7 @@
 // ============================================================
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronUp, ChevronDown, Check, Loader2, Sparkles, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, Check, Loader2, Sparkles, X, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useAgentTaskQueue, CXO_META, type CxoRole, type AgentTask } from '../hooks/useAgentTaskQueue';
 import { useCelebrate } from '../hooks/useCelebrate';
 
@@ -25,7 +25,8 @@ interface Props {
 const WATCH_ROTATE_MS = 4500;
 
 export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false }: Props) {
-  const { activeTask, recentDone, counts, propose, approve } = useAgentTaskQueue();
+  const { activeTask, recentDone, counts, propose, approve, retry, reject, failedTasks } = useAgentTaskQueue();
+  const failedTask = failedTasks[0] || null;
   const { celebrate, CelebratePortal } = useCelebrate();
   // ユーザーが明示的に閉じた状態は localStorage に保存し、active task が来ても
   // 勝手に開かないようにする (2026-05-26: オーナー報告でリール画面で widget が
@@ -90,7 +91,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
 
   const accent = brand === 'iris' ? '#E1306C' : '#A78BFA';
   const workingCxo: CxoRole | null = activeTask?.steps.find(s => s.status === 'working')?.cxo || null;
-  const hasActivity = !!activeTask || counts.proposed > 0 || counts.running > 0;
+  const hasActivity = !!activeTask || !!failedTask || counts.proposed > 0 || counts.running > 0;
 
   // 今日 / 今週の完了件数
   const stats = useMemo(() => {
@@ -175,10 +176,14 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
           <div style={{
             width: 32, height: 32, borderRadius: 10,
-            background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+            background: (failedTask && !activeTask)
+              ? 'linear-gradient(135deg, #F59E0B, #DC2626)'
+              : `linear-gradient(135deg, ${accent}, ${accent}cc)`,
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 16, color: '#fff',
-            boxShadow: hasActivity ? `0 0 16px ${accent}88` : 'none',
+            boxShadow: (failedTask && !activeTask)
+              ? '0 0 16px rgba(220,38,38,0.6)'
+              : hasActivity ? `0 0 16px ${accent}88` : 'none',
             flexShrink: 0,
           }}>
             {activeTask ? (
@@ -187,13 +192,19 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                 transition={{ duration: 2.8, repeat: Infinity, ease: 'linear' }}
                 style={{ display: 'inline-flex' }}
               ><Loader2 size={16} /></motion.span>
+            ) : failedTask ? (
+              <AlertTriangle size={16} />
             ) : watchInfo ? (
               <span style={{ fontSize: 14 }}>{watchInfo.meta.emoji}</span>
             ) : '🏛'}
           </div>
           <div style={{ minWidth: 0, textAlign: 'left', flex: 1 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.14em', color: accent }}>
+            <div style={{
+              fontSize: 11, fontWeight: 800, letterSpacing: '0.14em',
+              color: (failedTask && !activeTask) ? '#FBBF24' : accent,
+            }}>
               {activeTask ? 'IN PROGRESS'
+                : failedTask ? '要・やり直し'
                 : counts.proposed > 0 ? 'AWAITING APPROVAL'
                 : 'AI 会社 稼働中'}
             </div>
@@ -203,11 +214,13 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
             }}>
               {activeTask?.title
                 ? activeTask.title
-                : counts.proposed > 0
-                  ? `${counts.proposed} 件の提案待ち`
-                  : watchInfo
-                    ? <RotatingWatchPhrase phrase={`${watchInfo.meta.shortLabel} が ${watchInfo.phrase}`} tick={watchTick} />
-                    : '13 名 待機中'}
+                : failedTask
+                  ? failedTask.title
+                  : counts.proposed > 0
+                    ? `${counts.proposed} 件の提案待ち`
+                    : watchInfo
+                      ? <RotatingWatchPhrase phrase={`${watchInfo.meta.shortLabel} が ${watchInfo.phrase}`} tick={watchTick} />
+                      : '13 名 待機中'}
             </div>
           </div>
         </div>
@@ -486,8 +499,66 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
               </div>
             )}
 
+            {/* つまずいたタスク — 黙って消さず「やり直す」で救済 */}
+            {!activeTask && failedTask && (
+              <div style={{
+                padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.04)',
+                background: 'linear-gradient(180deg, rgba(220,38,38,0.10) 0%, transparent 100%)',
+              }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6,
+                  fontSize: 10.5, color: '#FCA5A5', letterSpacing: '0.06em', fontWeight: 700,
+                }}>
+                  <AlertTriangle size={12} /> つまずいたタスク
+                </div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
+                  {failedTask.title}
+                </div>
+                {(() => {
+                  const fs = failedTask.steps.find(s => s.status === 'failed');
+                  return fs?.error ? (
+                    <div style={{
+                      fontSize: 11.5, color: '#FCA5A5', lineHeight: 1.5, marginBottom: 8,
+                      padding: '5px 8px', borderRadius: 6,
+                      background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.25)',
+                    }}>
+                      {CXO_META[fs.cxo].shortLabel} のところで止まりました — {fs.error}
+                    </div>
+                  ) : null;
+                })()}
+                <TaskLogList task={failedTask} />
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => retry(failedTask.id)}
+                    style={{
+                      flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      padding: '9px 12px', borderRadius: 10, cursor: 'pointer',
+                      background: 'linear-gradient(135deg, #F59E0B, #DC2626)',
+                      border: 'none', color: '#fff', fontSize: 13, fontWeight: 800,
+                      boxShadow: '0 4px 14px rgba(220,38,38,0.35)',
+                    }}
+                  >
+                    <RotateCcw size={14} /> やり直す
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => reject(failedTask.id)}
+                    style={{
+                      padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600,
+                    }}
+                  >
+                    取り消す
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* 完了履歴 */}
-            {!activeTask && recentDone.length > 0 && (
+            {!activeTask && !failedTask && recentDone.length > 0 && (
               <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                 <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)', marginBottom: 6, letterSpacing: '0.06em' }}>
                   最近完了したタスク
@@ -511,7 +582,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
             )}
 
             {/* 待機中の補助 — 完了がまだ 0 件の人向け */}
-            {!activeTask && counts.proposed === 0 && recentDone.length === 0 && (
+            {!activeTask && !failedTask && counts.proposed === 0 && recentDone.length === 0 && (
               <div style={{
                 padding: '12px 14px', borderTop: '1px solid rgba(255,255,255,0.04)',
                 color: 'rgba(255,255,255,0.55)', fontSize: 11, lineHeight: 1.6,
@@ -623,6 +694,7 @@ function TaskLogList({ task }: { task: AgentTask }) {
         const meta = CXO_META[s.cxo];
         const isWorking = s.status === 'working';
         const isDone = s.status === 'done';
+        const isFailed = s.status === 'failed';
         const elapsed = formatElapsed(s.startedAt, s.finishedAt);
         return (
           <motion.div
@@ -637,25 +709,29 @@ function TaskLogList({ task }: { task: AgentTask }) {
                 ? `linear-gradient(90deg, ${meta.color}18, ${meta.color}05)`
                 : isDone
                   ? 'rgba(16,185,129,0.05)'
-                  : 'transparent',
+                  : isFailed
+                    ? 'rgba(220,38,38,0.08)'
+                    : 'transparent',
               border: isWorking
                 ? `1px solid ${meta.color}44`
                 : isDone
                   ? '1px solid rgba(16,185,129,0.15)'
-                  : '1px solid transparent',
+                  : isFailed
+                    ? '1px solid rgba(220,38,38,0.30)'
+                    : '1px solid transparent',
               fontSize: 12, lineHeight: 1.45,
             }}
           >
             <span style={{
               fontSize: 13, color: meta.color, fontWeight: 800,
               width: 24, textAlign: 'center',
-              filter: !isWorking && !isDone ? 'grayscale(0.7) opacity(0.5)' : 'none',
+              filter: !isWorking && !isDone && !isFailed ? 'grayscale(0.7) opacity(0.5)' : 'none',
             }}>
               {meta.emoji}
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                color: isDone ? 'rgba(255,255,255,0.7)' : isWorking ? '#fff' : 'rgba(255,255,255,0.45)',
+                color: isFailed ? '#FCA5A5' : isDone ? 'rgba(255,255,255,0.7)' : isWorking ? '#fff' : 'rgba(255,255,255,0.45)',
                 fontWeight: isWorking ? 700 : 500,
                 display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
               }}>
@@ -667,7 +743,9 @@ function TaskLogList({ task }: { task: AgentTask }) {
                   {meta.shortLabel}
                 </span>
                 <span>{s.label}</span>
-                {elapsed && (
+                {isFailed ? (
+                  <span style={{ fontSize: 10, color: '#FCA5A5', fontWeight: 700 }}>失敗</span>
+                ) : elapsed && (
                   <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
                     {isDone ? `✓ ${elapsed}` : `実行中 ${elapsed}`}
                   </span>
@@ -688,6 +766,20 @@ function TaskLogList({ task }: { task: AgentTask }) {
                   → {s.output}
                 </div>
               )}
+              {isFailed && s.error && (
+                <div style={{
+                  marginTop: 4,
+                  padding: '5px 8px',
+                  background: 'rgba(220,38,38,0.12)',
+                  borderLeft: '2px solid #DC2626',
+                  borderRadius: 4,
+                  fontSize: 11.5,
+                  color: '#FCA5A5',
+                  fontFamily: 'inherit',
+                }}>
+                  ⚠ {s.error}
+                </div>
+              )}
             </div>
             {isWorking && (
               <motion.span
@@ -697,6 +789,7 @@ function TaskLogList({ task }: { task: AgentTask }) {
               ><Loader2 size={13} color={meta.color} /></motion.span>
             )}
             {isDone && <Check size={13} color="#10B981" style={{ flexShrink: 0, marginTop: 2 }} />}
+            {isFailed && <AlertTriangle size={13} color="#DC2626" style={{ flexShrink: 0, marginTop: 2 }} />}
           </motion.div>
         );
       })}
