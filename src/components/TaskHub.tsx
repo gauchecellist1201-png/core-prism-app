@@ -638,18 +638,26 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
         onDone={() => setBurst(null)}
       />
 
-      {/* トースト */}
+      {/* トースト — .cp-toast 統一スタイル (persona アクセント) */}
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }}
+            key={toast}
+            className="cp-toast cp-toast--success"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 12, opacity: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
             style={{
-              position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 3500,
-              background: persona.accentColor, color: '#0a0a0f',
-              padding: '10px 18px', borderRadius: 999, fontWeight: 600, fontSize: '0.9rem',
-              boxShadow: `0 8px 24px ${persona.accentColor}66`,
-            }}>
-            {toast}
+              ['--cp-toast-accent' as any]: persona.accentColor,
+              ['--cp-toast-glow' as any]: `${persona.accentColor}55`,
+            }}
+            role="status"
+            aria-live="polite"
+          >
+            <span aria-hidden style={{ color: persona.accentColor, fontWeight: 800, fontSize: 14 }}>✓</span>
+            <span>{toast}</span>
+            <span className="cp-toast__bar" aria-hidden />
           </motion.div>
         )}
       </AnimatePresence>

@@ -631,18 +631,42 @@ function PersonDetail({
         )}
       </AnimatePresence>
 
-      {/* トースト */}
+      {/* トースト — .cp-toast 統一スタイル (export=persona アクセント / delegate=紫) */}
       <AnimatePresence>
         {exportToast && (
-          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="cp-card" style={{ borderColor: persona.accentColor + '60', textAlign: 'center' }}>
-            <p className="cp-body" style={{ color: persona.accentColor }}>{exportToast}</p>
+          <motion.div
+            key={`export-${exportToast}`}
+            className="cp-toast cp-toast--success"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 12, opacity: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            style={{
+              ['--cp-toast-accent' as any]: persona.accentColor,
+              ['--cp-toast-glow' as any]: `${persona.accentColor}55`,
+            }}
+            role="status"
+            aria-live="polite"
+          >
+            <span aria-hidden style={{ color: persona.accentColor, fontWeight: 800, fontSize: 14 }}>✓</span>
+            <span>{exportToast}</span>
+            <span className="cp-toast__bar" aria-hidden />
           </motion.div>
         )}
         {delegateToast && (
-          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="cp-card" style={{ borderColor: '#a78bfa60', textAlign: 'center' }}>
-            <p className="cp-body" style={{ color: '#a78bfa' }}>{delegateToast}</p>
+          <motion.div
+            key={`delegate-${delegateToast}`}
+            className="cp-toast cp-toast--info"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 12, opacity: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            role="status"
+            aria-live="polite"
+          >
+            <span aria-hidden style={{ color: '#a78bfa', fontWeight: 800, fontSize: 14 }}>🤖</span>
+            <span>{delegateToast}</span>
+            <span className="cp-toast__bar" aria-hidden />
           </motion.div>
         )}
       </AnimatePresence>
