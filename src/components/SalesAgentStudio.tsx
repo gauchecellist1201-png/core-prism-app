@@ -19,7 +19,15 @@ interface Props {
   onClose: () => void;
 }
 
-type Tab = 'today' | 'history' | 'product';
+type Tab = 'today' | 'history' | 'product' | 'script';
+
+interface SalesScript {
+  opening: string;            // 掴みの一言
+  hearing: string[];          // ヒアリング質問
+  pitch: string;              // 提案の核
+  objections: Array<{ q: string; a: string }>; // 想定反論 + 切り返し
+  closing: string;            // クロージング
+}
 
 interface CachedPicks {
   seed: number;
@@ -56,6 +64,54 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
 
   const ownProduct = sa.getOwnProduct(persona.id);
   const myLeads = useMemo(() => sa.getLeadsForPersona(persona.id), [sa.leads, persona.id]);
+
+  // ─── 商談台本 + 反論対応 (オーナー指示 2026-05-28) ───
+  const [scriptTarget, setScriptTarget] = useState('');
+  const [script, setScript] = useState<SalesScript | null>(null);
+  const [scriptBusy, setScriptBusy] = useState(false);
+  const generateScript = useCallback(async () => {
+    if (!scriptTarget.trim()) { setError('商談相手や状況を 1 行で入れてください'); return; }
+    setScriptBusy(true); setError(null);
+    try {
+      const sys = `あなたは一流の法人営業コーチです。日本のビジネス慣習に沿った、自然で押しつけがましくない商談台本を作ります。
+返答は JSON のみ (コードブロックなし):
+{
+  "opening": "最初の掴みの一言 (堅すぎず、相手の関心に触れる。1-2 文)",
+  "hearing": ["相手の課題を引き出す質問 1", "質問 2", "質問 3"],
+  "pitch": "提案の核 — 相手の課題にどう効くかを 2-3 文で",
+  "objections": [
+    { "q": "想定される反論・断り文句 1", "a": "それへの自然な切り返し (1-2 文)" },
+    { "q": "反論 2", "a": "切り返し 2" },
+    { "q": "反論 3 (価格系)", "a": "切り返し 3" }
+  ],
+  "closing": "次の一歩につなげるクロージング (1-2 文)"
+}
+やさしい日本語。専門用語・横文字は避ける。具体的に。`;
+      const userPrompt = `## 自社の商材\n${ownProduct || '(未登録 — 一般的な提案として作成)'}\n\n## 商談相手 / 状況\n${scriptTarget}\n\n上記の商談で使える台本と反論対応を作ってください。`;
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 1800, system: sys, messages: [{ role: 'user', content: userPrompt }] }),
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e?.error?.message || `AI エラー: ${res.status}`); }
+      const data = await res.json();
+      const text = data?.content?.[0]?.text ?? '';
+      const m = text.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('AI の返答を読み取れませんでした');
+      const p = JSON.parse(m[0]);
+      setScript({
+        opening: p.opening || '',
+        hearing: Array.isArray(p.hearing) ? p.hearing : [],
+        pitch: p.pitch || '',
+        objections: Array.isArray(p.objections) ? p.objections : [],
+        closing: p.closing || '',
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '台本を作れませんでした');
+    } finally {
+      setScriptBusy(false);
+    }
+  }, [scriptTarget, ownProduct]);
 
   // ─── 今日のピックアップ ─────────
   const [picks, setPicks] = useState<AiPick[]>([]);
@@ -241,6 +297,7 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
         <div className="cp-modal-tabs">
           {([
             { id: 'today',   emoji: '✨', label: '今日の5社' },
+            { id: 'script',  emoji: '🎤', label: '商談台本' },
             { id: 'history', emoji: '📂', label: `採用済 (${approvedLeadCount})` },
             { id: 'product', emoji: '🎁', label: '自社の商材' },
           ] as const).map(t => (
@@ -583,6 +640,86 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
             </>
           )}
 
+          {/* ─── 商談台本 + 反論対応 ─── */}
+          {tab === 'script' && (
+            <div className="cp-stack-sm">
+              <div className="cp-card-section cp-stack-sm" style={{ background: `${persona.accentColor}10`, border: `1px solid ${persona.accentColor}40` }}>
+                <p className="cp-h3">🎤 商談台本 + 反論対応を AI が作る</p>
+                <p className="cp-meta">
+                  商談相手や状況を 1 行入れると、掴み・ヒアリング・提案・想定反論への切り返し・クロージングまで一気に用意します。
+                </p>
+                <textarea
+                  value={scriptTarget}
+                  onChange={e => setScriptTarget(e.target.value)}
+                  placeholder={'例: 渋谷の美容室オーナー、忙しくて新ツール導入に慎重。来週訪問予定。\n例: 製造業のDX担当部長、予算は取れてるが社内承認が必要。'}
+                  rows={3}
+                  className="cp-textarea"
+                />
+                <button
+                  onClick={generateScript}
+                  disabled={scriptBusy || !scriptTarget.trim()}
+                  className="cp-btn cp-btn-primary"
+                  style={{ background: persona.accentColor, color: '#0a0a0f', opacity: (scriptBusy || !scriptTarget.trim()) ? 0.5 : 1 }}
+                >
+                  {scriptBusy ? '🧠 台本を作成中…' : '🎤 商談台本を作る'}
+                </button>
+              </div>
+
+              <AILoadingState
+                active={scriptBusy}
+                label="商談台本を組み立てています"
+                stages={['相手の立場を分析', '刺さる切り口を選定', '想定反論を洗い出し', '切り返しを用意']}
+                brand="prism"
+              />
+
+              {script && !scriptBusy && (
+                <>
+                  <ScriptBlock icon="👋" title="掴みの一言" accent={persona.accentColor}>
+                    <p className="cp-body" style={{ lineHeight: 1.7 }}>{script.opening}</p>
+                  </ScriptBlock>
+
+                  <ScriptBlock icon="🎧" title="ヒアリング (相手の課題を引き出す)" accent={persona.accentColor}>
+                    <ol style={{ paddingLeft: 20, margin: 0 }}>
+                      {script.hearing.map((h, i) => (
+                        <li key={i} style={{ marginBottom: 5, lineHeight: 1.6, fontSize: '0.92rem' }}>{h}</li>
+                      ))}
+                    </ol>
+                  </ScriptBlock>
+
+                  <ScriptBlock icon="💡" title="提案の核" accent={persona.accentColor}>
+                    <p className="cp-body" style={{ lineHeight: 1.7 }}>{script.pitch}</p>
+                  </ScriptBlock>
+
+                  <ScriptBlock icon="🛡" title="想定反論 → 切り返し" accent={persona.accentColor}>
+                    <div className="cp-stack-sm">
+                      {script.objections.map((o, i) => (
+                        <div key={i} style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                          <p style={{ margin: 0, fontSize: '0.88rem', color: '#FCA5A5', fontWeight: 700 }}>「{o.q}」</p>
+                          <p style={{ margin: '4px 0 0', fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--fg)' }}>→ {o.a}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </ScriptBlock>
+
+                  <ScriptBlock icon="🤝" title="クロージング" accent={persona.accentColor}>
+                    <p className="cp-body" style={{ lineHeight: 1.7 }}>{script.closing}</p>
+                  </ScriptBlock>
+
+                  <div className="cp-row" style={{ gap: 6 }}>
+                    <button
+                      onClick={() => {
+                        const full = `【商談台本】\n\n■ 掴み\n${script.opening}\n\n■ ヒアリング\n${script.hearing.map((h, i) => `${i + 1}. ${h}`).join('\n')}\n\n■ 提案の核\n${script.pitch}\n\n■ 想定反論への切り返し\n${script.objections.map(o => `Q:「${o.q}」\nA: ${o.a}`).join('\n\n')}\n\n■ クロージング\n${script.closing}`;
+                        copyText(full, '商談台本');
+                      }}
+                      className="cp-btn cp-btn-sm"
+                    >📋 台本を全部コピー</button>
+                    <button onClick={generateScript} className="cp-btn cp-btn-ghost cp-btn-sm">↻ 別パターンで作り直す</button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* ─── 自社の商材 ─── */}
           {tab === 'product' && (
             <div className="cp-card-section cp-stack-sm">
@@ -617,5 +754,19 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+// 商談台本の 1 ブロック (掴み / ヒアリング / 提案 / 反論 / クロージング)
+function ScriptBlock({ icon, title, accent, children }: {
+  icon: string; title: string; accent: string; children: React.ReactNode;
+}) {
+  return (
+    <div className="cp-card-section" style={{ borderLeft: `3px solid ${accent}` }}>
+      <p className="cp-tiny" style={{ color: accent, fontWeight: 800, letterSpacing: '0.06em', marginBottom: 6 }}>
+        {icon} {title}
+      </p>
+      {children}
+    </div>
   );
 }
