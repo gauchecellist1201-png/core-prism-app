@@ -674,22 +674,7 @@ export default function IdentityDashboard({
           <div className="flex-1 overflow-auto p-3 md:p-4 relative">
             <div className="max-w-5xl space-y-3">
 
-              {/* 焦点モード: 今日の最優先 1 つ + 数字 1 行 (オーナー指示 2026-05-28) */}
-              <FocusHero
-                persona={persona}
-                proposal={briefOverride ?? proactive.latestProposal ?? (coach.brief ? coachBriefToProposal(coach.brief) : null)}
-                isGenerating={proactive.isGenerating || coach.isGenerating}
-                onPrimaryAction={onAcceptProactiveAction}
-                onGenerate={() => proactive.generate(settings.voiceEnabled !== false)}
-                expanded={dashboardExpanded}
-                onToggleExpanded={toggleDashboardExpanded}
-                hiddenCount={30}
-              />
-
-              {/* ↓ 「すべての機能を見る」で展開する全コンテンツ */}
-              {dashboardExpanded && (<>
-
-              {/* 7 つのエージェントが、それぞれ動いている可視化 (LP の 7 本柱と対応) */}
+              {/* 7 つのエージェント — 常時トップ固定 (オーナー指示 2026-05-28: ここは閉じない) */}
               <AgentsOrbit
                 specs={PRISM_SPECS}
                 order={PRISM_ORDER}
@@ -763,6 +748,21 @@ export default function IdentityDashboard({
                   },
                 ]}
               />
+
+              {/* 焦点モード: 今日の最優先 1 つ + 数字 1 行 (オーナー指示 2026-05-28) */}
+              <FocusHero
+                persona={persona}
+                proposal={briefOverride ?? proactive.latestProposal ?? (coach.brief ? coachBriefToProposal(coach.brief) : null)}
+                isGenerating={proactive.isGenerating || coach.isGenerating}
+                onPrimaryAction={onAcceptProactiveAction}
+                onGenerate={() => proactive.generate(settings.voiceEnabled !== false)}
+                expanded={dashboardExpanded}
+                onToggleExpanded={toggleDashboardExpanded}
+                hiddenCount={30}
+              />
+
+              {/* ↓ 「すべての機能を見る」で展開する全コンテンツ */}
+              {dashboardExpanded && (<>
 
               {/*
                 EarningsAndTimeHero (2026-05-25 オーナー指示):

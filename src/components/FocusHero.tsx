@@ -75,20 +75,41 @@ export default function FocusHero({
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         style={{
           position: 'relative',
-          padding: '1.4rem 1.3rem',
-          borderRadius: 20,
-          background: `linear-gradient(135deg, ${um.color}1c, ${accent}10 60%, transparent)`,
-          border: `1.5px solid ${um.color}55`,
+          padding: '1.6rem 1.5rem 1.5rem',
+          borderRadius: 24,
+          background: `
+            radial-gradient(120% 140% at 0% 0%, ${um.color}1f 0%, transparent 45%),
+            radial-gradient(120% 160% at 100% 100%, ${accent}18 0%, transparent 50%),
+            linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012))
+          `,
+          border: `1px solid ${um.color}3a`,
+          boxShadow: `0 20px 50px -24px ${um.color}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           overflow: 'hidden',
         }}
       >
-        {/* 左端の緊急度バー */}
+        {/* 装飾オーブ (右上、緊急度カラー) */}
+        <motion.div
+          aria-hidden
+          animate={{ scale: [1, 1.12, 1], opacity: [0.5, 0.75, 0.5] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute', top: -70, right: -60,
+            width: 200, height: 200, borderRadius: '50%',
+            background: `radial-gradient(circle, ${um.color}40 0%, transparent 70%)`,
+            filter: 'blur(36px)', pointerEvents: 'none',
+          }}
+        />
+        {/* 左端の緊急度バー (グロー) */}
         <div aria-hidden style={{
-          position: 'absolute', left: 0, top: 0, bottom: 0, width: 5,
-          background: um.color, boxShadow: `0 0 20px ${um.color}88`,
+          position: 'absolute', left: 0, top: 14, bottom: 14, width: 4,
+          borderRadius: 4,
+          background: `linear-gradient(180deg, ${um.color}, ${um.color}55)`,
+          boxShadow: `0 0 22px ${um.color}aa`,
         }} />
 
         {/* ラベル行 */}
@@ -230,35 +251,42 @@ export default function FocusHero({
         )}
       </motion.div>
 
-      {/* ── 数字 1 行帯 (今は大カード 3 連 → 圧縮) ── */}
+      {/* ── 数字 1 行帯 (今は大カード 3 連 → 圧縮、ガラス質感) ── */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
-        padding: '10px 14px', borderRadius: 12,
-        background: 'var(--surface-3)', border: '1px solid var(--border-2)',
+        display: 'flex', alignItems: 'center', gap: 0, flexWrap: 'wrap',
+        padding: '12px 16px', borderRadius: 16,
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012))',
+        border: '1px solid rgba(255,255,255,0.07)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
         fontFamily: '"SF Mono", "JetBrains Mono", Menlo, monospace',
       }}>
         <NumChip label="今月" value={fmtJpy(thisRev)} color="#34D399" />
         {stripe.connected && total12 > 0 && (
-          <NumChip label="累計(12ヶ月)" value={fmtJpy(total12)} color="#2E6FFF" muted />
+          <>
+            <span aria-hidden style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.1)', margin: '0 16px' }} />
+            <NumChip label="累計 (12ヶ月)" value={fmtJpy(total12)} color="#2E6FFF" muted />
+          </>
         )}
         {!stripe.connected && (
-          <span style={{ fontSize: 11.5, color: 'var(--fg-muted)' }}>
+          <span style={{ fontSize: 11.5, color: 'var(--fg-muted)', marginLeft: 12, fontFamily: 'system-ui' }}>
             Stripe をつなぐと売上が出ます
           </span>
         )}
       </div>
 
-      {/* ── もっと見る トグル ── */}
+      {/* ── もっと見る トグル (洗練) ── */}
       <button
         type="button"
         onClick={onToggleExpanded}
+        className="cp-pill-tap"
         style={{
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          padding: '9px 14px', borderRadius: 10,
-          background: expanded ? 'var(--surface-3)' : `${accent}12`,
-          border: `1px solid ${expanded ? 'var(--border-2)' : accent + '33'}`,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+          padding: '11px 14px', borderRadius: 12,
+          background: expanded ? 'rgba(255,255,255,0.03)' : `linear-gradient(135deg, ${accent}16, ${accent}06)`,
+          border: `1px solid ${expanded ? 'rgba(255,255,255,0.08)' : accent + '33'}`,
           color: expanded ? 'var(--fg-muted)' : accent,
-          fontSize: 12.5, fontWeight: 700, cursor: 'pointer', width: '100%',
+          fontSize: 12.5, fontWeight: 800, letterSpacing: '0.02em', cursor: 'pointer', width: '100%',
+          transition: 'all 0.2s ease',
         }}
       >
         {expanded
@@ -271,9 +299,14 @@ export default function FocusHero({
 
 function NumChip({ label, value, color, muted }: { label: string; value: string; color: string; muted?: boolean }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 5 }}>
-      <span style={{ fontSize: 10, color: 'var(--fg-muted)', fontFamily: 'inherit' }}>{label}</span>
-      <span style={{ fontSize: muted ? 13 : 16, fontWeight: 700, color: muted ? `${color}cc` : color }}>{value}</span>
+    <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 7 }}>
+      <span style={{ fontSize: 10, color: 'var(--fg-muted)', fontFamily: 'system-ui', letterSpacing: '0.04em' }}>{label}</span>
+      <span style={{
+        fontSize: muted ? 14 : 18, fontWeight: 700,
+        color: muted ? `${color}cc` : color,
+        textShadow: muted ? 'none' : `0 0 18px ${color}44`,
+        letterSpacing: '-0.01em',
+      }}>{value}</span>
     </span>
   );
 }
