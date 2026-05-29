@@ -1423,29 +1423,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         <div key={tab}>
             {tab === 'home' && (
               <>
-                {/* 稼げる + 楽できるビジョン 3 連ヒーロー */}
-                <IrisEarningsHero
-                  myDeals={myDeals}
-                  igProfile={igProfile}
-                  onOpenDeals={() => setTab('deals')}
-                  onConnectInstagram={() => setShowIgConnect(true)}
-                />
-
-                {/* エディトリアル ホームダッシュ */}
-                <IrisEditorialHome
-                  bg={bg}
-                  myDeals={myDeals}
-                  postQueue={postQueue}
-                  knowledge={knowledge}
-                  igProfile={igProfile}
-                  onNavigate={(t) => setTab(t as Tab)}
-                  settings={settings}
-                  mediaKit={mediaKit}
-                  onConnectInstagram={() => setShowIgConnect(true)}
-                  onOpenDmDraft={(deal) => setDmDraftDeal(deal)}
-                />
-
-                {/* 6 エージェント オービット */}
+                {/* 6 エージェント オービット — 常時トップ固定 (オーナー指示 2026-05-28) */}
                 <div style={{ marginBottom: '1.25rem' }}>
                   <AgentsOrbit
                     specs={IRIS_SPECS}
@@ -1504,6 +1482,28 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     ]}
                   />
                 </div>
+
+                {/* 稼げる + 楽できるビジョン 3 連ヒーロー */}
+                <IrisEarningsHero
+                  myDeals={myDeals}
+                  igProfile={igProfile}
+                  onOpenDeals={() => setTab('deals')}
+                  onConnectInstagram={() => setShowIgConnect(true)}
+                />
+
+                {/* エディトリアル ホームダッシュ */}
+                <IrisEditorialHome
+                  bg={bg}
+                  myDeals={myDeals}
+                  postQueue={postQueue}
+                  knowledge={knowledge}
+                  igProfile={igProfile}
+                  onNavigate={(t) => setTab(t as Tab)}
+                  settings={settings}
+                  mediaKit={mediaKit}
+                  onConnectInstagram={() => setShowIgConnect(true)}
+                  onOpenDmDraft={(deal) => setDmDraftDeal(deal)}
+                />
 
                 {/* 仕事獲得を最優先 */}
                 <IrisEarnHero
