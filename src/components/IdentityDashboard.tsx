@@ -13,6 +13,7 @@ import ShortcutHelpModal from './ShortcutHelpModal';
 import PwaInstallPrompt from './PwaInstallPrompt';
 import FeedbackWidget from './FeedbackWidget';
 import KnowledgeBase from './KnowledgeBase';
+import StudioOpeningSheet from './StudioOpeningSheet';
 const MeetingHub = lazy(() => import('./MeetingHub'));
 const HealthHub = lazy(() => import('./health/HealthHub'));
 import { ThemeToggle } from './ThemeToggle';
@@ -1319,7 +1320,7 @@ export default function IdentityDashboard({
 
       {/* Overlays — 重い Studio は React.lazy で必要な時だけ読み込む */}
       <AnimatePresence>
-        <Suspense fallback={null}>
+        <Suspense fallback={<StudioOpeningSheet brand="prism" />}>
         {showKnowledge && (
           <KnowledgeBase
             key="kb"

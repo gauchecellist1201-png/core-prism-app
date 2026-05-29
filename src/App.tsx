@@ -18,6 +18,7 @@ import SettingsModal from './components/SettingsModal';
 import LandingPage from './components/LandingPage';
 import CheckoutModal from './components/CheckoutModal';
 import LegalModal, { type LegalKind } from './components/LegalModal';
+import StudioOpeningSheet from './components/StudioOpeningSheet';
 // 重い「別ルート専用」のページは React.lazy で main から切り出す。
 // (Prism ダッシュボードを開く一般ユーザーには、これらを読み込ませない)
 const MasterEntry = lazy(() => import('./components/MasterEntry'));
@@ -542,7 +543,7 @@ export default function App() {
       <WowOnboarding brand="prism" trigger={tutorialDoneTick} />
       <AnimatePresence>
         {showErrorLog && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<StudioOpeningSheet brand="prism" />}>
             <ErrorLogViewer key="error-log" onClose={() => setShowErrorLog(false)} />
           </Suspense>
         )}
