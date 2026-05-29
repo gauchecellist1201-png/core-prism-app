@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, KnowledgeItem } from '../types/identity';
 import EmptyState from './EmptyState';
+import { StudioIntro } from './StudioIntro';
 import { usePersonas } from '../hooks/usePersonas';
 import { useAgentTaskQueue, CXO_META, type CxoRole, type ProposalDraft } from '../hooks/useAgentTaskQueue';
 import { RewardBurst } from './visualFx';
@@ -423,6 +424,22 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
         </div>
 
         <div className="cp-modal-body cp-stack">
+          <StudioIntro
+            id="taskhub"
+            accent={persona.accentColor}
+            emoji="✅"
+            what="やる事を全部ここに集めて、AI が「今日やるべき順」に並べ、終わったものから消していく場所です。"
+            tryThis="「今日」を見て、上から 1 つ片付けてチェックを入れてみる。"
+            example="メモした用事や、AI からの提案がタスクになり、急ぎ順に並びます。"
+            sampleLabel="並び方"
+            samplePreview={
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.66rem', lineHeight: 1.35 }}>
+                <span style={{ color: '#FF6B6B', fontWeight: 700 }}>● 高優先 — 見積もり返信</span>
+                <span style={{ color: persona.accentColor }}>● 進行中 — 資料づくり</span>
+                <span style={{ color: '#4ADE80' }}>✓ 完了 — 請求書送付</span>
+              </div>
+            }
+          />
           {/* サマリー (4 カード) */}
           <div className="cp-grid-2" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {[

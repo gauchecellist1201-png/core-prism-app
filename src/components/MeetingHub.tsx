@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Persona } from '../types/identity';
 import { copyText } from '../lib/clipboard';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -58,6 +59,15 @@ export default function MeetingHub({ persona, onClose }: Props) {
           </div>
           <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle">×</button>
         </div>
+
+        <StudioIntro
+          id="meetinghub"
+          accent={persona.accentColor}
+          emoji="🔗"
+          what="オンライン会議の入室リンクを作って、相手にコピペで送れる場所です。"
+          tryThis="ミーティング名と時間を選んで、出てきたリンクをコピーするだけ。"
+          example="「30 分の打ち合わせ」を作る → 1 本の URL ができ、相手に貼って送れます。"
+        />
 
         {/* タイトル */}
         <div className="mb-4">

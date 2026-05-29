@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { KnowledgeItem, Persona, AppSettings } from '../types/identity';
 import AgentProposalCard from './AgentProposalCard';
 import EmptyState from './EmptyState';
+import { StudioIntro } from './StudioIntro';
 import ContextualUpgradeCard from './ContextualUpgradeCard';
 import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
 import {
@@ -403,6 +404,24 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
+          <div className="px-3 pt-3">
+            <StudioIntro
+              id="knowledge"
+              accent={persona.accentColor}
+              emoji="📚"
+              what="資料(PDF・議事録・メモ)を入れておくと、AI がそれを覚えて、これからの提案や下書きに自動で活かす場所です。"
+              tryThis="「資料を追加」を押して、手元の PDF やメモを 1 枚入れてみる。"
+              example="業界レポートを 1 枚入れる → そこから使える提案・戦略・気をつける点を AI が抜き出してくれます。"
+              sampleLabel="入れると出ます"
+              samplePreview={
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.66rem', lineHeight: 1.35 }}>
+                  <span style={{ color: persona.accentColor, fontWeight: 700 }}>● 提案 3 件</span>
+                  <span style={{ opacity: 0.85 }}>● 戦略 2 件</span>
+                  <span style={{ opacity: 0.7 }}>● 気をつける点 1 件</span>
+                </div>
+              }
+            />
+          </div>
           {/* 文脈型アップグレード提案 — 成果物 (ナレッジ) が貯まってきた人向け */}
           {items.length >= 20 && (() => {
             const user = loadBillingUser();
