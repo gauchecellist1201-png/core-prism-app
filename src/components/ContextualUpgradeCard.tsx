@@ -96,7 +96,7 @@ export default function ContextualUpgradeCard({
         padding: '0.95rem 1.05rem',
         background: `linear-gradient(135deg, ${accent}22, ${accent}0a)`,
         border: `1px solid ${accent}55`,
-        color: '#fff',
+        color: 'var(--fg)',
         display: 'flex',
         flexDirection: 'column',
         gap: 6,
@@ -108,8 +108,8 @@ export default function ContextualUpgradeCard({
         aria-label="閉じる"
         style={{
           position: 'absolute', top: 8, right: 8,
-          background: 'rgba(255,255,255,0.05)', border: 'none',
-          color: 'rgba(255,255,255,0.55)', borderRadius: '50%',
+          background: 'var(--surface-3)', border: 'none',
+          color: 'var(--fg-muted)', borderRadius: '50%',
           width: 26, height: 26, minHeight: 32, minWidth: 32,
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer',
@@ -128,12 +128,12 @@ export default function ContextualUpgradeCard({
       </h3>
 
       {context && (
-        <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.75)', margin: '2px 0 0', lineHeight: 1.55 }}>
+        <p style={{ fontSize: 11.5, color: 'var(--fg-muted)', margin: '2px 0 0', lineHeight: 1.55 }}>
           {context}
         </p>
       )}
 
-      <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0', lineHeight: 1.6 }}>
+      <p style={{ fontSize: 11.5, color: 'var(--fg-muted)', margin: '4px 0 0', lineHeight: 1.6 }}>
         {c.body}
       </p>
 
