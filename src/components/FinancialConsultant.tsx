@@ -164,6 +164,37 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
     };
   }, [series, fullTrend]);
 
+  // ─── キャッシュ予測 (3ヶ月先まで) — 嘘禁止: 直近の実トレンドから線形予測 ───
+  // オーナー指示 2026-05-28: 財務エージェントにキャッシュ予測を
+  const forecast = useMemo(() => {
+    const withData = series.filter(m => m.revenue > 0 || m.expense > 0);
+    if (withData.length < 2) return null;
+    const recent = withData.slice(-3); // 直近 3 ヶ月
+    const avgRev = recent.reduce((s, m) => s + m.revenue, 0) / recent.length;
+    const avgExp = recent.reduce((s, m) => s + m.expense, 0) / recent.length;
+    const avgProfit = avgRev - avgExp;
+    // 線形トレンド (直近 3 ヶ月の利益の傾き)
+    const slope = recent.length >= 2
+      ? (recent[recent.length - 1].profit - recent[0].profit) / (recent.length - 1)
+      : 0;
+    const now = new Date();
+    const points: Array<{ month: string; revenue: number; expense: number; profit: number; cumulative: number }> = [];
+    let cumulative = 0;
+    for (let i = 1; i <= 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const month = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+      // 利益 = 平均 + トレンド (極端化しないよう slope は控えめに 0.5 倍)
+      const projProfit = Math.round(avgProfit + slope * 0.5 * i);
+      const projRev = Math.round(avgRev + slope * 0.5 * i);
+      const projExp = Math.max(0, projRev - projProfit);
+      cumulative += projProfit;
+      points.push({ month, revenue: projRev, expense: projExp, profit: projProfit, cumulative });
+    }
+    // ランウェイ判定: 平均利益がマイナスなら警告
+    const monthlyBurn = avgProfit < 0 ? Math.abs(avgProfit) : 0;
+    return { points, avgProfit, avgRev, avgExp, slope, monthlyBurn };
+  }, [series]);
+
   // ─── AI コンサル ───
   const [consult, setConsult] = useState<Consult | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -411,6 +442,58 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
                   <p className="cp-body text-fg">
                     {analysis.lossMonths.map(m => monthLabel(m.month)).join('・')} は
                     経費が売上を上回りました (赤字)。閑散期の固定費を見直す合図です。
+                  </p>
+                </div>
+              )}
+
+              {/* ─── キャッシュ予測 (3ヶ月先) ─── */}
+              {forecast && (
+                <div className="cp-card-section">
+                  <p className="cp-h3 mb-1">🔮 これから 3 ヶ月の見通し</p>
+                  <p className="cp-meta" style={{ marginBottom: 12 }}>
+                    直近 3 ヶ月の実績から予測。月あたりの利益はおよそ {fmtJpy(forecast.avgProfit)}
+                    {forecast.slope > 0 ? '（上向き）' : forecast.slope < 0 ? '（下向き）' : ''} です。
+                  </p>
+                  <div className="cp-grid-2" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                    {forecast.points.map((p, i) => (
+                      <div key={p.month} style={{
+                        padding: '10px 12px', borderRadius: 12,
+                        background: 'var(--surface-3)', border: '1px solid var(--border)',
+                      }}>
+                        <div className="cp-tiny" style={{ color: 'var(--fg-muted)', marginBottom: 4 }}>
+                          {monthLabel(p.month)} {i === 0 ? '(来月)' : ''}
+                        </div>
+                        <div style={{
+                          fontSize: '1.05rem', fontWeight: 800,
+                          color: p.profit >= 0 ? '#34D399' : '#F87171',
+                          fontFamily: '"SF Mono", monospace',
+                        }}>{fmtJpy(p.profit)}</div>
+                        <div className="cp-tiny" style={{ color: 'var(--fg-muted)', marginTop: 2 }}>
+                          累計 {fmtJpy(p.cumulative)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {forecast.monthlyBurn > 0 ? (
+                    <div style={{
+                      marginTop: 10, padding: '10px 12px', borderRadius: 10,
+                      background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.35)',
+                      fontSize: '0.85rem', color: '#FCA5A5', lineHeight: 1.6,
+                    }}>
+                      ⚠ いまは毎月およそ {fmtJpy(forecast.monthlyBurn)} ずつ持ち出しの状態です。
+                      売上を増やすか固定費を見直して、3 ヶ月以内に黒字化を目指しましょう。
+                    </div>
+                  ) : (
+                    <div style={{
+                      marginTop: 10, padding: '10px 12px', borderRadius: 10,
+                      background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.3)',
+                      fontSize: '0.85rem', color: '#34D399', lineHeight: 1.6,
+                    }}>
+                      ✓ この調子なら 3 ヶ月で約 {fmtJpy(forecast.points[forecast.points.length - 1].cumulative)} 積み上がる見込みです。
+                    </div>
+                  )}
+                  <p className="cp-tiny" style={{ color: 'var(--fg-muted)', marginTop: 8 }}>
+                    ※ 直近の実績をもとにした目安です。大きな受注や支出があると変わります。
                   </p>
                 </div>
               )}
