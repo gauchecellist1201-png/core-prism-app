@@ -295,6 +295,7 @@ export default function App() {
   const [showPersonaCreator, setShowPersonaCreator] = useState(false);
   const [editingPersonaId, setEditingPersonaId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'basic' | 'ai' | 'integrations' | 'privacy' | 'other'>('basic');
   const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
   const [tutorialDoneTick, setTutorialDoneTick] = useState(0);
   const [showErrorLog, setShowErrorLog] = useState(false);
@@ -304,6 +305,19 @@ export default function App() {
     const open = () => setShowErrorLog(true);
     window.addEventListener('core:open-error-log', open as EventListener);
     return () => window.removeEventListener('core:open-error-log', open as EventListener);
+  }, []);
+
+  // エラーカード等から「設定を開く」を発火できるよう購読。detail.tab があればそのタブに直行 (例: 'ai' で AI キー登録欄へ)
+  useEffect(() => {
+    const open = (e: Event) => {
+      const tab = (e as CustomEvent)?.detail?.tab;
+      if (tab === 'ai' || tab === 'basic' || tab === 'integrations' || tab === 'privacy' || tab === 'other') {
+        setSettingsInitialTab(tab);
+      }
+      setShowSettings(true);
+    };
+    window.addEventListener('core:open-settings', open as EventListener);
+    return () => window.removeEventListener('core:open-settings', open as EventListener);
   }, []);
 
   // 課金フロー: 未 signup なら Checkout モーダルで signup → 入場
@@ -487,7 +501,7 @@ export default function App() {
             onSwitch={handleSwitchPersona}
             onSendMessage={handleSendMessage}
             onBackToSelection={() => { setView('selection'); setChatMessages([]); }}
-            onOpenSettings={() => setShowSettings(true)}
+            onOpenSettings={() => { setSettingsInitialTab('basic'); setShowSettings(true); }}
             onCreatePersona={() => setShowPersonaCreator(true)}
             onAddKnowledgeFile={handleAddKnowledgeFile}
             onAddKnowledgeNote={handleAddKnowledgeNote}
@@ -518,6 +532,7 @@ export default function App() {
           <SettingsModal
             key="settings"
             settings={settings}
+            initialTab={settingsInitialTab}
             personas={personas}
             onEditPersona={(id) => { setEditingPersonaId(id); setShowPersonaCreator(true); setShowSettings(false); }}
             onSave={updateSettings}

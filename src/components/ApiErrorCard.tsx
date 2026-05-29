@@ -10,7 +10,7 @@ import type { LucideIcon } from 'lucide-react';
 interface Props {
   /** エラーメッセージ。null/空なら何も出さない */
   error: string | null | undefined;
-  /** 設定モーダルを開くハンドラ (マスターモード切替へ誘導) */
+  /** @deprecated 「API キーを登録」ボタンは常に core:open-settings イベントで AI タブを開くため不要。後方互換のため受け取るだけ */
   onOpenSettings?: () => void;
   /** 表示位置の調整 (default はフルワイド) */
   className?: string;
@@ -135,7 +135,7 @@ function useEffectiveLight(variant: 'dark' | 'light' | 'auto'): boolean {
   return light;
 }
 
-export default function ApiErrorCard({ error, onOpenSettings, className, variant = 'auto', onRetry }: Props) {
+export default function ApiErrorCard({ error, className, variant = 'auto', onRetry }: Props) {
   const [version, setVersion] = useState(0); // 再描画用
   const isLight = useEffectiveLight(variant);
   const visible = !!error && !isDismissedNow(error);
@@ -172,6 +172,14 @@ export default function ApiErrorCard({ error, onOpenSettings, className, variant
     dismissFor(error, 60_000);
     setVersion(v => v + 1);
   };
+
+  // 設定を開く: 全 21 箇所のエラーカードが、prop 無しでも必ず「API キー登録欄 (AI タブ)」へ直行する。
+  // 汎用の onOpenSettings は基本タブを開いてしまうため使わず、常にグローバルイベントで AI タブを指定する。
+  const openSettings = () => {
+    window.dispatchEvent(new CustomEvent('core:open-settings', { detail: { tab: 'ai' } }));
+  };
+  // 設定への導線を出すべきエラー種別 (手順で「設定 → API キー」と案内しているもの)
+  const showSettingsBtn = c.kind === 'quota' || c.kind === 'auth' || c.kind === 'other';
 
   return (
     <AnimatePresence>
@@ -225,7 +233,7 @@ export default function ApiErrorCard({ error, onOpenSettings, className, variant
                 {c.steps.map((s, i) => <li key={i}>{s}</li>)}
               </ol>
             )}
-            {!isValidation && (onRetry || (c.kind === 'quota' && onOpenSettings)) && (
+            {!isValidation && (onRetry || showSettingsBtn || c.kind === 'network') && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.4rem' }}>
                 {onRetry && (
                   <button
@@ -241,9 +249,9 @@ export default function ApiErrorCard({ error, onOpenSettings, className, variant
                     }}
                   ><RotateCcw size={13} strokeWidth={2.6} /> もう一度ためす</button>
                 )}
-                {c.kind === 'quota' && onOpenSettings && (
+                {showSettingsBtn && (
                   <button
-                    onClick={onOpenSettings}
+                    onClick={openSettings}
                     style={{
                       background: 'rgba(255,255,255,0.12)',
                       border: '1px solid ' + border,
@@ -252,7 +260,20 @@ export default function ApiErrorCard({ error, onOpenSettings, className, variant
                       fontSize: 12, fontWeight: 600, cursor: 'pointer',
                       display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
                     }}
-                  ><SettingsIcon size={13} strokeWidth={2.2} /> マスターモードにする</button>
+                  ><SettingsIcon size={13} strokeWidth={2.2} /> API キーを登録</button>
+                )}
+                {c.kind === 'network' && (
+                  <button
+                    onClick={() => window.location.reload()}
+                    style={{
+                      background: 'rgba(255,255,255,0.12)',
+                      border: '1px solid ' + border,
+                      color: fg,
+                      borderRadius: 999, padding: '0.46rem 0.95rem',
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                    }}
+                  ><RotateCcw size={13} strokeWidth={2.2} /> ページを再読み込み</button>
                 )}
               </div>
             )}

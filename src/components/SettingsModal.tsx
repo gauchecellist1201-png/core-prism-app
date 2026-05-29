@@ -22,6 +22,8 @@ interface Props {
   personas?: Persona[];
   /** 編集ボタン押下時の handler。クリック後 SettingsModal は閉じ、PersonaCreator が edit mode で開く */
   onEditPersona?: (id: string) => void;
+  /** 開いた直後に表示するタブ (例: エラーカードから「AI キーを登録」で 'ai' タブへ直行) */
+  initialTab?: Tab;
 }
 
 // オーナー指示 (2026-05-15): Sonnet/Opus は Studio (¥29,800/月以上) 限定。
@@ -144,7 +146,7 @@ function setReduceMotion(v: boolean): void {
   } catch { /* */ }
 }
 
-export default function SettingsModal({ settings, onSave, onClose, onResetStats, personas, onEditPersona }: Props) {
+export default function SettingsModal({ settings, onSave, onClose, onResetStats, personas, onEditPersona, initialTab }: Props) {
   const [apiKey, setApiKey] = useState(settings.claudeApiKey);
   const [model, setModel] = useState(settings.preferredModel);
   const [userName, setUserName] = useState(settings.userName);
@@ -162,7 +164,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
   const [fontSize, setFontSizeState] = useState<FontSize>(getFontSize());
   const [reduceMotion, setReduceMotionState] = useState<boolean>(getReduceMotion());
 
-  const [tab, setTab] = useState<Tab>('basic');
+  const [tab, setTab] = useState<Tab>(initialTab || 'basic');
   const [query, setQuery] = useState('');
   const searchRef = useRef<HTMLInputElement | null>(null);
   const [recent, setRecent] = useState<RecentEntry[]>(getRecent());
