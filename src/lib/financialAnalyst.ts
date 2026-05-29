@@ -2,6 +2,7 @@
 // 決算書分析 AI — 財務健全性診断 + 改善提案
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
+import { enqueueClaudeCall } from './apiQueue';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -86,25 +87,23 @@ export async function analyzeFinancials(
     ? financialText.slice(0, 30000) + '\n\n[...省略]'
     : financialText;
 
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: settings.preferredModel,
-      max_tokens: 6144,
-      system: SYS,
-      messages: [{ role: 'user', content: `## 決算データ\n${truncated}\n\n上記を詳細分析してください。` }],
-    }),
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: settings.preferredModel,
+        max_tokens: 6144,
+        system: SYS,
+        messages: [{ role: 'user', content: `## 決算データ\n${truncated}\n\n上記を詳細分析してください。` }],
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message ?? `決算分析 API エラー: ${res.status}`);
+    }
+    return res.json();
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message ?? `決算分析 API エラー: ${res.status}`);
-  }
-
-  const data = await res.json();
   const text = data.content?.[0]?.text ?? '';
   if (!text.trim()) {
     throw new Error('決算分析: AI から空の応答が返りました。もう一度試してください。');

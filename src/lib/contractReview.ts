@@ -2,6 +2,7 @@
 // 契約書レビュー AI — リスク・標準逸脱・交渉ポイント抽出
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
+import { enqueueClaudeCall } from './apiQueue';
 
 // API キーは main.tsx の interceptor が localStorage から自動付与
 
@@ -93,25 +94,23 @@ export async function reviewContract(
     ? contractText.slice(0, 30000) + '\n\n[...以降省略]'
     : contractText;
 
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: settings.preferredModel,
-      max_tokens: 6144,
-      system: SYS(stance),
-      messages: [{ role: 'user', content: `## 契約書\n${truncated}\n\n${STANCE_LABELS[stance]} の立場で詳細レビューしてください。` }],
-    }),
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: settings.preferredModel,
+        max_tokens: 6144,
+        system: SYS(stance),
+        messages: [{ role: 'user', content: `## 契約書\n${truncated}\n\n${STANCE_LABELS[stance]} の立場で詳細レビューしてください。` }],
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message ?? `契約レビュー API エラー: ${res.status}`);
+    }
+    return res.json();
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message ?? `契約レビュー API エラー: ${res.status}`);
-  }
-
-  const data = await res.json();
   const text = data.content?.[0]?.text ?? '';
   let parsed: any = {};
   try {

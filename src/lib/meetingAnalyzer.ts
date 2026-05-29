@@ -2,6 +2,7 @@
 // 議事録 AI — 音声/動画/テキストの議事録から構造化議事録を生成
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
+import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
 
 // API キーは main.tsx の interceptor が localStorage から自動付与
@@ -106,25 +107,23 @@ ${truncated}
 
 上記の会議内容を構造化議事録に変換してください。`;
 
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: settings.preferredModel,
-      max_tokens: 4096,
-      system: buildSys(settings.aiTone),
-      messages: [{ role: 'user', content: userText }],
-    }),
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: settings.preferredModel,
+        max_tokens: 4096,
+        system: buildSys(settings.aiTone),
+        messages: [{ role: 'user', content: userText }],
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message ?? `議事録 API エラー: ${res.status}`);
+    }
+    return res.json();
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message ?? `議事録 API エラー: ${res.status}`);
-  }
-
-  const data = await res.json();
   const text = data.content?.[0]?.text ?? '';
 
   let parsed: Partial<MeetingMinutes> = {};

@@ -2,6 +2,7 @@
 // 戦略コンサル AI — McKinsey 級フレームワークで戦略を構造化
 // ============================================================
 import type { AppSettings, Persona, KnowledgeItem } from '../types/identity';
+import { enqueueClaudeCall } from './apiQueue';
 
 // API キーは main.tsx の interceptor が localStorage から自動付与
 
@@ -92,25 +93,23 @@ ${relevantKb}
 
 上記を踏まえて、${FRAMEWORKS[framework].label} を実行してください。`;
 
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: settings.preferredModel,
-      max_tokens: 4096,
-      system: SYS(framework),
-      messages: [{ role: 'user', content: userPrompt }],
-    }),
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: settings.preferredModel,
+        max_tokens: 4096,
+        system: SYS(framework),
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message ?? `戦略 API エラー: ${res.status}`);
+    }
+    return res.json();
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message ?? `戦略 API エラー: ${res.status}`);
-  }
-
-  const data = await res.json();
   const text = data.content?.[0]?.text ?? '';
   let parsed: any = {};
   try {

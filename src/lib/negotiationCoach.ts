@@ -2,6 +2,7 @@
 // AI 交渉コーチ — ロールプレイ + 評価フィードバック
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
+import { enqueueClaudeCall } from './apiQueue';
 
 // API キーは main.tsx の interceptor が localStorage から自動付与
 
@@ -193,22 +194,23 @@ export async function evaluateNegotiation(
 }
 
 async function callClaude(settings: AppSettings, system: string, messages: Array<{ role: string; content: string }>): Promise<string> {
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: settings.preferredModel,
-      max_tokens: 1024,
-      system,
-      messages,
-    }),
+  // キュー経由 (並列2・自動リトライ・サーキットブレーカー) で 429/過負荷に強く
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: settings.preferredModel,
+        max_tokens: 1024,
+        system,
+        messages,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message ?? `API エラー: ${res.status}`);
+    }
+    return res.json();
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message ?? `API エラー: ${res.status}`);
-  }
-  const data = await res.json();
   return data.content?.[0]?.text ?? '';
 }

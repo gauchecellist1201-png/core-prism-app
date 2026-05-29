@@ -2,6 +2,7 @@
 // 意思決定メモ — 構造化されたフレームワークで判断を支援
 // ============================================================
 import type { AppSettings, Persona, KnowledgeItem } from '../types/identity';
+import { enqueueClaudeCall } from './apiQueue';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -111,25 +112,23 @@ ${relevantKnowledge}
 
 上記を踏まえて、構造化された意思決定メモを JSON で出力してください。`;
 
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: settings.preferredModel,
-      max_tokens: 4096,
-      system: SYS,
-      messages: [{ role: 'user', content: userPrompt }],
-    }),
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: settings.preferredModel,
+        max_tokens: 4096,
+        system: SYS,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message ?? `意思決定 API エラー: ${res.status}`);
+    }
+    return res.json();
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message ?? `意思決定 API エラー: ${res.status}`);
-  }
-
-  const data = await res.json();
   const text = data.content?.[0]?.text ?? '';
   let parsed: any = {};
   try {
@@ -200,25 +199,23 @@ ${rawText}
 
 上記から 6 要素を JSON で抽出してください。`;
 
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: settings.preferredModel,
-      max_tokens: 1500,
-      system: sys,
-      messages: [{ role: 'user', content: userText }],
-    }),
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: settings.preferredModel,
+        max_tokens: 1500,
+        system: sys,
+        messages: [{ role: 'user', content: userText }],
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message ?? `要素抽出 API エラー: ${res.status}`);
+    }
+    return res.json();
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message ?? `要素抽出 API エラー: ${res.status}`);
-  }
-
-  const data = await res.json();
   const text = data.content?.[0]?.text ?? '';
   let parsed: any = {};
   try {
