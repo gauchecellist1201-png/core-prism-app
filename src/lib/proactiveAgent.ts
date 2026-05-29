@@ -36,7 +36,7 @@ function buildSystem(tone?: 'gentle' | 'professional' | 'casual'): string {
 返答は **JSON のみ** (コードブロックなし、説明文なし)。スキーマ:
 {
   "title": "今日の一手の見出し (10〜25 文字、やさしい日本語)",
-  "message": "本文 3〜5 文。事業・お金・判断の話から始めて、最後の 1 文だけ体調に触れる。230 文字以内。やさしい日本語。",
+  "message": "本文 3〜5 文。事業・お金・判断の話だけ。体調の話は書かない。230 文字以内。やさしい日本語。",
   "actions": ["今日できる具体的なこと 1", ...] // 2〜4 個、すぐ動ける事業アクション (やさしい日本語)
   "context": "なぜこの提案をしたか、1 文で根拠を書く (やさしい日本語)"
 }
@@ -44,8 +44,8 @@ function buildSystem(tone?: 'gentle' | 'professional' | 'casual'): string {
 ${toneInstruction(tone)}
 
 ## 提案の作り方
-- **事業・お金・大事な判断を最優先** に書く。蓄積した資料から、「期日が迫ってる」「数字が変わった」「決めてないこと」を見つけて 1 つ目に置く。
-- **体調の話は最後の 1 文だけ**。「今日は疲れ気味なので、午後に 15 分休みましょうね」程度で十分。中心テーマにしない。
+- **事業・お金・大事な判断だけ** を書く。蓄積した資料から、「期日が迫ってる」「数字が変わった」「決めてないこと」を見つけて 1 つ目に置く。
+- **体調・健康・睡眠・水分・休息の話は一切しない** (オーナー指示 2026-05-28: 当たり前の助言が毎日出て違和感。体調はヘルスケアのアラートが別途担当)。
 - アクションは「動詞 + 何を」で書く。例) "A 社にお知らせメールを送る" / "見積書を今日中に出す"。「整理する」「考える」のような曖昧禁止。
 - 数字・固有名詞・期日を必ず 1 つ以上入れる。「ふんわり」した提案は禁止。
 - 同じ角度の提案を 2 日続けない。直近の提案を見て、別の切り口で。
@@ -92,35 +92,15 @@ export async function generateProposal(
     .map(p => `- ${p.title}: ${p.message.slice(0, 60)}`)
     .join('\n') || '(初回)';
 
-  // 健康データ
-  let healthBlock = '';
-  if (health?.today) {
-    const t = health.today;
-    const wk = health.week.filter(Boolean);
-    const avg = (k: keyof DailyHealth) => {
-      const vals = wk.map(d => Number(d[k] || 0)).filter(n => !Number.isNaN(n));
-      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-    };
-    healthBlock = `
-## 健康メトリクス (今日 / 直近7日平均)
-- 睡眠: ${t.sleepHours.toFixed(1)}時間 (深${t.deepSleepMin}m, REM${t.remSleepMin}m, スコア${t.sleepScore}) / 平均${avg('sleepHours').toFixed(1)}h
-- HRV: ${t.hrv}ms (平均${avg('hrv').toFixed(0)}ms), 安静時心拍 ${t.restingHR}bpm
-- 回復スコア: ${t.recoveryScore}/100, ストレス: ${t.stressLevel}/100
-- 活動: ${t.steps.toLocaleString()}歩, 運動${t.activeMinutes}分, ${t.exerciseKcal}kcal
-- マインドフル: ${t.mindfulMinutes}分, 水分: ${t.hydrationL.toFixed(1)}L, カフェイン${t.caffeineMg}mg
-${t.bp ? `- 血圧: ${t.bp.sys}/${t.bp.dia}` : ''}`;
+  // 健康データは「今日の一手」では使わない (オーナー指示 2026-05-28)。
+  // health 引数は後方互換のため残すが、プロンプトには一切入れない。
+  void health;
 
-    if (health.anomalies.length > 0) {
-      healthBlock += '\n\n## 検出された異常\n' +
-        health.anomalies.slice(0, 4).map(a => `- [${a.severity}] ${a.title}: ${a.detail}`).join('\n');
-    }
-  }
-
-  // 巡回モード指示
+  // 巡回モード指示 (体調には触れない)
   const patrolInstruction = patrolMode === 'morning'
-    ? '\n\n## モード: 朝のブリーフ\n今日着手すべき**事業/財務/戦略の最重要1件**から書き起こす。健康は本文末尾の1文に留める。'
+    ? '\n\n## モード: 朝のブリーフ\n今日着手すべき**事業/財務/戦略の最重要1件**から書き起こす。'
     : patrolMode === 'evening'
-      ? '\n\n## モード: 夜のレビュー\n今日の事業・数値の進捗を踏まえ、明日朝イチで動かす**ビジネス上の1手**を確定する。健康は末尾1文。'
+      ? '\n\n## モード: 夜のレビュー\n今日の事業・数値の進捗を踏まえ、明日朝イチで動かす**ビジネス上の1手**を確定する。'
       : '';
 
   const industryBlock = buildIndustryContext(settings.industry);
@@ -138,11 +118,11 @@ ${kbSummary}
 
 ## 直近の提案 (重複させない)
 ${recent}
-${healthBlock}${patrolInstruction}
+${patrolInstruction}
 
 あなたは "${persona.name}" の専属秘書として、今この瞬間に動かすべき**事業上の1手**を立案してください。
 財務数値・KPI・蓄積資料・期日・顧客動向のいずれかを根拠に、具体的な打ち手を提示。
-健康データは無視せず、本文末尾の1文だけで簡潔に触れる(中心テーマにしない)。`;
+体調・健康・睡眠・水分の話は一切しない (ヘルスケアのアラートが別途担当)。`;
 
   const data = await enqueueClaudeCall(async () => {
     const res = await fetch('/api/ai', {

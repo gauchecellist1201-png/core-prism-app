@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Legend, CartesianGrid } from 'recharts';
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Legend, CartesianGrid } from 'recharts';
 import type { Persona, AppSettings } from '../types/identity';
 import type { PersonRecord, PersonInteraction, SentimentType, InteractionType } from '../types/people';
 import { usePeople } from '../hooks/usePeople';
@@ -831,23 +831,24 @@ function PersonDetail({
         )}
       </div>
 
-      {/* センチメントチャート */}
+      {/* センチメント分布チャートは撤去 (オーナー指示 2026-05-28:
+          黒帯バグ + そもそも不要)。代わりに気持ちの内訳を簡潔なチップ表示に。 */}
       {chartData.length > 0 && (
         <div className="cp-card">
-          <p className="cp-h3 mb-2">センチメント分布 (やり取り)</p>
-          <ResponsiveContainer width="100%" height={120}>
-            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--fg-muted)' }} />
-              <Tooltip
-                contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
-              />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                {chartData.map((entry, index) => (
-                  <rect key={index} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <p className="cp-h3 mb-2">気持ちの内訳 (これまでのやり取り)</p>
+          <div className="cp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            {chartData.map((d) => (
+              <span key={d.name} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '5px 11px', borderRadius: 999,
+                background: `${d.color}18`, border: `1px solid ${d.color}44`,
+                fontSize: 12, fontWeight: 700, color: 'var(--fg)',
+              }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: d.color }} />
+                {d.name} <strong style={{ color: d.color }}>{d.count}</strong>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

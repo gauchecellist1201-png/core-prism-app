@@ -85,7 +85,7 @@ function buildSlotInstruction(slot: CoachSlot): string {
   switch (slot) {
     case 'morning':
       return `## モード: 朝のブリーフ (自動配信)
-今日のフォーカスを決める。体調を踏まえて、今日重点にすべき事業アクション3件を具体的に提示。
+今日のフォーカスを決める。今日重点にすべき事業アクション3件を具体的に提示 (体調の話はしない)。
 "title" は「おはよう + 今日の核心1行」の形式 (20文字以内)。`;
 
     case 'noon':
@@ -141,7 +141,7 @@ export async function generateBrief(
 ): Promise<CoachBrief> {
   // API キー / master key / gemini key は main.tsx の fetch interceptor が
   // localStorage から自動で付与する。ここでは手動で渡さない。
-  const { persona, slot, knowledge, health, business } = input;
+  const { persona, slot, knowledge, business } = input;
 
   const kbSummary = knowledge
     .slice(0, 5)
@@ -204,27 +204,17 @@ export async function generateBrief(
   }
   const businessOps = bizBlock.length > 0 ? bizBlock.join('\n') : '(業務情報の追加データなし)';
 
-  // 体調は「業務に影響する場合だけ」1 行で添える。最後に
-  let healthBlock = '';
-  if (health?.today) {
-    const t = health.today;
-    const concern = t.sleepHours < 5 || t.recoveryScore < 40 || t.stressLevel > 70;
-    if (concern) {
-      healthBlock = `\n## 体調 (注意あり)\n- 睡眠 ${t.sleepHours.toFixed(1)}h / 回復 ${t.recoveryScore} / ストレス ${t.stressLevel}`;
-      if (health.anomalies.length > 0) {
-        healthBlock += ` / ${health.anomalies.slice(0, 1).map(a => a.title).join(', ')}`;
-      }
-    } else {
-      healthBlock = `\n## 体調 — 概ね良好 (睡眠 ${t.sleepHours.toFixed(1)}h / 回復 ${t.recoveryScore})`;
-    }
-  }
+  // 体調コメントは「今日の一言」から完全撤去 (オーナー指示 2026-05-28:
+  // 「HRV低下/アルコール影響…」のような当たり前の助言が毎日出て違和感。
+  //  体調はヘルスケアのアラート側で別途通知する。ブリーフは事業だけ)
+  const healthBlock = '';
 
   const systemPrompt = `あなたはオーナーの **AI 戦略コーチ** です。1 日 3 回、自動的にお知らせを届けます。
 
 ## 🟢 内容のルール (絶対遵守)
-1. **業務 (お金 / 案件 / タスク / 顧客) が常に最優先**。体調の話は、業務に影響しているとき "1 文だけ" 添える。
+1. **事業の話だけ** (お金 / 案件 / タスク / 顧客 / 戦略)。**体調・健康・睡眠・水分・休息の話は一切しない** (それはヘルスケアのアラートが別途担当)。
 2. **必ず数字を入れる**: Stripe 実売上 / 未請求金額 / 取引件数 / 残タスク件数 / 案件件数 など、与えられた数字を message と context に入れる。
-3. 抽象的な「がんばりましょう」「健康に気をつけて」だけは **禁止**。具体的な行動を 1 つ以上提示。
+3. 抽象的な「がんばりましょう」「健康に気をつけて」は **禁止**。具体的な事業の行動を 1 つ以上提示。
 4. ナレッジに書かれていることだけを根拠にする。推測で数字を作らない。
 
 ## 🟢 やさしい日本語で書くルール (絶対遵守)
