@@ -574,9 +574,9 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
           type="button"
           onClick={() => setDetailOpen(o => !o)}
           style={{
-            fontSize: 10.5, fontWeight: 700, color: '#fff',
-            background: 'rgba(255,255,255,0.10)',
-            border: '1px solid rgba(255,255,255,0.18)',
+            fontSize: 10.5, fontWeight: 700, color: 'var(--fg)',
+            background: 'var(--surface-3)',
+            border: '1px solid var(--border)',
             borderRadius: 7, padding: '6px 11px', cursor: 'pointer',
             minHeight: 30,
           }}
@@ -586,9 +586,9 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
             type="button"
             onClick={onReconnect}
             style={{
-              fontSize: 10.5, fontWeight: 700, color: '#fff',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              fontSize: 10.5, fontWeight: 700, color: 'var(--fg)',
+              background: 'var(--surface-3)',
+              border: '1px solid var(--border)',
               borderRadius: 7, padding: '6px 11px', cursor: 'pointer',
               minHeight: 30,
             }}

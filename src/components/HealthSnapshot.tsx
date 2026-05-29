@@ -66,7 +66,7 @@ const METRICS: MetricSpec[] = [
     label: '瞑想',
     emoji: '🧘',
     format: v => `${Math.round(v)}m`,
-    color: v => v >= 10 ? '#34d399' : v >= 5 ? '#c9a96e' : 'rgba(255,255,255,0.5)',
+    color: v => v >= 10 ? '#34d399' : v >= 5 ? '#c9a96e' : 'var(--fg-muted)',
     good: v => v >= 10,
   },
 ];

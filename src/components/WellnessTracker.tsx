@@ -104,7 +104,7 @@ export default function WellnessTracker({ today, accent = '#8E5CFF', accentSoft,
         {/* スコアリング */}
         <div style={{ position: 'relative', width: 84, height: 84, flexShrink: 0 }}>
           <svg width="84" height="84" style={{ transform: 'rotate(-90deg)' }}>
-            <circle cx="42" cy="42" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="7" />
+            <circle cx="42" cy="42" r={R} fill="none" stroke="var(--border-2)" strokeWidth="7" />
             <motion.circle
               cx="42" cy="42" r={R} fill="none"
               stroke={theme.ring} strokeWidth="7" strokeLinecap="round"
@@ -123,9 +123,9 @@ export default function WellnessTracker({ today, accent = '#8E5CFF', accentSoft,
             <motion.span
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              style={{ fontSize: 22, fontWeight: 900, color: '#fff', lineHeight: 1 }}
+              style={{ fontSize: 22, fontWeight: 900, color: 'var(--fg-strong)', lineHeight: 1 }}
             >{w.today}</motion.span>
-            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+            <span style={{ fontSize: 9, color: 'var(--fg-muted)', marginTop: 2 }}>
               {theme.emoji} {theme.label}
             </span>
           </div>
@@ -168,9 +168,9 @@ export default function WellnessTracker({ today, accent = '#8E5CFF', accentSoft,
       {/* 一言メッセージ */}
       <p style={{
         marginTop: 12,
-        fontSize: 12, color: 'rgba(255,255,255,0.78)',
+        fontSize: 12, color: 'var(--fg)',
         lineHeight: 1.6, position: 'relative',
-        borderTop: '1px solid rgba(255,255,255,0.07)',
+        borderTop: '1px solid var(--border)',
         paddingTop: 10,
       }}>
         {w.message}
@@ -185,12 +185,13 @@ function Stat({ icon, label, value, unit, accent, spark }: {
 }) {
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.04)',
+      background: 'var(--surface-3)',
+      border: '1px solid var(--border)',
       borderRadius: 10, padding: '6px 9px',
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 4,
-        color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: 600,
+        color: 'var(--fg-muted)', fontSize: 9, fontWeight: 600,
         marginBottom: 3,
       }}>
         <span style={{ color: accent }}>{icon}</span>{label}
@@ -199,8 +200,8 @@ function Stat({ icon, label, value, unit, accent, spark }: {
         <Sparkline data={spark} color={accent} />
       ) : (
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
-          <span style={{ fontSize: 17, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{value}</span>
-          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>{unit}</span>
+          <span style={{ fontSize: 17, fontWeight: 900, color: 'var(--fg-strong)', lineHeight: 1 }}>{value}</span>
+          <span style={{ fontSize: 9, color: 'var(--fg-muted)' }}>{unit}</span>
         </div>
       )}
     </div>
