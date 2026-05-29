@@ -10,7 +10,7 @@
 // ============================================================
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
-  Copy, Share2, Check, Gift, Users as UsersIcon, Sparkles, QrCode, Mail,
+  Copy, Share2, Check, Gift, QrCode, Mail,
   Calendar, MessageCircle,
 } from 'lucide-react';
 
@@ -33,6 +33,7 @@ import { type Brand, loadBillingUser, isTrialActive } from '../lib/billing';
 import {
   getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS,
   getInviterName, saveInviterName, INVITER_NAME_MAX, sanitizeInviterName,
+  getShareCount, recordShare,
 } from '../lib/referral';
 import { shareToInstagram } from '../iris/instagramShare';
 
@@ -135,6 +136,10 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
   const [copied, setCopied] = useState<'url' | 'text' | null>(null);
   const [snack, setSnack] = useState<string | null>(null);
   const [showQr, setShowQr] = useState(false);
+  const [shareCount, setShareCount] = useState<number>(() => getShareCount());
+
+  // シェアアクションのたびに端末ローカルの実カウントを +1 (正直な数値)
+  const bumpShare = useCallback(() => setShareCount(recordShare()), []);
 
   // 名前を 600ms デバウンスで localStorage に保存
   useEffect(() => {
@@ -182,29 +187,31 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
 
   const copyUrl = useCallback(async () => {
     const ok = await copyText(url);
-    if (ok) flashCopied('url', '✓ リンクをコピーしました!');
+    if (ok) { flashCopied('url', '✓ リンクをコピーしました!'); bumpShare(); }
     else flashSnack('コピーに失敗しました');
-  }, [url, copyText, flashCopied, flashSnack]);
+  }, [url, copyText, flashCopied, flashSnack, bumpShare]);
 
   const copyInviteText = useCallback(async () => {
     const ok = await copyText(text);
-    if (ok) flashCopied('text', '✓ 招待文をコピーしました!');
+    if (ok) { flashCopied('text', '✓ 招待文をコピーしました!'); bumpShare(); }
     else flashSnack('コピーに失敗しました');
-  }, [text, copyText, flashCopied, flashSnack]);
+  }, [text, copyText, flashCopied, flashSnack, bumpShare]);
 
   const shareLine = useCallback(() => {
     const lineText = shareTextLine(url, brand, cleanName);
     const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`;
     window.open(lineUrl, '_blank', 'noopener,noreferrer');
     flashSnack('LINE を開きました');
-  }, [url, brand, cleanName, flashSnack]);
+    bumpShare();
+  }, [url, brand, cleanName, flashSnack, bumpShare]);
 
   const shareX = useCallback(() => {
     const xText = shareTextX(url, brand, cleanName);
     const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(xText)}`;
     window.open(xUrl, '_blank', 'noopener,noreferrer');
     flashSnack('X を開きました');
-  }, [url, brand, cleanName, flashSnack]);
+    bumpShare();
+  }, [url, brand, cleanName, flashSnack, bumpShare]);
 
   const shareMail = useCallback(() => {
     const { subject, body } = shareTextMail(url, brand, cleanName);
@@ -212,7 +219,8 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
     // PWA / iOS では mailto 起動を window.location に流すと標準クライアントが開く
     window.location.href = mailto;
     flashSnack('メールクライアントを開きました');
-  }, [url, brand, cleanName, flashSnack]);
+    bumpShare();
+  }, [url, brand, cleanName, flashSnack, bumpShare]);
 
   const shareNative = useCallback(async () => {
     const navAny = navigator as any;
@@ -224,19 +232,22 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
           url,
         });
         flashSnack('✓ 共有しました');
+        bumpShare();
       } catch (e: any) {
         if (e?.name !== 'AbortError') flashSnack('共有がキャンセルされました');
       }
     } else {
       const ok = await copyText(text);
       flashSnack(ok ? '✓ 本文をコピーしました (共有 API 非対応)' : 'コピーに失敗しました');
+      if (ok) bumpShare();
     }
-  }, [text, url, brand, copyText, flashSnack]);
+  }, [text, url, brand, copyText, flashSnack, bumpShare]);
 
   const shareInstagram = useCallback(async () => {
     const r = await shareToInstagram({ caption: text });
     flashSnack(r.message);
-  }, [text, flashSnack]);
+    bumpShare();
+  }, [text, flashSnack, bumpShare]);
 
   const sectionPad = compact ? '1rem' : '1.5rem 1.25rem';
   const radius = 20;
@@ -314,8 +325,8 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '0.5rem',
       }}>
-        <Stat icon={<UsersIcon size={13} />} label="紹介人数" value={`${referral.referredCount}`} suffix="人" palette={p} />
-        <Stat icon={<Sparkles size={13} />} label="獲得日数" value={`+${referral.bonusDays}`} suffix="日" palette={p} />
+        <Stat icon={<Share2 size={13} />} label="シェア回数" value={`${shareCount}`} suffix="回" palette={p} />
+        <Stat icon={<Gift size={13} />} label="友達1人につき" value={`+${REFERRAL_BONUS_DAYS}`} suffix="日" palette={p} />
         <Stat
           icon={<Calendar size={13} />}
           label="trial 残"

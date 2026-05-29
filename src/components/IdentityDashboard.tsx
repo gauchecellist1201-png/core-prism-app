@@ -611,6 +611,19 @@ export default function IdentityDashboard({
                 📚 <span className="hidden md:inline">ナレッジ</span>{personaKnowledge.length > 0 && ` (${personaKnowledge.length})`}
               </motion.button>
               <button
+                onClick={() => setShowInvite(true)}
+                className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg transition-all flex-shrink-0"
+                style={{
+                  background: `${persona.accentColor}1a`,
+                  border: `1px solid ${persona.accentColor}44`,
+                  color: persona.accentColor,
+                }}
+                aria-label={`友達招待 +${REFERRAL_BONUS_DAYS}日`}
+                title={`友達招待 +${REFERRAL_BONUS_DAYS}日`}
+              >
+                <Gift size={15} strokeWidth={2.4} />
+              </button>
+              <button
                 onClick={() => setShowMobileAI(true)}
                 className="md:hidden text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all"
                 style={{
