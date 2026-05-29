@@ -131,59 +131,94 @@ ${pool.map(c => `- id: ${c.id} / 社名: ${c.name} / 業界: ${c.industry} / 規
 
 上記から最も相性が良い 5 社を選び、JSON で返してください。`;
 
-  const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: opts.settings.preferredModel,
-        max_tokens: 4000,
-        system: sys,
-        messages: [{ role: 'user', content: userMsg }],
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `先回りマッチ AI エラー: ${res.status}`);
-    }
-    return res.json();
-  });
-
-  const text = data.content?.[0]?.text ?? '';
-  let parsed: any = {};
+  // AI 呼出し。失敗 (レート制限 / JSON 崩れ / 0 件) しても、行き止まらず
+  // ローカルで 5 社を選ぶフォールバックを返す (オーナー報告 2026-05-28:
+  // 「ずっとエラーになる」= master キー未添付時の 429 で止まる問題の根治)
   try {
+    const data = await enqueueClaudeCall(async () => {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: opts.settings.preferredModel,
+          max_tokens: 4000,
+          system: sys,
+          messages: [{ role: 'user', content: userMsg }],
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message ?? `先回りマッチ AI エラー: ${res.status}`);
+      }
+      return res.json();
+    });
+
+    const text = data.content?.[0]?.text ?? '';
     const m = text.match(/\{[\s\S]*\}/);
-    parsed = JSON.parse(m ? m[0] : text);
+    const parsed: any = m ? JSON.parse(m[0]) : {};
+    const rawPicks: any[] = Array.isArray(parsed.picks) ? parsed.picks : [];
+    const lookup = new Map(COMPANIES_JP.map(c => [c.id, c]));
+
+    const picks: AiPick[] = rawPicks
+      .map((p: any): AiPick | null => {
+        const c = lookup.get(String(p.companyId || ''));
+        if (!c) return null;
+        return {
+          companyId: c.id,
+          companyName: c.name,
+          industry: c.industry,
+          size: c.size,
+          region: c.region,
+          matchScore: Math.max(0, Math.min(100, Number(p.matchScore) || 60)),
+          reason: String(p.reason || '').trim(),
+          emailSubject: String(p.emailSubject || '').trim(),
+          emailBody: String(p.emailBody || '').trim(),
+        };
+      })
+      .filter((p): p is AiPick => Boolean(p && p.emailBody))
+      .slice(0, 5);
+
+    if (picks.length > 0) return picks;
+    // AI が 0 件 → ローカルフォールバック
+    return localFallbackPicks(pool, opts);
   } catch {
-    throw new Error('AI が返した JSON を解釈できませんでした。もう一度試してください。');
+    // レート制限 / 通信エラー / JSON 崩れ → ローカルで必ず 5 社返す
+    return localFallbackPicks(pool, opts);
   }
+}
 
-  const rawPicks: any[] = Array.isArray(parsed.picks) ? parsed.picks : [];
-  const lookup = new Map(COMPANIES_JP.map(c => [c.id, c]));
+/**
+ * AI が使えない時のローカル先回りピック。
+ * 候補プール (業種優先でソート済) の上位 5 社に、テンプレ提案文を当てる。
+ * 「AI 不調でも営業先 + たたき台メールは必ず出る」を保証する。
+ */
+function localFallbackPicks(
+  pool: CompanyEntry[],
+  opts: { persona: Persona; ownProduct: string },
+): AiPick[] {
+  const top = pool.slice(0, 5);
+  const sender = opts.persona.name || 'わたし';
+  return top.map((c, i): AiPick => {
+    const subject = `${c.name} 様の${c.newsHint ? '最近の動き' : '事業'}に役立てそうな件`;
+    const body =
+`${c.name} ご担当者さま
 
-  const picks: AiPick[] = rawPicks
-    .map((p: any): AiPick | null => {
-      const c = lookup.get(String(p.companyId || ''));
-      if (!c) return null;
-      return {
-        companyId: c.id,
-        companyName: c.name,
-        industry: c.industry,
-        size: c.size,
-        region: c.region,
-        matchScore: Math.max(0, Math.min(100, Number(p.matchScore) || 60)),
-        reason: String(p.reason || '').trim(),
-        emailSubject: String(p.emailSubject || '').trim(),
-        emailBody: String(p.emailBody || '').trim(),
-      };
-    })
-    .filter((p): p is AiPick => Boolean(p && p.emailBody))
-    .slice(0, 5);
+はじめてご連絡します。${sender} と申します。
+${c.newsHint ? `御社の「${c.newsHint}」を拝見し、` : '御社の事業を拝見し、'}わたしたちの取り組みがお力になれそうだと感じました。
 
-  if (picks.length === 0) {
-    throw new Error('AI が候補を選べませんでした。自社商材の説明を増やしてもう一度試してください。');
-  }
-  return picks;
+${(opts.ownProduct || '').split('\n')[0]?.slice(0, 60) || 'わたしたちのサービス'}を通じて、御社の課題解決のお手伝いができればと思います。
+
+まずは 20 分ほど、オンラインでお話しできませんか。ご都合のよい日時を 2〜3 候補いただけますと幸いです。`;
+    return {
+      companyId: c.id,
+      companyName: c.name,
+      industry: c.industry,
+      size: c.size,
+      region: c.region,
+      matchScore: 72 - i * 4, // 上位ほど高スコア
+      reason: `${c.industry} / ${c.region} で、自社商材の想定ターゲットに近い先です${c.newsHint ? ` (${c.newsHint})` : ''}`,
+      emailSubject: subject,
+      emailBody: body,
+    };
+  });
 }
