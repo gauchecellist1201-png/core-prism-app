@@ -382,7 +382,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
               <p className="text-neutral-600 text-xs">ナレッジベース · {items.length}件</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle text-xl">×</button>
+          <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle text-xl flex items-center justify-center" style={{ minWidth: 44, minHeight: 44 }} aria-label="閉じる">✕</button>
         </div>
 
         {/* Tabs */}

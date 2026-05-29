@@ -57,7 +57,7 @@ export default function MeetingHub({ persona, onClose }: Props) {
             <span style={{ color: persona.accentColor }}>{persona.icon}</span>
             <p className="text-fg text-sm font-light">ミーティングリンク</p>
           </div>
-          <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle">×</button>
+          <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle text-xl flex items-center justify-center" style={{ minWidth: 44, minHeight: 44 }} aria-label="閉じる">✕</button>
         </div>
 
         <StudioIntro

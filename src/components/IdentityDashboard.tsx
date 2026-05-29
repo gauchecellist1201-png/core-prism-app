@@ -1304,7 +1304,7 @@ export default function IdentityDashboard({
                   className="w-8 h-8 rounded-full flex items-center justify-center text-fg-muted hover:text-fg text-lg leading-none"
                   aria-label="閉じる"
                 >
-                  ×
+                  ✕
                 </button>
               </div>
               <div className="overflow-y-auto flex-shrink-0" style={{ maxHeight: '30%', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>

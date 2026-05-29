@@ -261,7 +261,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
         {/* ヘッダー */}
         <div className="flex items-center justify-between p-5 pb-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <p className="text-fg text-sm font-light tracking-wide">環境設定</p>
-          <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle text-xl" style={{ minWidth: 44, minHeight: 44 }} aria-label="閉じる">×</button>
+          <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle text-xl" style={{ minWidth: 44, minHeight: 44 }} aria-label="閉じる">✕</button>
         </div>
 
         {/* 検索バー */}

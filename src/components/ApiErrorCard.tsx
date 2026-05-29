@@ -223,7 +223,7 @@ export default function ApiErrorCard({ error, className, variant = 'auto', onRet
                   color: fgDim, fontSize: 18, lineHeight: 1, padding: '0 4px',
                   borderRadius: 6,
                 }}
-              >×</button>
+              >✕</button>
             </div>
             {!isValidation && (
               <ol style={{
@@ -247,7 +247,7 @@ export default function ApiErrorCard({ error, className, variant = 'auto', onRet
                       display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
                       boxShadow: `0 4px 12px ${c.iconColor}55`,
                     }}
-                  ><RotateCcw size={13} strokeWidth={2.6} /> もう一度ためす</button>
+                  ><RotateCcw size={13} strokeWidth={2.2} /> もう一度ためす</button>
                 )}
                 {showSettingsBtn && (
                   <button
