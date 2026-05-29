@@ -168,6 +168,49 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
   const [result, setResult] = useState<{ title: string; body: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // ── 横断インサイト: 全資料を一度に読んで「気づき」を抽出 (オーナー指示 2026-05-28) ──
+  const [crossBusy, setCrossBusy] = useState(false);
+  const runCrossInsight = useCallback(async () => {
+    if (items.length === 0) return;
+    setCrossBusy(true);
+    try {
+      const digest = items.slice(0, 40).map((k, i) => {
+        const sum = k.analysis?.summary || k.content.slice(0, 160);
+        return `${i + 1}. ${k.title}: ${sum.slice(0, 180)}`;
+      }).join('\n');
+      const sys = `あなたは経営参謀です。バラバラの資料を横断して読み、1 件ずつ見てるだけでは気づけない
+「点と点をつなぐ気づき」を出します。やさしい日本語、専門用語は使わない。
+返答は本文のみ (JSON 不要)。以下の 3 ブロックを短く:
+
+【見えてきたパターン】3 行
+散らばった資料に共通する流れ・繰り返し・方向性。
+
+【見落としているかもしれない機会】3 行
+資料同士を組み合わせると見える、まだ手をつけてない事業チャンス。
+
+【今すぐ確かめるべき問い】3 つ
+この資料群から、社長が今週中に答えを出すべき問い。`;
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: settings.preferredModel,
+          max_tokens: 1500,
+          system: sys,
+          messages: [{ role: 'user', content: `# 事業: ${persona.name}\n\n# 蓄積資料 ${items.length} 件 (抜粋)\n${digest}\n\n上記を横断して、点をつなぐ気づきを出してください。` }],
+        }),
+      });
+      if (!res.ok) throw new Error('AI エラー');
+      const data = await res.json();
+      const text = data?.content?.[0]?.text ?? '';
+      if (text.trim()) setResult({ title: `🔮 ${items.length} 件の資料を横断した気づき`, body: text.trim() });
+    } catch {
+      setResult({ title: '横断インサイト', body: 'いま混み合っているようです。少し待ってからもう一度お試しください。' });
+    } finally {
+      setCrossBusy(false);
+    }
+  }, [items, persona.name, settings.preferredModel]);
+
   const loadProposals = useCallback(async () => {
     if (items.length === 0) return;
     setProposalsBusy(true);
@@ -427,6 +470,21 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                   </div>
                 ) : (
                   <>
+                    {/* 横断インサイト — 全資料を一度に読んで点をつなぐ (オーナー指示 2026-05-28) */}
+                    {items.length >= 2 && (
+                      <button
+                        onClick={runCrossInsight}
+                        disabled={crossBusy}
+                        className="w-full py-3 rounded-xl text-sm font-bold mb-1"
+                        style={{
+                          background: `linear-gradient(135deg, ${persona.accentColor}, ${persona.accentColor}cc)`,
+                          color: '#fff', border: 'none', cursor: crossBusy ? 'wait' : 'pointer',
+                          boxShadow: `0 8px 20px ${persona.accentColor}44`, opacity: crossBusy ? 0.6 : 1,
+                        }}
+                      >
+                        {crossBusy ? '🧠 全資料を横断して考え中…' : `🔮 ${items.length} 件を横断して「気づき」を出す`}
+                      </button>
+                    )}
                     <p className="text-white/60 text-xs leading-relaxed">
                       ためた {items.length} 件の資料から、AI が「こう活かせます」を先に提案します。
                       よければ <strong style={{ color: persona.accentColor }}>✓ 承認</strong> で成果物まで作ります。
