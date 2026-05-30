@@ -8,6 +8,7 @@
 // API キーはサーバ側に保管されたまま。ファイルはユーザーの
 // ブラウザ内で処理され、分割した音声だけが順番に送られる。
 // ============================================================
+import { enqueueClaudeCall } from './apiQueue';
 
 const CHUNK_SEC = 75;        // 1 チャンクの長さ (75s × 16kHz × 2byte ≒ 2.4MB)
 const TARGET_RATE = 16000;   // 文字起こしに十分な品質
@@ -103,32 +104,34 @@ async function decodeAndResample(file: File): Promise<Float32Array> {
 
 // ── 1 チャンクを文字起こし ──
 async function transcribeChunk(wavB64: string, model: string): Promise<string> {
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'light' },
-    body: JSON.stringify({
-      model,
-      max_tokens: 4096,
-      system:
-        'あなたは日本語の文字起こしの専門家です。会議の音声を、聞こえたとおりに文字起こししてください。' +
-        '発言内容だけを出力し、要約・説明・推測はしません。話者が変わったと感じたら改行します。' +
-        '聞き取れない箇所は (不明) と書きます。音声が無音なら空のまま返します。',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: 'audio/wav', data: wavB64 } },
-            { type: 'text', text: 'この会議音声を文字起こししてください。' },
-          ],
-        },
-      ],
-    }),
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'light' },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4096,
+        system:
+          'あなたは日本語の文字起こしの専門家です。会議の音声を、聞こえたとおりに文字起こししてください。' +
+          '発言内容だけを出力し、要約・説明・推測はしません。話者が変わったと感じたら改行します。' +
+          '聞き取れない箇所は (不明) と書きます。音声が無音なら空のまま返します。',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: 'audio/wav', data: wavB64 } },
+              { type: 'text', text: 'この会議音声を文字起こししてください。' },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({} as any));
+      throw new Error(e?.error?.message || `文字起こしに失敗しました (${res.status})。少し待ってもう一度お試しください。`);
+    }
+    return res.json();
   });
-  if (!res.ok) {
-    const e = await res.json().catch(() => ({} as any));
-    throw new Error(e?.error?.message || `文字起こしに失敗しました (${res.status})。少し待ってもう一度お試しください。`);
-  }
-  const data = await res.json();
   return (data?.content?.[0]?.text || '').trim();
 }
 

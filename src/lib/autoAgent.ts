@@ -8,6 +8,7 @@
 // - 「やる」→ AI が裏で実行 → 結果を見せる
 // - 営業も、解決も、AI が動く。ユーザーは方向性を示すだけ
 // ============================================================
+import { enqueueClaudeCall } from './apiQueue';
 
 const STORAGE_KEY = 'core_auto_agent_suggestions_v2_plain'; // v2: やさしい日本語ルール導入でキャッシュ無効化
 const CACHE_TTL = 25 * 60_000; // 25 分
@@ -230,21 +231,23 @@ ${hasKnowledge
   : 'まだ何もデータが無い状態です。「資料をアップロード」「最初の案件を登録」など、ユーザーが最初に行うべき設定アクションを 2-3 件だけ提案してください。'}
 JSON で返答。`;
 
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5',
-      messages: [{ role: 'user', content: userMsg }],
-      system,
-      max_tokens: 1600,
-    }),
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        messages: [{ role: 'user', content: userMsg }],
+        system,
+        max_tokens: 1600,
+      }),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => null);
+      throw new Error(e?.error?.message || `Agent API ${res.status}`);
+    }
+    return res.json();
   });
-  if (!res.ok) {
-    const e = await res.json().catch(() => null);
-    throw new Error(e?.error?.message || `Agent API ${res.status}`);
-  }
-  const data = await res.json();
   const text: string =
     (Array.isArray(data.content) ? data.content[0]?.text : '') ||
     data.text || data.message || '';
@@ -302,21 +305,23 @@ ${ctx.knowledge ? `## 参照可能なナレッジ\n${ctx.knowledge}\n` : ''}
 ${ctx.deals ? `## 案件状況\n${ctx.deals}\n` : ''}
 ${ctx.kpis ? `## KPI\n${ctx.kpis}\n` : ''}`;
 
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'heavy' },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5',
-      messages: [{ role: 'user', content: s.actionPrompt }],
-      system,
-      max_tokens: 2200,
-    }),
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'heavy' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        messages: [{ role: 'user', content: s.actionPrompt }],
+        system,
+        max_tokens: 2200,
+      }),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => null);
+      throw new Error(e?.error?.message || `Exec API ${res.status}`);
+    }
+    return res.json();
   });
-  if (!res.ok) {
-    const e = await res.json().catch(() => null);
-    throw new Error(e?.error?.message || `Exec API ${res.status}`);
-  }
-  const data = await res.json();
   const text: string =
     (Array.isArray(data.content) ? data.content[0]?.text : '') ||
     data.text || data.message || '';
@@ -340,18 +345,20 @@ export async function refineSuggestion(s: Suggestion, refinement: string, ctx: A
   "actionPrompt": "..."
 }`;
 
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5',
-      messages: [{ role: 'user', content: refinement }],
-      system,
-      max_tokens: 600,
-    }),
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        messages: [{ role: 'user', content: refinement }],
+        system,
+        max_tokens: 600,
+      }),
+    });
+    if (!res.ok) throw new Error(`Refine ${res.status}`);
+    return res.json();
   });
-  if (!res.ok) throw new Error(`Refine ${res.status}`);
-  const data = await res.json();
   const text: string = (Array.isArray(data.content) ? data.content[0]?.text : '') || data.text || data.message || '';
   const m = text.match(/\{[\s\S]*\}/);
   if (!m) throw new Error('Refine: JSON 無し');
