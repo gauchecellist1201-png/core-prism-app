@@ -45,7 +45,10 @@ export default function CognitiveDashboard({ activeId, personas, onEditFinance, 
     <div className="space-y-3">
       {/* Time rings */}
       <div className="p-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <p className="text-neutral-600 text-xs tracking-widest uppercase mb-3">時間投資</p>
+        <div className="mb-3">
+          <p className="text-neutral-600 text-xs tracking-widest uppercase">時間投資</p>
+          <p className="text-neutral-500 text-[10px] mt-0.5 leading-snug">どのペルソナ(役割)に何% 時間を使っているかを見る場所</p>
+        </div>
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0">
             <svg width="100" height="100" viewBox="0 0 100 100">
@@ -71,15 +74,18 @@ export default function CognitiveDashboard({ activeId, personas, onEditFinance, 
 
       {/* Finance */}
       <div className="p-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-neutral-600 text-xs tracking-widest uppercase">財務核心</p>
+        <div className="flex items-start justify-between mb-2 gap-2">
+          <div>
+            <p className="text-neutral-600 text-xs tracking-widest uppercase">財務核心</p>
+            <p className="text-neutral-500 text-[10px] mt-0.5 leading-snug">収入 - 支出 = 手元に残るお金。ペルソナ別の収支も下に並びます</p>
+          </div>
           {onEditFinance && totalIncome === 0 && totalExpense === 0 && (
             <button
               onClick={() => {
                 const active = personas.find(p => p.id === activeId);
                 if (active) onEditFinance(active);
               }}
-              className="text-[10px] text-fg-muted hover:text-fg underline"
+              className="text-[10px] text-fg-muted hover:text-fg underline flex-shrink-0"
             >資料から抽出</button>
           )}
         </div>

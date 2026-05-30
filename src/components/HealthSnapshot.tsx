@@ -118,21 +118,24 @@ export default function HealthSnapshot({ today, week, anomalies, onOpen }: Props
     >
       <button
         onClick={onOpen}
-        className="w-full flex items-center justify-between px-3 pt-3 pb-2 hover:bg-surface transition-colors text-left"
+        className="w-full px-3 pt-3 pb-2 hover:bg-surface transition-colors text-left"
       >
-        <div className="flex items-center gap-2">
-          <span className="text-base">🩺</span>
-          <p className="text-fg text-base font-medium">今日のヘルス</p>
-          {alertCount > 0 && (
-            <span
-              className="text-xs px-2 py-0.5 rounded-full font-medium"
-              style={{ background: 'rgba(248,113,113,0.15)', color: '#f87171', border: '1px solid rgba(248,113,113,0.3)' }}
-            >
-              ⚠ {alertCount}件の注意
-            </span>
-          )}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-base">🩺</span>
+            <p className="text-fg text-base font-medium">今日のヘルス</p>
+            {alertCount > 0 && (
+              <span
+                className="text-xs px-2 py-0.5 rounded-full font-medium"
+                style={{ background: 'rgba(248,113,113,0.15)', color: '#f87171', border: '1px solid rgba(248,113,113,0.3)' }}
+              >
+                ⚠ {alertCount}件の注意
+              </span>
+            )}
+          </div>
+          <span className="text-fg-muted text-xs">詳細 →</span>
         </div>
-        <span className="text-fg-muted text-xs">詳細 →</span>
+        <p className="text-fg-muted text-[10px] mt-0.5 leading-snug">今日のからだの状態。色が緑=良好 / 黄=ふつう / 赤=注意。タップで 7 日分のグラフへ。</p>
       </button>
 
       <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 px-3 pb-3">

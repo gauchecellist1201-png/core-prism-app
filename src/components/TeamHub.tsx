@@ -4,6 +4,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWorkspace } from '../hooks/useWorkspace';
+import { StudioIntro } from './StudioIntro';
 import type { MemberRole } from '../types/team';
 
 const INVITE_BASE_URL = 'https://core-prism-app.vercel.app';
@@ -144,6 +145,43 @@ export default function TeamHub({ accentColor, onClose }: Props) {
         </div>
 
         <div className="p-5 space-y-6">
+          <StudioIntro
+            id="team-hub"
+            accent={accentColor}
+            emoji="👥"
+            what="ひとつのワークスペースを家族や仲間と一緒に使う場所です。同じナレッジ(資料)と AI を共有して、別々のアカウントから触れます。"
+            tryThis="「ワークスペースを作成」→「招待リンクを作る」を押す → 相手にコピーして送るだけで参加できます。"
+            example="あなた (オーナー) + 編集者 2 名 + 閲覧者 2 名 = 最大 5 名まで同じデータを共有。"
+            sampleLabel="作れる招待リンク"
+            samplePreview={
+              <div
+                style={{
+                  fontSize: 8,
+                  lineHeight: 1.5,
+                  color: 'var(--fg)',
+                  padding: '6px 6px',
+                }}
+                aria-label="招待リンクのサンプル"
+              >
+                <div style={{ opacity: 0.6, marginBottom: 2 }}>編集者として招待 · 7 日間有効</div>
+                <div
+                  style={{
+                    background: 'var(--surface-1)',
+                    borderRadius: 4,
+                    padding: '3px 5px',
+                    fontFamily: 'ui-monospace, monospace',
+                    fontSize: 7,
+                    color: accentColor,
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  core-prism-app.vercel.app/?invite=AB7K
+                </div>
+                <div style={{ opacity: 0.6, marginTop: 3 }}>📋 コピーして相手に送るだけ</div>
+              </div>
+            }
+          />
+
           {/* メンバー数表示 */}
           <div className="flex items-center justify-between text-xs rounded-lg px-3 py-2"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
