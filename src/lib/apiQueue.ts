@@ -103,6 +103,11 @@ export function enqueueClaudeCall<T>(task: Task<T>): Promise<T> {
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
           const result = await task();
+          // AI 呼出し成功 → クレジット消費を記録 (master は credits.ts で無視される)
+          try {
+            const m = await import('./credits');
+            m.consume('brief', 'ai-call');
+          } catch { /* credits 未ロード時は無視 */ }
           resolve(result);
           return;
         } catch (err) {
