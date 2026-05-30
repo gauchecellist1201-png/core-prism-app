@@ -88,6 +88,8 @@ import IntegrationCenter from './IntegrationCenter';
 import StripeConnectHero from './StripeConnectHero';
 import EarningsAndTimeHero from './EarningsAndTimeHero';
 import FocusHero from './FocusHero';
+import CreditBar from './CreditBar';
+import CreditModal from './CreditModal';
 
 interface Props {
   persona: Persona;
@@ -200,6 +202,10 @@ export default function IdentityDashboard({
   const [showHealth, setShowHealth] = useState(false);
   // CeoStudio (経営アドバイザー) — 7 エージェントの最重要、現状分析 + 90 日方針 + 今週やること
   const [showCeo, setShowCeo] = useState(false);
+  // クレジット (Top-up / プラン切替) モーダル — オーナー指示 2026-05-28
+  const [showCredit, setShowCredit] = useState(false);
+  const [creditTab, setCreditTab] = useState<'topup' | 'plan'>('topup');
+
   // 焦点モード (オーナー指示 2026-05-28): 開いた瞬間は「今日の最優先 1 つ + 数字」だけ。
   // 残りは「すべての機能を見る」で展開。設定は localStorage に保存。
   const [dashboardExpanded, setDashboardExpanded] = useState<boolean>(() => {
@@ -687,6 +693,12 @@ export default function IdentityDashboard({
 
           <div className="flex-1 overflow-auto p-3 md:p-4 relative">
             <div className="max-w-5xl space-y-3">
+
+              {/* クレジット使用量バー — 常時トップ (オーナー指示 2026-05-28: 対価設計) */}
+              <CreditBar
+                onTopUp={() => { setCreditTab('topup'); setShowCredit(true); }}
+                onUpgrade={() => { setCreditTab('plan'); setShowCredit(true); }}
+              />
 
               {/* 7 つのエージェント — 常時トップ固定 (オーナー指示 2026-05-28: ここは閉じない) */}
               <AgentsOrbit
@@ -1367,6 +1379,11 @@ export default function IdentityDashboard({
             onClose={() => setShowCeo(false)}
           />
         )}
+        <CreditModal
+          open={showCredit}
+          onClose={() => setShowCredit(false)}
+          initialTab={creditTab}
+        />
         {showMinutes && (
           <MeetingMinutesModal
             key="minutes"
