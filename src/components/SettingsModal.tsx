@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePhaseButton } from '../hooks/usePhaseButton';
 import type { AppSettings, Persona } from '../types/identity';
 import { estimateMonthlyCost } from '../hooks/useClaude';
 import { OPENAI_VOICE_OPTIONS, isOpenAITTSConfigured, type OpenAIVoice } from '../lib/ttsOpenAI';
@@ -203,18 +204,24 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // 「保存しました」を緑フラッシュで一瞬見せてからモーダルを閉じる (押した手応え)
+  const savePhase = usePhaseButton({ successDuration: 1100 });
   const handleSave = () => {
-    onSave({
-      claudeApiKey: apiKey,
-      preferredModel: model as AppSettings['preferredModel'],
-      userName,
-      aiTone,
-      voiceEnabled,
-      uiLanguage,
-      industry: (industry || undefined) as AppSettings['industry'],
-      ...({ openaiVoice } as any),
+    if (!savePhase.isIdle) return;
+    savePhase.run(() => {
+      onSave({
+        claudeApiKey: apiKey,
+        preferredModel: model as AppSettings['preferredModel'],
+        userName,
+        aiTone,
+        voiceEnabled,
+        uiLanguage,
+        industry: (industry || undefined) as AppSettings['industry'],
+        ...({ openaiVoice } as any),
+      });
     });
-    onClose();
+    // success フラッシュが見えるのを待ってから閉じる
+    setTimeout(() => onClose(), 720);
   };
 
   // ── 危険操作: 全 API キー削除 ──────────────────────
@@ -843,11 +850,39 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
           </button>
           <motion.button
             onClick={handleSave}
-            className="px-6 py-2 rounded-lg text-sm font-light"
-            style={{ background: 'linear-gradient(135deg, #c9a96e, #a07840)', color: '#0a0a0f', minHeight: 40 }}
-            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            disabled={!savePhase.isIdle}
+            aria-live="polite"
+            className={`px-6 py-2 rounded-lg text-sm font-light inline-flex items-center justify-center gap-1.5 ${savePhase.successClass ?? ''}`}
+            style={{
+              background: savePhase.isSuccess
+                ? 'linear-gradient(135deg, #34D399, #10B981)'
+                : 'linear-gradient(135deg, #c9a96e, #a07840)',
+              color: '#0a0a0f',
+              minHeight: 40,
+              minWidth: 110,
+              boxShadow: savePhase.isSuccess ? '0 4px 14px rgba(52, 211, 153, 0.45)' : undefined,
+              transition: 'background 0.22s ease-out, box-shadow 0.22s ease-out',
+            }}
+            whileHover={savePhase.isIdle ? { scale: 1.02 } : {}}
+            whileTap={savePhase.isIdle ? { scale: 0.98 } : {}}
           >
-            保存
+            {savePhase.isPending ? (
+              <>
+                <svg width="11" height="11" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="cp-phase-spin">
+                  <path d="M8.5 5a3.5 3.5 0 1 1-3.5-3.5" />
+                </svg>
+                保存中…
+              </>
+            ) : savePhase.isSuccess ? (
+              <>
+                <svg width="13" height="13" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 5.2L4.2 7.4L8 3" />
+                </svg>
+                保存しました
+              </>
+            ) : (
+              '保存'
+            )}
           </motion.button>
         </div>
       </motion.div>

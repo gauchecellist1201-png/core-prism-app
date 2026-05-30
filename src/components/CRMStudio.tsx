@@ -25,6 +25,7 @@ import AILoadingState from './AILoadingState';
 import ApiErrorCard from './ApiErrorCard';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { useCelebrate } from '../hooks/useCelebrate';
+import { usePhaseButton } from '../hooks/usePhaseButton';
 import { suggestNextAction, heuristicNextAction, priorityScore, daysSinceLastActivity } from '../lib/crmNextAction';
 
 interface Props {
@@ -543,6 +544,10 @@ function DealCard({ deal, accent, onOpen, onMove, onPropose, proposing, compact 
   const days = daysSinceLastActivity(deal);
   const stale = days != null && days >= 7;
 
+  // 押した瞬間に「依頼中…」スピナーが出るよう phase ボタンを 1 個ずつ用意
+  const proposeBtn = usePhaseButton({ successDuration: 1100 });
+  const followupBtn = usePhaseButton({ successDuration: 1100 });
+
   return (
     <div className="cp-card text-left w-full"
       style={{ borderColor: meta.color + '50', background: 'var(--surface)', cursor: 'grab', padding: compact ? 10 : 12 }}>
@@ -583,32 +588,40 @@ function DealCard({ deal, accent, onOpen, onMove, onPropose, proposing, compact 
       {isOpen && (
         <div className="cp-row mt-2" style={{ gap: 4 }}>
           <button
-            onClick={(e) => { e.stopPropagation(); onPropose('proposal'); }}
-            disabled={proposing}
-            className="cp-btn cp-btn-sm"
+            onClick={(e) => { e.stopPropagation(); proposeBtn.run(() => onPropose('proposal')); }}
+            disabled={proposing || proposeBtn.isPending}
+            aria-live="polite"
+            className={`cp-btn cp-btn-sm ${proposeBtn.successClass ?? ''}`}
             style={{
               fontSize: 10.5, padding: '4px 8px',
-              background: proposing ? 'transparent' : accent + '15',
-              color: accent,
-              borderColor: accent + '40',
+              background: proposeBtn.isSuccess
+                ? 'rgba(52, 211, 153, 0.18)'
+                : (proposing || proposeBtn.isPending) ? 'transparent' : accent + '15',
+              color: proposeBtn.isSuccess ? '#34D399' : accent,
+              borderColor: proposeBtn.isSuccess ? 'rgba(52, 211, 153, 0.55)' : accent + '40',
               flex: 1,
+              transition: 'background 0.22s ease-out, border-color 0.22s ease-out',
             }}
             title="CSO/CMO に提案文を書かせる"
           >
-            {proposing ? '送信中…' : '✍️ 提案文を書く'}
+            {proposeBtn.isPending ? '⏳ 依頼中…' : proposeBtn.isSuccess ? '✓ 依頼しました' : proposing ? '送信中…' : '✍️ 提案文を書く'}
           </button>
           {stale && (
             <button
-              onClick={(e) => { e.stopPropagation(); onPropose('followup'); }}
-              disabled={proposing}
-              className="cp-btn cp-btn-sm"
+              onClick={(e) => { e.stopPropagation(); followupBtn.run(() => onPropose('followup')); }}
+              disabled={proposing || followupBtn.isPending}
+              aria-live="polite"
+              className={`cp-btn cp-btn-sm ${followupBtn.successClass ?? ''}`}
               style={{
                 fontSize: 10.5, padding: '4px 8px',
-                background: '#FFA94D15', color: '#FFA94D', borderColor: '#FFA94D40',
+                background: followupBtn.isSuccess ? 'rgba(52, 211, 153, 0.18)' : '#FFA94D15',
+                color: followupBtn.isSuccess ? '#34D399' : '#FFA94D',
+                borderColor: followupBtn.isSuccess ? 'rgba(52, 211, 153, 0.55)' : '#FFA94D40',
                 flex: 1,
+                transition: 'background 0.22s ease-out, border-color 0.22s ease-out',
               }}
             >
-              {proposing ? '…' : '📮 リマインダー'}
+              {followupBtn.isPending ? '⏳ 依頼中…' : followupBtn.isSuccess ? '✓ 送りました' : proposing ? '…' : '📮 リマインダー'}
             </button>
           )}
         </div>
@@ -669,6 +682,9 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
   const [refreshingAI, setRefreshingAI] = useState(false);
   const [aiNext, setAiNext] = useState<string>(() => heuristicNextAction(deal));
   const [aiErr, setAiErr] = useState<string | null>(null);
+  // 大きめ「提案文を書かせる」ボタン用の手応え phase
+  const editorProposeBtn = usePhaseButton({ successDuration: 1200 });
+  const editorFollowupBtn = usePhaseButton({ successDuration: 1200 });
 
   // 編集モーダルを開いた瞬間に AI 次アクションも取り直す
   useEffect(() => {
@@ -739,12 +755,34 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
             )}
             <ApiErrorCard error={aiErr} onRetry={refreshAI} />
             <div className="cp-row mt-2" style={{ gap: 6, flexWrap: 'wrap' }}>
-              <button onClick={() => onPropose('proposal')} disabled={proposing} className="cp-btn cp-btn-sm"
-                style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
-                {proposing ? '送信中…' : '✍️ CSO/CMO に提案文を書かせる'}
+              <button
+                onClick={() => editorProposeBtn.run(() => onPropose('proposal'))}
+                disabled={proposing || editorProposeBtn.isPending}
+                aria-live="polite"
+                className={`cp-btn cp-btn-sm ${editorProposeBtn.successClass ?? ''}`}
+                style={{
+                  background: editorProposeBtn.isSuccess ? 'linear-gradient(135deg, #34D399, #10B981)' : persona.accentColor,
+                  color: '#0a0a0f',
+                  borderColor: 'transparent',
+                  boxShadow: editorProposeBtn.isSuccess ? '0 4px 14px rgba(52, 211, 153, 0.45)' : undefined,
+                  transition: 'background 0.22s ease-out, box-shadow 0.22s ease-out',
+                }}
+              >
+                {editorProposeBtn.isPending ? '⏳ CXO に依頼中…' : editorProposeBtn.isSuccess ? '✓ 依頼しました' : proposing ? '送信中…' : '✍️ CSO/CMO に提案文を書かせる'}
               </button>
-              <button onClick={() => onPropose('followup')} disabled={proposing} className="cp-btn cp-btn-sm">
-                {proposing ? '…' : '📮 フォローアップ文を作る'}
+              <button
+                onClick={() => editorFollowupBtn.run(() => onPropose('followup'))}
+                disabled={proposing || editorFollowupBtn.isPending}
+                aria-live="polite"
+                className={`cp-btn cp-btn-sm ${editorFollowupBtn.successClass ?? ''}`}
+                style={{
+                  background: editorFollowupBtn.isSuccess ? 'rgba(52, 211, 153, 0.18)' : undefined,
+                  borderColor: editorFollowupBtn.isSuccess ? 'rgba(52, 211, 153, 0.55)' : undefined,
+                  color: editorFollowupBtn.isSuccess ? '#34D399' : undefined,
+                  transition: 'background 0.22s ease-out, border-color 0.22s ease-out',
+                }}
+              >
+                {editorFollowupBtn.isPending ? '⏳ 依頼中…' : editorFollowupBtn.isSuccess ? '✓ 送りました' : proposing ? '…' : '📮 フォローアップ文を作る'}
               </button>
             </div>
           </div>

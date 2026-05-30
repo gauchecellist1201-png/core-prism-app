@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ChatMessage, KnowledgeItem, Persona, AppSettings } from '../types/identity';
 import { useTypewriter } from '../hooks/useTypewriter';
+import { usePhaseButton } from '../hooks/usePhaseButton';
 import ContextualUpgradeCard from './ContextualUpgradeCard';
 import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
 import ApiErrorCard from './ApiErrorCard';
@@ -55,12 +56,14 @@ export default function AISidebar({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
+  const sendPhase = usePhaseButton({ successDuration: 950 });
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || sendPhase.isPending) return;
     const msg = input.trim();
     setInput('');
-    await onSend(msg);
+    await sendPhase.run(() => onSend(msg));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -306,17 +309,33 @@ export default function AISidebar({
           />
           <motion.button
             type="submit"
-            disabled={!input.trim() || isLoading || !hasApiKey}
-            className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 mb-0.5"
+            disabled={!input.trim() || isLoading || !hasApiKey || sendPhase.isPending}
+            aria-live="polite"
+            aria-label={sendPhase.isPending ? '送信中' : sendPhase.isSuccess ? '送れました' : '送信'}
+            className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 mb-0.5 ${sendPhase.successClass ?? ''}`}
             style={{
-              background: input.trim() && hasApiKey ? persona.accentColor : 'var(--surface-3)',
-              color: input.trim() && hasApiKey ? '#0a0a0f' : 'var(--fg-muted)',
+              background: sendPhase.isSuccess
+                ? '#34D399'
+                : sendPhase.isPending
+                  ? (input.trim() && hasApiKey ? persona.accentColor + 'cc' : 'var(--surface-3)')
+                  : (input.trim() && hasApiKey ? persona.accentColor : 'var(--surface-3)'),
+              color: sendPhase.isSuccess ? '#0a0a0f' : (input.trim() && hasApiKey ? '#0a0a0f' : 'var(--fg-muted)'),
             }}
-            whileTap={input.trim() && hasApiKey ? { scale: 0.9 } : {}}
+            whileTap={input.trim() && hasApiKey && sendPhase.isIdle ? { scale: 0.9 } : {}}
           >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M5 1L9 5L5 9M1 5H9" />
-            </svg>
+            {sendPhase.isPending ? (
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="cp-phase-spin">
+                <path d="M8.5 5a3.5 3.5 0 1 1-3.5-3.5" />
+              </svg>
+            ) : sendPhase.isSuccess ? (
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 5.2L4.2 7.4L8 3" />
+              </svg>
+            ) : (
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M5 1L9 5L5 9M1 5H9" />
+              </svg>
+            )}
           </motion.button>
         </div>
       </form>
