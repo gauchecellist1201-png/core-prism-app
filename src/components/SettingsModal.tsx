@@ -298,7 +298,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                 className="text-neutral-600 hover:text-fg-subtle"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, padding: 4 }}
                 aria-label="検索をクリア"
-              >×</button>
+              >✕</button>
             )}
           </div>
         </div>
@@ -319,7 +319,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                   color: tab === id ? '#c9a96e' : '#4a4a6a',
                   whiteSpace: 'nowrap',
                   flexShrink: 0,
-                  minHeight: 36,
+                  minHeight: 44,
                 }}
               >
                 {label}
@@ -400,7 +400,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                             background: fontSize === s ? 'rgba(201,169,110,0.18)' : 'rgba(255,255,255,0.04)',
                             color: fontSize === s ? '#c9a96e' : 'rgba(255,255,255,0.6)',
                             border: `1px solid ${fontSize === s ? 'rgba(201,169,110,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                            minHeight: 32,
+                            minHeight: 44,
                           }}
                         >
                           {s === 'sm' ? '小' : s === 'md' ? '中' : '大'}
@@ -455,7 +455,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                         window.location.reload();
                       }}
                       className="text-xs px-3 py-1.5 rounded-full flex-shrink-0"
-                      style={{ background: 'rgba(201,169,110,0.12)', color: '#c9a96e', border: '1px solid rgba(201,169,110,0.3)', minHeight: 32 }}
+                      style={{ background: 'rgba(201,169,110,0.12)', color: '#c9a96e', border: '1px solid rgba(201,169,110,0.3)', minHeight: 44 }}
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     >
                       再表示
@@ -651,7 +651,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                             color: '#c9a96e',
                             border: '1px solid rgba(201,169,110,0.25)',
                             cursor: 'pointer',
-                            minHeight: 32,
+                            minHeight: 44,
                           }}
                         >
                           編集
@@ -845,7 +845,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
 
         {/* フッター */}
         <div className="flex justify-end gap-3 px-5 pb-5 flex-shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 14 }}>
-          <button onClick={onClose} className="px-4 py-2 text-sm text-neutral-600 hover:text-fg-subtle transition-colors" style={{ minHeight: 40 }}>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-neutral-600 hover:text-fg-subtle transition-colors" style={{ minHeight: 44 }}>
             キャンセル
           </button>
           <motion.button
@@ -858,7 +858,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                 ? 'linear-gradient(135deg, #34D399, #10B981)'
                 : 'linear-gradient(135deg, #c9a96e, #a07840)',
               color: '#0a0a0f',
-              minHeight: 40,
+              minHeight: 44,
               minWidth: 110,
               boxShadow: savePhase.isSuccess ? '0 4px 14px rgba(52, 211, 153, 0.45)' : undefined,
               transition: 'background 0.22s ease-out, box-shadow 0.22s ease-out',
