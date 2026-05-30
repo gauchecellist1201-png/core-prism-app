@@ -9,7 +9,7 @@ import {
   Camera, Sparkles, TrendingUp, Bookmark, Share2, Eye, Heart,
   MessageCircle, Clock, Flame, Loader2,
   Image as ImageIcon, FileText, CheckCircle2, X, Upload, Wand2, BarChart3,
-  Sliders, Plus, Trash2, RefreshCw, FilePlus2, Pencil,
+  Sliders, Plus, Trash2, RefreshCw, FilePlus2, Pencil, Check,
 } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { ContentType, MediaKit } from '../types/influencerDeal';
@@ -630,10 +630,24 @@ function ErrorRecovery({
   bg: IrisBackgroundDef;
   message: string;
   canRetry: boolean;
-  onRetry: () => void;
+  onRetry: () => void | Promise<void>;
   onPickAgain: () => void;
   onManualInput: () => void;
 }) {
+  type Phase = 'idle' | 'pending' | 'success';
+  const [retryPhase, setRetryPhase] = useState<Phase>('idle');
+  const mounted = useRef(true);
+  useEffect(() => () => { mounted.current = false; }, []);
+
+  const handleRetry = async () => {
+    if (retryPhase !== 'idle') return;
+    setRetryPhase('pending');
+    try { await Promise.resolve(onRetry()); } catch { /* 失敗は親が新しい message を渡してくる */ }
+    if (!mounted.current) return;
+    setRetryPhase('success');
+    setTimeout(() => { if (mounted.current) setRetryPhase('idle'); }, 1000);
+  };
+
   const btn = (icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean) => (
     <button
       onClick={onClick}
@@ -655,6 +669,43 @@ function ErrorRecovery({
     </button>
   );
 
+  const retryBtn = canRetry && (
+    <button
+      onClick={handleRetry}
+      disabled={retryPhase === 'pending'}
+      aria-live="polite"
+      className={retryPhase === 'success' ? 'cp-phase-success' : undefined}
+      style={{
+        background: retryPhase === 'success'
+          ? 'linear-gradient(135deg, #34D399, #34D399cc)'
+          : `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+        color: '#fff',
+        border: 'none',
+        borderRadius: 999,
+        padding: '0.5rem 1rem',
+        fontWeight: 700,
+        fontSize: '0.82rem',
+        fontFamily: IRIS_FONTS.body,
+        cursor: retryPhase === 'pending' ? 'progress' : 'pointer',
+        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+        boxShadow: retryPhase === 'success'
+          ? '0 6px 16px rgba(52, 211, 153, 0.55)'
+          : `0 6px 16px ${bg.accent}55`,
+        opacity: retryPhase === 'pending' ? 0.88 : 1,
+        transition: 'background 0.22s ease-out, box-shadow 0.22s ease-out, opacity 0.18s',
+        minWidth: 144, justifyContent: 'center',
+      }}
+    >
+      {retryPhase === 'pending' ? (
+        <><RefreshCw size={14} className="cp-phase-spin" /> 再試行中…</>
+      ) : retryPhase === 'success' ? (
+        <><Check size={15} strokeWidth={2.8} /> 届きました</>
+      ) : (
+        <><RefreshCw size={14} /> もう一度ためす</>
+      )}
+    </button>
+  );
+
   return (
     <div style={{
       marginTop: '0.9rem',
@@ -671,7 +722,7 @@ function ErrorRecovery({
         </p>
       </div>
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-        {canRetry && btn(<RefreshCw size={14} />, 'もう一度ためす', onRetry, true)}
+        {retryBtn}
         {btn(<FilePlus2 size={14} />, '別の画像でやり直す', onPickAgain)}
         {btn(<Pencil size={14} />, '手で入力する', onManualInput)}
       </div>

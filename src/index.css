@@ -2074,6 +2074,29 @@ select:not([data-no-tactile]):focus-visible,
   100% { transform: translateX(100%); }
 }
 
+/* ───── 押した瞬間の「手応え」: pending / success の状態演出 ─────
+   再試行・送信・保存系のボタンに付けるユーティリティ。
+   .cp-phase-spin: 進行中アイコンをクルクル回す (0.85s, iris-spin を流用)。
+   .cp-phase-success: 押下後 0.7s だけ緑のリングがフッと広がる安堵感。
+   reduced-motion 設定中は両方とも止めて静止状態に。 */
+.cp-phase-spin {
+  display: inline-block;
+  animation: iris-spin 0.85s linear infinite;
+  transform-origin: center;
+}
+@keyframes cp-phase-success-flash {
+  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); filter: brightness(1); }
+  35%  { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0); filter: brightness(1.12); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); filter: brightness(1); }
+}
+.cp-phase-success {
+  animation: cp-phase-success-flash 0.7s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-phase-spin { animation: none; }
+  .cp-phase-success { animation: none; }
+}
+
 /* ───── H. トースト / 通知の登場 keyframe (framer-motion 未使用箇所用) ───── */
 @keyframes slide-up-fade {
   from { opacity: 0; transform: translateY(12px); }
