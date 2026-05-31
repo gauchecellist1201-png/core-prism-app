@@ -308,7 +308,7 @@ export default function IntegrationsHub() {
                 {/* 権限 1 行 */}
                 <div className="text-[11px] leading-snug space-y-0.5 mb-2">
                   <p style={{ color: '#4ade80' }}>✓ {svc.does}</p>
-                  <p className="text-fg-muted">× {svc.doesNot}</p>
+                  <p className="text-fg-muted">✕ {svc.doesNot}</p>
                 </div>
 
                 {ts === 'error' && testErr[svc.id] && (

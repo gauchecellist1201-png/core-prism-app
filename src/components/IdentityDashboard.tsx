@@ -1313,7 +1313,7 @@ export default function IdentityDashboard({
                 </div>
                 <button
                   onClick={() => setShowMobileAI(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-fg-muted hover:text-fg text-lg leading-none"
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-fg-muted hover:text-fg text-lg leading-none"
                   aria-label="閉じる"
                 >
                   ✕

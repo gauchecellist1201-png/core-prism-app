@@ -71,8 +71,9 @@ export default function PremiumHubModal({ persona, settings, knowledge, onClose,
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none"
-          >×</button>
+            aria-label="閉じる"
+            className="w-11 h-11 rounded-full flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none"
+          >✕</button>
         </div>
 
         {/* Tabs */}
