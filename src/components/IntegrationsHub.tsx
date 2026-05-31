@@ -16,6 +16,7 @@ import {
   type IntegrationConfig,
 } from '../lib/integrations';
 import AccountingIntegration from './AccountingIntegration';
+import { StudioIntro } from './StudioIntro';
 
 const SAMPLE_BRIEF = {
   title: 'テスト送信 — CORE Prism',
@@ -213,6 +214,27 @@ export default function IntegrationsHub() {
 
   return (
     <div className="space-y-6">
+      <StudioIntro
+        id="integrations-hub"
+        accent="#5BA8FF"
+        emoji="🔗"
+        what="あなたのアプリ (Stripe / Gmail / カレンダー など) を Prism につなぐ場所。つなぐと「売上・予定・メール」を AI が自動で読み、毎日のブリーフや返信下書きに反映される。"
+        tryThis="まず Stripe (お会計) を「接続」。30 秒で今月の売上が画面に出ます。"
+        example="Stripe 接続後 → 今月の売上 ¥482,000 / 客単価 ¥18,500 / 入金待ち 3 件 が自動で出る"
+        sampleLabel="接続後にすぐ見えるもの"
+        samplePreview={(
+          <div className="cp-stack-xs" style={{ fontSize: 11, lineHeight: 1.5 }}>
+            <div className="cp-row" style={{ gap: 6, alignItems: 'center' }}>
+              <span style={{ color: '#10B981' }}>●</span>
+              <span style={{ color: 'var(--fg)' }}>Stripe</span>
+              <span style={{ color: 'var(--fg-muted)' }}>接続済み</span>
+            </div>
+            <div style={{ color: 'var(--fg-muted)' }}>今月の売上</div>
+            <div style={{ color: 'var(--fg)', fontWeight: 700 }}>¥482,000</div>
+            <div style={{ color: 'var(--fg-muted)', fontSize: 10 }}>入金待ち 3 件 / 客単価 ¥18,500</div>
+          </div>
+        )}
+      />
       {/* ─── ダッシュボード サマリ ───────────────────────────── */}
       <section className="space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">

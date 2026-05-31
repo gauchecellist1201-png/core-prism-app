@@ -13,6 +13,7 @@ import {
   analyzeFinancials, type FinancialAnalysis, financialToMarkdown,
 } from '../lib/financialAnalyst';
 import { parseFile } from '../lib/fileParser';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -130,6 +131,25 @@ function StrategyPanel({ persona, settings, knowledge, onSave }: {
 
   return (
     <div className="p-5 space-y-4">
+      <StudioIntro
+        id="premium-strategy"
+        accent="#A78BFA"
+        emoji="🎯"
+        what="自社の悩み・問いに対し、コンサル会社が使う「分析の型 (SWOT / 5フォースなど)」を AI が当てはめて、強み弱み・機会脅威を整理してくれる戦略の壁打ち AI。"
+        tryThis="まず型を 1 つ選ぶ → 問いを 1 行で書く → 「分析する」。3 分で 4 象限の表が返ってきます。"
+        example="問い『来期の値上げをすべきか?』→ SWOT 表 + 推奨アクション 3 つ + 想定リスク"
+        sampleLabel="返ってくるもの"
+        samplePreview={(
+          <div className="cp-stack-xs" style={{ fontSize: 11, lineHeight: 1.5 }}>
+            <div style={{ color: 'var(--fg)', fontWeight: 700 }}>SWOT 分析</div>
+            <div style={{ color: 'var(--fg-muted)' }}>強み: 既存顧客の満足度高</div>
+            <div style={{ color: 'var(--fg-muted)' }}>弱み: 営業人員 1 名のみ</div>
+            <div style={{ color: 'var(--fg-muted)' }}>機会: 同業の値上げが進行中</div>
+            <div style={{ color: 'var(--fg-muted)' }}>脅威: 新規参入 2 社</div>
+            <div style={{ color: '#A78BFA', fontWeight: 700, marginTop: 4 }}>→ 推奨: 段階値上げ + 既存維持</div>
+          </div>
+        )}
+      />
       {!result ? (
         <>
           <div>
@@ -272,6 +292,30 @@ function ContractPanel({ persona, settings, onSave }: {
 
   return (
     <div className="p-5 space-y-4">
+      <StudioIntro
+        id="premium-contract"
+        accent="#F472B6"
+        emoji="⚖"
+        what="契約書 (PDF / Word / テキスト) を投げると、AI があなたの立場 (発注 / 受注 / NDA) から「危ない条文」を赤・黄・青で振り分け、修正の提案文まで作ってくれる契約レビュー AI。"
+        tryThis="まず立場を選ぶ → 契約書ファイルを投げる → 「分析」。1〜2 分でリスク一覧と修正案が返ります。"
+        example="業務委託契約 (受注側) → 危険 2 件 (損害賠償上限なし / 知財帰属) + 修正文案 2 通り"
+        sampleLabel="返ってくるもの"
+        samplePreview={(
+          <div className="cp-stack-xs" style={{ fontSize: 11, lineHeight: 1.5 }}>
+            <div className="cp-row" style={{ gap: 4, alignItems: 'baseline' }}>
+              <span style={{ color: '#dc2626', fontWeight: 700 }}>● 重大</span>
+              <span style={{ color: 'var(--fg)' }}>第 12 条</span>
+            </div>
+            <div style={{ color: 'var(--fg-muted)' }}>損害賠償の上限が無い</div>
+            <div style={{ color: '#F472B6', fontWeight: 700, marginTop: 2 }}>→ 修正案: 「報酬月額の 3 倍を上限とする」</div>
+            <div className="cp-row" style={{ gap: 4, alignItems: 'baseline', marginTop: 4 }}>
+              <span style={{ color: '#fbbf24', fontWeight: 700 }}>● 注意</span>
+              <span style={{ color: 'var(--fg)' }}>第 8 条</span>
+            </div>
+            <div style={{ color: 'var(--fg-muted)' }}>知財が全て発注側に</div>
+          </div>
+        )}
+      />
       {!result ? (
         <>
           <div>
@@ -456,6 +500,24 @@ function FinancialPanel({ persona, settings, onSave }: {
 
   return (
     <div className="p-5 space-y-4">
+      <StudioIntro
+        id="premium-financial"
+        accent="#5BA8FF"
+        emoji="📊"
+        what="決算書・試算表・月次レポート (PDF / Excel / CSV) を投げると、AI が「儲かっている / 危ない」を 5 段階で評価し、改善の打ち手を 3 つ提案してくれる決算分析 AI。"
+        tryThis="まず財務ファイルを投げる → 「分析」。3 分で安全度スコアと改善案が返ります。"
+        example="月次 P&L → 粗利率 32% (業界平均 28%) / キャッシュ残 2 ヶ月 / 改善案: 固定費 -8%"
+        sampleLabel="返ってくるもの"
+        samplePreview={(
+          <div className="cp-stack-xs" style={{ fontSize: 11, lineHeight: 1.5 }}>
+            <div style={{ color: 'var(--fg)', fontWeight: 700 }}>健全度: ★★★☆☆ (3/5)</div>
+            <div style={{ color: 'var(--fg-muted)' }}>粗利率 32% (業界平均比 +4 pt)</div>
+            <div style={{ color: '#fbbf24', fontWeight: 700 }}>● 注意: キャッシュ残 2 ヶ月</div>
+            <div style={{ color: '#5BA8FF', fontWeight: 700, marginTop: 4 }}>→ 改善案 1: 固定費 -8%</div>
+            <div style={{ color: '#5BA8FF', fontWeight: 700 }}>→ 改善案 2: 売掛 30→14 日</div>
+          </div>
+        )}
+      />
       {!result ? (
         <>
           <div className="rounded-xl p-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
