@@ -29,6 +29,32 @@
     --orb-opacity-high: 0.32;
     --titlebar-bg: rgba(255, 255, 255, 0.6);
     --code-bg: #F1EDE3;
+
+    /* ─── モーション統一トークン (テンポの指揮者) ───
+       「押した瞬間 / ふわっと / 落ち着いた」の 3 拍子を全アプリで揃える。
+       手で書いた 0.06s / 0.15s / 0.18s / 0.2s / 0.22s / 0.25s / 0.3s / 0.7s
+       のバラつきを以下 6 段に集約する。 */
+    --cp-duration-instant: 60ms;   /* 押下沈み込み・指離し直後 */
+    --cp-duration-fast: 150ms;     /* hover 色変化・小さい属性遷移 */
+    --cp-duration-base: 180ms;     /* 既定 (transform / box-shadow) */
+    --cp-duration-slow: 220ms;     /* focus グロー・カードの浮き戻り */
+    --cp-duration-stage: 320ms;    /* モーダル・スケルトン段差 */
+    --cp-duration-curtain: 700ms;  /* スライドカーテン (CTA 光跡) */
+
+    /* ─── イージング (動きの性格) ─── */
+    --cp-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);              /* 自然な減速 */
+    --cp-ease-springy: cubic-bezier(0.34, 1.56, 0.64, 1);       /* コクッと弾む */
+    --cp-ease-soft: cubic-bezier(0.34, 1.2, 0.64, 1);           /* ふわっと */
+    --cp-ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);             /* 標準スムーズ */
+
+    /* ─── 角丸トークン (4 段 + ピル) ───
+       8 / 10 / 12 / 14 / 16 の散らかりを 4 段に整える。
+       xs=チップ, sm=入力/小ボタン, md=カード, lg=モーダル/ヒーロー, pill=丸み最大 */
+    --cp-radius-xs: 6px;
+    --cp-radius-sm: 9px;
+    --cp-radius-md: 12px;
+    --cp-radius-lg: 16px;
+    --cp-radius-pill: 999px;
   }
 
   [data-theme="dark"] {
@@ -484,11 +510,11 @@ select option {
 .cp-modal-tab {
   font-size: 0.85rem; font-weight: 500;
   padding: 8px 14px;
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--cp-radius-sm) var(--cp-radius-sm) 0 0;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
   color: var(--fg-muted);
-  transition: all 0.15s;
+  transition: all var(--cp-duration-fast) var(--cp-ease-out);
 }
 .cp-modal-tab:hover { color: var(--fg); }
 .cp-modal-tab[data-active="true"] { color: var(--fg); border-bottom-color: currentColor; }
@@ -509,13 +535,13 @@ select option {
   padding: 9px 12px;
   background: var(--surface-3);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--cp-radius-sm);
   color: var(--fg);
   outline: none;
   /* focus 時に紫グロー (box-shadow) を息を吸うようにふわっと出す */
-  transition: border-color 0.18s ease-out,
-              background 0.18s ease-out,
-              box-shadow 0.22s cubic-bezier(0.34, 1.2, 0.64, 1);
+  transition: border-color var(--cp-duration-base) var(--cp-ease-out),
+              background var(--cp-duration-base) var(--cp-ease-out),
+              box-shadow var(--cp-duration-slow) var(--cp-ease-soft);
   -webkit-tap-highlight-color: transparent;
 }
 @media (max-width: 768px) {
@@ -571,15 +597,15 @@ select option {
   display: inline-flex; align-items: center; justify-content: center;
   gap: 6px;
   padding: 9px 16px;
-  border-radius: 9px;
+  border-radius: var(--cp-radius-sm);
   font-size: 0.875rem; font-weight: 600;
   border: 1px solid var(--border);
   background: var(--surface-3);
   color: var(--fg);
   /* 押した瞬間だけ素早く沈み、戻りはふわっとした感じ (cubic-bezier で「コクッ」感) */
-  transition: background 0.15s, filter 0.15s, border-color 0.15s,
-              transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.18s ease-out;
+  transition: background var(--cp-duration-fast), filter var(--cp-duration-fast), border-color var(--cp-duration-fast),
+              transform var(--cp-duration-base) var(--cp-ease-springy),
+              box-shadow var(--cp-duration-base) var(--cp-ease-out);
   cursor: pointer;
   min-height: 38px;
   /* タップ時の青いハイライトを消す (Mobile Safari) */
@@ -591,7 +617,7 @@ select option {
 /* 押下: 一瞬だけ 4% ほど沈める。pointer:coarse (タッチ端末) ではより深く */
 .cp-btn:active:not(:disabled) {
   transform: scale(0.96);
-  transition-duration: 0.06s;
+  transition-duration: var(--cp-duration-instant);
 }
 .cp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 /* キーボード focus 時だけ控えめなリング (mouse click では出さない) */
@@ -622,13 +648,13 @@ select option {
 .cp-tap {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
-              background 0.15s, box-shadow 0.18s ease-out, filter 0.15s;
+  transition: transform var(--cp-duration-base) var(--cp-ease-springy),
+              background var(--cp-duration-fast), box-shadow var(--cp-duration-base) var(--cp-ease-out), filter var(--cp-duration-fast);
   will-change: transform;
 }
 .cp-tap:active {
   transform: scale(0.985);
-  transition-duration: 0.06s;
+  transition-duration: var(--cp-duration-instant);
   filter: brightness(0.97);
 }
 .cp-tap:focus-visible {
@@ -646,13 +672,13 @@ select option {
 .cp-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--cp-radius-md);
   padding: 14px 16px;
 }
 .cp-card-section {
   background: var(--surface-3);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--cp-radius-md);
   padding: 16px 18px;
 }
 
@@ -664,10 +690,10 @@ select option {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.2s ease-out,
-              border-color 0.18s ease-out,
-              background 0.18s ease-out;
+  transition: transform var(--cp-duration-slow) var(--cp-ease-springy),
+              box-shadow var(--cp-duration-slow) var(--cp-ease-out),
+              border-color var(--cp-duration-base) var(--cp-ease-out),
+              background var(--cp-duration-base) var(--cp-ease-out);
   will-change: transform, box-shadow;
 }
 .cp-card-tap:hover {
@@ -679,7 +705,7 @@ select option {
 .cp-card-tap:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.25);
-  transition-duration: 0.06s;
+  transition-duration: var(--cp-duration-instant);
 }
 .cp-card-tap:focus-visible {
   outline: 2px solid var(--prism-creative);
@@ -782,11 +808,11 @@ select option {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
-              background 0.15s ease-out,
-              border-color 0.15s ease-out,
-              color 0.15s ease-out,
-              box-shadow 0.18s ease-out;
+  transition: transform var(--cp-duration-base) var(--cp-ease-springy),
+              background var(--cp-duration-fast) var(--cp-ease-out),
+              border-color var(--cp-duration-fast) var(--cp-ease-out),
+              color var(--cp-duration-fast) var(--cp-ease-out),
+              box-shadow var(--cp-duration-base) var(--cp-ease-out);
   will-change: transform;
 }
 .cp-pill-tap:hover {
@@ -796,7 +822,7 @@ select option {
 }
 .cp-pill-tap:active {
   transform: scale(0.92);
-  transition-duration: 0.06s;
+  transition-duration: var(--cp-duration-instant);
 }
 .cp-pill-tap:focus-visible {
   outline: 2px solid var(--prism-creative);
@@ -1356,16 +1382,16 @@ input, textarea, select { font-family: inherit; }
   height: 100%;
   background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.45) 50%, transparent 100%);
   transform: skewX(-20deg);
-  transition: left 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left var(--cp-duration-curtain) var(--cp-ease-smooth);
   pointer-events: none;
   z-index: 1;
 }
 .iris-plan-cta:hover::before { left: 130%; }
 .iris-plan-cta:hover { transform: translateY(-2px); }
-.iris-plan-cta { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+.iris-plan-cta { transition: transform var(--cp-duration-base) var(--cp-ease-out), box-shadow var(--cp-duration-base) var(--cp-ease-out); }
 
 /* Iris Wow カード: hover でほんのり浮く */
-.iris-wow-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.iris-wow-card { transition: transform var(--cp-duration-slow) var(--cp-ease-out), box-shadow var(--cp-duration-slow) var(--cp-ease-out); }
 .iris-wow-card:hover { transform: translateY(-4px); }
 
 /* Iris 画像加工スタジオ: デスクトップは 2 カラム (プレビュー固定 + コントロール) */
@@ -1466,7 +1492,7 @@ input, textarea, select { font-family: inherit; }
   --iris-spacing-8: 32px;
 }
 .iris-card-hover {
-  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  transition: transform var(--cp-duration-slow) var(--cp-ease-out), box-shadow var(--cp-duration-slow) var(--cp-ease-out), border-color var(--cp-duration-slow) var(--cp-ease-out);
 }
 .iris-card-hover:hover {
   transform: translateY(-3px);
@@ -1959,11 +1985,12 @@ input, textarea, select { font-family: inherit; }
    - prefers-reduced-motion 対応
    ============================================================ */
 
-/* 共通 token (このセクション内だけで使う) */
+/* 共通 token — 上位の --cp-* と統一して二重管理をやめる
+   (旧 mi-* 名は既存呼び出しのために残し、値は新トークンへ集約) */
 :root {
-  --mi-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --mi-dur-fast: 120ms;
-  --mi-dur: 200ms;
+  --mi-ease: var(--cp-ease-out);
+  --mi-dur-fast: var(--cp-duration-fast);
+  --mi-dur: var(--cp-duration-slow);
   --mi-accent: #8E5CFF;          /* デフォルトは prism-creative */
   --mi-accent-soft: rgba(142, 92, 255, 0.28);
   --mi-ring: 0 0 0 2px rgba(142, 92, 255, 0.55), 0 0 0 4px rgba(142, 92, 255, 0.18);
