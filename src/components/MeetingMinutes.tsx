@@ -47,6 +47,7 @@ export default function MeetingMinutesModal({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [minutes, setMinutes] = useState<MeetingMinutes | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const analyzeAbortRef = useRef<AbortController | null>(null);
 
   // AI 会社へのタスク提案 (議事録 → AgentTeamMonitor に propose)
   const { propose } = useAgentTaskQueue();
@@ -398,6 +399,10 @@ export default function MeetingMinutesModal({
       setError('議事録の内容を入力してください');
       return;
     }
+    // 直前の AI 呼出しが残っていたら中断 (二重起動防止)
+    if (analyzeAbortRef.current) analyzeAbortRef.current.abort();
+    const ac = new AbortController();
+    analyzeAbortRef.current = ac;
     setIsAnalyzing(true);
     setError(null);
     setProposedActionIds(new Set());
@@ -412,14 +417,28 @@ export default function MeetingMinutesModal({
       const result = await analyzeMeeting(settings, persona, text, {
         title: title || undefined,
         participants: allParts.length ? allParts : undefined,
+        signal: ac.signal,
       });
+      if (ac.signal.aborted) return;
       setMinutes(result);
-    } catch (err) {
+    } catch (err: any) {
+      // 中断は「失敗」ではない — エラー表示しない
+      if (err?.name === 'AbortError' || ac.signal.aborted) return;
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setIsAnalyzing(false);
+      if (analyzeAbortRef.current === ac) setIsAnalyzing(false);
     }
   }, [mode, segments, segmentsToTranscript, transcript, title, participants, usedSpeakers, speakerLabel, persona, settings]);
+
+  const handleAbortAnalyze = useCallback(() => {
+    analyzeAbortRef.current?.abort();
+    setIsAnalyzing(false);
+  }, []);
+
+  // アンマウント時に進行中の議事録 AI を止める
+  useEffect(() => () => {
+    analyzeAbortRef.current?.abort();
+  }, []);
 
   // ── ナレッジ保存 ──
   const handleSaveToKnowledge = useCallback(() => {
@@ -890,8 +909,10 @@ export default function MeetingMinutesModal({
                   '決定事項とアクションを整理',
                   '議事録を整形',
                 ]}
+                onAbort={handleAbortAnalyze}
                 brand="prism"
                 skeletonLines={5}
+                hint="長くなりそうなら ✕ で中断できます"
               />
             </div>
 

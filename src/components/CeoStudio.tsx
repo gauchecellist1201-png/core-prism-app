@@ -79,7 +79,10 @@ export default function CeoStudio({ persona, settings, knowledge, onClose }: Pro
   const [brief, setBrief] = useState<CeoBrief | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aborted, setAborted] = useState(false);
   const autoFiredRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
 
   const accent = persona.accentColor;
 
@@ -164,8 +167,13 @@ ${kbBlock}`;
   }, [stripe, crm.deals, exp.entries, persona, knowledge, settings.industry]);
 
   const runAnalysis = async () => {
+    // 直前の AI 呼出しが残っていたら中断 (二重起動防止)
+    if (abortRef.current) abortRef.current.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
     setLoading(true);
     setError(null);
+    setAborted(false);
     try {
       const res = await fetch('/api/ai', {
         method: 'POST',
@@ -179,16 +187,20 @@ ${kbBlock}`;
             content: `${contextBlock}\n\nこの社長のために、現状を分析し、90 日の重点 3 つと今週やるべきこと 3 つを提示してください。数字を根拠に、具体的に。`,
           }],
         }),
+        signal: ac.signal,
       });
+      if (ac.signal.aborted) return;
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
         throw new Error(e?.error?.message || `AI エラー: ${res.status}`);
       }
       const data = await res.json();
+      if (ac.signal.aborted) return;
       const text = data?.content?.[0]?.text ?? '';
       const m = text.match(/\{[\s\S]*\}/);
       if (!m) throw new Error('AI の返答を読み取れませんでした');
       const p = JSON.parse(m[0]);
+      if (!mountedRef.current || ac.signal.aborted) return;
       setBrief({
         currentState: p.currentState || '',
         strengths: Array.isArray(p.strengths) ? p.strengths : [],
@@ -197,12 +209,31 @@ ${kbBlock}`;
         thisWeekActions: Array.isArray(p.thisWeekActions) ? p.thisWeekActions : [],
         warnings: Array.isArray(p.warnings) ? p.warnings : [],
       });
-    } catch (e) {
+    } catch (e: any) {
+      // 中断は「失敗」ではない — エラー表示せず、aborted フラグだけ立てる
+      if (e?.name === 'AbortError' || ac.signal.aborted) return;
+      if (!mountedRef.current) return;
       setError(e instanceof Error ? e.message : '分析できませんでした');
     } finally {
-      setLoading(false);
+      if (mountedRef.current && abortRef.current === ac) setLoading(false);
     }
   };
+
+  const handleAbort = () => {
+    // ユーザーが「✕ 中断」を押した瞬間に即座にローディング解除
+    abortRef.current?.abort();
+    setLoading(false);
+    setAborted(true);
+  };
+
+  // アンマウント時に進行中の AI 呼出しを止める (モーダル閉じた瞬間に握り続けない)
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      abortRef.current?.abort();
+    };
+  }, []);
 
   // モーダル開いた瞬間に自動発火 (Stripe ローディング終わるのを待つ)
   useEffect(() => {
@@ -283,9 +314,29 @@ ${kbBlock}`;
                   `${knowledge.length} 件の資料を読み込み中`,
                   '90 日の方針を組み立て中',
                 ]}
+                onAbort={handleAbort}
                 brand="prism"
-                hint="Claude が動いてます"
+                hint="Claude が動いてます · 長くなりそうなら ✕ で中断できます"
               />
+            </div>
+          )}
+
+          {aborted && !loading && !brief && (
+            <div className="cp-card-section" style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              textAlign: 'center',
+            }}>
+              <p className="cp-body" style={{ marginBottom: 10 }}>
+                分析を中断しました。今すぐもう一度始められます。
+              </p>
+              <button
+                onClick={runAnalysis}
+                className="cp-btn"
+                style={{ background: accent, color: '#0a0a0f' }}
+              >
+                ↻ もう一度分析する
+              </button>
             </div>
           )}
 

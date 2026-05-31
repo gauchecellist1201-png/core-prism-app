@@ -87,7 +87,7 @@ export async function analyzeMeeting(
   settings: AppSettings,
   persona: Persona,
   transcript: string,
-  meta?: { title?: string; participants?: string[]; date?: string }
+  meta?: { title?: string; participants?: string[]; date?: string; signal?: AbortSignal }
 ): Promise<MeetingMinutes> {
   if (!transcript.trim()) throw new Error('議事録の入力が空です');
 
@@ -117,6 +117,7 @@ ${truncated}
         system: buildSys(settings.aiTone),
         messages: [{ role: 'user', content: userText }],
       }),
+      signal: meta?.signal,
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
