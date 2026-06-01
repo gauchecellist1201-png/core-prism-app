@@ -443,7 +443,7 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
                       style={{ background: persona.accentColor, color: '#0a0a0f' }}>
                       {busy === 'pick'
                         ? '🧠 AI が選定中…'
-                        : picks.length === 0 ? '✨ 今日の 5 社を選んでもらう' : '🔄 もう一度選び直す'}
+                        : picks.length === 0 ? '✨ 今日アプローチする 5 社 + 営業文を AI に作ってもらう' : '🔄 別の 5 社で作り直してもらう'}
                     </button>
                   </div>
                 </div>
@@ -632,7 +632,7 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
                                   className="cp-btn cp-btn-sm cp-copy-btn"
                                 >{approachCopy.copied ? '✓ コピーしました' : '📋 コピー'}</button>
                                 <button onClick={() => sa.updateApproach(a.id, { status: 'sent' })}
-                                  className="cp-btn cp-btn-sm">送信済にする</button>
+                                  className="cp-btn cp-btn-sm">📤 送信済みにする</button>
                               </div>
                             </div>
                           ))}
@@ -666,7 +666,7 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
                   className="cp-btn cp-btn-primary"
                   style={{ background: persona.accentColor, color: '#0a0a0f', opacity: (scriptBusy || !scriptTarget.trim()) ? 0.5 : 1 }}
                 >
-                  {scriptBusy ? '🧠 台本を作成中…' : '🎤 商談台本を作る'}
+                  {scriptBusy ? '🧠 台本を作成中…' : '🎤 30 秒で読める商談台本を AI に書いてもらう'}
                 </button>
               </div>
 

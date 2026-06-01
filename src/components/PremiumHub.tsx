@@ -198,7 +198,7 @@ function StrategyPanel({ persona, settings, knowledge, onSave }: {
               style={{ background: persona.accentColor, color: '#0a0a0f' }}
               whileHover={!loading ? { scale: 1.02 } : {}}
               whileTap={!loading ? { scale: 0.98 } : {}}
-            >{loading ? '🧠 分析中...' : `✨ ${FRAMEWORKS[framework].label} を実行`}</motion.button>
+            >{loading ? '🧠 分析中...' : `✨ ${FRAMEWORKS[framework].label} で 4 象限の表を作ってもらう`}</motion.button>
           </div>
         </>
       ) : (
@@ -365,7 +365,7 @@ function ContractPanel({ persona, settings, onSave }: {
               className="px-5 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
               style={{ background: persona.accentColor, color: '#0a0a0f' }}
               whileTap={!loading ? { scale: 0.98 } : {}}
-            >{loading ? '⚖ レビュー中...' : '✨ 契約書をレビュー'}</motion.button>
+            >{loading ? '⚖ レビュー中...' : '✨ 危ない条文を 赤・黄・青 で振り分けてもらう'}</motion.button>
           </div>
         </>
       ) : (
@@ -552,7 +552,7 @@ function FinancialPanel({ persona, settings, onSave }: {
               className="px-5 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
               style={{ background: persona.accentColor, color: '#0a0a0f' }}
               whileTap={!loading ? { scale: 0.98 } : {}}
-            >{loading ? '🧠 分析中...' : '✨ 決算を分析'}</motion.button>
+            >{loading ? '🧠 分析中...' : '✨ 健全度 ★5 段階 + 改善案 3 つ を出してもらう'}</motion.button>
           </div>
         </>
       ) : (

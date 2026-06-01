@@ -211,7 +211,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
                 whileHover={!isBusy ? { scale: 1.02 } : {}}
                 whileTap={!isBusy ? { scale: 0.98 } : {}}
               >
-                {isBusy ? '🧠 思考中…' : '✨ 判断する'}
+                {isBusy ? '🧠 思考中…' : '✨ 賛成・反対・推奨 を AI に出してもらう'}
               </motion.button>
             </div>
           </div>
@@ -368,7 +368,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
               onClick={handleReset}
               className="w-full mt-3 rounded-lg text-sm font-semibold"
               style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 48 }}
-            >＋ 新しい意思決定を作成</button>
+            >＋ 新しい意思決定を AI に手伝ってもらう</button>
           </div>
         )}
       </motion.div>
