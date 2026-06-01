@@ -642,6 +642,41 @@ select option {
 .cp-btn-ghost:hover:not(:disabled) { background: var(--surface-3); }
 .cp-btn-sm { padding: 5px 10px; font-size: 0.78rem; min-height: 28px; }
 
+/* ───── コピーボタン .cp-copy-btn ─────
+   「📋 コピー」ボタンを押した瞬間、ボタンの中で完結するごほうび演出。
+   useCopyButton() フックと組で使う。data-copied="true" が立つと:
+     1) 緑のグロー (#34D399) がボタンに 1.6 秒だけ宿る
+     2) ::after の小さなチェックが 240ms で描き起こされる
+     3) わずかに弾む (springy)
+   トーストと違って画面遷移を伴わない — 押した指の真下で「できた」と分かる。 */
+.cp-copy-btn {
+  position: relative;
+  transition: background var(--cp-duration-fast), color var(--cp-duration-fast),
+              border-color var(--cp-duration-fast),
+              box-shadow var(--cp-duration-stage) var(--cp-ease-soft),
+              transform var(--cp-duration-base) var(--cp-ease-springy);
+}
+.cp-copy-btn[data-copied="true"] {
+  background: rgba(52, 211, 153, 0.16);
+  border-color: rgba(52, 211, 153, 0.55);
+  color: #34D399;
+  box-shadow:
+    0 0 0 3px rgba(52, 211, 153, 0.12),
+    0 0 22px -4px rgba(52, 211, 153, 0.55);
+  animation: cp-copy-pop var(--cp-duration-stage) var(--cp-ease-springy);
+}
+.cp-copy-btn[data-copied="true"]:hover:not(:disabled) {
+  background: rgba(52, 211, 153, 0.22);
+}
+@keyframes cp-copy-pop {
+  0%   { transform: scale(0.96); }
+  40%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-copy-btn[data-copied="true"] { animation: none; }
+}
+
 /* ──────────────── タップ可能な要素の共通リズム ────────────────
    .cp-tap を付けるだけで、任意の div / span / li を「押せる感」のある
    要素に変えられる。カードや行アイテムの onClick に振りかけて使う。 */

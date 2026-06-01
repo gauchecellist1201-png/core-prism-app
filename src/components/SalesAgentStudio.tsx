@@ -4,7 +4,7 @@ import type { Persona, AppSettings } from '../types/identity';
 import { useSalesAgent } from '../hooks/useSalesAgent';
 import { pickTodaysCompanies, type AiPick } from '../lib/salesAgentMatch';
 import { todaySeed } from '../data/companies-jp';
-import { copyText } from '../lib/clipboard';
+import { useCopyButton } from '../hooks/useCopyButton';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
@@ -58,6 +58,8 @@ const SIZE_LABEL: Record<AiPick['size'], string> = {
 export default function SalesAgentStudio({ persona, settings, onClose }: Props) {
   const sa = useSalesAgent();
   const queue = useAgentTaskQueue();
+  const approachCopy = useCopyButton();
+  const scriptCopy = useCopyButton();
   const [tab, setTab] = useState<Tab>('today');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'pick' | 'edit' | null>(null);
@@ -624,8 +626,11 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
                               <p className="cp-meta" style={{ marginBottom: 4 }}>件名: <span style={{ color: 'var(--fg)', fontWeight: 600 }}>{a.subject}</span></p>
                               <pre className="cp-body" style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, fontSize: '0.85rem' }}>{a.body}</pre>
                               <div className="cp-row" style={{ gap: 6, marginTop: 8 }}>
-                                <button onClick={() => copyText(`${a.subject}\n\n${a.body}`, '営業文')}
-                                  className="cp-btn cp-btn-sm">📋 コピー</button>
+                                <button
+                                  onClick={() => approachCopy.copy(`${a.subject}\n\n${a.body}`, '営業文')}
+                                  data-copied={approachCopy.copied}
+                                  className="cp-btn cp-btn-sm cp-copy-btn"
+                                >{approachCopy.copied ? '✓ コピーしました' : '📋 コピー'}</button>
                                 <button onClick={() => sa.updateApproach(a.id, { status: 'sent' })}
                                   className="cp-btn cp-btn-sm">送信済にする</button>
                               </div>
@@ -709,10 +714,11 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
                     <button
                       onClick={() => {
                         const full = `【商談台本】\n\n■ 掴み\n${script.opening}\n\n■ ヒアリング\n${script.hearing.map((h, i) => `${i + 1}. ${h}`).join('\n')}\n\n■ 提案の核\n${script.pitch}\n\n■ 想定反論への切り返し\n${script.objections.map(o => `Q:「${o.q}」\nA: ${o.a}`).join('\n\n')}\n\n■ クロージング\n${script.closing}`;
-                        copyText(full, '商談台本');
+                        scriptCopy.copy(full, '商談台本');
                       }}
-                      className="cp-btn cp-btn-sm"
-                    >📋 台本を全部コピー</button>
+                      data-copied={scriptCopy.copied}
+                      className="cp-btn cp-btn-sm cp-copy-btn"
+                    >{scriptCopy.copied ? '✓ コピーしました' : '📋 台本を全部コピー'}</button>
                     <button onClick={generateScript} className="cp-btn cp-btn-ghost cp-btn-sm">↻ 別パターンで作り直す</button>
                   </div>
                 </>

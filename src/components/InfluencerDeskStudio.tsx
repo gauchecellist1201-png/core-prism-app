@@ -11,6 +11,7 @@ import {
   DEAL_STAGE_META, PLATFORM_META, CONTENT_TYPE_META, NEGOTIATION_TYPE_META,
 } from '../types/influencerDeal';
 import { useInfluencerDesk } from '../hooks/useInfluencerDesk';
+import { useCopyButton } from '../hooks/useCopyButton';
 import { generateNegotiation, generateDraftCopy, evaluateOffer, generateBrandReport } from '../lib/influencerAgent';
 import { confirmAction } from '../lib/confirmDialog';
 import { StudioIntro } from './StudioIntro';
@@ -25,6 +26,9 @@ type Tab = 'board' | 'negotiate' | 'schedule' | 'draft' | 'report' | 'kit';
 
 export default function InfluencerDeskStudio({ persona, settings, onClose }: Props) {
   const desk = useInfluencerDesk();
+  const negoCopy = useCopyButton();
+  const draftCopy = useCopyButton();
+  const reportCopy = useCopyButton();
   const [tab, setTab] = useState<Tab>('board');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -522,7 +526,11 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                         <p className="cp-h4">{meta.emoji} {meta.label} — {d.brandName}</p>
                         <div className="flex gap-2">
                           {n.successProbability !== undefined && <span className="cp-pill">成立予測 {n.successProbability}%</span>}
-                          <button onClick={() => navigator.clipboard?.writeText((n.subject ? `件名: ${n.subject}\n\n` : '') + n.body)} className="cp-btn cp-btn-ghost cp-btn-sm">📋 コピー</button>
+                          <button
+                            onClick={() => negoCopy.copy((n.subject ? `件名: ${n.subject}\n\n` : '') + n.body, '交渉文')}
+                            data-copied={negoCopy.copied}
+                            className="cp-btn cp-btn-ghost cp-btn-sm cp-copy-btn"
+                          >{negoCopy.copied ? '✓ コピーしました' : '📋 コピー'}</button>
                           <button onClick={() => desk.removeNego(n.id)} className="cp-btn cp-btn-ghost cp-btn-sm">🗑</button>
                         </div>
                       </div>
@@ -558,7 +566,11 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <p className="cp-h4">{PLATFORM_META[d.platform].emoji} {d.brandName}</p>
                       <div className="flex gap-2">
-                        <button onClick={() => navigator.clipboard?.writeText(d.draftCopy || '')} className="cp-btn cp-btn-ghost cp-btn-sm">📋 コピー</button>
+                        <button
+                          onClick={() => draftCopy.copy(d.draftCopy || '', '下書き')}
+                          data-copied={draftCopy.copied}
+                          className="cp-btn cp-btn-ghost cp-btn-sm cp-copy-btn"
+                        >{draftCopy.copied ? '✓ コピーしました' : '📋 コピー'}</button>
                         <button onClick={() => desk.updateDeal(d.id, { stage: 'draft-submitted' })} className="cp-btn cp-btn-ghost cp-btn-sm">📤 提出済みにする</button>
                       </div>
                     </div>
@@ -601,7 +613,11 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                 <div className="cp-card">
                   <p className="cp-meta italic">サマリー: {reportOut.summary}</p>
                   <pre className="cp-body whitespace-pre-wrap mt-2" style={{ fontFamily: 'inherit' }}>{reportOut.markdown}</pre>
-                  <button onClick={() => navigator.clipboard?.writeText(reportOut.markdown)} className="cp-btn cp-btn-secondary cp-btn-sm mt-2">📋 Markdown をコピー</button>
+                  <button
+                    onClick={() => reportCopy.copy(reportOut.markdown, 'レポート Markdown')}
+                    data-copied={reportCopy.copied}
+                    className="cp-btn cp-btn-secondary cp-btn-sm cp-copy-btn mt-2"
+                  >{reportCopy.copied ? '✓ コピーしました' : '📋 Markdown をコピー'}</button>
                 </div>
               )}
             </div>

@@ -508,9 +508,10 @@ function PreviewPanel({
           />
           <button
             onClick={handleCopy}
-            className="text-xs px-3 py-1.5 rounded font-semibold"
-            style={{ background: persona.accentColor, color: '#0a0a0f' }}
-          >{copied ? '✓ コピー済' : '📋 コピー'}</button>
+            data-copied={copied}
+            className="cp-copy-btn text-xs px-3 py-1.5 rounded font-semibold"
+            style={{ background: copied ? 'rgba(52,211,153,0.20)' : persona.accentColor, color: copied ? '#34D399' : '#0a0a0f' }}
+          >{copied ? '✓ コピーしました' : '📋 コピー'}</button>
         </div>
         <p className="text-fg-muted text-[11px] mt-2">
           このURLをゲストに送るだけ。ゲストは空き時間を選び → Google Calendar で予約完了 (Calendar/メールが自動で招待を送信)。
