@@ -17,6 +17,14 @@
     { "source": "/keynote",     "destination": "/keynote.html" },
     { "source": "/keynote/",    "destination": "/keynote.html" },
     { "source": "/keynote/(.*)", "destination": "/keynote.html" },
+    { "source": "/industry/restaurant",  "destination": "/industry-restaurant.html" },
+    { "source": "/industry/restaurant/", "destination": "/industry-restaurant.html" },
+    { "source": "/industry/beauty",      "destination": "/industry-beauty.html" },
+    { "source": "/industry/beauty/",     "destination": "/industry-beauty.html" },
+    { "source": "/industry/it",          "destination": "/industry-it.html" },
+    { "source": "/industry/it/",         "destination": "/industry-it.html" },
+    { "source": "/industry/ec",          "destination": "/industry-ec.html" },
+    { "source": "/industry/ec/",         "destination": "/industry-ec.html" },
     { "source": "/(.*)",     "destination": "/index.html" }
   ],
   "headers": [

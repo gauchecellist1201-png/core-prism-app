@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>CORE Prism for IT・SaaS — MRR と粗利率を毎日見張る AI 経営パートナー</title>
+<meta name="description" content="SaaS スタートアップ・受託開発・ノーコード制作の経営者専用。MRR・粗利率・案件稼働率を AI が毎日見て、危ない数字に毎朝アラート。月 4,980 円、14 日無料。" />
+<meta name="theme-color" content="#0a0e1a" />
+<link rel="icon" type="image/svg+xml" href="/prism-icon.svg" />
+<link rel="canonical" href="https://core-prism-app.vercel.app/industry/it" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://core-prism-app.vercel.app/industry/it" />
+<meta property="og:title" content="CORE Prism for IT・SaaS — MRR と粗利率を毎日見張る AI 経営パートナー" />
+<meta property="og:description" content="SaaS・受託・ノーコード制作の経営者専用。MRR・粗利率・案件稼働率を AI が毎日見て、危ない数字に毎朝アラート。" />
+<meta property="og:image" content="https://core-prism-app.vercel.app/og-prism-v2.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;800&family=Noto+Sans+JP:wght@400;500;700&family=Inter:wght@400;600;700&display=swap" />
+<style>
+:root { --bg:#070712; --bg2:#0d0d1c; --fg:#fff; --muted:#a8b0c0; --accent:#5b9eff; --accent2:#22d3ee; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { background:var(--bg); color:var(--fg); font-family:'Noto Sans JP',-apple-system,sans-serif; -webkit-font-smoothing:antialiased; line-height:1.7; }
+body { padding-bottom:env(safe-area-inset-bottom); }
+.wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+.hero { padding:80px 0 60px; background:linear-gradient(180deg,#070712 0%,#0a1a2a 100%); }
+.eyebrow { color:var(--accent); font-size:14px; letter-spacing:0.18em; font-weight:700; margin-bottom:16px; }
+h1 { font-family:'Noto Serif JP',serif; font-size:clamp(36px,6vw,64px); font-weight:800; line-height:1.2; margin-bottom:24px; }
+h1 .accent { color:var(--accent); }
+.lead { font-size:clamp(16px,2.4vw,20px); color:var(--muted); margin-bottom:40px; max-width:680px; }
+.cta-row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:60px; }
+.btn { display:inline-flex; align-items:center; justify-content:center; padding:18px 32px; border-radius:12px; font-weight:700; font-size:16px; text-decoration:none; min-height:48px; transition:transform 0.2s, background 0.2s, border-color 0.2s; }
+.btn-primary { background:var(--accent); color:#0a1a2a; }
+.btn-primary:hover { transform:translateY(-2px); }
+.btn-secondary { background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.18); }
+.btn-secondary:hover { background:rgba(255,255,255,0.14); border-color:rgba(255,255,255,0.28); }
+.btn:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.section { padding:80px 0; }
+.section h2 { font-family:'Noto Serif JP',serif; font-size:clamp(28px,4vw,40px); font-weight:800; margin-bottom:48px; text-align:center; }
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:24px; }
+.kpi-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:32px; }
+.kpi-name { color:var(--accent); font-weight:700; font-size:18px; margin-bottom:8px; }
+.kpi-bench { font-size:24px; font-weight:800; margin-bottom:12px; }
+.kpi-why { color:var(--muted); font-size:14px; }
+.pain { background:rgba(91,158,255,0.06); border:1px solid rgba(91,158,255,0.18); border-radius:16px; padding:24px; margin-bottom:16px; font-size:16px; }
+.pain::before { content:"😩 "; }
+.play { background:rgba(34,211,238,0.05); border:1px solid rgba(34,211,238,0.15); border-radius:16px; padding:24px; margin-bottom:16px; }
+.play-title { color:var(--accent); font-weight:700; margin-bottom:8px; font-size:17px; }
+.play-detail { color:var(--muted); font-size:14px; }
+.pricing { background:linear-gradient(180deg,#0d0d1c 0%,#0a1a2a 100%); border-radius:24px; padding:60px 40px; text-align:center; }
+.price-big { font-size:clamp(48px,8vw,72px); font-weight:800; color:var(--accent); margin:24px 0; }
+.price-big small { font-size:50%; color:var(--muted); }
+footer { padding:60px 0 40px; text-align:center; color:var(--muted); font-size:14px; }
+footer a { color:var(--muted); text-decoration:underline; transition:color 0.2s; }
+footer a:hover { color:var(--fg); }
+html { scroll-behavior:smooth; }
+@media (max-width:640px) { .hero { padding:60px 0 40px; } .section { padding:60px 0; } .btn { padding:16px 24px; } .pricing { padding:48px 24px; } .kpi-card { padding:24px; } }
+</style>
+</head>
+<body>
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow">💻 CORE PRISM FOR IT・SAAS</div>
+    <h1>MRR と粗利率を <span class="accent">毎日見張る</span>、AI 経営パートナー。</h1>
+    <p class="lead">SaaS・受託・ノーコード制作の経営者向け。Stripe MRR・案件粗利・メンバー稼働率を AI が毎日見て、危ない案件に毎朝アラートを出します。受託の利益で SaaS を育てる "二刀流" 経営の数字を、1 画面で。</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="/?industry=it">14 日無料で試す（IT・SaaS 向けに準備）</a>
+      <a class="btn btn-secondary" href="/pricing">料金を見る</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background:var(--bg2);">
+  <div class="wrap">
+    <h2>IT 経営者が毎日見る、3 つの数字</h2>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-name">MRR / ARR</div>
+        <div class="kpi-bench">月次成長率 10% で優秀 / 5% で標準</div>
+        <div class="kpi-why">SaaS の心臓。Stripe / Paddle と連動して毎日自動更新します。</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-name">案件粗利率 (受託)</div>
+        <div class="kpi-bench">40% 超で健全 / 30% 割れは赤信号</div>
+        <div class="kpi-why">案件ごとの見積もり vs 実工数で粗利率を毎週可視化。利益が薄い案件を早期発見。</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-name">メンバー稼働率</div>
+        <div class="kpi-bench">70〜85% が健全 / 95% 超は疲弊リスク</div>
+        <div class="kpi-why">受託は稼働率が全て。高すぎても低すぎても危ない。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>こんな夜眠れない悩みに、AI が答えを出します</h2>
+    <div class="pain">SaaS の MRR が伸びてるはずなのに、銀行残高が減っていく感覚</div>
+    <div class="pain">受託案件の粗利率が見えない。見積もり時間より実工数が常に超過する</div>
+    <div class="pain">SaaS 化を進めたいが、受託の利益でいつまで持つか分からない</div>
+    <div class="pain">エンジニアの稼働率にバラツキ。誰が疲弊してるか把握できない</div>
+    <div class="pain">解約 (Churn) の理由がデータで分からない。感覚で対策してる</div>
+  </div>
+</section>
+
+<section class="section" style="background:var(--bg2);">
+  <div class="wrap">
+    <h2>AI が毎週提案する、明日からやれる打ち手</h2>
+    <div class="play"><div class="play-title">Stripe / Paddle 自動連携で MRR 日次更新</div><div class="play-detail">サブスク売上を AI が毎日取得。Churn / Expansion / New の内訳まで自動分解。</div></div>
+    <div class="play"><div class="play-title">案件粗利の "悪化兆候" 早期アラート</div><div class="play-detail">実工数が見積もりの 70% を超えた時点で AI が通知。赤字案件を未然に防ぐ。</div></div>
+    <div class="play"><div class="play-title">解約理由の自動分類とリテンション施策提案</div><div class="play-detail">解約アンケート + 利用ログを AI が分析。「Onboarding 不足」「機能ミスマッチ」など根因別にまとめます。</div></div>
+    <div class="play"><div class="play-title">エンジニア稼働率の負荷ヒートマップ</div><div class="play-detail">Jira / Linear / GitHub の動きから AI が稼働状況を推定。疲弊リスクの高い人を早期発見。</div></div>
+    <div class="play"><div class="play-title">SaaS 化のキャッシュランウェイ予測</div><div class="play-detail">受託の粗利 + SaaS の MRR 成長率から「あと何ヶ月 SaaS に集中できるか」を AI が毎月予測。</div></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="pricing">
+      <div class="eyebrow">CORE PRISM IT プラン</div>
+      <div class="price-big">¥4,980<small> / 月</small></div>
+      <p class="lead" style="margin:0 auto 32px;">14 日無料。クレジット登録不要で開始できます。<br/>セールス・財務・人事・戦略・創作・運用・データの 7 体 AI エージェントがすべて含まれます。</p>
+      <a class="btn btn-primary" href="/?industry=it">いますぐ 14 日無料で試す（IT・SaaS 向けに準備）</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    株式会社コア (CORE Inc.) — すべての時代の、核となるものを。<br/>
+    <a href="/">CORE Prism トップ</a> · <a href="/pricing">料金</a> · <a href="/corp">会社案内</a> · <a href="/privacy">プライバシー</a> · <a href="/terms">利用規約</a>
+  </div>
+</footer>
+
+</body>
+</html>

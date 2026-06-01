@@ -1,10 +1,25 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
-import { INDUSTRY_LIST, type IndustryId } from '../prism/industryPacks';
+import { INDUSTRY_LIST, INDUSTRY_PACKS, type IndustryId } from '../prism/industryPacks';
 
 interface Props {
   onComplete: (settings: Partial<AppSettings>) => void;
+}
+
+// 業界ランディングページ (/industry/restaurant 等) から ?industry=food で来た時に
+// その業界を最初から選択済みにしておく。ランディングの「飲食店向け」の文脈を切らさない。
+function readIndustryFromUrl(): IndustryId | '' {
+  if (typeof window === 'undefined') return '';
+  try {
+    const raw = new URLSearchParams(window.location.search).get('industry');
+    if (raw && (INDUSTRY_PACKS as Record<string, unknown>)[raw]) {
+      return raw as IndustryId;
+    }
+  } catch {
+    // URLSearchParams が落ちる環境では何もしない
+  }
+  return '';
 }
 
 // オーナー指示 (2026-05-15): 現段階は Haiku のみ。
@@ -31,24 +46,29 @@ export default function OnboardingFlow({ onComplete }: Props) {
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState<string>('claude-haiku-4-5');
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
-  const [industry, setIndustry] = useState<IndustryId | ''>('');
+  const [presetIndustry] = useState<IndustryId | ''>(() => readIndustryFromUrl());
+  const [industry, setIndustry] = useState<IndustryId | ''>(presetIndustry);
+  const presetPack = presetIndustry ? INDUSTRY_PACKS[presetIndustry] : null;
 
   // ENV有: 0=welcome, 1=name, 2=industry, 3=model
   // ENV無: 0=welcome, 1=name, 2=industry, 3=apikey, 4=model
-  const steps = HAS_ENV_API_KEY
+  // presetIndustry がある時は「業種を選ぶ」ステップ自体を取り除く (ランディングで既に選んでくれた)
+  const allSteps = HAS_ENV_API_KEY
     ? [
-        { title: 'ようこそ', subtitle: 'CORE Identity OS へ' },
-        { title: 'あなたのお名前', subtitle: '最初の一歩' },
-        { title: '業種を選ぶ', subtitle: 'AIをあなたの業界に最適化' },
-        { title: 'AIモデル選択', subtitle: '予算と性能のバランス' },
+        { id: 'welcome',  title: 'ようこそ', subtitle: 'CORE Identity OS へ' },
+        { id: 'name',     title: 'あなたのお名前', subtitle: '最初の一歩' },
+        { id: 'industry', title: '業種を選ぶ', subtitle: 'AIをあなたの業界に最適化' },
+        { id: 'model',    title: 'AIモデル選択', subtitle: '予算と性能のバランス' },
       ]
     : [
-        { title: 'ようこそ', subtitle: 'CORE Identity OS へ' },
-        { title: 'あなたのお名前', subtitle: '最初の一歩' },
-        { title: '業種を選ぶ', subtitle: 'AIをあなたの業界に最適化' },
-        { title: 'Claude APIキー', subtitle: 'AIを接続する' },
-        { title: 'AIモデル選択', subtitle: '予算と性能のバランス' },
+        { id: 'welcome',  title: 'ようこそ', subtitle: 'CORE Identity OS へ' },
+        { id: 'name',     title: 'あなたのお名前', subtitle: '最初の一歩' },
+        { id: 'industry', title: '業種を選ぶ', subtitle: 'AIをあなたの業界に最適化' },
+        { id: 'apikey',   title: 'Claude APIキー', subtitle: 'AIを接続する' },
+        { id: 'model',    title: 'AIモデル選択', subtitle: '予算と性能のバランス' },
       ];
+  const steps = presetIndustry ? allSteps.filter(s => s.id !== 'industry') : allSteps;
+  const currentStepId = steps[step]?.id ?? 'welcome';
 
   const handleComplete = () => {
     onComplete({
@@ -60,11 +80,10 @@ export default function OnboardingFlow({ onComplete }: Props) {
     });
   };
 
-  const logicalStep = step;
-  const isNameStep = logicalStep === 1;
-  const isIndustryStep = logicalStep === 2;
-  const isApiKeyStep = !HAS_ENV_API_KEY && logicalStep === 3;
-  const isModelStep = HAS_ENV_API_KEY ? logicalStep === 3 : logicalStep === 4;
+  const isNameStep     = currentStepId === 'name';
+  const isIndustryStep = currentStepId === 'industry';
+  const isApiKeyStep   = currentStepId === 'apikey';
+  const isModelStep    = currentStepId === 'model';
 
   const canNext = () => {
     if (isNameStep) return name.trim().length > 0;
@@ -117,6 +136,11 @@ export default function OnboardingFlow({ onComplete }: Props) {
           >
             <p className="text-prism text-5xl font-extralight mb-2">CORE</p>
             <p className="text-sm tracking-widest uppercase mb-8" style={{ color: 'rgba(255,255,255,0.7)' }}>Prism OS</p>
+            {presetPack && (
+              <div className="inline-block px-3 py-1 rounded-full mb-6 text-xs" style={{ background:'rgba(201,169,110,0.10)', border:'1px solid rgba(201,169,110,0.25)', color:'#c9a96e' }}>
+                {presetPack.label} 向けに準備中
+              </div>
+            )}
             <h2 className="text-fg text-2xl font-extralight mb-4 leading-relaxed">
               あなたの複数の人格を、<br />ひとつのOSで統合する。
             </h2>

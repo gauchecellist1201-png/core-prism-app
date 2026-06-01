@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>CORE Prism for 美容サロン — 指名リピート率を毎週見張る AI 経営パートナー</title>
+<meta name="description" content="美容室・ネイル・エステ・脱毛のオーナー専用。指名リピート率・客単価・SNS 連動を AI が毎週見て、離脱しそうなお客様に DM 下書きを自動生成。月 4,980 円、14 日無料。" />
+<meta name="theme-color" content="#0a0e1a" />
+<link rel="icon" type="image/svg+xml" href="/prism-icon.svg" />
+<link rel="canonical" href="https://core-prism-app.vercel.app/industry/beauty" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://core-prism-app.vercel.app/industry/beauty" />
+<meta property="og:title" content="CORE Prism for 美容サロン — 指名リピート率を毎週見張る AI 経営パートナー" />
+<meta property="og:description" content="美容オーナー専用。指名リピート率・SNS 連動を AI が毎週分析。離脱しそうなお客様に DM 下書きを自動生成。" />
+<meta property="og:image" content="https://core-prism-app.vercel.app/og-prism-v2.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;800&family=Noto+Sans+JP:wght@400;500;700&family=Inter:wght@400;600;700&display=swap" />
+<style>
+:root { --bg:#070712; --bg2:#0d0d1c; --fg:#fff; --muted:#a8b0c0; --accent:#ff7eb6; --accent2:#c084fc; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { background:var(--bg); color:var(--fg); font-family:'Noto Sans JP',-apple-system,sans-serif; -webkit-font-smoothing:antialiased; line-height:1.7; }
+body { padding-bottom:env(safe-area-inset-bottom); }
+.wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+.hero { padding:80px 0 60px; background:linear-gradient(180deg,#070712 0%,#220a1a 100%); }
+.eyebrow { color:var(--accent); font-size:14px; letter-spacing:0.18em; font-weight:700; margin-bottom:16px; }
+h1 { font-family:'Noto Serif JP',serif; font-size:clamp(36px,6vw,64px); font-weight:800; line-height:1.2; margin-bottom:24px; }
+h1 .accent { color:var(--accent); }
+.lead { font-size:clamp(16px,2.4vw,20px); color:var(--muted); margin-bottom:40px; max-width:680px; }
+.cta-row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:60px; }
+.btn { display:inline-flex; align-items:center; justify-content:center; padding:18px 32px; border-radius:12px; font-weight:700; font-size:16px; text-decoration:none; min-height:48px; transition:transform 0.2s, background 0.2s, border-color 0.2s; }
+.btn-primary { background:var(--accent); color:#220a1a; }
+.btn-primary:hover { transform:translateY(-2px); }
+.btn-secondary { background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.18); }
+.btn-secondary:hover { background:rgba(255,255,255,0.14); border-color:rgba(255,255,255,0.28); }
+.btn:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.section { padding:80px 0; }
+.section h2 { font-family:'Noto Serif JP',serif; font-size:clamp(28px,4vw,40px); font-weight:800; margin-bottom:48px; text-align:center; }
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:24px; }
+.kpi-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:32px; }
+.kpi-name { color:var(--accent); font-weight:700; font-size:18px; margin-bottom:8px; }
+.kpi-bench { font-size:24px; font-weight:800; margin-bottom:12px; }
+.kpi-why { color:var(--muted); font-size:14px; }
+.pain { background:rgba(255,126,182,0.06); border:1px solid rgba(255,126,182,0.18); border-radius:16px; padding:24px; margin-bottom:16px; font-size:16px; }
+.pain::before { content:"😩 "; }
+.play { background:rgba(192,132,252,0.05); border:1px solid rgba(192,132,252,0.15); border-radius:16px; padding:24px; margin-bottom:16px; }
+.play-title { color:var(--accent); font-weight:700; margin-bottom:8px; font-size:17px; }
+.play-detail { color:var(--muted); font-size:14px; }
+.pricing { background:linear-gradient(180deg,#0d0d1c 0%,#220a1a 100%); border-radius:24px; padding:60px 40px; text-align:center; }
+.price-big { font-size:clamp(48px,8vw,72px); font-weight:800; color:var(--accent); margin:24px 0; }
+.price-big small { font-size:50%; color:var(--muted); }
+footer { padding:60px 0 40px; text-align:center; color:var(--muted); font-size:14px; }
+footer a { color:var(--muted); text-decoration:underline; transition:color 0.2s; }
+footer a:hover { color:var(--fg); }
+html { scroll-behavior:smooth; }
+@media (max-width:640px) { .hero { padding:60px 0 40px; } .section { padding:60px 0; } .btn { padding:16px 24px; } .pricing { padding:48px 24px; } .kpi-card { padding:24px; } }
+</style>
+</head>
+<body>
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow">💇 CORE PRISM FOR 美容サロン</div>
+    <h1>指名リピート率を <span class="accent">毎週見張る</span>、AI 経営パートナー。</h1>
+    <p class="lead">美容はリピートビジネス。新規広告費は 3 回来てやっと回収する世界です。CORE Prism はスタイリスト別の指名率と再来店率を毎週見て、離脱しそうなお客様にだけ DM 下書きを自動生成します。ホットペッパー依存からの脱却を、AI が支えます。</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="/?industry=beauty">14 日無料で試す（美容サロン向けに準備）</a>
+      <a class="btn btn-secondary" href="/pricing">料金を見る</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background:var(--bg2);">
+  <div class="wrap">
+    <h2>美容オーナーが毎週見る、3 つの数字</h2>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-name">指名リピート率</div>
+        <div class="kpi-bench">新規→2 回目で 40% 超 / 既存全体 70% 超</div>
+        <div class="kpi-why">美容はリピートビジネス。新規広告費は 3 回来てやっと回収する世界。</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-name">スタイリスト売上 (1 人月商)</div>
+        <div class="kpi-bench">月 100 万円が一人前 / 150 万円超は優秀</div>
+        <div class="kpi-why">美容師 1 人あたりの月商で店舗の収益力が決まります。</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-name">客単価 × 来店間隔</div>
+        <div class="kpi-bench">単価 ¥7,000〜10,000 / 来店間隔 6〜8 週</div>
+        <div class="kpi-why">来店間隔が 1 週間伸びるだけで年間売上が大きく変わります。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>こんな夜眠れない悩みに、AI が答えを出します</h2>
+    <div class="pain">ホットペッパーの掲載費が重い。減らしたいけど新規流入が落ちるのが怖い</div>
+    <div class="pain">人気スタイリストが独立した後、お客様も一緒に持っていかれる</div>
+    <div class="pain">指名リピート率がスタイリストごとにバラバラ。何が違うか言語化できない</div>
+    <div class="pain">Instagram は毎日投稿してるのに、フォロワーが集客につながらない</div>
+    <div class="pain">シェアサロンに行く美容師が増えて、雇用維持が難しい</div>
+  </div>
+</section>
+
+<section class="section" style="background:var(--bg2);">
+  <div class="wrap">
+    <h2>AI が毎週提案する、明日からやれる打ち手</h2>
+    <div class="play"><div class="play-title">離脱兆候お客様への DM 下書き自動生成</div><div class="play-detail">来店間隔が伸びかけているお客様に、AI が「次回提案 DM」を毎週用意。1 タップで送信。</div></div>
+    <div class="play"><div class="play-title">スタイリスト別の指名率トレンドを可視化</div><div class="play-detail">月次の指名率推移と要因 (SNS 投稿頻度・施術メニュー) を AI が分析。指導のネタが切れない。</div></div>
+    <div class="play"><div class="play-title">Instagram 投稿テンプレを毎日 3 案</div><div class="play-detail">過去の保存数・いいね数を AI が学習し、当たりやすいビフォーアフター投稿の構成を提案。</div></div>
+    <div class="play"><div class="play-title">予約サイト広告費の費用対効果計測</div><div class="play-detail">ホットペッパー経由の新規客の LTV を AI が追跡。広告費を減らすべきタイミングを判断。</div></div>
+    <div class="play"><div class="play-title">スタッフ独立リスクの早期検知</div><div class="play-detail">シフト変動・指名減少・遅刻パターンから「辞めるかも」を 3 ヶ月前に AI が察知。</div></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="pricing">
+      <div class="eyebrow">CORE PRISM 美容プラン</div>
+      <div class="price-big">¥4,980<small> / 月</small></div>
+      <p class="lead" style="margin:0 auto 32px;">14 日無料。クレジット登録不要で開始できます。<br/>セールス・財務・人事・戦略・創作・運用・データの 7 体 AI エージェントがすべて含まれます。</p>
+      <a class="btn btn-primary" href="/?industry=beauty">いますぐ 14 日無料で試す（美容サロン向けに準備）</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    株式会社コア (CORE Inc.) — すべての時代の、核となるものを。<br/>
+    <a href="/">CORE Prism トップ</a> · <a href="/pricing">料金</a> · <a href="/corp">会社案内</a> · <a href="/privacy">プライバシー</a> · <a href="/terms">利用規約</a>
+  </div>
+</footer>
+
+</body>
+</html>
