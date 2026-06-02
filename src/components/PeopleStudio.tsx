@@ -20,7 +20,21 @@ interface Props {
   onClose: () => void;
 }
 
-type View = 'list' | 'detail' | 'compose';
+type View = 'list' | 'detail' | 'compose' | 'interview';
+
+interface InterviewQuestion {
+  q: string;
+  intent: string;          // 何を見るための質問か
+  followUp: string;        // 深掘り (1 文)
+  redFlag: string;         // この答えだと危険
+  greenFlag: string;       // この答えだと有望
+}
+
+interface InterviewPack {
+  role: string;
+  questions: InterviewQuestion[];
+  evalRubric: string[];    // 評価軸 3 つ
+}
 
 const SENTIMENT_COLOR: Record<SentimentType, string> = {
   positive: '#4ade80',
@@ -129,6 +143,80 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
+  // ─── 採用面接シミュレーター (オーナー指示 2026-06-02) ───
+  const [interviewRole, setInterviewRole] = useState('');
+  const [interviewPack, setInterviewPack] = useState<InterviewPack | null>(null);
+  const [interviewBusy, setInterviewBusy] = useState(false);
+  const [interviewError, setInterviewError] = useState<string | null>(null);
+  const generateInterviewPack = useCallback(async () => {
+    if (!interviewRole.trim()) { setInterviewError('募集職種や候補者の状況を 1 行入れてください'); return; }
+    setInterviewBusy(true); setInterviewError(null);
+    try {
+      const sys = `あなたは経験豊富な採用面接官です。日本の中小企業の社長が候補者と向き合う場面で
+使える、刺さる質問セットを作ります。
+
+返答は JSON のみ (コードブロックなし):
+{
+  "role": "想定した職種・状況",
+  "questions": [
+    {
+      "q": "質問本文 (具体的で答えやすい、1 文)",
+      "intent": "この質問で見たいこと (1 文)",
+      "followUp": "想定回答が薄かった時の深掘り質問 (1 文)",
+      "redFlag": "この答え方だと採用見送り基準 (1 文)",
+      "greenFlag": "この答え方だと採用前向き基準 (1 文)"
+    }
+  ],
+  "evalRubric": ["評価軸 1 (例: 課題を自分ごと化できるか)", "評価軸 2", "評価軸 3"]
+}
+
+ルール:
+- 質問は 5 つきっかり。深掘りまで揃える
+- やさしい日本語、専門用語禁止、押しつけがましくない
+- 経歴を聞くだけの面接にしない。考え方・行動パターンを引き出す
+- 評価軸は具体的で、面接後に〇△× がつけられるもの`;
+      const userMsg = `## 募集 / 候補者の状況\n${interviewRole}\n\n## 事業\n${persona.name} (${persona.subtitle || ''})\n\n上記の状況で使える面接質問セットを JSON で。`;
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: settings.preferredModel,
+          max_tokens: 2400,
+          system: sys,
+          messages: [{ role: 'user', content: userMsg }],
+        }),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e?.error?.message || `面接 AI エラー: ${res.status}`);
+      }
+      const data = await res.json();
+      const text = data?.content?.[0]?.text ?? '';
+      const m = text.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('AI の返答を読み取れませんでした');
+      const p = JSON.parse(m[0]);
+      const questions: InterviewQuestion[] = Array.isArray(p.questions)
+        ? p.questions.slice(0, 5).map((q: any) => ({
+            q: String(q.q || '').trim(),
+            intent: String(q.intent || '').trim(),
+            followUp: String(q.followUp || '').trim(),
+            redFlag: String(q.redFlag || '').trim(),
+            greenFlag: String(q.greenFlag || '').trim(),
+          }))
+        : [];
+      if (questions.length === 0) throw new Error('質問を生成できませんでした');
+      setInterviewPack({
+        role: String(p.role || interviewRole).slice(0, 80),
+        questions,
+        evalRubric: Array.isArray(p.evalRubric) ? p.evalRubric.slice(0, 3).map(String) : [],
+      });
+    } catch (e) {
+      setInterviewError(e instanceof Error ? e.message : '面接パックを作れませんでした');
+    } finally {
+      setInterviewBusy(false);
+    }
+  }, [interviewRole, persona, settings.preferredModel]);
+
   const selected = useMemo(() => people.find(p => p.id === selectedId) || null, [people, selectedId]);
   const interactions = useMemo(() =>
     selectedId ? pp.getInteractionsForPerson(selectedId) : [],
@@ -177,11 +265,18 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                 className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 44, minWidth: 44 }}>← 一覧</button>
             )}
             {view === 'list' && (
-              <button onClick={() => setView('compose')}
-                className="cp-btn cp-btn-primary cp-btn-sm"
-                style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
-                ＋ 人物を追加
-              </button>
+              <>
+                <button onClick={() => setView('interview')}
+                  className="cp-btn cp-btn-ghost cp-btn-sm"
+                  style={{ minHeight: 44, color: persona.accentColor, border: `1px solid ${persona.accentColor}55` }}>
+                  🎤 採用面接
+                </button>
+                <button onClick={() => setView('compose')}
+                  className="cp-btn cp-btn-primary cp-btn-sm"
+                  style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
+                  ＋ 人物を追加
+                </button>
+              </>
             )}
             <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 44, minWidth: 44 }}>✕</button>
           </div>
@@ -359,6 +454,100 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                 onAddInteraction={(inter) => pp.addInteraction({ ...inter, personId: selected.id })}
                 onRemoveInteraction={pp.removeInteraction}
               />
+            )}
+
+            {/* ─── 採用面接シミュレーター (オーナー指示 2026-06-02) ─── */}
+            {view === 'interview' && (
+              <div className="cp-stack-sm" key="interview">
+                <div className="cp-card-section cp-stack-sm" style={{
+                  background: `${persona.accentColor}10`,
+                  border: `1px solid ${persona.accentColor}40`,
+                }}>
+                  <p className="cp-h3">🎤 採用面接シミュレーター</p>
+                  <p className="cp-meta">
+                    募集職種や候補者の状況を 1 行入れると、AI が面接質問 5 つと「採用・見送り基準」を作ります。
+                    経歴を聞くだけにならない、考え方を引き出す質問セットです。
+                  </p>
+                  <textarea
+                    value={interviewRole}
+                    onChange={e => setInterviewRole(e.target.value)}
+                    placeholder={`例: 営業マネージャー候補、業界経験 5 年以上、来週 1 次面接\n例: 副業デザイナー、月 20 時間稼働、Iris のブランド統一を任せたい`}
+                    rows={3}
+                    className="cp-textarea"
+                  />
+                  <button
+                    onClick={generateInterviewPack}
+                    disabled={interviewBusy || !interviewRole.trim()}
+                    className="cp-btn cp-btn-primary"
+                    style={{
+                      background: persona.accentColor,
+                      color: '#0a0a0f',
+                      opacity: (interviewBusy || !interviewRole.trim()) ? 0.5 : 1,
+                    }}
+                  >
+                    {interviewBusy ? '🧠 面接パックを組み立て中…' : '🎤 面接パックを作る'}
+                  </button>
+                  {interviewError && (
+                    <div style={{
+                      padding: '8px 12px', borderRadius: 8,
+                      background: 'rgba(248,113,113,0.10)',
+                      border: '1px solid rgba(248,113,113,0.35)',
+                      color: '#FCA5A5', fontSize: 12,
+                    }}>⚠ {interviewError}</div>
+                  )}
+                </div>
+
+                {interviewPack && !interviewBusy && (
+                  <>
+                    <div className="cp-card-section">
+                      <p className="cp-tiny" style={{ color: persona.accentColor, fontWeight: 800, letterSpacing: '0.06em', marginBottom: 4 }}>
+                        想定 · {interviewPack.role}
+                      </p>
+                      {interviewPack.evalRubric.length > 0 && (
+                        <div style={{ marginTop: 8 }}>
+                          <p className="cp-tiny" style={{ color: 'var(--fg-muted)', marginBottom: 4 }}>📋 評価軸 (面接後に〇△× をつける)</p>
+                          <ul style={{ paddingLeft: 18, margin: 0, fontSize: '0.9rem' }}>
+                            {interviewPack.evalRubric.map((r, i) => (
+                              <li key={i} style={{ marginBottom: 3 }}>{r}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {interviewPack.questions.map((q, i) => (
+                      <div key={i} className="cp-card-section" style={{ borderLeft: `3px solid ${persona.accentColor}` }}>
+                        <p className="cp-tiny" style={{ color: persona.accentColor, fontWeight: 800, marginBottom: 6 }}>
+                          質問 {i + 1}
+                        </p>
+                        <p className="cp-body" style={{ fontWeight: 700, lineHeight: 1.6, marginBottom: 8 }}>
+                          「{q.q}」
+                        </p>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--fg-muted)', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <div>🎯 <span style={{ color: 'var(--fg)' }}>狙い:</span> {q.intent}</div>
+                          <div>↪ <span style={{ color: 'var(--fg)' }}>深掘り:</span> {q.followUp}</div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 8 }}>
+                          <div style={{ padding: '6px 9px', borderRadius: 6, background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.3)', fontSize: '0.8rem', color: '#34D399' }}>
+                            ✓ <strong>OK:</strong> {q.greenFlag}
+                          </div>
+                          <div style={{ padding: '6px 9px', borderRadius: 6, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.3)', fontSize: '0.8rem', color: '#FCA5A5' }}>
+                            ⚠ <strong>NG:</strong> {q.redFlag}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      onClick={() => {
+                        const text = `【採用面接パック】 想定: ${interviewPack.role}\n\n■ 評価軸\n${interviewPack.evalRubric.map((r, i) => `${i + 1}. ${r}`).join('\n')}\n\n${interviewPack.questions.map((q, i) => `■ 質問 ${i + 1}\n「${q.q}」\n  狙い: ${q.intent}\n  深掘り: ${q.followUp}\n  ✓ OK の答え: ${q.greenFlag}\n  ⚠ NG の答え: ${q.redFlag}`).join('\n\n')}`;
+                        try { navigator.clipboard.writeText(text); } catch { /* */ }
+                      }}
+                      className="cp-btn cp-btn-sm"
+                    >📋 面接パックを全部コピー</button>
+                  </>
+                )}
+              </div>
             )}
 
             {/* ─── 新規追加フォーム ─── */}
