@@ -154,6 +154,7 @@ export default function CoreSite() {
             <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
             <a href="#values" style={navLink} className="lp-nav-link">信条</a>
             <a href="#mission" style={navLink} className="lp-nav-link">理念</a>
+            <a href="#journey" style={navLink} className="lp-nav-link">歩み</a>
             <a href="#about" style={navLink} className="lp-nav-link">会社概要</a>
             <a href="#contact" style={ctaSmall}>お問い合わせ</a>
           </nav>
@@ -525,7 +526,7 @@ export default function CoreSite() {
               color: 'rgba(255,255,255,0.7)',
               lineHeight: 2.2,
               maxWidth: 720,
-              margin: '0 auto',
+              margin: '0 auto 3.5rem',
               fontWeight: 400,
             }}
           >
@@ -535,6 +536,83 @@ export default function CoreSite() {
             <br />
             技術は手段にすぎず、いつの時代も中心にあるのは「人」です。
           </p>
+
+          {/* 3 つの約束 (具体的な指針) */}
+          <div
+            className="lp-promise-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '1rem',
+              maxWidth: 880,
+              margin: '0 auto',
+              textAlign: 'left',
+            }}
+          >
+            {[
+              {
+                accent: '#fbbf24',
+                en: 'CORE 1',
+                jaTitle: '時間を、取り戻す',
+                body: '社長 1 人の時間は、組織で一番貴重な資産。AI 役員 13 名が、その時間を毎月 30 時間以上、確実に取り戻します。',
+              },
+              {
+                accent: '#a78bfa',
+                en: 'CORE 2',
+                jaTitle: '判断を、軽くする',
+                body: '迷う時間は重く、決める時間は短い。データと文脈を瞬時にまとめ、いつでも 3 つの選択肢を並べて差し出します。',
+              },
+              {
+                accent: '#60a5fa',
+                en: 'CORE 3',
+                jaTitle: '言葉を、つくる',
+                body: '営業文・議事録・提案書。書くのに時間がかかる言葉はすべて、AI が下書きまで終わらせておきます。あなたは確認して送るだけ。',
+              },
+            ].map((p, i) => (
+              <div
+                key={i}
+                style={{
+                  padding: '1.5rem 1.4rem',
+                  background: `linear-gradient(160deg, ${p.accent}10, transparent 70%)`,
+                  border: `1px solid ${p.accent}28`,
+                  borderRadius: 14,
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{
+                  fontFamily: FONT_SERIF_EN,
+                  fontSize: '0.7rem',
+                  letterSpacing: '0.28em',
+                  color: p.accent,
+                  fontWeight: 700,
+                  marginBottom: '0.5rem',
+                  textTransform: 'uppercase',
+                }}>
+                  {p.en}
+                </div>
+                <div style={{
+                  fontFamily: FONT_SERIF_JA,
+                  fontWeight: 700,
+                  fontSize: '1.05rem',
+                  color: '#fff',
+                  marginBottom: '0.7rem',
+                  letterSpacing: '0.04em',
+                }}>
+                  {p.jaTitle}
+                </div>
+                <p style={{
+                  fontFamily: FONT_SERIF_JA,
+                  fontSize: '0.86rem',
+                  color: 'rgba(255,255,255,0.65)',
+                  lineHeight: 1.95,
+                  margin: 0,
+                }}>
+                  {p.body}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -725,6 +803,170 @@ export default function CoreSite() {
       </section>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  JOURNEY (歩み)              */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section
+        id="journey"
+        className="lp-section-pad"
+        style={{
+          padding: '7rem 1.5rem',
+          background: 'linear-gradient(180deg,#000 0%,#040410 60%,#000 100%)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ maxWidth: 960, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <p style={sectionLabel}>
+              <span style={sectionLabelMain}>歩&nbsp;み</span>
+              <span style={sectionLabelSub}>JOURNEY</span>
+            </p>
+            <motion.h2
+              initial={{ y: 20 }}
+              whileInView={{ y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.9 }}
+              style={{
+                fontFamily: FONT_SERIF_JA,
+                fontSize: 'clamp(1.85rem, 3.5vw, 2.65rem)',
+                fontWeight: 700,
+                lineHeight: 1.5,
+                letterSpacing: '0.05em',
+              }}
+            >
+              はじまりから、その先へ。
+            </motion.h2>
+            <p style={{
+              fontFamily: FONT_SERIF_EN,
+              fontSize: 'clamp(0.85rem, 1.3vw, 1rem)',
+              color: 'rgba(255,255,255,0.45)',
+              fontStyle: 'italic',
+              letterSpacing: '0.08em',
+              marginTop: '0.85rem',
+            }}>
+              From the first day, toward what stays.
+            </p>
+          </div>
+
+          {/* 縦タイムライン */}
+          <ol style={{ listStyle: 'none', padding: 0, margin: 0, position: 'relative' }}>
+            {/* 縦線 */}
+            <div aria-hidden style={{
+              position: 'absolute',
+              left: 'calc(1.1rem - 1px)',
+              top: 6,
+              bottom: 6,
+              width: 2,
+              background: 'linear-gradient(180deg, rgba(252,176,69,0.4), rgba(167,139,250,0.4), rgba(96,165,250,0.4), rgba(255,255,255,0.05))',
+            }} />
+            {[
+              {
+                year: '2026',
+                title: '株式会社 CORE 創業',
+                body: '「すべての時代の、核となるものを」を理念に、AI 経営参謀 Prism と Instagram クリエイター向け Iris の二本柱で起業。13 名の AI 役員 (CXO エージェント) が中小経営者・個人事業主を支える設計を構築。',
+                accent: '#FCB045',
+                emoji: '🌱',
+              },
+              {
+                year: '2026 Q3',
+                title: '本格ローンチ',
+                body: '日本の個人事業主・中小経営者向けに正式リリース。「クレジット制 + 上限超過は買い足し」のフェアな価格設計で、はじめての AI ツール体験を提供。',
+                accent: '#FBBF24',
+                emoji: '🚀',
+              },
+              {
+                year: '2027',
+                title: '法人プラン展開 / チーム機能強化',
+                body: 'メンバー招待 + 共有ダッシュボード + Slack 連携を完成させ、5〜50 名の組織にも導入できる体験へ。経営者と現場の「橋」を AI が担う。',
+                accent: '#A78BFA',
+                emoji: '🤝',
+              },
+              {
+                year: '2028 →',
+                title: '国境を越える「核」',
+                body: '英語版 / 韓国語版 / 台湾繁体字版を提供し、東アジアの中小経営者へ。やさしい言葉でいつでも頼れる AI 役員 13 名を、誰の手元にも。',
+                accent: '#60A5FA',
+                emoji: '🌏',
+              },
+            ].map((m, i) => (
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, x: -8 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
+                style={{
+                  display: 'flex',
+                  gap: '1.25rem',
+                  paddingLeft: 0,
+                  marginBottom: '2.5rem',
+                  alignItems: 'flex-start',
+                  position: 'relative',
+                }}
+              >
+                {/* ドット */}
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${m.accent}, ${m.accent}55)`,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.05rem',
+                  flexShrink: 0,
+                  boxShadow: `0 0 18px ${m.accent}55, 0 0 0 4px #000`,
+                  position: 'relative',
+                  zIndex: 2,
+                }}>
+                  {m.emoji}
+                </div>
+                <div style={{ flex: 1, paddingTop: '0.2rem' }}>
+                  <div style={{
+                    fontFamily: FONT_SERIF_EN,
+                    fontSize: '0.78rem',
+                    letterSpacing: '0.22em',
+                    color: m.accent,
+                    fontWeight: 700,
+                    marginBottom: '0.4rem',
+                  }}>
+                    {m.year}
+                  </div>
+                  <div style={{
+                    fontFamily: FONT_SERIF_JA,
+                    fontSize: 'clamp(1.15rem, 1.85vw, 1.4rem)',
+                    fontWeight: 700,
+                    color: '#fff',
+                    marginBottom: '0.6rem',
+                    letterSpacing: '0.04em',
+                  }}>
+                    {m.title}
+                  </div>
+                  <p style={{
+                    fontFamily: FONT_SERIF_JA,
+                    fontSize: 'clamp(0.9rem, 1.3vw, 1rem)',
+                    color: 'rgba(255,255,255,0.65)',
+                    lineHeight: 1.95,
+                    margin: 0,
+                  }}>
+                    {m.body}
+                  </p>
+                </div>
+              </motion.li>
+            ))}
+          </ol>
+
+          <p style={{
+            textAlign: 'center',
+            marginTop: '3rem',
+            fontFamily: FONT_SERIF_JA,
+            fontSize: 'clamp(0.85rem, 1.2vw, 0.95rem)',
+            color: 'rgba(255,255,255,0.5)',
+            fontStyle: 'italic',
+            letterSpacing: '0.05em',
+          }}>
+            速度は時代から借りる。<strong style={{ color: '#FCB045', fontWeight: 600 }}>誠実さは、自分のもの。</strong>
+          </p>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  ABOUT (会社概要)            */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section
@@ -838,6 +1080,161 @@ export default function CoreSite() {
             </div>
           </div>
 
+          {/* AI 役員 13 名 — 「これがチームです」 */}
+          <div style={{ marginBottom: '3.5rem' }}>
+            <p style={{
+              fontFamily: FONT_SERIF_EN,
+              fontSize: '0.78rem',
+              letterSpacing: '0.22em',
+              color: 'rgba(255,255,255,0.5)',
+              textTransform: 'uppercase',
+              textAlign: 'center',
+              marginBottom: '0.6rem',
+            }}>
+              The 13 AI Officers
+            </p>
+            <h3 style={{
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(1.3rem, 2.2vw, 1.7rem)',
+              fontWeight: 700,
+              textAlign: 'center',
+              marginBottom: '0.6rem',
+              color: '#fff',
+              letterSpacing: '0.04em',
+            }}>
+              AI 役員 13 名が、あなたを支えます
+            </h3>
+            <p style={{
+              fontFamily: FONT_SERIF_JA,
+              fontSize: '0.88rem',
+              color: 'rgba(255,255,255,0.55)',
+              textAlign: 'center',
+              lineHeight: 1.85,
+              maxWidth: 640,
+              margin: '0 auto 2rem',
+            }}>
+              すべてのプロダクトに、13 の専門エージェントが乗っています。経営判断・営業・財務・創造・学び・人材・生活。社長 1 人の頭脳に、13 の参謀が並走する設計です。
+            </p>
+            <div
+              className="lp-officer-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
+                gap: '0.6rem',
+                maxWidth: 720,
+                margin: '0 auto',
+              }}
+            >
+              {[
+                { e: '🧭', t: 'CEO', d: '経営戦略' },
+                { e: '⚙️', t: 'CTO', d: '技術' },
+                { e: '🎯', t: 'CPO', d: '製品' },
+                { e: '🎨', t: 'CDO', d: 'デザイン' },
+                { e: '📢', t: 'CMO', d: 'マーケ' },
+                { e: '💼', t: 'CSO', d: '営業' },
+                { e: '🧮', t: 'CFO', d: '財務' },
+                { e: '🗂', t: 'COO', d: 'オペ' },
+                { e: '🔬', t: 'CDS', d: 'データ' },
+                { e: '⚖️', t: 'CLO', d: '法務' },
+                { e: '✨', t: 'UIE', d: 'UI' },
+                { e: '👁', t: 'UXE', d: 'UX' },
+                { e: '🛡', t: 'QAE', d: '品質' },
+              ].map((o, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '0.85rem 0.4rem',
+                  background: 'rgba(255,255,255,0.025)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 10,
+                  textAlign: 'center',
+                  gap: 2,
+                }}>
+                  <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>{o.e}</span>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#fff', letterSpacing: '0.08em', fontFamily: FONT_SERIF_EN }}>{o.t}</span>
+                  <span style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.5)', fontFamily: FONT_SERIF_JA }}>{o.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 私たちの文化 — 3 つの約束 */}
+          <div style={{ marginBottom: '3.5rem' }}>
+            <p style={{
+              fontFamily: FONT_SERIF_EN,
+              fontSize: '0.78rem',
+              letterSpacing: '0.22em',
+              color: 'rgba(255,255,255,0.5)',
+              textTransform: 'uppercase',
+              textAlign: 'center',
+              marginBottom: '0.6rem',
+            }}>
+              Our Culture
+            </p>
+            <h3 style={{
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(1.3rem, 2.2vw, 1.7rem)',
+              fontWeight: 700,
+              textAlign: 'center',
+              marginBottom: '2rem',
+              color: '#fff',
+              letterSpacing: '0.04em',
+            }}>
+              わたしたちが守る 3 つの約束
+            </h3>
+            <div
+              className="lp-culture-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '1.25rem',
+              }}
+            >
+              {[
+                {
+                  emoji: '🪞',
+                  title: '嘘の数字は出さない',
+                  body: 'まだ数字がないなら「—」と書く。架空の実績や水増しした数値は、信頼を一瞬で失う最大の罪と考えています。',
+                },
+                {
+                  emoji: '🌿',
+                  title: 'やさしい日本語で話す',
+                  body: '専門用語や横文字は、できる限り日本語に言い換える。「初心者向け」ではなく「すべての人向け」のために。',
+                },
+                {
+                  emoji: '🤲',
+                  title: '使ったぶんだけ払えるように',
+                  body: '月額には上限を設け、超えたぶんは買い足し方式。決して気づかぬ間に高額にならない、フェアな料金設計を守ります。',
+                },
+              ].map((c, i) => (
+                <div key={i} style={{
+                  padding: '1.5rem 1.4rem',
+                  background: 'rgba(255,255,255,0.025)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 14,
+                }}>
+                  <div style={{ fontSize: '1.7rem', marginBottom: '0.6rem', lineHeight: 1 }}>{c.emoji}</div>
+                  <div style={{
+                    fontFamily: FONT_SERIF_JA,
+                    fontWeight: 700,
+                    fontSize: '1.02rem',
+                    color: '#fff',
+                    marginBottom: '0.5rem',
+                    letterSpacing: '0.03em',
+                  }}>{c.title}</div>
+                  <p style={{
+                    fontFamily: FONT_SERIF_JA,
+                    fontSize: '0.85rem',
+                    color: 'rgba(255,255,255,0.6)',
+                    lineHeight: 1.85,
+                    margin: 0,
+                  }}>{c.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <dl
             style={{
               display: 'grid',
@@ -873,7 +1270,7 @@ export default function CoreSite() {
           overflow: 'hidden',
         }}
       >
-        <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+        <div style={{ maxWidth: 920, margin: '0 auto', position: 'relative', zIndex: 2 }}>
           <p style={sectionLabel}>
             <span style={sectionLabelMain}>お問い合わせ</span>
             <span style={sectionLabelSub}>CONTACT</span>
@@ -883,9 +1280,10 @@ export default function CoreSite() {
               fontFamily: FONT_SERIF_JA,
               fontSize: 'clamp(1.95rem, 3.8vw, 2.85rem)',
               fontWeight: 700,
-              marginBottom: '1.75rem',
+              marginBottom: '1.25rem',
               lineHeight: 1.5,
               letterSpacing: '0.05em',
+              textAlign: 'center',
             }}
           >
             核を、共に。
@@ -896,29 +1294,92 @@ export default function CoreSite() {
               color: 'rgba(255,255,255,0.65)',
               fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
               lineHeight: 2.1,
-              marginBottom: '2.5rem',
+              marginBottom: '3rem',
               fontWeight: 400,
+              textAlign: 'center',
             }}
           >
-            法人契約・カスタム導入・取材・資本提携など、
+            一通一通、丁寧にお返事します。
             <br />
-            お問い合わせは下記までご連絡ください。
+            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+              通常 24 時間以内にご返信 (土日祝は翌営業日)
+            </span>
           </p>
-          <a
-            href={`mailto:${COMPANY.email}`}
+
+          {/* 3 つの窓口 */}
+          <div
+            className="lp-contact-grid"
             style={{
-              ...ctaHero,
-              fontFamily: '"SF Mono", "Menlo", monospace',
-              letterSpacing: '0.05em',
-              fontSize: '0.95rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.6rem',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '1rem',
+              marginBottom: '2.5rem',
             }}
           >
-            <MailIcon size={17} strokeWidth={2.2} />
-            {COMPANY.email}
-          </a>
+            {[
+              { icon: '🤝', label: '法人 / 導入相談', desc: 'チーム導入・請求書払い・カスタム要件', subject: '法人導入の相談' },
+              { icon: '📰', label: '取材 / プレス', desc: 'メディア掲載・登壇依頼・資料請求', subject: '取材依頼' },
+              { icon: '💼', label: '採用 / 業務委託', desc: 'エンジニア・デザイナー・パートナー', subject: '採用に関心があります' },
+            ].map((c, i) => (
+              <a
+                key={i}
+                href={`mailto:${COMPANY.email}?subject=${encodeURIComponent(c.subject)}`}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '1.5rem 1.25rem',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  borderRadius: 14,
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  textAlign: 'center',
+                  transition: 'background 0.2s, border-color 0.2s, transform 0.2s',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(167,139,250,0.10)';
+                  e.currentTarget.style.borderColor = 'rgba(167,139,250,0.35)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <span style={{ fontSize: '1.75rem', lineHeight: 1 }}>{c.icon}</span>
+                <span style={{ fontFamily: FONT_SERIF_JA, fontWeight: 600, fontSize: '0.95rem', color: '#fff', letterSpacing: '0.02em' }}>{c.label}</span>
+                <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{c.desc}</span>
+              </a>
+            ))}
+          </div>
+
+          {/* 直接連絡 */}
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.18em', marginBottom: '0.85rem', fontFamily: FONT_SERIF_EN, textTransform: 'uppercase' }}>
+              Direct
+            </p>
+            <a
+              href={`mailto:${COMPANY.email}`}
+              style={{
+                ...ctaHero,
+                fontFamily: '"SF Mono", "Menlo", monospace',
+                letterSpacing: '0.05em',
+                fontSize: '0.95rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+              }}
+            >
+              <MailIcon size={17} strokeWidth={2.2} />
+              {COMPANY.email}
+            </a>
+            <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', marginTop: '1.25rem', fontFamily: FONT_SERIF_JA }}>
+              よくある質問は <a href="/faq" style={{ color: 'rgba(167,139,250,0.85)', textDecoration: 'underline', textUnderlineOffset: 3 }}>FAQ ページ</a> で先にご確認いただけます。
+            </p>
+          </div>
         </div>
       </section>
 
