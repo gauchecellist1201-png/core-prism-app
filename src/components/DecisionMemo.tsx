@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import ApiErrorCard from './ApiErrorCard';
+import EmptyState from './EmptyState';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import type { DecisionMemo, DecisionInput } from '../lib/decisionMemo';
 import {
@@ -345,7 +346,16 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
           <div className="flex-1 overflow-y-auto p-5 space-y-2">
             <p className="text-fg-muted text-xs tracking-wider uppercase mb-2">過去の意思決定</p>
             {history.length === 0 ? (
-              <p className="text-fg-muted text-sm py-8 text-center">まだ履歴がありません</p>
+              <EmptyState
+                icon="🧭"
+                title="まだ意思決定の履歴はありません"
+                description={'迷っていることを声に出すだけで、AI が「賛成・反対・推奨」に分けて整理。\n「単価をいくらにするか」「来週どっちを出すか」など、決め切れない 1 つをどうぞ。'}
+                ctaLabel="最初の意思決定を作る"
+                onCta={() => setPhase('speak')}
+                accent={persona.accentColor}
+                preview="質問 → 賛成 3 / 反対 2 / 推奨 1 つに自動分解 + 確度 %"
+                showSample={false}
+              />
             ) : (
               history.map((m, i) => (
                 <button

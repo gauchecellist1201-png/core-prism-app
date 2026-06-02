@@ -14,6 +14,7 @@ import {
   PLATFORM_META, type SocialPlatform,
 } from '../lib/socialDraft';
 import AgentProposalCard from './AgentProposalCard';
+import EmptyState from './EmptyState';
 import ThinkingIndicator from './ThinkingIndicator';
 import GenerationReward from './GenerationReward';
 import ApiErrorCard from './ApiErrorCard';
@@ -513,10 +514,16 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
             )}
 
             {weeklyDays.length === 0 && !weeklyBusy && (
-              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--fg-muted)' }}>
-                <p style={{ fontSize: '0.85rem', marginBottom: 4 }}>まだ計画がありません</p>
-                <p style={{ fontSize: '0.78rem' }}>上のボタンで AI に来週の 7 日計画を作ってもらいましょう</p>
-              </div>
+              <EmptyState
+                icon="📅"
+                title="まだ 7 日計画はありません"
+                description={'AI が「月: note 告知 → 火: X リール → 週末: ライブ」のように、来週 7 日分を一気に並べます。\n各日カードから本文と画像のドラフトまで AI に下書きしてもらえます。'}
+                ctaLabel="今週の 7 日計画を AI に"
+                onCta={buildWeeklyPlan}
+                accent={accent}
+                preview="月 note / 火 X / 水 Instagram / 木 LinkedIn / 金 YouTube / 土 ライブ / 日 まとめ"
+                showSample={false}
+              />
             )}
           </div>
         )}

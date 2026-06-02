@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
+import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
 import { copyText } from '../lib/clipboard';
 import type { Persona, AppSettings } from '../types/identity';
@@ -744,10 +745,16 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
           {tab === 'history' && (
             <>
               {history.length === 0 ? (
-                <div className="text-center py-16">
-                  <p className="text-3xl mb-2">🖼</p>
-                  <p className="text-fg-muted text-sm">生成履歴はまだありません</p>
-                </div>
+                <EmptyState
+                  icon="🖼"
+                  title="まだ生成した画像はありません"
+                  description={'ロゴ・サムネ・人物・風景、思いついたものを 1 枚作ってみてください。\nスタイルとアスペクト比は左のタブで選べます。最大 ' + MAX_HISTORY + ' 件まで履歴に残ります。'}
+                  ctaLabel="最初の 1 枚を生成する"
+                  onCta={() => setTab('create')}
+                  accent={persona.accentColor}
+                  preview="ロゴ案 1024×1024 / 商品サムネ 1792×1024 / SNS アイコン 1024×1024"
+                  showSample={false}
+                />
               ) : (
                 <>
                   <div className="flex justify-between items-center">
