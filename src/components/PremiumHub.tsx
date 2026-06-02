@@ -14,6 +14,7 @@ import {
 } from '../lib/financialAnalyst';
 import { parseFile } from '../lib/fileParser';
 import { StudioIntro } from './StudioIntro';
+import AILoadingState from './AILoadingState';
 
 interface Props {
   persona: Persona;
@@ -191,6 +192,18 @@ function StrategyPanel({ persona, settings, knowledge, onSave }: {
             />
           </div>
           {err && <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>{err}</div>}
+          <AILoadingState
+            active={loading}
+            brand="prism"
+            label={`${FRAMEWORKS[framework].label} を組み立て中`}
+            stages={[
+              '質問と背景を読み込み中',
+              `${FRAMEWORKS[framework].label} の型に当てはめ中`,
+              '強み・弱み・機会・脅威を抽出',
+              '推奨アクション 3 つを整理',
+            ]}
+            skeletonLines={5}
+          />
           <div className="flex justify-end pt-2">
             <motion.button
               onClick={run} disabled={!question.trim() || loading}
@@ -359,6 +372,18 @@ function ContractPanel({ persona, settings, onSave }: {
             />
           </div>
           {err && <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>{err}</div>}
+          <AILoadingState
+            active={loading}
+            brand="prism"
+            label="契約書をレビュー中"
+            stages={[
+              '契約書の全文を読み込み中',
+              `${STANCE_LABELS[stance]} の視点で条文を点検`,
+              '危ない条文を 赤・黄・青 に振り分け',
+              '修正案と交渉ポイントを作成',
+            ]}
+            skeletonLines={6}
+          />
           <div className="flex justify-end">
             <motion.button
               onClick={run} disabled={!text.trim() || loading}
@@ -546,6 +571,18 @@ function FinancialPanel({ persona, settings, onSave }: {
             />
           </div>
           {err && <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>{err}</div>}
+          <AILoadingState
+            active={loading}
+            brand="prism"
+            label="決算を分析中"
+            stages={[
+              '財務データを読み込み中',
+              '粗利率・キャッシュ残・回転率を計算',
+              '業界平均と比較して健全度を採点',
+              '改善案 3 つを優先度付きで作成',
+            ]}
+            skeletonLines={5}
+          />
           <div className="flex justify-end">
             <motion.button
               onClick={run} disabled={!text.trim() || loading}

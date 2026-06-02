@@ -183,12 +183,14 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-fg text-sm font-semibold">
-                      {step === 'extracting' ? '要素を読み取り中…' : '推奨を組み立て中…'}
+                      {step === 'extracting'
+                        ? '① あなたの悩みを読んでます…'
+                        : '② 賛成・反対・推奨 を組み立て中…'}
                     </p>
                     <p className="text-fg-muted text-xs">
                       {step === 'extracting'
-                        ? '質問・背景・選択肢・評価軸を抽出しています'
-                        : 'ナレッジを参照して根拠を整理しています'}
+                        ? '「決めたい質問・選択肢・評価軸」を AI が読み取り中。10 秒くらい。'
+                        : 'ナレッジを参照しながら推奨案と確度 % を作成中。長くて 30 秒くらい。'}
                     </p>
                   </div>
                 </motion.div>
