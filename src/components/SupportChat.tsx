@@ -214,15 +214,19 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
               background: 'var(--surface-1, #0e0e12)',
               borderLeft: `1px solid ${accentColor}30`,
               boxShadow: `-12px 0 40px rgba(0,0,0,0.5)`,
+              // iPhone Dynamic Island / ノッチに隠れないように safe-area を入れる
+              // (オーナー報告 2026-06-03: ヘッダーが見切れて X が押せない)
+              paddingTop: 'env(safe-area-inset-top, 0px)',
             }}
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 32, stiffness: 320 }}
           >
-            {/* Header */}
+            {/* Header — iPhone 縦狭 (375px) 向けに「× ボタンは必ず右上に固定」+
+                通話 / 履歴消去 は飽和したら省略する */}
             <header
-              className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
+              className="flex items-center gap-2 px-3 py-3 flex-shrink-0"
               style={{
                 borderBottom: '1px solid rgba(255,255,255,0.06)',
                 background: `linear-gradient(135deg, ${accentColor}18, transparent 60%)`,
@@ -238,41 +242,54 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                 <BrandIcon size={22} withWordmark={false} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-tight" style={{ color: '#fff' }}>{aiName}</p>
-                <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                  {brand === 'iris' ? 'CORE Iris サポート' : 'CORE Prism サポート'} ·{' '}
+                <p className="text-sm font-semibold leading-tight truncate" style={{ color: '#fff' }}>{aiName}</p>
+                <p className="text-[11px] truncate" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                  {brand === 'iris' ? 'Iris サポート' : 'Prism サポート'} ·{' '}
                   {isLoading ? '考えています…' : 'オンライン'}
                 </p>
               </div>
+              {/* 通話 — iPhone 縦狭ではテキストを省略 (アイコンのみ) */}
               <button
                 onClick={() => setVoiceCallOpen(true)}
-                className="text-[11px] px-2.5 py-1.5 rounded-full transition-all flex items-center gap-1 font-semibold"
+                className="rounded-full transition-all flex items-center justify-center font-semibold flex-shrink-0"
                 style={{
+                  width: 36, height: 36,
                   background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
                   color: '#fff',
                   boxShadow: `0 2px 8px ${accentColor}55`,
+                  fontSize: 15,
                 }}
                 title={`${aiName} に電話する`}
+                aria-label="通話"
               >
-                📞 通話
+                📞
               </button>
               {messages.length > 0 && (
                 <button
                   onClick={async () => {
                     if (await confirmAction({ title: 'チャット履歴を消去しますか?', body: '消すと元に戻せません。', tone: 'danger', okLabel: '消去する' })) clear();
                   }}
-                  className="text-[11px] px-2 py-1 rounded transition-colors text-fg-muted hover:text-fg"
-                  style={{ background: 'rgba(255,255,255,0.04)' }}
+                  className="rounded-full transition-colors text-fg-muted hover:text-fg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(255,255,255,0.04)', width: 36, height: 36, fontSize: 15 }}
                   title="履歴を消去"
+                  aria-label="履歴を消去"
                 >
-                  履歴消去
+                  🗑
                 </button>
               )}
+              {/* × は最右に必ず触れる位置で固定 (44x44 タップ領域確保) */}
               <button
                 onClick={() => setOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-fg-muted hover:text-fg text-lg leading-none"
+                className="rounded-full flex items-center justify-center text-fg hover:text-fg leading-none flex-shrink-0"
                 aria-label="閉じる"
-                style={{ background: 'rgba(255,255,255,0.04)' }}
+                style={{
+                  background: 'rgba(255,255,255,0.12)',
+                  border: '1px solid rgba(255,255,255,0.16)',
+                  color: '#fff',
+                  width: 36, height: 36,
+                  fontSize: 22,
+                  fontWeight: 600,
+                }}
               >
                 ×
               </button>

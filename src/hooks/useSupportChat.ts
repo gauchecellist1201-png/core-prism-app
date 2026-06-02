@@ -140,7 +140,23 @@ export function useSupportChat(ctx: SupportContext) {
             let msg = `HTTP ${res.status}`;
             try {
               const data = await res.json();
-              msg = data.userMessage || data.error || data.message || msg;
+              // /api/ai は { error: { message, type, status } } 形式で返すため、
+              // error.message を最優先で拾う。直で error を取ると [object Object] に
+              // なるバグ (オーナー報告 2026-06-03 iPhone) を防ぐ。
+              const fromObj = (v: unknown): string | null => {
+                if (!v) return null;
+                if (typeof v === 'string') return v;
+                if (typeof v === 'object' && v !== null) {
+                  const o = v as { message?: unknown; userMessage?: unknown };
+                  if (typeof o.message === 'string') return o.message;
+                  if (typeof o.userMessage === 'string') return o.userMessage;
+                }
+                return null;
+              };
+              msg = fromObj(data?.userMessage)
+                || fromObj(data?.error)
+                || fromObj(data?.message)
+                || msg;
             } catch {
               /* ignore */
             }
