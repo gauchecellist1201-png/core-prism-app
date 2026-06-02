@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import type { Persona, Proposal } from '../types/identity';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Play, Plus } from 'lucide-react';
+import type { Persona, Proposal, AppSettings } from '../types/identity';
 import { listIntegrations, sendBrief } from '../lib/integrations';
 import { RewardBurst } from './visualFx';
 import ThinkingIndicator from './ThinkingIndicator';
+import InlineActionExecutor from './InlineActionExecutor';
 
 interface Props {
   persona: Persona;
@@ -17,6 +19,8 @@ interface Props {
   onAcceptAction: (a: string) => void;
   shadowDraftCount?: number;
   onOpenShadow?: () => void;
+  /** AI 実行に必要 (preferred model 等) */
+  settings: AppSettings;
 }
 
 export default function TodayBrief({
@@ -31,10 +35,13 @@ export default function TodayBrief({
   onAcceptAction,
   shadowDraftCount = 0,
   onOpenShadow,
+  settings,
 }: Props) {
   const [briefSending, setBriefSending] = useState(false);
   const [briefSent, setBriefSent] = useState(false);
   const [showReward, setShowReward] = useState(false);
+  // どのアクションを「今この場で実行中」か (index)。null なら誰も実行中ではない。
+  const [executingIdx, setExecutingIdx] = useState<number | null>(null);
   const enabledIntegrations = listIntegrations().filter(i => i.enabled);
 
   const handleSendToIntegrations = async () => {
@@ -101,33 +108,66 @@ export default function TodayBrief({
             {proposal.actions.length > 0 && (
               <div className="space-y-1.5 mb-3">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <p className="text-fg-muted text-xs tracking-widest uppercase">アクション提案 ({proposal.actions.length})</p>
+                  <p className="text-fg-muted text-xs tracking-widest uppercase">
+                    アクション提案 ({proposal.actions.length}) · タップで AI が実行
+                  </p>
                   <button
                     onClick={() => {
                       proposal.actions.forEach(a => onAcceptAction(a));
                       setShowReward(true);
                     }}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all inline-flex items-center gap-1"
                     style={{
-                      background: `linear-gradient(135deg, ${persona.accentColor}, ${persona.accentColor}cc)`,
-                      color: '#fff',
-                      boxShadow: `0 4px 12px ${persona.accentColor}55`,
+                      background: 'transparent',
+                      border: `1px solid ${persona.accentColor}66`,
+                      color: persona.accentColor,
                     }}
-                    title="すべてのアクションを今日のタスクとして追加"
+                    title="まとめてタスクに追加 (実行はしない)"
                   >
-                    ✓ すべて追加
+                    <Plus size={11} /> まとめてタスクに追加
                   </button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                <div className="space-y-1.5">
                   {proposal.actions.map((a, i) => (
-                    <button
-                      key={i}
-                      onClick={() => onAcceptAction(a)}
-                      className="text-left flex items-start gap-2 p-2.5 rounded-lg transition-all group bg-surface-3 border-edge border hover:border-fg-subtle"
-                    >
-                      <span style={{ color: persona.accentColor }} className="text-base flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform">＋</span>
-                      <span className="text-fg text-sm leading-snug flex-1">{a}</span>
-                    </button>
+                    <div key={i}>
+                      <button
+                        onClick={() => setExecutingIdx(executingIdx === i ? null : i)}
+                        disabled={executingIdx !== null && executingIdx !== i}
+                        className="w-full text-left flex items-start gap-2 p-2.5 rounded-lg transition-all group bg-surface-3 border-edge border hover:border-fg-subtle disabled:opacity-50"
+                        style={{
+                          borderColor: executingIdx === i ? persona.accentColor : undefined,
+                          background: executingIdx === i ? `${persona.accentColor}1a` : undefined,
+                        }}
+                      >
+                        <span
+                          className="flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform inline-flex items-center justify-center"
+                          style={{
+                            color: '#0a0a0f',
+                            background: persona.accentColor,
+                            width: 22, height: 22, borderRadius: 6,
+                          }}
+                        >
+                          <Play size={11} fill="#0a0a0f" />
+                        </span>
+                        <span className="text-fg text-sm leading-snug flex-1">{a}</span>
+                      </button>
+                      <AnimatePresence>
+                        {executingIdx === i && (
+                          <InlineActionExecutor
+                            key={`exec-${i}`}
+                            action={a}
+                            persona={persona}
+                            settings={settings}
+                            contextText={proposal.context}
+                            onAddAsTask={(act) => {
+                              onAcceptAction(act);
+                              setShowReward(true);
+                            }}
+                            onClose={() => setExecutingIdx(null)}
+                          />
+                        )}
+                      </AnimatePresence>
+                    </div>
                   ))}
                 </div>
               </div>

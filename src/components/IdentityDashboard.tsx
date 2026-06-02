@@ -877,6 +877,7 @@ export default function IdentityDashboard({
                     onAcceptAction={onAcceptProactiveAction}
                     shadowDraftCount={shadow.drafts.length}
                     onOpenShadow={() => setShowShadow(true)}
+                    settings={settings}
                   />
                 </div>
 
