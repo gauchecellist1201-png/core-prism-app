@@ -664,9 +664,11 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
 
                 {err && (
                   <div style={{
-                    fontSize: 11, color: '#FBBF24', lineHeight: 1.5,
+                    fontSize: 11, color: '#FBBF24', lineHeight: 1.55,
                     background: 'rgba(251,191,36,0.1)', borderRadius: 8,
-                    padding: '7px 10px', marginBottom: 9,
+                    padding: '8px 11px', marginBottom: 9,
+                    whiteSpace: 'pre-wrap',  // ← 改行を保持 (Google OAuth エラーは複数行で出るため)
+                    wordBreak: 'break-word',
                   }}>{err}</div>
                 )}
 

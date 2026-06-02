@@ -121,15 +121,31 @@ async function fetchUserInfo(token: string): Promise<CalUserInfo | null> {
 }
 
 function translateError(code: string): string {
+  // gmail.ts の translateGoogleError と完全に同じ文言。原因別に具体的に案内する。
   switch (code) {
     case 'access_denied':
+      return 'Google から「アクセスを許可しない」が返ってきました。考えられる原因と対処:\n'
+        + '① テストモード中: ログインに使った Google アドレスを Google Cloud Console の「テストユーザー」欄に追加してください\n'
+        + '② 一度開いた画面の「キャンセル」を押した可能性 → もう一度「Google でログイン」を押してすべて「許可」してください\n'
+        + '③ ブラウザの「サードパーティ Cookie ブロック」が原因 → 設定で許可するか、Chrome 通常モードでお試しください';
     case 'popup_closed':
     case 'popup_closed_by_user':
-      return 'Google 認証が完了しませんでした。もう一度お試しください。';
+      return 'ログイン画面が閉じられました。もう一度「Google でログイン」を押して、最後まで「許可」してください。\n'
+        + '※ Google 側の許可画面が一瞬しか出ない場合は、ブラウザのポップアップブロックを解除してください。';
+    case 'unauthorized_client':
     case 'admin_policy_enforced':
-      return 'お使いの Google アカウントの管理ポリシーにより外部アプリの利用が制限されています。';
+      return 'お使いの Google アカウント (会社・学校等の管理アカウント) では、外部アプリの認可が管理者により制限されています。個人 Gmail アカウントでお試しください。';
+    case 'invalid_client':
+      return 'CORE 側の OAuth 設定が間違っているようです (Client ID 不正)。サポートまでご連絡ください。';
+    case 'origin_mismatch':
+    case 'redirect_uri_mismatch':
+      return 'CORE のドメインが Google 側に未登録です (origin_mismatch)。サポートまでご連絡ください。';
+    case 'popup_failed_to_open':
+      return 'ポップアップを開けませんでした。ブラウザのポップアップブロックを解除して、もう一度お試しください。';
+    case 'idpiframe_initialization_failed':
+      return 'ブラウザがサードパーティ Cookie をブロックしています。設定で許可していただくか、Chrome 通常モードでお試しください。';
     default:
-      return `Google 認証エラー: ${code}`;
+      return `Google 認証エラー (${code}): もう一度お試しいただくか、ブラウザを変えてお試しください。`;
   }
 }
 
@@ -140,15 +156,30 @@ export async function connectCalendar(): Promise<{ token: CalTokenInfo; user: Ca
   if (!window.google?.accounts?.oauth2) throw new Error('Google Identity Services が利用できません');
 
   const token = await new Promise<CalTokenInfo>((resolve, reject) => {
-    // 成功と popup_closed_by_user の race を防ぐ (gmail.ts 側と同じ guard)
+    // ── GIS race condition 対策 (gmail.ts と同じロジック) ───
+    // popup_closed が来てもすぐ拒否せず、2 秒だけ callback の到着を待つ。
+    // その間に callback(success) が来たら遅延 reject をキャンセル。
     let settled = false;
+    let pendingClose: { timer: number } | null = null;
+    const finalizeReject = (code: string) => {
+      if (settled) return;
+      settled = true;
+      try { console.warn('[gcal.connect] OAuth failed with code:', code); } catch { /* */ }
+      reject(new Error(translateError(code)));
+    };
     const tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: CAL_SCOPES,
       prompt: 'consent',
       callback: (resp: any) => {
+        if (pendingClose) { window.clearTimeout(pendingClose.timer); pendingClose = null; }
         if (settled) return;
-        if (resp.error) { settled = true; reject(new Error(translateError(resp.error))); return; }
+        if (resp.error) {
+          settled = true;
+          try { console.warn('[gcal.connect] callback error:', resp.error, resp); } catch { /* */ }
+          reject(new Error(translateError(resp.error)));
+          return;
+        }
         const expiresAt = Date.now() + (Number(resp.expires_in) || 3600) * 1000;
         const info: CalTokenInfo = { accessToken: resp.access_token, expiresAt };
         saveToken(info);
@@ -156,9 +187,14 @@ export async function connectCalendar(): Promise<{ token: CalTokenInfo; user: Ca
         resolve(info);
       },
       error_callback: (err: any) => {
-        if (settled) return; // 成功後の stale エラーは無視
-        settled = true;
-        reject(new Error(translateError(err?.type || 'unknown')));
+        if (settled) return;
+        const code: string = err?.type || 'unknown';
+        if (code === 'popup_closed' || code === 'popup_closed_by_user') {
+          if (pendingClose) return;
+          pendingClose = { timer: window.setTimeout(() => { pendingClose = null; finalizeReject(code); }, 2000) };
+          return;
+        }
+        finalizeReject(code);
       },
     });
     tokenClient.requestAccessToken();

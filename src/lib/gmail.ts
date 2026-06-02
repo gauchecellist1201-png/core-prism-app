@@ -152,21 +152,41 @@ export async function connectGmail(): Promise<{ token: GmailTokenInfo; user: Gma
   if (!window.google?.accounts?.oauth2) throw new Error('Google Identity Services が利用できません');
 
   const token = await new Promise<GmailTokenInfo>((resolve, reject) => {
-    // ── 成功と popup_closed_by_user error が race することがあるための guard ──
-    // GSI は同意完了 → popup を自動で閉じる際、稀に error_callback('popup_closed_by_user')
-    // が callback の直後に発火し、本当は成功なのに「認証完了しませんでした」と出る
-    // (オーナー報告 2026-05-25)。
-    // 戦略: callback で settled=true、error_callback で settled なら無視。
+    // ── GIS の race condition 対策 ──────────────────────────
+    // Google Identity Services は popup を閉じる前後で callback と error_callback が
+    // 同時に発火することがある。観測されたパターン:
+    //   (A) 同意完了 → callback(success) → 直後に error_callback('popup_closed') が発火
+    //       → settled で無視できる (既存対策)
+    //   (B) 同意完了直前に popup が一瞬リダイレクトで閉じる → error_callback('popup_closed')
+    //       → 1-2 秒後に callback(success) が遅延発火
+    //       → 既存対策では (B) で「失敗」と判定してしまう。本当は成功している。
+    //
+    // 対策: popup_closed 系のエラーが来たら即拒否せず、最大 2 秒だけ callback を待つ。
+    //       その間に callback が来たら成功扱いに切り替える。
     let settled = false;
+    let pendingClose: { timer: number; type: string } | null = null;
+    const finalizeReject = (code: string) => {
+      if (settled) return;
+      settled = true;
+      // 診断ログ (オーナー報告対応 2026-06-03) — どの GIS code が来たかを開発者ツールに残す
+      // production でも有効。Sentry や手動報告のときに役立つ。
+      try {
+        console.warn('[gmail.connect] OAuth failed with code:', code);
+      } catch { /* */ }
+      reject(new Error(translateGoogleError(code)));
+    };
     const tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: GMAIL_SCOPES,
       // 'consent' で常に同意画面を表示してスコープを明示する (一般ユーザー向け)
       prompt: 'consent',
       callback: (resp: any) => {
+        // 遅延 popup_closed が予約されていればキャンセル (race 回避)
+        if (pendingClose) { window.clearTimeout(pendingClose.timer); pendingClose = null; }
         if (settled) return;
         if (resp.error) {
           settled = true;
+          try { console.warn('[gmail.connect] callback error:', resp.error, resp); } catch { /* */ }
           reject(new Error(translateGoogleError(resp.error)));
           return;
         }
@@ -178,12 +198,24 @@ export async function connectGmail(): Promise<{ token: GmailTokenInfo; user: Gma
       },
       error_callback: (err: any) => {
         if (settled) {
-          // 成功後に発火した stale な popup_closed は無視 (race 回避)
-          // console.warn('[gmail.connect] ignoring late error after success', err);
+          // 成功後に発火した stale な popup_closed は無視 (パターン A)
           return;
         }
-        settled = true;
-        reject(new Error(translateGoogleError(err?.type || 'unknown')));
+        const code: string = err?.type || 'unknown';
+        // popup_closed 系 — callback が遅延発火する可能性 (パターン B) → 2 秒待つ
+        if (code === 'popup_closed' || code === 'popup_closed_by_user') {
+          if (pendingClose) return; // 既に予約済み
+          pendingClose = {
+            type: code,
+            timer: window.setTimeout(() => {
+              pendingClose = null;
+              finalizeReject(code);
+            }, 2000),
+          };
+          return;
+        }
+        // それ以外 (access_denied / unauthorized_client / invalid_client 等) は即拒否
+        finalizeReject(code);
       },
     });
     tokenClient.requestAccessToken();
@@ -197,18 +229,32 @@ export async function connectGmail(): Promise<{ token: GmailTokenInfo; user: Gma
 function translateGoogleError(code: string): string {
   switch (code) {
     case 'access_denied':
+      // Test モード時、テストユーザー未登録だと「同意 → 拒否」になりこれが返る。
+      // 実際のフローを確認したオーナー報告に基づき、具体的な対処を案内。
+      return 'Google から「アクセスを許可しない」が返ってきました。考えられる原因と対処:\n'
+        + '① テストモード中: ログインに使った Google アドレスを Google Cloud Console の「テストユーザー」欄に追加してください\n'
+        + '② 一度開いた画面の「キャンセル」を押した可能性 → もう一度「Google でログイン」を押してすべて「許可」してください\n'
+        + '③ ブラウザの「サードパーティ Cookie ブロック」が原因 → 設定で許可するか、Chrome 通常モードでお試しください';
     case 'popup_closed':
     case 'popup_closed_by_user':
-      return 'Google 認証が完了しませんでした。もう一度お試しください。';
+      return 'ログイン画面が閉じられました。もう一度「Google でログイン」を押して、最後まで「許可」してください。\n'
+        + '※ Google 側の許可画面が一瞬しか出ない場合は、ブラウザのポップアップブロックを解除してください。';
     case 'unauthorized_client':
     case 'admin_policy_enforced':
-      return 'お使いの Google アカウントの管理ポリシーにより外部アプリの利用が制限されています。';
+      return 'お使いの Google アカウント (会社・学校等の管理アカウント) では、外部アプリの認可が管理者により制限されています。個人 Gmail アカウントでお試しください。';
     case 'invalid_client':
-      return 'CORE Prism の OAuth 設定に問題があります。サポートにお問い合わせください。';
+      return 'CORE 側の OAuth 設定が間違っているようです (Client ID 不正)。サポートまでご連絡ください。';
+    case 'origin_mismatch':
+    case 'redirect_uri_mismatch':
+      return 'CORE のドメインが Google 側に未登録です (origin_mismatch)。サポートまでご連絡ください。';
     case 'access_denied_by_resource_owner':
-      return '権限の許可がキャンセルされました。';
+      return '権限の許可画面で「キャンセル」を押されました。もう一度「許可」を選んでください。';
+    case 'popup_failed_to_open':
+      return 'ポップアップを開けませんでした。ブラウザのポップアップブロックを解除して、もう一度お試しください。';
+    case 'idpiframe_initialization_failed':
+      return 'ブラウザがサードパーティ Cookie をブロックしています。設定で許可していただくか、Chrome 通常モードでお試しください。';
     default:
-      return `Google 認証エラー: ${code}`;
+      return `Google 認証エラー (${code}): もう一度お試しいただくか、ブラウザを変えてお試しください。`;
   }
 }
 
