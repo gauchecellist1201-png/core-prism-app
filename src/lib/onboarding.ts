@@ -21,11 +21,24 @@ import {
   buildAgentTasks,
 } from './demoDataCafe';
 import {
+  DEMO_MUSIC_PID,
+  seedStripeCacheMusic,
+  buildMusicSalesLedger,
+  buildMusicInvoices,
+  buildMusicExpenses,
+  buildMusicDeals,
+  buildMusicPeople,
+  buildMusicKnowledge,
+  buildMusicTasks,
+  buildMusicDocuments,
+  buildMusicAgentTasks,
+} from './demoDataMusicSchool';
+import {
   seedDemoDataCreator,
   clearDemoDataCreator,
 } from '../iris/demoDataCreator';
 
-export type DemoProfile = 'cafe' | 'creator';
+export type DemoProfile = 'cafe' | 'creator' | 'music-school';
 
 const ONBOARDED_KEY = 'core_onboarded_v2';
 const DEMO_KEY = 'core_demo_active_v1';
@@ -114,6 +127,9 @@ export function seedDemoData(opts?: { profile?: DemoProfile }): number {
   if (profile === 'creator') {
     const total = seedDemoDataCreator();
     return total;
+  }
+  if (profile === 'music-school') {
+    return seedDemoDataMusicSchool();
   }
   return seedDemoDataCafe();
 }
@@ -217,4 +233,87 @@ function seedDemoDataCafe(): number {
     salesLedger.length +
     agentTasks.length;
   return total;
+}
+
+/** 音楽スクール (GAUCHE Cello School) 用デモを seed する */
+function seedDemoDataMusicSchool(): number {
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const today = now;
+
+  // Stripe 売上キャッシュ (12 ヶ月分)
+  const thisMonthPoint = seedStripeCacheMusic(today);
+
+  const tasks = buildMusicTasks(today, nowIso);
+  const knowledge = buildMusicKnowledge(nowIso);
+  const deals = buildMusicDeals(nowIso);
+  const documents = buildMusicDocuments(today, nowIso);
+  const expenses = buildMusicExpenses(today, nowIso);
+  const { people, interactions } = buildMusicPeople(today, nowIso);
+  const invoices = buildMusicInvoices(today, nowIso);
+  const salesLedger = buildMusicSalesLedger(today, nowIso);
+  const agentTasks = buildMusicAgentTasks(nowIso);
+
+  // Persona (cashflow は Stripe 今月の値に同期)
+  const persona = {
+    id: DEMO_MUSIC_PID,
+    name: '音楽スクール経営者・井出 直毅',
+    subtitle: 'GAUCHE Cello School 主宰',
+    icon: '🎻',
+    accentColor: '#9333EA',
+    accentColorLight: 'rgba(147,51,234,0.15)',
+    description: '渋谷でチェロ専門教室を運営。生徒 25 名・月謝 ¥18,000。事務時間の削減と退会兆候の早期察知が課題。法人サークル化で売上の山を作りたい。',
+    createdAt: nowIso,
+    meetingSlug: 'gauche-cello-demo',
+    tasks,
+    cashflow: {
+      income: thisMonthPoint.revenueJpy,
+      expense: -thisMonthPoint.expenseJpy,
+      label: 'GAUCHE Cello School・月次収支',
+    },
+    timeAllocation: 30,
+  };
+
+  // 請求者プロファイル + クライアントリスト
+  const issuerProfile = invoices[0]?.issuerSnapshot;
+  const clientList = Array.from(
+    new Map(invoices.map(i => [i.clientSnapshot.id, i.clientSnapshot])).values()
+  );
+
+  const upsert = (key: string, newItems: Array<{ id: string }>) => {
+    const existing = loadArr<{ id: string }>(key);
+    const cleaned = existing.filter(i => !i.id.startsWith('demo:'));
+    saveArr(key, [...newItems, ...cleaned]);
+  };
+
+  const existingPersonas = loadArr<{ id: string }>(PERSONA_STORE);
+  const cleanedPersonas = existingPersonas.filter(p => !p.id.startsWith('demo:'));
+  saveArr(PERSONA_STORE, [persona, ...cleanedPersonas]);
+
+  upsert(KNOWLEDGE_STORE, knowledge);
+  upsert(CRM_STORE, deals);
+  upsert(DOC_STORE, documents);
+  upsert(EXPENSE_STORE, expenses);
+  upsert(PEOPLE_STORE, people);
+  upsert(INTERACTION_STORE, interactions);
+  upsert(INVOICE_STORE, invoices);
+  upsert(SALES_LEDGER_STORE, salesLedger);
+  upsert(AGENT_QUEUE_STORE, agentTasks);
+
+  if (issuerProfile) {
+    const issuers = loadArr<{ personaId: string }>(INVOICE_ISSUER_STORE);
+    const cleaned = issuers.filter(i => i.personaId !== DEMO_MUSIC_PID);
+    saveArr(INVOICE_ISSUER_STORE, [issuerProfile, ...cleaned]);
+  }
+  if (clientList.length > 0) {
+    const clients = loadArr<{ id: string }>(INVOICE_CLIENT_STORE);
+    const cleaned = clients.filter(c => !c.id.startsWith('demo:'));
+    saveArr(INVOICE_CLIENT_STORE, [...clientList, ...cleaned]);
+  }
+
+  try { localStorage.setItem('core_active_persona_id_v1', DEMO_MUSIC_PID); } catch { /* */ }
+
+  return 1 + tasks.length + knowledge.length + deals.length + documents.length +
+    expenses.length + people.length + interactions.length + invoices.length +
+    salesLedger.length + agentTasks.length;
 }

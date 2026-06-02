@@ -93,6 +93,30 @@ const MASTER_KEY_STORAGE = 'core_master_key_v1';
     history.replaceState({}, '', window.location.pathname + window.location.search);
   }
 
+  // ─── 業界特化 LP からの ?demo=music-school で音楽スクール デモを起動 ───
+  // (汎用 LP では刺さらないので 1 業界に絞った垂直立ち上げ — オーナー戦略 2026-06-02)
+  const demoParam = url.searchParams.get('demo');
+  if (demoParam === 'music-school' || demoParam === 'cafe' || demoParam === 'creator') {
+    // 動的 import で本体バンドルを汚さない
+    import('./lib/onboarding').then(({ seedDemoData, setDemoActive, markOnboarded }) => {
+      try {
+        const profile = demoParam === 'music-school' ? 'music-school'
+                       : demoParam === 'creator' ? 'creator' : 'cafe';
+        seedDemoData({ profile });
+        setDemoActive(true);
+        markOnboarded();
+        // 入場ゲート解除 — アプリ本体に直行できるようにする
+        try { localStorage.setItem('core_app_entered_v1', 'true'); } catch { /* */ }
+        url.searchParams.delete('demo');
+        window.history.replaceState({}, '', url.toString());
+        // localStorage の反映を待ってからリロード (ストア再構築)
+        setTimeout(() => { window.location.href = '/'; }, 50);
+      } catch (e) {
+        console.warn('[CORE] demo seed failed', e);
+      }
+    });
+  }
+
   // ─── Chrome 拡張機能から ?capture=BASE64 で取り込み ───
   // 拡張機能の popup/context メニューが投げてくる。payload は
   // { title, url, selection?, source, kind } の JSON を base64 化したもの。

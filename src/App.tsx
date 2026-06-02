@@ -36,6 +36,7 @@ const SharedArtifactView = lazy(() => import('./components/SharedArtifactView'))
 const ErrorLogViewer = lazy(() => import('./components/ErrorLogViewer'));
 const FAQPage = lazy(() => import('./pages/FAQPage'));
 const TokushohoPage = lazy(() => import('./pages/TokushohoPage'));
+const MusicSchoolLanding = lazy(() => import('./components/MusicSchoolLanding'));
 import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, syncSubscriptionState, type Plan } from './lib/billing';
 import { PrismBackground } from './components/PrismBackground';
 import GlobalVoiceInput from './components/GlobalVoiceInput';
@@ -173,6 +174,12 @@ function isTermsPath(): boolean {
   return p === '/terms' || p === '/terms/' || p === '/iris/terms' || p === '/iris/terms/';
 }
 
+function isMusicSchoolLpPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/lp/music-school' || p === '/lp/music-school/';
+}
+
 export default function App() {
   // ?share=... — 友だちから届いた成果物プレビュー + 新規登録 CTA
   const sharedArtifact = readSharedFromUrl();
@@ -210,6 +217,11 @@ export default function App() {
   // /tokushoho, /iris/tokushoho — 特定商取引法に基づく表記
   if (isTokushohoPath()) {
     return <Suspense fallback={<RouteFallback />}><TokushohoPage /></Suspense>;
+  }
+
+  // /lp/music-school — 音楽スクール 業界特化 LP (1 業界垂直立ち上げ第 1 弾)
+  if (isMusicSchoolLpPath()) {
+    return <Suspense fallback={<RouteFallback />}><MusicSchoolLanding /></Suspense>;
   }
 
   // /strategy — オーナー専用 戦略ダッシュボード
