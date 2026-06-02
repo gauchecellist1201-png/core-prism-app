@@ -36,6 +36,7 @@ type StepAction =
   | { kind: 'input'; placeholder: string }
   | { kind: 'oauth'; provider: 'gmail' | 'gcal' }
   | { kind: 'stripeConnect' }
+  | { kind: 'lineConnect' }
   | { kind: 'info' };
 
 interface Step {
@@ -239,12 +240,18 @@ const CATALOG: Tool[] = [
     ],
   },
   {
-    id: 'line', name: 'LINE', color: '#06C755', glyph: 'L', category: 'SNS',
-    can: 'AI の提案やリマインドを LINE に届ける',
+    id: 'line', name: 'LINE 公式アカウント', color: '#06C755', glyph: 'L', category: 'SNS',
+    can: 'AI の提案やリマインドを 公式LINE (LINE Messaging API) で届ける',
     steps: [
-      { label: 'LINE Notify のトークン発行ページを開きます', action: { kind: 'openLink', url: 'https://notify-bot.line.me/my/', btn: 'LINE Notify を開く' } },
-      { label: 'トークンを発行し、コピー', action: { kind: 'info' } },
-      { label: 'トークンを貼り付けて連携完了', action: { kind: 'input', placeholder: 'LINE Notify トークン' } },
+      // ※ LINE Notify は 2025/3/31 にサービス終了。代わりに「LINE Messaging API (公式LINEアカウント)」
+      //   を使う。無料プランで月 200 通までメッセージ送信できる (2026/6 時点)。
+      { label: 'LINE Notify は 2025/3/31 に終了しました。代わりに「公式LINEアカウント (Messaging API)」で届けます。所要 約 5 分・無料。', action: { kind: 'info' } },
+      { label: 'LINE Developers Console を開きます (LINE アカウントでログイン)', action: { kind: 'openLink', url: 'https://developers.line.biz/console/', btn: 'LINE Developers を開く' } },
+      { label: '「新規プロバイダ作成」→「新規チャネル作成」→「Messaging API」を選択。チャネル名は自由 (例: 「自分専用 AI 通知」)', action: { kind: 'info' } },
+      { label: '作成したチャネルの「Messaging API 設定」タブを開き、下までスクロール。「チャネルアクセストークン (長期)」の「発行」ボタンを押す', action: { kind: 'info' } },
+      { label: '同じ画面の上にある QR コードを、自分のスマホの LINE で読み取って「自分の公式LINE」を友だち追加する', action: { kind: 'info' } },
+      { label: '「あなたの userId」を確認: チャネルの「チャネル基本設定」タブ → 一番下「あなたのユーザーID」をコピー', action: { kind: 'info' } },
+      { label: '下の 2 つの欄に貼り付けて「テスト送信」を押すと、その場で公式LINEから動作確認メッセージが届きます', action: { kind: 'lineConnect' } },
     ],
   },
   {
@@ -422,6 +429,9 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
   const [justDone, setJustDone] = useState(false);
   // Stripe テスト接続の結果メッセージ ("✓ つながった..." 等) を一瞬出すため
   const [verifyOk, setVerifyOk] = useState<string | null>(null);
+  // LINE Messaging API 連携用: token + userId を別々に保持
+  const [lineToken, setLineToken] = useState('');
+  const [lineUserId, setLineUserId] = useState('');
 
   const total = tool.steps.length;
   const step = tool.steps[stepIdx];
@@ -890,6 +900,134 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                       : <>Stripe で許可する <ArrowRight size={13} /></>}
                   </button>
                 )}
+
+                {step.action.kind === 'lineConnect' && (() => {
+                  const tokenOk = lineToken.trim().length >= 50;
+                  const userIdOk = /^U[0-9a-f]{20,}$/.test(lineUserId.trim());
+                  const bothOk = tokenOk && userIdOk;
+                  const sendTest = async () => {
+                    setErr(null); setVerifyOk(null);
+                    if (!bothOk) {
+                      setErr(!tokenOk
+                        ? 'アクセストークンが短すぎます。LINE Developers の「長期トークン」を全文コピーしてください。'
+                        : 'userId の形式が違います。"U" で始まる 33 文字前後の文字列を貼ってください。');
+                      return;
+                    }
+                    setBusy(true);
+                    try {
+                      const r = await fetch('/api/integrations/line-push', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'x-line-token': lineToken.trim(),
+                          'x-line-userid': lineUserId.trim(),
+                        },
+                        body: JSON.stringify({ test: true }),
+                      });
+                      const j = await r.json().catch(() => ({}));
+                      if (r.status === 200 && j.ok) {
+                        // 成功 → token + userId を ` | ` 区切りで保存
+                        const payload = `${lineToken.trim()}|${lineUserId.trim()}`;
+                        setVerifyOk('テストメッセージを送信しました。LINE をご確認ください。');
+                        setTimeout(() => completeConnection(payload), 1500);
+                        return;
+                      }
+                      setErr(j?.message || `LINE へ送信できませんでした (HTTP ${r.status})`);
+                    } catch {
+                      setErr('ネットワークエラーで LINE へ送信できませんでした。少し待ってからもう一度。');
+                    } finally {
+                      setBusy(false);
+                    }
+                  };
+                  return (
+                  <div>
+                    <div style={{
+                      fontSize: 10.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.55,
+                      background: 'rgba(255,255,255,0.04)', borderRadius: 8,
+                      padding: '7px 10px', marginBottom: 9,
+                    }}>
+                      ※ ここで入れたトークンと userId は、お客様の端末 (localStorage) のみに保存されます。サーバーには毎回ヘッダーで都度送ります。
+                    </div>
+                    {/* アクセストークン */}
+                    <label style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
+                      ① チャネルアクセストークン (長期)
+                    </label>
+                    <textarea
+                      value={lineToken}
+                      onChange={e => { setLineToken(e.target.value); setErr(null); setVerifyOk(null); }}
+                      placeholder="長期トークン (200 文字前後)"
+                      rows={3}
+                      style={{
+                        width: '100%', fontSize: 11.5, padding: '9px 11px', borderRadius: 9,
+                        background: 'rgba(255,255,255,0.06)', color: '#fff',
+                        border: `1px solid ${
+                          lineToken.length >= 4 && !tokenOk
+                            ? 'rgba(248,113,113,0.6)'
+                            : tokenOk
+                              ? 'rgba(52,211,153,0.6)'
+                              : 'rgba(255,255,255,0.12)'
+                        }`,
+                        outline: 'none', resize: 'vertical', marginTop: 4, marginBottom: 9,
+                        fontFamily: 'ui-monospace, "SF Mono", monospace',
+                      }}
+                    />
+                    {/* userId */}
+                    <label style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
+                      ② あなたの userId (LINE Developers「あなたのユーザーID」)
+                    </label>
+                    <input
+                      type="text"
+                      value={lineUserId}
+                      onChange={e => { setLineUserId(e.target.value); setErr(null); setVerifyOk(null); }}
+                      placeholder="U で始まる 33 文字前後"
+                      style={{
+                        width: '100%', fontSize: 12, padding: '10px 12px', borderRadius: 9,
+                        background: 'rgba(255,255,255,0.06)', color: '#fff',
+                        border: `1px solid ${
+                          lineUserId.length >= 4 && !userIdOk
+                            ? 'rgba(248,113,113,0.6)'
+                            : userIdOk
+                              ? 'rgba(52,211,153,0.6)'
+                              : 'rgba(255,255,255,0.12)'
+                        }`,
+                        outline: 'none', marginTop: 4, marginBottom: 11,
+                        fontFamily: 'ui-monospace, "SF Mono", monospace',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={busy || !bothOk}
+                      onClick={sendTest}
+                      style={{
+                        width: '100%', fontSize: 12.5, fontWeight: 800, color: '#fff',
+                        background: bothOk
+                          ? `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`
+                          : 'rgba(255,255,255,0.08)',
+                        border: 'none', borderRadius: 10, padding: '11px 16px',
+                        cursor: bothOk ? (busy ? 'wait' : 'pointer') : 'not-allowed',
+                        opacity: bothOk ? (busy ? 0.7 : 1) : 0.6,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      }}
+                    >
+                      {busy
+                        ? <><Loader2 size={14} className="spin" /> LINE へ送信中…</>
+                        : <>📩 テスト送信して連携完了 <ArrowRight size={13} /></>}
+                    </button>
+                    {verifyOk && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                        style={{
+                          marginTop: 9, padding: '8px 11px', borderRadius: 9,
+                          fontSize: 11.5, fontWeight: 700, color: '#34D399',
+                          background: 'rgba(52,211,153,0.12)',
+                          border: '1px solid rgba(52,211,153,0.35)',
+                          display: 'flex', alignItems: 'center', gap: 6,
+                        }}
+                      ><Check size={13} /> {verifyOk}</motion.div>
+                    )}
+                  </div>
+                  );
+                })()}
 
                 {/* 戻る */}
                 {stepIdx > 0 && (
