@@ -191,7 +191,7 @@ function StrategyPanel({ persona, settings, knowledge, onSave }: {
               style={{ minHeight: '100px' }}
             />
           </div>
-          {err && <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>{err}</div>}
+          {err && <div className="cp-banner-error">{err}</div>}
           <AILoadingState
             active={loading}
             brand="prism"
@@ -371,7 +371,7 @@ function ContractPanel({ persona, settings, onSave }: {
               style={{ minHeight: '200px' }}
             />
           </div>
-          {err && <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>{err}</div>}
+          {err && <div className="cp-banner-error">{err}</div>}
           <AILoadingState
             active={loading}
             brand="prism"
@@ -570,7 +570,7 @@ function FinancialPanel({ persona, settings, onSave }: {
               style={{ minHeight: '180px' }}
             />
           </div>
-          {err && <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>{err}</div>}
+          {err && <div className="cp-banner-error">{err}</div>}
           <AILoadingState
             active={loading}
             brand="prism"

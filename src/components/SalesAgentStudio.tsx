@@ -758,7 +758,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                     <div className="cp-stack-sm">
                       {script.objections.map((o, i) => (
                         <div key={i} style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                          <p style={{ margin: 0, fontSize: '0.88rem', color: '#FCA5A5', fontWeight: 700 }}>「{o.q}」</p>
+                          <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--cp-danger-text)', fontWeight: 700 }}>「{o.q}」</p>
                           <p style={{ margin: '4px 0 0', fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--fg)' }}>→ {o.a}</p>
                         </div>
                       ))}

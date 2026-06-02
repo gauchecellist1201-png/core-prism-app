@@ -812,6 +812,63 @@ select option {
 .cp-toast--info    { --cp-toast-accent: #60A5FA; --cp-toast-glow: rgba(96, 165, 250, 0.40); }
 .cp-toast--warn    { --cp-toast-accent: #FBBF24; --cp-toast-glow: rgba(251, 191, 36, 0.40); }
 
+/* ─────── 意味色バナー / チップ (light / dark 両対応) ───────
+   各所で散らかっていた `rgba(248,113,113,...)` + `#FCA5A5` / `#f87171` を集約。
+   light モードでは赤系を濃く (#B91C1C) に、dark モードでは淡く (#FCA5A5) に
+   切り替えて、白背景でほぼ見えない問題を解消。背景アルファも別物に分ける。 */
+:root {
+  --cp-danger-bg: rgba(220, 38, 38, 0.08);
+  --cp-danger-border: rgba(220, 38, 38, 0.30);
+  --cp-danger-text: #B91C1C;
+  --cp-success-bg: rgba(5, 150, 105, 0.08);
+  --cp-success-border: rgba(5, 150, 105, 0.30);
+  --cp-success-text: #047857;
+}
+[data-theme="dark"] {
+  --cp-danger-bg: rgba(248, 113, 113, 0.10);
+  --cp-danger-border: rgba(248, 113, 113, 0.35);
+  --cp-danger-text: #FCA5A5;
+  --cp-success-bg: rgba(52, 211, 153, 0.08);
+  --cp-success-border: rgba(52, 211, 153, 0.30);
+  --cp-success-text: #34D399;
+}
+.cp-banner-error {
+  padding: 8px 12px;
+  border-radius: var(--cp-radius-sm);
+  background: var(--cp-danger-bg);
+  border: 1px solid var(--cp-danger-border);
+  color: var(--cp-danger-text);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.cp-banner-success {
+  padding: 8px 12px;
+  border-radius: var(--cp-radius-sm);
+  background: var(--cp-success-bg);
+  border: 1px solid var(--cp-success-border);
+  color: var(--cp-success-text);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.cp-chip-danger {
+  padding: 6px 9px;
+  border-radius: var(--cp-radius-xs);
+  background: var(--cp-danger-bg);
+  border: 1px solid var(--cp-danger-border);
+  color: var(--cp-danger-text);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.cp-chip-success {
+  padding: 6px 9px;
+  border-radius: var(--cp-radius-xs);
+  background: var(--cp-success-bg);
+  border: 1px solid var(--cp-success-border);
+  color: var(--cp-success-text);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
 /* 残り時間バー — Framer Motion の exit 前に「もうすぐ消える」を予告 */
 .cp-toast__bar {
   position: absolute;

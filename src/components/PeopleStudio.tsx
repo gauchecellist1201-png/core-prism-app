@@ -488,12 +488,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                     {interviewBusy ? '🧠 面接パックを組み立て中…' : '🎤 面接パックを作る'}
                   </button>
                   {interviewError && (
-                    <div style={{
-                      padding: '8px 12px', borderRadius: 8,
-                      background: 'rgba(248,113,113,0.10)',
-                      border: '1px solid rgba(248,113,113,0.35)',
-                      color: '#FCA5A5', fontSize: 12,
-                    }}>⚠ {interviewError}</div>
+                    <div className="cp-banner-error">⚠ {interviewError}</div>
                   )}
                 </div>
 
@@ -528,10 +523,10 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                           <div>↪ <span style={{ color: 'var(--fg)' }}>深掘り:</span> {q.followUp}</div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 8 }}>
-                          <div style={{ padding: '6px 9px', borderRadius: 6, background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.3)', fontSize: '0.8rem', color: '#34D399' }}>
+                          <div className="cp-chip-success">
                             ✓ <strong>OK:</strong> {q.greenFlag}
                           </div>
-                          <div style={{ padding: '6px 9px', borderRadius: 6, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.3)', fontSize: '0.8rem', color: '#FCA5A5' }}>
+                          <div className="cp-chip-danger">
                             ⚠ <strong>NG:</strong> {q.redFlag}
                           </div>
                         </div>
