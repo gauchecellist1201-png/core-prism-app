@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Persona, AppSettings } from '../types/identity';
+import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import { useSalesAgent } from '../hooks/useSalesAgent';
 import { pickTodaysCompanies, type AiPick } from '../lib/salesAgentMatch';
 import { todaySeed } from '../data/companies-jp';
@@ -16,6 +16,8 @@ import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 interface Props {
   persona: Persona;
   settings: AppSettings;
+  /** ナレッジ (自社商材の自動取り込み元) — オーナー指示 2026-06-02 */
+  knowledge?: KnowledgeItem[];
   onClose: () => void;
 }
 
@@ -55,7 +57,7 @@ const SIZE_LABEL: Record<AiPick['size'], string> = {
   startup: 'スタートアップ',
 };
 
-export default function SalesAgentStudio({ persona, settings, onClose }: Props) {
+export default function SalesAgentStudio({ persona, settings, knowledge = [], onClose }: Props) {
   const sa = useSalesAgent();
   const queue = useAgentTaskQueue();
   const approachCopy = useCopyButton();
@@ -230,7 +232,64 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
   // ─── 自社の商材タブ ──────
   const [productDraft, setProductDraft] = useState(ownProduct);
   const [productSavedMsg, setProductSavedMsg] = useState<string | null>(null);
+  const [extractBusy, setExtractBusy] = useState(false);
   useEffect(() => setProductDraft(ownProduct), [ownProduct]);
+
+  // ─── ナレッジから自社商材を自動取込 (オーナー指示 2026-06-02) ───
+  // 「いちいち入力させない」: 蓄積資料を AI が読んで商材説明を 5-10 行で自動生成
+  const extractFromKnowledge = useCallback(async () => {
+    if (knowledge.length === 0) {
+      setError('まずナレッジに資料を 1 件以上入れてください。');
+      return;
+    }
+    setExtractBusy(true);
+    setError(null);
+    try {
+      const digest = knowledge.slice(0, 25).map((k, i) => {
+        const sum = k.analysis?.summary || k.content.slice(0, 200);
+        return `${i + 1}. ${k.title}\n   ${sum.slice(0, 240)}`;
+      }).join('\n\n');
+      const sys = `あなたは経営参謀です。蓄積された資料から「この事業者の自社商材」を抽出し、
+営業相手探しに使える形に整理します。
+
+返答は JSON のみ:
+{
+  "summary": "5〜10 行のプレーンテキスト (改行 \\n で区切る)。フォーマット:\\n弊社の商材: ○○\\n価格: ○○\\nコア機能: ○○\\nターゲット: ○○\\n強み: ○○"
+}
+
+ルール:
+- 資料に書かれた事実だけを使う (作り話禁止)
+- やさしい日本語、専門用語は避ける
+- 価格やターゲットが資料に無ければ「(資料に記載なし)」と書く`;
+      const userMsg = `# 事業: ${persona.name} (${persona.subtitle || ''})\n\n# 資料 ${knowledge.length} 件 (主要 ${Math.min(25, knowledge.length)} 件)\n\n${digest}\n\n上記から自社商材の説明を JSON で抽出してください。`;
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: settings.preferredModel,
+          max_tokens: 1500,
+          system: sys,
+          messages: [{ role: 'user', content: userMsg }],
+        }),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e?.error?.message || `取込エラー: ${res.status}`);
+      }
+      const data = await res.json();
+      const text = data?.content?.[0]?.text ?? '';
+      const m = text.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('AI の返答を読み取れませんでした');
+      const parsed = JSON.parse(m[0]);
+      const summary = String(parsed.summary || '').trim();
+      if (!summary) throw new Error('資料から商材情報を抽出できませんでした。');
+      setProductDraft(summary);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '取込に失敗しました');
+    } finally {
+      setExtractBusy(false);
+    }
+  }, [knowledge, persona, settings.preferredModel]);
   const saveProduct = () => {
     if (!productDraft.trim()) {
       setError('まず商材の内容を入れてください (5〜10 行で OK)');
@@ -729,13 +788,37 @@ export default function SalesAgentStudio({ persona, settings, onClose }: Props) 
           {/* ─── 自社の商材 ─── */}
           {tab === 'product' && (
             <div className="cp-card-section cp-stack-sm">
-              <p className="cp-h3">🎁 自社の商材を登録</p>
+              <p className="cp-h3">🎁 自社の商材</p>
               <p className="cp-meta">
-                この情報をもとに AI が「合う企業」を毎日先回りで選びます。
-                何を売っていて、誰に向けて、どう刺さるかを 5〜10 行で。詳しいほど精度が上がります。
+                AI が「合う企業」を選ぶための土台です。
+                {knowledge.length > 0 ? (
+                  <> 蓄積済の <strong style={{ color: persona.accentColor }}>{knowledge.length} 件のナレッジ</strong> から自動で取り込めます。</>
+                ) : (
+                  <> 5〜10 行で何を売っているか書くか、ナレッジに資料を入れると自動取込できます。</>
+                )}
               </p>
+
+              {/* ナレッジから自動取込 (オーナー指示 2026-06-02: いちいち入力させない) */}
+              {knowledge.length > 0 && (
+                <button
+                  onClick={extractFromKnowledge}
+                  disabled={extractBusy}
+                  className="cp-btn"
+                  style={{
+                    background: extractBusy ? 'var(--surface-3)' : `linear-gradient(135deg, ${persona.accentColor}22, ${persona.accentColor}0a)`,
+                    border: `1px solid ${persona.accentColor}55`,
+                    color: persona.accentColor,
+                    fontWeight: 800,
+                    padding: '10px 14px',
+                    opacity: extractBusy ? 0.7 : 1,
+                  }}
+                >
+                  {extractBusy ? '🧠 ナレッジを読んでいます…' : `✨ ナレッジ ${knowledge.length} 件から自動で取り込む`}
+                </button>
+              )}
+
               <textarea value={productDraft} onChange={e => setProductDraft(e.target.value)}
-                placeholder={`狙いたい企業を入れてください (例: 都内の Web 制作会社 / 従業員 10-50 名)\n\n商材も合わせて書くと精度が上がります:\n弊社の商材: 飲食店向け予約管理 SaaS\n価格: 月¥9,800〜\nコア機能: 予約一元管理 / 顧客LTV分析 / LINE自動配信\nターゲット: 月50万円以上の売上がある飲食店\n強み: 月の客単価が3,500円以上の店で、リピート率を平均15%向上した実績`}
+                placeholder={`ナレッジから取り込むか、自分で書いてもどちらでも OK\n\n例:\n弊社の商材: 飲食店向け予約管理 SaaS\n価格: 月¥9,800〜\nコア機能: 予約一元管理 / 顧客LTV分析 / LINE自動配信\nターゲット: 月50万円以上の売上がある飲食店\n強み: 客単価3,500円以上の店でリピート率を平均15%向上した実績`}
                 rows={10} className="cp-textarea" />
               <button onClick={saveProduct} className="cp-btn cp-btn-primary"
                 disabled={!!productSavedMsg}

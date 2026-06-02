@@ -1545,6 +1545,7 @@ export default function IdentityDashboard({
             key="sales-agent"
             persona={persona}
             settings={settings}
+            knowledge={knowledgeForAgent}
             onClose={() => setShowSalesAgent(false)}
           />
         )}
