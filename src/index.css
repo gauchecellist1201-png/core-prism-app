@@ -95,6 +95,12 @@
     color: var(--fg);
     font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* 日本語の詰め組み (palt) + 字詰め (kern) で誌面感を一段上げる。
+       palt は Hiragino Sans / Noto Sans JP がサポート。Latin 文字には影響しない。 */
+    font-feature-settings: "palt" 1, "kern" 1;
+    font-kerning: normal;
     /* Mobile: 16pxを下限にしてiOSのオートズームを防ぐ */
     font-size: 16px;
   }
@@ -468,10 +474,10 @@ select option {
    ============================================================ */
 
 /* タイポグラフィ統一 */
-.cp-h1 { font-size: 1.5rem; line-height: 1.4; font-weight: 600; letter-spacing: -0.01em; color: var(--fg); }
-.cp-h2 { font-size: 1.125rem; line-height: 1.45; font-weight: 600; color: var(--fg); }
-.cp-h3 { font-size: 0.95rem; line-height: 1.5; font-weight: 600; color: var(--fg); }
-.cp-body { font-size: 0.9rem; line-height: 1.65; color: var(--fg); }
+.cp-h1 { font-size: 1.5rem; line-height: 1.35; font-weight: 600; letter-spacing: -0.012em; color: var(--fg); }
+.cp-h2 { font-size: 1.125rem; line-height: 1.42; font-weight: 600; letter-spacing: -0.008em; color: var(--fg); }
+.cp-h3 { font-size: 0.95rem; line-height: 1.48; font-weight: 600; letter-spacing: -0.005em; color: var(--fg); }
+.cp-body { font-size: 0.9rem; line-height: 1.7; color: var(--fg); }
 .cp-meta { font-size: 0.78rem; line-height: 1.5; color: var(--fg-muted); }
 .cp-tiny { font-size: 0.7rem; line-height: 1.4; color: var(--fg-subtle); letter-spacing: 0.05em; text-transform: uppercase; }
 
@@ -2212,6 +2218,42 @@ select:not([data-no-tactile]):focus-visible,
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
+}
+
+/* ───── K. 数字を等幅で揃える (tabular-nums) ─────
+   売上 / KPI / カウントが行頭で揺れて見えるのを直す。
+   1234 と 9876 の桁幅が同じになり、表/リスト/カードでビシッと揃う。
+   palt (詰め組み) の影響を受けないよう tnum を明示。
+   既に Tailwind の tabular-nums を当てている箇所と二重適用しても害なし。 */
+.cp-num,
+[class*="cp-stat"],
+[class*="cp-kpi"],
+[class*="cp-money"],
+[class*="cp-amount"],
+[class*="cp-metric"],
+[class*="cp-count"],
+[class*="kpi-num"],
+[class*="kpi-value"],
+[class*="stat-num"],
+[class*="stat-value"],
+[class*="amount-num"],
+[class*="money-num"],
+[class*="iris-revenue-num"],
+[class*="iris-kpi"],
+[class*="iris-stat"],
+[class*="iris-amount"],
+[class*="prism-kpi"],
+[class*="prism-stat"],
+[class*="cp-percent"],
+[data-num],
+[data-tabular] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "kern" 1;
+}
+
+/* time 要素も日時/期間を含むので等幅化 (見出しと並んだ時に揃う) */
+time {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ───── Reduced motion: マイクロインタラクションを抑制 ───── */
