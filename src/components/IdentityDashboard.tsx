@@ -775,17 +775,79 @@ export default function IdentityDashboard({
                 ]}
               />
 
-              {/* 焦点モード: 今日の最優先 1 つ + 数字 1 行 (オーナー指示 2026-05-28) */}
-              <FocusHero
-                persona={persona}
-                proposal={briefOverride ?? proactive.latestProposal ?? (coach.brief ? coachBriefToProposal(coach.brief) : null)}
-                isGenerating={proactive.isGenerating || coach.isGenerating}
-                onPrimaryAction={onAcceptProactiveAction}
-                onGenerate={() => proactive.generate(settings.voiceEnabled !== false)}
-                expanded={dashboardExpanded}
-                onToggleExpanded={toggleDashboardExpanded}
-                hiddenCount={30}
-              />
+              {/* iPhone 専用: 7 agents の直下に「ブリーフ → 売上」を常時 巨大表示
+                  (オーナー指示 2026-06-03: モバイルはペライチ的にわかりやすく、情報を間引いて巨大化) */}
+              <div className="md:hidden space-y-3">
+                {/* モバイル用ブリーフ — 余計な飾りを削いで TodayBrief 本体だけを大きく */}
+                <div style={{
+                  borderRadius: 18,
+                  background: 'linear-gradient(135deg, rgba(46,111,255,0.10), rgba(142,92,255,0.08) 50%, rgba(232,75,151,0.06))',
+                  border: '1px solid rgba(142,92,255,0.22)',
+                  padding: 10,
+                }}>
+                  <TodayBrief
+                    persona={persona}
+                    proposal={briefOverride ?? proactive.latestProposal}
+                    isGenerating={proactive.isGenerating || coach.isGenerating}
+                    isSpeaking={proactive.isSpeaking}
+                    voiceEnabled={settings.voiceEnabled !== false}
+                    onGenerate={(v) => { setBriefOverride(null); proactive.generate(v); }}
+                    onSpeak={proactive.speakProposal}
+                    onStopSpeak={proactive.stopSpeak}
+                    onAcceptAction={onAcceptProactiveAction}
+                    shadowDraftCount={shadow.drafts.length}
+                    onOpenShadow={() => setShowShadow(true)}
+                    settings={settings}
+                  />
+                </div>
+                {/* モバイル用 売上カード */}
+                <EarningsAndTimeHero
+                  persona={persona}
+                  onConnectStripe={() => {
+                    setIntegrationsFocusId('stripe');
+                    setShowIntegrations(true);
+                  }}
+                />
+              </div>
+
+              {/* PC 専用: 焦点モード (今日の最優先 1 つ + 数字 1 行) — iPhone では上のブリーフ + 売上に置き換え */}
+              <div className="hidden md:block">
+                <FocusHero
+                  persona={persona}
+                  proposal={briefOverride ?? proactive.latestProposal ?? (coach.brief ? coachBriefToProposal(coach.brief) : null)}
+                  isGenerating={proactive.isGenerating || coach.isGenerating}
+                  onPrimaryAction={onAcceptProactiveAction}
+                  onGenerate={() => proactive.generate(settings.voiceEnabled !== false)}
+                  expanded={dashboardExpanded}
+                  onToggleExpanded={toggleDashboardExpanded}
+                  hiddenCount={30}
+                />
+              </div>
+
+              {/* iPhone 専用: 全機能を見るための展開ボタン (FocusHero を mobile で隠した代わり) */}
+              <div className="md:hidden">
+                <button
+                  onClick={toggleDashboardExpanded}
+                  type="button"
+                  style={{
+                    width: '100%',
+                    padding: '14px 18px',
+                    borderRadius: 14,
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(142,92,255,0.28)',
+                    color: 'var(--fg)',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {dashboardExpanded ? '▲ 折りたたむ' : '▼ すべての機能を見る (CRM / 請求書 / 議事録 ほか 30+ )'}
+                </button>
+              </div>
 
               {/* ↓ 「すべての機能を見る」で展開する全コンテンツ */}
               {dashboardExpanded && (<>
@@ -794,21 +856,25 @@ export default function IdentityDashboard({
                 EarningsAndTimeHero (2026-05-25 オーナー指示):
                 「稼げそう / 楽できそう」を一目で。
                 ダッシュボード最上部 = TodayBrief 直前に置く。
+                iPhone では上の mobile ブロックで既に表示済みなので hidden。
               */}
-              <EarningsAndTimeHero
-                persona={persona}
-                onConnectStripe={() => {
-                  setIntegrationsFocusId('stripe');
-                  setShowIntegrations(true);
-                }}
-              />
+              <div className="hidden md:block">
+                <EarningsAndTimeHero
+                  persona={persona}
+                  onConnectStripe={() => {
+                    setIntegrationsFocusId('stripe');
+                    setShowIntegrations(true);
+                  }}
+                />
+              </div>
 
               {/*
                 AutoAgentHero (今日のひと言) はオーナー指示で削除 (2026-05-16)。
                 JSON parse エラーが恒常的に出ていたため。
                 その美しい紫紺グラデの世界観だけを TodayBrief のラッパーに引き継ぐ。
+                iPhone では上の mobile ブロックで既に表示済みなので hidden。
               */}
-              <div style={{
+              <div className="hidden md:block" style={{
                 position: 'relative',
                 padding: '1.4rem 1.2rem 1.2rem',
                 borderRadius: 22,
