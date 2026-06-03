@@ -94,6 +94,29 @@ export function useAgentTaskQueue() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
+  // ── 起動時: 5 分以上 'working' で残っている stuck task を failed に
+  //    (オーナー報告 2026-06-03: 「実行中 9555 分 21 秒」と表示される偽の進行を撲滅) ──
+  useEffect(() => {
+    const STUCK_MS = 5 * 60 * 1000;
+    setTasks(prev => {
+      let changed = false;
+      const next = prev.map(t => {
+        if (t.status !== 'running') return t;
+        const workingStep = t.steps.find(s => s.status === 'working');
+        if (!workingStep || !workingStep.startedAt) return t;
+        const age = Date.now() - new Date(workingStep.startedAt).getTime();
+        if (age < STUCK_MS) return t;
+        changed = true;
+        const idx = t.steps.indexOf(workingStep);
+        const steps = [...t.steps];
+        steps[idx] = { ...workingStep, status: 'failed' as const, finishedAt: new Date().toISOString(),
+          error: 'ブラウザが閉じられたまま停止しました。「やり直す」で再開できます' };
+        return { ...t, steps, status: 'failed' as const };
+      });
+      return changed ? next : prev;
+    });
+  }, []);
+
   useEffect(() => { saveQueue(tasks); }, [tasks]);
 
   /** 提案を新規追加 (proposed 状態で) */
@@ -186,10 +209,13 @@ export function useAgentTaskQueue() {
       const userPrompt = `# タスク\n${latest.title}\n\n# 概要\n${latest.summary}\n\n# あなたの担当ステップ\n${step.label}\n\n上記を実行し、結果を 1 文で報告してください。`;
 
       // AI 呼び出し — 一時的なネット不調は最大 2 回まで自動リトライ
+      // 1 回あたり最大 45 秒で打ち切り (オーナー報告 2026-06-03: 偽の長時間「実行中」を撲滅)
       let output: string | null = null;
       let lastErr = '';
       for (let attempt = 0; attempt < 2 && output === null; attempt++) {
         if (attempt > 0) await new Promise(r => setTimeout(r, 450));
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 45000);
         try {
           const r = await fetch('/api/ai', {
             method: 'POST',
@@ -200,14 +226,19 @@ export function useAgentTaskQueue() {
               system: sys,
               messages: [{ role: 'user', content: userPrompt }],
             }),
+            signal: controller.signal,
           });
+          clearTimeout(timer);
           if (!r.ok) { lastErr = `AI が応答エラーを返しました (${r.status})`; continue; }
           const data = await r.json() as any;
           const text = data.content?.[0]?.text || '';
           // 接続成功・本文が空なら担当領域のテンプレで継続 (これは失敗ではない)
           output = text.trim() ? text.trim().slice(0, 80) : (fallbacks[step.cxo] || '完了');
-        } catch {
-          lastErr = 'AI への接続に失敗しました';
+        } catch (e) {
+          clearTimeout(timer);
+          lastErr = (e as { name?: string })?.name === 'AbortError'
+            ? 'AI 実行が 45 秒以内に終わりませんでした (タイムアウト)'
+            : 'AI への接続に失敗しました';
         }
       }
 

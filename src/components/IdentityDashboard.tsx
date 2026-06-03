@@ -834,6 +834,7 @@ export default function IdentityDashboard({
                   expanded={dashboardExpanded}
                   onToggleExpanded={toggleDashboardExpanded}
                   hiddenCount={30}
+                  settings={settings}
                 />
               </div>
 

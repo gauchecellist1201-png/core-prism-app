@@ -9,11 +9,12 @@
 // 優先順位の視覚言語:
 //   🔴 今すぐ (24h 以内)  /  🟡 今週  /  🟢 いつでも
 // ============================================================
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp, ArrowRight, Sparkles } from 'lucide-react';
-import type { Persona, Proposal } from '../types/identity';
+import type { Persona, Proposal, AppSettings } from '../types/identity';
 import { useStripeRevenue } from '../hooks/useStripeRevenue';
+import InlineActionExecutor from './InlineActionExecutor';
 
 type Urgency = 'now' | 'week' | 'anytime';
 
@@ -42,7 +43,7 @@ interface Props {
   /** 今日の最優先提案 (coach brief or proactive proposal) */
   proposal: Proposal | null;
   isGenerating?: boolean;
-  /** 「やる」= 最初のアクションを承認 */
+  /** 「やる」= 最初のアクションを承認 (タスクへの追加用 fallback) */
   onPrimaryAction?: (actionText: string) => void;
   /** 「次の一手を出す」= 提案を生成 */
   onGenerate?: () => void;
@@ -51,14 +52,17 @@ interface Props {
   onToggleExpanded: () => void;
   /** 折りたたまれている残りセクション数 (バッジ表示用) */
   hiddenCount?: number;
+  /** AI 実行に必要 (オーナー指示 2026-06-03: タップ→ 実際に実行) */
+  settings?: AppSettings;
 }
 
 export default function FocusHero({
   persona, proposal, isGenerating, onPrimaryAction, onGenerate,
-  expanded, onToggleExpanded, hiddenCount,
+  expanded, onToggleExpanded, hiddenCount, settings,
 }: Props) {
   const stripe = useStripeRevenue();
   const [showDetail, setShowDetail] = useState(false);
+  const [executingAction, setExecutingAction] = useState<string | null>(null);
   const accent = persona.accentColor;
 
   const urgency = useMemo(() => inferUrgency(proposal), [proposal]);
@@ -157,18 +161,20 @@ export default function FocusHero({
               </p>
             )}
 
-            {/* ボタン行 */}
+            {/* ボタン行 — タップで AI が即実行 (オーナー指示 2026-06-03) */}
             <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-              {firstAction && onPrimaryAction && (
+              {firstAction && (
                 <button
                   type="button"
-                  onClick={() => onPrimaryAction(firstAction)}
+                  onClick={() => setExecutingAction(firstAction)}
+                  disabled={executingAction !== null}
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     padding: '10px 18px', borderRadius: 10,
                     background: `linear-gradient(135deg, ${um.color}, ${um.color}cc)`,
                     color: '#0a0a0f', border: 'none', fontSize: 13.5, fontWeight: 800,
-                    cursor: 'pointer', boxShadow: `0 8px 20px ${um.color}44`,
+                    cursor: executingAction ? 'wait' : 'pointer', boxShadow: `0 8px 20px ${um.color}44`,
+                    opacity: executingAction ? 0.7 : 1,
                   }}
                 >
                   ▶ {firstAction.length > 22 ? firstAction.slice(0, 22) + '…' : firstAction}
@@ -202,12 +208,14 @@ export default function FocusHero({
                       <button
                         key={i}
                         type="button"
-                        onClick={() => onPrimaryAction?.(a)}
+                        onClick={() => setExecutingAction(a)}
+                        disabled={executingAction !== null}
                         style={{
                           textAlign: 'left', padding: '8px 12px', borderRadius: 8,
                           background: 'var(--surface-3)', border: '1px solid var(--border-2)',
-                          color: 'var(--fg)', fontSize: 12.5, cursor: 'pointer',
+                          color: 'var(--fg)', fontSize: 12.5, cursor: executingAction ? 'wait' : 'pointer',
                           display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
+                          opacity: executingAction ? 0.5 : 1,
                         }}
                       >
                         <span>{a}</span>
@@ -223,6 +231,21 @@ export default function FocusHero({
                 )}
               </motion.div>
             )}
+
+            {/* AI 実行 ペイン (オーナー指示 2026-06-03: 動かないボタンを撲滅) */}
+            <AnimatePresence>
+              {executingAction && settings && (
+                <InlineActionExecutor
+                  key={`exec-${executingAction}`}
+                  action={executingAction}
+                  persona={persona}
+                  settings={settings}
+                  contextText={(proposal as { context?: string })?.context}
+                  onAddAsTask={(act) => { onPrimaryAction?.(act); }}
+                  onClose={() => setExecutingAction(null)}
+                />
+              )}
+            </AnimatePresence>
           </>
         ) : (
           <>

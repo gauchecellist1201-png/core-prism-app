@@ -640,6 +640,9 @@ function formatElapsed(startIso?: string, endIso?: string): string {
   const start = new Date(startIso).getTime();
   const end = endIso ? new Date(endIso).getTime() : Date.now();
   const sec = Math.max(0, Math.round((end - start) / 1000));
+  // 5 分以上「実行中」のものは stuck と判断 (オーナー報告 2026-06-03: 9555 分 21 秒)
+  // 数字を見せず「再開待ち」と表示
+  if (!endIso && sec > 300) return '再開待ち';
   if (sec < 60) return `${sec} 秒`;
   const min = Math.floor(sec / 60);
   return `${min}分${sec % 60}秒`;
