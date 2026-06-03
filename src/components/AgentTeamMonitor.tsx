@@ -17,6 +17,7 @@ import { useCelebrate } from '../hooks/useCelebrate';
 import { usePersonas } from '../hooks/usePersonas';
 import { useSettings } from '../hooks/useSettings';
 import InlineActionExecutor from './InlineActionExecutor';
+import CxoProfileModal from './CxoProfileModal';
 
 interface Props {
   /** Iris か Prism — Iris は dock 上、Prism は別位置 */
@@ -50,6 +51,8 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
   const [watchTick, setWatchTick] = useState(0);
   // HH (2026-06-03): タスクボタン → InlineActionExecutor で AI 実行 → 成果物表示
   const [inlineExec, setInlineExec] = useState<{ action: string; cxo: CxoRole } | null>(null);
+  // JJJJ (2026-06-04): CXO 人格 詳細 モーダル
+  const [profileRole, setProfileRole] = useState<CxoRole | null>(null);
   const { activePersona } = usePersonas();
   const { settings } = useSettings();
 
@@ -150,6 +153,15 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
   return (
     <>
     {CelebratePortal}
+    {/* JJJJ (2026-06-04): CXO 人格 詳細 モーダル */}
+    <CxoProfileModal
+      role={profileRole}
+      onClose={() => setProfileRole(null)}
+      onAssign={(r) => {
+        // 「いま頼む」を押された時は popover に戻して 3 件を選んでもらう
+        setOpenCxo(r);
+      }}
+    />
     <motion.div
       initial={false}
       animate={{ height: open ? 'auto' : 56 }}
@@ -485,6 +497,21 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                           {CXO_META[openCxo].tagline}
                         </div>
                       </div>
+                      {/* JJJJ (2026-06-04): 人格 詳細 を開く */}
+                      <button
+                        type="button"
+                        onClick={() => setProfileRole(openCxo)}
+                        aria-label="この役員の詳細"
+                        title="経歴 / 得意 / 苦手 / 名言 を見る"
+                        style={{
+                          padding: '4px 10px', borderRadius: 999,
+                          background: `${CXO_META[openCxo].color}25`,
+                          border: `1px solid ${CXO_META[openCxo].color}55`,
+                          color: CXO_META[openCxo].color,
+                          fontSize: 10, fontWeight: 800, cursor: 'pointer',
+                          flexShrink: 0,
+                        }}
+                      >👤 人格</button>
                       <button
                         type="button"
                         onClick={() => setOpenCxo(null)}

@@ -76,6 +76,12 @@ export function isDemoActive(): boolean {
 
 export function setDemoActive(active: boolean): void {
   localStorage.setItem(DEMO_KEY, active ? 'true' : 'false');
+  // HHHH (2026-06-04): SampleModeBanner 等の購読者へ即時通知 (storage は他タブ用)
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('core:demo-state-changed', { detail: { active } }));
+    }
+  } catch { /* */ }
 }
 
 function loadArr<T>(key: string): T[] {

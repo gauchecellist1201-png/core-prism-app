@@ -22,6 +22,7 @@ import SuggestionFab from './components/SuggestionFab';
 import OnboardingTour from './components/OnboardingTour';
 import EveningFeed from './components/EveningFeed';
 import PersonaPresetSuggestion from './components/PersonaPresetSuggestion';
+import SampleModeBanner from './components/SampleModeBanner';
 import SitemapPalette from './components/SitemapPalette';
 import AiThrottleToast from './components/AiThrottleToast';
 import PublicThemeToggle from './components/PublicThemeToggle';
@@ -669,6 +670,8 @@ export default function App() {
       <AiThrottleToast />
       {/* YYY (2026-06-04): LP / Pricing / Billing / Contact 用 ライト ⇄ ダーク 切替 */}
       <PublicThemeToggle />
+      {/* HHHH (2026-06-04): サンプルモード時 最上部 帯 (全画面常駐) */}
+      <SampleModeBanner />
     </>
   );
 }
