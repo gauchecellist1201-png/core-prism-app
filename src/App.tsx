@@ -21,6 +21,7 @@ import QuickAskFab from './components/QuickAskFab';
 import SuggestionFab from './components/SuggestionFab';
 import OnboardingTour from './components/OnboardingTour';
 import SitemapPalette from './components/SitemapPalette';
+import AiThrottleToast from './components/AiThrottleToast';
 import LegalModal, { type LegalKind } from './components/LegalModal';
 import StudioOpeningSheet from './components/StudioOpeningSheet';
 // 重い「別ルート専用」のページは React.lazy で main から切り出す。
@@ -657,6 +658,8 @@ export default function App() {
       <SuggestionFab />
       {/* OOO (2026-06-04): Cmd+Shift+/ で「全機能マップ」 */}
       <SitemapPalette />
+      {/* PPP (2026-06-04): AI throttle 表示 */}
+      <AiThrottleToast />
     </>
   );
 }

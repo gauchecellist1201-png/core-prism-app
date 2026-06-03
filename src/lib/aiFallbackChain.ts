@@ -20,6 +20,7 @@
 // ============================================================
 
 // 失敗ログは console.warn にフォールバック (errorCapture が console を hook している)
+import { recordFailure, recordSuccess, sleepIfNeeded } from './aiBackoff';
 
 export interface AiPayload {
   model: string;
@@ -70,13 +71,15 @@ async function callOnce(
   payload: AiPayload,
   timeoutMs: number,
   externalSignal?: AbortSignal,
-): Promise<{ ok: true; data: AiResponse } | { ok: false; status: number; retryable: boolean; error: string }> {
+): Promise<{ ok: true; data: AiResponse } | { ok: false; status: number; retryable: boolean; error: string; retryAfterHeader: string | null }> {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(new TimeoutError()), timeoutMs);
   const onAbort = () => ac.abort(externalSignal?.reason);
   if (externalSignal) externalSignal.addEventListener('abort', onAbort, { once: true });
 
   try {
+    // PPP (2026-06-04): 直近 429/503 で待機時間が残っていれば待つ
+    await sleepIfNeeded();
     const res = await fetch('/api/ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -90,7 +93,8 @@ async function callOnce(
         const j = JSON.parse(txt);
         msg = j?.error?.message || j?.message || msg;
       } catch { /* */ }
-      return { ok: false, status: res.status, retryable: isRetryableHttp(res.status), error: msg };
+      const retryAfter = res.headers.get('retry-after');
+      return { ok: false, status: res.status, retryable: isRetryableHttp(res.status), error: msg, retryAfterHeader: retryAfter };
     }
     const data = (await res.json()) as AiResponse;
     return { ok: true, data };
@@ -101,6 +105,7 @@ async function callOnce(
       status: isAbort ? 408 : 0,
       retryable: isAbort || true, // ネットワークエラーは retry 価値あり
       error: isAbort ? 'request_timed_out_or_aborted' : ((e as Error)?.message || 'network_error'),
+      retryAfterHeader: null,
     };
   } finally {
     clearTimeout(timer);
@@ -125,9 +130,15 @@ export async function callAiWithFallback(
     opts.onStep?.(i, model, i === 0 ? undefined : `previous failed: ${lastError.error}`);
     const r = await callOnce({ ...basePayload, model }, timeoutMs, opts.signal);
     if (r.ok) {
+      // PPP (2026-06-04): 成功でバックオフ状態をリセット
+      recordSuccess();
       return { ...r.data, resolvedModel: r.data.model || model, fallbackStep: i };
     }
     lastError = { status: r.status, error: r.error, model };
+    // PPP (2026-06-04): 429 / 503 / 408 / network はバックオフ記録 + UI 通知
+    if (r.status === 429 || r.status === 503 || r.status === 408 || r.status === 0) {
+      recordFailure(r.status, r.retryAfterHeader);
+    }
     // 4xx (retryable=false) は即時離脱しない: 次のモデルでは構造的問題が回避されることもある (例: model not found)
     // ただし 401/403 は env/auth の話なので全段ダメ。離脱。
     if (r.status === 401 || r.status === 403) break;
