@@ -21,6 +21,7 @@ import QuickAskFab from './components/QuickAskFab';
 import SuggestionFab from './components/SuggestionFab';
 import OnboardingTour from './components/OnboardingTour';
 import EveningFeed from './components/EveningFeed';
+import PersonaPresetSuggestion from './components/PersonaPresetSuggestion';
 import SitemapPalette from './components/SitemapPalette';
 import AiThrottleToast from './components/AiThrottleToast';
 import PublicThemeToggle from './components/PublicThemeToggle';
@@ -656,6 +657,8 @@ export default function App() {
       {view === 'dashboard' && <OnboardingTour />}
       {/* VVV (2026-06-04): 夜のフィード — 18 時以降 1 日 1 回 */}
       {view === 'dashboard' && <EveningFeed />}
+      {/* GGGG (2026-06-04): 業種別 AI ペルソナ プリセット 4 名 提案 */}
+      {view === 'dashboard' && <PersonaPresetSuggestion />}
       {/* ZZ (2026-06-03): 全画面常駐 FAB — LP / Pricing / Billing / Dashboard */}
       <QuickAskFab />
       {/* DDD (2026-06-04): 左下「💡 改善提案」(QuickAskFab と被らない位置) */}

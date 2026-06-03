@@ -78,6 +78,15 @@ export default function OnboardingFlow({ onComplete }: Props) {
 
   const handleComplete = () => {
     try { recordStep('completed'); } catch { /* */ }
+    // GGGG (2026-06-04): 業種別ペルソナ プリセットを localStorage に保留し、
+    //   ダッシュボード初回ロード時に「4 名を一括追加しますか?」を提示する
+    try {
+      if (industry) {
+        localStorage.setItem('core_persona_preset_suggest_v1', JSON.stringify({
+          industry, ts: Date.now(),
+        }));
+      }
+    } catch { /* */ }
     onComplete({
       userName: name,
       claudeApiKey: apiKey,

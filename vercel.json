@@ -23,6 +23,10 @@
     {
       "path": "/api/cron/d3-highlights-email",
       "schedule": "0 22 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-push",
+      "schedule": "0 13 * * 0"
     }
   ],
   "rewrites": [
