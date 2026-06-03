@@ -148,6 +148,8 @@ import IgConnectModal from './IgConnectModal';
 import { loadIgProfile, consumeOauthCallback, type IgProfile } from './instagramConnect';
 import IrisDmDraftModal from './IrisDmDraftModal';
 import type { DmDealInput } from './dmDraft';
+import MobileGeminiDashboard from '../components/MobileGeminiDashboard';
+import type { Persona } from '../types/identity';
 
 interface Props {
   settings: AppSettings;
@@ -1019,6 +1021,18 @@ function ctaButtonSm(bg: IrisBackgroundDef) {
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
 export default function IrisDashboard({ settings, onLeave }: Props) {
+  // モバイル: ジェミニ風 UI に切替 (オーナー指示 2026-06-03)
+  const [irisMobileGeminiMode, setIrisMobileGeminiMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem('iris_mobile_gemini_mode_v1');
+    if (saved === '0') return false;
+    if (saved === '1') return true;
+    return window.matchMedia('(max-width: 767px)').matches;
+  });
+  useEffect(() => {
+    try { localStorage.setItem('iris_mobile_gemini_mode_v1', irisMobileGeminiMode ? '1' : '0'); } catch { /* */ }
+  }, [irisMobileGeminiMode]);
+
   const [bg, setBg] = useState<IrisBackgroundDef | CustomIrisBackground>(() => loadIrisBackground());
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const [customEditorOpen, setCustomEditorOpen] = useState(false);
@@ -1083,6 +1097,40 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
     cashflow: { income: 0, expense: 0, label: '' },
     timeAllocation: 0,
   }), [bg]);
+
+  // モバイル: ジェミニ風 シンプル UI に切替 (オーナー指示 2026-06-03)
+  if (irisMobileGeminiMode) {
+    const irisPersona: Persona = {
+      ...irisPersonaStub,
+      name: igProfile?.handle ? `@${igProfile.handle}` : 'Iris クリエイター',
+      icon: '✨',
+      accentColor: '#E1306C',
+      accentColorLight: 'rgba(225,48,108,0.15)',
+    };
+    return (
+      <MobileGeminiDashboard
+        brand="iris"
+        persona={irisPersona}
+        allPersonas={[irisPersona]}
+        settings={settings}
+        knowledgeItems={(knowledge.items || []) as never}
+        onSwitch={() => { /* Iris は単一ユーザー、切替なし */ }}
+        onOpenSettings={onLeave}
+        onOpenFullFeatures={() => setIrisMobileGeminiMode(false)}
+        onAgentOpen={(key) => {
+          // 7 エージェント → Iris のタブにマッピング
+          if (key === 'creative')       setTab('reel');
+          else if (key === 'sales')     setTab('deals');
+          else if (key === 'cfo')       setTab('revenue');
+          else if (key === 'people')    setTab('fans');
+          else if (key === 'life')      setTab('health');
+          else if (key === 'knowledge') setTab('knowledge');
+          else                          setTab('home');
+          setIrisMobileGeminiMode(false); // フル UI に戻して該当 tab を開く
+        }}
+      />
+    );
+  }
 
   return (
     <div style={{
