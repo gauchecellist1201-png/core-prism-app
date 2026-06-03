@@ -27,6 +27,7 @@ import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { useCelebrate } from '../hooks/useCelebrate';
 import { usePhaseButton } from '../hooks/usePhaseButton';
 import { suggestNextAction, heuristicNextAction, priorityScore, daysSinceLastActivity } from '../lib/crmNextAction';
+import { SAMPLE_LEAD_INDUSTRIES, addLeadsToCrm, hasSampleLeads, type LeadIndustry } from '../lib/salesLeadSeed';
 
 interface Props {
   persona: Persona;
@@ -77,6 +78,16 @@ export default function CRMStudio({ persona, onClose }: Props) {
     const wonValue = won.reduce((s, d) => s + (d.amount || 0), 0);
     return { open: open.length, won: won.length, lost: lost.length, pipelineValue, weightedValue, wonValue };
   }, [dealsAll]);
+
+  // サンプルリード取込 (オーナー指示 2026-06-03: Z. 6 業界 115 件を 1 タップ)
+  const handleImportSample = useCallback((industry: LeadIndustry) => {
+    const added = addLeadsToCrm(persona.id, industry);
+    if (added > 0) {
+      celebrate({ message: `${added} 件のサンプル営業先を追加しました` });
+      // useCRM は localStorage を直接読まないため、リロードで再描画
+      window.setTimeout(() => window.location.reload(), 800);
+    }
+  }, [persona.id, celebrate]);
 
   const handleNewDeal = (stage: CRMStage = 'lead') => {
     const d = crm.createDeal(persona.id, { title: '新規案件', stage });
@@ -320,15 +331,21 @@ export default function CRMStudio({ persona, onClose }: Props) {
                     );
                   })}
                   {dealsAll.length === 0 && (
-                    <EmptyState
-                      icon="🤝"
-                      title="まだ商談はありません"
-                      description={'名前と会社を入れるだけで、AI が「次の一手」を毎日提案します。\nメール返信案や見積もり試算も、案件カードから 1 タップで動きます。'}
-                      ctaLabel="最初の案件を作る"
-                      onCta={() => handleNewDeal('lead')}
-                      accent={persona.accentColor}
-                      preview="🌱 山田太郎 (株式会社サンプル)　→ 提案中　次の一手: 木曜にラフ案を送る"
-                    />
+                    <>
+                      <EmptyState
+                        icon="🤝"
+                        title="まだ商談はありません"
+                        description={'名前と会社を入れるだけで、AI が「次の一手」を毎日提案します。\nメール返信案や見積もり試算も、案件カードから 1 タップで動きます。'}
+                        ctaLabel="最初の案件を作る"
+                        onCta={() => handleNewDeal('lead')}
+                        accent={persona.accentColor}
+                        preview="🌱 山田太郎 (株式会社サンプル)　→ 提案中　次の一手: 木曜にラフ案を送る"
+                      />
+                      <SampleLeadsPicker
+                        accent={persona.accentColor}
+                        onImport={handleImportSample}
+                      />
+                    </>
                   )}
                 </div>
               ) : (
@@ -391,15 +408,21 @@ export default function CRMStudio({ persona, onClose }: Props) {
           {view === 'list' && (
             <div className="cp-stack-sm">
               {dealsAll.length === 0 ? (
-                <EmptyState
-                  icon="🤝"
-                  title="まだ商談はありません"
-                  description={'名前と会社を入れるだけで、AI が「次の一手」を毎日提案します。\nメール返信案や見積もり試算も、案件カードから 1 タップで動きます。'}
-                  ctaLabel="最初の案件を作る"
-                  onCta={() => handleNewDeal('lead')}
-                  accent={persona.accentColor}
-                  preview="🌱 山田太郎 (株式会社サンプル)　→ 提案中　次の一手: 木曜にラフ案を送る"
-                />
+                <>
+                  <EmptyState
+                    icon="🤝"
+                    title="まだ商談はありません"
+                    description={'名前と会社を入れるだけで、AI が「次の一手」を毎日提案します。\nメール返信案や見積もり試算も、案件カードから 1 タップで動きます。'}
+                    ctaLabel="最初の案件を作る"
+                    onCta={() => handleNewDeal('lead')}
+                    accent={persona.accentColor}
+                    preview="🌱 山田太郎 (株式会社サンプル)　→ 提案中　次の一手: 木曜にラフ案を送る"
+                  />
+                  <SampleLeadsPicker
+                    accent={persona.accentColor}
+                    onImport={handleImportSample}
+                  />
+                </>
               ) : [...dealsAll].sort((a, b) => priorityScore(b) - priorityScore(a)).map(d => {
                 const meta = STAGE_META[d.stage];
                 return (
@@ -939,5 +962,90 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+// ─── サンプルリード取込 パネル (オーナー指示 2026-06-03 Z) ───
+// 6 業界 × 115 件 のサンプル営業先を 1 タップで CRM に追加
+function SampleLeadsPicker({ accent, onImport }: { accent: string; onImport: (industry: LeadIndustry) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{
+      marginTop: 20,
+      padding: '14px 16px',
+      borderRadius: 14,
+      background: `linear-gradient(135deg, ${accent}12, transparent 60%)`,
+      border: `1px solid ${accent}33`,
+    }}>
+      <button
+        type="button"
+        onClick={() => setOpen(s => !s)}
+        style={{
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          color: '#fff', width: '100%', display: 'flex',
+          alignItems: 'center', justifyContent: 'space-between', gap: 10,
+          padding: 0,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: `${accent}30`, color: accent,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18,
+          }}>📦</div>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: 13.5, fontWeight: 800 }}>
+              サンプル営業先を 1 タップで取込
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>
+              業界別 115 件 の架空ターゲット (まずは触って慣れる用)
+            </div>
+          </div>
+        </div>
+        <span style={{
+          fontSize: 18, color: accent,
+          transform: open ? 'rotate(45deg)' : 'rotate(0)',
+          transition: 'transform 0.2s',
+        }}>＋</span>
+      </button>
+
+      {open && (
+        <div style={{
+          marginTop: 12,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: 8,
+        }}>
+          {SAMPLE_LEAD_INDUSTRIES.map(ind => {
+            const already = hasSampleLeads(ind.key);
+            return (
+              <button
+                key={ind.key}
+                onClick={() => onImport(ind.key)}
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: 10,
+                  background: already ? `${accent}1a` : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${already ? `${accent}66` : 'rgba(255,255,255,0.08)'}`,
+                  color: '#fff', cursor: 'pointer', textAlign: 'left',
+                  fontSize: 12.5, fontWeight: 700,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 800 }}>{ind.label}</span>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: accent, background: `${accent}22`, padding: '2px 6px', borderRadius: 999 }}>
+                    {ind.count} 件
+                  </span>
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>
+                  {already ? '✓ 取込済 (上書き)' : 'タップで一括追加'}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
