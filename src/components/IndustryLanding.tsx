@@ -80,6 +80,7 @@ export default function IndustryLanding({ slug }: Props) {
       <Solution config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Proof config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Cases config={config} accentLeft={accentLeft} accentRight={accentRight} />
+      <Comparison config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Pricing config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Faq config={config} accentLeft={accentLeft} />
       <FinalCta config={config} accentLeft={accentLeft} accentRight={accentRight} />
@@ -524,6 +525,109 @@ function Cases({ config, accentLeft, accentRight }: { config: IndustryConfig; ac
       </div>
     </section>
   );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// COMPARISON — 他の選択肢との比較
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function Comparison({ config, accentLeft, accentRight }: { config: IndustryConfig; accentLeft: string; accentRight: string }) {
+  // 業界別に「自分でやる」「外注」「他 SaaS」のスコア
+  const isB2B = config.recommendedPlan.startsWith('v2-btoB');
+  const monthlyCost = ({
+    'v2-btoC-light': 3000, 'v2-btoC-standard': 5000, 'v2-btoC-pro': 15000,
+    'v2-btoB-entry': 20000, 'v2-btoB-standard': 30000, 'v2-btoB-pro': 50000,
+  } as Record<string, number>)[config.recommendedPlan] || 30000;
+
+  const altColumn = isB2B ? 'コンサル外注' : '社員雇用 (1 人)';
+  const altCost = isB2B ? '月 ¥200 万〜' : '月 ¥30 万〜';
+
+  const rows = [
+    { label: '月額コスト', core: `月 ¥${monthlyCost.toLocaleString('ja-JP')}`, alt: altCost, self: '¥0', other: '月 ¥10,000〜' },
+    { label: '稼働時間', core: '24h / 365 日', alt: '営業時間のみ', self: 'あなたの時間に依存', other: '稼働時間内' },
+    { label: '専門範囲', core: '13 領域 (CEO〜CHR)', alt: '1 領域', self: 'あなたの得意のみ', other: '1 機能' },
+    { label: '反応速度', core: '10 秒〜数分', alt: '数日〜数週間', self: 'いまの心の状態次第', other: '1〜数時間' },
+    { label: 'スケール', core: '同時 13 タスク', alt: '案件数で線形に増える', self: '体力の限界', other: 'プランで段階' },
+    { label: '導入時間', core: '7 日間 無料 + 5 分', alt: '商談 → 契約 → 開始 で数週間', self: '即日', other: '数時間〜数日' },
+  ];
+
+  return (
+    <section style={{ padding: '5rem 1.5rem', background: '#080812' }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+        <div style={{
+          fontFamily: FONT_SERIF_EN,
+          fontSize: 11, letterSpacing: '0.3em', color: accentRight,
+          textAlign: 'center', fontWeight: 700, marginBottom: 8,
+        }}>
+          COMPARISON
+        </div>
+        <h2 style={sectionTitle}>他の選択肢と何が違うか</h2>
+        <p style={sectionLead}>「外注」「雇用」「自分で全部」と比べたときの位置づけ</p>
+
+        <div style={{ marginTop: '2.5rem', overflowX: 'auto' }}>
+          <table style={{
+            width: '100%', borderCollapse: 'collapse',
+            fontSize: 13, color: 'rgba(255,255,255,0.85)',
+            minWidth: 640,
+          }}>
+            <thead>
+              <tr>
+                <th style={thStyle()}></th>
+                <th style={thStyle(accentLeft, accentRight, true)}>★ CORE</th>
+                <th style={thStyle()}>{altColumn}</th>
+                <th style={thStyle()}>{isB2B ? '社員雇用' : '自分でやる'}</th>
+                <th style={thStyle()}>他 SaaS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td style={tdStyle(true)}>{r.label}</td>
+                  <td style={tdStyle(false, accentLeft)}>
+                    <strong style={{ color: '#fff' }}>{r.core}</strong>
+                  </td>
+                  <td style={tdStyle()}>{r.alt}</td>
+                  <td style={tdStyle()}>{r.self}</td>
+                  <td style={tdStyle()}>{r.other}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p style={{
+          fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center',
+          marginTop: 12, lineHeight: 1.7,
+        }}>
+          ※ 一般的な相場感の比較。実際のコスト・効果は使い方により変動します。
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function thStyle(left?: string, right?: string, isCore?: boolean): React.CSSProperties {
+  return {
+    padding: '12px 10px',
+    textAlign: 'left',
+    fontWeight: 800,
+    fontSize: 11.5,
+    letterSpacing: '0.05em',
+    color: isCore ? '#fff' : 'rgba(255,255,255,0.55)',
+    borderBottom: '1px solid rgba(255,255,255,0.1)',
+    background: isCore && left ? `linear-gradient(180deg, ${left}25, transparent)` : 'transparent',
+    whiteSpace: 'nowrap',
+    ...(right ? { boxShadow: `inset 0 -2px 0 ${right}` } : {}),
+  };
+}
+function tdStyle(isLabel?: boolean, accent?: string): React.CSSProperties {
+  return {
+    padding: '12px 10px',
+    fontSize: 13, lineHeight: 1.6,
+    color: isLabel ? '#fff' : 'rgba(255,255,255,0.75)',
+    fontWeight: isLabel ? 700 : 500,
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    fontFamily: FONT_SERIF_JA,
+    background: accent ? `${accent}10` : 'transparent',
+  };
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
