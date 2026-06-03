@@ -3,57 +3,114 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://core-prism-app.vercel.app/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="ja" href="https://core-prism-app.vercel.app/" />
   </url>
   <url>
     <loc>https://core-prism-app.vercel.app/iris</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="ja" href="https://core-prism-app.vercel.app/iris" />
   </url>
   <url>
     <loc>https://core-prism-app.vercel.app/pricing</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- 業界別 LP (2026-06-03 オーナー指示で追加) -->
+  <url>
+    <loc>https://core-prism-app.vercel.app/lp/sme</loc>
+    <lastmod>2026-06-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://core-prism-app.vercel.app/lp/realestate-finance</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://core-prism-app.vercel.app/lp/consulting</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://core-prism-app.vercel.app/lp/solo</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://core-prism-app.vercel.app/lp/creator</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://core-prism-app.vercel.app/lp/freelance-pro</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://core-prism-app.vercel.app/lp/music-school</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
     <loc>https://core-prism-app.vercel.app/corp</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://core-prism-app.vercel.app/keynote</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://core-prism-app.vercel.app/faq</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://core-prism-app.vercel.app/tokushoho</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
     <loc>https://core-prism-app.vercel.app/privacy</loc>
-    <lastmod>2026-05-22</lastmod>
+    <lastmod>2026-06-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://core-prism-app.vercel.app/terms</loc>
-    <lastmod>2026-05-22</lastmod>
+    <lastmod>2026-06-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://core-prism-app.vercel.app/iris/privacy</loc>
-    <lastmod>2026-05-22</lastmod>
+    <lastmod>2026-06-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://core-prism-app.vercel.app/iris/terms</loc>
-    <lastmod>2026-05-22</lastmod>
+    <lastmod>2026-06-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
