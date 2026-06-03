@@ -8,6 +8,7 @@ import ContextualUpgradeCard from './ContextualUpgradeCard';
 import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
 import { sortRisksByPriority } from '../lib/riskPriority';
 import { summarizeMeeting, stripCaptions } from '../lib/meetingSummarize';
+import MeetingRecorder from './MeetingRecorder';
 import {
   proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse,
   KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal,
@@ -206,6 +207,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
   const folderInputRef = useRef<HTMLInputElement>(null);
   const meetingInputRef = useRef<HTMLInputElement>(null);
   const [meetingProcessing, setMeetingProcessing] = useState<string | null>(null);
+  const [showRecorder, setShowRecorder] = useState(false);
 
   // ── 先回り提案: AI が「この資料こう活かせます」を 3 案先出し ──
   const [proposals, setProposals] = useState<KnowledgeUseProposal[]>([]);
@@ -884,25 +886,43 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                       >📁 フォルダを選択</button>
                     </div>
 
-                    {/* 会議録画から取り込み (Zoom / Google Meet)
-                        オーナー指示 2026-06-03: 会議を AI 要約してナレッジに蓄積 */}
+                    {/* 会議の取り込み (オーナー指示 2026-06-03)
+                        ① ブラウザで直接録音 (無料 Meet/Zoom でも OK)
+                        ② ファイル取込 (録画済の人向け) */}
+                    <button
+                      onClick={() => setShowRecorder(true)}
+                      className="w-full text-sm py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2"
+                      style={{
+                        background: `linear-gradient(135deg, ${persona.accentColor}, #E84B97)`,
+                        border: 'none',
+                        color: '#fff',
+                        marginTop: 8,
+                        boxShadow: `0 6px 18px ${persona.accentColor}44`,
+                      }}
+                    >
+                      🎤 いま会議中? 録音して AI 要約
+                    </button>
+                    <p className="text-fg-muted text-xs text-center" style={{ marginTop: 6 }}>
+                      Google Meet 無料・Zoom 無料・対面会議 すべて OK・マイクで聞かせるだけ
+                    </p>
+
                     <button
                       onClick={() => meetingInputRef.current?.click()}
                       disabled={!!meetingProcessing}
                       className="w-full text-sm py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                       style={{
-                        background: 'linear-gradient(135deg, rgba(45,140,255,0.15), rgba(232,75,151,0.15))',
-                        border: `1px solid ${persona.accentColor}60`,
+                        background: 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${persona.accentColor}40`,
                         color: 'var(--fg)',
-                        marginTop: 8,
+                        marginTop: 10,
                       }}
                     >
                       {meetingProcessing
                         ? <>🧠 {meetingProcessing}…</>
-                        : <>📹 会議録画から取り込み (Zoom / Google Meet)</>}
+                        : <>📁 録画済のファイルから取り込み</>}
                     </button>
                     <p className="text-fg-muted text-xs text-center" style={{ marginTop: 6 }}>
-                      .vtt / .srt (字幕) or .mp4 / .m4a (音声/動画) を選択 → AI が要約 → 自動でナレッジに
+                      .vtt / .srt (字幕) or .mp4 / .m4a (音声/動画) を選択 → AI が要約 → ナレッジに
                     </p>
                     <input
                       ref={meetingInputRef}
@@ -996,6 +1016,19 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
           </AnimatePresence>
         </div>
       </motion.div>
+
+      {/* 会議録音 (オーナー指示 2026-06-03: 無料 Meet/Zoom でも使えるように) */}
+      <AnimatePresence>
+        {showRecorder && (
+          <MeetingRecorder
+            accentColor={persona.accentColor}
+            onClose={() => setShowRecorder(false)}
+            onSavedToKnowledge={(title, content) => {
+              onAddNote(title, content);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
