@@ -474,12 +474,43 @@ select option {
    ============================================================ */
 
 /* タイポグラフィ統一 */
-.cp-h1 { font-size: 1.5rem; line-height: 1.35; font-weight: 600; letter-spacing: -0.012em; color: var(--fg); }
-.cp-h2 { font-size: 1.125rem; line-height: 1.42; font-weight: 600; letter-spacing: -0.008em; color: var(--fg); }
-.cp-h3 { font-size: 0.95rem; line-height: 1.48; font-weight: 600; letter-spacing: -0.005em; color: var(--fg); }
-.cp-body { font-size: 0.9rem; line-height: 1.7; color: var(--fg); }
-.cp-meta { font-size: 0.78rem; line-height: 1.5; color: var(--fg-muted); }
+.cp-h1 { font-size: 1.5rem; line-height: 1.35; font-weight: 600; letter-spacing: -0.012em; color: var(--fg); text-wrap: balance; }
+.cp-h2 { font-size: 1.125rem; line-height: 1.42; font-weight: 600; letter-spacing: -0.008em; color: var(--fg); text-wrap: balance; }
+.cp-h3 { font-size: 0.95rem; line-height: 1.48; font-weight: 600; letter-spacing: -0.005em; color: var(--fg); text-wrap: balance; }
+.cp-body { font-size: 0.9rem; line-height: 1.7; color: var(--fg); text-wrap: pretty; }
+.cp-meta { font-size: 0.78rem; line-height: 1.5; color: var(--fg-muted); text-wrap: pretty; }
 .cp-tiny { font-size: 0.7rem; line-height: 1.4; color: var(--fg-subtle); letter-spacing: 0.05em; text-transform: uppercase; }
+.cp-lead { font-size: 1rem; line-height: 1.65; color: var(--fg); text-wrap: pretty; }
+
+/* 段落の落ち着き — 最後の 1 単語だけ取り残される「孤児」を消す。
+   text-wrap: balance は見出し向け (2-4 行を均等割)、pretty は本文向け (寡婦を解消)。
+   Safari 17.4+ / Chrome 114+ / Firefox 121+ に対応。未対応ブラウザは無視 (壊れない)。 */
+.cp-body p,
+.cp-lead p {
+  text-wrap: pretty;
+}
+
+/* 引用符・句読点の「ぶら下げ」— 行頭の「『 や 〈 が左端を超えてぶら下がり、
+   見出しの左端が文字本体できちんと揃って見える (新聞・本のレイアウトと同じ品質)。
+   Safari 17.0+ に対応、Chrome/Firefox は無視されるだけで壊れない。 */
+.cp-h1, .cp-h2, .cp-h3, .cp-body, .cp-lead {
+  hanging-punctuation: first allow-end;
+}
+
+/* リスト項目の縦リズム — li が並んだ時の隣接マージンを統一。
+   インライン style や Tailwind の space-y-* が無い場所でも、cp-body 内の ul/ol が
+   ちょうどよく息を吸う (1 行分の半分)。 */
+.cp-body ul,
+.cp-body ol,
+.cp-lead ul,
+.cp-lead ol {
+  padding-left: 1.4em;
+  margin: 0.4em 0;
+}
+.cp-body li + li,
+.cp-lead li + li {
+  margin-top: 0.35em;
+}
 
 /* モーダル共通骨格 */
 .cp-modal-bg {
@@ -2332,5 +2363,60 @@ time {
   }
   a[href]:not([data-no-tactile]):hover {
     text-shadow: none;
+  }
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   iPhone 強制可読化レイヤ (オーナー報告 2026-06-03)
+   「見切れる/文字キレてる/煩雑」を 1 箇所で必ず効くように
+   ─────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* 16px 未満の input/textarea は Safari がフォーカス時に自動ズームインする */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  /* ダッシュボードの root が safe-area で必ず下がる (Dynamic Island 回避) */
+  .dashboard-root {
+    height: 100dvh !important;
+  }
+
+  /* TodayBrief: 強制的に大きく + 余白広く (オーナー指示「巨大化」) */
+  .brief-mobile {
+    padding: 20px 18px !important;
+  }
+  .brief-title-mobile {
+    font-size: 19px !important;
+    line-height: 1.4 !important;
+  }
+  .brief-body-mobile {
+    font-size: 15px !important;
+    line-height: 1.85 !important;
+  }
+  .brief-action-mobile {
+    min-height: 60px !important;
+    padding: 14px 14px !important;
+  }
+  .brief-action-text-mobile {
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+  }
+  .brief-eyebrow-mobile {
+    font-size: 10.5px !important;
+    letter-spacing: 0.18em !important;
+  }
+
+  /* タップ対象は最低 44px (Apple HIG) */
+  button, [role="button"] {
+    min-height: 44px;
+  }
+  /* ただし inline / pill / 小バッジは例外 (44px 強制すると見た目が崩れる) */
+  button.no-min-tap,
+  .no-min-tap button,
+  button[class*="rounded-full"][class*="text-xs"],
+  button[class*="rounded-full"][class*="text-[10"],
+  button[class*="rounded-full"][class*="text-[11"] {
+    min-height: 0;
   }
 }
