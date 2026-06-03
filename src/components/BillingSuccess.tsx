@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { syncFromStripe } from '../lib/billing';
+import { getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS } from '../lib/referral';
 
 type Status = 'loading' | 'success' | 'error';
 
@@ -132,8 +133,14 @@ export default function BillingSuccess() {
               お支払いが完了しました
             </h2>
             <p style={{ color: '#5A5562', fontSize: '0.95rem', lineHeight: 1.8 }}>
-              <strong>{planLabel}</strong> プランが有効になりました。<br />
-              2 秒後にアプリへ移動します…
+              <strong>{planLabel}</strong> プランが有効になりました。
+            </p>
+
+            {/* 紹介リンク (オーナー指示 2026-06-03: 完了 → 即拡散の動線) */}
+            <ReferralBlock brand={brand as 'iris' | 'prism'} accent={accent} grad={grad} />
+
+            <p style={{ color: '#8A8593', fontSize: '0.85rem', marginTop: '1.5rem' }}>
+              ※ あと数秒でアプリへ移動します
             </p>
           </>
         )}
@@ -176,6 +183,118 @@ export default function BillingSuccess() {
           </>
         )}
       </motion.div>
+    </div>
+  );
+}
+
+// ─── 紹介リンク ブロック (オーナー指示 2026-06-03) ─────
+function ReferralBlock({ brand, accent, grad }: { brand: 'iris' | 'prism'; accent: string; grad: string }) {
+  const [data] = useState(() => getReferralData());
+  const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
+  const url = getReferralUrl(brand, data.myCode);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* */ }
+  };
+
+  const handleShare = async () => {
+    const text = brand === 'iris'
+      ? `Iris (SNS クリエイター向け AI チーム) を使い始めました。私の紹介リンクからの登録で、お互い +${REFERRAL_BONUS_DAYS} 日無料です:`
+      : `CORE Prism (経営者向け AI 役員 13 名) を使い始めました。私の紹介リンクからの登録で、お互い +${REFERRAL_BONUS_DAYS} 日無料です:`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: brand === 'iris' ? 'CORE Iris' : 'CORE Prism', text, url });
+        setShared(true);
+        setTimeout(() => setShared(false), 2000);
+      } catch { /* user cancelled */ }
+    } else {
+      handleCopy();
+    }
+  };
+
+  const xUrl = `https://x.com/intent/post?text=${encodeURIComponent(
+    brand === 'iris'
+      ? `Iris (SNS クリエイター向け 6 人の AI チーム) を始めました ✨\n紹介リンクからの登録で、お互い +${REFERRAL_BONUS_DAYS} 日無料に。\n`
+      : `CORE Prism (経営者の AI 役員 13 名) を始めました 👑\n紹介リンクからの登録で、お互い +${REFERRAL_BONUS_DAYS} 日無料に。\n`
+  )}&url=${encodeURIComponent(url)}`;
+
+  return (
+    <div style={{
+      marginTop: '1.75rem',
+      padding: '1.25rem 1rem',
+      borderRadius: 14,
+      background: `linear-gradient(135deg, ${accent}10, ${accent}05)`,
+      border: `1px solid ${accent}33`,
+      textAlign: 'left',
+    }}>
+      <div style={{
+        fontSize: 10.5, letterSpacing: '0.2em', color: accent,
+        fontWeight: 800, marginBottom: 6,
+      }}>
+        🎁 友達紹介で +{REFERRAL_BONUS_DAYS} 日無料
+      </div>
+      <p style={{ fontSize: 13, color: '#1F1A2E', lineHeight: 1.7, marginBottom: 10, fontWeight: 600 }}>
+        友達 1 人紹介 → <strong>お互いに +{REFERRAL_BONUS_DAYS} 日</strong> 無料が延長されます
+      </p>
+      <div style={{
+        background: '#fff', borderRadius: 8, padding: '8px 10px',
+        fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11.5,
+        color: '#3A3A4E', wordBreak: 'break-all',
+        border: '1px solid rgba(0,0,0,0.08)', marginBottom: 10,
+      }}>
+        {url}
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <button
+          onClick={handleCopy}
+          style={{
+            flex: 1, minWidth: 100,
+            padding: '8px 12px', borderRadius: 8,
+            background: copied ? '#34D399' : grad,
+            color: '#fff', border: 'none', cursor: 'pointer',
+            fontSize: 12.5, fontWeight: 800,
+            transition: 'all 0.2s',
+          }}
+        >
+          {copied ? '✓ コピーしました' : '📋 リンクをコピー'}
+        </button>
+        <a
+          href={xUrl}
+          target="_blank" rel="noopener noreferrer"
+          style={{
+            padding: '8px 14px', borderRadius: 8,
+            background: '#0a0a0f', color: '#fff', textDecoration: 'none',
+            fontSize: 12.5, fontWeight: 800,
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+          }}
+        >
+          𝕏 でシェア
+        </a>
+        {typeof navigator !== 'undefined' && 'share' in navigator && (
+          <button
+            onClick={handleShare}
+            style={{
+              padding: '8px 14px', borderRadius: 8,
+              background: 'rgba(0,0,0,0.06)', color: '#3A3A4E',
+              border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer',
+              fontSize: 12.5, fontWeight: 700,
+            }}
+          >
+            {shared ? '✓' : '📤 共有'}
+          </button>
+        )}
+      </div>
+      <p style={{ fontSize: 10.5, color: '#8A8593', marginTop: 8, lineHeight: 1.6 }}>
+        あなたの紹介コード: <strong style={{ color: accent }}>{data.myCode}</strong>
+        {data.referredCount > 0 && (
+          <span> · 紹介済: {data.referredCount} 人 (累計 +{data.bonusDays} 日)</span>
+        )}
+      </p>
     </div>
   );
 }
