@@ -23,7 +23,33 @@ export default function IndustryLanding({ slug }: Props) {
   const config = INDUSTRIES[slug];
 
   useEffect(() => {
-    if (config) document.title = config.pageTitle;
+    if (!config) return;
+    document.title = config.pageTitle;
+
+    // ── SEO + OG meta タグを動的に注入 (オーナー指示 2026-06-03) ──
+    const setMeta = (selector: string, content: string) => {
+      let el = document.querySelector(selector) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement('meta');
+        const [attr, val] = selector.replace(/[\[\]"]/g, '').split('=');
+        el.setAttribute(attr, val);
+        document.head.appendChild(el);
+      }
+      el.content = content;
+    };
+    const ogImageUrl = `https://core-prism-app.vercel.app/og/${config.slug}.png`;
+    const pageUrl = `https://core-prism-app.vercel.app/lp/${config.slug}`;
+
+    setMeta('meta[name="description"]', config.metaDescription);
+    setMeta('meta[property="og:title"]', config.pageTitle);
+    setMeta('meta[property="og:description"]', config.metaDescription);
+    setMeta('meta[property="og:image"]', ogImageUrl);
+    setMeta('meta[property="og:url"]', pageUrl);
+    setMeta('meta[property="og:type"]', 'website');
+    setMeta('meta[name="twitter:card"]', 'summary_large_image');
+    setMeta('meta[name="twitter:title"]', config.pageTitle);
+    setMeta('meta[name="twitter:description"]', config.metaDescription);
+    setMeta('meta[name="twitter:image"]', ogImageUrl);
   }, [config]);
 
   if (!config) {
