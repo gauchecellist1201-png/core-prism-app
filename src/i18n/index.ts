@@ -15,6 +15,17 @@ const DICTIONARIES: Record<Lang, Dictionary> = { ja, en };
 
 export function detectLang(): Lang {
   if (typeof window === 'undefined') return DEFAULT_LANG;
+  // URL クエリ ?lang=en|ja が最優先 (シェアリンクからの強制切替)
+  try {
+    const url = new URL(window.location.href);
+    const qp = url.searchParams.get('lang');
+    if (qp === 'ja' || qp === 'en') {
+      // 次回以降のためにも保存
+      localStorage.setItem(STORAGE_KEY, qp);
+      localStorage.setItem('core_locale_v1', qp);
+      return qp;
+    }
+  } catch { /* */ }
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === 'ja' || stored === 'en') return stored;
   // 旧 useLocale との互換 (core_locale_v1 を見る)

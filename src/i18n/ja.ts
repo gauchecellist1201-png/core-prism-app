@@ -16,7 +16,7 @@ type FaqItem = { q: string; a: string };
 export type Dictionary = {
   banner: string;
   nav: { agents: string; exec: string; pricing: string; faq: string; cta: string };
-  hero: { eyebrow: string; h1Line1: string; h1Line2: string; sub1: string; sub2: string; cta: string; cta2: string; free: string };
+  hero: { eyebrow: string; h1Line1: string; h1Line2: string; sub1: string; sub2: string; cta: string; cta2: string; free: string; sample: string; sampleNote: string };
   agents: {
     eyebrow: string;
     h2Line1: string;
@@ -78,14 +78,16 @@ export const ja: Dictionary = {
   },
 
   hero: {
-    eyebrow: 'CORE PRISM — AGENT OS FOR EVERY ROLE',
-    h1Line1: 'あなたは、',
-    h1Line2: 'ひとつじゃない。',
-    sub1: '経営者・営業・財務・創造者・先生・親 ── 役割の数だけ、思考が要る。',
-    sub2: 'CORE Prism は Core Identity OS の事業家版。あなたの代わりに左脳の作業を引き受け、右脳を「創造」へ解き放つ 7 つの分身エージェント。',
-    cta:  'Prism を試す',
-    cta2: 'エージェントを見る',
-    free: '14 日間無料 · クレカ不要 · いつでも解約可',
+    eyebrow: 'CORE PRISM — AI 役員 13 名があなたの会社になる',
+    h1Line1: '13 人の AI 役員 が、',
+    h1Line2: 'あなたの会社を 24 時間動かす。',
+    sub1: 'ユーザーは 承認するだけ。',
+    sub2: '議事録 / 営業 / 財務 / コンテンツ ── 全部、勝手に進む。',
+    cta:  '7 日間 無料で試す',
+    cta2: '価格を見る',
+    sample: 'サンプルで触ってみる',
+    sampleNote: '(架空カフェ経営者のデータで体験)',
+    free: '7 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ',
   },
 
   agents: {

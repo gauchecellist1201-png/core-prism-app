@@ -17,14 +17,16 @@ export const en: Dictionary = {
   },
 
   hero: {
-    eyebrow: 'CORE PRISM — AGENT OS FOR EVERY ROLE',
-    h1Line1: 'You are',
-    h1Line2: 'more than one.',
-    sub1: 'CEO, salesperson, CFO, creator, teacher, parent — each role demands a different mind.',
-    sub2: 'CORE Prism is the business edition of Core Identity OS. Seven dedicated agents take over your left-brain work so you can fully unleash your right-brain for creation.',
-    cta:  'Try Prism',
-    cta2: 'See agents',
-    free: '14-day free trial · No credit card · Cancel anytime',
+    eyebrow: 'CORE PRISM — 13 AI EXECUTIVES, RUNNING YOUR COMPANY',
+    h1Line1: '13 AI executives,',
+    h1Line2: 'running your company 24/7.',
+    sub1: 'You just approve.',
+    sub2: 'Meetings · Sales · Finance · Content — everything moves on its own.',
+    cta:  'Start 7-day free trial',
+    cta2: 'See pricing',
+    sample: 'Try with sample data',
+    sampleNote: '(experience a fictional café owner)',
+    free: '7 days fully free · No credit card · Cancel in one tap',
   },
 
   agents: {

@@ -159,7 +159,7 @@ export default function LandingPage({ onEnterApp }: Props) {
               transition={{ duration: 0.6 }}
               style={{ fontSize: '0.72rem', letterSpacing: '0.35em', fontWeight: 700, marginBottom: '1.1rem', background: 'linear-gradient(90deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
             >
-              CORE PRISM — AI 役員 13 名があなたの会社になる
+              {t.hero.eyebrow}
             </motion.p>
 
             <motion.h1
@@ -168,9 +168,9 @@ export default function LandingPage({ onEnterApp }: Props) {
               transition={{ duration: 0.8, delay: 0.1 }}
               style={{ fontSize: 'clamp(2.2rem, 4.8vw, 4.4rem)', fontWeight: 900, lineHeight: 1.08, letterSpacing: '-0.02em', marginBottom: '1.25rem' }}
             >
-              13 人の <span style={{ background: 'linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>AI 役員</span> が、
+              <span style={{ background: 'linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.hero.h1Line1}</span>
               <br />
-              あなたの会社を <span style={{ background: 'linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>24 時間動かす</span>。
+              <span style={{ background: 'linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.hero.h1Line2}</span>
             </motion.h1>
 
             <motion.p
@@ -179,8 +179,9 @@ export default function LandingPage({ onEnterApp }: Props) {
               transition={{ duration: 0.8, delay: 0.25 }}
               style={{ fontSize: 'clamp(1rem, 1.55vw, 1.18rem)', color: 'rgba(255,255,255,0.8)', lineHeight: 1.75, marginBottom: '2rem', maxWidth: 560 }}
             >
-              ユーザーは <strong style={{ color: '#fff' }}>承認するだけ</strong>。
-              議事録 / 営業 / 財務 / コンテンツ ── 全部、勝手に進む。
+              <strong style={{ color: '#fff' }}>{t.hero.sub1}</strong>
+              <br />
+              {t.hero.sub2}
             </motion.p>
 
             <motion.div
@@ -191,16 +192,16 @@ export default function LandingPage({ onEnterApp }: Props) {
             >
               <button onClick={onEnterApp} style={ctaBtnHero} className="lp-hero-cta-primary">
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                  7 日間 無料で試す <ArrowRight size={18} strokeWidth={2.6} />
+                  {t.hero.cta} <ArrowRight size={18} strokeWidth={2.6} />
                 </span>
               </button>
               <a href="/pricing" style={ctaBtnGhost} className="lp-hero-cta-secondary">
-                価格を見る
+                {t.hero.cta2}
               </a>
             </motion.div>
 
             <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginTop: '1.1rem', lineHeight: 1.6 }}>
-              7 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ
+              {t.hero.free}
             </p>
 
             <button
@@ -222,8 +223,8 @@ export default function LandingPage({ onEnterApp }: Props) {
               }}
             >
               <SparklesIcon size={14} color="#a78bfa" />
-              <span>サンプルで触ってみる</span>
-              <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>(架空カフェ経営者のデータで体験)</span>
+              <span>{t.hero.sample}</span>
+              <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>{t.hero.sampleNote}</span>
             </button>
           </div>
 
@@ -248,7 +249,7 @@ export default function LandingPage({ onEnterApp }: Props) {
       </section>
 
       {/* ── 14 役員 リアルタイム稼働ステージ (FF) ───────────────────────────── */}
-      <AnimatedExecStage onCta={onEnterApp} ctaLabel="7 日間 無料で始める" />
+      <AnimatedExecStage onCta={onEnterApp} ctaLabel={t.hero.cta} />
 
       {/* ── セクション: 7 つのエージェント ──────────────────────────────────────────────────── */}
       <section id="agents" className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#070712 0%,#0d0d1c 100%)' }}>

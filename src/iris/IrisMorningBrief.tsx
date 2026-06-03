@@ -15,36 +15,43 @@ import { TrendingUp, MessageCircle, Clock, X } from 'lucide-react';
 import type { IgProfile } from './instagramConnect';
 import { getAllBrandDeals } from './brandDeals';
 import { IRIS_COLORS } from './irisStyle';
+import { getActiveAccount } from './multiAccount';
 
-const HISTORY_KEY = 'core_iris_follower_history_v1';
-const SHOWN_KEY = 'core_iris_brief_shown';
+const HISTORY_KEY_BASE = 'core_iris_follower_history_v1';
+const SHOWN_KEY_BASE = 'core_iris_brief_shown';
+
+/** ペルソナ間文脈隔離 — multi-account 切替 で混ざらないようキーを scope する。 */
+function scopedKey(base: string, personaId: string): string {
+  const acctId = (() => { try { return getActiveAccount()?.id || 'default'; } catch { return 'default'; } })();
+  return `${base}:${personaId}:${acctId}`;
+}
 
 type FollowerHistoryEntry = { date: string; followers: number };
 
-function loadHistory(): FollowerHistoryEntry[] {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+function loadHistory(personaId: string): FollowerHistoryEntry[] {
+  try { return JSON.parse(localStorage.getItem(scopedKey(HISTORY_KEY_BASE, personaId)) || '[]'); } catch { return []; }
 }
 
-function saveHistory(h: FollowerHistoryEntry[]) {
-  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(-30))); } catch { /* */ }
+function saveHistory(personaId: string, h: FollowerHistoryEntry[]) {
+  try { localStorage.setItem(scopedKey(HISTORY_KEY_BASE, personaId), JSON.stringify(h.slice(-30))); } catch { /* */ }
 }
 
 /** 今日の日付 (YYYY-MM-DD JST 想定) */
 function today() { return new Date().toISOString().slice(0, 10); }
 
 /** 前日比のフォロワー差を返す。前日データがなければ null。 */
-function getFollowerDelta(currentFollowers: number): {
+function getFollowerDelta(personaId: string, currentFollowers: number): {
   delta: number | null;
   pctText: string;
   yesterdayFollowers: number | null;
 } {
-  const h = loadHistory();
+  const h = loadHistory(personaId);
   const todayStr = today();
   const todayEntry = h.find(e => e.date === todayStr);
   // 今日のスナップショットが無ければ今追加
   if (!todayEntry) {
     const next = [...h, { date: todayStr, followers: currentFollowers }];
-    saveHistory(next);
+    saveHistory(personaId, next);
   }
   // 前日のエントリ
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -92,7 +99,7 @@ export default function IrisMorningBrief({
   useEffect(() => {
     if (force) { setVisible(true); return; }
     if (!igProfile) { setVisible(false); return; } // IG 未接続なら出さない
-    const key = `${SHOWN_KEY}:${personaId}:${today()}`;
+    const key = `${scopedKey(SHOWN_KEY_BASE, personaId)}:${today()}`;
     const alreadyShown = localStorage.getItem(key) === '1';
     if (alreadyShown) { setVisible(false); return; }
     setVisible(true);
@@ -102,7 +109,7 @@ export default function IrisMorningBrief({
   const cards = useMemo(() => {
     if (!igProfile) return null;
     const followers = igProfile.followers || 0;
-    const { pctText, delta } = getFollowerDelta(followers);
+    const { pctText, delta } = getFollowerDelta(personaId, followers);
     const deltaPositive = (delta ?? 0) >= 0;
     const { total: dealCount, topNames } = countMatchingDeals(followers);
     return [

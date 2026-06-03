@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
 import { INDUSTRY_LIST, INDUSTRY_PACKS, type IndustryId } from '../prism/industryPacks';
+import { recordStep, type OnboardStep } from '../lib/onboardingFunnel';
 
 interface Props {
   onComplete: (settings: Partial<AppSettings>) => void;
@@ -70,7 +71,13 @@ export default function OnboardingFlow({ onComplete }: Props) {
   const steps = presetIndustry ? allSteps.filter(s => s.id !== 'industry') : allSteps;
   const currentStepId = steps[step]?.id ?? 'welcome';
 
+  // II (2026-06-03): 各 step に到達したら funnel 計測
+  useEffect(() => {
+    try { recordStep(currentStepId as OnboardStep); } catch { /* */ }
+  }, [currentStepId]);
+
   const handleComplete = () => {
+    try { recordStep('completed'); } catch { /* */ }
     onComplete({
       userName: name,
       claudeApiKey: apiKey,

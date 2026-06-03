@@ -112,6 +112,9 @@ export default async function handler(req: Request): Promise<Response> {
   const dateStr = `${jstNow.getFullYear()}/${jstNow.getMonth() + 1}/${jstNow.getDate()}`;
   const yDateStr = `${yJst.getMonth() + 1}/${yJst.getDate()}`;
 
+  // II (2026-06-03): オンボ funnel 取得 (Upstash 経由)
+  const funnelYesterday = await loadOnboardFunnel(yJst);
+
   const html = renderHtml({
     dateStr,
     yDateStr,
@@ -122,6 +125,7 @@ export default async function handler(req: Request): Promise<Response> {
     newSubscriptions,
     alertCount: alertSubscriptions.length,
     alerts: alertSubscriptions,
+    funnelYesterday,
   });
 
   await sendResendEmail(
@@ -139,6 +143,53 @@ export default async function handler(req: Request): Promise<Response> {
   });
 }
 
+type OnboardFunnel = {
+  welcome: number;
+  name: number;
+  industry: number;
+  apikey: number;
+  model: number;
+  completed: number;
+  dropRate: number;
+  available: boolean;
+};
+
+const UP_URL_OB = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_URL) || '';
+const UP_TOK_OB = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_TOKEN) || '';
+
+async function loadOnboardFunnel(yJst: Date): Promise<OnboardFunnel> {
+  const empty: OnboardFunnel = {
+    welcome: 0, name: 0, industry: 0, apikey: 0, model: 0, completed: 0,
+    dropRate: 0, available: false,
+  };
+  if (!UP_URL_OB || !UP_TOK_OB) return empty;
+  const dateStr = `${yJst.getFullYear()}-${String(yJst.getMonth() + 1).padStart(2, '0')}-${String(yJst.getDate()).padStart(2, '0')}`;
+  try {
+    const res = await fetch(UP_URL_OB, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${UP_TOK_OB}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(['HGETALL', `onboard:funnel:${dateStr}`]),
+    });
+    if (!res.ok) return empty;
+    const r = await res.json() as { result?: string[] };
+    const arr = r.result || [];
+    const out: Record<string, number> = {};
+    for (let i = 0; i < arr.length; i += 2) out[arr[i]] = Number(arr[i + 1]) || 0;
+    const w = out.welcome || 0;
+    const c = out.completed || 0;
+    return {
+      welcome: w,
+      name: out.name || 0,
+      industry: out.industry || 0,
+      apikey: out.apikey || 0,
+      model: out.model || 0,
+      completed: c,
+      dropRate: w > 0 ? Math.round((1 - c / w) * 1000) / 10 : 0,
+      available: true,
+    };
+  } catch { return empty; }
+}
+
 function renderHtml(data: {
   dateStr: string;
   yDateStr: string;
@@ -149,6 +200,7 @@ function renderHtml(data: {
   newSubscriptions: number;
   alertCount: number;
   alerts: Array<{ customer: string; status: string }>;
+  funnelYesterday: OnboardFunnel;
 }): string {
   const alertBlock = data.alertCount === 0
     ? `<p style="font-size:13px;color:#666;margin:0">✅ 重要なアラートはありません</p>`
@@ -183,6 +235,32 @@ function renderHtml(data: {
       <p style="font-size:14px;color:#1F1A2E;margin:0 0 24px">
         <strong style="color:#E84B97;font-size:18px">${data.newSubscriptions} 件</strong> の新規 Subscription
       </p>
+
+      <h2 style="margin:0 0 12px;font-size:16px;font-weight:800">👋 昨日のオンボーディング</h2>
+      ${(() => {
+        const f = data.funnelYesterday;
+        if (!f.available) {
+          return `<p style="font-size:12px;color:#999;margin:0 0 24px;line-height:1.7">
+            集計には UPSTASH_REDIS_REST_URL/TOKEN を Vercel env に追加してください (Upstash 無料枠 OK)。
+          </p>`;
+        }
+        if (f.welcome === 0) {
+          return `<p style="font-size:13px;color:#666;margin:0 0 24px">— 昨日は新規アクセスなし</p>`;
+        }
+        return `<div style="background:#FFF7ED;padding:14px 18px;border-radius:10px;margin-bottom:24px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+            <div style="font-size:11px;color:#666;letter-spacing:.08em;font-weight:700">FUNNEL</div>
+            <div style="font-size:11px;color:${f.dropRate >= 70 ? '#DC2626' : f.dropRate >= 40 ? '#D97706' : '#16A34A'};font-weight:800">離脱率 ${f.dropRate}%</div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px;color:#1F1A2E">
+            <tr><td style="padding:4px 0;color:#666">入口</td><td style="text-align:right;font-weight:700">${f.welcome}</td></tr>
+            <tr><td style="padding:4px 0;color:#666">→ 名前</td><td style="text-align:right;font-weight:700">${f.name}</td></tr>
+            <tr><td style="padding:4px 0;color:#666">→ 業種</td><td style="text-align:right;font-weight:700">${f.industry}</td></tr>
+            <tr><td style="padding:4px 0;color:#666">→ モデル</td><td style="text-align:right;font-weight:700">${f.model}</td></tr>
+            <tr><td style="padding:4px 0;color:#16A34A;font-weight:700">→ 完了</td><td style="text-align:right;font-weight:800;color:#16A34A">${f.completed}</td></tr>
+          </table>
+        </div>`;
+      })()}
 
       <h2 style="margin:0 0 12px;font-size:16px;font-weight:800">⚠ 重要アラート</h2>
       ${alertBlock}
