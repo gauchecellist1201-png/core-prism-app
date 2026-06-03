@@ -3,8 +3,18 @@
 // ============================================================
 import { useCallback, useEffect, useState } from 'react';
 
-export type PlanId = 'free' | 'lite' | 'standard' | 'pro' | 'studio';
+// v1 = 旧プラン (現状ユーザー) / v2 = 新プラン (BtoB/BtoC 6 階層、2026-06-03 承認)
+export type PlanId =
+  // v1 (既存・後方互換)
+  | 'free' | 'lite' | 'standard' | 'pro' | 'studio'
+  // v2 BtoC (個人 / スモール)
+  | 'v2-btoC-light' | 'v2-btoC-standard' | 'v2-btoC-pro'
+  // v2 BtoB (法人)
+  | 'v2-btoB-entry' | 'v2-btoB-standard' | 'v2-btoB-pro'
+  // v2 Enterprise (年契約・営業ハンドル)
+  | 'v2-enterprise';
 export type Brand = 'iris' | 'prism';
+export type PlanFamily = 'v1' | 'btoC' | 'btoB' | 'enterprise';
 
 // ─── プラン別 機能制限 ───
 export type FeatureKey =
@@ -100,6 +110,51 @@ export const PLAN_LIMITS: Record<PlanId, Partial<Record<FeatureKey, FeatureLimit
     'brand-match': 'unlimited',
     'api-access': 'unlimited',
     'white-label': 'unlimited',
+  },
+  // ── v2 BtoC (個人 / スモール) ─────────────────────
+  'v2-btoC-light': {
+    'ai-chat': 300, 'screenshot-ai': 10, 'caption-ai': 10, 'negotiation-ai': 5,
+    'triage-ai': 10, 'beauty-advice': 30, 'instagram-analyze': 2,
+    'story-arc': 1, 'community': 'unlimited', 'team-members': 1,
+    'brand-match': 'unavailable', 'api-access': 'unavailable', 'white-label': 'unavailable',
+  },
+  'v2-btoC-standard': {
+    'ai-chat': 1500, 'screenshot-ai': 'unlimited', 'caption-ai': 'unlimited',
+    'negotiation-ai': 'unlimited', 'triage-ai': 'unlimited', 'beauty-advice': 'unlimited',
+    'instagram-analyze': 20, 'story-arc': 5, 'community': 'unlimited', 'team-members': 1,
+    'brand-match': 'unavailable', 'api-access': 'unavailable', 'white-label': 'unavailable',
+  },
+  'v2-btoC-pro': {
+    'ai-chat': 'unlimited', 'screenshot-ai': 'unlimited', 'caption-ai': 'unlimited',
+    'negotiation-ai': 'unlimited', 'triage-ai': 'unlimited', 'beauty-advice': 'unlimited',
+    'instagram-analyze': 'unlimited', 'story-arc': 'unlimited', 'community': 'unlimited',
+    'team-members': 1, 'brand-match': 'unlimited', 'api-access': 'unavailable', 'white-label': 'unavailable',
+  },
+  // ── v2 BtoB (法人) ────────────────────────────────
+  'v2-btoB-entry': {
+    'ai-chat': 3000, 'screenshot-ai': 'unlimited', 'caption-ai': 'unlimited',
+    'negotiation-ai': 'unlimited', 'triage-ai': 'unlimited', 'beauty-advice': 'unlimited',
+    'instagram-analyze': 40, 'story-arc': 'unlimited', 'community': 'unlimited',
+    'team-members': 5, 'brand-match': 'unlimited', 'api-access': 'unavailable', 'white-label': 'unavailable',
+  },
+  'v2-btoB-standard': {
+    'ai-chat': 10000, 'screenshot-ai': 'unlimited', 'caption-ai': 'unlimited',
+    'negotiation-ai': 'unlimited', 'triage-ai': 'unlimited', 'beauty-advice': 'unlimited',
+    'instagram-analyze': 'unlimited', 'story-arc': 'unlimited', 'community': 'unlimited',
+    'team-members': 15, 'brand-match': 'unlimited', 'api-access': 'unavailable', 'white-label': 'unavailable',
+  },
+  'v2-btoB-pro': {
+    'ai-chat': 'unlimited', 'screenshot-ai': 'unlimited', 'caption-ai': 'unlimited',
+    'negotiation-ai': 'unlimited', 'triage-ai': 'unlimited', 'beauty-advice': 'unlimited',
+    'instagram-analyze': 'unlimited', 'story-arc': 'unlimited', 'community': 'unlimited',
+    'team-members': 50, 'brand-match': 'unlimited', 'api-access': 'unlimited', 'white-label': 'unavailable',
+  },
+  // ── v2 Enterprise (年契約) ────────────────────────
+  'v2-enterprise': {
+    'ai-chat': 'unlimited', 'screenshot-ai': 'unlimited', 'caption-ai': 'unlimited',
+    'negotiation-ai': 'unlimited', 'triage-ai': 'unlimited', 'beauty-advice': 'unlimited',
+    'instagram-analyze': 'unlimited', 'story-arc': 'unlimited', 'community': 'unlimited',
+    'team-members': 'unlimited', 'brand-match': 'unlimited', 'api-access': 'unlimited', 'white-label': 'unlimited',
   },
 };
 
@@ -325,7 +380,108 @@ export const PRISM_PLANS: Plan[] = [
   },
 ];
 
+// ============================================================
+// v2 プラン定義 (2026-06-03 オーナー承認)
+// 既存 v1 と併存。Phase 1 で `usePlansV2()` フラグを立てると新規 sign up が v2 へ
+// ============================================================
+export const PLAN_V2_FLAG_KEY = 'core_plan_v2_enabled';
+export function isPlanV2Enabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(PLAN_V2_FLAG_KEY) === 'true';
+}
+export function setPlanV2Enabled(on: boolean): void {
+  localStorage.setItem(PLAN_V2_FLAG_KEY, on ? 'true' : 'false');
+}
+
+const _v2BtoCPrism: Plan[] = [
+  {
+    id: 'v2-btoC-light', brand: 'prism',
+    name: 'ライト', priceJpy: 3000, priceJpy_yearly: 30000,
+    tagline: 'お試し・副業の方', badge: 'BtoC',
+    features: ['AI 相談 月 300 回', 'ナレッジ 30 件', '主要機能をお試し可'],
+    stripeUrlEnvKey: 'VITE_STRIPE_PRISM_V2_BTOC_LIGHT_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_PRISM_V2_BTOC_LIGHT_YEARLY_URL',
+  },
+  {
+    id: 'v2-btoC-standard', brand: 'prism',
+    name: 'スタンダード', priceJpy: 5000, priceJpy_yearly: 50000,
+    badge: '個人向け 人気 No.1', tagline: '個人事業主・一人社長',
+    features: ['AI 相談 月 1,500 回', '主要機能ほぼ無制限', 'ナレッジ 200 件', '事務時間を最大 70% 削減'],
+    stripeUrlEnvKey: 'VITE_STRIPE_PRISM_V2_BTOC_STANDARD_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_PRISM_V2_BTOC_STANDARD_YEARLY_URL',
+  },
+  {
+    id: 'v2-btoC-pro', brand: 'prism',
+    name: 'プロ', priceJpy: 15000, priceJpy_yearly: 150000,
+    tagline: '高単価フリーランス',
+    features: ['AI 全機能 無制限', 'ナレッジ 1,000 件', '営業 AI フル機能', '優先サポート'],
+    stripeUrlEnvKey: 'VITE_STRIPE_PRISM_V2_BTOC_PRO_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_PRISM_V2_BTOC_PRO_YEARLY_URL',
+  },
+];
+
+const _v2BtoBPrism: Plan[] = [
+  {
+    id: 'v2-btoB-entry', brand: 'prism',
+    name: 'エントリー', priceJpy: 20000, priceJpy_yearly: 200000,
+    tagline: '法人 試験導入', badge: 'BtoB',
+    features: ['AI 相談 月 3,000 回', 'チーム 5 名まで', '請求書払い対応 (口座振込)', '導入サポート'],
+    stripeUrlEnvKey: 'VITE_STRIPE_PRISM_V2_BTOB_ENTRY_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_PRISM_V2_BTOB_ENTRY_YEARLY_URL',
+  },
+  {
+    id: 'v2-btoB-standard', brand: 'prism',
+    name: 'スタンダード', priceJpy: 30000, priceJpy_yearly: 300000,
+    badge: '法人 推奨', tagline: '中小企業 / 高収益フリーランス',
+    features: ['AI 相談 月 10,000 回', 'フル機能', 'チーム 15 名まで', '請求書払い OK', 'コンサル代月¥200万を1/7に'],
+    stripeUrlEnvKey: 'VITE_STRIPE_PRISM_V2_BTOB_STANDARD_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_PRISM_V2_BTOB_STANDARD_YEARLY_URL',
+  },
+  {
+    id: 'v2-btoB-pro', brand: 'prism',
+    name: 'プロ (全機能)', priceJpy: 50000, priceJpy_yearly: 500000,
+    tagline: '法人 上位 / 強い ROI',
+    features: ['AI 全機能 無制限', 'チーム 50 名まで', '専任 CS', 'API キー専有', 'カスタム連携'],
+    stripeUrlEnvKey: 'VITE_STRIPE_PRISM_V2_BTOB_PRO_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_PRISM_V2_BTOB_PRO_YEARLY_URL',
+  },
+];
+
+const _v2EnterprisePrism: Plan[] = [
+  {
+    id: 'v2-enterprise', brand: 'prism',
+    name: 'エンタープライズ', priceJpy: 0, priceJpy_yearly: 2000000,
+    tagline: '年契約 ¥200〜¥400 万 / 営業相談',
+    badge: '要相談',
+    features: [
+      '全機能 + カスタム開発',
+      '専属導入チーム + 月次定例',
+      'SLA 99.9% / 24h サポート',
+      'API キー専有 + ホワイトラベル',
+      'カスタム AI モデル調整',
+      'SSO / 監査ログ / セキュリティレビュー対応',
+      '請求書払い (口座振込・年一括 or 半期)',
+    ],
+    // Enterprise は Stripe Checkout ではなく営業ハンドル
+    stripeUrlEnvKey: undefined,
+    stripeUrlEnvKey_yearly: undefined,
+  },
+];
+
+// v2 全プラン (PRISM 用) — Iris は当面 PRISM の v2 を流用
+export const PRISM_PLANS_V2: Plan[] = [
+  ..._v2BtoCPrism,
+  ..._v2BtoBPrism,
+  ..._v2EnterprisePrism,
+];
+
+// Iris は当面 v1 のまま (将来 v2 拡張) — 切替は isPlanV2Enabled() で
+export const IRIS_PLANS_V2: Plan[] = IRIS_PLANS;
+
 export function getPlans(brand: Brand): Plan[] {
+  if (isPlanV2Enabled()) {
+    return brand === 'iris' ? IRIS_PLANS_V2 : PRISM_PLANS_V2;
+  }
   return brand === 'iris' ? IRIS_PLANS : PRISM_PLANS;
 }
 
