@@ -135,27 +135,37 @@ export default function OnboardingFlow({ onComplete }: Props) {
             exit={{ opacity: 0, y: -20 }}
           >
             <p className="text-prism text-5xl font-extralight mb-2">CORE</p>
-            <p className="text-sm tracking-widest uppercase mb-8" style={{ color: 'rgba(255,255,255,0.7)' }}>Prism OS</p>
+            <p className="text-sm tracking-widest uppercase mb-6" style={{ color: 'rgba(255,255,255,0.7)' }}>Prism</p>
             {presetPack && (
               <div className="inline-block px-3 py-1 rounded-full mb-6 text-xs" style={{ background:'rgba(201,169,110,0.10)', border:'1px solid rgba(201,169,110,0.25)', color:'#c9a96e' }}>
                 {presetPack.label} 向けに準備中
               </div>
             )}
-            <h2 className="text-fg text-2xl font-extralight mb-4 leading-relaxed">
-              あなたの複数の人格を、<br />ひとつのOSで統合する。
+            <h2 className="text-fg text-2xl font-bold mb-3 leading-relaxed">
+              AI 役員 13 名が、<br />あなたの右腕になります。
             </h2>
-            <p className="text-sm font-light leading-relaxed mb-12" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              事業ごとに人格を作り、<br />
-              それぞれに専用のAI・ナレッジ・カレンダーを持つ。<br />
-              「今日は誰として在るか」を、システムが支える。
+            <p className="text-sm font-light leading-relaxed mb-8" style={{ color: 'rgba(255,255,255,0.7)' }}>
+              経営判断 ・ 営業提案 ・ 月次 P/L<br />
+              ひとりの社長が、ひとりで抱えなくていい時代へ。
             </p>
-            <div className="grid grid-cols-3 gap-3 mb-12 text-center">
-              {['AIアシスタント', 'ナレッジRAG', 'カレンダー連携'].map((f, i) => (
-                <div key={i} className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <p className="text-xs font-light" style={{ color: 'rgba(255,255,255,0.78)' }}>{f}</p>
+            {/* 3 つの数字ヒーロー */}
+            <div className="grid grid-cols-3 gap-3 mb-8 text-center">
+              {[
+                { num: '13', sub: 'AI 役員', unit: '名' },
+                { num: '5', sub: '初期設定', unit: '分' },
+                { num: '7', sub: '無料', unit: '日間' },
+              ].map((f, i) => (
+                <div key={i} className="p-3 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.06), rgba(232,75,151,0.06))', border: '1px solid rgba(251,191,36,0.20)' }}>
+                  <p className="text-xs font-light mb-1" style={{ color: 'rgba(255,255,255,0.55)' }}>{f.sub}</p>
+                  <p className="font-bold" style={{ fontSize: '1.6rem', color: '#FBBF24', lineHeight: 1 }}>
+                    {f.num}<span style={{ fontSize: '0.7rem', marginLeft: 2, color: 'rgba(255,255,255,0.6)' }}>{f.unit}</span>
+                  </p>
                 </div>
               ))}
             </div>
+            <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              カード登録なし ・ いつでも解約できます
+            </p>
           </motion.div>
         )}
 
