@@ -45,6 +45,10 @@ interface FeedbackBody {
   url?: string;
   userAgent?: string;
   ts?: number;
+  /** DDD/EEE (2026-06-04): 'suggestion' / 'exit' は NPS 不要 */
+  kind?: 'nps' | 'suggestion' | 'exit';
+  /** EEE (2026-06-04): 解約理由カテゴリ */
+  exitReason?: 'too_expensive' | 'too_hard' | 'switching' | 'not_useful' | 'other';
 }
 
 export default async function handler(req: Request) {
@@ -57,21 +61,29 @@ export default async function handler(req: Request) {
   catch { return json({ error: 'Invalid JSON' }, 400, ch); }
 
   const brand = body.brand === 'iris' ? 'iris' : 'prism';
+  const kind: 'nps' | 'suggestion' | 'exit' = body.kind === 'suggestion' || body.kind === 'exit' ? body.kind : 'nps';
   const nps = typeof body.nps === 'number' ? Math.max(0, Math.min(10, Math.round(body.nps))) : -1;
   const comment = String(body.comment ?? '').slice(0, 4000);
   const email = String(body.email ?? '').slice(0, 200);
   const url = String(body.url ?? '').slice(0, 500);
   const userAgent = String(body.userAgent ?? '').slice(0, 300);
+  const exitReason = (['too_expensive', 'too_hard', 'switching', 'not_useful', 'other'] as const).includes(body.exitReason as never)
+    ? body.exitReason
+    : undefined;
 
-  if (nps < 0) return json({ error: 'nps required (0-10)' }, 400, ch);
+  // NPS kind の時のみ 0-10 必須。suggestion / exit は不要。
+  if (kind === 'nps' && nps < 0) return json({ error: 'nps required (0-10)' }, 400, ch);
 
   // Vercel Functions Logs に必ず構造化記録 (mail 設定の有無に関わらず)
   // → `vercel logs --prod | grep '\[feedback\]'` で全件抽出可能
   // localStorage しか頼れない問題への保険 (Day1 振り返り 5/14 で追加)
   console.log('[feedback]', JSON.stringify({
-    brand, nps, comment, email, url, userAgent,
+    brand, kind, nps, exitReason, comment, email, url, userAgent,
     ts: typeof body.ts === 'number' ? body.ts : Date.now(),
   }));
+
+  // DDD (2026-06-04): Upstash 永続化 (60 日 TTL)
+  await persistFeedback({ brand, kind, nps, exitReason, comment, email, url, ts: Date.now() }).catch(() => { /* */ });
 
   const apiKey = process.env.RESEND_API_KEY;
   const ownerEmail = process.env.FEEDBACK_TO_EMAIL || process.env.EMAIL_FROM;
@@ -114,4 +126,29 @@ export default async function handler(req: Request) {
   } catch {
     return json({ success: true, delivered: false, reason: 'mail_exception' }, 200, ch);
   }
+}
+
+// ─── Upstash 永続 (DDD 2026-06-04) ───────────────────
+const UP_URL_FB = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_URL) || '';
+const UP_TOK_FB = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_TOKEN) || '';
+
+async function persistFeedback(fb: {
+  brand: string; kind: string; nps: number; exitReason?: string;
+  comment: string; email: string; url: string; ts: number;
+}): Promise<void> {
+  if (!UP_URL_FB || !UP_TOK_FB) return;
+  const date = new Date(fb.ts).toISOString().slice(0, 10);
+  const key = `feedback:${date}`;
+  try {
+    await fetch(UP_URL_FB, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${UP_TOK_FB}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(['RPUSH', key, JSON.stringify(fb)]),
+    });
+    await fetch(UP_URL_FB, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${UP_TOK_FB}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(['EXPIRE', key, 60 * 86400]),
+    });
+  } catch { /* */ }
 }

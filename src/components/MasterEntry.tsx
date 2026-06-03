@@ -452,6 +452,23 @@ export default function MasterEntry() {
             💸 AI コスト試算
           </a>
           <a
+            href="/master/secrets-health"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(167,139,250,0.12)',
+              border: '1px solid rgba(167,139,250,0.35)',
+              color: '#ddd6fe',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            🔑 Secrets Health
+          </a>
+          <a
             href="/master/stripe-status"
             style={{
               flex: 1,

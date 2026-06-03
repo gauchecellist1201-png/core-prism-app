@@ -12,6 +12,7 @@ import {
 } from '../lib/billing';
 import { sendEmail } from '../lib/emailNotify';
 import { confirmAction } from '../lib/confirmDialog';
+import CancelFlowDialog from './CancelFlowDialog';
 
 interface Props {
   onClose: () => void;
@@ -28,6 +29,8 @@ export default function BillingDashboard({ onClose }: Props) {
   const [switchMsg, setSwitchMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState<null | 'soft' | 'reset'>(null);
+  // EEE (2026-06-04): Exit Survey ダイアログ
+  const [showExitSurvey, setShowExitSurvey] = useState(false);
 
   if (!user) return null;
 
@@ -128,6 +131,18 @@ export default function BillingDashboard({ onClose }: Props) {
   };
 
   return (
+    <>
+    {/* EEE (2026-06-04): 解約 Exit Survey ダイアログ — 「解約する」押下時に表示 */}
+    <CancelFlowDialog
+      open={showExitSurvey}
+      brand="prism"
+      cancelBusy={cancelBusy}
+      onConfirmCancel={async () => {
+        setShowExitSurvey(false);
+        await handleCancel();
+      }}
+      onClose={() => setShowExitSurvey(false)}
+    />
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
@@ -418,7 +433,7 @@ export default function BillingDashboard({ onClose }: Props) {
                   キャンセル
                 </button>
                 <button
-                  onClick={handleCancel}
+                  onClick={() => setShowExitSurvey(true)}
                   disabled={cancelBusy}
                   style={{
                     flex: 1, background: '#DC2626', color: '#fff',
@@ -549,5 +564,6 @@ export default function BillingDashboard({ onClose }: Props) {
         </div>
       </motion.div>
     </motion.div>
+    </>
   );
 }

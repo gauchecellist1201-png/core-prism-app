@@ -18,6 +18,7 @@ import SettingsModal from './components/SettingsModal';
 import LandingPage from './components/LandingPage';
 import CheckoutModal from './components/CheckoutModal';
 import QuickAskFab from './components/QuickAskFab';
+import SuggestionFab from './components/SuggestionFab';
 import LegalModal, { type LegalKind } from './components/LegalModal';
 import StudioOpeningSheet from './components/StudioOpeningSheet';
 // 重い「別ルート専用」のページは React.lazy で main から切り出す。
@@ -25,6 +26,7 @@ import StudioOpeningSheet from './components/StudioOpeningSheet';
 const MasterEntry = lazy(() => import('./components/MasterEntry'));
 const AiStats = lazy(() => import('./master/AiStats'));
 const AiCostDashboard = lazy(() => import('./master/AiCostDashboard'));
+const SecretsHealth = lazy(() => import('./master/SecretsHealth'));
 const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./legal/TermsOfService'));
@@ -123,6 +125,12 @@ function isAiCostPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master/ai-cost' || p === '/ai-cost';
+}
+
+function isSecretsHealthPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/secrets-health' || p === '/secrets-health';
 }
 
 function isErrorLogPath(): boolean {
@@ -279,6 +287,11 @@ export default function App() {
   // /master/ai-cost — オーナー専用 AI モデル別 コスト試算 (NN)
   if (isAiCostPath()) {
     return <Suspense fallback={<RouteFallback />}><AiCostDashboard /></Suspense>;
+  }
+
+  // /master/secrets-health — オーナー専用 API キー疎通診断 (FFF)
+  if (isSecretsHealthPath()) {
+    return <Suspense fallback={<RouteFallback />}><SecretsHealth /></Suspense>;
   }
 
   // /master/error-log — エラーログ単独閲覧 (自端末のローカルログのみ)
@@ -624,6 +637,8 @@ export default function App() {
       {view === 'dashboard' && <InstallPwaBanner brand="prism" />}
       {/* ZZ (2026-06-03): 全画面常駐 FAB — LP / Pricing / Billing / Dashboard */}
       <QuickAskFab />
+      {/* DDD (2026-06-04): 左下「💡 改善提案」(QuickAskFab と被らない位置) */}
+      <SuggestionFab />
     </>
   );
 }
