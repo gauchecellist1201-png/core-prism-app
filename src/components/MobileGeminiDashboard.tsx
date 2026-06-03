@@ -15,11 +15,12 @@
 // ============================================================
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Send, ChevronDown, ChevronUp, Settings } from 'lucide-react';
+import { Sparkles, Send, ChevronDown, ChevronUp, Settings, Plus } from 'lucide-react';
 import type { Persona, AppSettings } from '../types/identity';
 import { useClaude, selectRelevantKnowledge } from '../hooks/useClaude';
 import type { KnowledgeItem } from '../types/identity';
 import { executeAction, type ExecutionPlan } from '../lib/actionExecutor';
+import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
 
 interface Props {
   persona: Persona;
@@ -82,6 +83,8 @@ export default function MobileGeminiDashboard({
   const [busy, setBusy] = useState(false);
   const [showCxoRow, setShowCxoRow] = useState(false);
   const [showPersonaPicker, setShowPersonaPicker] = useState(false);
+  // CXO ピルをタップ → 「この CXO に任せる 3 候補」を出して選択させる
+  const [openCxoPicker, setOpenCxoPicker] = useState<CxoRole | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -141,8 +144,21 @@ export default function MobileGeminiDashboard({
     }
   };
 
-  // 「実行」モード: AI が手順 + 成果物を出す (将来使用予定)
-  void executeAction; // 抑止用
+  // 「実行」モード: AI が手順 + 成果物を出す (CXO ピル選択時)
+  const handleExecute = async (action: string, cxoLabel?: string) => {
+    if (busy) return;
+    appendMsg({ kind: 'user', text: cxoLabel ? `📋 ${cxoLabel}: ${action}` : `📋 「${action}」を実行` });
+    setBusy(true);
+    try {
+      const plan = await executeAction(action, persona, settings);
+      appendMsg({ kind: 'plan', plan });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '実行に失敗しました';
+      appendMsg({ kind: 'system', text: `⚠ ${msg}` });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const accent = persona.accentColor;
 
@@ -308,11 +324,11 @@ export default function MobileGeminiDashboard({
             {CXO_PILLS.map(c => (
               <button
                 key={c.key}
-                onClick={() => appendMsg({ kind: 'system', text: `🟢 ${c.key} に「次のタスク」を任せる準備` })}
+                onClick={() => setOpenCxoPicker(c.key as CxoRole)}
                 style={{
                   flex: '0 0 auto',
                   padding: '6px 11px', borderRadius: 999,
-                  background: 'rgba(255,255,255,0.05)',
+                  background: openCxoPicker === c.key ? `${accent}22` : 'rgba(255,255,255,0.05)',
                   border: `1px solid ${accent}44`,
                   color: '#fff', cursor: 'pointer',
                   display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -324,6 +340,86 @@ export default function MobileGeminiDashboard({
                 {c.key}
               </button>
             ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* CXO Action Picker (タップ → 3 候補から選んで AI 実行) */}
+      <AnimatePresence>
+        {openCxoPicker && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.94 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 50,
+              background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)',
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+              padding: 14,
+            }}
+            onClick={() => setOpenCxoPicker(null)}
+          >
+            <motion.div
+              initial={{ y: 30 }} animate={{ y: 0 }} exit={{ y: 30 }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: '100%', maxWidth: 460,
+                background: 'rgba(20,20,30,0.98)',
+                borderRadius: 22,
+                border: `1px solid ${CXO_META[openCxoPicker].color}66`,
+                padding: '20px 16px 24px',
+                boxShadow: `0 20px 50px ${CXO_META[openCxoPicker].color}44`,
+              }}
+            >
+              {/* ヘッダー */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: `linear-gradient(135deg, ${CXO_META[openCxoPicker].color}, ${CXO_META[openCxoPicker].color}99)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22,
+                }}>{CXO_META[openCxoPicker].emoji}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>
+                    {CXO_META[openCxoPicker].name}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
+                    {CXO_META[openCxoPicker].tagline}
+                  </div>
+                </div>
+                <button onClick={() => setOpenCxoPicker(null)} style={{
+                  background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)',
+                  fontSize: 22, cursor: 'pointer',
+                }}>×</button>
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginBottom: 10, letterSpacing: '0.1em' }}>
+                いま任せられること
+              </div>
+              {CXO_META[openCxoPicker].canDo.map((cd, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    const action = cd;
+                    const meta = CXO_META[openCxoPicker];
+                    setOpenCxoPicker(null);
+                    handleExecute(action, meta.shortLabel);
+                  }}
+                  style={{
+                    width: '100%', textAlign: 'left',
+                    padding: '14px 14px',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${CXO_META[openCxoPicker].color}33`,
+                    borderRadius: 12, marginBottom: 8,
+                    color: '#fff', fontSize: 14, fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  <Sparkles size={14} style={{ color: CXO_META[openCxoPicker].color, flexShrink: 0 }} />
+                  <span style={{ flex: 1 }}>{cd}</span>
+                </button>
+              ))}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -452,12 +548,28 @@ export default function MobileGeminiDashboard({
         }}
       >
         <div style={{
-          display: 'flex', alignItems: 'flex-end', gap: 6,
+          display: 'flex', alignItems: 'flex-end', gap: 4,
           background: 'rgba(255,255,255,0.06)',
           border: `1px solid ${accent}44`,
           borderRadius: 22,
-          padding: '6px 6px 6px 14px',
+          padding: '4px 6px 4px 4px',
         }}>
+          {/* ＋ ボタン → 機能を開く (将来: ファイル / 会議録音 / 写真) */}
+          <button
+            type="button"
+            onClick={onOpenFullFeatures}
+            title="資料追加 / 会議録音 / その他機能"
+            style={{
+              width: 38, height: 38, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.04)',
+              border: 'none', color: 'rgba(255,255,255,0.6)',
+              flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <Plus size={17} />
+          </button>
           <textarea
             ref={inputRef}
             value={input}
@@ -475,7 +587,7 @@ export default function MobileGeminiDashboard({
               flex: 1, background: 'transparent', border: 'none',
               outline: 'none', resize: 'none',
               color: '#fff', fontSize: 16, lineHeight: 1.55,
-              maxHeight: 120, minHeight: 24, padding: '6px 0',
+              maxHeight: 120, minHeight: 24, padding: '8px 0',
             }}
           />
           <button
