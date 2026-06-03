@@ -385,9 +385,21 @@ export const PRISM_PLANS: Plan[] = [
 // 既存 v1 と併存。Phase 1 で `usePlansV2()` フラグを立てると新規 sign up が v2 へ
 // ============================================================
 export const PLAN_V2_FLAG_KEY = 'core_plan_v2_enabled';
+/**
+ * v2 プラン (BtoB/BtoC 6 階層) を使うかどうかの判定
+ * 優先度:
+ *   ① ローカル override (localStorage) — オーナーが個別に切替できる
+ *   ② Vercel 環境変数 VITE_PLAN_V2_ENABLED = 'true' — 全ユーザー一斉切替
+ *   ③ デフォルト false (v1 を使う)
+ */
 export function isPlanV2Enabled(): boolean {
   if (typeof window === 'undefined') return false;
-  return localStorage.getItem(PLAN_V2_FLAG_KEY) === 'true';
+  const local = localStorage.getItem(PLAN_V2_FLAG_KEY);
+  if (local === 'true') return true;
+  if (local === 'false') return false;
+  // env でも切替可能 (Vercel デプロイ反映で全ユーザー一斉)
+  const envFlag = (import.meta as { env?: { VITE_PLAN_V2_ENABLED?: string } })?.env?.VITE_PLAN_V2_ENABLED;
+  return envFlag === 'true';
 }
 export function setPlanV2Enabled(on: boolean): void {
   localStorage.setItem(PLAN_V2_FLAG_KEY, on ? 'true' : 'false');
