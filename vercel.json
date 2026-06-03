@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/cron/daily-stripe-slack",
+      "schedule": "0 21 * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/privacy",      "destination": "/index.html" },
     { "source": "/privacy/",     "destination": "/index.html" },
