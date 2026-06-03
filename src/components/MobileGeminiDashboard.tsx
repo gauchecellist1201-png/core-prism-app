@@ -93,6 +93,35 @@ export default function MobileGeminiDashboard({
     setMsgs(loadMessages(persona.id));
   }, [persona.id]);
 
+  // 朝のブリーフ自動生成 — その日初めて開いた時 + 履歴が空の時のみ
+  // (オーナー指示 2026-06-03: 自律実行 — ユーザーが空のチャットを見るだけで時間が止まらないように)
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const briefKey = `core_mobile_brief_shown:${persona.id}:${today}`;
+    const alreadyShownToday = localStorage.getItem(briefKey) === '1';
+    if (alreadyShownToday) return;
+    if (msgs.length > 0) return;
+    // 履歴が空 + 今日まだ表示してない → 自動でブリーフを生成
+    const hour = new Date().getHours();
+    const greet = hour < 11 ? 'おはようございます' : hour < 18 ? 'こんにちは' : 'こんばんは';
+    const personaName = persona.name;
+    const sysHint = `${greet}、${personaName} さん。\n\n今日まずやる「最優先 1 つ」と、AI がいま代わりに進められる「アクション 3 つ」を出して。短く 200 字以内。最後に「下のエージェントに任せる?」と一言。`;
+    setBusy(true);
+    (async () => {
+      try {
+        const personaKnowledge = knowledgeItems.filter(k => k.personaId === persona.id);
+        const reply = await sendMessage(persona, sysHint, [], [], personaKnowledge.slice(0, 3));
+        if (reply?.content) {
+          setMsgs([{ id: `b_${Date.now()}`, kind: 'ai', text: reply.content, ts: Date.now() }]);
+          try { localStorage.setItem(briefKey, '1'); } catch { /* */ }
+        }
+      } catch { /* fail silently — 既存 example prompts を表示 */ }
+      setBusy(false);
+    })();
+    // 依存配列を意図的に [persona.id] のみにして、msgs 更新でループしないように
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persona.id]);
+
   // 自動保存
   useEffect(() => { saveMessages(persona.id, msgs); }, [persona.id, msgs]);
 
