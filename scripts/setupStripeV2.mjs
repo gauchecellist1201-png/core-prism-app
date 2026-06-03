@@ -54,6 +54,9 @@ const PLANS = [
 
 const PRODUCT_NAME = 'CORE Prism (v2)';
 const PRODUCT_DESCRIPTION = 'AI 役員 13 名であなたの会社の意思決定を支える経営パートナー (BtoC/BtoB 6 階層)';
+// Stripe Checkout に表示するロゴ画像 URL (オーナー提供のロゴを public/ に配置)
+const PUBLIC_BASE = process.env.STRIPE_IMAGE_BASE || 'https://core-prism-app.vercel.app';
+const PRODUCT_IMAGES = [`${PUBLIC_BASE}/stripe-prism.png`];
 
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log('CORE Prism v2 Stripe セットアップ');
@@ -79,9 +82,10 @@ async function ensureProduct() {
   const p = await stripe.products.create({
     name: PRODUCT_NAME,
     description: PRODUCT_DESCRIPTION,
+    images: PRODUCT_IMAGES,
     metadata: { version: 'v2', createdBy: 'setupStripeV2.mjs' },
   });
-  console.log(`✔ Product 作成: ${p.id}`);
+  console.log(`✔ Product 作成: ${p.id} (ロゴ画像つき)`);
   return p;
 }
 
