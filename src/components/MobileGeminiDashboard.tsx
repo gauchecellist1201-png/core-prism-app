@@ -15,7 +15,8 @@
 // ============================================================
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Send, ChevronDown, ChevronUp, Settings, Plus } from 'lucide-react';
+import { Sparkles, Send, ChevronDown, ChevronUp, Settings, Plus, FileText, BookOpen } from 'lucide-react';
+import { downloadCurrentChatTxt, downloadAllChatsMd } from '../lib/chatHistoryExport';
 import type { Persona, AppSettings } from '../types/identity';
 import { useClaude, selectRelevantKnowledge } from '../hooks/useClaude';
 import type { KnowledgeItem } from '../types/identity';
@@ -294,6 +295,44 @@ export default function MobileGeminiDashboard({
                 {p.id === persona.id && <span style={{ fontSize: 11, color: p.accentColor }}>✓</span>}
               </button>
             ))}
+
+            {/* LLL (2026-06-04): チャット履歴 エクスポート */}
+            <div style={{
+              marginTop: 8, paddingTop: 8,
+              borderTop: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', gap: 6,
+            }}>
+              <button
+                onClick={() => { downloadCurrentChatTxt(persona.id, persona.name); setShowPersonaPicker(false); }}
+                style={{
+                  flex: 1,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                  padding: '8px 10px', borderRadius: 10,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#fff', cursor: 'pointer',
+                  fontSize: 11, fontWeight: 600,
+                }}
+                title={`${persona.name} のチャットを txt で保存`}
+              >
+                <FileText size={12} /> 現在を txt
+              </button>
+              <button
+                onClick={() => { downloadAllChatsMd(); setShowPersonaPicker(false); }}
+                style={{
+                  flex: 1,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                  padding: '8px 10px', borderRadius: 10,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#fff', cursor: 'pointer',
+                  fontSize: 11, fontWeight: 600,
+                }}
+                title="全ペルソナの履歴を md で保存"
+              >
+                <BookOpen size={12} /> 全履歴 md
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

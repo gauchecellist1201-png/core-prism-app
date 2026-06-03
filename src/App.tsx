@@ -27,6 +27,7 @@ const MasterEntry = lazy(() => import('./components/MasterEntry'));
 const AiStats = lazy(() => import('./master/AiStats'));
 const AiCostDashboard = lazy(() => import('./master/AiCostDashboard'));
 const SecretsHealth = lazy(() => import('./master/SecretsHealth'));
+const ContactPage = lazy(() => import('./components/ContactPage'));
 const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./legal/TermsOfService'));
@@ -131,6 +132,12 @@ function isSecretsHealthPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master/secrets-health' || p === '/secrets-health';
+}
+
+function isContactPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/contact' || p === '/contact/';
 }
 
 function isErrorLogPath(): boolean {
@@ -292,6 +299,11 @@ export default function App() {
   // /master/secrets-health — オーナー専用 API キー疎通診断 (FFF)
   if (isSecretsHealthPath()) {
     return <Suspense fallback={<RouteFallback />}><SecretsHealth /></Suspense>;
+  }
+
+  // /contact — 公開窓口 (KKK 2026-06-04)
+  if (isContactPath()) {
+    return <Suspense fallback={<RouteFallback />}><ContactPage /></Suspense>;
   }
 
   // /master/error-log — エラーログ単独閲覧 (自端末のローカルログのみ)

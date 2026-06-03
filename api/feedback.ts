@@ -45,8 +45,8 @@ interface FeedbackBody {
   url?: string;
   userAgent?: string;
   ts?: number;
-  /** DDD/EEE (2026-06-04): 'suggestion' / 'exit' は NPS 不要 */
-  kind?: 'nps' | 'suggestion' | 'exit';
+  /** DDD/EEE/KKK (2026-06-04): 'suggestion' / 'exit' / 'contact' は NPS 不要 */
+  kind?: 'nps' | 'suggestion' | 'exit' | 'contact';
   /** EEE (2026-06-04): 解約理由カテゴリ */
   exitReason?: 'too_expensive' | 'too_hard' | 'switching' | 'not_useful' | 'other';
 }
@@ -61,7 +61,8 @@ export default async function handler(req: Request) {
   catch { return json({ error: 'Invalid JSON' }, 400, ch); }
 
   const brand = body.brand === 'iris' ? 'iris' : 'prism';
-  const kind: 'nps' | 'suggestion' | 'exit' = body.kind === 'suggestion' || body.kind === 'exit' ? body.kind : 'nps';
+  const kind: 'nps' | 'suggestion' | 'exit' | 'contact' =
+    body.kind === 'suggestion' || body.kind === 'exit' || body.kind === 'contact' ? body.kind : 'nps';
   const nps = typeof body.nps === 'number' ? Math.max(0, Math.min(10, Math.round(body.nps))) : -1;
   const comment = String(body.comment ?? '').slice(0, 4000);
   const email = String(body.email ?? '').slice(0, 200);
@@ -71,8 +72,13 @@ export default async function handler(req: Request) {
     ? body.exitReason
     : undefined;
 
-  // NPS kind の時のみ 0-10 必須。suggestion / exit は不要。
+  // NPS kind の時のみ 0-10 必須。suggestion / exit / contact は不要。
   if (kind === 'nps' && nps < 0) return json({ error: 'nps required (0-10)' }, 400, ch);
+  // contact は email + comment が必須
+  if (kind === 'contact') {
+    if (!email || !email.includes('@')) return json({ error: 'email required' }, 400, ch);
+    if (comment.trim().length < 5) return json({ error: 'comment too short' }, 400, ch);
+  }
 
   // Vercel Functions Logs に必ず構造化記録 (mail 設定の有無に関わらず)
   // → `vercel logs --prod | grep '\[feedback\]'` で全件抽出可能
@@ -122,6 +128,43 @@ export default async function handler(req: Request) {
     if (!resp.ok) {
       return json({ success: true, delivered: false, reason: 'mail_failed' }, 200, ch);
     }
+
+    // KKK (2026-06-04): contact kind は自動返信メールも送る
+    if (kind === 'contact' && email) {
+      try {
+        const autoReplyHtml = `<!DOCTYPE html><html><body style="font-family:-apple-system,sans-serif;background:#f4f4f7;padding:24px;">
+<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;">
+<div style="background:linear-gradient(135deg,#a78bfa,#f472b6);padding:24px 28px;color:#fff">
+<h2 style="margin:0;font-size:18px;font-weight:800">お問い合わせを受け付けました</h2>
+<p style="margin:6px 0 0;font-size:13px;opacity:.95">${esc(brandLabel)} サポート</p>
+</div>
+<div style="padding:24px 28px;color:#1F1A2E;font-size:14px;line-height:1.7">
+<p style="margin:0 0 16px">${esc(email.split('@')[0])} 様</p>
+<p style="margin:0 0 16px">この度は CORE Prism / Iris にお問い合わせいただきありがとうございます。<br />
+内容を確認の上、通常 1〜3 営業日以内にご返信いたします。</p>
+<div style="background:#FAF7F0;padding:14px 16px;border-radius:8px;margin:16px 0;">
+<div style="font-size:11px;color:#666;letter-spacing:.05em;font-weight:700;margin-bottom:6px">お問い合わせ内容</div>
+<div style="white-space:pre-wrap;font-size:13px;color:#1F1A2E;line-height:1.7">${esc(comment.slice(0, 1000))}</div>
+</div>
+<p style="margin:0 0 8px;font-size:13px;color:#666">${esc(url || '')}</p>
+<p style="font-size:11px;color:#999;margin:24px 0 0;border-top:1px solid #eee;padding-top:16px">
+このメールは自動送信です。返信不要です。<br />
+直接ご連絡は gauche.cellist1201@gmail.com まで。
+</p>
+</div></div></body></html>`;
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from,
+            to: email,
+            subject: `お問い合わせを受け付けました — ${brandLabel}`,
+            html: autoReplyHtml,
+          }),
+        });
+      } catch { /* 自動返信失敗は致命的でないので無視 */ }
+    }
+
     return json({ success: true, delivered: true }, 200, ch);
   } catch {
     return json({ success: true, delivered: false, reason: 'mail_exception' }, 200, ch);

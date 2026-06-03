@@ -69,8 +69,9 @@ const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
 import { REFERRAL_BONUS_DAYS } from '../lib/referral';
-import { Gift, FileDown } from 'lucide-react';
+import { Gift, FileDown, Database } from 'lucide-react';
 import { downloadMonthlyCsv } from '../lib/monthlyCsvExport';
+import { downloadUserExport } from '../lib/userDataExport';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
 import { useDailyCoach } from '../hooks/useDailyCoach';
 import { useDailyStreak } from '../hooks/useDailyStreak';
@@ -579,6 +580,15 @@ export default function IdentityDashboard({
           >
             <FileDown size={14} className="text-fg-muted group-hover:text-fg" />
             <span className="text-fg-muted group-hover:text-fg text-sm">数字を CSV で出力</span>
+          </button>
+          {/* JJJ (2026-06-04): GDPR/個情法 対応 — 全データを 1 JSON で持ち出し */}
+          <button
+            onClick={() => { downloadUserExport().catch(e => alert(`エクスポート失敗: ${(e as Error).message}`)); }}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
+            title="localStorage 全件 + Stripe 顧客情報 + サーバ集計 を 1 JSON でダウンロード (GDPR/個情法 対応)"
+          >
+            <Database size={14} className="text-fg-muted group-hover:text-fg" />
+            <span className="text-fg-muted group-hover:text-fg text-sm">全データを JSON で持ち出す</span>
           </button>
           <div className="px-2 py-1.5 flex items-center justify-between gap-2">
             <span className="text-fg-muted text-xs tracking-widest uppercase">表示</span>
