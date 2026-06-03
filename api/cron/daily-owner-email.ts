@@ -115,6 +115,9 @@ export default async function handler(req: Request): Promise<Response> {
   // II (2026-06-03): オンボ funnel 取得 (Upstash 経由)
   const funnelYesterday = await loadOnboardFunnel(yJst);
 
+  // RR (2026-06-03): リテンション (DAU + 7 日再訪)
+  const retentionYesterday = await loadRetention(yJst);
+
   const html = renderHtml({
     dateStr,
     yDateStr,
@@ -126,6 +129,7 @@ export default async function handler(req: Request): Promise<Response> {
     alertCount: alertSubscriptions.length,
     alerts: alertSubscriptions,
     funnelYesterday,
+    retentionYesterday,
   });
 
   await sendResendEmail(
@@ -156,6 +160,61 @@ type OnboardFunnel = {
 
 const UP_URL_OB = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_URL) || '';
 const UP_TOK_OB = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_TOKEN) || '';
+
+type RetentionStat = {
+  dauYesterday: number;
+  dauLastWeek: number;
+  ret7dPct: number;
+  available: boolean;
+};
+
+async function loadRetention(yJst: Date): Promise<RetentionStat> {
+  const empty: RetentionStat = { dauYesterday: 0, dauLastWeek: 0, ret7dPct: 0, available: false };
+  if (!UP_URL_OB || !UP_TOK_OB) return empty;
+  const yStr = `${yJst.getFullYear()}-${String(yJst.getMonth() + 1).padStart(2, '0')}-${String(yJst.getDate()).padStart(2, '0')}`;
+  const lastWeek = new Date(yJst);
+  lastWeek.setDate(yJst.getDate() - 7);
+  const wStr = `${lastWeek.getFullYear()}-${String(lastWeek.getMonth() + 1).padStart(2, '0')}-${String(lastWeek.getDate()).padStart(2, '0')}`;
+  try {
+    const dauRes = await fetch(UP_URL_OB, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${UP_TOK_OB}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(['SCARD', `active:${yStr}`]),
+    });
+    const dauYesterday = Number(((await dauRes.json()) as { result?: number }).result || 0);
+
+    const refRes = await fetch(UP_URL_OB, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${UP_TOK_OB}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(['SCARD', `active:${wStr}`]),
+    });
+    const dauLastWeek = Number(((await refRes.json()) as { result?: number }).result || 0);
+
+    // 1 週前にいたうち、昨日も来てくれた人数
+    let inter = 0;
+    if (dauLastWeek > 0) {
+      const tmp = `tmp:ret:${yStr}:${wStr}`;
+      const iRes = await fetch(UP_URL_OB, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${UP_TOK_OB}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(['SINTERSTORE', tmp, 2, `active:${wStr}`, `active:${yStr}`]),
+      });
+      inter = Number(((await iRes.json()) as { result?: number }).result || 0);
+      // 後始末
+      fetch(UP_URL_OB, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${UP_TOK_OB}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(['DEL', tmp]),
+      }).catch(() => { /* */ });
+    }
+    return {
+      dauYesterday,
+      dauLastWeek,
+      ret7dPct: dauLastWeek > 0 ? Math.round((inter / dauLastWeek) * 1000) / 10 : 0,
+      available: true,
+    };
+  } catch { return empty; }
+}
 
 async function loadOnboardFunnel(yJst: Date): Promise<OnboardFunnel> {
   const empty: OnboardFunnel = {
@@ -201,6 +260,7 @@ function renderHtml(data: {
   alertCount: number;
   alerts: Array<{ customer: string; status: string }>;
   funnelYesterday: OnboardFunnel;
+  retentionYesterday: RetentionStat;
 }): string {
   const alertBlock = data.alertCount === 0
     ? `<p style="font-size:13px;color:#666;margin:0">✅ 重要なアラートはありません</p>`
@@ -235,6 +295,31 @@ function renderHtml(data: {
       <p style="font-size:14px;color:#1F1A2E;margin:0 0 24px">
         <strong style="color:#E84B97;font-size:18px">${data.newSubscriptions} 件</strong> の新規 Subscription
       </p>
+
+      <h2 style="margin:0 0 12px;font-size:16px;font-weight:800">👥 昨日のアクティブ</h2>
+      ${(() => {
+        const r = data.retentionYesterday;
+        if (!r.available) {
+          return `<p style="font-size:12px;color:#999;margin:0 0 24px;line-height:1.7">
+            UPSTASH_REDIS_REST_URL/TOKEN を Vercel env に追加すると DAU + 7 日再訪率が表示されます。
+          </p>`;
+        }
+        const color = r.ret7dPct >= 40 ? '#16A34A' : r.ret7dPct >= 20 ? '#D97706' : '#DC2626';
+        return `<div style="background:#F5F3FF;padding:14px 18px;border-radius:10px;margin-bottom:24px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div>
+              <div style="font-size:11px;color:#666;letter-spacing:.08em;font-weight:700">DAU</div>
+              <div style="font-size:22px;font-weight:900;color:#0F2540">${r.dauYesterday} 人</div>
+              <div style="font-size:11px;color:#666;margin-top:2px">1 週前: ${r.dauLastWeek} 人</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:11px;color:#666;letter-spacing:.08em;font-weight:700">7 日 リテンション</div>
+              <div style="font-size:22px;font-weight:900;color:${color}">${r.ret7dPct}%</div>
+              <div style="font-size:11px;color:#666;margin-top:2px">1 週前ユーザーの再訪率</div>
+            </div>
+          </div>
+        </div>`;
+      })()}
 
       <h2 style="margin:0 0 12px;font-size:16px;font-weight:800">👋 昨日のオンボーディング</h2>
       ${(() => {

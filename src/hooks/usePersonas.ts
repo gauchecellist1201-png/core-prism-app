@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Persona, Task } from '../types/identity';
 import { useCloudSync } from './useCloudSync';
+import { generateAvatarDataUrl } from '../lib/avatarGen';
 
 const STORAGE_KEY = 'core_personas';
 const ACTIVE_PERSONA_KEY = 'core_active_persona_id_v1';
@@ -97,11 +98,16 @@ export function usePersonas() {
     accentColor: string,
     accentColorLight: string,
   ): Persona => {
+    // TT (2026-06-03): 名前から決定的 SVG アバターを自動生成
+    const avatarUrl: string | undefined = (() => {
+      try { return generateAvatarDataUrl(name, 128); } catch { return undefined; }
+    })();
     const persona: Persona = {
       id: uuidv4(),
       name,
       subtitle,
       icon,
+      avatarUrl,
       description,
       accentColor,
       accentColorLight,

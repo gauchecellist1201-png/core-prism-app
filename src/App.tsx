@@ -350,6 +350,11 @@ export default function App() {
     return () => window.removeEventListener('core:open-error-log', open as EventListener);
   }, []);
 
+  // RR (2026-06-03): リテンション ping — 1 日 1 回 DAU カウント
+  useEffect(() => {
+    import('./lib/retentionTracker').then(m => m.pingRetention()).catch(() => { /* */ });
+  }, []);
+
   // エラーカード等から「設定を開く」を発火できるよう購読。detail.tab があればそのタブに直行 (例: 'ai' で AI キー登録欄へ)
   useEffect(() => {
     const open = (e: Event) => {

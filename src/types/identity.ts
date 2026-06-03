@@ -9,6 +9,8 @@ export interface Persona {
   name: string;
   subtitle: string;
   icon: string;
+  /** 自動生成された SVG アバター (data URL)。未設定なら icon 絵文字にフォールバック。 */
+  avatarUrl?: string;
   accentColor: string;
   accentColorLight: string;
   description: string;           // AIへの人格説明
