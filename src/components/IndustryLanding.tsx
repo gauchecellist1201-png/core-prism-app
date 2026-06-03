@@ -1,0 +1,736 @@
+// ============================================================
+// IndustryLanding — 業界別 LP 6 種の共通テンプレート
+//
+// オーナー指示 (2026-06-03):
+//   業界の悩みから入り、数字で ROI、7 日無料・カード登録なし へ
+//   骨格: Hero / Pain / Solution / Proof / Pricing / FAQ / CTA
+//
+// URL: /lp/<slug> → INDUSTRIES[slug] を読み込んで描画
+// ============================================================
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { INDUSTRIES, type IndustryConfig } from '../lp/industries';
+
+const FONT_SERIF_JA = '"Noto Serif JP", "Yu Mincho", serif';
+const FONT_SERIF_EN = '"Cinzel", "Cormorant Garamond", serif';
+const FONT_SANS = '"Inter", system-ui, -apple-system, sans-serif';
+
+interface Props {
+  slug: string;
+}
+
+export default function IndustryLanding({ slug }: Props) {
+  const config = INDUSTRIES[slug];
+
+  useEffect(() => {
+    if (config) document.title = config.pageTitle;
+  }, [config]);
+
+  if (!config) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0A0A12', color: '#fff', fontFamily: FONT_SANS }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ fontFamily: FONT_SERIF_JA, fontSize: 24, marginBottom: 16 }}>業界 LP が見つかりません</h1>
+          <a href="/" style={{ color: '#FBBF24' }}>トップに戻る</a>
+        </div>
+      </div>
+    );
+  }
+
+  // ブランドアクセント
+  const accentLeft = config.brandHint === 'iris' ? '#E1306C' : '#9333EA';
+  const accentRight = config.accentRight;
+
+  return (
+    <div style={{
+      background: '#0A0A12',
+      color: '#fff',
+      minHeight: '100dvh',
+      fontFamily: FONT_SANS,
+      overflowX: 'clip',
+    }}>
+      <Hero config={config} accentLeft={accentLeft} accentRight={accentRight} />
+      <Pain config={config} accentLeft={accentLeft} />
+      <Solution config={config} accentLeft={accentLeft} accentRight={accentRight} />
+      <Proof config={config} accentLeft={accentLeft} accentRight={accentRight} />
+      <Pricing config={config} accentLeft={accentLeft} accentRight={accentRight} />
+      <Faq config={config} accentLeft={accentLeft} />
+      <FinalCta config={config} accentLeft={accentLeft} accentRight={accentRight} />
+      <Footer />
+    </div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// HERO
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function Hero({ config, accentLeft, accentRight }: { config: IndustryConfig; accentLeft: string; accentRight: string }) {
+  return (
+    <section style={{
+      position: 'relative',
+      padding: '6rem 1.5rem 5rem',
+      textAlign: 'center',
+      overflow: 'hidden',
+    }}>
+      <div aria-hidden style={{
+        position: 'absolute', top: -120, left: '50%', transform: 'translateX(-50%)',
+        width: 720, height: 720, borderRadius: '50%',
+        background: `radial-gradient(circle, ${accentLeft}33 0%, transparent 60%)`,
+        filter: 'blur(80px)', pointerEvents: 'none',
+      }} />
+
+      <div style={{ maxWidth: 880, margin: '0 auto', position: 'relative' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '6px 16px', borderRadius: 999,
+            background: `${accentLeft}22`,
+            border: `1px solid ${accentLeft}55`,
+            fontFamily: FONT_SERIF_EN,
+            fontSize: 11, letterSpacing: '0.25em',
+            color: accentLeft, fontWeight: 700,
+            marginBottom: '2rem',
+          }}
+        >
+          {config.industryLabel}
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.1 }}
+          style={{
+            fontFamily: FONT_SERIF_JA,
+            fontSize: 'clamp(1.8rem, 5vw, 3.4rem)',
+            fontWeight: 700,
+            lineHeight: 1.4,
+            letterSpacing: '0.02em',
+            marginBottom: '1.5rem',
+            whiteSpace: 'pre-line',
+          }}
+        >
+          {config.heroMain.split('\n').map((line, i) => (
+            <span key={i} style={{ display: 'block' }}>
+              {line.includes('AI') || line.includes('1/7') ? (
+                <span style={{
+                  background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                }}>{line}</span>
+              ) : line}
+            </span>
+          ))}
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          style={{
+            fontFamily: FONT_SERIF_JA,
+            fontSize: 'clamp(0.95rem, 1.4vw, 1.1rem)',
+            color: 'rgba(255,255,255,0.7)',
+            lineHeight: 1.95,
+            marginBottom: '2.5rem',
+            maxWidth: 680,
+            marginLeft: 'auto', marginRight: 'auto',
+          }}
+        >
+          {config.heroSub}
+        </motion.p>
+
+        {/* 巨大数字 */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          style={{
+            display: 'inline-block',
+            padding: '14px 28px',
+            borderRadius: 18,
+            background: `linear-gradient(135deg, ${accentLeft}15, ${accentRight}15)`,
+            border: `1px solid ${accentRight}55`,
+            marginBottom: '2rem',
+          }}
+        >
+          <div style={{ fontSize: 11, color: accentRight, letterSpacing: '0.2em', fontWeight: 700, marginBottom: 4 }}>
+            {config.heroHeroNumber.label}
+          </div>
+          <div style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 900, color: '#fff' }}>
+            {config.heroHeroNumber.value}
+          </div>
+        </motion.div>
+
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 8 }}>
+          <a href="#demo" style={ctaPrimary(accentLeft, accentRight)}>
+            7 日間 無料で試す →
+          </a>
+          <a href="#pricing" style={ctaGhost}>
+            プランを見る
+          </a>
+        </div>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 16 }}>
+          カード登録なし ・ いつでも解約可
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PAIN — 業界の生々しい悩み 4 つ
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function Pain({ config, accentLeft }: { config: IndustryConfig; accentLeft: string }) {
+  return (
+    <section style={{ padding: '5rem 1.5rem', background: '#080812' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        <h2 style={sectionTitle}>こんな悩み、ありませんか?</h2>
+        <p style={sectionLead}>
+          多くの{getPainAudience(config.slug)}が抱えている、実際の声です。
+        </p>
+        <div style={{
+          marginTop: '3rem',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: '1rem',
+        }}>
+          {config.pain.map((p, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.08 }}
+              style={{
+                padding: '1.5rem',
+                background: 'rgba(255,255,255,0.03)',
+                border: `1px solid ${accentLeft}33`,
+                borderRadius: 14,
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+              }}
+            >
+              <span style={{ fontSize: 28, flexShrink: 0 }}>{p.emoji}</span>
+              <p style={{ fontSize: 14.5, color: '#fff', lineHeight: 1.7, margin: 0, fontFamily: FONT_SERIF_JA }}>
+                {p.text}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function getPainAudience(slug: string): string {
+  return ({
+    'sme': '中小企業の社長',
+    'realestate-finance': '不動産・金融営業の方',
+    'consulting': 'コンサル・士業の方',
+    'solo': '個人事業主・一人社長',
+    'creator': 'クリエイター',
+    'freelance-pro': '上位フリーランス',
+  } as Record<string, string>)[slug] || 'お客様';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SOLUTION — AI が肩代わりすること 3 つ
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function Solution({ config, accentLeft, accentRight }: { config: IndustryConfig; accentLeft: string; accentRight: string }) {
+  const totalHours = config.features.reduce((sum, f) => sum + (f.savesHours || 0), 0);
+  return (
+    <section style={{ padding: '5rem 1.5rem' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        <div style={{
+          fontFamily: FONT_SERIF_EN,
+          fontSize: 11, letterSpacing: '0.3em', color: accentRight,
+          textAlign: 'center', fontWeight: 700, marginBottom: 8,
+        }}>
+          SOLUTION
+        </div>
+        <h2 style={sectionTitle}>AI が代わりにやること</h2>
+        <p style={sectionLead}>
+          あなたは「確認」と「送信」だけ。下書きはぜんぶ AI が作ります。
+        </p>
+        <div style={{
+          marginTop: '3rem',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '1.5rem',
+        }}>
+          {config.features.map((f, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: i * 0.1 }}
+              style={{
+                padding: '2rem 1.5rem',
+                background: `linear-gradient(180deg, ${accentLeft}10, transparent)`,
+                border: `1px solid ${accentLeft}33`,
+                borderRadius: 18,
+              }}
+            >
+              <div style={{
+                width: 60, height: 60, borderRadius: 14,
+                background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 28, marginBottom: '1.25rem',
+              }}>
+                {f.icon}
+              </div>
+              <h3 style={{
+                fontFamily: FONT_SERIF_JA,
+                fontSize: 18, fontWeight: 800, lineHeight: 1.5, marginBottom: 12,
+              }}>
+                {f.title}
+              </h3>
+              <p style={{
+                fontSize: 13.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.85, margin: 0,
+                fontFamily: FONT_SERIF_JA,
+              }}>
+                {f.body}
+              </p>
+              {f.savesHours && (
+                <div style={{
+                  marginTop: 16,
+                  display: 'inline-block',
+                  padding: '4px 12px',
+                  borderRadius: 999,
+                  background: `${accentRight}22`,
+                  color: accentRight,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: '0.05em',
+                }}>
+                  月 約 {f.savesHours} 時間 節約
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+        {totalHours > 0 && (
+          <div style={{
+            marginTop: '3rem',
+            textAlign: 'center',
+            padding: '1.5rem',
+            borderRadius: 14,
+            background: `linear-gradient(135deg, ${accentLeft}15, ${accentRight}15)`,
+            border: `1px solid ${accentRight}55`,
+            maxWidth: 600,
+            marginLeft: 'auto', marginRight: 'auto',
+          }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+              合計
+            </div>
+            <div style={{ fontSize: 36, fontWeight: 900, color: accentRight }}>
+              月 約 {totalHours} 時間
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
+              があなたに戻ってきます
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PROOF — 数字で示す ROI
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function Proof({ config, accentLeft, accentRight }: { config: IndustryConfig; accentLeft: string; accentRight: string }) {
+  return (
+    <section style={{ padding: '5rem 1.5rem', background: '#080812' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        <div style={{
+          fontFamily: FONT_SERIF_EN,
+          fontSize: 11, letterSpacing: '0.3em', color: accentLeft,
+          textAlign: 'center', fontWeight: 700, marginBottom: 8,
+        }}>
+          PROOF
+        </div>
+        <h2 style={sectionTitle}>数字で見る効果</h2>
+        <div style={{
+          marginTop: '3rem',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '1.5rem',
+        }}>
+          {config.proofStats.map((s, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, scale: 0.92 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              style={{
+                padding: '2rem 1.5rem',
+                background: 'rgba(255,255,255,0.04)',
+                border: `1px solid ${accentRight}44`,
+                borderRadius: 18,
+                textAlign: 'center',
+              }}
+            >
+              <div style={{
+                fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 900,
+                background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                marginBottom: 8,
+              }}>
+                {s.value}
+              </div>
+              <div style={{
+                fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6,
+                fontFamily: FONT_SERIF_JA, fontWeight: 600,
+              }}>
+                {s.label}
+              </div>
+              <div style={{
+                fontSize: 10,
+                color: s.caveat === 'owner-experience' ? '#34D399' : s.caveat === 'actual' ? '#FBBF24' : 'rgba(255,255,255,0.4)',
+                marginTop: 10, fontWeight: 700, letterSpacing: '0.1em',
+              }}>
+                {s.caveat === 'owner-experience' ? '★ オーナー実体験' : s.caveat === 'actual' ? '✓ 実値' : '※ 想定値'}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PRICING — 業界別 3 プラン (推奨を中央 highlight)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const PLAN_INFO: Record<string, { name: string; price: number; subtitle: string; envKey: string }> = {
+  'v2-btoC-light':    { name: 'ライト',      price: 3000,  subtitle: 'お試し・副業',           envKey: 'VITE_STRIPE_PRISM_V2_BTOC_LIGHT_URL' },
+  'v2-btoC-standard': { name: 'スタンダード', price: 5000,  subtitle: '個人事業主・一人社長',   envKey: 'VITE_STRIPE_PRISM_V2_BTOC_STANDARD_URL' },
+  'v2-btoC-pro':      { name: 'プロ',        price: 15000, subtitle: '高単価フリーランス',     envKey: 'VITE_STRIPE_PRISM_V2_BTOC_PRO_URL' },
+  'v2-btoB-entry':    { name: 'エントリー',  price: 20000, subtitle: '法人 試験導入',          envKey: 'VITE_STRIPE_PRISM_V2_BTOB_ENTRY_URL' },
+  'v2-btoB-standard': { name: 'スタンダード', price: 30000, subtitle: '中小企業 / 高 ROI',     envKey: 'VITE_STRIPE_PRISM_V2_BTOB_STANDARD_URL' },
+  'v2-btoB-pro':      { name: 'プロ',        price: 50000, subtitle: '法人 上位',              envKey: 'VITE_STRIPE_PRISM_V2_BTOB_PRO_URL' },
+};
+
+function Pricing({ config, accentLeft, accentRight }: { config: IndustryConfig; accentLeft: string; accentRight: string }) {
+  const [yearly, setYearly] = useState(false);
+  return (
+    <section id="pricing" style={{ padding: '5rem 1.5rem' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        <h2 style={sectionTitle}>料金プラン</h2>
+        <p style={sectionLead}>{config.pricingTagline}</p>
+
+        {/* 月額 / 年額 切替 */}
+        <div style={{
+          display: 'flex', justifyContent: 'center', gap: 8,
+          marginTop: '2rem', marginBottom: '2rem',
+        }}>
+          <button
+            onClick={() => setYearly(false)}
+            style={{
+              padding: '8px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700,
+              background: !yearly ? `linear-gradient(135deg, ${accentLeft}, ${accentRight})` : 'rgba(255,255,255,0.06)',
+              color: '#fff', border: 'none', cursor: 'pointer',
+            }}
+          >月額</button>
+          <button
+            onClick={() => setYearly(true)}
+            style={{
+              padding: '8px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700,
+              background: yearly ? `linear-gradient(135deg, ${accentLeft}, ${accentRight})` : 'rgba(255,255,255,0.06)',
+              color: '#fff', border: 'none', cursor: 'pointer',
+            }}
+          >年額 (2 ヶ月分お得)</button>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: '1.5rem',
+        }}>
+          {config.planLineup.map(planId => {
+            const info = PLAN_INFO[planId];
+            const isRecommended = planId === config.recommendedPlan;
+            const displayPrice = yearly ? info.price * 10 : info.price;
+            const url = getStripeUrl(planId, yearly);
+            return (
+              <PlanCard
+                key={planId}
+                name={info.name}
+                subtitle={info.subtitle}
+                price={displayPrice}
+                yearly={yearly}
+                isRecommended={isRecommended}
+                accentLeft={accentLeft}
+                accentRight={accentRight}
+                stripeUrl={url}
+              />
+            );
+          })}
+        </div>
+        <p style={{
+          textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.5)',
+          marginTop: '2rem',
+        }}>
+          ※ 表示価格は税別。法人は請求書払い (口座振込) も対応。
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function getStripeUrl(planId: string, yearly: boolean): string {
+  const info = PLAN_INFO[planId];
+  const envKey = yearly ? info.envKey.replace('_URL', '_YEARLY_URL') : info.envKey;
+  // import.meta.env で取得
+  const envObj = (import.meta as { env?: Record<string, string> })?.env || {};
+  return envObj[envKey] || '/';
+}
+
+function PlanCard({ name, subtitle, price, yearly, isRecommended, accentLeft, accentRight, stripeUrl }: {
+  name: string; subtitle: string; price: number; yearly: boolean;
+  isRecommended: boolean; accentLeft: string; accentRight: string; stripeUrl: string;
+}) {
+  return (
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.2 }}
+      style={{
+        position: 'relative',
+        padding: '2rem 1.5rem',
+        background: isRecommended
+          ? `linear-gradient(180deg, ${accentLeft}20, ${accentRight}08)`
+          : 'rgba(255,255,255,0.03)',
+        border: isRecommended
+          ? `1px solid ${accentRight}88`
+          : '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 18,
+        boxShadow: isRecommended ? `0 16px 48px ${accentRight}33` : 'none',
+      }}
+    >
+      {isRecommended && (
+        <div style={{
+          position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+          background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+          color: '#fff', fontSize: 10, fontWeight: 800,
+          padding: '4px 14px', borderRadius: 999, letterSpacing: '0.15em',
+        }}>
+          ★ 推奨
+        </div>
+      )}
+      <p style={{ fontSize: 11, color: accentRight, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 4 }}>
+        {subtitle}
+      </p>
+      <h3 style={{ fontFamily: FONT_SERIF_JA, fontSize: 22, fontWeight: 800, marginBottom: 12 }}>
+        {name}
+      </h3>
+      <p style={{ fontSize: 36, fontWeight: 900, marginBottom: 4 }}>
+        ¥{price.toLocaleString('ja-JP')}
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: 500, marginLeft: 4 }}>
+          / {yearly ? '年' : '月'}
+        </span>
+      </p>
+      <a
+        href={stripeUrl}
+        target={stripeUrl.startsWith('https://') ? '_blank' : undefined}
+        rel="noopener noreferrer"
+        style={{
+          display: 'block',
+          width: '100%',
+          textAlign: 'center',
+          padding: '12px 16px',
+          marginTop: 18,
+          borderRadius: 12,
+          background: isRecommended
+            ? `linear-gradient(135deg, ${accentLeft}, ${accentRight})`
+            : 'rgba(255,255,255,0.06)',
+          color: '#fff',
+          textDecoration: 'none',
+          fontWeight: 800,
+          fontSize: 13.5,
+          border: isRecommended ? 'none' : '1px solid rgba(255,255,255,0.15)',
+        }}
+      >
+        7 日 無料で始める
+      </a>
+    </motion.div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FAQ
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function Faq({ config, accentLeft }: { config: IndustryConfig; accentLeft: string }) {
+  return (
+    <section style={{ padding: '5rem 1.5rem', background: '#080812' }}>
+      <div style={{ maxWidth: 760, margin: '0 auto' }}>
+        <h2 style={sectionTitle}>よくある質問</h2>
+        <div style={{ marginTop: '2.5rem' }}>
+          {config.faq.map((f, i) => (
+            <FaqItem key={i} q={f.q} a={f.a} accent={accentLeft} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FaqItem({ q, a, accent }: { q: string; a: string; accent: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{
+      marginBottom: 12,
+      borderRadius: 12,
+      background: 'rgba(255,255,255,0.04)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      overflow: 'hidden',
+    }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%',
+          padding: '16px 20px',
+          background: 'transparent',
+          border: 'none',
+          color: '#fff',
+          textAlign: 'left',
+          cursor: 'pointer',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+          fontFamily: FONT_SERIF_JA,
+          fontSize: 14,
+          fontWeight: 700,
+        }}
+      >
+        <span>{q}</span>
+        <span style={{ color: accent, fontSize: 20, transition: 'transform 0.2s', transform: open ? 'rotate(45deg)' : 'rotate(0)' }}>+</span>
+      </button>
+      {open && (
+        <div style={{
+          padding: '0 20px 16px',
+          fontSize: 13,
+          color: 'rgba(255,255,255,0.7)',
+          lineHeight: 1.85,
+          fontFamily: FONT_SERIF_JA,
+        }}>
+          {a}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FINAL CTA
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function FinalCta({ config, accentLeft, accentRight }: { config: IndustryConfig; accentLeft: string; accentRight: string }) {
+  const info = PLAN_INFO[config.recommendedPlan];
+  const envObj = (import.meta as { env?: Record<string, string> })?.env || {};
+  const url = envObj[info.envKey] || '/';
+  return (
+    <section id="demo" style={{ padding: '5rem 1.5rem', textAlign: 'center' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        <h2 style={{
+          ...sectionTitle,
+          fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
+        }}>
+          まず 7 日間、無料で。
+        </h2>
+        <p style={{ ...sectionLead, marginBottom: '2rem' }}>
+          カード登録は不要。続けるか続けないかは、7 日後に決めてください。
+        </p>
+        <a
+          href={url}
+          target={url.startsWith('https://') ? '_blank' : undefined}
+          rel="noopener noreferrer"
+          style={{ ...ctaPrimary(accentLeft, accentRight), fontSize: 16, padding: '16px 32px' }}
+        >
+          無料で始める →
+        </a>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 16 }}>
+          推奨: {info.name} (月 ¥{info.price.toLocaleString('ja-JP')}) ・ いつでも解約
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FOOTER
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function Footer() {
+  return (
+    <footer style={{
+      padding: '3rem 1.5rem',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+      textAlign: 'center',
+      fontFamily: FONT_SERIF_JA,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 18, flexWrap: 'wrap', marginBottom: '1rem', fontSize: 12 }}>
+        <a href="/corp" style={footerLink}>会社概要</a>
+        <a href="/pricing" style={footerLink}>料金</a>
+        <a href="/faq" style={footerLink}>FAQ</a>
+        <a href="/privacy" style={footerLink}>プライバシー</a>
+        <a href="/terms" style={footerLink}>利用規約</a>
+        <a href="/tokushoho" style={footerLink}>特定商取引法</a>
+      </div>
+      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+        © 2026 株式会社 CORE
+      </p>
+    </footer>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SHARED STYLES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const sectionTitle: React.CSSProperties = {
+  fontFamily: FONT_SERIF_JA,
+  fontSize: 'clamp(1.6rem, 3.6vw, 2.4rem)',
+  fontWeight: 700,
+  letterSpacing: '0.04em',
+  textAlign: 'center',
+  marginBottom: '0.85rem',
+  lineHeight: 1.4,
+};
+
+const sectionLead: React.CSSProperties = {
+  fontFamily: FONT_SERIF_JA,
+  fontSize: 'clamp(0.92rem, 1.3vw, 1.02rem)',
+  color: 'rgba(255,255,255,0.65)',
+  textAlign: 'center',
+  maxWidth: 640,
+  margin: '0 auto',
+  lineHeight: 1.95,
+};
+
+function ctaPrimary(accentLeft: string, accentRight: string): React.CSSProperties {
+  return {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    padding: '13px 22px', borderRadius: 999,
+    background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+    color: '#fff', fontWeight: 800, fontSize: 14,
+    textDecoration: 'none',
+    boxShadow: `0 8px 24px ${accentRight}55`,
+    border: 'none', cursor: 'pointer',
+  };
+}
+
+const ctaGhost: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6,
+  padding: '12px 20px', borderRadius: 999,
+  background: 'rgba(255,255,255,0.05)',
+  color: '#fff', fontWeight: 700, fontSize: 13.5,
+  textDecoration: 'none',
+  border: '1px solid rgba(255,255,255,0.15)',
+};
+
+const footerLink: React.CSSProperties = {
+  color: 'rgba(255,255,255,0.55)',
+  textDecoration: 'none',
+};

@@ -37,6 +37,7 @@ const ErrorLogViewer = lazy(() => import('./components/ErrorLogViewer'));
 const FAQPage = lazy(() => import('./pages/FAQPage'));
 const TokushohoPage = lazy(() => import('./pages/TokushohoPage'));
 const MusicSchoolLanding = lazy(() => import('./components/MusicSchoolLanding'));
+const IndustryLanding = lazy(() => import('./components/IndustryLanding'));
 import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, syncSubscriptionState, type Plan } from './lib/billing';
 import { PrismBackground } from './components/PrismBackground';
 import GlobalVoiceInput from './components/GlobalVoiceInput';
@@ -180,6 +181,16 @@ function isMusicSchoolLpPath(): boolean {
   return p === '/lp/music-school' || p === '/lp/music-school/';
 }
 
+/** /lp/<slug> 業界別 LP のパス判定 (music-school は別途専用) */
+function getIndustryLpSlug(): string | null {
+  if (typeof window === 'undefined') return null;
+  const p = window.location.pathname.replace(/\/$/, '');
+  const m = p.match(/^\/lp\/([\w-]+)$/);
+  if (!m) return null;
+  if (m[1] === 'music-school') return null; // 専用 LP に任せる
+  return m[1];
+}
+
 export default function App() {
   // ?share=... — 友だちから届いた成果物プレビュー + 新規登録 CTA
   const sharedArtifact = readSharedFromUrl();
@@ -222,6 +233,14 @@ export default function App() {
   // /lp/music-school — 音楽スクール 業界特化 LP (1 業界垂直立ち上げ第 1 弾)
   if (isMusicSchoolLpPath()) {
     return <Suspense fallback={<RouteFallback />}><MusicSchoolLanding /></Suspense>;
+  }
+
+  // /lp/<slug> — 業界別 LP (sme / realestate-finance / consulting / solo / creator / freelance-pro)
+  {
+    const industrySlug = getIndustryLpSlug();
+    if (industrySlug) {
+      return <Suspense fallback={<RouteFallback />}><IndustryLanding slug={industrySlug} /></Suspense>;
+    }
   }
 
   // /strategy — オーナー専用 戦略ダッシュボード
