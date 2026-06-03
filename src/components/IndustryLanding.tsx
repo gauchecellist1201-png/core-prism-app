@@ -39,7 +39,13 @@ export default function IndustryLanding({ slug }: Props) {
       }
       el.content = content;
     };
-    const ogImageUrl = `https://core-prism-app.vercel.app/og/${config.slug}.png`;
+    // KKKK (2026-06-04): 業界別 OG 画像 (IIII で生成した /og/industry-<slug>.png) を優先
+    //   config.metaOgImage > /og/industry-<slug>.png > /og/<slug>.png (旧)
+    const ogPath = config.metaOgImage
+      || `/og/industry-${config.slug}.png`;
+    const ogImageUrl = ogPath.startsWith('http')
+      ? ogPath
+      : `https://core-prism-app.vercel.app${ogPath}`;
     const pageUrl = `https://core-prism-app.vercel.app/lp/${config.slug}`;
 
     setMeta('meta[name="description"]', config.metaDescription);
@@ -52,6 +58,11 @@ export default function IndustryLanding({ slug }: Props) {
     setMeta('meta[name="twitter:title"]', config.pageTitle);
     setMeta('meta[name="twitter:description"]', config.metaDescription);
     setMeta('meta[name="twitter:image"]', ogImageUrl);
+    // KKKK (2026-06-04): og:image:width / height + alt も明示 (FB/X クローラ用)
+    setMeta('meta[property="og:image:width"]', '1200');
+    setMeta('meta[property="og:image:height"]', '630');
+    setMeta('meta[property="og:image:alt"]', `${config.industryLabel} 向け — CORE Prism / Iris の業界別 LP`);
+    setMeta('meta[name="twitter:image:alt"]', `${config.industryLabel} 向け — CORE Prism / Iris の業界別 LP`);
   }, [config]);
 
   if (!config) {

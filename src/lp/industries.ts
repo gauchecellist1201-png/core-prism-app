@@ -74,6 +74,8 @@ export interface IndustryConfig {
     /** 想定再生時間 (UI 表示用 / 例: '2:14') */
     duration?: string;
   };
+  /** KKKK (2026-06-04): SNS シェア用 OG 画像 URL or パス (1200×630)。未指定なら /og/industry-<slug>.png にフォールバック。 */
+  metaOgImage?: string;
 }
 
 // ─── 1) /lp/sme — 中小企業 経営者 ─────────────
