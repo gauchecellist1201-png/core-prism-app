@@ -43,6 +43,8 @@ export interface VoiceInputResult {
   transcript: string;
   interim: string;
   isAvailable: boolean;
+  /** 直近のエラーコード（'not-allowed' | 'network' | 'audio-capture' など）。復旧メッセージの出し分けに使う */
+  errorCode: string | null;
   start: () => void;
   stop: () => void;
   reset: () => void;
@@ -62,6 +64,7 @@ export function useVoiceInput(
   const [state, setState] = useState<RecState>('idle');
   const [transcript, setTranscript] = useState('');
   const [interim, setInterim] = useState('');
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const silenceTimerRef = useRef<number | null>(null);
 
@@ -85,6 +88,7 @@ export function useVoiceInput(
     r.onstart = () => {
       setState('listening');
       setInterim('');
+      setErrorCode(null);
     };
 
     r.onresult = (e) => {
@@ -111,6 +115,7 @@ export function useVoiceInput(
     r.onerror = (e) => {
       // 認識ノーマッチや音声検出失敗以外を error 扱い
       if (e.error !== 'no-speech' && e.error !== 'aborted') {
+        setErrorCode(e.error || 'unknown');
         setState('error');
       } else {
         setState('idle');
@@ -155,6 +160,9 @@ export function useVoiceInput(
     try {
       setTranscript('');
       setInterim('');
+      setErrorCode(null);
+      // error 状態からの再試行も idle に戻してから開始
+      setState((cur) => (cur === 'error' ? 'idle' : cur));
       recognitionRef.current.start();
     } catch {
       // 既に起動済みなどのエラーは無視
@@ -171,9 +179,11 @@ export function useVoiceInput(
   const reset = useCallback(() => {
     setTranscript('');
     setInterim('');
+    setErrorCode(null);
+    setState((cur) => (cur === 'error' ? 'idle' : cur));
   }, []);
 
-  return { state, transcript, interim, isAvailable, start, stop, reset };
+  return { state, transcript, interim, isAvailable, errorCode, start, stop, reset };
 }
 
 /** TTS: Web Speech Synthesis */

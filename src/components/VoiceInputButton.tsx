@@ -5,7 +5,35 @@
 // ============================================================
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVoiceInput } from '../hooks/useVoiceInput';
-import { triggerHaptic, playClick } from '../lib/haptic';
+import { triggerHaptic, playClick, tactileError } from '../lib/haptic';
+import { notifyInApp } from '../lib/inAppNotify';
+
+/** エラーコード → やさしい復旧メッセージ */
+function recoveryMessage(code: string | null): { title: string; body: string } {
+  switch (code) {
+    case 'not-allowed':
+    case 'service-not-allowed':
+      return {
+        title: 'マイクの使用が許可されていません',
+        body: 'ブラウザのアドレスバーの🔒からマイクを「許可」にして、もう一度ボタンをタップしてください。',
+      };
+    case 'audio-capture':
+      return {
+        title: 'マイクが見つかりませんでした',
+        body: 'マイクが接続されているか確認して、もう一度タップしてください。',
+      };
+    case 'network':
+      return {
+        title: 'ネットワークが不安定です',
+        body: '通信環境を確認して、もう一度ボタンをタップしてください。',
+      };
+    default:
+      return {
+        title: '音声をうまく拾えませんでした',
+        body: 'もう一度ボタンをタップすると、すぐに録り直せます。',
+      };
+  }
+}
 
 interface Props {
   /** 認識結果を text として受け取る (現在値 + スペース + 結果) */
@@ -43,7 +71,7 @@ export default function VoiceInputButton({
     onText(currentValue + sep + trimmed);
   }, [currentValue, onText]);
 
-  const { state, isAvailable, start, stop, interim } = useVoiceInput(handleResult, {
+  const { state, isAvailable, start, stop, interim, errorCode } = useVoiceInput(handleResult, {
     lang: 'ja-JP',
     continuous,
     interimResults: true,
@@ -63,11 +91,57 @@ export default function VoiceInputButton({
     wasListeningRef.current = state === 'listening';
   }, [state]);
 
-  if (!isAvailable) return null; // 非対応ブラウザではボタン非表示
-
   const isListening = state === 'listening';
+  const isError = state === 'error';
+
+  // 非対応ブラウザでも「無言で消える」のはやめて、押すと理由が分かる説明ボタンを残す
+  if (!isAvailable) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          triggerHaptic('warning');
+          playClick('close');
+          notifyInApp({
+            kind: 'info',
+            title: 'このブラウザは音声入力に未対応です',
+            body: 'Chrome または Safari（iPhone は標準ブラウザ）でひらくと、マイクで入力できます。',
+          });
+        }}
+        title="このブラウザは音声入力に未対応（タップで案内）"
+        aria-label="音声入力はこのブラウザでは使えません"
+        className={className}
+        style={{
+          background: 'rgba(255,255,255,0.6)',
+          color: '#9A93A8',
+          border: '1px dashed rgba(31,26,46,0.18)',
+          borderRadius: '50%',
+          width: size, height: size,
+          display: 'inline-flex',
+          alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer',
+          fontSize: size * 0.42,
+          flexShrink: 0,
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'manipulation',
+          ...style,
+        }}
+      >
+        <span aria-hidden>🎙</span>
+      </button>
+    );
+  }
 
   const handleClick = () => {
+    if (isError) {
+      // 失敗状態 → タップで「何が起きたか + 直し方」を出して即リトライ
+      tactileError();
+      const msg = recoveryMessage(errorCode);
+      notifyInApp({ kind: 'warn', title: msg.title, body: msg.body });
+      setRipple(r => r + 1);
+      start(); // error を idle に戻してから録り直し
+      return;
+    }
     triggerHaptic(isListening ? 'medium' : 'light');
     playClick(isListening ? 'close' : 'open');
     setRipple(r => r + 1);
@@ -81,16 +155,24 @@ export default function VoiceInputButton({
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       onClick={handleClick}
-      title={interim ? `🎙 認識中: ${interim}` : title}
+      title={
+        isError
+          ? `${recoveryMessage(errorCode).title}（タップで再試行）`
+          : interim
+            ? `🎙 認識中: ${interim}`
+            : title
+      }
       aria-pressed={isListening}
-      aria-label={isListening ? '音声入力を止める' : '音声入力を開始'}
+      aria-label={isError ? '音声入力に失敗。タップで再試行' : isListening ? '音声入力を止める' : '音声入力を開始'}
       className={className}
       style={{
-        background: isListening
-          ? `linear-gradient(135deg, ${accentColor}, ${accentColor}aa)`
-          : 'rgba(255,255,255,0.92)',
-        color: isListening ? '#FFFFFF' : '#1F1A2E',
-        border: `1px solid ${isListening ? accentColor : 'rgba(31,26,46,0.12)'}`,
+        background: isError
+          ? 'linear-gradient(135deg, #FFB020, #F58A00)'
+          : isListening
+            ? `linear-gradient(135deg, ${accentColor}, ${accentColor}aa)`
+            : 'rgba(255,255,255,0.92)',
+        color: isError ? '#FFFFFF' : isListening ? '#FFFFFF' : '#1F1A2E',
+        border: `1px solid ${isError ? '#F58A00' : isListening ? accentColor : 'rgba(31,26,46,0.12)'}`,
         borderRadius: '50%',
         width: size, height: size,
         display: 'inline-flex',
@@ -103,19 +185,21 @@ export default function VoiceInputButton({
         WebkitTapHighlightColor: 'transparent',
         userSelect: 'none',
         touchAction: 'manipulation',
-        boxShadow: isListening
-          ? `0 0 0 4px ${accentColor}33, 0 4px 12px ${accentColor}55`
-          : pressed
-            ? `0 1px 2px rgba(0,0,0,0.10), inset 0 1px 3px rgba(0,0,0,0.08)`
-            : '0 1px 3px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)',
-        animation: isListening ? 'voice-pulse 1.6s ease-in-out infinite' : 'none',
+        boxShadow: isError
+          ? '0 0 0 4px rgba(245,138,0,0.22), 0 4px 12px rgba(245,138,0,0.40)'
+          : isListening
+            ? `0 0 0 4px ${accentColor}33, 0 4px 12px ${accentColor}55`
+            : pressed
+              ? `0 1px 2px rgba(0,0,0,0.10), inset 0 1px 3px rgba(0,0,0,0.08)`
+              : '0 1px 3px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)',
+        animation: isListening ? 'voice-pulse 1.6s ease-in-out infinite' : isError ? 'voice-nudge 1.8s ease-in-out infinite' : 'none',
         transform: pressed ? 'scale(0.92)' : 'scale(1)',
         transition: 'transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, background 0.2s ease',
         ...style,
       }}
     >
       <span style={{ position: 'relative', zIndex: 1, transition: 'transform 0.2s', transform: isListening ? 'scale(1.08)' : 'scale(1)' }}>
-        {isListening ? '⏹' : '🎙'}
+        {isError ? '↻' : isListening ? '⏹' : '🎙'}
       </span>
       {/* リップル波紋 */}
       <span
@@ -139,6 +223,10 @@ export default function VoiceInputButton({
         @keyframes voice-ripple {
           0%   { transform: scale(0.6); opacity: 0.9; }
           100% { transform: scale(2.2); opacity: 0; }
+        }
+        @keyframes voice-nudge {
+          0%, 88%, 100% { box-shadow: 0 0 0 4px rgba(245,138,0,0.22), 0 4px 12px rgba(245,138,0,0.40); }
+          94%           { box-shadow: 0 0 0 9px rgba(245,138,0,0.08), 0 4px 16px rgba(245,138,0,0.55); }
         }
       `}</style>
     </button>
