@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { REFERRAL_BONUS_DAYS, getPendingReferralInviter } from '../lib/referral';
 import LiveAgentMock from './LiveAgentMock';
 import AnimatedExecStage from './AnimatedExecStage';
+import HeroExecLoop from './HeroExecLoop';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
 import LaunchCountdownBanner from './LaunchCountdownBanner';
 import PwaInstallNudge from './PwaInstallNudge';
@@ -151,6 +152,8 @@ export default function LandingPage({ onEnterApp }: Props) {
 
       {/* ── HERO ──────────────────────────────────────────── */}
       <section className="lp-hero-pad lp-safe" style={{ position: 'relative', padding: '6.5rem 1.25rem 5.5rem', overflow: 'hidden' }}>
+        {/* YY (2026-06-03): Hero 背景に CXO 14 名がうっすら浮遊する 8 秒ループ */}
+        <HeroExecLoop density="normal" />
         <PrismHeroBackdrop />
 
         <div className="lp-hero-grid" style={{ maxWidth: 1240, margin: '0 auto', position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: '1.05fr 0.95fr', gap: '3rem', alignItems: 'center' }}>

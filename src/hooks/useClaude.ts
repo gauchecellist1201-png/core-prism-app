@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { ChatMessage, KnowledgeChunk, KnowledgeItem, Persona, AppSettings } from '../types/identity';
 import { toneInstruction } from '../lib/aiTone';
+import { callAiWithFallback } from '../lib/aiFallbackChain';
 
 const MODELS = {
   'claude-haiku-4-5': { input: 1.0, output: 5.0 },   // USD per MTok
@@ -170,29 +171,15 @@ export function useClaude(settings: AppSettings, onUpdateStats?: (tokens: number
     ];
 
     try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 1024,
-          system: systemPrompt,
-          messages,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error?.message ?? `APIエラー: ${res.status}`);
-      }
-
-      const data = await res.json();
+      // XX (2026-06-03): 階段式 fallback (Haiku → Sonnet → Gemini Flash)
+      const data = await callAiWithFallback(
+        { model, max_tokens: 1024, system: systemPrompt, messages },
+      );
       const content = data.content?.[0]?.text ?? '';
       const inputTokens = data.usage?.input_tokens ?? estimateTokens(systemPrompt + message);
       const outputTokens = data.usage?.output_tokens ?? estimateTokens(content);
-      const cost = estimateCost(inputTokens, outputTokens, model);
+      const usedModel = data.resolvedModel || model;
+      const cost = estimateCost(inputTokens, outputTokens, usedModel);
 
       onUpdateStats?.(inputTokens + outputTokens, cost);
 
