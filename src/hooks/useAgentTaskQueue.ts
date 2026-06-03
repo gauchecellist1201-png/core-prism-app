@@ -317,6 +317,27 @@ export interface CxoMeta {
   canDo: string[];
 }
 
+/**
+ * 表示用に nickname を抽出 — name の役職プレフィックスを除いた残り。
+ * 例: 'CEO イーロン' → 'イーロン'、'CPO プロダクト' → 'プロダクト'。
+ * 安全側で「分割できなければ name そのまま」を返す。
+ */
+export function cxoNickname(role: CxoRole): string {
+  const meta = CXO_META[role];
+  const sep = meta.name.indexOf(' ');
+  return sep > 0 ? meta.name.slice(sep + 1).trim() : meta.name;
+}
+
+/**
+ * 親近感のある表示文字列。例: 「イーロン (CEO)」「テック (CTO)」。
+ */
+export function cxoDisplayName(role: CxoRole): string {
+  const nick = cxoNickname(role);
+  const meta = CXO_META[role];
+  if (!nick || nick === meta.name) return meta.name;
+  return `${nick} (${meta.shortLabel})`;
+}
+
 export const CXO_META: Record<CxoRole, CxoMeta> = {
   CEO: {
     name: 'CEO イーロン', emoji: '🌟', color: '#FBBF24', tagline: '戦略・最終判断',

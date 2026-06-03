@@ -20,7 +20,7 @@ import type { Persona, AppSettings } from '../types/identity';
 import { useClaude, selectRelevantKnowledge } from '../hooks/useClaude';
 import type { KnowledgeItem } from '../types/identity';
 import { executeAction, type ExecutionPlan } from '../lib/actionExecutor';
-import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
+import { CXO_META, cxoDisplayName, type CxoRole } from '../hooks/useAgentTaskQueue';
 
 interface Props {
   persona: Persona;
@@ -424,7 +424,7 @@ export default function MobileGeminiDashboard({
                 }}>{CXO_META[openCxoPicker].emoji}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>
-                    {CXO_META[openCxoPicker].name}
+                    {cxoDisplayName(openCxoPicker)}
                   </div>
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
                     {CXO_META[openCxoPicker].tagline}

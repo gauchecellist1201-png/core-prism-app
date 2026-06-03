@@ -12,7 +12,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown, Check, Loader2, Sparkles, X, RotateCcw, AlertTriangle } from 'lucide-react';
-import { useAgentTaskQueue, CXO_META, type CxoRole, type AgentTask } from '../hooks/useAgentTaskQueue';
+import { useAgentTaskQueue, CXO_META, cxoDisplayName, type CxoRole, type AgentTask } from '../hooks/useAgentTaskQueue';
 import { useCelebrate } from '../hooks/useCelebrate';
 import { usePersonas } from '../hooks/usePersonas';
 import { useSettings } from '../hooks/useSettings';
@@ -128,7 +128,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
   const assignToCxo = (role: CxoRole, task: string) => {
     const meta = CXO_META[role];
     if (activePersona && settings) {
-      setInlineExec({ action: `${meta.shortLabel} に「${task}」をやらせる`, cxo: role });
+      setInlineExec({ action: `${cxoDisplayName(role)} に「${task}」をやらせる`, cxo: role });
       if (!open) setOpen(true);
       return;
     }
@@ -136,7 +136,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
     const proposal = propose({
       title: task,
       summary: `${meta.name} が即実行します`,
-      why: `あなたが ${meta.shortLabel} に直接依頼したタスクです`,
+      why: `あなたが ${cxoDisplayName(role)} に直接依頼したタスクです`,
       steps: [
         { cxo: role, label: task },
         ...(role !== 'QAE' ? [{ cxo: 'QAE' as CxoRole, label: '結果を点検' }] : []),
@@ -234,7 +234,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                   : counts.proposed > 0
                     ? `${counts.proposed} 件の提案待ち`
                     : watchInfo
-                      ? <RotatingWatchPhrase phrase={`${watchInfo.meta.shortLabel} が ${watchInfo.phrase}`} tick={watchTick} />
+                      ? <RotatingWatchPhrase phrase={`${cxoDisplayName(watchInfo.role)} が ${watchInfo.phrase}`} tick={watchTick} />
                       : '13 名 待機中'}
             </div>
           </div>
@@ -430,7 +430,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                       letterSpacing: '0.08em',
                     }}>
                       <span style={{ fontSize: 14 }}>{CXO_META[inlineExec.cxo].emoji}</span>
-                      <span>{CXO_META[inlineExec.cxo].name} が実行中</span>
+                      <span>{cxoDisplayName(inlineExec.cxo)} が実行中</span>
                     </div>
                     <InlineActionExecutor
                       action={inlineExec.action}
@@ -441,7 +441,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                         // 完了した成果物をタスクキューにも残したい場合の保険
                         const proposal = propose({
                           title: act,
-                          summary: `${CXO_META[inlineExec.cxo].name} の成果物`,
+                          summary: `${cxoDisplayName(inlineExec.cxo)} の成果物`,
                           why: `インライン実行から保存しました`,
                           steps: [{ cxo: inlineExec.cxo, label: act }],
                         });
@@ -479,7 +479,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                       }}>{CXO_META[openCxo].emoji}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>
-                          {CXO_META[openCxo].name}
+                          {cxoDisplayName(openCxo)}
                         </div>
                         <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)' }}>
                           {CXO_META[openCxo].tagline}
@@ -580,7 +580,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                       padding: '5px 8px', borderRadius: 6,
                       background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.25)',
                     }}>
-                      {CXO_META[fs.cxo].shortLabel} のところで止まりました — {fs.error}
+                      {cxoDisplayName(fs.cxo)} のところで止まりました — {fs.error}
                     </div>
                   ) : null;
                 })()}
