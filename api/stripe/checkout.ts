@@ -70,7 +70,16 @@ export default async function handler(req: Request) {
     return json({ error: 'STRIPE_NOT_CONFIGURED' }, 503, ch);
   }
 
-  let body: { plan?: string; brand?: string; email?: string; cycle?: string };
+  let body: {
+    plan?: string;
+    brand?: string;
+    email?: string;
+    cycle?: string;
+    /** BBBB (2026-06-04): Stripe Coupon / Promotion Code */
+    promotionCodeId?: string;
+    couponId?: string;
+    couponCode?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -107,6 +116,24 @@ export default async function handler(req: Request) {
   params.append('subscription_data[trial_settings][end_behavior][missing_payment_method]', 'cancel');
   params.append('payment_method_collection', 'always');
   if (email) params.append('customer_email', email);
+
+  // BBBB (2026-06-04): Coupon / Promotion Code を Stripe Session に渡す
+  //   優先度: 1) promotionCodeId (検証済) > 2) couponId > 3) couponCode (Stripe 内蔵検証)
+  //   trial 中の Subscription にも適用される (Stripe は自動で trial 後 charge に反映)
+  const promoId = String(body.promotionCodeId || '').trim();
+  const couponId = String(body.couponId || '').trim();
+  if (promoId && /^promo_[A-Za-z0-9_]+$/.test(promoId)) {
+    params.append('discounts[0][promotion_code]', promoId);
+  } else if (couponId && /^[A-Za-z0-9_-]{2,40}$/.test(couponId)) {
+    params.append('discounts[0][coupon]', couponId);
+  } else if (body.couponCode && /^[A-Za-z0-9_-]{2,40}$/.test(body.couponCode)) {
+    // Promotion Code を ID ではなくユーザー入力の文字列で渡したい場合 — Stripe 側で再検索
+    // ※ Session 作成時に Stripe が allow_promotion_codes と組み合わせる方が安全
+    params.append('allow_promotion_codes', 'true');
+  } else {
+    // 検証済 ID が無い場合でも 「割引コードあり」 を許可しておく (Stripe Checkout 内で入力可能)
+    params.append('allow_promotion_codes', 'true');
+  }
 
   let stripeResp: Response;
   try {

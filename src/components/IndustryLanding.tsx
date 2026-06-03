@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { INDUSTRIES, type IndustryConfig } from '../lp/industries';
 import IndustryWeekTimeline from './IndustryWeekTimeline';
+import IndustryVideoSection from './IndustryVideoSection';
 
 const FONT_SERIF_JA = '"Noto Serif JP", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"Cinzel", "Cormorant Garamond", serif';
@@ -80,6 +81,8 @@ export default function IndustryLanding({ slug }: Props) {
       <Pain config={config} accentLeft={accentLeft} />
       <Solution config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Proof config={config} accentLeft={accentLeft} accentRight={accentRight} />
+      {/* DDDD (2026-06-04): YouTube 説明動画 (config.video があれば表示) */}
+      <IndustryVideoSection config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Cases config={config} accentLeft={accentLeft} accentRight={accentRight} />
       {/* WWW (2026-06-04): 導入後の典型 1 週間 (Hero と比較表の間) */}
       <IndustryWeekTimeline accent={accentLeft} />

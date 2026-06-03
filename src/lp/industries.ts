@@ -67,6 +67,13 @@ export interface IndustryConfig {
     result: string;        // 結果 (1 文)
     quote: string;         // ひとこと (オーナーが想像で書いた、想定の声)
   }>;
+  /** DDDD (2026-06-04): YouTube 説明動画 (2 分前後) */
+  video?: {
+    youtubeId: string;     // 例: 'dQw4w9WgXcQ'
+    title: string;
+    /** 想定再生時間 (UI 表示用 / 例: '2:14') */
+    duration?: string;
+  };
 }
 
 // ─── 1) /lp/sme — 中小企業 経営者 ─────────────
@@ -125,6 +132,12 @@ const SME: IndustryConfig = {
       quote: '「時給 1,400 → 1,580 でも応募が来るようになった」',
     },
   ],
+  // DDDD (2026-06-04): プレースホルダー — 撮影後に youtubeId を差し替え
+  video: {
+    youtubeId: 'dQw4w9WgXcQ', // ⚠ 仮 ID — 本番撮影後に CORE 公式動画へ
+    title: '2 分で分かる CORE Prism (中小企業向け)',
+    duration: '2:04',
+  },
 };
 
 // ─── 2) /lp/realestate-finance — 不動産 / 金融営業 ─

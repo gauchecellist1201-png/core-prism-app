@@ -69,10 +69,11 @@ const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
 import { REFERRAL_BONUS_DAYS } from '../lib/referral';
-import { Gift, FileDown, Database, Brain } from 'lucide-react';
+import { Gift, FileDown, Database, Brain, BarChart3 } from 'lucide-react';
 import { downloadMonthlyCsv } from '../lib/monthlyCsvExport';
 import { downloadUserExport } from '../lib/userDataExport';
 import MyAiUsageInsights from './MyAiUsageInsights';
+import CareerStudio from './CareerStudio';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
 import { useDailyCoach } from '../hooks/useDailyCoach';
 import { useDailyStreak } from '../hooks/useDailyStreak';
@@ -203,6 +204,7 @@ export default function IdentityDashboard({
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboarded());
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [showAiInsights, setShowAiInsights] = useState(false); // XXX (2026-06-04)
+  const [showCareer, setShowCareer] = useState(false); // CCCC (2026-06-04)
   const [showMeeting, setShowMeeting] = useState(false);
   const [showHealth, setShowHealth] = useState(false);
   // CeoStudio (経営アドバイザー) — 7 エージェントの最重要、現状分析 + 90 日方針 + 今週やること
@@ -609,8 +611,19 @@ export default function IdentityDashboard({
             <Brain size={14} className="text-fg-muted group-hover:text-fg" />
             <span className="text-fg-muted group-hover:text-fg text-sm">AI 利用状況</span>
           </button>
+          {/* CCCC (2026-06-04): 5 年後のキャリア レポート */}
+          <button
+            onClick={() => setShowCareer(true)}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
+            title="CFO + CDS の AI に「5 年後のキャリア」を作ってもらう"
+          >
+            <BarChart3 size={14} className="text-fg-muted group-hover:text-fg" />
+            <span className="text-fg-muted group-hover:text-fg text-sm">5 年後のキャリア</span>
+          </button>
         </div>
       </div>
+      {/* CCCC (2026-06-04): キャリア レポート モーダル */}
+      <CareerStudio open={showCareer} onClose={() => setShowCareer(false)} defaultIndustry={(settings as { industry?: string })?.industry || 'sme'} />
       {/* XXX (2026-06-04): AI 利用状況 モーダル */}
       {showAiInsights && (
         <div
