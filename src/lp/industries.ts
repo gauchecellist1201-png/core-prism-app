@@ -60,6 +60,13 @@ export interface IndustryConfig {
   accentRight: string;
   /** ロゴ脇のキーワード (PRISM/Iris どちらの世界観か) */
   brandHint: 'prism' | 'iris';
+  /** 導入事例 (3 件、模擬) — Proof セクションの下に表示 */
+  cases?: Array<{
+    persona: string;       // 人物像 (例: 「ITコンサル 5 名の会社の代表 40 代男性」)
+    usage: string;         // どう使ってるか (1 文)
+    result: string;        // 結果 (1 文)
+    quote: string;         // ひとこと (オーナーが想像で書いた、想定の声)
+  }>;
 }
 
 // ─── 1) /lp/sme — 中小企業 経営者 ─────────────
@@ -98,6 +105,26 @@ const SME: IndustryConfig = {
   ],
   accentRight: '#FBBF24',
   brandHint: 'prism',
+  cases: [
+    {
+      persona: 'IT コンサル法人 (8 名・50 代社長)',
+      usage: '月次経営判断を 13 CXO に相談 → 推奨案 + 数字根拠を 10 分で受け取り',
+      result: 'コンサル外注 月¥120 万を撤去、判断スピード 3 倍',
+      quote: '「相談相手がいなかった社長の孤独が、AI で消えた」',
+    },
+    {
+      persona: '製造業 (25 名・3 代目女性経営者)',
+      usage: '営業文 / 提案資料 / 月次 P/L を AI に丸投げ',
+      result: '事務時間 月 28h → 6h、本業 (新規開拓) に集中',
+      quote: '「やっと "経営" できるようになりました」',
+    },
+    {
+      persona: '飲食チェーン 5 店舗 (40 代男性)',
+      usage: 'CHR エージェントで求人票 + 媒体組み合わせを最適化',
+      result: '応募 3 倍、採用コスト ▲ 65%',
+      quote: '「時給 1,400 → 1,580 でも応募が来るようになった」',
+    },
+  ],
 };
 
 // ─── 2) /lp/realestate-finance — 不動産 / 金融営業 ─
@@ -136,6 +163,26 @@ const REAL_FINANCE: IndustryConfig = {
   ],
   accentRight: '#34D399',
   brandHint: 'prism',
+  cases: [
+    {
+      persona: '不動産仲介 営業部長 (40 代男性 / 営業 30 名)',
+      usage: '新人の提案準備に AI、反論対応 20 パターンを社内で共有',
+      result: '新人の初成約まで 90 日 → 30 日',
+      quote: '「教える時間が 1/3 で、結果は 3 倍になりました」',
+    },
+    {
+      persona: '生保営業 (35 歳女性・富裕層担当)',
+      usage: '顧客資料を入れて潜在ニーズを 2 分で抽出、提案書ドラフトまで',
+      result: '提案準備 4h → 30 分、提案数 月 8 → 23',
+      quote: '「忙しさで気付けなかった顧客の本音が、AI で見えた」',
+    },
+    {
+      persona: '投資不動産仲介 (一人法人・年商 ¥3,000 万)',
+      usage: 'クロージング文 + 契約書ドラフトまで AI で',
+      result: '成約率 18% → 41%、年商 1.6 倍',
+      quote: '「営業マンを 1 人雇うか AI かで悩んで、結果 AI で正解」',
+    },
+  ],
 };
 
 // ─── 3) /lp/consulting — コンサル / 士業 ────
@@ -174,6 +221,26 @@ const CONSULTING: IndustryConfig = {
   ],
   accentRight: '#9333EA',
   brandHint: 'prism',
+  cases: [
+    {
+      persona: '税理士法人 (パートナー 3 名・顧客 200 社)',
+      usage: '月次顧問業務 + 申告期の論点抽出 + 報告書ドラフト',
+      result: '申告期の月平均残業 90h → 22h、新規受任 +12 社',
+      quote: '「人を雇わずに案件数を増やせる構造ができた」',
+    },
+    {
+      persona: '個人弁護士 (40 代女性・一般民事)',
+      usage: '案件メモ → 論点抽出 → クライアント宛サマリを自動',
+      result: '案件同時数 4 → 9、収入 1.8 倍',
+      quote: '「一人事務所のままで法人クラスの仕事ができる」',
+    },
+    {
+      persona: '戦略コンサル独立 (45 歳男性)',
+      usage: '分析資料の章立て + グラフ案 + 提案書ドラフトまで',
+      result: '報告書 1 本 8h → 1.5h、稼働日数 ▲ 40%',
+      quote: '「時間を取り戻して家族との週末が戻ってきました」',
+    },
+  ],
 };
 
 // ─── 4) /lp/solo — 一人社長 / 個人事業主 ───
@@ -212,6 +279,26 @@ const SOLO: IndustryConfig = {
   ],
   accentRight: '#FBBF24',
   brandHint: 'prism',
+  cases: [
+    {
+      persona: 'チェロ教室主宰 (オーナー実体験)',
+      usage: 'Stripe / Gmail / カレンダーを繋いで朝のブリーフで一日が始まる',
+      result: '事務時間 月 30h → 8h、本業 (生徒対応) に集中',
+      quote: '「やっと "経営者" でなく "先生" に戻れた感覚です」',
+    },
+    {
+      persona: 'カフェ経営 (一人オーナー・年商 ¥1,200 万)',
+      usage: '月次 P/L 自動 + 法人顧客への請求書 AI 下書き',
+      result: '経理時間 月 12h → 2h、新メニュー試作の時間に',
+      quote: '「税理士に頼んでた仕事の半分が AI で済むようになった」',
+    },
+    {
+      persona: 'コーチング (一人会社・年商 ¥1,800 万)',
+      usage: 'クライアント前のメモから 1on1 議事録 → 次回案内まで',
+      result: '1 セッションの準備 + 後処理 2h → 25 分',
+      quote: '「クライアント数を増やせる余白ができた」',
+    },
+  ],
 };
 
 // ─── 5) /lp/creator — クリエイター (Iris) ─────
@@ -250,6 +337,26 @@ const CREATOR: IndustryConfig = {
   ],
   accentRight: '#E1306C',
   brandHint: 'iris',
+  cases: [
+    {
+      persona: 'コスメ系インフルエンサー (28 歳・IG 35K)',
+      usage: '案件 DM の AI 確度判定 + 返信 AI で取りこぼし防止',
+      result: '案件単価 +35%、取りこぼし月 8 件 → 0',
+      quote: '「DM の返信ストレスから完全に解放されました」',
+    },
+    {
+      persona: 'ライフスタイル系 TikToker (32 歳・60K)',
+      usage: 'リール台本 AI で毎日のネタ切れ解消',
+      result: '投稿頻度 週 3 → 週 7、フォロワー 4 ヶ月で 1.7 倍',
+      quote: '「企画する苦しみがなくなって、楽しめるようになった」',
+    },
+    {
+      persona: 'グルメ系 Instagrammer (一人事業・年商 ¥800 万)',
+      usage: '店舗との交渉文 + 投稿カレンダー + ファンクラブ運営',
+      result: '案件件数 月 6 → 14、副業 → 本業化',
+      quote: '「フリーで食べれる自信を AI が支えてくれてます」',
+    },
+  ],
 };
 
 // ─── 6) /lp/freelance-pro — 上位フリーランス ─────
@@ -288,6 +395,26 @@ const FREELANCE_PRO: IndustryConfig = {
   ],
   accentRight: '#34D399',
   brandHint: 'prism',
+  cases: [
+    {
+      persona: 'フリーバックエンドエンジニア (32 歳・月単価 ¥120 万)',
+      usage: '案件登録 → 適正単価 + 交渉文 + 契約書を AI で',
+      result: '月単価 ¥120 → ¥160 万 (3 ヶ月で +¥120 万)',
+      quote: '「自分の "言い値" が崩れて、上位の単価帯に入れた」',
+    },
+    {
+      persona: 'フリーランス UI/UX デザイナー (34 歳女性)',
+      usage: '提案書 + 議事録 + 確定申告まで全部 AI',
+      result: '月の稼働日 22 → 16、休む日が増えた',
+      quote: '「制作だけに集中する環境がやっと作れた」',
+    },
+    {
+      persona: 'フリー Web ライター (40 代男性・年商 ¥800 万)',
+      usage: '案件管理 + 単価交渉 + 経理を 1 画面に',
+      result: '案件取りこぼし ゼロ、確定申告準備 月 6h → 30 分',
+      quote: '「月末になっても心が穏やかでいられるようになった」',
+    },
+  ],
 };
 
 export const INDUSTRIES: Record<string, IndustryConfig> = {

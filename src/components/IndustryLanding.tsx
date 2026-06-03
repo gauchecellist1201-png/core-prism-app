@@ -79,6 +79,7 @@ export default function IndustryLanding({ slug }: Props) {
       <Pain config={config} accentLeft={accentLeft} />
       <Solution config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Proof config={config} accentLeft={accentLeft} accentRight={accentRight} />
+      <Cases config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Pricing config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Faq config={config} accentLeft={accentLeft} />
       <FinalCta config={config} accentLeft={accentLeft} accentRight={accentRight} />
@@ -426,6 +427,96 @@ function Proof({ config, accentLeft, accentRight }: { config: IndustryConfig; ac
                 marginTop: 10, fontWeight: 700, letterSpacing: '0.1em',
               }}>
                 {s.caveat === 'owner-experience' ? '★ オーナー実体験' : s.caveat === 'actual' ? '✓ 実値' : '※ 想定値'}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CASES — 業界別 導入事例 (※ 模擬・想定)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function Cases({ config, accentLeft, accentRight }: { config: IndustryConfig; accentLeft: string; accentRight: string }) {
+  if (!config.cases || config.cases.length === 0) return null;
+  return (
+    <section style={{ padding: '5rem 1.5rem' }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+        <div style={{
+          fontFamily: FONT_SERIF_EN,
+          fontSize: 11, letterSpacing: '0.3em', color: accentLeft,
+          textAlign: 'center', fontWeight: 700, marginBottom: 8,
+        }}>
+          USE CASES
+        </div>
+        <h2 style={sectionTitle}>こんな風に使われています</h2>
+        <p style={sectionLead}>※ 想定の使い方 / 効果です。実利用での効果は環境により変動します。</p>
+        <div style={{
+          marginTop: '3rem',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
+          gap: '1.25rem',
+        }}>
+          {config.cases.map((c, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              style={{
+                padding: '1.5rem',
+                background: 'rgba(255,255,255,0.03)',
+                border: `1px solid ${accentLeft}33`,
+                borderRadius: 16,
+                position: 'relative',
+              }}
+            >
+              <div style={{
+                fontSize: 10, letterSpacing: '0.2em', color: accentRight,
+                fontWeight: 800, marginBottom: 10,
+              }}>
+                CASE 0{i + 1}
+              </div>
+              <p style={{
+                fontFamily: FONT_SERIF_JA, fontSize: 13.5, fontWeight: 700,
+                color: '#fff', lineHeight: 1.6, marginBottom: 14,
+                paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.08)',
+              }}>
+                {c.persona}
+              </p>
+              <div style={{
+                fontSize: 11, color: accentLeft, fontWeight: 700,
+                letterSpacing: '0.1em', marginBottom: 6,
+              }}>使い方</div>
+              <p style={{
+                fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7,
+                marginBottom: 14, fontFamily: FONT_SERIF_JA,
+              }}>
+                {c.usage}
+              </p>
+              <div style={{
+                fontSize: 11, color: accentRight, fontWeight: 700,
+                letterSpacing: '0.1em', marginBottom: 6,
+              }}>効果</div>
+              <p style={{
+                fontSize: 13, color: 'rgba(255,255,255,0.9)', lineHeight: 1.7,
+                marginBottom: 16, fontFamily: FONT_SERIF_JA, fontWeight: 600,
+              }}>
+                {c.result}
+              </p>
+              <div style={{
+                padding: '10px 12px',
+                background: `${accentLeft}10`,
+                borderLeft: `2px solid ${accentLeft}`,
+                borderRadius: '0 8px 8px 0',
+                fontSize: 12, color: 'rgba(255,255,255,0.85)',
+                lineHeight: 1.7, fontStyle: 'italic',
+                fontFamily: FONT_SERIF_JA,
+              }}>
+                {c.quote}
               </div>
             </motion.div>
           ))}
