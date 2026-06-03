@@ -130,12 +130,18 @@ function Hero({ config, accentLeft, accentRight }: { config: IndustryConfig; acc
           transition={{ duration: 0.8, delay: 0.1 }}
           style={{
             fontFamily: FONT_SERIF_JA,
-            fontSize: 'clamp(1.8rem, 5vw, 3.4rem)',
+            // 業界 LP のキャッチが iPhone (390px) で見切れる問題を修正
+            // (オーナー報告 2026-06-03 ダブルチェック: /lp/solo 等)
+            fontSize: 'clamp(1.3rem, 4.8vw, 3.4rem)',
             fontWeight: 700,
             lineHeight: 1.4,
-            letterSpacing: '0.02em',
+            letterSpacing: '0.01em',
             marginBottom: '1.5rem',
             whiteSpace: 'pre-line',
+            wordBreak: 'keep-all',
+            overflowWrap: 'break-word',
+            maxWidth: '94vw',
+            marginLeft: 'auto', marginRight: 'auto',
           }}
         >
           {config.heroMain.split('\n').map((line, i) => (

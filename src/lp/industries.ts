@@ -182,7 +182,7 @@ const SOLO: IndustryConfig = {
   pageTitle: '一人社長・個人事業主の方へ — CORE Prism',
   metaDescription: '月¥5,000 で「事務専属社員 + AI 役員 13 名」を雇える時代。事務時間 月 30 時間 → 8 時間に。7 日間 無料・カード登録なし。',
   industryLabel: 'FOR SOLO ENTREPRENEURS',
-  heroMain: 'ひとり社長の右腕、\n月 ¥5,000 で。\n事務 / 営業 / 経理 ぜんぶ AI に。',
+  heroMain: 'ひとり社長の右腕、\n月 ¥5,000 で。\n事務・営業・経理 ぜんぶ AI。',
   heroSub: '月 30 時間の事務作業 → 8 時間に。残った 22 時間で売上を作る側に回ろう。',
   heroHeroNumber: { value: '月 22h', label: '本業に戻ってくる時間' },
   pain: [
@@ -220,7 +220,7 @@ const CREATOR: IndustryConfig = {
   pageTitle: 'インフルエンサー・クリエイターへ — CORE Iris',
   metaDescription: 'フォロワー数より、案件数。SNS クリエイターのための「6 人の AI チーム」。リール台本 5 秒、DM 返信 AI、案件管理。月¥5,000。',
   industryLabel: 'FOR INFLUENCERS & CREATORS',
-  heroMain: 'フォロワー数より、\n案件数。\n6 人の AI チームを月 ¥5,000 で。',
+  heroMain: 'フォロワー数より、\n案件数。\n6 人の AI が月 ¥5,000 で。',
   heroSub: '「映え」より「いくら入ったか」。リール台本 5 秒、DM 返信 AI、案件管理 全部入り。',
   heroHeroNumber: { value: '5 秒', label: 'リール台本完成' },
   pain: [
@@ -258,7 +258,7 @@ const FREELANCE_PRO: IndustryConfig = {
   pageTitle: 'フリーランス上位 10% へ — CORE Prism',
   metaDescription: '単価交渉と請求業務、AI に任せて月 +¥30 万。確定申告 月6h → 30 分。「制作」だけに集中できる環境。',
   industryLabel: 'FOR HIGH-INCOME FREELANCERS',
-  heroMain: '単価交渉と請求業務、\nAI に任せて月 +¥30 万。\nフリーランス上位 10% への入口。',
+  heroMain: '単価交渉と請求業務、\nAI に任せて月 +¥30 万。\n上位 10% への入口。',
   heroSub: '税理士不要、議事録不要、提案作成不要 — 「制作」だけに集中できる環境を月¥15,000 で。',
   heroHeroNumber: { value: '月 +¥30 万', label: '案件単価アップ効果' },
   pain: [
