@@ -31,6 +31,8 @@ interface Props {
   onOpenSettings: () => void;
   onOpenFullFeatures: () => void;
   onAgentOpen: (key: 'ceo' | 'sales' | 'cfo' | 'creative' | 'knowledge' | 'people' | 'life') => void;
+  /** Iris ブランドでは 6 エージェント + ピンク (オーナー指示 2026-06-03) */
+  brand?: 'prism' | 'iris';
 }
 
 type Msg = {
@@ -42,7 +44,7 @@ type Msg = {
   ts: number;
 };
 
-const AGENTS = [
+const AGENTS_PRISM = [
   { key: 'ceo',       emoji: '👑', name: 'CEO 経営', tagline: '今月どう動く?' },
   { key: 'sales',     emoji: '💼', name: '営業',     tagline: '次の一手は?' },
   { key: 'cfo',       emoji: '📊', name: 'CFO',     tagline: '数字を読む' },
@@ -50,6 +52,15 @@ const AGENTS = [
   { key: 'knowledge', emoji: '📚', name: 'ナレッジ', tagline: '資料を読む' },
   { key: 'people',    emoji: '🌷', name: 'ピープル', tagline: 'チームを見る' },
   { key: 'life',      emoji: '🌅', name: 'ライフ',   tagline: '身体を見る' },
+] as const;
+
+const AGENTS_IRIS = [
+  { key: 'creative',  emoji: '🎬', name: '戦略',     tagline: '今月のテーマ' },
+  { key: 'creative',  emoji: '🎨', name: '演出',     tagline: 'サムネ AB' },
+  { key: 'sales',     emoji: '💼', name: '案件',     tagline: '交渉 / 単価' },
+  { key: 'people',    emoji: '💖', name: 'ファン',   tagline: '返信文 下書き' },
+  { key: 'cfo',       emoji: '💰', name: '収益',     tagline: '物販 / 投げ銭' },
+  { key: 'life',      emoji: '🌙', name: '健康',     tagline: '休む時間' },
 ] as const;
 
 const CXO_PILLS = [
@@ -77,7 +88,9 @@ function saveMessages(personaId: string, msgs: Msg[]) {
 export default function MobileGeminiDashboard({
   persona, allPersonas, settings, knowledgeItems,
   onSwitch, onOpenSettings, onOpenFullFeatures, onAgentOpen,
+  brand = 'prism',
 }: Props) {
+  const AGENTS = brand === 'iris' ? AGENTS_IRIS : AGENTS_PRISM;
   const [msgs, setMsgs] = useState<Msg[]>(() => loadMessages(persona.id));
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -189,7 +202,8 @@ export default function MobileGeminiDashboard({
     }
   };
 
-  const accent = persona.accentColor;
+  // Iris ブランドはピンク〜オレンジを強制 (persona.accentColor を上書き)
+  const accent = brand === 'iris' ? '#E1306C' : persona.accentColor;
 
   return (
     <div style={{
