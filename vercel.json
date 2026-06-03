@@ -19,6 +19,10 @@
     {
       "path": "/api/cron/weekly-diary",
       "schedule": "0 12 * * 0"
+    },
+    {
+      "path": "/api/cron/d3-highlights-email",
+      "schedule": "0 22 * * *"
     }
   ],
   "rewrites": [

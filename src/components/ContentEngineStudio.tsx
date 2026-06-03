@@ -70,9 +70,14 @@ function saveHistory(items: History[]) {
   try { localStorage.setItem(KEY_HISTORY, JSON.stringify(items.slice(0, 30))); } catch { /* */ }
 }
 
+// TTT (2026-06-04): SVG 生成デモ (Claude → SVG)
+import SvgFromConceptDemo from './SvgFromConceptDemo';
+
 export default function ContentEngineStudio({ persona, settings, knowledge, onClose }: Props) {
   const [mode, setMode] = useState<'single' | 'weekly'>('single');
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  // TTT (2026-06-04): SVG デモ
+  const [showSvgDemo, setShowSvgDemo] = useState(false);
   const [topic, setTopic] = useState('');
   const [tone, setTone] = useState<SocialTone>('storytelling');
   const [history, setHistory] = useState<History[]>(() => loadHistory());
@@ -307,8 +312,26 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
             <p style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--fg-muted)', fontWeight: 600 }}>CONTENT ENGINE</p>
             <h2 style={{ fontSize: '0.95rem', fontWeight: 700, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>note × X 同時生成</h2>
           </div>
+          {/* TTT (2026-06-04): SVG 概念お絵描き */}
+          <button
+            onClick={() => setShowSvgDemo(true)}
+            title="概念 → SVG (AI お絵描き)"
+            aria-label="SVG 概念お絵描き"
+            style={{
+              padding: '6px 12px', borderRadius: 999,
+              background: 'rgba(167,139,250,0.18)',
+              border: '1px solid rgba(167,139,250,0.4)',
+              color: '#ddd6fe', cursor: 'pointer',
+              fontSize: 11, fontWeight: 800,
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              flexShrink: 0,
+            }}
+          >✨ SVG</button>
           <button onClick={onClose} aria-label="閉じる" className="hover:text-fg" style={{ width: 40, height: 40, minWidth: 40, borderRadius: 999, color: 'var(--fg)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontSize: 20, lineHeight: 1, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </header>
+
+        {/* TTT (2026-06-04): SVG 生成 ダイアログ */}
+        <SvgFromConceptDemo open={showSvgDemo} onClose={() => setShowSvgDemo(false)} />
 
         {/* モード切替: 単発 / 週次 */}
         <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: 6 }}>
