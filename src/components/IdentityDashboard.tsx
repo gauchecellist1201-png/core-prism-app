@@ -90,6 +90,7 @@ import EarningsAndTimeHero from './EarningsAndTimeHero';
 import FocusHero from './FocusHero';
 import CreditBar from './CreditBar';
 import CreditModal from './CreditModal';
+import MobileGeminiDashboard from './MobileGeminiDashboard';
 
 interface Props {
   persona: Persona;
@@ -409,6 +410,44 @@ export default function IdentityDashboard({
     setBulkProgress({ done: supported.length, total: supported.length, current: '' });
     setTimeout(() => setBulkProgress(null), 2000);
   }, [onAddKnowledgeFile]);
+
+  // ── モバイル「ジェミニ風」シンプル UI モード (オーナー指示 2026-06-03) ──
+  // 既定で iPhone は ON、PC は OFF。ヘッダーの「機能」ボタンでフル機能に切替可
+  const [mobileGeminiMode, setMobileGeminiMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem('core_mobile_gemini_mode_v1');
+    if (saved === '0') return false;
+    if (saved === '1') return true;
+    // 既定: スマホ幅 (md 以下) なら ON
+    return window.matchMedia('(max-width: 767px)').matches;
+  });
+  useEffect(() => {
+    try { localStorage.setItem('core_mobile_gemini_mode_v1', mobileGeminiMode ? '1' : '0'); } catch { /* */ }
+  }, [mobileGeminiMode]);
+
+  // モバイル + Gemini モードの時は MobileGeminiDashboard を返す
+  if (mobileGeminiMode) {
+    return (
+      <MobileGeminiDashboard
+        persona={persona}
+        allPersonas={allPersonas}
+        settings={settings}
+        knowledgeItems={knowledgeItems}
+        onSwitch={onSwitch}
+        onOpenSettings={onOpenSettings}
+        onOpenFullFeatures={() => setMobileGeminiMode(false)}
+        onAgentOpen={(key) => {
+          if (key === 'ceo')       setShowCeo(true);
+          else if (key === 'sales')     setShowSalesAgent(true);
+          else if (key === 'cfo')       setShowFinConsult(true);
+          else if (key === 'creative')  setShowContentEngine(true);
+          else if (key === 'knowledge') setShowKnowledge(true);
+          else if (key === 'people')    setShowPeople(true);
+          else if (key === 'life')      setShowHealth(true);
+        }}
+      />
+    );
+  }
 
   return (
     <motion.div
