@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import IrisCommandBar from './IrisCommandBar';
 import IrisDealCaptureModal from './IrisDealCaptureModal';
+import IrisMorningBrief from './IrisMorningBrief';
 import InviteShareCard from '../components/InviteShareCard';
 import type { LucideIcon } from 'lucide-react';
 
@@ -464,6 +465,16 @@ function IrisEditorialHome({
         background: `radial-gradient(circle, #833AB418 0%, transparent 70%)`,
         filter: 'blur(40px)',
       }} />
+
+      {/* ── 朝のブリーフ (GG) ── 1 日 1 回 自動表示 ──────────── */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <IrisMorningBrief
+          personaId={IRIS_PERSONA_ID}
+          personaName={(igProfile?.handle ? `@${igProfile.handle}` : 'クリエイター')}
+          igProfile={igProfile}
+          variant="desktop"
+        />
+      </div>
 
       {/* ── ヒーロー カード ─────────────────────────────── */}
       <motion.div

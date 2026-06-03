@@ -13,7 +13,7 @@
 //   ④ 13 CXO ピル (chip) — 任意で開く
 //   ⑤ ボトム: テキスト入力 + 「✦」マイク
 // ============================================================
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Send, ChevronDown, ChevronUp, Settings, Plus } from 'lucide-react';
 import type { Persona, AppSettings } from '../types/identity';
@@ -476,6 +476,9 @@ export default function MobileGeminiDashboard({
           WebkitOverflowScrolling: 'touch',
         }}
       >
+        {/* Iris ブランド限定: 朝の 3 カードブリーフ (GG) */}
+        {brand === 'iris' && <IrisBriefSlot personaId={persona.id} personaName={persona.name} />}
+
         {msgs.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 16px', color: 'rgba(255,255,255,0.5)' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>✨</div>
@@ -718,4 +721,29 @@ function PlanCard({ plan, accent, icon }: { plan: ExecutionPlan; accent: string;
       </div>
     </div>
   );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// IrisBriefSlot — Iris ブランド時のみマウントされる朝ブリーフ
+//   localStorage から IgProfile を読み、IrisMorningBrief に渡す
+//   PRISM 側は完全に未参照のため tree-shake で除外される
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function IrisBriefSlot({ personaId, personaName }: { personaId: string; personaName: string }) {
+  const [Brief, setBrief] = useState<React.ComponentType<any> | null>(null);
+  const [igProfile, setIgProfile] = useState<any>(null);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const [briefMod, igMod] = await Promise.all([
+        import('../iris/IrisMorningBrief'),
+        import('../iris/instagramConnect'),
+      ]);
+      if (!mounted) return;
+      setBrief(() => briefMod.default);
+      try { setIgProfile(igMod.loadIgProfile()); } catch { /* */ }
+    })();
+    return () => { mounted = false; };
+  }, []);
+  if (!Brief) return null;
+  return <Brief personaId={personaId} personaName={personaName} igProfile={igProfile} variant="mobile" />;
 }

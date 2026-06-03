@@ -15,6 +15,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { REFERRAL_BONUS_DAYS, getPendingReferralInviter } from '../lib/referral';
 import LiveAgentMock from './LiveAgentMock';
+import AnimatedExecStage from './AnimatedExecStage';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
 import LaunchCountdownBanner from './LaunchCountdownBanner';
 
@@ -245,6 +246,9 @@ export default function LandingPage({ onEnterApp }: Props) {
           <PrismFanVisualization dict={t} />
         </div>
       </section>
+
+      {/* ── 14 役員 リアルタイム稼働ステージ (FF) ───────────────────────────── */}
+      <AnimatedExecStage onCta={onEnterApp} ctaLabel="7 日間 無料で始める" />
 
       {/* ── セクション: 7 つのエージェント ──────────────────────────────────────────────────── */}
       <section id="agents" className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#070712 0%,#0d0d1c 100%)' }}>

@@ -14,6 +14,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown, Check, Loader2, Sparkles, X, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useAgentTaskQueue, CXO_META, type CxoRole, type AgentTask } from '../hooks/useAgentTaskQueue';
 import { useCelebrate } from '../hooks/useCelebrate';
+import { usePersonas } from '../hooks/usePersonas';
+import { useSettings } from '../hooks/useSettings';
+import InlineActionExecutor from './InlineActionExecutor';
 
 interface Props {
   /** Iris か Prism — Iris は dock 上、Prism は別位置 */
@@ -45,6 +48,10 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
   }, [open]);
   const [openCxo, setOpenCxo] = useState<CxoRole | null>(null);
   const [watchTick, setWatchTick] = useState(0);
+  // HH (2026-06-03): タスクボタン → InlineActionExecutor で AI 実行 → 成果物表示
+  const [inlineExec, setInlineExec] = useState<{ action: string; cxo: CxoRole } | null>(null);
+  const { activePersona } = usePersonas();
+  const { settings } = useSettings();
 
   // 完了タスクが増えた瞬間に祝う (初回マウントは祝わない)
   const seenDoneIdsRef = useRef<Set<string> | null>(null);
@@ -115,9 +122,17 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
     return { role, meta, phrase };
   }, [watchTick, activeTask]);
 
-  // CXO クリックで「任せること」を選んで承認 → propose + auto-approve
+  // CXO クリックで「任せること」を選んだら InlineActionExecutor で
+  // AI が考え → 成果物を表示する流れに統一 (HH: 2026-06-03 オーナー指示)
+  // persona/settings が揃わない場合は従来の queue 経由 propose + auto-approve に倒す
   const assignToCxo = (role: CxoRole, task: string) => {
     const meta = CXO_META[role];
+    if (activePersona && settings) {
+      setInlineExec({ action: `${meta.shortLabel} に「${task}」をやらせる`, cxo: role });
+      if (!open) setOpen(true);
+      return;
+    }
+    // fallback: 古い task queue 経由
     const proposal = propose({
       title: task,
       summary: `${meta.name} が即実行します`,
@@ -394,6 +409,49 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                 })}
               </div>
             </div>
+
+            {/* HH: InlineActionExecutor — AI が考える → 成果物表示 を統一 */}
+            <AnimatePresence>
+              {inlineExec && activePersona && settings && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25 }}
+                  style={{
+                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div style={{ padding: '12px 14px' }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8,
+                      fontSize: 11, color: CXO_META[inlineExec.cxo].color, fontWeight: 800,
+                      letterSpacing: '0.08em',
+                    }}>
+                      <span style={{ fontSize: 14 }}>{CXO_META[inlineExec.cxo].emoji}</span>
+                      <span>{CXO_META[inlineExec.cxo].name} が実行中</span>
+                    </div>
+                    <InlineActionExecutor
+                      action={inlineExec.action}
+                      persona={activePersona}
+                      settings={settings}
+                      onClose={() => setInlineExec(null)}
+                      onAddAsTask={(act) => {
+                        // 完了した成果物をタスクキューにも残したい場合の保険
+                        const proposal = propose({
+                          title: act,
+                          summary: `${CXO_META[inlineExec.cxo].name} の成果物`,
+                          why: `インライン実行から保存しました`,
+                          steps: [{ cxo: inlineExec.cxo, label: act }],
+                        });
+                        setTimeout(() => approve(proposal.id), 100);
+                      }}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* CXO クリック時のポップオーバー — 任せること 3 件 */}
             <AnimatePresence>
