@@ -412,7 +412,14 @@ export default function IdentityDashboard({
 
   return (
     <motion.div
-      className="flex h-screen overflow-hidden relative"
+      className="flex overflow-hidden relative dashboard-root"
+      style={{
+        // iPhone Dynamic Island / ホームバーを避ける + URL バー伸縮対応 (100dvh)
+        // (オーナー報告 2026-06-03: 見切れる/煩雑/文字キレてる の根治)
+        height: '100dvh',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       onDragEnter={(e) => {
@@ -691,7 +698,13 @@ export default function IdentityDashboard({
             style={{ background: `radial-gradient(ellipse at top center, ${persona.accentColor} 0%, transparent 70%)` }}
           />
 
-          <div className="flex-1 overflow-auto p-3 md:p-4 relative">
+          <div
+            className="flex-1 overflow-auto px-3 pt-3 md:p-4 relative"
+            style={{
+              // 下部の AgentTeamMonitor / チャット FAB に隠れない余白を確保 (mobile)
+              paddingBottom: 'calc(140px + env(safe-area-inset-bottom, 0px))',
+            }}
+          >
             <div className="max-w-5xl space-y-3">
 
               {/* クレジット使用量バー — 常時トップ (オーナー指示 2026-05-28: 対価設計) */}

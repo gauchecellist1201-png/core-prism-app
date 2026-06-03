@@ -81,19 +81,23 @@ export default function TodayBrief({
         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
       />
 
-      <div className="relative p-4 md:p-5">
-        <div className="flex items-center gap-2 mb-3">
+      {/* iPhone は余白広めで巨大化 (オーナー指示 2026-06-03) */}
+      <div className="relative p-5 md:p-5 brief-mobile">
+        <div className="flex items-center gap-3 mb-4">
           <motion.div
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0"
-            style={{ background: `${persona.accentColor}30`, color: persona.accentColor }}
+            className="rounded-xl flex items-center justify-center flex-shrink-0 brief-icon-mobile"
+            style={{ background: `${persona.accentColor}30`, color: persona.accentColor, width: 44, height: 44, fontSize: 22 }}
             animate={isSpeaking ? { scale: [1, 1.12, 1] } : {}}
             transition={{ duration: 0.7, repeat: Infinity }}
           >
             {isSpeaking ? '🔊' : '💡'}
           </motion.div>
           <div className="flex-1 min-w-0">
-            <p className="text-fg-muted text-xs tracking-widest uppercase">今日のブリーフ · {greet}</p>
-            <p className="text-fg text-lg font-semibold leading-tight truncate">
+            <p className="text-fg-muted text-xs tracking-widest uppercase brief-eyebrow-mobile">今日のブリーフ · {greet}</p>
+            <p
+              className="text-fg font-extrabold leading-tight brief-title-mobile"
+              style={{ fontSize: 18, wordBreak: 'keep-all', lineHeight: 1.35 }}
+            >
               {proposal?.title || (isGenerating ? '提案を生成中…' : 'AIから提案を受け取る')}
             </p>
           </div>
@@ -101,15 +105,18 @@ export default function TodayBrief({
 
         {proposal ? (
           <>
-            <p className="text-fg text-base leading-relaxed mb-3 whitespace-pre-wrap">
+            <p
+              className="text-fg leading-relaxed mb-4 whitespace-pre-wrap brief-body-mobile"
+              style={{ fontSize: 15, lineHeight: 1.75 }}
+            >
               {proposal.message}
             </p>
 
             {proposal.actions.length > 0 && (
-              <div className="space-y-1.5 mb-3">
+              <div className="space-y-2 mb-3">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <p className="text-fg-muted text-xs tracking-widest uppercase">
-                    アクション提案 ({proposal.actions.length}) · タップで AI が実行
+                    アクション提案 ({proposal.actions.length}) · タップで AI 実行
                   </p>
                   <button
                     onClick={() => {
@@ -124,19 +131,21 @@ export default function TodayBrief({
                     }}
                     title="まとめてタスクに追加 (実行はしない)"
                   >
-                    <Plus size={11} /> まとめてタスクに追加
+                    <Plus size={11} /> まとめて追加
                   </button>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {proposal.actions.map((a, i) => (
                     <div key={i}>
                       <button
                         onClick={() => setExecutingIdx(executingIdx === i ? null : i)}
                         disabled={executingIdx !== null && executingIdx !== i}
-                        className="w-full text-left flex items-start gap-2 p-2.5 rounded-lg transition-all group bg-surface-3 border-edge border hover:border-fg-subtle disabled:opacity-50"
+                        className="w-full text-left flex items-start gap-3 rounded-xl transition-all group bg-surface-3 border-edge border hover:border-fg-subtle disabled:opacity-50 brief-action-mobile"
                         style={{
+                          padding: '14px 14px',
                           borderColor: executingIdx === i ? persona.accentColor : undefined,
                           background: executingIdx === i ? `${persona.accentColor}1a` : undefined,
+                          minHeight: 56, // ← 44px Apple HIG 推奨 + 余裕
                         }}
                       >
                         <span
@@ -144,12 +153,15 @@ export default function TodayBrief({
                           style={{
                             color: '#0a0a0f',
                             background: persona.accentColor,
-                            width: 22, height: 22, borderRadius: 6,
+                            width: 32, height: 32, borderRadius: 8,
                           }}
                         >
-                          <Play size={11} fill="#0a0a0f" />
+                          <Play size={14} fill="#0a0a0f" />
                         </span>
-                        <span className="text-fg text-sm leading-snug flex-1">{a}</span>
+                        <span
+                          className="text-fg flex-1 brief-action-text-mobile"
+                          style={{ fontSize: 14.5, lineHeight: 1.55, wordBreak: 'keep-all' }}
+                        >{a}</span>
                       </button>
                       <AnimatePresence>
                         {executingIdx === i && (

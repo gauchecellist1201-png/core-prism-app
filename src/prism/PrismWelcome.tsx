@@ -117,15 +117,18 @@ export default function PrismSplash({ personaName }: SplashProps) {
             }} />
           </motion.div>
 
-          {/* CORE PRISM ワードマーク */}
+          {/* CORE PRISM ワードマーク
+              (オーナー報告 2026-06-03: iPhone で "CORE PRIS" と切れていた)
+              0.3em の letter-spacing + clamp font-size だと 375px に収まらない →
+              モバイルは letter-spacing を 0.15em に縮め、font-size も小さめに. */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.8, duration: 0.7 }}
             style={{
               fontFamily: 'Cinzel, "Noto Serif JP", serif',
-              fontSize: 'clamp(2rem, 6vw, 3.4rem)',
-              letterSpacing: '0.3em',
+              fontSize: 'clamp(1.6rem, 7vw, 3.4rem)',
+              letterSpacing: 'clamp(0.12em, 1.5vw, 0.3em)',
               fontWeight: 500,
               background: `linear-gradient(135deg, #fff, ${PRISM_COLORS.logic}cc)`,
               WebkitBackgroundClip: 'text',
@@ -133,6 +136,9 @@ export default function PrismSplash({ personaName }: SplashProps) {
               backgroundClip: 'text',
               marginBottom: '0.3rem',
               position: 'relative', zIndex: 2,
+              whiteSpace: 'nowrap',
+              maxWidth: '92vw',
+              textAlign: 'center',
             }}>
             CORE PRISM
           </motion.div>

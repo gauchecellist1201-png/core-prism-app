@@ -206,13 +206,15 @@ export default function AgentsOrbit({
       {/* 流れる光の粒 */}
       <FlowingParticles colors={usedLineColors.slice(0, 5)} />
 
-      {/* オーブグリッド */}
-      <div style={{
+      {/* オーブグリッド
+          (オーナー報告 2026-06-03: iPhone で 7 列が狭すぎてオーブが潰れていた)
+          - md 以上: ${cols} 列 (元のまま)
+          - mobile : 自動的に 4 列 → 2 段に折り返す (orb 56px + gap 6px で 375px に収まる) */}
+      <div className="orbit-grid-responsive" style={{
         position: 'relative',
         display: 'grid',
-        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-        gap: '0.4rem',
-        padding: '0.25rem 0.4rem',
+        // mobile は 4 列、md 以上は cols 列 → 下の <style> で切替
+        ['--orbit-cols-desktop' as never]: String(cols),
       }}>
         {order.map((key, i) => {
           const spec = specMap.get(key);
@@ -515,6 +517,32 @@ export default function AgentsOrbit({
         @keyframes agentsOrbitCaret {
           0%, 50%   { opacity: 1; }
           51%, 100% { opacity: 0; }
+        }
+        /* グリッド: 既定 (mobile) は 4 列で 2 段に折り返す。md 以上は元の cols 列。
+           (オーナー報告 2026-06-03: iPhone で 7 列がはみ出し/文字キレ) */
+        .orbit-grid-responsive {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 0.5rem 0.35rem;
+          padding: 0.35rem 0.5rem;
+        }
+        @media (min-width: 768px) {
+          .orbit-grid-responsive {
+            grid-template-columns: repeat(var(--orbit-cols-desktop), minmax(0, 1fr));
+            gap: 0.4rem;
+            padding: 0.25rem 0.4rem;
+          }
+        }
+        /* iPhone: オーブ・ラベルを縮小して 4 列でも息ができる余白に */
+        @media (max-width: 767px) {
+          .orbit-grid-responsive > button > div:first-child { width: 48px !important; height: 48px !important; }
+          .orbit-grid-responsive > button > div:first-child svg { width: 18px !important; height: 18px !important; }
+          .orbit-grid-responsive > button > div:nth-child(2) { font-size: 11px !important; }
+          .orbit-grid-responsive > button > div:nth-child(3) {
+            font-size: 9.5px !important;
+            min-height: 0 !important;
+            max-width: 100% !important;
+            line-height: 1.3 !important;
+          }
         }
       `}</style>
     </div>
