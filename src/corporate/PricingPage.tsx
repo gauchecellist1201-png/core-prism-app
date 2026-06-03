@@ -264,7 +264,12 @@ export default function PricingPage() {
   const [yearly, setYearly] = useState(false);
   // v2 フラグを確認 (localStorage または VITE_PLAN_V2_ENABLED)
   const planV2 = useMemo(() => isPlanV2Enabled(), []);
-  const PRISM_PLANS = planV2 ? PRISM_PLANS_V2 : PRISM_PLANS_V1;
+  // v2 では「個人 (BtoC) / 法人 (BtoB)」タブで切替表示
+  const [audienceTab, setAudienceTab] = useState<'btoC' | 'btoB'>('btoC');
+  const PRISM_PLANS = useMemo(() => {
+    if (!planV2) return PRISM_PLANS_V1;
+    return PRISM_PLANS_V2.filter(p => audienceTab === 'btoB' ? (p as any).btob : !(p as any).btob);
+  }, [planV2, audienceTab]);
 
   // 5 項目入力
   const [minutesCount, setMinutesCount]   = useState(10);
@@ -338,7 +343,7 @@ export default function PricingPage() {
       {/* PRISM プラン */}
       <section className="lp-section-pad" style={{ padding: '3rem 1.5rem 4rem', background: '#070712' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'center', marginBottom: '2.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'center', marginBottom: '1.25rem' }}>
             <PrismLogo size={36} withWordmark={false} />
             <div>
               <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.4em', color: '#a78bfa', fontWeight: 700, textAlign: 'center' }}>CORE PRISM</p>
@@ -346,9 +351,74 @@ export default function PricingPage() {
             </div>
           </div>
 
+          {/* v2: 個人 / 法人 切替タブ (オーナー指示 2026-06-03) */}
+          {planV2 && (
+            <div style={{
+              display: 'flex', justifyContent: 'center', gap: 8,
+              marginBottom: '2rem',
+            }}>
+              <button
+                onClick={() => setAudienceTab('btoC')}
+                style={{
+                  padding: '10px 24px', borderRadius: 999,
+                  fontSize: 13.5, fontWeight: 800, fontFamily: FONT_SERIF_JA,
+                  background: audienceTab === 'btoC' ? 'linear-gradient(135deg, #a78bfa, #f472b6)' : 'rgba(255,255,255,0.06)',
+                  color: '#fff', border: 'none', cursor: 'pointer',
+                  boxShadow: audienceTab === 'btoC' ? '0 6px 20px rgba(167,139,250,0.35)' : 'none',
+                  transition: 'all 0.2s',
+                }}
+              >
+                👤 個人・スモール
+              </button>
+              <button
+                onClick={() => setAudienceTab('btoB')}
+                style={{
+                  padding: '10px 24px', borderRadius: 999,
+                  fontSize: 13.5, fontWeight: 800, fontFamily: FONT_SERIF_JA,
+                  background: audienceTab === 'btoB' ? 'linear-gradient(135deg, #60A5FA, #a78bfa)' : 'rgba(255,255,255,0.06)',
+                  color: '#fff', border: 'none', cursor: 'pointer',
+                  boxShadow: audienceTab === 'btoB' ? '0 6px 20px rgba(96,165,250,0.35)' : 'none',
+                  transition: 'all 0.2s',
+                }}
+              >
+                🏢 法人 (BtoB)
+              </button>
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
             {PRISM_PLANS.map(p => <PlanCard key={p.id} plan={p} yearly={yearly} brand="prism" />)}
           </div>
+
+          {/* v2 法人タブ時はエンタープライズ案内も */}
+          {planV2 && audienceTab === 'btoB' && (
+            <div style={{
+              marginTop: '2.5rem',
+              padding: '1.5rem 2rem',
+              borderRadius: 16,
+              background: 'linear-gradient(135deg, rgba(96,165,250,0.08), rgba(167,139,250,0.08))',
+              border: '1px solid rgba(96,165,250,0.3)',
+              textAlign: 'center',
+            }}>
+              <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: '#60A5FA', fontWeight: 700 }}>
+                ENTERPRISE
+              </p>
+              <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.3rem', fontWeight: 800, marginTop: 6 }}>
+                年 ¥200〜¥400 万 (個別ご相談)
+              </p>
+              <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 12.5, color: 'rgba(255,255,255,0.65)', marginTop: 8, lineHeight: 1.8 }}>
+                専属導入 + 月次定例 + SLA 99.9% + 24h サポート + SSO / 監査ログ / カスタム AI モデル調整 + 請求書払い (口座振込)
+              </p>
+              <a href="mailto:enterprise@core-prism-app.vercel.app?subject=Enterprise%20%E3%81%94%E7%9B%B8%E8%AB%87" style={{
+                display: 'inline-block', marginTop: 14,
+                padding: '10px 22px', borderRadius: 999,
+                background: 'linear-gradient(135deg, #60A5FA, #a78bfa)',
+                color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 13,
+              }}>
+                ご相談を開始する →
+              </a>
+            </div>
+          )}
         </div>
       </section>
 
