@@ -92,10 +92,15 @@ for (const { key, value } of pairs) {
     continue;
   }
   // 1) 既存削除 (失敗しても無視)
-  execFileSync('npx', ['vercel', 'env', 'rm', key, target, '--yes'], {
-    cwd: process.cwd(),
-    stdio: ['ignore', 'ignore', 'ignore'],
-  }).toString?.() ?? null;
+  try {
+    execFileSync('npx', ['vercel', 'env', 'rm', key, target, '--yes'], {
+      cwd: process.cwd(),
+      stdio: ['ignore', 'ignore', 'ignore'],
+      timeout: 20_000,
+    });
+  } catch {
+    // 既存が無いケースは正常。続行。
+  }
 
   // 2) 新規追加 (echo で value を stdin に流す)
   try {
