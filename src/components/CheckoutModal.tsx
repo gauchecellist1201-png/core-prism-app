@@ -81,26 +81,37 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
     try {
       if (!isFree) {
         let stripeUrl: string | null = null;
-        try {
-          const resp = await fetch('/api/stripe/checkout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ plan: plan.id, brand, email, cycle }),
-          });
-          if (resp.status === 503) {
-            setIsTestMode(true);
-          } else if (resp.ok) {
-            const data = await resp.json() as { url?: string };
-            stripeUrl = data.url ?? null;
-          } else {
-            const err = await resp.json() as { error?: string };
-            throw new Error(err.error || 'Stripe エラーが発生しました');
-          }
-        } catch (fetchErr: any) {
-          if (fetchErr.message?.includes('STRIPE_NOT_CONFIGURED') || fetchErr.message?.includes('503')) {
-            setIsTestMode(true);
-          } else {
-            throw fetchErr;
+
+        // ── v2: Plan に stripeUrlEnvKey があれば直接 Payment Link を使う (オーナー指示 2026-06-03) ──
+        const envObj = (import.meta as { env?: Record<string, string> })?.env || {};
+        const envKey = cycle === 'yearly' ? plan.stripeUrlEnvKey_yearly : plan.stripeUrlEnvKey;
+        if (envKey && envObj[envKey]) {
+          stripeUrl = envObj[envKey];
+        }
+
+        // ── 旧 API ルート (v1 互換) ──
+        if (!stripeUrl) {
+          try {
+            const resp = await fetch('/api/stripe/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ plan: plan.id, brand, email, cycle }),
+            });
+            if (resp.status === 503) {
+              setIsTestMode(true);
+            } else if (resp.ok) {
+              const data = await resp.json() as { url?: string };
+              stripeUrl = data.url ?? null;
+            } else {
+              const err = await resp.json() as { error?: string };
+              throw new Error(err.error || 'Stripe エラーが発生しました');
+            }
+          } catch (fetchErr: any) {
+            if (fetchErr.message?.includes('STRIPE_NOT_CONFIGURED') || fetchErr.message?.includes('503')) {
+              setIsTestMode(true);
+            } else {
+              throw fetchErr;
+            }
           }
         }
 
