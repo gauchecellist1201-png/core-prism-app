@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "smoke": "node scripts/smoke.mjs",
-    "build:store-assets": "node extensions/build-assets.mjs"
+    "build:store-assets": "node extensions/build-assets.mjs",
+    "lighthouse": "node scripts/lighthouseAll.mjs"
   },
   "dependencies": {
     "@rolldown/binding-linux-x64-gnu": "^1.0.1",
