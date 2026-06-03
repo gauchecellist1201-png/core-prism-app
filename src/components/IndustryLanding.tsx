@@ -54,7 +54,7 @@ export default function IndustryLanding({ slug }: Props) {
 
   if (!config) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0A0A12', color: '#fff', fontFamily: FONT_SANS }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#080812', color: '#fff', fontFamily: FONT_SANS }}>
         <div style={{ textAlign: 'center' }}>
           <h1 style={{ fontFamily: FONT_SERIF_JA, fontSize: 24, marginBottom: 16 }}>業界 LP が見つかりません</h1>
           <a href="/" style={{ color: '#FBBF24' }}>トップに戻る</a>
@@ -69,7 +69,7 @@ export default function IndustryLanding({ slug }: Props) {
 
   return (
     <div style={{
-      background: '#0A0A12',
+      background: '#080812',
       color: '#fff',
       minHeight: '100dvh',
       fontFamily: FONT_SANS,
@@ -205,7 +205,7 @@ function Hero({ config, accentLeft, accentRight }: { config: IndustryConfig; acc
             プランを見る
           </a>
         </div>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 16 }}>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 16 }}>
           カード登録なし ・ いつでも解約可
         </p>
       </div>
@@ -594,7 +594,7 @@ function Comparison({ config, accentLeft, accentRight }: { config: IndustryConfi
           </table>
         </div>
         <p style={{
-          fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center',
+          fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center',
           marginTop: 12, lineHeight: 1.7,
         }}>
           ※ 一般的な相場感の比較。実際のコスト・効果は使い方により変動します。
@@ -699,7 +699,7 @@ function Pricing({ config, accentLeft, accentRight }: { config: IndustryConfig; 
           })}
         </div>
         <p style={{
-          textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.5)',
+          textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.6)',
           marginTop: '2rem',
         }}>
           ※ 表示価格は税別。法人は請求書払い (口座振込) も対応。
@@ -879,7 +879,7 @@ function FinalCta({ config, accentLeft, accentRight }: { config: IndustryConfig;
         >
           無料で始める →
         </a>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 16 }}>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 16 }}>
           推奨: {info.name} (月 ¥{info.price.toLocaleString('ja-JP')}) ・ いつでも解約
         </p>
       </div>
