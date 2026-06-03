@@ -7,6 +7,10 @@ import InAppNotificationToast from './components/InAppNotificationToast'
 import ConfirmDialog from './components/ConfirmDialog'
 import { migrateLegacyKeysOnce } from './lib/tenant'
 import { installErrorCapture } from './lib/errorCapture'
+import { initTheme } from './lib/themeManager'
+
+// YYY (2026-06-04): グローバル テーマを最優先で適用 (FOUC 防止)
+initTheme();
 
 // Phase A: tenant prefix への 1 回限りの自動マイグレーション
 migrateLegacyKeysOnce();

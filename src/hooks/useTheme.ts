@@ -1,28 +1,39 @@
+// ============================================================
+// useTheme — React hook 版 (YYY 2026-06-04: themeManager に統合)
+// ============================================================
+
 import { useCallback, useEffect, useState } from 'react';
+import {
+  currentTheme, detectTheme, initTheme,
+  setTheme as setThemeGlobal,
+  toggleTheme as toggleThemeGlobal,
+  subscribeTheme, type Theme,
+} from '../lib/themeManager';
 
-export type Theme = 'light' | 'dark';
-const KEY = 'core_theme';
-
-function load(): Theme {
-  if (typeof window === 'undefined') return 'light';
-  const stored = localStorage.getItem(KEY) as Theme | null;
-  if (stored === 'light' || stored === 'dark') return stored;
-  return 'light'; // 既定: ライトモード
-}
+export type { Theme };
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(load);
+  const [theme, setLocal] = useState<Theme>(() => {
+    if (typeof document === 'undefined') return 'light';
+    return currentTheme() || detectTheme();
+  });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem(KEY, theme);
-  }, [theme]);
+    initTheme();
+    setLocal(currentTheme());
+    const unsub = subscribeTheme((t) => setLocal(t));
+    return unsub;
+  }, []);
 
-  const setTheme = useCallback((t: Theme) => setThemeState(t), []);
-  const toggle = useCallback(
-    () => setThemeState((cur) => (cur === 'light' ? 'dark' : 'light')),
-    []
-  );
+  const setTheme = useCallback((t: Theme) => {
+    setThemeGlobal(t);
+    setLocal(t);
+  }, []);
+
+  const toggle = useCallback(() => {
+    const next = toggleThemeGlobal();
+    setLocal(next);
+  }, []);
 
   return { theme, setTheme, toggle };
 }

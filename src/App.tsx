@@ -23,6 +23,7 @@ import OnboardingTour from './components/OnboardingTour';
 import EveningFeed from './components/EveningFeed';
 import SitemapPalette from './components/SitemapPalette';
 import AiThrottleToast from './components/AiThrottleToast';
+import PublicThemeToggle from './components/PublicThemeToggle';
 import LegalModal, { type LegalKind } from './components/LegalModal';
 import StudioOpeningSheet from './components/StudioOpeningSheet';
 // 重い「別ルート専用」のページは React.lazy で main から切り出す。
@@ -663,6 +664,8 @@ export default function App() {
       <SitemapPalette />
       {/* PPP (2026-06-04): AI throttle 表示 */}
       <AiThrottleToast />
+      {/* YYY (2026-06-04): LP / Pricing / Billing / Contact 用 ライト ⇄ ダーク 切替 */}
+      <PublicThemeToggle />
     </>
   );
 }

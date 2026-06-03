@@ -19,6 +19,7 @@ import { getPendingReferral, getPendingReferralInviter, REFERRAL_BONUS_DAYS } fr
 import { sendEmail } from '../lib/emailNotify';
 import { isBiometricAvailable, registerBiometric } from '../lib/biometricAuth';
 import CheckoutTrialCountdown from './CheckoutTrialCountdown';
+import CouponInput, { type AppliedCoupon } from './CouponInput';
 import { pickVariant, trackImpression, trackClick } from '../lib/ctaAbTest';
 
 interface Props {
@@ -47,6 +48,8 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
   // OO (2026-06-03): CTA A/B variant 選択 — ユーザーごとに固定
   const ctaVariant = useMemo(() => pickVariant(), []);
   const [ctaImpressionTracked, setCtaImpressionTracked] = useState(false);
+  // ZZZ (2026-06-04): Stripe Coupon
+  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
 
   // 招待リンク経由かどうか (?ref=XXX が sessionStorage に保留されている)
   const pendingReferral = useMemo(() => getPendingReferral(), []);
@@ -100,7 +103,13 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
             const resp = await fetch('/api/stripe/checkout', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ plan: plan.id, brand, email, cycle }),
+              body: JSON.stringify({
+                plan: plan.id, brand, email, cycle,
+                // ZZZ (2026-06-04): 検証済 Coupon の Promotion Code ID or Coupon ID を渡す
+                promotionCodeId: coupon?.promotionCodeId,
+                couponId: coupon?.couponId,
+                couponCode: coupon?.code,
+              }),
             });
             if (resp.status === 503) {
               setIsTestMode(true);
@@ -538,6 +547,14 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
               <CheckoutTrialCountdown
                 days={7 + (hasReferralBonus ? REFERRAL_BONUS_DAYS : 0)}
                 accent={accent}
+              />
+
+              {/* ZZZ (2026-06-04): Stripe Coupon 入力 */}
+              <CouponInput
+                applied={coupon}
+                onApply={setCoupon}
+                onClear={() => setCoupon(null)}
+                light
               />
 
               <div style={{
