@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { KnowledgeItem, Persona } from '../types/identity';
+import { severityOf, SEVERITY_LABELS, type RiskSeverity } from '../lib/riskPriority';
 
 interface Props {
   persona: Persona;
@@ -15,6 +16,8 @@ interface Bucket {
   text: string;
   source: string; // タイトル
   sourceId: string;
+  severity?: RiskSeverity;        // risks 専用
+  severityScore?: number;          // ソート用
 }
 
 export default function InsightsStream({ persona, items, onAcceptAction, onOpenKnowledge }: Props) {
@@ -30,8 +33,19 @@ export default function InsightsStream({ persona, items, onAcceptAction, onOpenK
       for (const x of item.analysis.insights) ins.push({ text: x, source: item.title, sourceId: item.id });
       for (const x of item.analysis.strategy) str.push({ text: x, source: item.title, sourceId: item.id });
       for (const x of item.analysis.actions) act.push({ text: x, source: item.title, sourceId: item.id });
-      for (const x of item.analysis.risks) rsk.push({ text: x, source: item.title, sourceId: item.id });
+      for (const x of item.analysis.risks) {
+        const sev = severityOf(x);
+        rsk.push({
+          text: x,
+          source: item.title,
+          sourceId: item.id,
+          severity: sev,
+          severityScore: SEVERITY_LABELS[sev].score,
+        });
+      }
     }
+    // risks のみ重要度順に並べ替え (オーナー指示 2026-06-03)
+    rsk.sort((a, b) => (b.severityScore || 0) - (a.severityScore || 0));
     return { insights: ins, strategy: str, actions: act, risks: rsk };
   }, [items]);
 
@@ -132,24 +146,46 @@ export default function InsightsStream({ persona, items, onAcceptAction, onOpenK
             )}
             {currentData.slice(0, 12).map((b, i) => {
               const isAction = tab === 'actions';
+              const isRisk = tab === 'risks' && b.severity;
+              const sevMeta = isRisk ? SEVERITY_LABELS[b.severity!] : null;
+              const borderColor = sevMeta ? sevMeta.color : currentTab.color;
               return (
                 <motion.div
                   key={`${b.sourceId}-${i}`}
                   className="rounded-lg p-2.5 flex items-start gap-2 group"
                   style={{
-                    background: 'var(--surface)',
-                    border: `1px solid ${currentTab.color}25`,
+                    background: sevMeta ? `${sevMeta.color}10` : 'var(--surface)',
+                    border: `1px solid ${borderColor}${sevMeta ? '40' : '25'}`,
+                    borderLeftWidth: sevMeta ? 3 : 1,
+                    borderLeftColor: borderColor,
                   }}
                   initial={{ opacity: 0, x: -4 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.03 }}
                 >
-                  <span
-                    className="text-sm flex-shrink-0 mt-0.5"
-                    style={{ color: currentTab.color }}
-                  >
-                    {currentTab.emoji}
-                  </span>
+                  {sevMeta ? (
+                    <span
+                      className="flex-shrink-0 rounded font-bold tracking-wider"
+                      style={{
+                        background: sevMeta.color,
+                        color: '#fff',
+                        fontSize: 9,
+                        padding: '2px 6px',
+                        lineHeight: 1.4,
+                        minWidth: 40,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {sevMeta.label}
+                    </span>
+                  ) : (
+                    <span
+                      className="text-sm flex-shrink-0 mt-0.5"
+                      style={{ color: currentTab.color }}
+                    >
+                      {currentTab.emoji}
+                    </span>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-fg text-sm leading-snug">{b.text}</p>
                     <p className="text-fg-muted text-xs mt-1 truncate">— {b.source}</p>

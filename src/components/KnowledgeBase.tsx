@@ -6,6 +6,7 @@ import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
 import ContextualUpgradeCard from './ContextualUpgradeCard';
 import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
+import { sortRisksByPriority } from '../lib/riskPriority';
 import {
   proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse,
   KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal,
@@ -87,6 +88,48 @@ function Section({ title, items, color }: { title: string; items: string[]; colo
           <li key={i} className="text-white/85 text-xs leading-relaxed flex gap-2">
             <span style={{ color }}>·</span>
             <span className="flex-1">{s}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * リスク専用セクション: 重要度順 (致命的→重大→注意→参考) で並び替え、
+ * 各項目に色付きラベルを付けて見やすくする (オーナー指示 2026-06-03)
+ */
+function RiskSection({ title, items }: { title: string; items: string[] }) {
+  const sorted = sortRisksByPriority(items);
+  if (sorted.length === 0) return null;
+  return (
+    <div className="pt-3">
+      <p className="text-xs tracking-wider mb-2" style={{ color: '#f87171' }}>{title}</p>
+      <ul className="space-y-1.5">
+        {sorted.map((r, i) => (
+          <li
+            key={i}
+            className="text-xs leading-relaxed flex items-start gap-2 rounded-md px-2 py-1.5"
+            style={{
+              background: `${r.color}14`,
+              borderLeft: `3px solid ${r.color}`,
+            }}
+          >
+            <span
+              className="flex-shrink-0 rounded font-bold tracking-wider"
+              style={{
+                background: r.color,
+                color: '#fff',
+                fontSize: 9,
+                padding: '2px 6px',
+                lineHeight: 1.3,
+                minWidth: 38,
+                textAlign: 'center',
+              }}
+            >
+              {r.label}
+            </span>
+            <span className="flex-1" style={{ color: '#fff', opacity: 0.9 }}>{r.text}</span>
           </li>
         ))}
       </ul>
@@ -663,7 +706,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                                       <Section title="✓ アクション" color="#34d399" items={item.analysis.actions} />
                                     )}
                                     {item.analysis.risks.length > 0 && (
-                                      <Section title="⚠ リスク" color="#f87171" items={item.analysis.risks} />
+                                      <RiskSection title="⚠ リスク (重要度順)" items={item.analysis.risks} />
                                     )}
                                   </>
                                 ) : (item.analysisStatus === 'done' || item.analysisStatus === 'error' || !item.analysisStatus) && (

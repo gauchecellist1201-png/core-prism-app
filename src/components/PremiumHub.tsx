@@ -13,6 +13,7 @@ import {
   analyzeFinancials, type FinancialAnalysis, financialToMarkdown,
 } from '../lib/financialAnalyst';
 import { parseFile } from '../lib/fileParser';
+import { sortRisksByPriority } from '../lib/riskPriority';
 import { StudioIntro } from './StudioIntro';
 import AILoadingState from './AILoadingState';
 
@@ -704,6 +705,35 @@ function FinancialPanel({ persona, settings, onSave }: {
 }
 
 function Section({ title, color, items }: { title: string; color: string; items: string[] }) {
+  // タイトルに「リスク」を含む場合は重要度順表示 (オーナー指示 2026-06-03)
+  const isRisks = /リスク|risk/i.test(title);
+  if (isRisks) {
+    const sorted = sortRisksByPriority(items);
+    return (
+      <div className="rounded-xl p-3.5" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+        <p className="text-xs tracking-widest uppercase font-semibold mb-2" style={{ color }}>{title} (重要度順)</p>
+        <ul className="space-y-2">
+          {sorted.map((r, i) => (
+            <li
+              key={i}
+              className="text-fg text-sm flex items-start gap-2 leading-relaxed rounded-md px-2 py-1.5"
+              style={{ background: `${r.color}12`, borderLeft: `3px solid ${r.color}` }}
+            >
+              <span
+                className="flex-shrink-0 rounded font-bold tracking-wider"
+                style={{
+                  background: r.color, color: '#fff',
+                  fontSize: 9, padding: '2px 6px', lineHeight: 1.3,
+                  minWidth: 40, textAlign: 'center',
+                }}
+              >{r.label}</span>
+              <span className="flex-1">{r.text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
   return (
     <div className="rounded-xl p-3.5" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
       <p className="text-xs tracking-widest uppercase font-semibold mb-2" style={{ color }}>{title}</p>
