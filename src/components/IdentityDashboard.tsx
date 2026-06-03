@@ -69,7 +69,8 @@ const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
 import { REFERRAL_BONUS_DAYS } from '../lib/referral';
-import { Gift } from 'lucide-react';
+import { Gift, FileDown } from 'lucide-react';
+import { downloadMonthlyCsv } from '../lib/monthlyCsvExport';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
 import { useDailyCoach } from '../hooks/useDailyCoach';
 import { useDailyStreak } from '../hooks/useDailyStreak';
@@ -569,6 +570,15 @@ export default function IdentityDashboard({
           >
             <span className="text-fg-muted group-hover:text-fg text-sm">⚙</span>
             <span className="text-fg-muted group-hover:text-fg text-sm">環境設定</span>
+          </button>
+          {/* PP (2026-06-03): 今月の数字 CSV エクスポート */}
+          <button
+            onClick={() => downloadMonthlyCsv({ personaId: persona.id, personaName: persona.name })}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
+            title="今月の CRM Deals / タスク / 収支 / SNS スナップショットを 1 CSV にまとめてダウンロード"
+          >
+            <FileDown size={14} className="text-fg-muted group-hover:text-fg" />
+            <span className="text-fg-muted group-hover:text-fg text-sm">数字を CSV で出力</span>
           </button>
           <div className="px-2 py-1.5 flex items-center justify-between gap-2">
             <span className="text-fg-muted text-xs tracking-widest uppercase">表示</span>

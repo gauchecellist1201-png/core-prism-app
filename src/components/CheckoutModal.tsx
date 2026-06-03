@@ -19,6 +19,7 @@ import { getPendingReferral, getPendingReferralInviter, REFERRAL_BONUS_DAYS } fr
 import { sendEmail } from '../lib/emailNotify';
 import { isBiometricAvailable, registerBiometric } from '../lib/biometricAuth';
 import CheckoutTrialCountdown from './CheckoutTrialCountdown';
+import { pickVariant, trackImpression, trackClick } from '../lib/ctaAbTest';
 
 interface Props {
   brand: Brand;
@@ -43,6 +44,9 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
   const [error, setError] = useState<string | null>(null);
   const [isTestMode, setIsTestMode] = useState<boolean>(false);
   const { signup } = useBillingUser();
+  // OO (2026-06-03): CTA A/B variant 選択 — ユーザーごとに固定
+  const ctaVariant = useMemo(() => pickVariant(), []);
+  const [ctaImpressionTracked, setCtaImpressionTracked] = useState(false);
 
   // 招待リンク経由かどうか (?ref=XXX が sessionStorage に保留されている)
   const pendingReferral = useMemo(() => getPendingReferral(), []);
@@ -636,17 +640,32 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
 
               {error && <ErrorBox msg={error} />}
 
+              {/* OO (2026-06-03): 表示インプレッションを 1 回だけ送信 */}
+              {!ctaImpressionTracked && (() => {
+                trackImpression(ctaVariant.id, 'checkout-payment');
+                setTimeout(() => setCtaImpressionTracked(true), 0);
+                return null;
+              })()}
+
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={() => setStep('account')} style={btnSecondary}>← 戻る</button>
-                <button onClick={completePayment} disabled={busy} style={{
-                  ...btnPrimary(accent, accentGrad),
-                  flex: 2, opacity: busy ? 0.6 : 1, cursor: busy ? 'wait' : 'pointer',
-                }}>
+                <button
+                  onClick={() => {
+                    if (!busy) trackClick(ctaVariant.id, 'checkout-payment');
+                    completePayment();
+                  }}
+                  disabled={busy}
+                  data-cta-variant={ctaVariant.id}
+                  style={{
+                    ...btnPrimary(accent, accentGrad),
+                    flex: 2, opacity: busy ? 0.6 : 1, cursor: busy ? 'wait' : 'pointer',
+                  }}
+                >
                   {busy
                     ? '処理中…'
                     : showingTestMode
                       ? (isFree ? '✨ 無料トライアル開始 (¥0)' : '✨ 仮登録する (¥0)')
-                      : '✨ カードを登録して 7 日無料を始める (本日 ¥0)'}
+                      : `${ctaVariant.emoji || '✨'} ${ctaVariant.label} (本日 ¥0)`}
                 </button>
               </div>
             </motion.div>

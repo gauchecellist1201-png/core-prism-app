@@ -58,23 +58,54 @@ export default async function handler(req: Request): Promise<Response> {
     return jsonRes(500, { ok: false, error: msg });
   }
 
-  // Slack に送信
+  // Slack に送信 (QQ 2026-06-03: Block Kit リッチ化)
   const yen = (n: number) => '¥' + Math.round(n).toLocaleString('ja-JP');
   const today = new Date(now.getTime() + 9 * 3600_000).toISOString().slice(0, 10);
   const yKey = new Date(yesterday.getTime() + 9 * 3600_000).toISOString().slice(0, 10);
-  const text = [
-    `🌅 *CORE Prism 朝の売上サマリ* (${today})`,
-    ``,
-    `📅 *昨日 (${yKey})*`,
-    `   売上: ${yen(yStat.revenueJpy)} (${yStat.charges} 件)`,
-    ``,
-    `📈 *今月累計*`,
-    `   売上: ${yen(mStat.revenueJpy)} (${mStat.charges} 件)`,
-    ``,
-    `_(Live / 全通貨 JPY 換算前 — 円のみ集計)_`,
-  ].join('\n');
 
-  await notifySlack(slackUrl, text);
+  const deltaEmoji = yStat.charges === 0
+    ? '⚪'
+    : yStat.revenueJpy >= 100_000 ? '🔥' : '✅';
+
+  const blocks = [
+    {
+      type: 'header',
+      text: { type: 'plain_text', text: `🌅 CORE Prism 朝の売上 — ${today}`, emoji: true },
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*${deltaEmoji} 昨日 (${yKey})*\n💴  ${yen(yStat.revenueJpy)}\n📦  ${yStat.charges} 件` },
+        { type: 'mrkdwn', text: `*📈 今月累計*\n💴  ${yen(mStat.revenueJpy)}\n📦  ${mStat.charges} 件` },
+      ],
+    },
+    { type: 'divider' },
+    {
+      type: 'context',
+      elements: [
+        { type: 'mrkdwn', text: '_Live / 円のみ集計 / Stripe Charges API ベース。詳細は朝メールも参照。_' },
+      ],
+    },
+    {
+      type: 'actions',
+      elements: [
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: '📊 Stripe Dashboard を開く', emoji: true },
+          url: 'https://dashboard.stripe.com',
+          style: 'primary',
+        },
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: '🌅 朝メールを探す', emoji: true },
+          url: 'https://mail.google.com/mail/u/0/#search/from%3Acore-prism',
+        },
+      ],
+    },
+  ];
+
+  const fallbackText = `🌅 CORE Prism 朝の売上 (${today}) — 昨日 ${yen(yStat.revenueJpy)} / ${yStat.charges}件 / 今月 ${yen(mStat.revenueJpy)} / ${mStat.charges}件`;
+  await notifySlackRich(slackUrl, fallbackText, blocks);
   return jsonRes(200, {
     ok: true,
     yesterday: yStat,
@@ -112,6 +143,15 @@ async function notifySlack(url: string, text: string): Promise<void> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text }),
+  });
+}
+
+/** QQ (2026-06-03): Block Kit リッチ通知 (blocks 必須 + fallback text)。 */
+async function notifySlackRich(url: string, fallbackText: string, blocks: unknown[]): Promise<void> {
+  await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: fallbackText, blocks }),
   });
 }
 
