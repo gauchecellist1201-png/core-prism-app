@@ -1,7 +1,13 @@
 // ============================================================
 // 利用規約 / プライバシーポリシー / 特定商取引法に基づく表記 モーダル
+//
+// HHH (2026-06-04): v3 改定 — Push 通知 / 端末 ID / VAPID / Upstash 永続化
+//   等の最近の機能を反映。本文は markdown ファイル (privacy-v3.md /
+//   terms-v3.md) からインポート。
 // ============================================================
 import { motion } from 'framer-motion';
+import PRIVACY_V3 from '../legal/privacy-v3.md?raw';
+import TERMS_V3 from '../legal/terms-v3.md?raw';
 
 interface Props {
   kind: 'terms' | 'privacy' | 'tokushou';
@@ -102,8 +108,9 @@ export default function LegalModal({ kind, onClose }: Props) {
     tokushou: '特定商取引法に基づく表記',
   };
   const bodies = {
-    terms: TERMS,
-    privacy: PRIVACY,
+    // HHH (2026-06-04): v3 を採用 — Push / DAU / VAPID / Upstash 反映
+    terms: TERMS_V3 || TERMS,
+    privacy: PRIVACY_V3 || PRIVACY,
     tokushou: TOKUSHOU,
   };
 
