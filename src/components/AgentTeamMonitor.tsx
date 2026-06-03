@@ -633,6 +633,7 @@ const CXO_TOOL_VERBS: Record<CxoRole, string[]> = {
   UIE: ['CSS を整える', 'アニメを微調整', 'アクセシビリティを点検'],
   UXE: ['動線を試行', '操作感を測定', '改善案を発想'],
   QAE: ['ケースを実行', 'バグを再現', 'リグレッションを点検'],
+  CHR: ['求人票を最適化', '応募率を試算', '採用相場を調査'],
 };
 
 function formatElapsed(startIso?: string, endIso?: string): string {

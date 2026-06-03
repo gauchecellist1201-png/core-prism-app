@@ -55,8 +55,8 @@ const CXO_PILLS = [
   { key: 'CEO', emoji: '👑' }, { key: 'CTO', emoji: '⚙' }, { key: 'CPO', emoji: '🧭' },
   { key: 'CDO', emoji: '🎨' }, { key: 'CMO', emoji: '📣' }, { key: 'CSO', emoji: '🎯' },
   { key: 'CFO', emoji: '💰' }, { key: 'COO', emoji: '🗂' }, { key: 'CDS', emoji: '🔬' },
-  { key: 'CLO', emoji: '⚖' }, { key: 'UIE', emoji: '✨' }, { key: 'UXE', emoji: '👁' },
-  { key: 'QAE', emoji: '✓' },
+  { key: 'CLO', emoji: '⚖' }, { key: 'CHR', emoji: '🤝' }, { key: 'UIE', emoji: '✨' },
+  { key: 'UXE', emoji: '👁' }, { key: 'QAE', emoji: '✓' },
 ];
 
 const STORAGE_KEY = 'core_mobile_gemini_v1';

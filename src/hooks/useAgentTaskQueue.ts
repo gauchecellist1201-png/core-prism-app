@@ -20,7 +20,8 @@ export type CxoRole =
   | 'CLO'   // 法務 / コンプライアンス
   | 'UIE'   // UI エンジニア
   | 'UXE'   // UX エンジニア
-  | 'QAE';  // QA 自動化
+  | 'QAE'   // QA 自動化
+  | 'CHR';  // 人材獲得 / 採用 (オーナー指示 2026-06-03)
 
 export interface AgentStep {
   cxo: CxoRole;
@@ -196,6 +197,7 @@ export function useAgentTaskQueue() {
       CDO: '見た目を磨き', CMO: '文章を生成', CSO: 'リードを探索',
       CFO: '数字を集計', COO: 'ファイルを整理', CDS: 'データを分析',
       CLO: '法務を確認', UIE: 'UI を実装', UXE: '操作感を磨き', QAE: '動作テスト',
+      CHR: '求人票・採用戦略を作成',
     };
     const advance = async () => {
       const latest = loadQueue().find(t => t.id === id);
@@ -393,5 +395,15 @@ export const CXO_META: Record<CxoRole, CxoMeta> = {
     shortLabel: 'QAE',
     watching: ['新しい変更を試験中', '壊れた箇所を巡回', 'リリース前点検中'],
     canDo: ['今のサイトを 5 シナリオで試す', '壊れた箇所を洗い出す', 'リリース前チェックリスト'],
+  },
+  CHR: {
+    name: 'CHR 採用', emoji: '🤝', color: '#06B6D4', tagline: '採用戦略 & 求人票',
+    shortLabel: 'CHR',
+    watching: ['業界の採用相場を観察', '応募率を見積もり中', '採用 LP を最適化中'],
+    canDo: [
+      '業界相場に合わせた求人票を 1 枚作る',
+      '応募率を 3 倍にする求人媒体の組み合わせを提案',
+      '友人紹介ボーナス制度の文面と運用ルールを設計',
+    ],
   },
 };
