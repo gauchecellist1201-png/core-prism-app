@@ -12,6 +12,7 @@ import {
 } from '../lib/peopleAnalyst';
 import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
+import { LoaderDots } from './MicroLoader';
 import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
@@ -750,12 +751,12 @@ function PersonDetail({
           <button onClick={handleBuildAgenda} disabled={agendaBusy}
             className="cp-btn cp-btn-primary cp-btn-sm"
             style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
-            {agendaBusy ? '生成中…' : '🗒 1on1 アジェンダを作る'}
+            {agendaBusy ? <LoaderDots label="話す論点を選んでます" /> : '🗒 1on1 アジェンダを作る'}
           </button>
           <button onClick={handleAnalyze} disabled={analyzing}
             className="cp-btn cp-btn-sm"
             style={{ minHeight: 44 }}>
-            {analyzing ? '分析中…' : '🤖 AI 関係性分析'}
+            {analyzing ? <LoaderDots label="関係性を読み解き中" /> : '🤖 AI 関係性分析'}
           </button>
           <button onClick={handleExport} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 44 }}>
             📋 Markdown 書き出し
@@ -787,7 +788,7 @@ function PersonDetail({
                   <button onClick={handleBuildReopen} disabled={reopenBusy}
                     className="cp-btn cp-btn-primary cp-btn-sm"
                     style={{ background: chip.fg, color: '#0a0a0f', minHeight: 44 }}>
-                    {reopenBusy ? '生成中…' : '✍ 再開メッセージを書く'}
+                    {reopenBusy ? <LoaderDots label="送る言葉を選んでます" /> : '✍ 再開メッセージを書く'}
                   </button>
                 )}
                 <button onClick={handleDelegateReopen}

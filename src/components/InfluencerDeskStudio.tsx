@@ -14,6 +14,7 @@ import { useInfluencerDesk } from '../hooks/useInfluencerDesk';
 import { useCopyButton } from '../hooks/useCopyButton';
 import { generateNegotiation, generateDraftCopy, evaluateOffer, generateBrandReport } from '../lib/influencerAgent';
 import { confirmAction } from '../lib/confirmDialog';
+import { LoaderDots } from './MicroLoader';
 import { StudioIntro } from './StudioIntro';
 
 interface Props {
@@ -487,7 +488,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                     <button onClick={handleGenerateNego} disabled={busy || !selectedDealId}
                       className="cp-btn cp-btn-primary"
                       style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                      {busy ? '生成中…' : '✨ 交渉文を生成'}
+                      {busy ? <LoaderDots label="交渉文を書いてます" /> : '✨ 交渉文を生成'}
                     </button>
                     <button onClick={handleEvaluate} disabled={busy || !selectedDealId} className="cp-btn cp-btn-secondary">
                       {busy ? '判定中…' : '💴 報酬の妥当性をチェック'}
@@ -556,7 +557,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                 <button onClick={handleGenerateDraft} disabled={busy || !draftDealId}
                   className="cp-btn cp-btn-primary"
                   style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                  {busy ? '生成中…' : '✨ 下書きを作る'}
+                  {busy ? <LoaderDots label="下書きを組み立て中" /> : '✨ 下書きを作る'}
                 </button>
               </div>
 
@@ -605,7 +606,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                 <button onClick={handleGenerateReport} disabled={busy || !reportDealId}
                   className="cp-btn cp-btn-primary mt-2"
                   style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                  {busy ? '生成中…' : '✨ レポートを書く'}
+                  {busy ? <LoaderDots label="成果をまとめてます" /> : '✨ レポートを書く'}
                 </button>
               </div>
 
