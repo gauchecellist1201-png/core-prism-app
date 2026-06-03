@@ -17,15 +17,36 @@ export default function BillingSuccess() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get('session_id');
-    const brand = params.get('brand') || 'prism';
+    const planParam = params.get('plan');
+    const brand = params.get('brand') || (planParam?.includes('iris') ? 'iris' : 'prism');
 
+    let cancelled = false;
+
+    // ── v2: Stripe Payment Link 経由なら ?plan=v2-... が付く (オーナー指示 2026-06-03) ──
+    if (planParam && planParam.startsWith('v2-')) {
+      const niceName = ({
+        'v2-btoC-light': 'ライト (¥3,000/月)',
+        'v2-btoC-standard': 'スタンダード (¥5,000/月)',
+        'v2-btoC-pro': 'プロ (¥15,000/月)',
+        'v2-btoB-entry': '法人エントリー (¥20,000/月)',
+        'v2-btoB-standard': '法人スタンダード (¥30,000/月)',
+        'v2-btoB-pro': '法人プロ (¥50,000/月)',
+        'v2-enterprise': 'エンタープライズ',
+      } as Record<string, string>)[planParam] || planParam;
+      setPlanLabel(niceName);
+      setStatus('success');
+      setTimeout(() => {
+        window.location.href = brand === 'iris' ? '/iris?app=1' : '/?app=1';
+      }, 2500);
+      return;
+    }
+
+    // ── v1 互換: session_id 経由 ──
     if (!sessionId) {
       setErrMsg('session_id が見つかりません。');
       setStatus('error');
       return;
     }
-
-    let cancelled = false;
 
     (async () => {
       const result = await syncFromStripe(sessionId);
