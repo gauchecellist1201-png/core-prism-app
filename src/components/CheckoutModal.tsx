@@ -18,6 +18,7 @@ import {
 import { getPendingReferral, getPendingReferralInviter, REFERRAL_BONUS_DAYS } from '../lib/referral';
 import { sendEmail } from '../lib/emailNotify';
 import { isBiometricAvailable, registerBiometric } from '../lib/biometricAuth';
+import CheckoutTrialCountdown from './CheckoutTrialCountdown';
 
 interface Props {
   brand: Brand;
@@ -529,6 +530,12 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
 
           {step === 'payment' && (
             <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              {/* MM (2026-06-03): Stripe Checkout 直前の 7 日無料 カウントダウン演出 */}
+              <CheckoutTrialCountdown
+                days={7 + (hasReferralBonus ? REFERRAL_BONUS_DAYS : 0)}
+                accent={accent}
+              />
+
               <div style={{
                 padding: '1.25rem', borderRadius: 16,
                 background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5)',

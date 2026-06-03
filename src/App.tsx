@@ -23,6 +23,7 @@ import StudioOpeningSheet from './components/StudioOpeningSheet';
 // (Prism ダッシュボードを開く一般ユーザーには、これらを読み込ませない)
 const MasterEntry = lazy(() => import('./components/MasterEntry'));
 const AiStats = lazy(() => import('./master/AiStats'));
+const AiCostDashboard = lazy(() => import('./master/AiCostDashboard'));
 const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./legal/TermsOfService'));
@@ -115,6 +116,12 @@ function isAiStatsPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master/ai-stats' || p === '/ai-stats';
+}
+
+function isAiCostPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/ai-cost' || p === '/ai-cost';
 }
 
 function isErrorLogPath(): boolean {
@@ -266,6 +273,11 @@ export default function App() {
   // /master/ai-stats — オーナー専用 AI 使用量ダッシュボード
   if (isAiStatsPath()) {
     return <Suspense fallback={<RouteFallback />}><AiStats /></Suspense>;
+  }
+
+  // /master/ai-cost — オーナー専用 AI モデル別 コスト試算 (NN)
+  if (isAiCostPath()) {
+    return <Suspense fallback={<RouteFallback />}><AiCostDashboard /></Suspense>;
   }
 
   // /master/error-log — エラーログ単独閲覧 (自端末のローカルログのみ)

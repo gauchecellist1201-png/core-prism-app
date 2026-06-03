@@ -435,6 +435,23 @@ export default function MasterEntry() {
             📊 AI 使用量ダッシュボード
           </a>
           <a
+            href="/master/ai-cost"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(251,191,36,0.12)',
+              border: '1px solid rgba(251,191,36,0.35)',
+              color: '#fde68a',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            💸 AI コスト試算
+          </a>
+          <a
             href="/master/stripe-status"
             style={{
               flex: 1,
