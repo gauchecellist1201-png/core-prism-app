@@ -7,6 +7,7 @@ import { StudioIntro } from './StudioIntro';
 import ContextualUpgradeCard from './ContextualUpgradeCard';
 import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
 import { sortRisksByPriority } from '../lib/riskPriority';
+import { summarizeMeeting, stripCaptions } from '../lib/meetingSummarize';
 import {
   proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse,
   KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal,
@@ -203,6 +204,8 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
   const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const meetingInputRef = useRef<HTMLInputElement>(null);
+  const [meetingProcessing, setMeetingProcessing] = useState<string | null>(null);
 
   // ── 先回り提案: AI が「この資料こう活かせます」を 3 案先出し ──
   const [proposals, setProposals] = useState<KnowledgeUseProposal[]>([]);
@@ -380,6 +383,65 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
     if (arr.length === 1) handleFile(arr[0]);
     else handleBatch(arr);
   }, [handleFile, handleBatch]);
+
+  // ── 会議録画 → AI 要約 → ナレッジ追加 (オーナー指示 2026-06-03) ──
+  const handleMeetingFile = useCallback(async (file: File) => {
+    setMeetingProcessing('文字起こしを読み込み中');
+    try {
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      let transcript = '';
+      if (ext === 'vtt' || ext === 'srt' || ext === 'txt') {
+        // 字幕 / プレーンテキストは直接読む
+        transcript = await file.text();
+        transcript = stripCaptions(transcript);
+      } else {
+        // 音声/動画は Gemini で文字起こし (audioTranscribe.ts を流用)
+        setMeetingProcessing('AI で文字起こし中 (1-3 分)');
+        const { transcribeAudioFile } = await import('../lib/audioTranscribe');
+        transcript = await transcribeAudioFile(file);
+      }
+      if (!transcript || transcript.length < 50) {
+        throw new Error('会議の内容を読み取れませんでした。字幕ファイル (.vtt / .srt) があればそちらをお使いください。');
+      }
+      setMeetingProcessing('AI で要約中');
+      const summary = await summarizeMeeting({
+        transcript,
+        fileName: file.name,
+        date: new Date().toISOString(),
+      });
+      // ナレッジに登録 (addNote 経由で content + title)
+      const noteContent = [
+        `【会議要約】${summary.title}`,
+        `日時: ${new Date(summary.date).toLocaleString('ja-JP')}`,
+        `ソース: ${summary.source}`,
+        summary.participants.length ? `参加者: ${summary.participants.join(' / ')}` : '',
+        '',
+        '## 1 行サマリ',
+        summary.analysis.summary,
+        '',
+        '## 決定事項',
+        ...summary.keyDecisions.map(d => `- ${d}`),
+        '',
+        '## アクション',
+        ...summary.actionItems.map(a =>
+          `- ${a.text}${a.owner ? ` (${a.owner})` : ''}${a.due ? ` ▶ ${a.due}` : ''}`
+        ),
+        '',
+        summary.openQuestions.length ? '## 持ち越し論点' : '',
+        ...summary.openQuestions.map(q => `- ${q}`),
+        '',
+        '## 元の文字起こし',
+        transcript.slice(0, 8000) + (transcript.length > 8000 ? '\n…(以下省略)' : ''),
+      ].filter(Boolean).join('\n');
+
+      onAddNote(`📹 ${summary.title}`, noteContent);
+      setMeetingProcessing(null);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '会議の取り込みに失敗しました';
+      setMeetingProcessing(null);
+      window.alert(`⚠ ${msg}`);
+    }
+  }, [onAddNote]);
 
   const handleSaveNote = () => {
     if (!noteTitle.trim() || !noteContent.trim()) return;
@@ -821,6 +883,38 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                         style={{ background: persona.accentColorLight, border: `1px solid ${persona.accentColor}50`, color: persona.accentColor }}
                       >📁 フォルダを選択</button>
                     </div>
+
+                    {/* 会議録画から取り込み (Zoom / Google Meet)
+                        オーナー指示 2026-06-03: 会議を AI 要約してナレッジに蓄積 */}
+                    <button
+                      onClick={() => meetingInputRef.current?.click()}
+                      disabled={!!meetingProcessing}
+                      className="w-full text-sm py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(45,140,255,0.15), rgba(232,75,151,0.15))',
+                        border: `1px solid ${persona.accentColor}60`,
+                        color: 'var(--fg)',
+                        marginTop: 8,
+                      }}
+                    >
+                      {meetingProcessing
+                        ? <>🧠 {meetingProcessing}…</>
+                        : <>📹 会議録画から取り込み (Zoom / Google Meet)</>}
+                    </button>
+                    <p className="text-fg-muted text-xs text-center" style={{ marginTop: 6 }}>
+                      .vtt / .srt (字幕) or .mp4 / .m4a (音声/動画) を選択 → AI が要約 → 自動でナレッジに
+                    </p>
+                    <input
+                      ref={meetingInputRef}
+                      type="file"
+                      accept=".vtt,.srt,.txt,.mp4,.m4a,.webm,.mov,.wav,.mp3"
+                      className="hidden"
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) handleMeetingFile(f);
+                        e.target.value = '';
+                      }}
+                    />
 
                     <input
                       ref={fileInputRef}
