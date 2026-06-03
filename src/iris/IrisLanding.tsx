@@ -415,6 +415,116 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         </div>
       </section>
 
+      {/* ── 導入事例 (USE CASES) — 想定の使われ方 */}
+      <section className="lp-section-pad" style={{ padding: sectionPad, background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #1a0628 100%)` }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 700, color: IRIS_COLORS.gold, textAlign: 'center', marginBottom: '0.6rem' }}>USE CASES</p>
+          <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.7rem, 3.4vw, 2.5rem)', fontWeight: 500, textAlign: 'center', marginBottom: '0.6rem', color: IRIS_COLORS.cream }}>こんな風に <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>使われています</span></h2>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.55)', textAlign: 'center', fontFamily: IRIS_FONTS.serif }}>※ 想定の使い方 / 効果です。実利用での効果は環境により変動します。</p>
+          <div style={{ marginTop: '3rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1.25rem' }}>
+            {[
+              {
+                persona: '絵本作家 (Instagram + ECサイト運用)',
+                usage: '新作の世界観に合うキャプション・サムネ・OG画像を AI が一気通貫で生成。ファン分析で「次に何を描けば届くか」を毎週学習。',
+                result: 'フォロワー反応率が体感 2 倍。投稿準備時間が 60 分 → 8 分に。',
+                quote: '「世界観を壊さずに、ちゃんとビジネスもできるようになった」',
+              },
+              {
+                persona: 'インディー音楽アーティスト (リリース運用)',
+                usage: '新曲リリース日から逆算して 3 週間分の投稿カレンダーを AI が自動編成。フォロワーの聴く時間帯に合わせた最適配信。',
+                result: 'リリース初週の再生数が前作比 1.7 倍。マネージャー不在でも一人で完結。',
+                quote: '「事務所が必要だと思ってたけど、Iris で十分だった」',
+              },
+              {
+                persona: 'インスタグラマー (案件交渉 + 配信)',
+                usage: 'ブランド企業からの DM を AI が読み取り、相場感に基づいた料金提示文を 30 秒で生成。メディア資料も毎月自動更新。',
+                result: '案件あたりの単価が平均 +35%。交渉の心理的ハードルが消えた。',
+                quote: '「強気の値段を、自信を持って言えるようになった」',
+              },
+            ].map((c, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                style={{
+                  padding: '1.5rem',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${IRIS_COLORS.gold}33`,
+                  borderRadius: 16,
+                  position: 'relative',
+                }}
+              >
+                <div style={{ fontSize: 10, letterSpacing: '0.2em', color: IRIS_COLORS.hotPink, fontWeight: 800, marginBottom: 10, fontFamily: IRIS_FONTS.body }}>
+                  CASE 0{i + 1}
+                </div>
+                <p style={{ fontFamily: IRIS_FONTS.serif, fontSize: 13.5, fontWeight: 700, color: '#fff', lineHeight: 1.6, marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                  {c.persona}
+                </p>
+                <div style={{ fontSize: 11, color: IRIS_COLORS.gold, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 6 }}>使い方</div>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, marginBottom: 14, fontFamily: IRIS_FONTS.serif }}>
+                  {c.usage}
+                </p>
+                <div style={{ fontSize: 11, color: IRIS_COLORS.hotPink, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 6 }}>効果</div>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', lineHeight: 1.7, marginBottom: 16, fontFamily: IRIS_FONTS.serif, fontWeight: 600 }}>
+                  {c.result}
+                </p>
+                <div style={{ padding: '10px 12px', background: `${IRIS_COLORS.gold}10`, borderLeft: `2px solid ${IRIS_COLORS.gold}`, borderRadius: '0 8px 8px 0', fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, fontStyle: 'italic', fontFamily: IRIS_FONTS.serif }}>
+                  {c.quote}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 比較 (COMPARISON) — 他の選択肢との違い */}
+      <section className="lp-section-pad" style={{ padding: sectionPad, background: '#080812' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 700, color: IRIS_COLORS.hotPink, textAlign: 'center', marginBottom: '0.6rem' }}>COMPARISON</p>
+          <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.7rem, 3.4vw, 2.5rem)', fontWeight: 500, textAlign: 'center', marginBottom: '0.6rem', color: IRIS_COLORS.cream }}>他の選択肢と <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>何が違うか</span></h2>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.55)', textAlign: 'center', fontFamily: IRIS_FONTS.serif }}>「事務所所属」「運用代行」「自分で全部」と比べたときの位置づけ</p>
+
+          <div style={{ marginTop: '2.5rem', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, color: 'rgba(255,255,255,0.85)', minWidth: 640 }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.1em' }}></th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `2px solid ${IRIS_COLORS.gold}`, background: `linear-gradient(180deg, ${IRIS_COLORS.gold}15, transparent)`, color: IRIS_COLORS.gold, fontWeight: 800, fontSize: 12, letterSpacing: '0.05em' }}>★ CORE Iris</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>事務所所属</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>運用代行</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>自分で全部</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { label: '月額コスト', core: '月 ¥9,800', mgmt: '売上の 20〜30%', agency: '月 ¥10〜30 万', self: '¥0 (時間コスト)' },
+                  { label: '創作の自由度', core: '100% あなたのまま', mgmt: '事務所方針に従う', agency: '世界観の擦り合せ必要', self: '100% 自由' },
+                  { label: '稼働時間', core: '24h / 365 日', mgmt: '担当者の営業時間', agency: '営業時間のみ', self: 'あなたの時間に依存' },
+                  { label: '反応速度', core: '10 秒〜数分', mgmt: '数日〜数週間', agency: '1〜数日', self: 'いまの心の状態次第' },
+                  { label: 'カバー範囲', core: '案件/分析/創作/交渉/ブランド/仲間 (6 領域)', mgmt: 'マネジメント中心', agency: 'SNS 運用のみ', self: 'あなた次第' },
+                  { label: '導入時間', core: '7 日間 無料 + 5 分', mgmt: 'オーディション → 契約', agency: '商談 → 契約 → 開始', self: '即日' },
+                ].map((r, i) => (
+                  <tr key={i}>
+                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{r.label}</td>
+                    <td style={{ padding: '14px 10px', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, background: `${IRIS_COLORS.gold}08` }}>
+                      <strong style={{ color: '#fff' }}>{r.core}</strong>
+                    </td>
+                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}>{r.mgmt}</td>
+                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}>{r.agency}</td>
+                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}>{r.self}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: 12, lineHeight: 1.7 }}>
+            ※ 一般的な相場感の比較。実際のコスト・効果は使い方により変動します。
+          </p>
+        </div>
+      </section>
+
       {/* ── 価格 */}
       <section id="pricing" className="lp-section-pad" style={{ padding: sectionPad, background: IRIS_COLORS.inkBlack }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
