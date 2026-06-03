@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/daily-stripe-slack",
       "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/cron/daily-owner-email",
+      "schedule": "30 21 * * *"
     }
   ],
   "rewrites": [
