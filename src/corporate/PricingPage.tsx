@@ -1,31 +1,35 @@
 // ============================================================
 // /pricing — 公開価格ページ + ROI 計算機 + 業種別ユースケース
 // 検討フェーズの背中を押すために設計
+//
+// 2026-06-03 オーナー指示: v2 価格 (BtoB/BtoC 6 階層) に対応。
+// isPlanV2Enabled() フラグで v1/v2 を切替。
 // ============================================================
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { PrismLogo, IrisLogo } from '../components/Logo';
+import { isPlanV2Enabled } from '../lib/billing';
 
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", serif';
 const FONT_SERIF_EN = '"EB Garamond", "Noto Serif JP", serif';
 const FONT_SANS = '"Noto Sans JP", "Inter", sans-serif';
 
-// ─── Prism プラン ─────────────────
-const PRISM_PLANS = [
+// ─── Prism プラン v1 (既存・後方互換) ─────────
+const PRISM_PLANS_V1 = [
   {
     id: 'starter',
     name: 'Starter',
     nameJa: 'スターター',
     tag: '個人事業主・副業',
     price: 4800,
-    yearly: 48000, // 2 ヶ月分割引
+    yearly: 48000,
     features: [
       '3 つの人格 (経営/営業/+1)',
       '商談・議事録・スライド AI',
       'Cmd+K 横断検索',
       'PWA / オフライン対応',
-      '14 日間 無料トライアル',
+      '7 日間 無料トライアル',
     ],
   },
   {
@@ -42,7 +46,7 @@ const PRISM_PLANS = [
       'Gmail シャドー秘書',
       'YouTube 取込 → ナレッジ',
       '見積→請求の一気通貫',
-      '14 日間 無料トライアル',
+      '7 日間 無料トライアル',
     ],
   },
   {
@@ -60,6 +64,86 @@ const PRISM_PLANS = [
       '優先サポート + 戦略コーチ',
       '専任カスタマー成功担当',
     ],
+  },
+];
+
+// ─── Prism プラン v2 (BtoB/BtoC 6 階層) ─────────
+const PRISM_PLANS_V2 = [
+  // BtoC
+  {
+    id: 'v2-btoC-light',
+    name: 'ライト',
+    nameJa: 'ライト',
+    tag: '個人 / お試し',
+    price: 3000,
+    yearly: 30000,
+    features: ['AI 相談 月 300 回', 'ナレッジ 30 件', '主要機能をお試し可', '7 日間 無料'],
+  },
+  {
+    id: 'v2-btoC-standard',
+    name: 'スタンダード',
+    nameJa: 'スタンダード',
+    tag: '個人事業主・一人社長',
+    price: 5000,
+    yearly: 50000,
+    highlight: true,
+    badge: '個人 人気 No.1',
+    features: [
+      'AI 相談 月 1,500 回',
+      '主要機能ほぼ無制限',
+      'ナレッジ 200 件',
+      '事務時間を 最大 70% 削減',
+      '7 日間 無料',
+    ],
+  },
+  {
+    id: 'v2-btoC-pro',
+    name: 'プロ',
+    nameJa: 'プロ',
+    tag: '高単価フリーランス',
+    price: 15000,
+    yearly: 150000,
+    features: ['AI 全機能 無制限', 'ナレッジ 1,000 件', '営業 AI フル機能', '優先サポート', '7 日間 無料'],
+  },
+  // BtoB
+  {
+    id: 'v2-btoB-entry',
+    name: '法人エントリー',
+    nameJa: '法人エントリー',
+    tag: '法人 試験導入',
+    price: 20000,
+    yearly: 200000,
+    btob: true,
+    features: ['AI 相談 月 3,000 回', 'チーム 5 名まで', '請求書払い OK (口座振込)', '導入サポート', '7 日間 無料'],
+  },
+  {
+    id: 'v2-btoB-standard',
+    name: '法人スタンダード',
+    nameJa: '法人スタンダード',
+    tag: '中小企業 / 高収益フリーランス',
+    price: 30000,
+    yearly: 300000,
+    highlight: true,
+    btob: true,
+    badge: '法人 推奨',
+    features: [
+      'AI 相談 月 10,000 回',
+      'フル機能',
+      'チーム 15 名まで',
+      '請求書払い OK',
+      'コンサル代 月¥200 万を 1/7 に',
+      '7 日間 無料',
+    ],
+  },
+  {
+    id: 'v2-btoB-pro',
+    name: '法人プロ',
+    nameJa: '法人プロ',
+    tag: '法人上位 / 強い ROI 期待層',
+    price: 50000,
+    yearly: 500000,
+    btob: true,
+    features: ['AI 全機能 無制限', 'チーム 50 名まで', '専任 CS', 'API キー専有', 'カスタム連携', '7 日間 無料'],
   },
 ];
 
@@ -142,7 +226,7 @@ const USECASES = [
 // ─── FAQ ─────────────────
 const FAQS = [
   { q: '解約はいつでもできますか?', a: 'はい。マイページから 1 タップで解約できます。日割り計算で当月分のみ請求されます。' },
-  { q: '14 日間のトライアル中に料金は発生しますか?', a: '発生しません。トライアル期間中はクレジットカード登録も不要です。' },
+  { q: '7 日間のトライアル中に料金は発生しますか?', a: '発生しません。トライアル期間中はクレジットカード登録も不要です。' },
   { q: 'AI の API キーは自分で用意する必要がありますか?', a: '不要です。すべてのプランで Claude / Gemini / 画像生成 AI を内蔵しています。' },
   { q: 'プランを途中でアップグレード・ダウングレードできますか?', a: 'いつでも変更できます。差額は次回請求で日割り計算されます。' },
   { q: '法人契約・カスタム導入は可能ですか?', a: 'はい。10 名以上のチームには専用プランを用意しています。お問い合わせください。' },
@@ -178,6 +262,9 @@ const PRISM_MONTHLY = 9800;
 
 export default function PricingPage() {
   const [yearly, setYearly] = useState(false);
+  // v2 フラグを確認 (localStorage または VITE_PLAN_V2_ENABLED)
+  const planV2 = useMemo(() => isPlanV2Enabled(), []);
+  const PRISM_PLANS = planV2 ? PRISM_PLANS_V2 : PRISM_PLANS_V1;
 
   // 5 項目入力
   const [minutesCount, setMinutesCount]   = useState(10);
@@ -448,7 +535,7 @@ export default function PricingPage() {
               minHeight: 56,
               lineHeight: '1.5',
             }}>
-              14 日間 無料で試す →
+              7 日間 無料で試す →
             </a>
             <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginTop: 12 }}>
               クレカ登録不要 / いつでも 1 タップ解約
@@ -661,7 +748,7 @@ export default function PricingPage() {
       {/* 最終 CTA */}
       <section style={{ padding: '5rem 1.5rem', background: 'radial-gradient(ellipse at center, rgba(167,139,250,0.18) 0%, #000 70%)', textAlign: 'center' }}>
         <h2 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.85rem, 4vw, 2.85rem)', fontWeight: 700, marginBottom: '1.5rem', lineHeight: 1.5, letterSpacing: '0.05em' }}>
-          14 日間、<span style={{ background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>無料で。</span>
+          7 日間、<span style={{ background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>無料で。</span>
         </h2>
         <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', color: 'rgba(255,255,255,0.65)', marginBottom: '2rem', lineHeight: 2 }}>
           クレカ登録不要。いつでも 1 タップで解約できます。
@@ -713,7 +800,10 @@ function PlanCard({ plan, yearly, brand }: { plan: any; yearly: boolean; brand: 
       boxShadow: plan.highlight ? `0 16px 48px ${accent}25` : 'none',
     }}>
       {plan.highlight && (
-        <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: accentGrad, color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '0.3rem 0.85rem', borderRadius: 999, letterSpacing: '0.15em', fontFamily: FONT_SERIF_JA }}>人気</div>
+        <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: accentGrad, color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '0.3rem 0.85rem', borderRadius: 999, letterSpacing: '0.15em', fontFamily: FONT_SERIF_JA }}>{plan.badge || '人気'}</div>
+      )}
+      {plan.btob && !plan.highlight && (
+        <div style={{ position: 'absolute', top: -10, right: 10, background: 'rgba(96,165,250,0.18)', color: '#60A5FA', fontSize: '0.6rem', fontWeight: 800, padding: '0.2rem 0.55rem', borderRadius: 4, letterSpacing: '0.15em', border: '1px solid rgba(96,165,250,0.4)' }}>BtoB 法人</div>
       )}
       <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.75rem', color: accent, marginBottom: 4, fontWeight: 600, letterSpacing: '0.05em' }}>{plan.tag}</p>
       <h3 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.4rem', letterSpacing: '0.1em' }}>{plan.name}</h3>
@@ -745,7 +835,7 @@ function PlanCard({ plan, yearly, brand }: { plan: any; yearly: boolean; brand: 
           boxShadow: plan.highlight ? `0 8px 24px ${accent}50` : 'none',
         }}
       >
-        14 日 無料で試す
+        7 日 無料で試す
       </a>
     </motion.div>
   );
