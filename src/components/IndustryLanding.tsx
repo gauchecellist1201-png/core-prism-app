@@ -10,6 +10,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { INDUSTRIES, type IndustryConfig } from '../lp/industries';
+import IndustryWeekTimeline from './IndustryWeekTimeline';
 
 const FONT_SERIF_JA = '"Noto Serif JP", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"Cinzel", "Cormorant Garamond", serif';
@@ -80,6 +81,8 @@ export default function IndustryLanding({ slug }: Props) {
       <Solution config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Proof config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Cases config={config} accentLeft={accentLeft} accentRight={accentRight} />
+      {/* WWW (2026-06-04): 導入後の典型 1 週間 (Hero と比較表の間) */}
+      <IndustryWeekTimeline accent={accentLeft} />
       <Comparison config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Pricing config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Faq config={config} accentLeft={accentLeft} />

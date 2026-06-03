@@ -69,9 +69,10 @@ const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
 import { REFERRAL_BONUS_DAYS } from '../lib/referral';
-import { Gift, FileDown, Database } from 'lucide-react';
+import { Gift, FileDown, Database, Brain } from 'lucide-react';
 import { downloadMonthlyCsv } from '../lib/monthlyCsvExport';
 import { downloadUserExport } from '../lib/userDataExport';
+import MyAiUsageInsights from './MyAiUsageInsights';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
 import { useDailyCoach } from '../hooks/useDailyCoach';
 import { useDailyStreak } from '../hooks/useDailyStreak';
@@ -201,6 +202,7 @@ export default function IdentityDashboard({
   useReengagement(dailyStreak, { brand: 'prism' });
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboarded());
   const [showKnowledge, setShowKnowledge] = useState(false);
+  const [showAiInsights, setShowAiInsights] = useState(false); // XXX (2026-06-04)
   const [showMeeting, setShowMeeting] = useState(false);
   const [showHealth, setShowHealth] = useState(false);
   // CeoStudio (経営アドバイザー) — 7 エージェントの最重要、現状分析 + 90 日方針 + 今週やること
@@ -598,8 +600,51 @@ export default function IdentityDashboard({
             <span className="text-fg text-sm">¥{Math.round(settings.usageStats.estimatedCostUsd * 150)}</span>
             <span className="text-fg-subtle text-[10px]">今月のAPI</span>
           </div>
+          {/* XXX (2026-06-04): 詳細な利用インサイト ボタン */}
+          <button
+            onClick={() => setShowAiInsights(true)}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
+            title="今月の AI 利用状況を詳しく見る"
+          >
+            <Brain size={14} className="text-fg-muted group-hover:text-fg" />
+            <span className="text-fg-muted group-hover:text-fg text-sm">AI 利用状況</span>
+          </button>
         </div>
       </div>
+      {/* XXX (2026-06-04): AI 利用状況 モーダル */}
+      {showAiInsights && (
+        <div
+          onClick={() => setShowAiInsights(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 110,
+            background: 'rgba(0,0,12,0.6)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '24px 16px',
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ width: 'min(440px, 100%)' }}>
+            <MyAiUsageInsights settings={settings} />
+            <button
+              onClick={() => setShowAiInsights(false)}
+              style={{
+                marginTop: 12,
+                width: '100%',
+                padding: '10px 0',
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.08)',
+                color: 'var(--fg)',
+                border: 'none',
+                fontSize: '0.85rem', fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <AnimatePresence mode="wait">

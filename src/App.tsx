@@ -20,6 +20,7 @@ import CheckoutModal from './components/CheckoutModal';
 import QuickAskFab from './components/QuickAskFab';
 import SuggestionFab from './components/SuggestionFab';
 import OnboardingTour from './components/OnboardingTour';
+import EveningFeed from './components/EveningFeed';
 import SitemapPalette from './components/SitemapPalette';
 import AiThrottleToast from './components/AiThrottleToast';
 import LegalModal, { type LegalKind } from './components/LegalModal';
@@ -652,6 +653,8 @@ export default function App() {
       {view === 'dashboard' && <InstallPwaBanner brand="prism" />}
       {/* NNN (2026-06-04): 初回ダッシュボード Welcome ツアー */}
       {view === 'dashboard' && <OnboardingTour />}
+      {/* VVV (2026-06-04): 夜のフィード — 18 時以降 1 日 1 回 */}
+      {view === 'dashboard' && <EveningFeed />}
       {/* ZZ (2026-06-03): 全画面常駐 FAB — LP / Pricing / Billing / Dashboard */}
       <QuickAskFab />
       {/* DDD (2026-06-04): 左下「💡 改善提案」(QuickAskFab と被らない位置) */}
