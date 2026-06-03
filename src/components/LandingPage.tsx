@@ -18,6 +18,7 @@ import LiveAgentMock from './LiveAgentMock';
 import AnimatedExecStage from './AnimatedExecStage';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
 import LaunchCountdownBanner from './LaunchCountdownBanner';
+import PwaInstallNudge from './PwaInstallNudge';
 
 interface Props {
   onEnterApp: () => void;
@@ -72,6 +73,8 @@ export default function LandingPage({ onEnterApp }: Props) {
     <div style={{ background: BG_DARK, color: '#fff', minHeight: '100dvh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
       {/* ── 6/1 一般公開カウントダウン ───────────── */}
       <LaunchCountdownBanner kind="prism" />
+      {/* WW (2026-06-03): PWA インストール促進 (3 訪問目以降に 1 日 1 回) */}
+      <PwaInstallNudge />
       {/* ── 紹介リンク経由バナー (?ref=XXX 検出時のみ表示) ───────────── */}
       {pendingRef && (
         <motion.div

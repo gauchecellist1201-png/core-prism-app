@@ -106,9 +106,10 @@ interface StripeSubscription {
   status: string;
   customer?: string;
   current_period_end?: number;
+  trial_end?: number | null;
   cancel_at_period_end?: boolean;
   metadata?: { plan?: string; brand?: string };
-  items?: { data?: Array<{ price?: { id?: string; metadata?: { plan?: string; brand?: string } } }> };
+  items?: { data?: Array<{ price?: { id?: string; metadata?: { plan?: string; brand?: string }; unit_amount?: number; currency?: string } }> };
 }
 interface StripeInvoice {
   id: string;
@@ -280,6 +281,24 @@ export default async function handler(req: Request) {
         break;
       }
 
+      case 'customer.subscription.trial_will_end': {
+        // VV (2026-06-03): Stripe は trial_end の 3 日前にこのイベントを送る。
+        //   オーナー指示は「trial_end - 24h」だが、3 日前のシグナルしかないため
+        //   ここで「あと N 日で有料切り替え」リマインドを送る。本文は trial_end の
+        //   実日付を入れて利用者が正しく認識できるようにする。
+        const sub = event.data?.object as StripeSubscription;
+        if (sub?.id && sub.customer && sub.trial_end) {
+          try {
+            await sendTrialEndingReminder(sub);
+          } catch (e) {
+            log('error', 'trial_reminder_error', { event_id: eventId, sub_id: sub.id, msg: (e as Error).message });
+          }
+        } else {
+          log('warn', 'trial_will_end_no_data', { event_id: eventId, sub_id: sub?.id });
+        }
+        break;
+      }
+
       case 'checkout.session.completed': {
         // 初回 checkout — クライアントは success_url + session_id で確定する経路なので
         // ここではログのみ
@@ -306,4 +325,100 @@ export default async function handler(req: Request) {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+// ─── VV (2026-06-03): trial_will_end リマインド メール ────
+async function sendTrialEndingReminder(sub: StripeSubscription): Promise<void> {
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!stripeKey || !resendKey) {
+    log('warn', 'trial_reminder_skipped', { reason: 'env_missing', sub_id: sub.id });
+    return;
+  }
+  if (!sub.customer || !sub.trial_end) return;
+
+  // 顧客 email を取得
+  const email = await stripeGetCustomerEmail(stripeKey, sub.customer);
+  if (!email) {
+    log('warn', 'trial_reminder_no_email', { sub_id: sub.id, customer: sub.customer });
+    return;
+  }
+
+  // 料金 + 通貨 (items[0].price.unit_amount) を最善努力で取得
+  const item = sub.items?.data?.[0]?.price;
+  const planLabel = sub.metadata?.plan || item?.metadata?.plan || 'プラン';
+  const brand = sub.metadata?.brand || item?.metadata?.brand || 'PRISM';
+  const amount = item?.unit_amount ? Math.round(item.unit_amount / 1) : null;
+  const currency = (item?.currency || 'jpy').toUpperCase();
+  const priceStr = amount != null
+    ? (currency === 'JPY' ? `¥${amount.toLocaleString('ja-JP')}` : `${amount.toLocaleString()} ${currency}`)
+    : '(料金 — Stripe ダッシュボードで確認)';
+
+  // trial_end 表示
+  const trialEnd = new Date(sub.trial_end * 1000);
+  const jstTrialEnd = new Date(trialEnd.getTime() + 9 * 3600_000);
+  const trialEndStr = `${jstTrialEnd.getUTCFullYear()}/${jstTrialEnd.getUTCMonth() + 1}/${jstTrialEnd.getUTCDate()} (JST)`;
+  const daysLeft = Math.max(0, Math.ceil((sub.trial_end * 1000 - Date.now()) / 86400_000));
+
+  const subject = `🌅 CORE ${brand} 無料体験 あと ${daysLeft} 日 — ${trialEndStr} に有料へ切替`;
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f7;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif">
+  <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
+    <div style="background:linear-gradient(135deg,#FBBF24,#E84B97);padding:28px 32px;color:#fff">
+      <h1 style="margin:0;font-size:20px;font-weight:800;letter-spacing:-.3px">あと ${daysLeft} 日で無料体験が終わります</h1>
+      <p style="margin:6px 0 0;font-size:13px;opacity:.95">${planLabel} プラン — ${priceStr} / 月</p>
+    </div>
+    <div style="padding:24px 32px;color:#1F1A2E;line-height:1.7;font-size:14px">
+      <p style="margin:0 0 16px">CORE ${brand} をお試しいただきありがとうございます。</p>
+      <p style="margin:0 0 16px">
+        無料体験は <strong style="color:#1F1A2E">${trialEndStr}</strong> に終了し、
+        以降 <strong style="color:#E84B97">${priceStr} / 月</strong> の自動課金に切り替わります。
+      </p>
+      <div style="background:#FAF7F0;padding:14px 16px;border-radius:10px;margin:16px 0;font-size:13px">
+        🎯 引き続きご利用いただける場合は、特に何もする必要はありません。<br />
+        ✖ 解約をご希望の場合は、下のボタンから 1 タップで停止できます。
+      </div>
+      <div style="margin-top:24px">
+        <a href="https://core-prism-app.vercel.app/billing" style="display:inline-block;background:#1F1A2E;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;font-size:13px;margin-right:8px">
+          請求設定を開く →
+        </a>
+        <a href="https://core-prism-app.vercel.app" style="display:inline-block;color:#E84B97;text-decoration:none;padding:12px 8px;font-weight:700;font-size:13px">
+          ダッシュボードへ
+        </a>
+      </div>
+      <p style="font-size:11px;color:#999;margin:24px 0 0;line-height:1.7;border-top:1px solid #eee;padding-top:16px">
+        このメールは Stripe Webhook (customer.subscription.trial_will_end) から自動送信されています。<br />
+        お問い合わせは gauche.cellist1201@gmail.com まで。
+      </p>
+    </div>
+  </div>
+</body></html>`;
+
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${resendKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'CORE Prism <noreply@resend.dev>',
+      to: [email],
+      subject,
+      html,
+    }),
+  });
+  log('info', 'trial_reminder_sent', { sub_id: sub.id, to: email, daysLeft });
+}
+
+async function stripeGetCustomerEmail(stripeKey: string, customerId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+      headers: { 'Authorization': `Bearer ${stripeKey}` },
+    });
+    if (!res.ok) return null;
+    const json = await res.json() as { email?: string };
+    return typeof json.email === 'string' ? json.email : null;
+  } catch {
+    return null;
+  }
 }

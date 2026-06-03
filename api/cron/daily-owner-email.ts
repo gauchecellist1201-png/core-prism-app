@@ -118,6 +118,9 @@ export default async function handler(req: Request): Promise<Response> {
   // RR (2026-06-03): リテンション (DAU + 7 日再訪)
   const retentionYesterday = await loadRetention(yJst);
 
+  // UU (2026-06-03): エラー集計 (Upstash 経由)
+  const errorsYesterday = await loadErrors(yJst);
+
   const html = renderHtml({
     dateStr,
     yDateStr,
@@ -130,6 +133,7 @@ export default async function handler(req: Request): Promise<Response> {
     alerts: alertSubscriptions,
     funnelYesterday,
     retentionYesterday,
+    errorsYesterday,
   });
 
   await sendResendEmail(
@@ -216,6 +220,62 @@ async function loadRetention(yJst: Date): Promise<RetentionStat> {
   } catch { return empty; }
 }
 
+type ErrorReport = {
+  totalCount: number;
+  uniqueFingerprints: number;
+  top: Array<{ fingerprint: string; count: number; sample: string }>;
+  available: boolean;
+};
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] || ch));
+}
+
+async function loadErrors(yJst: Date): Promise<ErrorReport> {
+  const empty: ErrorReport = { totalCount: 0, uniqueFingerprints: 0, top: [], available: false };
+  if (!UP_URL_OB || !UP_TOK_OB) return empty;
+  const yStr = `${yJst.getFullYear()}-${String(yJst.getMonth() + 1).padStart(2, '0')}-${String(yJst.getDate()).padStart(2, '0')}`;
+  try {
+    const countRes = await fetch(UP_URL_OB, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${UP_TOK_OB}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(['HGETALL', `errlog:${yStr}:count`]),
+    });
+    const carr: string[] = ((await countRes.json()) as { result?: string[] }).result || [];
+    const counts: Array<[string, number]> = [];
+    let total = 0;
+    for (let i = 0; i < carr.length; i += 2) {
+      const v = Number(carr[i + 1]) || 0;
+      counts.push([carr[i], v]);
+      total += v;
+    }
+    if (counts.length === 0) return { ...empty, available: true };
+
+    // top 3 取得
+    counts.sort((a, b) => b[1] - a[1]);
+    const topFingerprints = counts.slice(0, 3);
+
+    // サンプルを HGET でまとめて取得
+    const top: Array<{ fingerprint: string; count: number; sample: string }> = [];
+    for (const [fp, c] of topFingerprints) {
+      try {
+        const s = await fetch(UP_URL_OB, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${UP_TOK_OB}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(['HGET', `errlog:${yStr}:sample`, fp]),
+        });
+        const sj = ((await s.json()) as { result?: string }).result || '';
+        top.push({ fingerprint: fp, count: c, sample: sj });
+      } catch {
+        top.push({ fingerprint: fp, count: c, sample: '' });
+      }
+    }
+    return { totalCount: total, uniqueFingerprints: counts.length, top, available: true };
+  } catch {
+    return empty;
+  }
+}
+
 async function loadOnboardFunnel(yJst: Date): Promise<OnboardFunnel> {
   const empty: OnboardFunnel = {
     welcome: 0, name: 0, industry: 0, apikey: 0, model: 0, completed: 0,
@@ -261,6 +321,7 @@ function renderHtml(data: {
   alerts: Array<{ customer: string; status: string }>;
   funnelYesterday: OnboardFunnel;
   retentionYesterday: RetentionStat;
+  errorsYesterday: ErrorReport;
 }): string {
   const alertBlock = data.alertCount === 0
     ? `<p style="font-size:13px;color:#666;margin:0">✅ 重要なアラートはありません</p>`
@@ -344,6 +405,39 @@ function renderHtml(data: {
             <tr><td style="padding:4px 0;color:#666">→ モデル</td><td style="text-align:right;font-weight:700">${f.model}</td></tr>
             <tr><td style="padding:4px 0;color:#16A34A;font-weight:700">→ 完了</td><td style="text-align:right;font-weight:800;color:#16A34A">${f.completed}</td></tr>
           </table>
+        </div>`;
+      })()}
+
+      <h2 style="margin:0 0 12px;font-size:16px;font-weight:800">🐛 昨日のフロントエラー</h2>
+      ${(() => {
+        const er = data.errorsYesterday;
+        if (!er.available) {
+          return `<p style="font-size:12px;color:#999;margin:0 0 24px;line-height:1.7">
+            UPSTASH_REDIS_REST_URL/TOKEN を Vercel env に追加するとエラー集計が表示されます。
+          </p>`;
+        }
+        if (er.totalCount === 0) {
+          return `<p style="font-size:13px;color:#16A34A;margin:0 0 24px;font-weight:700">✅ 昨日はエラー 0 件</p>`;
+        }
+        const sevColor = er.totalCount >= 50 ? '#DC2626' : er.totalCount >= 10 ? '#D97706' : '#16A34A';
+        return `<div style="background:#FEF2F2;padding:14px 18px;border-radius:10px;margin-bottom:24px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+            <div style="font-size:11px;color:#666;letter-spacing:.08em;font-weight:700">FRONTEND ERRORS</div>
+            <div style="font-size:13px;font-weight:800;color:${sevColor}">${er.totalCount} 件 / ${er.uniqueFingerprints} 種</div>
+          </div>
+          ${er.top.map((t, i) => {
+            let sampleObj: { type?: string; message?: string; url?: string; stack?: string } = {};
+            try { sampleObj = JSON.parse(t.sample) as { type?: string; message?: string; url?: string; stack?: string }; } catch { /* */ }
+            const headLine = `[${sampleObj.type || '?'}] ${sampleObj.message || t.fingerprint}`.slice(0, 140);
+            const stackLine = (sampleObj.stack || '').split('\n')[0]?.slice(0, 200) || '';
+            return `<div style="margin-top:${i === 0 ? '4px' : '10px'};padding-top:${i === 0 ? '0' : '10px'};border-top:${i === 0 ? '0' : '1px solid #fff'}">
+              <div style="font-size:12px;font-weight:700;color:#1F1A2E;line-height:1.5">
+                <span style="display:inline-block;min-width:28px;background:${sevColor};color:#fff;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:800;text-align:center;margin-right:6px">×${t.count}</span>
+                ${escapeHtml(headLine)}
+              </div>
+              ${stackLine ? `<div style="font-size:10.5px;color:#6B7280;font-family:Menlo,monospace;margin-top:3px;margin-left:34px;line-height:1.4">${escapeHtml(stackLine)}</div>` : ''}
+            </div>`;
+          }).join('')}
         </div>`;
       })()}
 

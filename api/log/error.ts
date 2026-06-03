@@ -179,5 +179,45 @@ export default async function handler(req: Request) {
     );
   }
 
+  // UU (2026-06-03): Upstash がある場合は朝メール集計用に日次永続化
+  await persistDailyError({ type, message, url, brand, stack, ts: body.ts });
+
   return json({ logged: true }, 200, ch);
+}
+
+// ─── Upstash 永続 (UU 2026-06-03) ──────────────────────────
+const UP_URL_E = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_URL) || '';
+const UP_TOK_E = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_TOKEN) || '';
+const UPSTASH_OK_E = !!(UP_URL_E && UP_TOK_E);
+
+async function persistDailyError(e: {
+  type: string; message: string; url: string; brand: string; stack?: string; ts: number;
+}): Promise<void> {
+  if (!UPSTASH_OK_E) return;
+  const date = new Date(e.ts).toISOString().slice(0, 10);
+  const key = `errlog:${date}`;
+  const fingerprint = `${e.type}|${e.message.slice(0, 120)}`;
+  const sample = JSON.stringify({
+    type: e.type, message: e.message.slice(0, 240), url: e.url.slice(0, 240),
+    brand: e.brand, stack: (e.stack || '').slice(0, 800), ts: e.ts,
+  });
+  try {
+    // 件数カウンタ
+    await up(['HINCRBY', `${key}:count`, fingerprint, 1]);
+    // 直近サンプル (上書き保存 — 最新スタックのみ)
+    await up(['HSET', `${key}:sample`, fingerprint, sample]);
+    // TTL
+    await up(['EXPIRE', `${key}:count`, 60 * 86400]);
+    await up(['EXPIRE', `${key}:sample`, 60 * 86400]);
+  } catch { /* noop */ }
+}
+
+async function up(cmd: (string | number)[]): Promise<unknown> {
+  const res = await fetch(UP_URL_E, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${UP_TOK_E}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(cmd),
+  });
+  if (!res.ok) throw new Error(`upstash ${res.status}`);
+  return res.json();
 }
