@@ -19,6 +19,8 @@ import LandingPage from './components/LandingPage';
 import CheckoutModal from './components/CheckoutModal';
 import QuickAskFab from './components/QuickAskFab';
 import SuggestionFab from './components/SuggestionFab';
+import OnboardingTour from './components/OnboardingTour';
+import SitemapPalette from './components/SitemapPalette';
 import LegalModal, { type LegalKind } from './components/LegalModal';
 import StudioOpeningSheet from './components/StudioOpeningSheet';
 // 重い「別ルート専用」のページは React.lazy で main から切り出す。
@@ -647,10 +649,14 @@ export default function App() {
       {view === 'dashboard' && <CxoWelcomeCard brand="prism" />}
       {/* PWA インストール導線 — Android/Chrome prompt + iOS Safari ガイド */}
       {view === 'dashboard' && <InstallPwaBanner brand="prism" />}
+      {/* NNN (2026-06-04): 初回ダッシュボード Welcome ツアー */}
+      {view === 'dashboard' && <OnboardingTour />}
       {/* ZZ (2026-06-03): 全画面常駐 FAB — LP / Pricing / Billing / Dashboard */}
       <QuickAskFab />
       {/* DDD (2026-06-04): 左下「💡 改善提案」(QuickAskFab と被らない位置) */}
       <SuggestionFab />
+      {/* OOO (2026-06-04): Cmd+Shift+/ で「全機能マップ」 */}
+      <SitemapPalette />
     </>
   );
 }
