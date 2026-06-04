@@ -167,6 +167,9 @@ export default function MasterEntry() {
           </p>
         </div>
 
+        {/* AAAAAAA (2026-06-04): ぱっと見 KPI 4 カード — master key が 入っている時のみ */}
+        {isMasterValid && <MasterTopKpiCards masterKey={master} />}
+
         {/* マスターキー */}
         <div style={{ marginBottom: 18 }}>
           <label
@@ -647,6 +650,97 @@ export default function MasterEntry() {
         }}
       >☀️</button>
       <OwnerBriefModal open={briefOpen} onClose={() => setBriefOpen(false)} />
+    </div>
+  );
+}
+
+// ============================================================
+// MasterTopKpiCards — /master トップ に「ぱっと見」KPI 4 カード
+// (AAAAAAA 2026-06-04)
+// owner-brief を 1 回 fetch して 表示。 失敗時 / 取得中 は loader / fallback。
+// ============================================================
+interface OwnerBrief {
+  kpi: { revenueToday: number; mrr: number; churnPct: number; onboardCompletionPct: number; errors24h: number };
+  asOf: string;
+}
+
+function MasterTopKpiCards({ masterKey }: { masterKey: string }) {
+  const [data, setData] = useState<OwnerBrief | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true); setErr(false);
+    fetch('/api/master/owner-brief', { headers: { 'x-master-key': masterKey } })
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then((j) => { if (!cancelled) setData(j as OwnerBrief); })
+      .catch(() => { if (!cancelled) setErr(true); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [masterKey]);
+
+  const yenFmt = (n: number) => '¥' + Math.round(n).toLocaleString('ja-JP');
+
+  // 取得失敗 / 未取得 でも 何かしら 表示する (嘘禁止 — 「—」)
+  const cards: Array<{ label: string; value: string; color: string; emoji: string }> = data
+    ? [
+        { label: '今日 売上',  value: yenFmt(data.kpi.revenueToday), color: '#34D399', emoji: '💴' },
+        { label: 'MRR',        value: yenFmt(data.kpi.mrr),          color: '#22D3EE', emoji: '📈' },
+        { label: 'オンボ完了率 (7日)', value: `${data.kpi.onboardCompletionPct}%`, color: data.kpi.onboardCompletionPct >= 60 ? '#34D399' : '#FBBF24', emoji: '🌱' },
+        { label: 'エラー累計',  value: String(data.kpi.errors24h),    color: data.kpi.errors24h > 10 ? '#F87171' : '#94A3B8', emoji: '🚨' },
+      ]
+    : Array.from({ length: 4 }).map(() => ({ label: '取得中…', value: loading ? '…' : '—', color: 'rgba(255,255,255,0.5)', emoji: '⌛' }));
+
+  return (
+    <div style={{
+      marginBottom: 22,
+      padding: '14px 16px',
+      borderRadius: 14,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.08)',
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 10,
+      }}>
+        <span style={{
+          fontSize: 10, letterSpacing: '0.22em',
+          color: 'rgba(255,255,255,0.55)', fontWeight: 800,
+        }}>📊 ぱっと見 (KPI)</span>
+        {data && (
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+            {new Date(data.asOf).toLocaleString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+      </div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+        gap: 8,
+      }}>
+        {cards.map((c, i) => (
+          <div key={i} style={{
+            padding: '10px 12px', borderRadius: 10,
+            background: 'rgba(255,255,255,0.04)',
+            border: `1px solid ${c.color}33`,
+          }}>
+            <div style={{
+              fontSize: 9, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.55)',
+              fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3,
+            }}><span style={{ fontSize: 12 }}>{c.emoji}</span> {c.label}</div>
+            <div style={{
+              fontSize: '1.05rem', fontWeight: 900, color: c.color, lineHeight: 1.2, marginTop: 3,
+              fontVariantNumeric: 'tabular-nums',
+            }}>{c.value}</div>
+          </div>
+        ))}
+      </div>
+      {err && (
+        <div style={{ marginTop: 8, fontSize: 10, color: 'rgba(248,113,113,0.85)' }}>
+          owner-brief 取得失敗 — STRIPE_SECRET_KEY / Upstash 環境を確認
+        </div>
+      )}
     </div>
   );
 }

@@ -53,6 +53,10 @@ function yen(n: number): string {
   return sign + Math.abs(Math.round(n)).toLocaleString('ja-JP');
 }
 
+function esc(s: string): string {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] || c));
+}
+
 function monthlyValueJpy(s: Stripe.Subscription): number {
   let sum = 0;
   for (const item of s.items.data) {
@@ -124,7 +128,47 @@ async function buildForecast(): Promise<Forecast> {
   return { mrrJpy, fixedMonthlyJpy, openingBalanceJpy, dailyNet, daysUntilZero, zeroDate };
 }
 
-function buildEmailHtml(f: Forecast): string {
+// ZZZZZZ (2026-06-04): daysUntilZero ≤ 30 で AI に 24 時間 以内 にやる 3 アクション (30字×3)
+async function aiUrgentActions(f: Forecast): Promise<string[] | null> {
+  if (!process.env.CLAUDE_API_KEY) return null;
+  try {
+    const prompt = `現在 状況:
+- 残高: ${yen(f.openingBalanceJpy)}
+- MRR: ${yen(f.mrrJpy)}
+- 固定費: ${yen(f.fixedMonthlyJpy)} / 月
+- 1 日 純増減: ${yen(f.dailyNet)}
+- 残高ゼロ到達: ${f.daysUntilZero} 日後 (${f.zeroDate})
+
+オーナー (株式会社CORE 代表 井出直毅) が 24 時間 以内 に やる 3 アクション を 純 JSON で 返してください。
+
+形式:
+{ "actions": ["30 字以内", "30 字以内", "30 字以内"] }
+
+ルール: 嘘禁止 / 抽象禁止 (例: 「営業を頑張る」 NG) / 具体的に (例: 「営業 5 件 に DM」 OK) / 数字 を 1 つ以上 入れる。`;
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': process.env.CLAUDE_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 400,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!res.ok) return null;
+    const j = await res.json() as { content?: Array<{ text?: string }> };
+    const raw = (j.content?.[0]?.text || '').trim();
+    const m = raw.replace(/```(?:json)?\s*\n?|```/g, '').match(/\{[\s\S]*\}/);
+    if (!m) return null;
+    const parsed = JSON.parse(m[0]) as { actions?: string[] };
+    return parsed.actions?.slice(0, 3).map((s) => String(s).slice(0, 40)) || null;
+  } catch { return null; }
+}
+
+function buildEmailHtml(f: Forecast, urgent?: string[] | null): string {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f4f4f7;font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif">
 <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
@@ -143,6 +187,14 @@ function buildEmailHtml(f: Forecast): string {
         <tr><td style="padding:4px 0;color:#7F1D1D;font-weight:700">残高ゼロ 到達日</td><td style="text-align:right;padding:4px 0;color:#DC2626;font-weight:800">${f.zeroDate} (あと ${f.daysUntilZero} 日)</td></tr>
       </table>
     </div>
+    ${urgent && urgent.length > 0 ? `
+    <div style="background:#FEF3C7;border:1px solid rgba(251,191,36,0.5);border-radius:12px;padding:16px 18px;margin:14px 0">
+      <div style="font-size:11px;color:#B45309;font-weight:800;letter-spacing:.08em;margin-bottom:8px">🚀 24 時間 以内 にやる 3 アクション (AI)</div>
+      <ol style="margin:0;padding-left:20px;line-height:1.9;color:#1F1A2E">
+        ${urgent.map((a) => `<li><strong>${esc(a)}</strong></li>`).join('')}
+      </ol>
+    </div>
+    ` : ''}
     <p style="margin:14px 0 0"><strong>打ち手 (優先順):</strong></p>
     <ul style="margin:8px 0 0;padding-left:18px;line-height:1.8">
       <li>営業: 営業先 リスト → AI 営業メール (scripts/draftSalesEmail.mjs) で 100 通 送信</li>
@@ -160,7 +212,7 @@ function buildEmailHtml(f: Forecast): string {
 </div></body></html>`;
 }
 
-async function notifySlack(f: Forecast): Promise<void> {
+async function notifySlack(f: Forecast, urgent?: string[] | null): Promise<void> {
   if (!SLACK) return;
   const text = `🚨 CORE 資金繰り 警告 — 残高 0 まで あと ${f.daysUntilZero} 日 (${f.zeroDate})`;
   const blocks = [
@@ -175,13 +227,24 @@ async function notifySlack(f: Forecast): Promise<void> {
         { type: 'mrkdwn', text: `*1 日 純増減*\n${yen(f.dailyNet)}` },
       ],
     },
-    {
-      type: 'actions',
-      elements: [
-        { type: 'button', text: { type: 'plain_text', text: '📊 ダッシュを開く', emoji: true }, url: 'https://core-prism-app.vercel.app/master/cashflow-forecast', style: 'danger' },
-      ],
-    },
   ];
+  // ZZZZZZ (2026-06-04): AI 推奨 3 アクション (緊急時のみ)
+  if (urgent && urgent.length > 0) {
+    blocks.push(
+      { type: 'divider' },
+      { type: 'section', text: { type: 'mrkdwn', text: '*🚀 24 時間 以内 にやる 3 アクション (AI 推奨)*' } },
+      ...urgent.slice(0, 3).map((a, i) => ({
+        type: 'section',
+        text: { type: 'mrkdwn', text: `*${i + 1}.* ${a}` },
+      })),
+    );
+  }
+  blocks.push({
+    type: 'actions',
+    elements: [
+      { type: 'button', text: { type: 'plain_text', text: '📊 ダッシュを開く', emoji: true }, url: 'https://core-prism-app.vercel.app/master/cashflow-forecast', style: 'danger' },
+    ],
+  });
   try {
     await fetch(SLACK, {
       method: 'POST',
@@ -191,7 +254,7 @@ async function notifySlack(f: Forecast): Promise<void> {
   } catch { /* */ }
 }
 
-async function notifyEmail(f: Forecast): Promise<boolean> {
+async function notifyEmail(f: Forecast, urgent?: string[] | null): Promise<boolean> {
   if (!RESEND_KEY || !OWNER_EMAIL) return false;
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -201,7 +264,7 @@ async function notifyEmail(f: Forecast): Promise<boolean> {
         from: 'CORE Prism <noreply@resend.dev>',
         to: [OWNER_EMAIL],
         subject: `🚨 資金繰り 警告 — あと ${f.daysUntilZero} 日 で 残高 0 (${f.zeroDate})`,
-        html: buildEmailHtml(f),
+        html: buildEmailHtml(f, urgent),
       }),
     });
     return res.ok;
@@ -238,18 +301,25 @@ export default async function handler(req: Request): Promise<Response> {
     } catch { /* */ }
   }
 
+  // ZZZZZZ (2026-06-04): daysUntilZero ≤ 30 で AI に 24 時間 3 アクション
+  const URGENT_DAYS = Number(process.env.CASHFLOW_URGENT_DAYS || '30');
+  let urgent: string[] | null = null;
+  if (f.daysUntilZero !== undefined && f.daysUntilZero <= URGENT_DAYS) {
+    urgent = await aiUrgentActions(f);
+  }
+
   if (dryRun) {
-    return json({ ok: true, dryRun: true, would_send: true, forecast: f });
+    return json({ ok: true, dryRun: true, would_send: true, forecast: f, urgent });
   }
 
   const [emailOk] = await Promise.all([
-    notifyEmail(f).catch(() => false),
-    notifySlack(f).catch(() => { /* */ }),
+    notifyEmail(f, urgent).catch(() => false),
+    notifySlack(f, urgent).catch(() => { /* */ }),
   ]);
 
   if (UPSTASH_OK) {
     try { await up(['SET', guard, new Date().toISOString(), 'EX', 26 * 3600]); } catch { /* */ }
   }
 
-  return json({ ok: true, triggered: true, emailSent: emailOk, slackSent: !!SLACK, daysUntilZero: f.daysUntilZero, zeroDate: f.zeroDate });
+  return json({ ok: true, triggered: true, emailSent: emailOk, slackSent: !!SLACK, daysUntilZero: f.daysUntilZero, zeroDate: f.zeroDate, urgent });
 }
