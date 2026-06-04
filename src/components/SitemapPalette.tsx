@@ -38,6 +38,7 @@ const SITEMAP: SiteNode[] = [
       { label: 'お問い合わせ',       href: '/contact',   desc: '6 トピックから問い合わせ', kw: ['contact', '問い合わせ', 'メール'] },
       { label: 'トラスト センター',  href: '/trust',     desc: 'データの所在 / アクセス / 削除 / 法令', kw: ['trust', 'GDPR', 'プライバシー', '監査'] },
       { label: 'ステータス',         href: '/status',    desc: 'API / Stripe / Upstash 健康診断 + 90 日インシデント', kw: ['status', '障害', 'uptime'] },
+      { label: 'ロードマップ',       href: '/roadmap',   desc: '今 / 次 / 後 の 3 ヶ月予定 + 投票', kw: ['roadmap', 'ロード', '予定', '投票'] },
     ],
   },
   {

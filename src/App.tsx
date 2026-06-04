@@ -41,6 +41,7 @@ const RevenueDashboard = lazy(() => import('./master/RevenueDashboard'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
 const StatusPage = lazy(() => import('./components/StatusPage'));
+const RoadmapPage = lazy(() => import('./components/RoadmapPage'));
 const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./legal/TermsOfService'));
@@ -175,6 +176,12 @@ function isStatusPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/status' || p === '/status/';
+}
+
+function isRoadmapPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/roadmap' || p === '/roadmap/';
 }
 
 function isErrorLogPath(): boolean {
@@ -361,6 +368,11 @@ export default function App() {
   // /status — 公開ステータスページ (WWWW 2026-06-04)
   if (isStatusPath()) {
     return <Suspense fallback={<RouteFallback />}><StatusPage /></Suspense>;
+  }
+
+  // /roadmap — 公開ロードマップ (LLLLL 2026-06-04)
+  if (isRoadmapPath()) {
+    return <Suspense fallback={<RouteFallback />}><RoadmapPage /></Suspense>;
   }
 
   // /master/error-log — エラーログ単独閲覧 (自端末のローカルログのみ)

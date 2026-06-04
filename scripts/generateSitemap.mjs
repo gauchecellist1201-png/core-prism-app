@@ -62,6 +62,7 @@ const URLS = [
   { path: '/contact',      file: 'src/components/ContactPage.tsx',      priority: '0.6', changefreq: 'yearly' },
   { path: '/trust',        file: 'src/components/TrustPage.tsx',        priority: '0.6', changefreq: 'monthly' },
   { path: '/status',       file: 'src/components/StatusPage.tsx',       priority: '0.4', changefreq: 'always' },
+  { path: '/roadmap',      file: 'src/components/RoadmapPage.tsx',      priority: '0.6', changefreq: 'weekly' },
   { path: '/privacy',      file: 'src/legal/PrivacyPolicy.tsx',         priority: '0.4', changefreq: 'monthly' },
   { path: '/terms',        file: 'src/legal/TermsOfService.tsx',        priority: '0.4', changefreq: 'monthly' },
   { path: '/tokushoho',    file: 'src/pages/TokushohoPage.tsx',         priority: '0.4', changefreq: 'monthly' },

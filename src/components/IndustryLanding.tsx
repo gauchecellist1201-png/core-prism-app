@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import { INDUSTRIES, type IndustryConfig } from '../lp/industries';
 import IndustryWeekTimeline from './IndustryWeekTimeline';
 import IndustryVideoSection from './IndustryVideoSection';
+import OnboardingVideoEmbed from './OnboardingVideoEmbed';
 
 const FONT_SERIF_JA = '"Noto Serif JP", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"Cinzel", "Cormorant Garamond", serif';
@@ -89,6 +90,8 @@ export default function IndustryLanding({ slug }: Props) {
       overflowX: 'clip',
     }}>
       <Hero config={config} accentLeft={accentLeft} accentRight={accentRight} />
+      {/* NNNNN (2026-06-04): /onboarding-video.mp4 が存在する時のみ 表示 (onError で 自動非表示) */}
+      <OnboardingVideoEmbed accentLeft={accentLeft} accentRight={accentRight} />
       <Pain config={config} accentLeft={accentLeft} />
       <Solution config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Proof config={config} accentLeft={accentLeft} accentRight={accentRight} />
