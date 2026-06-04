@@ -188,7 +188,7 @@ export default function WebVitals() {
           </div>
         )}
 
-        <div style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.4)', lineHeight: 1.7 }}>
+        <div style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7 }}>
           初期化: <code>initWebVitals()</code> を App.tsx で 呼び出し。 計測 は LCP/CLS/INP は ページ離脱時 確定 (sendBeacon)。
           基準: Web Vitals 2024-12 公式 (good/needs-improvement/poor)。
         </div>

@@ -117,13 +117,13 @@ export default function PersonaPresetSuggestion() {
             onClick={() => close('skip')}
             style={{
               position: 'absolute', top: 12, right: 12,
-              width: 30, height: 30, borderRadius: 15,
+              width: 36, height: 36, borderRadius: 18,
               background: 'rgba(255,255,255,0.08)', border: 'none',
               color: 'rgba(255,255,255,0.7)', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 1,
             }}
-          ><X size={14} /></button>
+          ><X size={16} /></button>
 
           <div style={{
             padding: '20px 22px 14px',

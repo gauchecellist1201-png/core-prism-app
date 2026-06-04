@@ -287,13 +287,13 @@ export default function SitemapPalette() {
               onClick={() => setOpen(false)}
               aria-label="閉じる"
               style={{
-                width: 28, height: 28, borderRadius: 14,
+                width: 36, height: 36, borderRadius: 18,
                 background: 'rgba(255,255,255,0.08)', border: 'none',
                 color: 'rgba(255,255,255,0.7)', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <X size={13} />
+              <X size={16} />
             </button>
           </div>
 

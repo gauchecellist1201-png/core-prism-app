@@ -296,7 +296,7 @@ export default function ChangelogPage() {
           );
         })}
 
-        <div style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+        <div style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
           このページは <code>public/changelog.json</code> を 読み込んでいます。
           オーナー が <code>node scripts/syncChangelog.mjs</code> を実行する度に 最新化されます。
         </div>
