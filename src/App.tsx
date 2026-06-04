@@ -21,6 +21,7 @@ import QuickAskFab from './components/QuickAskFab';
 import SuggestionFab from './components/SuggestionFab';
 import OnboardingTour from './components/OnboardingTour';
 import EveningFeed from './components/EveningFeed';
+import MorningCoach from './components/MorningCoach';
 import PersonaPresetSuggestion from './components/PersonaPresetSuggestion';
 import SampleModeBanner from './components/SampleModeBanner';
 import SitemapPalette from './components/SitemapPalette';
@@ -36,6 +37,7 @@ const AiStats = lazy(() => import('./master/AiStats'));
 const AiCostDashboard = lazy(() => import('./master/AiCostDashboard'));
 const SecretsHealth = lazy(() => import('./master/SecretsHealth'));
 const OnboardFunnel = lazy(() => import('./master/OnboardFunnel'));
+const RevenueDashboard = lazy(() => import('./master/RevenueDashboard'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
 const StatusPage = lazy(() => import('./components/StatusPage'));
@@ -149,6 +151,12 @@ function isOnboardFunnelPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master/onboard-funnel' || p === '/onboard-funnel';
+}
+
+function isRevenueDashboardPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/revenue-dashboard' || p === '/revenue-dashboard';
 }
 
 function isContactPath(): boolean {
@@ -333,6 +341,11 @@ export default function App() {
   // /master/onboard-funnel — オーナー専用 オンボ ファネル (YYYY 2026-06-04)
   if (isOnboardFunnelPath()) {
     return <Suspense fallback={<RouteFallback />}><OnboardFunnel /></Suspense>;
+  }
+
+  // /master/revenue-dashboard — Stripe 12 ヶ月 売上 + MRR + 解約率 (JJJJJ 2026-06-04)
+  if (isRevenueDashboardPath()) {
+    return <Suspense fallback={<RouteFallback />}><RevenueDashboard /></Suspense>;
   }
 
   // /contact — 公開窓口 (KKK 2026-06-04)
@@ -695,6 +708,8 @@ export default function App() {
       {view === 'dashboard' && <OnboardingTour />}
       {/* VVV (2026-06-04): 夜のフィード — 18 時以降 1 日 1 回 */}
       {view === 'dashboard' && <EveningFeed />}
+      {/* KKKKK (2026-06-04): 朝の「今日のひとこと」 (4-12 時 JST 1 日 1 回) */}
+      {view === 'dashboard' && <MorningCoach personaName={activePersona?.name} />}
       {/* GGGG (2026-06-04): 業種別 AI ペルソナ プリセット 4 名 提案 */}
       {view === 'dashboard' && <PersonaPresetSuggestion />}
       {/* ZZ (2026-06-03): 全画面常駐 FAB — LP / Pricing / Billing / Dashboard */}

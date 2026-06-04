@@ -486,6 +486,23 @@ export default function MasterEntry() {
             📊 オンボ ファネル
           </a>
           <a
+            href="/master/revenue-dashboard"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(52,211,153,0.12)',
+              border: '1px solid rgba(52,211,153,0.35)',
+              color: '#a7f3d0',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            💴 12ヶ月 売上 + MRR
+          </a>
+          <a
             href="/master/stripe-status"
             style={{
               flex: 1,
