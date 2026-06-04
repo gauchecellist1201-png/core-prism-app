@@ -27,6 +27,7 @@ import { generateReelScript, generateReelCaption, type ReelScriptResult } from '
 import { suggestNextSlot, type ScheduledPost } from './usePostQueue';
 import { notifyInApp } from '../lib/inAppNotify';
 import ShareArtifactButton from '../components/ShareArtifactButton';
+import GenerationReward from '../components/GenerationReward';
 import { shareToInstagram } from './instagramShare';
 import {
   REEL_PRESETS, getPreset, drawPresetDecorations, drawPresetBackground,
@@ -157,6 +158,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [capBusy, setCapBusy] = useState(false);
   const [capErr, setCapErr] = useState<string>('');
   const [aiCaption, setAiCaption] = useState<{ caption: string; hashtags: string[] } | null>(null);
+  // AI 生成が終わった「その瞬間」を祝うごほうび演出 (台本・字幕・投稿文の 3 か所で共有)
+  const [reward, setReward] = useState<{ label: string; detail?: string } | null>(null);
   // Instagram 共有
   const [igBusy, setIgBusy] = useState(false);
 
@@ -245,6 +248,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       })));
       setAiResult(result);
       setStep('subtitle');
+      setReward({ label: '字幕ができました！', detail: `${clips.length} カットに反映しました` });
     } catch (e: any) {
       setAiErr(e?.message || 'AI 処理に失敗しました。少し待ってから再試行してください。');
     } finally {
@@ -274,6 +278,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     try {
       const result = await generateReelScript(themeHint);
       setScriptResult(result);
+      setReward({ label: '台本ができました！', detail: `${result.scenes.length} シーンの構成を用意しました` });
       // 既存クリップが 3 個以上あれば字幕を上書き、無ければプレースホルダー (色付き) クリップを 3 個作る
       setClips(prev => {
         if (prev.length >= 3) {
@@ -635,6 +640,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       const themeForCap = themeHint || scriptResult?.title || 'リール投稿';
       const out = await generateReelCaption(themeForCap, captionTexts);
       setAiCaption(out);
+      setReward({ label: '投稿文ができました！', detail: `ハッシュタグ ${out.hashtags.length} 個つき` });
     } catch (e: any) {
       setCapErr(e?.message || 'キャプション生成に失敗しました');
     } finally {
@@ -718,6 +724,18 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         background: 'radial-gradient(circle, #FBBF2444 0%, transparent 70%)',
         filter: 'blur(60px)', pointerEvents: 'none', zIndex: 0,
       }} />
+
+      {/* AI 生成が終わった瞬間のごほうび — 画面中央にふわっと光って消える */}
+      {reward && (
+        <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 60 }}>
+          <GenerationReward
+            accent={bg.accent}
+            label={reward.label}
+            detail={reward.detail}
+            onDone={() => setReward(null)}
+          />
+        </div>
+      )}
 
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 480, margin: '0 auto', padding: '1rem' }}>
 
