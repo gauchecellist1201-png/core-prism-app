@@ -6,6 +6,7 @@ import {
   Upload, Download, Type, Sliders, Wand2, Crop as CropIcon,
   Undo2, Redo2, Plus, Trash2, Eye, EyeOff, ZoomIn, ZoomOut, Loader2,
   Sparkles, Send, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Grid3x3, Brain,
+  RefreshCw, X,
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import type { AppSettings } from '../types/identity';
@@ -142,6 +143,8 @@ export default function IrisImageEditor({ bg }: Props) {
   const [showThirds, setShowThirds] = useState(false);
   const [busy, setBusy] = useState<'omakase' | 'share' | null>(null);
   const [note, setNote] = useState('');
+  // 失敗したアクション (もう一度ボタン用) — 沈黙する失敗をゼロに
+  const [lastFail, setLastFail] = useState<'omakase' | 'share' | null>(null);
 
   // ─── 履歴 (Undo / Redo) ───
   const [history, setHistory] = useState<Snapshot[]>([
@@ -535,6 +538,7 @@ export default function IrisImageEditor({ bg }: Props) {
     if (!canvas || busy) return;
     setBusy('share');
     setNote('');
+    setLastFail(null);
     try {
       const blob: Blob = await new Promise((resolve, reject) => {
         canvas.toBlob(b => b ? resolve(b) : reject(new Error('blob 生成失敗')), 'image/jpeg', 0.95);
@@ -546,7 +550,8 @@ export default function IrisImageEditor({ bg }: Props) {
       });
       setNote(r.message);
     } catch (e: any) {
-      setNote(`シェア失敗: ${e?.message || '不明'}`);
+      setNote(`シェアできませんでした（${e?.message || '通信エラー'}）`);
+      setLastFail('share');
     } finally {
       setBusy(null);
     }
@@ -557,6 +562,7 @@ export default function IrisImageEditor({ bg }: Props) {
     if (!imgEl || busy) return;
     setBusy('omakase');
     setNote('');
+    setLastFail(null);
     try {
       const tmp = document.createElement('canvas');
       const maxSide = 384;
@@ -622,10 +628,20 @@ JSON だけ返し、\`\`\`json は不要。`;
       setFilter(fid as FilterId);
       setNote(`おまかせ完了 — ${j.comment || '画像に合わせて最適化しました'}`);
     } catch (e: any) {
-      setNote(`おまかせ失敗: ${e?.message || '不明'}`);
+      setNote(`おまかせできませんでした（${e?.message || '通信エラー'}）`);
+      setLastFail('omakase');
     } finally {
       setBusy(null);
     }
+  };
+
+  // 失敗したアクションをワンタップで再実行
+  const retryLastFail = () => {
+    const action = lastFail;
+    setLastFail(null);
+    setNote('');
+    if (action === 'omakase') omakase();
+    else if (action === 'share') shareToInsta();
   };
 
   const selectedText = texts.find(t => t.id === selectedTextId);
@@ -899,14 +915,41 @@ JSON だけ返し、\`\`\`json は不要。`;
             {ASPECTS.find(a => a.id === aspect)?.label} · {outputSize.w}×{outputSize.h}
           </div>
 
-          {/* 通知バッジ */}
+          {/* 通知バッジ — 失敗時は「もう一度」復旧ボタン付き */}
           {note && (
             <div style={{
               position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
-              background: 'rgba(0,0,0,0.7)', color: '#fff',
-              padding: '6px 14px', borderRadius: 999, fontSize: 12,
-              maxWidth: '88%', textAlign: 'center',
-            }}>{note}</div>
+              background: lastFail ? 'rgba(190,40,55,0.92)' : 'rgba(0,0,0,0.7)', color: '#fff',
+              padding: lastFail ? '8px 10px 8px 14px' : '6px 14px', borderRadius: 999, fontSize: 12,
+              maxWidth: '92%', display: 'inline-flex', alignItems: 'center', gap: 8,
+              boxShadow: lastFail ? '0 4px 16px rgba(190,40,55,0.35)' : 'none',
+            }}>
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{note}</span>
+              {lastFail && (
+                <>
+                  <button
+                    onClick={retryLastFail}
+                    disabled={!!busy}
+                    style={{
+                      flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 4,
+                      background: '#fff', color: '#be2837', border: 'none',
+                      borderRadius: 999, padding: '5px 11px', fontSize: 12, fontWeight: 800,
+                      cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1,
+                    }}
+                  >
+                    <RefreshCw size={13} strokeWidth={2.6} /> もう一度
+                  </button>
+                  <button
+                    onClick={() => { setNote(''); setLastFail(null); }}
+                    aria-label="閉じる"
+                    style={{
+                      flex: 'none', display: 'inline-flex', background: 'transparent',
+                      color: '#fff', border: 'none', cursor: 'pointer', opacity: 0.85, padding: 2,
+                    }}
+                  ><X size={14} /></button>
+                </>
+              )}
+            </div>
           )}
         </div>
 
