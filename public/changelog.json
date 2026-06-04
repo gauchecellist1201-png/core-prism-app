@@ -1,0 +1,427 @@
+{
+  "generatedAt": "2026-06-04T04:57:29.719Z",
+  "sourceFile": "~/Desktop/release_notes/v1.0.md",
+  "totalCommits": 80,
+  "sections": [
+    {
+      "category": "✨ 新機能 (59)",
+      "items": [
+        {
+          "hash": "1576d52",
+          "date": "2026-06-04",
+          "message": "feat(wave25): KKKK OG meta / LLLL TOTP 2FA / MMMM 競合スカウト"
+        },
+        {
+          "hash": "45d2b12",
+          "date": "2026-06-04",
+          "message": "feat(wave24): HHHH サンプルバナー / IIII 業界 OG 自動生成 / JJJJ CXO 人格詳細"
+        },
+        {
+          "hash": "fb300cf",
+          "date": "2026-06-04",
+          "message": "feat(wave23): EEEE weekly-push / FFFF IrisLanding 1 週間+動画 / GGGG ペルソナ プリセット"
+        },
+        {
+          "hash": "a043f92",
+          "date": "2026-06-04",
+          "message": "feat(wave22): BBBB checkout coupon / CCCC CareerStudio / DDDD LP YouTube"
+        },
+        {
+          "hash": "d3008d1",
+          "date": "2026-06-04",
+          "message": "feat(wave21): YYY 全画面テーマ / ZZZ Stripe Coupon / AAAA WebP/AVIF script"
+        },
+        {
+          "hash": "ac83841",
+          "date": "2026-06-04",
+          "message": "feat(wave20): VVV EveningFeed / WWW IndustryWeekTimeline / XXX MyAiUsageInsights"
+        },
+        {
+          "hash": "aa8d45b",
+          "date": "2026-06-04",
+          "message": "feat(wave19): SSS a11y check / TTT 概念→SVG / UUU D3 ハイライト cron"
+        },
+        {
+          "hash": "169c4cb",
+          "date": "2026-06-04",
+          "message": "feat(wave18): PPP aiBackoff / QQQ チーム招待 / RRR 今週の日記 cron"
+        },
+        {
+          "hash": "0204b65",
+          "date": "2026-06-04",
+          "message": "feat(wave17): MMM Invite hero / NNN onboard tour / OOO sitemap palette"
+        },
+        {
+          "hash": "375de40",
+          "date": "2026-06-04",
+          "message": "feat(wave16): JJJ user export / KKK /contact / LLL チャット履歴 export"
+        },
+        {
+          "hash": "cf735bf",
+          "date": "2026-06-04",
+          "message": "feat(wave15): GGG Connect status / HHH Legal v3 / III 商標出願 下書き"
+        },
+        {
+          "hash": "7c89e65",
+          "date": "2026-06-04",
+          "message": "feat(wave14): DDD SuggestionFab / EEE CancelFlowDialog / FFF SecretsHealth"
+        },
+        {
+          "hash": "d9d9741",
+          "date": "2026-06-04",
+          "message": "feat(wave13): AAA CXO display unification / BBB reengagement cron / CCC EN LP screenshots"
+        },
+        {
+          "hash": "8899d13",
+          "date": "2026-06-03",
+          "message": "feat(wave12): XX AI 階段式 fallback / YY Hero CXO ループ / ZZ QuickAsk FAB"
+        },
+        {
+          "hash": "c8770e8",
+          "date": "2026-06-03",
+          "message": "feat(wave11): UU error 集計 / VV trial_will_end メール / WW PWA install nudge"
+        },
+        {
+          "hash": "a456ff3",
+          "date": "2026-06-03",
+          "message": "feat(wave10): RR リテンション / SS Web Push 土台 / TT アバター自動生成"
+        },
+        {
+          "hash": "502fdaf",
+          "date": "2026-06-03",
+          "message": "feat(wave9): OO CTA A/B / PP 月次 CSV / QQ Slack Block Kit"
+        },
+        {
+          "hash": "6a1138e",
+          "date": "2026-06-03",
+          "message": "feat(wave8): LL ATF chk / MM Checkout カウントダウン / NN AI コストダッシュ"
+        },
+        {
+          "hash": "3b4e1fe",
+          "date": "2026-06-03",
+          "message": "feat(wave7): II オンボ funnel / JJ LP i18n / KK Iris persona 隔離"
+        },
+        {
+          "hash": "6e4c628",
+          "date": "2026-06-03",
+          "message": "feat(wave6): FF AnimatedExecStage / GG Iris 朝ブリーフ / HH AgentTeam InlineActionExecutor 統一"
+        },
+        {
+          "hash": "57bed10",
+          "date": "2026-06-03",
+          "message": "feat(scripts): 商標衝突チェック支援スクリプト (EE)"
+        },
+        {
+          "hash": "9159713",
+          "date": "2026-06-03",
+          "message": "feat(iris-lp): 導入事例 + 比較表セクション追加 (DD)"
+        },
+        {
+          "hash": "bfde58e",
+          "date": "2026-06-03",
+          "message": "feat(cron): JST 朝 7 時に X (Twitter) 自動投稿 cron (CC)"
+        },
+        {
+          "hash": "dabee02",
+          "date": "2026-06-03",
+          "message": "feat(onboarding): 最初の welcome step を LP の価値訴求に揃える (BB)"
+        },
+        {
+          "hash": "5ec1473",
+          "date": "2026-06-03",
+          "message": "feat(og): X / FB シェアカードを「価値訴求つき」v3 に刷新 (AA)"
+        },
+        {
+          "hash": "50d41a7",
+          "date": "2026-06-03",
+          "message": "feat(crm): CRM Studio に「サンプル営業先 1 タップ取込」パネル統合 (Z)"
+        },
+        {
+          "hash": "ccd474d",
+          "date": "2026-06-03",
+          "message": "feat(crm): 業界別サンプル営業先リスト 6 セット (115 件) を seed lib 化 (T)"
+        },
+        {
+          "hash": "94e356e",
+          "date": "2026-06-03",
+          "message": "feat(cron): 毎朝 JST 6:30 にオーナー宛メールで日次 KPI 送信 (W)"
+        },
+        {
+          "hash": "8a522e7",
+          "date": "2026-06-03",
+          "message": "feat(iris): IrisDashboard をスマホで MobileGemini に切替 (Y)"
+        },
+        {
+          "hash": "f7ce0a8",
+          "date": "2026-06-03",
+          "message": "feat(lp): 業界別 LP に比較表を追加 (CORE vs 外注/雇用/自分/他 SaaS) — S"
+        },
+        {
+          "hash": "c0457fb",
+          "date": "2026-06-03",
+          "message": "feat(cron): 毎朝 JST 6:00 に Stripe 売上を Slack 通知 (Q)"
+        },
+        {
+          "hash": "f2fefdf",
+          "date": "2026-06-03",
+          "message": "feat(perf): npm run lighthouse で 8 ページの自動計測 (R)"
+        },
+        {
+          "hash": "8753d64",
+          "date": "2026-06-03",
+          "message": "feat(billing): 完了画面に「友達紹介で +7 日無料」リンク自動生成 (オーナー指示 2026-06-03 N)"
+        },
+        {
+          "hash": "b5b81e9",
+          "date": "2026-06-03",
+          "message": "feat(lp): 業界別 LP に「3 つの導入事例」セクションを追加"
+        },
+        {
+          "hash": "8967e3e",
+          "date": "2026-06-03",
+          "message": "feat(mobile): MobileGemini を Iris ブランドに対応"
+        },
+        {
+          "hash": "7256c92",
+          "date": "2026-06-03",
+          "message": "feat(mobile): 朝のブリーフを自動表示 (毎日 1 回まで)"
+        },
+        {
+          "hash": "02f7bf6",
+          "date": "2026-06-03",
+          "message": "feat(mobile): MobileGemini に CXO アクション選択 + ＋ ボタン追加"
+        },
+        {
+          "hash": "8df5bcf",
+          "date": "2026-06-03",
+          "message": "feat(agents): 14 番目 CXO「CHR 採用」を追加 + 提案書 AI prompt を売れるレベルに"
+        },
+        {
+          "hash": "9010866",
+          "date": "2026-06-03",
+          "message": "feat(mobile): iPhone 専用「ジェミニ風」シンプル UI を実装"
+        },
+        {
+          "hash": "6c157b5",
+          "date": "2026-06-03",
+          "message": "feat(billing): v1 → v2 一括移行スクリプト + 値上げ告知メールテンプレ"
+        },
+        {
+          "hash": "5afbda2",
+          "date": "2026-06-03",
+          "message": "feat(billing): /billing/success が ?plan=v2-... も処理 (Payment Link 互換)"
+        },
+        {
+          "hash": "2659eb8",
+          "date": "2026-06-03",
+          "message": "feat(seo): 業界別 LP に SEO + OG image (twitter card + facebook) を動的注入"
+        },
+        {
+          "hash": "1129584",
+          "date": "2026-06-03",
+          "message": "feat(pricing): v2 で「個人 / 法人」切替タブ + エンタープライズ案内"
+        },
+        {
+          "hash": "c682cb4",
+          "date": "2026-06-03",
+          "message": "feat(perachi): 業界別 ペライチ生成器 + 投稿文案 18 本"
+        },
+        {
+          "hash": "2e00005",
+          "date": "2026-06-03",
+          "message": "feat(checkout): v2 Plan の Payment Link を env から直接読んでリダイレクト"
+        },
+        {
+          "hash": "49d45cd",
+          "date": "2026-06-03",
+          "message": "feat(lp): 業界別 LP 6 種を公開 (sme/realestate-finance/consulting/solo/creator/freelance-pro)"
+        },
+        {
+          "hash": "1b78df5",
+          "date": "2026-06-03",
+          "message": "feat(pricing): v2 (BtoB/BtoC 6 階層) 対応 + 14 日 → 7 日に統一"
+        },
+        {
+          "hash": "7fdfc74",
+          "date": "2026-06-03",
+          "message": "feat(billing): v2 フラグを env でも切替可 + Vercel env 一括投入スクリプト"
+        },
+        {
+          "hash": "ea0efef",
+          "date": "2026-06-03",
+          "message": "feat(meeting+stripe): 無料ユーザー対応の録音 + Stripe API 自動作成"
+        },
+        {
+          "hash": "0cbf7f7",
+          "date": "2026-06-03",
+          "message": "feat(meeting): ナレッジに「📹 会議録画から取り込み」ボタンを追加"
+        },
+        {
+          "hash": "e9f64eb",
+          "date": "2026-06-03",
+          "message": "feat(billing+meeting): 料金 v2 (BtoB/BtoC 6 階層) + 会議要約コア"
+        },
+        {
+          "hash": "947ee34",
+          "date": "2026-06-03",
+          "message": "feat(risk): ナレッジのリスクを「重要度順」に並べ替えてラベル表示"
+        },
+        {
+          "hash": "d801b52",
+          "date": "2026-06-03",
+          "message": "feat(mobile): iPhone ダッシュボードを「7 agents → ブリーフ → 売上」の縦並びに"
+        },
+        {
+          "hash": "125e0f0",
+          "date": "2026-06-03",
+          "message": "feat(brief): 提案タップで AI が実際に「実行」して成果物を納品"
+        },
+        {
+          "hash": "9a9e997",
+          "date": "2026-06-03",
+          "message": "feat(lp): /lp/music-school 業界特化 LP + GAUCHE Cello School デモ seed"
+        },
+        {
+          "hash": "d8efa46",
+          "date": "2026-06-02",
+          "message": "feat(corp): コーポレートサイトをブラッシュアップ (Products 以外)"
+        },
+        {
+          "hash": "ce9f7d7",
+          "date": "2026-06-02",
+          "message": "feat(People): 採用面接シミュレーターを追加"
+        },
+        {
+          "hash": "3147226",
+          "date": "2026-06-02",
+          "message": "feat(SalesAgent): 自社商材をナレッジから自動取込 + sync 劣化ガード強化"
+        },
+        {
+          "hash": "61102ca",
+          "date": "2026-06-02",
+          "message": "feat(industry): 業界ランディング → オンボに「○○ 向けに準備」を引き継ぐ"
+        }
+      ]
+    },
+    {
+      "category": "🌀 その他 (7)",
+      "items": [
+        {
+          "hash": "520c22a",
+          "date": "2026-06-03",
+          "message": "polish(lp): 背景色を #080812 に統一 + 小さな注釈テキストのコントラスト改善 (daytime-6pm)"
+        },
+        {
+          "hash": "1371714",
+          "date": "2026-06-03",
+          "message": "分かりやすさ: 関係性studioの「生成中…」を実況LoaderDotsに置換"
+        },
+        {
+          "hash": "7075761",
+          "date": "2026-06-03",
+          "message": "polish(typography): 段落リズム — text-wrap で「孤立改行」を消し、句読点をぶら下げる"
+        },
+        {
+          "hash": "d97e72f",
+          "date": "2026-06-02",
+          "message": "polish(theme): エラーバナー/チップを light/dark 両対応の semantic class に統一"
+        },
+        {
+          "hash": "9aae9aa",
+          "date": "2026-06-02",
+          "message": "polish(empty): 履歴/計画タブの「無の状態」を EmptyState + 入口 CTA に置換"
+        },
+        {
+          "hash": "a4850b0",
+          "date": "2026-06-02",
+          "message": "polish(loading): PremiumHub 3 タブに AILoadingState 実況 + DecisionMemo の loading 文言をやさしく"
+        },
+        {
+          "hash": "2214823",
+          "date": "2026-06-02",
+          "message": "polish(typography): 日本語詰め組み (palt) + 数字を等幅 (tabular-nums) + 見出しの文字間統一"
+        }
+      ]
+    },
+    {
+      "category": "🔧 内部改善 (5)",
+      "items": [
+        {
+          "hash": "0bbbca7",
+          "date": "2026-06-03",
+          "message": "chore: businessPlan sync timestamp"
+        },
+        {
+          "hash": "d036136",
+          "date": "2026-06-03",
+          "message": "chore(seo): sitemap.xml に業界別 LP 7 本を追加 (Google にインデックス促進)"
+        },
+        {
+          "hash": "1196c1d",
+          "date": "2026-06-03",
+          "message": "chore: .env.stripe-v2 を gitignore (Stripe URL を git に含めない)"
+        },
+        {
+          "hash": "caa0ece",
+          "date": "2026-06-03",
+          "message": "chore(stripe): Stripe Product 用 PRISM/Iris ロゴ画像を public に配置"
+        },
+        {
+          "hash": "6f2f69f",
+          "date": "2026-06-02",
+          "message": "chore(plan): businessPlan の generatedAt を 2026-06-01 にリフレッシュ"
+        }
+      ]
+    },
+    {
+      "category": "🐛 修正 (9)",
+      "items": [
+        {
+          "hash": "c4eca93",
+          "date": "2026-06-03",
+          "message": "fix(lp): heroMain をさらに短く (iPhone 390px で完全に収まるよう調整)"
+        },
+        {
+          "hash": "7d3d5ce",
+          "date": "2026-06-03",
+          "message": "fix(lp): iPhone でキャッチが見切れる問題を修正 (solo/creator/freelance-pro)"
+        },
+        {
+          "hash": "afc7797",
+          "date": "2026-06-03",
+          "message": "fix(agent): 偽の「9555分21秒」「動かないボタン」を撲滅 — 本物の AI 実行に"
+        },
+        {
+          "hash": "5b4bc2e",
+          "date": "2026-06-03",
+          "message": "fix(voice): 音声入力の沈黙失敗をゼロに — 未対応ブラウザ案内 + マイク拒否の復旧トースト"
+        },
+        {
+          "hash": "237e348",
+          "date": "2026-06-03",
+          "message": "fix(script): vercel env rm が存在しないとき error throw を抑止"
+        },
+        {
+          "hash": "bf30c19",
+          "date": "2026-06-03",
+          "message": "fix(mobile): iPhone 全面再設計 — 見切れ/文字キレ/煩雑 を根治"
+        },
+        {
+          "hash": "d5bf9e0",
+          "date": "2026-06-03",
+          "message": "fix(chat): iPhone でチャットが見切れる/[object Object]/×を押せない を一括修正"
+        },
+        {
+          "hash": "8840500",
+          "date": "2026-06-03",
+          "message": "fix(oauth): Google ログイン「認証完了しませんでした」の根本修正"
+        },
+        {
+          "hash": "571b8aa",
+          "date": "2026-06-03",
+          "message": "fix(integrations): LINE 連携を Messaging API (公式LINE) に移行"
+        }
+      ]
+    }
+  ]
+}

@@ -50,6 +50,8 @@
     { "source": "/status/",      "destination": "/index.html" },
     { "source": "/roadmap",      "destination": "/index.html" },
     { "source": "/roadmap/",     "destination": "/index.html" },
+    { "source": "/changelog",    "destination": "/index.html" },
+    { "source": "/changelog/",   "destination": "/index.html" },
     { "source": "/iris/privacy", "destination": "/iris.html" },
     { "source": "/iris/terms",   "destination": "/iris.html" },
     { "source": "/iris",     "destination": "/iris.html" },

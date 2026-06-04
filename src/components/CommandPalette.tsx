@@ -18,6 +18,7 @@ import type { Persona, KnowledgeItem } from '../types/identity';
 import { useAgentTaskQueue, CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
 import { notifyInApp } from '../lib/inAppNotify';
 import { seedDemoData, setDemoActive, clearDemoData, isDemoActive } from '../lib/onboarding';
+import { listSuggestions, setStatus as setSuggestionStatus, type SuggestionEntry } from '../lib/aiSuggestionLog';
 
 export type CmdAction =
   | { kind: 'open-modal'; modal: ModalKey; label: string; emoji: string; subtitle?: string }
@@ -52,13 +53,14 @@ interface Props {
 // ────────────────────────────────────────────────────────────
 // カテゴリ定義
 // ────────────────────────────────────────────────────────────
-type CategoryKey = 'recent' | 'nav' | 'create' | 'ai' | 'data' | 'persona' | 'knowledge' | 'task' | 'help';
+type CategoryKey = 'recent' | 'nav' | 'create' | 'ai' | 'suggestion' | 'data' | 'persona' | 'knowledge' | 'task' | 'help';
 
 const CATEGORY_LABEL: Record<CategoryKey, string> = {
   recent: '最近使った',
   nav: 'ナビ',
   create: '新規作成',
   ai: 'AI 会社に任せる',
+  suggestion: '最近の AI 提案 (タップで採用/却下)',
   data: 'データ操作',
   persona: '人格切替',
   knowledge: 'ナレッジ',
@@ -402,6 +404,32 @@ export default function CommandPalette({
     const openAiHistory = () => {
       try { window.dispatchEvent(new CustomEvent('core:open-ai-suggestions')); } catch { /* */ }
     };
+
+    // WWWWW (2026-06-04): 最近の AI 提案 を Cmd+K でも 横断検索 (最大 5 件)
+    try {
+      const recent: SuggestionEntry[] = listSuggestions().slice(0, 5);
+      for (const s of recent) {
+        const statusEmoji = s.status === 'adopted' ? '✅' : s.status === 'rejected' ? '❌' : s.status === 'held' ? '⏸' : '⌛';
+        const subtitle = `${s.cxoName} · ${statusEmoji} ${s.status} · ${new Date(s.ts).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+        const toggleAdopted = () => {
+          const next = s.status === 'adopted' ? 'pending' : 'adopted';
+          try { setSuggestionStatus(s.id, next); } catch { /* */ }
+          notifyInApp({ kind: 'info', title: `提案を「${next === 'adopted' ? '採用' : '未判定'}」に変更`, duration: 1800 });
+        };
+        out.push({
+          category: 'suggestion',
+          item: {
+            kind: 'custom',
+            id: `sug-${s.id}`,
+            label: `${s.cxoEmoji} ${s.title}`,
+            subtitle,
+            emoji: '🕘',
+            onRun: toggleAdopted,
+          },
+        });
+      }
+    } catch { /* */ }
+
     const helpItems: Array<{ id: string; label: string; subtitle: string; emoji: string; onRun: () => void }> = [
       { id: 'sitemap',  label: '全機能マップ', subtitle: '全ページ / 全機能 を 1 画面で (Cmd+Shift+/)', emoji: '🗺️', onRun: openSitemapPalette },
       { id: 'history',  label: 'AI 提案 履歴 (7 日)', subtitle: '採用 / 却下 / 採用率 (Cmd+Shift+H)', emoji: '🕘', onRun: openAiHistory },
@@ -649,6 +677,7 @@ export default function CommandPalette({
       case 'nav':       return <Compass {...props} />;
       case 'create':    return <Plus {...props} />;
       case 'ai':        return <Bot {...props} />;
+      case 'suggestion':return <Clock {...props} />;
       case 'data':      return <Wrench {...props} />;
       case 'persona':   return <Sparkles {...props} />;
       case 'knowledge': return <Search {...props} />;

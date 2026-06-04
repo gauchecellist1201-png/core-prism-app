@@ -22,6 +22,7 @@ import SuggestionFab from './components/SuggestionFab';
 import OnboardingTour from './components/OnboardingTour';
 import EveningFeed from './components/EveningFeed';
 import MorningCoach from './components/MorningCoach';
+import QuickKpiSparkline from './components/QuickKpiSparkline';
 import PersonaPresetSuggestion from './components/PersonaPresetSuggestion';
 import SampleModeBanner from './components/SampleModeBanner';
 import SitemapPalette from './components/SitemapPalette';
@@ -43,6 +44,7 @@ const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
 const StatusPage = lazy(() => import('./components/StatusPage'));
 const RoadmapPage = lazy(() => import('./components/RoadmapPage'));
+const ChangelogPage = lazy(() => import('./components/ChangelogPage'));
 const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./legal/TermsOfService'));
@@ -189,6 +191,12 @@ function isRoadmapPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/roadmap' || p === '/roadmap/';
+}
+
+function isChangelogPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/changelog' || p === '/changelog/';
 }
 
 function isErrorLogPath(): boolean {
@@ -385,6 +393,11 @@ export default function App() {
   // /roadmap — 公開ロードマップ (LLLLL 2026-06-04)
   if (isRoadmapPath()) {
     return <Suspense fallback={<RouteFallback />}><RoadmapPage /></Suspense>;
+  }
+
+  // /changelog — 公開変更履歴 (VVVVV 2026-06-04)
+  if (isChangelogPath()) {
+    return <Suspense fallback={<RouteFallback />}><ChangelogPage /></Suspense>;
   }
 
   // /master/error-log — エラーログ単独閲覧 (自端末のローカルログのみ)
@@ -732,6 +745,8 @@ export default function App() {
       {view === 'dashboard' && <OnboardingTour />}
       {/* VVV (2026-06-04): 夜のフィード — 18 時以降 1 日 1 回 */}
       {view === 'dashboard' && <EveningFeed />}
+      {/* UUUUU (2026-06-04): ダッシュ 上端に 3 KPI sparkline */}
+      {view === 'dashboard' && <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(7,7,18,0.78)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}><QuickKpiSparkline /></div>}
       {/* KKKKK (2026-06-04): 朝の「今日のひとこと」 (4-12 時 JST 1 日 1 回) */}
       {view === 'dashboard' && <MorningCoach personaName={activePersona?.name} />}
       {/* GGGG (2026-06-04): 業種別 AI ペルソナ プリセット 4 名 提案 */}
