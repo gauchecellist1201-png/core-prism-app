@@ -24,6 +24,7 @@ import EveningFeed from './components/EveningFeed';
 import PersonaPresetSuggestion from './components/PersonaPresetSuggestion';
 import SampleModeBanner from './components/SampleModeBanner';
 import SitemapPalette from './components/SitemapPalette';
+import AiSuggestionHistory from './components/AiSuggestionHistory';
 import AiThrottleToast from './components/AiThrottleToast';
 import PublicThemeToggle from './components/PublicThemeToggle';
 import LegalModal, { type LegalKind } from './components/LegalModal';
@@ -702,6 +703,8 @@ export default function App() {
       <SuggestionFab />
       {/* OOO (2026-06-04): Cmd+Shift+/ で「全機能マップ」 */}
       <SitemapPalette />
+      {/* DDDDD (2026-06-04): 7 日 AI 提案 履歴 — window.dispatchEvent('core:open-ai-suggestions') で開く */}
+      <AiSuggestionHistoryGlobalMount />
       {/* PPP (2026-06-04): AI throttle 表示 */}
       <AiThrottleToast />
       {/* YYY (2026-06-04): LP / Pricing / Billing / Contact 用 ライト ⇄ ダーク 切替 */}
@@ -710,4 +713,25 @@ export default function App() {
       <SampleModeBanner />
     </>
   );
+}
+
+function AiSuggestionHistoryGlobalMount() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    const onKey = (e: KeyboardEvent) => {
+      // Cmd+Shift+H (履歴) — Cmd+Shift+/ (sitemap), Cmd+K (palette) と被らない
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
+        e.preventDefault();
+        setOpen((o) => !o);
+      }
+    };
+    window.addEventListener('core:open-ai-suggestions', onOpen as EventListener);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('core:open-ai-suggestions', onOpen as EventListener);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, []);
+  return <AiSuggestionHistory open={open} onClose={() => setOpen(false)} />;
 }

@@ -94,6 +94,7 @@ const SITEMAP: SiteNode[] = [
     items: [
       { label: 'いま AI に質問 (FAB)',    desc: '右下の💬。LP / Dashboard どこからでも', kw: ['help', 'AI'] },
       { label: '改善提案 (FAB)',          desc: '左下の💡。1〜2 行 で送信', kw: ['feedback'] },
+      { label: 'AI 提案 履歴 (7 日)',     desc: 'Cmd+Shift+H — 採用 / 却下 を ワンタップ + 採用率', kw: ['履歴', 'history', '提案'] },
       { label: '環境設定 → AI キー',      hash: 'settings-ai', desc: 'Claude / Gemini キー登録' },
       { label: 'PWA インストール',         desc: 'ホーム画面に追加で Push 通知 + オフライン' },
     ],
