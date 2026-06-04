@@ -35,6 +35,7 @@ const AiStats = lazy(() => import('./master/AiStats'));
 const AiCostDashboard = lazy(() => import('./master/AiCostDashboard'));
 const SecretsHealth = lazy(() => import('./master/SecretsHealth'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
+const TrustPage = lazy(() => import('./components/TrustPage'));
 const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./legal/TermsOfService'));
@@ -145,6 +146,12 @@ function isContactPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/contact' || p === '/contact/';
+}
+
+function isTrustPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/trust' || p === '/trust/';
 }
 
 function isErrorLogPath(): boolean {
@@ -311,6 +318,11 @@ export default function App() {
   // /contact — 公開窓口 (KKK 2026-06-04)
   if (isContactPath()) {
     return <Suspense fallback={<RouteFallback />}><ContactPage /></Suspense>;
+  }
+
+  // /trust — 公開トラストページ (VVVV 2026-06-04)
+  if (isTrustPath()) {
+    return <Suspense fallback={<RouteFallback />}><TrustPage /></Suspense>;
   }
 
   // /master/error-log — エラーログ単独閲覧 (自端末のローカルログのみ)
