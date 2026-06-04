@@ -196,7 +196,8 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
         maxHeight: open ? 'min(60vh, 600px)' : 56,
         display: 'flex',
         flexDirection: 'column',
-        zIndex: 60,
+        // モーダル (z=50) より下に置く — 開いてる時は背景に隠れる ('請求書を発行' 等の footer ボタン が押せなくならないように)
+        zIndex: 40,
         background: 'linear-gradient(180deg, rgba(18,18,30,0.92) 0%, rgba(10,10,20,0.95) 100%)',
         backdropFilter: 'blur(18px)',
         WebkitBackdropFilter: 'blur(18px)',

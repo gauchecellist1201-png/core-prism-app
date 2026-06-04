@@ -798,7 +798,7 @@ export default function App() {
       {/* VVV (2026-06-04): 夜のフィード — 18 時以降 1 日 1 回 */}
       {view === 'dashboard' && <EveningFeed />}
       {/* UUUUU (2026-06-04): ダッシュ 上端に 3 KPI sparkline */}
-      {view === 'dashboard' && <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(7,7,18,0.78)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}><QuickKpiSparkline /></div>}
+      {view === 'dashboard' && <div style={{ position: 'sticky', top: 0, zIndex: 30, background: 'rgba(7,7,18,0.78)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}><QuickKpiSparkline /></div>}
       {/* KKKKK (2026-06-04): 朝の「今日のひとこと」 (4-12 時 JST 1 日 1 回) */}
       {view === 'dashboard' && <MorningCoach personaName={activePersona?.name} />}
       {/* GGGG (2026-06-04): 業種別 AI ペルソナ プリセット 4 名 提案 */}

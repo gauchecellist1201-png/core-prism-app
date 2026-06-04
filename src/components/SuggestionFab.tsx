@@ -81,7 +81,8 @@ export default function SuggestionFab() {
               position: 'fixed',
               left: 'calc(env(safe-area-inset-left, 0px) + 12px)',
               bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
-              zIndex: 60,
+              // モーダル (z=50) より下 — モーダルが開いてる時は背景に隠れる
+              zIndex: 40,
               padding: '10px 14px',
               borderRadius: 999,
               background: 'rgba(15, 14, 27, 0.88)',

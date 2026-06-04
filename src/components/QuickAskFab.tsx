@@ -134,7 +134,8 @@ export default function QuickAskFab() {
               position: 'fixed',
               right: 'calc(env(safe-area-inset-right, 0px) + 16px)',
               bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
-              zIndex: 60,
+              // モーダル (z=50) より下 — モーダル中は隠れる
+              zIndex: 40,
               width: 56, height: 56,
               borderRadius: 28,
               background: 'linear-gradient(135deg, #a78bfa, #f472b6)',
