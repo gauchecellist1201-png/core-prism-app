@@ -36,6 +36,8 @@ const SITEMAP: SiteNode[] = [
       { label: 'プライシング',       href: '/pricing',   desc: 'BtoC ¥3K〜 / BtoB ¥20K〜 / Enterprise', kw: ['price', '料金', '値段'] },
       { label: '請求 / 解約',        href: '/billing',   desc: 'プラン変更 / 解約 / 請求書 / CSV', kw: ['billing', '解約', '支払'] },
       { label: 'お問い合わせ',       href: '/contact',   desc: '6 トピックから問い合わせ', kw: ['contact', '問い合わせ', 'メール'] },
+      { label: 'トラスト センター',  href: '/trust',     desc: 'データの所在 / アクセス / 削除 / 法令', kw: ['trust', 'GDPR', 'プライバシー', '監査'] },
+      { label: 'ステータス',         href: '/status',    desc: 'API / Stripe / Upstash 健康診断 + 90 日インシデント', kw: ['status', '障害', 'uptime'] },
     ],
   },
   {
@@ -48,6 +50,7 @@ const SITEMAP: SiteNode[] = [
       { label: '個人事業主',                 href: '/lp/solo', desc: '事務・営業・経理 ぜんぶ AI' },
       { label: 'クリエイター (Iris)',       href: '/iris', desc: 'インスタ / 動画 / 案件交渉' },
       { label: 'フリーランスプロ',         href: '/lp/freelance-pro', desc: '高単価フリーランサー向け' },
+      { label: 'SaaS スタートアップ CEO',  href: '/lp/saas-startup', desc: '1 人 CEO × AI 役員 13 名 でシリーズ A まで走る', kw: ['saas', 'startup', 'CEO', '創業'] },
     ],
   },
   {
@@ -68,6 +71,7 @@ const SITEMAP: SiteNode[] = [
       { label: 'AI コスト試算',            href: '/master/ai-cost',            desc: 'Haiku/Sonnet/Opus 月額', badge: 'Master' },
       { label: 'Stripe 接続診断',          href: '/master/stripe-status',      desc: 'live 鍵 / payouts / failures', badge: 'Master' },
       { label: 'Secrets Health',           href: '/master/secrets-health',     desc: '8 系統 env 疎通テスト', badge: 'Master' },
+      { label: 'オンボ ファネル',           href: '/master/onboard-funnel',     desc: 'welcome→completed 14 日 + 改善提案', badge: 'Master' },
       { label: 'エラーログ',               href: '/master/error-log',          desc: 'window.onerror 履歴', badge: 'Master' },
     ],
   },
@@ -128,6 +132,43 @@ export default function SitemapPalette() {
       }))
       .filter(g => g.items.length > 0);
   }, [q]);
+
+  // 全 ヒット 件数 (フッタ に表示)
+  const totalHits = filtered.reduce((a, g) => a + g.items.length, 0);
+
+  /** クエリにマッチした 部分文字列を <mark> でラップ。q が空なら そのまま返す。 */
+  const renderHighlighted = (text: string): React.ReactNode => {
+    const qn = q.trim();
+    if (!qn) return text;
+    const lower = text.toLowerCase();
+    const ql = qn.toLowerCase();
+    if (!lower.includes(ql)) return text;
+    const out: React.ReactNode[] = [];
+    let i = 0;
+    while (i < text.length) {
+      const idx = lower.indexOf(ql, i);
+      if (idx === -1) {
+        out.push(text.slice(i));
+        break;
+      }
+      if (idx > i) out.push(text.slice(i, idx));
+      out.push(
+        <mark
+          key={i}
+          style={{
+            background: 'linear-gradient(180deg, rgba(251,191,36,0.55) 0%, rgba(245,158,11,0.45) 100%)',
+            color: '#fff',
+            padding: '0 2px',
+            borderRadius: 3,
+          }}
+        >
+          {text.slice(idx, idx + qn.length)}
+        </mark>,
+      );
+      i = idx + qn.length;
+    }
+    return out;
+  };
 
   if (!open) return null;
 
@@ -257,7 +298,7 @@ export default function SitemapPalette() {
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 700 }}>{it.label}</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700 }}>{renderHighlighted(it.label)}</span>
                         {it.badge && (
                           <span style={{
                             fontSize: 9, padding: '1px 6px', borderRadius: 6,
@@ -268,8 +309,8 @@ export default function SitemapPalette() {
                         )}
                       </div>
                       <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', marginTop: 1 }}>
-                        {it.desc}
-                        {it.href && <span style={{ marginLeft: 6, fontFamily: 'Menlo, monospace', color: 'rgba(167,139,250,0.6)' }}>{it.href}</span>}
+                        {renderHighlighted(it.desc)}
+                        {it.href && <span style={{ marginLeft: 6, fontFamily: 'Menlo, monospace', color: 'rgba(167,139,250,0.6)' }}>{renderHighlighted(it.href)}</span>}
                       </div>
                     </div>
                     {it.href ? <ExternalLink size={12} color="rgba(255,255,255,0.4)" /> : <ChevronRight size={12} color="rgba(255,255,255,0.4)" />}
@@ -291,6 +332,11 @@ export default function SitemapPalette() {
             <span><kbd style={kbdStyle}>↑↓</kbd> 移動</span>
             <span><kbd style={kbdStyle}>Enter</kbd> 開く</span>
             <span><kbd style={kbdStyle}>Esc</kbd> 閉じる</span>
+            {q && (
+              <span style={{ color: '#FBBF24', fontWeight: 700 }}>
+                {totalHits} 件 ヒット
+              </span>
+            )}
             <span style={{ marginLeft: 'auto', opacity: 0.6 }}>Cmd+K で「実行」 / Cmd+Shift+/ で「探す」</span>
           </div>
         </motion.div>

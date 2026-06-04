@@ -432,6 +432,64 @@ const FREELANCE_PRO: IndustryConfig = {
   ],
 };
 
+// ─── 7) /lp/saas-startup — SaaS スタートアップ CEO (2026-06-04 AAAAA) ─
+const SAAS_STARTUP: IndustryConfig = {
+  slug: 'saas-startup',
+  pageTitle: 'SaaS スタートアップ CEO へ — CORE Prism',
+  metaDescription: '1 人 CEO に 13 人の AI 役員。プロダクト・営業・PR・採用 を 1 画面で。月¥30,000 で「シリーズ A 級 の経営チーム」を雇える。',
+  industryLabel: 'FOR SAAS STARTUP CEOs',
+  heroMain: '1 人 CEO に、\n13 人の AI 役員。\nシリーズ A まで 1 人で走れる。',
+  heroSub: 'プロダクト・営業・PR・採用 を 1 画面で。創業期に いちばん必要な「右腕」を月¥30,000 で雇える。',
+  heroHeroNumber: { value: '1人 → 14人', label: '実質チーム規模 (AI 役員 13 + 自分)' },
+  pain: [
+    { emoji: '🌀', text: 'プロダクトと営業と採用 を 全部 1 人で回している' },
+    { emoji: '📈', text: '数字を見て次の打ち手 を 1 日中考えてる' },
+    { emoji: '🪙', text: 'シリーズ A まで CFO / CMO / CTO を 雇えない' },
+    { emoji: '😶‍🌫️', text: '相談相手の VC / 先輩は 反応が遅い' },
+  ],
+  features: [
+    { icon: '🚀', title: 'AI 役員 13 名 で 経営即決', body: 'CEO / CTO / CFO / CMO / CPO / CSO / COO / CDO / CHR / CDS / CCO / CLO / CAO が常駐。判断 → 3 案 + 推奨 を 10 分', savesHours: 12 },
+    { icon: '💸', title: 'ピッチ資料 + 投資家 メール + KPI ダッシュ', body: '次の投資家ミーティング向け資料を 1 タップで。 KPI と 来月の目標 を 自動で 1 枚に', savesHours: 8 },
+    { icon: '🧑‍💻', title: '採用 JD + スカウト DM + 面接質問', body: 'JD 作成 + LinkedIn スカウト + 面接質問 + 評価シート まで AI が下書き。エンジニア採用が 1 週間早まる', savesHours: 10 },
+  ],
+  proofStats: [
+    { value: '▲ 75%', label: '創業期 雑務時間 削減', caveat: 'estimate' },
+    { value: '月 ¥220 万', label: 'CFO/CMO/CPO 採用 を 据え置いた節約効果', caveat: 'estimate' },
+    { value: '2.4倍', label: '投資家 ピッチ準備 スピード', caveat: 'estimate' },
+  ],
+  recommendedPlan: 'v2-btoB-standard',
+  planLineup: ['v2-btoB-entry', 'v2-btoB-standard', 'v2-btoB-pro'],
+  pricingTagline: '月¥30,000 で「シード 〜 シリーズ A の経営チーム」を雇える。創業者 1 人で走り抜ける月数を伸ばす',
+  faq: [
+    { q: 'シリーズ A 調達後も使えますか?', a: '使えます。むしろ 採用した CXO 候補との橋渡し に最適 — 採用前の役割を AI が担い、面接 / 引継ぎ も AI でログ化できます' },
+    { q: 'プロダクト データ を AI に渡しても 安全ですか?', a: '通信は HTTPS、AI は 入力を学習しない契約 (Anthropic Commercial API)。Trust センター /trust も併せて確認ください' },
+    { q: '法人クレカ / 請求書払いに対応?', a: 'はい。すべてのプランで 法人クレカ / 銀行振込 (月次/半期) に対応' },
+    { q: '英語で使えますか?', a: 'はい。LP も AI 出力も 日本語 / 英語 を切替可。海外 VC への 英語ピッチ もそのまま生成できます' },
+  ],
+  accentRight: '#3B82F6',
+  brandHint: 'prism',
+  cases: [
+    {
+      persona: 'BtoB SaaS シード期 CEO (29 歳・1 人 創業)',
+      usage: '週 1 で 13 CXO に経営判断を相談 + 投資家 ピッチ準備を AI で',
+      result: '創業期 雑務 ▲ 70%、プロダクト開発に 週 +20h 投下',
+      quote: '「相談する相手が居なかった夜が、AI で消えた」',
+    },
+    {
+      persona: 'AI スタートアップ CEO (33 歳・共同創業 3 人)',
+      usage: '採用 JD + スカウト DM + 面接設計 を 全部 AI に下書きさせて自分は 最終承認だけ',
+      result: 'エンジニア 採用 リードタイム 6 週 → 2 週',
+      quote: '「採用に時間使うフェーズ じゃないんだよね」',
+    },
+    {
+      persona: 'モバイル SaaS シリーズ A 直前 CEO (37 歳)',
+      usage: 'KPI ダッシュ + 投資家 月次 メール + ピッチ更新を毎週 自動化',
+      result: '投資家ミーティング 準備 8h → 1.5h',
+      quote: '「投資家の期待値コントロール が AI で一定になった」',
+    },
+  ],
+};
+
 export const INDUSTRIES: Record<string, IndustryConfig> = {
   'sme': SME,
   'realestate-finance': REAL_FINANCE,
@@ -439,6 +497,7 @@ export const INDUSTRIES: Record<string, IndustryConfig> = {
   'solo': SOLO,
   'creator': CREATOR,
   'freelance-pro': FREELANCE_PRO,
+  'saas-startup': SAAS_STARTUP,
 };
 
 export const INDUSTRY_SLUGS = Object.keys(INDUSTRIES);

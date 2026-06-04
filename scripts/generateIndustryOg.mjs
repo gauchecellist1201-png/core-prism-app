@@ -74,6 +74,13 @@ const INDUSTRIES = [
     metric: '単価\n+ 50%',
     bgFrom: '#6366F1', bgTo: '#EC4899', textFg: '#fff',
   },
+  {
+    slug: 'saas-startup',
+    emoji: '🚀',
+    title: '1 人 CEO に、\n13 人の AI 役員',
+    metric: '創業期 雑務\n▲ 75%',
+    bgFrom: '#00D4FF', bgTo: '#3B82F6', textFg: '#fff',
+  },
 ];
 
 function buildHtml(it) {
