@@ -48,6 +48,71 @@ function saveHistory(items: HistoryItem[]) {
   try { localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, MAX_HISTORY))); } catch { /* quota */ }
 }
 
+// ─── 履歴サムネ — 個別 loading / error / 再読込 (2026-06-04) ──────────
+//   原因: Pollinations が レート制限 / 瞬断 で 500 を返した時、
+//   <img> に onError 無く 黒いまま で 画像 が 出ない 様 に 見える。
+//   修正: 状態 管理 + 🔄 再読込 (cache-bust) で 必ず 復旧できる 様 に。
+interface HistoryThumbProps {
+  url: string;
+  width: number;
+  height: number;
+  reloadKey: number; // 親 からの 全再読込 トリガ
+  onClick: () => void;
+}
+function HistoryThumb({ url, width, height, reloadKey, onClick }: HistoryThumbProps) {
+  const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading');
+  const [bust, setBust] = useState(0);
+  // 親 reloadKey が 変わる たび に 再 fetch (cache-bust)
+  useEffect(() => { setBust(reloadKey); setState('loading'); }, [reloadKey]);
+  const finalUrl = bust ? `${url}${url.includes('?') ? '&' : '?'}_=${bust}` : url;
+  return (
+    <div
+      style={{ position: 'relative', width: '100%', aspectRatio: `${width}/${height}`, background: '#0a0a0f', cursor: state === 'ok' ? 'zoom-in' : 'default' }}
+      onClick={state === 'ok' ? onClick : undefined}
+    >
+      <img
+        src={finalUrl}
+        alt=""
+        loading="lazy"
+        onLoad={() => setState('ok')}
+        onError={() => setState('error')}
+        style={{
+          width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+          opacity: state === 'ok' ? 1 : 0, transition: 'opacity 0.3s',
+        }}
+      />
+      {state === 'loading' && (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'rgba(255,255,255,0.55)', fontSize: 11, gap: 6, flexDirection: 'column',
+        }}>
+          <span style={{ fontSize: 24, animation: 'iris-spin 1.4s linear infinite', display: 'inline-block' }}>🎨</span>
+          <span>読み込み中…</span>
+        </div>
+      )}
+      {state === 'error' && (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column', gap: 8, padding: 12,
+          background: 'rgba(0,0,0,0.7)', color: 'rgba(255,255,255,0.85)',
+        }}>
+          <span style={{ fontSize: 22 }}>⚠️</span>
+          <span style={{ fontSize: 11, textAlign: 'center' }}>画像を読み込めません</span>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setBust(Date.now()); setState('loading'); }}
+            style={{
+              fontSize: 11, padding: '4px 10px', borderRadius: 6,
+              background: 'rgba(251,191,36,0.18)', color: '#FBBF24',
+              border: '1px solid rgba(251,191,36,0.4)', cursor: 'pointer', fontWeight: 700,
+            }}
+          >🔄 再読込</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const ASPECT_GROUPS: { id: 'social' | 'free' | 'doc'; label: string; emoji: string }[] = [
   { id: 'social', label: 'SNS / Web', emoji: '🌐' },
   { id: 'free',   label: '汎用',     emoji: '⬜' },
@@ -177,6 +242,8 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
   const [lightbox, setLightbox] = useState<{ url: string; w: number; h: number } | null>(null);
   const [toast, setToast] = useState<string>('');
   const [pendingPromptPrefix, setPendingPromptPrefix] = useState<string>('');
+  // 履歴 全再読込 トリガ (Date.now() を カウンタ 代わりに)
+  const [historyReloadKey, setHistoryReloadKey] = useState<number>(0);
 
   useEffect(() => { saveHistory(history); }, [history]);
 
@@ -671,13 +738,12 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                           className="rounded-xl overflow-hidden"
                           style={{ border: `1px solid ${persona.accentColor}40`, background: 'var(--surface-3)' }}
                         >
-                          <img
-                            src={r.url}
-                            alt=""
-                            loading="lazy"
-                            className="w-full h-auto block cursor-zoom-in"
+                          <HistoryThumb
+                            url={r.url}
+                            width={r.width}
+                            height={r.height}
+                            reloadKey={0}
                             onClick={() => { setCurrent(r); setLightbox({ url: r.url, w: r.width, h: r.height }); }}
-                            style={{ aspectRatio: `${r.width}/${r.height}`, background: '#0a0a0f' }}
                           />
                           <div className="flex flex-wrap gap-1.5 p-2 justify-end items-center">
                             <span className="text-[10px] text-fg-muted mr-auto self-center">
@@ -757,13 +823,21 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                 />
               ) : (
                 <>
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center flex-wrap gap-2">
                     <p className="text-fg-muted text-xs">最大 {MAX_HISTORY} 件まで自動保存</p>
-                    <button
-                      onClick={async () => { if (await confirmAction({ title: '画像生成の履歴をすべて削除しますか?', body: '保存した画像のサムネイル一覧が空になります。', tone: 'danger', okLabel: '全消去' })) setHistory([]); }}
-                      className="text-xs text-fg-muted hover:text-red-400"
-                      style={{ minHeight: 36, padding: '0 12px' }}
-                    >全消去</button>
+                    <div className="flex gap-2 items-center">
+                      <button
+                        onClick={() => { setHistoryReloadKey(Date.now()); setToast('🔄 全サムネを再読込しています…'); }}
+                        className="text-xs hover:text-fg"
+                        style={{ minHeight: 36, padding: '0 12px', color: '#FBBF24', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 6 }}
+                        title="表示が崩れた / 黒くなった 時に 押す"
+                      >🔄 全再読込</button>
+                      <button
+                        onClick={async () => { if (await confirmAction({ title: '画像生成の履歴をすべて削除しますか?', body: '保存した画像のサムネイル一覧が空になります。', tone: 'danger', okLabel: '全消去' })) setHistory([]); }}
+                        className="text-xs text-fg-muted hover:text-red-400"
+                        style={{ minHeight: 36, padding: '0 12px' }}
+                      >全消去</button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {history.map(h => (
@@ -772,13 +846,12 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                         className="rounded-xl overflow-hidden"
                         style={{ border: '1px solid var(--border)', background: 'var(--surface-3)' }}
                       >
-                        <img
-                          src={h.url}
-                          alt=""
-                          loading="lazy"
-                          className="w-full h-auto block cursor-zoom-in"
+                        <HistoryThumb
+                          url={h.url}
+                          width={h.width}
+                          height={h.height}
+                          reloadKey={historyReloadKey}
                           onClick={() => setLightbox({ url: h.url, w: h.width, h: h.height })}
-                          style={{ aspectRatio: `${h.width}/${h.height}`, background: '#0a0a0f' }}
                         />
                         <div className="p-2 space-y-1">
                           <div className="flex items-center gap-1 text-[10px] text-fg-muted">
@@ -856,6 +929,14 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                 touchAction: 'pinch-zoom',
               }}
               onClick={e => e.stopPropagation()}
+              onError={(e) => {
+                // 一度だけ cache-bust で再試行
+                const el = e.currentTarget as HTMLImageElement;
+                if (!el.dataset.retried) {
+                  el.dataset.retried = '1';
+                  el.src = `${lightbox.url}${lightbox.url.includes('?') ? '&' : '?'}_=${Date.now()}`;
+                }
+              }}
             />
             <button
               onClick={() => setLightbox(null)}
