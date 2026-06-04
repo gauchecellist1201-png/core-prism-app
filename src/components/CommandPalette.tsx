@@ -53,7 +53,7 @@ interface Props {
 // ────────────────────────────────────────────────────────────
 // カテゴリ定義
 // ────────────────────────────────────────────────────────────
-type CategoryKey = 'recent' | 'nav' | 'create' | 'ai' | 'suggestion' | 'data' | 'persona' | 'knowledge' | 'task' | 'help';
+type CategoryKey = 'recent' | 'nav' | 'create' | 'ai' | 'suggestion' | 'changelog' | 'data' | 'persona' | 'knowledge' | 'task' | 'help';
 
 const CATEGORY_LABEL: Record<CategoryKey, string> = {
   recent: '最近使った',
@@ -61,6 +61,7 @@ const CATEGORY_LABEL: Record<CategoryKey, string> = {
   create: '新規作成',
   ai: 'AI 会社に任せる',
   suggestion: '最近の AI 提案 (タップで採用/却下)',
+  changelog: '✨ 最近の 新機能 (タップで /changelog へ)',
   data: 'データ操作',
   persona: '人格切替',
   knowledge: 'ナレッジ',
@@ -160,10 +161,45 @@ export default function CommandPalette({
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [activeTab, setActiveTab] = useState<CategoryKey | 'all'>('all');
   const [recent, setRecent] = useState<RecentEntry[]>(loadRecent);
+  // MMMMMM (2026-06-04): changelog.json から 直近 新機能 5 件
+  const [changelogFeats, setChangelogFeats] = useState<Array<{ hash: string; date: string; message: string }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const queue = useAgentTaskQueue();
+
+  // MMMMMM: open 時に changelog.json を 1 度だけ 取得 (キャッシュ可)
+  useEffect(() => {
+    if (!open) return;
+    if (changelogFeats.length > 0) return;
+    let cancelled = false;
+    fetch('/changelog.json', { cache: 'force-cache' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((j: any) => {
+        if (cancelled || !j) return;
+        // 「✨ 新機能」 or "feat" prefix を 上位 5 件
+        const all: Array<{ hash: string; date: string; message: string }> = [];
+        for (const s of (j.sections || [])) {
+          for (const it of (s.items || [])) {
+            if (/✨|^feat/i.test(s.category) || /^feat(\(|:)/.test(it.message || '')) {
+              all.push(it);
+            }
+          }
+        }
+        // 日付降順 → message dedup
+        const seen = new Set<string>();
+        const top = [];
+        for (const it of all.sort((a, b) => (b.date || '').localeCompare(a.date || ''))) {
+          if (seen.has(it.message)) continue;
+          seen.add(it.message);
+          top.push(it);
+          if (top.length >= 5) break;
+        }
+        if (!cancelled) setChangelogFeats(top);
+      })
+      .catch(() => { /* */ });
+    return () => { cancelled = true; };
+  }, [open, changelogFeats.length]);
 
   useEffect(() => {
     if (open) {
@@ -405,6 +441,21 @@ export default function CommandPalette({
       try { window.dispatchEvent(new CustomEvent('core:open-ai-suggestions')); } catch { /* */ }
     };
 
+    // MMMMMM (2026-06-04): 最近の 新機能 を Cmd+K に (上位 5 件)
+    for (const f of changelogFeats) {
+      out.push({
+        category: 'changelog',
+        item: {
+          kind: 'custom',
+          id: `feat-${f.hash}`,
+          label: f.message.replace(/^feat(\([^)]*\))?:\s*/, '✨ '),
+          subtitle: `${f.date} · ${f.hash} — タップで /changelog へ`,
+          emoji: '✨',
+          onRun: () => { window.location.href = `/changelog#${f.hash}`; },
+        },
+      });
+    }
+
     // WWWWW (2026-06-04): 最近の AI 提案 を Cmd+K でも 横断検索 (最大 5 件)
     try {
       const recent: SuggestionEntry[] = listSuggestions().slice(0, 5);
@@ -442,7 +493,7 @@ export default function CommandPalette({
     }
 
     return out;
-  }, [personas, personaKnowledge, activePersona, activePersonaId, onOpenModal]);
+  }, [personas, personaKnowledge, activePersona, activePersonaId, onOpenModal, changelogFeats]);
 
   // ────────────────────────────────────────────────────────
   // 最近使った (recent) を解決
@@ -678,6 +729,7 @@ export default function CommandPalette({
       case 'create':    return <Plus {...props} />;
       case 'ai':        return <Bot {...props} />;
       case 'suggestion':return <Clock {...props} />;
+      case 'changelog': return <Sparkles {...props} />;
       case 'data':      return <Wrench {...props} />;
       case 'persona':   return <Sparkles {...props} />;
       case 'knowledge': return <Search {...props} />;

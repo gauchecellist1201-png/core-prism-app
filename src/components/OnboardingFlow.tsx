@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
 import { INDUSTRY_LIST, INDUSTRY_PACKS, type IndustryId } from '../prism/industryPacks';
 import { recordStep, type OnboardStep } from '../lib/onboardingFunnel';
+import { useCelebrate } from '../hooks/useCelebrate';
 
 interface Props {
   onComplete: (settings: Partial<AppSettings>) => void;
@@ -42,6 +43,8 @@ const MODELS = [
 const HAS_ENV_API_KEY = true;
 
 export default function OnboardingFlow({ onComplete }: Props) {
+  // NNNNNN (2026-06-04): オンボ 最終 step で 14 役員 拍手
+  const { celebrate, CelebratePortal } = useCelebrate();
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -87,13 +90,17 @@ export default function OnboardingFlow({ onComplete }: Props) {
         }));
       }
     } catch { /* */ }
-    onComplete({
-      userName: name,
-      claudeApiKey: apiKey,
-      preferredModel: model as AppSettings['preferredModel'],
-      industry: (industry || undefined) as AppSettings['industry'],
-      onboardingComplete: true,
-    });
+    // NNNNNN: epic 祝賀 → 300ms 待って onComplete (アニメ初動を見せる)
+    try { celebrate({ message: `${name || 'あなた'} さん、ようこそ — 14 役員 がお迎えします!`, level: 'epic' }); } catch { /* */ }
+    setTimeout(() => {
+      onComplete({
+        userName: name,
+        claudeApiKey: apiKey,
+        preferredModel: model as AppSettings['preferredModel'],
+        industry: (industry || undefined) as AppSettings['industry'],
+        onboardingComplete: true,
+      });
+    }, 600);
   };
 
   const isNameStep     = currentStepId === 'name';
@@ -109,6 +116,8 @@ export default function OnboardingFlow({ onComplete }: Props) {
   };
 
   return (
+    <>
+    {CelebratePortal}
     <motion.div
       className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
       initial={{ opacity: 0 }}
@@ -383,5 +392,6 @@ export default function OnboardingFlow({ onComplete }: Props) {
         </motion.button>
       </div>
     </motion.div>
+    </>
   );
 }

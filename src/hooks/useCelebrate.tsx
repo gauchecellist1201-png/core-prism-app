@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CXO_META, type CxoRole } from './useAgentTaskQueue';
 
 const EMOJIS = ['🎉', '✨', '💫', '⭐', '🌟'];
 const DISABLED_KEY = 'core_celebrate_disabled';
@@ -40,17 +41,21 @@ const isDisabled = (): boolean => {
 };
 
 /** 軽い「祝う和音」を Web Audio で 0.6 秒ほど鳴らす */
-function playCelebrationChord(level: 'small' | 'big') {
+function playCelebrationChord(level: 'small' | 'big' | 'epic') {
   if (typeof window === 'undefined') return;
   try {
     const AC = (window as unknown as { AudioContext?: typeof AudioContext }).AudioContext
       || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AC) return;
     const ctx = new AC();
-    // C メジャー (C5 E5 G5) + big は C6
-    const freqs = level === 'big' ? [523.25, 659.25, 783.99, 1046.5] : [523.25, 659.25, 783.99];
+    // C メジャー (C5 E5 G5) + big は C6 + epic は さらに E6 G6
+    const freqs = level === 'epic'
+      ? [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568.0]
+      : level === 'big'
+        ? [523.25, 659.25, 783.99, 1046.5]
+        : [523.25, 659.25, 783.99];
     const now = ctx.currentTime;
-    const duration = level === 'big' ? 0.8 : 0.45;
+    const duration = level === 'epic' ? 1.4 : level === 'big' ? 0.8 : 0.45;
     freqs.forEach((f, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -70,12 +75,12 @@ function playCelebrationChord(level: 'small' | 'big') {
 interface CelebrateRequest {
   id: number;
   message: string;
-  level: 'small' | 'big';
+  level: 'small' | 'big' | 'epic';
 }
 
 interface CelebrateOpts {
   message: string;
-  level?: 'small' | 'big';
+  level?: 'small' | 'big' | 'epic';
 }
 
 let nextId = 1;
@@ -94,7 +99,7 @@ export function useCelebrate() {
 
   const celebrate = useCallback((opts: CelebrateOpts) => {
     const message = opts.message;
-    const level: 'small' | 'big' = opts.level || 'small';
+    const level: 'small' | 'big' | 'epic' = opts.level || 'small';
 
     if (isDisabled()) {
       try {
@@ -113,7 +118,7 @@ export function useCelebrate() {
     timerRef.current = window.setTimeout(() => {
       setCurrent(c => (c?.id === req.id ? null : c));
       timerRef.current = null;
-    }, 2000);
+    }, level === 'epic' ? 4200 : 2000);
     playCelebrationChord(level);
   }, []);
 
@@ -143,6 +148,7 @@ function CelebrateLayer({ current }: { current: CelebrateRequest | null }) {
           role="status"
         >
           <ConfettiPieces level={current.level} />
+          {current.level === 'epic' && <CxoApplauseRow />}
           <motion.div
             initial={{ y: 20, opacity: 0, scale: 0.9 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -150,13 +156,14 @@ function CelebrateLayer({ current }: { current: CelebrateRequest | null }) {
             transition={{ type: 'spring', stiffness: 320, damping: 22 }}
             style={{
               position: 'absolute',
-              top: '38%', left: '50%',
+              top: current.level === 'epic' ? '28%' : '38%',
+              left: '50%',
               transform: 'translate(-50%, -50%)',
               padding: '14px 22px',
               borderRadius: 999,
               background: 'linear-gradient(135deg, rgba(168,139,250,0.95), rgba(225,48,108,0.95))',
               color: '#fff',
-              fontSize: current.level === 'big' ? 18 : 15,
+              fontSize: current.level === 'epic' ? 20 : current.level === 'big' ? 18 : 15,
               fontWeight: 800,
               letterSpacing: '0.02em',
               boxShadow: '0 12px 40px rgba(168,139,250,0.45)',
@@ -165,7 +172,7 @@ function CelebrateLayer({ current }: { current: CelebrateRequest | null }) {
               textAlign: 'center',
             }}
           >
-            <span aria-hidden style={{ marginRight: 6 }}>✨</span>
+            <span aria-hidden style={{ marginRight: 6 }}>{current.level === 'epic' ? '🎊' : '✨'}</span>
             {current.message}
           </motion.div>
         </motion.div>
@@ -174,8 +181,101 @@ function CelebrateLayer({ current }: { current: CelebrateRequest | null }) {
   );
 }
 
-function ConfettiPieces({ level }: { level: 'small' | 'big' }) {
-  const count = level === 'big' ? 110 : 60;
+/** NNNNNN (2026-06-04): 14 役員 が ニコッと 並んで 拍手する 横一列 */
+function CxoApplauseRow() {
+  const roles = Object.keys(CXO_META) as CxoRole[];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 30 }}
+      transition={{ duration: 0.4, delay: 0.1 }}
+      style={{
+        position: 'absolute',
+        bottom: '14%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        gap: 10,
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        maxWidth: 'calc(100vw - 32px)',
+        padding: '14px 20px',
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        borderRadius: 20,
+        border: '1px solid rgba(255,255,255,0.15)',
+        boxShadow: '0 16px 40px rgba(0,0,0,0.4)',
+      }}
+    >
+      {roles.map((role, i) => {
+        const meta = CXO_META[role];
+        return (
+          <motion.div
+            key={role}
+            animate={{
+              y: [0, -10, 0],
+              rotate: [0, -8, 8, 0],
+            }}
+            transition={{
+              duration: 0.8,
+              delay: 0.3 + i * 0.06,
+              repeat: 2,
+              repeatType: 'loop',
+              ease: 'easeInOut',
+            }}
+            title={meta.name}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            <div style={{
+              width: 38, height: 38, borderRadius: 12,
+              background: `linear-gradient(135deg, ${meta.color}, ${meta.color}aa)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20,
+              boxShadow: `0 6px 16px ${meta.color}55`,
+            }}>
+              {meta.emoji}
+            </div>
+            <span style={{
+              fontSize: 9, fontWeight: 800,
+              color: meta.color, letterSpacing: '0.05em',
+              textShadow: '0 1px 4px rgba(0,0,0,0.6)',
+            }}>{meta.shortLabel}</span>
+          </motion.div>
+        );
+      })}
+      {/* 👏 floating */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <motion.span
+          key={`clap-${i}`}
+          initial={{ opacity: 0, y: 20, x: 0 }}
+          animate={{
+            opacity: [0, 1, 1, 0],
+            y: [-10, -60, -90],
+            x: (Math.random() - 0.5) * 60,
+          }}
+          transition={{ duration: 1.4, delay: 0.5 + i * 0.18, repeat: 2 }}
+          style={{
+            position: 'absolute',
+            bottom: '100%',
+            left: `${15 + i * 9}%`,
+            fontSize: 22,
+            pointerEvents: 'none',
+          }}
+        >
+          👏
+        </motion.span>
+      ))}
+    </motion.div>
+  );
+}
+
+function ConfettiPieces({ level }: { level: 'small' | 'big' | 'epic' }) {
+  const count = level === 'epic' ? 180 : level === 'big' ? 110 : 60;
   const pieces = useRef<Array<{ x: number; emoji: string; delay: number; dur: number; rot: number; size: number }> | null>(null);
   if (!pieces.current) {
     pieces.current = Array.from({ length: count }).map(() => ({

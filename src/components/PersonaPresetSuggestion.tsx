@@ -148,6 +148,20 @@ export default function PersonaPresetSuggestion() {
             </p>
           </div>
 
+          {/* OOOOOO (2026-06-04): お試し ペルソナ 3 ボタン — 1 タップで 1 名 だけ追加 → 即ダッシュ */}
+          <QuickTrialPresets
+            onPick={(preset) => {
+              try {
+                const p = personas.createPersona(
+                  preset.name, preset.subtitle, preset.icon,
+                  preset.description, preset.accentColor, preset.accentColorLight,
+                );
+                personas.selectPersona(p.id);
+              } catch { /* */ }
+              close('add');
+            }}
+          />
+
           <div style={{ padding: '14px 16px', overflowY: 'auto', flex: 1 }}>
             {presets.map((p) => {
               const on = picked.has(p.key);
@@ -239,5 +253,96 @@ export default function PersonaPresetSuggestion() {
         </motion.div>
       </motion.div>
     </AnimatePresence>
+  );
+}
+
+// OOOOOO (2026-06-04): 3 ボタン で 即 ペルソナ 作成 + 即 アクティブ化
+interface QuickPreset {
+  key: string;
+  emoji: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  icon: string;
+  accentColor: string;
+  accentColorLight: string;
+  tagline: string;
+}
+const QUICK_PRESETS: QuickPreset[] = [
+  {
+    key: 'shop-owner',
+    emoji: '🍜',
+    name: '飲食店オーナー',
+    subtitle: '3 店舗 / 月商 800 万',
+    description: '売上 / 在庫 / 採用 を 14 役員 で 回す 飲食店オーナー (例: 田中)',
+    icon: '🍜',
+    accentColor: '#F97316',
+    accentColorLight: 'rgba(249,115,22,0.18)',
+    tagline: '売上 / 採用 / 在庫 を 1 画面で',
+  },
+  {
+    key: 'consultant',
+    emoji: '🧠',
+    name: 'コンサルタント',
+    subtitle: '独立 5 年 / 提案 8h → 30 分',
+    description: '提案書 + リサーチ を AI に 任せる 独立コンサル (例: 森本)',
+    icon: '🧠',
+    accentColor: '#6366F1',
+    accentColorLight: 'rgba(99,102,241,0.18)',
+    tagline: '提案 / リサーチ / 議事録 ぜんぶ AI',
+  },
+  {
+    key: 'freelancer',
+    emoji: '⚡',
+    name: 'フリーランス エンジニア',
+    subtitle: '月単価 ¥120 万 / 副業 2 件',
+    description: '案件管理 + 単価交渉 + 確定申告 を AI で (例: 山口)',
+    icon: '⚡',
+    accentColor: '#A855F7',
+    accentColorLight: 'rgba(168,85,247,0.18)',
+    tagline: '案件 / 交渉 / 経理 を AI で',
+  },
+];
+
+function QuickTrialPresets({ onPick }: { onPick: (preset: QuickPreset) => void }) {
+  return (
+    <div style={{
+      padding: '12px 16px 14px',
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      background: 'linear-gradient(180deg, rgba(167,139,250,0.06), transparent)',
+    }}>
+      <div style={{
+        fontSize: 10, letterSpacing: '0.2em',
+        color: '#FBBF24', fontWeight: 800,
+        marginBottom: 8,
+      }}>
+        🚀 お試し で 1 タップ で 始める
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+        {QUICK_PRESETS.map((p) => (
+          <button
+            key={p.key}
+            onClick={() => onPick(p)}
+            aria-label={`${p.name} ペルソナ を 1 タップで 作成`}
+            style={{
+              padding: '12px 10px',
+              borderRadius: 12,
+              background: p.accentColorLight,
+              border: `1px solid ${p.accentColor}55`,
+              color: '#fff',
+              cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+              transition: 'transform 0.15s, box-shadow 0.15s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = `0 8px 18px ${p.accentColor}33`; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+          >
+            <span style={{ fontSize: 26, lineHeight: 1 }}>{p.emoji}</span>
+            <span style={{ fontSize: 11, fontWeight: 800, lineHeight: 1.3, textAlign: 'center' }}>{p.name}</span>
+            <span style={{ fontSize: 9, color: p.accentColor, fontWeight: 700, lineHeight: 1.2, textAlign: 'center' }}>{p.tagline}</span>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -58,9 +58,13 @@ const STEPS: Step[] = [
   },
 ];
 
+import { useCelebrate } from '../hooks/useCelebrate';
+
 export default function OnboardingTour() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
+  // NNNNNN (2026-06-04): ツアー終了時に 14 役員 拍手 + 紙吹雪
+  const { celebrate, CelebratePortal } = useCelebrate();
 
   useEffect(() => {
     try {
@@ -74,6 +78,12 @@ export default function OnboardingTour() {
   const close = (completed: boolean) => {
     setOpen(false);
     try { localStorage.setItem(KEY, completed ? '1' : '1'); } catch { /* skip も同じ扱い (再表示しない) */ }
+    if (completed) {
+      // NNNNNN: 14 役員 拍手 epic
+      setTimeout(() => {
+        celebrate({ message: 'ようこそ — 14 役員 が お迎えします!', level: 'epic' });
+      }, 200);
+    }
   };
 
   const next = () => {
@@ -84,7 +94,7 @@ export default function OnboardingTour() {
     }
   };
 
-  if (!open) return null;
+  if (!open) return <>{CelebratePortal}</>;  // 閉じても celebrate のポータルは残す
   const s = STEPS[step];
 
   return (
