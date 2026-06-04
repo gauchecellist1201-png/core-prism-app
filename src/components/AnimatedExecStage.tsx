@@ -14,6 +14,8 @@ import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
 type Props = {
   onCta?: () => void;
   ctaLabel?: string;
+  /** LLLLLL (2026-06-04): CXO ピル を タップ した時 CxoProfileModal を 開く コールバック */
+  onCxoClick?: (cxo: CxoRole) => void;
 };
 
 type StageBeat = {
@@ -43,7 +45,7 @@ const BEATS: StageBeat[] = [
 const BEAT_MS = 2200;
 const FINAL_PAUSE_MS = 3000;
 
-export default function AnimatedExecStage({ onCta, ctaLabel = '7 日間 無料で始める' }: Props) {
+export default function AnimatedExecStage({ onCta, ctaLabel = '7 日間 無料で始める', onCxoClick }: Props) {
   const [step, setStep] = useState(0); // 0..BEATS.length-1 = 各 CXO / BEATS.length = CTA フェーズ
   const isCtaPhase = step >= BEATS.length;
   const currentBeat = BEATS[step] || BEATS[0];
@@ -113,13 +115,21 @@ export default function AnimatedExecStage({ onCta, ctaLabel = '7 日間 無料�
           {(Object.keys(CXO_META) as CxoRole[]).map((role) => {
             const isActive = !isCtaPhase && role === currentBeat.cxo;
             const m = CXO_META[role];
+            const clickable = !!onCxoClick;
             return (
               <motion.div
                 key={role}
+                role={clickable ? 'button' : undefined}
+                tabIndex={clickable ? 0 : undefined}
+                aria-label={clickable ? `${m.name} の プロフィールを開く` : undefined}
+                onClick={clickable ? () => onCxoClick?.(role) : undefined}
+                onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onCxoClick?.(role); } } : undefined}
                 animate={{
                   scale: isActive ? 1.18 : 1,
                   opacity: isActive ? 1 : 0.45,
                 }}
+                whileHover={clickable ? { scale: isActive ? 1.22 : 1.08, opacity: 1 } : undefined}
+                whileTap={clickable ? { scale: 0.95 } : undefined}
                 transition={{ duration: 0.35, ease: 'easeOut' }}
                 style={{
                   position: 'relative',
@@ -132,6 +142,8 @@ export default function AnimatedExecStage({ onCta, ctaLabel = '7 日間 無料�
                   background: isActive ? `${m.color}22` : 'rgba(255,255,255,0.04)',
                   border: isActive ? `2px solid ${m.color}` : '1px solid rgba(255,255,255,0.08)',
                   boxShadow: isActive ? `0 0 24px ${m.color}66` : 'none',
+                  cursor: clickable ? 'pointer' : 'default',
+                  outline: 'none',
                 }}
               >
                 <div style={{ fontSize: '1.3rem', lineHeight: 1 }}>{m.emoji}</div>

@@ -16,6 +16,8 @@ import { useEffect, useState } from 'react';
 import { REFERRAL_BONUS_DAYS, getPendingReferralInviter } from '../lib/referral';
 import LiveAgentMock from './LiveAgentMock';
 import AnimatedExecStage from './AnimatedExecStage';
+import CxoProfileModal from './CxoProfileModal';
+import type { CxoRole } from '../hooks/useAgentTaskQueue';
 import HeroExecLoop from './HeroExecLoop';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
 import LaunchCountdownBanner from './LaunchCountdownBanner';
@@ -56,6 +58,8 @@ export default function LandingPage({ onEnterApp }: Props) {
   const { lang, setLang, t } = useT();
   const [pendingRef, setPendingRef] = useState<string | null>(null);
   const [pendingInviter, setPendingInviter] = useState<string>('');
+  // LLLLLL (2026-06-04): CXO ピル を タップで プロフィール モーダル
+  const [openCxo, setOpenCxo] = useState<CxoRole | null>(null);
   useEffect(() => {
     try { setPendingRef(sessionStorage.getItem('pending_ref')); } catch { /* */ }
     setPendingInviter(getPendingReferralInviter());
@@ -255,7 +259,9 @@ export default function LandingPage({ onEnterApp }: Props) {
       </section>
 
       {/* ── 14 役員 リアルタイム稼働ステージ (FF) ───────────────────────────── */}
-      <AnimatedExecStage onCta={onEnterApp} ctaLabel={t.hero.cta} />
+      {/* LLLLLL (2026-06-04): CXO タップ で プロフィール モーダル */}
+      <AnimatedExecStage onCta={onEnterApp} ctaLabel={t.hero.cta} onCxoClick={(c) => setOpenCxo(c)} />
+      <CxoProfileModal role={openCxo} onClose={() => setOpenCxo(null)} />
 
       {/* ── セクション: 7 つのエージェント ──────────────────────────────────────────────────── */}
       <section id="agents" className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#070712 0%,#0d0d1c 100%)' }}>
