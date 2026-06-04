@@ -42,6 +42,8 @@
     { "source": "/terms/",       "destination": "/index.html" },
     { "source": "/trust",        "destination": "/index.html" },
     { "source": "/trust/",       "destination": "/index.html" },
+    { "source": "/status",       "destination": "/index.html" },
+    { "source": "/status/",      "destination": "/index.html" },
     { "source": "/iris/privacy", "destination": "/iris.html" },
     { "source": "/iris/terms",   "destination": "/iris.html" },
     { "source": "/iris",     "destination": "/iris.html" },

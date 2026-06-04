@@ -469,6 +469,23 @@ export default function MasterEntry() {
             🔑 Secrets Health
           </a>
           <a
+            href="/master/onboard-funnel"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(99,102,241,0.12)',
+              border: '1px solid rgba(99,102,241,0.35)',
+              color: '#c7d2fe',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            📊 オンボ ファネル
+          </a>
+          <a
             href="/master/stripe-status"
             style={{
               flex: 1,

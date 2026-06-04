@@ -34,8 +34,10 @@ const MasterEntry = lazy(() => import('./components/MasterEntry'));
 const AiStats = lazy(() => import('./master/AiStats'));
 const AiCostDashboard = lazy(() => import('./master/AiCostDashboard'));
 const SecretsHealth = lazy(() => import('./master/SecretsHealth'));
+const OnboardFunnel = lazy(() => import('./master/OnboardFunnel'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
+const StatusPage = lazy(() => import('./components/StatusPage'));
 const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./legal/TermsOfService'));
@@ -142,6 +144,12 @@ function isSecretsHealthPath(): boolean {
   return p === '/master/secrets-health' || p === '/secrets-health';
 }
 
+function isOnboardFunnelPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/onboard-funnel' || p === '/onboard-funnel';
+}
+
 function isContactPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
@@ -152,6 +160,12 @@ function isTrustPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/trust' || p === '/trust/';
+}
+
+function isStatusPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/status' || p === '/status/';
 }
 
 function isErrorLogPath(): boolean {
@@ -315,6 +329,11 @@ export default function App() {
     return <Suspense fallback={<RouteFallback />}><SecretsHealth /></Suspense>;
   }
 
+  // /master/onboard-funnel — オーナー専用 オンボ ファネル (YYYY 2026-06-04)
+  if (isOnboardFunnelPath()) {
+    return <Suspense fallback={<RouteFallback />}><OnboardFunnel /></Suspense>;
+  }
+
   // /contact — 公開窓口 (KKK 2026-06-04)
   if (isContactPath()) {
     return <Suspense fallback={<RouteFallback />}><ContactPage /></Suspense>;
@@ -323,6 +342,11 @@ export default function App() {
   // /trust — 公開トラストページ (VVVV 2026-06-04)
   if (isTrustPath()) {
     return <Suspense fallback={<RouteFallback />}><TrustPage /></Suspense>;
+  }
+
+  // /status — 公開ステータスページ (WWWW 2026-06-04)
+  if (isStatusPath()) {
+    return <Suspense fallback={<RouteFallback />}><StatusPage /></Suspense>;
   }
 
   // /master/error-log — エラーログ単独閲覧 (自端末のローカルログのみ)
