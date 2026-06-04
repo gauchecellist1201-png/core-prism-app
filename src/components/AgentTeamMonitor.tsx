@@ -18,6 +18,7 @@ import { usePersonas } from '../hooks/usePersonas';
 import { useSettings } from '../hooks/useSettings';
 import InlineActionExecutor from './InlineActionExecutor';
 import CxoProfileModal from './CxoProfileModal';
+import { logSuggestion, setStatus as setSuggestionStatus } from '../lib/aiSuggestionLog';
 
 interface Props {
   /** Iris か Prism — Iris は dock 上、Prism は別位置 */
@@ -50,7 +51,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
   const [openCxo, setOpenCxo] = useState<CxoRole | null>(null);
   const [watchTick, setWatchTick] = useState(0);
   // HH (2026-06-03): タスクボタン → InlineActionExecutor で AI 実行 → 成果物表示
-  const [inlineExec, setInlineExec] = useState<{ action: string; cxo: CxoRole } | null>(null);
+  const [inlineExec, setInlineExec] = useState<{ action: string; cxo: CxoRole; suggestionId?: string | null } | null>(null);
   // JJJJ (2026-06-04): CXO 人格 詳細 モーダル
   const [profileRole, setProfileRole] = useState<CxoRole | null>(null);
   const { activePersona } = usePersonas();
@@ -128,10 +129,25 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
   // CXO クリックで「任せること」を選んだら InlineActionExecutor で
   // AI が考え → 成果物を表示する流れに統一 (HH: 2026-06-03 オーナー指示)
   // persona/settings が揃わない場合は従来の queue 経由 propose + auto-approve に倒す
+  // GGGGG (2026-06-04): pending 提案 として記録 → 履歴モーダルで採否 が見える
+  const recordSuggestion = (role: CxoRole, task: string) => {
+    const meta = CXO_META[role];
+    try {
+      return logSuggestion({
+        cxoKey: role,
+        cxoName: cxoDisplayName(role),
+        cxoEmoji: meta.emoji,
+        title: task,
+        detail: `${meta.shortLabel || meta.name} に依頼 — ${task}`,
+        source: 'agent-monitor',
+      });
+    } catch { return null; }
+  };
   const assignToCxo = (role: CxoRole, task: string) => {
     const meta = CXO_META[role];
     if (activePersona && settings) {
-      setInlineExec({ action: `${cxoDisplayName(role)} に「${task}」をやらせる`, cxo: role });
+      const entry = recordSuggestion(role, task);
+      setInlineExec({ action: `${cxoDisplayName(role)} に「${task}」をやらせる`, cxo: role, suggestionId: entry?.id });
       if (!open) setOpen(true);
       return;
     }
@@ -146,6 +162,11 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
       ],
     });
     setTimeout(() => approve(proposal.id), 200);
+    // GGGGG: queue 経由でも 「採用済 提案」 として履歴に記録
+    const entry = recordSuggestion(role, task);
+    if (entry) {
+      try { setSuggestionStatus(entry.id, 'adopted'); } catch { /* */ }
+    }
     setOpenCxo(null);
     if (!open) setOpen(true);
   };
@@ -458,6 +479,10 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                           steps: [{ cxo: inlineExec.cxo, label: act }],
                         });
                         setTimeout(() => approve(proposal.id), 100);
+                        // GGGGG: タスクに採用 = 採用 (adopted) として履歴 を更新
+                        if (inlineExec.suggestionId) {
+                          try { setSuggestionStatus(inlineExec.suggestionId, 'adopted'); } catch { /* */ }
+                        }
                       }}
                     />
                   </div>
