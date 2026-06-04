@@ -38,6 +38,7 @@ const AiCostDashboard = lazy(() => import('./master/AiCostDashboard'));
 const SecretsHealth = lazy(() => import('./master/SecretsHealth'));
 const OnboardFunnel = lazy(() => import('./master/OnboardFunnel'));
 const RevenueDashboard = lazy(() => import('./master/RevenueDashboard'));
+const RoadmapVotes = lazy(() => import('./master/RoadmapVotes'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
 const StatusPage = lazy(() => import('./components/StatusPage'));
@@ -158,6 +159,12 @@ function isRevenueDashboardPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master/revenue-dashboard' || p === '/revenue-dashboard';
+}
+
+function isRoadmapVotesPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/roadmap-votes' || p === '/roadmap-votes';
 }
 
 function isContactPath(): boolean {
@@ -353,6 +360,11 @@ export default function App() {
   // /master/revenue-dashboard — Stripe 12 ヶ月 売上 + MRR + 解約率 (JJJJJ 2026-06-04)
   if (isRevenueDashboardPath()) {
     return <Suspense fallback={<RouteFallback />}><RevenueDashboard /></Suspense>;
+  }
+
+  // /master/roadmap-votes — 投票結果 ダッシュ (RRRRR 2026-06-04)
+  if (isRoadmapVotesPath()) {
+    return <Suspense fallback={<RouteFallback />}><RoadmapVotes /></Suspense>;
   }
 
   // /contact — 公開窓口 (KKK 2026-06-04)

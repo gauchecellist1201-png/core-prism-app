@@ -217,6 +217,34 @@ function Hero({ config, accentLeft, accentRight }: { config: IndustryConfig; acc
           </div>
         </motion.div>
 
+        {/* TTTTT (2026-06-04): 「公式 動画 75 秒」 バッジ — #video アンカーで OnboardingVideoEmbed へ */}
+        <a
+          href="#video"
+          aria-label="75 秒 で わかる 公式 動画 を 再生"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '8px 16px', borderRadius: 999,
+            background: `linear-gradient(135deg, ${accentLeft}22, ${accentRight}22)`,
+            border: `1px solid ${accentRight}66`,
+            color: '#fff', textDecoration: 'none',
+            fontSize: 12, fontWeight: 800, letterSpacing: '0.02em',
+            marginTop: 16, marginBottom: 16,
+            boxShadow: `0 8px 18px ${accentRight}22`,
+            transition: 'transform 0.18s, box-shadow 0.18s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = `0 12px 26px ${accentRight}44`; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = `0 8px 18px ${accentRight}22`; }}
+        >
+          <span aria-hidden="true" style={{
+            width: 24, height: 24, borderRadius: 12,
+            background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+            color: '#fff',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, lineHeight: 1,
+          }}>▶</span>
+          75 秒 で わかる
+        </a>
+
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 8 }}>
           <a href="#demo" style={ctaPrimary(accentLeft, accentRight)}>
             7 日間 無料で試す →

@@ -503,6 +503,23 @@ export default function MasterEntry() {
             💴 12ヶ月 売上 + MRR
           </a>
           <a
+            href="/master/roadmap-votes"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(236,72,153,0.12)',
+              border: '1px solid rgba(236,72,153,0.35)',
+              color: '#fbcfe8',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            ♡ ロードマップ 投票
+          </a>
+          <a
             href="/master/stripe-status"
             style={{
               flex: 1,

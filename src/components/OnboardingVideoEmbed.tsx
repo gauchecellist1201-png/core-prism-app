@@ -30,9 +30,10 @@ export default function OnboardingVideoEmbed({ src, accentLeft = '#A78BFA', acce
   if (hidden) return null;
 
   return (
-    <section style={{
+    <section id="video" aria-label="公式 動画 75 秒" style={{
       padding: '3rem 1.25rem 2rem',
       background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.02) 100%)',
+      scrollMarginTop: 24,
     }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 11, letterSpacing: '0.25em', fontWeight: 800, color: accentLeft }}>
