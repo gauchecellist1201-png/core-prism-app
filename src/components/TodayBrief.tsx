@@ -6,6 +6,7 @@ import { listIntegrations, sendBrief } from '../lib/integrations';
 import { RewardBurst } from './visualFx';
 import ThinkingIndicator from './ThinkingIndicator';
 import InlineActionExecutor from './InlineActionExecutor';
+import { LoaderDots } from './MicroLoader';
 
 interface Props {
   persona: Persona;
@@ -98,7 +99,7 @@ export default function TodayBrief({
               className="text-fg font-extrabold leading-tight brief-title-mobile"
               style={{ fontSize: 18, wordBreak: 'keep-all', lineHeight: 1.35 }}
             >
-              {proposal?.title || (isGenerating ? '提案を生成中…' : 'AIから提案を受け取る')}
+              {proposal?.title || (isGenerating ? <LoaderDots label="今日の打ち手を選んでます" /> : 'AIから提案を受け取る')}
             </p>
           </div>
         </div>
@@ -220,7 +221,7 @@ export default function TodayBrief({
               color: '#0a0a0f',
             }}
           >
-            {isGenerating ? '🧠 生成中…' : proposal ? '🔄 新しい提案' : '✨ 提案を生成'}
+            {isGenerating ? <LoaderDots label="提案を考えてます" /> : proposal ? '🔄 新しい提案' : '✨ 提案を生成'}
           </button>
           {proposal && voiceEnabled && (
             isSpeaking ? (

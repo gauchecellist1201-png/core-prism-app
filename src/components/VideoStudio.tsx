@@ -4,6 +4,7 @@
 // ============================================================
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ApiErrorCard from './ApiErrorCard';
+import { LoaderDots } from './MicroLoader';
 import { StudioIntro } from './StudioIntro';
 import { notifyInApp } from '../lib/inAppNotify';
 import type { AppSettings } from '../types/identity';
@@ -466,7 +467,7 @@ export default function VideoStudio({ bg, settings }: Props) {
             </select>
           </div>
           <button onClick={handleGenerate} disabled={busy} style={btnPrimary}>
-            {busy ? '⏳ 生成中…' : '🎬 AI 脚本を生成'}
+            {busy ? <LoaderDots label="脚本を書いてます" /> : '🎬 AI 脚本を生成'}
           </button>
           <ApiErrorCard error={err} onRetry={handleGenerate} />
         </div>

@@ -10,6 +10,7 @@ import { InvoicePrintView } from './InvoicePrintView';
 import { confirmAction } from '../lib/confirmDialog';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
+import { LoaderDots } from './MicroLoader';
 import { StudioIntro } from './StudioIntro';
 import EmptyState from './EmptyState';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
@@ -344,7 +345,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
                     disabled={aiBusy || !aiPrompt.trim()}
                     className="text-xs px-3 py-2 rounded font-semibold disabled:opacity-50"
                     style={{ background: persona.accentColor, color: '#0a0a0f' }}
-                  >{aiBusy ? '生成中…' : '✨ 構成'}</button>
+                  >{aiBusy ? <LoaderDots label="明細を組み立て中" /> : '✨ 構成'}</button>
                 </div>
                 {/* 構成成功フィードバック */}
                 {aiSuccess && (
