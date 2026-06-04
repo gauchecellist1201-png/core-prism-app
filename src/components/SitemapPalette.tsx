@@ -107,18 +107,39 @@ export default function SitemapPalette() {
   const [q, setQ] = useState('');
 
   useEffect(() => {
+    let gPressed = 0;        // PPPPP (2026-06-04): Vim 風「g s」 2 連打 で 開く
     const onKey = (e: KeyboardEvent) => {
       // Cmd+Shift+? (US 配列) / Ctrl+Shift+? (Win/Linux)
       const isOpen = (e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === '?' || e.key === '/');
       if (isOpen) {
         e.preventDefault();
         setOpen(o => !o);
-      } else if (e.key === 'Escape' && open) {
+        return;
+      }
+      if (e.key === 'Escape' && open) {
         setOpen(false);
+        return;
+      }
+      // 入力中 (input / textarea / contentEditable) は g s ショートカット を無効化
+      const tgt = e.target as HTMLElement | null;
+      if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'g') { gPressed = Date.now(); return; }
+      if (e.key === 's' && gPressed && Date.now() - gPressed < 1200) {
+        e.preventDefault();
+        gPressed = 0;
+        setOpen(true);
+      } else if (e.key !== 'g') {
+        gPressed = 0;
       }
     };
+    const onOpenEvt = () => setOpen(true);
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('core:open-sitemap-palette', onOpenEvt as EventListener);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('core:open-sitemap-palette', onOpenEvt as EventListener);
+    };
   }, [open]);
 
   const filtered = useMemo(() => {

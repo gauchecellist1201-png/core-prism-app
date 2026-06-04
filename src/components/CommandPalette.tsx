@@ -390,7 +390,21 @@ export default function CommandPalette({
         notifyInApp({ kind: 'info', title: `🌓 テーマを ${next === 'light' ? 'ライト' : 'ダーク'} に切替`, duration: 1800 });
       } catch { /* */ }
     };
+    const openSitemapPalette = () => {
+      try {
+        // SitemapPalette は keydown で Cmd+Shift+/ を購読しているので、合成イベントを 投げる
+        const ev = new KeyboardEvent('keydown', { key: '/', shiftKey: true, metaKey: true, bubbles: true });
+        window.dispatchEvent(ev);
+        // 互換: 一部 環境で metaKey が無効化される可能性 → 直接 CustomEvent でもトリガ
+        window.dispatchEvent(new CustomEvent('core:open-sitemap-palette'));
+      } catch { /* */ }
+    };
+    const openAiHistory = () => {
+      try { window.dispatchEvent(new CustomEvent('core:open-ai-suggestions')); } catch { /* */ }
+    };
     const helpItems: Array<{ id: string; label: string; subtitle: string; emoji: string; onRun: () => void }> = [
+      { id: 'sitemap',  label: '全機能マップ', subtitle: '全ページ / 全機能 を 1 画面で (Cmd+Shift+/)', emoji: '🗺️', onRun: openSitemapPalette },
+      { id: 'history',  label: 'AI 提案 履歴 (7 日)', subtitle: '採用 / 却下 / 採用率 (Cmd+Shift+H)', emoji: '🕘', onRun: openAiHistory },
       { id: 'api-keys', label: 'API キー設定', subtitle: 'OpenAI / Stripe などの接続', emoji: '🔑', onRun: () => onOpenModal('settings') },
       { id: 'settings', label: '設定を開く', subtitle: 'すべての設定 (5 タブ + 検索)', emoji: '⚙️', onRun: () => onOpenModal('settings') },
       { id: 'theme', label: 'テーマ切替', subtitle: 'ライト / ダーク', emoji: '🌓', onRun: handleThemeToggle },

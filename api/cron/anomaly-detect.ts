@@ -36,6 +36,11 @@ interface KpiDelta {
   changePct: number;          // null = prev 0 (急増判定)
   level: 'critical' | 'warn' | 'ok';
   reason: string;
+  // QQQQQ (2026-06-04): 先週 平均比較 (前日比 とは別軸)
+  weekAvg?: number;           // 直近 7 日 平均 (curr 含まず)
+  weekChangePct?: number;
+  weekLevel?: 'critical' | 'warn' | 'ok';
+  weekReason?: string;
 }
 
 const UP_URL = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_URL) || '';
@@ -100,18 +105,50 @@ function judge(prev: number, curr: number): { changePct: number; level: 'critica
 async function diffDailyHash(category: string, keyTmpl: (date: string) => string, prevDate: string, currDate: string): Promise<KpiDelta[]> {
   const out: KpiDelta[] = [];
   try {
-    const [pRes, cRes] = await Promise.all([
+    // 前日 / 当日 + QQQQQ: 当日の前 7 日 (week avg 用)
+    const week7Dates: string[] = [];
+    {
+      const base = new Date(currDate + 'T00:00:00Z');
+      for (let i = 1; i <= 7; i++) {
+        const d = new Date(base.getTime());
+        d.setUTCDate(d.getUTCDate() - i);
+        week7Dates.push(d.toISOString().slice(0, 10));
+      }
+    }
+    const [pRes, cRes, ...wRess] = await Promise.all([
       upstash(['HGETALL', keyTmpl(prevDate)]),
       upstash(['HGETALL', keyTmpl(currDate)]),
+      ...week7Dates.map((d) => upstash(['HGETALL', keyTmpl(d)])),
     ]);
     const prev = parseHash(pRes);
     const curr = parseHash(cRes);
+    const weeks = wRess.map((r) => parseHash(r));
     const fields = new Set([...Object.keys(prev), ...Object.keys(curr)]);
+    // 7 日 のいずれかに field が出ていれば 平均集計の 対象に追加
+    for (const wh of weeks) Object.keys(wh).forEach((k) => fields.add(k));
     for (const f of fields) {
       const p = prev[f] || 0;
       const c = curr[f] || 0;
       const j = judge(p, c);
-      out.push({ category, field: f, prev: p, curr: c, changePct: j.changePct, level: j.level, reason: j.reason });
+      // 7 日 平均
+      let sum = 0, count = 0;
+      for (const wh of weeks) {
+        const v = wh[f] || 0;
+        sum += v; count += 1;
+      }
+      const weekAvg = count > 0 ? Math.round((sum / count) * 100) / 100 : 0;
+      const wj = judge(weekAvg, c);
+      out.push({
+        category, field: f,
+        prev: p, curr: c,
+        changePct: j.changePct,
+        level: j.level,
+        reason: j.reason,
+        weekAvg,
+        weekChangePct: wj.changePct,
+        weekLevel: wj.level,
+        weekReason: `先週平均比 ${wj.reason}`,
+      });
     }
   } catch {
     /* category ごと欠損は無視 */
@@ -176,15 +213,17 @@ export default async function handler(req: Request): Promise<Response> {
     }
   } catch { /* */ }
 
-  // フィルタ: warn 以上のみ通知
-  const alerts = deltas.filter((d) => d.level !== 'ok');
-  const crit = alerts.filter((d) => d.level === 'critical');
-  const warn = alerts.filter((d) => d.level === 'warn');
+  // フィルタ: 前日比 / 先週平均比 のいずれかが warn 以上
+  const alerts = deltas.filter((d) => d.level !== 'ok' || (d.weekLevel && d.weekLevel !== 'ok'));
+  const crit = alerts.filter((d) => d.level === 'critical' || d.weekLevel === 'critical');
+  const warn = alerts.filter((d) => !(d.level === 'critical' || d.weekLevel === 'critical') && (d.level === 'warn' || d.weekLevel === 'warn'));
+  // QQQQQ: 先週平均 比較 のみ warn (前日比は ok) のカテゴリを 別ラベル
+  const weekOnly = alerts.filter((d) => d.level === 'ok' && d.weekLevel && d.weekLevel !== 'ok');
 
   // dryRun の時は Slack 送らずそのまま返す
   if (!dryRun && SLACK && alerts.length > 0) {
     const head = crit.length ? '🚨' : '⚠';
-    const text = `${head} CORE 数字異常 — ${prevDate} vs ${currDate}: critical ${crit.length} / warn ${warn.length}`;
+    const text = `${head} CORE 数字異常 — ${currDate}: critical ${crit.length} / warn ${warn.length} (先週平均比のみ ${weekOnly.length})`;
     const blocks: unknown[] = [
       {
         type: 'header',
@@ -193,21 +232,31 @@ export default async function handler(req: Request): Promise<Response> {
       {
         type: 'section',
         fields: [
-          { type: 'mrkdwn', text: `*🚨 critical*\n${crit.length} 件 (倍以上 or 消滅)` },
+          { type: 'mrkdwn', text: `*🚨 critical*\n${crit.length} 件 (前日 or 先週 で倍以上)` },
           { type: 'mrkdwn', text: `*⚠ warn*\n${warn.length} 件 (±50% 以上)` },
+          { type: 'mrkdwn', text: `*📊 先週平均比 のみ*\n${weekOnly.length} 件` },
+          { type: 'mrkdwn', text: `*基準*\n前日 ${prevDate} / 先週平均 = 直近 7 日` },
         ],
       },
       { type: 'divider' },
     ];
-    // critical を 5 件まで詳細
-    const detail = [...crit.slice(0, 5), ...warn.slice(0, 5)];
+    // critical を 5 件まで詳細、warn 5、weekOnly 3
+    const detail = [
+      ...crit.slice(0, 5).map((d) => ({ ...d, _kind: 'critical' as const })),
+      ...warn.slice(0, 5).map((d) => ({ ...d, _kind: 'warn' as const })),
+      ...weekOnly.slice(0, 3).map((d) => ({ ...d, _kind: 'weekOnly' as const })),
+    ];
     for (const d of detail) {
-      const icon = d.level === 'critical' ? '🚨' : '⚠';
+      const icon = d._kind === 'critical' ? '🚨' : d._kind === 'weekOnly' ? '📊' : '⚠';
+      const dayLine = `_前日比_ ${prevDate} → ${currDate}: ${d.prev} → ${d.curr} *(${d.reason})*`;
+      const weekLine = d.weekAvg !== undefined
+        ? `_先週平均比_ 平均 ${d.weekAvg} → ${currDate}: ${d.curr} *(${d.weekReason})*`
+        : '';
       blocks.push({
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `${icon} *${d.category}* — \`${d.field}\`\n${prevDate}: ${d.prev}  →  ${currDate}: ${d.curr}  (${d.reason})`,
+          text: `${icon} *${d.category}* — \`${d.field}\`\n${dayLine}\n${weekLine}`,
         },
       });
     }
@@ -216,7 +265,7 @@ export default async function handler(req: Request): Promise<Response> {
       {
         type: 'context',
         elements: [
-          { type: 'mrkdwn', text: '_集計: Upstash HGETALL × 2 日 / 判定: ±50% で warn, ±100% or 突発/消滅 で critical_' },
+          { type: 'mrkdwn', text: '_前日比 ±50% で warn / ±100% or 突発/消滅 で critical · 先週平均比も同じ閾値で並行判定 (QQQQQ)_' },
         ],
       },
     );
@@ -227,7 +276,7 @@ export default async function handler(req: Request): Promise<Response> {
     ok: true,
     prevDate,
     currDate,
-    counts: { critical: crit.length, warn: warn.length, total: deltas.length },
+    counts: { critical: crit.length, warn: warn.length, weekOnly: weekOnly.length, total: deltas.length },
     dryRun,
     sample: alerts.slice(0, 20),
   });

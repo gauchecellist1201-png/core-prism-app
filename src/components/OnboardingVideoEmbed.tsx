@@ -77,11 +77,11 @@ export default function OnboardingVideoEmbed({ src, accentLeft = '#A78BFA', acce
             </button>
           )}
           <video
-            src={url}
             controls={started}
             playsInline
             preload="metadata"
             autoPlay={started}
+            poster="/onboarding-poster.jpg"
             onError={() => setHidden(true)}
             style={{
               width: '100%', height: '100%',
@@ -89,7 +89,10 @@ export default function OnboardingVideoEmbed({ src, accentLeft = '#A78BFA', acce
               backgroundColor: '#0c0c1c',
               objectFit: 'cover',
             }}
-          />
+          >
+            <source src={url.replace(/\.mp4$/, '.webm')} type="video/webm" />
+            <source src={url} type="video/mp4" />
+          </video>
         </div>
         <p style={{ marginTop: 12, fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
           PRISM / Iris の 5 シーン (LP → 料金 → ダッシュ → CXO チャット → Iris) を 75 秒 で。
