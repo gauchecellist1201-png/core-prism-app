@@ -47,6 +47,7 @@ const RoadmapVotes = lazy(() => import('./master/RoadmapVotes'));
 const WebVitals = lazy(() => import('./master/WebVitals'));
 const AuditLog = lazy(() => import('./master/AuditLog'));
 const CashflowForecast = lazy(() => import('./master/CashflowForecast'));
+const SocialShares = lazy(() => import('./master/SocialShares'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
 const StatusPage = lazy(() => import('./components/StatusPage'));
@@ -192,6 +193,12 @@ function isCashflowPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master/cashflow-forecast' || p === '/cashflow-forecast';
+}
+
+function isSocialSharesPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/social-shares' || p === '/social-shares';
 }
 
 function isContactPath(): boolean {
@@ -413,6 +420,11 @@ export default function App() {
   // /master/cashflow-forecast — 資金繰り 60 日 (EEEEEE 2026-06-04)
   if (isCashflowPath()) {
     return <Suspense fallback={<RouteFallback />}><CashflowForecast /></Suspense>;
+  }
+
+  // /master/social-shares — シェア 計測 (XXXXXX 2026-06-04)
+  if (isSocialSharesPath()) {
+    return <Suspense fallback={<RouteFallback />}><SocialShares /></Suspense>;
   }
 
   // /contact — 公開窓口 (KKK 2026-06-04)

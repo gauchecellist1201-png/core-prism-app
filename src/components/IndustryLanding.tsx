@@ -16,6 +16,7 @@ import OnboardingVideoEmbed from './OnboardingVideoEmbed';
 import IndustryLogoStrip from './IndustryLogoStrip';
 import HowItWorks from './HowItWorks';
 import LiveSignupCounter from './LiveSignupCounter';
+import SocialShareButtons from './SocialShareButtons';
 
 const FONT_SERIF_JA = '"Noto Serif JP", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"Cinzel", "Cormorant Garamond", serif';
@@ -330,13 +331,47 @@ function Hero({ config, accentLeft, accentRight }: { config: IndustryConfig; acc
           <a href="#demo" style={ctaPrimary(accentLeft, accentRight)}>
             7 日間 無料で試す →
           </a>
+          {/* WWWWWW (2026-06-04): データ無し で 即 試せる デモ ボタン */}
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const { seedDemoData, setDemoActive } = await import('../lib/onboarding');
+                seedDemoData({ profile: 'cafe' });
+                setDemoActive(true);
+              } catch { /* */ }
+              window.location.href = '/?demo=1';
+            }}
+            aria-label="データ無しで デモ を 触る"
+            style={{
+              padding: '14px 28px', borderRadius: 999,
+              background: 'rgba(255,255,255,0.06)',
+              border: `1px solid ${accentLeft}aa`,
+              color: '#fff', fontSize: 14, fontWeight: 800,
+              cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              transition: 'transform 0.15s, background 0.15s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = `${accentLeft}22`; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLButtonElement).style.transform = 'none'; }}
+          >
+            🎮 データ無し で 触る
+          </button>
           <a href="#pricing" style={ctaGhost}>
             プランを見る
           </a>
         </div>
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 16 }}>
-          カード登録なし ・ いつでも解約可
+          カード登録なし ・ いつでも解約可 ・ <span style={{ color: 'rgba(255,255,255,0.85)' }}>「触る」は 1 タップ</span>
         </p>
+        {/* XXXXXX (2026-06-04): シェア ボタン (X / FB / LinkedIn / Copy) */}
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+          <SocialShareButtons
+            text={`${config.heroMain.split('\n')[0]} — CORE Prism`}
+            hashtags={['CORE_Prism', 'AI役員', 'SaaS']}
+            accent={accentLeft}
+          />
+        </div>
       </div>
     </section>
   );

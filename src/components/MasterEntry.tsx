@@ -574,6 +574,23 @@ export default function MasterEntry() {
             🌊 資金繰り 60日
           </a>
           <a
+            href="/master/social-shares"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(236,72,153,0.12)',
+              border: '1px solid rgba(236,72,153,0.35)',
+              color: '#fbcfe8',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            📣 シェア計測
+          </a>
+          <a
             href="/master/stripe-status"
             style={{
               flex: 1,
