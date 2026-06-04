@@ -39,6 +39,10 @@
     {
       "path": "/api/cron/auto-reply-business-hours",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/cashflow-alert",
+      "schedule": "0 22 * * *"
     }
   ],
   "rewrites": [

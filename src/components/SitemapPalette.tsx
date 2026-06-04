@@ -103,9 +103,24 @@ const SITEMAP: SiteNode[] = [
   },
 ];
 
+// IIIIII (2026-06-04): 検索履歴 (直近 10 件)
+const HISTORY_KEY = 'core_sitemap_history_v1';
+const HISTORY_MAX = 10;
+function loadHistory(): string[] {
+  if (typeof window === 'undefined') return [];
+  try { const r = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); return Array.isArray(r) ? r.filter((s) => typeof s === 'string') : []; }
+  catch { return []; }
+}
+function saveHistory(list: string[]) {
+  if (typeof window === 'undefined') return;
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, HISTORY_MAX))); } catch { /* */ }
+}
+
 export default function SitemapPalette() {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
+  const [history, setHistory] = useState<string[]>(() => loadHistory());
+  const [focused, setFocused] = useState(false);
 
   useEffect(() => {
     let gPressed = 0;        // PPPPP (2026-06-04): Vim 風「g s」 2 連打 で 開く
@@ -159,6 +174,30 @@ export default function SitemapPalette() {
 
   // 全 ヒット 件数 (フッタ に表示)
   const totalHits = filtered.reduce((a, g) => a + g.items.length, 0);
+
+  // IIIIII: クエリ が settled (700ms 同じ + 2 文字以上 + ヒットあり) で 履歴に保存
+  useEffect(() => {
+    const qn = q.trim();
+    if (qn.length < 2) return;
+    if (totalHits === 0) return;
+    const t = setTimeout(() => {
+      setHistory((prev) => {
+        const next = [qn, ...prev.filter((x) => x.toLowerCase() !== qn.toLowerCase())].slice(0, HISTORY_MAX);
+        saveHistory(next);
+        return next;
+      });
+    }, 700);
+    return () => clearTimeout(t);
+  }, [q, totalHits]);
+
+  const removeHistory = (item: string) => {
+    setHistory((prev) => {
+      const next = prev.filter((x) => x !== item);
+      saveHistory(next);
+      return next;
+    });
+  };
+  const clearHistory = () => { setHistory([]); saveHistory([]); };
 
   /** クエリにマッチした 部分文字列を <mark> でラップ。q が空なら そのまま返す。 */
   const renderHighlighted = (text: string): React.ReactNode => {
@@ -270,6 +309,8 @@ export default function SitemapPalette() {
               autoFocus
               value={q}
               onChange={(e) => setQ(e.target.value)}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setTimeout(() => setFocused(false), 150)}
               placeholder="検索 (例: stripe, 解約, CRM, master)"
               style={{
                 flex: 1,
@@ -283,6 +324,58 @@ export default function SitemapPalette() {
               }}><X size={13} /></button>
             )}
           </div>
+
+          {/* IIIIII (2026-06-04): 検索 履歴 — 入力 focus 中 + q が 空 で 表示 */}
+          {focused && !q && history.length > 0 && (
+            <div style={{
+              padding: '8px 12px 10px',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+              background: 'rgba(167,139,250,0.04)',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.55)',
+                fontWeight: 800, marginBottom: 6, padding: '0 4px',
+              }}>
+                <span>直近の検索 ({history.length})</span>
+                <button onClick={clearHistory} style={{
+                  background: 'transparent', border: 'none',
+                  color: 'rgba(255,255,255,0.5)', fontSize: 10, cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}>すべて消す</button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {history.map((h) => (
+                  <button
+                    key={h}
+                    onMouseDown={(e) => { e.preventDefault(); setQ(h); }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      padding: '4px 10px', borderRadius: 999,
+                      background: 'rgba(167,139,250,0.15)',
+                      border: '1px solid rgba(167,139,250,0.3)',
+                      color: '#ddd6fe',
+                      fontSize: 11, fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {h}
+                    <span
+                      role="button"
+                      aria-label={`「${h}」 を 履歴から削除`}
+                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); removeHistory(h); }}
+                      style={{
+                        marginLeft: 2, color: 'rgba(255,255,255,0.55)',
+                        display: 'inline-flex',
+                      }}
+                    >
+                      <X size={10} />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* List */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px 16px' }}>
