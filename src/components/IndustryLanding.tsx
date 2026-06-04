@@ -120,7 +120,22 @@ export default function IndustryLanding({ slug }: Props) {
         availability: 'https://schema.org/InStock',
       },
     };
-    scriptEl.text = JSON.stringify([breadcrumb, organization, videoObject, product]);
+    // FFFFFF (2026-06-04): FAQ → FAQPage 構造化データ (Google 検索アコーディオン 狙い)
+    const faqPage = (config.faq && config.faq.length > 0) ? {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: config.faq.map((f) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: f.a,
+        },
+      })),
+    } : null;
+    const items = [breadcrumb, organization, videoObject, product];
+    if (faqPage) items.push(faqPage as any);
+    scriptEl.text = JSON.stringify(items);
   }, [config]);
 
   if (!config) {

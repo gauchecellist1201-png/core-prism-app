@@ -45,6 +45,8 @@ const OnboardFunnel = lazy(() => import('./master/OnboardFunnel'));
 const RevenueDashboard = lazy(() => import('./master/RevenueDashboard'));
 const RoadmapVotes = lazy(() => import('./master/RoadmapVotes'));
 const WebVitals = lazy(() => import('./master/WebVitals'));
+const AuditLog = lazy(() => import('./master/AuditLog'));
+const CashflowForecast = lazy(() => import('./master/CashflowForecast'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
 const StatusPage = lazy(() => import('./components/StatusPage'));
@@ -178,6 +180,18 @@ function isWebVitalsPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master/web-vitals' || p === '/web-vitals';
+}
+
+function isAuditLogPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/audit-log' || p === '/audit-log';
+}
+
+function isCashflowPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/cashflow-forecast' || p === '/cashflow-forecast';
 }
 
 function isContactPath(): boolean {
@@ -389,6 +403,16 @@ export default function App() {
   // /master/web-vitals — Core Web Vitals (AAAAAA 2026-06-04)
   if (isWebVitalsPath()) {
     return <Suspense fallback={<RouteFallback />}><WebVitals /></Suspense>;
+  }
+
+  // /master/audit-log — 認証履歴 (DDDDDD 2026-06-04)
+  if (isAuditLogPath()) {
+    return <Suspense fallback={<RouteFallback />}><AuditLog /></Suspense>;
+  }
+
+  // /master/cashflow-forecast — 資金繰り 60 日 (EEEEEE 2026-06-04)
+  if (isCashflowPath()) {
+    return <Suspense fallback={<RouteFallback />}><CashflowForecast /></Suspense>;
   }
 
   // /contact — 公開窓口 (KKK 2026-06-04)

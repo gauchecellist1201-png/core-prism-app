@@ -18,6 +18,7 @@
 // ============================================================
 
 import Stripe from 'stripe';
+import { logMasterAudit } from '../_lib/masterAudit';
 
 export const config = { runtime: 'edge' };
 
@@ -157,7 +158,11 @@ export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'GET') return json({ error: 'method_not_allowed' }, 405);
   const url = new URL(req.url);
   const key = req.headers.get('x-master-key') || url.searchParams.get('master_key') || '';
-  if (key !== 'GAUCHE2026') return json({ error: 'forbidden' }, 403);
+  if (key !== 'GAUCHE2026') {
+    await logMasterAudit(req, '/api/master/revenue-monthly', 'forbidden');
+    return json({ error: 'forbidden' }, 403);
+  }
+  await logMasterAudit(req, '/api/master/revenue-monthly', 'ok');
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) return json({ error: 'STRIPE_SECRET_KEY 未設定' }, 503);

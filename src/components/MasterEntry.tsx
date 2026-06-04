@@ -537,6 +537,40 @@ export default function MasterEntry() {
             🎚️ Web Vitals
           </a>
           <a
+            href="/master/audit-log"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(148,163,184,0.12)',
+              border: '1px solid rgba(148,163,184,0.35)',
+              color: '#cbd5e1',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            📜 認証履歴
+          </a>
+          <a
+            href="/master/cashflow-forecast"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(34,211,238,0.12)',
+              border: '1px solid rgba(34,211,238,0.35)',
+              color: '#a5f3fc',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            🌊 資金繰り 60日
+          </a>
+          <a
             href="/master/stripe-status"
             style={{
               flex: 1,

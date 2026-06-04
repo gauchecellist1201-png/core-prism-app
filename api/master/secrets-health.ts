@@ -10,6 +10,7 @@
 export const config = { runtime: 'edge' };
 
 import { runSecretsHealth } from '../_lib/secretsHealth';
+import { logMasterAudit } from '../_lib/masterAudit';
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'GET') {
@@ -18,8 +19,10 @@ export default async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const key = req.headers.get('x-master-key') || url.searchParams.get('master_key') || '';
   if (key !== 'GAUCHE2026') {
+    await logMasterAudit(req, '/api/master/secrets-health', 'forbidden');
     return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
   }
+  await logMasterAudit(req, '/api/master/secrets-health', 'ok');
   try {
     const data = await runSecretsHealth();
     return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });

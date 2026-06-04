@@ -100,7 +100,15 @@ export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'GET') {
     const url = new URL(req.url);
     const key = req.headers.get('x-master-key') || url.searchParams.get('master_key') || '';
-    if (key !== 'GAUCHE2026') return json({ error: 'forbidden' }, 403);
+    if (key !== 'GAUCHE2026') {
+      const { logMasterAudit } = await import('../_lib/masterAudit');
+      await logMasterAudit(req, '/api/track/web-vitals', 'forbidden');
+      return json({ error: 'forbidden' }, 403);
+    }
+    {
+      const { logMasterAudit } = await import('../_lib/masterAudit');
+      await logMasterAudit(req, '/api/track/web-vitals', 'ok');
+    }
     if (!OK) return json({ ok: true, configured: false, metrics: {} });
     const result: Record<string, any> = {};
     for (const m of VALID_METRICS) {
