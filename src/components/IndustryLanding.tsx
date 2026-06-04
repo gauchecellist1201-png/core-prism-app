@@ -15,6 +15,7 @@ import IndustryVideoSection from './IndustryVideoSection';
 import OnboardingVideoEmbed from './OnboardingVideoEmbed';
 import IndustryLogoStrip from './IndustryLogoStrip';
 import HowItWorks from './HowItWorks';
+import LiveSignupCounter from './LiveSignupCounter';
 
 const FONT_SERIF_JA = '"Noto Serif JP", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"Cinzel", "Cormorant Garamond", serif';
@@ -166,6 +167,8 @@ export default function IndustryLanding({ slug }: Props) {
       <Hero config={config} accentLeft={accentLeft} accentRight={accentRight} />
       {/* HHHHHH (2026-06-04): 導入企業 ロゴ ストリップ (Marquee) */}
       <IndustryLogoStrip slug={config.slug} accentLeft={accentLeft} accentRight={accentRight} />
+      {/* SSSSSS (2026-06-04): 累計 N 社 ライブ カウンター (Hero と Pain の間) */}
+      <LiveSignupCounter accentLeft={accentLeft} accentRight={accentRight} />
       {/* NNNNN (2026-06-04): /onboarding-video.mp4 が存在する時のみ 表示 (onError で 自動非表示) */}
       <OnboardingVideoEmbed accentLeft={accentLeft} accentRight={accentRight} />
       <Pain config={config} accentLeft={accentLeft} />

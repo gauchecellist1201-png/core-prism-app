@@ -7,12 +7,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { resetCircuit } from '../lib/apiQueue';
 import { confirmAction } from '../lib/confirmDialog';
+import OwnerBriefModal from './OwnerBriefModal';
 
 const MASTER_KEY_STORAGE = 'core_master_key_v1';
 const CLAUDE_KEY_STORAGE = 'core_claude_api_key_v1';
 const EXPECTED_MASTER = 'GAUCHE2026';
 
 export default function MasterEntry() {
+  // TTTTTT (2026-06-04): オーナー向け 「今日 やるべき 3 件」 モーダル
+  const [briefOpen, setBriefOpen] = useState(false);
   const [master, setMaster] = useState('');
   const [claudeKey, setClaudeKey] = useState('');
   const [showClaude, setShowClaude] = useState(false);
@@ -603,6 +606,30 @@ export default function MasterEntry() {
           サーバには送信されません。共有 PC では「解除」を必ず押してください。
         </p>
       </motion.div>
+
+      {/* TTTTTT (2026-06-04): 朝の Owner Brief — 全画面どこからでも開ける Float Button */}
+      <button
+        onClick={() => setBriefOpen(true)}
+        aria-label="今日 やるべき 3 件 を 開く"
+        title="今日 やるべき 3 件 (Owner Brief)"
+        style={{
+          position: 'fixed',
+          right: 20,
+          bottom: 80,
+          width: 56, height: 56,
+          borderRadius: 28,
+          background: 'linear-gradient(135deg, #FBBF24, #F97316)',
+          color: '#1a0a1a',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: 24,
+          boxShadow: '0 12px 30px rgba(251,191,36,0.5)',
+          zIndex: 70,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontWeight: 900,
+        }}
+      >☀️</button>
+      <OwnerBriefModal open={briefOpen} onClose={() => setBriefOpen(false)} />
     </div>
   );
 }
