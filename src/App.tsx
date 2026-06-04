@@ -23,6 +23,10 @@ import OnboardingTour from './components/OnboardingTour';
 import EveningFeed from './components/EveningFeed';
 import MorningCoach from './components/MorningCoach';
 import QuickKpiSparkline from './components/QuickKpiSparkline';
+import { initWebVitals } from './lib/initWebVitals';
+
+// AAAAAA (2026-06-04): モジュール 評価時 に 1 度だけ Web Vitals 観測 開始
+if (typeof window !== 'undefined') initWebVitals({ sampleRate: 1 });
 import PersonaPresetSuggestion from './components/PersonaPresetSuggestion';
 import SampleModeBanner from './components/SampleModeBanner';
 import SitemapPalette from './components/SitemapPalette';
@@ -40,6 +44,7 @@ const SecretsHealth = lazy(() => import('./master/SecretsHealth'));
 const OnboardFunnel = lazy(() => import('./master/OnboardFunnel'));
 const RevenueDashboard = lazy(() => import('./master/RevenueDashboard'));
 const RoadmapVotes = lazy(() => import('./master/RoadmapVotes'));
+const WebVitals = lazy(() => import('./master/WebVitals'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
 const StatusPage = lazy(() => import('./components/StatusPage'));
@@ -167,6 +172,12 @@ function isRoadmapVotesPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master/roadmap-votes' || p === '/roadmap-votes';
+}
+
+function isWebVitalsPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/master/web-vitals' || p === '/web-vitals';
 }
 
 function isContactPath(): boolean {
@@ -373,6 +384,11 @@ export default function App() {
   // /master/roadmap-votes — 投票結果 ダッシュ (RRRRR 2026-06-04)
   if (isRoadmapVotesPath()) {
     return <Suspense fallback={<RouteFallback />}><RoadmapVotes /></Suspense>;
+  }
+
+  // /master/web-vitals — Core Web Vitals (AAAAAA 2026-06-04)
+  if (isWebVitalsPath()) {
+    return <Suspense fallback={<RouteFallback />}><WebVitals /></Suspense>;
   }
 
   // /contact — 公開窓口 (KKK 2026-06-04)

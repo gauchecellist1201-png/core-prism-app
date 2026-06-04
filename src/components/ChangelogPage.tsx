@@ -9,6 +9,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, RefreshCw, ChevronDown, ChevronUp, GitCommit, Sparkles } from 'lucide-react';
 
+// BBBBBB (2026-06-04): プレフィックス → カテゴリ 分類
+type PrefixCat = 'feat' | 'fix' | 'docs' | 'refactor' | 'perf' | 'chore' | 'test' | 'style' | 'other';
+const PREFIX_META: Record<PrefixCat, { label: string; color: string; emoji: string }> = {
+  feat:     { label: '新機能',     color: '#34D399', emoji: '✨' },
+  fix:      { label: '修正',       color: '#F87171', emoji: '🐛' },
+  docs:     { label: 'ドキュメント', color: '#A78BFA', emoji: '📝' },
+  refactor: { label: 'リファクタ',  color: '#FBBF24', emoji: '🔧' },
+  perf:     { label: 'パフォ',     color: '#22D3EE', emoji: '⚡' },
+  chore:    { label: '雑務',       color: '#94A3B8', emoji: '🧹' },
+  test:     { label: 'テスト',     color: '#A855F7', emoji: '✅' },
+  style:    { label: 'スタイル',   color: '#EC4899', emoji: '💅' },
+  other:    { label: 'その他',     color: '#94A3B8', emoji: '🌀' },
+};
+function prefixOf(message: string): PrefixCat {
+  const m = message.match(/^([a-z]+)(?:\([^)]*\))?:/);
+  if (!m) return 'other';
+  const p = m[1].toLowerCase();
+  if (p in PREFIX_META) return p as PrefixCat;
+  return 'other';
+}
+
 interface Item { hash: string; date: string; message: string; }
 interface Section { category: string; items: Item[]; }
 interface Changelog {
@@ -24,6 +45,7 @@ export default function ChangelogPage() {
   const [err, setErr] = useState<string | null>(null);
   const [openSection, setOpenSection] = useState<Set<string>>(new Set());
   const [q, setQ] = useState('');
+  const [activeCat, setActiveCat] = useState<PrefixCat | 'all'>('all');
 
   const load = async () => {
     setLoading(true); setErr(null);
@@ -43,12 +65,29 @@ export default function ChangelogPage() {
 
   const filtered = useMemo<Section[]>(() => {
     if (!data) return [];
-    if (!q.trim()) return data.sections;
     const qn = q.trim().toLowerCase();
     return data.sections
-      .map((s) => ({ ...s, items: s.items.filter((it) => it.message.toLowerCase().includes(qn) || it.hash.startsWith(qn)) }))
+      .map((s) => ({
+        ...s,
+        items: s.items.filter((it) => {
+          if (qn && !(it.message.toLowerCase().includes(qn) || it.hash.startsWith(qn))) return false;
+          if (activeCat !== 'all' && prefixOf(it.message) !== activeCat) return false;
+          return true;
+        }),
+      }))
       .filter((s) => s.items.length > 0);
-  }, [data, q]);
+  }, [data, q, activeCat]);
+
+  // カテゴリ別 件数 (全 sections フラットに)
+  const catCounts = useMemo(() => {
+    const out: Record<string, number> = {};
+    if (!data) return out;
+    for (const s of data.sections) for (const it of s.items) {
+      const c = prefixOf(it.message);
+      out[c] = (out[c] || 0) + 1;
+    }
+    return out;
+  }, [data]);
 
   const toggle = (cat: string) => {
     setOpenSection((s) => {
@@ -152,6 +191,37 @@ export default function ChangelogPage() {
           </div>
         )}
 
+        {/* BBBBBB (2026-06-04): プレフィックス カテゴリ フィルタ */}
+        {data && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
+            <CatChip
+              active={activeCat === 'all'}
+              color="#A78BFA"
+              emoji="🌍"
+              label="すべて"
+              count={data.totalCommits}
+              onClick={() => setActiveCat('all')}
+            />
+            {(Object.keys(PREFIX_META) as PrefixCat[])
+              .filter((k) => (catCounts[k] || 0) > 0)
+              .sort((a, b) => (catCounts[b] || 0) - (catCounts[a] || 0))
+              .map((k) => {
+                const m = PREFIX_META[k];
+                return (
+                  <CatChip
+                    key={k}
+                    active={activeCat === k}
+                    color={m.color}
+                    emoji={m.emoji}
+                    label={m.label}
+                    count={catCounts[k] || 0}
+                    onClick={() => setActiveCat(k)}
+                  />
+                );
+              })}
+          </div>
+        )}
+
         {data && filtered.length === 0 && q && (
           <div style={{ padding: 24, textAlign: 'center', color: 'rgba(255,255,255,0.55)' }}>
             「{q}」 に 一致する 履歴がありません。
@@ -192,18 +262,32 @@ export default function ChangelogPage() {
                       <div style={{ fontSize: 10, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.45)', fontWeight: 800, marginBottom: 4, padding: '0 4px' }}>
                         {date}
                       </div>
-                      {items.map((it) => (
-                        <div key={it.hash} style={{
-                          display: 'flex', alignItems: 'flex-start', gap: 10,
-                          padding: '8px 10px', borderRadius: 8,
-                        }}>
-                          <GitCommit size={12} color="rgba(167,139,250,0.7)" style={{ marginTop: 3, flexShrink: 0 }} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.88)', lineHeight: 1.5 }}>{it.message}</div>
-                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontFamily: 'Menlo, monospace', marginTop: 2 }}>{it.hash}</div>
+                      {items.map((it) => {
+                        const cat = prefixOf(it.message);
+                        const m = PREFIX_META[cat];
+                        return (
+                          <div key={it.hash} style={{
+                            display: 'flex', alignItems: 'flex-start', gap: 10,
+                            padding: '8px 10px', borderRadius: 8,
+                            borderLeft: `3px solid ${m.color}55`,
+                            background: 'rgba(255,255,255,0.02)',
+                            marginBottom: 4,
+                          }}>
+                            <GitCommit size={12} color={m.color} style={{ marginTop: 3, flexShrink: 0 }} />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.88)', lineHeight: 1.5 }}>
+                                <span style={{
+                                  fontSize: 10, padding: '1px 6px', borderRadius: 999,
+                                  background: `${m.color}22`, color: m.color, fontWeight: 800,
+                                  letterSpacing: '0.05em', marginRight: 6,
+                                }}>{m.emoji} {m.label}</span>
+                                {it.message}
+                              </div>
+                              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontFamily: 'Menlo, monospace', marginTop: 2 }}>{it.hash}</div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ))}
                 </div>
@@ -229,3 +313,25 @@ const btnGhost: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,0.12)',
   cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700,
 };
+
+function CatChip({ active, color, emoji, label, count, onClick }: {
+  active: boolean; color: string; emoji: string; label: string; count: number; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 5,
+        padding: '6px 12px', borderRadius: 999,
+        background: active ? `${color}33` : 'rgba(255,255,255,0.04)',
+        border: `1px solid ${active ? color : 'rgba(255,255,255,0.1)'}`,
+        color: active ? color : 'rgba(255,255,255,0.85)',
+        fontSize: 12, fontWeight: 700, cursor: 'pointer',
+      }}
+    >
+      <span style={{ fontSize: 14 }}>{emoji}</span>
+      {label}
+      <span style={{ fontSize: 10, opacity: 0.75, marginLeft: 2 }}>({count})</span>
+    </button>
+  );
+}

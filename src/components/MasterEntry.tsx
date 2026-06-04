@@ -520,6 +520,23 @@ export default function MasterEntry() {
             ♡ ロードマップ 投票
           </a>
           <a
+            href="/master/web-vitals"
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              borderRadius: 10,
+              background: 'rgba(251,191,36,0.12)',
+              border: '1px solid rgba(251,191,36,0.35)',
+              color: '#fde68a',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            🎚️ Web Vitals
+          </a>
+          <a
             href="/master/stripe-status"
             style={{
               flex: 1,
