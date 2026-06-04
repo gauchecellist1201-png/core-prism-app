@@ -220,6 +220,46 @@ export default async function handler(req: Request): Promise<Response> {
   // QQQQQ: 先週平均 比較 のみ warn (前日比は ok) のカテゴリを 別ラベル
   const weekOnly = alerts.filter((d) => d.level === 'ok' && d.weekLevel && d.weekLevel !== 'ok');
 
+  // QQQQQQ (2026-06-04): 主要 5 件 だけ AI に 推測原因 を依頼 (30 字)
+  const top5 = [
+    ...crit.slice(0, 3),
+    ...warn.slice(0, 2),
+  ].slice(0, 5);
+  const causes: Record<string, string> = {};
+  if (top5.length > 0 && process.env.CLAUDE_API_KEY) {
+    try {
+      const promptBody = top5.map((d, i) => `${i + 1}. ${d.category}/${d.field}: ${d.prev} → ${d.curr} (${d.reason})`).join('\n');
+      const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': process.env.CLAUDE_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5',
+          max_tokens: 500,
+          system: 'あなたは SRE です。以下の異常 5 件 それぞれに「推測される 1 番ありえる原因」を 30 字以内 で 答えてください。出力は 純 JSON: {"causes":["..","..",...]} 5 要素 (順序保持)。嘘の数字 / 確定的断言 禁止。',
+          messages: [{ role: 'user', content: promptBody }],
+        }),
+      });
+      if (aiRes.ok) {
+        const j = await aiRes.json() as { content?: Array<{ text?: string }> };
+        const raw = (j.content?.[0]?.text || '').trim();
+        const cleaned = raw.replace(/```(?:json)?\s*\n?|```/g, '').trim();
+        const m = cleaned.match(/\{[\s\S]*\}/);
+        if (m) {
+          const parsed = JSON.parse(m[0]) as { causes?: string[] };
+          (parsed.causes || []).forEach((c, i) => {
+            const d = top5[i];
+            if (d) causes[`${d.category}::${d.field}`] = String(c).slice(0, 30);
+          });
+        }
+      }
+    } catch { /* AI 失敗時は cause なし */ }
+  }
+  const causeOf = (d: KpiDelta): string => causes[`${d.category}::${d.field}`] || '';
+
   // dryRun の時は Slack 送らずそのまま返す
   if (!dryRun && SLACK && alerts.length > 0) {
     const head = crit.length ? '🚨' : '⚠';
@@ -239,33 +279,63 @@ export default async function handler(req: Request): Promise<Response> {
         ],
       },
       { type: 'divider' },
+      // QQQQQQ: 重大度別 ranking ヘッダ
+      {
+        type: 'section',
+        text: { type: 'mrkdwn', text: '*📊 重大度別 ランキング*\n左 = 🚨 critical / 右 = ⚠ warn / 📊 先週比のみ' },
+      },
     ];
-    // critical を 5 件まで詳細、warn 5、weekOnly 3
-    const detail = [
-      ...crit.slice(0, 5).map((d) => ({ ...d, _kind: 'critical' as const })),
-      ...warn.slice(0, 5).map((d) => ({ ...d, _kind: 'warn' as const })),
-      ...weekOnly.slice(0, 3).map((d) => ({ ...d, _kind: 'weekOnly' as const })),
-    ];
-    for (const d of detail) {
-      const icon = d._kind === 'critical' ? '🚨' : d._kind === 'weekOnly' ? '📊' : '⚠';
-      const dayLine = `_前日比_ ${prevDate} → ${currDate}: ${d.prev} → ${d.curr} *(${d.reason})*`;
-      const weekLine = d.weekAvg !== undefined
-        ? `_先週平均比_ 平均 ${d.weekAvg} → ${currDate}: ${d.curr} *(${d.weekReason})*`
-        : '';
+
+    // QQQQQQ: 二段組 — 左列 = critical, 右列 = warn (Block Kit fields で 2 列)
+    const formatItem = (d: KpiDelta, kind: string): string => {
+      const cause = causeOf(d);
+      const causeTxt = cause ? `\n_推測_: ${cause}` : '';
+      const dayTxt = `${d.prev}→${d.curr}`;
+      const weekTxt = d.weekAvg !== undefined ? ` / 先週平均 ${d.weekAvg}` : '';
+      return `${kind} *${d.category}* \`${d.field}\`\n${dayTxt}${weekTxt} *(${d.reason})*${causeTxt}`;
+    };
+
+    const critItems = crit.slice(0, 4).map((d) => formatItem(d, '🚨'));
+    const warnItems = warn.slice(0, 4).map((d) => formatItem(d, '⚠'));
+    const maxRows = Math.max(critItems.length, warnItems.length);
+    if (maxRows > 0) {
+      // Slack Block Kit の fields は 2 列で 並ぶ (最大 10 件)
+      const pairFields: Array<{ type: 'mrkdwn'; text: string }> = [];
+      // ヘッダ 行
+      pairFields.push({ type: 'mrkdwn', text: `*🚨 CRITICAL (${crit.length})*` });
+      pairFields.push({ type: 'mrkdwn', text: `*⚠ WARN (${warn.length})*` });
+      for (let i = 0; i < maxRows; i++) {
+        pairFields.push({ type: 'mrkdwn', text: critItems[i] || ' ' });
+        pairFields.push({ type: 'mrkdwn', text: warnItems[i] || ' ' });
+      }
+      // 2 column section に 10 個まで詰める (超えたら 分割)
+      for (let i = 0; i < pairFields.length; i += 10) {
+        blocks.push({ type: 'section', fields: pairFields.slice(i, i + 10) });
+      }
+    }
+
+    // 先週平均比 のみ ブロック (補足)
+    if (weekOnly.length > 0) {
+      blocks.push({ type: 'divider' });
       blocks.push({
         type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `${icon} *${d.category}* — \`${d.field}\`\n${dayLine}\n${weekLine}`,
-        },
+        text: { type: 'mrkdwn', text: `*📊 先週平均比 のみ warn (${weekOnly.length})*` },
       });
+      const woFields: Array<{ type: 'mrkdwn'; text: string }> = [];
+      for (const d of weekOnly.slice(0, 6)) {
+        woFields.push({ type: 'mrkdwn', text: `*${d.category}* \`${d.field}\`\n平均 ${d.weekAvg} → ${d.curr} *(${d.weekReason})*` });
+      }
+      if (woFields.length > 0) {
+        blocks.push({ type: 'section', fields: woFields });
+      }
     }
+
     blocks.push(
       { type: 'divider' },
       {
         type: 'context',
         elements: [
-          { type: 'mrkdwn', text: '_前日比 ±50% で warn / ±100% or 突発/消滅 で critical · 先週平均比も同じ閾値で並行判定 (QQQQQ)_' },
+          { type: 'mrkdwn', text: `_前日比 ±50% で warn / ±100% or 突発/消滅 で critical · 先週平均比も同じ閾値で並行判定 · 推測原因 は AI 簡易判定 (QQQQQQ)_` },
         ],
       },
     );

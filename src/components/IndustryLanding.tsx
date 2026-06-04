@@ -14,6 +14,7 @@ import IndustryWeekTimeline from './IndustryWeekTimeline';
 import IndustryVideoSection from './IndustryVideoSection';
 import OnboardingVideoEmbed from './OnboardingVideoEmbed';
 import IndustryLogoStrip from './IndustryLogoStrip';
+import HowItWorks from './HowItWorks';
 
 const FONT_SERIF_JA = '"Noto Serif JP", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"Cinzel", "Cormorant Garamond", serif';
@@ -176,6 +177,8 @@ export default function IndustryLanding({ slug }: Props) {
       {/* WWW (2026-06-04): 導入後の典型 1 週間 (Hero と比較表の間) */}
       <IndustryWeekTimeline accent={accentLeft} />
       <Comparison config={config} accentLeft={accentLeft} accentRight={accentRight} />
+      {/* RRRRRR (2026-06-04): 「導入の流れ」 3 ステップ アコーディオン */}
+      <HowItWorks accentLeft={accentLeft} accentRight={accentRight} />
       <Pricing config={config} accentLeft={accentLeft} accentRight={accentRight} />
       <Faq config={config} accentLeft={accentLeft} />
       <FinalCta config={config} accentLeft={accentLeft} accentRight={accentRight} />
@@ -1032,7 +1035,7 @@ function Footer() {
         <a href="/terms" style={footerLink}>利用規約</a>
         <a href="/tokushoho" style={footerLink}>特定商取引法</a>
       </div>
-      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
         © 2026 株式会社 CORE
       </p>
     </footer>

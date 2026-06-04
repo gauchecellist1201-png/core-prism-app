@@ -93,6 +93,14 @@ export default function OnboardingVideoEmbed({ src, accentLeft = '#A78BFA', acce
           >
             <source src={url.replace(/\.mp4$/, '.webm')} type="video/webm" />
             <source src={url} type="video/mp4" />
+            {/* PPPPPP (2026-06-04): WebVTT 字幕 (デフォルトで ON) */}
+            <track
+              kind="captions"
+              srcLang="ja"
+              label="日本語 字幕"
+              src="/onboarding-video.vtt"
+              default
+            />
           </video>
         </div>
         <p style={{ marginTop: 12, fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
