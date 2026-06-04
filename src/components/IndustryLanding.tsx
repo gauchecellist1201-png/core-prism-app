@@ -64,6 +64,63 @@ export default function IndustryLanding({ slug }: Props) {
     setMeta('meta[property="og:image:height"]', '630');
     setMeta('meta[property="og:image:alt"]', `${config.industryLabel} 向け — CORE Prism / Iris の業界別 LP`);
     setMeta('meta[name="twitter:image:alt"]', `${config.industryLabel} 向け — CORE Prism / Iris の業界別 LP`);
+
+    // YYYYY (2026-06-04): JSON-LD (構造化データ) を 動的注入 — Google リッチカード狙い
+    const SCRIPT_ID = `jsonld-industry-${config.slug}`;
+    let scriptEl = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    if (!scriptEl) {
+      scriptEl = document.createElement('script');
+      scriptEl.id = SCRIPT_ID;
+      scriptEl.type = 'application/ld+json';
+      document.head.appendChild(scriptEl);
+    }
+    const breadcrumb = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'CORE Prism', item: 'https://core-prism-app.vercel.app/' },
+        { '@type': 'ListItem', position: 2, name: '業界 LP', item: 'https://core-prism-app.vercel.app/' },
+        { '@type': 'ListItem', position: 3, name: config.industryLabel, item: pageUrl },
+      ],
+    };
+    const organization = {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: '株式会社CORE',
+      url: 'https://core-prism-app.vercel.app/',
+      logo: 'https://core-prism-app.vercel.app/og-prism-v3.png',
+      sameAs: ['https://x.com/'],
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        email: 'gauche.cellist1201@gmail.com',
+      },
+    };
+    const videoObject = {
+      '@context': 'https://schema.org',
+      '@type': 'VideoObject',
+      name: 'CORE Prism — 75 秒 で わかる',
+      description: '5 シーン (LP → 料金 → ダッシュボード → AI 役員チャット → Iris) を 75 秒 にまとめた 公式オンボ動画。',
+      thumbnailUrl: ['https://core-prism-app.vercel.app/onboarding-poster.jpg'],
+      contentUrl: 'https://core-prism-app.vercel.app/onboarding-video.mp4',
+      uploadDate: '2026-06-04',
+      duration: 'PT1M15S',
+    };
+    const product = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: config.pageTitle,
+      description: config.metaDescription,
+      brand: { '@type': 'Brand', name: 'CORE Prism' },
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'JPY',
+        price: '3000',
+        url: 'https://core-prism-app.vercel.app/pricing',
+        availability: 'https://schema.org/InStock',
+      },
+    };
+    scriptEl.text = JSON.stringify([breadcrumb, organization, videoObject, product]);
   }, [config]);
 
   if (!config) {
@@ -599,7 +656,7 @@ function Comparison({ config, accentLeft, accentRight }: { config: IndustryConfi
   ];
 
   return (
-    <section style={{ padding: '5rem 1.5rem', background: '#080812' }}>
+    <section id="comparison" aria-labelledby="comparison-heading" style={{ padding: '5rem 1.5rem', background: '#080812' }}>
       <div style={{ maxWidth: 1080, margin: '0 auto' }}>
         <div style={{
           fontFamily: FONT_SERIF_EN,
@@ -608,7 +665,7 @@ function Comparison({ config, accentLeft, accentRight }: { config: IndustryConfi
         }}>
           COMPARISON
         </div>
-        <h2 style={sectionTitle}>他の選択肢と何が違うか</h2>
+        <h2 id="comparison-heading" style={sectionTitle}>他の選択肢と何が違うか</h2>
         <p style={sectionLead}>「外注」「雇用」「自分で全部」と比べたときの位置づけ</p>
 
         <div style={{ marginTop: '2.5rem', overflowX: 'auto' }}>
@@ -617,19 +674,22 @@ function Comparison({ config, accentLeft, accentRight }: { config: IndustryConfi
             fontSize: 13, color: 'rgba(255,255,255,0.85)',
             minWidth: 640,
           }}>
+            <caption style={{ position: 'absolute', left: -9999, top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
+              CORE Prism / Iris と {altColumn} / {isB2B ? '社員雇用' : '自分でやる'} / 他 SaaS の機能・価格 比較表
+            </caption>
             <thead>
               <tr>
-                <th style={thStyle()}></th>
-                <th style={thStyle(accentLeft, accentRight, true)}>★ CORE</th>
-                <th style={thStyle()}>{altColumn}</th>
-                <th style={thStyle()}>{isB2B ? '社員雇用' : '自分でやる'}</th>
-                <th style={thStyle()}>他 SaaS</th>
+                <th scope="col" style={thStyle()}></th>
+                <th scope="col" style={thStyle(accentLeft, accentRight, true)}>★ CORE</th>
+                <th scope="col" style={thStyle()}>{altColumn}</th>
+                <th scope="col" style={thStyle()}>{isB2B ? '社員雇用' : '自分でやる'}</th>
+                <th scope="col" style={thStyle()}>他 SaaS</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => (
                 <tr key={i}>
-                  <td style={tdStyle(true)}>{r.label}</td>
+                  <th scope="row" style={tdStyle(true)}>{r.label}</th>
                   <td style={tdStyle(false, accentLeft)}>
                     <strong style={{ color: '#fff' }}>{r.core}</strong>
                   </td>

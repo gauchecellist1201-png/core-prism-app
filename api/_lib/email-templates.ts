@@ -2,7 +2,7 @@
 // 共有メールテンプレート — Resend / Gmail SMTP 両経路で使用
 // ============================================================
 
-export type Template = 'welcome' | 'trial_ending' | 'cancel_save' | 'reengagement';
+export type Template = 'welcome' | 'trial_ending' | 'cancel_save' | 'reengagement' | 'd3_highlights' | 'd7_progress' | 'd14_results';
 
 export interface TemplateData {
   name?: string;
@@ -146,6 +146,83 @@ function reengagementHtml(data: TemplateData): string {
 </div>`);
 }
 
+// ──────────────────────────────────────────────
+// XXXXX (2026-06-04): D3 / D7 / D14 オンボ ナーチャリング テンプレ
+// ──────────────────────────────────────────────
+
+function d3HighlightsHtml(data: TemplateData): string {
+  const name = data.name || 'お客様';
+  return baseHtml('3 日目の確認 — 14 役員 はちゃんと動いていますか?', `
+<div class="header" style="background: linear-gradient(135deg, #A78BFA, #F472B6, #FBBF24);">
+  <h1>3 日目の確認</h1>
+  <p>${name} さん、14 役員 はちゃんと動いていますか?</p>
+</div>
+<div class="body">
+  <p>CORE Prism を始めて <strong>3 日</strong> — 14 人の役員 を「肌で感じる」のに 最適なタイミングです。</p>
+  <p>下の <strong>3 つのタスク</strong> を 1 回ずつ AI に頼んでみてください。それぞれ 1 分で結果が返ります。</p>
+  <div class="highlight" style="border-color: #A78BFA; background: #faf7ff;">
+    <strong>📊 CFO に「今月の収支を整理して」</strong><br>
+    入金 / 出金 を一覧化 → 30 秒で 赤字 / 黒字 が見える
+  </div>
+  <div class="highlight" style="border-color: #6366F1; background: #f0f4fa;">
+    <strong>💼 CSO (営業) に「明日アプローチする 3 社を選んで」</strong><br>
+    CRM から「いま動かすべき 3 社」 + 一文 アプローチを 即時生成
+  </div>
+  <div class="highlight" style="border-color: #F472B6; background: #fff0f5;">
+    <strong>📣 CMO (マーケ) に「今週の SNS 投稿 3 本を生成」</strong><br>
+    note / X / Instagram 用 を 3 本 同時生成 → コピー → 投稿 で完
+  </div>
+  <a class="cta" style="background: linear-gradient(135deg, #A78BFA, #F472B6);" href="https://core-prism-app.vercel.app/?utm_source=d3_highlights">✨ いま始める →</a>
+  <p style="font-size:13px;color:#8A8593;">画面左下の 💡 改善提案 で 1 行 フィードバック もお待ちしてます。</p>
+</div>`);
+}
+
+function d7ProgressHtml(data: TemplateData): string {
+  const name = data.name || 'お客様';
+  return baseHtml('1 週間 おつかれさま — 14 役員 の 進捗', `
+<div class="header" style="background: linear-gradient(135deg, #34D399, #10B981, #059669);">
+  <h1>1 週間 おつかれさま</h1>
+  <p>${name} さん、14 役員 と どこまで来ましたか?</p>
+</div>
+<div class="body">
+  <p>CORE Prism を始めて <strong>1 週間</strong>。3 日目 にお送りした 3 タスクの 「結果が出始める」 のは このタイミングです。</p>
+  <p>もし「まだ ピンと来てない」 なら、次の <strong>+2 つ</strong> を 今週中 に試してみてください — どれも 1 タップ で 動きます。</p>
+  <div class="highlight" style="border-color: #34D399; background: #f0fdf4;">
+    <strong>🧠 CDS に「先週の数字を比較して 一番効いた施策」</strong><br>
+    自分でも気づかなかった「勝ちパターン」 を 数字 から 抽出
+  </div>
+  <div class="highlight" style="border-color: #6366F1; background: #f5f3ff;">
+    <strong>👔 CEO に「来週やる 3 つの大事なこと」</strong><br>
+    朝 1 分 で「今週 何に集中するか」 が 自分の言葉になる
+  </div>
+  <p style="margin-top:18px;font-size:14px"><strong>採用率 が 50% を超えた CXO の提案</strong> が ある場合、画面 上の 履歴 (Cmd+Shift+H) からも 振り返れます。</p>
+  <a class="cta" style="background: linear-gradient(135deg, #34D399, #10B981);" href="https://core-prism-app.vercel.app/?utm_source=d7_progress">📈 続きを見る →</a>
+  <p style="font-size:13px;color:#8A8593;">「もう自走している」 なら 返信不要。気になることがあれば 1 行 で 返信ください。</p>
+</div>`);
+}
+
+function d14ResultsHtml(data: TemplateData): string {
+  const name = data.name || 'お客様';
+  return baseHtml('2 週間 — 投資判断 の時間', `
+<div class="header" style="background: linear-gradient(135deg, #6366F1, #A855F7, #EC4899);">
+  <h1>2 週間 — 投資判断 の時間</h1>
+  <p>${name} さん、CORE Prism は「経費」 になりましたか? それとも 「投資」 になりましたか?</p>
+</div>
+<div class="body">
+  <p>2 週間 が経ちました。 ここまで来た方には 「率直な振り返り」 をお願いしています。</p>
+  <p>下の 3 つの問い に「はい / いいえ」 で 答えてみてください — 全部 「はい」 なら、 投資 として 継続が正解 です。</p>
+  <div class="highlight" style="border-color: #6366F1; background: #f5f3ff;">
+    <strong>Q1.</strong> 自分が 1 人で 抱えていた 雑務 を 5 件 以上 AI に渡せた?<br>
+    <strong>Q2.</strong> AI の提案 で 「採用」 を 押した数 が 「却下」 を 上回っている? (履歴 Cmd+Shift+H)<br>
+    <strong>Q3.</strong> 来週 また 朝コーチ を 1 度は開きたいと思う?
+  </div>
+  <p style="margin-top:18px;font-size:14px">「いいえ」 が 1 つでもあれば、 オーナー (井出) に <strong>直接 メール返信</strong> してください。当日に 30 分 だけ 個別に お話を伺います (料金 据え置き)。</p>
+  <a class="cta" style="background: linear-gradient(135deg, #6366F1, #A855F7);" href="https://core-prism-app.vercel.app/billing?utm_source=d14_results">📊 数字で 判断する →</a>
+  <a class="cta" style="background: rgba(99,102,241,0.08); color: #6366F1; border: 1px solid #6366F1;" href="mailto:gauche.cellist1201@gmail.com?subject=CORE+2週間+振り返り">📨 30 分 を 予約する</a>
+  <p style="font-size:13px;color:#8A8593;">継続 / 解約 / 一時停止 — どれを選んでも、データ は 30 日 残ります。</p>
+</div>`);
+}
+
 export function buildEmail(template: Template, data: TemplateData): { subject: string; html: string } {
   switch (template) {
     case 'welcome':
@@ -168,7 +245,22 @@ export function buildEmail(template: Template, data: TemplateData): { subject: s
         subject: `${data.brand === 'iris' ? 'CORE Iris' : 'CORE Prism'} があなたを待っています — 今日のブリーフが準備できました`,
         html: reengagementHtml(data),
       };
+    case 'd3_highlights':
+      return {
+        subject: '3 日目の確認 — 14 役員 はちゃんと 動いてますか?',
+        html: d3HighlightsHtml(data),
+      };
+    case 'd7_progress':
+      return {
+        subject: '1 週間 おつかれさま — 14 役員 と どこまで来ましたか',
+        html: d7ProgressHtml(data),
+      };
+    case 'd14_results':
+      return {
+        subject: '2 週間 — 経費 か 投資 か、 数字 で 判断する 時間',
+        html: d14ResultsHtml(data),
+      };
   }
 }
 
-export const VALID_TEMPLATES: Template[] = ['welcome', 'trial_ending', 'cancel_save', 'reengagement'];
+export const VALID_TEMPLATES: Template[] = ['welcome', 'trial_ending', 'cancel_save', 'reengagement', 'd3_highlights', 'd7_progress', 'd14_results'];
