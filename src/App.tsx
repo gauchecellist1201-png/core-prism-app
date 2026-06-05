@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import './index.css';
 
 import { usePersonas } from './hooks/usePersonas';
@@ -52,6 +52,7 @@ const ContactPage = lazy(() => import('./components/ContactPage'));
 const TrustPage = lazy(() => import('./components/TrustPage'));
 const StatusPage = lazy(() => import('./components/StatusPage'));
 const RoadmapPage = lazy(() => import('./components/RoadmapPage'));
+const ExecutiveBriefingsTab = lazy(() => import('./components/ExecutiveBriefingsTab'));
 const ChangelogPage = lazy(() => import('./components/ChangelogPage'));
 const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
@@ -506,6 +507,11 @@ export default function App() {
     return getInitialView(settings.onboardingComplete);
   });
   const [isTransitioning, setIsTransitioning] = useState(false);
+  // 役員 日報 タブ オーバーレイ (2026-06-05 オーナー指示)
+  const [briefingsOpen, setBriefingsOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.location.pathname === '/briefings' || window.location.pathname === '/briefings/';
+  });
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [showPersonaCreator, setShowPersonaCreator] = useState(false);
   const [editingPersonaId, setEditingPersonaId] = useState<string | null>(null);
@@ -787,6 +793,58 @@ export default function App() {
       {view === 'dashboard' && <StripeFailureBanner brand="prism" />}
       {/* AI 会社 作戦本部 — 常駐ウィジェット (承認したタスクの実行を可視化) */}
       {view === 'dashboard' && <AgentTeamMonitor brand="prism" />}
+      {/* 役員 日報 タブ ボタン — 13 名 役員 が 作った 成果物 を 全部 見られる (2026-06-05) */}
+      {view === 'dashboard' && activePersona && (
+        <button
+          onClick={() => setBriefingsOpen(true)}
+          aria-label="役員 日報 を 見る"
+          style={{
+            position: 'fixed',
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+            right: 'max(14px, env(safe-area-inset-right, 0px))',
+            zIndex: 35,
+            padding: '10px 14px', borderRadius: 14,
+            background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
+            color: '#fff', fontWeight: 800, fontSize: 13,
+            border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
+            boxShadow: '0 8px 22px rgba(99,102,241,0.45)',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}
+        >📋 役員 日報</button>
+      )}
+      {/* 役員 日報 オーバーレイ — 全画面 モーダル として 表示 */}
+      <AnimatePresence>
+        {briefingsOpen && activePersona && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 65,
+              background: 'rgba(7,7,18,0.97)', backdropFilter: 'blur(12px)',
+              overflow: 'auto',
+            }}
+          >
+            <div style={{ maxWidth: 880, margin: '0 auto', position: 'relative' }}>
+              <button
+                onClick={() => setBriefingsOpen(false)}
+                aria-label="閉じる"
+                style={{
+                  position: 'fixed', top: 'max(env(safe-area-inset-top, 0px) + 12px, 12px)', right: 14,
+                  width: 36, height: 36, borderRadius: 999,
+                  background: 'rgba(255,255,255,0.1)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
+                  fontSize: 20, lineHeight: 1, zIndex: 5,
+                }}
+              >×</button>
+              <Suspense fallback={<RouteFallback />}>
+                <ExecutiveBriefingsTab
+                  persona={activePersona}
+                  onSaveAsKnowledge={(title, content) => handleAddKnowledgeNote(title, content)}
+                />
+              </Suspense>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Chrome 拡張機能から ?capture= で届いた取り込みのお知らせ */}
       {view === 'dashboard' && <ExtensionCaptureToast brand="prism" />}
       {/* 初回 dashboard 訪問時の AI 会社ウェルカム (13 CXO の自己紹介 + サンプルタスク投入) */}

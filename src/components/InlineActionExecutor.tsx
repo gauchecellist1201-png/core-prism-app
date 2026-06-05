@@ -33,6 +33,8 @@ interface Props {
   onClose: () => void;
   /** 追加コンテキスト (オーナーのその日のメモ等) */
   contextText?: string;
+  /** 完了時 に 親側 (AgentTeamMonitor 等) で 役員日報 へ logDeliverable する 用 (2026-06-05) */
+  onComplete?: (deliverable: Deliverable, action: string) => void;
 }
 
 type Phase = 'planning' | 'streaming' | 'done' | 'error';
@@ -44,7 +46,7 @@ interface StreamedStep {
 }
 
 export default function InlineActionExecutor({
-  action, persona, settings, onAddAsTask, onClose, contextText,
+  action, persona, settings, onAddAsTask, onClose, contextText, onComplete,
 }: Props) {
   const [phase, setPhase] = useState<Phase>('planning');
   const [plan, setPlan] = useState<ExecutionPlan | null>(null);
@@ -114,7 +116,9 @@ export default function InlineActionExecutor({
     };
     saveArtifact(a);
     setSaved(true);
-  }, [phase, plan, saved, persona.id, action]);
+    // 親 へ 完了 通知 (AgentTeamMonitor が 役員日報 へ logDeliverable する)
+    try { onComplete?.(plan.deliverable, action); } catch { /* */ }
+  }, [phase, plan, saved, persona.id, action, onComplete]);
 
   const handleCopy = async () => {
     if (!plan) return;
