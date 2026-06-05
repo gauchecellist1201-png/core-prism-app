@@ -357,6 +357,30 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 触感のベースライン ―――――――――――――――――――――――――――――――――
+   デザインシステムの .cp-btn / .cp-tap は「押すとコクッと沈む」感触を
+   持つが、それらを付けていない “素の <button>”（アプリ全体で大多数）は
+   タップしても無反応で、押した手応えが無かった。
+   ここで「指で押せる」見た目(pointer)と「押すと沈む」感触を全ボタンに
+   一律で与える。.cp- 系ボタンは各自の :active が優先されるので干渉しない。
+   インライン style で transform を持つボタンも（inline 優先で）影響なし。 */
+button:not([class*="cp-"]):not(:disabled) {
+  cursor: pointer;
+  transition: transform var(--cp-duration-base) var(--cp-ease-springy);
+}
+button:not([class*="cp-"]):not(:disabled):active {
+  transform: scale(0.97);
+  transition-duration: var(--cp-duration-instant);
+}
+@media (hover: none) and (pointer: coarse) {
+  /* 指で触れる端末では沈み込みをやや深く＝より確かな手応えに */
+  button:not([class*="cp-"]):not(:disabled):active { transform: scale(0.955); }
+}
+@media (prefers-reduced-motion: reduce) {
+  button:not([class*="cp-"]):not(:disabled) { transition: none; }
+  button:not([class*="cp-"]):not(:disabled):active { transform: none; }
+}
+
 /* iOS: input のデフォルト appearance リセット */
 input, textarea {
   -webkit-appearance: none;
