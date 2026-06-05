@@ -33,6 +33,7 @@ import { type Brand, loadBillingUser, isTrialActive } from '../lib/billing';
 import {
   getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS,
   getInviterName, saveInviterName, INVITER_NAME_MAX, sanitizeInviterName,
+  getInviterMessage, saveInviterMessage, INVITER_MESSAGE_MAX, sanitizeInviterMessage,
   getShareCount, recordShare,
 } from '../lib/referral';
 import { shareToInstagram } from '../iris/instagramShare';
@@ -125,9 +126,11 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
   const referral = useMemo(() => getReferralData(), []);
   const [inviterName, setInviterName] = useState<string>(() => getInviterName());
   const cleanName = useMemo(() => sanitizeInviterName(inviterName), [inviterName]);
+  const [inviterMsg, setInviterMsg] = useState<string>(() => getInviterMessage());
+  const cleanMsg = useMemo(() => sanitizeInviterMessage(inviterMsg), [inviterMsg]);
   const url = useMemo(
-    () => getReferralUrl(brand, referral.myCode, { from: cleanName }),
-    [brand, referral.myCode, cleanName],
+    () => getReferralUrl(brand, referral.myCode, { from: cleanName, msg: cleanMsg }),
+    [brand, referral.myCode, cleanName, cleanMsg],
   );
   // 汎用 (Web Share API / Insta / 互換用) のテキスト
   const text = useMemo(() => shareTextGeneric(url, brand, cleanName), [url, brand, cleanName]);
@@ -146,6 +149,12 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
     const id = setTimeout(() => saveInviterName(inviterName), 600);
     return () => clearTimeout(id);
   }, [inviterName]);
+
+  // 一言メッセージを 600ms デバウンスで localStorage に保存
+  useEffect(() => {
+    const id = setTimeout(() => saveInviterMessage(inviterMsg), 600);
+    return () => clearTimeout(id);
+  }, [inviterMsg]);
 
   // 紹介 URL の QR コード (qrserver.com の無料 API、認証なし)
   const qrUrl = useMemo(
@@ -361,6 +370,38 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         {cleanName && (
           <p style={{ margin: 0, fontSize: '0.7rem', color: p.inkSoft }}>
             招待された人は「<strong style={{ color: p.accent }}>{cleanName} さんからの招待</strong>」と見えます
+          </p>
+        )}
+      </div>
+
+      {/* ─── 一言メッセージ (任意) ─── */}
+      <div style={{ display: 'grid', gap: '0.35rem' }}>
+        <label style={{
+          fontSize: '0.7rem', letterSpacing: '0.06em', color: p.inkSoft,
+          fontWeight: 700,
+        }}>
+          ひとことメッセージ (任意 — 招待された人に表示されます)
+        </label>
+        <input
+          type="text"
+          value={inviterMsg}
+          onChange={(e) => setInviterMsg(e.target.value)}
+          placeholder="例: これ本当に便利だから一回触ってみて!"
+          maxLength={INVITER_MESSAGE_MAX}
+          style={{
+            background: '#fff', color: p.ink,
+            border: `1px solid ${p.border}`, borderRadius: 10,
+            padding: '0.6rem 0.7rem', fontSize: '0.88rem',
+            outline: 'none', fontFamily: 'inherit',
+          }}
+        />
+        {cleanMsg && (
+          <p style={{
+            margin: 0, fontSize: '0.7rem', color: p.inkSoft,
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}>
+            <Gift size={11} style={{ color: p.accent, flexShrink: 0 }} />
+            <span>登録画面に「<strong style={{ color: p.accent }}>{cleanMsg}</strong>」と表示されます</span>
           </p>
         )}
       </div>

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { REFERRAL_BONUS_DAYS, getPendingReferralInviter } from '../lib/referral';
+import { REFERRAL_BONUS_DAYS, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
 import LiveAgentMock from './LiveAgentMock';
 import AnimatedExecStage from './AnimatedExecStage';
 import CxoProfileModal from './CxoProfileModal';
@@ -58,11 +58,13 @@ export default function LandingPage({ onEnterApp }: Props) {
   const { lang, setLang, t } = useT();
   const [pendingRef, setPendingRef] = useState<string | null>(null);
   const [pendingInviter, setPendingInviter] = useState<string>('');
+  const [pendingMsg, setPendingMsg] = useState<string>('');
   // LLLLLL (2026-06-04): CXO ピル を タップで プロフィール モーダル
   const [openCxo, setOpenCxo] = useState<CxoRole | null>(null);
   useEffect(() => {
     try { setPendingRef(sessionStorage.getItem('pending_ref')); } catch { /* */ }
     setPendingInviter(getPendingReferralInviter());
+    setPendingMsg(getPendingReferralMessage());
   }, []);
 
   // 「サンプルで触ってみる」: 実物品質のデモデータを localStorage に投入してから入室
@@ -121,6 +123,18 @@ export default function LandingPage({ onEnterApp }: Props) {
           >
             登録して受け取る →
           </button>
+          {pendingMsg && (
+            <p
+              data-testid="referral-inviter-message"
+              style={{
+                flexBasis: '100%', margin: '0.15rem 0 0', textAlign: 'center',
+                fontSize: '0.84rem', fontWeight: 600, fontStyle: 'italic',
+                color: 'rgba(255,255,255,0.96)', lineHeight: 1.5,
+              }}
+            >
+              💬「{pendingMsg}」{pendingInviter ? ` — ${pendingInviter} さん` : ''}
+            </p>
+          )}
         </motion.div>
       )}
 

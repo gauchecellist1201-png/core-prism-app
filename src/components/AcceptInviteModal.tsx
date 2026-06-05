@@ -12,7 +12,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Sparkles, Users, ArrowRight, Check, X } from 'lucide-react';
 import { useWorkspace } from '../hooks/useWorkspace';
-import { REFERRAL_BONUS_DAYS, getPendingReferralInviter } from '../lib/referral';
+import { REFERRAL_BONUS_DAYS, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
 
 interface Props {
   code: string;
@@ -28,6 +28,8 @@ export default function AcceptInviteModal({ code, onClose, onSignupRequest }: Pr
 
   // ?ref=...&from=NAME 経由で来ていれば招待元の名前を取得
   const inviterName = useMemo(() => getPendingReferralInviter(), []);
+  // 招待者が添えた一言メッセージ (任意)
+  const inviterMsg = useMemo(() => getPendingReferralMessage(), []);
 
   useEffect(() => {
     try { sessionStorage.removeItem('pending_invite'); } catch { /* */ }
@@ -154,6 +156,34 @@ export default function AcceptInviteModal({ code, onClose, onSignupRequest }: Pr
               }}>
                 <Users size={13} /> ワークスペース「{workspace.name}」
               </p>
+            )}
+
+            {inviterMsg && (
+              <div
+                data-testid="accept-inviter-message"
+                style={{
+                  margin: '1rem auto 0',
+                  maxWidth: 320,
+                  background: 'rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 14,
+                  padding: '0.7rem 0.9rem',
+                  fontSize: '0.88rem',
+                  fontStyle: 'italic',
+                  color: 'rgba(255,255,255,0.92)',
+                  lineHeight: 1.55,
+                  textAlign: 'left',
+                }}
+              >
+                <span style={{ color: '#FFD86F', fontWeight: 800 }}>“</span>
+                {inviterMsg}
+                <span style={{ color: '#FFD86F', fontWeight: 800 }}>”</span>
+                {inviterName && (
+                  <span style={{ display: 'block', marginTop: 4, fontStyle: 'normal', fontSize: '0.74rem', color: 'rgba(255,255,255,0.6)', textAlign: 'right' }}>
+                    — {inviterName} さん
+                  </span>
+                )}
+              </div>
             )}
           </div>
 

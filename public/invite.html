@@ -84,12 +84,20 @@
       <p class="small">クレジットカード不要 · いつでも解約可</p>
     </main>
     <script>
-      // ?ref=CODE を引き継いで / に遷移 (短時間 SNS の OG プレビュー後、人間が踏むと自動で本体へ)
+      // ?ref=CODE&from=NAME&msg=... を引き継いで / に遷移
+      // (短時間 SNS の OG プレビュー後、人間が踏むと自動で本体へ)
+      // from / msg を落とすと「○○ さんからの招待」+ 一言メッセージが消えるので必ず引き継ぐ
       (function () {
         try {
           var url = new URL(window.location.href);
           var ref = url.searchParams.get('ref');
-          var target = '/' + (ref ? '?ref=' + encodeURIComponent(ref) : '');
+          var from = url.searchParams.get('from');
+          var msg = url.searchParams.get('msg');
+          var qs = [];
+          if (ref) qs.push('ref=' + encodeURIComponent(ref));
+          if (from) qs.push('from=' + encodeURIComponent(from));
+          if (msg) qs.push('msg=' + encodeURIComponent(msg));
+          var target = '/' + (qs.length ? '?' + qs.join('&') : '');
           var a = document.getElementById('cta');
           if (a) a.setAttribute('href', target);
           // 自動遷移は 1.2 秒後 (SNS Bot は JS を実行しないので OG プレビューは維持される)

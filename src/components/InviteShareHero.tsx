@@ -17,7 +17,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Copy, Mail, MessageCircle, Share2, Sparkles, Check } from 'lucide-react';
 import {
-  getReferralData, getReferralUrl, getInviterName,
+  getReferralData, getReferralUrl, getInviterName, getInviterMessage,
   REFERRAL_BONUS_DAYS, recordShare,
 } from '../lib/referral';
 
@@ -38,7 +38,8 @@ export default function InviteShareHero({ brand = 'prism' }: Props) {
   const [copied, setCopied] = useState(false);
   const data = useMemo(() => getReferralData(), []);
   const inviter = useMemo(() => getInviterName(), []);
-  const url = useMemo(() => getReferralUrl(brand, data.myCode, { from: inviter }), [brand, data.myCode, inviter]);
+  const inviterMsg = useMemo(() => getInviterMessage(), []);
+  const url = useMemo(() => getReferralUrl(brand, data.myCode, { from: inviter, msg: inviterMsg }), [brand, data.myCode, inviter, inviterMsg]);
 
   const earnedDays = data.bonusDays || 0;
   const referredCount = data.referredCount || 0;
