@@ -31,9 +31,11 @@ function loadCache(handle: string): IgStrategyData | null {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
+    // スキーマ ガード: 古い 壊れた cache で クラッシュ しない
+    if (!data || typeof data !== 'object' || !data.handle || !data.generatedAt) return null;
     if (data.handle !== handle) return null;
     const t = new Date(data.generatedAt).getTime();
-    if (Date.now() - t > CACHE_TTL) return null;
+    if (!isFinite(t) || Date.now() - t > CACHE_TTL) return null;
     return data as IgStrategyData;
   } catch { return null; }
 }

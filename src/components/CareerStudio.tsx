@@ -108,8 +108,13 @@ export default function CareerStudio({ open, onClose, defaultIndustry }: Props) 
       const raw = resp.content?.[0]?.text || '';
       // JSON 抽出
       const m = raw.match(/\{[\s\S]*\}/);
-      if (!m) throw new Error('AI から JSON が返りませんでした');
-      const parsed = JSON.parse(m[0]) as CareerReport;
+      if (!m) throw new Error(`AI から JSON 形式 が 返りませんでした (回答 ${raw.length} 字 — 「もう一度生成」 で 再試行)`);
+      let parsed: CareerReport;
+      try {
+        parsed = JSON.parse(m[0]) as CareerReport;
+      } catch (pe) {
+        throw new Error(`AI の JSON が 壊れて います (${(pe as Error).message}) — 「もう一度生成」 を 押して ください`);
+      }
       setReport(parsed);
       setStep('report');
     } catch (e) {

@@ -16,6 +16,7 @@ import {
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { notifyInApp } from '../lib/inAppNotify';
 import ApiErrorCard from './ApiErrorCard';
+import SafeImg from './SafeImg';
 import { StudioIntro } from './StudioIntro';
 
 interface Props {
@@ -470,11 +471,12 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
 
                 {/* サムネ + メタ */}
                 <div className="cp-card-section flex gap-3 items-start">
-                  <img
+                  <SafeImg
                     src={meta.thumbnailUrl}
                     alt={meta.title}
-                    className="w-28 rounded-lg flex-shrink-0 object-cover"
-                    style={{ aspectRatio: '16/9' }}
+                    className="w-28 rounded-lg flex-shrink-0"
+                    aspectRatio="16/9"
+                    errorLabel="サムネ取得失敗"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-fg text-sm font-semibold leading-snug line-clamp-2">{meta.title}</p>
@@ -567,8 +569,8 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
 
                 {/* サムネ + タイトル */}
                 <div className="cp-card-section flex gap-3 items-center">
-                  <img src={meta.thumbnailUrl} alt={meta.title}
-                    className="w-16 rounded-lg flex-shrink-0 object-cover" style={{ aspectRatio: '16/9' }} />
+                  <SafeImg src={meta.thumbnailUrl} alt={meta.title}
+                    className="w-16 rounded-lg flex-shrink-0" aspectRatio="16/9" errorLabel="読み込み失敗" silent />
                   <div className="min-w-0 flex-1">
                     <p className="text-fg text-sm font-semibold truncate">{meta.title}</p>
                     <p className="text-fg-muted text-xs">{meta.author} · {sourceLabel(transcriptSource)}</p>
@@ -676,8 +678,8 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
                       style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
                     >
                       {row.meta?.thumbnailUrl ? (
-                        <img src={row.meta.thumbnailUrl} alt="" className="w-14 rounded flex-shrink-0 object-cover"
-                          style={{ aspectRatio: '16/9' }} />
+                        <SafeImg src={row.meta.thumbnailUrl} alt="" className="w-14 rounded flex-shrink-0"
+                          aspectRatio="16/9" silent />
                       ) : (
                         <div className="w-14 rounded flex-shrink-0"
                           style={{ aspectRatio: '16/9', background: 'var(--surface)' }} />
@@ -760,8 +762,8 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
                               className="w-full flex gap-2 items-start text-left rounded-lg p-2 transition-colors"
                               style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
                             >
-                              <img src={v.thumbnailUrl} alt="" className="w-16 rounded flex-shrink-0 object-cover"
-                                style={{ aspectRatio: '16/9' }} />
+                              <SafeImg src={v.thumbnailUrl} alt="" className="w-16 rounded flex-shrink-0"
+                                aspectRatio="16/9" silent />
                               <div className="flex-1 min-w-0">
                                 <p className="text-fg text-xs font-semibold line-clamp-2">{v.title}</p>
                                 {v.summaryLine && (

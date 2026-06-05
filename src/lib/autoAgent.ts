@@ -202,8 +202,12 @@ export async function generateSuggestions(ctx: AgentContext): Promise<Suggestion
   // キャッシュ確認 (ナレッジ変更時は別キーで fresh)
   try {
     const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
-    if (cached && Date.now() - new Date(cached.cachedAt).getTime() < CACHE_TTL) {
-      return cached.suggestions;
+    // スキーマ ガード: cachedAt + suggestions[] が 揃って いる時のみ採用
+    if (cached && typeof cached === 'object' && cached.cachedAt && Array.isArray(cached.suggestions)) {
+      const t = new Date(cached.cachedAt).getTime();
+      if (isFinite(t) && Date.now() - t < CACHE_TTL) {
+        return cached.suggestions;
+      }
     }
   } catch {/* */}
 

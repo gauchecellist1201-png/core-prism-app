@@ -47,7 +47,8 @@ function buildCsv(sections: CsvSection[]): string {
 
 function readCrmDeals(personaId: string): SectionRow[] {
   try {
-    const all = JSON.parse(localStorage.getItem('core_crm_deals_v1') || '[]') as Array<Record<string, unknown>>;
+    const parsed = JSON.parse(localStorage.getItem('core_crm_deals_v1') || '[]');
+    const all = Array.isArray(parsed) ? parsed as Array<Record<string, unknown>> : [];
     const rows: SectionRow[] = [];
     for (const d of all) {
       if ((d as { personaId?: string }).personaId !== personaId) continue;
@@ -66,7 +67,8 @@ function readCrmDeals(personaId: string): SectionRow[] {
 
 function readMonthlyTasks(personaId: string, year: number, month: number): SectionRow[] {
   try {
-    const all = JSON.parse(localStorage.getItem('core_tasks_v1') || '[]') as Array<Record<string, unknown>>;
+    const parsed = JSON.parse(localStorage.getItem('core_tasks_v1') || '[]');
+    const all = Array.isArray(parsed) ? parsed as Array<Record<string, unknown>> : [];
     const rows: SectionRow[] = [];
     for (const t of all) {
       if ((t as { personaId?: string }).personaId !== personaId) continue;
@@ -85,7 +87,8 @@ function readMonthlyTasks(personaId: string, year: number, month: number): Secti
 
 function readCashflowEntries(personaId: string, year: number, month: number): SectionRow[] {
   try {
-    const all = JSON.parse(localStorage.getItem('core_cashflow_v1') || '[]') as Array<Record<string, unknown>>;
+    const parsed = JSON.parse(localStorage.getItem('core_cashflow_v1') || '[]');
+    const all = Array.isArray(parsed) ? parsed as Array<Record<string, unknown>> : [];
     const rows: SectionRow[] = [];
     for (const e of all) {
       if ((e as { personaId?: string }).personaId !== personaId) continue;

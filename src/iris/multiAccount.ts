@@ -45,12 +45,17 @@ function loadAll(): IrisAccount[] {
     const r = localStorage.getItem(STORAGE_KEY);
     if (r) {
       const parsed = JSON.parse(r);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        // スキーマ ガード: id と type が 必須。古い 壊れた entry は 落とす
+        return parsed.filter((a): a is IrisAccount =>
+          a && typeof a === 'object' && typeof a.id === 'string' && typeof a.type === 'string'
+        );
+      }
     }
   } catch { /* */ }
   // 初回起動時: @your_handle のプレースホルダは作らない。空配列を返して
   // UI 側で「連携してください」モーダルを出させる。架空ハンドルの残骸を防ぐ。
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify([])); } catch { /* quota */ }
   return [];
 }
 

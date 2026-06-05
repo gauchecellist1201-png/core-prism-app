@@ -77,22 +77,24 @@ export default function RoadmapPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState<string | null>(null);
+  const [voteErr, setVoteErr] = useState<string | null>(null);
 
   const load = async () => {
-    setLoading(true);
+    setLoading(true); setVoteErr(null);
     try {
       const res = await fetch('/api/roadmap-votes');
-      if (res.ok) {
-        const j = await res.json() as { items: Record<string, number> };
-        setCounts(j.items || {});
-      }
-    } catch { /* */ } finally { setLoading(false); }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const j = await res.json() as { items: Record<string, number> };
+      setCounts(j.items || {});
+    } catch (e) {
+      setVoteErr(`投票数の取得に失敗 (${(e as Error).message || '通信エラー'}) — リロードしてください`);
+    } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
   const vote = async (id: string) => {
     if (voted.has(id) || posting) return;
-    setPosting(id);
+    setPosting(id); setVoteErr(null);
     // 楽観 UI
     const next = new Set(voted); next.add(id); setVoted(next); writeVoted(next);
     setCounts((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
@@ -102,11 +104,15 @@ export default function RoadmapPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       });
-      if (res.ok) {
-        const j = await res.json() as { count?: number };
-        if (typeof j.count === 'number') setCounts((c) => ({ ...c, [id]: j.count! }));
-      }
-    } catch { /* */ } finally { setPosting(null); }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const j = await res.json() as { count?: number };
+      if (typeof j.count === 'number') setCounts((c) => ({ ...c, [id]: j.count! }));
+    } catch (e) {
+      // 楽観 UI を ロールバック
+      const rollback = new Set(voted); rollback.delete(id); setVoted(rollback); writeVoted(rollback);
+      setCounts((c) => ({ ...c, [id]: Math.max(0, (c[id] || 1) - 1) }));
+      setVoteErr(`投票送信に失敗 (${(e as Error).message || '通信エラー'}) — もう一度試してください`);
+    } finally { setPosting(null); }
   };
 
   const totalVotes = useMemo(() => Object.values(counts).reduce((a, b) => a + b, 0), [counts]);
@@ -157,6 +163,20 @@ export default function RoadmapPage() {
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 28 }}>
           合計 投票 数: <strong style={{ color: 'rgba(255,255,255,0.8)' }}>{totalVotes}</strong> · 最終更新: {new Date().toLocaleString('ja-JP')}
         </div>
+
+        {voteErr && (
+          <div style={{
+            marginBottom: 18, padding: '10px 14px', borderRadius: 10,
+            background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.32)',
+            color: '#FCA5A5', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
+          }}>
+            <span>⚠️ {voteErr}</span>
+            <button onClick={() => { setVoteErr(null); load(); }} style={{
+              fontSize: 11, padding: '4px 10px', borderRadius: 6, fontWeight: 700,
+              background: 'rgba(248,113,113,0.2)', color: '#FCA5A5', border: '1px solid rgba(248,113,113,0.4)', cursor: 'pointer',
+            }}>🔄 再試行</button>
+          </div>
+        )}
 
         {/* 3 列グリッド */}
         <div style={{

@@ -43,7 +43,12 @@ function load(): ScheduledPost[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as ScheduledPost[];
+    const parsed = JSON.parse(raw);
+    // スキーマ ガード: 配列で 各 要素 が 期待 形状 か
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((p): p is ScheduledPost =>
+      p && typeof p === 'object' && typeof p.id === 'string' && typeof p.createdAt === 'string'
+    );
   } catch { return []; }
 }
 
