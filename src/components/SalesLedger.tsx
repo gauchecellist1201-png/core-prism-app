@@ -11,6 +11,7 @@ import {
 import { fmtJpy } from '../lib/invoiceCalc';
 import { CountUp } from './visualFx';
 import { confirmAction } from '../lib/confirmDialog';
+import SampleDataCTA from './SampleDataCTA';
 
 interface Props {
   persona: Persona;
@@ -191,10 +192,23 @@ export default function SalesLedger({ persona, onClose }: Props) {
           {tab === 'entries' && (
             <div className="space-y-1.5">
               {personaEntries.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-3xl mb-2">📭</p>
-                  <p className="text-fg-muted text-sm">売上エントリはまだありません</p>
-                  <p className="text-fg-subtle text-xs mt-1">請求書を発行するか「+ 手動追加」から登録できます</p>
+                <div className="text-center py-12 flex flex-col items-center gap-2">
+                  <p className="text-4xl mb-1">📭</p>
+                  <p className="text-fg text-sm font-semibold">ここに「いつ・誰から・いくら」が並びます</p>
+                  <p className="text-fg-muted text-xs max-w-[260px] leading-relaxed">
+                    請求書を発行するか「＋ 手動追加」で 1 件登録すると、月ごとの売上と入金状況がここに自動でたまっていきます。
+                  </p>
+                  <button
+                    onClick={() => setTab('add')}
+                    className="cp-btn cp-btn-primary mt-2"
+                    style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, padding: '0 18px' }}>
+                    ＋ 最初の売上を手で 1 件入れる
+                  </button>
+                  <SampleDataCTA
+                    accent={persona.accentColor}
+                    label="✨ サンプルの売上で中を見てみる"
+                    hint="カフェ田中さんの 12 ヶ月分の売上が入り、画面の使い方がすぐ分かります（あとで消せます）"
+                  />
                 </div>
               ) : personaEntries.map(e => (
                 <div key={e.id} className="rounded-xl p-3 flex items-center justify-between gap-3"
@@ -243,7 +257,18 @@ export default function SalesLedger({ persona, onClose }: Props) {
           {tab === 'clients' && (
             <div className="space-y-2">
               {clients.length === 0 ? (
-                <p className="text-fg-muted text-sm text-center py-8">取引先データがまだありません</p>
+                <div className="text-center py-10 flex flex-col items-center gap-2">
+                  <p className="text-4xl mb-1">🏷️</p>
+                  <p className="text-fg text-sm font-semibold">「誰がいくら買ってくれたか」のランキングが出ます</p>
+                  <p className="text-fg-muted text-xs max-w-[260px] leading-relaxed">
+                    売上を登録すると、取引先ごとの合計金額が自動でまとまり、大切なお客さまがひと目で分かります。
+                  </p>
+                  <SampleDataCTA
+                    accent={persona.accentColor}
+                    label="✨ サンプルの取引先で中を見てみる"
+                    hint="カフェ田中さんのお客さま一覧が入ります（あとで消せます）"
+                  />
+                </div>
               ) : clients.map((c, i) => (
                 <div key={c.name} className="rounded-xl p-3 flex items-center justify-between gap-3"
                   style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
