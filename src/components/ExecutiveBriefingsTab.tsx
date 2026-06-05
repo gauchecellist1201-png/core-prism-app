@@ -194,18 +194,18 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
         {(['today', 'week', 'month', 'all'] as const).map((p) => (
-          <FilterChip key={p} active={periodFilter === p} onClick={() => setPeriodFilter(p)}>
+          <FilterChip key={p} active={periodFilter === p} onClick={() => setPeriodFilter(p)} accent={accent}>
             {p === 'today' ? '今日' : p === 'week' ? '今週' : p === 'month' ? '今月' : '全部'}
           </FilterChip>
         ))}
       </div>
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-        <FilterChip active={cxoFilter === 'all'} onClick={() => setCxoFilter('all')}>👑 全 役員</FilterChip>
+        <FilterChip active={cxoFilter === 'all'} onClick={() => setCxoFilter('all')} accent={accent}>👑 全 役員</FilterChip>
         {activeCxos.map((r) => {
           const m = CXO_META[r];
           return (
-            <FilterChip key={r} active={cxoFilter === r} onClick={() => setCxoFilter(r)}>
+            <FilterChip key={r} active={cxoFilter === r} onClick={() => setCxoFilter(r)} accent={accent}>
               {m.emoji} {r}
             </FilterChip>
           );
@@ -213,12 +213,12 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
       </div>
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>
-        <FilterChip active={categoryFilter === 'all'} onClick={() => setCategoryFilter('all')}>📦 全カテゴリ</FilterChip>
+        <FilterChip active={categoryFilter === 'all'} onClick={() => setCategoryFilter('all')} accent={accent}>📦 全カテゴリ</FilterChip>
         {(Object.keys(CATEGORY_LABEL) as DeliverableCategory[]).map((c) => {
           const cm = CATEGORY_LABEL[c];
           if (!stats.byCategory[c]) return null;
           return (
-            <FilterChip key={c} active={categoryFilter === c} onClick={() => setCategoryFilter(c)}>
+            <FilterChip key={c} active={categoryFilter === c} onClick={() => setCategoryFilter(c)} accent={accent}>
               {cm.emoji} {cm.label}
             </FilterChip>
           );
@@ -273,12 +273,12 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
                     background: cm.color + '22', color: cm.color, border: `1px solid ${cm.color}55`,
                   }}>{cm.emoji} {cm.label}</span>
                   {d.pinned && <span style={{ fontSize: 10, color: '#FBBF24' }}>📌 ピン</span>}
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>{ageLabel}</span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.52)', marginLeft: 'auto' }}>{ageLabel}</span>
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.35 }}>{d.title}</div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>{d.summary}</div>
                 {d.knowledgeRef && (
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.52)', marginTop: 2 }}>
                     📂 参照: {d.knowledgeRef}
                   </div>
                 )}
@@ -327,11 +327,12 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
                       background: cm.color + '22', color: cm.color, border: `1px solid ${cm.color}55`,
                     }}>{cm.emoji} {cm.label}</span>
                     {d.durationSec != null && (
-                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>⏱ {d.durationSec} 秒 で 完了</span>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>⏱ {d.durationSec} 秒 で 完了</span>
                     )}
-                    <button onClick={() => setOpenId(null)} style={{
-                      marginLeft: 'auto', background: 'transparent', border: 'none',
-                      color: 'rgba(255,255,255,0.6)', fontSize: 22, cursor: 'pointer', padding: 0, width: 28, height: 28,
+                    <button onClick={() => setOpenId(null)} aria-label="閉じる" style={{
+                      marginLeft: 'auto', background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 999,
+                      color: 'rgba(255,255,255,0.7)', fontSize: 20, cursor: 'pointer', padding: 0, flexShrink: 0,
+                      width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
                     }}>×</button>
                   </div>
                   <h2 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0, lineHeight: 1.35 }}>{d.title}</h2>
@@ -409,13 +410,13 @@ function Kpi({ label, value, unit, color, emoji }: { label: string; value: numbe
   );
 }
 
-function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function FilterChip({ active, onClick, children, accent = '#A78BFA' }: { active: boolean; onClick: () => void; children: React.ReactNode; accent?: string }) {
   return (
     <button onClick={onClick} style={{
       fontSize: 11, padding: '5px 10px', borderRadius: 999, fontWeight: 700, cursor: 'pointer',
-      background: active ? 'rgba(167,139,250,0.18)' : 'rgba(255,255,255,0.04)',
-      color: active ? '#A78BFA' : 'rgba(255,255,255,0.6)',
-      border: `1px solid ${active ? '#A78BFA66' : 'rgba(255,255,255,0.08)'}`,
+      background: active ? `${accent}2e` : 'rgba(255,255,255,0.04)',
+      color: active ? accent : 'rgba(255,255,255,0.6)',
+      border: `1px solid ${active ? accent + '66' : 'rgba(255,255,255,0.08)'}`,
     }}>{children}</button>
   );
 }
