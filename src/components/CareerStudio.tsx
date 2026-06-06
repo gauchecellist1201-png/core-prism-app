@@ -241,6 +241,20 @@ export default function CareerStudio({ open, onClose, defaultIndustry }: Props) 
             <div style={{ padding: 18, overflowY: 'auto', flex: 1 }}>
               {step === 'q' && (
                 <>
+                  {/* 3 秒でわかる説明 + サンプル出力 — 初見の人が「何が出るか」を触らず理解できる */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, rgba(167,139,250,0.18), rgba(167,139,250,0.05) 60%)',
+                    border: '1px solid rgba(167,139,250,0.35)',
+                    borderRadius: 12, padding: '12px 14px', marginBottom: 18,
+                  }}>
+                    <p style={{ fontSize: '0.86rem', fontWeight: 700, color: '#fff', lineHeight: 1.5, margin: 0 }}>
+                      🔮 下の 3 問に答えるだけ。AI が <span style={{ color: '#C4B5FD' }}>あなたの 5 年後の「年収・役割・学ぶべきスキル」</span>を 1 枚のレポートにします。
+                    </p>
+                    <p style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, margin: '6px 0 0' }}>
+                      例: 不動産 10 年 → <span style={{ color: 'rgba(255,255,255,0.85)' }}>「5 年後は独立して年商 8,000 万円。今学ぶべきは AI 査定 × LINE 集客」</span>のように出ます。
+                    </p>
+                  </div>
+
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'rgba(255,255,255,0.75)', marginBottom: 8 }}>
                     1. 業種は?
                   </label>
