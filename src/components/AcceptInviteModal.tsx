@@ -281,7 +281,7 @@ export default function AcceptInviteModal({ code, onClose, onSignupRequest }: Pr
                   justifyContent: 'center', gap: 8,
                   boxShadow: '0 12px 32px rgba(124,92,255,0.45)',
                   opacity: status === 'loading' ? 0.7 : 1,
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                  transition: 'transform var(--cp-duration-fast) var(--cp-ease-out), box-shadow var(--cp-duration-fast) var(--cp-ease-smooth)',
                 }}
                 onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.98)')}
                 onMouseUp={(e) => (e.currentTarget.style.transform = '')}

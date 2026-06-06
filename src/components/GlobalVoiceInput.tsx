@@ -331,7 +331,7 @@ export default function GlobalVoiceInput() {
         boxShadow: listening
           ? '0 0 0 4px rgba(239,68,68,0.25), 0 4px 12px rgba(239,68,68,0.5)'
           : '0 4px 12px rgba(46,111,255,0.45)',
-        transition: 'background 0.2s',
+        transition: 'background var(--cp-duration-fast) var(--cp-ease-smooth)',
         animation: listening ? 'voiceMicPulse 1.1s ease-in-out infinite' : 'none',
       }}
     >

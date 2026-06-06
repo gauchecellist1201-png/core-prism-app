@@ -435,11 +435,11 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
             aria-label="紹介 URL をコピー"
             style={{
               background: copied === 'url' ? '#16A34A' : p.accent,
-              color: '#fff', border: 'none', borderRadius: 8,
+              color: '#fff', border: 'none', borderRadius: 'var(--cp-radius-sm)',
               padding: '0.55rem 0.75rem', fontSize: '0.78rem', fontWeight: 700,
               cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
               whiteSpace: 'nowrap',
-              transition: 'transform 0.15s ease, background 0.2s ease',
+              transition: 'transform var(--cp-duration-fast) var(--cp-ease-out), background var(--cp-duration-fast) var(--cp-ease-smooth)',
             }}
             onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.96)')}
             onMouseUp={(e) => (e.currentTarget.style.transform = '')}
@@ -647,7 +647,7 @@ function ShareIconBtn({ label, bg, icon, onClick }: {
         cursor: 'pointer', whiteSpace: 'nowrap',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', gap: 4,
-        transition: 'transform 0.15s ease, opacity 0.15s ease',
+        transition: 'transform var(--cp-duration-fast) var(--cp-ease-out), opacity var(--cp-duration-fast) var(--cp-ease-smooth)',
         minHeight: 60,
       }}
       onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.94)')}
