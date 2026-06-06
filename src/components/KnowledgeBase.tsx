@@ -207,7 +207,16 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
   const folderInputRef = useRef<HTMLInputElement>(null);
   const meetingInputRef = useRef<HTMLInputElement>(null);
   const [meetingProcessing, setMeetingProcessing] = useState<string | null>(null);
+  const [meetingError, setMeetingError] = useState<string | null>(null);
+  const [meetingDone, setMeetingDone] = useState<string | null>(null);
   const [showRecorder, setShowRecorder] = useState(false);
+
+  // 取り込み成功トーストは 4 秒で自動的に消す（うるさくしない）
+  useEffect(() => {
+    if (!meetingDone) return;
+    const t = setTimeout(() => setMeetingDone(null), 4000);
+    return () => clearTimeout(t);
+  }, [meetingDone]);
 
   // ── 先回り提案: AI が「この資料こう活かせます」を 3 案先出し ──
   const [proposals, setProposals] = useState<KnowledgeUseProposal[]>([]);
@@ -388,6 +397,8 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
 
   // ── 会議録画 → AI 要約 → ナレッジ追加 (オーナー指示 2026-06-03) ──
   const handleMeetingFile = useCallback(async (file: File) => {
+    setMeetingError(null);
+    setMeetingDone(null);
     setMeetingProcessing('文字起こしを読み込み中');
     try {
       const ext = (file.name.split('.').pop() || '').toLowerCase();
@@ -438,10 +449,11 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
 
       onAddNote(`📹 ${summary.title}`, noteContent);
       setMeetingProcessing(null);
+      setMeetingDone(`「${summary.title}」をナレッジに取り込みました`);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '会議の取り込みに失敗しました';
       setMeetingProcessing(null);
-      window.alert(`⚠ ${msg}`);
+      setMeetingError(msg);
     }
   }, [onAddNote]);
 
@@ -924,6 +936,61 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                     <p className="text-fg-muted text-xs text-center" style={{ marginTop: 6 }}>
                       .vtt / .srt (字幕) or .mp4 / .m4a (音声/動画) を選択 → AI が要約 → ナレッジに
                     </p>
+
+                    {/* 取り込み失敗 — 黙らせず、その場で「もう一度」復旧できるように (オーナールール: 復旧ボタン必須) */}
+                    <AnimatePresence>
+                      {meetingError && (
+                        <motion.div
+                          key="meeting-error"
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          className="rounded-xl p-3 flex flex-col gap-2"
+                          style={{ marginTop: 10, background: 'rgba(244,63,94,0.10)', border: '1px solid rgba(244,63,94,0.4)' }}
+                          role="alert"
+                        >
+                          <p className="text-xs leading-relaxed" style={{ color: '#fda4af' }}>
+                            ⚠ {meetingError}
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => { setMeetingError(null); meetingInputRef.current?.click(); }}
+                              className="flex-1 text-xs py-2 rounded-lg font-bold transition-all"
+                              style={{ background: '#f43f5e', color: '#fff', minHeight: 40 }}
+                            >🔄 もう一度ファイルを選ぶ</button>
+                            <button
+                              onClick={() => setMeetingError(null)}
+                              className="text-xs px-3 rounded-lg transition-all"
+                              style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--fg)', minHeight: 40 }}
+                              aria-label="閉じる"
+                            >✕</button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* 取り込み成功 — 成功も黙らない (4 秒で自動的に消える) */}
+                    <AnimatePresence>
+                      {meetingDone && (
+                        <motion.div
+                          key="meeting-done"
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          className="rounded-xl p-3 flex items-center gap-2"
+                          style={{ marginTop: 10, background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.4)' }}
+                          role="status"
+                        >
+                          <span className="text-sm">✓</span>
+                          <p className="text-xs leading-relaxed flex-1" style={{ color: '#86efac' }}>{meetingDone}</p>
+                          <button
+                            onClick={() => setTab('list')}
+                            className="text-xs px-3 py-1.5 rounded-lg font-bold transition-all"
+                            style={{ background: 'rgba(34,197,94,0.2)', color: '#86efac' }}
+                          >一覧で見る</button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                     <input
                       ref={meetingInputRef}
                       type="file"
