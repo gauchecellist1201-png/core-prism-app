@@ -98,8 +98,11 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     /* 日本語の詰め組み (palt) + 字詰め (kern) で誌面感を一段上げる。
-       palt は Hiragino Sans / Noto Sans JP がサポート。Latin 文字には影響しない。 */
-    font-feature-settings: "palt" 1, "kern" 1;
+       palt は Hiragino Sans / Noto Sans JP がサポート。Latin 文字には影響しない。
+       tnum = 等幅数字（桁が変わっても横幅が動かない）, lnum = ライニング数字（高さを揃える）。
+       これでアプリ全体の数字が「カタカタ揺れない / 行ごとにビシッと揃う」高級な静けさになる。
+       palt は仮名・漢字、tnum は数字と別グリフを対象にするので衝突しない。 */
+    font-feature-settings: "palt" 1, "kern" 1, "tnum" 1, "lnum" 1;
     font-kerning: normal;
     /* Mobile: 16pxを下限にしてiOSのオートズームを防ぐ */
     font-size: 16px;
@@ -2366,6 +2369,15 @@ select:not([data-no-tactile]):focus-visible,
 /* time 要素も日時/期間を含むので等幅化 (見出しと並んだ時に揃う) */
 time {
   font-variant-numeric: tabular-nums;
+}
+
+/* 等幅は body 既定 (font-feature-settings "tnum") で全数字に効くようになった。
+   インラインスタイル直書きの売上カード等も追加クラス無しで自動的に揃う。
+   この .pnum は「文章中で数字を自然な字幅に戻したい」時だけの逃げ道。 */
+.pnum,
+.pnum * {
+  font-variant-numeric: proportional-nums;
+  font-feature-settings: "palt" 1, "kern" 1, "pnum" 1;
 }
 
 /* ───── Reduced motion: マイクロインタラクションを抑制 ───── */
