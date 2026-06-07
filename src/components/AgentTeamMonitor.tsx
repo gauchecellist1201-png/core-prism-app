@@ -210,6 +210,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
       }}
       role="region"
       aria-label="AI 会社 作戦本部"
+      data-tour-id="agent-team-monitor"
     >
       {/* ヘッダ */}
       <button

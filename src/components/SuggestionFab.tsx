@@ -77,6 +77,7 @@ export default function SuggestionFab() {
             whileTap={{ scale: 0.95 }}
             onClick={open}
             aria-label="改善提案を送る"
+            data-tour-id="suggestion-fab"
             style={{
               position: 'fixed',
               left: 'calc(env(safe-area-inset-left, 0px) + 12px)',

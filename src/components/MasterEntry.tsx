@@ -210,6 +210,11 @@ export default function MasterEntry() {
           )}
         </div>
 
+        {/* 初回 ユーザー 体験 ボタン (2026-06-05 オーナー指示) */}
+        {isMasterValid && (
+          <FreshUserDemoButtons />
+        )}
+
         {/* Claude API キー */}
         <div style={{ marginBottom: 22 }}>
           <label
@@ -741,6 +746,116 @@ function MasterTopKpiCards({ masterKey }: { masterKey: string }) {
           owner-brief 取得失敗 — STRIPE_SECRET_KEY / Upstash 環境を確認
         </div>
       )}
+    </div>
+  );
+}
+
+// ============================================================
+// FreshUserDemoButtons — 「初回 ユーザー として 触る」 ボタン 2 つ
+// (2026-06-05 オーナー指示)
+//
+// マスター キー で 入った 状態 から、 全 データ を 初期化 して
+// Prism / Iris の 初回 ユーザー 体験 (HubSpot 風 ガイド ツアー 付き) を 開始。
+// ============================================================
+function FreshUserDemoButtons() {
+  const [confirming, setConfirming] = useState<'prism' | 'iris' | null>(null);
+  const [resetting, setResetting] = useState(false);
+
+  const handleStart = async (brand: 'prism' | 'iris') => {
+    setResetting(true);
+    try {
+      const { resetToFreshUser } = await import('../lib/freshUserDemo');
+      const r = resetToFreshUser({ brand, startTour: true });
+      console.log(`[FreshUserDemo] cleared ${r.cleared} keys, preserved ${r.preserved}`);
+      // / に リダイレクト → 初回 onboarding から
+      const target = brand === 'iris' ? '/iris' : '/';
+      window.location.href = target;
+    } catch (e) {
+      alert('リセット に 失敗 しました: ' + (e as Error).message);
+      setResetting(false);
+    }
+  };
+
+  return (
+    <div style={{
+      marginBottom: 22,
+      padding: '14px 16px',
+      borderRadius: 14,
+      background: 'rgba(167,139,250,0.06)',
+      border: '1px solid rgba(167,139,250,0.25)',
+    }}>
+      <div style={{
+        fontSize: 10, letterSpacing: '0.22em', fontWeight: 800,
+        color: '#A78BFA', marginBottom: 6,
+      }}>🎓 初回 ユーザー 体験</div>
+      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: '0 0 12px' }}>
+        全 データ を 消して、 インストール 直後 の 状態 で HubSpot 風 の ガイド ツアー (「ここを タップ」)
+        を 受けられます。 一般 ユーザー が 触る 時 と 同じ 体験 で、 不足 機能 を 把握 できる モード。
+      </p>
+      {confirming ? (
+        <div style={{
+          padding: 10, borderRadius: 8,
+          background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)',
+          marginBottom: 10,
+        }}>
+          <div style={{ fontSize: 12, color: '#FCA5A5', marginBottom: 8, fontWeight: 700 }}>
+            ⚠️ 確認: {confirming === 'iris' ? 'Iris' : 'Prism'} の 全 ユーザー データ を 消去 します。
+            (連携 キー / 設定 は 残します)
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={() => handleStart(confirming)}
+              disabled={resetting}
+              style={{
+                fontSize: 11, padding: '6px 12px', borderRadius: 6, fontWeight: 700,
+                background: confirming === 'iris' ? '#F472B6' : '#A78BFA',
+                color: '#fff', border: 'none', cursor: resetting ? 'wait' : 'pointer',
+              }}
+            >{resetting ? 'リセット中…' : '✓ 実行 + ツアー 開始'}</button>
+            <button
+              onClick={() => setConfirming(null)}
+              disabled={resetting}
+              style={{
+                fontSize: 11, padding: '6px 12px', borderRadius: 6, fontWeight: 700,
+                background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)',
+                border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
+              }}
+            >キャンセル</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <button
+            onClick={() => setConfirming('prism')}
+            style={{
+              padding: '10px 12px', borderRadius: 10, fontSize: 12, fontWeight: 800,
+              background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
+              color: '#fff', border: 'none', cursor: 'pointer',
+              boxShadow: '0 6px 18px rgba(167,139,250,0.4)',
+              display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3,
+            }}
+          >
+            <span>🎯 Prism を 初回 体験</span>
+            <span style={{ fontSize: 10, opacity: 0.85 }}>BtoB — 14 名 役員 ツアー</span>
+          </button>
+          <button
+            onClick={() => setConfirming('iris')}
+            style={{
+              padding: '10px 12px', borderRadius: 10, fontSize: 12, fontWeight: 800,
+              background: 'linear-gradient(135deg, #F472B6, #EC4899)',
+              color: '#fff', border: 'none', cursor: 'pointer',
+              boxShadow: '0 6px 18px rgba(244,114,182,0.4)',
+              display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3,
+            }}
+          >
+            <span>✨ Iris を 初回 体験</span>
+            <span style={{ fontSize: 10, opacity: 0.85 }}>Creator — 6 名 役員 ツアー</span>
+          </button>
+        </div>
+      )}
+      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 10, lineHeight: 1.5 }}>
+        💡 ヒント: ツアー 中 でも Cmd+K で 中断 / 再開 可能。 終了 後 は 再度 マスター キー で 戻れます。
+      </p>
     </div>
   );
 }

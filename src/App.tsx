@@ -53,6 +53,8 @@ const TrustPage = lazy(() => import('./components/TrustPage'));
 const StatusPage = lazy(() => import('./components/StatusPage'));
 const RoadmapPage = lazy(() => import('./components/RoadmapPage'));
 const ExecutiveBriefingsTab = lazy(() => import('./components/ExecutiveBriefingsTab'));
+const GuidedTourSpotlight = lazy(() => import('./components/GuidedTourSpotlight'));
+import { PRISM_TOUR, IRIS_TOUR } from './lib/guidedTourSteps';
 const ChangelogPage = lazy(() => import('./components/ChangelogPage'));
 const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
@@ -512,6 +514,29 @@ export default function App() {
     if (typeof window === 'undefined') return false;
     return window.location.pathname === '/briefings' || window.location.pathname === '/briefings/';
   });
+  // ガイド ツアー (2026-06-05 オーナー指示) — HubSpot 風 「ここを タップ」 案内
+  const [tourBrand, setTourBrand] = useState<'prism' | 'iris' | null>(null);
+  useEffect(() => {
+    // 1. 起動 時 フラグ チェック (freshUserDemo の リセット 後 自動 起動)
+    (async () => {
+      try {
+        const { shouldStartTour, consumeTourFlag } = await import('./lib/freshUserDemo');
+        const b = shouldStartTour();
+        if (b) {
+          consumeTourFlag();
+          // ダッシュ 描画 が 落ち着く まで 待つ
+          setTimeout(() => setTourBrand(b), 1500);
+        }
+      } catch { /* */ }
+    })();
+    // 2. window event で 開始 (Cmd+K / 設定 等 から)
+    const onStart = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { brand?: 'prism' | 'iris' } | undefined;
+      setTourBrand(detail?.brand || 'prism');
+    };
+    window.addEventListener('core:start-guided-tour', onStart as EventListener);
+    return () => window.removeEventListener('core:start-guided-tour', onStart as EventListener);
+  }, []);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [showPersonaCreator, setShowPersonaCreator] = useState(false);
   const [editingPersonaId, setEditingPersonaId] = useState<string | null>(null);
@@ -798,6 +823,7 @@ export default function App() {
         <button
           onClick={() => setBriefingsOpen(true)}
           aria-label="役員 日報 を 見る"
+          data-tour-id="briefings-button"
           style={{
             position: 'fixed',
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
@@ -811,6 +837,17 @@ export default function App() {
             display: 'inline-flex', alignItems: 'center', gap: 6,
           }}
         >📋 役員 日報</button>
+      )}
+      {/* ガイド ツアー (HubSpot 風) — 「ここを タップ」 で 全機能 を 案内 */}
+      {tourBrand && (
+        <Suspense fallback={null}>
+          <GuidedTourSpotlight
+            steps={tourBrand === 'iris' ? IRIS_TOUR : PRISM_TOUR}
+            brand={tourBrand}
+            onClose={() => setTourBrand(null)}
+            onComplete={() => setTourBrand(null)}
+          />
+        </Suspense>
       )}
       {/* 役員 日報 オーバーレイ — 全画面 モーダル として 表示 */}
       <AnimatePresence>
@@ -856,7 +893,7 @@ export default function App() {
       {/* VVV (2026-06-04): 夜のフィード — 18 時以降 1 日 1 回 */}
       {view === 'dashboard' && <EveningFeed />}
       {/* UUUUU (2026-06-04): ダッシュ 上端に 3 KPI sparkline */}
-      {view === 'dashboard' && <div style={{ position: 'sticky', top: 0, zIndex: 30, background: 'rgba(7,7,18,0.78)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}><QuickKpiSparkline /></div>}
+      {view === 'dashboard' && <div data-tour-id="kpi-sparkline" style={{ position: 'sticky', top: 0, zIndex: 30, background: 'rgba(7,7,18,0.78)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}><QuickKpiSparkline /></div>}
       {/* KKKKK (2026-06-04): 朝の「今日のひとこと」 (4-12 時 JST 1 日 1 回) */}
       {view === 'dashboard' && <MorningCoach personaName={activePersona?.name} />}
       {/* GGGG (2026-06-04): 業種別 AI ペルソナ プリセット 4 名 提案 */}

@@ -130,6 +130,7 @@ export default function QuickAskFab() {
             whileTap={{ scale: 0.94 }}
             onClick={() => setOpen(true)}
             aria-label="AI に質問する"
+            data-tour-id="quick-ask"
             style={{
               position: 'fixed',
               right: 'calc(env(safe-area-inset-right, 0px) + 16px)',
