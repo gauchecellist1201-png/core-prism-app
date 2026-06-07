@@ -290,7 +290,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
                   padding: '8px 9px',
                   fontSize: 7,
                   lineHeight: 1.4,
-                  boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+                  boxShadow: 'var(--cp-elev-3)',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   borderTop: `3px solid ${persona.accentColor}`,
                 }}

@@ -246,7 +246,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                   fontSize: 7,
                   lineHeight: 1.4,
                   fontFamily: 'system-ui, -apple-system, sans-serif',
-                  boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+                  boxShadow: 'var(--cp-elev-3)',
                   border: `1px solid ${persona.accentColor}30`,
                 }}
                 aria-label="案件ボードのサンプル"

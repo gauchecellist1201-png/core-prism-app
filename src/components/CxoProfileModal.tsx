@@ -55,7 +55,7 @@ export default function CxoProfileModal({ role, onClose, onAssign }: Props) {
               color: '#fff',
               display: 'flex', flexDirection: 'column',
               overflow: 'hidden',
-              boxShadow: `0 30px 60px rgba(0,0,0,0.5), 0 0 0 1px ${meta.color}22`,
+              boxShadow: `var(--cp-elev-4), 0 0 0 1px ${meta.color}22`,
             }}
           >
             {/* Header */}

@@ -136,7 +136,7 @@ export default function CompetitorScout({ open, onClose, defaultIndustry }: Prop
               color: '#fff',
               display: 'flex', flexDirection: 'column',
               overflow: 'hidden',
-              boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
+              boxShadow: 'var(--cp-elev-4)',
             }}
           >
             <div style={{

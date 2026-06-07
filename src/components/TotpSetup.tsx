@@ -134,7 +134,7 @@ export default function TotpSetup({ open, onClose, account }: Props) {
               borderRadius: 18,
               color: '#fff',
               overflow: 'hidden',
-              boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
+              boxShadow: 'var(--cp-elev-4)',
             }}
           >
             <div style={{

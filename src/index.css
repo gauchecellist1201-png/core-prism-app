@@ -55,6 +55,16 @@
     --cp-radius-md: 12px;
     --cp-radius-lg: 16px;
     --cp-radius-pill: 999px;
+
+    /* ─── 影の階層トークン (ものの浮き上がり方) ───
+       散らばった 1 枚影 (0 6px 16px… / 0 30px 60px… 等数十種) を 4 段に統一。
+       コツは「2 枚重ね」: 近く小さい影 (接地感) + 遠く広い影 (距離感) を重ねると
+       1 つの光源から照らされたように見え、安っぽさが消えて高級感が出る。
+       elev-1=休んでるカード, 2=hover で持ち上がる, 3=ポップオーバー/メニュー, 4=モーダル */
+    --cp-elev-1: 0 1px 2px rgba(20, 20, 40, 0.06), 0 2px 8px -3px rgba(20, 20, 40, 0.10);
+    --cp-elev-2: 0 2px 4px rgba(20, 20, 40, 0.06), 0 10px 22px -8px rgba(20, 20, 40, 0.16);
+    --cp-elev-3: 0 4px 8px rgba(20, 20, 40, 0.08), 0 18px 40px -12px rgba(20, 20, 40, 0.22);
+    --cp-elev-4: 0 8px 18px rgba(20, 20, 40, 0.10), 0 34px 80px -20px rgba(20, 20, 40, 0.32);
   }
 
   [data-theme="dark"] {
@@ -71,6 +81,11 @@
     --border-2: rgba(255, 255, 255, 0.10);
     --border-strong: rgba(255, 255, 255, 0.35);
     --shadow: 0 60px 120px -50px rgba(0, 0, 0, 0.7);
+    /* 暗い面では影をやや深く。上端にごく薄い内側ハイライトを足すと面がガラスのように立つ */
+    --cp-elev-1: 0 1px 2px rgba(0, 0, 0, 0.40), 0 2px 8px -3px rgba(0, 0, 0, 0.50);
+    --cp-elev-2: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 26px -8px rgba(0, 0, 0, 0.60);
+    --cp-elev-3: 0 4px 10px rgba(0, 0, 0, 0.50), 0 20px 46px -12px rgba(0, 0, 0, 0.66);
+    --cp-elev-4: 0 8px 22px rgba(0, 0, 0, 0.55), 0 40px 96px -20px rgba(0, 0, 0, 0.72);
     --orb-blend: screen;
     --orb-opacity-low: 0.35;
     --orb-opacity-high: 0.7;
@@ -798,12 +813,11 @@ select option {
 .cp-card-tap:hover {
   transform: translateY(-2px);
   border-color: var(--border-strong);
-  box-shadow: 0 6px 22px -6px rgba(0, 0, 0, 0.35),
-              0 2px 6px -2px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--cp-elev-2);
 }
 .cp-card-tap:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--cp-elev-1);
   transition-duration: var(--cp-duration-instant);
 }
 .cp-card-tap:focus-visible {
@@ -1084,7 +1098,7 @@ select option {
   padding: 13px 22px;
   border-radius: 14px;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  box-shadow: var(--cp-elev-2);
   letter-spacing: 0.02em;
 }
 .cp-empty-pro-cta-secondary {
@@ -1652,7 +1666,7 @@ input, textarea, select { font-family: inherit; }
 }
 .iris-card-hover:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 28px rgba(31,26,46,0.12);
+  box-shadow: var(--cp-elev-3);
 }
 
 /* Iris: 768px 超では FAB が中央下に来ないので main の余白を通常に戻す */
@@ -2024,7 +2038,7 @@ input, textarea, select { font-family: inherit; }
   font-weight: 600;
   color: #0a0a0f;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--cp-elev-2);
   -webkit-tap-highlight-color: transparent;
 }
 .cp-sample-cta-hint {
