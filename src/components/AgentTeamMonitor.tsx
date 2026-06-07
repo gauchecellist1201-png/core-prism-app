@@ -186,15 +186,15 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
     />
     <motion.div
       initial={false}
-      animate={{ height: open ? 'auto' : 56 }}
+      animate={{ height: open ? 'auto' : 68 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       style={{
         position: 'fixed',
         bottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)',
         right: 'max(14px, env(safe-area-inset-right, 0px))',
-        width: 'min(380px, calc(100vw - 28px))',
+        width: 'min(420px, calc(100vw - 28px))',
         // 展開時でも画面の 60% 以上を覆わない (スクロール阻害防止)
-        maxHeight: open ? 'min(60vh, 600px)' : 56,
+        maxHeight: open ? 'min(60vh, 600px)' : 68,
         display: 'flex',
         flexDirection: 'column',
         // モーダル (z=50) より下に置く — 開いてる時は背景に隠れる ('請求書を発行' 等の footer ボタン が押せなくならないように)
@@ -217,24 +217,24 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
         type="button"
         onClick={() => setOpen(o => !o)}
         style={{
-          width: '100%', height: 56,
-          padding: '0 14px',
+          width: '100%', height: 68,
+          padding: '0 16px',
           background: 'transparent', border: 'none', color: 'inherit',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           cursor: 'pointer',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
           <div style={{
-            width: 32, height: 32, borderRadius: 10,
+            width: 42, height: 42, borderRadius: 12,
             background: (failedTask && !activeTask)
               ? 'linear-gradient(135deg, #F59E0B, #DC2626)'
               : `linear-gradient(135deg, ${accent}, ${accent}cc)`,
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 16, color: '#fff',
+            fontSize: 22, color: '#fff',
             boxShadow: (failedTask && !activeTask)
-              ? '0 0 16px rgba(220,38,38,0.6)'
-              : hasActivity ? `0 0 16px ${accent}88` : 'none',
+              ? '0 0 18px rgba(220,38,38,0.6)'
+              : hasActivity ? `0 0 22px ${accent}aa` : `0 4px 12px ${accent}55`,
             flexShrink: 0,
           }}>
             {activeTask ? (
@@ -242,22 +242,35 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2.8, repeat: Infinity, ease: 'linear' }}
                 style={{ display: 'inline-flex' }}
-              ><Loader2 size={16} /></motion.span>
+              ><Loader2 size={22} /></motion.span>
             ) : failedTask ? (
-              <AlertTriangle size={16} />
+              <AlertTriangle size={22} />
             ) : watchInfo ? (
-              <span style={{ fontSize: 14 }}>{watchInfo.meta.emoji}</span>
-            ) : '🏛'}
+              <span style={{ fontSize: 22 }}>{watchInfo.meta.emoji}</span>
+            ) : '🏢'}
           </div>
           <div style={{ minWidth: 0, textAlign: 'left', flex: 1 }}>
             <div style={{
-              fontSize: 11, fontWeight: 800, letterSpacing: '0.14em',
+              fontSize: 10, fontWeight: 800, letterSpacing: '0.18em',
               color: (failedTask && !activeTask) ? '#FBBF24' : accent,
+              display: 'flex', alignItems: 'center', gap: 4,
             }}>
-              {activeTask ? 'IN PROGRESS'
-                : failedTask ? '要・やり直し'
-                : counts.proposed > 0 ? 'AWAITING APPROVAL'
-                : 'AI 会社 稼働中'}
+              <span>🏢 役員 会議室</span>
+              <span style={{
+                fontSize: 9, padding: '1px 5px', borderRadius: 999,
+                background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)',
+                fontWeight: 700, letterSpacing: '0.04em',
+              }}>14 名</span>
+            </div>
+            <div style={{
+              fontSize: 11, fontWeight: 800, letterSpacing: '0.14em',
+              color: (failedTask && !activeTask) ? '#FBBF24' : 'rgba(255,255,255,0.5)',
+              marginTop: 2,
+            }}>
+              {activeTask ? '💼 IN PROGRESS'
+                : failedTask ? '⚠️ 要・やり直し'
+                : counts.proposed > 0 ? `📥 ${counts.proposed} 件 承認 待ち`
+                : '🟢 全員 稼働中'}
             </div>
             <div style={{
               fontSize: 12.5, fontWeight: 700, color: '#fff',

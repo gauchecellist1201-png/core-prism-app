@@ -18,16 +18,15 @@ export const PRISM_TOUR: TourStep[] = [
   {
     id: 'welcome',
     title: '👋 CORE Prism へ ようこそ',
-    body: 'これ から 1 分 30 秒 で、 14 名 の AI 役員 が あなた の 代わり に 仕事 を こなす 仕組み を 案内 します。 触り ながら 覚えられる 様 に なって います。',
+    body: 'これ から 1 分 30 秒 で、 「あなた の デジタル 会社」 と 14 名 の AI 役員 が 仕事 を こなす 仕組み を 案内 します。 触り ながら 覚えられる 様 に なって います。',
     placement: 'auto',
   },
   {
-    id: 'agent-team-monitor',
-    title: '🏢 まず ここ が 「AI 会社」 です',
-    body: '画面 右下 の パネル が CXO 軍団 の 作戦本部。 14 名 の 役員 が ここ に 待機 して います。 タップ すると 開きます。',
-    target: '[data-tour-id="agent-team-monitor"]',
-    tapLabel: 'パネル を 開く',
-    placement: 'left',
+    id: 'company-hero',
+    title: '🏢 これ が あなた の デジタル 会社 です',
+    body: 'ダッシュ 最上段 に 「あなた の 役員 会議室」 が ある の が 見えます か? ここ に 14 名 の 役員 が 在籍 して います。 名前 / 役職 / 今 動いて いる か が 全部 見えます。',
+    target: '[data-tour-id="digital-company-hero"]',
+    placement: 'auto',
     waitMs: 4000,
   },
   {
@@ -37,6 +36,14 @@ export const PRISM_TOUR: TourStep[] = [
     target: '[data-tour-id="cxo-grid"]',
     tapLabel: '役員 を 1 人 タップ',
     placement: 'top',
+  },
+  {
+    id: 'agent-team-monitor',
+    title: '💼 右下 = 役員 の 待機 室',
+    body: 'タスク を 渡す と この パネル に 動き が 出ます。 「実行 中 / 完了」 が ライブ で 見えるので、 自分 が 動かなくて も 会社 が 動いて いる 感覚 が 掴めます。',
+    target: '[data-tour-id="agent-team-monitor"]',
+    placement: 'left',
+    waitMs: 4000,
   },
   {
     id: 'briefings-button',

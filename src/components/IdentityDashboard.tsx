@@ -94,6 +94,7 @@ import IntegrationCenter from './IntegrationCenter';
 import StripeConnectHero from './StripeConnectHero';
 import EarningsAndTimeHero from './EarningsAndTimeHero';
 import FocusHero from './FocusHero';
+import DigitalCompanyHero from './DigitalCompanyHero';
 import CreditBar from './CreditBar';
 import CreditModal from './CreditModal';
 import MobileGeminiDashboard from './MobileGeminiDashboard';
@@ -965,6 +966,15 @@ export default function IdentityDashboard({
                   }}
                 />
               </div>
+
+              {/* 🏢 デジタル 会社 ヒーロー — 「役員 会議室」 (2026-06-05 オーナー指示) */}
+              <DigitalCompanyHero
+                persona={persona}
+                onCxoClick={() => {
+                  // AgentTeamMonitor を 開いて 該当 CXO を 選んで もらう
+                  try { window.dispatchEvent(new CustomEvent('core:agent-monitor-open')); } catch { /* */ }
+                }}
+              />
 
               {/* PC 専用: 焦点モード (今日の最優先 1 つ + 数字 1 行) — iPhone では上のブリーフ + 売上に置き換え */}
               <div className="hidden md:block">
