@@ -65,6 +65,7 @@ export default function SampleModeBanner() {
   return (
     <AnimatePresence>
       <motion.div
+        data-explain-id="demo-banner"
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: collapsed ? 0.55 : 1 }}
         exit={{ y: -40, opacity: 0 }}

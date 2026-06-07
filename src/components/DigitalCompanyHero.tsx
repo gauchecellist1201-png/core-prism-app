@@ -113,7 +113,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
         gap: 12, marginBottom: 14, position: 'relative',
       }}>
-        <div>
+        <div data-explain-id="company-title" style={{ cursor: 'pointer' }}>
           <div style={{
             fontSize: 10, letterSpacing: '0.24em', fontWeight: 800,
             color: accent, marginBottom: 4,

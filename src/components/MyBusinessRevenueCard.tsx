@@ -77,7 +77,7 @@ export default function MyBusinessRevenueCard({ onOpenIntegrations }: Props) {
   const multiCurrency = (data?.currencies || []).filter(c => c !== 'jpy').length > 0;
 
   return (
-    <div style={{
+    <div data-explain-id="kpi-month" style={{
       borderRadius: 12, marginBottom: 8, padding: '0.8rem 0.85rem',
       background: 'linear-gradient(135deg, rgba(99,91,255,0.13), rgba(52,211,153,0.08))',
       border: '1px solid rgba(99,91,255,0.3)',

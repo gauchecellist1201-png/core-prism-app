@@ -259,6 +259,7 @@ export default function AgentsOrbit({
                 color: '#fff', position: 'relative',
               }}
               aria-label={`${spec.name}エージェント (${live?.status ?? '待機中'})`}
+              data-explain-id={`orbit-${key}`}
             >
               <div style={{ position: 'relative', width: 60, height: 60 }}>
                 <motion.div

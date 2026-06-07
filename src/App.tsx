@@ -19,7 +19,7 @@ import LandingPage from './components/LandingPage';
 import CheckoutModal from './components/CheckoutModal';
 import QuickAskFab from './components/QuickAskFab';
 import SuggestionFab from './components/SuggestionFab';
-import { DashboardHints } from './components/InlineHints';
+import ExplainOnTouch from './components/ExplainOnTouch';
 import EveningFeed from './components/EveningFeed';
 import MorningCoach from './components/MorningCoach';
 import QuickKpiSparkline from './components/QuickKpiSparkline';
@@ -885,8 +885,8 @@ export default function App() {
       {view === 'dashboard' && <CxoWelcomeCard brand="prism" />}
       {/* PWA インストール導線 — Android/Chrome prompt + iOS Safari ガイド */}
       {view === 'dashboard' && <InstallPwaBanner brand="prism" />}
-      {/* 2026-06-05 オーナー指示: 4 枚 モーダル ツアー → インライン ヒント に 置換 (うざい から) */}
-      {view === 'dashboard' && <DashboardHints brand="prism" />}
+      {/* 2026-06-05 オーナー指示: ホーム 内 で 触った 場所 に 説明 が 浮かぶ 学習 モード */}
+      {view === 'dashboard' && <ExplainOnTouch brand="prism" />}
       {/* VVV (2026-06-04): 夜のフィード — 18 時以降 1 日 1 回 */}
       {view === 'dashboard' && <EveningFeed />}
       {/* UUUUU (2026-06-04): ダッシュ 上端に 3 KPI sparkline */}
