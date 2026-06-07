@@ -94,8 +94,9 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
         marginBottom: 20,
         padding: '18px 18px 14px',
         borderRadius: 18,
-        background: 'linear-gradient(135deg, rgba(167,139,250,0.10) 0%, rgba(99,102,241,0.10) 100%)',
-        border: `1px solid ${accent}33`,
+        // light/dark 両対応: surface を base に 紫グラデを 乗せる (light でも 文字が 読める)
+        background: 'linear-gradient(135deg, rgba(167,139,250,0.10) 0%, rgba(99,102,241,0.10) 100%), var(--surface)',
+        border: `1px solid ${accent}55`,
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -120,12 +121,12 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
           }}>🏢 あなた の デジタル 会社</div>
           <h1 style={{
             fontSize: 'clamp(1.4rem, 4.5vw, 2rem)', fontWeight: 900,
-            margin: 0, lineHeight: 1.2, color: '#fff',
+            margin: 0, lineHeight: 1.2, color: 'var(--fg-strong)',
             letterSpacing: '-0.02em',
           }}>
-            {companyName} <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: '0.65em' }}>役員 会議室</span>
+            {companyName} <span style={{ color: 'var(--fg-subtle)', fontWeight: 600, fontSize: '0.65em' }}>役員 会議室</span>
           </h1>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>
+          <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 4 }}>
             👥 役員 14 名 在籍 · 今日 動いた {Object.values(cxoStatus).filter((s) => s.doneCount > 0).length} 名 · 累計 納品 {stats.totalCount} 件
           </div>
         </div>
@@ -135,7 +136,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
           background: workingCount > 0 ? 'rgba(52,211,153,0.18)' : 'rgba(255,255,255,0.06)',
           border: `1px solid ${workingCount > 0 ? 'rgba(52,211,153,0.4)' : 'rgba(255,255,255,0.12)'}`,
           fontSize: 11, fontWeight: 800,
-          color: workingCount > 0 ? '#34D399' : 'rgba(255,255,255,0.6)',
+          color: workingCount > 0 ? '#34D399' : 'var(--fg-muted)',
           whiteSpace: 'nowrap',
         }}>
           {workingCount > 0 ? (
@@ -237,12 +238,12 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                 border: `1px solid ${meta.color}44`,
               }}>{role}</div>
               {/* 名前 */}
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--fg-strong)' }}>
                 {prof.name}
               </div>
               {/* tagline (小さく) */}
               <div style={{
-                fontSize: 8, lineHeight: 1.3, color: 'rgba(255,255,255,0.5)',
+                fontSize: 8, lineHeight: 1.3, color: 'var(--fg-subtle)',
                 marginTop: 1, minHeight: 22,
               }}>{prof.tagline}</div>
               {/* 実行中 ラベル */}
@@ -270,9 +271,9 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
         }}>
           <span style={{
             fontSize: 9, padding: '2px 7px', borderRadius: 999, fontWeight: 800,
-            background: accent, color: '#fff', letterSpacing: '0.08em',
+            background: accent, color: 'var(--fg-strong)', letterSpacing: '0.08em',
           }}>📦 直近 納品</span>
-          <span style={{ fontSize: 12, color: '#fff', fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 12, color: 'var(--fg-strong)', fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {items[0].cxoEmoji} {items[0].cxoName} → 「{items[0].title}」
           </span>
           <a
@@ -323,12 +324,13 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                 onClick={(e) => e.stopPropagation()}
                 style={{
                   width: '100%', maxWidth: 480,
-                  background: 'linear-gradient(180deg, rgba(28,28,40,0.98), rgba(18,18,30,0.98))',
+                  // light/dark 両対応: bg-2 を base に、 light で 黒文字 が 読める
+                  background: 'var(--bg-2)',
                   borderRadius: 18,
                   border: `1px solid ${meta.color}66`,
-                  boxShadow: `0 24px 60px rgba(0,0,0,0.6), 0 0 32px ${meta.color}33`,
+                  boxShadow: `0 24px 60px rgba(0,0,0,0.4), 0 0 32px ${meta.color}33`,
                   padding: '20px 22px 18px',
-                  color: '#fff',
+                  color: 'var(--fg-strong)',
                 }}
               >
                 {/* ヘッダ: アバター + 役職 + 名前 */}
@@ -348,7 +350,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                     <div style={{ fontSize: '1.15rem', fontWeight: 900, lineHeight: 1.2 }}>
                       {prof.name} さん
                     </div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 2 }}>
                       {prof.tagline}
                     </div>
                   </div>
@@ -357,8 +359,8 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                     aria-label="閉じる"
                     style={{
                       width: 32, height: 32, borderRadius: 999,
-                      background: 'rgba(255,255,255,0.08)', color: '#fff',
-                      border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
+                      background: 'var(--surface-3)', color: 'var(--fg-strong)',
+                      border: '1px solid var(--border, rgba(0,0,0,0.1))', cursor: 'pointer',
                       fontSize: 16, lineHeight: 1, flexShrink: 0,
                     }}
                   >×</button>
@@ -379,7 +381,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                 {/* 任せられる 仕事 */}
                 <div style={{
                   fontSize: 10, letterSpacing: '0.18em', fontWeight: 800,
-                  color: 'rgba(255,255,255,0.5)', marginBottom: 8,
+                  color: 'var(--fg-subtle)', marginBottom: 8,
                 }}>👇 今 任せられる 仕事</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
                   {canDo.slice(0, 4).map((task: string, i: number) => (
@@ -393,9 +395,9 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                       style={{
                         textAlign: 'left',
                         padding: '10px 12px', borderRadius: 10,
-                        background: 'rgba(255,255,255,0.04)',
+                        background: 'var(--surface-3)',
                         border: `1px solid ${meta.color}33`,
-                        color: '#fff', fontSize: 12.5, fontWeight: 600, lineHeight: 1.4,
+                        color: 'var(--fg-strong)', fontSize: 12.5, fontWeight: 600, lineHeight: 1.4,
                         cursor: 'pointer',
                         display: 'flex', alignItems: 'center', gap: 8,
                       }}
@@ -423,7 +425,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                   }}
                 >🏢 {prof.name} さん に 任せる</button>
                 <div style={{
-                  marginTop: 8, fontSize: 10, color: 'rgba(255,255,255,0.45)', textAlign: 'center',
+                  marginTop: 8, fontSize: 10, color: 'var(--fg-subtle)', textAlign: 'center',
                 }}>右下 の 「役員 会議室」 が 開いて 詳細 の 仕事 選択 へ</div>
               </motion.div>
             </motion.div>
