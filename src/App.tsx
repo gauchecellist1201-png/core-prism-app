@@ -54,6 +54,7 @@ const StatusPage = lazy(() => import('./components/StatusPage'));
 const RoadmapPage = lazy(() => import('./components/RoadmapPage'));
 const ExecutiveBriefingsTab = lazy(() => import('./components/ExecutiveBriefingsTab'));
 const GuidedTourSpotlight = lazy(() => import('./components/GuidedTourSpotlight'));
+const CommandCenter = lazy(() => import('./components/CommandCenter'));
 import { PRISM_TOUR, IRIS_TOUR } from './lib/guidedTourSteps';
 const ChangelogPage = lazy(() => import('./components/ChangelogPage'));
 const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
@@ -509,6 +510,8 @@ export default function App() {
     return getInitialView(settings.onboardingComplete);
   });
   const [isTransitioning, setIsTransitioning] = useState(false);
+  // コマンド センター (2026-06-05 オーナー指示: Claude Code 風 右パネル)
+  const [commandCenterOpen, setCommandCenterOpen] = useState<boolean>(false);
   // 役員 日報 タブ オーバーレイ (2026-06-05 オーナー指示)
   const [briefingsOpen, setBriefingsOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -813,8 +816,50 @@ export default function App() {
       </AnimatePresence>
       {/* 課金失敗 (past_due / unpaid) 救済バナー — dashboard 上部に固定表示 */}
       {view === 'dashboard' && <StripeFailureBanner brand="prism" />}
-      {/* AI 会社 作戦本部 — 常駐ウィジェット (承認したタスクの実行を可視化) */}
-      {view === 'dashboard' && <AgentTeamMonitor brand="prism" />}
+      {/* AI 会社 作戦本部 — 常駐ウィジェット (承認したタスクの実行を可視化)
+          2026-06-05 オーナー指示: コマンドセンター 開いて いる 間 は 非表示 */}
+      {view === 'dashboard' && !commandCenterOpen && <AgentTeamMonitor brand="prism" />}
+
+      {/* 🔮 プリズム コマンド センター 起動 ボタン (右端 中央 固定) */}
+      {view === 'dashboard' && !commandCenterOpen && activePersona && (
+        <button
+          onClick={() => setCommandCenterOpen(true)}
+          aria-label="プリズム コマンド センター を 開く"
+          data-explain-id="prism-mark"
+          title="プリズム コマンド センター"
+          style={{
+            position: 'fixed',
+            top: '50%', right: 0,
+            transform: 'translateY(-50%)',
+            zIndex: 38,
+            width: 44, height: 64,
+            background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
+            color: '#fff',
+            border: 'none',
+            borderTopLeftRadius: 14, borderBottomLeftRadius: 14,
+            cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: 4,
+            boxShadow: '-6px 0 22px rgba(99,102,241,0.45)',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
+          }}
+        >
+          <span style={{ fontSize: 20, lineHeight: 1 }}>🔮</span>
+          <span style={{ fontSize: 8, fontWeight: 900, letterSpacing: '0.04em', writingMode: 'vertical-rl', textOrientation: 'mixed' }}>COMMAND</span>
+        </button>
+      )}
+
+      {/* 🔮 コマンド センター 本体 */}
+      {activePersona && (
+        <Suspense fallback={null}>
+          <CommandCenter
+            persona={activePersona}
+            open={commandCenterOpen}
+            onClose={() => setCommandCenterOpen(false)}
+            brand="prism"
+          />
+        </Suspense>
+      )}
       {/* 役員 日報 タブ ボタン — 13 名 役員 が 作った 成果物 を 全部 見られる (2026-06-05) */}
       {view === 'dashboard' && activePersona && (
         <button
