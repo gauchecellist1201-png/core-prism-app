@@ -43,9 +43,13 @@ interface Props {
 interface LogLine {
   id: string;
   ts: number;
-  kind: 'user' | 'system' | 'agent' | 'done';
+  /** 同じ 指令 を まとめる ため の セッション ID */
+  sessionId: string;
+  kind: 'user' | 'route' | 'thinking' | 'executing' | 'done' | 'error';
   cxo?: CxoRole;
   text: string;
+  /** 進行 状態 を 視覚化 する 補助 */
+  detail?: string;
 }
 
 const LOG_KEY = 'core_command_center_log_v1';
@@ -145,35 +149,49 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
 
   const workingCount = Object.values(cxoStatus).filter((s) => s.state === 'working' || s.state === 'thinking').length;
 
-  // 指令 を 実行 — 簡易 シミュレート + 役員日報 に 納品
+  // 指令 を 実行 — Claude Code 風 の リアルタイム 進捗 + 役員日報 納品
   const submit = async () => {
     const cmd = input.trim();
     if (!cmd || busy) return;
     setBusy(true);
     setInput('');
+    const sessionId = `s-${Date.now().toString(36)}`;
 
     // 1. ユーザー ログ
-    pushLog({ kind: 'user', text: cmd });
+    pushLog({ sessionId, kind: 'user', text: cmd });
 
     // 2. CEO が 担当 を 振り分け
     const role = pickCxoFor(cmd);
     const meta = CXO_META[role];
     const name = CXO_NAMES[role];
-    await sleep(500);
-    pushLog({ kind: 'system', text: `CEO 陽翔 → 「${cxoDisplayName(role)} (${name}) に 振ります」` });
+    await sleep(450);
+    pushLog({
+      sessionId, kind: 'route',
+      text: `担当 を 振り分け ました`,
+      detail: `${cxoDisplayName(role)} (${name}) ← ${routeReason(cmd, role)}`,
+    });
 
     // 3. CXO 思考中
-    await sleep(600);
+    await sleep(550);
     const tv = THINKING_VERBS[Math.floor(Math.random() * THINKING_VERBS.length)];
-    pushLog({ kind: 'agent', cxo: role, text: `${meta.emoji} ${cxoDisplayName(role)} 💭 ${cmd}${tv}` });
+    pushLog({
+      sessionId, kind: 'thinking', cxo: role,
+      text: `${cmd}${tv}`,
+      detail: 'ナレッジ ベース を 横断 検索 / 仮説 を 整理',
+    });
 
     // 4. 実行中
-    await sleep(900);
+    await sleep(800);
     const ev = EXECUTING_VERBS[Math.floor(Math.random() * EXECUTING_VERBS.length)];
-    pushLog({ kind: 'agent', cxo: role, text: `${meta.emoji} ${cxoDisplayName(role)} ⚡ 成果物${ev}` });
+    pushLog({
+      sessionId, kind: 'executing', cxo: role,
+      text: `成果物${ev}`,
+      detail: 'AI 文章 生成 / 構造化 / 検証',
+    });
 
     // 5. AI で 簡易 成果物 生成 を 試みる (失敗時 は フォールバック)
     let content = '';
+    let aiErr = '';
     try {
       const res = await fetch('/api/ai', {
         method: 'POST',
@@ -190,15 +208,25 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
       if (res.ok) {
         const j = await res.json();
         content = j?.content?.[0]?.text || '';
+      } else {
+        aiErr = `HTTP ${res.status}`;
       }
-    } catch { /* */ }
+    } catch (e: any) { aiErr = e?.message || 'network'; }
     if (!content) {
       content = `${cmd} を 受領 しました。 ${cxoDisplayName(role)} として、 ${tv.replace('を ', '')} を 経て、 ${ev.replace('を ', '')} を 進めて います。 完了 次第 役員 日報 に 納品 します。`;
     }
 
+    if (aiErr) {
+      pushLog({
+        sessionId, kind: 'error', cxo: role,
+        text: `AI 接続 が 一時 失敗 (${aiErr}) — 雛形 で 進めます`,
+      });
+    }
+
     // 6. 役員 日報 に 記録
+    let savedId: string | null = null;
     try {
-      logDeliverable({
+      const saved = logDeliverable({
         personaId: persona.id,
         cxoRole: role,
         cxoName: `${name} (${role})`,
@@ -209,16 +237,43 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
         category: 'plan',
         source: 'agent-monitor',
       });
+      savedId = saved?.id || null;
     } catch { /* */ }
 
-    await sleep(400);
-    pushLog({ kind: 'done', cxo: role, text: `✓ 役員 日報 に 納品 しました — 「${cmd}」` });
+    await sleep(350);
+    pushLog({
+      sessionId, kind: 'done', cxo: role,
+      text: `役員 日報 に 納品 しました`,
+      detail: savedId ? `📋 「${cmd}」 (${content.length} 字)` : `📋 「${cmd}」`,
+    });
 
     setBusy(false);
   };
 
   function pushLog(line: Omit<LogLine, 'id' | 'ts'>) {
     setLog((prev) => [...prev, { id: `l-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, ts: Date.now(), ...line }].slice(-MAX_LOG));
+  }
+
+  // 振り分け 理由 (ユーザー に 見せる 用)
+  function routeReason(cmd: string, role: CxoRole): string {
+    const reasons: Record<CxoRole, string> = {
+      CFO: '財務 / 数字 系',
+      CMO: '集客 / マーケ 系',
+      CSO: '営業 / 商談 系',
+      CHR: '採用 / 人材 系',
+      CDO: '分析 / KPI 系',
+      CLO: '法務 / 契約 系',
+      CTO: '技術 / 自動化 系',
+      UXE: 'デザイン 系',
+      UIE: 'UI / 動線 系',
+      CDS: 'リサーチ 系',
+      QAE: '品質 / 検証 系',
+      COO: '運用 / 業務 系',
+      CPO: 'プロダクト 系',
+      CEO: '統括 → 自分 で 受ける',
+    };
+    void cmd;
+    return reasons[role] || '統括';
   }
 
   const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -396,58 +451,147 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
             )}
           </div>
 
-          {/* ログ ストリーム */}
+          {/* ログ ストリーム — Claude Code 風 セッション グループ化 */}
           <div style={{
             flex: 1, minHeight: 0,
-            padding: '12px 16px',
+            padding: '14px 14px',
             overflowY: 'auto',
-            display: 'flex', flexDirection: 'column', gap: 7,
-            fontFamily: '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace',
+            display: 'flex', flexDirection: 'column', gap: 14,
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
           }}>
             {log.length === 0 ? (
               <div style={{
                 color: 'rgba(255,255,255,0.4)', fontSize: 12, padding: '20px 4px',
-                textAlign: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif',
+                textAlign: 'center',
               }}>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>💬</div>
-                <div style={{ fontWeight: 800, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>💬</div>
+                <div style={{ fontWeight: 800, color: 'rgba(255,255,255,0.8)', marginBottom: 8, fontSize: 13 }}>
                   指令 を 入力 して ください
                 </div>
-                <div style={{ fontSize: 11, lineHeight: 1.6 }}>
+                <div style={{ fontSize: 11, lineHeight: 1.8 }}>
                   例: 「今週 の 集客 案 を 3 つ」<br/>
                   「来月 の 損益 を まとめて」<br/>
                   「商標 調査 を 急いで」
                 </div>
               </div>
-            ) : log.map((l) => (
-              <div key={l.id} style={{
-                fontSize: 11, lineHeight: 1.55, padding: '5px 0',
-                color: l.kind === 'user'   ? '#fff'
-                     : l.kind === 'system' ? 'rgba(167,139,250,0.85)'
-                     : l.kind === 'done'   ? '#34D399'
-                     :                       'rgba(255,255,255,0.78)',
-                wordBreak: 'break-word',
-              }}>
-                <span style={{ color: 'rgba(255,255,255,0.35)', marginRight: 6 }}>
-                  {fmtTime(l.ts)}
-                </span>
-                {l.kind === 'user' && <span style={{ color: accent, fontWeight: 800, marginRight: 4 }}>{'>'}</span>}
-                {l.text}
-              </div>
-            ))}
-            {busy && (
-              <div style={{
-                fontSize: 11, color: 'rgba(255,255,255,0.5)',
-                padding: '4px 0', display: 'flex', alignItems: 'center', gap: 6,
-              }}>
-                <motion.span
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}
-                  style={{ display: 'inline-block' }}
-                >⚙</motion.span>
-                処理 中…
-              </div>
-            )}
+            ) : groupBySession(log).map((session) => {
+              const userLine = session.find((l) => l.kind === 'user');
+              const cxoRole = session.find((l) => l.cxo)?.cxo;
+              const cxoMeta = cxoRole ? CXO_META[cxoRole] : null;
+              const isLast = session === groupBySession(log).slice(-1)[0];
+              const done = session.some((l) => l.kind === 'done');
+              return (
+                <div key={session[0].id} style={{
+                  borderLeft: `2px solid ${done ? '#34D399' : cxoMeta?.color || accent}55`,
+                  paddingLeft: 12,
+                  position: 'relative',
+                }}>
+                  {/* ユーザー 指令 行 */}
+                  {userLine && (
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{
+                        display: 'flex', alignItems: 'flex-start', gap: 8,
+                      }}>
+                        <span style={{
+                          fontSize: 11, fontWeight: 900, color: accent,
+                          fontFamily: '"JetBrains Mono", ui-monospace, Menlo, monospace',
+                          flexShrink: 0,
+                        }}>{'>'}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1.5,
+                            wordBreak: 'break-word',
+                          }}>{userLine.text}</div>
+                          <div style={{
+                            fontSize: 9, color: 'rgba(255,255,255,0.35)',
+                            marginTop: 2, letterSpacing: '0.04em',
+                            fontFamily: '"JetBrains Mono", ui-monospace, Menlo, monospace',
+                          }}>{fmtTime(userLine.ts)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 実行 ステップ (route / thinking / executing / done / error) */}
+                  {session.filter((l) => l.kind !== 'user').map((l, i, arr) => {
+                    const stepMeta = STEP_META[l.kind];
+                    const meta = l.cxo ? CXO_META[l.cxo] : null;
+                    const isLastStep = i === arr.length - 1;
+                    const pending = isLast && busy && isLastStep && l.kind !== 'done' && l.kind !== 'error';
+                    return (
+                      <div key={l.id} style={{
+                        display: 'flex', alignItems: 'flex-start', gap: 9,
+                        padding: '4px 0',
+                        position: 'relative',
+                      }}>
+                        {/* ステップ マーカー (左 縦 線) */}
+                        <div style={{
+                          width: 20, flexShrink: 0,
+                          display: 'flex', flexDirection: 'column', alignItems: 'center',
+                          position: 'relative', minHeight: 20,
+                        }}>
+                          {l.cxo && meta ? (
+                            <div style={{
+                              width: 20, height: 20, borderRadius: 999,
+                              background: `linear-gradient(135deg, ${meta.color}, ${meta.color}aa)`,
+                              color: '#0a0a0f',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 11,
+                              boxShadow: pending ? `0 0 10px ${meta.color}` : 'none',
+                            }}>{meta.emoji}</div>
+                          ) : (
+                            <div style={{
+                              width: 20, height: 20, borderRadius: 999,
+                              background: stepMeta.bg,
+                              color: stepMeta.fg,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 11,
+                            }}>
+                              {pending ? (
+                                <motion.span
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}
+                                  style={{ display: 'inline-block' }}
+                                >⚙</motion.span>
+                              ) : stepMeta.icon}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: 11.5, lineHeight: 1.5,
+                            color: stepMeta.textColor, fontWeight: 700,
+                            wordBreak: 'break-word',
+                          }}>
+                            {l.cxo && (
+                              <span style={{
+                                fontSize: 9, padding: '1px 5px', borderRadius: 4, fontWeight: 800,
+                                background: meta ? meta.color + '22' : 'rgba(255,255,255,0.08)',
+                                color: meta?.color || 'rgba(255,255,255,0.8)',
+                                marginRight: 6, letterSpacing: '0.04em',
+                              }}>{l.cxo} {CXO_NAMES[l.cxo]}</span>
+                            )}
+                            <span style={{ color: stepMeta.textColor }}>
+                              {stepMeta.prefix} {l.text}
+                            </span>
+                          </div>
+                          {l.detail && (
+                            <div style={{
+                              fontSize: 10, color: 'rgba(255,255,255,0.4)',
+                              marginTop: 2, lineHeight: 1.4,
+                              fontFamily: '"JetBrains Mono", ui-monospace, Menlo, monospace',
+                            }}>
+                              ↳ {l.detail}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            {busy && groupBySession(log).slice(-1)[0]?.some((l) => l.kind === 'done') === false && null}
             <div ref={logEndRef} />
           </div>
 
@@ -521,13 +665,46 @@ function fmtTime(ts: number) {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
+
+/** ステップ 種類 別 の 表示 メタ (Claude Code 風) */
+const STEP_META: Record<LogLine['kind'], {
+  icon: string; bg: string; fg: string; textColor: string; prefix: string;
+}> = {
+  user:      { icon: '>', bg: 'transparent',           fg: '#A78BFA',           textColor: '#fff',                prefix: '' },
+  route:     { icon: '↓', bg: 'rgba(167,139,250,0.2)', fg: '#A78BFA',           textColor: 'rgba(167,139,250,0.95)', prefix: '🎯' },
+  thinking:  { icon: '💭', bg: 'rgba(251,191,36,0.2)', fg: '#FBBF24',           textColor: 'rgba(255,255,255,0.85)', prefix: '💭 思考中:' },
+  executing: { icon: '⚡', bg: 'rgba(34,211,238,0.2)', fg: '#22D3EE',           textColor: 'rgba(255,255,255,0.92)', prefix: '⚡ 実行中:' },
+  done:      { icon: '✓', bg: 'rgba(52,211,153,0.25)', fg: '#34D399',           textColor: '#34D399',                prefix: '✓ 完了:' },
+  error:     { icon: '⚠', bg: 'rgba(248,113,113,0.25)', fg: '#F87171',          textColor: '#FCA5A5',                prefix: '⚠' },
+};
+
+/** ログ を 同じ sessionId で グループ化 (新しい セッション 順) */
+function groupBySession(log: LogLine[]): LogLine[][] {
+  const map = new Map<string, LogLine[]>();
+  for (const l of log) {
+    const key = l.sessionId || `solo-${l.id}`;
+    const arr = map.get(key) || [];
+    arr.push(l);
+    map.set(key, arr);
+  }
+  return Array.from(map.values());
+}
 function loadLog(): LogLine[] {
   try {
     const raw = localStorage.getItem(LOG_KEY);
     if (!raw) return [];
     const arr = JSON.parse(raw);
     if (!Array.isArray(arr)) return [];
-    return arr.slice(-MAX_LOG);
+    // 旧 ログ migration: kind 名 + sessionId を 補完
+    const KIND_MAP: Record<string, LogLine['kind']> = {
+      user: 'user', system: 'route', agent: 'executing', done: 'done',
+    };
+    return arr.map((l: any) => ({
+      id: String(l.id || ''), ts: Number(l.ts || Date.now()),
+      sessionId: String(l.sessionId || `legacy-${l.id || ''}`),
+      kind: (KIND_MAP[l.kind] || l.kind || 'executing') as LogLine['kind'],
+      cxo: l.cxo, text: String(l.text || ''), detail: l.detail,
+    })).slice(-MAX_LOG);
   } catch { return []; }
 }
 function saveLog(log: LogLine[]) {

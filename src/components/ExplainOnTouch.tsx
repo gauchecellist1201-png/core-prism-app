@@ -112,25 +112,46 @@ export default function ExplainOnTouch({ brand = 'prism' }: { brand?: 'prism' | 
   }, [mode, seen, active]);
 
   // クリック キャプチャ
+  // ⚠ 重要 (2026-06-05 オーナー報告):
+  //   ネスト した × / 閉じる / その他 ボタン まで 横取り して しまう バグ を 修正。
+  //   ルール:
+  //     - 内側 の <button> / <a> / <input> 等 が data-explain-id を 持って いる → 横取り
+  //     - 持って いない (= 通常 の 内部 ボタン) → スルー して 通常 動作
   useEffect(() => {
     if (!mode) return;
     const handler = (e: MouseEvent) => {
       const t = e.target as HTMLElement | null;
       if (!t) return;
+      // 1. 最も 近い interactive 要素 を 探す
+      const interactive = t.closest('button, a, input, textarea, select, [role="button"], [data-no-explain]') as HTMLElement | null;
+      if (interactive) {
+        // interactive 自身 が data-explain-id を 持つ なら 横取り 対象 (例: AgentsOrbit の オーブ ボタン)
+        if (interactive.hasAttribute('data-explain-id')) {
+          const id = interactive.getAttribute('data-explain-id') || '';
+          if (!EXPLAIN_CATALOG[id] || seen.has(id) || recentlyExplainedRef.current === id) {
+            if (recentlyExplainedRef.current === id) recentlyExplainedRef.current = null;
+            return;
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          setActive({ id, rect: interactive.getBoundingClientRect(), clickedEl: interactive });
+        }
+        // 内部 ボタン (× / アクション 等) は スルー → 通常 動作 が 走る
+        return;
+      }
+      // 2. 非 interactive 領域 の クリック: 最寄り の data-explain-id を 探す
       const wrap = t.closest('[data-explain-id]') as HTMLElement | null;
       if (!wrap) return;
       const id = wrap.dataset.explainId || '';
       if (!EXPLAIN_CATALOG[id]) return;
-      if (seen.has(id)) return; // 既読 は スルー
-      // 直前 説明 した 要素 への 直後 クリック は スルー (「実行する」 ボタン で すでに 説明 済み)
+      if (seen.has(id)) return;
       if (recentlyExplainedRef.current === id) {
         recentlyExplainedRef.current = null;
         return;
       }
       e.preventDefault();
       e.stopPropagation();
-      const rect = wrap.getBoundingClientRect();
-      setActive({ id, rect, clickedEl: wrap });
+      setActive({ id, rect: wrap.getBoundingClientRect(), clickedEl: wrap });
     };
     document.addEventListener('click', handler, true);
     return () => document.removeEventListener('click', handler, true);
