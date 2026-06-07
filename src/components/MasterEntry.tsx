@@ -765,8 +765,21 @@ function FreshUserDemoButtons() {
     setResetting(true);
     try {
       const { resetToFreshUser } = await import('../lib/freshUserDemo');
-      const r = resetToFreshUser({ brand, startTour: true });
+      // 16 ステップ ツアー は 廃止 (オーナー指示 2026-06-05)
+      // 代わり に ホーム の InlineHints が 自然 に 案内する
+      const r = resetToFreshUser({ brand, startTour: false });
       console.log(`[FreshUserDemo] cleared ${r.cleared} keys, preserved ${r.preserved}`);
+      // ヒント の 既読 フラグ も リセット (新規 ユーザー 体感 を 再現)
+      try {
+        const allKeys: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k) allKeys.push(k);
+        }
+        for (const k of allKeys) {
+          if (k.startsWith('core_hint_seen_')) localStorage.removeItem(k);
+        }
+      } catch { /* */ }
       // / に リダイレクト → 初回 onboarding から
       const target = brand === 'iris' ? '/iris' : '/';
       window.location.href = target;

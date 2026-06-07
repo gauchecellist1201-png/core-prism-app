@@ -19,7 +19,7 @@ import LandingPage from './components/LandingPage';
 import CheckoutModal from './components/CheckoutModal';
 import QuickAskFab from './components/QuickAskFab';
 import SuggestionFab from './components/SuggestionFab';
-import OnboardingTour from './components/OnboardingTour';
+import { DashboardHints } from './components/InlineHints';
 import EveningFeed from './components/EveningFeed';
 import MorningCoach from './components/MorningCoach';
 import QuickKpiSparkline from './components/QuickKpiSparkline';
@@ -515,21 +515,18 @@ export default function App() {
     return window.location.pathname === '/briefings' || window.location.pathname === '/briefings/';
   });
   // ガイド ツアー (2026-06-05 オーナー指示) — HubSpot 風 「ここを タップ」 案内
+  // ガイド ツアー (オーナー指示 2026-06-05: 16 ステップ ツアー は うざい から 自動 起動 廃止。
+  //   freshUserDemo の フラグ も 消費 する だけ。 触れる の は window event の 明示 呼び出し のみ。)
   const [tourBrand, setTourBrand] = useState<'prism' | 'iris' | null>(null);
   useEffect(() => {
-    // 1. 起動 時 フラグ チェック (freshUserDemo の リセット 後 自動 起動)
+    // 旧 自動 起動 フラグ を 消費 (蓄積 した 状態 を リセット)
     (async () => {
       try {
-        const { shouldStartTour, consumeTourFlag } = await import('./lib/freshUserDemo');
-        const b = shouldStartTour();
-        if (b) {
-          consumeTourFlag();
-          // ダッシュ 描画 が 落ち着く まで 待つ
-          setTimeout(() => setTourBrand(b), 1500);
-        }
+        const { consumeTourFlag } = await import('./lib/freshUserDemo');
+        consumeTourFlag();
       } catch { /* */ }
     })();
-    // 2. window event で 開始 (Cmd+K / 設定 等 から)
+    // 明示 開始 イベント (master の ボタン / Cmd+K 等 から)
     const onStart = (e: Event) => {
       const detail = (e as CustomEvent).detail as { brand?: 'prism' | 'iris' } | undefined;
       setTourBrand(detail?.brand || 'prism');
@@ -888,8 +885,8 @@ export default function App() {
       {view === 'dashboard' && <CxoWelcomeCard brand="prism" />}
       {/* PWA インストール導線 — Android/Chrome prompt + iOS Safari ガイド */}
       {view === 'dashboard' && <InstallPwaBanner brand="prism" />}
-      {/* NNN (2026-06-04): 初回ダッシュボード Welcome ツアー */}
-      {view === 'dashboard' && <OnboardingTour />}
+      {/* 2026-06-05 オーナー指示: 4 枚 モーダル ツアー → インライン ヒント に 置換 (うざい から) */}
+      {view === 'dashboard' && <DashboardHints brand="prism" />}
       {/* VVV (2026-06-04): 夜のフィード — 18 時以降 1 日 1 回 */}
       {view === 'dashboard' && <EveningFeed />}
       {/* UUUUU (2026-06-04): ダッシュ 上端に 3 KPI sparkline */}

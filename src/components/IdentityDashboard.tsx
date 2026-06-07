@@ -858,6 +858,7 @@ export default function IdentityDashboard({
               />
 
               {/* 7 つのエージェント — 常時トップ固定 (オーナー指示 2026-05-28: ここは閉じない) */}
+              <div data-tour-id="agents-orbit">
               <AgentsOrbit
                 specs={PRISM_SPECS}
                 order={PRISM_ORDER}
@@ -931,6 +932,7 @@ export default function IdentityDashboard({
                   },
                 ]}
               />
+              </div>
 
               {/* iPhone 専用: 7 agents の直下に「ブリーフ → 売上」を常時 巨大表示
                   (オーナー指示 2026-06-03: モバイルはペライチ的にわかりやすく、情報を間引いて巨大化) */}

@@ -13,7 +13,7 @@
 //   - タップ で 役員 に 即 依頼 (AgentTeamMonitor の popover を 呼び出し)
 // ============================================================
 import { useMemo, useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { statsForPersona, listDeliverables } from '../lib/cxoDeliverables';
@@ -21,7 +21,7 @@ import type { Persona } from '../types/identity';
 
 interface Props {
   persona: Persona;
-  /** タップで AgentTeamMonitor を 開く 等 */
+  /** ポップオーバー で 「任せる」 が 押された 時 — AgentTeamMonitor を 開く */
   onCxoClick?: (role: CxoRole) => void;
 }
 
@@ -50,6 +50,8 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
   const { tasks } = useAgentTaskQueue();
   const [stats, setStats] = useState(() => statsForPersona(persona.id));
   const [items, setItems] = useState(() => listDeliverables(persona.id));
+  // 役員 を タップ した 時 に 役割 + 任せられる 仕事 を 見せる ポップオーバー
+  const [popoverRole, setPopoverRole] = useState<CxoRole | null>(null);
 
   // 役員 日報 が 増えたら 自動 更新
   useEffect(() => {
@@ -171,7 +173,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
             <motion.button
               key={role}
               type="button"
-              onClick={() => onCxoClick?.(role)}
+              onClick={() => setPopoverRole(role)}
               whileHover={{ scale: 1.03, y: -2 }}
               whileTap={{ scale: 0.97 }}
               style={{
@@ -295,6 +297,139 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
           💡 まず 1 人 タップ してみて ください。 60 秒 で 役員 が 仕事 を 仕上げて 役員 日報 に 納品 します。
         </div>
       )}
+
+      {/* 役員 タップ ポップオーバー (役割 + 任せられる 仕事 リスト) */}
+      <AnimatePresence>
+        {popoverRole && (() => {
+          const meta = CXO_META[popoverRole];
+          const prof = CXO_PROFILE[popoverRole];
+          const st = cxoStatus[popoverRole];
+          const canDo = meta.canDo || [];
+          return (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setPopoverRole(null)}
+              style={{
+                position: 'fixed', inset: 0, zIndex: 200,
+                background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: 16,
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.92, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 12 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  width: '100%', maxWidth: 480,
+                  background: 'linear-gradient(180deg, rgba(28,28,40,0.98), rgba(18,18,30,0.98))',
+                  borderRadius: 18,
+                  border: `1px solid ${meta.color}66`,
+                  boxShadow: `0 24px 60px rgba(0,0,0,0.6), 0 0 32px ${meta.color}33`,
+                  padding: '20px 22px 18px',
+                  color: '#fff',
+                }}
+              >
+                {/* ヘッダ: アバター + 役職 + 名前 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+                  <div style={{
+                    width: 56, height: 56, borderRadius: 16,
+                    background: `linear-gradient(135deg, ${meta.color}, ${meta.color}88)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 28, color: '#0a0a0f', flexShrink: 0,
+                    boxShadow: `0 0 22px ${meta.color}88`,
+                  }}>{meta.emoji}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontSize: 10, fontWeight: 900, letterSpacing: '0.14em',
+                      color: meta.color, marginBottom: 2,
+                    }}>{popoverRole} · {meta.name || ''}</div>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 900, lineHeight: 1.2 }}>
+                      {prof.name} さん
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>
+                      {prof.tagline}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setPopoverRole(null)}
+                    aria-label="閉じる"
+                    style={{
+                      width: 32, height: 32, borderRadius: 999,
+                      background: 'rgba(255,255,255,0.08)', color: '#fff',
+                      border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
+                      fontSize: 16, lineHeight: 1, flexShrink: 0,
+                    }}
+                  >×</button>
+                </div>
+
+                {/* これまで の 仕事 */}
+                {(st?.doneCount || 0) > 0 && (
+                  <div style={{
+                    padding: '8px 12px', borderRadius: 10, marginBottom: 12,
+                    background: 'rgba(52,211,153,0.1)',
+                    border: '1px solid rgba(52,211,153,0.3)',
+                    fontSize: 11, color: '#34D399',
+                  }}>
+                    📦 これ まで {st.doneCount} 件 納品 — {st.lastDelivery ? `直近: 「${st.lastDelivery}」` : ''}
+                  </div>
+                )}
+
+                {/* 任せられる 仕事 */}
+                <div style={{
+                  fontSize: 10, letterSpacing: '0.18em', fontWeight: 800,
+                  color: 'rgba(255,255,255,0.5)', marginBottom: 8,
+                }}>👇 今 任せられる 仕事</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+                  {canDo.slice(0, 4).map((task: string, i: number) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setPopoverRole(null);
+                        // 親 へ 通知 — AgentTeamMonitor を 開く 等
+                        try { onCxoClick?.(popoverRole); } catch { /* */ }
+                      }}
+                      style={{
+                        textAlign: 'left',
+                        padding: '10px 12px', borderRadius: 10,
+                        background: 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${meta.color}33`,
+                        color: '#fff', fontSize: 12.5, fontWeight: 600, lineHeight: 1.4,
+                        cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                      }}
+                    >
+                      <span style={{
+                        fontSize: 14, color: meta.color, flexShrink: 0,
+                      }}>✨</span>
+                      <span style={{ flex: 1 }}>{task}</span>
+                      <span style={{ fontSize: 12, color: meta.color, fontWeight: 800 }}>→</span>
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setPopoverRole(null);
+                    try { onCxoClick?.(popoverRole); } catch { /* */ }
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', borderRadius: 12,
+                    background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)`,
+                    color: '#0a0a0f', fontSize: 13, fontWeight: 900,
+                    border: 'none', cursor: 'pointer',
+                    boxShadow: `0 6px 20px ${meta.color}55`,
+                  }}
+                >🏢 {prof.name} さん に 任せる</button>
+                <div style={{
+                  marginTop: 8, fontSize: 10, color: 'rgba(255,255,255,0.45)', textAlign: 'center',
+                }}>右下 の 「役員 会議室」 が 開いて 詳細 の 仕事 選択 へ</div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }
