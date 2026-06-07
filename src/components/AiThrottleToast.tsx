@@ -47,14 +47,13 @@ export default function AiThrottleToast() {
     <AnimatePresence>
       {visible && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -10, x: '-50%' }}
+          animate={{ opacity: 1, y: 0, x: '-50%' }}
+          exit={{ opacity: 0, y: -10, x: '-50%' }}
           style={{
             position: 'fixed',
             top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
             left: '50%',
-            transform: 'translateX(-50%)',
             zIndex: 90,
             background: 'rgba(15,14,27,0.92)',
             border: '1px solid rgba(251,191,36,0.5)',

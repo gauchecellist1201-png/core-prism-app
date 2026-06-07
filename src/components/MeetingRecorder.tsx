@@ -447,10 +447,11 @@ function RecordingPulse({ accent, active }: { accent: string; active: boolean })
       {active && [0, 1, 2].map(i => (
         <motion.div
           key={i}
-          animate={{ scale: [1, 2.4], opacity: [0.4, 0] }}
+          initial={{ x: '-50%' }}
+          animate={{ scale: [1, 2.4], opacity: [0.4, 0], x: '-50%' }}
           transition={{ duration: 2, repeat: Infinity, delay: i * 0.55, ease: 'easeOut' }}
           style={{
-            position: 'absolute', top: 18, left: '50%', transform: 'translateX(-50%)',
+            position: 'absolute', top: 18, left: '50%',
             width: 60, height: 60, borderRadius: '50%',
             background: accent, opacity: 0.4, pointerEvents: 'none',
           }}

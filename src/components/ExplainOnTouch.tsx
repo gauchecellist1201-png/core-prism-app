@@ -299,9 +299,9 @@ export default function ExplainOnTouch({ brand = 'prism' }: { brand?: 'prism' | 
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 20, x: '-50%' }} animate={{ opacity: 1, y: 0, x: '-50%' }} exit={{ opacity: 0, y: 20, x: '-50%' }}
             style={{
-              position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)',
+              position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)', left: '50%',
               padding: '10px 18px', borderRadius: 12, zIndex: 9999,
               background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
               color: '#0a0a0f', fontSize: 13, fontWeight: 900,
