@@ -152,8 +152,10 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [presetId, setPresetId] = useState<PresetId | null>(null);
   // AI 台本生成 (テーマ → 3 シーン)
   const [scriptBusy, setScriptBusy] = useState(false);
+  const [scriptPhase, setScriptPhase] = useState<string>(''); // 「今 AI が何をしているか」の実況
   const [scriptErr, setScriptErr] = useState<string>('');
   const [scriptResult, setScriptResult] = useState<ReelScriptResult | null>(null);
+  const scriptTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Instagram キャプション AI 生成
   const [capBusy, setCapBusy] = useState(false);
   const [capErr, setCapErr] = useState<string>('');
@@ -275,6 +277,22 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       return;
     }
     setScriptBusy(true); setScriptErr(''); setScriptResult(null);
+    // 「今 AI が何をしているか」を順番に見せる実況ティッカー。
+    // 1 回の通信中でも画面が動き続けるので「固まった？」という不安が消える。
+    const phases = [
+      '🪄 テーマを読み解いています…',
+      '🎬 3 シーンの流れを組み立てています…',
+      '✍️ 字幕を短く言い切る形にしています…',
+      '#️⃣ ハッシュタグと投稿文を整えています…',
+      '✨ もうすぐできあがります…',
+    ];
+    let pi = 0;
+    setScriptPhase(phases[0]);
+    if (scriptTickRef.current) clearInterval(scriptTickRef.current);
+    scriptTickRef.current = setInterval(() => {
+      pi = Math.min(pi + 1, phases.length - 1); // 最後の一文で待機（巻き戻さない）
+      setScriptPhase(phases[pi]);
+    }, 1100);
     try {
       const result = await generateReelScript(themeHint);
       setScriptResult(result);
@@ -316,9 +334,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     } catch (e: any) {
       setScriptErr(e?.message || 'AI 処理に失敗しました。少し待ってから再試行してください。');
     } finally {
+      if (scriptTickRef.current) { clearInterval(scriptTickRef.current); scriptTickRef.current = null; }
+      setScriptPhase('');
       setScriptBusy(false);
     }
   }, [themeHint, presetId]);
+
+  // アンマウント時にティッカーが残らないように後始末
+  useEffect(() => () => { if (scriptTickRef.current) clearInterval(scriptTickRef.current); }, []);
 
   // ─── キャンバス描画 ─────
   const drawAt = useCallback((t: number) => {
@@ -1384,6 +1407,40 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     ? <><Loader2 size={15} className="iris-spin" /> 台本を考え中…</>
                     : <><Wand2 size={15} /> AI に 3 シーン台本を書いてもらう</>}
                 </button>
+                {/* 生成中の実況 — 「今 AI が何をしているか」を 1 行で見せる（沈黙する待ち時間ゼロ） */}
+                <AnimatePresence>
+                  {scriptBusy && scriptPhase && (
+                    <motion.div
+                      key="script-phase"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.22 }}
+                      style={{
+                        marginBottom: 10, padding: '0.55rem 0.7rem',
+                        background: 'rgba(225,48,108,0.07)',
+                        border: '1px solid rgba(225,48,108,0.18)',
+                        borderRadius: 12, fontSize: 11.5, color: bg.ink,
+                        display: 'flex', alignItems: 'center', gap: 8, lineHeight: 1.5,
+                      }}
+                    >
+                      <span aria-hidden style={{
+                        width: 6, height: 6, borderRadius: 999,
+                        background: '#E1306C', flexShrink: 0,
+                        animation: 'iris-pulse 1s ease-in-out infinite',
+                      }} />
+                      <motion.span
+                        key={scriptPhase}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.2 }}
+                        style={{ fontWeight: 700 }}
+                      >
+                        {scriptPhase}
+                      </motion.span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 {scriptErr && (
                   <div style={{
                     marginBottom: 10, padding: '0.6rem 0.7rem',

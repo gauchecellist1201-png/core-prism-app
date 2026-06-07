@@ -1652,6 +1652,9 @@ input, textarea, select { font-family: inherit; }
 @keyframes iris-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .iris-spin { animation: iris-spin 1s linear infinite; }
 
+/* 生成中の「実況」ドット用 — そっと脈打つ */
+@keyframes iris-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.55); opacity: 0.5; } }
+
 /* Iris デザイン トーン統一 (Phase 2) */
 :root {
   --iris-spacing-1: 4px;
