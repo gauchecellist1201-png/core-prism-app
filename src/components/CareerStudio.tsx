@@ -228,7 +228,7 @@ export default function CareerStudio({ open, onClose, defaultIndustry }: Props) 
                 <BarChart3 size={16} color="#fff" />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.62rem', letterSpacing: '0.25em', color: '#A78BFA', fontWeight: 800 }}>CFO + CDS</div>
+                <div style={{ fontSize: '0.62rem', letterSpacing: '0.22em', color: '#A78BFA', fontWeight: 800 }}>CFO + CDS</div>
                 <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>5 年後のキャリア レポート</div>
               </div>
               <button onClick={onClose} aria-label="閉じる" style={{

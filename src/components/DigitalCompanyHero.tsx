@@ -116,7 +116,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
       }}>
         <div data-explain-id="company-title" style={{ cursor: 'pointer' }}>
           <div style={{
-            fontSize: 10, letterSpacing: '0.24em', fontWeight: 800,
+            fontSize: 10, letterSpacing: '0.22em', fontWeight: 800,
             color: accent, marginBottom: 4,
           }}>🏢 あなた の デジタル 会社</div>
           <h1 style={{

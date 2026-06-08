@@ -428,7 +428,7 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
                       boxShadow: active ? `0 0 8px ${meta.color}` : 'none',
                     }}>{meta.emoji}</div>
                     <div style={{ fontSize: 8, fontWeight: 800, marginTop: 2, color: active ? meta.color : 'rgba(255,255,255,0.7)' }}>{role}</div>
-                    <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.45)' }}>{name}</div>
+                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.55)' }}>{name}</div>
                   </div>
                 );
               })}
@@ -503,7 +503,7 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
                             wordBreak: 'break-word',
                           }}>{userLine.text}</div>
                           <div style={{
-                            fontSize: 9, color: 'rgba(255,255,255,0.35)',
+                            fontSize: 9, color: 'rgba(255,255,255,0.4)',
                             marginTop: 2, letterSpacing: '0.04em',
                             fontFamily: '"JetBrains Mono", ui-monospace, Menlo, monospace',
                           }}>{fmtTime(userLine.ts)}</div>
