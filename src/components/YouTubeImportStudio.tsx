@@ -18,6 +18,7 @@ import { notifyInApp } from '../lib/inAppNotify';
 import ApiErrorCard from './ApiErrorCard';
 import SafeImg from './SafeImg';
 import { StudioIntro } from './StudioIntro';
+import ThinkingIndicator from './ThinkingIndicator';
 
 interface Props {
   persona: Persona;
@@ -551,14 +552,21 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
 
             {/* ─── Phase: summarizing ─── */}
             {phase === 'summarizing' && (
-              <motion.div key="summarizing" className="flex flex-col items-center gap-4 py-10"
+              <motion.div key="summarizing"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <motion.div className="text-5xl"
-                  animate={{ rotate: [0, 8, -8, 0] }}
-                  transition={{ duration: 1, repeat: Infinity }}>
-                  🤖
-                </motion.div>
-                <p className="text-fg-muted text-sm">AI が要約・章立て・引用を生成中…</p>
+                <ThinkingIndicator
+                  accent={persona.accentColor}
+                  variant="full"
+                  messages={[
+                    '🎬 動画の中身を読み込んでいます…',
+                    '🧠 話している内容を理解しています…',
+                    '📑 大事なところを章ごとに分けています…',
+                    '✍️ 要点を 5 行にまとめています…',
+                    '💬 そのまま使える引用を選んでいます…',
+                  ]}
+                  subtitle="動画を見なくても要点が分かるように、AI がまとめています"
+                  onRetry={handleSummarize}
+                />
               </motion.div>
             )}
 
