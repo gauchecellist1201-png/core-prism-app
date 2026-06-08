@@ -65,6 +65,15 @@
     --cp-elev-2: 0 2px 4px rgba(20, 20, 40, 0.06), 0 10px 22px -8px rgba(20, 20, 40, 0.16);
     --cp-elev-3: 0 4px 8px rgba(20, 20, 40, 0.08), 0 18px 40px -12px rgba(20, 20, 40, 0.22);
     --cp-elev-4: 0 8px 18px rgba(20, 20, 40, 0.10), 0 34px 80px -20px rgba(20, 20, 40, 0.32);
+
+    /* ─── スケルトン (読み込み中の仮表示) トークン ───
+       待ち時間を「静かな光の呼吸」にするための 3 値。
+       base=下地のグレー / sheen=横切る光の帯 / tempo=ひと呼吸の長さ。
+       Light では白い光は near-white 面に溶けて見えないため、ごく薄い"墨色"の影で
+       帯を表現する (暗→明の順で動くと、面が一度沈んでから持ち上がる呼吸感が出る)。 */
+    --cp-skeleton-base: rgba(20, 20, 40, 0.05);
+    --cp-skeleton-sheen: rgba(20, 20, 40, 0.09);
+    --cp-skeleton-tempo: 1.8s;
   }
 
   [data-theme="dark"] {
@@ -91,6 +100,9 @@
     --orb-opacity-high: 0.7;
     --titlebar-bg: rgba(0, 0, 0, 0.3);
     --code-bg: rgba(255, 255, 255, 0.06);
+    /* 暗い面では逆に"光"の帯。下地より明るい白で持ち上げる呼吸感に */
+    --cp-skeleton-base: rgba(255, 255, 255, 0.05);
+    --cp-skeleton-sheen: rgba(255, 255, 255, 0.13);
   }
 
   /* Legacy ロゴ用 brass tokens */
@@ -1778,22 +1790,28 @@ input, textarea, select { font-family: inherit; }
 
 /* AI 思考中の骨組み (スケルトン) を流れる光 */
 @keyframes cp-shimmer {
-  0% { background-position: -160% 0; }
-  100% { background-position: 160% 0; }
+  0% { background-position: 160% 0; }
+  100% { background-position: -160% 0; }
 }
 .cp-skeleton-line {
   border-radius: 7px;
   background: linear-gradient(
     100deg,
-    var(--surface-3) 30%,
-    rgba(255, 255, 255, 0.13) 50%,
-    var(--surface-3) 70%
+    var(--cp-skeleton-base) 30%,
+    var(--cp-skeleton-sheen) 50%,
+    var(--cp-skeleton-base) 70%
   );
   background-size: 220% 100%;
-  animation: cp-shimmer 1.7s ease-in-out infinite;
+  animation: cp-shimmer var(--cp-skeleton-tempo) var(--cp-ease-smooth) infinite;
 }
+/* 縦に積んだ行を少しずつ位相をずらすと、機械的な同時点滅ではなく
+   光がゆっくり上から下へ流れる「生きている」待ち時間になる */
+.cp-skeleton-line:nth-child(2) { animation-delay: 0.12s; }
+.cp-skeleton-line:nth-child(3) { animation-delay: 0.24s; }
+.cp-skeleton-line:nth-child(4) { animation-delay: 0.36s; }
+.cp-skeleton-line:nth-child(5) { animation-delay: 0.48s; }
 @media (prefers-reduced-motion: reduce) {
-  .cp-skeleton-line { animation: none; }
+  .cp-skeleton-line { animation: none; background: var(--cp-skeleton-base); }
 }
 
 /* デスクトップ: 中央より少し右 (右サイドパネルとメインの隙間) */
@@ -2245,7 +2263,7 @@ select:not([data-no-tactile]):focus-visible,
 .skeleton {
   position: relative;
   overflow: hidden;
-  background: var(--surface-3);
+  background: var(--cp-skeleton-base);
   border-radius: 8px;
 }
 .skeleton::after {
@@ -2253,25 +2271,20 @@ select:not([data-no-tactile]):focus-visible,
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.12) 50%,
-    transparent 100%
+    100deg,
+    transparent 30%,
+    var(--cp-skeleton-sheen) 50%,
+    transparent 70%
   );
   transform: translateX(-100%);
-  animation: mi-skeleton-shimmer 1.4s ease-in-out infinite;
-}
-[data-theme="dark"] .skeleton::after {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.06) 50%,
-    transparent 100%
-  );
+  animation: mi-skeleton-shimmer var(--cp-skeleton-tempo) var(--cp-ease-smooth) infinite;
 }
 @keyframes mi-skeleton-shimmer {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
 }
 
 /* ───── 押した瞬間の「手応え」: pending / success の状態演出 ─────
