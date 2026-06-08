@@ -8,8 +8,9 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, Sparkles, ExternalLink, Loader2, Copy, Check, Download, ArrowRight } from 'lucide-react';
+import { X, Search, Sparkles, ExternalLink, Copy, Check, Download, ArrowRight } from 'lucide-react';
 import { callAiWithFallback } from '../lib/aiFallbackChain';
+import ThinkingIndicator from './ThinkingIndicator';
 
 interface Props {
   open: boolean;
@@ -211,11 +212,18 @@ export default function CompetitorScout({ open, onClose, defaultIndustry }: Prop
               )}
 
               {step === 'busy' && (
-                <div style={{ textAlign: 'center', padding: '40px 8px' }}>
-                  <Loader2 size={36} color="#A78BFA" style={{ animation: 'core-spin 1s linear infinite' }} />
-                  <div style={{ marginTop: 14, fontSize: '0.95rem', fontWeight: 700 }}>市場を スキャン中…</div>
-                  <div style={{ marginTop: 6, fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)' }}>10〜20 秒</div>
-                </div>
+                <ThinkingIndicator
+                  accent="#F472B6"
+                  onRetry={run}
+                  subtitle={industry.trim() ? `「${industry.trim()}」の市場を調べています` : '市場を調べています'}
+                  messages={[
+                    '🔍 業種にあう市場を絞り込んでいます…',
+                    '🏢 日本国内の代表的な会社を集めています…',
+                    '⚖️ 直接ぶつかる競合を見分けています…',
+                    '💪 各社の強みを 1 行にまとめています…',
+                    '📊 意識すべき順に並べています…',
+                  ]}
+                />
               )}
 
               {step === 'error' && (

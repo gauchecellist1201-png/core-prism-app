@@ -13,8 +13,9 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, ArrowRight, Download, Copy, Check, Loader2, BarChart3, TrendingUp, GraduationCap, Briefcase, Heart } from 'lucide-react';
+import { X, Sparkles, ArrowRight, Download, Copy, Check, BarChart3, TrendingUp, GraduationCap, Briefcase, Heart } from 'lucide-react';
 import { callAiWithFallback } from '../lib/aiFallbackChain';
+import ThinkingIndicator from './ThinkingIndicator';
 
 interface Props {
   open: boolean;
@@ -339,11 +340,19 @@ export default function CareerStudio({ open, onClose, defaultIndustry }: Props) 
               )}
 
               {step === 'busy' && (
-                <div style={{ textAlign: 'center', padding: '40px 8px' }}>
-                  <Loader2 size={36} color="#A78BFA" style={{ animation: 'core-spin 1s linear infinite' }} />
-                  <div style={{ marginTop: 14, fontSize: '0.95rem', fontWeight: 700 }}>CFO と CDS が話し合っています…</div>
-                  <div style={{ marginTop: 6, fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)' }}>20〜40 秒ほどお待ちください</div>
-                </div>
+                <ThinkingIndicator
+                  accent="#A78BFA"
+                  onRetry={generate}
+                  subtitle="CFO（財務）と CDS（データ）の AI 役員が合議しています"
+                  messages={[
+                    '🏢 あなたの業種と経験を読み込んでいます…',
+                    '📊 同業の年収・キャリアの中央値を調べています…',
+                    '🔭 5 年後にあり得る役割を描いています…',
+                    '📚 いま学ぶべきスキルを選んでいます…',
+                    '⚠️ 現実的なリスクを洗い出しています…',
+                    '✍️ 明日からの一手にまとめています…',
+                  ]}
+                />
               )}
 
               {step === 'error' && (
