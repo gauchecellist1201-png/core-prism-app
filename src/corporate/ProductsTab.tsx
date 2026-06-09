@@ -8,7 +8,7 @@ import { useState } from 'react';
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", serif';
 
-type ProductId = 'prism' | 'iris';
+type ProductId = 'prism' | 'iris' | 'lume' | 'resonance';
 
 const PRODUCTS: Record<ProductId, {
   name: string;
@@ -16,6 +16,7 @@ const PRODUCTS: Record<ProductId, {
   for: string;
   description: string;
   color: { primary: string; secondary: string };
+  featureLabel: { en: string; ja: string };
   agents: { name: string; en: string; role: string }[];
   pricing: { plan: string; price: string; period: string; features: string[]; highlight?: boolean }[];
   kgi: { label: string; q4_target: string }[];
@@ -27,6 +28,7 @@ const PRODUCTS: Record<ProductId, {
     for: '事業家 / マルチロール経営者 / フリーランス',
     description: 'ひとつの白い光を、7 つの人格に分散させる。経営・財務・営業・人事・法務・健康・自己実現の 7 つのエージェントが、あなたの分身として動きます。',
     color: { primary: '#60a5fa', secondary: '#a78bfa' },
+    featureLabel: { en: '7 AGENTS', ja: '7 つのエージェント' },
     agents: [
       { name: '経営戦略', en: 'STRATEGY', role: '事業計画 / KPI / 意思決定' },
       { name: '財務会計', en: 'FINANCE', role: '請求書 / 経費 / キャッシュフロー' },
@@ -60,6 +62,7 @@ const PRODUCTS: Record<ProductId, {
     for: 'クリエイター / インフルエンサー / SNS マネジメント',
     description: 'クリエイター活動の 6 つの仕事を 1 つの AI 相棒に統合。案件管理 / Instagram 解析 / 投稿生成 / ブランド統一 / コミュニティ運営 / 収益管理 — Instagram・X・TikTok・YouTube すべてに対応。',
     color: { primary: '#f472b6', secondary: '#fbbf24' },
+    featureLabel: { en: '6 FACETS', ja: '6 つのファセット' },
     agents: [
       { name: '案件', en: 'BRIEFS', role: '受注→投稿→レポート' },
       { name: '分析', en: 'ANALYTICS', role: 'Instagram / X / TikTok 解析' },
@@ -84,6 +87,68 @@ const PRODUCTS: Record<ProductId, {
       'YouTuber / Vlogger / TikTok クリエイター',
       'ブランド / EC の SNS 担当者',
       'クリエイターエージェンシー',
+    ],
+  },
+  lume: {
+    name: 'Lume',
+    tagline: 'あなたのリンクを、いちばん美しく光らせる。',
+    for: 'クリエイター / 個人事業主 / 店舗',
+    description: 'LitLink 代替のリンクまとめサービス。30 秒で美しいプロフィールを公開し、「誰がどのリンクを踏んだか」をヒートマップで見える化する。日本のクリエイターに最適化。',
+    color: { primary: '#7C5CFF', secondary: '#FF6EC7' },
+    featureLabel: { en: '4 FEATURES', ja: '主な機能' },
+    agents: [
+      { name: '美しいプロフィール', en: 'PROFILE', role: '30 秒で公開 / 5 テーマ自由' },
+      { name: 'クリックヒートマップ', en: 'HEATMAP', role: '誰がどこを踏んだか色で可視化' },
+      { name: '流入元クロス分析', en: 'SOURCE', role: 'Instagram / TikTok 別の行動' },
+      { name: '爆速表示', en: 'SPEED', role: '開いた瞬間に表示 / 離脱させない' },
+    ],
+    pricing: [
+      { plan: 'Free', price: '¥0', period: '', features: ['リンク無制限', '基本テーマ', 'クリック総数'] },
+      { plan: 'Pro', price: '¥980', period: '/ 月', features: ['全テーマ + カスタムフォント', 'ヒートマップ分析', '流入元クロス分析', '独自ドメイン'], highlight: true },
+      { plan: 'Business', price: '¥2,980', period: '/ 月〜', features: ['チーム管理', 'EC / 予約連携', 'チーム分析', 'ロゴ非表示'] },
+    ],
+    kgi: [
+      { label: '有料ユーザー数 (Q4)', q4_target: '1,000 人' },
+      { label: '月次 MRR', q4_target: '¥1.4M' },
+      { label: '無料→有料 転換', q4_target: '3%+' },
+      { label: 'チャーン率', q4_target: '< 5%' },
+    ],
+    targetCustomers: [
+      'LitLink / Linktree を使っているクリエイター',
+      'フォロワーを EC・予約・公式 LINE に誘導したい発信者',
+      '店舗 / EC / アーティスト・絵本作家',
+      '「踏まれ方」を見て改善したい個人事業主',
+    ],
+  },
+  resonance: {
+    name: 'ResonanceBot',
+    tagline: '一人ひとりに、その人だけのメッセージを。',
+    for: '個人事業主 / 店舗 / アーティスト',
+    description: 'LINE × Claude のパーソナライズ配信 SaaS。大企業の CRM のような「一人ひとりに寄り添う体験」を、月数千円で個人事業主にも届ける。利用者が自分の鍵を接続するため AI 原価はほぼゼロ。',
+    color: { primary: '#22c55e', secondary: '#06b6d4' },
+    featureLabel: { en: '4 FEATURES', ja: '中心機能' },
+    agents: [
+      { name: '個別パーソナライズ', en: 'PERSONALIZE', role: '過去の会話を踏まえ自動生成' },
+      { name: '名前差し替え', en: 'NAME', role: 'その人の名前で語りかける' },
+      { name: '承認フロー', en: 'APPROVAL', role: '誤送信を防いで安全に配信' },
+      { name: '自前鍵接続', en: 'BYOK', role: 'AI 原価ゼロのコスト構造' },
+    ],
+    pricing: [
+      { plan: 'Free', price: '¥0', period: '', features: ['AI 生成なし', '名前差し替えのみ', 'まず試したい人向け'] },
+      { plan: 'Basic', price: '¥2,980', period: '/ 月', features: ['名前差し替えが無制限', '日常的な名前入り配信'], highlight: true },
+      { plan: 'Premium', price: '¥9,800', period: '/ 月', features: ['Claude 個別パーソナライズ配信', '過去の会話を踏まえる', 'ファンとの関係を深める'] },
+    ],
+    kgi: [
+      { label: '有料件数 (Q4)', q4_target: '1,000 件' },
+      { label: '月次 MRR', q4_target: '¥5M' },
+      { label: 'LTV ÷ CAC', q4_target: '約 5 倍' },
+      { label: 'チャーン率', q4_target: '< 5%' },
+    ],
+    targetCustomers: [
+      'アーティスト / 音楽教室 / サロン',
+      'LINE 公式アカウントを運用する小規模事業者',
+      'ファンとの関係を深めたい個人ビジネス',
+      '名前入り・個別配信で特別感を出したい店舗',
     ],
   },
 };
@@ -154,8 +219,8 @@ export default function ProductsTab() {
 
       {/* エージェント / ファセット一覧 */}
       <section style={sectionStyle}>
-        <p style={eyebrowStyle}>{active === 'prism' ? '7 AGENTS' : '6 FACETS'}</p>
-        <h3 style={h3Style}>{active === 'prism' ? '7 つのエージェント' : '6 つのファセット'}</h3>
+        <p style={eyebrowStyle}>{p.featureLabel.en}</p>
+        <h3 style={h3Style}>{p.featureLabel.ja}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
           {p.agents.map((a, i) => (
             <div key={i} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }}>
@@ -233,7 +298,8 @@ export default function ProductsTab() {
         </div>
       </section>
 
-      {/* 機能比較表 */}
+      {/* 機能比較表 (Prism / Iris のみ) */}
+      {(active === 'prism' || active === 'iris') && (
       <section style={sectionStyle}>
         <p style={eyebrowStyle}>COMPARISON</p>
         <h3 style={h3Style}>Prism vs Iris 機能比較</h3>
@@ -258,6 +324,7 @@ export default function ProductsTab() {
           </table>
         </div>
       </section>
+      )}
 
       {/* スライド / PDF へのリンク */}
       <section style={sectionStyle}>
