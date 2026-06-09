@@ -428,6 +428,25 @@ export async function sendReply(opts: {
   });
 }
 
+/** Gmail に 下書き を 作成 (送信 せず) — オーナー が 自分 で 確認 してから 送る用 */
+export async function createGmailDraft(opts: {
+  threadId?: string;
+  to: string;
+  subject: string;
+  body: string;
+  inReplyTo?: string;
+  references?: string;
+}): Promise<{ id: string; messageId?: string }> {
+  const raw = b64UrlEncode(buildMime(opts));
+  const message: any = { raw };
+  if (opts.threadId) message.threadId = opts.threadId;
+  const res = await gmailFetch('/gmail/v1/users/me/drafts', {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  });
+  return { id: res?.id || '', messageId: res?.message?.id };
+}
+
 // 受信メッセージから返信に必要な情報を取り出す
 export function buildReplyMeta(m: GmailMessage): {
   to: string;

@@ -95,6 +95,8 @@ import StripeConnectHero from './StripeConnectHero';
 import EarningsAndTimeHero from './EarningsAndTimeHero';
 import FocusHero from './FocusHero';
 import DigitalCompanyHero from './DigitalCompanyHero';
+import GmailInsightsCard from './GmailInsightsCard';
+import AllSourcesHub from './AllSourcesHub';
 import CreditBar from './CreditBar';
 import CreditModal from './CreditModal';
 import MobileGeminiDashboard from './MobileGeminiDashboard';
@@ -849,7 +851,7 @@ export default function IdentityDashboard({
               paddingBottom: 'calc(140px + env(safe-area-inset-bottom, 0px))',
             }}
           >
-            <div className="max-w-5xl space-y-3">
+            <div className="max-w-5xl space-y-3 cp-enter-stagger">
 
               {/* クレジット使用量バー — 常時トップ (オーナー指示 2026-05-28: 対価設計) */}
               <CreditBar
@@ -977,6 +979,12 @@ export default function IdentityDashboard({
                   try { window.dispatchEvent(new CustomEvent('core:agent-monitor-open')); } catch { /* */ }
                 }}
               />
+
+              {/* 📧 Gmail インサイト (2026-06-05 オーナー指示: 連携 = 価値) */}
+              <GmailInsightsCard />
+
+              {/* ✨ 最強 RAG — 全 ソース 連携 ハブ (Instagram / TikTok 含む) */}
+              <AllSourcesHub />
 
               {/* PC 専用: 焦点モード (今日の最優先 1 つ + 数字 1 行) — iPhone では上のブリーフ + 売上に置き換え */}
               <div className="hidden md:block">
