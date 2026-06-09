@@ -278,6 +278,38 @@ export default function CoreSite() {
               会社概要
             </a>
           </motion.div>
+
+          {/* 4プロダクトのチップ (一目でスイートが分かる) */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.85 }}
+            style={{ display: 'flex', gap: '0.55rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2.5rem' }}
+          >
+            {[
+              { t: 'Prism', d: '事業', c: '#a78bfa' },
+              { t: 'Iris', d: 'Instagram', c: '#E1306C' },
+              { t: 'Resonance', d: 'LINE', c: '#06C755' },
+              { t: 'Lume', d: 'リンク', c: '#8B5CF6' },
+            ].map((p, i) => (
+              <a
+                key={i}
+                href="#products"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
+                  padding: '0.5rem 0.95rem', borderRadius: 999,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${p.c}44`,
+                  textDecoration: 'none',
+                }}
+                className="lp-tap-link"
+              >
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: p.c, boxShadow: `0 0 8px ${p.c}` }} />
+                <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.86rem', fontWeight: 600, fontStyle: 'italic', color: '#fff' }}>{p.t}</span>
+                <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.68rem', color: 'rgba(255,255,255,0.6)' }}>{p.d}</span>
+              </a>
+            ))}
+          </motion.div>
         </div>
       </section>
 
@@ -858,6 +890,65 @@ export default function CoreSite() {
             url="https://lume-deploy-five.vercel.app/"
             reversed
           />
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  USE CASES (誰のための CORE か) */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section
+        id="who"
+        className="lp-section-pad"
+        style={{ padding: '7rem 1.5rem', background: 'linear-gradient(180deg,#070712 0%,#000 100%)' }}
+      >
+        <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.75rem' }}>
+            <p style={sectionLabel}>
+              <span style={sectionLabelMain}>使い方</span>
+              <span style={sectionLabelSub}>WHO&nbsp;IT&apos;S&nbsp;FOR</span>
+            </p>
+            <h2 style={{
+              fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.85rem, 3.8vw, 2.85rem)',
+              fontWeight: 700, lineHeight: 1.5, letterSpacing: '0.04em', marginBottom: '1.1rem',
+            }}>
+              組み合わせ方は、あなた次第。
+            </h2>
+            <p style={{
+              fontFamily: FONT_SERIF_JA, color: 'rgba(255,255,255,0.65)',
+              fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', maxWidth: 660, margin: '0 auto', lineHeight: 2,
+            }}>
+              四つは、ひとつずつでも、すべて一緒でも。
+              <br />
+              あなたの仕事に合わせて、必要なところから始められます。
+            </p>
+          </div>
+
+          <div
+            className="lp-usecase-grid"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}
+          >
+            <UseCaseCard
+              persona="個人事業主・経営者"
+              headline="経営も、SNSも、片手間に。"
+              body="判断・営業・財務・事務は Prism の AI 役員 13 名へ。集客の Instagram・LINE もつなげば、現場の反応がそのまま経営判断に届きます。"
+              tools={[{ t: 'Prism', c: '#a78bfa' }, { t: 'Iris', c: '#E1306C' }, { t: 'Resonance', c: '#06C755' }]}
+              lead="Prism"
+            />
+            <UseCaseCard
+              persona="インフルエンサー・クリエイター"
+              headline="発信から収益まで、一本の線に。"
+              body="Iris で Instagram を伸ばし、Lume で全リンクをひとつのプロフィールに束ねる。どの投稿が、どのリンクのクリックを生んだかまで見えます。"
+              tools={[{ t: 'Iris', c: '#E1306C' }, { t: 'Lume', c: '#8B5CF6' }]}
+              lead="Iris"
+            />
+            <UseCaseCard
+              persona="店舗・サロン・教室"
+              headline="一度きりを、また会いたいへ。"
+              body="Resonance が LINE のご縁を一人ひとり温め、Lume が予約や各リンクへの動線を可視化。来店につながる流れを、AI が静かに育てます。"
+              tools={[{ t: 'Resonance', c: '#06C755' }, { t: 'Lume', c: '#8B5CF6' }]}
+              lead="Resonance"
+            />
+          </div>
         </div>
       </section>
 
@@ -2260,6 +2351,62 @@ function FlowStep({ n, color, tool, body, last }: { n: string; color: string; to
         {body}
       </p>
     </div>
+  );
+}
+
+// ───────────── ユースケース・カード ─────────────
+function UseCaseCard({ persona, headline, body, tools, lead }: {
+  persona: string; headline: string; body: string;
+  tools: { t: string; c: string }[]; lead: string;
+}) {
+  const leadColor = tools.find(t => t.t === lead)?.c || tools[0].c;
+  return (
+    <motion.div
+      initial={{ y: 24 }}
+      whileInView={{ y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.7 }}
+      className="lp-usecase-card"
+      style={{
+        padding: '2rem 1.75rem',
+        background: `linear-gradient(170deg, ${leadColor}12, rgba(255,255,255,0.015) 70%)`,
+        border: `1px solid ${leadColor}33`,
+        borderRadius: 18,
+        display: 'flex', flexDirection: 'column', gap: '1.1rem',
+      }}
+    >
+      <span style={{
+        alignSelf: 'flex-start', fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', fontWeight: 700,
+        letterSpacing: '0.08em', padding: '0.35rem 0.85rem', borderRadius: 999,
+        background: `${leadColor}22`, border: `1px solid ${leadColor}55`, color: leadColor,
+      }}>
+        {persona}
+      </span>
+      <h3 style={{
+        fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.25rem, 2vw, 1.5rem)', fontWeight: 700,
+        color: '#fff', letterSpacing: '0.03em', lineHeight: 1.5, margin: 0,
+      }}>
+        {headline}
+      </h3>
+      <p style={{
+        fontFamily: FONT_SERIF_JA, fontSize: '0.92rem', color: 'rgba(255,255,255,0.68)',
+        lineHeight: 2, margin: 0, flex: 1,
+      }}>
+        {body}
+      </p>
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
+        {tools.map((t, i) => (
+          <span key={i} style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+            fontFamily: FONT_SERIF_EN, fontSize: '0.8rem', fontStyle: 'italic', fontWeight: 600, color: '#fff',
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: t.c, boxShadow: `0 0 7px ${t.c}` }} />
+            {t.t}
+            {i < tools.length - 1 && <span style={{ color: 'rgba(255,255,255,0.3)', marginLeft: '0.3rem', fontStyle: 'normal' }}>＋</span>}
+          </span>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 

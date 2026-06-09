@@ -1306,6 +1306,25 @@ input, textarea, select { font-family: inherit; }
 
   /* 一気通貫フロー 4列 → 2列 */
   .lp-flow-grid { grid-template-columns: 1fr 1fr !important; }
+
+  /* ユースケース 3列 → 1列 */
+  .lp-usecase-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ─── LP コーポレート: スクロール挙動 & ホバーの磨き込み ─── */
+html { scroll-behavior: smooth; }
+#top, #connect, #values, #mission, #products, #who, #journey, #about, #contact {
+  scroll-margin-top: 84px; /* sticky ヘッダー分のオフセット */
+}
+.lp-feature-product, .lp-usecase-card {
+  transition: transform 260ms cubic-bezier(.4,0,.2,1), border-color 260ms ease, box-shadow 260ms ease;
+}
+@media (hover: hover) {
+  .lp-feature-product:hover { transform: translateY(-4px); }
+  .lp-usecase-card:hover { transform: translateY(-5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
 /* ─── スマホ縦 (640px) ─── */
