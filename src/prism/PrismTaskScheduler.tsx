@@ -58,6 +58,22 @@ function fromLocalInputValue(s: string): string {
   return new Date(s).toISOString();
 }
 
+// 音声認識のエラーコードを「やさしい日本語 + 次の一手」に翻訳。
+// 黙って失敗させず、必ず原因と直し方を本人に伝える（GlobalVoiceInput と同じ思想）。
+function friendlyVoiceError(code: string): string {
+  switch (code) {
+    case 'not-allowed':
+    case 'service-not-allowed':
+      return 'マイクの使用がオフになっています。アドレスバー横の🔒からマイクを「許可」にして、もう一度お試しください。';
+    case 'audio-capture':
+      return 'マイクが見つかりませんでした。マイクの接続を確かめて、もう一度お試しください。';
+    case 'network':
+      return '通信が不安定で聞き取れませんでした。電波のよい場所でもう一度お試しください。';
+    default:
+      return 'うまく聞き取れませんでした。もう一度ゆっくり話してみてください。';
+  }
+}
+
 export default function PrismTaskScheduler() {
   const queue = usePrismTaskQueue();
   const [open, setOpen] = useState(false);
@@ -68,6 +84,7 @@ export default function PrismTaskScheduler() {
   const [voiceText, setVoiceText] = useState('');
   const [interim, setInterim] = useState('');
   const recogRef = useRef<any>(null);
+  const gotResultRef = useRef(false);
 
   // 「いつ実行する?」 クイックチップ
   const [quickKey, setQuickKey] = useState<QuickTimeKey>(null);
@@ -80,6 +97,8 @@ export default function PrismTaskScheduler() {
   // パース / 確認
   const [parsing, setParsing] = useState(false);
   const [parseErr, setParseErr] = useState<string>('');
+  // 失敗時に「もう一度試す」復旧ボタンを出すためのアクション（null なら復旧ボタンなし）
+  const [errAction, setErrAction] = useState<{ label: string; run: () => void } | null>(null);
   const [parsed, setParsed] = useState<null | {
     scheduledAt: string; kind: TaskKind; title: string; description: string; prompt: string;
   }>(null);
@@ -104,11 +123,15 @@ export default function PrismTaskScheduler() {
     setVoiceText('');
     setInterim('');
     setParseErr('');
+    setErrAction(null);
     setParsed(null);
+    gotResultRef.current = false;
 
     const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
-      setParseErr('このブラウザは音声入力非対応。下のテキスト入力を使ってください。(Chrome/Safari/Edge 推奨)');
+      // 非対応ブラウザでは復旧ボタンを出さず、テキスト入力へ誘導（録り直しても無駄なため）
+      setParseErr('このブラウザは音声入力に対応していません。下のテキスト欄に直接入力してください。(Chrome / Safari / Edge 推奨)');
+      setErrAction(null);
       return;
     }
     const rec = new SR();
@@ -123,17 +146,42 @@ export default function PrismTaskScheduler() {
         if (r.isFinal) finalT += r[0].transcript;
         else interimT += r[0].transcript;
       }
+      if (finalT || interimT) gotResultRef.current = true;
       setVoiceText(prev => prev + finalT);
       setInterim(interimT);
     };
     rec.onerror = (e: any) => {
-      setParseErr(`音声認識エラー: ${e.error || 'unknown'}`);
       setListening(false);
+      const code = e?.error || 'unknown';
+      // 自分で止めた(aborted) / 一瞬の無音(no-speech) は「失敗」ではないので赤く出さない
+      if (code === 'aborted') return;
+      if (code === 'no-speech') {
+        setParseErr('声が聞き取れませんでした。マイクに少し近づいて、もう一度お試しください。');
+        setErrAction({ label: 'もう一度話す', run: startListening });
+        return;
+      }
+      gotResultRef.current = true; // onend での二重表示を防ぐ
+      setParseErr(friendlyVoiceError(code));
+      setErrAction({ label: 'もう一度話す', run: startListening });
     };
-    rec.onend = () => { setListening(false); };
-    rec.start();
+    rec.onend = () => {
+      setListening(false);
+      // 何も拾えずに終わった時も黙らせず、すぐ録り直せる導線を出す
+      if (!gotResultRef.current) {
+        setParseErr('声が聞き取れませんでした。もう一度ボタンを押して話してみてください。');
+        setErrAction({ label: 'もう一度話す', run: startListening });
+      }
+    };
     recogRef.current = rec;
-    setListening(true);
+    // iOS Safari 等で start() が例外を投げても黙って固まらないよう保護
+    try {
+      rec.start();
+      setListening(true);
+    } catch {
+      setListening(false);
+      setParseErr('マイクを起動できませんでした。もう一度ボタンを押すか、下のテキスト欄に入力してください。');
+      setErrAction({ label: 'もう一度試す', run: startListening });
+    }
   };
 
   const stopListening = () => {
@@ -143,14 +191,19 @@ export default function PrismTaskScheduler() {
 
   const onParse = async () => {
     const text = (voiceText + interim).trim();
-    if (!text) { setParseErr('音声 or テキストを入力してください'); return; }
-    setParsing(true); setParseErr('');
+    if (!text) {
+      setParseErr('まだ何も入力されていません。マイクで話すか、テキスト欄に予定を書いてください。');
+      setErrAction({ label: 'マイクで話す', run: startListening });
+      return;
+    }
+    setParsing(true); setParseErr(''); setErrAction(null);
     try {
       const j = await parseVoiceCommand(text);
       setParsed(j);
     } catch (e: any) {
       // parseVoiceCommand は内部でフォールバックするので通常ここに来ない
-      setParseErr(e?.message || '解析失敗。時刻と内容を直接入力してください。');
+      setParseErr(e?.message || 'うまく解析できませんでした。時刻と内容を直接入力してから、もう一度お試しください。');
+      setErrAction({ label: 'もう一度解析', run: onParse });
     } finally {
       setParsing(false);
     }
@@ -186,7 +239,7 @@ export default function PrismTaskScheduler() {
 
   const reset = () => {
     if (listening) stopListening();
-    setVoiceText(''); setInterim(''); setParsed(null); setParseErr('');
+    setVoiceText(''); setInterim(''); setParsed(null); setParseErr(''); setErrAction(null);
     setQuickKey(null);
   };
 
@@ -202,6 +255,7 @@ export default function PrismTaskScheduler() {
     setInterim('');
     setParsed(null);
     setParseErr('');
+    setErrAction(null);
     setQuickKey(null);
     setView('compose');
   };
@@ -427,8 +481,27 @@ export default function PrismTaskScheduler() {
                   )}
 
                   {parseErr && (
-                    <div style={{ padding: '0.55rem 0.75rem', background: '#FEE2E2', color: '#991B1B', borderRadius: 8, fontSize: '0.82rem', marginBottom: '0.7rem' }}>
-                      {parseErr}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '0.6rem 0.75rem', background: '#FEE2E2', color: '#991B1B',
+                      borderRadius: 8, fontSize: '0.82rem', lineHeight: 1.5, marginBottom: '0.7rem',
+                    }}>
+                      <span style={{ flex: 1 }}>{parseErr}</span>
+                      {errAction && (
+                        <button
+                          type="button"
+                          onClick={() => { setParseErr(''); const r = errAction.run; setErrAction(null); r(); }}
+                          style={{
+                            flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
+                            padding: '6px 11px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                            fontSize: '0.78rem', fontWeight: 700, color: '#fff',
+                            background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          <RefreshCw size={13} /> {errAction.label}
+                        </button>
+                      )}
                     </div>
                   )}
 
