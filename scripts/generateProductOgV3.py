@@ -113,6 +113,41 @@ def draw_lume_logo(size, grad):
     d.ellipse([cx - 6 * k - hr, cy - 6 * k - hr, cx - 6 * k + hr, cy - 6 * k + hr], fill=(255, 255, 255, 235))
     return img.resize((size, size), Image.LANCZOS)
 
+def draw_core_logo(size, grad):
+    # 発光する核 + 傾いた軌道リング (アトム/コア)。シアン基調・強いブルーム。
+    s = size * SS
+    img = Image.new('RGBA', (s, s), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    k = s / 100.0
+    cx, cy = s / 2, s / 2
+    ring = hex2rgb('#38BDF8')
+    # 外周ブルーム (シアンの滲み)
+    R = int(46 * k)
+    for r in range(R, 0, -1):
+        t = r / R
+        a = int(60 * (1 - t) ** 2.2)
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=ring + (a,))
+    # 傾いた軌道リング 2 本 (個別レイヤーで描いて回転)
+    def ring_layer(rx, ry, lw, col, alpha, angle):
+        L = Image.new('RGBA', (s, s), (0, 0, 0, 0))
+        ld = ImageDraw.Draw(L)
+        ld.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], outline=col + (alpha,), width=int(lw * k))
+        return L.rotate(angle, center=(cx, cy), resample=Image.BICUBIC)
+    img.alpha_composite(ring_layer(43 * k, 16 * k, 2.6, ring, 235, -24))
+    img.alpha_composite(ring_layer(43 * k, 16 * k, 2.2, hex2rgb('#7DD3FC'), 150, 34))
+    # 中央核 (白→シアン→ブルーの発光球)
+    cr = int(16 * k)
+    inner = hex2rgb('#FFFFFF'); midc = hex2rgb('#BAE6FD'); outer = hex2rgb('#0EA5E9')
+    for r in range(cr, 0, -1):
+        t = r / cr
+        col = lerp(inner, midc, t / 0.5) if t < 0.5 else lerp(midc, outer, (t - 0.5) / 0.5)
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=col + (255,))
+    # スペキュラ
+    hr = 3.4 * k
+    d.ellipse([cx - 5 * k - hr, cy - 5 * k - hr, cx - 5 * k + hr, cy - 5 * k + hr], fill=(255, 255, 255, 235))
+    return img.resize((size, size), Image.LANCZOS)
+
+
 # ── ピル (角丸チップ) ──
 def draw_pill(draw, x, y, text, fnt, accent):
     pad_x, pad_y = 22, 13
@@ -188,6 +223,18 @@ build(
     pills=['個別文面AI', '送信前に全件確認', 'LINE公式に接続'],
     url='resonancebot-ivory.vercel.app',
     logo_fn=draw_resonance_logo,
+)
+
+# ── CORE (法人 OG) ──
+build(
+    slug='core',
+    accent_hexes=['#38BDF8', '#7DD3FC', '#0EA5E9'],
+    eyebrow='CORE INC. — すべての時代の、核となるものを',
+    headline=['仕事も SNS も、', 'ひとつの流れに。'],
+    sub='Prism ・ Iris ・ Resonance ・ Lume',
+    pills=['事業', 'Instagram', 'LINE', 'リンク'],
+    url='core-prism-app.vercel.app/corp',
+    logo_fn=draw_core_logo,
 )
 
 # ── Lume ──

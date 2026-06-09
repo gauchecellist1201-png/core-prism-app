@@ -63,11 +63,11 @@ export default function CoreSite() {
     };
     setMeta('meta[property="og:title"]', 'content', '株式会社コア — CORE Inc.');
     setMeta('meta[property="og:description"]', 'content', 'すべての時代の、核となるものを。AI エージェント OS を提供する CORE。');
-    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core.png');
+    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v3.png');
     setMeta('meta[property="og:url"]', 'content', 'https://core-prism-app.vercel.app/corp');
     setMeta('meta[property="og:type"]', 'content', 'website');
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
-    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core.png');
+    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v3.png');
     setMeta('meta[name="twitter:title"]', 'content', '株式会社コア — CORE Inc.');
     setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。');
     setMeta('meta[name="description"]', 'content', '株式会社コア (CORE Inc.) — あなたの仕事と SNS を、AI エージェントで一気通貫に。司令塔 Prism に、Instagram の Iris・LINE の Resonance・リンクの Lume がつながる、ひとつの AI エージェント OS。');
@@ -688,11 +688,11 @@ export default function CoreSite() {
               fontWeight: 400,
             }}
           >
-            私たちが目指すのは、流行や形を追うことではありません。
+            私たちが追い求めるのは、流行でも、目新しさでもありません。
             <br />
-            <strong style={{ color: '#fff' }}>本質に届くプロダクトを、静かに、確かに。</strong>
+            <strong style={{ color: '#fff' }}>人の本質に届くものを、静かに、確かに。</strong>
             <br />
-            技術は手段にすぎず、いつの時代も中心にあるのは「人」です。
+            技術はあくまで手段であり、時代がどれほど移ろうとも、その中心にあるのは「人」である——私たちは、そう信じています。
           </p>
 
           {/* 3 つの約束 (具体的な指針) */}
@@ -711,20 +711,20 @@ export default function CoreSite() {
               {
                 accent: '#fbbf24',
                 en: 'CORE 1',
-                jaTitle: '時間を、取り戻す',
-                body: '経営者の時間は、組織でもっとも希少な資産です。13 名の AI 役員が雑務と下調べを引き受け、本来向き合うべき仕事のための時間を取り戻します。',
+                jaTitle: '時間という資産を、経営に。',
+                body: '経営者の時間は、組織でもっとも希少な資産です。13 名の AI エージェントが日々の実務と情報収集を引き受け、本来向き合うべき意思決定のための時間を生み出します。',
               },
               {
                 accent: '#a78bfa',
                 en: 'CORE 2',
-                jaTitle: '判断を、支える',
-                body: '迷いは重く、決断は一瞬であるべきです。散らばったデータと文脈をその場でまとめ、根拠とともに選択肢を差し出します。決めるのは、いつもあなた。',
+                jaTitle: '意思決定を、確信へ。',
+                body: '散在する情報と文脈を即座に統合し、根拠とともに選択肢を提示します。迷いの時間を最小化し、決断の精度を高める。最終的な判断は、つねに経営者の手に委ねられます。',
               },
               {
                 accent: '#60a5fa',
                 en: 'CORE 3',
-                jaTitle: '言葉を、ととのえる',
-                body: '商談メール、議事録、提案書。時間を奪う書きものは、AI が下書きまで仕上げておきます。あなたの仕事は、目を通して送り出すことだけ。',
+                jaTitle: '言葉の仕事を、自動化する。',
+                body: '商談メール、議事録、提案書。時間を要する文書を、AI が草案まで仕上げます。人が担うのは、最終確認と意思の表明のみ。本質的な仕事に、集中できます。',
               },
             ].map((p, i) => (
               <div
