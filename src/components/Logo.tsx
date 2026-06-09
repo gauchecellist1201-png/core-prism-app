@@ -248,8 +248,8 @@ export function ResonanceLogo({ size = 28, withWordmark = true, variant = 'defau
 }
 
 // ─────────────────────────────────────────────
-//  CORE Lume — 灯るオーブ (紫のスクエア + 白く発光する球)
-//  オーナー支給のアプリアイコンを忠実に再現。バイオレット基調。
+//  CORE Lume — 灯るオーブ (金〜オレンジのスクエア + 白く発光する球)
+//  オーナー支給のアプリアイコンを忠実に再現。ゴールド〜オレンジ基調（光・ルーメン）。
 // ─────────────────────────────────────────────
 export function LumeLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
   const isMono = variant === 'mono';
@@ -271,18 +271,18 @@ export function LumeLogo({ size = 28, withWordmark = true, variant = 'default', 
         style={{ flexShrink: 0 }}
       >
         <defs>
-          {/* スクエア地: ラベンダー → ディープバイオレット (斜め) */}
+          {/* スクエア地: ゴールド → ディープオレンジ (斜め) */}
           <linearGradient id={sqId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor="#A78BFA" />
-            <stop offset="45%"  stopColor="#8B5CF6" />
-            <stop offset="100%" stopColor="#6D28D9" />
+            <stop offset="0%"   stopColor="#FFD86B" />
+            <stop offset="45%"  stopColor="#FFA42A" />
+            <stop offset="100%" stopColor="#FF7A18" />
           </linearGradient>
-          {/* 発光オーブ: 白核 → ラベンダーのブルーム */}
+          {/* 発光オーブ: 白核 → ウォームのブルーム */}
           <radialGradient id={orbId} cx="50%" cy="43%" r="60%">
             <stop offset="0%"   stopColor="#FFFFFF" stopOpacity="1" />
             <stop offset="30%"  stopColor="#FFFFFF" stopOpacity="0.95" />
-            <stop offset="62%"  stopColor="#EDE9FE" stopOpacity="0.32" />
-            <stop offset="100%" stopColor="#EDE9FE" stopOpacity="0" />
+            <stop offset="62%"  stopColor="#FFF1D6" stopOpacity="0.32" />
+            <stop offset="100%" stopColor="#FFF1D6" stopOpacity="0" />
           </radialGradient>
         </defs>
 
@@ -309,7 +309,7 @@ export function LumeLogo({ size = 28, withWordmark = true, variant = 'default', 
           letterSpacing: '0.01em',
           lineHeight: 1,
           ...(isMono ? { color: 'currentColor' } : {
-            background: 'linear-gradient(135deg, #A78BFA 0%, #8B5CF6 50%, #6D28D9 100%)',
+            background: 'linear-gradient(135deg, #FFD86B 0%, #FFA42A 50%, #FF7A18 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',

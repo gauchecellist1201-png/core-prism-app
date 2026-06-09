@@ -42,8 +42,8 @@ const VENTURES: Venture[] = [
     reading: 'ルーメ',
     tagline: 'あなたのリンクを、いちばん美しく光らせる。',
     status: 'LP・アプリ公開済み / β',
-    accent: '#7C5CFF',
-    accent2: '#FF6EC7',
+    accent: '#FFC23A',
+    accent2: '#FF7A18',
     liveUrl: 'https://lume-deploy-five.vercel.app/',
     oneLine: 'LitLink 代替のリンクまとめサービス。30秒で美しいプロフィール、そして「誰がどのリンクを踏んだか」をヒートマップで見える化する。',
     problem: [
@@ -230,7 +230,7 @@ export default function NewVenturesTab() {
                   <td style={{ ...tdNum, color: '#fca5a5' }}>-{r.fee}</td>
                   <td style={{ ...tdNum, color: 'rgba(255,255,255,0.5)' }}>-{r.infra}</td>
                   <td style={{ ...tdNum, color: '#86efac', fontWeight: 800 }}>{r.net}</td>
-                  <td style={{ ...tdNum, color: v.accent === '#7C5CFF' ? '#c4b5fd' : '#6ee7b7', fontWeight: 800 }}>{r.margin}</td>
+                  <td style={{ ...tdNum, color: v.accent === '#FFC23A' ? '#ffd98a' : '#6ee7b7', fontWeight: 800 }}>{r.margin}</td>
                 </tr>
               ))}
             </tbody>

@@ -94,7 +94,7 @@ const PRODUCTS: Record<ProductId, {
     tagline: 'あなたのリンクを、いちばん美しく光らせる。',
     for: 'クリエイター / 個人事業主 / 店舗',
     description: 'LitLink 代替のリンクまとめサービス。30 秒で美しいプロフィールを公開し、「誰がどのリンクを踏んだか」をヒートマップで見える化する。日本のクリエイターに最適化。',
-    color: { primary: '#7C5CFF', secondary: '#FF6EC7' },
+    color: { primary: '#FFC23A', secondary: '#FF7A18' },
     featureLabel: { en: '4 FEATURES', ja: '主な機能' },
     agents: [
       { name: '美しいプロフィール', en: 'PROFILE', role: '30 秒で公開 / 5 テーマ自由' },

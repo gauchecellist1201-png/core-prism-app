@@ -290,7 +290,7 @@ export default function CoreSite() {
               { t: 'Prism', d: '事業', c: '#a78bfa' },
               { t: 'Iris', d: 'Instagram', c: '#E1306C' },
               { t: 'Resonance', d: 'LINE', c: '#06C755' },
-              { t: 'Lume', d: 'リンク', c: '#8B5CF6' },
+              { t: 'Lume', d: 'リンク', c: '#FFA42A' },
             ].map((p, i) => (
               <a
                 key={i}
@@ -416,7 +416,7 @@ export default function CoreSite() {
                 textAlign: 'left',
               }}
             >
-              <FlowStep n="01" color="#8B5CF6" tool="Lume" body="ファンが、あなたのどのリンクを踏んだのかが分かる。" />
+              <FlowStep n="01" color="#FFA42A" tool="Lume" body="ファンが、あなたのどのリンクを踏んだのかが分かる。" />
               <FlowStep n="02" color="#E1306C" tool="Iris" body="その人の Instagram での反応を、AIが解析する。" />
               <FlowStep n="03" color="#06C755" tool="Resonance" body="いま響く一文を、LINE でその人だけに届ける。" />
               <FlowStep n="04" color="#a78bfa" tool="Prism" body="すべてを記録し、13 名の AI 役員が次の一手を出す。" last />
@@ -885,8 +885,8 @@ export default function CoreSite() {
               'クリックの偏りを熱で可視化するヒートマップ',
               '来訪データを Prism・Iris・Resonance へ',
             ]}
-            accentColor="#8B5CF6"
-            accentGradient="linear-gradient(135deg,#A78BFA,#8B5CF6,#6D28D9)"
+            accentColor="#FFA42A"
+            accentGradient="linear-gradient(135deg,#FFD86B,#FFA42A,#FF7A18)"
             url="https://lume-deploy-five.vercel.app/"
             reversed
           />
@@ -938,14 +938,14 @@ export default function CoreSite() {
               persona="インフルエンサー・クリエイター"
               headline="発信から収益まで、一本の線に。"
               body="Iris で Instagram を伸ばし、Lume で全リンクをひとつのプロフィールに束ねる。どの投稿が、どのリンクのクリックを生んだかまで見えます。"
-              tools={[{ t: 'Iris', c: '#E1306C' }, { t: 'Lume', c: '#8B5CF6' }]}
+              tools={[{ t: 'Iris', c: '#E1306C' }, { t: 'Lume', c: '#FFA42A' }]}
               lead="Iris"
             />
             <UseCaseCard
               persona="店舗・サロン・教室"
               headline="一度きりを、また会いたいへ。"
               body="Resonance が LINE のご縁を一人ひとり温め、Lume が予約や各リンクへの動線を可視化。来店につながる流れを、AI が静かに育てます。"
-              tools={[{ t: 'Resonance', c: '#06C755' }, { t: 'Lume', c: '#8B5CF6' }]}
+              tools={[{ t: 'Resonance', c: '#06C755' }, { t: 'Lume', c: '#FFA42A' }]}
               lead="Resonance"
             />
           </div>
@@ -1048,7 +1048,7 @@ export default function CoreSite() {
             LINE のご縁を温める
             <strong style={{ color: '#06C755', fontWeight: 600 }}> Resonance</strong>。
             すべてのリンクをひとつに束ねる
-            <strong style={{ color: '#8B5CF6', fontWeight: 600 }}> Lume</strong>。
+            <strong style={{ color: '#FFA42A', fontWeight: 600 }}> Lume</strong>。
             <br />
             <br />
             四つは別々の道具ではなく、ひとつの核でつながっています。
@@ -2239,7 +2239,7 @@ function ConnectedSuite() {
   const sats = [
     { key: 'iris', Logo: IrisLogo, name: 'Iris', role: 'Instagram', color: '#E1306C', x: 50, y: 11 },
     { key: 'resonance', Logo: ResonanceLogo, name: 'Resonance', role: 'LINE', color: '#06C755', x: 13, y: 85 },
-    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#8B5CF6', x: 87, y: 85 },
+    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#FFA42A', x: 87, y: 85 },
   ];
 
   const nodeCard = (color: string): React.CSSProperties => ({
