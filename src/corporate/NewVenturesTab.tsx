@@ -182,7 +182,7 @@ export default function NewVenturesTab() {
           </div>
           <span style={{ display: 'inline-block', fontSize: '0.72rem', fontWeight: 700, padding: '4px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff', marginBottom: 14 }}>● {v.status}</span>
           <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.9, maxWidth: 760 }}>{v.oneLine}</p>
-          {v.liveUrl && <a href={v.liveUrl} target="_blank" rel="noopener" style={{ display: 'inline-block', marginTop: 16, padding: '0.6rem 1.3rem', borderRadius: 999, background: `linear-gradient(135deg,${v.accent},${v.accent2})`, color: '#fff', fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none' }}>本番サイトを開く →</a>}
+          {v.liveUrl && <a href={v.liveUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 16, padding: '0.6rem 1.3rem', borderRadius: 999, background: `linear-gradient(135deg,${v.accent},${v.accent2})`, color: '#fff', fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none' }}>本番サイトを開く →</a>}
         </div>
 
         {/* 課題 / ソリューション */}
@@ -256,7 +256,7 @@ export default function NewVenturesTab() {
         {v.links.some(l => l.url) && (
           <div style={{ marginTop: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {v.links.filter(l => l.url).map((l, i) => (
-              <a key={i} href={l.url} target="_blank" rel="noopener" style={{ fontSize: '0.78rem', padding: '0.5rem 1rem', borderRadius: 999, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontFamily: FONT_SERIF_JA }}>{l.label} ↗</a>
+              <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.78rem', padding: '0.5rem 1rem', borderRadius: 999, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontFamily: FONT_SERIF_JA }}>{l.label} ↗</a>
             ))}
           </div>
         )}

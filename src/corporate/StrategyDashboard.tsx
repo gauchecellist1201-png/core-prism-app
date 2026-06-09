@@ -169,7 +169,7 @@ export default function StrategyDashboard() {
 
       {/* TAB: 事業計画 */}
       {tab === 'plan' && masterMode && (
-        <section style={{ padding: '2rem 1.5rem 4rem', background: 'linear-gradient(180deg,#000 0%,#070712 100%)' }}>
+        <section className="lp-section-pad" style={{ padding: '2.5rem 1.5rem 4rem', background: 'linear-gradient(180deg,#000 0%,#070712 100%)' }}>
           <div style={{ maxWidth: 1180, margin: '0 auto' }}>
             <SectionHeader subtitle="BUSINESS PLAN" title="事業計画書" desc="2026 Q2-Q4 の経営計画。ブラウザ印刷で PDF 出力可能。" />
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: '1rem' }}>
@@ -182,7 +182,7 @@ export default function StrategyDashboard() {
 
       {/* TAB: プロダクト */}
       {tab === 'products' && (
-        <section style={{ padding: '2.5rem 1.5rem 4rem', background: 'linear-gradient(180deg,#000 0%,#0a0a18 100%)' }}>
+        <section className="lp-section-pad" style={{ padding: '2.5rem 1.5rem 4rem', background: 'linear-gradient(180deg,#000 0%,#0a0a18 100%)' }}>
           <div style={{ maxWidth: 1180, margin: '0 auto' }}>
             <SectionHeader subtitle="PRODUCT MANUAL" title="プロダクト製品説明書" desc="CORE Prism (事業家向け 7 エージェント) / CORE Iris (クリエイター向け 6 ファセット)" />
             <ProductsTab />
@@ -192,7 +192,7 @@ export default function StrategyDashboard() {
 
       {/* TAB: 新規事業ポートフォリオ */}
       {tab === 'ventures' && (
-        <section style={{ padding: '2.5rem 1.5rem 4rem', background: 'linear-gradient(180deg,#000 0%,#0a0a18 100%)' }}>
+        <section className="lp-section-pad" style={{ padding: '2.5rem 1.5rem 4rem', background: 'linear-gradient(180deg,#000 0%,#0a0a18 100%)' }}>
           <div style={{ maxWidth: 1180, margin: '0 auto' }}>
             <SectionHeader subtitle="NEW VENTURES" title="新規事業ポートフォリオ" desc="Lume / ResonanceBot — それぞれの事業計画と、この価格での実利益。" />
             <NewVenturesTab />

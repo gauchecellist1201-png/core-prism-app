@@ -539,7 +539,7 @@ export default function AgentsOrbit({
           .orbit-grid-responsive > button > div:first-child svg { width: 18px !important; height: 18px !important; }
           .orbit-grid-responsive > button > div:nth-child(2) { font-size: 11px !important; }
           .orbit-grid-responsive > button > div:nth-child(3) {
-            font-size: 9.5px !important;
+            font-size: 10.5px !important;
             min-height: 0 !important;
             max-width: 100% !important;
             line-height: 1.3 !important;

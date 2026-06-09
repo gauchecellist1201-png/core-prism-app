@@ -781,7 +781,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                 <a
                   href="https://note.com/notes/new"
                   target="_blank"
-                  rel="noopener"
+                  rel="noopener noreferrer"
                   style={{ flex: 1, padding: '0.7rem', textAlign: 'center', background: 'rgba(255,255,255,0.06)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none' }}
                 >
                   ↗ note を開いて貼付け
@@ -835,7 +835,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                       <a
                         href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(t)}`}
                         target="_blank"
-                        rel="noopener"
+                        rel="noopener noreferrer"
                         style={{ fontSize: '0.72rem', padding: '0.35rem 0.7rem', background: 'rgba(255,255,255,0.04)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.3)', borderRadius: 6, textDecoration: 'none' }}
                       >↗ X で開く</a>
                     </div>

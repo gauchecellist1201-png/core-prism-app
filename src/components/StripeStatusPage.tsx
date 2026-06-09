@@ -197,7 +197,7 @@ export default function StripeStatusPage() {
               <h3 style={sectionTitle}>セットアップ手順</h3>
               <ol style={{ paddingLeft: '1.4rem', lineHeight: 2, fontSize: '0.88rem', color: '#1F1A2E' }}>
                 <li>
-                  <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener" style={linkStyle}>
+                  <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener noreferrer" style={linkStyle}>
                     Stripe Dashboard → 商品
                     <ExternalLink size={12} style={{ marginLeft: 4, verticalAlign: 'middle' }} />
                   </a>
