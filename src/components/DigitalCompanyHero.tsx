@@ -14,10 +14,12 @@
 // ============================================================
 import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
+import { CXO_META, type CxoRole, cxoDisplayName } from '../hooks/useAgentTaskQueue';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
-import { statsForPersona, listDeliverables } from '../lib/cxoDeliverables';
+import { statsForPersona, listDeliverables, logDeliverable } from '../lib/cxoDeliverables';
 import type { Persona } from '../types/identity';
+import { useSettings } from '../hooks/useSettings';
+import InlineActionExecutor from './InlineActionExecutor';
 
 interface Props {
   persona: Persona;
@@ -28,22 +30,40 @@ interface Props {
 // 14 名 を 役職 順 に 並べる
 const CXO_ORDER: CxoRole[] = ['CEO', 'CTO', 'CPO', 'CDO', 'CMO', 'CSO', 'CFO', 'COO', 'CDS', 'CLO', 'UIE', 'UXE', 'QAE', 'CHR'];
 
-// 役員 の 「肩書 + 名前」 (お飾り 感 を 消す ため プロフィール 風)
-const CXO_PROFILE: Record<CxoRole, { name: string; tagline: string }> = {
-  CEO: { name: '陽翔',  tagline: '全体 を まとめ、 優先順位 を 決める'  },
-  CTO: { name: '匠',    tagline: '技術 / 自動化 / 連携 を 設計'         },
-  CPO: { name: '凛',    tagline: '機能 / 仕様 / 商標 / ロードマップ'    },
-  CDO: { name: '蒼',    tagline: 'KPI / 仮説 / 分析'                  },
-  CMO: { name: '陽菜',  tagline: '広告 / SNS / コンテンツ'             },
-  CSO: { name: '誠',    tagline: '営業 / 商談 / 提案 / 督促'           },
-  CFO: { name: '颯太',  tagline: '損益 / 資金繰り / 投資 判断'          },
-  COO: { name: '葵',    tagline: '業務 プロセス / SOP / 委託'           },
-  CDS: { name: '陸',    tagline: '競合 / 業界 動向 / リサーチ'         },
-  CLO: { name: '結衣',  tagline: '契約 / 商標 / 個情法 / 約款'          },
-  UIE: { name: '美海',  tagline: 'UI / コピー / 動線 を 磨く'           },
-  UXE: { name: '玲奈',  tagline: 'デザイン / バナー / 配色'             },
-  QAE: { name: '律',    tagline: 'バグ / 沈黙エラー / 数字嘘 検知'      },
-  CHR: { name: '優',    tagline: '採用 / 評価 / 1 on 1 質問'           },
+// 役員 の 担当 領域 (オーナー指示 2026-06-05: 個別 名前 削除 — 役職 で 識別)
+const CXO_TAGLINE: Record<CxoRole, string> = {
+  CEO: '統括 / 優先順位',
+  CTO: '技術 / 自動化',
+  CPO: '機能 / ロードマップ',
+  CDO: 'KPI / 分析',
+  CMO: '集客 / SNS',
+  CSO: '営業 / 商談',
+  CFO: '損益 / 資金',
+  COO: '運用 / SOP',
+  CDS: '競合 / リサーチ',
+  CLO: '契約 / 法務',
+  UIE: 'UI / 動線',
+  UXE: 'デザイン',
+  QAE: '品質 / 検証',
+  CHR: '採用 / 評価',
+};
+
+// CXO ごと の 「タップ で 一発 着手」 する 標準 タスク
+const CXO_QUICK_TASK: Record<CxoRole, string> = {
+  CEO: '現状 を 整理 して 今週 やる べき 3 件 を 提案',
+  CTO: '自動 化 できる 業務 を 3 つ ピックアップ',
+  CPO: '次 リリース の 候補 機能 を 5 つ 整理',
+  CDO: 'KPI 異常 値 を 検出 + 仮説 を 3 つ',
+  CMO: '今週 の 集客 案 を 3 つ 起案',
+  CSO: '商談 候補 リスト を 5 件 用意',
+  CFO: '今月 の 損益 を 1 枚 に まとめる',
+  COO: '業務 SOP の 改善 ポイント を 3 つ',
+  CDS: '競合 3 社 の 動向 を 要約',
+  CLO: '契約 / 法務 の チェック ポイント を 整理',
+  UIE: 'UI 動線 の 改善 案 を 3 つ',
+  UXE: 'デザイン 改善 提案 を 3 つ',
+  QAE: '品質 リスク を 検出 + 優先順位',
+  CHR: '採用 戦略 を 整理',
 };
 
 export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
@@ -166,7 +186,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
       >
         {CXO_ORDER.map((role) => {
           const meta = CXO_META[role];
-          const prof = CXO_PROFILE[role];
+          const tagline = CXO_TAGLINE[role];
           const st = cxoStatus[role];
           const working = st?.state === 'working';
           const hasDone = (st?.doneCount || 0) > 0;
@@ -175,20 +195,21 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
               key={role}
               type="button"
               onClick={() => setPopoverRole(role)}
-              whileHover={{ scale: 1.03, y: -2 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.06, y: -3 }}
+              whileTap={{ scale: 0.94 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 22 }}
               style={{
-                padding: '10px 8px 8px',
-                borderRadius: 12,
+                padding: '12px 8px 10px',
+                borderRadius: 14,
                 background: working
                   ? `linear-gradient(135deg, ${meta.color}30, ${meta.color}10)`
-                  : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${working ? meta.color : hasDone ? meta.color + '55' : 'rgba(255,255,255,0.1)'}`,
+                  : `var(--surface-3)`,
+                border: `1px solid ${working ? meta.color : hasDone ? meta.color + '66' : `${meta.color}33`}`,
                 cursor: 'pointer', color: 'inherit',
                 position: 'relative', textAlign: 'center',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
               }}
-              aria-label={`${role} ${prof.name} に 依頼`}
+              aria-label={`${role} に 依頼`}
             >
               {/* 実行中 パルス */}
               {working && (
@@ -217,35 +238,35 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                   background: meta.color, color: '#0a0a0f', lineHeight: 1.4,
                 }}>{st.doneCount}</div>
               )}
-              {/* アバター 円 */}
-              <div style={{
-                width: 38, height: 38, borderRadius: 999,
-                background: `linear-gradient(135deg, ${meta.color}, ${meta.color}80)`,
-                color: '#0a0a0f',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 18, fontWeight: 900,
-                boxShadow: working ? `0 0 18px ${meta.color}99` : `0 2px 8px ${meta.color}55`,
-                marginBottom: 2,
-              }}>
+              {/* アバター 円 (大きめ + ホバー で 光る) */}
+              <motion.div
+                animate={working ? { scale: [1, 1.06, 1] } : { scale: 1 }}
+                transition={working ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
+                style={{
+                  width: 46, height: 46, borderRadius: 999,
+                  background: `linear-gradient(135deg, ${meta.color}, ${meta.color}80)`,
+                  color: '#0a0a0f',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22, fontWeight: 900,
+                  boxShadow: working ? `0 0 22px ${meta.color}, 0 0 38px ${meta.color}66` : `0 4px 12px ${meta.color}66`,
+                  marginBottom: 3,
+                }}
+              >
                 {meta.emoji}
-              </div>
-              {/* 役職 ピル */}
+              </motion.div>
+              {/* 役職 ピル (大きめ) */}
               <div style={{
-                fontSize: 9, fontWeight: 900, letterSpacing: '0.06em',
-                padding: '1px 6px', borderRadius: 999,
+                fontSize: 11, fontWeight: 900, letterSpacing: '0.08em',
+                padding: '2px 9px', borderRadius: 999,
                 background: meta.color + '22',
                 color: meta.color,
-                border: `1px solid ${meta.color}44`,
+                border: `1px solid ${meta.color}55`,
               }}>{role}</div>
-              {/* 名前 */}
-              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--fg-strong)' }}>
-                {prof.name}
-              </div>
-              {/* tagline (小さく) */}
+              {/* 担当 領域 */}
               <div style={{
-                fontSize: 8, lineHeight: 1.3, color: 'var(--fg-subtle)',
-                marginTop: 1, minHeight: 22,
-              }}>{prof.tagline}</div>
+                fontSize: 9.5, lineHeight: 1.3, color: 'var(--fg-muted)',
+                marginTop: 1, minHeight: 24, fontWeight: 600,
+              }}>{tagline}</div>
               {/* 実行中 ラベル */}
               {working && (
                 <div style={{
@@ -299,139 +320,248 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
         </div>
       )}
 
-      {/* 役員 タップ ポップオーバー (役割 + 任せられる 仕事 リスト) */}
+      {/* 役員 タップ → 実際 に 動き出す ポップオーバー (InlineActionExecutor 内蔵) */}
       <AnimatePresence>
-        {popoverRole && (() => {
-          const meta = CXO_META[popoverRole];
-          const prof = CXO_PROFILE[popoverRole];
-          const st = cxoStatus[popoverRole];
-          const canDo = meta.canDo || [];
-          return (
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setPopoverRole(null)}
-              style={{
-                position: 'fixed', inset: 0, zIndex: 200,
-                background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: 16,
-              }}
-            >
-              <motion.div
-                initial={{ scale: 0.92, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 12 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  width: '100%', maxWidth: 480,
-                  // light/dark 両対応: bg-2 を base に、 light で 黒文字 が 読める
-                  background: 'var(--bg-2)',
-                  borderRadius: 18,
-                  border: `1px solid ${meta.color}66`,
-                  boxShadow: `0 24px 60px rgba(0,0,0,0.4), 0 0 32px ${meta.color}33`,
-                  padding: '20px 22px 18px',
-                  color: 'var(--fg-strong)',
-                }}
-              >
-                {/* ヘッダ: アバター + 役職 + 名前 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-                  <div style={{
-                    width: 56, height: 56, borderRadius: 16,
-                    background: `linear-gradient(135deg, ${meta.color}, ${meta.color}88)`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 28, color: '#0a0a0f', flexShrink: 0,
-                    boxShadow: `0 0 22px ${meta.color}88`,
-                  }}>{meta.emoji}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      fontSize: 10, fontWeight: 900, letterSpacing: '0.14em',
-                      color: meta.color, marginBottom: 2,
-                    }}>{popoverRole} · {meta.name || ''}</div>
-                    <div style={{ fontSize: '1.15rem', fontWeight: 900, lineHeight: 1.2 }}>
-                      {prof.name} さん
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 2 }}>
-                      {prof.tagline}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setPopoverRole(null)}
-                    aria-label="閉じる"
-                    style={{
-                      width: 32, height: 32, borderRadius: 999,
-                      background: 'var(--surface-3)', color: 'var(--fg-strong)',
-                      border: '1px solid var(--border, rgba(0,0,0,0.1))', cursor: 'pointer',
-                      fontSize: 16, lineHeight: 1, flexShrink: 0,
-                    }}
-                  >×</button>
-                </div>
-
-                {/* これまで の 仕事 */}
-                {(st?.doneCount || 0) > 0 && (
-                  <div style={{
-                    padding: '8px 12px', borderRadius: 10, marginBottom: 12,
-                    background: 'rgba(52,211,153,0.1)',
-                    border: '1px solid rgba(52,211,153,0.3)',
-                    fontSize: 11, color: '#34D399',
-                  }}>
-                    📦 これ まで {st.doneCount} 件 納品 — {st.lastDelivery ? `直近: 「${st.lastDelivery}」` : ''}
-                  </div>
-                )}
-
-                {/* 任せられる 仕事 */}
-                <div style={{
-                  fontSize: 10, letterSpacing: '0.18em', fontWeight: 800,
-                  color: 'var(--fg-subtle)', marginBottom: 8,
-                }}>👇 今 任せられる 仕事</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
-                  {canDo.slice(0, 4).map((task: string, i: number) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        setPopoverRole(null);
-                        // 親 へ 通知 — AgentTeamMonitor を 開く 等
-                        try { onCxoClick?.(popoverRole); } catch { /* */ }
-                      }}
-                      style={{
-                        textAlign: 'left',
-                        padding: '10px 12px', borderRadius: 10,
-                        background: 'var(--surface-3)',
-                        border: `1px solid ${meta.color}33`,
-                        color: 'var(--fg-strong)', fontSize: 12.5, fontWeight: 600, lineHeight: 1.4,
-                        cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: 8,
-                      }}
-                    >
-                      <span style={{
-                        fontSize: 14, color: meta.color, flexShrink: 0,
-                      }}>✨</span>
-                      <span style={{ flex: 1 }}>{task}</span>
-                      <span style={{ fontSize: 12, color: meta.color, fontWeight: 800 }}>→</span>
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => {
-                    setPopoverRole(null);
-                    try { onCxoClick?.(popoverRole); } catch { /* */ }
-                  }}
-                  style={{
-                    width: '100%', padding: '12px 16px', borderRadius: 12,
-                    background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)`,
-                    color: '#0a0a0f', fontSize: 13, fontWeight: 900,
-                    border: 'none', cursor: 'pointer',
-                    boxShadow: `0 6px 20px ${meta.color}55`,
-                  }}
-                >🏢 {prof.name} さん に 任せる</button>
-                <div style={{
-                  marginTop: 8, fontSize: 10, color: 'var(--fg-subtle)', textAlign: 'center',
-                }}>右下 の 「役員 会議室」 が 開いて 詳細 の 仕事 選択 へ</div>
-              </motion.div>
-            </motion.div>
-          );
-        })()}
+        {popoverRole && (
+          <CxoActionPopover
+            role={popoverRole}
+            persona={persona}
+            doneCount={cxoStatus[popoverRole]?.doneCount || 0}
+            lastDone={cxoStatus[popoverRole]?.lastDelivery}
+            quickTask={CXO_QUICK_TASK[popoverRole]}
+            onClose={() => setPopoverRole(null)}
+            onAgentMonitorOpen={() => {
+              try { onCxoClick?.(popoverRole); } catch { /* */ }
+            }}
+          />
+        )}
       </AnimatePresence>
     </div>
+  );
+}
+
+// ============================================================
+// CxoActionPopover — タップ で 実際 に 動く ポップオーバー
+//
+// オーナー指示 (2026-06-05):
+//   「クリック したら その 人 が 仕事 し 始めて、 提案 して、 目に 見える 形 で
+//    ダイナミック に 表現 して。 ポンコツ じゃ なくて 実際 に 動かして。」
+//
+// 動き:
+//   1. 開いた 瞬間 に 「💼 [役員] が 動き始めて います…」
+//   2. 「今 すぐ 着手」 ボタン → InlineActionExecutor 起動 (本物 の AI 実行)
+//   3. AI が plan を 立てる → ステップ を 順に 表示 → 成果物 完成
+//   4. 完了 で 役員 日報 に 自動 納品 + 緑 チェック
+//   5. 「もっと 細かく 任せる」 で AgentTeamMonitor へ ジャンプ
+// ============================================================
+function CxoActionPopover({
+  role, persona, doneCount, lastDone, quickTask, onClose, onAgentMonitorOpen,
+}: {
+  role: CxoRole;
+  persona: Persona;
+  doneCount: number;
+  lastDone?: string;
+  quickTask: string;
+  onClose: () => void;
+  onAgentMonitorOpen: () => void;
+}) {
+  const meta = CXO_META[role];
+  const { settings } = useSettings();
+  const [phase, setPhase] = useState<'idle' | 'running' | 'done'>('idle');
+  const canDoList = (meta.canDo || []).slice(0, 4);
+  const allTasks = [quickTask, ...canDoList.filter((t) => t !== quickTask)].slice(0, 4);
+  const [selectedTask, setSelectedTask] = useState<string | null>(null);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.92, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92, y: 20 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 560, maxHeight: '88vh', overflowY: 'auto',
+          background: 'var(--bg-2)',
+          borderRadius: 22,
+          border: `2px solid ${meta.color}`,
+          boxShadow: `0 28px 70px rgba(0,0,0,0.55), 0 0 60px ${meta.color}55`,
+          padding: '22px 24px 20px',
+          color: 'var(--fg-strong)',
+        }}
+      >
+        {/* ヘッダ: アバター + 役職 (大きく、 ダイナミック に 入場) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+          <motion.div
+            initial={{ scale: 0.4, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 340, damping: 18 }}
+            style={{
+              width: 72, height: 72, borderRadius: 20,
+              background: `linear-gradient(135deg, ${meta.color}, ${meta.color}aa)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 36, color: '#0a0a0f', flexShrink: 0,
+              boxShadow: `0 0 32px ${meta.color}99, 0 8px 20px rgba(0,0,0,0.4)`,
+              position: 'relative',
+            }}
+          >
+            {meta.emoji}
+            {/* 動いて いる 時 の パルス */}
+            {phase === 'running' && (
+              <motion.div
+                animate={{ scale: [1, 1.5], opacity: [0.6, 0] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }}
+                style={{
+                  position: 'absolute', inset: -4,
+                  borderRadius: 22,
+                  border: `2px solid ${meta.color}`,
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
+          </motion.div>
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontSize: 11, fontWeight: 900, letterSpacing: '0.2em',
+              color: meta.color, marginBottom: 2,
+            }}>{role} エージェント</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 900, lineHeight: 1.15, color: 'var(--fg-strong)' }}>
+              {phase === 'idle' ? '何 を 任せます か?' :
+               phase === 'running' ? '💼 動いて います…' :
+               '✓ 納品 しました'}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 3 }}>
+              {meta.tagline || CXO_TAGLINE[role]}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="閉じる"
+            style={{
+              width: 36, height: 36, borderRadius: 999,
+              background: 'var(--surface-3)', color: 'var(--fg-strong)',
+              border: '1px solid var(--border, rgba(0,0,0,0.12))', cursor: 'pointer',
+              fontSize: 18, lineHeight: 1, flexShrink: 0, fontWeight: 700,
+            }}
+          >×</button>
+        </div>
+
+        {/* 過去 の 納品 (ピル) */}
+        {doneCount > 0 && (
+          <div style={{
+            padding: '8px 12px', borderRadius: 10, marginBottom: 12,
+            background: 'rgba(52,211,153,0.12)',
+            border: '1px solid rgba(52,211,153,0.4)',
+            fontSize: 11, color: '#10B981',
+          }}>
+            📦 これ まで {doneCount} 件 納品 {lastDone ? `· 直近: 「${lastDone}」` : ''}
+          </div>
+        )}
+
+        {/* 仕事 選択 (idle) */}
+        {phase === 'idle' && (
+          <>
+            <div style={{
+              fontSize: 11, letterSpacing: '0.16em', fontWeight: 800,
+              color: 'var(--fg-muted)', marginBottom: 10,
+            }}>👇 タップ で その 仕事 を 今 すぐ 着手</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+              {allTasks.map((task, i) => (
+                <motion.button
+                  key={i}
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setSelectedTask(task);
+                    setPhase('running');
+                  }}
+                  style={{
+                    textAlign: 'left',
+                    padding: '14px 16px', borderRadius: 12,
+                    background: i === 0 ? `linear-gradient(135deg, ${meta.color}26, ${meta.color}0d)` : 'var(--surface-3)',
+                    border: `1px solid ${i === 0 ? meta.color : meta.color + '44'}`,
+                    color: 'var(--fg-strong)', fontSize: 13.5, fontWeight: 700, lineHeight: 1.45,
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    boxShadow: i === 0 ? `0 4px 14px ${meta.color}33` : 'none',
+                  }}
+                >
+                  {i === 0 && (
+                    <span style={{
+                      fontSize: 9, padding: '2px 6px', borderRadius: 999, fontWeight: 800,
+                      background: meta.color, color: '#0a0a0f', letterSpacing: '0.06em', flexShrink: 0,
+                    }}>おすすめ</span>
+                  )}
+                  <span style={{ fontSize: 18, color: meta.color, flexShrink: 0 }}>✨</span>
+                  <span style={{ flex: 1 }}>{task}</span>
+                  <span style={{ fontSize: 18, color: meta.color, fontWeight: 800 }}>→</span>
+                </motion.button>
+              ))}
+            </div>
+            <div style={{
+              fontSize: 10.5, color: 'var(--fg-subtle)', textAlign: 'center',
+              padding: '8px 0 0',
+            }}>
+              タップ する と {role} が AI で 即 着手 → 役員 日報 に 自動 納品 されます
+            </div>
+          </>
+        )}
+
+        {/* AI 実行 (running / done) */}
+        {phase !== 'idle' && selectedTask && (
+          <InlineActionExecutor
+            action={selectedTask}
+            persona={persona}
+            settings={settings}
+            onClose={() => { setPhase('idle'); setSelectedTask(null); }}
+            onComplete={(deliverable, act) => {
+              // 役員 日報 に 自動 記録
+              try {
+                const kindToCategory: Record<string, 'plan' | 'copy' | 'analysis' | 'outreach' | 'design' | 'finance' | 'product' | 'ops' | 'other'> = {
+                  text: 'copy', checklist: 'plan', email: 'outreach', table: 'analysis', memo: 'copy',
+                };
+                logDeliverable({
+                  personaId: persona.id,
+                  cxoRole: role,
+                  cxoName: cxoDisplayName(role),
+                  cxoEmoji: meta.emoji,
+                  title: deliverable.title || act,
+                  summary: act,
+                  content: deliverable.content,
+                  category: kindToCategory[deliverable.kind] || 'other',
+                  source: 'agent-monitor',
+                });
+              } catch { /* */ }
+              setPhase('done');
+            }}
+          />
+        )}
+
+        {/* もっと 細かく 任せる (右下 役員 会議室 へ) */}
+        {phase === 'idle' && (
+          <button
+            onClick={() => { onClose(); onAgentMonitorOpen(); }}
+            style={{
+              width: '100%', marginTop: 10,
+              padding: '8px 14px', borderRadius: 8,
+              background: 'transparent', color: meta.color,
+              border: `1px solid ${meta.color}44`,
+              cursor: 'pointer', fontSize: 11, fontWeight: 800,
+              letterSpacing: '0.04em',
+            }}
+          >もっと 細かく 指示 する → 役員 会議室 (右下)</button>
+        )}
+      </motion.div>
+    </motion.div>
   );
 }
