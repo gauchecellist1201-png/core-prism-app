@@ -12,15 +12,17 @@ import { motion } from 'framer-motion';
 import BusinessPlanView from './BusinessPlanView';
 import KpiActualsTab from './KpiActualsTab';
 import ProductsTab from './ProductsTab';
+import NewVenturesTab from './NewVenturesTab';
 import { isMasterAuth } from '../lib/billing';
 
-type StrategyTab = 'overview' | 'actuals' | 'plan' | 'products' | 'simulation';
+type StrategyTab = 'overview' | 'actuals' | 'plan' | 'products' | 'ventures' | 'simulation';
 
 function getInitialTab(): StrategyTab {
   if (typeof window === 'undefined') return 'overview';
   const p = window.location.pathname;
   if (/\/plan(\/|$)/.test(p)) return 'plan';
   if (/\/actuals|\/kpi/.test(p)) return 'actuals';
+  if (/\/ventures|\/new-?business|\/portfolio/.test(p)) return 'ventures';
   if (/\/products?/.test(p)) return 'products';
   if (/\/simulation|\/sim/.test(p)) return 'simulation';
   // legacy: /strategy/sales → overview
@@ -135,6 +137,7 @@ export default function StrategyDashboard() {
             {masterMode && <TabBtn active={tab === 'actuals'} onClick={() => setTab('actuals')}>KPI 実行値</TabBtn>}
             {masterMode && <TabBtn active={tab === 'plan'} onClick={() => setTab('plan')}>事業計画</TabBtn>}
             <TabBtn active={tab === 'products'} onClick={() => setTab('products')}>プロダクト</TabBtn>
+            <TabBtn active={tab === 'ventures'} onClick={() => setTab('ventures')}>新規事業</TabBtn>
             <TabBtn active={tab === 'simulation'} onClick={() => setTab('simulation')}>シミュレーション</TabBtn>
           </div>
 
@@ -183,6 +186,16 @@ export default function StrategyDashboard() {
           <div style={{ maxWidth: 1180, margin: '0 auto' }}>
             <SectionHeader subtitle="PRODUCT MANUAL" title="プロダクト製品説明書" desc="CORE Prism (事業家向け 7 エージェント) / CORE Iris (クリエイター向け 6 ファセット)" />
             <ProductsTab />
+          </div>
+        </section>
+      )}
+
+      {/* TAB: 新規事業ポートフォリオ */}
+      {tab === 'ventures' && (
+        <section style={{ padding: '2.5rem 1.5rem 4rem', background: 'linear-gradient(180deg,#000 0%,#0a0a18 100%)' }}>
+          <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+            <SectionHeader subtitle="NEW VENTURES" title="新規事業ポートフォリオ" desc="Lume / ResonanceBot — それぞれの事業計画と、この価格での実利益。" />
+            <NewVenturesTab />
           </div>
         </section>
       )}
