@@ -1,5 +1,5 @@
 // ============================================================
-// 新規事業ポートフォリオ — Lume / ResonanceBot の事業計画ページ
+// 新規事業ポートフォリオ — Lume / Resonance の事業計画ページ
 // /strategy の「新規事業」タブから表示。各事業を1ページの計画書として描画。
 // 数字は前提つき推定（盛らない）。Stripe Japan 手数料 3.6% で実利益を明示。
 // ============================================================
@@ -95,14 +95,14 @@ const VENTURES: Venture[] = [
   },
   {
     id: 'resonance',
-    name: 'ResonanceBot',
-    reading: 'レゾナンスボット',
+    name: 'Resonance',
+    reading: 'レゾナンス',
     tagline: '一人ひとりに、その人だけのメッセージを。',
     status: 'Phase1 設計完了 / 開発中',
     accent: '#22c55e',
     accent2: '#06b6d4',
     liveUrl: '',
-    oneLine: 'LINE × Claude のパーソナライズ配信 SaaS。大企業の CRM のような「一人ひとりに寄り添う体験」を、月数千円で個人事業主にも届ける。',
+    oneLine: 'LINE × Claude のパーソナライズ配信 SaaS。大企業の CRM のような「一人ひとりに寄り添う体験」を、月980円から個人事業主にも届ける。',
     problem: [
       'LINE公式は「全員に同じ文章」しか送れず、特別感が出ない',
       'セグメント配信はあっても限界があり、本当の個別対応にならない',
@@ -116,20 +116,20 @@ const VENTURES: Venture[] = [
     market: [
       'LINE は日本のインフラ（生活者の大多数が日常利用）',
       'LINE公式アカウントは小規模事業者に広く普及',
-      '盛らない算定：有料1,000件で月商500万、5,000件で月商2,500万（ARPU¥5,000想定）',
+      '盛らない算定：有料1,000件で月商約158万、5,000件で月商約790万（ARPU¥1,580想定）',
     ],
     pricing: [
       { plan: 'Free', price: '¥0', net: '—', desc: 'AI生成なし・名前差し替えのみ。まず試す人' },
-      { plan: 'Basic', price: '¥2,980/月', net: yen(2873), desc: '名前差し替えが無制限', pop: true },
-      { plan: 'Premium', price: '¥9,800/月', net: yen(9447), desc: 'Claude による個別パーソナライズ配信' },
+      { plan: 'Basic', price: '¥980/月', net: yen(945), desc: '名前差し替えが無制限', pop: true },
+      { plan: 'Premium', price: '¥2,980/月', net: yen(2873), desc: 'Claude による個別パーソナライズ配信' },
     ],
     unitNote: '利用者が自分の API キーを接続する設計のため、使われるほど膨らむ AI 代を構造的に回避（運営の AI 原価 ≒ 0）。だから安い料金でも高利益。',
     profit: [
-      { users: '100人', mrr: yen(502600), fee: yen(18094), infra: yen(10000), net: yen(474506), margin: '94.4%' },
-      { users: '1,000人', mrr: yen(5026000), fee: yen(180936), infra: yen(30000), net: yen(4815064), margin: '95.8%' },
-      { users: '5,000人', mrr: yen(25130000), fee: yen(904680), infra: yen(80000), net: yen(24145320), margin: '96.1%' },
+      { users: '100人', mrr: yen(158000), fee: yen(5688), infra: yen(10000), net: yen(142312), margin: '90.1%' },
+      { users: '1,000人', mrr: yen(1580000), fee: yen(56880), infra: yen(30000), net: yen(1493120), margin: '94.5%' },
+      { users: '5,000人', mrr: yen(7900000), fee: yen(284400), infra: yen(80000), net: yen(7535600), margin: '95.4%' },
     ],
-    profitNote: '有料の内訳を Basic 70% / Premium 30%（平均ARPU ¥5,026）と仮定した【推定】。AI原価は利用者の自前鍵なのでほぼ0。インフラは Vercel/Upstash の概算。CAC・人件費は別。',
+    profitNote: '有料の内訳を Basic 70% / Premium 30%（平均ARPU ¥1,580）と仮定した【推定】。AI原価は利用者の自前鍵なのでほぼ0。インフラは Vercel/Upstash の概算。CAC・人件費は別。',
     edge: [
       '「便利ツール」ではなく「関係性を深める道具」という哲学',
       '自前鍵接続でAI原価ゼロ → 多くのAI SaaSの弱点を構造回避',

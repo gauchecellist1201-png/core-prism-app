@@ -121,10 +121,10 @@ const PRODUCTS: Record<ProductId, {
     ],
   },
   resonance: {
-    name: 'ResonanceBot',
+    name: 'Resonance',
     tagline: '一人ひとりに、その人だけのメッセージを。',
     for: '個人事業主 / 店舗 / アーティスト',
-    description: 'LINE × Claude のパーソナライズ配信 SaaS。大企業の CRM のような「一人ひとりに寄り添う体験」を、月数千円で個人事業主にも届ける。利用者が自分の鍵を接続するため AI 原価はほぼゼロ。',
+    description: 'LINE × Claude のパーソナライズ配信 SaaS。大企業の CRM のような「一人ひとりに寄り添う体験」を、月980円から個人事業主にも届ける。利用者が自分の鍵を接続するため AI 原価はほぼゼロ。',
     color: { primary: '#22c55e', secondary: '#06b6d4' },
     featureLabel: { en: '4 FEATURES', ja: '中心機能' },
     agents: [
@@ -135,12 +135,12 @@ const PRODUCTS: Record<ProductId, {
     ],
     pricing: [
       { plan: 'Free', price: '¥0', period: '', features: ['AI 生成なし', '名前差し替えのみ', 'まず試したい人向け'] },
-      { plan: 'Basic', price: '¥2,980', period: '/ 月', features: ['名前差し替えが無制限', '日常的な名前入り配信'], highlight: true },
-      { plan: 'Premium', price: '¥9,800', period: '/ 月', features: ['Claude 個別パーソナライズ配信', '過去の会話を踏まえる', 'ファンとの関係を深める'] },
+      { plan: 'Basic', price: '¥980', period: '/ 月', features: ['名前差し替えが無制限', '日常的な名前入り配信'], highlight: true },
+      { plan: 'Premium', price: '¥2,980', period: '/ 月', features: ['Claude 個別パーソナライズ配信', '過去の会話を踏まえる', 'ファンとの関係を深める'] },
     ],
     kgi: [
       { label: '有料件数 (Q4)', q4_target: '1,000 件' },
-      { label: '月次 MRR', q4_target: '¥5M' },
+      { label: '月次 MRR', q4_target: '¥1.6M' },
       { label: 'LTV ÷ CAC', q4_target: '約 5 倍' },
       { label: 'チャーン率', q4_target: '< 5%' },
     ],
