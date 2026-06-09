@@ -5,8 +5,8 @@
 // ============================================================
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mail as MailIcon, Compass, Heart, Shield } from 'lucide-react';
-import { PrismLogo, IrisLogo, CoreLogo } from '../components/Logo';
+import { Mail as MailIcon, Compass, Heart, Shield, BadgeCheck, MessagesSquare, Scale } from 'lucide-react';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, CoreLogo } from '../components/Logo';
 
 const COMPANY = {
   nameJa: '株式会社コア',
@@ -15,7 +15,7 @@ const COMPANY = {
   ceoJa: '井出 直毅',
   ceoEn: 'Naoki Ide',
   addressJa: '〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11-7',
-  addressEn: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0026, Japan',
+  addressEn: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0025, Japan',
   email: 'hello@core-inc.jp',
 };
 
@@ -70,7 +70,7 @@ export default function CoreSite() {
     setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core.png');
     setMeta('meta[name="twitter:title"]', 'content', '株式会社コア — CORE Inc.');
     setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。');
-    setMeta('meta[name="description"]', 'content', '株式会社コア (CORE Inc.) — すべての時代の、核となるものを。AI エージェント OS を提供する会社。');
+    setMeta('meta[name="description"]', 'content', '株式会社コア (CORE Inc.) — あなたの仕事と SNS を、AI エージェントで一気通貫に。司令塔 Prism に、Instagram の Iris・LINE の Resonance・リンクの Lume がつながる、ひとつの AI エージェント OS。');
 
     // 検索エンジンには載せない (noindex)
     let robots = document.querySelector('meta[name="robots"]');
@@ -115,7 +115,7 @@ export default function CoreSite() {
         position: 'relative',
         zIndex: 60,
       }}>
-        ◎ 2026/05/12 — CORE Prism / Iris ベータ同時公開
+        Prism ・ Iris ・ Resonance ・ Lume —— 四つのプロダクト、ベータ公開中
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -152,6 +152,7 @@ export default function CoreSite() {
           </a>
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
             <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
+            <a href="#connect" style={navLink} className="lp-nav-link">つながり</a>
             <a href="#values" style={navLink} className="lp-nav-link">信条</a>
             <a href="#mission" style={navLink} className="lp-nav-link">理念</a>
             <a href="#journey" style={navLink} className="lp-nav-link">歩み</a>
@@ -277,6 +278,131 @@ export default function CoreSite() {
               会社概要
             </a>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  CONNECT (一気通貫 / つながり)  */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section
+        id="connect"
+        className="lp-section-pad"
+        style={{
+          padding: '7rem 1.5rem',
+          background: 'linear-gradient(180deg,#000 0%,#070713 45%,#000 100%)',
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ maxWidth: 1080, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+          <p style={sectionLabel}>
+            <span style={sectionLabelMain}>つ&nbsp;な&nbsp;が&nbsp;り</span>
+            <span style={sectionLabelSub}>ONE&nbsp;FLOW</span>
+          </p>
+
+          <motion.h2
+            initial={{ y: 22 }}
+            whileInView={{ y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9 }}
+            style={{
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(2rem, 5vw, 3.6rem)',
+              fontWeight: 700,
+              lineHeight: 1.35,
+              letterSpacing: '0.04em',
+              marginBottom: '1.5rem',
+            }}
+          >
+            バラバラの道具では、ない。
+            <br />
+            <span
+              style={{
+                background: 'linear-gradient(90deg,#E1306C,#a78bfa,#60a5fa,#06C755)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 900,
+              }}
+            >
+              ひとつに、つながる。
+            </span>
+          </motion.h2>
+
+          <p
+            style={{
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(0.98rem, 1.45vw, 1.12rem)',
+              color: 'rgba(255,255,255,0.72)',
+              lineHeight: 2.2,
+              maxWidth: 720,
+              margin: '0 auto 3.5rem',
+              fontWeight: 400,
+            }}
+          >
+            Instagram（Iris）・LINE（Resonance）・リンク（Lume）が集めた、お客様の動きのすべて。
+            それは司令塔 <strong style={{ color: '#fff', fontWeight: 600 }}>Prism</strong> にひとつに流れ込み、
+            13 名の AI エージェントが次の一手まで動かします。
+            <br />
+            あなたの仕事も SNS も、もう別々ではありません。
+          </p>
+
+          {/* つながりの図 (司令塔 Prism + 3 つの SNS チャネル) */}
+          <ConnectedSuite />
+
+          {/* 一気通貫のシナリオ (ループ) */}
+          <div style={{ marginTop: '4rem' }}>
+            <p style={{
+              fontFamily: FONT_SERIF_EN,
+              fontSize: '0.78rem',
+              letterSpacing: '0.22em',
+              color: 'rgba(255,255,255,0.5)',
+              textTransform: 'uppercase',
+              marginBottom: '0.6rem',
+            }}>
+              A Day, Connected
+            </p>
+            <h3 style={{
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(1.3rem, 2.4vw, 1.85rem)',
+              fontWeight: 700,
+              color: '#fff',
+              letterSpacing: '0.04em',
+              marginBottom: '2.5rem',
+            }}>
+              横串にすると、こんなことが起きる
+            </h3>
+
+            <div
+              className="lp-flow-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '0.85rem',
+                maxWidth: 1000,
+                margin: '0 auto',
+                textAlign: 'left',
+              }}
+            >
+              <FlowStep n="01" color="#8B5CF6" tool="Lume" body="ファンが、あなたのどのリンクを踏んだのかが分かる。" />
+              <FlowStep n="02" color="#E1306C" tool="Iris" body="その人の Instagram での反応を、AIが解析する。" />
+              <FlowStep n="03" color="#06C755" tool="Resonance" body="いま響く一文を、LINE でその人だけに届ける。" />
+              <FlowStep n="04" color="#a78bfa" tool="Prism" body="すべてを記録し、13 名の AI 役員が次の一手を出す。" last />
+            </div>
+
+            <p style={{
+              fontFamily: FONT_SERIF_JA,
+              fontSize: 'clamp(0.95rem, 1.4vw, 1.08rem)',
+              color: 'rgba(255,255,255,0.78)',
+              lineHeight: 2,
+              marginTop: '2.75rem',
+              fontWeight: 400,
+            }}>
+              四つのツールを横串にして、ひとつの流れに。
+              <br />
+              <strong style={{ color: '#fff', fontWeight: 700 }}>あなたは、確認して送るだけ。</strong>
+            </p>
+          </div>
         </div>
       </section>
 
@@ -554,19 +680,19 @@ export default function CoreSite() {
                 accent: '#fbbf24',
                 en: 'CORE 1',
                 jaTitle: '時間を、取り戻す',
-                body: '社長 1 人の時間は、組織で一番貴重な資産。AI 役員 13 名が、その時間を毎月 30 時間以上、確実に取り戻します。',
+                body: '経営者の時間は、組織でもっとも希少な資産です。13 名の AI 役員が雑務と下調べを引き受け、本来向き合うべき仕事のための時間を取り戻します。',
               },
               {
                 accent: '#a78bfa',
                 en: 'CORE 2',
-                jaTitle: '判断を、軽くする',
-                body: '迷う時間は重く、決める時間は短い。データと文脈を瞬時にまとめ、いつでも 3 つの選択肢を並べて差し出します。',
+                jaTitle: '判断を、支える',
+                body: '迷いは重く、決断は一瞬であるべきです。散らばったデータと文脈をその場でまとめ、根拠とともに選択肢を差し出します。決めるのは、いつもあなた。',
               },
               {
                 accent: '#60a5fa',
                 en: 'CORE 3',
-                jaTitle: '言葉を、つくる',
-                body: '営業文・議事録・提案書。書くのに時間がかかる言葉はすべて、AI が下書きまで終わらせておきます。あなたは確認して送るだけ。',
+                jaTitle: '言葉を、ととのえる',
+                body: '商談メール、議事録、提案書。時間を奪う書きものは、AI が下書きまで仕上げておきます。あなたの仕事は、目を通して送り出すことだけ。',
               },
             ].map((p, i) => (
               <div
@@ -643,57 +769,93 @@ export default function CoreSite() {
                 letterSpacing: '0.04em',
               }}
             >
-              ひとつの光が、二つの形に。
+              四つの専門。ひとつの、頭脳。
             </h2>
             <p
               style={{
                 fontFamily: FONT_SERIF_JA,
                 color: 'rgba(255,255,255,0.65)',
                 fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
-                maxWidth: 640,
+                maxWidth: 700,
                 margin: '0 auto',
                 lineHeight: 2,
                 fontWeight: 400,
               }}
             >
-              ひとつは光を分散し、もうひとつは光を受け止める。
+              経営の司令塔 <strong style={{ color: '#fff', fontWeight: 600 }}>Prism</strong> に、
+              Instagram・LINE・リンクの三つの SNS ツールがつながる。
               <br />
-              対をなす二つのAIが、人の核を照らし出します。
+              あなたの仕事も SNS も、ひとつの AI エージェントの流れで動きます。
             </p>
           </div>
 
-          {/* PRISM (主力プロダクト・大きく) */}
+          {/* PRISM — 全事業の司令塔 */}
           <FeatureProduct
             brand="prism"
-            badge="フラッグシップ"
-            tagline="光を、分散させる。"
-            taglineEn="Disperse the light."
-            description="ひとりの人間に宿る複数の人格を、エージェントAIとして外に取り出すOS。経営者・営業・財務・創造者 ── 役割の数だけ、思考が要る。すべての事業家のための、新しい知性のかたち。"
+            badge="司令塔 ／ 全事業を一元管理"
+            tagline="すべての事業を、ひとつの頭脳で。"
+            taglineEn="One mind for your whole business."
+            description="営業・財務・契約・議事録 —— 経営のすべてを 13 名の AI エージェントが引き受ける司令塔。Iris・Resonance・Lume が SNS で掴んだお客様の動きも、最後はここにすべて集まり、次の一手まで提案します。"
             features={[
-              '7つの人格・7つの専属AIエージェント',
-              '商談、議事録、財務、契約書まで一気通貫',
-              '横断検索ひとつで、すべての文脈にアクセス',
+              '七つの役割に、七人の専属エージェント',
+              '商談・財務・契約をひと続きに自動化',
+              '三つの SNS ツールの結果も、ここに集約',
             ]}
             accentColor="#a78bfa"
             accentGradient="linear-gradient(135deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)"
             url="/"
           />
 
-          {/* IRIS (二番手・ペアで配置) */}
+          {/* IRIS — Instagram を AI で */}
           <FeatureProduct
             brand="iris"
-            badge="クリエイター向け"
-            tagline="光を、受け止める。"
-            taglineEn="Receive the light."
-            description="あらゆる情報・反応・感情を受け取り、解像度の高い洞察に変えるクリエイターのためのAI。インフルエンサーの六つの仕事を、ひとつのアプリで束ねます。"
+            badge="Instagram を、AI エージェントに"
+            tagline="Instagram を、AIと育てる。"
+            taglineEn="Run Instagram with an AI agent."
+            description="投稿・分析・案件管理・DM 返信 —— Instagram 運用のすべてを AI が担います。ここで掴んだファンの反応は、そのまま Resonance の LINE 配信や、Prism の経営判断へと流れていきます。"
             features={[
-              '案件管理・分析・創作・交渉まで一気通貫',
-              'Instagram 解析と投稿AIで戦略を自動化',
-              '美意識を共有する、招待制コミュニティ',
+              '投稿AI × Instagram 解析で戦略を自動化',
+              '案件管理・DM 返信まで下書きを用意',
+              '反応データを Resonance・Prism へ連携',
             ]}
             accentColor="#E1306C"
             accentGradient="linear-gradient(135deg,#FCB045,#E1306C,#833AB4)"
             url="/iris"
+            reversed
+          />
+
+          {/* RESONANCE — LINE を AI で */}
+          <FeatureProduct
+            brand="resonance"
+            badge="LINE を、AI エージェントに"
+            tagline="LINE のご縁を、AIが温める。"
+            taglineEn="Run LINE with an AI agent."
+            description="名簿の一人ひとりに、その人のための一文を AI が書き分け、LINE で手紙のように届ける個別配信。Iris や Lume が見つけた「いま関心のある人」へ、最適なタイミングで届きます。"
+            features={[
+              '一人ひとりに、AIが文面を書き分ける',
+              '送る前に必ず全件を確認できる安心設計',
+              'Iris・Lume の来訪データで宛先を最適化',
+            ]}
+            accentColor="#06C755"
+            accentGradient="linear-gradient(135deg,#34D399,#06C755,#0EA5E9)"
+            url="https://resonancebot-ivory.vercel.app/"
+          />
+
+          {/* LUME — すべてのリンクを束ねるハブ */}
+          <FeatureProduct
+            brand="lume"
+            badge="すべてのリンクを、ひとつに"
+            tagline="すべてのリンクを、ひとつに。"
+            taglineEn="Every link, in one place."
+            description="プロフィールのたった一行に、あなたのすべてのリンクを束ねるハブ。誰が、どこから、どのリンクに触れたのか —— そのクリックの流れは、Iris・Resonance・Prism すべての判断材料になります。"
+            features={[
+              '全リンクを、ひとつのプロフィールに集約',
+              'クリックの偏りを熱で可視化するヒートマップ',
+              '来訪データを Prism・Iris・Resonance へ',
+            ]}
+            accentColor="#8B5CF6"
+            accentGradient="linear-gradient(135deg,#A78BFA,#8B5CF6,#6D28D9)"
+            url="https://lume-deploy-five.vercel.app/"
             reversed
           />
         </div>
@@ -748,10 +910,9 @@ export default function CoreSite() {
               letterSpacing: '0.05em',
             }}
           >
-            光は、分かれる。
+            光は、分かれる。受けとめられる。灯る。
             <br />
-            光は、受け止められる。
-            <br />
+            そして、
             <span
               style={{
                 background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)',
@@ -760,7 +921,7 @@ export default function CoreSite() {
                 fontWeight: 900,
               }}
             >
-              そのどちらもが、核。
+              響きあう。
             </span>
           </motion.h2>
 
@@ -774,7 +935,7 @@ export default function CoreSite() {
               marginBottom: '2rem',
             }}
           >
-            Light disperses. Light is received. Both, the CORE.
+            Light disperses, is received, is kindled — and resonates.
           </p>
 
           <p
@@ -782,20 +943,26 @@ export default function CoreSite() {
               fontFamily: FONT_SERIF_JA,
               color: 'rgba(255,255,255,0.7)',
               fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
-              lineHeight: 2.2,
+              lineHeight: 2.4,
               maxWidth: 760,
               margin: '0 auto',
               fontWeight: 400,
             }}
           >
-            ひとりの中に、複数の役割を解き放つ
+            すべての事業を束ねる司令塔
             <strong style={{ color: '#a78bfa', fontWeight: 600 }}> Prism</strong>。
-            <br />
-            あらゆる情報を受け取り、伝わる形に変える
+            Instagram を AI と育てる
             <strong style={{ color: '#E1306C', fontWeight: 600 }}> Iris</strong>。
             <br />
+            LINE のご縁を温める
+            <strong style={{ color: '#06C755', fontWeight: 600 }}> Resonance</strong>。
+            すべてのリンクをひとつに束ねる
+            <strong style={{ color: '#8B5CF6', fontWeight: 600 }}> Lume</strong>。
             <br />
-            この二つは、対立するように見えて、ひとつの真理の両面です。
+            <br />
+            四つは別々の道具ではなく、ひとつの核でつながっています。
+            <br />
+            あなたの仕事と SNS を、ひとつの流れで動かすこと。
             <br />
             それが、<strong style={{ color: '#fff', fontWeight: 700, fontFamily: FONT_DISPLAY, letterSpacing: '0.15em' }}>CORE</strong> という会社の核。
           </p>
@@ -863,30 +1030,26 @@ export default function CoreSite() {
               {
                 year: '2026',
                 title: '株式会社 CORE 創業',
-                body: '「すべての時代の、核となるものを」を理念に、AI 経営参謀 Prism と Instagram クリエイター向け Iris の二本柱で起業。13 名の AI 役員 (CXO エージェント) が中小経営者・個人事業主を支える設計を構築。',
+                body: '「すべての時代の、核となるものを」を理念に創業。事業家のための Prism を起点に、Iris・Resonance・Lume を加えた四つのプロダクトと、13 名の AI 役員で、中小経営者と個人事業主を支える土台を築きます。',
                 accent: '#FCB045',
-                emoji: '🌱',
               },
               {
-                year: '2026 Q3',
-                title: '本格ローンチ',
-                body: '日本の個人事業主・中小経営者向けに正式リリース。「クレジット制 + 上限超過は買い足し」のフェアな価格設計で、はじめての AI ツール体験を提供。',
+                year: '2026 後期',
+                title: '四プロダクトの本格ローンチ',
+                body: '日本の個人事業主・中小経営者へ正式リリース。使ったぶんだけ支払い、上限を超えたぶんは買い足す。気づかぬうちに高額にならない、公正な料金設計で届けます。',
                 accent: '#FBBF24',
-                emoji: '🚀',
               },
               {
                 year: '2027',
-                title: '法人プラン展開 / チーム機能強化',
-                body: 'メンバー招待 + 共有ダッシュボード + Slack 連携を完成させ、5〜50 名の組織にも導入できる体験へ。経営者と現場の「橋」を AI が担う。',
+                title: '法人プランとチーム機能',
+                body: 'メンバー招待、共有ダッシュボード、外部ツール連携を整え、5〜50 名の組織にも導入できる体験へ。経営者と現場をつなぐ「橋」を、AI が担います。',
                 accent: '#A78BFA',
-                emoji: '🤝',
               },
               {
-                year: '2028 →',
+                year: '2028 —',
                 title: '国境を越える「核」',
-                body: '英語版 / 韓国語版 / 台湾繁体字版を提供し、東アジアの中小経営者へ。やさしい言葉でいつでも頼れる AI 役員 13 名を、誰の手元にも。',
+                body: '英語・韓国語・台湾繁体字に対応し、東アジアの中小経営者へ。やさしい言葉でいつでも頼れる AI 役員を、誰の手元にも届けます。',
                 accent: '#60A5FA',
-                emoji: '🌏',
               },
             ].map((m, i) => (
               <motion.li
@@ -904,18 +1067,22 @@ export default function CoreSite() {
                   position: 'relative',
                 }}
               >
-                {/* ドット */}
+                {/* ドット (核を象る同心円) */}
                 <div style={{
                   width: 36, height: 36, borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${m.accent}, ${m.accent}55)`,
+                  background: `radial-gradient(circle, ${m.accent} 0%, ${m.accent}22 70%, transparent 72%)`,
+                  border: `1px solid ${m.accent}66`,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.05rem',
                   flexShrink: 0,
-                  boxShadow: `0 0 18px ${m.accent}55, 0 0 0 4px #000`,
+                  boxShadow: `0 0 18px ${m.accent}44, 0 0 0 4px #000`,
                   position: 'relative',
                   zIndex: 2,
                 }}>
-                  {m.emoji}
+                  <span style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: '#fff',
+                    boxShadow: `0 0 8px ${m.accent}`,
+                  }} />
                 </div>
                 <div style={{ flex: 1, paddingTop: '0.2rem' }}>
                   <div style={{
@@ -1113,7 +1280,7 @@ export default function CoreSite() {
               maxWidth: 640,
               margin: '0 auto 2rem',
             }}>
-              すべてのプロダクトに、13 の専門エージェントが乗っています。経営判断・営業・財務・創造・学び・人材・生活。社長 1 人の頭脳に、13 の参謀が並走する設計です。
+              四つのプロダクトすべてに、13 名の専門エージェントが控えています。経営、営業、財務、創造、データ、人材、法務 —— 経営者ひとりの頭脳に、13 の参謀が並走する設計です。
             </p>
             <div
               className="lp-officer-grid"
@@ -1126,34 +1293,35 @@ export default function CoreSite() {
               }}
             >
               {[
-                { e: '🧭', t: 'CEO', d: '経営戦略' },
-                { e: '⚙️', t: 'CTO', d: '技術' },
-                { e: '🎯', t: 'CPO', d: '製品' },
-                { e: '🎨', t: 'CDO', d: 'デザイン' },
-                { e: '📢', t: 'CMO', d: 'マーケ' },
-                { e: '💼', t: 'CSO', d: '営業' },
-                { e: '🧮', t: 'CFO', d: '財務' },
-                { e: '🗂', t: 'COO', d: 'オペ' },
-                { e: '🔬', t: 'CDS', d: 'データ' },
-                { e: '⚖️', t: 'CLO', d: '法務' },
-                { e: '✨', t: 'UIE', d: 'UI' },
-                { e: '👁', t: 'UXE', d: 'UX' },
-                { e: '🛡', t: 'QAE', d: '品質' },
+                { t: 'CEO', d: '経営戦略' },
+                { t: 'CTO', d: '技術' },
+                { t: 'CPO', d: '製品' },
+                { t: 'CDO', d: 'デザイン' },
+                { t: 'CMO', d: 'マーケ' },
+                { t: 'CSO', d: '営業' },
+                { t: 'CFO', d: '財務' },
+                { t: 'COO', d: '運営' },
+                { t: 'CDS', d: 'データ' },
+                { t: 'CLO', d: '法務' },
+                { t: 'UIE', d: 'UI' },
+                { t: 'UXE', d: 'UX' },
+                { t: 'QAE', d: '品質' },
               ].map((o, i) => (
                 <div key={i} style={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  padding: '0.85rem 0.4rem',
+                  justifyContent: 'center',
+                  padding: '1rem 0.4rem',
                   background: 'rgba(255,255,255,0.025)',
                   border: '1px solid rgba(255,255,255,0.08)',
                   borderRadius: 10,
                   textAlign: 'center',
-                  gap: 2,
+                  gap: 5,
                 }}>
-                  <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>{o.e}</span>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#fff', letterSpacing: '0.08em', fontFamily: FONT_SERIF_EN }}>{o.t}</span>
-                  <span style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.5)', fontFamily: FONT_SERIF_JA }}>{o.d}</span>
+                  <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff', letterSpacing: '0.14em', fontFamily: FONT_SERIF_EN }}>{o.t}</span>
+                  <span aria-hidden style={{ width: 14, height: 1, background: 'rgba(255,255,255,0.25)' }} />
+                  <span style={{ fontSize: '0.64rem', color: 'rgba(255,255,255,0.55)', fontFamily: FONT_SERIF_JA, letterSpacing: '0.04em' }}>{o.d}</span>
                 </div>
               ))}
             </div>
@@ -1193,19 +1361,22 @@ export default function CoreSite() {
             >
               {[
                 {
-                  emoji: '🪞',
-                  title: '嘘の数字は出さない',
-                  body: 'まだ数字がないなら「—」と書く。架空の実績や水増しした数値は、信頼を一瞬で失う最大の罪と考えています。',
+                  icon: <BadgeCheck size={24} strokeWidth={1.8} color="#FCB045" />,
+                  accent: '#FCB045',
+                  title: '偽りの数字は、載せない',
+                  body: 'まだ実績がないものには「—」と記す。架空の数字や水増しした成果は、信頼を一瞬で失わせる最大の不誠実だと考えています。',
                 },
                 {
-                  emoji: '🌿',
-                  title: 'やさしい日本語で話す',
-                  body: '専門用語や横文字は、できる限り日本語に言い換える。「初心者向け」ではなく「すべての人向け」のために。',
+                  icon: <MessagesSquare size={24} strokeWidth={1.8} color="#60A5FA" />,
+                  accent: '#60A5FA',
+                  title: 'やさしい言葉で、語る',
+                  body: '専門用語や横文字は、できるかぎり日常の言葉に言い換える。「初心者のため」ではなく、「すべての人のため」に。',
                 },
                 {
-                  emoji: '🤲',
-                  title: '使ったぶんだけ払えるように',
-                  body: '月額には上限を設け、超えたぶんは買い足し方式。決して気づかぬ間に高額にならない、フェアな料金設計を守ります。',
+                  icon: <Scale size={24} strokeWidth={1.8} color="#4ADE80" />,
+                  accent: '#4ADE80',
+                  title: '使ったぶんだけ、いただく',
+                  body: '月額には上限を設け、超えたぶんは買い足す方式。知らぬ間に高額にならない、公正な料金のかたちを守り続けます。',
                 },
               ].map((c, i) => (
                 <div key={i} style={{
@@ -1214,7 +1385,13 @@ export default function CoreSite() {
                   border: '1px solid rgba(255,255,255,0.08)',
                   borderRadius: 14,
                 }}>
-                  <div style={{ fontSize: '1.7rem', marginBottom: '0.6rem', lineHeight: 1 }}>{c.emoji}</div>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: '50%',
+                    background: `radial-gradient(circle, ${c.accent}22 0%, transparent 70%)`,
+                    border: `1px solid ${c.accent}44`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: '0.85rem',
+                  }} aria-hidden>{c.icon}</div>
                   <div style={{
                     fontFamily: FONT_SERIF_JA,
                     fontWeight: 700,
@@ -1251,7 +1428,7 @@ export default function CoreSite() {
             <InfoRow label="代表取締役" subLabel="CEO"           value={COMPANY.ceoJa}    subValue={COMPANY.ceoEn} />
             <InfoRow label="本社所在地" subLabel="Headquarters" value={COMPANY.addressJa} subValue={COMPANY.addressEn} />
             <InfoRow label="事業内容"   subLabel="Business"     value="エージェントAIを中心とした SaaS の開発・運営" />
-            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Prism（事業家向け）, CORE Iris（クリエイター向け）" isLast />
+            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）" isLast />
           </dl>
         </div>
       </section>
@@ -1421,6 +1598,8 @@ export default function CoreSite() {
             <p style={footHead}>プロダクト</p>
             <a href="/" style={footLink} className="lp-tap-link">CORE Prism</a>
             <a href="/iris" style={footLink} className="lp-tap-link">CORE Iris</a>
+            <a href="https://resonancebot-ivory.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Resonance</a>
+            <a href="https://lume-deploy-five.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Lume</a>
           </div>
           <div>
             <p style={footHead}>会社</p>
@@ -1572,7 +1751,7 @@ function FeatureProduct({
   url,
   reversed,
 }: {
-  brand: 'prism' | 'iris';
+  brand: 'prism' | 'iris' | 'resonance' | 'lume';
   badge: string;
   tagline: string;
   taglineEn: string;
@@ -1583,8 +1762,16 @@ function FeatureProduct({
   url: string;
   reversed?: boolean;
 }) {
-  const Logo = brand === 'iris' ? IrisLogo : PrismLogo;
-  const productName = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
+  const Logo =
+    brand === 'iris' ? IrisLogo :
+    brand === 'resonance' ? ResonanceLogo :
+    brand === 'lume' ? LumeLogo :
+    PrismLogo;
+  const productName =
+    brand === 'iris' ? 'CORE Iris' :
+    brand === 'resonance' ? 'CORE Resonance' :
+    brand === 'lume' ? 'CORE Lume' :
+    'CORE Prism';
 
   return (
     <motion.div
@@ -1764,6 +1951,7 @@ function FeatureProduct({
 
         <a
           href={url}
+          {...(url.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -1949,6 +2137,129 @@ function ValuePillar({
         {body}
       </p>
     </motion.div>
+  );
+}
+
+// ============================================================
+//  ConnectedSuite — 司令塔 Prism + 3 つの SNS チャネルのつながり図
+// ============================================================
+function ConnectedSuite() {
+  // 衛星ノード (% 座標 = 正方形コンテナ内)
+  const sats = [
+    { key: 'iris', Logo: IrisLogo, name: 'Iris', role: 'Instagram', color: '#E1306C', x: 50, y: 11 },
+    { key: 'resonance', Logo: ResonanceLogo, name: 'Resonance', role: 'LINE', color: '#06C755', x: 13, y: 85 },
+    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#8B5CF6', x: 87, y: 85 },
+  ];
+
+  const nodeCard = (color: string): React.CSSProperties => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 6,
+    padding: '0.9rem 0.9rem 0.8rem',
+    background: 'rgba(8,8,18,0.85)',
+    border: `1px solid ${color}55`,
+    borderRadius: 16,
+    boxShadow: `0 8px 28px ${color}33`,
+    backdropFilter: 'blur(6px)',
+    minWidth: 96,
+  });
+
+  return (
+    <div
+      className="lp-connect-suite"
+      style={{ position: 'relative', width: 'min(86vw, 520px)', aspectRatio: '1 / 1', margin: '0 auto' }}
+    >
+      {/* つなぐ線 (中央 → 各衛星、データが流れるダッシュ) */}
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        aria-hidden
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}
+      >
+        {sats.map(s => (
+          <line
+            key={s.key}
+            x1="50" y1="50" x2={s.x} y2={s.y}
+            stroke={s.color}
+            strokeWidth="0.45"
+            strokeOpacity="0.55"
+            strokeDasharray="1.6 1.8"
+            strokeLinecap="round"
+          >
+            <animate attributeName="stroke-dashoffset" from="7" to="0" dur="1.4s" repeatCount="indefinite" />
+          </line>
+        ))}
+      </svg>
+
+      {/* 中央: 司令塔 Prism */}
+      <motion.div
+        animate={{ scale: [1, 1.04, 1] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+          padding: '1.2rem 1.3rem 1rem',
+          background: 'radial-gradient(circle at 50% 40%, rgba(167,139,250,0.22), rgba(8,8,18,0.92))',
+          border: '1px solid rgba(167,139,250,0.55)',
+          borderRadius: 22,
+          boxShadow: '0 0 48px rgba(167,139,250,0.4), inset 0 0 24px rgba(167,139,250,0.12)',
+          zIndex: 3,
+        }}
+      >
+        <PrismLogo size={56} withWordmark={false} />
+        <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.62rem', letterSpacing: '0.28em', color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>
+          PRISM
+        </span>
+        <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.74rem', color: '#fff', fontWeight: 700, letterSpacing: '0.06em' }}>
+          司令塔
+        </span>
+      </motion.div>
+
+      {/* 衛星: Iris / Resonance / Lume */}
+      {sats.map(s => (
+        <div
+          key={s.key}
+          style={{ position: 'absolute', left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%,-50%)', zIndex: 2 }}
+        >
+          <div style={nodeCard(s.color)}>
+            <s.Logo size={42} withWordmark={false} />
+            <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.82rem', color: '#fff', fontWeight: 600, fontStyle: 'italic', letterSpacing: '0.02em' }}>
+              {s.name}
+            </span>
+            <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.66rem', color: s.color, fontWeight: 700, letterSpacing: '0.06em' }}>
+              {s.role}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ───────────── 一気通貫フローの 1 ステップ ─────────────
+function FlowStep({ n, color, tool, body, last }: { n: string; color: string; tool: string; body: string; last?: boolean }) {
+  return (
+    <div
+      style={{
+        position: 'relative',
+        padding: '1.4rem 1.2rem',
+        background: `linear-gradient(165deg, ${color}14, transparent 75%)`,
+        border: `1px solid ${color}33`,
+        borderRadius: 16,
+        overflow: 'hidden',
+      }}
+    >
+      <span aria-hidden style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: color }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.7rem' }}>
+        <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.74rem', letterSpacing: '0.2em', color, fontWeight: 700 }}>{n}</span>
+        <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.98rem', fontStyle: 'italic', fontWeight: 600, color: '#fff' }}>{tool}</span>
+        {!last && <span aria-hidden style={{ marginLeft: 'auto', color: `${color}cc`, fontSize: '1rem' }}>→</span>}
+      </div>
+      <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', color: 'rgba(255,255,255,0.72)', lineHeight: 1.85, margin: 0 }}>
+        {body}
+      </p>
+    </div>
   );
 }
 

@@ -849,6 +849,48 @@ select option {
   .cp-card-tap:active { transform: scale(0.985); }
 }
 
+/* ───── 登場の演出 .cp-enter-stagger ─────
+   画面を開いた瞬間、コンテンツが「下からそっと立ち上がってピントが合う」第一印象。
+   親に .cp-enter-stagger を付けるだけで、直下の子が 1 拍ずつ遅れて現れる。
+   設計:
+     1) 10px 下から浮上 + わずかな blur(3px) から合焦 — 写真のピント送りのような上質感
+     2) 子ごとに 55ms ずらし、8 番目以降は一律 (待たせすぎない)
+     3) 着地は --cp-ease-soft (ふわっと) で、止まる瞬間に小さな安心感
+   ※ animation-fill-backwards で「遅延中は最初のフレーム(透明)」を保ち、チラつきを防ぐ。 */
+@keyframes cp-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+.cp-enter-stagger > * {
+  animation: cp-rise-in var(--cp-duration-curtain) var(--cp-ease-soft) backwards;
+}
+.cp-enter-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.cp-enter-stagger > *:nth-child(2) { animation-delay: 55ms; }
+.cp-enter-stagger > *:nth-child(3) { animation-delay: 110ms; }
+.cp-enter-stagger > *:nth-child(4) { animation-delay: 165ms; }
+.cp-enter-stagger > *:nth-child(5) { animation-delay: 220ms; }
+.cp-enter-stagger > *:nth-child(6) { animation-delay: 275ms; }
+.cp-enter-stagger > *:nth-child(7) { animation-delay: 330ms; }
+.cp-enter-stagger > *:nth-child(n+8) { animation-delay: 385ms; }
+/* 動きが苦手な人へ: 浮上もボヤけも消し、その場でやわらかく現れるだけにする */
+@media (prefers-reduced-motion: reduce) {
+  .cp-enter-stagger > * {
+    animation: cp-rise-in-soft var(--cp-duration-stage) var(--cp-ease-out) backwards;
+  }
+  @keyframes cp-rise-in-soft {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
 /* ───── 統一トースト .cp-toast ─────
    小さな成功/失敗の通知を「全部おなじ語彙」で出すための共通スタイル。
    下部中央に scoot-up で滑り込み、左にアクセント色 4px の柱、右上に薄い ✓ アイコンを CSS で出せる。
@@ -1261,6 +1303,9 @@ input, textarea, select { font-family: inherit; }
 
   /* VALUES 3カラム → 縦積み */
   .lp-values-grid { grid-template-columns: 1fr !important; gap: 1.25rem !important; }
+
+  /* 一気通貫フロー 4列 → 2列 */
+  .lp-flow-grid { grid-template-columns: 1fr 1fr !important; }
 }
 
 /* ─── スマホ縦 (640px) ─── */
