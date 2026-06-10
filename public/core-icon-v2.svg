@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='1024' height='1024'>
+  <defs>
+    <radialGradient id='core' cx='44%' cy='40%' r='62%'>
+      <stop offset='0%' stop-color='#FFFFFF'/>
+      <stop offset='45%' stop-color='#BAE6FD'/>
+      <stop offset='100%' stop-color='#0EA5E9'/>
+    </radialGradient>
+    <radialGradient id='glow' cx='50%' cy='50%' r='50%'>
+      <stop offset='0%' stop-color='#38BDF8' stop-opacity='0.55'/>
+      <stop offset='100%' stop-color='#38BDF8' stop-opacity='0'/>
+    </radialGradient>
+  </defs>
+  <rect width='100' height='100' rx='24' fill='#0B1220'/>
+  <circle cx='50' cy='50' r='34' fill='url(#glow)'/>
+  <g fill='none' stroke-linecap='round'>
+    <ellipse cx='50' cy='50' rx='40' ry='15' stroke='#38BDF8' stroke-width='3' transform='rotate(-24 50 50)'/>
+    <ellipse cx='50' cy='50' rx='40' ry='15' stroke='#7DD3FC' stroke-width='2.4' opacity='0.6' transform='rotate(34 50 50)'/>
+  </g>
+  <circle cx='50' cy='50' r='13' fill='url(#core)'/>
+  <circle cx='45' cy='45' r='3' fill='#FFFFFF' opacity='0.85'/>
+</svg>
