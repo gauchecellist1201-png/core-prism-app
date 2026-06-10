@@ -11,7 +11,9 @@ import type { CSSProperties, ReactNode } from 'react';
 
 export type BrandName =
   | 'gmail' | 'gcalendar' | 'stripe' | 'instagram'
-  | 'tiktok' | 'slack' | 'line' | 'meeting';
+  | 'tiktok' | 'slack' | 'line' | 'meeting'
+  | 'gdrive' | 'gdocs' | 'gsheets' | 'notion' | 'dropbox'
+  | 'zoom' | 'x' | 'ms365' | 'trello' | 'asana' | 'salesforce' | 'hubspot';
 
 function Tile({ size, bg, children, style }: { size: number; bg: string; children: ReactNode; style?: CSSProperties }) {
   return (
@@ -101,6 +103,120 @@ export function BrandIcon({ name, size = 26 }: { name: BrandName; size?: number 
         <Tile size={size} bg="#06C755">
           <svg width={g * 0.92} height={g * 0.92} viewBox="0 0 24 24" fill="#fff" aria-label="LINE">
             <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+          </svg>
+        </Tile>
+      );
+    case 'gdrive':
+      return (
+        <Tile size={size} bg="#ffffff">
+          <svg width={g} height={g} viewBox="0 0 87.3 78" aria-label="Google Drive">
+            <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />
+            <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.79 1.36-1.2 2.92-1.2 4.5h27.5z" fill="#00ac47" />
+            <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335" />
+            <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d" />
+            <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc" />
+            <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00" />
+          </svg>
+        </Tile>
+      );
+    case 'gdocs':
+      return (
+        <Tile size={size} bg="#ffffff">
+          <svg width={g * 0.78} height={g} viewBox="0 0 14 18" aria-label="Google Docs">
+            <path d="M9 0H1.5A1.5 1.5 0 000 1.5v15A1.5 1.5 0 001.5 18h11a1.5 1.5 0 001.5-1.5V5z" fill="#4285F4" />
+            <path d="M9 0v3.5A1.5 1.5 0 0010.5 5H14z" fill="#A1C2FA" />
+            <rect x="3" y="8" width="8" height="1.1" rx="0.55" fill="#fff" />
+            <rect x="3" y="10.6" width="8" height="1.1" rx="0.55" fill="#fff" />
+            <rect x="3" y="13.2" width="5.5" height="1.1" rx="0.55" fill="#fff" />
+          </svg>
+        </Tile>
+      );
+    case 'gsheets':
+      return (
+        <Tile size={size} bg="#ffffff">
+          <svg width={g * 0.78} height={g} viewBox="0 0 14 18" aria-label="Google Sheets">
+            <path d="M9 0H1.5A1.5 1.5 0 000 1.5v15A1.5 1.5 0 001.5 18h11a1.5 1.5 0 001.5-1.5V5z" fill="#0F9D58" />
+            <path d="M9 0v3.5A1.5 1.5 0 0010.5 5H14z" fill="#87CEAC" />
+            <path d="M3.2 8.2h7.6v6H3.2z M4.4 8.2v6 M7 8.2v6 M9.6 8.2v6 M3.2 10.2h7.6 M3.2 12.2h7.6" stroke="#fff" strokeWidth="0.7" fill="none" />
+          </svg>
+        </Tile>
+      );
+    case 'notion':
+      return (
+        <Tile size={size} bg="#ffffff" style={{ border: '1px solid rgba(0,0,0,0.12)' }}>
+          <svg width={g * 0.9} height={g * 0.9} viewBox="0 0 24 24" fill="#000" aria-label="Notion">
+            <path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.054-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.561.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952l1.448.327s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.14c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z" />
+          </svg>
+        </Tile>
+      );
+    case 'dropbox':
+      return (
+        <Tile size={size} bg="#0061FF">
+          <svg width={g * 0.86} height={g * 0.86} viewBox="0 0 24 24" fill="#fff" aria-label="Dropbox">
+            <path d="M6 1.807L0 5.629l6 3.822 6.001-3.822L6 1.807zM18 1.807l-6 3.822 6 3.822 6-3.822-6-3.822zM0 13.274l6 3.822 6.001-3.822L6 9.452l-6 3.822zM18 9.452l-6 3.822 6 3.822 6-3.822-6-3.822zM6 18.371l6.001 3.822 6-3.822-6-3.822L6 18.371z" />
+          </svg>
+        </Tile>
+      );
+    case 'zoom':
+      return (
+        <Tile size={size} bg="#2D8CFF">
+          <svg width={g * 0.86} height={g * 0.86} viewBox="0 0 24 24" fill="#fff" aria-label="Zoom">
+            <rect x="3" y="7.5" width="11" height="9" rx="2.2" />
+            <path d="M15 11l5-3.2v8.4L15 13z" />
+          </svg>
+        </Tile>
+      );
+    case 'x':
+      return (
+        <Tile size={size} bg="#000000">
+          <svg width={g * 0.72} height={g * 0.72} viewBox="0 0 24 24" fill="#fff" aria-label="X">
+            <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932zM17.61 20.644h2.039L6.486 3.24H4.298z" />
+          </svg>
+        </Tile>
+      );
+    case 'ms365':
+      return (
+        <Tile size={size} bg="#ffffff">
+          <svg width={g * 0.86} height={g * 0.86} viewBox="0 0 24 24" aria-label="Microsoft 365">
+            <rect x="2" y="2" width="9" height="9" fill="#F25022" />
+            <rect x="13" y="2" width="9" height="9" fill="#7FBA00" />
+            <rect x="2" y="13" width="9" height="9" fill="#00A4EF" />
+            <rect x="13" y="13" width="9" height="9" fill="#FFB900" />
+          </svg>
+        </Tile>
+      );
+    case 'trello':
+      return (
+        <Tile size={size} bg="#0079BF">
+          <svg width={g * 0.86} height={g * 0.86} viewBox="0 0 24 24" fill="#fff" aria-label="Trello">
+            <rect x="3.5" y="3.5" width="6.5" height="13" rx="1.2" />
+            <rect x="14" y="3.5" width="6.5" height="8" rx="1.2" />
+          </svg>
+        </Tile>
+      );
+    case 'asana':
+      return (
+        <Tile size={size} bg="#ffffff">
+          <svg width={g * 0.86} height={g * 0.86} viewBox="0 0 24 24" fill="#F06A6A" aria-label="Asana">
+            <circle cx="12" cy="17.8" r="4.3" />
+            <circle cx="6.2" cy="6.5" r="4.3" />
+            <circle cx="17.8" cy="6.5" r="4.3" />
+          </svg>
+        </Tile>
+      );
+    case 'salesforce':
+      return (
+        <Tile size={size} bg="#00A1E0">
+          <svg width={g * 0.94} height={g * 0.94} viewBox="0 0 24 24" fill="#fff" aria-label="Salesforce">
+            <path d="M10.2 8.3a3.4 3.4 0 015.9-1 4 4 0 015.9 3.5 3.7 3.7 0 01-1.7 6.9c-.3 0-.6 0-.9-.1a2.9 2.9 0 01-5.3.6 3.3 3.3 0 01-6.1-.4 3 3 0 01-.6.1 3.4 3.4 0 01-.8-6.7 3.9 3.9 0 014.5-2.9z" />
+          </svg>
+        </Tile>
+      );
+    case 'hubspot':
+      return (
+        <Tile size={size} bg="#FF7A59">
+          <svg width={g * 0.86} height={g * 0.86} viewBox="0 0 24 24" fill="#fff" aria-label="HubSpot">
+            <path d="M16.3 8.2V5.9a1.9 1.9 0 10-1.3 0v2.3a5.4 5.4 0 00-2.3 1l-6-4.2a2 2 0 10-1 1.5l5.9 4.1a5.4 5.4 0 00.1 5.9l-1.8 1.8a1.7 1.7 0 101 1l1.8-1.8a5.4 5.4 0 103.6-9.3zm-1 8.2a2.8 2.8 0 112.8-2.8 2.8 2.8 0 01-2.8 2.8z" />
           </svg>
         </Tile>
       );

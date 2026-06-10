@@ -167,7 +167,7 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
         }}>✨</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h3 style={{ fontSize: 14, fontWeight: 900, color: 'var(--fg-strong)', margin: 0, letterSpacing: '-0.01em' }}>
-            ✨ 最強 の RAG — 全 ソース 連携 ハブ
+            最強 の RAG — 全 ソース 連携 ハブ
           </h3>
           <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 2 }}>
             {connectedCount} / {sources.length} 連携 中 · 繋ぐ ほど 役員 が 賢く なります
@@ -205,13 +205,14 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
               cursor: busy === s.key ? 'wait' : 'pointer',
               position: 'relative',
               fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
+              transition: 'border-color 0.2s, background 0.2s',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <BrandIcon name={s.brand} size={28} />
               <strong style={{ fontSize: 12.5, color: 'var(--fg-strong)', flex: 1, minWidth: 0 }}>{s.name}</strong>
               <span style={{
-                fontSize: 9, padding: '2px 5px', borderRadius: 999, fontWeight: 800,
+                fontSize: 10, padding: '2px 6px', borderRadius: 999, fontWeight: 800,
                 background: s.status === 'connected' ? 'rgba(52,211,153,0.22)' :
                             s.status === 'phase2' ? 'rgba(148,163,184,0.18)' :
                             s.color + '22',
@@ -224,10 +225,10 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
                  '⬜ 連携 する'}
               </span>
             </div>
-            <div style={{ fontSize: 10, color: 'var(--fg-muted)', lineHeight: 1.5 }}>
+            <div style={{ fontSize: 10.5, color: 'var(--fg-muted)', lineHeight: 1.5 }}>
               <span style={{ color: 'var(--fg-strong)', fontWeight: 700 }}>取得:</span> {s.what}
             </div>
-            <div style={{ fontSize: 10, color: 'var(--fg-muted)', lineHeight: 1.5, marginTop: 2 }}>
+            <div style={{ fontSize: 10.5, color: 'var(--fg-muted)', lineHeight: 1.5, marginTop: 2 }}>
               <span style={{ color: s.color, fontWeight: 700 }}>役員 が:</span> {s.why}
             </div>
           </button>

@@ -87,6 +87,8 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
     setError(null);
     setBusy(true);
     try {
+      // ── オーナー(マスターモード)は全機能が解放済み。決済画面には絶対に飛ばさない ──
+      if (isMasterAuth()) { setStep('success'); setBusy(false); return; }
       if (!isFree) {
         let stripeUrl: string | null = null;
 
