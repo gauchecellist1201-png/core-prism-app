@@ -1335,6 +1335,24 @@ html { scroll-behavior: smooth; }
   html { scroll-behavior: auto; }
 }
 
+/* ─── つながり図: PC=ハブ / モバイル=縦スタック ─── */
+.lp-connect-stack { display: none; }
+@media (max-width: 640px) {
+  .lp-connect-hub { display: none; }
+  .lp-connect-stack {
+    display: flex; flex-direction: column; align-items: center;
+    width: 100%; margin: 0 auto;
+  }
+  .lp-connect-branch {
+    width: 2px; height: 26px; margin: 4px 0;
+    background: linear-gradient(180deg, rgba(167,139,250,0.6), rgba(255,255,255,0.12));
+  }
+  .lp-connect-sats {
+    display: grid; grid-template-columns: 1fr; gap: 0.7rem;
+    width: 100%; max-width: 340px;
+  }
+}
+
 /* ─── スマホ縦 (640px) ─── */
 @media (max-width: 640px) {
   /* LP セクションパディング縮小 */

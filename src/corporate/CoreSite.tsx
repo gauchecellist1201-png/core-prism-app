@@ -2235,95 +2235,87 @@ function ValuePillar({
 //  ConnectedSuite — 司令塔 Prism + 3 つの SNS チャネルのつながり図
 // ============================================================
 function ConnectedSuite() {
-  // 衛星ノード (% 座標 = 正方形コンテナ内)
+  // 衛星ノード（正方形コンテナ内の % 座標。左右対称＝Prism を完全中央に）
   const sats = [
-    { key: 'iris', Logo: IrisLogo, name: 'Iris', role: 'Instagram', color: '#E1306C', x: 50, y: 11 },
-    { key: 'resonance', Logo: ResonanceLogo, name: 'Resonance', role: 'LINE', color: '#06C755', x: 13, y: 85 },
-    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#FFA42A', x: 87, y: 85 },
+    { key: 'iris', Logo: IrisLogo, name: 'Iris', role: 'Instagram', color: '#E1306C', x: 50, y: 9 },
+    { key: 'resonance', Logo: ResonanceLogo, name: 'Resonance', role: 'LINE', color: '#06C755', x: 14, y: 86 },
+    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#FFA42A', x: 86, y: 86 },
   ];
 
-  const nodeCard = (color: string): React.CSSProperties => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 6,
-    padding: '0.9rem 0.9rem 0.8rem',
-    background: 'rgba(8,8,18,0.85)',
-    border: `1px solid ${color}55`,
-    borderRadius: 16,
-    boxShadow: `0 8px 28px ${color}33`,
-    backdropFilter: 'blur(6px)',
-    minWidth: 96,
-  });
+  // 共通: 衛星カード（角丸スクエア・発光）
+  const SatCard = ({ s, size = 46 }: { s: typeof sats[number]; size?: number }) => (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
+      padding: '0.95rem 0.7rem 0.8rem', width: 116,
+      background: `radial-gradient(circle at 50% 30%, ${s.color}1f, rgba(8,8,18,0.92))`,
+      border: `1px solid ${s.color}66`, borderRadius: 18,
+      boxShadow: `0 0 26px ${s.color}3a, inset 0 0 18px ${s.color}14`,
+      backdropFilter: 'blur(6px)',
+    }}>
+      <s.Logo size={size} withWordmark={false} />
+      <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.84rem', color: '#fff', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
+      <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.64rem', color: s.color, fontWeight: 700, letterSpacing: '0.08em' }}>{s.role}</span>
+    </div>
+  );
+
+  const PrismCard = ({ size = 60 }: { size?: number }) => (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
+      padding: '1.25rem 1.35rem 1.05rem', width: 144,
+      background: 'radial-gradient(circle at 50% 32%, rgba(167,139,250,0.28), rgba(8,8,18,0.94))',
+      border: '1px solid rgba(167,139,250,0.6)', borderRadius: 22,
+      boxShadow: '0 0 52px rgba(167,139,250,0.42), inset 0 0 26px rgba(167,139,250,0.14)',
+    }}>
+      <PrismLogo size={size} withWordmark={false} />
+      <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.6rem', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>PRISM</span>
+      <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.76rem', color: '#fff', fontWeight: 700, letterSpacing: '0.08em' }}>司令塔</span>
+    </div>
+  );
 
   return (
-    <div
-      className="lp-connect-suite"
-      style={{ position: 'relative', width: 'min(86vw, 520px)', aspectRatio: '1 / 1', margin: '0 auto' }}
-    >
-      {/* つなぐ線 (中央 → 各衛星、データが流れるダッシュ) */}
-      <svg
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        aria-hidden
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}
-      >
+    <div className="lp-connect-wrap">
+      {/* ── HUB (デスクトップ / タブレット)：Prism を完全中央に ── */}
+      <div className="lp-connect-hub" style={{ position: 'relative', width: 'min(90vw, 560px)', aspectRatio: '1 / 1', margin: '0 auto' }}>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>
+          {sats.map(s => (
+            <line key={s.key} x1="50" y1="50" x2={s.x} y2={s.y} stroke={s.color}
+              strokeWidth="0.5" strokeOpacity="0.6" strokeDasharray="1.6 1.8" strokeLinecap="round">
+              <animate attributeName="stroke-dashoffset" from="7" to="0" dur="1.4s" repeatCount="indefinite" />
+            </line>
+          ))}
+        </svg>
+        <motion.div
+          animate={{ scale: [1, 1.045, 1] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 3 }}>
+          <PrismCard />
+        </motion.div>
         {sats.map(s => (
-          <line
-            key={s.key}
-            x1="50" y1="50" x2={s.x} y2={s.y}
-            stroke={s.color}
-            strokeWidth="0.45"
-            strokeOpacity="0.55"
-            strokeDasharray="1.6 1.8"
-            strokeLinecap="round"
-          >
-            <animate attributeName="stroke-dashoffset" from="7" to="0" dur="1.4s" repeatCount="indefinite" />
-          </line>
-        ))}
-      </svg>
-
-      {/* 中央: 司令塔 Prism */}
-      <motion.div
-        animate={{ scale: [1, 1.04, 1] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-        style={{
-          position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-          padding: '1.2rem 1.3rem 1rem',
-          background: 'radial-gradient(circle at 50% 40%, rgba(167,139,250,0.22), rgba(8,8,18,0.92))',
-          border: '1px solid rgba(167,139,250,0.55)',
-          borderRadius: 22,
-          boxShadow: '0 0 48px rgba(167,139,250,0.4), inset 0 0 24px rgba(167,139,250,0.12)',
-          zIndex: 3,
-        }}
-      >
-        <PrismLogo size={56} withWordmark={false} />
-        <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.62rem', letterSpacing: '0.28em', color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>
-          PRISM
-        </span>
-        <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.74rem', color: '#fff', fontWeight: 700, letterSpacing: '0.06em' }}>
-          司令塔
-        </span>
-      </motion.div>
-
-      {/* 衛星: Iris / Resonance / Lume */}
-      {sats.map(s => (
-        <div
-          key={s.key}
-          style={{ position: 'absolute', left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%,-50%)', zIndex: 2 }}
-        >
-          <div style={nodeCard(s.color)}>
-            <s.Logo size={42} withWordmark={false} />
-            <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.82rem', color: '#fff', fontWeight: 600, fontStyle: 'italic', letterSpacing: '0.02em' }}>
-              {s.name}
-            </span>
-            <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.66rem', color: s.color, fontWeight: 700, letterSpacing: '0.06em' }}>
-              {s.role}
-            </span>
+          <div key={s.key} style={{ position: 'absolute', left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%, -50%)', zIndex: 2 }}>
+            <SatCard s={s} />
           </div>
+        ))}
+      </div>
+
+      {/* ── STACK (モバイル)：縦に Prism → 3チャネル ── */}
+      <div className="lp-connect-stack" aria-hidden>
+        <PrismCard size={52} />
+        <span className="lp-connect-branch" />
+        <div className="lp-connect-sats">
+          {sats.map(s => (
+            <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '0.9rem',
+              padding: '0.7rem 0.9rem', width: '100%',
+              background: `radial-gradient(circle at 0% 50%, ${s.color}1c, rgba(8,8,18,0.9))`,
+              border: `1px solid ${s.color}55`, borderRadius: 16 }}>
+              <s.Logo size={38} withWordmark={false} />
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1rem', color: '#fff', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
+                <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: s.color, fontWeight: 700, letterSpacing: '0.06em' }}>{s.role}</span>
+              </span>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 }
