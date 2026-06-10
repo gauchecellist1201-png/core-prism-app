@@ -56,10 +56,9 @@ PRODUCTS = [
     after=('6人のAIチームが運用を担い、「いいね」を「案件」に。創作に集中できる。'),
     metric=('6→1','六つの仕事を、ひとつのアプリに'),
     plans=[('7日間無料','¥0','7日間','全機能を7日間おためし・カード登録不要',False),
-           ('Lite','¥2,800','/月','AI相談30回/月・案件管理無制限・キャプション月30回',False),
-           ('Standard','¥6,800','/月','AI相談/解析ほぼ無制限・Instagram解析・コミュニティ',True),
-           ('Pro','¥9,800','/月','連携アカウント5・ブランドマッチ・投稿カレンダー',False),
-           ('Studio','¥29,800','/月','連携無制限・ホワイトラベル・API連携・月次研修',False)],
+           ('Lite','¥2,980','/月','AI相談50回/月・案件管理無制限・キャプション月30',False),
+           ('Standard','¥6,980','/月','リール自動生成・AI相談/解析ほぼ無制限・Instagram解析',True),
+           ('Pro','¥12,800','/月','連携アカウント5・ブランドマッチ・運用代行',False)],
     url='core-prism-app.vercel.app/iris'),
 
   dict(key='resonance', name='Resonance', role='LINE 個別配信 SaaS', acc='#2E8B6F', tint='#EAF4F0',
@@ -82,12 +81,12 @@ PRODUCTS = [
     after=('一人ひとりに別の手紙。「また会いたい」が育ち、再来店とLTVが伸びる。'),
     metric=('LTV ↑','再来店を育て、顧客生涯価値を伸ばす'),
     plans=[('7日間無料','¥0','7日間','全機能を7日間おためし・カード登録不要',False),
-           ('Pro','¥980','/月','AI個別配信・1アカウント・月3,000通・全件確認',True),
-           ('Business','¥2,980','/月','3アカウント・月15,000通',False),
-           ('Premium','¥4,980','/月','10アカウント・月50,000通',False)],
+           ('Solo','¥1,980','/月','AI個別配信・1アカウント・月2,000通',False),
+           ('Pro','¥4,980','/月','AIレター・1アカウント・月8,000通・全件確認',True),
+           ('Business','¥9,800','/月','3アカウント・月30,000通・設定代行',False)],
     url='resonancebot-ivory.vercel.app'),
 
-  dict(key='lume', name='Lume', role='リンクハブ＋クリック解析', acc='#6A57C8', tint='#F1EEFA',
+  dict(key='lume', name='Lume', role='リンクハブ＋クリック解析', acc='#FFA42A', tint='#FFF3E0',
     target='クリエイター・店舗・あらゆる発信者（プロフィールリンク運用者）',
     promise='散らばるリンクを、ひとつに。そして「測れる資産」に。',
     problems=[
@@ -107,8 +106,8 @@ PRODUCTS = [
     after=('ひとつに集約し、クリックを可視化。導線が「測れる資産」になる。'),
     metric=('見える化','リンクを「ただの入口」から「測れる資産」へ'),
     plans=[('7日間無料','¥0','7日間','全機能を7日間おためし・カード登録不要',False),
-           ('Pro','¥980','/月','ヒートマップ・流入元クロス分析・時間帯の可視化',True),
-           ('Business','¥2,980','/月','Pro全機能・複数プロフィール管理',False)],
+           ('Pro','¥1,480','/月','ヒートマップ・流入元クロス分析・時間帯の可視化',True),
+           ('Business','¥3,480','/月','Pro全機能・複数プロフィール管理',False)],
     url='lume-deploy-five.vercel.app'),
 ]
 
@@ -322,8 +321,8 @@ SL.append(slide('<div class="body"><span class="eyebrow"><span class="tick"></sp
  '<p class="lead" style="text-align:center;margin:30px auto 0">機能の足し算ではなく、掛け合わせて、ひとつの知性へ。'
  '<b style="color:var(--ink)">あなたは、最後に確認するだけ。</b></p></div>','Synergy'))
 # 9 PRICING ALL
-SUMMARY=[('Prism','全事業の司令塔','¥4,800〜','¥29,800','#4B57B0'),('Iris','Instagram 運用','¥2,800〜','¥29,800','#A8497B'),
-         ('Resonance','LINE 個別配信','¥980〜','¥4,980','#2E8B6F'),('Lume','リンク・解析','¥980〜','¥2,980','#6A57C8')]
+SUMMARY=[('Prism','全事業の司令塔','¥4,800〜','¥29,800','#4B57B0'),('Iris','Instagram 運用','¥2,980〜','¥12,800','#A8497B'),
+         ('Resonance','LINE 個別配信','¥1,980〜','¥9,800','#2E8B6F'),('Lume','リンク・解析','¥1,480〜','¥3,480','#FFA42A')]
 allrows=''.join(f'<tr><td class="pn"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:{a};margin-right:9px;vertical-align:middle"></span>{nm}</td>'
   f'<td class="ft">{r}</td><td class="ft">7日間無料（その後課金）</td><td class="pr">{e}</td><td class="pr">{t}</td></tr>' for nm,r,e,t,a in SUMMARY)
 SL.append(slide('<div class="body"><span class="eyebrow"><span class="tick"></span>Pricing — All Services</span><div class="h2">4サービスの料金一覧</div>'

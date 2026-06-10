@@ -207,10 +207,9 @@ PRODUCTS=[
       url='core-prism-app.vercel.app/iris', foot='全プラン 7日間無料・クレカ不要',
       plans=[
         dict(name='Free', price='¥0', per='/7日間', note='全機能トライアル', features=['全機能を7日間おためし','カード登録不要・自動課金なし']),
-        dict(name='Lite', price='¥2,800', per='/月', note='入門・副業クリエイター', features=['AI戦略相談 30回/月','案件管理 無制限','投稿構成・キャプション 月30回']),
-        dict(name='Standard', price='¥6,800', per='/月', hot=True, note='年¥49,800', features=['AI相談・解析ほぼ無制限','Instagram解析 月10回','コミュニティ参加']),
-        dict(name='Pro', price='¥9,800', per='/月', note='チーム/マネージャー', features=['連携アカウント 5','ブランドマッチ（Prism連動）','投稿カレンダー・専任CS']),
-        dict(name='Studio', price='¥29,800', per='/月', note='事務所・代理店', features=['連携アカウント 無制限','ホワイトラベル・API連携','月次研修']),
+        dict(name='Lite', price='¥2,980', per='/月', note='入門・副業', features=['AI戦略相談 50回/月','案件管理 無制限','キャプション 月30回']),
+        dict(name='Standard', price='¥6,980', per='/月', hot=True, note='リール自動生成', features=['AI相談・解析ほぼ無制限','Instagram解析','コミュニティ参加']),
+        dict(name='Pro', price='¥12,800', per='/月', note='チーム/代理店', features=['連携アカウント 5','ブランドマッチ','運用代行・専任CS']),
       ]),
  dict(name='Resonance', mark='resonance', accent='#06C755', bright='#34D399',
       grad=['#34D399','#06C755','#0EA5E9'],
@@ -219,9 +218,9 @@ PRODUCTS=[
       url='resonancebot-ivory.vercel.app', foot='全プラン7日間無料・クレカ不要（BYOK）',
       plans=[
         dict(name='7日間無料', price='¥0', per='/7日間', note='全機能トライアル', features=['全機能を7日間おためし','カード登録不要・自動課金なし']),
-        dict(name='Pro', price='¥980', per='/月', hot=True, note='1アカウント', features=['AIが一人ひとり文面を書き分け','月3,000通','送信前に全件確認']),
-        dict(name='Business', price='¥2,980', per='/月', note='3アカウント', features=['Pro全機能','月15,000通','複数アカウント管理']),
-        dict(name='Premium', price='¥4,980', per='/月', note='10アカウント', features=['Business全機能','月50,000通','大規模配信に']),
+        dict(name='Solo', price='¥1,980', per='/月', note='1アカウント', features=['AI個別配信','月2,000通','送信前に全件確認']),
+        dict(name='Pro', price='¥4,980', per='/月', hot=True, note='1アカウント', features=['AIレター・個別配信','月8,000通','送信前に全件確認']),
+        dict(name='Business', price='¥9,800', per='/月', note='3アカウント', features=['Pro全機能・設定代行','月30,000通','複数アカウント管理']),
       ]),
  dict(name='Lume', mark='lume', accent='#FFA42A', bright='#FFD86B',
       grad=['#FFD86B','#FFA42A','#FF7A18'],
@@ -230,8 +229,8 @@ PRODUCTS=[
       url='lume-deploy-five.vercel.app', foot='全プラン7日間無料・クレジットカード登録不要',
       plans=[
         dict(name='7日間無料', price='¥0', per='/7日間', note='全機能トライアル', features=['全機能を7日間おためし','カード登録不要・自動課金なし']),
-        dict(name='Pro', price='¥980', per='/月', hot=True, note='解析フル機能', features=['クリックヒートマップ','流入元クロス分析','時間帯・傾向の可視化']),
-        dict(name='Business', price='¥2,980', per='/月', note='複数プロフィール', features=['Pro全機能','複数プロフィール管理','チーム運用に']),
+        dict(name='Pro', price='¥1,480', per='/月', hot=True, note='解析フル機能', features=['クリックヒートマップ','流入元クロス分析','時間帯・傾向の可視化']),
+        dict(name='Business', price='¥3,480', per='/月', note='複数プロフィール', features=['Pro全機能','複数プロフィール管理','チーム運用に']),
       ]),
 ]
 
