@@ -16,6 +16,13 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, ArrowRight, Loader2, ExternalLink, PartyPopper } from 'lucide-react';
 import EasyImportPanel from './EasyImportPanel';
+import { BrandIcon as OfficialBrandIcon, type BrandName } from './BrandIcons';
+
+// 連携センターのツール ID → 正規ブランドアイコン名 (持っているものだけ正規化)
+const OFFICIAL_ICON: Record<string, BrandName> = {
+  gmail: 'gmail', gcal: 'gcalendar', slack: 'slack',
+  stripe: 'stripe', instagram: 'instagram', line: 'line',
+};
 import {
   isGmailConfigured, isGmailConnected, connectGmail, clearGmailToken,
 } from '../lib/gmail';
@@ -394,6 +401,9 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
 }
 
 function BrandIcon({ tool, size = 40 }: { tool: Tool; size?: number }) {
+  // 正規アイコンを持っているサービスは公式ロゴを使う
+  const official = OFFICIAL_ICON[tool.id];
+  if (official) return <OfficialBrandIcon name={official} size={size} />;
   return (
     <div style={{
       width: size, height: size, borderRadius: size * 0.27, flexShrink: 0,
