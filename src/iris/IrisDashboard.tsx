@@ -41,7 +41,7 @@ import {
   Wallet, Calendar, Hourglass, ShieldAlert,
   CheckCircle2, AlertTriangle, Bot, Lightbulb, Sun,
   Briefcase, Rocket, Heart, Smartphone,
-  Save, X,
+  Save, X, Target, Zap, Smile, PartyPopper,
 } from 'lucide-react';
 import IrisCommandBar from './IrisCommandBar';
 import IrisDealCaptureModal from './IrisDealCaptureModal';
@@ -579,7 +579,7 @@ function IrisEditorialHome({
             if (!igProfile) {
               out.push({
                 id: 'connect-ig',
-                icon: '🌷',
+                icon: Camera,
                 title: 'Instagram をつなぐ',
                 reason: 'アカウントを繋ぐと、伸ばし方が一気に具体的になります',
                 cta: 'つなぐ',
@@ -590,7 +590,7 @@ function IrisEditorialHome({
             if (myDeals.length === 0) {
               out.push({
                 id: 'add-deal',
-                icon: '💌',
+                icon: Mail,
                 title: '最初の案件を登録する',
                 reason: 'DM のスクショから 1 件追加するだけで、Iris が交渉文を準備します',
                 cta: '登録',
@@ -602,7 +602,7 @@ function IrisEditorialHome({
             if (pq < 3) {
               out.push({
                 id: 'make-reel',
-                icon: '🎬',
+                icon: Clapperboard,
                 title: 'リールを 1 本作ってみる',
                 reason: '素材を入れるだけで AI が脚本・キャプション・ハッシュタグまで',
                 cta: '作る',
@@ -614,7 +614,7 @@ function IrisEditorialHome({
             if (out.length < 3) {
               out.push({
                 id: 'compose',
-                icon: '✍️',
+                icon: Edit3,
                 title: '次の投稿を書く',
                 reason: 'お題を 1 つ入れるだけで、AI が note と SNS の文を同時に作ります',
                 cta: '書く',
@@ -625,7 +625,7 @@ function IrisEditorialHome({
             if (out.length < 3) {
               out.push({
                 id: 'inbox',
-                icon: '💖',
+                icon: MessageSquare,
                 title: 'お返事をまとめて片付ける',
                 reason: '溜まった DM や案件の返信を AI が下書き',
                 cta: '見る',
@@ -707,7 +707,7 @@ function IrisEditorialHome({
                 {/* データ取得状況バッジ — ユーザーに「何が実データ / 何が推測」を明示 */}
                 {igProfile && (() => {
                   const src = igProfile.source as string;
-                  const label = src === 'oauth' ? '✓ Instagram から実データ取得済み'
+                  const label = src === 'oauth' ? 'Instagram から実データ取得済み'
                     : src === 'screenshot-ai' ? 'スクショから基本データのみ (詳細は別途インサイト連携)'
                     : src === 'self' ? 'あなたの申告値 (推測ベース)'
                     : 'データ取得状況不明';
@@ -722,6 +722,7 @@ function IrisEditorialHome({
                       fontSize: 10.5, color: tone.c, fontWeight: 800,
                       marginBottom: 10, letterSpacing: '0.02em',
                     }}>
+                      {src === 'oauth' && <CheckCircle2 size={12} strokeWidth={2.6} />}
                       {label}
                     </div>
                   );
@@ -809,8 +810,8 @@ function IrisEditorialHome({
                         <p style={{ ...IRIS_TYPE.caption, color: bg.ink, margin: '2px 0', lineHeight: 1.6 }}>
                           <strong>やる:</strong> {s.action}
                         </p>
-                        <p style={{ ...IRIS_TYPE.caption, color: bg.accent, margin: 0, fontWeight: 700 }}>
-                          🎯 {s.kpi}
+                        <p style={{ ...IRIS_TYPE.caption, color: bg.accent, margin: 0, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <Target size={12} strokeWidth={2.2} /> {s.kpi}
                         </p>
                       </div>
                     </div>
@@ -2074,8 +2075,8 @@ function ProposalCard({
           marginTop: 10, padding: '0.7rem 0.85rem', borderRadius: 12,
           background: `${bg.accent}14`, border: `1px solid ${bg.accent}33`,
         }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: bg.accent, marginBottom: 3 }}>
-            {reasonLabel || '🤔 AI がこれをすすめる理由'}
+          <div style={{ fontSize: 10, fontWeight: 800, color: bg.accent, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            {reasonLabel || <><Lightbulb size={11} strokeWidth={2.4} /> AI がこれをすすめる理由</>}
           </div>
           <div style={{ fontSize: '0.86rem', color: bg.ink, lineHeight: 1.65 }}>{reason}</div>
         </div>
@@ -2084,18 +2085,18 @@ function ProposalCard({
         )}
         <div style={{ display: 'flex', gap: '0.4rem', marginTop: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <button onClick={onReject} disabled={busy}
-            style={{ ...btnSecondary(bg), padding: '0.6rem 1rem', opacity: busy ? 0.5 : 1 }}>
-            ✗ 却下
+            style={{ ...btnSecondary(bg), padding: '0.6rem 1rem', opacity: busy ? 0.5 : 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <X size={14} strokeWidth={2.4} /> 却下
           </button>
           {editArea && (
             <button onClick={() => setEditing(e => !e)} disabled={busy}
-              style={{ ...btnSecondary(bg), padding: '0.6rem 1rem', opacity: busy ? 0.5 : 1 }}>
-              {editing ? '修正をとじる' : '✏️ 修正'}
+              style={{ ...btnSecondary(bg), padding: '0.6rem 1rem', opacity: busy ? 0.5 : 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              {editing ? '修正をとじる' : <><Edit3 size={14} strokeWidth={2.2} /> 修正</>}
             </button>
           )}
           <button onClick={onApprove} disabled={busy}
-            style={{ ...btnPrimary(bg), padding: '0.6rem 1.2rem', opacity: busy ? 0.6 : 1 }}>
-            {busy ? <LoaderDots label="考えてる" /> : approveLabel}
+            style={{ ...btnPrimary(bg), padding: '0.6rem 1.2rem', opacity: busy ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            {busy ? <LoaderDots label="考えてる" /> : <><CheckCircle2 size={15} strokeWidth={2.4} /> {approveLabel}</>}
           </button>
         </div>
       </Card>
@@ -2191,8 +2192,8 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
         <h2 style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0, fontWeight: 500 }}>
           お仕事一覧
         </h2>
-        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', margin: '0.2rem 0 0' }}>
-          AI があなたに合いそうな案件を先に見つけています。✓ で追加するだけ。
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', margin: '0.2rem 0 0', display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+          AI があなたに合いそうな案件を先に見つけています。<CheckCircle2 size={13} strokeWidth={2.4} style={{ verticalAlign: 'middle' }} /> で追加するだけ。
         </p>
       </div>
 
@@ -2233,7 +2234,8 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
           padding: '0.6rem 0.9rem',
           background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)',
           color: '#065F46', borderRadius: 10, fontSize: '0.85rem',
-        }}>✓ {flash}</div>
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}><CheckCircle2 size={14} strokeWidth={2.4} /> {flash}</div>
       )}
 
       {/* AI が先出しした応募候補 */}
@@ -2244,7 +2246,7 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
             title={`${CATEGORY_META[deal.category].emoji} ${deal.brandName} に応募しましょうか?`}
             sub={`${deal.summary} ・ 締切 ${deal.deadline}`}
             reason={`${score.reasons.slice(0, 2).join('。') || 'あなたのジャンルと相性が良い案件です'}。報酬 ¥${(feeEdit[deal.id] ?? deal.fee).toLocaleString()}${deal.feeNote ? ` (${deal.feeNote})` : ''}。合致度 ${score.total} 点。`}
-            approveLabel="✓ お仕事に追加"
+            approveLabel="お仕事に追加"
             onApprove={() => approvePick(deal)}
             onReject={() => setHandled(h => [...h, deal.id])}
             editArea={
@@ -2261,7 +2263,7 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
 
       {picks.length === 0 && (
         <Card bg={bg}>
-          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1rem 0' }}>今日の提案はすべて見終わりました 🎉</p>
+          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1rem 0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%' }}>今日の提案はすべて見終わりました <PartyPopper size={15} strokeWidth={2.2} /></p>
         </Card>
       )}
 
@@ -2296,7 +2298,8 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
               marginTop: '0.6rem', padding: '0.55rem 0.85rem',
               background: 'rgba(225,29,72,0.10)', border: '1px solid rgba(225,29,72,0.3)',
               color: '#9F1239', borderRadius: 10, fontSize: '0.85rem',
-            }}>⚠ {addError}</div>
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}><AlertTriangle size={14} strokeWidth={2.4} /> {addError}</div>
           )}
           <button onClick={add} style={{ ...btnPrimary(bg), marginTop: '0.75rem' }}>保存</button>
         </Card>
@@ -2386,8 +2389,8 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
           お返事を作る
         </h2>
-        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', margin: '0.2rem 0 0' }}>
-          AI が「返事が必要な案件」を見つけて、返し方まで考えました。✓ で文章ができます。
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', margin: '0.2rem 0 0', display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+          AI が「返事が必要な案件」を見つけて、返し方まで考えました。<CheckCircle2 size={13} strokeWidth={2.4} style={{ verticalAlign: 'middle' }} /> で文章ができます。
         </p>
       </div>
 
@@ -2405,7 +2408,7 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
               title={`${deal.brandName} に「${m.emoji} ${m.label}」で返信しましょうか?`}
               sub={`いまの状況: ${sm.emoji} ${sm.label}`}
               reason={m.hint}
-              approveLabel="✓ この返事を作る"
+              approveLabel="この返事を作る"
               onApprove={() => approve(deal, type)}
               onReject={() => setDismissed(d => [...d, deal.id])}
               editArea={
@@ -2434,7 +2437,7 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
 
       {proposals.length === 0 && (
         <Card bg={bg}>
-          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1rem 0' }}>いま返事が必要な案件はありません ☺ お仕事が増えると AI が提案します。</p>
+          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1rem 0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', flexWrap: 'wrap' }}>いま返事が必要な案件はありません <Smile size={14} strokeWidth={2.2} /> お仕事が増えると AI が提案します。</p>
         </Card>
       )}
 
@@ -2514,8 +2517,8 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
           投稿を書く
         </h2>
-        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', margin: '0.2rem 0 0' }}>
-          AI が「まだ投稿文がない案件」を見つけて、書き方まで考えました。✓ で文章ができます。
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', margin: '0.2rem 0 0', display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+          AI が「まだ投稿文がない案件」を見つけて、書き方まで考えました。<CheckCircle2 size={13} strokeWidth={2.4} style={{ verticalAlign: 'middle' }} /> で文章ができます。
         </p>
       </div>
 
@@ -2531,7 +2534,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
               title={`${PLATFORM_META[deal.platform].emoji} ${deal.brandName} の${CONTENT_TYPE_META[deal.contentType]}を書きましょうか?`}
               sub={deal.productName || deal.deliverables || undefined}
               reason={`おすすめのトーン: ${tone}。${knowledge?.count ? `あなたの資料 ${knowledge.count} 件を読んで、らしさを合わせて書きます。` : 'あなたらしい言葉で書きます。'}`}
-              approveLabel="✓ この投稿を書く"
+              approveLabel="この投稿を書く"
               onApprove={() => approve(deal, tone)}
               onReject={() => setDismissed(d => [...d, deal.id])}
               editArea={
@@ -2549,7 +2552,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
 
       {proposals.length === 0 && (
         <Card bg={bg}>
-          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1rem 0' }}>いま書く必要のある投稿はありません ☺ お仕事を追加すると AI が提案します。</p>
+          <p style={{ textAlign: 'center', color: bg.inkSoft, padding: '1rem 0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', flexWrap: 'wrap' }}>いま書く必要のある投稿はありません <Smile size={14} strokeWidth={2.2} /> お仕事を追加すると AI が提案します。</p>
         </Card>
       )}
 
@@ -2599,9 +2602,10 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
                 border: `1px solid ${bg.cardBorder}`, borderRadius: 12,
                 padding: '0.75rem 1rem', fontSize: '0.85rem', fontWeight: 600,
                 cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
-              ⏱ ストーリーで
+              <Hourglass size={14} strokeWidth={2.2} /> ストーリーで
             </button>
           </div>
         </Card>
@@ -2833,7 +2837,8 @@ function TeamView({ bg, team, desk, myDeals }: {
               marginTop: '0.55rem', padding: '0.5rem 0.8rem',
               background: 'rgba(225,29,72,0.10)', border: '1px solid rgba(225,29,72,0.3)',
               color: '#9F1239', borderRadius: 10, fontSize: '0.82rem',
-            }}>⚠ {memberError}</div>
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}><AlertTriangle size={13} strokeWidth={2.4} /> {memberError}</div>
           )}
           <button onClick={add} style={{ ...btnPrimary(bg), marginTop: '0.5rem' }}>追加</button>
         </Card>
@@ -3219,8 +3224,9 @@ function BrandDealCard({ bg, deal, score, onOpen }: {
           padding: '0.25rem 0.7rem', borderRadius: 999,
           fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap',
           boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+          display: 'inline-flex', alignItems: 'center', gap: 4,
         }}>
-          ⚡ {score.total}% {score.label}
+          <Zap size={12} strokeWidth={2.4} /> {score.total}% {score.label}
         </span>
         {/* ロゴ + ブランド名 (下部) */}
         <div style={{
@@ -3300,7 +3306,7 @@ function BrandDealCard({ bg, deal, score, onOpen }: {
             color: urgent ? '#E11D48' : bg.inkSoft,
             display: 'inline-flex', alignItems: 'center', gap: 4,
           }}>
-            <Calendar size={11} /> {urgent ? '⚡' : ''}あと {daysLeft} 日
+            <Calendar size={11} /> {urgent && <Zap size={11} strokeWidth={2.4} />}あと {daysLeft} 日
           </p>
           <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: bg.inkSoft }}>
             ~{deal.deadline}
@@ -3348,7 +3354,7 @@ function BrandDealCard({ bg, deal, score, onOpen }: {
           padding: '0.25rem 0.55rem', borderRadius: 999,
           fontSize: '0.7rem', fontWeight: 600,
         }}>
-          🎬 {ctLabel || deal.contentType}
+          <Clapperboard size={11} strokeWidth={2.2} /> {ctLabel || deal.contentType}
         </span>
       </div>
 

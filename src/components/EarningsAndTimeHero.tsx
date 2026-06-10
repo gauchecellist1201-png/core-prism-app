@@ -15,7 +15,8 @@
 //   触覚: 数字は monospace + カウントアップ + 微小ホバーリフト。
 // ============================================================
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Sparkles, RefreshCw, Search, ClipboardList, CheckCircle2, Copy } from 'lucide-react';
 import { useStripeRevenue } from '../hooks/useStripeRevenue';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { useCRM } from '../hooks/useCRM';
@@ -324,8 +325,9 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
           color: '#34D399',
           textTransform: 'uppercase',
           marginBottom: 4,
+          display: 'inline-flex', alignItems: 'center', gap: 4,
         }}>
-          ✦ YOUR MONEY & TIME
+          <Sparkles size={11} strokeWidth={2.2} /> YOUR MONEY & TIME
         </div>
         <h2 style={{
           margin: 0,
@@ -484,18 +486,21 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
   }, [detailOpen]);
 
 
-  const state: { tone: 'green' | 'yellow' | 'red' | 'gray'; line1: string; line2: string } = (() => {
+  const dot = (color: string): ReactNode => (
+    <span style={{ width: 6, height: 6, borderRadius: 999, background: color, display: 'inline-block', flexShrink: 0 }} />
+  );
+  const state: { tone: 'green' | 'yellow' | 'red' | 'gray'; icon: ReactNode; line1: string; line2: string } = (() => {
     if (stripe.loading) {
-      return { tone: 'yellow', line1: '⏳ Stripe から取得中…', line2: '数秒お待ちください' };
+      return { tone: 'yellow', icon: dot('#FBBF24'), line1: 'Stripe から取得中…', line2: '数秒お待ちください' };
     }
     if (stripe.error) {
-      return { tone: 'red', line1: '🔴 Stripe エラー', line2: stripe.error };
+      return { tone: 'red', icon: dot('#EF4444'), line1: 'Stripe エラー', line2: stripe.error };
     }
     if (!stripe.connected) {
-      return { tone: 'gray', line1: '⚪ Stripe 未連携', line2: '右上の連携センターから rk_live_ を貼ると数字が出ます' };
+      return { tone: 'gray', icon: dot('rgba(255,255,255,0.4)'), line1: 'Stripe 未連携', line2: '右上の連携センターから rk_live_ を貼ると数字が出ます' };
     }
     if (stripe.source === 'manual') {
-      return { tone: 'yellow', line1: '📝 手動入力データ (Stripe 未連携)', line2: 'rk_live_ を貼ると自動取得に切り替わります' };
+      return { tone: 'yellow', icon: <ClipboardList size={13} strokeWidth={2.2} />, line1: '手動入力データ (Stripe 未連携)', line2: 'rk_live_ を貼ると自動取得に切り替わります' };
     }
     const tm = stripe.thisMonth;
     if ((tm.txnCount || 0) === 0 && (tm.revenueJpy || 0) === 0) {
@@ -505,27 +510,31 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
         if (d.chargesOk && (d.chargesCount || 0) === 0) {
           return {
             tone: 'yellow',
-            line1: `🟡 Stripe 連携中 (${stripe.keyMasked}) — Charges 12 ヶ月で 0 件`,
+            icon: dot('#FBBF24'),
+            line1: `Stripe 連携中 (${stripe.keyMasked}) — Charges 12 ヶ月で 0 件`,
             line2: '本当に取引が無いか、別の Stripe アカウントの可能性。ダッシュボード URL (acct_xxx) と一致するキーを使ってください',
           };
         }
         if (!d.chargesOk) {
           return {
             tone: 'red',
-            line1: `🔴 Stripe — Charges 取得失敗`,
+            icon: dot('#EF4444'),
+            line1: `Stripe — Charges 取得失敗`,
             line2: `Stripe で「Charges → 読み取り」を有効にして作り直してください。詳細: ${(d.errors || []).join(' / ')}`,
           };
         }
       }
       return {
         tone: 'yellow',
-        line1: `🟡 Stripe 連携中 (${stripe.keyMasked}) — 取引 0 件`,
+        icon: dot('#FBBF24'),
+        line1: `Stripe 連携中 (${stripe.keyMasked}) — 取引 0 件`,
         line2: '今月の取引がまだ無いか、キーの権限不足の可能性。Stripe で Charges を「読み取り」に',
       };
     }
     return {
       tone: 'green',
-      line1: `✓ Stripe 連携中 (${stripe.keyMasked}) — 今月 ${tm.txnCount} 件`,
+      icon: <CheckCircle2 size={13} strokeWidth={2.2} />,
+      line1: `Stripe 連携中 (${stripe.keyMasked}) — 今月 ${tm.txnCount} 件`,
       line2: `売上 ¥${Math.round(tm.revenueJpy).toLocaleString()} / 経費 ¥${Math.round(tm.expenseJpy).toLocaleString()}`,
     };
   })();
@@ -548,8 +557,8 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
       flexWrap: 'wrap',
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11.5, fontWeight: 800, color: colors.fg, lineHeight: 1.4 }}>
-          {state.line1}
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: colors.fg, lineHeight: 1.4, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          {state.icon}{state.line1}
         </div>
         <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.55, marginTop: 1 }}>
           {state.line2}
@@ -567,8 +576,9 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
               border: `1px solid ${colors.border}`,
               borderRadius: 7, padding: '6px 11px', cursor: stripe.loading ? 'wait' : 'pointer',
               minHeight: 30,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
             }}
-          >🔄 再取得</button>
+          ><RefreshCw size={12} strokeWidth={2.2} /> 再取得</button>
         )}
         <button
           type="button"
@@ -579,8 +589,9 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
             border: '1px solid var(--border)',
             borderRadius: 7, padding: '6px 11px', cursor: 'pointer',
             minHeight: 30,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
           }}
-        >🔍 詳細</button>
+        ><Search size={12} strokeWidth={2.2} /> 詳細</button>
         {onReconnect && (
           <button
             type="button"
@@ -606,8 +617,8 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             marginBottom: 6,
           }}>
-            <span style={{ fontSize: 10.5, fontWeight: 800, color: '#FBBF24' }}>
-              📋 詳細診断 (このテキストをコピーしてイーロンに送ってください)
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: '#FBBF24', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <ClipboardList size={12} strokeWidth={2.2} /> 詳細診断 (このテキストをコピーしてイーロンに送ってください)
             </span>
             <div style={{ display: 'flex', gap: 6 }}>
               <button
@@ -619,8 +630,9 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
                   background: 'rgba(255,255,255,0.08)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   borderRadius: 5, padding: '2px 7px', cursor: diagLoading ? 'wait' : 'pointer',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                 }}
-              >{diagLoading ? '取得中…' : '🔄 再診断'}</button>
+              >{diagLoading ? '取得中…' : <><RefreshCw size={11} strokeWidth={2.2} /> 再診断</>}</button>
               <button
                 type="button"
                 onClick={() => {
@@ -633,8 +645,9 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
                   background: 'rgba(255,255,255,0.08)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   borderRadius: 5, padding: '2px 7px', cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                 }}
-              >📋 コピー</button>
+              ><Copy size={11} strokeWidth={2.2} /> コピー</button>
             </div>
           </div>
           <pre style={{

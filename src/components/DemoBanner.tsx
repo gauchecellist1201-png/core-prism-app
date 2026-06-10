@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { BookOpen } from 'lucide-react';
 
 interface Props {
   onClearDemo: () => void;
@@ -16,8 +17,8 @@ export default function DemoBanner({ onClearDemo }: Props) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
     >
-      <p style={{ color: 'rgba(255,220,130,0.9)' }}>
-        📚 デモデータ表示中。実際の運用に切替えるとデモデータは消えます。
+      <p style={{ color: 'rgba(255,220,130,0.9)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+        <BookOpen size={14} strokeWidth={2.2} /> デモデータ表示中。実際の運用に切替えるとデモデータは消えます。
       </p>
       <motion.button
         onClick={onClearDemo}

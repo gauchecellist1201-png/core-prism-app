@@ -8,6 +8,7 @@
 // ============================================================
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Radio, Wallet, Bell, CheckCircle2, XCircle, Loader2, FlaskConical, RotateCw, Lock, Key } from 'lucide-react';
 import {
   listIntegrations,
   saveIntegration,
@@ -115,11 +116,21 @@ function classifyToken(_id: string, token: string): ConnStatus {
   return 'connected';
 }
 
-const STATUS_META: Record<ConnStatus, { color: string; bg: string; label: string; emoji: string }> = {
-  connected: { color: '#4ade80', bg: 'rgba(74,222,128,0.10)', label: '接続済', emoji: '🟢' },
-  pending:   { color: '#facc15', bg: 'rgba(250,204,21,0.10)', label: '未接続', emoji: '🟡' },
-  error:     { color: '#f87171', bg: 'rgba(248,113,113,0.10)', label: 'エラー', emoji: '🔴' },
+const STATUS_META: Record<ConnStatus, { color: string; bg: string; label: string }> = {
+  connected: { color: '#4ade80', bg: 'rgba(74,222,128,0.10)', label: '接続済' },
+  pending:   { color: '#facc15', bg: 'rgba(250,204,21,0.10)', label: '未接続' },
+  error:     { color: '#f87171', bg: 'rgba(248,113,113,0.10)', label: 'エラー' },
 };
+
+/** 状態を表す小さな丸ドット (絵文字の代替) */
+function StatusDot({ color, size = 8 }: { color: string; size?: number }) {
+  return (
+    <span
+      className="inline-block rounded-full flex-shrink-0"
+      style={{ width: size, height: size, background: color }}
+    />
+  );
+}
 
 export default function IntegrationsHub() {
   // ── SaaS カード状態 ──────────────────────────────────────────
@@ -238,7 +249,7 @@ export default function IntegrationsHub() {
       {/* ─── ダッシュボード サマリ ───────────────────────────── */}
       <section className="space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h4 className="text-fg text-sm font-medium">🛰 連携サービス ダッシュボード</h4>
+          <h4 className="text-fg text-sm font-medium flex items-center gap-1.5"><span className="inline-flex"><Radio size={15} strokeWidth={2} /></span>連携サービス ダッシュボード</h4>
           <div className="flex items-center gap-1.5 text-xs">
             <span style={{ color: STATUS_META.connected.color }}>● {counts.connected} 接続</span>
             <span style={{ color: STATUS_META.pending.color }}>● {counts.pending} 未接続</span>
@@ -261,7 +272,7 @@ export default function IntegrationsHub() {
               }}
             >
               {f === 'all' ? `すべて (${SERVICES.length})`
-                : `${STATUS_META[f].emoji} ${STATUS_META[f].label} (${counts[f]})`}
+                : <span className="inline-flex items-center gap-1.5"><StatusDot color={STATUS_META[f].color} />{`${STATUS_META[f].label} (${counts[f]})`}</span>}
             </button>
           ))}
         </div>
@@ -295,10 +306,10 @@ export default function IntegrationsHub() {
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <p className="text-fg text-sm font-semibold truncate">{svc.name}</p>
                       <span
-                        className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                        className="text-[10px] px-1.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1"
                         style={{ background: meta.color + '22', color: meta.color, border: `1px solid ${meta.color}55` }}
                       >
-                        {meta.emoji} {meta.label}
+                        <StatusDot color={meta.color} size={6} />{meta.label}
                       </span>
                     </div>
                     <p className="text-fg-muted text-[11px] mt-0.5 truncate">{svc.category}</p>
@@ -307,8 +318,8 @@ export default function IntegrationsHub() {
 
                 {/* 権限 1 行 */}
                 <div className="text-[11px] leading-snug space-y-0.5 mb-2">
-                  <p style={{ color: '#4ade80' }}>✓ {svc.does}</p>
-                  <p className="text-fg-muted">✕ {svc.doesNot}</p>
+                  <p style={{ color: '#4ade80' }} className="flex items-start gap-1"><span className="inline-flex mt-0.5"><CheckCircle2 size={12} strokeWidth={2.2} /></span>{svc.does}</p>
+                  <p className="text-fg-muted flex items-start gap-1"><span className="inline-flex mt-0.5"><XCircle size={12} strokeWidth={2.2} /></span>{svc.doesNot}</p>
                 </div>
 
                 {ts === 'error' && testErr[svc.id] && (
@@ -330,7 +341,13 @@ export default function IntegrationsHub() {
                           minHeight: 32,
                         }}
                       >
-                        {ts === 'testing' ? '⏳ テスト中…' : ts === 'ok' ? '✓ 接続 OK' : '🧪 接続テスト'}
+                        <span className="inline-flex items-center justify-center gap-1">
+                          {ts === 'testing'
+                            ? <><Loader2 size={12} strokeWidth={2} className="animate-spin" />テスト中…</>
+                            : ts === 'ok'
+                              ? <><CheckCircle2 size={12} strokeWidth={2.2} />接続 OK</>
+                              : <><FlaskConical size={12} strokeWidth={2} />接続テスト</>}
+                        </span>
                       </button>
                       <button
                         onClick={() => handleDisconnect(svc)}
@@ -359,7 +376,7 @@ export default function IntegrationsHub() {
                           minHeight: 32,
                         }}
                       >
-                        🔄 トークン再発行
+                        <span className="inline-flex items-center justify-center gap-1"><RotateCw size={12} strokeWidth={2} />トークン再発行</span>
                       </a>
                       <button
                         onClick={() => handleDisconnect(svc)}
@@ -387,7 +404,11 @@ export default function IntegrationsHub() {
                         minHeight: 32,
                       }}
                     >
-                      {svc.oauth ? '🔐 OAuth で接続' : '🔑 接続する (トークン発行)'}
+                      <span className="inline-flex items-center justify-center gap-1">
+                        {svc.oauth
+                          ? <><Lock size={12} strokeWidth={2} />OAuth で接続</>
+                          : <><Key size={12} strokeWidth={2} />接続する (トークン発行)</>}
+                      </span>
                     </a>
                   )}
                 </div>
@@ -404,7 +425,7 @@ export default function IntegrationsHub() {
 
       {/* ─── 会計サービス連携 ──────────────────────────────────── */}
       <section className="space-y-3">
-        <h4 className="text-fg text-sm font-medium">💰 会計サービス連携</h4>
+        <h4 className="text-fg text-sm font-medium flex items-center gap-1.5"><span className="inline-flex"><Wallet size={15} strokeWidth={2} /></span>会計サービス連携</h4>
         <AccountingIntegration />
       </section>
 
@@ -412,7 +433,7 @@ export default function IntegrationsHub() {
 
       {/* ─── 通知 Webhook (Slack / Discord) ─────────────────── */}
       <section className="space-y-3">
-        <h4 className="text-fg text-sm font-medium">🔔 通知 Webhook</h4>
+        <h4 className="text-fg text-sm font-medium flex items-center gap-1.5"><span className="inline-flex"><Bell size={15} strokeWidth={2} /></span>通知 Webhook</h4>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <p className="text-fg-muted text-xs">Slack / Discord Webhook でブリーフを送信します</p>
           {!adding && (
@@ -509,8 +530,10 @@ export default function IntegrationsHub() {
               }}>
               <div className="flex items-start gap-3 flex-wrap">
                 <div className="flex-1 min-w-0">
-                  <p className="text-fg text-sm font-medium">
-                    <span style={{ color: tone }}>●</span> {cfg.kind === 'slack' ? '🟢 Slack' : '🟣 Discord'} — {cfg.channelName}
+                  <p className="text-fg text-sm font-medium inline-flex items-center gap-1.5 flex-wrap">
+                    <span style={{ color: tone }}>●</span>
+                    <StatusDot color={cfg.kind === 'slack' ? '#4ade80' : '#a78bfa'} />
+                    {cfg.kind === 'slack' ? 'Slack' : 'Discord'} — {cfg.channelName}
                     {!cfg.enabled && <span className="text-neutral-600 text-xs ml-2">(無効)</span>}
                   </p>
                   <p className="text-neutral-600 text-xs truncate mt-0.5">

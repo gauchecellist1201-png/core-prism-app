@@ -4,7 +4,7 @@
 // 「あなたの光が、世界をつくる」 ── 影響力という光を、AI が広げる
 // ============================================================
 import { motion } from 'framer-motion';
-import { Mail, BarChart3, Sparkle, MessageSquare, Palette, UsersRound, Camera, Mic, HeartPulse, Check, ArrowRight, TrendingUp, Clock, Sparkles as SparklesIcon } from 'lucide-react';
+import { Mail, BarChart3, Sparkle, MessageSquare, Palette, UsersRound, Camera, Mic, HeartPulse, Check, ArrowRight, TrendingUp, Clock, Sparkles as SparklesIcon, Sunrise, Zap, Rocket } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { IRIS_COLORS, IRIS_FONTS } from './irisStyle';
@@ -488,7 +488,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         steps={[
           {
             day: '初日 (Day 1)',
-            emoji: '🌅',
+            Icon: Sunrise,
             title: 'Instagram を 1 タップ連携',
             body: 'スクショ or OAuth でアカウントを接続。サンプル投稿が AI に読まれて、世界観の理解が始まります。',
             ai: '「フォロワーの伸びる時間帯を教えて」を AI に頼む',
@@ -496,7 +496,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           },
           {
             day: '3 日目',
-            emoji: '⚡',
+            Icon: Zap,
             title: '案件 DM の返信を AI と一緒に',
             body: '受信した DM に対する返信案を Iris が即提案。あなたは「これでいい」と承認 → 送信のみ。',
             ai: '「単価交渉の文面 を 3 案 ください」を AI に',
@@ -504,7 +504,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           },
           {
             day: '7 日目',
-            emoji: '🚀',
+            Icon: Rocket,
             title: '初週終了 — 続けるか判断',
             body: '今週の反応数 / 新規フォロワー / 案件件数を 1 枚で確認。あなたの「自由時間」が増えたか実感できます。',
             ai: '夜のフィードで「今週の Iris が頑張ったこと」を確認',

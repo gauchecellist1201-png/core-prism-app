@@ -14,6 +14,7 @@
 // ============================================================
 import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Building2, Users, Briefcase, Package, Lightbulb, CheckCircle2, MousePointerClick, Sparkles } from 'lucide-react';
 import { CXO_META, type CxoRole, cxoDisplayName } from '../hooks/useAgentTaskQueue';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { statsForPersona, listDeliverables, logDeliverable } from '../lib/cxoDeliverables';
@@ -138,7 +139,8 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
           <div style={{
             fontSize: 10, letterSpacing: '0.22em', fontWeight: 800,
             color: accent, marginBottom: 4,
-          }}>🏢 あなた の デジタル 会社</div>
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+          }}><Building2 size={12} strokeWidth={2.2} /> あなた の デジタル 会社</div>
           <h1 style={{
             fontSize: 'clamp(1.4rem, 4.5vw, 2rem)', fontWeight: 900,
             margin: 0, lineHeight: 1.2, color: 'var(--fg-strong)',
@@ -146,8 +148,8 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
           }}>
             {companyName} <span style={{ color: 'var(--fg-subtle)', fontWeight: 600, fontSize: '0.65em' }}>役員 会議室</span>
           </h1>
-          <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 4 }}>
-            👥 役員 14 名 在籍 · 今日 動いた {Object.values(cxoStatus).filter((s) => s.doneCount > 0).length} 名 · 累計 納品 {stats.totalCount} 件
+          <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Users size={13} strokeWidth={2.2} style={{ flexShrink: 0 }} /> 役員 14 名 在籍 · 今日 動いた {Object.values(cxoStatus).filter((s) => s.doneCount > 0).length} 名 · 累計 納品 {stats.totalCount} 件
           </div>
         </div>
         <div style={{
@@ -169,7 +171,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
               {workingCount} 名 実行中
             </>
           ) : (
-            <>🟢 全員 待機 中</>
+            <><span style={{ width: 6, height: 6, borderRadius: 999, background: '#9CA3AF', display: 'inline-block' }} /> 全員 待機 中</>
           )}
         </div>
       </div>
@@ -252,7 +254,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                   marginBottom: 3,
                 }}
               >
-                {meta.emoji}
+                <meta.Icon size={22} color="#0a0a0f" strokeWidth={2.4} />
               </motion.div>
               {/* 役職 ピル (大きめ) */}
               <div style={{
@@ -275,7 +277,8 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                   padding: '1px 5px', borderRadius: 4,
                   background: 'rgba(52,211,153,0.15)',
                   border: '1px solid rgba(52,211,153,0.35)',
-                }}>💼 実行中</div>
+                  display: 'inline-flex', alignItems: 'center', gap: 3,
+                }}><Briefcase size={9} strokeWidth={2.4} /> 実行中</div>
               )}
             </motion.button>
           );
@@ -293,7 +296,8 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
           <span style={{
             fontSize: 9, padding: '2px 7px', borderRadius: 999, fontWeight: 800,
             background: accent, color: 'var(--fg-strong)', letterSpacing: '0.08em',
-          }}>📦 直近 納品</span>
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+          }}><Package size={10} strokeWidth={2.4} /> 直近 納品</span>
           <span style={{ fontSize: 12, color: 'var(--fg-strong)', fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {items[0].cxoEmoji} {items[0].cxoName} → 「{items[0].title}」
           </span>
@@ -315,8 +319,9 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
           marginTop: 12, padding: '10px 14px', borderRadius: 10,
           background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)',
           fontSize: 12, color: '#FBBF24', lineHeight: 1.5,
+          display: 'flex', alignItems: 'flex-start', gap: 6,
         }}>
-          💡 まず 1 人 タップ してみて ください。 60 秒 で 役員 が 仕事 を 仕上げて 役員 日報 に 納品 します。
+          <Lightbulb size={14} strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 2 }} /> <span>まず 1 人 タップ してみて ください。 60 秒 で 役員 が 仕事 を 仕上げて 役員 日報 に 納品 します。</span>
         </div>
       )}
 
@@ -415,7 +420,7 @@ function CxoActionPopover({
               position: 'relative',
             }}
           >
-            {meta.emoji}
+            <meta.Icon size={34} color="#0a0a0f" strokeWidth={2.2} />
             {/* 動いて いる 時 の パルス */}
             {phase === 'running' && (
               <motion.div
@@ -435,10 +440,10 @@ function CxoActionPopover({
               fontSize: 11, fontWeight: 900, letterSpacing: '0.2em',
               color: meta.color, marginBottom: 2,
             }}>{role} エージェント</div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 900, lineHeight: 1.15, color: 'var(--fg-strong)' }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: 900, lineHeight: 1.15, color: 'var(--fg-strong)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               {phase === 'idle' ? '何 を 任せます か?' :
-               phase === 'running' ? '💼 動いて います…' :
-               '✓ 納品 しました'}
+               phase === 'running' ? <><Briefcase size={20} strokeWidth={2.4} /> 動いて います…</> :
+               <><CheckCircle2 size={20} strokeWidth={2.4} color="#34D399" /> 納品 しました</>}
             </div>
             <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 3 }}>
               {meta.tagline || CXO_TAGLINE[role]}
@@ -463,8 +468,9 @@ function CxoActionPopover({
             background: 'rgba(52,211,153,0.12)',
             border: '1px solid rgba(52,211,153,0.4)',
             fontSize: 11, color: '#10B981',
+            display: 'flex', alignItems: 'center', gap: 5,
           }}>
-            📦 これ まで {doneCount} 件 納品 {lastDone ? `· 直近: 「${lastDone}」` : ''}
+            <Package size={13} strokeWidth={2.2} style={{ flexShrink: 0 }} /> これ まで {doneCount} 件 納品 {lastDone ? `· 直近: 「${lastDone}」` : ''}
           </div>
         )}
 
@@ -474,7 +480,8 @@ function CxoActionPopover({
             <div style={{
               fontSize: 11, letterSpacing: '0.16em', fontWeight: 800,
               color: 'var(--fg-muted)', marginBottom: 10,
-            }}>👇 タップ で その 仕事 を 今 すぐ 着手</div>
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+            }}><MousePointerClick size={13} strokeWidth={2.2} /> タップ で その 仕事 を 今 すぐ 着手</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
               {allTasks.map((task, i) => (
                 <motion.button
@@ -502,7 +509,7 @@ function CxoActionPopover({
                       background: meta.color, color: '#0a0a0f', letterSpacing: '0.06em', flexShrink: 0,
                     }}>おすすめ</span>
                   )}
-                  <span style={{ fontSize: 18, color: meta.color, flexShrink: 0 }}>✨</span>
+                  <span style={{ color: meta.color, flexShrink: 0, display: 'inline-flex' }}><Sparkles size={16} strokeWidth={2.2} /></span>
                   <span style={{ flex: 1 }}>{task}</span>
                   <span style={{ fontSize: 18, color: meta.color, fontWeight: 800 }}>→</span>
                 </motion.button>

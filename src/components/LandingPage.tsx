@@ -10,6 +10,7 @@ import {
   Compass, Briefcase, TrendingUp, Sparkles, BookOpen, Users, Heart,
   FileText, FileSpreadsheet, ScrollText, Target, Mail, Receipt, Palette, Mic,
   Mic2, Handshake, Receipt as ReceiptIcon, ArrowRight, Sparkles as SparklesIcon,
+  Gift, MessageSquare,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -101,7 +102,7 @@ export default function LandingPage({ onEnterApp }: Props) {
           }}
           data-testid="referral-welcome-banner"
         >
-          <span style={{ fontSize: '1.15rem' }}>🎁</span>
+          <span className="inline-flex" style={{ alignItems: 'center' }}><Gift size={19} strokeWidth={2.2} /></span>
           <span>
             {pendingInviter ? (
               <><strong style={{ background: 'rgba(255,255,255,0.22)', padding: '0.1rem 0.55rem', borderRadius: 8 }}>{pendingInviter} さん</strong>からの招待で </>
@@ -132,7 +133,7 @@ export default function LandingPage({ onEnterApp }: Props) {
                 color: 'rgba(255,255,255,0.96)', lineHeight: 1.5,
               }}
             >
-              💬「{pendingMsg}」{pendingInviter ? ` — ${pendingInviter} さん` : ''}
+              <span className="inline-flex" style={{ verticalAlign: 'middle', marginRight: '0.3rem' }}><MessageSquare size={15} strokeWidth={2.2} /></span>「{pendingMsg}」{pendingInviter ? ` — ${pendingInviter} さん` : ''}
             </p>
           )}
         </motion.div>

@@ -8,11 +8,12 @@
 // ============================================================
 
 import { motion } from 'framer-motion';
-import { CheckCircle2, Sparkles, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Sparkles, TrendingUp, Sunrise, Zap, Rocket } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface WeekStep {
   day: string;     // '初日 (Day 1)' 等
-  emoji: string;
+  Icon: LucideIcon;
   title: string;
   body: string;
   ai: string;      // 「あなたが AI に頼むこと」
@@ -22,7 +23,7 @@ interface WeekStep {
 const DEFAULT_STEPS: WeekStep[] = [
   {
     day: '初日 (Day 1)',
-    emoji: '🌅',
+    Icon: Sunrise,
     title: '5 分でセットアップ',
     body: '名前・業種・モデル を選ぶだけ。クレカ登録不要、7 日間ぜんぶ無料。',
     ai: '「今週の優先 3 つ を決める」を CEO に頼む',
@@ -30,7 +31,7 @@ const DEFAULT_STEPS: WeekStep[] = [
   },
   {
     day: '3 日目',
-    emoji: '⚡',
+    Icon: Zap,
     title: '業務に染み込む',
     body: '朝のブリーフ + 完了タスク 5-10 件。「あ、これ AI に頼めばいいのか」が増える。',
     ai: '「営業先 3 社に DM 下書き」「数字を整理して」を CSO / CFO に',
@@ -38,7 +39,7 @@ const DEFAULT_STEPS: WeekStep[] = [
   },
   {
     day: '7 日目',
-    emoji: '🚀',
+    Icon: Rocket,
     title: '無料体験終了 — 続けるか判断',
     body: '1 週間の AI 進めた仕事ログが「今週の日記」で 1 通のメールに。',
     ai: '夜のフィードで「今日 AI が触れた仕事 N 件」を確認',
@@ -140,10 +141,9 @@ export default function IndustryWeekTimeline({
                     background: `linear-gradient(135deg, ${accent}, #F472B6)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: `0 6px 16px ${accent}77`,
-                    fontSize: '1.4rem',
                   }}
                 >
-                  {s.emoji}
+                  <s.Icon size={22} color="#fff" strokeWidth={2.2} />
                 </div>
 
                 <div style={{

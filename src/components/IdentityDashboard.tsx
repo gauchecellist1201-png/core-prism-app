@@ -69,7 +69,8 @@ const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
 import { REFERRAL_BONUS_DAYS } from '../lib/referral';
-import { Gift, FileDown, Database, Brain, BarChart3, Search, ShieldCheck } from 'lucide-react';
+import { Gift, FileDown, Database, Brain, BarChart3, Search, ShieldCheck, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { downloadMonthlyCsv } from '../lib/monthlyCsvExport';
 import { downloadUserExport } from '../lib/userDataExport';
 import MyAiUsageInsights from './MyAiUsageInsights';
@@ -144,7 +145,8 @@ function PriorityDot({ priority }: { priority: string }) {
 }
 
 function FileIcon({ type }: { type: string }) {
-  return <span className="text-sm flex-shrink-0">{{ file: '📄', note: '🗒', url: '🔗', auto: '🤖' }[type] ?? '📄'}</span>;
+  const Ic = ({ file: FileText, note: StickyNote, url: Link2, auto: Bot } as Record<string, LucideIcon>)[type] ?? FileText;
+  return <span className="flex-shrink-0 inline-flex text-fg-muted"><Ic size={15} strokeWidth={2} /></span>;
 }
 
 export default function IdentityDashboard({
@@ -586,7 +588,7 @@ export default function IdentityDashboard({
             onClick={onOpenSettings}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
           >
-            <span className="text-fg-muted group-hover:text-fg text-sm">⚙</span>
+            <span className="text-fg-muted group-hover:text-fg inline-flex"><Settings size={15} strokeWidth={2} /></span>
             <span className="text-fg-muted group-hover:text-fg text-sm">環境設定</span>
           </button>
           {/* PP (2026-06-03): 今月の数字 CSV エクスポート */}
@@ -713,7 +715,7 @@ export default function IdentityDashboard({
                 style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg-muted)' }}
                 aria-label="メニュー"
               >
-                ☰
+                <Menu size={18} strokeWidth={2.2} />
               </button>
               <motion.div
                 className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
@@ -740,7 +742,7 @@ export default function IdentityDashboard({
                 aria-label="今日のレポート"
                 title="今日のレポート — 売上・AI 完了・明日の 3 手"
               >
-                📊 <span className="hidden md:inline">今日のレポート</span>
+                <BarChart3 size={14} strokeWidth={2.2} /> <span className="hidden md:inline">今日のレポート</span>
               </motion.button>
               <motion.button
                 onClick={() => setShowHealth(true)}
@@ -753,7 +755,7 @@ export default function IdentityDashboard({
                 whileHover={{ background: 'rgba(255,111,181,0.15)' }}
                 aria-label="ヘルス"
               >
-                🩺 <span className="hidden md:inline">ヘルス</span>
+                <HeartPulse size={14} strokeWidth={2.2} /> <span className="hidden md:inline">ヘルス</span>
               </motion.button>
               <motion.button
                 onClick={() => setShowMeeting(true)}
@@ -761,7 +763,7 @@ export default function IdentityDashboard({
                 style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg-muted)' }}
                 whileHover={{ borderColor: persona.accentColor + '40', color: persona.accentColor }}
               >
-                📅 ミーティングリンク
+                <Calendar size={14} strokeWidth={2.2} /> ミーティングリンク
               </motion.button>
               <motion.button
                 onClick={() => setShowKnowledge(true)}
@@ -773,7 +775,7 @@ export default function IdentityDashboard({
                 }}
                 aria-label="ナレッジ"
               >
-                📚 <span className="hidden md:inline">ナレッジ</span>{personaKnowledge.length > 0 && ` (${personaKnowledge.length})`}
+                <BookOpen size={14} strokeWidth={2.2} /> <span className="hidden md:inline">ナレッジ</span>{personaKnowledge.length > 0 && ` (${personaKnowledge.length})`}
               </motion.button>
               <button
                 onClick={() => setShowInvite(true)}
@@ -798,7 +800,7 @@ export default function IdentityDashboard({
                 }}
                 aria-label="AIチャット"
               >
-                💬 AI
+                <MessageSquare size={14} strokeWidth={2.2} /> AI
               </button>
               {coach.brief && !coach.incoming && (
                 <motion.button
@@ -809,7 +811,7 @@ export default function IdentityDashboard({
                   transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
                   title="コーチブリーフを表示"
                 >
-                  🧠 ブリーフ
+                  <Brain size={13} strokeWidth={2.2} /> ブリーフ
                 </motion.button>
               )}
               <div
@@ -1086,7 +1088,7 @@ export default function IdentityDashboard({
                 {/* ヘッダ — 旧 AutoAgentHero の見た目を踏襲 */}
                 <div style={{ position: 'relative', zIndex: 1, marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-                    <span style={{ color: '#E84B97', fontSize: 14, lineHeight: 1 }}>✦</span>
+                    <span style={{ color: '#E84B97', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}><Sparkles size={14} strokeWidth={2.2} /></span>
                     <span style={{
                       fontSize: 10, letterSpacing: '0.3em', fontWeight: 800,
                       color: '#E84B97', textTransform: 'uppercase',
@@ -1273,7 +1275,10 @@ export default function IdentityDashboard({
               />
 
               <div className="flex gap-1.5">
-                {[['files', `📄 資料 (${personaKnowledge.length})`], ['tasks', `✓ タスク (${persona.tasks.filter(t => !t.done).length})`]].map(([id, label]) => (
+                {([
+                  ['files', <FileText size={14} strokeWidth={2.2} />, `資料 (${personaKnowledge.length})`],
+                  ['tasks', <CheckCircle2 size={14} strokeWidth={2.2} />, `タスク (${persona.tasks.filter(t => !t.done).length})`],
+                ] as const).map(([id, icon, label]) => (
                   <button
                     key={id}
                     onClick={() => setActiveTab(id as 'files' | 'tasks')}
@@ -1282,9 +1287,10 @@ export default function IdentityDashboard({
                       background: persona.accentColorLight,
                       color: persona.accentColor,
                       border: `1px solid ${persona.accentColor}50`,
-                    } : { border: '1px solid var(--border)' }}
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                    } : { border: '1px solid var(--border)', display: 'inline-flex', alignItems: 'center', gap: 5 }}
                   >
-                    {label}
+                    {icon}{label}
                   </button>
                 ))}
               </div>
@@ -1342,8 +1348,8 @@ export default function IdentityDashboard({
                                   item.analysisStatus === 'tagging' ||
                                   item.analysisStatus === 'summarizing' ||
                                   item.analysisStatus === 'extracting') && (
-                                  <span className="text-xs" style={{ color: persona.accentColor }}>
-                                    🧠 {item.analysisStatus === 'parsing' ? 'ファイル解析中'
+                                  <span className="text-xs" style={{ color: persona.accentColor, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                    <Brain size={12} strokeWidth={2.2} /> {item.analysisStatus === 'parsing' ? 'ファイル解析中'
                                       : item.analysisStatus === 'tagging' ? 'タグ生成中'
                                       : item.analysisStatus === 'summarizing' ? 'AI 要約中'
                                       : item.analysisStatus === 'extracting' ? '数字を抽出中'
@@ -1420,7 +1426,7 @@ export default function IdentityDashboard({
                                 borderColor: task.done ? persona.accentColor : 'var(--border)',
                                 background: task.done ? persona.accentColorLight : 'transparent',
                               }}>
-                              {task.done && <span style={{ color: persona.accentColor, fontSize: '12px' }}>✓</span>}
+                              {task.done && <span style={{ color: persona.accentColor, display: 'inline-flex', alignItems: 'center' }}><CheckCircle2 size={12} strokeWidth={2.2} /></span>}
                             </div>
                           </motion.button>
                         ))}
@@ -1442,11 +1448,11 @@ export default function IdentityDashboard({
                 whileTap={{ scale: 0.995 }}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-fg-muted text-xs tracking-widest uppercase" style={{ color: stripeActive ? '#635BFF' : undefined }}>
-                    {stripeActive && '⚡ '}
+                  <p className="text-fg-muted text-xs tracking-widest uppercase" style={{ color: stripeActive ? '#635BFF' : undefined, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    {stripeActive && <Zap size={12} strokeWidth={2.2} />}
                     {displayLabel}
                   </p>
-                  <span className="text-[10px] text-fg-muted">{stripeActive ? '自動連動' : '編集 ✎'}</span>
+                  <span className="text-[10px] text-fg-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>{stripeActive ? '自動連動' : <>編集 <Pencil size={11} strokeWidth={2.2} /></>}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-baseline gap-3 flex-wrap">
@@ -1564,14 +1570,14 @@ export default function IdentityDashboard({
             >
               <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <div className="flex items-center gap-2">
-                  <span className="text-fg text-sm">💬 AIチャット</span>
+                  <span className="text-fg text-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><MessageSquare size={14} strokeWidth={2.2} /> AIチャット</span>
                 </div>
                 <button
                   onClick={() => setShowMobileAI(false)}
                   className="w-11 h-11 rounded-full flex items-center justify-center text-fg-muted hover:text-fg text-lg leading-none"
                   aria-label="閉じる"
                 >
-                  ✕
+                  <X size={20} strokeWidth={2.2} />
                 </button>
               </div>
               <div className="overflow-y-auto flex-shrink-0" style={{ maxHeight: '30%', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -1905,7 +1911,7 @@ export default function IdentityDashboard({
             }}
           >
             <div className="text-center">
-              <p className="text-6xl mb-4">📥</p>
+              <p className="mb-4 flex justify-center"><Inbox size={56} strokeWidth={1.6} /></p>
               <p className="text-white text-2xl font-semibold">どこにでもドロップOK</p>
               <p className="text-white/80 text-sm mt-2">フォルダごと・複数ファイル一括取り込み</p>
               <p className="text-white/60 text-xs mt-1">PDF · Word · Excel · PowerPoint · CSV · 画像 · テキスト</p>
@@ -1928,7 +1934,7 @@ export default function IdentityDashboard({
             exit={{ y: 100, opacity: 0 }}
           >
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{bulkProgress.done === bulkProgress.total ? '✅' : '🧠'}</span>
+              <span className="flex items-center">{bulkProgress.done === bulkProgress.total ? <CheckCircle2 size={24} strokeWidth={2.2} /> : <Brain size={24} strokeWidth={2.2} />}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-white text-sm font-semibold">
                   {bulkProgress.done === bulkProgress.total
@@ -1992,7 +1998,7 @@ export default function IdentityDashboard({
         }}
         title="横断検索 (Cmd+K)"
       >
-        <span>🔮</span>
+        <span className="flex items-center"><Gem size={14} strokeWidth={2.2} /></span>
         <span>横断検索</span>
         <span className="cp-pill" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>⌘K</span>
       </button>

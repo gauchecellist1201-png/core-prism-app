@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Landmark, CreditCard, Sparkles, Briefcase, Coffee, Mic, Lock, CheckCircle2, AlertTriangle, Star, Target, Crown, Settings } from 'lucide-react';
 import { usePhaseButton } from '../hooks/usePhaseButton';
 import type { AppSettings, Persona } from '../types/identity';
 import { estimateMonthlyCost } from '../hooks/useClaude';
@@ -426,7 +427,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                         border: '1px solid rgba(99,102,241,0.2)',
                       }}
                     >
-                      <div className="text-fg text-sm font-semibold">🏛️ 組織</div>
+                      <div className="text-fg text-sm font-semibold flex items-center gap-1.5"><span className="inline-flex"><Landmark size={15} strokeWidth={2} /></span>組織</div>
                       <div className="text-fg-muted text-xs mt-0.5">メンバー招待・ロール管理</div>
                     </button>
                     <button
@@ -438,7 +439,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                         border: '1px solid rgba(225,48,108,0.2)',
                       }}
                     >
-                      <div className="text-fg text-sm font-semibold">💳 プラン</div>
+                      <div className="text-fg text-sm font-semibold flex items-center gap-1.5"><span className="inline-flex"><CreditCard size={15} strokeWidth={2} /></span>プラン</div>
                       <div className="text-fg-muted text-xs mt-0.5">
                         {billingUser ? `現在: ${billingUser.plan}` : '登録後に利用可'}
                       </div>
@@ -471,9 +472,9 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     <p className="text-fg-muted text-xs mb-3">提案・要約・返信ドラフトの語り口</p>
                     <div className="space-y-2">
                       {([
-                        { v: 'gentle', t: '🌸 やさしく (推奨)', d: '一文短く、専門用語に必ず日本語補足' },
-                        { v: 'professional', t: '💼 プロ調', d: '簡潔・論理的、断定的' },
-                        { v: 'casual', t: '☕ カジュアル', d: 'フランクで親しみやすい' },
+                        { v: 'gentle', icon: Sparkles, t: 'やさしく (推奨)', d: '一文短く、専門用語に必ず日本語補足' },
+                        { v: 'professional', icon: Briefcase, t: 'プロ調', d: '簡潔・論理的、断定的' },
+                        { v: 'casual', icon: Coffee, t: 'カジュアル', d: 'フランクで親しみやすい' },
                       ] as const).map(opt => (
                         <button
                           key={opt.v}
@@ -484,7 +485,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                             border: `1px solid ${aiTone === opt.v ? 'rgba(180,124,252,0.50)' : 'rgba(255,255,255,0.06)'}`,
                           }}
                         >
-                          <p className="text-fg text-sm font-light">{opt.t}</p>
+                          <p className="text-fg text-sm font-light flex items-center gap-1.5"><span className="inline-flex"><opt.icon size={15} strokeWidth={2} /></span>{opt.t}</p>
                           <p className="text-fg-muted text-xs mt-0.5">{opt.d}</p>
                         </button>
                       ))}
@@ -579,8 +580,9 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                       background: openaiAvailable ? 'rgba(180,124,252,0.10)' : 'rgba(255,255,255,0.02)',
                       border: `1px solid ${openaiAvailable ? 'rgba(180,124,252,0.40)' : 'rgba(255,255,255,0.06)'}`,
                     }}>
-                      <p className="text-fg text-xs font-medium mb-1">
-                        {openaiAvailable ? '🎤 OpenAI TTS が有効' : '🔒 ブラウザ標準音声で再生'}
+                      <p className="text-fg text-xs font-medium mb-1 flex items-center gap-1.5">
+                        <span className="inline-flex">{openaiAvailable ? <Mic size={14} strokeWidth={2} /> : <Lock size={14} strokeWidth={2} />}</span>
+                        {openaiAvailable ? 'OpenAI TTS が有効' : 'ブラウザ標準音声で再生'}
                       </p>
                       <p className="text-fg-muted text-[11px] leading-relaxed">
                         {openaiAvailable
@@ -1054,8 +1056,10 @@ function ApiKeySetupBox({
           : 'linear-gradient(135deg, rgba(251,191,36,0.10), rgba(248,113,113,0.06))',
         border: `1px solid ${hasGemini || hasClaude ? 'rgba(16,185,129,0.30)' : 'rgba(251,191,36,0.30)'}`,
       }}>
-        <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg)', marginBottom: 2 }}>
-          {hasGemini || hasClaude ? '✓ AI 鍵が登録済み' : '⚠ AI 鍵が未登録 — AI 機能が使えません'}
+        <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg)', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+          {hasGemini || hasClaude
+            ? <><span className="inline-flex" style={{ color: '#10B981' }}><CheckCircle2 size={15} strokeWidth={2.2} /></span>AI 鍵が登録済み</>
+            : <><span className="inline-flex" style={{ color: '#FBBF24' }}><AlertTriangle size={15} strokeWidth={2.2} /></span>AI 鍵が未登録 — AI 機能が使えません</>}
         </p>
         <p style={{ fontSize: 11, color: 'var(--fg-muted)', lineHeight: 1.65 }}>
           {hasGemini || hasClaude
@@ -1071,8 +1075,8 @@ function ApiKeySetupBox({
         border: '1px solid rgba(255,255,255,0.08)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-          <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg)' }}>
-            🌟 Gemini キー <span style={{ fontSize: 10, color: '#10B981', fontWeight: 700, marginLeft: 6 }}>無料・おすすめ</span>
+          <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="inline-flex" style={{ color: '#FBBF24' }}><Star size={15} strokeWidth={2} /></span>Gemini キー <span style={{ fontSize: 10, color: '#10B981', fontWeight: 700, marginLeft: 6 }}>無料・おすすめ</span>
           </p>
           <a
             href="https://aistudio.google.com/apikey"
@@ -1105,16 +1109,16 @@ function ApiKeySetupBox({
           </button>
         </div>
         {saved === 'gemini' && (
-          <p style={{ fontSize: 11, color: '#10B981', fontWeight: 700, marginTop: 6 }}>
-            ✓ 保存しました — もう AI 機能が使えます
+          <p style={{ fontSize: 11, color: '#10B981', fontWeight: 700, marginTop: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span className="inline-flex"><CheckCircle2 size={13} strokeWidth={2.2} /></span>保存しました — もう AI 機能が使えます
           </p>
         )}
       </div>
 
       {/* Claude 鍵 (有料・高品質) */}
       <details style={{ fontSize: 12 }}>
-        <summary style={{ cursor: 'pointer', color: 'var(--fg-muted)', padding: 4 }}>
-          🎯 Claude キーを登録 (有料・高品質) — 上級者向け
+        <summary style={{ cursor: 'pointer', color: 'var(--fg-muted)', padding: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span className="inline-flex"><Target size={14} strokeWidth={2} /></span>Claude キーを登録 (有料・高品質) — 上級者向け
         </summary>
         <div style={{ marginTop: 8, padding: '0.85rem 1rem', borderRadius: 12,
           background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -1200,8 +1204,10 @@ function MasterModeBox({ onChange }: { onChange?: () => void }) {
       border: `1px solid ${isOwner ? 'rgba(255,215,0,0.35)' : 'rgba(255,255,255,0.08)'}`,
     }}>
       <div className="flex items-center justify-between gap-2 mb-2">
-        <p className="text-fg text-sm font-medium">
-          {isOwner ? '👑 Owner モード ON (Claude API · 全機能解放)' : '⚙ Owner モード'}
+        <p className="text-fg text-sm font-medium flex items-center gap-1.5">
+          {isOwner
+            ? <><span className="inline-flex" style={{ color: '#FFD60A' }}><Crown size={15} strokeWidth={2} /></span>Owner モード ON (Claude API · 全機能解放)</>
+            : <><span className="inline-flex"><Settings size={15} strokeWidth={2} /></span>Owner モード</>}
         </p>
         {isOwner && (
           <button onClick={clear}

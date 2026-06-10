@@ -249,7 +249,7 @@ export default function CxoWelcomeCard({ brand = 'prism', force = false }: Props
                 display: 'flex', alignItems: 'center', gap: 8,
               }}
             >
-              <span style={{ color: accent, fontWeight: 800 }}>✨</span>
+              <span style={{ color: accent, fontWeight: 800, display: 'inline-flex', alignItems: 'center' }}><Sparkles size={15} strokeWidth={2.2} /></span>
               <div style={{ flex: 1 }}>
                 AI 会社が動き始めました。<br />
                 <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Plus } from 'lucide-react';
+import { Play, Plus, Volume2, Lightbulb, Sparkles, RefreshCw } from 'lucide-react';
 import type { Persona, Proposal, AppSettings } from '../types/identity';
 import { listIntegrations, sendBrief } from '../lib/integrations';
 import { RewardBurst } from './visualFx';
@@ -91,7 +91,7 @@ export default function TodayBrief({
             animate={isSpeaking ? { scale: [1, 1.12, 1] } : {}}
             transition={{ duration: 0.7, repeat: Infinity }}
           >
-            {isSpeaking ? '🔊' : '💡'}
+            {isSpeaking ? <Volume2 size={22} strokeWidth={2.2} /> : <Lightbulb size={22} strokeWidth={2.2} />}
           </motion.div>
           <div className="flex-1 min-w-0">
             <p className="text-fg-muted text-xs tracking-widest uppercase brief-eyebrow-mobile">今日のブリーフ · {greet}</p>
@@ -221,7 +221,7 @@ export default function TodayBrief({
               color: '#0a0a0f',
             }}
           >
-            {isGenerating ? <LoaderDots label="提案を考えてます" /> : proposal ? '🔄 新しい提案' : '✨ 提案を生成'}
+            {isGenerating ? <LoaderDots label="提案を考えてます" /> : proposal ? <span className="inline-flex items-center gap-1.5"><RefreshCw size={15} strokeWidth={2.4} /> 新しい提案</span> : <span className="inline-flex items-center gap-1.5"><Sparkles size={15} strokeWidth={2.4} /> 提案を生成</span>}
           </button>
           {proposal && voiceEnabled && (
             isSpeaking ? (

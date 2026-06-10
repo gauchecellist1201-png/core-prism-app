@@ -9,6 +9,7 @@
 //   - ノードをタップ → そのチャネルの最近のシグナル + CTA
 // ============================================================
 import { useState, useEffect, useRef, type ReactElement } from 'react';
+import { Radio, CheckCircle2, X } from 'lucide-react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo } from './Logo';
 import {
   CHANNEL_META, loadSignals, channelStats, runLoop,
@@ -106,7 +107,7 @@ export default function CommandTowerHub() {
           background: 'linear-gradient(135deg,#A78BFA,#6366F1)', color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19,
           boxShadow: '0 4px 14px rgba(167,139,250,0.45)',
-        }}>🗼</div>
+        }}><Radio size={20} strokeWidth={2.2} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h3 style={{ fontSize: 14, fontWeight: 900, color: 'var(--fg-strong)', margin: 0, letterSpacing: '-0.01em' }}>
             司令塔ループ — 4 プロダクトが一周する
@@ -225,8 +226,8 @@ export default function CommandTowerHub() {
             );
           })}
           {!running && steps.length >= 4 && (
-            <div style={{ marginTop: 10, fontSize: 11, color: '#34D399', fontWeight: 800 }}>
-              ✓ 一周完了 — このやり取りは司令塔タイムラインに記録されました
+            <div style={{ marginTop: 10, fontSize: 11, color: '#34D399', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <CheckCircle2 size={13} strokeWidth={2.2} /> 一周完了 — このやり取りは司令塔タイムラインに記録されました
             </div>
           )}
         </div>
@@ -258,7 +259,8 @@ function NodeDetail({ ch, signals, onClose }: { ch: LoopChannel; signals: LoopSi
         <button onClick={onClose} style={{
           marginLeft: 'auto', width: 26, height: 26, borderRadius: 8, border: 'none',
           background: 'rgba(0,0,0,0.12)', color: 'var(--fg-muted)', cursor: 'pointer', fontSize: 14,
-        }}>✕</button>
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        }}><X size={15} strokeWidth={2.2} /></button>
       </div>
       {list.length === 0 ? (
         <div style={{ fontSize: 11.5, color: 'var(--fg-muted)' }}>まだシグナルがありません。「ループを回す」で動き出します。</div>
