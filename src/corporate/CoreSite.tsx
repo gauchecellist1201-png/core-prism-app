@@ -347,17 +347,17 @@ export default function CoreSite() {
               marginBottom: '1.5rem',
             }}
           >
-            バラバラの道具では、ない。
+            機能の、足し算ではない。
             <br />
             <span
               style={{
-                background: 'linear-gradient(90deg,#E1306C,#a78bfa,#60a5fa,#06C755)',
+                background: 'linear-gradient(90deg,#f0abfc,#a78bfa,#60a5fa,#5eead4)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 fontWeight: 900,
               }}
             >
-              ひとつに、つながる。
+              掛け合わせて、ひとつの知性へ。
             </span>
           </motion.h2>
 
@@ -402,7 +402,7 @@ export default function CoreSite() {
               letterSpacing: '0.04em',
               marginBottom: '2.5rem',
             }}>
-              横串にすると、こんなことが起きる
+              つながると、何が変わるか。
             </h3>
 
             <div
@@ -430,9 +430,9 @@ export default function CoreSite() {
               marginTop: '2.75rem',
               fontWeight: 400,
             }}>
-              四つのツールを横串にして、ひとつの流れに。
+              四つのサービスが連携し、ひとつの流れになる。
               <br />
-              <strong style={{ color: '#fff', fontWeight: 700 }}>あなたは、確認して送るだけ。</strong>
+              <strong style={{ color: '#fff', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
             </p>
           </div>
         </div>
