@@ -16,6 +16,10 @@ interface Props {
   onSend: (msg: string) => Promise<void>;
   isLoading: boolean;
   error: string | null;
+  /** 直近メッセージが送信失敗していて再送可能か */
+  canRetry?: boolean;
+  /** 失敗メッセージをワンタップで再送 */
+  onRetry?: () => void;
   knowledgeCount: number;
   /** persona に紐づく KnowledgeItem 群 — 引用表示・動的サジェスト用 */
   knowledgeItems?: KnowledgeItem[];
@@ -30,6 +34,8 @@ export default function AISidebar({
   onSend,
   isLoading,
   error,
+  canRetry,
+  onRetry,
   knowledgeCount,
   knowledgeItems,
   onOpenKnowledge,
@@ -242,6 +248,41 @@ export default function AISidebar({
             </motion.div>
           ))}
         </AnimatePresence>
+
+        {/* 送信失敗 — 直近の自分の吹き出しの真下に「もう一度送る」を出す。
+            打ち直し不要で、同じ内容をワンタップ再送できる（沈黙する失敗を防ぐ） */}
+        {!isLoading && canRetry && onRetry && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
+          <motion.div
+            className="flex justify-start"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div
+              className="max-w-[88%] px-3 py-2.5 rounded-xl"
+              style={{ background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.30)' }}
+            >
+              <p className="text-xs font-semibold" style={{ color: '#f87171' }}>
+                ⚠ 返信を受け取れませんでした
+              </p>
+              <p className="text-[11px] text-fg-muted mt-0.5 leading-relaxed">
+                通信が一瞬不安定だったのかもしれません。打ち直さなくても、同じ内容でもう一度送れます。
+              </p>
+              <motion.button
+                onClick={onRetry}
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                style={{ background: '#f87171', color: '#0a0a0f' }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 2v3H7M2 10v-3h3" />
+                  <path d="M9.5 5A4 4 0 0 0 3 3.5M2.5 7A4 4 0 0 0 9 8.5" />
+                </svg>
+                もう一度送る
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
 
         {isLoading && (
           <AILoadingState

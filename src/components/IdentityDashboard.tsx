@@ -109,10 +109,12 @@ interface Props {
   chatMessages: ChatMessage[];
   isChatLoading: boolean;
   chatError: string | null;
+  canRetry?: boolean;
   settings: AppSettings;
   knowledgeItems: KnowledgeItem[];
   onSwitch: (id: string) => void;
   onSendMessage: (msg: string) => Promise<void>;
+  onRetryMessage?: () => void;
   onBackToSelection: () => void;
   onOpenSettings: () => void;
   onCreatePersona: () => void;
@@ -152,10 +154,12 @@ export default function IdentityDashboard({
   chatMessages,
   isChatLoading,
   chatError,
+  canRetry,
   settings,
   knowledgeItems,
   onSwitch,
   onSendMessage,
+  onRetryMessage,
   onBackToSelection,
   onOpenSettings,
   onCreatePersona,
@@ -1524,6 +1528,8 @@ export default function IdentityDashboard({
             onSend={onSendMessage}
             isLoading={isChatLoading}
             error={chatError}
+            canRetry={canRetry}
+            onRetry={onRetryMessage}
             knowledgeCount={personaKnowledge.length}
             knowledgeItems={personaKnowledge}
             onOpenKnowledge={() => setShowKnowledge(true)}
@@ -1581,6 +1587,8 @@ export default function IdentityDashboard({
                   onSend={onSendMessage}
                   isLoading={isChatLoading}
                   error={chatError}
+                  canRetry={canRetry}
+                  onRetry={onRetryMessage}
                   knowledgeCount={personaKnowledge.length}
                   knowledgeItems={personaKnowledge}
                   onOpenKnowledge={() => setShowKnowledge(true)}

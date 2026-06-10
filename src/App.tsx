@@ -503,6 +503,8 @@ export default function App() {
     });
   }, [activePersona, addTask]);
   const { sendMessage, isLoading: isChatLoading, error: chatError } = useClaude(settings, updateUsageStats);
+  // 送信失敗した直近メッセージ — ワンタップ再送のために保持
+  const [retryMessage, setRetryMessage] = useState<string | null>(null);
 
   const [view, setView] = useState<View>(() => {
     // 復元された activePersona があれば、dashboard で直行
@@ -639,7 +641,9 @@ export default function App() {
     setIsTransitioning(false);
   }, [selectPersona, activePersona]);
 
-  const handleSendMessage = useCallback(async (message: string) => {
+  // 送信の本体。append=true なら新規送信 (ユーザー吹き出しを追加)、
+  // append=false なら再送 (吹き出しは既にあるので追加しない)。
+  const runSend = useCallback(async (message: string, append: boolean) => {
     if (!activePersona) return;
 
     const personaKnowledge = getForPersona(activePersona.id);
@@ -661,18 +665,37 @@ export default function App() {
           .slice(0, 4)
       : [];
 
-    const userMsg: ChatMessage = {
-      role: 'user',
-      content: message,
-      timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
-    };
-    setChatMessages(prev => [...prev, userMsg]);
+    // 履歴: 新規送信は現在の chatMessages、再送は末尾の失敗ユーザー吹き出しを
+    // 除いた履歴を渡す (API 側で message が二重に積まれるのを防ぐ)。
+    const baseHistory = append
+      ? chatMessages
+      : (chatMessages[chatMessages.length - 1]?.role === 'user'
+          ? chatMessages.slice(0, -1)
+          : chatMessages);
 
-    const reply = await sendMessage(activePersona, message, chatMessages, relevantChunks, relevantItems);
+    if (append) {
+      const userMsg: ChatMessage = {
+        role: 'user',
+        content: message,
+        timestamp: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+      };
+      setChatMessages(prev => [...prev, userMsg]);
+    }
+    setRetryMessage(null);
+
+    const reply = await sendMessage(activePersona, message, baseHistory, relevantChunks, relevantItems);
     if (reply) {
       setChatMessages(prev => [...prev, reply]);
+    } else {
+      // 失敗 — 同じ内容をワンタップで再送できるよう保持
+      setRetryMessage(message);
     }
   }, [activePersona, chatMessages, sendMessage, getForPersona]);
+
+  const handleSendMessage = useCallback((message: string) => runSend(message, true), [runSend]);
+  const handleRetryMessage = useCallback(() => {
+    if (retryMessage) runSend(retryMessage, false);
+  }, [retryMessage, runSend]);
 
   const handleCreatePersona = useCallback((
     name: string, subtitle: string, icon: string,
@@ -747,10 +770,12 @@ export default function App() {
             chatMessages={chatMessages}
             isChatLoading={isChatLoading}
             chatError={chatError}
+            canRetry={!!retryMessage}
             settings={settings}
             knowledgeItems={knowledgeItems}
             onSwitch={handleSwitchPersona}
             onSendMessage={handleSendMessage}
+            onRetryMessage={handleRetryMessage}
             onBackToSelection={() => { setView('selection'); setChatMessages([]); }}
             onOpenSettings={() => { setSettingsInitialTab('basic'); setShowSettings(true); }}
             onCreatePersona={() => setShowPersonaCreator(true)}
