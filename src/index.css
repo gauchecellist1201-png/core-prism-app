@@ -1800,19 +1800,10 @@ html { scroll-behavior: smooth; }
     grid-template-columns: 1fr !important;
     gap: 0.5rem !important;
   }
-  /* FeatureProduct: モバイルではロゴと文章を縦積み */
+  /* FeatureProduct: 縦積み（PC/モバイル共通）。モバイルは余白だけ詰める */
   .lp-feature-product {
-    grid-template-columns: 1fr !important;
     gap: 1.5rem !important;
-  }
-  .lp-feature-product > div {
-    order: unset !important;
-  }
-  .lp-feature-product > div:first-child {
-    order: 1 !important;
-  }
-  .lp-feature-product > div:last-child {
-    order: 2 !important;
+    padding: 2rem 1.4rem !important;
   }
 }
 

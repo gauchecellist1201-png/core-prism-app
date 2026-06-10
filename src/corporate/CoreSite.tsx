@@ -1879,10 +1879,11 @@ function FeatureProduct({
         border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: 24,
         overflow: 'hidden',
-        display: 'grid',
-        gridTemplateColumns: reversed ? '1fr 0.85fr' : '0.85fr 1fr',
-        gap: 'clamp(2rem, 4vw, 4rem)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'clamp(1.5rem, 3vw, 2.25rem)',
         alignItems: 'center',
+        textAlign: 'center',
       }}
     >
       {/* 装飾オーラ */}
@@ -1905,7 +1906,6 @@ function FeatureProduct({
       {/* ロゴ + 視覚要素 */}
       <div
         style={{
-          order: reversed ? 2 : 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -1954,7 +1954,7 @@ function FeatureProduct({
       </div>
 
       {/* テキストコンテンツ */}
-      <div style={{ order: reversed ? 1 : 2, position: 'relative', zIndex: 2 }}>
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: 680, width: '100%', margin: '0 auto' }}>
         <span
           style={{
             display: 'inline-block',
@@ -2287,7 +2287,7 @@ function ConnectedSuite() {
         </svg>
         <motion.div
           animate={{ scale: [1, 1.045, 1] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 3 }}>
+          style={{ position: 'absolute', left: '50%', top: '50%', x: '-50%', y: '-50%', zIndex: 3 }}>
           <PrismCard />
         </motion.div>
         {sats.map(s => (
