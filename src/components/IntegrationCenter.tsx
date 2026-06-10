@@ -22,6 +22,10 @@ import { BrandIcon as OfficialBrandIcon, type BrandName } from './BrandIcons';
 const OFFICIAL_ICON: Record<string, BrandName> = {
   gmail: 'gmail', gcal: 'gcalendar', slack: 'slack',
   stripe: 'stripe', instagram: 'instagram', line: 'line',
+  gdrive: 'gdrive', gdocs: 'gdocs', gsheets: 'gsheets',
+  notion: 'notion', dropbox: 'dropbox', zoom: 'zoom',
+  x: 'x', ms365: 'ms365', trello: 'trello', asana: 'asana',
+  salesforce: 'salesforce', hubspot: 'hubspot',
 };
 import {
   isGmailConfigured, isGmailConnected, connectGmail, clearGmailToken,
