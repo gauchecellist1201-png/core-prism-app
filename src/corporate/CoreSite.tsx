@@ -598,7 +598,7 @@ export default function CoreSite() {
                 fontWeight: 500,
               }}
             >
-              "Speed is borrowed. Integrity is owned."
+              評判を築くには二十年かかる。それを失うのは、五分だ。
             </p>
             <p
               style={{
@@ -610,7 +610,7 @@ export default function CoreSite() {
                 lineHeight: 1.9,
               }}
             >
-              時代から借りるのは速度、自分のものは誠実さだけ。
+              — ウォーレン・バフェット（投資家）
             </p>
           </div>
         </div>
@@ -835,7 +835,7 @@ export default function CoreSite() {
             ]}
             accentColor="#a78bfa"
             accentGradient="linear-gradient(135deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)"
-            url="/"
+            url="/?lp=1"
           />
 
           {/* IRIS — Instagram を AI で */}
@@ -852,7 +852,7 @@ export default function CoreSite() {
             ]}
             accentColor="#E1306C"
             accentGradient="linear-gradient(135deg,#FCB045,#E1306C,#833AB4)"
-            url="/iris"
+            url="/iris?lp=1"
             reversed
           />
 
@@ -1210,17 +1210,6 @@ export default function CoreSite() {
             ))}
           </ol>
 
-          <p style={{
-            textAlign: 'center',
-            marginTop: '3rem',
-            fontFamily: FONT_SERIF_JA,
-            fontSize: 'clamp(0.85rem, 1.2vw, 0.95rem)',
-            color: 'rgba(255,255,255,0.5)',
-            fontStyle: 'italic',
-            letterSpacing: '0.05em',
-          }}>
-            速度は時代から借りる。<strong style={{ color: '#FCB045', fontWeight: 600 }}>誠実さは、自分のもの。</strong>
-          </p>
         </div>
       </section>
 
@@ -1687,8 +1676,8 @@ export default function CoreSite() {
           </div>
           <div>
             <p style={footHead}>プロダクト</p>
-            <a href="/" style={footLink} className="lp-tap-link">CORE Prism</a>
-            <a href="/iris" style={footLink} className="lp-tap-link">CORE Iris</a>
+            <a href="/?lp=1" style={footLink} className="lp-tap-link">CORE Prism</a>
+            <a href="/iris?lp=1" style={footLink} className="lp-tap-link">CORE Iris</a>
             <a href="https://resonancebot-ivory.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Resonance</a>
             <a href="https://lume-deploy-five.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Lume</a>
           </div>

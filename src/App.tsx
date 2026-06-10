@@ -507,6 +507,8 @@ export default function App() {
   const [retryMessage, setRetryMessage] = useState<string | null>(null);
 
   const [view, setView] = useState<View>(() => {
+    // コーポレートサイト等から ?lp=1 で来たら、再訪・マスターでも必ず LP を見せる
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('lp') === '1') return 'landing';
     // 復元された activePersona があれば、dashboard で直行
     if (activePersona && hasEnteredApp()) return 'dashboard';
     return getInitialView(settings.onboardingComplete);

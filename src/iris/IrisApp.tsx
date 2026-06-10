@@ -35,7 +35,11 @@ function markEntered() {
 export default function IrisApp() {
   const { settings } = useSettings();
   const { user } = useBillingUser();
-  const [entered, setEntered] = useState(() => hasEntered());
+  const [entered, setEntered] = useState(() => {
+    // ?lp=1（コーポレートサイト等から）の時は、再訪・マスターでも必ず LP を見せる
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('lp') === '1') return false;
+    return hasEntered();
+  });
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
   const [tutorialDoneTick, setTutorialDoneTick] = useState(0);
 

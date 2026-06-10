@@ -249,7 +249,7 @@ export const IRIS_PLANS: Plan[] = [
   },
   {
     id: 'lite', brand: 'iris',
-    name: 'Lite', priceJpy: 1980, priceJpy_yearly: 19800,
+    name: 'Lite', priceJpy: 2980, priceJpy_yearly: 29800,
     tagline: '入門・副業クリエイター',
     features: [
       'AI 戦略相談 30 回/月',
@@ -264,7 +264,7 @@ export const IRIS_PLANS: Plan[] = [
   },
   {
     id: 'standard', brand: 'iris',
-    name: 'Standard', priceJpy: 4980, priceJpy_yearly: 49800,
+    name: 'Standard', priceJpy: 6980, priceJpy_yearly: 69800,
     badge: '人気 No.1',
     tagline: '本気のクリエイター',
     features: [
@@ -283,7 +283,7 @@ export const IRIS_PLANS: Plan[] = [
   },
   {
     id: 'pro', brand: 'iris',
-    name: 'Pro', priceJpy: 9800, priceJpy_yearly: 98000,
+    name: 'Pro', priceJpy: 12800, priceJpy_yearly: 128000,
     tagline: 'チーム / マネージャー',
     features: [
       'Standard 全機能',
@@ -323,7 +323,7 @@ export const PRISM_PLANS: Plan[] = [
   },
   {
     id: 'lite', brand: 'prism',
-    name: 'Starter', priceJpy: 4980, priceJpy_yearly: 49800,
+    name: 'Starter', priceJpy: 4800, priceJpy_yearly: 48000,
     tagline: '個人・スタートアップ',
     features: [
       '基本 AI 機能',
