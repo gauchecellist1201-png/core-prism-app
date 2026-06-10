@@ -67,6 +67,41 @@ export default function MeetingHub({ persona, onClose }: Props) {
           what="オンライン会議の入室リンクを作って、相手にコピペで送れる場所です。"
           tryThis="ミーティング名と時間を選んで、出てきたリンクをコピーするだけ。"
           example="「30 分の打ち合わせ」を作る → 1 本の URL ができ、相手に貼って送れます。"
+          sampleLabel="こんなリンクが出ます"
+          samplePreview={
+            <div
+              style={{
+                width: 150,
+                background: '#ffffff',
+                color: '#0f172a',
+                borderRadius: 6,
+                padding: '9px 10px',
+                fontSize: 7,
+                lineHeight: 1.4,
+                boxShadow: 'var(--cp-elev-3)',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                borderTop: `3px solid ${persona.accentColor}`,
+              }}
+              aria-label="ミーティングリンクのサンプル"
+            >
+              <div style={{ fontWeight: 800, fontSize: 8.5, marginBottom: 1 }}>30 分の打ち合わせ</div>
+              <div style={{ opacity: 0.55, fontSize: 5.5, marginBottom: 5 }}>📅 5/23 (金) 14:00〜14:30</div>
+              <div
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  background: `${persona.accentColor}14`,
+                  border: `1px solid ${persona.accentColor}44`,
+                  borderRadius: 5, padding: '4px 6px', marginBottom: 5,
+                }}
+              >
+                <span style={{ fontSize: 6, opacity: 0.85, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                  meet.core/abc-1234
+                </span>
+                <span style={{ fontSize: 5.5, fontWeight: 800, color: persona.accentColor }}>コピー</span>
+              </div>
+              <div style={{ fontSize: 5.5, opacity: 0.6 }}>相手に貼って送るだけで入室できます</div>
+            </div>
+          }
         />
 
         {/* タイトル */}

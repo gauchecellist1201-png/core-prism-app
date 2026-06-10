@@ -182,6 +182,28 @@ export default function SlideGeneratorModal({ persona, settings, knowledge, onCl
                 what="メモや議事録を貼り付けるだけで、AI がプレゼン用のスライド構成を一気に作る画面です。"
                 tryThis="下の枠にスライド化したい文章を貼って「✨ スライド生成」を押します。"
                 example="5 行の事業メモ → タイトル・章立て付きで 8 枚のスライド構成が完成。"
+                sampleLabel="こんなスライドが出ます"
+                samplePreview={
+                  <div style={{ position: 'relative', width: 150, height: 92 }} aria-label="スライドのサンプル">
+                    {/* 後ろに重なる束 */}
+                    <div style={{ position: 'absolute', left: 10, top: 8, width: 130, height: 74, background: '#1e293b', borderRadius: 4, opacity: 0.35 }} />
+                    <div style={{ position: 'absolute', left: 5, top: 4, width: 130, height: 74, background: '#334155', borderRadius: 4, opacity: 0.55 }} />
+                    {/* 一番上の表紙スライド */}
+                    <div
+                      style={{
+                        position: 'absolute', left: 0, top: 0, width: 130, height: 74,
+                        background: `linear-gradient(135deg, #0f172a 60%, ${persona.accentColor})`,
+                        color: '#fff', borderRadius: 4, padding: '9px 10px',
+                        boxShadow: 'var(--cp-elev-3)', overflow: 'hidden',
+                      }}
+                    >
+                      <div style={{ width: 18, height: 3, background: persona.accentColor, borderRadius: 2, marginBottom: 6 }} />
+                      <div style={{ fontSize: 10, fontWeight: 800, lineHeight: 1.2 }}>新規事業<br />提案</div>
+                      <div style={{ fontSize: 6, opacity: 0.7, marginTop: 5 }}>市場 / 戦略 / 数字</div>
+                      <div style={{ position: 'absolute', right: 7, bottom: 6, fontSize: 5.5, opacity: 0.6 }}>1 / 8</div>
+                    </div>
+                  </div>
+                }
               />
               {/* Source UI */}
               {mode === 'paste' && (

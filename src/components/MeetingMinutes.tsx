@@ -615,6 +615,33 @@ export default function MeetingMinutesModal({
                 what="会議の録音や文字起こしから、AI が決定事項・宿題・要点を整理する画面です。"
                 tryThis="「🎙 会議を録音」を押して話す、または文字起こしを貼って「議事録を作る」を押します。"
                 example="30 分の打合せ → 決まったこと 3 つ・宿題 2 つ・要点 5 つに圧縮された議事録。"
+                sampleLabel="こんな議事録が出ます"
+                samplePreview={
+                  <div
+                    style={{
+                      width: 150,
+                      background: '#ffffff',
+                      color: '#0f172a',
+                      borderRadius: 4,
+                      padding: '8px 9px',
+                      fontSize: 7,
+                      lineHeight: 1.45,
+                      boxShadow: 'var(--cp-elev-3)',
+                      fontFamily: 'system-ui, -apple-system, sans-serif',
+                      borderTop: `3px solid ${persona.accentColor}`,
+                    }}
+                    aria-label="議事録のサンプル"
+                  >
+                    <div style={{ fontWeight: 800, fontSize: 8.5, marginBottom: 1 }}>営業MTG 議事録</div>
+                    <div style={{ opacity: 0.55, fontSize: 5.5, marginBottom: 4 }}>5/23 ・ 参加 3 名 ・ 30 分</div>
+                    <div style={{ fontWeight: 700, fontSize: 6.5, color: persona.accentColor, marginBottom: 1 }}>✓ 決まったこと</div>
+                    <div style={{ opacity: 0.85, marginBottom: 3 }}>・A社へ来週提案／・粗利38%案件を優先</div>
+                    <div style={{ fontWeight: 700, fontSize: 6.5, color: persona.accentColor, marginBottom: 1 }}>□ 宿題</div>
+                    <div style={{ opacity: 0.85, marginBottom: 3 }}>・井出: 見積を木曜まで</div>
+                    <div style={{ fontWeight: 700, fontSize: 6.5, color: persona.accentColor, marginBottom: 1 }}>● 要点</div>
+                    <div style={{ opacity: 0.85 }}>・予算感は合致／競合は2社</div>
+                  </div>
+                }
               />
               {/* タイトル + 参加者 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
