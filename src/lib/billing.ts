@@ -297,21 +297,7 @@ export const IRIS_PLANS: Plan[] = [
     stripeUrlEnvKey: 'VITE_STRIPE_IRIS_PRO_URL',
     stripeUrlEnvKey_yearly: 'VITE_STRIPE_IRIS_PRO_YEARLY_URL',
   },
-  {
-    id: 'studio', brand: 'iris',
-    name: 'Studio', priceJpy: 29800, priceJpy_yearly: 298000,
-    tagline: '事務所・代理店',
-    features: [
-      'Pro 全機能',
-      '連携アカウント 無制限',
-      'ホワイトラベル可 (自社ブランド)',
-      'API 連携 (Salesforce 等)',
-      '月次オンライン研修',
-      'API キー専有',
-    ],
-    stripeUrlEnvKey: 'VITE_STRIPE_IRIS_STUDIO_URL',
-    stripeUrlEnvKey_yearly: 'VITE_STRIPE_IRIS_STUDIO_YEARLY_URL',
-  },
+  // Iris「Studio」は 2026-06-11 に廃止（3階層 Lite/Standard/Pro に統一）。
 ];
 
 export const PRISM_PLANS: Plan[] = [

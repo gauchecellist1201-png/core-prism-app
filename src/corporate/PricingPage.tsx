@@ -149,10 +149,9 @@ const PRISM_PLANS_V2 = [
 
 // ─── Iris プラン ─────────────────
 const IRIS_PLANS = [
-  { id: 'lite', name: 'Lite', tag: '創作のはじめに', price: 2800, features: ['AI キャプション 30回/月', '案件管理 3件まで', '基本フィルター', 'コミュニティ閲覧'] },
-  { id: 'standard', name: 'Standard', tag: '伸びる時期に', price: 6800, highlight: true, features: ['AI キャプション 無制限', 'IG 分析 月10回', 'ストーリー設計 5本', 'コミュニティ投稿'] },
-  { id: 'pro', name: 'Pro', tag: '事業として', price: 9800, features: ['Standard 全機能', 'チーム 5名', 'ブランドマッチ無制限', 'メディアキット'] },
-  { id: 'studio', name: 'Studio', tag: 'プロチーム/法人', price: 29800, features: ['Pro 全機能', 'API + Webhook', 'ホワイトラベル', '無制限チーム', '専任コンサル'] },
+  { id: 'lite', name: 'Lite', tag: '創作のはじめに', price: 2980, features: ['AI キャプション 30回/月', '案件管理 無制限', '基本フィルター', 'コミュニティ閲覧'] },
+  { id: 'standard', name: 'Standard', tag: '伸びる時期に', price: 6980, highlight: true, features: ['AI キャプション 無制限', 'IG 分析 月10回', 'ストーリー設計 5本', 'コミュニティ投稿'] },
+  { id: 'pro', name: 'Pro', tag: 'チーム / マネージャー', price: 12800, features: ['Standard 全機能', 'チーム 5名', 'ブランドマッチ無制限', 'メディアキット'] },
 ];
 
 // ─── 業種別ユースケース ─────────────────
@@ -859,6 +858,7 @@ function PlanCard({ plan, yearly, brand }: { plan: any; yearly: boolean; brand: 
   const accentGrad = brand === 'iris' ? 'linear-gradient(135deg,#FCB045,#E1306C)' : 'linear-gradient(135deg,#a78bfa,#f472b6)';
   const price = yearly ? plan.yearly || plan.price * 10 : plan.price;
   const suffix = yearly ? '/ 年' : '/ 月';
+  const listPrice = price > 0 ? price * 2 : 0; // 定価（実売の2倍が目安）
 
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} style={{
@@ -877,6 +877,12 @@ function PlanCard({ plan, yearly, brand }: { plan: any; yearly: boolean; brand: 
       )}
       <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.75rem', color: accent, marginBottom: 4, fontWeight: 600, letterSpacing: '0.05em' }}>{plan.tag}</p>
       <h3 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.4rem', letterSpacing: '0.1em' }}>{plan.name}</h3>
+      {listPrice > 0 && (
+        <p style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: 2 }}>
+          <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', color: 'rgba(255,255,255,0.4)', textDecoration: 'line-through', fontWeight: 600 }}>定価 {fmt(listPrice)}</span>
+          <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff', background: accentGrad, padding: '0.12rem 0.4rem', borderRadius: 999, letterSpacing: '0.05em' }}>50% OFF</span>
+        </p>
+      )}
       <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '2rem', fontWeight: 800 }}>
         {fmt(price)}<span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', fontWeight: 500, marginLeft: 4 }}>{suffix}</span>
       </p>
