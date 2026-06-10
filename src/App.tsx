@@ -866,6 +866,7 @@ export default function App() {
           onClick={() => setBriefingsOpen(true)}
           aria-label="役員 日報 を 見る"
           data-tour-id="briefings-button"
+          className="cp-fab-iconize"
           style={{
             position: 'fixed',
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
@@ -878,7 +879,7 @@ export default function App() {
             boxShadow: '0 8px 22px rgba(99,102,241,0.45)',
             display: 'inline-flex', alignItems: 'center', gap: 6,
           }}
-        >📋 役員 日報</button>
+        ><span style={{ fontSize: 17, lineHeight: 1 }}>📋</span><span className="cp-fab-label">役員 日報</span></button>
       )}
       {/* ガイド ツアー (HubSpot 風) — 「ここを タップ」 で 全機能 を 案内 */}
       {tourBrand && (

@@ -78,6 +78,7 @@ export default function SuggestionFab() {
             onClick={open}
             aria-label="改善提案を送る"
             data-tour-id="suggestion-fab"
+            className="cp-fab-iconize"
             style={{
               position: 'fixed',
               left: 'calc(env(safe-area-inset-left, 0px) + 12px)',
@@ -101,7 +102,7 @@ export default function SuggestionFab() {
             }}
           >
             <Lightbulb size={14} />
-            改善提案
+            <span className="cp-fab-label">改善提案</span>
           </motion.button>
         )}
       </AnimatePresence>

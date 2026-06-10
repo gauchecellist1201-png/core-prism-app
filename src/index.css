@@ -2602,6 +2602,16 @@ time {
   button[aria-label="フィードバックを送る"] {
     display: none !important;
   }
+  /* 横長ピル(役員日報/改善提案)はコンテンツに被るのでモバイルでは丸アイコンに畳む */
+  .cp-fab-iconize {
+    width: 48px !important;
+    height: 48px !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    gap: 0 !important;
+    justify-content: center !important;
+  }
+  .cp-fab-label { display: none !important; }
   /* AgentTeam モニター: 折りたたみ時は左下のコンパクトなドックに (全幅バーをやめる) */
   .agent-monitor-dock[data-open="false"] {
     width: auto !important;
