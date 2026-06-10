@@ -102,7 +102,7 @@ const SOURCES_INIT: Source[] = [
   },
 ];
 
-export default function AllSourcesHub() {
+export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration?: (toolId: string) => void } = {}) {
   const [gmailConn, setGmailConn] = useState(() => isGmailConnected());
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState('');
@@ -136,7 +136,11 @@ export default function AllSourcesHub() {
       } finally { setBusy(null); }
       return;
     }
-    // 他 は 設定 画面 に 誘導
+    // Stripe / Calendar / 会議録音 / LINE → 連携センターを該当ツールで開く (実接続フロー)
+    if (onOpenIntegration) {
+      onOpenIntegration(s.key);
+      return;
+    }
     setToast(`${s.name} は 環境 設定 → 連携 から 接続 して ください`);
     window.setTimeout(() => setToast(''), 3000);
   };
