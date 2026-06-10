@@ -13,10 +13,12 @@
 // ============================================================
 import { useState, useEffect } from 'react';
 import { isGmailConnected, connectGmail } from '../lib/gmail';
+import { BrandIcon, type BrandName } from './BrandIcons';
 
 interface Source {
   key: string;
   name: string;
+  brand: BrandName;
   emoji: string;
   color: string;
   what: string;          // 何を 取得 する か
@@ -29,6 +31,7 @@ const SOURCES_INIT: Source[] = [
   {
     key: 'gmail',
     name: 'Gmail',
+    brand: 'gmail',
     emoji: '📧', color: '#EA4335',
     what: 'メール / スレッド',
     why: '案件 候補 抽出、 返信 下書き、 督促 検知',
@@ -37,6 +40,7 @@ const SOURCES_INIT: Source[] = [
   {
     key: 'calendar',
     name: 'Google Calendar',
+    brand: 'gcalendar',
     emoji: '📅', color: '#4285F4',
     what: '予定 / 会議',
     why: '空き 時間 提案、 商談 後 の フォロー 自動 化',
@@ -45,6 +49,7 @@ const SOURCES_INIT: Source[] = [
   {
     key: 'stripe',
     name: 'Stripe',
+    brand: 'stripe',
     emoji: '💳', color: '#635BFF',
     what: '売上 / 顧客 / 解約',
     why: 'MRR / 解約 兆候 / 入金 予測',
@@ -53,6 +58,7 @@ const SOURCES_INIT: Source[] = [
   {
     key: 'instagram',
     name: 'Instagram',
+    brand: 'instagram',
     emoji: '📸', color: '#E4405F',
     what: '投稿 / DM / フォロワー',
     why: '案件 DM 自動 仕分け、 投稿 案 / リール 台本',
@@ -61,6 +67,7 @@ const SOURCES_INIT: Source[] = [
   {
     key: 'tiktok',
     name: 'TikTok',
+    brand: 'tiktok',
     emoji: '🎵', color: '#000000',
     what: '動画 / コメント / 分析',
     why: 'バズ パターン 抽出、 次 投稿 の 設計',
@@ -69,6 +76,7 @@ const SOURCES_INIT: Source[] = [
   {
     key: 'meeting',
     name: '会議 録音',
+    brand: 'meeting',
     emoji: '🎙️', color: '#A855F7',
     what: 'Zoom / Meet / iPhone 録音',
     why: '議事 録 自動 生成 + 次 アクション 抽出',
@@ -77,6 +85,7 @@ const SOURCES_INIT: Source[] = [
   {
     key: 'slack',
     name: 'Slack',
+    brand: 'slack',
     emoji: '💬', color: '#4A154B',
     what: 'メッセージ / DM',
     why: 'チーム 動向、 重要 通知 抜粋',
@@ -85,6 +94,7 @@ const SOURCES_INIT: Source[] = [
   {
     key: 'line',
     name: 'LINE',
+    brand: 'line',
     emoji: '💚', color: '#06C755',
     what: 'メッセージ / 公式 アカウント',
     why: '顧客 連絡、 配信 自動 化',
@@ -194,13 +204,7 @@ export default function AllSourcesHub() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <span style={{
-                width: 26, height: 26, borderRadius: 7,
-                background: `linear-gradient(135deg, ${s.color}, ${s.color}aa)`,
-                color: '#fff',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 14, flexShrink: 0,
-              }}>{s.emoji}</span>
+              <BrandIcon name={s.brand} size={28} />
               <strong style={{ fontSize: 12.5, color: 'var(--fg-strong)', flex: 1, minWidth: 0 }}>{s.name}</strong>
               <span style={{
                 fontSize: 9, padding: '2px 5px', borderRadius: 999, fontWeight: 800,

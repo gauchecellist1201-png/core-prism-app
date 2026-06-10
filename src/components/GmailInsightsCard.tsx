@@ -19,6 +19,7 @@
 // ============================================================
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BrandIcon } from './BrandIcons';
 import {
   isGmailConfigured, isGmailConnected, connectGmail, loadGmailUser,
   fetchInbox, createGmailDraft, buildReplyMeta, type GmailMessage,
@@ -166,9 +167,9 @@ export default function GmailInsightsCard() {
     return (
       <div style={cardStyle()}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <div style={iconStyle('#EA4335')}>📧</div>
+          <BrandIcon name="gmail" size={40} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={titleStyle()}>📧 Gmail インサイト</h3>
+            <h3 style={titleStyle()}>Gmail インサイト</h3>
             <p style={bodyStyle()}>
               Gmail OAuth Client ID が 未設定 です (環境変数 <code>VITE_GOOGLE_CLIENT_ID</code>)。
               連携 すると 受信トレイ を 役員 が 棚卸し → 案件 候補 / 返信 必要 を 抽出 + 下書き まで 作ります。
@@ -184,9 +185,9 @@ export default function GmailInsightsCard() {
     return (
       <div style={cardStyle('#34D399')}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <div style={iconStyle('#EA4335')}>📧</div>
+          <BrandIcon name="gmail" size={40} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={titleStyle()}>📧 Gmail を 役員 に 渡す</h3>
+            <h3 style={titleStyle()}>Gmail を 役員 に 渡す</h3>
             <p style={bodyStyle()}>
               受信トレイ の 内容 を 役員 が 自動 で 棚卸し します:
             </p>
@@ -221,9 +222,9 @@ export default function GmailInsightsCard() {
     <div style={cardStyle('#34D399')}>
       {/* ヘッダ */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-        <div style={iconStyle('#EA4335')}>📧</div>
+        <BrandIcon name="gmail" size={40} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={titleStyle()}>📧 Gmail インサイト</h3>
+          <h3 style={titleStyle()}>Gmail インサイト</h3>
           {user?.email && (
             <div style={{ fontSize: 10, color: 'var(--fg-subtle)', letterSpacing: '0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               🟢 連携 中: {user.email}
@@ -433,14 +434,6 @@ function cardStyle(border = 'rgba(167,139,250,0.4)'): React.CSSProperties {
     border: `1px solid ${border}`,
     marginBottom: 14,
     color: 'var(--fg)',
-  };
-}
-function iconStyle(color: string): React.CSSProperties {
-  return {
-    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-    background: `linear-gradient(135deg, ${color}, ${color}aa)`, color: '#fff',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 22, boxShadow: `0 4px 14px ${color}55`,
   };
 }
 function titleStyle(): React.CSSProperties {
