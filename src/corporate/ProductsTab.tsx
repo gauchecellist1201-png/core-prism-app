@@ -104,12 +104,12 @@ const PRODUCTS: Record<ProductId, {
     ],
     pricing: [
       { plan: 'Free', price: '¥0', period: '', features: ['リンク無制限', '基本テーマ', 'クリック総数'] },
-      { plan: 'Pro', price: '¥980', period: '/ 月', features: ['全テーマ + カスタムフォント', 'ヒートマップ分析', '流入元クロス分析', '独自ドメイン'], highlight: true },
-      { plan: 'Business', price: '¥2,980', period: '/ 月〜', features: ['チーム管理', 'EC / 予約連携', 'チーム分析', 'ロゴ非表示'] },
+      { plan: 'Pro', price: '¥1,480', period: '/ 月', features: ['全テーマ + カスタムフォント', 'ヒートマップ分析', '流入元クロス分析', '独自ドメイン', '7日間無料'], highlight: true },
+      { plan: 'Business', price: '¥3,480', period: '/ 月〜', features: ['チーム管理', 'EC / 予約連携', 'チーム分析', 'ロゴ非表示', '7日間無料'] },
     ],
     kgi: [
       { label: '有料ユーザー数 (Q4)', q4_target: '1,000 人' },
-      { label: '月次 MRR', q4_target: '¥1.4M' },
+      { label: '月次 MRR', q4_target: '¥1.9M' },
       { label: '無料→有料 転換', q4_target: '3%+' },
       { label: 'チャーン率', q4_target: '< 5%' },
     ],
