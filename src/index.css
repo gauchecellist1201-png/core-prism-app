@@ -2576,3 +2576,38 @@ time {
     min-height: 0;
   }
 }
+
+/* ============================================================
+   モバイル下部 FAB 整列 (2026-06-10)
+   iPhone でフローティングボタンが重なって「訳わからん」状態だったのを、
+   2 列に整列して重なりを解消する。
+     右列(下→上): チャット(AIに質問する) → マイク → 役員日報
+     左列(下→上): AgentTeam モニター(折りたたみ時コンパクト) → 改善提案
+   触って学ぶバッジはモバイルでは非表示 (ExplainOnTouch 側で制御)
+   ============================================================ */
+@media (max-width: 767px) {
+  /* 右列を縦に積む */
+  button[aria-label="音声でタスク予約"] {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
+  }
+  button[aria-label="役員 日報 を 見る"] {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 146px) !important;
+  }
+  /* 左列: 改善提案をモニターの上に逃がす */
+  button[aria-label="改善提案を送る"] {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 92px) !important;
+  }
+  /* フィードバックは「改善提案」と重複 → モバイルでは独立アイコンを隠す
+     (左下隅で AgentTeam モニターと重なるため) */
+  button[aria-label="フィードバックを送る"] {
+    display: none !important;
+  }
+  /* AgentTeam モニター: 折りたたみ時は左下のコンパクトなドックに (全幅バーをやめる) */
+  .agent-monitor-dock[data-open="false"] {
+    width: auto !important;
+    max-width: 62vw !important;
+    right: auto !important;
+    left: calc(env(safe-area-inset-left, 0px) + 12px) !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px) !important;
+  }
+}

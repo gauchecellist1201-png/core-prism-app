@@ -425,18 +425,19 @@ export default function IdentityDashboard({
     setTimeout(() => setBulkProgress(null), 2000);
   }, [onAddKnowledgeFile]);
 
-  // ── モバイル「ジェミニ風」シンプル UI モード (オーナー指示 2026-06-03) ──
-  // 既定で iPhone は ON、PC は OFF。ヘッダーの「機能」ボタンでフル機能に切替可
+  // ── モバイル表示モード ──
+  // オーナー指示 (2026-06-10): iPhone もデスクトップと同じフル画面に統一（わかりやすさ優先）。
+  // 旧「ジェミニ風チャット専用ホーム」は既定 OFF。キーを v2 に上げ旧設定を無視。
+  // チャット専用ホームに戻したい時だけ ON（ヘッダーの切替で保存）。
   const [mobileGeminiMode, setMobileGeminiMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
-    const saved = localStorage.getItem('core_mobile_gemini_mode_v1');
-    if (saved === '0') return false;
-    if (saved === '1') return true;
-    // 既定: スマホ幅 (md 以下) なら ON
-    return window.matchMedia('(max-width: 767px)').matches;
+    const saved = localStorage.getItem('core_mobile_view_v2');
+    if (saved === 'chat') return true;
+    // 既定: フル画面（PC と同じリッチなカード一覧）
+    return false;
   });
   useEffect(() => {
-    try { localStorage.setItem('core_mobile_gemini_mode_v1', mobileGeminiMode ? '1' : '0'); } catch { /* */ }
+    try { localStorage.setItem('core_mobile_view_v2', mobileGeminiMode ? 'chat' : 'full'); } catch { /* */ }
   }, [mobileGeminiMode]);
 
   // モバイル + Gemini モードの時は MobileGeminiDashboard を返す

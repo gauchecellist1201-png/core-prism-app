@@ -294,6 +294,8 @@ export default function ExplainOnTouch({ brand = 'prism' }: { brand?: 'prism' | 
       <style>{`
         .explain-progress-badge { left: calc(env(safe-area-inset-left, 0px) + 14px); }
         @media (min-width: 768px) { .explain-progress-badge { left: calc(208px + 16px) !important; } }
+        /* モバイルは下部 FAB が混み合うため学習バッジは非表示 (2026-06-10) */
+        @media (max-width: 767px) { .explain-progress-badge { display: none !important; } }
       `}</style>
       {!allDone && (
         <button

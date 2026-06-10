@@ -186,6 +186,8 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
     />
     <motion.div
       initial={false}
+      className="agent-monitor-dock"
+      data-open={open ? 'true' : 'false'}
       animate={{ height: open ? 'auto' : 68 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       style={{
