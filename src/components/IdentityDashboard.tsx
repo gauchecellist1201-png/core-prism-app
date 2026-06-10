@@ -97,6 +97,7 @@ import FocusHero from './FocusHero';
 import DigitalCompanyHero from './DigitalCompanyHero';
 import GmailInsightsCard from './GmailInsightsCard';
 import AllSourcesHub from './AllSourcesHub';
+import CommandTowerHub from './CommandTowerHub';
 import CreditBar from './CreditBar';
 import CreditModal from './CreditModal';
 import MobileGeminiDashboard from './MobileGeminiDashboard';
@@ -979,6 +980,9 @@ export default function IdentityDashboard({
                   try { window.dispatchEvent(new CustomEvent('core:agent-monitor-open')); } catch { /* */ }
                 }}
               />
+
+              {/* 🗼 司令塔ループ — Prism中心に Iris/Resonance/Lume が一周 (2026-06-10) */}
+              <CommandTowerHub />
 
               {/* 📧 Gmail インサイト (2026-06-05 オーナー指示: 連携 = 価値) */}
               <GmailInsightsCard />
