@@ -289,14 +289,19 @@ export default function ExplainOnTouch({ brand = 'prism' }: { brand?: 'prism' | 
         })()}
       </AnimatePresence>
 
-      {/* 右下 進捗 バッジ (常時 表示、 学習 モード OFF/ON 切替) */}
+      {/* 進捗 バッジ (常時 表示、 学習 モード OFF/ON 切替) */}
+      {/* PC では左サイドバー(幅52=208px)に被らないよう左オフセットをずらす */}
+      <style>{`
+        .explain-progress-badge { left: calc(env(safe-area-inset-left, 0px) + 14px); }
+        @media (min-width: 768px) { .explain-progress-badge { left: calc(208px + 16px) !important; } }
+      `}</style>
       {!allDone && (
         <button
           onClick={() => setMode((m) => !m)}
+          className="explain-progress-badge"
           style={{
             position: 'fixed',
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 100px)',
-            left: 'calc(env(safe-area-inset-left, 0px) + 14px)',
             zIndex: 35,
             padding: '8px 12px', borderRadius: 999,
             background: mode
