@@ -63,11 +63,11 @@ export default function CoreSite() {
     };
     setMeta('meta[property="og:title"]', 'content', '株式会社コア — CORE Inc.');
     setMeta('meta[property="og:description"]', 'content', 'すべての時代の、核となるものを。AI エージェント OS を提供する CORE。');
-    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v3.png');
+    setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v4.png');
     setMeta('meta[property="og:url"]', 'content', 'https://core-prism-app.vercel.app/corp');
     setMeta('meta[property="og:type"]', 'content', 'website');
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
-    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v3.png');
+    setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v4.png');
     setMeta('meta[name="twitter:title"]', 'content', '株式会社コア — CORE Inc.');
     setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。');
     setMeta('meta[name="description"]', 'content', '株式会社コア (CORE Inc.) — あなたの仕事と SNS を、AI エージェントで一気通貫に。司令塔 Prism に、Instagram の Iris・LINE の Resonance・リンクの Lume がつながる、ひとつの AI エージェント OS。');

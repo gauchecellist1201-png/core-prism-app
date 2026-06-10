@@ -43,8 +43,8 @@ PAL = {
                  grad=['#FCB045', '#E1306C', '#833AB4'], en='CORE IRIS', mark='iris'),
     'resonance': dict(primary='#06C755', bright='#34D399', deep='#0EA5E9',
                       grad=['#34D399', '#06C755', '#0EA5E9'], en='CORE RESONANCE', mark='resonance'),
-    'lume': dict(primary='#8B5CF6', bright='#A78BFA', deep='#6D28D9',
-                 grad=['#A78BFA', '#8B5CF6', '#6D28D9'], en='CORE LUME', mark='lume'),
+    'lume': dict(primary='#FFA42A', bright='#FFD86B', deep='#FF7A18',
+                 grad=['#FFD86B', '#FFA42A', '#FF7A18'], en='CORE LUME', mark='lume'),
     'core': dict(primary='#38BDF8', bright='#7DD3FC', deep='#0EA5E9',
                  grad=['#7DD3FC', '#E0F2FE', '#38BDF8'], en='CORE INC.', mark='core'),
 }
@@ -596,7 +596,7 @@ def build_combined():
     cx, cy = SW / 2, 4.1
     sats = [('iris', 'Instagram', cx, 2.25, '#E1306C'),
             ('resonance', 'LINE', cx - 3.6, 5.5, '#06C755'),
-            ('lume', 'リンク', cx + 3.6, 5.5, '#8B5CF6')]
+            ('lume', 'リンク', cx + 3.6, 5.5, '#FFA42A')]
     for key, role, sx, sy, col in sats:
         line(s, cx, cy, sx, sy, hx(col), 1.6, dash='sysDot')
     # center prism
@@ -636,7 +636,7 @@ def build_combined():
     rows = [('Prism', '全事業の司令塔', '月 ¥4,800〜', '#a78bfa'),
             ('Iris', 'Instagram運用', '月 ¥2,800〜', '#E1306C'),
             ('Resonance', 'LINE個別配信', '月 ¥980〜', '#06C755'),
-            ('Lume', 'リンクハブ＋解析', '月 ¥980〜', '#8B5CF6')]
+            ('Lume', 'リンクハブ＋解析', '月 ¥980〜', '#FFA42A')]
     y0 = 2.5
     for i, (nm, role, pr, col) in enumerate(rows):
         y = y0 + i * 0.95

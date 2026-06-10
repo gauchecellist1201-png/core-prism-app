@@ -94,7 +94,7 @@ const PRODUCTS = [
     url: "resonancebot-ivory.vercel.app",
   },
   {
-    key: "lume", name: "Lume", accent: "8B5CF6", bright: "A78BFA",
+    key: "lume", name: "Lume", accent: "FFA42A", bright: "FFD86B",
     role: "クリエイターのためのリンクハブ", logo: "lume.png",
     tag: "すべてのリンクを、ひとつに。", en: "Every link, in one place.",
     problem: ["プロフィールは、一行しかない。", "その一行に、全部を込める。"],
@@ -206,7 +206,7 @@ function build(p) {
   s.addText("ONE FLOW", { x: 0, y: 1.5, w: W, h: 0.4, fontFace: GOTH, fontSize: 13, color: B, bold: true, align: "center", charSpacing: 4 });
   s.addText("CORE は、つながっている。", { x: 0.5, y: 2.0, w: W - 1, h: 0.9, fontFace: MIN, fontSize: 38, color: INK, bold: true, align: "center" });
   s.addText(p.connect, { x: 2.0, y: 3.15, w: W - 4.0, h: 1.6, fontFace: GOTH, fontSize: 17, color: DIM, align: "center", lineSpacingMultiple: 1.6 });
-  const chips = [["Prism", "a78bfa"], ["Iris", "E1306C"], ["Resonance", "06C755"], ["Lume", "8B5CF6"]];
+  const chips = [["Prism", "a78bfa"], ["Iris", "E1306C"], ["Resonance", "06C755"], ["Lume", "FFA42A"]];
   const tot = chips.length, chw = 2.2, cgap = 0.3, startx = (W - (chw * tot + cgap * (tot - 1))) / 2;
   chips.forEach((c, i) => {
     const x = startx + i * (chw + cgap);

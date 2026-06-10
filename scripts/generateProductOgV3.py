@@ -77,8 +77,8 @@ def draw_lume_logo(size, grad):
     d = ImageDraw.Draw(img)
     k = s / 100.0
     # スクイクル地: 斜めグラデ (ラベンダー→ディープバイオレット)
-    sq_tl = hex2rgb('#A78BFA')
-    sq_br = hex2rgb('#6D28D9')
+    sq_tl = hex2rgb('#FFD86B')
+    sq_br = hex2rgb('#FF7A18')
     rect = Image.new('RGBA', (s, s), (0, 0, 0, 0))
     rp = rect.load()
     for y in range(s):
@@ -101,7 +101,7 @@ def draw_lume_logo(size, grad):
             col = (255, 255, 255); a = 255
         else:
             tt = (t - 0.30) / 0.70
-            col = lerp(hex2rgb('#FFFFFF'), hex2rgb('#EDE9FE'), tt)
+            col = lerp(hex2rgb('#FFFFFF'), hex2rgb('#FFF1D6'), tt)
             a = int(255 * (1 - tt) ** 1.7)
         bd.ellipse([cx - r, cy - r, cx + r, cy + r], fill=col + (a,))
     img.alpha_composite(Image.composite(bloom, Image.new('RGBA', (s, s), (0, 0, 0, 0)), mask))
@@ -240,7 +240,7 @@ build(
 # ── Lume ──
 build(
     slug='lume',
-    accent_hexes=['#8B5CF6', '#A78BFA', '#6D28D9'],
+    accent_hexes=['#FFA42A', '#FFD86B', '#FF7A18'],
     eyebrow='CORE LUME — FOR CREATORS',
     headline=['あなたのリンクを、', 'いちばん美しく。'],
     sub='リンクまとめ ・ クリック解析 ・ 月¥980〜',

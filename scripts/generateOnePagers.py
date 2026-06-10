@@ -65,7 +65,7 @@ def m_resonance(size, grad):
 
 def m_lume(size, grad):
     img,d,s,k=_canvas(size)
-    tl=hx('#A78BFA'); br=hx('#6D28D9')
+    tl=hx('#FFD86B'); br=hx('#FF7A18')
     rect=Image.new('RGBA',(s,s),(0,0,0,0)); rp=rect.load()
     for y in range(s):
         for x in range(s):
@@ -78,7 +78,7 @@ def m_lume(size, grad):
         t=r/R
         if t<0.30: col=(255,255,255); a=255
         else:
-            tt=(t-0.30)/0.70; col=lerp(hx('#FFFFFF'),hx('#EDE9FE'),tt); a=int(255*(1-tt)**1.7)
+            tt=(t-0.30)/0.70; col=lerp(hx('#FFFFFF'),hx('#FFF1D6'),tt); a=int(255*(1-tt)**1.7)
         bd.ellipse([cx-r,cy-r,cx+r,cy+r], fill=col+(a,))
     img.alpha_composite(Image.composite(bloom,Image.new('RGBA',(s,s),(0,0,0,0)),mask))
     cr=int(15*k); d.ellipse([cx-cr,cy-cr,cx+cr,cy+cr], fill=(255,255,255,255))
@@ -223,8 +223,8 @@ PRODUCTS=[
         dict(name='Business', price='¥2,980', per='/月', note='3アカウント', features=['Pro全機能','月15,000通','複数アカウント管理']),
         dict(name='Premium', price='¥4,980', per='/月', note='10アカウント', features=['Business全機能','月50,000通','大規模配信に']),
       ]),
- dict(name='Lume', mark='lume', accent='#8B5CF6', bright='#A78BFA',
-      grad=['#A78BFA','#8B5CF6','#6D28D9'],
+ dict(name='Lume', mark='lume', accent='#FFA42A', bright='#FFD86B',
+      grad=['#FFD86B','#FFA42A','#FF7A18'],
       role='リンクハブ＋クリック解析', tag='すべてのリンクを、ひとつに。',
       en='Every link, in one place.',
       url='lume-deploy-five.vercel.app', foot='全プラン7日間無料・クレジットカード登録不要',
