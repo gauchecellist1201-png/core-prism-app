@@ -14,7 +14,7 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.oxml.ns import qn
 from lxml import etree
 
-DESKTOP = os.path.expanduser('~/Desktop')
+DESKTOP = os.path.expanduser('~/Desktop/CORE 営業資料')
 DATE = '2026-06-09'
 
 SW, SH = 13.333, 7.5  # 16:9 inches
@@ -415,16 +415,16 @@ PRODUCTS = {
     ])),
     ('2col', ('「ばらばら」から、「ひとつ」へ。',
               '従来', 'コンサル¥30万＋秘書＋ChatGPT＋Notion＋議事録ツール…\nそれぞれ別契約・別管理。',
-              'CORE Prism', '13名のAI役員が、ひとつのOSで並走。\n月¥3,000台から、7日間無料。')),
+              'CORE Prism', '13名のAI役員が、ひとつのOSで並走。\n月¥4,800から、7日間無料。')),
     ('stat', ('1/7', 'コンサル代を', '顧問・秘書・各種SaaSを、ひとつのOSに置き換える')),
     ('tb', ('CONNECTED', 'Prism は、司令塔。',
             'Instagram の Iris、LINE の Resonance、リンクの Lume。\n三つの SNS ツールが集めたお客様の動きは、最後にすべて Prism へ集まり、13 名の AI 役員が次の一手まで提案します。')),
-    ('price', ('料金 — 用途に合わせた段階制。', [
-        ('Free', '¥0', 'まず触れる入口', False),
-        ('個人', '¥3,000〜', '全AIツール／無制限ペルソナ', False),
-        ('標準', '¥15,000', '無制限・営業AIフル機能', True),
-        ('法人', '¥30,000〜', 'チーム・請求書払い・コンサルAI', False),
-    ], '全プラン 7日間無料・クレジットカード登録不要')),
+    ('price', ('料金 — プランごとの「できること」。', [
+        ('Free', '¥0', '7日間 全機能おためし', False),
+        ('Starter', '¥4,800', '基本AI・1人格・個人向け', False),
+        ('Standard', '¥9,800', '全AI＋商談AI・人格無制限', True),
+        ('Exclusive', '¥29,800', '専任CS・法人連携・導入伴走', False),
+    ], '全プラン 7日間無料・クレジットカード登録不要 ／ 法人Studioは要問合せ')),
     ('cta', ('あなたは、\n決めるだけ。', 'core-prism-app.vercel.app    ·    hello@core-inc.jp')),
 ]),
 
@@ -452,11 +452,12 @@ PRODUCTS = {
               'CORE Iris', '数字を踏まえて、AIが次の一手まで決める。\n月¥2,800から、7日間無料。')),
     ('tb', ('CONNECTED', 'Iris の発見は、流れていく。',
             'ここで掴んだファンの反応は、そのまま Resonance の LINE 配信や、司令塔 Prism の経営判断へとつながります。\n発見を、行動に変えるまでが一続きです。')),
-    ('price', ('料金 — 伸びる段階に合わせて。', [
-        ('Lite', '¥2,800', '創作のはじめに', False),
-        ('Standard', '¥6,800', '伸びる時期に', True),
-        ('Pro', '¥9,800', '事業として', False),
-        ('Studio', '¥29,800', 'プロチーム/法人', False),
+    ('price', ('料金 — プランごとの「できること」。', [
+        ('Free', '¥0', '7日間 全機能おためし', False),
+        ('Lite', '¥2,800', 'AI相談30回・案件管理無制限', False),
+        ('Standard', '¥6,800', 'AI相談/解析ほぼ無制限', True),
+        ('Pro', '¥9,800', 'チーム5名・ブランドマッチ', False),
+        ('Studio', '¥29,800', '無制限・API・ホワイトラベル', False),
     ], '全プラン 7日間無料・クレジットカード登録不要')),
     ('cta', ('数字に、\n振り回されない。', 'core-prism-app.vercel.app/iris    ·    hello@core-inc.jp')),
 ]),
@@ -485,11 +486,11 @@ PRODUCTS = {
               'CORE Resonance', '一人ひとり別の文面＋送信前の全件確認。\n月¥980から、7日間無料。')),
     ('tb', ('CONNECTED', '誰に届けるかは、仲間が教える。',
             'Iris（Instagram）や Lume（リンク）が見つけた「いま関心のある人」へ、最適なタイミングで届きます。\nそして、その結果はすべて Prism に集まります。')),
-    ('price', ('料金 — 小さく始められる。', [
-        ('Free', '¥0', '名前差し替えから', False),
-        ('Pro', '¥980', '1アカウント/AI配信', True),
-        ('Business', '¥2,980', '3アカウント', False),
-        ('Premium', '¥4,980', '10アカウント', False),
+    ('price', ('料金 — プランごとの「できること」。', [
+        ('7日間無料', '¥0', '全機能を7日間おためし', False),
+        ('Pro', '¥980', 'AI個別配信・1アカ・月3,000通', True),
+        ('Business', '¥2,980', '3アカウント・月15,000通', False),
+        ('Premium', '¥4,980', '10アカウント・月50,000通', False),
     ], '全プラン 7日間無料・自分のLINE/Claude鍵で原価ほぼ0（BYOK）')),
     ('cta', ('売り込みでは、ない。\nご縁を、温める。', 'resonancebot-ivory.vercel.app    ·    hello@core-inc.jp')),
 ]),
@@ -518,10 +519,10 @@ PRODUCTS = {
               'CORE Lume', '美しく、そしてクリックを熱で可視化。\n月¥980から、7日間無料。')),
     ('tb', ('CONNECTED', 'そのクリックは、財産になる。',
             '誰がどのリンクを踏んだか。その流れは、Iris・Resonance・司令塔 Prism すべての判断材料になります。\nリンクは、ただの入口ではありません。')),
-    ('price', ('料金 — まず無料で、美しく。', [
-        ('Free', '¥0', 'すぐに始められる', False),
-        ('Pro', '¥980', '解析フル機能', True),
-        ('Business', '¥2,980', '複数プロフィール', False),
+    ('price', ('料金 — プランごとの「できること」。', [
+        ('7日間無料', '¥0', '全機能を7日間おためし', False),
+        ('Pro', '¥980', 'ヒートマップ・流入元・時間帯解析', True),
+        ('Business', '¥2,980', '複数プロフィール管理', False),
     ], '全プラン 7日間無料・クレジットカード登録不要')),
     ('cta', ('あなたのリンクを、\nいちばん美しく。', 'lume-deploy-five.vercel.app    ·    hello@core-inc.jp')),
 ]),
@@ -574,7 +575,7 @@ def build_combined():
         footer(s)
 
     s_product_intro('prism', 'Prism — 全事業の司令塔',
-                    '営業・財務・契約・議事録。経営のすべてを13名のAIエージェントが引き受ける、あなたの頭脳。', '月 ¥3,000〜 ・ 7日間無料')
+                    '営業・財務・契約・議事録。経営のすべてを13名のAIエージェントが引き受ける、あなたの頭脳。', '月 ¥4,800〜 ・ 7日間無料')
     s_product_intro('iris', 'Iris — Instagram',
                     '投稿・分析・案件・DM返信・交渉。Instagram運用の六つの仕事を、ひとつのアプリに。', '月 ¥2,800〜 ・ 7日間無料')
     s_product_intro('resonance', 'Resonance — LINE',
@@ -632,7 +633,7 @@ def build_combined():
     # 16 pricing overview (4 products)
     PAGE += 1; s = blank(); bg(s)
     txt(s, '四つとも、7日間無料・クレカ不要。', 0.9, 0.95, SW - 1.8, 1.0, font=F_DISP, size=34, color=INK, bold=True, align='left')
-    rows = [('Prism', '全事業の司令塔', '月 ¥3,000〜', '#a78bfa'),
+    rows = [('Prism', '全事業の司令塔', '月 ¥4,800〜', '#a78bfa'),
             ('Iris', 'Instagram運用', '月 ¥2,800〜', '#E1306C'),
             ('Resonance', 'LINE個別配信', '月 ¥980〜', '#06C755'),
             ('Lume', 'リンクハブ＋解析', '月 ¥980〜', '#8B5CF6')]

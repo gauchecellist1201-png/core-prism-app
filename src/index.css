@@ -396,19 +396,27 @@ button {
    インライン style で transform を持つボタンも（inline 優先で）影響なし。 */
 button:not([class*="cp-"]):not(:disabled) {
   cursor: pointer;
-  transition: transform var(--cp-duration-base) var(--cp-ease-springy);
+  /* 押下: transform は素早く沈み戻りはコクッ。brightness は同じ速度で陰る＝
+     「光が当たらなくなる」本物のキーの手触り。離すと springy でふわっと復帰。 */
+  transition: transform var(--cp-duration-base) var(--cp-ease-springy),
+              filter var(--cp-duration-base) var(--cp-ease-springy);
 }
 button:not([class*="cp-"]):not(:disabled):active {
-  transform: scale(0.97);
+  /* scale で縮め + わずかに下へ沈め + 陰らせる の三層で「物理的に押し込んだ」感触に */
+  transform: scale(0.97) translateY(0.5px);
+  filter: brightness(0.95);
   transition-duration: var(--cp-duration-instant);
 }
 @media (hover: none) and (pointer: coarse) {
-  /* 指で触れる端末では沈み込みをやや深く＝より確かな手応えに */
-  button:not([class*="cp-"]):not(:disabled):active { transform: scale(0.955); }
+  /* 指で触れる端末では沈み込み・陰りをやや深く＝より確かな手応えに */
+  button:not([class*="cp-"]):not(:disabled):active {
+    transform: scale(0.955) translateY(0.5px);
+    filter: brightness(0.93);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   button:not([class*="cp-"]):not(:disabled) { transition: none; }
-  button:not([class*="cp-"]):not(:disabled):active { transform: none; }
+  button:not([class*="cp-"]):not(:disabled):active { transform: none; filter: none; }
 }
 
 /* iOS: input のデフォルト appearance リセット */
