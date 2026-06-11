@@ -34,10 +34,9 @@ const FACETS: { Icon: LucideIcon; name: string; desc: string; color: string }[] 
 ];
 
 const PLANS = [
-  { id: 'lite', name: 'Lite', tag: '創作のはじめに', price: '¥2,800', suffix: '/ 月', features: ['AIキャプション 30回 / 月', '案件管理 (3件まで)', '基本フィルター', 'コミュニティ閲覧'] },
-  { id: 'standard', name: 'Standard', tag: '伸びる時期に', price: '¥6,800', suffix: '/ 月', features: ['AIキャプション 無制限', 'Instagram 分析 月10回', 'ストーリー設計 5本/月', '案件交渉サポート', 'コミュニティ投稿'], highlight: true },
-  { id: 'pro', name: 'Pro', tag: '事業として育てる', price: '¥9,800', suffix: '/ 月', features: ['Standard 全機能', 'チームメンバー 5名', 'ブランドマッチ 無制限', 'メディアキット PDF', '優先サポート'] },
-  { id: 'studio', name: 'Studio', tag: 'プロチーム / 法人', price: '¥29,800', suffix: '/ 月', features: ['Pro 全機能', 'API アクセス + Webhook', 'ホワイトラベル', '無制限チーム', '専任コンサル付き'] },
+  { id: 'lite', name: 'Lite', tag: '創作のはじめに', price: '¥2,980', listPrice: '¥5,960', suffix: '/ 月', features: ['AIキャプション 30回 / 月', '案件管理 (3件まで)', '基本フィルター', 'コミュニティ閲覧'] },
+  { id: 'standard', name: 'Standard', tag: '伸びる時期に', price: '¥6,980', listPrice: '¥13,960', suffix: '/ 月', features: ['AIキャプション 無制限', 'Instagram 分析 月10回', 'ストーリー設計 5本/月', '案件交渉サポート', 'コミュニティ投稿'], highlight: true },
+  { id: 'pro', name: 'Pro', tag: '事業として育てる', price: '¥12,800', listPrice: '¥25,600', suffix: '/ 月', features: ['Standard 全機能', 'チームメンバー 5名', 'ブランドマッチ 無制限', 'メディアキット PDF', '優先サポート'] },
 ];
 
 export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
@@ -576,7 +575,11 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 {p.highlight && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: `linear-gradient(135deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '0.3rem 0.85rem', borderRadius: 999, letterSpacing: '0.15em' }}>人気</div>}
                 <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.85rem', color: IRIS_COLORS.gold, marginBottom: '0.5rem' }}>— {p.tag}</p>
                 <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.85rem', fontWeight: 500, marginBottom: '0.4rem' }}>{p.name}</h3>
-                <p style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem', fontFamily: IRIS_FONTS.body }}>{p.price}<span style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.5)', fontWeight: 500 }}>{p.suffix}</span></p>
+                <p style={{ marginBottom: '0.5rem' }}>
+                  {p.listPrice && <span style={{ fontSize: '1rem', color: 'rgba(255,250,245,0.4)', fontWeight: 500, textDecoration: 'line-through', marginRight: '0.5rem', fontFamily: IRIS_FONTS.body }}>{p.listPrice}</span>}
+                  <span style={{ fontSize: '2rem', fontWeight: 800, fontFamily: IRIS_FONTS.body }}>{p.price}</span>
+                  <span style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.5)', fontWeight: 500 }}>{p.suffix}</span>
+                </p>
                 <div style={{ height: 1, background: `${IRIS_COLORS.purpleDeep}40`, margin: '1rem 0' }} />
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem' }}>
                   {p.features.map((f, i) => <li key={i} style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.78)', lineHeight: 1.7, marginBottom: '0.4rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}><Check size={14} color={p.highlight ? IRIS_COLORS.gold : IRIS_COLORS.hotPink} strokeWidth={2.6} style={{ flexShrink: 0, marginTop: 3 }} /><span>{f}</span></li>)}
@@ -604,8 +607,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                   }}
                 >
                   <span style={{ position: 'relative', zIndex: 2 }}>
-                    {p.id === 'studio' ? 'チームでの導入を相談' :
-                     p.id === 'pro' ? 'Pro を 7 日無料で試す' :
+                    {p.id === 'pro' ? 'Pro を 7 日無料で試す' :
                      p.id === 'standard' ? 'Standard を 7 日無料で試す' :
                      'Lite を 7 日無料で試す'}
                   </span>
@@ -615,7 +617,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                   color: 'rgba(255,250,245,0.45)', marginTop: '0.55rem',
                   fontFamily: IRIS_FONTS.body, letterSpacing: '0.04em',
                 }}>
-                  {p.id === 'studio' ? '専任コンサルが伴走' : 'クレカ不要 · いつでも解約'}
+                  クレカ不要 · いつでも解約
                 </p>
               </motion.div>
             ))}
