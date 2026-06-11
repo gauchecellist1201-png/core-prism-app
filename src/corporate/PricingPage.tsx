@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { PrismLogo, IrisLogo } from '../components/Logo';
 import { isPlanV2Enabled } from '../lib/billing';
+import LegalModal, { type LegalKind } from '../components/LegalModal';
 
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", serif';
@@ -261,6 +262,7 @@ const PRISM_MONTHLY = 9800;
 
 export default function PricingPage() {
   const [yearly, setYearly] = useState(false);
+  const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
   // v2 フラグを確認 (localStorage または VITE_PLAN_V2_ENABLED)
   const planV2 = useMemo(() => isPlanV2Enabled(), []);
   // v2 では「個人 (BtoC) / 法人 (BtoB)」タブで切替表示
@@ -842,10 +844,32 @@ export default function PricingPage() {
 
       {/* フッタ */}
       <footer style={{ background: '#000', padding: '2.5rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.5rem 1.25rem', marginBottom: '1.25rem' }}>
+          {([
+            { k: 'tokushou', label: '特定商取引法に基づく表記' },
+            { k: 'terms', label: '利用規約' },
+            { k: 'privacy', label: 'プライバシーポリシー' },
+          ] as { k: LegalKind; label: string }[]).map(({ k, label }) => (
+            <button
+              key={k}
+              onClick={() => setLegalKind(k)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem 0.25rem',
+                minHeight: '44px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)',
+                textDecoration: 'underline', textUnderlineOffset: '3px',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.3)' }}>
           © {new Date().getFullYear()} CORE INC.
         </p>
       </footer>
+      {legalKind && (
+        <LegalModal key={`legal-${legalKind}`} kind={legalKind} onClose={() => setLegalKind(null)} />
+      )}
     </div>
   );
 }

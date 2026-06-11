@@ -3,8 +3,9 @@
 // 「すべての時代の、核となるものを。」
 // 配置: /corp ルート、noindex で検索エンジンには載せない
 // ============================================================
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon, Compass, Heart, Shield, BadgeCheck, MessagesSquare, Scale } from 'lucide-react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, CoreLogo } from '../components/Logo';
 
@@ -28,6 +29,7 @@ const FONT_SANS = '"Noto Sans JP", "Inter", "游ゴシック", sans-serif';
 const SPECTRUM = ['#ff5757', '#ff9842', '#fbbf24', '#4ade80', '#60a5fa', '#a78bfa', '#f472b6'];
 
 export default function CoreSite() {
+  const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
   useEffect(() => {
     document.title = '株式会社コア — すべての時代の、核となるものを。';
 
@@ -1702,6 +1704,23 @@ export default function CoreSite() {
               {COMPANY.addressJa}
             </p>
           </div>
+          <div>
+            <p style={footHead}>法務</p>
+            {([
+              { k: 'tokushou', label: '特定商取引法に基づく表記' },
+              { k: 'terms', label: '利用規約' },
+              { k: 'privacy', label: 'プライバシーポリシー' },
+            ] as { k: LegalKind; label: string }[]).map(({ k, label }) => (
+              <button
+                key={k}
+                onClick={() => setLegalKind(k)}
+                style={{ ...footLink, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, font: 'inherit', minHeight: '44px', display: 'flex', alignItems: 'center' }}
+                className="lp-tap-link"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         <div
           style={{
@@ -1717,6 +1736,9 @@ export default function CoreSite() {
           © {new Date().getFullYear()} CORE INC. — FOUNDING IN 2026
         </div>
       </footer>
+      {legalKind && (
+        <LegalModal key={`legal-${legalKind}`} kind={legalKind} onClose={() => setLegalKind(null)} />
+      )}
     </div>
   );
 }
