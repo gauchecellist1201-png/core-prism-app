@@ -36,12 +36,39 @@ export default function CxoWelcomeCard({ brand = 'prism', force = false }: Props
   const [demoStarted, setDemoStarted] = useState(false);
   const accent = brand === 'iris' ? '#E1306C' : '#A78BFA';
 
+  // WowOnboarding と同じ鍵。初回オンボ（チュートリアル→Wow）が終わるまで
+  // Cxo ウェルカムは出さない＝モーダル重なりを防ぐ。Wow 完了で WOW_KEY がセットされる。
+  const WOW_KEY = brand === 'iris' ? 'core_wow_seen_iris_v1' : 'core_wow_seen_prism_v1';
+  const onboardingPending = () => {
+    if (force) return false;
+    try { return !localStorage.getItem(WOW_KEY); } catch { return false; }
+  };
+
   // 起動から少し遅らせる (他の overlay とぶつからないように)
   const [readyToShow, setReadyToShow] = useState(false);
   useEffect(() => {
     if (!open) return;
-    const t = setTimeout(() => setReadyToShow(true), 600);
-    return () => clearTimeout(t);
+    let done = false;
+    const reveal = () => { if (!done) { done = true; setReadyToShow(true); } };
+    // Wow フローが既に完了済み（or force）なら従来どおり 600ms 後に表示
+    if (!onboardingPending()) {
+      const t = setTimeout(reveal, 600);
+      return () => { done = true; clearTimeout(t); };
+    }
+    // まだ初回オンボ中：Wow 完了イベント＋ポーリングで待ってから表示
+    const onWow = () => { if (!onboardingPending()) setTimeout(reveal, 350); };
+    window.addEventListener('core:wow-finished', onWow);
+    const poll = setInterval(() => {
+      if (!onboardingPending()) { clearInterval(poll); setTimeout(reveal, 350); }
+    }, 600);
+    // 不測の事態でも永久に隠れないよう最終フォールバック
+    const fallback = setTimeout(reveal, 15000);
+    return () => {
+      done = true;
+      window.removeEventListener('core:wow-finished', onWow);
+      clearInterval(poll);
+      clearTimeout(fallback);
+    };
   }, [open]);
 
   if (!open || !readyToShow) return null;

@@ -229,6 +229,8 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
 
   const dismiss = () => {
     try { localStorage.setItem(WOW_KEY, '1'); } catch {/* */}
+    // Cxo ウェルカム等の後続オーバーレイに「Wow 完了」を通知（モーダル重なり防止）
+    try { window.dispatchEvent(new CustomEvent('core:wow-finished', { detail: { brand } })); } catch {/* */}
     setOpen(false);
     setStep('ask');
     setAnswer('');
