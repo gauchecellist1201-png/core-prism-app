@@ -19,7 +19,7 @@
 //   />
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Loader2, X, Sparkles } from 'lucide-react';
 
 interface Props {
@@ -190,17 +190,36 @@ function SkeletonLine({ index, accent }: { index: number; accent: string }) {
   // 1 行ごとに微妙に width を変えて自然に見せる
   const widths = ['92%', '74%', '88%', '60%', '80%'];
   const w = widths[index % widths.length];
+  const reduce = useReducedMotion();
+
+  // やわらかい土台の上を、明るい一筋の光が左から右へ横切る。
+  // 行ごとに少しずつ遅らせることで、光が上から下へ流れ落ちて見える ＝
+  // 「ただ点滅する」のではなく「生きている」高級な待ち時間になる。
+  if (reduce) {
+    return (
+      <div style={{
+        height: 10, width: w, borderRadius: 5,
+        background: `${accent}22`,
+      }} />
+    );
+  }
+
   return (
     <motion.div
-      initial={{ opacity: 0.3 }}
-      animate={{ opacity: [0.3, 0.55, 0.3] }}
-      transition={{ duration: 1.6, repeat: Infinity, delay: index * 0.12, ease: 'easeInOut' }}
+      initial={{ backgroundPosition: '180% 0' }}
+      animate={{ backgroundPosition: '-180% 0' }}
+      transition={{
+        duration: 1.8,
+        repeat: Infinity,
+        delay: index * 0.14,
+        ease: [0.4, 0.0, 0.2, 1],
+      }}
       style={{
         height: 10,
         width: w,
         borderRadius: 5,
-        background: `linear-gradient(90deg, ${accent}15 0%, ${accent}30 50%, ${accent}15 100%)`,
-        backgroundSize: '200% 100%',
+        background: `linear-gradient(100deg, ${accent}14 28%, ${accent}4d 50%, ${accent}14 72%)`,
+        backgroundSize: '220% 100%',
       }}
     />
   );
