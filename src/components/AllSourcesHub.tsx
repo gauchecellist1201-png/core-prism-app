@@ -208,10 +208,11 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
               transition: 'border-color 0.2s, background 0.2s',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
               <BrandIcon name={s.brand} size={28} />
-              <strong style={{ fontSize: 12.5, color: 'var(--fg-strong)', flex: 1, minWidth: 0 }}>{s.name}</strong>
+              <strong style={{ fontSize: 12.5, color: 'var(--fg-strong)', flex: 1, minWidth: 0, lineHeight: 1.3, wordBreak: 'break-word' }}>{s.name}</strong>
               <span style={{
+                flexShrink: 0, whiteSpace: 'nowrap', alignSelf: 'flex-start',
                 fontSize: 10, padding: '2px 6px', borderRadius: 999, fontWeight: 800,
                 background: s.status === 'connected' ? 'rgba(52,211,153,0.22)' :
                             s.status === 'phase2' ? 'rgba(148,163,184,0.18)' :
