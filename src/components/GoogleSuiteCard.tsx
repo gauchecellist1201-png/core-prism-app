@@ -4,6 +4,7 @@
 //   ドキュメント: ドキュメント本文を CORE のナレッジに取り込む
 // ============================================================
 import { useState, useEffect, useCallback } from 'react';
+import { CalendarDays } from 'lucide-react';
 import { BrandIcon } from './BrandIcons';
 import {
   isCalendarConnected, connectCalendar, getFreeSlots, createEvent, disconnectCalendar,
@@ -26,8 +27,8 @@ export default function GoogleSuiteCard({ onIngestKnowledge }: { onIngestKnowled
         <div style={{
           width: 40, height: 40, borderRadius: 10, flexShrink: 0,
           background: 'linear-gradient(135deg,#4285F4,#34A853)', color: '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19,
-        }}>📆</div>
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}><CalendarDays size={20} color="#fff" strokeWidth={2.2} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h3 style={{ fontSize: 14, fontWeight: 900, color: 'var(--fg-strong)', margin: 0 }}>
             Google カレンダー & ドキュメント
@@ -121,7 +122,7 @@ function CalendarSection() {
           {slots && slots.length === 0 && <div style={{ fontSize: 12, color: 'var(--fg-muted)' }}>今後5日（平日 9〜19時）に30分以上の空きが見つかりませんでした。</div>}
           {slots && slots.length > 0 && (
             <>
-              <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginBottom: 6 }}>📅 今後5日の空き時間（平日 9〜19時）</div>
+              <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginBottom: 6 }}>今後5日の空き時間（平日 9〜19時）</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
                 {slots.slice(0, 12).map((s, i) => (
                   <button key={i} onClick={() => setPicked(s)} style={{
