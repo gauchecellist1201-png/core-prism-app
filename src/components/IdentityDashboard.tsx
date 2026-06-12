@@ -99,6 +99,7 @@ import DigitalCompanyHero from './DigitalCompanyHero';
 import GmailInsightsCard from './GmailInsightsCard';
 import AllSourcesHub from './AllSourcesHub';
 import CommandTowerHub from './CommandTowerHub';
+import GoogleSuiteCard from './GoogleSuiteCard';
 import CreditBar from './CreditBar';
 import CreditModal from './CreditModal';
 import MobileGeminiDashboard from './MobileGeminiDashboard';
@@ -993,6 +994,9 @@ export default function IdentityDashboard({
 
               {/* 📧 Gmail インサイト (2026-06-05 オーナー指示: 連携 = 価値) */}
               <GmailInsightsCard />
+
+              {/* 📆 Google カレンダー(隙間時間→会議登録) & ドキュメント(→ナレッジ) 実連携 */}
+              <GoogleSuiteCard onIngestKnowledge={onAddKnowledgeNote} />
 
               {/* ✨ 最強 RAG — 全 ソース 連携 ハブ (Instagram / TikTok 含む) */}
               <AllSourcesHub onOpenIntegration={(id) => { setIntegrationsFocusId(id); setShowIntegrations(true); }} />
