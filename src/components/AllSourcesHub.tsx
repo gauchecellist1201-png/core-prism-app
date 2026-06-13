@@ -13,6 +13,8 @@
 // ============================================================
 import { useState, useEffect } from 'react';
 import { isGmailConnected, connectGmail } from '../lib/gmail';
+import { isCalendarConnected, connectCalendar } from '../lib/gcal';
+import { isDocsConnected, connectDocs } from '../lib/gdocs';
 import { BrandIcon, type BrandName } from './BrandIcons';
 
 interface Source {
@@ -44,6 +46,15 @@ const SOURCES_INIT: Source[] = [
     emoji: '📅', color: '#4285F4',
     what: '予定 / 会議',
     why: '空き 時間 提案、 商談 後 の フォロー 自動 化',
+    status: 'available',
+  },
+  {
+    key: 'docs',
+    name: 'Google ドキュメント',
+    brand: 'gdocs',
+    emoji: '📄', color: '#4285F4',
+    what: 'ドキュメント 本文',
+    why: '資料 を ナレッジ 化 → 役員 が 文脈 で 回答',
     status: 'available',
   },
   {
@@ -104,16 +115,23 @@ const SOURCES_INIT: Source[] = [
 
 export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration?: (toolId: string) => void } = {}) {
   const [gmailConn, setGmailConn] = useState(() => isGmailConnected());
+  const [calConn, setCalConn] = useState(() => isCalendarConnected());
+  const [docsConn, setDocsConn] = useState(() => isDocsConnected());
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState('');
 
   useEffect(() => {
-    const t = window.setInterval(() => setGmailConn(isGmailConnected()), 2000);
+    const t = window.setInterval(() => {
+      setGmailConn(isGmailConnected());
+      setCalConn(isCalendarConnected());
+      setDocsConn(isDocsConnected());
+    }, 2000);
     return () => window.clearInterval(t);
   }, []);
 
+  const connFlags: Record<string, boolean> = { gmail: gmailConn, calendar: calConn, docs: docsConn };
   const sources = SOURCES_INIT.map((s) => {
-    if (s.key === 'gmail') return { ...s, status: (gmailConn ? 'connected' : 'available') as Source['status'] };
+    if (s.key in connFlags) return { ...s, status: (connFlags[s.key] ? 'connected' : 'available') as Source['status'] };
     return s;
   });
 
@@ -123,20 +141,27 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
       window.setTimeout(() => setToast(''), 2500);
       return;
     }
-    if (s.key === 'gmail') {
-      setBusy('gmail');
+    // Google 系は直接 OAuth で実接続 (押して動く)
+    const googleConnect: Record<string, { fn: () => Promise<unknown>; set: (v: boolean) => void; label: string }> = {
+      gmail: { fn: connectGmail, set: setGmailConn, label: 'Gmail' },
+      calendar: { fn: connectCalendar, set: setCalConn, label: 'Google カレンダー' },
+      docs: { fn: connectDocs, set: setDocsConn, label: 'Google ドキュメント' },
+    };
+    const g = googleConnect[s.key];
+    if (g) {
+      setBusy(s.key);
       try {
-        await connectGmail();
-        setGmailConn(true);
-        setToast('✓ Gmail を 連携 しました');
+        await g.fn();
+        g.set(true);
+        setToast(`✓ ${g.label} を 連携 しました`);
         window.setTimeout(() => setToast(''), 2500);
       } catch (e: any) {
-        setToast(`Gmail 連携 に 失敗 しました: ${e?.message || ''}`);
-        window.setTimeout(() => setToast(''), 4000);
+        setToast(`${g.label} 連携 に 失敗: ${e?.message || ''}`);
+        window.setTimeout(() => setToast(''), 5000);
       } finally { setBusy(null); }
       return;
     }
-    // Stripe / Calendar / 会議録音 / LINE → 連携センターを該当ツールで開く (実接続フロー)
+    // Stripe / 会議録音 / LINE → 連携センターを該当ツールで開く (実接続フロー)
     if (onOpenIntegration) {
       onOpenIntegration(s.key);
       return;
