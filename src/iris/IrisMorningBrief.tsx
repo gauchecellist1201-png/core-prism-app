@@ -11,7 +11,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, MessageCircle, Clock, X } from 'lucide-react';
+import { TrendingUp, MessageCircle, Clock, X, Sparkles, ArrowRight } from 'lucide-react';
 import type { IgProfile } from './instagramConnect';
 import { getAllBrandDeals } from './brandDeals';
 import { IRIS_COLORS } from './irisStyle';
@@ -88,10 +88,42 @@ type Props = {
   variant?: 'mobile' | 'desktop';
   /** 強制表示 (今日表示済みでも再表示する開発者用) */
   force?: boolean;
+  /** 「今日の一手」タップ時の遷移。未指定なら一手カードは出さない。 */
+  onAction?: (tab: string) => void;
 };
 
+/** その日の最優先アクション 1 つを、表示データから決める。
+ *  応募できる案件があれば最優先 (直接の収益)、次にベストタイム投稿、次に投稿作成。 */
+function pickOneMove(
+  dealCount: number, topNames: string[], bestPostTime: string | null,
+): { tab: string; label: string; cta: string; detail: string } {
+  if (dealCount > 0) {
+    const who = topNames.length ? `${topNames[0]} など` : 'あなたに合う案件';
+    return {
+      tab: 'deals',
+      label: '今日の一手',
+      cta: '案件を見て1件応募する',
+      detail: `${who}に今日1件だけ応募しましょう。最初の1通が仕事につながります。`,
+    };
+  }
+  if (bestPostTime) {
+    return {
+      tab: 'reel',
+      label: '今日の一手',
+      cta: 'リールを1本つくる',
+      detail: `今日のベストタイム ${bestPostTime} に向けて、リールを1本仕上げましょう。`,
+    };
+  }
+  return {
+    tab: 'draft',
+    label: '今日の一手',
+    cta: '投稿を1つ書く',
+    detail: '今日の投稿を1つ作って、止めずに発信を続けましょう。',
+  };
+}
+
 export default function IrisMorningBrief({
-  personaId, personaName, igProfile, variant = 'desktop', force = false,
+  personaId, personaName, igProfile, variant = 'desktop', force = false, onAction,
 }: Props) {
   const [visible, setVisible] = useState(false);
 
@@ -144,6 +176,13 @@ export default function IrisMorningBrief({
       },
     ];
   }, [igProfile]);
+
+  const oneMove = useMemo(() => {
+    if (!igProfile || !onAction) return null;
+    const followers = igProfile.followers || 0;
+    const { total, topNames } = countMatchingDeals(followers);
+    return pickOneMove(total, topNames, igProfile.bestPostTime || null);
+  }, [igProfile, onAction]);
 
   if (!visible || !cards) return null;
 
@@ -263,6 +302,60 @@ export default function IrisMorningBrief({
             );
           })}
         </div>
+
+        {/* ── 今日の一手 ── タップで該当画面へ ──────────────── */}
+        {oneMove && (
+          <motion.button
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+            onClick={() => { setVisible(false); onAction?.(oneMove.tab); }}
+            style={{
+              width: '100%',
+              marginTop: isMobile ? 10 : 12,
+              textAlign: 'left',
+              cursor: 'pointer',
+              border: `1px solid ${IRIS_COLORS.gold}55`,
+              borderRadius: 12,
+              padding: isMobile ? '0.8rem 0.9rem' : '0.9rem 1.1rem',
+              background: `linear-gradient(135deg, ${IRIS_COLORS.gold}1f 0%, ${IRIS_COLORS.hotPink}14 100%)`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: `${IRIS_COLORS.gold}26`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Sparkles size={18} color={IRIS_COLORS.gold} />
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{
+                fontSize: '0.6rem', letterSpacing: '0.18em',
+                color: IRIS_COLORS.gold, fontWeight: 700, marginBottom: 3,
+              }}>
+                {oneMove.label.toUpperCase() === oneMove.label ? oneMove.label : '今日の一手'}
+              </div>
+              <div style={{
+                fontSize: isMobile ? '0.92rem' : '1rem',
+                fontWeight: 700, color: IRIS_COLORS.cream, lineHeight: 1.25,
+                marginBottom: 2,
+              }}>
+                {oneMove.cta}
+              </div>
+              <div style={{
+                fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)',
+                fontWeight: 500, lineHeight: 1.35,
+              }}>
+                {oneMove.detail}
+              </div>
+            </div>
+            <ArrowRight size={18} color={IRIS_COLORS.gold} style={{ flexShrink: 0 }} />
+          </motion.button>
+        )}
       </motion.div>
     </AnimatePresence>
   );

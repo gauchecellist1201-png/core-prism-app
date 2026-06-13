@@ -475,6 +475,7 @@ function IrisEditorialHome({
           personaName={(igProfile?.handle ? `@${igProfile.handle}` : 'クリエイター')}
           igProfile={igProfile}
           variant="desktop"
+          onAction={(t) => onNavigate(t as Tab)}
         />
       </div>
 
