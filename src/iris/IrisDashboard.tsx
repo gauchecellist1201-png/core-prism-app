@@ -80,6 +80,7 @@ const TAB_GROUPS: TabGroup[] = [
     tabs: [{ id: 'home', l: 'ホーム' }, { id: 'schedule', l: '予約投稿' }] },
   { id: 'create', label: 'つくる', color: '#833AB4', icon: Wand2,
     tabs: [
+      { id: 'studio', l: 'スタジオ' },
       { id: 'reel', l: 'リール' }, { id: 'draft', l: '投稿を書く' },
       { id: 'director', l: '動画おまかせ' }, { id: 'image', l: '写真を直す' },
     ] },
@@ -119,6 +120,7 @@ const VideoStudio = React.lazy(() => import('../components/VideoStudio'));
 // 抜本リデザインされた美しい Minimal 版が default
 // 旧フル機能版は ./IrisReelStudio に残る (詳細モードで呼ぶ用)
 const IrisReelStudio = React.lazy(() => import('./IrisReelStudioMinimal'));
+const IrisStudioHub = React.lazy(() => import('./IrisStudioHub'));
 const IrisPostQueueView = React.lazy(() => import('./IrisPostQueueView'));
 import { usePostQueue } from './usePostQueue';
 const IrisTriageView = React.lazy(() => import('./IrisTriageView'));
@@ -157,7 +159,7 @@ interface Props {
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite' | 'knowledge';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'studio' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite' | 'knowledge';
 
 // ── デスクトップ左サイドバー ────────────────────────────────────
 function IrisSidebar({
@@ -332,7 +334,7 @@ function IrisBottomDock({
   const DOCK_ITEMS = [
     { group: TAB_GROUPS[0], defaultTab: 'home' as Tab },
     { group: TAB_GROUPS[2], defaultTab: 'triage' as Tab },
-    { group: TAB_GROUPS[1], defaultTab: 'reel' as Tab, isFab: true },
+    { group: TAB_GROUPS[1], defaultTab: 'studio' as Tab, isFab: true },
     { group: TAB_GROUPS[3], defaultTab: 'strategy' as Tab },
     { group: TAB_GROUPS[4], defaultTab: 'health' as Tab },
   ];
@@ -1599,6 +1601,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'beauty' && <BeautyChatView bg={bg} settings={settings} />}
             {tab === 'health' && <IrisHealthView bg={bg} health={health} />}
             {tab === 'strategy' && <IrisStrategistView bg={bg} settings={settings} mediaKit={mediaKit} knowledge={knowledge} />}
+            {tab === 'studio' && <IrisStudioHub bg={bg} onOpen={(t) => setTab(t as Tab)} />}
             {tab === 'image' && <IrisImageEditor bg={bg} settings={settings} />}
             {tab === 'triage' && (
               <IrisTriageView bg={bg} settings={settings} mediaKit={mediaKit}
@@ -3038,7 +3041,8 @@ function BrandMatchView({ bg, desk, mediaKit, settings, knowledge }: {
           お仕事を、見つける。
         </h2>
         <p style={{ color: bg.inkSoft, marginTop: '0.5rem', fontSize: '0.9rem' }}>
-          実在ブランドの公開案件 {allDeals.length} 件から、あなたに合うものを Iris が見つけます。気になったら AI が応募文を下書きします。
+          相場感をつかむ<strong style={{ color: bg.accent }}>サンプル案件 {allDeals.length} 件</strong>です（練習用・実在の募集ではありません）。AI が応募文の下書きや交渉のコツを教えます。<br />
+          <span style={{ fontSize: '0.8rem' }}>本物の募集とつながると、ここに「今すぐ応募できる案件」が並びます。</span>
         </p>
       </div>
 

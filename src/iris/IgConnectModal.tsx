@@ -497,12 +497,12 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
           cursor: 'pointer',
           boxShadow: '0 10px 24px rgba(225,48,108,0.35)',
         }}>
-          ✨ 連携して案件を見る
+          手入力ではじめる
         </button>
 
         <p style={{ fontSize: 10, color: '#8A8593', marginTop: 10, lineHeight: 1.7, textAlign: 'center' }}>
-          ユーザー名 / フォロワー数 / ジャンル のみ保存。<br />
-          Instagram のパスワードは不要です。
+          これは<strong>簡易入力</strong>です（自動連携ではありません）。投稿数・ER・リーチは取得できません。<br />
+          数字を自動取得したい場合は上の「スクショ」または「本連携」をお使いください。
         </p>
         </>
         )}
