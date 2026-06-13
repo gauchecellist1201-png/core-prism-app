@@ -195,40 +195,18 @@ function anthropicToGemini(req: AnthropicRequest): {
 
 // ─── モデルマッピング (Anthropic 名 → Gemini 名) ───
 // fallback リストから順に試す。404 / 429 (quota) で次のモデルへ。
-//   - gemini-1.5-flash         (無料枠 1,500req/日 — 一番堅実) ← デフォルト 1 番目
-//   - gemini-1.5-flash-latest  (1.5-flash の latest alias)
-//   - gemini-1.5-flash-002     (バージョン固定)
-//   - gemini-2.0-flash         (一部キーで limit:0 の場合あり、後ろに)
-//   - gemini-1.5-pro           (高品質、無料枠 50req/日)
+// 2026-06 時点で実在・generateContent 可能なモデルのみ使用（1.5系は提供終了で 404 になるため撤去）。
+// 実測で利用可: gemini-2.5-flash / gemini-2.0-flash / gemini-2.5-flash-lite。
+const GEMINI_FLASH_CHAIN = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
 function pickGeminiModels(anthropicModel?: string): string[] {
-  if (!anthropicModel) {
-    return [
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-latest',
-      'gemini-1.5-flash-002',
-      'gemini-2.0-flash',
-      'gemini-2.0-flash-001',
-    ];
-  }
+  if (!anthropicModel) return [...GEMINI_FLASH_CHAIN];
   const m = anthropicModel.toLowerCase();
-  // opus / sonnet-4 → 高品質モデル (Pro 系)
+  // opus / sonnet-4 → 高品質寄り。2.5-flash を先頭に（2.5-pro 未提供キーでも落ちないよう flash 中心）。
   if (m.includes('opus') || m.includes('sonnet-4')) {
-    return [
-      'gemini-1.5-pro',
-      'gemini-1.5-pro-latest',
-      'gemini-1.5-pro-002',
-      'gemini-1.5-flash',
-      'gemini-2.0-flash',
-    ];
+    return ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
   }
   // sonnet / haiku → 高速バランス
-  return [
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-latest',
-    'gemini-1.5-flash-002',
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-001',
-  ];
+  return [...GEMINI_FLASH_CHAIN];
 }
 
 // ─── Gemini → Anthropic レスポンス変換 ───
