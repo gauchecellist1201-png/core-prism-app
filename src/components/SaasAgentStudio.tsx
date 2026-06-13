@@ -437,7 +437,7 @@ export default function SaasAgentStudio({ persona, settings, onClose }: Props) {
                       whileHover={!busy && nlText.trim() ? { scale: 1.01 } : {}}
                       whileTap={!busy && nlText.trim() ? { scale: 0.99 } : {}}
                     >
-                      {busy ? '🧠 推定 + プラン生成中…' : '✨ AI に推定させて実行プラン生成'}
+                      {busy ? 'いまの状況を読み取り、プランを組み立てています…' : '✨ AI に推定させて実行プラン生成'}
                     </motion.button>
                   </div>
                 )}
@@ -547,7 +547,7 @@ export default function SaasAgentStudio({ persona, settings, onClose }: Props) {
                       whileHover={!busy && payload.trim() ? { scale: 1.01 } : {}}
                       whileTap={!busy && payload.trim() ? { scale: 0.99 } : {}}
                     >
-                      {busy ? '🧠 プランを生成中…' : '✨ 実行プランを生成'}
+                      {busy ? '実行プランを組み立てています…' : '✨ 実行プランを生成'}
                     </motion.button>
                   </>
                 )}

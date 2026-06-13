@@ -7,6 +7,7 @@ import { parseFile } from '../lib/fileParser';
 import { copyText } from '../lib/clipboard';
 import ApiErrorCard from './ApiErrorCard';
 import { StudioIntro } from './StudioIntro';
+import ThinkingIndicator from './ThinkingIndicator';
 
 interface Props {
   persona: Persona;
@@ -365,19 +366,23 @@ export default function SlideGeneratorModal({ persona, settings, knowledge, onCl
 
         {isGenerating && (
           <div className="flex-1 flex items-center justify-center p-10">
-            <div className="text-center">
-              <motion.div
-                className="text-5xl mb-4"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-              >{phase === 'design' ? '🧠' : '🎨'}</motion.div>
-              <p className="text-fg text-lg font-semibold mb-1">
-                {phase === 'design' ? 'AI が構成を設計中...' : 'スライドをレンダリング中...'}
-              </p>
-              <p className="text-fg-muted text-sm">
-                {phase === 'design' ? 'タイトル・流れ・各スライドのレイアウトを最適化' : 'PPTX ファイルを生成しています'}
-              </p>
-            </div>
+            <ThinkingIndicator
+              key={phase ?? 'design'}
+              accent={persona.accentColor}
+              subtitle={`${persona.name} のアクセントカラーで自動デザイン中`}
+              messages={phase === 'render'
+                ? [
+                    'スライドのレイアウトを描いています',
+                    '配色とフォントを整えています',
+                    'PowerPoint ファイルに書き出しています',
+                  ]
+                : [
+                    '資料の要点を読み取っています',
+                    '話の流れ（章立て）を組み立てています',
+                    '各スライドの言葉を選んでいます',
+                    'タイトルと締めを整えています',
+                  ]}
+            />
           </div>
         )}
 

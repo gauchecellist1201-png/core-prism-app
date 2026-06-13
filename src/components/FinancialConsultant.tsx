@@ -508,7 +508,7 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
               <button onClick={runConsult} disabled={aiLoading}
                 className="cp-btn cp-btn-sm"
                 style={{ background: accent, color: '#0a0a0f', borderColor: 'transparent', opacity: aiLoading ? 0.5 : 1 }}>
-                {aiLoading ? '🧠 考え中…' : consult ? '↻ もう一度' : '✨ 助言をもらう'}
+                {aiLoading ? '数字を読んでいます…' : consult ? '↻ もう一度' : '✨ 助言をもらう'}
               </button>
             </div>
 
@@ -525,11 +525,11 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
                 accent={accent}
                 variant="full"
                 messages={[
-                  '📊 12 ヶ月の数字を読み込んでいます…',
-                  '🔥 売上の強い月・弱い月を見つけています…',
-                  '📈 利益のうわまえ (利益率) を調べています…',
-                  '🔮 来月の売上を予測しています…',
-                  '💡 打つべき一手を考えています…',
+                  '12 ヶ月の数字を読み込んでいます…',
+                  '売上の強い月・弱い月を見つけています…',
+                  '利益のうわまえ (利益率) を調べています…',
+                  '来月の売上を予測しています…',
+                  '打つべき一手を考えています…',
                 ]}
                 subtitle="あなたのお金の流れを、やさしい言葉でまとめています"
                 onRetry={runConsult}
