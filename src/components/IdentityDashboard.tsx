@@ -30,7 +30,7 @@ import { useStripeRevenue } from '../hooks/useStripeRevenue';
 import { useInvoices } from '../hooks/useInvoices';
 import type { BusinessSnapshot } from '../lib/coachScheduler';
 import TodaysBodyCard from '../prism/TodaysBodyCard';
-import { loadBillingUser } from '../lib/billing';
+import { loadBillingUser, extendTrial } from '../lib/billing';
 // CoreRevenueCard はマスター専用経営画面へ移設予定 (ペルソナ画面からは撤去)
 const MeetingMinutesModal = lazy(() => import('./MeetingMinutes'));
 const SlideGeneratorModal = lazy(() => import('./SlideGenerator'));
@@ -68,8 +68,8 @@ const PeopleStudio = lazy(() => import('./PeopleStudio'));
 const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
-import { REFERRAL_BONUS_DAYS } from '../lib/referral';
-import { Gift, FileDown, Database, Brain, BarChart3, Search, ShieldCheck, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem } from 'lucide-react';
+import { REFERRAL_BONUS_DAYS, getReferralData, syncReferralStatus, consumePendingBonusDays } from '../lib/referral';
+import { Gift, FileDown, Database, Brain, BarChart3, Search, ShieldCheck, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { downloadMonthlyCsv } from '../lib/monthlyCsvExport';
 import { downloadUserExport } from '../lib/userDataExport';
@@ -277,6 +277,13 @@ export default function IdentityDashboard({
   });
   const [showCmdK, setShowCmdK] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  // 招待者の手応え: 自分のコードで実際に登録した人数 / 累計獲得日数 (起動時にサーバ同期)
+  const [referralStat, setReferralStat] = useState(() => {
+    const d = getReferralData();
+    return { referredCount: d.referredCount, bonusDays: d.bonusDays };
+  });
+  // 新しく友達が登録した時の一過性トースト (人数差分)
+  const [referralToast, setReferralToast] = useState<number | null>(null);
   const [showDailyReport, setShowDailyReport] = useState(false);
   const [financeEditFor, setFinanceEditFor] = useState<Persona | null>(null);
   const [briefOverride, setBriefOverride] = useState<Proposal | null>(null);
@@ -307,6 +314,26 @@ export default function IdentityDashboard({
   }, [settings.voiceLang]);
 
   useCommandPaletteHotkey(() => setShowCmdK(true));
+
+  // 起動時に「自分のコードで実際に登録した友達の数」をサーバ同期。
+  // 新しく登録があれば人数差分でトーストを出し、招待バッジを最新化する。
+  useEffect(() => {
+    let alive = true;
+    syncReferralStatus()
+      .then(r => {
+        if (!alive) return;
+        setReferralStat({ referredCount: r.referredCount, bonusDays: r.bonusDays });
+        if (r.newReferrals > 0) {
+          // 未反映の延長日数を実際のトライアル期限へ加算 (招待者への +7 日/人 を本当に適用)
+          const days = consumePendingBonusDays();
+          if (days > 0) extendTrial(days);
+          setReferralToast(r.newReferrals);
+          setTimeout(() => { if (alive) setReferralToast(null); }, 7000);
+        }
+      })
+      .catch(() => { /* フェイルオープン: 現状維持 */ });
+    return () => { alive = false; };
+  }, []);
 
   const handleCmdKOpen = useCallback((m: ModalKey) => {
     switch (m) {
@@ -585,6 +612,20 @@ export default function IdentityDashboard({
             <Gift size={14} style={{ color: persona.accentColor }} strokeWidth={2.4} />
             <span className="text-sm font-semibold" style={{ color: persona.accentColor }}>友達招待 +{REFERRAL_BONUS_DAYS}日</span>
           </button>
+          {/* 招待者の手応えバッジ — 実際に登録した友達がいる時だけ正直に表示 (0 は出さない) */}
+          {referralStat.referredCount > 0 && (
+            <button
+              onClick={() => setShowInvite(true)}
+              className="w-full flex items-center gap-2 px-2 py-1 rounded-lg text-left transition-colors hover:bg-surface-3"
+              aria-label={`友達 ${referralStat.referredCount} 人が登録済み・累計 ${referralStat.bonusDays} 日もらいました`}
+              title={`友達 ${referralStat.referredCount} 人が登録 / 累計 +${referralStat.bonusDays} 日`}
+            >
+              <Users size={13} style={{ color: persona.accentColor }} strokeWidth={2.2} />
+              <span className="text-xs font-medium text-fg-muted">
+                <span style={{ color: persona.accentColor, fontWeight: 700 }}>{referralStat.referredCount}人</span> 登録 · 累計 <span style={{ color: persona.accentColor, fontWeight: 700 }}>+{referralStat.bonusDays}日</span>
+              </span>
+            </button>
+          )}
           <button
             onClick={onOpenSettings}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
@@ -2020,6 +2061,48 @@ export default function IdentityDashboard({
       <ShortcutHelpModal />
       <PwaInstallPrompt accentColor={persona.accentColor} />
       <FeedbackWidget brand="prism" />
+
+      {/* 友達が新たに登録した瞬間のお祝いトースト (safe-area 対応・タップで招待カードへ) */}
+      <AnimatePresence>
+        {referralToast !== null && referralToast > 0 && (
+          <motion.button
+            key="referral-toast"
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+            onClick={() => { setReferralToast(null); setShowInvite(true); }}
+            style={{
+              position: 'fixed', zIndex: 120,
+              left: '50%', transform: 'translateX(-50%)',
+              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)',
+              maxWidth: 'min(92vw, 380px)',
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '0.85rem 1.1rem', borderRadius: 16, border: 'none',
+              background: `linear-gradient(135deg, ${persona.accentColor}, ${persona.accentColor}cc)`,
+              color: '#fff', cursor: 'pointer', textAlign: 'left',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
+            }}
+            aria-label={`友達が ${referralToast} 人登録しました。タップで詳細`}
+          >
+            <span style={{
+              width: 36, height: 36, borderRadius: 12, flexShrink: 0,
+              background: 'rgba(255,255,255,0.18)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Gift size={18} strokeWidth={2.4} />
+            </span>
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: '0.92rem', fontWeight: 800, lineHeight: 1.25 }}>
+                友達が {referralToast} 人 登録しました!
+              </span>
+              <span style={{ display: 'block', fontSize: '0.74rem', opacity: 0.92, marginTop: 2 }}>
+                あなたに +{referralToast * REFERRAL_BONUS_DAYS} 日 のトライアル延長
+              </span>
+            </span>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showOnboarding && (

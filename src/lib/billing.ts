@@ -716,6 +716,28 @@ export function clearBillingUser() {
 }
 
 /**
+ * 現在のユーザーのトライアル期限を days 日ぶん延長する。
+ * 招待者側の紹介ボーナス (友達が登録 → 招待者に +7 日) を実際の trialEndsAt に反映する用途。
+ * - days <= 0 / ユーザー未ログインなら何もしない (現在の期限を返す or null)。
+ * - trialEndsAt 未設定でも、今より先の期限を作って延長する (有料化前に登録した招待者を救済)。
+ * @returns 延長後の trialEndsAt (ISO) — 適用しなかった場合は既存値 or null
+ */
+export function extendTrial(days: number): string | null {
+  if (!Number.isFinite(days) || days <= 0) {
+    return loadBillingUser()?.trialEndsAt ?? null;
+  }
+  const u = loadBillingUser();
+  if (!u) return null;
+  // 既存の期限が未来ならそこから、過去 or 未設定なら今から起算
+  const base = u.trialEndsAt && new Date(u.trialEndsAt).getTime() > Date.now()
+    ? new Date(u.trialEndsAt).getTime()
+    : Date.now();
+  const next = new Date(base + days * 86400000).toISOString();
+  saveBillingUser({ ...u, trialEndsAt: next });
+  return next;
+}
+
+/**
  * ログアウト + アプリゲート解除。
  * - billing user (localStorage + cookie) を削除
  * - APP_ENTERED フラグを削除 → 次の表示で LP に戻す
