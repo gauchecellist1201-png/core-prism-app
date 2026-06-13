@@ -100,6 +100,7 @@ import GmailInsightsCard from './GmailInsightsCard';
 import AllSourcesHub from './AllSourcesHub';
 import CommandTowerHub from './CommandTowerHub';
 import GoogleSuiteCard from './GoogleSuiteCard';
+import ViralStudioCard from './ViralStudioCard';
 import CreditBar from './CreditBar';
 import CreditModal from './CreditModal';
 import MobileGeminiDashboard from './MobileGeminiDashboard';
@@ -1044,6 +1045,9 @@ export default function IdentityDashboard({
                 if (id === 'meeting') { setShowMeeting(true); return; }
                 setIntegrationsFocusId(id); setShowIntegrations(true);
               }} />
+
+              {/* ✨ バイラル投稿スタジオ (X/Threads): テーマ→分析→生成→投稿 */}
+              <ViralStudioCard />
 
               {/* PC 専用: 焦点モード (今日の最優先 1 つ + 数字 1 行) — iPhone では上のブリーフ + 売上に置き換え */}
               <div className="hidden md:block">
