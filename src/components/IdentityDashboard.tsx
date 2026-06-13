@@ -1040,7 +1040,10 @@ export default function IdentityDashboard({
               <GoogleSuiteCard onIngestKnowledge={onAddKnowledgeNote} />
 
               {/* ✨ 最強 RAG — 全 ソース 連携 ハブ (Instagram / TikTok 含む) */}
-              <AllSourcesHub onOpenIntegration={(id) => { setIntegrationsFocusId(id); setShowIntegrations(true); }} />
+              <AllSourcesHub onOpenIntegration={(id) => {
+                if (id === 'meeting') { setShowMeeting(true); return; }
+                setIntegrationsFocusId(id); setShowIntegrations(true);
+              }} />
 
               {/* PC 専用: 焦点モード (今日の最優先 1 つ + 数字 1 行) — iPhone では上のブリーフ + 売上に置き換え */}
               <div className="hidden md:block">
