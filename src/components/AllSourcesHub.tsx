@@ -41,7 +41,7 @@ const SOURCES_INIT: Source[] = [
   },
   {
     key: 'calendar',
-    name: 'Google Calendar',
+    name: 'Calendar',
     brand: 'gcalendar',
     emoji: '📅', color: '#4285F4',
     what: '予定 / 会議',
@@ -50,7 +50,7 @@ const SOURCES_INIT: Source[] = [
   },
   {
     key: 'docs',
-    name: 'Google ドキュメント',
+    name: 'Docs',
     brand: 'gdocs',
     emoji: '📄', color: '#4285F4',
     what: 'ドキュメント 本文',
@@ -213,7 +213,7 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
       {/* グリッド */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(158px, 1fr))',
         gap: 8,
       }}>
         {sources.map((s) => (
@@ -238,11 +238,11 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
               transition: 'border-color 0.2s, background 0.2s',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <BrandIcon name={s.brand} size={28} />
-              <strong style={{ fontSize: 12.5, color: 'var(--fg-strong)', flex: 1, minWidth: 0, lineHeight: 1.3, wordBreak: 'break-word' }}>{s.name}</strong>
+              <strong style={{ fontSize: 12.5, color: 'var(--fg-strong)', flex: 1, minWidth: 0, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</strong>
               <span style={{
-                flexShrink: 0, whiteSpace: 'nowrap', alignSelf: 'flex-start',
+                flexShrink: 0, whiteSpace: 'nowrap',
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 800,
                 background: s.status === 'connected' ? 'rgba(52,211,153,0.22)' :
@@ -257,9 +257,9 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
                   background: 'currentColor',
                   opacity: s.status === 'phase2' ? 0.55 : 1,
                 }} />
-                {s.status === 'connected' ? '連携 中' :
+                {s.status === 'connected' ? '連携中' :
                  s.status === 'phase2' ? '準備中' :
-                 '連携 する'}
+                 '連携する'}
               </span>
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--fg-muted)', lineHeight: 1.5 }}>
