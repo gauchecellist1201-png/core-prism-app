@@ -581,9 +581,9 @@ export default function IdentityDashboard({
           background: 'var(--bg, #0a0a0a)',
         }}
       >
-        <div className="px-2 mb-3">
+        <div className="px-2 pt-1 mb-4">
           <button onClick={onBackToSelection} className="group text-left flex items-center transition-opacity group-hover:opacity-70">
-            <PrismLogo size={32} withWordmark />
+            <PrismLogo size={44} withWordmark />
           </button>
         </div>
 
@@ -883,10 +883,11 @@ export default function IdentityDashboard({
           </div>
 
           <AnimatePresence>
-            {isDemoActive() && (
+            {/* デモ帯は「サンプル人格(田中/カフェ等)」を選んでいる時だけ。他の人格は実データ運用 */}
+            {isDemoActive() && persona?.id?.startsWith('demo:') && (
               <DemoBanner
                 key="demo-banner"
-                onClearDemo={() => { clearDemoData(); window.location.reload(); }}
+                onClearDemo={() => { clearDemoData(); window.location.href = '/?fresh=1'; }}
               />
             )}
           </AnimatePresence>

@@ -28,7 +28,6 @@ import { initWebVitals } from './lib/initWebVitals';
 // AAAAAA (2026-06-04): モジュール 評価時 に 1 度だけ Web Vitals 観測 開始
 if (typeof window !== 'undefined') initWebVitals({ sampleRate: 1 });
 import PersonaPresetSuggestion from './components/PersonaPresetSuggestion';
-import SampleModeBanner from './components/SampleModeBanner';
 import SitemapPalette from './components/SitemapPalette';
 import AiSuggestionHistory from './components/AiSuggestionHistory';
 import AiThrottleToast from './components/AiThrottleToast';
@@ -980,8 +979,7 @@ export default function App() {
       <AiThrottleToast />
       {/* YYY (2026-06-04): LP / Pricing / Billing / Contact 用 ライト ⇄ ダーク 切替 */}
       <PublicThemeToggle />
-      {/* HHHH (2026-06-04): サンプルモード時 最上部 帯 (全画面常駐) */}
-      <SampleModeBanner />
+      {/* サンプル表示は ダッシュボード内の DemoBanner に一本化 (ロゴと被る固定帯は廃止) */}
     </>
   );
 }
