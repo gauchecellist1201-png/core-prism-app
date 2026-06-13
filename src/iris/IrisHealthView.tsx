@@ -133,17 +133,46 @@ export default function IrisHealthView({ bg, health }: Props) {
         </div>
       ) : (
         <div style={{
-          padding: '1.5rem',
-          background: bg.card,
-          border: `1px solid ${bg.cardBorder}`,
-          borderRadius: 14,
+          padding: '1.75rem 1.5rem',
+          background: `linear-gradient(135deg, ${bg.accent}14, ${bg.accent}06)`,
+          border: `1px solid ${bg.accent}38`,
+          borderRadius: 16,
           textAlign: 'center',
-          color: bg.inkSoft,
-          fontSize: '0.9rem',
-          fontFamily: IRIS_FONTS.serif,
-          fontStyle: 'italic',
         }}>
-          まだ健康データがありません。下の「Apple Health から取込」で開始してください。
+          <p style={{
+            fontFamily: IRIS_FONTS.display, fontStyle: 'italic',
+            fontSize: '1.3rem', color: bg.ink, fontWeight: 500, margin: '0 0 0.5rem',
+          }}>
+            まだ、何も記録がありません。
+          </p>
+          <p style={{
+            fontSize: '0.85rem', color: bg.inkSoft, lineHeight: 1.8,
+            fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
+            margin: '0 auto 1.25rem', maxWidth: 380,
+          }}>
+            このタブでは、睡眠・心拍・歩数を見やすくまとめ、<br />
+            AI が「今日の整え方」を一言で教えてくれます。<br />
+            まずはサンプルで、できあがりを見てみませんか。
+          </p>
+          <button
+            type="button"
+            onClick={() => health.reseed()}
+            style={{
+              padding: '0.7rem 1.6rem', borderRadius: 999,
+              background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+              color: '#fff', fontWeight: 700, fontSize: '0.9rem',
+              border: 'none', cursor: 'pointer',
+              boxShadow: `0 8px 22px ${bg.accent}44`,
+              minHeight: 44,
+            }}
+          >
+            サンプルで試してみる
+          </button>
+          <p style={{
+            fontSize: '0.72rem', color: bg.inkSoft, marginTop: '0.9rem', opacity: 0.85,
+          }}>
+            自分のデータは、下の「Apple Health から取込」で（約30秒）。サンプルはあとで消せます。
+          </p>
         </div>
       )}
 
