@@ -10,6 +10,7 @@ import { StudioIntro } from './StudioIntro';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
+import AISuccessBurst from './AISuccessBurst';
 
 interface Props {
   persona: Persona;
@@ -46,6 +47,7 @@ export default function MeetingMinutesModal({
   const [transcript, setTranscript] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [minutes, setMinutes] = useState<MeetingMinutes | null>(null);
+  const [doneKey, setDoneKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const analyzeAbortRef = useRef<AbortController | null>(null);
 
@@ -421,6 +423,8 @@ export default function MeetingMinutesModal({
       });
       if (ac.signal.aborted) return;
       setMinutes(result);
+      setDoneKey(k => k + 1); // 完成の一瞬にごほうび演出
+
     } catch (err: any) {
       // 中断は「失敗」ではない — エラー表示しない
       if (err?.name === 'AbortError' || ac.signal.aborted) return;
@@ -942,6 +946,7 @@ export default function MeetingMinutesModal({
                 skeletonLines={5}
                 hint="長くなりそうなら ✕ で中断できます"
               />
+              <AISuccessBurst trigger={doneKey} brand="prism" label="議事録が完成しました" />
             </div>
 
             {/* Footer */}

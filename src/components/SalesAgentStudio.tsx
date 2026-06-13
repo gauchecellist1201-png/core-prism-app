@@ -7,6 +7,7 @@ import { todaySeed } from '../data/companies-jp';
 import { useCopyButton } from '../hooks/useCopyButton';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
+import AISuccessBurst from './AISuccessBurst';
 import { StudioIntro } from './StudioIntro';
 import SampleDataCTA from './SampleDataCTA';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
@@ -119,6 +120,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
 
   // ─── 今日のピックアップ ─────────
   const [picks, setPicks] = useState<AiPick[]>([]);
+  const [doneKey, setDoneKey] = useState(0);
   const [approvedIds, setApprovedIds] = useState<string[]>([]);
   const [rejectedIds, setRejectedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -168,6 +170,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
         excludeIds: exclude,
       });
       setPicks(result);
+      if (result.length > 0) setDoneKey(k => k + 1); // 選定完了のごほうび演出
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -392,6 +395,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
             brand="prism"
             skeletonLines={4}
           />
+          <AISuccessBurst trigger={doneKey} brand="prism" label="今日の候補がそろいました" />
 
           <StudioIntro
             id="sales-agent"
