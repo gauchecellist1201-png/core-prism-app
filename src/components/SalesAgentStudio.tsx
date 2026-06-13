@@ -1,5 +1,11 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Target, X, Sparkles, Mic, FolderOpen, Gift, Brain, RefreshCw,
+  PartyPopper, Lightbulb, Mail, Pencil, Check, Inbox, Copy, Send,
+  Hand, Headphones, Shield, Handshake, type LucideIcon,
+} from 'lucide-react';
+import { IconBadge, IconChip } from './icons';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import { useSalesAgent } from '../hooks/useSalesAgent';
 import { pickTodaysCompanies, type AiPick } from '../lib/salesAgentMatch';
@@ -300,7 +306,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
     }
     sa.setOwnProduct(persona.id, productDraft);
     setError(null);
-    setProductSavedMsg('✓ 保存しました。AI が「今日の 5 社」を探しています…');
+    setProductSavedMsg('保存しました。AI が「今日の 5 社」を探しています…');
     // AgentTeamMonitor に進捗を出す (CSO がメインで動く)
     queue.propose({
       title: '今日の 5 社を選び、提案メールまで下書き',
@@ -341,14 +347,13 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
       >
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}>🎯</div>
+            <IconBadge icon={Target} color={persona.accentColor} size={40} variant="soft" />
             <div className="min-w-0">
               <p className="cp-h2 truncate">商談 AI エージェント</p>
               <p className="cp-meta truncate">AI が今日の 5 社を選び、提案文まで先回りで用意します</p>
             </div>
           </div>
-          <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
+          <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm" aria-label="閉じる"><X size={16} strokeWidth={2.4} /></button>
         </div>
 
         <DelegateToAgentTeamBanner
@@ -360,15 +365,15 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
 
         <div className="cp-modal-tabs">
           {([
-            { id: 'today',   emoji: '✨', label: '今日の5社' },
-            { id: 'script',  emoji: '🎤', label: '商談台本' },
-            { id: 'history', emoji: '📂', label: `採用済 (${approvedLeadCount})` },
-            { id: 'product', emoji: '🎁', label: '自社の商材' },
-          ] as const).map(t => (
+            { id: 'today',   icon: Sparkles,   label: '今日の5社' },
+            { id: 'script',  icon: Mic,        label: '商談台本' },
+            { id: 'history', icon: FolderOpen, label: `採用済 (${approvedLeadCount})` },
+            { id: 'product', icon: Gift,       label: '自社の商材' },
+          ] as { id: Tab; icon: LucideIcon; label: string }[]).map(t => (
             <button key={t.id} onClick={() => { setTab(t.id); setError(null); }}
               className="cp-modal-tab" data-active={tab === t.id}
               style={{ color: tab === t.id ? persona.accentColor : undefined, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <span aria-hidden>{t.emoji}</span>
+              <IconChip icon={t.icon} color={tab === t.id ? persona.accentColor : 'currentColor'} size={16} />
               <span>{t.label}</span>
             </button>
           ))}
@@ -400,9 +405,9 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
           <StudioIntro
             id="sales-agent"
             accent={persona.accentColor}
-            emoji="🎯"
+            icon={Target}
             what="営業先を探す → 提案文を書く までを AI が先回りで終わらせておく場所です。"
-            tryThis="「✨ 今日の 5 社を選ぶ」を押すと、AI が候補 + 件名 + 本文まで用意します。"
+            tryThis="「今日の 5 社を選ぶ」を押すと、AI が候補 + 件名 + 本文まで用意します。"
             example="「中堅メーカーの DX 担当」に響くメール 5 通を、朝の 10 秒で完成。"
             sampleLabel="出来上がる今日の 1 社"
             samplePreview={
@@ -477,8 +482,8 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                     fontSize: 5.5,
                   }}
                 >
-                  <span style={{ flex: 1, textAlign: 'center', background: `${persona.accentColor}20`, color: persona.accentColor, padding: '2px 0', borderRadius: 3, fontWeight: 700 }}>
-                    ✓ 採用
+                  <span style={{ flex: 1, textAlign: 'center', background: `${persona.accentColor}20`, color: persona.accentColor, padding: '2px 0', borderRadius: 3, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                    <Check size={6} strokeWidth={3} /> 採用
                   </span>
                   <span style={{ flex: 1, textAlign: 'center', background: 'var(--surface-3)', opacity: 0.7, padding: '2px 0', borderRadius: 3 }}>
                     却下
@@ -494,25 +499,32 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
               <div className="cp-card-section cp-stack-sm">
                 <div className="cp-row-between" style={{ flexWrap: 'wrap', gap: 10 }}>
                   <div className="min-w-0">
-                    <p className="cp-h3">✨ AI が選んだ 今日の 5 社</p>
+                    <p className="cp-h3" style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                      <IconChip icon={Sparkles} color={persona.accentColor} size={18} />
+                      AI が選んだ 今日の 5 社
+                    </p>
                     <p className="cp-meta">
                       あなたの「自社の商材」をもとに、日本企業 {300}+ 社の中から AI が先回りで選びました。
-                      気に入ったら ✓ 承認、違うなと思ったら ✗ 却下、文面を直したいときは ✏️ で。
+                      気に入ったら承認、違うなと思ったら却下、文面を直したいときは編集を押してください。
                     </p>
                   </div>
                   <div className="cp-row" style={{ gap: 6, flexShrink: 0 }}>
                     <button onClick={() => runPick(false)} disabled={busy === 'pick'}
                       className="cp-btn cp-btn-primary"
-                      style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                      {busy === 'pick'
-                        ? '🧠 AI が選定中…'
-                        : picks.length === 0 ? '✨ 今日アプローチする 5 社 + 営業文を AI に作ってもらう' : '🔄 別の 5 社で作り直してもらう'}
+                      style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                      {busy === 'pick' ? (
+                        <><Brain size={16} strokeWidth={2.4} /><span>AI が選定中…</span></>
+                      ) : picks.length === 0 ? (
+                        <><Sparkles size={16} strokeWidth={2.4} /><span>今日アプローチする 5 社 + 営業文を AI に作ってもらう</span></>
+                      ) : (
+                        <><RefreshCw size={16} strokeWidth={2.4} /><span>別の 5 社で作り直してもらう</span></>
+                      )}
                     </button>
                   </div>
                 </div>
                 {!ownProduct?.trim() && (
                   <p className="cp-tiny" style={{ color: '#FBBF24' }}>
-                    まだ自社の商材が未登録です。「🎁 自社の商材」タブで一度だけ書いておくと、毎日 AI が自動で合う企業を探します。
+                    まだ自社の商材が未登録です。「自社の商材」タブで一度だけ書いておくと、毎日 AI が自動で合う企業を探します。
                   </p>
                 )}
               </div>
@@ -520,9 +532,9 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
               {/* 5 社カード */}
               {visiblePicks.length === 0 && picks.length === 0 && (
                 <div className="cp-empty">
-                  <p className="cp-empty-icon">🎯</p>
+                  <p className="cp-empty-icon"><Target size={34} strokeWidth={1.6} color={persona.accentColor} /></p>
                   <p>まだピックアップがありません</p>
-                  <p className="cp-meta">右上の「✨ 今日の 5 社を選んでもらう」を押してね</p>
+                  <p className="cp-meta">右上の「今日の 5 社を選んでもらう」を押してね</p>
                   {!isDemoActive() && (
                     <div style={{ marginTop: 14 }}>
                       <SampleDataCTA
@@ -536,9 +548,9 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
 
               {visiblePicks.length === 0 && picks.length > 0 && (
                 <div className="cp-empty">
-                  <p className="cp-empty-icon">🎉</p>
+                  <p className="cp-empty-icon"><PartyPopper size={34} strokeWidth={1.6} color={persona.accentColor} /></p>
                   <p>今日の 5 社、全部さばき終わりました</p>
-                  <p className="cp-meta">「🔄 もう一度選び直す」で次の候補を出せます</p>
+                  <p className="cp-meta">「もう一度選び直す」で次の候補を出せます</p>
                 </div>
               )}
 
@@ -596,14 +608,14 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
 
                       {/* 理由 */}
                       <div className="cp-card" style={{ background: persona.accentColorLight, borderColor: persona.accentColor + '55' }}>
-                        <p className="cp-tiny" style={{ color: persona.accentColor }}>🤔 AI がこの企業を選んだ理由</p>
+                        <p className="cp-tiny" style={{ color: persona.accentColor, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Lightbulb size={13} strokeWidth={2.2} /> AI がこの企業を選んだ理由</p>
                         <p className="cp-body" style={{ color: 'var(--fg)' }}>{p.reason}</p>
                       </div>
 
                       {/* 提案文プレビュー / 編集 */}
                       {!isEditing ? (
                         <div className="cp-stack-sm">
-                          <p className="cp-tiny">📧 提案文ドラフト</p>
+                          <p className="cp-tiny" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Mail size={13} strokeWidth={2.2} /> 提案文ドラフト</p>
                           <div className="cp-card">
                             <p className="cp-meta" style={{ marginBottom: 6 }}>件名: <span style={{ color: 'var(--fg)', fontWeight: 600 }}>{p.emailSubject}</span></p>
                             <pre className="cp-body" style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{p.emailBody}</pre>
@@ -611,7 +623,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                         </div>
                       ) : (
                         <div className="cp-stack-sm">
-                          <p className="cp-tiny">✏️ 文面を直す</p>
+                          <p className="cp-tiny" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Pencil size={13} strokeWidth={2.2} /> 文面を直す</p>
                           <input value={editDraft.subject} onChange={e => setEditDraft({ ...editDraft, subject: e.target.value })}
                             placeholder="件名" className="cp-input" />
                           <textarea value={editDraft.body} onChange={e => setEditDraft({ ...editDraft, body: e.target.value })}
@@ -628,13 +640,13 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                       {!isEditing && (
                         <div className="cp-row" style={{ gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                           <button onClick={() => handleReject(p)}
-                            className="cp-btn cp-btn-ghost cp-btn-sm">✗ 却下</button>
+                            className="cp-btn cp-btn-ghost cp-btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><X size={14} strokeWidth={2.4} /> 却下</button>
                           <button onClick={() => startEdit(p)}
-                            className="cp-btn cp-btn-sm">✏️ 直す</button>
+                            className="cp-btn cp-btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Pencil size={14} strokeWidth={2.4} /> 直す</button>
                           <button onClick={() => handleApprove(p)}
                             className="cp-btn cp-btn-primary cp-btn-sm"
-                            style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                            ✓ 承認 → メール下書きを保存
+                            style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                            <Check size={14} strokeWidth={2.6} /> 承認 → メール下書きを保存
                           </button>
                         </div>
                       )}
@@ -649,9 +661,12 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
           {tab === 'history' && (
             <>
               <div className="cp-card-section">
-                <p className="cp-h3">📂 採用済のリード</p>
+                <p className="cp-h3" style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  <IconChip icon={FolderOpen} color={persona.accentColor} size={18} />
+                  採用済のリード
+                </p>
                 <p className="cp-meta">
-                  「✓ 承認」したものはここに溜まります。メール下書きは {draftCount} 件保存中。
+                  「承認」したものはここに溜まります。メール下書きは {draftCount} 件保存中。
                   シャドー秘書 (毎朝の自動チェック) がこの一覧から優先度の高い相手に動きます。
                 </p>
               </div>
@@ -659,9 +674,9 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
               <div className="cp-stack-sm">
                 {myLeads.length === 0 ? (
                   <div className="cp-empty">
-                    <p className="cp-empty-icon">📭</p>
+                    <p className="cp-empty-icon"><Inbox size={34} strokeWidth={1.6} color={persona.accentColor} /></p>
                     <p>まだ採用したリードはありません</p>
-                    <p className="cp-meta">「✨ 今日のピックアップ」タブで AI が選んだ企業を承認すると、ここに追加されます</p>
+                    <p className="cp-meta">「今日のピックアップ」タブで AI が選んだ企業を承認すると、ここに追加されます</p>
                   </div>
                 ) : myLeads.map(l => {
                   const drafts = sa.approaches.filter(a => a.leadId === l.id);
@@ -692,10 +707,10 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                                 <button
                                   onClick={() => approachCopy.copy(`${a.subject}\n\n${a.body}`, '営業文')}
                                   data-copied={approachCopy.copied}
-                                  className="cp-btn cp-btn-sm cp-copy-btn"
-                                >{approachCopy.copied ? '✓ コピーしました' : '📋 コピー'}</button>
+                                  className="cp-btn cp-btn-sm cp-copy-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                                >{approachCopy.copied ? <><Check size={13} strokeWidth={2.6} /> コピーしました</> : <><Copy size={13} strokeWidth={2.2} /> コピー</>}</button>
                                 <button onClick={() => sa.updateApproach(a.id, { status: 'sent' })}
-                                  className="cp-btn cp-btn-sm">📤 送信済みにする</button>
+                                  className="cp-btn cp-btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Send size={13} strokeWidth={2.2} /> 送信済みにする</button>
                               </div>
                             </div>
                           ))}
@@ -712,7 +727,10 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
           {tab === 'script' && (
             <div className="cp-stack-sm">
               <div className="cp-card-section cp-stack-sm" style={{ background: `${persona.accentColor}10`, border: `1px solid ${persona.accentColor}40` }}>
-                <p className="cp-h3">🎤 商談台本 + 反論対応を AI が作る</p>
+                <p className="cp-h3" style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  <IconChip icon={Mic} color={persona.accentColor} size={18} />
+                  商談台本 + 反論対応を AI が作る
+                </p>
                 <p className="cp-meta">
                   商談相手や状況を 1 行入れると、掴み・ヒアリング・提案・想定反論への切り返し・クロージングまで一気に用意します。
                 </p>
@@ -727,9 +745,13 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                   onClick={generateScript}
                   disabled={scriptBusy || !scriptTarget.trim()}
                   className="cp-btn cp-btn-primary"
-                  style={{ background: persona.accentColor, color: '#0a0a0f', opacity: (scriptBusy || !scriptTarget.trim()) ? 0.5 : 1 }}
+                  style={{ background: persona.accentColor, color: '#0a0a0f', opacity: (scriptBusy || !scriptTarget.trim()) ? 0.5 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
                 >
-                  {scriptBusy ? '🧠 台本を作成中…' : '🎤 30 秒で読める商談台本を AI に書いてもらう'}
+                  {scriptBusy ? (
+                    <><Brain size={16} strokeWidth={2.4} /><span>台本を作成中…</span></>
+                  ) : (
+                    <><Mic size={16} strokeWidth={2.4} /><span>30 秒で読める商談台本を AI に書いてもらう</span></>
+                  )}
                 </button>
               </div>
 
@@ -742,11 +764,11 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
 
               {script && !scriptBusy && (
                 <>
-                  <ScriptBlock icon="👋" title="掴みの一言" accent={persona.accentColor}>
+                  <ScriptBlock icon={Hand} title="掴みの一言" accent={persona.accentColor}>
                     <p className="cp-body" style={{ lineHeight: 1.7 }}>{script.opening}</p>
                   </ScriptBlock>
 
-                  <ScriptBlock icon="🎧" title="ヒアリング (相手の課題を引き出す)" accent={persona.accentColor}>
+                  <ScriptBlock icon={Headphones} title="ヒアリング (相手の課題を引き出す)" accent={persona.accentColor}>
                     <ol style={{ paddingLeft: 20, margin: 0 }}>
                       {script.hearing.map((h, i) => (
                         <li key={i} style={{ marginBottom: 5, lineHeight: 1.6, fontSize: '0.92rem' }}>{h}</li>
@@ -754,11 +776,11 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                     </ol>
                   </ScriptBlock>
 
-                  <ScriptBlock icon="💡" title="提案の核" accent={persona.accentColor}>
+                  <ScriptBlock icon={Lightbulb} title="提案の核" accent={persona.accentColor}>
                     <p className="cp-body" style={{ lineHeight: 1.7 }}>{script.pitch}</p>
                   </ScriptBlock>
 
-                  <ScriptBlock icon="🛡" title="想定反論 → 切り返し" accent={persona.accentColor}>
+                  <ScriptBlock icon={Shield} title="想定反論 → 切り返し" accent={persona.accentColor}>
                     <div className="cp-stack-sm">
                       {script.objections.map((o, i) => (
                         <div key={i} style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid var(--border)' }}>
@@ -769,7 +791,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                     </div>
                   </ScriptBlock>
 
-                  <ScriptBlock icon="🤝" title="クロージング" accent={persona.accentColor}>
+                  <ScriptBlock icon={Handshake} title="クロージング" accent={persona.accentColor}>
                     <p className="cp-body" style={{ lineHeight: 1.7 }}>{script.closing}</p>
                   </ScriptBlock>
 
@@ -780,9 +802,9 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                         scriptCopy.copy(full, '商談台本');
                       }}
                       data-copied={scriptCopy.copied}
-                      className="cp-btn cp-btn-sm cp-copy-btn"
-                    >{scriptCopy.copied ? '✓ コピーしました' : '📋 台本を全部コピー'}</button>
-                    <button onClick={generateScript} className="cp-btn cp-btn-ghost cp-btn-sm">↻ 別パターンで作り直す</button>
+                      className="cp-btn cp-btn-sm cp-copy-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                    >{scriptCopy.copied ? <><Check size={13} strokeWidth={2.6} /> コピーしました</> : <><Copy size={13} strokeWidth={2.2} /> 台本を全部コピー</>}</button>
+                    <button onClick={generateScript} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><RefreshCw size={13} strokeWidth={2.2} /> 別パターンで作り直す</button>
                   </div>
                 </>
               )}
@@ -792,7 +814,10 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
           {/* ─── 自社の商材 ─── */}
           {tab === 'product' && (
             <div className="cp-card-section cp-stack-sm">
-              <p className="cp-h3">🎁 自社の商材</p>
+              <p className="cp-h3" style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <IconChip icon={Gift} color={persona.accentColor} size={18} />
+                自社の商材
+              </p>
               <p className="cp-meta">
                 AI が「合う企業」を選ぶための土台です。
                 {knowledge.length > 0 ? (
@@ -815,9 +840,14 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                     fontWeight: 800,
                     padding: '10px 14px',
                     opacity: extractBusy ? 0.7 : 1,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                   }}
                 >
-                  {extractBusy ? '🧠 ナレッジを読んでいます…' : `✨ ナレッジ ${knowledge.length} 件から自動で取り込む`}
+                  {extractBusy ? (
+                    <><Brain size={15} strokeWidth={2.4} /><span>ナレッジを読んでいます…</span></>
+                  ) : (
+                    <><Sparkles size={15} strokeWidth={2.4} /><span>ナレッジ {knowledge.length} 件から自動で取り込む</span></>
+                  )}
                 </button>
               )}
 
@@ -826,8 +856,8 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                 rows={10} className="cp-textarea" />
               <button onClick={saveProduct} className="cp-btn cp-btn-primary"
                 disabled={!!productSavedMsg}
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                {productSavedMsg ? '✓ AI 起動中…' : '保存 → AI に今日の 5 社を選ばせる'}
+                style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                {productSavedMsg ? <><Check size={15} strokeWidth={2.6} /> AI 起動中…</> : '保存 → AI に今日の 5 社を選ばせる'}
               </button>
               {productSavedMsg && (
                 <motion.div
@@ -851,13 +881,13 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
 }
 
 // 商談台本の 1 ブロック (掴み / ヒアリング / 提案 / 反論 / クロージング)
-function ScriptBlock({ icon, title, accent, children }: {
-  icon: string; title: string; accent: string; children: React.ReactNode;
+function ScriptBlock({ icon: Icon, title, accent, children }: {
+  icon: LucideIcon; title: string; accent: string; children: React.ReactNode;
 }) {
   return (
     <div className="cp-card-section" style={{ borderLeft: `3px solid ${accent}` }}>
-      <p className="cp-tiny" style={{ color: accent, fontWeight: 800, letterSpacing: '0.06em', marginBottom: 6 }}>
-        {icon} {title}
+      <p className="cp-tiny" style={{ color: accent, fontWeight: 800, letterSpacing: '0.06em', marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <Icon size={14} strokeWidth={2.4} /> {title}
       </p>
       {children}
     </div>

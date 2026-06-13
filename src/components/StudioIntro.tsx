@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 /**
  * 各スタジオの一番上に出る「3 秒でわかる説明 + サンプル出力」ストリップ。
@@ -10,6 +12,7 @@ export function StudioIntro({
   id,
   accent,
   emoji,
+  icon: Icon,
   what,
   tryThis,
   example,
@@ -18,7 +21,10 @@ export function StudioIntro({
 }: {
   id: string;
   accent: string;
-  emoji: string;
+  /** 旧来の絵文字 (no-cheap-emoji 移行中の後方互換)。icon があればそちら優先 */
+  emoji?: string;
+  /** Lucide ライン・アイコン (推奨)。指定時は emoji より優先 */
+  icon?: LucideIcon;
   what: string;
   tryThis: string;
   example: string;
@@ -67,7 +73,20 @@ export function StudioIntro({
               className="cp-row"
               style={{ alignItems: 'flex-start', gap: 10, minWidth: 0, flex: '1 1 240px' }}
             >
-              <span style={{ fontSize: '1.35rem', lineHeight: 1.2, flexShrink: 0 }}>{emoji}</span>
+              {Icon ? (
+                <span
+                  style={{
+                    flexShrink: 0,
+                    width: 36, height: 36, borderRadius: 10,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    background: `${accent}1F`, border: `1px solid ${accent}40`,
+                  }}
+                >
+                  <Icon size={20} color={accent} strokeWidth={2.2} />
+                </span>
+              ) : (
+                <span style={{ fontSize: '1.35rem', lineHeight: 1.2, flexShrink: 0 }}>{emoji}</span>
+              )}
               <div className="cp-stack-sm" style={{ minWidth: 0 }}>
                 <p className="cp-h3" style={{ lineHeight: 1.35 }}>{what}</p>
                 <p className="cp-meta">
@@ -123,7 +142,7 @@ export function StudioIntro({
               title="この説明を閉じる"
               aria-label="この説明を閉じる"
             >
-              ✕
+              <X size={15} strokeWidth={2.4} />
             </button>
           </div>
         </motion.div>
