@@ -131,7 +131,7 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
         setToast('✓ Gmail を 連携 しました');
         window.setTimeout(() => setToast(''), 2500);
       } catch (e: any) {
-        setToast(`⚠️ Gmail 連携 失敗: ${e?.message || ''}`);
+        setToast(`Gmail 連携 に 失敗 しました: ${e?.message || ''}`);
         window.setTimeout(() => setToast(''), 4000);
       } finally { setBusy(null); }
       return;
@@ -163,8 +163,13 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
           width: 40, height: 40, borderRadius: 10,
           background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
           color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 20, boxShadow: '0 4px 14px rgba(167,139,250,0.5)', flexShrink: 0,
-        }}>✨</div>
+          boxShadow: '0 4px 14px rgba(167,139,250,0.5)', flexShrink: 0,
+        }}>
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
+            <path d="M19 15l.7 1.9L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.6z" />
+          </svg>
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h3 style={{ fontSize: 14, fontWeight: 900, color: 'var(--fg-strong)', margin: 0, letterSpacing: '-0.01em' }}>
             最強 の RAG — 全 ソース 連携 ハブ
@@ -213,7 +218,8 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
               <strong style={{ fontSize: 12.5, color: 'var(--fg-strong)', flex: 1, minWidth: 0, lineHeight: 1.3, wordBreak: 'break-word' }}>{s.name}</strong>
               <span style={{
                 flexShrink: 0, whiteSpace: 'nowrap', alignSelf: 'flex-start',
-                fontSize: 10, padding: '2px 6px', borderRadius: 999, fontWeight: 800,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 800,
                 background: s.status === 'connected' ? 'rgba(52,211,153,0.22)' :
                             s.status === 'phase2' ? 'rgba(148,163,184,0.18)' :
                             s.color + '22',
@@ -221,9 +227,14 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
                        s.status === 'phase2' ? 'var(--fg-subtle)' :
                        s.color,
               }}>
-                {s.status === 'connected' ? '🟢 連携 中' :
-                 s.status === 'phase2' ? '⏳ 準備中' :
-                 '⬜ 連携 する'}
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                  background: 'currentColor',
+                  opacity: s.status === 'phase2' ? 0.55 : 1,
+                }} />
+                {s.status === 'connected' ? '連携 中' :
+                 s.status === 'phase2' ? '準備中' :
+                 '連携 する'}
               </span>
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--fg-muted)', lineHeight: 1.5 }}>
