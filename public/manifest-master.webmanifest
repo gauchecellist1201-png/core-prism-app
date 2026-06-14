@@ -1,0 +1,16 @@
+{
+  "name": "CORE マスターハブ",
+  "short_name": "CORE",
+  "description": "4サービスを全機能開放で開く、オーナー専用ハブ。",
+  "start_url": "/master.html?key=GAUCHE2026",
+  "scope": "/master.html",
+  "display": "standalone",
+  "background_color": "#0B0E16",
+  "theme_color": "#0B0E16",
+  "lang": "ja",
+  "icons": [
+    { "src": "/core-192-v2.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/core-512-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/core-512-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CORE マスターハブ</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="株式会社CORE — 4サービスをマスターモードで開く、オーナー専用ハブ。">
+<!-- OG画像＝COREアイコン -->
+<meta property="og:title" content="CORE マスターハブ">
+<meta property="og:description" content="4サービスを全機能開放で開く、オーナー専用ハブ。">
+<meta property="og:image" content="/og-core-v4.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="/og-core-v4.png">
+<!-- ホーム画面追加時＝COREアイコン -->
+<link rel="icon" type="image/png" sizes="192x192" href="/core-192-v2.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/core-180-v2.png">
+<link rel="manifest" href="/manifest-master.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CORE">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B0E16">
+<style>
+  :root{ --gold:#D8A83B; --teal:#16C77A; --ink:#0B0E16; --card:#161D29; --line:#2A3340; --mut:#9AA6B2; }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{ background:radial-gradient(120% 80% at 50% -10%, #15203022 0%, var(--ink) 60%) , var(--ink);
+        color:#F4F6F8; font-family:-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;
+        min-height:100svh; padding:max(env(safe-area-inset-top),20px) 18px calc(env(safe-area-inset-bottom) + 28px); }
+  .wrap{ max-width:540px; margin:0 auto; }
+  .top{ display:flex; flex-direction:column; align-items:center; text-align:center; margin:14px 0 22px; }
+  .logo{ width:76px; height:76px; border-radius:20px; }
+  h1{ font-size:22px; margin:14px 0 4px; letter-spacing:.04em; }
+  .sub{ color:var(--mut); font-size:13px; margin:0; }
+  .badge{ display:inline-block; margin-top:10px; font-size:11px; font-weight:700; color:var(--ink);
+          background:linear-gradient(135deg,var(--gold),#E9C25E); padding:5px 12px; border-radius:999px; letter-spacing:.06em;}
+  .lock{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:22px; text-align:center; }
+  .lock p{ color:var(--mut); font-size:13px; }
+  .lock input{ width:100%; margin-top:10px; padding:13px 14px; border-radius:12px; border:1px solid var(--line);
+               background:#0E141E; color:#fff; font-size:16px; outline:none; text-align:center; letter-spacing:.1em;}
+  .lock button{ width:100%; margin-top:10px; padding:13px; border:0; border-radius:12px; cursor:pointer;
+                background:linear-gradient(135deg,var(--gold),#E9C25E); color:var(--ink); font-weight:800; font-size:15px;}
+  .err{ color:#F2A2A2; font-size:12px; margin-top:8px; min-height:16px;}
+  .grid{ display:grid; gap:12px; }
+  a.card{ display:flex; align-items:center; gap:14px; text-decoration:none; color:inherit;
+          background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 16px;
+          transition:transform .12s ease, border-color .12s ease; }
+  a.card:active{ transform:scale(.985); }
+  a.card:hover{ border-color:var(--gold); }
+  .ic{ width:54px; height:54px; border-radius:14px; flex:0 0 auto; background:#0A0E16; object-fit:cover; }
+  .nm{ font-size:17px; font-weight:700; }
+  .ds{ font-size:12px; color:var(--mut); margin-top:2px; }
+  .go{ margin-left:auto; color:var(--gold); font-size:20px; }
+  .note{ color:var(--mut); font-size:11px; text-align:center; margin-top:18px; line-height:1.7;}
+  .hidden{ display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <img class="logo" src="/core-512-v2.png" alt="CORE">
+    <h1>CORE マスターハブ</h1>
+    <p class="sub">4サービスを「全機能 開放」で開く、オーナー専用の入口です。</p>
+    <span class="badge">MASTER MODE</span>
+  </div>
+
+  <div id="lock" class="lock hidden">
+    <p>合言葉を入力してください。</p>
+    <input id="key" type="password" inputmode="text" autocomplete="off" placeholder="合言葉" />
+    <button id="unlock">開く</button>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div id="apps" class="grid hidden">
+    <a class="card" id="lnk-prism">
+      <img class="ic" src="/prism-512.png" alt="">
+      <div><div class="nm">Prism</div><div class="ds">経営のAI役員OS — 全機能開放で開く</div></div>
+      <span class="go">→</span>
+    </a>
+    <a class="card" id="lnk-iris">
+      <img class="ic" src="/iris-512.png" alt="">
+      <div><div class="nm">Iris</div><div class="ds">Instagram運用AI — 全機能開放で開く</div></div>
+      <span class="go">→</span>
+    </a>
+    <a class="card" id="lnk-reso">
+      <img class="ic" src="https://resonancebot-ivory.vercel.app/icon-512.png" alt="">
+      <div><div class="nm">Resonance</div><div class="ds">LINE個別配信AI — 全機能開放で開く</div></div>
+      <span class="go">→</span>
+    </a>
+    <a class="card" id="lnk-lume">
+      <img class="ic" src="https://lume-deploy-five.vercel.app/lume-512.png" alt="">
+      <div><div class="nm">Lume</div><div class="ds">リンクハブ＋解析 — 全機能開放で開く</div></div>
+      <span class="go">→</span>
+    </a>
+    <p class="note">各アプリは新しいタブで開き、マスターモード（課金なしで全機能）になります。<br>このページはオーナー専用です（検索エンジンには出ません）。</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var KEY = "GAUCHE2026";
+  var M = "master=" + KEY;
+  var LINKS = {
+    "lnk-prism": "https://core-prism-app.vercel.app/?" + M,
+    "lnk-iris":  "https://core-prism-app.vercel.app/iris?" + M,
+    "lnk-reso":  "https://resonancebot-ivory.vercel.app/?" + M,
+    "lnk-lume":  "https://lume-deploy-five.vercel.app/app.html?" + M
+  };
+  function reveal(){
+    Object.keys(LINKS).forEach(function(id){
+      var a=document.getElementById(id); a.href=LINKS[id]; a.target="_blank"; a.rel="noopener";
+    });
+    document.getElementById("apps").classList.remove("hidden");
+    document.getElementById("lock").classList.add("hidden");
+    try{ localStorage.setItem("core_hub_key", KEY); }catch(e){}
+  }
+  function lock(){
+    document.getElementById("lock").classList.remove("hidden");
+    document.getElementById("apps").classList.add("hidden");
+  }
+  var q = new URLSearchParams(location.search).get("key");
+  var saved = (function(){try{return localStorage.getItem("core_hub_key");}catch(e){return null;}})();
+  if (q === KEY || saved === KEY) { reveal(); }
+  else { lock(); }
+  document.getElementById("unlock").addEventListener("click", function(){
+    var v=document.getElementById("key").value.trim();
+    if (v === KEY) { reveal(); }
+    else { document.getElementById("err").textContent="合言葉が違います。"; }
+  });
+  document.getElementById("key").addEventListener("keydown", function(e){ if(e.key==="Enter") document.getElementById("unlock").click(); });
+})();
+</script>
+</body>
+</html>
