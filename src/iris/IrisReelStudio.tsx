@@ -13,7 +13,7 @@ import { notifyInApp } from '../lib/inAppNotify';
 import {
   Image as ImageIcon, Film, Type, Music, Download, Share2,
   Play, Square, Trash2, ChevronUp, ChevronDown, Sparkles,
-  Mic, Loader2, Wand2, AlertCircle, UploadCloud,
+  Mic, Loader2, Wand2, AlertCircle, UploadCloud, Copy, Check,
 } from 'lucide-react';
 import {
   COLOR_GRADES, applyGradeOverlay, getGrade,
@@ -1293,6 +1293,7 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, myDeals = [], pos
   const [scheduleGenerating, setScheduleGenerating] = useState(false);
   const [scheduleErr, setScheduleErr] = useState<string>('');
   const [scheduleSaved, setScheduleSaved] = useState<string | null>(null);
+  const [scheduleCopied, setScheduleCopied] = useState<'post' | 'tags' | null>(null);
 
   // ─── CapCut Pro killer 機能 (LUT / ステッカー / TTS / 翻訳 / 4K / ハイライト) ─────
   const [stickers, setStickers] = useState<StickerInstance[]>([]);
@@ -1480,6 +1481,7 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, myDeals = [], pos
     setScheduleCta('');
     setScheduleErr('');
     setScheduleSaved(null);
+    setScheduleCopied(null);
     setScheduleOpen(true);
     // すぐに AI 生成走らせる
     void generateScheduleDraft('');
@@ -1557,6 +1559,25 @@ JSON のみで返答。`;
       setScheduleGenerating(false);
     }
     void settings; void mediaKit; // 将来 generateDraftCopy 直接利用時用
+  };
+
+  // 本文 (キャプション + 空行 + CTA) を 1 タップでコピー → Instagram にそのまま貼れる
+  const buildPostBody = (): string => {
+    const cap = scheduleCaption.trim();
+    const cta = scheduleCta.trim();
+    if (cap && cta && !cap.includes(cta)) return `${cap}\n\n${cta}`;
+    return cap || cta;
+  };
+  const copyScheduleField = async (which: 'post' | 'tags') => {
+    const text = which === 'post' ? buildPostBody() : scheduleHashtags.trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setScheduleCopied(which);
+      setTimeout(() => setScheduleCopied(c => (c === which ? null : c)), 1800);
+    } catch {
+      setScheduleErr('コピーできませんでした。長押しで手動コピーしてください。');
+    }
   };
 
   const saveSchedule = async () => {
@@ -3549,9 +3570,27 @@ JSON のみで返答。`;
             />
 
             {/* キャプション */}
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>
-              キャプション {scheduleGenerating && <span style={{ color: bg.accent, fontWeight: 500 }}>(AI 生成中…)</span>}
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700 }}>
+                キャプション {scheduleGenerating && <span style={{ color: bg.accent, fontWeight: 500 }}>(AI 生成中…)</span>}
+              </label>
+              <button
+                type="button"
+                onClick={() => copyScheduleField('post')}
+                disabled={!scheduleCaption.trim()}
+                title="本文＋CTA をまとめてコピー → Instagram にそのまま貼れます"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '0.3rem 0.6rem', borderRadius: 7,
+                  border: 'none', cursor: scheduleCaption.trim() ? 'pointer' : 'not-allowed',
+                  background: scheduleCopied === 'post' ? '#ECFDF5' : '#F4F0FA',
+                  color: scheduleCopied === 'post' ? '#065F46' : bg.accent,
+                  fontSize: '0.72rem', fontWeight: 700,
+                  opacity: scheduleCaption.trim() ? 1 : 0.5,
+                }}>
+                {scheduleCopied === 'post' ? <><Check size={13} /> コピー済</> : <><Copy size={13} /> 本文をコピー</>}
+              </button>
+            </div>
             <textarea
               value={scheduleCaption}
               onChange={e => setScheduleCaption(e.target.value)}
@@ -3561,9 +3600,27 @@ JSON のみで返答。`;
             />
 
             {/* ハッシュタグ */}
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>
-              ハッシュタグ (スペース区切り、# は自動補完)
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700 }}>
+                ハッシュタグ <span style={{ fontWeight: 500, color: '#888' }}>(最初のコメントに貼ると本文がすっきり)</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => copyScheduleField('tags')}
+                disabled={!scheduleHashtags.trim()}
+                title="ハッシュタグをコピー → Instagram の「最初のコメント」に貼ると本文が読みやすくなります"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '0.3rem 0.6rem', borderRadius: 7,
+                  border: 'none', cursor: scheduleHashtags.trim() ? 'pointer' : 'not-allowed',
+                  background: scheduleCopied === 'tags' ? '#ECFDF5' : '#F4F0FA',
+                  color: scheduleCopied === 'tags' ? '#065F46' : bg.accent,
+                  fontSize: '0.72rem', fontWeight: 700,
+                  opacity: scheduleHashtags.trim() ? 1 : 0.5,
+                }}>
+                {scheduleCopied === 'tags' ? <><Check size={13} /> コピー済</> : <><Copy size={13} /> タグをコピー</>}
+              </button>
+            </div>
             <textarea
               value={scheduleHashtags}
               onChange={e => setScheduleHashtags(e.target.value)}
