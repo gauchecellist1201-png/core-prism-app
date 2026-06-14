@@ -13,7 +13,8 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, ArrowRight, Download, Copy, Check, BarChart3, TrendingUp, GraduationCap, Briefcase, Heart } from 'lucide-react';
+import { X, Sparkles, ArrowRight, Download, Copy, Check, BarChart3, TrendingUp, GraduationCap, Briefcase, Heart, Building2, Home, Brain, User, Palette, Zap } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { callAiWithFallback } from '../lib/aiFallbackChain';
 import ThinkingIndicator from './ThinkingIndicator';
 import { StudioIntro } from './StudioIntro';
@@ -33,14 +34,14 @@ interface CareerReport {
   one_action: string;
 }
 
-const INDUSTRIES = [
-  { id: 'sme', emoji: '🏢', label: '中小企業オーナー' },
-  { id: 'realestate', emoji: '🏠', label: '不動産 / 金融' },
-  { id: 'consulting', emoji: '🧠', label: 'コンサル' },
-  { id: 'solo', emoji: '👤', label: '個人事業主' },
-  { id: 'creator', emoji: '🎨', label: 'クリエイター' },
-  { id: 'freelance', emoji: '⚡', label: 'フリーランスプロ' },
-  { id: 'other', emoji: '✨', label: 'その他' },
+const INDUSTRIES: Array<{ id: string; Icon: LucideIcon; label: string }> = [
+  { id: 'sme', Icon: Building2, label: '中小企業オーナー' },
+  { id: 'realestate', Icon: Home, label: '不動産 / 金融' },
+  { id: 'consulting', Icon: Brain, label: 'コンサル' },
+  { id: 'solo', Icon: User, label: '個人事業主' },
+  { id: 'creator', Icon: Palette, label: 'クリエイター' },
+  { id: 'freelance', Icon: Zap, label: 'フリーランスプロ' },
+  { id: 'other', Icon: Sparkles, label: 'その他' },
 ];
 
 const YEARS = [
@@ -283,7 +284,7 @@ export default function CareerStudio({ open, onClose, defaultIndustry }: Props) 
                           textAlign: 'left',
                         }}
                       >
-                        <span style={{ fontSize: 16 }}>{it.emoji}</span> {it.label}
+                        <it.Icon size={15} strokeWidth={2.2} color={industry === it.id ? '#A78BFA' : 'rgba(255,255,255,0.55)'} /> {it.label}
                       </button>
                     ))}
                   </div>
@@ -354,12 +355,12 @@ export default function CareerStudio({ open, onClose, defaultIndustry }: Props) 
                   onRetry={generate}
                   subtitle="CFO（財務）と CDS（データ）の AI 役員が合議しています"
                   messages={[
-                    '🏢 あなたの業種と経験を読み込んでいます…',
-                    '📊 同業の年収・キャリアの中央値を調べています…',
-                    '🔭 5 年後にあり得る役割を描いています…',
-                    '📚 いま学ぶべきスキルを選んでいます…',
-                    '⚠️ 現実的なリスクを洗い出しています…',
-                    '✍️ 明日からの一手にまとめています…',
+                    'あなたの業種と経験を読み込んでいます…',
+                    '同業の年収・キャリアの中央値を調べています…',
+                    '5 年後にあり得る役割を描いています…',
+                    'いま学ぶべきスキルを選んでいます…',
+                    '現実的なリスクを洗い出しています…',
+                    '明日からの一手にまとめています…',
                   ]}
                 />
               )}
@@ -403,7 +404,9 @@ export default function CareerStudio({ open, onClose, defaultIndustry }: Props) 
                       }}>
                         <div style={{ fontWeight: 800, fontSize: 13, color: '#FBBF24', marginBottom: 2 }}>{s.skill}</div>
                         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6 }}>{s.why}</div>
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 3, lineHeight: 1.6 }}>📚 {s.how}</div>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 3, lineHeight: 1.6 }}>
+                          <GraduationCap size={12} color="#FBBF24" strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 2 }} /> {s.how}
+                        </div>
                       </div>
                     ))}
                   </div>

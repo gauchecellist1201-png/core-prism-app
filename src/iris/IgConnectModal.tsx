@@ -175,12 +175,12 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 800 }}>
               {oauthState === 'trying' ? '接続中…' :
-               oauthState === 'unavailable' ? 'OAuth 接続は近日公開' :
+               oauthState === 'unavailable' ? '本連携を準備中（まもなく開通）' :
                'Instagram でログインして連携 (おすすめ)'}
             </div>
             <div style={{ fontSize: 10, opacity: 0.92, marginTop: 2 }}>
               {oauthState === 'unavailable'
-                ? 'Meta 審査完了次第、自動で有効化されます。それまでは下のいずれかを選んでください'
+                ? '最終設定中です。今すぐ実データを見るなら、下の「スクショ」が確実です'
                 : 'フォロワー・反応率・伸びる時間帯を自動取得します'}
             </div>
           </div>
