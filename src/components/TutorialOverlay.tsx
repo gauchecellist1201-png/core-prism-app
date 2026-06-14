@@ -101,6 +101,12 @@ export default function TutorialOverlay({ brand, force = false, onClose }: Props
   const [open, setOpen] = useState(() => {
     if (force) return true;
     if (typeof window === 'undefined') return false;
+    // 使い方ガイドは「アプリをインストールして使い始めた時」だけ初回表示する。
+    // LP/ブラウザ閲覧の段階では出さない（説明が先に来ると面倒で離脱するため）。
+    const standalone =
+      window.matchMedia?.('(display-mode: standalone)').matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+    if (!standalone) return false;
     try { return !localStorage.getItem(STORAGE_KEY); } catch { return false; }
   });
   const [step, setStep] = useState(0);

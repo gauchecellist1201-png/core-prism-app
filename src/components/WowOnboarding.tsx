@@ -213,10 +213,10 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
   const [showFirstWin, setShowFirstWin] = useState(false);
 
   const shouldShow = useCallback(() => {
-    if (force) return true;
-    try {
-      return !!localStorage.getItem(TUTORIAL_KEY) && !localStorage.getItem(WOW_KEY);
-    } catch { return false; }
+    // 自動表示は廃止（オーナー指示 2026-06-14）：この「最初の3分でWow」画面はLP/初回では出さない。
+    // 使い方ガイドは TutorialOverlay 側（インストール後の初回のみ表示）に集約。必要時のみ force で起動。
+    void TUTORIAL_KEY; void WOW_KEY;
+    return force;
   }, [TUTORIAL_KEY, WOW_KEY, force]);
 
   useEffect(() => {
