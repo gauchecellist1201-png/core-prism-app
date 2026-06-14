@@ -2606,9 +2606,48 @@ time {
   /* AgentTeam モニター: 折りたたみ時は左下のコンパクトなドックに (全幅バーをやめる) */
   .agent-monitor-dock[data-open="false"] {
     width: auto !important;
-    max-width: 62vw !important;
+    /* 62vw だと iPhone (375px) で「役員 会議室」が欠けるので広げる。
+       それでも入らない極小幅は見出しの ellipsis で安全に省略される。 */
+    max-width: min(80vw, 320px) !important;
     right: auto !important;
     left: calc(env(safe-area-inset-left, 0px) + 12px) !important;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 12px) !important;
+  }
+}
+
+/* ============================================================
+   下部固定要素の最終衝突ガード (≤640px) — 2026-06-14
+   症状: AgentTeamMonitor の折りたたみバーと AI オーブ FAB が
+   重なり「役員 会議室」が「員会議室」に欠けて見える。
+   Iris では画面最下部のナビ Dock (.iris-bottom-dock, 約72px) に
+   両者が乗り上げる。PC レイアウトには一切触れない。
+   ============================================================ */
+@media (max-width: 640px) {
+  /* (1) 折りたたみバーの見出しテキストは絶対に「欠け」させない。
+        欠けても文字化けに見えないよう ellipsis で省略する。 */
+  .agent-monitor-dock .agent-monitor-title-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* (2) Iris のときだけ: 最下部ナビ Dock の上へ全部を逃がす。
+        Dock 高さ ≈ 64px + 余白 → 84px ぶん持ち上げる。 */
+  body[data-iris-dock] .agent-monitor-dock[data-open="false"] {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 84px) !important;
+  }
+  /* 展開時も Dock を隠さないよう、内側スクロール上限を下げる */
+  body[data-iris-dock] .agent-monitor-dock[data-open="true"] {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 84px) !important;
+    max-height: calc(100svh - env(safe-area-inset-bottom, 0px) - 160px) !important;
+  }
+  /* AI オーブ FAB (チャット/アシスタント) も Dock の上へ。
+     右下に置きつつ Dock(72px) とオーブ(80px) が重ならない高さに。 */
+  body[data-iris-dock] .cp-ai-fab-wrap {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
+  }
+  /* PWA インストールバナーも Dock の上 (full-width バーが Dock に被る) */
+  body[data-iris-dock] .install-pwa-banner {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 84px) !important;
   }
 }

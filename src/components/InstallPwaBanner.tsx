@@ -152,6 +152,7 @@ export default function InstallPwaBanner({ brand }: Props) {
       {showAndroid && (
         <motion.div
           key="android-banner"
+          className="install-pwa-banner"
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
@@ -253,6 +254,7 @@ export default function InstallPwaBanner({ brand }: Props) {
       {showIOS && (
         <motion.div
           key="ios-banner"
+          className="install-pwa-banner"
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}

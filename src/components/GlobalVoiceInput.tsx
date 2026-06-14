@@ -322,7 +322,7 @@ export default function GlobalVoiceInput() {
         borderRadius: '50%',
         border: 'none',
         cursor: 'pointer',
-        zIndex: 9999,
+        zIndex: 45, /* モーダル(≥50)より下・ダッシュボードより上。総括等のモーダルを覆わない */
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         background: listening
           ? 'linear-gradient(135deg, #EF4444, #F87171)'

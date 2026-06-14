@@ -50,6 +50,15 @@ export default function IrisApp() {
     if (meta) meta.setAttribute('content', '#E1306C');
   }, []);
 
+  // 下部固定要素 (AgentTeamMonitor / AI オーブ FAB / PWA バナー) を
+  // モバイルの bottom-dock と重ねないため、ダッシュボード表示中だけ
+  // body に印を付ける (CSS 側で ≤640px のときに dock の上へ逃がす)
+  useEffect(() => {
+    if (!entered) return;
+    document.body.setAttribute('data-iris-dock', 'on');
+    return () => { document.body.removeAttribute('data-iris-dock'); };
+  }, [entered]);
+
   // 既存ユーザーがいる場合、自動でアプリへ
   useEffect(() => {
     if (user && !entered) {

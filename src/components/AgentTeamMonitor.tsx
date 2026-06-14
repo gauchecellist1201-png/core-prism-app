@@ -251,17 +251,18 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
               <span style={{ fontSize: 22 }}>{watchInfo.meta.emoji}</span>
             ) : '🏢'}
           </div>
-          <div style={{ minWidth: 0, textAlign: 'left', flex: 1 }}>
+          <div className="agent-monitor-title-text" style={{ minWidth: 0, textAlign: 'left', flex: 1 }}>
             <div style={{
               fontSize: 10, fontWeight: 800, letterSpacing: '0.18em',
               color: (failedTask && !activeTask) ? '#FBBF24' : accent,
               display: 'flex', alignItems: 'center', gap: 4,
+              minWidth: 0,
             }}>
-              <span>🏢 役員 会議室</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>🏢 役員 会議室</span>
               <span style={{
                 fontSize: 9, padding: '1px 5px', borderRadius: 999,
                 background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)',
-                fontWeight: 700, letterSpacing: '0.04em',
+                fontWeight: 700, letterSpacing: '0.04em', flexShrink: 0,
               }}>14 名</span>
             </div>
             <div style={{
