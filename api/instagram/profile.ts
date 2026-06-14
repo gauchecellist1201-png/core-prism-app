@@ -57,11 +57,11 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    // 基本プロフィール
-    const profUrl = new URL(`https://graph.facebook.com/v21.0/${accountId}`);
+    // 基本プロフィール (Instagram Login = graph.instagram.com)
+    const profUrl = new URL(`https://graph.instagram.com/v21.0/${accountId}`);
     profUrl.searchParams.set(
       'fields',
-      'id,username,name,followers_count,media_count,profile_picture_url',
+      'id,username,followers_count,media_count,profile_picture_url',
     );
     profUrl.searchParams.set('access_token', token);
     const profResp = await fetch(profUrl.toString());
@@ -75,7 +75,7 @@ export default async function handler(req: Request): Promise<Response> {
     const user = (await profResp.json()) as IgUser;
 
     // 直近 25 件メディアでエンゲージメント平均
-    const mediaUrl = new URL(`https://graph.facebook.com/v21.0/${accountId}/media`);
+    const mediaUrl = new URL(`https://graph.instagram.com/v21.0/${accountId}/media`);
     mediaUrl.searchParams.set('fields', 'id,like_count,comments_count,timestamp,caption');
     mediaUrl.searchParams.set('limit', '25');
     mediaUrl.searchParams.set('access_token', token);
@@ -112,7 +112,7 @@ export default async function handler(req: Request): Promise<Response> {
     let audienceTopCountries: { country: string; pct: number }[] = [];
     try {
       const insightsUrl = new URL(
-        `https://graph.facebook.com/v21.0/${accountId}/insights`,
+        `https://graph.instagram.com/v21.0/${accountId}/insights`,
       );
       insightsUrl.searchParams.set('metric', 'follower_demographics');
       insightsUrl.searchParams.set('period', 'lifetime');

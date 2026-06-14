@@ -16,10 +16,11 @@
 // ============================================================
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Sparkles, RefreshCw, Search, ClipboardList, CheckCircle2, Copy } from 'lucide-react';
+import { Sparkles, RefreshCw, Search, ClipboardList, CheckCircle2, Copy, Users } from 'lucide-react';
 import { useStripeRevenue } from '../hooks/useStripeRevenue';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { useCRM } from '../hooks/useCRM';
+import { realStatsForPersona, CATEGORY_LABEL, type DeliverableCategory } from '../lib/cxoDeliverables';
 import type { Persona } from '../types/identity';
 
 interface Props {
@@ -278,6 +279,22 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
     return { count: done.length, totalMin, hours, moneyEq };
   }, [queue.tasks]);
 
+  // (4) 今週、役員が「あなたのために」動いた量 (嘘禁止: デモ サンプル を 除いた 実数)
+  //   成果が数字で見えると「払う価値」が伝わり、解約が減る (オーナー方針 2026-06-13)。
+  const [execWeek, setExecWeek] = useState(() => realStatsForPersona(persona.id));
+  useEffect(() => {
+    const refresh = () => setExecWeek(realStatsForPersona(persona.id));
+    refresh();
+    window.addEventListener('core:deliverable-added', refresh);
+    return () => window.removeEventListener('core:deliverable-added', refresh);
+  }, [persona.id]);
+  const execTopCats = useMemo(() => {
+    return (Object.entries(execWeek.weekByCategory) as Array<[DeliverableCategory, number]>)
+      .filter(([, n]) => n > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4);
+  }, [execWeek.weekByCategory]);
+
   // --- 数字が全く無い時は、「これから貯まります」モードで控えめに ---
   const hasAnything =
     thisMonthRev > 0 ||
@@ -415,6 +432,51 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
           delay={0.15}
         />
       </div>
+
+      {/* (4) 今週、役員が「あなたのために」動いた量 — 実数のみ (0 件の間は出さない＝嘘ゼロ) */}
+      {execWeek.weekCount > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.2, ease: 'easeOut' }}
+          style={{
+            position: 'relative', zIndex: 1,
+            marginTop: '0.8rem',
+            padding: '0.7rem 0.9rem',
+            borderRadius: 14,
+            background: 'rgba(255,255,255,0.035)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          }}
+        >
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontSize: 12, color: 'var(--fg-muted)', fontWeight: 600,
+          }}>
+            <Users size={13} strokeWidth={2.2} style={{ color: '#8E5CFF' }} />
+            今週、役員があなたのために
+          </span>
+          <span style={{
+            fontFamily: '"SF Mono", "JetBrains Mono", "Menlo", monospace',
+            fontSize: '1.15rem', fontWeight: 700, color: '#8E5CFF', letterSpacing: '-0.01em',
+          }}>
+            <CountUp value={execWeek.weekCount} formatter={(n) => `${Math.round(n)} 件`} durationMs={1100} /> 仕上げました
+          </span>
+          {execTopCats.length > 0 && (
+            <span style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap', marginLeft: 'auto' }}>
+              {execTopCats.map(([cat, n]) => {
+                const cm = CATEGORY_LABEL[cat];
+                return (
+                  <span key={cat} style={{
+                    fontSize: 11, padding: '2px 8px', borderRadius: 999, fontWeight: 700,
+                    background: `${cm.color}1f`, color: cm.color, border: `1px solid ${cm.color}44`,
+                  }}>{cm.label} {n}</span>
+                );
+              })}
+            </span>
+          )}
+        </motion.div>
+      )}
 
       {/* 帯下 micro-copy */}
       <div style={{

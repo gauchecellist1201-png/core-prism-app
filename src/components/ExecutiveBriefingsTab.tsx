@@ -18,7 +18,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   listDeliverables, markViewed, markAllViewed, togglePin, removeDeliverable,
-  statsForPersona, seedDemoDeliverables, CATEGORY_LABEL,
+  realStatsForPersona, seedDemoDeliverables, CATEGORY_LABEL,
   type CxoDeliverable, type DeliverableCategory,
 } from '../lib/cxoDeliverables';
 import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
@@ -56,7 +56,9 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
     return () => window.removeEventListener('core:deliverable-added', onAdded);
   }, [persona.id]);
 
-  const stats = useMemo(() => statsForPersona(persona.id), [persona.id, items]);
+  // 嘘禁止: KPI カウンタ は デモ サンプル を 除いた 「本当に 役員 が 作った」 件数 だけ を 数える
+  const stats = useMemo(() => realStatsForPersona(persona.id), [persona.id, items]);
+  const hasOnlySamples = items.length > 0 && stats.totalCount === 0;
 
   const filtered = useMemo(() => {
     const now = Date.now();
@@ -177,6 +179,16 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
         </div>
       </div>
 
+      {hasOnlySamples && (
+        <div style={{
+          marginBottom: 16, padding: '9px 12px', borderRadius: 10,
+          background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.18)',
+          fontSize: 11.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5,
+        }}>
+          下 に 出ている の は 使い方 が 分かる 「サンプル」 です。役員 に 仕事 を 頼む と、ここ の 数字 が 増えて いきます。
+        </div>
+      )}
+
       {/* フィルタ */}
       <div style={{ marginBottom: 16 }}>
         <input
@@ -272,6 +284,13 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
                     fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700,
                     background: cm.color + '22', color: cm.color, border: `1px solid ${cm.color}55`,
                   }}>{cm.emoji} {cm.label}</span>
+                  {d.source === 'demo' && (
+                    <span style={{
+                      fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700,
+                      background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)',
+                      border: '1px dashed rgba(255,255,255,0.28)',
+                    }}>サンプル</span>
+                  )}
                   {d.pinned && <span style={{ fontSize: 10, color: '#FBBF24' }}>📌 ピン</span>}
                   <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.52)', marginLeft: 'auto' }}>{ageLabel}</span>
                 </div>
@@ -326,7 +345,14 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
                       fontSize: 10, padding: '3px 8px', borderRadius: 999, fontWeight: 700,
                       background: cm.color + '22', color: cm.color, border: `1px solid ${cm.color}55`,
                     }}>{cm.emoji} {cm.label}</span>
-                    {d.durationSec != null && (
+                    {d.source === 'demo' && (
+                      <span style={{
+                        fontSize: 10, padding: '3px 8px', borderRadius: 999, fontWeight: 700,
+                        background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)',
+                        border: '1px dashed rgba(255,255,255,0.28)',
+                      }}>サンプル</span>
+                    )}
+                    {d.durationSec != null && d.source !== 'demo' && (
                       <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>⏱ {d.durationSec} 秒 で 完了</span>
                     )}
                     <button onClick={() => setOpenId(null)} aria-label="閉じる" style={{

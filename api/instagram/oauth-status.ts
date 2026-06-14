@@ -22,17 +22,16 @@ function readCookies(req: Request): Record<string, string> {
 
 export default async function handler(req: Request): Promise<Response> {
   const configured =
-    Boolean(process.env.META_APP_ID) && Boolean(process.env.META_APP_SECRET);
+    Boolean(process.env.INSTAGRAM_APP_ID) && Boolean(process.env.INSTAGRAM_APP_SECRET);
   const cookies = readCookies(req);
   const connected = Boolean(cookies['ig_connected']);
 
   return new Response(
     JSON.stringify({ configured, connected, scopes_requested: [
-      'instagram_basic',
-      'instagram_manage_insights',
-      'pages_read_engagement',
-      'pages_show_list',
-      'business_management',
+      'instagram_business_basic',
+      'instagram_business_manage_insights',
+      'instagram_business_manage_comments',
+      'instagram_business_content_publish',
     ] }),
     {
       status: 200,

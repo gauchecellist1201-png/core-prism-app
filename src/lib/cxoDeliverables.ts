@@ -150,24 +150,53 @@ export function statsForPersona(personaId: string): {
   todayCount: number; weekCount: number; totalCount: number; unread: number;
   byCxo: Record<string, number>;
   byCategory: Record<string, number>;
+  weekByCategory: Record<string, number>;
 } {
   const items = loadAll().filter((d) => d.personaId === personaId);
+  return statsFromItems(items);
+}
+
+/**
+ * 嘘禁止版 — デモ シード (source==='demo') を 除いた 「本当に 役員 が 作った」 件数 だけ を 数える。
+ * 「今週 役員 が あなた の ために 動いた 量」 など、価値 を 主張 する 数字 は すべて これ を 使う。
+ * (オーナー方針 honest-numbers: サンプル を 実績 として 見せない)
+ */
+export function realStatsForPersona(personaId: string): {
+  todayCount: number; weekCount: number; totalCount: number; unread: number;
+  byCxo: Record<string, number>;
+  byCategory: Record<string, number>;
+  weekByCategory: Record<string, number>;
+} {
+  const items = loadAll().filter((d) => d.personaId === personaId && d.source !== 'demo');
+  return statsFromItems(items);
+}
+
+function statsFromItems(items: CxoDeliverable[]): {
+  todayCount: number; weekCount: number; totalCount: number; unread: number;
+  byCxo: Record<string, number>;
+  byCategory: Record<string, number>;
+  weekByCategory: Record<string, number>;
+} {
   const now = Date.now();
   const dayMs = 86400_000;
   const today = items.filter((d) => now - new Date(d.createdAt).getTime() < dayMs).length;
   const week = items.filter((d) => now - new Date(d.createdAt).getTime() < dayMs * 7).length;
   const byCxo: Record<string, number> = {};
   const byCategory: Record<string, number> = {};
+  const weekByCategory: Record<string, number> = {};
   for (const d of items) {
     byCxo[d.cxoRole] = (byCxo[d.cxoRole] || 0) + 1;
     byCategory[d.category] = (byCategory[d.category] || 0) + 1;
+    if (now - new Date(d.createdAt).getTime() < dayMs * 7) {
+      weekByCategory[d.category] = (weekByCategory[d.category] || 0) + 1;
+    }
   }
   return {
     todayCount: today,
     weekCount: week,
     totalCount: items.length,
     unread: items.filter((d) => !d.viewed).length,
-    byCxo, byCategory,
+    byCxo, byCategory, weekByCategory,
   };
 }
 

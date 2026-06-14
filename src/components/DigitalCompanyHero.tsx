@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Users, Briefcase, Package, Lightbulb, CheckCircle2, MousePointerClick, Sparkles } from 'lucide-react';
 import { CXO_META, type CxoRole, cxoDisplayName } from '../hooks/useAgentTaskQueue';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
-import { statsForPersona, listDeliverables, logDeliverable } from '../lib/cxoDeliverables';
+import { realStatsForPersona, listDeliverables, logDeliverable } from '../lib/cxoDeliverables';
 import type { Persona } from '../types/identity';
 import { useSettings } from '../hooks/useSettings';
 import InlineActionExecutor from './InlineActionExecutor';
@@ -69,7 +69,7 @@ const CXO_QUICK_TASK: Record<CxoRole, string> = {
 
 export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
   const { tasks } = useAgentTaskQueue();
-  const [stats, setStats] = useState(() => statsForPersona(persona.id));
+  const [stats, setStats] = useState(() => realStatsForPersona(persona.id));
   const [items, setItems] = useState(() => listDeliverables(persona.id));
   // 役員 を タップ した 時 に 役割 + 任せられる 仕事 を 見せる ポップオーバー
   const [popoverRole, setPopoverRole] = useState<CxoRole | null>(null);
@@ -77,7 +77,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
   // 役員 日報 が 増えたら 自動 更新
   useEffect(() => {
     const refresh = () => {
-      setStats(statsForPersona(persona.id));
+      setStats(realStatsForPersona(persona.id));
       setItems(listDeliverables(persona.id));
     };
     window.addEventListener('core:deliverable-added', refresh);
@@ -89,12 +89,15 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
   }, [persona.id]);
 
   // 各 CXO の 「今 やって いる 仕事」 を 計算 (running task + 直近 deliverable)
+  // 嘘禁止: 「動いた / 納品」 の 数字 は デモ サンプル を 除いた 実際 の 成果物 だけ で 数える
+  const realItems = useMemo(() => items.filter((d) => d.source !== 'demo'), [items]);
+
   const cxoStatus = useMemo(() => {
     const map: Record<string, { state: 'working' | 'idle'; lastDelivery?: string; doneCount: number }> = {};
     for (const role of CXO_ORDER) {
       const running = tasks?.find?.((t) => t.status === 'running' && t.steps?.some?.((s: any) => s.cxo === role && s.status === 'working'));
-      const lastDel = items.find((d) => d.cxoRole === role);
-      const doneCount = items.filter((d) => d.cxoRole === role).length;
+      const lastDel = realItems.find((d) => d.cxoRole === role);
+      const doneCount = realItems.filter((d) => d.cxoRole === role).length;
       map[role] = {
         state: running ? 'working' : 'idle',
         lastDelivery: lastDel?.title,
@@ -102,7 +105,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
       };
     }
     return map;
-  }, [tasks, items]);
+  }, [tasks, realItems]);
 
   const workingCount = Object.values(cxoStatus).filter((s) => s.state === 'working').length;
   const accent = persona.accentColor || '#A78BFA';
@@ -285,8 +288,8 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
         })}
       </div>
 
-      {/* フッタ: 直近 の 納品 (最新 1 件 を ティッカー 風 に) */}
-      {items.length > 0 && (
+      {/* フッタ: 直近 の 納品 (最新 1 件 を ティッカー 風 に) — 実際 の 成果物 のみ */}
+      {realItems.length > 0 && (
         <div style={{
           marginTop: 12, padding: '8px 12px', borderRadius: 10,
           background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)',
@@ -299,7 +302,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
             display: 'inline-flex', alignItems: 'center', gap: 4,
           }}><Package size={10} strokeWidth={2.4} /> 直近 納品</span>
           <span style={{ fontSize: 12, color: 'var(--fg-strong)', fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {items[0].cxoEmoji} {items[0].cxoName} → 「{items[0].title}」
+            {realItems[0].cxoEmoji} {realItems[0].cxoName} → 「{realItems[0].title}」
           </span>
           <a
             href="/briefings"
@@ -313,8 +316,8 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
         </div>
       )}
 
-      {/* CTA ヒント */}
-      {items.length === 0 && (
+      {/* CTA ヒント — まだ 実際 の 納品 が ない 間 (サンプル のみ) は ここ で 最初 の 一手 を 促す */}
+      {realItems.length === 0 && (
         <div style={{
           marginTop: 12, padding: '10px 14px', borderRadius: 10,
           background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)',

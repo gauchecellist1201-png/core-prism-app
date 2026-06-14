@@ -1,9 +1,9 @@
 // ============================================================
 // GET /api/instagram/oauth-start
 //
-// Meta (Facebook) OAuth ダイアログへリダイレクト。
-// Instagram Graph API (Business / Creator) を利用するため
-// Facebook Login + Instagram スコープを使う。
+// Instagram API with Instagram Login の認可ダイアログへリダイレクト。
+// インフルエンサーは Instagram (プロアカウント) でログイン→許可するだけ。
+// Facebook ページを介さず直接 Instagram と連携できる。
 //
 // CSRF 対策: ランダム state を生成し HttpOnly Cookie に保存。
 // callback 側で Cookie の state と query の state を照合する。
@@ -11,12 +11,12 @@
 
 export const config = { runtime: 'edge' };
 
+// Instagram ログイン用スコープ
 const SCOPES = [
-  'instagram_basic',
-  'instagram_manage_insights',
-  'pages_read_engagement',
-  'pages_show_list',
-  'business_management',
+  'instagram_business_basic',
+  'instagram_business_manage_insights',
+  'instagram_business_manage_comments',
+  'instagram_business_content_publish',
 ].join(',');
 
 function randomState(): string {
@@ -33,9 +33,9 @@ function originOf(req: Request): string {
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  const appId = process.env.META_APP_ID;
+  const appId = process.env.INSTAGRAM_APP_ID;
   if (!appId) {
-    return new Response('NOT_CONFIGURED: META_APP_ID missing', { status: 503 });
+    return new Response('NOT_CONFIGURED: INSTAGRAM_APP_ID missing', { status: 503 });
   }
 
   const url = new URL(req.url);
@@ -45,13 +45,13 @@ export default async function handler(req: Request): Promise<Response> {
   const origin = originOf(req);
   const redirectUri = `${origin}/api/instagram/oauth-callback`;
 
-  // Facebook OAuth ダイアログ
-  const authUrl = new URL('https://www.facebook.com/v21.0/dialog/oauth');
+  // Instagram 認可ダイアログ
+  const authUrl = new URL('https://www.instagram.com/oauth/authorize');
   authUrl.searchParams.set('client_id', appId);
   authUrl.searchParams.set('redirect_uri', redirectUri);
+  authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('scope', SCOPES);
   authUrl.searchParams.set('state', state);
-  authUrl.searchParams.set('response_type', 'code');
 
   // state と return_to を HttpOnly Cookie で持つ (10 分有効)
   const cookieAttrs = 'Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600';
@@ -62,5 +62,6 @@ export default async function handler(req: Request): Promise<Response> {
     `ig_oauth_return=${encodeURIComponent(returnTo)}; ${cookieAttrs}`,
   );
   headers.set('Location', authUrl.toString());
+  headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
   return new Response(null, { status: 302, headers });
 }

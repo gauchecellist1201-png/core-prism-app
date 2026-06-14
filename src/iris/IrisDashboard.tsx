@@ -881,6 +881,18 @@ function IrisEditorialHome({
                 <button onClick={() => onNavigate('strategy')} style={{ ...ctaButtonSm(bg), width: '100%' }}>
                   詳細分析を見る
                 </button>
+                {igProfile.source !== 'oauth' && (
+                  <button onClick={onConnectInstagram} style={{
+                    marginTop: '0.5rem', width: '100%',
+                    ...IRIS_TYPE.small, fontWeight: 800,
+                    background: IRIS_GRADIENT.instagram, color: '#fff', border: 'none',
+                    padding: '0.6rem 1rem', borderRadius: IRIS_RADIUS.full, cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                    boxShadow: IRIS_SHADOW.glow('#E1306C'),
+                  }}>
+                    <Camera size={13} strokeWidth={2.5} /> 本物のデータに連携（自動取得）
+                  </button>
+                )}
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '0.75rem 0' }}>
