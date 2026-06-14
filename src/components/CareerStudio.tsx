@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, ArrowRight, Download, Copy, Check, BarChart3, TrendingUp, GraduationCap, Briefcase, Heart } from 'lucide-react';
 import { callAiWithFallback } from '../lib/aiFallbackChain';
 import ThinkingIndicator from './ThinkingIndicator';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   open: boolean;
@@ -243,18 +244,26 @@ export default function CareerStudio({ open, onClose, defaultIndustry }: Props) 
               {step === 'q' && (
                 <>
                   {/* 3 秒でわかる説明 + サンプル出力 — 初見の人が「何が出るか」を触らず理解できる */}
-                  <div style={{
-                    background: 'linear-gradient(135deg, rgba(167,139,250,0.18), rgba(167,139,250,0.05) 60%)',
-                    border: '1px solid rgba(167,139,250,0.35)',
-                    borderRadius: 12, padding: '12px 14px', marginBottom: 18,
-                  }}>
-                    <p style={{ fontSize: '0.86rem', fontWeight: 700, color: '#fff', lineHeight: 1.5, margin: 0 }}>
-                      🔮 下の 3 問に答えるだけ。AI が <span style={{ color: '#C4B5FD' }}>あなたの 5 年後の「年収・役割・学ぶべきスキル」</span>を 1 枚のレポートにします。
-                    </p>
-                    <p style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, margin: '6px 0 0' }}>
-                      例: 不動産 10 年 → <span style={{ color: 'rgba(255,255,255,0.85)' }}>「5 年後は独立して年商 8,000 万円。今学ぶべきは AI 査定 × LINE 集客」</span>のように出ます。
-                    </p>
-                  </div>
+                  <StudioIntro
+                    id="career"
+                    accent="#A78BFA"
+                    icon={TrendingUp}
+                    what="下の 3 問に答えるだけで、AI があなたの 5 年後の「年収・役割・学ぶべきスキル」を 1 枚のレポートにします。"
+                    tryThis="業種を 1 つ選び、経験年数を押し、目標を一言書いて「レポートを作る」だけ。"
+                    example="不動産 10 年 →「5 年後は独立して年商 8,000 万円。今学ぶべきは AI 査定 × LINE 集客」"
+                    sampleLabel="出来上がるレポート"
+                    samplePreview={
+                      <div style={{ width: 150, fontSize: 8, lineHeight: 1.5, color: 'rgba(255,255,255,0.9)' }}>
+                        <div style={{ color: '#C4B5FD', fontWeight: 800, fontSize: 8.5, marginBottom: 3 }}>5 年後のあなた</div>
+                        <div style={{ marginBottom: 2 }}>役割: 独立オーナー</div>
+                        <div style={{ marginBottom: 2 }}>年収: 800万 → <span style={{ color: '#34D399', fontWeight: 800 }}>2,400万</span></div>
+                        <div style={{ color: '#FBBF24', fontWeight: 800, marginTop: 4 }}>学ぶべき 3 スキル</div>
+                        <div>・AI 査定 / LINE 集客 / 財務設計</div>
+                        <div style={{ color: '#34D399', fontWeight: 800, marginTop: 4 }}>明日やる 1 つ</div>
+                        <div>・既存客 3 名に紹介を依頼</div>
+                      </div>
+                    }
+                  />
 
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'rgba(255,255,255,0.75)', marginBottom: 8 }}>
                     1. 業種は?

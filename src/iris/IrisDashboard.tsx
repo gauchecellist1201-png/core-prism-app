@@ -108,6 +108,7 @@ const TAB_TO_GROUP: Record<string, string> = TAB_GROUPS.reduce((acc, g) => {
 import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 import { getAllBrandDeals, CATEGORY_META, type BrandDeal, type BrandCategory } from './brandDeals';
+import IrisRealOpenCalls from './IrisRealOpenCalls';
 import { getBrandLogoUrl, getDealImageUrl, getDealGradient } from './brandVisuals';
 import {
   computeMatchScore, generateApplicationDraft, addApplyRecord,
@@ -1595,7 +1596,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 />
               </>
             )}
-            {tab === 'deals' && <DealsView bg={bg} desk={desk} myDeals={myDeals} settings={settings} mediaKit={mediaKit} />}
+            {tab === 'deals' && <><IrisRealOpenCalls bg={bg} /><DealsView bg={bg} desk={desk} myDeals={myDeals} settings={settings} mediaKit={mediaKit} /></>}
             {tab === 'negotiate' && <NegotiateView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'draft' && <DraftView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} knowledge={knowledge} />}
             {tab === 'knowledge' && <IrisKnowledgeView bg={bg} knowledge={knowledge} />}

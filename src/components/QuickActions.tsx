@@ -5,7 +5,7 @@ import {
   Handshake, MessagesSquare, Send, Image as ImageIcon, Radio, Receipt,
   ScrollText, BarChart3, Camera, Files, FolderKanban,
   Users, Sword, Target, Bot, CheckSquare, Crown, Calendar, HeartPulse,
-  Sun, Sparkles, BarChart2, Zap, Search, Star, Link2,
+  Sun, Sparkles, BarChart2, Zap, Search, Star, Link2, Calculator,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Persona } from '../types/identity';
@@ -29,6 +29,7 @@ const QUICK_ICON_MAP: Record<string, { Icon: LucideIcon; color: string }> = {
   invoice:      { Icon: Receipt,       color: '#5BA8FF' },
   sales:        { Icon: ScrollText,    color: '#10B981' },
   pnl:          { Icon: BarChart3,     color: '#10B981' },
+  'fin-consult':{ Icon: Calculator,    color: '#10B981' },
   expense:      { Icon: Camera,        color: '#FFA94D' },
   benchmark:    { Icon: BarChart2,     color: '#5BA8FF' },
   crm:          { Icon: FolderKanban,  color: '#FFA94D' },
@@ -62,7 +63,7 @@ const CATEGORY: Record<string, CatName> = {
   youtube: 'つくる', kb: 'つくる', note: 'つくる', minutes: 'つくる',
   slides: 'つくる', post: 'つくる', image: 'つくる', engine: 'つくる',
   decision: 'つくる', nego: 'つくる',
-  invoice: '商い', sales: '商い', pnl: '商い', expense: '商い',
+  invoice: '商い', sales: '商い', pnl: '商い', 'fin-consult': '商い', expense: '商い',
   benchmark: '商い', crm: '商い', documents: '商い',
   people: 'つながる', team: 'つながる', 'saas-agent': 'つながる',
   integrations: 'つながる', premium: 'つながる', health: 'つながる',
@@ -87,6 +88,7 @@ const KEYWORDS: Record<string, string> = {
   invoice: '請求書 インボイス 発行',
   sales: '売上 売り上げ 記録',
   pnl: '利益 損益 収支 お金 pl',
+  'fin-consult': '財務 コンサル 相談 改善 資金繰り 数字 経営 アドバイス',
   expense: '経費 レシート 領収書 撮影',
   benchmark: '比較 業界 平均 ベンチマーク',
   crm: '案件 商談 顧客 管理',
