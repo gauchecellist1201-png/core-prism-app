@@ -22,6 +22,10 @@ import ShareArtifactButton from './ShareArtifactButton';
 import { StudioIntro } from './StudioIntro';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { notifyInApp } from '../lib/inAppNotify';
+import {
+  fetchXStatus, startXConnect, postXThread, disconnectX,
+  readXCallbackResult, translateXError, type XStatus,
+} from '../lib/xConnect';
 
 interface Props {
   persona: Persona;
@@ -102,6 +106,60 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
   const [showReward, setShowReward] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // ─── X 自動投稿 連携 ─────────────────────────────
+  const [xStatus, setXStatus] = useState<XStatus>({ configured: false, connected: false });
+  const [xPosting, setXPosting] = useState(false);
+
+  const refreshXStatus = useCallback(async () => {
+    setXStatus(await fetchXStatus());
+  }, []);
+
+  // 起動時に連携状態を取得 + コールバック結果(?x_connected/?x_error)を拾う
+  useEffect(() => {
+    const cb = readXCallbackResult();
+    if (cb) {
+      if (cb.connected) {
+        notifyInApp({ kind: 'success', title: 'Xと連携しました', body: 'これで「Xに投稿する」からワンタップ投稿できます。' });
+      } else if (cb.error) {
+        notifyInApp({ kind: 'warn', title: 'X連携でエラー', body: translateXError(cb.error) });
+      }
+    }
+    refreshXStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleXPost = useCallback(async () => {
+    if (xThread.length === 0) return;
+    setXPosting(true);
+    try {
+      const r = await postXThread(xThread);
+      if (r.ok && r.urls && r.urls.length > 0) {
+        notifyInApp({
+          kind: 'success',
+          title: `Xに${r.urls.length}本のスレッドを投稿しました`,
+          body: r.urls[0],
+        });
+      } else if (r.error === 'reauth') {
+        notifyInApp({ kind: 'warn', title: '再連携が必要です', body: r.message || 'もう一度「Xアカウントと連携」してください。' });
+        setXStatus((s) => ({ ...s, connected: false }));
+      } else if (r.error === 'rate') {
+        notifyInApp({ kind: 'warn', title: '投稿上限に達しました', body: r.message || 'Xの投稿上限に達しました（無料枠は月500件）。' });
+      } else {
+        notifyInApp({ kind: 'warn', title: 'X投稿に失敗', body: r.message || 'Xへの投稿に失敗しました。' });
+      }
+    } finally {
+      setXPosting(false);
+    }
+  }, [xThread]);
+
+  const handleXDisconnect = useCallback(async () => {
+    const ok = await disconnectX();
+    if (ok) {
+      setXStatus((s) => ({ ...s, connected: false, username: undefined }));
+      notifyInApp({ kind: 'info', title: 'Xの連携を解除しました', body: 'いつでも再連携できます。' });
+    }
+  }, []);
 
   // 先回り提案: AI が起動時にテーマ 3 案を先出し
   const [proposals, setProposals] = useState<ContentTopicProposal[]>([]);
@@ -841,6 +899,41 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* X 自動投稿（CORE 経由の OAuth 連携） */}
+              <div style={{ marginTop: 12, padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10 }}>
+                {!xStatus.configured ? (
+                  <p style={{ fontSize: '0.78rem', color: 'var(--fg-muted)', margin: 0, lineHeight: 1.6 }}>
+                    Xの自動投稿は準備中です（提供者が設定中）。上の「↗ X で開く」から手動で投稿できます。
+                  </p>
+                ) : xStatus.connected ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>
+                        {xStatus.username ? `@${xStatus.username} に自動投稿` : 'Xに自動投稿'}
+                      </span>
+                      <button
+                        onClick={handleXDisconnect}
+                        style={{ fontSize: '0.7rem', padding: '0.25rem 0.6rem', background: 'transparent', color: 'var(--fg-muted)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, cursor: 'pointer' }}
+                      >連携を解除</button>
+                    </div>
+                    <button
+                      onClick={handleXPost}
+                      disabled={xPosting || xThread.length === 0}
+                      style={{ width: '100%', padding: '0.75rem', minHeight: 44, background: xPosting ? 'rgba(255,255,255,0.08)' : accent, color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.9rem', fontWeight: 800, cursor: xPosting ? 'default' : 'pointer', opacity: xPosting ? 0.7 : 1 }}
+                    >
+                      {xPosting ? '投稿中…' : `✕ Xに投稿する（${xThread.length}本を連続スレッド）`}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={startXConnect}
+                    style={{ width: '100%', padding: '0.75rem', minHeight: 44, background: accent, color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer' }}
+                  >
+                    ✕ Xアカウントと連携（初回だけ）
+                  </button>
+                )}
               </div>
             </section>
 
