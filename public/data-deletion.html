@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>データ削除の手順 | CORE Iris</title>
+  <meta name="description" content="CORE Iris における Instagram 連携データ・利用者データの削除方法" />
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+      background: #fdf6f9; color: #2a1a3a; line-height: 1.8;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+    h1 { font-size: 1.6rem; color: #1a0a26; margin: 0 0 0.25rem; }
+    .sub { color: #8a7aa0; font-size: 0.85rem; margin-bottom: 2rem; }
+    h2 { font-size: 1.1rem; color: #E1306C; margin: 2rem 0 0.5rem; }
+    ol, ul { padding-left: 1.4rem; }
+    li { margin: 0.4rem 0; }
+    .card { background: #fff; border: 1px solid #f3d9e6; border-radius: 14px; padding: 1.1rem 1.25rem; margin: 1rem 0; }
+    a { color: #E1306C; }
+    code { background: #f3e8f0; padding: 0.1rem 0.4rem; border-radius: 6px; font-size: 0.9em; }
+    .foot { margin-top: 2.5rem; font-size: 0.85rem; color: #8a7aa0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>データ削除の手順</h1>
+    <div class="sub">CORE Iris（株式会社 CORE）／ 最終更新: 2026年6月15日</div>
+
+    <p>CORE Iris は、利用者ご本人の同意のもと Instagram のプロアカウント情報（プロフィール・投稿の反応・インサイト等）を取得し、ご本人のダッシュボードでのみ利用します。取得したデータは、以下のいずれの方法でもいつでも削除できます。</p>
+
+    <h2>方法 1：アプリ内で連携を解除する（推奨）</h2>
+    <div class="card">
+      <ol>
+        <li>CORE Iris（<a href="https://core-prism-app.vercel.app/iris">core-prism-app.vercel.app/iris</a>）を開く</li>
+        <li>右上のアカウントメニュー →「Instagram 連携を解除」を選ぶ</li>
+        <li>解除すると、保存中の<strong>アクセストークンは即時破棄</strong>され、端末に保存された Instagram の数値データ（フォロワー数・反応率等）も<strong>削除</strong>されます</li>
+      </ol>
+    </div>
+
+    <h2>方法 2：Instagram 側でアクセスを取り消す</h2>
+    <div class="card">
+      <ol>
+        <li>Instagram アプリ／<a href="https://www.instagram.com/accounts/manage_access/">instagram.com/accounts/manage_access</a> を開く</li>
+        <li>設定 →「アプリとウェブサイト」→ <strong>CORE Iris-IG</strong> を選ぶ</li>
+        <li>「削除」または「アクセスを取り消す」をタップ</li>
+      </ol>
+      <p>取り消すと、当社が保持するアクセストークンは無効化され、以後データを取得できなくなります。</p>
+    </div>
+
+    <h2>方法 3：メールで削除を依頼する</h2>
+    <div class="card">
+      <p>下記までご連絡ください。<strong>30 日以内</strong>に、当社が保持する当該データ（アクセストークン・取得済みの Instagram データ）を完全に削除し、完了をご返信します。</p>
+      <ul>
+        <li>宛先: <a href="mailto:gauche.cellist1201@gmail.com">gauche.cellist1201@gmail.com</a></li>
+        <li>件名: 「データ削除依頼」</li>
+        <li>本文: 連携した Instagram のユーザー名をご記入ください</li>
+      </ul>
+    </div>
+
+    <h2>削除されるデータ</h2>
+    <ul>
+      <li>Instagram アクセストークン（サーバ側・暗号化保存分）</li>
+      <li>取得したプロフィール数値・投稿の反応データ・インサイト（端末 localStorage 分を含む）</li>
+    </ul>
+
+    <p class="foot">
+      関連: <a href="https://core-prism-app.vercel.app/iris/privacy">プライバシーポリシー</a> ／
+      本ページは Meta App Review の「データ削除の手順 URL」として提供しています。<br />
+      株式会社 CORE
+    </p>
+  </div>
+</body>
+</html>

@@ -2,10 +2,11 @@
 // ViralStudioCard — X / Threads バイラル投稿 自動作成スタジオ
 //   テーマ → トレンド分析 → similar 投稿生成 → コピー/キュー/X投稿
 // ============================================================
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, Copy, Check, Send, Loader2, TrendingUp, Clock } from 'lucide-react';
 import { runViral, type GeneratedPost, type TrendAnalysis, saveToQueue } from '../lib/viralEngine';
 import { isXConfigured, isXConnected, startXAuth, postTweet } from '../lib/xPost';
+import { fetchThreadsStatus, startThreadsConnect, postThreadsChain, readThreadsCallbackResult, translateThreadsError } from '../lib/threadsConnect';
 import { BrandIcon } from './BrandIcons';
 import ThinkingIndicator from './ThinkingIndicator';
 
@@ -17,6 +18,15 @@ export default function ViralStudioCard() {
   const [err, setErr] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
   const [posted, setPosted] = useState<Record<string, boolean>>({});
+  const [thConnected, setThConnected] = useState(false);
+  const [thConfigured, setThConfigured] = useState(false);
+  const [thPosting, setThPosting] = useState<string | null>(null);
+
+  // Threads 連携状態を取得（OAuthコールバック後の ?threads_connected も拾う）
+  useEffect(() => {
+    readThreadsCallbackResult();
+    fetchThreadsStatus().then(s => { setThConnected(!!s.connected); setThConfigured(!!s.configured); });
+  }, []);
 
   const run = async () => {
     if (!theme.trim() || loading) return;
@@ -41,6 +51,28 @@ export default function ViralStudioCard() {
       await postTweet(`${p.body}\n${p.hashtags.join(' ')}`.trim().slice(0, 280));
       setPosted(s => ({ ...s, [p.id]: true }));
     } catch (e: any) { setErr(e?.message || 'X投稿に失敗しました'); }
+  };
+
+  // Threads: 未連携なら連携へ / 連携済みなら本文を投稿。設定が無い時は共有(Web Share)で投稿。
+  const postThreads = async (p: GeneratedPost) => {
+    const text = `${p.body}\n${p.hashtags.join(' ')}`.trim();
+    // 連携設定が無い環境は、設定ゼロの「共有」で今すぐ投稿できる入口を出す
+    if (!thConfigured) {
+      const nav = typeof navigator !== 'undefined' ? navigator : undefined;
+      if (nav?.share) { try { await nav.share({ text }); return; } catch { /* キャンセル時はコピーへ */ } }
+      try { await nav?.clipboard?.writeText(text); } catch { /* */ }
+      if (typeof window !== 'undefined') window.open('https://www.threads.net/', '_blank', 'noopener');
+      return;
+    }
+    if (!thConnected) { startThreadsConnect(); return; }
+    setThPosting(p.id);
+    try {
+      const r = await postThreadsChain([text]);
+      if (r.ok) setPosted(s => ({ ...s, [p.id]: true }));
+      else if (r.error === 'reauth') { setThConnected(false); startThreadsConnect(); }
+      else setErr(r.message || translateThreadsError(r.error || '') || 'Threads投稿に失敗しました');
+    } catch (e: any) { setErr(e?.message || 'Threads投稿に失敗しました'); }
+    finally { setThPosting(null); }
   };
 
   const xPosts = posts.filter(p => p.platform === 'x');
@@ -108,8 +140,8 @@ export default function ViralStudioCard() {
 
       {posts.length > 0 && (
         <>
-          <PostGroup brand="x" label="X (旧Twitter)" posts={xPosts} copied={copied} posted={posted} onCopy={copy} onPost={postX} canPostX />
-          <PostGroup brand="threads" label="Threads" posts={thPosts} copied={copied} posted={posted} onCopy={copy} onPost={postX} canPostX={false} />
+          <PostGroup brand="x" label="X (旧Twitter)" posts={xPosts} copied={copied} posted={posted} posting={null} onCopy={copy} onPost={postX} postLabel={isXConnected() ? 'Xに投稿' : 'Xを連携して投稿'} />
+          <PostGroup brand="threads" label="Threads" posts={thPosts} copied={copied} posted={posted} posting={thPosting} onCopy={copy} onPost={postThreads} postLabel={thConnected ? 'Threadsに投稿' : thConfigured ? 'Threadsと連携して投稿' : 'Threadsで共有して投稿'} />
           {!isXConfigured() && (
             <div style={{ fontSize: 10.5, color: 'var(--fg-subtle)', marginTop: 6, lineHeight: 1.5 }}>
               ※ いまは「コピー」して投稿できます。X Developer アプリを作って Client ID を設定すると、ここから<b>ワンタップ投稿</b>に切り替わります（Threads は連携実装後に対応）。
@@ -121,11 +153,12 @@ export default function ViralStudioCard() {
   );
 }
 
-function PostGroup({ brand, label, posts, copied, posted, onCopy, onPost, canPostX }: {
+function PostGroup({ brand, label, posts, copied, posted, posting, onCopy, onPost, postLabel }: {
   brand: 'x' | 'threads'; label: string; posts: GeneratedPost[];
-  copied: string | null; posted: Record<string, boolean>;
-  onCopy: (p: GeneratedPost) => void; onPost: (p: GeneratedPost) => void; canPostX: boolean;
+  copied: string | null; posted: Record<string, boolean>; posting: string | null;
+  onCopy: (p: GeneratedPost) => void; onPost: (p: GeneratedPost) => void; postLabel: string;
 }) {
+  const btnBg = brand === 'threads' ? '#000000' : '#0f1419';
   if (posts.length === 0) return null;
   return (
     <div style={{ marginBottom: 10 }}>
@@ -143,11 +176,11 @@ function PostGroup({ brand, label, posts, copied, posted, onCopy, onPost, canPos
               <button onClick={() => onCopy(p)} style={miniBtn('var(--surface)')}>
                 {copied === p.id ? <><Check size={13} /> コピー済</> : <><Copy size={13} /> コピー</>}
               </button>
-              {canPostX && (
-                <button onClick={() => onPost(p)} style={miniBtn('#0f1419', '#fff')}>
-                  {posted[p.id] ? <><Check size={13} /> 投稿済</> : <><Send size={13} /> {isXConnected() ? 'Xに投稿' : 'Xを連携して投稿'}</>}
-                </button>
-              )}
+              <button onClick={() => onPost(p)} disabled={posting === p.id} style={miniBtn(btnBg, '#fff')}>
+                {posting === p.id ? <><Loader2 size={13} className="spin" /> 投稿中…</>
+                  : posted[p.id] ? <><Check size={13} /> 投稿済</>
+                  : <><Send size={13} /> {postLabel}</>}
+              </button>
             </div>
           </div>
         ))}

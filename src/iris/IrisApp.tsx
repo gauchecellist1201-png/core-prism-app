@@ -7,9 +7,7 @@ import { useSettings } from '../hooks/useSettings';
 import IrisLanding from './IrisLanding';
 import GlobalVoiceInput from '../components/GlobalVoiceInput';
 import OfflineNotice from '../components/OfflineNotice';
-import AgentTeamMonitor from '../components/AgentTeamMonitor';
 import ExtensionCaptureToast from '../components/ExtensionCaptureToast';
-import CxoWelcomeCard from '../components/CxoWelcomeCard';
 import StripeFailureBanner from '../components/StripeFailureBanner';
 import InstallPwaBanner from '../components/InstallPwaBanner';
 import IrisDashboard from './IrisDashboard';
@@ -121,12 +119,12 @@ export default function IrisApp() {
       {/* 課金失敗 (past_due / unpaid) 救済バナー — Iris ダッシュボード上部 */}
       <StripeFailureBanner brand="iris" />
       <IrisDashboard settings={settings} onLeave={() => setEntered(false)} />
-      {/* AI 会社 作戦本部 — Iris (CMO/CDS/CSO/UXE が活躍する場面が多い) */}
-      <AgentTeamMonitor brand="iris" />
       {/* Chrome 拡張機能から ?capture= で届いた取り込みのお知らせ */}
       <ExtensionCaptureToast brand="iris" />
-      {/* 初回訪問時の AI 会社ウェルカム (13 CXO 自己紹介 + サンプル戦略タスク) */}
-      <CxoWelcomeCard brand="iris" />
+      {/* 旧: AgentTeamMonitor / CxoWelcomeCard は Prism の「13/14 CXO 役員会議室」を
+          そのまま表示し、Iris (インフルエンサー向け・6 人の専属 AI) と内容が食い違って
+          混乱を生んでいたため Iris からは撤去 (2026-06-15)。Iris のエージェントは
+          IrisDashboard 上部の AgentsOrbit (6 人) で表示する。 */}
       <TutorialOverlay brand="iris" onClose={() => setTutorialDoneTick(t => t + 1)} />
       <WowOnboarding brand="iris" trigger={tutorialDoneTick} />
       {/* どの入力欄でも音声入力できる */}
