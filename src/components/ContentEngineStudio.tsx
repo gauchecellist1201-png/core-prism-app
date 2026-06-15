@@ -923,7 +923,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                       disabled={xPosting || xThread.length === 0}
                       style={{ width: '100%', padding: '0.75rem', minHeight: 44, background: xPosting ? 'rgba(255,255,255,0.08)' : accent, color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.9rem', fontWeight: 800, cursor: xPosting ? 'default' : 'pointer', opacity: xPosting ? 0.7 : 1 }}
                     >
-                      {xPosting ? '投稿中…' : `✕ Xに投稿する（${xThread.length}本を連続スレッド）`}
+                      {xPosting ? '投稿中…' : `Xに投稿する（${xThread.length}本を連続スレッド）`}
                     </button>
                   </div>
                 ) : (
@@ -931,7 +931,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                     onClick={startXConnect}
                     style={{ width: '100%', padding: '0.75rem', minHeight: 44, background: accent, color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer' }}
                   >
-                    ✕ Xアカウントと連携（初回だけ）
+                    Xアカウントと連携（初回だけ）
                   </button>
                 )}
               </div>

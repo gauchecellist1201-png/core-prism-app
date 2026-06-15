@@ -25,10 +25,15 @@ interface Props {
   accent?: string;
   /** 「コンパクト」だと縦並び・小さめ */
   compact?: boolean;
+  /** 本文の文字色 (淡背景テーマでは濃色を渡す。白地白文字防止) */
+  ink?: string;
+  /** 補足文の文字色 */
+  inkMuted?: string;
 }
 
 export default function TodayCard({
   suggestions, heading = '今日の最初の一手', accent = '#A78BFA', compact = false,
+  ink = 'var(--fg, #fff)', inkMuted = 'var(--fg-muted, rgba(255,255,255,0.65))',
 }: Props) {
   if (suggestions.length === 0) return null;
   const items = suggestions.slice(0, 3);
@@ -73,7 +78,7 @@ export default function TodayCard({
                 borderRadius: 14,
                 padding: compact ? '10px 12px' : '14px 14px',
                 cursor: 'pointer',
-                color: 'var(--fg, #fff)',
+                color: ink,
                 display: 'flex', alignItems: 'center', gap: 11,
                 minHeight: 60,
                 transition: 'background 0.15s, border-color 0.15s',
@@ -99,12 +104,12 @@ export default function TodayCard({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontSize: compact ? 13 : 13.5, fontWeight: 800,
-                  marginBottom: 2, lineHeight: 1.4,
+                  marginBottom: 2, lineHeight: 1.4, color: ink,
                   overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{s.title}</div>
                 <div style={{
                   fontSize: 11, fontWeight: 500,
-                  color: 'var(--fg-muted, rgba(255,255,255,0.65))',
+                  color: inkMuted,
                   lineHeight: 1.45,
                   display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',

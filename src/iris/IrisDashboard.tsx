@@ -149,7 +149,7 @@ import IrisEarnHero from './IrisEarnHero';
 import IrisEarningsHero from './IrisEarningsHero';
 import WellnessTracker from '../components/WellnessTracker';
 import IgConnectModal from './IgConnectModal';
-import { loadIgProfile, consumeOauthCallback, type IgProfile } from './instagramConnect';
+import { loadIgProfile, consumeOauthCallback, fetchOauthProfile, saveIgProfile, type IgProfile } from './instagramConnect';
 import IrisDmDraftModal from './IrisDmDraftModal';
 import type { DmDealInput } from './dmDraft';
 import MobileGeminiDashboard from '../components/MobileGeminiDashboard';
@@ -578,6 +578,8 @@ function IrisEditorialHome({
         <TodayCard
           heading="今日、Iris で何する?"
           accent={bg.accent}
+          ink={bg.ink}
+          inkMuted={bg.inkSoft}
           suggestions={(() => {
             const out: TodaySuggestion[] = [];
             if (!igProfile) {
@@ -1074,6 +1076,13 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
 
   useEffect(() => {
     consumeOauthCallback().then(p => { if (p) setIgProfile(p); }).catch(() => {});
+    // 本連携(OAuth)済みなら、毎回サーバから実データを取得して上書きする。
+    // (古い「手入力(self)」値を残さない / トークン更新後の最新値を反映)
+    if (typeof document !== 'undefined' && document.cookie.includes('ig_connected=1')) {
+      fetchOauthProfile().then(p => {
+        if (p && p.followers) { saveIgProfile(p); setIgProfile(p); }
+      }).catch(() => {});
+    }
   }, []);
 
   const allBgs = useMemo(() => getAllBackgrounds(), [bgListVersion]);

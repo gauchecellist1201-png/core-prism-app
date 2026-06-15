@@ -144,7 +144,7 @@ function PostGroup({ brand, label, posts, copied, posted, onCopy, onPost, canPos
                 {copied === p.id ? <><Check size={13} /> コピー済</> : <><Copy size={13} /> コピー</>}
               </button>
               {canPostX && (
-                <button onClick={() => onPost(p)} style={miniBtn('#1d9bf0', '#fff')}>
+                <button onClick={() => onPost(p)} style={miniBtn('#0f1419', '#fff')}>
                   {posted[p.id] ? <><Check size={13} /> 投稿済</> : <><Send size={13} /> {isXConnected() ? 'Xに投稿' : 'Xを連携して投稿'}</>}
                 </button>
               )}
@@ -159,5 +159,5 @@ function PostGroup({ brand, label, posts, copied, posted, onCopy, onPost, canPos
 const miniBtn = (bg: string, color = 'var(--fg)'): React.CSSProperties => ({
   display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 11px', borderRadius: 8,
   border: bg === 'var(--surface)' ? '1px solid var(--border, rgba(0,0,0,0.12))' : 'none',
-  background: bg, color, fontSize: 11.5, fontWeight: 800, cursor: 'pointer', minHeight: 34,
+  background: bg, color, fontSize: 11.5, fontWeight: 800, cursor: 'pointer', minHeight: 44,
 });

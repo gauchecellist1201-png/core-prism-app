@@ -57,8 +57,9 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    // 基本プロフィール (Instagram Login = graph.instagram.com)
-    const profUrl = new URL(`https://graph.instagram.com/v21.0/${accountId}`);
+    // 基本プロフィール (Instagram Login = graph.instagram.com の me ノード。
+    // token 由来の数値 ID 直叩きは code 100 で失敗するため me を使う)
+    const profUrl = new URL(`https://graph.instagram.com/v21.0/me`);
     profUrl.searchParams.set(
       'fields',
       'id,username,followers_count,media_count,profile_picture_url',
@@ -75,7 +76,7 @@ export default async function handler(req: Request): Promise<Response> {
     const user = (await profResp.json()) as IgUser;
 
     // 直近 25 件メディアでエンゲージメント平均
-    const mediaUrl = new URL(`https://graph.instagram.com/v21.0/${accountId}/media`);
+    const mediaUrl = new URL(`https://graph.instagram.com/v21.0/me/media`);
     mediaUrl.searchParams.set('fields', 'id,like_count,comments_count,timestamp,caption');
     mediaUrl.searchParams.set('limit', '25');
     mediaUrl.searchParams.set('access_token', token);
@@ -112,7 +113,7 @@ export default async function handler(req: Request): Promise<Response> {
     let audienceTopCountries: { country: string; pct: number }[] = [];
     try {
       const insightsUrl = new URL(
-        `https://graph.instagram.com/v21.0/${accountId}/insights`,
+        `https://graph.instagram.com/v21.0/me/insights`,
       );
       insightsUrl.searchParams.set('metric', 'follower_demographics');
       insightsUrl.searchParams.set('period', 'lifetime');

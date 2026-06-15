@@ -150,7 +150,7 @@ export async function executeAction(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: settings.preferredModel || 'claude-haiku-4-5',
-        max_tokens: 2400,
+        max_tokens: 8192,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userPrompt }],
       }),
@@ -169,12 +169,42 @@ export async function executeAction(
   });
 }
 
+/**
+ * AI (特に Gemini) は JSON 文字列の中に生の改行/タブ等の制御文字を入れてくる
+ * ことがあり、標準の JSON.parse が "Bad control character" で失敗する。
+ * 文字列リテラルの内側だけを対象に制御文字をエスケープして救済する。
+ * (構造上の空白=トークン間の改行は触らない)
+ */
+function sanitizeJsonControlChars(s: string): string {
+  let out = '', inStr = false, esc = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (esc) { out += ch; esc = false; continue; }
+    if (ch === '\\') { out += ch; esc = true; continue; }
+    if (ch === '"') { inStr = !inStr; out += ch; continue; }
+    if (inStr) {
+      const code = ch.charCodeAt(0);
+      if (ch === '\n') { out += '\\n'; continue; }
+      if (ch === '\r') { out += '\\r'; continue; }
+      if (ch === '\t') { out += '\\t'; continue; }
+      if (code < 0x20) { out += '\\u' + code.toString(16).padStart(4, '0'); continue; }
+    }
+    out += ch;
+  }
+  return out;
+}
+
+function looseJsonParse(raw: string): any | null {
+  try { return JSON.parse(raw); } catch { /* retry below */ }
+  try { return JSON.parse(sanitizeJsonControlChars(raw)); } catch { return null; }
+}
+
 function parsePlan(text: string): ExecutionPlan | null {
   // JSON ブロック抽出 (前後に余計な説明があっても拾う)
   const match = text.match(/\{[\s\S]*\}/);
   const raw = match ? match[0] : text;
   try {
-    const obj = JSON.parse(raw);
+    const obj = looseJsonParse(raw);
     if (!obj || !Array.isArray(obj.steps) || !obj.deliverable) return null;
     const steps: ExecutionStep[] = obj.steps
       .filter((s: unknown): s is { label?: unknown; detail?: unknown } => !!s && typeof s === 'object')

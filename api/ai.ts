@@ -162,10 +162,10 @@ interface AnthropicRequest {
 }
 
 // ─── Anthropic → Gemini 変換 ───
-function anthropicToGemini(req: AnthropicRequest): {
+function anthropicToGemini(req: AnthropicRequest, jsonMode = false): {
   systemInstruction?: { parts: { text: string }[] };
   contents: { role: 'user' | 'model'; parts: any[] }[];
-  generationConfig: { maxOutputTokens: number; temperature?: number };
+  generationConfig: { maxOutputTokens: number; temperature?: number; thinkingConfig?: { thinkingBudget: number }; responseMimeType?: string };
 } {
   const contents = req.messages.map(m => ({
     role: m.role === 'assistant' ? 'model' as const : 'user' as const,
@@ -189,6 +189,13 @@ function anthropicToGemini(req: AnthropicRequest): {
     generationConfig: {
       maxOutputTokens: req.max_tokens || 4096,
       ...(req.temperature !== undefined ? { temperature: req.temperature } : {}),
+      // Gemini 2.5 Flash は思考(thinking)が既定 ON で maxOutputTokens を食い潰し、
+      // 本文(JSON)が途中で切れて parse 失敗の原因になる。思考を切って全予算を出力へ。
+      // (2.0-flash は thinking 非対応で無視される / 2.5-flash-lite は既定 OFF)
+      thinkingConfig: { thinkingBudget: 0 },
+      // JSON 生成依頼のときは responseMimeType で「必ず正しい JSON」を強制。
+      // (``` 付き出力・文字列内の生改行/未エスケープで parse 失敗するのを根治)
+      ...(jsonMode ? { responseMimeType: 'application/json' } : {}),
     },
   };
 }
@@ -448,8 +455,14 @@ export default async function handler(req: Request) {
     });
   }
   // 変換 + フォールバック呼び出し
+  // JSON 生成依頼を検出 (system が JSON/スキーマ指定、または x-ai-format:json) →
+  // Gemini の responseMimeType=application/json で「必ず正しい JSON」を強制する。
+  const sysText = String(body.system || '');
+  const formatHint = (req.headers.get('x-ai-format') || '').toLowerCase();
+  const jsonMode = formatHint === 'json'
+    || (/json/i.test(sysText) && /(スキーマ|schema|だけ|のみ|only|JSON1|JSON 1)/i.test(sysText));
   const candidateModels = pickGeminiModels(body.model);
-  const geminiBody = anthropicToGemini(body);
+  const geminiBody = anthropicToGemini(body, jsonMode);
 
   let lastError: { status: number; message: string; model: string } | null = null;
   const geminiStart = Date.now();
