@@ -81,7 +81,23 @@ export default function ThreadsPostPanel({ posts, brand = 'prism', compact = fal
     }
   }, []);
 
+  // 設定ゼロの“かんたん投稿”：スマホの共有機能でThreadsアプリを開く。
+  // 共有非対応の環境は、本文をコピーしてThreadsを開く（貼り付けるだけ）。
+  // 連携(OAuth)も審査も不要で、誰でも今すぐ使える入口。
+  const shareToThreads = useCallback(async () => {
+    if (posts.length === 0) return;
+    const text = posts.join('\n\n');
+    const nav = typeof navigator !== 'undefined' ? navigator : undefined;
+    if (nav?.share) {
+      try { await nav.share({ text }); return; } catch { /* キャンセル/失敗→フォールバックへ */ }
+    }
+    try { await nav?.clipboard?.writeText(text); } catch { /* */ }
+    if (typeof window !== 'undefined') window.open('https://www.threads.net/', '_blank', 'noopener');
+    notifyInApp({ kind: 'info', title: '本文をコピーしました', body: 'Threadsが開きます。投稿欄に貼り付けて投稿してください。' });
+  }, [posts]);
+
   const disabled = threadsPosting || posts.length === 0;
+  const noPosts = posts.length === 0;
 
   return (
     <div style={{ marginTop: compact ? 0 : 8, padding: compact ? '0.7rem 0.85rem' : '0.85rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10 }}>
@@ -89,9 +105,25 @@ export default function ThreadsPostPanel({ posts, brand = 'prism', compact = fal
         <span style={{ fontSize: '0.95rem' }}>@</span>
         <span style={{ fontSize: '0.82rem', fontWeight: 800 }}>Threads に投稿</span>
       </div>
+
+      {/* ① かんたん投稿（設定ゼロ・誰でも今すぐ）：共有でThreadsを開く */}
+      <button
+        onClick={shareToThreads}
+        disabled={noPosts}
+        style={{ width: '100%', padding: '0.75rem', minHeight: 44, background: noPosts ? 'rgba(255,255,255,0.08)' : accent, color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.9rem', fontWeight: 800, cursor: noPosts ? 'default' : 'pointer', opacity: noPosts ? 0.7 : 1 }}
+      >
+        Threadsで共有（すぐ投稿）
+      </button>
+      <p style={{ fontSize: '0.72rem', color: 'var(--fg-muted)', margin: '6px 0 0', lineHeight: 1.6 }}>
+        スマホの共有からThreadsが開きます。連携も設定も不要で、すぐに投稿できます。
+      </p>
+
+      {/* ② 自動投稿（任意・上級）：一度だけ連携すると以降ワンタップで連続スレッド */}
+      <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ fontSize: '0.72rem', color: 'var(--fg-muted)', marginBottom: 6 }}>もっと楽に：連携すると自動で連続スレッド投稿</div>
       {!threadsStatus.configured ? (
-        <p style={{ fontSize: '0.78rem', color: 'var(--fg-muted)', margin: 0, lineHeight: 1.6 }}>
-          Threadsの自動投稿は準備中です（提供者が設定中）。
+        <p style={{ fontSize: '0.76rem', color: 'var(--fg-muted)', margin: 0, lineHeight: 1.6 }}>
+          自動投稿（連携）は準備中です。上の「Threadsで共有」は今すぐお使いいただけます。
         </p>
       ) : threadsStatus.connected ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -120,6 +152,7 @@ export default function ThreadsPostPanel({ posts, brand = 'prism', compact = fal
           Threadsと連携（初回だけ）
         </button>
       )}
+      </div>
     </div>
   );
 }
