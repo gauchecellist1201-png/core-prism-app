@@ -33,6 +33,9 @@ import {
 import {
   isCalConfigured, isCalConnected, connectCalendar, clearCalToken,
 } from '../lib/googleCalendar';
+import {
+  fetchThreadsStatus, startThreadsConnect, disconnectThreads, readThreadsCallbackResult,
+} from '../lib/threadsConnect';
 import IntegrationCelebrate from './IntegrationCelebrate';
 
 interface Props {
@@ -48,6 +51,7 @@ type StepAction =
   | { kind: 'oauth'; provider: 'gmail' | 'gcal' }
   | { kind: 'stripeConnect' }
   | { kind: 'lineConnect' }
+  | { kind: 'threadsConnect' }
   | { kind: 'info' };
 
 interface Step {
@@ -251,6 +255,14 @@ const CATALOG: Tool[] = [
     ],
   },
   {
+    id: 'threads', name: 'Threads', color: '#0A0A0A', glyph: '@', category: 'SNS',
+    can: 'AI が作った投稿を、ボタン 1 つで Threads に自動投稿',
+    steps: [
+      { label: '「Threads と連携」を押すと、Threads のログイン画面が開きます (CORE 経由・キーのコピペは不要)', action: { kind: 'info' } },
+      { label: 'ご自身の Threads アカウントで「許可」を押すだけ。これで連携完了です', action: { kind: 'threadsConnect' } },
+    ],
+  },
+  {
     id: 'line', name: 'LINE 公式アカウント', color: '#06C755', glyph: 'L', category: 'SNS',
     can: 'AI の提案やリマインドを 公式LINE (LINE Messaging API) で届ける',
     steps: [
@@ -285,10 +297,19 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
   const [, force] = useState(0);
   const [celebratedId, setCelebratedId] = useState<string | null>(null);
   const refresh = () => force(n => n + 1);
+  const [thStatus, setThStatus] = useState<{ configured: boolean; connected: boolean }>({ configured: false, connected: false });
+
+  // Threads: OAuthコールバック結果を拾い、運営側設定(configured)と接続状態(connected)を取得
+  useEffect(() => {
+    const cb = readThreadsCallbackResult();
+    if (cb?.connected) saveTokenLS('threads', '__done__');
+    fetchThreadsStatus().then(s => setThStatus({ configured: !!s.configured, connected: !!s.connected }));
+  }, []);
 
   const isConnected = (t: Tool): boolean => {
     if (t.id === 'gmail') return isGmailConnected();
     if (t.id === 'gcal') return isCalConnected();
+    if (t.id === 'threads') return thStatus.connected || isDone('threads');
     return !!loadToken(t.id);
   };
 
@@ -296,6 +317,7 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
   const isComingSoon = (t: Tool): boolean => {
     if (t.id === 'gmail') return !isGmailConfigured();
     if (t.id === 'gcal') return !isCalConfigured();
+    if (t.id === 'threads') return !thStatus.configured;
     return false;
   };
 
@@ -304,6 +326,7 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
   const disconnect = (t: Tool) => {
     if (t.id === 'gmail') clearGmailToken();
     else if (t.id === 'gcal') clearCalToken();
+    else if (t.id === 'threads') { disconnectThreads(); clearTokenLS('threads'); setThStatus(s => ({ ...s, connected: false })); }
     else clearTokenLS(t.id);
     refresh();
   };
@@ -914,6 +937,26 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                     {busy
                       ? <><Loader2 size={14} className="spin" /> Stripe へ移動中…</>
                       : <>Stripe で許可する <ArrowRight size={13} /></>}
+                  </button>
+                )}
+
+                {step.action.kind === 'threadsConnect' && (
+                  <button
+                    type="button"
+                    onClick={() => { setBusy(true); setErr(null); startThreadsConnect(); }}
+                    disabled={busy}
+                    style={{
+                      width: '100%',
+                      fontSize: 12.5, fontWeight: 800, color: '#fff',
+                      background: `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`,
+                      border: 'none', borderRadius: 9, padding: '12px 16px',
+                      cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    {busy
+                      ? <><Loader2 size={14} className="spin" /> Threads へ移動中…</>
+                      : <>Threads と連携する <ArrowRight size={13} /></>}
                   </button>
                 )}
 
