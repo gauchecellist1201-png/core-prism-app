@@ -26,10 +26,7 @@ import {
   fetchXStatus, startXConnect, postXThread, disconnectX,
   readXCallbackResult, translateXError, type XStatus,
 } from '../lib/xConnect';
-import {
-  fetchThreadsStatus, startThreadsConnect, postThreadsChain, disconnectThreads,
-  readThreadsCallbackResult, translateThreadsError, type ThreadsStatus,
-} from '../lib/threadsConnect';
+import ThreadsPostPanel from './ThreadsPostPanel';
 
 interface Props {
   persona: Persona;
@@ -119,15 +116,8 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
     setXStatus(await fetchXStatus());
   }, []);
 
-  // ─── Threads 自動投稿 連携 ───────────────────────
-  const [threadsStatus, setThreadsStatus] = useState<ThreadsStatus>({ configured: false, connected: false });
-  const [threadsPosting, setThreadsPosting] = useState(false);
-
-  const refreshThreadsStatus = useCallback(async () => {
-    setThreadsStatus(await fetchThreadsStatus());
-  }, []);
-
-  // 起動時に連携状態を取得 + コールバック結果(?x_connected/?x_error, ?threads_*)を拾う
+  // 起動時に連携状態を取得 + コールバック結果(?x_connected/?x_error)を拾う
+  // （Threads の連携状態・コールバックは ThreadsPostPanel が自前で処理する）
   useEffect(() => {
     const cb = readXCallbackResult();
     if (cb) {
@@ -137,16 +127,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
         notifyInApp({ kind: 'warn', title: 'X連携でエラー', body: translateXError(cb.error) });
       }
     }
-    const tcb = readThreadsCallbackResult();
-    if (tcb) {
-      if (tcb.connected) {
-        notifyInApp({ kind: 'success', title: 'Threadsと連携しました', body: 'これで「Threadsに投稿する」からワンタップ投稿できます。' });
-      } else if (tcb.error) {
-        notifyInApp({ kind: 'warn', title: 'Threads連携でエラー', body: translateThreadsError(tcb.error) });
-      }
-    }
     refreshXStatus();
-    refreshThreadsStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -179,36 +160,6 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
     if (ok) {
       setXStatus((s) => ({ ...s, connected: false, username: undefined }));
       notifyInApp({ kind: 'info', title: 'Xの連携を解除しました', body: 'いつでも再連携できます。' });
-    }
-  }, []);
-
-  const handleThreadsPost = useCallback(async () => {
-    if (xThread.length === 0) return;
-    setThreadsPosting(true);
-    try {
-      const r = await postThreadsChain(xThread);
-      if (r.ok && r.urls && r.urls.length > 0) {
-        notifyInApp({
-          kind: 'success',
-          title: `Threadsに${r.urls.length}本の連続スレッドを投稿しました`,
-          body: r.urls[0],
-        });
-      } else if (r.error === 'reauth') {
-        notifyInApp({ kind: 'warn', title: '再連携が必要です', body: r.message || 'もう一度「Threadsと連携」してください。' });
-        setThreadsStatus((s) => ({ ...s, connected: false }));
-      } else {
-        notifyInApp({ kind: 'warn', title: 'Threads投稿に失敗', body: r.message || 'Threadsへの投稿に失敗しました。' });
-      }
-    } finally {
-      setThreadsPosting(false);
-    }
-  }, [xThread]);
-
-  const handleThreadsDisconnect = useCallback(async () => {
-    const ok = await disconnectThreads();
-    if (ok) {
-      setThreadsStatus((s) => ({ ...s, connected: false, username: undefined }));
-      notifyInApp({ kind: 'info', title: 'Threadsの連携を解除しました', body: 'いつでも再連携できます。' });
     }
   }, []);
 
@@ -987,44 +938,8 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                 )}
               </div>
 
-              {/* Threads 自動投稿（CORE 経由の OAuth 連携） — 同じ本文を流用 */}
-              <div style={{ marginTop: 8, padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <span style={{ fontSize: '0.95rem' }}>@</span>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800 }}>Threads にも同じ内容で投稿</span>
-                </div>
-                {!threadsStatus.configured ? (
-                  <p style={{ fontSize: '0.78rem', color: 'var(--fg-muted)', margin: 0, lineHeight: 1.6 }}>
-                    Threadsの自動投稿は準備中です（提供者が設定中）。
-                  </p>
-                ) : threadsStatus.connected ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>
-                        {threadsStatus.username ? `@${threadsStatus.username} に投稿` : 'Threadsに投稿'}
-                      </span>
-                      <button
-                        onClick={handleThreadsDisconnect}
-                        style={{ fontSize: '0.7rem', padding: '0.25rem 0.6rem', background: 'transparent', color: 'var(--fg-muted)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, cursor: 'pointer' }}
-                      >連携を解除</button>
-                    </div>
-                    <button
-                      onClick={handleThreadsPost}
-                      disabled={threadsPosting || xThread.length === 0}
-                      style={{ width: '100%', padding: '0.75rem', minHeight: 44, background: threadsPosting ? 'rgba(255,255,255,0.08)' : accent, color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.9rem', fontWeight: 800, cursor: threadsPosting ? 'default' : 'pointer', opacity: threadsPosting ? 0.7 : 1 }}
-                    >
-                      {threadsPosting ? '投稿中…' : `Threadsに投稿する（${xThread.length}本を連続スレッド）`}
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={startThreadsConnect}
-                    style={{ width: '100%', padding: '0.75rem', minHeight: 44, background: accent, color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer' }}
-                  >
-                    Threadsと連携（初回だけ）
-                  </button>
-                )}
-              </div>
+              {/* Threads 自動投稿（CORE 経由の OAuth 連携） — X と同じ本文を流用 */}
+              <ThreadsPostPanel posts={xThread} brand="prism" />
             </section>
 
             {/* ハッシュタグ */}

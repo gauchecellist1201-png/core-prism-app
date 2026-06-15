@@ -31,6 +31,7 @@ import { detectAudioPeaks } from './reelStudio/Highlight';
 import { translateCaptions, type TargetLang } from './reelStudio/Translate';
 import { removeBackgroundFromUrl } from './reelStudio/BgRemove';
 import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
+import ThreadsPostPanel from '../components/ThreadsPostPanel';
 
 // ─── 編集テンプレート (型) ─────────────────────
 type ReelTemplate = {
@@ -3639,6 +3640,18 @@ JSON のみで返答。`;
               placeholder="保存して、明日から実践してね"
               style={{ width: '100%', padding: '0.55rem 0.7rem', border: '1px solid #E2DEF0', borderRadius: 8, fontSize: '0.85rem', marginBottom: '0.9rem' }}
             />
+
+            {/* Threads にも同じ内容で投稿（生成済みキャプションを 1 投稿で連携） */}
+            {scheduleCaption.trim() && (
+              <div style={{ marginBottom: '0.7rem' }}>
+                <ThreadsPostPanel
+                  posts={[
+                    [buildPostBody(), scheduleHashtags.trim()].filter(Boolean).join('\n\n'),
+                  ]}
+                  brand="iris"
+                />
+              </div>
+            )}
 
             {/* エラー */}
             {scheduleErr && (
