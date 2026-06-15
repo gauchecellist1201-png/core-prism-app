@@ -11,6 +11,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
+import { MetaIcon } from './ExecIcon';
 
 type Theme = 'prism' | 'iris';
 
@@ -140,7 +141,7 @@ export default function LiveAgentMock({ theme = 'prism' }: Props) {
               fontSize: '0.92rem', color: '#fff', fontWeight: 600, lineHeight: 1.45,
             }}
           >
-            <span style={{ fontSize: '1.2rem' }}>{CXO_META[active.cxo].emoji}</span>
+            <MetaIcon meta={CXO_META[active.cxo]} size={20} strokeWidth={2.2} />
             <span>{active.msg}</span>
           </motion.div>
         </AnimatePresence>
@@ -185,7 +186,7 @@ export default function LiveAgentMock({ theme = 'prism' }: Props) {
               }}
               title={meta.name}
             >
-              <span style={{ filter: isActive ? 'none' : 'grayscale(0.15)' }}>{meta.emoji}</span>
+              <MetaIcon meta={meta} size={20} color={isActive ? '#fff' : meta.color} strokeWidth={2.2} />
               {isActive && (
                 <motion.div
                   aria-hidden

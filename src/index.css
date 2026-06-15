@@ -2041,6 +2041,11 @@ html { scroll-behavior: smooth; }
 .iris-main {
   /* 上余白も safe-area 分加算 (ノッチに食い込ませない) */
   padding-top: calc(2rem + env(safe-area-inset-top, 0px)) !important;
+  /* flex 子の min-width:auto による横はみ出し(見切れ)を根絶。
+     これが無いと中身の最小幅で main が膨らみ、画面右が切れる (2026-06-15 修正) */
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-x: clip;
 }
 @media (min-width: 769px) {
   .iris-main {

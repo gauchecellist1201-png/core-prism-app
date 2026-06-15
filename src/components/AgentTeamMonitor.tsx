@@ -18,6 +18,7 @@ import { usePersonas } from '../hooks/usePersonas';
 import { useSettings } from '../hooks/useSettings';
 import InlineActionExecutor from './InlineActionExecutor';
 import CxoProfileModal from './CxoProfileModal';
+import { MetaIcon } from './ExecIcon';
 import { logSuggestion, setStatus as setSuggestionStatus } from '../lib/aiSuggestionLog';
 import { logDeliverable } from '../lib/cxoDeliverables';
 
@@ -248,7 +249,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
             ) : failedTask ? (
               <AlertTriangle size={22} />
             ) : watchInfo ? (
-              <span style={{ fontSize: 22 }}>{watchInfo.meta.emoji}</span>
+              <MetaIcon meta={watchInfo.meta} size={22} color={watchInfo.meta.color} strokeWidth={2.2} />
             ) : '🏢'}
           </div>
           <div className="agent-monitor-title-text" style={{ minWidth: 0, textAlign: 'left', flex: 1 }}>
@@ -301,7 +302,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
               border: `1px solid ${CXO_META[workingCxo].color}44`,
               display: 'inline-flex', alignItems: 'center', gap: 4,
             }}>
-              {CXO_META[workingCxo].emoji} {workingCxo}
+              <MetaIcon meta={CXO_META[workingCxo]} size={14} color={CXO_META[workingCxo].color} strokeWidth={2.3} /> {workingCxo}
             </span>
           )}
           {/* ヘッダのチェブロンを明示的なアイコンボタンに見せ、押せると分かるよう塗る */}
@@ -438,8 +439,11 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                         }}
                       >
                         <span style={{
-                          filter: !isWorking && !isDoneOnActive && !isWatching ? 'grayscale(0.5) opacity(0.7)' : 'none',
-                        }}>{meta.emoji}</span>
+                          opacity: !isWorking && !isDoneOnActive && !isWatching ? 0.7 : 1,
+                          display: 'inline-flex',
+                        }}>
+                          <MetaIcon meta={meta} size={16} color={isWorking ? '#fff' : meta.color} strokeWidth={2.2} />
+                        </span>
                         {isDoneOnActive && !isWorking && (
                           <span style={{
                             position: 'absolute', bottom: -2, right: -2,
@@ -481,7 +485,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                       fontSize: 11, color: CXO_META[inlineExec.cxo].color, fontWeight: 800,
                       letterSpacing: '0.08em',
                     }}>
-                      <span style={{ fontSize: 14 }}>{CXO_META[inlineExec.cxo].emoji}</span>
+                      <MetaIcon meta={CXO_META[inlineExec.cxo]} size={14} color={CXO_META[inlineExec.cxo].color} strokeWidth={2.3} />
                       <span>{cxoDisplayName(inlineExec.cxo)} が実行中</span>
                     </div>
                     <InlineActionExecutor
@@ -552,7 +556,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                         background: `linear-gradient(135deg, ${CXO_META[openCxo].color}, ${CXO_META[openCxo].color}cc)`,
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 14, color: '#fff',
-                      }}>{CXO_META[openCxo].emoji}</div>
+                      }}><MetaIcon meta={CXO_META[openCxo]} size={16} color="#fff" strokeWidth={2.2} /></div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>
                           {cxoDisplayName(openCxo)}
@@ -876,11 +880,10 @@ function TaskLogList({ task }: { task: AgentTask }) {
             }}
           >
             <span style={{
-              fontSize: 13, color: meta.color, fontWeight: 800,
-              width: 24, textAlign: 'center',
-              filter: !isWorking && !isDone && !isFailed ? 'grayscale(0.7) opacity(0.5)' : 'none',
+              width: 24, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              opacity: !isWorking && !isDone && !isFailed ? 0.5 : 1,
             }}>
-              {meta.emoji}
+              <MetaIcon meta={meta} size={15} color={meta.color} strokeWidth={2.2} />
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{

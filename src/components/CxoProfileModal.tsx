@@ -9,6 +9,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Briefcase, ThumbsUp, AlertTriangle, Quote, Heart } from 'lucide-react';
 import { CXO_META, cxoDisplayName, cxoNickname, type CxoRole } from '../hooks/useAgentTaskQueue';
+import { MetaIcon } from './ExecIcon';
 import { getCxoProfile } from '../lib/cxoProfiles';
 
 interface Props {
@@ -73,7 +74,7 @@ export default function CxoProfileModal({ role, onClose, onAssign }: Props) {
                 fontSize: 30,
                 flexShrink: 0,
                 boxShadow: `0 8px 24px ${meta.color}55`,
-              }}>{meta.emoji}</div>
+              }}><MetaIcon meta={meta} size={32} color="#fff" strokeWidth={2} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontSize: 10, letterSpacing: '0.25em',

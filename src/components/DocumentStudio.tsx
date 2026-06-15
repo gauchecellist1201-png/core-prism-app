@@ -10,6 +10,7 @@ import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
+import ThinkingIndicator from './ThinkingIndicator';
 import { notifyInApp } from '../lib/inAppNotify';
 import { confirmAction } from '../lib/confirmDialog';
 import { copyText } from '../lib/clipboard';
@@ -846,6 +847,22 @@ function TemplateDocStudio({
             style={{ minHeight: 48 }}
           >🧱 雛形だけ挿入</button>
         </div>
+        {isGenerating && (
+          <div className="mt-3">
+            <ThinkingIndicator
+              accent={persona.accentColor}
+              variant="compact"
+              subtitle={`${persona.name}（AI 担当）が ${DOC_TEMPLATE_META[kind].label} を書いています`}
+              messages={[
+                'いただいた材料を読み込んでいます…',
+                `${DOC_TEMPLATE_META[kind].label}の型に当てはめています…`,
+                '相手に伝わる言葉に整えています…',
+                '体裁（見出し・項目）を組み立てています…',
+                '初稿として下に書き出しています…',
+              ]}
+            />
+          </div>
+        )}
       </div>
 
       {/* 表示モード切替 */}

@@ -7,6 +7,7 @@ import { Sparkles, Copy, Check, Send, Loader2, TrendingUp, Clock } from 'lucide-
 import { runViral, type GeneratedPost, type TrendAnalysis, saveToQueue } from '../lib/viralEngine';
 import { isXConfigured, isXConnected, startXAuth, postTweet } from '../lib/xPost';
 import { BrandIcon } from './BrandIcons';
+import ThinkingIndicator from './ThinkingIndicator';
 
 export default function ViralStudioCard() {
   const [theme, setTheme] = useState('');
@@ -80,6 +81,21 @@ export default function ViralStudioCard() {
       </div>
 
       {err && <div style={{ fontSize: 11.5, color: '#F87171', marginBottom: 8, lineHeight: 1.5 }}>{err}</div>}
+
+      {loading && (
+        <ThinkingIndicator
+          accent="#A78BFA"
+          variant="compact"
+          subtitle="AI が「いま伸びている投稿」を読み解いています"
+          messages={[
+            `「${theme.trim()}」で伸びている投稿を集めています…`,
+            'バズった型（フック・構成）を分析しています…',
+            'あなた向けの切り口を3つ選んでいます…',
+            'X と Threads 用に書き分けています…',
+            'ハッシュタグを付けて仕上げています…',
+          ]}
+        />
+      )}
 
       {analysis && (
         <div style={{ background: 'var(--surface-3)', borderRadius: 10, padding: 12, marginBottom: 12, fontSize: 11.5, lineHeight: 1.6 }}>

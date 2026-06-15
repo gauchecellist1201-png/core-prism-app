@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, ArrowRight, Building2 } from 'lucide-react';
 import { CXO_META, type CxoRole, useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
+import { MetaIcon } from './ExecIcon';
 
 const SEEN_KEY = 'core_cxo_welcome_seen_v1';
 
@@ -219,7 +220,7 @@ export default function CxoWelcomeCard({ brand = 'prism', force = false }: Props
                     fontSize: 14,
                   }}
                 >
-                  {meta.emoji}
+                  <MetaIcon meta={meta} size={16} color={meta.color} strokeWidth={2.2} />
                 </motion.div>
               );
             })}

@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
+import { MetaIcon } from './ExecIcon';
 
 type Props = {
   onCta?: () => void;
@@ -146,7 +147,9 @@ export default function AnimatedExecStage({ onCta, ctaLabel = '7 日間 無料�
                   outline: 'none',
                 }}
               >
-                <div style={{ fontSize: '1.3rem', lineHeight: 1 }}>{m.emoji}</div>
+                <div style={{ lineHeight: 1 }}>
+                  <MetaIcon meta={m} size={22} color={isActive ? m.color : 'rgba(255,255,255,0.85)'} strokeWidth={2.1} />
+                </div>
                 <div style={{
                   fontSize: '0.55rem',
                   fontWeight: 700,
@@ -204,7 +207,7 @@ export default function AnimatedExecStage({ onCta, ctaLabel = '7 日間 無料�
                   fontSize: '0.7rem', letterSpacing: '0.1em',
                   color: meta.color, fontWeight: 700, marginBottom: 8,
                 }}>
-                  <span style={{ fontSize: '1.05rem' }}>{meta.emoji}</span>
+                  <MetaIcon meta={meta} size={17} color={meta.color} strokeWidth={2.2} />
                   {meta.name}
                   <span style={{
                     fontSize: '0.65rem',

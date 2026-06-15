@@ -11,15 +11,14 @@
 //   - 14 個の emoji を 7 列 2 行に配置し、それぞれ独自速度で上下フロート
 // ============================================================
 
-const EXECS = [
-  { emoji: '🌟', label: 'CEO' }, { emoji: '⚙', label: 'CTO' },
-  { emoji: '🎯', label: 'CPO' }, { emoji: '🎨', label: 'CDO' },
-  { emoji: '📣', label: 'CMO' }, { emoji: '💼', label: 'CSO' },
-  { emoji: '📊', label: 'CFO' }, { emoji: '🗂', label: 'COO' },
-  { emoji: '🔬', label: 'CDS' }, { emoji: '⚖', label: 'CLO' },
-  { emoji: '✨', label: 'UIE' }, { emoji: '👁', label: 'UXE' },
-  { emoji: '🛡', label: 'QAE' }, { emoji: '🤝', label: 'CHR' },
+import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
+import { MetaIcon } from './ExecIcon';
+
+const EXEC_ORDER: CxoRole[] = [
+  'CEO', 'CTO', 'CPO', 'CDO', 'CMO', 'CSO', 'CFO',
+  'COO', 'CDS', 'CLO', 'UIE', 'UXE', 'QAE', 'CHR',
 ];
+const EXECS = EXEC_ORDER.map((role) => ({ role, meta: CXO_META[role], label: role }));
 
 // 14 個 × 個別位相 + 速度
 const KEYFRAMES_NAME = 'core-hero-exec-float';
@@ -82,7 +81,7 @@ export default function HeroExecLoop({
           const low = Math.max(0.03, peak * 0.35);
           return (
             <div
-              key={e.label + i}
+              key={e.role + i}
               className="core-hero-exec-cell"
               style={{
                 display: 'flex',
@@ -98,7 +97,9 @@ export default function HeroExecLoop({
                 filter: 'drop-shadow(0 0 14px rgba(167,139,250,0.18))',
               }}
             >
-              <span aria-hidden style={{ lineHeight: 1 }}>{e.emoji}</span>
+              <span aria-hidden style={{ lineHeight: 1, display: 'inline-flex' }}>
+                <MetaIcon meta={e.meta} size={40} color="rgba(255,255,255,0.85)" strokeWidth={1.6} />
+              </span>
               <span
                 aria-hidden
                 style={{

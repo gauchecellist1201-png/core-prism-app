@@ -30,6 +30,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CXO_META, useAgentTaskQueue, type CxoRole, cxoDisplayName } from '../hooks/useAgentTaskQueue';
+import { MetaIcon } from './ExecIcon';
 import { listDeliverables, logDeliverable } from '../lib/cxoDeliverables';
 import type { Persona } from '../types/identity';
 
@@ -426,7 +427,7 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 12, color: '#0a0a0f',
                       boxShadow: active ? `0 0 8px ${meta.color}` : 'none',
-                    }}>{meta.emoji}</div>
+                    }}><MetaIcon meta={meta} size={13} color="#0a0a0f" strokeWidth={2.4} /></div>
                     <div style={{ fontSize: 8, fontWeight: 800, marginTop: 2, color: active ? meta.color : 'rgba(255,255,255,0.7)' }}>{role}</div>
                     <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.55)' }}>{name}</div>
                   </div>
@@ -538,7 +539,7 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: 11,
                               boxShadow: pending ? `0 0 10px ${meta.color}` : 'none',
-                            }}>{meta.emoji}</div>
+                            }}><MetaIcon meta={meta} size={12} color="#0a0a0f" strokeWidth={2.4} /></div>
                           ) : (
                             <div style={{
                               width: 20, height: 20, borderRadius: 999,
