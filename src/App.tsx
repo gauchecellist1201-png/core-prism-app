@@ -852,7 +852,6 @@ export default function App() {
           messages={chatMessages}
           onSend={handleSendMessage}
           isLoading={isChatLoading}
-          brand="prism"
         />
       )}
       {/* AI 会社 作戦本部 — 常駐ウィジェット (承認したタスクの実行を可視化)

@@ -19,11 +19,9 @@ interface Props {
   messages: ChatMessage[];
   onSend: (msg: string) => Promise<void> | void;
   isLoading: boolean;
-  /** ブランド差し替え（既定 prism）。 */
-  brand?: 'prism' | 'iris';
 }
 
-export default function BottomChatDock({ accent, name, messages, onSend, isLoading, brand = 'prism' }: Props) {
+export default function BottomChatDock({ accent, name, messages, onSend, isLoading }: Props) {
   const [input, setInput] = useState('');
   const [expanded, setExpanded] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
