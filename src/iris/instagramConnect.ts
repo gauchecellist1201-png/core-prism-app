@@ -255,6 +255,39 @@ export async function fetchOauthProfile(): Promise<IgProfile | null> {
   } catch { return null; }
 }
 
+/** OAuth 連携済みの本人の投稿 (インサイト付き) */
+export interface OauthMediaItem {
+  id: string;
+  caption: string;
+  mediaType: string;       // IMAGE | VIDEO | CAROUSEL_ALBUM
+  permalink: string;
+  thumbnailUrl: string;
+  timestamp: string;       // ISO
+  likes: number;
+  comments: number;
+  reach?: number;
+  saved?: number;
+}
+
+/**
+ * OAuth 連携済みなら本人の直近投稿 (各投稿の reach/saved 付き) を取得。
+ * 未連携・失敗時は空配列。
+ */
+export async function fetchOauthMedia(): Promise<OauthMediaItem[]> {
+  try {
+    const resp = await fetch('/api/instagram/media', { credentials: 'include' });
+    if (!resp.ok) return [];
+    const data = await resp.json() as { media?: OauthMediaItem[] };
+    return Array.isArray(data.media) ? data.media : [];
+  } catch { return []; }
+}
+
+/** ig_connected cookie の有無で OAuth 連携済みか判定 (クライアント側) */
+export function isOauthConnected(): boolean {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.includes('ig_connected=1');
+}
+
 /**
  * URL に ig_oauth=ok が付いていたら OAuth 戻りとみなしてプロフィールを取り込む。
  * IrisApp の初期化時に呼ぶ想定。

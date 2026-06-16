@@ -27,6 +27,7 @@ import {
   readXCallbackResult, translateXError, type XStatus,
 } from '../lib/xConnect';
 import ThreadsPostPanel from './ThreadsPostPanel';
+import { BrandIcon } from './BrandIcons';
 
 interface Props {
   persona: Persona;
@@ -869,14 +870,14 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
             {/* X スレッド セクション */}
             <section style={{ marginBottom: 24 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: '1.2rem' }}>🐦</span> X スレッド ({xThread.length}本)
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <BrandIcon name="x" size={19} /> X スレッド ({xThread.length}本)
                 </h3>
                 <button
                   onClick={() => copy(xThread.map((t, i) => `${i + 1}/${xThread.length}\n${t}`).join('\n\n---\n\n'), 'x-all')}
                   style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', background: accent, color: '#fff', border: 'none', borderRadius: 999, cursor: 'pointer', fontWeight: 700 }}
                 >
-                  {copiedKey === 'x-all' ? '✓' : '📋 全部コピー'}
+                  {copiedKey === 'x-all' ? '✓ コピー済' : '全部コピー'}
                 </button>
               </div>
               <div style={{ display: 'grid', gap: 8 }}>
@@ -903,8 +904,23 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                 ))}
               </div>
 
+              {/* ─── SNSに投稿・連携（目立つハブ）─────────────────── */}
+              <div style={{ marginTop: 16, padding: '1rem', background: 'linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(236,72,153,0.08) 100%)', border: '1.5px solid rgba(139,92,246,0.35)', borderRadius: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <BrandIcon name="x" size={18} />
+                  <BrandIcon name="threads" size={18} />
+                  <span style={{ fontSize: '0.98rem', fontWeight: 900 }}>SNSに投稿・連携</span>
+                </div>
+                <p style={{ fontSize: '0.74rem', color: 'var(--fg-muted)', margin: '0 0 12px', lineHeight: 1.6 }}>
+                  作った文章を、X と Threads にそのまま投稿できます。初回だけ連携すれば、次からはボタン1つです。
+                </p>
+
               {/* X 自動投稿（CORE 経由の OAuth 連携） */}
-              <div style={{ marginTop: 12, padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10 }}>
+              <div style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <BrandIcon name="x" size={15} />
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800 }}>X に投稿</span>
+                </div>
                 {!xStatus.configured ? (
                   <p style={{ fontSize: '0.78rem', color: 'var(--fg-muted)', margin: 0, lineHeight: 1.6 }}>
                     Xの自動投稿は準備中です（提供者が設定中）。上の「↗ X で開く」から手動で投稿できます。
@@ -940,6 +956,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
 
               {/* Threads 自動投稿（CORE 経由の OAuth 連携） — X と同じ本文を流用 */}
               <ThreadsPostPanel posts={xThread} brand="prism" />
+              </div>
             </section>
 
             {/* ハッシュタグ */}
