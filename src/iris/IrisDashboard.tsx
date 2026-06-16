@@ -149,7 +149,7 @@ import IrisEarnHero from './IrisEarnHero';
 import IrisEarningsHero from './IrisEarningsHero';
 import WellnessTracker from '../components/WellnessTracker';
 import IgConnectModal from './IgConnectModal';
-import { loadIgProfile, consumeOauthCallback, fetchOauthProfile, saveIgProfile, type IgProfile } from './instagramConnect';
+import { loadIgProfile, consumeOauthCallback, fetchOauthProfile, saveIgProfile, syncOauthMediaToHistory, type IgProfile } from './instagramConnect';
 import IrisDmDraftModal from './IrisDmDraftModal';
 import type { DmDealInput } from './dmDraft';
 import MobileGeminiDashboard from '../components/MobileGeminiDashboard';
@@ -1082,6 +1082,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
       fetchOauthProfile().then(p => {
         if (p && p.followers) { saveIgProfile(p); setIgProfile(p); }
       }).catch(() => {});
+      // 本人の実投稿(reach/saved/ER)を投稿履歴に同期 → 「伸ばす作戦」が実データで埋まる
+      syncOauthMediaToHistory().catch(() => {});
     }
   }, []);
 

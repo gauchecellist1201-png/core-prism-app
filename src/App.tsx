@@ -81,6 +81,7 @@ import TutorialOverlay from './components/TutorialOverlay';
 import WowOnboarding from './components/WowOnboarding';
 import OfflineNotice from './components/OfflineNotice';
 import AgentTeamMonitor from './components/AgentTeamMonitor';
+import BottomChatDock from './components/BottomChatDock';
 import ExtensionCaptureToast from './components/ExtensionCaptureToast';
 import CxoWelcomeCard from './components/CxoWelcomeCard';
 import StripeFailureBanner from './components/StripeFailureBanner';
@@ -842,6 +843,18 @@ export default function App() {
       </AnimatePresence>
       {/* 課金失敗 (past_due / unpaid) 救済バナー — dashboard 上部に固定表示 */}
       {view === 'dashboard' && <StripeFailureBanner brand="prism" />}
+      {/* Claude Code 風 下部チャットドック — 右サイドとは別の分かりやすい入口。
+          チャット状態(messages/onSend/isLoading)を共有。コマンドセンター展開中は隠す。 */}
+      {view === 'dashboard' && !commandCenterOpen && activePersona && (
+        <BottomChatDock
+          accent={activePersona.accentColor}
+          name={activePersona.name}
+          messages={chatMessages}
+          onSend={handleSendMessage}
+          isLoading={isChatLoading}
+          brand="prism"
+        />
+      )}
       {/* AI 会社 作戦本部 — 常駐ウィジェット (承認したタスクの実行を可視化)
           2026-06-05 オーナー指示: コマンドセンター 開いて いる 間 は 非表示 */}
       {view === 'dashboard' && !commandCenterOpen && <AgentTeamMonitor brand="prism" />}

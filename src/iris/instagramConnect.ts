@@ -289,6 +289,53 @@ export function isOauthConnected(): boolean {
 }
 
 /**
+ * OAuth 連携済みなら本人の実投稿(reach/saved/ER付き)を取得し、
+ * 投稿履歴 (core_iris_posthistory_v1) に直接マージする。
+ * → 「伸ばす作戦」の統計(投稿数/平均ER/平均リーチ/平均保存)・投稿ギャラリーが
+ *   どの画面から開いても実データで埋まる。手入力/スクショ不要。
+ * 既存(url=permalink)は metrics を更新、無ければ追加。重複しない。
+ * @returns 追加した新規投稿数
+ */
+export async function syncOauthMediaToHistory(): Promise<number> {
+  if (!isOauthConnected()) return 0;
+  const media = await fetchOauthMedia();
+  if (!media.length) return 0;
+  const followers = loadIgProfile()?.followers || 0;
+  const KEY = 'core_iris_posthistory_v1';
+  let posts: any[] = [];
+  try { posts = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { posts = []; }
+  const byUrl = new Map<string, any>(posts.filter(p => p && p.url).map(p => [p.url as string, p]));
+  let added = 0;
+  for (const m of media) {
+    if (!m.permalink) continue;
+    const er = followers > 0
+      ? Math.round(((m.likes + m.comments) / followers) * 1000) / 10
+      : undefined;
+    const metrics = { reach: m.reach, saves: m.saved, likes: m.likes, comments: m.comments, engagementRate: er };
+    const existing = byUrl.get(m.permalink);
+    if (existing) {
+      existing.metrics = { ...(existing.metrics || {}), ...metrics };
+    } else {
+      posts.unshift({
+        id: 'ig_' + m.id,
+        postedAt: m.timestamp || new Date().toISOString(),
+        platform: 'instagram',
+        contentType: m.mediaType === 'VIDEO' ? 'reel' : 'post',
+        title: (m.caption || '(キャプションなし)').slice(0, 40),
+        caption: m.caption,
+        url: m.permalink,
+        notes: 'Instagram連携から自動取得',
+        metrics,
+      });
+      added++;
+    }
+  }
+  posts.sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime());
+  try { localStorage.setItem(KEY, JSON.stringify(posts)); } catch { /* quota */ }
+  return added;
+}
+
+/**
  * URL に ig_oauth=ok が付いていたら OAuth 戻りとみなしてプロフィールを取り込む。
  * IrisApp の初期化時に呼ぶ想定。
  */
