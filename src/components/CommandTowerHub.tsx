@@ -8,7 +8,7 @@
 //   - 「ループを回す」で Lume→Iris→Prism(Haiku)→Resonance が一周
 //   - ノードをタップ → そのチャネルの最近のシグナル + CTA
 // ============================================================
-import { useState, useEffect, useRef, type ReactElement } from 'react';
+import { useState, useEffect, useRef, type ReactElement, type CSSProperties } from 'react';
 import { Radio, CheckCircle2, X } from 'lucide-react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo } from './Logo';
 import {
@@ -44,7 +44,25 @@ export default function CommandTowerHub() {
   const [steps, setSteps] = useState<LoopStep[]>([]);
   const [activeLeg, setActiveLeg] = useState<LoopChannel | null>(null);
   const [selected, setSelected] = useState<LoopChannel | null>(null);
+  const [copied, setCopied] = useState(false);
   const tick = useRef(0);
+
+  // ループ完了後に Prism が出した「今日の一手」= 実際に送れるメッセージ
+  const resultLine = !running && steps.length >= 4
+    ? steps.find((s) => s.leg === 'prism')?.output
+    : undefined;
+  const resultWho = signals.filter((s) => s.channel === 'prism').slice(-1)[0]?.who;
+
+  const copyLine = async (line: string) => {
+    try { await navigator.clipboard?.writeText(line); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* */ }
+  };
+  const shareUrl = (kind: 'threads' | 'x' | 'line', text: string) => {
+    const t = encodeURIComponent(text);
+    const url = kind === 'threads' ? `https://www.threads.net/intent/post?text=${t}`
+      : kind === 'x' ? `https://twitter.com/intent/tweet?text=${t}`
+      : `https://line.me/R/share?text=${t}`;
+    if (typeof window !== 'undefined') window.open(url, '_blank', 'noopener');
+  };
 
   const stats = channelStats(signals);
 
@@ -233,16 +251,57 @@ export default function CommandTowerHub() {
         </div>
       )}
 
+      {/* 成果物 — Prism が出した「今日の一手」。実際に送れるメッセージとして使える */}
+      {resultLine && (
+        <div className="ct-step" style={{
+          marginTop: 12, padding: '13px 14px', borderRadius: 14,
+          background: 'linear-gradient(135deg, rgba(167,139,250,0.14), rgba(99,102,241,0.06))',
+          border: '1.5px solid rgba(167,139,250,0.45)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
+            <span style={{ fontSize: 11.5, fontWeight: 900, color: '#A78BFA', letterSpacing: '0.02em' }}>
+              Prism が出した今日の一手
+            </span>
+            {resultWho && <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--fg-muted)' }}>宛先 {resultWho}</span>}
+          </div>
+          <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg-strong)', lineHeight: 1.6, margin: '0 0 11px' }}>
+            {resultLine}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            <button onClick={() => copyLine(resultLine)} style={actBtn('#A78BFA', true)}>
+              {copied ? '✓ コピーしました' : 'コピー'}
+            </button>
+            <button onClick={() => shareUrl('line', resultLine)} style={actBtn('#06C755')}>LINEで送る</button>
+            <button onClick={() => shareUrl('threads', resultLine)} style={actBtn('#0A0A0A')}>Threadsで送る</button>
+            <button onClick={() => shareUrl('x', resultLine)} style={actBtn('#0A0A0A')}>Xで送る</button>
+          </div>
+          <p style={{ fontSize: 10.5, color: 'var(--fg-subtle)', margin: '9px 0 0', lineHeight: 1.5 }}>
+            このメッセージは AI が今その場で生成した実物です。コピーするか、各SNS/LINEの送信画面を開いてそのまま送れます。
+          </p>
+        </div>
+      )}
+
       {/* ノード詳細 */}
       {selected && (
         <NodeDetail ch={selected} signals={signals} onClose={() => setSelected(null)} />
       )}
 
       <p style={{ fontSize: 10, color: 'var(--fg-subtle)', margin: '10px 2px 0', lineHeight: 1.5 }}>
-        ※ 数値・ファンはデモ用のサンプルです。Iris は実アプリ稼働中、Resonance(LINE)・Lume(リンク) は接続準備中。
+        ※ 例として表示しているファン・反応はサンプルですが、Prism が出す「今日の一手」は AI がその場で作る実物で、コピー／各SNS・LINEからそのまま送れます。Iris は実アプリ稼働中、Resonance(LINE)・Lume(リンク) は接続準備中。
       </p>
     </div>
   );
+}
+
+// 成果カードのアクションボタン共通スタイル（全て塗り＋白文字で暗背景でも視認可）
+function actBtn(color: string, primary = false): CSSProperties {
+  return {
+    padding: '8px 14px', minHeight: 40, borderRadius: 10,
+    background: color, color: '#fff',
+    border: '1px solid rgba(255,255,255,0.18)',
+    fontSize: 12, fontWeight: 800, cursor: 'pointer',
+    boxShadow: primary ? `0 4px 14px ${color}66` : 'none',
+  };
 }
 
 function NodeDetail({ ch, signals, onClose }: { ch: LoopChannel; signals: LoopSignal[]; onClose: () => void }) {
