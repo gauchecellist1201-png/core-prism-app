@@ -2038,6 +2038,23 @@ html { scroll-behavior: smooth; }
 }
 
 /* IrisDashboard ヘッダ: sticky top の safe-area-inset-top を必ず確保 */
+/* ============================================================
+   Iris は常に「淡ピンクの明色テーマ」。OS / アプリのダークモード
+   ([data-theme="dark"]) でも、共有部品 (cp-* / var(--fg) を使う
+   AgentProposalCard 等) が白地に白文字にならないよう、Iris コンテキストでは
+   明色の CSS 変数を強制する。(白文字バグ根治 2026-06-16)
+   ============================================================ */
+body[data-iris-dock="on"] {
+  --fg: #2A1A3A;
+  --fg-strong: #1A0A26;
+  --fg-muted: #5A4570;
+  --fg-subtle: #8A7AA0;
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-2: rgba(255, 255, 255, 0.85);
+  --surface-3: rgba(255, 255, 255, 0.60);
+  --border: rgba(42, 26, 58, 0.14);
+}
+
 .iris-main {
   /* 上余白も safe-area 分加算 (ノッチに食い込ませない) */
   padding-top: calc(2rem + env(safe-area-inset-top, 0px)) !important;

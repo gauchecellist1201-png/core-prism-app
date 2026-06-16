@@ -28,6 +28,9 @@ export interface IgProfile {
   source: 'self' | 'oauth' | 'screenshot-ai';
   connectedAt: string;     // ISO
   updatedAt: string;       // ISO
+  mediaCount?: number;     // 投稿数 (OAuth 実データ)
+  engagementRate?: number; // エンゲージ率 % (OAuth 実データから算出)
+  avatarUrl?: string;      // プロフィール画像 URL
 }
 
 const STORAGE_KEY = 'core_iris_ig_profile_v1';
@@ -221,13 +224,20 @@ export async function fetchOauthProfile(): Promise<IgProfile | null> {
   try {
     const resp = await fetch('/api/instagram/profile', { credentials: 'include' });
     if (!resp.ok) return null;
-    const data = await resp.json() as Partial<IgProfile> & { handle?: string };
+    const data = await resp.json() as Partial<IgProfile> & { handle?: string; raw?: { mediaCount?: number; avatarUrl?: string } };
     if (!data.handle) return null;
+    const followers = data.followers || 0;
+    const avgLikes = data.avgLikes || 0;
+    const avgComments = data.avgComments || 0;
+    // エンゲージ率 = (平均いいね + 平均コメント) / フォロワー × 100
+    const engagementRate = followers > 0
+      ? Math.round(((avgLikes + avgComments) / followers) * 1000) / 10
+      : undefined;
     return {
       handle: data.handle,
-      followers: data.followers || 0,
-      avgLikes: data.avgLikes || 0,
-      avgComments: data.avgComments || 0,
+      followers,
+      avgLikes,
+      avgComments,
       topPostCategories: data.topPostCategories || [],
       bestPostTime: data.bestPostTime || '土 21:00',
       saveRate: data.saveRate || 0,
@@ -238,6 +248,9 @@ export async function fetchOauthProfile(): Promise<IgProfile | null> {
       source: 'oauth',
       connectedAt: data.connectedAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      mediaCount: data.raw?.mediaCount,
+      engagementRate,
+      avatarUrl: data.raw?.avatarUrl,
     };
   } catch { return null; }
 }
