@@ -27,6 +27,7 @@ import {
 import { usePostQueue } from './usePostQueue';
 import type { IrisBackgroundDef } from './irisStyle';
 import { computeApplyKpi, loadApplyHistory } from './brandDealMatch';
+import { fetchOauthMedia, isOauthConnected, loadIgProfile } from './instagramConnect';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -82,6 +83,45 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queue.posts.length]);
+
+  // Instagram 本連携(OAuth)済みなら、本人の実投稿(reach/saved/ER付き)を履歴に取り込む。
+  // → 既存の統計(投稿数/平均ER/平均リーチ/平均保存)・ギャラリーがそのまま実データで埋まる。
+  //   手入力もスクショも不要 (連携してない人はスクショ方式が従来どおり使える)。
+  const oauthSyncedRef = useRef(false);
+  useEffect(() => {
+    if (oauthSyncedRef.current || !isOauthConnected()) return;
+    oauthSyncedRef.current = true;
+    (async () => {
+      const media = await fetchOauthMedia();
+      if (!media.length) return;
+      const followers = loadIgProfile()?.followers || 0;
+      const byUrl = new Map(history.posts.filter(p => p.url).map(p => [p.url as string, p]));
+      for (const m of media) {
+        if (!m.permalink) continue;
+        const er = followers > 0
+          ? Math.round(((m.likes + m.comments) / followers) * 1000) / 10
+          : undefined;
+        const metrics = { reach: m.reach, saves: m.saved, likes: m.likes, comments: m.comments, engagementRate: er };
+        const existing = byUrl.get(m.permalink);
+        const contentType: ContentType = m.mediaType === 'VIDEO' ? 'reel' : 'post';
+        if (existing) {
+          history.update(existing.id, { metrics });
+        } else {
+          history.add({
+            postedAt: m.timestamp || new Date().toISOString(),
+            platform: 'instagram',
+            contentType,
+            title: (m.caption || '(キャプションなし)').slice(0, 40),
+            caption: m.caption,
+            url: m.permalink,
+            notes: 'Instagram連携から自動取得',
+            metrics,
+          });
+        }
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stats = useMemo(() => computeStats(history.posts), [history.posts]);
 

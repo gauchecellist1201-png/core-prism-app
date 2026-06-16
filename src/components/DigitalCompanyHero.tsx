@@ -249,15 +249,15 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                 transition={working ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
                 style={{
                   width: 46, height: 46, borderRadius: 999,
-                  // 光沢のある球体：左上に白いハイライト → ブランド色 へ。下地の暗さを透かさず鮮やかに。
-                  background: `radial-gradient(circle at 32% 24%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.15) 28%, ${meta.color} 58%, ${meta.color} 100%)`,
+                  // 1エージェント1カラー：単色で塗り、上部にだけ軽い艶。暗い影は入れず黒い丸が出ないように。
+                  background: meta.color,
                   color: '#0a0a0f',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 22, fontWeight: 900,
-                  // 外側にカラーグロー（輝き）＋内側に上ハイライト/下シャドウで艶のある立体感
+                  // 外側にカラーグロー（輝き）＋上だけ淡いハイライト。下方向の黒い影は入れない。
                   boxShadow: working
-                    ? `0 0 28px ${meta.color}, 0 0 50px ${meta.color}88, inset 0 2px 5px rgba(255,255,255,0.6), inset 0 -4px 9px rgba(0,0,0,0.3)`
-                    : `0 0 16px ${meta.color}cc, 0 6px 16px ${meta.color}66, inset 0 2px 5px rgba(255,255,255,0.55), inset 0 -4px 9px rgba(0,0,0,0.28)`,
+                    ? `0 0 26px ${meta.color}, 0 0 48px ${meta.color}88, inset 0 2px 4px rgba(255,255,255,0.45)`
+                    : `0 0 15px ${meta.color}aa, 0 5px 14px ${meta.color}55, inset 0 2px 4px rgba(255,255,255,0.4)`,
                   marginBottom: 3,
                 }}
               >
@@ -420,10 +420,10 @@ function CxoActionPopover({
             transition={{ type: 'spring', stiffness: 340, damping: 18 }}
             style={{
               width: 72, height: 72, borderRadius: 20,
-              background: `radial-gradient(circle at 30% 22%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.15) 30%, ${meta.color} 60%, ${meta.color} 100%)`,
+              background: meta.color,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, color: '#0a0a0f', flexShrink: 0,
-              boxShadow: `0 0 34px ${meta.color}cc, 0 8px 22px rgba(0,0,0,0.4), inset 0 3px 6px rgba(255,255,255,0.55), inset 0 -5px 11px rgba(0,0,0,0.3)`,
+              boxShadow: `0 0 30px ${meta.color}bb, 0 8px 20px ${meta.color}44, inset 0 3px 6px rgba(255,255,255,0.45)`,
               position: 'relative',
             }}
           >
