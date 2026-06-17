@@ -15,7 +15,9 @@
 // ============================================================
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Send, ChevronDown, ChevronUp, Settings, Plus, FileText, BookOpen } from 'lucide-react';
+import { Sparkles, Send, ChevronDown, ChevronUp, Settings, Plus, FileText, BookOpen, Gem } from 'lucide-react';
+import CoreCreditsPanel from './CoreCreditsPanel';
+import { getBalance as getCreditBalance, earnDaily as earnCreditDaily, earnOnce as earnCreditOnce } from '../lib/coreCredits';
 import { downloadCurrentChatTxt, downloadAllChatsMd } from '../lib/chatHistoryExport';
 import type { Persona, AppSettings } from '../types/identity';
 import { useClaude, selectRelevantKnowledge } from '../hooks/useClaude';
@@ -99,6 +101,8 @@ export default function MobileGeminiDashboard({
   const [showPersonaPicker, setShowPersonaPicker] = useState(false);
   // CXO ピルをタップ → 「この CXO に任せる 3 候補」を出して選択させる
   const [openCxoPicker, setOpenCxoPicker] = useState<CxoRole | null>(null);
+  const [showCredits, setShowCredits] = useState(false);
+  const [creditBalance, setCreditBalance] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -138,6 +142,16 @@ export default function MobileGeminiDashboard({
 
   // 自動保存
   useEffect(() => { saveMessages(persona.id, msgs); }, [persona.id, msgs]);
+
+  // CORE Credits — 初回 + 毎日の付与、残高を購読
+  useEffect(() => {
+    earnCreditOnce('onboarding', 'はじめての利用', 100);
+    earnCreditDaily('daily_open', '毎日ひらく', 5);
+    const sync = () => setCreditBalance(getCreditBalance());
+    sync();
+    window.addEventListener('core-credits-changed', sync);
+    return () => window.removeEventListener('core-credits-changed', sync);
+  }, []);
 
   // 末尾へスクロール
   useEffect(() => {
@@ -247,6 +261,20 @@ export default function MobileGeminiDashboard({
           <ChevronDown size={14} style={{ opacity: 0.5 }} />
         </button>
         <button
+          onClick={() => setShowCredits(true)}
+          title="CORE Credits"
+          aria-label="CORE Credits"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 8, padding: '6px 9px', color: '#fff', cursor: 'pointer',
+            fontSize: 12, fontWeight: 800,
+          }}
+        >
+          <Gem size={14} style={{ color: accent }} strokeWidth={2.2} />
+          {creditBalance.toLocaleString()}
+        </button>
+        <button
           onClick={onOpenFullFeatures}
           title="細かい機能を全部見る"
           style={{
@@ -265,6 +293,8 @@ export default function MobileGeminiDashboard({
           }}
         ><Settings size={14} /></button>
       </header>
+
+      {showCredits && <CoreCreditsPanel onClose={() => setShowCredits(false)} />}
 
       {/* 人格切替 ドロップダウン */}
       <AnimatePresence>
