@@ -14,7 +14,8 @@ import IrisDashboard from './IrisDashboard';
 import TutorialOverlay from '../components/TutorialOverlay';
 import WowOnboarding from '../components/WowOnboarding';
 import CheckoutModal from '../components/CheckoutModal';
-import { useBillingUser, IRIS_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, syncSubscriptionState, type Plan } from '../lib/billing';
+import { useBillingUser, IRIS_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, isTrialExpired, syncSubscriptionState, type Plan } from '../lib/billing';
+import TrialExpiredLock from '../components/TrialExpiredLock';
 
 const ENTERED_KEY = 'core_iris_entered_v1';
 
@@ -32,7 +33,8 @@ function markEntered() {
 
 export default function IrisApp() {
   const { settings } = useSettings();
-  const { user } = useBillingUser();
+  const { user, signout } = useBillingUser();
+  const trialExpired = !isMasterAuth() && isTrialExpired(user);
   const [entered, setEntered] = useState(() => {
     // ?lp=1（コーポレートサイト等から）の時は、再訪・マスターでも必ず LP を見せる
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('lp') === '1') return false;
@@ -131,6 +133,24 @@ export default function IrisApp() {
       <GlobalVoiceInput />
       {/* PWA インストール導線 — Android/Chrome prompt + iOS Safari ガイド */}
       <InstallPwaBanner brand="iris" />
+
+      {/* 無料体験 終了 → 画面ロック（課金で続きから使える） */}
+      {trialExpired && !checkoutPlan && (
+        <TrialExpiredLock
+          brand="iris"
+          accent="#E1306C"
+          onChoose={(p) => setCheckoutPlan(p)}
+          onSignout={signout}
+        />
+      )}
+      {checkoutPlan && (
+        <CheckoutModal
+          brand="iris"
+          plan={checkoutPlan}
+          onClose={() => setCheckoutPlan(null)}
+          onSuccess={() => { markEntered(); setEntered(true); }}
+        />
+      )}
     </>
   );
 }

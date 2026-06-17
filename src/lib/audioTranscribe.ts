@@ -146,18 +146,30 @@ export async function transcribeAudioFile(file: File, opts: TranscribeOptions = 
   const samples = await decodeAndResample(file);
   const chunkLen = CHUNK_SEC * TARGET_RATE;
   const total = Math.max(1, Math.ceil(samples.length / chunkLen));
-  const parts: string[] = [];
-
-  for (let i = 0; i < total; i++) {
-    opts.onProgress?.(i, total);
-    const slice = samples.subarray(i * chunkLen, Math.min((i + 1) * chunkLen, samples.length));
-    const wav = encodeWav(slice, TARGET_RATE);
-    const text = await transcribeChunk(toBase64(wav), model);
-    if (text) parts.push(text);
+  // 並列ワーカープールで文字起こし (旧: 直列ループで N×待ち=遅い → 離脱要因)。
+  // 順序は results[i] で保持。同時実行は apiQueue (MAX_CONCURRENT) が最終的に律速。
+  const results: string[] = new Array(total).fill('');
+  let next = 0;
+  let done = 0;
+  const CONCURRENCY = Math.min(6, total);
+  async function worker() {
+    for (;;) {
+      const i = next++;
+      if (i >= total) break;
+      const slice = samples.subarray(i * chunkLen, Math.min((i + 1) * chunkLen, samples.length));
+      const wav = encodeWav(slice, TARGET_RATE);
+      try {
+        results[i] = await transcribeChunk(toBase64(wav), model);
+      } catch {
+        results[i] = '';
+      }
+      done++;
+      opts.onProgress?.(done, total);
+    }
   }
-  opts.onProgress?.(total, total);
+  await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
 
-  const joined = parts.join('\n').trim();
+  const joined = results.filter(Boolean).join('\n').trim();
   if (!joined) {
     throw new Error('音声から文字を取り出せませんでした。録音が無音か、声が小さすぎる可能性があります。');
   }

@@ -557,6 +557,19 @@ export function isTrialActive(user: BillingUser | null): boolean {
   return new Date(user.trialEndsAt).getTime() > Date.now();
 }
 
+/**
+ * 無料トライアルが「終了済み」か (= 画面をロックして課金へ誘導すべき状態)。
+ * - free プランで trialEndsAt が過去 → true
+ * - 有料プラン / トライアル中 / 期限未設定 → false
+ * master モードはここでは判定しない (呼び出し側で isMasterAuth を併用)。
+ */
+export function isTrialExpired(user: BillingUser | null): boolean {
+  if (!user) return false;
+  if (user.plan !== 'free') return false;
+  if (!user.trialEndsAt) return false;
+  return new Date(user.trialEndsAt).getTime() <= Date.now();
+}
+
 /** アプリにアクセスできる状態か (master or 有効な signup) */
 export function isAuthorized(): boolean {
   if (isMasterAuth()) return true;

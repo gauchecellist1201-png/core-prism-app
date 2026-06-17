@@ -71,7 +71,8 @@ const FAQPage = lazy(() => import('./pages/FAQPage'));
 const TokushohoPage = lazy(() => import('./pages/TokushohoPage'));
 const MusicSchoolLanding = lazy(() => import('./components/MusicSchoolLanding'));
 const IndustryLanding = lazy(() => import('./components/IndustryLanding'));
-import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, syncSubscriptionState, type Plan } from './lib/billing';
+import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, isTrialExpired, syncSubscriptionState, type Plan } from './lib/billing';
+import TrialExpiredLock from './components/TrialExpiredLock';
 import { PrismBackground } from './components/PrismBackground';
 import GlobalVoiceInput from './components/GlobalVoiceInput';
 import { useTheme } from './hooks/useTheme';
@@ -576,8 +577,10 @@ export default function App() {
   }, []);
 
   // 課金フロー: 未 signup なら Checkout モーダルで signup → 入場
-  const { user: billingUser } = useBillingUser();
+  const { user: billingUser, signout } = useBillingUser();
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
+  // 無料体験が終了したら画面をロックして課金へ誘導（master は対象外）
+  const trialExpired = !isMasterAuth() && isTrialExpired(billingUser);
 
   // 起動時に Stripe / webhook と localStorage を同期 (subscriptionId がある場合のみ)
   useEffect(() => {
@@ -746,6 +749,16 @@ export default function App() {
             plan={checkoutPlan}
             onClose={() => setCheckoutPlan(null)}
             onSuccess={handleCheckoutSuccess}
+          />
+        )}
+
+        {/* 無料体験 終了 → 画面ロック（課金で続きから使える）。CheckoutModal が開いている間は二重表示しない */}
+        {trialExpired && !checkoutPlan && (
+          <TrialExpiredLock
+            brand="prism"
+            accent="#A78BFA"
+            onChoose={(p) => setCheckoutPlan(p)}
+            onSignout={signout}
           />
         )}
 

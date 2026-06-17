@@ -142,10 +142,14 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
     }
 
     try {
-      setProcessingLabel('AI で文字起こし中 (1-3 分)');
+      setProcessingLabel('AI で文字起こし中…');
       const fakeName = `${meetingTitle.trim() || '会議'}_${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.${extFromMime(blob.type)}`;
       const file = new File([blob], fakeName, { type: blob.type });
-      const transcript = await transcribeAudioFile(file);
+      const transcript = await transcribeAudioFile(file, {
+        onProgress: (done, total) => setProcessingLabel(
+          total > 1 ? `AI で文字起こし中… ${Math.round((done / total) * 100)}%` : 'AI で文字起こし中…',
+        ),
+      });
 
       if (!transcript || transcript.length < 30) {
         throw new Error('音声から十分な内容を取得できませんでした。次回はマイクに近づいてください。');

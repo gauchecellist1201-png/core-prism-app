@@ -2,7 +2,7 @@
 // AI API 共有キュー: 並列制限 + リトライ + Circuit Breaker
 // ============================================================
 
-const MAX_CONCURRENT = 2;
+const MAX_CONCURRENT = 4;  // 2→4 (会議文字起こし等のチャンク並列処理を高速化。429 はリトライで吸収)
 const MAX_RETRIES = 4;
 
 type Task<T> = () => Promise<T>;
