@@ -71,6 +71,8 @@ import InviteShareCard from './InviteShareCard';
 import { REFERRAL_BONUS_DAYS, getReferralData, syncReferralStatus, consumePendingBonusDays } from '../lib/referral';
 import { Gift, FileDown, Database, Brain, BarChart3, Search, ShieldCheck, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import CoreCreditsPanel from './CoreCreditsPanel';
+import { getBalance as getCreditBalance, earnDaily as earnCreditDaily, earnOnce as earnCreditOnce } from '../lib/coreCredits';
 import { downloadMonthlyCsv } from '../lib/monthlyCsvExport';
 import { downloadUserExport } from '../lib/userDataExport';
 import MyAiUsageInsights from './MyAiUsageInsights';
@@ -217,6 +219,18 @@ export default function IdentityDashboard({
   useReengagement(dailyStreak, { brand: 'prism' });
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboarded());
   const [showKnowledge, setShowKnowledge] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
+  const [creditBalance, setCreditBalance] = useState(0);
+
+  // CORE Credits：起動時に「毎日ひらく(+5)」「初回利用(+100)」を付与し、残高を表示。
+  useEffect(() => {
+    earnCreditOnce('onboarding', 'はじめての利用', 100);
+    earnCreditDaily('daily_open', '毎日ひらく', 5);
+    const refresh = () => setCreditBalance(getCreditBalance());
+    refresh();
+    window.addEventListener('core-credits-changed', refresh);
+    return () => window.removeEventListener('core-credits-changed', refresh);
+  }, []);
   const [showAiInsights, setShowAiInsights] = useState(false); // XXX (2026-06-04)
   const [showCareer, setShowCareer] = useState(false); // CCCC (2026-06-04)
   const [showScout, setShowScout] = useState(false);   // MMMM (2026-06-04)
@@ -627,6 +641,16 @@ export default function IdentityDashboard({
               </span>
             </button>
           )}
+          {/* CORE Credits（貯まる/使えるポイント） */}
+          <button
+            onClick={() => setShowCredits(true)}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
+            aria-label="CORE Credits を開く"
+          >
+            <Gem size={14} style={{ color: persona.accentColor }} strokeWidth={2.2} />
+            <span className="text-fg-muted group-hover:text-fg text-sm flex-1">CORE Credits</span>
+            <span className="text-xs font-bold" style={{ color: persona.accentColor }}>{creditBalance.toLocaleString()}</span>
+          </button>
           <button
             onClick={onOpenSettings}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
@@ -700,6 +724,7 @@ export default function IdentityDashboard({
       </div>
       {/* CCCC (2026-06-04): キャリア レポート モーダル */}
       <CareerStudio open={showCareer} onClose={() => setShowCareer(false)} defaultIndustry={(settings as { industry?: string })?.industry || 'sme'} />
+      {showCredits && <CoreCreditsPanel onClose={() => setShowCredits(false)} />}
       {/* MMMM (2026-06-04): 競合スカウト モーダル */}
       <CompetitorScout open={showScout} onClose={() => setShowScout(false)} defaultIndustry={(settings as { industry?: string })?.industry || ''} />
       {/* LLLL (2026-06-04): TOTP 2 段階認証 */}

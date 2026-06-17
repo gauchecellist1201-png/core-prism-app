@@ -56,6 +56,11 @@ export default function SuggestionFab() {
         const cnt = Number(localStorage.getItem('core_suggestion_sent_count') || '0') + 1;
         localStorage.setItem('core_suggestion_sent_count', String(cnt));
       } catch { /* */ }
+      // CORE Credits: 初回フィードバックで +50
+      try {
+        const { earnOnce } = await import('../lib/coreCredits');
+        earnOnce('feedback_first', 'フィードバックを送る', 50);
+      } catch { /* クレジット付与失敗は送信成功を妨げない */ }
       setPhase('done');
       setTimeout(close, 1600);
     } catch (e) {
