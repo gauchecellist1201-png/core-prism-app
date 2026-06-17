@@ -5,13 +5,15 @@
 // ============================================================
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
+import { X } from "lucide-react";
 import {
-  getBalance, getHistory, rankFor, spend, hasClaimed, RANKS, type CreditEntry,
+  getBalance, getHistory, rankFor, spend, hasClaimed, type CreditEntry,
 } from "../lib/coreCredits";
 import { extendTrial } from "../lib/billing";
 import { notifyInApp } from "../lib/inAppNotify";
 
-const ACCENT = "#A78BFA";
+// ブランド基調のパープル（--mi-accent: #8E5CFF）に統一
+const ACCENT = "#8E5CFF";
 
 // 貯める方法（一覧表示用。onceKey があれば「獲得済み」を判定）
 const EARN_WAYS: { label: string; amount: number; onceKey?: string; note?: string }[] = [
@@ -82,7 +84,7 @@ export default function CoreCreditsPanel({ onClose }: { onClose: () => void }) {
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.08em", color: "var(--fg-strong)" }}>CORE Credits</span>
-          <button onClick={onClose} aria-label="閉じる" style={{ width: 32, height: 32, borderRadius: 10, border: "1px solid var(--border)", background: "transparent", color: "var(--fg-muted)", cursor: "pointer" }}>✕</button>
+          <button onClick={onClose} aria-label="閉じる" style={{ width: 44, height: 44, borderRadius: 12, border: "1px solid var(--border)", background: "transparent", color: "var(--fg-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={20} strokeWidth={2.2} /></button>
         </div>
 
         {/* 残高＋ランク */}
@@ -133,7 +135,7 @@ export default function CoreCreditsPanel({ onClose }: { onClose: () => void }) {
               const done = w.onceKey ? hasClaimed(w.onceKey) : false;
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }}>
-                  <span style={{ width: 18, height: 18, borderRadius: 999, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: done ? "#34D399" : "rgba(255,255,255,0.1)", color: done ? "#0a0a0f" : "transparent", fontSize: 11, fontWeight: 900 }}>{done ? "✓" : ""}</span>
+                  <span style={{ width: 18, height: 18, borderRadius: 999, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: done ? "#34D399" : "rgba(255,255,255,0.1)", color: done ? "#0a0a0f" : "transparent" }}>{done && <Check size={12} strokeWidth={3} />}</span>
                   <span style={{ flex: 1, fontSize: 13, color: "var(--fg)", textDecoration: done ? "line-through" : "none", opacity: done ? 0.6 : 1 }}>{w.label}{w.note && <span style={{ fontSize: 10.5, color: "var(--fg-subtle)", marginLeft: 6 }}>{w.note}</span>}</span>
                   <span style={{ fontSize: 12.5, fontWeight: 800, color: ACCENT }}>+{w.amount}</span>
                 </div>

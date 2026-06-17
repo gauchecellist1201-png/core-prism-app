@@ -19,7 +19,7 @@
 // ============================================================
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Pause, Play, Sparkles, Check } from 'lucide-react';
+import { Mic, MicOff, Pause, Play, Sparkles, Check, X } from 'lucide-react';
 import { summarizeMeeting } from '../lib/meetingSummarize';
 import { transcribeAudioFile } from '../lib/audioTranscribe';
 
@@ -258,12 +258,12 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
             style={{
               background: 'rgba(255,255,255,0.08)',
               border: 'none', borderRadius: '50%',
-              width: 36, height: 36, color: '#fff',
-              fontSize: 20, fontWeight: 600, cursor: 'pointer',
+              width: 44, height: 44, color: '#fff',
+              cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
             aria-label="閉じる"
-          >×</button>
+          ><X size={20} strokeWidth={2.2} /></button>
         </div>
 
         {/* タイトル入力 (idle のみ) */}
