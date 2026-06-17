@@ -34,6 +34,13 @@ import {
   type PresetId,
 } from './reelStudio/Presets';
 
+/** キャプションの「最初の1行」を別フックに差し替える（2行目以降は維持） */
+function swapFirstLine(caption: string, newHook: string): string {
+  const idx = caption.indexOf('\n');
+  if (idx === -1) return newHook;
+  return newHook + caption.slice(idx);
+}
+
 interface Props {
   bg: IrisBackgroundDef;
   myDeals?: any[];
@@ -1667,6 +1674,37 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                           marginBottom: 8,
                           color: bg.ink,
                         }}>{aiResult.caption || '—'}</div>
+                        {/* ── フックの別案（最初の1行＝伸びるかの9割）。タップで冒頭を差し替え ── */}
+                        {aiResult.hookOptions && aiResult.hookOptions.length > 0 && (
+                          <div style={{ marginBottom: 8 }}>
+                            <div style={{
+                              fontSize: 9, letterSpacing: '0.18em', fontWeight: 800,
+                              color: bg.accent, marginBottom: 5, textTransform: 'uppercase',
+                            }}>最初の1行を選ぶ（伸びるかの9割）</div>
+                            <div style={{ display: 'grid', gap: 5 }}>
+                              {aiResult.hookOptions.map((hook, hi) => {
+                                const active = (aiResult.caption.split('\n')[0] || '').trim() === hook.trim();
+                                return (
+                                  <button
+                                    key={hi}
+                                    onClick={() => setAiResult(prev => prev ? { ...prev, caption: swapFirstLine(prev.caption, hook) } : prev)}
+                                    style={{
+                                      textAlign: 'left',
+                                      minHeight: 40,
+                                      padding: '0.5rem 0.7rem',
+                                      background: active ? bg.accent : 'rgba(255,255,255,0.7)',
+                                      color: active ? '#fff' : bg.ink,
+                                      border: `1px solid ${active ? bg.accent : bg.cardBorder}`,
+                                      borderRadius: 10,
+                                      fontSize: 12, lineHeight: 1.45, fontWeight: active ? 700 : 500,
+                                      cursor: 'pointer', fontFamily: IRIS_FONTS.body,
+                                    }}
+                                  >{hook}</button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                         {aiResult.hashtags.length > 0 && (
                           <div style={{
                             padding: '0.55rem 0.7rem',

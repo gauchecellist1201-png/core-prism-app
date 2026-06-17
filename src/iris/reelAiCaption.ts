@@ -42,6 +42,8 @@ export interface ReelAiResult {
   themeGuess: string;     // AI が読み取ったリール全体のテーマ
   /** Instagram Story 用の短い文 (1〜2 行、絵文字込み) */
   storyText?: string;
+  /** 最初の1行（フック）の別案。タップで caption の冒頭1行を差し替えられる */
+  hookOptions?: string[];
 }
 
 export interface CutInput {
@@ -103,6 +105,7 @@ function buildSystemPrompt(): string {
     }
   ],
   "caption": "Instagram 投稿本文。改行を活用、絵文字は適度、3〜6 行",
+  "hookOptions": ["最初の1行の別案A", "別案B", "別案C"],
   "hashtags": ["#タグ1", "#タグ2"],
   "storyText": "Instagram Story に貼り付けやすい短いコピー (1〜2 行、絵文字込み)"
 }
@@ -114,6 +117,7 @@ function buildSystemPrompt(): string {
 - bgmMood の意味: "up"=テンション上げる元気系 / "soft"=しっとり穏やか / "pop"=明るく軽やか / "emo"=感情に刺さる切なさ。映像の温度感に合うものを必ず 1 つ選ぶ
 - emojis は 3〜5 個。カットに映っているものや感情に合う絵文字
 - caption は押し売りではなく体験ベース。最初の 1 行で続きを読みたくなる
+- hookOptions は caption の「最初の1行」を差し替えられる別案を 3 つ。切り口を必ず変える (共感 / 数字 / 逆説 / 問いかけ など)。各 15〜45 字、改行なし、絵文字は0〜1個
 - hashtags は 10〜15 個。具体性と汎用性の混合 (ニッチ + 大規模タグ)
 - storyText は Instagram Story にスタンプで貼れる短いコピー (30字以内目安、絵文字込み)`;
 }
@@ -262,6 +266,12 @@ export async function generateReelCaptions(
       : [],
     themeGuess: String(parsed.themeGuess || '').trim(),
     storyText: String(parsed.storyText || '').trim() || undefined,
+    hookOptions: Array.isArray(parsed.hookOptions)
+      ? parsed.hookOptions
+          .map((h: any) => String(h).replace(/[\r\n]+/g, ' ').trim())
+          .filter((h: string) => h.length >= 4 && h.length <= 60)
+          .slice(0, 3)
+      : [],
   };
 }
 
