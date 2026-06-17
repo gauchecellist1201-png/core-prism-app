@@ -10,11 +10,14 @@ import { Mail as MailIcon, Compass, Heart, Shield, BadgeCheck, MessagesSquare, S
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, CoreLogo } from '../components/Logo';
 
 const COMPANY = {
-  nameJa: '株式会社コア',
-  nameEn: 'CORE Inc.',
+  nameJa: '合同会社CORE',
+  nameEn: 'CORE DAO LLC',
+  legalForm: '合同会社型DAO',
   founded: '2026年 設立予定',
   ceoJa: '井出 直毅',
   ceoEn: 'Naoki Ide',
+  ceoTitleJa: '代表社員',
+  ceoTitleEn: 'Representative Member',
   addressJa: '〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11-7',
   addressEn: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0025, Japan',
   email: 'hello@core-inc.jp',
@@ -31,7 +34,7 @@ const SPECTRUM = ['#ff5757', '#ff9842', '#fbbf24', '#4ade80', '#60a5fa', '#a78bf
 export default function CoreSite() {
   const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
   useEffect(() => {
-    document.title = '株式会社コア — すべての時代の、核となるものを。';
+    document.title = '合同会社CORE（合同会社型DAO） — すべての時代の、核となるものを。';
 
     // theme-color
     const themeMeta = document.querySelector('meta[name="theme-color"]');
@@ -63,16 +66,16 @@ export default function CoreSite() {
       }
       m.setAttribute(attr, value);
     };
-    setMeta('meta[property="og:title"]', 'content', '株式会社コア — CORE Inc.');
+    setMeta('meta[property="og:title"]', 'content', '合同会社CORE — CORE DAO LLC');
     setMeta('meta[property="og:description"]', 'content', 'すべての時代の、核となるものを。AI エージェント OS を提供する CORE。');
     setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v4.png');
     setMeta('meta[property="og:url"]', 'content', 'https://core-prism-app.vercel.app/corp');
     setMeta('meta[property="og:type"]', 'content', 'website');
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
     setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v4.png');
-    setMeta('meta[name="twitter:title"]', 'content', '株式会社コア — CORE Inc.');
+    setMeta('meta[name="twitter:title"]', 'content', '合同会社CORE — CORE DAO LLC');
     setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。');
-    setMeta('meta[name="description"]', 'content', '株式会社コア (CORE Inc.) — あなたの仕事と SNS を、AI エージェントで一気通貫に。司令塔 Prism に、Instagram の Iris・LINE の Resonance・リンクの Lume がつながる、ひとつの AI エージェント OS。');
+    setMeta('meta[name="description"]', 'content', '合同会社CORE（合同会社型DAO・CORE DAO LLC） — あなたの仕事と SNS を、AI エージェントで一気通貫に。司令塔 Prism に、Instagram の Iris・LINE の Resonance・リンクの Lume がつながる、ひとつの AI エージェント OS。');
 
     // 検索エンジンには載せない (noindex)
     let robots = document.querySelector('meta[name="robots"]');
@@ -147,7 +150,7 @@ export default function CoreSite() {
           <a
             href="#top"
             style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}
-            aria-label="株式会社コア"
+            aria-label="合同会社CORE"
             className="lp-tap-link"
           >
             <CoreLogo size={36} withWordmark />
@@ -198,7 +201,7 @@ export default function CoreSite() {
               color: 'rgba(255,255,255,0.55)',
             }}
           >
-            CORE&nbsp;&nbsp;INC.&nbsp;&nbsp;/&nbsp;&nbsp;EST.&nbsp;2026
+            CORE&nbsp;&nbsp;DAO&nbsp;&nbsp;/&nbsp;&nbsp;EST.&nbsp;2026
           </motion.div>
 
           <motion.h1
@@ -537,7 +540,7 @@ export default function CoreSite() {
             <br />
             人を愛し、仲間を信じ、誠実であること。
             <br />
-            株式会社 CORE は、その
+            合同会社CORE は、その
             <strong style={{ color: '#fff', fontWeight: 600 }}>「変わらない核」</strong>
             を中心に据える会社です。
           </p>
@@ -1122,7 +1125,7 @@ export default function CoreSite() {
             {[
               {
                 year: '2026',
-                title: '株式会社 CORE 創業',
+                title: '合同会社CORE（合同会社型DAO）創業',
                 body: '「すべての時代の、核となるものを」を理念に創業。事業家のための Prism を起点に、Iris・Resonance・Lume を加えた四つのプロダクトと、13 名の AI 役員で、中小経営者と個人事業主を支える土台を築きます。',
                 accent: '#FCB045',
               },
@@ -1506,8 +1509,9 @@ export default function CoreSite() {
             }}
           >
             <InfoRow label="会社名"     subLabel="Company"      value={COMPANY.nameJa}  subValue={COMPANY.nameEn} />
+            <InfoRow label="法人形態"   subLabel="Legal form"   value={COMPANY.legalForm} subValue="LLC-type DAO" />
             <InfoRow label="設立"       subLabel="Founded"      value={COMPANY.founded} />
-            <InfoRow label="代表取締役" subLabel="CEO"           value={COMPANY.ceoJa}    subValue={COMPANY.ceoEn} />
+            <InfoRow label="代表社員" subLabel="Rep. Member"           value={COMPANY.ceoJa}    subValue={COMPANY.ceoEn} />
             <InfoRow label="本社所在地" subLabel="Headquarters" value={COMPANY.addressJa} subValue={COMPANY.addressEn} />
             <InfoRow label="事業内容"   subLabel="Business"     value="エージェントAIを中心とした SaaS の開発・運営" />
             <InfoRow label="提供サービス" subLabel="Products"   value="CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）" isLast />
@@ -1733,7 +1737,7 @@ export default function CoreSite() {
             letterSpacing: '0.25em',
           }}
         >
-          © {new Date().getFullYear()} CORE INC. — FOUNDING IN 2026
+          © {new Date().getFullYear()} CORE DAO LLC — FOUNDING IN 2026
         </div>
       </footer>
       {legalKind && (
