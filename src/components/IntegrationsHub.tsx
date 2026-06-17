@@ -228,7 +228,7 @@ export default function IntegrationsHub() {
       <StudioIntro
         id="integrations-hub"
         accent="#5BA8FF"
-        emoji="🔗"
+        iconKey="integrations"
         what="あなたのアプリ (Stripe / Gmail / カレンダー など) を Prism につなぐ場所。つなぐと「売上・予定・メール」を AI が自動で読み、毎日のブリーフや返信下書きに反映される。"
         tryThis="まず Stripe (お会計) を「接続」。30 秒で今月の売上が画面に出ます。"
         example="Stripe 接続後 → 今月の売上 ¥482,000 / 客単価 ¥18,500 / 入金待ち 3 件 が自動で出る"

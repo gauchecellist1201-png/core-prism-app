@@ -353,7 +353,7 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
             <StudioIntro
               id="youtube-import"
               accent={persona.accentColor}
-              emoji="🎬"
+              iconKey="youtube"
               what="YouTube の URL を貼るだけで、AI が要約してナレッジに保存します。複数行で一括取込も。"
               tryThis="URL を 1 本貼って「取得」、または改行で複数貼って「一括取込」。"
               example="講義動画 5 本 → 各 3 行要約 + 同じチャンネルでシリーズ化 → 他の Studio から参照可能。"
@@ -558,11 +558,11 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
                   accent={persona.accentColor}
                   variant="full"
                   messages={[
-                    '🎬 動画の中身を読み込んでいます…',
-                    '🧠 話している内容を理解しています…',
-                    '📑 大事なところを章ごとに分けています…',
-                    '✍️ 要点を 5 行にまとめています…',
-                    '💬 そのまま使える引用を選んでいます…',
+                    '動画の中身を読み込んでいます…',
+                    '話している内容を理解しています…',
+                    '大事なところを章ごとに分けています…',
+                    '要点を 5 行にまとめています…',
+                    'そのまま使える引用を選んでいます…',
                   ]}
                   subtitle="動画を見なくても要点が分かるように、AI がまとめています"
                   onRetry={handleSummarize}

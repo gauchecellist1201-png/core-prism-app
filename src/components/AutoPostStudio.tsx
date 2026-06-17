@@ -623,7 +623,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
             <StudioIntro
               id="auto-post-multi"
               accent={persona.accentColor}
-              emoji="⚡"
+              iconKey="autopost"
               what="1 つのテーマから X / Threads / Instagram / LinkedIn / note / Facebook 6 SNS 分の最適化された投稿文を同時生成します。"
               tryThis="テーマを入力 → ✨ 6 SNS 同時生成 → 各カードでコピー or 投稿予約。"
               example="「今月のミニ起業ジャーニー」→ 各 SNS の長さ・口調に合わせて 6 本同時に並ぶ。"

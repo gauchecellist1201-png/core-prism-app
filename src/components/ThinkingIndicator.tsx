@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PrismLogo } from './Logo';
 
 /**
  * AI が考えている数十秒を「不安な無音」ではなく
@@ -51,8 +52,8 @@ export default function ThinkingIndicator({
     return () => clearInterval(t);
   }, []);
 
-  const orbSize = variant === 'full' ? 90 : 56;
-  const orbFont = variant === 'full' ? 36 : 24;
+  const orbSize = variant === 'full' ? 108 : 56;
+  const markSize = variant === 'full' ? 64 : 34;
 
   return (
     <div
@@ -145,30 +146,33 @@ export default function ThinkingIndicator({
               }}
             />
           ))}
-          {/* 中心のオーブ — グラデが回転 */}
+          {/* 中心のオーブ — ガラス質のコアの中で Prism マークが静かに回る */}
           <motion.div
-            animate={{ scale: [1, 1.09, 1], rotate: [0, 360] }}
-            transition={{
-              scale: { duration: 1.7, repeat: Infinity, ease: 'easeInOut' },
-              rotate: { duration: 8, repeat: Infinity, ease: 'linear' },
-            }}
+            animate={{ scale: [1, 1.06, 1] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             style={{
               position: 'absolute',
               inset: 0,
               borderRadius: '50%',
-              background: `conic-gradient(from 0deg, ${accent}, ${accent}88, ${accent}, ${accent}cc, ${accent})`,
-              filter: `drop-shadow(0 0 24px ${accent}aa)`,
+              background: `radial-gradient(circle at 34% 28%, ${accent}33 0%, ${accent}1f 46%, transparent 72%)`,
+              border: `1px solid ${accent}44`,
+              boxShadow: `0 0 30px ${accent}55, inset 0 0 22px ${accent}22`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: orbFont,
             }}
           >
-            <motion.span
-              animate={{ rotate: [0, -360] }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-              style={{ display: 'inline-flex' }}
-            >🧠</motion.span>
+            {/* 回転する Prism マーク (CORE 公式の多面体プリズム) */}
+            <motion.div
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 11, repeat: Infinity, ease: 'linear' }}
+              style={{
+                display: 'inline-flex',
+                filter: `drop-shadow(0 0 10px ${accent}aa)`,
+              }}
+            >
+              <PrismLogo size={markSize} withWordmark={false} />
+            </motion.div>
           </motion.div>
         </div>
       </div>

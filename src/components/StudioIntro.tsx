@@ -1,7 +1,48 @@
 import { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import {
+  X, Users, FolderKanban, Compass, BarChart3, Megaphone, Film,
+  Clapperboard, Radio, Target, Scale, Receipt, BarChart2, CheckSquare,
+  BookOpen, Quote, Calendar, Files, Presentation, MailOpen, Calculator,
+  Bot, Camera, Image as ImageIcon, Mic, Send, Link2,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+
+/**
+ * 各スタジオ intro 用ブランド・ライン・アイコン登録簿。
+ * 関連機能は QuickActions の QUICK_ICON_MAP と同じアイコン言語に揃え、
+ * OS 標準のカラー絵文字を一掃する (no-cheap-emoji 恒久ルール)。
+ */
+const STUDIO_ICONS: Record<string, LucideIcon> = {
+  people: Users,
+  crm: FolderKanban,
+  ceo: Compass,
+  pnl: BarChart3,
+  influencer: Megaphone,
+  youtube: Film,
+  video: Clapperboard,
+  content: Radio,
+  strategy: Target,
+  legal: Scale,
+  finance: BarChart3,
+  invoice: Receipt,
+  benchmark: BarChart2,
+  team: Users,
+  tasks: CheckSquare,
+  knowledge: BookOpen,
+  minutes: Quote,
+  meeting: Calendar,
+  document: Files,
+  slides: Presentation,
+  email: MailOpen,
+  finConsult: Calculator,
+  saas: Bot,
+  expense: Camera,
+  image: ImageIcon,
+  voice: Mic,
+  autopost: Send,
+  integrations: Link2,
+};
 
 /**
  * 各スタジオの一番上に出る「3 秒でわかる説明 + サンプル出力」ストリップ。
@@ -13,6 +54,7 @@ export function StudioIntro({
   accent,
   emoji,
   icon: Icon,
+  iconKey,
   what,
   tryThis,
   example,
@@ -21,16 +63,19 @@ export function StudioIntro({
 }: {
   id: string;
   accent: string;
-  /** 旧来の絵文字 (no-cheap-emoji 移行中の後方互換)。icon があればそちら優先 */
+  /** 旧来の絵文字 (no-cheap-emoji 移行中の後方互換)。icon / iconKey があればそちら優先 */
   emoji?: string;
-  /** Lucide ライン・アイコン (推奨)。指定時は emoji より優先 */
+  /** Lucide ライン・アイコン (直接指定)。指定時は iconKey / emoji より優先 */
   icon?: LucideIcon;
+  /** STUDIO_ICONS のキー (推奨)。これだけで関連機能と同じブランド・アイコンが付く */
+  iconKey?: string;
   what: string;
   tryThis: string;
   example: string;
   samplePreview?: ReactNode;
   sampleLabel?: string;
 }) {
+  const ResolvedIcon: LucideIcon | undefined = Icon || (iconKey ? STUDIO_ICONS[iconKey] : undefined);
   const storageKey = `cp-studio-intro-dismissed-${id}`;
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -73,7 +118,7 @@ export function StudioIntro({
               className="cp-row"
               style={{ alignItems: 'flex-start', gap: 10, minWidth: 0, flex: '1 1 240px' }}
             >
-              {Icon ? (
+              {ResolvedIcon ? (
                 <span
                   style={{
                     flexShrink: 0,
@@ -82,7 +127,7 @@ export function StudioIntro({
                     background: `${accent}1F`, border: `1px solid ${accent}40`,
                   }}
                 >
-                  <Icon size={20} color={accent} strokeWidth={2.2} />
+                  <ResolvedIcon size={20} color={accent} strokeWidth={2.2} />
                 </span>
               ) : (
                 <span style={{ fontSize: '1.35rem', lineHeight: 1.2, flexShrink: 0 }}>{emoji}</span>

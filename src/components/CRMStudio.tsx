@@ -222,7 +222,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
           <StudioIntro
             id="crm"
             accent={persona.accentColor}
-            emoji="🤝"
+            iconKey="crm"
             what="商談がいま どこまで進んでいるか を一覧で見える画面です。"
             tryThis="右上の「＋ 案件追加」で、追いかけたい商談を 1 件登録します。"
             example="「A社サイト制作」を“提案中”に置く → 受注できたら“受注”の列へドラッグ。AI が次の一手も提案します。"

@@ -148,7 +148,7 @@ export default function TeamHub({ accentColor, onClose }: Props) {
           <StudioIntro
             id="team-hub"
             accent={accentColor}
-            emoji="👥"
+            iconKey="team"
             what="ひとつのワークスペースを家族や仲間と一緒に使う場所です。同じナレッジ(資料)と AI を共有して、別々のアカウントから触れます。"
             tryThis="「ワークスペースを作成」→「招待リンクを作る」を押す → 相手にコピーして送るだけで参加できます。"
             example="あなた (オーナー) + 編集者 2 名 + 閲覧者 2 名 = 最大 5 名まで同じデータを共有。"

@@ -455,7 +455,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
               <StudioIntro
                 id="image"
                 accent={persona.accentColor}
-                emoji="🎨"
+                iconKey="image"
                 what="テーマを日本語で 1 行書くだけで、AI が SNS や記事向けの画像を作る画面です。"
                 tryThis="まず下の「プリセット」を 1 つ選び、「画像のテーマ」に作りたい絵を書いて「✨ 生成」を押します。"
                 example="「秋のカフェのスペシャルティコーヒー」 → note のヘッダー画像が 1 枚完成。"

@@ -137,7 +137,7 @@ function StrategyPanel({ persona, settings, knowledge, onSave }: {
       <StudioIntro
         id="premium-strategy"
         accent="#A78BFA"
-        emoji="🎯"
+        iconKey="strategy"
         what="自社の悩み・問いに対し、コンサル会社が使う「分析の型 (SWOT / 5フォースなど)」を AI が当てはめて、強み弱み・機会脅威を整理してくれる戦略の壁打ち AI。"
         tryThis="まず型を 1 つ選ぶ → 問いを 1 行で書く → 「分析する」。3 分で 4 象限の表が返ってきます。"
         example="問い『来期の値上げをすべきか?』→ SWOT 表 + 推奨アクション 3 つ + 想定リスク"
@@ -310,7 +310,7 @@ function ContractPanel({ persona, settings, onSave }: {
       <StudioIntro
         id="premium-contract"
         accent="#F472B6"
-        emoji="⚖"
+        iconKey="legal"
         what="契約書 (PDF / Word / テキスト) を投げると、AI があなたの立場 (発注 / 受注 / NDA) から「危ない条文」を赤・黄・青で振り分け、修正の提案文まで作ってくれる契約レビュー AI。"
         tryThis="まず立場を選ぶ → 契約書ファイルを投げる → 「分析」。1〜2 分でリスク一覧と修正案が返ります。"
         example="業務委託契約 (受注側) → 危険 2 件 (損害賠償上限なし / 知財帰属) + 修正文案 2 通り"
@@ -530,7 +530,7 @@ function FinancialPanel({ persona, settings, onSave }: {
       <StudioIntro
         id="premium-financial"
         accent="#5BA8FF"
-        emoji="📊"
+        iconKey="finance"
         what="決算書・試算表・月次レポート (PDF / Excel / CSV) を投げると、AI が「儲かっている / 危ない」を 5 段階で評価し、改善の打ち手を 3 つ提案してくれる決算分析 AI。"
         tryThis="まず財務ファイルを投げる → 「分析」。3 分で安全度スコアと改善案が返ります。"
         example="月次 P&L → 粗利率 32% (業界平均 28%) / キャッシュ残 2 ヶ月 / 改善案: 固定費 -8%"

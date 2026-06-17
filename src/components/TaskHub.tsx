@@ -427,7 +427,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
           <StudioIntro
             id="taskhub"
             accent={persona.accentColor}
-            emoji="✅"
+            iconKey="tasks"
             what="やる事を全部ここに集めて、AI が「今日やるべき順」に並べ、終わったものから消していく場所です。"
             tryThis="「今日」を見て、上から 1 つ片付けてチェックを入れてみる。"
             example="メモした用事や、AI からの提案がタスクになり、急ぎ順に並びます。"

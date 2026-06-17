@@ -282,7 +282,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
           <StudioIntro
             id="document"
             accent={persona.accentColor}
-            emoji="📄"
+            iconKey="document"
             what="見積書・発注書・納品書・請求書を、日本のルール（インボイス）に沿って作れる画面です。"
             tryThis="上のタブで作りたい書類を選び、「＋ 新規」で 1 枚作ってみます。"
             example="「Webサイト制作 30万円」の見積書を作る → そのまま請求書に変換。"

@@ -246,7 +246,7 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
           <StudioIntro
             id="expense"
             accent={persona.accentColor}
-            emoji="🧾"
+            iconKey="expense"
             what="レシートを撮るだけで、店名・金額・勘定科目をAIが読み取って経費に登録する画面です。"
             tryThis="下の枠にレシート写真を 1 枚アップロードしてみます。"
             example="コンビニのレシート → 「消耗品費 480円」と自動で仕訳されて一覧に追加。"

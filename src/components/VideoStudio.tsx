@@ -398,7 +398,7 @@ export default function VideoStudio({ bg, settings }: Props) {
       <StudioIntro
         id="video"
         accent={bg.accent}
-        emoji="🎬"
+        iconKey="video"
         what="テーマを 1 行入れるだけで、縦長動画 (Reels・ショート向け) の脚本と画面を AI が組み立てて、そのまま .webm で書き出します。"
         tryThis="下の枠に「春の新作リップ3本を比較」みたいに 1 行入れて、青いボタンを押す。脚本→シーン→プレビュー→書き出しの 4 ステップが順に進みます。"
         example="「30秒で新作コスメを紹介」→ 6 シーンの脚本＋ナレーション＋BGM ヒント＋トランジション付きの 9:16 動画"

@@ -63,7 +63,7 @@ export default function MeetingHub({ persona, onClose }: Props) {
         <StudioIntro
           id="meetinghub"
           accent={persona.accentColor}
-          emoji="🔗"
+          iconKey="meeting"
           what="オンライン会議の入室リンクを作って、相手にコピペで送れる場所です。"
           tryThis="ミーティング名と時間を選んで、出てきたリンクをコピーするだけ。"
           example="「30 分の打ち合わせ」を作る → 1 本の URL ができ、相手に貼って送れます。"

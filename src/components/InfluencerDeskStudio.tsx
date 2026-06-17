@@ -231,7 +231,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
           <StudioIntro
             id="influencer-desk"
             accent={persona.accentColor}
-            emoji="★"
+            iconKey="influencer"
             what="ブランド案件の「依頼 → 交渉 → 投稿 → 報告」までを 1 画面で全部回す場所です。"
             tryThis="「+ 新規案件を追加」でブランド名と報酬を入れる → 💬 交渉センターで返信文を AI 生成。"
             example="案件 5 本 → 報酬合計・今週納期・交渉返信文・報告レポートまで全自動で並ぶ。"

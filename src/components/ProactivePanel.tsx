@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, Proposal } from '../types/identity';
+import { PrismLogo } from './Logo';
 
 interface Props {
   persona: Persona;
@@ -170,10 +171,10 @@ export default function ProactivePanel({
             {isGenerating ? (
               <>
                 <motion.span
-                  className="text-base"
+                  style={{ display: 'inline-flex' }}
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-                >🧠</motion.span>
+                  transition={{ duration: 2.4, repeat: Infinity, ease: 'linear' }}
+                ><PrismLogo size={18} withWordmark={false} /></motion.span>
                 <span className="text-white/80 text-xs">提案を考えています...</span>
               </>
             ) : (

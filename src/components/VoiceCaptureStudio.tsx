@@ -599,7 +599,7 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
             <StudioIntro
               id="voice-capture"
               accent={persona.accentColor}
-              emoji="🎤"
+              iconKey="voice"
               what="話すだけで「タスク / ナレッジ / CRM / 経費 / アイデア」に AI が自動で振り分けます。"
               tryThis="🎙 録音開始 を押して、ふだんの口調で 10 秒話してみる。"
               example="「明日 14 時に田中さんと打合せ。来週までに提案書」→ 予定 + タスク + CRM の 3 行が出来上がり。"

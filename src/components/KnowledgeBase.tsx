@@ -527,7 +527,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
             <StudioIntro
               id="knowledge"
               accent={persona.accentColor}
-              emoji="📚"
+              iconKey="knowledge"
               what="資料(PDF・議事録・メモ)を入れておくと、AI がそれを覚えて、これからの提案や下書きに自動で活かす場所です。"
               tryThis="「資料を追加」を押して、手元の PDF やメモを 1 枚入れてみる。"
               example="業界レポートを 1 枚入れる → そこから使える提案・戦略・気をつける点を AI が抜き出してくれます。"

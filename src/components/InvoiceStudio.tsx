@@ -275,7 +275,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
           <StudioIntro
             id="invoice"
             accent={persona.accentColor}
-            emoji="🧾"
+            iconKey="invoice"
             what="お金を「請求して、もらう」までを 1 画面で終わらせる場所です。"
             tryThis="「✨ AI で明細を自動構成」に依頼内容を 1 行書くと、明細・金額・期日まで埋まります。"
             example="「Web制作50万円、月末締翌月末払い」→ AI が御請求書 1 枚を完成。"

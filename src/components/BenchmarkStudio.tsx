@@ -1512,7 +1512,7 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
           <StudioIntro
             id="benchmark"
             accent={persona.accentColor}
-            emoji="📊"
+            iconKey="benchmark"
             what="あなたの数字を「同じ業界の会社たち」と比べて、強い所と弱い所を 1 画面で見せます。"
             tryThis="まず「✨ AI 補助」タブで AI に業界を当ててもらう。質問に 2-3 個答えるだけで結果が出ます。"
             example="粗利率 38% → 業界の真ん中より上、上位 30% です。客単価は逆に下位 25%。"

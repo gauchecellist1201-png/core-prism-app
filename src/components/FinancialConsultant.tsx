@@ -330,7 +330,7 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
           <StudioIntro
             id="fin-consult"
             accent={accent}
-            emoji="🧮"
+            iconKey="finConsult"
             what="毎月の売上・経費・利益を並べて、『どの月が強い / 弱い』を AI が読み解く場所です。"
             tryThis="開くと自動で集計します。下の「助言をもらう」で、数字をもとにした改善案が出ます。"
             example="「3 月は経費が突出 → 外注費が原因。固定契約に切り替えると月 8 万円減らせます」のように。"

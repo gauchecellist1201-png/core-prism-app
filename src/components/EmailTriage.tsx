@@ -343,7 +343,7 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
             <StudioIntro
               id="email"
               accent={persona.accentColor}
-              emoji="📬"
+              iconKey="email"
               what="受信トレイのメールを AI が『要返信 / 通常 / 後回し』に仕分けして、返信文の下書きまで作る場所です。"
               tryThis="Gmail をつなぐか、メール本文を貼り付けて「仕分ける」を押すだけ。"
               example="「請求書の件 → 要返信」「メルマガ → 後回し」に色分けされ、要返信には返信案が 3 通り付きます。"

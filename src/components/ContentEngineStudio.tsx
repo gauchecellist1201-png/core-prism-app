@@ -617,7 +617,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
             <StudioIntro
               id="content-engine"
               accent={accent}
-              emoji="📡"
+              iconKey="content"
               what="同じ話題から note 記事 (長文) と X 投稿 (140 字) を 同時に 作る場所です。"
               tryThis="✓ で AI 提案テーマを承認するだけ。あとは生成 → コピー → 投稿の 3 ステップ。"
               example="「来週イベント告知」を承認 → note 800 字 + X 投稿 1 本が一度に並ぶ。"
@@ -688,9 +688,9 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                 accent={accent}
                 variant="compact"
                 messages={[
-                  '🧠 今日の話題をさがしています…',
-                  '📚 あなたのナレッジを見ています…',
-                  '💡 刺さるテーマを 3 案えらんでいます…',
+                  '今日の話題をさがしています…',
+                  'あなたのナレッジを見ています…',
+                  '刺さるテーマを 3 案えらんでいます…',
                 ]}
               />
             )}
@@ -795,11 +795,11 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
             accent={accent}
             variant="full"
             messages={[
-              '🧠 あなたのナレッジを読み込んでいます…',
-              `🎭 人格「${persona.name}」の口調をなぞっています…`,
-              '📝 本文の流れを組み立てています…',
-              '🔍 言い回しをていねいに整えています…',
-              '✨ 最後の仕上げをしています…',
+              'あなたのナレッジを読み込んでいます…',
+              `人格「${persona.name}」の口調をなぞっています…`,
+              '本文の流れを組み立てています…',
+              '言い回しをていねいに整えています…',
+              '最後の仕上げをしています…',
             ]}
             subtitle={
               progress === 'note' ? 'いま note 記事を書いています'

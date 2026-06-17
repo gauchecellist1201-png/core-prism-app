@@ -155,7 +155,7 @@ export default function PnLStudio({ persona, onClose }: Props) {
           <StudioIntro
             id="pnl"
             accent={persona.accentColor}
-            emoji="📊"
+            iconKey="pnl"
             what="売上 - 経費 = 利益 を、今月いくら? の 1 画面で見せる場所です。"
             tryThis="期間ボタン (今月 / 先月 / 今四半期 / 今年) を 1 つ押すだけ。あとは自動で出ます。"
             example="売上 1,250,000 - 経費 380,000 = 利益 870,000、利益率 69.6%。"

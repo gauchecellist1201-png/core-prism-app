@@ -615,7 +615,7 @@ export default function MeetingMinutesModal({
               <StudioIntro
                 id="meeting-minutes"
                 accent={persona.accentColor}
-                emoji="📅"
+                iconKey="minutes"
                 what="会議の録音や文字起こしから、AI が決定事項・宿題・要点を整理する画面です。"
                 tryThis="「🎙 会議を録音」を押して話す、または文字起こしを貼って「議事録を作る」を押します。"
                 example="30 分の打合せ → 決まったこと 3 つ・宿題 2 つ・要点 5 つに圧縮された議事録。"

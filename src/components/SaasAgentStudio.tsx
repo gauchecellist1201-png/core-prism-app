@@ -297,7 +297,7 @@ export default function SaasAgentStudio({ persona, settings, onClose }: Props) {
                 <StudioIntro
                   id="saas-agent"
                   accent={persona.accentColor}
-                  emoji="🤖"
+                  iconKey="saas"
                   what="14 種類の SaaS を「お願いごと 1 行」で代わりに操作してもらえる場所です。"
                   tryThis="自然言語タブに「Notion に今日の議事録を追加」と書いて「AI に推定させて実行」を押すだけ。"
                   example="入力 →AI が SaaS / 操作 / パラメータを推定 →5 ステップの実行プラン + Claude にコピペ用のスクリプトを完成。"

@@ -287,7 +287,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
           <StudioIntro
             id="people"
             accent={persona.accentColor}
-            emoji="👥"
+            iconKey="people"
             what="関わる人 1 人 1 人の「いま元気か / 何を考えているか」を 1 画面で見守る場所です。"
             tryThis="人物カードを開いて「🗒 1on1 アジェンダを作る」を押す → 雑談・進捗・課題・次の一歩・フィードバックの 5 ブロックが揃います。"
             example="チームメンバーの過去 1on1 5 件 → 信頼トレンド・リスクフラグ・次の話題 3 案を 30 秒で。"

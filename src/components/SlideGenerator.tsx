@@ -179,7 +179,7 @@ export default function SlideGeneratorModal({ persona, settings, knowledge, onCl
               <StudioIntro
                 id="slide"
                 accent={persona.accentColor}
-                emoji="🪄"
+                iconKey="slides"
                 what="メモや議事録を貼り付けるだけで、AI がプレゼン用のスライド構成を一気に作る画面です。"
                 tryThis="下の枠にスライド化したい文章を貼って「✨ スライド生成」を押します。"
                 example="5 行の事業メモ → タイトル・章立て付きで 8 枚のスライド構成が完成。"
