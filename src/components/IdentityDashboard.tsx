@@ -101,6 +101,7 @@ import DigitalCompanyHero from './DigitalCompanyHero';
 import GmailInsightsCard from './GmailInsightsCard';
 import AllSourcesHub from './AllSourcesHub';
 import CommandTowerHub from './CommandTowerHub';
+import WeeklyValueCard from './WeeklyValueCard';
 import GoogleSuiteCard from './GoogleSuiteCard';
 import ViralStudioCard from './ViralStudioCard';
 import CreditBar from './CreditBar';
@@ -1057,8 +1058,15 @@ export default function IdentityDashboard({
                 }}
               />
 
+              {/* 価値の可視化 — 今週 AI があなたのために動いた量 (2026-06-17 / 価値で価格を超える) */}
+              <WeeklyValueCard onRunLoop={() => {
+                try { document.getElementById('command-tower')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* */ }
+              }} />
+
               {/* 🗼 司令塔ループ — Prism中心に Iris/Resonance/Lume が一周 (2026-06-10) */}
-              <CommandTowerHub />
+              <div id="command-tower">
+                <CommandTowerHub />
+              </div>
 
               {/* 📧 Gmail インサイト (2026-06-05 オーナー指示: 連携 = 価値) */}
               <GmailInsightsCard />
