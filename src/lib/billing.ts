@@ -29,6 +29,7 @@ export type FeatureKey =
   | 'community'         // コミュニティ参加
   | 'team-members'      // 連携アカウント
   | 'brand-match'       // ブランドマッチ (Pro+)
+  | 'script-studio'     // 企画・台本スタジオ (運用代行モード) — 最上位プラン限定
   | 'api-access'        // API キー (Studio)
   | 'white-label';      // ホワイトラベル (Studio)
 
@@ -93,6 +94,7 @@ export const PLAN_LIMITS: Record<PlanId, Partial<Record<FeatureKey, FeatureLimit
     'community': 'unlimited',
     'team-members': 5,
     'brand-match': 'unlimited',
+    'script-studio': 'unlimited',
     'api-access': 'unavailable',
     'white-label': 'unavailable',
   },
@@ -108,6 +110,7 @@ export const PLAN_LIMITS: Record<PlanId, Partial<Record<FeatureKey, FeatureLimit
     'community': 'unlimited',
     'team-members': 'unlimited',
     'brand-match': 'unlimited',
+    'script-studio': 'unlimited',
     'api-access': 'unlimited',
     'white-label': 'unlimited',
   },
@@ -128,7 +131,7 @@ export const PLAN_LIMITS: Record<PlanId, Partial<Record<FeatureKey, FeatureLimit
     'ai-chat': 'unlimited', 'screenshot-ai': 'unlimited', 'caption-ai': 'unlimited',
     'negotiation-ai': 'unlimited', 'triage-ai': 'unlimited', 'beauty-advice': 'unlimited',
     'instagram-analyze': 'unlimited', 'story-arc': 'unlimited', 'community': 'unlimited',
-    'team-members': 1, 'brand-match': 'unlimited', 'api-access': 'unavailable', 'white-label': 'unavailable',
+    'team-members': 1, 'brand-match': 'unlimited', 'script-studio': 'unlimited', 'api-access': 'unavailable', 'white-label': 'unavailable',
   },
   // ── v2 BtoB (法人) ────────────────────────────────
   'v2-btoB-entry': {
@@ -147,14 +150,14 @@ export const PLAN_LIMITS: Record<PlanId, Partial<Record<FeatureKey, FeatureLimit
     'ai-chat': 'unlimited', 'screenshot-ai': 'unlimited', 'caption-ai': 'unlimited',
     'negotiation-ai': 'unlimited', 'triage-ai': 'unlimited', 'beauty-advice': 'unlimited',
     'instagram-analyze': 'unlimited', 'story-arc': 'unlimited', 'community': 'unlimited',
-    'team-members': 50, 'brand-match': 'unlimited', 'api-access': 'unlimited', 'white-label': 'unavailable',
+    'team-members': 50, 'brand-match': 'unlimited', 'script-studio': 'unlimited', 'api-access': 'unlimited', 'white-label': 'unavailable',
   },
   // ── v2 Enterprise (年契約) ────────────────────────
   'v2-enterprise': {
     'ai-chat': 'unlimited', 'screenshot-ai': 'unlimited', 'caption-ai': 'unlimited',
     'negotiation-ai': 'unlimited', 'triage-ai': 'unlimited', 'beauty-advice': 'unlimited',
     'instagram-analyze': 'unlimited', 'story-arc': 'unlimited', 'community': 'unlimited',
-    'team-members': 'unlimited', 'brand-match': 'unlimited', 'api-access': 'unlimited', 'white-label': 'unlimited',
+    'team-members': 'unlimited', 'brand-match': 'unlimited', 'script-studio': 'unlimited', 'api-access': 'unlimited', 'white-label': 'unlimited',
   },
 };
 
@@ -170,6 +173,7 @@ export const FEATURE_META: Record<FeatureKey, { label: string; emoji: string }> 
   'community':         { label: 'コミュニティ',       emoji: '🌹' },
   'team-members':      { label: 'チームメンバー',     emoji: '🌷' },
   'brand-match':       { label: 'ブランドマッチ',     emoji: '✨' },
+  'script-studio':     { label: '企画・台本スタジオ', emoji: '🎬' },
   'api-access':        { label: 'API アクセス',       emoji: '🔌' },
   'white-label':       { label: 'ホワイトラベル',     emoji: '🎨' },
 };

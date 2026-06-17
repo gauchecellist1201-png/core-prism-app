@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Plus, Volume2, Lightbulb, Sparkles, RefreshCw } from 'lucide-react';
+import { Play, Plus, Volume2, Square, Lightbulb, Sparkles, RefreshCw, Mail, Send, AlertTriangle, Check } from 'lucide-react';
 import type { Persona, Proposal, AppSettings } from '../types/identity';
 import { listIntegrations, sendBrief } from '../lib/integrations';
 import { RewardBurst } from './visualFx';
@@ -40,6 +40,8 @@ export default function TodayBrief({
 }: Props) {
   const [briefSending, setBriefSending] = useState(false);
   const [briefSent, setBriefSent] = useState(false);
+  // 送信失敗を黙って隠さない（silent fail撲滅）。失敗時は理由＋再送導線を出す。
+  const [briefError, setBriefError] = useState<string | null>(null);
   const [showReward, setShowReward] = useState(false);
   // どのアクションを「今この場で実行中」か (index)。null なら誰も実行中ではない。
   const [executingIdx, setExecutingIdx] = useState<number | null>(null);
@@ -48,14 +50,33 @@ export default function TodayBrief({
   const handleSendToIntegrations = async () => {
     if (!proposal || briefSending) return;
     setBriefSending(true);
+    setBriefError(null);
     const brief = {
       title: proposal.title,
       message: proposal.message,
       actions: proposal.actions,
       generatedAt: proposal.generatedAt,
     };
-    await Promise.all(enabledIntegrations.map(i => sendBrief(i, brief)));
+    // sendBrief は throw せず {ok,error} を返す。結果を必ず検査して
+    // 失敗を「送信完了」と偽らない（honest-numbers / silent fail撲滅）。
+    let results: Array<{ ok: boolean; error?: string }> = [];
+    try {
+      results = await Promise.all(enabledIntegrations.map(i => sendBrief(i, brief)));
+    } catch (e: unknown) {
+      results = [{ ok: false, error: e instanceof Error ? e.message : '不明なエラー' }];
+    }
     setBriefSending(false);
+    const failed = results.filter(r => !r.ok);
+    if (failed.length > 0) {
+      const total = results.length;
+      const reason = failed[0]?.error ? `（${failed[0].error}）` : '';
+      setBriefError(
+        total > 1
+          ? `${total}件中 ${failed.length}件 送信できませんでした${reason}。連携設定のWebhook URLをご確認のうえ、もう一度お試しください。`
+          : `送信できませんでした${reason}。連携設定のWebhook URLをご確認のうえ、もう一度お試しください。`,
+      );
+      return;
+    }
     setBriefSent(true);
     setTimeout(() => setBriefSent(false), 3000);
   };
@@ -227,17 +248,17 @@ export default function TodayBrief({
             isSpeaking ? (
               <button
                 onClick={onStopSpeak}
-                className="text-sm px-4 py-2.5 rounded-lg transition-all"
+                className="text-sm px-4 py-2.5 rounded-lg transition-all inline-flex items-center gap-1.5"
                 style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.4)', color: '#f87171' }}
               >
-                ⏹ 停止
+                <Square size={14} strokeWidth={2.4} fill="#f87171" /> 停止
               </button>
             ) : (
               <button
                 onClick={() => onSpeak(proposal)}
-                className="text-sm px-4 py-2.5 rounded-lg transition-all bg-surface-3 border-edge border text-fg hover:bg-surface"
+                className="text-sm px-4 py-2.5 rounded-lg transition-all bg-surface-3 border-edge border text-fg hover:bg-surface inline-flex items-center gap-1.5"
               >
-                🔊 読み上げ
+                <Volume2 size={15} strokeWidth={2.2} /> 読み上げ
               </button>
             )
           )}
@@ -253,21 +274,27 @@ export default function TodayBrief({
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
             >
-              📬 返信下書き済 {shadowDraftCount}件
+              <span className="inline-flex items-center gap-1.5"><Mail size={13} strokeWidth={2.2} /> 返信下書き済 {shadowDraftCount}件</span>
             </motion.button>
           )}
           {proposal && enabledIntegrations.length > 0 && (
             <button
               onClick={handleSendToIntegrations}
               disabled={briefSending}
-              className="text-sm px-4 py-2.5 rounded-lg transition-all disabled:opacity-50"
+              className="text-sm px-4 py-2.5 rounded-lg transition-all disabled:opacity-50 inline-flex items-center gap-1.5"
               style={{
-                background: briefSent ? 'rgba(74,222,128,0.15)' : 'var(--surface-3)',
-                border: `1px solid ${briefSent ? 'rgba(74,222,128,0.4)' : 'var(--border)'}`,
-                color: briefSent ? '#4ade80' : 'var(--fg-muted)',
+                background: briefSent ? 'rgba(74,222,128,0.15)' : briefError ? 'rgba(248,113,113,0.12)' : 'var(--surface-3)',
+                border: `1px solid ${briefSent ? 'rgba(74,222,128,0.4)' : briefError ? 'rgba(248,113,113,0.4)' : 'var(--border)'}`,
+                color: briefSent ? '#4ade80' : briefError ? '#f87171' : 'var(--fg-muted)',
               }}
             >
-              {briefSending ? '送信中…' : briefSent ? '送信完了' : '📤 Slack に送信'}
+              {briefSending
+                ? <><LoaderDots label="送信中" /></>
+                : briefSent
+                  ? <><Check size={14} strokeWidth={2.6} /> 送信完了</>
+                  : briefError
+                    ? <><RefreshCw size={14} strokeWidth={2.4} /> 再送する</>
+                    : <><Send size={14} strokeWidth={2.2} /> Slack に送信</>}
             </button>
           )}
           {proposal && (
@@ -276,6 +303,22 @@ export default function TodayBrief({
             </span>
           )}
         </div>
+
+        {/* 送信失敗を黙って隠さない — 理由と再送導線を必ず見せる */}
+        {briefError && (
+          <div
+            className="mt-3 flex items-start gap-2.5 rounded-xl"
+            style={{
+              padding: '12px 13px',
+              background: 'rgba(248,113,113,0.10)',
+              border: '1px solid rgba(248,113,113,0.35)',
+            }}
+            role="alert"
+          >
+            <AlertTriangle size={16} strokeWidth={2.3} color="#f87171" className="flex-shrink-0 mt-0.5" />
+            <p className="text-xs leading-relaxed m-0" style={{ color: '#fca5a5' }}>{briefError}</p>
+          </div>
+        )}
       </div>
 
       <RewardBurst

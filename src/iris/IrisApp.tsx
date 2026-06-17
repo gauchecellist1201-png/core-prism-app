@@ -97,6 +97,17 @@ export default function IrisApp() {
     if (plan) setCheckoutPlan(plan);
   };
 
+  // 機能ロックの「アップグレード」CTA から開く (例: 企画・台本スタジオ = Pro 限定)
+  useEffect(() => {
+    const onOpenPlan = (e: Event) => {
+      const id = (e as CustomEvent).detail?.planId || 'pro';
+      const plan = IRIS_PLANS.find(p => p.id === id) || IRIS_PLANS.find(p => p.id === 'pro');
+      if (plan) setCheckoutPlan(plan);
+    };
+    window.addEventListener('iris:open-plan', onOpenPlan as EventListener);
+    return () => window.removeEventListener('iris:open-plan', onOpenPlan as EventListener);
+  }, []);
+
   if (!entered) {
     return (
       <>

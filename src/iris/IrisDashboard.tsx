@@ -81,6 +81,7 @@ const TAB_GROUPS: TabGroup[] = [
   { id: 'create', label: 'つくる', color: '#833AB4', icon: Wand2,
     tabs: [
       { id: 'studio', l: 'スタジオ' },
+      { id: 'script', l: '企画・台本' },
       { id: 'reel', l: 'リール' }, { id: 'draft', l: '投稿を書く' },
       { id: 'director', l: '動画おまかせ' }, { id: 'image', l: '写真を直す' },
     ] },
@@ -117,6 +118,7 @@ import {
 } from './brandDealMatch';
 // 各タブ専用 View は、そのタブを開いた瞬間にだけ読み込めばいい
 const IrisDirectorView = React.lazy(() => import('./IrisDirectorView'));
+const IrisScriptStudio = React.lazy(() => import('./IrisScriptStudio'));
 const VideoStudio = React.lazy(() => import('../components/VideoStudio'));
 // 抜本リデザインされた美しい Minimal 版が default
 // 旧フル機能版は ./IrisReelStudio に残る (詳細モードで呼ぶ用)
@@ -140,6 +142,7 @@ const IrisFanEngagement = React.lazy(() => import('./IrisFanEngagement'));
 import { useHealth } from '../hooks/useHealth';
 const IrisCollabBoard = React.lazy(() => import('./IrisCollabBoard'));
 import { useMultiAccount, ACCOUNT_TYPE_META, PLATFORM_META_ACCOUNT, type IrisAccount } from './multiAccount';
+import { useBillingUser, getEffectivePlan, checkFeature, isMasterAuth } from '../lib/billing';
 import { useBrandGuidelines, TONE_META, type BrandGuideline, type BrandTone, runStyleCheck } from './brandGuidelines';
 import { useIrisKnowledge } from './irisKnowledge';
 const IrisKnowledgeView = React.lazy(() => import('./IrisKnowledgeView'));
@@ -160,7 +163,7 @@ interface Props {
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'studio' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite' | 'knowledge';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'studio' | 'script' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite' | 'knowledge';
 
 // ── デスクトップ左サイドバー ────────────────────────────────────
 function IrisSidebar({
@@ -1101,6 +1104,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const multiAccount = useMultiAccount();
   const brandGuide = useBrandGuidelines();
   const knowledge = useIrisKnowledge();
+  // 企画・台本スタジオは「最上位プラン (Pro)」限定。マスターは常に許可。
+  const { user: billingUser } = useBillingUser();
+  const scriptStudioAllowed = isMasterAuth() || checkFeature(getEffectivePlan(billingUser), 'script-studio').allowed;
   const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const myDeals = useMemo(() => desk.getDealsForPersona(IRIS_PERSONA_ID), [desk.deals]);
   const mediaKit = desk.getMediaKit(IRIS_PERSONA_ID);
@@ -1654,6 +1660,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               />
             )}
             {tab === 'director' && <IrisDirectorView bg={bg} settings={settings} />}
+            {tab === 'script' && <IrisScriptStudio bg={bg} settings={settings} locked={!scriptStudioAllowed} />}
             {tab === 'video' && <VideoStudio bg={bg} settings={settings} />}
             {tab === 'reel' && (
               <React.Suspense fallback={
