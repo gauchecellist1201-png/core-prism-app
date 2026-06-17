@@ -220,7 +220,7 @@ export default function CoreSite() {
             <span
               style={{
                 background:
-                  'linear-gradient(90deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)',
+                  'linear-gradient(100deg,#E0F2FE,#7DD3FC,#38BDF8,#0EA5E9)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 fontWeight: 900,
@@ -2438,17 +2438,18 @@ const ctaSmall: React.CSSProperties = {
 };
 const ctaHero: React.CSSProperties = {
   display: 'inline-block',
+  // ロゴアイコンと同じスカイブルー基調（虹色をやめて上品に）
   background:
-    'linear-gradient(135deg,#ff5757,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)',
-  backgroundSize: '300% 100%',
-  color: '#000',
+    'linear-gradient(135deg,#7DD3FC,#38BDF8,#0EA5E9)',
+  backgroundSize: '200% 100%',
+  color: '#04293A',
   padding: '1.1rem 2.4rem',
   borderRadius: 14,
   fontFamily: FONT_SERIF_JA,
   fontSize: '1rem',
   fontWeight: 800,
   textDecoration: 'none',
-  boxShadow: '0 12px 36px rgba(167,139,250,0.45)',
+  boxShadow: '0 12px 36px rgba(56,189,248,0.40)',
   letterSpacing: '0.12em',
 };
 const ctaGhost: React.CSSProperties = {

@@ -1084,6 +1084,30 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                         }}
                       ><Check size={13} /> {verifyOk}</motion.div>
                     )}
+
+                    {/* Resonance への導線 — LINE 配信を AI で自動化したい人向け */}
+                    <a
+                      href="https://resonancebot-ivory.vercel.app"
+                      target="_blank" rel="noopener noreferrer"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10, marginTop: 14,
+                        padding: '12px 14px', borderRadius: 12, textDecoration: 'none',
+                        background: 'linear-gradient(135deg, rgba(99,102,241,0.20), rgba(168,85,250,0.12))',
+                        border: '1px solid rgba(167,139,250,0.4)',
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#fff' }}>
+                          LINE 配信を AI で自動化するなら → Resonance
+                        </div>
+                        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.62)', marginTop: 2, lineHeight: 1.5 }}>
+                          一人ひとりに刺さるメッセージを AI が書いて自動配信。料金・お試しはこちら。
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: '#C4B5FD', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                        開く <ArrowRight size={12} />
+                      </span>
+                    </a>
                   </div>
                   );
                 })()}

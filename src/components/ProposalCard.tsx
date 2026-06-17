@@ -25,6 +25,15 @@ export default function ProposalCard({ proposal, brand = 'prism', onApproved, on
   const [state, setState] = useState<'idle' | 'approving' | 'rejected'>('idle');
 
   const accent = brand === 'iris' ? '#E1306C' : '#A78BFA';
+  // Iris は淡色テーマ → 濃文字。Prism はダーク → 白文字。(白地に白文字を防ぐ恒久ルール)
+  const isLight = brand === 'iris';
+  const ink = isLight ? '#1A0A26' : '#fff';
+  const body = isLight ? '#3A2A4A' : 'rgba(255,255,255,0.85)';
+  const muted = isLight ? '#8A7AA0' : 'rgba(255,255,255,0.5)';
+  const hair = isLight ? 'rgba(42,26,58,0.10)' : 'rgba(255,255,255,0.06)';
+  const ghostBg = isLight ? 'rgba(42,26,58,0.05)' : 'rgba(255,255,255,0.06)';
+  const ghostBorder = isLight ? 'rgba(42,26,58,0.12)' : 'rgba(255,255,255,0.10)';
+  const ghostInk = isLight ? '#5A4570' : 'rgba(255,255,255,0.65)';
 
   // 同じ提案が既にキューに入っているか
   const existing = dedupeKey ? tasks.find(t => t.id.endsWith(dedupeKey)) : null;
@@ -56,7 +65,7 @@ export default function ProposalCard({ proposal, brand = 'prism', onApproved, on
         border: `1px solid ${accent}44`,
         borderRadius: 16,
         padding: '14px 16px',
-        color: '#fff',
+        color: ink,
       }}
       role="region"
       aria-label="AI 会社からの提案"
@@ -74,7 +83,7 @@ export default function ProposalCard({ proposal, brand = 'prism', onApproved, on
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
         <h3 style={{
           flex: 1, fontSize: 16, fontWeight: 900,
-          color: '#fff', margin: 0, lineHeight: 1.4,
+          color: ink, margin: 0, lineHeight: 1.4,
           letterSpacing: '-0.01em',
         }}>{proposal.title}</h3>
         {proposal.dueDays && (
@@ -90,14 +99,14 @@ export default function ProposalCard({ proposal, brand = 'prism', onApproved, on
       </div>
 
       {/* 概要 */}
-      <p style={{ fontSize: 12.5, color: 'var(--fg, rgba(255,255,255,0.85))', margin: '0 0 8px', lineHeight: 1.65 }}>
+      <p style={{ fontSize: 12.5, color: body, margin: '0 0 8px', lineHeight: 1.65 }}>
         {proposal.summary}
       </p>
 
       {/* なぜ */}
       {proposal.why && (
         <div style={{
-          fontSize: 11.5, color: 'rgba(255,255,255,0.70)', lineHeight: 1.6,
+          fontSize: 11.5, color: body, lineHeight: 1.6,
           marginBottom: 6,
         }}>
           <strong style={{ color: accent }}>なぜ:</strong> {proposal.why}
@@ -120,10 +129,10 @@ export default function ProposalCard({ proposal, brand = 'prism', onApproved, on
         display: 'flex', flexWrap: 'wrap', gap: 4,
         marginBottom: 12,
         padding: '6px 0',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderTop: `1px solid ${hair}`,
+        borderBottom: `1px solid ${hair}`,
       }}>
-        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginRight: 4, alignSelf: 'center' }}>
+        <span style={{ fontSize: 10, color: muted, marginRight: 4, alignSelf: 'center' }}>
           動く CXO ({proposal.steps.length} 名):
         </span>
         {proposal.steps.map((step, i) => {
@@ -178,9 +187,9 @@ export default function ProposalCard({ proposal, brand = 'prism', onApproved, on
           aria-label="却下"
           title="却下"
           style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            color: 'rgba(255,255,255,0.65)',
+            background: ghostBg,
+            border: `1px solid ${ghostBorder}`,
+            color: ghostInk,
             borderRadius: 12,
             padding: '0 14px',
             cursor: state === 'idle' ? 'pointer' : 'not-allowed',

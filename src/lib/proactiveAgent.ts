@@ -60,6 +60,8 @@ interface GenInput {
   health?: { today: DailyHealth | null; week: DailyHealth[]; anomalies: HealthAnomaly[] };
   /** 巡回モード: 'morning' | 'evening' | null (オンデマンド) */
   patrolMode?: 'morning' | 'evening' | null;
+  /** 連携サービス (Iris/Resonance 等) の実データ要約。提案の根拠に使う */
+  extraContext?: string;
 }
 
 export async function generateProposal(
@@ -67,7 +69,7 @@ export async function generateProposal(
   input: GenInput,
 ): Promise<Proposal> {
 
-  const { persona, knowledge, recentProposals, health, patrolMode } = input;
+  const { persona, knowledge, recentProposals, health, patrolMode, extraContext } = input;
 
   // ナレッジサマリ (最新5件)
   const kbSummary = knowledge
@@ -115,7 +117,7 @@ ${openTasks}
 
 ## 蓄積ナレッジ
 ${kbSummary}
-
+${extraContext ? `\n## 連携サービスの実データ (Iris / Resonance など)\n${extraContext}\n→ これらの実数値があれば、必ず根拠として提案に織り込むこと。\n` : ''}
 ## 直近の提案 (重複させない)
 ${recent}
 ${patrolInstruction}

@@ -1001,6 +1001,11 @@ function EditorialCard({
       border: `1px solid rgba(31,26,46,0.07)`,
       boxShadow: IRIS_SHADOW.card,
       overflow: 'hidden',
+      // 列ごとに高さを揃え、長い中身はカード内でスクロール (4列の不揃いを解消)
+      height: '100%',
+      maxHeight: 'min(74vh, 600px)',
+      display: 'flex',
+      flexDirection: 'column',
     }}>
       <div style={{
         padding: '1rem 1.1rem 0.7rem',
@@ -1024,7 +1029,7 @@ function EditorialCard({
           letterSpacing: '-0.005em',
         }}>{title}</span>
       </div>
-      <div style={{ padding: '0.85rem 1.1rem 1rem' }}>
+      <div style={{ padding: '0.85rem 1.1rem 1rem', flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {children}
       </div>
     </div>

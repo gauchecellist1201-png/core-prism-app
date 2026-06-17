@@ -6,6 +6,7 @@ import type { AppSettings, Persona, KnowledgeItem, Proposal } from '../types/ide
 import type { DailyHealth } from '../types/health';
 import type { HealthAnomaly } from '../data/healthAnomaly';
 import { generateProposal } from '../lib/proactiveAgent';
+import { getCrossServiceSummary } from '../lib/crossServiceData';
 import { speakNatural, stopSpeakingNatural, loadVoices } from '../lib/tts';
 
 const STORAGE_KEY = 'core_proposals';
@@ -55,12 +56,15 @@ export function useProactiveAgent(
     setIsGenerating(true);
     setError(null);
     try {
+      // Iris(Instagram実データ)/Resonance(LINE配信) を提案の根拠に織り込む (司令塔)
+      const extraContext = await getCrossServiceSummary({ includeResonance: true }).catch(() => '');
       const proposal = await generateProposal(settings, {
         persona,
         knowledge: knowledge.filter(k => k.personaId === persona.id),
         recentProposals: proposals.filter(p => p.personaId === persona.id).slice(0, 5),
         health,
         patrolMode,
+        extraContext,
       });
       setProposals(prev => [proposal, ...prev].slice(0, MAX_HISTORY));
       lastGenAtRef.current = Date.now();
