@@ -5,7 +5,7 @@
 // ============================================================
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 import {
   getBalance, getHistory, rankFor, spend, hasClaimed, type CreditEntry,
 } from "../lib/coreCredits";
