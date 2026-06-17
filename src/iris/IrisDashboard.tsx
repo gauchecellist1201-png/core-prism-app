@@ -29,6 +29,7 @@ import {
   type InfluencerDeal, type MediaKit,
 } from '../types/influencerDeal';
 import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMessage } from './beautyAdvisor';
+import { generateMediaKitDoc, mediaKitDocToMarkdown, mediaKitStats, type MediaKitDoc } from './mediaKitDoc';
 import { shareToInstagram } from './instagramShare';
 import { notifyInApp } from '../lib/inAppNotify';
 import { LoaderDots, LoaderBlock } from '../components/MicroLoader';
@@ -1681,7 +1682,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'community' && <IrisCommunityView bg={bg} myHandle={mediaKit?.handleName} />}
             {tab === 'team' && <TeamView bg={bg} team={team} desk={desk} myDeals={myDeals} />}
             {tab === 'brands' && <BrandMatchView bg={bg} desk={desk} mediaKit={mediaKit} settings={settings} knowledge={knowledge} />}
-            {tab === 'kit' && <MediaKitView bg={bg} desk={desk} kit={mediaKit} />}
+            {tab === 'kit' && <MediaKitView bg={bg} desk={desk} kit={mediaKit} settings={settings} />}
             {tab === 'revenue' && <IrisRevenueView bg={bg} />}
             {tab === 'fans' && <IrisFanEngagement bg={bg} settings={settings} />}
             {tab === 'collab' && (
@@ -2745,17 +2746,51 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
 
 
 // ─── メディアキット ─────────────────────────
-function MediaKitView({ bg, desk, kit }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; kit?: MediaKit }) {
+function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; kit?: MediaKit; settings: AppSettings }) {
   const [d, setD] = useState<MediaKit>(kit || { personaId: IRIS_PERSONA_ID });
-  const save = () => desk.setMediaKit(IRIS_PERSONA_ID, { ...d, personaId: IRIS_PERSONA_ID });
+  const save = () => {
+    desk.setMediaKit(IRIS_PERSONA_ID, { ...d, personaId: IRIS_PERSONA_ID });
+    notifyInApp({ kind: 'success', title: '保存しました' });
+  };
   void desk;
+
+  const [doc, setDoc] = useState<MediaKitDoc | null>(null);
+  const [genLoading, setGenLoading] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+
+  const hasInput = !!(d.handleName || d.audienceProfile || d.caseHistory ||
+    (d.followers && Object.values(d.followers).some(v => v && v > 0)));
+
+  const generate = async () => {
+    setGenError(null);
+    setGenLoading(true);
+    // 生成前に最新の入力を保存（手入力を取りこぼさない）
+    desk.setMediaKit(IRIS_PERSONA_ID, { ...d, personaId: IRIS_PERSONA_ID });
+    try {
+      const result = await generateMediaKitDoc({ settings, mediaKit: { ...d, personaId: IRIS_PERSONA_ID } });
+      setDoc(result);
+    } catch (e) {
+      setGenError(e instanceof Error ? e.message : 'メディアキットを作れませんでした。少し時間をおいて、もう一度お試しください。');
+    } finally {
+      setGenLoading(false);
+    }
+  };
+
+  const copyMarkdown = () => {
+    if (!doc) return;
+    const md = mediaKitDocToMarkdown(doc, { ...d, personaId: IRIS_PERSONA_ID });
+    navigator.clipboard?.writeText(md);
+    notifyInApp({ kind: 'success', title: 'メディアキットをコピーしました', body: 'メールやDMに貼り付けて、企業にそのまま送れます。' });
+  };
+
+  const stats = mediaKitStats({ ...d, personaId: IRIS_PERSONA_ID });
 
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
       <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
         私のプロフィール
       </h2>
-      <p style={{ color: bg.inkSoft }}>ここに書いた内容を、AI がお返事や投稿を書くときに参考にします。</p>
+      <p style={{ color: bg.inkSoft }}>ここに書いた内容を、AI がお返事や投稿を書くときに参考にします。下の「メディアキットを作る」で、企業にそのまま送れる自己紹介資料も自動で作れます。</p>
 
       <Card bg={bg}>
         <input style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} placeholder="表示名 (例: @hanako_official)" value={d.handleName || ''} onChange={e => setD({ ...d, handleName: e.target.value })} />
@@ -2783,6 +2818,121 @@ function MediaKitView({ bg, desk, kit }: { bg: IrisBackgroundDef; desk: ReturnTy
         <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="大切にしたいこと・NGなこと" value={d.brandValues || ''} onChange={e => setD({ ...d, brandValues: e.target.value })} />
 
         <button onClick={save} style={{ ...btnPrimary(bg), marginTop: '0.75rem' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Save size={14} /> 保存</span></button>
+      </Card>
+
+      {/* ── メディアキット自動生成 ───────────────── */}
+      <Card bg={bg}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ fontSize: '0.72rem', letterSpacing: '0.28em', color: bg.accent, fontWeight: 700, margin: 0 }}>MEDIA KIT</p>
+            <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.5rem', color: bg.ink, margin: '0.2rem 0 0' }}>
+              企業に送れる自己紹介資料
+            </h3>
+          </div>
+          <button onClick={generate} disabled={genLoading} style={{ ...btnPrimary(bg), opacity: genLoading ? 0.6 : 1, cursor: genLoading ? 'wait' : 'pointer' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {genLoading ? <LoaderDots /> : <Wand2 size={14} />} {doc ? '作り直す' : 'メディアキットを作る'}
+            </span>
+          </button>
+        </div>
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginTop: '0.6rem', marginBottom: 0 }}>
+          上の数字や一言から、AI が「強み・よく見てくれる人・一緒にできること」を整えて、企業の担当者にそのまま送れる文章にします。
+        </p>
+        {!hasInput && (
+          <p style={{ color: bg.inkSoft, fontSize: '0.8rem', marginTop: '0.5rem', marginBottom: 0 }}>
+            表示名やフォロワー数を1つでも入れると、ぐっと刺さる内容になります。
+          </p>
+        )}
+
+        {genError && (
+          <div style={{ marginTop: '0.8rem', padding: '0.7rem 0.9rem', borderRadius: 12, background: 'rgba(220,53,69,0.1)', border: '1px solid rgba(220,53,69,0.3)', color: '#B02030', fontSize: '0.85rem', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span>{genError}</span>
+          </div>
+        )}
+
+        {doc && (
+          <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.66)', border: `1px solid ${bg.cardBorder}`, borderRadius: 18, padding: '1.2rem 1.3rem', display: 'grid', gap: '1rem' }}>
+            <div>
+              {d.handleName && <p style={{ margin: 0, fontWeight: 700, color: bg.ink, fontSize: '1.05rem' }}>{d.handleName}</p>}
+              {doc.tagline && <p style={{ margin: '0.15rem 0 0', fontFamily: IRIS_FONTS.display, fontStyle: 'italic', color: bg.accent, fontSize: '1.15rem' }}>{doc.tagline}</p>}
+            </div>
+
+            {stats.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {stats.map(s => (
+                  <div key={s.label} style={{ background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 12, padding: '0.5rem 0.8rem' }}>
+                    <p style={{ margin: 0, fontSize: '0.68rem', color: bg.inkSoft, letterSpacing: '0.06em' }}>{s.label}</p>
+                    <p style={{ margin: '0.1rem 0 0', fontWeight: 700, color: bg.ink, fontSize: '0.9rem' }}>{s.value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {doc.intro && <p style={{ margin: 0, color: bg.ink, lineHeight: 1.75 }}>{doc.intro}</p>}
+
+            {doc.strengths.length > 0 && (
+              <div>
+                <p style={{ margin: '0 0 0.4rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700 }}>強み</p>
+                <div style={{ display: 'grid', gap: '0.5rem' }}>
+                  {doc.strengths.map((s, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <Sparkles size={15} color={bg.accent} style={{ flexShrink: 0, marginTop: 3 }} />
+                      <div>
+                        <span style={{ fontWeight: 700, color: bg.ink }}>{s.title}</span>
+                        <span style={{ color: bg.inkSoft }}>　{s.detail}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {doc.audience && (
+              <div>
+                <p style={{ margin: '0 0 0.3rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700 }}>よく見てくれる人</p>
+                <p style={{ margin: 0, color: bg.ink, lineHeight: 1.7 }}>{doc.audience}</p>
+              </div>
+            )}
+
+            {doc.whyCollab && (
+              <div>
+                <p style={{ margin: '0 0 0.3rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700 }}>一緒にできること</p>
+                <p style={{ margin: 0, color: bg.ink, lineHeight: 1.7 }}>{doc.whyCollab}</p>
+              </div>
+            )}
+
+            {doc.collabFormats.length > 0 && (
+              <div>
+                <p style={{ margin: '0 0 0.4rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700 }}>コラボの形</p>
+                <div style={{ display: 'grid', gap: '0.4rem' }}>
+                  {doc.collabFormats.map((c, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <Film size={15} color={bg.accent} style={{ flexShrink: 0, marginTop: 3 }} />
+                      <div>
+                        <span style={{ fontWeight: 700, color: bg.ink }}>{c.title}</span>
+                        <span style={{ color: bg.inkSoft }}>　{c.detail}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {d.rateCard && (
+              <div>
+                <p style={{ margin: '0 0 0.3rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700 }}>金額の目安</p>
+                <p style={{ margin: 0, color: bg.ink, lineHeight: 1.7 }}>{d.rateCard}</p>
+              </div>
+            )}
+
+            {doc.closing && <p style={{ margin: 0, color: bg.inkSoft, lineHeight: 1.7, fontStyle: 'italic' }}>{doc.closing}</p>}
+
+            <button onClick={copyMarkdown} style={{ ...btnSecondary(bg), justifySelf: 'start' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Clipboard size={14} /> メディアキットをコピー</span>
+            </button>
+          </div>
+        )}
       </Card>
     </div>
   );
