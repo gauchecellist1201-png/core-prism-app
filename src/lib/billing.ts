@@ -288,9 +288,10 @@ export const IRIS_PLANS: Plan[] = [
   {
     id: 'pro', brand: 'iris',
     name: 'Pro', priceJpy: 12800, priceJpy_yearly: 128000,
-    tagline: 'チーム / マネージャー',
+    tagline: 'チーム / 運用代行 / マネージャー',
     features: [
       'Standard 全機能',
+      '企画・台本スタジオ (運用代行モード) ※Pro 限定',
       '連携アカウント 5',
       'ブランドマッチ (Prism 企業リスト連動)',
       '投稿カレンダー・自動 30 日プラン',

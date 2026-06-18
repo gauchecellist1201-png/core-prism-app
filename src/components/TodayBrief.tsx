@@ -104,7 +104,7 @@ export default function TodayBrief({
       />
 
       {/* iPhone は余白広めで巨大化 (オーナー指示 2026-06-03) */}
-      <div className="relative p-5 md:p-5 brief-mobile">
+      <div className="relative p-5 brief-mobile">
         <div className="flex items-center gap-3 mb-4">
           <motion.div
             className="rounded-xl flex items-center justify-center flex-shrink-0 brief-icon-mobile"

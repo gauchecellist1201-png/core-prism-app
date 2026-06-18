@@ -732,7 +732,7 @@ function IrisEditorialHome({
                       fontSize: 10.5, color: tone.c, fontWeight: 800,
                       marginBottom: 10, letterSpacing: '0.02em',
                     }}>
-                      {src === 'oauth' && <CheckCircle2 size={12} strokeWidth={2.6} />}
+                      {src === 'oauth' && <CheckCircle2 size={12} strokeWidth={2.2} />}
                       {label}
                     </div>
                   );
@@ -1022,7 +1022,7 @@ function EditorialCard({
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
-          <Ico size={14} color={accent} strokeWidth={2.3} />
+          <Ico size={14} color={accent} strokeWidth={2.2} />
         </div>
         <span style={{
           fontFamily: IRIS_FONTS.serif,

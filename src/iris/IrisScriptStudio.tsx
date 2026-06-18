@@ -284,7 +284,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
               <div key={i} style={{ padding: '0.7rem 0.9rem', background: 'rgba(255,255,255,0.62)', borderRadius: 12, borderLeft: `3px solid ${bg.accent}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
                   <p style={{ fontWeight: 700, color: bg.ink, lineHeight: 1.4 }}>{it.hook}</p>
-                  <span style={{ flexShrink: 0, fontSize: '0.66rem', fontWeight: 700, color: '#fff', background: EFFORT_COLOR[it.effort], padding: '0.1rem 0.5rem', borderRadius: 999 }}>{it.format}・手間{it.effort}</span>
+                  <span style={{ flexShrink: 0, fontSize: '0.66rem', fontWeight: 800, color: '#1c1c24', background: EFFORT_COLOR[it.effort], padding: '0.1rem 0.5rem', borderRadius: 999 }}>{it.format}・手間{it.effort}</span>
                 </div>
                 <p style={{ fontSize: '0.8rem', color: bg.inkSoft, marginTop: 3 }}>{it.angle}</p>
                 <p style={{ fontSize: '0.74rem', color: bg.accent, marginTop: 2, fontStyle: 'italic' }}>狙い: {it.why}</p>
