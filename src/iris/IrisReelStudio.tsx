@@ -802,10 +802,25 @@ export const BGM_LIBRARY: BgmTrack[] = [
   { id: 'soft-piano',   name: 'Soft Piano',        mood: 'emotional', bpm: 65,  sec: 105, url: 'https://cdn.pixabay.com/audio/2022/05/16/audio_259a2c7f76.mp3' },
 ];
 
+/**
+ * 外部（IrisFlowHub の「素材から構成」）からスタジオへ渡す下書きプロジェクト。
+ * AI が決めた「順番・各カットの秒数・字幕」をそのままタイムラインに展開し、
+ * ユーザーは書き出すだけにする（一気通貫の最終段）。
+ */
+export interface ReelStudioSeed {
+  clips: { file: File; durationSec: number; overlayText?: string }[];
+  caption?: string;
+  hashtags?: string[];
+}
+
 interface Props {
   bg: IrisBackgroundDef;
   /** 投稿予約タブへ移動 (optional) */
   onJumpToSchedule?: () => void;
+  /** 外部から渡された下書き（素材から構成の結果）。マウント時に1回だけ展開する */
+  initialProject?: ReelStudioSeed | null;
+  /** initialProject を取り込んだら親に通知（再展開を防ぐ） */
+  onConsumeInitial?: () => void;
   /** 案件一覧 (オプション — 予約作成時に紐づけ) */
   myDeals?: any[];
   /** 予約キュー (オプション) */
@@ -1243,7 +1258,7 @@ async function convertWebmToMp4(webm: Blob): Promise<Blob | null> {
 // ============================================================
 // メインコンポーネント
 // ============================================================
-export default function IrisReelStudio({ bg, onJumpToSchedule, myDeals = [], postQueue, settings, persona, mediaKit }: Props) {
+export default function IrisReelStudio({ bg, onJumpToSchedule, initialProject, onConsumeInitial, myDeals = [], postQueue, settings, persona, mediaKit }: Props) {
   const [clips, setClips] = useState<Clip[]>([]);
   const [bgmFile, setBgmFile] = useState<File | null>(null);
   const [bpm, setBpm] = useState<number | null>(null);
@@ -1295,6 +1310,49 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, myDeals = [], pos
   const [scheduleErr, setScheduleErr] = useState<string>('');
   const [scheduleSaved, setScheduleSaved] = useState<string | null>(null);
   const [scheduleCopied, setScheduleCopied] = useState<'post' | 'tags' | null>(null);
+
+  // 「素材から構成」の結果をマウント時に1回だけタイムラインへ展開（一気通貫の最終段）。
+  // AI が決めた順番でクリップを並べ、各カットの秒数と字幕（overlayText）を反映する。
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current || !initialProject?.clips?.length) return;
+    seededRef.current = true;
+    let cancelled = false;
+    (async () => {
+      const built: Clip[] = [];
+      const caps: Caption[] = [];
+      let t = 0;
+      for (const seed of initialProject.clips) {
+        const url = URL.createObjectURL(seed.file);
+        const isVideo = (seed.file.type || '').startsWith('video');
+        try {
+          if (isVideo) {
+            const v = await loadVideo(url);
+            const dur = clamp(seed.durationSec || v.duration || 4, 2, Math.max(2, v.duration || 6));
+            built.push({ id: makeId(), kind: 'video', url, duration: dur, kenBurns: 'none', transition: 'whip', el: v, speed: 1 });
+            if (seed.overlayText) caps.push({ start: t, end: t + dur, text: seed.overlayText });
+            t += dur;
+          } else {
+            const img = await loadImage(url);
+            const dur = clamp(seed.durationSec || 3, 1.5, 8);
+            built.push({ id: makeId(), kind: 'image', url, duration: dur, kenBurns: 'in', transition: 'fade', el: img });
+            if (seed.overlayText) caps.push({ start: t, end: t + dur, text: seed.overlayText });
+            t += dur;
+          }
+        } catch { /* 壊れた素材はスキップ（残りは展開する＝silent fail させない） */ }
+      }
+      if (cancelled) return;
+      if (built.length) {
+        setClips(built);
+        if (caps.length) setCaptions(caps);
+        if (initialProject.caption) setScheduleCaption(initialProject.caption);
+        if (initialProject.hashtags?.length) setScheduleHashtags(initialProject.hashtags.join(' '));
+      }
+      onConsumeInitial?.();
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialProject]);
 
   // ─── CapCut Pro killer 機能 (LUT / ステッカー / TTS / 翻訳 / 4K / ハイライト) ─────
   const [stickers, setStickers] = useState<StickerInstance[]>([]);

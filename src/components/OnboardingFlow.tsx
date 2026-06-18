@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import CountUp from './CountUp';
 import type { AppSettings } from '../types/identity';
 import { INDUSTRY_LIST, INDUSTRY_PACKS, type IndustryId } from '../prism/industryPacks';
 import { recordStep, type OnboardStep } from '../lib/onboardingFunnel';
@@ -180,12 +181,17 @@ export default function OnboardingFlow({ onComplete }: Props) {
                 { num: '5', sub: '初期設定', unit: '分' },
                 { num: '7', sub: '無料', unit: '日間' },
               ].map((f, i) => (
-                <div key={i} className="p-3 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.06), rgba(232,75,151,0.06))', border: '1px solid rgba(251,191,36,0.20)' }}>
+                <motion.div key={i} className="p-3 rounded-xl"
+                  initial={{ opacity: 0, y: 16, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ type: 'spring', damping: 16, stiffness: 220, delay: 0.15 + i * 0.12 }}
+                  whileHover={{ y: -3 }}
+                  style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.06), rgba(232,75,151,0.06))', border: '1px solid rgba(251,191,36,0.20)' }}>
                   <p className="text-xs font-light mb-1" style={{ color: 'rgba(255,255,255,0.55)' }}>{f.sub}</p>
                   <p className="font-bold" style={{ fontSize: '1.6rem', color: '#FBBF24', lineHeight: 1 }}>
-                    {f.num}<span style={{ fontSize: '0.7rem', marginLeft: 2, color: 'rgba(255,255,255,0.6)' }}>{f.unit}</span>
+                    <CountUp value={Number(f.num)} durationMs={1100 + i * 250} /><span style={{ fontSize: '0.7rem', marginLeft: 2, color: 'rgba(255,255,255,0.6)' }}>{f.unit}</span>
                   </p>
-                </div>
+                </motion.div>
               ))}
             </div>
             <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>

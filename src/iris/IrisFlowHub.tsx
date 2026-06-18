@@ -14,28 +14,66 @@
 // 失敗時は必ず復旧導線（再試行）を出し、行き止まりを作らない。
 // ============================================================
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import CountUp from '../components/CountUp';
+import Celebrate from '../components/Celebrate';
 import {
   BarChart3, Sparkles, Clapperboard, Mail, CheckCircle2, ArrowRight,
-  Loader2, TrendingUp, RefreshCw, ChevronRight, Hash, Clock,
+  Loader2, TrendingUp, RefreshCw, ChevronRight, Hash, Clock, CalendarPlus,
 } from 'lucide-react';
 import type { IgProfile } from './instagramConnect';
 import { useIgStrategy, type StrategyItem } from './useIgStrategy';
 import { useIgAnalysis } from './useIgAnalysis';
 import { generateReelScript, type ReelScriptResult } from './reelAiScript';
 import { getAllBrandDeals, CATEGORY_META, type BrandDeal } from './brandDeals';
+import { generateApplicationDraft, type ApplicationDraft } from './brandDealMatch';
 import IrisReelComposer from './IrisReelComposer';
 import type { ComposeContext } from './reelAiCaption';
+import type { ReelStudioSeed } from './IrisReelStudio';
 import type { IrisBackgroundDef } from './irisStyle';
 import type { AppSettings } from '../types/identity';
+import type { MediaKit } from '../types/influencerDeal';
 
 interface Props {
   bg: IrisBackgroundDef;
   igProfile: IgProfile;
   settings: AppSettings;
+  mediaKit?: MediaKit;
   onNavigate: (tab: string) => void;
   /** リールスタジオを開く（生成済みテーマを引き継ぐ） */
   onOpenReelStudio: (theme: string) => void;
+  /** リールを投稿予約に追加（任意で案件に紐付け）。ダッシュボードが postQueue.add に橋渡し */
+  onScheduleReel?: (p: { caption: string; hashtags: string[]; cta?: string; title?: string; dealId?: string; brandName?: string; mediaKind?: 'video' | 'image' }) => void;
+  /** 「素材から構成」の結果をリールスタジオへ渡して動画化する */
+  onSendReelToStudio?: (seed: ReelStudioSeed) => void;
+}
+
+/** リールを紐付ける案件の選択（なし or マッチ済み案件）チップ */
+function DealLinkPicker({ deals, value, onChange, accent, bg }: {
+  deals: { deal: BrandDeal }[]; value: string | null; onChange: (id: string | null) => void; accent: string; bg: IrisBackgroundDef;
+}) {
+  if (!deals.length) return null;
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: bg.inkSoft, marginBottom: 6 }}>案件に紐付け（任意）</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {[{ id: null as string | null, name: 'なし' }, ...deals.map((d) => ({ id: d.deal.id, name: d.deal.brandName }))].map((opt) => {
+          const sel = value === opt.id;
+          return (
+            <button key={opt.id ?? 'none'} type="button" onClick={() => onChange(opt.id)}
+              style={{
+                fontSize: 11, fontWeight: 700, borderRadius: 99, padding: '5px 11px', cursor: 'pointer',
+                background: sel ? `linear-gradient(135deg, ${accent}, #F77737)` : 'transparent',
+                color: sel ? '#fff' : bg.inkSoft,
+                border: sel ? 'none' : `1px solid ${bg.cardBorder}`,
+              }}>
+              {opt.name}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 const fmtNum = (n?: number) => (n == null ? '—' : n.toLocaleString('ja-JP'));
@@ -68,8 +106,9 @@ function matchDealsForProfile(profile: IgProfile, max = 3): { deal: BrandDeal; r
     .map(({ deal, reason }) => ({ deal, reason }));
 }
 
-export default function IrisFlowHub({ bg, igProfile, settings, onNavigate, onOpenReelStudio }: Props) {
+export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavigate, onOpenReelStudio, onScheduleReel, onSendReelToStudio }: Props) {
   const accent = '#E1306C';
+  const reduce = useReducedMotion();
   const { data: strategy, loading: stratLoading, error: stratError, refresh } = useIgStrategy(igProfile);
   // 連携後の自動分析（永続化）
   const { data: analysis, loading: anaLoading, error: anaError, refresh: refreshAna } = useIgAnalysis(igProfile, settings);
@@ -80,11 +119,53 @@ export default function IrisFlowHub({ bg, igProfile, settings, onNavigate, onOpe
   const [reel, setReel] = useState<ReelScriptResult | null>(null);
   const [reelLoading, setReelLoading] = useState(false);
   const [reelError, setReelError] = useState<string | null>(null);
+  // リール↔案件↔投稿予約の紐付け
+  const [linkDealId, setLinkDealId] = useState<string | null>(null);
+  const [scheduled, setScheduled] = useState(false);
+  // 達成の瞬間の祝祭
+  const [celebrate, setCelebrate] = useState({ n: 0, msg: '' });
+  const fire = (msg: string) => setCelebrate((c) => ({ n: c.n + 1, msg }));
 
   const matchedDeals = useMemo(() => matchDealsForProfile(igProfile), [igProfile]);
 
+  // ④ 応募文をその場生成（稼ぐステップを一気通貫で完結）
+  const [draftDealId, setDraftDealId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<ApplicationDraft | null>(null);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
+
+  const makeDraft = async (deal: BrandDeal) => {
+    setDraftDealId(deal.id);
+    setDraft(null);
+    setDraftError(null);
+    setDraftLoading(true);
+    const note = [
+      `Instagram @${igProfile.handle}`,
+      igProfile.followers ? `フォロワー ${igProfile.followers.toLocaleString()}` : '',
+      (igProfile.topPostCategories || []).length ? `ジャンル: ${igProfile.topPostCategories.join('・')}` : '',
+      analysis?.oneLiner ? `強み: ${analysis.oneLiner}` : '',
+    ].filter(Boolean).join(' / ');
+    try {
+      const d = await generateApplicationDraft({ settings, deal, mediaKit, customNote: note });
+      setDraft(d);
+    } catch (e) {
+      setDraftError(e instanceof Error ? e.message : '応募文の生成に失敗しました');
+    } finally {
+      setDraftLoading(false);
+    }
+  };
+
   const defaultTheme =
     strategy?.contentTheme || analysis?.next30Days?.week1?.theme || strategy?.strategies?.[0]?.action || strategy?.strategies?.[0]?.title || '';
+
+  // リールを投稿予約へ（選択中の案件に紐付け）
+  const scheduleReel = (p: { caption: string; hashtags: string[]; cta?: string; title?: string; mediaKind?: 'video' | 'image' }) => {
+    if (!onScheduleReel) return;
+    const linked = matchedDeals.find((d) => d.deal.id === linkDealId)?.deal;
+    onScheduleReel({ ...p, dealId: linked?.id, brandName: linked?.brandName });
+    setScheduled(true);
+    fire(linked ? `${linked.brandName} 用に予約しました！` : '投稿予約に追加しました！');
+  };
 
   // 分析から得たリール構成用の文脈（オーディエンス/世界観/テーマ）
   const composeContext: ComposeContext = {
@@ -104,6 +185,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, onNavigate, onOpe
     try {
       const r = await generateReelScript(t);
       setReel(r);
+      fire('リール台本ができました！');
     } catch (e) {
       setReelError(e instanceof Error ? e.message : '台本の生成に失敗しました');
     } finally {
@@ -127,56 +209,108 @@ export default function IrisFlowHub({ bg, igProfile, settings, onNavigate, onOpe
     { key: 'reel', label: 'リール', done: !!reel },
     { key: 'earn', label: '稼ぐ', done: false },
   ];
+  // 「いま光らせる」ステップ = 完了していない最初のステップ
+  const activeStepIdx = steps.findIndex((s) => !s.done);
+
+  // 子要素を順に立ち上げる（段階的に現れることで“組み上がっていく”感）
+  const reveal = (i: number) => (reduce
+    ? {}
+    : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay: 0.06 * i, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } });
 
   return (
-    <div style={{ marginBottom: '1.25rem' }}>
-      {/* ヘッダ + ステップレール */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: 12, flexWrap: 'wrap', gap: 8,
-      }}>
-        <div>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            fontSize: 10.5, letterSpacing: '0.18em', fontWeight: 800, color: accent,
-          }}>
-            <Sparkles size={13} /> あなたの運用プラン
-          </div>
-          <h2 style={{ margin: '4px 0 0', fontSize: '1.15rem', fontWeight: 800, color: bg.ink, lineHeight: 1.35 }}>
-            連携から、稼ぐまで一気通貫で
-          </h2>
-        </div>
-      </div>
+    <div style={{ marginBottom: '1.25rem', position: 'relative' }}>
+      <Celebrate trigger={celebrate.n} message={celebrate.msg} />
+      {/* 生きているオーラ（ヘッダ背後でゆっくり呼吸する） */}
+      {!reduce && (
+        <motion.div aria-hidden
+          animate={{ opacity: [0.35, 0.6, 0.35], scale: [1, 1.08, 1], x: [0, 10, 0] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute', top: -30, left: -10, width: 260, height: 160,
+            background: `radial-gradient(60% 60% at 30% 30%, ${accent}33, transparent 70%), radial-gradient(50% 50% at 80% 40%, #F7773733, transparent 70%)`,
+            filter: 'blur(28px)', pointerEvents: 'none', zIndex: 0,
+          }}
+        />
+      )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 14 }}>
-        {steps.map((s, i) => (
-          <div key={s.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1 }}>
-              <div style={{
-                width: 26, height: 26, borderRadius: '50%',
-                background: s.done ? stepDoneColor : `${accent}1A`,
-                border: s.done ? 'none' : `1.5px solid ${accent}55`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: s.done ? '#fff' : accent, fontSize: 11, fontWeight: 800,
-              }}>
-                {s.done ? <CheckCircle2 size={15} /> : i + 1}
+      {/* ヘッダ */}
+      <motion.div {...reveal(0)} style={{ position: 'relative', zIndex: 1, marginBottom: 12 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, letterSpacing: '0.18em', fontWeight: 800, color: accent }}>
+          <motion.span
+            animate={reduce ? {} : { rotate: [0, 18, -12, 0], scale: [1, 1.18, 1] }}
+            transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ display: 'inline-flex' }}
+          ><Sparkles size={13} /></motion.span>
+          あなたの運用プラン
+        </div>
+        <h2 style={{ margin: '4px 0 0', fontSize: '1.15rem', fontWeight: 800, color: bg.ink, lineHeight: 1.35 }}>
+          連携から、稼ぐまで一気通貫で
+        </h2>
+      </motion.div>
+
+      {/* ステップレール（流れる光・現在地の脈動・完了のポップ） */}
+      <motion.div {...reveal(1)} style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 14 }}>
+        {steps.map((s, i) => {
+          const active = i === activeStepIdx;
+          const segDone = steps[i + 1]?.done || s.done;
+          return (
+            <div key={s.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, position: 'relative' }}>
+                {/* 現在地の脈動リング */}
+                {active && !reduce && (
+                  <motion.div aria-hidden
+                    animate={{ scale: [1, 1.9], opacity: [0.5, 0] }}
+                    transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
+                    style={{ position: 'absolute', top: 0, width: 26, height: 26, borderRadius: '50%', border: `2px solid ${accent}`, pointerEvents: 'none' }}
+                  />
+                )}
+                <motion.div
+                  initial={false}
+                  animate={s.done
+                    ? { background: stepDoneColor, scale: reduce ? 1 : [1, 1.25, 1] }
+                    : { background: active ? `${accent}26` : `${accent}14` }}
+                  transition={{ duration: 0.45, ease: 'easeOut' }}
+                  style={{
+                    width: 26, height: 26, borderRadius: '50%',
+                    border: s.done ? 'none' : `1.5px solid ${active ? accent : accent + '55'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: s.done ? '#fff' : accent, fontSize: 11, fontWeight: 800,
+                    boxShadow: active && !reduce ? `0 0 0 0 ${accent}` : 'none',
+                  }}>
+                  {s.done ? <CheckCircle2 size={15} /> : i + 1}
+                </motion.div>
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: s.done ? stepDoneColor : active ? accent : bg.inkSoft }}>{s.label}</span>
               </div>
-              <span style={{ fontSize: 9.5, fontWeight: 700, color: s.done ? stepDoneColor : bg.inkSoft }}>{s.label}</span>
+              {i < steps.length - 1 && (
+                <div style={{ position: 'relative', height: 2, flex: 1, marginBottom: 16, background: `${accent}22`, borderRadius: 2, overflow: 'hidden' }}>
+                  <motion.div
+                    initial={false}
+                    animate={{ width: segDone ? '100%' : '0%' }}
+                    transition={{ duration: 0.6, ease: 'easeInOut' }}
+                    style={{ position: 'absolute', inset: 0, background: `${stepDoneColor}99`, borderRadius: 2 }}
+                  />
+                  {/* 完了セグメントを流れる光 */}
+                  {segDone && !reduce && (
+                    <motion.div aria-hidden
+                      animate={{ x: ['-40%', '140%'] }}
+                      transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay: i * 0.2 }}
+                      style={{ position: 'absolute', top: 0, bottom: 0, width: '40%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent)' }}
+                    />
+                  )}
+                </div>
+              )}
             </div>
-            {i < steps.length - 1 && (
-              <div style={{ height: 2, flex: 1, background: steps[i + 1].done || s.done ? `${stepDoneColor}66` : `${accent}22`, marginBottom: 16 }} />
-            )}
-          </div>
-        ))}
-      </div>
+          );
+        })}
+      </motion.div>
 
       {/* ① 分析サマリ（連携後に自動実行） */}
       <div style={card}>
         <SectionLabel Icon={BarChart3} color={accent} title="① いまのあなた（自動分析）" />
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-          <Stat label="フォロワー" value={fmtNum(igProfile.followers)} bg={bg} />
+          <Stat label="フォロワー" value={igProfile.followers ? <CountUp value={igProfile.followers} /> : '—'} bg={bg} />
           {analysis ? (
-            <Stat label="総合スコア" value={`${analysis.totalScore}`} bg={bg} />
+            <Stat label="総合スコア" value={<CountUp value={analysis.totalScore} durationMs={1400} />} bg={bg} />
           ) : igProfile.engagementRate != null ? (
             <Stat label="エンゲージ率" value={`${igProfile.engagementRate}%`} bg={bg} />
           ) : null}
@@ -230,7 +364,15 @@ export default function IrisFlowHub({ bg, igProfile, settings, onNavigate, onOpe
       </div>
 
       {/* ③ 今日のリール（台本 or 素材から構成 = 一気通貫の核） */}
-      <div style={{ ...card, border: `1.5px solid ${accent}55`, background: `linear-gradient(180deg, ${accent}0D, ${bg.card})` }}>
+      <motion.div {...reveal(2)} whileHover={reduce ? undefined : { y: -2 }} style={{ ...card, position: 'relative', zIndex: 1, overflow: 'hidden', border: `1.5px solid ${accent}55`, background: `linear-gradient(180deg, ${accent}0D, ${bg.card})` }}>
+        {/* 「核」のカードが息づく — 縁を回る淡い光 */}
+        {!reduce && (
+          <motion.div aria-hidden
+            animate={{ opacity: [0.25, 0.6, 0.25] }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ position: 'absolute', inset: 0, borderRadius: 20, boxShadow: `inset 0 0 30px ${accent}26`, pointerEvents: 'none' }}
+          />
+        )}
         <SectionLabel Icon={Clapperboard} color={accent} title="③ 今日のリール" />
         {/* モード切替: テーマから台本 / 素材から構成 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, background: `${accent}10`, borderRadius: 12, padding: 4, margin: '10px 0 12px' }}>
@@ -248,8 +390,19 @@ export default function IrisFlowHub({ bg, igProfile, settings, onNavigate, onOpe
           ))}
         </div>
 
+        {/* リール↔案件 紐付け（投稿予約に引き継がれる） */}
+        <DealLinkPicker deals={matchedDeals} value={linkDealId} onChange={(id) => { setLinkDealId(id); setScheduled(false); }} accent={accent} bg={bg} />
+
         {reelMode === 'clips' ? (
-          <IrisReelComposer bg={bg} accent={accent} context={composeContext} />
+          <div style={{ marginTop: 12 }}>
+            <IrisReelComposer
+              bg={bg} accent={accent} context={composeContext}
+              onSchedule={onScheduleReel ? (p) => scheduleReel({ ...p, mediaKind: 'video' }) : undefined}
+              scheduled={scheduled}
+              onViewSchedule={() => onNavigate('schedule')}
+              onSendToStudio={onSendReelToStudio}
+            />
+          </div>
         ) : (
         <>
         <p style={{ margin: '0 0 10px', fontSize: 12, color: bg.inkSoft, lineHeight: 1.6 }}>
@@ -275,14 +428,23 @@ export default function IrisFlowHub({ bg, igProfile, settings, onNavigate, onOpe
         {reelLoading && <InlineLoading text="台本を書いています…（フック・3シーン・ハッシュタグ）" bg={bg} />}
         {reelError && <InlineError text={reelError} onRetry={() => makeReel(reelTheme || defaultTheme)} />}
         {reel && (
-          <ReelScriptCard reel={reel} theme={reelTheme} accent={accent} bg={bg}
-            onRegenerate={() => makeReel(reelTheme || defaultTheme)}
-            onOpenStudio={() => onOpenReelStudio(reelTheme || defaultTheme)}
-          />
+          <>
+            <ReelScriptCard reel={reel} theme={reelTheme} accent={accent} bg={bg}
+              onRegenerate={() => makeReel(reelTheme || defaultTheme)}
+              onOpenStudio={() => onOpenReelStudio(reelTheme || defaultTheme)}
+            />
+            {onScheduleReel && (
+              <ScheduleReelBar
+                scheduled={scheduled} accent={accent}
+                onSchedule={() => scheduleReel({ caption: reel.caption || reel.title, hashtags: reel.hashtags || [], cta: reel.cta, title: reel.title, mediaKind: 'video' })}
+                onViewSchedule={() => onNavigate('schedule')}
+              />
+            )}
+          </>
         )}
         </>
         )}
-      </div>
+      </motion.div>
 
       {/* ④ あなた向け案件（プロフィール連動マッチ） */}
       <div style={card}>
@@ -294,31 +456,64 @@ export default function IrisFlowHub({ bg, igProfile, settings, onNavigate, onOpe
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
             {matchedDeals.map(({ deal, reason }) => (
-              <button key={deal.id} type="button" onClick={() => onNavigate('deals')}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
-                  background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 14,
-                  padding: '10px 12px', cursor: 'pointer', width: '100%',
-                }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                  background: `${CATEGORY_META[deal.category]?.color || accent}22`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 800, color: CATEGORY_META[deal.category]?.color || accent,
-                }}>
-                  {deal.brandName.slice(0, 2)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, color: bg.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {deal.brandName} <span style={{ color: bg.inkSoft, fontWeight: 600 }}>· {deal.productName}</span>
+              <div key={deal.id} style={{ background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 14, padding: '10px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                    background: `${CATEGORY_META[deal.category]?.color || accent}22`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 13, fontWeight: 800, color: CATEGORY_META[deal.category]?.color || accent,
+                  }}>
+                    {deal.brandName.slice(0, 2)}
                   </div>
-                  <div style={{ fontSize: 11, color: bg.inkSoft, lineHeight: 1.4, marginTop: 1 }}>{reason}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: bg.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {deal.brandName} <span style={{ color: bg.inkSoft, fontWeight: 600 }}>· {deal.productName}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: bg.inkSoft, lineHeight: 1.4, marginTop: 1 }}>{reason}</div>
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: accent, flexShrink: 0 }}>¥{fmtNum(deal.fee)}</div>
                 </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: accent }}>¥{fmtNum(deal.fee)}</div>
-                  <ChevronRight size={15} color={bg.inkSoft} style={{ marginLeft: 'auto' }} />
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button type="button" onClick={() => makeDraft(deal)} disabled={draftLoading && draftDealId === deal.id}
+                    style={{ flex: 1, background: `linear-gradient(135deg, ${accent}, #F77737)`, border: 'none', color: '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                    <Mail size={13} /> {draftLoading && draftDealId === deal.id ? '作成中…' : '応募文を作る'}
+                  </button>
+                  <button type="button" onClick={() => onNavigate('deals')}
+                    style={{ background: 'transparent', border: `1px solid ${bg.cardBorder}`, color: bg.ink, fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '8px 12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    詳細 <ChevronRight size={13} />
+                  </button>
                 </div>
-              </button>
+                {/* 応募文（その場生成） */}
+                {draftDealId === deal.id && draftLoading && <InlineLoading text="あなたの強みを織り込んで応募文を書いています…" bg={bg} />}
+                {draftDealId === deal.id && draftError && <InlineError text={draftError} onRetry={() => makeDraft(deal)} />}
+                {draftDealId === deal.id && draft && (
+                  <div style={{ marginTop: 10, background: `${accent}0A`, border: `1px solid ${accent}33`, borderRadius: 12, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: accent, marginBottom: 4 }}>件名</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: bg.ink, lineHeight: 1.5 }}>{draft.subject}</div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: accent, margin: '8px 0 4px' }}>本文</div>
+                    <div style={{ fontSize: 12, color: bg.ink, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{draft.body}</div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                      <button type="button"
+                        onClick={() => { try { navigator.clipboard?.writeText(`${draft.subject}\n\n${draft.body}`); } catch { /* */ } }}
+                        style={{ flex: 1, background: `linear-gradient(135deg, ${accent}, #F77737)`, border: 'none', color: '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', cursor: 'pointer' }}>
+                        応募文をコピー
+                      </button>
+                      {deal.contact?.type === 'email' ? (
+                        <a href={`mailto:${deal.contact.address}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`}
+                          style={{ flex: 1, textAlign: 'center', background: 'transparent', border: `1px solid ${accent}66`, color: accent, fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', textDecoration: 'none' }}>
+                          メールで送る
+                        </a>
+                      ) : deal.contact?.type === 'form' ? (
+                        <a href={deal.contact.url} target="_blank" rel="noopener noreferrer"
+                          style={{ flex: 1, textAlign: 'center', background: 'transparent', border: `1px solid ${accent}66`, color: accent, fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', textDecoration: 'none' }}>
+                          応募フォームを開く
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
             <button type="button" onClick={() => onNavigate('deals')}
               style={{
@@ -337,6 +532,29 @@ export default function IrisFlowHub({ bg, igProfile, settings, onNavigate, onOpe
 
 // ── 小物 ────────────────────────────────────────────
 
+function ScheduleReelBar({ scheduled, accent, onSchedule, onViewSchedule }: {
+  scheduled: boolean; accent: string; onSchedule: () => void; onViewSchedule: () => void;
+}) {
+  if (scheduled) {
+    return (
+      <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 12, padding: '10px 12px' }}>
+        <CheckCircle2 size={16} color="#10B981" />
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0F7D63' }}>投稿予約に追加しました</span>
+        <button type="button" onClick={onViewSchedule}
+          style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: accent, fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+          予約を見る <ArrowRight size={13} />
+        </button>
+      </div>
+    );
+  }
+  return (
+    <button type="button" onClick={onSchedule}
+      style={{ marginTop: 10, width: '100%', background: 'transparent', border: `1px solid ${accent}66`, color: accent, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+      <CalendarPlus size={14} /> 投稿予約に追加
+    </button>
+  );
+}
+
 function truncate(s: string, n: number) { const a = [...s]; return a.length > n ? a.slice(0, n).join('') + '…' : s; }
 
 function SectionLabel({ Icon, color, title }: { Icon: typeof BarChart3; color: string; title: string }) {
@@ -350,12 +568,15 @@ function SectionLabel({ Icon, color, title }: { Icon: typeof BarChart3; color: s
   );
 }
 
-function Stat({ label, value, bg }: { label: string; value: string; bg: IrisBackgroundDef }) {
+function Stat({ label, value, bg }: { label: string; value: React.ReactNode; bg: IrisBackgroundDef }) {
   return (
-    <div style={{ flex: '1 1 30%', minWidth: 88, background: `${bg.accent}0D`, borderRadius: 12, padding: '8px 10px' }}>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: 'spring', damping: 16, stiffness: 220 }}
+      style={{ flex: '1 1 30%', minWidth: 88, background: `${bg.accent}0D`, borderRadius: 12, padding: '8px 10px' }}>
       <div style={{ fontSize: 10, color: bg.inkSoft, fontWeight: 700 }}>{label}</div>
       <div style={{ fontSize: 16, fontWeight: 800, color: bg.ink, marginTop: 1 }}>{value}</div>
-    </div>
+    </motion.div>
   );
 }
 

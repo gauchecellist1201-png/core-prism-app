@@ -24,6 +24,7 @@ import {
   snapDurationToBgm,
 } from './reelAiCaption';
 import { generateReelScript, generateReelCaption, type ReelScriptResult } from './reelAiScript';
+import type { ReelStudioSeed } from './IrisReelStudio';
 import { suggestNextSlot, type ScheduledPost } from './usePostQueue';
 import { notifyInApp } from '../lib/inAppNotify';
 import ShareArtifactButton from '../components/ShareArtifactButton';
@@ -54,6 +55,10 @@ interface Props {
   onJumpToSchedule?: () => void;
   /** 旧フル機能版へ遷移 */
   onOpenAdvanced?: () => void;
+  /** 「素材から構成」の結果（順番・秒数・字幕＋素材）。マウント時に1回だけ展開 */
+  initialProject?: ReelStudioSeed | null;
+  /** 取り込み済みを親に通知（再展開防止） */
+  onConsumeInitial?: () => void;
 }
 
 const OUT_W = 1080;
@@ -129,7 +134,7 @@ function drawCover(ctx: CanvasRenderingContext2D, el: HTMLImageElement | HTMLVid
 }
 
 // ─── Main Component ─────
-export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdvanced, postQueue }: Props) {
+export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdvanced, postQueue, initialProject, onConsumeInitial }: Props) {
   const [step, setStep] = useState<'material' | 'edit' | 'subtitle' | 'export'>('material');
   const [clips, setClips] = useState<Clip[]>([]);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
@@ -203,6 +208,39 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     }
     if (newClips.length) setClips(prev => [...prev, ...newClips]);
   }, []);
+
+  // 「素材から構成」の結果をマウント時に1回だけ展開（一気通貫の最終段）。
+  // AI が決めた順番でクリップを並べ、各カットの秒数・字幕(captionText)を反映する。
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current || !initialProject?.clips?.length) return;
+    seededRef.current = true;
+    let cancelled = false;
+    (async () => {
+      const built: Clip[] = [];
+      for (const seed of initialProject.clips) {
+        const url = URL.createObjectURL(seed.file);
+        const isVideo = (seed.file.type || '').startsWith('video');
+        try {
+          if (isVideo) {
+            const el = await loadVideo(url);
+            built.push({ id: makeId(), kind: 'video', url, duration: Math.min(seed.durationSec || el.duration || 4, Math.max(2, el.duration || 6)), el, captionText: seed.overlayText });
+          } else {
+            const el = await loadImage(url);
+            built.push({ id: makeId(), kind: 'image', url, duration: Math.max(1.5, Math.min(seed.durationSec || 2.5, 8)), el, captionText: seed.overlayText });
+          }
+        } catch { URL.revokeObjectURL(url); /* 壊れた素材はスキップ（残りは展開） */ }
+      }
+      if (cancelled) return;
+      if (built.length) setClips(built);
+      if (initialProject.caption) {
+        setAiCaption({ caption: initialProject.caption, hashtags: initialProject.hashtags || [] });
+      }
+      onConsumeInitial?.();
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialProject]);
 
   // ─── BGM ライブラリから取得 ─────
   const applyBgm = useCallback(async (track: typeof BGM_LIBRARY[0]) => {

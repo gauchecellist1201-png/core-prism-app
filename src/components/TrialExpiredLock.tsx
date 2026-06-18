@@ -12,6 +12,7 @@
 // ・選ぶと CheckoutModal(=Stripe, カード登録) が開く
 // ============================================================
 import { getPlans, getPlanPrice, type Plan, type Brand } from '../lib/billing';
+import { computeWeeklyValue } from '../lib/weeklyValue';
 
 interface Props {
   brand: Brand;
@@ -27,6 +28,12 @@ export default function TrialExpiredLock({ brand, accent, onChoose, onSignout }:
   // 有料プランのみ（free を除外）。多すぎないよう上位3つに絞る。
   const paid = getPlans(brand).filter((p) => p.id !== 'free' && p.priceJpy > 0).slice(0, 3);
   const recommendIdx = paid.length >= 2 ? 1 : 0; // 真ん中を推奨表示
+
+  // 課金前の「動いた量」= 体験中(直近7日)に AI が実際にあなたのために動いた件数。
+  // honest-numbers: 実活動の件数だけ。0 件なら何も出さない（捏造しない）。
+  const { metrics, total } = computeWeeklyValue();
+  // 件数の多い順に上位3つだけ要約表示（ペイウォールは縦スクロールを短く保つ）
+  const topMetrics = [...metrics].sort((a, b) => b.count - a.count).slice(0, 3);
 
   return (
     <div
@@ -66,6 +73,38 @@ export default function TrialExpiredLock({ brand, accent, onChoose, onSignout }:
           これまで使っていた機能は、プランを選ぶと<strong style={{ color: '#fff' }}>そのまま続き</strong>から使えます。
           あなたのデータと設定は消えていません。
         </p>
+
+        {/* 課金前の価値証明 — 体験中に AI が実際に動いた量（あれば） */}
+        {total > 0 && (
+          <div style={{
+            padding: '13px 14px', borderRadius: 14, margin: '0 0 16px',
+            background: `${accent}14`, border: `1px solid ${accent}59`,
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>
+              この 7 日間で、AI役員があなたのために動きました
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, margin: '4px 0 10px' }}>
+              <span style={{ fontSize: 30, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>
+                {total.toLocaleString('ja-JP')}
+              </span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>件 の仕事</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {topMetrics.map((m) => (
+                <span key={m.key} style={{
+                  fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.88)',
+                  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.14)',
+                  padding: '4px 9px', borderRadius: 999,
+                }}>
+                  {m.label} <strong style={{ color: '#fff' }}>{m.count.toLocaleString('ja-JP')}</strong>
+                </span>
+              ))}
+            </div>
+            <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)', margin: '9px 0 0', lineHeight: 1.5 }}>
+              続けると、この積み上げはそのまま引き継がれます。数字はアプリ内の実際の活動だけです。
+            </p>
+          </div>
+        )}
 
         {/* 有料プラン */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

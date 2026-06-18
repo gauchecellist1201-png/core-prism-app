@@ -9,7 +9,7 @@
 // ============================================================
 import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, Loader2, RefreshCw, Film, Clock, X, Wand2, Hash } from 'lucide-react';
+import { Upload, Loader2, RefreshCw, Film, Clock, X, Wand2, Hash, CalendarPlus, CheckCircle2, ArrowRight } from 'lucide-react';
 import {
   composeReelFromClips, type ReelComposition, type ComposeContext, type CutInput, type CutRole,
 } from './reelAiCaption';
@@ -22,6 +22,13 @@ interface Props {
   /** 分析から得た文脈 (オーディエンス/世界観/テーマ) */
   context?: ComposeContext;
   accent?: string;
+  /** 構成結果を投稿予約に追加（任意の案件紐付けは親が付与） */
+  onSchedule?: (p: { caption: string; hashtags: string[]; cta?: string; title?: string }) => void;
+  /** 予約済みフラグ（親管理） */
+  scheduled?: boolean;
+  onViewSchedule?: () => void;
+  /** 構成（順番・秒数・字幕）と素材をリールスタジオへ渡して動画化する */
+  onSendToStudio?: (seed: { clips: { file: File; durationSec: number; overlayText?: string }[]; caption?: string; hashtags?: string[] }) => void;
 }
 
 const ROLE_META: Record<CutRole, { label: string; color: string }> = {
@@ -58,9 +65,10 @@ function loadClip(file: File): Promise<{ meta: ClipMeta; el: HTMLImageElement | 
   });
 }
 
-export default function IrisReelComposer({ bg, context, accent = '#E1306C' }: Props) {
+export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSchedule, scheduled, onViewSchedule, onSendToStudio }: Props) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const elMap = useRef<Map<string, HTMLImageElement | HTMLVideoElement>>(new Map());
+  const fileMap = useRef<Map<string, File>>(new Map());
   const [clips, setClips] = useState<ClipMeta[]>([]);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState('');
@@ -73,7 +81,7 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C' }: Pr
     const arr = Array.from(files).slice(0, 12);
     try {
       const loaded = await Promise.all(arr.map(loadClip));
-      loaded.forEach(({ meta, el }) => elMap.current.set(meta.id, el));
+      loaded.forEach(({ meta, el }, i) => { elMap.current.set(meta.id, el); fileMap.current.set(meta.id, arr[i]); });
       setClips((prev) => [...prev, ...loaded.map((l) => l.meta)].slice(0, 12));
     } catch (e) {
       setError(e instanceof Error ? e.message : '素材の読み込みに失敗しました');
@@ -84,6 +92,7 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C' }: Pr
     const meta = clips.find((c) => c.id === id);
     if (meta) { try { URL.revokeObjectURL(meta.url); } catch { /* */ } }
     elMap.current.delete(id);
+    fileMap.current.delete(id);
     setClips((prev) => prev.filter((c) => c.id !== id));
   };
 
@@ -107,6 +116,19 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C' }: Pr
   };
 
   const clipById = (i: number) => clips[i];
+
+  // 構成（順番・秒数・字幕）と素材ファイルをリールスタジオへ渡す
+  const sendToStudio = () => {
+    if (!comp || !onSendToStudio) return;
+    const seedClips: { file: File; durationSec: number; overlayText?: string }[] = [];
+    for (const cut of comp.cuts) {
+      const clip = clips[cut.sourceIndex];
+      const file = clip ? fileMap.current.get(clip.id) : undefined;
+      if (file) seedClips.push({ file, durationSec: cut.durationSec, overlayText: cut.overlayText });
+    }
+    if (!seedClips.length) return;
+    onSendToStudio({ clips: seedClips, caption: comp.caption, hashtags: comp.hashtags });
+  };
 
   return (
     <div>
@@ -235,6 +257,35 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C' }: Pr
                 本文＋タグをコピー
               </button>
             </div>
+          )}
+
+          {/* リールスタジオで動画化（順番・秒数・字幕を引き継ぐ） */}
+          {onSendToStudio && (
+            <button type="button" onClick={sendToStudio}
+              style={{ marginTop: 10, width: '100%', background: `linear-gradient(135deg, #833AB4, ${accent} 55%, #F77737)`, border: 'none', color: '#fff', fontSize: 13.5, fontWeight: 800, borderRadius: 12, padding: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: `0 8px 22px ${accent}40` }}>
+              <Film size={15} /> この構成でリールスタジオを開く（動画化） <ArrowRight size={14} />
+            </button>
+          )}
+
+          {/* 投稿予約に追加（案件紐付けは親が付与） */}
+          {onSchedule && (
+            scheduled ? (
+              <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 12, padding: '10px 12px' }}>
+                <CheckCircle2 size={16} color="#10B981" />
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0F7D63' }}>投稿予約に追加しました</span>
+                {onViewSchedule && (
+                  <button type="button" onClick={onViewSchedule} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: accent, fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    予約を見る <ArrowRight size={13} />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <button type="button"
+                onClick={() => onSchedule({ caption: comp.caption || comp.title, hashtags: comp.hashtags, title: comp.title })}
+                style={{ marginTop: 10, width: '100%', background: `linear-gradient(135deg, ${accent}, #F77737)`, border: 'none', color: '#fff', fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <CalendarPlus size={14} /> この構成を投稿予約に追加
+              </button>
+            )
           )}
         </motion.div>
       )}

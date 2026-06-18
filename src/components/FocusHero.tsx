@@ -10,6 +10,7 @@
 //   🔴 今すぐ (24h 以内)  /  🟡 今週  /  🟢 いつでも
 // ============================================================
 import { motion, AnimatePresence } from 'framer-motion';
+import CountUp from './CountUp';
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp, ArrowRight, Sparkles } from 'lucide-react';
 import type { Persona, Proposal, AppSettings } from '../types/identity';
@@ -284,11 +285,11 @@ export default function FocusHero({
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
         fontFamily: '"SF Mono", "JetBrains Mono", Menlo, monospace',
       }}>
-        <NumChip label="今月" value={fmtJpy(thisRev)} color="#34D399" />
+        <NumChip label="今月" value={fmtJpy(thisRev)} color="#34D399" countTo={thisRev} />
         {stripe.connected && total12 > 0 && (
           <>
             <span aria-hidden style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.1)', margin: '0 16px' }} />
-            <NumChip label="累計 (12ヶ月)" value={fmtJpy(total12)} color="#2E6FFF" muted />
+            <NumChip label="累計 (12ヶ月)" value={fmtJpy(total12)} color="#2E6FFF" muted countTo={total12} />
           </>
         )}
         {!stripe.connected && (
@@ -321,7 +322,7 @@ export default function FocusHero({
   );
 }
 
-function NumChip({ label, value, color, muted }: { label: string; value: string; color: string; muted?: boolean }) {
+function NumChip({ label, value, color, muted, countTo }: { label: string; value: string; color: string; muted?: boolean; countTo?: number }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 7 }}>
       <span style={{ fontSize: 10, color: 'var(--fg-muted)', fontFamily: 'system-ui', letterSpacing: '0.04em' }}>{label}</span>
@@ -330,7 +331,12 @@ function NumChip({ label, value, color, muted }: { label: string; value: string;
         color: muted ? `${color}cc` : color,
         textShadow: muted ? 'none' : `0 0 18px ${color}44`,
         letterSpacing: '-0.01em',
-      }}>{value}</span>
+      }}>
+        {/* 売上が 0 → 立ち上がる演出（達成感）。値が無い時は元の文字列のまま */}
+        {countTo && countTo > 0
+          ? <CountUp value={countTo} durationMs={1300} format={fmtJpy} />
+          : value}
+      </span>
     </span>
   );
 }

@@ -155,6 +155,8 @@ import WellnessTracker from '../components/WellnessTracker';
 import IgConnectModal from './IgConnectModal';
 import IrisConnectFirst from './IrisConnectFirst';
 import IrisFlowHub from './IrisFlowHub';
+import Celebrate from '../components/Celebrate';
+import type { ReelStudioSeed } from './IrisReelStudio';
 import { loadIgProfile, consumeOauthCallback, fetchOauthProfile, saveIgProfile, syncOauthMediaToHistory, type IgProfile } from './instagramConnect';
 import IrisDmDraftModal from './IrisDmDraftModal';
 import type { DmDealInput } from './dmDraft';
@@ -1084,6 +1086,10 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [igProfile, setIgProfile] = useState<IgProfile | null>(() => loadIgProfile());
   const [showIgConnect, setShowIgConnect] = useState(false);
+  // 「素材から構成」→ リールスタジオへ渡す下書き（順番・秒数・字幕＋素材）
+  const [reelSeed, setReelSeed] = useState<ReelStudioSeed | null>(null);
+  // 連携完了の祝祭（Iris の第一歩を祝う）
+  const [welcomeCelebrate, setWelcomeCelebrate] = useState(0);
   // Instagram 連携を「最初のステップ」に (オーナー指示 2026-06-18)。
   //   未連携かつ未スキップなら、ダッシュボードより先に連携画面を出す。
   //   連携できない事情のある人を閉じ込めない (離脱ゼロ) ため「あとで」も用意。
@@ -1177,7 +1183,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           {showIgConnect && (
             <IgConnectModal
               onClose={() => setShowIgConnect(false)}
-              onConnected={(p) => { setIgProfile(p); setShowIgConnect(false); dismissConnectGate(); }}
+              onConnected={(p) => { setIgProfile(p); setShowIgConnect(false); dismissConnectGate(); setWelcomeCelebrate((n) => n + 1); }}
             />
           )}
         </AnimatePresence>
@@ -1228,6 +1234,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
       display: 'flex',
       ...themeStyle,
     }}>
+      {/* 連携完了の祝祭（第一歩を祝う） */}
+      <Celebrate trigger={welcomeCelebrate} message="Instagram とつながりました！ようこそ" />
       {/* デスクトップ左サイドバー */}
       <div className="iris-sidebar-wrapper">
         <IrisSidebar tab={tab} setTab={setTab} bg={bg} onBgPicker={() => setBgPickerOpen(true)} onLeave={onLeave} />
@@ -1624,8 +1632,23 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     bg={bg}
                     igProfile={igProfile}
                     settings={settings}
+                    mediaKit={mediaKit}
                     onNavigate={(t) => setTab(t as Tab)}
                     onOpenReelStudio={() => setTab('reel')}
+                    onScheduleReel={(p) => postQueue.add({
+                      platform: 'instagram_reel',
+                      source: 'reel',
+                      // 既定は翌日 20:00（予約タブで変更可）。
+                      scheduledAt: (() => { const d = new Date(Date.now() + 24 * 60 * 60 * 1000); d.setHours(20, 0, 0, 0); return d.toISOString(); })(),
+                      caption: p.caption,
+                      hashtags: p.hashtags,
+                      cta: p.cta,
+                      dealId: p.dealId,
+                      brandName: p.brandName,
+                      note: p.title,
+                      mediaKind: p.mediaKind || 'video',
+                    })}
+                    onSendReelToStudio={(seed) => { setReelSeed(seed); setTab('reel'); }}
                   />
                 )}
 
@@ -1722,6 +1745,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   persona={irisPersonaStub}
                   mediaKit={mediaKit}
                   onJumpToSchedule={() => setTab('schedule')}
+                  initialProject={reelSeed}
+                  onConsumeInitial={() => setReelSeed(null)}
                 />
               </React.Suspense>
             )}
@@ -1760,7 +1785,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         {showIgConnect && (
           <IgConnectModal
             onClose={() => setShowIgConnect(false)}
-            onConnected={(p) => setIgProfile(p)}
+            onConnected={(p) => { setIgProfile(p); setWelcomeCelebrate((n) => n + 1); }}
           />
         )}
       </AnimatePresence>
