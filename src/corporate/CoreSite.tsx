@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon, Compass, Heart, Shield, BadgeCheck, MessagesSquare, Scale } from 'lucide-react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, CoreLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo } from '../components/Logo';
 
 const COMPANY = {
   nameJa: '株式会社コア',
@@ -117,7 +117,7 @@ export default function CoreSite() {
         position: 'relative',
         zIndex: 60,
       }}>
-        Prism ・ Iris ・ Resonance ・ Lume —— 四つのプロダクト、ベータ公開中
+        Prism ・ Iris ・ Guild ・ Resonance ・ Lume —— 五つのプロダクト、ベータ公開中
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -291,6 +291,7 @@ export default function CoreSite() {
             {[
               { t: 'Prism', d: '事業', c: '#a78bfa' },
               { t: 'Iris', d: 'Instagram', c: '#E1306C' },
+              { t: 'Guild', d: '組織', c: '#2DD4BF' },
               { t: 'Resonance', d: 'LINE', c: '#06C755' },
               { t: 'Lume', d: 'リンク', c: '#FFA42A' },
             ].map((p, i) => (
@@ -858,6 +859,23 @@ export default function CoreSite() {
             reversed
           />
 
+          {/* GUILD — 貢献で決める組織 OS（5サービスの中央） */}
+          <FeatureProduct
+            brand="guild"
+            badge="チーム ／ 貢献で決める組織 OS"
+            tagline="肩書きではなく、貢献で動く。"
+            taglineEn="Run your team by contribution."
+            description="社員・副業・フリーランス・AI を、ひとつの「ギルド」へ。意思決定は提案と投票で透明に行い、決まったことは改ざんできない記録として刻まれます。Prism が率いる 13 名の AI 役員も、このギルドの一員として動きます。"
+            features={[
+              '提案 → 投票で、チーム全員が意思決定に参加',
+              '決定は改ざん検知つきのタイムラインに記録',
+              '社員・副業・フリーランス・AI を一つのギルドに',
+            ]}
+            accentColor="#2DD4BF"
+            accentGradient="linear-gradient(135deg,#5EEAD4,#22D3EE,#2DD4BF)"
+            url="https://guild-gauches-projects.vercel.app/"
+          />
+
           {/* RESONANCE — LINE を AI で */}
           <FeatureProduct
             brand="resonance"
@@ -873,6 +891,7 @@ export default function CoreSite() {
             accentColor="#06C755"
             accentGradient="linear-gradient(135deg,#34D399,#06C755,#0EA5E9)"
             url="https://resonancebot-ivory.vercel.app/"
+            reversed
           />
 
           {/* LUME — すべてのリンクを束ねるハブ */}
@@ -890,7 +909,6 @@ export default function CoreSite() {
             accentColor="#FFA42A"
             accentGradient="linear-gradient(135deg,#FFD86B,#FFA42A,#FF7A18)"
             url="https://lume-deploy-five.vercel.app/"
-            reversed
           />
         </div>
       </section>
@@ -1680,6 +1698,7 @@ export default function CoreSite() {
             <p style={footHead}>プロダクト</p>
             <a href="/?lp=1" style={footLink} className="lp-tap-link">CORE Prism</a>
             <a href="/iris?lp=1" style={footLink} className="lp-tap-link">CORE Iris</a>
+            <a href="https://guild-gauches-projects.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Guild</a>
             <a href="https://resonancebot-ivory.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Resonance</a>
             <a href="https://lume-deploy-five.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Lume</a>
           </div>
@@ -1853,7 +1872,7 @@ function FeatureProduct({
   url,
   reversed,
 }: {
-  brand: 'prism' | 'iris' | 'resonance' | 'lume';
+  brand: 'prism' | 'iris' | 'guild' | 'resonance' | 'lume';
   badge: string;
   tagline: string;
   taglineEn: string;
@@ -1866,11 +1885,13 @@ function FeatureProduct({
 }) {
   const Logo =
     brand === 'iris' ? IrisLogo :
+    brand === 'guild' ? GuildLogo :
     brand === 'resonance' ? ResonanceLogo :
     brand === 'lume' ? LumeLogo :
     PrismLogo;
   const productName =
     brand === 'iris' ? 'CORE Iris' :
+    brand === 'guild' ? 'CORE Guild' :
     brand === 'resonance' ? 'CORE Resonance' :
     brand === 'lume' ? 'CORE Lume' :
     'CORE Prism';

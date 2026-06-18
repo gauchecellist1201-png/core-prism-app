@@ -153,6 +153,8 @@ import IrisEarnHero from './IrisEarnHero';
 import IrisEarningsHero from './IrisEarningsHero';
 import WellnessTracker from '../components/WellnessTracker';
 import IgConnectModal from './IgConnectModal';
+import IrisConnectFirst from './IrisConnectFirst';
+import IrisFlowHub from './IrisFlowHub';
 import { loadIgProfile, consumeOauthCallback, fetchOauthProfile, saveIgProfile, syncOauthMediaToHistory, type IgProfile } from './instagramConnect';
 import IrisDmDraftModal from './IrisDmDraftModal';
 import type { DmDealInput } from './dmDraft';
@@ -1060,16 +1062,18 @@ function ctaButtonSm(bg: IrisBackgroundDef) {
 const IRIS_PERSONA_ID = 'iris-default';  // Iris は単一ユーザー前提
 
 export default function IrisDashboard({ settings, onLeave }: Props) {
-  // モバイル: ジェミニ風 UI に切替 (オーナー指示 2026-06-03)
+  // モバイルでも「本物の Iris ダッシュボード」(6 エージェント オービット + Instagram 連携導線) を出す。
+  //   旧仕様 (2026-06-03) はモバイルで簡易版 MobileGeminiDashboard を既定にしていたが、
+  //   そこには Instagram 連携導線が無く、エージェント表記も食い違い (6 個なのに「7 名」)、
+  //   テストユーザーが「携帯でエージェントもインスタ連携も出ない」と詰まる重大事態になっていた
+  //   (オーナー報告 2026-06-18)。よって既定はフル UI に統一し、簡易版は明示オプトインのみ。
+  //   旧 key (iris_mobile_gemini_mode_v1) に自動保存された値は「ユーザーの意思」ではないため無視する。
   const [irisMobileGeminiMode, setIrisMobileGeminiMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
-    const saved = localStorage.getItem('iris_mobile_gemini_mode_v1');
-    if (saved === '0') return false;
-    if (saved === '1') return true;
-    return window.matchMedia('(max-width: 767px)').matches;
+    return localStorage.getItem('iris_simple_mode_optin_v2') === '1';
   });
   useEffect(() => {
-    try { localStorage.setItem('iris_mobile_gemini_mode_v1', irisMobileGeminiMode ? '1' : '0'); } catch { /* */ }
+    try { localStorage.setItem('iris_simple_mode_optin_v2', irisMobileGeminiMode ? '1' : '0'); } catch { /* */ }
   }, [irisMobileGeminiMode]);
 
   const [bg, setBg] = useState<IrisBackgroundDef | CustomIrisBackground>(() => loadIrisBackground());
@@ -1080,6 +1084,16 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [igProfile, setIgProfile] = useState<IgProfile | null>(() => loadIgProfile());
   const [showIgConnect, setShowIgConnect] = useState(false);
+  // Instagram 連携を「最初のステップ」に (オーナー指示 2026-06-18)。
+  //   未連携かつ未スキップなら、ダッシュボードより先に連携画面を出す。
+  //   連携できない事情のある人を閉じ込めない (離脱ゼロ) ため「あとで」も用意。
+  const [connectGateDone, setConnectGateDone] = useState<boolean>(() => {
+    try { return localStorage.getItem('iris_connect_gate_v1') === 'done'; } catch { return false; }
+  });
+  const dismissConnectGate = () => {
+    try { localStorage.setItem('iris_connect_gate_v1', 'done'); } catch { /* */ }
+    setConnectGateDone(true);
+  };
   // AI 交渉文モーダル (案件カテゴリ → DM 下書き)
   const [dmDraftDeal, setDmDraftDeal] = useState<DmDealInput | null>(null);
 
@@ -1149,7 +1163,29 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
     timeAllocation: 0,
   }), [bg]);
 
-  // モバイル: ジェミニ風 シンプル UI に切替 (オーナー指示 2026-06-03)
+  // ★最初のステップ = Instagram 連携 (オーナー指示 2026-06-18)。
+  //   未連携かつ未スキップなら、ダッシュボード本体より先に「連携から始める」画面を出す。
+  //   ここで連携できれば igProfile が入り、以降は通常のダッシュボードへ。
+  if (!igProfile && !connectGateDone) {
+    return (
+      <>
+        <IrisConnectFirst
+          onConnect={() => setShowIgConnect(true)}
+          onSkip={dismissConnectGate}
+        />
+        <AnimatePresence>
+          {showIgConnect && (
+            <IgConnectModal
+              onClose={() => setShowIgConnect(false)}
+              onConnected={(p) => { setIgProfile(p); setShowIgConnect(false); dismissConnectGate(); }}
+            />
+          )}
+        </AnimatePresence>
+      </>
+    );
+  }
+
+  // 簡易版 (MobileGeminiDashboard) は明示オプトイン時のみ
   if (irisMobileGeminiMode) {
     const irisPersona: Persona = {
       ...irisPersonaStub,
@@ -1581,6 +1617,17 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     ]}
                   />
                 </div>
+
+                {/* 一気通貫の運用プラン（連携→分析→戦略→リール台本→案件）。連携済みのときだけ。 */}
+                {igProfile && (
+                  <IrisFlowHub
+                    bg={bg}
+                    igProfile={igProfile}
+                    settings={settings}
+                    onNavigate={(t) => setTab(t as Tab)}
+                    onOpenReelStudio={() => setTab('reel')}
+                  />
+                )}
 
                 {/* 稼げる + 楽できるビジョン 3 連ヒーロー */}
                 <IrisEarningsHero

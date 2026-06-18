@@ -3,7 +3,8 @@
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, ArrowRight, Check, Camera, Key, ExternalLink, AlertCircle, Loader2, ImageUp, Sparkles } from 'lucide-react';
+import { X, ArrowRight, Check, Key, ExternalLink, AlertCircle, Loader2, ImageUp, Sparkles } from 'lucide-react';
+import InstagramGlyph from './InstagramGlyph';
 import { createSelfReportedProfile, saveIgProfile, tryOauthConnect, connectWithToken, connectFromScreenshot } from './instagramConnect';
 import type { IgProfile } from './instagramConnect';
 
@@ -147,7 +148,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
               display: 'inline-flex', alignItems: 'center', gap: 6,
               fontSize: 10, letterSpacing: '0.25em', fontWeight: 800, color: '#E1306C',
             }}>
-              <Camera size={12} /> INSTAGRAM 連携
+              <InstagramGlyph size={12} color="#E1306C" /> INSTAGRAM 連携
             </div>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0.3rem 0 0', lineHeight: 1.4 }}>
               あなたに合う案件を見つけます
@@ -171,7 +172,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
           marginBottom: '0.6rem',
           boxShadow: '0 8px 20px rgba(225,48,108,0.3)',
         }}>
-          <Camera size={20} />
+          <InstagramGlyph size={20} color="#fff" />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 800 }}>
               {oauthState === 'trying' ? '接続中…' :

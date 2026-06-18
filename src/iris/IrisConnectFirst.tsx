@@ -10,8 +10,9 @@
 // モバイル最優先 (safe-area / 100svh / タップ 44px 以上)。
 // ============================================================
 import { motion } from 'framer-motion';
-import { Camera, BarChart3, Sparkles, Search, ArrowRight } from 'lucide-react';
+import { BarChart3, Sparkles, Search, ArrowRight } from 'lucide-react';
 import { IrisLogo } from '../components/Logo';
+import InstagramGlyph from './InstagramGlyph';
 
 interface Props {
   /** 「Instagram を連携する」= 連携モーダルを開く */
@@ -20,7 +21,7 @@ interface Props {
   onSkip: () => void;
 }
 
-const BENEFITS: { Icon: typeof Camera; title: string; desc: string }[] = [
+const BENEFITS: { Icon: typeof BarChart3; title: string; desc: string }[] = [
   { Icon: BarChart3, title: '伸びる時間とテーマがわかる', desc: 'あなたの投稿データから、保存される投稿の共通点を分析します' },
   { Icon: Search, title: '相性の良い案件が届く', desc: 'フォロワー層に合うブランド案件を、毎日 AI が探してきます' },
   { Icon: Sparkles, title: '世界観に合った原稿を自動で', desc: 'キャプション・サムネ・リール構成をあなた専用に作ります' },
@@ -60,7 +61,7 @@ export default function IrisConnectFirst({ onConnect, onSkip }: Props) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 18px 44px rgba(225,48,108,0.4)',
           }}>
-            <Camera size={40} color="#fff" strokeWidth={2.2} />
+            <InstagramGlyph size={42} color="#fff" strokeWidth={2.2} />
           </div>
         </motion.div>
 
@@ -74,7 +75,7 @@ export default function IrisConnectFirst({ onConnect, onSkip }: Props) {
             fontSize: 10.5, letterSpacing: '0.25em', fontWeight: 800, color: '#E1306C',
             marginBottom: 8,
           }}>
-            <Camera size={12} /> STEP 1 — まずはここから
+            <InstagramGlyph size={12} color="#E1306C" /> STEP 1 — まずはここから
           </div>
           <h1 style={{ fontSize: '1.55rem', fontWeight: 800, lineHeight: 1.4, margin: '0 0 0.6rem' }}>
             Instagram をつなぐと、<br />Iris があなた専用になります
@@ -131,7 +132,7 @@ export default function IrisConnectFirst({ onConnect, onSkip }: Props) {
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           }}
         >
-          <Camera size={19} /> Instagram を連携する <ArrowRight size={18} />
+          <InstagramGlyph size={19} color="#fff" /> Instagram を連携する <ArrowRight size={18} />
         </motion.button>
 
         <button

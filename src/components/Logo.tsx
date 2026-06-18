@@ -323,6 +323,83 @@ export function LumeLogo({ size = 28, withWordmark = true, variant = 'default', 
 }
 
 // ─────────────────────────────────────────────
+//  CORE Guild — 六角バッジ + 中心と 6 ノードのネットワーク (ティール発光)
+//  貢献で決める組織 OS。社員・副業・フリーランス・AI をひとつのギルドへ。
+// ─────────────────────────────────────────────
+export function GuildLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
+  const isMono = variant === 'mono';
+  const gid = 'guild-grad-' + size;
+  const fid = 'guild-glow-' + size;
+  const nodes: [number, number][] = [[32, 8], [53, 20], [53, 44], [32, 56], [11, 44], [11, 20]];
+
+  return (
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: withWordmark ? 10 : 0, lineHeight: 1 }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 64 64"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="CORE Guild"
+        style={{ flexShrink: 0 }}
+      >
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#5eead4" />
+            <stop offset="0.55" stopColor="#22d3ee" />
+            <stop offset="1" stopColor="#2dd4bf" />
+          </linearGradient>
+          {!isMono && (
+            <filter id={fid} x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="1.6" result="b" />
+              <feMerge>
+                <feMergeNode in="b" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          )}
+        </defs>
+        <g filter={isMono ? undefined : `url(#${fid})`} stroke={isMono ? 'currentColor' : `url(#${gid})`}>
+          {/* 六角形のギルドバッジ */}
+          <path d="M32 4 56 18 56 46 32 60 8 46 8 18Z" strokeWidth="2.4" strokeLinejoin="round" fill={isMono ? 'none' : 'rgba(45,212,191,0.06)'} />
+          {/* 中心から各ノードへの接続線（コミュニティ） */}
+          {nodes.map(([x, y], i) => (
+            <line key={i} x1="32" y1="32" x2={x} y2={y} strokeWidth="1.4" opacity="0.7" />
+          ))}
+        </g>
+        {/* ノード（発光ドット） */}
+        {nodes.map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r="3" fill={isMono ? 'currentColor' : `url(#${gid})`} />
+        ))}
+        <circle cx="32" cy="32" r="5" fill={isMono ? 'currentColor' : `url(#${gid})`} />
+        <circle cx="32" cy="32" r="9" stroke={isMono ? 'currentColor' : `url(#${gid})`} strokeWidth="1.4" opacity="0.5" />
+      </svg>
+
+      {withWordmark && (
+        <span style={{
+          fontFamily: '"Cormorant Garamond", "Playfair Display", "Noto Serif JP", serif',
+          fontWeight: 600,
+          fontSize: size * 0.82,
+          letterSpacing: '0.04em',
+          lineHeight: 1,
+          ...(isMono ? { color: 'currentColor' } : {
+            background: 'linear-gradient(135deg, #5eead4 0%, #22d3ee 55%, #2dd4bf 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }),
+        }}>
+          Guild
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────
 //  CORE Inc. — 法人ロゴ (同心円 + 8 本スポーク + 中央の核)
 //  「核」の本質: 中心から世界へ放射する光
 //  青白いシアン基調の発光、Apple Vision/SF 的な精緻さ

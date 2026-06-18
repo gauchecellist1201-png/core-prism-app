@@ -275,6 +275,223 @@ export async function generateReelCaptions(
   };
 }
 
+// ============================================================
+// composeReelFromClips — 素材の「文脈」を理解して、文章・順番・カットまで設計する
+//
+// オーナー指示 (2026-06-18):
+//   動画素材の文脈を理解し、その文脈に対して適切な文章生成と「順番」「カット」を作る。
+//
+// generateReelCaptions は与えられた順番のまま字幕を付けるだけだった。こちらは
+//   AI が全クリップを観てから「リールとして一番伸びる構成」を設計する:
+//     - どのクリップを何番目に置くか (order) ＝ 並べ替え
+//     - 各カットの役割 (hook / build / payoff / cta)
+//     - 各カットに重ねる字幕 + ナレーション + 推奨秒数 + なぜそこに置くか(理由)
+//     - 全体のタイトル(フック) / 本文 / ハッシュタグ / BGM
+//   オーディエンス/ブランド文脈 (分析結果) を渡すと、その層に刺さる言葉で書く。
+// ============================================================
+
+export type CutRole = 'hook' | 'build' | 'payoff' | 'cta';
+
+export interface ComposedCut {
+  /** 元クリップの番号 (0-based)。並べ替えの結果ここが飛ぶ */
+  sourceIndex: number;
+  /** リール内での順番 (0-based) */
+  order: number;
+  role: CutRole;
+  /** このカットに映っている文脈 (AI の読み取り) */
+  context: string;
+  /** 画面に重ねる字幕 (8〜15字) */
+  overlayText: string;
+  /** ナレーション / 読み (任意) */
+  narration?: string;
+  /** 推奨秒数 */
+  durationSec: number;
+  /** なぜこの順番・この役割なのか (編集意図) */
+  reason: string;
+}
+
+export interface ReelComposition {
+  title: string;            // 1〜3秒のフック (リール冒頭)
+  themeGuess: string;
+  cuts: ComposedCut[];      // order 昇順で並んだ完成構成
+  caption: string;
+  hashtags: string[];
+  bgmMood?: BgmMood;
+  /** 構成全体のねらい (1〜2行) */
+  editorNote: string;
+}
+
+/** 文脈理解リール構成のための追加文脈 (分析結果から) */
+export interface ComposeContext {
+  audience?: string;   // 例: "25-34歳女性・コスメ感度高"
+  brand?: string;      // 例: "ナチュラル志向の等身大ビューティ"
+  theme?: string;      // 例: "朝のスキンケア"
+  goal?: string;       // 例: "保存数を伸ばす"
+}
+
+function buildComposeSystem(ctx: ComposeContext): string {
+  const ctxLines = [
+    ctx.audience ? `- 想定オーディエンス: ${ctx.audience}` : '',
+    ctx.brand ? `- アカウントの世界観: ${ctx.brand}` : '',
+    ctx.theme ? `- 今回のテーマ希望: ${ctx.theme}` : '',
+    ctx.goal ? `- ねらう成果: ${ctx.goal}` : '',
+  ].filter(Boolean).join('\n');
+
+  return `あなたは Instagram Reels / TikTok のトップ編集者 兼 構成作家です。
+これからユーザーが撮った複数のクリップ(画像/動画のサムネ)を順不同で見せます。
+あなたの仕事は「素材の文脈を読み取り、リールとして一番伸びる作品に再構成する」こと。
+
+${ctxLines ? `## このアカウントの文脈\n${ctxLines}\n` : ''}
+## やること
+1. 各クリップに何が映っているか(人物/場面/物/光/動き/感情)を具体的に読み取る
+2. リールの黄金構成に沿って「並べ替える」: 冒頭1〜2秒で離脱を止める hook → 中盤で惹きつける build → 山場 payoff → 最後に行動を促す cta
+3. クリップの内容に最も合う順番を決める(撮影順は無視してよい。弱いカットは後ろや短くする)
+4. 各カットに「重ねる字幕(8〜15字)」「ナレーション(任意,少し長め可)」「推奨秒数(2〜6秒)」「なぜその順番/役割か(理由)」を付ける
+5. 全体の title(冒頭フック), caption(本文), hashtags, bgmMood を決める
+
+返答は JSON のみ。前後に説明文を一切入れない:
+{
+  "themeGuess": "全体テーマ 1 行",
+  "title": "冒頭1〜3秒のフック (例: 知らないと損する朝の3秒)",
+  "editorNote": "この構成のねらいを1〜2行で(なぜ伸びるか)",
+  "bgmMood": "up | soft | pop | emo",
+  "cuts": [
+    {
+      "sourceIndex": 元クリップ番号(0始まり),
+      "order": リール内の順番(0始まり),
+      "role": "hook | build | payoff | cta",
+      "context": "そのカットの内容を具体的に",
+      "overlayText": "8〜15字の字幕",
+      "narration": "読み上げ用(任意)",
+      "durationSec": 2〜6,
+      "reason": "なぜこの順番・役割か"
+    }
+  ],
+  "caption": "Instagram 本文(体験ベース・冒頭で続きを読ませる・3〜6行)",
+  "hashtags": ["#…"]
+}
+
+ルール:
+- cuts は必ず全クリップを 1 回ずつ含める(全 ${'${n}'} 枚)。order は 0..N-1 の連番、重複なし
+- overlayText は日本語 8〜15字。説明でなく感情フック
+- 1 枚目(order:0)は必ず role:"hook"。最後は role:"cta"
+- durationSec の合計が 15〜30秒に収まるよう調整
+- オーディエンス文脈があれば、その層が「自分ごと」に感じる言葉を選ぶ
+- hashtags は 10〜15 個(ニッチ + 大規模の混合)`;
+}
+
+export async function composeReelFromClips(
+  inputs: CutInput[],
+  opts: { context?: ComposeContext; onProgress?: ProgressCb } = {},
+): Promise<ReelComposition> {
+  if (!inputs.length) throw new Error('クリップがありません');
+  const onProgress = opts.onProgress || (() => {});
+  const total = inputs.length + 1;
+
+  // 1) フレーム抽出
+  const frames: { data: string; mimeType: string }[] = [];
+  for (let i = 0; i < inputs.length; i++) {
+    onProgress(`素材 ${i + 1} / ${inputs.length} を読み取り中…`, i, total);
+    try {
+      frames.push(await extractFrameJpeg(inputs[i]));
+    } catch (e: any) {
+      throw new Error(`素材 ${i + 1} の読み取りに失敗: ${e.message || e}`);
+    }
+  }
+
+  // 2) Vision + 構成設計 (1 リクエスト)
+  onProgress('文脈を読んで構成を設計中…', inputs.length, total);
+  const sys = buildComposeSystem(opts.context || {}).replace('${n}', String(inputs.length));
+  const userParts = buildUserContent(frames);
+  userParts.unshift({
+    type: 'text',
+    text: `クリップは全 ${inputs.length} 枚。各クリップの長さ(秒): ${inputs.map((c, i) => `#${i}=${Math.round(c.duration * 10) / 10}s`).join(', ')}`,
+  });
+
+  let res: Response;
+  try {
+    res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'heavy' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 3000,
+        system: sys,
+        messages: [{ role: 'user', content: userParts }],
+      }),
+    });
+  } catch (e: any) {
+    throw new Error(`通信に失敗しました: ${e.message || e}。回線を確認して再試行してください。`);
+  }
+  if (!res.ok) {
+    let errJson: any = {};
+    try { errJson = await res.json(); } catch { /* */ }
+    const msg = errJson?.userMessage || errJson?.error?.message || `AI エラー: ${res.status}`;
+    const recov = errJson?.recovery || '少し待って再試行してください。';
+    throw new Error(`${msg} ${recov}`);
+  }
+
+  const data = await res.json();
+  const text = data?.content?.[0]?.text ?? '';
+  if (!text) throw new Error('AI から空の応答が返りました。もう一度お試しください。');
+
+  let parsed: any;
+  try { parsed = extractJson(text); }
+  catch (e: any) { throw new Error(`AI 応答を解釈できませんでした: ${e.message}。もう一度お試しください。`); }
+
+  // 3) 正規化 + 健全化 (全クリップを 1 回ずつ・order 連番・role 妥当)
+  const validRoles: CutRole[] = ['hook', 'build', 'payoff', 'cta'];
+  const rawCuts: any[] = Array.isArray(parsed.cuts) ? parsed.cuts : [];
+  const used = new Set<number>();
+  let cuts: ComposedCut[] = rawCuts
+    .map((c: any): ComposedCut => {
+      let src = Number.isInteger(c.sourceIndex) ? c.sourceIndex : -1;
+      if (src < 0 || src >= inputs.length || used.has(src)) src = -1; // 後で補完
+      if (src >= 0) used.add(src);
+      const roleRaw = String(c.role || '').toLowerCase().trim();
+      return {
+        sourceIndex: src,
+        order: Number.isInteger(c.order) ? c.order : 0,
+        role: (validRoles as string[]).includes(roleRaw) ? (roleRaw as CutRole) : 'build',
+        context: String(c.context || '').slice(0, 200),
+        overlayText: clampOverlay(String(c.overlayText || '')),
+        narration: c.narration ? String(c.narration).slice(0, 160) : undefined,
+        durationSec: Math.min(6, Math.max(2, Number(c.durationSec) || 3)),
+        reason: String(c.reason || '').slice(0, 160),
+      };
+    });
+  // 欠けたクリップを末尾に補完（AI が落とした素材も必ず使う）
+  for (let i = 0; i < inputs.length; i++) {
+    if (!used.has(i)) {
+      cuts.push({ sourceIndex: i, order: cuts.length, role: 'build', context: '', overlayText: '', durationSec: 3, reason: '自動補完' });
+    }
+  }
+  // sourceIndex 未確定(-1)を残った番号で埋める
+  const missing = [...Array(inputs.length).keys()].filter((i) => !cuts.some((c) => c.sourceIndex === i));
+  let mi = 0;
+  cuts = cuts.map((c) => (c.sourceIndex < 0 ? { ...c, sourceIndex: missing[mi++] ?? 0 } : c));
+  // order を 0..N-1 に振り直し（AI の order を尊重しつつ連番化）
+  cuts.sort((a, b) => a.order - b.order).forEach((c, i) => { c.order = i; });
+  if (cuts.length) { cuts[0].role = 'hook'; cuts[cuts.length - 1].role = 'cta'; }
+
+  onProgress('完了', total, total);
+
+  const validMoods: BgmMood[] = ['up', 'soft', 'pop', 'emo'];
+  const moodRaw = String(parsed.bgmMood || '').toLowerCase().trim();
+
+  return {
+    title: String(parsed.title || '').trim() || cuts[0]?.overlayText || 'あなたのリール',
+    themeGuess: String(parsed.themeGuess || '').trim(),
+    editorNote: String(parsed.editorNote || '').trim(),
+    bgmMood: (validMoods as string[]).includes(moodRaw) ? (moodRaw as BgmMood) : undefined,
+    cuts,
+    caption: String(parsed.caption || '').trim(),
+    hashtags: Array.isArray(parsed.hashtags)
+      ? parsed.hashtags.map((h: any) => String(h)).filter((h: string) => h.startsWith('#')).slice(0, 20)
+      : [],
+  };
+}
+
 /** BGM ジャンルに対する BPM (テンポ合わせ用) */
 export function bgmMoodBpm(mood: BgmMood): number {
   const def = BGM_MOOD_DEFS.find(d => d.id === mood);
