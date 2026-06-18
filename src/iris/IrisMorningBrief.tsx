@@ -67,6 +67,66 @@ function getFollowerDelta(personaId: string, currentFollowers: number): {
   };
 }
 
+/** 今日が今年の何日目か (1-366)。日替わりテーマのローテーションに使う（ランダム不使用＝再現可能）。 */
+function dayOfYear(): number {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  return Math.floor((now.getTime() - start.getTime()) / 86_400_000);
+}
+
+// ─── ニッチ別「今日の投稿テーマ案」─────────────────────────
+// igProfile.topPostCategories から、その人のジャンルで「保存・再生されやすい」具体的な
+// テーマを 1 つ提案する。「今日は何を作ればいい?」に AI が先回りで答え、手入力ゼロにする。
+// 日付から決まるインデックスで日替わり（同じ日なら何度開いても同じ＝再現可能）。
+type TopicBank = { keys: string[]; niche: string; ideas: string[] };
+const TOPIC_BANK: TopicBank[] = [
+  { keys: ['美容', 'コスメ', 'スキンケア', 'メイク'], niche: '美容', ideas: [
+    '夜のスキンケア3ステップを60秒で', 'プチプラなのに高見えするコスメ5選', 'メイク直しが一瞬で決まる小ワザ',
+    '毛穴が目立たなくなった下地の塗り方', '朝の時短メイク ビフォーアフター', '今の季節に変えたいスキンケア',
+  ] },
+  { keys: ['ファッション', 'コーデ', 'アパレル', '服'], niche: 'ファッション', ideas: [
+    '1着を3通りに着回すコーデ', '低身長さんが脚長に見える組み合わせ', 'この時季の毎日コーデ5days',
+    'プチプラとハイブランドの合わせ方', '骨格別・似合うシルエットの選び方', '今買い足すべき定番アイテム',
+  ] },
+  { keys: ['グルメ', '料理', 'レシピ', 'ごはん', 'カフェ', '食'], niche: 'グルメ・料理', ideas: [
+    '10分で作れる時短レシピ', '一度は行きたい絶品カフェ巡り', '失敗しない作り置き3品',
+    'コンビニ食材だけで作る一品', '映える盛り付けのコツ', 'リピ確定のお取り寄せグルメ',
+  ] },
+  { keys: ['フィットネス', 'トレーニング', '筋トレ', 'ダイエット', 'ヨガ', '健康'], niche: 'フィットネス', ideas: [
+    '寝る前5分の宅トレ', 'ぽっこりお腹に効く3種目', '反り腰をほぐすストレッチ',
+    '1週間で変わる食事の置き換え', '初心者向け・正しいスクワット', 'むくみを流す朝ルーティン',
+  ] },
+  { keys: ['旅行', 'トラベル', '観光', '旅'], niche: '旅行', ideas: [
+    '日帰りで行ける絶景スポット', '荷物を減らすパッキング術', '知らないと損する旅の予約ワザ',
+    '泊まってよかった宿ベスト3', '弾丸でも満喫できるモデルコース', '海外で困らない便利アプリ',
+  ] },
+  { keys: ['子育て', '育児', 'ママ', 'パパ', 'キッズ'], niche: '子育て', ideas: [
+    'イヤイヤ期が落ち着いた声かけ', '5分で完成・子どもが喜ぶ朝ごはん', '買ってよかった育児グッズ',
+    '寝かしつけがラクになった習慣', '雨の日のおうち遊びアイデア', '入園準備で本当に必要だったもの',
+  ] },
+  { keys: ['ガジェット', 'テック', 'ビジネス', '仕事', '副業', '勉強', 'お金', '投資'], niche: 'ビジネス・学び', ideas: [
+    '作業が爆速になるアプリ3選', '知らないと損する時短ショートカット', '続けられる手帳・メモ術',
+    '副業を始める前にやること', '在宅デスク環境の整え方', '今日から使える話し方のコツ',
+  ] },
+  { keys: ['暮らし', 'ライフスタイル', 'インテリア', '掃除', '収納', 'ルーティン'], niche: '暮らし', ideas: [
+    '5分でできる毎日の整え習慣', '狭くても片付く収納アイデア', '買ってよかった日用品',
+    '朝のルーティン ルームツアー', '汚れがスルッと落ちる掃除ワザ', 'ミニマルに暮らすコツ',
+  ] },
+];
+const TOPIC_GENERIC: TopicBank = { keys: [], niche: 'あなたのジャンル', ideas: [
+  'フォロワーからよく聞かれる質問に答える', '最近のお気に入りを3つ紹介', '失敗談から学んだこと',
+  'はじめての人に向けた自己紹介', '今日の出来事をショート動画で', 'リクエストの多いテーマを深掘り',
+] };
+
+/** その人のジャンルに合った「今日の投稿テーマ」を 1 つ返す。カテゴリ未取得なら null。 */
+function pickTodayTopic(categories: string[] | undefined): { topic: string; niche: string } | null {
+  if (!categories || !categories.length) return null;
+  const joined = categories.join(' ');
+  const bank = TOPIC_BANK.find(b => b.keys.some(k => joined.includes(k))) || TOPIC_GENERIC;
+  const idea = bank.ideas[dayOfYear() % bank.ideas.length];
+  return { topic: idea, niche: bank.niche };
+}
+
 /** 「いま応募可能な案件 = DM 候補」をフォロワー帯でフィルタ */
 function countMatchingDeals(followers: number): { total: number; topNames: string[] } {
   const deals = getAllBrandDeals().filter(d => {
@@ -96,6 +156,7 @@ type Props = {
  *  応募できる案件があれば最優先 (直接の収益)、次にベストタイム投稿、次に投稿作成。 */
 function pickOneMove(
   dealCount: number, topNames: string[], bestPostTime: string | null,
+  topic: { topic: string; niche: string } | null,
 ): { tab: string; label: string; cta: string; detail: string } {
   if (dealCount > 0) {
     const who = topNames.length ? `${topNames[0]} など` : 'あなたに合う案件';
@@ -104,6 +165,16 @@ function pickOneMove(
       label: '今日の一手',
       cta: '案件を見て1件応募する',
       detail: `${who}に今日1件だけ応募しましょう。最初の1通が仕事につながります。`,
+    };
+  }
+  // 案件が無い日は「今日の投稿テーマ」を AI が具体的に提案（手入力ゼロ）。
+  if (topic) {
+    const when = bestPostTime ? `ベストタイム ${bestPostTime} に合わせて、` : '';
+    return {
+      tab: bestPostTime ? 'reel' : 'draft',
+      label: '今日の一手',
+      cta: `「${topic.topic}」を投稿する`,
+      detail: `${when}${topic.niche}で保存されやすいテーマです。このまま作って今日の1本に。`,
     };
   }
   if (bestPostTime) {
@@ -181,7 +252,8 @@ export default function IrisMorningBrief({
     if (!igProfile || !onAction) return null;
     const followers = igProfile.followers || 0;
     const { total, topNames } = countMatchingDeals(followers);
-    return pickOneMove(total, topNames, igProfile.bestPostTime || null);
+    const topic = pickTodayTopic(igProfile.topPostCategories);
+    return pickOneMove(total, topNames, igProfile.bestPostTime || null, topic);
   }, [igProfile, onAction]);
 
   if (!visible || !cards) return null;
