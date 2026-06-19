@@ -80,8 +80,8 @@ function getContactStatus(lastDateISO?: string): { status: ContactStatus; daysSi
 }
 const CONTACT_CHIP: Record<ContactStatus, { label: string; bg: string; fg: string }> = {
   fresh:  { label: '最近やり取り済み', bg: '#1f3a2a', fg: '#4ade80' },
-  warm:   { label: '⚠ 連絡しましょう', bg: '#3a2f1a', fg: '#fbbf24' },
-  cold:   { label: '🚨 久しぶりに連絡', bg: '#3a1f1f', fg: '#f87171' },
+  warm:   { label: '連絡しましょう', bg: '#3a2f1a', fg: '#fbbf24' },
+  cold:   { label: '久しぶりに連絡', bg: '#3a1f1f', fg: '#f87171' },
   silent: { label: '未接触',            bg: '#2a2a3a', fg: '#9ca3af' },
 };
 

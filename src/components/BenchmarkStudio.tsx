@@ -1514,7 +1514,7 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
             accent={persona.accentColor}
             iconKey="benchmark"
             what="あなたの数字を「同じ業界の会社たち」と比べて、強い所と弱い所を 1 画面で見せます。"
-            tryThis="まず「✨ AI 補助」タブで AI に業界を当ててもらう。質問に 2-3 個答えるだけで結果が出ます。"
+            tryThis="まず「AI 補助」タブで AI に業界を当ててもらう。質問に 2-3 個答えるだけで結果が出ます。"
             example="粗利率 38% → 業界の真ん中より上、上位 30% です。客単価は逆に下位 25%。"
             sampleLabel="こんな結果が出ます"
             samplePreview={
@@ -1546,7 +1546,7 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
         {/* タブ */}
         <div className="cp-row px-4 pt-3 gap-1 overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
           {([
-            { v: 'assist' as const, label: '✨ AI 補助' },
+            { v: 'assist' as const, label: 'AI 補助' },
             { v: 'analyze' as const, label: '手入力' },
             { v: 'history' as const, label: `履歴 (${historyCount})` },
             { v: 'competitor' as const, label: `競合 (${competitors.length})` },

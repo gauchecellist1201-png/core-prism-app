@@ -206,9 +206,9 @@ export default function CRMStudio({ persona, onClose }: Props) {
 
         <div className="cp-modal-tabs">
           {([
-            { id: 'kanban' as View, label: isMobile ? '🗂 一覧' : '🗂 カンバン' },
-            { id: 'list' as View,   label: `📋 リスト (${dealsAll.length})` },
-            { id: 'summary' as View,label: '📊 サマリ' },
+            { id: 'kanban' as View, label: isMobile ? '一覧' : 'カンバン' },
+            { id: 'list' as View,   label: `リスト (${dealsAll.length})` },
+            { id: 'summary' as View,label: 'サマリ' },
           ]).map(t => (
             <button key={t.id} onClick={() => setView(t.id)}
               className="cp-modal-tab" data-active={view === t.id}
