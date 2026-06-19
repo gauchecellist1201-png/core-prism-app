@@ -6,7 +6,7 @@
 //   0 のときは捏造せず「これから貯まる」導線を出す（honest-numbers）。
 // ============================================================
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
-import { Sparkles, Send, BookOpen, Briefcase, Activity, TrendingUp } from 'lucide-react';
+import { Sparkles, Send, BookOpen, Briefcase, Activity, FileCheck, TrendingUp } from 'lucide-react';
 import { computeWeeklyValue, type ValueMetric } from '../lib/weeklyValue';
 
 const ICONS: Record<ValueMetric['icon'], (p: { size?: number; color?: string }) => ReactElement> = {
@@ -15,6 +15,7 @@ const ICONS: Record<ValueMetric['icon'], (p: { size?: number; color?: string }) 
   book: (p) => <BookOpen size={p.size} color={p.color} strokeWidth={2.1} />,
   briefcase: (p) => <Briefcase size={p.size} color={p.color} strokeWidth={2.1} />,
   activity: (p) => <Activity size={p.size} color={p.color} strokeWidth={2.1} />,
+  'file-check': (p) => <FileCheck size={p.size} color={p.color} strokeWidth={2.1} />,
 };
 
 export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void }) {

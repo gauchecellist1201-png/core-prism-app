@@ -17,7 +17,7 @@ export interface ValueMetric {
   /** 集計窓 — UI のバッジ表示に使う */
   window: 'week' | 'month';
   /** Lucide アイコン名（UI 側でマップ） */
-  icon: 'sparkles' | 'send' | 'book' | 'briefcase' | 'activity';
+  icon: 'sparkles' | 'send' | 'book' | 'briefcase' | 'activity' | 'file-check';
   color: string;
 }
 
@@ -52,6 +52,12 @@ export function computeWeeklyValue(now: number = Date.now()): {
   const proposals = parse<Array<{ generatedAt?: string }>>('core_proposals', []);
   const proposalCount = proposals.filter((p) => withinWeekISO(p?.generatedAt, cutoff)).length;
   all.push({ key: 'proposals', label: 'AIからの提案', count: proposalCount, window: 'week', icon: 'sparkles', color: '#8E5CFF' });
+
+  // 1.5 AI がその場で仕上げた成果物（TodayBrief のアクション実行＝最も体感できる価値）
+  //     core_action_artifacts_v1 は InlineActionExecutor が保存する実物。createdAt あり＝直近7日で絞れる。
+  const artifacts = parse<Array<{ createdAt?: string }>>('core_action_artifacts_v1', []);
+  const artifactCount = artifacts.filter((a) => withinWeekISO(a?.createdAt, cutoff)).length;
+  all.push({ key: 'artifacts', label: 'AIが仕上げた成果物', count: artifactCount, window: 'week', icon: 'file-check', color: '#C9A96E' });
 
   // 2. 司令塔ループが生んだ「今日の一手」（下書き＋配信）
   const signals = parse<Array<{ kind?: string; ts?: number }>>('core_loop_signals_v1', []);

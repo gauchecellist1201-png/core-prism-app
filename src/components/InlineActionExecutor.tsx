@@ -15,7 +15,7 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Copy, Save, RotateCw, Plus, AlertCircle, Sparkles } from 'lucide-react';
+import { Check, Copy, Save, RotateCw, Plus, AlertCircle, Sparkles, Mail, FileText, MessageSquare } from 'lucide-react';
 import type { AppSettings, Persona } from '../types/identity';
 import {
   executeAction, saveArtifact,
@@ -312,8 +312,10 @@ export default function InlineActionExecutor({
               padding: '8px 12px 10px', fontSize: 11, color: 'var(--fg-muted)',
               fontStyle: 'italic', lineHeight: 1.55,
               borderTop: '1px solid var(--border)',
+              display: 'flex', alignItems: 'flex-start', gap: 6,
             }}>
-              💭 {plan.note}
+              <MessageSquare size={12} strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 2 }} />
+              <span>{plan.note}</span>
             </div>
           )}
           {/* アクションボタン群 */}
@@ -388,8 +390,9 @@ function DeliverableView({ deliverable, accent }: { deliverable: Deliverable; ac
         <div style={{
           fontWeight: 800, paddingBottom: 6, marginBottom: 8,
           borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', gap: 6,
         }}>
-          📧 件名: {subject}
+          <Mail size={13} strokeWidth={2.3} style={{ flexShrink: 0 }} /> 件名: {subject}
         </div>
         <pre style={{
           whiteSpace: 'pre-wrap', wordBreak: 'break-word',
@@ -451,11 +454,11 @@ function KindBadge({ kind, accent }: { kind: Deliverable['kind']; accent: string
     kind === 'email' ? 'メール下書き' :
     kind === 'table' ? '表' :
     kind === 'memo' ? 'メモ' : 'テキスト';
-  const icon =
-    kind === 'checklist' ? '✓' :
-    kind === 'email' ? '✉' :
-    kind === 'table' ? '▦' :
-    kind === 'memo' ? '✎' : '📝';
+  const Icon =
+    kind === 'checklist' ? Check :
+    kind === 'email' ? Mail :
+    kind === 'table' ? FileText :
+    kind === 'memo' ? FileText : FileText;
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -463,7 +466,7 @@ function KindBadge({ kind, accent }: { kind: Deliverable['kind']; accent: string
       background: `${accent}22`, color: accent,
       fontSize: 10, fontWeight: 800, letterSpacing: 1,
     }}>
-      <span>{icon}</span>{label}
+      <Icon size={11} strokeWidth={2.6} />{label}
     </span>
   );
 }
