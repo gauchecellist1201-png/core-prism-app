@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
-import { Mail as MailIcon, Compass, Heart, Shield, BadgeCheck, MessagesSquare, Scale } from 'lucide-react';
+import { Mail as MailIcon, BadgeCheck, MessagesSquare, Scale } from 'lucide-react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo } from '../components/Logo';
 
 const COMPANY = {
@@ -155,7 +155,6 @@ export default function CoreSite() {
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
             <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
             <a href="#connect" style={navLink} className="lp-nav-link">つながり</a>
-            <a href="#values" style={navLink} className="lp-nav-link">信条</a>
             <a href="#mission" style={navLink} className="lp-nav-link">理念</a>
             <a href="#journey" style={navLink} className="lp-nav-link">歩み</a>
             <a href="#about" style={navLink} className="lp-nav-link">会社概要</a>
@@ -436,184 +435,6 @@ export default function CoreSite() {
               四つのサービスが連携し、ひとつの流れになる。
               <br />
               <strong style={{ color: '#fff', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  VALUES (信条 / 道徳)        */}
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <section
-        id="values"
-        className="lp-section-pad"
-        style={{
-          padding: '6rem 1.5rem',
-          background: 'linear-gradient(180deg,#000 0%,#050510 60%,#000 100%)',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* 背景の細い水平アクセント */}
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            width: 720,
-            height: 720,
-            marginLeft: -360,
-            marginTop: -360,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(252,176,69,0.07) 0%, transparent 65%)',
-            filter: 'blur(60px)',
-            pointerEvents: 'none',
-          }}
-        />
-
-        <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 2 }}>
-          <p style={sectionLabel}>
-            <span style={sectionLabelMain}>信&nbsp;条</span>
-            <span style={sectionLabelSub}>PHILOSOPHY&nbsp;/&nbsp;VALUES</span>
-          </p>
-
-          {/* ゴールドの細い水平線 */}
-          <div
-            aria-hidden
-            style={{
-              width: 64,
-              height: 1,
-              margin: '1.5rem auto 2.5rem',
-              background: 'linear-gradient(90deg, transparent, #FCB045, transparent)',
-            }}
-          />
-
-          {/* メインステートメント */}
-          <motion.h2
-            initial={{ y: 24 }}
-            whileInView={{ y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1 }}
-            style={{
-              fontFamily: FONT_SERIF_JA,
-              fontSize: 'clamp(2.4rem, 6vw, 4.5rem)',
-              fontWeight: 700,
-              lineHeight: 1.35,
-              letterSpacing: '0.05em',
-              marginBottom: '2.25rem',
-              color: '#fff',
-            }}
-          >
-            変わらないものに、
-            <br />
-            <span
-              style={{
-                background: 'linear-gradient(90deg,#FCB045,#FBBF24,#F59E0B)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontWeight: 900,
-              }}
-            >
-              向き合う。
-            </span>
-          </motion.h2>
-
-          {/* リード文 */}
-          <p
-            style={{
-              fontFamily: FONT_SERIF_JA,
-              fontSize: 'clamp(0.98rem, 1.4vw, 1.1rem)',
-              color: 'rgba(255,255,255,0.75)',
-              lineHeight: 2.3,
-              maxWidth: 760,
-              margin: '0 auto 4.5rem',
-              fontWeight: 400,
-            }}
-          >
-            時代は加速する。テクノロジーは古びる。流行は通り過ぎる。
-            <br />
-            けれど、人間が人間であるかぎり、変わらないものがある。
-            <br />
-            人を愛し、仲間を信じ、誠実であること。
-            <br />
-            株式会社 CORE は、その
-            <strong style={{ color: '#fff', fontWeight: 600 }}>「変わらない核」</strong>
-            を中心に据える会社です。
-          </p>
-
-          {/* 3 つの柱 */}
-          <div
-            className="lp-values-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '2rem',
-              maxWidth: 1080,
-              margin: '0 auto 3.75rem',
-              textAlign: 'left',
-            }}
-          >
-            <ValuePillar
-              icon={<Compass size={28} strokeWidth={1.8} color="#FCB045" />}
-              accentColor="#FCB045"
-              titleEn="THE UNCHANGING CORE"
-              titleJa="変わらない核"
-              body="時代がどれほど変わっても、人を想う気持ち、信じる勇気、誠実であろうとする意志は変わらない。私たちは、その普遍を見失わないために存在する。"
-            />
-            <ValuePillar
-              icon={<Heart size={28} strokeWidth={1.8} color="#E1306C" />}
-              accentColor="#E1306C"
-              titleEn="LOVE & FELLOWSHIP"
-              titleJa="人を愛し、仲間を大切に"
-              body="すべての事業は、人と人の信頼の上にある。顧客もチームメンバーも、出会うすべての人を尊び、共に育つこと。それが私たちの最初の決まりごと。"
-            />
-            <ValuePillar
-              icon={<Shield size={28} strokeWidth={1.8} color="#4ADE80" />}
-              accentColor="#4ADE80"
-              titleEn="INTEGRITY FIRST"
-              titleJa="道徳を、利益より先に"
-              body="効率や速さは尊い。けれど、誠実さの前に置いてはならない。私たちは「正しいか」を「速いか」より先に問う。時代が早くなるほど、その順序を守り続ける。"
-            />
-          </div>
-
-          {/* フッターステートメント (引用デザイン) */}
-          <div
-            style={{
-              maxWidth: 720,
-              margin: '0 auto',
-              padding: '2.25rem 1.75rem',
-              borderTop: '1px solid rgba(252,176,69,0.25)',
-              borderBottom: '1px solid rgba(252,176,69,0.25)',
-              position: 'relative',
-            }}
-          >
-            <p
-              style={{
-                fontFamily: FONT_SERIF_EN,
-                fontSize: 'clamp(1.05rem, 1.8vw, 1.4rem)',
-                fontStyle: 'italic',
-                letterSpacing: '0.05em',
-                color: '#FCB045',
-                lineHeight: 1.6,
-                marginBottom: '0.85rem',
-                fontWeight: 500,
-              }}
-            >
-              評判を築くには二十年かかる。それを失うのは、五分だ。
-            </p>
-            <p
-              style={{
-                fontFamily: FONT_SERIF_JA,
-                fontSize: 'clamp(0.9rem, 1.3vw, 1rem)',
-                color: 'rgba(255,255,255,0.7)',
-                letterSpacing: '0.06em',
-                fontWeight: 400,
-                lineHeight: 1.9,
-              }}
-            >
-              — ウォーレン・バフェット（投資家）
             </p>
           </div>
         </div>
@@ -2268,11 +2089,14 @@ function ValuePillar({
 // ============================================================
 function ConnectedSuite() {
   // 衛星ノード（正方形コンテナ内の % 座標。左右対称＝Prism を完全中央に）
+  // GUILD の「場」(六角フィールド) に収まるよう、やや内側に配置。
   const sats = [
-    { key: 'iris', Logo: IrisLogo, name: 'Iris', role: 'Instagram', color: '#E1306C', x: 50, y: 9 },
-    { key: 'resonance', Logo: ResonanceLogo, name: 'Resonance', role: 'LINE', color: '#06C755', x: 14, y: 86 },
-    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#FFA42A', x: 86, y: 86 },
+    { key: 'iris', Logo: IrisLogo, name: 'Iris', role: 'Instagram', color: '#E1306C', x: 50, y: 18 },
+    { key: 'resonance', Logo: ResonanceLogo, name: 'Resonance', role: 'LINE', color: '#06C755', x: 24, y: 80 },
+    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#FFA42A', x: 76, y: 80 },
   ];
+  // GUILD の場（4プロダクトを包む）のティール
+  const GUILD = '#2dd4bf';
 
   // 共通: 衛星カード（角丸スクエア・発光）
   const SatCard = ({ s, size = 46 }: { s: typeof sats[number]; size?: number }) => (
@@ -2306,10 +2130,37 @@ function ConnectedSuite() {
 
   return (
     <div className="lp-connect-wrap">
-      {/* ── HUB (デスクトップ / タブレット)：Prism を完全中央に ── */}
-      <div className="lp-connect-hub" style={{ position: 'relative', width: 'min(90vw, 560px)', aspectRatio: '1 / 1', margin: '0 auto' }}>
+      {/* ── HUB (デスクトップ / タブレット)：GUILD の「場」が 4 プロダクトを包む ── */}
+      <div className="lp-connect-hub" style={{ position: 'relative', width: 'min(90vw, 560px)', aspectRatio: '1 / 1', margin: '2.6rem auto 0' }}>
+        {/* GUILD の場：4 つを内包する六角フィールド（DAO＝組織そのもの・ノードではなく“場”） */}
+        <motion.svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden
+          animate={{ opacity: [0.7, 1, 0.7] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible', zIndex: 0 }}>
+          <defs>
+            <linearGradient id="guildField" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#5eead4" />
+              <stop offset="55%" stopColor="#22d3ee" />
+              <stop offset="100%" stopColor="#2dd4bf" />
+            </linearGradient>
+            <radialGradient id="guildFill" cx="50%" cy="44%" r="62%">
+              <stop offset="0%" stopColor="rgba(45,212,191,0.12)" />
+              <stop offset="68%" stopColor="rgba(45,212,191,0.035)" />
+              <stop offset="100%" stopColor="rgba(45,212,191,0)" />
+            </radialGradient>
+          </defs>
+          {/* 外周の六角メンブレン（場の境界） */}
+          <path d="M25 8.4 L75 8.4 L98 50 L75 91.6 L25 91.6 L2 50 Z"
+            fill="url(#guildFill)" stroke="url(#guildField)" strokeWidth="0.7" strokeOpacity="0.85" strokeLinejoin="round" />
+          {/* 内側の流れる薄いライン（生きた場） */}
+          <path d="M28 13 L72 13 L92 50 L72 87 L28 87 L8 50 Z"
+            fill="none" stroke="url(#guildField)" strokeWidth="0.3" strokeOpacity="0.4" strokeLinejoin="round" strokeDasharray="2 2.4">
+            <animate attributeName="stroke-dashoffset" from="9" to="0" dur="3.4s" repeatCount="indefinite" />
+          </path>
+        </motion.svg>
+
+        {/* Prism → 各プロダクトの接続線 */}
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible', zIndex: 1 }}>
           {sats.map(s => (
             <line key={s.key} x1="50" y1="50" x2={s.x} y2={s.y} stroke={s.color}
               strokeWidth="0.5" strokeOpacity="0.6" strokeDasharray="1.6 1.8" strokeLinecap="round">
@@ -2317,6 +2168,24 @@ function ConnectedSuite() {
             </line>
           ))}
         </svg>
+
+        {/* GUILD ネームプレート（場のタイトル・上端中央） */}
+        <div style={{
+          position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', zIndex: 4,
+          display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0.42rem 0.95rem', borderRadius: 999,
+          background: 'rgba(6,18,16,0.88)', border: `1px solid ${GUILD}88`,
+          boxShadow: `0 0 24px ${GUILD}55`, backdropFilter: 'blur(6px)', whiteSpace: 'nowrap',
+        }}>
+          <GuildLogo size={20} withWordmark={false} />
+          <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.62rem', letterSpacing: '0.34em', color: '#7ef0dd', fontWeight: 700, paddingLeft: '0.34em' }}>GUILD</span>
+        </div>
+        {/* 場の意味（下端中央） */}
+        <div style={{
+          position: 'absolute', bottom: '-1.7rem', left: '50%', transform: 'translateX(-50%)', zIndex: 4,
+          fontFamily: FONT_SERIF_JA, fontSize: '0.74rem', color: 'rgba(126,240,221,0.82)', letterSpacing: '0.08em', whiteSpace: 'nowrap',
+        }}>
+          貢献で動く、ひとつの場〈DAO〉
+        </div>
         <motion.div
           animate={{ scale: [1, 1.045, 1] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
           style={{ position: 'absolute', left: '50%', top: '50%', x: '-50%', y: '-50%', zIndex: 3 }}>
@@ -2329,23 +2198,45 @@ function ConnectedSuite() {
         ))}
       </div>
 
-      {/* ── STACK (モバイル)：縦に Prism → 3チャネル ── */}
+      {/* ── STACK (モバイル)：GUILD の「場」の中に Prism → 3チャネルを内包 ── */}
       <div className="lp-connect-stack" aria-hidden>
-        <PrismCard size={52} />
-        <span className="lp-connect-branch" />
-        <div className="lp-connect-sats">
-          {sats.map(s => (
-            <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '0.9rem',
-              padding: '0.7rem 0.9rem', width: '100%',
-              background: `radial-gradient(circle at 0% 50%, ${s.color}1c, rgba(8,8,18,0.9))`,
-              border: `1px solid ${s.color}55`, borderRadius: 16 }}>
-              <s.Logo size={38} withWordmark={false} />
-              <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1rem', color: '#fff', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
-                <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: s.color, fontWeight: 700, letterSpacing: '0.06em' }}>{s.role}</span>
-              </span>
-            </div>
-          ))}
+        <div style={{
+          position: 'relative', width: '100%',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          padding: '2rem 0.9rem 1.4rem', borderRadius: 24,
+          border: `1px solid ${GUILD}55`,
+          background: `radial-gradient(circle at 50% 0%, ${GUILD}16, transparent 70%)`,
+          boxShadow: `inset 0 0 34px ${GUILD}1a, 0 0 24px ${GUILD}1f`,
+        }}>
+          {/* GUILD ヘッダ（場の名前） */}
+          <div style={{
+            position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)',
+            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.32rem 0.82rem', borderRadius: 999,
+            background: '#06120f', border: `1px solid ${GUILD}88`, boxShadow: `0 0 18px ${GUILD}44`, whiteSpace: 'nowrap',
+          }}>
+            <GuildLogo size={16} withWordmark={false} />
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.56rem', letterSpacing: '0.3em', color: '#7ef0dd', fontWeight: 700, paddingLeft: '0.3em' }}>GUILD</span>
+          </div>
+
+          <PrismCard size={52} />
+          <span className="lp-connect-branch" />
+          <div className="lp-connect-sats">
+            {sats.map(s => (
+              <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '0.9rem',
+                padding: '0.7rem 0.9rem', width: '100%',
+                background: `radial-gradient(circle at 0% 50%, ${s.color}1c, rgba(8,8,18,0.9))`,
+                border: `1px solid ${s.color}55`, borderRadius: 16 }}>
+                <s.Logo size={38} withWordmark={false} />
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1rem', color: '#fff', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
+                  <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: s.color, fontWeight: 700, letterSpacing: '0.06em' }}>{s.role}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: '1rem', fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: 'rgba(126,240,221,0.82)', letterSpacing: '0.06em' }}>
+            貢献で動く、ひとつの場〈DAO〉
+          </div>
         </div>
       </div>
     </div>
