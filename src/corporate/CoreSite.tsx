@@ -17,7 +17,7 @@ const COMPANY = {
   ceoEn: 'Naoki Ide',
   addressJa: '〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11-7',
   addressEn: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0025, Japan',
-  email: 'hello@core-inc.jp',
+  email: 'core.inc.guild@gmail.com',
 };
 
 // 荘厳系フォント
@@ -1177,9 +1177,9 @@ export default function CoreSite() {
             }}
           >
             {[
-              { icon: '🤝', label: '法人 / 導入相談', desc: 'チーム導入・請求書払い・カスタム要件', subject: '法人導入の相談' },
-              { icon: '📰', label: '取材 / プレス', desc: 'メディア掲載・登壇依頼・資料請求', subject: '取材依頼' },
-              { icon: '💼', label: '採用 / 業務委託', desc: 'エンジニア・デザイナー・パートナー', subject: '採用に関心があります' },
+              { label: '法人 / 導入相談', desc: 'チーム導入・請求書払い・カスタム要件', subject: '法人導入の相談' },
+              { label: '取材 / プレス', desc: 'メディア掲載・登壇依頼・資料請求', subject: '取材依頼' },
+              { label: '採用 / 業務委託', desc: 'エンジニア・デザイナー・パートナー', subject: '採用に関心があります' },
             ].map((c, i) => (
               <a
                 key={i}
@@ -1209,7 +1209,6 @@ export default function CoreSite() {
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
-                <span style={{ fontSize: '1.75rem', lineHeight: 1 }}>{c.icon}</span>
                 <span style={{ fontFamily: FONT_SERIF_JA, fontWeight: 600, fontSize: '0.95rem', color: '#fff', letterSpacing: '0.02em' }}>{c.label}</span>
                 <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{c.desc}</span>
               </a>
