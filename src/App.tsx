@@ -88,6 +88,13 @@ import CxoWelcomeCard from './components/CxoWelcomeCard';
 import StripeFailureBanner from './components/StripeFailureBanner';
 import InstallPwaBanner from './components/InstallPwaBanner';
 import { readSharedFromUrl } from './lib/shareLink';
+import { CoreDock } from './components/CoreDock';
+import { readCoreHandoff } from './components/coreLink';
+
+// CORE 共通ハンドオフを起動時に1度だけ取り込む（?core= を localStorage へ。文脈の持ち越し）。
+// App は URL ごとにフル remount するルート構成（早期 return が多い）なので、
+// hook ではなくモジュール評価時に1回呼ぶことで /iris を含む全ルートで確実に走らせる。
+if (typeof window !== 'undefined') readCoreHandoff();
 
 // 別ルートを lazy 読み込みする際の共通フォールバック (シンプルな空白)
 // 即座に切り替わるルートが多いので、派手な spinner より flash を防ぐ薄い背景の方が落ち着く
@@ -474,7 +481,13 @@ export default function App() {
 
   // CORE Iris (姉妹ブランド) ルート — /iris で別ブランドを起動
   if (isIrisPath()) {
-    return <Suspense fallback={<RouteFallback />}><IrisApp /></Suspense>;
+    return (
+      <Suspense fallback={<RouteFallback />}>
+        <IrisApp />
+        {/* CORE 共通ドック（下部中央・current=iris） */}
+        <CoreDock current="iris" />
+      </Suspense>
+    );
   }
 
   // Theme初期化 (ライト既定)
@@ -1005,8 +1018,18 @@ export default function App() {
       {/* YYY (2026-06-04): LP / Pricing / Billing / Contact 用 ライト ⇄ ダーク 切替 */}
       <PublicThemeToggle />
       {/* サンプル表示は ダッシュボード内の DemoBanner に一本化 (ロゴと被る固定帯は廃止) */}
+      {/* CORE 共通ドック（下部中央・current=prism）。Prism ルート(/)でのみ表示し、
+          中央のBottomChatドック入力バーより1段上に浮かせて操作を塞がない。 */}
+      {isPrismRootPath() && <CoreDock current="prism" />}
     </>
   );
+}
+
+/** Prism 本体ルート(/)の判定 — 早期 return される /corp /pricing /iris 等は対象外 */
+function isPrismRootPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname.replace(/\/+$/, '');
+  return p === '' || p === '/briefings';
 }
 
 function AiSuggestionHistoryGlobalMount() {
