@@ -148,8 +148,8 @@ type Props = {
   variant?: 'mobile' | 'desktop';
   /** 強制表示 (今日表示済みでも再表示する開発者用) */
   force?: boolean;
-  /** 「今日の一手」タップ時の遷移。未指定なら一手カードは出さない。 */
-  onAction?: (tab: string) => void;
+  /** 「今日の一手」タップ時の遷移。theme があればリールスタジオでその場で台本を自動生成する。未指定なら一手カードは出さない。 */
+  onAction?: (tab: string, theme?: string) => void;
 };
 
 /** その日の最優先アクション 1 つを、表示データから決める。
@@ -157,7 +157,7 @@ type Props = {
 function pickOneMove(
   dealCount: number, topNames: string[], bestPostTime: string | null,
   topic: { topic: string; niche: string } | null,
-): { tab: string; label: string; cta: string; detail: string } {
+): { tab: string; label: string; cta: string; detail: string; theme?: string } {
   if (dealCount > 0) {
     const who = topNames.length ? `${topNames[0]} など` : 'あなたに合う案件';
     return {
@@ -168,13 +168,15 @@ function pickOneMove(
     };
   }
   // 案件が無い日は「今日の投稿テーマ」を AI が具体的に提案（手入力ゼロ）。
+  // theme を渡すと、リールタブで何も打たずに台本が自動生成される（一気通貫）。
   if (topic) {
     const when = bestPostTime ? `ベストタイム ${bestPostTime} に合わせて、` : '';
     return {
-      tab: bestPostTime ? 'reel' : 'draft',
+      tab: 'reel',
       label: '今日の一手',
       cta: `「${topic.topic}」を投稿する`,
-      detail: `${when}${topic.niche}で保存されやすいテーマです。このまま作って今日の1本に。`,
+      detail: `${when}${topic.niche}で保存されやすいテーマです。タップでそのまま台本まで作ります。`,
+      theme: topic.topic,
     };
   }
   if (bestPostTime) {
@@ -381,7 +383,7 @@ export default function IrisMorningBrief({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.3 }}
-            onClick={() => { setVisible(false); onAction?.(oneMove.tab); }}
+            onClick={() => { setVisible(false); onAction?.(oneMove.tab, oneMove.theme); }}
             style={{
               width: '100%',
               marginTop: isMobile ? 10 : 12,

@@ -427,7 +427,7 @@ function IrisEditorialHome({
   postQueue: any;
   knowledge?: any;
   igProfile: any;
-  onNavigate: (t: Tab) => void;
+  onNavigate: (t: Tab, theme?: string) => void;
   settings?: any;
   mediaKit: any;
   onConnectInstagram: () => void;
@@ -484,7 +484,7 @@ function IrisEditorialHome({
           personaName={(igProfile?.handle ? `@${igProfile.handle}` : 'クリエイター')}
           igProfile={igProfile}
           variant="desktop"
-          onAction={(t) => onNavigate(t as Tab)}
+          onAction={(t, theme) => onNavigate(t as Tab, theme)}
         />
       </div>
 
@@ -1088,6 +1088,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const [showIgConnect, setShowIgConnect] = useState(false);
   // 「素材から構成」→ リールスタジオへ渡す下書き（順番・秒数・字幕＋素材）
   const [reelSeed, setReelSeed] = useState<ReelStudioSeed | null>(null);
+  // 朝ブリーフ/フローの「今日の一手」テーマ → リールタブで自動台本生成（手入力ゼロの一気通貫）
+  const [reelTheme, setReelTheme] = useState<string | null>(null);
   // 連携完了の祝祭（Iris の第一歩を祝う）
   const [welcomeCelebrate, setWelcomeCelebrate] = useState(0);
   // Instagram 連携を「最初のステップ」に (オーナー指示 2026-06-18)。
@@ -1634,7 +1636,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     settings={settings}
                     mediaKit={mediaKit}
                     onNavigate={(t) => setTab(t as Tab)}
-                    onOpenReelStudio={() => setTab('reel')}
+                    onOpenReelStudio={(theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab('reel'); }}
                     onScheduleReel={(p) => postQueue.add({
                       platform: 'instagram_reel',
                       source: 'reel',
@@ -1667,7 +1669,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   postQueue={postQueue}
                   knowledge={knowledge}
                   igProfile={igProfile}
-                  onNavigate={(t) => setTab(t as Tab)}
+                  onNavigate={(t, theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab(t as Tab); }}
                   settings={settings}
                   mediaKit={mediaKit}
                   onConnectInstagram={() => setShowIgConnect(true)}
@@ -1747,6 +1749,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   onJumpToSchedule={() => setTab('schedule')}
                   initialProject={reelSeed}
                   onConsumeInitial={() => setReelSeed(null)}
+                  initialTheme={reelTheme}
+                  onConsumeTheme={() => setReelTheme(null)}
                 />
               </React.Suspense>
             )}

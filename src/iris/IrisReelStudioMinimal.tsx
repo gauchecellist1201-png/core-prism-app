@@ -59,6 +59,10 @@ interface Props {
   initialProject?: ReelStudioSeed | null;
   /** 取り込み済みを親に通知（再展開防止） */
   onConsumeInitial?: () => void;
+  /** 朝ブリーフ/フローの「今日の一手」テーマ。届いたら入力欄に入れ、AI台本を自動生成する（手入力ゼロ） */
+  initialTheme?: string | null;
+  /** テーマ取り込み済みを親に通知（再生成防止） */
+  onConsumeTheme?: () => void;
 }
 
 const OUT_W = 1080;
@@ -134,7 +138,7 @@ function drawCover(ctx: CanvasRenderingContext2D, el: HTMLImageElement | HTMLVid
 }
 
 // ─── Main Component ─────
-export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdvanced, postQueue, initialProject, onConsumeInitial }: Props) {
+export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdvanced, postQueue, initialProject, onConsumeInitial, initialTheme, onConsumeTheme }: Props) {
   const [step, setStep] = useState<'material' | 'edit' | 'subtitle' | 'export'>('material');
   const [clips, setClips] = useState<Clip[]>([]);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
@@ -316,8 +320,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   }, []);
 
   // ─── AI 台本生成 (テーマ → 3 シーン × 4〜6 秒) ─────
-  const runAiScript = useCallback(async () => {
-    if (!themeHint || !themeHint.trim()) {
+  const runAiScript = useCallback(async (overrideTheme?: string) => {
+    const theme = (overrideTheme ?? themeHint).trim();
+    if (!theme) {
       setScriptErr('上の入力欄にテーマを入れてからもう一度押してください');
       return;
     }
@@ -339,7 +344,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       setScriptPhase(phases[pi]);
     }, 1100);
     try {
-      const result = await generateReelScript(themeHint);
+      const result = await generateReelScript(theme);
       setScriptResult(result);
       setReward({ label: '台本ができました！', detail: `${result.scenes.length} シーンの構成を用意しました` });
       // 既存クリップが 3 個以上あれば字幕を上書き、無ければプレースホルダー (色付き) クリップを 3 個作る
@@ -387,6 +392,18 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
 
   // アンマウント時にティッカーが残らないように後始末
   useEffect(() => () => { if (scriptTickRef.current) clearInterval(scriptTickRef.current); }, []);
+
+  // 朝ブリーフ/フローの「今日の一手」テーマが届いたら、入力欄に入れてそのまま AI 台本を自動生成する。
+  // タップ → 何も打たずに台本ができあがる一気通貫（手入力ゼロ）。マウント時に1回だけ。
+  const themeSeededRef = useRef(false);
+  useEffect(() => {
+    const t = (initialTheme || '').trim();
+    if (themeSeededRef.current || !t) return;
+    themeSeededRef.current = true;
+    setThemeHint(t);
+    onConsumeTheme?.();
+    void runAiScript(t);
+  }, [initialTheme, onConsumeTheme, runAiScript]);
 
   // ─── キャンバス描画 ─────
   const drawAt = useCallback((t: number) => {
@@ -1433,7 +1450,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                 />
                 {/* AI 台本生成 (3 シーン × 4-6 秒) */}
                 <button
-                  onClick={runAiScript}
+                  onClick={() => runAiScript()}
                   disabled={scriptBusy || !themeHint.trim()}
                   style={{
                     width: '100%', padding: '0.85rem 1rem',
