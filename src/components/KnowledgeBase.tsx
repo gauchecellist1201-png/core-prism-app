@@ -564,7 +564,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
               <motion.div key="propose" className="p-4 space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {items.length === 0 ? (
                   <EmptyState
-                    icon="📚"
+                    iconKey="knowledge"
                     title="ナレッジはまだ空っぽです"
                     description={'PDF・議事録・メモを 1 枚入れるだけで、AI が「こう活かせます」を 3 つ提案します。\n資料は何度も再利用され、別の案件にも自動で効きます。'}
                     ctaLabel="資料を追加する"
@@ -690,7 +690,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
               <motion.div key="list" className="p-4 space-y-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {items.length === 0 ? (
                   <EmptyState
-                    icon="📂"
+                    iconKey="folder"
                     title="一覧はまだ空っぽです"
                     description={'ここには取り込んだ資料が並びます。PDF、画像、議事録、メモ、なんでも入ります。\n中身は AI が要約してくれるので、長い資料も読み返しが楽になります。'}
                     ctaLabel="資料を追加する"

@@ -369,7 +369,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                   />
                   {filtered.length === 0 ? (
                     <EmptyState
-                      icon="👥"
+                      iconKey="people"
                       title="まだ「人物カルテ」はありません"
                       description={'家族・取引先・恩人を 1 人ずつカルテにすると、AI が「最近連絡してない人」を教えてくれます。\n誕生日・好み・前回の会話メモも全部 1 箇所に。'}
                       ctaLabel="最初の人物を登録"

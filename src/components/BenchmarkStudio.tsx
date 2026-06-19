@@ -1096,7 +1096,7 @@ function HistoryTab({ personaId, accentColor }: { personaId: string; accentColor
     return (
       <div className="cp-card-section">
         <EmptyState
-          icon="📈"
+          iconKey="benchmark"
           title="まだ業界ベンチマーク履歴はありません"
           description={'分析タブで自分の数字を 1 回入れると、業界平均との比較が時系列で残ります。\n月ごとの伸びと弱点が一目で分かるようになります。'}
           showSample={false}

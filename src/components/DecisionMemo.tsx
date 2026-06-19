@@ -348,7 +348,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
             <p className="text-fg-muted text-xs tracking-wider uppercase mb-2">過去の意思決定</p>
             {history.length === 0 ? (
               <EmptyState
-                icon="🧭"
+                iconKey="decision"
                 title="まだ意思決定の履歴はありません"
                 description={'迷っていることを声に出すだけで、AI が「賛成・反対・推奨」に分けて整理。\n「単価をいくらにするか」「来週どっちを出すか」など、決め切れない 1 つをどうぞ。'}
                 ctaLabel="最初の意思決定を作る"

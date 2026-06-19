@@ -584,7 +584,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
             {realOpen.length === 0 ? (
               persona.tasks.length === 0 ? (
                 <EmptyState
-                  icon="📋"
+                  iconKey="tasks"
                   title="今日のやることはまだありません"
                   description={'Prism の AI が「あなたが手放したい仕事」を見つけて、ここに並べます。\n最初の 1 件を入れると、AI 会社 (CXO 9 人) に丸投げできるボタンが出ます。'}
                   ctaLabel="最初の 1 件を書く"

@@ -812,7 +812,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
             <>
               {history.length === 0 ? (
                 <EmptyState
-                  icon="🖼"
+                  iconKey="image"
                   title="まだ生成した画像はありません"
                   description={'ロゴ・サムネ・人物・風景、思いついたものを 1 枚作ってみてください。\nスタイルとアスペクト比は左のタブで選べます。最大 ' + MAX_HISTORY + ' 件まで履歴に残ります。'}
                   ctaLabel="最初の 1 枚を生成する"

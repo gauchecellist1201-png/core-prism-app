@@ -599,7 +599,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
 
             {weeklyDays.length === 0 && !weeklyBusy && (
               <EmptyState
-                icon="📅"
+                iconKey="calendar"
                 title="まだ 7 日計画はありません"
                 description={'AI が「月: note 告知 → 火: X リール → 週末: ライブ」のように、来週 7 日分を一気に並べます。\n各日カードから本文と画像のドラフトまで AI に下書きしてもらえます。'}
                 ctaLabel="今週の 7 日計画を AI に"

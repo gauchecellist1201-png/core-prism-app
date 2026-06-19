@@ -373,11 +373,15 @@ export default function CoreSite() {
               fontWeight: 400,
             }}
           >
-            Instagram（Iris）・LINE（Resonance）・リンク（Lume）が集めた、お客様の動きのすべて。
-            それは司令塔 <strong style={{ color: '#fff', fontWeight: 600 }}>Prism</strong> にひとつに流れ込み、
-            13 名の AI エージェントが次の一手まで動かします。
+            Instagram の <strong style={{ color: '#E1306C', fontWeight: 600 }}>Iris</strong> が反応をつかみ、リンクの <strong style={{ color: '#FFA42A', fontWeight: 600 }}>Lume</strong> が興味を映し、LINE の <strong style={{ color: '#06C755', fontWeight: 600 }}>Resonance</strong> が一人ひとりに届ける。
             <br />
-            あなたの仕事も SNS も、もう別々ではありません。
+            集まった声は、司令塔 <strong style={{ color: '#a78bfa', fontWeight: 600 }}>Prism</strong> へ。13 名の AI 役員が、次の一手まで描く。
+            <br />
+            そして <strong style={{ color: '#2dd4bf', fontWeight: 600 }}>Guild</strong> が、お客様を“ファン”から、ともに動く“仲間”へ変える。
+            <br />
+            五つは、別々の道具ではない。掛け合わさって、ひとつの知性になる。
+            <br />
+            <strong style={{ color: '#fff', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
           </p>
 
           {/* つながりの図 (司令塔 Prism + 3 つの SNS チャネル) */}

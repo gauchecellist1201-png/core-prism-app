@@ -240,7 +240,7 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
       {/* リスト */}
       {filtered.length === 0 ? (
         <EmptyState
-          icon="📋"
+          iconKey="briefing"
           title={items.length === 0 ? 'まだ 役員 が 何も 作って いません' : '該当 する 成果物 が ありません'}
           description={items.length === 0
             ? 'ダッシュボード の AI 軍団 ボタン や、 各 Studio で 「✨ 任せる」 を 押すと、\n役員 が 仕事 を 始めて ここ に 成果物 が 並びます。'

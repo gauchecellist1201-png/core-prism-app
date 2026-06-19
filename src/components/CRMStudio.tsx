@@ -333,7 +333,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
                   {dealsAll.length === 0 && (
                     <>
                       <EmptyState
-                        icon="🤝"
+                        iconKey="deals"
                         title="まだ商談はありません"
                         description={'名前と会社を入れるだけで、AI が「次の一手」を毎日提案します。\nメール返信案や見積もり試算も、案件カードから 1 タップで動きます。'}
                         ctaLabel="最初の案件を作る"
@@ -410,7 +410,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
               {dealsAll.length === 0 ? (
                 <>
                   <EmptyState
-                    icon="🤝"
+                    iconKey="deals"
                     title="まだ商談はありません"
                     description={'名前と会社を入れるだけで、AI が「次の一手」を毎日提案します。\nメール返信案や見積もり試算も、案件カードから 1 タップで動きます。'}
                     ctaLabel="最初の案件を作る"

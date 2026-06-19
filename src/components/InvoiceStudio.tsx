@@ -608,7 +608,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
             <div className="space-y-2">
               {personaInvoices.length === 0 ? (
                 <EmptyState
-                  icon="🧾"
+                  iconKey="invoice"
                   title="今月の請求書はゼロです"
                   description={'「森川さんに 10 万円」と書くだけで AI が請求書を組み立てます。\n連番採番・税計算・印刷用 PDF も自動。源泉徴収にも対応します。'}
                   ctaLabel="最初の請求書を作る"
