@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
-import { Mail as MailIcon, BadgeCheck, MessagesSquare, Scale } from 'lucide-react';
+import { Mail as MailIcon } from 'lucide-react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo } from '../components/Logo';
 
 const COMPANY = {
@@ -410,17 +410,18 @@ export default function CoreSite() {
               className="lp-flow-grid"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
+                gridTemplateColumns: 'repeat(5, 1fr)',
                 gap: '0.85rem',
-                maxWidth: 1000,
+                maxWidth: 1180,
                 margin: '0 auto',
                 textAlign: 'left',
               }}
             >
-              <FlowStep n="01" color="#FFA42A" tool="Lume" body="ファンが、あなたのどのリンクを踏んだのかが分かる。" />
-              <FlowStep n="02" color="#E1306C" tool="Iris" body="その人の Instagram での反応を、AIが解析する。" />
-              <FlowStep n="03" color="#06C755" tool="Resonance" body="いま響く一文を、LINE でその人だけに届ける。" />
-              <FlowStep n="04" color="#a78bfa" tool="Prism" body="すべてを記録し、13 名の AI 役員が次の一手を出す。" last />
+              <FlowStep n="01" color="#FFA42A" tool="Lume" Logo={LumeLogo} body="ファンが、あなたのどのリンクを踏んだのかが分かる。" />
+              <FlowStep n="02" color="#E1306C" tool="Iris" Logo={IrisLogo} body="その人の Instagram での反応を、AIが解析する。" />
+              <FlowStep n="03" color="#06C755" tool="Resonance" Logo={ResonanceLogo} body="いま響く一文を、LINE でその人だけに届ける。" />
+              <FlowStep n="04" color="#a78bfa" tool="Prism" Logo={PrismLogo} body="すべてを記録し、13 名の AI 役員が次の一手を出す。" />
+              <FlowStep n="05" color="#2dd4bf" tool="Guild" Logo={GuildLogo} body="決まった一手を、貢献で動くチーム〈ギルド〉が実行する。" last />
             </div>
 
             <p style={{
@@ -431,7 +432,7 @@ export default function CoreSite() {
               marginTop: '2.75rem',
               fontWeight: 400,
             }}>
-              四つのサービスが連携し、ひとつの流れになる。
+              五つのサービスが連携し、ひとつの流れになる。
               <br />
               <strong style={{ color: '#fff', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
             </p>
@@ -732,10 +733,15 @@ export default function CoreSite() {
             すべてのリンクをひとつに束ねる
             <strong style={{ color: '#FFA42A', fontWeight: 600 }}> Lume</strong>。
             <br />
+            そして、その全部が息づく場が、貢献で動く組織
+            <strong style={{ color: '#2dd4bf', fontWeight: 600 }}> Guild</strong>〈ギルド〉。
             <br />
-            四つは別々の道具ではなく、ひとつの核でつながっています。
             <br />
-            あなたの仕事と SNS を、ひとつの流れで動かすこと。
+            四つの道具と、それを使う人々が、ひとつの〈ギルド〉に集う。
+            <br />
+            別々ではなく、ひとつの核でつながり、
+            <br />
+            つくる人も、使う人も、やがてひとつの組織になる。
             <br />
             それが、<strong style={{ color: '#fff', fontWeight: 700, fontFamily: FONT_DISPLAY, letterSpacing: '0.15em' }}>CORE</strong> という会社の核。
           </p>
@@ -1084,91 +1090,6 @@ export default function CoreSite() {
                   <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff', letterSpacing: '0.14em', fontFamily: FONT_SERIF_EN }}>{o.t}</span>
                   <span aria-hidden style={{ width: 14, height: 1, background: 'rgba(255,255,255,0.25)' }} />
                   <span style={{ fontSize: '0.64rem', color: 'rgba(255,255,255,0.55)', fontFamily: FONT_SERIF_JA, letterSpacing: '0.04em' }}>{o.d}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 私たちの文化 — 3 つの約束 */}
-          <div style={{ marginBottom: '3.5rem' }}>
-            <p style={{
-              fontFamily: FONT_SERIF_EN,
-              fontSize: '0.78rem',
-              letterSpacing: '0.22em',
-              color: 'rgba(255,255,255,0.5)',
-              textTransform: 'uppercase',
-              textAlign: 'center',
-              marginBottom: '0.6rem',
-            }}>
-              Our Culture
-            </p>
-            <h3 style={{
-              fontFamily: FONT_SERIF_JA,
-              fontSize: 'clamp(1.3rem, 2.2vw, 1.7rem)',
-              fontWeight: 700,
-              textAlign: 'center',
-              marginBottom: '2rem',
-              color: '#fff',
-              letterSpacing: '0.04em',
-            }}>
-              わたしたちが守る 3 つの約束
-            </h3>
-            <div
-              className="lp-culture-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: '1.25rem',
-              }}
-            >
-              {[
-                {
-                  icon: <BadgeCheck size={24} strokeWidth={1.8} color="#FCB045" />,
-                  accent: '#FCB045',
-                  title: '偽りの数字は、載せない',
-                  body: 'まだ実績がないものには「—」と記す。架空の数字や水増しした成果は、信頼を一瞬で失わせる最大の不誠実だと考えています。',
-                },
-                {
-                  icon: <MessagesSquare size={24} strokeWidth={1.8} color="#60A5FA" />,
-                  accent: '#60A5FA',
-                  title: 'やさしい言葉で、語る',
-                  body: '専門用語や横文字は、できるかぎり日常の言葉に言い換える。「初心者のため」ではなく、「すべての人のため」に。',
-                },
-                {
-                  icon: <Scale size={24} strokeWidth={1.8} color="#4ADE80" />,
-                  accent: '#4ADE80',
-                  title: '使ったぶんだけ、いただく',
-                  body: '月額には上限を設け、超えたぶんは買い足す方式。知らぬ間に高額にならない、公正な料金のかたちを守り続けます。',
-                },
-              ].map((c, i) => (
-                <div key={i} style={{
-                  padding: '1.5rem 1.4rem',
-                  background: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 14,
-                }}>
-                  <div style={{
-                    width: 48, height: 48, borderRadius: '50%',
-                    background: `radial-gradient(circle, ${c.accent}22 0%, transparent 70%)`,
-                    border: `1px solid ${c.accent}44`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    marginBottom: '0.85rem',
-                  }} aria-hidden>{c.icon}</div>
-                  <div style={{
-                    fontFamily: FONT_SERIF_JA,
-                    fontWeight: 700,
-                    fontSize: '1.02rem',
-                    color: '#fff',
-                    marginBottom: '0.5rem',
-                    letterSpacing: '0.03em',
-                  }}>{c.title}</div>
-                  <p style={{
-                    fontFamily: FONT_SERIF_JA,
-                    fontSize: '0.85rem',
-                    color: 'rgba(255,255,255,0.6)',
-                    lineHeight: 1.85,
-                    margin: 0,
-                  }}>{c.body}</p>
                 </div>
               ))}
             </div>
@@ -2085,7 +2006,7 @@ function ConnectedSuite() {
 }
 
 // ───────────── 一気通貫フローの 1 ステップ ─────────────
-function FlowStep({ n, color, tool, body, last }: { n: string; color: string; tool: string; body: string; last?: boolean }) {
+function FlowStep({ n, color, tool, body, Logo, last }: { n: string; color: string; tool: string; body: string; Logo: React.ComponentType<{ size?: number; withWordmark?: boolean }>; last?: boolean }) {
   return (
     <div
       style={{
@@ -2099,6 +2020,7 @@ function FlowStep({ n, color, tool, body, last }: { n: string; color: string; to
     >
       <span aria-hidden style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: color }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.7rem' }}>
+        <span style={{ display: 'inline-flex', flexShrink: 0 }}><Logo size={22} withWordmark={false} /></span>
         <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.74rem', letterSpacing: '0.2em', color, fontWeight: 700 }}>{n}</span>
         <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.98rem', fontStyle: 'italic', fontWeight: 600, color: '#fff' }}>{tool}</span>
         {!last && <span aria-hidden style={{ marginLeft: 'auto', color: `${color}cc`, fontSize: '1rem' }}>→</span>}
