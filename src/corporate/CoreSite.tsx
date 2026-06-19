@@ -15,7 +15,7 @@ const COMPANY = {
   founded: '2026年 設立予定',
   ceoJa: '井出 直毅',
   ceoEn: 'Naoki Ide',
-  addressJa: '〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11-7',
+  addressJa: '〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11番7号',
   addressEn: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0025, Japan',
   email: 'core.inc.guild@gmail.com',
 };
