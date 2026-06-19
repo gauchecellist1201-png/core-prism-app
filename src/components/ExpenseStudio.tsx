@@ -498,7 +498,7 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
             <div className="cp-stack-sm">
               {personaEntries.length === 0 ? (
                 <EmptyState
-                  icon="🧾"
+                  iconKey="expense"
                   title="今月のレシートはまだ 0 枚"
                   description={'スマホで撮るだけ、AI が日付・金額・科目を自動で読み取ります。\n月末のまとめも自動。確定申告も「ボタンひとつ」を目指してます。'}
                   ctaLabel="レシートを撮る / 取り込む"
