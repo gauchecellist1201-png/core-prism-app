@@ -25,15 +25,39 @@ const APPS: App[] = [
   { key: "guild",     name: "Guild",     tag: "貢献で動く組織",      color: "#2dd4bf", url: "https://guild-gauches-projects.vercel.app/" },
 ];
 
-// ── 各アプリのミニ・グリフ(自前SVG・色は親から) ───────────────
-function Glyph({ k, c }: { k: App["key"]; c: string }) {
-  const common = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none" as const };
-  if (k === "prism") return (<svg {...common}><path d="M12 3 4 21h16L12 3Z" stroke={c} strokeWidth="1.6" strokeLinejoin="round" /><path d="M12 3v18M12 12 4 21M12 12l8 9" stroke={c} strokeWidth="1" opacity=".6" /></svg>);
-  if (k === "iris") return (<svg {...common}>{[0, 60, 120].map((r) => (<g key={r} transform={`rotate(${r} 12 12)`}><ellipse cx="12" cy="12" rx="3.4" ry="9" stroke={c} strokeWidth="1.5" /></g>))}</svg>);
-  if (k === "resonance") return (<svg {...common}><path d="M7 12a5 5 0 0 1 5 5M7 8a9 9 0 0 1 9 9M7 4a13 13 0 0 1 13 13" stroke={c} strokeWidth="1.6" strokeLinecap="round" /><circle cx="7" cy="17" r="1.6" fill={c} /></svg>);
-  if (k === "lume") return (<svg {...common}><rect x="3.5" y="3.5" width="17" height="17" rx="5.5" stroke={c} strokeWidth="1.4" /><circle cx="12" cy="11" r="4.2" fill={c} /><circle cx="12" cy="11" r="7" stroke={c} strokeWidth="1" opacity=".4" /></svg>);
+// ── 各アプリの本物ブランドロゴ(自前SVG・色は各ロゴのグラデ内蔵) ───────────────
+const HEX: [number, number][] = [[32, 8], [53, 20], [53, 44], [32, 56], [11, 44], [11, 20]];
+function Glyph({ k }: { k: App["key"] }) {
+  if (k === "prism") return (
+    <svg width="22" height="22" viewBox="0 0 100 100" fill="none" aria-hidden>
+      <polygon points="50,5 30,55 50,55" fill="#C13584" /><polygon points="50,5 50,55 65,32" fill="#7B2CBF" /><polygon points="65,32 50,55 78,55" fill="#06A77D" /><polygon points="65,32 78,55 88,38" fill="#118AB2" /><polygon points="30,55 50,55 40,75" fill="#E1306C" /><polygon points="50,55 78,55 60,75" fill="#833AB4" /><polygon points="10,92 30,55 40,75" fill="#FFD60A" /><polygon points="10,92 40,75 60,75" fill="#F77F00" /><polygon points="60,75 78,55 90,92" fill="#06A77D" />
+    </svg>);
+  if (k === "iris") return (
+    <svg width="22" height="22" viewBox="0 0 100 100" fill="none" aria-hidden>
+      <defs><linearGradient id="cd-iris" x1="0" y1="0" x2="0" y2="100" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#FF8A1A" /><stop offset="0.5" stopColor="#E1306C" /><stop offset="1" stopColor="#833AB4" /></linearGradient></defs>
+      <g stroke="url(#cd-iris)" strokeWidth="3" fill="none" strokeLinejoin="round" strokeLinecap="round">
+        {[0, 60, 120, 180, 240, 300].map((r) => (<g key={r} transform={`rotate(${r} 50 50)`}><path d="M 50 12 C 42 24, 42 38, 50 50 C 58 38, 58 24, 50 12 Z" /></g>))}
+      </g>
+    </svg>);
+  if (k === "resonance") return (
+    <svg width="22" height="22" viewBox="0 0 100 100" fill="none" aria-hidden>
+      <defs><linearGradient id="cd-reso" x1="0" y1="100" x2="100" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#06C755" /><stop offset="0.55" stopColor="#14B8A6" /><stop offset="1" stopColor="#0EA5E9" /></linearGradient></defs>
+      <g stroke="url(#cd-reso)" strokeWidth="4" fill="none" strokeLinecap="round"><path d="M 28 50 A 22 22 0 0 1 50 72" /><path d="M 28 34 A 38 38 0 0 1 66 72" opacity="0.7" /><path d="M 28 18 A 54 54 0 0 1 82 72" opacity="0.45" /></g>
+      <circle cx="28" cy="72" r="6" fill="url(#cd-reso)" />
+    </svg>);
+  if (k === "lume") return (
+    <svg width="22" height="22" viewBox="0 0 100 100" fill="none" aria-hidden>
+      <defs><linearGradient id="cd-lume" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#FFD86B" /><stop offset="0.45" stopColor="#FFA42A" /><stop offset="1" stopColor="#FF7A18" /></linearGradient></defs>
+      <rect x="4" y="4" width="92" height="92" rx="26" fill="url(#cd-lume)" /><circle cx="50" cy="44" r="17" fill="#fff" /><circle cx="44" cy="38" r="4.5" fill="#fff" />
+    </svg>);
   // guild: 六角ネットワーク
-  return (<svg {...common}><path d="M12 3 19.5 7.5v9L12 21 4.5 16.5v-9L12 3Z" stroke={c} strokeWidth="1.4" strokeLinejoin="round" />{[[12, 5], [18, 9], [18, 15], [12, 19], [6, 15], [6, 9]].map(([x, y], i) => (<g key={i}><line x1="12" y1="12" x2={x} y2={y} stroke={c} strokeWidth="0.9" opacity=".6" /><circle cx={x} cy={y} r="1.3" fill={c} /></g>))}<circle cx="12" cy="12" r="2" fill={c} /></svg>);
+  return (
+    <svg width="22" height="22" viewBox="0 0 64 64" fill="none" aria-hidden>
+      <defs><linearGradient id="cd-guild" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop stopColor="#5eead4" /><stop offset="0.55" stopColor="#22d3ee" /><stop offset="1" stopColor="#2dd4bf" /></linearGradient></defs>
+      <g stroke="url(#cd-guild)"><path d="M32 4 56 18 56 46 32 60 8 46 8 18Z" strokeWidth="2.4" strokeLinejoin="round" fill="rgba(45,212,191,0.06)" />{HEX.map(([x, y], i) => (<line key={i} x1="32" y1="32" x2={x} y2={y} strokeWidth="1.4" opacity="0.7" />))}</g>
+      {HEX.map(([x, y], i) => (<circle key={i} cx={x} cy={y} r="3" fill="url(#cd-guild)" />))}
+      <circle cx="32" cy="32" r="5" fill="url(#cd-guild)" />
+    </svg>);
 }
 
 // 中央の Core マーク(脈打つ核)
@@ -112,7 +136,7 @@ export function CoreDock({ current }: { current: App["key"] }) {
                   style={{ minHeight: 60 }}
                 >
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: `radial-gradient(circle at 50% 30%, ${a.color}26, transparent 70%)`, border: `1px solid ${a.color}44` }}>
-                    <Glyph k={a.key} c={a.color} />
+                    <Glyph k={a.key} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[15px] font-semibold text-white">{a.name}</span>
