@@ -13,6 +13,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Coins, Plus, Copy, Target, ListChecks } from 'lucide-react';
+import IrisIntro from './IrisIntro';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -358,6 +359,15 @@ export default function IrisRevenueView({ bg }: Props) {
           案件・スポンサー・アフィリ・グッズ — すべての収入と、来月予測・税金まで一か所に。
         </p>
       </div>
+
+      <IrisIntro
+        id="revenue"
+        bg={bg}
+        icon={Coins}
+        what="案件・スポンサー・物販まで、すべての収入を 1 か所に。来月いくら入るかも予測します。"
+        tryThis="下の「＋ 収益を追加」で、最初の収入を 1 件だけ入れてみましょう。"
+        example="「ブランド案件 ¥80,000」を記録 → 今月の収益グラフと来月予測にすぐ反映"
+      />
 
       <DelegateToAgentTeamBanner
         taskTitle="今月の収益を CFO に分析してもらう"

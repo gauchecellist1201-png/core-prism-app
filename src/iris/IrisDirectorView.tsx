@@ -22,6 +22,8 @@ import { IRIS_FONTS } from './irisStyle';
 import { notifyInApp } from '../lib/inAppNotify';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
+import IrisIntro from './IrisIntro';
+import { Clapperboard } from 'lucide-react';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -340,6 +342,15 @@ export default function IrisDirectorView({ bg, settings }: Props) {
           1 週間の撮影・編集・投稿を、AI と一緒に組み立てる。
         </p>
       </div>
+
+      <IrisIntro
+        id="director"
+        bg={bg}
+        icon={Clapperboard}
+        what="1 週間の撮影・編集・投稿を、AI と一緒に組み立てる司令塔です。"
+        tryThis="テーマを 1 つ決めて週間プランを作るか、「次の撮影を CDO に委任」を押してみましょう。"
+        example="テーマ「梅雨の過ごし方」→ 7 日分の撮影カット・ロケ・衣装・字幕プリセットが並ぶ"
+      />
 
       <DelegateToAgentTeamBanner
         taskTitle="来週の撮影計画を CDS + CDO に立ててもらう"

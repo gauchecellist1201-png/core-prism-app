@@ -17,6 +17,7 @@ import {
   Heart, UserPlus, Camera, Upload, Sparkles, MessageCircleHeart,
   Trash2, ListChecks, Image as ImageIcon, FileText, Send,
 } from 'lucide-react';
+import IrisIntro from './IrisIntro';
 import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -624,6 +625,15 @@ ${recent}
           DM・コメントを記録して、Iris が大切な人をそっと教えてくれます。
         </p>
       </div>
+
+      <IrisIntro
+        id="fans"
+        bg={bg}
+        icon={UserPlus}
+        what="ファン一人ひとりを記録すると、Iris が「今、声をかけるべき人」をそっと教えます。"
+        tryThis="「ファンを追加」を押すか、DM 受信箱のスクショを 1 枚取り込んでみましょう。"
+        example="スクショ 1 枚 → 名前と直近のやり取りを自動で読み取り → 絆スコア順に並ぶ"
+      />
 
       <DelegateToAgentTeamBanner
         taskTitle="今週連絡すべきファンの案を CMO に出してもらう"
