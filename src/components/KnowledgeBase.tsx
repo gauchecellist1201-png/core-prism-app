@@ -860,7 +860,8 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                 ) : (
                   <>
                     <div
-                      className="border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all mb-3"
+                      className="cp-pressable border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all mb-3"
+                      role="button" tabIndex={0}
                       style={{
                         borderColor: isDragging ? persona.accentColor : 'rgba(255,255,255,0.08)',
                         background: isDragging ? persona.accentColorLight : 'rgba(255,255,255,0.01)',

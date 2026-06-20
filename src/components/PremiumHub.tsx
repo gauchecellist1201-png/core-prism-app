@@ -351,7 +351,8 @@ function ContractPanel({ persona, settings, onSave }: {
             </div>
           </div>
           <div
-            className="rounded-xl p-4 text-center cursor-pointer"
+            className="cp-pressable rounded-xl p-4 text-center cursor-pointer"
+            role="button" tabIndex={0}
             style={{ background: 'var(--surface-3)', border: '2px dashed var(--border)' }}
             onClick={() => fileRef.current?.click()}
             onDragOver={e => e.preventDefault()}
@@ -551,7 +552,8 @@ function FinancialPanel({ persona, settings, onSave }: {
             <p className="text-fg text-sm">📊 P&L / BS / CF / 試算表 / 月次レポート / KPI ダッシュボードなど、財務データなら何でも読み取り可能。SaaS の MRR・LTV/CAC も対応。</p>
           </div>
           <div
-            className="rounded-xl p-4 text-center cursor-pointer"
+            className="cp-pressable rounded-xl p-4 text-center cursor-pointer"
+            role="button" tabIndex={0}
             style={{ background: 'var(--surface-3)', border: '2px dashed var(--border)' }}
             onClick={() => fileRef.current?.click()}
             onDragOver={e => e.preventDefault()}

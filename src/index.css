@@ -419,6 +419,56 @@ button:not([class*="cp-"]):not(:disabled):active {
   button:not([class*="cp-"]):not(:disabled):active { transform: none; filter: none; }
 }
 
+/* 触感をボタン以外の“押せる物”へも拡張 ―――――――――――――――――――――
+   <button> は上で沈むようになったが、role="button" を付けた div / a、
+   開閉の <summary>、そして指で押す「カード」(.cp-pressable) は今まで
+   タップしても無反応＝手応えゼロだった。ここで同じ「コクッと沈む」感触を
+   与え、CORE 全体で「押せる物は必ず沈む」を統一する。
+   .cp- 始まりのクラスを持つ物は各自の :active を優先（干渉しない）。 */
+[role="button"]:not(button):not([class*="cp-"]):not([aria-disabled="true"]),
+a[role="button"]:not([class*="cp-"]),
+summary:not([class*="cp-"]),
+.cp-pressable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--cp-duration-base) var(--cp-ease-springy),
+              filter var(--cp-duration-base) var(--cp-ease-springy);
+}
+[role="button"]:not(button):not([class*="cp-"]):not([aria-disabled="true"]):active,
+a[role="button"]:not([class*="cp-"]):active,
+summary:not([class*="cp-"]):active,
+.cp-pressable:active {
+  transform: scale(0.97) translateY(0.5px);
+  filter: brightness(0.96);
+  transition-duration: var(--cp-duration-instant);
+}
+@media (hover: none) and (pointer: coarse) {
+  /* 指の端末では沈み込みをやや深く＝確かな手応え。カードは面が広いので控えめに */
+  [role="button"]:not(button):not([class*="cp-"]):not([aria-disabled="true"]):active,
+  a[role="button"]:not([class*="cp-"]):active,
+  summary:not([class*="cp-"]):active {
+    transform: scale(0.955) translateY(0.5px);
+    filter: brightness(0.94);
+  }
+  .cp-pressable:active {
+    transform: scale(0.975) translateY(0.5px);
+    filter: brightness(0.95);
+  }
+}
+/* summary のデフォルト三角を消したい時用（任意・listスタイル抑制） */
+summary.cp-pressable { list-style: none; }
+summary.cp-pressable::-webkit-details-marker { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  [role="button"]:not(button),
+  a[role="button"],
+  summary,
+  .cp-pressable { transition: none; }
+  [role="button"]:not(button):active,
+  a[role="button"]:active,
+  summary:active,
+  .cp-pressable:active { transform: none; filter: none; }
+}
+
 /* iOS: input のデフォルト appearance リセット */
 input, textarea {
   -webkit-appearance: none;
