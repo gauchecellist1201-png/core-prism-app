@@ -1119,6 +1119,19 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
     }
   }, []);
 
+  // 初回ツアー等から「このタブを開いて」と頼まれたら開く（window イベント連携）
+  useEffect(() => {
+    const onGoto = (e: Event) => {
+      const t = (e as CustomEvent).detail?.tab as Tab | undefined;
+      if (t) {
+        setTab(t);
+        setIrisMobileGeminiMode(false); // フル UI に戻して該当タブを見せる
+      }
+    };
+    window.addEventListener('iris:goto-tab', onGoto as EventListener);
+    return () => window.removeEventListener('iris:goto-tab', onGoto as EventListener);
+  }, []);
+
   const allBgs = useMemo(() => getAllBackgrounds(), [bgListVersion]);
 
   const desk = useInfluencerDesk();

@@ -16,6 +16,7 @@ import WowOnboarding from '../components/WowOnboarding';
 import CheckoutModal from '../components/CheckoutModal';
 import { useBillingUser, IRIS_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, isTrialExpired, syncSubscriptionState, type Plan } from '../lib/billing';
 import TrialExpiredLock from '../components/TrialExpiredLock';
+import IrisFirstRunTour, { shouldShowFirstRunTour } from './IrisFirstRunTour';
 
 const ENTERED_KEY = 'core_iris_entered_v1';
 
@@ -42,6 +43,8 @@ export default function IrisApp() {
   });
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
   const [tutorialDoneTick, setTutorialDoneTick] = useState(0);
+  // 初回 3 ステップの Wow ツアー（入室後に 1 回だけ）
+  const [showFirstRunTour, setShowFirstRunTour] = useState(false);
 
   // タイトル + theme-color を Iris に
   useEffect(() => {
@@ -66,6 +69,15 @@ export default function IrisApp() {
       setEntered(true);
     }
   }, [user, entered]);
+
+  // 入室したら、初回 1 回だけ「3 ステップ Wow ツアー」を出す。
+  // チュートリアル等の重なりを避けるため、少しだけ遅らせて表示。
+  useEffect(() => {
+    if (!entered) return;
+    if (!shouldShowFirstRunTour()) return;
+    const id = window.setTimeout(() => setShowFirstRunTour(true), 700);
+    return () => window.clearTimeout(id);
+  }, [entered]);
 
   // 起動時に Stripe / webhook と localStorage を同期 (subscriptionId があれば)
   useEffect(() => {
@@ -140,6 +152,16 @@ export default function IrisApp() {
           IrisDashboard 上部の AgentsOrbit (6 人) で表示する。 */}
       <TutorialOverlay brand="iris" onClose={() => setTutorialDoneTick(t => t + 1)} />
       <WowOnboarding brand="iris" trigger={tutorialDoneTick} />
+      {/* 初回 3 ステップ Wow ツアー（解析→作戦→リール台本）。1 回だけ・純フロント */}
+      {showFirstRunTour && (
+        <IrisFirstRunTour
+          onClose={() => setShowFirstRunTour(false)}
+          onGotoReel={() => {
+            setShowFirstRunTour(false);
+            window.dispatchEvent(new CustomEvent('iris:goto-tab', { detail: { tab: 'reel' } }));
+          }}
+        />
+      )}
       {/* どの入力欄でも音声入力できる */}
       <GlobalVoiceInput />
       {/* PWA インストール導線 — Android/Chrome prompt + iOS Safari ガイド */}
