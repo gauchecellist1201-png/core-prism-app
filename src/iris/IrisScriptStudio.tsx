@@ -3,7 +3,7 @@
 // クライアント登録 → ネタ量産(企画) → 撮影者・編集者がそのまま動ける本格台本
 // ============================================================
 import React, { useState } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, Scissors } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -186,6 +186,21 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(md)
         .then(() => notifyInApp({ kind: 'success', title: '撮影台本をコピーしました', body: '撮影担当・編集担当にそのまま渡せます (Markdown)' }))
+        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
+    } else {
+      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
+    }
+  };
+
+  // 投稿本文だけをそのまま Instagram などに貼れる形でコピー (本文 + ハッシュタグ)
+  const copyCaption = () => {
+    if (!script) return;
+    const text = [script.caption, script.hashtags.length ? '\n' + script.hashtags.join(' ') : '']
+      .filter(Boolean).join('\n').trim();
+    if (!text) { notifyInApp({ kind: 'info', title: 'コピーする本文がありません', body: '台本を作り直してください' }); return; }
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => notifyInApp({ kind: 'success', title: '投稿本文をコピーしました', body: 'Instagram などにそのまま貼り付けられます' }))
         .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
     } else {
       notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
@@ -400,7 +415,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                   <p style={{ fontSize: '0.85rem', color: bg.ink, marginTop: 4 }}><strong>撮る:</strong> {sh.action}</p>
                   {sh.line && <p style={{ fontSize: '0.85rem', color: bg.ink, marginTop: 2, fontStyle: 'italic' }}>セリフ:「{sh.line}」</p>}
                   {sh.onScreenText && <p style={{ fontSize: '0.8rem', color: bg.accent, marginTop: 2 }}>テロップ: {sh.onScreenText}</p>}
-                  {sh.editNote && <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: 2 }}>✂️ 編集: {sh.editNote}</p>}
+                  {sh.editNote && <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}><Scissors size={12} style={{ flexShrink: 0 }} /> 編集: {sh.editNote}</p>}
                 </div>
               ))}
             </div>
@@ -417,7 +432,12 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
 
           {/* 投稿本文 */}
           <div style={card}>
-            <p style={sectionLabel}>投稿本文</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <p style={{ ...sectionLabel, marginBottom: 0 }}>投稿本文</p>
+              <button onClick={copyCaption} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
+                投稿本文をコピー
+              </button>
+            </div>
             <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: bg.ink, lineHeight: 1.7, fontSize: '0.88rem', margin: 0 }}>{script.caption}</pre>
             {script.hashtags.length > 0 && <p style={{ color: bg.accent, lineHeight: 1.7, marginTop: 10, fontSize: '0.84rem' }}>{script.hashtags.join(' ')}</p>}
           </div>
