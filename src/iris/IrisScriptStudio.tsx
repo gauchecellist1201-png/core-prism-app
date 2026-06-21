@@ -206,6 +206,40 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
         </p>
       </div>
 
+      {/* 3 秒でわかる説明 + サンプル出力 — 初見の人に「まず何を押す → こうなる」を触らず見せる */}
+      {!script && ideas.length === 0 && (
+        <div style={{
+          padding: '0.95rem 1.05rem',
+          background: `linear-gradient(135deg, ${bg.accent}16 0%, ${bg.accent}07 100%)`,
+          border: `1px solid ${bg.accent}33`,
+          borderRadius: 16,
+        }}>
+          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: bg.ink, lineHeight: 1.5 }}>
+            クライアントを 1 人だけ登録すれば、<span style={{ color: bg.accent }}>あとは AI が企画も台本も書きます。</span>
+          </p>
+          {/* 3 ステップ */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '10px 0 8px', flexWrap: 'wrap' }}>
+            {['クライアントを登録', '「ネタを10本出す」を押す', '気に入った1本を本格台本に'].map((t, i) => (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, color: bg.ink,
+                  background: 'rgba(255,255,255,0.7)', border: `1px solid ${bg.cardBorder}`,
+                  borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap',
+                }}>
+                  <span style={{ color: bg.accent, fontWeight: 800 }}>{i + 1}.</span> {t}
+                </span>
+                {i < 2 && <span style={{ color: bg.accent, fontSize: 12, fontWeight: 800 }}>→</span>}
+              </span>
+            ))}
+          </div>
+          {/* サンプル出力 1 枚 */}
+          <p style={{ margin: 0, fontSize: 11.5, color: bg.inkSoft, lineHeight: 1.5 }}>
+            例:「スキンケア」のクライアント → <span style={{ color: bg.ink, fontWeight: 700 }}>〈朝の5分ルーティン〉</span>など 10 本のネタ → 1 本選ぶと
+            <span style={{ color: bg.ink, fontWeight: 700 }}>カット割り・画角・セリフ・テロップ・編集指示</span>まで入った撮影台本が完成。
+          </p>
+        </div>
+      )}
+
       {/* ── クライアント ── */}
       <div style={card}>
         <p style={sectionLabel}>クライアント (代行先アカウント)</p>
