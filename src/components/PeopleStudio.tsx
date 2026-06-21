@@ -14,6 +14,7 @@ import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
 import { LoaderDots } from './MicroLoader';
 import { confirmAction } from '../lib/confirmDialog';
+import { copyText } from '../lib/clipboard';
 
 interface Props {
   persona: Persona;
@@ -537,7 +538,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                     <button
                       onClick={() => {
                         const text = `【採用面接パック】 想定: ${interviewPack.role}\n\n■ 評価軸\n${interviewPack.evalRubric.map((r, i) => `${i + 1}. ${r}`).join('\n')}\n\n${interviewPack.questions.map((q, i) => `■ 質問 ${i + 1}\n「${q.q}」\n  狙い: ${q.intent}\n  深掘り: ${q.followUp}\n  ✓ OK の答え: ${q.greenFlag}\n  ⚠ NG の答え: ${q.redFlag}`).join('\n\n')}`;
-                        try { navigator.clipboard.writeText(text); } catch { /* */ }
+                        void copyText(text, '面接パック');
                       }}
                       className="cp-btn cp-btn-sm"
                     >📋 面接パックを全部コピー</button>
@@ -671,12 +672,8 @@ function PersonDetail({
 
   const handleExport = useCallback(async () => {
     const md = buildMarkdownExport(person, interactions, moods);
-    try {
-      await navigator.clipboard?.writeText(md);
-      setExportToast('📋 Markdown をコピーしました');
-    } catch {
-      setExportToast('コピーに失敗しました');
-    }
+    const ok = await copyText(md, 'Markdown', { silentSuccess: true });
+    setExportToast(ok ? '📋 Markdown をコピーしました' : 'コピーできませんでした');
     setTimeout(() => setExportToast(null), 2200);
   }, [person, interactions, moods]);
 
@@ -803,8 +800,8 @@ function PersonDetail({
                   <p className="cp-section-head">件名: {reopen.subject}</p>
                   <button
                     onClick={async () => {
-                      await navigator.clipboard?.writeText(`件名: ${reopen.subject}\n\n${reopen.body}`);
-                      setExportToast('📋 メッセージをコピーしました');
+                      const ok = await copyText(`件名: ${reopen.subject}\n\n${reopen.body}`, 'メッセージ', { silentSuccess: true });
+                      setExportToast(ok ? '📋 メッセージをコピーしました' : 'コピーできませんでした');
                       setTimeout(() => setExportToast(null), 2000);
                     }}
                     className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 36 }}>📋 コピー</button>
@@ -883,8 +880,8 @@ function PersonDetail({
                       '', '## 💬 フィードバック', ...agenda.feedback.map(s => `- ${s}`),
                     ];
                     if (agenda.reopenScript) lines.push('', '## 🌱 久しぶり用オープニング', agenda.reopenScript);
-                    await navigator.clipboard?.writeText(lines.join('\n'));
-                    setExportToast('📋 アジェンダをコピーしました');
+                    const ok = await copyText(lines.join('\n'), 'アジェンダ', { silentSuccess: true });
+                    setExportToast(ok ? '📋 アジェンダをコピーしました' : 'コピーできませんでした');
                     setTimeout(() => setExportToast(null), 2000);
                   }}
                   className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 36 }}>📋 コピー</button>

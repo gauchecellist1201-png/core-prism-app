@@ -21,6 +21,7 @@ import { useStripeRevenue } from '../hooks/useStripeRevenue';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { useCRM } from '../hooks/useCRM';
 import { realStatsForPersona, CATEGORY_LABEL, type DeliverableCategory } from '../lib/cxoDeliverables';
+import { copyText } from '../lib/clipboard';
 import type { Persona } from '../types/identity';
 
 interface Props {
@@ -697,11 +698,7 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
               >{diagLoading ? '取得中…' : <><RefreshCw size={11} strokeWidth={2.2} /> 再診断</>}</button>
               <button
                 type="button"
-                onClick={() => {
-                  try {
-                    navigator.clipboard.writeText(rawDiag);
-                  } catch { /* */ }
-                }}
+                onClick={() => { void copyText(rawDiag, '診断情報'); }}
                 style={{
                   fontSize: 10, fontWeight: 700, color: '#fff',
                   background: 'rgba(255,255,255,0.08)',

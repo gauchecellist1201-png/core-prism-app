@@ -9,8 +9,12 @@
 // 連携できない事情のある人を閉じ込めない (離脱ゼロ) ため、控えめに「あとで」も用意。
 // モバイル最優先 (safe-area / 100svh / タップ 44px 以上)。
 // ============================================================
-import { motion } from 'framer-motion';
-import { BarChart3, Sparkles, Search, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  BarChart3, Sparkles, Search, ArrowRight, Eye, ChevronDown,
+  TrendingUp, Clapperboard, Handshake,
+} from 'lucide-react';
 import { IrisLogo } from '../components/Logo';
 import InstagramGlyph from './InstagramGlyph';
 
@@ -27,7 +31,113 @@ const BENEFITS: { Icon: typeof BarChart3; title: string; desc: string }[] = [
   { Icon: Sparkles, title: '世界観に合った原稿を自動で', desc: 'キャプション・サムネ・リール構成をあなた専用に作ります' },
 ];
 
+// ── サンプル（連携前に「中身」を 30 秒で見せる）。実物品質の作例＝プレースホルダー禁止。
+//    純粋に表示だけ。localStorage も API も一切触らない＝実データ汚染リスクゼロ。
+const SAMPLE = {
+  handle: 'aya_beauty',
+  followers: '8,420',
+  analysis: [
+    { label: '伸びる時間', value: '木・日 21時台', hint: '保存率が平均の2.3倍' },
+    { label: '刺さるテーマ', value: '時短スキンケア', hint: '直近30投稿で最多保存' },
+    { label: '次の一手', value: '「朝5分」系を週2本', hint: 'フォロワー層と相性◎' },
+  ],
+  reel: {
+    theme: '時短スキンケア',
+    hook: '「朝、化粧水つける時間もない」人に30秒だけください',
+    scenes: [
+      'スッピンで鏡前→「正直、もう諦めてた」のテロップ',
+      '1本で済むオールインワンを手に取り、塗る5秒を実演',
+      'メイクのり比較（before/after）で「ここまで変わる」',
+    ],
+    hashtags: ['#時短スキンケア', '#オールインワン', '#美容好きと繋がりたい'],
+  },
+  deal: {
+    brand: 'スキンケアD2C「mira」',
+    fee: '¥40,000 / 1投稿',
+    reason: 'フォロワーの78%が女性・20〜34歳。ブランドの理想層と一致',
+  },
+};
+
+function SamplePreview({ accent }: { accent: string }) {
+  const cardBase: React.CSSProperties = {
+    background: '#fff', borderRadius: 16, border: '1px solid rgba(225,48,108,0.16)',
+    padding: '0.95rem 1rem', boxShadow: '0 8px 22px rgba(225,48,108,0.07)',
+  };
+  const head = (Icon: typeof BarChart3, step: string, title: string) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+      <div style={{
+        width: 28, height: 28, borderRadius: 9, flexShrink: 0,
+        background: 'linear-gradient(135deg, rgba(225,48,108,0.13), rgba(247,119,55,0.11))',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Icon size={15} color={accent} strokeWidth={2.4} />
+      </div>
+      <div style={{ fontSize: 9.5, letterSpacing: '0.18em', fontWeight: 800, color: accent }}>{step}</div>
+      <div style={{ fontSize: 13, fontWeight: 800, color: '#1F1A2E' }}>{title}</div>
+    </div>
+  );
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      style={{ overflow: 'hidden' }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 0 14px' }}>
+        <div style={{ fontSize: 11, color: '#8A8593', textAlign: 'center', fontWeight: 600 }}>
+          ↓ これは作例です。<strong style={{ color: accent }}>@{SAMPLE.handle}（フォロワー{SAMPLE.followers}）</strong>を連携したら、こうなります
+        </div>
+
+        {/* ① 分析 */}
+        <div style={cardBase}>
+          {head(TrendingUp, 'STEP A', 'あなたの分析')}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {SAMPLE.analysis.map((a) => (
+              <div key={a.label} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#8A8593', width: 64, flexShrink: 0 }}>{a.label}</span>
+                <span style={{ fontSize: 13.5, fontWeight: 800, color: '#1F1A2E' }}>{a.value}</span>
+                <span style={{ fontSize: 10.5, color: accent, fontWeight: 700, marginLeft: 'auto' }}>{a.hint}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ② リール台本 */}
+        <div style={cardBase}>
+          {head(Clapperboard, 'STEP B', '今日のリール台本')}
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1F1A2E', marginBottom: 6, lineHeight: 1.55 }}>
+            フック：「{SAMPLE.reel.hook}」
+          </div>
+          <ol style={{ margin: '0 0 8px', paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {SAMPLE.reel.scenes.map((s, i) => (
+              <li key={i} style={{ fontSize: 12, color: '#5A5562', lineHeight: 1.5 }}>{s}</li>
+            ))}
+          </ol>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            {SAMPLE.reel.hashtags.map((h) => (
+              <span key={h} style={{
+                fontSize: 10.5, fontWeight: 700, color: accent,
+                background: 'rgba(225,48,108,0.08)', borderRadius: 99, padding: '3px 9px',
+              }}>{h}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* ③ 案件 */}
+        <div style={cardBase}>
+          {head(Handshake, 'STEP C', '届いた案件')}
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1F1A2E' }}>{SAMPLE.deal.brand}</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: accent, margin: '2px 0 6px' }}>{SAMPLE.deal.fee}</div>
+          <div style={{ fontSize: 11.5, color: '#7A7585', lineHeight: 1.6 }}>{SAMPLE.deal.reason}</div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function IrisConnectFirst({ onConnect, onSkip }: Props) {
+  const [showSample, setShowSample] = useState(false);
+  const accent = '#E1306C';
   return (
     <div
       style={{
@@ -114,6 +224,38 @@ export default function IrisConnectFirst({ onConnect, onSkip }: Props) {
             </motion.div>
           ))}
         </div>
+
+        {/* サンプルを見る（連携前に中身を 30 秒で確認＝行き止まりゼロ） */}
+        <motion.button
+          type="button"
+          onClick={() => setShowSample((v) => !v)}
+          aria-expanded={showSample}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.45 }}
+          whileTap={{ scale: 0.98 }}
+          style={{
+            width: '100%', minHeight: 48,
+            background: showSample ? 'rgba(225,48,108,0.06)' : '#fff',
+            border: `1px solid rgba(225,48,108,0.28)`, borderRadius: 14,
+            color: accent, fontSize: 13.5, fontWeight: 800, cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            marginBottom: showSample ? 4 : '1.75rem',
+          }}
+        >
+          <Eye size={17} /> {showSample ? 'サンプルを閉じる' : '連携せずに中身を見る（30秒）'}
+          <motion.span animate={{ rotate: showSample ? 180 : 0 }} transition={{ duration: 0.25 }}
+            style={{ display: 'inline-flex' }}>
+            <ChevronDown size={16} />
+          </motion.span>
+        </motion.button>
+
+        <AnimatePresence initial={false}>
+          {showSample && <SamplePreview key="sample" accent={accent} />}
+        </AnimatePresence>
+
+        {showSample && (
+          <div style={{ marginBottom: '1.5rem' }} />
+        )}
 
         {/* CTA */}
         <motion.button

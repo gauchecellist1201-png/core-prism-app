@@ -3,7 +3,7 @@
 // 沈黙する失敗をなくし、失敗したときは次の手 (手でコピー) を案内する。
 // ============================================================
 import { notifyInApp } from './inAppNotify';
-import { triggerHaptic } from './haptic';
+import { triggerHaptic, playChime } from './haptic';
 
 async function writeClipboard(text: string): Promise<boolean> {
   try {
@@ -46,7 +46,9 @@ export async function copyText(
 ): Promise<boolean> {
   const ok = await writeClipboard(text);
   if (ok) {
+    // 振動 (Android) + やわらかいチャイム (iPhone は振動非対応のため音で「できた」を伝える)
     triggerHaptic('success');
+    playChime('success');
     if (!opts?.silentSuccess) {
       notifyInApp({ kind: 'success', title: `${label}をコピーしました`, duration: 2500 });
     }

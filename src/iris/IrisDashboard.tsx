@@ -32,6 +32,7 @@ import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMess
 import { generateMediaKitDoc, mediaKitDocToMarkdown, mediaKitStats, type MediaKitDoc } from './mediaKitDoc';
 import { shareToInstagram } from './instagramShare';
 import { notifyInApp } from '../lib/inAppNotify';
+import { copyText } from '../lib/clipboard';
 import { LoaderDots, LoaderBlock } from '../components/MicroLoader';
 import {
   Sparkles, TrendingUp, Search, Mail, Film, MessageSquare, Edit3,
@@ -2566,7 +2567,7 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
           <Card key={n.id} bg={bg}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <p style={{ fontWeight: 700 }}>{m.emoji} {m.label} — {d.brandName}</p>
-              <button onClick={() => navigator.clipboard?.writeText((n.subject ? `件名: ${n.subject}\n\n` : '') + n.body)} title="コピー" aria-label="コピー" style={btnIcon(bg)}><Clipboard size={16} strokeWidth={2.2} /></button>
+              <button onClick={() => copyText((n.subject ? `件名: ${n.subject}\n\n` : '') + n.body, 'メール文')} title="コピー" aria-label="コピー" style={btnIcon(bg)}><Clipboard size={16} strokeWidth={2.2} /></button>
             </div>
             {n.subject && <p style={{ color: bg.inkSoft, fontSize: '0.85rem' }}>件名: {n.subject}</p>}
             <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', marginTop: '0.5rem' }}>{n.body}</pre>
@@ -2682,7 +2683,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
             <button onClick={() => saveToKnowledge(d)} style={btnIcon(bg)} title="ナレッジに追加" aria-label="ナレッジに追加">
               <BookmarkPlus size={16} strokeWidth={2.2} />
             </button>
-            <button onClick={() => navigator.clipboard?.writeText(d.draftCopy || '')} style={btnIcon(bg)} title="コピー" aria-label="コピー"><Clipboard size={16} strokeWidth={2.2} /></button>
+            <button onClick={() => copyText(d.draftCopy || '', '下書き')} style={btnIcon(bg)} title="コピー" aria-label="コピー"><Clipboard size={16} strokeWidth={2.2} /></button>
           </div>
           {savedNotice === d.id && (
             <p style={{ fontSize: '0.78rem', color: '#10B981', marginBottom: '0.5rem' }}>
@@ -2855,7 +2856,7 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
   const copyMarkdown = () => {
     if (!doc) return;
     const md = mediaKitDocToMarkdown(doc, { ...d, personaId: IRIS_PERSONA_ID });
-    navigator.clipboard?.writeText(md);
+    void copyText(md, 'メディアキット', { silentSuccess: true });
     notifyInApp({ kind: 'success', title: 'メディアキットをコピーしました', body: 'メールやDMに貼り付けて、企業にそのまま送れます。' });
   };
 
@@ -3048,7 +3049,7 @@ function TeamView({ bg, team, desk, myDeals }: {
 
   const exportJson = () => {
     const json = team.exportTeam();
-    navigator.clipboard?.writeText(json);
+    void copyText(json, 'チーム情報', { silentSuccess: true });
     notifyInApp({ kind: 'success', title: 'チーム情報をコピーしました', body: '仲間に渡してください。' });
   };
   const tryImport = () => {
@@ -3241,7 +3242,7 @@ function TeamView({ bg, team, desk, myDeals }: {
                   <span style={{ fontSize: '0.75rem', color: bg.inkSoft }}>{t.uses} 回使用</span>
                 </div>
                 <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '0.85rem', color: bg.inkSoft }}>{t.body.slice(0, 200)}{t.body.length > 200 ? '…' : ''}</pre>
-                <button onClick={() => { navigator.clipboard?.writeText(t.body); team.incrementTemplateUse(t.id); }} style={{ ...btnIcon(bg), width: 'auto', padding: '0.3rem 0.7rem', marginTop: '0.4rem', gap: 4 }}><Clipboard size={13} /> 使う</button>
+                <button onClick={() => { copyText(t.body, 'テンプレート'); team.incrementTemplateUse(t.id); }} style={{ ...btnIcon(bg), width: 'auto', padding: '0.3rem 0.7rem', marginTop: '0.4rem', gap: 4 }}><Clipboard size={13} /> 使う</button>
               </div>
             ))}
           </div>
