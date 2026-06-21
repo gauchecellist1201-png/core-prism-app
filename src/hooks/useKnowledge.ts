@@ -337,6 +337,52 @@ export function useKnowledge(
     return item;
   }, []);
 
+  // フォルダ丸ごと一括取込 (統合ナレッジ脳用)。
+  // 個別 AI 要約はかけず parse + chunk + ローカルタグだけ → 大量ファイルでも速く・無料。
+  // 横断的な「統合思考」は KnowledgeBrainView 側でまとめて 1 回の AI 呼び出しに集約する。
+  const addFilesBulk = useCallback(async (
+    personaId: PersonaId,
+    files: File[],
+    onProgress?: (done: number, total: number, currentName: string) => void,
+  ): Promise<{ added: number; skipped: number; failed: number }> => {
+    let added = 0, skipped = 0, failed = 0;
+    const total = files.length;
+    const seen = new Set(items.map(i => `${i.fileName}::${i.fileSize}`));
+    for (let idx = 0; idx < files.length; idx++) {
+      const file = files[idx];
+      onProgress?.(idx, total, file.name);
+      const key = `${file.name}::${file.size}`;
+      if (seen.has(key)) { skipped++; continue; } // 取り込み済み (重複防止)
+      try {
+        const parsed = await parseFile(file);
+        const content = (parsed.text || '').trim();
+        if (content.length < 20) { skipped++; continue; } // 中身が無い/画像のみ等はスキップ
+        const item: KnowledgeItem = {
+          id: uuidv4(),
+          personaId,
+          title: file.name.replace(/\.[^/.]+$/, ''),
+          content,
+          chunks: chunkText(content),
+          sourceType: 'file',
+          fileKind: parsed.kind,
+          fileName: file.name,
+          fileSize: file.size,
+          pages: parsed.pages,
+          createdAt: new Date().toISOString(),
+          tags: inferTags(content),
+          analysisStatus: 'done',
+        };
+        seen.add(key);
+        setItems(prev => [item, ...prev]);
+        added++;
+      } catch {
+        failed++;
+      }
+    }
+    onProgress?.(total, total, '');
+    return { added, skipped, failed };
+  }, [items]);
+
   const deleteItem = useCallback((id: string) => {
     setItems(prev => prev.filter(i => i.id !== id));
   }, []);
@@ -361,6 +407,7 @@ export function useKnowledge(
     items,
     getForPersona,
     addFromFile,
+    addFilesBulk,
     addNote,
     addFromUrl,
     deleteItem,

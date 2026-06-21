@@ -78,6 +78,7 @@ import GlobalVoiceInput from './components/GlobalVoiceInput';
 import { useTheme } from './hooks/useTheme';
 import PrismTaskScheduler from './prism/PrismTaskScheduler';
 import PrismSplash from './prism/PrismWelcome';
+const KnowledgeBrainView = lazy(() => import('./prism/KnowledgeBrainView'));
 import TutorialOverlay from './components/TutorialOverlay';
 import WowOnboarding from './components/WowOnboarding';
 import OfflineNotice from './components/OfflineNotice';
@@ -494,7 +495,7 @@ export default function App() {
   useTheme();
   const { settings, updateSettings, updateUsageStats, resetStats } = useSettings();
   const { personas, activePersona, createPersona, updatePersona, selectPersona, toggleTask, addTask, updateCashflow } = usePersonas();
-  const { items: knowledgeItems, getForPersona, addFromFile, addNote, deleteItem, reanalyze, recomputeCashflow } = useKnowledge(
+  const { items: knowledgeItems, getForPersona, addFromFile, addFilesBulk, addNote, deleteItem, reanalyze, recomputeCashflow } = useKnowledge(
     settings,
     useCallback(() => activePersona, [activePersona]),
     updateCashflow,
@@ -535,6 +536,8 @@ export default function App() {
     if (typeof window === 'undefined') return false;
     return window.location.pathname === '/briefings' || window.location.pathname === '/briefings/';
   });
+  // 🧠 統合ナレッジ脳 (最上位 Studio 限定) の開閉
+  const [brainOpen, setBrainOpen] = useState(false);
   // ガイド ツアー (2026-06-05 オーナー指示) — HubSpot 風 「ここを タップ」 案内
   // ガイド ツアー (オーナー指示 2026-06-05: 16 ステップ ツアー は うざい から 自動 起動 廃止。
   //   freshUserDemo の フラグ も 消費 する だけ。 触れる の は window event の 明示 呼び出し のみ。)
@@ -944,6 +947,40 @@ export default function App() {
             display: 'inline-flex', alignItems: 'center', gap: 6,
           }}
         ><span style={{ fontSize: 17, lineHeight: 1 }}>📋</span><span className="cp-fab-label">役員 日報</span></button>
+      )}
+      {/* 🧠 統合ナレッジ脳 ボタン (最上位 Studio 限定の中核機能) — 役員日報の上に積む */}
+      {view === 'dashboard' && activePersona && (
+        <button
+          onClick={() => setBrainOpen(true)}
+          aria-label="統合ナレッジ脳 を 開く"
+          className="cp-fab-iconize"
+          style={{
+            position: 'fixed',
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 134px)',
+            right: 'max(14px, env(safe-area-inset-right, 0px))',
+            zIndex: 35,
+            padding: '10px 14px', borderRadius: 14,
+            background: 'linear-gradient(135deg, #8B5CF6, #4F46E5)',
+            color: '#fff', fontWeight: 800, fontSize: 13,
+            border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
+            boxShadow: '0 8px 22px rgba(99,102,241,0.45)',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}
+        ><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}><path d="M9.5 3.5A2.5 2.5 0 0 0 7 6a2.5 2.5 0 0 0-1.5 4.5A2.5 2.5 0 0 0 7 15a2.5 2.5 0 0 0 2.5 2.5V3.5Z" /><path d="M14.5 3.5A2.5 2.5 0 0 1 17 6a2.5 2.5 0 0 1 1.5 4.5A2.5 2.5 0 0 1 17 15a2.5 2.5 0 0 1-2.5 2.5V3.5Z" /><path d="M12 3.5v14" /></svg><span className="cp-fab-label">統合脳</span></button>
+      )}
+      {/* 🧠 統合ナレッジ脳 オーバーレイ */}
+      {brainOpen && activePersona && (
+        <Suspense fallback={null}>
+          <KnowledgeBrainView
+            persona={activePersona}
+            plan={isMasterAuth() ? 'studio' : (billingUser?.plan ?? 'free')}
+            knowledgeItems={knowledgeItems}
+            settings={settings}
+            addFilesBulk={addFilesBulk}
+            onClose={() => setBrainOpen(false)}
+            onUpgrade={() => { setBrainOpen(false); const studio = PRISM_PLANS.find(p => p.id === 'studio'); if (studio) setCheckoutPlan(studio); }}
+          />
+        </Suspense>
       )}
       {/* ガイド ツアー (HubSpot 風) — 「ここを タップ」 で 全機能 を 案内 */}
       {tourBrand && (
