@@ -51,6 +51,10 @@ interface LogLine {
   text: string;
   /** 進行 状態 を 視覚化 する 補助 */
   detail?: string;
+  /** done 行: 役員 が 実際 に 作った 成果物 全文 (その場 で 開いて 読める / コピー できる) */
+  payload?: string;
+  /** done 行: 役員 日報 に 保存 できた 成果物 の ID。null = 保存 失敗 (コピー で 確保 して もらう) */
+  deliverableId?: string | null;
 }
 
 const LOG_KEY = 'core_command_center_log_v1';
@@ -97,6 +101,12 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [tick, setTick] = useState(0);
+  // done 行 の 成果物 を その場 で 開く / コピー する
+  const [openResult, setOpenResult] = useState<Record<string, boolean>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const copyResult = async (id: string, text: string) => {
+    try { await navigator.clipboard?.writeText(text); setCopiedId(id); window.setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 1600); } catch { /* clipboard 不可 */ }
+  };
   const logEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -243,9 +253,13 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
 
     await sleep(350);
     pushLog({
-      sessionId, kind: 'done', cxo: role,
-      text: `役員 日報 に 納品 しました`,
-      detail: savedId ? `📋 「${cmd}」 (${content.length} 字)` : `📋 「${cmd}」`,
+      sessionId, kind: savedId ? 'done' : 'error', cxo: role,
+      text: savedId
+        ? `役員 日報 に 納品 しました`
+        : `成果 は できました — 履歴 への 保存 だけ 失敗 (下の コピー で 確保 して ください)`,
+      detail: `「${cmd}」 ${content.length} 字`,
+      payload: content,
+      deliverableId: savedId,
     });
 
     setBusy(false);
@@ -583,6 +597,40 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
                               fontFamily: '"JetBrains Mono", ui-monospace, Menlo, monospace',
                             }}>
                               ↳ {l.detail}
+                            </div>
+                          )}
+                          {l.payload && (
+                            <div style={{ marginTop: 6 }}>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                <button
+                                  onClick={() => setOpenResult((o) => ({ ...o, [l.id]: !o[l.id] }))}
+                                  style={{
+                                    padding: '5px 11px', minHeight: 32, borderRadius: 8,
+                                    background: openResult[l.id] ? 'rgba(167,139,250,0.18)' : 'rgba(255,255,255,0.06)',
+                                    border: `1px solid ${accent}55`, color: '#fff',
+                                    fontSize: 11, fontWeight: 800, cursor: 'pointer',
+                                  }}
+                                >{openResult[l.id] ? '閉じる' : '成果を見る'}</button>
+                                <button
+                                  onClick={() => copyResult(l.id, l.payload!)}
+                                  style={{
+                                    padding: '5px 11px', minHeight: 32, borderRadius: 8,
+                                    background: copiedId === l.id ? '#34D399' : accent, color: '#fff',
+                                    border: '1px solid rgba(255,255,255,0.18)',
+                                    fontSize: 11, fontWeight: 800, cursor: 'pointer',
+                                  }}
+                                >{copiedId === l.id ? 'コピーしました' : 'コピー'}</button>
+                              </div>
+                              {openResult[l.id] && (
+                                <div style={{
+                                  marginTop: 7, padding: '10px 12px', borderRadius: 10,
+                                  background: 'rgba(0,0,0,0.32)', border: `1px solid ${accent}33`,
+                                  fontSize: 12, lineHeight: 1.7, color: 'rgba(255,255,255,0.92)',
+                                  whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                                  maxHeight: 280, overflowY: 'auto',
+                                  fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
+                                }}>{l.payload}</div>
+                              )}
                             </div>
                           )}
                         </div>
