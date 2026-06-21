@@ -13,7 +13,7 @@ import {
   loadClients, saveClients, clientUid,
   generateIdeaPool, type IdeaItem,
   generateProductionScript, type ProductionScript,
-  scriptToMarkdown, type IrisClient,
+  scriptToMarkdown, ideaPoolToMarkdown, type IrisClient,
 } from './scriptStudio';
 
 interface Props {
@@ -192,6 +192,19 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
     }
   };
 
+  // 企画リストを丸ごと「投稿プラン」としてコピー (クライアント・チームにそのまま渡せる)
+  const copyIdeaPool = () => {
+    if (!ideas.length) return;
+    const md = ideaPoolToMarkdown(ideas, activeClient, focus || undefined);
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(md)
+        .then(() => notifyInApp({ kind: 'success', title: `投稿プラン ${ideas.length}本をコピーしました`, body: 'クライアント・チームにそのまま渡せます (Markdown)' }))
+        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
+    } else {
+      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
+    }
+  };
+
   // 投稿本文だけをそのまま Instagram などに貼れる形でコピー (本文 + ハッシュタグ)
   const copyCaption = () => {
     if (!script) return;
@@ -329,6 +342,14 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
 
         {!ideaBusy && ideas.length > 0 && (
           <div style={{ display: 'grid', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <p style={{ fontSize: '0.78rem', color: bg.inkSoft, fontWeight: 700, margin: 0 }}>
+                {ideas.length} 本の企画ができました
+              </p>
+              <button onClick={copyIdeaPool} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
+                投稿プランを丸ごとコピー
+              </button>
+            </div>
             {ideas.map((it, i) => (
               <div key={i} style={{ padding: '0.7rem 0.9rem', background: 'rgba(255,255,255,0.62)', borderRadius: 12, borderLeft: `3px solid ${bg.accent}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>

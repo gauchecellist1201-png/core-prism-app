@@ -141,6 +141,34 @@ ${opts.focus || '(指定なし — アカウントの強みを伸ばす方向で
   return raw.map(norm).filter((i: IdeaItem) => i.hook).slice(0, count);
 }
 
+// ─── 企画リスト → 投稿カレンダー Markdown (クライアント・チームに渡す用) ──
+// 代行会社が「今月の投稿プラン」として丸ごと渡せる形に。手入力ゼロで成果物化。
+export function ideaPoolToMarkdown(
+  ideas: IdeaItem[],
+  client?: IrisClient | null,
+  focus?: string,
+): string {
+  const L: string[] = [];
+  L.push(`# 投稿プラン (${ideas.length}本)${client?.name ? ` — ${client.name}` : ''}`);
+  if (client) {
+    const meta = [client.niche, client.target, client.goal && `ゴール: ${client.goal}`]
+      .filter(Boolean).join(' / ');
+    if (meta) L.push(meta);
+  }
+  if (focus) L.push(`フォーカス: ${focus}`);
+  const low = ideas.filter((i) => i.effort === '低').length;
+  L.push(`撮影しやすさ: 手間「低」${low}/${ideas.length}本\n`);
+  ideas.forEach((it, i) => {
+    L.push(`## ${i + 1}. ${it.hook}`);
+    L.push(`- 形式: ${it.format} / 撮影の手間: ${it.effort}`);
+    L.push(`- 切り口: ${it.angle}`);
+    if (it.why) L.push(`- 狙い: ${it.why}`);
+    L.push('');
+  });
+  L.push(`---\n各ネタは Iris で1タップ → 撮影者・編集者がそのまま動ける本格台本になります。`);
+  return L.join('\n');
+}
+
 // ─── ② 台本: 撮影者・編集者がそのまま動ける本格台本 ──────────
 export interface ScriptShot {
   no: number;
