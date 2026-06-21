@@ -396,6 +396,10 @@ button {
    インライン style で transform を持つボタンも（inline 優先で）影響なし。 */
 button:not([class*="cp-"]):not(:disabled) {
   cursor: pointer;
+  /* iOS Safari でタップ時に出る灰色のフラッシュを消す。role="button" 側では
+     既に消していたが素の <button> は残っていた＝モバイルで挙動がバラついて
+     いたので統一する。 */
+  -webkit-tap-highlight-color: transparent;
   /* 押下: transform は素早く沈み戻りはコクッ。brightness は同じ速度で陰る＝
      「光が当たらなくなる」本物のキーの手触り。離すと springy でふわっと復帰。 */
   transition: transform var(--cp-duration-base) var(--cp-ease-springy),

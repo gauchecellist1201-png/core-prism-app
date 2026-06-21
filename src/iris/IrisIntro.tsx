@@ -46,6 +46,8 @@ export default function IrisIntro({
     }
   });
 
+  const [closeHover, setCloseHover] = useState(false);
+
   const dismiss = () => {
     try {
       localStorage.setItem(storageKey, '1');
@@ -76,7 +78,7 @@ export default function IrisIntro({
               aria-hidden
               style={{
                 flexShrink: 0,
-                width: 38, height: 38, borderRadius: 11,
+                width: 38, height: 38, borderRadius: 12,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 background: `${accent}1F`, border: `1px solid ${accent}3A`,
               }}
@@ -109,14 +111,22 @@ export default function IrisIntro({
 
             <button
               onClick={dismiss}
+              onPointerEnter={() => setCloseHover(true)}
+              onPointerLeave={() => setCloseHover(false)}
               title="この説明を閉じる"
               aria-label="この説明を閉じる"
               style={{
                 flexShrink: 0,
                 width: 28, height: 28, borderRadius: 9,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                background: 'transparent', border: `1px solid ${bg.cardBorder}`,
-                color: bg.inkSoft, cursor: 'pointer',
+                background: closeHover ? `${accent}1A` : 'transparent',
+                border: `1px solid ${closeHover ? `${accent}55` : bg.cardBorder}`,
+                color: closeHover ? accent : bg.inkSoft, cursor: 'pointer',
+                // hover の色変化に加え、全ボタン共通の「押すと沈む」感触 (transform/filter) も残す
+                transition:
+                  'background 0.15s ease, border-color 0.15s ease, color 0.15s ease,' +
+                  ' transform var(--cp-duration-base) var(--cp-ease-springy),' +
+                  ' filter var(--cp-duration-base) var(--cp-ease-springy)',
               }}
             >
               <X size={15} strokeWidth={2.4} />
