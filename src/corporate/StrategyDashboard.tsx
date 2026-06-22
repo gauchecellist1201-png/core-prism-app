@@ -13,15 +13,17 @@ import BusinessPlanView from './BusinessPlanView';
 import KpiActualsTab from './KpiActualsTab';
 import ProductsTab from './ProductsTab';
 import NewVenturesTab from './NewVenturesTab';
+import RoboticsPlan from './RoboticsPlan';
 import { isMasterAuth } from '../lib/billing';
 
-type StrategyTab = 'overview' | 'actuals' | 'plan' | 'products' | 'ventures' | 'simulation';
+type StrategyTab = 'overview' | 'actuals' | 'plan' | 'products' | 'ventures' | 'robotics' | 'simulation';
 
 function getInitialTab(): StrategyTab {
   if (typeof window === 'undefined') return 'overview';
   const p = window.location.pathname;
   if (/\/plan(\/|$)/.test(p)) return 'plan';
   if (/\/actuals|\/kpi/.test(p)) return 'actuals';
+  if (/\/robotics|\/robot/.test(p)) return 'robotics';
   if (/\/ventures|\/new-?business|\/portfolio/.test(p)) return 'ventures';
   if (/\/products?/.test(p)) return 'products';
   if (/\/simulation|\/sim/.test(p)) return 'simulation';
@@ -138,6 +140,7 @@ export default function StrategyDashboard() {
             {masterMode && <TabBtn active={tab === 'plan'} onClick={() => setTab('plan')}>事業計画</TabBtn>}
             <TabBtn active={tab === 'products'} onClick={() => setTab('products')}>プロダクト</TabBtn>
             <TabBtn active={tab === 'ventures'} onClick={() => setTab('ventures')}>新規事業</TabBtn>
+            <TabBtn active={tab === 'robotics'} onClick={() => setTab('robotics')}>CORE Robotics</TabBtn>
             <TabBtn active={tab === 'simulation'} onClick={() => setTab('simulation')}>シミュレーション</TabBtn>
           </div>
 
@@ -199,6 +202,9 @@ export default function StrategyDashboard() {
           </div>
         </section>
       )}
+
+      {/* TAB: CORE Robotics 事業計画 */}
+      {tab === 'robotics' && <RoboticsPlan />}
 
       {/* TAB: 概要 (販売戦略) */}
       {tab === 'overview' && <>
