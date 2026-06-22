@@ -5,14 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CORE マスターハブ</title>
 <meta name="robots" content="noindex,nofollow">
-<meta name="description" content="株式会社CORE — 4サービスをマスターモードで開く、オーナー専用ハブ。">
-<!-- OG画像＝COREアイコン -->
-<meta property="og:title" content="CORE マスターハブ">
-<meta property="og:description" content="4サービスを全機能開放で開く、オーナー専用ハブ。">
-<meta property="og:image" content="/og-core-v4.png">
+<meta name="description" content="株式会社CORE — 5サービスをマスターモード（全機能フル解放／Maxプラン）で開く、オーナー専用ハブ。">
+<!-- OG画像＝マスターモードの王冠マーク -->
+<meta property="og:title" content="CORE Master Mode — オーナー専用ハブ">
+<meta property="og:description" content="5サービスを全機能フル解放（Maxプラン）で開く、オーナー専用の入口。">
+<meta property="og:image" content="https://core-prism-app.vercel.app/og-master-crown-v1.png?v=20260622">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CORE Master Mode — 王冠マーク">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="/og-core-v4.png">
+<meta name="twitter:title" content="CORE Master Mode — オーナー専用ハブ">
+<meta name="twitter:image" content="https://core-prism-app.vercel.app/og-master-crown-v1.png?v=20260622">
 <!-- ホーム画面追加時＝COREアイコン -->
 <link rel="icon" type="image/png" sizes="192x192" href="/core-192-v2.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/core-180-v2.png">
@@ -60,7 +64,7 @@
   <div class="top">
     <img class="logo" src="/core-512-v2.png" alt="CORE">
     <h1>CORE マスターハブ</h1>
-    <p class="sub">4サービスを「全機能 開放」で開く、オーナー専用の入口です。</p>
+    <p class="sub">5サービスを「全機能フル解放（Maxプラン）」で開く、オーナー専用の入口です。</p>
     <span class="badge">MASTER MODE</span>
   </div>
 
@@ -92,7 +96,17 @@
       <div><div class="nm">Lume</div><div class="ds">リンクハブ＋解析 — 全機能開放で開く</div></div>
       <span class="go">→</span>
     </a>
-    <p class="note">各アプリは新しいタブで開き、マスターモード（課金なしで全機能）になります。<br>このページはオーナー専用です（検索エンジンには出ません）。</p>
+    <a class="card" id="lnk-guild">
+      <img class="ic" src="https://guild-hazel.vercel.app/icon.svg" alt="">
+      <div><div class="nm">Guild</div><div class="ds">共創OS（声→採用→謝礼） — 全機能で開く</div></div>
+      <span class="go">→</span>
+    </a>
+    <a class="card" id="lnk-tools" href="/master/keys" target="_blank" rel="noopener" style="background:rgba(216,168,59,0.07);border-color:rgba(216,168,59,0.3);">
+      <div class="ic" style="display:flex;align-items:center;justify-content:center;font-size:26px;">🔑</div>
+      <div><div class="nm">マスターツール</div><div class="ds">Claude APIキー・KPI・初回ユーザー体験</div></div>
+      <span class="go">→</span>
+    </a>
+    <p class="note">各アプリは新しいタブで開き、マスターモード（課金なしで全機能フル解放＝Maxプラン）になります。<br>このページはオーナー専用です（合言葉が必要・検索エンジンには出ません）。</p>
   </div>
 </div>
 
@@ -104,7 +118,8 @@
     "lnk-prism": "https://core-prism-app.vercel.app/?" + M,
     "lnk-iris":  "https://core-prism-app.vercel.app/iris?" + M,
     "lnk-reso":  "https://resonancebot-ivory.vercel.app/?" + M,
-    "lnk-lume":  "https://lume-deploy-five.vercel.app/app.html?" + M
+    "lnk-lume":  "https://lume-deploy-five.vercel.app/app.html?" + M,
+    "lnk-guild": "https://guild-hazel.vercel.app/?" + M
   };
   function reveal(){
     Object.keys(LINKS).forEach(function(id){
