@@ -540,7 +540,7 @@ export default function CoreSite() {
             ]}
             accentColor="#2DD4BF"
             accentGradient="linear-gradient(135deg,#5EEAD4,#22D3EE,#2DD4BF)"
-            url="https://guild-gauches-projects.vercel.app/"
+            url="https://guild-gauches-projects.vercel.app/?lp=1"
           />
 
           {/* RESONANCE — LINE を AI で */}
@@ -557,7 +557,7 @@ export default function CoreSite() {
             ]}
             accentColor="#06C755"
             accentGradient="linear-gradient(135deg,#34D399,#06C755,#0EA5E9)"
-            url="https://resonancebot-ivory.vercel.app/"
+            url="https://resonancebot-ivory.vercel.app/lp"
             reversed
           />
 
@@ -1284,8 +1284,8 @@ export default function CoreSite() {
             <p style={footHead}>プロダクト</p>
             <a href="/?lp=1" style={footLink} className="lp-tap-link">CORE Prism</a>
             <a href="/iris?lp=1" style={footLink} className="lp-tap-link">CORE Iris</a>
-            <a href="https://guild-gauches-projects.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Guild</a>
-            <a href="https://resonancebot-ivory.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Resonance</a>
+            <a href="https://guild-gauches-projects.vercel.app/?lp=1" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Guild</a>
+            <a href="https://resonancebot-ivory.vercel.app/lp" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Resonance</a>
             <a href="https://lume-deploy-five.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Lume</a>
           </div>
           <div>
