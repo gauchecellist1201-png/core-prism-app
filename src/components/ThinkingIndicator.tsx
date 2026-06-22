@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Clock, RefreshCw } from 'lucide-react';
 import { PrismLogo } from './Logo';
 
 /**
@@ -32,6 +33,9 @@ export default function ThinkingIndicator({
   const [secs, setSecs] = useState(0);
   const [rescueDismissed, setRescueDismissed] = useState(false);
   const startRef = useRef(Date.now());
+  // OS の「視差効果を減らす / 動きを減らす」設定を尊重する。
+  // CSS アニメは index.css で既に止まるが、framer-motion の JS アニメは別途ここで静める。
+  const reduce = useReducedMotion();
 
   const showRescue = !!onRetry && secs >= RESCUE_AFTER && !rescueDismissed;
 
@@ -75,7 +79,7 @@ export default function ThinkingIndicator({
         }}
       >
         {/* 垂直の光線 — 上下に光が走る */}
-        {variant === 'full' && (
+        {variant === 'full' && !reduce && (
           <motion.div
             aria-hidden
             animate={{ scaleY: [0.4, 1.3, 0.4], opacity: [0.15, 0.6, 0.15] }}
@@ -92,7 +96,7 @@ export default function ThinkingIndicator({
         )}
 
         {/* 周囲を漂うパーティクル (8 粒) — 生きて呼吸している雰囲気 */}
-        {[0, 1, 2, 3, 4, 5, 6, 7].map((p) => {
+        {!reduce && [0, 1, 2, 3, 4, 5, 6, 7].map((p) => {
           const angle = (p / 8) * Math.PI * 2;
           const r = orbSize * 1.05;
           const cx = Math.cos(angle) * r;
@@ -128,7 +132,7 @@ export default function ThinkingIndicator({
 
         {/* 三重波紋 */}
         <div style={{ position: 'relative', width: orbSize, height: orbSize }}>
-          {[0, 1, 2].map((ring) => (
+          {!reduce && [0, 1, 2].map((ring) => (
             <motion.div
               key={ring}
               animate={{ scale: [1, 1.7], opacity: [0.4, 0] }}
@@ -148,7 +152,7 @@ export default function ThinkingIndicator({
           ))}
           {/* 中心のオーブ — ガラス質のコアの中で Prism マークが静かに回る */}
           <motion.div
-            animate={{ scale: [1, 1.06, 1] }}
+            animate={reduce ? undefined : { scale: [1, 1.06, 1] }}
             transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             style={{
               position: 'absolute',
@@ -164,7 +168,7 @@ export default function ThinkingIndicator({
           >
             {/* 回転する Prism マーク (CORE 公式の多面体プリズム) */}
             <motion.div
-              animate={{ rotate: [0, 360] }}
+              animate={reduce ? undefined : { rotate: [0, 360] }}
               transition={{ duration: 11, repeat: Infinity, ease: 'linear' }}
               style={{
                 display: 'inline-flex',
@@ -233,8 +237,9 @@ export default function ThinkingIndicator({
               textAlign: 'center',
             }}
           >
-            <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--fg)' }}>
-              ⏳ 思ったより時間がかかっています
+            <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--fg)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Clock size={15} style={{ color: accent }} aria-hidden />
+              思ったより時間がかかっています
             </p>
             <p style={{ fontSize: '0.74rem', color: 'var(--fg-muted)', lineHeight: 1.7, marginTop: 4 }}>
               通信が混み合っているのかもしれません。
@@ -254,9 +259,14 @@ export default function ThinkingIndicator({
                   fontSize: '0.82rem',
                   fontWeight: 700,
                   cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
                 }}
               >
-                🔄 もう一度ためす
+                <RefreshCw size={14} aria-hidden />
+                もう一度ためす
               </button>
               <button
                 onClick={() => setRescueDismissed(true)}
