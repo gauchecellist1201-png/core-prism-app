@@ -649,27 +649,63 @@ JSON だけ返し、\`\`\`json は不要。`;
 
   // ─── レンダリング ───
   if (!imgUrl) {
+    // 初見の人が触る前に「このツールで何が起きるか」を 3 秒で掴めるように
+    const canDo = [
+      { Icon: Brain, title: '明るさ・色を自動で', body: '「おまかせ」を押すだけ。AI が映える明るさ・色に補正します。' },
+      { Icon: Type,  title: '写真に文字をのせる', body: 'フォント・色・位置を自由に。投稿の主役になる 1 枚に。' },
+      { Icon: CropIcon, title: 'SNSの映えサイズに', body: '正方形 / 縦長 / ストーリーをワンタップで切り替え。' },
+    ];
     return (
       <div style={wrap}>
-        <Header bg={bg} title="画像エディタ" subtitle="写真を 1 画面で仕上げる" />
+        <Header bg={bg} title="画像エディタ" subtitle="写真を選ぶだけ。明るさも文字もサイズも、ここで仕上がる" />
         <label style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          padding: '6rem 2rem', textAlign: 'center', cursor: 'pointer',
+          padding: '3.4rem 2rem', textAlign: 'center', cursor: 'pointer',
           border: `2px dashed ${bg.cardBorder}`, borderRadius: 22,
-          background: bg.card, color: bg.inkSoft, minHeight: 320,
+          background: bg.card, color: bg.inkSoft, minHeight: 220,
         }}>
-          <Upload size={56} color={bg.accent} />
+          <Upload size={48} color={bg.accent} />
           <div style={{ fontSize: '1.4rem', color: bg.ink, marginTop: '1rem', fontWeight: 600 }}>
-            写真を選んでください
+            まず写真を選んでください
           </div>
           <div style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
             JPG / PNG / WebP / HEIC ・ クリックまたはドラッグ
           </div>
+          <span style={{
+            marginTop: '0.9rem', fontSize: '0.8rem', fontWeight: 700,
+            color: bg.accent, padding: '0.3rem 0.85rem', borderRadius: 999,
+            background: `${bg.accent}15`,
+          }}>
+            選んだあと「おまかせ」で AI が自動補正
+          </span>
           <input type="file" accept="image/*" onChange={onUpload} style={{ display: 'none' }} />
         </label>
-        <p style={{ color: bg.inkSoft, fontSize: '0.88rem', marginTop: '0.8rem', textAlign: 'center' }}>
-          1 画面で完結 — 左にプレビュー、右に文字 / フィルター / 明るさ
+
+        {/* このツールでできること — 触る前に 3 秒で分かる */}
+        <p style={{ color: bg.inkSoft, fontSize: '0.8rem', fontWeight: 700, margin: '1rem 0 0.5rem', letterSpacing: '0.04em' }}>
+          このツールでできること
         </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.6rem' }}>
+          {canDo.map(c => (
+            <div key={c.title} style={{
+              display: 'flex', gap: '0.65rem', alignItems: 'flex-start',
+              padding: '0.85rem 0.9rem', borderRadius: 14,
+              background: bg.card, border: `1px solid ${bg.cardBorder}`,
+            }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: `${bg.accent}15`, color: bg.accent,
+              }}>
+                <c.Icon size={18} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: bg.ink, marginBottom: 2 }}>{c.title}</div>
+                <div style={{ fontSize: '0.76rem', color: bg.inkSoft, lineHeight: 1.5 }}>{c.body}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
