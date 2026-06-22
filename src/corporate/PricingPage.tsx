@@ -22,9 +22,9 @@ const PRISM_PLANS_V1 = [
     id: 'starter',
     name: 'Starter',
     nameJa: 'スターター',
-    tag: '個人事業主・副業',
-    price: 4800,
-    yearly: 48000,
+    tag: '個人事業主・ひとり社長の入口',
+    price: 2980,
+    yearly: 29800,
     features: [
       '3 つの人格 (経営/営業/+1)',
       '商談・議事録・スライド AI',
@@ -153,6 +153,7 @@ const IRIS_PLANS = [
   { id: 'lite', name: 'Lite', tag: '創作のはじめに', price: 2980, features: ['AI キャプション 30回/月', '案件管理 無制限', '基本フィルター', 'コミュニティ閲覧'] },
   { id: 'standard', name: 'Standard', tag: '伸びる時期に', price: 6980, highlight: true, features: ['AI キャプション 無制限', 'IG 分析 月10回', 'ストーリー設計 5本', 'コミュニティ投稿'] },
   { id: 'pro', name: 'Pro', tag: 'チーム / マネージャー', price: 12800, features: ['Standard 全機能', 'チーム 5名', 'ブランドマッチ無制限', 'メディアキット'] },
+  { id: 'agency', name: 'Agency', tag: '運用代行会社', price: 29800, features: ['Pro 全機能', '連携アカウント 30', '企画・台本スタジオ 無制限', 'クライアント別ワークスペース', '専任サポート'] },
 ];
 
 // ─── 業種別ユースケース ─────────────────
@@ -330,7 +331,7 @@ export default function PricingPage() {
           Cheaper than hiring. Smarter than alone.
         </p>
         <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1rem', color: 'rgba(255,255,255,0.7)', lineHeight: 2, maxWidth: 700, margin: '0 auto 2rem' }}>
-          月額 ¥4,800 から、7 つの専属 AI エージェントが 24 時間あなたの代わりに動きます。
+          月額 ¥2,980 から、7 つの専属 AI エージェントが 24 時間あなたの代わりに動きます。
           <br />試算してみてください ── 元が取れるのは、たいてい 1 週間以内です。
         </p>
 

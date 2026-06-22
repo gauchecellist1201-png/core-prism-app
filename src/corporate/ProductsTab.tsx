@@ -39,7 +39,7 @@ const PRODUCTS: Record<ProductId, {
       { name: '自己実現', en: 'SELF', role: 'コーチ / 目標 / 振り返り' },
     ],
     pricing: [
-      { plan: 'Starter', price: '¥4,800', period: '/ 月', features: ['3 つの人格 (経営 / 営業 / +1)', '商談・議事録・スライド AI', 'Cmd+K 横断検索', '7 日間 無料トライアル'] },
+      { plan: 'Starter', price: '¥2,980', period: '/ 月', features: ['3 つの人格 (経営 / 営業 / +1)', '商談・議事録・スライド AI', 'Cmd+K 横断検索', '7 日間 無料トライアル'] },
       { plan: 'Standard', price: '¥9,800', period: '/ 月', features: ['7 つの人格 (全エージェント)', '提案書・契約書・財務 AI', 'Gmail シャドー秘書', '見積→請求の一気通貫', '7 日間 無料トライアル'], highlight: true },
       { plan: 'Exclusive', price: '¥29,800', period: '/ 月', features: ['Standard 全機能', '人物ケア (1on1 + センチメント)', 'API + Webhook', 'チーム共有 (5 名)', '優先サポート + 戦略コーチ'] },
     ],
@@ -75,6 +75,7 @@ const PRODUCTS: Record<ProductId, {
       { plan: 'Lite', price: '¥2,980', period: '/ 月', features: ['AI キャプション 30 回 / 月', '案件管理 無制限', '基本フィルター', 'コミュニティ閲覧'] },
       { plan: 'Standard', price: '¥6,980', period: '/ 月', features: ['AI キャプション 無制限', 'IG 分析 月 10 回', 'ストーリー設計 5 本', 'コミュニティ投稿'], highlight: true },
       { plan: 'Pro', price: '¥12,800', period: '/ 月', features: ['Standard 全機能', 'チーム 5 名', 'ブランドマッチ無制限', 'メディアキット'] },
+      { plan: 'Agency', price: '¥29,800', period: '/ 月', features: ['Pro 全機能', '連携アカウント 30 (複数クライアント)', '企画・台本スタジオ 無制限', '専任サポート'] },
     ],
     kgi: [
       { label: '有料クリエイター数 (Q4)', q4_target: '1,000 人' },
@@ -135,8 +136,8 @@ const PRODUCTS: Record<ProductId, {
     ],
     pricing: [
       { plan: 'Solo', price: '¥1,980', period: '/ 月', features: ['名前差し替え 無制限', '個別配信をまず始める層に', '承認フローで誤送信ゼロ'], highlight: true },
-      { plan: 'Pro', price: '¥4,980', period: '/ 月', features: ['Claude 個別パーソナライズ配信', '過去の会話を踏まえる', 'ファンとの関係を深める'] },
-      { plan: 'Business', price: '¥9,800', period: '/ 月', features: ['大規模 / 複数ライン配信', 'チーム運用', '優先サポート'] },
+      { plan: 'Pro', price: '¥6,980', period: '/ 月', features: ['Claude 個別パーソナライズ配信', '過去の会話を踏まえる', 'ファンとの関係を深める'] },
+      { plan: 'Business', price: '¥14,800', period: '/ 月', features: ['大規模 / 複数ライン配信', 'チーム運用', '優先サポート'] },
     ],
     kgi: [
       { label: '有料件数 (Q4)', q4_target: '1,000 件' },
@@ -359,7 +360,7 @@ const COMPARISON = [
   { label: '対象顧客', prism: '事業家・経営者', iris: 'クリエイター・SNS' },
   { label: 'エージェント数', prism: '7 (経営・財務 ...)', iris: '6 (案件・分析 ...)' },
   { label: '主要連携', prism: 'Gmail / Calendar / 会計', iris: 'Instagram / X / TikTok' },
-  { label: '料金 (Pro/Creator)', prism: '¥3,980 / 月', iris: '¥4,800 / 月' },
+  { label: '料金 (主力プラン)', prism: '¥9,800 / 月', iris: '¥6,980 / 月' },
   { label: 'Q4 MRR 目標', prism: '¥8M', iris: '¥5M' },
 ];
 

@@ -203,6 +203,9 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedItem, setUploadedItem] = useState<KnowledgeItem | null>(null);
   const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
+  // 大量データ取込のプラン制限に当たった時のアップグレード案内
+  const [capNotice, setCapNotice] = useState<string | null>(null);
+  const isCapError = (e: unknown) => /¥29,800|統合ナレッジ脳|30 件まで/.test(e instanceof Error ? e.message : String(e));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const meetingInputRef = useRef<HTMLInputElement>(null);
@@ -330,10 +333,14 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
 
   const handleFile = useCallback(async (file: File) => {
     setIsUploading(true);
+    setCapNotice(null);
     try {
       const item = await onAddFile(file);
       setUploadedItem(item);
       setTimeout(() => { setUploadedItem(null); setTab('list'); }, 2000);
+    } catch (e) {
+      if (isCapError(e)) setCapNotice(e instanceof Error ? e.message : '');
+      else throw e;
     } finally {
       setIsUploading(false);
     }
@@ -350,6 +357,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
       try {
         await onAddFile(f);
       } catch (err) {
+        if (isCapError(err)) { setCapNotice(err instanceof Error ? err.message : ''); break; } // プラン上限 → 以降は中断して案内
         failed.push(f.name);
       }
     }
@@ -819,6 +827,18 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
 
             {tab === 'add-file' && (
               <motion.div key="add-file" className="p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                {capNotice && (
+                  <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} role="alert"
+                    className="mb-4 rounded-xl p-3"
+                    style={{ background: 'linear-gradient(135deg, rgba(225,48,108,0.10), rgba(251,191,36,0.08))', border: '1px solid rgba(225,48,108,0.30)' }}>
+                    <p className="text-sm font-bold mb-1" style={{ color: '#E1306C' }}>大量データ取込は最上位プラン限定です</p>
+                    <p className="text-xs leading-relaxed" style={{ color: 'var(--fg-muted)' }}>{capNotice}</p>
+                    <button type="button" onClick={() => { try { window.dispatchEvent(new CustomEvent('iris:open-plan', { detail: { planId: 'agency' } })); } catch { /* */ } }}
+                      className="mt-2 text-xs font-bold px-3 py-1.5 rounded-lg" style={{ background: 'linear-gradient(135deg, #E1306C, #F77737)', color: '#fff' }}>
+                      プランを見る（¥29,800〜）
+                    </button>
+                  </motion.div>
+                )}
                 {batchProgress ? (
                   <motion.div className="py-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <p className="text-4xl text-center mb-3">

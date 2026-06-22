@@ -29,7 +29,7 @@ import {
   type InfluencerDeal, type MediaKit,
 } from '../types/influencerDeal';
 import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMessage } from './beautyAdvisor';
-import { generateMediaKitDoc, mediaKitDocToMarkdown, mediaKitStats, type MediaKitDoc } from './mediaKitDoc';
+import { generateMediaKitDoc, mediaKitDocToMarkdown, mediaKitDocToHtml, mediaKitStats, type MediaKitDoc } from './mediaKitDoc';
 import { shareToInstagram } from './instagramShare';
 import { notifyInApp } from '../lib/inAppNotify';
 import { copyText } from '../lib/clipboard';
@@ -2873,6 +2873,28 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
     notifyInApp({ kind: 'success', title: 'メディアキットをコピーしました', body: 'メールやDMに貼り付けて、企業にそのまま送れます。' });
   };
 
+  // 企業にそのまま見せられる「美しい1枚もの」を新しいタブで開く（そのまま印刷→PDF保存）
+  const openOnePager = () => {
+    if (!doc) return;
+    const html = mediaKitDocToHtml(doc, { ...d, personaId: IRIS_PERSONA_ID });
+    const w = window.open('', '_blank');
+    if (!w) {
+      // ポップアップがブロックされた時は行き止まりにせず、ダウンロードで救済
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `media-kit-${(d.handleName || 'iris').replace(/[^\w-]/g, '')}.html`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      notifyInApp({ kind: 'success', title: 'メディアキットを書き出しました', body: '保存したファイルを開くと、PDFで保存できます。' });
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  };
+
   const stats = mediaKitStats({ ...d, personaId: IRIS_PERSONA_ID });
 
   return (
@@ -3018,9 +3040,17 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
 
             {doc.closing && <p style={{ margin: 0, color: bg.inkSoft, lineHeight: 1.7, fontStyle: 'italic' }}>{doc.closing}</p>}
 
-            <button onClick={copyMarkdown} style={{ ...btnSecondary(bg), justifySelf: 'start' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Clipboard size={14} /> メディアキットをコピー</span>
-            </button>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <button onClick={openOnePager} style={{ ...btnPrimary(bg) }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><FileText size={14} /> 美しい1枚で書き出す（PDF）</span>
+              </button>
+              <button onClick={copyMarkdown} style={{ ...btnSecondary(bg) }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Clipboard size={14} /> 文章をコピー</span>
+              </button>
+            </div>
+            <p style={{ margin: 0, color: bg.inkSoft, fontSize: '0.78rem' }}>
+              「美しい1枚」は新しいタブで開きます。右上の「PDFで保存 / 印刷」を押すと、企業にそのまま送れる1枚もののPDFになります。
+            </p>
           </div>
         )}
       </Card>

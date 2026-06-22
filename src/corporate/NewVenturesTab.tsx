@@ -116,20 +116,20 @@ const VENTURES: Venture[] = [
     market: [
       'LINE は日本のインフラ（生活者の大多数が日常利用）',
       'LINE公式アカウントは小規模事業者に広く普及',
-      '盛らない算定：有料1,000件で月商約420万、5,000件で月商約2,100万（ARPU¥4,200想定）',
+      '盛らない算定：有料1,000件で月商約565万、5,000件で月商約2,825万（ARPU¥5,650想定）',
     ],
     pricing: [
       { plan: 'Solo', price: '¥1,980/月', net: yen(1909), desc: 'AI個別配信・1アカウント・月2,000通（7日間無料）' },
-      { plan: 'Pro', price: '¥4,980/月', net: yen(4801), desc: 'AIレター・月8,000通・送信前に全件確認（7日間無料）', pop: true },
-      { plan: 'Business', price: '¥9,800/月', net: yen(9447), desc: '3アカウント・月30,000通・設定代行（7日間無料）' },
+      { plan: 'Pro', price: '¥6,980/月', net: yen(6729), desc: 'AIレター・月8,000通・送信前に全件確認（7日間無料）', pop: true },
+      { plan: 'Business', price: '¥14,800/月', net: yen(14267), desc: '3アカウント・月30,000通・設定代行（7日間無料）' },
     ],
     unitNote: '利用者が自分の API キーを接続する設計のため、使われるほど膨らむ AI 代を構造的に回避（運営の AI 原価 ≒ 0）。だから安い料金でも高利益。',
     profit: [
-      { users: '100人', mrr: yen(420000), fee: yen(15120), infra: yen(10000), net: yen(394880), margin: '94.0%' },
-      { users: '1,000人', mrr: yen(4200000), fee: yen(151200), infra: yen(30000), net: yen(4018800), margin: '95.7%' },
-      { users: '5,000人', mrr: yen(21000000), fee: yen(756000), infra: yen(80000), net: yen(20164000), margin: '96.0%' },
+      { users: '100人', mrr: yen(565000), fee: yen(20340), infra: yen(10000), net: yen(534660), margin: '94.6%' },
+      { users: '1,000人', mrr: yen(5650000), fee: yen(203400), infra: yen(30000), net: yen(5416600), margin: '95.9%' },
+      { users: '5,000人', mrr: yen(28250000), fee: yen(1017000), infra: yen(80000), net: yen(27153000), margin: '96.1%' },
     ],
-    profitNote: '有料の内訳を Solo 50% / Pro 35% / Business 15%（平均ARPU ¥4,200）と仮定した【推定】。AI原価は利用者の自前鍵なのでほぼ0。インフラは Vercel/Upstash の概算。CAC・人件費は別。',
+    profitNote: '有料の内訳を Solo 50% / Pro 35% / Business 15%（平均ARPU ¥5,650）と仮定した【推定】。AI原価は利用者の自前鍵なのでほぼ0。インフラは Vercel/Upstash の概算。CAC・人件費は別。',
     edge: [
       '「便利ツール」ではなく「関係性を深める道具」という哲学',
       '自前鍵接続でAI原価ゼロ → 多くのAI SaaSの弱点を構造回避',
@@ -155,7 +155,7 @@ const VENTURES: Venture[] = [
     accent: '#4B57B0',
     accent2: '#A855F7',
     liveUrl: 'https://core-prism-app.vercel.app/?lp=1',
-    oneLine: '事業家のための AI エージェント OS。経営の「自分でなくてもいい仕事」を13名のAI役員に任せ、社長は意思決定に集中する。月4,800円から。',
+    oneLine: '事業家のための AI エージェント OS。経営の「自分でなくてもいい仕事」を13名のAI役員に任せ、社長は意思決定に集中する。月2,980円から。',
     problem: [
       '社長がひとりで営業・財務・契約・議事録まで抱え、肝心の判断の時間が奪われる',
       '顧問弁護士・税理士・秘書・各種SaaSを別々に契約すると月数十万円＋窓口がバラバラ',
@@ -169,20 +169,20 @@ const VENTURES: Venture[] = [
     market: [
       '国内の中小企業・個人事業主は数百万社規模（広大な対象市場）',
       '顧問・秘書・各種SaaSの置換需要＝月数十万円の支出を1つに集約できる',
-      '盛らない算定：有料1,000件で月商約1,030万（平均単価¥10,300想定）',
+      '盛らない算定：有料1,000件で月商約939万（平均単価¥9,390想定）',
     ],
     pricing: [
-      { plan: 'Starter', price: '¥4,800/月', net: yen(4627), desc: '基本AI・1人格1ユーザー・ナレッジ100件（7日間無料）' },
+      { plan: 'Starter', price: '¥2,980/月', net: yen(2873), desc: '基本AI・1人格1ユーザー・ナレッジ100件（7日間無料）' },
       { plan: 'Standard', price: '¥9,800/月', net: yen(9447), desc: '全AI（商談AI含む）・人格/ユーザー無制限・音声秘書（7日間無料）', pop: true },
       { plan: 'Exclusive', price: '¥29,800/月', net: yen(28727), desc: '専任サポート・契約/決算AI・導入伴走・請求書払い（7日間無料）' },
     ],
     unitNote: 'BYOK（利用者が自分のAPIキーを接続）でAI原価をほぼ0に。高単価でも限界費用が小さく、利益率が高い。',
     profit: [
-      { users: '100人', mrr: yen(1030000), fee: yen(37080), infra: yen(15000), net: yen(977920), margin: '94.9%' },
-      { users: '1,000人', mrr: yen(10300000), fee: yen(370800), infra: yen(40000), net: yen(9889200), margin: '96.0%' },
-      { users: '3,000人', mrr: yen(30900000), fee: yen(1112400), infra: yen(80000), net: yen(29707600), margin: '96.1%' },
+      { users: '100人', mrr: yen(939000), fee: yen(33804), infra: yen(15000), net: yen(890196), margin: '94.8%' },
+      { users: '1,000人', mrr: yen(9390000), fee: yen(338040), infra: yen(40000), net: yen(9011960), margin: '96.0%' },
+      { users: '3,000人', mrr: yen(28170000), fee: yen(1014120), infra: yen(80000), net: yen(27075880), margin: '96.1%' },
     ],
-    profitNote: '有料の内訳を Starter 50% / Standard 35% / Exclusive 15%（平均単価 ¥10,300）と仮定した【推定】。AI原価はBYOKでほぼ0。インフラは概算。CAC・人件費は別。',
+    profitNote: '有料の内訳を Starter 50% / Standard 35% / Exclusive 15%（平均単価 ¥9,390）と仮定した【推定】。AI原価はBYOKでほぼ0。インフラは概算。CAC・人件費は別。',
     edge: [
       '「AIツール」ではなく「AI役員」。操作するのでなく、任せて確認する',
       '7役割＋13役員という設計思想で、単機能ツールと差別化',

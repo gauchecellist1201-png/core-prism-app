@@ -10,8 +10,13 @@ async function parseFile(file: File) {
 import { analyzeKnowledge, looksLikeFinancialData, extractFinancialData } from '../lib/analyzeKnowledge';
 import { useCloudSync } from './useCloudSync';
 import { safeSetJSON } from '../lib/storage';
+import { useBillingUser, getEffectivePlan, checkFeature, isMasterAuth } from '../lib/billing';
 
 const STORAGE_KEY = 'core_knowledge';
+
+// 大量データの取込（統合ナレッジ脳）は最上位＝¥29,800 以上のプラン限定。
+// それ未満は少量（プレビュー用途）に制限し、明確にアップグレードへ誘導する。
+const FREE_KNOWLEDGE_CAP = 30;
 const CHUNK_SIZE = 400; // characters per chunk
 
 // ── テキストをチャンクに分割 ─────────────────────────────
@@ -114,7 +119,11 @@ function load(): KnowledgeItem[] {
 }
 
 function save(items: KnowledgeItem[]) {
-  safeSetJSON(STORAGE_KEY, items, { module: 'ナレッジ' });
+  // 画像の base64 は 1 枚で 1MB 級になり localStorage(約5MB) を即圧迫する＝「容量が少ない」の主因。
+  // 検索/RAG はテキスト chunks があれば成立するため、永続化時は重い imageBase64 を外して
+  // 大量のデータを保存できるようにする（画像プレビューはセッション中のみ・再読込で軽量アイコンに）。
+  const slim = items.map((i) => (i.imageBase64 ? { ...i, imageBase64: undefined } : i));
+  safeSetJSON(STORAGE_KEY, slim, { module: 'ナレッジ' });
 }
 
 type UpdateCashflowFn = (
@@ -130,6 +139,11 @@ export function useKnowledge(
   updateCashflow?: UpdateCashflowFn,
 ) {
   const [items, setItems] = useState<KnowledgeItem[]>(load);
+  // 大量データ取込の解放判定（¥29,800 以上＝統合ナレッジ脳）。マスターは常に解放。
+  const { user: billingUser } = useBillingUser();
+  const bulkUnlocked = isMasterAuth() || checkFeature(getEffectivePlan(billingUser), 'knowledge-brain').allowed;
+  const [capacityError, setCapacityError] = useState<string | null>(null);
+  const CAP_MSG = '無料・標準プランのナレッジは 30 件までです。大量のデータ取込（統合ナレッジ脳）は Agency / 最上位プラン（¥29,800〜）で解放され、精度が大きく上がります。';
 
   useEffect(() => { save(items); }, [items]);
 
@@ -157,6 +171,10 @@ export function useKnowledge(
   //   extracting  (looksLikeFinancialData が true の場合のみ: 数字抽出中)
   //   done / error
   const addFromFile = useCallback(async (personaId: PersonaId, file: File): Promise<KnowledgeItem> => {
+    if (!bulkUnlocked && items.length >= FREE_KNOWLEDGE_CAP) {
+      setCapacityError(CAP_MSG);
+      throw new Error(CAP_MSG);
+    }
     const id = uuidv4();
     // パース前にプレースホルダ item を一覧に挿入 → ユーザーに「読み始めた」感を即座に出す
     const placeholder: KnowledgeItem = {
@@ -245,7 +263,7 @@ export function useKnowledge(
 
     // 戻り値: 最新スナップショット (UI 側はストア参照する想定だが、互換のため返す)
     return { ...placeholder, content, chunks, tags, fileKind: parsed.kind, pages: parsed.pages, imageBase64: parsed.imageBase64 };
-  }, [settings, getActivePersona, updateAnalysis, updateCashflow]);
+  }, [settings, getActivePersona, updateAnalysis, updateCashflow, bulkUnlocked, items.length]);
 
   // 指定人格の全資料から財務データを抽出して cashflow を再計算
   const recomputeCashflow = useCallback(async (personaId: PersonaId, personaName: string): Promise<{
@@ -344,7 +362,13 @@ export function useKnowledge(
     personaId: PersonaId,
     files: File[],
     onProgress?: (done: number, total: number, currentName: string) => void,
-  ): Promise<{ added: number; skipped: number; failed: number }> => {
+  ): Promise<{ added: number; skipped: number; failed: number; capped?: boolean }> => {
+    // 大量一括取込は最上位（¥29,800〜）限定。未解放なら何も取り込まずアップグレード誘導。
+    if (!bulkUnlocked) {
+      setCapacityError(CAP_MSG);
+      return { added: 0, skipped: files.length, failed: 0, capped: true };
+    }
+    setCapacityError(null);
     let added = 0, skipped = 0, failed = 0;
     const total = files.length;
     const seen = new Set(items.map(i => `${i.fileName}::${i.fileSize}`));
@@ -381,7 +405,7 @@ export function useKnowledge(
     }
     onProgress?.(total, total, '');
     return { added, skipped, failed };
-  }, [items]);
+  }, [items, bulkUnlocked]);
 
   const deleteItem = useCallback((id: string) => {
     setItems(prev => prev.filter(i => i.id !== id));
@@ -414,6 +438,11 @@ export function useKnowledge(
     reanalyze,
     recomputeCashflow,
     suggestPersona,
+    // 大量データ取込の解放状態・件数制限・アップグレード文言（UI 側のメーター/誘導用）
+    bulkUnlocked,
+    freeCap: FREE_KNOWLEDGE_CAP,
+    capacityError,
+    clearCapacityError: () => setCapacityError(null),
     searchKnowledge: (query: string, personaId: PersonaId) =>
       searchKnowledge(query, items.filter(i => i.personaId === personaId)),
   };

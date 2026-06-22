@@ -152,8 +152,8 @@ export const ja: Dictionary = {
     plans: {
       starter: {
         name: 'Starter',
-        tag:  '個人事業 / 副業',
-        price: '¥4,800',
+        tag:  '個人事業 / ひとり社長',
+        price: '¥2,980',
         features: [
           '3 つの人格 (経営/営業/+1)',
           '商談・議事録・スライド AI',

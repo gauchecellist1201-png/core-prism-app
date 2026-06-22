@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 // v1 = 旧プラン (現状ユーザー) / v2 = 新プラン (BtoB/BtoC 6 階層、2026-06-03 承認)
 export type PlanId =
   // v1 (既存・後方互換)
-  | 'free' | 'lite' | 'standard' | 'pro' | 'studio'
+  | 'free' | 'lite' | 'standard' | 'pro' | 'studio' | 'agency'
   // v2 BtoC (個人 / スモール)
   | 'v2-btoC-light' | 'v2-btoC-standard' | 'v2-btoC-pro'
   // v2 BtoB (法人)
@@ -115,6 +115,23 @@ export const PLAN_LIMITS: Record<PlanId, Partial<Record<FeatureKey, FeatureLimit
     'knowledge-brain': 'unlimited',
     'api-access': 'unlimited',
     'white-label': 'unlimited',
+  },
+  // Iris Agency（運用代行会社向け・2026-06-22新設）— 全AI無制限＋企画台本＋多アカウント
+  agency: {
+    'ai-chat': 'unlimited',
+    'screenshot-ai': 'unlimited',
+    'caption-ai': 'unlimited',
+    'negotiation-ai': 'unlimited',
+    'triage-ai': 'unlimited',
+    'beauty-advice': 'unlimited',
+    'instagram-analyze': 'unlimited',
+    'story-arc': 'unlimited',
+    'community': 'unlimited',
+    'team-members': 30,
+    'brand-match': 'unlimited',
+    'script-studio': 'unlimited',
+    'api-access': 'unlimited',
+    'white-label': 'unavailable',
   },
   // ── v2 BtoC (個人 / スモール) ─────────────────────
   'v2-btoC-light': {
@@ -305,7 +322,23 @@ export const IRIS_PLANS: Plan[] = [
     stripeUrlEnvKey: 'VITE_STRIPE_IRIS_PRO_URL',
     stripeUrlEnvKey_yearly: 'VITE_STRIPE_IRIS_PRO_YEARLY_URL',
   },
-  // Iris「Studio」は 2026-06-11 に廃止（3階層 Lite/Standard/Pro に統一）。
+  {
+    id: 'agency', brand: 'iris',
+    name: 'Agency', priceJpy: 29800, priceJpy_yearly: 298000,
+    badge: '運用代行',
+    tagline: '運用代行会社・複数クライアント',
+    features: [
+      'Pro 全機能',
+      '連携アカウント 30（複数クライアント運用）',
+      '企画・台本スタジオ 無制限（量産モード）',
+      'クライアント別ワークスペース',
+      'チームメンバー 30 名',
+      '専任サポート / 導入伴走',
+    ],
+    stripeUrlEnvKey: 'VITE_STRIPE_IRIS_AGENCY_URL',
+    stripeUrlEnvKey_yearly: 'VITE_STRIPE_IRIS_AGENCY_YEARLY_URL',
+  },
+  // Iris「Studio」は 2026-06-11 に廃止（Lite/Standard/Pro/Agency の4階層）。
 ];
 
 export const PRISM_PLANS: Plan[] = [
@@ -317,8 +350,8 @@ export const PRISM_PLANS: Plan[] = [
   },
   {
     id: 'lite', brand: 'prism',
-    name: 'Starter', priceJpy: 4800, priceJpy_yearly: 48000,
-    tagline: '個人・スタートアップ',
+    name: 'Starter', priceJpy: 2980, priceJpy_yearly: 29800,
+    tagline: '個人・ひとり社長の入口',
     features: [
       '基本 AI 機能',
       '1 人格 / 1 ユーザー',
