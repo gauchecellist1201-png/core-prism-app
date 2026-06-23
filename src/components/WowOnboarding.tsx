@@ -8,7 +8,7 @@
 // ============================================================
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Mail, Calendar, FileText, Sparkles, ArrowRight, Check, Copy } from 'lucide-react';
+import { X, Loader2, Mail, Calendar, FileText, Sparkles, ArrowRight, Check, Copy, Film, Pin, AlertTriangle } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { buildGcalDeeplink } from '../lib/googleCalendar';
 import { tactileReward } from '../lib/haptic';
@@ -205,7 +205,7 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
   const [answer, setAnswer] = useState('');
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [activeResult, setActiveResult] = useState<{ title: string; body: string } | null>(null);
+  const [activeResult, setActiveResult] = useState<{ title: string; body: string; icon?: 'mail' | 'calendar' | 'film' | 'pin' | 'memo' | 'warn' } | null>(null);
   const [running, setRunning] = useState<number | null>(null);
   const [done, setDone] = useState<Set<number>>(new Set());
   const [copied, setCopied] = useState(false);
@@ -291,7 +291,8 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
         const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         try { window.open(url); } catch {/* */}
         setActiveResult({
-          title: '✉️ 下書きを用意しました',
+          icon: 'mail',
+          title: '下書きを用意しました',
           body: `宛先: ${to || '(あなたが選んでください)'}\n件名: ${subject}\n\n${body}\n\n— メールアプリが自動で開かない場合は、上の文章をそのままコピーしてお使いください。`,
         });
       } else if (p.actionType === 'calendar') {
@@ -305,7 +306,8 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
         });
         try { window.open(url, '_blank', 'noopener'); } catch {/* */}
         setActiveResult({
-          title: '📅 Google カレンダーを開きました',
+          icon: 'calendar',
+          title: 'Google カレンダーを開きました',
           body: `予定: ${p.payload.eventTitle || p.title}\n開始: ${formatJP(startISO)}\n所要: ${minutes} 分\n\n新しいタブで Google カレンダーが開きました。「保存」を押すと登録完了です。\n\n(タブが開かない場合は、ブラウザのポップアップを許可してください)`,
         });
       } else if (p.actionType === 'text_artifact') {
@@ -327,10 +329,12 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
         const d = await r.json();
         const out = (d?.content?.[0]?.text ?? '').trim();
         if (!out) throw new Error('AI のレスポンスが空でした');
-        const heading = p.payload.kind === 'reel_script' ? '🎬 リール台本ができました'
-          : p.payload.kind === 'pitch' ? '📌 ピッチメモができました'
-          : '📝 メモができました';
-        setActiveResult({ title: heading, body: out });
+        const heading = p.payload.kind === 'reel_script' ? 'リール台本ができました'
+          : p.payload.kind === 'pitch' ? 'ピッチメモができました'
+          : 'メモができました';
+        const headIcon: 'film' | 'pin' | 'memo' = p.payload.kind === 'reel_script' ? 'film'
+          : p.payload.kind === 'pitch' ? 'pin' : 'memo';
+        setActiveResult({ icon: headIcon, title: heading, body: out });
       }
       const wasFirstWin = done.size === 0;
       setDone(prev => new Set(prev).add(i));
@@ -340,7 +344,8 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
       }
     } catch (e: any) {
       setActiveResult({
-        title: '⚠️ うまく動かせませんでした',
+        icon: 'warn',
+        title: 'うまく動かせませんでした',
         body: `${e?.message || '不明なエラー'}\n\nもう一度試すか、別の提案を選んでみてください。`,
       });
     } finally {
@@ -598,8 +603,10 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
                   fontSize: 11, lineHeight: 1.55,
                   color: 'rgba(255,210,140,0.9)',
                   marginBottom: '0.8rem',
+                  display: 'flex', alignItems: 'center', gap: 7,
                 }}>
-                  ⚠️ AI 接続が不安定だったため、定番の 3 つを表示しています。
+                  <AlertTriangle size={13} style={{ flexShrink: 0 }} />
+                  <span>AI 接続が不安定だったため、定番の 3 つを表示しています。</span>
                 </div>
               )}
 
@@ -726,7 +733,30 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
                 }}>
                   <h3 style={{
                     margin: 0, fontSize: 16, fontWeight: 800, lineHeight: 1.4,
-                  }}>{activeResult.title}</h3>
+                    display: 'flex', alignItems: 'center', gap: 9,
+                  }}>
+                    {(() => {
+                      const ic = activeResult.icon;
+                      const warn = ic === 'warn';
+                      const col = warn ? '#FFC766' : accentSolid;
+                      const Glyph = ic === 'mail' ? Mail
+                        : ic === 'calendar' ? Calendar
+                        : ic === 'film' ? Film
+                        : ic === 'pin' ? Pin
+                        : ic === 'warn' ? AlertTriangle
+                        : FileText;
+                      return (
+                        <span style={{
+                          flexShrink: 0, width: 30, height: 30, borderRadius: 9,
+                          background: warn ? 'rgba(255,180,80,0.14)' : `${accentSolid}22`,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Glyph size={16} color={col} strokeWidth={2.1} />
+                        </span>
+                      );
+                    })()}
+                    <span>{activeResult.title}</span>
+                  </h3>
                   <button onClick={() => setActiveResult(null)} style={{
                     flexShrink: 0,
                     width: 28, height: 28, borderRadius: 999,
@@ -819,8 +849,14 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
                 initial={{ scale: 0, rotate: -20 }}
                 animate={{ scale: [0, 1.25, 1], rotate: 0 }}
                 transition={{ duration: 0.7, ease: [0.34, 1.56, 0.64, 1] }}
-                style={{ fontSize: 'clamp(3.4rem, 14vw, 5rem)', marginBottom: '0.6rem', zIndex: 2 }}>
-                🎉
+                style={{
+                  width: 'clamp(64px, 18vw, 92px)', height: 'clamp(64px, 18vw, 92px)',
+                  borderRadius: '50%', background: accent,
+                  display: 'grid', placeItems: 'center',
+                  marginBottom: '0.6rem', zIndex: 2,
+                  boxShadow: `0 10px 30px ${accentSolid}55`,
+                }}>
+                <Check color="#fff" strokeWidth={2.6} style={{ width: '46%', height: '46%' }} />
               </motion.div>
 
               <motion.div
