@@ -20,7 +20,8 @@
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Loader2, X, Sparkles } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
+import GenerationOrb from './GenerationOrb';
 
 interface Props {
   /** ローディング表示するかどうか */
@@ -95,22 +96,8 @@ export default function AILoadingState({
           marginTop: 8,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: 10,
-            background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 0 14px ${accent}66`,
-            flexShrink: 0,
-          }}>
-            <motion.span
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: 'linear' }}
-              style={{ display: 'inline-flex' }}
-            >
-              <Loader2 size={14} color="#fff" />
-            </motion.span>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <GenerationOrb brand={brand} size={44} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13.5, fontWeight: 800, color: '#fff', letterSpacing: '0.01em' }}>
               {label}
