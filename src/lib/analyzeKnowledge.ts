@@ -234,6 +234,48 @@ function buildKnowledgeContextForUse(items: KnowledgeItem[]): string {
   }).join('\n\n');
 }
 
+export interface KnowledgeAction {
+  /** 命令形の短いアクション（明日から動ける粒度） */
+  action: string;
+  /** 何をどうやるか（誰に/何を/どこで）1 行 */
+  how: string;
+  /** 着手目安 */
+  effort: 'today' | 'week' | 'month';
+}
+
+/**
+ * 提案・戦略の本文を「丸ごとコピー」ではなく、明日から動ける具体アクションへ分解する。
+ * （オーナー指示 2026-06-18: 丸ごとコピーは無意味。アクションベースで有益にする）
+ */
+export async function extractActionPlan(opts: {
+  settings: AppSettings;
+  title: string;
+  body: string;
+}): Promise<KnowledgeAction[]> {
+  const SYS = `あなたは実行支援のプロ。与えられた提案・戦略の文章を、ユーザーが「明日から手を動かせる」具体的な次のアクションに分解する。
+ルール:
+- 3〜5 個。各アクションは命令形で短く（20〜36字）、すぐ着手できる粒度にする
+- how は 1 行で「何をどうやるか」を具体的に（誰に / 何を / どこで / どの順で）
+- effort は today（今日できる）/ week（今週）/ month（今月）のいずれか
+- 「意識する」「検討する」などの抽象論・心構えは禁止。手を動かせることだけ
+出力は JSON 配列のみ（前後に文章を書かない）:
+[{"action":"...","how":"...","effort":"today|week|month"}]`;
+  const userMsg = `# ${opts.title}\n\n${opts.body}\n\n上記を、明日から動ける具体アクションに分解して JSON で返してください。`;
+  const text = await callKnowledgeAi(opts.settings, SYS, userMsg, 900, 'アクション分解');
+  const m = text.match(/\[[\s\S]*\]/);
+  if (!m) throw new Error('アクションを取り出せませんでした。もう一度お試しください。');
+  const arr = JSON.parse(m[0]);
+  const ok: KnowledgeAction['effort'][] = ['today', 'week', 'month'];
+  return (Array.isArray(arr) ? arr : [])
+    .map((a: { action?: unknown; how?: unknown; effort?: unknown }) => ({
+      action: String(a.action ?? '').trim().slice(0, 60),
+      how: String(a.how ?? '').trim().slice(0, 140),
+      effort: (ok as string[]).includes(String(a.effort)) ? (a.effort as KnowledgeAction['effort']) : 'week',
+    }))
+    .filter((a: KnowledgeAction) => a.action)
+    .slice(0, 6);
+}
+
 async function callKnowledgeAi(
   settings: AppSettings,
   system: string,

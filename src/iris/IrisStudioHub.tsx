@@ -34,13 +34,13 @@ interface StudioTool {
 }
 
 const DESIGN_TOOLS: StudioTool[] = [
-  { tab: 'image',  title: '写真を直す',     desc: '明るさ・色・背景をワンタップで。投稿が映える1枚に。', icon: Camera,    badge: 'Canva風' },
+  { tab: 'image',  title: '写真を直す',     desc: '明るさ・色・背景をワンタップで。投稿が映える1枚に。', icon: Camera,    badge: 'ワンタップ' },
   { tab: 'draft',  title: '投稿を書く',     desc: 'AI がキャプション・ハッシュタグ・文字入れ案を作成。',  icon: Type },
 ];
 
 const VIDEO_TOOLS: StudioTool[] = [
-  { tab: 'reel',     title: 'リールを作る',   desc: '素材を並べる→字幕→BGMでテンポ良く。縦型に最適化。', icon: Film,         badge: 'CapCut風' },
-  { tab: 'director', title: '動画おまかせ',   desc: 'テーマを言うだけ。AI が構成・台本・字幕まで設計。',   icon: Clapperboard, badge: 'AI' },
+  { tab: 'reel',     title: 'リールを作る',   desc: '素材を並べる→字幕→BGMでテンポ良く。縦型に最適化。', icon: Film,         badge: '字幕つき' },
+  { tab: 'director', title: '動画おまかせ',   desc: 'テーマを言うだけ。AI が構成・台本・字幕まで設計。',   icon: Clapperboard, badge: 'AIにまかせる' },
 ];
 
 export default function IrisStudioHub({ bg, onOpen }: { bg: StudioBg; onOpen: (tab: string) => void }) {
@@ -78,8 +78,8 @@ export default function IrisStudioHub({ bg, onOpen }: { bg: StudioBg; onOpen: (t
         background: bg.card, border: `1px solid ${bg.cardBorder}`,
       }}>
         {([
-          { id: 'design' as Mode, label: 'デザイン', sub: 'Canva 風', icon: ImageIcon },
-          { id: 'video'  as Mode, label: '動画',     sub: 'CapCut 風', icon: Film },
+          { id: 'design' as Mode, label: 'デザイン', sub: '画像・サムネ', icon: ImageIcon },
+          { id: 'video'  as Mode, label: '動画',     sub: 'リール・字幕', icon: Film },
         ]).map(m => {
           const on = mode === m.id;
           return (

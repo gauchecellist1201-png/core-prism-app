@@ -19,7 +19,7 @@
 // ============================================================
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Pause, Play, Sparkles, Check, X } from 'lucide-react';
+import { Mic, MicOff, Pause, Play, Sparkles, Check, X, Video, Link2, MonitorSpeaker } from 'lucide-react';
 import { summarizeMeeting } from '../lib/meetingSummarize';
 import { transcribeAudioFile } from '../lib/audioTranscribe';
 
@@ -42,9 +42,19 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [summaryHint, setSummaryHint] = useState<string | null>(null);
 
+  // 音源: マイク(対面/スピーカー) or この画面/タブの音声(Meet/Zoom の参加者音声)
+  const [sourceMode, setSourceMode] = useState<'mic' | 'tab'>('mic');
+  // Google Meet リンク（Prism から発行して相手に送る）
+  const [meetLink, setMeetLink] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
+
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  // タブ音声モード用: 画面共有・マイク・AudioContext を個別に保持して確実に開放する
+  const displayStreamRef = useRef<MediaStream | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const tickRef = useRef<number | null>(null);
   const startedAtRef = useRef<number>(0);
   const pauseDurationRef = useRef<number>(0);
@@ -71,13 +81,40 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
   const start = async () => {
     setErrMsg(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
+      let stream: MediaStream;
+      if (sourceMode === 'tab') {
+        // Meet/Zoom の「参加者の声」を取るには、ブラウザのタブ音声を共有してもらう。
+        // さらに自分のマイクも足して全員の声を 1 本に混ぜる（AudioContext で合成）。
+        const display = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        displayStreamRef.current = display;
+        const tabAudio = display.getAudioTracks();
+        if (tabAudio.length === 0) {
+          display.getTracks().forEach(t => t.stop());
+          displayStreamRef.current = null;
+          throw new Error('タブの音声が共有されませんでした。共有ダイアログで会議の「タブ」を選び、「タブの音声も共有」にチェックを入れてください。');
+        }
+        // 自分の声（任意・取れなくても続行）
+        let mic: MediaStream | null = null;
+        try {
+          mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+          micStreamRef.current = mic;
+        } catch { /* マイク不可でも参加者音声だけで続行 */ }
+        const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const ctx = new Ctx();
+        audioCtxRef.current = ctx;
+        const dest = ctx.createMediaStreamDestination();
+        ctx.createMediaStreamSource(new MediaStream(tabAudio)).connect(dest);
+        if (mic) ctx.createMediaStreamSource(mic).connect(dest);
+        // 画面映像は不要なので止める（音声だけ録る）
+        display.getVideoTracks().forEach(t => t.stop());
+        // ユーザーがブラウザの「共有を停止」を押したら自動で確定
+        tabAudio[0].addEventListener('ended', () => { stopAndProcess(); });
+        stream = dest.stream;
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
+      }
       streamRef.current = stream;
       const mimeType = chooseMimeType();
       const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 64000 });
@@ -92,10 +129,23 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
       setElapsedSec(0);
       setPhase('recording');
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'マイクを使えません';
-      setErrMsg(`マイク許可をお願いします: ${msg}`);
+      releaseStreams();
+      const msg = e instanceof Error ? e.message : '音声を取得できませんでした';
+      // 取消(NotAllowed)はやさしく、それ以外はメッセージをそのまま見せる
+      setErrMsg(/denied|notallowed|permission/i.test(msg)
+        ? (sourceMode === 'tab' ? '画面共有が許可されませんでした。もう一度「録音を開始」を押し、会議のタブと「タブの音声」を選んでください。' : 'マイクが許可されませんでした。ブラウザのマイク許可をオンにしてください。')
+        : msg);
       setPhase('error');
     }
+  };
+
+  // すべての入力ストリーム/AudioContext を確実に開放する
+  const releaseStreams = () => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    displayStreamRef.current?.getTracks().forEach(t => t.stop());
+    micStreamRef.current?.getTracks().forEach(t => t.stop());
+    try { audioCtxRef.current?.close(); } catch { /* */ }
+    streamRef.current = null; displayStreamRef.current = null; micStreamRef.current = null; audioCtxRef.current = null;
   };
 
   const pause = () => {
@@ -130,9 +180,8 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
       rec.onstop = () => resolve();
       rec.stop();
     });
-    // マイクを開放
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    streamRef.current = null;
+    // 入力をすべて開放（マイク / タブ音声 / AudioContext）
+    releaseStreams();
 
     const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || 'audio/webm' });
     if (blob.size < 1024) {
@@ -205,7 +254,7 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
     if (recorderRef.current?.state === 'recording' || recorderRef.current?.state === 'paused') {
       try { recorderRef.current.stop(); } catch { /* */ }
     }
-    streamRef.current?.getTracks().forEach(t => t.stop());
+    releaseStreams();
     onClose();
   }, [onClose]);
 
@@ -269,10 +318,54 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
         {/* タイトル入力 (idle のみ) */}
         {phase === 'idle' && (
           <>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, marginBottom: 14 }}>
-              Google Meet 無料・Zoom 無料・対面会議 どれでも OK。
-              スマホでもパソコンでも使えます。マイク許可をお願いします。
-            </p>
+            {/* STEP 1: Google Meet リンクを作って相手に送る */}
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 14, marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: accentColor, letterSpacing: '0.1em', marginBottom: 8 }}>STEP 1 ・ 会議リンクを用意</div>
+              <a href="https://meet.google.com/new" target="_blank" rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '12px', borderRadius: 12, background: 'linear-gradient(135deg, #1a73e8, #4285f4)', color: '#fff', fontSize: 14, fontWeight: 800, textDecoration: 'none', marginBottom: 10 }}>
+                <Video size={17} /> Google Meet を作成（新しいタブで開く）
+              </a>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input type="url" value={meetLink} onChange={e => { setMeetLink(e.target.value); setLinkCopied(false); }}
+                  placeholder="発行された Meet リンクを貼り付け"
+                  style={{ flex: 1, minWidth: 0, fontSize: 13, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', outline: 'none' }} />
+                <button
+                  onClick={async () => {
+                    const link = meetLink.trim(); if (!link) return;
+                    const shareData = { title: '会議のご案内', text: 'こちらの Google Meet にご参加ください:', url: link };
+                    try { if (navigator.share) { await navigator.share(shareData); return; } } catch { /* 共有キャンセルは無視 */ }
+                    try { await navigator.clipboard?.writeText(link); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 1800); } catch { /* */ }
+                  }}
+                  style={{ flexShrink: 0, padding: '0 14px', borderRadius: 10, background: accentColor, color: '#fff', border: 'none', fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  {linkCopied ? <><Check size={14} /> コピー済</> : <><Link2 size={14} /> 送る</>}
+                </button>
+              </div>
+              <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.45)', marginTop: 8, lineHeight: 1.6 }}>
+                作成 → リンクをコピーしてこの欄に貼り、「送る」で相手へ共有。会議に入ったら下で録音を始めます。
+              </p>
+            </div>
+
+            {/* STEP 2: 音源を選ぶ */}
+            <div style={{ fontSize: 11, fontWeight: 800, color: accentColor, letterSpacing: '0.1em', marginBottom: 8 }}>STEP 2 ・ 録音する音</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+              {([
+                ['tab', 'Meet / Zoom', '画面共有で参加者の声＋あなたの声', MonitorSpeaker],
+                ['mic', '対面 / スピーカー', 'マイクで拾う', Mic],
+              ] as const).map(([mode, title, desc, Icon]) => {
+                const sel = sourceMode === mode;
+                return (
+                  <button key={mode} onClick={() => setSourceMode(mode)}
+                    style={{ textAlign: 'left', padding: '11px 12px', borderRadius: 12, cursor: 'pointer',
+                      background: sel ? `${accentColor}22` : 'rgba(255,255,255,0.04)',
+                      border: `1.5px solid ${sel ? accentColor : 'rgba(255,255,255,0.10)'}`, color: '#fff' }}>
+                    <Icon size={16} color={sel ? accentColor : 'rgba(255,255,255,0.6)'} />
+                    <div style={{ fontSize: 12.5, fontWeight: 800, marginTop: 5 }}>{title}</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', lineHeight: 1.4, marginTop: 2 }}>{desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+
             <input
               type="text"
               value={meetingTitle}
@@ -304,10 +397,12 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
             >
-              <Mic size={18} /> 録音を開始
+              {sourceMode === 'tab' ? <><MonitorSpeaker size={18} /> 画面を共有して録音開始</> : <><Mic size={18} /> マイクで録音開始</>}
             </button>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginTop: 10, lineHeight: 1.6 }}>
-              ※ 録音内容は端末内のみで処理 → 文字起こしと要約だけサーバに送信されます
+              {sourceMode === 'tab'
+                ? '※ 次の画面で会議の「タブ」を選び、「タブの音声も共有」にチェックを入れてください'
+                : '※ 録音内容は端末内のみで処理 → 文字起こしと要約だけサーバに送信されます'}
             </p>
           </>
         )}

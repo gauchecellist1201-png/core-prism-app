@@ -10,8 +10,8 @@ import { sortRisksByPriority } from '../lib/riskPriority';
 import { summarizeMeeting, stripCaptions } from '../lib/meetingSummarize';
 import MeetingRecorder from './MeetingRecorder';
 import {
-  proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse,
-  KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal,
+  proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse, extractActionPlan,
+  KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal, type KnowledgeAction,
 } from '../lib/analyzeKnowledge';
 
 const USE_ICON: Record<KnowledgeUseKind, string> = {
@@ -227,6 +227,12 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
   const [proposalError, setProposalError] = useState<string | null>(null);
   const [busyIdx, setBusyIdx] = useState<number | null>(null);
   const [result, setResult] = useState<{ title: string; body: string } | null>(null);
+  // 「丸ごとコピー」ではなく、提案を明日から動けるアクションへ分解する
+  const [actions, setActions] = useState<KnowledgeAction[] | null>(null);
+  const [actionsBusy, setActionsBusy] = useState(false);
+  const [actionsErr, setActionsErr] = useState<string | null>(null);
+  const [actionDone, setActionDone] = useState<Record<number, boolean>>({});
+  const [actionsSaved, setActionsSaved] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // ── 横断インサイト: 全資料を一度に読んで「気づき」を抽出 (オーナー指示 2026-05-28) ──
@@ -330,6 +336,33 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
       setTimeout(() => setCopied(false), 1800);
     }).catch(() => { /* クリップボード非対応でも表示は残るので無視 */ });
   }, [result]);
+
+  // 提案を「明日から動けるアクション」に分解（丸ごとコピーの置き換え）
+  const handleBreakIntoActions = useCallback(async () => {
+    if (!result) return;
+    setActionsBusy(true);
+    setActionsErr(null);
+    setActions(null);
+    setActionDone({});
+    setActionsSaved(false);
+    try {
+      const list = await extractActionPlan({ settings, title: result.title, body: result.body });
+      setActions(list);
+    } catch (e) {
+      setActionsErr(e instanceof Error ? e.message : 'アクションへの分解に失敗しました');
+    } finally {
+      setActionsBusy(false);
+    }
+  }, [result, settings]);
+
+  // 出たアクションをナレッジに保存（積み上がって精度が上がる）
+  const handleSaveActions = useCallback(() => {
+    if (!result || !actions?.length) return;
+    const EFFORT_JP: Record<KnowledgeAction['effort'], string> = { today: '今日', week: '今週', month: '今月' };
+    const body = actions.map((a, i) => `${i + 1}. [${EFFORT_JP[a.effort]}] ${a.action}\n   → ${a.how}`).join('\n');
+    onAddNote(`✓ アクション: ${result.title}`, body);
+    setActionsSaved(true);
+  }, [result, actions, onAddNote]);
 
   const handleFile = useCallback(async (file: File) => {
     setIsUploading(true);
@@ -585,21 +618,69 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-white text-sm font-medium flex-1 min-w-0">{result.title}</p>
                       <button
-                        onClick={() => setResult(null)}
+                        onClick={() => { setResult(null); setActions(null); setActionsErr(null); }}
                         className="text-xs text-white/60 hover:text-white flex-shrink-0"
                       >← 提案にもどる</button>
                     </div>
                     <div
                       className="rounded-xl p-3 text-xs leading-relaxed whitespace-pre-wrap text-white/85"
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', maxHeight: '52vh', overflowY: 'auto' }}
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', maxHeight: actions ? '24vh' : '46vh', overflowY: 'auto' }}
                     >
                       {result.body}
                     </div>
-                    <button
-                      onClick={handleCopyResult}
-                      className="w-full py-2.5 rounded-lg text-sm font-medium"
-                      style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
-                    >{copied ? '✓ コピーしました' : '📋 まるごとコピー'}</button>
+
+                    {/* 丸ごとコピーではなく「明日から動けるアクション」に分解 */}
+                    {!actions && (
+                      <button
+                        onClick={handleBreakIntoActions}
+                        disabled={actionsBusy}
+                        className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                        style={{ background: 'linear-gradient(135deg, #E1306C, #F77737)', color: '#fff', opacity: actionsBusy ? 0.7 : 1 }}
+                      >{actionsBusy ? '分解しています…' : '⚡ 明日から動けるアクションに分解'}</button>
+                    )}
+                    {actionsErr && (
+                      <div className="rounded-lg p-2.5 text-xs" style={{ background: 'rgba(200,16,46,0.10)', border: '1px solid rgba(200,16,46,0.3)', color: '#ffb4b4' }}>
+                        {actionsErr}
+                        <button onClick={handleBreakIntoActions} className="ml-2 underline font-bold">再試行</button>
+                      </div>
+                    )}
+
+                    {actions && actions.length > 0 && (
+                      <div className="space-y-2">
+                        {actions.map((a, i) => {
+                          const EFFORT: Record<KnowledgeAction['effort'], { jp: string; color: string }> = {
+                            today: { jp: '今日', color: '#E1306C' }, week: { jp: '今週', color: '#F77737' }, month: { jp: '今月', color: '#FBBF24' },
+                          };
+                          const ef = EFFORT[a.effort];
+                          const done = !!actionDone[i];
+                          return (
+                            <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                              className="rounded-xl p-3 flex gap-3"
+                              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', opacity: done ? 0.5 : 1 }}>
+                              <button onClick={() => setActionDone(d => ({ ...d, [i]: !d[i] }))}
+                                className="flex-shrink-0 w-5 h-5 rounded-md mt-0.5 flex items-center justify-center"
+                                style={{ border: `2px solid ${done ? '#34D399' : 'rgba(255,255,255,0.3)'}`, background: done ? '#34D399' : 'transparent', color: '#fff', fontSize: 12 }}
+                                aria-label="完了">{done ? '✓' : ''}</button>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${ef.color}22`, color: ef.color }}>{ef.jp}</span>
+                                  <span className="text-white text-sm font-bold leading-snug" style={{ textDecoration: done ? 'line-through' : 'none' }}>{a.action}</span>
+                                </div>
+                                <p className="text-white/65 text-xs leading-relaxed">{a.how}</p>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                        <div className="flex gap-2 pt-1">
+                          <button onClick={handleSaveActions} disabled={actionsSaved}
+                            className="flex-1 py-2.5 rounded-lg text-sm font-bold"
+                            style={{ background: actionsSaved ? 'rgba(52,211,153,0.15)' : persona.accentColorLight, color: actionsSaved ? '#34D399' : persona.accentColor, border: `1px solid ${actionsSaved ? '#34D399' : persona.accentColor}40` }}
+                          >{actionsSaved ? '✓ ナレッジに保存しました' : 'このアクションをナレッジに保存'}</button>
+                          <button onClick={handleBreakIntoActions} className="px-4 py-2.5 rounded-lg text-sm font-medium text-white/70" style={{ background: 'rgba(255,255,255,0.06)' }}>別案</button>
+                        </div>
+                        <button onClick={handleCopyResult} className="w-full text-xs text-white/45 hover:text-white/70 pt-1">{copied ? '✓ コピーしました' : '本文を全文コピー（必要な場合）'}</button>
+                      </div>
+                    )}
                   </motion.div>
                 ) : proposalsBusy ? (
                   <div className="text-center py-12">
