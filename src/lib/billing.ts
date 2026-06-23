@@ -629,6 +629,22 @@ export function getEffectivePlan(user: BillingUser | null): PlanId {
 }
 
 /**
+ * 実際に契約しているプランの月額(円)を返す。
+ * PlanId 'pro' は Iris(¥12,800) と Prism Exclusive(¥29,800) で共有されているため、
+ * 価格で機能解放を判定したい場合は **ブランドで正しいプランを引く** 必要がある。
+ * （オーナー指示 2026-06-18: 大容量ナレッジは「¥29,800 以上」で解放）
+ */
+export function getEffectivePlanPriceJpy(user: BillingUser | null): number {
+  if (isMasterAuth()) return Infinity;
+  if (!user) return 0;
+  const pool: Plan[] = user.brand === 'iris'
+    ? IRIS_PLANS
+    : [...PRISM_PLANS, ...PRISM_PLANS_V2];
+  const plan = pool.find((p) => p.id === user.plan);
+  return plan?.priceJpy ?? 0;
+}
+
+/**
  * 機能を使う前に呼ぶ厳格チェック。
  * - 許可: { ok: true } を返す
  * - 拒否: { ok: false, reason, upgradeTo? } を返す

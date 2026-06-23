@@ -124,6 +124,8 @@ interface Props {
   onBackToSelection: () => void;
   onOpenSettings: () => void;
   onCreatePersona: () => void;
+  /** 人格の名前・肩書きを変更（ヘッダーでその場編集） */
+  onRenamePersona?: (id: string, updates: { name?: string; subtitle?: string }) => void;
   onAddKnowledgeFile: (file: File) => Promise<KnowledgeItem>;
   onAddKnowledgeNote: (title: string, content: string) => KnowledgeItem;
   onDeleteKnowledge: (id: string) => void;
@@ -154,6 +156,51 @@ function FileIcon({ type }: { type: string }) {
   return <span className="flex-shrink-0 inline-flex text-fg-muted"><Ic size={15} strokeWidth={2} /></span>;
 }
 
+/** ヘッダーの名前・肩書きをその場でタイピング編集（クリック→入力→Enter/フォーカスアウトで保存） */
+function EditablePersonaTitle({ persona, onRename }: { persona: Persona; onRename?: (id: string, u: { name?: string; subtitle?: string }) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(persona.name);
+  const [subtitle, setSubtitle] = useState(persona.subtitle || '');
+  useEffect(() => { setName(persona.name); setSubtitle(persona.subtitle || ''); }, [persona.id, persona.name, persona.subtitle]);
+
+  const save = () => {
+    const n = name.trim() || persona.name;
+    const s = subtitle.trim();
+    if (onRename && (n !== persona.name || s !== (persona.subtitle || ''))) onRename(persona.id, { name: n, subtitle: s });
+    setEditing(false);
+  };
+  const cancel = () => { setName(persona.name); setSubtitle(persona.subtitle || ''); setEditing(false); };
+
+  if (editing && onRename) {
+    const inp: React.CSSProperties = {
+      width: '100%', background: 'var(--surface-3)', border: '1px solid var(--border)',
+      borderRadius: 8, color: 'var(--fg)', outline: 'none', padding: '4px 8px',
+    };
+    return (
+      <div className="min-w-0 flex-1 flex flex-col gap-1">
+        <input autoFocus value={name} maxLength={40} placeholder="名前"
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') cancel(); }}
+          style={{ ...inp, fontSize: 16, fontWeight: 600 }} />
+        <input value={subtitle} maxLength={60} placeholder="肩書き (例: Tech Startup CEO)"
+          onChange={e => setSubtitle(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') cancel(); }}
+          onBlur={save}
+          style={{ ...inp, fontSize: 12 }} />
+      </div>
+    );
+  }
+  return (
+    <button onClick={() => onRename && setEditing(true)} className="min-w-0 text-left group" title={onRename ? 'クリックで名前を変更' : undefined} style={{ cursor: onRename ? 'text' : 'default' }}>
+      <p className="text-fg text-base font-medium truncate leading-tight flex items-center gap-1">
+        <span className="truncate">{persona.name}</span>
+        {onRename && <Pencil size={11} strokeWidth={2.2} className="flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity" />}
+      </p>
+      <p className="text-fg-muted text-xs truncate">{persona.subtitle || '＋ 肩書きを追加'}</p>
+    </button>
+  );
+}
+
 export default function IdentityDashboard({
   persona,
   allPersonas,
@@ -170,6 +217,7 @@ export default function IdentityDashboard({
   onBackToSelection,
   onOpenSettings,
   onCreatePersona,
+  onRenamePersona,
   onAddKnowledgeFile,
   onAddKnowledgeNote,
   onDeleteKnowledge,
@@ -793,10 +841,7 @@ export default function IdentityDashboard({
               >
                 {persona.icon}
               </motion.div>
-              <div className="min-w-0">
-                <p className="text-fg text-base font-medium truncate leading-tight">{persona.name}</p>
-                <p className="text-fg-muted text-xs truncate">{persona.subtitle}</p>
-              </div>
+              <EditablePersonaTitle persona={persona} onRename={onRenamePersona} />
             </div>
             <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
               <motion.button

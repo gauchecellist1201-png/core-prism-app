@@ -40,7 +40,8 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
   const [meetingTitle, setMeetingTitle] = useState('');
   const [processingLabel, setProcessingLabel] = useState('');
   const [errMsg, setErrMsg] = useState<string | null>(null);
-  const [summaryHint, setSummaryHint] = useState<string | null>(null);
+  // 保存された要約の中身（「ちゃんとナレッジに入った」を実感させる確認表示用）
+  const [savedSummary, setSavedSummary] = useState<{ title: string; summary: string; decisions: string[]; actions: string[] } | null>(null);
 
   // 音源: マイク(対面/スピーカー) or この画面/タブの音声(Meet/Zoom の参加者音声)
   const [sourceMode, setSourceMode] = useState<'mic' | 'tab'>('mic');
@@ -240,7 +241,12 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
         : `📹 ${summary.title}`;
       onSavedToKnowledge(title, noteContent);
 
-      setSummaryHint(summary.analysis.summary || summary.keyDecisions[0] || '');
+      setSavedSummary({
+        title: summary.title,
+        summary: summary.analysis.summary || '',
+        decisions: summary.keyDecisions.slice(0, 3),
+        actions: summary.actionItems.slice(0, 3).map(a => a.text),
+      });
       setPhase('done');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '要約に失敗しました';
@@ -489,22 +495,48 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
               <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>
                 ナレッジに保存しました
               </div>
-              {summaryHint && (
+              {savedSummary && (
                 <div style={{
-                  fontSize: 13, color: 'rgba(255,255,255,0.75)',
-                  marginTop: 10, padding: '10px 14px',
+                  marginTop: 12, padding: '14px 16px',
                   background: 'rgba(255,255,255,0.05)',
-                  borderRadius: 10, textAlign: 'left',
-                  lineHeight: 1.6,
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  borderRadius: 14, textAlign: 'left', lineHeight: 1.65,
                 }}>
-                  💭 {summaryHint}
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: accentColor, marginBottom: 4 }}>
+                    📚 ナレッジに追加された内容
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 6 }}>{savedSummary.title}</div>
+                  {savedSummary.summary && (
+                    <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.8)', marginBottom: savedSummary.decisions.length || savedSummary.actions.length ? 8 : 0 }}>
+                      {savedSummary.summary}
+                    </div>
+                  )}
+                  {savedSummary.decisions.length > 0 && (
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ fontSize: 10.5, fontWeight: 800, color: '#FBBF24', marginBottom: 2 }}>決定事項</div>
+                      {savedSummary.decisions.map((d, i) => (
+                        <div key={i} style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)' }}>・{d}</div>
+                      ))}
+                    </div>
+                  )}
+                  {savedSummary.actions.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 10.5, fontWeight: 800, color: '#34D399', marginBottom: 2 }}>アクション</div>
+                      {savedSummary.actions.map((a, i) => (
+                        <div key={i} style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)' }}>✓ {a}</div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 10 }}>
+                ナレッジ一覧に「📹 {savedSummary?.title || '会議'}」として追加されました
+              </div>
               <button onClick={handleClose} style={{
                 ...ctlBtn(accentColor, true),
-                marginTop: 18, width: '100%',
+                marginTop: 16, width: '100%',
               }}>
-                閉じる
+                ナレッジを見る
               </button>
             </motion.div>
           </AnimatePresence>

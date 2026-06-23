@@ -810,6 +810,7 @@ export default function App() {
             onBackToSelection={() => { setView('selection'); setChatMessages([]); }}
             onOpenSettings={() => { setSettingsInitialTab('basic'); setShowSettings(true); }}
             onCreatePersona={() => setShowPersonaCreator(true)}
+            onRenamePersona={(id, updates) => updatePersona(id, updates)}
             onAddKnowledgeFile={handleAddKnowledgeFile}
             onAddKnowledgeNote={handleAddKnowledgeNote}
             onDeleteKnowledge={deleteItem}

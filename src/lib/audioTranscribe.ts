@@ -10,7 +10,7 @@
 // ============================================================
 import { enqueueClaudeCall } from './apiQueue';
 
-const CHUNK_SEC = 75;        // 1 チャンクの長さ (75s × 16kHz × 2byte ≒ 2.4MB)
+const CHUNK_SEC = 110;       // 1 チャンクの長さ (長めにして往復回数を削減＝高速化。110s×16kHz×2byte ≒ 3.5MB)
 const TARGET_RATE = 16000;   // 文字起こしに十分な品質
 
 // 録音ファイルとして受け付ける拡張子

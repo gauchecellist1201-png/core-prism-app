@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { KnowledgeItem, KnowledgeChunk, PersonaId, AppSettings, Persona } from '../types/identity';
 // fileParser は pdfjs/mammoth/xlsx/jszip を抱える 1MB 級の重さ。
@@ -10,7 +10,8 @@ async function parseFile(file: File) {
 import { analyzeKnowledge, looksLikeFinancialData, extractFinancialData } from '../lib/analyzeKnowledge';
 import { useCloudSync } from './useCloudSync';
 import { safeSetJSON } from '../lib/storage';
-import { useBillingUser, getEffectivePlan, checkFeature, isMasterAuth } from '../lib/billing';
+import { idbGet, idbSet } from '../lib/idbStore';
+import { useBillingUser, getEffectivePlan, getEffectivePlanPriceJpy, checkFeature, isMasterAuth } from '../lib/billing';
 
 const STORAGE_KEY = 'core_knowledge';
 
@@ -109,7 +110,8 @@ function friendlyError(raw: string): string {
   return raw;
 }
 
-function load(): KnowledgeItem[] {
+/** 旧 localStorage からの読み出し（IndexedDB への移行元） */
+function loadLocal(): KnowledgeItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
@@ -118,12 +120,18 @@ function load(): KnowledgeItem[] {
   }
 }
 
-function save(items: KnowledgeItem[]) {
-  // 画像の base64 は 1 枚で 1MB 級になり localStorage(約5MB) を即圧迫する＝「容量が少ない」の主因。
-  // 検索/RAG はテキスト chunks があれば成立するため、永続化時は重い imageBase64 を外して
-  // 大量のデータを保存できるようにする（画像プレビューはセッション中のみ・再読込で軽量アイコンに）。
-  const slim = items.map((i) => (i.imageBase64 ? { ...i, imageBase64: undefined } : i));
-  safeSetJSON(STORAGE_KEY, slim, { module: 'ナレッジ' });
+// 永続化は IndexedDB（大容量可）。画像 base64 は重いので保存対象から外す
+// （RAG はテキスト chunks で成立。画像プレビューはセッション中のみ）。
+function slimForStore(items: KnowledgeItem[]): KnowledgeItem[] {
+  return items.map((i) => (i.imageBase64 ? { ...i, imageBase64: undefined } : i));
+}
+async function save(items: KnowledgeItem[]) {
+  const slim = slimForStore(items);
+  const ok = await idbSet(STORAGE_KEY, slim);
+  if (!ok) {
+    // IndexedDB が使えない環境のみ localStorage へフォールバック（容量内のときだけ成功）
+    safeSetJSON(STORAGE_KEY, slim, { module: 'ナレッジ' });
+  }
 }
 
 type UpdateCashflowFn = (
@@ -138,14 +146,41 @@ export function useKnowledge(
   getActivePersona?: () => Persona | null,
   updateCashflow?: UpdateCashflowFn,
 ) {
-  const [items, setItems] = useState<KnowledgeItem[]>(load);
-  // 大量データ取込の解放判定（¥29,800 以上＝統合ナレッジ脳）。マスターは常に解放。
+  const [items, setItems] = useState<KnowledgeItem[]>([]);
+  const hydratedRef = useRef(false);
+  // 大量データ取込の解放判定：実際のプラン価格が ¥29,800 以上か（ブランド差・プランID共有を吸収）。マスターは常に解放。
   const { user: billingUser } = useBillingUser();
-  const bulkUnlocked = isMasterAuth() || checkFeature(getEffectivePlan(billingUser), 'knowledge-brain').allowed;
+  const bulkUnlocked = isMasterAuth()
+    || getEffectivePlanPriceJpy(billingUser) >= 29800
+    || checkFeature(getEffectivePlan(billingUser), 'knowledge-brain').allowed;
   const [capacityError, setCapacityError] = useState<string | null>(null);
-  const CAP_MSG = '無料・標準プランのナレッジは 30 件までです。大量のデータ取込（統合ナレッジ脳）は Agency / 最上位プラン（¥29,800〜）で解放され、精度が大きく上がります。';
+  const CAP_MSG = '無料・標準プランのナレッジは 30 件までです。大量のデータ取込（統合ナレッジ脳）は ¥29,800 以上のプランで解放され、精度が大きく上がります。';
 
-  useEffect(() => { save(items); }, [items]);
+  // 永続化は IndexedDB（大容量可）。マウント時に1回ハイドレート（旧 localStorage からは自動移行）。
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let data = await idbGet<KnowledgeItem[]>(STORAGE_KEY);
+      if (!Array.isArray(data) || data.length === 0) {
+        const ls = loadLocal();
+        if (ls.length) {
+          data = ls;
+          await idbSet(STORAGE_KEY, slimForStore(ls));
+          try { localStorage.removeItem(STORAGE_KEY); } catch { /* */ }
+        }
+      }
+      if (!cancelled && Array.isArray(data) && data.length) setItems(data);
+      hydratedRef.current = true;
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // 変更を保存（ハイドレート完了後のみ・debounce で大量書込みをまとめる）
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    const t = setTimeout(() => { void save(items); }, 400);
+    return () => clearTimeout(t);
+  }, [items]);
 
   // Supabase 同期 (未認証 / env 未設定なら no-op)。
   // ナレッジは個別アイテム最大 100KB 程度になりうるが user_state は jsonb で許容、

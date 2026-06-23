@@ -1,6 +1,16 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import GenerationOrb from './GenerationOrb';
 import type { KnowledgeItem, Persona, AppSettings } from '../types/identity';
+
+/** いつもの「PRISM マークが回る」生成演出（脳の絵文字の置き換え） */
+function SpinningPrism({ size = 56 }: { size?: number }) {
+  return (
+    <div style={{ margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <GenerationOrb brand="prism" size={size} />
+    </div>
+  );
+}
 import AgentProposalCard from './AgentProposalCard';
 import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
@@ -684,15 +694,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                   </motion.div>
                 ) : proposalsBusy ? (
                   <div className="text-center py-12">
-                    <motion.div
-                      animate={{ scale: [1, 1.12, 1] }}
-                      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                      style={{
-                        width: 60, height: 60, borderRadius: '50%', margin: '0 auto 0.9rem',
-                        background: `radial-gradient(circle, ${persona.accentColor} 0%, ${persona.accentColor}55 60%, transparent 100%)`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
-                      }}
-                    >🧠</motion.div>
+                    <div className="mb-3"><SpinningPrism size={56} /></div>
                     <p className="text-white text-sm font-medium">AI が資料の活かし方を考えています…</p>
                   </div>
                 ) : (
@@ -922,9 +924,11 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                 )}
                 {batchProgress ? (
                   <motion.div className="py-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <p className="text-4xl text-center mb-3">
-                      {batchProgress.done === batchProgress.total ? '✅' : '🧠'}
-                    </p>
+                    <div className="mb-3">
+                      {batchProgress.done === batchProgress.total
+                        ? <p className="text-4xl text-center">✓</p>
+                        : <SpinningPrism size={56} />}
+                    </div>
                     <p className="text-fg text-base text-center font-medium">
                       {batchProgress.done === batchProgress.total
                         ? `${batchProgress.total} ファイル取り込み完了`

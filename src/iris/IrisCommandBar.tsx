@@ -9,6 +9,7 @@ import type { IrisBackgroundDef } from './irisStyle';
 import type { CustomIrisBackground } from './irisStyle';
 import type { AppSettings } from '../types/identity';
 import { chatWithIris } from './irisAssistant';
+import ApiErrorCard from '../components/ApiErrorCard';
 
 interface Props {
   bg: IrisBackgroundDef | CustomIrisBackground;
@@ -249,13 +250,10 @@ export default function IrisCommandBar({ bg, settings, onRoute }: Props) {
                 </div>
               )}
 
-              {error && (
-                <div style={{
-                  padding: '0.6rem 1.25rem',
-                  background: '#FFF1F0',
-                  borderBottom: `1px solid ${bg.cardBorder}`,
-                  fontSize: '0.78rem', color: '#C8102E',
-                }}>{error}</div>
+              {error && !busy && (
+                <div style={{ padding: '0.35rem 0.5rem', borderBottom: `1px solid ${bg.cardBorder}` }}>
+                  <ApiErrorCard error={error} onRetry={submit} variant="light" />
+                </div>
               )}
 
               {/* ヒント */}

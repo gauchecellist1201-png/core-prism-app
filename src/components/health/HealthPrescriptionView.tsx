@@ -9,6 +9,7 @@ import { Moon, UtensilsCrossed, Footprints, Sparkles, Sun, Loader2, RefreshCw } 
 import type { useHealth } from '../../hooks/useHealth';
 import { PRISM } from '../prism/MockShell';
 import { generateHealthAdvice, buildStatBundle, type HealthAdvice } from '../../lib/healthAdvisor';
+import ApiErrorCard from '../ApiErrorCard';
 
 interface Props {
   health: ReturnType<typeof useHealth>;
@@ -86,10 +87,8 @@ export default function HealthPrescriptionView({ health, userName }: Props) {
         </button>
       </div>
 
-      {error && (
-        <div className="rounded-md bg-rose-500/10 px-3 py-2 text-[13px] text-rose-200">
-          {error}
-        </div>
+      {error && !busy && (
+        <ApiErrorCard error={error} onRetry={fetchAdvice} variant="dark" />
       )}
 
       {advice && (

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, RefreshCw, AlertTriangle, CheckCircle2, Dumbbell, Brain, ArrowRight } from 'lucide-react';
 import AILoadingState from '../AILoadingState';
+import ApiErrorCard from '../ApiErrorCard';
 import {
   generateWeeklySummary,
   loadCachedSummary,
@@ -189,9 +190,8 @@ export default function WeeklyAiSummary({ days, autoGenerate = true }: Props) {
       />
 
       {error && !busy && (
-        <div className="mt-3 flex items-start gap-2 rounded-md bg-rose-500/10 px-3 py-2 text-[13px] text-rose-200">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5" />
-          <span>{error}</span>
+        <div className="mt-3">
+          <ApiErrorCard error={error} onRetry={() => run(true)} variant="dark" />
         </div>
       )}
 
