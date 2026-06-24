@@ -19,7 +19,7 @@
 // ============================================================
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Pause, Play, Sparkles, Check, X, Video, Link2, MonitorSpeaker } from 'lucide-react';
+import { Mic, MicOff, Pause, Play, Sparkles, Check, X, Video, Link2, MonitorSpeaker, Pin, BookOpen, AlertTriangle } from 'lucide-react';
 import { summarizeMeeting } from '../lib/meetingSummarize';
 import { transcribeAudioFile } from '../lib/audioTranscribe';
 
@@ -440,8 +440,8 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
                 <Check size={16} /> 終了 → 要約
               </button>
             </div>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginTop: 14, lineHeight: 1.6 }}>
-              📌 画面をオフにしても録音は続きます (iPhone Safari は画面を点けたままが安全)
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginTop: 14, lineHeight: 1.6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Pin size={12} style={{ flexShrink: 0, opacity: 0.7 }} /> 画面をオフにしても録音は続きます (iPhone Safari は画面を点けたままが安全)
             </p>
           </>
         )}
@@ -502,8 +502,8 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
                   border: '1px solid rgba(255,255,255,0.10)',
                   borderRadius: 14, textAlign: 'left', lineHeight: 1.65,
                 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: accentColor, marginBottom: 4 }}>
-                    📚 ナレッジに追加された内容
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: accentColor, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <BookOpen size={12} /> ナレッジに追加された内容
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 6 }}>{savedSummary.title}</div>
                   {savedSummary.summary && (
@@ -523,14 +523,14 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
                     <div>
                       <div style={{ fontSize: 10.5, fontWeight: 800, color: '#34D399', marginBottom: 2 }}>アクション</div>
                       {savedSummary.actions.map((a, i) => (
-                        <div key={i} style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)' }}>✓ {a}</div>
+                        <div key={i} style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)', display: 'flex', alignItems: 'flex-start', gap: 5 }}><Check size={12} color="#34D399" style={{ flexShrink: 0, marginTop: 3 }} /> <span>{a}</span></div>
                       ))}
                     </div>
                   )}
                 </div>
               )}
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 10 }}>
-                ナレッジ一覧に「📹 {savedSummary?.title || '会議'}」として追加されました
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                ナレッジ一覧に「<Video size={11} style={{ flexShrink: 0 }} /> {savedSummary?.title || '会議'}」として追加されました
               </div>
               <button onClick={handleClose} style={{
                 ...ctlBtn(accentColor, true),
@@ -552,8 +552,9 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
             color: '#f87171',
             fontSize: 13, lineHeight: 1.6,
             marginBottom: 14,
+            display: 'flex', alignItems: 'flex-start', gap: 6,
           }}>
-            ⚠ {errMsg}
+            <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 2 }} /> <span>{errMsg}</span>
           </div>
         )}
         {phase === 'error' && (
