@@ -246,6 +246,9 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
         <h2 style={{ margin: '4px 0 0', fontSize: '1.15rem', fontWeight: 800, color: bg.ink, lineHeight: 1.35 }}>
           連携から、稼ぐまで一気通貫で
         </h2>
+        <p style={{ margin: '6px 0 0', fontSize: 12.5, color: bg.inkSoft, lineHeight: 1.6 }}>
+          Iris があなたのアカウントを見て、<strong style={{ color: bg.ink }}>今のあなた → 今週やること → 今日のリール → 案件</strong>まで全部そろえます。上から順に進むだけ。
+        </p>
       </motion.div>
 
       {/* ステップレール（流れる光・現在地の脈動・完了のポップ） */}
@@ -376,7 +379,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
         <SectionLabel Icon={Clapperboard} color={accent} title="③ 今日のリール" />
         {/* モード切替: テーマから台本 / 素材から構成 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, background: `${accent}10`, borderRadius: 12, padding: 4, margin: '10px 0 12px' }}>
-          {([['script', '戦略から台本'], ['clips', '素材から構成']] as const).map(([k, label]) => (
+          {([['script', '台本を書く'], ['clips', '写真・動画から作る']] as const).map(([k, label]) => (
             <button key={k} type="button" onClick={() => setReelMode(k)}
               style={{
                 padding: '8px 6px', borderRadius: 9, border: 'none', cursor: 'pointer',
@@ -395,6 +398,9 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
 
         {reelMode === 'clips' ? (
           <div style={{ marginTop: 12 }}>
+            <p style={{ margin: '0 0 10px', fontSize: 12, color: bg.inkSoft, lineHeight: 1.6 }}>
+              手持ちの写真・動画をえらぶと、Iris が順番とテロップ（字幕）を考えてリールに組み立てます。
+            </p>
             <IrisReelComposer
               bg={bg} accent={accent} context={composeContext}
               onSchedule={onScheduleReel ? (p) => scheduleReel({ ...p, mediaKind: 'video' }) : undefined}
@@ -406,7 +412,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
         ) : (
         <>
         <p style={{ margin: '0 0 10px', fontSize: 12, color: bg.inkSoft, lineHeight: 1.6 }}>
-          戦略のテーマから、Iris が今すぐ台本（フック→本編→締め）を書きます。
+          上の戦略テーマから、Iris がリールの台本（最初のつかみ → 本編 → 締めのひとこと）を今すぐ書きます。
         </p>
         {!reel && !reelLoading && (
           <button
