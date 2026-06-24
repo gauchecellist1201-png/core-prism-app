@@ -327,6 +327,18 @@ export default function InlineActionExecutor({
             <button onClick={handleCopy} style={btnStyle('primary', persona.accentColor)}>
               {copied ? <><Check size={12} /> コピーしました</> : <><Copy size={12} /> コピー</>}
             </button>
+            {plan.deliverable.kind === 'email' && (() => {
+              const { subject, body } = parseEmail(plan.deliverable.content);
+              return (
+                <button
+                  onClick={() => {
+                    const url = gmailComposeUrl(subject, body);
+                    if (typeof window !== 'undefined') window.open(url, '_blank', 'noopener');
+                  }}
+                  style={btnStyle('ghost', persona.accentColor)}
+                ><Mail size={12} /> Gmailで作成</button>
+              );
+            })()}
             {onAddAsTask && (
               <button
                 onClick={() => onAddAsTask(action, plan.deliverable)}
@@ -494,4 +506,19 @@ function sleep(ms: number) {
 
 function formatDeliverableAsText(d: Deliverable): string {
   return `[${d.title}]\n\n${d.content}\n`;
+}
+
+// メール下書きを「件名」「本文」に分解（DeliverableView の email 分岐と同じ規則）
+function parseEmail(content: string): { subject: string; body: string } {
+  const m = content.match(/^件名:\s*(.+)\n([\s\S]*)$/);
+  return {
+    subject: m ? m[1].trim() : '',
+    body: (m ? m[2] : content).trim(),
+  };
+}
+
+// Gmail の「新規作成」画面を、件名・本文を入れた状態で開く URL
+function gmailComposeUrl(subject: string, body: string): string {
+  const q = `view=cm&fs=1&tf=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return `https://mail.google.com/mail/?${q}`;
 }
