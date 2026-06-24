@@ -10,6 +10,8 @@
 // (x-ai-weight: light 指定は不要だが明示しておくと意図が伝わる)
 // ============================================================
 
+import { logIrisActivity } from './irisActivity';
+
 export interface ScriptScene {
   /** シーン番号 (1〜3) */
   index: number;
@@ -141,6 +143,7 @@ export async function generateReelScript(theme: string): Promise<ReelScriptResul
     });
   }
 
+  logIrisActivity('script'); // 台本が実際に生成できたときのみ記録 (honest)
   return {
     title: clampCaption(String(parsed.title || theme), 28),
     scenes,
@@ -193,6 +196,7 @@ export async function generateReelCaption(themeOrHint: string, existingCaptions:
   const text = data?.content?.[0]?.text ?? '';
   if (!text) throw new Error('AI から空の応答が返りました');
   const parsed = extractJson(text);
+  logIrisActivity('caption'); // キャプション生成成功時のみ記録 (honest)
   return {
     caption: String(parsed.caption || '').slice(0, 600),
     hashtags: Array.isArray(parsed.hashtags)

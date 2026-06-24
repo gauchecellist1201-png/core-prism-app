@@ -3,7 +3,7 @@
 // 「すべての時代の、核となるものを。」
 // 配置: /corp ルート、noindex で検索エンジンには載せない
 // ============================================================
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
@@ -26,7 +26,6 @@ const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"EB Garamond", "Cormorant Garamond", "Noto Serif JP", serif';
 const FONT_SANS = '"Noto Sans JP", "Inter", "游ゴシック", sans-serif';
 
-const SPECTRUM = ['#ff5757', '#ff9842', '#fbbf24', '#4ade80', '#60a5fa', '#a78bfa', '#f472b6'];
 
 export default function CoreSite() {
   const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
@@ -165,154 +164,7 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  HERO                       */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <section
-        id="top"
-        className="lp-hero-pad lp-safe"
-        style={{
-          position: 'relative',
-          padding: '7.5rem 1.5rem 7rem',
-          overflow: 'hidden',
-          textAlign: 'center',
-          minHeight: '88dvh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <CoreOrb />
-        <CoreWatermark />
-
-        <div style={{ maxWidth: 1080, margin: '0 auto', position: 'relative', zIndex: 3, width: '100%' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            style={{
-              fontFamily: FONT_DISPLAY,
-              fontSize: '0.75rem',
-              letterSpacing: '0.55em',
-              fontWeight: 600,
-              marginBottom: '2.25rem',
-              color: 'rgba(255,255,255,0.55)',
-            }}
-          >
-            CORE&nbsp;&nbsp;INC.&nbsp;&nbsp;/&nbsp;&nbsp;EST.&nbsp;2026
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, delay: 0.15 }}
-            style={{
-              fontFamily: FONT_SERIF_JA,
-              fontSize: 'clamp(2.4rem, 6.5vw, 5.4rem)',
-              fontWeight: 700,
-              lineHeight: 1.25,
-              letterSpacing: '0.04em',
-              marginBottom: '1.5rem',
-              color: '#fff',
-            }}
-          >
-            すべての時代の、
-            <br />
-            <span
-              style={{
-                background:
-                  'linear-gradient(100deg,#E0F2FE,#7DD3FC,#38BDF8,#0EA5E9)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontWeight: 900,
-              }}
-            >
-              核となるものを。
-            </span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.4 }}
-            style={{
-              fontFamily: FONT_SERIF_EN,
-              fontSize: 'clamp(0.85rem, 1.3vw, 1rem)',
-              letterSpacing: '0.18em',
-              color: 'rgba(255,255,255,0.45)',
-              marginBottom: '2.25rem',
-              fontStyle: 'italic',
-            }}
-          >
-            In the core of every era, there is a CORE.
-          </motion.p>
-
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.55 }}
-            style={{
-              fontFamily: FONT_SERIF_JA,
-              fontSize: 'clamp(0.95rem, 1.45vw, 1.15rem)',
-              color: 'rgba(255,255,255,0.7)',
-              lineHeight: 2.1,
-              maxWidth: 660,
-              margin: '0 auto 2.75rem',
-              fontWeight: 400,
-            }}
-          >
-            時代がどれだけ変わっても、人の中心にあるものは変わらない。
-            <br />
-            私たちは、その<strong style={{ color: '#fff', fontWeight: 600 }}>「核」となる体験</strong>を、
-            <br />
-            次の世代に届けるための会社です。
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.7 }}
-            style={{ display: 'flex', gap: '0.85rem', justifyContent: 'center', flexWrap: 'wrap' }}
-          >
-            <a href="#products" style={ctaHero}>
-              プロダクトを見る
-            </a>
-            <a href="#about" style={ctaGhost}>
-              会社概要
-            </a>
-          </motion.div>
-
-          {/* 4プロダクトのチップ (一目でスイートが分かる) */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.85 }}
-            style={{ display: 'flex', gap: '0.55rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2.5rem' }}
-          >
-            {[
-              { t: 'Prism', d: '事業', c: '#a78bfa' },
-              { t: 'Iris', d: 'Instagram', c: '#E1306C' },
-              { t: 'Guild', d: '組織', c: '#2DD4BF' },
-              { t: 'Resonance', d: 'LINE', c: '#06C755' },
-              { t: 'Lume', d: 'リンク', c: '#FFA42A' },
-            ].map((p, i) => (
-              <a
-                key={i}
-                href="#products"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
-                  padding: '0.5rem 0.95rem', borderRadius: 999,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${p.c}44`,
-                  textDecoration: 'none',
-                }}
-                className="lp-tap-link"
-              >
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: p.c, boxShadow: `0 0 8px ${p.c}` }} />
-                <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.86rem', fontWeight: 600, fontStyle: 'italic', color: '#fff' }}>{p.t}</span>
-                <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.68rem', color: 'rgba(255,255,255,0.6)' }}>{p.d}</span>
-              </a>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+      <HeroVideo />
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  CONNECT (一気通貫 / つながり)  */}
@@ -1351,97 +1203,65 @@ export default function CoreSite() {
 // ============================================================
 //  CoreOrb — 中央の白光と虹色光線 (荘厳に、控えめに)
 // ============================================================
-function CoreOrb() {
+function HeroVideo() {
+  const vref = useRef<HTMLVideoElement | null>(null);
+  const [muted, setMuted] = useState(true);
+  const toggle = () => {
+    const v = vref.current;
+    if (!v) return;
+    v.muted = !v.muted;
+    setMuted(v.muted);
+    if (!v.muted) void v.play().catch(() => {});
+  };
   return (
-    <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
-      <motion.div
-        animate={{ opacity: [0.45, 0.75, 0.45], scale: [1, 1.08, 1] }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          width: 420,
-          height: 420,
-          marginLeft: -210,
-          marginTop: -210,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.18) 40%, transparent 70%)',
-          filter: 'blur(24px)',
-        }}
+    <section
+      id="top"
+      className="lp-safe"
+      style={{ position: 'relative', minHeight: '100dvh', overflow: 'hidden', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: '#000' }}
+    >
+      <video
+        ref={vref}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        poster="/corp-hero-poster.jpg"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
+      >
+        <source src="/corp-hero.mp4" type="video/mp4" />
+      </video>
+      <div
+        style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 26%, rgba(0,0,0,0) 56%, rgba(0,0,0,0.82) 100%)' }}
       />
-      {SPECTRUM.map((c, i) => {
-        const angle = -75 + i * 25;
-        return (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0.14, 0.32, 0.14] }}
-            transition={{
-              duration: 5 + i * 0.3,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: i * 0.18,
-            }}
-            style={{
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              width: 4,
-              height: '90vh',
-              transformOrigin: 'top center',
-              transform: `translateX(-50%) rotate(${angle}deg)`,
-              background: `linear-gradient(180deg, ${c}cc 0%, ${c}00 80%)`,
-              filter: 'blur(11px)',
-            }}
-          />
-        );
-      })}
-      <div style={{ position: 'absolute', top: -200, right: -200, width: 600, height: 600, borderRadius: '50%', background: '#a78bfa', opacity: 0.08, filter: 'blur(80px)' }} />
-      <div style={{ position: 'absolute', bottom: -200, left: -200, width: 600, height: 600, borderRadius: '50%', background: '#E1306C', opacity: 0.06, filter: 'blur(80px)' }} />
-    </div>
+      <button
+        onClick={toggle}
+        aria-label={muted ? '音を出す' : '消音'}
+        className="lp-tap-link"
+        style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top, 0px) + 5rem)', right: '1.1rem', zIndex: 4, display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 0.85rem', borderRadius: 999, cursor: 'pointer', background: 'rgba(0,0,0,0.42)', border: '1px solid rgba(255,255,255,0.28)', color: '#fff', fontSize: '0.78rem', backdropFilter: 'blur(6px)' }}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          {muted ? <line x1="22" y1="9" x2="16" y2="15" /> : <path d="M15.5 8.5a5 5 0 0 1 0 7" />}
+        </svg>
+        {muted ? '音を出す' : '消音'}
+      </button>
+      <div
+        style={{ position: 'relative', zIndex: 3, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 3.5rem)', textAlign: 'center', width: '100%' }}
+      >
+        <a href="#products" style={ctaHero}>プロダクトを見る</a>
+        <div aria-hidden style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+          <span style={{ width: 20, height: 20, borderRight: '2px solid rgba(255,255,255,0.55)', borderBottom: '2px solid rgba(255,255,255,0.55)', transform: 'rotate(45deg)' }} />
+        </div>
+      </div>
+    </section>
   );
 }
+
 
 // ============================================================
 //  CoreWatermark — 巨大な「CORE」の透かし背景文字
 // ============================================================
-function CoreWatermark() {
-  return (
-    <div
-      aria-hidden
-      style={{
-        position: 'absolute',
-        inset: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        pointerEvents: 'none',
-        zIndex: 2,
-        overflow: 'hidden',
-      }}
-    >
-      <motion.span
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 2, ease: 'easeOut' }}
-        style={{
-          fontFamily: FONT_DISPLAY,
-          fontSize: 'clamp(8rem, 28vw, 26rem)',
-          fontWeight: 800,
-          letterSpacing: '0.08em',
-          color: 'transparent',
-          WebkitTextStroke: '1px rgba(255,255,255,0.06)',
-          lineHeight: 1,
-          userSelect: 'none',
-        }}
-      >
-        CORE
-      </motion.span>
-    </div>
-  );
-}
 
 // ============================================================
 //  FeatureProduct — Prism / Iris をフィーチャーする横長カード
@@ -2040,19 +1860,6 @@ const ctaHero: React.CSSProperties = {
   textDecoration: 'none',
   boxShadow: '0 12px 36px rgba(56,189,248,0.40)',
   letterSpacing: '0.12em',
-};
-const ctaGhost: React.CSSProperties = {
-  display: 'inline-block',
-  background: 'rgba(255,255,255,0.06)',
-  color: '#fff',
-  padding: '1.1rem 2.1rem',
-  borderRadius: 14,
-  fontFamily: FONT_SERIF_JA,
-  fontSize: '0.95rem',
-  fontWeight: 600,
-  textDecoration: 'none',
-  border: '1px solid rgba(255,255,255,0.18)',
-  letterSpacing: '0.1em',
 };
 const sectionLabel: React.CSSProperties = {
   display: 'flex',

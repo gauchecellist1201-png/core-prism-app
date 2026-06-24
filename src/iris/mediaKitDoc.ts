@@ -9,6 +9,7 @@ import type { MediaKit, Platform } from '../types/influencerDeal';
 import { PLATFORM_META } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
+import { logIrisActivity } from './irisActivity';
 
 export interface MediaKitDoc {
   /** 一言キャッチ（肩書き的なフレーズ） */
@@ -115,6 +116,7 @@ ${kitFacts(opts.mediaKit)}
   const text = data.content?.[0]?.text ?? '';
   const m = text.match(/\{[\s\S]*\}/);
   const parsed = JSON.parse(m ? m[0] : text);
+  logIrisActivity('mediakit'); // メディアキット本文が実生成できた時のみ記録 (honest)
   return {
     tagline: parsed.tagline || '',
     intro: parsed.intro || '',

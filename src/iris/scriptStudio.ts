@@ -12,6 +12,7 @@
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
+import { logIrisActivity } from './irisActivity';
 
 // ─── クライアント (代行先アカウント) プロフィール ───────────
 export interface IrisClient {
@@ -138,7 +139,9 @@ ${opts.focus || '(指定なし — アカウントの強みを伸ばす方向で
     why: String(v?.why || '').slice(0, 80),
     effort: (['低', '中', '高'].includes(v?.effort) ? v.effort : '中') as IdeaItem['effort'],
   });
-  return raw.map(norm).filter((i: IdeaItem) => i.hook).slice(0, count);
+  const ideas = raw.map(norm).filter((i: IdeaItem) => i.hook).slice(0, count);
+  if (ideas.length) logIrisActivity('ideas'); // 企画が実生成できた時のみ記録 (honest)
+  return ideas;
 }
 
 // ─── 企画リスト → 投稿カレンダー Markdown (クライアント・チームに渡す用) ──
@@ -291,6 +294,7 @@ ${fmt} / ${dur}秒前後
   const strArr = (a: any, max = 16): string[] =>
     Array.isArray(a) ? a.map((x) => String(x).trim()).filter(Boolean).slice(0, max) : [];
 
+  logIrisActivity('script'); // 本格台本が実生成できた時のみ記録 (honest)
   return {
     title: String(p?.title || opts.topic).slice(0, 40),
     format: String(p?.format || fmt),

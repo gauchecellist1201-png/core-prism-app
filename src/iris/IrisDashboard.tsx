@@ -48,6 +48,7 @@ import {
 import IrisCommandBar from './IrisCommandBar';
 import IrisDealCaptureModal from './IrisDealCaptureModal';
 import IrisMorningBrief from './IrisMorningBrief';
+import IrisValueReceipt from './IrisValueReceipt';
 import InviteShareCard from '../components/InviteShareCard';
 import type { LucideIcon } from 'lucide-react';
 
@@ -488,6 +489,9 @@ function IrisEditorialHome({
           onAction={(t, theme) => onNavigate(t as Tab, theme)}
         />
       </div>
+
+      {/* ── 今週、Iris が動いた量 (ROI 可視化・嘘なし) ───────── */}
+      <IrisValueReceipt variant="desktop" />
 
       {/* ── ヒーロー カード ─────────────────────────────── */}
       <motion.div

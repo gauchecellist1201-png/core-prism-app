@@ -5,6 +5,7 @@
 // 失敗時は recovery テキスト付きでフォールバック下書きを返す。
 // ============================================================
 import type { IgProfile } from './instagramConnect';
+import { logIrisActivity } from './irisActivity';
 
 // ── トーンプリセット (4 種) ─────────────────────────────────
 export type DmTone = 'polite' | 'friendly' | 'pro' | 'passionate';
@@ -113,6 +114,7 @@ export function pushDmHistory(entry: Omit<DmDraftHistoryEntry, 'id' | 'ts'>): Dm
   };
   const list = [next, ...all].slice(0, HISTORY_MAX);
   try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); } catch { /* */ }
+  logIrisActivity('dm'); // 営業DM下書きが実生成・保存できた時のみ記録 (honest)
   return list;
 }
 

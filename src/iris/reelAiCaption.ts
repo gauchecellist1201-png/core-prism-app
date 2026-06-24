@@ -18,6 +18,8 @@
 // ============================================================
 
 /** カット毎の BGM ジャンル候補。アップ/しっとり/ポップ/エモ の 4 種 */
+import { logIrisActivity } from './irisActivity';
+
 export type BgmMood = 'up' | 'soft' | 'pop' | 'emo';
 
 export const BGM_MOOD_DEFS: { id: BgmMood; label: string; bpm: number; desc: string }[] = [
@@ -258,6 +260,7 @@ export async function generateReelCaptions(
 
   onProgress('完了', total, total);
 
+  logIrisActivity('caption'); // クリップから字幕+キャプションを実生成できた時のみ記録 (honest)
   return {
     cuts,
     caption: String(parsed.caption || '').trim(),
