@@ -3,7 +3,8 @@
 // 新 UX: 手入力ゼロのホーム + 旧 5 タブを上級者モードに格納
 // ============================================================
 import { useState } from 'react';
-import { ChevronLeft, X, Brain, BookmarkPlus, CheckCircle2, TrendingUp, Plus } from 'lucide-react';
+import { ChevronLeft, X, Brain, BookmarkPlus, CheckCircle2, TrendingUp, Plus, Target } from 'lucide-react';
+import IrisIntro from './IrisIntro';
 import { useIrisKnowledge } from './irisKnowledge';
 import EmptyInvite from './EmptyInvite';
 import type { AppSettings } from '../types/identity';
@@ -98,6 +99,14 @@ function AdvancedView({ bg, settings, mediaKit, knowledge, onBack }: Props & { o
       }}>
         <ChevronLeft size={14} /> ホームに戻る
       </button>
+      <IrisIntro
+        id="strategist"
+        bg={bg}
+        icon={Target}
+        what="あなたのアカウントを分析して、来月フォロワーを伸ばすための作戦を AI が立てます。"
+        tryThis="まずは「戦略を作る」を押すだけ。今のフォロワー数や投稿の傾向から、自動で作戦づくりが始まります。"
+        example="例:「水曜20時はリール・金曜は質問スタンプ」のように、曜日ごとの具体的な打ち手が並ぶ"
+      />
       {/* 見出し */}
       <div>
         <p style={{

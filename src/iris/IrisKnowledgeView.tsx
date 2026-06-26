@@ -11,6 +11,7 @@ import {
 } from './irisKnowledge';
 import { BookmarkPlus, Trash2, Save, X, Search, Brain, BookOpen } from 'lucide-react';
 import { confirmAction } from '../lib/confirmDialog';
+import IrisIntro from './IrisIntro';
 import EmptyInvite from './EmptyInvite';
 
 interface Props {
@@ -90,6 +91,15 @@ export default function IrisKnowledgeView({ bg, knowledge }: Props) {
           ここに保存した資料は、次回 AI 提案を作るときに自動で参考にされます。書けば書くほど、あなた専用の提案になります。
         </p>
       </div>
+
+      <IrisIntro
+        id="knowledge"
+        bg={bg}
+        icon={BookOpen}
+        what="ブランドの情報・過去の投稿・お客さんの声などを、AI に覚えさせておく資料庫です。"
+        tryThis="まずは「ノートを追加」か、PDF・メモを1つ入れてみましょう。短い1行でも構いません。"
+        example="例: 商品の特徴をメモ → 次に台本やキャプションを作ると、その特徴が自動で反映される"
+      />
 
       <div style={card(bg)}>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.6rem' }}>

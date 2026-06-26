@@ -8,6 +8,7 @@ import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image 
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { usePostQueue, buildCaptionText, type ScheduledPost } from './usePostQueue';
+import IrisIntro from './IrisIntro';
 import { confirmAction } from '../lib/confirmDialog';
 import EmptyInvite from './EmptyInvite';
 
@@ -64,6 +65,14 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
 
   return (
     <div style={{ display: 'grid', gap: '1rem', fontFamily: IRIS_FONTS.body }}>
+      <IrisIntro
+        id="postqueue"
+        bg={bg}
+        icon={Calendar}
+        what="リールや案件から作った投稿予約を、ここで1画面にまとめて管理します。"
+        tryThis="予約の「Instagram で開く」を押すと、キャプションが自動でコピーされて Instagram が開きます。"
+        example="例: 木曜18時の予約リールを開く → 本文はコピー済み。あとは貼り付けて投稿するだけ"
+      />
       {/* ヘッダ */}
       <div>
         <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>POST QUEUE</p>

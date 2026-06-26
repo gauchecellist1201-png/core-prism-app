@@ -1206,6 +1206,17 @@ export default function CoreSite() {
 function HeroVideo() {
   const vref = useRef<HTMLVideoElement | null>(null);
   const [muted, setMuted] = useState(true);
+  // スマホ縦は横長動画だと左右が見切れるため、縦(9:16)再編集版に切り替える。
+  const [portrait, setPortrait] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px) and (orientation: portrait)');
+    const update = () => setPortrait(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  const src = portrait ? '/corp-hero-portrait.mp4' : '/corp-hero.mp4';
+  const poster = portrait ? '/corp-hero-portrait-poster.jpg' : '/corp-hero-poster.jpg';
   const toggle = () => {
     const v = vref.current;
     if (!v) return;
@@ -1220,16 +1231,17 @@ function HeroVideo() {
       style={{ position: 'relative', minHeight: '100dvh', overflow: 'hidden', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: '#000' }}
     >
       <video
+        key={src}
         ref={vref}
         autoPlay
         muted
         loop
         playsInline
         preload="auto"
-        poster="/corp-hero-poster.jpg"
+        poster={poster}
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
       >
-        <source src="/corp-hero.mp4" type="video/mp4" />
+        <source src={src} type="video/mp4" />
       </video>
       <div
         style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 26%, rgba(0,0,0,0) 56%, rgba(0,0,0,0.82) 100%)' }}
