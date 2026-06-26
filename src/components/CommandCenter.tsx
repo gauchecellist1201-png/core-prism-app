@@ -678,7 +678,7 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
                 }}
               />
               <button
-                onClick={submit}
+                onClick={() => submit()}
                 disabled={busy || !input.trim()}
                 aria-label="送信"
                 style={{
