@@ -314,7 +314,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, lineHeight: 1.3 }}>
-              あなたの紹介で {referredCount} 人が登録 🎉
+              あなたの紹介で {referredCount} 人が登録
             </p>
             <p style={{ margin: '0.1rem 0 0', fontSize: '0.76rem', color: 'rgba(255,255,255,0.92)', lineHeight: 1.4 }}>
               これまでに合計 <strong>+{earnedDays} 日</strong> のトライアル延長を獲得しました。

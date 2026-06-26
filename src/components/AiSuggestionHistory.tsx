@@ -205,8 +205,8 @@ export default function AiSuggestionHistory({ open, onClose }: Props) {
             <div style={{ flex: 1, overflowY: 'auto', padding: '6px 12px 14px' }}>
               {items.length === 0 ? (
                 <div style={{ padding: '36px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '0.88rem' }}>
-                  <div style={{ fontSize: 28, marginBottom: 6 }}>🌱</div>
-                  まだ 直近 7 日 に 提案がありません。<br />
+                  <History size={26} strokeWidth={1.8} style={{ opacity: 0.6, marginBottom: 8 }} />
+                  <br />まだ 直近 7 日 に 提案がありません。<br />
                   ダッシュボードで AI 役員 から 提案を受け取ると ここに自動で並びます。
                 </div>
               ) : (

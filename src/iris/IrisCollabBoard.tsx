@@ -783,8 +783,11 @@ function PlanBoard(props: {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {plansForStage.length === 0 && (
           <div style={{ ...card, textAlign: 'center', color: bg.inkSoft, padding: '2.4rem 1rem' }}>
-            <div style={{ fontSize: 56, lineHeight: 1, marginBottom: 10 }} aria-hidden>
-              {activeStage === 'candidate' ? '🤝' : activeStage === 'contacting' ? '✉️' : activeStage === 'confirmed' ? '🎯' : '🏁'}
+            <div style={{ marginBottom: 12, color: bg.inkSoft, opacity: 0.7 }} aria-hidden>
+              {activeStage === 'candidate' ? <Sparkles size={44} strokeWidth={1.6} />
+                : activeStage === 'contacting' ? <Send size={44} strokeWidth={1.6} />
+                : activeStage === 'confirmed' ? <Star size={44} strokeWidth={1.6} />
+                : <ListChecks size={44} strokeWidth={1.6} />}
             </div>
             <p style={{ fontSize: '0.95rem', color: bg.ink, fontWeight: 600 }}>
               {activeStage === 'candidate' && 'コラボ候補はまだいません'}

@@ -867,7 +867,7 @@ function AssistIndustryStep({
   if (error || !inference) {
     return (
       <div className="cp-card-section text-center py-8 cp-stack-sm">
-        <p className="text-3xl">😅</p>
+        <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(248,113,113,0.15)', color: '#f87171', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, margin: '0 auto' }}>!</div>
         <p className="text-fg">業種の自動推定ができませんでした</p>
         <p className="cp-tiny">{error || '情報が不足しています'}</p>
         <button onClick={onRetry} className="cp-btn cp-btn-sm"
