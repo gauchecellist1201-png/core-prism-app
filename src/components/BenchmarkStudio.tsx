@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import type { Persona, AppSettings } from '../types/identity';
 import type { BenchmarkEntry } from '../lib/benchmarkData';
+import { confirmAction } from '../lib/confirmDialog';
 import {
   analyzeAgainstIndustry, saveBenchmarkResult,
   getAllIndustries, getBenchmarksForIndustry, getIndustryInfo,
@@ -305,8 +306,8 @@ function StepIndustry({
   const industries = useMemo(() => getAllIndustries(), [refreshKey]);
   const customs = useMemo(() => loadCustomIndustries(), [refreshKey]);
 
-  const handleDelete = (id: string) => {
-    if (!confirm('この自前業界を削除しますか？')) return;
+  const handleDelete = async (id: string) => {
+    if (!(await confirmAction({ title: 'この自前業界を削除しますか?', tone: 'danger', okLabel: '削除する' }))) return;
     deleteCustomIndustry(id);
     onRefresh();
   };
@@ -1086,8 +1087,8 @@ function HistoryTab({ personaId, accentColor }: { personaId: string; accentColor
   }, [history, selectedKpi]);
 
   const reload = () => setHistory(loadHistory(personaId));
-  const handleClear = () => {
-    if (!confirm('履歴を全て削除しますか？')) return;
+  const handleClear = async () => {
+    if (!(await confirmAction({ title: '履歴を全て削除しますか?', body: '保存した分析履歴がすべて消えます。', tone: 'danger', okLabel: '全て削除' }))) return;
     clearHistory(personaId);
     reload();
   };

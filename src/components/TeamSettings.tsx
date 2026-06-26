@@ -12,6 +12,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserPlus, Trash2, Copy, Check, Mail, Crown, Pencil, Eye, ArrowRight, X } from 'lucide-react';
+import { confirmAction } from '../lib/confirmDialog';
 import {
   loadMembers, addInvite, updateRole, removeMember, hardDelete,
   buildInviteUrl, ROLE_META,
@@ -76,8 +77,8 @@ export default function TeamSettings() {
     setMembers(loadMembers());
   };
 
-  const handleRemove = (id: string) => {
-    if (!confirm('このメンバーを削除しますか?')) return;
+  const handleRemove = async (id: string) => {
+    if (!(await confirmAction({ title: 'このメンバーを削除しますか?', tone: 'danger', okLabel: '削除する' }))) return;
     removeMember(id);
     setMembers(loadMembers());
   };

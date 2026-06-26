@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ArrowRight, EyeOff, Eye } from 'lucide-react';
 import { isDemoActive, setDemoActive, clearDemoData } from '../lib/onboarding';
+import { confirmAction } from '../lib/confirmDialog';
 
 const COLLAPSED_KEY = 'core_sample_banner_collapsed_v1';
 
@@ -42,8 +43,8 @@ export default function SampleModeBanner() {
     };
   }, []);
 
-  const switchToReal = () => {
-    if (!confirm('サンプルデータをすべて削除し、自分のアカウント用に切り替えます。よろしいですか?')) return;
+  const switchToReal = async () => {
+    if (!(await confirmAction({ title: '自分のアカウント用に切り替えます', body: 'サンプルデータはすべて消えて、初期セットアップから始まります。よろしいですか?', tone: 'danger', okLabel: '切り替える' }))) return;
     try { clearDemoData(); } catch { /* */ }
     setDemoActive(false);
     setActive(false);

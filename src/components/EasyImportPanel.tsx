@@ -17,6 +17,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, FileSpreadsheet, Pencil, Check, X, Sparkles } from 'lucide-react';
+import { confirmAction } from '../lib/confirmDialog';
 
 export interface ManualRevenue {
   thisMonthRevenueJpy: number;
@@ -186,8 +187,8 @@ function ManualEntryForm({
     setTimeout(() => { onClose(); }, 900);
   };
 
-  const handleClear = () => {
-    if (!confirm('手動入力データを削除しますか?')) return;
+  const handleClear = async () => {
+    if (!(await confirmAction({ title: '手動入力データを削除しますか?', body: '入力した売上・費用・案件数が消えます。', tone: 'danger', okLabel: '削除する' }))) return;
     clearManualRevenue();
     onClose();
   };

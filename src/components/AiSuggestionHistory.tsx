@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, History, Check, X as XIcon, Pause, RefreshCw, Trash2, TrendingUp } from 'lucide-react';
+import { confirmAction } from '../lib/confirmDialog';
 import {
   listSuggestions,
   setStatus,
@@ -64,8 +65,8 @@ export default function AiSuggestionHistory({ open, onClose }: Props) {
     setStatus(id, status);
     setTick((t) => t + 1);
   };
-  const onRemove = (id: string) => {
-    if (confirm('この提案を削除しますか?')) {
+  const onRemove = async (id: string) => {
+    if (await confirmAction({ title: 'この提案を削除しますか?', tone: 'danger', okLabel: '削除する' })) {
       removeSuggestion(id);
       setTick((t) => t + 1);
     }

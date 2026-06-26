@@ -13,6 +13,7 @@
 import React, { useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ListChecks, MessageCircle, Star, ChevronRight, Plus, Send } from 'lucide-react';
+import { confirmAction } from '../lib/confirmDialog';
 import type { IrisBackgroundDef } from './irisStyle';
 import type { CustomIrisBackground } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -376,8 +377,8 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
     updatePlans(plans.map(p => p.id === id ? { ...p, stage: next, updatedAt: new Date().toISOString() } : p));
   }, [plans, updatePlans]);
 
-  const deletePlan = useCallback((id: string) => {
-    if (!confirm('この計画を削除しますか?')) return;
+  const deletePlan = useCallback(async (id: string) => {
+    if (!(await confirmAction({ title: 'この計画を削除しますか?', tone: 'danger', okLabel: '削除する' }))) return;
     updatePlans(plans.filter(p => p.id !== id));
   }, [plans, updatePlans]);
 
