@@ -15,6 +15,7 @@ import type { AppSettings } from '../types/identity';
 import type { ContentType, MediaKit } from '../types/influencerDeal';
 import { CONTENT_TYPE_META } from '../types/influencerDeal';
 import { IRIS_FONTS } from './irisStyle';
+import { BASE_ALL, DUR_BASE, EASE_OUT } from './motion';
 import {
   usePostHistory, type PostHistoryItem,
 } from './strategist';
@@ -506,7 +507,7 @@ function CaptureZone({
         background: drag
           ? `linear-gradient(135deg, ${bg.accent}18, ${bg.accent}06)`
           : 'rgba(255,255,255,0.72)',
-        transition: 'all 0.2s',
+        transition: BASE_ALL,
         position: 'relative',
       }}
       onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
@@ -560,7 +561,7 @@ function CaptureZone({
           borderRadius: 18,
           cursor: extracting ? 'wait' : 'pointer',
           background: 'rgba(255,255,255,0.4)',
-          transition: 'all 0.25s',
+          transition: BASE_ALL,
           textAlign: 'center',
           fontFamily: IRIS_FONTS.body,
           color: 'inherit',
@@ -692,7 +693,7 @@ function ErrorRecovery({
           ? '0 6px 16px rgba(52, 211, 153, 0.55)'
           : `0 6px 16px ${bg.accent}55`,
         opacity: retryPhase === 'pending' ? 0.88 : 1,
-        transition: 'background 0.22s ease-out, box-shadow 0.22s ease-out, opacity 0.18s',
+        transition: `background ${DUR_BASE}s ${EASE_OUT}, box-shadow ${DUR_BASE}s ${EASE_OUT}, opacity ${DUR_BASE}s ${EASE_OUT}`,
         minWidth: 144, justifyContent: 'center',
       }}
     >
@@ -1143,7 +1144,7 @@ function InsightsHero({
                       border: `1px solid ${bg.cardBorder}`,
                       borderRadius: 16,
                       padding: '0.9rem 1rem',
-                      transition: 'all 0.25s',
+                      transition: BASE_ALL,
                     }}
                   >
                     <p style={{ fontSize: '0.68rem', color: bg.accent, fontWeight: 700, letterSpacing: '0.18em' }}>
@@ -1721,7 +1722,7 @@ function PostCard({ bg, post, onTap }: { bg: IrisBackgroundDef; post: PostHistor
         cursor: 'pointer',
         padding: 0,
         textAlign: 'left',
-        transition: 'all 0.25s',
+        transition: BASE_ALL,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',

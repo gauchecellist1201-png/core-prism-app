@@ -18,6 +18,7 @@ import {
   Sparkles, Wand2, ArrowRight, LayoutTemplate,
 } from 'lucide-react';
 import { IRIS_FONTS } from './irisStyle';
+import { TOGGLE, HOVER_LIFT, DUR_ENTER } from './motion';
 
 interface StudioBg {
   accent: string; ink: string; inkSoft: string; card: string; cardBorder: string;
@@ -87,7 +88,7 @@ export default function IrisStudioHub({ bg, onOpen }: { bg: StudioBg; onOpen: (t
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               padding: '0.7rem 0.5rem', borderRadius: 10, border: 'none', cursor: 'pointer',
               background: on ? `linear-gradient(135deg, ${accent}, #833AB4)` : 'transparent',
-              color: on ? '#fff' : bg.inkSoft, transition: 'all .2s',
+              color: on ? '#fff' : bg.inkSoft, transition: TOGGLE,
               boxShadow: on ? '0 6px 16px rgba(225,48,108,0.3)' : 'none',
             }}>
               <m.icon size={17} />
@@ -101,7 +102,7 @@ export default function IrisStudioHub({ bg, onOpen }: { bg: StudioBg; onOpen: (t
       {/* ── ツールカード ── */}
       <motion.div
         key={mode}
-        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
+        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: DUR_ENTER, ease: [0.22, 1, 0.36, 1] }}
         style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.8rem' }}
       >
         {tools.map(t => (
@@ -109,7 +110,7 @@ export default function IrisStudioHub({ bg, onOpen }: { bg: StudioBg; onOpen: (t
             textAlign: 'left', cursor: 'pointer',
             background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16,
             padding: '1.1rem 1.1rem', display: 'grid', gap: 8,
-            transition: 'transform .15s, box-shadow .15s, border-color .15s',
+            transition: HOVER_LIFT,
           }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 14px 30px rgba(225,48,108,0.16)'; e.currentTarget.style.borderColor = accent; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = bg.cardBorder; }}

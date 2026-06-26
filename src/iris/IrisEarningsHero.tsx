@@ -16,6 +16,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAgentTaskQueue, type CxoRole } from '../hooks/useAgentTaskQueue';
 import type { InfluencerDeal, DealStage } from '../types/influencerDeal';
 import type { IgProfile } from './instagramConnect';
+import { DUR_BASE, EASE_OUT } from './motion';
 
 interface Props {
   myDeals: InfluencerDeal[];
@@ -137,7 +138,7 @@ function MetricCard({ accent, label, value, valueFormatter, subtitle, emptyCta, 
         overflow: 'hidden',
         cursor: emptyCta && isEmpty ? 'pointer' : 'default',
         boxShadow: '0 8px 22px rgba(225,48,108,0.07)',
-        transition: 'background 0.2s ease',
+        transition: `background ${DUR_BASE}s ${EASE_OUT}`,
       }}
       onClick={() => { if (emptyCta && isEmpty) emptyCta.onClick(); }}
     >

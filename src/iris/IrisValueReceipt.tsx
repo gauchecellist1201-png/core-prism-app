@@ -79,7 +79,7 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: isMobile ? 10 : 12 }}>
         <div style={{
-          width: 30, height: 30, borderRadius: 9,
+          width: 30, height: 30, borderRadius: 8,
           background: `${IRIS_COLORS.gold}22`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
@@ -104,9 +104,11 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
 
       <div style={{
         display: 'grid',
+        // auto-fit で常に折返し可能に。デスクトップは広く詰める、狭幅(スマホ実機)では
+        // カードが潰れず自然に 2〜3 列へ折り返す（携帯最優先・見切れゼロ）。
         gridTemplateColumns: isMobile
           ? 'repeat(auto-fit, minmax(96px, 1fr))'
-          : `repeat(${Math.min(rows.length, 5)}, 1fr)`,
+          : 'repeat(auto-fit, minmax(108px, 1fr))',
         gap: isMobile ? 8 : 10,
       }}>
         {rows.map((m, i) => {

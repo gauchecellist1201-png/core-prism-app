@@ -320,7 +320,9 @@ export default function IrisMorningBrief({
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+          // auto-fit で狭幅では自動的に列数を減らす。アイコン+ラベル+数値の
+          // 横並びカードが潰れないよう最小 150px を確保（携帯実機で見切れゼロ）。
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(150px, 1fr))',
           gap: isMobile ? 8 : 12,
         }}>
           {cards.map((c, i) => {
