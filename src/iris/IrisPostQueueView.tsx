@@ -3,11 +3,11 @@
 // リール書き出し済 / 案件下書きから生成された予約を1画面で管理
 // 「Instagram で開く」 → キャプションを自動コピー → IG アプリへ
 // ============================================================
-import { useMemo } from 'react';
-import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image as ImageIcon, Video as VideoIcon, CalendarClock } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
-import { usePostQueue, buildCaptionText, type ScheduledPost } from './usePostQueue';
+import { usePostQueue, buildCaptionText, suggestNextSlot, type ScheduledPost } from './usePostQueue';
 import IrisIntro from './IrisIntro';
 import { confirmAction } from '../lib/confirmDialog';
 import EmptyInvite from './EmptyInvite';
@@ -27,6 +27,26 @@ const STATUS_META: Record<ScheduledPost['status'], { label: string; color: strin
 
 export default function IrisPostQueueView({ bg, queue }: Props) {
   const sorted = useMemo(() => queue.upcoming(), [queue]);
+  // コピー成功フィードバック (silent fail 撲滅) — どの予約のコピーが直近で成功したか
+  const [copiedId, setCopiedId] = useState<string>('');
+
+  const copyCaption = (p: ScheduledPost) => {
+    navigator.clipboard?.writeText(buildCaptionText(p))
+      .then(() => {
+        setCopiedId(p.id);
+        setTimeout(() => setCopiedId(c => (c === p.id ? '' : c)), 1800);
+      })
+      .catch(() => {/* clipboard 不可環境 */});
+  };
+
+  // 過ぎた / 時刻未確定の予約を「次のベスト時間」に入れ直す（行き止まりを無くす）
+  const reschedule = (p: ScheduledPost) => {
+    const next = suggestNextSlot();
+    queue.update(p.id, { scheduledAt: next.toISOString(), status: 'scheduled' });
+  };
+
+  const slotLabel = (d: Date) =>
+    `${d.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', weekday: 'short' })} ${d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}`;
 
   const open = (p: ScheduledPost) => {
     // キャプションをクリップボードにコピー
@@ -239,15 +259,28 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                   }}>
                     <ExternalLink size={11} /> 投稿
                   </button>
-                  <button onClick={() => navigator.clipboard?.writeText(buildCaptionText(p))} title="キャプションをコピー" style={{
+                  <button onClick={() => copyCaption(p)} title="本文+ハッシュタグをコピー" style={{
                     padding: '0.4rem 0.7rem',
-                    background: 'transparent', color: bg.ink,
-                    border: `1px solid ${bg.cardBorder}`, borderRadius: 8,
+                    background: copiedId === p.id ? '#ECFDF5' : 'transparent',
+                    color: copiedId === p.id ? '#065F46' : bg.ink,
+                    border: `1px solid ${copiedId === p.id ? '#10B98180' : bg.cardBorder}`, borderRadius: 8,
                     fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer',
                     display: 'inline-flex', gap: 4, alignItems: 'center',
+                    transition: 'background 0.2s, color 0.2s, border-color 0.2s',
                   }}>
-                    <Copy size={11} /> コピー
+                    {copiedId === p.id ? <><Check size={11} /> コピー済</> : <><Copy size={11} /> コピー</>}
                   </button>
+                  {(overdue || p.status === 'draft') && (
+                    <button onClick={() => reschedule(p)} title={`次のベスト投稿時間 (${slotLabel(suggestNextSlot())}) に予約し直す`} style={{
+                      padding: '0.4rem 0.7rem',
+                      background: 'transparent', color: bg.accent,
+                      border: `1px solid ${bg.accent}80`, borderRadius: 8,
+                      fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
+                      display: 'inline-flex', gap: 4, alignItems: 'center',
+                    }}>
+                      <CalendarClock size={11} /> ベスト時間に再予約
+                    </button>
+                  )}
                   {p.status === 'ready' && (
                     <button onClick={() => markPosted(p)} title="投稿済にする" style={{
                       padding: '0.4rem 0.7rem',
