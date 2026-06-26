@@ -85,15 +85,9 @@ export default function InstallPwaBanner({ brand }: Props) {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, [dismissed]);
 
-  // 表示タイミング判定: 起動後 30 秒 & 3 回目以降の訪問
+  // 表示タイミング判定: 初回訪問から数秒で案内（Resonance と同じく“すぐ気づける”ように）。
   useEffect(() => {
     if (dismissed) return;
-    let visits = 0;
-    try {
-      visits = parseInt(localStorage.getItem(VISIT_COUNT_KEY) || '0', 10) || 0;
-    } catch {}
-    if (visits < 3) return;
-
     const timer = window.setTimeout(() => {
       if (isStandalone()) return;
       if (bipEvent) {
@@ -101,7 +95,7 @@ export default function InstallPwaBanner({ brand }: Props) {
       } else if (isIOSSafari()) {
         setShowIOS(true);
       }
-    }, 30_000);
+    }, 6_000);
     return () => window.clearTimeout(timer);
   }, [bipEvent, dismissed]);
 

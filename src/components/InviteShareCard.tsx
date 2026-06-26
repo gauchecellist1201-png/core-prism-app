@@ -11,7 +11,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Copy, Share2, Check, Gift, QrCode, Mail,
-  Calendar, MessageCircle,
+  Calendar, MessageCircle, Users, Sparkles,
 } from 'lucide-react';
 
 // lucide-react から Twitter アイコンは削除されたため X glyph を inline SVG で実装
@@ -34,7 +34,7 @@ import {
   getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS,
   getInviterName, saveInviterName, INVITER_NAME_MAX, sanitizeInviterName,
   getInviterMessage, saveInviterMessage, INVITER_MESSAGE_MAX, sanitizeInviterMessage,
-  getShareCount, recordShare,
+  getShareCount, recordShare, syncReferralStatus,
 } from '../lib/referral';
 import { shareToInstagram } from '../iris/instagramShare';
 
@@ -140,6 +140,21 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
   const [snack, setSnack] = useState<string | null>(null);
   const [showQr, setShowQr] = useState(false);
   const [shareCount, setShareCount] = useState<number>(() => getShareCount());
+
+  // あなたの紹介の「実績」(登録した友達の人数 / 累計獲得日数) — 開いた瞬間にサーバへ同期して最新化
+  const [referredCount, setReferredCount] = useState<number>(() => referral.referredCount);
+  const [earnedDays, setEarnedDays] = useState<number>(() => referral.bonusDays);
+  useEffect(() => {
+    let alive = true;
+    syncReferralStatus()
+      .then((r) => {
+        if (!alive) return;
+        setReferredCount(r.referredCount);
+        setEarnedDays(r.bonusDays);
+      })
+      .catch(() => { /* オフライン等は現状維持 — 嘘の数字は出さない */ });
+    return () => { alive = false; };
+  }, []);
 
   // シェアアクションのたびに端末ローカルの実カウントを +1 (正直な数値)
   const bumpShare = useCallback(() => setShareCount(recordShare()), []);
@@ -276,6 +291,38 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
       color: p.ink,
       position: 'relative',
     }}>
+      {/* ─── 実績バナー — 実際に登録した友達がいる時だけ正直に祝う (0 は出さない) ─── */}
+      {referredCount > 0 && (
+        <div
+          data-testid="referral-success-banner"
+          style={{
+            background: 'linear-gradient(135deg, #16A34A, #22C55E)',
+            borderRadius: 14,
+            padding: '0.8rem 0.95rem',
+            color: '#fff',
+            display: 'flex', alignItems: 'center', gap: '0.65rem',
+            boxShadow: '0 8px 22px rgba(22,163,74,0.32)',
+          }}
+        >
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: 'rgba(255,255,255,0.22)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <Sparkles size={19} strokeWidth={2.4} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, lineHeight: 1.3 }}>
+              あなたの紹介で {referredCount} 人が登録 🎉
+            </p>
+            <p style={{ margin: '0.1rem 0 0', fontSize: '0.76rem', color: 'rgba(255,255,255,0.92)', lineHeight: 1.4 }}>
+              これまでに合計 <strong>+{earnedDays} 日</strong> のトライアル延長を獲得しました。
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ─── ヒーロー (巨大訴求) ─── */}
       <div style={{
         background: heroGradient,
@@ -334,8 +381,18 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '0.5rem',
       }}>
-        <Stat icon={<Share2 size={13} />} label="シェア回数" value={`${shareCount}`} suffix="回" palette={p} />
-        <Stat icon={<Gift size={13} />} label="友達1人につき" value={`+${REFERRAL_BONUS_DAYS}`} suffix="日" palette={p} />
+        {/* 紹介実績がある人には実数を、まだ 0 の人には「シェア回数 + 1人あたり報酬」を見せる */}
+        {referredCount > 0 ? (
+          <>
+            <Stat icon={<Users size={13} />} label="紹介で登録" value={`${referredCount}`} suffix="人" palette={p} />
+            <Stat icon={<Gift size={13} />} label="累計獲得" value={`+${earnedDays}`} suffix="日" palette={p} />
+          </>
+        ) : (
+          <>
+            <Stat icon={<Share2 size={13} />} label="シェア回数" value={`${shareCount}`} suffix="回" palette={p} />
+            <Stat icon={<Gift size={13} />} label="友達1人につき" value={`+${REFERRAL_BONUS_DAYS}`} suffix="日" palette={p} />
+          </>
+        )}
         <Stat
           icon={<Calendar size={13} />}
           label="trial 残"
