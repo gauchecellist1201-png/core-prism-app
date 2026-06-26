@@ -16,6 +16,7 @@ import type { IgProfile } from './instagramConnect';
 import { getAllBrandDeals } from './brandDeals';
 import { IRIS_COLORS } from './irisStyle';
 import { getActiveAccount } from './multiAccount';
+import { EASE_OUT_FM } from './motion';
 
 const HISTORY_KEY_BASE = 'core_iris_follower_history_v1';
 const SHOWN_KEY_BASE = 'core_iris_brief_shown';
@@ -270,7 +271,7 @@ export default function IrisMorningBrief({
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.35 }}
+        transition={{ duration: 0.4, ease: EASE_OUT_FM }}
         style={{
           background: `linear-gradient(135deg, ${IRIS_COLORS.purpleDeep}25 0%, ${IRIS_COLORS.inkBlack} 100%)`,
           border: `1px solid ${IRIS_COLORS.gold}33`,
@@ -332,7 +333,7 @@ export default function IrisMorningBrief({
                 key={i}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.08 }}
+                transition={{ duration: 0.3, delay: i * 0.08, ease: EASE_OUT_FM }}
                 style={{
                   background: 'rgba(255,255,255,0.04)',
                   border: `1px solid ${c.accent}22`,
@@ -384,7 +385,7 @@ export default function IrisMorningBrief({
           <motion.button
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
+            transition={{ duration: 0.3, delay: 0.3, ease: EASE_OUT_FM }}
             onClick={() => { setVisible(false); onAction?.(oneMove.tab, oneMove.theme); }}
             style={{
               width: '100%',

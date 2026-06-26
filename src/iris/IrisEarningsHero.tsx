@@ -16,7 +16,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAgentTaskQueue, type CxoRole } from '../hooks/useAgentTaskQueue';
 import type { InfluencerDeal, DealStage } from '../types/influencerDeal';
 import type { IgProfile } from './instagramConnect';
-import { DUR_BASE, EASE_OUT } from './motion';
+import { DUR_BASE, EASE_OUT, EASE_OUT_FM } from './motion';
 
 interface Props {
   myDeals: InfluencerDeal[];
@@ -124,7 +124,7 @@ function MetricCard({ accent, label, value, valueFormatter, subtitle, emptyCta, 
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, delay, ease: 'easeOut' }}
+      transition={{ duration: 0.45, delay, ease: EASE_OUT_FM }}
       whileHover={{ y: -2 }}
       style={{
         position: 'relative',
@@ -291,7 +291,7 @@ export default function IrisEarningsHero({ myDeals, igProfile, onOpenDeals, onCo
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
+      transition={{ duration: 0.4, ease: EASE_OUT_FM }}
       style={{
         position: 'relative',
         padding: '1.3rem 1.1rem 1.15rem',

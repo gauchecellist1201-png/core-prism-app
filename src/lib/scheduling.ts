@@ -1,7 +1,7 @@
 // ============================================================
 // 空き時間計算 + Booking URL エンコード/デコード
 // ============================================================
-import type { AvailabilityRules, BookingConfig } from '../types/scheduling';
+import type { AvailabilityRules, BookingConfig, LocationKind } from '../types/scheduling';
 import type { BusyInterval } from './googleCalendar';
 
 /**
@@ -124,4 +124,81 @@ export function groupSlotsByDay(slots: string[], locale = 'ja-JP'): { dayKey: st
       iso: list,
     };
   });
+}
+
+// ─── 予約確定 → カレンダー登録 (ゲスト側・OAuth 不要) ──────────────
+const LOCATION_LABELS_JA: Record<LocationKind, string> = {
+  'google-meet': 'Google Meet', 'zoom': 'Zoom', 'phone': '電話', 'in-person': '対面', 'custom': 'オンライン',
+};
+
+export function bookingLocationLabel(cfg: BookingConfig): string {
+  if ((cfg.location === 'custom' || cfg.location === 'in-person') && cfg.customLocation) return cfg.customLocation;
+  return LOCATION_LABELS_JA[cfg.location] || 'オンライン';
+}
+
+/** ISO 文字列 → Google Calendar / ICS 用 UTC 形式 (YYYYMMDDTHHMMSSZ) */
+function toCalStamp(iso: string): string {
+  return new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+}
+
+export interface BookingDetails {
+  cfg: BookingConfig;
+  slotIso: string;
+  guestName: string;
+  guestEmail: string;
+}
+
+function eventEndIso(slotIso: string, durationMin: number): string {
+  return new Date(new Date(slotIso).getTime() + durationMin * 60_000).toISOString();
+}
+
+function eventTitle(d: BookingDetails): string {
+  return `${d.cfg.meetingName} — ${d.cfg.host} × ${d.guestName || 'ゲスト'}`;
+}
+
+function eventDescription(d: BookingDetails): string {
+  const lines = [
+    d.cfg.description || '',
+    `ホスト: ${d.cfg.host}${d.cfg.hostEmail ? ` (${d.cfg.hostEmail})` : ''}`,
+    `ゲスト: ${d.guestName}${d.guestEmail ? ` (${d.guestEmail})` : ''}`,
+    `場所: ${bookingLocationLabel(d.cfg)}`,
+    'CORE Prism の日程調整で予約しました。',
+  ];
+  return lines.filter(Boolean).join('\n');
+}
+
+/** ワンクリックで Google カレンダーに予定を追加 (add= でホストを招待)。OAuth 不要。 */
+export function buildGoogleCalendarUrl(d: BookingDetails): string {
+  const start = toCalStamp(d.slotIso);
+  const end = toCalStamp(eventEndIso(d.slotIso, d.cfg.duration));
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: eventTitle(d),
+    dates: `${start}/${end}`,
+    details: eventDescription(d),
+    location: bookingLocationLabel(d.cfg),
+  });
+  // ホストを招待 (ゲストが保存すると Google からホストへ招待が届く)
+  if (d.cfg.hostEmail) params.append('add', d.cfg.hostEmail);
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+/** どのカレンダーアプリでも開ける .ics を生成 (Apple カレンダー / Outlook 等のフォールバック) */
+export function buildIcs(d: BookingDetails): string {
+  const uid = `${toCalStamp(d.slotIso)}-${(d.guestEmail || 'guest').replace(/[^a-z0-9]/gi, '')}@core-prism`;
+  const esc = (s: string) => (s || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+  const lines = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//CORE Prism//Booking//JA', 'CALSCALE:GREGORIAN', 'METHOD:REQUEST',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTART:${toCalStamp(d.slotIso)}`,
+    `DTEND:${toCalStamp(eventEndIso(d.slotIso, d.cfg.duration))}`,
+    `SUMMARY:${esc(eventTitle(d))}`,
+    `DESCRIPTION:${esc(eventDescription(d))}`,
+    `LOCATION:${esc(bookingLocationLabel(d.cfg))}`,
+    d.cfg.hostEmail ? `ORGANIZER;CN=${esc(d.cfg.host)}:mailto:${d.cfg.hostEmail}` : '',
+    d.guestEmail ? `ATTENDEE;CN=${esc(d.guestName)};RSVP=TRUE:mailto:${d.guestEmail}` : '',
+    'STATUS:CONFIRMED', 'END:VEVENT', 'END:VCALENDAR',
+  ].filter(Boolean);
+  return lines.join('\r\n');
 }

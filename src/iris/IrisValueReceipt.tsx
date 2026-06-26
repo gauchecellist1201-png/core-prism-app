@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 import { FileText, Type, Lightbulb, IdCard, Send, Sparkles } from 'lucide-react';
 import { getActivitySummary, type IrisActivityType } from './irisActivity';
 import { IRIS_COLORS } from './irisStyle';
+import { EASE_OUT_FM } from './motion';
 
 type MetaRow = {
   t: IrisActivityType;
@@ -65,7 +66,7 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
+      transition={{ duration: 0.4, ease: EASE_OUT_FM }}
       style={{
         position: 'relative',
         zIndex: 1,
@@ -119,7 +120,7 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
               key={m.t}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.06 }}
+              transition={{ duration: 0.3, delay: i * 0.06, ease: EASE_OUT_FM }}
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 border: `1px solid ${m.accent}22`,

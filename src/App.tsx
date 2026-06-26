@@ -66,6 +66,7 @@ const IrisApp = lazy(() => import('./iris/IrisApp'));
 const BillingSuccess = lazy(() => import('./components/BillingSuccess'));
 const KeynoteLanding = lazy(() => import('./keynote/KeynoteLanding'));
 const SharedArtifactView = lazy(() => import('./components/SharedArtifactView'));
+const BookingPage = lazy(() => import('./pages/BookingPage'));
 const ErrorLogViewer = lazy(() => import('./components/ErrorLogViewer'));
 const FAQPage = lazy(() => import('./pages/FAQPage'));
 const TokushohoPage = lazy(() => import('./pages/TokushohoPage'));
@@ -89,6 +90,7 @@ import CxoWelcomeCard from './components/CxoWelcomeCard';
 import StripeFailureBanner from './components/StripeFailureBanner';
 import InstallPwaBanner from './components/InstallPwaBanner';
 import { readSharedFromUrl } from './lib/shareLink';
+import { parseBookingFromUrl } from './lib/scheduling';
 import { CoreDock } from './components/CoreDock';
 import { readCoreHandoff } from './components/coreLink';
 
@@ -319,6 +321,16 @@ function getIndustryLpSlug(): string | null {
 }
 
 export default function App() {
+  // ?book=... — ゲストが受け取った日程調整リンクの受信ページ
+  const booking = parseBookingFromUrl();
+  if (booking) {
+    return (
+      <Suspense fallback={<RouteFallback />}>
+        <BookingPage cfg={booking} />
+      </Suspense>
+    );
+  }
+
   // ?share=... — 友だちから届いた成果物プレビュー + 新規登録 CTA
   const sharedArtifact = readSharedFromUrl();
   if (sharedArtifact) {

@@ -23,5 +23,7 @@ export const TOGGLE = `background ${DUR_SNAP}s ${EASE_IN_OUT}, color ${DUR_SNAP}
 /** 複数プロパティが同時に変わる状態カード向け（'all' の速度・カーブだけを統一）。 */
 export const BASE_ALL = `all ${DUR_BASE}s ${EASE_OUT}`;
 
+/** framer-motion 用の減速イージング（CSS の EASE_OUT と同一カーブ）。 */
+export const EASE_OUT_FM = [0.22, 1, 0.36, 1] as [number, number, number, number];
 /** framer-motion 用の登場プリセット。 */
-export const ENTER_SPRING = { duration: DUR_ENTER, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
+export const ENTER_SPRING = { duration: DUR_ENTER, ease: EASE_OUT_FM };
