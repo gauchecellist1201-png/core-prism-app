@@ -133,6 +133,10 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
   const [draft, setDraft] = useState<ApplicationDraft | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
+  // 「稼ぐ」ステップ完了 = Iris が応募文（稼ぐための成果物）を出した瞬間に点灯
+  const [earnDone, setEarnDone] = useState(false);
+  // コピーした案件 id（ボタンを「コピー済み」に変えて沈黙を消す）
+  const [copiedDealId, setCopiedDealId] = useState<string | null>(null);
 
   const makeDraft = async (deal: BrandDeal) => {
     setDraftDealId(deal.id);
@@ -148,6 +152,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
     try {
       const d = await generateApplicationDraft({ settings, deal, mediaKit, customNote: note });
       setDraft(d);
+      if (!earnDone) { setEarnDone(true); fire('応募文ができました！連携から稼ぐまで一気通貫の完成です'); }
     } catch (e) {
       setDraftError(e instanceof Error ? e.message : '応募文の生成に失敗しました');
     } finally {
@@ -207,7 +212,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
     { key: 'connect', label: '連携', done: true },
     { key: 'strategy', label: '戦略', done: !!strategy },
     { key: 'reel', label: 'リール', done: !!reel },
-    { key: 'earn', label: '稼ぐ', done: false },
+    { key: 'earn', label: '稼ぐ', done: earnDone },
   ];
   // 「いま光らせる」ステップ = 完了していない最初のステップ
   const activeStepIdx = steps.findIndex((s) => !s.done);
@@ -501,9 +506,13 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
                     <div style={{ fontSize: 12, color: bg.ink, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{draft.body}</div>
                     <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                       <button type="button"
-                        onClick={() => { try { navigator.clipboard?.writeText(`${draft.subject}\n\n${draft.body}`); } catch { /* */ } }}
-                        style={{ flex: 1, background: `linear-gradient(135deg, ${accent}, #F77737)`, border: 'none', color: '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', cursor: 'pointer' }}>
-                        応募文をコピー
+                        onClick={() => {
+                          try { navigator.clipboard?.writeText(`${draft.subject}\n\n${draft.body}`); } catch { /* */ }
+                          setCopiedDealId(deal.id);
+                          fire('応募文をコピーしました');
+                        }}
+                        style={{ flex: 1, background: copiedDealId === deal.id ? 'rgba(16,185,129,0.12)' : `linear-gradient(135deg, ${accent}, #F77737)`, border: copiedDealId === deal.id ? '1px solid rgba(16,185,129,0.4)' : 'none', color: copiedDealId === deal.id ? '#0F7D63' : '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                        {copiedDealId === deal.id ? <><CheckCircle2 size={13} /> コピー済み</> : '応募文をコピー'}
                       </button>
                       {deal.contact?.type === 'email' ? (
                         <a href={`mailto:${deal.contact.address}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`}
