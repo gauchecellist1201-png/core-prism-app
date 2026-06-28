@@ -1883,7 +1883,7 @@ function DetailModal({
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
           <Stat bg={bg} icon={<Eye size={14} />} label="届いた数" value={m.reach} />
-          <Stat bg={bg} icon={<Flame size={14} />} label="ER" value={m.engagementRate} suffix="%" />
+          <Stat bg={bg} icon={<Flame size={14} />} label="反応率" value={m.engagementRate} suffix="%" />
           <Stat bg={bg} icon={<Heart size={14} />} label="いいね" value={m.likes} />
           <Stat bg={bg} icon={<MessageCircle size={14} />} label="コメント" value={m.comments} />
           <Stat bg={bg} icon={<Bookmark size={14} />} label="保存" value={m.saves} />

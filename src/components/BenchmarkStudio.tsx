@@ -7,6 +7,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid, Legend,
 } from 'recharts';
+import { Zap, RefreshCw } from 'lucide-react';
 import type { Persona, AppSettings } from '../types/identity';
 import type { BenchmarkEntry } from '../lib/benchmarkData';
 import { confirmAction } from '../lib/confirmDialog';
@@ -606,9 +607,9 @@ function StepResult({
           <button
             onClick={onProposeAgents}
             disabled={proposeBusy}
-            className="cp-btn cp-btn-sm w-full mt-2"
+            className="cp-btn cp-btn-sm w-full mt-2 cp-row justify-center gap-1"
             style={{ background: accentColor + '20', color: accentColor, borderColor: accentColor + '40' }}>
-            {proposeBusy ? '提案中...' : '⚡ CDS / CSO / CMO に実行を依頼'}
+            {proposeBusy ? '提案中...' : <><Zap size={13} /> CDS / CSO / CMO に実行を依頼</>}
           </button>
         </div>
       )}
@@ -778,8 +779,8 @@ function CompetitorBrandsSection({
           <p className="cp-tiny">{list?.industryLabel || ''} の代表的な会社。クリックで HP へ。</p>
         </div>
         <button onClick={() => load(true)} disabled={loading}
-          className="cp-btn cp-btn-ghost cp-btn-sm text-xs flex-shrink-0">
-          {loading ? '取得中…' : '🔄 更新'}
+          className="cp-btn cp-btn-ghost cp-btn-sm text-xs flex-shrink-0 cp-row gap-1">
+          {loading ? '取得中…' : <><RefreshCw size={12} /> 更新</>}
         </button>
       </div>
 
@@ -923,7 +924,7 @@ function AssistIndustryStep({
       </div>
 
       <div className="cp-row justify-between gap-2">
-        <button onClick={onRetry} className="cp-btn cp-btn-ghost cp-btn-sm">🔄 再推定</button>
+        <button onClick={onRetry} className="cp-btn cp-btn-ghost cp-btn-sm cp-row gap-1"><RefreshCw size={12} /> 再推定</button>
         <button onClick={onConfirm} className="cp-btn cp-btn-sm"
           style={{ background: accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
           この業種で進める →
