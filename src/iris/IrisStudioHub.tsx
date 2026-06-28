@@ -35,6 +35,7 @@ interface StudioTool {
 }
 
 const DESIGN_TOOLS: StudioTool[] = [
+  { tab: 'cover',  title: 'カバー・サムネを作る', desc: 'テーマを書くだけ。AI が見出し・配色・写真の方向性を提案し、雑誌の表紙級の1枚に。', icon: LayoutTemplate, badge: 'AI提案' },
   { tab: 'image',  title: '写真を直す',     desc: '明るさ・色・背景をワンタップで。投稿が映える1枚に。', icon: Camera,    badge: 'ワンタップ' },
   { tab: 'draft',  title: '投稿を書く',     desc: 'AI がキャプション・ハッシュタグ・文字入れ案を作成。',  icon: Type },
 ];

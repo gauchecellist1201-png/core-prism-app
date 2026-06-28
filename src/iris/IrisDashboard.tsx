@@ -127,6 +127,7 @@ const VideoStudio = React.lazy(() => import('../components/VideoStudio'));
 // 旧フル機能版は ./IrisReelStudio に残る (詳細モードで呼ぶ用)
 const IrisReelStudio = React.lazy(() => import('./IrisReelStudioMinimal'));
 const IrisStudioHub = React.lazy(() => import('./IrisStudioHub'));
+const IrisCoverStudio = React.lazy(() => import('./IrisCoverStudio'));
 const IrisPostQueueView = React.lazy(() => import('./IrisPostQueueView'));
 import { usePostQueue } from './usePostQueue';
 const IrisTriageView = React.lazy(() => import('./IrisTriageView'));
@@ -170,7 +171,7 @@ interface Props {
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'studio' | 'script' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite' | 'knowledge';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'studio' | 'cover' | 'script' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite' | 'knowledge';
 
 // ── デスクトップ左サイドバー ────────────────────────────────────
 function IrisSidebar({
@@ -1729,6 +1730,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'health' && <IrisHealthView bg={bg} health={health} />}
             {tab === 'strategy' && <IrisStrategistView bg={bg} settings={settings} mediaKit={mediaKit} knowledge={knowledge} />}
             {tab === 'studio' && <IrisStudioHub bg={bg} onOpen={(t) => setTab(t as Tab)} />}
+            {tab === 'cover' && <IrisCoverStudio bg={bg} settings={settings} />}
             {tab === 'image' && <IrisImageEditor bg={bg} settings={settings} />}
             {tab === 'triage' && (
               <IrisTriageView bg={bg} settings={settings} mediaKit={mediaKit}
@@ -3276,7 +3278,7 @@ function TeamView({ bg, team, desk, myDeals }: {
           交渉文や投稿テンプレを保存して、チーム内で再利用 (使用回数も記録)。
         </p>
         {team.templates.length === 0 ? (
-          <p style={{ color: bg.inkSoft, fontSize: '0.85rem' }}>まだテンプレはありません。交渉センターで生成した文を「テンプレ化」する機能は順次追加予定です。</p>
+          <p style={{ color: bg.inkSoft, fontSize: '0.85rem' }}>まだテンプレはありません。よく使う交渉文や投稿文をここに保存しておくと、チームでワンタップで再利用できます。</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {team.templates.map(t => (

@@ -111,7 +111,7 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
       const images = await Promise.all(files.map(fileToBase64Pair));
       const result = await extractPostsFromScreenshots({ settings, images });
       if (result.length === 0) {
-        setExtractErr('投稿を検出できませんでした。インサイト画面のスクショ (リーチ・ER・保存数が見える画面) を試してみてください。');
+        setExtractErr('投稿を検出できませんでした。インサイト画面のスクショ (リーチ・反応率・保存数が見える画面) を試してみてください。');
         return;
       }
       setExtracted(result);
@@ -394,8 +394,8 @@ function HeroBanner({ bg, stats }: { bg: IrisBackgroundDef; stats: ReturnType<ty
         marginTop: '1rem',
       }}>
         <MetricBig bg={bg} value={stats.total.toString()} numeric={stats.total} label="投稿" />
-        <MetricBig bg={bg} value={er > 0 ? `${er.toFixed(1)}%` : '—'} numeric={er} suffix="%" label="平均 ER" />
-        <MetricBig bg={bg} value={reach > 0 ? formatNumber(Math.round(reach)) : '—'} numeric={reach} label="平均リーチ" />
+        <MetricBig bg={bg} value={er > 0 ? `${er.toFixed(1)}%` : '—'} numeric={er} suffix="%" label="平均 反応率" />
+        <MetricBig bg={bg} value={reach > 0 ? formatNumber(Math.round(reach)) : '—'} numeric={reach} label="平均 届いた数" />
         <MetricBig bg={bg} value={stats.avgSaves > 0 ? formatNumber(Math.round(stats.avgSaves)) : '—'} numeric={stats.avgSaves} label="平均保存" />
       </div>
     </div>
@@ -912,10 +912,10 @@ function ExtractedReview({
                   marginTop: '0.55rem',
                 }}>
                   {p.metrics.reach !== undefined && (
-                    <MiniStat bg={bg} icon={<Eye size={11} />} label="リーチ" value={formatNumber(p.metrics.reach)} />
+                    <MiniStat bg={bg} icon={<Eye size={11} />} label="届いた数" value={formatNumber(p.metrics.reach)} />
                   )}
                   {p.metrics.engagementRate !== undefined && (
-                    <MiniStat bg={bg} icon={<Flame size={11} />} label="ER" value={`${p.metrics.engagementRate.toFixed(1)}%`} accent />
+                    <MiniStat bg={bg} icon={<Flame size={11} />} label="反応率" value={`${p.metrics.engagementRate.toFixed(1)}%`} accent />
                   )}
                   {p.metrics.likes !== undefined && (
                     <MiniStat bg={bg} icon={<Heart size={11} />} label="いいね" value={formatNumber(p.metrics.likes)} />
@@ -1246,7 +1246,7 @@ function Dashboard({
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
             <BarChart3 size={16} style={{ color: bg.accent }} />
             <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', fontWeight: 600, color: bg.ink }}>
-              曜日 × 時間帯 × ER
+              曜日 × 時間帯 × 反応率
             </p>
           </div>
           <Heatmap stats={stats} bg={bg} />
@@ -1262,7 +1262,7 @@ function Dashboard({
                   fontSize: '0.75rem',
                   fontWeight: 700,
                 }}>
-                  {dayLabel(s.day)} {s.hour}時 · ER {s.er.toFixed(1)}%
+                  {dayLabel(s.day)} {s.hour}時 · 反応率 {s.er.toFixed(1)}%
                 </span>
               ))}
             </div>
@@ -1274,7 +1274,7 @@ function Dashboard({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.8rem' }}>
         <TopList bg={bg} glassCard={glassCard} title="保存数 TOP3" icon={<Bookmark size={14} />} items={stats.topBySaves.map(p => ({ title: p.title, value: formatNumber(p.saves) }))} />
         <TopList bg={bg} glassCard={glassCard} title="シェア TOP3" icon={<Share2 size={14} />} items={stats.topByShares.map(p => ({ title: p.title, value: formatNumber(p.shares) }))} />
-        <TopList bg={bg} glassCard={glassCard} title="ER TOP3" icon={<Flame size={14} />} items={stats.topByER.map(p => ({ title: p.title, value: `${p.er.toFixed(1)}%` }))} />
+        <TopList bg={bg} glassCard={glassCard} title="反応がよかった投稿 TOP3" icon={<Flame size={14} />} items={stats.topByER.map(p => ({ title: p.title, value: `${p.er.toFixed(1)}%` }))} />
       </div>
 
       {/* フォーマット別 */}
@@ -1362,7 +1362,7 @@ function Heatmap({ stats, bg }: { stats: ReturnType<typeof computeStats>; bg: Ir
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4, delay: (d * 6 + h * 0.1) * 0.01 }}
-                  title={v > 0 ? `${dayLabel(d)} ${h}時: ER ${v.toFixed(2)}%` : '投稿なし'}
+                  title={v > 0 ? `${dayLabel(d)} ${h}時: 反応率 ${v.toFixed(2)}%` : '投稿なし'}
                   style={{
                     aspectRatio: '1.4 / 1',
                     minHeight: 28,
@@ -1882,7 +1882,7 @@ function DetailModal({
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
-          <Stat bg={bg} icon={<Eye size={14} />} label="リーチ" value={m.reach} />
+          <Stat bg={bg} icon={<Eye size={14} />} label="届いた数" value={m.reach} />
           <Stat bg={bg} icon={<Flame size={14} />} label="ER" value={m.engagementRate} suffix="%" />
           <Stat bg={bg} icon={<Heart size={14} />} label="いいね" value={m.likes} />
           <Stat bg={bg} icon={<MessageCircle size={14} />} label="コメント" value={m.comments} />

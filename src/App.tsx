@@ -80,6 +80,7 @@ import { useTheme } from './hooks/useTheme';
 import PrismTaskScheduler from './prism/PrismTaskScheduler';
 import PrismSplash from './prism/PrismWelcome';
 const KnowledgeBrainView = lazy(() => import('./prism/KnowledgeBrainView'));
+const PrismArtifactStudio = lazy(() => import('./components/PrismArtifactStudio'));
 import TutorialOverlay from './components/TutorialOverlay';
 import WowOnboarding from './components/WowOnboarding';
 import OfflineNotice from './components/OfflineNotice';
@@ -550,6 +551,7 @@ export default function App() {
   });
   // 🧠 統合ナレッジ脳 (最上位 Studio 限定) の開閉
   const [brainOpen, setBrainOpen] = useState(false);
+  const [artifactOpen, setArtifactOpen] = useState(false);
   // ガイド ツアー (2026-06-05 オーナー指示) — HubSpot 風 「ここを タップ」 案内
   // ガイド ツアー (オーナー指示 2026-06-05: 16 ステップ ツアー は うざい から 自動 起動 廃止。
   //   freshUserDemo の フラグ も 消費 する だけ。 触れる の は window event の 明示 呼び出し のみ。)
@@ -980,6 +982,32 @@ export default function App() {
             display: 'inline-flex', alignItems: 'center', gap: 6,
           }}
         ><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}><path d="M9.5 3.5A2.5 2.5 0 0 0 7 6a2.5 2.5 0 0 0-1.5 4.5A2.5 2.5 0 0 0 7 15a2.5 2.5 0 0 0 2.5 2.5V3.5Z" /><path d="M14.5 3.5A2.5 2.5 0 0 1 17 6a2.5 2.5 0 0 1 1.5 4.5A2.5 2.5 0 0 1 17 15a2.5 2.5 0 0 1-2.5 2.5V3.5Z" /><path d="M12 3.5v14" /></svg><span className="cp-fab-label">統合脳</span></button>
+      )}
+      {/* ✨ 成果物スタジオ ボタン — 統合脳の上に積む（エージェント提案→美しい一枚成果物） */}
+      {view === 'dashboard' && activePersona && (
+        <button
+          onClick={() => setArtifactOpen(true)}
+          aria-label="成果物スタジオ を 開く"
+          className="cp-fab-iconize"
+          style={{
+            position: 'fixed',
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 188px)',
+            right: 'max(14px, env(safe-area-inset-right, 0px))',
+            zIndex: 35,
+            padding: '10px 14px', borderRadius: 14,
+            background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
+            color: '#fff', fontWeight: 800, fontSize: 13,
+            border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
+            boxShadow: '0 8px 22px rgba(99,102,241,0.45)',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}
+        ><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /></svg><span className="cp-fab-label">成果物</span></button>
+      )}
+      {/* ✨ 成果物スタジオ オーバーレイ */}
+      {artifactOpen && activePersona && (
+        <Suspense fallback={null}>
+          <PrismArtifactStudio onClose={() => setArtifactOpen(false)} settings={settings} persona={activePersona} />
+        </Suspense>
       )}
       {/* 🧠 統合ナレッジ脳 オーバーレイ */}
       {brainOpen && activePersona && (

@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SESSION_KEY = 'prism_welcome_seen_v2';
+// 抜本的に使いやすく: 一度見たら以降のセッションでは出さない（毎回開くたびの待ちを消す）。初回だけ感動を見せる。
+const EVER_KEY = 'prism_welcome_ever_v1';
 
 const PRISM_COLORS = {
   logic:    '#2E6FFF',
@@ -24,15 +26,15 @@ interface SplashProps {
 export default function PrismSplash({ personaName }: SplashProps) {
   const [show, setShow] = useState(() => {
     if (typeof window === 'undefined') return false;
-    try { return !sessionStorage.getItem(SESSION_KEY); } catch { return false; }
+    try { return !localStorage.getItem(EVER_KEY) && !sessionStorage.getItem(SESSION_KEY); } catch { return false; }
   });
 
   useEffect(() => {
     if (!show) return;
     const t = setTimeout(() => {
-      try { sessionStorage.setItem(SESSION_KEY, '1'); } catch {/* */}
+      try { sessionStorage.setItem(SESSION_KEY, '1'); localStorage.setItem(EVER_KEY, '1'); } catch {/* */}
       setShow(false);
-    }, 2800);
+    }, 1900); // 抜本的に使いやすく: 強制待ちを 2.8s→1.9s に短縮。さらに一度見たら以降は出さない（EVER_KEY）
     return () => clearTimeout(t);
   }, [show]);
 
@@ -49,7 +51,7 @@ export default function PrismSplash({ personaName }: SplashProps) {
                   '明日の自分を、今ここで決める';
 
   const dismiss = () => {
-    try { sessionStorage.setItem(SESSION_KEY, '1'); } catch {/* */}
+    try { sessionStorage.setItem(SESSION_KEY, '1'); localStorage.setItem(EVER_KEY, '1'); } catch {/* */}
     setShow(false);
   };
 
@@ -191,11 +193,11 @@ export default function PrismSplash({ personaName }: SplashProps) {
           {/* スキップヒント */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.4 }}
-            transition={{ delay: 2.0, duration: 0.5 }}
+            animate={{ opacity: 0.55 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
             style={{
               position: 'absolute', bottom: '8%',
-              fontSize: '0.72rem', color: '#fff',
+              fontSize: '0.78rem', color: '#fff',
               letterSpacing: '0.15em',
               fontFamily: '"Noto Sans JP", system-ui',
             }}>

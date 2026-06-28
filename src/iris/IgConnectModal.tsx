@@ -502,7 +502,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
         </button>
 
         <p style={{ fontSize: 10, color: '#8A8593', marginTop: 10, lineHeight: 1.7, textAlign: 'center' }}>
-          これは<strong>簡易入力</strong>です（自動連携ではありません）。投稿数・ER・リーチは取得できません。<br />
+          これは<strong>簡易入力</strong>です（自動連携ではありません）。投稿数・反応率・リーチは取得できません。<br />
           数字を自動取得したい場合は上の「スクショ」または「本連携」をお使いください。
         </p>
         </>

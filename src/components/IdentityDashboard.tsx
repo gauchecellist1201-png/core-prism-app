@@ -1108,11 +1108,6 @@ export default function IdentityDashboard({
                 try { document.getElementById('command-tower')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* */ }
               }} />
 
-              {/* 🗼 司令塔ループ — Prism中心に Iris/Resonance/Lume が一周 (2026-06-10) */}
-              <div id="command-tower">
-                <CommandTowerHub />
-              </div>
-
               {/* 📧 Gmail インサイト (2026-06-05 オーナー指示: 連携 = 価値) */}
               <GmailInsightsCard />
 
@@ -1619,6 +1614,12 @@ export default function IdentityDashboard({
                 knowledge={personaKnowledge}
                 proposals={proactive.proposals}
               />
+
+              {/* 🗼 司令塔ループ — Prism中心に Iris/Resonance/Lume が一周。
+                  分かりにくいとの指摘(2026-06-18)で、優先度を下げて「すべての機能を見る」展開内の最下部へ移動。 */}
+              <div id="command-tower">
+                <CommandTowerHub />
+              </div>
 
               </>)}
               {/* ↑ 焦点モード展開ここまで */}

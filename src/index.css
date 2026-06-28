@@ -118,6 +118,8 @@
 
   html, body {
     margin: 0;
+    /* 文字を一段大きく（読みやすさ最優先・16px→17.5px）。rem基準なので全体が比例して拡大。 */
+    font-size: 17.5px;
     background: var(--bg);
     color: var(--fg);
     font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', system-ui, -apple-system, sans-serif;

@@ -9,6 +9,7 @@
 //   - ノードをタップ → そのチャネルの最近のシグナル + CTA
 // ============================================================
 import { useState, useEffect, useRef, type ReactElement, type CSSProperties } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Radio, CheckCircle2, X } from 'lucide-react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo } from './Logo';
 import {
@@ -32,6 +33,9 @@ const POS: Record<LoopChannel, { x: number; y: number }> = {
 };
 
 const SPOKES: LoopChannel[] = ['iris', 'resonance', 'lume'];
+
+// データが流れる順番（集める→読む→考える→届ける）。パケットはこの順に旅する。
+const LOOP_ORDER: LoopChannel[] = ['lume', 'iris', 'prism', 'resonance'];
 
 // 接続状態（honest: Iris は実アプリ稼働、他は準備中）
 const CONNECTED: Record<LoopChannel, 'live' | 'soon'> = {
@@ -101,6 +105,12 @@ export default function CommandTowerHub() {
   };
 
   const litLeg = activeLeg ?? idlePulse;
+  // 旅するデータパケットの現在地（実行中は active、待機中は非表示）
+  const packetLeg: LoopChannel | null = running ? (activeLeg ?? 'lume') : null;
+  const packetPos = packetLeg ? POS[packetLeg] : POS.lume;
+  // いまアクティブな段の中身（ノード横に出す吹き出し用）
+  const activeStep = activeLeg ? steps[LOOP_ORDER.indexOf(activeLeg)] : undefined;
+  const reachedIdx = activeLeg ? LOOP_ORDER.indexOf(activeLeg) : (running ? 0 : -1);
 
   return (
     <div style={{
@@ -143,6 +153,7 @@ export default function CommandTowerHub() {
       }}>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+          {/* 待機時の細い三角スポーク */}
           {SPOKES.map((leg) => {
             const on = litLeg === leg;
             const c = CHANNEL_META[leg].color;
@@ -152,11 +163,46 @@ export default function CommandTowerHub() {
                 className={`ct-line ${on ? 'ct-line-on' : ''}`}
                 stroke={c} strokeWidth={on ? 2 : 1.4} strokeLinecap="round"
                 strokeDasharray="4 5" vectorEffect="non-scaling-stroke"
-                style={{ opacity: on ? 1 : 0.38 }}
+                style={{ opacity: running ? 0.12 : (on ? 1 : 0.34) }}
+              />
+            );
+          })}
+          {/* 実行中: データが流れる順番（集める→読む→考える→届ける）を太い光の線で描く */}
+          {running && LOOP_ORDER.slice(0, -1).map((leg, i) => {
+            const a = POS[leg]; const b = POS[LOOP_ORDER[i + 1]];
+            const passed = i < reachedIdx;            // 通過済み = 点灯
+            const active = i === reachedIdx - 1 || (reachedIdx === 0 && i === 0);
+            const c = CHANNEL_META[LOOP_ORDER[i + 1]].color;
+            return (
+              <line key={`flow-${leg}`}
+                x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                className={passed || active ? 'ct-line-on' : ''}
+                stroke={c} strokeWidth={passed || active ? 2.6 : 1.6} strokeLinecap="round"
+                strokeDasharray="3 4" vectorEffect="non-scaling-stroke"
+                style={{ opacity: passed ? 0.9 : active ? 1 : 0.25, filter: (passed || active) ? `drop-shadow(0 0 3px ${c})` : 'none' }}
               />
             );
           })}
         </svg>
+
+        {/* 旅するデータパケット（彗星）— 集めた“ファンの信号”が4プロダクトを一周する */}
+        <AnimatePresence>
+          {packetLeg && (
+            <motion.div
+              initial={false}
+              animate={{ left: `${packetPos.x}%`, top: `${packetPos.y}%` }}
+              transition={{ type: 'spring', damping: 18, stiffness: 90 }}
+              exit={{ opacity: 0, scale: 0 }}
+              style={{ position: 'absolute', transform: 'translate(-50%,-50%)', zIndex: 4, pointerEvents: 'none' }}
+            >
+              <motion.div
+                animate={{ scale: [1, 1.35, 1], boxShadow: [`0 0 14px 4px ${CHANNEL_META[packetLeg].color}`, `0 0 28px 10px ${CHANNEL_META[packetLeg].color}`, `0 0 14px 4px ${CHANNEL_META[packetLeg].color}`] }}
+                transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
+                style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff' }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ノード */}
         {(['prism', ...SPOKES] as LoopChannel[]).map((ch) => {
@@ -199,6 +245,34 @@ export default function CommandTowerHub() {
             </button>
           );
         })}
+
+        {/* アクティブなノードから出る「いま何をしているか」の吹き出し（連携が見える） */}
+        <AnimatePresence mode="wait">
+          {running && activeLeg && activeStep && (
+            <motion.div
+              key={activeLeg}
+              initial={{ opacity: 0, y: 6, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.92 }}
+              transition={{ duration: 0.28 }}
+              style={{
+                position: 'absolute', left: '50%', bottom: -6, transform: 'translateX(-50%)',
+                width: 'min(94%, 420px)', zIndex: 5, pointerEvents: 'none',
+                background: 'rgba(10,8,20,0.9)', backdropFilter: 'blur(8px)',
+                border: `1.5px solid ${CHANNEL_META[activeLeg].color}`,
+                borderRadius: 12, padding: '8px 12px',
+                boxShadow: `0 8px 26px ${CHANNEL_META[activeLeg].color}55`,
+              }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 800, color: CHANNEL_META[activeLeg].color }}>
+                <span>{CHANNEL_META[activeLeg].name}</span>
+                <span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{CHANNEL_META[activeLeg].role}</span>
+              </div>
+              <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.5, marginTop: 2 }}>
+                {activeStep.output || `${activeStep.label}…`}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ループ実行 */}
@@ -253,11 +327,16 @@ export default function CommandTowerHub() {
 
       {/* 成果物 — Prism が出した「今日の一手」。実際に送れるメッセージとして使える */}
       {resultLine && (
-        <div className="ct-step" style={{
-          marginTop: 12, padding: '13px 14px', borderRadius: 14,
-          background: 'linear-gradient(135deg, rgba(167,139,250,0.14), rgba(99,102,241,0.06))',
-          border: '1.5px solid rgba(167,139,250,0.45)',
-        }}>
+        <motion.div
+          initial={{ opacity: 0, y: 16, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: 'spring', damping: 16, stiffness: 200 }}
+          style={{
+            marginTop: 12, padding: '13px 14px', borderRadius: 14,
+            background: 'linear-gradient(135deg, rgba(167,139,250,0.14), rgba(99,102,241,0.06))',
+            border: '1.5px solid rgba(167,139,250,0.45)',
+            boxShadow: '0 10px 30px rgba(167,139,250,0.25)',
+          }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
             <span style={{ fontSize: 11.5, fontWeight: 900, color: '#A78BFA', letterSpacing: '0.02em' }}>
               Prism が出した今日の一手
@@ -278,7 +357,7 @@ export default function CommandTowerHub() {
           <p style={{ fontSize: 10.5, color: 'var(--fg-subtle)', margin: '9px 0 0', lineHeight: 1.5 }}>
             このメッセージは AI が今その場で生成した実物です。コピーするか、各SNS/LINEの送信画面を開いてそのまま送れます。
           </p>
-        </div>
+        </motion.div>
       )}
 
       {/* ノード詳細 */}

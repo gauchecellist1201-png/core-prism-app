@@ -315,7 +315,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
           {analysis ? (
             <Stat label="総合スコア" value={<CountUp value={analysis.totalScore} durationMs={1400} />} bg={bg} />
           ) : igProfile.engagementRate != null ? (
-            <Stat label="エンゲージ率" value={`${igProfile.engagementRate}%`} bg={bg} />
+            <Stat label="反応率" value={`${igProfile.engagementRate}%`} bg={bg} />
           ) : null}
           {igProfile.bestPostTime && <Stat label="伸びる時間" value={igProfile.bestPostTime} bg={bg} />}
         </div>
