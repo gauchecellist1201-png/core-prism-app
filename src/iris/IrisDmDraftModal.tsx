@@ -577,7 +577,7 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
                   }}
                 >
                   {loading
-                    ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> 生成中...</>
+                    ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> 下書きを書いています…</>
                     : <><RefreshCw size={15} strokeWidth={2.3} /> このトーンで再生成</>}
                 </button>
               </div>

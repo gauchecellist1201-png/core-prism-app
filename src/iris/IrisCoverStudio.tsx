@@ -345,7 +345,7 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
             }}
           >
             {thinking ? <RefreshCw size={15} className="spin" /> : <Wand2 size={15} />}
-            {thinking ? '考え中…' : '提案してもらう'}
+            {thinking ? '見出しを考えています…' : '見出しを提案してもらう'}
           </button>
         </div>
         {thinking && <div style={{ fontSize: 12, color: accent, fontWeight: 600 }}>{thinkLine}</div>}

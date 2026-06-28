@@ -1887,8 +1887,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                               }}
                             >
                               {capBusy
-                                ? <><Loader2 size={12} className="iris-spin" /> 生成中</>
-                                : <><MessageSquare size={12} /> 本文 AI 生成</>}
+                                ? <><Loader2 size={12} className="iris-spin" /> 本文を書いています…</>
+                                : <><MessageSquare size={12} /> 投稿の本文を AI に書いてもらう</>}
                             </button>
                           </div>
                         </div>
