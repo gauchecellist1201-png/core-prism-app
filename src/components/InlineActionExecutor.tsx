@@ -116,6 +116,8 @@ export default function InlineActionExecutor({
     };
     saveArtifact(a);
     setSaved(true);
+    // 価値カード(WeeklyValueCard)へ即時反映 — AIが動いた瞬間に「今週/今日の件数」が増える体感を作る
+    try { window.dispatchEvent(new CustomEvent('core:value-updated')); } catch { /* */ }
     // 親 へ 完了 通知 (AgentTeamMonitor が 役員日報 へ logDeliverable する)
     try { onComplete?.(plan.deliverable, action); } catch { /* */ }
   }, [phase, plan, saved, persona.id, action, onComplete]);

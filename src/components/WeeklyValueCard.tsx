@@ -21,20 +21,24 @@ const ICONS: Record<ValueMetric['icon'], (p: { size?: number; color?: string }) 
 export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void }) {
   const [data, setData] = useState(() => computeWeeklyValue());
 
-  // ループ完了やナレッジ追加で localStorage が変わったら再集計
+  // ループ完了やナレッジ追加で localStorage が変わったら再集計。
+  // 'storage' は別タブ用なので、同じタブでの成果（役員タップ→成果物）も即反映するため
+  // 'core:value-updated' を購読する（AIが動いた瞬間に数字が増える＝価値を即体感）。
   useEffect(() => {
     const refresh = () => setData(computeWeeklyValue());
     window.addEventListener('focus', refresh);
     window.addEventListener('storage', refresh);
+    window.addEventListener('core:value-updated', refresh as EventListener);
     const t = window.setInterval(refresh, 20_000);
     return () => {
       window.removeEventListener('focus', refresh);
       window.removeEventListener('storage', refresh);
+      window.removeEventListener('core:value-updated', refresh as EventListener);
       window.clearInterval(t);
     };
   }, []);
 
-  const { metrics, total } = data;
+  const { metrics, total, todayTotal } = data;
   const empty = total === 0;
 
   return (
@@ -55,8 +59,18 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
           <h3 style={{ fontSize: 14, fontWeight: 900, color: 'var(--fg-strong)', margin: 0, letterSpacing: '-0.01em' }}>
             今週、AI役員があなたのために動いた量
           </h3>
-          <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 2 }}>
-            {empty ? 'まだ記録がありません' : `直近7日で合計 ${total.toLocaleString('ja-JP')} 件`}
+          <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+            <span>{empty ? 'まだ記録がありません' : `直近7日で合計 ${total.toLocaleString('ja-JP')} 件`}</span>
+            {todayTotal > 0 && (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                fontSize: 10.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999,
+                background: 'rgba(6,199,85,0.15)', color: '#06C755',
+                border: '1px solid rgba(6,199,85,0.35)',
+              }}>
+                今日 {todayTotal.toLocaleString('ja-JP')} 件
+              </span>
+            )}
           </div>
         </div>
       </div>
