@@ -388,10 +388,12 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
           overflowWrap: 'break-word',
           padding: '0 0.5rem',
         }}>
-          おかえり。<br className="iris-okaeri-br" />なんでも話して。
+          {history.length === 0
+            ? <>はじめまして。<br className="iris-okaeri-br" />なんでも話して。</>
+            : <>おかえり。<br className="iris-okaeri-br" />なんでも話して。</>}
         </h2>
         <p style={{ color: subtleColor, fontSize: '0.85rem', marginTop: '0.5rem', lineHeight: 1.5 }}>
-          スクショ・声・テキスト ── どれでも OK
+          スクショ・声・テキスト ── どれでも話しかけて OK
         </p>
       </div>
 
@@ -414,8 +416,15 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
             }}>
               <Sparkles size={30} color="#fff" strokeWidth={2.2} />
             </div>
-            <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.15rem', color: bg.ink, marginBottom: '1rem' }}>
+            <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.15rem', color: bg.ink, marginBottom: '0.5rem' }}>
               何から、はなしましょうか?
+            </p>
+            <p style={{ fontSize: '0.85rem', color: subtleColor, lineHeight: 1.7, maxWidth: 440, margin: '0 auto 1.1rem' }}>
+              Iris は、あなたの SNS 運用の相棒です。<br />
+              <b style={{ color: bg.ink, fontWeight: 600 }}>お仕事の管理・ことわり文・投稿のネタ出し・お肌の相談</b>まで、ぜんぶここで話すだけ。むずかしい操作はいりません。
+            </p>
+            <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', color: subtleColor, marginBottom: '0.5rem', alignSelf: 'flex-start', paddingLeft: '0.1rem' }}>
+              たとえば、こんなことを ──
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', maxWidth: 600, width: '100%' }}>
               {/* 動画スタジオへの直接ナビ */}
