@@ -16,6 +16,7 @@ import {
   generateIdeaPool, type IdeaItem,
   generateProductionScript, type ProductionScript,
   scriptToMarkdown, ideaPoolToMarkdown, type IrisClient,
+  buildMonthlySchedule, monthlyPlanToMarkdown, monthlyPlanToHtml, type ScheduledIdea,
 } from './scriptStudio';
 
 interface Props {
@@ -110,6 +111,14 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
   const [ideas, setIdeas] = useState<IdeaItem[]>([]);
   const [ideaBusy, setIdeaBusy] = useState(false);
 
+  // 月次カレンダー (代行→クライアント承認用)
+  const now = new Date();
+  const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const [perWeek, setPerWeek] = useState(3);
+  const [startISO, setStartISO] = useState(todayISO);
+  const [monthly, setMonthly] = useState<ScheduledIdea[]>([]);
+  const [monthlyBusy, setMonthlyBusy] = useState(false);
+
   // 台本
   const [freeTopic, setFreeTopic] = useState('');
   const [script, setScript] = useState<ProductionScript | null>(null);
@@ -175,6 +184,49 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
       if (!list.length) setErr('ネタを取得できませんでした。もう一度お試しください。');
     } catch (e: any) { setErr(e?.message || String(e)); }
     finally { setIdeaBusy(false); }
+  };
+
+  // 1ヶ月分の投稿カレンダーを一括生成 (週 perWeek 本 × 4週)
+  const runMonthly = async () => {
+    setMonthlyBusy(true); setErr(null);
+    try {
+      const total = Math.min(20, Math.max(4, perWeek * 4));
+      const list = await generateIdeaPool({ settings, client: activeClient, igProfile, pastPosts, focus: focus || undefined, count: total });
+      if (!list.length) { setErr('カレンダーを作れませんでした。もう一度お試しください。'); return; }
+      setMonthly(buildMonthlySchedule(list, { startISO, perWeek, igProfile }));
+    } catch (e: any) { setErr(e?.message || String(e)); }
+    finally { setMonthlyBusy(false); }
+  };
+
+  const copyMonthly = () => {
+    if (!monthly.length) return;
+    const md = monthlyPlanToMarkdown(monthly, activeClient);
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(md)
+        .then(() => notifyInApp({ kind: 'success', title: `今月の投稿カレンダー ${monthly.length}本をコピーしました`, body: 'チーム共有・履歴にそのまま使えます (Markdown)' }))
+        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
+    } else {
+      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
+    }
+  };
+
+  // クライアント承認用の「美しい1枚もの」を新規タブで開く (そのまま印刷→PDF保存)
+  const openMonthlyOnePager = () => {
+    if (!monthly.length) return;
+    const html = monthlyPlanToHtml(monthly, activeClient, { periodLabel: `${startISO} 起点・週${perWeek}本` });
+    const w = window.open('', '_blank');
+    if (!w) {
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `投稿カレンダー-${(activeClient?.name || 'iris').replace(/[^\w぀-ヿ一-龯-]/g, '')}.html`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      notifyInApp({ kind: 'success', title: 'カレンダーを書き出しました', body: '保存したファイルを開くと、PDFで保存できます。' });
+      return;
+    }
+    w.document.open(); w.document.write(html); w.document.close();
   };
 
   const runScript = async (topic: string) => {
@@ -393,6 +445,65 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                 <button onClick={() => runScript(it.hook + ' — ' + it.angle)} disabled={scriptBusy} style={{ ...btnGhost, marginTop: 8, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
                   この案で台本を作る →
                 </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── ①' 今月の投稿カレンダー (代行→クライアント承認用) ── */}
+      <div style={card}>
+        <p style={sectionLabel}>① ＋ 今月の投稿カレンダー</p>
+        <p style={{ fontSize: '0.82rem', color: bg.inkSoft, lineHeight: 1.6, marginBottom: 10 }}>
+          1ヶ月分の投稿を<strong style={{ color: bg.ink }}>投稿日つき</strong>で一括生成。クライアント承認用の<strong style={{ color: bg.ink }}>美しい1枚もの</strong>でそのまま書き出せます。
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 10 }}>
+          <div>
+            <label style={label}>投稿頻度</label>
+            <select style={{ ...inp, width: 150 }} value={perWeek} onChange={e => setPerWeek(Number(e.target.value))}>
+              <option value={2}>週2回（計8本）</option>
+              <option value={3}>週3回（計12本）</option>
+              <option value={5}>週5回（計20本）</option>
+            </select>
+          </div>
+          <div>
+            <label style={label}>開始日</label>
+            <input type="date" style={{ ...inp, width: 160 }} value={startISO} onChange={e => setStartISO(e.target.value || todayISO)} />
+          </div>
+          <button onClick={runMonthly} disabled={monthlyBusy} style={{ ...btnPrimary, opacity: monthlyBusy ? 0.6 : 1 }}>
+            {monthlyBusy ? '生成中…' : '1ヶ月分を一括生成'}
+          </button>
+        </div>
+        {monthlyBusy && (
+          <ThinkingIndicator accent={bg.accent} variant="compact" messages={['今月の投稿カレンダーを組んでいます…', 'ネタを量産しています…', '投稿日を割り当てています…', '形式と撮影の手間を整えています…']} />
+        )}
+        {!monthlyBusy && monthly.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={openMonthlyOnePager} style={btnPrimary}>承認用ページを開く（PDF保存）</button>
+              <button onClick={copyMonthly} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>カレンダーをコピー</button>
+            </div>
+            {Array.from(new Set(monthly.map(m => m.week))).sort((a, b) => a - b).map(w => (
+              <div key={w}>
+                <p style={{ fontSize: '0.74rem', fontWeight: 800, color: bg.accent, margin: '4px 0' }}>第{w + 1}週</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {monthly.filter(m => m.week === w).map((it, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, padding: '0.55rem 0.8rem', background: 'rgba(255,255,255,0.62)', borderRadius: 12, borderLeft: `3px solid ${bg.accent}` }}>
+                      <div style={{ flexShrink: 0, width: 70, textAlign: 'center' }}>
+                        <div style={{ fontWeight: 800, fontSize: '0.82rem', color: bg.ink }}>{it.label}</div>
+                        <div style={{ fontSize: '0.7rem', color: bg.inkSoft }}>{it.time}</div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: '0.64rem', fontWeight: 800, color: '#1c1c24', background: EFFORT_COLOR[it.effort], padding: '0.08rem 0.45rem', borderRadius: 999 }}>{it.format}・手間{it.effort}</span>
+                        <p style={{ fontWeight: 700, color: bg.ink, lineHeight: 1.4, marginTop: 4 }}>{it.hook}</p>
+                        <p style={{ fontSize: '0.76rem', color: bg.inkSoft, marginTop: 2 }}>{it.angle}</p>
+                        <button onClick={() => runScript(it.hook + ' — ' + it.angle)} disabled={scriptBusy} style={{ ...btnGhost, marginTop: 6, fontSize: '0.74rem', padding: '0.35rem 0.8rem', background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
+                          この案で台本を作る →
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>

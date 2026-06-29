@@ -233,6 +233,150 @@ export function ideaPoolToMarkdown(
   return L.join('\n');
 }
 
+// ─── 1ヶ月分の投稿カレンダー (代行→クライアント承認用) ──────────
+// ネタ群に「投稿日・曜日・時刻」を割り当て、週ごとに並べた月次プランにする。
+// 代行会社が「今月の投稿、これで進めます」とクライアントに承認をもらう体裁。
+const WEEKDAY_JP = ['日', '月', '火', '水', '木', '金', '土'];
+
+export interface ScheduledIdea extends IdeaItem {
+  date: string;   // YYYY-MM-DD
+  label: string;  // "6/30 (月)"
+  time: string;   // "21:00"
+  week: number;   // 0始まりの週インデックス
+}
+
+/** ネタに投稿日を割り当てる。startISO から週 perWeek 本のペースで等間隔配置。時刻は連携の bestPostTime を反映。 */
+export function buildMonthlySchedule(ideas: IdeaItem[], opts: {
+  startISO: string;
+  perWeek: number;
+  igProfile?: IgProfile | null;
+}): ScheduledIdea[] {
+  const start = new Date(`${opts.startISO}T00:00:00`);
+  const time = (opts.igProfile?.bestPostTime || '').match(/(\d{1,2}:\d{2})/)?.[1] || '19:00';
+  const perWeek = Math.max(1, Math.min(7, opts.perWeek));
+  const gap = Math.max(1, Math.round(7 / perWeek));
+  const out: ScheduledIdea[] = [];
+  const cursor = new Date(start);
+  ideas.forEach((idea, i) => {
+    const d = new Date(cursor);
+    const week = Math.floor((d.getTime() - start.getTime()) / (7 * 86400000));
+    out.push({
+      ...idea,
+      date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+      label: `${d.getMonth() + 1}/${d.getDate()} (${WEEKDAY_JP[d.getDay()]})`,
+      time,
+      week,
+    });
+    // 週内の本数を超えたら翌週頭へ送らず、単純に gap 日進める（月内に自然に分散）
+    cursor.setDate(cursor.getDate() + gap);
+    void i;
+  });
+  return out;
+}
+
+function groupByWeek(items: ScheduledIdea[]): ScheduledIdea[][] {
+  const weeks: Record<number, ScheduledIdea[]> = {};
+  items.forEach(it => { (weeks[it.week] ||= []).push(it); });
+  return Object.keys(weeks).map(Number).sort((a, b) => a - b).map(w => weeks[w]);
+}
+
+/** 月次プラン → Markdown (チーム共有・履歴用) */
+export function monthlyPlanToMarkdown(items: ScheduledIdea[], client?: IrisClient | null): string {
+  const L: string[] = [];
+  L.push(`# 今月の投稿カレンダー (${items.length}本)${client?.name ? ` — ${client.name}` : ''}`);
+  if (client) {
+    const meta = [client.niche, client.target, client.goal && `ゴール: ${client.goal}`].filter(Boolean).join(' / ');
+    if (meta) L.push(meta);
+  }
+  const low = items.filter(i => i.effort === '低').length;
+  L.push(`撮影しやすさ: 手間「低」${low}/${items.length}本\n`);
+  groupByWeek(items).forEach((week, wi) => {
+    L.push(`## 第${wi + 1}週`);
+    week.forEach(it => {
+      L.push(`- **${it.label} ${it.time}** [${it.format}・手間${it.effort}] ${it.hook}`);
+      L.push(`  - 切り口: ${it.angle}${it.why ? ` / 狙い: ${it.why}` : ''}`);
+    });
+    L.push('');
+  });
+  L.push(`---\n各投稿は Iris で1タップ → 撮影者・編集者がそのまま動ける本格台本に。`);
+  return L.join('\n');
+}
+
+/** 月次プラン → クライアント承認用の美しい1枚もの HTML (新規タブで開いて PDF 保存) */
+export function monthlyPlanToHtml(items: ScheduledIdea[], client?: IrisClient | null, opts?: { periodLabel?: string }): string {
+  const esc = (s?: string) => String(s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string));
+  const formatMix = ['リール', 'フィード', 'ストーリー']
+    .map(f => ({ f, n: items.filter(i => i.format === f).length }))
+    .filter(x => x.n > 0)
+    .map(x => `${x.f} ${x.n}`).join(' / ');
+  const low = items.filter(i => i.effort === '低').length;
+  const fmtBadge = (f: string) => f === 'リール' ? '#E1306C' : f === 'フィード' ? '#F77737' : '#FCB045';
+  const weeksHtml = groupByWeek(items).map((week, wi) => `
+    <section class="week">
+      <h2>第${wi + 1}週</h2>
+      ${week.map(it => `
+        <div class="post">
+          <div class="when"><span class="date">${esc(it.label)}</span><span class="time">${esc(it.time)}</span></div>
+          <div class="body">
+            <div class="badges">
+              <span class="badge" style="background:${fmtBadge(it.format)}">${esc(it.format)}</span>
+              <span class="badge eff">手間 ${esc(it.effort)}</span>
+            </div>
+            <p class="hook">${esc(it.hook)}</p>
+            <p class="angle">${esc(it.angle)}${it.why ? ` ・ <span>${esc(it.why)}</span>` : ''}</p>
+          </div>
+        </div>`).join('')}
+    </section>`).join('');
+  return `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>今月の投稿カレンダー${client?.name ? ` — ${esc(client.name)}` : ''}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; color: #2A1A3A; background: #FFF6FA; padding: 32px; line-height: 1.6; }
+  .sheet { max-width: 880px; margin: 0 auto; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 18px 50px rgba(225,48,108,0.12); }
+  .hero { background: linear-gradient(135deg, #E1306C, #F77737); color: #fff; padding: 34px 36px; }
+  .hero .kicker { font-size: 12px; letter-spacing: .24em; text-transform: uppercase; opacity: .9; }
+  .hero h1 { font-size: 30px; margin: 6px 0 4px; font-weight: 800; }
+  .hero .sub { font-size: 14px; opacity: .95; }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px; padding: 18px 36px; border-bottom: 1px solid #FFE0EC; }
+  .stat { background: #FFF1F6; border: 1px solid #FFD4E5; border-radius: 12px; padding: 8px 14px; font-size: 13px; font-weight: 700; color: #C21A57; }
+  .content { padding: 8px 36px 28px; }
+  .week { margin-top: 22px; }
+  .week h2 { font-size: 16px; color: #E1306C; border-left: 4px solid #E1306C; padding-left: 10px; margin-bottom: 12px; }
+  .post { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px dashed #F3D6E2; }
+  .post:last-child { border-bottom: none; }
+  .when { width: 92px; flex-shrink: 0; text-align: center; }
+  .when .date { display: block; font-weight: 800; font-size: 14px; color: #2A1A3A; }
+  .when .time { font-size: 12px; color: #8A7AA0; }
+  .badges { display: flex; gap: 6px; margin-bottom: 4px; }
+  .badge { color: #fff; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+  .badge.eff { background: #fff; color: #8A7AA0; border: 1px solid #E6D6EE; }
+  .hook { font-weight: 700; font-size: 15px; }
+  .angle { font-size: 13px; color: #5A4570; }
+  .angle span { color: #C21A57; }
+  .foot { padding: 20px 36px 30px; border-top: 1px solid #FFE0EC; font-size: 12px; color: #8A7AA0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .brand { font-weight: 800; color: #E1306C; letter-spacing: .04em; }
+  .printbar { max-width: 880px; margin: 18px auto 0; text-align: center; }
+  .printbar button { background: linear-gradient(135deg,#E1306C,#F77737); color: #fff; border: none; border-radius: 999px; padding: 12px 28px; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 24px rgba(225,48,108,.3); }
+  @media print { body { background: #fff; padding: 0; } .sheet { box-shadow: none; border-radius: 0; } .printbar { display: none; } .hero, .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head><body>
+  <div class="sheet">
+    <div class="hero">
+      <div class="kicker">Monthly Content Plan</div>
+      <h1>今月の投稿カレンダー${client?.name ? `<br>${esc(client.name)}` : ''}</h1>
+      <div class="sub">${[client?.niche, client?.target, opts?.periodLabel].filter(Boolean).map(esc).join(' ・ ') || '投稿プラン'}</div>
+    </div>
+    <div class="stats">
+      <span class="stat">全 ${items.length} 投稿</span>
+      ${formatMix ? `<span class="stat">${esc(formatMix)}</span>` : ''}
+      <span class="stat">撮影しやすさ 手間「低」${low}/${items.length}</span>
+    </div>
+    <div class="content">${weeksHtml}</div>
+    <div class="foot"><span>各投稿は撮影者・編集者がそのまま動ける本格台本に展開できます。</span><span class="brand">CORE Iris</span></div>
+  </div>
+  <div class="printbar"><button onclick="window.print()">PDFで保存 / 印刷</button></div>
+</body></html>`;
+}
+
 // ─── ② 台本: 撮影者・編集者がそのまま動ける本格台本 ──────────
 export interface ScriptShot {
   no: number;
