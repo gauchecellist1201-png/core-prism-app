@@ -17,6 +17,7 @@ import {
   generateProductionScript, type ProductionScript,
   scriptToMarkdown, ideaPoolToMarkdown, type IrisClient,
   buildMonthlySchedule, monthlyPlanToMarkdown, monthlyPlanToHtml, type ScheduledIdea,
+  captionBlock,
 } from './scriptStudio';
 
 interface Props {
@@ -184,6 +185,19 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
       if (!list.length) setErr('ネタを取得できませんでした。もう一度お試しください。');
     } catch (e: any) { setErr(e?.message || String(e)); }
     finally { setIdeaBusy(false); }
+  };
+
+  // 1案の「投稿文(キャプション＋ハッシュタグ)」をそのままコピー
+  const copyIdeaCaption = (it: IdeaItem) => {
+    const block = captionBlock(it);
+    if (!block) { notifyInApp({ kind: 'info', title: '投稿文がまだありません', body: 'もう一度生成すると投稿文つきで出ます' }); return; }
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(block)
+        .then(() => notifyInApp({ kind: 'success', title: '投稿文をコピーしました', body: 'Instagram の投稿欄にそのまま貼れます' }))
+        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
+    } else {
+      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
+    }
   };
 
   // 1ヶ月分の投稿カレンダーを一括生成 (週 perWeek 本 × 4週)
@@ -442,9 +456,22 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                 </div>
                 <p style={{ fontSize: '0.8rem', color: bg.inkSoft, marginTop: 3 }}>{it.angle}</p>
                 <p style={{ fontSize: '0.74rem', color: bg.accent, marginTop: 2, fontStyle: 'italic' }}>狙い: {it.why}</p>
-                <button onClick={() => runScript(it.hook + ' — ' + it.angle)} disabled={scriptBusy} style={{ ...btnGhost, marginTop: 8, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
-                  この案で台本を作る →
-                </button>
+                {it.caption && (
+                  <div style={{ marginTop: 8, padding: '0.55rem 0.7rem', background: `${bg.accent}0E`, border: `1px solid ${bg.accent}33`, borderRadius: 10 }}>
+                    <p style={{ fontSize: '0.78rem', color: bg.ink, whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{it.caption}</p>
+                    {it.hashtags && it.hashtags.length > 0 && (
+                      <p style={{ fontSize: '0.74rem', color: bg.accent, marginTop: 4, fontWeight: 600 }}>{it.hashtags.join(' ')}</p>
+                    )}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                  <button onClick={() => runScript(it.hook + ' — ' + it.angle)} disabled={scriptBusy} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
+                    この案で台本を作る →
+                  </button>
+                  {it.caption && (
+                    <button onClick={() => copyIdeaCaption(it)} style={{ ...btnGhost, fontWeight: 700 }}>投稿文をコピー</button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -497,9 +524,22 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                         <span style={{ fontSize: '0.64rem', fontWeight: 800, color: '#1c1c24', background: EFFORT_COLOR[it.effort], padding: '0.08rem 0.45rem', borderRadius: 999 }}>{it.format}・手間{it.effort}</span>
                         <p style={{ fontWeight: 700, color: bg.ink, lineHeight: 1.4, marginTop: 4 }}>{it.hook}</p>
                         <p style={{ fontSize: '0.76rem', color: bg.inkSoft, marginTop: 2 }}>{it.angle}</p>
-                        <button onClick={() => runScript(it.hook + ' — ' + it.angle)} disabled={scriptBusy} style={{ ...btnGhost, marginTop: 6, fontSize: '0.74rem', padding: '0.35rem 0.8rem', background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
-                          この案で台本を作る →
-                        </button>
+                        {it.caption && (
+                          <div style={{ marginTop: 6, padding: '0.45rem 0.6rem', background: `${bg.accent}0E`, border: `1px solid ${bg.accent}33`, borderRadius: 9 }}>
+                            <p style={{ fontSize: '0.76rem', color: bg.ink, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{it.caption}</p>
+                            {it.hashtags && it.hashtags.length > 0 && (
+                              <p style={{ fontSize: '0.72rem', color: bg.accent, marginTop: 3, fontWeight: 600 }}>{it.hashtags.join(' ')}</p>
+                            )}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                          <button onClick={() => runScript(it.hook + ' — ' + it.angle)} disabled={scriptBusy} style={{ ...btnGhost, fontSize: '0.74rem', padding: '0.35rem 0.8rem', background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
+                            この案で台本を作る →
+                          </button>
+                          {it.caption && (
+                            <button onClick={() => copyIdeaCaption(it)} style={{ ...btnGhost, fontSize: '0.74rem', padding: '0.35rem 0.8rem', fontWeight: 700 }}>投稿文をコピー</button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

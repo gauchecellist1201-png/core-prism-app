@@ -116,6 +116,10 @@ export interface IdeaItem {
   why: string;
   /** 撮影難易度 */
   effort: '低' | '中' | '高';
+  /** そのまま投稿できるキャプション本文 (2〜3行・改行可)。代行が手を入れずに使える。 */
+  caption?: string;
+  /** 投稿ハッシュタグ (#つき) */
+  hashtags?: string[];
 }
 
 function extractJson(text: string): any {
@@ -149,7 +153,7 @@ export async function generateIdeaPool(opts: {
 
 返答は JSON のみ:
 { "ideas": [
-  { "hook": "冒頭2秒のフック", "angle": "切り口(1行)", "format": "リール|フィード|ストーリー", "why": "なぜ伸びるか(1行)", "effort": "低|中|高" }
+  { "hook": "冒頭2秒のフック", "angle": "切り口(1行)", "format": "リール|フィード|ストーリー", "why": "なぜ伸びるか(1行)", "effort": "低|中|高", "caption": "そのまま投稿できる本文(2〜3行・改行OK・最後に行動を促す一言)", "hashtags": ["#具体タグ", "#関連タグ"] }
 ] }
 
 ## ルール
@@ -159,7 +163,9 @@ export async function generateIdeaPool(opts: {
 - フックは具体的に。「知らないと損する◯◯」「9割が間違えてる◯◯」など離脱を止める強さ
 - effort は撮影の手間。代行現場で回しやすいよう「低」を半分以上に
 - クライアントのジャンル・ターゲット・NGワードを必ず踏まえる
-- 抽象論を避け、数字・固有名詞・具体シーンで`;
+- 抽象論を避け、数字・固有名詞・具体シーンで
+- caption は代行が手を入れずそのまま投稿できる完成度に。クライアントの口調・世界観で書き、NGワードは使わない。誇大表現や根拠なき断定は避ける
+- hashtags は 5〜8 個。ジャンルに実在する具体タグ中心に、大中小ミックス`;
 
   const userText = `${clientContext(opts.client)}
 ${acct ? '\n' + acct + '\n' : ''}
@@ -174,7 +180,7 @@ ${opts.focus || '(指定なし — このアカウントの強みを伸ばす方
       headers: { 'Content-Type': 'application/json', 'x-ai-format': 'json' },
       body: JSON.stringify({
         model: opts.settings.preferredModel,
-        max_tokens: 3000,
+        max_tokens: 4096,
         system: sys,
         messages: [{ role: 'user', content: userText }],
       }),
@@ -199,10 +205,22 @@ ${opts.focus || '(指定なし — このアカウントの強みを伸ばす方
     format: (['リール', 'フィード', 'ストーリー'].includes(v?.format) ? v.format : 'リール') as IdeaItem['format'],
     why: String(v?.why || '').slice(0, 80),
     effort: (['低', '中', '高'].includes(v?.effort) ? v.effort : '中') as IdeaItem['effort'],
+    caption: v?.caption ? String(v.caption).slice(0, 400) : undefined,
+    hashtags: Array.isArray(v?.hashtags)
+      ? v.hashtags.map((h: any) => { const t = String(h || '').trim().replace(/^#*/, ''); return t ? `#${t}` : ''; }).filter(Boolean).slice(0, 8)
+      : undefined,
   });
   const ideas = raw.map(norm).filter((i: IdeaItem) => i.hook).slice(0, count);
   if (ideas.length) logIrisActivity('ideas'); // 企画が実生成できた時のみ記録 (honest)
   return ideas;
+}
+
+/** キャプション＋ハッシュタグを、そのまま投稿欄に貼れる1ブロックに。 */
+export function captionBlock(it: IdeaItem): string {
+  const cap = (it.caption || '').trim();
+  const tags = (it.hashtags || []).join(' ').trim();
+  if (!cap && !tags) return '';
+  return [cap, tags].filter(Boolean).join('\n\n');
 }
 
 // ─── 企画リスト → 投稿カレンダー Markdown (クライアント・チームに渡す用) ──
@@ -227,6 +245,8 @@ export function ideaPoolToMarkdown(
     L.push(`- 形式: ${it.format} / 撮影の手間: ${it.effort}`);
     L.push(`- 切り口: ${it.angle}`);
     if (it.why) L.push(`- 狙い: ${it.why}`);
+    const cb = captionBlock(it);
+    if (cb) { L.push('', '**投稿文（そのまま使えます）**', '```', cb, '```'); }
     L.push('');
   });
   L.push(`---\n各ネタは Iris で1タップ → 撮影者・編集者がそのまま動ける本格台本になります。`);
@@ -295,6 +315,8 @@ export function monthlyPlanToMarkdown(items: ScheduledIdea[], client?: IrisClien
     week.forEach(it => {
       L.push(`- **${it.label} ${it.time}** [${it.format}・手間${it.effort}] ${it.hook}`);
       L.push(`  - 切り口: ${it.angle}${it.why ? ` / 狙い: ${it.why}` : ''}`);
+      const cb = captionBlock(it);
+      if (cb) L.push('  - 投稿文:', '    ```', ...cb.split('\n').map(x => `    ${x}`), '    ```');
     });
     L.push('');
   });
@@ -324,6 +346,7 @@ export function monthlyPlanToHtml(items: ScheduledIdea[], client?: IrisClient | 
             </div>
             <p class="hook">${esc(it.hook)}</p>
             <p class="angle">${esc(it.angle)}${it.why ? ` ・ <span>${esc(it.why)}</span>` : ''}</p>
+            ${captionBlock(it) ? `<div class="caption">${esc(it.caption).replace(/\n/g, '<br>')}${(it.hashtags && it.hashtags.length) ? `<span class="tags">${esc(it.hashtags.join(' '))}</span>` : ''}</div>` : ''}
           </div>
         </div>`).join('')}
     </section>`).join('');
@@ -353,6 +376,8 @@ export function monthlyPlanToHtml(items: ScheduledIdea[], client?: IrisClient | 
   .hook { font-weight: 700; font-size: 15px; }
   .angle { font-size: 13px; color: #5A4570; }
   .angle span { color: #C21A57; }
+  .caption { margin-top: 8px; padding: 10px 12px; background: #FFF1F6; border: 1px solid #FFD4E5; border-radius: 10px; font-size: 13px; color: #2A1A3A; white-space: normal; }
+  .caption .tags { display: block; margin-top: 6px; color: #C21A57; font-weight: 600; }
   .foot { padding: 20px 36px 30px; border-top: 1px solid #FFE0EC; font-size: 12px; color: #8A7AA0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
   .brand { font-weight: 800; color: #E1306C; letter-spacing: .04em; }
   .printbar { max-width: 880px; margin: 18px auto 0; text-align: center; }
