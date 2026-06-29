@@ -26,6 +26,9 @@ export interface IrisClient {
   goal: string;            // 運用ゴール (例: 来店予約、フォロワー1万、商品認知)
   tone: string;            // アカウントのトーン (例: 親しみやすく専門性も)
   ngWords: string;         // 言ってはいけない言葉 (カンマ区切り)
+  /** このクライアントの実際の投稿例・口調・定番ネタ・世界観 (代行が貼り付け)。
+   *  OAuth 連携が無くても、これを基準に AI が“そのクライアントらしい”企画を出す核心データ。 */
+  referenceNotes?: string;
   updatedAt: string;
 }
 
@@ -48,6 +51,7 @@ export function clientUid(): string {
 
 function clientContext(c?: IrisClient | null): string {
   if (!c) return '## クライアント\n(未指定 — 一般的なアカウントとして提案)';
+  const ref = (c.referenceNotes || '').trim();
   return `## クライアント
 - アカウント名: ${c.name}
 - ジャンル: ${c.niche}
@@ -55,7 +59,10 @@ function clientContext(c?: IrisClient | null): string {
 - プラットフォーム: ${c.platform}
 - 運用ゴール: ${c.goal || '(指定なし)'}
 - トーン: ${c.tone || '自然体'}
-- 言ってはいけない言葉: ${c.ngWords || '(なし)'}`;
+- 言ってはいけない言葉: ${c.ngWords || '(なし)'}${ref ? `
+
+## このクライアントの実際の投稿例・世界観（必ずこの世界観・口調・定番ネタに沿う）
+${ref.slice(0, 1200)}` : ''}`;
 }
 
 // ─── 連携アカウントの「実データ」コンテキスト ──────────────────

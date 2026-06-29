@@ -30,7 +30,7 @@ const PLATFORM_LABEL: Record<IrisClient['platform'], string> = { instagram: 'Ins
 
 const emptyClient = (): IrisClient => ({
   id: clientUid(), name: '', niche: '', target: '', platform: 'instagram',
-  goal: '', tone: '', ngWords: '', updatedAt: new Date().toISOString(),
+  goal: '', tone: '', ngWords: '', referenceNotes: '', updatedAt: new Date().toISOString(),
 });
 
 export default function IrisScriptStudio({ bg, settings, locked }: Props) {
@@ -299,12 +299,25 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
           </div>
         )}
 
-        {activeClient && !editing && (
-          <p style={{ marginTop: 10, fontSize: '0.8rem', color: bg.inkSoft, lineHeight: 1.6 }}>
-            {PLATFORM_LABEL[activeClient.platform]} / {activeClient.niche} / {activeClient.target}
-            {activeClient.goal ? ` / ゴール: ${activeClient.goal}` : ''}
-          </p>
-        )}
+        {activeClient && !editing && (() => {
+          const grounded = !!(activeClient.referenceNotes || '').trim();
+          return (
+            <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+              <p style={{ margin: 0, fontSize: '0.8rem', color: bg.inkSoft, lineHeight: 1.6 }}>
+                {PLATFORM_LABEL[activeClient.platform]} / {activeClient.niche} / {activeClient.target}
+                {activeClient.goal ? ` / ゴール: ${activeClient.goal}` : ''}
+              </p>
+              <span style={{
+                fontSize: '0.7rem', fontWeight: 700, padding: '3px 9px', borderRadius: 999,
+                color: grounded ? '#047857' : '#B45309',
+                background: grounded ? 'rgba(16,185,129,0.14)' : 'rgba(245,158,11,0.14)',
+                border: `1px solid ${grounded ? 'rgba(16,185,129,0.35)' : 'rgba(245,158,11,0.35)'}`,
+              }}>
+                {grounded ? '世界観 登録済み — このクライアントらしい企画が出ます' : '世界観 未登録 — 「編集」で実際の投稿例を入れると精度が上がります'}
+              </span>
+            </div>
+          );
+        })()}
 
         {editing && (
           <div style={{ display: 'grid', gap: 10, marginTop: 6 }}>
@@ -324,6 +337,18 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
               <div><label style={label}>トーン</label><input style={inp} value={editing.tone} onChange={e => setEditing({ ...editing, tone: e.target.value })} placeholder="例: 親しみやすく専門性も" /></div>
             </div>
             <div><label style={label}>言ってはいけない言葉 (NG)</label><input style={inp} value={editing.ngWords} onChange={e => setEditing({ ...editing, ngWords: e.target.value })} placeholder="例: 完治, 必ず痩せる" /></div>
+            <div>
+              <label style={label}>実際の投稿例・世界観（強く推奨）</label>
+              <textarea
+                style={{ ...inp, minHeight: 96, resize: 'vertical', lineHeight: 1.5 }}
+                value={editing.referenceNotes || ''}
+                onChange={e => setEditing({ ...editing, referenceNotes: e.target.value })}
+                placeholder={'このクライアントの実際の投稿キャプションを2〜3本貼るか、定番ネタ・口調・登場人物・撮影トーンをメモ。\n例) 毎週「#○○の日常」で店内の手仕事を接写。語尾は丁寧でやわらかい。家族経営の温度感を大事に。伸びた投稿=新作の仕込み風景。'}
+              />
+              <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 4, lineHeight: 1.5 }}>
+                これを入れると、AI が「このクライアントらしい」企画だけを出します（無関係な汎用ネタを防ぐ核心）。連携が無くてもOK。
+              </p>
+            </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={saveEditing} style={btnPrimary}>保存</button>
               <button onClick={() => { setEditing(null); setErr(null); }} style={btnGhost}>キャンセル</button>
