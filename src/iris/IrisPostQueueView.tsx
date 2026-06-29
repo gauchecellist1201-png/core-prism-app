@@ -4,7 +4,7 @@
 // 「Instagram で開く」 → キャプションを自動コピー → IG アプリへ
 // ============================================================
 import { useMemo, useState } from 'react';
-import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image as ImageIcon, Video as VideoIcon, CalendarClock } from 'lucide-react';
+import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image as ImageIcon, Video as VideoIcon, CalendarClock, X } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { usePostQueue, buildCaptionText, suggestNextSlot, type ScheduledPost } from './usePostQueue';
@@ -127,10 +127,10 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
           <span style={{ flex: 1 }}>{queue.saveError}</span>
           <button
             onClick={queue.dismissSaveError}
-            style={{ background: 'transparent', border: 'none', color: '#8B0000', cursor: 'pointer', fontSize: '0.8rem' }}
+            style={{ background: 'transparent', border: 'none', color: '#8B0000', cursor: 'pointer', display: 'inline-flex', flexShrink: 0, padding: 2 }}
             aria-label="閉じる"
           >
-            ✕
+            <X size={15} />
           </button>
         </div>
       )}
@@ -168,6 +168,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
               border: `1px solid ${view === v ? bg.accent : bg.cardBorder}`,
               background: view === v ? bg.accent : 'transparent',
               color: view === v ? '#fff' : bg.inkSoft,
+              transition: 'background 0.15s, color 0.15s, border-color 0.15s',
             }}>{v === 'list' ? 'リスト' : 'グリッド'}</button>
           ))}
         </div>
@@ -306,6 +307,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                     color: '#fff', border: 'none', borderRadius: 8,
                     fontSize: '0.74rem', fontWeight: 800, cursor: 'pointer',
                     display: 'inline-flex', gap: 4, alignItems: 'center',
+                    transition: 'background 0.15s, color 0.15s, border-color 0.15s',
                   }}>
                     <ExternalLink size={11} /> 投稿
                   </button>
@@ -316,7 +318,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                     border: `1px solid ${copiedId === p.id ? '#10B98180' : bg.cardBorder}`, borderRadius: 8,
                     fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer',
                     display: 'inline-flex', gap: 4, alignItems: 'center',
-                    transition: 'background 0.2s, color 0.2s, border-color 0.2s',
+                    transition: 'background 0.15s, color 0.15s, border-color 0.15s',
                   }}>
                     {copiedId === p.id ? <><Check size={11} /> コピー済</> : <><Copy size={11} /> コピー</>}
                   </button>
@@ -327,6 +329,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                       border: `1px solid ${bg.accent}80`, borderRadius: 8,
                       fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
                       display: 'inline-flex', gap: 4, alignItems: 'center',
+                      transition: 'background 0.15s, color 0.15s, border-color 0.15s',
                     }}>
                       <CalendarClock size={11} /> ベスト時間に再予約
                     </button>
@@ -338,6 +341,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                       border: `1px solid #10B98180`, borderRadius: 8,
                       fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
                       display: 'inline-flex', gap: 4, alignItems: 'center',
+                      transition: 'background 0.15s, color 0.15s, border-color 0.15s',
                     }}>
                       <Check size={11} /> 完了
                     </button>
@@ -348,6 +352,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                     border: `1px solid #FCA5A5`, borderRadius: 8,
                     fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer',
                     display: 'inline-flex', gap: 4, alignItems: 'center',
+                    transition: 'background 0.15s, color 0.15s, border-color 0.15s',
                   }}>
                     <Trash2 size={11} /> 削除
                   </button>
