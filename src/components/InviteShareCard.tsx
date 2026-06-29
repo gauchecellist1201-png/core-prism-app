@@ -11,7 +11,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Copy, Share2, Check, Gift, QrCode, Mail,
-  Calendar, MessageCircle, Users, Sparkles,
+  Calendar, MessageCircle, Users, Sparkles, Download,
 } from 'lucide-react';
 
 // lucide-react から Twitter アイコンは削除されたため X glyph を inline SVG で実装
@@ -139,6 +139,8 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
   const [copied, setCopied] = useState<'url' | 'text' | null>(null);
   const [snack, setSnack] = useState<string | null>(null);
   const [showQr, setShowQr] = useState(false);
+  // QR は外部 API (qrserver) 生成。読み込み失敗時に壊れた画像を黙って出さないためのフラグ
+  const [qrError, setQrError] = useState(false);
   const [shareCount, setShareCount] = useState<number>(() => getShareCount());
 
   // あなたの紹介の「実績」(登録した友達の人数 / 累計獲得日数) — 開いた瞬間にサーバへ同期して最新化
@@ -176,11 +178,35 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
     () => `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=${encodeURIComponent(url)}`,
     [url],
   );
+  // URL が変われば QR を作り直すのでエラー状態もリセット
+  useEffect(() => { setQrError(false); }, [qrUrl]);
 
   const flashSnack = useCallback((message: string) => {
     setSnack(message);
     setTimeout(() => setSnack(null), 2200);
   }, []);
+
+  // QR 画像を端末に保存 (対面・名刺・ポスター用)。CORS 不可なら新規タブで開いて長押し保存に逃がす
+  const downloadQr = useCallback(async () => {
+    try {
+      const resp = await fetch(qrUrl);
+      if (!resp.ok) throw new Error('qr fetch failed');
+      const blob = await resp.blob();
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objUrl;
+      a.download = `core-${brand}-invite-qr.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+      flashSnack('QR 画像を保存しました');
+      bumpShare();
+    } catch {
+      window.open(qrUrl, '_blank', 'noopener,noreferrer');
+      flashSnack('QR を新しいタブで開きました (長押しで保存)');
+    }
+  }, [qrUrl, brand, flashSnack, bumpShare]);
 
   const flashCopied = useCallback((kind: 'url' | 'text', message: string) => {
     setCopied(kind);
@@ -591,18 +617,53 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
               background: '#fff', border: `1px dashed ${p.accent}55`,
               borderRadius: 14, padding: '1rem',
             }}>
-            <img
-              src={qrUrl}
-              alt="紹介リンクの QR コード"
-              width={200}
-              height={200}
-              loading="lazy"
-              style={{ borderRadius: 8, display: 'block' }}
-            />
+            {qrError ? (
+              /* 外部 QR API が失敗しても壊れた画像を出さない — リンクコピーへ逃がす */
+              <div style={{
+                width: 200, height: 200, borderRadius: 8,
+                background: `${p.accent}0a`, border: `1px solid ${p.border}`,
+                display: 'grid', placeItems: 'center', textAlign: 'center', padding: '1rem',
+              }}>
+                <p style={{ margin: 0, fontSize: '0.76rem', color: p.inkSoft, lineHeight: 1.6 }}>
+                  QR を表示できませんでした。<br />下の「リンクをコピー」で共有してください。
+                </p>
+              </div>
+            ) : (
+              <img
+                src={qrUrl}
+                alt="紹介リンクの QR コード"
+                width={200}
+                height={200}
+                loading="lazy"
+                onError={() => setQrError(true)}
+                style={{ borderRadius: 8, display: 'block' }}
+              />
+            )}
             <p style={{ margin: 0, fontSize: '0.72rem', color: p.inkSoft, textAlign: 'center', lineHeight: 1.55 }}>
               友達のスマホで読み込むだけ。<br />
               対面・カフェ・名刺裏にも貼れます
             </p>
+            {!qrError && (
+              <button
+                onClick={downloadQr}
+                aria-label="QR 画像を保存"
+                style={{
+                  background: p.accent, color: '#fff', border: 'none', borderRadius: 10,
+                  padding: '0.5rem 0.9rem', fontSize: '0.78rem', fontWeight: 700,
+                  cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}>
+                <Download size={14} strokeWidth={2.3} /> QR 画像を保存
+              </button>
+            )}
+            <button
+              onClick={copyUrl}
+              style={{
+                background: 'transparent', color: p.accent, border: `1px solid ${p.accent}55`,
+                borderRadius: 10, padding: '0.45rem 0.9rem', fontSize: '0.74rem', fontWeight: 700,
+                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
+              }}>
+              <Copy size={13} /> リンクをコピー
+            </button>
           </div>
         )}
       </div>
