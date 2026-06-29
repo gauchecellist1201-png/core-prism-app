@@ -28,6 +28,20 @@ export interface ValueMetric {
   color: string;
 }
 
+/** 直近7日の1日ごとの活動件数。AIが「毎日動いている」momentumを正直に可視化する */
+export interface DayBucket {
+  /** ローカル日付の 0:00 ミリ秒 */
+  dayStart: number;
+  /** その日に動いた件数（タイムスタンプのある実活動だけ） */
+  count: number;
+  /** 曜日ラベル（日〜土） */
+  weekday: string;
+  /** 今日かどうか */
+  isToday: boolean;
+}
+
+const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
+
 function parse<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -53,11 +67,32 @@ export function computeWeeklyValue(now: number = Date.now()): {
   total: number;
   /** 今日（ローカル 0:00 以降）AI が動いた件数。タイムスタンプのある実活動だけを数える（honest-numbers） */
   todayTotal: number;
+  /** 直近7日の1日ごとの活動件数（古い→新しい）。AIが毎日動いているmomentumを正直に見せる */
+  dailySeries: DayBucket[];
 } {
   const cutoff = now - WEEK_MS;
   const dayStart = startOfLocalDay(now);
   const all: ValueMetric[] = [];
   let todayTotal = 0;
+
+  // 直近7日の日別バケツ（古い→新しい）。タイムスタンプのある実活動だけを各日に加算する。
+  const today0 = startOfLocalDay(now);
+  const dayKeys: number[] = [];
+  const dayCounts = new Map<number, number>();
+  for (let i = 6; i >= 0; i--) {
+    const ds = today0 - i * 24 * 60 * 60 * 1000;
+    dayKeys.push(ds);
+    dayCounts.set(ds, 0);
+  }
+  /** epoch ミリ秒を該当する日バケツに1件加算（範囲外は無視） */
+  const addToDay = (t: number) => {
+    if (!Number.isFinite(t)) return;
+    const ds = startOfLocalDay(t);
+    if (dayCounts.has(ds)) dayCounts.set(ds, (dayCounts.get(ds) || 0) + 1);
+  };
+  const addDayISO = (iso: unknown) => {
+    if (typeof iso === 'string') addToDay(Date.parse(iso));
+  };
 
   const isTodayISO = (iso: unknown): boolean => {
     if (typeof iso !== 'string') return false;
@@ -69,6 +104,7 @@ export function computeWeeklyValue(now: number = Date.now()): {
   const proposals = parse<Array<{ generatedAt?: string }>>('core_proposals', []);
   const proposalCount = proposals.filter((p) => withinWeekISO(p?.generatedAt, cutoff)).length;
   todayTotal += proposals.filter((p) => isTodayISO(p?.generatedAt)).length;
+  proposals.forEach((p) => addDayISO(p?.generatedAt));
   all.push({ key: 'proposals', label: 'AIからの提案', count: proposalCount, window: 'week', icon: 'sparkles', color: '#8E5CFF' });
 
   // 1.5 AI がその場で仕上げた成果物（TodayBrief のアクション実行＝最も体感できる価値）
@@ -76,6 +112,7 @@ export function computeWeeklyValue(now: number = Date.now()): {
   const artifacts = parse<Array<{ createdAt?: string }>>('core_action_artifacts_v1', []);
   const artifactCount = artifacts.filter((a) => withinWeekISO(a?.createdAt, cutoff)).length;
   todayTotal += artifacts.filter((a) => isTodayISO(a?.createdAt)).length;
+  artifacts.forEach((a) => addDayISO(a?.createdAt));
   all.push({ key: 'artifacts', label: 'AIが仕上げた成果物', count: artifactCount, window: 'week', icon: 'file-check', color: '#C9A96E' });
 
   // 2. 司令塔ループが生んだ「今日の一手」（下書き＋配信）
@@ -85,18 +122,21 @@ export function computeWeeklyValue(now: number = Date.now()): {
     (s) => isHand(s) && typeof s?.ts === 'number' && s.ts >= cutoff,
   ).length;
   todayTotal += signals.filter((s) => isHand(s) && typeof s?.ts === 'number' && s.ts >= dayStart).length;
+  signals.forEach((s) => { if (isHand(s) && typeof s?.ts === 'number') addToDay(s.ts); });
   all.push({ key: 'hands', label: '今日の一手（生成・配信）', count: handCount, window: 'week', icon: 'send', color: '#A78BFA' });
 
   // 3. 取り込んだナレッジ（メール/ドキュメント/会議メモ等）
   const knowledge = parse<Array<{ createdAt?: string }>>('core_knowledge_v1', []);
   const knowledgeCount = knowledge.filter((k) => withinWeekISO(k?.createdAt, cutoff)).length;
   todayTotal += knowledge.filter((k) => isTodayISO(k?.createdAt)).length;
+  knowledge.forEach((k) => addDayISO(k?.createdAt));
   all.push({ key: 'knowledge', label: '取り込んだ知識', count: knowledgeCount, window: 'week', icon: 'book', color: '#2E6FFF' });
 
   // 4. 抽出・整理した案件（CRM）
   const deals = parse<Array<{ createdAt?: string }>>('core_crm_deals_v1', []);
   const dealCount = deals.filter((d) => withinWeekISO(d?.createdAt, cutoff)).length;
   todayTotal += deals.filter((d) => isTodayISO(d?.createdAt)).length;
+  deals.forEach((d) => addDayISO(d?.createdAt));
   all.push({ key: 'deals', label: '整理した案件', count: dealCount, window: 'week', icon: 'briefcase', color: '#E84B97' });
 
   // 5. 今月の実行アクション総数（feature_usage は月単位で記録）
@@ -111,5 +151,13 @@ export function computeWeeklyValue(now: number = Date.now()): {
 
   const metrics = all.filter((m) => m.count > 0);
   const total = metrics.reduce((s, m) => s + m.count, 0);
-  return { metrics, total, todayTotal };
+
+  const dailySeries: DayBucket[] = dayKeys.map((ds) => ({
+    dayStart: ds,
+    count: dayCounts.get(ds) || 0,
+    weekday: WEEKDAY_JA[new Date(ds).getDay()],
+    isToday: ds === today0,
+  }));
+
+  return { metrics, total, todayTotal, dailySeries };
 }

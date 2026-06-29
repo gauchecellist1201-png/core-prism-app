@@ -156,8 +156,10 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
   }, [handleAddImages]);
 
   // 送信
-  const send = async () => {
-    const userText = (textInput + (interim ? ' ' + interim : '')).trim();
+  const send = async (overrideText?: string) => {
+    const userText = (overrideText != null
+      ? overrideText
+      : (textInput + (interim ? ' ' + interim : ''))).trim();
     if (!userText && pendingImages.length === 0) return;
     if (busy) return;
 

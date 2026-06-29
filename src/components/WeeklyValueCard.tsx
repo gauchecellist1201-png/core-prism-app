@@ -7,7 +7,7 @@
 // ============================================================
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
 import { Sparkles, Send, BookOpen, Briefcase, Activity, FileCheck, TrendingUp } from 'lucide-react';
-import { computeWeeklyValue, type ValueMetric } from '../lib/weeklyValue';
+import { computeWeeklyValue, type ValueMetric, type DayBucket } from '../lib/weeklyValue';
 
 const ICONS: Record<ValueMetric['icon'], (p: { size?: number; color?: string }) => ReactElement> = {
   sparkles: (p) => <Sparkles size={p.size} color={p.color} strokeWidth={2.1} />,
@@ -38,8 +38,11 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
     };
   }, []);
 
-  const { metrics, total, todayTotal } = data;
+  const { metrics, total, todayTotal, dailySeries } = data;
   const empty = total === 0;
+  // 直近7日に1日でも実活動があれば momentum バーを出す（嘘の0埋めは見せても、全0なら出さない）
+  const seriesMax = dailySeries.reduce((m, d) => Math.max(m, d.count), 0);
+  const activeDays = dailySeries.filter((d) => d.count > 0).length;
 
   return (
     <div style={{
@@ -74,6 +77,11 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
           </div>
         </div>
       </div>
+
+      {/* 7日 momentum — AIが「毎日動いている」を正直に可視化（実活動のある日だけ色が立つ） */}
+      {!empty && seriesMax > 0 && (
+        <Sparkbar series={dailySeries} max={seriesMax} activeDays={activeDays} />
+      )}
 
       {empty ? (
         // 正直な空状態 — 嘘の数字を出さず、貯め方を案内
@@ -123,6 +131,46 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
       <p style={{ fontSize: 10, color: 'var(--fg-subtle)', margin: '11px 2px 0', lineHeight: 1.5 }}>
         ※ 表示はすべて、あなたのこのアプリ内での実際の活動件数です。推定や水増しは行っていません。
       </p>
+    </div>
+  );
+}
+
+// 7日 momentum バー — 実活動のある日だけ色が立つ。高さは件数比（最低でも触知できる芯を残す）。
+function Sparkbar({ series, max, activeDays }: { series: DayBucket[]; max: number; activeDays: number }) {
+  return (
+    <div style={{
+      marginBottom: 12, padding: '10px 12px 8px', borderRadius: 12,
+      background: 'var(--surface-3)', border: '1px solid rgba(142,92,255,0.18)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--fg-muted)', letterSpacing: '0.01em' }}>
+          この7日間の動き
+        </span>
+        <span style={{ fontSize: 10.5, fontWeight: 800, color: '#06C755' }}>
+          7日のうち {activeDays} 日 稼働
+        </span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 40 }}>
+        {series.map((d) => {
+          const ratio = max > 0 ? d.count / max : 0;
+          const h = d.count > 0 ? Math.max(6, Math.round(ratio * 34)) : 3;
+          return (
+            <div key={d.dayStart} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <div title={`${d.count} 件`} style={{
+                width: '100%', height: h, borderRadius: 5,
+                background: d.count > 0
+                  ? (d.isToday ? 'linear-gradient(180deg,#8E5CFF,#2E6FFF)' : 'rgba(142,92,255,0.55)')
+                  : 'var(--border)',
+                transition: 'height 0.4s cubic-bezier(.22,1,.36,1)',
+              }} />
+              <span style={{
+                fontSize: 9, fontWeight: d.isToday ? 800 : 600,
+                color: d.isToday ? '#8E5CFF' : 'var(--fg-subtle)',
+              }}>{d.isToday ? '今日' : d.weekday}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
