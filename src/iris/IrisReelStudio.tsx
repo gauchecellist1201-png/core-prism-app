@@ -2455,10 +2455,47 @@ JSON のみで返答。`;
         }}>
           リール作成
         </h2>
-        <p style={{ color: bg.inkSoft, fontSize: '0.9rem', marginTop: '0.3rem' }}>
-          画像 / 動画 → 9:16 リール。Ken Burns + 切替 + AI 字幕 + 20+ フォント。素材はサーバーに送られません。
+        <p style={{ color: bg.inkSoft, fontSize: '0.9rem', marginTop: '0.3rem', lineHeight: 1.6 }}>
+          スマホの写真や動画を選ぶだけで、<strong style={{ color: bg.ink }}>Instagram・TikTok 向けの縦長ショート動画</strong>を作ります。
+          字幕も動きの演出も AI が自動でつけます。素材はこの端末の中だけで処理され、外部には送られません。
         </p>
       </div>
+
+      {/* 3 秒でわかる説明 + サンプル出力 — 初見の人に「まず何をする → こうなる」を触らず見せる。
+          素材を 1 枚でも入れたら（clips がある）邪魔にならないよう自動で消える。 */}
+      {!clips.length && (
+        <div style={{
+          padding: '0.95rem 1.05rem',
+          background: `linear-gradient(135deg, ${bg.accent}16 0%, ${bg.accent}07 100%)`,
+          border: `1px solid ${bg.accent}33`,
+          borderRadius: 16,
+        }}>
+          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: bg.ink, lineHeight: 1.5 }}>
+            動画づくりの知識はいりません。<span style={{ color: bg.accent }}>写真を数枚えらぶだけで、見栄えのする縦動画ができます。</span>
+          </p>
+          {/* 3 ステップ */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '10px 0 8px', flexWrap: 'wrap' }}>
+            {['写真や動画をえらぶ', '気に入った見た目のテンプレを選ぶ', '「プレビュー再生」で確認 → 保存'].map((t, i) => (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, color: bg.ink,
+                  background: 'rgba(255,255,255,0.7)', border: `1px solid ${bg.cardBorder}`,
+                  borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap',
+                }}>
+                  <span style={{ color: bg.accent, fontWeight: 800 }}>{i + 1}.</span> {t}
+                </span>
+                {i < 2 && <span style={{ color: bg.accent, fontSize: 12, fontWeight: 800 }}>→</span>}
+              </span>
+            ))}
+          </div>
+          {/* サンプル出力 1 枚（言葉で） */}
+          <p style={{ margin: 0, fontSize: 11.5, color: bg.inkSoft, lineHeight: 1.5 }}>
+            例: お店の写真を 5 枚えらぶ → テンプレ「上品ルックブック」を選ぶと、
+            <span style={{ color: bg.ink, fontWeight: 700 }}>ゆっくり動くスライド + 文字 + BGM が入った 15 秒の縦動画</span>が完成。
+            むずかしい言葉（9:16・Ken Burns など）は気にせず、見た目で選べば大丈夫です。
+          </p>
+        </div>
+      )}
 
       <DelegateToAgentTeamBanner
         taskTitle="リール台本を CMO + CDO に書いてもらう"

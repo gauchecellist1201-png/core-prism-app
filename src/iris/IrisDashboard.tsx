@@ -1587,7 +1587,34 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         <div key={tab}>
             {tab === 'home' && (
               <>
-                {/* 6 エージェント オービット — 常時トップ固定 (オーナー指示 2026-05-28) */}
+                {/* 連携済みなら、まず一気通貫プラン（分析→戦略→リール→稼ぐ）を最上部に。
+                    迷わず1本道で「次へ」進める ＝ 価値に0スクロールで届く。(2026-06-29 抜本的に使いやすく) */}
+                {igProfile && (
+                  <IrisFlowHub
+                    bg={bg}
+                    igProfile={igProfile}
+                    settings={settings}
+                    mediaKit={mediaKit}
+                    onNavigate={(t) => setTab(t as Tab)}
+                    onOpenReelStudio={(theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab('reel'); }}
+                    onScheduleReel={(p) => postQueue.add({
+                      platform: 'instagram_reel',
+                      source: 'reel',
+                      // 既定は翌日 20:00（予約タブで変更可）。
+                      scheduledAt: (() => { const d = new Date(Date.now() + 24 * 60 * 60 * 1000); d.setHours(20, 0, 0, 0); return d.toISOString(); })(),
+                      caption: p.caption,
+                      hashtags: p.hashtags,
+                      cta: p.cta,
+                      dealId: p.dealId,
+                      brandName: p.brandName,
+                      note: p.title,
+                      mediaKind: p.mediaKind || 'video',
+                    })}
+                    onSendReelToStudio={(seed) => { setReelSeed(seed); setTab('reel'); }}
+                  />
+                )}
+
+                {/* 6 エージェント オービット */}
                 <div style={{ marginBottom: '1.25rem' }}>
                   <AgentsOrbit
                     specs={IRIS_SPECS}
@@ -1647,33 +1674,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   />
                 </div>
 
-                {/* 一気通貫の運用プラン（連携→分析→戦略→リール台本→案件）。連携済みのときだけ。 */}
-                {igProfile && (
-                  <IrisFlowHub
-                    bg={bg}
-                    igProfile={igProfile}
-                    settings={settings}
-                    mediaKit={mediaKit}
-                    onNavigate={(t) => setTab(t as Tab)}
-                    onOpenReelStudio={(theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab('reel'); }}
-                    onScheduleReel={(p) => postQueue.add({
-                      platform: 'instagram_reel',
-                      source: 'reel',
-                      // 既定は翌日 20:00（予約タブで変更可）。
-                      scheduledAt: (() => { const d = new Date(Date.now() + 24 * 60 * 60 * 1000); d.setHours(20, 0, 0, 0); return d.toISOString(); })(),
-                      caption: p.caption,
-                      hashtags: p.hashtags,
-                      cta: p.cta,
-                      dealId: p.dealId,
-                      brandName: p.brandName,
-                      note: p.title,
-                      mediaKind: p.mediaKind || 'video',
-                    })}
-                    onSendReelToStudio={(seed) => { setReelSeed(seed); setTab('reel'); }}
-                  />
-                )}
-
-                {/* 稼げる + 楽できるビジョン 3 連ヒーロー */}
+                {/* 稼げる + 楽できるビジョン 3 連ヒーロー（実績がある時だけ自動表示） */}
                 <IrisEarningsHero
                   myDeals={myDeals}
                   igProfile={igProfile}
@@ -1681,27 +1682,32 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   onConnectInstagram={() => setShowIgConnect(true)}
                 />
 
-                {/* エディトリアル ホームダッシュ */}
-                <IrisEditorialHome
-                  bg={bg}
-                  myDeals={myDeals}
-                  postQueue={postQueue}
-                  knowledge={knowledge}
-                  igProfile={igProfile}
-                  onNavigate={(t, theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab(t as Tab); }}
-                  settings={settings}
-                  mediaKit={mediaKit}
-                  onConnectInstagram={() => setShowIgConnect(true)}
-                  onOpenDmDraft={(deal) => setDmDraftDeal(deal)}
-                />
+                {/* 未連携のときだけ: 連携を促すオンボーディング導線（エディトリアル＋稼ぐ）。
+                    連携後は上部の IrisFlowHub に集約されるため、重複を出さず1本道に絞る。*/}
+                {!igProfile && (
+                  <>
+                    {/* エディトリアル ホームダッシュ */}
+                    <IrisEditorialHome
+                      bg={bg}
+                      myDeals={myDeals}
+                      postQueue={postQueue}
+                      knowledge={knowledge}
+                      igProfile={igProfile}
+                      onNavigate={(t, theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab(t as Tab); }}
+                      settings={settings}
+                      mediaKit={mediaKit}
+                      onConnectInstagram={() => setShowIgConnect(true)}
+                      onOpenDmDraft={(deal) => setDmDraftDeal(deal)}
+                    />
 
-                {/* 仕事獲得を最優先 */}
-                <IrisEarnHero
-                  onOpenDeals={() => setTab('deals')}
-                  onConnectInstagram={() => setShowIgConnect(true)}
-                  igConnected={!!igProfile}
-                  igFollowers={igProfile?.followers}
-                />
+                    {/* 仕事獲得を最優先 */}
+                    <IrisEarnHero
+                      onOpenDeals={() => setTab('deals')}
+                      onConnectInstagram={() => setShowIgConnect(true)}
+                      igConnected={false}
+                    />
+                  </>
+                )}
 
                 {/* 健康が積み上がっている実感 */}
                 <div style={{ marginBottom: '1.25rem' }}>
