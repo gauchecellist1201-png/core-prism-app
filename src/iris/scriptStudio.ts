@@ -13,6 +13,8 @@ import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { logIrisActivity } from './irisActivity';
+import type { IgProfile } from './instagramConnect';
+import type { PostHistoryItem } from './strategist';
 
 // ─── クライアント (代行先アカウント) プロフィール ───────────
 export interface IrisClient {
@@ -56,6 +58,45 @@ function clientContext(c?: IrisClient | null): string {
 - 言ってはいけない言葉: ${c.ngWords || '(なし)'}`;
 }
 
+// ─── 連携アカウントの「実データ」コンテキスト ──────────────────
+// これが企画を“本人のジャンル”に固定する。汎用テンプレ化(節約/家計 等の
+// 無関係ネタ)を防ぐための核心。連携プロフィールの実ジャンルと、実際の過去投稿を渡す。
+function postScore(m?: PostHistoryItem['metrics']): number {
+  if (!m) return 0;
+  return (m.saves ?? 0) * 3 + (m.shares ?? 0) * 2 + (m.comments ?? 0) * 2 + (m.likes ?? 0) + (m.views ?? 0) / 100;
+}
+
+function accountContext(ig?: IgProfile | null, posts?: PostHistoryItem[]): string {
+  const L: string[] = [];
+  if (ig && (ig.handle || ig.topPostCategories?.length)) {
+    L.push('## 連携アカウントの実データ（このアカウント本人）');
+    if (ig.handle) L.push(`- ハンドル: @${ig.handle}`);
+    if (ig.followers) L.push(`- フォロワー: ${ig.followers.toLocaleString()}`);
+    if (ig.topPostCategories?.length) L.push(`- 実際に投稿しているジャンル: ${ig.topPostCategories.join(' / ')}`);
+    if (ig.bestPostTime) L.push(`- 反応が良い時間帯: ${ig.bestPostTime}`);
+    if (ig.saveRate) L.push(`- 保存率: ${ig.saveRate}%`);
+  }
+  const real = (posts || []).filter(p => p.title || p.caption);
+  if (real.length) {
+    const top = [...real].sort((a, b) => postScore(b.metrics) - postScore(a.metrics)).slice(0, 8);
+    L.push('\n## このアカウントの実際の過去投稿（伸びた順・必ずこの世界観に沿う）');
+    top.forEach((p, i) => {
+      const m = p.metrics || {};
+      const stat = [
+        m.saves != null && `保存${m.saves}`,
+        m.likes != null && `いいね${m.likes}`,
+        m.comments != null && `コメント${m.comments}`,
+      ].filter(Boolean).join(' / ');
+      const body = (p.caption || '').replace(/\s+/g, ' ').slice(0, 90);
+      L.push(`${i + 1}. ${p.title}${p.topic ? `（${p.topic}）` : ''}${stat ? ` — ${stat}` : ''}${body ? `\n   本文: ${body}` : ''}`);
+    });
+  }
+  return L.join('\n');
+}
+
+/** 企画・台本を本人のジャンルに固定するための共通ルール文 (実データがある時のみ意味を持つ) */
+const ON_BRAND_RULE = '【最重要】下に「連携アカウントの実データ」または「実際の過去投稿」がある場合は、必ずそのジャンル・世界観・実際に伸びた傾向に沿ったネタ/台本だけを作る。アカウントと無関係なジャンル（例: 音楽アカウントなのに節約・家計・ダイエット）のネタは絶対に出さない。過去投稿の実テーマ・語彙・被写体を踏襲し、その亜種＋自然な拡張で構成する。';
+
 // ─── ① 企画: ネタを大量に出す ──────────────────────────────
 export interface IdeaItem {
   /** 冒頭フック (最初の2秒で離脱を止める一言) */
@@ -81,10 +122,22 @@ function extractJson(text: string): any {
 export async function generateIdeaPool(opts: {
   settings: AppSettings;
   client?: IrisClient | null;
+  igProfile?: IgProfile | null;   // 連携アカウント本人の実プロフィール
+  pastPosts?: PostHistoryItem[];  // 実際の過去投稿 (これが企画を本人ジャンルに固定)
   focus?: string;     // 今回のテーマ (例: 新メニュー告知、季節キャンペーン)
   count?: number;     // 何本出すか (既定 10)
 }): Promise<IdeaItem[]> {
   const count = Math.max(3, Math.min(20, opts.count ?? 10));
+
+  // 実データの有無を判定。クライアントのジャンルも、連携プロフィールも、過去投稿も
+  // 何も無い状態で生成すると「テーマだけ」を頼りに無関係な汎用ネタ(節約/家計など)に
+  // なってしまう。それは“分析した風の嘘”なので、捏造せず連携・登録へ誘導する。
+  const acct = accountContext(opts.igProfile, opts.pastPosts);
+  const hasClientNiche = !!(opts.client && opts.client.niche?.trim());
+  if (!hasClientNiche && !acct) {
+    throw new Error('まず Instagram を連携するか、クライアントを登録してください。あなたの過去投稿（ジャンル）が分からないと、的外れな汎用ネタになってしまいます。連携 →「分析」で過去投稿を取り込むと、あなたのジャンルに沿ったネタが出ます。');
+  }
+
   const sys = `あなたは SNS 運用代行会社のトップ企画者です。クライアントのアカウントを伸ばす投稿ネタを、撮影しやすさまで考えて量産します。
 
 返答は JSON のみ:
@@ -93,6 +146,7 @@ export async function generateIdeaPool(opts: {
 ] }
 
 ## ルール
+- ${ON_BRAND_RULE}
 - ${toneInstruction(opts.settings.aiTone)}
 - 切り口を散らす (悩み解決 / 比較 / ビフォーアフター / 裏側 / 実演 / 共感 / 権威付け / トレンド便乗)
 - フックは具体的に。「知らないと損する◯◯」「9割が間違えてる◯◯」など離脱を止める強さ
@@ -101,11 +155,11 @@ export async function generateIdeaPool(opts: {
 - 抽象論を避け、数字・固有名詞・具体シーンで`;
 
   const userText = `${clientContext(opts.client)}
-
+${acct ? '\n' + acct + '\n' : ''}
 ## 今回のフォーカス
-${opts.focus || '(指定なし — アカウントの強みを伸ばす方向で)'}
+${opts.focus || '(指定なし — このアカウントの強みを伸ばす方向で)'}
 
-上記クライアントの投稿ネタを ${count} 本、JSON で出してください。`;
+上記のジャンル・実際の過去投稿に必ず沿って、投稿ネタを ${count} 本、JSON で出してください。アカウントと無関係なジャンルのネタは禁止です。`;
 
   const data = await enqueueClaudeCall(async () => {
     const res = await fetch('/api/ai', {
@@ -202,6 +256,8 @@ export interface ProductionScript {
 export async function generateProductionScript(opts: {
   settings: AppSettings;
   client?: IrisClient | null;
+  igProfile?: IgProfile | null;
+  pastPosts?: PostHistoryItem[];
   topic: string;          // 企画ネタ or 自由入力テーマ
   format?: string;        // リール/フィード/ストーリー
   durationSec?: number;
@@ -245,10 +301,12 @@ export async function generateProductionScript(opts: {
 - onScreenText と editNote は編集者がそのまま作業できる粒度で
 - hooks は離脱を止める3案 (A/Bテスト用)
 - hashtags は 10-14 個、# 付き
+- ${ON_BRAND_RULE}
 - クライアントのジャンル・ターゲット・トーン・NGワードを厳守`;
 
+  const acct = accountContext(opts.igProfile, opts.pastPosts);
   const userText = `${clientContext(opts.client)}
-
+${acct ? '\n' + acct + '\n' : ''}
 ## 台本にするネタ
 ${opts.topic.trim()}
 

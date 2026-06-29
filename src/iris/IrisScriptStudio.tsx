@@ -9,6 +9,8 @@ import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { notifyInApp } from '../lib/inAppNotify';
 import ThinkingIndicator from '../components/ThinkingIndicator';
+import { loadIgProfile } from './instagramConnect';
+import { usePostHistory } from './strategist';
 import {
   loadClients, saveClients, clientUid,
   generateIdeaPool, type IdeaItem,
@@ -97,6 +99,11 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
   const [activeId, setActiveId] = useState<string>(() => loadClients()[0]?.id || '');
   const [editing, setEditing] = useState<IrisClient | null>(null);
 
+  // 連携アカウント本人の実データ — 企画/台本を本人のジャンルに固定する核心。
+  // クライアント未登録でも、連携プロフィール＋実際の過去投稿があればそれに沿って生成する。
+  const [igProfile] = useState(() => loadIgProfile());
+  const { posts: pastPosts } = usePostHistory();
+
   // 企画
   const [focus, setFocus] = useState('');
   const [count, setCount] = useState(10);
@@ -163,7 +170,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
   const runIdeas = async () => {
     setIdeaBusy(true); setErr(null);
     try {
-      const list = await generateIdeaPool({ settings, client: activeClient, focus: focus || undefined, count });
+      const list = await generateIdeaPool({ settings, client: activeClient, igProfile, pastPosts, focus: focus || undefined, count });
       setIdeas(list);
       if (!list.length) setErr('ネタを取得できませんでした。もう一度お試しください。');
     } catch (e: any) { setErr(e?.message || String(e)); }
@@ -174,7 +181,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
     if (!topic.trim()) { setErr('台本にするネタ・テーマを入れてください'); return; }
     setScriptBusy(true); setErr(null); setScript(null); setScriptTopic(topic);
     try {
-      const s = await generateProductionScript({ settings, client: activeClient, topic });
+      const s = await generateProductionScript({ settings, client: activeClient, igProfile, pastPosts, topic });
       setScript(s);
     } catch (e: any) { setErr(e?.message || String(e)); }
     finally { setScriptBusy(false); }
