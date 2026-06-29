@@ -29,6 +29,9 @@ export interface IrisClient {
   /** このクライアントの実際の投稿例・口調・定番ネタ・世界観 (代行が貼り付け)。
    *  OAuth 連携が無くても、これを基準に AI が“そのクライアントらしい”企画を出す核心データ。 */
   referenceNotes?: string;
+  /** 前月の手応え・今月の方針 (代行の振り返り)。伸びた/伸びなかった傾向や、今月強化したい方向。
+   *  AI が次の企画に必ず反映する。捏造した数値ではなく、代行自身の観測を入れる。 */
+  lastMonthLearnings?: string;
   updatedAt: string;
 }
 
@@ -52,6 +55,7 @@ export function clientUid(): string {
 function clientContext(c?: IrisClient | null): string {
   if (!c) return '## クライアント\n(未指定 — 一般的なアカウントとして提案)';
   const ref = (c.referenceNotes || '').trim();
+  const learn = (c.lastMonthLearnings || '').trim();
   return `## クライアント
 - アカウント名: ${c.name}
 - ジャンル: ${c.niche}
@@ -62,7 +66,11 @@ function clientContext(c?: IrisClient | null): string {
 - 言ってはいけない言葉: ${c.ngWords || '(なし)'}${ref ? `
 
 ## このクライアントの実際の投稿例・世界観（必ずこの世界観・口調・定番ネタに沿う）
-${ref.slice(0, 1200)}` : ''}`;
+${ref.slice(0, 1200)}` : ''}${learn ? `
+
+## 前月の手応え・今月の方針（必ず反映する）
+${learn.slice(0, 800)}
+→ 伸びた傾向は増やし、反応が薄かった切り口は減らす。今月の方針に沿って企画を寄せる。` : ''}`;
 }
 
 // ─── 連携アカウントの「実データ」コンテキスト ──────────────────
@@ -321,6 +329,25 @@ export function monthlyPlanToMarkdown(items: ScheduledIdea[], client?: IrisClien
     L.push('');
   });
   L.push(`---\n各投稿は Iris で1タップ → 撮影者・編集者がそのまま動ける本格台本に。`);
+  return L.join('\n');
+}
+
+/** 月次プラン → 今月の撮影リスト Markdown (形式ごとにまとめ、1日でまとめ撮りできる形に) */
+export function shootingListMarkdown(items: ScheduledIdea[], client?: IrisClient | null): string {
+  const L: string[] = [];
+  L.push(`# 今月の撮影リスト (${items.length}本)${client?.name ? ` — ${client.name}` : ''}`);
+  L.push(`手間「低」${items.filter(i => i.effort === '低').length}/${items.length}本 — まとめ撮り推奨\n`);
+  (['リール', 'フィード', 'ストーリー'] as const).forEach(fmt => {
+    const group = items.filter(i => i.format === fmt);
+    if (!group.length) return;
+    L.push(`## ${fmt} (${group.length}本)`);
+    group.forEach(it => {
+      L.push(`- [ ] **${it.label}** ${it.hook}  〈手間${it.effort}〉`);
+      L.push(`  - 撮るもの: ${it.angle}`);
+    });
+    L.push('');
+  });
+  L.push(`---\nまとめて撮影 → Iris で各案を本格台本に展開 → 投稿文はカレンダーからコピー。`);
   return L.join('\n');
 }
 

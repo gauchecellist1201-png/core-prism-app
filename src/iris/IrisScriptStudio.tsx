@@ -17,7 +17,7 @@ import {
   generateProductionScript, type ProductionScript,
   scriptToMarkdown, ideaPoolToMarkdown, type IrisClient,
   buildMonthlySchedule, monthlyPlanToMarkdown, monthlyPlanToHtml, type ScheduledIdea,
-  captionBlock,
+  captionBlock, shootingListMarkdown,
 } from './scriptStudio';
 
 interface Props {
@@ -32,8 +32,36 @@ const PLATFORM_LABEL: Record<IrisClient['platform'], string> = { instagram: 'Ins
 
 const emptyClient = (): IrisClient => ({
   id: clientUid(), name: '', niche: '', target: '', platform: 'instagram',
-  goal: '', tone: '', ngWords: '', referenceNotes: '', updatedAt: new Date().toISOString(),
+  goal: '', tone: '', ngWords: '', referenceNotes: '', lastMonthLearnings: '', updatedAt: new Date().toISOString(),
 });
+
+// ★テンプレ起点（白紙を見せない）：どのジャンルでも効く“切り口”の雛形。タップでフォーカス欄を埋め、
+//   AIがクライアントのジャンル・人物像に合わせて具体ネタへ展開する。打鍵ゼロで企画を始められる。
+const IDEA_TEMPLATES: { label: string; focus: string }[] = [
+  { label: '悩み解決', focus: 'よくある悩みを1つ取り上げ、解決のステップで見せる' },
+  { label: 'ビフォーアフター', focus: '導入前→導入後の変化をビフォーアフターで見せる' },
+  { label: '◯選まとめ', focus: 'テーマを「◯選」でまとめ、保存したくなる形にする' },
+  { label: 'よくある誤解', focus: 'よくある誤解・勘違いを正す切り口' },
+  { label: '失敗談', focus: '自分の失敗談から学びを伝える共感系' },
+  { label: '初心者向け基本', focus: '初心者向けに基本を一から丁寧に解説する' },
+  { label: '比較で選び方', focus: 'A と B を比較して、迷っている人に選び方を示す' },
+  { label: '1日ルーティン', focus: '1日の流れ・ルーティンで世界観を見せる' },
+  { label: 'Q&A', focus: 'よくある質問にまとめて答えるQ&A形式' },
+  { label: '保存版チェックリスト', focus: '保存版のチェックリストにまとめる' },
+];
+
+// ★台本の型（白紙を見せない・第2弾＝②台本）：どのジャンルでも効く台本の構成パターン。
+//   タップで自由入力欄を埋め、AIがクライアントに合わせて本格台本へ展開する。
+const SCRIPT_TEMPLATES: { label: string; topic: string }[] = [
+  { label: '結論先出し3ステップ', topic: '結論を先に言い、理由を3ステップで解説する台本' },
+  { label: 'ビフォーアフター', topic: '導入前→導入後の変化を見せるビフォーアフター台本' },
+  { label: 'ストーリー仕立て', topic: '自分の体験談をストーリーで見せる台本' },
+  { label: 'よくある誤解を正す', topic: 'よくある誤解を取り上げて正す台本' },
+  { label: '比較で選び方', topic: 'A と B を比較して、迷っている人に選び方を示す台本' },
+  { label: 'Q&A', topic: 'よくある質問にまとめて答えるQ&A形式の台本' },
+  { label: '保存版チェックリスト', topic: '保存版のチェックリストにまとめる台本' },
+  { label: '失敗談から学び', topic: '自分の失敗談から学びを伝える共感系の台本' },
+];
 
 export default function IrisScriptStudio({ bg, settings, locked }: Props) {
   if (locked) return <ScriptStudioLock bg={bg} />;
@@ -225,6 +253,18 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
   };
 
   // クライアント承認用の「美しい1枚もの」を新規タブで開く (そのまま印刷→PDF保存)
+  const copyShootingList = () => {
+    if (!monthly.length) return;
+    const md = shootingListMarkdown(monthly, activeClient);
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(md)
+        .then(() => notifyInApp({ kind: 'success', title: '今月の撮影リストをコピーしました', body: '形式ごとにまとめ撮りできる形です' }))
+        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
+    } else {
+      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
+    }
+  };
+
   const openMonthlyOnePager = () => {
     if (!monthly.length) return;
     const html = monthlyPlanToHtml(monthly, activeClient, { periodLabel: `${startISO} 起点・週${perWeek}本` });
@@ -415,6 +455,18 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                 これを入れると、AI が「このクライアントらしい」企画だけを出します（無関係な汎用ネタを防ぐ核心）。連携が無くてもOK。
               </p>
             </div>
+            <div>
+              <label style={label}>前月の手応え・今月の方針（任意）</label>
+              <textarea
+                style={{ ...inp, minHeight: 72, resize: 'vertical', lineHeight: 1.5 }}
+                value={editing.lastMonthLearnings || ''}
+                onChange={e => setEditing({ ...editing, lastMonthLearnings: e.target.value })}
+                placeholder={'前月に伸びた/伸びなかった傾向や、今月強化したい方向をメモ。\n例) 「裏側・仕込み風景」の保存が伸びた。逆に商品紹介だけの投稿は反応薄。今月は職人の手元アップを増やす。'}
+              />
+              <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 4, lineHeight: 1.5 }}>
+                次に出す企画・カレンダーに必ず反映します（伸びた傾向を増やし、薄かった切り口は減らす）。
+              </p>
+            </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={saveEditing} style={btnPrimary}>保存</button>
               <button onClick={() => { setEditing(null); setErr(null); }} style={btnGhost}>キャンセル</button>
@@ -426,6 +478,25 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
       {/* ── ① 企画: ネタ量産 ── */}
       <div style={card}>
         <p style={sectionLabel}>① 企画 — ネタを量産</p>
+        {/* ★テンプレ起点：白紙でこまったら、タップで切り口を入れて始められる（打鍵ゼロ）。 */}
+        <div style={{ marginBottom: 10 }}>
+          <p style={{ fontSize: '0.72rem', color: bg.inkSoft, fontFamily: IRIS_FONTS.body, margin: '0 0 6px' }}>白紙でこまったら、今日のテンプレから：</p>
+          <div className="iris-tpl-row" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+            {IDEA_TEMPLATES.map(t => {
+              const on = focus === t.focus;
+              return (
+                <button key={t.label} type="button" onClick={() => setFocus(on ? '' : t.focus)} style={{
+                  flexShrink: 0, minHeight: 36, padding: '7px 13px', borderRadius: 999,
+                  border: `1px solid ${on ? bg.accent : bg.cardBorder}`,
+                  background: on ? bg.accent : 'transparent',
+                  color: on ? '#fff' : bg.ink,
+                  fontSize: '0.8rem', fontFamily: IRIS_FONTS.body, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                }}>{t.label}</button>
+              );
+            })}
+          </div>
+          <style>{`.iris-tpl-row::-webkit-scrollbar{display:none}`}</style>
+        </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
           <input style={{ ...inp, flex: 1, minWidth: 200 }} placeholder="今回のフォーカス (例: 新メニュー告知 / 任意)" value={focus} onChange={e => setFocus(e.target.value)} />
           <select style={{ ...inp, width: 120 }} value={count} onChange={e => setCount(Number(e.target.value))}>
@@ -509,6 +580,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={openMonthlyOnePager} style={btnPrimary}>承認用ページを開く（PDF保存）</button>
               <button onClick={copyMonthly} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>カレンダーをコピー</button>
+              <button onClick={copyShootingList} style={{ ...btnGhost, fontWeight: 700 }}>今月の撮影リストをコピー</button>
             </div>
             {Array.from(new Set(monthly.map(m => m.week))).sort((a, b) => a - b).map(w => (
               <div key={w}>
@@ -553,6 +625,24 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
       {/* ── ② 台本: 自由入力 ── */}
       <div style={card}>
         <p style={sectionLabel}>② 台本 — 自分でテーマを入れて作る</p>
+        {/* ★台本の型：白紙でこまったら、タップで型を入れて始められる（AIがクライアントに合わせて展開）。 */}
+        <div style={{ marginBottom: 10 }}>
+          <p style={{ fontSize: '0.72rem', color: bg.inkSoft, fontFamily: IRIS_FONTS.body, margin: '0 0 6px' }}>白紙でこまったら、台本の型から：</p>
+          <div className="iris-tpl-row" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+            {SCRIPT_TEMPLATES.map(t => {
+              const on = freeTopic === t.topic;
+              return (
+                <button key={t.label} type="button" onClick={() => setFreeTopic(on ? '' : t.topic)} style={{
+                  flexShrink: 0, minHeight: 36, padding: '7px 13px', borderRadius: 999,
+                  border: `1px solid ${on ? bg.accent : bg.cardBorder}`,
+                  background: on ? bg.accent : 'transparent',
+                  color: on ? '#fff' : bg.ink,
+                  fontSize: '0.8rem', fontFamily: IRIS_FONTS.body, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                }}>{t.label}</button>
+              );
+            })}
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <input style={{ ...inp, flex: 1, minWidth: 200 }} placeholder="例: 毛穴ケアの正しい順番を3ステップで" value={freeTopic} onChange={e => setFreeTopic(e.target.value)} />
           <button onClick={() => runScript(freeTopic)} disabled={scriptBusy} style={btnPrimary}>{scriptBusy ? '台本作成中…' : '台本を作る'}</button>
