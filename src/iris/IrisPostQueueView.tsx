@@ -29,6 +29,8 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
   const sorted = useMemo(() => queue.upcoming(), [queue]);
   // コピー成功フィードバック (silent fail 撲滅) — どの予約のコピーが直近で成功したか
   const [copiedId, setCopiedId] = useState<string>('');
+  // 表示モード：リスト（詳細）／グリッド（フィードの見た目プレビュー＝Later風）。
+  const [view, setView] = useState<'list' | 'grid'>('list');
 
   const copyCaption = (p: ScheduledPost) => {
     navigator.clipboard?.writeText(buildCaptionText(p))
@@ -157,7 +159,21 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
         ))}
       </div>
 
-      {/* リスト */}
+      {/* 表示切替：リスト⇄グリッド（フィードの見た目プレビュー＝Later風） */}
+      {sorted.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, alignSelf: 'flex-start' }}>
+          {(['list', 'grid'] as const).map(v => (
+            <button key={v} onClick={() => setView(v)} style={{
+              padding: '6px 14px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+              border: `1px solid ${view === v ? bg.accent : bg.cardBorder}`,
+              background: view === v ? bg.accent : 'transparent',
+              color: view === v ? '#fff' : bg.inkSoft,
+            }}>{v === 'list' ? 'リスト' : 'グリッド'}</button>
+          ))}
+        </div>
+      )}
+
+      {/* リスト / グリッド */}
       {sorted.length === 0 ? (
         <EmptyInvite
           bg={bg}
@@ -171,6 +187,40 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
           }
           hint="一度入れた予約は時刻が近づくと自動で Instagram へ送り出します"
         />
+      ) : view === 'grid' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+          {sorted.map(p => {
+            const when = new Date(p.scheduledAt);
+            const copied = copiedId === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => copyCaption(p)}
+                title="タップでキャプションをコピー"
+                style={{ position: 'relative', aspectRatio: '3 / 4', background: '#000', borderRadius: 8, overflow: 'hidden', border: 'none', padding: 0, cursor: 'pointer', display: 'block' }}
+              >
+                {p.thumbDataUrl ? (
+                  <img src={p.thumbDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <VideoIcon size={22} color="rgba(255,255,255,0.4)" />
+                  </div>
+                )}
+                <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '4px 5px', fontSize: '0.6rem', fontWeight: 600, color: '#fff', background: 'linear-gradient(transparent, rgba(0,0,0,0.78))', lineHeight: 1.3, textAlign: 'left' }}>
+                  {when.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })} {when.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+                {p.mediaKind === 'video' && (
+                  <span style={{ position: 'absolute', top: 4, right: 4, display: 'flex' }}><VideoIcon size={12} color="#fff" /></span>
+                )}
+                {copied && (
+                  <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>
+                    <Check size={14} color="#fff" /> コピー済
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       ) : (
         <div style={{ display: 'grid', gap: 10 }}>
           {sorted.map(p => {

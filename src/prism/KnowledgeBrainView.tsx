@@ -296,6 +296,17 @@ export default function KnowledgeBrainView({ persona, plan, knowledgeItems, sett
         </div>
       )}
 
+      {/* 空状態を“触れる入口”に：何をすれば効くか＋貯める→効くループを伝える（白紙を見せない） */}
+      {myItems.length === 0 && !ingesting && (
+        <div style={{ border: '1px dashed #d8d2f5', borderRadius: 14, padding: 16, background: '#faf9ff', textAlign: 'center' }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: INK, marginBottom: 4 }}>まだ知識がありません</div>
+          <div style={{ fontSize: 12.5, color: SUB, lineHeight: 1.8 }}>
+            上の<strong style={{ color: '#6366F1' }}>「フォルダを丸ごと取り込む」</strong>で会議メモや資料を入れると、Prismがそれを
+            <strong style={{ color: '#6366F1' }}>根拠に</strong>提案・回答します。入れるほど賢くなります（貯める→効く）。
+          </div>
+        </div>
+      )}
+
       {/* 取り込み済み一覧 */}
       {myItems.length > 0 && (
         <details style={{ marginTop: 4 }}>
