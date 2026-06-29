@@ -278,7 +278,7 @@ export default function ContactPage() {
         </AnimatePresence>
 
         <div style={{ marginTop: 32, fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
-          直接メール: <a href="mailto:gauche.cellist1201@gmail.com" style={{ color: '#a78bfa' }}>gauche.cellist1201@gmail.com</a>
+          直接メール: <a href="mailto:core.guild.inc@gmail.com" style={{ color: '#60a5fa', fontWeight: 600, textDecoration: 'underline' }}>core.guild.inc@gmail.com</a>
         </div>
       </div>
     </div>

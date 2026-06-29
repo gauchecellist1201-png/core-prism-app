@@ -13,6 +13,7 @@ import { BookmarkPlus, Trash2, Save, X, Search, Brain, BookOpen } from 'lucide-r
 import { confirmAction } from '../lib/confirmDialog';
 import IrisIntro from './IrisIntro';
 import EmptyInvite from './EmptyInvite';
+import IrisCoreCard from './IrisCoreCard';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -91,6 +92,8 @@ export default function IrisKnowledgeView({ bg, knowledge }: Props) {
           ここに保存した資料は、次回 AI 提案を作るときに自動で参考にされます。書けば書くほど、あなた専用の提案になります。
         </p>
       </div>
+
+      <IrisCoreCard bg={bg} />
 
       <IrisIntro
         id="knowledge"

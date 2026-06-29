@@ -324,6 +324,14 @@ export default async function handler(req: Request) {
     });
   }
 
+  // 入力バリデーション：messages が無い/空なら 400（500クラッシュを防ぐ＝不満ゼロ）
+  if (!body || !Array.isArray(body.messages) || body.messages.length === 0) {
+    return new Response(JSON.stringify({ error: { message: 'messages (non-empty array) is required' } }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+  }
+
   // 重量判定
   const requestedMaxTokens = body.max_tokens || 1024;
   const hasImages = (body.messages || []).some(m =>

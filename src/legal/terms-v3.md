@@ -94,4 +94,4 @@
 ## 13. 連絡先
 
 - 株式会社 CORE
-- メール: gauche.cellist1201@gmail.com
+- メール: [core.guild.inc@gmail.com](mailto:core.guild.inc@gmail.com)

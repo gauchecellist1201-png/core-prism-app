@@ -16,7 +16,7 @@ interface Props {
 
 const COMPANY = 'CORE 株式会社';
 const REP = '井出 直毅';
-const EMAIL = 'gauche.cellist1201@gmail.com';
+const EMAIL = 'core.guild.inc@gmail.com';
 const URL = 'https://core-prism-app.vercel.app/';
 
 const TERMS = `

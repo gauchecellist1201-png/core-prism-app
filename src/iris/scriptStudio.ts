@@ -574,6 +574,41 @@ ${fmt} / ${dur}秒前後
 }
 
 // ─── 撮影台本シート → Markdown (撮影者・編集者に渡す用) ──────
+// ★ワンタップ自動字幕：台本のショット（time＋テロップ/セリフ）から CapCut/Edits 等にそのまま読み込める
+//   SRT 字幕を生成する。実データ（台本のテロップ/セリフ）だけを使い、無い文言は作らない（honest）。
+function parseShotSeconds(time: string, fallbackStart: number, total: number): { start: number; end: number } {
+  // "0-3秒" / "3〜6秒" / "0:03-0:06" 等を緩く解釈。失敗時は前ショットの続き＋3秒。
+  const nums = String(time || "").match(/\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+  let start = nums.length >= 1 ? nums[0] : fallbackStart;
+  let end = nums.length >= 2 ? nums[1] : start + 3;
+  if (end <= start) end = start + 3;
+  if (total > 0) end = Math.min(end, total);
+  return { start, end };
+}
+function srtTime(sec: number): string {
+  const s = Math.max(0, sec);
+  const hh = Math.floor(s / 3600);
+  const mm = Math.floor((s % 3600) / 60);
+  const ss = Math.floor(s % 60);
+  const ms = Math.round((s - Math.floor(s)) * 1000);
+  const p = (n: number, w = 2) => String(n).padStart(w, "0");
+  return `${p(hh)}:${p(mm)}:${p(ss)},${p(ms, 3)}`;
+}
+export function scriptToSrt(s: ProductionScript): string {
+  const blocks: string[] = [];
+  let cursor = 0;
+  let n = 0;
+  for (const shot of s.shots || []) {
+    const text = (shot.onScreenText || shot.line || "").trim(); // テロップ優先、無ければセリフ
+    if (!text) { const sp = parseShotSeconds(shot.time, cursor, s.durationSec); cursor = sp.end; continue; }
+    const { start, end } = parseShotSeconds(shot.time, cursor, s.durationSec);
+    cursor = end;
+    n += 1;
+    blocks.push(`${n}\n${srtTime(start)} --> ${srtTime(end)}\n${text}`);
+  }
+  return blocks.join("\n\n");
+}
+
 export function scriptToMarkdown(s: ProductionScript, clientName?: string): string {
   const L: string[] = [];
   L.push(`# 撮影台本: ${s.title}`);

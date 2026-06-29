@@ -198,7 +198,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                 key={p.id}
                 onClick={() => copyCaption(p)}
                 title="タップでキャプションをコピー"
-                style={{ position: 'relative', aspectRatio: '3 / 4', background: '#000', borderRadius: 8, overflow: 'hidden', border: 'none', padding: 0, cursor: 'pointer', display: 'block' }}
+                style={{ position: 'relative', aspectRatio: '3 / 4', background: '#000', borderRadius: 8, overflow: 'hidden', border: 'none', padding: 0, cursor: 'pointer', display: 'block', transition: 'opacity 0.15s, transform 0.15s' }}
               >
                 {p.thumbDataUrl ? (
                   <img src={p.thumbDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

@@ -3,7 +3,7 @@
 // クライアント登録 → ネタ量産(企画) → 撮影者・編集者がそのまま動ける本格台本
 // ============================================================
 import React, { useState } from 'react';
-import { Lock, Scissors } from 'lucide-react';
+import { Lock, Scissors, Check } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -15,7 +15,7 @@ import {
   loadClients, saveClients, clientUid,
   generateIdeaPool, type IdeaItem,
   generateProductionScript, type ProductionScript,
-  scriptToMarkdown, ideaPoolToMarkdown, type IrisClient,
+  scriptToMarkdown, scriptToSrt, ideaPoolToMarkdown, type IrisClient,
   buildMonthlySchedule, monthlyPlanToMarkdown, monthlyPlanToHtml, type ScheduledIdea,
   captionBlock, shootingListMarkdown,
 } from './scriptStudio';
@@ -72,7 +72,7 @@ export default function IrisScriptStudio({ bg, settings, locked }: Props) {
 function ScriptStudioLock({ bg }: { bg: IrisBackgroundDef }) {
   const card: React.CSSProperties = {
     background: bg.card, backdropFilter: 'blur(10px)',
-    border: `1px solid ${bg.cardBorder}`, borderRadius: 22, padding: '1.6rem',
+    border: `1px solid ${bg.cardBorder}`, borderRadius: 20, padding: '1.6rem',
   };
   const openPlans = () => {
     window.dispatchEvent(new CustomEvent('iris:open-plan', { detail: { planId: 'pro' } }));
@@ -107,7 +107,7 @@ function ScriptStudioLock({ bg }: { bg: IrisBackgroundDef }) {
         <div style={{ display: 'grid', gap: 8, textAlign: 'left', maxWidth: 460, margin: '0 auto 1.3rem' }}>
           {FEATURES.map((f, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: '0.86rem', color: bg.ink, lineHeight: 1.5 }}>
-              <span style={{ color: bg.accent, fontWeight: 800, flexShrink: 0 }}>✓</span>
+              <Check size={16} color={bg.accent} strokeWidth={2.6} style={{ flexShrink: 0, marginTop: 2 }} />
               <span>{f}</span>
             </div>
           ))}
@@ -172,11 +172,13 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
     background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`, color: '#fff',
     border: 'none', borderRadius: 999, padding: '0.7rem 1.4rem', fontWeight: 700,
     cursor: 'pointer', fontSize: '0.88rem', fontFamily: IRIS_FONTS.body, boxShadow: `0 8px 22px ${bg.accent}44`,
+    transition: 'background 0.15s, box-shadow 0.15s, opacity 0.15s',
   };
   const btnGhost: React.CSSProperties = {
     background: 'rgba(255,255,255,0.6)', color: bg.ink, border: `1px solid ${bg.cardBorder}`,
     borderRadius: 999, padding: '0.5rem 1rem', fontWeight: 600, cursor: 'pointer',
     fontSize: '0.8rem', fontFamily: IRIS_FONTS.body,
+    transition: 'background 0.15s, color 0.15s, border-color 0.15s',
   };
   const sectionLabel: React.CSSProperties = {
     fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.76rem',
@@ -299,6 +301,20 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(md)
         .then(() => notifyInApp({ kind: 'success', title: '撮影台本をコピーしました', body: '撮影担当・編集担当にそのまま渡せます (Markdown)' }))
+        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
+    } else {
+      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
+    }
+  };
+
+  // ★ワンタップ自動字幕：台本のテロップ/セリフから SRT を生成してコピー（CapCut/Edits 等にそのまま読み込める）。
+  const copySubtitles = () => {
+    if (!script) return;
+    const srt = scriptToSrt(script);
+    if (!srt.trim()) { notifyInApp({ kind: 'info', title: '字幕の元になる文言がありません', body: 'テロップ・セリフのある台本で使えます' }); return; }
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(srt)
+        .then(() => notifyInApp({ kind: 'success', title: '字幕(SRT)をコピーしました', body: 'CapCut / CapCut Web / Edits で「字幕を読み込む」に貼れます' }))
         .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
     } else {
       notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
@@ -491,6 +507,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                   background: on ? bg.accent : 'transparent',
                   color: on ? '#fff' : bg.ink,
                   fontSize: '0.8rem', fontFamily: IRIS_FONTS.body, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                  transition: 'background 0.15s, color 0.15s, border-color 0.15s',
                 }}>{t.label}</button>
               );
             })}
@@ -638,6 +655,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                   background: on ? bg.accent : 'transparent',
                   color: on ? '#fff' : bg.ink,
                   fontSize: '0.8rem', fontFamily: IRIS_FONTS.body, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                  transition: 'background 0.15s, color 0.15s, border-color 0.15s',
                 }}>{t.label}</button>
               );
             })}
@@ -678,7 +696,10 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                 <p style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.5rem', fontWeight: 700, color: bg.ink, lineHeight: 1.2 }}>{script.title}</p>
                 <p style={{ fontSize: '0.8rem', color: bg.inkSoft, marginTop: 3 }}>{script.format} / 約{script.durationSec}秒{script.bgmMood ? ` / BGM: ${script.bgmMood}` : ''}</p>
               </div>
-              <button onClick={copyScript} style={btnPrimary}>撮影台本をコピー</button>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button onClick={copySubtitles} style={{ ...btnGhost, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }} title="テロップ/セリフから字幕(SRT)を作り、CapCut/Editsに読み込めます">字幕を作る（CapCut/Edits用）</button>
+                <button onClick={copyScript} style={btnPrimary}>撮影台本をコピー</button>
+              </div>
             </div>
             {script.thumbnailText && (
               <p style={{ marginTop: 10, padding: '0.5rem 0.8rem', background: `${bg.accent}14`, borderRadius: 10, color: bg.ink, fontSize: '0.85rem' }}>

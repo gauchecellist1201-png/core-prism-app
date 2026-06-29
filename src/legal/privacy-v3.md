@@ -112,5 +112,5 @@ CORE Iris は、利用者ご本人の同意のもと **Instagram API (Instagram 
 ## 9. 連絡先
 
 - 株式会社 CORE
-- メール: gauche.cellist1201@gmail.com
+- メール: [core.guild.inc@gmail.com](mailto:core.guild.inc@gmail.com)
 - 件名に「プライバシー」と明記してください

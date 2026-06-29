@@ -5,6 +5,7 @@
 // ============================================================
 import { useState, useCallback, useEffect } from 'react';
 import { useCloudSync } from '../hooks/useCloudSync';
+import { readCreatorCoreContextSync } from './irisCore';
 
 const STORAGE_KEY = 'iris_knowledge_v1';
 
@@ -113,8 +114,13 @@ export function useIrisKnowledge() {
     setItems([]);
   }, []);
 
-  // AI 呼び出しに渡す context (上位 10 件)
-  const getContext = useCallback((topK = 10) => buildIrisKnowledgeContext(items, topK), [items]);
+  // AI 呼び出しに渡す context。先頭に「発信者の核（あなたの核）」を毎回差し込み、
+  // 全 AI（分析/戦略/台本/ブランドマッチ）があなたらしさに沿うようにする。
+  const getContext = useCallback((topK = 10) => {
+    const coreCtx = readCreatorCoreContextSync();
+    const knowledgeCtx = buildIrisKnowledgeContext(items, topK);
+    return [coreCtx, knowledgeCtx].filter(Boolean).join('\n\n');
+  }, [items]);
 
   return {
     items,
