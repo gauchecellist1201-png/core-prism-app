@@ -253,6 +253,46 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
     return HINTS[day % HINTS.length];
   }, []);
 
+  // ─── 文脈に沿った「タップ即実行」チップ ─────
+  // 実データ (返信遅延・納期・進行中案件・今日のリール) から、押せばその場で
+  // AI が成果物を出すプロンプトを組み立てる。手入力ゼロで価値を体感させる狙い。
+  const starterChips = useMemo(() => {
+    const chips: { Ico: LucideIcon; t: string; prompt: string }[] = [];
+    const overdueN = urgent.find(u => u.kind === 'overdue_reply')?.n || 0;
+    if (overdueN > 0) {
+      chips.push({
+        Ico: MessageSquare,
+        t: `返信が遅れている${overdueN}件の返信文を作る`,
+        prompt: `返信が遅れている案件が${overdueN}件あります。相手を待たせたお詫びを添えた、ていねいで温かい返信文を案件ごとに書いてください。`,
+      });
+    }
+    const dueN = urgent.find(u => u.kind === 'due_24h')?.n || 0;
+    if (dueN > 0) {
+      chips.push({
+        Ico: Calendar,
+        t: `納期24h以内の${dueN}件、何から手をつける?`,
+        prompt: `納期が24時間以内の案件が${dueN}件あります。優先順位と、今すぐ取りかかる具体的な手順を3ステップで教えてください。`,
+      });
+    }
+    // 今日のリール台本 — 押せばその場で台本が出る
+    chips.push({
+      Ico: Film,
+      t: `今日のリール「${todayReelHint.name}」の台本を書く`,
+      prompt: `今日のおすすめは「${todayReelHint.name}」(${todayReelHint.why})です。この型で、フック・本編・締めの構成と、そのまま読めるナレーション、キャプション、ハッシュタグまで一気に作ってください。`,
+    });
+    if (activeCount > 0) {
+      chips.push({
+        Ico: BarChart3,
+        t: '進行中の案件、今週やることを整理して',
+        prompt: '今、進行中の案件について、今週中にやるべきことを期限の近い順に箇条書きで整理してください。',
+      });
+    }
+    // 常設の定番
+    chips.push({ Ico: MessageSquare, t: 'やわらかい断り文を書いて', prompt: '条件が合わない案件を、相手を傷つけずにお断りする、やわらかく丁寧な文面を作ってください。' });
+    chips.push({ Ico: HeartPulse, t: '肌が荒れて困ってる', prompt: '最近肌が荒れています。撮影前にできるケアと、隠さず活かせる見せ方を教えてください。' });
+    return chips.slice(0, 5);
+  }, [urgent, todayReelHint, activeCount]);
+
   return (
     <div style={{ display: 'grid', gap: '1.5rem' }}>
       {/* 通知 opt-in CTA (default & 未提示) */}
@@ -426,7 +466,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
               <b style={{ color: bg.ink, fontWeight: 600 }}>お仕事の管理・ことわり文・投稿のネタ出し・お肌の相談</b>まで、ぜんぶここで話すだけ。むずかしい操作はいりません。
             </p>
             <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', color: subtleColor, marginBottom: '0.5rem', alignSelf: 'flex-start', paddingLeft: '0.1rem' }}>
-              たとえば、こんなことを ──
+              タップするだけ ── すぐ作ります
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', maxWidth: 600, width: '100%' }}>
               {/* 動画スタジオへの直接ナビ */}
@@ -434,7 +474,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
                 background: `linear-gradient(135deg, ${bg.accent}22, ${bg.accent}11)`,
                 border: `1px solid ${bg.accent}55`,
                 borderRadius: 12, padding: '0.7rem 0.9rem',
-                cursor: 'pointer', fontSize: '0.88rem',
+                cursor: 'pointer', fontSize: '0.88rem', minHeight: 44,
                 color: bg.ink, fontFamily: IRIS_FONTS.body, textAlign: 'left',
                 fontWeight: 600,
                 display: 'inline-flex', alignItems: 'center', gap: '0.55rem',
@@ -442,19 +482,29 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
                 <Film size={16} color={bg.accent} strokeWidth={2.2} />
                 動画スタジオを開く
               </button>
-              {[
-                { Ico: Camera, t: 'スクショからお仕事を追加' },
-                { Ico: MessageSquare, t: 'やわらかい断り文を書いて' },
-                { Ico: BarChart3, t: '今週、何を投稿しよう?' },
-                { Ico: HeartPulse, t: '肌が荒れて困ってる' },
-              ].map(s => (
-                <button key={s.t} onClick={() => setTextInput(s.t)} style={{
+              {/* スクショ取込はそのまま下のカメラへ誘導 (画像が要るので入力欄へ) */}
+              <button onClick={() => setTextInput('このスクショからお仕事を追加して')} style={{
+                background: 'rgba(255,255,255,0.85)',
+                border: `1px solid ${bg.cardBorder}`,
+                borderRadius: 12, padding: '0.7rem 0.9rem',
+                cursor: 'pointer', fontSize: '0.88rem', minHeight: 44,
+                color: '#1F1A2E', fontFamily: IRIS_FONTS.body, textAlign: 'left',
+                display: 'inline-flex', alignItems: 'center', gap: '0.55rem',
+              }}>
+                <Camera size={16} color={bg.accent} strokeWidth={2.2} />
+                スクショからお仕事を追加
+              </button>
+              {/* 文脈チップ: 押せばその場で AI が成果物を出す */}
+              {starterChips.map(s => (
+                <button key={s.t} disabled={busy} onClick={() => send(s.prompt)} style={{
                   background: 'rgba(255,255,255,0.85)',
                   border: `1px solid ${bg.cardBorder}`,
                   borderRadius: 12, padding: '0.7rem 0.9rem',
-                  cursor: 'pointer', fontSize: '0.88rem',
+                  cursor: busy ? 'wait' : 'pointer', fontSize: '0.88rem', minHeight: 44,
                   color: '#1F1A2E', fontFamily: IRIS_FONTS.body, textAlign: 'left',
+                  opacity: busy ? 0.55 : 1,
                   display: 'inline-flex', alignItems: 'center', gap: '0.55rem',
+                  transition: 'transform 0.12s, opacity 0.12s',
                 }}>
                   <s.Ico size={16} color={bg.accent} strokeWidth={2.2} />
                   {s.t}
@@ -708,7 +758,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
           />
 
           <button
-            onClick={send}
+            onClick={() => send()}
             disabled={busy || (!textInput.trim() && pendingImages.length === 0)}
             style={{
               background: 'linear-gradient(135deg, #E1306C, #833AB4 50%, #FCB045)',
