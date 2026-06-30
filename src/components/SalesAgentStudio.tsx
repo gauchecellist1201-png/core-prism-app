@@ -9,6 +9,9 @@ import { IconBadge, IconChip } from './icons';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import { useSalesAgent } from '../hooks/useSalesAgent';
 import { pickTodaysCompanies, type AiPick } from '../lib/salesAgentMatch';
+import { generateApproachEmail } from '../lib/salesAgent';
+import { isGmailConfigured, isGmailConnected, connectGmail, fetchInbox, createGmailDraft, loadGmailUser } from '../lib/gmail';
+import { extractProspectsFromInbox, qualifyProspects, type QualifiedProspect } from '../lib/salesGmailProspects';
 import { todaySeed } from '../data/companies-jp';
 import { useCopyButton } from '../hooks/useCopyButton';
 import ApiErrorCard from './ApiErrorCard';
@@ -28,7 +31,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Tab = 'today' | 'history' | 'product' | 'script';
+type Tab = 'today' | 'gmail' | 'history' | 'product' | 'script';
 
 interface SalesScript {
   opening: string;            // 掴みの一言
@@ -123,6 +126,86 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
       setScriptBusy(false);
     }
   }, [scriptTarget, ownProduct]);
+
+  // ─── Gmail から営業先を発掘 (NoimosAI 型) ─────────
+  const [gmailConnected, setGmailConnected] = useState(() => isGmailConnected());
+  const [prospects, setProspects] = useState<QualifiedProspect[]>([]);
+  const [gmailBusy, setGmailBusy] = useState<'connect' | 'scan' | null>(null);
+  const [gmailStep, setGmailStep] = useState('');
+  const [draftedEmails, setDraftedEmails] = useState<Record<string, boolean>>({});
+  const [draftingEmail, setDraftingEmail] = useState<string | null>(null);
+  const [dismissedProspects, setDismissedProspects] = useState<string[]>([]);
+
+  const connectGmailFlow = useCallback(async () => {
+    setGmailBusy('connect'); setError(null);
+    try {
+      await connectGmail();
+      setGmailConnected(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gmail 連携に失敗しました');
+    } finally { setGmailBusy(null); }
+  }, []);
+
+  const scanInboxForProspects = useCallback(async () => {
+    if (!ownProduct?.trim()) {
+      setTab('product');
+      setError('まず「自社の商材」を登録してください。何を売るかが分からないと、営業先の相性を判定できません。');
+      return;
+    }
+    setGmailBusy('scan'); setError(null); setProspects([]);
+    try {
+      setGmailStep('受信メールを読み込んでいます…');
+      const messages = await fetchInbox(40);
+      if (!messages.length) {
+        setError('直近14日の受信メールが見つかりませんでした。やり取りのあるメールが必要です。');
+        return;
+      }
+      setGmailStep('差出人から営業先候補を抽出しています…');
+      const self = loadGmailUser()?.email;
+      const raw = extractProspectsFromInbox(messages, self);
+      if (!raw.length) {
+        setError('営業先になりそうな差出人が見つかりませんでした（自動配信・通知メールは除外しています）。');
+        return;
+      }
+      setGmailStep(`${raw.length}社の相性を AI が判定しています…`);
+      const qualified = await qualifyProspects({ settings, ownProduct, prospects: raw });
+      setProspects(qualified);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '営業先の発掘に失敗しました');
+    } finally { setGmailBusy(null); setGmailStep(''); }
+  }, [ownProduct, settings]);
+
+  // 候補1社に最適な営業メールを作り、Gmail に「下書き」として保存(送信はしない=安全)
+  const draftEmailForProspect = useCallback(async (p: QualifiedProspect) => {
+    setDraftingEmail(p.email); setError(null);
+    try {
+      const lead = sa.addLead(persona.id, {
+        companyName: p.companyGuess,
+        contactName: p.isPersonal ? p.name : undefined,
+        email: p.email,
+        score: p.fit,
+        scoreReason: p.fitReason,
+        stage: 'new',
+        source: 'gmail-prospect',
+        notes: `直近件名: ${p.lastSubject || '(なし)'}`,
+      });
+      const draft = await generateApproachEmail({
+        settings, persona, lead, ownProduct,
+        goal: `${p.angle || '相手の課題に自社商材がどう効くか'}を軸に、返信をもらう`,
+      });
+      const subject = draft.subject || `${p.companyGuess}様へのご提案`;
+      await createGmailDraft({ to: p.email, subject, body: draft.body });
+      sa.addApproach({
+        leadId: lead.id, type: 'email',
+        subject, body: draft.body, tone: draft.tone,
+        hitProbability: draft.hitProbability, status: 'draft',
+        generatedAt: new Date().toISOString(),
+      });
+      setDraftedEmails(prev => ({ ...prev, [p.email]: true }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'メール下書きの作成に失敗しました');
+    } finally { setDraftingEmail(null); }
+  }, [settings, persona, ownProduct, sa]);
 
   // ─── 今日のピックアップ ─────────
   const [picks, setPicks] = useState<AiPick[]>([]);
@@ -366,6 +449,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
         <div className="cp-modal-tabs">
           {([
             { id: 'today',   icon: Sparkles,   label: '今日の5社' },
+            { id: 'gmail',   icon: Inbox,      label: 'Gmailから営業先' },
             { id: 'script',  icon: Mic,        label: '商談台本' },
             { id: 'history', icon: FolderOpen, label: `採用済 (${approvedLeadCount})` },
             { id: 'product', icon: Gift,       label: '自社の商材' },
@@ -654,6 +738,99 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                   );
                 })}
               </AnimatePresence>
+            </>
+          )}
+
+          {/* ─── Gmail から営業先を発掘 ─── */}
+          {tab === 'gmail' && (
+            <>
+              <div className="cp-card-section cp-stack-sm">
+                <div className="cp-row-between" style={{ flexWrap: 'wrap', gap: 10 }}>
+                  <div className="min-w-0">
+                    <p className="cp-h3" style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                      <IconChip icon={Inbox} color={persona.accentColor} size={18} />
+                      Gmail のやり取りから営業先を見つける
+                    </p>
+                    <p className="cp-meta">
+                      受信メールの差出人（実在の会社・担当者）から、自社商材の営業先になりそうな相手を AI が選び、
+                      それぞれに最適な営業メールを作って Gmail の<strong>下書き</strong>に入れます（送信はしません。中身を確認して Gmail から送れます）。
+                    </p>
+                  </div>
+                  <div className="cp-row" style={{ gap: 6, flexShrink: 0 }}>
+                    {!isGmailConfigured() ? (
+                      <p className="cp-tiny" style={{ color: '#FBBF24' }}>Gmail 連携が未設定です（管理者に VITE_GOOGLE_CLIENT_ID の設定を依頼してください）。</p>
+                    ) : !gmailConnected ? (
+                      <button onClick={connectGmailFlow} disabled={gmailBusy === 'connect'}
+                        className="cp-btn cp-btn-primary"
+                        style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                        <Mail size={16} strokeWidth={2.4} /><span>{gmailBusy === 'connect' ? '連携中…' : 'Gmail を連携する'}</span>
+                      </button>
+                    ) : (
+                      <button onClick={scanInboxForProspects} disabled={gmailBusy === 'scan'}
+                        className="cp-btn cp-btn-primary"
+                        style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                        {gmailBusy === 'scan'
+                          ? <><Brain size={16} strokeWidth={2.4} /><span>探しています…</span></>
+                          : <><Sparkles size={16} strokeWidth={2.4} /><span>受信メールから営業先を探す</span></>}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {!ownProduct?.trim() && (
+                  <p className="cp-tiny" style={{ color: '#FBBF24' }}>
+                    まだ自社の商材が未登録です。「自社の商材」タブで一度だけ書いておくと、相性を正しく判定できます。
+                  </p>
+                )}
+                {gmailBusy === 'scan' && gmailStep && (
+                  <p className="cp-tiny" style={{ color: persona.accentColor }}>{gmailStep}</p>
+                )}
+              </div>
+
+              {gmailConnected && prospects.length === 0 && gmailBusy !== 'scan' && (
+                <div className="cp-empty">
+                  <p className="cp-empty-icon"><Inbox size={34} strokeWidth={1.6} color={persona.accentColor} /></p>
+                  <p>まだ営業先がありません</p>
+                  <p className="cp-meta">「受信メールから営業先を探す」を押すと、やり取りのある会社から候補を出します</p>
+                </div>
+              )}
+
+              {prospects.filter(p => !dismissedProspects.includes(p.email)).map(p => {
+                const drafted = draftedEmails[p.email];
+                return (
+                  <div key={p.email} className="cp-card-section cp-stack-sm" style={{ borderLeft: `3px solid ${p.fit >= 70 ? '#34D399' : p.fit >= 40 ? persona.accentColor : '#94a3b8'}` }}>
+                    <div className="cp-row-between" style={{ gap: 8, alignItems: 'flex-start' }}>
+                      <div className="min-w-0">
+                        <p className="cp-h3" style={{ marginBottom: 2 }}>
+                          {p.companyGuess}
+                          {p.recommend && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 800, color: '#047857', background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 999, padding: '2px 8px' }}>おすすめ</span>}
+                        </p>
+                        <p className="cp-meta" style={{ wordBreak: 'break-all' }}>{p.email}{p.lastSubject ? ` ・ 直近件名「${p.lastSubject}」` : ''}</p>
+                      </div>
+                      <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, color: '#0a0a0f', background: p.fit >= 70 ? '#34D399' : p.fit >= 40 ? '#FBBF24' : '#cbd5e1', borderRadius: 999, padding: '3px 10px' }}>相性 {p.fit}</span>
+                    </div>
+                    <p className="cp-meta" style={{ lineHeight: 1.6 }}>{p.fitReason}</p>
+                    {p.angle && <p className="cp-tiny" style={{ color: persona.accentColor }}>刺さる切り口: {p.angle}</p>}
+                    <div className="cp-row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                      {drafted ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#047857', fontWeight: 700, fontSize: 13 }}>
+                          <Check size={15} strokeWidth={2.6} /> Gmail に下書きを作成しました（Gmailで確認して送信）
+                        </span>
+                      ) : (
+                        <>
+                          <button onClick={() => draftEmailForProspect(p)} disabled={draftingEmail === p.email}
+                            className="cp-btn cp-btn-primary"
+                            style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            {draftingEmail === p.email
+                              ? <><Brain size={15} strokeWidth={2.4} /><span>作成中…</span></>
+                              : <><Mail size={15} strokeWidth={2.4} /><span>最適な営業メールを作る → Gmail下書き</span></>}
+                          </button>
+                          <button onClick={() => setDismissedProspects(prev => [...prev, p.email])} className="cp-btn cp-btn-ghost">却下</button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </>
           )}
 
