@@ -72,6 +72,7 @@ const FAQPage = lazy(() => import('./pages/FAQPage'));
 const TokushohoPage = lazy(() => import('./pages/TokushohoPage'));
 const MusicSchoolLanding = lazy(() => import('./components/MusicSchoolLanding'));
 const IndustryLanding = lazy(() => import('./components/IndustryLanding'));
+const ConciergePage = lazy(() => import('./prism/concierge/ConciergePage'));
 import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, isTrialExpired, syncSubscriptionState, type Plan } from './lib/billing';
 import TrialExpiredLock from './components/TrialExpiredLock';
 import { PrismBackground } from './components/PrismBackground';
@@ -253,6 +254,11 @@ function isErrorLogPath(): boolean {
   return p === '/master/error-log' || p === '/error-log';
 }
 
+function isConciergePath(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.pathname.startsWith('/concierge');
+}
+
 function isCorpPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
@@ -391,6 +397,11 @@ export default function App() {
   // /pricing — 公開価格ページ + ROI 計算機
   if (isPricingPath()) {
     return <Suspense fallback={<RouteFallback />}><PricingPage /></Suspense>;
+  }
+
+  // /concierge — 高級コンシェルジュ・チャットウィジェット (ショーケース + ?embed=1 埋め込み)
+  if (isConciergePath()) {
+    return <Suspense fallback={<RouteFallback />}><ConciergePage /></Suspense>;
   }
 
   // /corp — 株式会社コア (CORE Inc.) 法人 LP

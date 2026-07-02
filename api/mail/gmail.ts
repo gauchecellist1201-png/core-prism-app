@@ -20,8 +20,8 @@ function applyCors(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Max-Age', '86400');
 }
 
-type Template = 'welcome' | 'trial_ending' | 'cancel_save' | 'reengagement';
-const VALID_TEMPLATES: Template[] = ['welcome', 'trial_ending', 'cancel_save', 'reengagement'];
+type Template = 'welcome' | 'trial_ending' | 'cancel_save' | 'reengagement' | 'lead_notify';
+const VALID_TEMPLATES: Template[] = ['welcome', 'trial_ending', 'cancel_save', 'reengagement', 'lead_notify'];
 
 interface TemplateData {
   name?: string;
@@ -30,6 +30,16 @@ interface TemplateData {
   code?: string;
   days?: number;
   upgradeUrl?: string;
+  /** lead_notify 用 (オーナー宛通知。宛先はサーバ側で固定) */
+  subject?: string;
+  bodyText?: string;
+  replyTo?: string;
+}
+
+function escGm(s: unknown): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function baseHtml(title: string, body: string): string {
@@ -63,6 +73,13 @@ function buildEmail(template: Template, data: TemplateData): { subject: string; 
       html: baseHtml('またいつでも戻ってきてください', `<div class="header" style="background:linear-gradient(135deg,#374151,#6B7280);"><h1>ご利用ありがとうございました</h1></div><div class="body"><p>${name} さん、これまでのご利用、誠にありがとうございました。</p><div class="highlight" style="border-color:#10B981;background:#f0fdf4;"><strong>復帰クーポン:</strong> <span style="font-size:22px;font-weight:900;letter-spacing:3px;color:#065f46;">${code}</span><br><span style="font-size:12px;color:#6B7280;">初月 50% OFF。有効期限: 30 日間</span></div><a class="cta" style="background:linear-gradient(135deg,#059669,#10B981);" href="${guideUrl}">再開する →</a></div>`),
     };
   }
+  if (template === 'lead_notify') {
+    // オーナー宛のリード/お問い合わせ通知 (Resend 失敗時のフォールバック含む)
+    return {
+      subject: data.subject || '[CORE] 新しいリード・お問い合わせ',
+      html: baseHtml('新しいリード・お問い合わせ', `<div class="header" style="background:linear-gradient(135deg,#0F1B33,#B08D2F);"><h1>新しいリード・お問い合わせ</h1><p>コンシェルジュ / フォーム経由</p></div><div class="body"><div style="white-space:pre-wrap;font-size:14px;line-height:1.8;">${escGm(data.bodyText || '')}</div></div>`),
+    };
+  }
   // reengagement
   const days = data.days ?? 1;
   return {
@@ -91,11 +108,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const to = body.to as string | undefined;
   const template = body.template as string | undefined;
   const data: TemplateData = (body.data as TemplateData) || {};
-  if (!to || !template) {
-    return res.status(400).json({ error: 'Missing to or template' });
+  if (!template) {
+    return res.status(400).json({ error: 'Missing template' });
   }
   if (!VALID_TEMPLATES.includes(template as Template)) {
     return res.status(400).json({ error: 'Unknown template' });
+  }
+  // lead_notify は宛先をオーナーに固定 (外部から任意宛先へ送らせない)
+  const finalTo = template === 'lead_notify'
+    ? (process.env.FEEDBACK_TO_EMAIL || user)
+    : to;
+  if (!finalTo) {
+    return res.status(400).json({ error: 'Missing to' });
   }
 
   const fromName = process.env.GMAIL_FROM_NAME || 'CORE Prism';
@@ -118,9 +142,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     const info = await transporter.sendMail({
       from: `"${fromName}" <${user}>`,
-      to,
+      to: finalTo,
       subject,
       html,
+      ...(template === 'lead_notify' && data.replyTo ? { replyTo: data.replyTo } : {}),
     });
     return res.status(200).json({ success: true, id: info.messageId, from: user, via: 'gmail-smtp' });
   } catch (e: any) {

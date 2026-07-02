@@ -37,6 +37,20 @@ function esc(s: unknown): string {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Resend が使えない/失敗した時の Gmail SMTP フォールバック。
+// リード通知の機会損失を防ぐため、必ずどちらかでオーナーに届ける。
+async function gmailFallback(req: Request, subject: string, bodyText: string, replyTo?: string): Promise<boolean> {
+  try {
+    const u = new URL('/api/mail/gmail', req.url);
+    const r = await fetch(u.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ template: 'lead_notify', data: { subject, bodyText, replyTo } }),
+    });
+    return r.ok;
+  } catch { return false; }
+}
+
 interface FeedbackBody {
   brand?: 'prism' | 'iris';
   nps?: number;
@@ -94,9 +108,16 @@ export default async function handler(req: Request) {
   const apiKey = process.env.RESEND_API_KEY;
   const ownerEmail = process.env.FEEDBACK_TO_EMAIL || process.env.EMAIL_FROM;
 
-  // env が無ければ noop で 200 を返す (localStorage + サーバ logs に蓄積済み)
+  const fbBrandLabel = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
+  const fbSubject = kind === 'contact'
+    ? `[リード] ${fbBrandLabel} お問い合わせ${email ? ` from ${email}` : ''}`
+    : `[Beta フィードバック] ${fbBrandLabel} NPS=${nps}`;
+  const fbText = `Email: ${email || '(未記入)'}\nURL: ${url || ''}\n\n${comment || '(コメント無し)'}`;
+
+  // Resend 未設定でも Gmail SMTP で必ずオーナーへ届ける (リード機会損失防止)
   if (!apiKey || !ownerEmail) {
-    return json({ success: true, delivered: false, reason: 'mail_not_configured', logged: true }, 200, ch);
+    const ok = await gmailFallback(req, fbSubject, fbText, email);
+    return json({ success: true, delivered: ok, reason: ok ? 'gmail_fallback' : 'mail_not_configured', logged: true }, 200, ch);
   }
 
   const from = process.env.EMAIL_FROM || 'noreply@coreprism.app';
@@ -126,7 +147,8 @@ export default async function handler(req: Request) {
       body: JSON.stringify({ from, to: ownerEmail, subject, html }),
     });
     if (!resp.ok) {
-      return json({ success: true, delivered: false, reason: 'mail_failed' }, 200, ch);
+      const ok = await gmailFallback(req, fbSubject, fbText, email);
+      return json({ success: true, delivered: ok, reason: ok ? 'gmail_fallback' : 'mail_failed' }, 200, ch);
     }
 
     // KKK (2026-06-04): contact kind は自動返信メールも送る
@@ -167,7 +189,8 @@ export default async function handler(req: Request) {
 
     return json({ success: true, delivered: true }, 200, ch);
   } catch {
-    return json({ success: true, delivered: false, reason: 'mail_exception' }, 200, ch);
+    const ok = await gmailFallback(req, fbSubject, fbText, email);
+    return json({ success: true, delivered: ok, reason: ok ? 'gmail_fallback' : 'mail_exception' }, 200, ch);
   }
 }
 
