@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserPlus, Trash2, Copy, Check, Mail, Crown, Pencil, Eye, ArrowRight, X } from 'lucide-react';
 import { confirmAction } from '../lib/confirmDialog';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import {
   loadMembers, addInvite, updateRole, removeMember, hardDelete,
   buildInviteUrl, ROLE_META,
@@ -50,7 +51,7 @@ export default function TeamSettings() {
     try {
       const m = addInvite(email, role, parentEmail);
       const inviteUrl = buildInviteUrl(m.inviteToken || m.id);
-      const res = await fetch('/api/team/invite', {
+      const res = await fetchWithTimeout('/api/team/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

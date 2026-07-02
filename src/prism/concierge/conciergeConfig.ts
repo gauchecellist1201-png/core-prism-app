@@ -34,11 +34,21 @@ export interface ConciergeConfig {
   conciergeName?: string;
   /** 一人称 (例: 私 / わたくし) */
   firstPerson?: string;
+  /** 貼るだけナレッジ — 会社案内・商品説明など。AI はこの内容を最優先の根拠に答える */
+  knowledge?: string;
+  /** 応対の人格: classic=正統派(高級ホテル) / warm=親しみやすい / sharp=簡潔なプロ */
+  tone?: 'classic' | 'warm' | 'sharp';
+  /** 有望なお客様の条件 (AI SDR)。会話の流れで自然に確認し日程提案へつなぐ */
+  qualify?: string;
+  /** 先に話しかける一言 (埋め込みバブルの吹き出し)。空なら声かけしない */
+  proactiveMessage?: string;
+  /** 先に話しかけるまでの秒数 */
+  proactiveSec?: number;
 }
 
 /** Prism 自身のコンシェルジュ (デフォルト設定 = ライブデモにもなる) */
 export const DEFAULT_CONCIERGE_CONFIG: ConciergeConfig = {
-  brandName: 'CORE Prism',
+  brandName: 'Crystal',
   tagline: '24時間、あなたのブランドを体現するコンシェルジュ',
   accentColor: '#C9A96E',
   industry: '高級ブランド向け AI コンシェルジュの提供',
@@ -65,6 +75,10 @@ export const DEFAULT_CONCIERGE_CONFIG: ConciergeConfig = {
   contactEmail: 'core.guild.inc@gmail.com',
   conciergeName: 'コンシェルジュ',
   firstPerson: '私',
+  tone: 'classic',
+  qualify: '自社サイトへの AI コンシェルジュ導入を検討していて、月3万円前後の予算感がある方',
+  proactiveMessage: 'ご覧いただきありがとうございます。ご質問には、その場でお答えできます。',
+  proactiveSec: 8,
 };
 
 // ─── Unicode 安全な base64url エンコード/デコード ───────────
@@ -121,6 +135,13 @@ export function normalizeConciergeConfig(raw: Partial<ConciergeConfig> | null | 
     contactEmail: String(raw.contactEmail || '').includes('@') ? sanitizeString(raw.contactEmail, 200) : undefined,
     conciergeName: sanitizeString(raw.conciergeName, 30) || d.conciergeName,
     firstPerson: sanitizeString(raw.firstPerson, 10) || d.firstPerson,
+    knowledge: sanitizeString(raw.knowledge, 4000) || undefined,
+    tone: raw.tone === 'warm' || raw.tone === 'sharp' ? raw.tone : 'classic',
+    qualify: sanitizeString(raw.qualify, 300) || undefined,
+    proactiveMessage: sanitizeString(raw.proactiveMessage, 140) || undefined,
+    proactiveSec: typeof raw.proactiveSec === 'number' && Number.isFinite(raw.proactiveSec)
+      ? Math.min(60, Math.max(3, Math.round(raw.proactiveSec)))
+      : d.proactiveSec,
   };
 }
 

@@ -256,7 +256,9 @@ function isErrorLogPath(): boolean {
 
 function isConciergePath(): boolean {
   if (typeof window === 'undefined') return false;
-  return window.location.pathname.startsWith('/concierge');
+  const p = window.location.pathname;
+  // Crystal — 6つ目のサービス (白×クリスタル×金)。/concierge は旧名の互換パス
+  return p.startsWith('/crystal') || p.startsWith('/concierge');
 }
 
 function isCorpPath(): boolean {

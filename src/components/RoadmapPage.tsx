@@ -8,6 +8,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Heart, Sparkles, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 
 type Status = 'shipping' | 'building' | 'planning';
 
@@ -82,7 +83,7 @@ export default function RoadmapPage() {
   const load = async () => {
     setLoading(true); setVoteErr(null);
     try {
-      const res = await fetch('/api/roadmap-votes');
+      const res = await fetchWithTimeout('/api/roadmap-votes', {}, 12000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json() as { items: Record<string, number> };
       setCounts(j.items || {});
@@ -99,11 +100,11 @@ export default function RoadmapPage() {
     const next = new Set(voted); next.add(id); setVoted(next); writeVoted(next);
     setCounts((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
     try {
-      const res = await fetch('/api/roadmap-votes', {
+      const res = await fetchWithTimeout('/api/roadmap-votes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
-      });
+      }, 15000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json() as { count?: number };
       if (typeof j.count === 'number') setCounts((c) => ({ ...c, [id]: j.count! }));

@@ -140,9 +140,11 @@ interface Props {
   model?: string;
   /** 生成成功時に結果を親へ渡す (IrisPlatformCards を親側で展開) */
   onResult: (r: ThoughtDropResult) => void;
+  /** ヒーロー (IrisCrystalHero) 側に見出しがある時は内部見出しを消す */
+  hideHeading?: boolean;
 }
 
-export default function IrisThoughtDrop({ bg, model, onResult }: Props) {
+export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Props) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -197,6 +199,7 @@ export default function IrisThoughtDrop({ bg, model, onResult }: Props) {
   return (
     <section aria-label="思考を投げる" style={{ display: 'grid', gap: '0.9rem' }}>
       {/* 見出し */}
+      {!hideHeading && (
       <div style={{ textAlign: 'center', padding: '0.25rem 0.5rem 0' }}>
         <p style={{
           fontSize: '0.66rem', letterSpacing: '0.32em', color: bg.accent,
@@ -214,6 +217,7 @@ export default function IrisThoughtDrop({ bg, model, onResult }: Props) {
           思考を投げるだけ。<br />あとはIrisが全てを支配する。
         </h2>
       </div>
+      )}
 
       {/* 入力カード — Apple ボイスメモの静謐さ。余計な装飾ゼロ */}
       <div style={{

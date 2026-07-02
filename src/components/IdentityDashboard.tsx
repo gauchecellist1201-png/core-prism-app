@@ -9,6 +9,7 @@ import ModeSwitcher from './ModeSwitcher';
 import CognitiveDashboard from './CognitiveDashboard';
 import AISidebar from './AISidebar';
 import SupportChat from './SupportChat';
+import PrismQuickCapture from './PrismQuickCapture';
 import ShortcutHelpModal from './ShortcutHelpModal';
 import PwaInstallPrompt from './PwaInstallPrompt';
 import FeedbackWidget from './FeedbackWidget';
@@ -2134,6 +2135,30 @@ export default function IdentityDashboard({
         <span>横断検索</span>
         <span className="cp-pill" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>⌘K</span>
       </button>
+
+      {/* ★モバイルの「単一入口」：スマホは⌘Kが無く、上の入口は md:flex で隠れる＝コマンドバーに到達できない。
+          iPhone最優先で、左下に常時見える入口を置く（「何から触ればいいか分からない」を解消）。SupportChatは右下なので左下に。 */}
+      <button
+        onClick={() => setShowCmdK(true)}
+        className="md:hidden fixed left-4 z-30 flex items-center gap-2 rounded-full px-4 font-semibold"
+        style={{
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+          minHeight: 48,
+          fontSize: '0.85rem',
+          background: 'rgba(20, 20, 30, 0.82)',
+          backdropFilter: 'blur(20px)',
+          color: 'rgba(255,255,255,0.92)',
+          border: '1px solid rgba(255,255,255,0.18)',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.38)',
+        }}
+        aria-label="検索・操作メニューを開く"
+      >
+        <Search size={16} strokeWidth={2.2} />
+        <span>探す・操作する</span>
+      </button>
+
+      {/* ★クイック・キャプチャ：左下・コマンドFABの上に常設。思いつきを1〜2タップで知識へ（貯める→効く） */}
+      <PrismQuickCapture onAddNote={onAddKnowledgeNote} accentColor={persona.accentColor} />
 
       <SupportChat
         brand="prism"

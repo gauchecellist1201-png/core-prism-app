@@ -17,6 +17,8 @@ export interface ConciergeMessage {
   role: 'user' | 'assistant';
   content: string;
   ts: number;
+  /** AI の [action:booking] で付く予約ページ (メッセージ直下に予約ボタンを出す) */
+  bookingUrl?: string;
 }
 
 export type ConciergeState = 'idle' | 'listening' | 'thinking' | 'speaking';
@@ -29,6 +31,20 @@ export interface LeadDraft {
 
 const TIMEOUT_MS = 40_000;
 const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+
+// AI が応答に埋め込むアクション記号 (お客様には見せず、UI 側で実行する)
+const ACTION_RE = /\s*\[action:(lead|booking)\]\s*/g;
+
+function extractActions(raw: string): { text: string; lead: boolean; booking: boolean } {
+  let lead = false;
+  let booking = false;
+  const text = raw.replace(ACTION_RE, (_m, a: string) => {
+    if (a === 'lead') lead = true;
+    else booking = true;
+    return '\n';
+  }).trim();
+  return { text: text || raw.trim(), lead, booking };
+}
 
 function makeId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -53,6 +69,8 @@ export function useConcierge(cfg: ConciergeConfig) {
 
   const cfgRef = useRef(cfg);
   cfgRef.current = cfg;
+  /** 送信済みなら [action:lead] でカードを開き直さない */
+  const leadSentRef = useRef(false);
 
   // ── typewriter: 受信済み全文を少しずつ見せる ──────────
   useEffect(() => {
@@ -153,9 +171,18 @@ export function useConcierge(cfg: ConciergeConfig) {
         return t as string;
       });
 
-      const aMsg: ConciergeMessage = { id: makeId('a'), role: 'assistant', content: reply, ts: Date.now() };
+      const parsed = extractActions(reply);
+      const aMsg: ConciergeMessage = { id: makeId('a'), role: 'assistant', content: parsed.text, ts: Date.now() };
+      if (parsed.booking && cfgRef.current.bookingUrl) aMsg.bookingUrl = cfgRef.current.bookingUrl;
       setMessages(prev => [...prev, aMsg]);
       setTyping({ id: aMsg.id, shown: 0 });
+      // AI がお客様の同意を確認 → 連絡先カードをそっと自動で開く (会話中アクション)
+      if (parsed.lead && !leadSentRef.current) {
+        window.setTimeout(() => {
+          setLeadError(null);
+          setLeadOpen(true);
+        }, 900);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : '不明なエラー';
       setError(msg);
@@ -192,13 +219,14 @@ export function useConcierge(cfg: ConciergeConfig) {
     setLeadError(null);
     const c = cfgRef.current;
     const comment = [
-      `[prism-concierge] ご案内希望リード`,
+      `[Crystal] ご案内希望リード`,
       `ブランド: ${c.brandName} (${c.industry})`,
       `お名前: ${name || '(未記入)'}`,
       `ご希望・メモ: ${draft.note.trim() || '(なし)'}`,
-      '--- 会話サマリ ---',
-      summarizeConversation(messages),
-    ].join('\n');
+      c.qualify ? `有望条件 (設定): ${c.qualify}` : '',
+      '--- 会話の全文 ---',
+      summarizeConversation(messages, 24),
+    ].filter(Boolean).join('\n');
     try {
       const ctrl = new AbortController();
       const timer = window.setTimeout(() => ctrl.abort(), 20_000);
@@ -206,7 +234,7 @@ export function useConcierge(cfg: ConciergeConfig) {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          brand: 'prism-concierge',
+          brand: 'crystal-concierge',
           kind: 'contact',
           comment,
           email,
@@ -218,6 +246,7 @@ export function useConcierge(cfg: ConciergeConfig) {
       }).finally(() => window.clearTimeout(timer));
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setLeadSent(true);
+      leadSentRef.current = true;
       setLeadOpen(false);
       // 会話上でも上品にお礼を返す (通信不要のローカルメッセージ)
       setMessages(prev => [...prev, {
@@ -241,6 +270,7 @@ export function useConcierge(cfg: ConciergeConfig) {
     setFailedText(null);
     setTyping(null);
     setLeadSent(false);
+    leadSentRef.current = false;
   }, []);
 
   return {

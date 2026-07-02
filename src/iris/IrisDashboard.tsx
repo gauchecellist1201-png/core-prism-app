@@ -136,6 +136,7 @@ const IrisStrategistView = React.lazy(() => import('./IrisStrategistView'));
 import IrisQuickAdd from './IrisQuickAdd';
 import IrisVoiceHome from './IrisVoiceHome';
 import IrisThoughtDropSection from './IrisThoughtDropSection';
+import IrisCrystalHero from './IrisCrystalHero';
 import { IrisLogo } from '../components/Logo';
 import SupportChat from '../components/SupportChat';
 import ShortcutHelpModal from '../components/ShortcutHelpModal';
@@ -1588,14 +1589,17 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         <div key={tab}>
             {tab === 'home' && (
               <>
-                {/* ★フラッグシップ (2026-07-02): 思考を投げるだけ。あとは Iris が全てを支配する。
-                    巨大入力→X/Instagram/note 並列生成→実物風カード→1タップ予約 ＋ 今週のあなた */}
-                <IrisThoughtDropSection
-                  bg={bg}
-                  model={settings.preferredModel}
-                  postQueue={postQueue}
-                  handle={mediaKit?.handleName}
-                />
+                {/* ★フラッグシップ (2026-07-02): クリスタルの花のヒーロー + 思考を投げるだけ。
+                    ガラスの花(ブランドロゴ再現・開花アニメ)→見出し→巨大入力→3つの入口 */}
+                <IrisCrystalHero bg={bg} onNavigate={(t) => setTab(t as Tab)}>
+                  <IrisThoughtDropSection
+                    bg={bg}
+                    model={settings.preferredModel}
+                    postQueue={postQueue}
+                    handle={mediaKit?.handleName}
+                    hideHeading
+                  />
+                </IrisCrystalHero>
                 {/* 連携済みなら、まず一気通貫プラン（分析→戦略→リール→稼ぐ）を最上部に。
                     迷わず1本道で「次へ」進める ＝ 価値に0スクロールで届く。(2026-06-29 抜本的に使いやすく) */}
                 {igProfile && (

@@ -4,6 +4,15 @@
 
 const MAX_CONCURRENT = 4;  // 2→4 (会議文字起こし等のチャンク並列処理を高速化。429 はリトライで吸収)
 const MAX_RETRIES = 4;
+// ★弱い電波対策：AI応答が返らず固まる（ThinkingIndicatorが無限に回る）のを防ぐ上限時間。
+//   40秒は大きめの生成でも十分。メッセージは isTransientError に当たらない語にして“即失敗→もう一度”にする（4回リトライで待たせない）。
+const AI_TIMEOUT_MS = 40000;
+function withAiTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('AI応答が時間内に返りませんでした。電波の良い場所で、もう一度お試しください。')), ms);
+    p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+  });
+}
 
 type Task<T> = () => Promise<T>;
 type Pending = { run: () => Promise<void>; };
@@ -102,7 +111,7 @@ export function enqueueClaudeCall<T>(task: Task<T>): Promise<T> {
       let lastErr: unknown = null;
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
-          const result = await task();
+          const result = await withAiTimeout(task(), AI_TIMEOUT_MS);
           // AI 呼出し成功 → クレジット消費を記録 (master は credits.ts で無視される)
           try {
             const m = await import('./credits');

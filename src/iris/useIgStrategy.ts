@@ -4,6 +4,7 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import type { IgProfile } from './instagramConnect';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 
 export interface StrategyItem {
   title: string;
@@ -68,11 +69,11 @@ export function useIgStrategy(profile: IgProfile | null): {
     setLoading(true);
     setError(null);
 
-    fetch('/api/iris/strategy-from-ig', {
+    fetchWithTimeout('/api/iris/strategy-from-ig', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ profile, focus: '案件獲得 + フォロワー成長' }),
-    })
+    }, 40000)
       .then(async (r) => {
         if (!r.ok) throw new Error(`戦略の取得に失敗 (${r.status})`);
         return r.json() as Promise<IgStrategyData>;

@@ -7,6 +7,7 @@
 // ============================================================
 
 import { useEffect, useState } from 'react';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import { ArrowLeft, ShieldCheck, ShieldAlert, ShieldX, RefreshCw, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
 
 interface PublicService { name: string; ok: boolean | null; latencyMs: number | null; note: string; }
@@ -33,7 +34,7 @@ export default function StatusPage() {
   const load = async () => {
     setLoading(true); setErr(null);
     try {
-      const res = await fetch('/api/status', { headers: { 'Accept': 'application/json' } });
+      const res = await fetchWithTimeout('/api/status', { headers: { 'Accept': 'application/json' } }, 12000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json() as StatusData;
       setData(j);

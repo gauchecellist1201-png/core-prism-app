@@ -56,7 +56,7 @@ interface Props {
 type CategoryKey = 'recent' | 'nav' | 'create' | 'ai' | 'suggestion' | 'changelog' | 'data' | 'persona' | 'knowledge' | 'task' | 'help';
 
 const CATEGORY_LABEL: Record<CategoryKey, string> = {
-  recent: '最近使った',
+  recent: 'よく使う・最近',
   nav: 'ナビ',
   create: '新規作成',
   ai: 'AI 会社に任せる',
@@ -121,6 +121,7 @@ const RECENT_MAX = 10;
 interface RecentEntry {
   id: string; // action id (kind 別に一意化)
   ts: number;
+  count?: number; // 使用回数（学習する初期表示＝よく使う順に並べるため）
 }
 
 function loadRecent(): RecentEntry[] {
@@ -501,7 +502,9 @@ export default function CommandPalette({
   const recentItems = useMemo<CmdAction[]>(() => {
     const byId = new Map<string, CmdAction>();
     for (const { item } of allItems) byId.set(actionId(item), item);
-    return recent
+    // ★学習する初期表示：よく使う順（count降順）→同数なら最近使った順（ts降順）。
+    return [...recent]
+      .sort((a, b) => (b.count ?? 0) - (a.count ?? 0) || b.ts - a.ts)
       .map(r => byId.get(r.id))
       .filter((x): x is CmdAction => Boolean(x))
       .slice(0, 10);
@@ -629,7 +632,8 @@ export default function CommandPalette({
     // recent に記録 (ai-delegate は prompt が毎回違うので除外)
     if (item.kind !== 'ai-delegate') {
       const id = actionId(item);
-      const next = [{ id, ts: Date.now() }, ...recent.filter(r => r.id !== id)].slice(0, RECENT_MAX);
+      const prevCount = recent.find(r => r.id === id)?.count ?? 0;
+      const next = [{ id, ts: Date.now(), count: prevCount + 1 }, ...recent.filter(r => r.id !== id)].slice(0, RECENT_MAX);
       saveRecent(next);
       setRecent(next);
     }

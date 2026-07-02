@@ -150,6 +150,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
 
   // 台本
   const [freeTopic, setFreeTopic] = useState('');
+  const [dur, setDur] = useState(30); // 台本の尺（秒）：15/30/60 から選ぶ＝媒体に合わせた“尺違い”を即生成
   const [script, setScript] = useState<ProductionScript | null>(null);
   const [scriptBusy, setScriptBusy] = useState(false);
   const [scriptTopic, setScriptTopic] = useState('');
@@ -289,7 +290,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
     if (!topic.trim()) { setErr('台本にするネタ・テーマを入れてください'); return; }
     setScriptBusy(true); setErr(null); setScript(null); setScriptTopic(topic);
     try {
-      const s = await generateProductionScript({ settings, client: activeClient, igProfile, pastPosts, topic });
+      const s = await generateProductionScript({ settings, client: activeClient, igProfile, pastPosts, topic, durationSec: dur });
       setScript(s);
     } catch (e: any) { setErr(e?.message || String(e)); }
     finally { setScriptBusy(false); }
@@ -660,6 +661,22 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
               );
             })}
           </div>
+        </div>
+        {/* ★尺（秒数）を選んで台本を作る＝媒体に合わせた“尺違い”をその場で生成（Bufferの複数バリエの一部）。 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.72rem', color: bg.inkSoft, fontFamily: IRIS_FONTS.body }}>尺：</span>
+          {[15, 30, 60].map(d => {
+            const on = dur === d;
+            return (
+              <button key={d} type="button" onClick={() => setDur(d)} style={{
+                minHeight: 34, padding: '6px 13px', borderRadius: 999, cursor: 'pointer',
+                border: `1px solid ${on ? bg.accent : bg.cardBorder}`,
+                background: on ? bg.accent : 'transparent', color: on ? '#fff' : bg.ink,
+                fontSize: '0.8rem', fontWeight: 700, fontFamily: IRIS_FONTS.body,
+              }}>{d}秒</button>
+            );
+          })}
+          <span style={{ fontSize: '0.7rem', color: bg.inkSoft, fontFamily: IRIS_FONTS.body }}>（リール=15〜30秒 / 解説=60秒 が目安）</span>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <input style={{ ...inp, flex: 1, minWidth: 200 }} placeholder="例: 毛穴ケアの正しい順番を3ステップで" value={freeTopic} onChange={e => setFreeTopic(e.target.value)} />

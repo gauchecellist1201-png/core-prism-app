@@ -26,7 +26,9 @@ import {
   type ExtractedPost, type StrategyInsights,
 } from './screenshotExtractor';
 import { usePostQueue } from './usePostQueue';
+import IrisBestTime from './IrisBestTime';
 import type { IrisBackgroundDef } from './irisStyle';
+import EmptyInvite from './EmptyInvite';
 import { computeApplyKpi, loadApplyHistory } from './brandDealMatch';
 
 interface Props {
@@ -226,6 +228,9 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
       {/* ─── ヒーロー: 大きな数字 ─── */}
       <HeroBanner bg={bg} stats={stats} />
 
+      {/* ─── 最適投稿時間（実績ベース・データ不足時は一般目安と明記） ─── */}
+      <IrisBestTime bg={bg} />
+
       {/* ─── ブランド応募 KPI ─── */}
       <BrandApplyKpiBlock bg={bg} />
 
@@ -284,7 +289,6 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
       {/* ─── 投稿ギャラリー (Instagram 風) ─── */}
       <Gallery
         bg={bg}
-        glassCard={glassCard}
         posts={sorted}
         sort={sort}
         setSort={setSort}
@@ -1633,10 +1637,9 @@ function TopList({
 // ギャラリー (Instagram 風)
 // ============================================================
 function Gallery({
-  bg, glassCard, posts, sort, setSort, onTap,
+  bg, posts, sort, setSort, onTap,
 }: {
   bg: IrisBackgroundDef;
-  glassCard: React.CSSProperties;
   posts: PostHistoryItem[];
   sort: Sort;
   setSort: (s: Sort) => void;
@@ -1681,13 +1684,13 @@ function Gallery({
       </div>
 
       {posts.length === 0 ? (
-        <div style={{ ...glassCard, textAlign: 'center', padding: '2.4rem 1rem' }}>
-          <Upload size={28} style={{ color: bg.inkSoft, marginBottom: '0.6rem' }} />
-          <p style={{ color: bg.inkSoft, lineHeight: 1.8, fontSize: '0.88rem' }}>
-            投稿はまだありません。<br />
-            上のキャプチャゾーンに Instagram のスクショをドロップしてください。
-          </p>
-        </div>
+        <EmptyInvite
+          bg={bg}
+          icon={Upload}
+          title="投稿はまだありません"
+          description={<>Instagram の投稿スクショを取り込むと、ここに並びます。<br />反応の良い投稿の傾向を、AI が読み解いて戦略に変えます。</>}
+          hint="上のキャプチャゾーンに画像をドラッグ＆ドロップ、またはタップして選んでください"
+        />
       ) : (
         <div style={{
           display: 'grid',

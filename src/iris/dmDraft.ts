@@ -6,6 +6,7 @@
 // ============================================================
 import type { IgProfile } from './instagramConnect';
 import { logIrisActivity } from './irisActivity';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 
 // ── トーンプリセット (4 種) ─────────────────────────────────
 export type DmTone = 'polite' | 'friendly' | 'pro' | 'passionate';
@@ -237,7 +238,7 @@ export async function generateDmDraft(
     : (optsOrCustomNote || {});
 
   try {
-    const res = await fetch('/api/iris/draft-dm', {
+    const res = await fetchWithTimeout('/api/iris/draft-dm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -249,7 +250,7 @@ export async function generateDmDraft(
         mentionMediaKit: opts.mentionMediaKit,
         ngWords: opts.ngWords,
       }),
-    });
+    }, 35000);
     if (!res.ok) {
       const fb = localFallback(profile, deal, opts);
       const err = await res.json().catch(() => ({}));

@@ -10,7 +10,7 @@ export type BusinessPlanDoc = {
   content: string;
 };
 
-export const BUSINESS_PLAN_GENERATED_AT = "2026-06-29T22:51:43.859Z";
+export const BUSINESS_PLAN_GENERATED_AT = "2026-07-02T07:21:04.564Z";
 
 export const BUSINESS_PLAN_DOCS: BusinessPlanDoc[] = [
   {
@@ -802,8 +802,8 @@ Bear シナリオの早期検知: Year 1 12 月時点で MRR ¥10M 未満なら*
 `,
   },
   {
-    slug: "05_マーケティング戦略",
-    file: "05_マーケティング戦略.md",
+    slug: "05_マーケティング戦略",
+    file: "05_マーケティング戦略.md",
     title: "CORE マーケティング戦略",
     updated: "2026-05-11",
     content: `# CORE マーケティング戦略
@@ -978,8 +978,8 @@ LP / 広告 / 営業資料すべてこの 4 階層に統一。
 `,
   },
   {
-    slug: "06_リスク_KPI_ロードマップ",
-    file: "06_リスク_KPI_ロードマップ.md",
+    slug: "06_リスク_KPI_ロードマップ",
+    file: "06_リスク_KPI_ロードマップ.md",
     title: "CORE リスク分析 + KPI 設計 + 3 年ロードマップ (統合)",
     updated: "2026-05-11",
     content: `# CORE リスク分析 + KPI 設計 + 3 年ロードマップ (統合)
@@ -1254,8 +1254,8 @@ LP / 広告 / 営業資料すべてこの 4 階層に統一。
 `,
   },
   {
-    slug: "08_ピッチデッキ概要",
-    file: "08_ピッチデッキ概要.md",
+    slug: "08_ピッチデッキ概要",
+    file: "08_ピッチデッキ概要.md",
     title: "CORE 投資家向けピッチデッキ概要",
     updated: "2026-05-11",
     content: `# CORE 投資家向けピッチデッキ概要
@@ -1385,8 +1385,8 @@ LP / 広告 / 営業資料すべてこの 4 階層に統一。
 `,
   },
   {
-    slug: "09_自己強化ループ実装計画",
-    file: "09_自己強化ループ実装計画.md",
+    slug: "09_自己強化ループ実装計画",
+    file: "09_自己強化ループ実装計画.md",
     title: "CORE 自己強化ループ実装計画",
     updated: "2026-05-11",
     content: `# CORE 自己強化ループ実装計画
@@ -1559,8 +1559,8 @@ api/
 `,
   },
   {
-    slug: "10_キーノート_ブランド統合_スケール拡張",
-    file: "10_キーノート_ブランド統合_スケール拡張.md",
+    slug: "10_キーノート_ブランド統合_スケール拡張",
+    file: "10_キーノート_ブランド統合_スケール拡張.md",
     title: "Core Identity OS — キーノート反映 + ブランド統合 + スケール拡張",
     updated: "2026-05-11",
     content: `# Core Identity OS — キーノート反映 + ブランド統合 + スケール拡張
@@ -2355,8 +2355,8 @@ const { data: deals } = useQuery({
 `,
   },
   {
-    slug: "13_機能カタログ_2026-05-11",
-    file: "13_機能カタログ_2026-05-11.md",
+    slug: "13_機能カタログ_2026-05-11",
+    file: "13_機能カタログ_2026-05-11.md",
     title: "CORE Identity OS — 機能カタログ (2026-05-11 時点)",
     updated: "2026-05-11",
     content: `# CORE Identity OS — 機能カタログ (2026-05-11 時点)

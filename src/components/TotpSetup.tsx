@@ -19,6 +19,7 @@ import {
   generateSecret, verifyTOTP, buildOtpAuthUri,
   loadStoredSecret, saveStoredSecret, clearStoredSecret,
 } from '../lib/totp';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 
 interface Props {
   open: boolean;
@@ -71,7 +72,7 @@ export default function TotpSetup({ open, onClose, account }: Props) {
       }
       // サーバー側でも再検証 (時刻ズレ + アンチタンパー)
       try {
-        const res = await fetch('/api/auth/totp-verify', {
+        const res = await fetchWithTimeout('/api/auth/totp-verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ secret, code }),

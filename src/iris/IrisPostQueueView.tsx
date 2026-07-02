@@ -85,6 +85,21 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
 
   const markPosted = (p: ScheduledPost) => queue.markPosted(p.id);
 
+  // ★下書きをベスト枠にまとめて予約：未スケジュールの下書きを、よく伸びる時間帯へ順に自動割当（手入力ゼロ）。
+  //   時刻はベスト投稿枠を起点から順送り（suggestNextSlotを連鎖）＝それぞれ別の枠。あとで個別に変更可。
+  const drafts = queue.posts.filter(p => p.status === 'draft');
+  async function bulkBestSlots() {
+    if (!drafts.length) return;
+    const ok = await confirmAction({ title: `下書き ${drafts.length}件 を、よく伸びる時間帯にまとめて予約しますか？`, body: '時刻はあとで個別に変えられます。', tone: 'normal' });
+    if (!ok) return;
+    let cursor = new Date();
+    drafts.forEach(p => {
+      const slot = suggestNextSlot(cursor);
+      queue.update(p.id, { scheduledAt: slot.toISOString(), status: 'scheduled' });
+      cursor = slot;
+    });
+  }
+
   return (
     <div style={{ display: 'grid', gap: '1rem', fontFamily: IRIS_FONTS.body }}>
       <IrisIntro
@@ -172,6 +187,19 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
             }}>{v === 'list' ? 'リスト' : 'グリッド'}</button>
           ))}
         </div>
+      )}
+
+      {/* ★下書きをベスト枠にまとめて予約（手入力ゼロ・honestな目安枠） */}
+      {drafts.length > 0 && (
+        <button onClick={bulkBestSlots} style={{
+          alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 7,
+          padding: '9px 15px', borderRadius: 12, cursor: 'pointer', border: 'none',
+          background: bg.accent, color: '#fff', fontFamily: IRIS_FONTS.body, fontWeight: 700, fontSize: '0.84rem',
+          boxShadow: `0 8px 20px ${bg.accent}44`,
+        }}>
+          <CalendarClock size={15} strokeWidth={2.2} />
+          下書き {drafts.length}件 をベスト枠にまとめて予約
+        </button>
       )}
 
       {/* リスト / グリッド */}

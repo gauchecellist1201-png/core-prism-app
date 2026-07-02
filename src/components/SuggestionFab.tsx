@@ -17,6 +17,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lightbulb, X, Send, CheckCircle2 } from 'lucide-react';
+import { fetchWithTimeout, isAbort } from '../lib/fetchWithTimeout';
 
 type Phase = 'closed' | 'open' | 'sending' | 'done' | 'error';
 
@@ -39,7 +40,7 @@ export default function SuggestionFab() {
     setPhase('sending');
     setErr(null);
     try {
-      const res = await fetch('/api/feedback', {
+      const res = await fetchWithTimeout('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -50,7 +51,7 @@ export default function SuggestionFab() {
           userAgent: navigator.userAgent,
           ts: Date.now(),
         }),
-      });
+      }, 15000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       try {
         const cnt = Number(localStorage.getItem('core_suggestion_sent_count') || '0') + 1;
@@ -64,7 +65,7 @@ export default function SuggestionFab() {
       setPhase('done');
       setTimeout(close, 1600);
     } catch (e) {
-      setErr((e as Error)?.message || 'ネットワークエラー');
+      setErr(isAbort(e) ? '通信が不安定なようです。電波の良い場所でもう一度お試しください。' : ((e as Error)?.message || 'ネットワークエラー'));
       setPhase('error');
     }
   };

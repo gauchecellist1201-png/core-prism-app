@@ -15,6 +15,7 @@
 // ============================================================
 
 import { useState } from 'react';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle, ChevronRight, Heart } from 'lucide-react';
 
@@ -39,7 +40,7 @@ const REASONS: { id: ExitReason; emoji: string; label: string; sub: string }[] =
 
 async function postExitSurvey(brand: 'prism' | 'iris', reason: ExitReason, comment: string): Promise<void> {
   try {
-    await fetch('/api/feedback', {
+    await fetchWithTimeout('/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

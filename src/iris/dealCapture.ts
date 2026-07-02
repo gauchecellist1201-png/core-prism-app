@@ -6,6 +6,8 @@
 //   if (result.ok) { addDeal(personaId, toDealInput(result.deal)); }
 // ============================================================
 
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
+
 export interface CapturedDeal {
   brandName: string | null;
   senderHandle: string | null;
@@ -90,11 +92,11 @@ export async function captureDealFromScreenshots(files: File[]): Promise<Capture
   }
 
   try {
-    const res = await fetch('/api/iris/extract-deal-from-screenshot', {
+    const res = await fetchWithTimeout('/api/iris/extract-deal-from-screenshot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageDataUrls }),
-    });
+    }, 35000);
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data?.ok) {
       return {

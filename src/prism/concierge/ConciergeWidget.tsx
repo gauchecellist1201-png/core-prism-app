@@ -23,6 +23,8 @@ interface Props {
   avatarProvider?: AvatarProvider;
   /** floating の開閉通知 (埋め込み iframe の resize 連携に使う) */
   onOpenChange?: (open: boolean) => void;
+  /** 先に話しかける吹き出しの表示通知 (埋め込み iframe を少し広げるために使う) */
+  onPeekChange?: (peek: boolean) => void;
 }
 
 const SILK = { type: 'spring' as const, stiffness: 260, damping: 30, mass: 0.9 };
@@ -78,7 +80,7 @@ function IconCheck({ size = 14 }: { size?: number }) {
   );
 }
 
-export default function ConciergeWidget({ config, variant = 'inline', avatarProvider = 'portrait', onOpenChange }: Props) {
+export default function ConciergeWidget({ config, variant = 'inline', avatarProvider = 'portrait', onOpenChange, onPeekChange }: Props) {
   const c = useConcierge(config);
   const accent = config.accentColor;
   const accentFg = readableTextColor(accent);
@@ -91,6 +93,33 @@ export default function ConciergeWidget({ config, variant = 'inline', avatarProv
   useEffect(() => {
     onOpenChange?.(open);
   }, [open, onOpenChange]);
+
+  // ── 先に話しかける (プロアクティブ接客) ──
+  // 設定秒数の経過後、まだ一度も開かれていなければバブルの上に一言だけ声をかける。
+  // 同セッションで一度閉じたら二度と出さない (しつこさは離脱のもと)。
+  const [peek, setPeek] = useState(false);
+  const openedOnceRef = useRef(variant === 'inline');
+  useEffect(() => {
+    if (open) { openedOnceRef.current = true; setPeek(false); }
+  }, [open]);
+  useEffect(() => {
+    if (variant !== 'floating' || !config.proactiveMessage) return;
+    let done = false;
+    try { done = sessionStorage.getItem('cz_proactive_done') === '1'; } catch { /* 記憶できない環境でも声かけ自体は動く */ }
+    if (done) return;
+    const t = window.setTimeout(() => {
+      if (!openedOnceRef.current) setPeek(true);
+    }, (config.proactiveSec || 8) * 1000);
+    return () => window.clearTimeout(t);
+  }, [variant, config.proactiveMessage, config.proactiveSec]);
+  useEffect(() => {
+    onPeekChange?.(peek);
+  }, [peek, onPeekChange]);
+  const dismissPeek = (thenOpen: boolean) => {
+    setPeek(false);
+    try { sessionStorage.setItem('cz_proactive_done', '1'); } catch { /* */ }
+    if (thenOpen) setOpen(true);
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -224,6 +253,23 @@ export default function ConciergeWidget({ config, variant = 'inline', avatarProv
               fontSize: 14, lineHeight: 1.75, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}>
               {m.content}
+              {/* 予約ページ (AI の [action:booking] で自動表示) */}
+              {m.role === 'assistant' && m.bookingUrl && (
+                <a
+                  href={m.bookingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 9,
+                    minHeight: 40, padding: '8px 15px', borderRadius: 999,
+                    background: accent, color: accentFg, textDecoration: 'none',
+                    fontSize: 12.5, fontWeight: 700, letterSpacing: '0.02em',
+                  }}
+                >
+                  <IconCalendar />
+                  ご予約ページを開く
+                </a>
+              )}
             </div>
           </motion.div>
         ))}
@@ -343,7 +389,7 @@ export default function ConciergeWidget({ config, variant = 'inline', avatarProv
             rel="noreferrer"
             style={{ fontSize: 10, color: T.fgSubtle, textDecoration: 'none', letterSpacing: '0.08em' }}
           >
-            Powered by CORE Prism
+            Powered by Crystal
           </a>
         </div>
       </div>
@@ -463,6 +509,46 @@ export default function ConciergeWidget({ config, variant = 'inline', avatarProv
         alignItems: 'flex-end',
       }}
     >
+      {/* 先に話しかける吹き出し (バブルの上に一言) */}
+      <AnimatePresence>
+        {!open && peek && (
+          <motion.div
+            key="peek"
+            initial={{ opacity: 0, y: 10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.96 }}
+            transition={SILK}
+            style={{
+              marginBottom: 10, maxWidth: 300, position: 'relative',
+              borderRadius: '18px 18px 4px 18px', border: `1px solid ${T.border}`,
+              background: T.glass, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.10)',
+              padding: '12px 14px', color: T.fg,
+            }}
+          >
+            <button
+              onClick={() => dismissPeek(false)}
+              aria-label="閉じる"
+              style={{
+                position: 'absolute', top: 4, right: 4, width: 28, height: 28,
+                border: 'none', background: 'transparent', color: T.fgSubtle,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <IconClose size={11} />
+            </button>
+            <div
+              onClick={() => dismissPeek(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => { if (e.key === 'Enter') dismissPeek(true); }}
+              style={{ cursor: 'pointer', fontSize: 13, lineHeight: 1.7, paddingRight: 18 }}
+            >
+              {config.proactiveMessage}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AnimatePresence mode="wait">
         {open ? panel : (
           <motion.button

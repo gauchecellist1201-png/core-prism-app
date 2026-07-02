@@ -4,6 +4,7 @@
 // Phase 2 (予約): 売上自動同期、請求書取込、勘定科目マッピング
 // ============================================================
 import { useState, useEffect, useCallback } from 'react';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import { motion } from 'framer-motion';
 import { Check, RotateCcw } from 'lucide-react';
 import { notifyInApp } from '../lib/inAppNotify';
@@ -84,7 +85,7 @@ export default function AccountingIntegration() {
   const checkStatus = useCallback(async () => {
     setFetchState('loading');
     try {
-      const res = await fetch('/api/accounting/status');
+      const res = await fetchWithTimeout('/api/accounting/status', {}, 12000);
       if (res.ok) {
         const data = await res.json();
         setEnvAvailable({

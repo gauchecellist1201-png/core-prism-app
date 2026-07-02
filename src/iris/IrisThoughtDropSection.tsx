@@ -22,16 +22,18 @@ interface Props {
   postQueue?: any;
   /** mediaKit.handleName (プレビューの表示名) */
   handle?: string;
+  /** ヒーロー (IrisCrystalHero) 側に見出しがある時は内部見出しを消す */
+  hideHeading?: boolean;
 }
 
-export default function IrisThoughtDropSection({ bg, model, postQueue, handle }: Props) {
+export default function IrisThoughtDropSection({ bg, model, postQueue, handle, hideHeading }: Props) {
   const [result, setResult] = useState<ThoughtDropResult | null>(null);
   // streak は日次 touch が冪等なのでここで直接計測してよい
   const streakInfo = useDailyStreak();
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem', marginBottom: '1.25rem' }}>
-      <IrisThoughtDrop bg={bg} model={model} onResult={setResult} />
+      <IrisThoughtDrop bg={bg} model={model} onResult={setResult} hideHeading={hideHeading} />
       {result && (
         <IrisPlatformCards bg={bg} result={result} queue={postQueue} handle={handle} />
       )}

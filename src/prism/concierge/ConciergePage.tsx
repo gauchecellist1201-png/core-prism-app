@@ -1,16 +1,16 @@
 // ============================================================
-// ConciergePage — /concierge ショーケース
+// ConciergePage — /concierge
 //
-// 上半分: 高級不動産サイト風のデモ背景 (CSS のみ・実写不使用) に
-//         ウィジェットが浮かぶライブデモ (実際に AI と話せる)
-// 下半分: 「あなたのサイトに1行で設置」— 設定フォーム → その場プレビュー →
-//         埋め込みタグ生成 + コピー → 価格 2 プラン + 導入相談 CTA
+// 1画面目 = ConciergeStage: 画面いっぱいのクリスタル・アバターに
+//           話しかけるだけの全画面体験 (開花アニメーション付き)
+// スクロール下層 = 02 SETUP (1行設置タグ生成) / 03 PRICING
 //
 // ?embed=1 のときは全画面透過でフローティングバブルのみ描画し、
 // 開閉を parent へ postMessage (public/prism-concierge.js が受けて iframe を伸縮)
 // ============================================================
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ConciergeWidget from './ConciergeWidget';
+import ConciergeStage from './ConciergeStage';
 import {
   type ConciergeConfig,
   DEFAULT_CONCIERGE_CONFIG,
@@ -19,22 +19,23 @@ import {
   isConciergeEmbed,
 } from './conciergeConfig';
 
-const SERIF = `'Bodoni 72', 'Didot', 'Hiragino Mincho ProN', 'Yu Mincho', Georgia, serif`;
+const SERIF = `'Didot', 'Bodoni 72', 'Hiragino Mincho ProN', 'Yu Mincho', Georgia, serif`;
 const SANS = `-apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif`;
 
-// ページ専用トークン (App の theme に依存しない自己完結ページ)
+// ページ専用トークン — CRYSTAL (スチールブルーの空気)
 const P = {
-  bg: '#06070D',
-  fg: '#F2EFE6',
-  fgMuted: 'rgba(242,239,230,0.68)',
-  fgSubtle: 'rgba(242,239,230,0.45)',
+  bg0: '#1B2333',
+  bg1: '#28354C',
+  fg: '#F4F7FC',
+  fgMuted: 'rgba(244,247,252,0.72)',
+  fgSubtle: 'rgba(244,247,252,0.5)',
+  line: 'rgba(255,255,255,0.16)',
+  lineSoft: 'rgba(255,255,255,0.1)',
+  glass: 'rgba(255,255,255,0.07)',
+  glassStrong: 'rgba(255,255,255,0.12)',
+  silver: '#D9E4F5',
   gold: '#C9A96E',
-  goldSoft: 'rgba(201,169,110,0.35)',
-  surface: 'rgba(255,255,255,0.05)',
-  border: 'rgba(255,255,255,0.12)',
 };
-
-const NOISE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E")`;
 
 const ACCENT_PRESETS = [
   { label: '金', hex: '#C9A96E' },
@@ -64,7 +65,13 @@ function EmbedMode() {
     } catch { /* 埋め込み外で開いた場合は何もしない */ }
   }, []);
 
-  return <ConciergeWidget config={config} variant="floating" onOpenChange={onOpenChange} />;
+  const onPeekChange = useCallback((peek: boolean) => {
+    try {
+      window.parent?.postMessage({ type: 'prism-concierge:peek', peek }, '*');
+    } catch { /* 埋め込み外で開いた場合は何もしない */ }
+  }, []);
+
+  return <ConciergeWidget config={config} variant="floating" onOpenChange={onOpenChange} onPeekChange={onPeekChange} />;
 }
 
 // ─── 小さな UI 部品 ─────────────────────────────
@@ -82,12 +89,48 @@ function Field({ label, children, hint }: { label: string; children: React.React
 
 const inputStyle: React.CSSProperties = {
   width: '100%', boxSizing: 'border-box', minHeight: 44, padding: '10px 13px',
-  borderRadius: 12, border: `1px solid ${P.border}`, outline: 'none',
-  background: 'rgba(255,255,255,0.05)', color: P.fg, fontSize: 16, fontFamily: SANS,
+  borderRadius: 12, border: `1px solid ${P.line}`, outline: 'none',
+  background: 'rgba(13,20,34,0.35)', color: P.fg, fontSize: 16, fontFamily: SANS,
 };
 
-function GoldLine() {
-  return <div aria-hidden style={{ height: 1, background: `linear-gradient(90deg, transparent, ${P.goldSoft}, transparent)` }} />;
+function HairLine() {
+  return <div aria-hidden style={{ height: 1, background: `linear-gradient(90deg, transparent, ${P.line}, transparent)` }} />;
+}
+
+// エディトリアル番号 (参照デザインの「01 Frost Dahlia」)
+function SectionIndex({ no, label }: { no: string; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+      <span style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 400, color: P.silver, letterSpacing: '0.06em' }}>{no}</span>
+      <span aria-hidden style={{ width: 44, height: 1, background: P.line }} />
+      <span style={{ fontSize: 11, letterSpacing: '0.32em', color: P.fgMuted, textTransform: 'uppercase' }}>{label}</span>
+    </div>
+  );
+}
+
+// ─── できること (世界で売れている AI エージェントの中核機能) ───
+const CAPABILITIES: Array<{ t: string; d: string }> = [
+  { t: '24時間・365日の応対', d: '深夜も休日も、ブランドの言葉づかいのまま。お問い合わせの取りこぼしをゼロに。' },
+  { t: '声で話す・声で返す', d: 'マイクに話しかけるだけ。美しい字幕と声で、その場でお答えします。' },
+  { t: 'ナレッジ貼るだけ学習', d: '会社案内やサービス説明を貼るだけで、その内容を根拠に正確に答えます。' },
+  { t: 'FAQ 自動生成', d: '貼り付けた文章から、よくある質問と模範回答を AI が自動で起こします。' },
+  { t: '商談・来店の日程獲得', d: '関心が高まった瞬間を逃さず日程を伺い、連絡先カードを自動で開きます。' },
+  { t: '見込み客の見極め (AI SDR)', d: '「有望なお客様の条件」を設定すると、会話の流れで自然に確認します。' },
+  { t: '会話まるごとメール通知', d: 'お名前・連絡先・会話の全文が、そのままあなたのメールに届きます。' },
+  { t: '多言語の自動応対', d: '英語・中国語など、お客様の言語を見分けて同じ言語でお迎えします。' },
+  { t: '先に話しかける接客', d: '迷っている訪問者へ、数秒後にそっと一言。声かけから商談が始まります。' },
+  { t: 'ブランド人格の調整', d: '正統派・親しみ・簡潔の3人格に、呼び名・一人称・色まで合わせられます。' },
+  { t: '予約ページへの橋渡し', d: '予約 URL を設定すると、会話の流れで予約ボタンを自動で差し出します。' },
+  { t: '設置はタグ1行', d: 'HTML に1行貼るだけ。プログラミング不要、5分で働き始めます。' },
+];
+
+function DiamondIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke={P.silver} strokeWidth="1.3" strokeLinejoin="round" aria-hidden>
+      <path d="M8 1.5L14.5 8 8 14.5 1.5 8 8 1.5z" />
+      <path d="M8 4.5L11.5 8 8 11.5 4.5 8 8 4.5z" opacity="0.55" />
+    </svg>
+  );
 }
 
 // ─── ショーケース本体 ────────────────────────────
@@ -96,12 +139,60 @@ function Showcase() {
   const [servicesText, setServicesText] = useState(() => config.services.join('\n'));
   const [copied, setCopied] = useState(false);
 
+  // FAQ 自動生成 (貼り付けたナレッジ → Q&A を AI が起こす)
+  const [genBusy, setGenBusy] = useState(false);
+  const [genMsg, setGenMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const generateFaq = async () => {
+    const src = (config.knowledge || '').trim();
+    if (src.length < 40) {
+      setGenMsg({ ok: false, text: 'まず上の欄に、会社やサービスの説明文を貼り付けてください (40文字以上)。' });
+      return;
+    }
+    setGenBusy(true);
+    setGenMsg(null);
+    try {
+      const ctrl = new AbortController();
+      const timer = window.setTimeout(() => ctrl.abort(), 40_000);
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5',
+          max_tokens: 1400,
+          system: 'あなたはFAQ設計の専門家。渡された文章から、サイト訪問者が実際に尋ねそうな質問と、文章の内容だけを根拠にした回答を最大6組作る。出力はJSON配列のみ: [{"q":"質問","a":"回答"}]。回答は2文以内。文章にない情報は作らない。',
+          messages: [{ role: 'user', content: src.slice(0, 4000) }],
+        }),
+        signal: ctrl.signal,
+      }).finally(() => window.clearTimeout(timer));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const text: string = data?.content?.[0]?.text || '';
+      const jsonText = text.replace(/^[\s\S]*?(\[)/, '$1').replace(/(\])[\s\S]*$/, '$1');
+      const arr = JSON.parse(jsonText) as Array<{ q?: unknown; a?: unknown }>;
+      const items = arr
+        .filter(x => x && typeof x.q === 'string' && typeof x.a === 'string' && (x.q as string).trim() && (x.a as string).trim())
+        .map(x => ({ q: (x.q as string).slice(0, 120), a: (x.a as string).slice(0, 400) }));
+      if (items.length === 0) throw new Error('empty');
+      setConfig(prev => {
+        const merged = [...prev.faq.filter(f => f.q.trim() || f.a.trim())];
+        for (const it of items) if (!merged.some(m => m.q === it.q)) merged.push(it);
+        return { ...prev, faq: merged.slice(0, 12) };
+      });
+      setGenMsg({ ok: true, text: `${items.length}件の FAQ を作成し、下の「よくある質問」に追加しました。` });
+    } catch {
+      setGenMsg({ ok: false, text: '生成できませんでした。通信環境をご確認のうえ、もう一度お試しください。' });
+    } finally {
+      setGenBusy(false);
+    }
+  };
+
   const set = <K extends keyof ConciergeConfig>(key: K, value: ConciergeConfig[K]) =>
     setConfig(prev => ({ ...prev, [key]: value }));
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://core-prism-app.vercel.app';
   const encoded = useMemo(() => encodeConciergeConfig(config), [config]);
-  const embedCode = `<script src="${origin}/prism-concierge.js" data-config="${encoded}" async></script>`;
+  const embedCode = `<script src="${origin}/crystal.js" data-config="${encoded}" async></script>`;
 
   const copyEmbed = async () => {
     try {
@@ -115,118 +206,69 @@ function Showcase() {
   };
 
   const mailtoCta = (plan: string) =>
-    `mailto:core.guild.inc@gmail.com?subject=${encodeURIComponent(`【コンシェルジュ導入相談】${plan}`)}&body=${encodeURIComponent(
+    `mailto:core.guild.inc@gmail.com?subject=${encodeURIComponent(`【Crystal 導入相談】${plan}`)}&body=${encodeURIComponent(
       `ブランド名: ${config.brandName}\n業種: ${config.industry}\nご希望プラン: ${plan}\nサイトURL: \nご相談内容: `,
     )}`;
 
   return (
-    <div style={{ minHeight: '100svh', background: P.bg, color: P.fg, fontFamily: SANS }}>
-      {/* ── 上部バー ── */}
-      <header style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px clamp(16px, 4vw, 40px)', borderBottom: `1px solid ${P.border}`,
-        position: 'sticky', top: 0, zIndex: 20,
-        background: 'rgba(6,7,13,0.8)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-      }}>
-        <a href="/" style={{ textDecoration: 'none', color: P.fg, fontWeight: 800, fontSize: 14, letterSpacing: '0.12em' }}>
-          CORE PRISM
-        </a>
-        <a
-          href={mailtoCta('未定 (まず相談)')}
-          style={{
-            display: 'inline-flex', alignItems: 'center', minHeight: 40, padding: '8px 18px',
-            borderRadius: 999, border: `1px solid ${P.gold}`, color: P.gold,
-            textDecoration: 'none', fontSize: 13, fontWeight: 700, letterSpacing: '0.04em',
-          }}
-        >
-          導入相談
-        </a>
-      </header>
+    <div style={{
+      minHeight: '100svh', color: P.fg, fontFamily: SANS,
+      background: `linear-gradient(180deg, ${P.bg1} 0%, ${P.bg0} 100%)`,
+    }}>
+      <style>{`html { scroll-behavior: smooth; }`}</style>
 
-      {/* ── ヒーロー: 高級不動産サイト風デモ + ライブウィジェット ── */}
-      <section style={{
-        position: 'relative', overflow: 'hidden',
-        background: `radial-gradient(140% 90% at 70% -10%, #131A33 0%, #0A0E1E 45%, #06070D 100%)`,
-        padding: 'clamp(28px, 6vw, 72px) clamp(16px, 4vw, 40px) clamp(40px, 6vw, 80px)',
-      }}>
-        {/* 微細ノイズ + 金の細線 */}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: NOISE, pointerEvents: 'none' }} />
-        <div aria-hidden style={{ position: 'absolute', top: 0, left: '8%', right: '8%', height: 1, background: `linear-gradient(90deg, transparent, ${P.goldSoft}, transparent)` }} />
-        <div aria-hidden style={{ position: 'absolute', top: 90, left: 0, width: 1, height: '55%', background: `linear-gradient(180deg, transparent, ${P.goldSoft}, transparent)`, marginLeft: 'clamp(16px, 6vw, 64px)' }} />
+      {/* ── 1画面目: 全画面クリスタル・アバター ── */}
+      <ConciergeStage config={config} />
 
-        <div style={{
-          position: 'relative', maxWidth: 1080, margin: '0 auto',
-          display: 'flex', flexWrap: 'wrap', gap: 'clamp(24px, 4vw, 56px)',
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          {/* 左: デモサイトの顔 (CSS だけの高級不動産風) */}
-          <div style={{ flex: '1 1 320px', minWidth: 0, maxWidth: 560 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 999,
-              border: `1px solid ${P.border}`, background: P.surface, marginBottom: 18,
-              fontSize: 11, letterSpacing: '0.1em', color: P.fgMuted,
+      <HairLine />
+
+      {/* ── 02 CAPABILITIES ── */}
+      <section id="features" style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(40px, 6vw, 80px) clamp(16px, 4vw, 44px)', scrollMarginTop: 16 }}>
+        <SectionIndex no="02" label="Everything, in one crystal" />
+        <h2 style={{ margin: '0 0 10px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(24px, 3.6vw, 36px)', letterSpacing: '0.04em' }}>
+          Crystal ができること
+        </h2>
+        <p style={{ margin: '0 0 30px', fontSize: 14, lineHeight: 2, color: P.fgMuted, maxWidth: 680 }}>
+          世界で売れている AI エージェント — Intercom Fin (解決1件 $0.99)、Sierra (Fortune 500 が採用)、
+          Qualified の AI 営業担当 (年間約 $68,000〜) — の中核機能を、この一体に集めました。
+          応対も、見極めも、日程獲得も、Crystal ひとりで。
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 14 }}>
+          {CAPABILITIES.map(c => (
+            <div key={c.t} style={{
+              borderRadius: 18, padding: '18px 18px 16px',
+              border: `1px solid ${P.lineSoft}`, background: P.glass,
+              backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
             }}>
-              <span style={{ width: 6, height: 6, borderRadius: 999, background: P.gold, boxShadow: `0 0 8px ${P.gold}` }} />
-              ライブデモ — 実際に話しかけられます
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8 }}>
+                <DiamondIcon />
+                <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.02em' }}>{c.t}</div>
+              </div>
+              <div style={{ fontSize: 12.5, lineHeight: 1.85, color: P.fgMuted }}>{c.d}</div>
             </div>
-            <div style={{ fontFamily: SERIF, fontSize: 'clamp(13px, 1.6vw, 15px)', letterSpacing: '0.35em', color: P.gold, marginBottom: 10 }}>
-              {config.brandName}
-            </div>
-            <h1 style={{
-              margin: '0 0 16px', fontFamily: SERIF, fontWeight: 500,
-              fontSize: 'clamp(30px, 5.6vw, 52px)', lineHeight: 1.25, letterSpacing: '0.04em', color: '#FFFFFF',
-            }}>
-              24時間、ブランドを
-              <br />
-              体現するコンシェルジュ
-            </h1>
-            <p style={{ margin: '0 0 22px', fontSize: 'clamp(14px, 1.8vw, 16px)', lineHeight: 1.9, color: P.fgMuted, maxWidth: 460 }}>
-              高級不動産・ラグジュアリーブランド・高単価コンサルのサイトに、
-              深夜でも同じ品格でお客様を迎える AI コンシェルジュを。
-              ご相談の日程とご連絡先まで、そっとお預かりします。
-            </p>
-            {/* 物件カード風スケルトン (実写不使用の "高級サイトの気配") */}
-            <div aria-hidden style={{ display: 'flex', gap: 12, maxWidth: 460 }}>
-              {[0, 1, 2].map(i => (
-                <div key={i} style={{
-                  flex: 1, minWidth: 0, borderRadius: 14, overflow: 'hidden',
-                  border: `1px solid ${P.border}`, background: 'rgba(255,255,255,0.03)',
-                }}>
-                  <div style={{ height: 54, background: `linear-gradient(135deg, rgba(201,169,110,${0.16 + i * 0.05}), rgba(20,26,50,0.6))` }} />
-                  <div style={{ padding: '8px 10px' }}>
-                    <div style={{ height: 6, width: '70%', borderRadius: 3, background: 'rgba(255,255,255,0.16)', marginBottom: 6 }} />
-                    <div style={{ height: 6, width: '45%', borderRadius: 3, background: `rgba(201,169,110,0.4)` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 右: 生きているウィジェット */}
-          <div style={{ flex: '0 1 400px', width: 'min(400px, 100%)', height: 'min(600px, 76svh)', minHeight: 480 }}>
-            <ConciergeWidget config={config} variant="inline" />
-          </div>
+          ))}
         </div>
       </section>
 
-      <GoldLine />
+      <HairLine />
 
-      {/* ── 設置セクション ── */}
-      <section style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(36px, 6vw, 72px) clamp(16px, 4vw, 40px)' }}>
-        <div style={{ fontFamily: SERIF, fontSize: 12, letterSpacing: '0.3em', color: P.gold, marginBottom: 10 }}>SETUP</div>
-        <h2 style={{ margin: '0 0 10px', fontSize: 'clamp(22px, 3.4vw, 32px)', fontWeight: 700, letterSpacing: '0.02em' }}>
+      {/* ── 03 SETUP ── */}
+      <section id="setup" style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(40px, 6vw, 80px) clamp(16px, 4vw, 44px)', scrollMarginTop: 16 }}>
+        <SectionIndex no="03" label="Crafted in one line" />
+        <h2 style={{ margin: '0 0 10px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(24px, 3.6vw, 36px)', letterSpacing: '0.04em' }}>
           あなたのサイトに、1行で設置
         </h2>
-        <p style={{ margin: '0 0 28px', fontSize: 14, lineHeight: 1.9, color: P.fgMuted, maxWidth: 620 }}>
-          下のフォームでブランドに合わせて調整すると、上のデモがその場で変わります。
+        <p style={{ margin: '0 0 30px', fontSize: 14, lineHeight: 2, color: P.fgMuted, maxWidth: 620 }}>
+          下のフォームでブランドに合わせて調整すると、上のコンシェルジュがその場で変わります。
           仕上がったら、生成されたタグをサイトの HTML に貼るだけ。プログラミングの知識は要りません。
         </p>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
           {/* 設定フォーム */}
           <div style={{
-            flex: '1 1 320px', minWidth: 0, borderRadius: 20, padding: 'clamp(16px, 3vw, 24px)',
-            border: `1px solid ${P.border}`, background: P.surface,
+            flex: '1 1 320px', minWidth: 0, borderRadius: 24, padding: 'clamp(16px, 3vw, 26px)',
+            border: `1px solid ${P.line}`, background: P.glass,
+            backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
           }}>
             <Field label="ブランド名">
               <input style={inputStyle} value={config.brandName} onChange={e => set('brandName', e.target.value)} placeholder="例: THE RESIDENCE 麻布" />
@@ -237,7 +279,7 @@ function Showcase() {
             <Field label="業種">
               <input style={inputStyle} value={config.industry} onChange={e => set('industry', e.target.value)} placeholder="例: 高級不動産" />
             </Field>
-            <Field label="ご案内できること (1行に1つ)" hint="チャットの最初に「ご用件ボタン」として表示されます">
+            <Field label="ご案内できること (1行に1つ)" hint="アバターの下に「ご用件ボタン」として表示されます">
               <textarea
                 style={{ ...inputStyle, resize: 'vertical', minHeight: 96, lineHeight: 1.6 }}
                 value={servicesText}
@@ -245,6 +287,77 @@ function Showcase() {
                   setServicesText(e.target.value);
                   set('services', e.target.value.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 8));
                 }}
+              />
+            </Field>
+            <Field
+              label="ナレッジ (貼るだけで AI が学習)"
+              hint="会社案内・サービス説明・料金表などをそのまま貼り付けると、AI はこの内容を最優先の根拠に答えます (4,000文字まで)"
+            >
+              <textarea
+                style={{ ...inputStyle, resize: 'vertical', minHeight: 120, lineHeight: 1.6 }}
+                value={config.knowledge || ''}
+                onChange={e => set('knowledge', e.target.value || undefined)}
+                placeholder="ここに文章を貼り付けるだけ"
+              />
+              <button
+                onClick={() => void generateFaq()}
+                disabled={genBusy}
+                style={{
+                  marginTop: 8, minHeight: 44, width: '100%', borderRadius: 12, cursor: genBusy ? 'default' : 'pointer',
+                  border: `1px solid ${P.line}`, background: genBusy ? 'transparent' : 'rgba(217,228,245,0.12)',
+                  color: P.silver, fontSize: 13, fontWeight: 700, letterSpacing: '0.03em',
+                }}
+              >
+                {genBusy ? 'AI が文章を読んでいます…' : 'この文章から FAQ を自動生成'}
+              </button>
+              {genMsg && (
+                <div style={{ fontSize: 12, lineHeight: 1.7, marginTop: 6, color: genMsg.ok ? '#9ED3BC' : '#F2B8C6' }}>
+                  {genMsg.text}
+                </div>
+              )}
+            </Field>
+            <Field label="応対の人格 (トーン)">
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {([
+                  { v: 'classic', l: '正統派 (高級ホテル)' },
+                  { v: 'warm', l: '親しみやすい' },
+                  { v: 'sharp', l: '簡潔なプロ' },
+                ] as const).map(t => (
+                  <button
+                    key={t.v}
+                    onClick={() => set('tone', t.v)}
+                    style={{
+                      minHeight: 44, padding: '10px 16px', borderRadius: 999, cursor: 'pointer',
+                      border: (config.tone || 'classic') === t.v ? '1.5px solid rgba(217,228,245,0.75)' : `1px solid ${P.line}`,
+                      background: (config.tone || 'classic') === t.v ? 'rgba(217,228,245,0.14)' : 'transparent',
+                      color: P.fg, fontSize: 13, fontFamily: SANS,
+                    }}
+                  >
+                    {t.l}
+                  </button>
+                ))}
+              </div>
+            </Field>
+            <Field
+              label="有望なお客様の条件 (AI SDR)"
+              hint="AI が会話の流れで自然に確認し、条件に合う方を日程のご提案へつなげます"
+            >
+              <input
+                style={inputStyle}
+                value={config.qualify || ''}
+                onChange={e => set('qualify', e.target.value || undefined)}
+                placeholder="例: 予算月3万円以上・導入時期が3ヶ月以内"
+              />
+            </Field>
+            <Field
+              label="先に話しかける一言 (空欄で OFF)"
+              hint="埋め込み先のサイトで、数秒後にバブルの上からそっと声をかけます"
+            >
+              <input
+                style={inputStyle}
+                value={config.proactiveMessage || ''}
+                onChange={e => set('proactiveMessage', e.target.value || undefined)}
+                placeholder="例: ご覧いただきありがとうございます。ご質問はございますか？"
               />
             </Field>
             <Field label="アクセント色">
@@ -257,7 +370,7 @@ function Showcase() {
                     style={{
                       width: 44, height: 44, borderRadius: 12, cursor: 'pointer',
                       background: p.hex,
-                      border: config.accentColor === p.hex ? '2px solid #FFFFFF' : `1px solid ${P.border}`,
+                      border: config.accentColor === p.hex ? '2px solid #FFFFFF' : `1px solid ${P.line}`,
                     }}
                   />
                 ))}
@@ -266,7 +379,7 @@ function Showcase() {
                   value={config.accentColor}
                   onChange={e => set('accentColor', e.target.value)}
                   aria-label="アクセント色を自由に選ぶ"
-                  style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${P.border}`, background: 'transparent', padding: 4, cursor: 'pointer' }}
+                  style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${P.line}`, background: 'transparent', padding: 4, cursor: 'pointer' }}
                 />
               </div>
             </Field>
@@ -281,7 +394,7 @@ function Showcase() {
             <Field label="よくある質問 (AI はこの内容に沿って答えます)">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {config.faq.map((f, i) => (
-                  <div key={i} style={{ border: `1px solid ${P.border}`, borderRadius: 12, padding: 10 }}>
+                  <div key={i} style={{ border: `1px solid ${P.line}`, borderRadius: 12, padding: 10 }}>
                     <input
                       style={{ ...inputStyle, minHeight: 40, marginBottom: 6, fontSize: 16 }}
                       value={f.q}
@@ -296,7 +409,7 @@ function Showcase() {
                     />
                     <button
                       onClick={() => set('faq', config.faq.filter((_, j) => j !== i))}
-                      style={{ marginTop: 6, minHeight: 40, padding: '8px 12px', borderRadius: 10, border: `1px solid ${P.border}`, background: 'transparent', color: P.fgMuted, fontSize: 12, cursor: 'pointer' }}
+                      style={{ marginTop: 6, minHeight: 40, padding: '8px 12px', borderRadius: 10, border: `1px solid ${P.line}`, background: 'transparent', color: P.fgMuted, fontSize: 12, cursor: 'pointer' }}
                     >
                       この質問を削除
                     </button>
@@ -305,7 +418,7 @@ function Showcase() {
                 {config.faq.length < 12 && (
                   <button
                     onClick={() => set('faq', [...config.faq, { q: '', a: '' }])}
-                    style={{ minHeight: 44, borderRadius: 12, border: `1px dashed ${P.goldSoft}`, background: 'transparent', color: P.gold, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                    style={{ minHeight: 44, borderRadius: 12, border: `1px dashed ${P.line}`, background: 'transparent', color: P.silver, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                   >
                     ＋ 質問を追加
                   </button>
@@ -327,7 +440,7 @@ function Showcase() {
                 setConfig({ ...DEFAULT_CONCIERGE_CONFIG });
                 setServicesText(DEFAULT_CONCIERGE_CONFIG.services.join('\n'));
               }}
-              style={{ minHeight: 40, padding: '8px 14px', borderRadius: 10, border: `1px solid ${P.border}`, background: 'transparent', color: P.fgSubtle, fontSize: 12, cursor: 'pointer' }}
+              style={{ minHeight: 40, padding: '8px 14px', borderRadius: 10, border: `1px solid ${P.line}`, background: 'transparent', color: P.fgSubtle, fontSize: 12, cursor: 'pointer' }}
             >
               はじめの設定に戻す
             </button>
@@ -335,15 +448,20 @@ function Showcase() {
 
           {/* 埋め込みタグ */}
           <div style={{ flex: '1 1 320px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ borderRadius: 20, padding: 'clamp(16px, 3vw, 24px)', border: `1px solid ${P.goldSoft}`, background: 'linear-gradient(160deg, rgba(201,169,110,0.08), rgba(255,255,255,0.02))' }}>
+            <div style={{
+              borderRadius: 24, padding: 'clamp(16px, 3vw, 26px)',
+              border: `1px solid ${P.glassStrong}`,
+              background: 'linear-gradient(160deg, rgba(217,228,245,0.12), rgba(255,255,255,0.03))',
+              backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+            }}>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>設置タグ (この1行だけ)</div>
               <p style={{ margin: '0 0 12px', fontSize: 12.5, lineHeight: 1.8, color: P.fgMuted }}>
-                サイトの HTML の <code style={{ color: P.gold }}>&lt;/body&gt;</code> の直前に貼ると、
+                サイトの HTML の <code style={{ color: P.silver }}>&lt;/body&gt;</code> の直前に貼ると、
                 右下にコンシェルジュのバブルが現れます。上の設定を変えるたびに、このタグも自動で更新されます。
               </p>
               <div style={{
-                borderRadius: 12, border: `1px solid ${P.border}`, background: 'rgba(0,0,0,0.45)',
-                padding: '12px 14px', fontSize: 11.5, lineHeight: 1.6, color: '#D9E2C8',
+                borderRadius: 12, border: `1px solid ${P.line}`, background: 'rgba(10,16,28,0.55)',
+                padding: '12px 14px', fontSize: 11.5, lineHeight: 1.6, color: '#CFE0D0',
                 fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
                 wordBreak: 'break-all', maxHeight: 140, overflowY: 'auto',
               }}>
@@ -352,8 +470,8 @@ function Showcase() {
               <button
                 onClick={() => void copyEmbed()}
                 style={{
-                  marginTop: 12, width: '100%', minHeight: 48, borderRadius: 13, border: 'none',
-                  background: copied ? '#4E9E82' : P.gold, color: '#141414', fontSize: 14, fontWeight: 800,
+                  marginTop: 12, width: '100%', minHeight: 48, borderRadius: 999, border: 'none',
+                  background: copied ? '#4E9E82' : '#F4F7FC', color: '#1B2333', fontSize: 14, fontWeight: 800,
                   letterSpacing: '0.04em', cursor: 'pointer', transition: 'background 0.2s',
                 }}
               >
@@ -361,7 +479,10 @@ function Showcase() {
               </button>
             </div>
 
-            <div style={{ borderRadius: 20, padding: 'clamp(16px, 3vw, 24px)', border: `1px solid ${P.border}`, background: P.surface }}>
+            <div style={{
+              borderRadius: 24, padding: 'clamp(16px, 3vw, 26px)', border: `1px solid ${P.line}`, background: P.glass,
+              backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+            }}>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>届いたご希望 (リード) の受け取り方</div>
               <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, lineHeight: 2, color: P.fgMuted }}>
                 <li>お客様が「ご案内の日程を希望」を押す (または会話で連絡先を伝える)</li>
@@ -373,12 +494,14 @@ function Showcase() {
         </div>
       </section>
 
-      <GoldLine />
+      <HairLine />
 
-      {/* ── 価格 ── */}
-      <section style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(36px, 6vw, 72px) clamp(16px, 4vw, 40px)' }}>
-        <div style={{ fontFamily: SERIF, fontSize: 12, letterSpacing: '0.3em', color: P.gold, marginBottom: 10 }}>PRICING</div>
-        <h2 style={{ margin: '0 0 28px', fontSize: 'clamp(22px, 3.4vw, 32px)', fontWeight: 700 }}>料金プラン</h2>
+      {/* ── 04 PRICING ── */}
+      <section id="pricing" style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(40px, 6vw, 80px) clamp(16px, 4vw, 44px)', scrollMarginTop: 16 }}>
+        <SectionIndex no="04" label="Pricing" />
+        <h2 style={{ margin: '0 0 30px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(24px, 3.6vw, 36px)', letterSpacing: '0.04em' }}>
+          料金プラン
+        </h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
           {[
             {
@@ -386,7 +509,12 @@ function Showcase() {
               monthly: '¥29,800',
               setup: '¥98,000',
               desc: 'まず1サイトに導入して、夜間・休日の取りこぼしを無くしたい方へ。',
-              features: ['ブランド設定 (色・言葉づかい・FAQ)', '24時間の自動応対', 'ご希望 (リード) のメール通知', 'メールサポート'],
+              features: [
+                '上の12機能すべて (ナレッジ学習・FAQ自動生成・AI SDR・多言語・先に話しかける接客)',
+                '24時間の自動応対・会話まるごとメール通知',
+                'ブランド設定 (色・人格・言葉づかい)',
+                'メールサポート',
+              ],
               highlight: false,
             },
             {
@@ -394,16 +522,22 @@ function Showcase() {
               monthly: '¥49,800',
               setup: '¥298,000',
               desc: '応対品質そのものをブランド資産にしたい方へ。専任で言葉を磨き込みます。',
-              features: ['Standard の全て', '専任チューニング (応対文の磨き込み)', '実写風アバター (準備中・優先案内)', '複数サイト・優先サポート'],
+              features: [
+                'Standard の全て',
+                '専任チューニング (応対文・FAQ・見極め条件の磨き込み)',
+                '実写風アバター (準備中・優先案内)',
+                '複数サイト・優先サポート',
+              ],
               highlight: true,
             },
           ].map(plan => (
             <div key={plan.name} style={{
-              flex: '1 1 300px', minWidth: 0, borderRadius: 22, padding: 'clamp(20px, 3vw, 28px)',
-              border: plan.highlight ? `1.5px solid ${P.gold}` : `1px solid ${P.border}`,
+              flex: '1 1 300px', minWidth: 0, borderRadius: 26, padding: 'clamp(20px, 3vw, 30px)',
+              border: plan.highlight ? `1.5px solid rgba(217,228,245,0.55)` : `1px solid ${P.line}`,
               background: plan.highlight
-                ? 'linear-gradient(165deg, rgba(201,169,110,0.12), rgba(255,255,255,0.02))'
-                : P.surface,
+                ? 'linear-gradient(165deg, rgba(217,228,245,0.14), rgba(255,255,255,0.03))'
+                : P.glass,
+              backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
               position: 'relative',
             }}>
               {plan.highlight && (
@@ -414,11 +548,11 @@ function Showcase() {
                   おすすめ
                 </div>
               )}
-              <div style={{ fontFamily: SERIF, fontSize: 18, letterSpacing: '0.14em', color: plan.highlight ? P.gold : P.fg, marginBottom: 12 }}>
+              <div style={{ fontFamily: SERIF, fontSize: 19, letterSpacing: '0.18em', color: plan.highlight ? P.silver : P.fg, marginBottom: 12, textTransform: 'uppercase' }}>
                 {plan.name}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 2 }}>
-                <span style={{ fontSize: 'clamp(28px, 4vw, 36px)', fontWeight: 800, letterSpacing: '0.01em' }}>{plan.monthly}</span>
+                <span style={{ fontFamily: SERIF, fontSize: 'clamp(30px, 4vw, 40px)', fontWeight: 400, letterSpacing: '0.01em' }}>{plan.monthly}</span>
                 <span style={{ fontSize: 13, color: P.fgMuted }}>/月 (税込)</span>
               </div>
               <div style={{ fontSize: 12.5, color: P.fgMuted, marginBottom: 14 }}>初期費用 {plan.setup} (設定代行つき)</div>
@@ -426,7 +560,7 @@ function Showcase() {
               <ul style={{ listStyle: 'none', margin: '0 0 20px', padding: 0 }}>
                 {plan.features.map(f => (
                   <li key={f} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', fontSize: 13, lineHeight: 1.7, marginBottom: 8 }}>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke={P.gold} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 4 }}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke={P.silver} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 4 }}>
                       <path d="M2.5 7.5l3 3 6-7" />
                     </svg>
                     <span>{f}</span>
@@ -437,10 +571,10 @@ function Showcase() {
                 href={mailtoCta(plan.name)}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 50,
-                  borderRadius: 14, textDecoration: 'none', fontSize: 14, fontWeight: 800, letterSpacing: '0.05em',
-                  background: plan.highlight ? P.gold : 'transparent',
-                  color: plan.highlight ? '#141414' : P.fg,
-                  border: plan.highlight ? 'none' : `1px solid ${P.border}`,
+                  borderRadius: 999, textDecoration: 'none', fontSize: 14, fontWeight: 800, letterSpacing: '0.05em',
+                  background: plan.highlight ? '#F4F7FC' : 'transparent',
+                  color: plan.highlight ? '#1B2333' : P.fg,
+                  border: plan.highlight ? 'none' : `1px solid ${P.line}`,
                 }}
               >
                 導入を相談する
@@ -449,15 +583,17 @@ function Showcase() {
           ))}
         </div>
         <p style={{ margin: '20px 0 0', fontSize: 12, lineHeight: 1.8, color: P.fgSubtle }}>
-          お支払い前に、上のライブデモであなたのブランド設定をそのまま試せます。
+          世界の相場 (公開情報): Intercom Fin は解決1件ごとに $0.99 の従量課金、Qualified の AI 営業担当は年間約 $68,000〜。
+          Crystal は同じ中核機能を、月額定額・従量課金なしでご提供します。
+          お支払い前に、上のコンシェルジュであなたのブランド設定をそのまま試せます。
           導入相談はメール1通から — 24時間以内にご返信します。
         </p>
       </section>
 
       {/* ── フッタ ── */}
-      <footer style={{ borderTop: `1px solid ${P.border}`, padding: '24px clamp(16px, 4vw, 40px)', textAlign: 'center' }}>
+      <footer style={{ borderTop: `1px solid ${P.lineSoft}`, padding: '24px clamp(16px, 4vw, 44px)', textAlign: 'center' }}>
         <div style={{ fontSize: 11, color: P.fgSubtle, letterSpacing: '0.08em' }}>
-          CORE Prism Concierge — 株式会社CORE ·{' '}
+          Crystal — 株式会社CORE ·{' '}
           <a href="/" style={{ color: P.fgMuted, textDecoration: 'none' }}>CORE Prism を見る</a>
         </div>
       </footer>

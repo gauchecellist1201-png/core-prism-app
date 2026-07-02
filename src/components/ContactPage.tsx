@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, CheckCircle2, ArrowLeft, Send, AlertCircle } from 'lucide-react';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 
 type Phase = 'idle' | 'sending' | 'done' | 'error';
 
@@ -37,7 +38,7 @@ export default function ContactPage() {
     setPhase('sending');
     setErr(null);
     try {
-      const res = await fetch('/api/feedback', {
+      const res = await fetchWithTimeout('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

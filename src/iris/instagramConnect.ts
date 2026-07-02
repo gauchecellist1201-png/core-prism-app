@@ -33,6 +33,8 @@ export interface IgProfile {
   avatarUrl?: string;      // プロフィール画像 URL
 }
 
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
+
 const STORAGE_KEY = 'core_iris_ig_profile_v1';
 
 export function loadIgProfile(): IgProfile | null {
@@ -111,11 +113,11 @@ export async function connectFromScreenshot(
       r.onerror = () => reject(new Error('ファイル読み込みに失敗'));
       r.readAsDataURL(file);
     });
-    const resp = await fetch('/api/instagram/profile-from-screenshot', {
+    const resp = await fetchWithTimeout('/api/instagram/profile-from-screenshot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageDataUrl: dataUrl }),
-    });
+    }, 30000);
     const data = await resp.json();
     if (!resp.ok || !data.ok) {
       return {
@@ -151,14 +153,14 @@ export async function connectWithToken(
   accountId?: string,
 ): Promise<{ ok: true; profile: IgProfile } | { ok: false; error: string; message: string; recovery?: string }> {
   try {
-    const resp = await fetch('/api/instagram/profile-by-token', {
+    const resp = await fetchWithTimeout('/api/instagram/profile-by-token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-ig-token': token.trim(),
         ...(accountId ? { 'x-ig-account-id': accountId.trim() } : {}),
       },
-    });
+    }, 20000);
     const data = await resp.json();
     if (!resp.ok) {
       return {
@@ -199,7 +201,7 @@ export async function connectWithToken(
 
 export async function tryOauthConnect(): Promise<{ ok: boolean; reason?: string }> {
   try {
-    const resp = await fetch('/api/instagram/oauth-status', { method: 'GET' });
+    const resp = await fetchWithTimeout('/api/instagram/oauth-status', { method: 'GET' }, 10000);
     if (!resp.ok) return { ok: false, reason: 'oauth_not_configured' };
     const data = await resp.json() as { configured?: boolean; connected?: boolean };
     if (!data.configured) return { ok: false, reason: 'pending_meta_review' };
@@ -222,7 +224,7 @@ export async function tryOauthConnect(): Promise<{ ok: boolean; reason?: string 
  */
 export async function fetchOauthProfile(): Promise<IgProfile | null> {
   try {
-    const resp = await fetch('/api/instagram/profile', { credentials: 'include' });
+    const resp = await fetchWithTimeout('/api/instagram/profile', { credentials: 'include' }, 15000);
     if (!resp.ok) return null;
     const data = await resp.json() as Partial<IgProfile> & { handle?: string; raw?: { mediaCount?: number; avatarUrl?: string } };
     if (!data.handle) return null;
@@ -275,7 +277,7 @@ export interface OauthMediaItem {
  */
 export async function fetchOauthMedia(): Promise<OauthMediaItem[]> {
   try {
-    const resp = await fetch('/api/instagram/media', { credentials: 'include' });
+    const resp = await fetchWithTimeout('/api/instagram/media', { credentials: 'include' }, 20000);
     if (!resp.ok) return [];
     const data = await resp.json() as { media?: OauthMediaItem[] };
     return Array.isArray(data.media) ? data.media : [];
