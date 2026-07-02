@@ -1,0 +1,15 @@
+{
+  "name": "Crystal — 話しかけるだけの AI コンシェルジュ",
+  "short_name": "Crystal",
+  "description": "画面いっぱいのクリスタルの花に、声で話しかけるだけ。あなたの iPhone に住む AI エージェント。",
+  "start_url": "/crystal",
+  "scope": "/crystal",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1B2333",
+  "theme_color": "#1B2333",
+  "icons": [
+    { "src": "/crystal-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/crystal-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

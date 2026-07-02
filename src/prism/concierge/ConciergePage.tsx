@@ -489,6 +489,7 @@ function Showcase() {
                 あなた専用のコンシェルジュページが、もうできています。このリンクを
                 Instagram のプロフィール・LINE のリッチメニュー・メールの署名・Google ビジネスプロフィールに貼るか、
                 QR コードを店頭や名刺に置くだけ。サイトを触る必要はありません。
+                iPhone ならリンクを開いて「共有 → ホーム画面に追加」— それだけでアプリとしてフルスクリーンで住み着きます。
               </p>
               <div style={{
                 borderRadius: 12, border: `1px solid ${P.line}`, background: 'rgba(10,16,28,0.55)',
@@ -629,6 +630,7 @@ function Showcase() {
               monthly: '¥29,800',
               setup: '¥98,000',
               desc: 'まず1サイトに導入して、夜間・休日の取りこぼしを無くしたい方へ。',
+              stripeUrl: 'https://buy.stripe.com/6oUeVe3HteOT9nt6LfdIA0B',
               features: [
                 '上の12機能すべて (ナレッジ学習・FAQ自動生成・AI SDR・多言語・先に話しかける接客)',
                 '24時間の自動応対・会話まるごとメール通知',
@@ -642,6 +644,7 @@ function Showcase() {
               monthly: '¥49,800',
               setup: '¥298,000',
               desc: '応対品質そのものをブランド資産にしたい方へ。専任で言葉を磨き込みます。',
+              stripeUrl: 'https://buy.stripe.com/3cI8wQcdZ9uz8jp1qVdIA0C',
               features: [
                 'Standard の全て',
                 '専任チューニング (応対文・FAQ・見極め条件の磨き込み)',
@@ -688,16 +691,26 @@ function Showcase() {
                 ))}
               </ul>
               <a
-                href={mailtoCta(plan.name)}
+                href={plan.stripeUrl}
+                target="_blank"
+                rel="noreferrer"
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 50,
                   borderRadius: 999, textDecoration: 'none', fontSize: 14, fontWeight: 800, letterSpacing: '0.05em',
-                  background: plan.highlight ? '#F4F7FC' : 'transparent',
-                  color: plan.highlight ? '#1B2333' : P.fg,
-                  border: plan.highlight ? 'none' : `1px solid ${P.line}`,
+                  background: '#F4F7FC', color: '#1B2333', border: 'none',
                 }}
               >
-                導入を相談する
+                今すぐ導入する (カード決済)
+              </a>
+              <a
+                href={mailtoCta(plan.name)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 46, marginTop: 10,
+                  borderRadius: 999, textDecoration: 'none', fontSize: 13, fontWeight: 700, letterSpacing: '0.04em',
+                  background: 'transparent', color: P.fgMuted, border: `1px solid ${P.line}`,
+                }}
+              >
+                先にメールで相談する
               </a>
             </div>
           ))}
