@@ -121,7 +121,7 @@ const CAPABILITIES: Array<{ t: string; d: string }> = [
   { t: '先に話しかける接客', d: '迷っている訪問者へ、数秒後にそっと一言。声かけから商談が始まります。' },
   { t: 'ブランド人格の調整', d: '正統派・親しみ・簡潔の3人格に、呼び名・一人称・色まで合わせられます。' },
   { t: '予約ページへの橋渡し', d: '予約 URL を設定すると、会話の流れで予約ボタンを自動で差し出します。' },
-  { t: '設置はタグ1行', d: 'HTML に1行貼るだけ。プログラミング不要、5分で働き始めます。' },
+  { t: '設置は3通り・HTML不要も', d: '専用リンクを貼るだけ / タグ1行 / メール1通で設置代行。最短1分で働き始めます。' },
 ];
 
 function DiamondIcon() {
@@ -194,6 +194,13 @@ function Showcase() {
   const encoded = useMemo(() => encodeConciergeConfig(config), [config]);
   const embedCode = `<script src="${origin}/crystal.js" data-config="${encoded}" async></script>`;
 
+  // 方法1: 専用リンク (貼り付け不要)。設定はぜんぶ URL の中に入っている
+  const [copiedLink, setCopiedLink] = useState(false);
+  const pageUrl = `${origin}/crystal?page=1&c=${encoded}`;
+  // ナレッジが大きいと QR の容量を超えるので、そのときは QR を省略してリンクだけにする
+  const qrOk = pageUrl.length <= 1500;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(pageUrl)}`;
+
   const copyEmbed = async () => {
     try {
       await navigator.clipboard.writeText(embedCode);
@@ -204,6 +211,20 @@ function Showcase() {
       window.prompt('このタグをコピーしてください', embedCode);
     }
   };
+
+  const copyPageLink = async () => {
+    try {
+      await navigator.clipboard.writeText(pageUrl);
+      setCopiedLink(true);
+      window.setTimeout(() => setCopiedLink(false), 2200);
+    } catch {
+      window.prompt('このリンクをコピーしてください', pageUrl);
+    }
+  };
+
+  const daikouMailto = `mailto:core.guild.inc@gmail.com?subject=${encodeURIComponent('【Crystal 設置代行】お願いします')}&body=${encodeURIComponent(
+    `サイトURL: \nブランド名: ${config.brandName}\nご希望 (あれば): \n\n--- 以下はそのままで大丈夫です (あなたの設定データ) ---\n${pageUrl}`,
+  )}`;
 
   const mailtoCta = (plan: string) =>
     `mailto:core.guild.inc@gmail.com?subject=${encodeURIComponent(`【Crystal 導入相談】${plan}`)}&body=${encodeURIComponent(
@@ -258,9 +279,10 @@ function Showcase() {
         <h2 style={{ margin: '0 0 10px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(24px, 3.6vw, 36px)', letterSpacing: '0.04em' }}>
           あなたのサイトに、1行で設置
         </h2>
-        <p style={{ margin: '0 0 30px', fontSize: 14, lineHeight: 2, color: P.fgMuted, maxWidth: 620 }}>
+        <p style={{ margin: '0 0 30px', fontSize: 14, lineHeight: 2, color: P.fgMuted, maxWidth: 680 }}>
           下のフォームでブランドに合わせて調整すると、上のコンシェルジュがその場で変わります。
-          仕上がったら、生成されたタグをサイトの HTML に貼るだけ。プログラミングの知識は要りません。
+          設置のしかたは3つ — いちばん簡単なのは<strong style={{ color: P.fg }}>「専用リンクを貼るだけ」</strong>。
+          HTML を触る必要はありません。丸ごとおまかせの設置代行もあります。
         </p>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
@@ -446,18 +468,93 @@ function Showcase() {
             </button>
           </div>
 
-          {/* 埋め込みタグ */}
+          {/* 設置方法 (かんたん順に3つ) */}
           <div style={{ flex: '1 1 320px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* 方法1: 専用リンク — 貼り付け不要 */}
+            <div style={{
+              borderRadius: 24, padding: 'clamp(16px, 3vw, 26px)',
+              border: `1.5px solid rgba(217,228,245,0.55)`,
+              background: 'linear-gradient(160deg, rgba(217,228,245,0.16), rgba(255,255,255,0.04))',
+              backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+              position: 'relative',
+            }}>
+              <div style={{
+                position: 'absolute', top: -11, left: 24, padding: '3px 12px', borderRadius: 999,
+                background: P.gold, color: '#141414', fontSize: 11, fontWeight: 800, letterSpacing: '0.06em',
+              }}>
+                いちばん簡単
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>方法1 — 専用リンクを貼るだけ (HTML不要)</div>
+              <p style={{ margin: '0 0 12px', fontSize: 12.5, lineHeight: 1.8, color: P.fgMuted }}>
+                あなた専用のコンシェルジュページが、もうできています。このリンクを
+                Instagram のプロフィール・LINE のリッチメニュー・メールの署名・Google ビジネスプロフィールに貼るか、
+                QR コードを店頭や名刺に置くだけ。サイトを触る必要はありません。
+              </p>
+              <div style={{
+                borderRadius: 12, border: `1px solid ${P.line}`, background: 'rgba(10,16,28,0.55)',
+                padding: '10px 14px', fontSize: 11.5, lineHeight: 1.6, color: '#CFE0F5',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                wordBreak: 'break-all', maxHeight: 76, overflowY: 'auto',
+              }}>
+                {pageUrl}
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button
+                  onClick={() => void copyPageLink()}
+                  style={{
+                    flex: '1 1 180px', minHeight: 48, borderRadius: 999, border: 'none',
+                    background: copiedLink ? '#4E9E82' : '#F4F7FC', color: '#1B2333', fontSize: 14, fontWeight: 800,
+                    letterSpacing: '0.04em', cursor: 'pointer', transition: 'background 0.2s',
+                  }}
+                >
+                  {copiedLink ? 'コピーしました' : '専用リンクをコピー'}
+                </button>
+                <a
+                  href={pageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 48,
+                    padding: '0 18px', borderRadius: 999, border: `1px solid ${P.line}`,
+                    color: P.fg, textDecoration: 'none', fontSize: 13, fontWeight: 700,
+                  }}
+                >
+                  開いてみる
+                </a>
+              </div>
+              {qrOk ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 14 }}>
+                  <img
+                    src={qrUrl}
+                    alt="専用ページの QR コード"
+                    width={92}
+                    height={92}
+                    loading="lazy"
+                    style={{ borderRadius: 10, background: '#FFFFFF', padding: 4, flexShrink: 0 }}
+                  />
+                  <div style={{ fontSize: 11.5, lineHeight: 1.8, color: P.fgSubtle }}>
+                    QR コード — 店頭のポップ・名刺・チラシに。読み取るとこのコンシェルジュが開きます。
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: 11.5, lineHeight: 1.8, color: P.fgSubtle, marginTop: 12 }}>
+                  ナレッジの文章が長いため QR コードは省略しました。リンクのコピーはそのまま使えます。
+                </div>
+              )}
+            </div>
+
+            {/* 方法2: タグ1行 */}
             <div style={{
               borderRadius: 24, padding: 'clamp(16px, 3vw, 26px)',
               border: `1px solid ${P.glassStrong}`,
               background: 'linear-gradient(160deg, rgba(217,228,245,0.12), rgba(255,255,255,0.03))',
               backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
             }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>設置タグ (この1行だけ)</div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>方法2 — 自分のサイトに、タグ1行で埋め込み</div>
               <p style={{ margin: '0 0 12px', fontSize: 12.5, lineHeight: 1.8, color: P.fgMuted }}>
                 サイトの HTML の <code style={{ color: P.silver }}>&lt;/body&gt;</code> の直前に貼ると、
                 右下にコンシェルジュのバブルが現れます。上の設定を変えるたびに、このタグも自動で更新されます。
+                WordPress・Wix・STUDIO・ペライチ・Shopify・BASE は、それぞれの「カスタムHTML / コード埋め込み」機能に貼れば動きます。
               </p>
               <div style={{
                 borderRadius: 12, border: `1px solid ${P.line}`, background: 'rgba(10,16,28,0.55)',
@@ -477,6 +574,29 @@ function Showcase() {
               >
                 {copied ? 'コピーしました' : 'タグをコピー'}
               </button>
+            </div>
+
+            {/* 方法3: 設置代行 — メール1通で丸投げ */}
+            <div style={{
+              borderRadius: 24, padding: 'clamp(16px, 3vw, 26px)', border: `1px solid ${P.line}`, background: P.glass,
+              backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>方法3 — 丸ごとおまかせ (設置代行)</div>
+              <p style={{ margin: '0 0 12px', fontSize: 12.5, lineHeight: 1.8, color: P.fgMuted }}>
+                下のボタンを押すと、あなたの設定データ入りのメールが用意されます。
+                サイトの URL を書いて送るだけで、こちらで設置まで行います (初期費用に含まれます)。
+                メールが開かない場合は、上の専用リンクをコピーして core.guild.inc@gmail.com へ送ってください。
+              </p>
+              <a
+                href={daikouMailto}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 48,
+                  borderRadius: 999, border: `1px solid ${P.line}`, background: 'transparent',
+                  color: P.fg, textDecoration: 'none', fontSize: 13.5, fontWeight: 700, letterSpacing: '0.03em',
+                }}
+              >
+                設置代行をメールで頼む
+              </a>
             </div>
 
             <div style={{
@@ -601,7 +721,19 @@ function Showcase() {
   );
 }
 
+/** 専用ページモード (?page=1) — 貼り付け不要の「リンクだけ設置」。お客様に見せる全画面のみ */
+function isCrystalPageMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('page') === '1';
+}
+
+function HostedPage() {
+  const config = useMemo(() => readConciergeConfigFromUrl(), []);
+  return <ConciergeStage config={config} standalone />;
+}
+
 export default function ConciergePage() {
   if (isConciergeEmbed()) return <EmbedMode />;
+  if (isCrystalPageMode()) return <HostedPage />;
   return <Showcase />;
 }

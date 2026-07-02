@@ -240,7 +240,7 @@ const sheetInput: React.CSSProperties = {
 };
 
 // ─── 本体 ─────────────────────────────────
-export default function ConciergeStage({ config }: { config: ConciergeConfig }) {
+export default function ConciergeStage({ config, standalone }: { config: ConciergeConfig; standalone?: boolean }) {
   const cz = useConcierge(config);
   const [input, setInput] = useState('');
   const [voiceOn, setVoiceOn] = useState(true);
@@ -360,14 +360,16 @@ export default function ConciergeStage({ config }: { config: ConciergeConfig }) 
           <button onClick={() => setHistoryOpen(true)} aria-label="会話履歴" style={iconBtn}>
             <HistoryIcon />
           </button>
-          <a href="#setup" style={{
-            display: 'inline-flex', alignItems: 'center', minHeight: 42, padding: '8px 16px',
-            borderRadius: 999, border: `1px solid ${T.line}`, background: T.glassLight,
-            backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-            color: T.fg, textDecoration: 'none', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap',
-          }}>
-            設置と料金
-          </a>
+          {!standalone && (
+            <a href="#setup" style={{
+              display: 'inline-flex', alignItems: 'center', minHeight: 42, padding: '8px 16px',
+              borderRadius: 999, border: `1px solid ${T.line}`, background: T.glassLight,
+              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+              color: T.fg, textDecoration: 'none', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap',
+            }}>
+              設置と料金
+            </a>
+          )}
         </div>
       </div>
 
