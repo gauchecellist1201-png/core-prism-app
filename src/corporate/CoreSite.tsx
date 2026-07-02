@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo } from '../components/Logo';
 
 const COMPANY = {
   nameJa: '株式会社コア',
@@ -116,7 +116,7 @@ export default function CoreSite() {
         position: 'relative',
         zIndex: 60,
       }}>
-        Prism ・ Iris ・ Guild ・ Resonance ・ Lume —— 五つのプロダクト、ベータ公開中
+        Prism ・ Iris ・ Guild ・ Resonance ・ Lume ・ Crystal —— 六つのプロダクト、ベータ公開中
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -428,6 +428,24 @@ export default function CoreSite() {
             accentColor="#FFA42A"
             accentGradient="linear-gradient(135deg,#FFD86B,#FFA42A,#FF7A18)"
             url="https://lume-deploy-five.vercel.app/"
+          />
+
+          {/* CRYSTAL — 話しかけるだけの AI コンシェルジュ (第6のプロダクト) */}
+          <FeatureProduct
+            brand="crystal"
+            badge="AI コンシェルジュ ／ サイトに1行で"
+            tagline="話しかけるだけで、すべて解決。"
+            taglineEn="Speak, and it is handled."
+            description="画面いっぱいに咲くクリスタルの花に、声で話しかけるだけ。あなたのサイトを訪れたお客様を 24 時間お迎えし、質問に答え、見込みの高い方から商談の日程まで受け取る、白と金の AI コンシェルジュです。"
+            features={[
+              '会社案内を貼るだけで学習・FAQ も自動生成',
+              '有望なお客様を見極めて日程と連絡先を獲得',
+              '設置は HTML にタグ1行、多言語で自動応対',
+            ]}
+            accentColor="#C9A96E"
+            accentGradient="linear-gradient(135deg,#FFFFFF,#D9E4F5,#C9A96E)"
+            url="/crystal"
+            reversed
           />
         </div>
       </section>
@@ -967,7 +985,7 @@ export default function CoreSite() {
             <InfoRow label="代表取締役" subLabel="CEO"           value={COMPANY.ceoJa}    subValue={COMPANY.ceoEn} />
             <InfoRow label="本社所在地" subLabel="Headquarters" value={COMPANY.addressJa} subValue={COMPANY.addressEn} />
             <InfoRow label="事業内容"   subLabel="Business"     value="エージェントAIを中心とした SaaS の開発・運営" />
-            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）" isLast />
+            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）／ Crystal（AI コンシェルジュ・接客サイト向け）" isLast />
           </dl>
         </div>
       </section>
@@ -1139,6 +1157,7 @@ export default function CoreSite() {
             <a href="https://guild-gauches-projects.vercel.app/?lp=1" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Guild</a>
             <a href="https://resonancebot-ivory.vercel.app/lp" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Resonance</a>
             <a href="https://lume-deploy-five.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Lume</a>
+            <a href="/crystal" style={footLink} className="lp-tap-link">Crystal</a>
           </div>
           <div>
             <p style={footHead}>会社</p>
@@ -1290,7 +1309,7 @@ function FeatureProduct({
   url,
   reversed,
 }: {
-  brand: 'prism' | 'iris' | 'guild' | 'resonance' | 'lume';
+  brand: 'prism' | 'iris' | 'guild' | 'resonance' | 'lume' | 'crystal';
   badge: string;
   tagline: string;
   taglineEn: string;
@@ -1306,12 +1325,14 @@ function FeatureProduct({
     brand === 'guild' ? GuildLogo :
     brand === 'resonance' ? ResonanceLogo :
     brand === 'lume' ? LumeLogo :
+    brand === 'crystal' ? CrystalLogo :
     PrismLogo;
   const productName =
     brand === 'iris' ? 'CORE Iris' :
     brand === 'guild' ? 'CORE Guild' :
     brand === 'resonance' ? 'CORE Resonance' :
     brand === 'lume' ? 'CORE Lume' :
+    brand === 'crystal' ? 'Crystal' :
     'CORE Prism';
 
   return (

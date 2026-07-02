@@ -400,6 +400,101 @@ export function GuildLogo({ size = 28, withWordmark = true, variant = 'default',
 }
 
 // ─────────────────────────────────────────────
+//  Crystal — ガラスの蓮 (白×クリスタル×金)
+//  外輪8弁のクリスタル花弁 + 内輪6弁 + 金の芯
+//  /crystal の 3D クリスタル・ロータスをシンボル化
+// ─────────────────────────────────────────────
+export function CrystalLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
+  const isMono = variant === 'mono';
+  // 同一ページに複数置いてもグラデ ID が衝突しないよう size を織り込む
+  const gOuter = `czlOuter-${size}`;
+  const gInner = `czlInner-${size}`;
+  const gCore = `czlCore-${size}`;
+
+  const outerPetal = 'M50,8 C59,22 61,36 50,50 C39,36 41,22 50,8 Z';
+  const innerPetal = 'M50,26 C56,34 57,43 50,50 C43,43 44,34 50,26 Z';
+
+  return (
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: withWordmark ? 10 : 0, lineHeight: 1 }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="Crystal"
+        style={{ flexShrink: 0 }}
+      >
+        <defs>
+          <linearGradient id={gOuter} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#F4F7FC" stopOpacity="0.95" />
+            <stop offset="55%" stopColor="#C7D8F0" stopOpacity="0.72" />
+            <stop offset="100%" stopColor="#8FA8CC" stopOpacity="0.55" />
+          </linearGradient>
+          <linearGradient id={gInner} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.98" />
+            <stop offset="100%" stopColor="#D9E4F5" stopOpacity="0.8" />
+          </linearGradient>
+          <radialGradient id={gCore}>
+            <stop offset="0%" stopColor="#FFF3DC" />
+            <stop offset="55%" stopColor="#C9A96E" />
+            <stop offset="100%" stopColor="#C9A96E" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        {/* 外輪 8 弁 */}
+        <g>
+          {Array.from({ length: 8 }, (_, i) => (
+            <path
+              key={`o${i}`}
+              d={outerPetal}
+              fill={isMono ? 'currentColor' : `url(#${gOuter})`}
+              opacity={isMono ? 0.5 : 1}
+              stroke={isMono ? 'none' : 'rgba(255,255,255,0.85)'}
+              strokeWidth="1.1"
+              transform={`rotate(${i * 45} 50 50)`}
+            />
+          ))}
+        </g>
+        {/* 内輪 6 弁 */}
+        <g>
+          {Array.from({ length: 6 }, (_, i) => (
+            <path
+              key={`n${i}`}
+              d={innerPetal}
+              fill={isMono ? 'currentColor' : `url(#${gInner})`}
+              opacity={isMono ? 0.8 : 1}
+              stroke={isMono ? 'none' : 'rgba(255,255,255,0.9)'}
+              strokeWidth="0.9"
+              transform={`rotate(${i * 60 + 30} 50 50)`}
+            />
+          ))}
+        </g>
+        {/* 金の芯 */}
+        <circle cx="50" cy="50" r="11" fill={isMono ? 'currentColor' : `url(#${gCore})`} />
+        <circle cx="50" cy="50" r="4" fill={isMono ? 'currentColor' : '#FFF8EA'} />
+      </svg>
+
+      {withWordmark && (
+        <span
+          style={{
+            fontFamily: '"Didot", "Bodoni 72", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif',
+            fontWeight: 500,
+            fontSize: size * 0.46,
+            letterSpacing: '0.3em',
+            ...(isMono ? { color: 'currentColor' } : { color: '#E8EFF9' }),
+          }}
+        >
+          CRYSTAL
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────
 //  CORE Inc. — 法人ロゴ (同心円 + 8 本スポーク + 中央の核)
 //  「核」の本質: 中心から世界へ放射する光
 //  青白いシアン基調の発光、Apple Vision/SF 的な精緻さ
