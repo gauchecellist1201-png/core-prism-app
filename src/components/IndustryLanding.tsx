@@ -90,7 +90,7 @@ export default function IndustryLanding({ slug }: Props) {
     const organization = {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: '株式会社CORE',
+      name: 'CORE',
       url: 'https://core-prism-app.vercel.app/',
       logo: 'https://core-prism-app.vercel.app/og-prism-v3.png',
       sameAs: ['https://x.com/'],
@@ -1074,7 +1074,7 @@ function Footer() {
         <a href="/tokushoho" style={footerLink}>特定商取引法</a>
       </div>
       <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
-        © 2026 株式会社 CORE
+        © 2026 CORE
       </p>
     </footer>
   );

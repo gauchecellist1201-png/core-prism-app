@@ -10,7 +10,7 @@ interface Row {
 }
 
 const ROWS: Row[] = [
-  { label: '販売事業者名', value: '株式会社CORE' },
+  { label: '販売事業者名', value: '井出 直毅（屋号: CORE）' },
   { label: '代表者名', value: '井出 直毅' },
   {
     label: '所在地',

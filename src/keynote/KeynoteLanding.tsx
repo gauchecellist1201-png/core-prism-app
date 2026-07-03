@@ -228,7 +228,7 @@ export default function KeynoteLanding() {
         color: 'rgba(255,250,245,0.35)', fontSize: '0.78rem',
         borderTop: '1px solid rgba(255,250,245,0.08)',
       }}>
-        Core Identity OS — produced by 株式会社コアプリズム (仮) / Founder: 井出直毅
+        Core Identity OS — produced by CORE（設立準備中）/ Founder: 井出直毅
       </footer>
     </div>
   );

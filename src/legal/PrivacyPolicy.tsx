@@ -35,7 +35,7 @@ export default function PrivacyPolicy() {
       <section id="about">
         <h2><span className="num">01</span>はじめに / 対象範囲</h2>
         <p>
-          株式会社CORE (以下「当社」) は、当社が提供する SaaS「CORE Prism」「CORE Iris」および Chrome 拡張機能 (以下まとめて「本サービス」) における、お客様の個人情報の取り扱いについて、本プライバシーポリシー (以下「本ポリシー」) で定めます。
+          CORE（運営者: 井出 直毅。以下「当社」） は、当社が提供する SaaS「CORE Prism」「CORE Iris」および Chrome 拡張機能 (以下まとめて「本サービス」) における、お客様の個人情報の取り扱いについて、本プライバシーポリシー (以下「本ポリシー」) で定めます。
         </p>
         <p>
           当社は「個人情報の保護に関する法律」(個人情報保護法) を遵守し、EU 域内からご利用の方には GDPR (一般データ保護規則) の主要な権利を尊重します。

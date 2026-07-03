@@ -1,5 +1,5 @@
 // ============================================================
-// /strategy — 株式会社CORE 経営戦略司令塔 (オーナー専用)
+// /strategy — CORE 経営戦略司令塔 (オーナー専用)
 // 5 タブ構成:
 //   1. 概要 (Overview)         — 販売チャネル / 集客動線
 //   2. KPI 実行値 (Actuals)    — 実 MRR vs 目標 / Prism / Iris / 12mo トレンド
@@ -139,7 +139,7 @@ const ROADMAP = [
   { phase: 'Phase 1', dates: '〜5/15', focus: 'プロダクト完成と公開開始', items: ['Stripe 本番接続 (5/10)', 'AI 戦略コーチ (5/11)', 'チームコラボ (5/12)', 'AI 動画 / ベンチマーク (5/13-14)'] },
   { phase: 'Phase 2', dates: '5/15-5/22', focus: '販売動線の構築',     items: ['Slack/Discord 統合', 'AI が SaaS を操作', 'マルチ言語', 'ProductHunt 申請キット'] },
   { phase: 'Phase 3', dates: '5/22-5/31', focus: '集客の本格稼働',     items: ['X 自動投稿の質向上', '業種別ユースケース 8 本', 'パートナー営業資料', 'note 記事 4 本'] },
-  { phase: 'Phase 4', dates: '6月',       focus: '法人化・スケール',   items: ['株式会社CORE 法人登記', '独自ドメイン取得 (core-inc.jp)', '本格 PR / メディア対応', 'カスタマー成功チーム整備'] },
+  { phase: 'Phase 4', dates: '6月',       focus: '法人化・スケール',   items: ['CORE 法人登記', '独自ドメイン取得 (core-inc.jp)', '本格 PR / メディア対応', 'カスタマー成功チーム整備'] },
 ];
 
 export default function StrategyDashboard() {
@@ -148,7 +148,7 @@ export default function StrategyDashboard() {
   const masterMode = isMasterAuth();
 
   useEffect(() => {
-    document.title = '株式会社CORE — 経営戦略司令塔';
+    document.title = 'CORE — 経営戦略司令塔';
     let robots = document.querySelector('meta[name="robots"]');
     if (!robots) {
       robots = document.createElement('meta');
@@ -259,7 +259,7 @@ export default function StrategyDashboard() {
             このページ一つで、<span style={{ background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>経営戦略が立つ。</span>
           </h1>
           <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.9, maxWidth: 720, margin: '0 auto' }}>
-            実売上 (KPI) / 事業計画 / 製品説明書 / シナリオ ── 株式会社CORE の意思決定の母艦。
+            実売上 (KPI) / 事業計画 / 製品説明書 / シナリオ ── CORE の意思決定の母艦。
           </p>
         </section>
 

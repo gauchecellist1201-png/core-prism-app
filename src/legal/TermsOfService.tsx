@@ -35,7 +35,7 @@ export default function TermsOfService() {
       <section id="apply">
         <h2><span className="num">第1条</span>本規約の適用</h2>
         <p>
-          本利用規約 (以下「本規約」) は、株式会社CORE (以下「当社」) が提供する SaaS「CORE Prism」「CORE Iris」および関連する Chrome 拡張機能 (以下まとめて「本サービス」) の利用条件を定めるものです。
+          本利用規約 (以下「本規約」) は、CORE（運営者: 井出 直毅。以下「当社」） が提供する SaaS「CORE Prism」「CORE Iris」および関連する Chrome 拡張機能 (以下まとめて「本サービス」) の利用条件を定めるものです。
         </p>
         <p>
           お客様 (以下「ユーザー」) は、本サービスをご利用いただくにあたり、本規約および別途定めるプライバシーポリシーに同意したものとみなします。

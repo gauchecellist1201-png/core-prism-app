@@ -340,7 +340,7 @@ export default function ProductsTab() {
           <a href="/corp" style={resourceLink}>
             <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.65rem', letterSpacing: '0.25em', color: '#a78bfa' }}>CORP</span>
             <p style={{ fontSize: '0.95rem', fontWeight: 700, marginTop: 4 }}>法人サイト</p>
-            <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>株式会社CORE 公開情報ページ</p>
+            <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>CORE 公開情報ページ</p>
           </a>
           <a href="/pricing" style={resourceLink}>
             <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.65rem', letterSpacing: '0.25em', color: '#60a5fa' }}>PRICING</span>

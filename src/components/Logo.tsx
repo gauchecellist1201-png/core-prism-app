@@ -495,7 +495,7 @@ export function CrystalLogo({ size = 28, withWordmark = true, variant = 'default
 }
 
 // ─────────────────────────────────────────────
-//  CORE Inc. — 法人ロゴ (同心円 + 8 本スポーク + 中央の核)
+//  CORE — 法人ロゴ (同心円 + 8 本スポーク + 中央の核)
 //  「核」の本質: 中心から世界へ放射する光
 //  青白いシアン基調の発光、Apple Vision/SF 的な精緻さ
 // ─────────────────────────────────────────────
@@ -517,7 +517,7 @@ export function CoreLogo({ size = 32, withWordmark = true, variant = 'default', 
         viewBox="0 0 100 100"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        aria-label="CORE Inc."
+        aria-label="CORE"
         style={{ flexShrink: 0 }}
       >
         <defs>

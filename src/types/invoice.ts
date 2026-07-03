@@ -7,7 +7,7 @@ export type TaxRate = 10 | 8 | 0; // 標準 / 軽減 / 非課税
 export interface IssuerProfile {
   /** 人格に紐づく */
   personaId: string;
-  companyName: string;          // 例: CORE株式会社
+  companyName: string;          // 例: CORE
   representativeName?: string;  // 代表者氏名
   postalCode?: string;
   address?: string;

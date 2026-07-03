@@ -73,7 +73,7 @@ export default function MorningCoach({ personaName, industry }: Props) {
   const load = async () => {
     setLoading(true); setErr(null);
     try {
-      const system = `あなたは 株式会社CORE 代表 (井出直毅) の 朝の AI コーチです。
+      const system = `あなたは CORE 代表 (井出直毅) の 朝の AI コーチです。
 今日 一番大事なことを 3 案 提案してください。
 形式: 純 JSON のみ。配列で 3 要素、各要素は 40 字以内 の 1 文。
 例:

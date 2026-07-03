@@ -184,7 +184,7 @@ export default function LegalPageLayout({ eyebrow = 'CORE', title, updatedAt, to
             </a>
           </p>
           <p style={{ fontSize: '0.78rem', color: COLORS.textMute, margin: '0.8rem 0 0' }}>
-            運営: 株式会社CORE (日本・東京) / 代表: 井出 直毅 / 所在地は請求があれば遅滞なく開示します
+            運営: CORE（個人事業・日本）/ 運営責任者: 井出 直毅 / 所在地は請求があれば遅滞なく開示します
           </p>
         </section>
 

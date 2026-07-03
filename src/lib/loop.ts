@@ -89,7 +89,7 @@ export interface LoopStep { leg: LoopChannel; label: string; output?: string; do
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function generateLine(who: string, link: string, interest: string): Promise<string> {
-  const system = 'あなたは株式会社COREのCMO。ファン一人に今LINEで送る一言を、自然な日本語1文だけで返す。絵文字・前置き・カギカッコ不要。35文字以内。';
+  const system = 'あなたはCOREのCMO。ファン一人に今LINEで送る一言を、自然な日本語1文だけで返す。絵文字・前置き・カギカッコ不要。35文字以内。';
   const user = `ファン ${who} は Lumeで「${link}」、Instagramでは「${interest}」という反応。この人に今届ける一言を1文で。`;
   try {
     const data = await callAiWithFallback({ model: 'claude-haiku-4-5', max_tokens: 80, system, messages: [{ role: 'user', content: user }] });

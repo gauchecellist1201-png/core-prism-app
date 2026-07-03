@@ -796,7 +796,7 @@ function Showcase() {
       {/* ── フッタ ── */}
       <footer style={{ borderTop: `1px solid ${P.lineSoft}`, padding: '24px clamp(16px, 4vw, 44px)', textAlign: 'center' }}>
         <div style={{ fontSize: 11, color: P.fgSubtle, letterSpacing: '0.08em' }}>
-          Crystal — 株式会社CORE ·{' '}
+          Crystal — CORE ·{' '}
           <a href="/" style={{ color: P.fgMuted, textDecoration: 'none' }}>CORE Prism を見る</a>
         </div>
       </footer>

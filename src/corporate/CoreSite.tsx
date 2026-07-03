@@ -1,5 +1,5 @@
 // ============================================================
-// CORE Inc. — 法人 LP (Corporate Landing)
+// CORE — 法人 LP (Corporate Landing)
 // 「すべての時代の、核となるものを。」
 // 配置: /corp ルート、noindex で検索エンジンには載せない
 // ============================================================
@@ -10,8 +10,8 @@ import { Mail as MailIcon } from 'lucide-react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo } from '../components/Logo';
 
 const COMPANY = {
-  nameJa: '株式会社コア',
-  nameEn: 'CORE Inc.',
+  nameJa: 'CORE',
+  nameEn: 'CORE',
   founded: '2026年 設立予定',
   ceoJa: '井出 直毅',
   ceoEn: 'Naoki Ide',
@@ -19,6 +19,19 @@ const COMPANY = {
   addressEn: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0025, Japan',
   email: 'core.inc.guild@gmail.com',
 };
+
+// プラットフォーム価格グリッド — 製品追加は1オブジェクト追加で並ぶ
+const PLATFORM_PLANS: Array<{
+  name: string; role: string; copy: string; price: string; priceNote: string;
+  accent: string; url: string; featured?: boolean;
+}> = [
+  { name: 'Prism', role: 'AI Business OS', copy: '経営の司令塔。13名のAIエージェントが事業を動かす。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#A78BFA', url: '/pricing' },
+  { name: 'Iris', role: 'Instagram AI', copy: 'Instagram運用のすべてをAIと。分析から案件まで。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#E1306C', url: '/iris?lp=1' },
+  { name: 'Resonance', role: 'LINE AI', copy: '一人ひとりに書き分けるLINE個別配信と自動応対。', price: '¥6,980〜', priceNote: '/ 月（税込）', accent: '#06C755', url: 'https://resonancebot-ivory.vercel.app/lp' },
+  { name: 'Guild', role: 'Community OS', copy: '提案と投票で動く組織OS。まずは無料の入口から。', price: '¥980〜', priceNote: '/ 月（税込）', accent: '#2DD4BF', url: 'https://guild-gauches-projects.vercel.app/?lp=1' },
+  { name: 'Lume', role: 'Link Hub', copy: 'すべてのリンクをひとつに。いちばん軽い入口。', price: '無料〜', priceNote: '', accent: '#FFA42A', url: 'https://lume-deploy-five.vercel.app/' },
+  { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: '/crystal', featured: true },
+];
 
 // 荘厳系フォント
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
@@ -30,7 +43,7 @@ const FONT_SANS = '"Noto Sans JP", "Inter", "游ゴシック", sans-serif';
 export default function CoreSite() {
   const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
   useEffect(() => {
-    document.title = '株式会社コア — すべての時代の、核となるものを。';
+    document.title = 'CORE — すべての時代の、核となるものを。';
 
     // theme-color
     const themeMeta = document.querySelector('meta[name="theme-color"]');
@@ -62,16 +75,16 @@ export default function CoreSite() {
       }
       m.setAttribute(attr, value);
     };
-    setMeta('meta[property="og:title"]', 'content', '株式会社コア — CORE Inc.');
+    setMeta('meta[property="og:title"]', 'content', 'CORE');
     setMeta('meta[property="og:description"]', 'content', 'すべての時代の、核となるものを。AI エージェント OS を提供する CORE。');
     setMeta('meta[property="og:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v4.png');
     setMeta('meta[property="og:url"]', 'content', 'https://core-prism-app.vercel.app/corp');
     setMeta('meta[property="og:type"]', 'content', 'website');
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
     setMeta('meta[name="twitter:image"]', 'content', 'https://core-prism-app.vercel.app/og-core-v4.png');
-    setMeta('meta[name="twitter:title"]', 'content', '株式会社コア — CORE Inc.');
+    setMeta('meta[name="twitter:title"]', 'content', 'CORE');
     setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。');
-    setMeta('meta[name="description"]', 'content', '株式会社コア (CORE Inc.) — あなたの仕事と SNS を、AI エージェントで一気通貫に。司令塔 Prism に、Instagram の Iris・LINE の Resonance・リンクの Lume がつながる、ひとつの AI エージェント OS。');
+    setMeta('meta[name="description"]', 'content', 'CORE — あなたの仕事と SNS を、AI エージェントで一気通貫に。司令塔 Prism に、Instagram の Iris・LINE の Resonance・リンクの Lume がつながる、ひとつの AI エージェント OS。');
 
     // 検索エンジンには載せない (noindex)
     let robots = document.querySelector('meta[name="robots"]');
@@ -146,7 +159,7 @@ export default function CoreSite() {
           <a
             href="#top"
             style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}
-            aria-label="株式会社コア"
+            aria-label="CORE"
             className="lp-tap-link"
           >
             <CoreLogo size={36} withWordmark />
@@ -160,88 +173,6 @@ export default function CoreSite() {
           </nav>
         </div>
       </header>
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  1画面目: 原子ロゴが放射しながら開く (Crystal級・2026-07-02) */}
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <section
-        aria-label="株式会社CORE"
-        style={{
-          position: 'relative', height: 'calc(100svh - 96px)', minHeight: 520, overflow: 'hidden',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          background: 'radial-gradient(120% 90% at 50% -10%, #0d1b2e 0%, #06101d 50%, #01060d 100%)',
-        }}
-      >
-        <style>{`
-          .cah-ring { transform-origin: 50px 50px; transform: scale(0); opacity: 0;
-                      animation: cahRing 1.4s cubic-bezier(0.16,1,0.3,1) forwards; }
-          @keyframes cahRing { to { transform: scale(1); opacity: 1; } }
-          .cah-spoke { stroke-dasharray: 40; stroke-dashoffset: 40;
-                       animation: cahSpoke 0.9s ease-out forwards; }
-          @keyframes cahSpoke { to { stroke-dashoffset: 0; } }
-          .cah-core { transform-origin: 50px 50px; transform: scale(0);
-                      animation: cahCore 1s cubic-bezier(0.16,1,0.3,1) 0.1s forwards; }
-          @keyframes cahCore { to { transform: scale(1); } }
-          .cah-svg { animation: cahBreathe 8s ease-in-out 2.6s infinite; }
-          @keyframes cahBreathe { 0%,100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.03) rotate(1.6deg); } }
-          .cah-pulse { animation: cahPulse 3.2s ease-in-out 2.4s infinite; }
-          @keyframes cahPulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
-          .cah-fade { opacity: 0; animation: cahFade 1.1s ease-out forwards; }
-          @keyframes cahFade { to { opacity: 1; } }
-          .cah-hint { animation: cahHint 2.2s ease-in-out 3s infinite; opacity: 0.5; }
-          @keyframes cahHint { 0%,100% { transform: translate(-50%,0); } 50% { transform: translate(-50%,7px); } }
-          @media (prefers-reduced-motion: reduce) {
-            .cah-ring, .cah-spoke, .cah-core { animation: none; transform: none; opacity: 1; stroke-dashoffset: 0; }
-            .cah-svg, .cah-pulse, .cah-hint { animation: none; }
-            .cah-fade { animation: none; opacity: 1; }
-          }
-        `}</style>
-        {/* 青白いオーラ */}
-        <div aria-hidden className="cah-pulse" style={{
-          position: 'absolute', left: '50%', top: '40%', width: 'min(110vw, 820px)', aspectRatio: '1/1',
-          transform: 'translate(-50%,-50%)', pointerEvents: 'none', filter: 'blur(34px)',
-          background: 'radial-gradient(circle, rgba(56,189,248,0.20) 0%, rgba(14,165,233,0.07) 40%, transparent 70%)',
-        }} />
-        {/* 原子ロゴ: 核が灯り→リングとスポークが放射して開く */}
-        <svg className="cah-svg" viewBox="0 0 100 100" aria-hidden
-          style={{ width: 'min(46svh, 74vw, 400px)', display: 'block', overflow: 'visible' }}>
-          <g stroke="#7DD3FC" fill="none" strokeLinecap="round">
-            <circle className="cah-ring" cx="50" cy="50" r="44" strokeWidth="1.6" style={{ animationDelay: '1.1s' }} opacity="0.9" />
-            <circle className="cah-ring" cx="50" cy="50" r="28" strokeWidth="1.3" style={{ animationDelay: '0.7s' }} opacity="0.85" />
-            <circle className="cah-ring" cx="50" cy="50" r="12" strokeWidth="1.1" style={{ animationDelay: '0.4s' }} opacity="0.8" />
-            {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
-              const rad = (deg * Math.PI) / 180;
-              return (
-                <line
-                  key={deg}
-                  className="cah-spoke"
-                  x1={50 + Math.cos(rad) * 12} y1={50 + Math.sin(rad) * 12}
-                  x2={50 + Math.cos(rad) * 44} y2={50 + Math.sin(rad) * 44}
-                  strokeWidth="0.9" opacity="0.75"
-                  style={{ animationDelay: `${1.3 + i * 0.09}s` }}
-                />
-              );
-            })}
-          </g>
-          <circle className="cah-core" cx="50" cy="50" r="6.5" fill="#E0F2FE" />
-          <circle className="cah-core" cx="50" cy="50" r="3" fill="#FFFFFF" style={{ animationDelay: '0.2s' }} />
-        </svg>
-        {/* 言葉 */}
-        <div className="cah-fade" style={{ textAlign: 'center', padding: '0 20px', marginTop: 'clamp(14px, 3svh, 28px)', animationDelay: '1.8s', zIndex: 2 }}>
-          <h1 style={{ margin: 0, fontFamily: FONT_SERIF_JA, fontWeight: 600, fontSize: 'clamp(24px, 5vw, 40px)', letterSpacing: '0.12em', color: '#F0F7FF' }}>
-            すべての時代の、核となるものを。
-          </h1>
-          <p style={{ margin: '14px 0 0', fontSize: 'clamp(13px, 2.2vw, 15.5px)', lineHeight: 2, color: 'rgba(224,242,254,0.7)', letterSpacing: '0.06em' }}>
-            株式会社CORE — 六つのプロダクトと、AIの経営陣。
-          </p>
-        </div>
-        {/* 下へ */}
-        <div className="cah-hint" aria-hidden style={{ position: 'absolute', bottom: 'calc(16px + env(safe-area-inset-bottom))', left: '50%' }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(224,242,254,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        </div>
-      </section>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  HERO                       */}
@@ -309,11 +240,13 @@ export default function CoreSite() {
           >
             Instagram の <strong style={{ color: '#E1306C', fontWeight: 600 }}>Iris</strong> が反応をつかみ、リンクの <strong style={{ color: '#FFA42A', fontWeight: 600 }}>Lume</strong> が興味を映し、LINE の <strong style={{ color: '#06C755', fontWeight: 600 }}>Resonance</strong> が一人ひとりに届ける。
             <br />
+            サイトの入口では、AI コンシェルジュ <strong style={{ color: '#C9A96E', fontWeight: 600 }}>Crystal</strong> が 24 時間お客様をお迎えする。
+            <br />
             集まった声は、司令塔 <strong style={{ color: '#a78bfa', fontWeight: 600 }}>Prism</strong> へ。13 名の AI 役員が、次の一手まで描く。
             <br />
             そして <strong style={{ color: '#2dd4bf', fontWeight: 600 }}>Guild</strong> が、お客様を“ファン”から、ともに動く“仲間”へ変える。
             <br />
-            五つは、別々の道具ではない。掛け合わさって、ひとつの知性になる。
+            六つは、別々の道具ではない。掛け合わさって、ひとつの知性になる。
             <br />
             <strong style={{ color: '#fff', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
           </p>
@@ -358,8 +291,9 @@ export default function CoreSite() {
               <FlowStep n="01" color="#FFA42A" tool="Lume" Logo={LumeLogo} body="ファンが、あなたのどのリンクを踏んだのかが分かる。" />
               <FlowStep n="02" color="#E1306C" tool="Iris" Logo={IrisLogo} body="その人の Instagram での反応を、AIが解析する。" />
               <FlowStep n="03" color="#06C755" tool="Resonance" Logo={ResonanceLogo} body="いま響く一文を、LINE でその人だけに届ける。" />
-              <FlowStep n="04" color="#a78bfa" tool="Prism" Logo={PrismLogo} body="すべてを記録し、13 名の AI 役員が次の一手を出す。" />
-              <FlowStep n="05" color="#2dd4bf" tool="Guild" Logo={GuildLogo} body="決まった一手を、貢献で動くチーム〈ギルド〉が実行する。" last />
+              <FlowStep n="04" color="#C9A96E" tool="Crystal" Logo={CrystalLogo} body="サイトに来た方は Crystal がお迎えし、商談の日程まで受け取る。" />
+              <FlowStep n="05" color="#a78bfa" tool="Prism" Logo={PrismLogo} body="すべてを記録し、13 名の AI 役員が次の一手を出す。" />
+              <FlowStep n="06" color="#2dd4bf" tool="Guild" Logo={GuildLogo} body="決まった一手を、貢献で動くチーム〈ギルド〉が実行する。" last />
             </div>
 
             <p style={{
@@ -370,7 +304,7 @@ export default function CoreSite() {
               marginTop: '2.75rem',
               fontWeight: 400,
             }}>
-              五つのサービスが連携し、ひとつの流れになる。
+              六つのサービスが連携し、ひとつの流れになる。
               <br />
               <strong style={{ color: '#fff', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
             </p>
@@ -405,7 +339,7 @@ export default function CoreSite() {
                 letterSpacing: '0.04em',
               }}
             >
-              四つの専門。ひとつの、頭脳。
+              六つの専門。ひとつの、頭脳。
             </h2>
             <p
               style={{
@@ -529,6 +463,146 @@ export default function CoreSite() {
             url="/crystal"
             reversed
           />
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  PLATFORM — 価格グリッド    */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section
+        id="platform"
+        className="lp-section-pad"
+        style={{ padding: '7rem 1.5rem', background: 'linear-gradient(180deg,#070712 0%,#05050c 100%)' }}
+      >
+        <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <p style={sectionLabel}>
+              <span style={sectionLabelMain}>プラットフォーム</span>
+              <span style={sectionLabelSub}>PLATFORM</span>
+            </p>
+            <h2 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.85rem, 3.8vw, 2.85rem)', fontWeight: 700, lineHeight: 1.5, marginBottom: '1.25rem', letterSpacing: '0.04em' }}>
+              小さく始めて、大きく育てる。
+            </h2>
+            <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(255,255,255,0.65)', fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', maxWidth: 680, margin: '0 auto', lineHeight: 2 }}>
+              どのプロダクトも、月々数千円から。事業が育ったら、そのまま上位プランへ。
+              <br />
+              六つすべてが、ひとつの CORE でつながっています。
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            {PLATFORM_PLANS.map(p => (
+              <a
+                key={p.name}
+                href={p.url}
+                target={p.url.startsWith('http') ? '_blank' : undefined}
+                rel="noopener"
+                className="lp-tap-link"
+                style={{
+                  display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                  padding: '1.75rem 1.6rem', borderRadius: 18, textDecoration: 'none',
+                  background: p.featured ? 'linear-gradient(160deg, rgba(201,169,110,0.14), rgba(201,169,110,0.02))' : 'rgba(255,255,255,0.03)',
+                  border: p.featured ? '1px solid rgba(201,169,110,0.55)' : '1px solid rgba(255,255,255,0.09)',
+                  boxShadow: p.featured ? '0 24px 60px -30px rgba(201,169,110,0.45)' : 'none',
+                  color: '#fff', transition: 'transform .35s, border-color .35s',
+                }}
+              >
+                <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.24em', color: p.accent, textTransform: 'uppercase' }}>{p.role}</span>
+                <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.55rem', fontWeight: 600, letterSpacing: '0.04em' }}>{p.name}</span>
+                <span style={{ fontFamily: FONT_SANS, fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, minHeight: '2.9em' }}>{p.copy}</span>
+                <span style={{ marginTop: 'auto', paddingTop: '0.9rem', borderTop: '1px solid rgba(255,255,255,0.08)', fontFamily: FONT_SANS, fontWeight: 700, fontSize: '1.28rem', color: p.featured ? '#E7C987' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                  {p.price}
+                  <small style={{ fontSize: '0.68rem', fontWeight: 400, color: 'rgba(255,255,255,0.55)', marginLeft: 6 }}>{p.priceNote}</small>
+                </span>
+              </a>
+            ))}
+          </div>
+          <p style={{ textAlign: 'center', marginTop: '1.6rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.9 }}>
+            ※ 価格は税込・月額の入口プランです。詳細は各プロダクトのページでご確認ください。
+          </p>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  EXECUTIVE WELL-BEING PACKAGE */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section
+        id="executive"
+        className="lp-section-pad"
+        style={{ padding: '7rem 1.5rem', background: '#000' }}
+      >
+        <div
+          style={{
+            maxWidth: 1080, margin: '0 auto', position: 'relative', overflow: 'hidden',
+            borderRadius: 24, padding: 'clamp(2.4rem, 5vw, 4.2rem)',
+            background: 'radial-gradient(140% 120% at 85% -20%, #1a1508 0%, #070707 60%)',
+            border: '1px solid rgba(201,169,110,0.5)',
+            boxShadow: '0 40px 90px -40px rgba(201,169,110,0.35), inset 0 0 80px rgba(201,169,110,0.05)',
+          }}
+        >
+          <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.74rem', letterSpacing: '0.3em', color: '#C9A96E', textTransform: 'uppercase', marginBottom: '1.2rem' }}>
+            Executive Well-being Package
+          </p>
+          <h2
+            style={{
+              fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.6rem, 3.4vw, 2.5rem)', fontWeight: 700, lineHeight: 1.7, letterSpacing: '0.04em',
+              background: 'linear-gradient(120deg, #F7EAD0, #C9A96E)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              marginBottom: '1.2rem',
+            }}
+          >
+            AI が事業を伸ばし、
+            <br />
+            音楽が組織を潤す。
+          </h2>
+          <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(255,255,255,0.68)', fontSize: 'clamp(0.92rem, 1.4vw, 1.02rem)', lineHeight: 2.1, maxWidth: 640 }}>
+            CORE の上位プランをご契約の企業さまだけにご案内する、招待制の最上位パッケージ。
+            主宰・井出直毅のもう一つの顔 —— 世界のラグジュアリーの現場で演奏するチェリスト
+            <strong style={{ color: '#E7C987', fontWeight: 600 }}> GAUCHE </strong>
+            による特別な体験を、御社の福利厚生とブランドに。
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', margin: '2.2rem 0 2.4rem' }}>
+            {[
+              { t: '周年・VIP レセプションでの出張演奏', d: 'リッツ・カールトン、Loro Piana Milano で磨いた演奏が、御社のイベントの「格」を引き上げます。' },
+              { t: 'チェロスクール法人契約（福利厚生）', d: '従業員は GAUCHE Cello School の受け放題レッスンへ。楽器は無料貸与、手ぶらで始められます。' },
+              { t: '経営層向け Executive Private 優先枠', d: '役員・経営層のための完全1対1レッスン。多忙な予定に合わせるフルフレックス制。' },
+            ].map(f => (
+              <div key={f.t} style={{ padding: '1.3rem 1.2rem', borderRadius: 14, background: 'rgba(201,169,110,0.05)', border: '1px solid rgba(201,169,110,0.22)' }}>
+                <p style={{ fontFamily: FONT_SERIF_JA, fontWeight: 600, fontSize: '0.95rem', color: '#F1E6CE', lineHeight: 1.8, marginBottom: '0.5rem' }}>{f.t}</p>
+                <p style={{ fontFamily: FONT_SANS, fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.9 }}>{f.d}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.2rem', justifyContent: 'space-between' }}>
+            <p style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.3rem', letterSpacing: '0.14em', color: '#E7C987' }}>
+              By Invitation
+              <span style={{ display: 'block', fontFamily: FONT_SANS, fontSize: '0.72rem', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
+                上位プラン契約企業さま限定 ・ 完全個別お見積り
+              </span>
+            </p>
+            <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
+              <a
+                href={`mailto:${COMPANY.email}?subject=${encodeURIComponent('【Executive Well-being Package】ご相談')}`}
+                className="lp-tap-link"
+                style={{
+                  fontFamily: FONT_SANS, fontSize: '0.88rem', fontWeight: 700, padding: '0.95rem 1.9rem', borderRadius: 999,
+                  background: 'linear-gradient(135deg, #E7C987, #C9A96E)', color: '#14100a', textDecoration: 'none',
+                }}
+              >
+                導入の相談をする
+              </a>
+              <a
+                href="https://gauche-artist.vercel.app/"
+                target="_blank"
+                rel="noopener"
+                className="lp-tap-link"
+                style={{
+                  fontFamily: FONT_SANS, fontSize: '0.88rem', fontWeight: 600, padding: '0.95rem 1.9rem', borderRadius: 999,
+                  border: '1px solid rgba(201,169,110,0.5)', color: '#E7C987', textDecoration: 'none',
+                }}
+              >
+                GAUCHE の演奏を見る ↗
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -764,7 +838,7 @@ export default function CoreSite() {
             {[
               {
                 year: '2026',
-                title: '株式会社 CORE 創業',
+                title: 'CORE 創業',
                 body: '「すべての時代の、核となるものを」を理念に創業。事業家のための Prism を起点に、Iris・Resonance・Lume を加えた四つのプロダクトと、13 名の AI 役員で、中小経営者と個人事業主を支える土台を築きます。',
                 accent: '#FCB045',
               },
@@ -1291,7 +1365,7 @@ export default function CoreSite() {
             letterSpacing: '0.25em',
           }}
         >
-          © {new Date().getFullYear()} CORE INC. — FOUNDING IN 2026
+          © {new Date().getFullYear()} Naoki Ide — CORE（設立準備中）・運営責任者: 井出 直毅
         </div>
       </footer>
       {legalKind && (
@@ -1703,8 +1777,9 @@ function ConnectedSuite() {
   // GUILD の「場」(六角フィールド) に収まるよう、やや内側に配置。
   const sats = [
     { key: 'iris', Logo: IrisLogo, name: 'Iris', role: 'Instagram', color: '#E1306C', x: 50, y: 18 },
-    { key: 'resonance', Logo: ResonanceLogo, name: 'Resonance', role: 'LINE', color: '#06C755', x: 24, y: 80 },
-    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#FFA42A', x: 76, y: 80 },
+    { key: 'resonance', Logo: ResonanceLogo, name: 'Resonance', role: 'LINE', color: '#06C755', x: 22, y: 50 },
+    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#FFA42A', x: 78, y: 50 },
+    { key: 'crystal', Logo: CrystalLogo, name: 'Crystal', role: 'コンシェルジュ', color: '#C9A96E', x: 50, y: 82 },
   ];
   // GUILD の場（4プロダクトを包む）のティール
   const GUILD = '#2dd4bf';

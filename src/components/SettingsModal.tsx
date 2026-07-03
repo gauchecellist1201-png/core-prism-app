@@ -825,7 +825,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     <p className="text-neutral-600 text-[10px] mb-0.5">バージョン</p>
                     <p className="text-fg text-sm font-light">CORE Prism / Iris</p>
                     <p className="text-fg-muted text-[11px] mt-0.5">
-                      {new Date().getFullYear()} 株式会社CORE
+                      {new Date().getFullYear()} CORE
                     </p>
                   </div>
 

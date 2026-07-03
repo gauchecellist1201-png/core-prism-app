@@ -406,7 +406,7 @@ export default function App() {
     return <Suspense fallback={<RouteFallback />}><ConciergePage /></Suspense>;
   }
 
-  // /corp — 株式会社コア (CORE Inc.) 法人 LP
+  // /corp — CORE 法人 LP
   if (isCorpPath()) {
     return <Suspense fallback={<RouteFallback />}><CoreSite /></Suspense>;
   }

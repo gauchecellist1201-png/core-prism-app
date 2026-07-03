@@ -55,7 +55,7 @@ const SECTIONS: Section[] = [
     rows: [
       { label: '本人',          value: 'ログイン後 自分のデータのみ閲覧 (他のユーザーには 隔離 — KK 巡回済み)' },
       { label: '同じ会社のメンバー', value: 'チーム招待 (QQQ) で 役割 別 (オーナー / 編集 / 閲覧)。退会で即取消し' },
-      { label: '弊社 (株式会社CORE)', value: '緊急バグ調査・法令対応のみ。閲覧時は ログ + 本人通知 (audit log) を残す方針' },
+      { label: '運営者 (CORE)', value: '緊急バグ調査・法令対応のみ。閲覧時は ログ + 本人通知 (audit log) を残す方針' },
       { label: '第三者',        value: '原則なし。例外: Stripe (決済) / Resend (メール) / Anthropic / Google (AI) は 利用規約 で定めた範囲のみ' },
     ],
     note: '弊社の従業員アクセス は 監査ログ + 2 段階認証 (TOTP, LLLL) を必須にしています。',
@@ -106,7 +106,7 @@ const SECTIONS: Section[] = [
     title: '法令 / 認証',
     oneLine: '個人情報保護法 / GDPR / CCPA 準拠。SOC2 / ISO27001 は 2026Q4 取得を目標に。',
     rows: [
-      { label: '個人情報保護法 (日本)', value: '対応済。事業者: 株式会社CORE / 代表: 井出直毅' },
+      { label: '個人情報保護法 (日本)', value: '対応済。事業者: 井出 直毅（屋号: CORE）' },
       { label: 'GDPR (EU)',            value: '対応済 (アクセス / 訂正 / 削除 / 持ち出し / 異議申立 の権利を保証)' },
       { label: 'CCPA (米 加州)',        value: '対応済 (Do Not Sell / Share — 弊社は そもそも 個人データを 売却しません)' },
       { label: 'SOC2 / ISO27001',       value: '取得 ロードマップ中 (Type I を 2026Q3, Type II を 2026Q4 目標)' },
@@ -149,7 +149,7 @@ export default function TrustPage() {
         </div>
 
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 28 }}>
-          最終更新: {UPDATED}  /  事業者: <strong style={{ color: 'rgba(255,255,255,0.75)' }}>株式会社CORE</strong>  /  代表: 井出直毅
+          最終更新: {UPDATED}  /  運営責任者: <strong style={{ color: 'rgba(255,255,255,0.75)' }}>井出 直毅（CORE）</strong>  /  代表: 井出直毅
         </div>
 
         {/* TL;DR card */}
@@ -299,7 +299,7 @@ export default function TrustPage() {
 
         {/* Tiny footer */}
         <div style={{ marginTop: 28, fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
-          © 株式会社CORE — CORE Prism / Iris.   最終更新: {UPDATED}
+          © Naoki Ide (CORE) — CORE Prism / Iris.   最終更新: {UPDATED}
         </div>
       </div>
     </div>
