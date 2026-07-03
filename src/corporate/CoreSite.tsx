@@ -30,7 +30,7 @@ const PLATFORM_PLANS: Array<{
   { name: 'Prism', role: 'AI Business OS', copy: '経営の司令塔。13名のAIエージェントが事業を動かす。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#A78BFA', url: '/pricing', Logo: PrismLogo, step: 'STEP 3 — 経営に' },
   { name: 'Iris', role: 'Instagram AI', copy: 'Instagram運用のすべてをAIと。分析から案件まで。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#E1306C', url: '/iris?lp=1', Logo: IrisLogo, step: 'STEP 3 — 集客に' },
   { name: 'Resonance', role: 'LINE AI', copy: '一人ひとりに書き分けるLINE個別配信と自動応対。', price: '¥6,980〜', priceNote: '/ 月（税込）', accent: '#06C755', url: 'https://resonancebot-ivory.vercel.app/lp', Logo: ResonanceLogo, step: 'STEP 4 — ファンを資産に' },
-  { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: '/crystal', Logo: CrystalLogo, step: 'STEP 5 — 最上位のおもてなし', featured: true },
+  { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: 'https://crystal-nine-self.vercel.app/', Logo: CrystalLogo, step: 'STEP 5 — 最上位のおもてなし', featured: true },
 ];
 
 // 荘厳系フォント
@@ -460,7 +460,7 @@ export default function CoreSite() {
             ]}
             accentColor="#C9A96E"
             accentGradient="linear-gradient(135deg,#FFFFFF,#D9E4F5,#C9A96E)"
-            url="/crystal"
+            url="https://crystal-nine-self.vercel.app/"
             reversed
           />
         </div>
@@ -1331,7 +1331,7 @@ export default function CoreSite() {
             <a href="https://guild-gauches-projects.vercel.app/?lp=1" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Guild</a>
             <a href="https://resonancebot-ivory.vercel.app/lp" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Resonance</a>
             <a href="https://lume-deploy-five.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Lume</a>
-            <a href="/crystal" style={footLink} className="lp-tap-link">Crystal</a>
+            <a href="https://crystal-nine-self.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">Crystal</a>
           </div>
           <div>
             <p style={footHead}>会社</p>
@@ -1695,7 +1695,8 @@ function FeatureProduct({
             fontFamily: FONT_SERIF_JA,
             fontSize: '0.95rem',
             fontWeight: 700,
-            color: '#fff',
+            // 明るいグラデ (Crystal 白金 / Lume 黄金 / Guild 淡ティール) は濃色文字で可読性を確保
+            color: ['crystal', 'lume', 'guild'].includes(brand) ? '#14100a' : '#fff',
             textDecoration: 'none',
             padding: '0.85rem 1.75rem',
             borderRadius: 12,
