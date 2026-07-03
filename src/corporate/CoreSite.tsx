@@ -236,7 +236,7 @@ export default function CoreSite() {
           </p>
         </div>
         {/* 下へ */}
-        <div className="cah-hint" aria-hidden style={{ position: 'absolute', bottom: 'calc(14px + env(safe-area-inset-bottom))', left: '50%' }}>
+        <div className="cah-hint" aria-hidden style={{ position: 'absolute', bottom: 'calc(16px + env(safe-area-inset-bottom))', left: '50%' }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(224,242,254,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 9l6 6 6-6" />
           </svg>

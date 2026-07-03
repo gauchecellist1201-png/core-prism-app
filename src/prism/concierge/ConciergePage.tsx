@@ -300,7 +300,9 @@ function Showcase() {
               設定をはじめる
             </button>
             <p style={{ margin: '12px 0 0', fontSize: 11.5, lineHeight: 1.8, color: P.fgSubtle, textAlign: 'center' }}>
-              ご不明点はメール1通で: core.guild.inc@gmail.com — 24時間以内にご返信します。
+              ご不明点はメール1通で:{' '}
+              <a href="mailto:core.guild.inc@gmail.com" style={{ color: P.gold, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>core.guild.inc@gmail.com</a>{' '}
+              — 24時間以内にご返信します。
             </p>
           </div>
         </div>
