@@ -114,9 +114,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!VALID_TEMPLATES.includes(template as Template)) {
     return res.status(400).json({ error: 'Unknown template' });
   }
-  // lead_notify は宛先をオーナーに固定 (外部から任意宛先へ送らせない)
+  // lead_notify は宛先をオーナーに固定 (外部から任意宛先へ送らせない)。
+  // ただし Crystal コンシェルジュ経由 (x-lead-secret 一致) は、
+  // 各店舗のメール宛にリードを直接届けることを許可する (シークレット制でスパム防止)。
+  const leadSecret = process.env.CRYSTAL_LEAD_SECRET;
+  const secretOk = leadSecret && req.headers['x-lead-secret'] === leadSecret;
+  const toIsEmail = typeof to === 'string' && to.includes('@');
   const finalTo = template === 'lead_notify'
-    ? (process.env.FEEDBACK_TO_EMAIL || user)
+    ? (secretOk && toIsEmail ? to : (process.env.FEEDBACK_TO_EMAIL || user))
     : to;
   if (!finalTo) {
     return res.status(400).json({ error: 'Missing to' });
