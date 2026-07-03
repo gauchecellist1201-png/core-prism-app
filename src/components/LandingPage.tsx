@@ -20,6 +20,7 @@ import AnimatedExecStage from './AnimatedExecStage';
 import CxoProfileModal from './CxoProfileModal';
 import type { CxoRole } from '../hooks/useAgentTaskQueue';
 import HeroExecLoop from './HeroExecLoop';
+import PrismBloomHero from './PrismBloomHero';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
 import LaunchCountdownBanner from './LaunchCountdownBanner';
 import PwaInstallNudge from './PwaInstallNudge';
@@ -79,6 +80,8 @@ export default function LandingPage({ onEnterApp }: Props) {
 
   return (
     <div style={{ background: BG_DARK, color: '#fff', minHeight: '100dvh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
+      {/* ── 1画面目: 全画面プリズム開花ヒーロー (Crystal級・2026-07-02) ── */}
+      <PrismBloomHero onStart={onEnterApp} />
       {/* ── 6/1 一般公開カウントダウン ───────────── */}
       <LaunchCountdownBanner kind="prism" />
       {/* WW (2026-06-03): PWA インストール促進 (3 訪問目以降に 1 日 1 回) */}

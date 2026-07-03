@@ -162,6 +162,88 @@ export default function CoreSite() {
       </header>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  1画面目: 原子ロゴが放射しながら開く (Crystal級・2026-07-02) */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section
+        aria-label="株式会社CORE"
+        style={{
+          position: 'relative', height: 'calc(100svh - 96px)', minHeight: 520, overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          background: 'radial-gradient(120% 90% at 50% -10%, #0d1b2e 0%, #06101d 50%, #01060d 100%)',
+        }}
+      >
+        <style>{`
+          .cah-ring { transform-origin: 50px 50px; transform: scale(0); opacity: 0;
+                      animation: cahRing 1.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+          @keyframes cahRing { to { transform: scale(1); opacity: 1; } }
+          .cah-spoke { stroke-dasharray: 40; stroke-dashoffset: 40;
+                       animation: cahSpoke 0.9s ease-out forwards; }
+          @keyframes cahSpoke { to { stroke-dashoffset: 0; } }
+          .cah-core { transform-origin: 50px 50px; transform: scale(0);
+                      animation: cahCore 1s cubic-bezier(0.16,1,0.3,1) 0.1s forwards; }
+          @keyframes cahCore { to { transform: scale(1); } }
+          .cah-svg { animation: cahBreathe 8s ease-in-out 2.6s infinite; }
+          @keyframes cahBreathe { 0%,100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.03) rotate(1.6deg); } }
+          .cah-pulse { animation: cahPulse 3.2s ease-in-out 2.4s infinite; }
+          @keyframes cahPulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+          .cah-fade { opacity: 0; animation: cahFade 1.1s ease-out forwards; }
+          @keyframes cahFade { to { opacity: 1; } }
+          .cah-hint { animation: cahHint 2.2s ease-in-out 3s infinite; opacity: 0.5; }
+          @keyframes cahHint { 0%,100% { transform: translate(-50%,0); } 50% { transform: translate(-50%,7px); } }
+          @media (prefers-reduced-motion: reduce) {
+            .cah-ring, .cah-spoke, .cah-core { animation: none; transform: none; opacity: 1; stroke-dashoffset: 0; }
+            .cah-svg, .cah-pulse, .cah-hint { animation: none; }
+            .cah-fade { animation: none; opacity: 1; }
+          }
+        `}</style>
+        {/* 青白いオーラ */}
+        <div aria-hidden className="cah-pulse" style={{
+          position: 'absolute', left: '50%', top: '40%', width: 'min(110vw, 820px)', aspectRatio: '1/1',
+          transform: 'translate(-50%,-50%)', pointerEvents: 'none', filter: 'blur(34px)',
+          background: 'radial-gradient(circle, rgba(56,189,248,0.20) 0%, rgba(14,165,233,0.07) 40%, transparent 70%)',
+        }} />
+        {/* 原子ロゴ: 核が灯り→リングとスポークが放射して開く */}
+        <svg className="cah-svg" viewBox="0 0 100 100" aria-hidden
+          style={{ width: 'min(46svh, 74vw, 400px)', display: 'block', overflow: 'visible' }}>
+          <g stroke="#7DD3FC" fill="none" strokeLinecap="round">
+            <circle className="cah-ring" cx="50" cy="50" r="44" strokeWidth="1.6" style={{ animationDelay: '1.1s' }} opacity="0.9" />
+            <circle className="cah-ring" cx="50" cy="50" r="28" strokeWidth="1.3" style={{ animationDelay: '0.7s' }} opacity="0.85" />
+            <circle className="cah-ring" cx="50" cy="50" r="12" strokeWidth="1.1" style={{ animationDelay: '0.4s' }} opacity="0.8" />
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
+              const rad = (deg * Math.PI) / 180;
+              return (
+                <line
+                  key={deg}
+                  className="cah-spoke"
+                  x1={50 + Math.cos(rad) * 12} y1={50 + Math.sin(rad) * 12}
+                  x2={50 + Math.cos(rad) * 44} y2={50 + Math.sin(rad) * 44}
+                  strokeWidth="0.9" opacity="0.75"
+                  style={{ animationDelay: `${1.3 + i * 0.09}s` }}
+                />
+              );
+            })}
+          </g>
+          <circle className="cah-core" cx="50" cy="50" r="6.5" fill="#E0F2FE" />
+          <circle className="cah-core" cx="50" cy="50" r="3" fill="#FFFFFF" style={{ animationDelay: '0.2s' }} />
+        </svg>
+        {/* 言葉 */}
+        <div className="cah-fade" style={{ textAlign: 'center', padding: '0 20px', marginTop: 'clamp(14px, 3svh, 28px)', animationDelay: '1.8s', zIndex: 2 }}>
+          <h1 style={{ margin: 0, fontFamily: FONT_SERIF_JA, fontWeight: 600, fontSize: 'clamp(24px, 5vw, 40px)', letterSpacing: '0.12em', color: '#F0F7FF' }}>
+            すべての時代の、核となるものを。
+          </h1>
+          <p style={{ margin: '14px 0 0', fontSize: 'clamp(13px, 2.2vw, 15.5px)', lineHeight: 2, color: 'rgba(224,242,254,0.7)', letterSpacing: '0.06em' }}>
+            株式会社CORE — 六つのプロダクトと、AIの経営陣。
+          </p>
+        </div>
+        {/* 下へ */}
+        <div className="cah-hint" aria-hidden style={{ position: 'absolute', bottom: 'calc(14px + env(safe-area-inset-bottom))', left: '50%' }}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(224,242,254,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  HERO                       */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <HeroVideo />
