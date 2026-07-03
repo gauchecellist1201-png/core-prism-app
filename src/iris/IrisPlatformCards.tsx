@@ -3,14 +3,16 @@
 //
 //   X / Instagram / note の 3 カード。モバイルは横スクロール
 //   (scroll-snap)、md+ は 3 カラム。各カードは「作品」に見える仕上げ。
-//   共通アクション: 編集 (インライン textarea) / コピー / ベスト枠に予約
-//   (x・instagram のみ。note はコピー + note.com を開く)。
+//   共通アクション: 編集 (インライン textarea) / コピー / ベスト枠に予約 /
+//   その媒体で直接投稿 (X=本文入りの投稿画面 / Instagram=共有シート /
+//   note=コピーして note で書く)。「手入力ゼロ」で投稿まで運ぶ。
 // ============================================================
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Pencil, Check, Copy, CalendarClock, Film, ExternalLink } from 'lucide-react';
+import { Pencil, Check, Copy, CalendarClock, Film, ExternalLink, Send } from 'lucide-react';
 import InstagramGlyph from './InstagramGlyph'; // lucide の Instagram は未export (実行時に落ちる罠)
 import { suggestNextSlot } from './usePostQueue';
+import { shareToInstagram } from './instagramShare';
 import { notifyInApp } from '../lib/inAppNotify';
 import { IRIS_FONTS, type IrisBackgroundDef } from './irisStyle';
 import { EASE_OUT_FM } from './motion';
@@ -130,6 +132,39 @@ export default function IrisPlatformCards({ bg, result, queue, handle }: Props) 
     }
   };
 
+  // X の投稿画面を本文入りで開く (intent URL は本文を prefill できる)
+  const postToX = () => {
+    const text = xBody.trim();
+    if (!text) {
+      notifyInApp({ kind: 'warn', title: '本文が空です', body: '編集で少し書き足してから投稿してください。' });
+      return;
+    }
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    const w = window.open(url, '_blank', 'noopener');
+    if (!w) {
+      // ポップアップがブロックされた時は保険でコピー
+      copyText(text);
+      notifyInApp({ kind: 'warn', title: 'ポップアップがブロックされました', body: '本文はコピー済みです。Xを開いて貼り付けてください。' });
+      return;
+    }
+    notifyInApp({ kind: 'success', title: 'Xの投稿画面を開きました', body: '本文はすでに入っています。そのまま投稿できます。' });
+  };
+
+  // Instagram はキャプションを prefill できないので、共有シート/コピーで運ぶ
+  const shareIg = async () => {
+    try {
+      const r = await shareToInstagram({ caption: igCopyText });
+      notifyInApp({
+        kind: r.method === 'failed' ? 'warn' : 'success',
+        title: r.method === 'failed' ? 'Instagramを開けませんでした' : 'Instagramへ',
+        body: r.message,
+      });
+    } catch {
+      await copyText(igCopyText);
+      notifyInApp({ kind: 'warn', title: 'Instagramを開けませんでした', body: 'キャプションはコピー済みです。Instagramで貼り付けてください。' });
+    }
+  };
+
   const copyAndOpenNote = async () => {
     const ok = await copyText(noteText);
     if (ok) {
@@ -228,11 +263,15 @@ export default function IrisPlatformCards({ bg, result, queue, handle }: Props) 
               {copied === 'x' ? 'コピーした' : 'コピー'}
             </ActionBtn>
             {queue?.add && (
-              <ActionBtn primary onClick={() => reserve('x')}>
+              <ActionBtn dark onClick={() => reserve('x')}>
                 <CalendarClock size={14} />
                 {reserved.x ? `予約済み ${reserved.x}` : 'ベスト枠に予約'}
               </ActionBtn>
             )}
+            <ActionBtn primary onClick={postToX}>
+              <XGlyph size={13} color="#FFFFFF" />
+              Xで投稿
+            </ActionBtn>
           </footer>
         </motion.article>
 
@@ -343,11 +382,15 @@ export default function IrisPlatformCards({ bg, result, queue, handle }: Props) 
               {copied === 'ig' ? 'コピーした' : 'コピー'}
             </ActionBtn>
             {queue?.add && (
-              <ActionBtn primary onClick={() => reserve('ig')}>
+              <ActionBtn onClick={() => reserve('ig')}>
                 <CalendarClock size={14} />
                 {reserved.ig ? `予約済み ${reserved.ig}` : 'ベスト枠に予約'}
               </ActionBtn>
             )}
+            <ActionBtn primary onClick={shareIg}>
+              <Send size={14} />
+              Instagramへ
+            </ActionBtn>
           </footer>
         </motion.article>
 
