@@ -375,6 +375,13 @@ export default async function handler(req: Request) {
         claudeBody.model = 'claude-haiku-4-5';
       }
 
+      // 💰 プロンプトキャッシュ (2026-07-02): 最後のキャッシュ可能ブロックを自動キャッシュ。
+      // 大きな system (ナレッジ/知識) の入力コストが2回目以降 ~1/10 に。
+      // 短いプロンプトでは黙って無効化されるだけで害なし。
+      if (!(claudeBody as { cache_control?: unknown }).cache_control) {
+        (claudeBody as { cache_control?: unknown }).cache_control = { type: 'ephemeral' };
+      }
+
       // 🛡 Opus/Sonnet 課金ガード (オーナー指示 2026-05-15)
       // Studio プラン (¥29,800/月以上) または Master 認証以外は、
       // Opus / Sonnet をリクエストされても強制的に haiku-4-5 にダウングレード。
@@ -572,7 +579,7 @@ export default async function handler(req: Request) {
     if (claudeKey) {
       const rescueStart = Date.now();
       try {
-        const claudeBody = { ...body, model: 'claude-haiku-4-5' };
+        const claudeBody = { ...body, model: 'claude-haiku-4-5', cache_control: { type: 'ephemeral' } };
         const r = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
