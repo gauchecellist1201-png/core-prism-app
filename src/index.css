@@ -2729,3 +2729,11 @@ time {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 84px) !important;
   }
 }
+
+/* /corp platform pricing grid — 3×2 desktop / 2 cols tablet / 1 col mobile */
+.lp-platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+@media (max-width: 980px) { .lp-platform-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 580px) { .lp-platform-grid { grid-template-columns: 1fr; } }
+.lp-plan-card { transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .35s, box-shadow .35s; }
+.lp-plan-card:hover { transform: translateY(-5px); border-color: rgba(201,169,110,.6) !important; box-shadow: 0 26px 60px -30px rgba(201,169,110,.4); }
+@media (prefers-reduced-motion: reduce) { .lp-plan-card, .lp-plan-card:hover { transition: none; transform: none; } }

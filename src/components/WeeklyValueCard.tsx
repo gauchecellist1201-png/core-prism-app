@@ -6,8 +6,30 @@
 //   0 のときは捏造せず「これから貯まる」導線を出す（honest-numbers）。
 // ============================================================
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
-import { Sparkles, Send, BookOpen, Briefcase, Activity, FileCheck, TrendingUp } from 'lucide-react';
+import { Sparkles, Send, BookOpen, Briefcase, Activity, FileCheck, TrendingUp, Users, Check, UserRound } from 'lucide-react';
 import { computeWeeklyValue, type ValueMetric, type DayBucket } from '../lib/weeklyValue';
+import { statsForLastDays } from '../lib/aiSuggestionLog';
+import { CXO_META } from '../hooks/useAgentTaskQueue';
+
+// 役員 1 人分の集計（誰が・何件・うち採用）。件数はすべて実際に記録された提案の数（honest-numbers）。
+interface ExecRow { key: string; name: string; count: number; adopted: number; color: string; Icon: (p: { size?: number; color?: string }) => ReactElement; }
+
+// CXO_META から Lucide アイコン + 色を引く（絵文字は使わない）。未知キーは汎用アイコンにフォールバック。
+function execRowsForWeek(): ExecRow[] {
+  const meta = CXO_META as Record<string, { name: string; color: string; Icon: (p: { size?: number; color?: string }) => ReactElement }>;
+  return statsForLastDays(7).byCxo.map((c) => {
+    const m = meta[c.key];
+    return {
+      key: c.key,
+      // CXO_META の正式名を優先（無ければ記録時のキャッシュ名）。「CEO イーロン」等の頭の役職＋名前を短く。
+      name: (m?.name || c.name || '役員').replace(/\s+/g, ' ').trim(),
+      count: c.count,
+      adopted: c.adopted,
+      color: m?.color || '#8E5CFF',
+      Icon: m?.Icon || ((p) => <UserRound size={p.size} color={p.color} strokeWidth={2.1} />),
+    };
+  });
+}
 
 const ICONS: Record<ValueMetric['icon'], (p: { size?: number; color?: string }) => ReactElement> = {
   sparkles: (p) => <Sparkles size={p.size} color={p.color} strokeWidth={2.1} />,
@@ -20,26 +42,31 @@ const ICONS: Record<ValueMetric['icon'], (p: { size?: number; color?: string }) 
 
 export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void }) {
   const [data, setData] = useState(() => computeWeeklyValue());
+  const [execs, setExecs] = useState<ExecRow[]>(() => execRowsForWeek());
 
   // ループ完了やナレッジ追加で localStorage が変わったら再集計。
   // 'storage' は別タブ用なので、同じタブでの成果（役員タップ→成果物）も即反映するため
   // 'core:value-updated' を購読する（AIが動いた瞬間に数字が増える＝価値を即体感）。
+  // 提案の記録/採用は 'core:ai-suggestion-updated' で通知されるので、役員行もその場で更新。
   useEffect(() => {
-    const refresh = () => setData(computeWeeklyValue());
+    const refresh = () => { setData(computeWeeklyValue()); setExecs(execRowsForWeek()); };
     window.addEventListener('focus', refresh);
     window.addEventListener('storage', refresh);
     window.addEventListener('core:value-updated', refresh as EventListener);
+    window.addEventListener('core:ai-suggestion-updated', refresh as EventListener);
     const t = window.setInterval(refresh, 20_000);
     return () => {
       window.removeEventListener('focus', refresh);
       window.removeEventListener('storage', refresh);
       window.removeEventListener('core:value-updated', refresh as EventListener);
+      window.removeEventListener('core:ai-suggestion-updated', refresh as EventListener);
       window.clearInterval(t);
     };
   }, []);
 
   const { metrics, total, todayTotal, dailySeries } = data;
-  const empty = total === 0;
+  // 役員の稼働記録も「動いた量」の一部。metrics が全0でも役員が動いていれば空状態にしない。
+  const empty = total === 0 && execs.length === 0;
   // 直近7日に1日でも実活動があれば momentum バーを出す（嘘の0埋めは見せても、全0なら出さない）
   const seriesMax = dailySeries.reduce((m, d) => Math.max(m, d.count), 0);
   const activeDays = dailySeries.filter((d) => d.count > 0).length;
@@ -82,6 +109,9 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
       {!empty && seriesMax > 0 && (
         <Sparkbar series={dailySeries} max={seriesMax} activeDays={activeDays} />
       )}
+
+      {/* 動いた役員 — 「誰が」あなたのために動いたかを実データで見せる（提案の記録件数＝honest-numbers） */}
+      {execs.length > 0 && <ExecRoster rows={execs} />}
 
       {empty ? (
         // 正直な空状態 — 嘘の数字を出さず、貯め方を案内
@@ -131,6 +161,61 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
       <p style={{ fontSize: 10, color: 'var(--fg-subtle)', margin: '11px 2px 0', lineHeight: 1.5 }}>
         ※ 表示はすべて、あなたのこのアプリ内での実際の活動件数です。推定や水増しは行っていません。
       </p>
+    </div>
+  );
+}
+
+// 動いた役員 — 「誰が」あなたのために動いたかを顔（Lucideアイコン）付きで見せる。
+// 件数は statsForLastDays が返す実際の提案記録数。上位6名まで、多い順。採用があれば控えめに併記。
+function ExecRoster({ rows }: { rows: ExecRow[] }) {
+  const top = rows.slice(0, 6);
+  const hidden = rows.length - top.length;
+  const totalAdopted = rows.reduce((s, r) => s + r.adopted, 0);
+  return (
+    <div style={{
+      marginBottom: 12, padding: '11px 12px 10px', borderRadius: 12,
+      background: 'var(--surface-3)', border: '1px solid rgba(142,92,255,0.18)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9, gap: 8 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 800, color: 'var(--fg-muted)', letterSpacing: '0.01em' }}>
+          <Users size={12} strokeWidth={2.3} /> 動いた役員
+        </span>
+        {totalAdopted > 0 && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10.5, fontWeight: 800, color: '#06C755' }}>
+            <Check size={11} strokeWidth={3} /> あなたが採用 {totalAdopted} 件
+          </span>
+        )}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+        {top.map((r) => {
+          const Icon = r.Icon;
+          return (
+            <div key={r.key} title={`${r.name}: ${r.count}件${r.adopted > 0 ? `（採用${r.adopted}）` : ''}`} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              padding: '5px 10px 5px 6px', borderRadius: 999,
+              background: `${r.color}14`, border: `1px solid ${r.color}44`,
+            }}>
+              <span style={{
+                width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                background: `${r.color}26`, color: r.color,
+              }}><Icon size={13} color={r.color} /></span>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg-strong)', whiteSpace: 'nowrap' }}>
+                {r.name}
+              </span>
+              <span style={{
+                fontSize: 10.5, fontWeight: 900, color: r.color,
+                padding: '1px 7px', borderRadius: 999, background: `${r.color}1f`,
+              }}>{r.count}</span>
+            </div>
+          );
+        })}
+        {hidden > 0 && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 700, color: 'var(--fg-subtle)', padding: '5px 4px' }}>
+            ほか {hidden} 名
+          </span>
+        )}
+      </div>
     </div>
   );
 }

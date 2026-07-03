@@ -20,17 +20,17 @@ const COMPANY = {
   email: 'core.inc.guild@gmail.com',
 };
 
-// プラットフォーム価格グリッド — 製品追加は1オブジェクト追加で並ぶ
+// プラットフォーム価格グリッド — 安い入口→最上位Crystalへ昇る並び。製品追加は1オブジェクト追加で並ぶ
 const PLATFORM_PLANS: Array<{
   name: string; role: string; copy: string; price: string; priceNote: string;
-  accent: string; url: string; featured?: boolean;
+  accent: string; url: string; Logo: typeof PrismLogo; step: string; featured?: boolean;
 }> = [
-  { name: 'Prism', role: 'AI Business OS', copy: '経営の司令塔。13名のAIエージェントが事業を動かす。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#A78BFA', url: '/pricing' },
-  { name: 'Iris', role: 'Instagram AI', copy: 'Instagram運用のすべてをAIと。分析から案件まで。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#E1306C', url: '/iris?lp=1' },
-  { name: 'Resonance', role: 'LINE AI', copy: '一人ひとりに書き分けるLINE個別配信と自動応対。', price: '¥6,980〜', priceNote: '/ 月（税込）', accent: '#06C755', url: 'https://resonancebot-ivory.vercel.app/lp' },
-  { name: 'Guild', role: 'Community OS', copy: '提案と投票で動く組織OS。まずは無料の入口から。', price: '¥980〜', priceNote: '/ 月（税込）', accent: '#2DD4BF', url: 'https://guild-gauches-projects.vercel.app/?lp=1' },
-  { name: 'Lume', role: 'Link Hub', copy: 'すべてのリンクをひとつに。いちばん軽い入口。', price: '無料〜', priceNote: '', accent: '#FFA42A', url: 'https://lume-deploy-five.vercel.app/' },
-  { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: '/crystal', featured: true },
+  { name: 'Lume', role: 'Link Hub', copy: 'すべてのリンクをひとつに。いちばん軽い入口。', price: '無料〜', priceNote: '', accent: '#FFA42A', url: 'https://lume-deploy-five.vercel.app/', Logo: LumeLogo, step: 'STEP 1 — まず無料で' },
+  { name: 'Guild', role: 'Community OS', copy: '提案と投票で動く組織OS。まずは無料の入口から。', price: '¥980〜', priceNote: '/ 月（税込）', accent: '#2DD4BF', url: 'https://guild-gauches-projects.vercel.app/?lp=1', Logo: GuildLogo, step: 'STEP 2 — チームで' },
+  { name: 'Prism', role: 'AI Business OS', copy: '経営の司令塔。13名のAIエージェントが事業を動かす。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#A78BFA', url: '/pricing', Logo: PrismLogo, step: 'STEP 3 — 経営に' },
+  { name: 'Iris', role: 'Instagram AI', copy: 'Instagram運用のすべてをAIと。分析から案件まで。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#E1306C', url: '/iris?lp=1', Logo: IrisLogo, step: 'STEP 3 — 集客に' },
+  { name: 'Resonance', role: 'LINE AI', copy: '一人ひとりに書き分けるLINE個別配信と自動応対。', price: '¥6,980〜', priceNote: '/ 月（税込）', accent: '#06C755', url: 'https://resonancebot-ivory.vercel.app/lp', Logo: ResonanceLogo, step: 'STEP 4 — ファンを資産に' },
+  { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: '/crystal', Logo: CrystalLogo, step: 'STEP 5 — 最上位のおもてなし', featured: true },
 ];
 
 // 荘厳系フォント
@@ -489,29 +489,47 @@ export default function CoreSite() {
               六つすべてが、ひとつの CORE でつながっています。
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+          <div className="lp-platform-grid">
             {PLATFORM_PLANS.map(p => (
               <a
                 key={p.name}
                 href={p.url}
                 target={p.url.startsWith('http') ? '_blank' : undefined}
                 rel="noopener"
-                className="lp-tap-link"
+                className="lp-tap-link lp-plan-card"
                 style={{
-                  display: 'flex', flexDirection: 'column', gap: '0.5rem',
-                  padding: '1.75rem 1.6rem', borderRadius: 18, textDecoration: 'none',
+                  display: 'flex', flexDirection: 'column', gap: '0.55rem',
+                  padding: '1.7rem 1.6rem 1.5rem', borderRadius: 18, textDecoration: 'none',
                   background: p.featured ? 'linear-gradient(160deg, rgba(201,169,110,0.14), rgba(201,169,110,0.02))' : 'rgba(255,255,255,0.03)',
                   border: p.featured ? '1px solid rgba(201,169,110,0.55)' : '1px solid rgba(255,255,255,0.09)',
                   boxShadow: p.featured ? '0 24px 60px -30px rgba(201,169,110,0.45)' : 'none',
-                  color: '#fff', transition: 'transform .35s, border-color .35s',
+                  color: '#fff', position: 'relative',
                 }}
               >
-                <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.24em', color: p.accent, textTransform: 'uppercase' }}>{p.role}</span>
-                <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.55rem', fontWeight: 600, letterSpacing: '0.04em' }}>{p.name}</span>
-                <span style={{ fontFamily: FONT_SANS, fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, minHeight: '2.9em' }}>{p.copy}</span>
-                <span style={{ marginTop: 'auto', paddingTop: '0.9rem', borderTop: '1px solid rgba(255,255,255,0.08)', fontFamily: FONT_SANS, fontWeight: 700, fontSize: '1.28rem', color: p.featured ? '#E7C987' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
-                  {p.price}
-                  <small style={{ fontSize: '0.68rem', fontWeight: 400, color: 'rgba(255,255,255,0.55)', marginLeft: 6 }}>{p.priceNote}</small>
+                <span style={{ fontFamily: FONT_SANS, fontSize: '0.62rem', letterSpacing: '0.18em', fontWeight: 700, color: p.featured ? '#E7C987' : 'rgba(255,255,255,0.4)' }}>{p.step}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.2rem' }}>
+                  <span style={{
+                    width: 46, height: 46, borderRadius: 13, display: 'grid', placeItems: 'center', flexShrink: 0,
+                    background: `radial-gradient(circle at 50% 30%, ${p.accent}22, rgba(8,8,18,0.9))`,
+                    border: `1px solid ${p.accent}55`, boxShadow: `0 0 18px ${p.accent}26`,
+                  }}>
+                    <p.Logo size={30} withWordmark={false} />
+                  </span>
+                  <span style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.45rem', fontWeight: 600, letterSpacing: '0.04em', lineHeight: 1.2 }}>{p.name}</span>
+                    <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.62rem', letterSpacing: '0.22em', color: p.accent, textTransform: 'uppercase', marginTop: 3 }}>{p.role}</span>
+                  </span>
+                </span>
+                <span style={{ fontFamily: FONT_SANS, fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.85, minHeight: '3em', marginTop: '0.3rem' }}>{p.copy}</span>
+                <span style={{
+                  marginTop: 'auto', paddingTop: '0.9rem', borderTop: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.6rem',
+                }}>
+                  <span style={{ fontFamily: FONT_SANS, fontWeight: 700, fontSize: '1.26rem', color: p.featured ? '#E7C987' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                    {p.price}
+                    <small style={{ fontSize: '0.66rem', fontWeight: 400, color: 'rgba(255,255,255,0.55)', marginLeft: 6 }}>{p.priceNote}</small>
+                  </span>
+                  <span style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', fontWeight: 600, color: p.accent, whiteSpace: 'nowrap' }}>詳しく →</span>
                 </span>
               </a>
             ))}
