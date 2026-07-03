@@ -5,6 +5,7 @@
 // prefers-reduced-motion: reduce ではアニメ無効
 // ============================================================
 import { useEffect, useMemo, useState } from 'react';
+import { REFERRAL_BONUS_DAYS } from '../lib/referral';
 
 interface Props {
   kind: 'prism' | 'iris';
@@ -72,11 +73,13 @@ export default function LaunchCountdownBanner({ kind }: Props) {
 
   const message = isLaunched ? (
     <>
-      🎉 公開中! <strong>招待で +30 日延長</strong> — ご紹介でお互いにお得に
+      🎉 招待リンクで登録すると、あなたも招待した友達も{' '}
+      <strong>お互いに +{REFERRAL_BONUS_DAYS} 日 無料</strong>
     </>
   ) : (
     <>
-      🎉 6/1 一般公開まで残り <strong>{daysLeft} 日</strong> — 今登録すると <strong>+30 日無料</strong>
+      🎉 6/1 一般公開まで残り <strong>{daysLeft} 日</strong> — 招待コードで登録すると{' '}
+      <strong>+{REFERRAL_BONUS_DAYS} 日 無料</strong>
     </>
   );
 

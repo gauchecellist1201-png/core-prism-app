@@ -4,6 +4,7 @@
 // アクセシビリティ重視: キーボード操作・スクリーンリーダー対応
 // ============================================================
 import LegalPageLayout from '../legal/LegalPageLayout';
+import { REFERRAL_BONUS_DAYS } from '../lib/referral';
 
 interface FaqItem {
   q: string;
@@ -178,9 +179,9 @@ const FAQS: FaqItem[] = [
     a: (
       <>
         <p>
-          はい。あなたの紹介リンクから新規登録があると、紹介した方・された方の両方に <strong>+30 日無料</strong> が付与されます。
+          はい。あなたの紹介リンクから新規登録があると、紹介した方・された方の両方に <strong>お互いに +{REFERRAL_BONUS_DAYS} 日無料</strong> が付与されます。
         </p>
-        <p>3 名紹介で 1 ヶ月無料、10 名紹介で 1 年無料の特典もあります。紹介リンクは登録後の設定画面から取得できます。</p>
+        <p>紹介するたびに日数は積み上がります (例: 3 名紹介で +{REFERRAL_BONUS_DAYS * 3} 日、10 名で +{REFERRAL_BONUS_DAYS * 10} 日)。紹介リンクは登録後の設定画面から取得できます。</p>
       </>
     ),
   },
