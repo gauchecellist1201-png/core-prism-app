@@ -324,6 +324,40 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
         </p>
       </div>
 
+      {/* 3 秒でわかる説明 + サンプル出力 — 初見の人に「まず何を押す → こうなる」を触らず見せる。提案前だけ表示 */}
+      {!proposal && (
+        <div style={{
+          padding: '0.95rem 1.05rem',
+          background: `linear-gradient(135deg, ${accent}16 0%, ${accent}07 100%)`,
+          border: `1px solid ${accent}33`,
+          borderRadius: 16,
+        }}>
+          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: ink, lineHeight: 1.5 }}>
+            テーマを 1 行書くだけ。<span style={{ color: accent }}>あとは AI が見出しも配色も決めます。</span>
+          </p>
+          {/* 3 ステップ */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '10px 0 8px', flexWrap: 'wrap' }}>
+            {['テーマを書く', '「見出しを提案してもらう」を押す', '写真を載せて書き出す'].map((t, i) => (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, color: ink,
+                  background: 'rgba(255,255,255,0.7)', border: `1px solid ${cardBorder}`,
+                  borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap',
+                }}>
+                  <span style={{ color: accent, fontWeight: 800 }}>{i + 1}.</span> {t}
+                </span>
+                {i < 2 && <span style={{ color: accent, fontSize: 12, fontWeight: 800 }}>→</span>}
+              </span>
+            ))}
+          </div>
+          {/* サンプル出力 1 枚（言葉で） */}
+          <p style={{ margin: 0, fontSize: 11.5, color: inkSoft, lineHeight: 1.5 }}>
+            例:「朝のスキンケアルーティン」→ <span style={{ color: ink, fontWeight: 700 }}>〈5分で肌が変わる朝〉</span>など指が止まる見出し3案 +
+            <span style={{ color: ink, fontWeight: 700 }}>ローズ配色・写真の方向性</span>まで提案 → そのまま <span style={{ color: ink, fontWeight: 700 }}>投稿カバー1枚</span>が完成。
+          </p>
+        </div>
+      )}
+
       {/* ① テーマ → 提案 */}
       <div style={{ background: card, border: `1px solid ${cardBorder}`, borderRadius: 16, padding: '1rem 1.1rem', display: 'grid', gap: 10 }}>
         <div style={labelStyle}>① テーマを書いて、AI に提案してもらう</div>
@@ -349,7 +383,26 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
           </button>
         </div>
         {thinking && <div style={{ fontSize: 12, color: accent, fontWeight: 600 }}>{thinkLine}</div>}
-        {err && <div style={{ fontSize: 12, color: '#C8102E', fontWeight: 600 }}>{err}</div>}
+        {err && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+            padding: '0.7rem 0.85rem', background: 'rgba(200,16,46,0.06)',
+            border: '1px solid rgba(200,16,46,0.28)', borderRadius: 12,
+          }}>
+            <span style={{ flex: 1, minWidth: 180, fontSize: 12.5, color: '#C8102E', fontWeight: 600, lineHeight: 1.5 }}>{err}</span>
+            <button
+              onClick={() => { setErr(''); if (theme.trim()) propose(); }}
+              disabled={thinking}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, border: `1px solid ${accent}`,
+                cursor: thinking ? 'default' : 'pointer', background: '#fff', color: accent,
+                borderRadius: 999, padding: '0.5rem 1rem', fontSize: 12.5, fontWeight: 800, opacity: thinking ? 0.6 : 1,
+              }}
+            >
+              <RefreshCw size={13} className={thinking ? 'spin' : undefined} /> もう一度ためす
+            </button>
+          </div>
+        )}
 
         {/* 見出し候補（提案後） */}
         {proposal && proposal.titles.length > 0 && (
