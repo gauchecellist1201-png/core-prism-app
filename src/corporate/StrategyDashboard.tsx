@@ -16,7 +16,7 @@ import NewVenturesTab from './NewVenturesTab';
 import RoboticsPlan from './RoboticsPlan';
 import { isMasterAuth } from '../lib/billing';
 
-type StrategyTab = 'overview' | 'actuals' | 'plan' | 'products' | 'ventures' | 'robotics' | 'simulation';
+type StrategyTab = 'overview' | 'actuals' | 'plan' | 'products' | 'ventures' | 'robotics' | 'simulation' | 'crystal';
 
 function getInitialTab(): StrategyTab {
   if (typeof window === 'undefined') return 'overview';
@@ -24,6 +24,7 @@ function getInitialTab(): StrategyTab {
   if (/\/plan(\/|$)/.test(p)) return 'plan';
   if (/\/actuals|\/kpi/.test(p)) return 'actuals';
   if (/\/robotics|\/robot/.test(p)) return 'robotics';
+  if (/\/crystal/.test(p)) return 'crystal';
   if (/\/ventures|\/new-?business|\/portfolio/.test(p)) return 'ventures';
   if (/\/products?/.test(p)) return 'products';
   if (/\/simulation|\/sim/.test(p)) return 'simulation';
@@ -61,6 +62,46 @@ function simulate(scenario: Scenario, months: number) {
     const mrr = users * s.avgArpuYen;
     cumulative += mrr;
     out.push({ month: m, users, mrr, cumulative });
+  }
+  return out;
+}
+
+// ─── Crystal 専用シミュレーション (7日トライアル → 月額) ───
+const CRYSTAL_URL = 'https://crystal-nine-self.vercel.app';
+const CRYSTAL_PARAMS: Record<Scenario, {
+  startTrials: number;   // 初月の無料トライアル開始数
+  trialGrowth: number;   // 月次トライアル増加率
+  conversion: number;    // トライアル → 課金 転換率
+  churnRate: number;     // 月次解約率
+  premiumMix: number;    // プレミアム(¥49,800)比率
+}> = {
+  conservative: { startTrials: 40,  trialGrowth: 1.15, conversion: 0.30, churnRate: 0.06,  premiumMix: 0.25 },
+  base:         { startTrials: 70,  trialGrowth: 1.25, conversion: 0.40, churnRate: 0.045, premiumMix: 0.35 },
+  aggressive:   { startTrials: 120, trialGrowth: 1.40, conversion: 0.50, churnRate: 0.03,  premiumMix: 0.45 },
+};
+const CRYSTAL_STD = 29800;
+const CRYSTAL_PRM = 49800;
+
+function crystalArpu(scenario: Scenario): number {
+  const p = CRYSTAL_PARAMS[scenario];
+  return Math.round(p.premiumMix * CRYSTAL_PRM + (1 - p.premiumMix) * CRYSTAL_STD);
+}
+
+function simulateCrystal(scenario: Scenario, months: number) {
+  const p = CRYSTAL_PARAMS[scenario];
+  const arpu = crystalArpu(scenario);
+  const out = [];
+  let trials = p.startTrials;
+  let paid = 0;
+  let cumulative = 0;
+  for (let m = 1; m <= months; m++) {
+    if (m > 1) trials = Math.round(trials * p.trialGrowth);
+    const newPaid = Math.round(trials * p.conversion);
+    const churned = Math.round(paid * p.churnRate);
+    paid = paid + newPaid - churned;
+    const mrr = paid * arpu;
+    cumulative += mrr;
+    out.push({ month: m, trials, paid, newPaid, mrr, cumulative });
   }
   return out;
 }
@@ -126,6 +167,9 @@ export default function StrategyDashboard() {
   const peak = sim[sim.length - 1];
   const scenarioMrrTarget = peak.mrr;
 
+  const czSim = useMemo(() => simulateCrystal(scenario, 12), [scenario]);
+  const czPeak = czSim[czSim.length - 1];
+
   return (
     <div style={{ background: '#000', color: '#fff', minHeight: '100dvh', fontFamily: FONT_SANS, overflowX: 'hidden' }}>
       {/* ヘッダ */}
@@ -140,6 +184,7 @@ export default function StrategyDashboard() {
             {masterMode && <TabBtn active={tab === 'plan'} onClick={() => setTab('plan')}>事業計画</TabBtn>}
             <TabBtn active={tab === 'products'} onClick={() => setTab('products')}>プロダクト</TabBtn>
             <TabBtn active={tab === 'ventures'} onClick={() => setTab('ventures')}>新規事業</TabBtn>
+            <TabBtn active={tab === 'crystal'} onClick={() => setTab('crystal')}>Crystal</TabBtn>
             <TabBtn active={tab === 'robotics'} onClick={() => setTab('robotics')}>CORE Robotics</TabBtn>
             <TabBtn active={tab === 'simulation'} onClick={() => setTab('simulation')}>シミュレーション</TabBtn>
           </div>
@@ -284,6 +329,96 @@ export default function StrategyDashboard() {
                 </div>
               </motion.div>
             ))}
+          </div>
+        </Section>
+      </>}
+
+      {/* TAB: Crystal (第6プロダクト) */}
+      {tab === 'crystal' && <>
+        <section className="lp-section-pad" style={{ padding: '4rem 1.5rem 2rem', textAlign: 'center', background: 'radial-gradient(120% 90% at 50% -10%, #28354c 0%, #1b2333 45%, #0b0f18 100%)' }}>
+          <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.45em', color: '#C9A96E', fontWeight: 600, marginBottom: '1rem' }}>THE 6TH PRODUCT</p>
+          <h1 style={{ fontFamily: '"Cinzel", serif', fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 500, letterSpacing: '0.3em', textIndent: '0.3em', marginBottom: '0.75rem', color: '#F4F7FC' }}>CRYSTAL</h1>
+          <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1rem', color: 'rgba(244,247,252,0.75)', lineHeight: 1.9, maxWidth: 640, margin: '0 auto 1.5rem' }}>
+            話しかけるだけの、専属AIコンシェルジュ。7日間の無料トライアル（カード必須）→ 月額。<br />
+            iPhoneのポケットに住む「美しいClaude Code」。
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href={CRYSTAL_URL} target="_blank" rel="noopener noreferrer" style={{ ...pillStyle(true), textDecoration: 'none', display: 'inline-block' }}>アプリを開く ↗</a>
+            <a href={`${CRYSTAL_URL}/join`} target="_blank" rel="noopener noreferrer" style={{ ...pillStyle(false), textDecoration: 'none', display: 'inline-block' }}>入会ページ ↗</a>
+          </div>
+        </section>
+
+        <Section title="何者か" subtitle="POSITIONING" desc="比較対象は ChatGPT ではなく「人の秘書」。だからこの価格で売れる" bg="#0b0f18">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            {[
+              { t: 'ChatGPT (月¥3,000)', d: '汎用チャット。知識は古く、あなたを覚えない。', tone: 'rgba(255,255,255,0.5)' },
+              { t: 'オンライン秘書 (月¥5〜15万)', d: '人が対応。日中のみ・月10〜50時間・納品は日単位。', tone: 'rgba(255,255,255,0.5)' },
+              { t: 'Crystal (月¥29,800〜)', d: '24時間365日・数秒応答・成果物その場納品・専属の記憶。秘書の半額以下。', tone: '#C9A96E' },
+            ].map((c, i) => (
+              <div key={i} style={{ padding: '1.5rem', background: i === 2 ? 'rgba(201,169,110,0.08)' : 'rgba(255,255,255,0.03)', border: `1px solid ${i === 2 ? 'rgba(201,169,110,0.35)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 14 }}>
+                <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', fontWeight: 700, color: c.tone, marginBottom: 8 }}>{c.t}</p>
+                <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.82rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.9 }}>{c.d}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <Section title="できること" subtitle="CAPABILITIES" desc="Claude Code が携帯で動くような体験">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+            {[
+              ['声で対話', 'マイクに話しかけ、自然な音声で返る。声の往復対話'],
+              ['Web検索', '「いま」のニュース・価格・営業時間を調べて答える'],
+              ['成果物を実納品', 'LP・スライド・企画書を生成 → PDF保存 / HTML / プレビュー'],
+              ['あなたの核', '仕事・目標・口調を一度覚えたら、ずっと専属として考える'],
+              ['端末に記憶', '会話も核も端末内のみ。サーバーに残さない'],
+              ['PWA', 'ホーム画面に追加で、蓮アイコンのアプリに'],
+            ].map(([t, d], i) => (
+              <div key={i} style={{ padding: '1.1rem 1.25rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }}>
+                <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', fontWeight: 700, marginBottom: 6, color: '#D9E4F5' }}>{t}</p>
+                <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.8 }}>{d}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <Section title="Crystal 売上シミュレーション" subtitle="CRYSTAL PROJECTION" desc="7日トライアル → 課金転換のファネルで 12 ヶ月後の MRR を試算" bg="#0b0f18">
+          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
+            {(Object.keys(SCENARIOS) as Scenario[]).map(s => (
+              <button key={s} onClick={() => setScenario(s)} style={pillStyle(scenario === s)}>{SCENARIOS[s].label}シナリオ</button>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+            <Stat label="12ヶ月後 MRR" value={fmtShort(czPeak.mrr)} />
+            <Stat label="課金ユーザー" value={czPeak.paid.toLocaleString('ja-JP')} unit="人" />
+            <Stat label="年間累計" value={fmtShort(czPeak.cumulative)} />
+            <Stat label="平均 ARPU" value={fmt(crystalArpu(scenario))} unit="/ 月" />
+          </div>
+
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '1.5rem', overflowX: 'auto' }}>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1rem', fontWeight: 600 }}>月次 MRR 推移</p>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.4rem', minHeight: 220, paddingTop: '1rem' }}>
+              {czSim.map((d, i) => {
+                const h = (d.mrr / czPeak.mrr) * 200;
+                return (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 22 }}>
+                    <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.65)', fontFamily: 'monospace' }}>{fmtShort(d.mrr).replace('¥', '')}</span>
+                    <motion.div initial={{ height: 0 }} animate={{ height: h }} transition={{ duration: 0.5, delay: i * 0.04 }}
+                      style={{ width: '100%', background: 'linear-gradient(180deg,#D9E4F5,#C9A96E)', borderRadius: '4px 4px 0 0', minHeight: 4 }} />
+                    <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>M{d.month}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ marginTop: '1.5rem', padding: '1.25rem', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.25)', borderRadius: 12 }}>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.9 }}>
+              <strong style={{ color: '#E8CF9A' }}>前提:</strong> 初月トライアル {CRYSTAL_PARAMS[scenario].startTrials} 件 / トライアル月次成長 {((CRYSTAL_PARAMS[scenario].trialGrowth - 1) * 100).toFixed(0)}% / 課金転換 {(CRYSTAL_PARAMS[scenario].conversion * 100).toFixed(0)}% / 月次解約 {(CRYSTAL_PARAMS[scenario].churnRate * 100).toFixed(1)}% / プレミアム比率 {(CRYSTAL_PARAMS[scenario].premiumMix * 100).toFixed(0)}%。
+            </p>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.9, marginTop: 8 }}>
+              <strong style={{ color: '#9ED3BC' }}>原価:</strong> 頭脳は Gemini/Haiku（無料枠＋低単価）、音声は Gemini TTS（無料枠）、配布は PWA（App Store 手数料なし）。1ユーザー原価は概ね月 ¥数百〜数千に収まり、粗利率は高い。
+            </p>
           </div>
         </Section>
       </>}
