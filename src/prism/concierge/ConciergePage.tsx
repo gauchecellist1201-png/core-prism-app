@@ -139,6 +139,16 @@ function Showcase() {
   const [servicesText, setServicesText] = useState(() => config.services.join('\n'));
   const [copied, setCopied] = useState(false);
 
+  // 購入後オンボーディング (?welcome=1 — Stripe決済のリダイレクト先)
+  const [welcomeOpen, setWelcomeOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('welcome') === '1';
+  });
+  const closeWelcome = () => {
+    setWelcomeOpen(false);
+    document.getElementById('setup')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   // FAQ 自動生成 (貼り付けたナレッジ → Q&A を AI が起こす)
   const [genBusy, setGenBusy] = useState(false);
   const [genMsg, setGenMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -237,6 +247,64 @@ function Showcase() {
       background: `linear-gradient(180deg, ${P.bg1} 0%, ${P.bg0} 100%)`,
     }}>
       <style>{`html { scroll-behavior: smooth; }`}</style>
+
+      {/* ── 購入後オンボーディング (Stripe決済 → ?welcome=1 で着地) ── */}
+      {welcomeOpen && (
+        <div
+          role="dialog"
+          aria-label="ご導入ありがとうございます"
+          style={{
+            position: 'fixed', inset: 0, zIndex: 90,
+            background: 'rgba(10,16,30,0.72)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '20px 16px calc(20px + env(safe-area-inset-bottom))',
+          }}
+        >
+          <div style={{
+            width: 'min(560px, 100%)', maxHeight: '86svh', overflowY: 'auto',
+            borderRadius: 26, padding: 'clamp(22px, 4vw, 34px)',
+            border: `1px solid ${P.glassStrong}`,
+            background: 'linear-gradient(165deg, rgba(40,53,76,0.97), rgba(27,35,51,0.99))',
+            boxShadow: '0 30px 90px rgba(0,0,0,0.55)',
+          }}>
+            <div style={{ fontFamily: SERIF, fontSize: 15, letterSpacing: '0.3em', color: P.gold, marginBottom: 10 }}>WELCOME</div>
+            <h2 style={{ margin: '0 0 10px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(21px, 4vw, 27px)', letterSpacing: '0.05em' }}>
+              ご導入、ありがとうございます。
+            </h2>
+            <p style={{ margin: '0 0 20px', fontSize: 13.5, lineHeight: 2, color: P.fgMuted }}>
+              あと3分で、あなたのコンシェルジュが働き始めます。やることは3つだけです。
+            </p>
+            {[
+              { n: '1', t: 'ブランドを設定する', d: 'この下のフォームに、ブランド名・ご案内できること・ナレッジ (会社案内の貼り付け) を入れると、その場でコンシェルジュが変わります。' },
+              { n: '2', t: '専用リンクを置く', d: '「専用リンクをコピー」して、Instagramプロフィール・LINE・サイトのどこかへ。QRコードなら店頭にも。タグ1行の埋め込みも使えます。' },
+              { n: '3', t: '困ったら丸投げ', d: '「設置代行をメールで頼む」ボタンから送っていただければ、こちらで設置まで行います (初期費用に含まれています)。' },
+            ].map(s => (
+              <div key={s.n} style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
+                <div style={{
+                  width: 34, height: 34, minWidth: 34, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: `1px solid ${P.glassStrong}`, fontFamily: SERIF, fontSize: 15, color: P.silver,
+                }}>{s.n}</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>{s.t}</div>
+                  <div style={{ fontSize: 12.5, lineHeight: 1.9, color: P.fgMuted }}>{s.d}</div>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={closeWelcome}
+              style={{
+                marginTop: 8, width: '100%', minHeight: 52, borderRadius: 999, border: 'none', cursor: 'pointer',
+                background: '#F4F7FC', color: '#1B2333', fontSize: 14.5, fontWeight: 800, letterSpacing: '0.04em',
+              }}
+            >
+              設定をはじめる
+            </button>
+            <p style={{ margin: '12px 0 0', fontSize: 11.5, lineHeight: 1.8, color: P.fgSubtle, textAlign: 'center' }}>
+              ご不明点はメール1通で: core.guild.inc@gmail.com — 24時間以内にご返信します。
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── 1画面目: 全画面クリスタル・アバター ── */}
       <ConciergeStage config={config} />
