@@ -373,6 +373,31 @@ export async function fetchInbox(maxResults = 20): Promise<GmailMessage[]> {
   return messages;
 }
 
+// ─── 軽量サマリ (未読数 + 上位件名だけ) ──────────────────
+// 能動提案(今日の一手)の根拠用。本文は取らず format=metadata で件名/差出人のみ。
+// 接続済みトークンがある時だけ呼ぶこと (getValidToken は再取得の popup を起こしうる)。
+export interface GmailInboxLite {
+  unreadCount: number;
+  top: { from: string; subject: string }[];
+}
+
+export async function fetchInboxLite(maxResults = 6): Promise<GmailInboxLite> {
+  const list = await gmailFetch(
+    `/gmail/v1/users/me/messages?maxResults=${maxResults}&q=${encodeURIComponent('in:inbox is:unread -category:promotions -category:social newer_than:7d')}`,
+  );
+  const ids: string[] = (list.messages || []).map((m: any) => m.id);
+  const unreadCount = typeof list.resultSizeEstimate === 'number' ? list.resultSizeEstimate : ids.length;
+  if (ids.length === 0) return { unreadCount: 0, top: [] };
+  const metas = await Promise.all(ids.slice(0, maxResults).map(id =>
+    gmailFetch(`/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`).catch(() => null),
+  ));
+  const top = metas.filter(Boolean).map((r: any) => {
+    const headers = r.payload?.headers || [];
+    return { from: getHeader(headers, 'From'), subject: getHeader(headers, 'Subject') };
+  });
+  return { unreadCount, top };
+}
+
 // ─── トリアージ用テキストへ変換 ──────────────────────────
 export function gmailToTriageText(messages: GmailMessage[]): string {
   return messages.map(m => (

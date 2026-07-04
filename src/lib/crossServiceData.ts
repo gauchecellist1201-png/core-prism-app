@@ -56,6 +56,76 @@ export function getIrisSummary(): string | null {
   return lines.join('\n');
 }
 
+// ── 連携実データ (Gmail / カレンダー / Stripe) ───────────────
+// すべて「接続済みのときだけ」呼ぶ。OAuth の同意画面(popup)は絶対に起こさない。
+// ネットワークは各 8 秒でタイムアウトし、失敗しても提案生成をブロックしない。
+import { isGmailConnected, fetchInboxLite } from './gmail';
+import { isCalConnected, fetchUpcomingEvents } from './googleCalendar';
+
+async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([
+    p.catch(() => null),
+    new Promise<null>(res => setTimeout(() => res(null), ms)),
+  ]);
+}
+
+// 差出人 "Name <mail@x>" → 表示名 (無ければアドレス)
+function cleanFrom(raw: string): string {
+  const m = raw.match(/^\s*"?([^"<]+?)"?\s*<[^>]+>/);
+  return ((m ? m[1] : raw) || raw).trim().slice(0, 40);
+}
+
+/** Gmail 受信トレイの実データ要約 (未読数 + 上位件名)。未接続/失敗なら null */
+export async function getGmailSummary(): Promise<string | null> {
+  if (typeof window === 'undefined' || !isGmailConnected()) return null;
+  const inbox = await withTimeout(fetchInboxLite(6), 8000);
+  if (!inbox || (inbox.unreadCount === 0 && inbox.top.length === 0)) return null;
+  const lines: string[] = ['【Gmail / 受信トレイ (直近7日)】'];
+  lines.push(`- 未読メール ${inbox.unreadCount.toLocaleString()} 件`);
+  for (const m of inbox.top.slice(0, 3)) {
+    lines.push(`- ${cleanFrom(m.from)}: 「${(m.subject || '(件名なし)').slice(0, 40)}」`);
+  }
+  return lines.join('\n');
+}
+
+/** Google カレンダーの今日の予定要約。未接続/予定なしなら null */
+export async function getCalendarSummary(): Promise<string | null> {
+  if (typeof window === 'undefined' || !isCalConnected()) return null;
+  const events = await withTimeout(fetchUpcomingEvents(2), 8000);
+  if (!events) return null;
+  const now = new Date();
+  const endToday = new Date(now); endToday.setHours(23, 59, 59, 999);
+  const today = events
+    .filter(e => { const s = new Date(e.start); return s >= now && s <= endToday; })
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  if (today.length === 0) return null;
+  const lines: string[] = ['【Google カレンダー / 今日これからの予定】'];
+  for (const e of today.slice(0, 4)) {
+    const s = new Date(e.start);
+    const hm = `${String(s.getHours()).padStart(2, '0')}:${String(s.getMinutes()).padStart(2, '0')}`;
+    lines.push(`- ${hm} ${(e.summary || '(無題)').slice(0, 50)}`);
+  }
+  return lines.join('\n');
+}
+
+/** Stripe の今月売上要約 (キャッシュ済み実データのみ・ネットワークなし)。無ければ null */
+export function getStripeRevenueSummary(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('core_stripe_revenue_cache_v1');
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    const tm = c?.data?.thisMonth;
+    if (!tm || typeof tm.revenueJpy !== 'number' || tm.revenueJpy <= 0) return null;
+    const lines: string[] = ['【Stripe / 今月の売上 (連携実データ)】'];
+    lines.push(`- 今月の売上 ¥${Math.round(tm.revenueJpy).toLocaleString()}${tm.txnCount ? ` / 取引 ${tm.txnCount} 件` : ''}`);
+    if (typeof tm.profitJpy === 'number') {
+      lines.push(`- 今月の利益 ¥${Math.round(tm.profitJpy).toLocaleString()}`);
+    }
+    return lines.join('\n');
+  } catch { return null; }
+}
+
 interface ResonanceAccount { accountName?: string; basicId?: string; followers?: number; replied?: number; recentSends?: { kind?: string; summary?: string }[] }
 interface ResonanceSummary { ok?: boolean; accounts?: ResonanceAccount[]; totals?: { accounts?: number; followers?: number } }
 
@@ -82,6 +152,14 @@ export async function getCrossServiceSummary(opts?: { includeResonance?: boolean
   const parts: string[] = [];
   const iris = getIrisSummary();
   if (iris) parts.push(iris);
+
+  // 連携実データ (Gmail 未読 / 今日の予定 / Stripe 売上) — 接続済みのみ・並列取得
+  const [gmail, cal] = await Promise.all([getGmailSummary(), getCalendarSummary()]);
+  const stripe = getStripeRevenueSummary();
+  if (gmail) parts.push(gmail);
+  if (cal) parts.push(cal);
+  if (stripe) parts.push(stripe);
+
   if (opts?.includeResonance) {
     const reso = await getResonanceSummary();
     if (reso) parts.push(reso);
