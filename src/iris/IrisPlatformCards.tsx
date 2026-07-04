@@ -9,14 +9,15 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Pencil, Check, Copy, CalendarClock, Film, ExternalLink, Send } from 'lucide-react';
+import { Pencil, Check, Copy, CalendarClock, Film, ExternalLink, Send, PenLine, RefreshCw } from 'lucide-react';
 import InstagramGlyph from './InstagramGlyph'; // lucide の Instagram は未export (実行時に落ちる罠)
 import { suggestNextSlot } from './usePostQueue';
 import { shareToInstagram } from './instagramShare';
 import { notifyInApp } from '../lib/inAppNotify';
 import { IRIS_FONTS, type IrisBackgroundDef } from './irisStyle';
 import { EASE_OUT_FM } from './motion';
-import type { ThoughtDropResult } from './IrisThoughtDrop';
+import GenerationOrb from '../components/GenerationOrb';
+import { expandNoteArticle, type ThoughtDropResult } from './IrisThoughtDrop';
 
 type CardId = 'x' | 'ig' | 'note';
 
@@ -27,6 +28,8 @@ interface Props {
   queue?: { add: (p: any) => any };
   /** 表示名 (mediaKit.handleName) */
   handle?: string;
+  /** settings.preferredModel — note 本文の書き上げに使用 */
+  model?: string;
 }
 
 // ─── note 本文の組み立て (コピー・編集用) ─────
@@ -69,7 +72,7 @@ function fmtSlot(d: Date): string {
   return `${d.getMonth() + 1}/${d.getDate()} ${hh}:${mm}`;
 }
 
-export default function IrisPlatformCards({ bg, result, queue, handle }: Props) {
+export default function IrisPlatformCards({ bg, result, queue, handle, model }: Props) {
   const [xBody, setXBody] = useState(result.x.body);
   const [igCaption, setIgCaption] = useState(result.instagram.caption);
   const [noteText, setNoteText] = useState(() => composeNote(result.note));
@@ -78,6 +81,10 @@ export default function IrisPlatformCards({ bg, result, queue, handle }: Props) 
   const [copied, setCopied] = useState<CardId | null>(null);
   const [igExpanded, setIgExpanded] = useState(false);
   const [reserved, setReserved] = useState<{ x?: string; ig?: string }>({});
+  // note 本文の書き上げ (骨子 → 全文)
+  const [noteWriting, setNoteWriting] = useState(false);
+  const [noteWritten, setNoteWritten] = useState(false);
+  const [noteWriteErr, setNoteWriteErr] = useState<string | null>(null);
 
   // 新しい生成結果が来たら全部リセット
   useEffect(() => {
@@ -89,6 +96,9 @@ export default function IrisPlatformCards({ bg, result, queue, handle }: Props) 
     setCopied(null);
     setIgExpanded(false);
     setReserved({});
+    setNoteWriting(false);
+    setNoteWritten(false);
+    setNoteWriteErr(null);
   }, [result]);
 
   const displayName = (handle || '').trim() || 'あなた';
@@ -162,6 +172,25 @@ export default function IrisPlatformCards({ bg, result, queue, handle }: Props) 
     } catch {
       await copyText(igCopyText);
       notifyInApp({ kind: 'warn', title: 'Instagramを開けませんでした', body: 'キャプションはコピー済みです。Instagramで貼り付けてください。' });
+    }
+  };
+
+  // note の骨子を「そのまま公開できる全文」に書き上げる (2 回目の AI)
+  const writeNoteArticle = async () => {
+    if (noteWriting) return;
+    setNoteWriting(true);
+    setNoteWriteErr(null);
+    try {
+      const article = await expandNoteArticle(result.note, result.sourceThought, model);
+      const full = result.note.title ? `${result.note.title}\n\n${article}` : article;
+      setNoteText(full);
+      setNoteEdited(true);   // 全文表示に切り替える
+      setNoteWritten(true);
+      notifyInApp({ kind: 'success', title: '本文を書き上げました', body: 'このまま公開できます。コピーして note で仕上げてください。' });
+    } catch (e: any) {
+      setNoteWriteErr(e?.message || '本文を書き上げられませんでした。もう一度お試しください。');
+    } finally {
+      setNoteWriting(false);
     }
   };
 
@@ -484,6 +513,57 @@ export default function IrisPlatformCards({ bg, result, queue, handle }: Props) 
               )}
             </div>
           )}
+
+          {/* 本文の書き上げ (骨子 → 全文)。生成中は Orb、失敗時は必ず再試行 */}
+          {noteWriting ? (
+            <div role="status" aria-live="polite" style={{
+              display: 'flex', alignItems: 'center', gap: '0.6rem',
+              background: 'rgba(65,201,180,0.08)', borderRadius: 12,
+              padding: '0.7rem 0.8rem',
+            }}>
+              <GenerationOrb brand="iris" size={30} />
+              <p style={{ margin: 0, fontSize: '0.8rem', color: '#3D3247', fontWeight: 600, lineHeight: 1.5 }}>
+                骨子から本文を書き上げています… 長くて30秒くらいです
+              </p>
+            </div>
+          ) : noteWriteErr ? (
+            <div role="alert" style={{
+              background: '#FDE8EF', border: '1px solid rgba(225,48,108,0.3)',
+              borderRadius: 12, padding: '0.7rem 0.8rem',
+            }}>
+              <p style={{ margin: '0 0 0.55rem', fontSize: '0.8rem', color: '#8E1F44', lineHeight: 1.6 }}>
+                {noteWriteErr}
+              </p>
+              <button
+                type="button" onClick={writeNoteArticle}
+                style={{
+                  minHeight: 44, padding: '0.45rem 0.9rem', borderRadius: 12, border: 'none',
+                  background: '#E1306C', color: '#FFFFFF', fontSize: '0.82rem', fontWeight: 700,
+                  cursor: 'pointer', fontFamily: IRIS_FONTS.body,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <RefreshCw size={14} strokeWidth={2.4} />
+                もう一度ためす
+              </button>
+            </div>
+          ) : !noteWritten ? (
+            /* 未書き上げ: 全文を作る CTA を目立たせる */
+            <button
+              type="button" onClick={writeNoteArticle}
+              style={{
+                width: '100%', minHeight: 48, borderRadius: 14, border: 'none',
+                background: 'linear-gradient(135deg, #41C9B4 0%, #2FA894 100%)',
+                color: '#FFFFFF', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer',
+                fontFamily: IRIS_FONTS.body,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                boxShadow: '0 6px 18px rgba(65,201,180,0.32)',
+              }}
+            >
+              <PenLine size={16} strokeWidth={2.2} />
+              このまま本文を書き上げる
+            </button>
+          ) : null}
 
           <footer style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', borderTop: '1px solid rgba(31,26,46,0.08)', paddingTop: '0.65rem' }}>
             <ActionBtn onClick={() => setEditing(e => (e === 'note' ? null : 'note'))}>

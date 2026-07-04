@@ -35,7 +35,7 @@ export default function IrisThoughtDropSection({ bg, model, postQueue, handle, h
     <div style={{ display: 'grid', gap: '1.25rem', marginBottom: '1.25rem' }}>
       <IrisThoughtDrop bg={bg} model={model} onResult={setResult} hideHeading={hideHeading} />
       {result && (
-        <IrisPlatformCards bg={bg} result={result} queue={postQueue} handle={handle} />
+        <IrisPlatformCards bg={bg} result={result} queue={postQueue} handle={handle} model={model} />
       )}
       <IrisInsightSummary posts={postQueue?.posts} streak={streakInfo.streak} />
     </div>

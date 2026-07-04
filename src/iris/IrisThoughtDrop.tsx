@@ -126,6 +126,67 @@ export async function generateThoughtDrop(thought: string, model?: string): Prom
   return result;
 }
 
+// ─── note 本文の書き上げ (骨子 → 公開できる全文。2 回目の AI) ─────
+const ARTICLE_SYSTEM = `あなたは一流のnote編集者兼ライター。与えられた「思考の断片」と「記事の骨子(タイトル・リード・見出し)」から、そのまま公開できる本文を書き上げる。
+
+返答は記事の本文だけを出力する。前後の説明・挨拶・「以下が記事です」等は一切書かない。
+- タイトルは本文に含めない (リード文から書き始める)
+- 各見出しは行頭に「## 」を付ける
+- 段落は空行で区切る
+
+## ルール
+- 与えられた見出し構成の順で、各見出しに2〜4段落の中身を書く
+- 書き手本人の一人称・熱量・言葉づかいを保つ。別人の文章にしない
+- 数字・事実・実績の捏造は禁止。思考に無いものを勝手に足さない
+- 読み終えた人の見方が少し変わる、誠実で具体的な文章に
+- 全体で1200〜2000字程度
+${TONE_HEADLINE}`;
+
+export async function expandNoteArticle(
+  note: ThoughtDropResult['note'],
+  sourceThought: string,
+  model?: string,
+): Promise<string> {
+  const outline = [
+    note.title ? `タイトル: ${note.title}` : '',
+    note.lead ? `リード: ${note.lead}` : '',
+    note.headings.length ? `見出し:\n${note.headings.map((h, i) => `${i + 1}. ${h}`).join('\n')}` : '',
+  ].filter(Boolean).join('\n');
+
+  const data = await enqueueClaudeCall(async () => {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model || 'claude-haiku-4-5',
+        max_tokens: 3000,
+        system: ARTICLE_SYSTEM,
+        messages: [{ role: 'user', content: `思考の断片:\n${sourceThought}\n\n記事の骨子:\n${outline}` }],
+      }),
+    });
+    if (!res.ok) {
+      const err: any = await res.json().catch(() => ({}));
+      const msg = err?.userMessage || err?.error?.message || `AIエラー: ${res.status}`;
+      const recov = err?.recovery || '少し待ってから、もう一度お試しください。';
+      throw new Error(`${msg} ${recov}`);
+    }
+    return res.json();
+  });
+
+  let article = String(data?.content?.[0]?.text ?? '').trim();
+  if (!article) throw new Error('AIから空の応答が返りました。もう一度お試しください。');
+
+  // 万一コードフェンスや JSON で包んで来たら剥がす (プレーンテキスト前提)
+  const fence = article.match(/```(?:\w+)?\s*([\s\S]*?)```/);
+  if (fence) article = fence[1].trim();
+  if (article.startsWith('{') && article.includes('"article"')) {
+    try { const j = JSON.parse(article); if (j?.article) article = String(j.article).trim(); } catch { /* そのまま */ }
+  }
+
+  if (!article) throw new Error('本文を書き上げられませんでした。もう一度お試しください。');
+  return article;
+}
+
 // ─── 生成中の段階テキスト ─────
 const STAGES = [
   '思考を読み取っています…',
