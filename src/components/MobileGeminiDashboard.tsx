@@ -47,24 +47,41 @@ type Msg = {
   ts: number;
 };
 
+// 各エージェントに「これは何ができる?」の 3 行を持たせる。
+// 初見の人がタップ前に「自分の役に立つか」を 3 秒で判断できるように。
 const AGENTS_PRISM = [
-  { key: 'ceo',       emoji: '👑', name: 'CEO 経営', tagline: '今月どう動く?' },
-  { key: 'sales',     emoji: '💼', name: '営業',     tagline: '次の一手は?' },
-  { key: 'cfo',       emoji: '📊', name: 'CFO',     tagline: '数字を読む' },
-  { key: 'creative',  emoji: '✨', name: 'クリエ',   tagline: '原稿を書く' },
-  { key: 'knowledge', emoji: '📚', name: 'ナレッジ', tagline: '資料を読む' },
-  { key: 'people',    emoji: '🌷', name: 'ピープル', tagline: 'チームを見る' },
-  { key: 'life',      emoji: '🌅', name: 'ライフ',   tagline: '身体を見る' },
+  { key: 'ceo',       emoji: '👑', name: 'CEO 経営', tagline: '今月どう動く?',
+    what: ['今月の売上・利益をどう伸ばすか一緒に考える', '「次に何をやるべきか」を 3 つに絞って提案', '経営の迷いを壁打ちできる'] },
+  { key: 'sales',     emoji: '💼', name: '営業',     tagline: '次の一手は?',
+    what: ['今日攻めるべき相手と切り口を教えてくれる', '提案文・営業メールの下書きを作る', '商談の進め方を相談できる'] },
+  { key: 'cfo',       emoji: '📊', name: 'CFO',     tagline: '数字を読む',
+    what: ['売上・経費・利益をやさしい言葉で読み解く', 'お金の不安な点を数字で見せてくれる', '資金繰りの改善案を出す'] },
+  { key: 'creative',  emoji: '✨', name: 'クリエ',   tagline: '原稿を書く',
+    what: ['記事・SNS 投稿・原稿をゼロから書く', 'スライドや画像のたたき台を作る', '言い回しを何通りも出してくれる'] },
+  { key: 'knowledge', emoji: '📚', name: 'ナレッジ', tagline: '資料を読む',
+    what: ['PDF・資料・メモを読ませて記憶させる', '「あれ何だっけ」をすぐ引き出す', '資料の要点を 3 行にまとめる'] },
+  { key: 'people',    emoji: '🌷', name: 'ピープル', tagline: 'チームを見る',
+    what: ['チームメンバーの様子を一緒に見る', '1on1 の話し方や声かけを提案', '気になる兆候を先に教えてくれる'] },
+  { key: 'life',      emoji: '🌅', name: 'ライフ',   tagline: '身体を見る',
+    what: ['睡眠・活動・体調をやさしく振り返る', '疲れているときは休むよう教えてくれる', '無理しない働き方を一緒に考える'] },
 ] as const;
 
 const AGENTS_IRIS = [
-  { key: 'creative',  emoji: '🎬', name: '戦略',     tagline: '今月のテーマ' },
-  { key: 'creative',  emoji: '🎨', name: '演出',     tagline: 'サムネ AB' },
-  { key: 'sales',     emoji: '💼', name: '案件',     tagline: '交渉 / 単価' },
-  { key: 'people',    emoji: '💖', name: 'ファン',   tagline: '返信文 下書き' },
-  { key: 'cfo',       emoji: '💰', name: '収益',     tagline: '物販 / 投げ銭' },
-  { key: 'life',      emoji: '🌙', name: '健康',     tagline: '休む時間' },
+  { key: 'creative',  emoji: '🎬', name: '戦略',     tagline: '今月のテーマ',
+    what: ['今月伸ばすテーマ・方向性を決める', 'どんな投稿が当たりそうか提案', 'アカウントの伸ばし方を相談'] },
+  { key: 'creative',  emoji: '🎨', name: '演出',     tagline: 'サムネ AB',
+    what: ['サムネ・見せ方の A / B 案を出す', '目を引く構図・言葉を提案', '世界観を統一する手伝い'] },
+  { key: 'sales',     emoji: '💼', name: '案件',     tagline: '交渉 / 単価',
+    what: ['案件の単価・交渉のコツを教える', '企業への返信文を下書き', '割に合う仕事か一緒に判断'] },
+  { key: 'people',    emoji: '💖', name: 'ファン',   tagline: '返信文 下書き',
+    what: ['コメント・DM の返信文を下書き', 'ファンとの距離の縮め方を提案', '荒れたときの対応も相談できる'] },
+  { key: 'cfo',       emoji: '💰', name: '収益',     tagline: '物販 / 投げ銭',
+    what: ['物販・投げ銭・広告の収益を整理', 'どこを伸ばせば稼げるか教える', 'お金まわりの不安を数字で解消'] },
+  { key: 'life',      emoji: '🌙', name: '健康',     tagline: '休む時間',
+    what: ['働きすぎていないか見守る', '休むタイミングを教えてくれる', '長く続けられるペースを提案'] },
 ] as const;
+
+type AgentDef = { key: string; emoji: string; name: string; tagline: string; what: readonly string[] };
 
 const CXO_PILLS = [
   { key: 'CEO', emoji: '👑' }, { key: 'CTO', emoji: '⚙' }, { key: 'CPO', emoji: '🧭' },
@@ -103,6 +120,8 @@ export default function MobileGeminiDashboard({
   const [openCxoPicker, setOpenCxoPicker] = useState<CxoRole | null>(null);
   const [showCredits, setShowCredits] = useState(false);
   const [creditBalance, setCreditBalance] = useState(0);
+  // 「これは何ができる?」を開いているエージェント
+  const [infoAgent, setInfoAgent] = useState<AgentDef | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -375,37 +394,130 @@ export default function MobileGeminiDashboard({
         WebkitOverflowScrolling: 'touch',
         flexShrink: 0,
       }} className="hide-scrollbar">
-        {AGENTS.map((a) => (
-          <button
-            key={a.key}
-            onClick={() => {
-              onAgentOpen(a.key);
-              // 実行ログを表示
-              appendMsg({ kind: 'system', text: `🟢 ${a.name} エージェントを開きました`, agentKey: a.key });
-            }}
+        {AGENTS.map((a, ai) => (
+          <div
+            key={`${a.key}-${ai}`}
             style={{
-              flex: '0 0 auto', scrollSnapAlign: 'start',
-              width: 88, padding: '10px 6px', borderRadius: 14,
-              background: `linear-gradient(160deg, ${accent}18, rgba(255,255,255,0.03))`,
-              border: `1px solid ${accent}33`,
-              color: '#fff', cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-              fontSize: 11,
+              position: 'relative',
+              flex: '0 0 auto', scrollSnapAlign: 'start', width: 88,
             }}
           >
-            <div style={{
-              width: 38, height: 38, borderRadius: 12,
-              background: `${accent}30`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 18,
-            }}>{a.emoji}</div>
-            <div style={{ fontWeight: 800, fontSize: 11 }}>{a.name}</div>
-            <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.2, textAlign: 'center' }}>
-              {a.tagline}
-            </div>
-          </button>
+            <button
+              onClick={() => {
+                onAgentOpen(a.key);
+                // 実行ログを表示
+                appendMsg({ kind: 'system', text: `🟢 ${a.name} エージェントを開きました`, agentKey: a.key });
+              }}
+              style={{
+                width: '100%', padding: '10px 6px', borderRadius: 14,
+                background: `linear-gradient(160deg, ${accent}18, rgba(255,255,255,0.03))`,
+                border: `1px solid ${accent}33`,
+                color: '#fff', cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                fontSize: 11,
+              }}
+            >
+              <div style={{
+                width: 38, height: 38, borderRadius: 12,
+                background: `${accent}30`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 18,
+              }}>{a.emoji}</div>
+              <div style={{ fontWeight: 800, fontSize: 11 }}>{a.name}</div>
+              <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.2, textAlign: 'center' }}>
+                {a.tagline}
+              </div>
+            </button>
+            {/* 「何ができる?」— タップで 3 行の説明。開く動作とは別なので迷わない */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setInfoAgent(a as AgentDef); }}
+              aria-label={`${a.name} は何ができる?`}
+              style={{
+                position: 'absolute', top: 4, right: 4,
+                width: 20, height: 20, borderRadius: 999,
+                background: 'rgba(0,0,0,0.35)', border: `1px solid ${accent}55`,
+                color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: 800,
+                lineHeight: 1, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >?</button>
+          </div>
         ))}
       </div>
+
+      {/* ── 「これは何ができる?」説明シート ────────── */}
+      <AnimatePresence>
+        {infoAgent && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setInfoAgent(null)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 60,
+              background: 'rgba(0,0,0,0.55)',
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+            }}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0.6 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '100%', maxWidth: 440,
+                background: 'var(--surface, #14131a)',
+                borderTopLeftRadius: 22, borderTopRightRadius: 22,
+                border: `1px solid ${accent}33`, borderBottom: 'none',
+                padding: '18px 18px calc(18px + env(safe-area-inset-bottom))',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 13, background: `${accent}30`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+                }}>{infoAgent.emoji}</div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>{infoAgent.name}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>これは何ができる?</div>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gap: 9, marginBottom: 16 }}>
+                {infoAgent.what.map((line, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+                    <span style={{
+                      flex: '0 0 auto', marginTop: 1,
+                      width: 18, height: 18, borderRadius: 999, background: `${accent}30`,
+                      color: accent, fontSize: 11, fontWeight: 800,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{i + 1}</span>
+                    <span style={{ fontSize: 13.5, lineHeight: 1.5, color: 'rgba(255,255,255,0.9)' }}>{line}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => {
+                    const a = infoAgent;
+                    setInfoAgent(null);
+                    onAgentOpen(a.key as Parameters<typeof onAgentOpen>[0]);
+                    appendMsg({ kind: 'system', text: `🟢 ${a.name} エージェントを開きました`, agentKey: a.key });
+                  }}
+                  style={{
+                    flex: 1, padding: '12px', borderRadius: 12, border: 'none',
+                    background: accent, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                  }}
+                >このAIを開く</button>
+                <button
+                  onClick={() => setInfoAgent(null)}
+                  style={{
+                    flex: '0 0 auto', padding: '12px 18px', borderRadius: 12,
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                    color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >閉じる</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── 13 CXO ピル (折り畳み) ────────────── */}
       <button
