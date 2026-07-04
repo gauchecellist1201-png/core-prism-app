@@ -434,9 +434,9 @@ export default function MobileGeminiDashboard({
               aria-label={`${a.name} は何ができる?`}
               style={{
                 position: 'absolute', top: 4, right: 4,
-                width: 20, height: 20, borderRadius: 999,
+                width: 24, height: 24, borderRadius: 999,
                 background: 'rgba(0,0,0,0.35)', border: `1px solid ${accent}55`,
-                color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: 800,
+                color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 800,
                 lineHeight: 1, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
@@ -501,14 +501,14 @@ export default function MobileGeminiDashboard({
                     appendMsg({ kind: 'system', text: `🟢 ${a.name} エージェントを開きました`, agentKey: a.key });
                   }}
                   style={{
-                    flex: 1, padding: '12px', borderRadius: 12, border: 'none',
+                    flex: 1, minHeight: 44, padding: '12px', borderRadius: 12, border: 'none',
                     background: accent, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
                   }}
                 >このAIを開く</button>
                 <button
                   onClick={() => setInfoAgent(null)}
                   style={{
-                    flex: '0 0 auto', padding: '12px 18px', borderRadius: 12,
+                    flex: '0 0 auto', minHeight: 44, padding: '12px 18px', borderRadius: 12,
                     background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
                     color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: 700, cursor: 'pointer',
                   }}

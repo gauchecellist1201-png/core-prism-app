@@ -125,7 +125,7 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
           {onRunLoop && (
             <button onClick={onRunLoop} style={{
               padding: '10px 16px', minHeight: 44, borderRadius: 10, border: 'none',
-              background: 'linear-gradient(90deg,#8E5CFF,#2E6FFF)', color: '#fff',
+              background: 'linear-gradient(135deg,#8E5CFF,#2E6FFF)', color: '#fff',
               fontSize: 13, fontWeight: 800, cursor: 'pointer',
               boxShadow: '0 4px 14px rgba(142,92,255,0.4)',
             }}>
