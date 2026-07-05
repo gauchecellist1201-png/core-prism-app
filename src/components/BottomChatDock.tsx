@@ -21,11 +21,21 @@ interface Props {
   isLoading: boolean;
 }
 
+const MINIMIZED_KEY = 'prism-chat-dock-minimized';
+
 export default function BottomChatDock({ accent, name, messages, onSend, isLoading }: Props) {
   const [input, setInput] = useState('');
   const [expanded, setExpanded] = useState(false);
+  // 「待機」状態: 帯だけ残して下の画面を広く見せる。次回訪問時も記憶。
+  const [minimized, setMinimized] = useState(() => {
+    try { return localStorage.getItem(MINIMIZED_KEY) === '1'; } catch { return false; }
+  });
   const taRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try { localStorage.setItem(MINIMIZED_KEY, minimized ? '1' : '0'); } catch { /* noop */ }
+  }, [minimized]);
 
   // 送信や新着で会話末尾へスクロール
   useEffect(() => {
@@ -50,6 +60,55 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
   };
 
   const hasMsgs = messages.length > 0;
+
+  // 待機状態: 帯だけ残し、下のコンテンツが見えるスペースを確保する。
+  if (minimized) {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 'max(12px, env(safe-area-inset-bottom))',
+          paddingLeft: 12,
+          paddingRight: 84,
+          display: 'flex',
+          justifyContent: 'center',
+          zIndex: 46,
+          pointerEvents: 'none',
+        }}
+      >
+        <motion.button
+          layout
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+          onClick={() => setMinimized(false)}
+          aria-label={`${name} のチャットを開く`}
+          style={{
+            pointerEvents: 'auto',
+            height: 44,
+            padding: '0 18px',
+            borderRadius: 999,
+            border: `1px solid ${accent}55`,
+            background: 'rgba(16,16,28,0.94)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            boxShadow: '0 10px 34px rgba(0,0,0,0.45)',
+            color: 'var(--fg-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            cursor: 'pointer',
+          }}
+        >
+          <span style={{ width: 8, height: 8, borderRadius: 999, background: accent, boxShadow: `0 0 8px ${accent}`, flexShrink: 0 }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg)' }}>{name} に聞く</span>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 8l3.5-3.5L10 8" /></svg>
+        </motion.button>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -160,6 +219,14 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
         }}
       >
         <span style={{ width: 9, height: 9, borderRadius: 999, background: accent, boxShadow: `0 0 10px ${accent}`, flexShrink: 0, marginBottom: 12 }} />
+        <button
+          onClick={() => setMinimized(true)}
+          aria-label="チャットを待機（畳む）"
+          title="チャットを待機（畳む）"
+          style={{ width: 44, height: 44, borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'var(--fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 5.5l4 4 4-4" /></svg>
+        </button>
         <textarea
           ref={taRef}
           value={input}
