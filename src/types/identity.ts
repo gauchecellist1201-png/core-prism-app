@@ -152,6 +152,11 @@ export interface Proposal {
   generatedAt: string;
   spoken?: boolean;
   dismissed?: boolean;
+  /**
+   * この提案の生成時にプロンプトへ実際に織り込んだナレッジ件数 (実データのみ・嘘数字禁止)。
+   * 0件 or undefined の場合は UI 側で根拠チップを一切表示しない。
+   */
+  knowledgeUsedCount?: number;
 }
 
 export interface UsageStats {

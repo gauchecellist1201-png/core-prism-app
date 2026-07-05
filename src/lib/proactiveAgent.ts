@@ -72,8 +72,12 @@ export async function generateProposal(
   const { persona, knowledge, recentProposals, health, patrolMode, extraContext } = input;
 
   // ナレッジサマリ (最新5件)
-  const kbSummary = knowledge
-    .slice(0, 5)
+  // 「知識→提案の自己強化を可視化」根拠チップ用の件数はここで実際にプロンプトへ
+  // 織り込んだ件数と完全に一致させる (嘘数字禁止・水増し禁止)。要約テキストを
+  // 作ったのと同じ slice(0, 5) の結果を数えるだけで、架空の推定値は使わない。
+  const usedKnowledge = knowledge.slice(0, 5);
+  const knowledgeUsedCount = usedKnowledge.length;
+  const kbSummary = usedKnowledge
     .map(k => {
       const sum = k.analysis?.summary || k.content.slice(0, 200);
       const acts = k.analysis?.actions?.slice(0, 2).join(' / ') || '';
@@ -165,5 +169,7 @@ ${patrolInstruction}
     actions: Array.isArray(parsed.actions) ? parsed.actions : [],
     context: parsed.context || '',
     generatedAt: new Date().toISOString(),
+    // 0件なら chip 自体を出さない判定に使う (UI 側で knowledgeUsedCount > 0 のみ表示)
+    knowledgeUsedCount,
   };
 }

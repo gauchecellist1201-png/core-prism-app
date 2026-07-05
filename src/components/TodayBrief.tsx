@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Plus, Volume2, Square, Lightbulb, Sparkles, RefreshCw, Mail, Send, AlertTriangle, Check } from 'lucide-react';
+import { Play, Plus, Volume2, Square, Lightbulb, Sparkles, RefreshCw, Mail, Send, AlertTriangle, Check, BookOpen } from 'lucide-react';
 import type { Persona, Proposal, AppSettings } from '../types/identity';
 import { listIntegrations, sendBrief } from '../lib/integrations';
 import { RewardBurst } from './visualFx';
@@ -127,6 +127,22 @@ export default function TodayBrief({
 
         {proposal ? (
           <>
+            {/* 根拠チップ: ナレッジを実際に参照した件数のみ表示 (0件/未計測なら出さない・嘘数字禁止) */}
+            {!!proposal.knowledgeUsedCount && proposal.knowledgeUsedCount > 0 && (
+              <span
+                className="inline-flex items-center gap-1.5 text-xs font-semibold mb-3"
+                style={{
+                  padding: '5px 10px',
+                  borderRadius: 999,
+                  background: `${persona.accentColor}14`,
+                  border: `1px solid ${persona.accentColor}33`,
+                  color: persona.accentColor,
+                }}
+              >
+                <BookOpen size={12} strokeWidth={2.4} />
+                {proposal.knowledgeUsedCount}件の知識をもとに提案しました
+              </span>
+            )}
             <p
               className="text-fg leading-relaxed mb-4 whitespace-pre-wrap brief-body-mobile"
               style={{ fontSize: 15, lineHeight: 1.75 }}
