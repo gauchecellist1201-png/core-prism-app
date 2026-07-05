@@ -133,6 +133,120 @@ function DiamondIcon() {
   );
 }
 
+// ─── 共創フィードバックカード (Guild連携: このアプリを一緒に良くする) ───
+type Tokens = typeof P;
+
+function CrystalCoCreateCard({ tokens: T }: { tokens: Tokens }) {
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<{ url: string } | null>(null);
+
+  const submit = async () => {
+    const idea = body.trim();
+    if (!idea) {
+      setError('アイデアを入力してください。');
+      return;
+    }
+    setSending(true);
+    setError(null);
+    try {
+      const res = await fetch('https://guild-hazel.vercel.app/api/feedback', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          product: 'crystal',
+          contributor: 'ゲスト',
+          ...(title.trim() ? { title: title.trim() } : {}),
+          body: idea,
+        }),
+      });
+      const j = await res.json().catch(() => null);
+      if (!res.ok || !j?.ok || !j?.url) throw new Error('failed');
+      setDone({ url: String(j.url) });
+      setTitle('');
+      setBody('');
+    } catch {
+      setError('うまく届きませんでした。少し時間をおいて、もう一度お試しください。');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const cardStyle: React.CSSProperties = {
+    borderRadius: 24, padding: 'clamp(18px, 3vw, 28px)',
+    border: `1px solid ${T.line}`, background: T.glass,
+    backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+  };
+
+  if (done) {
+    return (
+      <div style={cardStyle}>
+        <div style={{ fontFamily: SERIF, fontSize: 15, letterSpacing: '0.3em', color: T.gold, marginBottom: 10 }}>THANK YOU</div>
+        <h2 style={{ margin: '0 0 8px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(19px, 3vw, 24px)' }}>ギルドに届きました</h2>
+        <p style={{ margin: '0 0 16px', fontSize: 13, lineHeight: 1.9, color: T.fgMuted }}>
+          ありがとうございます。あなたのアイデアは共創コミュニティで検討されます。採用されると<strong style={{ color: T.fg }}>トークン(謝礼)</strong>が届きます。
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          <a href={done.url} target="_blank" rel="noreferrer" style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, padding: '0 18px',
+            borderRadius: 999, background: T.gold, color: '#141414', textDecoration: 'none', fontSize: 13, fontWeight: 800,
+          }}>
+            ギルドで進捗を見る
+          </a>
+          <button onClick={() => setDone(null)} style={{
+            minHeight: 44, padding: '0 18px', borderRadius: 999, border: `1px solid ${T.line}`,
+            background: 'transparent', color: T.fgMuted, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          }}>
+            もう一つ送る
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={cardStyle}>
+      <SectionIndex no="05" label="Build it together" />
+      <h2 style={{ margin: '0 0 8px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(21px, 3.6vw, 28px)' }}>
+        このアプリを一緒に良くする
+      </h2>
+      <p style={{ margin: '0 0 18px', fontSize: 13, lineHeight: 1.9, color: T.fgMuted, maxWidth: 620 }}>
+        あなたの「こうだったらいいな」をギルドに届けると、<strong style={{ color: T.fg }}>採用された提案にはトークン(謝礼)</strong>が届きます。
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 560 }}>
+        <input
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="ひとことタイトル (任意)"
+          maxLength={60}
+          style={inputStyle}
+        />
+        <textarea
+          value={body}
+          onChange={e => setBody(e.target.value)}
+          placeholder="例: 応対の会話ログをもっと見やすく振り返りたいです。"
+          rows={4}
+          style={{ ...inputStyle, resize: 'vertical', minHeight: 96, lineHeight: 1.6 }}
+        />
+        {error && <p style={{ margin: 0, fontSize: 12.5, color: '#F2B8C6' }}>{error}</p>}
+        <button
+          onClick={() => void submit()}
+          disabled={sending || !body.trim()}
+          style={{
+            minHeight: 48, borderRadius: 999, border: 'none', cursor: sending ? 'default' : 'pointer',
+            background: sending ? 'rgba(217,228,245,0.35)' : T.gold, color: '#141414', fontSize: 14, fontWeight: 800,
+            letterSpacing: '0.03em', opacity: sending || !body.trim() ? 0.7 : 1,
+          }}
+        >
+          {sending ? '送っています…' : 'ギルドに改善アイデアを送る'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── ショーケース本体 ────────────────────────────
 function Showcase() {
   const [config, setConfig] = useState<ConciergeConfig>(() => readConciergeConfigFromUrl());
@@ -791,6 +905,11 @@ function Showcase() {
           お支払い前に、上のコンシェルジュであなたのブランド設定をそのまま試せます。
           導入相談はメール1通から — 24時間以内にご返信します。
         </p>
+      </section>
+
+      {/* ── 05 共創 (このアプリを一緒に良くする) ── */}
+      <section style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(32px, 5vw, 60px) clamp(16px, 4vw, 44px)' }}>
+        <CrystalCoCreateCard tokens={P} />
       </section>
 
       {/* ── フッタ ── */}
