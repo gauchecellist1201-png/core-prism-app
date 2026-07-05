@@ -21,6 +21,7 @@ import {
   BarChart3, Sparkles, Clapperboard, Mail, CheckCircle2, ArrowRight,
   Loader2, TrendingUp, RefreshCw, ChevronRight, Hash, Clock, CalendarPlus,
   LayoutGrid, GripVertical, ChevronLeft, Video as VideoIcon, ImageIcon,
+  Copy, Check,
 } from 'lucide-react';
 import type { IgProfile } from './instagramConnect';
 import { useIgStrategy, type StrategyItem } from './useIgStrategy';
@@ -784,9 +785,64 @@ function StrategyRow({ item, accent, bg, onMakeReel }: { item: StrategyItem; acc
   );
 }
 
+/** 台本を「撮影者・編集者にそのまま渡せる」プレーンテキストに整形（手入力ゼロ） */
+function buildScriptText(reel: ReelScriptResult, theme: string): string {
+  const lines: string[] = [];
+  lines.push(`【リール台本】${reel.title}`);
+  lines.push(`テーマ: ${theme}`);
+  lines.push('');
+  reel.scenes.forEach((sc) => {
+    lines.push(`■ シーン${sc.index}（${sc.duration}秒）`);
+    lines.push(`字幕: ${sc.caption}`);
+    if (sc.narration) lines.push(`読み: ${sc.narration}`);
+    lines.push('');
+  });
+  if (reel.cta) lines.push(`締め: ${reel.cta}`);
+  if (reel.caption) { lines.push(''); lines.push('― 投稿本文 ―'); lines.push(reel.caption); }
+  if (reel.hashtags && reel.hashtags.length) {
+    lines.push('');
+    lines.push(reel.hashtags.map((h) => (h.startsWith('#') ? h : '#' + h)).join(' '));
+  }
+  return lines.join('\n').trim();
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* フォールバックへ */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 function ReelScriptCard({ reel, theme, accent, bg, onRegenerate, onOpenStudio }: {
   reel: ReelScriptResult; theme: string; accent: string; bg: IrisBackgroundDef; onRegenerate: () => void; onOpenStudio: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const handleCopy = async () => {
+    const ok = await copyText(buildScriptText(reel, theme));
+    if (ok) {
+      setCopied(true); setCopyFailed(false);
+      window.setTimeout(() => setCopied(false), 1800);
+    } else {
+      setCopyFailed(true);
+      window.setTimeout(() => setCopyFailed(false), 2600);
+    }
+  };
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 4 }}>
       <div style={{ fontSize: 11, color: bg.inkSoft, marginBottom: 6 }}>テーマ: {theme}</div>
@@ -817,7 +873,16 @@ function ReelScriptCard({ reel, theme, accent, bg, onRegenerate, onOpenStudio }:
           ))}
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+      <button type="button" onClick={handleCopy}
+        style={{ width: '100%', marginTop: 12, background: copied ? `${accent}12` : 'transparent', border: `1px solid ${copied ? accent : bg.cardBorder}`, color: copied ? accent : bg.inkSoft, fontSize: 12, fontWeight: 800, borderRadius: 12, padding: '9px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all .18s ease' }}>
+        {copied ? <><Check size={13} /> コピーしました</> : <><Copy size={13} /> 台本をコピー（撮影者にそのまま渡せる）</>}
+      </button>
+      {copyFailed && (
+        <div style={{ marginTop: 6, fontSize: 11, color: '#9B1B30', lineHeight: 1.5 }}>
+          コピーできませんでした。台本を長押しして選択→コピーしてください。
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <button type="button" onClick={onRegenerate}
           style={{ flex: 1, background: 'transparent', border: `1px solid ${bg.cardBorder}`, color: bg.ink, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
           <RefreshCw size={13} /> 別案
