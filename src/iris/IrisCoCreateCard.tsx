@@ -80,7 +80,7 @@ export default function IrisCoCreateCard({ bg }: Props) {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <span style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+            width: 44, height: 44, borderRadius: 12, flexShrink: 0,
             background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
             boxShadow: `0 8px 20px ${bg.accent}55`,
           }}>
@@ -161,7 +161,7 @@ export default function IrisCoCreateCard({ bg }: Props) {
           onChange={(e) => setBodyText(e.target.value)}
           placeholder="例：台本を作った後、そのまま撮影メモとして共有できたら嬉しいです。"
           rows={4}
-          style={{ ...inp, resize: 'vertical' }}
+          style={{ ...inp, resize: 'vertical', minHeight: 96 }}
         />
         {error && (
           <p style={{ color: '#EF4444', fontSize: '0.8rem', margin: 0 }}>{error}</p>

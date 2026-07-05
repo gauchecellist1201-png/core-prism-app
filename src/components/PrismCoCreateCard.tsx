@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { Sparkles, Send, Check, Link2, Loader2 } from 'lucide-react';
 import { loadBillingUser } from '../lib/billing';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 
 const GUILD_FEEDBACK_URL = 'https://guild-hazel.vercel.app/api/feedback';
 
@@ -30,7 +31,7 @@ export default function PrismCoCreateCard() {
     try {
       const user = loadBillingUser();
       const contributor = user?.email?.trim() || 'ゲスト';
-      const res = await fetch(GUILD_FEEDBACK_URL, {
+      const res = await fetchWithTimeout(GUILD_FEEDBACK_URL, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({

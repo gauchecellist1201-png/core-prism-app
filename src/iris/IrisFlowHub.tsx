@@ -719,7 +719,7 @@ function FeedGridPreview({ bg, accent, posts, onReorder }: {
           <button type="button" onClick={() => moveSelected(-1)} disabled={selected === 0}
             aria-label="1つ前に移動"
             style={{
-              width: 44, height: 44, borderRadius: 10, border: 'none', cursor: selected === 0 ? 'not-allowed' : 'pointer',
+              width: 44, height: 44, borderRadius: 12, border: 'none', cursor: selected === 0 ? 'not-allowed' : 'pointer',
               background: selected === 0 ? `${accent}14` : `linear-gradient(135deg, ${accent}, #F77737)`,
               color: selected === 0 ? bg.inkSoft : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
@@ -731,7 +731,7 @@ function FeedGridPreview({ bg, accent, posts, onReorder }: {
           <button type="button" onClick={() => moveSelected(1)} disabled={selected === posts.length - 1}
             aria-label="1つ後ろに移動"
             style={{
-              width: 44, height: 44, borderRadius: 10, border: 'none', cursor: selected === posts.length - 1 ? 'not-allowed' : 'pointer',
+              width: 44, height: 44, borderRadius: 12, border: 'none', cursor: selected === posts.length - 1 ? 'not-allowed' : 'pointer',
               background: selected === posts.length - 1 ? `${accent}14` : `linear-gradient(135deg, ${accent}, #F77737)`,
               color: selected === posts.length - 1 ? bg.inkSoft : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>

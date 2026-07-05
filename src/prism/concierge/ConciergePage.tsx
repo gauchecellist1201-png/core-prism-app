@@ -18,6 +18,7 @@ import {
   readConciergeConfigFromUrl,
   isConciergeEmbed,
 } from './conciergeConfig';
+import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 
 const SERIF = `'Didot', 'Bodoni 72', 'Hiragino Mincho ProN', 'Yu Mincho', Georgia, serif`;
 const SANS = `-apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif`;
@@ -152,7 +153,7 @@ function CrystalCoCreateCard({ tokens: T }: { tokens: Tokens }) {
     setSending(true);
     setError(null);
     try {
-      const res = await fetch('https://guild-hazel.vercel.app/api/feedback', {
+      const res = await fetchWithTimeout('https://guild-hazel.vercel.app/api/feedback', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
