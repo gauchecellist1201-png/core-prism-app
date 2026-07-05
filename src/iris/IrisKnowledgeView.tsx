@@ -14,6 +14,7 @@ import { confirmAction } from '../lib/confirmDialog';
 import IrisIntro from './IrisIntro';
 import EmptyInvite from './EmptyInvite';
 import IrisCoreCard from './IrisCoreCard';
+import IrisCoCreateCard from './IrisCoCreateCard';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -266,6 +267,8 @@ export default function IrisKnowledgeView({ bg, knowledge }: Props) {
           </div>
         );
       })}
+
+      <IrisCoCreateCard bg={bg} />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import PrismQuickCapture from './PrismQuickCapture';
 import ShortcutHelpModal from './ShortcutHelpModal';
 import PwaInstallPrompt from './PwaInstallPrompt';
 import FeedbackWidget from './FeedbackWidget';
+import PrismCoCreateCard from './PrismCoCreateCard';
 import KnowledgeBase from './KnowledgeBase';
 import StudioOpeningSheet from './StudioOpeningSheet';
 const MeetingHub = lazy(() => import('./MeetingHub'));
@@ -1615,6 +1616,9 @@ export default function IdentityDashboard({
                 knowledge={personaKnowledge}
                 proposals={proactive.proposals}
               />
+
+              {/* 共創フィードバック — 「このアプリを一緒に良くする」をギルドに届ける導線 */}
+              <PrismCoCreateCard />
 
               {/* 🗼 司令塔ループ — Prism中心に Iris/Resonance/Lume が一周。
                   分かりにくいとの指摘(2026-06-18)で、優先度を下げて「すべての機能を見る」展開内の最下部へ移動。 */}
