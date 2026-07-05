@@ -20,6 +20,7 @@ import Celebrate from '../components/Celebrate';
 import {
   BarChart3, Sparkles, Clapperboard, Mail, CheckCircle2, ArrowRight,
   Loader2, TrendingUp, RefreshCw, ChevronRight, Hash, Clock, CalendarPlus,
+  LayoutGrid, GripVertical, ChevronLeft, Video as VideoIcon, ImageIcon,
 } from 'lucide-react';
 import type { IgProfile } from './instagramConnect';
 import { useIgStrategy, type StrategyItem } from './useIgStrategy';
@@ -33,6 +34,7 @@ import type { ReelStudioSeed } from './IrisReelStudio';
 import type { IrisBackgroundDef } from './irisStyle';
 import type { AppSettings } from '../types/identity';
 import type { MediaKit } from '../types/influencerDeal';
+import { usePostQueue, type ScheduledPost } from './usePostQueue';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -46,6 +48,8 @@ interface Props {
   onScheduleReel?: (p: { caption: string; hashtags: string[]; cta?: string; title?: string; dealId?: string; brandName?: string; mediaKind?: 'video' | 'image' }) => void;
   /** 「素材から構成」の結果をリールスタジオへ渡して動画化する */
   onSendReelToStudio?: (seed: ReelStudioSeed) => void;
+  /** 投稿予約キュー（9マス・グリッドプレビュー＋並べ替えに使用）。ダッシュボードの usePostQueue() を橋渡し */
+  postQueue?: ReturnType<typeof usePostQueue>;
 }
 
 /** リールを紐付ける案件の選択（なし or マッチ済み案件）チップ */
@@ -106,7 +110,7 @@ function matchDealsForProfile(profile: IgProfile, max = 3): { deal: BrandDeal; r
     .map(({ deal, reason }) => ({ deal, reason }));
 }
 
-export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavigate, onOpenReelStudio, onScheduleReel, onSendReelToStudio }: Props) {
+export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavigate, onOpenReelStudio, onScheduleReel, onSendReelToStudio, postQueue }: Props) {
   const accent = '#E1306C';
   const reduce = useReducedMotion();
   const { data: strategy, loading: stratLoading, error: stratError, refresh } = useIgStrategy(igProfile);
@@ -127,6 +131,40 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
   const fire = (msg: string) => setCelebrate((c) => ({ n: c.n + 1, msg }));
 
   const matchedDeals = useMemo(() => matchDealsForProfile(igProfile), [igProfile]);
+
+  // ⑤ 9マス・グリッドプレビュー＋並べ替え（公開前にフィード全体の統一感を見る）
+  //   投稿順（scheduledAt の昇順）を「見た目の並び」として扱い、ドラッグ/矢印で
+  //   セルを入れ替えると、対応する予約時刻（枠）同士を入れ替える。
+  const feedGridPosts = useMemo(() => {
+    if (!postQueue) return [];
+    return [...postQueue.posts]
+      .filter((p) => p.status !== 'posted' && p.status !== 'skipped')
+      .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
+      .slice(0, 9);
+  }, [postQueue]);
+  const [gridLastMove, setGridLastMove] = useState<{ from: number; to: number } | null>(null);
+  const [gridError, setGridError] = useState<string | null>(null);
+
+  const applyGridReorder = (from: number, to: number) => {
+    if (!postQueue) return;
+    if (from === to || from < 0 || to < 0 || from >= feedGridPosts.length || to >= feedGridPosts.length) return;
+    setGridError(null);
+    setGridLastMove({ from, to });
+    try {
+      const times = feedGridPosts.map((p) => p.scheduledAt);
+      const arr = [...feedGridPosts];
+      const [moved] = arr.splice(from, 1);
+      arr.splice(to, 0, moved);
+      arr.forEach((p, idx) => {
+        if (p.scheduledAt !== times[idx]) postQueue.update(p.id, { scheduledAt: times[idx] });
+      });
+    } catch (e) {
+      setGridError(e instanceof Error ? e.message : '並べ替えの保存に失敗しました');
+    }
+  };
+  const retryGridReorder = () => { if (gridLastMove) applyGridReorder(gridLastMove.from, gridLastMove.to); };
+  // usePostQueue 側のストレージ保存失敗も、このセクション内で拾って表示する（沈黙させない）
+  const gridSaveError = postQueue?.saveError || gridError;
 
   // ④ 応募文をその場生成（稼ぐステップを一気通貫で完結）
   const [draftDealId, setDraftDealId] = useState<string | null>(null);
@@ -457,6 +495,31 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
         )}
       </motion.div>
 
+      {/* ⑤ 9マス・グリッドプレビュー＋並べ替え（公開前にフィード全体の見た目を確認） */}
+      {feedGridPosts.length > 0 && (
+        <motion.div {...reveal(3)} style={{ ...card, position: 'relative', zIndex: 1 }}>
+          <SectionLabel Icon={LayoutGrid} color={accent} title="フィードの見た目（9マス）" />
+          <p style={{ margin: '10px 0 12px', fontSize: 12, color: bg.inkSoft, lineHeight: 1.6 }}>
+            公開前に、投稿予約の並びをフィード風に確認できます。ドラッグ（スマホは選んで矢印）で順番を入れ替えられます。
+          </p>
+          <FeedGridPreview bg={bg} accent={accent} posts={feedGridPosts} onReorder={applyGridReorder} />
+          {gridSaveError && (
+            <InlineError
+              text={gridSaveError}
+              onRetry={() => { postQueue?.dismissSaveError(); setGridError(null); retryGridReorder(); }}
+            />
+          )}
+          <button type="button" onClick={() => onNavigate('schedule')}
+            style={{
+              marginTop: 10, background: 'transparent', border: 'none', color: accent,
+              fontSize: 12.5, fontWeight: 800, cursor: 'pointer', padding: 6,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4, width: '100%',
+            }}>
+            投稿予約をすべて見る <ArrowRight size={14} />
+          </button>
+        </motion.div>
+      )}
+
       {/* ④ あなた向け案件（プロフィール連動マッチ） */}
       <div style={card}>
         <SectionLabel Icon={Mail} color={accent} title="④ あなた向けの案件" />
@@ -567,6 +630,116 @@ function ScheduleReelBar({ scheduled, accent, onSchedule, onViewSchedule }: {
       style={{ marginTop: 10, width: '100%', background: 'transparent', border: `1px solid ${accent}66`, color: accent, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
       <CalendarPlus size={14} /> 投稿予約に追加
     </button>
+  );
+}
+
+/** 9マス・グリッドプレビュー＋並べ替え。ドラッグ(デスクトップ) と 選択→矢印(タップ44px、モバイル向け) の両対応。 */
+function FeedGridPreview({ bg, accent, posts, onReorder }: {
+  bg: IrisBackgroundDef; accent: string; posts: ScheduledPost[]; onReorder: (from: number, to: number) => void;
+}) {
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+
+  const cells: (ScheduledPost | null)[] = Array.from({ length: 9 }, (_, i) => posts[i] || null);
+
+  const selectCell = (i: number) => setSelected((cur) => (cur === i ? null : i));
+  const moveSelected = (dir: -1 | 1) => {
+    if (selected == null) return;
+    const to = selected + dir;
+    if (to < 0 || to >= posts.length) return;
+    onReorder(selected, to);
+    setSelected(to);
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+        {cells.map((p, i) => {
+          if (!p) {
+            return (
+              <div key={`empty-${i}`} aria-hidden
+                style={{ aspectRatio: '1 / 1', borderRadius: 12, background: `${bg.accent}0A` }}
+              />
+            );
+          }
+          const isSel = selected === i;
+          const isDragOver = overIndex === i && dragIndex !== null && dragIndex !== i;
+          return (
+            <div
+              key={p.id}
+              draggable
+              role="button"
+              tabIndex={0}
+              aria-label={`${i + 1}番目の投稿。選択して矢印で並べ替え`}
+              onClick={() => selectCell(i)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectCell(i); }
+              }}
+              onDragStart={() => setDragIndex(i)}
+              onDragOver={(e) => { e.preventDefault(); setOverIndex(i); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragIndex != null && dragIndex !== i) onReorder(dragIndex, i);
+                setDragIndex(null);
+                setOverIndex(null);
+              }}
+              onDragEnd={() => { setDragIndex(null); setOverIndex(null); }}
+              style={{
+                position: 'relative', aspectRatio: '1 / 1', borderRadius: 12, overflow: 'hidden',
+                background: '#000', cursor: 'grab',
+                boxShadow: isSel ? `0 0 0 2.5px ${accent}` : isDragOver ? `0 0 0 2px ${accent}88` : '0 1px 4px rgba(0,0,0,0.14)',
+                transition: 'box-shadow 0.15s, transform 0.15s',
+                transform: dragIndex === i ? 'scale(0.96)' : 'scale(1)',
+              }}
+            >
+              {p.thumbDataUrl ? (
+                <img src={p.thumbDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} draggable={false} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(135deg, ${accent}33, #F7773733)` }}>
+                  {p.mediaKind === 'image' ? <ImageIcon size={20} color="rgba(255,255,255,0.75)" /> : <VideoIcon size={20} color="rgba(255,255,255,0.75)" />}
+                </div>
+              )}
+              <span style={{
+                position: 'absolute', top: 4, left: 4, minWidth: 18, height: 18, borderRadius: 6, padding: '0 4px',
+                background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: 10, fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>{i + 1}</span>
+              <span style={{ position: 'absolute', top: 4, right: 4, display: 'flex', opacity: 0.85 }}>
+                <GripVertical size={13} color="#fff" />
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 選択中セルの並べ替えバー（タップ44px・ドラッグが使えない環境の正規ルート） */}
+      {selected != null && posts[selected] && (
+        <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, background: `${accent}0D`, borderRadius: 12, padding: '6px 8px' }}>
+          <button type="button" onClick={() => moveSelected(-1)} disabled={selected === 0}
+            aria-label="1つ前に移動"
+            style={{
+              width: 44, height: 44, borderRadius: 10, border: 'none', cursor: selected === 0 ? 'not-allowed' : 'pointer',
+              background: selected === 0 ? `${accent}14` : `linear-gradient(135deg, ${accent}, #F77737)`,
+              color: selected === 0 ? bg.inkSoft : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+            <ChevronLeft size={18} />
+          </button>
+          <span style={{ flex: 1, textAlign: 'center', fontSize: 12, fontWeight: 700, color: bg.ink }}>
+            {selected + 1} 番目を選択中
+          </span>
+          <button type="button" onClick={() => moveSelected(1)} disabled={selected === posts.length - 1}
+            aria-label="1つ後ろに移動"
+            style={{
+              width: 44, height: 44, borderRadius: 10, border: 'none', cursor: selected === posts.length - 1 ? 'not-allowed' : 'pointer',
+              background: selected === posts.length - 1 ? `${accent}14` : `linear-gradient(135deg, ${accent}, #F77737)`,
+              color: selected === posts.length - 1 ? bg.inkSoft : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

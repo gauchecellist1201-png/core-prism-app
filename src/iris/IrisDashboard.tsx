@@ -1624,6 +1624,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                       mediaKind: p.mediaKind || 'video',
                     })}
                     onSendReelToStudio={(seed) => { setReelSeed(seed); setTab('reel'); }}
+                    postQueue={postQueue}
                   />
                 )}
 
