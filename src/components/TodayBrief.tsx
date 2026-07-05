@@ -7,6 +7,19 @@ import { RewardBurst } from './visualFx';
 import ThinkingIndicator from './ThinkingIndicator';
 import InlineActionExecutor from './InlineActionExecutor';
 import { LoaderDots } from './MicroLoader';
+import { logDeliverable, type DeliverableCategory } from '../lib/cxoDeliverables';
+import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
+
+// 今日の一手のアクションを AI 実行したとき、その成果物を「どの役員が納品したか」に
+// honest に割り当てるためのマップ。AgentTeamMonitor の kindToCategory と揃える。
+// 今日の一手には固有の CXO が無いため、成果物の種類から自然な担当役員を選ぶ。
+const KIND_TO_CXO: Record<string, { cxo: CxoRole; category: DeliverableCategory }> = {
+  text: { cxo: 'CMO', category: 'copy' },
+  memo: { cxo: 'CMO', category: 'copy' },
+  checklist: { cxo: 'COO', category: 'plan' },
+  email: { cxo: 'CSO', category: 'outreach' },
+  table: { cxo: 'CDS', category: 'analysis' },
+};
 
 interface Props {
   persona: Persona;
@@ -209,6 +222,26 @@ export default function TodayBrief({
                             persona={persona}
                             settings={settings}
                             contextText={proposal.context}
+                            onComplete={(deliverable, act) => {
+                              // 「今日の一手」タップ→AI成果物を役員日報へ確実に記録(silent fail撲滅)。
+                              // これが無いと、成果物は自動保存されるのに日報の「動いた量」に載らず
+                              // 価値が見えないままだった(2026-07-06)。
+                              try {
+                                const { cxo, category } = KIND_TO_CXO[deliverable.kind] ?? { cxo: 'COO' as CxoRole, category: 'other' as DeliverableCategory };
+                                const meta = CXO_META[cxo];
+                                logDeliverable({
+                                  personaId: persona.id,
+                                  cxoRole: cxo,
+                                  cxoName: meta.name,
+                                  cxoEmoji: meta.emoji,
+                                  title: deliverable.title || act,
+                                  summary: act,
+                                  content: deliverable.content,
+                                  category,
+                                  source: 'inline-executor',
+                                });
+                              } catch { /* 記録失敗は握りつぶさず、成果物自体は保存済み */ }
+                            }}
                             onAddAsTask={(act) => {
                               onAcceptAction(act);
                               setShowReward(true);
