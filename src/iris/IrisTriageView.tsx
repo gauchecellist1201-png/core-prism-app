@@ -2,11 +2,13 @@
 // IRIS — Offer Triage View (案件メールを精査して詐欺見抜き + 魅力度判定)
 // ============================================================
 import { useState } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { MediaKit } from '../types/influencerDeal';
 import { triageOffer, type OfferTriageResult } from './offerTriage';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
+import IrisIntro from './IrisIntro';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -68,6 +70,14 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
+      <IrisIntro
+        id="triage"
+        bg={bg}
+        icon={ShieldCheck}
+        what="届いた案件メールを丸ごと貼ると、AI が「受けていい / 交渉して受ける / 丁寧に辞退 / 関わらない」を理由つきで判定します。"
+        tryThis="まずは案件メールの本文をコピーして下の枠に貼り、「精査する」を押すだけ。何も持っていなくても、枠の例文のまま試せます。"
+        example="例: 相場より安い依頼 → 「交渉して受ける・提示額は◯◯円が妥当」と根拠つきで表示。怪しい相手なら警告も出る"
+      />
       <div>
         <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.4rem' }}>
           The Triage

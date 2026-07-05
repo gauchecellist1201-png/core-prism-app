@@ -9,6 +9,7 @@ import { IRIS_FONTS } from './irisStyle';
 import { confirmAction } from '../lib/confirmDialog';
 import EmptyInvite from './EmptyInvite';
 import InviteShareCard from '../components/InviteShareCard';
+import IrisIntro from './IrisIntro';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -76,6 +77,14 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
+      <IrisIntro
+        id="community"
+        bg={bg}
+        icon={MessagesSquare}
+        what="同じ立場のクリエイター同士で、案件シェア・コラボ相手探し・相場アンケ・危ない企業の警告を交換できる掲示板です。"
+        tryThis="まずは右上の「投稿する」を押して、種類（コラボ募集など）を選びひとこと書くだけ。上のチップを押せば見たい種類だけ絞れます。"
+        example="例:「一緒にリールを撮れる人を募集（東京・美容）」と投稿 → 同じジャンルの人がコメントで手を挙げてくれる"
+      />
       <div>
         <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.4rem' }}>
           The House
