@@ -874,7 +874,7 @@ function ReelScriptCard({ reel, theme, accent, bg, onRegenerate, onOpenStudio }:
         </div>
       )}
       <button type="button" onClick={handleCopy}
-        style={{ width: '100%', marginTop: 12, background: copied ? `${accent}12` : 'transparent', border: `1px solid ${copied ? accent : bg.cardBorder}`, color: copied ? accent : bg.inkSoft, fontSize: 12, fontWeight: 800, borderRadius: 12, padding: '9px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all .18s ease' }}>
+        style={{ width: '100%', marginTop: 12, background: copied ? `${accent}12` : 'transparent', border: `1px solid ${copied ? accent : bg.cardBorder}`, color: copied ? accent : bg.inkSoft, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all .18s ease' }}>
         {copied ? <><Check size={13} /> コピーしました</> : <><Copy size={13} /> 台本をコピー（撮影者にそのまま渡せる）</>}
       </button>
       {copyFailed && (

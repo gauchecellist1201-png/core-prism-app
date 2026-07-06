@@ -50,6 +50,11 @@ export default function PrismArtifactStudio({ onClose }: { onClose: () => void; 
   const [art, setArt] = useState<ArtifactProposal | null>(null);
   const [err, setErr] = useState('');
   const [copied, setCopied] = useState(false);
+  // 見本の日付は「今日」を出す（固定日だと日が経つほど古く見えるため）
+  const sampleDate = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+  })();
 
   async function propose() {
     setErr('');
@@ -239,7 +244,7 @@ export default function PrismArtifactStudio({ onClose }: { onClose: () => void; 
     }}>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '1.1rem 1.1rem 3rem' }}>
         {/* ヘッダ */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16 }}>
           <div style={{ width: 36, height: 36, borderRadius: 11, background: `linear-gradient(135deg, ${VIOLET}, ${INDIGO})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles size={19} />
           </div>
@@ -315,7 +320,7 @@ export default function PrismArtifactStudio({ onClose }: { onClose: () => void; 
                   </div>
                 ))}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 14, fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
-                  <span>2026.07.06</span>
+                  <span>{sampleDate}</span>
                   <span style={{ fontWeight: 800, color: VIOLET }}>CORE Prism</span>
                 </div>
               </div>
