@@ -908,6 +908,27 @@ function Showcase() {
         </p>
       </section>
 
+      {/* ── 04.5 導入までの流れ (高額初期費用の不安を手順の見える化でつぶす) ── */}
+      <section style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(24px, 4vw, 48px) clamp(16px, 4vw, 44px)' }}>
+        <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 400, margin: '0 0 6px' }}>導入までの流れ</h2>
+        <p style={{ margin: '0 0 22px', fontSize: 13, color: P.fgMuted }}>むずかしい作業は、すべてこちらで巻き取ります。</p>
+        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+          {[
+            { n: '1', t: 'お申し込み', d: 'カード決済で今すぐ、または先にメールでご相談。ご質問には24時間以内にお返事します。' },
+            { n: '2', t: '初期設定はおまかせ', d: 'ヒアリングのうえ、ナレッジ登録・人格・色までこちらで設定代行（初期費用に含まれます）。' },
+            { n: '3', t: '1行で公開', d: 'タグを1行貼るか、専用リンクを置くだけ。あなたのサイトでコンシェルジュが働き始めます。' },
+          ].map(s => (
+            <div key={s.n} style={{ border: `1px solid ${P.lineSoft}`, background: P.glass, borderRadius: 18, padding: '18px 18px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <span style={{ width: 28, height: 28, borderRadius: 999, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 800, color: P.bg0, background: P.gold }}>{s.n}</span>
+                <span style={{ fontSize: 14.5, fontWeight: 700 }}>{s.t}</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.8, color: P.fgMuted }}>{s.d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── 05 共創 (このアプリを一緒に良くする) ── */}
       <section style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(32px, 5vw, 60px) clamp(16px, 4vw, 44px)' }}>
         <CrystalCoCreateCard tokens={P} />
