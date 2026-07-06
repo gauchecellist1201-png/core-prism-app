@@ -363,7 +363,7 @@ export default function GuidedTourSpotlight({ steps, brand, onClose, onComplete 
                 background: accent, color: '#fff', border: 'none', cursor: 'pointer',
                 boxShadow: `0 4px 14px ${accent}55`,
               }}
-            >{isLast ? '🎉 完了' : '次へ →'}</button>
+            >{isLast ? '完了 ✓' : '次へ →'}</button>
           </div>
           {phase === 'searching' && (
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 8, textAlign: 'center' }}>

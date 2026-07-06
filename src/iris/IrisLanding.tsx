@@ -119,7 +119,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }} style={{ fontFamily: IRIS_FONTS.serif, fontSize: 'clamp(1rem, 1.7vw, 1.25rem)', color: IRIS_COLORS.ivoryDeep, lineHeight: 1.8, marginBottom: '2rem', maxWidth: 560 }}>
               DM スクショ → <strong style={{ color: IRIS_COLORS.gold }}>案件登録 30 秒</strong>。<br />
-              AI 交渉文、戦略まで全部やる。<strong style={{ color: IRIS_COLORS.cream }}>月 ¥9,800</strong> から。
+              AI 交渉文、戦略まで全部やる。<strong style={{ color: IRIS_COLORS.cream }}>月 ¥2,980</strong> から。
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.45 }} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <button onClick={onEnter} style={ctaBtnHero} className="iris-hero-cta-primary">
@@ -535,7 +535,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
               </thead>
               <tbody>
                 {[
-                  { label: '月額コスト', core: '月 ¥9,800', mgmt: '売上の 20〜30%', agency: '月 ¥10〜30 万', self: '¥0 (時間コスト)' },
+                  { label: '月額コスト', core: '月 ¥2,980〜', mgmt: '売上の 20〜30%', agency: '月 ¥10〜30 万', self: '¥0 (時間コスト)' },
                   { label: '創作の自由度', core: '100% あなたのまま', mgmt: '事務所方針に従う', agency: '世界観の擦り合せ必要', self: '100% 自由' },
                   { label: '稼働時間', core: '24h / 365 日', mgmt: '担当者の営業時間', agency: '営業時間のみ', self: 'あなたの時間に依存' },
                   { label: '反応速度', core: '10 秒〜数分', mgmt: '数日〜数週間', agency: '1〜数日', self: 'いまの心の状態次第' },

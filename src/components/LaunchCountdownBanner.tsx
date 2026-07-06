@@ -71,14 +71,21 @@ export default function LaunchCountdownBanner({ kind }: Props) {
       ? 'linear-gradient(90deg, #FF7AB6 0%, #E1306C 50%, #B22A6C 100%)'
       : 'linear-gradient(90deg, #A78BFA 0%, #7C3AED 50%, #5B21B6 100%)';
 
+  // OS絵文字は使わない(恒久ルール) — ラインアイコンのギフトで置き換え
+  const giftIcon = (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: 6 }} aria-hidden>
+      <rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" />
+      <path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5" />
+    </svg>
+  );
   const message = isLaunched ? (
     <>
-      🎉 招待リンクで登録すると、あなたも招待した友達も{' '}
+      {giftIcon}招待リンクで登録すると、あなたも招待した友達も{' '}
       <strong>お互いに +{REFERRAL_BONUS_DAYS} 日 無料</strong>
     </>
   ) : (
     <>
-      🎉 6/1 一般公開まで残り <strong>{daysLeft} 日</strong> — 招待コードで登録すると{' '}
+      {giftIcon}6/1 一般公開まで残り <strong>{daysLeft} 日</strong> — 招待コードで登録すると{' '}
       <strong>+{REFERRAL_BONUS_DAYS} 日 無料</strong>
     </>
   );
