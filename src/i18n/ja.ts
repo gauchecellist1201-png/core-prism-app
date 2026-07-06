@@ -78,8 +78,8 @@ export const ja: Dictionary = {
   },
 
   hero: {
-    eyebrow: 'CORE PRISM — AI 役員 13 名があなたの会社になる',
-    h1Line1: '13 人の AI 役員 が、',
+    eyebrow: 'CORE PRISM — AI 役員 14 名があなたの会社になる',
+    h1Line1: '14 人の AI 役員 が、',
     h1Line2: 'あなたの会社を 24 時間動かす。',
     sub1: 'ユーザーは 承認するだけ。',
     sub2: '議事録 / 営業 / 財務 / コンテンツ ── 全部、勝手に進む。',

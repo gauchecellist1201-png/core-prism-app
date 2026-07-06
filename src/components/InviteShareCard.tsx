@@ -75,7 +75,7 @@ ${url}`;
 function shareTextX(url: string, brand: Brand, inviterName: string): string {
   const product = brand === 'iris' ? '@core_iris' : '@core_prism';
   const who = inviterName ? `(${inviterName} の紹介) ` : '';
-  return `13 人の AI 役員が代わりに働く ${product}、めちゃ良い。${who}リンクから登録すると 7 日無料 +${REFERRAL_BONUS_DAYS} 日 →
+  return `14 人の AI 役員が代わりに働く ${product}、めちゃ良い。${who}リンクから登録すると 7 日無料 +${REFERRAL_BONUS_DAYS} 日 →
 ${url}`;
 }
 

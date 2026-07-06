@@ -17,8 +17,8 @@ export const en: Dictionary = {
   },
 
   hero: {
-    eyebrow: 'CORE PRISM — 13 AI EXECUTIVES, RUNNING YOUR COMPANY',
-    h1Line1: '13 AI executives,',
+    eyebrow: 'CORE PRISM — 14 AI EXECUTIVES, RUNNING YOUR COMPANY',
+    h1Line1: '14 AI executives,',
     h1Line2: 'running your company 24/7.',
     sub1: 'You just approve.',
     sub2: 'Meetings · Sales · Finance · Content — everything moves on its own.',
