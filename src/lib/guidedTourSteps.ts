@@ -128,7 +128,7 @@ export const PRISM_TOUR: TourStep[] = [
 export const IRIS_TOUR: TourStep[] = [
   {
     id: 'welcome',
-    title: '✨ CORE Iris へ ようこそ',
+    title: 'CORE Iris へ ようこそ',
     body: 'これ から 1 分 で、 6 名 の AI 役員 が 「Instagram / 案件 / 単価」 を 上げる 仕組み を 案内 します。 触り ながら 覚えられます。',
     placement: 'auto',
   },

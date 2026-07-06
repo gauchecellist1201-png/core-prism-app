@@ -702,7 +702,7 @@ export default function PricingPage() {
                     <td style={{ padding: '12px 8px 12px 0', textAlign: 'right', color: '#a78bfa', fontSize: '0.75rem', fontWeight: 700 }}>各々バラバラ</td>
                   </tr>
                   <tr style={{ background: 'linear-gradient(90deg, rgba(167,139,250,0.18), rgba(244,114,182,0.12))' }}>
-                    <td style={{ padding: '14px 0 14px 8px', color: '#fff', fontWeight: 900, fontSize: '0.95rem' }}>✨ CORE Prism Standard</td>
+                    <td style={{ padding: '14px 0 14px 8px', color: '#fff', fontWeight: 900, fontSize: '0.95rem' }}>CORE Prism Standard</td>
                     <td style={{ padding: '14px 0', textAlign: 'right', color: '#fff', fontWeight: 900, fontSize: '0.95rem' }}>¥9,800</td>
                     <td style={{ padding: '14px 8px 14px 0', textAlign: 'right', color: '#f472b6', fontSize: '0.78rem', fontWeight: 800 }}>7 つの AI が連動 / 24h 自律実行</td>
                   </tr>
@@ -748,7 +748,7 @@ export default function PricingPage() {
                     <td style={{ padding: '12px 8px 12px 0', textAlign: 'right', color: '#FCB045', fontSize: '0.75rem', fontWeight: 700 }}>案件は別途</td>
                   </tr>
                   <tr style={{ background: 'linear-gradient(90deg, rgba(225,48,108,0.18), rgba(252,176,69,0.12))' }}>
-                    <td style={{ padding: '14px 0 14px 8px', color: '#fff', fontWeight: 900, fontSize: '0.95rem' }}>✨ CORE Iris Pro</td>
+                    <td style={{ padding: '14px 0 14px 8px', color: '#fff', fontWeight: 900, fontSize: '0.95rem' }}>CORE Iris Pro</td>
                     <td style={{ padding: '14px 0', textAlign: 'right', color: '#fff', fontWeight: 900, fontSize: '0.95rem' }}>¥9,800</td>
                     <td style={{ padding: '14px 8px 14px 0', textAlign: 'right', color: '#FCB045', fontSize: '0.78rem', fontWeight: 800 }}>案件マッチ + AI 交渉文</td>
                   </tr>

@@ -92,7 +92,20 @@ export default function IntegrationCelebrate({ integrationId, onClose, onJump }:
             boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
           }}
         >
-          <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
+          {/* OS絵文字は使わない(恒久ルール) — ブランドグラデのスパークル */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <defs>
+                <linearGradient id="celebGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#A78BFA" />
+                  <stop offset="100%" stopColor="#7C3AED" />
+                </linearGradient>
+              </defs>
+              <path d="M12 3l1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7L12 3z" stroke="url(#celebGrad)" strokeWidth="1.6" strokeLinejoin="round" />
+              <path d="M19 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z" fill="url(#celebGrad)" opacity="0.85" />
+              <path d="M5 15.5l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6.6-1.5z" fill="url(#celebGrad)" opacity="0.6" />
+            </svg>
+          </div>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 8px' }}>連携できました</h2>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', margin: '0 0 16px' }}>
             CORE があなたの仕事をもっと支えられるようになりました。
