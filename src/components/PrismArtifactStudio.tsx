@@ -245,7 +245,8 @@ export default function PrismArtifactStudio({ onClose }: { onClose: () => void; 
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10.5, letterSpacing: '0.26em', fontWeight: 800, color: VIOLET }}>ARTIFACT STUDIO</div>
-            <div style={{ fontSize: 17, fontWeight: 800 }}>成果物をつくる</div>
+            <div style={{ fontSize: 17, fontWeight: 800 }}>メモを、配れる一枚に</div>
+            <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)', marginTop: 1 }}>走り書きを貼ると、AIが見出し・要点・やること付きの画像（PNG）に整えます</div>
           </div>
           <button onClick={onClose} aria-label="閉じる" style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 10, width: 38, height: 38, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <X size={18} />
@@ -279,8 +280,47 @@ export default function PrismArtifactStudio({ onClose }: { onClose: () => void; 
 
         {/* プレビュー＋操作 */}
         {!art ? (
-          <div style={{ border: '1px dashed rgba(255,255,255,0.18)', borderRadius: 16, padding: '3rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 13.5 }}>
-            上でテーマを書いて「AIに提案してもらう」を押すと、ここに成果物が表示されます。
+          <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, padding: '1.2rem 1.2rem 1.4rem', background: 'rgba(255,255,255,0.03)' }}>
+            {/* 3秒でわかる説明 */}
+            <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
+              {[
+                ['1', 'テーマを書く', '「来週の新商品ローンチ準備」のように一行でOK。会議メモの貼り付けでも。'],
+                ['2', '「AIに提案してもらう」を押す', 'AIが見出し・要点・やること・根拠を組み立てます。'],
+                ['3', '一枚の画像で書き出す', '下のような“配れる一枚”に。PNG保存・文章コピーもその場で。'],
+              ].map(([n, t, d]) => (
+                <div key={n} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <div style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 7, background: `linear-gradient(135deg, ${VIOLET}, ${INDIGO})`, color: '#fff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{n}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: '#fff' }}>{t}</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>{d}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* こんなのが出ます（サンプル出力1枚） */}
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em', marginBottom: 8 }}>こんなのが出ます（見本）</div>
+            <div style={{ maxWidth: 300, margin: '0 auto', borderRadius: 14, overflow: 'hidden', boxShadow: '0 18px 44px rgba(99,102,241,0.35)', background: '#0A0816', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ height: 8, background: `linear-gradient(90deg, ${VIOLET}, ${INDIGO})` }} />
+              <div style={{ padding: '18px 18px 20px' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.22em', color: VIOLET, marginBottom: 6 }}>ACTION PLAN</div>
+                <div style={{ width: 40, height: 2, background: VIOLET, marginBottom: 12 }} />
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.25 }}>新商品ローンチを<br />1週間で立ち上げる</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', margin: '8px 0 14px', lineHeight: 1.5 }}>告知・在庫・受付フォームを並行で用意し、金曜公開に間に合わせる。</div>
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: VIOLET, marginBottom: 8 }}>やること</div>
+                {['告知文とビジュアルを用意', '受付フォームと決済を用意', '公開前チェックと予約投稿'].map((a, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 }}>
+                    <div style={{ flexShrink: 0, width: 20, height: 20, borderRadius: '50%', background: `linear-gradient(135deg, ${VIOLET}, ${INDIGO})`, color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
+                    <div style={{ fontSize: 12.5, color: '#fff', fontWeight: 600 }}>{a}</div>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 14, fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+                  <span>2026.07.06</span>
+                  <span style={{ fontWeight: 800, color: VIOLET }}>CORE Prism</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ textAlign: 'center', fontSize: 11.5, color: 'rgba(255,255,255,0.4)', marginTop: 10 }}>これは見本です。上でテーマを書いて押すと、あなたの内容で作られます。</div>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 320px) 1fr', gap: '1rem', alignItems: 'start' }} className="art-grid">
