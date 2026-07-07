@@ -364,7 +364,7 @@ function CommentCard({ bg, media, comment, onSent }: {
           {drafting ? 'AI が考えています…' : draft ? 'AI で作り直す' : 'AI 下書き'}
         </button>
         <button onClick={() => void handleSend()} disabled={sending || !draft.trim()}
-          style={{ ...btn(bg, true), flex: 1, opacity: (sending || !draft.trim()) ? 0.55 : 1 }}>
+          style={{ ...btn(bg, true), flex: 1, opacity: (sending || !draft.trim()) ? 0.6 : 1 }}>
           <Send size={14} strokeWidth={2.4} />
           {sending ? '送信中…' : '確認して送信'}
         </button>
@@ -464,6 +464,7 @@ function DmPanel({ bg }: { bg: Bg }) {
                 background: tone === t ? `${DM_TONE_META[t].color}14` : 'rgba(255,255,255,0.7)',
                 color: tone === t ? DM_TONE_META[t].color : bg.inkSoft,
                 fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: IRIS_FONTS.body,
+                whiteSpace: 'nowrap',
               }}>
               {DM_TONE_META[t].label}
             </button>
@@ -483,7 +484,7 @@ function DmPanel({ bg }: { bg: Bg }) {
           </div>
         )}
         {error && (
-          <p style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0, fontSize: '0.78rem', color: '#B45309', fontWeight: 600 }}>
+          <p style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0, fontSize: '0.78rem', color: '#B91C1C', fontWeight: 600 }}>
             <AlertTriangle size={13} strokeWidth={2.4} /> {error}
           </p>
         )}
