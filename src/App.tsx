@@ -772,8 +772,8 @@ export default function App() {
     <>
       {/* LP では背景アニメを描画しない (iPhone Safari でスクロール固まる対策) */}
       {view !== 'landing' && <PrismBackground intensity="low" />}
-      {/* どの入力欄でも音声入力できる (フォーカス時にマイクが出現) */}
-      <GlobalVoiceInput />
+      {/* どの入力欄でも音声入力できる (フォーカス時にマイクが出現)。オンボ中は主CTAを塞ぐため出さない */}
+      {view !== 'onboarding' && <GlobalVoiceInput />}
       {/* 通信が切れたときだけ画面上部に案内バー */}
       <OfflineNotice />
       <AnimatePresence mode="wait">
@@ -883,8 +883,8 @@ export default function App() {
           />
         )}
       </AnimatePresence>
-      {/* Prism: 音声タスク予約 (FAB + モーダル + バックグラウンド自動実行) */}
-      <PrismTaskScheduler />
+      {/* Prism: 音声タスク予約 (FAB + モーダル + バックグラウンド自動実行)。オンボ中はCTAを塞ぐため出さない */}
+      {view !== 'onboarding' && <PrismTaskScheduler />}
       {/* Prism: シネマティック スプラッシュ (初回セッションのみ) */}
       <PrismSplash personaName={activePersona?.name} />
       {/* Prism: チュートリアル (初回起動のみ表示、スキップ可) */}
@@ -1097,9 +1097,10 @@ export default function App() {
       {/* GGGG (2026-06-04): 業種別 AI ペルソナ プリセット 4 名 提案 */}
       {view === 'dashboard' && <PersonaPresetSuggestion />}
       {/* ZZ (2026-06-03): 全画面常駐 FAB — LP / Pricing / Billing / Dashboard */}
-      <QuickAskFab />
+      {/* オンボ中はFABが「次へ」CTAに重なるため全て出さない(1画面1アクション) */}
+      {view !== 'onboarding' && <QuickAskFab />}
       {/* DDD (2026-06-04): 左下「💡 改善提案」(QuickAskFab と被らない位置) */}
-      <SuggestionFab />
+      {view !== 'onboarding' && <SuggestionFab />}
       {/* OOO (2026-06-04): Cmd+Shift+/ で「全機能マップ」 */}
       <SitemapPalette />
       {/* DDDDD (2026-06-04): 7 日 AI 提案 履歴 — window.dispatchEvent('core:open-ai-suggestions') で開く */}
@@ -1111,7 +1112,7 @@ export default function App() {
       {/* サンプル表示は ダッシュボード内の DemoBanner に一本化 (ロゴと被る固定帯は廃止) */}
       {/* CORE 共通ドック（下部中央・current=prism）。Prism ルート(/)でのみ表示し、
           中央のBottomChatドック入力バーより1段上に浮かせて操作を塞がない。 */}
-      {isPrismRootPath() && <CoreDock current="prism" />}
+      {isPrismRootPath() && view !== 'onboarding' && <CoreDock current="prism" />}
     </>
   );
 }

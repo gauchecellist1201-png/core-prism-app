@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
 import { INDUSTRY_LIST, INDUSTRY_PACKS, type IndustryId } from '../prism/industryPacks';
 import { recordStep, type OnboardStep } from '../lib/onboardingFunnel';
@@ -120,14 +120,15 @@ export default function OnboardingFlow({ onComplete }: Props) {
         ))}
       </div>
 
-      <AnimatePresence mode="wait">
+      {/* 退場アニメは使わない(入場のみ): mode="wait"はrAFが止まる環境で退場完了を待ち続け、
+          スライドが永遠に切り替わらない実害(名前入力が見えないまま「次へ」無効=詰み)を起こす */}
+      <>
         {step === 0 && (
           <motion.div
             key="step0"
             className="text-center max-w-md px-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
           >
             <p className="text-prism text-5xl font-extralight mb-2">CORE</p>
             <p className="text-sm tracking-widest uppercase mb-8" style={{ color: 'rgba(255,255,255,0.7)' }}>Prism</p>
@@ -154,7 +155,6 @@ export default function OnboardingFlow({ onComplete }: Props) {
             className="max-w-sm w-full px-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
           >
             <h2 className="text-fg text-2xl font-extralight mb-2">あなたのお名前は？</h2>
             <p className="text-sm mb-8" style={{ color: 'rgba(255,255,255,0.65)' }}>AIがあなたに合わせた対話を行います</p>
@@ -177,7 +177,6 @@ export default function OnboardingFlow({ onComplete }: Props) {
             className="max-w-2xl w-full px-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
           >
             <h2 className="text-fg text-2xl font-extralight mb-2 px-2">あなたの業種は？</h2>
             <p className="text-sm mb-6 leading-relaxed px-2" style={{ color: 'rgba(255,255,255,0.65)' }}>
@@ -219,7 +218,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </>
     </motion.div>
 
     {/* Fixed bottom bar — 親指が届く場所に、常に1つの主アクション */}
