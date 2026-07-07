@@ -425,26 +425,23 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 700, color: IRIS_COLORS.gold, textAlign: 'center', marginBottom: '0.6rem' }}>USE CASES</p>
           <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.7rem, 3.4vw, 2.5rem)', fontWeight: 500, textAlign: 'center', marginBottom: '0.6rem', color: IRIS_COLORS.cream }}>こんな風に <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>使われています</span></h2>
-          <p style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.55)', textAlign: 'center', fontFamily: IRIS_FONTS.serif }}>※ 想定の使い方 / 効果です。実利用での効果は環境により変動します。</p>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.55)', textAlign: 'center', fontFamily: IRIS_FONTS.serif }}>※ 想定シナリオです（実在の利用者の声ではありません）。効果は使い方や環境により異なります。</p>
           <div style={{ marginTop: '3rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1.25rem' }}>
             {[
               {
                 persona: '絵本作家 (Instagram + ECサイト運用)',
                 usage: '新作の世界観に合うキャプション・サムネ・OG画像を AI が一気通貫で生成。ファン分析で「次に何を描けば届くか」を毎週学習。',
-                result: 'フォロワー反応率が体感 2 倍。投稿準備時間が 60 分 → 8 分に。',
-                quote: '「世界観を壊さずに、ちゃんとビジネスもできるようになった」',
+                result: '世界観を保ったまま、投稿づくりの手間を大きく短縮。分析をもとに「次に描くもの」の判断材料が毎週手に入る。',
               },
               {
                 persona: 'インディー音楽アーティスト (リリース運用)',
                 usage: '新曲リリース日から逆算して 3 週間分の投稿カレンダーを AI が自動編成。フォロワーの聴く時間帯に合わせた最適配信。',
-                result: 'リリース初週の再生数が前作比 1.7 倍。マネージャー不在でも一人で完結。',
-                quote: '「事務所が必要だと思ってたけど、Iris で十分だった」',
+                result: 'リリースから逆算した投稿計画を、マネージャーなしで一人で回せる。配信は聴かれやすい時間帯へ自動で寄せられる。',
               },
               {
                 persona: 'インスタグラマー (案件交渉 + 配信)',
                 usage: 'ブランド企業からの DM を AI が読み取り、相場感に基づいた料金提示文を 30 秒で生成。メディア資料も毎月自動更新。',
-                result: '案件あたりの単価が平均 +35%。交渉の心理的ハードルが消えた。',
-                quote: '「強気の値段を、自信を持って言えるようになった」',
+                result: 'DM から料金提示文まで数十秒。相場感のある提案で、値づけの心理的ハードルを下げられる。',
               },
             ].map((c, i) => (
               <motion.div
@@ -471,13 +468,10 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, marginBottom: 14, fontFamily: IRIS_FONTS.serif }}>
                   {c.usage}
                 </p>
-                <div style={{ fontSize: 11, color: IRIS_COLORS.hotPink, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 6 }}>効果</div>
+                <div style={{ fontSize: 11, color: IRIS_COLORS.hotPink, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 6 }}>変わること</div>
                 <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', lineHeight: 1.7, marginBottom: 16, fontFamily: IRIS_FONTS.serif, fontWeight: 600 }}>
                   {c.result}
                 </p>
-                <div style={{ padding: '10px 12px', background: `${IRIS_COLORS.gold}10`, borderLeft: `2px solid ${IRIS_COLORS.gold}`, borderRadius: '0 8px 8px 0', fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, fontStyle: 'italic', fontFamily: IRIS_FONTS.serif }}>
-                  {c.quote}
-                </div>
               </motion.div>
             ))}
           </div>
@@ -511,7 +505,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             title: '初週終了 — 続けるか判断',
             body: '今週の反応数 / 新規フォロワー / 案件件数を 1 枚で確認。あなたの「自由時間」が増えたか実感できます。',
             ai: '夜のフィードで「今週の Iris が頑張ったこと」を確認',
-            outcome: '体感「投稿準備時間 60 分 → 8 分」レベルの軽さ',
+            outcome: '毎週の投稿づくりが、ぐっと軽くなっているはず',
           },
         ]}
       />
