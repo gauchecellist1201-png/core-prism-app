@@ -6,6 +6,7 @@
 import { motion } from 'framer-motion';
 import { Mail, BarChart3, Sparkle, MessageSquare, Palette, UsersRound, Camera, Mic, HeartPulse, Check, ArrowRight, TrendingUp, Clock, Sparkles as SparklesIcon, Sunrise, Zap, Rocket } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import IrisHeroDemo from './IrisHeroDemo';
 import { useState, useMemo } from 'react';
 import { IRIS_COLORS, IRIS_FONTS } from './irisStyle';
 import { IrisLogo } from '../components/Logo';
@@ -132,6 +133,9 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             <p style={{ fontSize: '0.78rem', color: 'rgba(255,250,245,0.5)', marginTop: '1.1rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', lineHeight: 1.6 }}>
               7 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ
             </p>
+
+            {/* 触れるデモ — 「DMスクショ→案件登録30秒」の主張を、その場で体験させる */}
+            <IrisHeroDemo onStart={onEnter} />
 
             <button
               type="button"
