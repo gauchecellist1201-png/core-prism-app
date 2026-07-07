@@ -275,7 +275,7 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
           color: bg.ink, margin: 0, fontWeight: 500, lineHeight: 1.4,
           wordBreak: 'keep-all', overflowWrap: 'break-word',
         }}>
-          思考を投げるだけ。<br />あとはIrisが全てを支配する。
+          思考を投げるだけ。<br />あとは Iris が、投稿から案件まで仕上げる。
         </h2>
       </div>
       )}

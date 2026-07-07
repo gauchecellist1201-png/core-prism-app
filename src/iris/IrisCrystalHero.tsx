@@ -158,7 +158,7 @@ export default function IrisCrystalHero({ bg, onNavigate, children }: Props) {
             overflowWrap: 'break-word',
             textShadow: '0 2px 18px rgba(26,10,38,0.9), 0 1px 3px rgba(26,10,38,0.65)',
           }}>
-            思考を投げるだけ。<br />あとは Iris が全てを支配する。
+            思考を投げるだけ。<br />あとは Iris が、投稿から案件まで仕上げる。
           </p>
         </div>
       </div>
