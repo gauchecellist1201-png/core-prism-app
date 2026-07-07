@@ -70,7 +70,7 @@ export const ja: Dictionary = {
   banner: '✦ 2026/05/12 ベータ公開 — 14 日間無料 / クレカ不要 / 先着で 30 日延長',
 
   nav: {
-    agents:  '7つのエージェント',
+    agents:  '7つの仕事',
     exec:    '実行する AI',
     pricing: '料金',
     faq:     'よくある質問',
@@ -92,11 +92,11 @@ export const ja: Dictionary = {
 
   agents: {
     eyebrow: '7 AGENTS, 1 OS',
-    h2Line1: '7 つのあなたに、',
-    h2Line2: '7 つのエージェント。',
-    sub: '役割ごとに専属の AI エージェントが伴走し、考え・書き・調べ・整える。提案で終わらない、実行までやりきる 7 つの脳。',
-    execHighlight: '実行までやりきる',
-    suffix: 'エージェント',
+    h2Line1: '経営から、暮らしまで。',
+    h2Line2: '7 つの仕事を、まるごと。',
+    sub: '経営・営業・財務・創造・学び・人材・暮らし——それぞれに専属の AI がついて、考えて、書いて、調べて、整える。提案だけで終わらせず、実行まで担います。',
+    execHighlight: '実行まで担います',
+    suffix: '',
     items: {
       red:    { name: '経営', role: 'CEO Agent',       desc: '戦略立案・KPI 自動モニタリング・意思決定メモ生成' },
       orange: { name: '営業', role: 'Sales Agent',     desc: 'リード探索・商談スクリプト・提案書ドラフト・反論対応' },
@@ -133,7 +133,7 @@ export const ja: Dictionary = {
     body: 'CRM、議事録、画像生成、スライド、メール、健康記録 ── ぜんぶ、',
     bodyEm: 'ひとつの PRISM の中',
     bodyTail: ' に。',
-    sub: '⌘+K で 7 つのエージェントを横断検索、人格を切替えれば文脈ごと一新。入力は文字でも、音声でも、画像でも。',
+    sub: '⌘+K で 7 つの仕事を横断検索、人格を切替えれば文脈ごと一新。入力は文字でも、音声でも、画像でも。',
     briefLabel: '今日のブリーフ',
     briefBody: '午前は新規開拓、午後は提案書をエージェントが下書き済みです。',
     todoItems: ['＋ 株式会社○○ への提案書', '＋ 経費 OCR (3件)', '＋ Gmail 返信下書き 5件', '＋ 来週の P&L レビュー'],
@@ -233,7 +233,7 @@ export const ja: Dictionary = {
     product:     'PRODUCT',
     company:     'COMPANY',
     contact:     'CONTACT',
-    agents:      '7 つのエージェント',
+    agents:      '7 つの仕事',
     exec:        '実行する AI',
     pricing:     '料金',
     iris:        '姉妹ブランド · CORE Iris',

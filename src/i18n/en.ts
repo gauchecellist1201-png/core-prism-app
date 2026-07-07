@@ -31,11 +31,11 @@ export const en: Dictionary = {
 
   agents: {
     eyebrow: '7 AGENTS, 1 OS',
-    h2Line1: 'For 7 versions of you,',
-    h2Line2: '7 dedicated agents.',
-    sub: "A dedicated AI agent runs alongside each role — thinking, writing, researching, organizing. Seven minds that don't just suggest — they execute.",
-    execHighlight: 'execute',
-    suffix: ' Agent',
+    h2Line1: 'From strategy to daily life,',
+    h2Line2: '7 kinds of work, handled.',
+    sub: "Strategy, sales, finance, creative, learning, people, life — each gets a dedicated AI that thinks, writes, researches, and organizes. It doesn't just suggest — it executes.",
+    execHighlight: 'executes',
+    suffix: '',
     items: {
       red:    { name: 'Strategy', role: 'CEO Agent',       desc: 'Strategy planning, KPI auto-monitoring, decision memos' },
       orange: { name: 'Sales',    role: 'Sales Agent',     desc: 'Lead discovery, call scripts, proposal drafts, objection handling' },
