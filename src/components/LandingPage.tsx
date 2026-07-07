@@ -15,7 +15,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { REFERRAL_BONUS_DAYS, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
-import LiveAgentMock from './LiveAgentMock';
+import PrismApproveDemo from './PrismApproveDemo';
 import AnimatedExecStage from './AnimatedExecStage';
 import CxoProfileModal from './CxoProfileModal';
 import type { CxoRole } from '../hooks/useAgentTaskQueue';
@@ -263,7 +263,7 @@ export default function LandingPage({ onEnterApp }: Props) {
             transition={{ duration: 0.9, delay: 0.3, ease: 'easeOut' }}
             className="lp-hero-mock"
           >
-            <LiveAgentMock theme="prism" />
+            <PrismApproveDemo onEnter={onEnterApp} />
           </motion.div>
         </div>
 
