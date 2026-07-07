@@ -162,7 +162,7 @@ import IrisConnectFirst from './IrisConnectFirst';
 import IrisFlowHub from './IrisFlowHub';
 import Celebrate from '../components/Celebrate';
 import type { ReelStudioSeed } from './IrisReelStudio';
-import { loadIgProfile, consumeOauthCallback, fetchOauthProfile, saveIgProfile, syncOauthMediaToHistory, type IgProfile } from './instagramConnect';
+import { loadIgProfile, consumeOauthCallback, fetchOauthProfile, saveIgProfile, syncOauthMediaToHistory, oauthReasonToMessage, type IgProfile } from './instagramConnect';
 import IrisDmDraftModal from './IrisDmDraftModal';
 import type { DmDealInput } from './dmDraft';
 import MobileGeminiDashboard from '../components/MobileGeminiDashboard';
@@ -1112,9 +1112,21 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   };
   // AI 交渉文モーダル (案件カテゴリ → DM 下書き)
   const [dmDraftDeal, setDmDraftDeal] = useState<DmDealInput | null>(null);
+  // Instagram OAuth 失敗の戻り (ig_oauth=error) をユーザーに必ず見せる
+  const [igOauthError, setIgOauthError] = useState<{ message: string; recovery: string } | null>(null);
 
   useEffect(() => {
-    consumeOauthCallback().then(p => { if (p) setIgProfile(p); }).catch(() => {});
+    consumeOauthCallback().then(r => {
+      if (!r) return;
+      if (r.status === 'ok' && r.profile) {
+        setIgProfile(r.profile);
+        setWelcomeCelebrate(n => n + 1);
+      } else if (r.status === 'error') {
+        // OAuth 失敗の戻り。以前は黙って無視され「何も起きない」ように
+        // 見えていた — 必ず理由と次の一手を見せる (silent fail 禁止)
+        setIgOauthError(oauthReasonToMessage(r.reason));
+      }
+    }).catch(() => {});
     // 本連携(OAuth)済みなら、毎回サーバから実データを取得して上書きする。
     // (古い「手入力(self)」値を残さない / トークン更新後の最新値を反映)
     if (typeof document !== 'undefined' && document.cookie.includes('ig_connected=1')) {
@@ -1198,8 +1210,37 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   if (!igProfile && !connectGateDone) {
     return (
       <>
+        {/* OAuth 失敗の戻りバナー — 理由と次の一手を必ず見せる */}
+        {igOauthError && (
+          <div style={{
+            position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 210, width: 'min(560px, calc(100vw - 24px))',
+            background: '#FFF', borderRadius: 14,
+            boxShadow: '0 12px 40px rgba(155,27,48,0.25)',
+            border: '1px solid rgba(200,16,46,0.3)',
+            padding: '0.8rem 1rem', color: '#9B1B30', fontSize: 13, lineHeight: 1.6,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <strong>{igOauthError.message}</strong>
+                <div style={{ marginTop: 3, fontSize: 11.5, color: '#5A5562' }}>{igOauthError.recovery}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIgOauthError(null)}
+                aria-label="閉じる"
+                style={{
+                  border: 'none', background: 'rgba(0,0,0,0.05)', borderRadius: 99,
+                  minWidth: 44, minHeight: 44, cursor: 'pointer', color: '#5A5562', fontWeight: 800,
+                }}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
         <IrisConnectFirst
-          onConnect={() => setShowIgConnect(true)}
+          onConnect={() => { setIgOauthError(null); setShowIgConnect(true); }}
           onSkip={dismissConnectGate}
         />
         <AnimatePresence>

@@ -69,6 +69,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
   const [followers, setFollowers] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [oauthState, setOauthState] = useState<'idle' | 'trying' | 'unavailable'>('idle');
+  const [oauthError, setOauthError] = useState<{ message: string; recovery: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   // トークン直接入力モード
   const [igToken, setIgToken] = useState('');
@@ -191,19 +192,38 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
         }}>
           <InstagramGlyph size={20} color="#fff" />
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 800 }}>
-              {oauthState === 'trying' ? '接続中…' :
+            <div style={{ fontSize: 13, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {oauthState === 'trying' ? <><Loader2 size={13} className="iris-spin" /> Instagram へ接続中…</> :
                oauthState === 'unavailable' ? '本連携を準備中（まもなく開通）' :
-               'Instagram でログインして連携 (おすすめ)'}
+               'Instagram でログインして連携 (本連携・おすすめ)'}
             </div>
             <div style={{ fontSize: 10, opacity: 0.92, marginTop: 2 }}>
               {oauthState === 'unavailable'
-                ? '最終設定中です。今すぐ実データを見るなら、下の「スクショ」が確実です'
+                ? '開通までは下の「手入力」でお使いいただけます'
                 : 'フォロワー・反応率・伸びる時間帯を自動取得します'}
             </div>
           </div>
           <ArrowRight size={16} />
         </button>
+
+        {/* 本連携のエラー (必ず理由と次の一手を見せる — silent fail 禁止) */}
+        {oauthError && (
+          <div style={{
+            background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.25)',
+            padding: '0.6rem 0.85rem', borderRadius: 10, marginBottom: '0.6rem',
+            color: '#9B1B30', fontSize: 12, lineHeight: 1.6,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+              <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+              <div style={{ flex: 1 }}>
+                <strong>{oauthError.message}</strong>
+                {oauthError.recovery && (
+                  <div style={{ marginTop: 4, fontSize: 11, color: '#5A5562', fontWeight: 500 }}>{oauthError.recovery}</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* モード切替: スクショ / 自己申告 / アクセストークン */}
         <div style={{
@@ -220,7 +240,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
             lineHeight: 1.25,
           }}>
             <span>📸 スクショで連携</span>
-            <span style={{ fontSize: 9, color: mode === 'screenshot' ? '#E1306C' : '#8A8593', fontWeight: 700 }}>30 秒・おすすめ</span>
+            <span style={{ fontSize: 9, color: mode === 'screenshot' ? '#E1306C' : '#8A8593', fontWeight: 700 }}>本連携が使えない時に</span>
           </button>
           <button type="button" onClick={() => setMode('self')} style={{
             padding: '8px 6px', borderRadius: 10, border: 'none',
