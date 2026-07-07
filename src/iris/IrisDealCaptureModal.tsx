@@ -9,7 +9,7 @@
 // ============================================================
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Camera, X, RefreshCw, CheckCircle2, AlertTriangle, Image as ImageIcon,
   Plus, Trash2, History, ShieldAlert, MessageCircleQuestion,
@@ -302,10 +302,12 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
           </button>
         </div>
 
-        <AnimatePresence mode="wait">
+        {/* 退場アニメ待ちはしない(mode="wait"禁止): rAFが止まる環境でステップ遷移が凍結し、
+            スクショ選択→読み取りの核フローが固まる実害を防ぐ。キー切替の入場のみ */}
+        <>
           {/* ─── Step 1: ファイル選択 (最大 3 枚) ─── */}
           {step === 'pick' && (
-            <motion.div key="pick" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="pick" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <p style={{ color: inkSoft, fontSize: '0.95rem', lineHeight: 1.7, margin: '0 0 1.2rem' }}>
                 Instagram / X / メールの DM スクショを <strong>最大 3 枚</strong> 送るだけで、
                 AI が <strong>案件名・報酬・締切</strong> を読んで案件カードを作ります。
@@ -396,7 +398,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
 
           {/* ─── Step 2: 抽出中 ─── */}
           {step === 'extracting' && (
-            <motion.div key="ext" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            <motion.div key="ext" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               style={{ textAlign: 'center', padding: '1rem 0.5rem' }}>
               {previews.length > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap', marginBottom: '1rem' }}>
@@ -426,7 +428,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
 
           {/* ─── Step 3 (新): 追加質問で補完 ─── */}
           {step === 'clarify' && deal && (
-            <motion.div key="clar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="clar" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div style={{
                 display: 'flex', alignItems: 'flex-start', gap: 10,
                 padding: '0.9rem 1rem',
@@ -479,7 +481,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
 
           {/* ─── Step 4: プレビュー (編集可) ─── */}
           {step === 'review' && deal && (
-            <motion.div key="rev" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="rev" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               {/* 警告 (NG ワード自動検出) */}
               {warnings.length > 0 && (
                 <div style={{
@@ -648,7 +650,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
 
           {/* ─── Step 5: エラー ─── */}
           {step === 'error' && errState && (
-            <motion.div key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div style={{
                 display: 'flex', gap: 12, alignItems: 'flex-start',
                 padding: '1rem',
@@ -696,7 +698,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
+        </>
       </motion.div>
     </motion.div>,
     document.body)}

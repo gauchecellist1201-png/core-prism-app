@@ -174,11 +174,13 @@ export default function IrisFirstRunTour({ onGotoReel, onClose }: Props) {
 
           {/* ── 本文（スクロール可） ── */}
           <div style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '4px 16px 8px', flex: 1 }}>
-            <AnimatePresence mode="wait">
+            {/* 退場アニメ待ちはしない: mode="wait"はrAFが止まる環境でステップが切り替わらず
+                「次へ」が空振りする実害(Prismオンボで実証)。キー切替の入場のみ */}
+            <>
               {step === 0 && <StepAnalysis key="s0" accent={accent} />}
               {step === 1 && <StepMoves key="s1" accent={accent} />}
               {step === 2 && <StepReel key="s2" accent={accent} />}
-            </AnimatePresence>
+            </>
           </div>
 
           {/* ── フッタ CTA ── */}
@@ -378,7 +380,6 @@ function StepShell({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.22 }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: accent, marginBottom: 4 }}>
