@@ -157,6 +157,12 @@ export interface Proposal {
    * 0件 or undefined の場合は UI 側で根拠チップを一切表示しない。
    */
   knowledgeUsedCount?: number;
+  /**
+   * この提案の生成時に実際にデータが返った連携サービスのラベル
+   * (例: 'Gmail' | 'カレンダー' | 'Stripe' | 'Instagram' | 'LINE配信')。
+   * 空 or undefined のときは UI 側で連携根拠チップを一切出さない (嘘の根拠を出さない)。
+   */
+  dataSources?: string[];
 }
 
 export interface UsageStats {

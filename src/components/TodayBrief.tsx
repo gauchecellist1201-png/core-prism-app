@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Plus, Volume2, Square, Lightbulb, Sparkles, RefreshCw, Mail, Send, AlertTriangle, Check, BookOpen } from 'lucide-react';
+import { Play, Plus, Volume2, Square, Lightbulb, Sparkles, RefreshCw, Mail, Send, AlertTriangle, Check, BookOpen, CalendarDays, CreditCard, Camera, MessageCircle, Radio } from 'lucide-react';
+import type { ComponentType } from 'react';
 import type { Persona, Proposal, AppSettings } from '../types/identity';
 import { listIntegrations, sendBrief } from '../lib/integrations';
 import { RewardBurst } from './visualFx';
@@ -19,6 +20,16 @@ const KIND_TO_CXO: Record<string, { cxo: CxoRole; category: DeliverableCategory 
   checklist: { cxo: 'COO', category: 'plan' },
   email: { cxo: 'CSO', category: 'outreach' },
   table: { cxo: 'CDS', category: 'analysis' },
+};
+
+// 連携根拠チップ: ソースのラベル→Lucideアイコン。未知ラベルは汎用(Radio)にフォールバック。
+// 絵文字は使わない(オーナー指示)。ここに出るのは「実際にデータが返った」連携だけ(嘘の根拠を出さない)。
+const SOURCE_ICON: Record<string, ComponentType<{ size?: number; strokeWidth?: number }>> = {
+  Gmail: Mail,
+  'カレンダー': CalendarDays,
+  Stripe: CreditCard,
+  Instagram: Camera,
+  'LINE配信': MessageCircle,
 };
 
 interface Props {
@@ -140,6 +151,37 @@ export default function TodayBrief({
 
         {proposal ? (
           <>
+            {/* 連携データの根拠チップ: この提案が「実際にデータが返った」連携をもとに作られたことを見せる。
+                dataSources は生成時に非nullだった連携だけ → 未連携/失敗時は何も出さない (嘘の根拠を出さない)。
+                「AIが連携実データから勝手に動いている」を第一画面で体感させる (価値の可視化)。 */}
+            {Array.isArray(proposal.dataSources) && proposal.dataSources.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                <span
+                  className="inline-flex items-center gap-1 text-xs font-semibold"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  <Radio size={12} strokeWidth={2.4} /> 連携データをもとに
+                </span>
+                {proposal.dataSources.map((s) => {
+                  const Icon = SOURCE_ICON[s] || Radio;
+                  return (
+                    <span
+                      key={s}
+                      className="inline-flex items-center gap-1 text-xs font-semibold"
+                      style={{
+                        padding: '4px 9px',
+                        borderRadius: 999,
+                        background: `${persona.accentColor}12`,
+                        border: `1px solid ${persona.accentColor}33`,
+                        color: persona.accentColor,
+                      }}
+                    >
+                      <Icon size={11} strokeWidth={2.4} /> {s}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
             {/* 根拠チップ: ナレッジを実際に参照した件数のみ表示 (0件/未計測なら出さない・嘘数字禁止) */}
             {!!proposal.knowledgeUsedCount && proposal.knowledgeUsedCount > 0 && (
               <span

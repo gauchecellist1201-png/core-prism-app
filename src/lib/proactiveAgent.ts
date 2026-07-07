@@ -62,6 +62,8 @@ interface GenInput {
   patrolMode?: 'morning' | 'evening' | null;
   /** 連携サービス (Iris/Resonance 等) の実データ要約。提案の根拠に使う */
   extraContext?: string;
+  /** 実際にデータが返った連携サービスのラベル。UI の根拠チップにそのまま渡す (嘘なし) */
+  dataSources?: string[];
 }
 
 export async function generateProposal(
@@ -69,7 +71,7 @@ export async function generateProposal(
   input: GenInput,
 ): Promise<Proposal> {
 
-  const { persona, knowledge, recentProposals, health, patrolMode, extraContext } = input;
+  const { persona, knowledge, recentProposals, health, patrolMode, extraContext, dataSources } = input;
 
   // ナレッジサマリ (最新5件)
   // 「知識→提案の自己強化を可視化」根拠チップ用の件数はここで実際にプロンプトへ
@@ -171,5 +173,7 @@ ${patrolInstruction}
     generatedAt: new Date().toISOString(),
     // 0件なら chip 自体を出さない判定に使う (UI 側で knowledgeUsedCount > 0 のみ表示)
     knowledgeUsedCount,
+    // 実際にデータが返った連携サービスだけを渡す (UI 側で空なら根拠チップを出さない・嘘なし)
+    dataSources: Array.isArray(dataSources) && dataSources.length > 0 ? dataSources : undefined,
   };
 }

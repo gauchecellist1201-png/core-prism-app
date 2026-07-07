@@ -146,23 +146,39 @@ export async function getResonanceSummary(): Promise<string | null> {
   } catch { return null; }
 }
 
+// 提案の根拠に「実際に使えた」連携サービスの短いラベル。UI の根拠チップ用。
+// 嘘を出さないため、その回で実データが返った(=null でない)ものだけを積む。
+export type DataSourceLabel = 'Gmail' | 'カレンダー' | 'Stripe' | 'Instagram' | 'LINE配信';
+
 /** Prism のエージェント提案に渡す「連携サービス実データ」要約。何も無ければ '' */
 export async function getCrossServiceSummary(opts?: { includeResonance?: boolean }): Promise<string> {
-  if (typeof window === 'undefined') return '';
+  return (await getCrossServiceContext(opts)).text;
+}
+
+/**
+ * 提案生成に渡す連携実データの要約テキストと、実際に寄与したソースのラベル一覧。
+ * text はプロンプトに織り込み、sources は UI の根拠チップに使う（両者は同じ実データから作る＝嘘なし）。
+ */
+export async function getCrossServiceContext(
+  opts?: { includeResonance?: boolean },
+): Promise<{ text: string; sources: DataSourceLabel[] }> {
+  if (typeof window === 'undefined') return { text: '', sources: [] };
   const parts: string[] = [];
+  const sources: DataSourceLabel[] = [];
+
   const iris = getIrisSummary();
-  if (iris) parts.push(iris);
+  if (iris) { parts.push(iris); sources.push('Instagram'); }
 
   // 連携実データ (Gmail 未読 / 今日の予定 / Stripe 売上) — 接続済みのみ・並列取得
   const [gmail, cal] = await Promise.all([getGmailSummary(), getCalendarSummary()]);
   const stripe = getStripeRevenueSummary();
-  if (gmail) parts.push(gmail);
-  if (cal) parts.push(cal);
-  if (stripe) parts.push(stripe);
+  if (gmail) { parts.push(gmail); sources.push('Gmail'); }
+  if (cal) { parts.push(cal); sources.push('カレンダー'); }
+  if (stripe) { parts.push(stripe); sources.push('Stripe'); }
 
   if (opts?.includeResonance) {
     const reso = await getResonanceSummary();
-    if (reso) parts.push(reso);
+    if (reso) { parts.push(reso); sources.push('LINE配信'); }
   }
-  return parts.join('\n\n');
+  return { text: parts.join('\n\n'), sources };
 }
