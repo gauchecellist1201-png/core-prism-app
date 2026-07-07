@@ -3,7 +3,7 @@
 // クライアント登録 → ネタ量産(企画) → 撮影者・編集者がそのまま動ける本格台本
 // ============================================================
 import React, { useState } from 'react';
-import { Lock, Scissors, Check } from 'lucide-react';
+import { Lock, Check } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -11,6 +11,7 @@ import { notifyInApp } from '../lib/inAppNotify';
 import ThinkingIndicator from '../components/ThinkingIndicator';
 import { loadIgProfile } from './instagramConnect';
 import { usePostHistory } from './strategist';
+import IrisReelDirector from './IrisReelDirector';
 import {
   loadClients, saveClients, clientUid,
   generateIdeaPool, type IdeaItem,
@@ -733,25 +734,18 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
             )}
           </div>
 
-          {/* カット割り */}
-          <div style={card}>
-            <p style={sectionLabel}>カット割り (撮影者用)</p>
-            <div style={{ display: 'grid', gap: 8 }}>
-              {script.shots.map((sh) => (
-                <div key={sh.no} style={{ padding: '0.7rem 0.9rem', background: 'rgba(255,255,255,0.6)', borderRadius: 12, borderLeft: `3px solid ${bg.accent}` }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 800, color: bg.accent }}>#{sh.no}</span>
-                    <span style={{ fontSize: '0.72rem', color: bg.inkSoft }}>{sh.time}</span>
-                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: bg.ink }}>{sh.shot}</span>
-                  </div>
-                  <p style={{ fontSize: '0.85rem', color: bg.ink, marginTop: 4 }}><strong>撮る:</strong> {sh.action}</p>
-                  {sh.line && <p style={{ fontSize: '0.85rem', color: bg.ink, marginTop: 2, fontStyle: 'italic' }}>セリフ:「{sh.line}」</p>}
-                  {sh.onScreenText && <p style={{ fontSize: '0.8rem', color: bg.accent, marginTop: 2 }}>テロップ: {sh.onScreenText}</p>}
-                  {sh.editNote && <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}><Scissors size={12} style={{ flexShrink: 0 }} /> 編集: {sh.editNote}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* ★リール監督モード: カット単位のタイムライン編集 + テロップの見え方プレビュー
+              + 構成テンプレ + 仕上げチェック + CapCut/Edits 書き出しハブ。
+              編集内容は onShotsChange で script.shots に書き戻されるため、
+              上の「撮影台本をコピー」「字幕を作る」も常に編集後の最新版になる。 */}
+          <IrisReelDirector
+            key={script.generatedAt}
+            bg={bg}
+            script={script}
+            clientName={activeClient?.name}
+            onShotsChange={(shots, durationSec) =>
+              setScript(prev => prev ? { ...prev, shots, durationSec } : prev)}
+          />
 
           {/* 素材・準備 */}
           {(script.broll.length > 0 || script.prep.length > 0 || script.shootingTips.length > 0) && (

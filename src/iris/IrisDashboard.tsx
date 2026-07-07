@@ -40,7 +40,7 @@ import {
   Menu as MenuIcon, Gift, Palette, ArrowLeft, Clapperboard, CalendarClock,
   Download, Clipboard, Wand2,
   Bookmark, BookmarkPlus, Send, Trash2, Brain, User,
-  Wallet, Calendar, Hourglass, ShieldAlert,
+  Wallet, Calendar, Hourglass, ShieldAlert, Inbox, Lock,
   CheckCircle2, AlertTriangle, Bot, Lightbulb, Sun,
   Briefcase, Rocket, Heart, Smartphone,
   Save, X, Target, Zap, Smile, PartyPopper,
@@ -73,6 +73,7 @@ const IRIS_TAB_ICON: Record<string, LucideIcon> = {
   schedule: CalendarClock,
   guideline: ShieldAlert,
   knowledge: Brain,
+  replies: Inbox,
 };
 
 // ─── タブ グループ (Phase 2 — 5 カテゴリ) ──────────
@@ -91,6 +92,7 @@ const TAB_GROUPS: TabGroup[] = [
   { id: 'earn',   label: '稼ぐ',   color: '#F77737', icon: Briefcase,
     tabs: [
       { id: 'triage', l: 'お仕事確認' }, { id: 'deals', l: 'お仕事' },
+      { id: 'replies', l: '返信センター' },
       { id: 'negotiate', l: 'お返事' }, { id: 'brands', l: 'お仕事を探す' },
     ] },
   { id: 'grow',   label: '伸ばす', color: '#3B82F6', icon: Rocket,
@@ -147,7 +149,8 @@ const IrisRevenueView = React.lazy(() => import('./IrisRevenueView'));
 const IrisFanEngagement = React.lazy(() => import('./IrisFanEngagement'));
 import { useHealth } from '../hooks/useHealth';
 const IrisCollabBoard = React.lazy(() => import('./IrisCollabBoard'));
-import { useMultiAccount, ACCOUNT_TYPE_META, PLATFORM_META_ACCOUNT, type IrisAccount } from './multiAccount';
+import { useMultiAccount, ACCOUNT_TYPE_META, PLATFORM_META_ACCOUNT, getAccountLimitInfo, type IrisAccount } from './multiAccount';
+const IrisReplyCenter = React.lazy(() => import('./IrisReplyCenter'));
 import { useBillingUser, getEffectivePlan, checkFeature, isMasterAuth } from '../lib/billing';
 import { useBrandGuidelines, TONE_META, type BrandGuideline, type BrandTone, runStyleCheck } from './brandGuidelines';
 import { useIrisKnowledge } from './irisKnowledge';
@@ -173,7 +176,7 @@ interface Props {
   onLeave: () => void;
 }
 
-type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'studio' | 'cover' | 'script' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite' | 'knowledge';
+type Tab = 'home' | 'strategy' | 'deals' | 'triage' | 'director' | 'video' | 'reel' | 'studio' | 'cover' | 'script' | 'schedule' | 'negotiate' | 'draft' | 'beauty' | 'image' | 'community' | 'team' | 'brands' | 'kit' | 'health' | 'revenue' | 'fans' | 'collab' | 'guideline' | 'invite' | 'knowledge' | 'replies';
 
 // ── デスクトップ左サイドバー ────────────────────────────────────
 function IrisSidebar({
@@ -1362,7 +1365,10 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   fontSize: '0.72rem', fontWeight: 700,
                   minHeight: 36, height: 36,
                 }}>
-                <User size={14} strokeWidth={2.4} color={bg.accent} />
+                {/* アカウント種別の色ドット (どのクライアントの作業空間か一目で分かる) */}
+                {multiAccount.active
+                  ? <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: ACCOUNT_TYPE_META[multiAccount.active.type].color }} />
+                  : <User size={14} strokeWidth={2.4} color={bg.accent} />}
                 <span className="iris-account-handle" style={{ maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {multiAccount.active?.handle || '@me'}
                 </span>
@@ -1424,6 +1430,26 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             <button onClick={onLeave} title="戻る" aria-label="戻る" style={btnIcon(bg)} className="iris-back-btn"><ArrowLeft size={18} strokeWidth={2} /></button>
           </div>
         </div>
+
+        {/* 複数アカウント運用 (運用代行) 時: 今どのクライアントの作業空間かを常時表示 */}
+        {multiAccount.accounts.length >= 2 && multiAccount.active && (
+          <div style={{
+            maxWidth: 1280, margin: '0.35rem auto 0',
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '0.25rem 0.6rem', borderRadius: 999,
+            background: `${ACCOUNT_TYPE_META[multiAccount.active.type].color}0e`,
+            border: `1px solid ${ACCOUNT_TYPE_META[multiAccount.active.type].color}33`,
+            width: 'fit-content',
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: ACCOUNT_TYPE_META[multiAccount.active.type].color, flexShrink: 0 }} />
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: bg.ink, whiteSpace: 'nowrap' }}>
+              作業中: @{multiAccount.active.handle.replace(/^@/, '')}
+            </span>
+            <span style={{ fontSize: '0.68rem', color: bg.inkSoft, whiteSpace: 'nowrap' }}>
+              {ACCOUNT_TYPE_META[multiAccount.active.type].label} ・ {multiAccount.accounts.length} アカウント連携中
+            </span>
+          </div>
+        )}
 
         {/* モバイル用 タブ ナビゲーション (コンパクト横スクロール) */}
         <nav className="iris-tabs-v2 iris-mobile-tabs" style={{
@@ -1844,6 +1870,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'fans' && <IrisFanEngagement bg={bg} settings={settings} />}
             {tab === 'collab' && (
               <IrisCollabBoard bg={bg} myHandle={multiAccount.active?.handle} />
+            )}
+            {tab === 'replies' && (
+              <IrisReplyCenter bg={bg} account={multiAccount.active} onConnect={() => setShowIgConnect(true)} />
             )}
             {tab === 'guideline' && (
               <BrandGuidelineView bg={bg} multiAccount={multiAccount} brandGuide={brandGuide} settings={settings} />
@@ -4339,11 +4368,19 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
   }
 
   const [addErr, setAddErr] = useState<string>('');
+  // プラン別 連携アカウント上限 (Lite/Standard=1, Pro=5, Agency=30)
+  const acctLimit = getAccountLimitInfo(multiAccount.accounts.length);
   function addAccount() {
     // ハンドル必須 (表示名は任意 — 空ならハンドルで代用)
     const rawHandle = (newAcct.handle || '').trim().replace(/^@+/, '');
     if (!rawHandle) {
       setAddErr('ハンドル (@より後の文字) を入力してください');
+      return;
+    }
+    // 上限の再チェック (フォームを開いたまま上限に達したケースも正直に伝える)
+    const nowLimit = getAccountLimitInfo(multiAccount.accounts.length);
+    if (!nowLimit.canAdd) {
+      setAddErr(`${nowLimit.planName} プランの連携上限 (${nowLimit.limit} アカウント) に達しています。`);
       return;
     }
     setAddErr('');
@@ -4378,11 +4415,42 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.1rem', color: bg.ink, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}><Smartphone size={16} color={bg.accent} /> 私のアカウント</h3>
-          <button onClick={() => setShowAddAccount(v => !v)}
-            style={{ ...btnPrimary(bg), padding: '0.45rem 1rem', fontSize: '0.8rem' }}>
-            + 追加
-          </button>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 700 }}>
+              {acctLimit.used} / {acctLimit.limit}
+            </span>
+            <button onClick={() => setShowAddAccount(v => !v)}
+              style={{ ...btnPrimary(bg), padding: '0.45rem 1rem', fontSize: '0.8rem', minHeight: 44 }}>
+              + 追加
+            </button>
+          </div>
         </div>
+        {/* 上限到達 — 死んだボタンにせず、プランと上限を正直に示してアップグレード導線 */}
+        {!acctLimit.canAdd && showAddAccount && (
+          <div style={{
+            marginBottom: '0.85rem', padding: '0.85rem 1rem', borderRadius: 14,
+            background: `linear-gradient(135deg, ${bg.accent}0c, transparent)`,
+            border: `1px solid ${bg.accent}44`,
+          }}>
+            <p style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '0 0 4px', fontSize: '0.85rem', fontWeight: 800, color: bg.ink }}>
+              <Lock size={14} strokeWidth={2.4} color={bg.accent} />
+              {acctLimit.planName} プランの連携上限は {acctLimit.limit} アカウントです
+            </p>
+            <p style={{ margin: '0 0 10px', fontSize: '0.78rem', color: bg.inkSoft, lineHeight: 1.6 }}>
+              現在 {acctLimit.used} アカウントを連携中です。
+              {acctLimit.upgradeTo
+                ? `${acctLimit.upgradeToName} にアップグレードすると、複数アカウント（クライアント）をこのままの操作感で切り替え運用できます。`
+                : 'これが最大枠です。増枠のご相談はサポートまでご連絡ください。'}
+            </p>
+            {acctLimit.upgradeTo && (
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('iris:open-plan', { detail: { planId: acctLimit.upgradeTo } }))}
+                style={{ ...btnPrimary(bg), padding: '0.55rem 1.1rem', fontSize: '0.82rem', minHeight: 44 }}>
+                {acctLimit.upgradeToName} を見る
+              </button>
+            )}
+          </div>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {multiAccount.accounts.map(acct => (
             <div key={acct.id} style={{
@@ -4465,9 +4533,9 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
             </div>
           ))}
         </div>
-        {/* アカウント追加フォーム */}
+        {/* アカウント追加フォーム (上限内のときだけ。上限時は上の正直パネルが出る) */}
         <AnimatePresence>
-          {showAddAccount && (
+          {showAddAccount && acctLimit.canAdd && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
               style={{ overflow: 'hidden' }}>
               <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid ${bg.cardBorder}` }}>

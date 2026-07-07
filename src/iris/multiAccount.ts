@@ -139,3 +139,38 @@ export function useMultiAccount() {
 
   return { accounts, active, switchTo, add, update, remove };
 }
+
+// ─── プラン別 連携アカウント上限 ──────────────────────────────
+// Lite / Standard = 1、Pro = 5、Agency = 30 (料金表 2026-06-22 準拠)。
+// master (studio 扱い) と enterprise は Agency と同じ 30。
+import { loadBillingUser, getEffectivePlan, IRIS_PLANS, type PlanId } from '../lib/billing';
+
+export const ACCOUNT_PLAN_LIMITS: Record<PlanId, number> = {
+  free: 1, lite: 1, standard: 1, pro: 5, studio: 30, agency: 30,
+  'v2-btoC-light': 1, 'v2-btoC-standard': 1, 'v2-btoC-pro': 5,
+  'v2-btoB-entry': 5, 'v2-btoB-standard': 15, 'v2-btoB-pro': 30,
+  'v2-enterprise': 30,
+};
+
+export interface AccountLimitInfo {
+  plan: PlanId;
+  planName: string;
+  limit: number;
+  used: number;
+  canAdd: boolean;
+  /** 上限を超えたい時の推奨アップグレード先 (null = これ以上ない) */
+  upgradeTo: 'pro' | 'agency' | null;
+  upgradeToName: string;
+}
+
+/** 現在のプランでのアカウント連携上限と、追加可否・アップグレード先を返す */
+export function getAccountLimitInfo(currentCount?: number): AccountLimitInfo {
+  const plan = getEffectivePlan(loadBillingUser());
+  const limit = ACCOUNT_PLAN_LIMITS[plan] ?? 1;
+  const used = typeof currentCount === 'number' ? currentCount : loadAll().length;
+  const planName = IRIS_PLANS.find(p => p.id === plan)?.name
+    || (plan === 'studio' ? 'Master' : plan);
+  const upgradeTo: 'pro' | 'agency' | null = limit < 5 ? 'pro' : limit < 30 ? 'agency' : null;
+  const upgradeToName = upgradeTo === 'pro' ? 'Pro (5 アカウント)' : upgradeTo === 'agency' ? 'Agency (30 アカウント)' : '';
+  return { plan, planName, limit, used, canAdd: used < limit, upgradeTo, upgradeToName };
+}
