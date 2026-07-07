@@ -1156,6 +1156,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
     const onGoto = (e: Event) => {
       const t = (e as CustomEvent).detail?.tab as Tab | undefined;
       if (t) {
+        // 明示的な行き先指定(ツアーの「この台本を自分のテーマで作る」等)を
+        // 連携ゲートで遮らない。「あとで連携する」と同義に扱い、約束した画面に必ず着地させる
+        dismissConnectGate();
         setTab(t);
         setIrisMobileGeminiMode(false); // フル UI に戻して該当タブを見せる
       }

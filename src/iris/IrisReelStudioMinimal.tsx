@@ -852,11 +852,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         </motion.div>
 
         {/* 3 秒でわかる説明 + サンプル出力 — まだ素材が無い初見の人に「何が出るか」を触らず見せる */}
+        {/* JSアニメ非依存の素のdiv: rAFが止まる環境(低電力モード等)でも初見の説明が必ず見える */}
         {clips.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+          <div
             style={{
               marginBottom: '1.4rem',
               padding: '0.95rem 1.05rem',
@@ -868,7 +866,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             <p style={{
               margin: 0, fontSize: 13.5, fontWeight: 800, color: bg.ink, lineHeight: 1.5,
             }}>
-              📱 写真や動画を入れるだけ。<span style={{ color: bg.accent }}>AI が字幕と投稿文をつけて</span>、そのまま出せる縦型リールにします。
+              写真や動画を入れるだけ。<span style={{ color: bg.accent }}>AI が字幕と投稿文をつけて</span>、そのまま出せる縦型リールにします。
             </p>
             {/* 3 ステップ */}
             <div style={{
@@ -895,7 +893,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             }}>
               例: スキンケアの動画 3 本 → <span style={{ color: bg.ink, fontWeight: 700 }}>「朝の 5 分ルーティン🌿」</span>の字幕付き 15 秒リール＋投稿文が 1 分で完成。
             </p>
-          </motion.div>
+          </div>
         )}
 
         {/* PRESET TEMPLATES (4 種) — 1 タップで色/フォント/レイアウト切替 */}
@@ -938,7 +936,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     transition: 'all 0.18s',
                   }}
                 >
-                  <div style={{ fontSize: 20, lineHeight: 1 }}>{p.emoji}</div>
+                  {/* OS絵文字禁止: プリセットIDごとの自作ラインSVG */}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#fff' : bg.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    {p.id === 'teach' && <><path d="M12 4 2 9l10 5 10-5-10-5z" /><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" /></>}
+                    {p.id === 'story' && <><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /><path d="M9 7h6M9 11h6" /></>}
+                    {p.id === 'news' && <><rect x="3" y="4" width="15" height="16" rx="2" /><path d="M18 8h2a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2h-1zM7 8h7M7 12h7M7 16h4" /></>}
+                    {p.id === 'qa' && <><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" /><path d="M9.5 9.5a2.5 2.5 0 0 1 4.3 1.7c0 1.6-2.3 2-2.3 3.3" /><path d="M12 17.5h.01" /></>}
+                    {p.id !== 'teach' && p.id !== 'story' && p.id !== 'news' && p.id !== 'qa' && <><rect x="4" y="4" width="16" height="16" rx="3" /><path d="m10 9 5 3-5 3z" /></>}
+                  </svg>
                   <div style={{ fontSize: 11, lineHeight: 1.1 }}>{p.label}</div>
                 </button>
               );
