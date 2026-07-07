@@ -24,15 +24,21 @@ type MetaRow = {
   unit: string;
   icon: typeof FileText;
   accent: string;
+  /**
+   * 外注に出した場合の 1 件あたりの一般的な相場（円・控えめな下限目安）。
+   * これは「実際の支払額」ではなく、フリーランスの制作相場に基づく参考値。
+   * 台本ライター/企画者/デザイナーへ外注した時の下限をとっている（honest: 誇張しない）。
+   */
+  rateYen: number;
 };
 
 // 表示順 = 価値の伝わりやすい順 (収益に近い順)
 const META: MetaRow[] = [
-  { t: 'script',   label: '台本',          unit: '本', icon: FileText,  accent: IRIS_COLORS.gold },
-  { t: 'caption',  label: 'キャプション',  unit: '本', icon: Type,      accent: IRIS_COLORS.purpleLt },
-  { t: 'ideas',    label: '企画',          unit: '件', icon: Lightbulb, accent: IRIS_COLORS.goldChampagne },
-  { t: 'mediakit', label: 'メディアキット', unit: '枚', icon: IdCard,    accent: IRIS_COLORS.hotPink },
-  { t: 'dm',       label: '営業DM',        unit: '通', icon: Send,      accent: IRIS_COLORS.goldDeep },
+  { t: 'script',   label: '台本',          unit: '本', icon: FileText,  accent: IRIS_COLORS.gold,          rateYen: 3000 },
+  { t: 'caption',  label: 'キャプション',  unit: '本', icon: Type,      accent: IRIS_COLORS.purpleLt,      rateYen: 800 },
+  { t: 'ideas',    label: '企画',          unit: '件', icon: Lightbulb, accent: IRIS_COLORS.goldChampagne, rateYen: 1500 },
+  { t: 'mediakit', label: 'メディアキット', unit: '枚', icon: IdCard,    accent: IRIS_COLORS.hotPink,        rateYen: 5000 },
+  { t: 'dm',       label: '営業DM',        unit: '通', icon: Send,      accent: IRIS_COLORS.goldDeep,       rateYen: 500 },
 ];
 
 type Props = {
@@ -61,6 +67,10 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
 
   const rows = META.filter(m => summary.byType[m.t] > 0);
   const isMobile = variant === 'mobile';
+
+  // 外注に出した場合の相場での目安（実データの件数 × 控えめな下限相場）。
+  // 実際の支払額ではなく参考値であることを必ず明記する（honest-numbers）。
+  const estYen = META.reduce((sum, m) => sum + summary.byType[m.t] * m.rateYen, 0);
 
   return (
     <motion.div
@@ -155,11 +165,49 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
         })}
       </div>
 
+      {/* 外注に出した場合の相場での目安 — 件数を「お金の価値」に翻訳して、月額を軽く感じさせる。
+          実際の支払額ではなく参考値であることを明記（honest-numbers）。 */}
+      {estYen > 0 && (
+        <div style={{
+          marginTop: isMobile ? 11 : 13,
+          padding: isMobile ? '0.7rem 0.8rem' : '0.8rem 1rem',
+          borderRadius: 12,
+          background: `linear-gradient(120deg, ${IRIS_COLORS.gold}1c 0%, ${IRIS_COLORS.gold}08 100%)`,
+          border: `1px solid ${IRIS_COLORS.gold}33`,
+          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+        }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+            background: `${IRIS_COLORS.gold}22`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <IdCard size={15} color={IRIS_COLORS.gold} />
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{
+              fontSize: '0.58rem', letterSpacing: '0.18em',
+              color: IRIS_COLORS.gold, fontWeight: 700, margin: '0 0 2px',
+            }}>
+              もし外注していたら
+            </p>
+            <p style={{
+              fontSize: isMobile ? '0.9rem' : '1rem', fontWeight: 700,
+              color: IRIS_COLORS.cream, margin: 0, lineHeight: 1.3,
+            }}>
+              約<span style={{ color: IRIS_COLORS.gold, fontSize: isMobile ? '1.2rem' : '1.35rem', fontWeight: 800 }}>
+                ¥{estYen.toLocaleString()}
+              </span>相当の制作を、Iris が今週こなしました
+            </p>
+          </div>
+        </div>
+      )}
+
       <p style={{
         marginTop: isMobile ? 9 : 11, marginBottom: 0,
-        fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4,
+        fontSize: '0.66rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.45,
       }}>
-        直近7日で Iris が実際に作った成果物の数です。手を動かすほど、ここが積み上がります。
+        直近7日で Iris が実際に作った成果物の数です。金額は台本・企画・デザインをフリーランスへ外注した場合の
+        一般的な相場での目安で、実際の支払額ではありません。手を動かすほど、ここが積み上がります。
       </p>
     </motion.div>
   );

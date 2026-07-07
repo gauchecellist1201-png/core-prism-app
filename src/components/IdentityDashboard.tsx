@@ -104,6 +104,7 @@ import GmailInsightsCard from './GmailInsightsCard';
 import AllSourcesHub from './AllSourcesHub';
 import CommandTowerHub from './CommandTowerHub';
 import WeeklyValueCard from './WeeklyValueCard';
+import TrialConversionNudge from './TrialConversionNudge';
 import GoogleSuiteCard from './GoogleSuiteCard';
 import ViralStudioCard from './ViralStudioCard';
 import CreditBar from './CreditBar';
@@ -1102,6 +1103,14 @@ export default function IdentityDashboard({
                 onCxoClick={() => {
                   // AgentTeamMonitor を 開いて 該当 CXO を 選んで もらう
                   try { window.dispatchEvent(new CustomEvent('core:agent-monitor-open')); } catch { /* */ }
+                }}
+              />
+
+              {/* 転換・継続 — 無料お試し残りわずかに、実データの成果を見せて課金へ橋渡し (2026-07-07 / 価値で価格を超える テーマ⑤) */}
+              <TrialConversionNudge
+                onUpgrade={() => { setCreditTab('plan'); setShowCredit(true); }}
+                onRunLoop={() => {
+                  try { document.getElementById('command-tower')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* */ }
                 }}
               />
 

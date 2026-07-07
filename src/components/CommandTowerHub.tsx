@@ -49,6 +49,14 @@ export default function CommandTowerHub() {
   const [activeLeg, setActiveLeg] = useState<LoopChannel | null>(null);
   const [selected, setSelected] = useState<LoopChannel | null>(null);
   const [copied, setCopied] = useState(false);
+  // 初見の人向け「これは何?」説明。一度閉じたらこの端末では二度と出さない。
+  const [showIntro, setShowIntro] = useState(() => {
+    try { return localStorage.getItem('cp-cmdtower-intro') !== '1'; } catch { return true; }
+  });
+  const dismissIntro = () => {
+    try { localStorage.setItem('cp-cmdtower-intro', '1'); } catch { /* localStorage 不可でも閉じる */ }
+    setShowIntro(false);
+  };
   const tick = useRef(0);
 
   // ループ完了後に Prism が出した「今日の一手」= 実際に送れるメッセージ
@@ -145,6 +153,37 @@ export default function CommandTowerHub() {
           </div>
         </div>
       </div>
+
+      {/* 初見の人向け「これは何?」— 製品名に頼らず、動作と安全性を1枚で */}
+      {showIntro && (
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+          margin: '2px 0 8px', padding: '10px 12px', borderRadius: 12,
+          background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.28)',
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--fg-strong)', marginBottom: 2 }}>
+              これは何?
+            </div>
+            <div style={{ fontSize: 11.5, color: 'var(--fg-muted)', lineHeight: 1.55 }}>
+              お客さまの声を「集める→読む→考える→届ける」の流れで1本につないだ実演です。
+              下のボタンを押すと<strong style={{ color: 'var(--fg)' }}>デモが1回まわるだけ</strong>。
+              何かが送信されたり消えたりはしません。
+            </div>
+          </div>
+          <button
+            onClick={dismissIntro}
+            aria-label="この説明を閉じる"
+            style={{
+              flexShrink: 0, width: 26, height: 26, borderRadius: 8,
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+              color: 'var(--fg-muted)', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+            <X size={13} strokeWidth={2.2} />
+          </button>
+        </div>
+      )}
 
       {/* 図 */}
       <div style={{
@@ -288,6 +327,11 @@ export default function CommandTowerHub() {
         }}>
         {running ? 'ループ実行中…' : '▶ ループを回す（1 人のファンに最適な一言を届ける）'}
       </button>
+      {!running && steps.length === 0 && (
+        <div style={{ marginTop: 6, textAlign: 'center', fontSize: 10.5, color: 'var(--fg-muted)', opacity: 0.8 }}>
+          ※ 押すとデモが 1 回まわります（送信はされません）
+        </div>
+      )}
 
       {/* ストリーム（Claude Code 風） */}
       {steps.length > 0 && (

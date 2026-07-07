@@ -199,23 +199,87 @@ export async function connectWithToken(
   }
 }
 
-export async function tryOauthConnect(): Promise<{ ok: boolean; reason?: string }> {
+export type OauthConnectResult =
+  | { ok: true; mode: 'redirect' }
+  | { ok: true; mode: 'connected'; profile: IgProfile }
+  | { ok: false; reason: string; message: string; recovery?: string };
+
+/**
+ * 本連携(OAuth)を開始する。
+ * - 未連携なら Instagram の認可画面へリダイレクト (mode: 'redirect')
+ * - 連携済みならプロフィールを取得して返す (mode: 'connected')
+ * - 失敗は必ず message/recovery つきで返す (silent fail 禁止 —
+ *   以前は連携済み分岐で成功しても呼び出し元に伝わらず「接続中…」のまま
+ *   固まるバグがあった)
+ */
+export async function tryOauthConnect(): Promise<OauthConnectResult> {
   try {
     const resp = await fetchWithTimeout('/api/instagram/oauth-status', { method: 'GET' }, 10000);
-    if (!resp.ok) return { ok: false, reason: 'oauth_not_configured' };
+    if (!resp.ok) {
+      return {
+        ok: false, reason: 'oauth_not_configured',
+        message: '本連携がまだ設定されていません',
+        recovery: '時間をおいてもう一度お試しください',
+      };
+    }
     const data = await resp.json() as { configured?: boolean; connected?: boolean };
-    if (!data.configured) return { ok: false, reason: 'pending_meta_review' };
+    if (!data.configured) {
+      return {
+        ok: false, reason: 'pending_meta_review',
+        message: '本連携は現在準備中です',
+        recovery: '開通までは「手入力」でお使いいただけます',
+      };
+    }
     if (data.connected) {
       // 既に連携済み → プロフィールを fetch して反映
       const p = await fetchOauthProfile();
-      if (p) saveIgProfile(p);
-      return { ok: true };
+      if (p) {
+        saveIgProfile(p);
+        return { ok: true, mode: 'connected', profile: p };
+      }
+      return {
+        ok: false, reason: 'profile_fetch_failed',
+        message: 'Instagramには接続済みですが、データの取得に失敗しました',
+        recovery: '数分おいてもう一度お試しください。続く場合は、Instagramが「プロアカウント(ビジネス/クリエイター)」になっているかご確認ください',
+      };
     }
     const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
     window.location.href = `/api/instagram/oauth-start?return_to=${returnTo}`;
-    return { ok: true };
+    return { ok: true, mode: 'redirect' };
   } catch (e: any) {
-    return { ok: false, reason: e.message || 'unknown' };
+    return {
+      ok: false, reason: 'network',
+      message: e?.message || '通信エラーが発生しました',
+      recovery: '電波の良い場所で、もう一度お試しください',
+    };
+  }
+}
+
+/** OAuth 戻りの reason コードを、ユーザーに見せる日本語へ変換 */
+export function oauthReasonToMessage(reason?: string): { message: string; recovery: string } {
+  switch (reason) {
+    case 'access_denied':
+    case 'user_denied':
+      return {
+        message: 'Instagram側で連携がキャンセルされました',
+        recovery: 'もう一度お試しいただき、許可画面で「許可する」を選んでください',
+      };
+    case 'token_exchange_failed':
+    case 'no_access_token':
+      return {
+        message: 'Instagramとの接続処理に失敗しました',
+        recovery: 'Instagramが「プロアカウント(ビジネス/クリエイター)」であることをご確認ください。アプリ審査の状況により、現在は登録済みテスターのみ連携できる場合があります',
+      };
+    case 'state_mismatch':
+      return {
+        message: '安全確認に失敗しました',
+        recovery: 'ブラウザを変えず、同じ画面からもう一度お試しください',
+      };
+    default:
+      return {
+        message: '接続処理でエラーが発生しました',
+        recovery: '時間をおいてもう一度お試しください。続く場合は「手入力」でも始められます',
+      };
   }
 }
 
@@ -338,21 +402,34 @@ export async function syncOauthMediaToHistory(): Promise<number> {
 }
 
 /**
- * URL に ig_oauth=ok が付いていたら OAuth 戻りとみなしてプロフィールを取り込む。
+ * URL に ig_oauth=... が付いていたら OAuth 戻りとみなして処理する。
+ * ok → プロフィールを取り込む / error → reason を返して UI に必ず見せる
+ * (以前は error 戻りを黙って無視していて「何も起きない」ように見えていた)。
  * IrisApp の初期化時に呼ぶ想定。
  */
-export async function consumeOauthCallback(): Promise<IgProfile | null> {
+export interface OauthCallbackResult {
+  status: 'ok' | 'error';
+  profile: IgProfile | null;
+  reason?: string;
+}
+
+export async function consumeOauthCallback(): Promise<OauthCallbackResult | null> {
   if (typeof window === 'undefined') return null;
   const params = new URLSearchParams(window.location.search);
   const status = params.get('ig_oauth');
-  if (status !== 'ok') return null;
-  const profile = await fetchOauthProfile();
-  if (profile) saveIgProfile(profile);
-  // URL から query を取り除く
+  if (!status) return null;
+  const reason = params.get('reason') || undefined;
+  // URL から query を取り除く (ok/error 共通)
   params.delete('ig_oauth');
+  params.delete('reason');
   const clean = window.location.pathname + (params.toString() ? `?${params}` : '');
   window.history.replaceState({}, '', clean);
-  return profile;
+  if (status !== 'ok') {
+    return { status: 'error', profile: null, reason };
+  }
+  const profile = await fetchOauthProfile();
+  if (profile) saveIgProfile(profile);
+  return { status: 'ok', profile };
 }
 
 /**

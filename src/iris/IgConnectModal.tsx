@@ -99,8 +99,25 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
   const handleOauth = async () => {
     setOauthState('trying');
     setError(null);
+    setOauthError(null);
     const result = await tryOauthConnect();
-    if (!result.ok) setOauthState('unavailable');
+    if (result.ok && result.mode === 'connected') {
+      // 既に連携済み → プロフィール取得成功。閉じて反映 (以前はここで
+      // 何も起きず「接続中…」のまま固まるバグがあった)
+      setOauthState('idle');
+      onConnected(result.profile);
+      onClose();
+      return;
+    }
+    if (result.ok && result.mode === 'redirect') {
+      // Instagram の許可画面へ遷移中。'trying' のままページが切り替わる
+      return;
+    }
+    if (!result.ok) {
+      // 失敗は必ず理由と復旧手段を見せる
+      setOauthState(result.reason === 'pending_meta_review' ? 'unavailable' : 'idle');
+      setOauthError({ message: result.message, recovery: result.recovery || null });
+    }
   };
 
   const handleSelfSubmit = () => {
