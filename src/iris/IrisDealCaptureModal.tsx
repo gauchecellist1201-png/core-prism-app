@@ -8,6 +8,7 @@
 // 中核プレゼン機能 — Day 1 アップグレード版
 // ============================================================
 import { useState, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Camera, X, RefreshCw, CheckCircle2, AlertTriangle, Image as ImageIcon,
@@ -246,11 +247,14 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
   return (
     <>
     {CelebratePortal}
+    {/* body直下にポータル: 祖先のbackdrop-filter/transformが作るstacking contextに
+        閉じ込められて背面に沈む事故を根治。dock(z:210)より上に */}
+    {createPortal(
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 110,
+        position: 'fixed', inset: 0, zIndex: 320,
         background: 'rgba(15,10,25,0.65)', backdropFilter: 'blur(18px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '1rem',
@@ -694,7 +698,8 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
           )}
         </AnimatePresence>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body)}
     </>
   );
 }

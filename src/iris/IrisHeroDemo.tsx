@@ -76,7 +76,11 @@ export default function IrisHeroDemo({ onStart }: { onStart: () => void }) {
               </div>
               <button
                 type="button"
-                onClick={onStart}
+                onClick={() => {
+                  // LPの約束(DMスクショ→案件登録)を入室後に直結: ホーム経由の迷子を無くす
+                  try { sessionStorage.setItem('iris_intent_dm_capture', '1'); } catch { /* private mode */ }
+                  onStart();
+                }}
                 style={{
                   marginTop: '0.9rem', width: '100%', minHeight: 48, borderRadius: 14, border: 'none', cursor: 'pointer',
                   background: `linear-gradient(90deg, ${C.hotPink}, ${C.purple})`, color: '#fff', fontWeight: 800, fontSize: '0.9rem',

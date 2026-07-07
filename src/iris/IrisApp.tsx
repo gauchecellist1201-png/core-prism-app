@@ -75,6 +75,9 @@ export default function IrisApp() {
   useEffect(() => {
     if (!entered) return;
     if (!shouldShowFirstRunTour()) return;
+    // LPヒーロー「自分のDMでやってみる」経由(値'1'→取込モーダルが消費して'2')は、
+    // 約束したDMスクショ取込の上にツアーを被せない。ツアーは次回訪問時に回す
+    try { if (sessionStorage.getItem('iris_intent_dm_capture')) return; } catch { /* */ }
     const id = window.setTimeout(() => setShowFirstRunTour(true), 700);
     return () => window.clearTimeout(id);
   }, [entered]);
@@ -150,7 +153,11 @@ export default function IrisApp() {
           そのまま表示し、Iris (インフルエンサー向け・6 人の専属 AI) と内容が食い違って
           混乱を生んでいたため Iris からは撤去 (2026-06-15)。Iris のエージェントは
           IrisDashboard 上部の AgentsOrbit (6 人) で表示する。 */}
-      <TutorialOverlay brand="iris" onClose={() => setTutorialDoneTick(t => t + 1)} />
+      {/* オンボ一本化: 体験型FirstRunTourが未消化の間は文字ガイドを出さない(二重ウィザード防止)。
+          ツアー完了時に tutorial_seen も付くので、以後も自動では出ない(手動force起動は従来どおり) */}
+      {!shouldShowFirstRunTour() && (
+        <TutorialOverlay brand="iris" onClose={() => setTutorialDoneTick(t => t + 1)} />
+      )}
       <WowOnboarding brand="iris" trigger={tutorialDoneTick} />
       {/* 初回 3 ステップ Wow ツアー（解析→作戦→リール台本）。1 回だけ・純フロント */}
       {showFirstRunTour && (

@@ -34,7 +34,12 @@ export function shouldShowFirstRunTour(): boolean {
   }
 }
 function markSeen() {
-  try { localStorage.setItem(SEEN_KEY, 'done'); } catch { /* quota */ }
+  try {
+    localStorage.setItem(SEEN_KEY, 'done');
+    // オンボは一本化: このツアーを見た人に文字5ステップのTutorialOverlayを
+    // 重ねて出さない(PWA初回の二重ウィザード防止)
+    localStorage.setItem('core_tutorial_seen_iris_v1', '1');
+  } catch { /* quota */ }
 }
 
 interface Props {

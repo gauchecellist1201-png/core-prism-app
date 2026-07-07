@@ -1093,7 +1093,12 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const [customEditorOpen, setCustomEditorOpen] = useState(false);
   const [bgListVersion, setBgListVersion] = useState(0); // 再描画用
-  const [tab, setTab] = useState<Tab>('home');
+  const [tab, setTab] = useState<Tab>(() => {
+    // LPヒーローの「自分のDMでやってみる」から来た人は、約束した
+    // DMスクショ→案件登録に直行させる(ホームで迷子にしない)
+    try { if (sessionStorage.getItem('iris_intent_dm_capture') === '1') return 'deals'; } catch { /* */ }
+    return 'home';
+  });
   const [moreOpen, setMoreOpen] = useState(false);
   const [igProfile, setIgProfile] = useState<IgProfile | null>(() => loadIgProfile());
   const [showIgConnect, setShowIgConnect] = useState(false);
@@ -1107,7 +1112,12 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   //   未連携かつ未スキップなら、ダッシュボードより先に連携画面を出す。
   //   連携できない事情のある人を閉じ込めない (離脱ゼロ) ため「あとで」も用意。
   const [connectGateDone, setConnectGateDone] = useState<boolean>(() => {
-    try { return localStorage.getItem('iris_connect_gate_v1') === 'done'; } catch { return false; }
+    try {
+      // LPの「自分のDMでやってみる」経由は連携不要のDMスクショ取込が目的。
+      // 連携ゲートで約束を切断しない(このセッションだけ素通し・恒久スキップにはしない)
+      if (sessionStorage.getItem('iris_intent_dm_capture')) return true;
+      return localStorage.getItem('iris_connect_gate_v1') === 'done';
+    } catch { return false; }
   });
   const dismissConnectGate = () => {
     try { localStorage.setItem('iris_connect_gate_v1', 'done'); } catch { /* */ }
@@ -2335,7 +2345,17 @@ function ProposalCard({
 function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; myDeals: InfluencerDeal[]; settings: AppSettings; mediaKit?: MediaKit }) {
   const [manualOpen, setManualOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
-  const [captureOpen, setCaptureOpen] = useState(false);
+  const [captureOpen, setCaptureOpen] = useState(() => {
+    // LPヒーロー「自分のDMでやってみる」→ 入室と同時にDMスクショ取込を開く(一度きり)
+    try {
+      if (sessionStorage.getItem('iris_intent_dm_capture') === '1') {
+        // 消さず '2'(消費済み)にする: IrisApp側がこのタブセッション中ツアーを抑制できるように
+        sessionStorage.setItem('iris_intent_dm_capture', '2');
+        return true;
+      }
+    } catch { /* */ }
+    return false;
+  });
   const [addError, setAddError] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
   const [handled, setHandled] = useState<string[]>([]);
