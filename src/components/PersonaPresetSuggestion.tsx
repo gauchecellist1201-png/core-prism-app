@@ -304,6 +304,36 @@ const QUICK_PRESETS: QuickPreset[] = [
   },
 ];
 
+// OS絵文字禁止ルール: プリセットのアイコンは import 不要のインライン SVG ライン（実行時クラッシュ回避）
+function PresetGlyph({ k, color }: { k: string; color: string }) {
+  const common = {
+    width: 26, height: 26, viewBox: '0 0 24 24', fill: 'none',
+    stroke: color, strokeWidth: 1.9,
+    strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
+  };
+  if (k === 'shop-owner') {
+    return (
+      <svg {...common} aria-hidden="true">
+        <path d="M4 12h16a8 8 0 0 1-16 0Z" />
+        <path d="M8 3c0 1-1 1-1 2s1 1 1 2M12 3c0 1-1 1-1 2s1 1 1 2M16 3c0 1-1 1-1 2s1 1 1 2" />
+      </svg>
+    );
+  }
+  if (k === 'consultant') {
+    return (
+      <svg {...common} aria-hidden="true">
+        <path d="M9 18h6M10 21h4" />
+        <path d="M12 3a6 6 0 0 0-4 10.5c.7.8 1 1.5 1 2.5h6c0-1 .3-1.7 1-2.5A6 6 0 0 0 12 3Z" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common} aria-hidden="true">
+      <path d="M13 2 4 14h7l-1 8 9-12h-7z" />
+    </svg>
+  );
+}
+
 function QuickTrialPresets({ onPick }: { onPick: (preset: QuickPreset) => void }) {
   return (
     <div style={{
@@ -314,9 +344,12 @@ function QuickTrialPresets({ onPick }: { onPick: (preset: QuickPreset) => void }
       <div style={{
         fontSize: 10, letterSpacing: '0.2em',
         color: '#FBBF24', fontWeight: 800,
-        marginBottom: 8,
+        marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6,
       }}>
-        🚀 お試し で 1 タップ で 始める
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 8-10c1.5 1.5 3 4 3 6a22 22 0 0 1-8 8zM9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+        </svg>
+        お試し で 1 タップ で 始める
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {QUICK_PRESETS.map((p) => (
@@ -337,7 +370,7 @@ function QuickTrialPresets({ onPick }: { onPick: (preset: QuickPreset) => void }
             onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = `0 8px 18px ${p.accentColor}33`; }}
             onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
           >
-            <span style={{ fontSize: 26, lineHeight: 1 }}>{p.emoji}</span>
+            <PresetGlyph k={p.key} color={p.accentColor} />
             <span style={{ fontSize: 11, fontWeight: 800, lineHeight: 1.3, textAlign: 'center' }}>{p.name}</span>
             <span style={{ fontSize: 9, color: p.accentColor, fontWeight: 700, lineHeight: 1.2, textAlign: 'center' }}>{p.tagline}</span>
           </button>
