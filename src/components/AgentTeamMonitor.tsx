@@ -360,6 +360,13 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
               minHeight: 0,
             }}
           >
+            {/* 稼働中は「働く劇場」を最上部に固定表示 — 小さい縦画面でも "いま動いている" が最初に目に入る (オーナー指示 2026-07-08) */}
+            {activeTask?.status === 'running' && (
+              <div style={{ padding: '12px 12px 0' }}>
+                <LiveWorkTheater task={activeTask} />
+              </div>
+            )}
+
             {/* 13 CXO アバター + 役職ラベル + クリックで「任せる」 */}
             <div style={{ padding: '12px 12px 8px 12px', background: 'rgba(255,255,255,0.02)' }}>
               <div style={{
@@ -645,8 +652,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
             {/* アクティブ タスクの詳細ログ */}
             {activeTask && (
               <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                {/* 働く劇場 — CXOの手が動き続けているのを、その瞬間ずっと見せる */}
-                {activeTask.status === 'running' && <LiveWorkTheater task={activeTask} />}
+                {/* 劇場は最上部に移設済み。ここは各ステップの詳細ログ(完了出力つき) */}
                 <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)', marginBottom: 6, letterSpacing: '0.06em' }}>
                   実行ログ
                 </div>
