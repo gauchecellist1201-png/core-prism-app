@@ -160,10 +160,10 @@ export const en: Dictionary = {
   },
 
   final: {
-    h2Lead:   'For the',
-    h2Accent: '7 possibilities',
-    h2Tail:   'within you, agent AI awaits.',
-    sub: 'Try all agents free for 14 days.',
+    h2Lead:   'Stop doing',
+    h2Accent: 'everything alone.',
+    h2Tail:   '',
+    sub: 'Try all your AI executives free for 14 days. No credit card required.',
     cta: 'Try Prism for free',
   },
 
