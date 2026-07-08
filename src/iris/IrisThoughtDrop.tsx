@@ -378,16 +378,15 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
             padding: '0.9rem 0 0.5rem',
           }}>
             <GenerationOrb brand="iris" size={56} />
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={stageIdx}
-                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.25 }}
-                style={{ margin: 0, fontSize: '0.85rem', color: '#3D3247', fontWeight: 600 }}
-              >
-                {STAGES[stageIdx]}
-              </motion.p>
-            </AnimatePresence>
+            {/* 退場アニメ待ち禁止(rAF停止環境でステージ文言が固まる)・キー切替入場のみ */}
+            <motion.p
+              key={stageIdx}
+              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ margin: 0, fontSize: '0.85rem', color: '#3D3247', fontWeight: 600 }}
+            >
+              {STAGES[stageIdx]}
+            </motion.p>
             <p style={{ margin: 0, fontSize: '0.7rem', color: '#8A7AA0' }}>
               長くて30秒くらいです
             </p>

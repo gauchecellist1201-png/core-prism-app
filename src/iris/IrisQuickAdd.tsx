@@ -2,7 +2,7 @@
 // IRIS — クイック追加モーダル (スクショ / 音声 / 文字 → AI 自動入力)
 // ============================================================
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Mic, Square, X } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { Platform, ContentType, DealStage, InfluencerDeal } from '../types/influencerDeal';
@@ -228,10 +228,11 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
           }} aria-label="閉じる"></button>
         </div>
 
-        <AnimatePresence mode="wait">
+        {/* 退場アニメ待ち禁止(rAF停止環境でモード切替が凍結する)・キー切替入場のみ */}
+        <>
           {/* モード選択 */}
           {mode === 'choose' && !extracted && (
-            <motion.div key="choose" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="choose" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <p style={{ color: '#5A4570', fontSize: '0.98rem', marginBottom: '1.5rem', lineHeight: 1.8, textAlign: 'center' }}>
                 <span style={{ background: `linear-gradient(135deg, ${bg.accent}, #F77737)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700 }}>
                   3 秒で案件追加。
@@ -263,7 +264,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
 
           {/* スクショモード */}
           {mode === 'screenshot' && !extracted && (
-            <motion.div key="ss" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <motion.div key="ss" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <button onClick={() => setMode('choose')} style={{
                 background: 'transparent', border: 'none', color: bg.accent,
                 cursor: 'pointer', fontSize: '0.85rem', marginBottom: '0.75rem', padding: 0,
@@ -320,7 +321,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
 
           {/* 音声モード */}
           {mode === 'voice' && !extracted && (
-            <motion.div key="voice" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <motion.div key="voice" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <button onClick={() => setMode('choose')} style={{
                 background: 'transparent', border: 'none', color: bg.accent,
                 cursor: 'pointer', fontSize: '0.85rem', marginBottom: '0.75rem', padding: 0,
@@ -384,7 +385,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
 
           {/* 手動モード — 既存フォームに誘導 */}
           {mode === 'manual' && !extracted && (
-            <motion.div key="manual" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <motion.div key="manual" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <button onClick={() => setMode('choose')} style={{
                 background: 'transparent', border: 'none', color: bg.accent,
                 cursor: 'pointer', fontSize: '0.85rem', marginBottom: '0.75rem', padding: 0,
@@ -483,7 +484,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
+        </>
 
         {err && (
           <div style={{

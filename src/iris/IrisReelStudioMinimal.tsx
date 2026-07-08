@@ -1262,13 +1262,11 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           ))}
         </div>
 
-        {/* STEP PANELS */}
-        <AnimatePresence mode="wait">
-          <motion.div
+        {/* STEP PANELS — 退場アニメ待ち禁止(rAF停止環境でステップ切替が凍結する)・キー切替入場のみ */}
+        <motion.div
             key={step}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.22 }}
             style={{ minHeight: 240 }}
           >
@@ -1993,7 +1991,6 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             )}
 
           </motion.div>
-        </AnimatePresence>
 
         {/* 詳細モードへ */}
         {onOpenAdvanced && (
