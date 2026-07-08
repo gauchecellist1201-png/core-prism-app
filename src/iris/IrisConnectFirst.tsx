@@ -242,7 +242,7 @@ export default function IrisConnectFirst({ onConnect, onSkip }: Props) {
             marginBottom: showSample ? 4 : '1.75rem',
           }}
         >
-          <Eye size={17} /> {showSample ? 'サンプルを閉じる' : '連携せずに中身を見る（30秒）'}
+          <Eye size={17} /> {showSample ? 'サンプルを閉じる' : '分析サンプルを見る（30秒）'}
           <motion.span animate={{ rotate: showSample ? 180 : 0 }} transition={{ duration: 0.25 }}
             style={{ display: 'inline-flex' }}>
             <ChevronDown size={16} />
@@ -288,7 +288,7 @@ export default function IrisConnectFirst({ onConnect, onSkip }: Props) {
             textDecoration: 'underline', textUnderlineOffset: 3,
           }}
         >
-          あとで連携する（先に中を見てみる）
+          あとで連携する（先にアプリを触ってみる）
         </button>
       </div>
     </div>
