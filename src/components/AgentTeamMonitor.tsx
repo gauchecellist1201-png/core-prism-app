@@ -645,6 +645,8 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
             {/* アクティブ タスクの詳細ログ */}
             {activeTask && (
               <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                {/* 働く劇場 — CXOの手が動き続けているのを、その瞬間ずっと見せる */}
+                {activeTask.status === 'running' && <LiveWorkTheater task={activeTask} />}
                 <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)', marginBottom: 6, letterSpacing: '0.06em' }}>
                   実行ログ
                 </div>
@@ -834,6 +836,118 @@ function ThinkingStream({ cxo }: { cxo: CxoRole }) {
       }} />
       <span>$ {verb}…</span>
     </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// LiveWorkTheater — 「働く劇場」(オーナー指示 2026-07-08: 動いている姿の可視化で満足度を上げる)
+// 実行中、①稼働CXOアバターの波紋パルス ②大きな経過時計 ③ターミナル風フィード
+// (動詞行が流れて積み上がる=Claude Codeのツールストリーム風) ④シマー進行バー。
+// すべて setInterval + CSSアニメ駆動(rAF非依存=低電力モードでも止まらない)。
+// 動詞はCXO_TOOL_VERBS(演出語彙)、経過時間・完了出力は実データのみ(honest)。
+function LiveWorkTheater({ task }: { task: AgentTask }) {
+  const working = task.steps.find(s => s.status === 'working');
+  const workingCxo = working?.cxo ?? null;
+  const [lines, setLines] = useState<{ id: number; cxo: CxoRole; verb: string; done: boolean }[]>([]);
+  const idRef = useRef(0);
+
+  // 2.2秒ごとに直前行を✓へ倒し、新しい動詞行を積む(最大5行・古い行は流れて消える)
+  useEffect(() => {
+    if (!workingCxo) return;
+    const tick = () => {
+      setLines(prev => {
+        const verbs = CXO_TOOL_VERBS[workingCxo] || ['作業中'];
+        const settled = prev.map(l => (l.done ? l : { ...l, done: true })).slice(-4);
+        idRef.current += 1;
+        return [...settled, { id: idRef.current, cxo: workingCxo, verb: verbs[idRef.current % verbs.length], done: false }];
+      });
+    };
+    tick();
+    const t = window.setInterval(tick, 2200);
+    return () => window.clearInterval(t);
+  }, [workingCxo]);
+
+  // 経過時計は1秒ごとに再描画
+  const [, force] = useState(0);
+  useEffect(() => {
+    const t = window.setInterval(() => force(x => x + 1), 1000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  if (!working || !workingCxo) return null;
+  // 未知ロール(古い保存データ等)でも落とさない — 劇場は装飾であり、クラッシュは最悪の体験
+  const meta = CXO_META[workingCxo] ?? CXO_META.CEO;
+  const elapsed = formatElapsed(working.startedAt);
+  const mono = 'ui-monospace, SFMono-Regular, Menlo, monospace';
+  return (
+    <div style={{
+      borderRadius: 14, marginBottom: 10, overflow: 'hidden',
+      border: `1px solid ${meta.color}33`,
+      background: `linear-gradient(135deg, ${meta.color}0d 0%, rgba(0,0,0,0.35) 70%)`,
+    }}>
+      {/* シマー進行バー(不定長・常に流れる) */}
+      <div style={{ height: 3, position: 'relative', overflow: 'hidden', background: 'rgba(255,255,255,0.06)' }}>
+        <div style={{
+          position: 'absolute', top: 0, bottom: 0, width: '42%',
+          background: `linear-gradient(90deg, transparent, ${meta.color}, transparent)`,
+          animation: 'atm-shimmer 1.5s ease-in-out infinite',
+        }} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px 8px' }}>
+        {/* 稼働アバター + 波紋パルス */}
+        <span style={{ position: 'relative', width: 46, height: 46, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+          <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1.5px solid ${meta.color}`, animation: 'atm-ring 1.8s ease-out infinite' }} />
+          <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1.5px solid ${meta.color}`, animation: 'atm-ring 1.8s ease-out infinite', animationDelay: '0.9s' }} />
+          <span style={{
+            width: 38, height: 38, borderRadius: '50%', display: 'grid', placeItems: 'center',
+            background: `${meta.color}22`, border: `1.5px solid ${meta.color}66`,
+          }}>
+            <MetaIcon meta={meta} size={19} color={meta.color} strokeWidth={2.2} />
+          </span>
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12.5, fontWeight: 800, color: '#fff' }}>{meta.shortLabel} が作業中</span>
+            <span style={{
+              fontSize: 10.5, color: 'rgba(255,255,255,0.5)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%',
+            }}>{working.label}</span>
+          </div>
+          <div style={{ fontFamily: mono, fontSize: 17, fontWeight: 700, color: meta.color, marginTop: 1 }}>
+            {elapsed}
+          </div>
+        </div>
+      </div>
+      {/* ターミナル風ライブフィード */}
+      <div style={{ padding: '2px 14px 12px', fontFamily: mono, fontSize: 11, lineHeight: 1.95 }}>
+        {lines.map(l => {
+          const lc = (CXO_META[l.cxo] ?? CXO_META.CEO).color;
+          return (
+            <div key={l.id} className="atm-feedline" style={{
+              display: 'flex', gap: 7, alignItems: 'baseline',
+              color: l.done ? 'rgba(255,255,255,0.38)' : lc,
+              whiteSpace: 'nowrap', overflow: 'hidden',
+            }}>
+              <span style={{ flexShrink: 0, width: 12, textAlign: 'center' }}>{l.done ? '✓' : '$'}</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.verb}{l.done ? '' : '…'}</span>
+              {!l.done && <span className="atm-caret" style={{ background: lc }} />}
+            </div>
+          );
+        })}
+      </div>
+      <style>{`
+        @keyframes atm-shimmer { 0% { left: -45%; } 100% { left: 105%; } }
+        @keyframes atm-ring { 0% { transform: scale(0.7); opacity: 0.7; } 100% { transform: scale(1.35); opacity: 0; } }
+        @keyframes atm-feedin { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .atm-feedline { animation: atm-feedin 0.3s ease; }
+        @keyframes atm-blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+        .atm-caret { display: inline-block; width: 6px; height: 12px; flex-shrink: 0; align-self: center; animation: atm-blink 1s steps(1) infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .atm-feedline { animation: none; }
+          .atm-caret { animation: none; }
+        }
+      `}</style>
+    </div>
   );
 }
 
