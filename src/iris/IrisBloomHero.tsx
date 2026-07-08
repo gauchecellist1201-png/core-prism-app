@@ -7,6 +7,8 @@
 //   Crystal/Lume/Resonance も同じ CSS 変数名(ibh-*)で横展開する。
 // ============================================================
 
+import { IRIS_COLORS } from './irisStyle';
+
 interface Props {
   onStart: () => void;
 }
@@ -96,16 +98,18 @@ export default function IrisBloomHero({ onStart }: Props) {
             CORE Iris
           </span>
         </h1>
-        <p style={{ margin: '12px 0 0', fontSize: 'clamp(14px, 2.4vw, 17px)', lineHeight: 1.9, color: 'rgba(255,255,255,0.78)' }}>
+        <p style={{ margin: '12px 0 0', fontSize: 'clamp(14px, 2.4vw, 17px)', lineHeight: 1.9, color: 'rgba(255,250,245,0.82)' }}>
           Instagram に、専属マネージャー AI を。
         </p>
         <button
           onClick={onStart}
           style={{
+            // ★Iris 共通 CTA フォーミュラに統一(ctaBtnHero と同じ: 135deg hotPink→purple→gold + 二層シャドウ)
             marginTop: 22, minHeight: 52, padding: '14px 34px', borderRadius: 999, border: 'none', cursor: 'pointer',
-            background: 'linear-gradient(90deg,#F77737,#E1306C)', color: '#fff',
-            fontSize: 15, fontWeight: 800, letterSpacing: '0.04em',
-            boxShadow: '0 12px 40px rgba(225,48,108,0.38)',
+            background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink} 0%, ${IRIS_COLORS.purple} 50%, ${IRIS_COLORS.gold} 100%)`,
+            color: '#fff', fontSize: 15, fontWeight: 800, letterSpacing: '0.04em',
+            boxShadow: `0 14px 40px ${IRIS_COLORS.hotPink}60, 0 4px 12px ${IRIS_COLORS.purple}40`,
+            transition: 'transform 0.12s, box-shadow 0.12s',
           }}
         >
           いますぐはじめる
