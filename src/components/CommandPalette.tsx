@@ -19,6 +19,7 @@ import { useAgentTaskQueue, CXO_META, type CxoRole } from '../hooks/useAgentTask
 import { notifyInApp } from '../lib/inAppNotify';
 import { seedDemoData, setDemoActive, clearDemoData, isDemoActive } from '../lib/onboarding';
 import { listSuggestions, setStatus as setSuggestionStatus, type SuggestionEntry } from '../lib/aiSuggestionLog';
+import PersonaGlyph, { isRoleCode } from './PersonaGlyph';
 
 export type CmdAction =
   | { kind: 'open-modal'; modal: ModalKey; label: string; emoji: string; subtitle?: string }
@@ -839,7 +840,7 @@ export default function CommandPalette({
                           onClick={() => runItem(item)}
                           className="cp-zero-row"
                         >
-                          <span className="cp-zero-row-emoji">{item.emoji}</span>
+                          <span className="cp-zero-row-emoji">{isRoleCode(item.emoji) ? <PersonaGlyph icon={item.emoji} size={18} color="currentColor" /> : item.emoji}</span>
                           <span className="cp-zero-row-label">{item.label}</span>
                           <ArrowRight size={14} style={{ color: 'var(--fg-subtle)' }} />
                         </button>
@@ -860,7 +861,7 @@ export default function CommandPalette({
                           onClick={() => runItem(item)}
                           className="cp-zero-row"
                         >
-                          <span className="cp-zero-row-emoji">{item.emoji}</span>
+                          <span className="cp-zero-row-emoji">{isRoleCode(item.emoji) ? <PersonaGlyph icon={item.emoji} size={18} color="currentColor" /> : item.emoji}</span>
                           <span className="cp-zero-row-label">{item.label}</span>
                           <ArrowRight size={14} style={{ color: 'var(--fg-subtle)' }} />
                         </button>
@@ -930,7 +931,7 @@ export default function CommandPalette({
                               transform: isSelected ? 'translateX(2px)' : 'none',
                             }}
                           >
-                            <span className="text-xl flex-shrink-0">{item.emoji}</span>
+                            <span className="text-xl flex-shrink-0">{isRoleCode(item.emoji) ? <PersonaGlyph icon={item.emoji} size={20} color="currentColor" /> : item.emoji}</span>
                             <div className="flex-1 min-w-0">
                               <p className="cp-body truncate" style={{ fontWeight: isSelected ? 600 : 400 }}>{item.label}</p>
                               {subtitle && <p className="cp-meta truncate">{subtitle}</p>}

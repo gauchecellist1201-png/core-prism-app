@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import type { Persona, PersonaId } from '../types/identity';
 import MyBusinessRevenueCard from './MyBusinessRevenueCard';
+import PersonaGlyph from './PersonaGlyph';
 
 interface Props {
   activeId: PersonaId;
@@ -124,7 +125,7 @@ export default function CognitiveDashboard({ activeId, personas, onEditFinance, 
             const row = (
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-1.5">
-                  <span style={{ color: p.accentColor, fontSize: '11px' }}>{p.icon}</span>
+                  <PersonaGlyph icon={p.icon} color={p.accentColor} size={12} />
                   <span className="text-xs text-neutral-600 truncate max-w-16">{p.name}</span>
                 </div>
                 <span className="text-xs" style={{ color: n >= 0 ? '#34d399' : '#f87171' }}>

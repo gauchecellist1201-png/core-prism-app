@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import type { Persona } from '../types/identity';
+import PersonaGlyph from './PersonaGlyph';
 
 interface Props {
   activeId: string;
@@ -42,7 +43,7 @@ export default function ModeSwitcher({ activeId, onSwitch, isTransitioning, pers
                 color: isActive ? persona.accentColor : '#3a3a5a',
               }}
             >
-              {persona.icon}
+              <PersonaGlyph icon={persona.icon} color={isActive ? persona.accentColor : '#3a3a5a'} size={16} />
             </span>
 
             <div className="flex-1 min-w-0">

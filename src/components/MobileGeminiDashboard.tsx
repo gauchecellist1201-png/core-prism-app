@@ -24,6 +24,7 @@ import { useClaude, selectRelevantKnowledge } from '../hooks/useClaude';
 import type { KnowledgeItem } from '../types/identity';
 import { executeAction, type ExecutionPlan } from '../lib/actionExecutor';
 import { CXO_META, cxoDisplayName, type CxoRole } from '../hooks/useAgentTaskQueue';
+import PersonaGlyph from './PersonaGlyph';
 
 interface Props {
   persona: Persona;
@@ -271,8 +272,8 @@ export default function MobileGeminiDashboard({
             width: 32, height: 32, borderRadius: 10,
             background: `linear-gradient(135deg, ${accent}, ${accent}99)`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 16, flexShrink: 0,
-          }}>{persona.icon}</div>
+            flexShrink: 0,
+          }}><PersonaGlyph icon={persona.icon} color="#fff" size={17} /></div>
           <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
             <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{persona.name}</div>
             <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.5)' }}>タップで切替</div>
@@ -339,7 +340,7 @@ export default function MobileGeminiDashboard({
                   textAlign: 'left', fontSize: 13,
                 }}
               >
-                <span style={{ fontSize: 20 }}>{p.icon}</span>
+                <PersonaGlyph icon={p.icon} color={p.accentColor} size={19} />
                 <span style={{ flex: 1, fontWeight: 600 }}>{p.name}</span>
                 {p.id === persona.id && <span style={{ fontSize: 11, color: p.accentColor }}>✓</span>}
               </button>
@@ -713,8 +714,8 @@ export default function MobileGeminiDashboard({
                     width: 28, height: 28, borderRadius: 8,
                     background: `${accent}30`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 16, flexShrink: 0,
-                  }}>{persona.icon}</div>
+                    flexShrink: 0,
+                  }}><PersonaGlyph icon={persona.icon} color={accent} size={16} /></div>
                   <div style={{
                     flex: 1,
                     background: 'rgba(255,255,255,0.04)',
@@ -849,8 +850,8 @@ function PlanCard({ plan, accent, icon }: { plan: ExecutionPlan; accent: string;
         width: 28, height: 28, borderRadius: 8,
         background: `${accent}30`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 16, flexShrink: 0,
-      }}>{icon}</div>
+        flexShrink: 0,
+      }}><PersonaGlyph icon={icon} color={accent} size={16} /></div>
       <div style={{
         flex: 1,
         background: 'rgba(255,255,255,0.04)',

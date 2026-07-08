@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { Persona } from '../types/identity';
 import { copyText } from '../lib/clipboard';
 import { StudioIntro } from './StudioIntro';
+import PersonaGlyph from './PersonaGlyph';
 
 interface Props {
   persona: Persona;
@@ -54,7 +55,7 @@ export default function MeetingHub({ persona, onClose }: Props) {
       >
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <span style={{ color: persona.accentColor }}>{persona.icon}</span>
+            <PersonaGlyph icon={persona.icon} color={persona.accentColor} size={18} />
             <p className="text-fg text-sm font-light">ミーティングリンク</p>
           </div>
           <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle text-xl flex items-center justify-center" style={{ minWidth: 44, minHeight: 44 }} aria-label="閉じる">✕</button>

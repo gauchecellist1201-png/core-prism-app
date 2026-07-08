@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ChatMessage, KnowledgeItem, Persona, AppSettings } from '../types/identity';
 import { useTypewriter } from '../hooks/useTypewriter';
+import PersonaGlyph from './PersonaGlyph';
 import { usePhaseButton } from '../hooks/usePhaseButton';
 import ContextualUpgradeCard from './ContextualUpgradeCard';
 import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
@@ -90,10 +91,10 @@ export default function AISidebar({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
             <div
-              className="w-5 h-5 rounded-md flex items-center justify-center text-xs flex-shrink-0"
+              className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}
             >
-              {persona.icon}
+              <PersonaGlyph icon={persona.icon} color={persona.accentColor} size={13} />
             </div>
             <p className="text-sm text-fg truncate">AI · {persona.name}</p>
           </div>

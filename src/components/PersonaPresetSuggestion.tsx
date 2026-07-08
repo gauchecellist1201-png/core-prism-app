@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Sparkles, ArrowRight } from 'lucide-react';
 import { usePersonas } from '../hooks/usePersonas';
 import { getPersonaPresets, presetTagline } from '../lib/personaPresets';
+import PersonaGlyph from './PersonaGlyph';
 
 const SUGGEST_KEY = 'core_persona_preset_suggest_v1';
 
@@ -185,9 +186,9 @@ export default function PersonaPresetSuggestion() {
                     background: `linear-gradient(135deg, ${p.accentColor}, ${p.accentColor}99)`,
                     color: '#fff',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 18, flexShrink: 0,
+                    flexShrink: 0,
                   }}>
-                    {p.icon}
+                    <PersonaGlyph icon={p.icon} color="#fff" size={20} strokeWidth={2.1} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#fff' }}>{p.name}</div>
@@ -273,7 +274,8 @@ const QUICK_PRESETS: QuickPreset[] = [
     name: '飲食店オーナー',
     subtitle: '3 店舗 / 月商 800 万',
     description: '売上 / 在庫 / 採用 を 14 役員 で 回す 飲食店オーナー (例: 田中)',
-    icon: '🍜',
+    // OS絵文字禁止: createPersona に渡す icon は役割コード。表示は下部の PresetGlyph(k) を使う
+    icon: 'COO',
     accentColor: '#F97316',
     accentColorLight: 'rgba(249,115,22,0.18)',
     tagline: '売上 / 採用 / 在庫 を 1 画面で',
@@ -283,7 +285,7 @@ const QUICK_PRESETS: QuickPreset[] = [
     name: 'コンサルタント',
     subtitle: '独立 5 年 / 提案 8h → 30 分',
     description: '提案書 + リサーチ を AI に 任せる 独立コンサル (例: 森本)',
-    icon: '🧠',
+    icon: 'CPO',
     accentColor: '#6366F1',
     accentColorLight: 'rgba(99,102,241,0.18)',
     tagline: '提案 / リサーチ / 議事録 ぜんぶ AI',
@@ -293,7 +295,7 @@ const QUICK_PRESETS: QuickPreset[] = [
     name: 'フリーランス エンジニア',
     subtitle: '月単価 ¥120 万 / 副業 2 件',
     description: '案件管理 + 単価交渉 + 確定申告 を AI で (例: 山口)',
-    icon: '⚡',
+    icon: 'CTO',
     accentColor: '#A855F7',
     accentColorLight: 'rgba(168,85,247,0.18)',
     tagline: '案件 / 交渉 / 経理 を AI で',

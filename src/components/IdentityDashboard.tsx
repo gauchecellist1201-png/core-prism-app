@@ -110,6 +110,7 @@ import ViralStudioCard from './ViralStudioCard';
 import CreditBar from './CreditBar';
 import CreditModal from './CreditModal';
 import MobileGeminiDashboard from './MobileGeminiDashboard';
+import PersonaGlyph from './PersonaGlyph';
 
 interface Props {
   persona: Persona;
@@ -838,11 +839,11 @@ export default function IdentityDashboard({
                 <Menu size={18} strokeWidth={2.2} />
               </button>
               <motion.div
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ background: persona.accentColorLight, color: persona.accentColor }}
                 layoutId="activeIcon"
               >
-                {persona.icon}
+                <PersonaGlyph icon={persona.icon} color={persona.accentColor} size={18} />
               </motion.div>
               <EditablePersonaTitle persona={persona} onRename={onRenamePersona} />
             </div>

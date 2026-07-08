@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { BookingConfig } from '../types/scheduling';
+import PersonaGlyph, { isRoleCode } from '../components/PersonaGlyph';
 import {
   groupSlotsByDay, formatSlot, bookingLocationLabel,
   buildGoogleCalendarUrl, buildIcs, type BookingDetails,
@@ -155,7 +156,7 @@ function Shell({ cfg, accent, children }: { cfg: BookingConfig; accent: string; 
           <div className="flex items-center gap-3 mb-3">
             <div className="w-11 h-11 rounded-full flex items-center justify-center text-xl font-bold"
                  style={{ background: `${accent}22`, color: accent }}>
-              {cfg.personaIcon || (cfg.host || '·').slice(0, 1)}
+              {isRoleCode(cfg.personaIcon) ? <PersonaGlyph icon={cfg.personaIcon} color={accent} size={20} /> : (cfg.personaIcon || (cfg.host || '·').slice(0, 1))}
             </div>
             <div className="min-w-0">
               <p className="text-fg font-semibold leading-tight truncate">{cfg.host}</p>
