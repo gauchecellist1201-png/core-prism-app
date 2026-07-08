@@ -32,7 +32,7 @@ export default function PrismBloomHero({ onStart }: Props) {
       style={{
         position: 'relative', height: '100svh', minHeight: 560, overflow: 'hidden',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        background: 'radial-gradient(120% 90% at 50% -10%, #1d1030 0%, #120a1e 45%, #0B0714 100%)',
+        background: 'radial-gradient(120% 90% at 50% -10%, #EAE6F5 0%, #F2EEFA 45%, #FFFFFF 100%)',
       }}
     >
       <style>{`
@@ -42,7 +42,7 @@ export default function PrismBloomHero({ onStart }: Props) {
         .pbh-svg { animation: pbhBreathe 7s ease-in-out 2.4s infinite; }
         @keyframes pbhBreathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
         .pbh-glint { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; filter: blur(10px);
-                     background: conic-gradient(from 0deg, transparent 0 70%, rgba(255,255,255,0.14) 76%, transparent 83%);
+                     background: conic-gradient(from 0deg, transparent 0 70%, rgba(0,0,0,0.14) 76%, transparent 83%);
                      opacity: 0; animation: pbhGlint 11s linear 2.2s infinite; }
         @keyframes pbhGlint { 0% { opacity: 0; transform: rotate(0deg); } 6% { opacity: 1; }
                               50% { opacity: 1; } 100% { opacity: 0.4; transform: rotate(360deg); } }
@@ -89,7 +89,7 @@ export default function PrismBloomHero({ onStart }: Props) {
             CORE Prism
           </span>
         </h1>
-        <p style={{ margin: '12px 0 0', fontSize: 'clamp(14px, 2.4vw, 17px)', lineHeight: 1.9, color: 'rgba(255,255,255,0.78)' }}>
+        <p style={{ margin: '12px 0 0', fontSize: 'clamp(14px, 2.4vw, 17px)', lineHeight: 1.9, color: 'rgba(0,0,0,0.78)' }}>
           すべての事業家に、エージェントAIを。
         </p>
         <button
@@ -107,7 +107,7 @@ export default function PrismBloomHero({ onStart }: Props) {
 
       {/* 下へ */}
       <div className="pbh-hint" aria-hidden style={{ position: 'absolute', bottom: 'calc(16px + env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)' }}>
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 9l6 6 6-6" />
         </svg>
       </div>
