@@ -5,6 +5,7 @@
 // ============================================================
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVoiceInput } from '../hooks/useVoiceInput';
+import { useAudioDictation, isIosSafari } from '../hooks/useAudioDictation';
 import { triggerHaptic, playClick, tactileError } from '../lib/haptic';
 import { notifyInApp } from '../lib/inAppNotify';
 
@@ -71,12 +72,23 @@ export default function VoiceInputButton({
     onText(currentValue + sep + trimmed);
   }, [currentValue, onText]);
 
-  const { state, isAvailable, start, stop, interim, errorCode } = useVoiceInput(handleResult, {
+  const web = useVoiceInput(handleResult, {
     lang: 'ja-JP',
     continuous,
     interimResults: true,
     silenceTimeout: continuous ? 4000 : 2500,
   });
+  // iOS Safari は Web Speech が動かない → MediaRecorder 録音→文字起こしに切替(2026-07-08)
+  const dict = useAudioDictation((t) => handleResult(t, true));
+  const useRecorder = isIosSafari() || !web.isAvailable;
+  const isAvailable = useRecorder ? dict.isAvailable : web.isAvailable;
+  const state = useRecorder
+    ? (dict.state === 'recording' ? 'listening' : dict.state === 'transcribing' ? 'processing' : dict.state)
+    : web.state;
+  const interim = useRecorder ? '' : web.interim;
+  const errorCode = useRecorder ? dict.errorCode : web.errorCode;
+  const start = useRecorder ? () => { dict.reset(); dict.start(); } : web.start;
+  const stop = useRecorder ? dict.stop : web.stop;
 
   const [pressed, setPressed] = useState(false);
   const [ripple, setRipple] = useState(0);
@@ -92,6 +104,7 @@ export default function VoiceInputButton({
   }, [state]);
 
   const isListening = state === 'listening';
+  const isProcessing = state === 'processing';
   const isError = state === 'error';
 
   // 非対応ブラウザでも「無言で消える」のはやめて、押すと理由が分かる説明ボタンを残す
@@ -133,6 +146,7 @@ export default function VoiceInputButton({
   }
 
   const handleClick = () => {
+    if (isProcessing) return; // 文字起こし中は待つ
     if (isError) {
       // 失敗状態 → タップで「何が起きたか + 直し方」を出して即リトライ
       tactileError();
@@ -198,8 +212,8 @@ export default function VoiceInputButton({
         ...style,
       }}
     >
-      <span style={{ position: 'relative', zIndex: 1, transition: 'transform 0.2s', transform: isListening ? 'scale(1.08)' : 'scale(1)' }}>
-        {isError ? '↻' : isListening ? '⏹' : '🎙'}
+      <span style={{ position: 'relative', zIndex: 1, transition: 'transform 0.2s', transform: isListening ? 'scale(1.08)' : 'scale(1)', display: 'inline-flex', animation: isProcessing ? 'voice-spin 0.9s linear infinite' : 'none' }}>
+        {isError ? '↻' : isProcessing ? '◌' : isListening ? '⏹' : '🎙'}
       </span>
       {/* リップル波紋 */}
       <span
@@ -228,6 +242,7 @@ export default function VoiceInputButton({
           0%, 88%, 100% { box-shadow: 0 0 0 4px rgba(245,138,0,0.22), 0 4px 12px rgba(245,138,0,0.40); }
           94%           { box-shadow: 0 0 0 9px rgba(245,138,0,0.08), 0 4px 16px rgba(245,138,0,0.55); }
         }
+        @keyframes voice-spin { to { transform: rotate(360deg); } }
       `}</style>
     </button>
   );
