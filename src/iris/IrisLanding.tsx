@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Mail, BarChart3, Sparkle, MessageSquare, Palette, UsersRound, Camera, Mic, HeartPulse, Check, ArrowRight, TrendingUp, Clock, Sparkles as SparklesIcon, Sunrise, Zap, Rocket } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import IrisHeroDemo from './IrisHeroDemo';
+import IrisBloomHero from './IrisBloomHero';
 import { useState, useMemo } from 'react';
 import { IRIS_COLORS, IRIS_FONTS } from './irisStyle';
 import { IrisLogo } from '../components/Logo';
@@ -101,6 +102,9 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           </nav>
         </div>
       </header>
+
+      {/* ── 1画面目: 全画面ブルームヒーロー(3D浮遊・全サービス統一 2026-07-08) ── */}
+      <IrisBloomHero onStart={onEnter} />
 
       {/* ── HERO */}
       <section className="lp-hero-pad lp-safe" style={{ position: 'relative', padding: '6.5rem 1.25rem 5rem', overflow: 'hidden' }}>
