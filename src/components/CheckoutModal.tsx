@@ -10,7 +10,7 @@
 // env 未設定 (503): テストモード (¥0) にフォールバック
 // ============================================================
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   type Plan, type Brand, type BillingCycle,
   useBillingUser, getPlans, getPlanPrice, findPlan, isMasterAuth,
@@ -166,9 +166,10 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
   const showingTestMode = isTestMode || isFree;
   const plans = getPlans(brand);
 
+  // 決済モーダルはJSアニメ非依存: rAF停止環境で入場opacityが途中凍結し
+  // モーダルが半透明のまま(背後のLPが透ける)になる実害を検証環境で確認したため、無条件で完全表示
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    <div
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 100,
@@ -177,9 +178,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
         padding: '1rem',
       }}
     >
-      <motion.div
-        initial={{ scale: 0.92, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 30 }}
-        transition={{ type: 'spring', damping: 24, stiffness: 280 }}
+      <div
         onClick={e => e.stopPropagation()}
         style={{
           background: '#FFFFFF', borderRadius: 24, padding: '1.5rem',
@@ -220,9 +219,10 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
           ))}
         </div>
 
-        <AnimatePresence mode="wait">
+        {/* 課金ステップは退場アニメ待ちをしない(rAF停止環境で決済フローが凍結する実害の予防・入場のみ) */}
+        <>
           {step === 'plan' && (
-            <motion.div key="plan" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <motion.div key="plan" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
               {/* 招待リンク経由ボーナス バナー */}
               {hasReferralBonus && (
                 <div style={{
@@ -234,7 +234,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                   display: 'flex', alignItems: 'center', gap: 10,
                   boxShadow: '0 4px 14px rgba(245,158,11,0.18)',
                 }}>
-                  <div style={{ fontSize: '1.5rem' }}>🎁</div>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5" /></svg>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#78350F' }}>
                       {inviterName
@@ -322,9 +322,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 display: 'flex', alignItems: 'flex-start', gap: 12,
                 boxShadow: '0 10px 28px rgba(16,185,129,0.30)',
               }}>
-                <div style={{
-                  fontSize: '1.6rem', lineHeight: 1, flexShrink: 0,
-                }} aria-hidden>🎁</div>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5" /></svg>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '1.02rem', fontWeight: 900, marginBottom: 4, letterSpacing: '0.01em' }}>
                     最初の 7 日 ¥0 — いつでも解約 OK
@@ -489,7 +487,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
           )}
 
           {step === 'account' && (
-            <motion.div key="account" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <motion.div key="account" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
               <p style={{ marginBottom: '1rem', color: '#5A5562', fontSize: '0.92rem' }}>
                 ログイン情報を作成します。
               </p>
@@ -544,7 +542,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
           )}
 
           {step === 'payment' && (
-            <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
               {/* MM (2026-06-03): Stripe Checkout 直前の 7 日無料 カウントダウン演出 */}
               <CheckoutTrialCountdown
                 days={7 + (hasReferralBonus ? REFERRAL_BONUS_DAYS : 0)}
@@ -582,7 +580,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                         padding: '0.5rem 0.65rem', borderRadius: 10,
                         background: 'rgba(245,158,11,0.10)', border: '1px dashed #F59E0B',
                       }}>
-                        <span style={{ color: '#92400E', fontWeight: 700 }}>🎁 友達招待ボーナス +{REFERRAL_BONUS_DAYS} 日</span>
+                        <span style={{ color: '#92400E', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5" /></svg>友達招待ボーナス +{REFERRAL_BONUS_DAYS} 日</span>
                         <span style={{ color: '#92400E', fontWeight: 800 }}>¥0</span>
                       </div>
                     )}
@@ -608,7 +606,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                         padding: '0.5rem 0.65rem', borderRadius: 10,
                         background: 'rgba(245,158,11,0.10)', border: '1px dashed #F59E0B',
                       }}>
-                        <span style={{ color: '#92400E', fontWeight: 700 }}>🎁 友達招待ボーナス +{REFERRAL_BONUS_DAYS} 日</span>
+                        <span style={{ color: '#92400E', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5" /></svg>友達招待ボーナス +{REFERRAL_BONUS_DAYS} 日</span>
                         <span style={{ color: '#92400E', fontWeight: 800 }}>¥0</span>
                       </div>
                     )}
@@ -729,9 +727,9 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
               </button>
             </motion.div>
           )}
-        </AnimatePresence>
-      </motion.div>
-    </motion.div>
+        </>
+      </div>
+    </div>
   );
 }
 

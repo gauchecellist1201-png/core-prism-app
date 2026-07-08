@@ -68,7 +68,6 @@ export default function IdentitySelection({ personas, userName, onSelect, onCrea
       className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
       {/* Ambient orbs */}
