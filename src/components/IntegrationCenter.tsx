@@ -1087,7 +1087,7 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
 
                     {/* Resonance への導線 — LINE 配信を AI で自動化したい人向け */}
                     <a
-                      href="https://resonancebot-ivory.vercel.app"
+                      href="https://resonancebot-ivory.vercel.app/lp"
                       target="_blank" rel="noopener noreferrer"
                       style={{
                         display: 'flex', alignItems: 'center', gap: 10, marginTop: 14,

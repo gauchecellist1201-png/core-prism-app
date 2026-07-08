@@ -20,7 +20,7 @@ type App = { key: Exclude<CoreAppKey, "core">; name: string; tag: string; color:
 const APPS: App[] = [
   { key: "prism",     name: "Prism",     tag: "考える、司令塔",     color: "#a78bfa", url: "https://core-prism-app.vercel.app/?lp=1" },
   { key: "iris",      name: "Iris",      tag: "Instagram を魅せる", color: "#E1306C", url: "https://core-prism-app.vercel.app/iris" },
-  { key: "resonance", name: "Resonance", tag: "LINE で届ける",       color: "#06C755", url: "https://resonancebot-ivory.vercel.app/" },
+  { key: "resonance", name: "Resonance", tag: "LINE で届ける",       color: "#06C755", url: "https://resonancebot-ivory.vercel.app/lp" },
   { key: "lume",      name: "Lume",      tag: "リンクをひとつに",    color: "#FFA42A", url: "https://lume-deploy-five.vercel.app/" },
   { key: "guild",     name: "Guild",     tag: "貢献で動く組織",      color: "#2dd4bf", url: "https://guild-gauches-projects.vercel.app/" },
 ];
