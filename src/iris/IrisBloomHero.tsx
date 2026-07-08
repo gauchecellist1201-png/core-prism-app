@@ -23,7 +23,7 @@ export default function IrisBloomHero({ onStart }: Props) {
       style={{
         position: 'relative', height: '100svh', minHeight: 560, overflow: 'hidden',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        background: 'radial-gradient(120% 90% at 50% -10%, #2a0f24 0%, #1a0a1a 45%, #0d0710 100%)',
+        background: 'radial-gradient(120% 90% at 50% -10%, #F6EEF6 0%, #FBF4FA 45%, #FFFFFF 100%)',
         perspective: '900px',
         paddingBottom: 'calc(186px + env(safe-area-inset-bottom))', // 下部 CORE ドック + 上部バナー分を避ける
       }}
@@ -98,7 +98,7 @@ export default function IrisBloomHero({ onStart }: Props) {
             CORE Iris
           </span>
         </h1>
-        <p style={{ margin: '12px 0 0', fontSize: 'clamp(14px, 2.4vw, 17px)', lineHeight: 1.9, color: 'rgba(255,250,245,0.82)' }}>
+        <p style={{ margin: '12px 0 0', fontSize: 'clamp(14px, 2.4vw, 17px)', lineHeight: 1.9, color: 'rgba(31,26,46,0.74)' }}>
           Instagram に、専属マネージャー AI を。
         </p>
         <button
@@ -118,7 +118,7 @@ export default function IrisBloomHero({ onStart }: Props) {
 
       {/* 下へ */}
       <div className="ibh-hint" aria-hidden style={{ position: 'absolute', bottom: 'calc(16px + env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)' }}>
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(31,26,46,0.5)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 9l6 6 6-6" />
         </svg>
       </div>

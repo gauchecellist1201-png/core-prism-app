@@ -62,8 +62,8 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
 
   return (
     <div style={{
-      background: IRIS_COLORS.inkBlack,
-      color: IRIS_COLORS.cream,
+      background: '#FFFFFF',
+      color: '#1F1A2E',
       fontFamily: IRIS_FONTS.body,
       minHeight: '100dvh',
       overflowX: 'hidden',
@@ -88,7 +88,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       {/* ── ヘッダ ────────────────────────────── */}
       <header className="lp-safe" style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(26,10,38,0.94)',
+        background: 'rgba(255,255,255,0.92)',
         borderBottom: `1px solid ${IRIS_COLORS.purpleDeep}40`,
       }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
@@ -122,9 +122,9 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
               <br />
               専属マネージャー <span style={{ fontFamily: IRIS_FONTS.body, fontStyle: 'normal', fontWeight: 800 }}>AI</span> を雇おう。
             </motion.h1>
-            <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }} style={{ fontFamily: IRIS_FONTS.serif, fontSize: 'clamp(1rem, 1.7vw, 1.25rem)', color: IRIS_COLORS.ivoryDeep, lineHeight: 1.8, marginBottom: '2rem', maxWidth: 560 }}>
+            <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }} style={{ fontFamily: IRIS_FONTS.serif, fontSize: 'clamp(1rem, 1.7vw, 1.25rem)', color: 'rgba(31,26,46,0.72)', lineHeight: 1.8, marginBottom: '2rem', maxWidth: 560 }}>
               DM スクショ → <strong style={{ color: IRIS_COLORS.gold }}>案件登録 30 秒</strong>。<br />
-              AI 交渉文、戦略まで全部やる。<strong style={{ color: IRIS_COLORS.cream }}>月 ¥2,980</strong> から。
+              AI 交渉文、戦略まで全部やる。<strong style={{ color: '#1F1A2E' }}>月 ¥2,980</strong> から。
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.45 }} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <button onClick={onEnter} style={ctaBtnHero} className="iris-hero-cta-primary">
@@ -134,7 +134,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
               </button>
               <a href="#pricing" style={ctaBtnGhost} className="iris-hero-cta-secondary">価格を見る</a>
             </motion.div>
-            <p style={{ fontSize: '0.78rem', color: 'rgba(255,250,245,0.5)', marginTop: '1.1rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', lineHeight: 1.6 }}>
+            <p style={{ fontSize: '0.78rem', color: 'rgba(0,0,0,0.5)', marginTop: '1.1rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', lineHeight: 1.6 }}>
               7 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ
             </p>
 
@@ -147,7 +147,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
               style={{
                 marginTop: '0.85rem',
                 background: 'transparent',
-                color: 'rgba(255,250,245,0.85)',
+                color: 'rgba(0,0,0,0.85)',
                 border: `1px dashed ${IRIS_COLORS.gold}80`,
                 borderRadius: 10,
                 padding: '0.55rem 1rem',
@@ -162,7 +162,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             >
               <SparklesIcon size={14} color={IRIS_COLORS.gold} />
               <span>サンプルで触ってみる</span>
-              <span style={{ fontSize: '0.7rem', color: 'rgba(255,250,245,0.55)' }}>(架空クリエイターのデータで体験)</span>
+              <span style={{ fontSize: '0.7rem', color: 'rgba(0,0,0,0.55)' }}>(架空クリエイターのデータで体験)</span>
             </button>
           </div>
 
@@ -211,7 +211,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 transition={{ duration: 0.5, delay: i * 0.08 }}
                 style={{
                   position: 'relative',
-                  background: 'rgba(255,250,245,0.04)',
+                  background: 'rgba(0,0,0,0.04)',
                   border: `1px solid ${ex.color}38`,
                   borderRadius: 16,
                   padding: '1.1rem 1.15rem 1.2rem',
@@ -224,14 +224,14 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                     width: 34, height: 34, borderRadius: 9,
                     background: `linear-gradient(135deg, ${ex.color}, ${ex.color}cc)`,
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: `0 6px 14px ${ex.color}55, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                    boxShadow: `0 6px 14px ${ex.color}55, inset 0 1px 0 rgba(0,0,0,0.2)`,
                   }}>
                     <ex.Icon size={18} color="#fff" strokeWidth={2.3} />
                   </div>
                   <span style={{ fontSize: '0.62rem', letterSpacing: '0.22em', fontWeight: 700, color: ex.color, textTransform: 'uppercase' }}>{ex.tag}</span>
                 </div>
-                <p style={{ position: 'relative', zIndex: 2, fontSize: '0.98rem', fontWeight: 700, color: IRIS_COLORS.ivory, marginBottom: '0.4rem', lineHeight: 1.4 }}>{ex.lead}</p>
-                <p style={{ position: 'relative', zIndex: 2, fontSize: '0.82rem', color: 'rgba(255,250,245,0.68)', lineHeight: 1.65, fontFamily: IRIS_FONTS.body }}>{ex.detail}</p>
+                <p style={{ position: 'relative', zIndex: 2, fontSize: '0.98rem', fontWeight: 700, color: '#1F1A2E', marginBottom: '0.4rem', lineHeight: 1.4 }}>{ex.lead}</p>
+                <p style={{ position: 'relative', zIndex: 2, fontSize: '0.82rem', color: 'rgba(0,0,0,0.68)', lineHeight: 1.65, fontFamily: IRIS_FONTS.body }}>{ex.detail}</p>
               </motion.div>
             ))}
           </div>
@@ -241,7 +241,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       {/* ── 30 秒の Wow (Before / After) ────────────────────────── */}
       <section id="wow" className="lp-section-pad" style={{
         padding: '5rem 1.25rem 5.5rem',
-        background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #240b32 100%)`,
+        background: `linear-gradient(180deg, ${'#FFFFFF'} 0%, #F4ECFB 100%)`,
         position: 'relative',
         overflow: 'hidden',
       }}>
@@ -262,7 +262,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             }}>
               スクショを投げる、それだけ。
             </h2>
-            <p style={{ color: 'rgba(255,250,245,0.65)', fontSize: '0.95rem', fontFamily: IRIS_FONTS.serif, lineHeight: 1.85, maxWidth: 620, margin: '0 auto' }}>
+            <p style={{ color: 'rgba(0,0,0,0.65)', fontSize: '0.95rem', fontFamily: IRIS_FONTS.serif, lineHeight: 1.85, maxWidth: 620, margin: '0 auto' }}>
               DM、案件依頼、撮影現場、肌の悩み ── ぜんぶ写真と一言で。<br />
               Iris が読み取って、次の一手まで用意する。
             </p>
@@ -301,7 +301,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 transition={{ duration: 0.55, delay: i * 0.1 }}
                 style={{
                   position: 'relative',
-                  background: 'rgba(255,250,245,0.045)',
+                  background: 'rgba(0,0,0,0.045)',
                   border: `1px solid ${c.accent}40`,
                   borderRadius: 22,
                   padding: '1.6rem 1.4rem 1.7rem',
@@ -317,7 +317,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                     <div style={{
                       width: 38, height: 38, borderRadius: 10,
                       background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)`,
-                      boxShadow: `0 6px 16px ${c.accent}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
+                      boxShadow: `0 6px 16px ${c.accent}55, inset 0 1px 0 rgba(0,0,0,0.18)`,
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                       flexShrink: 0,
                     }}>
@@ -333,11 +333,11 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                   <div style={{ marginBottom: '0.85rem' }}>
                     <p style={{
                       fontSize: '0.62rem', letterSpacing: '0.2em', fontWeight: 700,
-                      color: 'rgba(255,250,245,0.4)', marginBottom: '0.35rem',
+                      color: 'rgba(0,0,0,0.4)', marginBottom: '0.35rem',
                     }}>
                       BEFORE
                     </p>
-                    <p style={{ fontSize: '0.88rem', color: 'rgba(255,250,245,0.62)', lineHeight: 1.6 }}>
+                    <p style={{ fontSize: '0.88rem', color: 'rgba(0,0,0,0.62)', lineHeight: 1.6 }}>
                       {c.before}
                     </p>
                   </div>
@@ -352,7 +352,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                     }}>
                       WITH IRIS
                     </p>
-                    <p style={{ fontSize: '0.92rem', color: IRIS_COLORS.ivory, lineHeight: 1.7, fontWeight: 500 }}>
+                    <p style={{ fontSize: '0.92rem', color: '#1F1A2E', lineHeight: 1.7, fontWeight: 500 }}>
                       {c.after}
                     </p>
                   </div>
@@ -369,7 +369,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             }}>
               無料で Iris を試す
             </button>
-            <p style={{ fontSize: '0.75rem', color: 'rgba(255,250,245,0.45)', marginTop: '0.85rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.45)', marginTop: '0.85rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
               7 日間無料 · クレカ不要
             </p>
           </div>
@@ -383,29 +383,29 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       <ReclaimTimeSection onEnter={onEnter} />
 
       {/* ── 機能 (光彩のファセット) ────────────────────────────── */}
-      <section id="facets" className="lp-section-pad" style={{ padding: sectionPad, background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #2a0a3a 100%)` }}>
+      <section id="facets" className="lp-section-pad" style={{ padding: sectionPad, background: `linear-gradient(180deg, ${'#FFFFFF'} 0%, #FFFFFF 100%)` }}>
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
             <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 600, marginBottom: '1rem', color: IRIS_COLORS.gold }}>SIX FACETS OF LIGHT</p>
             <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.85rem, 3.8vw, 2.85rem)', lineHeight: 1.2, fontWeight: 500, marginBottom: '1rem' }}>光は、6 つの色を持つ。</h2>
-            <p style={{ color: 'rgba(255,250,245,0.65)', maxWidth: 700, margin: '0 auto', fontSize: '1rem', lineHeight: 1.8, fontFamily: IRIS_FONTS.serif }}>ひとつの輝きを、6 つのエージェントが角度を変えて磨く。<br />戦略・分析・創作・交渉・ブランド・コミュニティ ── 全部、自動で。</p>
+            <p style={{ color: 'rgba(0,0,0,0.65)', maxWidth: 700, margin: '0 auto', fontSize: '1rem', lineHeight: 1.8, fontFamily: IRIS_FONTS.serif }}>ひとつの輝きを、6 つのエージェントが角度を変えて磨く。<br />戦略・分析・創作・交渉・ブランド・コミュニティ ── 全部、自動で。</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
             {FACETS.map((f, i) => (
-              <motion.div key={f.name} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.5, delay: i * 0.07 }} style={{ position: 'relative', background: 'rgba(255,250,245,0.04)', border: `1px solid ${f.color}30`, borderRadius: 18, padding: '1.75rem 1.5rem', overflow: 'hidden' }}>
+              <motion.div key={f.name} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.5, delay: i * 0.07 }} style={{ position: 'relative', background: 'rgba(0,0,0,0.04)', border: `1px solid ${f.color}30`, borderRadius: 18, padding: '1.75rem 1.5rem', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', background: f.color, opacity: 0.16, filter: 'blur(50px)' }} />
                 <div style={{ position: 'relative', zIndex: 2 }}>
                   <div style={{
                     width: 52, height: 52, borderRadius: 14,
                     background: `linear-gradient(135deg, ${f.color}, ${f.color}cc)`,
-                    boxShadow: `0 8px 22px ${f.color}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
+                    boxShadow: `0 8px 22px ${f.color}55, inset 0 1px 0 rgba(0,0,0,0.18)`,
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     marginBottom: '0.85rem',
                   }}>
                     <f.Icon size={26} color="#FFFFFF" strokeWidth={2.2} />
                   </div>
-                  <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.5rem', fontWeight: 500, marginBottom: '0.5rem', color: IRIS_COLORS.ivory }}>{f.name}</h3>
-                  <p style={{ fontSize: '0.9rem', color: 'rgba(255,250,245,0.7)', lineHeight: 1.7, fontFamily: IRIS_FONTS.body }}>{f.desc}</p>
+                  <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.5rem', fontWeight: 500, marginBottom: '0.5rem', color: '#1F1A2E' }}>{f.name}</h3>
+                  <p style={{ fontSize: '0.9rem', color: 'rgba(0,0,0,0.7)', lineHeight: 1.7, fontFamily: IRIS_FONTS.body }}>{f.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -414,22 +414,22 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       </section>
 
       {/* ── REFLECTION */}
-      <section className="lp-section-pad" style={{ padding: sectionPad, background: `linear-gradient(180deg, #2a0a3a 0%, ${IRIS_COLORS.inkBlack} 100%)` }}>
+      <section className="lp-section-pad" style={{ padding: sectionPad, background: `linear-gradient(180deg, #FFFFFF 0%, ${'#FFFFFF'} 100%)` }}>
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
           <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 600, marginBottom: '1.5rem', color: IRIS_COLORS.purpleLt }}>REFLECTION</p>
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.6rem, 3.2vw, 2.4rem)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2rem', background: `linear-gradient(120deg, ${IRIS_COLORS.gold} 0%, ${IRIS_COLORS.pink} 50%, ${IRIS_COLORS.purpleLt} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             光は、<br />受け取る人がいて<br />初めて、光になる。
           </motion.h2>
-          <p style={{ fontFamily: IRIS_FONTS.serif, fontSize: 'clamp(1rem, 1.8vw, 1.2rem)', color: 'rgba(255,250,245,0.6)', lineHeight: 1.9 }}>投稿の数より、誰の心に届いたか。<br />CORE Iris は、あなたの光を <strong style={{ color: IRIS_COLORS.gold }}>必要としている人</strong> へ正確に届ける。</p>
+          <p style={{ fontFamily: IRIS_FONTS.serif, fontSize: 'clamp(1rem, 1.8vw, 1.2rem)', color: 'rgba(0,0,0,0.6)', lineHeight: 1.9 }}>投稿の数より、誰の心に届いたか。<br />CORE Iris は、あなたの光を <strong style={{ color: IRIS_COLORS.gold }}>必要としている人</strong> へ正確に届ける。</p>
         </div>
       </section>
 
       {/* ── 導入事例 (USE CASES) — 想定の使われ方 */}
-      <section className="lp-section-pad" style={{ padding: sectionPad, background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #1a0628 100%)` }}>
+      <section className="lp-section-pad" style={{ padding: sectionPad, background: `linear-gradient(180deg, ${'#FFFFFF'} 0%, #F4ECFB 100%)` }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 700, color: IRIS_COLORS.gold, textAlign: 'center', marginBottom: '0.6rem' }}>USE CASES</p>
-          <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.7rem, 3.4vw, 2.5rem)', fontWeight: 500, textAlign: 'center', marginBottom: '0.6rem', color: IRIS_COLORS.cream }}>こんな風に <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>使われています</span></h2>
-          <p style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.55)', textAlign: 'center', fontFamily: IRIS_FONTS.serif }}>※ 想定シナリオです（実在の利用者の声ではありません）。効果は使い方や環境により異なります。</p>
+          <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.7rem, 3.4vw, 2.5rem)', fontWeight: 500, textAlign: 'center', marginBottom: '0.6rem', color: '#1F1A2E' }}>こんな風に <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>使われています</span></h2>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', textAlign: 'center', fontFamily: IRIS_FONTS.serif }}>※ 想定シナリオです（実在の利用者の声ではありません）。効果は使い方や環境により異なります。</p>
           <div style={{ marginTop: '3rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1.25rem' }}>
             {[
               {
@@ -456,7 +456,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 style={{
                   padding: '1.5rem',
-                  background: 'rgba(255,255,255,0.03)',
+                  background: 'rgba(0,0,0,0.03)',
                   border: `1px solid ${IRIS_COLORS.gold}33`,
                   borderRadius: 16,
                   position: 'relative',
@@ -465,15 +465,15 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 <div style={{ fontSize: 10, letterSpacing: '0.2em', color: IRIS_COLORS.hotPink, fontWeight: 800, marginBottom: 10, fontFamily: IRIS_FONTS.body }}>
                   CASE 0{i + 1}
                 </div>
-                <p style={{ fontFamily: IRIS_FONTS.serif, fontSize: 13.5, fontWeight: 700, color: '#fff', lineHeight: 1.6, marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                <p style={{ fontFamily: IRIS_FONTS.serif, fontSize: 13.5, fontWeight: 700, color: '#1F1A2E', lineHeight: 1.6, marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
                   {c.persona}
                 </p>
                 <div style={{ fontSize: 11, color: IRIS_COLORS.gold, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 6 }}>使い方</div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, marginBottom: 14, fontFamily: IRIS_FONTS.serif }}>
+                <p style={{ fontSize: 13, color: 'rgba(0,0,0,0.8)', lineHeight: 1.7, marginBottom: 14, fontFamily: IRIS_FONTS.serif }}>
                   {c.usage}
                 </p>
                 <div style={{ fontSize: 11, color: IRIS_COLORS.hotPink, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 6 }}>変わること</div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', lineHeight: 1.7, marginBottom: 16, fontFamily: IRIS_FONTS.serif, fontWeight: 600 }}>
+                <p style={{ fontSize: 13, color: 'rgba(0,0,0,0.9)', lineHeight: 1.7, marginBottom: 16, fontFamily: IRIS_FONTS.serif, fontWeight: 600 }}>
                   {c.result}
                 </p>
               </motion.div>
@@ -483,9 +483,10 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       </section>
 
       {/* ── FFFF (2026-06-04): 導入後の典型 1 週間 (Iris 向けにカスタム ステップ) */}
+      {/* 白LP上の暗い"導入後の1週間"帯(内部が白文字前提のため暗背景を保つ=デモ帯として映える) */}
       <IndustryWeekTimeline
         accent={IRIS_COLORS.gold}
-        bgDark={IRIS_COLORS.inkBlack}
+        bgDark={'#160A20'}
         steps={[
           {
             day: '初日 (Day 1)',
@@ -518,21 +519,21 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       <IrisVideoSection />
 
       {/* ── 比較 (COMPARISON) — 他の選択肢との違い */}
-      <section className="lp-section-pad" style={{ padding: sectionPad, background: '#080812' }}>
+      <section className="lp-section-pad" style={{ padding: sectionPad, background: '#F6F7FB' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 700, color: IRIS_COLORS.hotPink, textAlign: 'center', marginBottom: '0.6rem' }}>COMPARISON</p>
-          <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.7rem, 3.4vw, 2.5rem)', fontWeight: 500, textAlign: 'center', marginBottom: '0.6rem', color: IRIS_COLORS.cream }}>他の選択肢と <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>何が違うか</span></h2>
-          <p style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.55)', textAlign: 'center', fontFamily: IRIS_FONTS.serif }}>「事務所所属」「運用代行」「自分で全部」と比べたときの位置づけ</p>
+          <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.7rem, 3.4vw, 2.5rem)', fontWeight: 500, textAlign: 'center', marginBottom: '0.6rem', color: '#1F1A2E' }}>他の選択肢と <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>何が違うか</span></h2>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', textAlign: 'center', fontFamily: IRIS_FONTS.serif }}>「事務所所属」「運用代行」「自分で全部」と比べたときの位置づけ</p>
 
           <div style={{ marginTop: '2.5rem', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, color: 'rgba(255,255,255,0.85)', minWidth: 640 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, color: 'rgba(0,0,0,0.85)', minWidth: 640 }}>
               <thead>
                 <tr>
-                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.1em' }}></th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.1em' }}></th>
                   <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `2px solid ${IRIS_COLORS.gold}`, background: `linear-gradient(180deg, ${IRIS_COLORS.gold}15, transparent)`, color: IRIS_COLORS.gold, fontWeight: 800, fontSize: 12, letterSpacing: '0.05em' }}>★ CORE Iris</th>
-                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>事務所所属</th>
-                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>運用代行</th>
-                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>自分で全部</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>事務所所属</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>運用代行</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>自分で全部</th>
                 </tr>
               </thead>
               <tbody>
@@ -545,46 +546,46 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                   { label: '導入時間', core: '7 日間 無料 + 5 分', mgmt: 'オーディション → 契約', agency: '商談 → 契約 → 開始', self: '即日' },
                 ].map((r, i) => (
                   <tr key={i}>
-                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{r.label}</td>
+                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.55)', fontWeight: 600 }}>{r.label}</td>
                     <td style={{ padding: '14px 10px', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, background: `${IRIS_COLORS.gold}08` }}>
-                      <strong style={{ color: '#fff' }}>{r.core}</strong>
+                      <strong style={{ color: '#1F1A2E' }}>{r.core}</strong>
                     </td>
-                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}>{r.mgmt}</td>
-                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}>{r.agency}</td>
-                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}>{r.self}</td>
+                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.7)' }}>{r.mgmt}</td>
+                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.7)' }}>{r.agency}</td>
+                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.7)' }}>{r.self}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: 12, lineHeight: 1.7 }}>
+          <p style={{ fontSize: 11, color: 'rgba(0,0,0,0.5)', textAlign: 'center', marginTop: 12, lineHeight: 1.7 }}>
             ※ 一般的な相場感の比較。実際のコスト・効果は使い方により変動します。
           </p>
         </div>
       </section>
 
       {/* ── 価格 */}
-      <section id="pricing" className="lp-section-pad" style={{ padding: sectionPad, background: IRIS_COLORS.inkBlack }}>
+      <section id="pricing" className="lp-section-pad" style={{ padding: sectionPad, background: '#FFFFFF' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 600, marginBottom: '1rem', color: IRIS_COLORS.hotPink }}>PRICING</p>
             <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.85rem, 3.8vw, 2.75rem)', fontWeight: 500, marginBottom: '0.75rem' }}><span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purpleLt})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Aurora</span> Plans</h2>
-            <p style={{ color: 'rgba(255,250,245,0.6)', fontSize: '0.95rem', fontFamily: IRIS_FONTS.serif }}>すべてのプランで Claude / Gemini を内蔵。API キー不要。</p>
+            <p style={{ color: 'rgba(0,0,0,0.6)', fontSize: '0.95rem', fontFamily: IRIS_FONTS.serif }}>すべてのプランで Claude / Gemini を内蔵。API キー不要。</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
             {PLANS.map(p => (
-              <motion.div key={p.id} whileHover={{ y: -4 }} transition={{ duration: 0.2 }} style={{ position: 'relative', background: p.highlight ? `linear-gradient(180deg, ${IRIS_COLORS.hotPink}25, ${IRIS_COLORS.purpleDeep}15)` : 'rgba(255,250,245,0.03)', border: p.highlight ? `1px solid ${IRIS_COLORS.hotPink}60` : `1px solid ${IRIS_COLORS.purpleDeep}30`, borderRadius: 18, padding: '1.75rem 1.5rem', boxShadow: p.highlight ? `0 16px 48px ${IRIS_COLORS.hotPink}25` : 'none' }}>
+              <motion.div key={p.id} whileHover={{ y: -4 }} transition={{ duration: 0.2 }} style={{ position: 'relative', background: p.highlight ? `linear-gradient(180deg, ${IRIS_COLORS.hotPink}25, ${IRIS_COLORS.purpleDeep}15)` : 'rgba(0,0,0,0.03)', border: p.highlight ? `1px solid ${IRIS_COLORS.hotPink}60` : `1px solid ${IRIS_COLORS.purpleDeep}30`, borderRadius: 18, padding: '1.75rem 1.5rem', boxShadow: p.highlight ? `0 16px 48px ${IRIS_COLORS.hotPink}25` : 'none' }}>
                 {p.highlight && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: `linear-gradient(135deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '0.3rem 0.85rem', borderRadius: 999, letterSpacing: '0.15em' }}>人気</div>}
                 <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.85rem', color: IRIS_COLORS.gold, marginBottom: '0.5rem' }}>— {p.tag}</p>
                 <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.85rem', fontWeight: 500, marginBottom: '0.4rem' }}>{p.name}</h3>
                 <p style={{ marginBottom: '0.5rem' }}>
-                  {p.listPrice && <span style={{ fontSize: '1rem', color: 'rgba(255,250,245,0.4)', fontWeight: 500, textDecoration: 'line-through', marginRight: '0.5rem', fontFamily: IRIS_FONTS.body }}>{p.listPrice}</span>}
+                  {p.listPrice && <span style={{ fontSize: '1rem', color: 'rgba(0,0,0,0.4)', fontWeight: 500, textDecoration: 'line-through', marginRight: '0.5rem', fontFamily: IRIS_FONTS.body }}>{p.listPrice}</span>}
                   <span style={{ fontSize: '2rem', fontWeight: 800, fontFamily: IRIS_FONTS.body }}>{p.price}</span>
-                  <span style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.5)', fontWeight: 500 }}>{p.suffix}</span>
+                  <span style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.5)', fontWeight: 500 }}>{p.suffix}</span>
                 </p>
                 <div style={{ height: 1, background: `${IRIS_COLORS.purpleDeep}40`, margin: '1rem 0' }} />
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem' }}>
-                  {p.features.map((f, i) => <li key={i} style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.78)', lineHeight: 1.7, marginBottom: '0.4rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}><Check size={14} color={p.highlight ? IRIS_COLORS.gold : IRIS_COLORS.hotPink} strokeWidth={2.6} style={{ flexShrink: 0, marginTop: 3 }} /><span>{f}</span></li>)}
+                  {p.features.map((f, i) => <li key={i} style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.78)', lineHeight: 1.7, marginBottom: '0.4rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}><Check size={14} color={p.highlight ? IRIS_COLORS.gold : IRIS_COLORS.hotPink} strokeWidth={2.6} style={{ flexShrink: 0, marginTop: 3 }} /><span>{f}</span></li>)}
                 </ul>
                 <button
                   onClick={() => handlePlan(p.id)}
@@ -595,8 +596,8 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                     width: '100%',
                     background: p.highlight
                       ? `linear-gradient(135deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`
-                      : 'rgba(255,250,245,0.06)',
-                    color: '#fff',
+                      : 'rgba(0,0,0,0.06)',
+                    color: p.highlight ? '#fff' : '#1F1A2E',
                     border: p.highlight ? 'none' : `1px solid ${IRIS_COLORS.purpleDeep}50`,
                     padding: '0.95rem 1rem',
                     borderRadius: 12,
@@ -616,7 +617,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 </button>
                 <p style={{
                   textAlign: 'center', fontSize: '0.7rem',
-                  color: 'rgba(255,250,245,0.45)', marginTop: '0.55rem',
+                  color: 'rgba(0,0,0,0.45)', marginTop: '0.55rem',
                   fontFamily: IRIS_FONTS.body, letterSpacing: '0.04em',
                 }}>
                   クレカ不要 · いつでも解約
@@ -624,29 +625,29 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
               </motion.div>
             ))}
           </div>
-          <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'rgba(255,250,245,0.45)', marginTop: '1.75rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>年払いで 2 ヶ月分割引 · チームプラン別途相談</p>
+          <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'rgba(0,0,0,0.45)', marginTop: '1.75rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>年払いで 2 ヶ月分割引 · チームプラン別途相談</p>
         </div>
       </section>
 
       {/* ── 最終 CTA */}
-      <section style={{ padding: '5rem 1.25rem', background: `radial-gradient(ellipse at center, ${IRIS_COLORS.purpleDeep}25 0%, ${IRIS_COLORS.inkBlack} 70%)`, textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ padding: '5rem 1.25rem', background: `radial-gradient(ellipse at center, ${IRIS_COLORS.purpleDeep}25 0%, ${'#FFFFFF'} 70%)`, textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 30% 50%, ${IRIS_COLORS.hotPink}20 0%, transparent 40%), radial-gradient(circle at 70% 50%, ${IRIS_COLORS.gold}15 0%, transparent 40%)` }} />
         <div style={{ position: 'relative', zIndex: 2, maxWidth: 760, margin: '0 auto' }}>
           <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.85rem, 4.5vw, 3rem)', fontWeight: 500, lineHeight: 1.2, marginBottom: '1.25rem' }}>
             あなたの光を、<br />
             <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purpleLt})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>いま、世界へ。</span>
           </h2>
-          <p style={{ color: 'rgba(255,250,245,0.6)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.8, fontFamily: IRIS_FONTS.serif }}>7 日間、すべての機能を無料でお試しできます。</p>
+          <p style={{ color: 'rgba(0,0,0,0.6)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.8, fontFamily: IRIS_FONTS.serif }}>7 日間、すべての機能を無料でお試しできます。</p>
           <button onClick={onEnter} style={ctaBtnHero}>Iris を試す</button>
         </div>
       </section>
 
       {/* ── フッタ */}
-      <footer style={{ background: '#0a0014', padding: '3rem 1.25rem 2rem', borderTop: `1px solid ${IRIS_COLORS.purpleDeep}30` }}>
+      <footer style={{ background: '#FFFFFF', padding: '3rem 1.25rem 2rem', borderTop: `1px solid ${IRIS_COLORS.purpleDeep}30` }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
           <div>
             <IrisLogo size={28} withWordmark />
-            <p style={{ fontSize: '0.8rem', color: 'rgba(255,250,245,0.45)', marginTop: '0.75rem', lineHeight: 1.7, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>すべてのインフルエンサーに、<br />エージェント AI を。</p>
+            <p style={{ fontSize: '0.8rem', color: 'rgba(0,0,0,0.45)', marginTop: '0.75rem', lineHeight: 1.7, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>すべてのインフルエンサーに、<br />エージェント AI を。</p>
           </div>
           <div>
             <p style={footHead}>PRODUCT</p>
@@ -664,10 +665,10 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           </div>
           <div>
             <p style={footHead}>CONNECT</p>
-            <p style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.55)', lineHeight: 1.7, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>世界中のクリエイターが集う場所。<br /><a href="mailto:hello@coreprism.app" style={{ color: IRIS_COLORS.gold, textDecoration: 'none' }}>hello@coreprism.app</a></p>
+            <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', lineHeight: 1.7, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>世界中のクリエイターが集う場所。<br /><a href="mailto:hello@coreprism.app" style={{ color: IRIS_COLORS.gold, textDecoration: 'none' }}>hello@coreprism.app</a></p>
           </div>
         </div>
-        <div style={{ borderTop: `1px solid ${IRIS_COLORS.purpleDeep}30`, paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: 'rgba(255,250,245,0.35)', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
+        <div style={{ borderTop: `1px solid ${IRIS_COLORS.purpleDeep}30`, paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: 'rgba(0,0,0,0.35)', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
           © {new Date().getFullYear()} CORE Iris · Aurora for every creator
         </div>
       </footer>
@@ -737,7 +738,7 @@ function FollowerEarningsCalculator({ onEnter }: { onEnter: () => void }) {
       className="lp-section-pad"
       style={{
         padding: sectionPad,
-        background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #1a0828 60%, ${IRIS_COLORS.inkBlack} 100%)`,
+        background: `linear-gradient(180deg, ${'#FFFFFF'} 0%, #F4ECFB 60%, ${'#FFFFFF'} 100%)`,
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -756,13 +757,13 @@ function FollowerEarningsCalculator({ onEnter }: { onEnter: () => void }) {
           }}>
             あなたの月収、いくらになる?
           </h2>
-          <p style={{ color: 'rgba(255,250,245,0.6)', fontSize: '0.92rem', fontFamily: IRIS_FONTS.serif, lineHeight: 1.85 }}>
+          <p style={{ color: 'rgba(0,0,0,0.6)', fontSize: '0.92rem', fontFamily: IRIS_FONTS.serif, lineHeight: 1.85 }}>
             フォロワー数を動かすと、業界相場ベースの月収レンジが出ます。
           </p>
         </div>
 
         <div style={{
-          background: 'rgba(255,250,245,0.04)',
+          background: 'rgba(0,0,0,0.04)',
           border: `1px solid ${IRIS_COLORS.gold}38`,
           borderRadius: 22,
           padding: '1.75rem 1.5rem 1.85rem',
@@ -785,8 +786,8 @@ function FollowerEarningsCalculator({ onEnter }: { onEnter: () => void }) {
               onChange={(e) => setFollowers(Math.max(100, Math.min(2000000, Number(e.target.value) || 0)))}
               style={{
                 flex: '1 1 180px',
-                background: 'rgba(255,250,245,0.06)',
-                color: IRIS_COLORS.cream,
+                background: 'rgba(0,0,0,0.06)',
+                color: '#1F1A2E',
                 border: `1px solid ${IRIS_COLORS.purpleDeep}66`,
                 borderRadius: 12,
                 padding: '0.85rem 1rem',
@@ -798,7 +799,7 @@ function FollowerEarningsCalculator({ onEnter }: { onEnter: () => void }) {
               }}
               aria-label="フォロワー数を入力"
             />
-            <span style={{ fontSize: '0.9rem', color: 'rgba(255,250,245,0.6)' }}>人</span>
+            <span style={{ fontSize: '0.9rem', color: 'rgba(0,0,0,0.6)' }}>人</span>
           </div>
 
           <input
@@ -824,8 +825,8 @@ function FollowerEarningsCalculator({ onEnter }: { onEnter: () => void }) {
                 style={{
                   background: followers === p.value
                     ? `linear-gradient(135deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`
-                    : 'rgba(255,250,245,0.05)',
-                  color: followers === p.value ? '#fff' : 'rgba(255,250,245,0.78)',
+                    : 'rgba(0,0,0,0.05)',
+                  color: followers === p.value ? '#fff' : 'rgba(0,0,0,0.78)',
                   border: followers === p.value ? 'none' : `1px solid ${IRIS_COLORS.purpleDeep}55`,
                   borderRadius: 999,
                   padding: '0.45rem 0.95rem',
@@ -864,12 +865,12 @@ function FollowerEarningsCalculator({ onEnter }: { onEnter: () => void }) {
             }}>
               {fmt(lo)} 〜 {fmt(hi)}
             </p>
-            <p style={{ fontSize: '0.75rem', color: 'rgba(255,250,245,0.55)', marginTop: '0.45rem', fontFamily: IRIS_FONTS.body }}>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.55)', marginTop: '0.45rem', fontFamily: IRIS_FONTS.body }}>
               / 月 · PR 案件 + ギフティング + アフィリエイト合算の目安
             </p>
           </div>
 
-          <p style={{ fontSize: '0.72rem', color: 'rgba(255,250,245,0.48)', marginTop: '0.95rem', lineHeight: 1.65, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.48)', marginTop: '0.95rem', lineHeight: 1.65, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', textAlign: 'center' }}>
             ※ 業界相場ベースの目安です。ジャンル・エンゲージメント率・実績で個別差があります。<br />
             数字は保証ではなく、Iris は「この上限に近づくまで」並走します。
           </p>
@@ -905,7 +906,7 @@ function ReclaimTimeSection({ onEnter }: { onEnter: () => void }) {
       className="lp-section-pad"
       style={{
         padding: '4rem 1.25rem 5rem',
-        background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, #240b32 60%, ${IRIS_COLORS.inkBlack} 100%)`,
+        background: `linear-gradient(180deg, ${'#FFFFFF'} 0%, #F4ECFB 60%, ${'#FFFFFF'} 100%)`,
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -925,7 +926,7 @@ function ReclaimTimeSection({ onEnter }: { onEnter: () => void }) {
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>捨てている時間</span>。
           </h2>
-          <p style={{ color: 'rgba(255,250,245,0.6)', fontSize: '0.92rem', fontFamily: IRIS_FONTS.serif, lineHeight: 1.85 }}>
+          <p style={{ color: 'rgba(0,0,0,0.6)', fontSize: '0.92rem', fontFamily: IRIS_FONTS.serif, lineHeight: 1.85 }}>
             Iris が引き受ける作業を、時間に直してみました。
           </p>
         </div>
@@ -940,7 +941,7 @@ function ReclaimTimeSection({ onEnter }: { onEnter: () => void }) {
               transition={{ duration: 0.5, delay: i * 0.08 }}
               style={{
                 position: 'relative',
-                background: 'rgba(255,250,245,0.04)',
+                background: 'rgba(0,0,0,0.04)',
                 border: `1px solid ${it.color}38`,
                 borderRadius: 18,
                 padding: '1.35rem 1.2rem 1.45rem',
@@ -954,14 +955,14 @@ function ReclaimTimeSection({ onEnter }: { onEnter: () => void }) {
                   background: `linear-gradient(135deg, ${it.color}, ${it.color}cc)`,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   marginBottom: '0.8rem',
-                  boxShadow: `0 6px 16px ${it.color}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
+                  boxShadow: `0 6px 16px ${it.color}55, inset 0 1px 0 rgba(0,0,0,0.18)`,
                 }}>
                   <it.Icon size={20} color="#fff" strokeWidth={2.3} />
                 </div>
-                <p style={{ fontSize: '0.95rem', fontWeight: 700, color: IRIS_COLORS.ivory, margin: '0 0 0.25rem' }}>
+                <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1F1A2E', margin: '0 0 0.25rem' }}>
                   {it.label}
                 </p>
-                <p style={{ fontSize: '0.78rem', color: 'rgba(255,250,245,0.6)', margin: '0 0 0.7rem', lineHeight: 1.55 }}>
+                <p style={{ fontSize: '0.78rem', color: 'rgba(0,0,0,0.6)', margin: '0 0 0.7rem', lineHeight: 1.55 }}>
                   {it.calc}
                 </p>
                 <p style={{
@@ -971,7 +972,7 @@ function ReclaimTimeSection({ onEnter }: { onEnter: () => void }) {
                 }}>
                   {it.hours} 時間
                 </p>
-                <p style={{ fontSize: '0.72rem', color: 'rgba(255,250,245,0.55)', margin: '0.25rem 0 0' }}>
+                <p style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.55)', margin: '0.25rem 0 0' }}>
                   / 月
                 </p>
               </div>
@@ -1009,7 +1010,7 @@ function ReclaimTimeSection({ onEnter }: { onEnter: () => void }) {
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>{total} 時間</span> 取り戻せます。
           </p>
-          <p style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.7)', margin: '0.85rem 0 1.25rem', lineHeight: 1.7, fontFamily: IRIS_FONTS.serif }}>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.7)', margin: '0.85rem 0 1.25rem', lineHeight: 1.7, fontFamily: IRIS_FONTS.serif }}>
             その時間で、撮影に出かけるか、寝るか、家族と過ごすか ── あなたが決める。
           </p>
           <button onClick={onEnter} style={{
@@ -1110,15 +1111,15 @@ function IrisLocaleToggle({ locale, setLocale }: { locale: Locale; setLocale: (l
   const locales: Locale[] = ['ja', 'en', 'zh'];
   const labels: Record<Locale, string> = { ja: '日', en: 'EN', zh: '中' };
   return (
-    <div style={{ display: 'flex', gap: 2, background: 'rgba(255,250,245,0.08)', borderRadius: 8, padding: 2 }}>
+    <div style={{ display: 'flex', gap: 2, background: 'rgba(0,0,0,0.08)', borderRadius: 8, padding: 2 }}>
       {locales.map(l => (
-        <button key={l} onClick={() => setLocale(l)} aria-label={`Language: ${l.toUpperCase()}`} style={{ background: locale === l ? 'rgba(255,250,245,0.18)' : 'transparent', color: locale === l ? IRIS_COLORS.cream : 'rgba(255,250,245,0.45)', border: 'none', borderRadius: 6, padding: '0.5rem 0.75rem', minWidth: 44, minHeight: 44, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' }}>{labels[l]}</button>
+        <button key={l} onClick={() => setLocale(l)} aria-label={`Language: ${l.toUpperCase()}`} style={{ background: locale === l ? 'rgba(0,0,0,0.18)' : 'transparent', color: locale === l ? '#1F1A2E' : 'rgba(0,0,0,0.45)', border: 'none', borderRadius: 6, padding: '0.5rem 0.75rem', minWidth: 44, minHeight: 44, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' }}>{labels[l]}</button>
       ))}
     </div>
   );
 }
 
-const navLink: React.CSSProperties = { fontSize: '0.85rem', color: 'rgba(255,250,245,0.7)', textDecoration: 'none', fontWeight: 500 };
+const navLink: React.CSSProperties = { fontSize: '0.85rem', color: 'rgba(0,0,0,0.7)', textDecoration: 'none', fontWeight: 500 };
 const ctaBtnSmall: React.CSSProperties = {
   background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink} 0%, ${IRIS_COLORS.purple} 60%, ${IRIS_COLORS.gold} 100%)`,
   color: '#fff', padding: '0.6rem 1.25rem', borderRadius: 999, fontSize: '0.85rem', fontWeight: 700,
@@ -1134,9 +1135,9 @@ const ctaBtnHero: React.CSSProperties = {
   letterSpacing: '0.04em',
   transition: 'transform 0.12s, box-shadow 0.12s',
 };
-const ctaBtnGhost: React.CSSProperties = { background: 'rgba(255,250,245,0.05)', color: IRIS_COLORS.cream, padding: '1.05rem 2rem', borderRadius: 14, fontSize: '1rem', fontWeight: 700, border: `1px solid ${IRIS_COLORS.gold}40`, textDecoration: 'none', display: 'inline-block' };
+const ctaBtnGhost: React.CSSProperties = { background: 'rgba(0,0,0,0.05)', color: '#1F1A2E', padding: '1.05rem 2rem', borderRadius: 14, fontSize: '1rem', fontWeight: 700, border: `1px solid ${IRIS_COLORS.gold}40`, textDecoration: 'none', display: 'inline-block' };
 const footHead: React.CSSProperties = { fontSize: '0.7rem', letterSpacing: '0.25em', color: IRIS_COLORS.gold, marginBottom: '0.75rem', fontWeight: 700 };
-const footLink: React.CSSProperties = { display: 'block', color: 'rgba(255,250,245,0.7)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '0.5rem' };
+const footLink: React.CSSProperties = { display: 'block', color: 'rgba(0,0,0,0.7)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '0.5rem' };
 
 // FFFF (2026-06-04): Iris 用 YouTube 説明動画 セクション
 function IrisVideoSection() {
@@ -1150,14 +1151,14 @@ function IrisVideoSection() {
   return (
     <section style={{
       padding: '5rem 1.5rem',
-      background: `linear-gradient(180deg, ${IRIS_COLORS.inkBlack} 0%, rgba(131,58,180,0.10) 100%)`,
+      background: `linear-gradient(180deg, ${'#FFFFFF'} 0%, rgba(131,58,180,0.10) 100%)`,
     }}>
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
         <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 700, color: IRIS_COLORS.hotPink, textAlign: 'center', marginBottom: '0.6rem' }}>WATCH IN 2 MIN</p>
-        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.6rem, 3.2vw, 2.3rem)', fontWeight: 500, textAlign: 'center', marginBottom: '0.5rem', color: IRIS_COLORS.cream }}>
+        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.6rem, 3.2vw, 2.3rem)', fontWeight: 500, textAlign: 'center', marginBottom: '0.5rem', color: '#1F1A2E' }}>
           <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{title}</span>
         </h2>
-        <p style={{ fontSize: '0.85rem', color: 'rgba(255,250,245,0.55)', textAlign: 'center', marginBottom: '2.5rem', fontFamily: IRIS_FONTS.serif }}>
+        <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', textAlign: 'center', marginBottom: '2.5rem', fontFamily: IRIS_FONTS.serif }}>
           6 つの AI 役員 が、あなたの世界観を磨きます。
         </p>
         <div style={{
