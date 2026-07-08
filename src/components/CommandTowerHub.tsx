@@ -286,13 +286,13 @@ export default function CommandTowerHub() {
         })}
 
         {/* アクティブなノードから出る「いま何をしているか」の吹き出し（連携が見える） */}
-        <AnimatePresence mode="wait">
+        {/* 退場アニメ待ち禁止(rAF停止環境で吹き出しが固まる)・キー切替入場のみ */}
+        <>
           {running && activeLeg && activeStep && (
             <motion.div
               key={activeLeg}
               initial={{ opacity: 0, y: 6, scale: 0.92 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.92 }}
               transition={{ duration: 0.28 }}
               style={{
                 position: 'absolute', left: '50%', bottom: -6, transform: 'translateX(-50%)',
@@ -311,7 +311,7 @@ export default function CommandTowerHub() {
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
+        </>
       </div>
 
       {/* ループ実行 */}

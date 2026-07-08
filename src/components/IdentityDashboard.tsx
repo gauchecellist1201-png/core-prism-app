@@ -817,14 +817,12 @@ export default function IdentityDashboard({
         </div>
       )}
 
-      {/* Main Content */}
-      <AnimatePresence mode="wait">
+      {/* Main Content — 退場アニメ待ち禁止(rAF停止環境で人格切替が全画面凍結する)・キー切替入場のみ */}
         <motion.div
           key={persona.id}
           className="flex-1 flex flex-col overflow-hidden"
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -10 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Topbar */}
@@ -1433,14 +1431,14 @@ export default function IdentityDashboard({
                 ))}
               </div>
 
-              <AnimatePresence mode="wait">
+              {/* 退場アニメ待ち禁止・キー切替入場のみ */}
+              <>
                 {activeTab === 'files' && (
                   <motion.div
                     key="files"
                     className="p-3 rounded-xl bg-surface-3 border-edge border"
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
                   >
                     {personaKnowledge.length === 0 ? (
                       <div className="text-center py-6">
@@ -1517,7 +1515,6 @@ export default function IdentityDashboard({
                     className="p-3 rounded-xl bg-surface-3 border-edge border"
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
                   >
                     {persona.tasks.length === 0 ? (
                       <div className="text-center py-6">
@@ -1572,7 +1569,7 @@ export default function IdentityDashboard({
                     )}
                   </motion.div>
                 )}
-              </AnimatePresence>
+              </>
 
               {/* Cashflow */}
               <motion.button
@@ -1641,7 +1638,6 @@ export default function IdentityDashboard({
             </div>
           </div>
         </motion.div>
-      </AnimatePresence>
 
       {/* Right Panel (desktop) */}
       <div className="hidden md:flex w-64 flex-col flex-shrink-0" style={{ borderLeft: '1px solid rgba(255,255,255,0.04)' }}>

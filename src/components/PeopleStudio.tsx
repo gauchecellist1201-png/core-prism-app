@@ -357,11 +357,12 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
             }
           />
 
-          <AnimatePresence mode="wait">
+          {/* 退場アニメ待ち禁止(rAF停止環境でビュー切替が凍結する)・キー切替入場のみ */}
+          <>
             {/* ─── 人物一覧 ─── */}
             {view === 'list' && (
               <motion.div key="list"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <div className="cp-stack">
                   <input
                     value={search} onChange={e => setSearch(e.target.value)}
@@ -559,7 +560,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                 onCancel={() => setView('list')}
               />
             )}
-          </AnimatePresence>
+          </>
         </div>
       </motion.div>
     </motion.div>

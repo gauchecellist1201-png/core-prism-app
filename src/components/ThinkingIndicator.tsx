@@ -183,12 +183,11 @@ export default function ThinkingIndicator({
 
       {/* 工程メッセージ — すっと入れ替わる */}
       <div style={{ minHeight: variant === 'full' ? 28 : 22, marginBottom: 6 }}>
-        <AnimatePresence mode="wait">
+        {/* 退場アニメ待ち禁止(rAF停止環境で文言が固まる/二重表示になる)・キー切替入場のみ */}
           <motion.p
             key={idx}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.32 }}
             style={{
               fontSize: variant === 'full' ? '1.05rem' : '0.9rem',
@@ -198,7 +197,6 @@ export default function ThinkingIndicator({
           >
             {messages[idx]}
           </motion.p>
-        </AnimatePresence>
       </div>
 
       {subtitle && (
