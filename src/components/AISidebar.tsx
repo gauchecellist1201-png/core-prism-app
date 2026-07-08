@@ -10,6 +10,26 @@ import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 import { readableTextColor } from '../lib/contrast';
 
+// ブランド ライン グリフ — OS カラー絵文字は使わない(恒久ルール)。currentColor 継承で文脈色に馴染む
+const glyphBase = (size: number) => ({
+  width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+  stroke: 'currentColor', strokeWidth: 1.8,
+  strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
+  style: { flexShrink: 0 } as const,
+});
+function BookGlyph({ size = 13 }: { size?: number }) {
+  return (<svg {...glyphBase(size)}><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15H5.5A1.5 1.5 0 0 0 4 20.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v15h5.5A1.5 1.5 0 0 1 20 20.5z"/></svg>);
+}
+function SparkGlyph({ size = 14 }: { size?: number }) {
+  return (<svg {...glyphBase(size)}><path d="M12 2l1.7 6.6a2 2 0 0 0 1.7 1.7L22 12l-6.6 1.7a2 2 0 0 0-1.7 1.7L12 22l-1.7-6.6a2 2 0 0 0-1.7-1.7L2 12l6.6-1.7a2 2 0 0 0 1.7-1.7z"/></svg>);
+}
+function BuildingGlyph({ size = 14 }: { size?: number }) {
+  return (<svg {...glyphBase(size)}><rect x="4" y="3" width="16" height="18" rx="1.2"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-3h4v3"/></svg>);
+}
+function AlertGlyph({ size = 13 }: { size?: number }) {
+  return (<svg {...glyphBase(size)}><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>);
+}
+
 interface Props {
   persona: Persona;
   messages: ChatMessage[];
@@ -108,15 +128,16 @@ export default function AISidebar({
               }}
               title="ナレッジベース"
             >
-              📚 {knowledgeCount}
+              <span className="inline-flex items-center gap-1"><BookGlyph size={11} />{knowledgeCount}</span>
             </button>
             {!hasApiKey && (
               <button
                 onClick={onOpenSettings}
                 className="text-xs px-2 py-1 rounded"
                 style={{ background: 'rgba(248,113,113,0.15)', color: '#f87171' }}
+                title="APIキー未設定"
               >
-                ⚠
+                <AlertGlyph size={13} />
               </button>
             )}
           </div>
@@ -144,8 +165,8 @@ export default function AISidebar({
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <p className="text-sm font-semibold" style={{ color: persona.accentColor }}>
-                ✨ Prism にようこそ
+              <p className="text-sm font-semibold inline-flex items-center gap-1.5" style={{ color: persona.accentColor }}>
+                <SparkGlyph size={14} />Prism にようこそ
               </p>
               <p className="text-xs text-fg-muted mt-0.5 leading-relaxed">
                 {persona.name} の専属秘書として動きます。{knowledgeCount > 0 ? `${knowledgeCount} 件の資料を読了済み。` : ''}まずは下から相談を選んでください。
@@ -180,7 +201,7 @@ export default function AISidebar({
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 + suggestions.length * 0.05 }}
             >
-              🏢 AI 会社 (13 CXO) に相談する →
+              <span className="inline-flex items-center gap-1.5"><BuildingGlyph size={14} />AI 会社 (13 CXO) に相談する →</span>
             </motion.button>
           </motion.div>
         )}
@@ -215,7 +236,7 @@ export default function AISidebar({
                     if (titles.length === 0) return null;
                     return (
                       <div className="mt-2 pt-2 flex flex-wrap gap-1" style={{ borderTop: '1px dashed rgba(255,255,255,0.08)' }}>
-                        <span className="text-[10px] opacity-60 mr-1">📚 参照:</span>
+                        <span className="text-[10px] opacity-60 mr-1 inline-flex items-center gap-0.5"><BookGlyph size={10} />参照:</span>
                         {titles.slice(0, 5).map((t, k) => (
                           <button
                             key={k}
@@ -263,8 +284,8 @@ export default function AISidebar({
               className="max-w-[88%] px-3 py-2.5 rounded-xl"
               style={{ background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.30)' }}
             >
-              <p className="text-xs font-semibold" style={{ color: '#f87171' }}>
-                ⚠ 返信を受け取れませんでした
+              <p className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: '#f87171' }}>
+                <AlertGlyph size={12} />返信を受け取れませんでした
               </p>
               <p className="text-[11px] text-fg-muted mt-0.5 leading-relaxed">
                 通信が一瞬不安定だったのかもしれません。打ち直さなくても、同じ内容でもう一度送れます。
