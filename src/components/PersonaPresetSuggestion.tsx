@@ -259,7 +259,6 @@ export default function PersonaPresetSuggestion() {
 // OOOOOO (2026-06-04): 3 ボタン で 即 ペルソナ 作成 + 即 アクティブ化
 interface QuickPreset {
   key: string;
-  emoji: string;
   name: string;
   subtitle: string;
   description: string;
@@ -271,7 +270,6 @@ interface QuickPreset {
 const QUICK_PRESETS: QuickPreset[] = [
   {
     key: 'shop-owner',
-    emoji: '🍜',
     name: '飲食店オーナー',
     subtitle: '3 店舗 / 月商 800 万',
     description: '売上 / 在庫 / 採用 を 14 役員 で 回す 飲食店オーナー (例: 田中)',
@@ -282,7 +280,6 @@ const QUICK_PRESETS: QuickPreset[] = [
   },
   {
     key: 'consultant',
-    emoji: '🧠',
     name: 'コンサルタント',
     subtitle: '独立 5 年 / 提案 8h → 30 分',
     description: '提案書 + リサーチ を AI に 任せる 独立コンサル (例: 森本)',
@@ -293,7 +290,6 @@ const QUICK_PRESETS: QuickPreset[] = [
   },
   {
     key: 'freelancer',
-    emoji: '⚡',
     name: 'フリーランス エンジニア',
     subtitle: '月単価 ¥120 万 / 副業 2 件',
     description: '案件管理 + 単価交渉 + 確定申告 を AI で (例: 山口)',
