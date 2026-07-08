@@ -1151,6 +1151,16 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
     }
   }, []);
 
+  // モバイルの見切れ根治(2026-07-08): タブ切替時、上部ナビの現在タブを必ず画面内に横スクロールで見せる
+  // (サブタブが多い伸ばす等でも「いま選んでいるタブ」が常に見える=切れて見えない)
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const el = document.querySelector('.iris-tabs-v2 .iris-tab-btn.is-active-tab');
+      if (el) el.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+    }, 60);
+    return () => window.clearTimeout(t);
+  }, [tab]);
+
   // 初回ツアー等から「このタブを開いて」と頼まれたら開く（window イベント連携）
   useEffect(() => {
     const onGoto = (e: Event) => {
@@ -1494,6 +1504,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 >
                   <div
                     title={group.label}
+                    className="iris-tab-grouplabel"
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 4,
                       padding: '0.3rem 0.55rem',
@@ -1512,7 +1523,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     return (
                       <button key={t.id}
                         onClick={() => setTab(t.id as Tab)}
-                        className="iris-tab-btn"
+                        className={`iris-tab-btn${active ? ' is-active-tab' : ''}`}
                         style={{
                           background: active
                             ? `linear-gradient(135deg, ${group.color}, ${group.color}cc)`

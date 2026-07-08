@@ -88,7 +88,9 @@ function AdvancedView({ bg, settings, mediaKit, knowledge, onBack }: Props & { o
   };
 
   return (
-    <div style={{ display: 'grid', gap: '1.25rem' }}>
+    // 見切れ根治(2026-07-08): minmax(0,1fr)+子孫全体 min-width:0(iris-adv-studio)で、
+    // grid/flex 子の既定 min-width:auto を打ち消し、見出し・サブタブ・カード・入力を画面幅に必ず収める
+    <div className="iris-adv-studio" style={{ display: 'grid', gap: '1.25rem', gridTemplateColumns: 'minmax(0, 1fr)' }}>
       <button onClick={onBack} style={{
         background: 'transparent', color: bg.inkSoft,
         border: `1px solid ${bg.cardBorder}`, borderRadius: 999,

@@ -1738,6 +1738,11 @@ html { scroll-behavior: smooth; }
   }
 }
 
+/* 戦略スタジオ(上級者モード)の横見切れ根治(2026-07-08):
+   grid/flex 子の既定 min-width:auto が縮まず、カードや入力グリッドが画面幅(773px等)を
+   突き破っていた。studio 配下すべてに min-width:0 を効かせ、必ず画面内に収める。 */
+.iris-adv-studio, .iris-adv-studio * { min-width: 0; }
+
 /* Iris Dashboard タブ: モバイルでは「主要のみ + メニュー」、PC では全部表示 */
 .iris-tab-more { display: none; }
 @media (max-width: 768px) {
@@ -1767,18 +1772,26 @@ html { scroll-behavior: smooth; }
 .iris-tabs-v2::-webkit-scrollbar { display: none; }
 .iris-tabs-v2 .iris-tab-btn { min-height: 36px; }
 
-/* モバイル: アクティブ グループ以外のタブは非表示 (ラベル + アクティブ タブのみ表示) */
+/* モバイル: 見切れ根治(2026-07-08)。全グループのラベルを並べると 970px 幅になり
+   横スクロールしても大半が画面外＝使えない。グループ切替は下部ナビが担うため、
+   上部ナビは「今いるグループのサブタブだけ」を表示する(非アクティブ グループは丸ごと隠す)。 */
 @media (max-width: 768px) {
   .iris-tabs-v2 {
     padding-right: max(1rem, env(safe-area-inset-right)) !important;
     padding-left: max(0.25rem, env(safe-area-inset-left)) !important;
     gap: 8px !important;
   }
+  /* 非アクティブ グループはラベルごと非表示(下部ナビでグループ切替できるので冗長) */
+  .iris-tabs-v2 .iris-tab-group:not(.is-active) {
+    display: none !important;
+  }
+  /* アクティブ グループのラベル(今いる場所)も非表示 = サブタブに幅を全部使う
+     (どのグループにいるかは下部ナビが示している) */
+  .iris-tabs-v2 .iris-tab-grouplabel {
+    display: none !important;
+  }
   .iris-tabs-v2 .iris-tab-group {
     flex-shrink: 0;
-  }
-  .iris-tabs-v2 .iris-tab-group:not(.is-active) .iris-tab-btn {
-    display: none !important;
   }
   .iris-tabs-v2 .iris-tab-divider {
     display: none !important;

@@ -11,8 +11,9 @@
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Square, Sparkles, RefreshCw } from 'lucide-react';
+import { Mic, Square, Sparkles, RefreshCw, Loader2 } from 'lucide-react';
 import { useVoiceInput } from '../hooks/useVoiceInput';
+import { useAudioDictation, isIosSafari } from '../hooks/useAudioDictation';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { TONE_HEADLINE } from '../lib/aiTone';
 import { logIrisActivity } from './irisActivity';
@@ -213,21 +214,45 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
   const lastThoughtRef = useRef('');
   const stageTimerRef = useRef<number | null>(null);
 
-  // 音声入力: 確定した端から即テキストに合流 (リアルタイム文字起こし)
-  const { state: vState, interim, isAvailable, start, stop, reset } = useVoiceInput(
+  // 音声入力(2026-07-08 iOS対応):
+  //  ・PC/Android(Chrome): Web Speech でリアルタイム文字起こし
+  //  ・iOS Safari: Web Speech は「あるのに動かない」罠 → MediaRecorder 録音→サーバ文字起こしに切替
+  const web = useVoiceInput(
     (t, isFinal) => { if (isFinal) setText(prev => prev + t); },
     { lang: 'ja-JP', continuous: true, interimResults: true, silenceTimeout: 8000 },
   );
-  const listening = vState === 'listening';
+  const dict = useAudioDictation(
+    (t) => setText(prev => (prev.trim() ? prev.trimEnd() + ' ' : '') + t),
+    { model },
+  );
+  // iOS、または Web Speech 非対応端末は録音方式にする
+  const useRecorder = isIosSafari() || !web.isAvailable;
+  const isAvailable = useRecorder ? dict.isAvailable : web.isAvailable;
+  const listening = useRecorder ? dict.state === 'recording' : web.state === 'listening';
+  const transcribing = useRecorder && dict.state === 'transcribing';
+  const interim = useRecorder ? '' : web.interim;
+  const voiceErr = useRecorder && dict.errorCode
+    ? (dict.errorCode === 'not-allowed'
+        ? 'マイクの使用が許可されていません。ブラウザの設定でマイクを許可してください。'
+        : dict.errorCode === 'transcribe'
+          ? '音声の文字起こしに失敗しました。もう一度お試しください。'
+          : 'この端末では音声を使えませんでした。書いて投げてください。')
+    : null;
 
   useEffect(() => () => {
     if (stageTimerRef.current) window.clearInterval(stageTimerRef.current);
   }, []);
 
   const toggleMic = () => {
-    if (busy || !isAvailable) return;
-    if (listening) { stop(); reset(); }
-    else { reset(); start(); }
+    if (busy) return;
+    if (useRecorder) {
+      if (dict.state === 'recording') dict.stop();
+      else if (dict.state !== 'transcribing') { dict.reset(); dict.start(); }
+    } else {
+      if (!web.isAvailable) return;
+      if (web.state === 'listening') { web.stop(); web.reset(); }
+      else { web.reset(); web.start(); }
+    }
   };
 
   const runGenerate = async (thought: string) => {
@@ -250,7 +275,9 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
   const submit = () => {
     const thought = (text + (interim || '')).trim();
     if (!thought || busy) return;
-    if (listening) { stop(); reset(); }
+    // 録音/認識中なら止めてから送る
+    if (useRecorder) { if (dict.state === 'recording') dict.stop(); }
+    else if (web.state === 'listening') { web.stop(); web.reset(); }
     lastThoughtRef.current = thought;
     runGenerate(thought);
   };
@@ -336,15 +363,15 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
             <motion.button
               type="button"
               onClick={toggleMic}
-              disabled={busy}
-              whileTap={!busy ? { scale: 0.92 } : {}}
-              aria-label={listening ? '録音を止める' : '声で投げる'}
+              disabled={busy || transcribing}
+              whileTap={!busy && !transcribing ? { scale: 0.92 } : {}}
+              aria-label={listening ? '録音を止めて文字にする' : transcribing ? '文字起こし中' : '声で投げる'}
               style={{
                 width: 64, height: 64, borderRadius: '50%',
                 background: listening ? '#1F1A2E' : bg.accent,
                 color: '#FFFFFF',
                 border: 'none',
-                cursor: busy ? 'wait' : 'pointer',
+                cursor: busy || transcribing ? 'wait' : 'pointer',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 padding: 0,
                 boxShadow: listening
@@ -354,20 +381,26 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
                 opacity: busy ? 0.5 : 1,
               }}
             >
-              {listening
-                ? <Square size={20} fill="#FFFFFF" strokeWidth={0} />
-                : <Mic size={26} strokeWidth={2} />}
+              {transcribing
+                ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={24} strokeWidth={2.4} /></motion.span>
+                : listening
+                  ? <Square size={20} fill="#FFFFFF" strokeWidth={0} />
+                  : <Mic size={26} strokeWidth={2} />}
             </motion.button>
           )}
           <p style={{
             marginTop: '0.55rem', marginBottom: 0,
-            color: '#8A7AA0', fontSize: '0.74rem', fontFamily: IRIS_FONTS.body,
+            color: voiceErr ? '#C8102E' : '#8A7AA0', fontSize: '0.74rem', fontFamily: IRIS_FONTS.body,
           }}>
-            {listening
-              ? '聞いています ─ タップで止める'
-              : isAvailable
-                ? 'タップして、声で投げる'
-                : 'この端末は音声に対応していないので、書いて投げてください'}
+            {voiceErr
+              ? voiceErr
+              : transcribing
+                ? '文字にしています…'
+                : listening
+                  ? (useRecorder ? '録音中 ─ タップで文字にする' : '聞いています ─ タップで止める')
+                  : isAvailable
+                    ? 'タップして、声で投げる'
+                    : 'この端末は音声に対応していないので、書いて投げてください'}
           </p>
         </div>
 
