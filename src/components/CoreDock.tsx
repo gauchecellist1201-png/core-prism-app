@@ -2,17 +2,22 @@
 // ============================================================
 // CoreDock — 5アプリを「ひとつのブレーン」に感じさせる共通モバイル・ドック
 //
-// どのアプリ(Prism/Iris/Resonance/Lume/Guild)に置いても、画面下中央に
-// 小さな“Core”の鼓動が常駐。タップで 5 アプリ＋Core ホームのスイッチャーが開き、
-// identity/文脈を持ち越して(別ドメインでも)シームレスに行き来できる。
+// どのアプリ(Prism/Iris/Resonance/Lume/Guild)に置いても、小さな“Core”の鼓動が
+// 常駐。タップで 5 アプリ＋Core ホームのスイッチャーが開き、identity/文脈を
+// 持ち越して(別ドメインでも)シームレスに行き来できる。
 //
 // 設計: モバイル最優先(タップ44px / safe-area / prefers-reduced-motion 尊重 /
 //        OS絵文字なし=自前SVG)。依存は React と Tailwind のみ。Next.js("use client")
 //        でも Vite でもそのまま動く。
 //
+// 【2026-07-09】「操作中にCOREタブが文字に被って邪魔」という声を受け、丸い小さな
+// FABに変更しドラッグで自由な位置に動かせるようにした。動かした位置は端末に
+// 記憶され、次回以降もそこに出る。動かしていない間の既定位置は左下(中央の
+// チャット入力バー・右下の常駐FAB群のどちらとも重ならない場所)。
+//
 // 置き方: 各アプリのルート(layout / App)末尾に <CoreDock current="resonance" /> を1行。
 // ============================================================
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { withCoreHandoff, readCoreHandoff, type CoreAppKey } from "./coreLink";
 
 type App = { key: Exclude<CoreAppKey, "core">; name: string; tag: string; color: string; url: string };
@@ -71,13 +76,48 @@ function CoreMark({ size = 26, beat }: { size?: number; beat: boolean }) {
   );
 }
 
+// ── ドラッグで自由に動かせる位置の永続化 ─────────────────────────────
+const POS_KEY = "core_dock_pos_v1";
+const DOCK_SIZE = 52;
+const EDGE_MARGIN = 14;
+const DRAG_THRESHOLD = 6; // これ未満の移動は「タップ」扱い
+
+function clampPos(x: number, y: number) {
+  const maxX = Math.max(EDGE_MARGIN, window.innerWidth - DOCK_SIZE - EDGE_MARGIN);
+  const maxY = Math.max(EDGE_MARGIN, window.innerHeight - DOCK_SIZE - EDGE_MARGIN);
+  return { x: Math.min(Math.max(x, EDGE_MARGIN), maxX), y: Math.min(Math.max(y, EDGE_MARGIN), maxY) };
+}
+function defaultPos() {
+  // 既定位置=左下(中央のチャット入力バー・右下の常駐FAB群と重ならない)
+  return clampPos(EDGE_MARGIN, window.innerHeight - DOCK_SIZE - EDGE_MARGIN - 74);
+}
+function loadPos(): { x: number; y: number } | null {
+  try {
+    const raw = localStorage.getItem(POS_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (typeof p?.x !== "number" || typeof p?.y !== "number") return null;
+    return clampPos(p.x, p.y);
+  } catch { return null; }
+}
+function savePos(x: number, y: number) {
+  try { localStorage.setItem(POS_KEY, JSON.stringify({ x, y })); } catch { /* noop */ }
+}
+
 export function CoreDock({ current }: { current: App["key"] }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState<string | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number; moved: boolean } | null>(null);
 
   useEffect(() => {
     const h = readCoreHandoff();
     if (h?.name) setName(h.name);
+    setPos(loadPos() ?? defaultPos());
+    const onResize = () => setPos((p) => (p ? clampPos(p.x, p.y) : p));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   // 表示順: 現在のアプリは先頭に出さず、行き先だけを並べる
@@ -88,20 +128,63 @@ export function CoreDock({ current }: { current: App["key"] }) {
     if (typeof window !== "undefined") window.location.href = withCoreHandoff(a.url, current);
   };
 
+  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!pos) return;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragRef.current = { startX: e.clientX, startY: e.clientY, baseX: pos.x, baseY: pos.y, moved: false };
+    setDragging(true);
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) d.moved = true;
+    if (d.moved) setPos(clampPos(d.baseX + dx, d.baseY + dy));
+  };
+  const onPointerUp = () => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    setDragging(false);
+    if (d && d.moved) {
+      setPos((p) => {
+        if (p) savePos(p.x, p.y);
+        return p;
+      });
+    } else {
+      // 動いていなければタップ = スイッチャーを開く
+      setOpen(true);
+    }
+  };
+
+  if (!pos) return null; // 初回マウント(位置未確定)は描画しない=SSRとの不一致回避
+
   return (
     <>
-      {/* 常駐ドック(下部中央・safe-area・タップ44px) */}
+      {/* 常駐ドック(ドラッグ可能な円形FAB・safe-area・タップ44px以上) */}
       <button
-        onClick={() => setOpen(true)}
-        aria-label="Core ── アプリを切り替える"
-        className="fixed left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-[#0b0e18]/90 px-4 text-white shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur transition active:scale-95"
-        // 既存の下部UI（中央のBottomChatDock入力バー / 左下SuggestionFab・右下QuickAskFab）と
-        // 重ならないよう、中央ドックは1段上に浮かせる（chat入力バー≒56px + 余白）。
-        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)", minHeight: 48 }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        aria-label="Core ── アプリを切り替える(ドラッグで移動できます)"
+        className="fixed z-[80] flex items-center justify-center rounded-full border border-white/15 bg-[#0b0e18]/90 text-white shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur active:scale-95"
+        style={{
+          left: pos.x,
+          top: pos.y,
+          width: DOCK_SIZE,
+          height: DOCK_SIZE,
+          touchAction: "none",
+          transition: dragging ? "none" : "left .15s ease, top .15s ease",
+        }}
       >
-        <CoreMark beat />
-        <span className="text-[13px] font-semibold tracking-[0.16em]">CORE</span>
-        {me && <span className="h-1.5 w-1.5 rounded-full" style={{ background: me.color, boxShadow: `0 0 8px ${me.color}` }} />}
+        <CoreMark beat={!dragging} />
+        {me && (
+          <span
+            className="absolute right-1 top-1 h-2 w-2 rounded-full"
+            style={{ background: me.color, boxShadow: `0 0 6px ${me.color}` }}
+          />
+        )}
       </button>
 
       {/* スイッチャー(ボトムシート) */}
@@ -150,7 +233,8 @@ export function CoreDock({ current }: { current: App["key"] }) {
             </div>
 
             <p className="mt-3 text-center text-[11px] leading-relaxed text-white/35">
-              一つのブレーンが、5つの仕事を束ねます。<br />行き来しても、あなたの文脈はそのまま引き継がれます。
+              一つのブレーンが、5つの仕事を束ねます。<br />行き来しても、あなたの文脈はそのまま引き継がれます。<br />
+              <span className="text-white/25">丸いCoreボタンはドラッグで好きな位置に動かせます。</span>
             </p>
           </div>
         </div>
