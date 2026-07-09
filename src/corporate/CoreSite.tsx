@@ -459,7 +459,9 @@ export default function CoreSite() {
               '設置は HTML にタグ1行、多言語で自動応対',
             ]}
             accentColor="#C9A96E"
-            accentGradient="linear-gradient(135deg,#FFFFFF,#D9E4F5,#C9A96E)"
+            // 白×薄青×金は暗背景前提のグラデ。白ベース化後のコーポ(淡背景)では
+            // 白に近い色が背景と同化して読めなくなるため、コーポ向けは濃色側に寄せる
+            accentGradient="linear-gradient(135deg,#6B7A99,#8C7A5E,#C9A96E)"
             url="https://crystal-nine-self.vercel.app/"
             reversed
           />
