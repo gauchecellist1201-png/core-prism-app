@@ -15,7 +15,6 @@ import { useLocale } from '../hooks/useLocale';
 import type { Locale } from '../lib/i18n';
 import LiveAgentMock from '../components/LiveAgentMock';
 import IndustryWeekTimeline from '../components/IndustryWeekTimeline';
-import { Play } from 'lucide-react';
 import { seedDemoData, setDemoActive, clearDemoData } from '../lib/onboarding';
 import LaunchCountdownBanner from '../components/LaunchCountdownBanner';
 
@@ -514,9 +513,6 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           },
         ]}
       />
-
-      {/* ── FFFF (2026-06-04): 説明動画 (2 分) — youtube-nocookie + 遅延再生 */}
-      <IrisVideoSection />
 
       {/* ── 比較 (COMPARISON) — 他の選択肢との違い */}
       <section className="lp-section-pad" style={{ padding: sectionPad, background: '#F6F7FB' }}>
@@ -1139,64 +1135,3 @@ const ctaBtnGhost: React.CSSProperties = { background: 'rgba(0,0,0,0.05)', color
 const footHead: React.CSSProperties = { fontSize: '0.7rem', letterSpacing: '0.25em', color: IRIS_COLORS.gold, marginBottom: '0.75rem', fontWeight: 700 };
 const footLink: React.CSSProperties = { display: 'block', color: 'rgba(0,0,0,0.7)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '0.5rem' };
 
-// FFFF (2026-06-04): Iris 用 YouTube 説明動画 セクション
-function IrisVideoSection() {
-  const [active, setActive] = useState(false);
-  // ⚠ プレースホルダ — 撮影後に Iris 公式 動画 ID へ
-  const youtubeId = 'dQw4w9WgXcQ';
-  const title = '2 分で分かる CORE Iris (クリエイター向け)';
-  const duration = '2:08';
-  const thumb = `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`;
-  const embed = `https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
-  return (
-    <section style={{
-      padding: '5rem 1.5rem',
-      background: `linear-gradient(180deg, ${'#FFFFFF'} 0%, rgba(131,58,180,0.10) 100%)`,
-    }}>
-      <div style={{ maxWidth: 980, margin: '0 auto' }}>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 700, color: IRIS_COLORS.hotPink, textAlign: 'center', marginBottom: '0.6rem' }}>WATCH IN 2 MIN</p>
-        <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.6rem, 3.2vw, 2.3rem)', fontWeight: 500, textAlign: 'center', marginBottom: '0.5rem', color: '#1F1A2E' }}>
-          <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{title}</span>
-        </h2>
-        <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', textAlign: 'center', marginBottom: '2.5rem', fontFamily: IRIS_FONTS.serif }}>
-          6 つの AI 役員 が、あなたの世界観を磨きます。
-        </p>
-        <div style={{
-          position: 'relative', maxWidth: 880, margin: '0 auto',
-          aspectRatio: '16 / 9', borderRadius: 18, overflow: 'hidden',
-          boxShadow: `0 18px 40px rgba(0,0,0,0.5), 0 0 0 1px ${IRIS_COLORS.gold}33`,
-          background: '#000',
-        }}>
-          {!active ? (
-            <button
-              onClick={() => setActive(true)}
-              aria-label={`${title} を再生`}
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', padding: 0, cursor: 'pointer', background: `url(${thumb}) center / cover #000` }}
-            >
-              <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.5) 100%)' }} />
-              <div aria-hidden style={{
-                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                width: 76, height: 76, borderRadius: 38,
-                background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.gold})`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: `0 16px 36px ${IRIS_COLORS.hotPink}66`,
-              }}>
-                <Play size={32} color="#fff" fill="#fff" style={{ marginLeft: 4 }} />
-              </div>
-              <div style={{ position: 'absolute', bottom: 14, right: 14, padding: '4px 10px', borderRadius: 999, background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: 'Menlo, monospace' }}>{duration}</div>
-            </button>
-          ) : (
-            <iframe
-              src={embed}
-              title={title}
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-            />
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
