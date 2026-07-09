@@ -14,9 +14,11 @@ import {
   type SocialDraft, type SocialTone, type SocialPlatform, type MultiPlatformDraft,
 } from '../lib/socialDraft';
 import {
-  isXConfigured, isXConnected, startXAuth, handleXCallbackIfPresent,
-  postTweet, postThread, loadXUser, clearXAuth, type XUser,
-} from '../lib/xPost';
+  fetchXStatus, startXConnect, postXThread, disconnectX,
+  readXCallbackResult, translateXError,
+  createXSchedule, listXSchedule, deleteXSchedule, type ScheduledXPost,
+} from '../lib/xConnect';
+import { generateImage, type GenerateImageResult } from '../lib/imageGen';
 import ShareArtifactButton from './ShareArtifactButton';
 import { StudioIntro } from './StudioIntro';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
@@ -124,31 +126,45 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
 
   // 旧来 (note 長文 / X 単独)
   const [targetWords, setTargetWords] = useState(1500);
+  const [useCustomWords, setUseCustomWords] = useState(false);
+  const [customWords, setCustomWords] = useState(2000);
   const [threadCount, setThreadCount] = useState(1);
   const [draft, setDraft] = useState<SocialDraft | null>(null);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedBody, setEditedBody] = useState('');
   const [editedThread, setEditedThread] = useState<string[]>([]);
 
+  // note: 生成内容に基づく見出し画像 (自動生成・トップに表示)
+  const [noteImage, setNoteImage] = useState<GenerateImageResult | null>(null);
+  const [noteImageBusy, setNoteImageBusy] = useState(false);
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // X 認証
-  const [xUser, setXUser] = useState<XUser | null>(loadXUser());
-  const [xConnected, setXConnected] = useState(isXConnected());
+  // X 連携（サーバー側 OAuth・トークンはサーバーに保存 = 予約の自動投稿にはこちらが必須）
+  const [xUsername, setXUsername] = useState<string | undefined>(undefined);
+  const [xConnected, setXConnected] = useState(false);
+  const [xReady, setXReady] = useState(false);
   const [xPosting, setXPosting] = useState(false);
-  const [xPostResult, setXPostResult] = useState<{ ids: string[] } | null>(null);
+  const [xPostResult, setXPostResult] = useState<{ ids: string[]; urls?: string[] } | null>(null);
+  const [xSchedules, setXSchedules] = useState<ScheduledXPost[]>([]);
+  const [xScheduling, setXScheduling] = useState(false);
 
   const personaKnowledge = useMemo(
     () => knowledge.filter(k => k.personaId === persona.id),
     [knowledge, persona.id]
   );
 
-  // X コールバック
+  // X 連携状態の読み込み + OAuth コールバック結果の反映
   useEffect(() => {
-    handleXCallbackIfPresent().then(user => {
-      if (user) { setXUser(user); setXConnected(true); }
-    }).catch(e => setError(e instanceof Error ? e.message : String(e)));
+    const cb = readXCallbackResult();
+    if (cb?.error) setError(translateXError(cb.error));
+    fetchXStatus().then(s => {
+      setXReady(s.configured);
+      setXConnected(s.connected);
+      setXUsername(s.username);
+      if (s.connected) listXSchedule().then(setXSchedules);
+    });
   }, []);
 
   // ─── 6 SNS 同時生成 ───
@@ -241,11 +257,48 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     setShowHistory(false);
   }, []);
 
+  // ─── X 自動投稿の予約 (サーバー保存・ブラウザを閉じても実行される) ───
+  const handleXAutoSchedule = useCallback(async (tweets: string[]) => {
+    if (!scheduleAt) { setError('予約日時を選んでください'); return; }
+    if (!xConnected) { setError('先にXアカウントと連携してください'); return; }
+    setXScheduling(true); setError(null);
+    try {
+      const iso = new Date(scheduleAt).toISOString();
+      const r = await createXSchedule(iso, tweets);
+      if (!r.ok || !r.item) { setError(r.message || '予約に失敗しました'); return; }
+      const next = [...xSchedules, r.item].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+      setXSchedules(next);
+      setShowSchedule(true);
+      notifyInApp({
+        kind: 'success',
+        title: 'Xへの自動投稿を予約しました',
+        body: `${new Date(iso).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} に自動で投稿されます`,
+        duration: 3000,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setXScheduling(false);
+    }
+  }, [scheduleAt, xConnected, xSchedules]);
+
+  const handleDeleteXSchedule = useCallback(async (id: string) => {
+    setXSchedules(prev => prev.filter(s => s.id !== id));
+    await deleteXSchedule(id);
+  }, []);
+
   // ─── 予約 ───
+  // X は自動投稿(サーバー予約)が可能。それ以外の SNS は投稿APIが無い/未連携のため、
+  // 「予約リスト」はローカルに残してリマインダーとして使う(自動では送信されない)。
   const handleSchedulePost = useCallback((platform: SocialPlatform) => {
     if (!scheduleAt) { setError('予約日時を選んでください'); return; }
     const body = multiPosts[platform] || '';
     if (!body.trim()) { setError('本文がありません'); return; }
+    const tags = multiHashtags.length > 0 ? '\n\n' + multiHashtags.slice(0, 3).map(t => '#' + t).join(' ') : '';
+    if (platform === 'x' && xConnected) {
+      handleXAutoSchedule([body + tags]);
+      return;
+    }
     const item: ScheduledPost = {
       id: `s_${Date.now()}_${platform}`,
       scheduledAt: new Date(scheduleAt).toISOString(),
@@ -263,15 +316,20 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     setShowSchedule(true);
     notifyInApp({
       kind: 'success',
-      title: `${PLATFORM_META[platform].label} を予約しました`,
+      title: `${PLATFORM_META[platform].label} を予約しました（リマインダー・手動投稿用）`,
       body: new Date(scheduleAt).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
       duration: 2500,
     });
-  }, [scheduleAt, multiPosts, multiHashtags, topic, schedule]);
+  }, [scheduleAt, multiPosts, multiHashtags, topic, schedule, xConnected, handleXAutoSchedule]);
 
   const handleScheduleAll = useCallback(() => {
     if (!scheduleAt) { setError('予約日時を選んでください'); return; }
     if (Object.keys(multiPosts).length === 0) { setError('まず投稿を生成してください'); return; }
+    // X 分は自動投稿を予約(接続時)。それ以外はローカルにリマインダーとして残す。
+    if (multiPosts.x && xConnected) {
+      const tags = multiHashtags.length > 0 ? '\n\n' + multiHashtags.slice(0, 2).map(t => '#' + t).join(' ') : '';
+      handleXAutoSchedule([multiPosts.x + tags]);
+    }
     const item: ScheduledPost = {
       id: `s_${Date.now()}_all`,
       scheduledAt: new Date(scheduleAt).toISOString(),
@@ -290,11 +348,11 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     setShowSchedule(true);
     notifyInApp({
       kind: 'success',
-      title: `全 ${Object.keys(multiPosts).length} SNS を予約しました`,
+      title: `全 ${Object.keys(multiPosts).length} SNS を予約しました${multiPosts.x && xConnected ? '（Xは自動投稿されます）' : ''}`,
       body: new Date(scheduleAt).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
       duration: 2800,
     });
-  }, [scheduleAt, multiPosts, multiHashtags, topic, schedule]);
+  }, [scheduleAt, multiPosts, multiHashtags, topic, schedule, xConnected, handleXAutoSchedule]);
 
   const handleDeleteSchedule = useCallback((id: string) => {
     const next = schedule.filter(s => s.id !== id);
@@ -315,23 +373,47 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     }));
   }, [multiPosts, topic]);
 
+  // ─── note 記事の見出し画像を生成内容から自動生成 (トップに載せる) ───
+  const generateNoteHeaderImage = useCallback(async (title: string, hookLine: string) => {
+    setNoteImageBusy(true);
+    setNoteImage(null);
+    try {
+      const seedText = [title, hookLine].filter(Boolean).join(' — ');
+      const img = await generateImage({
+        prompt: seedText || topic,
+        aspect: 'note-hero',
+        style: 'editorial',
+      });
+      setNoteImage(img);
+    } catch (e) {
+      // 画像生成の失敗は記事生成自体を止めない (silent failにせずログのみ)
+      console.warn('[AutoPostStudio] note見出し画像の生成に失敗', e);
+    } finally {
+      setNoteImageBusy(false);
+    }
+  }, [topic]);
+
   // ─── 旧 note / X 生成 ───
   const handleGenerate = useCallback(async () => {
     if (!topic.trim()) { setError('テーマを入力してください'); return; }
     setIsGenerating(true);
     setError(null);
     setDraft(null);
+    setNoteImage(null);
     try {
       const ks = personaKnowledge.filter(k => selectedKnowledge.has(k.id));
       let result: SocialDraft;
       if (tab === 'note') {
+        const effectiveWords = useCustomWords ? customWords : targetWords;
         result = await generateNoteArticle({
           settings, persona, topic, tone, knowledge: ks,
-          targetWords, customInstruction: customInstr,
+          targetWords: effectiveWords, customInstruction: customInstr,
         });
         setEditedTitle(result.title || '');
         setEditedBody('');
         animateInto(result.body || '', setEditedBody);
+        // 記事の内容(タイトル+リード文)に基づく見出し画像を裏で自動生成
+        generateNoteHeaderImage(result.title || topic, result.hookLine || '');
       } else {
         result = await generateXPost({
           settings, persona, topic, tone, knowledge: ks,
@@ -347,7 +429,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     } finally {
       setIsGenerating(false);
     }
-  }, [tab, topic, tone, customInstr, settings, persona, personaKnowledge, selectedKnowledge, targetWords, threadCount]);
+  }, [tab, topic, tone, customInstr, settings, persona, personaKnowledge, selectedKnowledge, targetWords, useCustomWords, customWords, threadCount, generateNoteHeaderImage]);
 
   const copyToClipboard = useCallback((text: string, label = '本文') => copyText(text, label), []);
 
@@ -390,25 +472,23 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     onSaveAsKnowledge(title, content);
   }, [tab, editedTitle, editedBody, editedThread, onSaveAsKnowledge]);
 
-  // X 投稿
-  const handleXConnect = useCallback(async () => {
+  // X 投稿 (サーバー側連携 = 予約の自動投稿もこの connect が有効な間ずっと使える)
+  const handleXConnect = useCallback(() => {
     setError(null);
-    try { await startXAuth(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    startXConnect();
   }, []);
-  const handleXDisconnect = useCallback(() => {
-    clearXAuth(); setXConnected(false); setXUser(null);
+  const handleXDisconnect = useCallback(async () => {
+    await disconnectX();
+    setXConnected(false); setXUsername(undefined); setXSchedules([]);
   }, []);
 
   const handleXPost = useCallback(async () => {
     setXPosting(true); setError(null); setXPostResult(null);
     try {
-      if (editedThread.length > 1) {
-        const r = await postThread(editedThread.filter(t => t.trim().length > 0));
-        setXPostResult(r);
-      } else {
-        const r = await postTweet(editedBody);
-        setXPostResult({ ids: [r.id] });
-      }
+      const tweets = editedThread.length > 1 ? editedThread.filter(t => t.trim().length > 0) : [editedBody];
+      const r = await postXThread(tweets);
+      if (!r.ok) { setError(r.message || 'Xへの投稿に失敗しました'); return; }
+      setXPostResult({ ids: r.ids || [], urls: r.urls });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -421,8 +501,10 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     if (!body) return;
     setXPosting(true); setError(null); setXPostResult(null);
     try {
-      const r = await postTweet(body + (multiHashtags.length > 0 ? '\n\n' + multiHashtags.slice(0, 2).map(t => '#' + t).join(' ') : ''));
-      setXPostResult({ ids: [r.id] });
+      const text = body + (multiHashtags.length > 0 ? '\n\n' + multiHashtags.slice(0, 2).map(t => '#' + t).join(' ') : '');
+      const r = await postXThread([text]);
+      if (!r.ok) { setError(r.message || 'Xへの投稿に失敗しました'); return; }
+      setXPostResult({ ids: r.ids || [], urls: r.urls });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -430,10 +512,8 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     }
   }, [multiPosts, multiHashtags]);
 
-  const xReady = isXConfigured();
-
   // 履歴の状態別件数
-  const pendingSchedules = schedule.filter(s => s.status === 'pending').length;
+  const pendingSchedules = schedule.filter(s => s.status === 'pending').length + xSchedules.filter(s => s.status === 'pending').length;
 
   return (
     <motion.div
@@ -526,9 +606,48 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                 className="rounded-xl overflow-hidden"
                 style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}40` }}
               >
+                {/* X: サーバー側で実際に自動投稿される予約 */}
+                {xSchedules.length > 0 && (
+                  <div style={{ borderBottom: '1px solid var(--border)' }}>
+                    <div className="px-4 py-2.5" style={{ background: `${persona.accentColor}12` }}>
+                      <p className="text-fg font-semibold text-sm">𝕏 自動投稿される予約 ({xSchedules.length}件)</p>
+                      <p className="text-fg-muted text-[11px]">時刻になると、ブラウザを閉じていても自動でXに投稿されます</p>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
+                      {xSchedules.map(s => {
+                        const dt = new Date(s.scheduledAt);
+                        return (
+                          <div key={s.id} className="px-4 py-2.5 flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-xs font-mono" style={{ color: persona.accentColor }}>
+                                  {dt.toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                {s.status === 'pending' && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--surface)', color: 'var(--fg-muted)' }}>予約中</span>}
+                                {s.status === 'sent' && <span className="text-[10px]" style={{ color: '#4ADE80' }}>✓ 自動投稿済み</span>}
+                                {s.status === 'failed' && <span className="text-[10px] text-red-400">⚠ 投稿失敗: {s.error}</span>}
+                              </div>
+                              <p className="text-fg-muted text-[11px] truncate">{s.tweets[0]}</p>
+                              {s.status === 'sent' && s.urls?.[0] && (
+                                <a href={s.urls[0]} target="_blank" rel="noopener noreferrer" className="text-[11px] underline" style={{ color: persona.accentColor }}>投稿を確認する →</a>
+                              )}
+                            </div>
+                            {s.status === 'pending' && (
+                              <button
+                                onClick={() => handleDeleteXSchedule(s.id)}
+                                className="text-fg-muted hover:text-fg text-xs px-2 py-1 rounded flex-shrink-0"
+                                style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 32 }}
+                              >削除</button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <p className="text-fg font-semibold text-sm">📅 予約済み投稿 ({schedule.length}件)</p>
-                  <p className="text-fg-muted text-[11px]">※ ローカル保存。自動投稿は今後のアップデートで対応</p>
+                  <p className="text-fg font-semibold text-sm">📅 その他 SNS の予約リマインダー ({schedule.length}件)</p>
+                  <p className="text-fg-muted text-[11px]">※ ローカル保存。X以外は投稿APIが無いため手動投稿の目安です</p>
                 </div>
                 {schedule.length === 0 ? (
                   <p className="text-fg-muted text-sm text-center py-6">まだ予約はありません</p>
@@ -658,19 +777,15 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               }}
             >
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                {xConnected && xUser?.profileImageUrl ? (
-                  <img src={xUser.profileImageUrl} alt="" className="w-9 h-9 rounded-full" referrerPolicy="no-referrer" />
-                ) : (
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-lg" style={{ background: persona.accentColorLight }}>𝕏</div>
-                )}
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-lg" style={{ background: persona.accentColorLight }}>𝕏</div>
                 <div className="min-w-0">
                   <p className="text-fg text-sm font-semibold leading-tight">
                     X 連携 {xConnected && <span className="text-xs ml-1" style={{ color: persona.accentColor }}>● 接続中</span>}
                   </p>
-                  {xConnected && xUser ? (
-                    <p className="text-fg-muted text-xs truncate">@{xUser.username} · このアカウントから直接投稿できます</p>
+                  {xConnected ? (
+                    <p className="text-fg-muted text-xs truncate">{xUsername ? `@${xUsername} · ` : ''}今すぐ投稿・予約した自動投稿の両方に使えます</p>
                   ) : (
-                    <p className="text-fg-muted text-xs">{xReady ? 'OAuth 認証で X に接続すると、生成 → ワンクリック投稿が可能に' : 'VITE_X_CLIENT_ID 未設定'}</p>
+                    <p className="text-fg-muted text-xs">{xReady ? '連携すると、生成 → ワンクリック投稿・日時指定の自動投稿が可能に' : 'X連携の設定が未完了です'}</p>
                   )}
                 </div>
               </div>
@@ -766,8 +881,12 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                   <div>
                     <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">目標字数</label>
                     <select
-                      value={targetWords}
-                      onChange={e => setTargetWords(Number(e.target.value))}
+                      value={useCustomWords ? 'custom' : targetWords}
+                      onChange={e => {
+                        if (e.target.value === 'custom') { setUseCustomWords(true); return; }
+                        setUseCustomWords(false);
+                        setTargetWords(Number(e.target.value));
+                      }}
                       className="w-full px-3 rounded bg-surface-3 border-edge border text-fg"
                       style={{ fontSize: 16, minHeight: 48 }}
                     >
@@ -775,7 +894,19 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                       <option value={1500}>標準 (1,500字)</option>
                       <option value={2500}>長め (2,500字)</option>
                       <option value={3500}>超詳細 (3,500字)</option>
+                      <option value="custom">カスタム (数字で指定)</option>
                     </select>
+                    {useCustomWords && (
+                      <input
+                        type="number"
+                        min={300} max={8000} step={100}
+                        value={customWords}
+                        onChange={e => setCustomWords(Math.max(300, Math.min(8000, Number(e.target.value) || 300)))}
+                        placeholder="例: 4500"
+                        className="w-full mt-1.5 px-3 rounded bg-surface-3 border-edge border text-fg"
+                        style={{ fontSize: 16, minHeight: 48 }}
+                      />
+                    )}
                   </div>
                 ) : (
                   <div>
@@ -885,14 +1016,14 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                 <div className="flex items-end">
                   <button
                     onClick={handleScheduleAll}
-                    disabled={!scheduleAt || Object.keys(multiPosts).length === 0}
+                    disabled={!scheduleAt || Object.keys(multiPosts).length === 0 || xScheduling}
                     className="w-full rounded font-semibold disabled:opacity-40"
                     style={{
                       minHeight: 48,
                       background: 'var(--surface)', color: 'var(--fg)',
                       border: `1px solid ${persona.accentColor}50`, fontSize: 14,
                     }}
-                  >📅 全 SNS をこの日時に予約</button>
+                  >{xScheduling ? '予約中…' : '📅 全 SNS をこの日時に予約'}</button>
                 </div>
               </div>
             )}
@@ -1024,8 +1155,8 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               {xPostResult && (
                 <div className="rounded-xl px-4 py-2 text-xs" style={{ background: 'rgba(74,222,128,0.10)', color: '#4ADE80' }}>
                   ✓ 投稿完了 ·{' '}
-                  {xUser && (
-                    <a href={`https://twitter.com/${xUser.username}/status/${xPostResult.ids[0]}`} target="_blank" rel="noopener noreferrer" className="underline">
+                  {xPostResult.urls?.[0] && (
+                    <a href={xPostResult.urls[0]} target="_blank" rel="noopener noreferrer" className="underline">
                       投稿を確認する →
                     </a>
                   )}
@@ -1040,6 +1171,41 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
                 <p className="text-fg-muted text-xs tracking-wider uppercase">下書きプレビュー (編集可)</p>
               </div>
+
+              {/* 見出し画像 (記事内容に基づき自動生成・note のトップに載せる用) */}
+              <div className="p-4 pb-0">
+                {noteImageBusy ? (
+                  <div
+                    className="w-full rounded-lg flex items-center justify-center text-fg-muted text-xs animate-pulse"
+                    style={{ aspectRatio: '16/9', background: 'var(--surface)', border: '1px solid var(--border)' }}
+                  >🎨 見出し画像を生成中…</div>
+                ) : noteImage ? (
+                  <div className="relative rounded-lg overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+                    <img src={noteImage.url} alt="見出し画像" className="w-full block" style={{ aspectRatio: '16/9', objectFit: 'cover' }} />
+                    <div className="absolute bottom-2 right-2 flex gap-1.5">
+                      <button
+                        onClick={() => generateNoteHeaderImage(editedTitle, draft?.hookLine || '')}
+                        className="text-[11px] px-2.5 py-1.5 rounded-md font-medium"
+                        style={{ background: 'rgba(0,0,0,0.65)', color: '#fff', backdropFilter: 'blur(6px)' }}
+                      >🔄 画像を変える</button>
+                      <a
+                        href={noteImage.url} download={`${(editedTitle || 'note-hero').replace(/[\\/:*?"<>|]/g, '_').slice(0, 40)}.jpg`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="text-[11px] px-2.5 py-1.5 rounded-md font-medium"
+                        style={{ background: 'rgba(0,0,0,0.65)', color: '#fff', backdropFilter: 'blur(6px)' }}
+                      >⬇ ダウンロード</a>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => generateNoteHeaderImage(editedTitle, draft?.hookLine || '')}
+                    className="w-full rounded-lg flex items-center justify-center text-fg-muted text-xs"
+                    style={{ aspectRatio: '16/9', background: 'var(--surface)', border: '1px dashed var(--border)' }}
+                  >🎨 見出し画像を生成する</button>
+                )}
+                <p className="text-fg-muted text-[11px] mt-1.5">この画像をダウンロードして、note編集画面の「見出し画像」に設定してください（note公式APIが無いため自動では貼り付けられません）</p>
+              </div>
+
               <div className="p-4 space-y-3">
                 <input
                   value={editedTitle}
@@ -1212,8 +1378,8 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               {xPostResult && (
                 <div className="px-4 py-2 text-xs" style={{ background: 'rgba(74,222,128,0.10)', color: '#4ADE80', borderTop: '1px solid var(--border)' }}>
                   ✓ 投稿完了 ({xPostResult.ids.length}本) ·{' '}
-                  {xUser && (
-                    <a href={`https://twitter.com/${xUser.username}/status/${xPostResult.ids[0]}`} target="_blank" rel="noopener noreferrer" className="underline">
+                  {xPostResult.urls?.[0] && (
+                    <a href={xPostResult.urls[0]} target="_blank" rel="noopener noreferrer" className="underline">
                       投稿を確認する →
                     </a>
                   )}

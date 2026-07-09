@@ -94,6 +94,74 @@ export async function disconnectX(): Promise<boolean> {
   }
 }
 
+// ─── 自動投稿（予約） ───────────────────────────────
+// 2026-07-09: 予約した時刻に api/cron/x-scheduled-posts が自動で投稿する。
+// ブラウザを閉じていても実行される「本物の自動投稿」。
+export interface ScheduledXPost {
+  id: string;
+  scheduledAt: string;
+  tweets: string[];
+  status: 'pending' | 'sent' | 'failed';
+  createdAt: number;
+  sentAt?: number;
+  error?: string;
+  urls?: string[];
+}
+
+export interface CreateScheduleResult {
+  ok?: boolean;
+  item?: ScheduledXPost;
+  error?: string;
+  message?: string;
+}
+
+/** 指定日時に自動投稿されるよう予約する。 */
+export async function createXSchedule(scheduledAt: string, tweets: string[]): Promise<CreateScheduleResult> {
+  const uid = getXUid();
+  try {
+    const res = await fetch('/api/x/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid, scheduledAt, tweets }),
+    });
+    const data = (await res.json().catch(() => ({}))) as CreateScheduleResult;
+    if (!res.ok) {
+      return { error: data.error || 'schedule-failed', message: data.message || '予約に失敗しました。' };
+    }
+    return data;
+  } catch {
+    return { error: 'network', message: 'Xへの接続に失敗しました。電波状況を確認して再度お試しください。' };
+  }
+}
+
+/** 自分の予約一覧を取得する。 */
+export async function listXSchedule(): Promise<ScheduledXPost[]> {
+  const uid = getXUid();
+  try {
+    const res = await fetch(`/api/x/schedule?uid=${encodeURIComponent(uid)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.items) ? data.items : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 予約を削除する。 */
+export async function deleteXSchedule(id: string): Promise<boolean> {
+  const uid = getXUid();
+  try {
+    const res = await fetch('/api/x/schedule', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid, id }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 /** URL の ?x_connected=1 / ?x_error=... を読み取り、読み終えたら除去。 */
 export function readXCallbackResult(): { connected?: boolean; error?: string } | null {
   try {
