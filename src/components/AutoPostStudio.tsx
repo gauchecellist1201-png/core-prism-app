@@ -4,6 +4,12 @@
 // ============================================================
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Send, Calendar, History, Zap, FileText, MessageCircle, Hash, Copy,
+  RefreshCw, Download, BookOpen, Globe, Check,
+  AlertTriangle, Clock, Inbox, Shuffle, Sparkles, Loader2, Palette, ExternalLink,
+  Circle,
+} from 'lucide-react';
 import ApiErrorCard from './ApiErrorCard';
 import { copyText } from '../lib/clipboard';
 import { notifyInApp } from '../lib/inAppNotify';
@@ -532,9 +538,9 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}
-            >📢</div>
+            ><Send size={20} strokeWidth={2.2} /></div>
             <div className="min-w-0">
               <p className="text-fg text-base font-semibold leading-tight truncate">投稿スタジオ</p>
               <p className="text-fg-muted text-xs truncate">6 SNS に最適化して同時生成 / 予約 / 履歴再利用</p>
@@ -550,16 +556,16 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                 color: pendingSchedules > 0 ? '#0a0a0f' : 'var(--fg-muted)',
                 border: '1px solid var(--border)',
               }}
-            >📅 予約{pendingSchedules > 0 && ` ${pendingSchedules}`}</button>
+            ><Calendar size={13} strokeWidth={2.2} />予約{pendingSchedules > 0 && ` ${pendingSchedules}`}</button>
             <button
               onClick={() => setShowHistory(s => !s)}
-              className="text-xs px-3 rounded-full font-semibold"
+              className="text-xs px-3 rounded-full font-semibold inline-flex items-center gap-1"
               style={{
                 height: 40, minHeight: 40,
                 background: 'var(--surface-3)', color: 'var(--fg-muted)',
                 border: '1px solid var(--border)',
               }}
-            >🕰 履歴{history.length > 0 && ` ${history.length}`}</button>
+            ><History size={13} strokeWidth={2.2} />履歴{history.length > 0 && ` ${history.length}`}</button>
             <button
               onClick={onClose}
               className="rounded-full flex items-center justify-center text-fg-muted hover:text-fg text-xl leading-none"
@@ -579,21 +585,21 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
         {/* Platform Tabs */}
         <div className="flex gap-1 px-5 pt-3 overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
           {([
-            { id: 'multi' as Tab, label: '⚡ 6 SNS 同時' },
-            { id: 'note' as Tab, label: '📝 note 記事 (長文)' },
-            { id: 'x' as Tab, label: '🐦 X 単独 / スレッド' },
+            { id: 'multi' as Tab, label: '6 SNS 同時', Icon: Zap },
+            { id: 'note' as Tab, label: 'note 記事 (長文)', Icon: FileText },
+            { id: 'x' as Tab, label: 'X 単独 / スレッド', Icon: MessageCircle },
           ]).map(t => (
             <button
               key={t.id}
               onClick={() => { setTab(t.id); setDraft(null); setError(null); }}
-              className="text-sm px-4 rounded-t-md font-medium whitespace-nowrap"
+              className="text-sm px-4 rounded-t-md font-medium whitespace-nowrap inline-flex items-center gap-1.5"
               style={{
                 minHeight: 44,
                 background: tab === t.id ? persona.accentColorLight : 'transparent',
                 color: tab === t.id ? persona.accentColor : 'var(--fg-muted)',
                 borderBottom: tab === t.id ? `2px solid ${persona.accentColor}` : '2px solid transparent',
               }}
-            >{t.label}</button>
+            ><t.Icon size={15} strokeWidth={2.2} />{t.label}</button>
           ))}
         </div>
 
@@ -624,8 +630,8 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                                   {dt.toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 {s.status === 'pending' && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--surface)', color: 'var(--fg-muted)' }}>予約中</span>}
-                                {s.status === 'sent' && <span className="text-[10px]" style={{ color: '#4ADE80' }}>✓ 自動投稿済み</span>}
-                                {s.status === 'failed' && <span className="text-[10px] text-red-400">⚠ 投稿失敗: {s.error}</span>}
+                                {s.status === 'sent' && <span className="text-[10px] inline-flex items-center gap-0.5" style={{ color: '#4ADE80' }}><Check size={11} strokeWidth={2.6} />自動投稿済み</span>}
+                                {s.status === 'failed' && <span className="text-[10px] text-red-400 inline-flex items-center gap-0.5"><AlertTriangle size={11} strokeWidth={2.4} />投稿失敗: {s.error}</span>}
                               </div>
                               <p className="text-fg-muted text-[11px] truncate">{s.tweets[0]}</p>
                               {s.status === 'sent' && s.urls?.[0] && (
@@ -646,7 +652,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                   </div>
                 )}
                 <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <p className="text-fg font-semibold text-sm">📅 その他 SNS の予約リマインダー ({schedule.length}件)</p>
+                  <p className="text-fg font-semibold text-sm inline-flex items-center gap-1.5"><Calendar size={14} strokeWidth={2.2} />その他 SNS の予約リマインダー ({schedule.length}件)</p>
                   <p className="text-fg-muted text-[11px]">※ ローカル保存。X以外は投稿APIが無いため手動投稿の目安です</p>
                 </div>
                 {schedule.length === 0 ? (
@@ -667,9 +673,9 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                               <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--surface)', color: 'var(--fg-muted)' }}>
                                 {meta}
                               </span>
-                              {s.status === 'missed' && <span className="text-[10px] text-red-400">⏰ 未送信のまま期限切れ</span>}
-                              {past && s.status === 'pending' && <span className="text-[10px] text-red-400">⚠ 過去日時</span>}
-                              {s.status === 'sent' && <span className="text-[10px]" style={{ color: persona.accentColor }}>✓ 送信済</span>}
+                              {s.status === 'missed' && <span className="text-[10px] text-red-400 inline-flex items-center gap-0.5"><Clock size={11} strokeWidth={2.4} />未送信のまま期限切れ</span>}
+                              {past && s.status === 'pending' && <span className="text-[10px] text-red-400 inline-flex items-center gap-0.5"><AlertTriangle size={11} strokeWidth={2.4} />過去日時</span>}
+                              {s.status === 'sent' && <span className="text-[10px] inline-flex items-center gap-0.5" style={{ color: persona.accentColor }}><Check size={11} strokeWidth={2.6} />送信済</span>}
                             </div>
                             <p className="text-fg text-xs truncate">{s.topic}</p>
                             <p className="text-fg-muted text-[11px] truncate">{s.body.slice(0, 80)}</p>
@@ -697,7 +703,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                 style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}40` }}
               >
                 <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <p className="text-fg font-semibold text-sm">🕰 過去の生成 ({history.length}件、最大 {MAX_HISTORY} 件)</p>
+                  <p className="text-fg font-semibold text-sm inline-flex items-center gap-1.5"><History size={14} strokeWidth={2.2} />過去の生成 ({history.length}件、最大 {MAX_HISTORY} 件)</p>
                 </div>
                 {history.length === 0 ? (
                   <p className="text-fg-muted text-sm text-center py-6">まだ履歴はありません</p>
@@ -721,14 +727,14 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleLoadFromHistory(h)}
-                            className="text-xs px-3 rounded font-semibold"
+                            className="text-xs px-3 rounded font-semibold inline-flex items-center gap-1"
                             style={{ background: 'var(--surface)', color: 'var(--fg)', border: '1px solid var(--border)', minHeight: 36 }}
-                          >📥 読み込む</button>
+                          ><Inbox size={13} strokeWidth={2.2} />読み込む</button>
                           <button
                             onClick={() => handleRemix(h)}
-                            className="text-xs px-3 rounded font-semibold"
+                            className="text-xs px-3 rounded font-semibold inline-flex items-center gap-1"
                             style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 36 }}
-                          >🔄 再アレンジ</button>
+                          ><Shuffle size={13} strokeWidth={2.2} />再アレンジ</button>
                         </div>
                       </div>
                     ))}
@@ -744,7 +750,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               accent={persona.accentColor}
               iconKey="autopost"
               what="1 つのテーマから X / Threads / Instagram / LinkedIn / note / Facebook 6 SNS 分の最適化された投稿文を同時生成します。"
-              tryThis="テーマを入力 → ✨ 6 SNS 同時生成 → 各カードでコピー or 投稿予約。"
+              tryThis="テーマを入力 → 「6 SNS 同時生成」を押す → 各カードでコピー or 投稿予約。"
               example="「今月のミニ起業ジャーニー」→ 各 SNS の長さ・口調に合わせて 6 本同時に並ぶ。"
               sampleLabel="同時に出来る 6 本"
               samplePreview={
@@ -977,7 +983,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                             className="w-full text-left px-2 py-1.5 rounded text-xs flex items-center gap-2"
                             style={{ background: sel ? persona.accentColorLight : 'transparent', color: sel ? persona.accentColor : 'var(--fg)', minHeight: 36 }}
                           >
-                            <span>{sel ? '✓' : '○'}</span>
+                            <span className="inline-flex flex-shrink-0">{sel ? <Check size={14} strokeWidth={2.6} /> : <Circle size={14} strokeWidth={2} />}</span>
                             <span className="truncate">{k.title}</span>
                           </button>
                         );
@@ -1004,7 +1010,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
             {tab === 'multi' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">📅 予約日時 (任意)</label>
+                  <label className="text-fg-muted text-xs tracking-wider uppercase mb-1.5 inline-flex items-center gap-1"><Calendar size={12} strokeWidth={2.2} />予約日時 (任意)</label>
                   <input
                     type="datetime-local"
                     value={scheduleAt}
@@ -1023,7 +1029,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                       background: 'var(--surface)', color: 'var(--fg)',
                       border: `1px solid ${persona.accentColor}50`, fontSize: 14,
                     }}
-                  >{xScheduling ? '予約中…' : '📅 全 SNS をこの日時に予約'}</button>
+                  ><span className="inline-flex items-center justify-center gap-1">{xScheduling ? '予約中…' : <><Calendar size={14} strokeWidth={2.2} />全 SNS をこの日時に予約</>}</span></button>
                 </div>
               </div>
             )}
@@ -1031,15 +1037,15 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
             <motion.button
               onClick={tab === 'multi' ? handleGenerateMulti : handleGenerate}
               disabled={!topic.trim() || isGenerating || (tab === 'multi' && enabledPlatforms.size === 0)}
-              className="w-full rounded-lg font-semibold disabled:opacity-50"
+              className="w-full rounded-lg font-semibold disabled:opacity-50 inline-flex items-center justify-center gap-2"
               style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 56, fontSize: 16 }}
               whileTap={!isGenerating ? { scale: 0.99 } : {}}
             >
               {isGenerating
-                ? '🧠 生成中…'
+                ? <><Loader2 size={17} strokeWidth={2.4} className="animate-spin" />生成中…</>
                 : tab === 'multi'
-                  ? `✨ ${enabledPlatforms.size} SNS 同時生成`
-                  : `✨ ${tab === 'note' ? 'note 記事' : threadCount > 1 ? 'X スレッド' : 'X ツイート'}を生成`
+                  ? <><Sparkles size={17} strokeWidth={2.2} />{`${enabledPlatforms.size} SNS 同時生成`}</>
+                  : <><Sparkles size={17} strokeWidth={2.2} />{`${tab === 'note' ? 'note 記事' : threadCount > 1 ? 'X スレッド' : 'X ツイート'}を生成`}</>
               }
             </motion.button>
 
@@ -1053,7 +1059,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                   background: 'var(--surface)', color: persona.accentColor,
                   border: `1px solid ${persona.accentColor}50`,
                 }}
-              >{hashtagBusy ? '🏷 提案中…' : '🏷 ハッシュタグだけ AI に提案させる (10 個)'}</button>
+              ><span className="inline-flex items-center justify-center gap-1.5"><Hash size={14} strokeWidth={2.4} />{hashtagBusy ? '提案中…' : 'ハッシュタグだけ AI に提案させる (10 個)'}</span></button>
             )}
 
             <ApiErrorCard
@@ -1070,12 +1076,12 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               {multiHashtags.length > 0 && (
                 <div className="rounded-xl p-3" style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}40` }}>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-fg-muted text-xs tracking-wider uppercase">🏷 提案ハッシュタグ ({multiHashtags.length})</p>
+                    <p className="text-fg-muted text-xs tracking-wider uppercase inline-flex items-center gap-1.5"><Hash size={13} strokeWidth={2.4} />提案ハッシュタグ ({multiHashtags.length})</p>
                     <button
                       onClick={() => copyToClipboard(multiHashtags.map(t => '#' + t).join(' '), 'ハッシュタグ')}
-                      className="text-[11px] px-2 py-1 rounded text-fg-muted hover:text-fg"
+                      className="text-[11px] px-2 py-1 rounded text-fg-muted hover:text-fg inline-flex items-center gap-1"
                       style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                    >📋 まとめてコピー</button>
+                    ><Copy size={12} strokeWidth={2.2} />まとめてコピー</button>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {multiHashtags.map((t, i) => (
@@ -1100,8 +1106,8 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                         </span>
                         <div className="min-w-0">
                           <p className="text-fg text-sm font-semibold truncate">{m.label}</p>
-                          <p className="text-[10px]" style={{ color: over ? '#f87171' : 'var(--fg-muted)' }}>
-                            {body.length} / {m.charBudget} 字 {over && '⚠ 超過'}
+                          <p className="text-[10px] inline-flex items-center gap-0.5" style={{ color: over ? '#f87171' : 'var(--fg-muted)' }}>
+                            {body.length} / {m.charBudget} 字 {over && <><AlertTriangle size={10} strokeWidth={2.4} />超過</>}
                           </p>
                         </div>
                       </div>
@@ -1116,28 +1122,28 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                     <div className="px-3 py-2.5 flex flex-wrap gap-1.5 justify-end" style={{ borderTop: '1px solid var(--border)' }}>
                       <button
                         onClick={() => handleCopyPlatform(p)}
-                        className="text-xs px-3 rounded text-fg hover:text-fg font-medium"
+                        className="text-xs px-3 rounded text-fg hover:text-fg font-medium inline-flex items-center gap-1"
                         style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
-                      >📋 タグごとコピー</button>
+                      ><Copy size={13} strokeWidth={2.2} />タグごとコピー</button>
                       <button
                         onClick={() => handleOpenImageStudio(p)}
-                        className="text-xs px-3 rounded font-medium"
+                        className="text-xs px-3 rounded font-medium inline-flex items-center gap-1"
                         style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--fg)', minHeight: 40 }}
-                      >🎨 画像生成</button>
+                      ><Palette size={13} strokeWidth={2.2} />画像生成</button>
                       {scheduleAt && (
                         <button
                           onClick={() => handleSchedulePost(p)}
-                          className="text-xs px-3 rounded font-semibold"
+                          className="text-xs px-3 rounded font-semibold inline-flex items-center gap-1"
                           style={{ background: persona.accentColorLight, color: persona.accentColor, minHeight: 40 }}
-                        >📅 この SNS だけ予約</button>
+                        ><Calendar size={13} strokeWidth={2.2} />この SNS だけ予約</button>
                       )}
                       {m.postUrl && (
                         <a
                           href={m.postUrl(body + (multiHashtags.length > 0 ? '\n\n' + multiHashtags.slice(0, 3).map(t => '#' + t).join(' ') : ''))}
                           target="_blank" rel="noopener noreferrer"
-                          className="text-xs px-3 rounded font-semibold inline-flex items-center"
+                          className="text-xs px-3 rounded font-semibold inline-flex items-center gap-1"
                           style={{ background: m.color, color: '#fff', minHeight: 40 }}
-                        >↗ {m.label.split(' ')[0]} で開く</a>
+                        ><ExternalLink size={13} strokeWidth={2.2} />{m.label.split(' ')[0]} で開く</a>
                       )}
                       {p === 'x' && xConnected && (
                         <button
@@ -1153,8 +1159,8 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               })}
 
               {xPostResult && (
-                <div className="rounded-xl px-4 py-2 text-xs" style={{ background: 'rgba(74,222,128,0.10)', color: '#4ADE80' }}>
-                  ✓ 投稿完了 ·{' '}
+                <div className="rounded-xl px-4 py-2 text-xs inline-flex items-center gap-1" style={{ background: 'rgba(74,222,128,0.10)', color: '#4ADE80' }}>
+                  <Check size={12} strokeWidth={2.6} />投稿完了 ·{' '}
                   {xPostResult.urls?.[0] && (
                     <a href={xPostResult.urls[0]} target="_blank" rel="noopener noreferrer" className="underline">
                       投稿を確認する →
@@ -1176,32 +1182,32 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               <div className="p-4 pb-0">
                 {noteImageBusy ? (
                   <div
-                    className="w-full rounded-lg flex items-center justify-center text-fg-muted text-xs animate-pulse"
+                    className="w-full rounded-lg flex items-center justify-center gap-1.5 text-fg-muted text-xs animate-pulse"
                     style={{ aspectRatio: '16/9', background: 'var(--surface)', border: '1px solid var(--border)' }}
-                  >🎨 見出し画像を生成中…</div>
+                  ><Palette size={14} strokeWidth={2.2} />見出し画像を生成中…</div>
                 ) : noteImage ? (
                   <div className="relative rounded-lg overflow-hidden" style={{ border: '1px solid var(--border)' }}>
                     <img src={noteImage.url} alt="見出し画像" className="w-full block" style={{ aspectRatio: '16/9', objectFit: 'cover' }} />
                     <div className="absolute bottom-2 right-2 flex gap-1.5">
                       <button
                         onClick={() => generateNoteHeaderImage(editedTitle, draft?.hookLine || '')}
-                        className="text-[11px] px-2.5 py-1.5 rounded-md font-medium"
+                        className="text-[11px] px-2.5 py-1.5 rounded-md font-medium inline-flex items-center gap-1"
                         style={{ background: 'rgba(0,0,0,0.65)', color: '#fff', backdropFilter: 'blur(6px)' }}
-                      >🔄 画像を変える</button>
+                      ><RefreshCw size={12} strokeWidth={2.2} />画像を変える</button>
                       <a
                         href={noteImage.url} download={`${(editedTitle || 'note-hero').replace(/[\\/:*?"<>|]/g, '_').slice(0, 40)}.jpg`}
                         target="_blank" rel="noopener noreferrer"
-                        className="text-[11px] px-2.5 py-1.5 rounded-md font-medium"
+                        className="text-[11px] px-2.5 py-1.5 rounded-md font-medium inline-flex items-center gap-1"
                         style={{ background: 'rgba(0,0,0,0.65)', color: '#fff', backdropFilter: 'blur(6px)' }}
-                      >⬇ ダウンロード</a>
+                      ><Download size={12} strokeWidth={2.2} />ダウンロード</a>
                     </div>
                   </div>
                 ) : (
                   <button
                     onClick={() => generateNoteHeaderImage(editedTitle, draft?.hookLine || '')}
-                    className="w-full rounded-lg flex items-center justify-center text-fg-muted text-xs"
+                    className="w-full rounded-lg flex items-center justify-center gap-1.5 text-fg-muted text-xs"
                     style={{ aspectRatio: '16/9', background: 'var(--surface)', border: '1px dashed var(--border)' }}
-                  >🎨 見出し画像を生成する</button>
+                  ><Palette size={14} strokeWidth={2.2} />見出し画像を生成する</button>
                 )}
                 <p className="text-fg-muted text-[11px] mt-1.5">この画像をダウンロードして、note編集画面の「見出し画像」に設定してください（note公式APIが無いため自動では貼り付けられません）</p>
               </div>
@@ -1233,25 +1239,25 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               <div className="px-4 py-3 flex flex-wrap gap-2 justify-end" style={{ borderTop: '1px solid var(--border)' }}>
                 <button
                   onClick={handleNoteCopy}
-                  className="text-xs px-3 rounded text-fg-muted hover:text-fg"
+                  className="text-xs px-3 rounded text-fg-muted hover:text-fg inline-flex items-center gap-1"
                   style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
-                >📋 Markdown コピー</button>
+                ><Copy size={13} strokeWidth={2.2} />Markdown コピー</button>
                 <button
                   onClick={handleNoteDownload}
-                  className="text-xs px-3 rounded text-fg-muted hover:text-fg"
+                  className="text-xs px-3 rounded text-fg-muted hover:text-fg inline-flex items-center gap-1"
                   style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
-                >⬇ .md ダウンロード</button>
+                ><Download size={13} strokeWidth={2.2} />.md ダウンロード</button>
                 <button
                   onClick={() => handleOpenImageStudio()}
-                  className="text-xs px-3 rounded text-fg hover:text-fg"
+                  className="text-xs px-3 rounded text-fg hover:text-fg inline-flex items-center gap-1"
                   style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
-                >🎨 アイキャッチ生成</button>
+                ><Palette size={13} strokeWidth={2.2} />アイキャッチ生成</button>
                 {onSaveAsKnowledge && (
                   <button
                     onClick={handleSaveKb}
-                    className="text-xs px-3 rounded text-fg-muted hover:text-fg"
+                    className="text-xs px-3 rounded text-fg-muted hover:text-fg inline-flex items-center gap-1"
                     style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
-                  >📚 ナレッジに保存</button>
+                  ><BookOpen size={13} strokeWidth={2.2} />ナレッジに保存</button>
                 )}
                 <ShareArtifactButton
                   variant="pill"
@@ -1270,9 +1276,9 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                 />
                 <button
                   onClick={handleNoteOpen}
-                  className="text-xs px-4 rounded font-semibold"
+                  className="text-xs px-4 rounded font-semibold inline-flex items-center gap-1"
                   style={{ background: '#41C9B4', color: '#000000', minHeight: 40 }}
-                >📝 note を開いて貼り付け →</button>
+                ><FileText size={13} strokeWidth={2.2} />note を開いて貼り付け →</button>
               </div>
             </div>
           )}
@@ -1330,14 +1336,14 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               <div className="px-4 py-3 flex flex-wrap gap-2 justify-end" style={{ borderTop: '1px solid var(--border)' }}>
                 <button
                   onClick={() => copyToClipboard(editedThread.length > 1 ? editedThread.join('\n\n---\n\n') : editedBody)}
-                  className="text-xs px-3 rounded text-fg-muted hover:text-fg"
+                  className="text-xs px-3 rounded text-fg-muted hover:text-fg inline-flex items-center gap-1"
                   style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
-                >📋 コピー</button>
+                ><Copy size={13} strokeWidth={2.2} />コピー</button>
                 <button
                   onClick={() => handleOpenImageStudio()}
-                  className="text-xs px-3 rounded text-fg hover:text-fg"
+                  className="text-xs px-3 rounded text-fg hover:text-fg inline-flex items-center gap-1"
                   style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
-                >🎨 画像生成</button>
+                ><Palette size={13} strokeWidth={2.2} />画像生成</button>
                 <ShareArtifactButton
                   variant="pill"
                   size="sm"
@@ -1356,17 +1362,17 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                 {onSaveAsKnowledge && (
                   <button
                     onClick={handleSaveKb}
-                    className="text-xs px-3 rounded text-fg-muted hover:text-fg"
+                    className="text-xs px-3 rounded text-fg-muted hover:text-fg inline-flex items-center gap-1"
                     style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
-                  >📚 ナレッジに保存</button>
+                  ><BookOpen size={13} strokeWidth={2.2} />ナレッジに保存</button>
                 )}
                 {!xConnected && (
                   <a
                     href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(editedBody)}`}
                     target="_blank" rel="noopener noreferrer"
-                    className="text-xs px-3 rounded text-fg-muted hover:text-fg inline-flex items-center"
+                    className="text-xs px-3 rounded text-fg-muted hover:text-fg inline-flex items-center gap-1"
                     style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 40 }}
-                  >🌐 X で開く</a>
+                  ><Globe size={13} strokeWidth={2.2} />X で開く</a>
                 )}
                 <button
                   onClick={handleXPost}
@@ -1376,8 +1382,8 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                 >{xPosting ? '送信中…' : `𝕏 ${editedThread.length > 1 ? 'スレッド投稿' : '今すぐ投稿'} →`}</button>
               </div>
               {xPostResult && (
-                <div className="px-4 py-2 text-xs" style={{ background: 'rgba(74,222,128,0.10)', color: '#4ADE80', borderTop: '1px solid var(--border)' }}>
-                  ✓ 投稿完了 ({xPostResult.ids.length}本) ·{' '}
+                <div className="px-4 py-2 text-xs inline-flex items-center gap-1" style={{ background: 'rgba(74,222,128,0.10)', color: '#4ADE80', borderTop: '1px solid var(--border)' }}>
+                  <Check size={12} strokeWidth={2.6} />投稿完了 ({xPostResult.ids.length}本) ·{' '}
                   {xPostResult.urls?.[0] && (
                     <a href={xPostResult.urls[0]} target="_blank" rel="noopener noreferrer" className="underline">
                       投稿を確認する →
