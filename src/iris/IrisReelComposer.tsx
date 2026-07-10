@@ -9,11 +9,14 @@
 // ============================================================
 import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, Loader2, RefreshCw, Film, Clock, X, Wand2, Hash, CalendarPlus, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Upload, Loader2, RefreshCw, Film, Clock, X, Wand2, Hash, CalendarPlus, CheckCircle2, ArrowRight, Sparkles, List, Sun, MessageCircle, AlertTriangle, Gift, Copy, Check, Lightbulb } from 'lucide-react';
 import {
   composeReelFromClips, type ReelComposition, type ComposeContext, type CutInput, type CutRole,
 } from './reelAiCaption';
+import { REEL_TEMPLATES, type ReelTemplate } from './reelTemplates';
 import type { IrisBackgroundDef } from './irisStyle';
+
+const TPL_ICON = { sparkles: Sparkles, list: List, sun: Sun, messageCircle: MessageCircle, alertTriangle: AlertTriangle, gift: Gift } as const;
 
 interface ClipMeta { id: string; kind: 'image' | 'video'; url: string; name: string; duration: number }
 
@@ -74,6 +77,16 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSc
   const [progress, setProgress] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [comp, setComp] = useState<ReelComposition | null>(null);
+  const [plan, setPlan] = useState<ReelTemplate | null>(null);
+  const [planCopied, setPlanCopied] = useState(false);
+
+  const copyPlanCaption = (t: ReelTemplate) => {
+    try {
+      navigator.clipboard?.writeText(`${t.caption}\n\n${t.hashtags.map((h) => `#${h}`).join(' ')}`);
+      setPlanCopied(true);
+      setTimeout(() => setPlanCopied(false), 1600);
+    } catch { /* クリップボード不可でも落とさない */ }
+  };
 
   const addFiles = async (files: FileList | null) => {
     if (!files || !files.length) return;
@@ -136,6 +149,94 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSc
         撮った動画・写真をそのまま入れてください。Iris が中身を読み取り、
         <strong style={{ color: bg.ink }}>並び順・カットの役割・字幕</strong>まで自動で構成します。
       </p>
+
+      {/* ワンタップ・型（白紙から作らせない）— 素材ゼロ & 未構成のときだけ */}
+      {clips.length === 0 && !comp && (
+        <div style={{ marginBottom: 14 }}>
+          {!plan ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '0 0 8px' }}>
+                <Lightbulb size={13} color={accent} />
+                <span style={{ fontSize: 12, fontWeight: 800, color: bg.ink }}>まず「型」を選ぶと、撮る前に完成形が見えます</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                {REEL_TEMPLATES.map((t) => {
+                  const Icon = TPL_ICON[t.icon];
+                  return (
+                    <button key={t.id} type="button" onClick={() => { setPlan(t); setPlanCopied(false); }}
+                      style={{ textAlign: 'left', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 12, padding: '10px 11px', cursor: 'pointer', minHeight: 66, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ width: 22, height: 22, borderRadius: 7, background: `${accent}14`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Icon size={13} color={accent} />
+                        </span>
+                        <span style={{ fontSize: 12.5, fontWeight: 800, color: bg.ink, lineHeight: 1.25 }}>{t.name}</span>
+                      </span>
+                      <span style={{ fontSize: 10.5, color: bg.inkSoft, lineHeight: 1.4 }}>{t.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div style={{ background: bg.card, border: `1px solid ${accent}44`, borderRadius: 14, padding: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+                {(() => { const Icon = TPL_ICON[plan.icon]; return <span style={{ width: 26, height: 26, borderRadius: 8, background: `${accent}16`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={15} color={accent} /></span>; })()}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: bg.ink, lineHeight: 1.25 }}>{plan.name}</div>
+                  <div style={{ fontSize: 10.5, color: bg.inkSoft }}>{plan.audience}に効く型</div>
+                </div>
+                <button type="button" onClick={() => { setPlan(null); setPlanCopied(false); }}
+                  style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: bg.inkSoft, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  <RefreshCw size={11} /> 他の型
+                </button>
+              </div>
+
+              {/* 撮る順番の設計図 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                {plan.slots.map((s, i) => {
+                  const rm = ROLE_META[s.role];
+                  return (
+                    <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 800, color: accent, width: 14, flexShrink: 0, paddingTop: 1 }}>{i + 1}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                          <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', background: rm.color, borderRadius: 99, padding: '2px 7px' }}>{rm.label}</span>
+                          <span style={{ fontSize: 9.5, color: bg.inkSoft, display: 'inline-flex', alignItems: 'center', gap: 2 }}><Clock size={9} />{s.durationSec}s</span>
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: bg.ink, lineHeight: 1.4 }}>{s.shoot}</div>
+                        <div style={{ fontSize: 11, color: bg.inkSoft, lineHeight: 1.45, marginTop: 1 }}>字幕: 「{s.overlay}」</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 本文の型 */}
+              <div style={{ marginTop: 11, background: `${accent}0A`, borderRadius: 10, padding: '9px 10px' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: accent, marginBottom: 4 }}>本文の型（{ } を自分の言葉に）</div>
+                <div style={{ fontSize: 11.5, color: bg.ink, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{plan.caption}</div>
+                <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {plan.hashtags.map((h, i) => (
+                    <span key={i} style={{ fontSize: 10, color: bg.inkSoft, background: `${accent}12`, borderRadius: 6, padding: '2px 6px', display: 'inline-flex', alignItems: 'center', gap: 1 }}><Hash size={8} />{h}</span>
+                  ))}
+                </div>
+                <button type="button" onClick={() => copyPlanCaption(plan)}
+                  style={{ marginTop: 8, background: 'transparent', border: `1px solid ${bg.cardBorder}`, color: planCopied ? '#0F7D63' : bg.ink, fontSize: 11, fontWeight: 800, borderRadius: 9, padding: '7px 11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  {planCopied ? <><Check size={12} color="#10B981" /> コピーしました</> : <><Copy size={12} /> 本文の型をコピー</>}
+                </button>
+              </div>
+
+              <button type="button" onClick={() => fileRef.current?.click()}
+                style={{ marginTop: 11, width: '100%', minHeight: 46, background: `linear-gradient(135deg, ${accent}, #F77737)`, color: '#fff', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: `0 6px 18px ${accent}33` }}>
+                <Upload size={15} /> この型で撮った素材を入れる
+              </button>
+              <p style={{ margin: '7px 2px 0', fontSize: 10.5, color: bg.inkSoft, lineHeight: 1.5 }}>
+                ※ 型は撮影の設計図です。素材を入れると Iris が中身を読んで最終的な並び・字幕を仕上げます。
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 素材グリッド */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
