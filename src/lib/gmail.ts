@@ -229,12 +229,12 @@ export async function connectGmail(): Promise<{ token: GmailTokenInfo; user: Gma
 function translateGoogleError(code: string): string {
   switch (code) {
     case 'access_denied':
-      // Test モード時、テストユーザー未登録だと「同意 → 拒否」になりこれが返る。
-      // 実際のフローを確認したオーナー報告に基づき、具体的な対処を案内。
-      return 'Google から「アクセスを許可しない」が返ってきました。考えられる原因と対処:\n'
-        + '① テストモード中: ログインに使った Google アドレスを Google Cloud Console の「テストユーザー」欄に追加してください\n'
-        + '② 一度開いた画面の「キャンセル」を押した可能性 → もう一度「Google でログイン」を押してすべて「許可」してください\n'
-        + '③ ブラウザの「サードパーティ Cookie ブロック」が原因 → 設定で許可するか、Chrome 通常モードでお試しください';
+      // メール連携は「受信の読み取り」を含む制限付きスコープのため、Google の追加審査を通すまでは
+      // 一般ユーザーの許可がブロックされる。正直に「順次開放中」と伝え、他の連携へ誘導する（負の体験を残さない）。
+      return 'メール連携（受信メールのAI要約・整理）は現在準備中です。\n'
+        + 'この機能は Google の追加確認が必要で、いま申請を進めています。整い次第そのままお使いいただけるので、今しばらくお待ちください。\n'
+        + '※ カレンダー・Meet など他の Google 連携は今すぐご利用いただけます。\n'
+        + '（キャンセルを押しただけの場合は、もう一度お試しください。）';
     case 'popup_closed':
     case 'popup_closed_by_user':
       return 'ログイン画面が閉じられました。もう一度「Google でログイン」を押して、最後まで「許可」してください。\n'

@@ -38,7 +38,11 @@ export function isGoogleConfigured(): boolean { return !!getGoogleClientId(); }
 export function translateGoogleError(code: string): string {
   switch (code) {
     case 'access_denied':
-      return 'Google から「許可しない」が返りました。① テストモード中はログインに使った Google アドレスを Google Cloud Console の「テストユーザー」に追加 ② 画面で「キャンセル」を押した場合はもう一度すべて「許可」してください。';
+      // 本番公開済みだが Google の確認（審査）前のため、多くは「このアプリは確認されていません」画面で
+      // 先に進まなかったのが原因。ここを越える手順を最優先で案内する。
+      return 'Google の許可画面で先に進めませんでした。よくある原因はこの2つです。\n'
+        + '① 「このアプリは Google で確認されていません」と表示されたら、画面左下の「詳細」→「（安全ではないページ）に移動」を押して進んでください（現在 Google に確認申請中のため出る画面で、あなたの情報は CORE 以外に渡りません）。\n'
+        + '② 画面で「キャンセル」を押した場合は、もう一度押して、最後まですべて「許可」してください。';
     case 'popup_closed':
     case 'popup_closed_by_user':
       return 'ログイン画面が閉じられました。もう一度押して、最後まで「許可」してください（ポップアップブロックは解除を）。';
