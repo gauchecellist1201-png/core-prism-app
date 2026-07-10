@@ -14,7 +14,7 @@
     },
     {
       "path": "/api/cron/x-scheduled-posts",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 23 * * *"
     },
     {
       "path": "/api/cron/reengagement-email",
