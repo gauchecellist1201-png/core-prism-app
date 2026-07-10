@@ -7,13 +7,14 @@
 // リールとして一番伸びる「並び順・各カットの役割・字幕・ナレーション・秒数」を設計して返す。
 // 文脈(分析のオーディエンス/世界観/テーマ)を渡すと、その層に刺さる言葉で書く。
 // ============================================================
-import { useRef, useState } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, Loader2, RefreshCw, Film, Clock, X, Wand2, Hash, CalendarPlus, CheckCircle2, ArrowRight, Sparkles, List, Sun, MessageCircle, AlertTriangle, Gift, Copy, Check, Lightbulb } from 'lucide-react';
 import {
   composeReelFromClips, type ReelComposition, type ComposeContext, type CutInput, type CutRole,
 } from './reelAiCaption';
 import { REEL_TEMPLATES, type ReelTemplate } from './reelTemplates';
+import { buildHashtagPlan, splitCaptionAndTags, BAND_META } from './hashtagStrategy';
 import type { IrisBackgroundDef } from './irisStyle';
 
 const TPL_ICON = { sparkles: Sparkles, list: List, sun: Sun, messageCircle: MessageCircle, alertTriangle: AlertTriangle, gift: Gift } as const;
@@ -79,6 +80,15 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSc
   const [comp, setComp] = useState<ReelComposition | null>(null);
   const [plan, setPlan] = useState<ReelTemplate | null>(null);
   const [planCopied, setPlanCopied] = useState(false);
+  const [copiedWhat, setCopiedWhat] = useState<'body' | 'tags' | 'all' | null>(null);
+
+  const copyText = (text: string, what: 'body' | 'tags' | 'all') => {
+    try {
+      navigator.clipboard?.writeText(text);
+      setCopiedWhat(what);
+      setTimeout(() => setCopiedWhat((c) => (c === what ? null : c)), 1600);
+    } catch { /* クリップボード不可でも落とさない */ }
+  };
 
   const copyPlanCaption = (t: ReelTemplate) => {
     try {
@@ -338,27 +348,74 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSc
             })}
           </div>
 
-          {/* 本文 + ハッシュタグ */}
-          {comp.caption && (
-            <div style={{ marginTop: 12, background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 14, padding: 12 }}>
-              <div style={{ fontSize: 10.5, fontWeight: 800, color: accent, marginBottom: 6 }}>投稿本文</div>
-              <div style={{ fontSize: 12.5, color: bg.ink, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{comp.caption}</div>
-              {comp.hashtags.length > 0 && (
-                <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                  {comp.hashtags.slice(0, 12).map((h, i) => (
-                    <span key={i} style={{ fontSize: 10.5, color: bg.inkSoft, background: `${accent}10`, borderRadius: 6, padding: '2px 6px', display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-                      <Hash size={9} />{h.replace(/^#/, '')}
-                    </span>
-                  ))}
+          {/* 本文 + ハッシュタグ（プロの見せ方: 本文はすっきり／タグは最初のコメント用に分離） */}
+          {comp.caption && (() => {
+            const { cleanCaption, mergedTags } = splitCaptionAndTags(comp.caption, comp.hashtags);
+            const hp = buildHashtagPlan(mergedTags);
+            const bands = (['broad', 'mid', 'niche'] as const).filter((b) => hp.counts[b] > 0);
+            const btnBase: CSSProperties = { flex: '1 1 auto', minHeight: 44, background: 'transparent', border: `1px solid ${bg.cardBorder}`, color: bg.ink, fontSize: 11.5, fontWeight: 800, borderRadius: 10, padding: '8px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 };
+            return (
+              <div style={{ marginTop: 12, background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 14, padding: 12 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 800, color: accent, marginBottom: 6 }}>投稿本文</div>
+                <div style={{ fontSize: 12.5, color: bg.ink, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{cleanCaption}</div>
+
+                {hp.banded.length > 0 && (
+                  <>
+                    <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 800, color: bg.inkSoft }}>
+                      <Hash size={11} /> ハッシュタグ {hp.banded.length}個
+                      <span style={{ fontWeight: 600, opacity: 0.8 }}>・届く広さの目安</span>
+                    </div>
+                    {/* 帯の凡例（実件数ではなく語の具体さからの目安） */}
+                    <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {bands.map((b) => (
+                        <span key={b} style={{ fontSize: 10, color: bg.inkSoft, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: 3, background: BAND_META[b].color, display: 'inline-block' }} />
+                          {BAND_META[b].label}<span style={{ opacity: 0.7 }}>{hp.counts[b]}</span>
+                        </span>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {hp.banded.map((t, i) => {
+                        const c = BAND_META[t.band].color;
+                        return (
+                          <span key={i} title={BAND_META[t.band].hint} style={{ fontSize: 10.5, color: c, background: `${c}14`, border: `1px solid ${c}33`, borderRadius: 6, padding: '2px 6px', display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                            <Hash size={9} />{t.tag.replace(/^#/, '')}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    {hp.advice && (
+                      <div style={{ marginTop: 8, display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 10.5, color: bg.inkSoft, lineHeight: 1.5, background: `${accent}0D`, borderRadius: 8, padding: '7px 9px' }}>
+                        <Lightbulb size={12} color={accent} style={{ flexShrink: 0, marginTop: 1 }} />
+                        <span>{hp.advice}</span>
+                      </div>
+                    )}
+                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 10.5, color: bg.inkSoft, lineHeight: 1.5 }}>
+                      <MessageCircle size={12} color={accent} style={{ flexShrink: 0, marginTop: 1 }} />
+                      <span>ハッシュタグは本文ではなく<b style={{ color: bg.ink }}>最初のコメント</b>に貼ると、本文がすっきり見えます（届く数は変わりません）。</span>
+                    </div>
+                  </>
+                )}
+
+                <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  <button type="button" onClick={() => copyText(cleanCaption, 'body')} style={btnBase}>
+                    {copiedWhat === 'body' ? <><Check size={13} color="#10B981" /> コピーしました</> : <><Copy size={13} /> 本文をコピー</>}
+                  </button>
+                  {hp.firstComment && (
+                    <button type="button" onClick={() => copyText(hp.firstComment, 'tags')} style={btnBase}>
+                      {copiedWhat === 'tags' ? <><Check size={13} color="#10B981" /> コピーしました</> : <><MessageCircle size={13} /> タグをコピー（最初のコメント用）</>}
+                    </button>
+                  )}
                 </div>
-              )}
-              <button type="button"
-                onClick={() => { try { navigator.clipboard?.writeText(`${comp.caption}\n\n${comp.hashtags.join(' ')}`); } catch { /* */ } }}
-                style={{ marginTop: 10, background: 'transparent', border: `1px solid ${bg.cardBorder}`, color: bg.ink, fontSize: 11.5, fontWeight: 800, borderRadius: 10, padding: '8px 12px', cursor: 'pointer' }}>
-                本文＋タグをコピー
-              </button>
-            </div>
-          )}
+                {hp.firstComment && (
+                  <button type="button" onClick={() => copyText(`${cleanCaption}\n\n${hp.firstComment}`, 'all')}
+                    style={{ marginTop: 6, width: '100%', minHeight: 40, background: 'transparent', border: 'none', color: bg.inkSoft, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                    {copiedWhat === 'all' ? '本文＋タグをまとめてコピーしました' : '本文＋タグをまとめてコピー'}
+                  </button>
+                )}
+              </div>
+            );
+          })()}
 
           {/* リールスタジオで動画化（順番・秒数・字幕を引き継ぐ） */}
           {onSendToStudio && (
