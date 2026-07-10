@@ -384,6 +384,21 @@ export default function LandingPage({ onEnterApp }: Props) {
       </section>
 
       {/* ── 価格 ──────────────────────────────────────────── */}
+      {/* 章扉：実物で語る（雑誌のリズム） */}
+      <section style={{ padding: '5.5rem 1.5rem', background: 'linear-gradient(150deg, #0d1022, #151735 55%, #0d1022)' }}>
+        <div style={{ maxWidth: 980, margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '2.5rem' }}>
+            <div style={{ flex: '0 0 auto', width: 'min(320px, 78vw)', borderRadius: 18, overflow: 'hidden', border: '1px solid #A78BFA44', boxShadow: '0 40px 80px -40px rgba(0,0,0,.9)' }}>
+              <img src="/lp/prism-poster.jpg" alt="Prismが実際に生成したアクションプランのポスター" loading="lazy" style={{ width: '100%', display: 'block' }} />
+            </div>
+            <div style={{ maxWidth: 460, textAlign: 'left' }}>
+              <p style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', letterSpacing: '0.32em', textTransform: 'uppercase', color: '#A78BFA', fontSize: '0.78rem', margin: 0 }}>Real Output</p>
+              <h2 style={{ fontSize: 'clamp(1.5rem, 3.4vw, 2.1rem)', fontWeight: 700, lineHeight: 1.6, letterSpacing: '0.03em', margin: '0.7rem 0 0.9rem', color: '#fff' }}>会議メモが、<br />1枚の“作戦”になる。</h2>
+              <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.92rem', lineHeight: 2, margin: 0 }}>走り書きのメモを渡すだけで、AIが「見出し・要約・やること・根拠」を整理し、そのまま共有できる美しい一枚に仕上げます。</p>
+              <p style={{ color: '#A78BFA', fontSize: '0.75rem', letterSpacing: '0.06em', marginTop: '1rem' }}>↑ Prism 成果物スタジオの実際の出力</p>
+            </div>
+        </div>
+      </section>
+
       <section id="pricing" className="lp-section-pad" style={{ padding: sectionPad, background: '#F6F7FB' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>

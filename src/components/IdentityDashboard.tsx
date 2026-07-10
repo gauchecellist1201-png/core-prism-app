@@ -1084,6 +1084,7 @@ export default function IdentityDashboard({
                     shadowDraftCount={shadow.drafts.length}
                     onOpenShadow={() => setShowShadow(true)}
                     settings={settings}
+                    genError={proactive.error}
                   />
                 </div>
                 {/* モバイル用 売上カード */}
@@ -1268,6 +1269,7 @@ export default function IdentityDashboard({
                     shadowDraftCount={shadow.drafts.length}
                     onOpenShadow={() => setShowShadow(true)}
                     settings={settings}
+                    genError={proactive.error}
                   />
                 </div>
 

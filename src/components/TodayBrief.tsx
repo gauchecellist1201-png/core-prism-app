@@ -46,6 +46,9 @@ interface Props {
   onOpenShadow?: () => void;
   /** AI 実行に必要 (preferred model 等) */
   settings: AppSettings;
+  /** 提案生成が失敗したときの理由。null なら失敗なし。
+      これが無いと生成失敗が黙って空状態に戻り「タップしたのに何も起きない」silent fail になっていた。 */
+  genError?: string | null;
 }
 
 export default function TodayBrief({
@@ -61,6 +64,7 @@ export default function TodayBrief({
   shadowDraftCount = 0,
   onOpenShadow,
   settings,
+  genError = null,
 }: Props) {
   const [briefSending, setBriefSending] = useState(false);
   const [briefSent, setBriefSent] = useState(false);
@@ -316,6 +320,27 @@ export default function TodayBrief({
               onRetry={() => onGenerate(voiceEnabled)}
             />
           </div>
+        ) : genError ? (
+          // 生成失敗を黙って空状態に戻さない（silent fail撲滅）。理由＋再試行を必ず見せる。
+          <div
+            className="mb-3 flex items-start gap-2.5 rounded-xl"
+            style={{
+              padding: '13px 14px',
+              background: 'rgba(248,113,113,0.10)',
+              border: '1px solid rgba(248,113,113,0.35)',
+            }}
+            role="alert"
+          >
+            <AlertTriangle size={17} strokeWidth={2.3} color="#f87171" className="flex-shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-sm font-bold m-0 mb-1" style={{ color: '#fca5a5' }}>提案を作れませんでした</p>
+              <p className="text-xs leading-relaxed m-0" style={{ color: '#fca5a5' }}>
+                {genError}
+                <br />
+                通信状況をご確認のうえ、下の「もう一度ためす」を押してください。
+              </p>
+            </div>
+          </div>
         ) : (
           <p className="text-fg-muted text-base mb-3 leading-relaxed">
             あなたの人格・集めた資料・今のタスクを見て、いま取り組むといちばん良いことを提案します。
@@ -333,7 +358,7 @@ export default function TodayBrief({
               color: '#0a0a0f',
             }}
           >
-            {isGenerating ? <LoaderDots label="提案を考えてます" /> : proposal ? <span className="inline-flex items-center gap-1.5"><RefreshCw size={15} strokeWidth={2.4} /> 新しい提案</span> : <span className="inline-flex items-center gap-1.5"><Sparkles size={15} strokeWidth={2.4} /> 提案を生成</span>}
+            {isGenerating ? <LoaderDots label="提案を考えてます" /> : genError ? <span className="inline-flex items-center gap-1.5"><RefreshCw size={15} strokeWidth={2.4} /> もう一度ためす</span> : proposal ? <span className="inline-flex items-center gap-1.5"><RefreshCw size={15} strokeWidth={2.4} /> 新しい提案</span> : <span className="inline-flex items-center gap-1.5"><Sparkles size={15} strokeWidth={2.4} /> 提案を生成</span>}
           </button>
           {proposal && voiceEnabled && (
             isSpeaking ? (
@@ -408,6 +433,25 @@ export default function TodayBrief({
           >
             <AlertTriangle size={16} strokeWidth={2.3} color="#f87171" className="flex-shrink-0 mt-0.5" />
             <p className="text-xs leading-relaxed m-0" style={{ color: '#fca5a5' }}>{briefError}</p>
+          </div>
+        )}
+
+        {/* 既に提案がある状態で「新しい提案」が失敗したときも黙らせない。
+            古い提案は残したまま、更新に失敗したことだけ小さく正直に伝える。 */}
+        {proposal && !isGenerating && genError && (
+          <div
+            className="mt-3 flex items-start gap-2.5 rounded-xl"
+            style={{
+              padding: '10px 12px',
+              background: 'rgba(248,113,113,0.08)',
+              border: '1px solid rgba(248,113,113,0.28)',
+            }}
+            role="alert"
+          >
+            <AlertTriangle size={15} strokeWidth={2.3} color="#f87171" className="flex-shrink-0 mt-0.5" />
+            <p className="text-xs leading-relaxed m-0" style={{ color: '#fca5a5' }}>
+              新しい提案を作れませんでした（{genError}）。上の提案はそのまま使えます。「もう一度ためす」で更新できます。
+            </p>
           </div>
         )}
       </div>

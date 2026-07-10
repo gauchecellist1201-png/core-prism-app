@@ -469,6 +469,57 @@ export default function CoreSite() {
       </section>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  REAL SCREENS — 実物で、ご覧ください（本番スクリーンショット6面の章扉） */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section
+        className="lp-section-pad"
+        style={{ padding: '6rem 1.5rem', background: 'linear-gradient(180deg, #0d1022, #131735 55%, #0d1022)', color: '#eef0f7' }}
+      >
+        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <p style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A24B', fontSize: '0.8rem', margin: 0 }}>Real Screens</p>
+            <h2 style={{ fontSize: 'clamp(1.6rem, 3.6vw, 2.4rem)', fontWeight: 600, letterSpacing: '0.04em', margin: '0.6rem 0 0.4rem' }}>実物で、ご覧ください。</h2>
+            <p style={{ color: 'rgba(238,240,247,0.65)', fontSize: '0.92rem', lineHeight: 2, maxWidth: 560, margin: '0 auto' }}>
+              モックアップではなく、いま本番で動いている6つの画面。<br />気になった一枚から、そのまま触れられます。
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            {[
+              { img: '/lp/shot-prism.jpg', name: 'Prism', cap: 'あなた専属のAI経営参謀', url: '/' },
+              { img: '/lp/shot-iris.jpg', name: 'Iris', cap: 'インフルエンサーの相棒AI', url: '/iris?lp=1' },
+              { img: '/lp/shot-resonance.jpg', name: 'Resonance', cap: 'LINEの返信を、AIが先に', url: 'https://resonancebot-ivory.vercel.app/lp' },
+              { img: '/lp/shot-guild.jpg', name: 'Guild', cap: 'みんなで決める組織OS', url: 'https://guild-hazel.vercel.app/?lp=1' },
+              { img: '/lp/shot-lume.jpg', name: 'Lume', cap: 'プロフィールを最も美しく', url: 'https://lume-deploy-five.vercel.app/' },
+              { img: '/lp/shot-crystal.jpg', name: 'Crystal', cap: '話しかけられるAI接客', url: 'https://crystal-nine-self.vercel.app/' },
+            ].map((s) => (
+              <a
+                key={s.name}
+                href={s.url}
+                target={s.url.startsWith('http') ? '_blank' : undefined}
+                rel="noopener"
+                style={{
+                  display: 'block', textDecoration: 'none', color: 'inherit',
+                  border: '1px solid rgba(201,162,75,0.25)', borderRadius: 16, overflow: 'hidden',
+                  background: '#0a0d1c',
+                  transition: 'transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s, border-color .35s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.borderColor = '#C9A24B'; e.currentTarget.style.boxShadow = '0 26px 56px -26px rgba(0,0,0,.85)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(201,162,75,0.25)'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <div style={{ aspectRatio: '4 / 5', overflow: 'hidden' }}>
+                  <img src={s.img} alt={s.name + ' の実際の画面'} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+                </div>
+                <div style={{ padding: '0.8rem 0.9rem 0.95rem', borderTop: '1px solid rgba(201,162,75,0.2)' }}>
+                  <div style={{ fontFamily: '"Cinzel", serif', fontSize: '0.85rem', letterSpacing: '0.12em', color: '#E9CD8A' }}>{s.name}</div>
+                  <div style={{ fontSize: '0.74rem', color: 'rgba(238,240,247,0.6)', marginTop: 2 }}>{s.cap} ↗</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  PLATFORM — 価格グリッド    */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section

@@ -803,6 +803,17 @@ function Showcase() {
       <HairLine />
 
       {/* ── 04 PRICING ── */}
+      {/* 章扉：引用（雑誌のリズム） */}
+      <section style={{ padding: '5rem 1.25rem', textAlign: 'center', background: 'radial-gradient(80% 120% at 50% -20%, rgba(201,162,75,0.22), transparent 60%), linear-gradient(160deg, #0b1020, #101a30)' }}>
+        <p style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', letterSpacing: '0.32em', textTransform: 'uppercase', color: '#C9A24B', fontSize: '0.78rem', margin: 0 }}>Crystal</p>
+        <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.3rem)', fontWeight: 700, lineHeight: 1.8, letterSpacing: '0.04em', color: '#fff', margin: '0.9rem auto 0.8rem', maxWidth: 680 }}>
+          営業も、案内も、接客も。<br />この一枚の“ガラス”に、住まわせる。
+        </h2>
+        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.92rem', lineHeight: 2.1, maxWidth: 560, margin: '0 auto' }}>
+          上のデモは飾りではありません。いまあなたが話しかければ、そのまま答えます。<br />これがそのまま、あなたのお店の入口に立ちます。
+        </p>
+      </section>
+
       <section id="pricing" style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(40px, 6vw, 80px) clamp(16px, 4vw, 44px)', scrollMarginTop: 16 }}>
         <SectionIndex no="04" label="Pricing" />
         <h2 style={{ margin: '0 0 30px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(24px, 3.6vw, 36px)', letterSpacing: '0.04em' }}>
