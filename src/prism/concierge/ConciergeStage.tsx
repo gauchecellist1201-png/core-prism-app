@@ -281,8 +281,13 @@ export default function ConciergeStage({ config, standalone }: { config: Concier
   const ttsUnlocked = useRef(false);
   const unlockTts = () => {
     if (ttsUnlocked.current || typeof window === 'undefined' || !window.speechSynthesis) return;
-    try { const u = new SpeechSynthesisUtterance(''); window.speechSynthesis.speak(u); } catch { /* */ }
-    ttsUnlocked.current = true;
+    try {
+      const u = new SpeechSynthesisUtterance('');
+      window.speechSynthesis.speak(u);
+      ttsUnlocked.current = true; // 成功時のみ「起こせた」とする（失敗時は次のタップで再試行）
+    } catch (err) {
+      console.warn('[concierge] TTS unlock failed, will retry on next tap', err);
+    }
   };
 
   const submitText = (e?: React.FormEvent) => {

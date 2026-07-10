@@ -939,7 +939,7 @@ export default function App() {
             fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
           }}
         >
-          <span style={{ fontSize: 20, lineHeight: 1 }}>🔮</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
           <span style={{ fontSize: 8, fontWeight: 900, letterSpacing: '0.04em', writingMode: 'vertical-rl', textOrientation: 'mixed' }}>COMMAND</span>
         </button>
       )}
@@ -974,7 +974,7 @@ export default function App() {
             boxShadow: '0 8px 22px rgba(99,102,241,0.45)',
             display: 'inline-flex', alignItems: 'center', gap: 6,
           }}
-        ><span style={{ fontSize: 17, lineHeight: 1 }}>📋</span><span className="cp-fab-label">役員 日報</span></button>
+        ><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}><path d="M9 3h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V4a1 1 0 0 1 1-1z" /><path d="M9 3.5V5h6V3.5" /><path d="M9 11h6M9 15h4" /></svg><span className="cp-fab-label">役員 日報</span></button>
       )}
       {/* 🧠 統合ナレッジ脳 ボタン (最上位 Studio 限定の中核機能) — 役員日報の上に積む */}
       {view === 'dashboard' && activePersona && (
@@ -1064,10 +1064,11 @@ export default function App() {
                 aria-label="閉じる"
                 style={{
                   position: 'fixed', top: 'max(env(safe-area-inset-top, 0px) + 12px, 12px)', right: 14,
-                  width: 36, height: 36, borderRadius: 999,
-                  background: 'rgba(255,255,255,0.1)', color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
-                  fontSize: 20, lineHeight: 1, zIndex: 5,
+                  width: 44, height: 44, borderRadius: 999,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'rgba(255,255,255,0.16)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.32)', cursor: 'pointer',
+                  fontSize: 22, lineHeight: 1, zIndex: 5,
                 }}
               >×</button>
               <Suspense fallback={<RouteFallback />}>
