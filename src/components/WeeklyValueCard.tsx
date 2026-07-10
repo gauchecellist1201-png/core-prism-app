@@ -9,26 +9,43 @@ import { useEffect, useState, type CSSProperties, type ReactElement } from 'reac
 import { Sparkles, Send, BookOpen, Briefcase, Activity, FileCheck, TrendingUp, Users, Check, UserRound } from 'lucide-react';
 import { computeWeeklyValue, type ValueMetric, type DayBucket } from '../lib/weeklyValue';
 import { statsForLastDays } from '../lib/aiSuggestionLog';
+import { cxoActivityLastDays } from '../lib/cxoDeliverables';
 import { CXO_META } from '../hooks/useAgentTaskQueue';
 
 // 役員 1 人分の集計（誰が・何件・うち採用）。件数はすべて実際に記録された提案の数（honest-numbers）。
 interface ExecRow { key: string; name: string; count: number; adopted: number; color: string; Icon: (p: { size?: number; color?: string }) => ReactElement; }
 
 // CXO_META から Lucide アイコン + 色を引く（絵文字は使わない）。未知キーは汎用アイコンにフォールバック。
+// 「動いた回数」は 2 系統の実データを合算する（honest-numbers）:
+//   ①提案の記録 (aiSuggestionLog) … 役員が「打ち手を提案した」回数（採用/却下つき）
+//   ②成果物の納品 (cxoDeliverables) … 「今日の一手」タップ→AIが実際に成果物を作った回数
+// ②は deliverable として別ログに入るため、以前はロスターに出ず実働が抜け落ちていた。
+// 両方を役員キーで union し、実際に動いた役員をもれなく見せる（デモシードは②側で除外済み）。
 function execRowsForWeek(): ExecRow[] {
   const meta = CXO_META as Record<string, { name: string; color: string; Icon: (p: { size?: number; color?: string }) => ReactElement }>;
-  return statsForLastDays(7).byCxo.map((c) => {
-    const m = meta[c.key];
-    return {
-      key: c.key,
-      // CXO_META の正式名を優先（無ければ記録時のキャッシュ名）。「CEO イーロン」等の頭の役職＋名前を短く。
-      name: (m?.name || c.name || '役員').replace(/\s+/g, ' ').trim(),
-      count: c.count,
-      adopted: c.adopted,
-      color: m?.color || '#8E5CFF',
-      Icon: m?.Icon || ((p) => <UserRound size={p.size} color={p.color} strokeWidth={2.1} />),
-    };
-  });
+  const merged = new Map<string, { key: string; name: string; count: number; adopted: number }>();
+  for (const c of statsForLastDays(7).byCxo) {
+    merged.set(c.key, { key: c.key, name: c.name, count: c.count, adopted: c.adopted });
+  }
+  for (const d of cxoActivityLastDays(7)) {
+    const cur = merged.get(d.key);
+    if (cur) cur.count += d.count;
+    else merged.set(d.key, { key: d.key, name: d.name, count: d.count, adopted: 0 });
+  }
+  return [...merged.values()]
+    .sort((a, b) => b.count - a.count)
+    .map((c) => {
+      const m = meta[c.key];
+      return {
+        key: c.key,
+        // CXO_META の正式名を優先（無ければ記録時のキャッシュ名）。「CEO イーロン」等の頭の役職＋名前を短く。
+        name: (m?.name || c.name || '役員').replace(/\s+/g, ' ').trim(),
+        count: c.count,
+        adopted: c.adopted,
+        color: m?.color || '#8E5CFF',
+        Icon: m?.Icon || ((p) => <UserRound size={p.size} color={p.color} strokeWidth={2.1} />),
+      };
+    });
 }
 
 const ICONS: Record<ValueMetric['icon'], (p: { size?: number; color?: string }) => ReactElement> = {
@@ -54,12 +71,15 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
     window.addEventListener('storage', refresh);
     window.addEventListener('core:value-updated', refresh as EventListener);
     window.addEventListener('core:ai-suggestion-updated', refresh as EventListener);
+    // 成果物が納品された瞬間も「動いた役員」に即反映（今日の一手タップ→AI成果物）。
+    window.addEventListener('core:deliverable-added', refresh as EventListener);
     const t = window.setInterval(refresh, 20_000);
     return () => {
       window.removeEventListener('focus', refresh);
       window.removeEventListener('storage', refresh);
       window.removeEventListener('core:value-updated', refresh as EventListener);
       window.removeEventListener('core:ai-suggestion-updated', refresh as EventListener);
+      window.removeEventListener('core:deliverable-added', refresh as EventListener);
       window.clearInterval(t);
     };
   }, []);

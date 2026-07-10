@@ -22,6 +22,31 @@ const KINDS: { id: ArtifactKind; label: string }[] = [
   { id: 'report', label: 'レポート' },
 ];
 
+// 選んだ種類に合わせて切り替える「見本」。初見の人が『自分が選んだ種類で、こういう一枚が出る』と一目で分かるように。
+const SAMPLES: Record<ArtifactKind, { kicker: string; title: string; summary: string; listLabel: string; items: string[] }> = {
+  action: {
+    kicker: 'ACTION PLAN',
+    title: '新商品ローンチを\n1週間で立ち上げる',
+    summary: '告知・在庫・受付フォームを並行で用意し、金曜公開に間に合わせる。',
+    listLabel: 'やること',
+    items: ['告知文とビジュアルを用意', '受付フォームと決済を用意', '公開前チェックと予約投稿'],
+  },
+  meeting: {
+    kicker: 'MEETING SUMMARY',
+    title: '定例MTG：\n来期の集客方針',
+    summary: '広告予算はA案で確定。次の一手と担当を整理しました。',
+    listLabel: '決定と次の一手',
+    items: ['広告予算はA案で確定', '来週までに広告文を3案用意', '効果測定は隔週で共有'],
+  },
+  report: {
+    kicker: 'WEEKLY REPORT',
+    title: '今週の集客\nレポート',
+    summary: '問い合わせは先週比+18%。伸びた導線と次アクションをまとめました。',
+    listLabel: '次アクション',
+    items: ['伸びたSNS導線に予算を寄せる', '反応の薄いLPを差し替え', '来週は資料DLも計測に追加'],
+  },
+};
+
 function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxW: number, maxLines: number): string[] {
   const tokens = text.split(/(\s+)/).filter((t) => t.length > 0);
   const lines: string[] = [];
@@ -303,17 +328,17 @@ export default function PrismArtifactStudio({ onClose }: { onClose: () => void; 
               ))}
             </div>
 
-            {/* こんなのが出ます（サンプル出力1枚） */}
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em', marginBottom: 8 }}>こんなのが出ます（見本）</div>
+            {/* こんなのが出ます（選んだ種類に合わせたサンプル出力1枚） */}
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em', marginBottom: 8 }}>「{kindMeta(kind).label}」の見本</div>
             <div style={{ maxWidth: 300, margin: '0 auto', borderRadius: 14, overflow: 'hidden', boxShadow: '0 18px 44px rgba(99,102,241,0.35)', background: '#0A0816', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div style={{ height: 8, background: `linear-gradient(90deg, ${VIOLET}, ${INDIGO})` }} />
               <div style={{ padding: '18px 18px 20px' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.22em', color: VIOLET, marginBottom: 6 }}>ACTION PLAN</div>
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.22em', color: VIOLET, marginBottom: 6 }}>{SAMPLES[kind].kicker}</div>
                 <div style={{ width: 40, height: 2, background: VIOLET, marginBottom: 12 }} />
-                <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.25 }}>新商品ローンチを<br />1週間で立ち上げる</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', margin: '8px 0 14px', lineHeight: 1.5 }}>告知・在庫・受付フォームを並行で用意し、金曜公開に間に合わせる。</div>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: VIOLET, marginBottom: 8 }}>やること</div>
-                {['告知文とビジュアルを用意', '受付フォームと決済を用意', '公開前チェックと予約投稿'].map((a, i) => (
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.25 }}>{SAMPLES[kind].title.split('\n').map((ln, i) => <span key={i}>{i > 0 && <br />}{ln}</span>)}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', margin: '8px 0 14px', lineHeight: 1.5 }}>{SAMPLES[kind].summary}</div>
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: VIOLET, marginBottom: 8 }}>{SAMPLES[kind].listLabel}</div>
+                {SAMPLES[kind].items.map((a, i) => (
                   <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 }}>
                     <div style={{ flexShrink: 0, width: 20, height: 20, borderRadius: '50%', background: `linear-gradient(135deg, ${VIOLET}, ${INDIGO})`, color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
                     <div style={{ fontSize: 12.5, color: '#fff', fontWeight: 600 }}>{a}</div>
@@ -325,7 +350,7 @@ export default function PrismArtifactStudio({ onClose }: { onClose: () => void; 
                 </div>
               </div>
             </div>
-            <div style={{ textAlign: 'center', fontSize: 11.5, color: 'rgba(255,255,255,0.4)', marginTop: 10 }}>これは見本です。上でテーマを書いて押すと、あなたの内容で作られます。</div>
+            <div style={{ textAlign: 'center', fontSize: 11.5, color: 'rgba(255,255,255,0.4)', marginTop: 10 }}>これは「{kindMeta(kind).label}」の見本です。上でテーマを書いて押すと、あなたの内容で作られます。</div>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 320px) 1fr', gap: '1rem', alignItems: 'start' }} className="art-grid">

@@ -171,6 +171,28 @@ export function realStatsForPersona(personaId: string): {
   return statsFromItems(items);
 }
 
+/**
+ * 直近 days 日に「実際に成果物を納品した役員」を honest に集計する（全ペルソナ横断）。
+ * WeeklyValueCard の「動いた役員」ロスターが aiSuggestionLog(=提案) だけを見ていたため、
+ * 「今日の一手」タップ→AI成果物のように deliverable として記録される稼働が
+ * ロスターに反映されず、実際に働いた役員が抜け落ちていた（honest-numbers の UNDERcount）。
+ * デモシード(source==='demo')は実績ではないので除外する。
+ * 返す name は記録時の cxoName（UI 側で CXO_META の正式名を優先しても良い）。
+ */
+export function cxoActivityLastDays(days: number = 7): Array<{ key: string; name: string; count: number }> {
+  const cutoff = Date.now() - days * 86400_000;
+  const map = new Map<string, { key: string; name: string; count: number }>();
+  for (const d of loadAll()) {
+    if (d.source === 'demo') continue;
+    const t = new Date(d.createdAt).getTime();
+    if (!Number.isFinite(t) || t < cutoff) continue;
+    const v = map.get(d.cxoRole) || { key: d.cxoRole, name: d.cxoName || d.cxoRole, count: 0 };
+    v.count++;
+    map.set(d.cxoRole, v);
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count);
+}
+
 function statsFromItems(items: CxoDeliverable[]): {
   todayCount: number; weekCount: number; totalCount: number; unread: number;
   byCxo: Record<string, number>;

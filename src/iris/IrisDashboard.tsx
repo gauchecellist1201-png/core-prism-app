@@ -167,6 +167,7 @@ import Celebrate from '../components/Celebrate';
 import type { ReelStudioSeed } from './IrisReelStudio';
 import { loadIgProfile, consumeOauthCallback, fetchOauthProfile, saveIgProfile, syncOauthMediaToHistory, oauthReasonToMessage, type IgProfile } from './instagramConnect';
 import IrisDmDraftModal from './IrisDmDraftModal';
+import InstagramGlyph from './InstagramGlyph';
 import type { DmDealInput } from './dmDraft';
 import MobileGeminiDashboard from '../components/MobileGeminiDashboard';
 import type { Persona } from '../types/identity';
@@ -2965,6 +2966,23 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
 }
 
 
+// 連携済み Instagram の実データから「よく見てくれる人」の説明文を作る。
+// 実データが無い項目（自己申告など）は無理に埋めず、空文字を返す（嘘を書かない）。
+function describeIgAudience(p: IgProfile): string {
+  const parts: string[] = [];
+  const topAge = [...(p.audienceAge || [])].filter(a => a && a.pct > 0).sort((a, b) => b.pct - a.pct)[0];
+  const g = p.audienceGender;
+  let gender = '';
+  if (g) {
+    if (g.female >= 60) gender = '女性';
+    else if (g.male >= 60) gender = '男性';
+  }
+  if (topAge) parts.push(`${topAge.range}歳`);
+  if (gender) parts.push(gender);
+  if (!parts.length) return '';
+  return `${parts.join('の')}が中心（Instagramの分析より）`;
+}
+
 // ─── メディアキット ─────────────────────────
 function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; kit?: MediaKit; settings: AppSettings }) {
   const [d, setD] = useState<MediaKit>(kit || { personaId: IRIS_PERSONA_ID });
@@ -2980,6 +2998,43 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
 
   const hasInput = !!(d.handleName || d.audienceProfile || d.caseHistory ||
     (d.followers && Object.values(d.followers).some(v => v && v > 0)));
+
+  // 連携済み Instagram の実データ（あれば「手入力ゼロ」で数字を取り込める）
+  const [ig] = useState<IgProfile | null>(() => loadIgProfile());
+
+  // Instagram の実データを空欄だけに流し込む（手入力は上書きしない・嘘の数字は入れない）
+  const importFromInstagram = () => {
+    const p = loadIgProfile();
+    if (!p) return;
+    const next: MediaKit = { ...d };
+    const filled: string[] = [];
+    if (p.handle && !d.handleName) { next.handleName = `@${p.handle}`; filled.push('表示名'); }
+    if (p.followers && p.followers > 0 && !d.followers?.instagram) {
+      next.followers = { ...(d.followers || {}), instagram: p.followers };
+      filled.push('フォロワー数');
+    }
+    // 反応率は実データがある時だけ（測れていなければ入れない）
+    const er = p.engagementRate && p.engagementRate > 0
+      ? p.engagementRate
+      : (p.followers > 0 && (p.avgLikes + p.avgComments) > 0
+          ? Math.round(((p.avgLikes + p.avgComments) / p.followers) * 1000) / 10
+          : undefined);
+    if (er && er > 0 && !d.avgEngagementRate?.instagram) {
+      next.avgEngagementRate = { ...(d.avgEngagementRate || {}), instagram: er };
+      filled.push('反応率');
+    }
+    if (!d.audienceProfile) {
+      const aud = describeIgAudience(p);
+      if (aud) { next.audienceProfile = aud; filled.push('よく見てくれる人'); }
+    }
+    setD(next);
+    desk.setMediaKit(IRIS_PERSONA_ID, { ...next, personaId: IRIS_PERSONA_ID });
+    if (filled.length) {
+      notifyInApp({ kind: 'success', title: 'Instagramから取り込みました', body: `${filled.join('・')}を自動で入れました。あなたが書いた欄はそのままです。` });
+    } else {
+      notifyInApp({ kind: 'info', title: 'すでに入力済みでした', body: '空いている欄がなかったので、そのままにしています。' });
+    }
+  };
 
   const generate = async () => {
     setGenError(null);
