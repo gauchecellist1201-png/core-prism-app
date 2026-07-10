@@ -956,8 +956,15 @@ function HostedPage() {
   return <ConciergeStage config={config} standalone />;
 }
 
+import LpStickyCta from '../../components/LpStickyCta';
+
 export default function ConciergePage() {
   if (isConciergeEmbed()) return <EmbedMode />;
   if (isCrystalPageMode()) return <HostedPage />;
-  return <Showcase />;
+  return (
+    <>
+      <Showcase />
+      <LpStickyCta title="AIコンシェルジュを、あなたのお店に" sub="設置3分・初期費用同梱プランあり" cta="料金を見る →" href="#pricing" accent1="#e9cd8a" accent2="#c9a24b" />
+    </>
+  );
 }

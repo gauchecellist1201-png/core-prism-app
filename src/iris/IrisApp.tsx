@@ -2,6 +2,7 @@
 // CORE Iris — エントリーポイント (LP / Checkout / Dashboard 切替)
 // ============================================================
 import { useState, useEffect } from 'react';
+import LpStickyCta from '../components/LpStickyCta';
 import { AnimatePresence } from 'framer-motion';
 import { useSettings } from '../hooks/useSettings';
 import IrisLanding from './IrisLanding';
@@ -127,7 +128,10 @@ export default function IrisApp() {
     return (
       <>
         <OfflineNotice />
-        <IrisLanding onEnter={handleEnter} onSelectPlan={handleSelectPlan} />
+        <>
+          <IrisLanding onEnter={handleEnter} onSelectPlan={handleSelectPlan} />
+          <LpStickyCta title="Irisを7日間、完全無料で" sub="クレカ不要・解約は1タップ" cta="無料で始める →" onClick={handleEnter} accent1="#E1306C" accent2="#833AB4" ctaColor="#fff" />
+        </>
         <AnimatePresence>
           {checkoutPlan && (
             <CheckoutModal

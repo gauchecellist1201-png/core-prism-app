@@ -83,6 +83,7 @@ import PrismSplash from './prism/PrismWelcome';
 const KnowledgeBrainView = lazy(() => import('./prism/KnowledgeBrainView'));
 const PrismArtifactStudio = lazy(() => import('./components/PrismArtifactStudio'));
 import TutorialOverlay from './components/TutorialOverlay';
+import LpStickyCta from './components/LpStickyCta';
 import WowOnboarding from './components/WowOnboarding';
 import OfflineNotice from './components/OfflineNotice';
 import AgentTeamMonitor from './components/AgentTeamMonitor';
@@ -408,7 +409,7 @@ export default function App() {
 
   // /corp — CORE 法人 LP
   if (isCorpPath()) {
-    return <Suspense fallback={<RouteFallback />}><CoreSite /></Suspense>;
+    return <Suspense fallback={<RouteFallback />}><CoreSite /><LpStickyCta title="ひとつの哲学、6つのAIプロダクト。" sub="CORE ── 変わらない核を、支える" cta="プロダクトを見る" href="#products" accent1="#e9cd8a" accent2="#c9a24b" /></Suspense>;
   }
 
   // /master/stripe-status — オーナー専用 Stripe 接続診断
@@ -776,6 +777,9 @@ export default function App() {
       {view !== 'onboarding' && <GlobalVoiceInput />}
       {/* 通信が切れたときだけ画面上部に案内バー */}
       <OfflineNotice />
+      {view === 'landing' && (
+        <LpStickyCta title="Prismを、無料で試す" sub="7日間無料・クレカ不要・いつでも解約" cta="無料で始める →" onClick={handleEnterApp} accent1="#a78bfa" accent2="#6366F1" ctaColor="#fff" />
+      )}
       <AnimatePresence mode="wait">
         {view === 'landing' && (
           <LandingPage
