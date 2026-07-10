@@ -80,13 +80,9 @@ export default function LandingPage({ onEnterApp }: Props) {
 
   return (
     <div style={{ background: BG_DARK, color: '#16162A', minHeight: '100dvh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
-      {/* ── 1画面目: 全画面プリズム開花ヒーロー (Crystal級・2026-07-02) ── */}
-      <PrismBloomHero onStart={onEnterApp} />
-      {/* ── 6/1 一般公開カウントダウン ───────────── */}
-      <LaunchCountdownBanner kind="prism" />
-      {/* WW (2026-06-03): PWA インストール促進 (3 訪問目以降に 1 日 1 回) */}
-      <PwaInstallNudge />
-      {/* ── 紹介リンク経由バナー (?ref=XXX 検出時のみ表示) ───────────── */}
+      {/* ── 紹介リンク経由バナー (?ref=XXX 検出時のみ) ───────────────
+          招待された友達は全画面ヒーローで +N 日プレゼントを見落とすため、
+          ヒーローより上 (=ファーストビュー最上部) に固定して必ず目に入るようにする。 */}
       {pendingRef && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -98,7 +94,7 @@ export default function LandingPage({ onEnterApp }: Props) {
             padding: '0.85rem 1rem',
             fontSize: '0.92rem', fontWeight: 800,
             letterSpacing: '0.02em',
-            position: 'relative', zIndex: 65,
+            position: 'sticky', top: 0, zIndex: 70,
             boxShadow: '0 4px 18px rgba(22,163,74,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: '0.55rem', flexWrap: 'wrap',
@@ -141,6 +137,13 @@ export default function LandingPage({ onEnterApp }: Props) {
           )}
         </motion.div>
       )}
+
+      {/* ── 1画面目: 全画面プリズム開花ヒーロー (Crystal級・2026-07-02) ── */}
+      <PrismBloomHero onStart={onEnterApp} />
+      {/* ── 6/1 一般公開カウントダウン ───────────── */}
+      <LaunchCountdownBanner kind="prism" />
+      {/* WW (2026-06-03): PWA インストール促進 (3 訪問目以降に 1 日 1 回) */}
+      <PwaInstallNudge />
 
       {/* ── ベータ公開告知バー ────────────────────────────── */}
       <div style={{
