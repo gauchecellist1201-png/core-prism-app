@@ -3090,6 +3090,17 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
       <p style={{ color: bg.inkSoft }}>ここに書いた内容を、AI がお返事や投稿を書くときに参考にします。下の「メディアキットを作る」で、企業にそのまま送れる自己紹介資料も自動で作れます。</p>
 
       <Card bg={bg}>
+        {ig && (
+          <div style={{ marginBottom: '0.85rem', padding: '0.7rem 0.85rem', borderRadius: 14, background: 'rgba(225,48,108,0.06)', border: `1px solid ${bg.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <InstagramGlyph size={18} color={bg.accent} />
+              <span style={{ fontSize: '0.83rem', color: bg.ink }}>連携中の Instagram（@{ig.handle}）から数字を入れられます。</span>
+            </div>
+            <button onClick={importFromInstagram} style={{ ...btnSecondary(bg), whiteSpace: 'nowrap' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><InstagramGlyph size={14} color={bg.accent} /> 数字を取り込む</span>
+            </button>
+          </div>
+        )}
         <input style={{ ...inp(bg), width: '100%', marginBottom: '0.5rem' }} placeholder="表示名 (例: @hanako_official)" value={d.handleName || ''} onChange={e => setD({ ...d, handleName: e.target.value })} />
 
         <p style={{ marginTop: '0.75rem', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600 }}>フォロワー数</p>
