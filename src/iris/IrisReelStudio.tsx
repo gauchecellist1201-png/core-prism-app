@@ -6,6 +6,7 @@
 // ・素材は IndexedDB / メモリのみ。サーバー送信なし
 // ============================================================
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { shareToInstagram } from './instagramShare';
@@ -1658,7 +1659,7 @@ JSON のみで返答。`;
     const mediaSrc = convertedMp4 || exportUrl;
     if (mediaSrc) {
       try {
-        const res = await fetch(mediaSrc);
+        const res = await fetchWithTimeout(mediaSrc, {}, 30000);
         const blob = await res.blob();
         if (blob.size <= 5_500_000) {
           mediaDataUrl = await new Promise<string>((resolve) => {
@@ -2007,7 +2008,7 @@ JSON のみで返答。`;
   const applyBgmFromLibrary = async (track: BgmTrack) => {
     setBgmLoading(track.id);
     try {
-      const res = await fetch(track.url, { mode: 'cors' });
+      const res = await fetchWithTimeout(track.url, { mode: 'cors' }, 30000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const file = new File([blob], `${track.id}.mp3`, { type: 'audio/mpeg' });
@@ -2379,7 +2380,7 @@ JSON のみで返答。`;
     if (!exportUrl) return;
     setConverting(true);
     try {
-      const res = await fetch(exportUrl);
+      const res = await fetchWithTimeout(exportUrl, {}, 30000);
       const blob = await res.blob();
       const mp4 = await convertWebmToMp4(blob);
       if (mp4) setConvertedMp4(URL.createObjectURL(mp4));
@@ -2403,7 +2404,7 @@ JSON のみで返答。`;
   const shareReel = async () => {
     const url = convertedMp4 || exportUrl;
     if (!url) return;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, {}, 30000);
     const blob = await res.blob();
     await shareToInstagram({
       caption: 'CORE Iris で作ったリール',

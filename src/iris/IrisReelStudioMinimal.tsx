@@ -6,6 +6,7 @@
 // ・既存のフル機能は IrisReelStudio.tsx に残る (詳細モード)
 // ============================================================
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Image as ImageIcon, Film, Music, Play, Square, Download, Share2,
@@ -250,7 +251,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const applyBgm = useCallback(async (track: typeof BGM_LIBRARY[0]) => {
     setBgmLoading(track.id);
     try {
-      const res = await fetch(track.url);
+      const res = await fetchWithTimeout(track.url, {}, 30000);
       if (!res.ok) throw new Error();
       const blob = await res.blob();
       setBgmFile(new File([blob], `${track.id}.mp3`, { type: 'audio/mpeg' }));
@@ -578,7 +579,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const sendToQueue = async () => {
     if (!exportUrl || !postQueue) return;
     try {
-      const resp = await fetch(exportUrl);
+      const resp = await fetchWithTimeout(exportUrl, {}, 30000);
       const blob = await resp.blob();
       const reader = new FileReader();
       const dataUrl: string = await new Promise((resolve, reject) => {
@@ -691,7 +692,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     // iOS Safari は <a download> が効かないため、Web Share API か新規タブで誘導する
     if (isIOS) {
       try {
-        const res = await fetch(exportUrl);
+        const res = await fetchWithTimeout(exportUrl, {}, 30000);
         const blob = await res.blob();
         const file = new File([blob], filename, { type: exportMime });
         // Web Share Level 2 (ファイル共有) — iOS 15+ Safari で対応
@@ -750,7 +751,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     if (!exportUrl) return;
     setIgBusy(true);
     try {
-      const res = await fetch(exportUrl);
+      const res = await fetchWithTimeout(exportUrl, {}, 30000);
       const blob = await res.blob();
       const ext = exportMime.startsWith('video/mp4') ? 'mp4' : 'webm';
       const captionAll = (aiCaption?.caption || aiResult?.caption || clips.map(c => c.captionText).filter(Boolean).join('\n'))
