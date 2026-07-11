@@ -149,7 +149,7 @@ export default function BookingPage({ cfg }: { cfg: BookingConfig }) {
 
 function Shell({ cfg, accent, children }: { cfg: BookingConfig; accent: string; children: React.ReactNode }) {
   return (
-    <div className="min-h-[100svh] w-full flex justify-center" style={{ background: 'var(--surface-1, #0b0b0f)' }}>
+    <div data-theme="dark" className="min-h-[100svh] w-full flex justify-center" style={{ background: 'var(--surface-1, #0b0b0f)' }}>
       <div className="w-full max-w-md px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
         {/* ヘッダー */}
         <div className="rounded-2xl p-5 mb-5" style={{ background: 'var(--surface-2, #14141b)', border: '1px solid var(--border)' }}>

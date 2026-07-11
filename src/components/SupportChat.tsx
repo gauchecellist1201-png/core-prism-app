@@ -204,6 +204,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
         {open && (
           <motion.aside
             key="drawer"
+            data-theme="dark"
             className="fixed z-50 flex flex-col overflow-hidden"
             style={{
               right: 0,

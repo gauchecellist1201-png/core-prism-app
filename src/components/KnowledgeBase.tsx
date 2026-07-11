@@ -537,6 +537,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
 
       {/* Panel */}
       <motion.div
+        data-theme="dark"
         className="relative ml-auto w-full max-w-lg h-full flex flex-col"
         style={{ background: '#0e0e18', borderLeft: '1px solid rgba(255,255,255,0.06)' }}
         initial={{ x: '100%' }}

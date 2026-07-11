@@ -339,6 +339,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
       <motion.div
         initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }}
         onClick={e => e.stopPropagation()}
+        data-theme="dark"
         className="cp-modal w-full max-w-[1400px] overflow-y-auto"
         style={{
           position: 'relative',

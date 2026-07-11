@@ -120,6 +120,7 @@ export default function TeamHub({ accentColor, onClose }: Props) {
     >
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }} />
       <motion.div
+        data-theme="dark"
         className="relative w-full sm:max-w-xl max-h-[90dvh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
         style={{ background: '#0e0e18', border: '1px solid rgba(255,255,255,0.1)' }}
         initial={{ y: 40, opacity: 0 }}
