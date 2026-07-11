@@ -538,13 +538,15 @@ function BeforeAfterShowcase() {
             transition={{ duration: 0.5, delay: i * 0.08 }}
             style={{
               position: 'relative',
-              background: 'rgba(0,0,0,0.035)',
+              // 半透明だと背後の演出が透けて「黒ずみ」に見える。カードは常に不透明なクリーン白。
+              background: '#FFFFFF',
               border: `1px solid ${ex.color}38`,
               borderRadius: 18,
               padding: '1.2rem 1.2rem 1.3rem',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
+              boxShadow: '0 10px 34px rgba(22,22,42,0.08)',
             }}
           >
             <div aria-hidden style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', background: ex.color, opacity: 0.18, filter: 'blur(50px)', pointerEvents: 'none' }} />
@@ -634,10 +636,12 @@ function BeforeAfterShowcase() {
 function PrismHeroBackdrop() {
   return (
     <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
-      <motion.div animate={{ opacity: [0.4, 0.7, 0.4], scale: [1, 1.1, 1] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', left: '50%', top: '38%', width: 380, height: 380, marginLeft: -190, marginTop: -190, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 60%)', filter: 'blur(40px)' }} />
+      {/* 光源はブランド色のやわらかい光に（黒い霧は白LP上で「汚れ」に見えるため禁止）。
+          top はモバイルでヒーローが縦に伸びても実例カードの背後に降りてこないよう px 上限でクランプ。 */}
+      <motion.div animate={{ opacity: [0.4, 0.7, 0.4], scale: [1, 1.1, 1] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', left: '50%', top: 'min(38%, 480px)', width: 380, height: 380, marginLeft: -190, marginTop: -190, borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.30) 0%, rgba(167,139,250,0) 60%)', filter: 'blur(40px)' }} />
       {SPECTRUM.map((s, i) => {
         const angle = -75 + i * 25;
-        return <motion.div key={s.key} initial={{ opacity: 0 }} animate={{ opacity: [0.18, 0.35, 0.18] }} transition={{ duration: 4 + i * 0.3, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 }} style={{ position: 'absolute', left: '50%', top: '38%', width: 4, height: '70vh', transformOrigin: 'top center', transform: `translateX(-50%) rotate(${angle}deg)`, background: `linear-gradient(180deg, ${s.color}cc 0%, ${s.color}00 80%)`, filter: 'blur(8px)' }} />;
+        return <motion.div key={s.key} initial={{ opacity: 0 }} animate={{ opacity: [0.18, 0.35, 0.18] }} transition={{ duration: 4 + i * 0.3, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 }} style={{ position: 'absolute', left: '50%', top: 'min(38%, 480px)', width: 4, height: '42vh', transformOrigin: 'top center', transform: `translateX(-50%) rotate(${angle}deg)`, background: `linear-gradient(180deg, ${s.color}cc 0%, ${s.color}00 80%)`, filter: 'blur(8px)' }} />;
       })}
       <div style={{ position: 'absolute', top: -200, right: -200, width: 600, height: 600, borderRadius: '50%', background: '#a78bfa', opacity: 0.12, filter: 'blur(80px)' }} />
       <div style={{ position: 'absolute', bottom: -200, left: -200, width: 600, height: 600, borderRadius: '50%', background: '#60a5fa', opacity: 0.12, filter: 'blur(80px)' }} />
