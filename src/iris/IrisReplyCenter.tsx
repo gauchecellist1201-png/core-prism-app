@@ -147,14 +147,20 @@ function CommentsPanel({ bg, accountId, onConnect }: { bg: Bg; accountId: string
   const load = useCallback(async () => {
     setState('loading');
     setErrMsg('');
-    const res: FetchCommentsResult = await fetchRecentComments();
-    if (!res.ok) {
-      setState(res.reason === 'not_connected' ? 'not_connected' : 'error');
-      setErrMsg(res.message);
-      return;
+    try {
+      const res: FetchCommentsResult = await fetchRecentComments();
+      if (!res.ok) {
+        setState(res.reason === 'not_connected' ? 'not_connected' : 'error');
+        setErrMsg(res.message);
+        return;
+      }
+      setItems(res.items);
+      setState('ready');
+    } catch {
+      // 想定外の例外でも「読み込み中」で固まらせない（error画面→再読み込みへ）。
+      setState('error');
+      setErrMsg('コメントを読み込めませんでした。通信環境を確認してもう一度お試しください。');
     }
-    setItems(res.items);
-    setState('ready');
   }, []);
 
   useEffect(() => { void load(); }, [load]);

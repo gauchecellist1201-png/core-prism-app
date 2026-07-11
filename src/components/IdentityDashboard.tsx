@@ -165,7 +165,8 @@ function EditablePersonaTitle({ persona, onRename }: { persona: Persona; onRenam
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(persona.name);
   const [subtitle, setSubtitle] = useState(persona.subtitle || '');
-  useEffect(() => { setName(persona.name); setSubtitle(persona.subtitle || ''); }, [persona.id, persona.name, persona.subtitle]);
+  // 編集中は親からの更新で入力を上書きしない（入力途中の消失＝離脱を防ぐ）。
+  useEffect(() => { if (!editing) { setName(persona.name); setSubtitle(persona.subtitle || ''); } }, [persona.id, persona.name, persona.subtitle, editing]);
 
   const save = () => {
     const n = name.trim() || persona.name;

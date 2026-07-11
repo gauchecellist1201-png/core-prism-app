@@ -62,6 +62,7 @@ function hasMediaKitContent(s?: DmMediaKitSummary): boolean {
 export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuideline, onClose }: Props) {
   const [result, setResult] = useState<DmDraftResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editedBody, setEditedBody] = useState('');
   const [customNote, setCustomNote] = useState('');
   const [copied, setCopied] = useState(false);
@@ -86,24 +87,31 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const r = await generateDmDraft(igProfile, deal, {
-        mediaKit: mkSummary,
-        mentionMediaKit: false,
-        ngWords,
-      });
-      if (cancelled) return;
-      setResult(r);
-      setEditedBody(r.draft.body);
-      setActiveTone(r.draft.tone);
-      setLoading(false);
-      // 履歴に保存
-      setHistory(pushDmHistory({
-        brandName: deal.brandName,
-        category: deal.category,
-        tone: r.draft.tone,
-        body: r.draft.body,
-        source: r.source,
-      }));
+      setError(null);
+      try {
+        const r = await generateDmDraft(igProfile, deal, {
+          mediaKit: mkSummary,
+          mentionMediaKit: false,
+          ngWords,
+        });
+        if (cancelled) return;
+        setResult(r);
+        setEditedBody(r.draft.body);
+        setActiveTone(r.draft.tone);
+        // 履歴に保存
+        setHistory(pushDmHistory({
+          brandName: deal.brandName,
+          category: deal.category,
+          tone: r.draft.tone,
+          body: r.draft.body,
+          source: r.source,
+        }));
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : 'DM文案を作れませんでした。もう一度お試しください。');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [igProfile, deal]);
@@ -132,6 +140,7 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
     }
     // 持っていなければ API 再呼び出し (4 トーン全部 alternatives には載らないため)
     setLoading(true);
+    setError(null);
     setCopied(false);
     const opts: DmGenerateOptions = {
       customNote: customNote || undefined,
@@ -140,22 +149,28 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
       mentionMediaKit: mentionMediaKit && mkAvailable,
       ngWords,
     };
-    const r = await generateDmDraft(igProfile, deal, opts);
-    setResult(r);
-    setEditedBody(r.draft.body);
-    setActiveTone(r.draft.tone);
-    setLoading(false);
-    setHistory(pushDmHistory({
-      brandName: deal.brandName,
-      category: deal.category,
-      tone: r.draft.tone,
-      body: r.draft.body,
-      source: r.source,
-    }));
+    try {
+      const r = await generateDmDraft(igProfile, deal, opts);
+      setResult(r);
+      setEditedBody(r.draft.body);
+      setActiveTone(r.draft.tone);
+      setHistory(pushDmHistory({
+        brandName: deal.brandName,
+        category: deal.category,
+        tone: r.draft.tone,
+        body: r.draft.body,
+        source: r.source,
+      }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'トーンを切り替えられませんでした。もう一度お試しください。');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const regenerate = async () => {
     setLoading(true);
+    setError(null);
     setCopied(false);
     const opts: DmGenerateOptions = {
       customNote: customNote || undefined,
@@ -164,18 +179,23 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
       mentionMediaKit: mentionMediaKit && mkAvailable,
       ngWords,
     };
-    const r = await generateDmDraft(igProfile, deal, opts);
-    setResult(r);
-    setEditedBody(r.draft.body);
-    setActiveTone(r.draft.tone);
-    setLoading(false);
-    setHistory(pushDmHistory({
-      brandName: deal.brandName,
-      category: deal.category,
-      tone: r.draft.tone,
-      body: r.draft.body,
-      source: r.source,
-    }));
+    try {
+      const r = await generateDmDraft(igProfile, deal, opts);
+      setResult(r);
+      setEditedBody(r.draft.body);
+      setActiveTone(r.draft.tone);
+      setHistory(pushDmHistory({
+        brandName: deal.brandName,
+        category: deal.category,
+        tone: r.draft.tone,
+        body: r.draft.body,
+        source: r.source,
+      }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '作り直せませんでした。もう一度お試しください。');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCopy = async () => {
@@ -285,7 +305,23 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
           flex: 1, overflowY: 'auto', padding: '0.9rem 1rem 0.5rem',
           display: 'flex', flexDirection: 'column', gap: '0.85rem',
         }}>
-          {loading && !result ? (
+          {error && !result ? (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              padding: '2.6rem 1rem', gap: '0.8rem', textAlign: 'center',
+              color: 'var(--fg, #1F1A2E)',
+            }}>
+              <div style={{ ...IRIS_TYPE.small, opacity: 0.85, maxWidth: 300 }}>{error}</div>
+              <button
+                onClick={regenerate}
+                style={{
+                  ...IRIS_TYPE.small, fontWeight: 700, cursor: 'pointer',
+                  padding: '0.5rem 1.1rem', borderRadius: 10,
+                  border: '1px solid var(--border)', background: 'var(--surface-3)', color: 'var(--fg)',
+                }}
+              >もう一度ためす</button>
+            </div>
+          ) : loading && !result ? (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               padding: '3rem 1rem', gap: '0.7rem',
@@ -297,6 +333,14 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
             </div>
           ) : result ? (
             <>
+              {/* トーン切替・再生成でエラーが出ても既存の下書きは残す（消えない）。小さく通知だけ。 */}
+              {error && (
+                <div style={{
+                  ...IRIS_TYPE.small, padding: '0.5rem 0.7rem', borderRadius: 8,
+                  background: 'rgba(220,80,80,0.10)', border: '1px solid rgba(220,80,80,0.30)',
+                  color: 'var(--fg, #1F1A2E)',
+                }}>{error}</div>
+              )}
               {/* 履歴オーバーレイ */}
               {showHistory && (
                 <HistoryPanel
