@@ -4,6 +4,7 @@
 // 時刻到達で自動実行 → 完了で通知
 // ============================================================
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 
 const STORAGE_KEY = 'prism_task_queue_v1';
 
@@ -173,7 +174,7 @@ export async function parseVoiceCommand(rawInput: string, now = new Date()): Pro
 JSON で返答してください。`;
   let aiErr = '';
   try {
-    const res = await fetch('/api/ai', {
+    const res = await fetchWithTimeout('/api/ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -182,7 +183,7 @@ JSON で返答してください。`;
         system: PARSE_SYSTEM,
         max_tokens: 800,
       }),
-    });
+    }, 30000);
     if (res.ok) {
       const data = await res.json();
       const text: string =
@@ -264,7 +265,7 @@ const EXECUTE_SYSTEMS: Record<TaskKind, string> = {
 
 export async function executeTask(task: PrismTask): Promise<string> {
   const system = EXECUTE_SYSTEMS[task.kind] || EXECUTE_SYSTEMS.general;
-  const res = await fetch('/api/ai', {
+  const res = await fetchWithTimeout('/api/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -273,7 +274,7 @@ export async function executeTask(task: PrismTask): Promise<string> {
       system,
       max_tokens: 2500,
     }),
-  });
+  }, 45000);
   if (!res.ok) {
     const errJson = await res.json().catch(() => null);
     const msg = errJson?.error?.message || `AI API error: ${res.status}`;
