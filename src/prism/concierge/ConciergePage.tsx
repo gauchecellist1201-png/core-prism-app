@@ -17,6 +17,7 @@ import {
   encodeConciergeConfig,
   readConciergeConfigFromUrl,
   isConciergeEmbed,
+  conciergeSiteId,
 } from './conciergeConfig';
 import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 
@@ -123,6 +124,8 @@ const CAPABILITIES: Array<{ t: string; d: string }> = [
   { t: 'ブランド人格の調整', d: '正統派・親しみ・簡潔の3人格に、呼び名・一人称・色まで合わせられます。' },
   { t: '予約ページへの橋渡し', d: '予約 URL を設定すると、会話の流れで予約ボタンを自動で差し出します。' },
   { t: '設置は3通り・HTML不要も', d: '専用リンクを貼るだけ / タグ1行 / メール1通で設置代行。最短1分で働き始めます。' },
+  { t: '会話インサイト', d: '実会話から「よく聞かれた質問」「答えに詰まった質問」を自動集計。1タップで FAQ に追加できます。' },
+  { t: '応対の育成メモ', d: '「こう答えてほしい」を書き足すだけで、以後の応対に最優先で反映。使うほど賢く育ちます。' },
 ];
 
 function DiamondIcon() {
@@ -209,7 +212,7 @@ function CrystalCoCreateCard({ tokens: T }: { tokens: Tokens }) {
 
   return (
     <div style={cardStyle}>
-      <SectionIndex no="05" label="Build it together" />
+      <SectionIndex no="06" label="Build it together" />
       <h2 style={{ margin: '0 0 8px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(21px, 3.6vw, 28px)' }}>
         このアプリを一緒に良くする
       </h2>
@@ -245,6 +248,182 @@ function CrystalCoCreateCard({ tokens: T }: { tokens: Tokens }) {
         </button>
       </div>
     </div>
+  );
+}
+
+// ─── 会話インサイト (実会話の集計 → 1タップで FAQ へ) ───
+interface InsightData {
+  conversations7d: number;
+  topQuestions: Array<{ text: string; count: number }>;
+  missedQuestions: Array<{ text: string; count: number }>;
+}
+
+function InsightIcon({ kind }: { kind: 'chat' | 'trend' | 'gap' }) {
+  const common = { width: 16, height: 16, viewBox: '0 0 16 16', fill: 'none', stroke: P.silver, strokeWidth: 1.4, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  if (kind === 'chat') return <svg {...common} aria-hidden><path d="M2 3.5h12v8H8.5L5 14v-2.5H2v-8z" /></svg>;
+  if (kind === 'trend') return <svg {...common} aria-hidden><path d="M2 12.5l4-4 2.5 2.5L14 5" /><path d="M10.5 5H14v3.5" /></svg>;
+  return <svg {...common} aria-hidden><circle cx="8" cy="8" r="6.2" /><path d="M8 5v3.6" /><circle cx="8" cy="11.2" r="0.4" fill={P.silver} /></svg>;
+}
+
+function CrystalInsightsSection({ config, onAddFaq }: { config: ConciergeConfig; onAddFaq: (q: string) => void }) {
+  const site = useMemo(() => conciergeSiteId(config), [config.brandName, config.industry]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [data, setData] = useState<InsightData | null>(null);
+  const [busy, setBusy] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [addedQ, setAddedQ] = useState<string | null>(null);
+  const faqQs = useMemo(() => new Set(config.faq.map(f => f.q.trim())), [config.faq]);
+
+  const load = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetchWithTimeout(`/api/crystal-insights?site=${encodeURIComponent(site)}`, {}, 15_000);
+      const j = await res.json().catch(() => null);
+      if (!res.ok || !j?.ok) throw new Error('failed');
+      setData({
+        conversations7d: Number(j.conversations7d) || 0,
+        topQuestions: Array.isArray(j.topQuestions) ? j.topQuestions : [],
+        missedQuestions: Array.isArray(j.missedQuestions) ? j.missedQuestions : [],
+      });
+    } catch {
+      setError('集計を取得できませんでした。通信環境をご確認のうえ、もう一度お試しください。');
+    } finally {
+      setBusy(false);
+    }
+  }, [site]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const addFaq = (q: string) => {
+    onAddFaq(q);
+    setAddedQ(q);
+    window.setTimeout(() => setAddedQ(prev => (prev === q ? null : prev)), 2600);
+  };
+
+  const cardStyle: React.CSSProperties = {
+    flex: '1 1 300px', minWidth: 0, borderRadius: 20, padding: 'clamp(16px, 3vw, 22px)',
+    border: `1px solid ${P.lineSoft}`, background: P.glass,
+    backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+  };
+  const rowStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0',
+    borderBottom: `1px solid ${P.lineSoft}`, fontSize: 13, lineHeight: 1.6,
+  };
+  const countPill: React.CSSProperties = {
+    flexShrink: 0, minWidth: 34, textAlign: 'center', padding: '2px 8px', borderRadius: 999,
+    border: `1px solid ${P.line}`, fontSize: 11.5, fontWeight: 700, color: P.silver,
+  };
+
+  const empty = (text: string) => (
+    <p style={{ margin: '10px 0 0', fontSize: 12.5, lineHeight: 1.9, color: P.fgSubtle }}>{text}</p>
+  );
+
+  return (
+    <section id="insights" style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(40px, 6vw, 80px) clamp(16px, 4vw, 44px)', scrollMarginTop: 16 }}>
+      <SectionIndex no="04" label="Learn from every conversation" />
+      <h2 style={{ margin: '0 0 10px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(24px, 3.6vw, 36px)', letterSpacing: '0.04em' }}>
+        会話インサイト — 応対の穴が、自動で見つかる
+      </h2>
+      <p style={{ margin: '0 0 8px', fontSize: 14, lineHeight: 2, color: P.fgMuted, maxWidth: 680 }}>
+        あなたのコンシェルジュ (<strong style={{ color: P.fg }}>{config.brandName}</strong>) が実際にお受けした会話から、
+        「よく聞かれた質問」と「答えに詰まった質問」を自動で集計します。
+        詰まった質問は<strong style={{ color: P.fg }}>1タップで FAQ に追加</strong> — 答えを書けば、次からは即答できます。
+      </p>
+      <p style={{ margin: '0 0 22px', fontSize: 11.5, lineHeight: 1.8, color: P.fgSubtle, maxWidth: 680 }}>
+        すべて実際の会話だけを数えた実数です (直近30日・お客様の連絡先は保存しません)。ブランド名を変えると別ブランドとして集計されます。
+      </p>
+
+      {busy && (
+        <div style={{ ...cardStyle, flex: 'none', textAlign: 'center', color: P.fgMuted, fontSize: 13 }}>
+          集計を読み込んでいます…
+        </div>
+      )}
+      {!busy && error && (
+        <div style={{ ...cardStyle, flex: 'none' }}>
+          <p style={{ margin: '0 0 12px', fontSize: 13, lineHeight: 1.8, color: '#F2B8C6' }}>{error}</p>
+          <button
+            onClick={() => void load()}
+            style={{ minHeight: 44, padding: '0 20px', borderRadius: 999, border: `1px solid ${P.line}`, background: 'rgba(217,228,245,0.12)', color: P.fg, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+          >
+            もう一度読み込む
+          </button>
+        </div>
+      )}
+      {!busy && !error && data && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+          {/* 会話数 */}
+          <div style={{ ...cardStyle, flex: '1 1 220px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <InsightIcon kind="chat" />
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: P.fgMuted, letterSpacing: '0.04em' }}>会話数 (直近7日)</span>
+            </div>
+            <div style={{ fontFamily: SERIF, fontSize: 'clamp(36px, 5vw, 52px)', lineHeight: 1, color: P.fg }}>
+              {data.conversations7d}
+              <span style={{ fontSize: 15, color: P.fgMuted, marginLeft: 8 }}>件</span>
+            </div>
+            {data.conversations7d === 0 && empty('まだ会話がありません。コンシェルジュが応対を始めると、ここに実数が届きます。')}
+            <button
+              onClick={() => void load()}
+              style={{ marginTop: 14, alignSelf: 'flex-start', minHeight: 44, padding: '0 16px', borderRadius: 999, border: `1px solid ${P.line}`, background: 'transparent', color: P.fgMuted, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+            >
+              最新の集計に更新
+            </button>
+          </div>
+
+          {/* よく聞かれた質問 */}
+          <div style={cardStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <InsightIcon kind="trend" />
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: P.fgMuted, letterSpacing: '0.04em' }}>よく聞かれた質問</span>
+            </div>
+            {data.topQuestions.length === 0
+              ? empty('まだデータがありません。会話が増えると、頻出の質問が順に並びます。')
+              : data.topQuestions.map(q => (
+                <div key={q.text} style={rowStyle}>
+                  <span style={{ flex: 1, minWidth: 0, color: P.fg, wordBreak: 'break-word' }}>{q.text}</span>
+                  <span style={countPill}>{q.count}回</span>
+                </div>
+              ))}
+          </div>
+
+          {/* 答えに詰まった質問 → FAQ へ */}
+          <div style={cardStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <InsightIcon kind="gap" />
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: P.fgMuted, letterSpacing: '0.04em' }}>答えに詰まった質問</span>
+            </div>
+            {data.missedQuestions.length === 0
+              ? empty('いまのところ、答えに詰まった質問はありません。見つかり次第ここに並び、1タップで FAQ にできます。')
+              : data.missedQuestions.map(q => {
+                const already = faqQs.has(q.text.trim());
+                return (
+                  <div key={q.text} style={{ ...rowStyle, flexWrap: 'wrap' }}>
+                    <span style={{ flex: '1 1 160px', minWidth: 0, color: P.fg, wordBreak: 'break-word' }}>{q.text}</span>
+                    <span style={countPill}>{q.count}回</span>
+                    <button
+                      onClick={() => addFaq(q.text)}
+                      disabled={already}
+                      style={{
+                        minHeight: 44, padding: '0 14px', borderRadius: 999, border: 'none',
+                        background: already ? 'rgba(217,228,245,0.18)' : P.gold,
+                        color: already ? P.fgMuted : '#141414',
+                        fontSize: 12, fontWeight: 800, cursor: already ? 'default' : 'pointer', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {already ? (addedQ === q.text ? 'FAQ に追加しました' : 'FAQ 追加済み') : 'FAQ に追加'}
+                    </button>
+                  </div>
+                );
+              })}
+            {data.missedQuestions.length > 0 && (
+              <p style={{ margin: '12px 0 0', fontSize: 11.5, lineHeight: 1.8, color: P.fgSubtle }}>
+                追加すると上の設定フォームの「よくある質問」に入ります。答えを書き込むと、専用リンク・埋め込みタグが自動で更新されます。
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -557,6 +736,42 @@ function Showcase() {
               />
             </Field>
             <Field
+              label="応対の育成メモ (この答え方に直したい)"
+              hint="「こう答えてほしい」を1行ずつ書くと、以後の応対に最優先で反映されます。例: 駐車場を聞かれたら「2台まで無料」と答える"
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {(config.coaching || []).map((c, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      style={{ ...inputStyle, flex: 1, minWidth: 0 }}
+                      value={c}
+                      onChange={e => set('coaching', (config.coaching || []).map((x, j) => (j === i ? e.target.value : x)))}
+                      placeholder="例: 価格を聞かれたら、まず見学をご案内する"
+                      maxLength={200}
+                    />
+                    <button
+                      onClick={() => {
+                        const next = (config.coaching || []).filter((_, j) => j !== i);
+                        set('coaching', next.length > 0 ? next : undefined);
+                      }}
+                      aria-label="この育成メモを削除"
+                      style={{ width: 44, minWidth: 44, minHeight: 44, borderRadius: 12, border: `1px solid ${P.line}`, background: 'transparent', color: P.fgMuted, fontSize: 16, cursor: 'pointer' }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {(config.coaching || []).length < 10 && (
+                  <button
+                    onClick={() => set('coaching', [...(config.coaching || []), ''])}
+                    style={{ minHeight: 44, borderRadius: 12, border: `1px dashed ${P.line}`, background: 'transparent', color: P.silver, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    ＋ 育成メモを追加
+                  </button>
+                )}
+              </div>
+            </Field>
+            <Field
               label="先に話しかける一言 (空欄で OFF)"
               hint="埋め込み先のサイトで、数秒後にバブルの上からそっと声をかけます"
             >
@@ -598,6 +813,7 @@ function Showcase() {
             </Field>
 
             {/* FAQ 編集 */}
+            <div id="faq-editor" style={{ scrollMarginTop: 20 }} />
             <Field label="よくある質問 (AI はこの内容に沿って答えます)">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {config.faq.map((f, i) => (
@@ -802,7 +1018,21 @@ function Showcase() {
 
       <HairLine />
 
-      {/* ── 04 PRICING ── */}
+      {/* ── 04 INSIGHTS (会話インサイト — 実会話から応対の穴を見つけて FAQ へ) ── */}
+      <CrystalInsightsSection
+        config={config}
+        onAddFaq={(q) => {
+          setConfig(prev => {
+            if (prev.faq.some(f => f.q.trim() === q.trim())) return prev;
+            return { ...prev, faq: [...prev.faq, { q: q.slice(0, 120), a: '' }].slice(0, 12) };
+          });
+          document.getElementById('faq-editor')?.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
+
+      <HairLine />
+
+      {/* ── 05 PRICING ── */}
       {/* 章扉：引用（雑誌のリズム） */}
       <section style={{ padding: '5rem 1.25rem', textAlign: 'center', background: 'radial-gradient(80% 120% at 50% -20%, rgba(201,162,75,0.22), transparent 60%), linear-gradient(160deg, #0b1020, #101a30)' }}>
         <p style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', letterSpacing: '0.32em', textTransform: 'uppercase', color: '#C9A24B', fontSize: '0.78rem', margin: 0 }}>Crystal</p>
@@ -815,7 +1045,7 @@ function Showcase() {
       </section>
 
       <section id="pricing" style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(40px, 6vw, 80px) clamp(16px, 4vw, 44px)', scrollMarginTop: 16 }}>
-        <SectionIndex no="04" label="Pricing" />
+        <SectionIndex no="05" label="Pricing" />
         <h2 style={{ margin: '0 0 30px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(24px, 3.6vw, 36px)', letterSpacing: '0.04em' }}>
           料金プラン
         </h2>

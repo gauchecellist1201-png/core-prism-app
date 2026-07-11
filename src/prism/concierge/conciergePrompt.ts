@@ -33,6 +33,11 @@ export function buildConciergePrompt(cfg: ConciergeConfig): string {
     ? `\n## ブランドの資料 (最優先の根拠。ここに書いてあることだけを事実として答える)\n${cfg.knowledge.trim()}\n`
     : '';
 
+  const coachingItems = (cfg.coaching || []).map(s => s.trim()).filter(Boolean);
+  const coachingBlock = coachingItems.length
+    ? `\n## オーナーからの応対指導 (何よりも最優先で守る)\n${coachingItems.map(c => `- ${c}`).join('\n')}\n`
+    : '';
+
   const qualifyBlock = cfg.qualify?.trim()
     ? `\n## 有望なお客様の条件 (見極め)\n${cfg.qualify.trim()}\n- 尋問にならないよう、会話の流れで関わることを1つずつ伺う\n- 条件に合う手応えを得たら、ご案内の日程のご提案に進む\n`
     : '';
@@ -56,7 +61,7 @@ ${servicesBlock}
 
 ## よくあるご質問 (この内容に沿って答える)
 ${faqBlock}
-${knowledgeBlock}${qualifyBlock}
+${coachingBlock}${knowledgeBlock}${qualifyBlock}
 ${contactLines.length ? `## ご案内先\n${contactLines.join('\n')}\n` : ''}
 ## アクション記号 (お客様には見えない内部記号。該当する時だけ、応答の最後に単独の行で書く)
 ${actionLines.join('\n')}

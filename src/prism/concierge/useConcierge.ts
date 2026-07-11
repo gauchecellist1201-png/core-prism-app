@@ -9,7 +9,7 @@
 // ============================================================
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { enqueueClaudeCall } from '../../lib/apiQueue';
-import type { ConciergeConfig } from './conciergeConfig';
+import { conciergeSiteId, type ConciergeConfig } from './conciergeConfig';
 import { buildConciergePrompt, summarizeConversation } from './conciergePrompt';
 
 export interface ConciergeMessage {
@@ -48,6 +48,34 @@ function extractActions(raw: string): { text: string; lead: boolean; booking: bo
 
 function makeId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+// 「答えに詰まった」応答の目印 (プロンプトが指示する定型句 + 多言語の近縁)
+const UNANSWERED_HINTS = [
+  '確認のうえ', '担当より改めて', '分かりかね', 'わかりかね',
+  'お答えできかね', 'お答えいたしかね', '存じ上げません', '把握しておりません',
+  "don't have that information", 'not able to answer', 'check with our team', 'get back to you',
+];
+
+function looksUnanswered(reply: string): boolean {
+  return UNANSWERED_HINTS.some(h => reply.includes(h));
+}
+
+/** 会話インサイトへの記録 (fire-and-forget — 訪問者の体験は一切妨げない) */
+function logInsight(cfg: ConciergeConfig, question: string, reply: string, first: boolean): void {
+  try {
+    void fetch('/api/crystal-insights', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        site: conciergeSiteId(cfg),
+        question: question.slice(0, 120),
+        answered: !looksUnanswered(reply),
+        first,
+      }),
+      keepalive: true,
+    }).catch(() => { /* 集計は本体機能ではないため訪問者側では黙って続行 */ });
+  } catch { /* 同上 */ }
 }
 
 export function useConcierge(cfg: ConciergeConfig) {
@@ -172,6 +200,8 @@ export function useConcierge(cfg: ConciergeConfig) {
       });
 
       const parsed = extractActions(reply);
+      // 会話インサイト: 質問と「答えられたか」を集計へ (訪問者の待ち時間ゼロ)
+      logInsight(cfgRef.current, trimmed, parsed.text, next.filter(m => m.role === 'user').length === 1);
       const aMsg: ConciergeMessage = { id: makeId('a'), role: 'assistant', content: parsed.text, ts: Date.now() };
       if (parsed.booking && cfgRef.current.bookingUrl) aMsg.bookingUrl = cfgRef.current.bookingUrl;
       setMessages(prev => [...prev, aMsg]);
