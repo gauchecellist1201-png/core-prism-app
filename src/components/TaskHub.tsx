@@ -416,7 +416,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
+          <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm" aria-label="閉じる" style={{ minWidth: 44, minHeight: 44 }}>✕</button>
         </div>
 
         {/* ビュー切替 (今日 / 今週 / すべて) */}
@@ -505,7 +505,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
                   onClick={() => fetchTop3(true)}
                   disabled={top3Loading}
                   className="cp-btn cp-btn-sm cp-btn-ghost"
-                  style={{ fontSize: '0.75rem' }}
+                  style={{ fontSize: '0.75rem', minHeight: 44 }}
                 >
                   {top3Loading ? '考え中…' : '↻ 再選定'}
                 </button>
@@ -542,6 +542,19 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
           {/* タスク追加フォーム */}
           <div className="cp-card-section">
             <p className="cp-h3 mb-2">+ 新しいタスクを追加</p>
+            {/* よくある仕事チップ — 1 タップで入力欄に入る (最初の 1 件のハードルを下げる) */}
+            {!newTitle && (
+              <div className="cp-row mb-2" style={{ gap: 6, flexWrap: 'wrap' }}>
+                {['見積もりに返信する', '請求書を送る', '来週の提案資料を作る'].map(t => (
+                  <button key={t} type="button"
+                    onClick={() => { setNewTitle(t); focusNewTitle(); }}
+                    className="cp-btn cp-btn-sm cp-btn-ghost"
+                    style={{ minHeight: 44, fontSize: '0.78rem', borderColor: persona.accentColor + '40', color: persona.accentColor }}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="cp-stack-sm">
               <input
                 ref={newTitleRef}
@@ -579,11 +592,11 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
             ]).map(s => (
               <button key={s.id} onClick={() => setSortMode(s.id)}
                 className="cp-btn cp-btn-sm"
-                style={sortMode === s.id ? { background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' } : {}}>
+                style={{ minHeight: 44, ...(sortMode === s.id ? { background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' } : {}) }}>
                 {s.label}
               </button>
             ))}
-            <button onClick={() => setShowDone(s => !s)} className="cp-btn cp-btn-sm" style={{ marginLeft: 'auto' }}>
+            <button onClick={() => setShowDone(s => !s)} className="cp-btn cp-btn-sm" style={{ marginLeft: 'auto', minHeight: 44 }}>
               {showDone ? '✓ 完了を非表示' : `✓ 完了を表示 (${done.length})`}
             </button>
           </div>
@@ -603,7 +616,16 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
                   preview="来週の提案資料を作る (60 分) → CSO に任せる"
                 />
               ) : (
-                <p className="cp-meta">この期間に取り組むタスクはありません</p>
+                // 行き止まり防止: 期限が先のタスクはあるので「すべて」へ 1 タップで移動できるように
+                <div className="cp-stack-sm">
+                  <p className="cp-meta">この期間に取り組むタスクはありません</p>
+                  {view !== 'all' && (
+                    <button onClick={() => setView('all')} className="cp-btn cp-btn-sm cp-btn-ghost"
+                      style={{ alignSelf: 'flex-start', minHeight: 44, borderColor: persona.accentColor + '40', color: persona.accentColor }}>
+                      すべてのタスク ({tasks.filter(t => !t.done && !t.isProposal).length} 件) を見る
+                    </button>
+                  )}
+                </div>
               )
             ) : (
               <div className="cp-stack-sm">
@@ -801,7 +823,7 @@ function TaskRow({
 
       {task.isProposal ? (
         <button onClick={onAccept} className="cp-btn cp-btn-sm flex-shrink-0"
-          style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent', minHeight: 40 }}>
+          style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent', minHeight: 44 }}>
           + タスク化
         </button>
       ) : !task.done && (
@@ -816,7 +838,7 @@ function TaskRow({
               borderColor: task.delegatedAgentTaskId ? 'transparent' : '#A78BFA50',
               color: '#A78BFA',
               fontSize: '0.75rem',
-              minHeight: 40,
+              minHeight: 44,
               opacity: delegating ? 0.5 : 1,
             }}
           >
@@ -824,7 +846,7 @@ function TaskRow({
           </button>
           {onDelete && (
             <button onClick={onDelete} className="cp-btn cp-btn-sm flex-shrink-0 cp-btn-ghost"
-              title="削除" aria-label="タスクを削除" style={{ fontSize: '0.75rem', opacity: 0.5, minWidth: 40, minHeight: 40 }}>✕</button>
+              title="削除" aria-label="タスクを削除" style={{ fontSize: '0.75rem', opacity: 0.5, minWidth: 44, minHeight: 44 }}>✕</button>
           )}
         </div>
       )}

@@ -191,7 +191,7 @@ function HistoryIcon() {
 }
 
 const iconBtn: React.CSSProperties = {
-  width: 42, height: 42, minWidth: 42, borderRadius: 999, cursor: 'pointer',
+  width: 44, height: 44, minWidth: 44, borderRadius: 999, cursor: 'pointer',
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
   border: `1px solid ${T.line}`, background: T.glassLight, color: T.fg,
   backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
@@ -221,7 +221,7 @@ function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () 
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.14em', color: T.fgMuted }}>{title}</div>
-              <button onClick={onClose} aria-label="閉じる" style={{ ...iconBtn, width: 38, height: 38, minWidth: 38 }}>
+              <button onClick={onClose} aria-label="閉じる" style={iconBtn}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><path d="M18 6L6 18M6 6l12 12" /></svg>
               </button>
             </div>
@@ -310,7 +310,10 @@ export default function ConciergeStage({ config, standalone }: { config: Concier
   const lastAssistant = [...cz.messages].reverse().find(m => m.role === 'assistant');
   const hasConversation = cz.messages.length > 0 || cz.isLoading || !!cz.error;
 
-  const chips = (config.services || []).slice(0, 4);
+  // 初回チップ: ご用件 (services) に FAQ の先頭質問を1つ混ぜる。
+  // 「質問を押す → その場で即答」を最初の10秒で体感してもらうため
+  const firstFaqQ = (config.faq || []).map(f => f.q.trim()).find(q => q.length > 0 && q.length <= 30);
+  const chips = Array.from(new Set([...(config.services || []).slice(0, 3), ...(firstFaqQ ? [firstFaqQ] : [])]));
 
   return (
     <section style={{
@@ -402,7 +405,7 @@ export default function ConciergeStage({ config, standalone }: { config: Concier
                       key={s}
                       onClick={() => { unlockTts(); void cz.send(s); }}
                       style={{
-                        minHeight: 40, padding: '9px 16px', borderRadius: 999, cursor: 'pointer',
+                        minHeight: 44, padding: '9px 16px', borderRadius: 999, cursor: 'pointer',
                         border: `1px solid ${T.line}`, background: T.glassLight, color: T.fg,
                         backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
                         fontSize: 13, fontFamily: SANS,
@@ -467,7 +470,7 @@ export default function ConciergeStage({ config, standalone }: { config: Concier
               {/* 日程希望 (会話が進んだら常設の小さな導線) */}
               {!cz.isLoading && !cz.error && !cz.leadSent && cz.messages.length >= 2 && (
                 <button onClick={cz.openLead} style={{
-                  marginTop: 16, minHeight: 40, padding: '9px 18px', borderRadius: 999, cursor: 'pointer',
+                  marginTop: 16, minHeight: 44, padding: '9px 18px', borderRadius: 999, cursor: 'pointer',
                   border: `1px solid ${T.line}`, background: T.glassLight, color: T.fgMuted,
                   backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', fontSize: 12.5,
                 }}>

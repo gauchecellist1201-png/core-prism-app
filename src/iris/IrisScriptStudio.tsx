@@ -8,6 +8,7 @@ import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { notifyInApp } from '../lib/inAppNotify';
+import { copyText } from './copyText';
 import ThinkingIndicator from '../components/ThinkingIndicator';
 import { loadIgProfile } from './instagramConnect';
 import { usePostHistory } from './strategist';
@@ -167,18 +168,19 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
   const inp: React.CSSProperties = {
     background: 'rgba(255,255,255,0.94)', border: `1px solid ${bg.cardBorder}`,
     color: '#1F1A2E', padding: '0.65rem 0.9rem', borderRadius: 12,
-    fontSize: '0.95rem', fontFamily: IRIS_FONTS.body, outline: 'none', width: '100%',
+    // 16px 未満だと iOS Safari がフォーカス時に自動ズームして画面が飛ぶため 16px 固定
+    fontSize: 16, fontFamily: IRIS_FONTS.body, outline: 'none', width: '100%',
   };
   const label: React.CSSProperties = { fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 700, marginBottom: 4, display: 'block' };
   const btnPrimary: React.CSSProperties = {
     background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`, color: '#fff',
-    border: 'none', borderRadius: 999, padding: '0.7rem 1.4rem', fontWeight: 700,
+    border: 'none', borderRadius: 999, padding: '0.7rem 1.4rem', fontWeight: 700, minHeight: 44,
     cursor: 'pointer', fontSize: '0.88rem', fontFamily: IRIS_FONTS.body, boxShadow: `0 8px 22px ${bg.accent}44`,
     transition: 'background 0.15s, box-shadow 0.15s, opacity 0.15s',
   };
   const btnGhost: React.CSSProperties = {
     background: 'rgba(255,255,255,0.6)', color: bg.ink, border: `1px solid ${bg.cardBorder}`,
-    borderRadius: 999, padding: '0.5rem 1rem', fontWeight: 600, cursor: 'pointer',
+    borderRadius: 999, padding: '0.5rem 1rem', fontWeight: 600, cursor: 'pointer', minHeight: 44,
     fontSize: '0.8rem', fontFamily: IRIS_FONTS.body,
     transition: 'background 0.15s, color 0.15s, border-color 0.15s',
   };
@@ -219,17 +221,20 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
     finally { setIdeaBusy(false); }
   };
 
+  // コピー共通処理：古い iPhone / Instagram 内蔵ブラウザ等でも copyText の
+  // フォールバック (execCommand) で救済し、成否を必ず通知する (silent fail 禁止)
+  const copyWithNotify = (text: string, success: { title: string; body?: string }) => {
+    void copyText(text).then((ok) => {
+      if (ok) notifyInApp({ kind: 'success', ...success });
+      else notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: '本文を長押しして選択→コピーしてください' });
+    });
+  };
+
   // 1案の「投稿文(キャプション＋ハッシュタグ)」をそのままコピー
   const copyIdeaCaption = (it: IdeaItem) => {
     const block = captionBlock(it);
     if (!block) { notifyInApp({ kind: 'info', title: '投稿文がまだありません', body: 'もう一度生成すると投稿文つきで出ます' }); return; }
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(block)
-        .then(() => notifyInApp({ kind: 'success', title: '投稿文をコピーしました', body: 'Instagram の投稿欄にそのまま貼れます' }))
-        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
-    } else {
-      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
-    }
+    copyWithNotify(block, { title: '投稿文をコピーしました', body: 'Instagram の投稿欄にそのまま貼れます' });
   };
 
   // 1ヶ月分の投稿カレンダーを一括生成 (週 perWeek 本 × 4週)
@@ -247,26 +252,14 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
   const copyMonthly = () => {
     if (!monthly.length) return;
     const md = monthlyPlanToMarkdown(monthly, activeClient);
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(md)
-        .then(() => notifyInApp({ kind: 'success', title: `今月の投稿カレンダー ${monthly.length}本をコピーしました`, body: 'チーム共有・履歴にそのまま使えます (Markdown)' }))
-        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
-    } else {
-      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
-    }
+    copyWithNotify(md, { title: `今月の投稿カレンダー ${monthly.length}本をコピーしました`, body: 'チーム共有・履歴にそのまま使えます (Markdown)' });
   };
 
   // クライアント承認用の「美しい1枚もの」を新規タブで開く (そのまま印刷→PDF保存)
   const copyShootingList = () => {
     if (!monthly.length) return;
     const md = shootingListMarkdown(monthly, activeClient);
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(md)
-        .then(() => notifyInApp({ kind: 'success', title: '今月の撮影リストをコピーしました', body: '形式ごとにまとめ撮りできる形です' }))
-        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
-    } else {
-      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
-    }
+    copyWithNotify(md, { title: '今月の撮影リストをコピーしました', body: '形式ごとにまとめ撮りできる形です' });
   };
 
   const openMonthlyOnePager = () => {
@@ -300,13 +293,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
   const copyScript = () => {
     if (!script) return;
     const md = scriptToMarkdown(script, activeClient?.name);
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(md)
-        .then(() => notifyInApp({ kind: 'success', title: '撮影台本をコピーしました', body: '撮影担当・編集担当にそのまま渡せます (Markdown)' }))
-        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
-    } else {
-      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
-    }
+    copyWithNotify(md, { title: '撮影台本をコピーしました', body: '撮影担当・編集担当にそのまま渡せます (Markdown)' });
   };
 
   // ★ワンタップ自動字幕：台本のテロップ/セリフから SRT を生成してコピー（CapCut/Edits 等にそのまま読み込める）。
@@ -314,26 +301,14 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
     if (!script) return;
     const srt = scriptToSrt(script);
     if (!srt.trim()) { notifyInApp({ kind: 'info', title: '字幕の元になる文言がありません', body: 'テロップ・セリフのある台本で使えます' }); return; }
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(srt)
-        .then(() => notifyInApp({ kind: 'success', title: '字幕(SRT)をコピーしました', body: 'CapCut / CapCut Web / Edits で「字幕を読み込む」に貼れます' }))
-        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
-    } else {
-      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
-    }
+    copyWithNotify(srt, { title: '字幕(SRT)をコピーしました', body: 'CapCut / CapCut Web / Edits で「字幕を読み込む」に貼れます' });
   };
 
   // 企画リストを丸ごと「投稿プラン」としてコピー (クライアント・チームにそのまま渡せる)
   const copyIdeaPool = () => {
     if (!ideas.length) return;
     const md = ideaPoolToMarkdown(ideas, activeClient, focus || undefined);
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(md)
-        .then(() => notifyInApp({ kind: 'success', title: `投稿プラン ${ideas.length}本をコピーしました`, body: 'クライアント・チームにそのまま渡せます (Markdown)' }))
-        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
-    } else {
-      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
-    }
+    copyWithNotify(md, { title: `投稿プラン ${ideas.length}本をコピーしました`, body: 'クライアント・チームにそのまま渡せます (Markdown)' });
   };
 
   // 投稿本文だけをそのまま Instagram などに貼れる形でコピー (本文 + ハッシュタグ)
@@ -342,13 +317,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
     const text = [script.caption, script.hashtags.length ? '\n' + script.hashtags.join(' ') : '']
       .filter(Boolean).join('\n').trim();
     if (!text) { notifyInApp({ kind: 'info', title: 'コピーする本文がありません', body: '台本を作り直してください' }); return; }
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text)
-        .then(() => notifyInApp({ kind: 'success', title: '投稿本文をコピーしました', body: 'Instagram などにそのまま貼り付けられます' }))
-        .catch(() => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'ブラウザのコピー権限をご確認ください' }));
-    } else {
-      notifyInApp({ kind: 'info', title: 'コピー未対応のブラウザ', body: 'テキストを手動で選択してください' });
-    }
+    copyWithNotify(text, { title: '投稿本文をコピーしました', body: 'Instagram などにそのまま貼り付けられます' });
   };
 
   return (

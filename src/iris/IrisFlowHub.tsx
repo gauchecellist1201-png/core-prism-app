@@ -36,6 +36,7 @@ import type { IrisBackgroundDef } from './irisStyle';
 import type { AppSettings } from '../types/identity';
 import type { MediaKit } from '../types/influencerDeal';
 import { usePostQueue, type ScheduledPost } from './usePostQueue';
+import { copyText } from './copyText';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -67,7 +68,7 @@ function DealLinkPicker({ deals, value, onChange, accent, bg }: {
           return (
             <button key={opt.id ?? 'none'} type="button" onClick={() => onChange(opt.id)}
               style={{
-                fontSize: 11, fontWeight: 700, borderRadius: 99, padding: '5px 11px', cursor: 'pointer',
+                fontSize: 11.5, fontWeight: 700, borderRadius: 99, padding: '9px 14px', minHeight: 40, cursor: 'pointer',
                 background: sel ? `linear-gradient(135deg, ${accent}, #F77737)` : 'transparent',
                 color: sel ? '#fff' : bg.inkSoft,
                 border: sel ? 'none' : `1px solid ${bg.cardBorder}`,
@@ -687,7 +688,7 @@ function ScheduleReelBar({ scheduled, accent, onSchedule, onViewSchedule }: {
         <CheckCircle2 size={16} color="#10B981" />
         <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0F7D63' }}>投稿予約に追加しました</span>
         <button type="button" onClick={onViewSchedule}
-          style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: accent, fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+          style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: accent, fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3, minHeight: 44, padding: '0 6px' }}>
           予約を見る <ArrowRight size={13} />
         </button>
       </div>
@@ -844,7 +845,7 @@ function StrategyRow({ item, accent, bg, onMakeReel }: { item: StrategyItem; acc
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 8 }}>
         {item.kpi && <span style={{ fontSize: 10.5, color: accent, fontWeight: 700, background: `${accent}14`, padding: '2px 8px', borderRadius: 99 }}>KPI: {item.kpi}</span>}
         <button type="button" onClick={onMakeReel}
-          style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${accent}55`, color: accent, fontSize: 11, fontWeight: 800, borderRadius: 99, padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${accent}55`, color: accent, fontSize: 11.5, fontWeight: 800, borderRadius: 99, padding: '8px 14px', minHeight: 44, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <Clapperboard size={12} /> これで台本
         </button>
       </div>
@@ -871,28 +872,6 @@ function buildScriptText(reel: ReelScriptResult, theme: string): string {
     lines.push(reel.hashtags.map((h) => (h.startsWith('#') ? h : '#' + h)).join(' '));
   }
   return lines.join('\n').trim();
-}
-
-async function copyText(text: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch { /* フォールバックへ */ }
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(ta);
-    return ok;
-  } catch {
-    return false;
-  }
 }
 
 function ReelScriptCard({ reel, theme, accent, bg, onRegenerate, onOpenStudio }: {

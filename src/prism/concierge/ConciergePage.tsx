@@ -846,7 +846,7 @@ function Showcase() {
                 {config.faq.map((f, i) => (
                   <div key={i} style={{ border: `1px solid ${P.line}`, borderRadius: 12, padding: 10 }}>
                     <input
-                      style={{ ...inputStyle, minHeight: 40, marginBottom: 6, fontSize: 16 }}
+                      style={{ ...inputStyle, marginBottom: 6, fontSize: 16 }}
                       value={f.q}
                       onChange={e => set('faq', config.faq.map((x, j) => j === i ? { ...x, q: e.target.value } : x))}
                       placeholder="質問"
@@ -859,7 +859,7 @@ function Showcase() {
                     />
                     <button
                       onClick={() => set('faq', config.faq.filter((_, j) => j !== i))}
-                      style={{ marginTop: 6, minHeight: 40, padding: '8px 12px', borderRadius: 10, border: `1px solid ${P.line}`, background: 'transparent', color: P.fgMuted, fontSize: 12, cursor: 'pointer' }}
+                      style={{ marginTop: 6, minHeight: 44, padding: '8px 12px', borderRadius: 10, border: `1px solid ${P.line}`, background: 'transparent', color: P.fgMuted, fontSize: 12, cursor: 'pointer' }}
                     >
                       この質問を削除
                     </button>
@@ -890,7 +890,7 @@ function Showcase() {
                 setConfig({ ...DEFAULT_CONCIERGE_CONFIG });
                 setServicesText(DEFAULT_CONCIERGE_CONFIG.services.join('\n'));
               }}
-              style={{ minHeight: 40, padding: '8px 14px', borderRadius: 10, border: `1px solid ${P.line}`, background: 'transparent', color: P.fgSubtle, fontSize: 12, cursor: 'pointer' }}
+              style={{ minHeight: 44, padding: '8px 14px', borderRadius: 10, border: `1px solid ${P.line}`, background: 'transparent', color: P.fgSubtle, fontSize: 12, cursor: 'pointer' }}
             >
               はじめの設定に戻す
             </button>
@@ -1142,7 +1142,7 @@ function Showcase() {
               desc: 'まず1サイトに導入して、夜間・休日の取りこぼしを無くしたい方へ。',
               stripeUrl: 'https://buy.stripe.com/6oUeVe3HteOT9nt6LfdIA0B',
               features: [
-                '上の12機能すべて (ナレッジ学習・FAQ自動生成・AI SDR・多言語・先に話しかける接客)',
+                `上の${CAPABILITIES.length}機能すべて (ナレッジ学習・FAQ自動生成・AI SDR・多言語・会話インサイト・育成メモ)`,
                 '24時間の自動応対・会話まるごとメール通知',
                 'ブランド設定 (色・人格・言葉づかい)',
                 'メールサポート',
