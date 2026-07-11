@@ -456,9 +456,7 @@ function Showcase() {
     setGenBusy(true);
     setGenMsg(null);
     try {
-      const ctrl = new AbortController();
-      const timer = window.setTimeout(() => ctrl.abort(), 40_000);
-      const res = await fetch('/api/ai', {
+      const res = await fetchWithTimeout('/api/ai', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -467,8 +465,7 @@ function Showcase() {
           system: 'あなたはFAQ設計の専門家。渡された文章から、サイト訪問者が実際に尋ねそうな質問と、文章の内容だけを根拠にした回答を最大6組作る。出力はJSON配列のみ: [{"q":"質問","a":"回答"}]。回答は2文以内。文章にない情報は作らない。',
           messages: [{ role: 'user', content: src.slice(0, 4000) }],
         }),
-        signal: ctrl.signal,
-      }).finally(() => window.clearTimeout(timer));
+      }, 40_000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const text: string = data?.content?.[0]?.text || '';
@@ -607,6 +604,35 @@ function Showcase() {
 
       <HairLine />
 
+      {/* ── ページ内クイック移動 (長いページでも会話インサイト・育成メモへ1タップ) ── */}
+      <nav
+        aria-label="ページ内の移動"
+        style={{
+          maxWidth: 1160, margin: '0 auto', padding: '14px clamp(16px, 4vw, 44px) 0',
+          display: 'flex', gap: 8, overflowX: 'auto', WebkitOverflowScrolling: 'touch',
+        }}
+      >
+        {[
+          { href: '#features', label: 'できること' },
+          { href: '#setup', label: '設置のしかた' },
+          { href: '#insights', label: '会話インサイト' },
+          { href: '#coaching', label: '育成メモ' },
+          { href: '#pricing', label: '料金' },
+        ].map(l => (
+          <a
+            key={l.href}
+            href={l.href}
+            style={{
+              flexShrink: 0, display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: '0 16px',
+              borderRadius: 999, border: `1px solid ${P.line}`, background: P.glass,
+              color: P.fg, textDecoration: 'none', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
+            }}
+          >
+            {l.label}
+          </a>
+        ))}
+      </nav>
+
       {/* ── 02 CAPABILITIES ── */}
       <section id="features" style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(40px, 6vw, 80px) clamp(16px, 4vw, 44px)', scrollMarginTop: 16 }}>
         <SectionIndex no="02" label="Everything, in one crystal" />
@@ -735,6 +761,7 @@ function Showcase() {
                 placeholder="例: 予算月3万円以上・導入時期が3ヶ月以内"
               />
             </Field>
+            <div id="coaching" style={{ scrollMarginTop: 20 }} />
             <Field
               label="応対の育成メモ (この答え方に直したい)"
               hint="「こう答えてほしい」を1行ずつ書くと、以後の応対に最優先で反映されます。例: 駐車場を聞かれたら「2台まで無料」と答える"
@@ -871,8 +898,42 @@ function Showcase() {
 
           {/* 設置方法 (かんたん順に3つ) */}
           <div style={{ flex: '1 1 320px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* 方法1: 専用リンク — 貼り付け不要 */}
+            {/* あなたはどれ? — 3方式で迷わせないための入口 */}
             <div style={{
+              borderRadius: 20, padding: 'clamp(14px, 2.5vw, 20px)',
+              border: `1px solid ${P.lineSoft}`, background: P.glass,
+              backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+            }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 4 }}>あなたはどれ？</div>
+              <p style={{ margin: '0 0 10px', fontSize: 12, lineHeight: 1.7, color: P.fgSubtle }}>
+                当てはまるものを押すと、ぴったりの設置方法へ移動します。
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { id: 'method-link', t: 'HP がない・Instagram / LINE / 店頭が中心', m: '方法1 リンクを貼るだけ' },
+                  { id: 'method-tag', t: '自分の HP がある (WordPress・Wix なども可)', m: '方法2 タグ1行' },
+                  { id: 'method-daikou', t: 'むずかしいことは全部任せたい', m: '方法3 設置代行' },
+                ].map(x => (
+                  <button
+                    key={x.id}
+                    onClick={() => document.getElementById(x.id)?.scrollIntoView({ behavior: 'smooth' })}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+                      minHeight: 48, padding: '10px 14px', borderRadius: 12, cursor: 'pointer',
+                      border: `1px solid ${P.line}`, background: 'rgba(13,20,34,0.35)',
+                      color: P.fg, fontSize: 13, fontFamily: SANS, textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ flex: 1, minWidth: 0, lineHeight: 1.5 }}>{x.t}</span>
+                    <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, color: P.gold, whiteSpace: 'nowrap' }}>{x.m} →</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 方法1: 専用リンク — 貼り付け不要 */}
+            <div id="method-link" style={{
+              scrollMarginTop: 20,
               borderRadius: 24, padding: 'clamp(16px, 3vw, 26px)',
               border: `1.5px solid rgba(217,228,245,0.55)`,
               background: 'linear-gradient(160deg, rgba(217,228,245,0.16), rgba(255,255,255,0.04))',
@@ -946,7 +1007,8 @@ function Showcase() {
             </div>
 
             {/* 方法2: タグ1行 */}
-            <div style={{
+            <div id="method-tag" style={{
+              scrollMarginTop: 20,
               borderRadius: 24, padding: 'clamp(16px, 3vw, 26px)',
               border: `1px solid ${P.glassStrong}`,
               background: 'linear-gradient(160deg, rgba(217,228,245,0.12), rgba(255,255,255,0.03))',
@@ -979,7 +1041,8 @@ function Showcase() {
             </div>
 
             {/* 方法3: 設置代行 — メール1通で丸投げ */}
-            <div style={{
+            <div id="method-daikou" style={{
+              scrollMarginTop: 20,
               borderRadius: 24, padding: 'clamp(16px, 3vw, 26px)', border: `1px solid ${P.line}`, background: P.glass,
               backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
             }}>
@@ -1042,6 +1105,27 @@ function Showcase() {
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.92rem', lineHeight: 2.1, maxWidth: 560, margin: '0 auto' }}>
           上のデモは飾りではありません。いまあなたが話しかければ、そのまま答えます。<br />これがそのまま、あなたのお店の入口に立ちます。
         </p>
+      </section>
+
+      {/* ── 04.5 導入までの流れ (料金の前に手順を見せて、決済前の不安をつぶす) ── */}
+      <section style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(24px, 4vw, 48px) clamp(16px, 4vw, 44px) 0' }}>
+        <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 400, margin: '0 0 6px' }}>導入までの流れ</h2>
+        <p style={{ margin: '0 0 22px', fontSize: 13, color: P.fgMuted }}>むずかしい作業は、すべてこちらで巻き取ります。</p>
+        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+          {[
+            { n: '1', t: 'お申し込み', d: 'カード決済で今すぐ、または先にメールでご相談。ご質問には24時間以内にお返事します。' },
+            { n: '2', t: '初期設定はおまかせ', d: 'ヒアリングのうえ、ナレッジ登録・人格・色までこちらで設定代行（初期費用に含まれます）。' },
+            { n: '3', t: '1行で公開', d: 'タグを1行貼るか、専用リンクを置くだけ。あなたのサイトでコンシェルジュが働き始めます。' },
+          ].map(s => (
+            <div key={s.n} style={{ border: `1px solid ${P.lineSoft}`, background: P.glass, borderRadius: 18, padding: '18px 18px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <span style={{ width: 28, height: 28, borderRadius: 999, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 800, color: P.bg0, background: P.gold }}>{s.n}</span>
+                <span style={{ fontSize: 14.5, fontWeight: 700 }}>{s.t}</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.8, color: P.fgMuted }}>{s.d}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section id="pricing" style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(40px, 6vw, 80px) clamp(16px, 4vw, 44px)', scrollMarginTop: 16 }}>
@@ -1128,6 +1212,9 @@ function Showcase() {
               >
                 今すぐ導入する (カード決済)
               </a>
+              <p style={{ margin: '8px 0 0', fontSize: 11.5, lineHeight: 1.7, color: P.fgSubtle, textAlign: 'center' }}>
+                決済後すぐこの画面に戻り、3ステップの設定案内が始まります (最短3分で稼働)
+              </p>
               <a
                 href={mailtoCta(plan.name)}
                 style={{
@@ -1147,27 +1234,6 @@ function Showcase() {
           お支払い前に、上のコンシェルジュであなたのブランド設定をそのまま試せます。
           導入相談はメール1通から — 24時間以内にご返信します。
         </p>
-      </section>
-
-      {/* ── 04.5 導入までの流れ (高額初期費用の不安を手順の見える化でつぶす) ── */}
-      <section style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(24px, 4vw, 48px) clamp(16px, 4vw, 44px)' }}>
-        <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 400, margin: '0 0 6px' }}>導入までの流れ</h2>
-        <p style={{ margin: '0 0 22px', fontSize: 13, color: P.fgMuted }}>むずかしい作業は、すべてこちらで巻き取ります。</p>
-        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-          {[
-            { n: '1', t: 'お申し込み', d: 'カード決済で今すぐ、または先にメールでご相談。ご質問には24時間以内にお返事します。' },
-            { n: '2', t: '初期設定はおまかせ', d: 'ヒアリングのうえ、ナレッジ登録・人格・色までこちらで設定代行（初期費用に含まれます）。' },
-            { n: '3', t: '1行で公開', d: 'タグを1行貼るか、専用リンクを置くだけ。あなたのサイトでコンシェルジュが働き始めます。' },
-          ].map(s => (
-            <div key={s.n} style={{ border: `1px solid ${P.lineSoft}`, background: P.glass, borderRadius: 18, padding: '18px 18px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <span style={{ width: 28, height: 28, borderRadius: 999, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 800, color: P.bg0, background: P.gold }}>{s.n}</span>
-                <span style={{ fontSize: 14.5, fontWeight: 700 }}>{s.t}</span>
-              </div>
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.8, color: P.fgMuted }}>{s.d}</p>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* ── 05 共創 (このアプリを一緒に良くする) ── */}

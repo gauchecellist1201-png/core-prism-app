@@ -13,7 +13,7 @@
 //   ④ あなた向け案件（プロフィールのフォロワー数・ジャンルで実マッチ）
 // 失敗時は必ず復旧導線（再試行）を出し、行き止まりを作らない。
 // ============================================================
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import CountUp from '../components/CountUp';
 import Celebrate from '../components/Celebrate';
@@ -176,11 +176,22 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
   const [earnDone, setEarnDone] = useState(false);
   // コピーした案件 id（ボタンを「コピー済み」に変えて沈黙を消す）
   const [copiedDealId, setCopiedDealId] = useState<string | null>(null);
+  // コピー失敗も沈黙させない（http 環境や古い端末向けフォールバック込み）
+  const [draftCopyFailed, setDraftCopyFailed] = useState(false);
+
+  const copyDraft = async (dealId: string) => {
+    if (!draft) return;
+    setDraftCopyFailed(false);
+    const ok = await copyText(`${draft.subject}\n\n${draft.body}`);
+    if (ok) { setCopiedDealId(dealId); fire('応募文をコピーしました'); }
+    else setDraftCopyFailed(true);
+  };
 
   const makeDraft = async (deal: BrandDeal) => {
     setDraftDealId(deal.id);
     setDraft(null);
     setDraftError(null);
+    setDraftCopyFailed(false);
     setDraftLoading(true);
     const note = [
       `Instagram @${igProfile.handle}`,
@@ -243,18 +254,34 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
     borderRadius: 20,
     padding: '1.1rem 1.15rem',
     marginBottom: 14,
+    scrollMarginTop: 76, // ステップレールからの移動時、上部バーに隠れない
   };
   const stepDoneColor = '#10B981';
 
-  // ステップレール（連携✓ → 戦略 → リール → 案件）
+  // ステップレール（連携✓ → 戦略 → リール → 案件）。タップで該当セクションへ飛べる
   const steps = [
-    { key: 'connect', label: '連携', done: true },
-    { key: 'strategy', label: '戦略', done: !!strategy },
-    { key: 'reel', label: 'リール', done: !!reel },
-    { key: 'earn', label: '稼ぐ', done: earnDone },
+    { key: 'connect', label: '連携', done: true, section: 'flow-sec-analysis' },
+    { key: 'strategy', label: '戦略', done: !!strategy, section: 'flow-sec-strategy' },
+    { key: 'reel', label: 'リール', done: !!reel, section: 'flow-sec-reel' },
+    { key: 'earn', label: '稼ぐ', done: earnDone, section: 'flow-sec-earn' },
   ];
   // 「いま光らせる」ステップ = 完了していない最初のステップ
   const activeStepIdx = steps.findIndex((s) => !s.done);
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  // 「次はこれ」ガイド — 実際の進み具合から、いま押すべき場所を言葉で示す
+  const nextGuide = activeStepIdx === -1
+    ? { text: '今日の流れはぜんぶ完了！投稿予約を確認しましょう', done: true as const, go: () => onNavigate('schedule') }
+    : {
+        text: ({
+          strategy: stratLoading ? 'いま Iris が今週の戦略を準備中。できたらすぐ下に出ます' : '次はこれ → ② 今週の戦略を確認する',
+          reel: '次はこれ → ③ ボタンを押すだけで今日の台本ができます',
+          earn: '次はこれ → ④ 案件の「応募文を作る」を押す',
+        } as Record<string, string>)[steps[activeStepIdx].key] || '次はこれ → 上から順に進むだけ',
+        done: false as const,
+        go: () => scrollToSection(steps[activeStepIdx].section),
+      };
 
   // 子要素を順に立ち上げる（段階的に現れることで“組み上がっていく”感）
   const reveal = (i: number) => (reduce
@@ -302,13 +329,16 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
           const segDone = steps[i + 1]?.done || s.done;
           return (
             <div key={s.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, position: 'relative' }}>
+              {/* タップで該当セクションへスクロール（44px 確保） */}
+              <button type="button" onClick={() => scrollToSection(s.section)}
+                aria-label={`${s.label}のセクションへ移動`}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, position: 'relative', background: 'transparent', border: 'none', cursor: 'pointer', padding: '5px 0 4px', minHeight: 44 }}>
                 {/* 現在地の脈動リング */}
                 {active && !reduce && (
                   <motion.div aria-hidden
                     animate={{ scale: [1, 1.9], opacity: [0.5, 0] }}
                     transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
-                    style={{ position: 'absolute', top: 0, width: 26, height: 26, borderRadius: '50%', border: `2px solid ${accent}`, pointerEvents: 'none' }}
+                    style={{ position: 'absolute', top: 5, width: 26, height: 26, borderRadius: '50%', border: `2px solid ${accent}`, pointerEvents: 'none' }}
                   />
                 )}
                 <motion.div
@@ -327,7 +357,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
                   {s.done ? <CheckCircle2 size={15} /> : i + 1}
                 </motion.div>
                 <span style={{ fontSize: 9.5, fontWeight: 700, color: s.done ? stepDoneColor : active ? accent : bg.inkSoft }}>{s.label}</span>
-              </div>
+              </button>
               {i < steps.length - 1 && (
                 <div style={{ position: 'relative', height: 2, flex: 1, marginBottom: 16, background: `${accent}22`, borderRadius: 2, overflow: 'hidden' }}>
                   <motion.div
@@ -351,8 +381,28 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
         })}
       </motion.div>
 
+      {/* 「次はこれ」ガイド — 今どこまで進んだか＋次に押す場所を1行で。タップで移動 */}
+      <motion.div {...reveal(1)} style={{ position: 'relative', zIndex: 1 }}>
+        <button type="button" onClick={nextGuide.go}
+          style={{
+            width: '100%', minHeight: 44, marginBottom: 14,
+            background: nextGuide.done ? 'rgba(16,185,129,0.10)' : `${accent}0D`,
+            border: `1px solid ${nextGuide.done ? 'rgba(16,185,129,0.3)' : accent + '33'}`,
+            borderRadius: 12, padding: '8px 12px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left',
+          }}>
+          {nextGuide.done
+            ? <CheckCircle2 size={16} color={stepDoneColor} style={{ flexShrink: 0 }} />
+            : <ArrowRight size={16} color={accent} style={{ flexShrink: 0 }} />}
+          <span style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: nextGuide.done ? '#0F7D63' : bg.ink, lineHeight: 1.5 }}>
+            {nextGuide.text}
+          </span>
+          <ChevronRight size={15} color={nextGuide.done ? '#0F7D63' : accent} style={{ flexShrink: 0 }} />
+        </button>
+      </motion.div>
+
       {/* ① 分析サマリ（連携後に自動実行） */}
-      <div style={card}>
+      <div style={card} id="flow-sec-analysis">
         <SectionLabel Icon={BarChart3} color={accent} title="① いまのあなた（自動分析）" />
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
           <Stat label="フォロワー" value={igProfile.followers ? <CountUp value={igProfile.followers} /> : '—'} bg={bg} />
@@ -363,7 +413,11 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
           ) : null}
           {igProfile.bestPostTime && <Stat label="伸びる時間" value={igProfile.bestPostTime} bg={bg} />}
         </div>
-        {anaLoading && <InlineLoading text="Iris があなたを分析しています…" bg={bg} />}
+        {anaLoading && (
+          <InlineLoading text="Iris があなたを分析しています…" bg={bg}
+            phases={['プロフィールを読み込んでいます…', '投稿への反応を集計しています…', 'あなたの強みを言葉にしています…', 'リールの想定単価を計算しています…']}
+          />
+        )}
         {anaError && !analysis && <InlineError text="分析に失敗しました。" onRetry={refreshAna} />}
         {analysis && (
           <>
@@ -392,9 +446,13 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
       </div>
 
       {/* ② 今週やること（戦略） */}
-      <div style={card}>
+      <div style={card} id="flow-sec-strategy">
         <SectionLabel Icon={TrendingUp} color={accent} title="② 今週やること（戦略）" />
-        {stratLoading && <InlineLoading text="戦略を立てています…" bg={bg} />}
+        {stratLoading && (
+          <InlineLoading text="戦略を立てています…" bg={bg}
+            phases={['直近の投稿の傾向を見ています…', '伸びやすいテーマを選んでいます…', '今週やること3本に絞っています…']}
+          />
+        )}
         {stratError && <InlineError text="戦略の取得に失敗しました。" onRetry={refresh} />}
         {strategy && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
@@ -411,7 +469,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
       </div>
 
       {/* ③ 今日のリール（台本 or 素材から構成 = 一気通貫の核） */}
-      <motion.div {...reveal(2)} whileHover={reduce ? undefined : { y: -2 }} style={{ ...card, position: 'relative', zIndex: 1, overflow: 'hidden', border: `1.5px solid ${accent}55`, background: `linear-gradient(180deg, ${accent}0D, ${bg.card})` }}>
+      <motion.div {...reveal(2)} whileHover={reduce ? undefined : { y: -2 }} id="flow-sec-reel" style={{ ...card, position: 'relative', zIndex: 1, overflow: 'hidden', border: `1.5px solid ${accent}55`, background: `linear-gradient(180deg, ${accent}0D, ${bg.card})` }}>
         {/* 「核」のカードが息づく — 縁を回る淡い光 */}
         {!reduce && (
           <motion.div aria-hidden
@@ -475,7 +533,11 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
             <Sparkles size={17} /> {defaultTheme ? `「${truncate(defaultTheme, 16)}」で台本を作る` : '戦略を待っています…'}
           </button>
         )}
-        {reelLoading && <InlineLoading text="台本を書いています…（フック・3シーン・ハッシュタグ）" bg={bg} />}
+        {reelLoading && (
+          <InlineLoading text="台本を書いています…" bg={bg}
+            phases={['最初のつかみ（フック）を考えています…', '3シーンの流れを書いています…', '締めのひとことを整えています…', 'ハッシュタグを選んでいます…']}
+          />
+        )}
         {reelError && <InlineError text={reelError} onRetry={() => makeReel(reelTheme || defaultTheme)} />}
         {reel && (
           <>
@@ -512,7 +574,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
           )}
           <button type="button" onClick={() => onNavigate('schedule')}
             style={{
-              marginTop: 10, background: 'transparent', border: 'none', color: accent,
+              marginTop: 10, minHeight: 44, background: 'transparent', border: 'none', color: accent,
               fontSize: 12.5, fontWeight: 800, cursor: 'pointer', padding: 6,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4, width: '100%',
             }}>
@@ -522,7 +584,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
       )}
 
       {/* ④ あなた向け案件（プロフィール連動マッチ） */}
-      <div style={card}>
+      <div style={card} id="flow-sec-earn">
         <SectionLabel Icon={Mail} color={accent} title="④ あなた向けの案件" />
         {matchedDeals.length === 0 ? (
           <p style={{ margin: '10px 0 0', fontSize: 12.5, color: bg.inkSoft, lineHeight: 1.6 }}>
@@ -551,16 +613,20 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                   <button type="button" onClick={() => makeDraft(deal)} disabled={draftLoading && draftDealId === deal.id}
-                    style={{ flex: 1, background: `linear-gradient(135deg, ${accent}, #F77737)`, border: 'none', color: '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                    style={{ flex: 1, minHeight: 44, background: `linear-gradient(135deg, ${accent}, #F77737)`, border: 'none', color: '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                     <Mail size={13} /> {draftLoading && draftDealId === deal.id ? '作成中…' : '応募文を作る'}
                   </button>
                   <button type="button" onClick={() => onNavigate('deals')}
-                    style={{ background: 'transparent', border: `1px solid ${bg.cardBorder}`, color: bg.ink, fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '8px 12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    style={{ minHeight: 44, background: 'transparent', border: `1px solid ${bg.cardBorder}`, color: bg.ink, fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '8px 12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     詳細 <ChevronRight size={13} />
                   </button>
                 </div>
                 {/* 応募文（その場生成） */}
-                {draftDealId === deal.id && draftLoading && <InlineLoading text="あなたの強みを織り込んで応募文を書いています…" bg={bg} />}
+                {draftDealId === deal.id && draftLoading && (
+                  <InlineLoading text="応募文を書いています…" bg={bg}
+                    phases={['あなたの実績を整理しています…', 'ブランドに合う言い方を選んでいます…', '件名と本文を仕上げています…']}
+                  />
+                )}
                 {draftDealId === deal.id && draftError && <InlineError text={draftError} onRetry={() => makeDraft(deal)} />}
                 {draftDealId === deal.id && draft && (
                   <div style={{ marginTop: 10, background: `${accent}0A`, border: `1px solid ${accent}33`, borderRadius: 12, padding: '10px 12px' }}>
@@ -570,33 +636,34 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
                     <div style={{ fontSize: 12, color: bg.ink, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{draft.body}</div>
                     <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                       <button type="button"
-                        onClick={() => {
-                          try { navigator.clipboard?.writeText(`${draft.subject}\n\n${draft.body}`); } catch { /* */ }
-                          setCopiedDealId(deal.id);
-                          fire('応募文をコピーしました');
-                        }}
-                        style={{ flex: 1, background: copiedDealId === deal.id ? 'rgba(16,185,129,0.12)' : `linear-gradient(135deg, ${accent}, #F77737)`, border: copiedDealId === deal.id ? '1px solid rgba(16,185,129,0.4)' : 'none', color: copiedDealId === deal.id ? '#0F7D63' : '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                        {copiedDealId === deal.id ? <><CheckCircle2 size={13} /> コピー済み</> : '応募文をコピー'}
+                        onClick={() => { void copyDraft(deal.id); }}
+                        style={{ flex: 1, minHeight: 44, background: copiedDealId === deal.id ? 'rgba(16,185,129,0.12)' : `linear-gradient(135deg, ${accent}, #F77737)`, border: copiedDealId === deal.id ? '1px solid rgba(16,185,129,0.4)' : 'none', color: copiedDealId === deal.id ? '#0F7D63' : '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                        {copiedDealId === deal.id ? <><CheckCircle2 size={13} /> コピーしました</> : <><Copy size={13} /> 応募文をコピー</>}
                       </button>
                       {deal.contact?.type === 'email' ? (
                         <a href={`mailto:${deal.contact.address}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`}
-                          style={{ flex: 1, textAlign: 'center', background: 'transparent', border: `1px solid ${accent}66`, color: accent, fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', textDecoration: 'none' }}>
+                          style={{ flex: 1, minHeight: 44, background: 'transparent', border: `1px solid ${accent}66`, color: accent, fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                           メールで送る
                         </a>
                       ) : deal.contact?.type === 'form' ? (
                         <a href={deal.contact.url} target="_blank" rel="noopener noreferrer"
-                          style={{ flex: 1, textAlign: 'center', background: 'transparent', border: `1px solid ${accent}66`, color: accent, fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', textDecoration: 'none' }}>
+                          style={{ flex: 1, minHeight: 44, background: 'transparent', border: `1px solid ${accent}66`, color: accent, fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                           応募フォームを開く
                         </a>
                       ) : null}
                     </div>
+                    {draftCopyFailed && draftDealId === deal.id && (
+                      <div style={{ marginTop: 6, fontSize: 11, color: '#9B1B30', lineHeight: 1.5 }}>
+                        コピーできませんでした。本文を長押しして選択→コピーしてください。
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             ))}
             <button type="button" onClick={() => onNavigate('deals')}
               style={{
-                marginTop: 2, background: 'transparent', border: 'none', color: accent,
+                marginTop: 2, minHeight: 44, background: 'transparent', border: 'none', color: accent,
                 fontSize: 12.5, fontWeight: 800, cursor: 'pointer', padding: 6,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
               }}>
@@ -628,7 +695,7 @@ function ScheduleReelBar({ scheduled, accent, onSchedule, onViewSchedule }: {
   }
   return (
     <button type="button" onClick={onSchedule}
-      style={{ marginTop: 10, width: '100%', background: 'transparent', border: `1px solid ${accent}66`, color: accent, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+      style={{ marginTop: 10, width: '100%', minHeight: 44, background: 'transparent', border: `1px solid ${accent}66`, color: accent, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
       <CalendarPlus size={14} /> 投稿予約に追加
     </button>
   );
@@ -874,7 +941,7 @@ function ReelScriptCard({ reel, theme, accent, bg, onRegenerate, onOpenStudio }:
         </div>
       )}
       <button type="button" onClick={handleCopy}
-        style={{ width: '100%', marginTop: 12, background: copied ? `${accent}12` : 'transparent', border: `1px solid ${copied ? accent : bg.cardBorder}`, color: copied ? accent : bg.inkSoft, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all .18s ease' }}>
+        style={{ width: '100%', minHeight: 44, marginTop: 12, background: copied ? `${accent}12` : 'transparent', border: `1px solid ${copied ? accent : bg.cardBorder}`, color: copied ? accent : bg.inkSoft, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all .18s ease' }}>
         {copied ? <><Check size={13} /> コピーしました</> : <><Copy size={13} /> 台本をコピー（撮影者にそのまま渡せる）</>}
       </button>
       {copyFailed && (
@@ -884,11 +951,11 @@ function ReelScriptCard({ reel, theme, accent, bg, onRegenerate, onOpenStudio }:
       )}
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <button type="button" onClick={onRegenerate}
-          style={{ flex: 1, background: 'transparent', border: `1px solid ${bg.cardBorder}`, color: bg.ink, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+          style={{ flex: 1, minHeight: 44, background: 'transparent', border: `1px solid ${bg.cardBorder}`, color: bg.ink, fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
           <RefreshCw size={13} /> 別案
         </button>
         <button type="button" onClick={onOpenStudio}
-          style={{ flex: 2, background: `linear-gradient(135deg, ${accent}, #F77737)`, border: 'none', color: '#fff', fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+          style={{ flex: 2, minHeight: 44, background: `linear-gradient(135deg, ${accent}, #F77737)`, border: 'none', color: '#fff', fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
           <Clapperboard size={14} /> 動画にして仕上げる <ArrowRight size={13} />
         </button>
       </div>
@@ -896,10 +963,22 @@ function ReelScriptCard({ reel, theme, accent, bg, onRegenerate, onOpenStudio }:
   );
 }
 
-function InlineLoading({ text, bg }: { text: string; bg: IrisBackgroundDef }) {
+/** 生成待ちの表示。phases を渡すと「AIが今やっていること」を1行ずつ流し、待ち時間を短く感じさせる */
+function InlineLoading({ text, bg, phases }: { text: string; bg: IrisBackgroundDef; phases?: string[] }) {
+  const [idx, setIdx] = useState(0);
+  const count = phases?.length ?? 0;
+  useEffect(() => {
+    if (count < 2) return;
+    const id = window.setInterval(() => setIdx((i) => (i + 1) % count), 1800);
+    return () => window.clearInterval(id);
+  }, [count]);
+  const line = count > 0 ? phases![idx % count] : text;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, color: bg.inkSoft, fontSize: 12.5 }}>
-      <Loader2 size={15} className="iris-spin" /> {text}
+      <Loader2 size={15} className="iris-spin" style={{ flexShrink: 0 }} />
+      <motion.span key={line} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        {line}
+      </motion.span>
     </div>
   );
 }

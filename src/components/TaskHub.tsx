@@ -12,6 +12,8 @@
 // ============================================================
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ListChecks, Flame, Sunrise, CalendarDays, LayoutList, Timer, Target, ListTodo, Lightbulb, Bot } from 'lucide-react';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import type { Persona, KnowledgeItem } from '../types/identity';
 import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
@@ -212,11 +214,11 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
       const a = k.analysis;
       if (!a) continue;
       for (const act of a.actions || [])
-        out.push({ id: `kb-action:${k.id}:${act.slice(0, 30)}`, title: act, source: 'knowledge-action', sourceLabel: `📄 ${k.title}`, priority: 'mid', done: false, isProposal: true, knowledgeId: k.id });
+        out.push({ id: `kb-action:${k.id}:${act.slice(0, 30)}`, title: act, source: 'knowledge-action', sourceLabel: `資料: ${k.title}`, priority: 'mid', done: false, isProposal: true, knowledgeId: k.id });
       for (const s of a.strategy || [])
-        out.push({ id: `kb-strategy:${k.id}:${s.slice(0, 30)}`, title: s, source: 'knowledge-strategy', sourceLabel: `🎯 ${k.title}`, priority: 'mid', done: false, isProposal: true, knowledgeId: k.id });
+        out.push({ id: `kb-strategy:${k.id}:${s.slice(0, 30)}`, title: s, source: 'knowledge-strategy', sourceLabel: `戦略: ${k.title}`, priority: 'mid', done: false, isProposal: true, knowledgeId: k.id });
       for (const r of a.risks || [])
-        out.push({ id: `kb-risk:${k.id}:${r.slice(0, 30)}`, title: r, source: 'risk', sourceLabel: `⚠ ${k.title}`, priority: 'high', done: false, isProposal: true, knowledgeId: k.id });
+        out.push({ id: `kb-risk:${k.id}:${r.slice(0, 30)}`, title: r, source: 'risk', sourceLabel: `注意: ${k.title}`, priority: 'high', done: false, isProposal: true, knowledgeId: k.id });
     }
     return out;
   }, [persona.tasks, knowledge, persona.id]);
@@ -274,7 +276,8 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
     try {
       const items = realOpen.slice(0, 20).map(t => `- [${t.id}] ${t.title} (優先度: ${t.priority}${t.due ? ` / 期限: ${t.due}` : ''}${t.estimatedMin ? ` / ${t.estimatedMin}分` : ''})`).join('\n');
       const sys = `あなたは ${persona.name} の頼れる秘書です。今日やるべきタスクを 3 つだけ選び、理由を 1 行で添えてください。出力は厳密な JSON のみ:\n{"ids":["id1","id2","id3"],"reason":"なぜこの 3 つか (40 字)"}`;
-      const r = await fetch('/api/ai', {
+      // 弱い電波でも「考え中…」のまま固まらないようタイムアウト付き (失敗時は下のフォールバックへ)
+      const r = await fetchWithTimeout('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -282,7 +285,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
           system: sys,
           messages: [{ role: 'user', content: `# 候補タスク (id 付き)\n${items}\n\n優先度 + 期限 + 依存関係を考えて 3 つ選んで。` }],
         }),
-      });
+      }, 25000);
       if (!r.ok) throw new Error('AI 呼び出し失敗');
       const data = await r.json();
       const text = (data.content?.[0]?.text || '').trim();
@@ -399,11 +402,18 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
       >
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}>✅</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: persona.accentColorLight, color: persona.accentColor }}>
+              <ListChecks size={20} strokeWidth={2.2} />
+            </div>
             <div className="min-w-0">
               <p className="cp-h2 truncate">タスクハブ</p>
-              <p className="cp-meta truncate">{persona.name} · {streak.count > 0 ? `🔥 ${streak.count} 連続完了中` : 'やる事を全部ここに'}</p>
+              <p className="cp-meta truncate flex items-center gap-1">
+                <span className="truncate">{persona.name}</span> ·
+                {streak.count > 0 ? (
+                  <><Flame size={11} strokeWidth={2.4} style={{ color: '#FF6B6B', flexShrink: 0 }} /> {streak.count} 連続完了中</>
+                ) : ' やる事を全部ここに'}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
@@ -412,14 +422,14 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
         {/* ビュー切替 (今日 / 今週 / すべて) */}
         <div className="cp-modal-tabs">
           {([
-            { id: 'today' as ViewMode, label: '🌅 今日' },
-            { id: 'week'  as ViewMode, label: '📅 今週' },
-            { id: 'all'   as ViewMode, label: `📋 すべて (${tasks.length})` },
+            { id: 'today' as ViewMode, label: '今日', Icon: Sunrise },
+            { id: 'week'  as ViewMode, label: '今週', Icon: CalendarDays },
+            { id: 'all'   as ViewMode, label: `すべて (${tasks.length})`, Icon: LayoutList },
           ]).map(t => (
             <button key={t.id} onClick={() => setView(t.id)}
               className="cp-modal-tab" data-active={view === t.id}
-              style={{ color: view === t.id ? persona.accentColor : undefined }}
-            >{t.label}</button>
+              style={{ color: view === t.id ? persona.accentColor : undefined, minHeight: 44 }}
+            ><span className="inline-flex items-center gap-1.5"><t.Icon size={13} strokeWidth={2.2} />{t.label}</span></button>
           ))}
         </div>
 
@@ -459,7 +469,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
           {summary.totalEst > 0 && (
             <div className="cp-card-section">
               <div className="cp-row-between mb-2">
-                <p className="cp-h3">⏱ 今日の時間予算</p>
+                <p className="cp-h3 flex items-center gap-1.5"><Timer size={14} strokeWidth={2.2} style={{ color: persona.accentColor }} /> 今日の時間予算</p>
                 <p className="cp-meta">
                   {summary.hours.toFixed(1)} h / {summary.dayBudget} h
                 </p>
@@ -477,7 +487,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
               </div>
               <p className="cp-tiny mt-2">
                 {summary.fill > 100
-                  ? '⚠ 1 日 8 時間に収まりません。優先度を絞るか期限を調整しましょう'
+                  ? '1 日 8 時間に収まりません。優先度を絞るか期限を調整しましょう'
                   : `あと ${(summary.dayBudget - summary.hours).toFixed(1)} 時間で全部終わる予定`}
               </p>
             </div>
@@ -490,7 +500,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
               borderLeft: `3px solid ${persona.accentColor}`,
             }}>
               <div className="cp-row-between mb-2">
-                <p className="cp-h3">🎯 AI が選ぶ「次にやるべき 3 つ」</p>
+                <p className="cp-h3 flex items-center gap-1.5"><Target size={14} strokeWidth={2.2} style={{ color: persona.accentColor }} /> AI が選ぶ「次にやるべき 3 つ」</p>
                 <button
                   onClick={() => fetchTop3(true)}
                   disabled={top3Loading}
@@ -504,7 +514,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
                 <p className="cp-meta">AI が今日のベスト 3 を選んでいます…</p>
               ) : top3 && top3Ids.length > 0 ? (
                 <>
-                  <p className="cp-meta mb-2">💭 {top3.reason}</p>
+                  <p className="cp-meta mb-2">選んだ理由: {top3.reason}</p>
                   <div className="cp-stack-sm">
                     {top3Ids.map(id => {
                       const t = realOpen.find(x => x.id === id);
@@ -545,14 +555,14 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
               />
               <div className="cp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
                 <select value={newPriority} onChange={e => setNewPriority(e.target.value as any)} className="cp-input" style={{ flex: '0 0 110px' }}>
-                  <option value="high">🔥 高優先</option>
-                  <option value="mid">🌟 中</option>
-                  <option value="low">🌱 低</option>
+                  <option value="high">高優先</option>
+                  <option value="mid">中</option>
+                  <option value="low">低</option>
                 </select>
                 <input type="text" value={newDue} onChange={e => setNewDue(e.target.value)} placeholder="今日 / 明日 / 2026-05-30" className="cp-input" style={{ flex: '1 1 130px' }} />
                 <input type="number" value={newEst} onChange={e => setNewEst(e.target.value)} placeholder="分" className="cp-input" style={{ flex: '0 0 80px' }} min={5} step={5} />
                 <button onClick={handleAdd} className="cp-btn cp-btn-sm" disabled={!newTitle.trim()}
-                  style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+                  style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent', minHeight: 44, minWidth: 64 }}>
                   追加
                 </button>
               </div>
@@ -580,7 +590,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
 
           {/* タスク一覧 */}
           <div className="cp-card-section">
-            <p className="cp-h3 mb-2">📌 タスク</p>
+            <p className="cp-h3 mb-2 flex items-center gap-1.5"><ListTodo size={14} strokeWidth={2.2} style={{ color: persona.accentColor }} /> タスク</p>
             {realOpen.length === 0 ? (
               persona.tasks.length === 0 ? (
                 <EmptyState
@@ -590,7 +600,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
                   ctaLabel="最初の 1 件を書く"
                   onCta={focusNewTitle}
                   accent={persona.accentColor}
-                  preview="🔥 来週の提案資料を作る (60 分) → CSO に任せる"
+                  preview="来週の提案資料を作る (60 分) → CSO に任せる"
                 />
               ) : (
                 <p className="cp-meta">この期間に取り組むタスクはありません</p>
@@ -614,7 +624,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
           {/* 提案 (ナレッジから) */}
           {proposals.length > 0 && (
             <div className="cp-card-section">
-              <p className="cp-h3 mb-1">💡 ナレッジから AI の提案 ({proposals.length})</p>
+              <p className="cp-h3 mb-1 flex items-center gap-1.5"><Lightbulb size={14} strokeWidth={2.2} style={{ color: '#C084FC' }} /> ナレッジから AI の提案 ({proposals.length})</p>
               <p className="cp-meta mb-3">タップでタスクに昇格できます</p>
               <div className="cp-stack-sm">
                 {proposals.slice(0, 8).map(t => (
@@ -733,16 +743,23 @@ function TaskRow({
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
+      {/* チェック: 見た目は 24px のまま、タップ判定を 44px に底上げ (負マージンで行の高さは変えない) */}
       <button onClick={onToggle} disabled={task.isProposal}
-        className="flex-shrink-0 rounded-md flex items-center justify-center"
+        className="flex-shrink-0 flex items-center justify-center"
+        aria-label={task.done ? '未完了に戻す' : '完了にする'}
         style={{
-          width: 24, height: 24,
-          background: task.done ? persona.accentColor : 'transparent',
-          border: `1.5px solid ${task.done ? persona.accentColor : priColor}`,
+          width: 44, height: 44, margin: -10,
+          background: 'transparent', border: 'none', padding: 0,
           opacity: task.isProposal ? 0.4 : 1,
           cursor: task.isProposal ? 'default' : 'pointer',
         }}>
-        {task.done && <span style={{ color: '#0a0a0f', fontSize: 14 }}>✓</span>}
+        <span className="rounded-md flex items-center justify-center" style={{
+          width: 24, height: 24,
+          background: task.done ? persona.accentColor : 'transparent',
+          border: `1.5px solid ${task.done ? persona.accentColor : priColor}`,
+        }}>
+          {task.done && <span style={{ color: '#0a0a0f', fontSize: 14 }}>✓</span>}
+        </span>
       </button>
       <div className="min-w-0 flex-1">
         <p className="cp-body" style={{
@@ -767,24 +784,24 @@ function TaskRow({
                   if (onEstimate && n > 0) onEstimate(n);
                 }}
                 onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                className="cp-input" style={{ width: 60, padding: '2px 6px', fontSize: '0.75rem' }}
+                className="cp-input" style={{ width: 72, padding: '4px 6px', fontSize: 16 }}
               />
             ) : (
-              <button onClick={() => setEditingEst(true)} className="cp-pill"
-                style={{ borderColor: persona.accentColor + '50', color: persona.accentColor, cursor: 'pointer' }}>
-                ⏱ {task.estimatedMin ? `${task.estimatedMin}分` : '時間'}
+              <button onClick={() => setEditingEst(true)} className="cp-pill inline-flex items-center gap-1"
+                style={{ borderColor: persona.accentColor + '50', color: persona.accentColor, cursor: 'pointer', minHeight: 24 }}>
+                <Timer size={10} strokeWidth={2.2} /> {task.estimatedMin ? `${task.estimatedMin}分` : '時間'}
               </button>
             )
           )}
           {task.delegatedAgentTaskId && (
-            <span className="cp-pill" style={{ borderColor: '#A78BFA50', color: '#A78BFA' }}>🤖 委任中</span>
+            <span className="cp-pill inline-flex items-center gap-1" style={{ borderColor: '#A78BFA50', color: '#A78BFA' }}><Bot size={10} strokeWidth={2.2} /> 委任中</span>
           )}
         </div>
       </div>
 
       {task.isProposal ? (
         <button onClick={onAccept} className="cp-btn cp-btn-sm flex-shrink-0"
-          style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+          style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent', minHeight: 40 }}>
           + タスク化
         </button>
       ) : !task.done && (
@@ -792,21 +809,22 @@ function TaskRow({
           <button
             onClick={onDelegate}
             disabled={delegating || !!task.delegatedAgentTaskId}
-            className="cp-btn cp-btn-sm flex-shrink-0"
+            className="cp-btn cp-btn-sm flex-shrink-0 inline-flex items-center gap-1"
             title={task.delegatedAgentTaskId ? '既に AI 会社へ委任済み' : `${CXO_META[pickCxo(task.title + ' ' + task.sourceLabel).primary].name} に任せる`}
             style={{
               background: task.delegatedAgentTaskId ? 'rgba(167,139,250,0.2)' : 'transparent',
               borderColor: task.delegatedAgentTaskId ? 'transparent' : '#A78BFA50',
               color: '#A78BFA',
               fontSize: '0.75rem',
+              minHeight: 40,
               opacity: delegating ? 0.5 : 1,
             }}
           >
-            {delegating ? '…' : task.delegatedAgentTaskId ? '🤖 委任済' : '🤖 AI 会社に任せる'}
+            {delegating ? '…' : (<><Bot size={12} strokeWidth={2.2} /> {task.delegatedAgentTaskId ? '委任済' : 'AI 会社に任せる'}</>)}
           </button>
           {onDelete && (
             <button onClick={onDelete} className="cp-btn cp-btn-sm flex-shrink-0 cp-btn-ghost"
-              title="削除" style={{ fontSize: '0.75rem', opacity: 0.5 }}>✕</button>
+              title="削除" aria-label="タスクを削除" style={{ fontSize: '0.75rem', opacity: 0.5, minWidth: 40, minHeight: 40 }}>✕</button>
           )}
         </div>
       )}
