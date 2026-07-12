@@ -6,7 +6,7 @@
 //   0 のときは捏造せず「これから貯まる」導線を出す（honest-numbers）。
 // ============================================================
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
-import { Sparkles, Send, BookOpen, Briefcase, Activity, FileCheck, TrendingUp, Users, Check, UserRound } from 'lucide-react';
+import { Sparkles, Send, BookOpen, Briefcase, Activity, FileCheck, TrendingUp, Users, Check, UserRound, Coins } from 'lucide-react';
 import { computeWeeklyValue, type ValueMetric, type DayBucket } from '../lib/weeklyValue';
 import { statsForLastDays } from '../lib/aiSuggestionLog';
 import { cxoActivityLastDays } from '../lib/cxoDeliverables';
@@ -84,7 +84,7 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
     };
   }, []);
 
-  const { metrics, total, todayTotal, dailySeries } = data;
+  const { metrics, total, todayTotal, dailySeries, estimatedYen } = data;
   // 役員の稼働記録も「動いた量」の一部。metrics が全0でも役員が動いていれば空状態にしない。
   const empty = total === 0 && execs.length === 0;
   // 直近7日に1日でも実活動があれば momentum バーを出す（嘘の0埋めは見せても、全0なら出さない）
@@ -124,6 +124,36 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
           </div>
         </div>
       </div>
+
+      {/* 円換算 — 「外注に出せばいくら分」を控えめな相場下限で見せる。
+          ¥10,000/月 の価値を毎週"体感"させる最強のレバー（テーマ② ROIを数字で）。
+          嘘にならないよう「参考値・下限・実際の支払額ではない」を必ず併記する。 */}
+      {!empty && estimatedYen > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12,
+          padding: '12px 13px', borderRadius: 13,
+          background: 'linear-gradient(135deg, rgba(6,199,85,0.14), rgba(46,111,255,0.06))',
+          border: '1px solid rgba(6,199,85,0.32)',
+        }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+            background: 'linear-gradient(135deg,#06C755,#2E6FFF)', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 3px 12px rgba(6,199,85,0.35)',
+          }}><Coins size={17} strokeWidth={2.3} /></div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--fg-muted)', marginBottom: 1 }}>
+              同じ量を外注に出すと
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--fg-strong)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                約 ¥{estimatedYen.toLocaleString('ja-JP')}
+              </span>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: '#06C755' }}>相当を代わりに</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 7日 momentum — AIが「毎日動いている」を正直に可視化（実活動のある日だけ色が立つ） */}
       {!empty && seriesMax > 0 && (
@@ -179,7 +209,7 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
       )}
 
       <p style={{ fontSize: 10, color: 'var(--fg-subtle)', margin: '11px 2px 0', lineHeight: 1.5 }}>
-        ※ 表示はすべて、あなたのこのアプリ内での実際の活動件数です。推定や水増しは行っていません。
+        ※ 件数はすべて、あなたのこのアプリ内での実際の活動です。推定や水増しはしていません。円換算は外注に出した場合の相場下限で計算した参考値で、実際の支払額ではありません。
       </p>
     </div>
   );

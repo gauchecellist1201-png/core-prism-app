@@ -107,6 +107,9 @@ export default function TrialConversionNudge({ onUpgrade, onRunLoop }: { onUpgra
             {topMetric
               ? <>いちばん多いのは「{topMetric.label}」で {topMetric.count.toLocaleString('ja-JP')} 件。</>
               : null}
+            {value.estimatedYen > 0
+              ? <>同じ量を外注に出すと約 <span style={{ color: '#06C755', fontWeight: 800 }}>¥{value.estimatedYen.toLocaleString('ja-JP')} 相当</span>。</>
+              : null}
             このまま続けると、この成果が毎日たまり続けます。
           </p>
 
@@ -140,7 +143,7 @@ export default function TrialConversionNudge({ onUpgrade, onRunLoop }: { onUpgra
       )}
 
       <p style={{ fontSize: 10, color: 'var(--fg-subtle)', margin: '11px 2px 0', lineHeight: 1.5 }}>
-        ※ 件数はこのアプリ内での実際の活動だけです。推定や水増しはしていません。
+        ※ 件数はこのアプリ内での実際の活動だけです。推定や水増しはしていません。円換算は外注相場の下限で計算した参考値で、実際の支払額ではありません。
       </p>
     </div>
   );

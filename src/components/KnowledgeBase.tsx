@@ -20,8 +20,8 @@ import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing'
 import { sortRisksByPriority } from '../lib/riskPriority';
 import { summarizeMeeting, stripCaptions } from '../lib/meetingSummarize';
 import MeetingRecorder from './MeetingRecorder';
-import {
 import { aiFetch } from '../lib/aiFetch';
+import {
   proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse, extractActionPlan,
   KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal, type KnowledgeAction,
 } from '../lib/analyzeKnowledge';

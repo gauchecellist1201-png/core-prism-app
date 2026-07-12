@@ -20,8 +20,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BrandIcon } from './BrandIcons';
-import {
 import { aiFetch } from '../lib/aiFetch';
+import {
   isGmailConfigured, isGmailConnected, connectGmail, loadGmailUser,
   fetchInbox, createGmailDraft, buildReplyMeta, type GmailMessage,
 } from '../lib/gmail';

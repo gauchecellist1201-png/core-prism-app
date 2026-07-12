@@ -3,8 +3,8 @@ import type {
   AppSettings,
   ChatMessage,
 } from '../types/identity';
-import type {
 import { aiFetch } from '../lib/aiFetch';
+import type {
   DailyHealth,
   MedicalProfile,
   SymptomEntry,
