@@ -190,6 +190,22 @@ function HistoryIcon() {
   );
 }
 
+// 応答待ちの状況テキスト (点3つだけでは無反応に見えるため)。
+// 実際の処理内容 (ナレッジ参照→回答生成) を一般化した表現のみ・誇張なし
+const THINKING_STEPS = ['ナレッジを確認しています…', 'お答えをまとめています…', '言葉を整えています…'];
+function ThinkingStatus() {
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setStep(v => (v + 1) % THINKING_STEPS.length), 1600);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <div style={{ marginTop: 8, fontSize: 12, color: T.fgSubtle, letterSpacing: '0.08em' }}>
+      {THINKING_STEPS[step]}
+    </div>
+  );
+}
+
 const iconBtn: React.CSSProperties = {
   width: 44, height: 44, minWidth: 44, borderRadius: 999, cursor: 'pointer',
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -358,7 +374,8 @@ export default function ConciergeStage({ config, standalone }: { config: Concier
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
         padding: 'calc(12px + env(safe-area-inset-top)) clamp(14px, 3vw, 28px) 12px',
       }}>
-        <a href="/crystal" style={{ textDecoration: 'none', color: T.fg, fontFamily: SERIF, fontWeight: 400, fontSize: 16, letterSpacing: '0.34em', whiteSpace: 'nowrap' }}>
+        {/* padding+負マージンで見た目そのまま、タップ領域だけ44pxに拡大 */}
+        <a href="/crystal" style={{ textDecoration: 'none', color: T.fg, fontFamily: SERIF, fontWeight: 400, fontSize: 16, letterSpacing: '0.34em', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: '10px 10px', margin: '-10px -10px' }}>
           CRYSTAL
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -428,8 +445,11 @@ export default function ConciergeStage({ config, standalone }: { config: Concier
                 </div>
               )}
               {cz.isLoading ? (
-                <div className="czs-dots" style={{ fontSize: 24, color: T.fgMuted, letterSpacing: 6 }} aria-label="考え中">
-                  <span>·</span><span>·</span><span>·</span>
+                <div aria-label="考え中">
+                  <div className="czs-dots" style={{ fontSize: 24, color: T.fgMuted, letterSpacing: 6 }}>
+                    <span>·</span><span>·</span><span>·</span>
+                  </div>
+                  <ThinkingStatus />
                 </div>
               ) : cz.error ? (
                 <div>

@@ -96,6 +96,7 @@ import { readSharedFromUrl } from './lib/shareLink';
 import { parseBookingFromUrl } from './lib/scheduling';
 import { CoreDock } from './components/CoreDock';
 import { readCoreHandoff } from './components/coreLink';
+import { useT } from './i18n';
 
 // CORE 共通ハンドオフを起動時に1度だけ取り込む（?core= を localStorage へ。文脈の持ち越し）。
 // App は URL ごとにフル remount するルート構成（早期 return が多い）なので、
@@ -520,6 +521,8 @@ export default function App() {
 
   // Theme初期化 (ライト既定)
   useTheme();
+  // LP の sticky CTA を言語追従させる (LandingPage 内の LangToggle と同一タブ同期)
+  const { t: lpDict } = useT();
   const { settings, updateSettings, updateUsageStats, resetStats } = useSettings();
   const { personas, activePersona, createPersona, updatePersona, selectPersona, toggleTask, addTask, updateCashflow } = usePersonas();
   const { items: knowledgeItems, getForPersona, addFromFile, addFilesBulk, addNote, deleteItem, reanalyze, recomputeCashflow } = useKnowledge(
@@ -773,12 +776,13 @@ export default function App() {
     <>
       {/* LP では背景アニメを描画しない (iPhone Safari でスクロール固まる対策) */}
       {view !== 'landing' && <PrismBackground intensity="low" />}
-      {/* どの入力欄でも音声入力できる (フォーカス時にマイクが出現)。オンボ中は主CTAを塞ぐため出さない */}
-      {view !== 'onboarding' && <GlobalVoiceInput />}
+      {/* どの入力欄でも音声入力できる (フォーカス時にマイクが出現)。
+          オンボ中と、プラン選択/体験終了ロック等のシート表示中は価格・特典テキストを塞ぐため出さない */}
+      {view !== 'onboarding' && !checkoutPlan && !trialExpired && <GlobalVoiceInput />}
       {/* 通信が切れたときだけ画面上部に案内バー */}
       <OfflineNotice />
       {view === 'landing' && (
-        <LpStickyCta title="Prismを、無料で試す" sub="7日間無料・クレカ不要・いつでも解約" cta="無料で始める →" onClick={handleEnterApp} accent1="#a78bfa" accent2="#6366F1" ctaColor="#fff" />
+        <LpStickyCta title={lpDict.sticky.title} sub={lpDict.sticky.sub} cta={lpDict.sticky.cta} onClick={handleEnterApp} accent1="#a78bfa" accent2="#6366F1" ctaColor="#fff" />
       )}
       <AnimatePresence mode="wait">
         {view === 'landing' && (
@@ -887,8 +891,9 @@ export default function App() {
           />
         )}
       </AnimatePresence>
-      {/* Prism: 音声タスク予約 (FAB + モーダル + バックグラウンド自動実行)。オンボ中はCTAを塞ぐため出さない */}
-      {view !== 'onboarding' && <PrismTaskScheduler />}
+      {/* Prism: 音声タスク予約 (FAB + モーダル + バックグラウンド自動実行)。
+          オンボ中と、プラン選択/体験終了ロックのシート表示中は価格・特典テキストに FAB(z=9997) が被るため出さない */}
+      {view !== 'onboarding' && !checkoutPlan && !trialExpired && <PrismTaskScheduler />}
       {/* Prism: シネマティック スプラッシュ (初回セッションのみ) */}
       <PrismSplash personaName={activePersona?.name} />
       {/* Prism: チュートリアル (初回起動のみ表示、スキップ可) */}
@@ -1117,7 +1122,14 @@ export default function App() {
       {/* サンプル表示は ダッシュボード内の DemoBanner に一本化 (ロゴと被る固定帯は廃止) */}
       {/* CORE 共通ドック（下部中央・current=prism）。Prism ルート(/)でのみ表示し、
           中央のBottomChatドック入力バーより1段上に浮かせて操作を塞がない。 */}
-      {isPrismRootPath() && view !== 'onboarding' && <CoreDock current="prism" />}
+      {/* LP表示中は sticky CTA(z=60)・footerリンクと重ならないよう、下端から持ち上げ + 重なり順を CTA より下げる */}
+      {isPrismRootPath() && view !== 'onboarding' && (
+        <CoreDock
+          current="prism"
+          bottomClearance={view === 'landing' ? 100 : 0}
+          zIndex={view === 'landing' ? 55 : 80}
+        />
+      )}
     </>
   );
 }

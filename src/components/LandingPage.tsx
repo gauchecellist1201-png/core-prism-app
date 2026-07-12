@@ -13,8 +13,9 @@ import {
   Gift, MessageSquare,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { REFERRAL_BONUS_DAYS, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
+import GenerationOrb from './GenerationOrb';
 import PrismApproveDemo from './PrismApproveDemo';
 import AnimatedExecStage from './AnimatedExecStage';
 import CxoProfileModal from './CxoProfileModal';
@@ -69,17 +70,27 @@ export default function LandingPage({ onEnterApp }: Props) {
     setPendingMsg(getPendingReferralMessage());
   }, []);
 
-  // 「サンプルで触ってみる」: 実物品質のデモデータを localStorage に投入してから入室
+  // 「サンプルで触ってみる」: 実物品質のデモデータを localStorage に投入してから入室。
+  // 投入後、7エージェントが1人ずつ「着任」するブート演出を約2.5秒見せてから入場
+  // (タップでスキップ可 / prefers-reduced-motion は演出なしで即入場)。
+  const [sampleBooting, setSampleBooting] = useState(false);
   const handleSampleEnter = () => {
+    if (sampleBooting) return;
     try {
       seedDemoData();
       setDemoActive(true);
     } catch { /* quota — そのまま入室 */ }
-    onEnterApp();
+    let reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { /* */ }
+    if (reduce) { onEnterApp(); return; }
+    setSampleBooting(true);
   };
 
   return (
     <div style={{ background: BG_DARK, color: '#16162A', minHeight: '100dvh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
+      {/* サンプル入場ブート演出: 7エージェントが1人ずつ着任 → 入場。
+          終了時は必ず overlay を畳む (入場が checkout モーダル表示になるケースでも塞がない) */}
+      {sampleBooting && <SampleBootOverlay dict={t} onDone={() => { setSampleBooting(false); onEnterApp(); }} />}
       {/* ── 紹介リンク経由バナー (?ref=XXX 検出時のみ) ───────────────
           招待された友達は全画面ヒーローで +N 日プレゼントを見落とすため、
           ヒーローより上 (=ファーストビュー最上部) に固定して必ず目に入るようにする。 */}
@@ -275,7 +286,7 @@ export default function LandingPage({ onEnterApp }: Props) {
 
         {/* 7色プリズム可視化 (元のまま、下に移動) */}
         <div style={{ maxWidth: 980, margin: '4rem auto 0', position: 'relative', zIndex: 2 }}>
-          <PrismFanVisualization dict={t} />
+          <PrismFanVisualization dict={t} onEnterApp={onEnterApp} />
         </div>
       </section>
 
@@ -468,7 +479,7 @@ export default function LandingPage({ onEnterApp }: Props) {
           </div>
           <div>
             <p style={footHead}>{t.footer.contact}</p>
-            <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', lineHeight: 1.7 }}>{t.footer.contactText}<br /><a href="mailto:hello@coreprism.app" style={{ color: '#a78bfa', textDecoration: 'none' }}>hello@coreprism.app</a></p>
+            <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', lineHeight: 1.7 }}>{t.footer.contactText}<br /><a href="mailto:hello@coreprism.app" style={{ color: '#a78bfa', textDecoration: 'none', display: 'inline-block', padding: '0.65rem 0.25rem', margin: '-0.35rem -0.25rem' }}>hello@coreprism.app</a></p>
           </div>
         </div>
         <div style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: 'rgba(0,0,0,0.35)' }}>
@@ -626,7 +637,8 @@ function BeforeAfterShowcase() {
         ))}
       </div>
 
-      <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'rgba(0,0,0,0.42)', marginTop: '0.95rem', lineHeight: 1.6 }}>
+      {/* 注記: ぼかしグレー背景上でも読めるよう、半透明白の帯 + 濃文字 (コントラスト4.5:1確保) */}
+      <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'rgba(0,0,0,0.68)', margin: '0.95rem auto 0', lineHeight: 1.6, background: 'rgba(255,255,255,0.75)', borderRadius: 10, padding: '0.5rem 0.85rem', width: 'fit-content', maxWidth: '100%' }}>
         ※ 時間単価 ¥3,000/h で試算した目安です。業種・スキルにより個人差があります。
       </p>
     </div>
@@ -649,18 +661,115 @@ function PrismHeroBackdrop() {
   );
 }
 
-function PrismFanVisualization({ dict }: { dict: Dictionary }) {
+function PrismFanVisualization({ dict, onEnterApp }: { dict: Dictionary; onEnterApp: () => void }) {
+  // モバイルでは横スクロールに続きがあることを可視化する:
+  // 右端フェード + 矢印 + スワイプヒント。最後(Life)まで見たら「7人そろいました」の到達報酬を出す。
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [scrollable, setScrollable] = useState(false);
+  const [atEnd, setAtEnd] = useState(false);
+  const [reached, setReached] = useState(false);
+
+  const measure = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const canScroll = el.scrollWidth > el.clientWidth + 8;
+    setScrollable(canScroll);
+    const end = el.scrollLeft + el.clientWidth >= el.scrollWidth - 12;
+    setAtEnd(end);
+    if (canScroll && end) setReached(true);
+  }, []);
+
+  useEffect(() => {
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [measure]);
+
   return (
-    <div className="lp-prism-fan" style={{ position: 'relative', width: '100%', height: 320, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-      <motion.div animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, #fff 0%, rgba(0,0,0,0.4) 50%, transparent 100%)', boxShadow: '0 0 60px rgba(0,0,0,0.5)', zIndex: 5 }} />
-      <div className="lp-prism-fan-cards" style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', width: '100%', maxWidth: 880 }}>
-        {SPECTRUM.map((s, i) => {
-          const offset = i - 3;
-          const rotateBase = offset * 8;
+    <div>
+      <div className="lp-prism-fan" style={{ position: 'relative', width: '100%', height: 320, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <motion.div animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, #fff 0%, rgba(0,0,0,0.4) 50%, transparent 100%)', boxShadow: '0 0 60px rgba(0,0,0,0.5)', zIndex: 5 }} />
+        <div ref={scrollerRef} onScroll={measure} className="lp-prism-fan-cards" style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', width: '100%', maxWidth: 880 }}>
+          {SPECTRUM.map((s, i) => {
+            const offset = i - 3;
+            const rotateBase = offset * 8;
+            const item = dict.agents.items[s.key];
+            return <motion.div key={s.key} className="lp-prism-fan-card-min" initial={{ opacity: 0, y: 20, rotate: 0 }} animate={{ opacity: 1, y: 0, rotate: rotateBase }} transition={{ duration: 0.7, delay: 0.4 + i * 0.08, ease: 'easeOut' }} style={{ flex: '1 1 0', minWidth: 70, maxWidth: 130, aspectRatio: '3 / 5', borderRadius: 14, background: `linear-gradient(180deg, ${s.color} 0%, ${s.color}88 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0.6rem 0.4rem', color: '#16162A', fontSize: '0.7rem', fontWeight: 700, textAlign: 'center', boxShadow: `0 12px 32px ${s.color}55`, transformOrigin: 'bottom center' }}><div style={{ marginBottom: 6, display: 'flex' }}><s.Icon size={22} color="#FFFFFF" strokeWidth={2.2} /></div><div style={{ opacity: 0.95 }}>{item.name}</div><div style={{ fontSize: '0.55rem', opacity: 0.75, marginTop: 2, letterSpacing: '0.05em' }}>{item.role}</div></motion.div>;
+          })}
+        </div>
+        {/* 右端フェード + 矢印: 「まだ続きがある」ことの可視化 (スクロール可能時のみ・末尾では消える) */}
+        {scrollable && (
+          <div aria-hidden style={{ position: 'absolute', right: 0, bottom: 0, height: 170, width: 64, zIndex: 6, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 4, background: 'linear-gradient(90deg, rgba(246,247,251,0) 0%, rgba(246,247,251,0.92) 72%)', opacity: atEnd ? 0 : 1, transition: 'opacity .3s ease' }}>
+            <ArrowRight size={17} color="rgba(22,22,42,0.6)" />
+          </div>
+        )}
+      </div>
+      {scrollable && !reached && (
+        <p style={{ margin: '0.55rem 0 0', textAlign: 'center', fontSize: '0.72rem', color: 'rgba(0,0,0,0.55)' }}>{dict.fan.hint}</p>
+      )}
+      {/* 到達報酬: 最後(Life)までスクロールした瞬間、分光ハローのバッジ + CTA が出現 */}
+      {reached && (
+        <motion.div initial={{ opacity: 0, y: 12, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.55, ease: 'easeOut' }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.65rem', marginTop: '1.1rem' }}>
+          <div style={{ padding: 2, borderRadius: 999, background: 'conic-gradient(from 0deg, #ff5757, #ff9842, #fbbf24, #4ade80, #60a5fa, #a78bfa, #f472b6, #ff5757)', boxShadow: '0 10px 32px rgba(167,139,250,0.4)' }}>
+            <div style={{ borderRadius: 999, background: '#FFFFFF', padding: '0.5rem 1.1rem', color: '#16162A', fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <SparklesIcon size={14} color="#a78bfa" /> {dict.fan.complete}
+            </div>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.78rem', color: 'rgba(0,0,0,0.62)', textAlign: 'center', lineHeight: 1.6, padding: '0 1rem' }}>{dict.fan.completeSub}</p>
+          <button type="button" onClick={onEnterApp} style={{ minHeight: 44, padding: '0.6rem 1.5rem', borderRadius: 999, border: 'none', cursor: 'pointer', background: 'linear-gradient(90deg,#a78bfa,#60a5fa)', color: '#fff', fontWeight: 800, fontSize: '0.9rem', boxShadow: '0 10px 26px -8px #6366F1' }}>
+            {dict.hero.cta}
+          </button>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+// ─── サンプル入場ブート演出 ──────────────────────────────
+// 「サンプルで触ってみる」タップ直後、GenerationOrb が回りながら
+// 7エージェントが1人ずつ着任していくのを見せてから入場する (約2.5秒・タップでスキップ)。
+// seedDemoData は既に投入済みなので、見せている内容に嘘はない。
+function SampleBootOverlay({ dict, onDone }: { dict: Dictionary; onDone: () => void }) {
+  const [step, setStep] = useState(0);
+  const doneRef = useRef(false);
+  const finish = useCallback(() => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    onDone();
+  }, [onDone]);
+
+  useEffect(() => {
+    const timers: number[] = [];
+    SPECTRUM.forEach((_, i) => {
+      timers.push(window.setTimeout(() => setStep(i + 1), 300 + i * 230));
+    });
+    // 全員着任後、少し余韻を置いて入場 (万一に備え finish は必ず呼ばれる)
+    timers.push(window.setTimeout(finish, 300 + SPECTRUM.length * 230 + 600));
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [finish]);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      onClick={finish}
+      style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(8,8,18,0.96)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.1rem', cursor: 'pointer', padding: '2rem 1.5rem' }}
+    >
+      <GenerationOrb brand="prism" size={72} />
+      <p style={{ margin: 0, color: '#fff', fontWeight: 800, fontSize: '0.95rem', textAlign: 'center', letterSpacing: '0.02em' }}>{dict.sampleBoot.title}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minHeight: SPECTRUM.length * 26, width: 'min(78vw, 280px)' }}>
+        {SPECTRUM.slice(0, step).map((s) => {
           const item = dict.agents.items[s.key];
-          return <motion.div key={s.key} className="lp-prism-fan-card-min" initial={{ opacity: 0, y: 20, rotate: 0 }} animate={{ opacity: 1, y: 0, rotate: rotateBase }} transition={{ duration: 0.7, delay: 0.4 + i * 0.08, ease: 'easeOut' }} style={{ flex: '1 1 0', minWidth: 70, maxWidth: 130, aspectRatio: '3 / 5', borderRadius: 14, background: `linear-gradient(180deg, ${s.color} 0%, ${s.color}88 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0.6rem 0.4rem', color: '#16162A', fontSize: '0.7rem', fontWeight: 700, textAlign: 'center', boxShadow: `0 12px 32px ${s.color}55`, transformOrigin: 'bottom center' }}><div style={{ marginBottom: 6, display: 'flex' }}><s.Icon size={22} color="#FFFFFF" strokeWidth={2.2} /></div><div style={{ opacity: 0.95 }}>{item.name}</div><div style={{ fontSize: '0.55rem', opacity: 0.75, marginTop: 2, letterSpacing: '0.05em' }}>{item.role}</div></motion.div>;
+          return (
+            <motion.div key={s.key} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255,255,255,0.9)', fontSize: '0.82rem', fontWeight: 600 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, boxShadow: `0 0 8px ${s.color}`, flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>{item.name} AI — {dict.sampleBoot.joined}</span>
+              <span style={{ color: '#4ade80', fontWeight: 800 }}>✓</span>
+            </motion.div>
+          );
         })}
       </div>
+      <p style={{ margin: 0, color: 'rgba(255,255,255,0.45)', fontSize: '0.72rem' }}>{dict.sampleBoot.skip}</p>
     </div>
   );
 }
@@ -755,4 +864,5 @@ const ctaBtnSmall: React.CSSProperties = { background: 'linear-gradient(135deg, 
 const ctaBtnHero: React.CSSProperties = { background: 'linear-gradient(135deg, #ff5757, #fbbf24, #4ade80, #60a5fa, #a78bfa, #f472b6)', backgroundSize: '300% 100%', color: '#16162A', padding: '1.05rem 2.25rem', borderRadius: 14, fontSize: '1.05rem', fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 12px 36px rgba(167,139,250,0.45)', letterSpacing: '0.02em' };
 const ctaBtnGhost: React.CSSProperties = { background: 'rgba(0,0,0,0.05)', color: '#16162A', padding: '1.05rem 2rem', borderRadius: 14, fontSize: '1rem', fontWeight: 700, border: '1px solid rgba(0,0,0,0.15)', textDecoration: 'none', display: 'inline-block' };
 const footHead: React.CSSProperties = { fontSize: '0.7rem', letterSpacing: '0.2em', color: 'rgba(0,0,0,0.45)', marginBottom: '0.75rem', fontWeight: 700 };
-const footLink: React.CSSProperties = { display: 'block', color: 'rgba(0,0,0,0.7)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '0.5rem' };
+// footer リンクは 44px 基準のタップ領域を確保 (flex + minHeight で行ごと押せる)
+const footLink: React.CSSProperties = { display: 'flex', alignItems: 'center', minHeight: 44, color: 'rgba(0,0,0,0.7)', fontSize: '0.85rem', textDecoration: 'none' };

@@ -248,8 +248,12 @@ export default function CrystalScene({ state, accent }: Props) {
     let spin = 0;
     let listenBoost = 0;
     let prevT = 0;
+    // 画面外・タブ非表示では描画を完全停止する (スクロールのカクつき・発熱・電池対策)
+    let running = false;
+    let inView = true;
 
     const tick = () => {
+      if (!running) return;
       raf = requestAnimationFrame(tick);
       const t = clock.getElapsedTime();
       const dt = Math.min(Math.max(t - prevT, 0.001), 0.05);
@@ -283,7 +287,32 @@ export default function CrystalScene({ state, accent }: Props) {
 
       renderer.render(scene, camera);
     };
-    tick();
+
+    const startLoop = () => {
+      if (running || !inView || document.visibilityState === 'hidden') return;
+      running = true;
+      prevT = clock.getElapsedTime(); // 停止中の経過ぶんで dt が跳ねないように
+      raf = requestAnimationFrame(tick);
+    };
+    const stopLoop = () => {
+      running = false;
+      cancelAnimationFrame(raf);
+    };
+
+    // 画面外に出たら停止・再入場で再開
+    const io = new IntersectionObserver((entries) => {
+      inView = entries.some(e => e.isIntersecting);
+      if (inView) startLoop(); else stopLoop();
+    }, { threshold: 0 });
+    io.observe(host);
+
+    // タブ非表示で停止・復帰で再開
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') stopLoop(); else startLoop();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    startLoop();
 
     // リサイズ追従
     const onResize = () => {
@@ -296,7 +325,9 @@ export default function CrystalScene({ state, accent }: Props) {
     ro.observe(host);
 
     return () => {
-      cancelAnimationFrame(raf);
+      stopLoop();
+      io.disconnect();
+      document.removeEventListener('visibilitychange', onVisibility);
       ro.disconnect();
       disposables.forEach(d => d.dispose());
       pmrem.dispose();

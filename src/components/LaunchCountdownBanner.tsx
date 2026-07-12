@@ -6,6 +6,7 @@
 // ============================================================
 import { useEffect, useMemo, useState } from 'react';
 import { REFERRAL_BONUS_DAYS } from '../lib/referral';
+import { useT } from '../i18n';
 
 interface Props {
   kind: 'prism' | 'iris';
@@ -26,6 +27,8 @@ function storageKey(kind: 'prism' | 'iris'): string {
 }
 
 export default function LaunchCountdownBanner({ kind }: Props) {
+  // LP本文の言語 (ja/en) に追従させる — 英語閲覧時に日本語が混ざらないように
+  const { lang } = useT();
   const [closed, setClosed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -79,15 +82,29 @@ export default function LaunchCountdownBanner({ kind }: Props) {
     </svg>
   );
   const message = isLaunched ? (
-    <>
-      {giftIcon}招待リンクで登録すると、あなたも招待した友達も{' '}
-      <strong>お互いに +{REFERRAL_BONUS_DAYS} 日 無料</strong>
-    </>
+    lang === 'en' ? (
+      <>
+        {giftIcon}Sign up with an invite link and you and your friend{' '}
+        <strong>each get +{REFERRAL_BONUS_DAYS} days free</strong>
+      </>
+    ) : (
+      <>
+        {giftIcon}招待リンクで登録すると、あなたも招待した友達も{' '}
+        <strong>お互いに +{REFERRAL_BONUS_DAYS} 日 無料</strong>
+      </>
+    )
   ) : (
-    <>
-      {giftIcon}6/1 一般公開まで残り <strong>{daysLeft} 日</strong> — 招待コードで登録すると{' '}
-      <strong>+{REFERRAL_BONUS_DAYS} 日 無料</strong>
-    </>
+    lang === 'en' ? (
+      <>
+        {giftIcon}<strong>{daysLeft} days</strong> until public launch — sign up with an invite code for{' '}
+        <strong>+{REFERRAL_BONUS_DAYS} days free</strong>
+      </>
+    ) : (
+      <>
+        {giftIcon}一般公開まで残り <strong>{daysLeft} 日</strong> — 招待コードで登録すると{' '}
+        <strong>+{REFERRAL_BONUS_DAYS} 日 無料</strong>
+      </>
+    )
   );
 
   return (
@@ -99,7 +116,7 @@ export default function LaunchCountdownBanner({ kind }: Props) {
         background: gradient,
         color: '#fff',
         textAlign: 'center',
-        padding: '0.6rem 2.5rem 0.6rem 1rem',
+        padding: '0.6rem 3rem 0.6rem 1rem',
         fontSize: '0.85rem',
         fontWeight: 600,
         letterSpacing: '0.02em',
@@ -117,31 +134,45 @@ export default function LaunchCountdownBanner({ kind }: Props) {
       >
         {message}
       </span>
+      {/* 閉じる×: 見た目は 24px の丸のまま、押せる領域を 44×44px に拡大 (誤タップ・押せないイラつき防止) */}
       <button
         type="button"
         onClick={handleClose}
-        aria-label="バナーを閉じる"
+        aria-label={lang === 'en' ? 'Close banner' : 'バナーを閉じる'}
         style={{
           position: 'absolute',
           top: '50%',
-          right: '0.5rem',
+          right: 0,
           transform: 'translateY(-50%)',
-          background: 'rgba(255,255,255,0.18)',
+          background: 'transparent',
           border: 'none',
-          color: '#fff',
-          width: 24,
-          height: 24,
-          borderRadius: '50%',
-          fontSize: '0.8rem',
-          fontWeight: 700,
+          padding: 0,
+          width: 44,
+          height: 44,
           cursor: 'pointer',
-          lineHeight: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        ×
+        <span
+          aria-hidden
+          style={{
+            background: 'rgba(255,255,255,0.18)',
+            color: '#fff',
+            width: 24,
+            height: 24,
+            borderRadius: '50%',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            lineHeight: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          ×
+        </span>
       </button>
       <style>{`
         @keyframes core-banner-pulse {

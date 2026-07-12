@@ -295,12 +295,19 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
                   {images.map((img, i) => (
                     <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '1 / 1' }}>
                       <img src={img.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      {/* 見た目は 24px のまま、タップ領域を 44x44px に拡大 (誤タップ・押せない事故防止) */}
                       <button onClick={() => setImages(images.filter((_, idx) => idx !== i))} style={{
-                        position: 'absolute', top: 2, right: 2,
-                        background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none',
-                        borderRadius: '50%', width: 24, height: 24, cursor: 'pointer',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-                      }} aria-label="画像を削除"><X size={12} strokeWidth={2.5} /></button>
+                        position: 'absolute', top: 0, right: 0,
+                        background: 'transparent', border: 'none', cursor: 'pointer',
+                        width: 44, height: 44, minHeight: 44, padding: 2,
+                        display: 'inline-flex', alignItems: 'flex-start', justifyContent: 'flex-end',
+                      }} aria-label="画像を削除">
+                        <span style={{
+                          background: 'rgba(0,0,0,0.7)', color: '#fff', borderRadius: '50%',
+                          width: 24, height: 24,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        }}><X size={12} strokeWidth={2.5} /></span>
+                      </button>
                     </div>
                   ))}
                 </div>

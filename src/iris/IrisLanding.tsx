@@ -16,7 +16,8 @@ import type { Locale } from '../lib/i18n';
 import LiveAgentMock from '../components/LiveAgentMock';
 import IndustryWeekTimeline from '../components/IndustryWeekTimeline';
 import { seedDemoData, setDemoActive, clearDemoData } from '../lib/onboarding';
-import LaunchCountdownBanner from '../components/LaunchCountdownBanner';
+import CountUp from '../components/CountUp';
+import { REFERRAL_BONUS_DAYS } from '../lib/referral';
 
 interface Props {
   onEnter: () => void;
@@ -32,6 +33,22 @@ const FACETS: { Icon: LucideIcon; name: string; desc: string; color: string }[] 
   { Icon: MessageSquare, name: '交渉',    desc: '料金交渉ロープレ・媒体資料・ブランド提案文を AI がドラフト',       color: IRIS_COLORS.roseGold },
   { Icon: Palette,      name: 'ブランド', desc: '世界観に合うフォント・カラー・トーンをパーソナル AI が提案',       color: IRIS_COLORS.purpleLt },
   { Icon: UsersRound,   name: '仲間',     desc: '同じ志のクリエイター同士が繋がる、招待制コミュニティ',             color: IRIS_COLORS.pink },
+];
+
+// 比較表データ (テーブル/モバイルカードの 2 レイアウトで共用)
+const COMPARE_ROWS: { label: string; core: string; mgmt: string; agency: string; self: string }[] = [
+  { label: '月額コスト', core: '月 ¥2,980〜', mgmt: '売上の 20〜30%', agency: '月 ¥10〜30 万', self: '¥0 (時間コスト)' },
+  { label: '創作の自由度', core: '100% あなたのまま', mgmt: '事務所方針に従う', agency: '世界観の擦り合せ必要', self: '100% 自由' },
+  { label: '稼働時間', core: '24h / 365 日', mgmt: '担当者の営業時間', agency: '営業時間のみ', self: 'あなたの時間に依存' },
+  { label: '反応速度', core: '10 秒〜数分', mgmt: '数日〜数週間', agency: '1〜数日', self: 'いまの心の状態次第' },
+  { label: 'カバー範囲', core: '案件/分析/創作/交渉/ブランド/仲間 (6 領域)', mgmt: 'マネジメント中心', agency: 'SNS 運用のみ', self: 'あなた次第' },
+  { label: '導入時間', core: '7 日間 無料 + 5 分', mgmt: 'オーディション → 契約', agency: '商談 → 契約 → 開始', self: '即日' },
+];
+const COMPARE_COLS: { key: 'core' | 'mgmt' | 'agency' | 'self'; label: string }[] = [
+  { key: 'core', label: '★ CORE Iris' },
+  { key: 'mgmt', label: '事務所所属' },
+  { key: 'agency', label: '運用代行' },
+  { key: 'self', label: '自分で全部' },
 ];
 
 const PLANS = [
@@ -67,9 +84,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       minHeight: '100dvh',
       overflowX: 'hidden',
     }}>
-      {/* ── 6/1 一般公開カウントダウン ────────────────────────────── */}
-      <LaunchCountdownBanner kind="iris" />
-      {/* ── ベータ公開告知バー ────────────────────────────── */}
+      {/* ── 告知バー (1本に統合: ベータ告知 + 招待特典) ────────────── */}
       <div className="iris-beta-bar" style={{
         background: `linear-gradient(90deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purpleLt})`,
         color: '#fff',
@@ -78,10 +93,13 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         fontSize: '0.78rem',
         fontWeight: 700,
         letterSpacing: '0.04em',
+        lineHeight: 1.6,
         position: 'relative',
         zIndex: 60,
       }}>
-        2026/05/12 ベータ公開 — 7 日間 完全無料 / クレカ登録不要 / 解約は 1 タップ
+        <span style={{ whiteSpace: 'nowrap' }}>ベータ公開中 — 7 日間 完全無料</span>{' / '}
+        <span style={{ whiteSpace: 'nowrap' }}>クレカ登録不要</span>{' · '}
+        <span style={{ whiteSpace: 'nowrap' }}>招待リンク登録でお互い +{REFERRAL_BONUS_DAYS} 日 無料</span>
       </div>
 
       {/* ── ヘッダ ────────────────────────────── */}
@@ -391,7 +409,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
             {FACETS.map((f, i) => (
-              <motion.div key={f.name} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.5, delay: i * 0.07 }} style={{ position: 'relative', background: 'rgba(0,0,0,0.04)', border: `1px solid ${f.color}30`, borderRadius: 18, padding: '1.75rem 1.5rem', overflow: 'hidden' }}>
+              <motion.div key={f.name} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.35, delay: i * 0.05 }} style={{ position: 'relative', background: 'rgba(0,0,0,0.04)', border: `1px solid ${f.color}30`, borderRadius: 18, padding: '1.75rem 1.5rem', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', background: f.color, opacity: 0.16, filter: 'blur(50px)' }} />
                 <div style={{ position: 'relative', zIndex: 2 }}>
                   <div style={{
@@ -416,7 +434,8 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
       <section className="lp-section-pad" style={{ padding: sectionPad, background: `linear-gradient(180deg, #FFFFFF 0%, ${'#FFFFFF'} 100%)` }}>
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
           <p style={{ fontSize: '0.7rem', letterSpacing: '0.4em', fontWeight: 600, marginBottom: '1.5rem', color: IRIS_COLORS.purpleLt }}>REFLECTION</p>
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.6rem, 3.2vw, 2.4rem)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2rem', background: `linear-gradient(120deg, ${IRIS_COLORS.gold} 0%, ${IRIS_COLORS.pink} 50%, ${IRIS_COLORS.purpleLt} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          {/* 白背景に淡goldは読めない → 濃トーン(#B8860B系)から始まる濃色グラデに */}
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.6rem, 3.2vw, 2.4rem)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2rem', background: `linear-gradient(120deg, #B8860B 0%, ${IRIS_COLORS.hotPink} 50%, ${IRIS_COLORS.purple} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             光は、<br />受け取る人がいて<br />初めて、光になる。
           </motion.h2>
           <p style={{ fontFamily: IRIS_FONTS.serif, fontSize: 'clamp(1rem, 1.8vw, 1.2rem)', color: 'rgba(0,0,0,0.6)', lineHeight: 1.9 }}>投稿の数より、誰の心に届いたか。<br />CORE Iris は、あなたの光を <strong style={{ color: IRIS_COLORS.gold }}>必要としている人</strong> へ正確に届ける。</p>
@@ -521,39 +540,81 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.7rem, 3.4vw, 2.5rem)', fontWeight: 500, textAlign: 'center', marginBottom: '0.6rem', color: '#1F1A2E' }}>他の選択肢と <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>何が違うか</span></h2>
           <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', textAlign: 'center', fontFamily: IRIS_FONTS.serif }}>「事務所所属」「運用代行」「自分で全部」と比べたときの位置づけ</p>
 
-          <div style={{ marginTop: '2.5rem', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, color: 'rgba(0,0,0,0.85)', minWidth: 640 }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.1em' }}></th>
-                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `2px solid ${IRIS_COLORS.gold}`, background: `linear-gradient(180deg, ${IRIS_COLORS.gold}15, transparent)`, color: IRIS_COLORS.gold, fontWeight: 800, fontSize: 12, letterSpacing: '0.05em' }}>★ CORE Iris</th>
-                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>事務所所属</th>
-                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>運用代行</th>
-                  <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>自分で全部</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { label: '月額コスト', core: '月 ¥2,980〜', mgmt: '売上の 20〜30%', agency: '月 ¥10〜30 万', self: '¥0 (時間コスト)' },
-                  { label: '創作の自由度', core: '100% あなたのまま', mgmt: '事務所方針に従う', agency: '世界観の擦り合せ必要', self: '100% 自由' },
-                  { label: '稼働時間', core: '24h / 365 日', mgmt: '担当者の営業時間', agency: '営業時間のみ', self: 'あなたの時間に依存' },
-                  { label: '反応速度', core: '10 秒〜数分', mgmt: '数日〜数週間', agency: '1〜数日', self: 'いまの心の状態次第' },
-                  { label: 'カバー範囲', core: '案件/分析/創作/交渉/ブランド/仲間 (6 領域)', mgmt: 'マネジメント中心', agency: 'SNS 運用のみ', self: 'あなた次第' },
-                  { label: '導入時間', core: '7 日間 無料 + 5 分', mgmt: 'オーディション → 契約', agency: '商談 → 契約 → 開始', self: '即日' },
-                ].map((r, i) => (
-                  <tr key={i}>
-                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.55)', fontWeight: 600 }}>{r.label}</td>
-                    <td style={{ padding: '14px 10px', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, background: `${IRIS_COLORS.gold}08` }}>
-                      <strong style={{ color: '#1F1A2E' }}>{r.core}</strong>
-                    </td>
-                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.7)' }}>{r.mgmt}</td>
-                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.7)' }}>{r.agency}</td>
-                    <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.7)' }}>{r.self}</td>
+          {/* デスクトップ/タブレット: 表 (640px 未満はカード縦積みに切替 — 見切れゼロ) */}
+          <div className="iris-cmp-tablewrap" style={{ position: 'relative', marginTop: '2.5rem' }}>
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table className="iris-cmp-tbl" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, color: 'rgba(0,0,0,0.85)', minWidth: 640 }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.1em' }}></th>
+                    <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `2px solid ${IRIS_COLORS.gold}`, background: `linear-gradient(180deg, ${IRIS_COLORS.gold}15, transparent)`, color: IRIS_COLORS.gold, fontWeight: 800, fontSize: 12, letterSpacing: '0.05em' }}>★ CORE Iris</th>
+                    <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>事務所所属</th>
+                    <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>運用代行</th>
+                    <th style={{ padding: '12px 10px', textAlign: 'left', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, color: 'rgba(0,0,0,0.5)', fontWeight: 600, fontSize: 11, letterSpacing: '0.05em' }}>自分で全部</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {COMPARE_ROWS.map((r, i) => (
+                    <tr key={i}>
+                      <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.55)', fontWeight: 600 }}>{r.label}</td>
+                      <td style={{ padding: '14px 10px', borderBottom: `1px solid ${IRIS_COLORS.gold}22`, background: `${IRIS_COLORS.gold}08` }}>
+                        <strong style={{ color: '#1F1A2E' }}>{r.core}</strong>
+                      </td>
+                      <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.7)' }}>{r.mgmt}</td>
+                      <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.7)' }}>{r.agency}</td>
+                      <td style={{ padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.7)' }}>{r.self}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="iris-cmp-fade" aria-hidden />
           </div>
+
+          {/* モバイル (<640px): カード縦積み — CORE Iris はゴールドグローで圧勝を可視化 */}
+          <div className="iris-cmp-cards">
+            {COMPARE_COLS.map((col, ci) => (
+              <motion.div
+                key={col.key}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.35, delay: ci * 0.05 }}
+                style={{
+                  background: col.key === 'core' ? `linear-gradient(180deg, ${IRIS_COLORS.gold}16, #FFFFFF 45%)` : '#FFFFFF',
+                  border: col.key === 'core' ? `1.5px solid ${IRIS_COLORS.gold}` : '1px solid rgba(0,0,0,0.08)',
+                  boxShadow: col.key === 'core' ? `0 12px 36px ${IRIS_COLORS.gold}38` : '0 2px 8px rgba(0,0,0,0.03)',
+                  borderRadius: 18,
+                  padding: '1.05rem 1rem 0.7rem',
+                }}
+              >
+                <p style={{ margin: '0 0 0.55rem', fontSize: col.key === 'core' ? '0.95rem' : '0.85rem', fontWeight: 800, letterSpacing: '0.05em', color: col.key === 'core' ? '#B8730A' : 'rgba(0,0,0,0.55)' }}>
+                  {col.label}
+                </p>
+                <dl style={{ margin: 0 }}>
+                  {COMPARE_ROWS.map((r, ri) => (
+                    <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '0.75rem', padding: '0.5rem 0', borderBottom: ri < COMPARE_ROWS.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none' }}>
+                      <dt style={{ fontSize: '0.74rem', color: 'rgba(0,0,0,0.5)', fontWeight: 600, flexShrink: 0 }}>{r.label}</dt>
+                      <dd style={{ margin: 0, fontSize: '0.82rem', textAlign: 'right', color: col.key === 'core' ? '#1F1A2E' : 'rgba(0,0,0,0.7)', fontWeight: col.key === 'core' ? 700 : 500, lineHeight: 1.5 }}>{r[col.key]}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </motion.div>
+            ))}
+          </div>
+
+          <style>{`
+            .iris-cmp-cards { display: none; }
+            .iris-cmp-fade { display: none; }
+            @media (max-width: 639px) {
+              .iris-cmp-tablewrap { display: none; }
+              .iris-cmp-cards { display: grid; gap: 0.85rem; margin-top: 2.25rem; }
+            }
+            @media (min-width: 640px) and (max-width: 767px) {
+              .iris-cmp-fade { display: block; position: absolute; top: 0; right: 0; bottom: 0; width: 40px; background: linear-gradient(90deg, rgba(246,247,251,0), #F6F7FB); pointer-events: none; }
+            }
+            .iris-cmp-tbl th:first-child, .iris-cmp-tbl td:first-child { position: sticky; left: 0; background: #F6F7FB; z-index: 1; }
+          `}</style>
           <p style={{ fontSize: 11, color: 'rgba(0,0,0,0.5)', textAlign: 'center', marginTop: 12, lineHeight: 1.7 }}>
             ※ 一般的な相場感の比較。実際のコスト・効果は使い方により変動します。
           </p>
@@ -676,7 +737,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           </div>
           <div>
             <p style={footHead}>CONNECT</p>
-            <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', lineHeight: 1.7, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>世界中のクリエイターが集う場所。<br /><a href="mailto:hello@coreprism.app" style={{ color: IRIS_COLORS.gold, textDecoration: 'none' }}>hello@coreprism.app</a></p>
+            <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', lineHeight: 1.7, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>世界中のクリエイターが集う場所。<br /><a href="mailto:hello@coreprism.app" style={{ color: '#B8730A', textDecoration: 'none', display: 'inline-block', padding: '12px 0' }}>hello@coreprism.app</a></p>
           </div>
         </div>
         <div style={{ borderTop: `1px solid ${IRIS_COLORS.purpleDeep}30`, paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: 'rgba(0,0,0,0.35)', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
@@ -853,28 +914,42 @@ function FollowerEarningsCalculator({ onEnter }: { onEnter: () => void }) {
             ))}
           </div>
 
-          {/* 結果 */}
+          {/* 結果 — 数字はカウントアップ + 更新の瞬間にカードが一瞬発光 (『AIが計算した』感) */}
           <div style={{
             background: `linear-gradient(135deg, ${IRIS_COLORS.hotPink}1f, ${IRIS_COLORS.purpleLt}14)`,
             border: `1px solid ${IRIS_COLORS.hotPink}38`,
             borderRadius: 16,
             padding: '1.25rem 1.1rem 1.35rem',
             textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden',
           }}>
+            <motion.div
+              key={`${lo}-${hi}`}
+              aria-hidden
+              initial={{ opacity: 0.55 }}
+              animate={{ opacity: 0 }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+              style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                background: `radial-gradient(circle at 50% 42%, ${IRIS_COLORS.gold}4d 0%, ${IRIS_COLORS.hotPink}26 45%, transparent 75%)`,
+              }}
+            />
             <p style={{
               fontSize: '0.7rem', letterSpacing: '0.25em', fontWeight: 700,
               color: IRIS_COLORS.hotPink, marginBottom: '0.55rem',
+              position: 'relative',
             }}>
               MONTHLY EARNINGS · 月収予測レンジ
             </p>
             <p style={{
               fontFamily: IRIS_FONTS.display, fontStyle: 'italic',
               fontSize: 'clamp(1.8rem, 5.5vw, 2.85rem)', fontWeight: 600,
-              lineHeight: 1.1, margin: 0,
-              background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink} 55%, ${IRIS_COLORS.purpleLt})`,
+              lineHeight: 1.1, margin: 0, position: 'relative',
+              background: `linear-gradient(120deg, ${IRIS_COLORS.goldDeep}, ${IRIS_COLORS.hotPink} 55%, ${IRIS_COLORS.purple})`,
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>
-              {fmt(lo)} 〜 {fmt(hi)}
+              <CountUp value={lo} durationMs={340} format={fmt} /> 〜 <CountUp value={hi} durationMs={340} format={fmt} />
             </p>
             <p style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.55)', marginTop: '0.45rem', fontFamily: IRIS_FONTS.body }}>
               / 月 · PR 案件 + ギフティング + アフィリエイト合算の目安

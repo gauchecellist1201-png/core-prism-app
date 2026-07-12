@@ -6,7 +6,7 @@
 // ・既存のフル機能は IrisReelStudio.tsx に残る (詳細モード)
 // ============================================================
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Image as ImageIcon, Film, Music, Play, Square, Download, Share2,

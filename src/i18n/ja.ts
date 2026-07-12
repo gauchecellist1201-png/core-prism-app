@@ -49,6 +49,9 @@ export type Dictionary = {
   };
   faq: { eyebrow: string; h2: string; sub: string; items: FaqItem[] };
   final: { h2Lead: string; h2Accent: string; h2Tail: string; sub: string; cta: string };
+  fan: { hint: string; complete: string; completeSub: string };
+  sampleBoot: { title: string; joined: string; skip: string };
+  sticky: { title: string; sub: string; cta: string };
   footer: {
     tagline: string;
     product: string;
@@ -67,7 +70,7 @@ export type Dictionary = {
 };
 
 export const ja: Dictionary = {
-  banner: '✦ 2026/05/12 ベータ公開 — 14 日間無料 / クレカ不要 / 先着で 30 日延長',
+  banner: '✦ ベータ公開中 — 7 日間無料 / クレカ不要 / 解約は 1 タップ',
 
   nav: {
     agents:  '7つの仕事',
@@ -145,7 +148,7 @@ export const ja: Dictionary = {
     h2Accent:  'あなたの可能性',
     sub:       'すべてのプランで Claude / Gemini / Stable Diffusion を内蔵。API キー不要。',
     popular:   '人気',
-    ctaTrial:  '14 日無料で試す',
+    ctaTrial:  '7 日無料で試す',
     ctaApply:  '今すぐ申し込む',
     annual:    '年払いで 2 ヶ月分割引 · 法人は別途お問い合わせください',
     suffixMonth: '/ 月',
@@ -199,7 +202,7 @@ export const ja: Dictionary = {
       },
       {
         q: '無料トライアル後、自動で課金されますか？',
-        a: 'いいえ。トライアル登録時にクレジットカードは不要です。14 日が過ぎても自動で課金されることはありません。続けるかどうかは、あなたが判断してから決めて頂けます。',
+        a: 'いいえ。トライアル登録時にクレジットカードは不要です。7 日が過ぎても自動で課金されることはありません。続けるかどうかは、あなたが判断してから決めて頂けます。',
       },
       {
         q: '私の業界・業種にも合いますか？',
@@ -224,8 +227,26 @@ export const ja: Dictionary = {
     h2Lead:   '「ひとりで全部」を、',
     h2Accent: '卒業する。',
     h2Tail:   '',
-    sub: '14 日間、すべての AI 役員を無料でお試しできます。クレジットカードの登録は不要です。',
+    sub: '7 日間、すべての AI 役員を無料でお試しできます。クレジットカードの登録は不要です。',
     cta: '無料で Prism を試す',
+  },
+
+  fan: {
+    hint: '横にスワイプして、7人全員に会う',
+    complete: '7人、全員そろいました',
+    completeSub: 'この7つの仕事すべてが、登録した瞬間からあなたのものになります。',
+  },
+
+  sampleBoot: {
+    title: '架空のカフェのサンプルデータを準備しています',
+    joined: '着任',
+    skip: 'タップでスキップ',
+  },
+
+  sticky: {
+    title: 'Prismを、無料で試す',
+    sub: '7日間無料・クレカ不要・いつでも解約',
+    cta: '無料で始める →',
   },
 
   footer: {

@@ -6,7 +6,7 @@
 // ・素材は IndexedDB / メモリのみ。サーバー送信なし
 // ============================================================
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { shareToInstagram } from './instagramShare';

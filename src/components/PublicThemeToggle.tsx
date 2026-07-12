@@ -53,7 +53,7 @@ export default function PublicThemeToggle() {
         top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
         right: 'calc(env(safe-area-inset-right, 0px) + 12px)',
         zIndex: 70,
-        width: 36, height: 36, borderRadius: 18,
+        width: 44, height: 44, borderRadius: 22, /* タップ44px基準 */
         background: isLight ? 'rgba(255,255,255,0.85)' : 'rgba(15,14,27,0.85)',
         color: isLight ? '#1F1A2E' : '#fff',
         border: `1px solid ${isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)'}`,

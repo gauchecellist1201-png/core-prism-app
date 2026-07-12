@@ -82,29 +82,39 @@ const DOCK_SIZE = 52;
 const EDGE_MARGIN = 14;
 const DRAG_THRESHOLD = 6; // これ未満の移動は「タップ」扱い
 
-function clampPos(x: number, y: number) {
+function clampPos(x: number, y: number, bottomClearance = 0) {
   const maxX = Math.max(EDGE_MARGIN, window.innerWidth - DOCK_SIZE - EDGE_MARGIN);
-  const maxY = Math.max(EDGE_MARGIN, window.innerHeight - DOCK_SIZE - EDGE_MARGIN);
+  const maxY = Math.max(EDGE_MARGIN, window.innerHeight - DOCK_SIZE - EDGE_MARGIN - bottomClearance);
   return { x: Math.min(Math.max(x, EDGE_MARGIN), maxX), y: Math.min(Math.max(y, EDGE_MARGIN), maxY) };
 }
-function defaultPos() {
+function defaultPos(bottomClearance = 0) {
   // 既定位置=左下(中央のチャット入力バー・右下の常駐FAB群と重ならない)
-  return clampPos(EDGE_MARGIN, window.innerHeight - DOCK_SIZE - EDGE_MARGIN - 74);
+  return clampPos(EDGE_MARGIN, window.innerHeight - DOCK_SIZE - EDGE_MARGIN - 74, bottomClearance);
 }
-function loadPos(): { x: number; y: number } | null {
+function loadPos(bottomClearance = 0): { x: number; y: number } | null {
   try {
     const raw = localStorage.getItem(POS_KEY);
     if (!raw) return null;
     const p = JSON.parse(raw);
     if (typeof p?.x !== "number" || typeof p?.y !== "number") return null;
-    return clampPos(p.x, p.y);
+    return clampPos(p.x, p.y, bottomClearance);
   } catch { return null; }
 }
 function savePos(x: number, y: number) {
   try { localStorage.setItem(POS_KEY, JSON.stringify({ x, y })); } catch { /* noop */ }
 }
 
-export function CoreDock({ current }: { current: App["key"] }) {
+export function CoreDock({
+  current,
+  bottomClearance = 0,
+  zIndex = 80,
+}: {
+  current: App["key"];
+  /** LP等で下部の sticky CTA / footer リンクと重ならないよう、画面下端からこの分だけ上に押し上げる(px) */
+  bottomClearance?: number;
+  /** LP表示中は sticky CTA(z=60) より下げたい等、重なり順を調整できる */
+  zIndex?: number;
+}) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState<string | null>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -114,11 +124,11 @@ export function CoreDock({ current }: { current: App["key"] }) {
   useEffect(() => {
     const h = readCoreHandoff();
     if (h?.name) setName(h.name);
-    setPos(loadPos() ?? defaultPos());
-    const onResize = () => setPos((p) => (p ? clampPos(p.x, p.y) : p));
+    setPos(loadPos(bottomClearance) ?? defaultPos(bottomClearance));
+    const onResize = () => setPos((p) => (p ? clampPos(p.x, p.y, bottomClearance) : p));
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, []);
+  }, [bottomClearance]);
 
   // 表示順: 現在のアプリは先頭に出さず、行き先だけを並べる
   const others = APPS.filter((a) => a.key !== current);
@@ -140,7 +150,7 @@ export function CoreDock({ current }: { current: App["key"] }) {
     const dx = e.clientX - d.startX;
     const dy = e.clientY - d.startY;
     if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) d.moved = true;
-    if (d.moved) setPos(clampPos(d.baseX + dx, d.baseY + dy));
+    if (d.moved) setPos(clampPos(d.baseX + dx, d.baseY + dy, bottomClearance));
   };
   const onPointerUp = () => {
     const d = dragRef.current;
@@ -168,8 +178,9 @@ export function CoreDock({ current }: { current: App["key"] }) {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         aria-label="Core ── アプリを切り替える(ドラッグで移動できます)"
-        className="fixed z-[80] flex items-center justify-center rounded-full border border-white/15 bg-[#0b0e18]/90 text-white shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur active:scale-95"
+        className="fixed flex items-center justify-center rounded-full border border-white/15 bg-[#0b0e18]/90 text-white shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur active:scale-95"
         style={{
+          zIndex,
           left: pos.x,
           top: pos.y,
           width: DOCK_SIZE,

@@ -4,7 +4,7 @@
 // 時刻到達で自動実行 → 完了で通知
 // ============================================================
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
+import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 
 const STORAGE_KEY = 'prism_task_queue_v1';
 

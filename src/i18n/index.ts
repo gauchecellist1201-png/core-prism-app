@@ -59,6 +59,8 @@ export function useT() {
   const setLang = useCallback((next: Lang) => {
     saveLang(next);
     setLangState(next);
+    // 同一タブ内の他の useT インスタンス (LaunchCountdownBanner / App の sticky CTA 等) にも即時反映
+    try { window.dispatchEvent(new CustomEvent('cp:lang-change', { detail: next })); } catch { /* */ }
   }, []);
 
   useEffect(() => {
@@ -67,8 +69,17 @@ export function useT() {
         setLangState(e.newValue);
       }
     };
+    // 同一タブ内の言語切替 (storage イベントは別タブしか飛ばないため)
+    const onLocal = (e: Event) => {
+      const next = (e as CustomEvent).detail;
+      if (next === 'ja' || next === 'en') setLangState(next);
+    };
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener('cp:lang-change', onLocal);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('cp:lang-change', onLocal);
+    };
   }, []);
 
   const t = getDict(lang);

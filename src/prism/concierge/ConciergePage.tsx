@@ -357,11 +357,21 @@ function CrystalInsightsSection({ config, onAddFaq }: { config: ConciergeConfig;
               <InsightIcon kind="chat" />
               <span style={{ fontSize: 12.5, fontWeight: 700, color: P.fgMuted, letterSpacing: '0.04em' }}>会話数 (直近7日)</span>
             </div>
-            <div style={{ fontFamily: SERIF, fontSize: 'clamp(36px, 5vw, 52px)', lineHeight: 1, color: P.fg }}>
-              {data.conversations7d}
-              <span style={{ fontSize: 15, color: P.fgMuted, marginLeft: 8 }}>件</span>
-            </div>
-            {data.conversations7d === 0 && empty('まだ会話がありません。コンシェルジュが応対を始めると、ここに実数が届きます。')}
+            {data.conversations7d > 0 ? (
+              <div style={{ fontFamily: SERIF, fontSize: 'clamp(36px, 5vw, 52px)', lineHeight: 1, color: P.fg }}>
+                {data.conversations7d}
+                <span style={{ fontSize: 15, color: P.fgMuted, marginLeft: 8 }}>件</span>
+              </div>
+            ) : (
+              <>
+                {/* 0件をどんと見せない: ぼかしの表示イメージ + デモへの誘導 (嘘の数字を実数と誤認させないよう明記) */}
+                <div aria-hidden style={{ fontFamily: SERIF, fontSize: 'clamp(36px, 5vw, 52px)', lineHeight: 1, color: P.fg, filter: 'blur(8px)', opacity: 0.35, userSelect: 'none', pointerEvents: 'none' }}>
+                  24
+                  <span style={{ fontSize: 15, marginLeft: 8 }}>件</span>
+                </div>
+                {empty('ぼかしは表示イメージです。まだ会話がありません — 上のデモと話すと、ここに実数が届きます。')}
+              </>
+            )}
             <button
               onClick={() => void load()}
               style={{ marginTop: 14, alignSelf: 'flex-start', minHeight: 44, padding: '0 16px', borderRadius: 999, border: `1px solid ${P.line}`, background: 'transparent', color: P.fgMuted, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
@@ -410,6 +420,11 @@ function CrystalInsightsSection({ config, onAddFaq }: { config: ConciergeConfig;
                         fontSize: 12, fontWeight: 800, cursor: already ? 'default' : 'pointer', whiteSpace: 'nowrap',
                       }}
                     >
+                      {already && addedQ === q.text && (
+                        <svg className="cz-anim" width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden style={{ marginRight: 5, verticalAlign: '-2px', animation: 'czPopIn 0.5s cubic-bezier(0.16,1,0.3,1) both' }}>
+                          <path d="M2.5 7l3 3 5-6.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
                       {already ? (addedQ === q.text ? 'FAQ に追加しました' : 'FAQ 追加済み') : 'FAQ に追加'}
                     </button>
                   </div>
@@ -421,6 +436,32 @@ function CrystalInsightsSection({ config, onAddFaq }: { config: ConciergeConfig;
               </p>
             )}
           </div>
+        </div>
+      )}
+
+      {/* FAQ 追加の瞬間を可視化するトースト — 学習して賢くなる AI を体感させる */}
+      {addedQ && (
+        <div
+          role="status"
+          className="cz-anim"
+          style={{
+            position: 'fixed', left: '50%', bottom: 'calc(20px + env(safe-area-inset-bottom))',
+            transform: 'translateX(-50%)', zIndex: 80,
+            display: 'flex', alignItems: 'center', gap: 9,
+            maxWidth: 'calc(100vw - 32px)', padding: '13px 20px', borderRadius: 999,
+            background: 'rgba(20,28,44,0.94)', border: `1px solid rgba(217,228,245,0.35)`,
+            backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+            boxShadow: '0 14px 44px rgba(0,0,0,0.45)',
+            color: P.fg, fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
+            animation: 'czToastIn 0.4s cubic-bezier(0.16,1,0.3,1) both',
+            pointerEvents: 'none',
+          }}
+        >
+          <svg className="cz-anim" width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden style={{ flexShrink: 0, animation: 'czPopIn 0.55s 0.1s cubic-bezier(0.16,1,0.3,1) both' }}>
+            <circle cx="8.5" cy="8.5" r="8" fill="rgba(201,169,110,0.22)" stroke={P.gold} strokeWidth="1" />
+            <path d="M5 9l2.4 2.4L12.2 6" stroke={P.gold} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>FAQ に追加 — 応対力が1つ上がりました</span>
         </div>
       )}
     </section>
@@ -446,6 +487,8 @@ function Showcase() {
   // FAQ 自動生成 (貼り付けたナレッジ → Q&A を AI が起こす)
   const [genBusy, setGenBusy] = useState(false);
   const [genMsg, setGenMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // 生成直後の Q — FAQ カードを1枚ずつ下からスライドインさせる (感動演出)
+  const [genNewQs, setGenNewQs] = useState<string[]>([]);
 
   const generateFaq = async () => {
     const src = (config.knowledge || '').trim();
@@ -475,12 +518,27 @@ function Showcase() {
         .filter(x => x && typeof x.q === 'string' && typeof x.a === 'string' && (x.q as string).trim() && (x.a as string).trim())
         .map(x => ({ q: (x.q as string).slice(0, 120), a: (x.a as string).slice(0, 400) }));
       if (items.length === 0) throw new Error('empty');
+      // 実際に追加された件数だけを数える (重複・12件上限を除外 — 数字の嘘禁止)
+      let addedQs: string[] = [];
       setConfig(prev => {
-        const merged = [...prev.faq.filter(f => f.q.trim() || f.a.trim())];
+        const kept = prev.faq.filter(f => f.q.trim() || f.a.trim());
+        const merged = [...kept];
         for (const it of items) if (!merged.some(m => m.q === it.q)) merged.push(it);
-        return { ...prev, faq: merged.slice(0, 12) };
+        const capped = merged.slice(0, 12);
+        addedQs = capped.filter(f => !kept.some(p => p.q === f.q)).map(f => f.q);
+        return { ...prev, faq: capped };
       });
-      setGenMsg({ ok: true, text: `${items.length}件の FAQ を作成し、下の「よくある質問」に追加しました。` });
+      // setConfig の updater 実行後 (次のマクロタスク) に演出を発火
+      window.setTimeout(() => {
+        if (addedQs.length > 0) {
+          setGenNewQs(addedQs);
+          setGenMsg({ ok: true, text: `${addedQs.length}件の FAQ ができました。下の「よくある質問」に追加済みです。` });
+          document.getElementById('faq-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          window.setTimeout(() => setGenNewQs([]), 5000);
+        } else {
+          setGenMsg({ ok: true, text: '同じ質問がすでに登録されているため、新しく追加された FAQ はありませんでした。' });
+        }
+      }, 0);
     } catch {
       setGenMsg({ ok: false, text: '生成できませんでした。通信環境をご確認のうえ、もう一度お試しください。' });
     } finally {
@@ -537,7 +595,15 @@ function Showcase() {
       minHeight: '100svh', color: P.fg, fontFamily: SANS,
       background: `linear-gradient(180deg, ${P.bg1} 0%, ${P.bg0} 100%)`,
     }}>
-      <style>{`html { scroll-behavior: smooth; }`}</style>
+      <style>{`
+        html { scroll-behavior: smooth; }
+        @keyframes czSlideIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+        @keyframes czPopIn { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes czToastIn { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        @media (prefers-reduced-motion: reduce) {
+          .cz-anim { animation: none !important; }
+        }
+      `}</style>
 
       {/* ── 購入後オンボーディング (Stripe決済 → ?welcome=1 で着地) ── */}
       {welcomeOpen && (
@@ -723,8 +789,14 @@ function Showcase() {
                 {genBusy ? 'AI が文章を読んでいます…' : 'この文章から FAQ を自動生成'}
               </button>
               {genMsg && (
-                <div style={{ fontSize: 12, lineHeight: 1.7, marginTop: 6, color: genMsg.ok ? '#9ED3BC' : '#F2B8C6' }}>
-                  {genMsg.text}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 12, lineHeight: 1.7, marginTop: 6, color: genMsg.ok ? '#9ED3BC' : '#F2B8C6' }}>
+                  {genMsg.ok && (
+                    <svg className="cz-anim" width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden style={{ flexShrink: 0, marginTop: 2, animation: 'czPopIn 0.5s cubic-bezier(0.16,1,0.3,1) both' }}>
+                      <circle cx="7.5" cy="7.5" r="7" fill="rgba(158,211,188,0.18)" stroke="#9ED3BC" strokeWidth="1" />
+                      <path d="M4.4 7.8l2.1 2.1 4.1-4.6" stroke="#9ED3BC" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                  <span>{genMsg.text}</span>
                 </div>
               )}
             </Field>
@@ -843,8 +915,19 @@ function Showcase() {
             <div id="faq-editor" style={{ scrollMarginTop: 20 }} />
             <Field label="よくある質問 (AI はこの内容に沿って答えます)">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {config.faq.map((f, i) => (
-                  <div key={i} style={{ border: `1px solid ${P.line}`, borderRadius: 12, padding: 10 }}>
+                {config.faq.map((f, i) => {
+                  // AI 生成直後のカードは1枚ずつ下からスライドイン
+                  const genIdx = genNewQs.indexOf(f.q);
+                  return (
+                  <div
+                    key={i}
+                    className={genIdx >= 0 ? 'cz-anim' : undefined}
+                    style={{
+                      border: genIdx >= 0 ? `1px solid rgba(158,211,188,0.55)` : `1px solid ${P.line}`,
+                      borderRadius: 12, padding: 10, transition: 'border-color 0.6s',
+                      ...(genIdx >= 0 ? { animation: `czSlideIn 0.55s ${genIdx * 110}ms cubic-bezier(0.16,1,0.3,1) both` } : {}),
+                    }}
+                  >
                     <input
                       style={{ ...inputStyle, marginBottom: 6, fontSize: 16 }}
                       value={f.q}
@@ -852,7 +935,7 @@ function Showcase() {
                       placeholder="質問"
                     />
                     <textarea
-                      style={{ ...inputStyle, resize: 'vertical', minHeight: 56, lineHeight: 1.6 }}
+                      style={{ ...inputStyle, resize: 'vertical', minHeight: 88, lineHeight: 1.6 }}
                       value={f.a}
                       onChange={e => set('faq', config.faq.map((x, j) => j === i ? { ...x, a: e.target.value } : x))}
                       placeholder="答え"
@@ -864,7 +947,8 @@ function Showcase() {
                       この質問を削除
                     </button>
                   </div>
-                ))}
+                  );
+                })}
                 {config.faq.length < 12 && (
                   <button
                     onClick={() => set('faq', [...config.faq, { q: '', a: '' }])}
@@ -1245,7 +1329,8 @@ function Showcase() {
       <footer style={{ borderTop: `1px solid ${P.lineSoft}`, padding: '24px clamp(16px, 4vw, 44px)', textAlign: 'center' }}>
         <div style={{ fontSize: 11, color: P.fgSubtle, letterSpacing: '0.08em' }}>
           Crystal — CORE ·{' '}
-          <a href="/" style={{ color: P.fgMuted, textDecoration: 'none' }}>CORE Prism を見る</a>
+          {/* タップ領域44px確保 (見た目は据え置き・padding+負マージン) */}
+          <a href="/" style={{ color: P.fgMuted, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: '12px 8px', margin: '-12px -8px', verticalAlign: 'middle' }}>CORE Prism を見る</a>
         </div>
       </footer>
     </div>

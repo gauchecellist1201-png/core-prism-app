@@ -6,7 +6,7 @@
 import type { Dictionary } from './ja';
 
 export const en: Dictionary = {
-  banner: '✦ Beta launch May 12, 2026 — 14-day free trial / No credit card / +30 days for early adopters',
+  banner: '✦ Now in beta — 7-day free trial / No credit card / Cancel in one tap',
 
   nav: {
     agents:  '7 Agents',
@@ -84,7 +84,7 @@ export const en: Dictionary = {
     h2Accent:  'your potential, unlocked.',
     sub:       'Claude / Gemini / Stable Diffusion built-in on every plan. No API key required.',
     popular:   'Popular',
-    ctaTrial:  'Try free for 14 days',
+    ctaTrial:  'Try free for 7 days',
     ctaApply:  'Get started now',
     annual:    'Annual billing: 2 months off · Enterprise: contact us',
     suffixMonth: '/ month',
@@ -138,7 +138,7 @@ export const en: Dictionary = {
       },
       {
         q: 'Will I be charged automatically after the free trial?',
-        a: "No. You don't need to enter a credit card to start the trial. After 14 days, you won't be billed automatically. You decide whether to continue.",
+        a: "No. You don't need to enter a credit card to start the trial. After 7 days, you won't be billed automatically. You decide whether to continue.",
       },
       {
         q: 'Does it fit my industry?',
@@ -163,8 +163,26 @@ export const en: Dictionary = {
     h2Lead:   'Stop doing',
     h2Accent: 'everything alone.',
     h2Tail:   '',
-    sub: 'Try all your AI executives free for 14 days. No credit card required.',
+    sub: 'Try all your AI executives free for 7 days. No credit card required.',
     cta: 'Try Prism for free',
+  },
+
+  fan: {
+    hint: 'Swipe to meet all 7',
+    complete: 'All 7 agents assembled',
+    completeSub: 'Every one of these becomes yours the moment you sign up.',
+  },
+
+  sampleBoot: {
+    title: 'Setting up your sample café',
+    joined: 'joined',
+    skip: 'Tap to skip',
+  },
+
+  sticky: {
+    title: 'Try Prism for free',
+    sub: '7-day free trial · No credit card · Cancel anytime',
+    cta: 'Start free →',
   },
 
   footer: {
