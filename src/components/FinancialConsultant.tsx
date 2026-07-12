@@ -22,6 +22,7 @@ import { fmtJpy } from '../lib/invoiceCalc';
 import ApiErrorCard from './ApiErrorCard';
 import { StudioIntro } from './StudioIntro';
 import ThinkingIndicator from './ThinkingIndicator';
+import { aiFetch } from '../lib/aiFetch';
 
 interface Props {
   persona: Persona;
@@ -251,7 +252,7 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
           + `\n\n助言は上記の内訳に踏み込み、「どのカテゴリが売上比で重いか」「削るならどこか」「投資すべきカテゴリはどれか」を具体的に書いてください。\n`;
       }
 
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

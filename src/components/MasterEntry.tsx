@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { resetCircuit } from '../lib/apiQueue';
 import { confirmAction } from '../lib/confirmDialog';
 import OwnerBriefModal from './OwnerBriefModal';
+import { aiFetch } from '../lib/aiFetch';
 
 const MASTER_KEY_STORAGE = 'core_master_key_v1';
 const CLAUDE_KEY_STORAGE = 'core_claude_api_key_v1';
@@ -63,7 +64,7 @@ export default function MasterEntry() {
     setTestStatus('testing');
     setTestMessage('Claude API に接続中…');
     try {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: {
           'content-type': 'application/json',

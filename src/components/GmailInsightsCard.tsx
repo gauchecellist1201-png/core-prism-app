@@ -21,6 +21,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BrandIcon } from './BrandIcons';
 import {
+import { aiFetch } from '../lib/aiFetch';
   isGmailConfigured, isGmailConnected, connectGmail, loadGmailUser,
   fetchInbox, createGmailDraft, buildReplyMeta, type GmailMessage,
 } from '../lib/gmail';
@@ -499,7 +500,7 @@ ${compact.map((m) => `[id=${m.id}] from=${m.from} subject="${m.subject}" snippet
 
   let parsed: { items?: Array<any> } = {};
   try {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

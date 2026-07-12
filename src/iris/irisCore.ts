@@ -10,6 +10,7 @@
 // ============================================================
 import { useState, useCallback, useEffect } from 'react';
 import { useCloudSync } from '../hooks/useCloudSync';
+import { aiFetch } from '../lib/aiFetch';
 
 export const IRIS_CORE_KEY = 'iris_core_v1';
 
@@ -71,7 +72,7 @@ export async function extractCreatorCore(source: string, model = 'claude-haiku-4
 返答は JSON のみ（前後に文章やコードフェンスを付けない）:
 {"identity":"","purpose":"","audience":"","strengths":"","goals":""}`;
   try {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -4,6 +4,7 @@ import type {
   ChatMessage,
 } from '../types/identity';
 import type {
+import { aiFetch } from '../lib/aiFetch';
   DailyHealth,
   MedicalProfile,
   SymptomEntry,
@@ -261,7 +262,7 @@ ${summarizeHistory(history)}
 `.trim();
 
       try {
-        const res = await fetch('/api/ai', {
+        const res = await aiFetch({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -359,7 +360,7 @@ ${summarizeHistory(profile)}
 `;
 
       try {
-        const res = await fetch('/api/ai', {
+        const res = await aiFetch({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

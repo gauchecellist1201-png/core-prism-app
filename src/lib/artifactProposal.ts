@@ -1,3 +1,4 @@
+import { aiFetch } from './aiFetch';
 // ============================================================
 // CORE Prism ▸ Artifact Proposal (テーマ/メモ → そのまま使える一枚成果物の構成)
 //
@@ -90,7 +91,7 @@ export async function generateArtifact(topic: string, kind: ArtifactKind): Promi
 
   let res: Response;
   try {
-    res = await fetch('/api/ai', {
+    res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'light' },
       body: JSON.stringify({

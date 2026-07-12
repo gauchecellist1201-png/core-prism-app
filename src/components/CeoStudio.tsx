@@ -21,6 +21,7 @@ import { fmtJpy } from '../lib/invoiceCalc';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
+import { aiFetch } from '../lib/aiFetch';
 
 interface Props {
   persona: Persona;
@@ -175,7 +176,7 @@ ${kbBlock}`;
     setError(null);
     setAborted(false);
     try {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

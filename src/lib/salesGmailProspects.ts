@@ -6,6 +6,7 @@
 // ============================================================
 import type { AppSettings } from '../types/identity';
 import type { GmailMessage } from './gmail';
+import { aiFetch } from './aiFetch';
 
 export interface GmailProspect {
   email: string;
@@ -143,7 +144,7 @@ export async function qualifyProspects(opts: {
 
   const userMsg = `## 自社商材\n${ownProduct.slice(0, 800)}\n\n## 受信メールの差出人(営業先候補)\n${list}\n\n各差出人について相性を判定し、JSON で返してください。`;
 
-  const res = await fetch('/api/ai', {
+  const res = await aiFetch({
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

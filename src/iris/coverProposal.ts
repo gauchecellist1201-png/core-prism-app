@@ -10,6 +10,7 @@
 // 実際の合成は IrisCoverStudio.tsx がクライアントの canvas で高精細に行う。
 // ============================================================
 import { logIrisActivity } from './irisActivity';
+import { aiFetch } from '../lib/aiFetch';
 
 export type CoverMood = 'rose' | 'champagne' | 'lavender' | 'peach' | 'midnight' | 'cream';
 export type CoverLayout = 'bottom' | 'center' | 'top';
@@ -101,7 +102,7 @@ export async function generateCoverProposal(theme: string): Promise<CoverProposa
 
   let res: Response;
   try {
-    res = await fetch('/api/ai', {
+    res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'light' },
       body: JSON.stringify({

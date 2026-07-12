@@ -15,6 +15,7 @@ import { StudioIntro } from './StudioIntro';
 import { LoaderDots } from './MicroLoader';
 import { confirmAction } from '../lib/confirmDialog';
 import { copyText } from '../lib/clipboard';
+import { aiFetch } from '../lib/aiFetch';
 
 interface Props {
   persona: Persona;
@@ -178,7 +179,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
 - 経歴を聞くだけの面接にしない。考え方・行動パターンを引き出す
 - 評価軸は具体的で、面接後に〇△× がつけられるもの`;
       const userMsg = `## 募集 / 候補者の状況\n${interviewRole}\n\n## 事業\n${persona.name} (${persona.subtitle || ''})\n\n上記の状況で使える面接質問セットを JSON で。`;
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

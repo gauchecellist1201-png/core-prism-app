@@ -21,6 +21,7 @@ import { sortRisksByPriority } from '../lib/riskPriority';
 import { summarizeMeeting, stripCaptions } from '../lib/meetingSummarize';
 import MeetingRecorder from './MeetingRecorder';
 import {
+import { aiFetch } from '../lib/aiFetch';
   proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse, extractActionPlan,
   KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal, type KnowledgeAction,
 } from '../lib/analyzeKnowledge';
@@ -268,7 +269,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
 
 【今すぐ確かめるべき問い】3 つ
 この資料群から、社長が今週中に答えを出すべき問い。`;
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

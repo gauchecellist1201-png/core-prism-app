@@ -11,6 +11,7 @@
 // ============================================================
 
 import { logIrisActivity } from './irisActivity';
+import { aiFetch } from '../lib/aiFetch';
 
 export interface ScriptScene {
   /** シーン番号 (1〜3) */
@@ -86,7 +87,7 @@ export async function generateReelScript(theme: string): Promise<ReelScriptResul
 
   let res: Response;
   try {
-    res = await fetch('/api/ai', {
+    res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -164,7 +165,7 @@ export async function generateReelCaption(themeOrHint: string, existingCaptions:
   const context = existingCaptions.filter(Boolean).join(' / ').slice(0, 200);
   let res: Response;
   try {
-    res = await fetch('/api/ai', {
+    res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

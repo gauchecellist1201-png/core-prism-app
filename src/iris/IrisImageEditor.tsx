@@ -11,6 +11,7 @@ import {
 import type { IrisBackgroundDef } from './irisStyle';
 import type { AppSettings } from '../types/identity';
 import { shareToInstagram } from './instagramShare';
+import { aiFetch } from '../lib/aiFetch';
 
 type AspectId = '1:1' | '4:5' | '9:16' | '16:9' | 'free';
 type FilterId = 'none' | 'vivid' | 'mono' | 'faded' | 'cinematic' | 'pastel' | 'noir' | 'warm' | 'cool';
@@ -591,7 +592,7 @@ export default function IrisImageEditor({ bg }: Props) {
 }
 JSON だけ返し、\`\`\`json は不要。`;
 
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

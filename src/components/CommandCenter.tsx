@@ -33,6 +33,7 @@ import { CXO_META, useAgentTaskQueue, type CxoRole, cxoDisplayName } from '../ho
 import { MetaIcon } from './ExecIcon';
 import { listDeliverables, logDeliverable } from '../lib/cxoDeliverables';
 import type { Persona } from '../types/identity';
+import { aiFetch } from '../lib/aiFetch';
 
 interface Props {
   persona: Persona;
@@ -204,7 +205,7 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
     let content = '';
     let aiErr = '';
     try {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

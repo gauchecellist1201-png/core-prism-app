@@ -22,6 +22,7 @@ import SampleDataCTA from './SampleDataCTA';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import { isDemoActive } from '../lib/onboarding';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
+import { aiFetch } from '../lib/aiFetch';
 
 interface Props {
   persona: Persona;
@@ -102,7 +103,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
 }
 やさしい日本語。専門用語・横文字は避ける。具体的に。`;
       const userPrompt = `## 自社の商材\n${ownProduct || '(未登録 — 一般的な提案として作成)'}\n\n## 商談相手 / 状況\n${scriptTarget}\n\n上記の商談で使える台本と反論対応を作ってください。`;
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 1800, system: sys, messages: [{ role: 'user', content: userPrompt }] }),
@@ -354,7 +355,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
 - やさしい日本語、専門用語は避ける
 - 価格やターゲットが資料に無ければ「(資料に記載なし)」と書く`;
       const userMsg = `# 事業: ${persona.name} (${persona.subtitle || ''})\n\n# 資料 ${knowledge.length} 件 (主要 ${Math.min(25, knowledge.length)} 件)\n\n${digest}\n\n上記から自社商材の説明を JSON で抽出してください。`;
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

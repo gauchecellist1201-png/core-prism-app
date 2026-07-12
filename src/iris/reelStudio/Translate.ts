@@ -1,3 +1,4 @@
+import { aiFetch } from '../../lib/aiFetch';
 // ============================================================
 // Translate.ts — 字幕翻訳 (Gemini 経由)
 //
@@ -31,7 +32,7 @@ Output ONLY the translations joined by "${sep}" in the same order — no extra c
 
 ${joined}`;
 
-  const res = await fetch('/api/ai', {
+  const res = await aiFetch({
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

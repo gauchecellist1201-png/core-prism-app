@@ -19,6 +19,7 @@
 
 /** カット毎の BGM ジャンル候補。アップ/しっとり/ポップ/エモ の 4 種 */
 import { logIrisActivity } from './irisActivity';
+import { aiFetch } from '../lib/aiFetch';
 
 export type BgmMood = 'up' | 'soft' | 'pop' | 'emo';
 
@@ -187,7 +188,7 @@ export async function generateReelCaptions(
 
   let res: Response;
   try {
-    res = await fetch('/api/ai', {
+    res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -413,7 +414,7 @@ export async function composeReelFromClips(
 
   let res: Response;
   try {
-    res = await fetch('/api/ai', {
+    res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'heavy' },
       body: JSON.stringify({

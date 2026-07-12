@@ -12,6 +12,7 @@ import { X, Loader2, Mail, Calendar, FileText, Sparkles, ArrowRight, Check, Copy
 import { useSettings } from '../hooks/useSettings';
 import { buildGcalDeeplink } from '../lib/googleCalendar';
 import { tactileReward } from '../lib/haptic';
+import { aiFetch } from '../lib/aiFetch';
 
 const TUTORIAL_KEYS = {
   prism: 'core_tutorial_seen_prism_v1',
@@ -249,7 +250,7 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
     setError(null);
     try {
       // API キーは main.tsx の interceptor が自動付与
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -312,7 +313,7 @@ export default function WowOnboarding({ brand, trigger, force = false, onClose }
         });
       } else if (p.actionType === 'text_artifact') {
         // API キーは main.tsx の interceptor が自動付与
-        const r = await fetch('/api/ai', {
+        const r = await aiFetch({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
