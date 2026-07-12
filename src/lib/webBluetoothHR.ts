@@ -38,13 +38,35 @@ export function isWebBluetoothSupported(): boolean {
   return typeof navigator !== 'undefined' && 'bluetooth' in navigator;
 }
 
+/** 1 回の計測セッションの要約 (ingest 保存や医療記録に使う) */
+export interface HRSessionSummary {
+  avgBpm: number;
+  minBpm: number;       // 安静時心拍の近似 (装着中の安定した最小値)
+  maxBpm: number;
+  restingBpm: number;   // 下位25%の平均 = 安静時心拍のより頑健な推定
+  hrvRmssd: number;     // ms
+  energyKj: number;     // デバイスが返した累積消費エネルギー
+  sampleCount: number;
+  durationSec: number;
+}
+
 export class HeartRateMonitor {
+  private device: any = null;
   private server: any = null;
   private hrChar: any = null;
   private listeners: Set<HRListener> = new Set();
   private statusListeners: Set<StatusListener> = new Set();
   public info: BleDeviceInfo | null = null;
   private rrBuffer: number[] = [];
+  // ── セッション集計 (保存・医療記録用) ──
+  private bpmSamples: number[] = [];
+  private startedAt = 0;
+  private lastEnergy = 0;
+  // ── 自動再接続 ──
+  private intentionalDisconnect = false;
+  private reconnectAttempts = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly MAX_RECONNECT = 6;
 
   onReading(fn: HRListener) {
     this.listeners.add(fn);
@@ -68,8 +90,18 @@ export class HeartRateMonitor {
       optionalServices: [BATTERY_SERVICE],
     });
     if (!device) throw new Error('デバイス未選択');
-    device.addEventListener('gattserverdisconnected', () => this.handleDisconnect());
+    this.device = device;
+    this.intentionalDisconnect = false;
+    device.addEventListener('gattserverdisconnected', this.handleDisconnect);
 
+    await this.openGatt(device);
+    this.startedAt = this.startedAt || Date.now();
+    this.emitStatus('connected', this.info?.name);
+    return this.info!;
+  }
+
+  /** GATT を開いて notify を張る (初回接続・再接続で共用) */
+  private async openGatt(device: any): Promise<void> {
     const server = await device.gatt.connect();
     this.server = server;
 
@@ -95,15 +127,12 @@ export class HeartRateMonitor {
     this.info = {
       id: device.id,
       name: device.name || '心拍計',
-      bodyLocation,
-      batteryLevel,
+      bodyLocation: bodyLocation ?? this.info?.bodyLocation,
+      batteryLevel: batteryLevel ?? this.info?.batteryLevel,
     };
 
     await this.hrChar.startNotifications();
     this.hrChar.addEventListener('characteristicvaluechanged', this.handleNotification);
-
-    this.emitStatus('connected', this.info.name);
-    return this.info;
   }
 
   private handleNotification = (event: Event) => {
@@ -115,23 +144,54 @@ export class HeartRateMonitor {
       this.rrBuffer.push(...reading.rrIntervals);
       if (this.rrBuffer.length > 600) this.rrBuffer = this.rrBuffer.slice(-300);
     }
+    // 装着中(または装着状態不明)の妥当な心拍のみ集計に加える
+    if (reading.bpm >= 30 && reading.bpm <= 240 && reading.contact !== false) {
+      this.bpmSamples.push(reading.bpm);
+      if (this.bpmSamples.length > 5000) this.bpmSamples = this.bpmSamples.slice(-3000);
+    }
+    if (typeof reading.energyExpended === 'number') this.lastEnergy = reading.energyExpended;
     this.listeners.forEach(l => l(reading));
   };
 
-  private handleDisconnect() {
-    this.emitStatus('disconnected');
-  }
+  // gattserverdisconnected ハンドラ。意図的でない切断なら自動再接続を試みる。
+  private handleDisconnect = () => {
+    if (this.intentionalDisconnect) { this.emitStatus('disconnected'); return; }
+    this.hrChar = null;
+    this.server = null;
+    if (this.reconnectAttempts >= this.MAX_RECONNECT) {
+      this.emitStatus('disconnected', '再接続できませんでした。装着とデバイスの電源をご確認ください。');
+      return;
+    }
+    const attempt = ++this.reconnectAttempts;
+    const wait = Math.min(8000, 800 * Math.pow(2, attempt - 1)); // 0.8s→1.6→3.2→…上限8s
+    this.emitStatus('reconnecting', `再接続中… (${attempt}/${this.MAX_RECONNECT})`);
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = setTimeout(async () => {
+      if (this.intentionalDisconnect || !this.device) return;
+      try {
+        await this.openGatt(this.device);
+        this.reconnectAttempts = 0;
+        this.emitStatus('connected', this.info?.name);
+      } catch {
+        this.handleDisconnect(); // 次のバックオフへ
+      }
+    }, wait);
+  };
 
   async disconnect() {
+    this.intentionalDisconnect = true;
+    if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
     try {
       if (this.hrChar) {
         await this.hrChar.stopNotifications();
         this.hrChar.removeEventListener('characteristicvaluechanged', this.handleNotification);
       }
+      if (this.device) this.device.removeEventListener('gattserverdisconnected', this.handleDisconnect);
       if (this.server?.connected) this.server.disconnect();
     } catch { /* ignore */ }
     this.server = null;
     this.hrChar = null;
+    this.device = null;
     this.info = null;
     this.emitStatus('disconnected');
   }
@@ -145,6 +205,26 @@ export class HeartRateMonitor {
       sumSq += d * d;
     }
     return Math.sqrt(sumSq / (this.rrBuffer.length - 1));
+  }
+
+  /** この計測セッションの要約 (保存・医療記録用)。まだ十分なサンプルが無ければ null。 */
+  sessionSummary(): HRSessionSummary | null {
+    const s = this.bpmSamples;
+    if (s.length < 5) return null;
+    const sorted = [...s].sort((a, b) => a - b);
+    const sum = s.reduce((a, b) => a + b, 0);
+    const q = Math.max(1, Math.floor(sorted.length * 0.25));
+    const restingBpm = Math.round(sorted.slice(0, q).reduce((a, b) => a + b, 0) / q);
+    return {
+      avgBpm: Math.round(sum / s.length),
+      minBpm: sorted[0],
+      maxBpm: sorted[sorted.length - 1],
+      restingBpm,
+      hrvRmssd: Math.round(this.computeHRV()),
+      energyKj: Math.round(this.lastEnergy),
+      sampleCount: s.length,
+      durationSec: this.startedAt ? Math.round((Date.now() - this.startedAt) / 1000) : 0,
+    };
   }
 }
 

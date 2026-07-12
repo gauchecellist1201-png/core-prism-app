@@ -1,27 +1,43 @@
 import { useEffect, useRef, useState } from 'react';
-import { Activity, Bluetooth, Heart, AlertTriangle, BatteryFull } from 'lucide-react';
+import { Activity, Bluetooth, Heart, AlertTriangle, BatteryFull, Save, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PRISM, Pill } from '../prism/MockShell';
 import { HeartRateMonitor, isWebBluetoothSupported, type BleDeviceInfo, type HRReading } from '../../lib/webBluetoothHR';
+import { saveLiveHRSession, type HealthIdentity } from '../../lib/healthLiveSession';
 
 interface Props {
   onSample?: (r: HRReading) => void;
+  /** 計測結果を PHR (今日のカラダ) に保存するための本人識別。渡すと「保存」ボタンが出る。 */
+  identity?: HealthIdentity | null;
 }
 
-export function LiveHRPanel({ onSample }: Props) {
+export function LiveHRPanel({ onSample, identity }: Props) {
   const monitorRef = useRef<HeartRateMonitor | null>(null);
   const [info, setInfo] = useState<BleDeviceInfo | null>(null);
   const [bpm, setBpm] = useState<number | null>(null);
   const [hrv, setHrv] = useState<number | null>(null);
   const [contact, setContact] = useState<boolean | undefined>(undefined);
-  const [status, setStatus] = useState<'idle' | 'pairing' | 'connected' | 'disconnected' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'pairing' | 'connected' | 'reconnecting' | 'disconnected' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [trend, setTrend] = useState<number[]>([]);
   const [supported] = useState(isWebBluetoothSupported());
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
   useEffect(() => {
     return () => { monitorRef.current?.disconnect(); };
   }, []);
+
+  const saveSession = async () => {
+    const m = monitorRef.current;
+    if (!m || !identity) return;
+    const summary = m.sessionSummary();
+    if (!summary) { setSaveState('error'); setSaveMsg('もう少し計測してから保存してください（数十秒ほど）。'); return; }
+    setSaveState('saving'); setSaveMsg(null);
+    const r = await saveLiveHRSession(identity, summary);
+    setSaveState(r.ok ? 'saved' : 'error');
+    setSaveMsg(r.message);
+  };
 
   const connect = async () => {
     setError(null);
@@ -62,6 +78,8 @@ export function LiveHRPanel({ onSample }: Props) {
     setHrv(null);
     setStatus('idle');
     setTrend([]);
+    setSaveState('idle');
+    setSaveMsg(null);
   };
 
   return (
@@ -72,6 +90,8 @@ export function LiveHRPanel({ onSample }: Props) {
           <Pill color={PRISM.action}>● 接続中</Pill>
         ) : status === 'pairing' ? (
           <Pill color={PRISM.creative}>… ペアリング中</Pill>
+        ) : status === 'reconnecting' ? (
+          <Pill color={PRISM.creative}>… 再接続中</Pill>
         ) : (
           <Pill color="#9C9C9C">未接続</Pill>
         )}
@@ -152,8 +172,8 @@ export function LiveHRPanel({ onSample }: Props) {
             <button
               onClick={connect}
               disabled={!supported}
-              className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-medium disabled:opacity-40"
-              style={{ background: `${PRISM.action}1f`, color: PRISM.action, border: `1px solid ${PRISM.action}55` }}
+              className="flex items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-medium disabled:opacity-40"
+              style={{ minHeight: 44, background: `${PRISM.action}1f`, color: PRISM.action, border: `1px solid ${PRISM.action}55` }}
             >
               <Bluetooth className="h-3.5 w-3.5" />
               心拍計を接続
@@ -161,11 +181,31 @@ export function LiveHRPanel({ onSample }: Props) {
           ) : (
             <button
               onClick={disconnect}
-              className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-medium"
-              style={{ background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }}
+              className="flex items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-medium"
+              style={{ minHeight: 44, background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }}
             >
               切断
             </button>
+          )}
+
+          {/* 計測を PHR に保存 (identity が渡されているときのみ) */}
+          {identity && (status === 'connected' || status === 'reconnecting') && (
+            <button
+              onClick={saveSession}
+              disabled={saveState === 'saving'}
+              className="flex items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-medium disabled:opacity-50"
+              style={{ minHeight: 44, background: saveState === 'saved' ? 'rgba(52,211,153,0.16)' : 'rgba(255,255,255,0.06)', color: saveState === 'saved' ? '#34d399' : '#fff', border: '1px solid rgba(255,255,255,0.12)' }}
+            >
+              {saveState === 'saving' ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : saveState === 'saved' ? <Check className="h-3.5 w-3.5" />
+                : <Save className="h-3.5 w-3.5" />}
+              {saveState === 'saving' ? '保存中…' : saveState === 'saved' ? '保存しました' : 'この計測を保存'}
+            </button>
+          )}
+          {saveMsg && (
+            <div className="rounded-md px-2 py-1.5 text-[12px]" style={{ background: saveState === 'error' ? 'rgba(244,63,94,0.10)' : 'rgba(52,211,153,0.08)', color: saveState === 'error' ? '#fecdd3' : '#a7f3d0' }}>
+              {saveMsg}
+            </div>
           )}
 
           {error && (
@@ -211,3 +251,5 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
     </svg>
   );
 }
+
+export default LiveHRPanel;

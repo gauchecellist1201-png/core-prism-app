@@ -13,6 +13,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import HealthQuickInput from '../components/HealthQuickInput';
+import LiveHRPanel from '../components/health/LiveHRPanel';
+import { checkIngestStatus, type IngestStatus } from '../lib/healthLiveSession';
 
 interface Props {
   /** ログイン中ユーザーの email (BillingUser から渡す) */
@@ -68,6 +70,17 @@ function CodeBlock({ children, value }: { children: string; value?: string }) {
 
 export default function HealthShortcutGuide({ email, onClose }: Props) {
   const [hash, setHash] = useState<string>('');
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<IngestStatus | 'none' | null>(null);
+
+  const verifyConnection = async () => {
+    if (!hash) return;
+    setVerifying(true);
+    setVerifyResult(null);
+    const s = await checkIngestStatus({ kind: 'hash', id: hash });
+    setVerifyResult(s && s.count > 0 ? s : 'none');
+    setVerifying(false);
+  };
   const endpoint = useMemo(() => {
     if (typeof window === 'undefined') return '/api/health/ingest';
     return `${window.location.origin}/api/health/ingest`;
@@ -119,9 +132,9 @@ export default function HealthShortcutGuide({ email, onClose }: Props) {
       <header className="flex items-start justify-between gap-3">
         <div>
           <div className="text-[10px] tracking-[0.18em] font-semibold uppercase opacity-60">体調を記録する</div>
-          <h2 className="text-lg sm:text-xl font-semibold mt-1">2 つの方法から、好きなほうで</h2>
+          <h2 className="text-lg sm:text-xl font-semibold mt-1">3 つの方法から、好きなものを</h2>
           <p className="text-sm opacity-70 mt-1">
-            むずかしい設定は不要です。まずは下の「かんたん入力」だけで十分。Apple Watch をお持ちの方は、自動同期も選べます。
+            むずかしい設定は不要です。まずは「かんたん入力」だけで十分。心拍計をお持ちなら今すぐライブ計測、Apple Watch をお持ちなら毎朝の自動同期も選べます。
           </p>
         </div>
         {onClose && (
@@ -148,9 +161,24 @@ export default function HealthShortcutGuide({ email, onClose }: Props) {
         <HealthQuickInput accent="#8E5CFF" />
       </section>
 
+      {/* 方法 B — 心拍計をいま接続 (Web Bluetooth・ライブ計測) */}
+      <section className="space-y-2 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
+        <div className="text-sm font-semibold flex items-center gap-2">
+          <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', background: '#2E6FFF', padding: '2px 7px', borderRadius: 999 }}>ライブ</span>
+          方法 B — 心拍計をいま接続して測る（Bluetooth）
+        </div>
+        <p className="text-xs opacity-70">
+          Polar・Wahoo・Garmin などの心拍センサーをその場で接続し、心拍と HRV をリアルタイム表示します。「この計測を保存」で今日の記録に残せます。
+          <span className="opacity-60">（Chrome / Edge / Brave。iPhone の Safari は非対応なので、iPhone だけの方は下の「自動同期」をどうぞ）</span>
+        </p>
+        {hash
+          ? <LiveHRPanel identity={{ kind: 'hash', id: hash }} />
+          : <div className="text-xs opacity-60 rounded-md px-3 py-2" style={{ background: 'rgba(255,255,255,0.05)' }}>ログインすると心拍計を接続できます。</div>}
+      </section>
+
       {/* くわしい方向け: Apple Watch 自動同期 */}
       <div className="text-sm font-semibold pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
-        方法 B — Apple Watch 自動同期（くわしい方向け・一度だけ設定）
+        方法 C — Apple Watch 自動同期（毎朝おまかせ・一度だけ設定）
       </div>
       <p className="text-xs opacity-60">
         以下は上級者向けです。設定すると、毎朝 iPhone が自動で歩数・睡眠・心拍・体重を届けます。むずかしければ、上の「かんたん入力」だけで OK です。
@@ -213,6 +241,42 @@ export default function HealthShortcutGuide({ email, onClose }: Props) {
           ターミナルに貼り付けて実行すると、ダミーの 1 日分が登録されます。ダッシュボードの「今日のカラダ」に反映されます。
         </p>
         <CodeBlock value={curlSample}>{curlSample}</CodeBlock>
+      </section>
+
+      {/* Step 4: 接続を確認 (実データ受信の可視化) */}
+      <section className="space-y-2">
+        <div className="text-sm font-semibold">⑤ ちゃんと届いたか確認する</div>
+        <p className="text-xs opacity-70">
+          ショートカットを一度手で実行するか、上の curl を実行してから押してください。サーバーに届いていれば、最新の数値を表示します。
+        </p>
+        <button
+          type="button"
+          onClick={verifyConnection}
+          disabled={verifying || !hash}
+          className="text-sm font-medium rounded-lg px-4 disabled:opacity-50"
+          style={{ minHeight: 44, background: 'rgba(46,111,255,0.16)', color: '#7aa2ff', border: '1px solid rgba(46,111,255,0.35)' }}
+        >
+          {verifying ? '確認中…' : '接続を確認する'}
+        </button>
+        {verifyResult === 'none' && (
+          <div className="text-xs rounded-md px-3 py-2" style={{ background: 'rgba(251,191,36,0.10)', color: '#fcd34d' }}>
+            まだデータが届いていません。ショートカット（または curl）を一度実行してから、もう一度お試しください。永続保存にはサーバーの保存設定（Upstash）が必要です。
+          </div>
+        )}
+        {verifyResult && verifyResult !== 'none' && (
+          <div className="text-xs rounded-md px-3 py-2 space-y-1" style={{ background: 'rgba(52,211,153,0.10)', color: '#a7f3d0' }}>
+            <div className="font-semibold">✓ 受信できています（{verifyResult.count} 日分）。</div>
+            {verifyResult.latestDate && (
+              <div className="opacity-90">
+                最新 {verifyResult.latestDate}：
+                {verifyResult.latest?.restingHR != null && ` 安静時心拍 ${verifyResult.latest.restingHR}bpm`}
+                {verifyResult.latest?.heartRate != null && ` / 心拍 ${verifyResult.latest.heartRate}bpm`}
+                {verifyResult.latest?.steps != null && ` / 歩数 ${verifyResult.latest.steps}`}
+                {verifyResult.latest?.sleepHours != null && ` / 睡眠 ${verifyResult.latest.sleepHours}h`}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* fine print */}
