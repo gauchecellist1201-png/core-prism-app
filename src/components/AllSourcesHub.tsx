@@ -23,8 +23,8 @@ interface Source {
   brand: BrandName;
   emoji: string;
   color: string;
-  what: string;          // 何を 取得 する か
-  why: string;           // 役員 が 何 が できる ように なる か
+  what: string;          // 何を取得するか
+  why: string;           // 役員が何をできるようになるか
   status: 'connected' | 'available' | 'phase2';
   onConnect?: () => Promise<void>;
 }
@@ -36,7 +36,7 @@ const SOURCES_INIT: Source[] = [
     brand: 'gmail',
     emoji: '📧', color: '#EA4335',
     what: 'メール / スレッド',
-    why: '案件 候補 抽出、 返信 下書き、 督促 検知',
+    why: '案件候補の抽出・返信の下書き・督促の検知',
     status: 'available',
   },
   {
@@ -45,7 +45,7 @@ const SOURCES_INIT: Source[] = [
     brand: 'gcalendar',
     emoji: '📅', color: '#4285F4',
     what: '予定 / 会議',
-    why: '空き 時間 提案、 商談 後 の フォロー 自動 化',
+    why: '空き時間の提案・商談後のフォロー自動化',
     status: 'available',
   },
   {
@@ -53,8 +53,8 @@ const SOURCES_INIT: Source[] = [
     name: 'Docs',
     brand: 'gdocs',
     emoji: '📄', color: '#4285F4',
-    what: 'ドキュメント 本文',
-    why: '資料 を ナレッジ 化 → 役員 が 文脈 で 回答',
+    what: 'ドキュメント本文',
+    why: '資料をナレッジ化 → 役員が文脈をふまえて回答',
     status: 'available',
   },
   {
@@ -63,7 +63,7 @@ const SOURCES_INIT: Source[] = [
     brand: 'stripe',
     emoji: '💳', color: '#635BFF',
     what: '売上 / 顧客 / 解約',
-    why: 'MRR / 解約 兆候 / 入金 予測',
+    why: 'MRR・解約の兆候・入金予測',
     status: 'available',
   },
   {
@@ -72,7 +72,7 @@ const SOURCES_INIT: Source[] = [
     brand: 'instagram',
     emoji: '📸', color: '#E4405F',
     what: '投稿 / DM / フォロワー',
-    why: '案件 DM 自動 仕分け、 投稿 案 / リール 台本',
+    why: '案件DMの自動仕分け・投稿案 / リール台本づくり',
     status: 'phase2',
   },
   {
@@ -81,16 +81,16 @@ const SOURCES_INIT: Source[] = [
     brand: 'tiktok',
     emoji: '🎵', color: '#000000',
     what: '動画 / コメント / 分析',
-    why: 'バズ パターン 抽出、 次 投稿 の 設計',
+    why: 'バズるパターンの抽出・次の投稿の設計',
     status: 'phase2',
   },
   {
     key: 'meeting',
-    name: '会議 録音',
+    name: '会議録音',
     brand: 'meeting',
     emoji: '🎙️', color: '#A855F7',
-    what: 'Zoom / Meet / iPhone 録音',
-    why: '議事 録 自動 生成 + 次 アクション 抽出',
+    what: 'Zoom / Meet / iPhone録音',
+    why: '議事録の自動生成＋次アクションの抽出',
     status: 'available',
   },
   {
@@ -99,7 +99,7 @@ const SOURCES_INIT: Source[] = [
     brand: 'slack',
     emoji: '💬', color: '#4A154B',
     what: 'メッセージ / DM',
-    why: 'チーム 動向、 重要 通知 抜粋',
+    why: 'チームの動向・重要な通知の抜粋',
     status: 'phase2',
   },
   {
@@ -107,8 +107,8 @@ const SOURCES_INIT: Source[] = [
     name: 'LINE',
     brand: 'line',
     emoji: '💚', color: '#06C755',
-    what: 'メッセージ / 公式 アカウント',
-    why: '顧客 連絡、 配信 自動 化',
+    what: 'メッセージ / 公式アカウント',
+    why: '顧客への連絡・配信の自動化',
     status: 'available',
   },
 ];
@@ -137,7 +137,7 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
 
   const handleConnect = async (s: Source) => {
     if (s.status === 'phase2') {
-      setToast(`${s.name} 連携 は 次 フェーズ で 実装 予定 です`);
+      setToast(`${s.name}の連携は次のフェーズで対応予定です`);
       window.setTimeout(() => setToast(''), 2500);
       return;
     }
@@ -153,10 +153,10 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
       try {
         await g.fn();
         g.set(true);
-        setToast(`✓ ${g.label} を 連携 しました`);
+        setToast(`✓ ${g.label}を連携しました`);
         window.setTimeout(() => setToast(''), 2500);
       } catch (e: any) {
-        setToast(`${g.label} 連携 に 失敗: ${e?.message || ''}`);
+        setToast(`${g.label}の連携に失敗: ${e?.message || ''}`);
         window.setTimeout(() => setToast(''), 5000);
       } finally { setBusy(null); }
       return;
@@ -166,7 +166,7 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
       onOpenIntegration(s.key);
       return;
     }
-    setToast(`${s.name} は 環境 設定 → 連携 から 接続 して ください`);
+    setToast(`${s.name}は「環境設定 → 連携」から接続してください`);
     window.setTimeout(() => setToast(''), 3000);
   };
 
@@ -197,17 +197,17 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h3 style={{ fontSize: 14, fontWeight: 900, color: 'var(--fg-strong)', margin: 0, letterSpacing: '-0.01em' }}>
-            最強 の RAG — 全 ソース 連携 ハブ
+            全ソース連携ハブ — つなぐほど賢くなる
           </h3>
           <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 2 }}>
-            {connectedCount} / {sources.length} 連携 中 · 繋ぐ ほど 役員 が 賢く なります
+            {connectedCount} / {sources.length} 連携中 · つなぐほど役員が賢くなります
           </div>
         </div>
       </div>
 
       <p style={{ fontSize: 11.5, color: 'var(--fg-muted)', lineHeight: 1.55, margin: '0 0 12px' }}>
-        全ての ツール を プリズム に 入れる ほど、 役員 が 「この 案件 は X で 触れて、 Y で 反応 良い」 と
-        横断 で 意思決定 できる 様 に。
+        使っているツールをプリズムに入れるほど、役員が「この案件はXで接点があって、Yで反応が良い」と
+        横断で判断できるようになります。
       </p>
 
       {/* グリッド */}
@@ -266,7 +266,7 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
               <span style={{ color: 'var(--fg-strong)', fontWeight: 700 }}>取得:</span> {s.what}
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--fg-muted)', lineHeight: 1.5, marginTop: 2 }}>
-              <span style={{ color: s.color, fontWeight: 700 }}>役員 が:</span> {s.why}
+              <span style={{ color: s.color, fontWeight: 700 }}>役員が:</span> {s.why}
             </div>
           </button>
         ))}
