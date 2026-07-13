@@ -4,7 +4,7 @@
 // ============================================================
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, PhoneOff, Volume2 } from 'lucide-react';
+import { Mic, PhoneOff, Volume2, RotateCcw } from 'lucide-react';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { enqueueClaudeCall } from '../lib/apiQueue';
@@ -40,6 +40,25 @@ ${context ? `\n## 現在のコンテキスト\n${context}\n` : ''}
 - 絵文字・記号は使わない (音声で読み上げると変なので)
 - 不明なら「もう少し教えてもらえますか？」と返す`;
 
+// 生のエラー (HTTP コードや英語) を、電話中でも一目で分かるやさしい日本語に変換する。
+function friendlyVoiceError(raw: string): string {
+  const s = raw || '';
+  if (/時間内|timeout|タイムアウト|時間がかかり/i.test(s)) {
+    return '電波が不安定で、AIの返事が届きませんでした。';
+  }
+  if (/混みあ|混雑|quota|rate limit|429|overload|5\d\d/i.test(s)) {
+    return 'AIが一時的に混みあっています。少し待ってからもう一度試してください。';
+  }
+  if (/network|fetch|接続|オフライン|offline/i.test(s)) {
+    return 'ネットワークにつながりませんでした。電波をご確認ください。';
+  }
+  // すでに短い日本語メッセージ (userMessage 等) ならそのまま活かす
+  if (/[ぁ-んァ-ン一-龠]/.test(s) && s.length <= 60 && !/HTTP|http/.test(s)) {
+    return s;
+  }
+  return 'うまく返事できませんでした。もう一度試してください。';
+}
+
 export default function VoiceConversation({ open, onClose, brand, accentColor, context }: Props) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [phase, setPhase] = useState<'idle' | 'connecting' | 'ai-speaking' | 'listening' | 'processing'>('idle');
@@ -51,12 +70,11 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
 
   const tts = useTextToSpeech({ lang: 'ja-JP', preferGender: 'female' });
 
-  // 自動的に listening を開始するため continuous=false で短いセグメント取得
-  const handleResult = useCallback(async (text: string, isFinal: boolean) => {
-    if (!isFinal || !text.trim()) return;
+  // AI 呼び出し本体 — 初回・リトライの両方から使う。会話履歴 (末尾が user) を渡すと
+  // その続きを生成する。失敗しても直前の user 発話は turns に残るので「もう一度試す」で再送できる。
+  const runAiTurn = useCallback(async (convo: Turn[]) => {
+    setErrorMsg(null);
     setPhase('processing');
-    const next: Turn[] = [...turnsRef.current, { role: 'user', text, ts: Date.now() }];
-    setTurns(next);
     try {
       const reply = await enqueueClaudeCall(async () => {
         const res = await fetch('/api/ai', {
@@ -66,7 +84,7 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
             model: 'claude-haiku-4-5',
             max_tokens: 200,
             system: SYSTEM_PROMPT(brand, context),
-            messages: next.slice(-10).map(t => ({ role: t.role, content: t.text })),
+            messages: convo.slice(-10).map(t => ({ role: t.role, content: t.text })),
           }),
         });
         if (!res.ok) {
@@ -90,10 +108,35 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
         },
       });
     } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : String(e));
+      // 生の HTTP コードではなく、やさしい日本語で伝える。復旧はエラー内の「もう一度試す」で。
+      setErrorMsg(friendlyVoiceError(e instanceof Error ? e.message : String(e)));
       setPhase('idle');
     }
   }, [brand, context, open, tts]);
+
+  // 自動的に listening を開始するため continuous=false で短いセグメント取得
+  const handleResult = useCallback(async (text: string, isFinal: boolean) => {
+    if (!isFinal || !text.trim()) return;
+    const next: Turn[] = [...turnsRef.current, { role: 'user', text, ts: Date.now() }];
+    setTurns(next);
+    await runAiTurn(next);
+  }, [runAiTurn]);
+
+  // 「もう一度試す」— 直前に話した内容 (turns 末尾の user 発話) をそのまま AI へ再送。
+  // ユーザーが話し直す必要をなくす復旧導線。
+  const retryLastTurn = useCallback(() => {
+    const convo = turnsRef.current;
+    // 末尾が user 発話でない (＝送るものがない) 場合はマイクを開いて話してもらう
+    if (convo.length === 0 || convo[convo.length - 1].role !== 'user') {
+      setErrorMsg(null);
+      tts.cancel();
+      voice.reset();
+      voice.start();
+      setPhase('listening');
+      return;
+    }
+    void runAiTurn(convo);
+  }, [runAiTurn, tts]);
 
   const voice = useVoiceInput(handleResult, {
     lang: 'ja-JP',
@@ -300,16 +343,39 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
         {errorMsg && (
           <div style={{
             marginTop: 16,
-            padding: '10px 14px',
+            padding: '14px 16px',
             background: 'rgba(248,113,113,0.15)',
             border: '1px solid rgba(248,113,113,0.4)',
             borderRadius: 12,
-            fontSize: 12,
+            fontSize: 13,
             color: '#fca5a5',
             maxWidth: 380,
             textAlign: 'center',
+            display: 'grid',
+            gap: 12,
+            justifyItems: 'center',
           }}>
-            ⚠ {errorMsg}
+            <span style={{ lineHeight: 1.6 }}>{errorMsg}</span>
+            <button
+              onClick={retryLastTurn}
+              disabled={phase === 'processing'}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '9px 18px',
+                borderRadius: 999,
+                border: 'none',
+                background: phase === 'processing' ? 'rgba(255,255,255,0.15)' : accentColor,
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: phase === 'processing' ? 'default' : 'pointer',
+                opacity: phase === 'processing' ? 0.7 : 1,
+              }}
+              aria-label="もう一度試す"
+            >
+              <RotateCcw size={15} strokeWidth={2.4} />
+              {phase === 'processing' ? '送信中…' : 'もう一度試す'}
+            </button>
           </div>
         )}
       </div>
