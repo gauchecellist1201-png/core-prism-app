@@ -1098,6 +1098,10 @@ export default function IdentityDashboard({
                 />
               </div>
 
+              {/* 二次カード群は「奥へ整理」— モバイルは初期画面をスッキリさせ、
+                  『すべての機能を見る』展開時のみ表示。デスクトップは常時表示のまま
+                  (2026-07-13 夜間: トップを分かりやすく・ごちゃごちゃ解消) */}
+              <div className={dashboardExpanded ? 'space-y-3' : 'hidden md:block space-y-3'}>
               {/* 🏢 デジタル 会社 ヒーロー — 「役員 会議室」 (2026-06-05 オーナー指示) */}
               <DigitalCompanyHero
                 persona={persona}
@@ -1134,6 +1138,7 @@ export default function IdentityDashboard({
 
               {/* ✨ バイラル投稿スタジオ (X/Threads): テーマ→分析→生成→投稿 */}
               <ViralStudioCard />
+              </div>
 
               {/* PC 専用: 焦点モード (今日の最優先 1 つ + 数字 1 行) — iPhone では上のブリーフ + 売上に置き換え */}
               <div className="hidden md:block">
