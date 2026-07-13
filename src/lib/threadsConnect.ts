@@ -57,14 +57,14 @@ export interface ThreadsPostResult {
   posted?: string[];
 }
 
-/** 返信チェーンを連投。成功/失敗いずれも意味あるメッセージ付きで返す。 */
-export async function postThreadsChain(posts: string[]): Promise<ThreadsPostResult> {
+/** 返信チェーンを連投。images[i] は posts[i] に添付する公開画像URL（任意）。 */
+export async function postThreadsChain(posts: string[], images?: (string | null)[]): Promise<ThreadsPostResult> {
   const uid = getThreadsUid();
   try {
     const res = await fetch('/api/threads/post', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid, posts }),
+      body: JSON.stringify({ uid, posts, images }),
     });
     const data = (await res.json().catch(() => ({}))) as ThreadsPostResult;
     if (!res.ok) {
@@ -126,5 +126,67 @@ export function translateThreadsError(code?: string): string {
       return 'Threads側で「許可しない」が選ばれました。連携するには「許可」を押してください。';
     default:
       return `Threads連携でエラーが発生しました（${code || '不明'}）。もう一度お試しください。`;
+  }
+}
+
+
+// ─── 予約（自動投稿）────────────────────────────────
+export interface ThreadsSchedule {
+  id: string;
+  scheduledAt: string;
+  posts: string[];
+  images?: (string | null)[];
+  status: 'pending' | 'sent' | 'failed';
+  createdAt: number;
+  sentAt?: number;
+  error?: string;
+  urls?: string[];
+}
+
+/** 予約一覧を取得（時刻順）。失敗時は空配列。 */
+export async function fetchThreadsSchedules(): Promise<ThreadsSchedule[]> {
+  const uid = getThreadsUid();
+  try {
+    const res = await fetch(`/api/threads/schedule?uid=${encodeURIComponent(uid)}`);
+    const data = await res.json().catch(() => ({}));
+    return res.ok && Array.isArray(data.items) ? (data.items as ThreadsSchedule[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 予約を作成。成功なら item、失敗なら message 入りで返す。 */
+export async function createThreadsSchedule(
+  scheduledAt: string,
+  posts: string[],
+  images?: (string | null)[],
+): Promise<{ ok: boolean; item?: ThreadsSchedule; message?: string }> {
+  const uid = getThreadsUid();
+  try {
+    const res = await fetch('/api/threads/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid, scheduledAt, posts, images }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, message: data.message || '予約に失敗しました。時間をおいて再度お試しください。' };
+    return { ok: true, item: data.item as ThreadsSchedule };
+  } catch {
+    return { ok: false, message: '通信に失敗しました。電波状況を確認して再度お試しください。' };
+  }
+}
+
+/** 予約を削除。 */
+export async function deleteThreadsSchedule(id: string): Promise<boolean> {
+  const uid = getThreadsUid();
+  try {
+    const res = await fetch('/api/threads/schedule', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid, id }),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
