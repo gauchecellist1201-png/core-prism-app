@@ -1124,20 +1124,24 @@ export default function IdentityDashboard({
                 try { document.getElementById('command-tower')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* */ }
               }} />
 
-              {/* 📧 Gmail インサイト (2026-06-05 オーナー指示: 連携 = 価値) */}
-              <GmailInsightsCard />
+              {/* 連携・スタジオ系は初期画面の密度を下げる: モバイルは「すべての機能を見る」展開後に整理
+                  (2026-07-13 分かりやすさ: ごちゃごちゃ解消。デスクトップは常時表示・機能は消さない) */}
+              <div className={`space-y-3 ${dashboardExpanded ? '' : 'hidden md:block'}`}>
+                {/* 📧 Gmail インサイト (2026-06-05 オーナー指示: 連携 = 価値) */}
+                <GmailInsightsCard />
 
-              {/* 📆 Google カレンダー(隙間時間→会議登録) & ドキュメント(→ナレッジ) 実連携 */}
-              <GoogleSuiteCard onIngestKnowledge={onAddKnowledgeNote} />
+                {/* 📆 Google カレンダー(隙間時間→会議登録) & ドキュメント(→ナレッジ) 実連携 */}
+                <GoogleSuiteCard onIngestKnowledge={onAddKnowledgeNote} />
 
-              {/* ✨ 最強 RAG — 全 ソース 連携 ハブ (Instagram / TikTok 含む) */}
-              <AllSourcesHub onOpenIntegration={(id) => {
-                if (id === 'meeting') { setShowMeeting(true); return; }
-                setIntegrationsFocusId(id); setShowIntegrations(true);
-              }} />
+                {/* ✨ 最強 RAG — 全 ソース 連携 ハブ (Instagram / TikTok 含む) */}
+                <AllSourcesHub onOpenIntegration={(id) => {
+                  if (id === 'meeting') { setShowMeeting(true); return; }
+                  setIntegrationsFocusId(id); setShowIntegrations(true);
+                }} />
 
               {/* ✨ バイラル投稿スタジオ (X/Threads): テーマ→分析→生成→投稿 */}
               <ViralStudioCard />
+              </div>
               </div>
 
               {/* PC 専用: 焦点モード (今日の最優先 1 つ + 数字 1 行) — iPhone では上のブリーフ + 売上に置き換え */}
