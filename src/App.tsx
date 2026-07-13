@@ -416,7 +416,7 @@ export default function App() {
 
   // /continuum — CORE Continuum 特設LP(旗艦ブランド・金×黒)
   if (window.location.pathname === '/continuum' || window.location.pathname.startsWith('/continuum/')) {
-    return <Suspense fallback={<RouteFallback />}><ContinuumLanding /><LpStickyCta title="仕事は、AIの仕事に。あなたは、人生に。" sub="CORE Continuum ── 6つのAIをひとつに" cta="プランを見る" href="#plans" accent1="#e9cd8a" accent2="#c9a24b" /></Suspense>;
+    return <Suspense fallback={<RouteFallback />}><ContinuumLanding /><LpStickyCta title="あなたが働かなくても、お店が回る。" sub="CORE Continuum ── 6つのAIをひとつに" cta="プランを見る" href="#plans" accent1="#e9cd8a" accent2="#c9a24b" /></Suspense>;
   }
 
   // /master/stripe-status — オーナー専用 Stripe 接続診断

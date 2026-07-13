@@ -614,7 +614,7 @@ export default function CoreSite() {
             </p>
             <h2
               style={{
-                fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.8rem, 4.2vw, 3rem)', fontWeight: 700, lineHeight: 1.65, letterSpacing: '0.04em',
+                fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.55rem, 4.2vw, 3rem)', fontWeight: 700, lineHeight: 1.65, letterSpacing: '0.04em',
                 background: 'linear-gradient(120deg, #F7EAD0, #C9A96E)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 marginBottom: '1.3rem',
               }}

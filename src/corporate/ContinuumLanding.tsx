@@ -110,7 +110,7 @@ export default function ContinuumLanding() {
           </div>
         </div>
 
-        <h1 className="ct-shimmer" style={{ fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: 'clamp(1.95rem, 6.6vw, 3.7rem)', lineHeight: 1.6, letterSpacing: '0.05em', margin: '2.5rem 0 1.3rem', position: 'relative' }}>
+        <h1 className="ct-shimmer" style={{ fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: 'clamp(1.58rem, 6.9vw, 3.7rem)', lineHeight: 1.6, letterSpacing: '0.05em', margin: '2.5rem 0 1.3rem', position: 'relative' }}>
           あなたが働かなくても、
           <br />
           お店が回る。
