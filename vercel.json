@@ -77,6 +77,8 @@
     { "source": "/iris/(.*)", "destination": "/iris.html" },
     { "source": "/crystal",     "destination": "/crystal.html" },
     { "source": "/crystal/",    "destination": "/crystal.html" },
+    { "source": "/continuum",     "destination": "/continuum.html" },
+    { "source": "/continuum/",    "destination": "/continuum.html" },
     { "source": "/corp",     "destination": "/corp.html" },
     { "source": "/corp/",    "destination": "/corp.html" },
     { "source": "/corp/(.*)", "destination": "/corp.html" },
