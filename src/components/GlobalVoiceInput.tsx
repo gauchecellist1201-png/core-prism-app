@@ -300,9 +300,15 @@ export default function GlobalVoiceInput() {
 
   if (!target || !rect) return feedbackToast;
 
-  // マイクボタンは入力欄の右上内側に配置
-  const size = 30;
-  const left = Math.min(window.innerWidth - size - 6, rect.right - size - 6);
+  // マイクボタンは入力欄の右上内側に配置。
+  // ★分かりやすさ最優先: まだ音声入力を使ったことがない人には「話して入力」のラベル付きピルで出す
+  //   （アイコンだけだと気づかれない）。一度使ったら以後はコンパクトな丸アイコンに。
+  let voiceUsed = false;
+  try { voiceUsed = localStorage.getItem('core_voice_used_v1') === '1'; } catch { /* noop */ }
+  const showLabel = !voiceUsed && !listening;
+  const size = 34;
+  const pillW = showLabel ? 118 : size;
+  const left = Math.min(window.innerWidth - pillW - 6, rect.right - pillW - 6);
   const top = Math.max(6, rect.top + (rect.height - size) / 2);
 
   return (
@@ -314,32 +320,43 @@ export default function GlobalVoiceInput() {
       data-voice-mic="1"
       aria-label={listening ? '音声入力を止める' : '音声で入力'}
       onMouseDown={(e) => e.preventDefault()} // 入力欄の focus を奪わない
-      onClick={() => (listening ? stop() : start())}
+      onClick={() => {
+        try { localStorage.setItem('core_voice_used_v1', '1'); } catch { /* noop */ }
+        listening ? stop() : start();
+      }}
       style={{
         position: 'fixed',
         left, top,
-        width: size, height: size,
-        borderRadius: '50%',
+        width: pillW, height: size,
+        borderRadius: 999,
         border: 'none',
         cursor: 'pointer',
         zIndex: 45, /* モーダル(≥50)より下・ダッシュボードより上。総括等のモーダルを覆わない */
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        padding: showLabel ? '0 12px' : 0,
         background: listening
           ? 'linear-gradient(135deg, #EF4444, #F87171)'
           : 'linear-gradient(135deg, #2E6FFF, #8E5CFF)',
         color: '#fff',
+        fontSize: 12.5, fontWeight: 800, letterSpacing: '0.02em', whiteSpace: 'nowrap',
         boxShadow: listening
           ? '0 0 0 4px rgba(239,68,68,0.25), 0 4px 12px rgba(239,68,68,0.5)'
-          : '0 4px 12px rgba(46,111,255,0.45)',
+          : '0 4px 14px rgba(46,111,255,0.5)',
         transition: 'background var(--cp-duration-fast) var(--cp-ease-smooth)',
-        animation: listening ? 'voiceMicPulse 1.1s ease-in-out infinite' : 'none',
+        animation: listening ? 'voiceMicPulse 1.1s ease-in-out infinite' : showLabel ? 'voiceMicHello 2.4s ease-in-out infinite' : 'none',
       }}
     >
       {listening ? <Loader2 size={15} className="voice-spin" /> : <Mic size={15} />}
+      {showLabel && <span>話して入力</span>}
       <style>{`
         @keyframes voiceMicPulse {
           0%, 100% { box-shadow: 0 0 0 3px rgba(239,68,68,0.25), 0 4px 12px rgba(239,68,68,0.5); }
           50%      { box-shadow: 0 0 0 8px rgba(239,68,68,0.05), 0 4px 12px rgba(239,68,68,0.5); }
+        }
+        /* 初見向け: そっと呼吸して「押せる」ことを知らせる（うるさくならない振幅） */
+        @keyframes voiceMicHello {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(46,111,255,0.35), 0 4px 14px rgba(46,111,255,0.5); }
+          50%      { box-shadow: 0 0 0 7px rgba(46,111,255,0.08), 0 4px 14px rgba(46,111,255,0.5); }
         }
         .voice-spin { animation: voiceSpin 1s linear infinite; }
         @keyframes voiceSpin { to { transform: rotate(360deg); } }

@@ -33,6 +33,56 @@ const PLATFORM_PLANS: Array<{
   { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: 'https://crystal-nine-self.vercel.app/', Logo: CrystalLogo, step: 'STEP 5 — 最上位のおもてなし', featured: true },
 ];
 
+// ── CORE Continuum（旗艦ブランド）— 6サービス統合パッケージ ──
+// 訴求: 仕事をAIに全部任せ、仕事時間をほぼゼロへ。空いた時間で人生を豊かに。
+// stripeUrl: オーナーがStripe決済リンクを作成したらここに貼るだけでボタンが「このプランで始める」に変わる。
+// 空文字の間は mailto の個別相談に自動フォールバック（動かないボタンを出さない）。
+const CONTINUUM_PLANS: Array<{
+  name: string; tag: string; price: string; setup?: string; compare?: string;
+  features: string[]; stripeUrl: string; featured?: boolean;
+}> = [
+  {
+    name: 'Continuum Light',
+    tag: 'まず3つの仕事を、AIに手放す',
+    price: '¥29,800',
+    compare: '単品合計より 約40% お得',
+    features: [
+      '6サービスから選べる3つ（いつでも入替可）',
+      'ぜんぶ上位プランでご利用OK',
+      'ひとつのCOREアカウントで横断',
+      'メールサポート',
+    ],
+    stripeUrl: '', // ← Stripeリンクをここに
+  },
+  {
+    name: 'Continuum Complete',
+    tag: '事業のぜんぶを、AIの仕事に',
+    price: '¥49,800',
+    compare: '単品合計 約¥109,000 相当 → 半額以下',
+    features: [
+      '6サービスすべて使い放題（各上位プラン）',
+      '返信・集客・接客・予約・分析まで全自動',
+      '月次「時間レポート」— AIが代行した仕事量と、あなたに戻った時間を見える化',
+      '優先サポート',
+    ],
+    stripeUrl: '', // ← Stripeリンクをここに
+    featured: true,
+  },
+  {
+    name: 'Continuum Zero',
+    tag: '仕事時間“ほぼゼロ”を、一緒に設計する',
+    price: '¥148,000',
+    setup: '¥298,000',
+    features: [
+      'Complete の全部',
+      '導入・初期構築・運用チューニングまで完全代行（あなたの作業ゼロで立ち上がる）',
+      '専属コンシェルジュによる月次レビュー',
+      '四半期ライフプラン面談 — 戻った時間を「人間関係・趣味・家族」へどう使うかまで一緒に描く',
+    ],
+    stripeUrl: '', // ← Stripeリンクをここに
+  },
+];
+
 // 荘厳系フォント
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
@@ -166,6 +216,7 @@ export default function CoreSite() {
           </a>
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
             <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
+            <a href="#continuum" style={navLink} className="lp-nav-link">Continuum</a>
             <a href="#connect" style={navLink} className="lp-nav-link">つながり</a>
             <a href="#journey" style={navLink} className="lp-nav-link">歩み</a>
             <a href="#about" style={navLink} className="lp-nav-link">会社概要</a>
@@ -589,6 +640,109 @@ export default function CoreSite() {
           </div>
           <p style={{ textAlign: 'center', marginTop: '1.6rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(0,0,0,0.4)', lineHeight: 1.9 }}>
             ※ 価格は税込・月額の入口プランです。詳細は各プロダクトのページでご確認ください。
+          </p>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  CORE CONTINUUM — 統合パッケージ(旗艦ブランド)  */}
+      {/*  訴求: 仕事をAIエージェントに全部任せ、仕事時間をほぼゼロへ。 */}
+      {/*  空いた時間で人生(人間関係・趣味・家族)を豊かに = ライフプランの見直し。 */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section
+        id="continuum"
+        className="lp-section-pad"
+        style={{ padding: '7rem 1.5rem', background: 'radial-gradient(120% 100% at 50% 0%, #101010 0%, #060606 70%)', scrollMarginTop: 70 }}
+      >
+        <div style={{ maxWidth: 1120, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.74rem', letterSpacing: '0.34em', color: '#C9A96E', textTransform: 'uppercase', marginBottom: '1.1rem' }}>
+              CORE Continuum
+            </p>
+            <h2
+              style={{
+                fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.8rem, 4.2vw, 3rem)', fontWeight: 700, lineHeight: 1.65, letterSpacing: '0.04em',
+                background: 'linear-gradient(120deg, #F7EAD0, #C9A96E)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                marginBottom: '1.3rem',
+              }}
+            >
+              仕事は、AIの仕事に。
+              <br />
+              あなたは、人生に。
+            </h2>
+            <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.95rem, 1.45vw, 1.05rem)', lineHeight: 2.15, maxWidth: 660, margin: '0 auto' }}>
+              六つのAIエージェントがあなたの事業を全自動で回し、仕事にかける時間を<strong style={{ color: '#E7C987', fontWeight: 600 }}>ほぼゼロ</strong>へ。
+              返信も、集客も、接客も、予約も、経営の数字も —— ぜんぶAIの仕事に。
+              <br />
+              空いた時間で、大切な人と過ごす。趣味に没頭する。人生の計画を、立て直す。
+              <br />
+              それが、CORE Continuum が届ける生き方です。
+            </p>
+          </div>
+
+          {/* 3プラン(Ascension: Light → Complete(推奨) → Zero) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.1rem', alignItems: 'stretch' }}>
+            {CONTINUUM_PLANS.map(pl => (
+              <div
+                key={pl.name}
+                style={{
+                  display: 'flex', flexDirection: 'column', gap: '0.9rem', position: 'relative',
+                  borderRadius: 20, padding: pl.featured ? '2.1rem 1.7rem' : '1.8rem 1.6rem',
+                  background: pl.featured
+                    ? 'linear-gradient(165deg, rgba(201,169,110,0.16), rgba(201,169,110,0.03))'
+                    : 'rgba(255,255,255,0.03)',
+                  border: pl.featured ? '1px solid rgba(201,169,110,0.65)' : '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: pl.featured ? '0 34px 80px -36px rgba(201,169,110,0.55)' : 'none',
+                }}
+              >
+                {pl.featured && (
+                  <span style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', fontFamily: FONT_SANS, fontSize: '0.64rem', fontWeight: 800, letterSpacing: '0.16em', color: '#141414', background: 'linear-gradient(90deg,#E7C987,#C9A96E)', borderRadius: 999, padding: '5px 14px' }}>
+                    いちばん選ばれています
+                  </span>
+                )}
+                <div>
+                  <p style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.2rem', letterSpacing: '0.1em', color: '#F1E6CE' }}>{pl.name}</p>
+                  <p style={{ fontFamily: FONT_SANS, fontSize: '0.76rem', color: 'rgba(255,255,255,0.5)', marginTop: 4, lineHeight: 1.8 }}>{pl.tag}</p>
+                </div>
+                <p style={{ fontFamily: FONT_SANS, fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ fontSize: '1.9rem', fontWeight: 800, color: pl.featured ? '#E7C987' : '#F4F7FC' }}>{pl.price}</span>
+                  <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', marginLeft: 6 }}>/ 月（税込）</span>
+                  {pl.setup && <span style={{ display: 'block', fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>＋ 初期構築 {pl.setup}（一度だけ）</span>}
+                </p>
+                {pl.compare && (
+                  <p style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', color: '#9BC4A0', lineHeight: 1.7 }}>{pl.compare}</p>
+                )}
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                  {pl.features.map(f => (
+                    <li key={f} style={{ fontFamily: FONT_SANS, fontSize: '0.8rem', color: 'rgba(255,255,255,0.74)', lineHeight: 1.8, paddingLeft: '1.15rem', position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: 0, top: 1, color: '#C9A96E' }}>◆</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href={pl.stripeUrl || `mailto:${COMPANY.email}?subject=${encodeURIComponent(`【CORE Continuum】${pl.name} のご相談`)}`}
+                  target={pl.stripeUrl ? '_blank' : undefined}
+                  rel={pl.stripeUrl ? 'noopener' : undefined}
+                  style={{
+                    marginTop: 'auto', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    minHeight: 50, borderRadius: 999, textDecoration: 'none',
+                    fontFamily: FONT_SANS, fontSize: '0.88rem', fontWeight: 800, letterSpacing: '0.04em',
+                    background: pl.featured ? 'linear-gradient(90deg,#E7C987,#C9A96E)' : 'rgba(255,255,255,0.08)',
+                    color: pl.featured ? '#141414' : '#F4F7FC',
+                    border: pl.featured ? 'none' : '1px solid rgba(255,255,255,0.2)',
+                  }}
+                >
+                  {pl.stripeUrl ? 'このプランで始める' : 'このプランを相談する'}
+                </a>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ textAlign: 'center', marginTop: '1.8rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.42)', lineHeight: 2 }}>
+            単品でそろえると 月 約¥109,000 相当（Guild・Prism・Iris・Resonance・Crystal・Lume 上位プラン合計）。
+            <br />
+            いつでも解約できます。決済ページ公開までは、ボタンからそのままご相談ください（1営業日以内にお返事します）。
           </p>
         </div>
       </section>
