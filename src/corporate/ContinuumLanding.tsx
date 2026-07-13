@@ -1,11 +1,10 @@
 // ============================================================
 // CORE Continuum — 特設LP (/continuum)
 //
-// 旗艦ブランドの世界観ページ。金×黒。
-// 「仕事は、AIの仕事に。あなたは、人生に。」— 6つのAIエージェントを統合し、
-// 仕事時間をほぼゼロへ。戻った時間で人生（人間関係・趣味・家族）を豊かに。
-//
-// ヒーローは6サービスのロゴが黄金の環となって CORE を巡る（純CSS・reduced-motion対応）。
+// 旗艦ブランドの世界観ページ。金×黒・派手に、しかし上品に。
+// コピーは抽象を避け「何が消えて、何が残るか」を具体で言い切る：
+//   H1『あなたが働かなくても、お店が回る。』
+//   消える仕事(6つの雑務→引き受けるAI) / AIが働く一日 / 6つの力 / プラン。
 // プランは continuumPlans.ts を /corp と共有（価格の二重管理を防ぐ）。
 // ============================================================
 import { useEffect } from 'react';
@@ -22,16 +21,34 @@ const GOLD_HI = '#E7C987';
 const GOLD_PALE = '#F7EAD0';
 
 // 環に乗る6サービス（角度は上から時計回り）。
-const ORBIT: Array<{ key: string; deg: number; Logo: typeof PrismLogo; name: string }> = [
-  { key: 'prism', deg: 0, Logo: PrismLogo, name: 'Prism' },
-  { key: 'resonance', deg: 60, Logo: ResonanceLogo, name: 'Resonance' },
-  { key: 'crystal', deg: 120, Logo: CrystalLogo, name: 'Crystal' },
-  { key: 'iris', deg: 180, Logo: IrisLogo, name: 'Iris' },
-  { key: 'guild', deg: 240, Logo: GuildLogo, name: 'Guild' },
-  { key: 'lume', deg: 300, Logo: LumeLogo, name: 'Lume' },
+const ORBIT: Array<{ key: string; deg: number; Logo: typeof PrismLogo }> = [
+  { key: 'prism', deg: 0, Logo: PrismLogo },
+  { key: 'resonance', deg: 60, Logo: ResonanceLogo },
+  { key: 'crystal', deg: 120, Logo: CrystalLogo },
+  { key: 'iris', deg: 180, Logo: IrisLogo },
+  { key: 'guild', deg: 240, Logo: GuildLogo },
+  { key: 'lume', deg: 300, Logo: LumeLogo },
 ];
 
-// 6サービスの「何を任せられるか」— 統合の星座。
+// あなたの毎日から消える仕事（具体の雑務 → 引き受けるAI）。
+const VANISH: Array<{ chore: string; detail: string; Logo: typeof PrismLogo; ai: string }> = [
+  { chore: '届いたLINEへの返信', detail: '一人ひとりに合わせた返事をAIが下書き。あなたは読んで送るだけ', Logo: ResonanceLogo, ai: 'Resonance' },
+  { chore: 'サイトの問い合わせ対応', detail: '夜中の質問にも、AIがその場で即答。取りこぼしゼロ', Logo: CrystalLogo, ai: 'Crystal' },
+  { chore: '予約の受付と管理', detail: '希望日時を聞いて、カレンダー登録まで自動で', Logo: CrystalLogo, ai: 'Crystal・Resonance' },
+  { chore: 'Instagramの投稿づくり', detail: '今日の企画・台本・案件の返事まで、選ぶだけの状態で用意', Logo: IrisLogo, ai: 'Iris' },
+  { chore: '資料づくりと売上の集計', detail: '会議メモから資料へ。数字は自動で集計・報告', Logo: PrismLogo, ai: 'Prism' },
+  { chore: 'チームへの共有・決めごと', detail: '提案と投票で、会議をしなくても決まっていく', Logo: GuildLogo, ai: 'Guild' },
+];
+
+// AIが働く1日 / あなたの1日。
+const DAY: Array<{ time: string; ai: string; you: string }> = [
+  { time: '7:00', ai: '夜間に届いたLINE・問い合わせに、すべて返信済み', you: '家族と、ゆっくり朝食を' },
+  { time: '10:00', ai: '今日の投稿と案件の返事を用意。予約はカレンダーへ', you: '気になっていた本を開く' },
+  { time: '14:00', ai: '資料と数字をまとめ、決めることだけを1つ提示', you: '5分で「決める」。それだけ' },
+  { time: '19:00', ai: '営業時間外の接客も、AIが変わらぬ品で', you: '大切な人と、食事を' },
+  { time: '23:00', ai: '今日AIが代行した仕事を、時間レポートに記録', you: 'あしたの楽しみを、ひとつ決める' },
+];
+
 const SIX: Array<{ Logo: typeof PrismLogo; name: string; role: string; hand: string }> = [
   { Logo: ResonanceLogo, name: 'Resonance', role: 'LINEの返信・日程調整', hand: '届いた1通ずつにAIが返信し、予約まで運ぶ。あなたは承認するだけ。' },
   { Logo: CrystalLogo, name: 'Crystal', role: 'サイトの接客・予約受付', hand: '24時間その場で即答するAIコンシェルジュ。問い合わせに追われない。' },
@@ -41,19 +58,10 @@ const SIX: Array<{ Logo: typeof PrismLogo; name: string; role: string; hand: str
   { Logo: LumeLogo, name: 'Lume', role: 'あなたの入口', hand: 'すべてのリンクと導線をひとつに。いちばん軽い名刺。' },
 ];
 
-// AIが働く1日 / あなたの1日 — 世界観を1本のタイムラインで。
-const DAY: Array<{ time: string; ai: string; you: string }> = [
-  { time: '7:00', ai: '夜間に届いたLINE・問い合わせに、すべて返信済み', you: '家族と、ゆっくり朝食を' },
-  { time: '10:00', ai: '今日の投稿と案件の返事を用意。予約はカレンダーへ', you: '気になっていた本を開く' },
-  { time: '14:00', ai: '資料と数字をまとめ、決めることだけを1つ提示', you: '5分で「決める」。それだけ' },
-  { time: '19:00', ai: '営業時間外の接客も、AIが変わらぬ品で', you: '大切な人と、食事を' },
-  { time: '23:00', ai: '今日AIが代行した仕事を、時間レポートに記録', you: 'あしたの人生を、少し設計する' },
-];
-
 export default function ContinuumLanding() {
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = 'CORE Continuum — 仕事は、AIの仕事に。あなたは、人生に。';
+    document.title = 'CORE Continuum — あなたが働かなくても、お店が回る。';
     const html = document.documentElement;
     const prevBg = html.style.background;
     html.style.background = '#050505';
@@ -65,23 +73,27 @@ export default function ContinuumLanding() {
       <style>{CSS}</style>
 
       {/* ───────── HERO ───────── */}
-      <section style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5.5rem 1.25rem 4.5rem', textAlign: 'center', overflow: 'hidden' }}>
-        {/* 黄金のオーラ */}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(70% 50% at 50% 38%, rgba(201,169,110,0.16), transparent 70%), radial-gradient(120% 80% at 50% 110%, rgba(201,169,110,0.08), transparent 60%)` }} />
-        {/* 微細な金粒 */}
+      <section style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5rem 1.25rem 4.5rem', textAlign: 'center', overflow: 'hidden' }}>
+        {/* 回る黄金のオーロラ（派手さの土台） */}
+        <div aria-hidden className="ct-aurora" />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(70% 50% at 50% 38%, rgba(201,169,110,0.18), transparent 70%), radial-gradient(120% 80% at 50% 110%, rgba(201,169,110,0.1), transparent 60%)` }} />
+        {/* 金粒（多め） */}
         {[
-          { l: '12%', t: '22%', d: '0s' }, { l: '84%', t: '18%', d: '1.2s' }, { l: '8%', t: '68%', d: '2.1s' },
-          { l: '90%', t: '62%', d: '0.7s' }, { l: '22%', t: '86%', d: '1.7s' }, { l: '74%', t: '84%', d: '2.6s' },
+          { l: '10%', t: '20%', d: '0s' }, { l: '86%', t: '16%', d: '1.2s' }, { l: '6%', t: '64%', d: '2.1s' },
+          { l: '92%', t: '58%', d: '0.7s' }, { l: '20%', t: '84%', d: '1.7s' }, { l: '76%', t: '86%', d: '2.6s' },
+          { l: '32%', t: '10%', d: '3.1s' }, { l: '64%', t: '8%', d: '0.4s' }, { l: '46%', t: '92%', d: '2.2s' },
+          { l: '4%', t: '40%', d: '1.1s' }, { l: '95%', t: '38%', d: '2.9s' },
         ].map((p, i) => (
           <span key={i} aria-hidden className="ct-dust" style={{ left: p.l, top: p.t, animationDelay: p.d }} />
         ))}
 
-        <p style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(0.72rem, 1.6vw, 0.9rem)', letterSpacing: '0.5em', color: GOLD, textTransform: 'uppercase', marginBottom: '2.2rem', position: 'relative', paddingLeft: '0.5em' }}>
+        <p style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(0.72rem, 1.6vw, 0.9rem)', letterSpacing: '0.5em', color: GOLD, textTransform: 'uppercase', marginBottom: '2rem', position: 'relative', paddingLeft: '0.5em' }}>
           CORE Continuum
         </p>
 
         {/* 黄金の環 — 6ロゴが CORE を巡る */}
         <div className="ct-orbit-wrap" aria-label="6つのAIエージェントがCOREを巡る">
+          <div className="ct-beam" aria-hidden />
           <div className="ct-ring" aria-hidden />
           <div className="ct-ring ct-ring2" aria-hidden />
           <div className="ct-core">
@@ -98,19 +110,21 @@ export default function ContinuumLanding() {
           </div>
         </div>
 
-        <h1 style={{ fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: 'clamp(1.9rem, 6.4vw, 3.6rem)', lineHeight: 1.6, letterSpacing: '0.06em', margin: '2.6rem 0 1.4rem', background: `linear-gradient(120deg, ${GOLD_PALE}, ${GOLD})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', position: 'relative' }}>
-          仕事は、AIの仕事に。
+        <h1 className="ct-shimmer" style={{ fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: 'clamp(1.95rem, 6.6vw, 3.7rem)', lineHeight: 1.6, letterSpacing: '0.05em', margin: '2.5rem 0 1.3rem', position: 'relative' }}>
+          あなたが働かなくても、
           <br />
-          あなたは、人生に。
+          お店が回る。
         </h1>
-        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.92rem, 2vw, 1.08rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.75)', maxWidth: 620, position: 'relative' }}>
-          六つのAIエージェントを、ひとつの意思に統合。
-          返信も、集客も、接客も、予約も、経営の数字も —— すべてが全自動で回りはじめ、
-          あなたの仕事時間は、ほぼゼロへ。
+        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.94rem, 2vw, 1.1rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.8)', maxWidth: 640, position: 'relative' }}>
+          LINEの返信、問い合わせ対応、Instagram、予約の管理、資料と売上の数字。
+          <br />
+          その全部を、6つのAIエージェントが引き受けます。
+          <br />
+          あなたに残る仕事は、<strong style={{ color: GOLD_HI }}>「決めること」だけ</strong>。
         </p>
-        <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '2.4rem', position: 'relative' }}>
+        <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '2.3rem', position: 'relative' }}>
           <a href="#plans" className="ct-cta-main">プランを見る</a>
-          <a href="#six" className="ct-cta-ghost">統合される6つの力</a>
+          <a href="#vanish" className="ct-cta-ghost">何を任せられる？</a>
         </div>
 
         <div aria-hidden style={{ position: 'absolute', bottom: 'calc(18px + env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', color: 'rgba(231,201,135,0.55)', fontFamily: FONT_DISPLAY, fontSize: 10, letterSpacing: '0.4em' }}>
@@ -120,28 +134,57 @@ export default function ContinuumLanding() {
 
       <GoldLine />
 
-      {/* ───────── PHILOSOPHY ───────── */}
-      <section style={{ maxWidth: 880, margin: '0 auto', padding: 'clamp(4.5rem, 9vw, 7.5rem) 1.5rem', textAlign: 'center' }}>
-        <p className="ct-label">Philosophy</p>
-        <h2 className="ct-h2">時間は、いちばん高価な資産。</h2>
-        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.92rem, 1.6vw, 1.05rem)', lineHeight: 2.3, color: 'rgba(247,234,208,0.72)', maxWidth: 640, margin: '0 auto' }}>
-          売上のためでも、効率のためでもなく。
-          人間関係を育て、趣味に没頭し、家族と過ごし、人生の計画を立て直すために ——
-          私たちは、あなたの仕事をAIの仕事にします。
-          Continuum（連続体）という名は、事業のすべてが途切れなくAIでつながり、
-          あなたの人生が途切れなく、あなたのものになることを指しています。
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '3rem' }}>
-          {[
-            { n: '6', u: 'つのAI', d: '返信・接客・集客・予約・数字・組織。事業の全面をエージェントが覆う' },
-            { n: 'ほぼ0', u: '時間', d: 'あなたが仕事に使う時間。決めることだけが、あなたに残る' },
-            { n: '24', u: '時間365日', d: 'あなたが眠っている間も、AIは同じ品で働き続ける' },
-          ].map(s => (
-            <div key={s.d} style={{ padding: '1.6rem 1.2rem', borderRadius: 18, border: `1px solid rgba(201,169,110,0.28)`, background: 'rgba(201,169,110,0.04)' }}>
-              <p style={{ fontFamily: FONT_SERIF_EN, fontSize: '2.4rem', color: GOLD_HI, lineHeight: 1 }}>
-                {s.n}<span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', marginLeft: 4, color: GOLD }}>{s.u}</span>
+      {/* ───────── 消える仕事 ───────── */}
+      <section id="vanish" style={{ maxWidth: 1040, margin: '0 auto', padding: 'clamp(4.5rem, 9vw, 7.5rem) 1.5rem', scrollMarginTop: 20 }}>
+        <div style={{ textAlign: 'center', marginBottom: '2.8rem' }}>
+          <p className="ct-label">What Disappears</p>
+          <h2 className="ct-h2">あなたの毎日から、この仕事が消えます。</h2>
+          <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.9rem, 1.5vw, 1rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.72)', maxWidth: 620, margin: '0 auto' }}>
+            どれも「やらないと困るのに、やりたくない」仕事。ぜんぶ、担当のAIがいます。
+          </p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+          {VANISH.map(v => (
+            <div key={v.chore} className="ct-six-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <p className="ct-strike" style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.05rem', fontWeight: 700, color: GOLD_PALE, lineHeight: 1.7 }}>
+                {v.chore}
               </p>
-              <p style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', lineHeight: 1.9, color: 'rgba(247,234,208,0.62)', marginTop: '0.7rem' }}>{s.d}</p>
+              <p style={{ fontFamily: FONT_SANS, fontSize: '0.8rem', lineHeight: 1.95, color: 'rgba(247,234,208,0.62)' }}>{v.detail}</p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 'auto', paddingTop: '0.5rem', borderTop: '1px solid rgba(201,169,110,0.18)' }}>
+                <span style={{ width: 30, height: 30, borderRadius: 9, display: 'grid', placeItems: 'center', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.35)' }}>
+                  <v.Logo size={18} withWordmark={false} />
+                </span>
+                <span style={{ fontFamily: FONT_SANS, fontSize: '0.74rem', fontWeight: 700, color: GOLD_HI }}>→ {v.ai} がやります</span>
+              </p>
+            </div>
+          ))}
+        </div>
+        <p style={{ textAlign: 'center', marginTop: '2rem', fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.95rem, 1.8vw, 1.1rem)', color: GOLD_HI, lineHeight: 2 }}>
+          しかも、AIは24時間365日、休まず・ムラなく働きます。
+        </p>
+      </section>
+
+      <GoldLine />
+
+      {/* ───────── A DAY ───────── */}
+      <section style={{ maxWidth: 880, margin: '0 auto', padding: 'clamp(4.5rem, 9vw, 7.5rem) 1.5rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2.6rem' }}>
+          <p className="ct-label">A Day with Continuum</p>
+          <h2 className="ct-h2">導入後の、ある一日。</h2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {DAY.map((d, i) => (
+            <div key={d.time} style={{ display: 'grid', gridTemplateColumns: '52px 1fr', gap: '1rem', position: 'relative', paddingBottom: i === DAY.length - 1 ? 0 : '1.9rem' }}>
+              {i < DAY.length - 1 && <span aria-hidden style={{ position: 'absolute', left: 25, top: 30, bottom: 0, width: 1, background: 'linear-gradient(180deg, rgba(201,169,110,0.45), rgba(201,169,110,0.08))' }} />}
+              <div style={{ width: 52, height: 30, display: 'grid', placeItems: 'center', borderRadius: 999, border: `1px solid rgba(201,169,110,0.45)`, fontFamily: FONT_SERIF_EN, fontSize: '0.78rem', color: GOLD_HI, background: '#0a0a0a', zIndex: 1 }}>{d.time}</div>
+              <div>
+                <p style={{ fontFamily: FONT_SANS, fontSize: '0.8rem', lineHeight: 1.9, color: 'rgba(247,234,208,0.55)' }}>
+                  <span style={{ color: GOLD, fontWeight: 700, marginRight: 8 }}>AI</span>{d.ai}
+                </p>
+                <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.98rem', lineHeight: 1.9, color: GOLD_PALE, marginTop: 5 }}>
+                  <span style={{ fontFamily: FONT_SANS, fontSize: '0.68rem', letterSpacing: '0.14em', color: GOLD_HI, fontWeight: 700, marginRight: 8 }}>あなた</span>{d.you}
+                </p>
+              </div>
             </div>
           ))}
         </div>
@@ -153,10 +196,10 @@ export default function ContinuumLanding() {
       <section id="six" style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(4.5rem, 9vw, 7.5rem) 1.5rem', scrollMarginTop: 20 }}>
         <div style={{ textAlign: 'center', marginBottom: '2.8rem' }}>
           <p className="ct-label">The Six</p>
-          <h2 className="ct-h2">六つの力が、ひとつの意思に。</h2>
+          <h2 className="ct-h2">担当は、この6人。</h2>
           <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.9rem, 1.5vw, 1rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.7)', maxWidth: 620, margin: '0 auto' }}>
-            それぞれが単体でも一流のAIエージェント。Continuum では六つがひとつのCOREでつながり、
-            お客様も、データも、あなたの人格も、途切れなく流れます。
+            それぞれ単体でも売られているAIサービスです。Continuum では6つがつながり、
+            お客様の情報も、あなたの話し方も、自動で引き継がれます。
           </p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
@@ -179,46 +222,23 @@ export default function ContinuumLanding() {
 
       <GoldLine />
 
-      {/* ───────── A DAY ───────── */}
-      <section style={{ maxWidth: 880, margin: '0 auto', padding: 'clamp(4.5rem, 9vw, 7.5rem) 1.5rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2.6rem' }}>
-          <p className="ct-label">A Day with Continuum</p>
-          <h2 className="ct-h2">AIが働く一日。あなたの一日。</h2>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-          {DAY.map((d, i) => (
-            <div key={d.time} style={{ display: 'grid', gridTemplateColumns: '52px 1fr', gap: '1rem', position: 'relative', paddingBottom: i === DAY.length - 1 ? 0 : '1.9rem' }}>
-              {i < DAY.length - 1 && <span aria-hidden style={{ position: 'absolute', left: 25, top: 30, bottom: 0, width: 1, background: 'linear-gradient(180deg, rgba(201,169,110,0.45), rgba(201,169,110,0.08))' }} />}
-              <div style={{ width: 52, height: 30, display: 'grid', placeItems: 'center', borderRadius: 999, border: `1px solid rgba(201,169,110,0.45)`, fontFamily: FONT_SERIF_EN, fontSize: '0.78rem', color: GOLD_HI, background: '#0a0a0a', zIndex: 1 }}>{d.time}</div>
-              <div>
-                <p style={{ fontFamily: FONT_SANS, fontSize: '0.8rem', lineHeight: 1.9, color: 'rgba(247,234,208,0.55)' }}>
-                  <span style={{ color: GOLD, fontWeight: 700, marginRight: 8 }}>AI</span>{d.ai}
-                </p>
-                <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.98rem', lineHeight: 1.9, color: GOLD_PALE, marginTop: 5 }}>
-                  <span style={{ fontFamily: FONT_SANS, fontSize: '0.68rem', letterSpacing: '0.14em', color: GOLD_HI, fontWeight: 700, marginRight: 8 }}>あなた</span>{d.you}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <GoldLine />
-
       {/* ───────── PLANS ───────── */}
       <section id="plans" style={{ maxWidth: 1120, margin: '0 auto', padding: 'clamp(4.5rem, 9vw, 7.5rem) 1.5rem', scrollMarginTop: 20 }}>
         <div style={{ textAlign: 'center', marginBottom: '2.8rem' }}>
           <p className="ct-label">Plans</p>
-          <h2 className="ct-h2">人生を取り戻す、三つの入口。</h2>
+          <h2 className="ct-h2">人を雇うより、ずっと軽く。</h2>
+          <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.9rem, 1.5vw, 1rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.72)', maxWidth: 620, margin: '0 auto' }}>
+            正社員をひとり雇えば、月30万円から。Continuum なら、その一部の金額で
+            6人分のAIチームが、今日から休まず働きます。
+          </p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.1rem', alignItems: 'stretch' }}>
           {CONTINUUM_PLANS.map(pl => (
-            <div key={pl.name} style={{
+            <div key={pl.name} className={pl.featured ? 'ct-plan-featured' : undefined} style={{
               display: 'flex', flexDirection: 'column', gap: '0.9rem', position: 'relative',
               borderRadius: 20, padding: pl.featured ? '2.1rem 1.7rem' : '1.8rem 1.6rem',
               background: pl.featured ? 'linear-gradient(165deg, rgba(201,169,110,0.16), rgba(201,169,110,0.03))' : 'rgba(255,255,255,0.03)',
               border: pl.featured ? `1px solid rgba(201,169,110,0.65)` : '1px solid rgba(255,255,255,0.1)',
-              boxShadow: pl.featured ? '0 34px 80px -36px rgba(201,169,110,0.55)' : 'none',
             }}>
               {pl.featured && (
                 <span style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', fontFamily: FONT_SANS, fontSize: '0.64rem', fontWeight: 800, letterSpacing: '0.16em', color: '#141414', background: `linear-gradient(90deg,${GOLD_HI},${GOLD})`, borderRadius: 999, padding: '5px 14px' }}>
@@ -234,7 +254,7 @@ export default function ContinuumLanding() {
                 <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', marginLeft: 6 }}>/ 月（税込）</span>
                 {pl.setup && <span style={{ display: 'block', fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>＋ 初期構築 {pl.setup}（一度だけ）</span>}
               </p>
-              {pl.compare && <p style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', color: '#9BC4A0', lineHeight: 1.7 }}>{pl.compare}</p>}
+              {pl.compare && <p style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', color: '#9BC4A0', lineHeight: 1.8 }}>{pl.compare}</p>}
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                 {pl.features.map(f => (
                   <li key={f} style={{ fontFamily: FONT_SANS, fontSize: '0.8rem', color: 'rgba(255,255,255,0.74)', lineHeight: 1.8, paddingLeft: '1.15rem', position: 'relative' }}>
@@ -262,7 +282,7 @@ export default function ContinuumLanding() {
           ))}
         </div>
         <p style={{ textAlign: 'center', marginTop: '1.8rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.42)', lineHeight: 2 }}>
-          単品でそろえると 月 約¥109,000 相当。いつでも解約できます。
+          6つを単品でそろえると 月 約¥109,000。いつでも解約できます。
           <br />
           決済ページ公開までは、ボタンからそのままご相談ください（1営業日以内にお返事します）。
         </p>
@@ -270,14 +290,14 @@ export default function ContinuumLanding() {
 
       {/* ───────── FINAL ───────── */}
       <section style={{ position: 'relative', textAlign: 'center', padding: 'clamp(5rem, 10vw, 8rem) 1.5rem calc(6rem + env(safe-area-inset-bottom))', overflow: 'hidden' }}>
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(60% 60% at 50% 100%, rgba(201,169,110,0.14), transparent 70%)` }} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(60% 60% at 50% 100%, rgba(201,169,110,0.16), transparent 70%)` }} />
         <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.44em', color: GOLD, textTransform: 'uppercase', marginBottom: '1.4rem', position: 'relative' }}>
-          Your Life, Returned
+          Your Time, Back
         </p>
-        <h2 style={{ fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: 'clamp(1.5rem, 4.6vw, 2.6rem)', lineHeight: 1.8, letterSpacing: '0.05em', background: `linear-gradient(120deg, ${GOLD_PALE}, ${GOLD})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', position: 'relative' }}>
-          あなたの時間を、
+        <h2 className="ct-shimmer" style={{ fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: 'clamp(1.55rem, 4.8vw, 2.7rem)', lineHeight: 1.8, letterSpacing: '0.05em', position: 'relative' }}>
+          さて、空いた時間で
           <br />
-          あなたの人生に返す。
+          なにをしましょうか。
         </h2>
         <div style={{ marginTop: '2.2rem', position: 'relative' }}>
           <a href="#plans" className="ct-cta-main">プランを選ぶ</a>
@@ -297,34 +317,60 @@ function GoldLine() {
 }
 
 const CSS = `
+  /* ── 回る黄金のオーロラ（ヒーロー背景・派手さの土台）── */
+  .ct-aurora { position: absolute; left: 50%; top: 34%; width: 170vmax; height: 170vmax; transform: translate(-50%, -50%);
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(201,169,110,0.10) 40deg, transparent 90deg, rgba(231,201,135,0.07) 160deg, transparent 210deg, rgba(201,169,110,0.09) 300deg, transparent 360deg);
+    animation: ctAurora 36s linear infinite; pointer-events: none; }
+  @keyframes ctAurora { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
   /* ── 黄金の環（6ロゴが CORE を巡る）── */
   .ct-orbit-wrap { position: relative; width: min(76vw, 340px); height: min(76vw, 340px); }
-  .ct-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(201,169,110,0.35); box-shadow: 0 0 60px rgba(201,169,110,0.12), inset 0 0 40px rgba(201,169,110,0.06); }
-  .ct-ring2 { inset: 12%; border-color: rgba(201,169,110,0.16); box-shadow: none; }
-  .ct-core { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 50% 32%, rgba(201,169,110,0.22), rgba(5,5,5,0.9)); border: 1px solid rgba(201,169,110,0.55); box-shadow: 0 0 44px rgba(201,169,110,0.3); animation: ctCoreBreath 4.5s ease-in-out infinite; }
+  .ct-beam { position: absolute; inset: -14%; border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(231,201,135,0.22) 24deg, transparent 60deg);
+    animation: ctSpin 9s linear infinite; filter: blur(6px); }
+  .ct-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(201,169,110,0.4); box-shadow: 0 0 70px rgba(201,169,110,0.16), inset 0 0 44px rgba(201,169,110,0.07); animation: ctRingPulse 5.5s ease-in-out infinite; }
+  .ct-ring2 { inset: 12%; border-color: rgba(201,169,110,0.18); box-shadow: none; animation: none; }
+  .ct-core { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 50% 32%, rgba(201,169,110,0.24), rgba(5,5,5,0.9)); border: 1px solid rgba(201,169,110,0.6); box-shadow: 0 0 48px rgba(201,169,110,0.34); animation: ctCoreBreath 4.5s ease-in-out infinite; z-index: 2; }
   .ct-orbit { position: absolute; inset: 0; animation: ctSpin 46s linear infinite; }
   .ct-sat { position: absolute; left: 50%; top: 50%; transform: rotate(var(--deg)) translateY(calc(min(38vw, 170px) * -1)) rotate(calc(var(--deg) * -1)); }
-  .ct-sat-inner { width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 50% 30%, rgba(201,169,110,0.14), rgba(8,8,8,0.92)); border: 1px solid rgba(201,169,110,0.42); box-shadow: 0 6px 22px rgba(0,0,0,0.55), 0 0 18px rgba(201,169,110,0.14); animation: ctSpinRev 46s linear infinite; }
+  .ct-sat-inner { width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 50% 30%, rgba(201,169,110,0.16), rgba(8,8,8,0.92)); border: 1px solid rgba(201,169,110,0.46); box-shadow: 0 6px 22px rgba(0,0,0,0.55), 0 0 20px rgba(201,169,110,0.18); animation: ctSpinRev 46s linear infinite; }
   @keyframes ctSpin { to { transform: rotate(360deg); } }
   @keyframes ctSpinRev { to { transform: rotate(-360deg); } }
-  @keyframes ctCoreBreath { 0%,100% { box-shadow: 0 0 44px rgba(201,169,110,0.3); } 50% { box-shadow: 0 0 74px rgba(201,169,110,0.5); } }
+  @keyframes ctCoreBreath { 0%,100% { box-shadow: 0 0 48px rgba(201,169,110,0.34); } 50% { box-shadow: 0 0 84px rgba(201,169,110,0.56); } }
+  @keyframes ctRingPulse { 0%,100% { box-shadow: 0 0 70px rgba(201,169,110,0.16), inset 0 0 44px rgba(201,169,110,0.07); } 50% { box-shadow: 0 0 100px rgba(201,169,110,0.28), inset 0 0 60px rgba(201,169,110,0.12); } }
 
   /* 金粒 */
-  .ct-dust { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: rgba(231,201,135,0.8); box-shadow: 0 0 8px rgba(231,201,135,0.9); animation: ctFloat 6s ease-in-out infinite; }
-  @keyframes ctFloat { 0%,100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 0.9; transform: translateY(-14px); } }
+  .ct-dust { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: rgba(231,201,135,0.85); box-shadow: 0 0 9px rgba(231,201,135,0.95); animation: ctFloat 6s ease-in-out infinite; }
+  @keyframes ctFloat { 0%,100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-16px); } }
+
+  /* きらめく金文字（H1/決めの見出し） */
+  .ct-shimmer { background: linear-gradient(110deg, ${GOLD_PALE} 20%, ${GOLD} 40%, #FFF3D6 50%, ${GOLD} 60%, ${GOLD_PALE} 80%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: ctShimmer 5.5s ease-in-out infinite; }
+  @keyframes ctShimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 
   /* 見出し・ラベル */
   .ct-label { font-family: ${FONT_DISPLAY.replace(/"/g, "'")}; font-size: 0.68rem; letter-spacing: 0.42em; color: ${GOLD}; text-transform: uppercase; margin-bottom: 1.1rem; }
   .ct-h2 { font-family: 'Noto Serif JP','游明朝','Yu Mincho',serif; font-weight: 700; font-size: clamp(1.5rem, 3.8vw, 2.4rem); line-height: 1.7; letter-spacing: 0.05em; margin-bottom: 1.2rem; background: linear-gradient(120deg, ${GOLD_PALE}, ${GOLD}); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 
+  /* 「消える仕事」の打ち消し線（金の線がすっと入る） */
+  .ct-strike { position: relative; display: inline-block; }
+  .ct-strike::after { content: ''; position: absolute; left: -2%; right: -2%; top: 54%; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, transparent, ${GOLD_HI}, ${GOLD}); transform-origin: left center; animation: ctStrike 1.1s ease-out 0.6s both; }
+  @keyframes ctStrike { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 0.85; } }
+
   /* CTA */
-  .ct-cta-main { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 34px; border-radius: 999px; text-decoration: none; font-family: ${FONT_SANS.replace(/"/g, "'")}; font-size: 0.92rem; font-weight: 800; letter-spacing: 0.05em; color: #141414; background: linear-gradient(90deg, ${GOLD_HI}, ${GOLD}); box-shadow: 0 14px 40px -12px rgba(201,169,110,0.65); }
+  .ct-cta-main { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 34px; border-radius: 999px; text-decoration: none; font-family: ${FONT_SANS.replace(/"/g, "'")}; font-size: 0.92rem; font-weight: 800; letter-spacing: 0.05em; color: #141414; background: linear-gradient(90deg, ${GOLD_HI}, ${GOLD}); box-shadow: 0 14px 44px -12px rgba(201,169,110,0.75); animation: ctCtaGlow 3.4s ease-in-out infinite; }
+  @keyframes ctCtaGlow { 0%,100% { box-shadow: 0 14px 44px -12px rgba(201,169,110,0.75); } 50% { box-shadow: 0 14px 58px -8px rgba(231,201,135,0.95); } }
   .ct-cta-ghost { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 26px; border-radius: 999px; text-decoration: none; font-family: ${FONT_SANS.replace(/"/g, "'")}; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.04em; color: ${GOLD_PALE}; border: 1px solid rgba(201,169,110,0.5); background: rgba(201,169,110,0.06); }
 
-  .ct-six-card { padding: 1.4rem 1.3rem; border-radius: 18; border-radius: 18px; border: 1px solid rgba(201,169,110,0.26); background: linear-gradient(170deg, rgba(201,169,110,0.06), rgba(255,255,255,0.01)); transition: border-color 0.3s ease, transform 0.3s ease; }
+  .ct-six-card { padding: 1.4rem 1.3rem; border-radius: 18px; border: 1px solid rgba(201,169,110,0.26); background: linear-gradient(170deg, rgba(201,169,110,0.06), rgba(255,255,255,0.01)); transition: border-color 0.3s ease, transform 0.3s ease; }
   .ct-six-card:hover { border-color: rgba(201,169,110,0.6); transform: translateY(-2px); }
 
+  /* 推奨プランの光る枠 */
+  .ct-plan-featured { box-shadow: 0 34px 80px -36px rgba(201,169,110,0.55); animation: ctPlanGlow 4.2s ease-in-out infinite; }
+  @keyframes ctPlanGlow { 0%,100% { box-shadow: 0 34px 80px -36px rgba(201,169,110,0.55); } 50% { box-shadow: 0 34px 96px -30px rgba(231,201,135,0.8); } }
+
   @media (prefers-reduced-motion: reduce) {
-    .ct-orbit, .ct-sat-inner, .ct-core, .ct-dust { animation: none !important; }
+    .ct-orbit, .ct-sat-inner, .ct-core, .ct-dust, .ct-aurora, .ct-beam, .ct-shimmer, .ct-cta-main, .ct-plan-featured, .ct-ring { animation: none !important; }
+    .ct-strike::after { animation: none !important; transform: scaleX(1); opacity: 0.85; }
   }
 `;

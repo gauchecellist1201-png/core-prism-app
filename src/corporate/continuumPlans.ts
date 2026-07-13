@@ -22,8 +22,8 @@ export const CONTINUUM_PLANS: ContinuumPlan[] = [
   {
     name: 'Continuum Light',
     tag: 'まず3つの仕事を、AIに手放す',
-    price: '¥29,800',
-    compare: '単品合計より 約40% お得',
+    price: '¥39,800',
+    compare: '例）Crystal＋Resonance＋Prism を単品でそろえると 約¥74,400 → ほぼ半額',
     features: [
       '6サービスから選べる3つ（いつでも入替可）',
       'ぜんぶ上位プランでご利用OK',
@@ -35,8 +35,8 @@ export const CONTINUUM_PLANS: ContinuumPlan[] = [
   {
     name: 'Continuum Complete',
     tag: '事業のぜんぶを、AIの仕事に',
-    price: '¥49,800',
-    compare: '単品合計 約¥109,000 相当 → 半額以下',
+    price: '¥79,800',
+    compare: '単品合計 約¥109,000 → 27%お得。正社員ひとり（月30万円〜）の約1/4で、6人分のAIチーム',
     features: [
       '6サービスすべて使い放題（各上位プラン）',
       '返信・集客・接客・予約・分析まで全自動',
@@ -49,7 +49,7 @@ export const CONTINUUM_PLANS: ContinuumPlan[] = [
   {
     name: 'Continuum Zero',
     tag: '仕事時間“ほぼゼロ”を、一緒に設計する',
-    price: '¥148,000',
+    price: '¥198,000',
     setup: '¥298,000',
     features: [
       'Complete の全部',

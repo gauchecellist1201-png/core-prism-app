@@ -619,17 +619,16 @@ export default function CoreSite() {
                 marginBottom: '1.3rem',
               }}
             >
-              仕事は、AIの仕事に。
+              あなたが働かなくても、
               <br />
-              あなたは、人生に。
+              お店が回る。
             </h2>
             <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.95rem, 1.45vw, 1.05rem)', lineHeight: 2.15, maxWidth: 660, margin: '0 auto' }}>
-              六つのAIエージェントがあなたの事業を全自動で回し、仕事にかける時間を<strong style={{ color: '#E7C987', fontWeight: 600 }}>ほぼゼロ</strong>へ。
-              返信も、集客も、接客も、予約も、経営の数字も —— ぜんぶAIの仕事に。
+              LINEの返信、問い合わせ対応、Instagram、予約の管理、資料と売上の数字。
+              その全部を、6つのAIエージェントが引き受けます。
               <br />
-              空いた時間で、大切な人と過ごす。趣味に没頭する。人生の計画を、立て直す。
-              <br />
-              それが、CORE Continuum が届ける生き方です。
+              あなたに残る仕事は、<strong style={{ color: '#E7C987', fontWeight: 600 }}>「決めること」だけ</strong>。
+              空いた時間で、大切な人と過ごす。趣味に没頭する。
             </p>
             <a
               href="/continuum"
