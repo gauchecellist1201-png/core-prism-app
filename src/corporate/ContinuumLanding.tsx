@@ -3,7 +3,7 @@
 //
 // 旗艦ブランドの世界観ページ。金×黒・派手に、しかし上品に。
 // コピーは抽象を避け「何が消えて、何が残るか」を具体で言い切る：
-//   H1『あなたが働かなくても、お店が回る。』
+//   H1『あなたが働かなくても、事業が回り続ける。』
 //   消える仕事(6つの雑務→引き受けるAI) / AIが働く一日 / 6つの力 / プラン。
 // プランは continuumPlans.ts を /corp と共有（価格の二重管理を防ぐ）。
 // ============================================================
@@ -61,7 +61,7 @@ const SIX: Array<{ Logo: typeof PrismLogo; name: string; role: string; hand: str
 export default function ContinuumLanding() {
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = 'CORE Continuum — あなたが働かなくても、お店が回る。';
+    document.title = 'CORE Continuum — あなたが働かなくても、事業が回り続ける。';
     const html = document.documentElement;
     const prevBg = html.style.background;
     html.style.background = '#050505';
@@ -113,7 +113,7 @@ export default function ContinuumLanding() {
         <h1 className="ct-shimmer" style={{ fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: 'clamp(1.58rem, 6.9vw, 3.7rem)', lineHeight: 1.6, letterSpacing: '0.05em', margin: '2.5rem 0 1.3rem', position: 'relative' }}>
           あなたが働かなくても、
           <br />
-          お店が回る。
+          事業が回り続ける。
         </h1>
         <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.94rem, 2vw, 1.1rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.8)', maxWidth: 640, position: 'relative' }}>
           LINEの返信、問い合わせ対応、Instagram、予約の管理、資料と売上の数字。

@@ -621,7 +621,7 @@ export default function CoreSite() {
             >
               あなたが働かなくても、
               <br />
-              お店が回る。
+              事業が回り続ける。
             </h2>
             <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.95rem, 1.45vw, 1.05rem)', lineHeight: 2.15, maxWidth: 660, margin: '0 auto' }}>
               LINEの返信、問い合わせ対応、Instagram、予約の管理、資料と売上の数字。
