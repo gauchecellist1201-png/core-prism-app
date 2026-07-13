@@ -1112,6 +1112,17 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
     return 'home';
   });
   const [moreOpen, setMoreOpen] = useState(false);
+  // ホームの二次ウィジェット (参謀オービット / 稼ぐヒーロー / 健康 / AIチャット) は
+  // モバイル初期画面の密度を下げるため「すべての機能を見る」展開時のみ表示。
+  // デスクトップは常時表示・機能は消さない。(2026-07-13 夜間: 分かりやすく・ごちゃごちゃ解消)
+  const [homeExpanded, setHomeExpanded] = useState<boolean>(() => {
+    try { return localStorage.getItem('iris_home_expanded_v1') === '1'; } catch { return false; }
+  });
+  const toggleHomeExpanded = () => setHomeExpanded(prev => {
+    const next = !prev;
+    try { localStorage.setItem('iris_home_expanded_v1', next ? '1' : '0'); } catch { /* */ }
+    return next;
+  });
   const [igProfile, setIgProfile] = useState<IgProfile | null>(() => loadIgProfile());
   const [showIgConnect, setShowIgConnect] = useState(false);
   // 「素材から構成」→ リールスタジオへ渡す下書き（順番・秒数・字幕＋素材）
@@ -1736,6 +1747,52 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   />
                 )}
 
+                {/* 未連携のときだけ: 連携を促すオンボーディング導線（エディトリアル＋稼ぐ）。
+                    主動線なので常時表示。連携後は上部の IrisFlowHub に集約されるため出さない。*/}
+                {!igProfile && (
+                  <>
+                    {/* エディトリアル ホームダッシュ */}
+                    <IrisEditorialHome
+                      bg={bg}
+                      myDeals={myDeals}
+                      postQueue={postQueue}
+                      knowledge={knowledge}
+                      igProfile={igProfile}
+                      onNavigate={(t, theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab(t as Tab); }}
+                      settings={settings}
+                      mediaKit={mediaKit}
+                      onConnectInstagram={() => setShowIgConnect(true)}
+                      onOpenDmDraft={(deal) => setDmDraftDeal(deal)}
+                    />
+
+                    {/* 仕事獲得を最優先 */}
+                    <IrisEarnHero
+                      onOpenDeals={() => setTab('deals')}
+                      onConnectInstagram={() => setShowIgConnect(true)}
+                      igConnected={false}
+                    />
+                  </>
+                )}
+
+                {/* モバイル専用: 二次ウィジェットを「奥へ整理」する展開ボタン
+                    (2026-07-13 夜間: 初期画面の密度を下げ、主動線を明快に。デスクトップは常時表示) */}
+                <div className="md:hidden" style={{ marginBottom: '1.25rem' }}>
+                  <button
+                    onClick={toggleHomeExpanded}
+                    type="button"
+                    style={{
+                      width: '100%', minHeight: 48, padding: '14px 18px', borderRadius: 14,
+                      background: 'rgba(225,48,108,0.06)', border: '1px solid rgba(225,48,108,0.24)',
+                      color: '#B21E52', fontSize: 14, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer',
+                    }}
+                  >
+                    {homeExpanded ? '▲ 折りたたむ' : '▼ すべての機能を見る（6人の参謀AI・成果・健康・AIチャット）'}
+                  </button>
+                </div>
+
+                {/* 二次ウィジェット群 — モバイルは展開時のみ / デスクトップは常時表示（機能は消さない） */}
+                <div className={homeExpanded ? '' : 'hidden md:block'}>
                 {/* 6 エージェント オービット */}
                 <div style={{ marginBottom: '1.25rem' }}>
                   <AgentsOrbit
@@ -1804,33 +1861,6 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   onConnectInstagram={() => setShowIgConnect(true)}
                 />
 
-                {/* 未連携のときだけ: 連携を促すオンボーディング導線（エディトリアル＋稼ぐ）。
-                    連携後は上部の IrisFlowHub に集約されるため、重複を出さず1本道に絞る。*/}
-                {!igProfile && (
-                  <>
-                    {/* エディトリアル ホームダッシュ */}
-                    <IrisEditorialHome
-                      bg={bg}
-                      myDeals={myDeals}
-                      postQueue={postQueue}
-                      knowledge={knowledge}
-                      igProfile={igProfile}
-                      onNavigate={(t, theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab(t as Tab); }}
-                      settings={settings}
-                      mediaKit={mediaKit}
-                      onConnectInstagram={() => setShowIgConnect(true)}
-                      onOpenDmDraft={(deal) => setDmDraftDeal(deal)}
-                    />
-
-                    {/* 仕事獲得を最優先 */}
-                    <IrisEarnHero
-                      onOpenDeals={() => setTab('deals')}
-                      onConnectInstagram={() => setShowIgConnect(true)}
-                      igConnected={false}
-                    />
-                  </>
-                )}
-
                 {/* 健康が積み上がっている実感 */}
                 <div style={{ marginBottom: '1.25rem' }}>
                   <WellnessTracker
@@ -1848,6 +1878,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   postQueue={postQueue}
                   onNavigate={(t) => setTab(t as Tab)}
                 />
+                </div>
               </>
             )}
             {tab === 'deals' && <><IrisRealOpenCalls bg={bg} /><DealsView bg={bg} desk={desk} myDeals={myDeals} settings={settings} mediaKit={mediaKit} /></>}
