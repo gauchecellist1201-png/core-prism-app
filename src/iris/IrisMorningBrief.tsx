@@ -40,31 +40,45 @@ function saveHistory(personaId: string, h: FollowerHistoryEntry[]) {
 /** 今日の日付 (YYYY-MM-DD JST 想定) */
 function today() { return new Date().toISOString().slice(0, 10); }
 
-/** 前日比のフォロワー差を返す。前日データがなければ null。 */
+/** 2つの YYYY-MM-DD 文字列の差（日数）を返す。UTC 基準で丸め誤差なし。 */
+function daysBetween(fromDate: string, toDate: string): number {
+  const a = Date.parse(`${fromDate}T00:00:00Z`);
+  const b = Date.parse(`${toDate}T00:00:00Z`);
+  if (Number.isNaN(a) || Number.isNaN(b)) return 0;
+  return Math.round((b - a) / 86_400_000);
+}
+
+/** 前回スナップショットからのフォロワー差を返す。
+ *  「昨日」に限定せず“今日より前で最も新しい”記録と比較するため、
+ *  1 日でも開かない日があっても伸びの数字が消えない（毎日の手応えを守る）。 */
 function getFollowerDelta(personaId: string, currentFollowers: number): {
   delta: number | null;
   pctText: string;
-  yesterdayFollowers: number | null;
+  prevFollowers: number | null;
 } {
   const h = loadHistory(personaId);
   const todayStr = today();
   const todayEntry = h.find(e => e.date === todayStr);
-  // 今日のスナップショットが無ければ今追加
+  // 今日のスナップショットが無ければ今追加（比較対象は追加前の履歴から選ぶ）
   if (!todayEntry) {
     const next = [...h, { date: todayStr, followers: currentFollowers }];
     saveHistory(personaId, next);
   }
-  // 前日のエントリ
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const ye = h.find(e => e.date === yesterday);
-  if (!ye) return { delta: null, pctText: '昨日比 計測開始', yesterdayFollowers: null };
-  const delta = currentFollowers - ye.followers;
-  const pct = ye.followers > 0 ? (delta / ye.followers) * 100 : 0;
+  // 今日より前で最も新しい記録（＝直近の比較基準）。日付順にソートして末尾を採る。
+  const prior = h
+    .filter(e => e.date < todayStr)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const base = prior[prior.length - 1];
+  if (!base) return { delta: null, pctText: '今日から計測をはじめます', prevFollowers: null };
+  const gap = daysBetween(base.date, todayStr);
+  const sinceLabel = gap <= 1 ? '昨日比' : `${gap}日前比`;
+  const delta = currentFollowers - base.followers;
+  const pct = base.followers > 0 ? (delta / base.followers) * 100 : 0;
   const sign = delta >= 0 ? '+' : '';
   return {
     delta,
-    pctText: `${sign}${delta.toLocaleString()} 人 (${sign}${pct.toFixed(2)}%)`,
-    yesterdayFollowers: ye.followers,
+    pctText: `${sinceLabel} ${sign}${delta.toLocaleString()} 人 (${sign}${pct.toFixed(2)}%)`,
+    prevFollowers: base.followers,
   };
 }
 

@@ -670,6 +670,31 @@ function Showcase() {
 
       <HairLine />
 
+      {/* ── 約束の帯：買い手が5秒で「自分の何が解決するか」を掴めるように。
+          機能一覧より先に、お悩み→AIが24時間肩代わり→取りこぼしゼロ、を温かく1つだけ。 */}
+      <section style={{ maxWidth: 960, margin: '0 auto', padding: 'clamp(40px, 7vw, 80px) clamp(20px, 5vw, 44px) clamp(8px, 2vw, 16px)', textAlign: 'center' }}>
+        <div style={{ fontSize: 12, letterSpacing: '0.32em', color: P.gold, textTransform: 'uppercase', marginBottom: 16 }}>
+          お店の接客を、AIにまかせる
+        </div>
+        <h2 style={{ margin: '0 0 18px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(26px, 5vw, 40px)', lineHeight: 1.4, color: P.fg }}>
+          問い合わせ対応に、<br />もう追われない。
+        </h2>
+        <p style={{ margin: '0 auto', maxWidth: 560, fontSize: 15, lineHeight: 2, color: P.fgMuted }}>
+          サイトを訪れたお客様の質問に、AIが<b style={{ color: P.fg }}>24時間その場で即答</b>。
+          夜間も営業時間外も、待たせず・取りこぼさず。あなたの手は、ほぼゼロになります。
+        </p>
+        <a
+          href="#setup"
+          style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 48,
+            marginTop: 28, padding: '0 30px', borderRadius: 999,
+            background: P.gold, color: '#141414', textDecoration: 'none', fontSize: 14, fontWeight: 800, letterSpacing: '0.02em',
+          }}
+        >
+          自分のお店で、無料で試す
+        </a>
+      </section>
+
       {/* ── ページ内クイック移動 (長いページでも会話インサイト・育成メモへ1タップ) ── */}
       <nav
         aria-label="ページ内の移動"
