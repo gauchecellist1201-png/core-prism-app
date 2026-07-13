@@ -57,6 +57,8 @@ type BlockProps = {
   accent?: string;
   /** ふんわり出す文字 */
   message?: string;
+  /** message の下に薄く添える一言 (初見の人への安心メッセージなど) */
+  sub?: string;
   /** 余白サイズ */
   padding?: string;
 };
@@ -68,6 +70,7 @@ type BlockProps = {
 export function LoaderBlock({
   accent = '#A78BFA',
   message = '読み込んでます',
+  sub,
   padding = '2rem 1rem',
 }: BlockProps) {
   return (
@@ -143,6 +146,21 @@ export function LoaderBlock({
       >
         {message}
       </p>
+
+      {sub && (
+        <p
+          style={{
+            fontSize: '0.72rem',
+            fontWeight: 500,
+            color: 'var(--fg-muted, #8a8794)',
+            margin: '-6px 0 0',
+            maxWidth: 260,
+            lineHeight: 1.5,
+          }}
+        >
+          {sub}
+        </p>
+      )}
 
       {/* 細い 3 本のシマー線で「組み立て中」感をうっすら */}
       <div style={{ display: 'grid', gap: 6, width: '60%', maxWidth: 220, marginTop: 4 }}>

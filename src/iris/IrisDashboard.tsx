@@ -111,6 +111,17 @@ const TAB_TO_GROUP: Record<string, string> = TAB_GROUPS.reduce((acc, g) => {
   g.tabs.forEach(t => { acc[t.id] = g.id; });
   return acc;
 }, {} as Record<string, string>);
+
+// タブ切替の待ち時間に「今どの画面を開いているか」を名前で伝える。
+// 弱い電波でチャンク読込に時間がかかっても「灰色の読み込み中…」で不安にさせない。
+// TAB_GROUPS のやさしい日本語ラベルをそのまま流用し、グループ外のタブだけ補う。
+const TAB_OPEN_LABEL: Record<string, string> = TAB_GROUPS.reduce((acc, g) => {
+  g.tabs.forEach(t => { acc[t.id] = t.l; });
+  return acc;
+}, {
+  cover: 'サムネ・カバー', video: '動画', revenue: '売上', fans: 'ファン',
+  collab: 'コラボ', kit: 'メディアキット',
+} as Record<string, string>);
 import { useIrisTeam, ROLE_META, type IrisTeamMember, type MemberRole } from './team';
 import { loadPrismCompanies, generateTieupPitch } from './brandMatch';
 import { getAllBrandDeals, CATEGORY_META, type BrandDeal, type BrandCategory } from './brandDeals';
@@ -1676,7 +1687,12 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         {/* タブ切替: アニメ無し (mode="wait" + 初期 opacity:0 の組合せで本文が見えなくなる事故が発生したため、確実に表示することを優先) */}
         {/* 各 View は React.lazy で必要時のみ読込。Suspense で一括ラップして flash を抑える */}
         <React.Suspense fallback={
-          <LoaderBlock accent={bg.accent} message="読み込み中…" padding="3rem 0" />
+          <LoaderBlock
+            accent={bg.accent}
+            message={`「${TAB_OPEN_LABEL[tab] || 'この画面'}」を開いています…`}
+            sub="はじめてでも大丈夫。開いたら、次に押す場所がわかります"
+            padding="3rem 0"
+          />
         }>
         <div key={tab}>
             {tab === 'home' && (
