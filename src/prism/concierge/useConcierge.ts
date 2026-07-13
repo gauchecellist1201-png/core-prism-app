@@ -11,6 +11,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { enqueueClaudeCall } from '../../lib/apiQueue';
 import { conciergeSiteId, type ConciergeConfig } from './conciergeConfig';
 import { buildConciergePrompt, summarizeConversation } from './conciergePrompt';
+import { addReservation } from './reservations';
+
+/** 会話中に受け取る予約カードの入力（お客様が埋める最小項目） */
+export interface ReservationInput {
+  name: string;
+  whenText: string;   // ご希望日時
+  contact: string;    // 連絡先（電話/メール/LINE名）
+  note?: string;
+}
 
 export interface ConciergeMessage {
   id: string;
@@ -94,6 +103,13 @@ export function useConcierge(cfg: ConciergeConfig) {
   const [leadSending, setLeadSending] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
   const [leadError, setLeadError] = useState<string | null>(null);
+
+  // 予約捕捉（会話中に「予約したい」→ カードでお名前・希望日時・連絡先を受け取り保存）
+  const [reservationOpen, setReservationOpen] = useState(false);
+  const [reservationSending, setReservationSending] = useState(false);
+  const [reservationSent, setReservationSent] = useState(false);
+  const [reservationError, setReservationError] = useState<string | null>(null);
+  const reservationSentRef = useRef(false);
 
   const cfgRef = useRef(cfg);
   cfgRef.current = cfg;
@@ -213,6 +229,13 @@ export function useConcierge(cfg: ConciergeConfig) {
           setLeadOpen(true);
         }, 900);
       }
+      // 予約の意思 → 予約カードをそっと開いて、お名前・希望日時・連絡先を受け取る（→予約管理へ保存）
+      if (parsed.booking && !reservationSentRef.current) {
+        window.setTimeout(() => {
+          setReservationError(null);
+          setReservationOpen(true);
+        }, 900);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : '不明なエラー';
       setError(msg);
@@ -294,6 +317,47 @@ export function useConcierge(cfg: ConciergeConfig) {
     }
   }, [messages]);
 
+  /** 予約カードを開く（「予約する」ボタン等から） */
+  const openReservation = useCallback(() => { setReservationError(null); setReservationOpen(true); }, []);
+  const closeReservation = useCallback(() => setReservationOpen(false), []);
+
+  /** 予約送信: お名前・希望日時・連絡先を /api/crystal-reservations へ（source=chat）。予約管理に届く。 */
+  const submitReservation = useCallback(async (input: ReservationInput): Promise<boolean> => {
+    const name = input.name.trim();
+    const whenText = input.whenText.trim();
+    const contact = input.contact.trim();
+    if (!name && !contact && !whenText) {
+      setReservationError('お名前・ご希望日時・連絡先のいずれかをご入力ください。');
+      return false;
+    }
+    setReservationSending(true);
+    setReservationError(null);
+    const c = cfgRef.current;
+    const ctype = /@/.test(contact) ? 'email' : /^[0-9+\-() ]{8,}$/.test(contact) ? 'phone' : 'other';
+    try {
+      const created = await addReservation(conciergeSiteId(c), {
+        name, whenText, contact, contactType: ctype as 'email' | 'phone' | 'other',
+        note: input.note?.trim() || undefined, source: 'chat',
+      });
+      if (!created) throw new Error('failed');
+      setReservationSent(true);
+      reservationSentRef.current = true;
+      setReservationOpen(false);
+      setMessages(prev => [...prev, {
+        id: makeId('a'),
+        role: 'assistant',
+        content: `${name ? `${name} 様、` : ''}ご予約を承りました。${whenText ? `【${whenText}】で` : ''}お手続きを進めます。確定のご連絡を差し上げますので、少々お待ちくださいませ。`,
+        ts: Date.now(),
+      }]);
+      return true;
+    } catch {
+      setReservationError('送信できませんでした。通信環境をご確認のうえ、もう一度お試しください。');
+      return false;
+    } finally {
+      setReservationSending(false);
+    }
+  }, []);
+
   const clear = useCallback(() => {
     setMessages([]);
     setError(null);
@@ -301,6 +365,8 @@ export function useConcierge(cfg: ConciergeConfig) {
     setTyping(null);
     setLeadSent(false);
     leadSentRef.current = false;
+    setReservationSent(false);
+    reservationSentRef.current = false;
   }, []);
 
   return {
@@ -323,5 +389,13 @@ export function useConcierge(cfg: ConciergeConfig) {
     openLead,
     closeLead,
     submitLead,
+    // 予約
+    reservationOpen,
+    reservationSending,
+    reservationSent,
+    reservationError,
+    openReservation,
+    closeReservation,
+    submitReservation,
   };
 }

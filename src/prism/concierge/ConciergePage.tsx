@@ -20,6 +20,11 @@ import {
   conciergeSiteId,
 } from './conciergeConfig';
 import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
+import {
+  listReservations, addReservation, updateReservationStatus,
+  SOURCE_LABEL, STATUS_LABEL,
+  type Reservation, type ReservationSource, type ReservationStatus,
+} from './reservations';
 
 const SERIF = `'Didot', 'Bodoni 72', 'Hiragino Mincho ProN', 'Yu Mincho', Georgia, serif`;
 const SANS = `-apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif`;
@@ -263,6 +268,174 @@ function InsightIcon({ kind }: { kind: 'chat' | 'trend' | 'gap' }) {
   if (kind === 'chat') return <svg {...common} aria-hidden><path d="M2 3.5h12v8H8.5L5 14v-2.5H2v-8z" /></svg>;
   if (kind === 'trend') return <svg {...common} aria-hidden><path d="M2 12.5l4-4 2.5 2.5L14 5" /><path d="M10.5 5H14v3.5" /></svg>;
   return <svg {...common} aria-hidden><circle cx="8" cy="8" r="6.2" /><path d="M8 5v3.6" /><circle cx="8" cy="11.2" r="0.4" fill={P.silver} /></svg>;
+}
+
+// ─── 予約管理：どの経路の予約も1つの受信箱で（チャット/LINE/メール/電話/手動）───
+function CrystalReservationsSection({ config }: { config: ConciergeConfig }) {
+  const site = useMemo(() => conciergeSiteId(config), [config.brandName, config.industry]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [items, setItems] = useState<Reservation[] | null>(null);
+  const [busy, setBusy] = useState(true);
+  const [configured, setConfigured] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<{ name: string; whenText: string; contact: string; service: string; party: string; note: string; source: ReservationSource }>(
+    { name: '', whenText: '', contact: '', service: '', party: '', note: '', source: 'phone' },
+  );
+
+  const load = useCallback(async () => {
+    setBusy(true); setError(null);
+    const r = await listReservations(site);
+    if (!r.ok && r.error) setError(r.error);
+    setConfigured(r.configured);
+    setItems(r.reservations);
+    setBusy(false);
+  }, [site]);
+  useEffect(() => { void load(); }, [load]);
+
+  const addManual = async () => {
+    if (!form.name.trim() && !form.contact.trim() && !form.whenText.trim()) return;
+    setSaving(true);
+    const created = await addReservation(site, {
+      name: form.name.trim(), whenText: form.whenText.trim(), contact: form.contact.trim(),
+      service: form.service.trim() || undefined, party: form.party ? Number(form.party) : undefined,
+      note: form.note.trim() || undefined, source: form.source,
+    });
+    setSaving(false);
+    if (created) {
+      setItems((prev) => [created, ...(prev || [])]);
+      setForm({ name: '', whenText: '', contact: '', service: '', party: '', note: '', source: 'phone' });
+      setShowAdd(false);
+    } else {
+      setError('保存できませんでした。通信環境をご確認のうえ、もう一度お試しください。');
+    }
+  };
+
+  const setStatus = async (id: string, status: ReservationStatus) => {
+    setItems((prev) => (prev || []).map((r) => (r.id === id ? { ...r, status } : r)));
+    const ok = await updateReservationStatus(site, id, status);
+    if (!ok) { setError('更新できませんでした。もう一度お試しください。'); void load(); }
+  };
+
+  const active = (items || []).filter((r) => r.status === 'new' || r.status === 'confirmed');
+  const closed = (items || []).filter((r) => r.status === 'done' || r.status === 'cancelled');
+  const newCount = (items || []).filter((r) => r.status === 'new').length;
+
+  const cardBg: React.CSSProperties = {
+    borderRadius: 18, padding: '14px 15px', border: `1px solid ${P.lineSoft}`, background: P.glass,
+    backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', marginBottom: 10,
+  };
+  const label: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 700, color: P.fgMuted, letterSpacing: '0.04em', marginBottom: 5 };
+  const inp: React.CSSProperties = {
+    width: '100%', minHeight: 44, padding: '10px 12px', borderRadius: 12, fontSize: 16,
+    border: `1px solid ${P.line}`, background: 'rgba(255,255,255,0.04)', color: P.fg, outline: 'none',
+  };
+  const srcColor: Record<ReservationSource, string> = { chat: '#8B7BE8', line: '#06C755', email: '#E0A64E', phone: '#5AA2E8', manual: P.silver };
+  const statusColor: Record<ReservationStatus, string> = { new: '#E0A64E', confirmed: '#4FB477', done: P.silver, cancelled: '#B06B6B' };
+
+  const actBtn = (bg: string, on: () => void, text: string): React.ReactElement => (
+    <button onClick={on} style={{ minHeight: 40, padding: '0 14px', borderRadius: 999, border: `1px solid ${bg}55`, background: `${bg}1f`, color: bg, fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>{text}</button>
+  );
+
+  const Row = ({ r }: { r: Reservation }) => (
+    <div style={cardBg}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.04em', color: srcColor[r.source], border: `1px solid ${srcColor[r.source]}55`, borderRadius: 999, padding: '2px 9px' }}>{SOURCE_LABEL[r.source]}</span>
+        <span style={{ fontSize: 10, fontWeight: 800, color: statusColor[r.status], border: `1px solid ${statusColor[r.status]}55`, borderRadius: 999, padding: '2px 9px' }}>{STATUS_LABEL[r.status]}</span>
+        <span style={{ marginLeft: 'auto', fontSize: 15, fontWeight: 800, color: P.fg }}>{r.whenText || '日時調整中'}</span>
+      </div>
+      <div style={{ fontSize: 14, color: P.fg, fontWeight: 700 }}>
+        {r.name || '（お名前未取得）'}{r.party ? `・${r.party}名` : ''}{r.service ? ` / ${r.service}` : ''}
+      </div>
+      {(r.contact || r.note) && (
+        <div style={{ fontSize: 12.5, color: P.fgMuted, marginTop: 3, lineHeight: 1.7 }}>
+          {r.contact && <>連絡先：{r.contact}</>}{r.contact && r.note ? ' ／ ' : ''}{r.note}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+        {r.status === 'new' && actBtn('#4FB477', () => setStatus(r.id, 'confirmed'), '確定する')}
+        {(r.status === 'new' || r.status === 'confirmed') && actBtn(P.silver, () => setStatus(r.id, 'done'), '完了')}
+        {(r.status === 'new' || r.status === 'confirmed') && actBtn('#B06B6B', () => setStatus(r.id, 'cancelled'), 'キャンセル')}
+        {(r.status === 'done' || r.status === 'cancelled') && actBtn('#4FB477', () => setStatus(r.id, 'confirmed'), '戻す')}
+      </div>
+    </div>
+  );
+
+  return (
+    <section id="reservations" style={{ maxWidth: 1160, margin: '0 auto', padding: 'clamp(40px, 6vw, 80px) clamp(16px, 4vw, 44px)', scrollMarginTop: 16 }}>
+      <SectionIndex no="05" label="Every booking, one inbox" />
+      <h2 style={{ margin: '0 0 10px', fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(24px, 3.6vw, 36px)', letterSpacing: '0.04em' }}>
+        予約管理 — どの経路の予約も、ひとつに
+      </h2>
+      <p style={{ margin: '0 0 18px', fontSize: 14, lineHeight: 2, color: P.fgMuted, maxWidth: 680 }}>
+        チャットでいただいた予約は<strong style={{ color: P.fg }}>Crystal が会話の中で自動で捕捉</strong>。
+        公式LINE・メール・電話でいただいた予約は<strong style={{ color: P.fg }}>「手動で追加」</strong>すれば、
+        すべての予約を1つの受信箱で確認・確定・完了まで管理できます。
+      </p>
+
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
+        <button onClick={() => setShowAdd((s) => !s)} style={{ minHeight: 44, padding: '0 20px', borderRadius: 999, background: P.gold, color: '#141414', border: 'none', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}>
+          {showAdd ? '閉じる' : '＋ 予約を手動で追加'}
+        </button>
+        <button onClick={() => void load()} disabled={busy} style={{ minHeight: 44, padding: '0 16px', borderRadius: 999, background: 'transparent', color: P.fgMuted, border: `1px solid ${P.line}`, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+          {busy ? '読み込み中…' : '更新'}
+        </button>
+        {newCount > 0 && <span style={{ fontSize: 13, fontWeight: 800, color: '#E0A64E' }}>未確認 {newCount}件</span>}
+      </div>
+
+      {showAdd && (
+        <div style={{ ...cardBg, padding: '16px 16px 18px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ gridColumn: '1 / -1' }}><label style={label}>受付経路</label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {(['phone', 'line', 'email', 'manual'] as ReservationSource[]).map((s) => (
+                  <button key={s} onClick={() => setForm((f) => ({ ...f, source: s }))} style={{ minHeight: 40, padding: '0 14px', borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: `1px solid ${form.source === s ? P.gold : P.line}`, background: form.source === s ? `${P.gold}22` : 'transparent', color: form.source === s ? P.gold : P.fgMuted }}>{SOURCE_LABEL[s]}</button>
+                ))}
+              </div>
+            </div>
+            <div><label style={label}>お名前</label><input style={inp} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="山田 太郎" /></div>
+            <div><label style={label}>ご希望日時</label><input style={inp} value={form.whenText} onChange={(e) => setForm((f) => ({ ...f, whenText: e.target.value }))} placeholder="7/25 19:00" /></div>
+            <div><label style={label}>連絡先</label><input style={inp} value={form.contact} onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))} placeholder="電話 / メール / LINE名" /></div>
+            <div><label style={label}>メニュー・コース（任意）</label><input style={inp} value={form.service} onChange={(e) => setForm((f) => ({ ...f, service: e.target.value }))} placeholder="ディナーコース" /></div>
+            <div><label style={label}>人数（任意）</label><input style={inp} type="number" inputMode="numeric" value={form.party} onChange={(e) => setForm((f) => ({ ...f, party: e.target.value }))} placeholder="2" /></div>
+            <div><label style={label}>備考（任意）</label><input style={inp} value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="窓際希望 など" /></div>
+          </div>
+          <button onClick={addManual} disabled={saving} style={{ marginTop: 14, width: '100%', minHeight: 48, borderRadius: 12, background: P.gold, color: '#141414', border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+            {saving ? '保存中…' : 'この予約を追加する'}
+          </button>
+        </div>
+      )}
+
+      {error && <div style={{ ...cardBg, borderColor: 'rgba(176,107,107,0.4)', color: '#E7B4B4', fontSize: 13 }}>{error}</div>}
+
+      {!configured && !busy && (
+        <div style={{ ...cardBg, fontSize: 13, color: P.fgMuted }}>
+          予約の保存にはサーバーの保存設定（Upstash）が必要です。設定後、ここに予約が並びます。
+        </div>
+      )}
+
+      {busy && items === null ? (
+        <p style={{ fontSize: 13, color: P.fgSubtle }}>読み込んでいます…</p>
+      ) : active.length === 0 && closed.length === 0 ? (
+        <div style={{ ...cardBg, textAlign: 'center', padding: '28px 16px' }}>
+          <div style={{ fontSize: 14, color: P.fg, fontWeight: 700 }}>まだ予約はありません</div>
+          <div style={{ fontSize: 12.5, color: P.fgMuted, marginTop: 6, lineHeight: 1.8 }}>
+            チャットで予約希望のお客様がいれば自動でここに届きます。電話やメールでいただいた予約は「＋ 予約を手動で追加」から。
+          </div>
+        </div>
+      ) : (
+        <>
+          {active.map((r) => <Row key={r.id} r={r} />)}
+          {closed.length > 0 && (
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 700, color: P.fgMuted, minHeight: 44, display: 'flex', alignItems: 'center' }}>完了・キャンセル（{closed.length}件）</summary>
+              <div style={{ marginTop: 10 }}>{closed.map((r) => <Row key={r.id} r={r} />)}</div>
+            </details>
+          )}
+        </>
+      )}
+    </section>
+  );
 }
 
 function CrystalInsightsSection({ config, onAddFaq }: { config: ConciergeConfig; onAddFaq: (q: string) => void }) {
@@ -706,6 +879,7 @@ function Showcase() {
         {[
           { href: '#features', label: 'できること' },
           { href: '#setup', label: '設置のしかた' },
+          { href: '#reservations', label: '予約管理' },
           { href: '#insights', label: '会話インサイト' },
           { href: '#coaching', label: '育成メモ' },
           { href: '#pricing', label: '料金' },
@@ -1201,6 +1375,11 @@ function Showcase() {
           document.getElementById('faq-editor')?.scrollIntoView({ behavior: 'smooth' });
         }}
       />
+
+      <HairLine />
+
+      {/* 予約管理：どの経路の予約も1つの受信箱で */}
+      <CrystalReservationsSection config={config} />
 
       <HairLine />
 

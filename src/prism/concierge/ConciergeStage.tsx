@@ -262,6 +262,7 @@ export default function ConciergeStage({ config, standalone }: { config: Concier
   const [voiceOn, setVoiceOn] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [lead, setLead] = useState<LeadDraft>({ name: '', email: '', note: '' });
+  const [resv, setResv] = useState<{ name: string; whenText: string; contact: string; note: string }>({ name: '', whenText: '', contact: '', note: '' });
   const [use3d] = useState(canUseWebgl);
 
   const voiceOnRef = useRef(voiceOn);
@@ -487,15 +488,28 @@ export default function ConciergeStage({ config, standalone }: { config: Concier
                   ご予約ページを開く
                 </a>
               )}
-              {/* 日程希望 (会話が進んだら常設の小さな導線) */}
-              {!cz.isLoading && !cz.error && !cz.leadSent && cz.messages.length >= 2 && (
-                <button onClick={cz.openLead} style={{
-                  marginTop: 16, minHeight: 44, padding: '9px 18px', borderRadius: 999, cursor: 'pointer',
-                  border: `1px solid ${T.line}`, background: T.glassLight, color: T.fgMuted,
-                  backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', fontSize: 12.5,
-                }}>
-                  ご案内の日程を希望する
-                </button>
+              {/* 予約する / 日程希望 (会話が進んだら常設の小さな導線) */}
+              {!cz.isLoading && !cz.error && cz.messages.length >= 2 && (
+                <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {!cz.reservationSent && (
+                    <button onClick={cz.openReservation} style={{
+                      minHeight: 44, padding: '9px 18px', borderRadius: 999, cursor: 'pointer',
+                      border: 'none', background: '#F4F7FC', color: '#1B2333',
+                      fontSize: 12.5, fontWeight: 800, letterSpacing: '0.03em',
+                    }}>
+                      予約する
+                    </button>
+                  )}
+                  {!cz.leadSent && (
+                    <button onClick={cz.openLead} style={{
+                      minHeight: 44, padding: '9px 18px', borderRadius: 999, cursor: 'pointer',
+                      border: `1px solid ${T.line}`, background: T.glassLight, color: T.fgMuted,
+                      backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', fontSize: 12.5,
+                    }}>
+                      日程を相談する
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -609,6 +623,31 @@ export default function ConciergeStage({ config, standalone }: { config: Concier
             }}
           >
             {cz.leadSending ? '送信しています…' : 'この内容で希望する'}
+          </button>
+        </div>
+      </Sheet>
+
+      {/* ── 予約シート（会話中に「予約したい」→ お名前・希望日時・連絡先を承り、予約管理へ）── */}
+      <Sheet open={cz.reservationOpen} onClose={cz.closeReservation} title="ご予約を承ります">
+        <p style={{ margin: '0 0 14px', fontSize: 12.5, lineHeight: 1.8, color: T.fgMuted }}>
+          お名前・ご希望日時・ご連絡先をお預かりします。確定のご連絡を差し上げます。
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input style={sheetInput} value={resv.name} onChange={e => setResv(p => ({ ...p, name: e.target.value }))} placeholder="お名前" aria-label="お名前" />
+          <input style={sheetInput} value={resv.whenText} onChange={e => setResv(p => ({ ...p, whenText: e.target.value }))} placeholder="ご希望日時 (例: 7/25 19:00)" aria-label="ご希望日時" />
+          <input style={sheetInput} value={resv.contact} onChange={e => setResv(p => ({ ...p, contact: e.target.value }))} placeholder="ご連絡先 (電話 / メール / LINE名)" aria-label="ご連絡先" />
+          <textarea style={{ ...sheetInput, minHeight: 60, resize: 'vertical', lineHeight: 1.7 }} value={resv.note} onChange={e => setResv(p => ({ ...p, note: e.target.value }))} placeholder="人数・ご要望など (任意)" aria-label="ご要望" />
+          {cz.reservationError && <div style={{ fontSize: 12.5, color: '#F2B8C6' }}>{cz.reservationError}</div>}
+          <button
+            onClick={() => void cz.submitReservation(resv)}
+            disabled={cz.reservationSending}
+            style={{
+              minHeight: 50, borderRadius: 999, border: 'none', cursor: 'pointer',
+              background: '#F4F7FC', color: '#1B2333', fontSize: 14, fontWeight: 800, letterSpacing: '0.04em',
+              opacity: cz.reservationSending ? 0.7 : 1,
+            }}
+          >
+            {cz.reservationSending ? '送信しています…' : 'この内容で予約する'}
           </button>
         </div>
       </Sheet>
