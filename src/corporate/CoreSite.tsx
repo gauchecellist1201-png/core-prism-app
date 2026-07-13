@@ -34,49 +34,7 @@ const PLATFORM_PLANS: Array<{
   { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: 'https://crystal-nine-self.vercel.app/', Logo: CrystalLogo, step: 'STEP 5 — 最上位のおもてなし', featured: true },
 ];
 
- stripeUrl: string; featured?: boolean;
-}> = [
-  {
-    name: 'Continuum Light',
-    tag: 'まず3つの仕事を、AIに手放す',
-    price: '¥29,800',
-    compare: '単品合計より 約40% お得',
-    features: [
-      '6サービスから選べる3つ（いつでも入替可）',
-      'ぜんぶ上位プランでご利用OK',
-      'ひとつのCOREアカウントで横断',
-      'メールサポート',
-    ],
-    stripeUrl: '', // ← Stripeリンクをここに
-  },
-  {
-    name: 'Continuum Complete',
-    tag: '事業のぜんぶを、AIの仕事に',
-    price: '¥49,800',
-    compare: '単品合計 約¥109,000 相当 → 半額以下',
-    features: [
-      '6サービスすべて使い放題（各上位プラン）',
-      '返信・集客・接客・予約・分析まで全自動',
-      '月次「時間レポート」— AIが代行した仕事量と、あなたに戻った時間を見える化',
-      '優先サポート',
-    ],
-    stripeUrl: '', // ← Stripeリンクをここに
-    featured: true,
-  },
-  {
-    name: 'Continuum Zero',
-    tag: '仕事時間“ほぼゼロ”を、一緒に設計する',
-    price: '¥148,000',
-    setup: '¥298,000',
-    features: [
-      'Complete の全部',
-      '導入・初期構築・運用チューニングまで完全代行（あなたの作業ゼロで立ち上がる）',
-      '専属コンシェルジュによる月次レビュー',
-      '四半期ライフプラン面談 — 戻った時間を「人間関係・趣味・家族」へどう使うかまで一緒に描く',
-    ],
-    stripeUrl: '', // ← Stripeリンクをここに
-  },
-];
+
 
 // 荘厳系フォント
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
