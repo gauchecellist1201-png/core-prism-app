@@ -11,6 +11,7 @@ import { computeWeeklyValue, type ValueMetric, type DayBucket } from '../lib/wee
 import { statsForLastDays } from '../lib/aiSuggestionLog';
 import { cxoActivityLastDays } from '../lib/cxoDeliverables';
 import { CXO_META } from '../hooks/useAgentTaskQueue';
+import { getEffectivePlanPriceJpy, loadBillingUser } from '../lib/billing';
 
 // 役員 1 人分の集計（誰が・何件・うち採用）。件数はすべて実際に記録された提案の数（honest-numbers）。
 interface ExecRow { key: string; name: string; count: number; adopted: number; color: string; Icon: (p: { size?: number; color?: string }) => ReactElement; }
@@ -84,6 +85,26 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
     };
   }, []);
 
+  // 実際に契約している月額（円）。free/トライアルは 0、master は Infinity → 0 扱い。
+  // 「外注いくら相当」を"あなたが払っている月額"と honest に突き合わせて
+  // 「もう元が取れている」を体感させる（月1万円の価値を毎日実感 / 解約防止）。
+  const [monthlyPrice, setMonthlyPrice] = useState<number>(() => {
+    const p = getEffectivePlanPriceJpy(loadBillingUser());
+    return Number.isFinite(p) ? p : 0;
+  });
+  useEffect(() => {
+    const refresh = () => {
+      const p = getEffectivePlanPriceJpy(loadBillingUser());
+      setMonthlyPrice(Number.isFinite(p) ? p : 0);
+    };
+    window.addEventListener('focus', refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
+
   const { metrics, total, todayTotal, dailySeries, estimatedYen } = data;
   // 役員の稼働記録も「動いた量」の一部。metrics が全0でも役員が動いていれば空状態にしない。
   const empty = total === 0 && execs.length === 0;
@@ -153,6 +174,13 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
             </div>
           </div>
         </div>
+      )}
+
+      {/* 元が取れたか — 「外注いくら相当」を"あなたが払っている月額"と正直に突き合わせる。
+          有料プランのときだけ表示（free/トライアルは月額0なので出さない＝嘘の元取れ表示をしない）。
+          今週分（直近7日）だけで月額を超えていれば「もう元が取れている」と言い切れる（控えめ換算なので誇張にならない）。 */}
+      {!empty && estimatedYen > 0 && monthlyPrice > 0 && (
+        <Payback estimatedYen={estimatedYen} monthlyPrice={monthlyPrice} />
       )}
 
       {/* 7日 momentum — AIが「毎日動いている」を正直に可視化（実活動のある日だけ色が立つ） */}
@@ -266,6 +294,49 @@ function ExecRoster({ rows }: { rows: ExecRow[] }) {
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+// 元が取れたか — 今週分の「外注いくら相当」を、あなたが払っている月額と正直に突き合わせる。
+// honest-numbers: 今週分（直近7日）の控えめな換算だけで判定。誇張しない。
+//   - 今週分 ≥ 月額 → 「もう今月分の元が取れています」＋（月額の何倍か）
+//   - 今週分 < 月額 → 「月額のうち今週分で ◯% を回収」＋細い進捗バー
+function Payback({ estimatedYen, monthlyPrice }: { estimatedYen: number; monthlyPrice: number }) {
+  const paidBack = estimatedYen >= monthlyPrice;
+  const pct = Math.min(100, Math.round((estimatedYen / monthlyPrice) * 100));
+  const mult = Math.floor(estimatedYen / monthlyPrice); // 何倍（切り捨て）
+  const accent = paidBack ? '#06C755' : '#8E5CFF';
+  return (
+    <div style={{
+      marginBottom: 12, padding: '11px 12px', borderRadius: 12,
+      background: 'var(--surface-3)', border: `1px solid ${accent}33`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: paidBack ? 0 : 8 }}>
+        <span style={{
+          width: 24, height: 24, borderRadius: 8, flexShrink: 0,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          background: `${accent}1f`, color: accent,
+        }}>
+          {paidBack ? <Check size={14} strokeWidth={3} /> : <TrendingUp size={13} strokeWidth={2.4} />}
+        </span>
+        <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--fg-strong)', lineHeight: 1.45 }}>
+          {paidBack ? (
+            <>今週分だけで、月額 ¥{monthlyPrice.toLocaleString('ja-JP')} の<span style={{ color: accent }}>元が取れています</span>{mult >= 2 ? <span style={{ color: 'var(--fg-muted)', fontWeight: 700 }}>（月額の約 {mult} 倍）</span> : null}</>
+          ) : (
+            <>月額 ¥{monthlyPrice.toLocaleString('ja-JP')} のうち、今週分で <span style={{ color: accent }}>約 {pct}%</span> を回収</>
+          )}
+        </span>
+      </div>
+      {!paidBack && (
+        <div style={{ height: 6, borderRadius: 999, background: 'var(--border)', overflow: 'hidden' }}>
+          <div style={{
+            width: `${pct}%`, height: '100%', borderRadius: 999,
+            background: 'linear-gradient(90deg,#8E5CFF,#2E6FFF)',
+            transition: 'width 0.5s cubic-bezier(.22,1,.36,1)',
+          }} />
+        </div>
+      )}
     </div>
   );
 }
