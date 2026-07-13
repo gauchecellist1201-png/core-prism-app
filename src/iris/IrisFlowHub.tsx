@@ -21,7 +21,7 @@ import {
   BarChart3, Sparkles, Clapperboard, Mail, CheckCircle2, ArrowRight,
   Loader2, TrendingUp, RefreshCw, ChevronRight, Hash, Clock, CalendarPlus,
   LayoutGrid, GripVertical, ChevronLeft, Video as VideoIcon, ImageIcon,
-  Copy, Check,
+  Copy, Check, Camera,
 } from 'lucide-react';
 import type { IgProfile } from './instagramConnect';
 import { useIgStrategy, type StrategyItem } from './useIgStrategy';
@@ -861,6 +861,7 @@ function buildScriptText(reel: ReelScriptResult, theme: string): string {
   lines.push('');
   reel.scenes.forEach((sc) => {
     lines.push(`■ シーン${sc.index}（${sc.duration}秒）`);
+    if (sc.shot) lines.push(`撮り方: ${sc.shot}`);
     lines.push(`字幕: ${sc.caption}`);
     if (sc.narration) lines.push(`読み: ${sc.narration}`);
     lines.push('');
@@ -902,6 +903,12 @@ function ReelScriptCard({ reel, theme, accent, bg, onRegenerate, onOpenStudio }:
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: bg.ink, lineHeight: 1.45 }}>{sc.caption}</div>
               {sc.narration && <div style={{ fontSize: 11, color: bg.inkSoft, lineHeight: 1.5, marginTop: 1 }}>{sc.narration}</div>}
+              {sc.shot && (
+                <div style={{ display: 'flex', gap: 4, alignItems: 'flex-start', marginTop: 4, fontSize: 11, color: accent, lineHeight: 1.5 }}>
+                  <Camera size={11} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <span>{sc.shot}</span>
+                </div>
+              )}
             </div>
             <span style={{ fontSize: 10, color: bg.inkSoft, display: 'inline-flex', alignItems: 'center', gap: 2, flexShrink: 0 }}><Clock size={10} />{sc.duration}s</span>
           </div>

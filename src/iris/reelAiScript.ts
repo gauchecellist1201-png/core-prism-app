@@ -22,6 +22,8 @@ export interface ScriptScene {
   duration: number;
   /** ナレーション (TTS で読ませる時用、字幕より少し長め可) */
   narration?: string;
+  /** 撮り方 (何を・どう撮るか。カメラ初心者でもそのまま撮れる 1 行の指示) */
+  shot?: string;
 }
 
 export interface ReelScriptResult {
@@ -45,6 +47,7 @@ function buildSystemPrompt(): string {
 - 必ず 3 シーン構成 (Hook → Body → CTA)
 - 各シーンの caption は 8〜18 文字、視認性最優先
 - 各シーン duration は 4〜6 秒 (合計 15〜20 秒)
+- 各シーンに shot (撮り方) を必ず付ける: カメラを触ったことがない人でもそのまま撮れるよう「何を・どのアングルで・どんな動きで撮るか」を具体的な 1 行で (例: "手元を真上から。商品を置く瞬間をアップで", "自分の顔を正面・自然光の窓際で。笑顔でうなずく"). 専門用語は避け、やさしい言葉で
 - title は最初の 1〜3 秒で離脱を防ぐ強いフック (例: "知らないと損する◯◯", "実はやってはいけない◯◯")
 - cta は短く、保存 / フォロー / コメントを促す (例: "保存して見返してね")
 - caption は Instagram 本文 (300 字以内、改行可)
@@ -54,9 +57,9 @@ function buildSystemPrompt(): string {
 {
   "title": "...",
   "scenes": [
-    { "index": 1, "caption": "...", "duration": 5, "narration": "..." },
-    { "index": 2, "caption": "...", "duration": 5, "narration": "..." },
-    { "index": 3, "caption": "...", "duration": 5, "narration": "..." }
+    { "index": 1, "caption": "...", "duration": 5, "narration": "...", "shot": "..." },
+    { "index": 2, "caption": "...", "duration": 5, "narration": "...", "shot": "..." },
+    { "index": 3, "caption": "...", "duration": 5, "narration": "...", "shot": "..." }
   ],
   "cta": "...",
   "caption": "...",
@@ -134,6 +137,7 @@ export async function generateReelScript(theme: string): Promise<ReelScriptResul
     caption: clampCaption(String(s.caption || ''), 24),
     duration: Math.max(3, Math.min(8, Number(s.duration) || 5)),
     narration: s.narration ? String(s.narration).slice(0, 120) : undefined,
+    shot: s.shot ? String(s.shot).replace(/\s+/g, ' ').trim().slice(0, 80) : undefined,
   }));
   // 3 シーンに満たなければ補完
   while (scenes.length < 3) {
