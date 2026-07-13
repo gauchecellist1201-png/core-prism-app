@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo } from '../components/Logo';
+import { CONTINUUM_PLANS } from './continuumPlans';
 
 const COMPANY = {
   nameJa: 'CORE',
@@ -33,13 +34,7 @@ const PLATFORM_PLANS: Array<{
   { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: 'https://crystal-nine-self.vercel.app/', Logo: CrystalLogo, step: 'STEP 5 — 最上位のおもてなし', featured: true },
 ];
 
-// ── CORE Continuum（旗艦ブランド）— 6サービス統合パッケージ ──
-// 訴求: 仕事をAIに全部任せ、仕事時間をほぼゼロへ。空いた時間で人生を豊かに。
-// stripeUrl: オーナーがStripe決済リンクを作成したらここに貼るだけでボタンが「このプランで始める」に変わる。
-// 空文字の間は mailto の個別相談に自動フォールバック（動かないボタンを出さない）。
-const CONTINUUM_PLANS: Array<{
-  name: string; tag: string; price: string; setup?: string; compare?: string;
-  features: string[]; stripeUrl: string; featured?: boolean;
+ stripeUrl: string; featured?: boolean;
 }> = [
   {
     name: 'Continuum Light',
@@ -216,7 +211,7 @@ export default function CoreSite() {
           </a>
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
             <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
-            <a href="#continuum" style={navLink} className="lp-nav-link">Continuum</a>
+            <a href="/continuum" style={navLink} className="lp-nav-link">Continuum</a>
             <a href="#connect" style={navLink} className="lp-nav-link">つながり</a>
             <a href="#journey" style={navLink} className="lp-nav-link">歩み</a>
             <a href="#about" style={navLink} className="lp-nav-link">会社概要</a>
@@ -678,6 +673,17 @@ export default function CoreSite() {
               <br />
               それが、CORE Continuum が届ける生き方です。
             </p>
+            <a
+              href="/continuum"
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 48,
+                marginTop: '1.8rem', padding: '0 28px', borderRadius: 999, textDecoration: 'none',
+                fontFamily: FONT_SANS, fontSize: '0.86rem', fontWeight: 800, letterSpacing: '0.05em',
+                color: '#F1E6CE', border: '1px solid rgba(201,169,110,0.55)', background: 'rgba(201,169,110,0.08)',
+              }}
+            >
+              Continuum の世界を見る →
+            </a>
           </div>
 
           {/* 3プラン(Ascension: Light → Complete(推奨) → Zero) */}

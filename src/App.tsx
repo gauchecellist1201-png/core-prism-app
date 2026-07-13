@@ -60,6 +60,7 @@ const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./legal/TermsOfService'));
 const CoreSite = lazy(() => import('./corporate/CoreSite'));
+const ContinuumLanding = lazy(() => import('./corporate/ContinuumLanding'));
 const StrategyDashboard = lazy(() => import('./corporate/StrategyDashboard'));
 const PricingPage = lazy(() => import('./corporate/PricingPage'));
 const IrisApp = lazy(() => import('./iris/IrisApp'));
@@ -411,6 +412,11 @@ export default function App() {
   // /corp — CORE 法人 LP
   if (isCorpPath()) {
     return <Suspense fallback={<RouteFallback />}><CoreSite /><LpStickyCta title="ひとつの哲学、6つのAIプロダクト。" sub="CORE ── 変わらない核を、支える" cta="プロダクトを見る" href="#products" accent1="#e9cd8a" accent2="#c9a24b" /></Suspense>;
+  }
+
+  // /continuum — CORE Continuum 特設LP(旗艦ブランド・金×黒)
+  if (window.location.pathname === '/continuum' || window.location.pathname.startsWith('/continuum/')) {
+    return <Suspense fallback={<RouteFallback />}><ContinuumLanding /><LpStickyCta title="仕事は、AIの仕事に。あなたは、人生に。" sub="CORE Continuum ── 6つのAIをひとつに" cta="プランを見る" href="#plans" accent1="#e9cd8a" accent2="#c9a24b" /></Suspense>;
   }
 
   // /master/stripe-status — オーナー専用 Stripe 接続診断
