@@ -2438,6 +2438,23 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
     [handled, mediaKit]
   );
 
+  // 今月の案件チャンス — メディアキットの実数字で「合う案件が合計いくら分あるか」を honest に集計。
+  // 価値の可視化（月額の元が取れることを、嘘のない実カタログ報酬で体感させる）。
+  const opportunity = useMemo(() => {
+    const hasKit = !!(mediaKit?.followers && Object.values(mediaKit.followers).some(v => v && v > 0));
+    if (!hasKit) return { hasKit: false, count: 0, totalFee: 0, avgFee: 0, topFee: 0, winRate: null as number | null, expected: null as number | null };
+    const scored = getAllBrandDeals().map(deal => ({ deal, score: computeMatchScore(deal, mediaKit) }));
+    const matched = scored.filter(s => s.score.total >= 60); // 良いマッチ以上のみ（60点＝good）
+    const totalFee = matched.reduce((sum, s) => sum + (s.deal.fee || 0), 0);
+    const avgFee = matched.length ? Math.round(totalFee / matched.length) : 0;
+    const topFee = matched.reduce((m, s) => Math.max(m, s.deal.fee || 0), 0);
+    // 応募履歴が十分にある時だけ、実績の通過率から期待収入を出す（嘘の見込みは出さない）
+    const kpi = computeApplyKpi();
+    const winRate = (kpi.total >= 3 && kpi.winRate > 0) ? kpi.winRate : null;
+    const expected = winRate != null ? Math.round(totalFee * winRate) : null;
+    return { hasKit: true, count: matched.length, totalFee, avgFee, topFee, winRate, expected };
+  }, [mediaKit, handled]);
+
   const approvePick = (deal: BrandDeal) => {
     const fee = feeEdit[deal.id] ?? deal.fee;
     desk.addDeal(IRIS_PERSONA_ID, {
@@ -2537,6 +2554,57 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
         </span>
         <span style={{ fontSize: '1.2rem' }}>→</span>
       </button>
+
+      {/* 今月の案件チャンス — 実カタログの報酬で「Irisが見つけた金額」を可視化 */}
+      {opportunity.hasKit && opportunity.count > 0 && (
+        <div style={{
+          borderRadius: 18,
+          padding: '1.05rem 1.2rem',
+          background: `linear-gradient(135deg, ${bg.accent}14, ${bg.accent}06)`,
+          border: `1px solid ${bg.accent}33`,
+          display: 'grid',
+          gap: '0.7rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Wallet size={16} strokeWidth={2.2} color={bg.accent} />
+            <span style={{ fontSize: '0.72rem', letterSpacing: '0.22em', color: bg.accent, fontWeight: 700 }}>今月の案件チャンス</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.9rem', fontWeight: 600, color: bg.ink, lineHeight: 1 }}>
+              ¥{opportunity.totalFee.toLocaleString()}
+            </span>
+            <span style={{ fontSize: '0.9rem', color: bg.inkSoft }}>
+              分の案件が {opportunity.count} 件、あなたに合っています
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap', fontSize: '0.8rem', color: bg.inkSoft }}>
+            <span>平均 <b style={{ color: bg.ink }}>¥{opportunity.avgFee.toLocaleString()}</b></span>
+            <span>最高 <b style={{ color: bg.ink }}>¥{opportunity.topFee.toLocaleString()}</b></span>
+            {opportunity.expected != null && opportunity.winRate != null && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <TrendingUp size={12} strokeWidth={2.4} color={bg.accent} />
+                あなたの通過率 {Math.round(opportunity.winRate * 100)}% なら期待 <b style={{ color: bg.ink }}>¥{opportunity.expected.toLocaleString()}</b>
+              </span>
+            )}
+          </div>
+          <p style={{ margin: 0, fontSize: '0.76rem', color: bg.inkSoft, lineHeight: 1.6 }}>
+            {opportunity.expected != null
+              ? 'あなたの応募実績から出した数字です。合致度60点以上の案件だけを合計しています。'
+              : '合致度60点以上の案件だけを合計しています。応募が増えると、あなた自身の通過率から見込み収入も出せます。'}
+          </p>
+        </div>
+      )}
+      {opportunity.hasKit && opportunity.count === 0 && (
+        <div style={{
+          borderRadius: 16, padding: '0.85rem 1.05rem',
+          background: bg.card, border: `1px solid ${bg.cardBorder}`,
+          fontSize: '0.82rem', color: bg.inkSoft, lineHeight: 1.6,
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <Target size={15} strokeWidth={2.2} color={bg.accent} style={{ flexShrink: 0 }} />
+          今の数字にぴったり合う案件を探しています。プロフィールの「よく見てくれる人」を書き足すと、もっと見つかりやすくなります。
+        </div>
+      )}
 
       {flash && (
         <div role="status" style={{
