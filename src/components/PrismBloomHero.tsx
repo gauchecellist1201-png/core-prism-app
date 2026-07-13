@@ -89,8 +89,8 @@ export default function PrismBloomHero({ onStart }: Props) {
             CORE Prism
           </span>
         </h1>
-        <p style={{ margin: '12px 0 0', fontSize: 'clamp(14px, 2.4vw, 17px)', lineHeight: 1.9, color: 'rgba(0,0,0,0.78)' }}>
-          すべての事業家に、エージェントAIを。
+        <p style={{ margin: '12px 0 0', fontSize: 'clamp(15px, 2.6vw, 19px)', lineHeight: 1.85, fontWeight: 600, color: 'rgba(0,0,0,0.82)' }}>
+          社長のやりたくない事務・資料・数字を、<br />AIが片づける。あなたは、決めるだけ。
         </p>
         <button
           onClick={onStart}

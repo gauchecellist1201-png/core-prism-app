@@ -313,13 +313,13 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
             transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
             style={{ display: 'inline-flex' }}
           ><Sparkles size={13} /></motion.span>
-          あなたの運用プラン
+          あなたの専属マネージャー
         </div>
-        <h2 style={{ margin: '4px 0 0', fontSize: '1.15rem', fontWeight: 800, color: bg.ink, lineHeight: 1.35 }}>
-          連携から、稼ぐまで一気通貫で
+        <h2 style={{ margin: '4px 0 0', fontSize: '1.2rem', fontWeight: 800, color: bg.ink, lineHeight: 1.35 }}>
+          毎日の投稿と案件は、<br />Iris が用意します。
         </h2>
         <p style={{ margin: '6px 0 0', fontSize: 12.5, color: bg.inkSoft, lineHeight: 1.6 }}>
-          Iris があなたのアカウントを見て、<strong style={{ color: bg.ink }}>今のあなた → 今週やること → 今日のリール → 案件</strong>まで全部そろえます。上から順に進むだけ。
+          あなたは、<strong style={{ color: bg.ink }}>選んで出すだけ</strong>。今のあなた → 今週やること → 今日のリール → 案件まで、上から順に進むだけです。
         </p>
       </motion.div>
 
