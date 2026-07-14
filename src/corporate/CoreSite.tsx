@@ -28,7 +28,7 @@ const PLATFORM_PLANS: Array<{
 }> = [
   { name: 'Lume', role: 'Link Hub', copy: 'すべてのリンクをひとつに。いちばん軽い入口。', price: '無料〜', priceNote: '', accent: '#FFA42A', url: 'https://lume-deploy-five.vercel.app/', Logo: LumeLogo, step: 'STEP 1 — まず無料で' },
   { name: 'Guild', role: 'Community OS', copy: '提案と投票で動く組織OS。まずは無料の入口から。', price: '¥980〜', priceNote: '/ 月（税込）', accent: '#2DD4BF', url: 'https://guild-gauches-projects.vercel.app/?lp=1', Logo: GuildLogo, step: 'STEP 2 — チームで' },
-  { name: 'Prism', role: 'AI Business OS', copy: '経営の司令塔。13名のAIエージェントが事業を動かす。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#A78BFA', url: '/pricing', Logo: PrismLogo, step: 'STEP 3 — 経営に' },
+  { name: 'Prism', role: 'AI Business OS', copy: '経営の司令塔。13名のAIエージェントが事業を動かす。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#C9A96E', url: '/pricing', Logo: PrismLogo, step: 'STEP 3 — 経営に' },
   { name: 'Iris', role: 'Instagram AI', copy: 'Instagram運用のすべてをAIと。分析から案件まで。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#E1306C', url: '/iris?lp=1', Logo: IrisLogo, step: 'STEP 3 — 集客に' },
   { name: 'Resonance', role: 'LINE AI', copy: '一人ひとりに書き分けるLINE個別配信と自動応対。', price: '¥6,980〜', priceNote: '/ 月（税込）', accent: '#06C755', url: 'https://resonancebot-ivory.vercel.app/lp', Logo: ResonanceLogo, step: 'STEP 4 — ファンを資産に' },
   { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: 'https://crystal-nine-self.vercel.app/', Logo: CrystalLogo, step: 'STEP 5 — 最上位のおもてなし', featured: true },
@@ -48,9 +48,9 @@ export default function CoreSite() {
   useEffect(() => {
     document.title = 'CORE — すべての時代の、核となるものを。';
 
-    // theme-color
+    // theme-color (金×黒テーマ)
     const themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta) themeMeta.setAttribute('content', '#F6F7FB');
+    if (themeMeta) themeMeta.setAttribute('content', '#050505');
 
     // favicon を CORE 専用に
     const links = document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]');
@@ -102,8 +102,8 @@ export default function CoreSite() {
   return (
     <div
       style={{
-        background: '#F6F7FB',
-        color: '#16162A',
+        background: '#050505',
+        color: '#F1E9D8',
         minHeight: '100dvh',
         fontFamily: FONT_SANS,
         // 修正 (オーナー報告 2026-05-27 / 28):
@@ -122,15 +122,17 @@ export default function CoreSite() {
       {/*  ベータ公開告知バー         */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div style={{
-        background: 'linear-gradient(90deg, #6FA8FF, #B07BD9, #FF6FA9)',
-        color: '#fff',
+        background: 'linear-gradient(90deg, #0a0805, #17120a 50%, #0a0805)',
+        color: '#E7C987',
+        borderBottom: '1px solid rgba(201,169,110,0.28)',
         textAlign: 'center',
         padding: '0.5rem 1rem',
         fontSize: '0.78rem',
-        fontWeight: 700,
-        letterSpacing: '0.04em',
+        fontWeight: 600,
+        letterSpacing: '0.08em',
         position: 'relative',
         zIndex: 60,
+        fontFamily: FONT_SERIF_JA,
       }}>
         Prism ・ Iris ・ Guild ・ Resonance ・ Lume ・ Crystal —— 六つのプロダクト、ベータ公開中
       </div>
@@ -143,9 +145,10 @@ export default function CoreSite() {
           position: 'sticky',
           top: 0,
           zIndex: 50,
-          background: 'rgba(255,255,255,0.82)',
+          background: 'rgba(5,5,5,0.78)',
           backdropFilter: 'blur(24px)',
-          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderBottom: '1px solid rgba(201,169,110,0.22)',
         }}
       >
         <div
@@ -191,7 +194,7 @@ export default function CoreSite() {
         className="lp-section-pad"
         style={{
           padding: '7rem 1.5rem',
-          background: 'linear-gradient(180deg,#FFFFFF 0%,#F1F4FA 45%,#FFFFFF 100%)',
+          background: 'radial-gradient(130% 90% at 50% 0%, #0e0b06 0%, #050505 68%)',
           textAlign: 'center',
           position: 'relative',
           overflow: 'hidden',
@@ -221,7 +224,7 @@ export default function CoreSite() {
             <br />
             <span
               style={{
-                background: 'linear-gradient(90deg,#f0abfc,#a78bfa,#60a5fa,#5eead4)',
+                background: 'linear-gradient(110deg,#F7EAD0,#E7C987 55%,#C9A96E)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 fontWeight: 900,
@@ -235,7 +238,7 @@ export default function CoreSite() {
             style={{
               fontFamily: FONT_SERIF_JA,
               fontSize: 'clamp(0.98rem, 1.45vw, 1.12rem)',
-              color: 'rgba(0,0,0,0.72)',
+              color: 'rgba(240,233,216,0.78)',
               lineHeight: 2.2,
               maxWidth: 720,
               margin: '0 auto 3.5rem',
@@ -252,7 +255,7 @@ export default function CoreSite() {
             <br />
             六つは、別々の道具ではない。掛け合わさって、ひとつの知性になる。
             <br />
-            <strong style={{ color: '#16162A', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
+            <strong style={{ color: '#F1E9D8', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
           </p>
 
           {/* つながりの図 (司令塔 Prism + 3 つの SNS チャネル) */}
@@ -264,7 +267,7 @@ export default function CoreSite() {
               fontFamily: FONT_SERIF_EN,
               fontSize: '0.78rem',
               letterSpacing: '0.22em',
-              color: 'rgba(0,0,0,0.5)',
+              color: 'rgba(240,233,216,0.55)',
               textTransform: 'uppercase',
               marginBottom: '0.6rem',
             }}>
@@ -274,7 +277,7 @@ export default function CoreSite() {
               fontFamily: FONT_SERIF_JA,
               fontSize: 'clamp(1.3rem, 2.4vw, 1.85rem)',
               fontWeight: 700,
-              color: '#16162A',
+              color: '#F1E9D8',
               letterSpacing: '0.04em',
               marginBottom: '2.5rem',
             }}>
@@ -303,14 +306,14 @@ export default function CoreSite() {
             <p style={{
               fontFamily: FONT_SERIF_JA,
               fontSize: 'clamp(0.95rem, 1.4vw, 1.08rem)',
-              color: 'rgba(0,0,0,0.78)',
+              color: 'rgba(240,233,216,0.82)',
               lineHeight: 2,
               marginTop: '2.75rem',
               fontWeight: 400,
             }}>
               六つのサービスが連携し、ひとつの流れになる。
               <br />
-              <strong style={{ color: '#16162A', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
+              <strong style={{ color: '#F1E9D8', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
             </p>
           </div>
         </div>
@@ -324,7 +327,7 @@ export default function CoreSite() {
         className="lp-section-pad"
         style={{
           padding: '7rem 1.5rem',
-          background: '#F3F5FA',
+          background: '#070604',
         }}
       >
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
@@ -348,7 +351,7 @@ export default function CoreSite() {
             <p
               style={{
                 fontFamily: FONT_SERIF_JA,
-                color: 'rgba(0,0,0,0.65)',
+                color: 'rgba(240,233,216,0.7)',
                 fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
                 maxWidth: 700,
                 margin: '0 auto',
@@ -356,7 +359,7 @@ export default function CoreSite() {
                 fontWeight: 400,
               }}
             >
-              経営の司令塔 <strong style={{ color: '#16162A', fontWeight: 600 }}>Prism</strong> に、
+              経営の司令塔 <strong style={{ color: '#F1E9D8', fontWeight: 600 }}>Prism</strong> に、
               Instagram・LINE・リンクの三つの SNS ツールがつながる。
               <br />
               あなたの仕事も SNS も、ひとつの AI エージェントの流れで動きます。
@@ -477,13 +480,13 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section
         className="lp-section-pad"
-        style={{ padding: '6rem 1.5rem', background: 'linear-gradient(180deg, #0d1022, #131735 55%, #0d1022)', color: '#eef0f7' }}
+        style={{ padding: '6rem 1.5rem', background: 'linear-gradient(180deg, #0a0805, #12100a 55%, #0a0805)', color: '#F1E9D8' }}
       >
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <p style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A24B', fontSize: '0.8rem', margin: 0 }}>Real Screens</p>
             <h2 style={{ fontSize: 'clamp(1.6rem, 3.6vw, 2.4rem)', fontWeight: 600, letterSpacing: '0.04em', margin: '0.6rem 0 0.4rem' }}>実物で、ご覧ください。</h2>
-            <p style={{ color: 'rgba(238,240,247,0.65)', fontSize: '0.92rem', lineHeight: 2, maxWidth: 560, margin: '0 auto' }}>
+            <p style={{ color: 'rgba(240,233,216,0.68)', fontSize: '0.92rem', lineHeight: 2, maxWidth: 560, margin: '0 auto' }}>
               モックアップではなく、いま本番で動いている6つの画面。<br />気になった一枚から、そのまま触れられます。
             </p>
           </div>
@@ -504,7 +507,7 @@ export default function CoreSite() {
                 style={{
                   display: 'block', textDecoration: 'none', color: 'inherit',
                   border: '1px solid rgba(201,162,75,0.25)', borderRadius: 16, overflow: 'hidden',
-                  background: '#0a0d1c',
+                  background: '#0b0a07',
                   transition: 'transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s, border-color .35s',
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.borderColor = '#C9A24B'; e.currentTarget.style.boxShadow = '0 26px 56px -26px rgba(0,0,0,.85)'; }}
@@ -515,7 +518,7 @@ export default function CoreSite() {
                 </div>
                 <div style={{ padding: '0.8rem 0.9rem 0.95rem', borderTop: '1px solid rgba(201,162,75,0.2)' }}>
                   <div style={{ fontFamily: '"Cinzel", serif', fontSize: '0.85rem', letterSpacing: '0.12em', color: '#E9CD8A' }}>{s.name}</div>
-                  <div style={{ fontSize: '0.74rem', color: 'rgba(238,240,247,0.6)', marginTop: 2 }}>{s.cap} ↗</div>
+                  <div style={{ fontSize: '0.74rem', color: 'rgba(240,233,216,0.62)', marginTop: 2 }}>{s.cap} ↗</div>
                 </div>
               </a>
             ))}
@@ -529,7 +532,7 @@ export default function CoreSite() {
       <section
         id="platform"
         className="lp-section-pad"
-        style={{ padding: '7rem 1.5rem', background: 'linear-gradient(180deg,#F3F5FA 0%,#FFFFFF 100%)' }}
+        style={{ padding: '7rem 1.5rem', background: 'linear-gradient(180deg,#070604 0%,#050505 100%)' }}
       >
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
@@ -540,7 +543,7 @@ export default function CoreSite() {
             <h2 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.85rem, 3.8vw, 2.85rem)', fontWeight: 700, lineHeight: 1.5, marginBottom: '1.25rem', letterSpacing: '0.04em' }}>
               小さく始めて、大きく育てる。
             </h2>
-            <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(0,0,0,0.65)', fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', maxWidth: 680, margin: '0 auto', lineHeight: 2 }}>
+            <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(240,233,216,0.7)', fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', maxWidth: 680, margin: '0 auto', lineHeight: 2 }}>
               どのプロダクトも、月々数千円から。事業が育ったら、そのまま上位プランへ。
               <br />
               六つすべてが、ひとつの CORE でつながっています。
@@ -557,17 +560,17 @@ export default function CoreSite() {
                 style={{
                   display: 'flex', flexDirection: 'column', gap: '0.55rem',
                   padding: '1.7rem 1.6rem 1.5rem', borderRadius: 18, textDecoration: 'none',
-                  background: p.featured ? 'linear-gradient(160deg, rgba(201,169,110,0.14), rgba(201,169,110,0.02))' : 'rgba(0,0,0,0.03)',
-                  border: p.featured ? '1px solid rgba(201,169,110,0.55)' : '1px solid rgba(0,0,0,0.09)',
+                  background: p.featured ? 'linear-gradient(160deg, rgba(201,169,110,0.14), rgba(201,169,110,0.02))' : 'rgba(255,255,255,0.03)',
+                  border: p.featured ? '1px solid rgba(201,169,110,0.55)' : '1px solid rgba(201,169,110,0.22)',
                   boxShadow: p.featured ? '0 24px 60px -30px rgba(201,169,110,0.45)' : 'none',
-                  color: '#16162A', position: 'relative',
+                  color: '#F1E9D8', position: 'relative',
                 }}
               >
-                <span style={{ fontFamily: FONT_SANS, fontSize: '0.62rem', letterSpacing: '0.18em', fontWeight: 700, color: p.featured ? '#E7C987' : 'rgba(0,0,0,0.4)' }}>{p.step}</span>
+                <span style={{ fontFamily: FONT_SANS, fontSize: '0.62rem', letterSpacing: '0.18em', fontWeight: 700, color: p.featured ? '#E7C987' : 'rgba(240,233,216,0.5)' }}>{p.step}</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.2rem' }}>
                   <span style={{
                     width: 46, height: 46, borderRadius: 13, display: 'grid', placeItems: 'center', flexShrink: 0,
-                    background: `radial-gradient(circle at 50% 30%, ${p.accent}22, #FFFFFF)`,
+                    background: `radial-gradient(circle at 50% 30%, ${p.accent}26, #0c0a07)`,
                     border: `1px solid ${p.accent}55`, boxShadow: `0 0 18px ${p.accent}26`,
                   }}>
                     <p.Logo size={30} withWordmark={false} />
@@ -577,21 +580,21 @@ export default function CoreSite() {
                     <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.62rem', letterSpacing: '0.22em', color: p.accent, textTransform: 'uppercase', marginTop: 3 }}>{p.role}</span>
                   </span>
                 </span>
-                <span style={{ fontFamily: FONT_SANS, fontSize: '0.82rem', color: 'rgba(0,0,0,0.6)', lineHeight: 1.85, minHeight: '3em', marginTop: '0.3rem' }}>{p.copy}</span>
+                <span style={{ fontFamily: FONT_SANS, fontSize: '0.82rem', color: 'rgba(240,233,216,0.65)', lineHeight: 1.85, minHeight: '3em', marginTop: '0.3rem' }}>{p.copy}</span>
                 <span style={{
-                  marginTop: 'auto', paddingTop: '0.9rem', borderTop: '1px solid rgba(0,0,0,0.08)',
+                  marginTop: 'auto', paddingTop: '0.9rem', borderTop: '1px solid rgba(201,169,110,0.2)',
                   display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.6rem',
                 }}>
-                  <span style={{ fontFamily: FONT_SANS, fontWeight: 700, fontSize: '1.26rem', color: p.featured ? '#B8901F' : '#16162A', fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ fontFamily: FONT_SANS, fontWeight: 700, fontSize: '1.26rem', color: p.featured ? '#E7C987' : '#F1E9D8', fontVariantNumeric: 'tabular-nums' }}>
                     {p.price}
-                    <small style={{ fontSize: '0.66rem', fontWeight: 400, color: 'rgba(0,0,0,0.55)', marginLeft: 6 }}>{p.priceNote}</small>
+                    <small style={{ fontSize: '0.66rem', fontWeight: 400, color: 'rgba(240,233,216,0.6)', marginLeft: 6 }}>{p.priceNote}</small>
                   </span>
                   <span style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', fontWeight: 600, color: p.accent, whiteSpace: 'nowrap' }}>詳しく →</span>
                 </span>
               </a>
             ))}
           </div>
-          <p style={{ textAlign: 'center', marginTop: '1.6rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(0,0,0,0.4)', lineHeight: 1.9 }}>
+          <p style={{ textAlign: 'center', marginTop: '1.6rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(240,233,216,0.48)', lineHeight: 1.9 }}>
             ※ 価格は税込・月額の入口プランです。詳細は各プロダクトのページでご確認ください。
           </p>
         </div>
@@ -716,7 +719,7 @@ export default function CoreSite() {
       <section
         id="executive"
         className="lp-section-pad"
-        style={{ padding: '7rem 1.5rem', background: '#FFFFFF' }}
+        style={{ padding: '7rem 1.5rem', background: '#050505' }}
       >
         <div
           style={{
@@ -801,7 +804,7 @@ export default function CoreSite() {
       <section
         id="who"
         className="lp-section-pad"
-        style={{ padding: '7rem 1.5rem', background: 'linear-gradient(180deg,#F3F5FA 0%,#FFFFFF 100%)' }}
+        style={{ padding: '7rem 1.5rem', background: 'linear-gradient(180deg,#070604 0%,#050505 100%)' }}
       >
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.75rem' }}>
@@ -816,7 +819,7 @@ export default function CoreSite() {
               組み合わせ方は、あなた次第。
             </h2>
             <p style={{
-              fontFamily: FONT_SERIF_JA, color: 'rgba(0,0,0,0.65)',
+              fontFamily: FONT_SERIF_JA, color: 'rgba(240,233,216,0.7)',
               fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', maxWidth: 660, margin: '0 auto', lineHeight: 2,
             }}>
               四つは、ひとつずつでも、すべて一緒でも。
@@ -861,7 +864,7 @@ export default function CoreSite() {
         className="lp-section-pad"
         style={{
           padding: '7rem 1.5rem',
-          background: 'linear-gradient(180deg,#F3F5FA 0%,#FFFFFF 100%)',
+          background: 'linear-gradient(180deg,#070604 0%,#050505 100%)',
           textAlign: 'center',
           position: 'relative',
           overflow: 'hidden',
@@ -879,7 +882,7 @@ export default function CoreSite() {
             marginLeft: -300,
             marginTop: -300,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(0,0,0,0.08) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(201,169,110,0.12) 0%, transparent 70%)',
             filter: 'blur(40px)',
             pointerEvents: 'none',
           }}
@@ -908,7 +911,7 @@ export default function CoreSite() {
             そして、
             <span
               style={{
-                background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)',
+                background: 'linear-gradient(110deg,#F7EAD0,#E7C987 55%,#C9A96E)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 fontWeight: 900,
@@ -922,7 +925,7 @@ export default function CoreSite() {
             style={{
               fontFamily: FONT_SERIF_EN,
               fontSize: 'clamp(0.85rem, 1.3vw, 1rem)',
-              color: 'rgba(0,0,0,0.45)',
+              color: 'rgba(240,233,216,0.52)',
               fontStyle: 'italic',
               letterSpacing: '0.1em',
               marginBottom: '2rem',
@@ -934,7 +937,7 @@ export default function CoreSite() {
           <p
             style={{
               fontFamily: FONT_SERIF_JA,
-              color: 'rgba(0,0,0,0.7)',
+              color: 'rgba(240,233,216,0.75)',
               fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
               lineHeight: 2.4,
               maxWidth: 760,
@@ -962,7 +965,7 @@ export default function CoreSite() {
             <br />
             つくる人も、使う人も、やがてひとつの組織になる。
             <br />
-            それが、<strong style={{ color: '#16162A', fontWeight: 700, fontFamily: FONT_DISPLAY, letterSpacing: '0.15em' }}>CORE</strong> という会社の核。
+            それが、<strong style={{ color: '#F1E9D8', fontWeight: 700, fontFamily: FONT_DISPLAY, letterSpacing: '0.15em' }}>CORE</strong> という会社の核。
           </p>
         </div>
       </section>
@@ -975,7 +978,7 @@ export default function CoreSite() {
         className="lp-section-pad"
         style={{
           padding: '7rem 1.5rem',
-          background: 'linear-gradient(180deg,#FFFFFF 0%,#F1F4FA 60%,#FFFFFF 100%)',
+          background: 'radial-gradient(120% 80% at 50% 20%, #0c0a05 0%, #050505 70%)',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -1004,7 +1007,7 @@ export default function CoreSite() {
             <p style={{
               fontFamily: FONT_SERIF_EN,
               fontSize: 'clamp(0.85rem, 1.3vw, 1rem)',
-              color: 'rgba(0,0,0,0.45)',
+              color: 'rgba(240,233,216,0.52)',
               fontStyle: 'italic',
               letterSpacing: '0.08em',
               marginTop: '0.85rem',
@@ -1022,32 +1025,32 @@ export default function CoreSite() {
               top: 6,
               bottom: 6,
               width: 2,
-              background: 'linear-gradient(180deg, rgba(252,176,69,0.4), rgba(167,139,250,0.4), rgba(96,165,250,0.4), rgba(0,0,0,0.05))',
+              background: 'linear-gradient(180deg, rgba(231,201,135,0.65), rgba(201,169,110,0.4), rgba(201,169,110,0.12))',
             }} />
             {[
               {
                 year: '2026',
                 title: 'CORE 創業',
                 body: '「すべての時代の、核となるものを」を理念に創業。事業家のための Prism を起点に、Iris・Resonance・Lume を加えた四つのプロダクトと、13 名の AI 役員で、中小経営者と個人事業主を支える土台を築きます。',
-                accent: '#FCB045',
+                accent: '#F1DCA7',
               },
               {
                 year: '2026 後期',
                 title: '四プロダクトの本格ローンチ',
                 body: '日本の個人事業主・中小経営者へ正式リリース。使ったぶんだけ支払い、上限を超えたぶんは買い足す。気づかぬうちに高額にならない、公正な料金設計で届けます。',
-                accent: '#FBBF24',
+                accent: '#E7C987',
               },
               {
                 year: '2027',
                 title: '法人プランとチーム機能',
                 body: 'メンバー招待、共有ダッシュボード、外部ツール連携を整え、5〜50 名の組織にも導入できる体験へ。経営者と現場をつなぐ「橋」を、AI が担います。',
-                accent: '#A78BFA',
+                accent: '#C9A96E',
               },
               {
                 year: '2028 —',
                 title: '国境を越える「核」',
                 body: '英語・韓国語・台湾繁体字に対応し、東アジアの中小経営者へ。やさしい言葉でいつでも頼れる AI 役員を、誰の手元にも届けます。',
-                accent: '#60A5FA',
+                accent: '#A98B57',
               },
             ].map((m, i) => (
               <motion.li
@@ -1072,7 +1075,7 @@ export default function CoreSite() {
                   border: `1px solid ${m.accent}66`,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
-                  boxShadow: `0 0 18px ${m.accent}44, 0 0 0 4px #000`,
+                  boxShadow: `0 0 18px ${m.accent}44, 0 0 0 4px #050505`,
                   position: 'relative',
                   zIndex: 2,
                 }}>
@@ -1097,7 +1100,7 @@ export default function CoreSite() {
                     fontFamily: FONT_SERIF_JA,
                     fontSize: 'clamp(1.15rem, 1.85vw, 1.4rem)',
                     fontWeight: 700,
-                    color: '#16162A',
+                    color: '#F1E9D8',
                     marginBottom: '0.6rem',
                     letterSpacing: '0.04em',
                   }}>
@@ -1106,7 +1109,7 @@ export default function CoreSite() {
                   <p style={{
                     fontFamily: FONT_SERIF_JA,
                     fontSize: 'clamp(0.9rem, 1.3vw, 1rem)',
-                    color: 'rgba(0,0,0,0.65)',
+                    color: 'rgba(240,233,216,0.7)',
                     lineHeight: 1.95,
                     margin: 0,
                   }}>
@@ -1128,7 +1131,7 @@ export default function CoreSite() {
         className="lp-section-pad"
         style={{
           padding: '7rem 1.5rem',
-          background: '#FFFFFF',
+          background: '#050505',
         }}
       >
         <div style={{ maxWidth: 920, margin: '0 auto' }}>
@@ -1159,9 +1162,9 @@ export default function CoreSite() {
               justifyContent: 'center',
               marginBottom: '3.5rem',
               padding: '2.5rem',
-              border: '1px solid rgba(0,0,0,0.1)',
+              border: '1px solid rgba(201,169,110,0.24)',
               borderRadius: 16,
-              background: 'rgba(0,0,0,0.02)',
+              background: 'rgba(255,255,255,0.025)',
             }}
           >
             <picture>
@@ -1178,7 +1181,7 @@ export default function CoreSite() {
                   height: 320,
                   objectFit: 'cover',
                   borderRadius: 16,
-                  boxShadow: '0 12px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,0,0,0.06)',
+                  boxShadow: '0 18px 44px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,169,110,0.45), 0 0 40px rgba(201,169,110,0.12)',
                   display: 'block',
                   flexShrink: 0,
                 }}
@@ -1191,7 +1194,7 @@ export default function CoreSite() {
                   fontSize: '0.78rem',
                   letterSpacing: '0.18em',
                   textTransform: 'uppercase',
-                  color: 'rgba(0,0,0,0.55)',
+                  color: 'rgba(240,233,216,0.6)',
                   marginBottom: '0.6rem',
                 }}
               >
@@ -1204,7 +1207,7 @@ export default function CoreSite() {
                   fontWeight: 700,
                   letterSpacing: '0.04em',
                   marginBottom: '0.2rem',
-                  color: '#16162A',
+                  color: '#F1E9D8',
                 }}
               >
                 井出 直毅
@@ -1213,7 +1216,7 @@ export default function CoreSite() {
                 style={{
                   fontFamily: FONT_SERIF_EN,
                   fontSize: '1rem',
-                  color: 'rgba(0,0,0,0.7)',
+                  color: 'rgba(240,233,216,0.75)',
                   letterSpacing: '0.06em',
                   marginBottom: '1.25rem',
                 }}
@@ -1224,7 +1227,7 @@ export default function CoreSite() {
                 style={{
                   fontFamily: FONT_SERIF_EN,
                   fontSize: '0.95rem',
-                  color: 'rgba(0,0,0,0.65)',
+                  color: 'rgba(240,233,216,0.7)',
                   lineHeight: 1.7,
                   fontStyle: 'italic',
                 }}
@@ -1240,7 +1243,7 @@ export default function CoreSite() {
               fontFamily: FONT_SERIF_EN,
               fontSize: '0.78rem',
               letterSpacing: '0.22em',
-              color: 'rgba(0,0,0,0.5)',
+              color: 'rgba(240,233,216,0.55)',
               textTransform: 'uppercase',
               textAlign: 'center',
               marginBottom: '0.6rem',
@@ -1253,7 +1256,7 @@ export default function CoreSite() {
               fontWeight: 700,
               textAlign: 'center',
               marginBottom: '0.6rem',
-              color: '#16162A',
+              color: '#F1E9D8',
               letterSpacing: '0.04em',
             }}>
               AI 役員 13 名が、あなたを支えます
@@ -1261,7 +1264,7 @@ export default function CoreSite() {
             <p style={{
               fontFamily: FONT_SERIF_JA,
               fontSize: '0.88rem',
-              color: 'rgba(0,0,0,0.55)',
+              color: 'rgba(240,233,216,0.6)',
               textAlign: 'center',
               lineHeight: 1.85,
               maxWidth: 640,
@@ -1300,15 +1303,15 @@ export default function CoreSite() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   padding: '1rem 0.4rem',
-                  background: 'rgba(0,0,0,0.025)',
-                  border: '1px solid rgba(0,0,0,0.08)',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(201,169,110,0.2)',
                   borderRadius: 10,
                   textAlign: 'center',
                   gap: 5,
                 }}>
-                  <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#16162A', letterSpacing: '0.14em', fontFamily: FONT_SERIF_EN }}>{o.t}</span>
-                  <span aria-hidden style={{ width: 14, height: 1, background: 'rgba(0,0,0,0.25)' }} />
-                  <span style={{ fontSize: '0.64rem', color: 'rgba(0,0,0,0.55)', fontFamily: FONT_SERIF_JA, letterSpacing: '0.04em' }}>{o.d}</span>
+                  <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#F1E9D8', letterSpacing: '0.14em', fontFamily: FONT_SERIF_EN }}>{o.t}</span>
+                  <span aria-hidden style={{ width: 14, height: 1, background: 'rgba(201,169,110,0.45)' }} />
+                  <span style={{ fontSize: '0.64rem', color: 'rgba(240,233,216,0.6)', fontFamily: FONT_SERIF_JA, letterSpacing: '0.04em' }}>{o.d}</span>
                 </div>
               ))}
             </div>
@@ -1319,10 +1322,10 @@ export default function CoreSite() {
               display: 'grid',
               gridTemplateColumns: '1fr',
               gap: 0,
-              border: '1px solid rgba(0,0,0,0.1)',
+              border: '1px solid rgba(201,169,110,0.24)',
               borderRadius: 14,
               overflow: 'hidden',
-              background: 'rgba(0,0,0,0.02)',
+              background: 'rgba(255,255,255,0.025)',
             }}
           >
             <InfoRow label="会社名"     subLabel="Company"      value={COMPANY.nameJa}  subValue={COMPANY.nameEn} />
@@ -1343,7 +1346,7 @@ export default function CoreSite() {
         className="lp-section-pad"
         style={{
           padding: '7rem 1.5rem',
-          background: 'radial-gradient(ellipse at center, rgba(167,139,250,0.10) 0%, #FFFFFF 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(201,169,110,0.10) 0%, #050505 72%)',
           textAlign: 'center',
           position: 'relative',
           overflow: 'hidden',
@@ -1370,7 +1373,7 @@ export default function CoreSite() {
           <p
             style={{
               fontFamily: FONT_SERIF_JA,
-              color: 'rgba(0,0,0,0.65)',
+              color: 'rgba(240,233,216,0.7)',
               fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)',
               lineHeight: 2.1,
               marginBottom: '3rem',
@@ -1380,7 +1383,7 @@ export default function CoreSite() {
           >
             一通一通、丁寧にお返事します。
             <br />
-            <span style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.5)' }}>
+            <span style={{ fontSize: '0.85rem', color: 'rgba(240,233,216,0.55)' }}>
               通常 24 時間以内にご返信 (土日祝は翌営業日)
             </span>
           </p>
@@ -1409,8 +1412,8 @@ export default function CoreSite() {
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '1.5rem 1.25rem',
-                  background: 'rgba(0,0,0,0.03)',
-                  border: '1px solid rgba(0,0,0,0.10)',
+                  background: 'rgba(255,255,255,0.035)',
+                  border: '1px solid rgba(201,169,110,0.24)',
                   borderRadius: 14,
                   textDecoration: 'none',
                   color: 'inherit',
@@ -1418,25 +1421,25 @@ export default function CoreSite() {
                   transition: 'background 0.2s, border-color 0.2s, transform 0.2s',
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(167,139,250,0.10)';
-                  e.currentTarget.style.borderColor = 'rgba(167,139,250,0.35)';
+                  e.currentTarget.style.background = 'rgba(201,169,110,0.12)';
+                  e.currentTarget.style.borderColor = 'rgba(201,169,110,0.4)';
                   e.currentTarget.style.transform = 'translateY(-2px)';
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(0,0,0,0.03)';
-                  e.currentTarget.style.borderColor = 'rgba(0,0,0,0.10)';
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.035)';
+                  e.currentTarget.style.borderColor = 'rgba(201,169,110,0.24)';
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
-                <span style={{ fontFamily: FONT_SERIF_JA, fontWeight: 600, fontSize: '0.95rem', color: '#16162A', letterSpacing: '0.02em' }}>{c.label}</span>
-                <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(0,0,0,0.55)', lineHeight: 1.6 }}>{c.desc}</span>
+                <span style={{ fontFamily: FONT_SERIF_JA, fontWeight: 600, fontSize: '0.95rem', color: '#F1E9D8', letterSpacing: '0.02em' }}>{c.label}</span>
+                <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(240,233,216,0.6)', lineHeight: 1.6 }}>{c.desc}</span>
               </a>
             ))}
           </div>
 
           {/* 直接連絡 */}
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '0.82rem', color: 'rgba(0,0,0,0.45)', letterSpacing: '0.18em', marginBottom: '0.85rem', fontFamily: FONT_SERIF_EN, textTransform: 'uppercase' }}>
+            <p style={{ fontSize: '0.82rem', color: 'rgba(240,233,216,0.52)', letterSpacing: '0.18em', marginBottom: '0.85rem', fontFamily: FONT_SERIF_EN, textTransform: 'uppercase' }}>
               Direct
             </p>
             <a
@@ -1454,8 +1457,8 @@ export default function CoreSite() {
               <MailIcon size={17} strokeWidth={2.2} />
               {COMPANY.email}
             </a>
-            <p style={{ fontSize: '0.78rem', color: 'rgba(0,0,0,0.4)', marginTop: '1.25rem', fontFamily: FONT_SERIF_JA }}>
-              よくある質問は <a href="/faq" style={{ color: 'rgba(167,139,250,0.85)', textDecoration: 'underline', textUnderlineOffset: 3 }}>FAQ ページ</a> で先にご確認いただけます。
+            <p style={{ fontSize: '0.78rem', color: 'rgba(240,233,216,0.48)', marginTop: '1.25rem', fontFamily: FONT_SERIF_JA }}>
+              よくある質問は <a href="/faq" style={{ color: '#E7C987', textDecoration: 'underline', textUnderlineOffset: 3 }}>FAQ ページ</a> で先にご確認いただけます。
             </p>
           </div>
         </div>
@@ -1466,9 +1469,9 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <footer
         style={{
-          background: '#FFFFFF',
+          background: '#050505',
           padding: '3.5rem 1.5rem 2.5rem',
-          borderTop: '1px solid rgba(0,0,0,0.05)',
+          borderTop: '1px solid rgba(201,169,110,0.14)',
         }}
       >
         <div
@@ -1487,7 +1490,7 @@ export default function CoreSite() {
               style={{
                 fontFamily: FONT_SERIF_JA,
                 fontSize: '0.78rem',
-                color: 'rgba(0,0,0,0.45)',
+                color: 'rgba(240,233,216,0.52)',
                 lineHeight: 1.9,
                 marginTop: '0.85rem',
               }}
@@ -1516,7 +1519,7 @@ export default function CoreSite() {
             <p
               style={{
                 fontSize: '0.72rem',
-                color: 'rgba(0,0,0,0.35)',
+                color: 'rgba(201,169,110,0.6)',
                 lineHeight: 1.8,
                 marginTop: '0.5rem',
                 fontFamily: FONT_SERIF_JA,
@@ -1545,11 +1548,11 @@ export default function CoreSite() {
         </div>
         <div
           style={{
-            borderTop: '1px solid rgba(0,0,0,0.05)',
+            borderTop: '1px solid rgba(201,169,110,0.14)',
             paddingTop: '1.75rem',
             textAlign: 'center',
             fontSize: '0.7rem',
-            color: 'rgba(0,0,0,0.3)',
+            color: 'rgba(240,233,216,0.4)',
             fontFamily: FONT_DISPLAY,
             letterSpacing: '0.25em',
           }}
@@ -1581,6 +1584,35 @@ function HeroVideo() {
   }, []);
   const src = portrait ? '/corp-hero-portrait.mp4' : '/corp-hero.mp4';
   const poster = portrait ? '/corp-hero-portrait-poster.jpg' : '/corp-hero-poster.jpg';
+  // iOS Safari 自動再生の根治:
+  // React は muted を「プロパティ」でしか設定せず HTML 属性に書かないため、
+  // iOS が「音声付き動画」と誤判定して自動再生を拒否する(再生ボタン表示の正体)。
+  // → 属性を直接刻み、再生を明示的に試行。失敗時は最初のタッチ/スクロールで再試行。
+  useEffect(() => {
+    const v = vref.current;
+    if (!v) return;
+    v.defaultMuted = true;
+    v.muted = true;
+    v.setAttribute('muted', '');
+    v.setAttribute('playsinline', '');
+    v.setAttribute('webkit-playsinline', '');
+    const tryPlay = () => { if (v.paused) void v.play().catch(() => {}); };
+    tryPlay();
+    v.addEventListener('loadedmetadata', tryPlay);
+    v.addEventListener('canplay', tryPlay);
+    // 低電力モード等で拒否されても、最初の操作(タッチ/スクロール)で必ず動き出す
+    const onFirstGesture = () => { tryPlay(); };
+    window.addEventListener('touchstart', onFirstGesture, { once: true, passive: true });
+    window.addEventListener('scroll', onFirstGesture, { once: true, passive: true });
+    document.addEventListener('visibilitychange', tryPlay);
+    return () => {
+      v.removeEventListener('loadedmetadata', tryPlay);
+      v.removeEventListener('canplay', tryPlay);
+      window.removeEventListener('touchstart', onFirstGesture);
+      window.removeEventListener('scroll', onFirstGesture);
+      document.removeEventListener('visibilitychange', tryPlay);
+    };
+  }, [src]);
   const toggle = () => {
     const v = vref.current;
     if (!v) return;
@@ -1623,8 +1655,27 @@ function HeroVideo() {
         {muted ? '音を出す' : '消音'}
       </button>
       <div
-        style={{ position: 'relative', zIndex: 3, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 3.5rem)', textAlign: 'center', width: '100%' }}
+        style={{ position: 'relative', zIndex: 3, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 3.5rem)', textAlign: 'center', width: '100%', padding: '0 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3.5rem)' }}
       >
+        {/* ブランドの刻印 — 動画の上に、金の一行 */}
+        <p style={{
+          fontFamily: FONT_DISPLAY, fontSize: 'clamp(0.66rem, 1.6vw, 0.82rem)', letterSpacing: '0.52em',
+          color: 'rgba(231,201,135,0.9)', textTransform: 'uppercase', marginBottom: '0.9rem', paddingLeft: '0.52em',
+          textShadow: '0 2px 18px rgba(0,0,0,0.6)',
+        }}>
+          CORE
+        </p>
+        <h1 style={{
+          fontFamily: FONT_SERIF_JA, fontWeight: 700, fontSize: 'clamp(1.5rem, 5.4vw, 2.9rem)',
+          lineHeight: 1.6, letterSpacing: '0.06em', margin: '0 0 1.6rem',
+          background: 'linear-gradient(115deg, #FDF6E3, #E7C987 60%, #C9A96E)',
+          WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          filter: 'drop-shadow(0 2px 22px rgba(0,0,0,0.65))',
+        }}>
+          すべての時代の、
+          <br />
+          核となるものを。
+        </h1>
         <a href="#products" style={ctaHero}>プロダクトを見る</a>
         <div aria-hidden style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
           <span style={{ width: 20, height: 20, borderRight: '2px solid rgba(255,255,255,0.85)', borderBottom: '2px solid rgba(255,255,255,0.85)', transform: 'rotate(45deg)' }} />
@@ -1691,8 +1742,8 @@ function FeatureProduct({
         position: 'relative',
         marginBottom: '2rem',
         padding: 'clamp(2rem, 4vw, 3.5rem)',
-        background: 'linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.01))',
-        border: '1px solid rgba(0,0,0,0.08)',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012))',
+        border: '1px solid rgba(201,169,110,0.2)',
         borderRadius: 24,
         overflow: 'hidden',
         display: 'flex',
@@ -1758,7 +1809,7 @@ function FeatureProduct({
         <p
           style={{
             fontSize: '0.7rem',
-            color: 'rgba(0,0,0,0.5)',
+            color: 'rgba(240,233,216,0.55)',
             letterSpacing: '0.2em',
             marginTop: 4,
             fontFamily: FONT_SERIF_EN,
@@ -1804,7 +1855,7 @@ function FeatureProduct({
           style={{
             fontFamily: FONT_SERIF_EN,
             fontSize: '0.9rem',
-            color: 'rgba(0,0,0,0.45)',
+            color: 'rgba(240,233,216,0.52)',
             fontStyle: 'italic',
             letterSpacing: '0.1em',
             marginBottom: '1.5rem',
@@ -1817,7 +1868,7 @@ function FeatureProduct({
           style={{
             fontFamily: FONT_SERIF_JA,
             fontSize: 'clamp(0.92rem, 1.4vw, 1rem)',
-            color: 'rgba(0,0,0,0.72)',
+            color: 'rgba(240,233,216,0.78)',
             lineHeight: 2.1,
             marginBottom: '1.5rem',
             fontWeight: 400,
@@ -1836,7 +1887,7 @@ function FeatureProduct({
                 gap: '0.6rem',
                 fontFamily: FONT_SERIF_JA,
                 fontSize: '0.92rem',
-                color: 'rgba(0,0,0,0.72)',
+                color: 'rgba(240,233,216,0.78)',
                 lineHeight: 1.9,
                 marginBottom: '0.5rem',
               }}
@@ -1905,7 +1956,7 @@ function InfoRow({
         display: 'grid',
         gridTemplateColumns: '180px 1fr',
         padding: '1.4rem 1.75rem',
-        borderBottom: isLast ? 'none' : '1px solid rgba(0,0,0,0.06)',
+        borderBottom: isLast ? 'none' : '1px solid rgba(201,169,110,0.18)',
         alignItems: 'center',
         gap: '1rem',
       }}
@@ -1917,7 +1968,7 @@ function InfoRow({
             fontFamily: FONT_SERIF_JA,
             fontSize: '0.85rem',
             fontWeight: 700,
-            color: 'rgba(0,0,0,0.85)',
+            color: 'rgba(240,233,216,0.92)',
             letterSpacing: '0.08em',
           }}
         >
@@ -1928,7 +1979,7 @@ function InfoRow({
             fontFamily: FONT_DISPLAY,
             fontSize: '0.65rem',
             letterSpacing: '0.25em',
-            color: 'rgba(0,0,0,0.35)',
+            color: 'rgba(201,169,110,0.6)',
             marginTop: 4,
             fontWeight: 600,
           }}
@@ -1937,7 +1988,7 @@ function InfoRow({
         </p>
       </div>
       <div>
-        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', color: '#16162A', lineHeight: 1.7, fontWeight: 500 }}>
+        <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', color: '#F1E9D8', lineHeight: 1.7, fontWeight: 500 }}>
           {value}
         </p>
         {subValue && (
@@ -1945,7 +1996,7 @@ function InfoRow({
             style={{
               fontFamily: FONT_SERIF_EN,
               fontSize: '0.78rem',
-              color: 'rgba(0,0,0,0.45)',
+              color: 'rgba(240,233,216,0.52)',
               marginTop: 4,
               lineHeight: 1.6,
               fontStyle: 'italic',
@@ -1979,13 +2030,13 @@ function ConnectedSuite() {
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
       padding: '0.95rem 0.7rem 0.8rem', width: 116,
-      background: `radial-gradient(circle at 50% 30%, ${s.color}1f, #FFFFFF)`,
+      background: `radial-gradient(circle at 50% 30%, ${s.color}24, #0c0a07)`,
       border: `1px solid ${s.color}66`, borderRadius: 18,
       boxShadow: `0 0 26px ${s.color}3a, inset 0 0 18px ${s.color}14`,
       backdropFilter: 'blur(6px)',
     }}>
       <s.Logo size={size} withWordmark={false} />
-      <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.84rem', color: '#16162A', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
+      <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.84rem', color: '#F1E9D8', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
       <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.64rem', color: s.color, fontWeight: 700, letterSpacing: '0.08em' }}>{s.role}</span>
     </div>
   );
@@ -1994,13 +2045,13 @@ function ConnectedSuite() {
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
       padding: '1.25rem 1.35rem 1.05rem', width: 144,
-      background: 'radial-gradient(circle at 50% 32%, rgba(167,139,250,0.28), #FFFFFF)',
+      background: 'radial-gradient(circle at 50% 32%, rgba(167,139,250,0.3), #0c0a07)',
       border: '1px solid rgba(167,139,250,0.6)', borderRadius: 22,
       boxShadow: '0 0 52px rgba(167,139,250,0.42), inset 0 0 26px rgba(167,139,250,0.14)',
     }}>
       <PrismLogo size={size} withWordmark={false} />
-      <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.6rem', letterSpacing: '0.3em', color: 'rgba(0,0,0,0.55)', fontWeight: 700 }}>PRISM</span>
-      <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.76rem', color: '#16162A', fontWeight: 700, letterSpacing: '0.08em' }}>司令塔</span>
+      <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.6rem', letterSpacing: '0.3em', color: 'rgba(240,233,216,0.6)', fontWeight: 700 }}>PRISM</span>
+      <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.76rem', color: '#F1E9D8', fontWeight: 700, letterSpacing: '0.08em' }}>司令塔</span>
     </div>
   );
 
@@ -2100,11 +2151,11 @@ function ConnectedSuite() {
             {sats.map(s => (
               <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '0.9rem',
                 padding: '0.7rem 0.9rem', width: '100%',
-                background: `radial-gradient(circle at 0% 50%, ${s.color}1c, #FFFFFF)`,
+                background: `radial-gradient(circle at 0% 50%, ${s.color}20, #0c0a07)`,
                 border: `1px solid ${s.color}55`, borderRadius: 16 }}>
                 <s.Logo size={38} withWordmark={false} />
                 <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1rem', color: '#16162A', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
+                  <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1rem', color: '#F1E9D8', fontWeight: 600, fontStyle: 'italic' }}>{s.name}</span>
                   <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.72rem', color: s.color, fontWeight: 700, letterSpacing: '0.06em' }}>{s.role}</span>
                 </span>
               </div>
@@ -2136,10 +2187,10 @@ function FlowStep({ n, color, tool, body, Logo, last }: { n: string; color: stri
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.7rem' }}>
         <span style={{ display: 'inline-flex', flexShrink: 0 }}><Logo size={22} withWordmark={false} /></span>
         <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.74rem', letterSpacing: '0.2em', color, fontWeight: 700 }}>{n}</span>
-        <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.98rem', fontStyle: 'italic', fontWeight: 600, color: '#16162A' }}>{tool}</span>
+        <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.98rem', fontStyle: 'italic', fontWeight: 600, color: '#F1E9D8' }}>{tool}</span>
         {!last && <span aria-hidden style={{ marginLeft: 'auto', color: `${color}cc`, fontSize: '1rem' }}>→</span>}
       </div>
-      <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', color: 'rgba(0,0,0,0.72)', lineHeight: 1.85, margin: 0 }}>
+      <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', color: 'rgba(240,233,216,0.78)', lineHeight: 1.85, margin: 0 }}>
         {body}
       </p>
     </div>
@@ -2161,7 +2212,7 @@ function UseCaseCard({ persona, headline, body, tools, lead }: {
       className="lp-usecase-card"
       style={{
         padding: '2rem 1.75rem',
-        background: `linear-gradient(170deg, ${leadColor}12, rgba(0,0,0,0.015) 70%)`,
+        background: `linear-gradient(170deg, ${leadColor}12, rgba(255,255,255,0.02) 70%)`,
         border: `1px solid ${leadColor}33`,
         borderRadius: 18,
         display: 'flex', flexDirection: 'column', gap: '1.1rem',
@@ -2176,25 +2227,25 @@ function UseCaseCard({ persona, headline, body, tools, lead }: {
       </span>
       <h3 style={{
         fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.25rem, 2vw, 1.5rem)', fontWeight: 700,
-        color: '#16162A', letterSpacing: '0.03em', lineHeight: 1.5, margin: 0,
+        color: '#F1E9D8', letterSpacing: '0.03em', lineHeight: 1.5, margin: 0,
       }}>
         {headline}
       </h3>
       <p style={{
-        fontFamily: FONT_SERIF_JA, fontSize: '0.92rem', color: 'rgba(0,0,0,0.68)',
+        fontFamily: FONT_SERIF_JA, fontSize: '0.92rem', color: 'rgba(240,233,216,0.72)',
         lineHeight: 2, margin: 0, flex: 1,
       }}>
         {body}
       </p>
-      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: '1rem' }}>
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', borderTop: '1px solid rgba(201,169,110,0.2)', paddingTop: '1rem' }}>
         {tools.map((t, i) => (
           <span key={i} style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-            fontFamily: FONT_SERIF_EN, fontSize: '0.8rem', fontStyle: 'italic', fontWeight: 600, color: '#16162A',
+            fontFamily: FONT_SERIF_EN, fontSize: '0.8rem', fontStyle: 'italic', fontWeight: 600, color: '#F1E9D8',
           }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: t.c, boxShadow: `0 0 7px ${t.c}` }} />
             {t.t}
-            {i < tools.length - 1 && <span style={{ color: 'rgba(0,0,0,0.3)', marginLeft: '0.3rem', fontStyle: 'normal' }}>＋</span>}
+            {i < tools.length - 1 && <span style={{ color: 'rgba(240,233,216,0.4)', marginLeft: '0.3rem', fontStyle: 'normal' }}>＋</span>}
           </span>
         ))}
       </div>
@@ -2206,7 +2257,7 @@ function UseCaseCard({ persona, headline, body, tools, lead }: {
 const navLink: React.CSSProperties = {
   fontFamily: FONT_SERIF_JA,
   fontSize: '0.88rem',
-  color: 'rgba(0,0,0,0.75)',
+  color: 'rgba(244,239,228,0.78)',
   textDecoration: 'none',
   fontWeight: 500,
   letterSpacing: '0.1em',
@@ -2215,10 +2266,11 @@ const ctaSmall: React.CSSProperties = {
   fontFamily: FONT_SERIF_JA,
   fontSize: '0.85rem',
   fontWeight: 600,
-  color: '#16162A',
+  color: '#E7C987',
   textDecoration: 'none',
   padding: '0.75rem 1.25rem',
-  border: '1px solid rgba(0,0,0,0.25)',
+  border: '1px solid rgba(201,169,110,0.55)',
+  background: 'rgba(201,169,110,0.07)',
   borderRadius: 999,
   letterSpacing: '0.1em',
   display: 'inline-flex',
@@ -2227,18 +2279,17 @@ const ctaSmall: React.CSSProperties = {
 };
 const ctaHero: React.CSSProperties = {
   display: 'inline-block',
-  // ロゴアイコンと同じスカイブルー基調（虹色をやめて上品に）
-  background:
-    'linear-gradient(135deg,#7DD3FC,#38BDF8,#0EA5E9)',
+  // Continuum と同じ金 — 会社サイト全体を金×黒で統一
+  background: 'linear-gradient(135deg,#F1DCA7,#E7C987 45%,#C9A96E)',
   backgroundSize: '200% 100%',
-  color: '#04293A',
+  color: '#14100a',
   padding: '1.1rem 2.4rem',
-  borderRadius: 14,
+  borderRadius: 999,
   fontFamily: FONT_SERIF_JA,
   fontSize: '1rem',
   fontWeight: 800,
   textDecoration: 'none',
-  boxShadow: '0 12px 36px rgba(56,189,248,0.40)',
+  boxShadow: '0 14px 42px -8px rgba(201,169,110,0.55)',
   letterSpacing: '0.12em',
 };
 const sectionLabel: React.CSSProperties = {
@@ -2252,28 +2303,28 @@ const sectionLabelMain: React.CSSProperties = {
   fontFamily: FONT_SERIF_JA,
   fontSize: '0.95rem',
   letterSpacing: '0.4em',
-  color: 'rgba(0,0,0,0.85)',
+  color: 'rgba(240,233,216,0.92)',
   fontWeight: 700,
 };
 const sectionLabelSub: React.CSSProperties = {
   fontFamily: FONT_DISPLAY,
   fontSize: '0.65rem',
   letterSpacing: '0.45em',
-  color: 'rgba(0,0,0,0.35)',
+  color: 'rgba(201,169,110,0.6)',
   fontWeight: 600,
 };
 const footHead: React.CSSProperties = {
   fontFamily: FONT_DISPLAY,
   fontSize: '0.7rem',
   letterSpacing: '0.3em',
-  color: 'rgba(0,0,0,0.5)',
+  color: 'rgba(240,233,216,0.55)',
   marginBottom: '0.85rem',
   fontWeight: 700,
 };
 const footLink: React.CSSProperties = {
   display: 'block',
   fontFamily: FONT_SERIF_JA,
-  color: 'rgba(0,0,0,0.65)',
+  color: 'rgba(240,233,216,0.7)',
   fontSize: '0.85rem',
   textDecoration: 'none',
   marginBottom: '0.5rem',

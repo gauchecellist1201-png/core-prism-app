@@ -267,7 +267,8 @@ function isConciergePath(): boolean {
 function isCorpPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
-  return p === '/corp' || p.startsWith('/corp/') || p === '/company' || p.startsWith('/company/');
+  // '/corp.html' は vite dev での直接アクセス用(本番は vercel rewrite で /corp → corp.html)
+  return p === '/corp' || p.startsWith('/corp/') || p === '/corp.html' || p === '/company' || p.startsWith('/company/');
 }
 
 function isStrategyPath(): boolean {
