@@ -70,7 +70,7 @@ export type Dictionary = {
 };
 
 export const ja: Dictionary = {
-  banner: '✦ ベータ公開中 — 7 日間無料 / クレカ不要 / 解約は 1 タップ',
+  banner: '✦ ベータ公開中 — 3 日間無料 / クレカ不要 / 解約は 1 タップ',
 
   nav: {
     agents:  '7つの仕事',
@@ -86,11 +86,11 @@ export const ja: Dictionary = {
     h1Line2: 'あなたの会社を 24 時間動かす。',
     sub1: 'ユーザーは 承認するだけ。',
     sub2: '議事録 / 営業 / 財務 / コンテンツ ── 全部、勝手に進む。',
-    cta:  '7 日間 無料で試す',
+    cta:  '3 日間 無料で試す',
     cta2: '価格を見る',
     sample: 'サンプルで触ってみる',
     sampleNote: '(架空カフェ経営者のデータで体験)',
-    free: '7 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ',
+    free: '3 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ',
   },
 
   agents: {
@@ -227,7 +227,7 @@ export const ja: Dictionary = {
     h2Lead:   '「ひとりで全部」を、',
     h2Accent: '卒業する。',
     h2Tail:   '',
-    sub: '7 日間、すべての AI 役員を無料でお試しできます。クレジットカードの登録は不要です。',
+    sub: '3 日間、すべての AI 役員を無料でお試しできます。クレジットカードの登録は不要です。',
     cta: '無料で Prism を試す',
   },
 
@@ -245,7 +245,7 @@ export const ja: Dictionary = {
 
   sticky: {
     title: 'Prismを、無料で試す',
-    sub: '7日間無料・クレカ不要・いつでも解約',
+    sub: '3日間無料・クレカ不要・いつでも解約',
     cta: '無料で始める →',
   },
 

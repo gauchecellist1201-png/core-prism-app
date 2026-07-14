@@ -268,7 +268,7 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
               {/* カレンダー直近イベント */}
               {calConnected && upcomingEvents.length > 0 && (
                 <div className="mt-4 rounded-xl p-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
-                  <p className="text-fg-muted text-xs tracking-wider uppercase mb-2">直近の予定 (7日間)</p>
+                  <p className="text-fg-muted text-xs tracking-wider uppercase mb-2">直近の予定 (3日間)</p>
                   <div className="space-y-1">
                     {upcomingEvents.slice(0, 8).map(ev => {
                       const d = new Date(ev.start);

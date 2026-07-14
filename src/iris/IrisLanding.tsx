@@ -42,7 +42,7 @@ const COMPARE_ROWS: { label: string; core: string; mgmt: string; agency: string;
   { label: '稼働時間', core: '24h / 365 日', mgmt: '担当者の営業時間', agency: '営業時間のみ', self: 'あなたの時間に依存' },
   { label: '反応速度', core: '10 秒〜数分', mgmt: '数日〜数週間', agency: '1〜数日', self: 'いまの心の状態次第' },
   { label: 'カバー範囲', core: '案件/分析/創作/交渉/ブランド/仲間 (6 領域)', mgmt: 'マネジメント中心', agency: 'SNS 運用のみ', self: 'あなた次第' },
-  { label: '導入時間', core: '7 日間 無料 + 5 分', mgmt: 'オーディション → 契約', agency: '商談 → 契約 → 開始', self: '即日' },
+  { label: '導入時間', core: '3 日間 無料 + 5 分', mgmt: 'オーディション → 契約', agency: '商談 → 契約 → 開始', self: '即日' },
 ];
 const COMPARE_COLS: { key: 'core' | 'mgmt' | 'agency' | 'self'; label: string }[] = [
   { key: 'core', label: '★ CORE Iris' },
@@ -97,7 +97,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         position: 'relative',
         zIndex: 60,
       }}>
-        <span style={{ whiteSpace: 'nowrap' }}>ベータ公開中 — 7 日間 完全無料</span>{' / '}
+        <span style={{ whiteSpace: 'nowrap' }}>ベータ公開中 — 3 日間 完全無料</span>{' / '}
         <span style={{ whiteSpace: 'nowrap' }}>クレカ登録不要</span>{' · '}
         <span style={{ whiteSpace: 'nowrap' }}>招待リンク登録でお互い +{REFERRAL_BONUS_DAYS} 日 無料</span>
       </div>
@@ -146,13 +146,13 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.45 }} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <button onClick={onEnter} style={ctaBtnHero} className="iris-hero-cta-primary">
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                  7 日間 無料で試す <ArrowRight size={18} strokeWidth={2.6} />
+                  3 日間 無料で試す <ArrowRight size={18} strokeWidth={2.6} />
                 </span>
               </button>
               <a href="#pricing" style={ctaBtnGhost} className="iris-hero-cta-secondary">価格を見る</a>
             </motion.div>
             <p style={{ fontSize: '0.78rem', color: 'rgba(0,0,0,0.5)', marginTop: '1.1rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', lineHeight: 1.6 }}>
-              7 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ
+              3 日間ぜんぶ無料 · クレカ登録不要 · 解約は 1 タップ
             </p>
 
             {/* 触れるデモ — 「DMスクショ→案件登録30秒」の主張を、その場で体験させる */}
@@ -387,7 +387,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
               無料で Iris を試す
             </button>
             <p style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.45)', marginTop: '0.85rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
-              7 日間無料 · クレカ不要
+              3 日間無料 · クレカ不要
             </p>
           </div>
         </div>
@@ -709,7 +709,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
             あなたの光を、<br />
             <span style={{ background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${IRIS_COLORS.hotPink}, ${IRIS_COLORS.purpleLt})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>いま、世界へ。</span>
           </h2>
-          <p style={{ color: 'rgba(0,0,0,0.6)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.8, fontFamily: IRIS_FONTS.serif }}>7 日間、すべての機能を無料でお試しできます。</p>
+          <p style={{ color: 'rgba(0,0,0,0.6)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.8, fontFamily: IRIS_FONTS.serif }}>3 日間、すべての機能を無料でお試しできます。</p>
           <button onClick={onEnter} style={ctaBtnHero}>Iris を試す</button>
         </div>
       </section>

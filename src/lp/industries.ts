@@ -82,7 +82,7 @@ export interface IndustryConfig {
 const SME: IndustryConfig = {
   slug: 'sme',
   pageTitle: '中小企業の社長へ — CORE Prism',
-  metaDescription: 'コンサル代月¥200 万を、月¥30,000 に。AI 役員 13 名があなたの会社の意思決定を支えます。7 日間 無料・カード登録なし。',
+  metaDescription: 'コンサル代月¥200 万を、月¥30,000 に。AI 役員 13 名があなたの会社の意思決定を支えます。3 日間 無料・カード登録なし。',
   industryLabel: 'FOR SMB OWNERS',
   heroMain: 'コンサル代を 1/7 に。\nAI 役員 13 名 が、\nあなたの右腕になる。',
   heroSub: '経営判断・営業提案・財務分析 — 1 人の社長がいまや 1 人で抱えなくていい時代へ。',
@@ -109,7 +109,7 @@ const SME: IndustryConfig = {
   faq: [
     { q: '社員何人くらいまで使えますか?', a: 'エントリー 5 名 / スタンダード 15 名 / プロ 50 名まで。それ以上はエンタープライズ (年¥200-400 万) で対応します' },
     { q: '請求書払い (口座振込) はできますか?', a: 'はい、全プランで口座振込に対応しています。月次または半期請求が選べます' },
-    { q: '無料期間後、自動で課金されますか?', a: '7 日間無料の間はカード登録不要です。継続を選んだときだけ決済画面が出ます' },
+    { q: '無料期間後、自動で課金されますか?', a: '3 日間無料の間はカード登録不要です。継続を選んだときだけ決済画面が出ます' },
     { q: 'セキュリティ対策は?', a: 'すべての通信は HTTPS、データは端末内 + Stripe の世界水準 SOC2 環境に保管。SSO / 監査ログはプロプラン以上で提供' },
   ],
   accentRight: '#FBBF24',
@@ -169,7 +169,7 @@ const REAL_FINANCE: IndustryConfig = {
   ],
   recommendedPlan: 'v2-btoB-standard',
   planLineup: ['v2-btoB-entry', 'v2-btoB-standard', 'v2-btoB-pro'],
-  pricingTagline: '契約 1 件取れれば年間コストペイ。失敗しても 7 日間で離脱可',
+  pricingTagline: '契約 1 件取れれば年間コストペイ。失敗しても 3 日間で離脱可',
   faq: [
     { q: '顧客情報を入れて安全ですか?', a: 'すべての処理は HTTPS で暗号化、顧客データは端末ローカル + 暗号化済 Stripe 環境のみ。第三者には一切共有しません' },
     { q: '営業マネージャー視点でも使えますか?', a: 'はい。チーム全員の提案文・反論対応を一元管理し、新人の育成データとしても活用できます' },
@@ -262,7 +262,7 @@ const CONSULTING: IndustryConfig = {
 const SOLO: IndustryConfig = {
   slug: 'solo',
   pageTitle: '一人社長・個人事業主の方へ — CORE Prism',
-  metaDescription: '月¥5,000 で「事務専属社員 + AI 役員 13 名」を雇える時代。事務時間 月 30 時間 → 8 時間に。7 日間 無料・カード登録なし。',
+  metaDescription: '月¥5,000 で「事務専属社員 + AI 役員 13 名」を雇える時代。事務時間 月 30 時間 → 8 時間に。3 日間 無料・カード登録なし。',
   industryLabel: 'FOR SOLO ENTREPRENEURS',
   heroMain: 'ひとり社長の右腕。\n月¥5,000 で\n全部 AI に任せる。',
   heroSub: '月 30 時間の事務作業 → 8 時間に。残った 22 時間で売上を作る側に回ろう。',

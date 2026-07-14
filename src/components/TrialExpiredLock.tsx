@@ -67,7 +67,7 @@ export default function TrialExpiredLock({ brand, accent, onChoose, onSignout }:
           無料体験が終了しました
         </h2>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.78)', textAlign: 'center', margin: '0 0 4px', lineHeight: 1.7 }}>
-          7 日間お試しいただき、ありがとうございます。
+          3 日間お試しいただき、ありがとうございます。
         </p>
         <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.62)', textAlign: 'center', margin: '0 0 20px', lineHeight: 1.7 }}>
           これまで使っていた機能は、プランを選ぶと<strong style={{ color: '#fff' }}>そのまま続き</strong>から使えます。
@@ -81,7 +81,7 @@ export default function TrialExpiredLock({ brand, accent, onChoose, onSignout }:
             background: `${accent}14`, border: `1px solid ${accent}59`,
           }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>
-              この 7 日間で、AI役員があなたのために動きました
+              この 3 日間で、AI役員があなたのために動きました
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, margin: '4px 0 10px' }}>
               <span style={{ fontSize: 30, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>

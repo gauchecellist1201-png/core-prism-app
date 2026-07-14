@@ -30,7 +30,7 @@ const PRISM_PLANS_V1 = [
       '商談・議事録・スライド AI',
       'Cmd+K 横断検索',
       'PWA / オフライン対応',
-      '7 日間 無料トライアル',
+      '3 日間 無料トライアル',
     ],
   },
   {
@@ -47,7 +47,7 @@ const PRISM_PLANS_V1 = [
       'Gmail シャドー秘書',
       'YouTube 取込 → ナレッジ',
       '見積→請求の一気通貫',
-      '7 日間 無料トライアル',
+      '3 日間 無料トライアル',
     ],
   },
   {
@@ -78,7 +78,7 @@ const PRISM_PLANS_V2 = [
     tag: '個人 / お試し',
     price: 3000,
     yearly: 30000,
-    features: ['AI 相談 月 300 回', 'ナレッジ 30 件', '主要機能をお試し可', '7 日間 無料'],
+    features: ['AI 相談 月 300 回', 'ナレッジ 30 件', '主要機能をお試し可', '3 日間 無料'],
   },
   {
     id: 'v2-btoC-standard',
@@ -94,7 +94,7 @@ const PRISM_PLANS_V2 = [
       '主要機能ほぼ無制限',
       'ナレッジ 200 件',
       '事務時間を 最大 70% 削減',
-      '7 日間 無料',
+      '3 日間 無料',
     ],
   },
   {
@@ -104,7 +104,7 @@ const PRISM_PLANS_V2 = [
     tag: '高単価フリーランス',
     price: 15000,
     yearly: 150000,
-    features: ['AI 全機能 無制限', 'ナレッジ 1,000 件', '営業 AI フル機能', '優先サポート', '7 日間 無料'],
+    features: ['AI 全機能 無制限', 'ナレッジ 1,000 件', '営業 AI フル機能', '優先サポート', '3 日間 無料'],
   },
   // BtoB
   {
@@ -115,7 +115,7 @@ const PRISM_PLANS_V2 = [
     price: 20000,
     yearly: 200000,
     btob: true,
-    features: ['AI 相談 月 3,000 回', 'チーム 5 名まで', '請求書払い OK (口座振込)', '導入サポート', '7 日間 無料'],
+    features: ['AI 相談 月 3,000 回', 'チーム 5 名まで', '請求書払い OK (口座振込)', '導入サポート', '3 日間 無料'],
   },
   {
     id: 'v2-btoB-standard',
@@ -133,7 +133,7 @@ const PRISM_PLANS_V2 = [
       'チーム 15 名まで',
       '請求書払い OK',
       'コンサル代 月¥200 万を 1/7 に',
-      '7 日間 無料',
+      '3 日間 無料',
     ],
   },
   {
@@ -144,7 +144,7 @@ const PRISM_PLANS_V2 = [
     price: 50000,
     yearly: 500000,
     btob: true,
-    features: ['AI 全機能 無制限', 'チーム 50 名まで', '専任 CS', 'API キー専有', 'カスタム連携', '7 日間 無料'],
+    features: ['AI 全機能 無制限', 'チーム 50 名まで', '専任 CS', 'API キー専有', 'カスタム連携', '3 日間 無料'],
   },
 ];
 
@@ -227,7 +227,7 @@ const USECASES = [
 // ─── FAQ ─────────────────
 const FAQS = [
   { q: '解約はいつでもできますか?', a: 'はい。マイページから 1 タップで解約できます。日割り計算で当月分のみ請求されます。' },
-  { q: '7 日間のトライアル中に料金は発生しますか?', a: '発生しません。トライアル期間中はクレジットカード登録も不要です。' },
+  { q: '3 日間のトライアル中に料金は発生しますか?', a: '発生しません。トライアル期間中はクレジットカード登録も不要です。' },
   { q: 'AI の API キーは自分で用意する必要がありますか?', a: '不要です。すべてのプランで Claude / Gemini / 画像生成 AI を内蔵しています。' },
   { q: 'プランを途中でアップグレード・ダウングレードできますか?', a: 'いつでも変更できます。差額は次回請求で日割り計算されます。' },
   { q: '法人契約・カスタム導入は可能ですか?', a: 'はい。10 名以上のチームには専用プランを用意しています。お問い合わせください。' },
@@ -607,7 +607,7 @@ export default function PricingPage() {
               minHeight: 56,
               lineHeight: '1.5',
             }}>
-              7 日間 無料で試す →
+              3 日間 無料で試す →
             </a>
             <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginTop: 12 }}>
               クレカ登録不要 / いつでも 1 タップ解約
@@ -820,7 +820,7 @@ export default function PricingPage() {
       {/* 最終 CTA */}
       <section style={{ padding: '5rem 1.5rem', background: 'radial-gradient(ellipse at center, rgba(167,139,250,0.18) 0%, #000 70%)', textAlign: 'center' }}>
         <h2 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.85rem, 4vw, 2.85rem)', fontWeight: 700, marginBottom: '1.5rem', lineHeight: 1.5, letterSpacing: '0.05em' }}>
-          7 日間、<span style={{ background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>無料で。</span>
+          3 日間、<span style={{ background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>無料で。</span>
         </h2>
         <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', color: 'rgba(255,255,255,0.65)', marginBottom: '2rem', lineHeight: 2 }}>
           クレカ登録不要。いつでも 1 タップで解約できます。

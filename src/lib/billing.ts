@@ -271,9 +271,9 @@ export interface Plan {
 export const IRIS_PLANS: Plan[] = [
   {
     id: 'free', brand: 'iris',
-    name: '7 日間 無料トライアル', priceJpy: 0,
+    name: '3 日間 無料トライアル', priceJpy: 0,
     tagline: 'まずは試す',
-    features: ['全機能 7 日間 試せる', 'カード登録不要', '自動課金なし'],
+    features: ['全機能 3 日間 試せる', 'カード登録不要', '自動課金なし'],
   },
   {
     id: 'lite', brand: 'iris',
@@ -348,9 +348,9 @@ export const IRIS_PLANS: Plan[] = [
 export const PRISM_PLANS: Plan[] = [
   {
     id: 'free', brand: 'prism',
-    name: '7 日間 無料トライアル', priceJpy: 0,
+    name: '3 日間 無料トライアル', priceJpy: 0,
     tagline: 'まずは試す',
-    features: ['全機能 7 日間 試せる', 'カード登録不要', '自動課金なし'],
+    features: ['全機能 3 日間 試せる', 'カード登録不要', '自動課金なし'],
   },
   {
     id: 'lite', brand: 'prism',
@@ -668,7 +668,7 @@ export function enforceFeature(
 
   // free プラントライアル期限チェック
   if (user.plan === 'free' && !isTrialActive(user)) {
-    return { ok: false, reason: '7 日間トライアルが終了しました。プランをアップグレードしてください。', upgradeTo: 'standard' };
+    return { ok: false, reason: '3 日間トライアルが終了しました。プランをアップグレードしてください。', upgradeTo: 'standard' };
   }
 
   const plan = user.plan;
@@ -870,17 +870,35 @@ export function useBillingUser(): {
       if (r.ok) bonusDays = r.bonusDays;
     } catch { /* UX を止めない */ }
 
-    const trialDays = (input.plan === 'free' ? 7 : 0) + bonusDays;
-    const trialEndsAt = trialDays > 0
-      ? new Date(now.getTime() + trialDays * 86400000).toISOString()
-      : undefined;
+    // ★トライアル窓は「サーバー側でメール基準に一度だけ」確定する（PC/スマホで別トライアルになる不具合の根治）。
+    //   同一メールなら、初回に決めた終了日を以後ずっと使う（延長・再発行しない）。3日に短縮（オーナー方針 2026-07-14）。
+    let trialEndsAt: string | undefined;
+    let startedAt = now.toISOString();
+    if (input.plan === 'free') {
+      try {
+        const r = await fetch('/api/trial/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: input.email.trim().toLowerCase(), brand: input.brand, plan: input.plan, bonusDays }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok && j?.trialEndsAt) {
+          trialEndsAt = j.trialEndsAt as string;
+          if (j.startedAt) startedAt = j.startedAt as string;
+        }
+      } catch { /* ネットワーク不通でも登録自体は止めない（下のフォールバック） */ }
+      // サーバーが取れなかった場合のみ、ローカルで 3 日を仮設定（オンライン復帰後は同APIで上書き整合）。
+      if (!trialEndsAt) {
+        trialEndsAt = new Date(now.getTime() + (3 + bonusDays) * 86400000).toISOString();
+      }
+    }
 
     const u: BillingUser = {
       email: input.email,
       passwordHash,
       brand: input.brand,
       plan: input.plan,
-      startedAt: now.toISOString(),
+      startedAt,
       trialEndsAt,
       isTestCheckout: input.plan !== 'free',  // ¥0 でテスト購入したフラグ
     };

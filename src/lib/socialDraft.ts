@@ -547,7 +547,7 @@ export async function generateWeeklyPlan(opts: {
   const kbCtx = buildKnowledgeContext(opts.knowledge || []);
 
   const SYS = `あなたは ${opts.persona.name} (${opts.persona.subtitle}) の SNS 編集長です。
-来週 7 日間の投稿カレンダーを設計します。
+来週 3 日間の投稿カレンダーを設計します。
 
 ## 人格コンテキスト
 ${opts.persona.description || '(なし)'}

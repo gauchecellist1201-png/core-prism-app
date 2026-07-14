@@ -92,7 +92,7 @@ export default function HealthSnapshot({ today, week, anomalies, onOpen }: Props
           <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
             <SampleDataCTA
               accent="#8E5CFF"
-              hint="サンプルの 7 日間データが入り、AI の体調アドバイス・異常検知をすぐ体験できます"
+              hint="サンプルの 3 日間データが入り、AI の体調アドバイス・異常検知をすぐ体験できます"
             />
           </div>
         )}

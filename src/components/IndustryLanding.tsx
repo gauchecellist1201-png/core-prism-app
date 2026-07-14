@@ -329,7 +329,7 @@ function Hero({ config, accentLeft, accentRight }: { config: IndustryConfig; acc
 
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 8 }}>
           <a href="#demo" style={ctaPrimary(accentLeft, accentRight)}>
-            7 日間 無料で試す →
+            3 日間 無料で試す →
           </a>
           {/* WWWWWW (2026-06-04): データ無し で 即 試せる デモ ボタン */}
           <button
@@ -711,7 +711,7 @@ function Comparison({ config, accentLeft, accentRight }: { config: IndustryConfi
     { label: '専門範囲', core: '13 領域 (CEO〜CHR)', alt: '1 領域', self: 'あなたの得意のみ', other: '1 機能' },
     { label: '反応速度', core: '10 秒〜数分', alt: '数日〜数週間', self: 'いまの心の状態次第', other: '1〜数時間' },
     { label: 'スケール', core: '同時 13 タスク', alt: '案件数で線形に増える', self: '体力の限界', other: 'プランで段階' },
-    { label: '導入時間', core: '7 日間 無料 + 5 分', alt: '商談 → 契約 → 開始 で数週間', self: '即日', other: '数時間〜数日' },
+    { label: '導入時間', core: '3 日間 無料 + 5 分', alt: '商談 → 契約 → 開始 で数週間', self: '即日', other: '数時間〜数日' },
   ];
 
   return (
@@ -1033,7 +1033,7 @@ function FinalCta({ config, accentLeft, accentRight }: { config: IndustryConfig;
           ...sectionTitle,
           fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
         }}>
-          まず 7 日間、無料で。
+          まず 3 日間、無料で。
         </h2>
         <p style={{ ...sectionLead, marginBottom: '2rem' }}>
           カード登録は不要。続けるか続けないかは、7 日後に決めてください。

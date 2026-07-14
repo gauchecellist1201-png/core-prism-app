@@ -138,7 +138,7 @@ export function getWellnessSummary(today: DailyHealth | null): WellnessSummary {
     : 1;
   const streak = computeStreak(hist);
 
-  // 改善率: 最初の 7 日平均 → 直近 7 日平均
+  // 改善率: 最初の 3 日平均 → 直近 7 日平均
   const firstWeek = hist.slice(0, 7);
   const lastWeek = hist.slice(-7);
   const avg = (a: WellnessEntry[]) => a.length ? a.reduce((s, e) => s + e.score, 0) / a.length : 0;

@@ -39,8 +39,8 @@ const PRODUCTS: Record<ProductId, {
       { name: '自己実現', en: 'SELF', role: 'コーチ / 目標 / 振り返り' },
     ],
     pricing: [
-      { plan: 'Starter', price: '¥2,980', period: '/ 月', features: ['3 つの人格 (経営 / 営業 / +1)', '商談・議事録・スライド AI', 'Cmd+K 横断検索', '7 日間 無料トライアル'] },
-      { plan: 'Standard', price: '¥9,800', period: '/ 月', features: ['7 つの人格 (全エージェント)', '提案書・契約書・財務 AI', 'Gmail シャドー秘書', '見積→請求の一気通貫', '7 日間 無料トライアル'], highlight: true },
+      { plan: 'Starter', price: '¥2,980', period: '/ 月', features: ['3 つの人格 (経営 / 営業 / +1)', '商談・議事録・スライド AI', 'Cmd+K 横断検索', '3 日間 無料トライアル'] },
+      { plan: 'Standard', price: '¥9,800', period: '/ 月', features: ['7 つの人格 (全エージェント)', '提案書・契約書・財務 AI', 'Gmail シャドー秘書', '見積→請求の一気通貫', '3 日間 無料トライアル'], highlight: true },
       { plan: 'Exclusive', price: '¥29,800', period: '/ 月', features: ['Standard 全機能', '人物ケア (1on1 + センチメント)', 'API + Webhook', 'チーム共有 (5 名)', '優先サポート + 戦略コーチ'] },
     ],
     kgi: [
@@ -105,8 +105,8 @@ const PRODUCTS: Record<ProductId, {
     ],
     pricing: [
       { plan: 'Free', price: '¥0', period: '', features: ['リンク無制限', '基本テーマ', 'クリック総数'] },
-      { plan: 'Pro', price: '¥1,480', period: '/ 月', features: ['全テーマ + カスタムフォント', 'ヒートマップ分析', '流入元クロス分析', '独自ドメイン', '7日間無料'], highlight: true },
-      { plan: 'Business', price: '¥3,480', period: '/ 月〜', features: ['チーム管理', 'EC / 予約連携', 'チーム分析', 'ロゴ非表示', '7日間無料'] },
+      { plan: 'Pro', price: '¥1,480', period: '/ 月', features: ['全テーマ + カスタムフォント', 'ヒートマップ分析', '流入元クロス分析', '独自ドメイン', '3日間無料'], highlight: true },
+      { plan: 'Business', price: '¥3,480', period: '/ 月〜', features: ['チーム管理', 'EC / 予約連携', 'チーム分析', 'ロゴ非表示', '3日間無料'] },
     ],
     kgi: [
       { label: '有料ユーザー数 (Q4)', q4_target: '1,000 人' },

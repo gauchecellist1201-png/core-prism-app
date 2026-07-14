@@ -164,7 +164,7 @@ export default function TeamHub({ accentColor, onClose }: Props) {
                 }}
                 aria-label="招待リンクのサンプル"
               >
-                <div style={{ opacity: 0.6, marginBottom: 2 }}>編集者として招待 · 7 日間有効</div>
+                <div style={{ opacity: 0.6, marginBottom: 2 }}>編集者として招待 · 3 日間有効</div>
                 <div
                   style={{
                     background: 'var(--surface-1)',

@@ -63,8 +63,8 @@ const VENTURES: Venture[] = [
     ],
     pricing: [
       { plan: 'Free', price: '¥0', net: '—', desc: 'リンク無制限・基本テーマ・クリック総数' },
-      { plan: 'Pro', price: '¥1,480/月', net: yen(1427), desc: '全テーマ・ヒートマップ分析・流入元分析・独自ドメイン（7日間無料）', pop: true },
-      { plan: 'Business', price: '¥3,480/月〜', net: yen(3355), desc: 'チーム管理・EC/予約連携・チーム分析（7日間無料）' },
+      { plan: 'Pro', price: '¥1,480/月', net: yen(1427), desc: '全テーマ・ヒートマップ分析・流入元分析・独自ドメイン（3日間無料）', pop: true },
+      { plan: 'Business', price: '¥3,480/月〜', net: yen(3355), desc: 'チーム管理・EC/予約連携・チーム分析（3日間無料）' },
     ],
     unitNote: 'Pro/Business とも Stripe Japan 手数料 3.6% を引いた純額。ソフトウェアなので1人増えても原価はほぼ増えない（限界費用≒0）。',
     profit: [
@@ -119,9 +119,9 @@ const VENTURES: Venture[] = [
       '盛らない算定：有料1,000件で月商約565万、5,000件で月商約2,825万（ARPU¥5,650想定）',
     ],
     pricing: [
-      { plan: 'Solo', price: '¥1,980/月', net: yen(1909), desc: 'AI個別配信・1アカウント・月2,000通（7日間無料）' },
-      { plan: 'Pro', price: '¥6,980/月', net: yen(6729), desc: 'AIレター・月8,000通・送信前に全件確認（7日間無料）', pop: true },
-      { plan: 'Business', price: '¥14,800/月', net: yen(14267), desc: '3アカウント・月30,000通・設定代行（7日間無料）' },
+      { plan: 'Solo', price: '¥1,980/月', net: yen(1909), desc: 'AI個別配信・1アカウント・月2,000通（3日間無料）' },
+      { plan: 'Pro', price: '¥6,980/月', net: yen(6729), desc: 'AIレター・月8,000通・送信前に全件確認（3日間無料）', pop: true },
+      { plan: 'Business', price: '¥14,800/月', net: yen(14267), desc: '3アカウント・月30,000通・設定代行（3日間無料）' },
     ],
     unitNote: '利用者が自分の API キーを接続する設計のため、使われるほど膨らむ AI 代を構造的に回避（運営の AI 原価 ≒ 0）。だから安い料金でも高利益。',
     profit: [
@@ -172,9 +172,9 @@ const VENTURES: Venture[] = [
       '盛らない算定：有料1,000件で月商約939万（平均単価¥9,390想定）',
     ],
     pricing: [
-      { plan: 'Starter', price: '¥2,980/月', net: yen(2873), desc: '基本AI・1人格1ユーザー・ナレッジ100件（7日間無料）' },
-      { plan: 'Standard', price: '¥9,800/月', net: yen(9447), desc: '全AI（商談AI含む）・人格/ユーザー無制限・音声秘書（7日間無料）', pop: true },
-      { plan: 'Exclusive', price: '¥29,800/月', net: yen(28727), desc: '専任サポート・契約/決算AI・導入伴走・請求書払い（7日間無料）' },
+      { plan: 'Starter', price: '¥2,980/月', net: yen(2873), desc: '基本AI・1人格1ユーザー・ナレッジ100件（3日間無料）' },
+      { plan: 'Standard', price: '¥9,800/月', net: yen(9447), desc: '全AI（商談AI含む）・人格/ユーザー無制限・音声秘書（3日間無料）', pop: true },
+      { plan: 'Exclusive', price: '¥29,800/月', net: yen(28727), desc: '専任サポート・契約/決算AI・導入伴走・請求書払い（3日間無料）' },
     ],
     unitNote: 'BYOK（利用者が自分のAPIキーを接続）でAI原価をほぼ0に。高単価でも限界費用が小さく、利益率が高い。',
     profit: [
@@ -189,7 +189,7 @@ const VENTURES: Venture[] = [
       'Iris/Resonance/Lume が集めたSNS・LINEの結果が、最後にPrismへ集約',
     ],
     roadmap: [
-      { phase: 'いま', body: '本番公開済み。7日間無料トライアル・全AI機能が稼働' },
+      { phase: 'いま', body: '本番公開済み。3日間無料トライアル・全AI機能が稼働' },
       { phase: '〜3ヶ月', body: '業種別パッケージ・オンボーディング摩擦ゼロ・導入事例づくり' },
       { phase: '〜6ヶ月', body: 'マルチテナント本格化・法人プラン（Exclusive）拡販' },
       { phase: '〜12ヶ月', body: '有料1,000件規模へ。3サービス連携の一気通貫を訴求' },
@@ -225,9 +225,9 @@ const VENTURES: Venture[] = [
       '盛らない算定：有料1,000件で月商約585万（平均単価¥5,850想定）',
     ],
     pricing: [
-      { plan: 'Lite', price: '¥2,980/月', net: yen(2873), desc: 'AI戦略相談50回/月・案件管理無制限・キャプション月30（7日間無料）' },
-      { plan: 'Standard', price: '¥6,980/月', net: yen(6729), desc: 'リール自動生成・AI相談/解析ほぼ無制限・Instagram解析（7日間無料）', pop: true },
-      { plan: 'Pro', price: '¥12,800/月', net: yen(12339), desc: '連携アカウント5・ブランドマッチ・運用代行（7日間無料）' },
+      { plan: 'Lite', price: '¥2,980/月', net: yen(2873), desc: 'AI戦略相談50回/月・案件管理無制限・キャプション月30（3日間無料）' },
+      { plan: 'Standard', price: '¥6,980/月', net: yen(6729), desc: 'リール自動生成・AI相談/解析ほぼ無制限・Instagram解析（3日間無料）', pop: true },
+      { plan: 'Pro', price: '¥12,800/月', net: yen(12339), desc: '連携アカウント5・ブランドマッチ・運用代行（3日間無料）' },
     ],
     unitNote: 'BYOK＋自動化で「運用代行（月数万円）の約1/10」を実現。ソフトなので利用者が増えても原価はほぼ増えない。',
     profit: [

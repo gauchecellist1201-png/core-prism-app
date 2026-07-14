@@ -130,7 +130,7 @@ export default function IrisApp() {
         <OfflineNotice />
         <>
           <IrisLanding onEnter={handleEnter} onSelectPlan={handleSelectPlan} />
-          <LpStickyCta title="Irisを7日間、完全無料で" sub="クレカ不要・解約は1タップ" cta="無料で始める →" onClick={handleEnter} accent1="#E1306C" accent2="#833AB4" ctaColor="#fff" />
+          <LpStickyCta title="Irisを3日間、完全無料で" sub="クレカ不要・解約は1タップ" cta="無料で始める →" onClick={handleEnter} accent1="#E1306C" accent2="#833AB4" ctaColor="#fff" />
         </>
         <AnimatePresence>
           {checkoutPlan && (

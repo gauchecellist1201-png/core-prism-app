@@ -473,7 +473,7 @@ function Pricing() {
             音楽スクールの大半はこのプランで余裕で足ります。
           </p>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'left' }}>
-            {['全機能利用可', 'クレジット 1,000/月 (生徒 80 名規模の事務時間相当)', 'Stripe / Google カレンダー 連携', '7 日間 完全無料体験'].map((p, i) => (
+            {['全機能利用可', 'クレジット 1,000/月 (生徒 80 名規模の事務時間相当)', 'Stripe / Google カレンダー 連携', '3 日間 完全無料体験'].map((p, i) => (
               <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, color: 'rgba(255,255,255,0.85)' }}>
                 <Check size={14} color={ACCENT_GREEN} /> {p}
               </li>
@@ -586,7 +586,7 @@ function ProposalSheet() {
 
           <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 8, color: '#9333EA' }}>3. 投資</h3>
           <p style={{ fontSize: 13, marginBottom: 18 }}>
-            <strong>月額 ¥9,800</strong> (スタンダードプラン) ・ <strong>7 日間 無料体験あり</strong><br />
+            <strong>月額 ¥9,800</strong> (スタンダードプラン) ・ <strong>3 日間 無料体験あり</strong><br />
             投資回収 約 1 ヶ月 (上記効果 ¥21,000/月 で計算)
           </p>
 

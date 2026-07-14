@@ -350,7 +350,7 @@ function Sparkbar({ series, max, activeDays }: { series: DayBucket[]; max: numbe
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--fg-muted)', letterSpacing: '0.01em' }}>
-          この7日間の動き
+          この3日間の動き
         </span>
         <span style={{ fontSize: 10.5, fontWeight: 800, color: '#06C755' }}>
           7日のうち {activeDays} 日 稼働

@@ -28,7 +28,7 @@ function statsOf(values: number[]): Stats {
   return { mean, std: Math.sqrt(v) };
 }
 
-/** 7日間の異常検知。新しい順に重要度の高い anomaly を返す（最大 5 件） */
+/** 3日間の異常検知。新しい順に重要度の高い anomaly を返す（最大 5 件） */
 export function detectAnomalies(days: DailyHealth[]): HealthAnomaly[] {
   if (days.length < 4) return [];
   const today = days[days.length - 1];

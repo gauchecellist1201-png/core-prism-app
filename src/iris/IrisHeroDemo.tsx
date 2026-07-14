@@ -132,7 +132,7 @@ export default function IrisHeroDemo({ onStart }: { onStart: () => void }) {
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
               >
-                自分のDMでやってみる（7日間無料） <ArrowRight size={16} strokeWidth={2.6} />
+                自分のDMでやってみる（3日間無料） <ArrowRight size={16} strokeWidth={2.6} />
               </button>
               <button type="button" onClick={() => setPhase('dm')} style={{ marginTop: 4, width: '100%', minHeight: 44, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.72rem', color: 'rgba(255,250,245,0.55)', textDecoration: 'underline', textUnderlineOffset: 3 }}>
                 もう一度みる

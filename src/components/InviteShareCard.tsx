@@ -1,5 +1,5 @@
 // ============================================================
-// Invite & Share Card — 1 紹介 = 両者に +7 日トライアル延長
+// Invite & Share Card — 1 紹介 = 両者に +3 日トライアル延長
 // Day 2 upgrade:
 //   - 巨大ヒーロー (「友だちが登録すると、あなたも友だちも 7 日無料追加」)
 //   - 3 連スタッツ (紹介人数 / 累計獲得日数 / 現在の trial 残日数)
@@ -108,7 +108,7 @@ function shareTextGeneric(url: string, brand: Brand, inviterName: string): strin
     ? `${inviterName} です。${product} を試してます。`
     : `${product} を試してます。`;
   return `${opener}
-このリンクから登録すると 7 日間無料トライアル + さらに +${REFERRAL_BONUS_DAYS} 日延長 (合計 ${7 + REFERRAL_BONUS_DAYS} 日無料)。
+このリンクから登録すると 3 日間無料トライアル + さらに +${REFERRAL_BONUS_DAYS} 日延長 (合計 ${7 + REFERRAL_BONUS_DAYS} 日無料)。
 ${url}`;
 }
 

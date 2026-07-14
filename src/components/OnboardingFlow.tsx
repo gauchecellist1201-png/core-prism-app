@@ -147,7 +147,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
               ひとりの社長が、ひとりで抱えなくていい時代へ。
             </p>
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              7日間無料 ・ カード登録なし ・ いつでも解約できます
+              3日間無料 ・ カード登録なし ・ いつでも解約できます
             </p>
           </motion.div>
         )}

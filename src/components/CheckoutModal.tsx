@@ -310,7 +310,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 </button>
               </div>
 
-              {/* Day 2 アップグレード: 「最初の 7 日 ¥0」の大きな緑バナー
+              {/* Day 2 アップグレード: 「最初の 3 日 ¥0」の大きな緑バナー
                   ※ 実装は Stripe trial_period_days=7 / payment_method_collection=always。
                   「14 日」「カード不要」と書くと嘘になるので、実物に合わせた正直 UI に統一。 */}
               <div style={{
@@ -325,7 +325,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5" /></svg>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '1.02rem', fontWeight: 900, marginBottom: 4, letterSpacing: '0.01em' }}>
-                    最初の 7 日 ¥0 — いつでも解約 OK
+                    最初の 3 日 ¥0 — いつでも解約 OK
                   </div>
                   <div style={{ fontSize: '0.8rem', lineHeight: 1.55, color: 'rgba(255,255,255,0.95)' }}>
                     カード情報は次の画面 (Stripe) で登録します。
@@ -347,7 +347,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 <span style={{ color: '#92400E' }}>3 つ契約すると合計 ¥6,000+ / 月</span>
               </div>
 
-              {/* 既存 7 日間 無料スタートの帯 (互換のため残す、サブ情報として小さく) */}
+              {/* 既存 3 日間 無料スタートの帯 (互換のため残す、サブ情報として小さく) */}
               <div style={{
                 marginBottom: '1.1rem',
                 padding: '0.65rem 1rem',
@@ -426,7 +426,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                         fontSize: '0.68rem', color: '#10B981', fontWeight: 700, marginBottom: '0.5rem',
                         display: 'flex', alignItems: 'center', gap: 4,
                       }}>
-                        <span>✦</span> 最初の 7 日間 ¥0、その後 自動スタート
+                        <span>✦</span> 最初の 3 日間 ¥0、その後 自動スタート
                       </div>
                       {cycle === 'yearly' && (
                         <div style={{ fontSize: '0.68rem', color: '#10B981', marginBottom: '0.5rem', fontWeight: 600 }}>
@@ -529,7 +529,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                   {isFree
                     ? (hasReferralBonus
                         ? `✨ ${7 + REFERRAL_BONUS_DAYS}日間 無料ではじめる →`
-                        : '✨ 7日間 無料ではじめる →')
+                        : '✨ 3日間 無料ではじめる →')
                     : '次へ →'}
                 </button>
               </div>
@@ -545,7 +545,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
             <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
               {/* MM (2026-06-03): Stripe Checkout 直前の 7 日無料 カウントダウン演出 */}
               <CheckoutTrialCountdown
-                days={7 + (hasReferralBonus ? REFERRAL_BONUS_DAYS : 0)}
+                days={3 + (hasReferralBonus ? REFERRAL_BONUS_DAYS : 0)}
                 accent={accent}
               />
 
@@ -570,7 +570,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 {isFree ? (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                      <span style={{ color: '#10B981', fontWeight: 700 }}>7日間 無料トライアル</span>
+                      <span style={{ color: '#10B981', fontWeight: 700 }}>3日間 無料トライアル</span>
                       <span style={{ color: '#10B981', fontWeight: 800 }}>¥0</span>
                     </div>
                     {hasReferralBonus && (
@@ -594,9 +594,9 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                   </>
                 ) : (
                   <>
-                    {/* 全プラン共通 7 日間 無料 (Stripe trial_period_days=7) */}
+                    {/* 全プラン共通 3 日間 無料 (Stripe trial_period_days=7) */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                      <span style={{ color: '#10B981', fontWeight: 700 }}>✦ 7 日間 無料トライアル</span>
+                      <span style={{ color: '#10B981', fontWeight: 700 }}>✦ 3 日間 無料トライアル</span>
                       <span style={{ color: '#10B981', fontWeight: 800 }}>¥0</span>
                     </div>
                     {hasReferralBonus && (
@@ -616,7 +616,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                       <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981' }}>¥0</span>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#065F46', marginTop: '0.5rem', lineHeight: 1.7 }}>
-                      {`8 日後 (${new Date(Date.now() + (7 + (hasReferralBonus ? REFERRAL_BONUS_DAYS : 0)) * 86400000).toLocaleDateString('ja-JP')}) から ¥${displayPrice.toLocaleString()} / ${cycle === 'yearly' ? '年' : '月'} で自動スタート。いつでも解約 OK。`}
+                      {`4 日後 (${new Date(Date.now() + (3 + (hasReferralBonus ? REFERRAL_BONUS_DAYS : 0)) * 86400000).toLocaleDateString('ja-JP')}) から ¥${displayPrice.toLocaleString()} / ${cycle === 'yearly' ? '年' : '月'} で自動スタート。いつでも解約 OK。`}
                     </div>
                     {cycle === 'yearly' && plan.priceJpy_yearly && (
                       <p style={{ fontSize: '0.78rem', color: '#065F46', marginTop: '0.5rem', lineHeight: 1.7 }}>
@@ -635,7 +635,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 }}>
                   <strong>ベータ確認モード</strong><br />
                   {isFree
-                    ? 'カード情報は不要です。¥0 で 7 日間トライアル開始。'
+                    ? 'カード情報は不要です。¥0 で 3 日間トライアル開始。'
                     : 'Stripe 接続準備中です。今回は ¥0 で登録 → 後日決済画面をご案内します。'}
                   {isMasterAuth() && (
                     <div style={{ marginTop: '0.5rem' }}>

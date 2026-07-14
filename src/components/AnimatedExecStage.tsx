@@ -46,7 +46,7 @@ const BEATS: StageBeat[] = [
 const BEAT_MS = 2200;
 const FINAL_PAUSE_MS = 3000;
 
-export default function AnimatedExecStage({ onCta, ctaLabel = '7 日間 無料で始める', onCxoClick }: Props) {
+export default function AnimatedExecStage({ onCta, ctaLabel = '3 日間 無料で始める', onCxoClick }: Props) {
   const [step, setStep] = useState(0); // 0..BEATS.length-1 = 各 CXO / BEATS.length = CTA フェーズ
   const isCtaPhase = step >= BEATS.length;
   const currentBeat = BEATS[step] || BEATS[0];

@@ -66,7 +66,7 @@ function simulate(scenario: Scenario, months: number) {
   return out;
 }
 
-// ─── Crystal 専用シミュレーション (7日トライアル → 月額) ───
+// ─── Crystal 専用シミュレーション (3日トライアル → 月額) ───
 const CRYSTAL_URL = 'https://crystal-nine-self.vercel.app';
 const CRYSTAL_PARAMS: Record<Scenario, {
   startTrials: number;   // 初月の無料トライアル開始数
@@ -339,7 +339,7 @@ export default function StrategyDashboard() {
           <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.45em', color: '#C9A96E', fontWeight: 600, marginBottom: '1rem' }}>THE 6TH PRODUCT</p>
           <h1 style={{ fontFamily: '"Cinzel", serif', fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 500, letterSpacing: '0.3em', textIndent: '0.3em', marginBottom: '0.75rem', color: '#F4F7FC' }}>CRYSTAL</h1>
           <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1rem', color: 'rgba(244,247,252,0.75)', lineHeight: 1.9, maxWidth: 640, margin: '0 auto 1.5rem' }}>
-            話しかけるだけの、専属AIコンシェルジュ。7日間の無料トライアル（カード必須）→ 月額。<br />
+            話しかけるだけの、専属AIコンシェルジュ。3日間の無料トライアル（カード必須）→ 月額。<br />
             iPhoneのポケットに住む「美しいClaude Code」。
           </p>
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -381,7 +381,7 @@ export default function StrategyDashboard() {
           </div>
         </Section>
 
-        <Section title="Crystal 売上シミュレーション" subtitle="CRYSTAL PROJECTION" desc="7日トライアル → 課金転換のファネルで 12 ヶ月後の MRR を試算" bg="#0b0f18">
+        <Section title="Crystal 売上シミュレーション" subtitle="CRYSTAL PROJECTION" desc="3日トライアル → 課金転換のファネルで 12 ヶ月後の MRR を試算" bg="#0b0f18">
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
             {(Object.keys(SCENARIOS) as Scenario[]).map(s => (
               <button key={s} onClick={() => setScenario(s)} style={pillStyle(scenario === s)}>{SCENARIOS[s].label}シナリオ</button>

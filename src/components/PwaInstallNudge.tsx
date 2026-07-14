@@ -9,7 +9,7 @@
 //   - 3 回目以降 + 未インストール + 1 日に 1 回だけ表示
 //   - Chrome / Edge は `beforeinstallprompt` を捕捉して deferredPrompt を保持
 //   - iOS Safari は `beforeinstallprompt` が無いため手動案内に倒す
-//   - 「あとで」を押したら 7 日間スヌーズ
+//   - 「あとで」を押したら 3 日間スヌーズ
 // ============================================================
 
 import { useEffect, useState } from 'react';

@@ -490,7 +490,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                 accent={accent}
                 variant="compact"
                 messages={[
-                  '🗓 7 日間のリズムを設計しています…',
+                  '🗓 3 日間のリズムを設計しています…',
                   '🎭 トーンを散らしています…',
                   '📲 各日のプラットフォームを選んでいます…',
                 ]}

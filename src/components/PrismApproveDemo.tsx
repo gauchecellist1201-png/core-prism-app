@@ -120,7 +120,7 @@ export default function PrismApproveDemo({ onEnter }: { onEnter: () => void }) {
 
       {state === 'done' && (
         <button type="button" onClick={onEnter} style={{ position: 'relative', zIndex: 2, width: '100%', marginTop: '0.9rem', minHeight: 48, borderRadius: 13, border: 'none', cursor: 'pointer', background: 'linear-gradient(90deg,#a78bfa,#60a5fa)', color: '#fff', fontWeight: 800, fontSize: '0.92rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          自分の会社で承認してみる（7日間無料） <ArrowRight size={16} strokeWidth={2.6} />
+          自分の会社で承認してみる（3日間無料） <ArrowRight size={16} strokeWidth={2.6} />
         </button>
       )}
 
