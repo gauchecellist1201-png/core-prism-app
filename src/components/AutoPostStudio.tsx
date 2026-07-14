@@ -95,6 +95,9 @@ function saveSchedule(items: ScheduledPost[]) {
 
 export default function AutoPostStudio({ persona, settings, knowledge, onClose, onSaveAsKnowledge }: Props) {
   const [tab, setTab] = useState<Tab>('multi');
+  // note記事と同時に作る X / Threads 告知文（オーナー要望: 記事・画像・SNS文がワンセットで完成）
+  const [noteSns, setNoteSns] = useState<{ x?: string; threads?: string } | null>(null);
+  const [noteSnsBusy, setNoteSnsBusy] = useState(false);
   const [topic, setTopic] = useState('');
   const [tone, setTone] = useState<SocialTone>('storytelling');
   const [customInstr, setCustomInstr] = useState('');
@@ -133,7 +136,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
   // 旧来 (note 長文 / X 単独)
   const [targetWords, setTargetWords] = useState(1500);
   const [useCustomWords, setUseCustomWords] = useState(false);
-  const [customWords, setCustomWords] = useState(2000);
+  const [customWords] = useState(2000);
   const [threadCount, setThreadCount] = useState(1);
   const [draft, setDraft] = useState<SocialDraft | null>(null);
   const [editedTitle, setEditedTitle] = useState('');
@@ -399,6 +402,26 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     }
   }, [topic]);
 
+  // ─── note記事の告知文 (X / Threads) を記事内容から同時生成 ───
+  const generateNoteSnsTexts = useCallback(async (title: string, hookLine: string, body: string) => {
+    setNoteSnsBusy(true);
+    setNoteSns(null);
+    try {
+      const excerpt = (body || '').replace(/[#>*`]/g, '').slice(0, 400);
+      const md = await generateMultiPlatformPost({
+        settings, persona, tone,
+        topic: `note記事を公開する告知投稿。記事タイトル「${title}」／リード「${hookLine}」／要点: ${excerpt}`,
+        platforms: ['x', 'threads'],
+        customInstruction: '記事の一番おいしい学びを1つだけ切り出し、続きはnoteで読みたくなる引きを作る。宣伝臭は出さない。',
+      });
+      setNoteSns({ x: md.posts?.x || '', threads: md.posts?.threads || '' });
+    } catch (e) {
+      console.warn('[AutoPostStudio] X/Threads告知文の生成に失敗', e);
+    } finally {
+      setNoteSnsBusy(false);
+    }
+  }, [settings, persona, tone]);
+
   // ─── 旧 note / X 生成 ───
   const handleGenerate = useCallback(async () => {
     if (!topic.trim()) { setError('テーマを入力してください'); return; }
@@ -406,6 +429,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     setError(null);
     setDraft(null);
     setNoteImage(null);
+    setNoteSns(null);
     try {
       const ks = personaKnowledge.filter(k => selectedKnowledge.has(k.id));
       let result: SocialDraft;
@@ -420,6 +444,8 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
         animateInto(result.body || '', setEditedBody);
         // 記事の内容(タイトル+リード文)に基づく見出し画像を裏で自動生成
         generateNoteHeaderImage(result.title || topic, result.hookLine || '');
+        // X / Threads の告知文も同時に用意（記事→画像→SNS文がワンセットで完成する体験）
+        void generateNoteSnsTexts(result.title || topic, result.hookLine || '', result.body || '');
       } else {
         result = await generateXPost({
           settings, persona, topic, tone, knowledge: ks,
@@ -435,7 +461,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
     } finally {
       setIsGenerating(false);
     }
-  }, [tab, topic, tone, customInstr, settings, persona, personaKnowledge, selectedKnowledge, targetWords, useCustomWords, customWords, threadCount, generateNoteHeaderImage]);
+  }, [tab, topic, tone, customInstr, settings, persona, personaKnowledge, selectedKnowledge, targetWords, useCustomWords, customWords, threadCount, generateNoteHeaderImage, generateNoteSnsTexts]);
 
   const copyToClipboard = useCallback((text: string, label = '本文') => copyText(text, label), []);
 
@@ -884,35 +910,45 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
             {tab !== 'multi' && (
               <div className="grid grid-cols-2 gap-2">
                 {tab === 'note' ? (
-                  <div>
-                    <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">目標字数</label>
-                    <select
-                      value={useCustomWords ? 'custom' : targetWords}
-                      onChange={e => {
-                        if (e.target.value === 'custom') { setUseCustomWords(true); return; }
-                        setUseCustomWords(false);
-                        setTargetWords(Number(e.target.value));
-                      }}
-                      className="w-full px-3 rounded bg-surface-3 border-edge border text-fg"
-                      style={{ fontSize: 16, minHeight: 48 }}
-                    >
-                      <option value={800}>短め (800字)</option>
-                      <option value={1500}>標準 (1,500字)</option>
-                      <option value={2500}>長め (2,500字)</option>
-                      <option value={3500}>超詳細 (3,500字)</option>
-                      <option value="custom">カスタム (数字で指定)</option>
-                    </select>
-                    {useCustomWords && (
-                      <input
-                        type="number"
-                        min={300} max={8000} step={100}
-                        value={customWords}
-                        onChange={e => setCustomWords(Math.max(300, Math.min(8000, Number(e.target.value) || 300)))}
-                        placeholder="例: 4500"
-                        className="w-full mt-1.5 px-3 rounded bg-surface-3 border-edge border text-fg"
-                        style={{ fontSize: 16, minHeight: 48 }}
-                      />
-                    )}
+                  <div className="col-span-2">
+                    <div className="flex items-baseline justify-between mb-1.5">
+                      <label className="block text-fg-muted text-xs tracking-wider uppercase">文字量</label>
+                      <span className="text-sm font-semibold tabular-nums" style={{ color: persona.accentColor }}>約 {targetWords.toLocaleString()} 字</span>
+                    </div>
+                    {/* ワンタップのチップ + 微調整スライダー（直感的に多く/少なく） */}
+                    <div className="flex gap-1.5 mb-2">
+                      {[
+                        { w: 800, label: '短め' },
+                        { w: 1500, label: '標準' },
+                        { w: 2500, label: '長め' },
+                        { w: 3500, label: '超詳細' },
+                      ].map(c => (
+                        <button
+                          key={c.w}
+                          onClick={() => { setTargetWords(c.w); setUseCustomWords(false); }}
+                          className="flex-1 rounded-lg text-xs font-medium transition-all"
+                          style={{
+                            minHeight: 40,
+                            background: targetWords === c.w ? persona.accentColorLight : 'var(--surface-3)',
+                            border: `1px solid ${targetWords === c.w ? persona.accentColor : 'var(--border)'}`,
+                            color: targetWords === c.w ? persona.accentColor : 'var(--fg-muted, #999)',
+                          }}
+                        >{c.label}</button>
+                      ))}
+                    </div>
+                    <input
+                      type="range"
+                      min={300} max={6000} step={100}
+                      value={targetWords}
+                      onChange={e => { setTargetWords(Number(e.target.value)); setUseCustomWords(false); }}
+                      className="w-full"
+                      style={{ accentColor: persona.accentColor, minHeight: 32 }}
+                      aria-label="目標字数"
+                    />
+                    <div className="flex justify-between text-[10px] text-fg-muted">
+                      <span>300字（サクッと）</span>
+                      <span>6,000字（がっつり）</span>
+                    </div>
                   </div>
                 ) : (
                   <div>
@@ -1279,6 +1315,53 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                   className="text-xs px-4 rounded font-semibold inline-flex items-center gap-1"
                   style={{ background: '#41C9B4', color: '#000000', minHeight: 40 }}
                 ><FileText size={13} strokeWidth={2.2} />note を開いて貼り付け →</button>
+              </div>
+
+              {/* ★記事とセットで完成する X / Threads 告知文（同時生成） */}
+              <div className="px-4 py-3 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-fg-muted text-xs tracking-wider uppercase">X・Threads 告知文（記事から同時生成）</p>
+                  {!noteSnsBusy && (
+                    <button
+                      onClick={() => generateNoteSnsTexts(editedTitle, draft?.hookLine || '', editedBody)}
+                      className="text-[11px] px-2.5 rounded text-fg-muted hover:text-fg inline-flex items-center gap-1"
+                      style={{ background: 'var(--surface)', border: '1px solid var(--border)', minHeight: 32 }}
+                    ><RefreshCw size={11} strokeWidth={2.2} />{noteSns ? '作り直す' : '生成する'}</button>
+                  )}
+                </div>
+                {noteSnsBusy ? (
+                  <div className="flex items-center gap-2 text-fg-muted text-xs py-3 animate-pulse">
+                    <Loader2 size={14} className="animate-spin" strokeWidth={2.2} />記事の内容から X と Threads の告知文を書いています…
+                  </div>
+                ) : noteSns ? (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {([['x', 'X (旧Twitter)'], ['threads', 'Threads']] as const).map(([pk, plabel]) => {
+                      const body = pk === 'x' ? noteSns.x : noteSns.threads;
+                      if (!body) return null;
+                      return (
+                        <div key={pk} className="rounded-lg p-3 space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                          <p className="text-[11px] font-semibold text-fg-muted">{plabel}</p>
+                          <p className="text-[13px] text-fg leading-relaxed whitespace-pre-wrap">{body}</p>
+                          <div className="flex gap-1.5 justify-end">
+                            <button
+                              onClick={() => copyToClipboard(body, plabel)}
+                              className="text-[11px] px-2.5 rounded text-fg-muted hover:text-fg inline-flex items-center gap-1"
+                              style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', minHeight: 32 }}
+                            ><Copy size={11} strokeWidth={2.2} />コピー</button>
+                            <a
+                              href={PLATFORM_META[pk].postUrl ? PLATFORM_META[pk].postUrl!(body) : '#'}
+                              target="_blank" rel="noopener noreferrer"
+                              className="text-[11px] px-2.5 rounded font-medium inline-flex items-center gap-1"
+                              style={{ background: persona.accentColorLight, color: persona.accentColor, minHeight: 32 }}
+                            ><ExternalLink size={11} strokeWidth={2.2} />投稿画面を開く</a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-fg-muted text-[11px]">記事を生成すると、Xと Threads の告知文もここに自動で並びます。</p>
+                )}
               </div>
             </div>
           )}

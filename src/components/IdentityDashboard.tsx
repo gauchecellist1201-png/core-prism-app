@@ -1341,37 +1341,35 @@ export default function IdentityDashboard({
               <QuickActions
                 persona={persona}
                 actions={[
+                  /* ── 主役: 毎日使う金になる4つ（レシートOCRは主力武器として前面へ・オーナー方針 2026-07-14）── */
                   { id: 'brief', emoji: '💡', label: '次の一手を出す', desc: '今やる事を AI が 3 つ提案', primary: true, onClick: () => proactive.generate(settings.voiceEnabled !== false) },
-                  { id: 'voice', emoji: '🎙', label: '話してメモ', desc: '30 秒喋ると要点 3 行に要約', onClick: () => setShowVoice(true) },
-                  { id: 'youtube', emoji: '🎦', label: '動画を学びに', desc: 'YouTube の URL → 要点 5 行', onClick: () => setShowYouTube(true) },
+                  { id: 'expense', emoji: '📷', label: 'レシート整理 OCR', desc: 'パシャと撮るだけ → 金額・店名・科目を自動で帳簿へ', primary: true, onClick: () => setShowExpense(true) },
                   { id: 'shadow', emoji: '📬', label: '返信下書きを見る', desc: shadow.drafts.length > 0 ? `AI が先に書いた返信案 ${shadow.drafts.length} 通` : 'AI が先に返信案を 3 通り書く', onClick: () => setShowShadow(true) },
-                  { id: 'kb', emoji: '📚', label: '資料を読ませる', desc: 'PDF / PPT / 画像を AI に記憶', onClick: () => setShowKnowledge(true) },
-                  { id: 'note', emoji: '📝', label: 'ノートを書く', desc: 'メモ → AI が要点と次の一手', onClick: () => setShowKnowledge(true) },
+                  { id: 'post', emoji: '📢', label: 'SNS投稿を書く', desc: 'テーマ 1 行 → note 記事 + 画像 + X / Threads 文', onClick: () => setShowPost(true) },
+                  /* ── つくる ── */
+                  { id: 'image', emoji: '🎨', label: '画像を作る', desc: 'YouTube / インスタ / X 用を同時生成', onClick: () => setShowImage(true) },
                   { id: 'minutes', emoji: '🎩', label: '会議を文字に', desc: '録音 → 話者別の議事録 + 要約', onClick: () => setShowMinutes(true) },
-                  { id: 'slides', emoji: '🎨', label: 'スライドを作る', desc: 'テーマ 1 行 → .pptx を 10 枚生成', onClick: () => setShowSlides(true) },
-                  { id: 'nego', emoji: '🤝', label: '交渉を練習', desc: 'AI が相手役 → 3 回練習 + 弱点指摘', onClick: () => setShowNego(true) },
-                  { id: 'decision', emoji: '💭', label: '迷いを整理', desc: '選択肢を入れると比較表 + AI 推し', onClick: () => setShowDecision(true) },
-                  { id: 'email', emoji: '📬', label: 'メールを片付け', desc: '受信箱を仕分け + 返信案 3 通り', onClick: () => setShowEmail(true) },
-                  { id: 'post', emoji: '📢', label: 'SNS投稿を書く', desc: 'テーマ 1 行 → note 本文 + X 3 投稿', onClick: () => setShowPost(true) },
-                  { id: 'image', emoji: '🎨', label: '画像を作る', desc: '言葉で説明 → AI が画像 4 枚生成', onClick: () => setShowImage(true) },
+                  { id: 'voice', emoji: '🎙', label: '話してメモ', desc: '30 秒喋ると要点 3 行に要約', onClick: () => setShowVoice(true) },
+                  { id: 'kb', emoji: '📚', label: '資料を読ませる', desc: 'PDF / PPT / 画像を AI に記憶', onClick: () => setShowKnowledge(true) },
+                  { id: 'slides', emoji: '🖼', label: 'スライドを作る', desc: 'テーマ 1 行 → .pptx を 10 枚生成', onClick: () => setShowSlides(true) },
                   { id: 'engine', emoji: '📡', label: '記事を一気に', desc: '1 テーマで note + X + LP を同時生成', onClick: () => setShowContentEngine(true) },
+                  /* ── お金 ── */
                   { id: 'invoice', emoji: '🧾', label: '請求書を作る', desc: '案件を選ぶだけで PDF を発行・送信', onClick: () => setShowInvoice(true) },
                   { id: 'sales', emoji: '📒', label: '売上を記録', desc: '請求書を発行 → 売上に自動計上', onClick: () => setShowSales(true) },
                   { id: 'pnl', emoji: '📊', label: '利益を確認', desc: '今月の利益・粗利・経費を 1 画面で', onClick: () => setShowPnL(true) },
                   { id: 'fin-consult', emoji: '🧮', label: '財務コンサルに相談', desc: '12 ヶ月の数字 → AI が改善 3 案', primary: true, onClick: () => setShowFinConsult(true) },
-                  { id: 'expense', emoji: '📷', label: '経費を登録', desc: 'レシートをパシャ → 自動で金額入力', onClick: () => setShowExpense(true) },
-                  { id: 'benchmark', emoji: '📊', label: '同業と比べる', desc: 'あなたの粗利率を業界中央値と比較', onClick: () => setShowBenchmark(true) },
+                  /* ── 商い ── */
                   { id: 'crm', emoji: '🤝', label: '案件を管理', desc: '案件の段階・金額・次の動きを一覧', onClick: () => setShowCRM(true) },
                   { id: 'documents', emoji: '📄', label: '取引書類を作る', desc: '見積 → 発注 → 納品 → 請求を 1 セット', onClick: () => setShowDocument(true) },
-                  { id: 'people', emoji: '👥', label: '人を気づかう', desc: '1on1 履歴 → AI がメンバーの兆候 3 行', onClick: () => setShowPeople(true) },
-                  { id: 'team', emoji: '🤺', label: 'メンバーを招く', desc: 'URL 1 つで招待 + 同じ画面を共有', onClick: () => setShowTeam(true) },
                   { id: 'sales-agent', emoji: '🎯', label: '今日の商談準備', desc: '今日攻める 5 社 + 理由 + 打ち手', primary: true, onClick: () => setShowSalesAgent(true) },
-                  { id: 'saas-agent', emoji: '🤖', label: 'アプリ操作を任す', desc: 'Notion / Gmail を AI が代わりに作業', primary: true, onClick: () => setShowSaasAgent(true) },
-                  { id: 'integrations', emoji: '🔗', label: '連携センター', desc: 'Gmail / Watch / Stripe を 3 ステップで接続', primary: true, onClick: () => setShowIntegrations(true) },
-                  { id: 'tasks-hub', emoji: '✅', label: 'やる事を一覧', desc: '全タスクを 1 画面で並べ替え・完了', onClick: () => setShowTaskHub(true) },
-                  { id: 'premium', emoji: '👑', label: '専門 AI に相談', desc: '戦略 / 法務 / 財務 / 採用 の 4 領域 AI', primary: true, onClick: () => setShowPremium(true) },
+                  { id: 'email', emoji: '✉️', label: 'メールを片付け', desc: '受信箱を仕分け + 返信案 3 通り', onClick: () => setShowEmail(true) },
                   { id: 'meet', emoji: '📅', label: '会議を予約', desc: '予約 URL 発行 → 相手が枠を選ぶだけ', onClick: () => setShowMeeting(true) },
-                  { id: 'health', emoji: '🩺', label: '体調を確認', desc: '睡眠 / 歩数 / 回復スコアを 1 画面で', onClick: () => setShowHealth(true) },
+                  /* ── ととのえる ── */
+                  { id: 'tasks-hub', emoji: '✅', label: 'やる事を一覧', desc: '全タスクを 1 画面で並べ替え・完了', onClick: () => setShowTaskHub(true) },
+                  { id: 'team', emoji: '🤺', label: 'メンバーを招く', desc: 'URL 1 つで招待 + 同じ画面を共有', onClick: () => setShowTeam(true) },
+                  { id: 'integrations', emoji: '🔗', label: '連携センター', desc: 'Gmail / Apple Watch / Stripe を 3 ステップで接続', primary: true, onClick: () => setShowIntegrations(true) },
+                  { id: 'premium', emoji: '👑', label: '専門 AI に相談', desc: '戦略 / 法務 / 財務 / 採用 の 4 領域 AI', primary: true, onClick: () => setShowPremium(true) },
+                  { id: 'health', emoji: '🩺', label: '体調を確認', desc: 'Apple Watch の睡眠 / 歩数 / 回復スコアを 1 画面で', onClick: () => setShowHealth(true) },
                 ]}
               />
 

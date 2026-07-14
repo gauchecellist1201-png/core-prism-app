@@ -242,6 +242,10 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
   const [lightbox, setLightbox] = useState<{ url: string; w: number; h: number } | null>(null);
   const [toast, setToast] = useState<string>('');
   const [pendingPromptPrefix, setPendingPromptPrefix] = useState<string>('');
+  // ★用途別・同時生成（オーナー要望 2026-07-14）: 1つのテーマから YouTube/Instagram/X/note 等の
+  //   各サイズを一括で作る。選んだ用途ごとに1枚ずつ並列生成。
+  const [multiTargets, setMultiTargets] = useState<Set<ImageAspect>>(new Set());
+  const [multiResults, setMultiResults] = useState<{ aspect: ImageAspect; result: GenerateImageResult }[]>([]);
   // 履歴 全再読込 トリガ (Date.now() を カウンタ 代わりに)
   const [historyReloadKey, setHistoryReloadKey] = useState<number>(0);
 
@@ -328,6 +332,48 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
       setPhase(null);
     }
   }, [topic, advancedPrompt, aspect, style, provider, settings, persona, batchCount, pendingPromptPrefix]);
+
+  // ★用途別・同時生成: 同じテーマ/プロンプトで、選んだ各プラットフォームのサイズを一括生成
+  const handleMultiGenerate = useCallback(async () => {
+    if (multiTargets.size === 0) return;
+    setError(null);
+    setBusy(true);
+    setMultiResults([]);
+    try {
+      let prompt = advancedPrompt.trim();
+      if (!prompt) {
+        if (!topic.trim()) {
+          setError('テーマを日本語で入力してください');
+          setBusy(false);
+          return;
+        }
+        setPhase('prompt');
+        prompt = await generateImagePrompt({
+          settings, topic,
+          context: `生成元人格: ${persona.name} (${persona.subtitle})`,
+        });
+        if (pendingPromptPrefix) prompt = `${pendingPromptPrefix} ${prompt}`;
+        setAdvancedPrompt(prompt);
+      }
+      setPhase('render');
+      const targets = Array.from(multiTargets);
+      const results = await Promise.all(targets.map(a =>
+        generateImage({ prompt, aspect: a, style, provider }).then(result => ({ aspect: a, result }))
+      ));
+      setMultiResults(results);
+      // 履歴にも残す
+      const newItems: HistoryItem[] = results.map(({ aspect: a, result: r }) => ({
+        id: uuidv4(), url: r.url, prompt: r.prompt, aspect: a, style,
+        width: r.width, height: r.height, provider: r.provider, generatedAt: r.generatedAt,
+      }));
+      setHistory(prev => [...newItems, ...prev].slice(0, MAX_HISTORY));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+      setPhase(null);
+    }
+  }, [multiTargets, topic, advancedPrompt, style, provider, settings, persona, pendingPromptPrefix]);
 
   const handleDownload = useCallback(async (img: HistoryItem | GenerateImageResult, idx?: number) => {
     const ext = img.url.includes('.png') ? 'png' : 'jpg';
@@ -685,6 +731,78 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                   </div>
                 </div>
               </div>
+
+              {/* ★用途別・同時生成: YouTube/インスタ/X/note を1テーマから一括で */}
+              <div className="rounded-xl p-3.5" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+                <div className="flex items-baseline justify-between mb-2">
+                  <p className="text-xs font-semibold text-fg">用途別に、まとめて生成</p>
+                  <p className="text-[11px] text-fg-muted">同じテーマで各サイズを一括制作</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5 mb-2.5">
+                  {([
+                    ['youtube-thumb', 'YouTube サムネ'],
+                    ['ig-square', 'インスタ投稿'],
+                    ['ig-story', 'ストーリー/リール'],
+                    ['x-post', 'X 投稿'],
+                    ['note-hero', 'note 見出し'],
+                    ['banner-wide', 'バナー'],
+                  ] as [ImageAspect, string][]).map(([a, label]) => {
+                    const on = multiTargets.has(a);
+                    return (
+                      <button
+                        key={a}
+                        onClick={() => {
+                          const next = new Set(multiTargets);
+                          if (on) next.delete(a); else next.add(a);
+                          setMultiTargets(next);
+                        }}
+                        className="rounded-full px-3 text-xs font-medium transition-all"
+                        style={{
+                          minHeight: 40,
+                          background: on ? persona.accentColorLight : 'var(--surface)',
+                          border: `1px solid ${on ? persona.accentColor : 'var(--border)'}`,
+                          color: on ? persona.accentColor : 'var(--fg-muted)',
+                        }}
+                      >{on ? '✓ ' : ''}{label}</button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={handleMultiGenerate}
+                  disabled={busy || multiTargets.size === 0 || (!topic.trim() && !advancedPrompt.trim())}
+                  className="w-full rounded-xl text-sm font-semibold disabled:opacity-40"
+                  style={{ minHeight: 48, background: multiTargets.size > 0 ? persona.accentColor : 'var(--surface)', color: multiTargets.size > 0 ? '#0a0a0f' : 'var(--fg-muted)', border: multiTargets.size > 0 ? 'none' : '1px solid var(--border)' }}
+                >
+                  {busy ? '🎨 一括生成中…' : multiTargets.size > 0 ? `✨ 選んだ ${multiTargets.size} 用途を同時生成` : '上のチップから用途を選んでください'}
+                </button>
+              </div>
+
+              {/* 用途別の結果（プラットフォーム名つき） */}
+              {multiResults.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-fg">用途別の仕上がり</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {multiResults.map(({ aspect: a, result: r }) => (
+                      <div key={a} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${persona.accentColor}40`, background: 'var(--surface-3)' }}>
+                        <div
+                          style={{ position: 'relative', width: '100%', aspectRatio: `${r.width}/${r.height}`, background: '#0a0a0f', cursor: 'zoom-in' }}
+                          onClick={() => setLightbox({ url: r.url, w: r.width, h: r.height })}
+                        >
+                          <img src={r.url} alt={ASPECTS[a].label} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                        <div className="flex items-center justify-between px-3 py-2">
+                          <span className="text-[11px] font-medium text-fg-muted">{ASPECTS[a].label}</span>
+                          <button
+                            onClick={() => handleDownload(r)}
+                            className="text-[11px] px-2.5 rounded font-medium"
+                            style={{ minHeight: 32, background: persona.accentColorLight, color: persona.accentColor }}
+                          >保存</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* 生成ボタン — 56px+ で親指タップしやすく */}
               <div className="flex gap-2 sticky bottom-0" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0px)' }}>

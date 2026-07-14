@@ -31,6 +31,7 @@ export type FeatureKey =
   | 'brand-match'       // ブランドマッチ (Pro+)
   | 'script-studio'     // 企画・台本スタジオ (運用代行モード) — 最上位プラン限定
   | 'knowledge-brain'   // 統合ナレッジ脳 (フォルダ丸ごと取込→全資料を横断統合思考) — 最上位プラン限定
+  | 'video-gen'         // AI動画生成 — API原価が高いため最上位プラン限定 (オーナー方針 2026-07-14)
   | 'api-access'        // API キー (Studio)
   | 'white-label';      // ホワイトラベル (Studio)
 
@@ -113,6 +114,7 @@ export const PLAN_LIMITS: Record<PlanId, Partial<Record<FeatureKey, FeatureLimit
     'brand-match': 'unlimited',
     'script-studio': 'unlimited',
     'knowledge-brain': 'unlimited',
+    'video-gen': 'unlimited',
     'api-access': 'unlimited',
     'white-label': 'unlimited',
   },
@@ -130,6 +132,7 @@ export const PLAN_LIMITS: Record<PlanId, Partial<Record<FeatureKey, FeatureLimit
     'team-members': 30,
     'brand-match': 'unlimited',
     'script-studio': 'unlimited',
+    'video-gen': 'unlimited',
     'api-access': 'unlimited',
     'white-label': 'unavailable',
   },
@@ -176,7 +179,7 @@ export const PLAN_LIMITS: Record<PlanId, Partial<Record<FeatureKey, FeatureLimit
     'ai-chat': 'unlimited', 'screenshot-ai': 'unlimited', 'caption-ai': 'unlimited',
     'negotiation-ai': 'unlimited', 'triage-ai': 'unlimited', 'beauty-advice': 'unlimited',
     'instagram-analyze': 'unlimited', 'story-arc': 'unlimited', 'community': 'unlimited',
-    'team-members': 'unlimited', 'brand-match': 'unlimited', 'script-studio': 'unlimited', 'knowledge-brain': 'unlimited', 'api-access': 'unlimited', 'white-label': 'unlimited',
+    'team-members': 'unlimited', 'brand-match': 'unlimited', 'script-studio': 'unlimited', 'knowledge-brain': 'unlimited', 'video-gen': 'unlimited', 'api-access': 'unlimited', 'white-label': 'unlimited',
   },
 };
 
@@ -194,6 +197,7 @@ export const FEATURE_META: Record<FeatureKey, { label: string; emoji: string }> 
   'brand-match':       { label: 'ブランドマッチ',     emoji: '✨' },
   'script-studio':     { label: '企画・台本スタジオ', emoji: '🎬' },
   'knowledge-brain':   { label: '統合ナレッジ脳',     emoji: '🧠' },
+  'video-gen':         { label: 'AI動画生成',        emoji: '🎥' },
   'api-access':        { label: 'API アクセス',       emoji: '🔌' },
   'white-label':       { label: 'ホワイトラベル',     emoji: '🎨' },
 };

@@ -1212,6 +1212,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   // 企画・台本スタジオは「最上位プラン (Pro)」限定。マスターは常に許可。
   const { user: billingUser } = useBillingUser();
   const scriptStudioAllowed = isMasterAuth() || checkFeature(getEffectivePlan(billingUser), 'script-studio').allowed;
+  // 動画生成はAPI原価が高いため最上位プラン限定（オーナー方針 2026-07-14）
+  const videoGenGate = checkFeature(getEffectivePlan(billingUser), 'video-gen');
+  const videoGenAllowed = isMasterAuth() || videoGenGate.allowed;
   const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const myDeals = useMemo(() => desk.getDealsForPersona(IRIS_PERSONA_ID), [desk.deals]);
   const mediaKit = desk.getMediaKit(IRIS_PERSONA_ID);
@@ -1913,7 +1916,27 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             )}
             {tab === 'director' && <IrisDirectorView bg={bg} settings={settings} />}
             {tab === 'script' && <IrisScriptStudio bg={bg} settings={settings} locked={!scriptStudioAllowed} />}
-            {tab === 'video' && <VideoStudio bg={bg} settings={settings} />}
+            {tab === 'video' && (
+              videoGenAllowed ? (
+                <VideoStudio bg={bg} settings={settings} />
+              ) : (
+                <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--surface-3, rgba(255,255,255,0.04))', border: '1px solid var(--border, rgba(255,255,255,0.1))' }}>
+                  <div className="text-4xl mb-3">🎥</div>
+                  <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--fg, #fff)' }}>AI動画生成は、最上位プラン限定です</h3>
+                  <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--fg-muted, rgba(255,255,255,0.6))', maxWidth: 420, margin: '0 auto 1.25rem' }}>
+                    動画AIは生成1本ごとのコストが大きいため、最上位プランでのみご利用いただけます。
+                    画像生成・台本づくり・リール企画は、いまのプランでもすべてお使いいただけます。
+                  </p>
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('iris:open-plan', { detail: { planId: videoGenGate.upgradeTo || 'studio' } }))}
+                    className="inline-flex items-center justify-center rounded-xl px-6 font-semibold"
+                    style={{ minHeight: 48, background: bg.accent, color: '#0a0a0f' }}
+                  >
+                    最上位プランを見る →
+                  </button>
+                </div>
+              )
+            )}
             {tab === 'reel' && (
               <React.Suspense fallback={
                 <LoaderBlock accent={bg.accent} message="リールスタジオを準備してます" padding="4rem 0" />
