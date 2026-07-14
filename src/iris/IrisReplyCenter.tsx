@@ -90,6 +90,9 @@ export default function IrisReplyCenter({ bg, account, onConnect }: Props) {
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
           ぜんぶ、ここで返す。
         </h2>
+        <p style={{ color: bg.inkSoft, fontSize: '0.85rem', margin: '0.3rem 0 0', lineHeight: 1.55 }}>
+          コメントも DM も、AI が「返し方」を先に下書き。あなたは読んで、選んで、送るだけ。
+        </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
           {account && (
             <span style={{
@@ -107,21 +110,33 @@ export default function IrisReplyCenter({ bg, account, onConnect }: Props) {
         </div>
       </div>
 
-      {/* コメント / DM 切り替え */}
+      {/* コメント / DM 切り替え — 押す前に「何が起きるか」が分かるよう一言添える */}
       <div style={{ display: 'flex', gap: 8 }}>
         {([
-          { id: 'comments' as const, label: 'コメント返信', Icon: MessageSquareReply },
-          { id: 'dm' as const, label: 'DM 下書き', Icon: Send },
-        ]).map(({ id, label, Icon }) => (
-          <button key={id} onClick={() => setView(id)}
-            style={{
-              ...btn(bg, view === id),
-              flex: 1,
-            }}>
-            <Icon size={15} strokeWidth={2.4} />
-            {label}
-          </button>
-        ))}
+          { id: 'comments' as const, label: 'コメント返信', sub: '届いたコメントに返す', Icon: MessageSquareReply },
+          { id: 'dm' as const, label: 'DM 下書き', sub: '相手を選んで DM を書く', Icon: Send },
+        ]).map(({ id, label, sub, Icon }) => {
+          const on = view === id;
+          return (
+            <button key={id} onClick={() => setView(id)}
+              style={{
+                ...btn(bg, on),
+                flex: 1,
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 3,
+                padding: '0.6rem 0.5rem',
+              }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                <Icon size={15} strokeWidth={2.4} />
+                {label}
+              </span>
+              <span style={{ fontSize: '0.68rem', fontWeight: 600, opacity: on ? 0.9 : 0.7 }}>
+                {sub}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {view === 'comments'
