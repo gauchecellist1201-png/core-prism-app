@@ -1884,7 +1884,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 </div>
               </>
             )}
-            {tab === 'deals' && <><IrisRealOpenCalls bg={bg} /><DealsView bg={bg} desk={desk} myDeals={myDeals} settings={settings} mediaKit={mediaKit} /></>}
+            {tab === 'deals' && <><IrisRealOpenCalls bg={bg} mediaKit={mediaKit} /><DealsView bg={bg} desk={desk} myDeals={myDeals} settings={settings} mediaKit={mediaKit} /></>}
             {tab === 'negotiate' && <NegotiateView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} />}
             {tab === 'draft' && <DraftView bg={bg} desk={desk} myDeals={myDeals} mediaKit={mediaKit} settings={settings} persona={irisPersonaStub} knowledge={knowledge} />}
             {tab === 'knowledge' && <IrisKnowledgeView bg={bg} knowledge={knowledge} />}

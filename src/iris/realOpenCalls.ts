@@ -112,3 +112,59 @@ export const KIND_META: Record<OpenCall['kind'], { label: string; color: string 
 export function getRealOpenCalls(): OpenCall[] {
   return REAL_OPEN_CALLS;
 }
+
+// ============================================================
+// プロフィールから「あなたに合いそうな募集」を推定して並べ替える
+//
+// 手入力ゼロ: メディアキットの自由記述(よく見てくれる人・世界観・過去案件・表示名)
+// からジャンルのキーワードを拾い、合致する募集を上に並べる。
+// 断定はしない (推定バッジ)。手掛かりが無ければ元の順序のまま (誤ったバッジは出さない)。
+// ============================================================
+
+/** カテゴリ推定用キーワード (日本語中心・あくまで手掛かり) */
+const CATEGORY_KEYWORDS: Record<BrandCategory, string[]> = {
+  beauty:    ['美容', 'コスメ', 'スキンケア', 'メイク', '化粧', '美白', 'ネイル', 'ヘアケア', '髪', '肌', 'デパコス'],
+  fashion:   ['ファッション', '服', 'コーデ', 'アパレル', '古着', 'おしゃれ', '着回し', 'スタイリング', 'ブランド服'],
+  health:    ['健康', 'フィットネス', '筋トレ', 'ヨガ', 'ダイエット', 'ランニング', 'ジム', '運動', 'トレーニング', 'ピラティス'],
+  food:      ['グルメ', '料理', 'カフェ', 'レシピ', 'スイーツ', '飲食', 'ごはん', '食べ歩き', 'お菓子', 'ランチ'],
+  lifestyle: ['暮らし', 'ライフスタイル', '日常', 'ミニマル', '主婦', '育児', 'ママ', '節約', '暮らしの'],
+  travel:    ['旅', '旅行', '観光', 'トラベル', '温泉', 'ホテル', '絶景', '国内旅行', '海外旅行'],
+  pet:       ['ペット', '犬', '猫', 'いぬ', 'ねこ', '動物', 'わんこ', 'にゃんこ'],
+  tech:      ['ガジェット', 'テック', 'アプリ', 'パソコン', 'スマホ', 'カメラ', '家電', 'ガジェ'],
+  learning:  ['学び', '勉強', 'キャリア', '資格', '英語', '読書', 'ビジネス書', '自己啓発', '副業'],
+  home:      ['インテリア', '家具', '部屋', '収納', 'ディーアイワイ', '暮らしの道具', 'ルームツアー', '一人暮らし'],
+};
+
+/** 自由記述テキストから、当てはまりそうなカテゴリを推定 (合致数の多い順) */
+export function inferPreferredCategories(...signals: (string | undefined)[]): BrandCategory[] {
+  const text = signals.filter(Boolean).join(' ').toLowerCase();
+  if (!text.trim()) return [];
+  const scored: { cat: BrandCategory; hits: number }[] = [];
+  for (const cat of Object.keys(CATEGORY_KEYWORDS) as BrandCategory[]) {
+    const hits = CATEGORY_KEYWORDS[cat].reduce(
+      (n, kw) => (text.includes(kw.toLowerCase()) ? n + 1 : n),
+      0,
+    );
+    if (hits > 0) scored.push({ cat, hits });
+  }
+  return scored.sort((a, b) => b.hits - a.hits).map((s) => s.cat);
+}
+
+/** 推定カテゴリで募集を並べ替え (合致を先頭へ・元の相対順は維持)。matched フラグ付き。 */
+export function rankOpenCalls(prefs: BrandCategory[]): (OpenCall & { matched: boolean })[] {
+  const prefSet = new Set(prefs);
+  const withFlag = REAL_OPEN_CALLS.map((c) => ({ ...c, matched: prefSet.has(c.category) }));
+  // 安定ソート: 合致を先に、その中でも推定順位が高いカテゴリを優先
+  const rank = (c: BrandCategory) => {
+    const i = prefs.indexOf(c);
+    return i < 0 ? Number.MAX_SAFE_INTEGER : i;
+  };
+  return withFlag
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) => {
+      if (a.c.matched !== b.c.matched) return a.c.matched ? -1 : 1;
+      const r = rank(a.c.category) - rank(b.c.category);
+      return r !== 0 ? r : a.i - b.i;
+    })
+    .map((x) => x.c);
+}

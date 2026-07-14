@@ -4,14 +4,24 @@
 // サンプル案件と明確に区別し、「公式ページで応募」ボタンで実在 URL を開く。
 // データは realOpenCalls.ts (HTTP 200 検証済み)。
 // ============================================================
-import { ExternalLink, BadgeCheck, ArrowUpRight } from 'lucide-react';
-import { getRealOpenCalls, KIND_META } from './realOpenCalls';
+import { ExternalLink, BadgeCheck, ArrowUpRight, Sparkles } from 'lucide-react';
+import { getRealOpenCalls, rankOpenCalls, inferPreferredCategories, KIND_META } from './realOpenCalls';
 import { CATEGORY_META } from './brandDeals';
+import type { MediaKit } from '../types/influencerDeal';
 
 interface Bg { accent: string; ink: string; inkSoft: string; card: string; cardBorder: string; }
 
-export default function IrisRealOpenCalls({ bg }: { bg: Bg }) {
-  const calls = getRealOpenCalls();
+export default function IrisRealOpenCalls({ bg, mediaKit }: { bg: Bg; mediaKit?: MediaKit }) {
+  // 手入力ゼロ: メディアキットの自由記述からジャンルを推定し、合いそうな募集を上へ。
+  const prefs = inferPreferredCategories(
+    mediaKit?.audienceProfile,
+    mediaKit?.brandValues,
+    mediaKit?.caseHistory,
+    mediaKit?.handleName,
+  );
+  const calls = prefs.length ? rankOpenCalls(prefs) : getRealOpenCalls().map(c => ({ ...c, matched: false }));
+  const matchCount = calls.filter(c => c.matched).length;
+  const topPref = prefs[0];
 
   return (
     <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.25rem' }}>
@@ -23,9 +33,16 @@ export default function IrisRealOpenCalls({ bg }: { bg: Bg }) {
           background: 'rgba(16,185,129,0.14)', color: '#0E9F6E',
         }}>実在・検証済み {calls.length} 件</span>
       </div>
-      <p style={{ margin: 0, fontSize: 12.5, color: bg.inkSoft, lineHeight: 1.6 }}>
-        公式ページから<strong>今すぐ応募できる</strong>恒常募集です（応募先 URL は実在を確認済み）。下のサンプル案件は応募文の練習用です。
-      </p>
+      {matchCount > 0 && topPref ? (
+        <p style={{ margin: 0, fontSize: 12.5, color: bg.inkSoft, lineHeight: 1.6 }}>
+          あなたのプロフィールから<strong style={{ color: CATEGORY_META[topPref].color }}>「{CATEGORY_META[topPref].label}」</strong>と読み取り、
+          合いそうな募集 <strong>{matchCount} 件</strong>を上に並べました。公式ページから<strong>今すぐ応募できます</strong>。
+        </p>
+      ) : (
+        <p style={{ margin: 0, fontSize: 12.5, color: bg.inkSoft, lineHeight: 1.6 }}>
+          公式ページから<strong>今すぐ応募できる</strong>恒常募集です（応募先 URL は実在を確認済み）。下のサンプル案件は応募文の練習用です。
+        </p>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.7rem' }}>
         {calls.map(c => {
@@ -33,11 +50,22 @@ export default function IrisRealOpenCalls({ bg }: { bg: Bg }) {
           const kind = KIND_META[c.kind];
           return (
             <div key={c.id} style={{
-              background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16,
+              background: bg.card,
+              border: c.matched ? `1.5px solid ${cat.color}66` : `1px solid ${bg.cardBorder}`,
+              borderRadius: 16,
               padding: '0.95rem 1rem', display: 'grid', gap: 8,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+              boxShadow: c.matched ? `0 4px 16px ${cat.color}22` : '0 2px 10px rgba(0,0,0,0.03)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                {c.matched && (
+                  <span style={{
+                    fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999,
+                    background: `linear-gradient(135deg, ${cat.color}, #F77737)`, color: '#fff',
+                    display: 'inline-flex', alignItems: 'center', gap: 3,
+                  }}>
+                    <Sparkles size={10} /> あなたに合いそう
+                  </span>
+                )}
                 <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 7px', borderRadius: 999, background: `${kind.color}1A`, color: kind.color }}>{kind.label}</span>
                 <span style={{ fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: `${cat.color}14`, color: cat.color }}>{cat.label}</span>
               </div>
