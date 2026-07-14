@@ -17,9 +17,9 @@
 //
 // 保存キー: rb:trial:<emailHash>  （メール平文は保存しない＝プライバシー）
 // ============================================================
-import { kvGetJSON, kvSet, isUpstashConfigured } from "../_lib/upstash.js";
+import { kvGetJSON, kvSet, isUpstashConfigured } from "../_lib/upstash";
 
-export const config = { runtime: "nodejs" };
+export const config = { runtime: "edge" };
 
 // ★トライアル日数の唯一の正（オーナー方針 2026-07-14: 7日 → 3日）
 const TRIAL_DAYS = 3;

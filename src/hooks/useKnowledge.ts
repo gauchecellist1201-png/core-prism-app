@@ -9,6 +9,7 @@ async function parseFile(file: File) {
 }
 import { analyzeKnowledge, looksLikeFinancialData, extractFinancialData } from '../lib/analyzeKnowledge';
 import { useCloudSync } from './useCloudSync';
+import { useEmailBlobSync } from './useEmailBlobSync';
 import { safeSetJSON } from '../lib/storage';
 import { idbGet, idbSet } from '../lib/idbStore';
 import { useBillingUser, getEffectivePlan, getEffectivePlanPriceJpy, checkFeature, isMasterAuth } from '../lib/billing';
@@ -186,6 +187,24 @@ export function useKnowledge(
   // ナレッジは個別アイテム最大 100KB 程度になりうるが user_state は jsonb で許容、
   // 上限を超える場合は今後 storage bucket に切替。
   useCloudSync({ key: STORAGE_KEY, value: items, setValue: setItems, isEmpty: v => v.length === 0 });
+
+  // ★同一メール基準の端末引き継ぎ（PC→スマホで「また1から」を根治）。
+  //   ログイン中(email)なら、cloud のナレッジを id 単位でマージ（既存を消さず、無い物だけ足す）。
+  //   push は画像base64を除いた slim 版で軽量化（サーバー上限保護）。
+  useEmailBlobSync<KnowledgeItem[]>({
+    key: 'knowledge',
+    email: billingUser?.email,
+    value: slimForStore(items), // 画像base64を除いた軽量版を送る（サーバー上限保護）
+    isEmpty: v => v.length === 0,
+    // 画像を落とした slim を送る（受信側でも問題なく検索・表示できる）
+    onRemote: (merged) => setItems(merged),
+    merge: (local, remote) => {
+      const byId = new Map<string, KnowledgeItem>();
+      for (const it of remote) byId.set(it.id, it);
+      for (const it of local) byId.set(it.id, it); // ローカルの最新を優先
+      return Array.from(byId.values());
+    },
+  });
 
   const getForPersona = useCallback((personaId: PersonaId) =>
     items.filter(i => i.personaId === personaId),
