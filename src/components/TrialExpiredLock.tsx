@@ -31,7 +31,7 @@ export default function TrialExpiredLock({ brand, accent, onChoose, onSignout }:
 
   // 課金前の「動いた量」= 体験中(直近7日)に AI が実際にあなたのために動いた件数。
   // honest-numbers: 実活動の件数だけ。0 件なら何も出さない（捏造しない）。
-  const { metrics, total } = computeWeeklyValue();
+  const { metrics, total, estimatedYen } = computeWeeklyValue();
   // 件数の多い順に上位3つだけ要約表示（ペイウォールは縦スクロールを短く保つ）
   const topMetrics = [...metrics].sort((a, b) => b.count - a.count).slice(0, 3);
 
@@ -100,8 +100,23 @@ export default function TrialExpiredLock({ brand, accent, onChoose, onSignout }:
                 </span>
               ))}
             </div>
+            {/* 外注いくら相当 — 転換の最強レバー。控えめな相場下限で「同じ量を外注に出すと約¥X」を見せ、
+                すぐ下の月額プランと並べて「もう元が取れる」を体感させる（honest-numbers・誇張しない）。 */}
+            {estimatedYen > 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap',
+                margin: '11px 0 0', padding: '9px 11px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)',
+              }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>同じ量を外注に出すと</span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>
+                  約 ¥{estimatedYen.toLocaleString('ja-JP')}
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>相当</span>
+              </div>
+            )}
             <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)', margin: '9px 0 0', lineHeight: 1.5 }}>
-              続けると、この積み上げはそのまま引き継がれます。数字はアプリ内の実際の活動だけです。
+              続けると、この積み上げはそのまま引き継がれます。数字はアプリ内の実際の活動だけで、円換算は外注相場の下限で出した参考値です。
             </p>
           </div>
         )}
