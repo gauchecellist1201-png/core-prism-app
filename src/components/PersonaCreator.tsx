@@ -82,6 +82,22 @@ const PRESETS: Preset[] = [
     colorIndex: 4,
   },
   {
+    name: '美容サロン経営',
+    subtitle: 'Salon Owner',
+    icon: '❖',
+    oneLiner: '予約・リピート・スタッフを管理',
+    description: '美容室・エステ・ネイル等のサロン経営者として、予約管理・リピート率・スタッフのシフト・客単価を最適化する。SNS集客からカルテ管理まで現場を回す。',
+    colorIndex: 6,
+  },
+  {
+    name: '教室・スクール講師',
+    subtitle: 'Teacher / School',
+    icon: '✎',
+    oneLiner: '生徒募集・レッスン・月謝を管理',
+    description: '音楽教室・学習塾・習い事などのスクール運営者・講師として、生徒募集・体験申込・レッスン管理・月謝の回収を行う。保護者対応と教材づくりも担う。',
+    colorIndex: 3,
+  },
+  {
     name: 'コンサルタント',
     subtitle: 'Consultant',
     icon: '⬡',
@@ -110,6 +126,8 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
   const [selectedColor, setSelectedColor] = useState(defaultColor);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const isEdit = !!editing;
+  // 見た目(肩書き・色・アイコン)は初回作成では畳んでおく — 最初の一歩を軽くする
+  const [showAppearance, setShowAppearance] = useState(isEdit);
 
   const canSave = name.trim().length > 0;
 
@@ -146,8 +164,8 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
         {/* ヘッダー */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <div>
-            <h3 className="text-white text-lg font-medium tracking-wide">{isEdit ? `「${editing!.name}」を編集` : '新しい人格を作成'}</h3>
-            <p className="text-white/50 text-xs mt-0.5">{isEdit ? '名前・アイコン・色を変更できます' : 'プリセットから選ぶか、自分でカスタマイズ'}</p>
+            <h3 className="text-white text-lg font-medium tracking-wide">{isEdit ? `「${editing!.name}」を編集` : 'はじめまして'}</h3>
+            <p className="text-white/50 text-xs mt-0.5">{isEdit ? '名前・アイコン・色を変更できます' : 'あなたのお仕事を教えてください。1分で始められます。'}</p>
           </div>
           <button
             onClick={onCancel}
@@ -160,36 +178,43 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
 
         {/* スクロール領域 */}
         <div className="flex-1 overflow-y-auto px-6 pb-4 space-y-5">
-          {/* ライブプレビュー */}
-          <div
-            className="flex items-center gap-3 p-4 rounded-xl"
-            style={{
-              background: selectedColor.light,
-              border: `1px solid ${selectedColor.color}40`,
-            }}
-          >
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-              style={{ background: `${selectedColor.color}25`, color: selectedColor.color }}
-            >
-              {icon}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-white text-base font-medium truncate">
-                {name || '人格名'}
+          {/* ① まず、お仕事を一言 — ここが主役 */}
+          <div>
+            <label className="block text-white text-[15px] font-medium mb-1">
+              {isEdit ? '人格名' : 'あなたのお仕事は？'}
+            </label>
+            {!isEdit && (
+              <p className="text-white/45 text-xs mb-2.5 leading-relaxed">
+                そのまま一言で書くだけでOK。ぴったりの言葉でなくても大丈夫です。
               </p>
-              <p className="text-sm truncate" style={{ color: selectedColor.color }}>
-                {subtitle || 'サブタイトル'}
-              </p>
-            </div>
+            )}
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder={isEdit ? '人格名' : '例：整体院オーナー、英会話教室の先生、美容サロン経営…'}
+              className="w-full bg-white/5 text-white text-base font-light outline-none rounded-xl px-4 py-3.5 placeholder:text-white/30 transition-all"
+              style={{ border: `1.5px solid ${name ? selectedColor.color + '99' : 'rgba(255,255,255,0.12)'}`, minHeight: 52 }}
+              autoFocus
+            />
+            {!isEdit && (
+              <p className="text-white/30 text-[11px] mt-1.5">名前はあとからいつでも変えられます</p>
+            )}
           </div>
 
-          {/* プリセット */}
+          {/* ② よくある例 — 補助。「近いものでOK」と明言して選択の圧を消す */}
           <div>
-            <div className="flex items-baseline justify-between mb-2">
-              <p className="text-white/80 text-xs tracking-wider uppercase">クイック選択</p>
-              <p className="text-white/40 text-[11px]">タップで自動入力</p>
+            <div className="flex items-baseline justify-between mb-1">
+              <p className="text-white/75 text-xs font-medium">
+                {isEdit ? 'よくある例から置き換える' : 'よくある例（近いものでOK）'}
+              </p>
+              <p className="text-white/35 text-[11px]">タップで入力</p>
             </div>
+            {!isEdit && (
+              <p className="text-white/35 text-[11px] mb-2.5 leading-relaxed">
+                ぴったりが無くても大丈夫。近いものを選んで、上の欄で自由に書き換えられます。
+              </p>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {PRESETS.map(p => {
                 const c = ACCENT_COLORS[p.colorIndex];
@@ -221,85 +246,97 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
             </div>
           </div>
 
-          {/* 名前 + サブタイトル */}
-          <div className="space-y-3">
-            <div>
-              <label className="block text-white/70 text-xs tracking-wider uppercase mb-1.5">人格名 *</label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="例：IT会社CEO、動画クリエイター、人材会社社長..."
-                className="w-full bg-white/5 text-white text-sm font-light outline-none rounded-lg px-3 py-2.5 placeholder:text-white/30 transition-all"
-                style={{ border: `1px solid ${name ? selectedColor.color + '80' : 'rgba(255,255,255,0.08)'}` }}
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="block text-white/70 text-xs tracking-wider uppercase mb-1.5">サブタイトル</label>
-              <input
-                type="text"
-                value={subtitle}
-                onChange={e => setSubtitle(e.target.value)}
-                placeholder="例：Tech Startup CEO"
-                className="w-full bg-white/5 text-white text-sm font-light outline-none rounded-lg px-3 py-2.5 placeholder:text-white/30 transition-all"
-                style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-              />
-            </div>
-          </div>
-
-          {/* カラー */}
+          {/* ③ 見た目（肩書き・色・アイコン）— 任意。初回は畳んで負担を減らす */}
           <div>
-            <p className="text-white/70 text-xs tracking-wider uppercase mb-2">カラー</p>
-            <div className="flex gap-2 flex-wrap">
-              {ACCENT_COLORS.map(c => (
-                <button
-                  key={c.color}
-                  onClick={() => setSelectedColor(c)}
-                  aria-label={c.label}
-                  className="w-8 h-8 rounded-full transition-all relative"
-                  style={{
-                    background: c.color,
-                    boxShadow: selectedColor.color === c.color ? `0 0 0 2px #15151c, 0 0 0 4px ${c.color}` : 'none',
-                  }}
-                />
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowAppearance(v => !v)}
+              className="w-full flex items-center justify-between text-white/60 hover:text-white text-xs tracking-wide transition-colors py-1"
+            >
+              <span className="flex items-center gap-2">
+                {/* 現在の見た目を小さくプレビュー */}
+                <span
+                  className="w-6 h-6 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
+                  style={{ background: `${selectedColor.color}25`, color: selectedColor.color }}
+                >
+                  {icon}
+                </span>
+                見た目（肩書き・色・アイコン）
+                <span className="text-white/30">任意</span>
+              </span>
+              <span>{showAppearance ? '▾' : '▸'}</span>
+            </button>
+
+            {showAppearance && (
+              <div className="mt-3 space-y-4">
+                {/* 肩書き（旧サブタイトル） */}
+                <div>
+                  <label className="block text-white/70 text-xs tracking-wider uppercase mb-1.5">肩書き（任意）</label>
+                  <input
+                    type="text"
+                    value={subtitle}
+                    onChange={e => setSubtitle(e.target.value)}
+                    placeholder="例：Tech Startup CEO"
+                    className="w-full bg-white/5 text-white text-sm font-light outline-none rounded-lg px-3 py-2.5 placeholder:text-white/30 transition-all"
+                    style={{ border: '1px solid rgba(255,255,255,0.08)' }}
+                  />
+                </div>
+
+                {/* カラー */}
+                <div>
+                  <p className="text-white/70 text-xs tracking-wider uppercase mb-2">カラー</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {ACCENT_COLORS.map(c => (
+                      <button
+                        key={c.color}
+                        onClick={() => setSelectedColor(c)}
+                        aria-label={c.label}
+                        className="w-8 h-8 rounded-full transition-all relative"
+                        style={{
+                          background: c.color,
+                          boxShadow: selectedColor.color === c.color ? `0 0 0 2px #15151c, 0 0 0 4px ${c.color}` : 'none',
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* アイコン */}
+                <div>
+                  <p className="text-white/70 text-xs tracking-wider uppercase mb-2">アイコン</p>
+                  <div className="grid grid-cols-7 gap-2">
+                    {ICON_OPTIONS.map(ic => {
+                      const active = icon === ic;
+                      return (
+                        <button
+                          key={ic}
+                          onClick={() => setIcon(ic)}
+                          className="aspect-square rounded-lg text-base flex items-center justify-center transition-all"
+                          style={{
+                            background: active ? selectedColor.light : 'rgba(255,255,255,0.04)',
+                            border: `1px solid ${active ? selectedColor.color : 'rgba(255,255,255,0.08)'}`,
+                            color: active ? selectedColor.color : 'rgba(255,255,255,0.7)',
+                          }}
+                        >
+                          {ic}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* アイコン */}
-          <div>
-            <p className="text-white/70 text-xs tracking-wider uppercase mb-2">アイコン</p>
-            <div className="grid grid-cols-7 gap-2">
-              {ICON_OPTIONS.map(ic => {
-                const active = icon === ic;
-                return (
-                  <button
-                    key={ic}
-                    onClick={() => setIcon(ic)}
-                    className="aspect-square rounded-lg text-base flex items-center justify-center transition-all"
-                    style={{
-                      background: active ? selectedColor.light : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${active ? selectedColor.color : 'rgba(255,255,255,0.08)'}`,
-                      color: active ? selectedColor.color : 'rgba(255,255,255,0.7)',
-                    }}
-                  >
-                    {ic}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 詳細(任意) */}
+          {/* ④ AIへの人格説明（任意） */}
           <div>
             <button
               type="button"
               onClick={() => setShowAdvanced(v => !v)}
-              className="flex items-center gap-1 text-white/60 hover:text-white text-xs tracking-wider uppercase transition-colors"
+              className="flex items-center gap-1 text-white/60 hover:text-white text-xs tracking-wide transition-colors py-1"
             >
               <span>{showAdvanced ? '▾' : '▸'}</span>
-              AIへの人格説明 (任意)
+              AIへの人格説明 <span className="text-white/30">任意</span>
             </button>
             {showAdvanced && (
               <textarea
@@ -337,7 +374,7 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
             whileHover={canSave ? { scale: 1.02 } : {}}
             whileTap={canSave ? { scale: 0.98 } : {}}
           >
-            作成する
+            {isEdit ? '保存する' : 'これで始める'}
           </motion.button>
         </div>
       </motion.div>

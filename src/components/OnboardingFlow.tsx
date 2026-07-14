@@ -35,6 +35,8 @@ export default function OnboardingFlow({ onComplete }: Props) {
   const [name, setName] = useState('');
   const [presetIndustry] = useState<IndustryId | ''>(() => readIndustryFromUrl());
   const [industry, setIndustry] = useState<IndustryId | ''>(presetIndustry);
+  // 「その他・まだ決めていない」を明示的に選んだ状態。業種リストに無い人の逃げ道。
+  const [noIndustry, setNoIndustry] = useState(false);
   const presetPack = presetIndustry ? INDUSTRY_PACKS[presetIndustry] : null;
 
   // 最短距離: welcome → name → industry。業種がURLで確定済みなら industry も省く。
@@ -78,7 +80,8 @@ export default function OnboardingFlow({ onComplete }: Props) {
 
   const canNext = () => {
     if (isNameStep) return name.trim().length > 0;
-    if (isIndustryStep) return industry !== '';
+    // 業種は「どれか」か「その他」を選べば進める。リストに無くても詰まない。
+    if (isIndustryStep) return industry !== '' || noIndustry;
     return true;
   };
 
@@ -178,9 +181,10 @@ export default function OnboardingFlow({ onComplete }: Props) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h2 className="text-fg text-2xl font-extralight mb-2 px-2">あなたの業種は？</h2>
+            <h2 className="text-fg text-2xl font-extralight mb-2 px-2">あなたのお仕事に近いのは？</h2>
             <p className="text-sm mb-6 leading-relaxed px-2" style={{ color: 'rgba(255,255,255,0.65)' }}>
-              AI がその業界の言葉で提案します。あとから変更できます。
+              近いものを選ぶと、AI がその業界の言葉で提案します。<br />
+              <span style={{ color: '#c9a96e' }}>ぴったり無くても大丈夫</span> — あとからいつでも変えられます。
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[56vh] overflow-y-auto pr-1 pb-2">
               {INDUSTRY_LIST.map(ind => {
@@ -188,7 +192,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
                 return (
                   <motion.button
                     key={ind.id}
-                    onClick={() => setIndustry(ind.id)}
+                    onClick={() => { setIndustry(ind.id); setNoIndustry(false); }}
                     className="text-left p-4 rounded-2xl transition-all duration-200"
                     style={{
                       background: selected ? 'rgba(201,169,110,0.12)' : 'rgba(255,255,255,0.035)',
@@ -215,6 +219,35 @@ export default function OnboardingFlow({ onComplete }: Props) {
                   </motion.button>
                 );
               })}
+
+              {/* その他・まだ決めていない — リストに無い人の逃げ道。ここで必ず前に進める。 */}
+              <motion.button
+                key="__other"
+                onClick={() => { setIndustry(''); setNoIndustry(true); }}
+                className="text-left p-4 rounded-2xl transition-all duration-200"
+                style={{
+                  background: noIndustry ? 'rgba(201,169,110,0.12)' : 'rgba(255,255,255,0.035)',
+                  boxShadow: noIndustry ? '0 8px 24px -10px rgba(201,169,110,0.45)' : '0 2px 12px -6px rgba(0,0,0,0.4)',
+                  minHeight: 76,
+                }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <div className="flex items-center gap-2.5 mb-1">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
+                    style={{
+                      background: noIndustry ? '#c9a96e' : 'rgba(201,169,110,0.14)',
+                      color: noIndustry ? '#0a0a0f' : '#c9a96e',
+                    }}>
+                    {noIndustry ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    ) : '他'}
+                  </span>
+                  <span className="text-fg text-sm font-medium">その他・まだ決めていない</span>
+                </div>
+                <p className="text-[11px] leading-snug" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                  この中に無い業種でもOK。まずは使ってみて、あとで選べます
+                </p>
+              </motion.button>
             </div>
           </motion.div>
         )}
