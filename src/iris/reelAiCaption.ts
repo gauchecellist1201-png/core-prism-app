@@ -482,6 +482,13 @@ export async function composeReelFromClips(
 
   const validMoods: BgmMood[] = ['up', 'soft', 'pop', 'emo'];
   const moodRaw = String(parsed.bgmMood || '').toLowerCase().trim();
+  const composedCaption = String(parsed.caption || '').trim();
+
+  // 実際に成果物ができた時だけ価値レシートに計上する (honest-numbers)。
+  // リール構成 = 並べ替え+役割+字幕+ナレーションの「台本」なので script を 1 本。
+  // 併せて Instagram 本文(caption)も生成できていれば caption も 1 本(誇張せず実物のみ)。
+  logIrisActivity('script');
+  if (composedCaption) logIrisActivity('caption');
 
   return {
     title: String(parsed.title || '').trim() || cuts[0]?.overlayText || 'あなたのリール',
@@ -489,7 +496,7 @@ export async function composeReelFromClips(
     editorNote: String(parsed.editorNote || '').trim(),
     bgmMood: (validMoods as string[]).includes(moodRaw) ? (moodRaw as BgmMood) : undefined,
     cuts,
-    caption: String(parsed.caption || '').trim(),
+    caption: composedCaption,
     hashtags: Array.isArray(parsed.hashtags)
       ? parsed.hashtags.map((h: any) => String(h)).filter((h: string) => h.startsWith('#')).slice(0, 20)
       : [],
