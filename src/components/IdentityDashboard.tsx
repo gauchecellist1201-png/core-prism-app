@@ -1064,7 +1064,7 @@ export default function IdentityDashboard({
 
               {/* iPhone 専用: 7 agents の直下に「ブリーフ → 売上」を常時 巨大表示
                   (オーナー指示 2026-06-03: モバイルはペライチ的にわかりやすく、情報を間引いて巨大化) */}
-              <div className="md:hidden space-y-3">
+              <div id="brief-anchor-mobile" className="md:hidden space-y-3">
                 {/* モバイル用ブリーフ — 余計な飾りを削いで TodayBrief 本体だけを大きく */}
                 <div style={{
                   borderRadius: 18,
@@ -1145,7 +1145,7 @@ export default function IdentityDashboard({
               </div>
 
               {/* PC 専用: 焦点モード (今日の最優先 1 つ + 数字 1 行) — iPhone では上のブリーフ + 売上に置き換え */}
-              <div className="hidden md:block">
+              <div id="brief-anchor-desktop" className="hidden md:block">
                 <FocusHero
                   persona={persona}
                   proposal={briefOverride ?? proactive.latestProposal ?? (coach.brief ? coachBriefToProposal(coach.brief) : null)}
@@ -1342,7 +1342,17 @@ export default function IdentityDashboard({
                 persona={persona}
                 actions={[
                   /* ── 主役: 毎日使う金になる4つ（レシートOCRは主力武器として前面へ・オーナー方針 2026-07-14）── */
-                  { id: 'brief', emoji: '💡', label: '次の一手を出す', desc: '今やる事を AI が 3 つ提案', primary: true, onClick: () => proactive.generate(settings.voiceEnabled !== false) },
+                  { id: 'brief', emoji: '💡', label: '次の一手を出す', desc: '今やる事を AI が 3 つ提案', primary: true, onClick: () => {
+                    proactive.generate(settings.voiceEnabled !== false);
+                    // 生成結果は画面上部のブリーフに出る。タップ位置(クイックアクション)から離れているので、
+                    // 必ずそこへスクロールして「生成中→結果」を見せる (無反応に見える離脱を防ぐ)。
+                    requestAnimationFrame(() => {
+                      const m = document.getElementById('brief-anchor-mobile');
+                      const d = document.getElementById('brief-anchor-desktop');
+                      const target = m && m.offsetParent !== null ? m : d && d.offsetParent !== null ? d : null;
+                      try { target?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* */ }
+                    });
+                  } },
                   { id: 'expense', emoji: '📷', label: 'レシート整理 OCR', desc: 'パシャと撮るだけ → 金額・店名・科目を自動で帳簿へ', primary: true, onClick: () => setShowExpense(true) },
                   { id: 'shadow', emoji: '📬', label: '返信下書きを見る', desc: shadow.drafts.length > 0 ? `AI が先に書いた返信案 ${shadow.drafts.length} 通` : 'AI が先に返信案を 3 通り書く', onClick: () => setShowShadow(true) },
                   { id: 'post', emoji: '📢', label: 'SNS投稿を書く', desc: 'テーマ 1 行 → note 記事 + 画像 + X / Threads 文', onClick: () => setShowPost(true) },
