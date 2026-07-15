@@ -95,37 +95,37 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
 
   const handleCopy = async (d: CxoDeliverable) => {
     await copyText(`${d.title}\n\n${d.content}`);
-    toastIt('📋 全文 を コピー しました');
+    toastIt('📋 全文をコピーしました');
   };
 
   const handleDownload = (d: CxoDeliverable) => {
     const safeName = d.title.replace(/[^\p{L}\p{N}_\-]+/gu, '_').slice(0, 40);
     const filename = `${d.cxoRole}_${safeName}_${d.createdAt.slice(0, 10)}.md`;
-    const body = `---\nCXO: ${d.cxoName} (${d.cxoRole})\n作成 日時: ${new Date(d.createdAt).toLocaleString('ja-JP')}\nカテゴリ: ${CATEGORY_LABEL[d.category].label}\n${d.knowledgeRef ? `参照 ナレッジ: ${d.knowledgeRef}\n` : ''}---\n\n# ${d.title}\n\n${d.content}\n`;
+    const body = `---\nCXO: ${d.cxoName} (${d.cxoRole})\n作成日時: ${new Date(d.createdAt).toLocaleString('ja-JP')}\nカテゴリ: ${CATEGORY_LABEL[d.category].label}\n${d.knowledgeRef ? `参照ナレッジ: ${d.knowledgeRef}\n` : ''}---\n\n# ${d.title}\n\n${d.content}\n`;
     const blob = new Blob([body], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = filename; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toastIt(`⬇ ${filename} を ダウンロード しました`);
+    toastIt(`⬇ ${filename} をダウンロードしました`);
   };
 
   const handleSaveKb = (d: CxoDeliverable) => {
-    if (!onSaveAsKnowledge) { toastIt('ナレッジ 保存 は ここ で 使えません'); return; }
+    if (!onSaveAsKnowledge) { toastIt('ナレッジ保存はここでは使えません'); return; }
     onSaveAsKnowledge(d.title, d.content);
-    toastIt('📚 ナレッジ に 保存 しました');
+    toastIt('📚 ナレッジに保存しました');
   };
 
   const handleDelete = async (d: CxoDeliverable) => {
     if (!await confirmAction({
-      title: 'この 成果物 を 削除 します か?',
-      body: `${d.cxoName} が 作った 「${d.title}」 を 削除 します。`,
+      title: 'この成果物を削除しますか?',
+      body: `${d.cxoName} が作った「${d.title}」を削除します。`,
       tone: 'danger', okLabel: '削除',
     })) return;
     removeDeliverable(d.id);
     setItems(listDeliverables(persona.id));
     setOpenId(null);
-    toastIt('🗑 削除 しました');
+    toastIt('🗑 削除しました');
   };
 
   const accent = persona.accentColor || '#A78BFA';
@@ -139,7 +139,7 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
       <div style={{ marginBottom: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
           <span style={{ fontSize: 32 }}>📋</span>
-          <h1 style={{ fontSize: '1.55rem', fontWeight: 900, margin: 0, letterSpacing: '-0.01em' }}>役員 日報</h1>
+          <h1 style={{ fontSize: '1.55rem', fontWeight: 900, margin: 0, letterSpacing: '-0.01em' }}>役員日報</h1>
           {stats.unread > 0 && (
             <span style={{
               fontSize: 10, padding: '3px 8px', borderRadius: 999, fontWeight: 800,
@@ -148,8 +148,8 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
           )}
         </div>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0 }}>
-          13 名 の AI 役員 が 「持ち主 の 代わり に やった 仕事」 が ここ に 全部 貯まります。
-          ナレッジ を 渡せば、 戦略 と リスク は 役員 が 自分 で 考えて 進めます。
+          13 名の AI 役員が「持ち主の代わりにやった仕事」がここに全部貯まります。
+          ナレッジを渡せば、戦略とリスクは役員が自分で考えて進めます。
         </p>
       </div>
 
@@ -158,15 +158,15 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
         display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
         gap: 10, marginBottom: 18,
       }}>
-        <Kpi label="今日 の 納品" value={stats.todayCount} unit="件" color="#34D399" emoji="📦" />
-        <Kpi label="今週 の 納品" value={stats.weekCount} unit="件" color="#22D3EE" emoji="📅" />
+        <Kpi label="今日の納品" value={stats.todayCount} unit="件" color="#34D399" emoji="📦" />
+        <Kpi label="今週の納品" value={stats.weekCount} unit="件" color="#22D3EE" emoji="📅" />
         <Kpi label="累計" value={stats.totalCount} unit="件" color={accent} emoji="🗂️" />
         <div style={{
           padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.04)',
           border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'center',
         }}>
           <button
-            onClick={() => { markAllViewed(persona.id); setItems(listDeliverables(persona.id)); toastIt('✓ 全部 既読 に しました'); }}
+            onClick={() => { markAllViewed(persona.id); setItems(listDeliverables(persona.id)); toastIt('✓ 全部を既読にしました'); }}
             disabled={stats.unread === 0}
             style={{
               fontSize: 11, padding: '6px 10px', borderRadius: 6, fontWeight: 700,
@@ -175,7 +175,7 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
               border: `1px solid ${stats.unread > 0 ? accent + '44' : 'rgba(255,255,255,0.08)'}`,
               cursor: stats.unread > 0 ? 'pointer' : 'default',
             }}
-          >✓ 全部 既読 に</button>
+          >✓ 全部を既読に</button>
         </div>
       </div>
 
@@ -185,7 +185,7 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
           background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.18)',
           fontSize: 11.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5,
         }}>
-          下 に 出ている の は 使い方 が 分かる 「サンプル」 です。役員 に 仕事 を 頼む と、ここ の 数字 が 増えて いきます。
+          下に出ているのは使い方が分かる「サンプル」です。役員に仕事を頼むと、ここの数字が増えていきます。
         </div>
       )}
 
@@ -195,7 +195,7 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="🔍 タイトル / 内容 / 役員 名 で 検索…"
+          placeholder="🔍 タイトル / 内容 / 役員名で検索…"
           style={{
             width: '100%', padding: '10px 12px', borderRadius: 10,
             background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 13,
@@ -213,7 +213,7 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
       </div>
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-        <FilterChip active={cxoFilter === 'all'} onClick={() => setCxoFilter('all')} accent={accent}>👑 全 役員</FilterChip>
+        <FilterChip active={cxoFilter === 'all'} onClick={() => setCxoFilter('all')} accent={accent}>👑 全役員</FilterChip>
         {activeCxos.map((r) => {
           const m = CXO_META[r];
           return (
@@ -241,10 +241,10 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
       {filtered.length === 0 ? (
         <EmptyState
           iconKey="briefing"
-          title={items.length === 0 ? 'まだ 役員 が 何も 作って いません' : '該当 する 成果物 が ありません'}
+          title={items.length === 0 ? 'まだ役員が何も作っていません' : '該当する成果物がありません'}
           description={items.length === 0
-            ? 'ダッシュボード の AI 軍団 ボタン や、 各 Studio で 「✨ 任せる」 を 押すと、\n役員 が 仕事 を 始めて ここ に 成果物 が 並びます。'
-            : '期間 / 役員 / カテゴリ の フィルタ を 緩める と 出て きます。'}
+            ? 'ダッシュボードの「AI 軍団」ボタンや、各 Studio の「✨ 任せる」を押すと、\n役員が仕事を始めて、ここに成果物が並びます。'
+            : '期間 / 役員 / カテゴリのフィルタを緩めると出てきます。'}
           accent={accent}
         />
       ) : (
@@ -353,7 +353,7 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
                       }}>サンプル</span>
                     )}
                     {d.durationSec != null && d.source !== 'demo' && (
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>⏱ {d.durationSec} 秒 で 完了</span>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>⏱ {d.durationSec} 秒で完了</span>
                     )}
                     <button onClick={() => setOpenId(null)} aria-label="閉じる" style={{
                       marginLeft: 'auto', background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 999,
@@ -371,7 +371,7 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
                       background: 'rgba(34,211,238,0.06)', border: '1px solid rgba(34,211,238,0.18)',
                       fontSize: 11, color: 'rgba(34,211,238,0.85)',
                     }}>
-                      📂 ナレッジ 参照: {d.knowledgeRef}
+                      📂 ナレッジ参照: {d.knowledgeRef}
                     </div>
                   )}
                 </div>
@@ -392,7 +392,7 @@ export default function ExecutiveBriefingsTab({ persona, onSaveAsKnowledge }: Pr
                   <ActionBtn onClick={() => handleDownload(d)}>⬇ .md ダウンロード</ActionBtn>
                   {onSaveAsKnowledge && <ActionBtn onClick={() => handleSaveKb(d)}>📚 ナレッジに保存</ActionBtn>}
                   <ActionBtn onClick={() => { togglePin(d.id); setItems(listDeliverables(persona.id)); }}>
-                    {d.pinned ? '📌 ピン 解除' : '📌 ピン 留め'}
+                    {d.pinned ? '📌 ピン解除' : '📌 ピン留め'}
                   </ActionBtn>
                   <ActionBtn onClick={() => handleDelete(d)} danger>🗑 削除</ActionBtn>
                 </div>
