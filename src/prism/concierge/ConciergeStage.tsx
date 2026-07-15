@@ -388,7 +388,7 @@ export default function ConciergeStage({ config, standalone }: { config: Concier
           </button>
           {!standalone && (
             <a href="#setup" style={{
-              display: 'inline-flex', alignItems: 'center', minHeight: 42, padding: '8px 16px',
+              display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: '9px 16px',
               borderRadius: 999, border: `1px solid ${T.line}`, background: T.glassLight,
               backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
               color: T.fg, textDecoration: 'none', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap',
