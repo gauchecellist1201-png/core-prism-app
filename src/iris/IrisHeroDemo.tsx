@@ -140,8 +140,8 @@ export default function IrisHeroDemo({ onStart }: { onStart: () => void }) {
             </motion.div>
           )}
       </div>
-      {/* ヒーロー帯はダーク背景 (本番実測) — 注釈は明色で */}
-      <p style={{ fontSize: '0.7rem', color: 'rgba(255,250,245,0.6)', marginTop: '0.55rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
+      {/* 注釈はデモカードの外＝明るいLP背景の上に載る。淡背景=濃文字で確実に読ませる(旧: 明色で不可視だった) */}
+      <p style={{ fontSize: '0.7rem', color: C.inkSoft, marginTop: '0.55rem', fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
         体験用のサンプルです。実際はDMのスクショを投げるだけで、AIが交渉文まで用意します。
       </p>
     </div>
