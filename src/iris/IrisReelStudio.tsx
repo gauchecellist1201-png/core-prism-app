@@ -7,6 +7,7 @@
 // ============================================================
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
+import { aiFetch } from '../lib/aiFetch';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { shareToInstagram } from './instagramShare';
@@ -1596,7 +1597,7 @@ ${persona?.description || ''}
 
 JSON のみで返答。`;
 
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
