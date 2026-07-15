@@ -676,7 +676,20 @@ select option {
 .cp-modal-body {
   flex: 1; min-height: 0;
   overflow-y: auto;
+  /* iOS: 生成後に内容が伸びた時のスクロール固まり/背景への連鎖を根治 */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 20px;
+}
+
+/* ★全モーダル共通: 固定オーバーレイ内のスクロール領域をiOSで確実に動かす。
+   Tailwind の overflow-y-auto を使う各スタジオ(画像/SNS投稿/記事エンジン等)にも効く。
+   生成後にコンテンツが伸びてもスクロールが固まらない/背景に連鎖しない。 */
+.fixed.inset-0 .overflow-y-auto,
+.fixed.inset-0 .overflow-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 /* 入力・ボタンの統一 */
