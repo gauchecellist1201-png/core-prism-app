@@ -138,9 +138,9 @@ function StrategyPanel({ persona, settings, knowledge, onSave }: {
         id="premium-strategy"
         accent="#A78BFA"
         iconKey="strategy"
-        what="自社の悩み・問いに対し、コンサル会社が使う「分析の型 (SWOT / 5フォースなど)」を AI が当てはめて、強み弱み・機会脅威を整理してくれる戦略の壁打ち AI。"
-        tryThis="まず型を 1 つ選ぶ → 問いを 1 行で書く → 「分析する」。3 分で 4 象限の表が返ってきます。"
-        example="問い『来期の値上げをすべきか?』→ SWOT 表 + 推奨アクション 3 つ + 想定リスク"
+        what="経営の悩みを 1 行書くだけで、コンサル会社が使う「考え方の型（強み・弱みの棚おろし 等）」に沿って、AI が『自社の強み・弱み・追い風・リスク』を 4 つの箱に整理します。迷った時の相談相手です。"
+        tryThis="まず型を 1 つ選ぶ → 悩みを 1 行で書く → 「分析する」。3 分で 4 つの箱に分けた表が返ってきます。"
+        example="悩み『来期の値上げをすべきか?』→ 強み・弱みの表 ＋ おすすめの一手 3 つ ＋ 注意すべきリスク"
         sampleLabel="返ってくるもの"
         samplePreview={(
           <div className="cp-stack-xs" style={{ fontSize: 11, lineHeight: 1.5 }}>
@@ -311,9 +311,9 @@ function ContractPanel({ persona, settings, onSave }: {
         id="premium-contract"
         accent="#F472B6"
         iconKey="legal"
-        what="契約書 (PDF / Word / テキスト) を投げると、AI があなたの立場 (発注 / 受注 / NDA) から「危ない条文」を赤・黄・青で振り分け、修正の提案文まで作ってくれる契約レビュー AI。"
-        tryThis="まず立場を選ぶ → 契約書ファイルを投げる → 「分析」。1〜2 分でリスク一覧と修正案が返ります。"
-        example="業務委託契約 (受注側) → 危険 2 件 (損害賠償上限なし / 知財帰属) + 修正文案 2 通り"
+        what="契約書 (PDF・Word・文章) を入れると、AI があなたの立場（発注する側 / 受ける側 / 秘密を守る約束〈NDA〉）から『危ない条文』を赤・黄・青で色分けし、直し方の文案まで作ります。"
+        tryThis="まず立場を選ぶ → 契約書ファイルを入れる → 「分析」。1〜2 分で危ない所の一覧と直し案が返ります。"
+        example="業務委託の契約 (受ける側) → 危険 2 件（賠償額に上限なし / 作った物の権利が相手に渡る）＋ 直し文案 2 通り"
         sampleLabel="返ってくるもの"
         samplePreview={(
           <div className="cp-stack-xs" style={{ fontSize: 11, lineHeight: 1.5 }}>
@@ -532,9 +532,9 @@ function FinancialPanel({ persona, settings, onSave }: {
         id="premium-financial"
         accent="#5BA8FF"
         iconKey="finance"
-        what="決算書・試算表・月次レポート (PDF / Excel / CSV) を投げると、AI が「儲かっている / 危ない」を 5 段階で評価し、改善の打ち手を 3 つ提案してくれる決算分析 AI。"
-        tryThis="まず財務ファイルを投げる → 「分析」。3 分で安全度スコアと改善案が返ります。"
-        example="月次 P&L → 粗利率 32% (業界平均 28%) / キャッシュ残 2 ヶ月 / 改善案: 固定費 -8%"
+        what="決算書・月次レポート・試算表（月々の数字の集計表）(PDF・Excel・CSV) を入れると、AI が『儲かっている / 危ない』を 5 段階で判定し、良くする打ち手を 3 つ提案します。"
+        tryThis="まず数字のファイルを入れる → 「分析」。3 分で安全度の点数と改善案が返ります。"
+        example="月々の損益 → 粗利率 32%（業界平均 28%）/ 現金は残り 2 ヶ月分 / 改善案: 固定費を 8% 減らす"
         sampleLabel="返ってくるもの"
         samplePreview={(
           <div className="cp-stack-xs" style={{ fontSize: 11, lineHeight: 1.5 }}>
