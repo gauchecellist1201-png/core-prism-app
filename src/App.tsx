@@ -568,6 +568,8 @@ export default function App() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   // コマンド センター (2026-06-05 オーナー指示: Claude Code 風 右パネル)
   const [commandCenterOpen, setCommandCenterOpen] = useState<boolean>(false);
+  // 右下ツールFAB群(成果物/統合脳/役員日報)を1つに畳む。モバイルの浮遊ボタン過密・重なりを解消。
+  const [toolsFabOpen, setToolsFabOpen] = useState<boolean>(false);
   // 役員 日報 タブ オーバーレイ (2026-06-05 オーナー指示)
   const [briefingsOpen, setBriefingsOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -971,66 +973,58 @@ export default function App() {
           />
         </Suspense>
       )}
-      {/* 役員 日報 タブ ボタン — 13 名 役員 が 作った 成果物 を 全部 見られる (2026-06-05) */}
-      {view === 'dashboard' && activePersona && (
-        <button
-          onClick={() => setBriefingsOpen(true)}
-          aria-label="役員 日報 を 見る"
-          data-tour-id="briefings-button"
-          className="cp-fab-iconize"
+      {/* 右下ツールFAB群 — 3つ(成果物/統合脳/役員日報)を1つのトグルに集約。
+          モバイルで浮遊ボタンが密集・重なる問題を根治。展開時だけ縦に開く。 */}
+      {view === 'dashboard' && !commandCenterOpen && activePersona && (
+        <div
           style={{
             position: 'fixed',
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 150px)',
             right: 'max(14px, env(safe-area-inset-right, 0px))',
-            zIndex: 35,
-            padding: '10px 14px', borderRadius: 14,
-            background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
-            color: '#fff', fontWeight: 800, fontSize: 13,
-            border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
-            boxShadow: '0 8px 22px rgba(99,102,241,0.45)',
-            display: 'inline-flex', alignItems: 'center', gap: 6,
+            zIndex: 36,
+            display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10,
           }}
-        ><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}><path d="M9 3h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V4a1 1 0 0 1 1-1z" /><path d="M9 3.5V5h6V3.5" /><path d="M9 11h6M9 15h4" /></svg><span className="cp-fab-label">役員 日報</span></button>
-      )}
-      {/* 🧠 統合ナレッジ脳 ボタン (最上位 Studio 限定の中核機能) — 役員日報の上に積む */}
-      {view === 'dashboard' && activePersona && (
-        <button
-          onClick={() => setBrainOpen(true)}
-          aria-label="統合ナレッジ脳 を 開く"
-          className="cp-fab-iconize"
-          style={{
-            position: 'fixed',
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 134px)',
-            right: 'max(14px, env(safe-area-inset-right, 0px))',
-            zIndex: 35,
-            padding: '10px 14px', borderRadius: 14,
-            background: 'linear-gradient(135deg, #8B5CF6, #4F46E5)',
-            color: '#fff', fontWeight: 800, fontSize: 13,
-            border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
-            boxShadow: '0 8px 22px rgba(99,102,241,0.45)',
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-          }}
-        ><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}><path d="M9.5 3.5A2.5 2.5 0 0 0 7 6a2.5 2.5 0 0 0-1.5 4.5A2.5 2.5 0 0 0 7 15a2.5 2.5 0 0 0 2.5 2.5V3.5Z" /><path d="M14.5 3.5A2.5 2.5 0 0 1 17 6a2.5 2.5 0 0 1 1.5 4.5A2.5 2.5 0 0 1 17 15a2.5 2.5 0 0 1-2.5 2.5V3.5Z" /><path d="M12 3.5v14" /></svg><span className="cp-fab-label">統合脳</span></button>
-      )}
-      {/* ✨ 成果物スタジオ ボタン — 統合脳の上に積む（エージェント提案→美しい一枚成果物） */}
-      {view === 'dashboard' && activePersona && (
-        <button
-          onClick={() => setArtifactOpen(true)}
-          aria-label="成果物スタジオ を 開く"
-          className="cp-fab-iconize"
-          style={{
-            position: 'fixed',
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 188px)',
-            right: 'max(14px, env(safe-area-inset-right, 0px))',
-            zIndex: 35,
-            padding: '10px 14px', borderRadius: 14,
-            background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
-            color: '#fff', fontWeight: 800, fontSize: 13,
-            border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
-            boxShadow: '0 8px 22px rgba(99,102,241,0.45)',
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-          }}
-        ><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /></svg><span className="cp-fab-label">成果物</span></button>
+        >
+          {toolsFabOpen && (
+            [
+              { label: '成果物', onClick: () => { setArtifactOpen(true); setToolsFabOpen(false); }, grad: '#A78BFA,#6366F1', icon: <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /> },
+              { label: '統合脳', onClick: () => { setBrainOpen(true); setToolsFabOpen(false); }, grad: '#8B5CF6,#4F46E5', icon: <><path d="M9.5 3.5A2.5 2.5 0 0 0 7 6a2.5 2.5 0 0 0-1.5 4.5A2.5 2.5 0 0 0 7 15a2.5 2.5 0 0 0 2.5 2.5V3.5Z" /><path d="M14.5 3.5A2.5 2.5 0 0 1 17 6a2.5 2.5 0 0 1 1.5 4.5A2.5 2.5 0 0 1 17 15a2.5 2.5 0 0 1-2.5 2.5V3.5Z" /><path d="M12 3.5v14" /></> },
+              { label: '役員日報', onClick: () => { setBriefingsOpen(true); setToolsFabOpen(false); }, grad: '#A78BFA,#6366F1', icon: <><path d="M9 3h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V4a1 1 0 0 1 1-1z" /><path d="M9 11h6M9 15h4" /></> },
+            ].map((t) => (
+              <button
+                key={t.label}
+                onClick={t.onClick}
+                aria-label={`${t.label} を 開く`}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  height: 44, padding: '0 16px 0 12px', borderRadius: 999,
+                  background: `linear-gradient(135deg, ${t.grad})`, color: '#fff',
+                  fontWeight: 800, fontSize: 13, border: '1px solid rgba(255,255,255,0.18)',
+                  boxShadow: '0 8px 22px rgba(99,102,241,0.45)', cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}>{t.icon}</svg>
+                {t.label}
+              </button>
+            ))
+          )}
+          <button
+            onClick={() => setToolsFabOpen(v => !v)}
+            aria-label={toolsFabOpen ? 'ツールを閉じる' : 'ツールを開く（成果物・統合脳・役員日報）'}
+            aria-expanded={toolsFabOpen}
+            style={{
+              width: 52, height: 52, borderRadius: 999,
+              background: 'linear-gradient(135deg, #A78BFA, #6366F1)', color: '#fff',
+              border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
+              boxShadow: '0 8px 24px rgba(99,102,241,0.5)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 0.2s ease',
+              transform: toolsFabOpen ? 'rotate(45deg)' : 'none',
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.2} strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
+          </button>
+        </div>
       )}
       {/* ✨ 成果物スタジオ オーバーレイ */}
       {artifactOpen && activePersona && (
