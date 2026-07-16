@@ -69,12 +69,16 @@ export default function HealthHub({ persona, settings, onClose }: Props) {
         transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
         className="relative mx-auto my-4 w-full max-w-[1200px]"
       >
+        {/* 閉じるボタン: 見つけやすく・44px以上（実ユーザー報告「開くと戻れない」の根治 2026-07-17）。
+            右上に固定し、ラベル付きで明確に。モバイルでも押しやすい位置。 */}
+        {/* 閉じるボタン: 見つけやすく・44px以上（実ユーザー報告「開くと戻れない」の根治 2026-07-17）。 */}
         <button
           onClick={onClose}
-          aria-label="閉じる"
-          className="absolute -top-3 -right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/60 text-fg-muted hover:text-fg"
+          aria-label="ヘルスを閉じる"
+          className="absolute top-2 right-2 z-30 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/70 px-4 text-sm font-semibold text-fg backdrop-blur-md hover:bg-black/85"
+          style={{ minHeight: 44 }}
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" /> 閉じる
         </button>
 
         <MockShell

@@ -208,6 +208,17 @@ function isSupported(name: string): boolean {
 
 export default function KnowledgeBase({ persona, settings, items, onAddFile, onAddNote, onDelete, onReanalyze, onClose }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  // 一括削除（実ユーザー報告 2026-07-17: 1件ずつしか消せずクレーム源）
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const toggleSelected = (id: string) => setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const bulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`選択した ${selectedIds.size} 件のナレッジを削除します。よろしいですか？`)) return;
+    selectedIds.forEach(id => onDelete(id));
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  };
   const [tab, setTab] = useState<'propose' | 'list' | 'add-file' | 'add-note'>(items.length > 0 ? 'propose' : 'add-file');
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
@@ -782,6 +793,29 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
 
             {tab === 'list' && (
               <motion.div key="list" className="p-4 space-y-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                {items.length > 0 && (
+                  <div className="flex items-center justify-between gap-2 pb-1">
+                    <button
+                      onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()); }}
+                      className="text-xs px-3 rounded-lg"
+                      style={{ minHeight: 40, background: selectMode ? persona.accentColorLight : 'rgba(255,255,255,0.05)', border: `1px solid ${selectMode ? persona.accentColor : 'rgba(255,255,255,0.1)'}`, color: selectMode ? persona.accentColor : 'rgba(255,255,255,0.75)' }}
+                    >{selectMode ? 'キャンセル' : '選択して削除'}</button>
+                    {selectMode && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSelectedIds(new Set(items.map(i => i.id)))}
+                          className="text-xs px-3 rounded-lg" style={{ minHeight: 40, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)' }}
+                        >すべて選択</button>
+                        <button
+                          onClick={bulkDelete}
+                          disabled={selectedIds.size === 0}
+                          className="text-xs px-3 rounded-lg font-semibold disabled:opacity-40"
+                          style={{ minHeight: 40, background: '#ef4444', color: '#fff', border: 'none' }}
+                        >{selectedIds.size > 0 ? `${selectedIds.size}件を削除` : '削除'}</button>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {items.length === 0 ? (
                   <EmptyState
                     iconKey="folder"
@@ -805,10 +839,18 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                       >
                         <button
                           className="w-full p-3 text-left"
-                          onClick={() => setExpanded(isOpen ? null : item.id)}
+                          onClick={() => selectMode ? toggleSelected(item.id) : setExpanded(isOpen ? null : item.id)}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-start gap-2 flex-1 min-w-0">
+                              {selectMode && (
+                                <span
+                                  className="flex-shrink-0 flex items-center justify-center rounded-md mt-0.5"
+                                  style={{ width: 22, height: 22, border: `2px solid ${selectedIds.has(item.id) ? persona.accentColor : 'rgba(255,255,255,0.3)'}`, background: selectedIds.has(item.id) ? persona.accentColor : 'transparent' }}
+                                >
+                                  {selectedIds.has(item.id) && <span style={{ color: '#0a0a0f', fontSize: 13, fontWeight: 900 }}>✓</span>}
+                                </span>
+                              )}
                               <span className="text-base flex-shrink-0">{item.fileKind === 'image' ? '🖼' : sourceIcon(item.sourceType)}</span>
                               <div className="flex-1 min-w-0">
                                 <p className="text-white text-sm font-light truncate">{item.title}</p>
