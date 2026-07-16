@@ -6,6 +6,7 @@ import type { MediaKit, Platform } from '../types/influencerDeal';
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
+import { logIrisActivity } from './irisActivity';
 
 // ─── マッチスコア ───────────────────────────────────────────
 export interface MatchScore {
@@ -197,21 +198,26 @@ ${opts.knowledgeContext}
   });
 
   const text = data.content?.[0]?.text ?? '';
+  let result: ApplicationDraft;
   try {
     const m = text.match(/\{[\s\S]*\}/);
     const parsed = JSON.parse(m ? m[0] : text);
-    return {
+    result = {
       subject: parsed.subject || `${opts.deal.brandName} 様 — ${opts.deal.productName} 案件応募の件`,
       body: parsed.body || text,
       reason: parsed.reason || '',
     };
   } catch {
-    return {
+    result = {
       subject: `${opts.deal.brandName} 様 — ${opts.deal.productName} 案件応募の件`,
       body: text,
       reason: '',
     };
   }
+  // 応募文(=ブランドへの営業DM)が実際に本文まで生成できた時のみ「今週動いた量」に計上 (honest)。
+  // 本文が空のときは記録しない — 数字を嘘にしないため。
+  if (result.body.trim()) logIrisActivity('dm');
+  return result;
 }
 
 // ─── 応募履歴 (localStorage) ───────────────────────────────
