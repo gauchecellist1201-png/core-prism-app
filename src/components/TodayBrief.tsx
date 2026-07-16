@@ -8,19 +8,9 @@ import { RewardBurst } from './visualFx';
 import ThinkingIndicator from './ThinkingIndicator';
 import InlineActionExecutor from './InlineActionExecutor';
 import { LoaderDots } from './MicroLoader';
-import { logDeliverable, type DeliverableCategory } from '../lib/cxoDeliverables';
-import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
-
-// 今日の一手のアクションを AI 実行したとき、その成果物を「どの役員が納品したか」に
-// honest に割り当てるためのマップ。AgentTeamMonitor の kindToCategory と揃える。
-// 今日の一手には固有の CXO が無いため、成果物の種類から自然な担当役員を選ぶ。
-const KIND_TO_CXO: Record<string, { cxo: CxoRole; category: DeliverableCategory }> = {
-  text: { cxo: 'CMO', category: 'copy' },
-  memo: { cxo: 'CMO', category: 'copy' },
-  checklist: { cxo: 'COO', category: 'plan' },
-  email: { cxo: 'CSO', category: 'outreach' },
-  table: { cxo: 'CDS', category: 'analysis' },
-};
+import { logDeliverable } from '../lib/cxoDeliverables';
+import { CXO_META } from '../hooks/useAgentTaskQueue';
+import { resolveDeliverableCxo } from '../lib/actionExecutor';
 
 // 連携根拠チップ: ソースのラベル→Lucideアイコン。未知ラベルは汎用(Radio)にフォールバック。
 // 絵文字は使わない(オーナー指示)。ここに出るのは「実際にデータが返った」連携だけ(嘘の根拠を出さない)。
@@ -273,7 +263,7 @@ export default function TodayBrief({
                               // これが無いと、成果物は自動保存されるのに日報の「動いた量」に載らず
                               // 価値が見えないままだった(2026-07-06)。
                               try {
-                                const { cxo, category } = KIND_TO_CXO[deliverable.kind] ?? { cxo: 'COO' as CxoRole, category: 'other' as DeliverableCategory };
+                                const { cxo, category } = resolveDeliverableCxo(deliverable.kind);
                                 const meta = CXO_META[cxo];
                                 logDeliverable({
                                   personaId: persona.id,

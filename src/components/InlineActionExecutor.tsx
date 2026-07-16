@@ -18,10 +18,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Copy, Save, RotateCw, Plus, AlertCircle, Sparkles, Mail, FileText, MessageSquare } from 'lucide-react';
 import type { AppSettings, Persona } from '../types/identity';
 import {
-  executeAction, saveArtifact,
+  executeAction, saveArtifact, resolveDeliverableCxo,
   type ExecutionPlan, type Deliverable, type SavedArtifact,
   STEP_REVEAL_MS, STEP_THINKING_MS,
 } from '../lib/actionExecutor';
+import { CXO_META } from '../hooks/useAgentTaskQueue';
 
 interface Props {
   action: string;
@@ -308,6 +309,36 @@ export default function InlineActionExecutor({
               {plan.deliverable.title}
             </span>
           </div>
+          {/* 納品した役員 + 「動いた量に記録」を honest に見せる。
+              タップ→成果→日報/価値カード の輪を、その場で目に見える形にする(価値の可視化)。
+              onComplete で役員日報へ記録し core:value-updated を dispatch 済 = 記録は本当。 */}
+          {(() => {
+            const { cxo } = resolveDeliverableCxo(plan.deliverable.kind);
+            const meta = CXO_META[cxo];
+            const CxoIcon = meta.Icon;
+            return (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '7px 12px',
+                borderBottom: '1px solid var(--border)',
+                fontSize: 11, color: 'var(--fg-muted)', lineHeight: 1.4,
+              }}>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+                  background: `${meta.color}22`, color: meta.color,
+                }}>
+                  <CxoIcon size={11} strokeWidth={2.4} />
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ fontWeight: 800, color: 'var(--fg)' }}>{meta.name}</span>
+                  {' が納品 · 今週の'}
+                  <span style={{ fontWeight: 700, color: persona.accentColor }}>「動いた量」</span>
+                  {'に記録しました'}
+                </span>
+              </div>
+            );
+          })()}
           <DeliverableView deliverable={plan.deliverable} accent={persona.accentColor} />
           {plan.note && (
             <div style={{

@@ -20,6 +20,8 @@
 // ============================================================
 import { enqueueClaudeCall } from './apiQueue';
 import type { AppSettings, Persona } from '../types/identity';
+import type { CxoRole } from '../hooks/useAgentTaskQueue';
+import type { DeliverableCategory } from './cxoDeliverables';
 
 // ── 成果物の型 ─────────────────────────────────────────
 export type DeliverableKind = 'text' | 'checklist' | 'email' | 'table' | 'memo';
@@ -84,6 +86,23 @@ export function deleteArtifact(id: string): void {
     const all: SavedArtifact[] = JSON.parse(raw);
     localStorage.setItem(ARTIFACT_KEY, JSON.stringify(all.filter(a => a.id !== id)));
   } catch { /* */ }
+}
+
+// ── 成果物 → 担当役員 (honest な割り当て) ───────────────────
+// 「今日の一手」タップで作られた成果物を、どの CXO が納品したかに自然に割り当てる。
+// 固有の CXO が無い作業なので「成果物の種類」から選ぶ (推定であることは UI で断定しない)。
+// TodayBrief と InlineActionExecutor で同じ表を使い、日報記録と画面表示のズレを防ぐ。
+export const KIND_TO_CXO: Record<DeliverableKind, { cxo: CxoRole; category: DeliverableCategory }> = {
+  text: { cxo: 'CMO', category: 'copy' },
+  memo: { cxo: 'CMO', category: 'copy' },
+  checklist: { cxo: 'COO', category: 'plan' },
+  email: { cxo: 'CSO', category: 'outreach' },
+  table: { cxo: 'CDS', category: 'analysis' },
+};
+
+/** 成果物の種類から担当役員と記録カテゴリを引く。未知の種類は COO / other にフォールバック。 */
+export function resolveDeliverableCxo(kind: DeliverableKind): { cxo: CxoRole; category: DeliverableCategory } {
+  return KIND_TO_CXO[kind] ?? { cxo: 'COO', category: 'other' };
 }
 
 // ── AI コール本体 ──────────────────────────────────────
