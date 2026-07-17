@@ -42,7 +42,11 @@ export default function CxoWelcomeCard({ brand = 'prism', force = false }: Props
   const WOW_KEY = brand === 'iris' ? 'core_wow_seen_iris_v1' : 'core_wow_seen_prism_v1';
   const onboardingPending = () => {
     if (force) return false;
-    try { return !localStorage.getItem(WOW_KEY); } catch { return false; }
+    try {
+      // Wow未完 or 初回ウィザード(core_onboarded_v2)未完のどちらかなら「オンボ中」。
+      // ウィザードの上に透け重なって文字が被る事故を防ぐ(オーナー指示 2026-07-17)。
+      return !localStorage.getItem(WOW_KEY) || localStorage.getItem('core_onboarded_v2') !== 'true';
+    } catch { return false; }
   };
 
   // 起動から少し遅らせる (他の overlay とぶつからないように)
@@ -62,13 +66,12 @@ export default function CxoWelcomeCard({ brand = 'prism', force = false }: Props
     const poll = setInterval(() => {
       if (!onboardingPending()) { clearInterval(poll); setTimeout(reveal, 350); }
     }, 600);
-    // 不測の事態でも永久に隠れないよう最終フォールバック
-    const fallback = setTimeout(reveal, 15000);
+    // フォールバック強制表示は廃止: オンボ画面の上に透け重なって文字が被るくらいなら、
+    // 今セッションは出さない(SEEN_KEY未設定のまま=次回マウントで表示される)。
     return () => {
       done = true;
       window.removeEventListener('core:wow-finished', onWow);
       clearInterval(poll);
-      clearTimeout(fallback);
     };
   }, [open]);
 

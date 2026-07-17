@@ -2715,6 +2715,16 @@ time {
   button[aria-label="ひらめきを知識に放り込む"] {
     display: none !important;
   }
+  /* ヘッダーのチップ過密の間引き（左上の文字潰れ・被り対策）。
+     モバイルは ☰・人格チップ・ナレッジ・テーマ切替だけ残す。
+     隠す機能は全て別導線あり: ヘルス=クイックアクション/招待=クレジット画面/
+     AIチャット=下部ドック/今日のレポート=イブニングフィード */
+  button[aria-label="ヘルス"],
+  button[aria-label^="友達招待"],
+  button[aria-label="AIチャット"],
+  button[aria-label="今日のレポート"] {
+    display: none !important;
+  }
   /* 横長ピル(役員日報/改善提案)はコンテンツに被るのでモバイルでは丸アイコンに畳む */
   .cp-fab-iconize {
     width: 48px !important;

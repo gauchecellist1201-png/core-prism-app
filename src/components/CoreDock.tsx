@@ -83,9 +83,12 @@ const EDGE_MARGIN = 14;
 const DRAG_THRESHOLD = 6; // これ未満の移動は「タップ」扱い
 
 function clampPos(x: number, y: number, bottomClearance = 0) {
+  // モバイルは上部=ヘッダー帯(タイトル/人格チップ)を進入禁止に。
+  // ドラッグ保存位置が左上に残ってヘッダーの文字に被る事故を構造的に防ぐ(オーナー指示 2026-07-17)。
+  const minY = window.innerWidth < 768 ? 120 : EDGE_MARGIN;
   const maxX = Math.max(EDGE_MARGIN, window.innerWidth - DOCK_SIZE - EDGE_MARGIN);
-  const maxY = Math.max(EDGE_MARGIN, window.innerHeight - DOCK_SIZE - EDGE_MARGIN - bottomClearance);
-  return { x: Math.min(Math.max(x, EDGE_MARGIN), maxX), y: Math.min(Math.max(y, EDGE_MARGIN), maxY) };
+  const maxY = Math.max(minY, window.innerHeight - DOCK_SIZE - EDGE_MARGIN - bottomClearance);
+  return { x: Math.min(Math.max(x, EDGE_MARGIN), maxX), y: Math.min(Math.max(y, minY), maxY) };
 }
 function defaultPos(bottomClearance = 0) {
   // 既定位置=左下(中央のチャット入力バー・右下の常駐FAB群と重ならない)
