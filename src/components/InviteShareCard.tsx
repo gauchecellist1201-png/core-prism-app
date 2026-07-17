@@ -13,6 +13,7 @@ import {
   Copy, Share2, Check, Gift, QrCode, Mail,
   Calendar, MessageCircle, Users, Sparkles, Download,
 } from 'lucide-react';
+import { onAccentInk } from '../lib/contrast';
 
 // lucide-react から Twitter アイコンは削除されたため X glyph を inline SVG で実装
 function XIcon({ size = 18 }: { size?: number }) {
@@ -306,6 +307,10 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
   // ヒーローのバナー色 (緑系で「無料」訴求)
   const heroGradient = `linear-gradient(135deg, ${p.accent}, ${p.accent}aa)`;
 
+  // アクセントの上に乗る文字色。呼び出し側が persona.accentColor
+  // (#FBBF24 など明るい色もある) を渡すため、白固定だと読めなくなる
+  const accentInk = onAccentInk(p.accent);
+
   return (
     <div style={{
       background: p.card,
@@ -355,7 +360,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         background: heroGradient,
         borderRadius: 16,
         padding: compact ? '1rem 1rem 1.1rem' : '1.35rem 1.2rem 1.5rem',
-        color: '#fff',
+        color: accentInk,
         position: 'relative',
         overflow: 'hidden',
       }}>
@@ -519,7 +524,8 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
             aria-label="紹介 URL をコピー"
             style={{
               background: copied === 'url' ? '#16A34A' : p.accent,
-              color: '#fff', border: 'none', borderRadius: 'var(--cp-radius-sm)',
+              color: copied === 'url' ? '#fff' : accentInk,
+              border: 'none', borderRadius: 'var(--cp-radius-sm)',
               padding: '0.55rem 0.75rem', fontSize: '0.78rem', fontWeight: 700,
               cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
               whiteSpace: 'nowrap',
@@ -577,6 +583,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
           <ShareIconBtn
             label={showQr ? 'QR 閉' : 'QR'}
             bg={showQr ? p.accent : '#475569'}
+            ink={showQr ? accentInk : '#fff'}
             icon={<QrCode size={18} strokeWidth={2.2} />}
             onClick={() => setShowQr(v => !v)}
           />
@@ -649,7 +656,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
                 onClick={downloadQr}
                 aria-label="QR 画像を保存"
                 style={{
-                  background: p.accent, color: '#fff', border: 'none', borderRadius: 10,
+                  background: p.accent, color: accentInk, border: 'none', borderRadius: 10,
                   padding: '0.5rem 0.9rem', fontSize: '0.78rem', fontWeight: 700,
                   cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
                 }}>
@@ -749,18 +756,21 @@ function Stat({ icon, label, value, suffix, palette }: {
   );
 }
 
-function ShareIconBtn({ label, bg, icon, onClick }: {
+// ink: 既定は白。LINE/X などブランド色のボタンは白のままが正なので、
+// アクセント色を背景に敷く時だけ読める文字色を渡す
+function ShareIconBtn({ label, bg, icon, onClick, ink = '#fff' }: {
   label: string;
   bg: string;
   icon: React.ReactNode;
   onClick: () => void;
+  ink?: string;
 }) {
   return (
     <button
       onClick={onClick}
       aria-label={label}
       style={{
-        background: bg, color: '#fff', border: 'none', borderRadius: 12,
+        background: bg, color: ink, border: 'none', borderRadius: 12,
         padding: '0.7rem 0.3rem',
         fontSize: '0.7rem', fontWeight: 700,
         cursor: 'pointer', whiteSpace: 'nowrap',

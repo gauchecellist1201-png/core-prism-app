@@ -277,7 +277,7 @@ export default function FinancialStatementsStudio({ persona, onClose }: Props) {
         <div className="flex items-center justify-between gap-2 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: persona.accentColorLight, color: persona.accentColor }}>
-              <Scale size={20} strokeWidth={2} />
+              <Scale size={20} strokeWidth={2.2} />
             </span>
             <div className="min-w-0">
               <p className="text-fg text-base font-semibold leading-tight truncate">決算書スタジオ</p>

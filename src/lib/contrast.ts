@@ -40,6 +40,19 @@ export function readableTextColor(bgHex: string): string {
 }
 
 /**
+ * アクセント色の上に乗せる文字色。
+ * ブランドの見え方を保つため白を優先し、白では読めない
+ * (コントラスト 3 未満) 明るいアクセントの時だけ黒系に落とす。
+ *
+ * readableTextColor の輝度 0.5 しきい値だと #34D399 や #06B6D4 のような
+ * 明るいアクセントを取りこぼし白のまま (1.85 / 2.43) になるため、
+ * ここでは実測コントラスト比で判定する。
+ */
+export function onAccentInk(accentHex: string): string {
+  return contrastRatio('#FFFFFF', accentHex) >= 3 ? '#FFFFFF' : '#0A0814';
+}
+
+/**
  * 背景に対して「やわらかい」読める文字色 (純黒/純白を避ける)
  */
 export function softTextColor(bgHex: string): string {
