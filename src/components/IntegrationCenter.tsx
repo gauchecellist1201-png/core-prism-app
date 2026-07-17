@@ -273,7 +273,7 @@ const CATALOG: Tool[] = [
       { label: '「新規プロバイダ作成」→「新規チャネル作成」→「Messaging API」を選択。チャネル名は自由 (例: 「自分専用 AI 通知」)', action: { kind: 'info' } },
       { label: '作成したチャネルの「Messaging API 設定」タブを開き、下までスクロール。「チャネルアクセストークン (長期)」の「発行」ボタンを押す', action: { kind: 'info' } },
       { label: '同じ画面の上にある QR コードを、自分のスマホの LINE で読み取って「自分の公式LINE」を友だち追加する', action: { kind: 'info' } },
-      { label: '「あなたの userId」を確認: チャネルの「チャネル基本設定」タブ → 一番下「あなたのユーザーID」をコピー', action: { kind: 'info' } },
+      { label: '「あなたの userId」を確認: 今つくったチャネルの「チャネル基本設定」タブ → 一番下「あなたのユーザーID」をコピー。⚠️ユーザーIDはプロバイダごとに別物です。新しいプロバイダを作った場合、古い画面のIDでは接続できません', action: { kind: 'info' } },
       { label: '下の 2 つの欄に貼り付けて「テスト送信」を押すと、その場で公式LINEから動作確認メッセージが届きます', action: { kind: 'lineConnect' } },
     ],
   },

@@ -10,7 +10,7 @@ export type BusinessPlanDoc = {
   content: string;
 };
 
-export const BUSINESS_PLAN_GENERATED_AT = "2026-07-17T12:35:07.578Z";
+export const BUSINESS_PLAN_GENERATED_AT = "2026-07-17T16:44:13.211Z";
 
 export const BUSINESS_PLAN_DOCS: BusinessPlanDoc[] = [
   {

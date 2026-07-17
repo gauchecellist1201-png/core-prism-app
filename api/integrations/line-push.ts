@@ -28,8 +28,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
   }
 
-  const token = String(req.headers['x-line-token'] || '').trim();
-  const userId = String(req.headers['x-line-userid'] || '').trim();
+  // スマホからのコピペで混入しがちな不可視文字(ゼロ幅スペース/BOM/改行/全角空白)を除去
+  const clean = (v: unknown) => String(v || '').replace(/[\u200B-\u200D\uFEFF\s\u3000]/g, '');
+  const token = clean(req.headers['x-line-token']);
+  const userId = clean(req.headers['x-line-userid']);
 
   if (!token || token.length < 50) {
     return res.status(400).json({
@@ -37,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       message: 'アクセストークンが空 / 短すぎます。LINE Developers の「チャネルアクセストークン (長期)」を貼り付けてください。',
     });
   }
-  if (!userId || !/^U[0-9a-f]{20,}$/.test(userId)) {
+  if (!userId || !/^U[0-9a-fA-F]{20,}$/.test(userId)) {
     return res.status(400).json({
       error: 'INVALID_INPUT',
       message: 'userId が空 / 形式が違います。"U" で始まる 33 文字前後の文字列を貼り付けてください。',
@@ -79,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (r.status === 403) {
       return res.status(403).json({
         error: 'USER_NOT_FRIEND',
-        message: 'この userId の方が公式アカウントを「友だち追加」していないか、ブロック中です。QR コードからもう一度友だち追加してください。',
+        message: 'この userId の方が、この公式アカウントを友だち追加していないか、ブロック中です。新しいチャネルを作った場合は「新しい方の」公式アカウントをQRコードから友だち追加してください。',
       });
     }
     if (r.status === 400) {
@@ -87,7 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try { j = await r.json(); } catch { /* */ }
       return res.status(400).json({
         error: 'INVALID_INPUT',
-        message: `LINE から拒否されました: ${j?.message || 'リクエスト形式エラー (userId が間違っている可能性)'}`,
+        message: `LINE から拒否されました: ${j?.message || 'userId が違う可能性'}。よくある原因: あなたのユーザーIDは「プロバイダごとに別」です。新しいプロバイダを作った場合は、今回のチャネルと同じプロバイダの「チャネル基本設定 → あなたのユーザーID」をコピーし直してください。`,
       });
     }
     return res.status(503).json({
