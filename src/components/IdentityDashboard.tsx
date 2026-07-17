@@ -63,6 +63,7 @@ import DailyReport from './DailyReport';
 import { useExpenses } from '../hooks/useExpenses';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 const PnLStudio = lazy(() => import('./PnLStudio'));
+const FinancialStatementsStudio = lazy(() => import('./FinancialStatementsStudio'));
 const FinancialConsultant = lazy(() => import('./FinancialConsultant'));
 const BenchmarkStudio = lazy(() => import('./BenchmarkStudio'));
 const DocumentStudio = lazy(() => import('./DocumentStudio'));
@@ -327,6 +328,7 @@ export default function IdentityDashboard({
   const [showCRM, setShowCRM] = useState(false);
   const [showTaskHub, setShowTaskHub] = useState(false);
   const [showPnL, setShowPnL] = useState(false);
+  const [showFinStatements, setShowFinStatements] = useState(false);
   const [showFinConsult, setShowFinConsult] = useState(false);
   const [showBenchmark, setShowBenchmark] = useState(false);
   const lastBenchmark = useMemo(() => loadBenchmarkResult(persona.id), [persona.id, showBenchmark]);
@@ -1367,6 +1369,7 @@ export default function IdentityDashboard({
                   { id: 'invoice', emoji: '🧾', label: '請求書を作る', desc: '案件を選ぶだけで PDF を発行・送信', onClick: () => setShowInvoice(true) },
                   { id: 'sales', emoji: '📒', label: '売上を記録', desc: '請求書を発行 → 売上に自動計上', onClick: () => setShowSales(true) },
                   { id: 'pnl', emoji: '📊', label: '利益を確認', desc: '今月の利益・粗利・経費を 1 画面で', onClick: () => setShowPnL(true) },
+                  { id: 'financials', emoji: '📑', label: '決算書を作る', desc: 'P/L・B/S を自動作成して Excel で出力', onClick: () => setShowFinStatements(true) },
                   { id: 'fin-consult', emoji: '🧮', label: '財務コンサルに相談', desc: '12 ヶ月の数字 → AI が改善 3 案', primary: true, onClick: () => setShowFinConsult(true) },
                   /* ── 商い ── */
                   { id: 'crm', emoji: '🤝', label: '案件を管理', desc: '案件の段階・金額・次の動きを一覧', onClick: () => setShowCRM(true) },
@@ -1939,6 +1942,13 @@ export default function IdentityDashboard({
             key="pnl"
             persona={persona}
             onClose={() => setShowPnL(false)}
+          />
+        )}
+        {showFinStatements && (
+          <FinancialStatementsStudio
+            key="financials"
+            persona={persona}
+            onClose={() => setShowFinStatements(false)}
           />
         )}
         {showFinConsult && (
