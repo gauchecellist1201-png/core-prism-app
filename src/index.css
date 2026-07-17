@@ -2703,6 +2703,18 @@ time {
   button[aria-label="フィードバックを送る"] {
     display: none !important;
   }
+  /* ボタン過多の間引き（オーナー指示 2026-07-17: 1画面のボタンが多すぎる）。
+     モバイルでは重複・二次的な浮遊UIを隠し、主役（チャット入力・＋ツール・COMMAND）だけ残す:
+     - AI に質問する → 下部チャットドックと重複
+     - 改善提案を送る → 設定/フィードバックから可能
+     - 検索・操作メニュー ピル → 右端の COMMAND タブと重複
+     - ひらめきメモ ピル → チャットドックから投げられる */
+  button[aria-label="AI に質問する"],
+  button[aria-label="改善提案を送る"],
+  button[aria-label="検索・操作メニューを開く"],
+  button[aria-label="ひらめきを知識に放り込む"] {
+    display: none !important;
+  }
   /* 横長ピル(役員日報/改善提案)はコンテンツに被るのでモバイルでは丸アイコンに畳む */
   .cp-fab-iconize {
     width: 48px !important;
