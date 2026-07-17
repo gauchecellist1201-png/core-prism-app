@@ -633,7 +633,7 @@ export default function IdentityDashboard({
       <AnimatePresence>
         {showMobileSidebar && (
           <motion.div
-            className="fixed inset-0 z-40 md:hidden"
+            className="fixed inset-0 z-[85] md:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -645,7 +645,7 @@ export default function IdentityDashboard({
 
       {/* Left Sidebar */}
       <div
-        className={`${showMobileSidebar ? 'flex' : 'hidden'} md:flex fixed md:static z-50 md:z-auto top-0 left-0 h-full w-56 md:w-52 flex-col py-3 px-2 flex-shrink-0`}
+        className={`${showMobileSidebar ? 'flex' : 'hidden'} md:flex fixed md:static z-[90] md:z-auto top-0 left-0 h-full w-56 md:w-52 flex-col py-3 px-2 flex-shrink-0`}
         style={{
           borderRight: '1px solid rgba(255,255,255,0.06)',
           background: 'var(--bg, #0a0a0a)',
@@ -658,6 +658,29 @@ export default function IdentityDashboard({
         </div>
 
         <div className="flex-1 overflow-y-auto">
+          {/* ページ選択(モバイル) — 長い1枚ページをやめ、行きたい場所へ直行(オーナー指示 2026-07-17) */}
+          <div className="md:hidden mb-4">
+            <p className="text-fg-muted text-xs tracking-widest uppercase px-2 mb-1.5">ページ</p>
+            {([
+              { label: 'ホーム', icon: Sparkles, act: () => { setShowMobileSidebar(false); window.scrollTo({ top: 0 }); } },
+              { label: '機能一覧', icon: Zap, act: () => { setShowMobileSidebar(false); if (!dashboardExpanded) toggleDashboardExpanded(); } },
+              { label: '記録・履歴', icon: Inbox, act: () => { setShowMobileSidebar(false); if (!dashboardExpanded) toggleDashboardExpanded(); setTimeout(() => document.getElementById('activity-log')?.scrollIntoView({ behavior: 'smooth' }), 250); } },
+              { label: 'ナレッジ', icon: BookOpen, act: () => { setShowMobileSidebar(false); setShowKnowledge(true); } },
+              { label: '決算書 (P/L・B/S)', icon: BarChart3, act: () => { setShowMobileSidebar(false); setShowFinStatements(true); } },
+              { label: 'ヘルス', icon: HeartPulse, act: () => { setShowMobileSidebar(false); setShowHealth(true); } },
+              { label: '設定', icon: Settings, act: () => { setShowMobileSidebar(false); onOpenSettings(); } },
+            ] as const).map(pg => (
+              <button
+                key={pg.label}
+                onClick={pg.act}
+                className="w-full flex items-center gap-2.5 px-2 rounded-lg transition-colors hover:bg-surface-3 text-left"
+                style={{ minHeight: 44 }}
+              >
+                <pg.icon size={16} strokeWidth={2.2} className="text-fg-muted flex-shrink-0" />
+                <span className="text-fg text-sm">{pg.label}</span>
+              </button>
+            ))}
+          </div>
           <p className="text-fg-muted text-xs tracking-widest uppercase px-2 mb-1.5">人格</p>
           <ModeSwitcher activeId={persona.id} onSwitch={onSwitch} isTransitioning={isTransitioning} />
 
@@ -979,7 +1002,7 @@ export default function IdentityDashboard({
               paddingBottom: 'calc(140px + env(safe-area-inset-bottom, 0px))',
             }}
           >
-            <div className="max-w-5xl space-y-3 cp-enter-stagger">
+            <div className="max-w-5xl space-y-3 cp-enter-stagger pb-[calc(env(safe-area-inset-bottom)+190px)] md:pb-8">
 
               {/* クレジット使用量バー — 常時トップ (オーナー指示 2026-05-28: 対価設計) */}
               <CreditBar
@@ -1641,11 +1664,13 @@ export default function IdentityDashboard({
                 </div>
               </motion.button>
 
-              <ActivityTimeline
-                persona={persona}
-                knowledge={personaKnowledge}
-                proposals={proactive.proposals}
-              />
+              <div id="activity-log" style={{ scrollMarginTop: 70 }}>
+                <ActivityTimeline
+                  persona={persona}
+                  knowledge={personaKnowledge}
+                  proposals={proactive.proposals}
+                />
+              </div>
 
               {/* 共創フィードバック — 「このアプリを一緒に良くする」をギルドに届ける導線 */}
               <PrismCoCreateCard />
@@ -1715,7 +1740,7 @@ export default function IdentityDashboard({
         {showMobileAI && (
           <>
             <motion.div
-              className="fixed inset-0 z-40 md:hidden"
+              className="fixed inset-0 z-[85] md:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

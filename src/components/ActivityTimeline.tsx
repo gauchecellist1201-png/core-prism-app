@@ -65,7 +65,8 @@ export default function ActivityTimeline({ persona, knowledge, proposals }: Prop
       }
     }
 
-    return out.sort((a, b) => b.at - a.at).slice(0, 8);
+    const compact = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+    return out.sort((a, b) => b.at - a.at).slice(0, compact ? 4 : 8);
   }, [knowledge, proposals, persona]);
 
   if (events.length === 0) {
