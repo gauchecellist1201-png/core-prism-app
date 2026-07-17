@@ -1,7 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Persona, Task } from '../types/identity';
 import { useCloudSync } from './useCloudSync';
+import { useEmailBlobSync } from './useEmailBlobSync';
+import { useBillingUser } from '../lib/billing';
 import { generateAvatarDataUrl } from '../lib/avatarGen';
 
 const STORAGE_KEY = 'core_personas';
@@ -47,6 +49,17 @@ function savePersonas(personas: Persona[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(personas));
 }
 
+// ─── 端末引き継ぎ用の軽量化 / 復元 ─────────────────────────
+// avatarUrl は名前から決定的に作れる SVG data URL（1件で数KB）なので、
+// クラウドへは送らず受信側で作り直す＝サーバー上限を食わない。
+function slimPersonasForStore(list: Persona[]): Persona[] {
+  return list.map(({ avatarUrl: _avatarUrl, ...rest }) => rest as Persona);
+}
+function restoreAvatar(p: Persona): Persona {
+  if (p.avatarUrl) return p;
+  try { return { ...p, avatarUrl: generateAvatarDataUrl(p.name, 128) }; } catch { return p; }
+}
+
 // ─── 同一タブ内 broadcaster (複数 usePersonas() 間で state を同期) ─────
 const personaSubscribers = new Set<(p: Persona[]) => void>();
 function broadcastPersonas(next: Persona[]) {
@@ -55,8 +68,20 @@ function broadcastPersonas(next: Persona[]) {
   });
 }
 
+// usePersonas() はアプリ内で9箇所から呼ばれる。クラウド同期は最初にマウントした
+// 1つだけが担当する（全員が push すると同じ内容を何度も送ってしまうため）。
+// 更新は broadcastPersonas で全インスタンスに伝わるので、1つで十分。
+let syncOwner: object | null = null;
+
 export function usePersonas() {
   const [personas, setPersonas] = useState<Persona[]>(loadPersonas);
+  const ownerTokenRef = useRef<object>({});
+  const [isSyncOwner, setIsSyncOwner] = useState(false);
+  useEffect(() => {
+    const token = ownerTokenRef.current;
+    if (syncOwner === null) { syncOwner = token; setIsSyncOwner(true); }
+    return () => { if (syncOwner === token) { syncOwner = null; } };
+  }, []);
   const [activePersona, setActivePersona] = useState<Persona | null>(() => {
     // 初回マウント時、localStorage の active_persona_id があれば自動選択
     try {
@@ -89,6 +114,24 @@ export function usePersonas() {
 
   // Supabase 同期 (未認証 / env 未設定なら no-op)
   useCloudSync({ key: STORAGE_KEY, value: personas, setValue: setPersonas, isEmpty: v => v.length === 0 });
+
+  // ★同一メール基準の端末引き継ぎ（PCで作ったAI役員がスマホで消えている、を根治）。
+  //   ナレッジ(useKnowledge)と同じ /api/account/blob を使う。id 単位マージで既存は消さない。
+  const { user: billingUser } = useBillingUser();
+  useEmailBlobSync<Persona[]>({
+    key: 'personas',
+    enabled: isSyncOwner,
+    email: billingUser?.email,
+    value: slimPersonasForStore(personas),
+    isEmpty: v => v.length === 0,
+    onRemote: (merged) => setPersonas(merged),
+    merge: (local, remote) => {
+      const byId = new Map<string, Persona>();
+      for (const p of remote) byId.set(p.id, restoreAvatar(p));
+      for (const p of local) byId.set(p.id, p); // ローカルの最新を優先
+      return Array.from(byId.values());
+    },
+  });
 
   const createPersona = useCallback((
     name: string,
