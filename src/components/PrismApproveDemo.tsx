@@ -7,6 +7,7 @@
 // 純クライアント・サンプル明記(honest)。framer-motion は入場のみ(退場アニメの重なり事故を回避)。
 // ============================================================
 import { useState } from 'react';
+import { TRIAL_BASE_DAYS } from '../lib/referral';
 import { motion } from 'framer-motion';
 import { Check, ArrowRight, Sparkles } from 'lucide-react';
 import { CXO_META } from '../hooks/useAgentTaskQueue';
@@ -126,7 +127,7 @@ export default function PrismApproveDemo({ onEnter }: { onEnter: () => void }) {
 
       {/* フッタ: 事実だけ(嘘の数字は書かない) */}
       <div style={{ position: 'relative', zIndex: 2, marginTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
-        {[{ label: '初期費用', value: '¥0' }, { label: '無料お試し', value: '7 日' }, { label: '解約', value: '1 タップ' }].map(stat => (
+        {[{ label: '初期費用', value: '¥0' }, { label: '無料お試し', value: `${TRIAL_BASE_DAYS} 日` }, { label: '解約', value: '1 タップ' }].map(stat => (
           <div key={stat.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '0.45rem 0.55rem', textAlign: 'center' }}>
             <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', marginBottom: 2 }}>{stat.label}</div>
             <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fff' }}>{stat.value}</div>

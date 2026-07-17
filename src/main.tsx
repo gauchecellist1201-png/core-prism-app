@@ -8,6 +8,7 @@ import ConfirmDialog from './components/ConfirmDialog'
 import { migrateLegacyKeysOnce } from './lib/tenant'
 import { installErrorCapture } from './lib/errorCapture'
 import { initTheme } from './lib/themeManager'
+import { captureReferralFromUrl } from './lib/referral'
 
 // YYY (2026-06-04): グローバル テーマを最優先で適用 (FOUC 防止)
 initTheme();
@@ -54,13 +55,10 @@ const MASTER_KEY_STORAGE = 'core_master_key_v1';
     window.history.replaceState({}, '', url.toString());
   }
 
-  // ─── 紹介コード ?ref=XXX を sessionStorage に保留 (signup 時に適用) ───
-  const ref = url.searchParams.get('ref');
-  if (ref && ref.length >= 6) {
-    try { sessionStorage.setItem('pending_ref', ref); } catch { /* */ }
-    url.searchParams.delete('ref');
-    window.history.replaceState({}, '', url.toString());
-  }
+  // ─── 紹介コード ?ref=XXX&from=NAME&msg=... を sessionStorage に保留 (signup 時に適用) ───
+  // referral.ts 側の実装に一本化する。ここで独自に ref だけ拾って URL から消していたため、
+  // 招待者の名前 (from) と一言メッセージ (msg) が保存前に捨てられていた (LP バナー/決済画面が出ない実害)。
+  captureReferralFromUrl();
 
   // ─── 招待コード ?invite=CODE を sessionStorage に保留 (AcceptInviteModal がトリガー) ───
   const invite = url.searchParams.get('invite');

@@ -84,7 +84,7 @@ export const en: Dictionary = {
     h2Accent:  'your potential, unlocked.',
     sub:       'Claude / Gemini / Stable Diffusion built-in on every plan. No API key required.',
     popular:   'Popular',
-    ctaTrial:  'Try free for 7 days',
+    ctaTrial:  'Try free for 3 days',
     ctaApply:  'Get started now',
     annual:    'Annual billing: 2 months off · Enterprise: contact us',
     suffixMonth: '/ month',

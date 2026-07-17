@@ -15,7 +15,7 @@ import {
   type Plan, type Brand, type BillingCycle,
   useBillingUser, getPlans, getPlanPrice, findPlan, isMasterAuth,
 } from '../lib/billing';
-import { getPendingReferral, getPendingReferralInviter, REFERRAL_BONUS_DAYS } from '../lib/referral';
+import { getPendingReferral, getPendingReferralInviter, REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS } from '../lib/referral';
 import { sendEmail } from '../lib/emailNotify';
 import { isBiometricAvailable, registerBiometric } from '../lib/biometricAuth';
 import CheckoutTrialCountdown from './CheckoutTrialCountdown';
@@ -55,6 +55,8 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
   const pendingReferral = useMemo(() => getPendingReferral(), []);
   const inviterName = useMemo(() => getPendingReferralInviter(), []);
   const hasReferralBonus = !!pendingReferral;
+  /** この人が実際にもらえる無料日数 — 表示する全ての「◯日無料」はこの 1 つから引く (実物とズレさせない) */
+  const freeDays = TRIAL_BASE_DAYS + (hasReferralBonus ? REFERRAL_BONUS_DAYS : 0);
 
   // 現在選択中の Plan
   const plan = findPlan(brand, planId as any) || getPlans(brand)[0];
@@ -243,7 +245,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#92400E', lineHeight: 1.45 }}>
                       招待コード <strong style={{ letterSpacing: '0.08em' }}>{pendingReferral}</strong> が適用されます。
-                      通常 7 日 + 招待 {REFERRAL_BONUS_DAYS} 日 = <strong>合計 {7 + REFERRAL_BONUS_DAYS} 日 無料</strong>
+                      通常 {TRIAL_BASE_DAYS} 日 + 招待 {REFERRAL_BONUS_DAYS} 日 = <strong>合計 {TRIAL_WITH_REFERRAL_DAYS} 日 無料</strong>
                     </div>
                   </div>
                 </div>
@@ -310,8 +312,8 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 </button>
               </div>
 
-              {/* Day 2 アップグレード: 「最初の 3 日 ¥0」の大きな緑バナー
-                  ※ 実装は Stripe trial_period_days=7 / payment_method_collection=always。
+              {/* Day 2 アップグレード: 「最初の ◯ 日 ¥0」の大きな緑バナー
+                  ※ 日数は freeDays (通常 3 日 + 招待経由なら +7 日) から引く。
                   「14 日」「カード不要」と書くと嘘になるので、実物に合わせた正直 UI に統一。 */}
               <div style={{
                 marginBottom: '0.9rem',
@@ -325,11 +327,11 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5" /></svg>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '1.02rem', fontWeight: 900, marginBottom: 4, letterSpacing: '0.01em' }}>
-                    最初の 3 日 ¥0 — いつでも解約 OK
+                    最初の {freeDays} 日 ¥0 — いつでも解約 OK
                   </div>
                   <div style={{ fontSize: '0.8rem', lineHeight: 1.55, color: 'rgba(255,255,255,0.95)' }}>
                     カード情報は次の画面 (Stripe) で登録します。
-                    <strong>7 日後の前日にメールが届く</strong>ので、そこで止めれば <strong>請求は 0 円</strong>。
+                    <strong>{freeDays} 日後の前日にメールが届く</strong>ので、そこで止めれば <strong>請求は 0 円</strong>。
                   </div>
                 </div>
               </div>
@@ -526,11 +528,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={() => setStep('plan')} style={btnSecondary}>← 戻る</button>
                 <button onClick={proceedToPayment} style={{ ...btnPrimary(accent, accentGrad), flex: 2 }}>
-                  {isFree
-                    ? (hasReferralBonus
-                        ? `✨ ${7 + REFERRAL_BONUS_DAYS}日間 無料ではじめる →`
-                        : '✨ 3日間 無料ではじめる →')
-                    : '次へ →'}
+                  {isFree ? `✨ ${freeDays}日間 無料ではじめる →` : '次へ →'}
                 </button>
               </div>
 
@@ -543,9 +541,9 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
 
           {step === 'payment' && (
             <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-              {/* MM (2026-06-03): Stripe Checkout 直前の 7 日無料 カウントダウン演出 */}
+              {/* MM (2026-06-03): Stripe Checkout 直前の 無料日数 カウントダウン演出 */}
               <CheckoutTrialCountdown
-                days={3 + (hasReferralBonus ? REFERRAL_BONUS_DAYS : 0)}
+                days={freeDays}
                 accent={accent}
               />
 
@@ -570,7 +568,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                 {isFree ? (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                      <span style={{ color: '#10B981', fontWeight: 700 }}>3日間 無料トライアル</span>
+                      <span style={{ color: '#10B981', fontWeight: 700 }}>{TRIAL_BASE_DAYS}日間 無料トライアル</span>
                       <span style={{ color: '#10B981', fontWeight: 800 }}>¥0</span>
                     </div>
                     {hasReferralBonus && (
@@ -587,16 +585,16 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                     <div style={{ height: 1, background: 'rgba(16,185,129,0.2)', margin: '0.6rem 0' }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                       <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#065F46' }}>
-                        本日のお支払い {hasReferralBonus && <span style={{ fontSize: '0.78rem', color: '#92400E', fontWeight: 700 }}>(計 {7 + REFERRAL_BONUS_DAYS} 日無料)</span>}
+                        本日のお支払い {hasReferralBonus && <span style={{ fontSize: '0.78rem', color: '#92400E', fontWeight: 700 }}>(計 {freeDays} 日無料)</span>}
                       </span>
                       <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981' }}>¥0</span>
                     </div>
                   </>
                 ) : (
                   <>
-                    {/* 全プラン共通 3 日間 無料 (Stripe trial_period_days=7) */}
+                    {/* 全プラン共通の通常トライアル (招待経由なら下に +7 日の行が並ぶ) */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                      <span style={{ color: '#10B981', fontWeight: 700 }}>✦ 3 日間 無料トライアル</span>
+                      <span style={{ color: '#10B981', fontWeight: 700 }}>✦ {TRIAL_BASE_DAYS} 日間 無料トライアル</span>
                       <span style={{ color: '#10B981', fontWeight: 800 }}>¥0</span>
                     </div>
                     {hasReferralBonus && (
@@ -616,7 +614,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                       <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981' }}>¥0</span>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#065F46', marginTop: '0.5rem', lineHeight: 1.7 }}>
-                      {`4 日後 (${new Date(Date.now() + (3 + (hasReferralBonus ? REFERRAL_BONUS_DAYS : 0)) * 86400000).toLocaleDateString('ja-JP')}) から ¥${displayPrice.toLocaleString()} / ${cycle === 'yearly' ? '年' : '月'} で自動スタート。いつでも解約 OK。`}
+                      {`${freeDays} 日後 (${new Date(Date.now() + freeDays * 86400000).toLocaleDateString('ja-JP')}) から ¥${displayPrice.toLocaleString()} / ${cycle === 'yearly' ? '年' : '月'} で自動スタート。いつでも解約 OK。`}
                     </div>
                     {cycle === 'yearly' && plan.priceJpy_yearly && (
                       <p style={{ fontSize: '0.78rem', color: '#065F46', marginTop: '0.5rem', lineHeight: 1.7 }}>

@@ -557,9 +557,12 @@ export {
   redeemPendingReferral,
   getPendingReferral,
   REFERRAL_BONUS_DAYS,
+  TRIAL_BASE_DAYS,
+  TRIAL_WITH_REFERRAL_DAYS,
 } from './referral';
 export type { ReferralData } from './referral';
 import { redeemPendingReferral as _redeemPendingReferral } from './referral';
+import { TRIAL_BASE_DAYS as _TRIAL_BASE_DAYS } from './referral';
 
 // ============================================================
 //  アクセスゲート
@@ -887,9 +890,9 @@ export function useBillingUser(): {
           if (j.startedAt) startedAt = j.startedAt as string;
         }
       } catch { /* ネットワーク不通でも登録自体は止めない（下のフォールバック） */ }
-      // サーバーが取れなかった場合のみ、ローカルで 3 日を仮設定（オンライン復帰後は同APIで上書き整合）。
+      // サーバーが取れなかった場合のみ、ローカルで通常日数を仮設定（オンライン復帰後は同APIで上書き整合）。
       if (!trialEndsAt) {
-        trialEndsAt = new Date(now.getTime() + (3 + bonusDays) * 86400000).toISOString();
+        trialEndsAt = new Date(now.getTime() + (_TRIAL_BASE_DAYS + bonusDays) * 86400000).toISOString();
       }
     }
 

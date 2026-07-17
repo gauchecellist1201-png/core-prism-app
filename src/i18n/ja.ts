@@ -148,7 +148,7 @@ export const ja: Dictionary = {
     h2Accent:  'あなたの可能性',
     sub:       'すべてのプランで Claude / Gemini / Stable Diffusion を内蔵。API キー不要。',
     popular:   '人気',
-    ctaTrial:  '7 日無料で試す',
+    ctaTrial:  '3 日無料で試す',
     ctaApply:  '今すぐ申し込む',
     annual:    '年払いで 2 ヶ月分割引 · 法人は別途お問い合わせください',
     suffixMonth: '/ 月',

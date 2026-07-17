@@ -3,7 +3,7 @@
 //
 //  Day 2 で刷新:
 //   - 「◯◯ さんから招待されました」を中央大きく
-//   - 「あなたも 7 日無料」を緑バナーで強調
+//   - 「あなたも◯日無料」を緑バナーで強調
 //   - 招待元の名前 (?ref=...&from=NAME 経由) があれば表示
 //   - 「登録する →」CTA 1 つを大きく (CheckoutModal を呼ぶ)
 //   - workspace.name があればワークスペース名を表示
@@ -12,7 +12,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Sparkles, Users, ArrowRight, Check, X } from 'lucide-react';
 import { useWorkspace } from '../hooks/useWorkspace';
-import { REFERRAL_BONUS_DAYS, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
+import { REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
 
 interface Props {
   code: string;
@@ -188,7 +188,7 @@ export default function AcceptInviteModal({ code, onClose, onSignupRequest }: Pr
           </div>
 
           <div style={{ padding: '0 1.5rem 1.5rem', display: 'grid', gap: '1rem' }}>
-            {/* 緑バナー: あなたも 7 日無料 */}
+            {/* 緑バナー: 招待経由の合計無料日数 */}
             <div style={{
               background: 'linear-gradient(135deg, #16A34A, #22C55E)',
               borderRadius: 16,
@@ -210,13 +210,13 @@ export default function AcceptInviteModal({ code, onClose, onSignupRequest }: Pr
                   margin: 0, fontSize: '1.05rem', fontWeight: 900,
                   lineHeight: 1.3,
                 }}>
-                  あなたも 7 日無料
+                  あなたも {TRIAL_WITH_REFERRAL_DAYS} 日無料
                 </p>
                 <p style={{
                   margin: '0.15rem 0 0', fontSize: '0.78rem',
                   color: 'rgba(255,255,255,0.92)', lineHeight: 1.4,
                 }}>
-                  招待リンク経由なので合計 <strong>{7 + REFERRAL_BONUS_DAYS} 日無料</strong>。
+                  通常 {TRIAL_BASE_DAYS} 日 + 招待ボーナス {REFERRAL_BONUS_DAYS} 日 = <strong>合計 {TRIAL_WITH_REFERRAL_DAYS} 日無料</strong>。
                   クレジットカード不要。
                 </p>
               </div>

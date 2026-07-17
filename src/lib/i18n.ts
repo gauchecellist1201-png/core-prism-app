@@ -69,7 +69,7 @@ const TRANSLATIONS: Translations = {
   'lp.pricing.h2':        { ja: '使うだけ広がる、あなたの可能性', en: 'Grow as you use it — your potential, unlocked.', zh: '用得越多，可能性越大' },
   'lp.pricing.sub':       { ja: 'すべてのプランで Claude / Gemini / Stable Diffusion を内蔵。API キー不要。', en: 'Claude / Gemini / Stable Diffusion built-in on all plans. No API key needed.', zh: '所有方案内置 Claude / Gemini / Stable Diffusion。无需API密钥。' },
   'lp.pricing.popular':   { ja: '人気', en: 'Popular', zh: '热门' },
-  'lp.pricing.cta.trial': { ja: '14 日無料で試す', en: 'Try free for 14 days', zh: '免费试用14天' },
+  'lp.pricing.cta.trial': { ja: '3 日無料で試す', en: 'Try free for 3 days', zh: '免费试用3天' },
   'lp.pricing.cta.apply': { ja: '今すぐ申し込む',   en: 'Get started now',     zh: '立即申请' },
   'lp.pricing.annual':    { ja: '年払いで 2 ヶ月分割引 · 法人は別途お問い合わせください', en: '2-month discount on annual billing · Enterprise: contact us', zh: '年付享2个月折扣 · 企业方案请联系我们' },
 

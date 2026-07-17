@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { REFERRAL_BONUS_DAYS, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
+import { REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
 import GenerationOrb from './GenerationOrb';
 import PrismApproveDemo from './PrismApproveDemo';
 import AnimatedExecStage from './AnimatedExecStage';
@@ -120,7 +120,7 @@ export default function LandingPage({ onEnterApp }: Props) {
               <>友達からの招待で </>
             )}
             <strong style={{ background: 'rgba(0,0,0,0.22)', padding: '0.1rem 0.55rem', borderRadius: 8, letterSpacing: '0.06em' }}>+{REFERRAL_BONUS_DAYS} 日</strong> プレゼント中。
-            通常 7 日 → <strong>合計 {7 + REFERRAL_BONUS_DAYS} 日</strong> 無料でお試しできます
+            通常 {TRIAL_BASE_DAYS} 日 → <strong>合計 {TRIAL_WITH_REFERRAL_DAYS} 日</strong> 無料でお試しできます
           </span>
           <button
             onClick={onEnterApp}

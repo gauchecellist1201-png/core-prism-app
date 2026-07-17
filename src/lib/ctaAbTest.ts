@@ -25,7 +25,7 @@ export type CtaVariant = {
 };
 
 export const CTA_VARIANTS: CtaVariant[] = [
-  { id: 'A', label: '7 日無料で始める',         emoji: '✨' },
+  { id: 'A', label: '3 日無料で始める',         emoji: '✨' },
   { id: 'B', label: '無料で 13 役員を雇う',     emoji: '👔' },
   { id: 'C', label: '今日から AI 役員を始動する', emoji: '🚀' },
 ];

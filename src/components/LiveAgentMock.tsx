@@ -9,6 +9,7 @@
 // Prism / Iris 両方の LP で使用。trial=false で純表示。
 // ============================================================
 import { motion, AnimatePresence } from 'framer-motion';
+import { TRIAL_BASE_DAYS } from '../lib/referral';
 import { useEffect, useState } from 'react';
 import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
 import { MetaIcon } from './ExecIcon';
@@ -214,7 +215,7 @@ export default function LiveAgentMock({ theme = 'prism' }: Props) {
       }}>
         {[
           { label: '初期費用', value: '¥0' },
-          { label: '無料お試し', value: '7 日' },
+          { label: '無料お試し', value: `${TRIAL_BASE_DAYS} 日` },
           { label: '解約', value: '1 タップ' },
         ].map(stat => (
           <div key={stat.label} style={{

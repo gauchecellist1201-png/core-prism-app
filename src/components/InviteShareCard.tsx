@@ -1,7 +1,7 @@
 // ============================================================
 // Invite & Share Card — 1 紹介 = 両者に +3 日トライアル延長
 // Day 2 upgrade:
-//   - 巨大ヒーロー (「友だちが登録すると、あなたも友だちも 7 日無料追加」)
+//   - 巨大ヒーロー (「友だちが登録すると、あなたも友だちも +7 日無料追加」)
 //   - 3 連スタッツ (紹介人数 / 累計獲得日数 / 現在の trial 残日数)
 //   - 5 シェア導線 (LINE / X / メール / リンクコピー / QR コード)
 //   - コピー成功スナックバー
@@ -35,6 +35,7 @@ import {
   getInviterName, saveInviterName, INVITER_NAME_MAX, sanitizeInviterName,
   getInviterMessage, saveInviterMessage, INVITER_MESSAGE_MAX, sanitizeInviterMessage,
   getShareCount, recordShare, syncReferralStatus,
+  TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS,
 } from '../lib/referral';
 import { shareToInstagram } from '../iris/instagramShare';
 
@@ -68,14 +69,14 @@ function shareTextLine(url: string, brand: Brand, inviterName: string): string {
   const product = brand === 'iris' ? 'CORE Iris' : 'CORE Prism';
   const who = inviterName ? `${inviterName}です。` : '';
   return `【共有】${who}${product} めっちゃ便利。これで AI 13 役員が代わりに働いてくれる。
-あなたも 7 日無料、さらに僕からの招待で +${REFERRAL_BONUS_DAYS} 日 (合計 ${7 + REFERRAL_BONUS_DAYS} 日無料) →
+あなたも ${TRIAL_BASE_DAYS} 日無料、さらに僕からの招待で +${REFERRAL_BONUS_DAYS} 日 (合計 ${TRIAL_WITH_REFERRAL_DAYS} 日無料) →
 ${url}`;
 }
 
 function shareTextX(url: string, brand: Brand, inviterName: string): string {
   const product = brand === 'iris' ? '@core_iris' : '@core_prism';
   const who = inviterName ? `(${inviterName} の紹介) ` : '';
-  return `14 人の AI 役員が代わりに働く ${product}、めちゃ良い。${who}リンクから登録すると 7 日無料 +${REFERRAL_BONUS_DAYS} 日 →
+  return `14 人の AI 役員が代わりに働く ${product}、めちゃ良い。${who}リンクから登録すると ${TRIAL_BASE_DAYS} 日無料 +${REFERRAL_BONUS_DAYS} 日 (合計 ${TRIAL_WITH_REFERRAL_DAYS} 日) →
 ${url}`;
 }
 
@@ -86,16 +87,16 @@ function shareTextMail(url: string, brand: Brand, inviterName: string): { subjec
     : 'AI が経営判断を補助する人格 OS';
   const sender = inviterName || 'わたし';
   return {
-    subject: `${product} を試してみてほしい (${7 + REFERRAL_BONUS_DAYS} 日無料)`,
+    subject: `${product} を試してみてほしい (${TRIAL_WITH_REFERRAL_DAYS} 日無料)`,
     body: `こんにちは、
 
 最近使っている ${product} (${tagline}) がとても便利で、
-${sender} からの招待リンクから登録すると 7 日無料に +${REFERRAL_BONUS_DAYS} 日 (合計 ${7 + REFERRAL_BONUS_DAYS} 日) 無料で試せます。
+${sender} からの招待リンクから登録すると ${TRIAL_BASE_DAYS} 日無料に +${REFERRAL_BONUS_DAYS} 日 (合計 ${TRIAL_WITH_REFERRAL_DAYS} 日) 無料で試せます。
 
 ▼ 登録リンク
 ${url}
 
-クレジットカードは不要、合わなければそのまま放置で OK です。
+カード登録は Stripe の画面で行いますが、期限前に止めれば請求は 0 円です。
 よければ触ってみてください。
 
 — ${sender}`,
@@ -108,7 +109,7 @@ function shareTextGeneric(url: string, brand: Brand, inviterName: string): strin
     ? `${inviterName} です。${product} を試してます。`
     : `${product} を試してます。`;
   return `${opener}
-このリンクから登録すると 3 日間無料トライアル + さらに +${REFERRAL_BONUS_DAYS} 日延長 (合計 ${7 + REFERRAL_BONUS_DAYS} 日無料)。
+このリンクから登録すると ${TRIAL_BASE_DAYS} 日間無料トライアル + さらに +${REFERRAL_BONUS_DAYS} 日延長 (合計 ${TRIAL_WITH_REFERRAL_DAYS} 日無料)。
 ${url}`;
 }
 
@@ -388,7 +389,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
             display: 'inline-block',
             marginTop: '0.2rem',
           }}>
-            あなたも友だちも 7 日無料追加
+            あなたも友だちも {REFERRAL_BONUS_DAYS} 日無料追加
           </span>
         </h2>
         <p style={{
@@ -396,8 +397,8 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
           color: 'rgba(255,255,255,0.92)',
           lineHeight: 1.55,
         }}>
-          通常 7 日 → 合計 <strong>{7 + REFERRAL_BONUS_DAYS} 日無料</strong>。
-          クレジットカード登録なしで試せます。
+          通常 {TRIAL_BASE_DAYS} 日 → 合計 <strong>{TRIAL_WITH_REFERRAL_DAYS} 日無料</strong>。
+          カード登録は Stripe の画面で行い、期限前に止めれば請求は 0 円です。
         </p>
       </div>
 
