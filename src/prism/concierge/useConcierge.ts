@@ -160,7 +160,8 @@ export function useConcierge(cfg: ConciergeConfig) {
     try {
       const ctrl = new AbortController();
       const timer = window.setTimeout(() => ctrl.abort(), 3500);
-      const res = await fetch(`/api/crystal-live?site=${conciergeSiteId(cfgRef.current)}`, { signal: ctrl.signal });
+      // PWAのService Workerに旧応答を返させない (クエリでキャッシュキーを毎回変える)
+      const res = await fetch(`/api/crystal-live?site=${conciergeSiteId(cfgRef.current)}&t=${Date.now()}`, { signal: ctrl.signal, cache: 'no-store' });
       window.clearTimeout(timer);
       if (!res.ok) return cached?.text ?? '';
       const data = await res.json();

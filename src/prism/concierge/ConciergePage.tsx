@@ -672,7 +672,7 @@ function Showcase() {
     let dead = false;
     (async () => {
       try {
-        const res = await fetch(`/api/crystal-live?site=${liveSite}`);
+        const res = await fetch(`/api/crystal-live?site=${liveSite}&t=${Date.now()}`, { cache: 'no-store' });
         const d = await res.json();
         if (!dead) setLiveState({ connected: !!d.configured, host: d.sourceHost });
       } catch { if (!dead) setLiveState({ connected: false }); }
