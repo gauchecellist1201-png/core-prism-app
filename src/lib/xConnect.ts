@@ -61,7 +61,7 @@ export function startXConnect(): void {
         ? 'X連携は現在準備中です（運営側でX API設定を作業中）。公開まで今しばらくお待ちください。'
         : (j?.message || 'X連携を開始できませんでした。時間をおいてもう一度お試しください。');
       const { notifyInApp } = await import('./inAppNotify');
-      notifyInApp({ kind: 'error', title: 'X連携を開始できません', body: msg, duration: 6000 });
+      notifyInApp({ kind: 'warn', title: 'X連携を開始できません', body: msg, duration: 6000 });
     } catch {
       // fetch自体が失敗する特殊環境では従来どおり遷移に賭ける
       window.location.href = url;
