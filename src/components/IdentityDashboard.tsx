@@ -1126,7 +1126,7 @@ export default function IdentityDashboard({
               {/* 二次カード群は「奥へ整理」— モバイルは初期画面をスッキリさせ、
                   『すべての機能を見る』展開時のみ表示。デスクトップは常時表示のまま
                   (2026-07-13 夜間: トップを分かりやすく・ごちゃごちゃ解消) */}
-              <div className={dashboardExpanded ? 'space-y-3' : 'hidden md:block space-y-3'}>
+              <div className={dashboardExpanded ? 'space-y-3' : 'hidden'}>
               {/* 🏢 デジタル 会社 ヒーロー — 「役員 会議室」 (2026-06-05 オーナー指示) */}
               <DigitalCompanyHero
                 persona={persona}
@@ -1151,7 +1151,7 @@ export default function IdentityDashboard({
 
               {/* 連携・スタジオ系は初期画面の密度を下げる: モバイルは「すべての機能を見る」展開後に整理
                   (2026-07-13 分かりやすさ: ごちゃごちゃ解消。デスクトップは常時表示・機能は消さない) */}
-              <div className={`space-y-3 ${dashboardExpanded ? '' : 'hidden md:block'}`}>
+              <div className={`space-y-3 ${dashboardExpanded ? '' : 'hidden'}`}>
                 {/* 📧 Gmail インサイト (2026-06-05 オーナー指示: 連携 = 価値) */}
                 <GmailInsightsCard />
 
