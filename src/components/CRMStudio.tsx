@@ -625,7 +625,7 @@ function DealCard({ deal, accent, onOpen, onMove, onPropose, proposing, compact 
               flex: 1,
               transition: 'background 0.22s ease-out, border-color 0.22s ease-out',
             }}
-            title="CSO/CMO に提案文を書かせる"
+            title="提案文を書く — CSO/CMO がこの顧客向けの提案文を 1 通ドラフトします"
           >
             {proposeBtn.isPending ? '⏳ 依頼中…' : proposeBtn.isSuccess ? '✓ 依頼しました' : proposing ? '送信中…' : '✍️ 提案文を書く'}
           </button>

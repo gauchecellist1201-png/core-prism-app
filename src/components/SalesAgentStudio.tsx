@@ -590,7 +590,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                     </p>
                     <p className="cp-meta">
                       あなたの「自社の商材」をもとに、日本企業 {300}+ 社の中から AI が先回りで選びました。
-                      気に入ったら承認、違うなと思ったら却下、文面を直したいときは編集を押してください。
+                      気に入ったら「採用」、違うなと思ったら「却下」、文面を変えたいときは「直す」を押してください。
                     </p>
                   </div>
                   <div className="cp-row" style={{ gap: 6, flexShrink: 0 }}>
@@ -619,7 +619,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                 <div className="cp-empty">
                   <p className="cp-empty-icon"><Target size={34} strokeWidth={1.6} color={persona.accentColor} /></p>
                   <p>まだピックアップがありません</p>
-                  <p className="cp-meta">右上の「今日の 5 社を選んでもらう」を押してね</p>
+                  <p className="cp-meta">上の「今日アプローチする 5 社 + 営業文を AI に作ってもらう」を押すと、AI が 5 社と営業文を用意します</p>
                   {!isDemoActive() && (
                     <div style={{ marginTop: 14 }}>
                       <SampleDataCTA
@@ -635,7 +635,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                 <div className="cp-empty">
                   <p className="cp-empty-icon"><PartyPopper size={34} strokeWidth={1.6} color={persona.accentColor} /></p>
                   <p>今日の 5 社、全部さばき終わりました</p>
-                  <p className="cp-meta">「もう一度選び直す」で次の候補を出せます</p>
+                  <p className="cp-meta">上の「別の 5 社で作り直してもらう」で次の候補を出せます</p>
                 </div>
               )}
 
@@ -731,7 +731,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                           <button onClick={() => handleApprove(p)}
                             className="cp-btn cp-btn-primary cp-btn-sm"
                             style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                            <Check size={14} strokeWidth={2.6} /> 承認 → メール下書きを保存
+                            <Check size={14} strokeWidth={2.6} /> 採用 → メール下書きを保存
                           </button>
                         </div>
                       )}
@@ -844,7 +844,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                   採用済のリード
                 </p>
                 <p className="cp-meta">
-                  「承認」したものはここに溜まります。メール下書きは {draftCount} 件保存中。
+                  「採用」したものはここに溜まります。メール下書きは {draftCount} 件保存中。
                   シャドー秘書 (毎朝の自動チェック) がこの一覧から優先度の高い相手に動きます。
                 </p>
               </div>
@@ -854,7 +854,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                   <div className="cp-empty">
                     <p className="cp-empty-icon"><Inbox size={34} strokeWidth={1.6} color={persona.accentColor} /></p>
                     <p>まだ採用したリードはありません</p>
-                    <p className="cp-meta">「今日のピックアップ」タブで AI が選んだ企業を承認すると、ここに追加されます</p>
+                    <p className="cp-meta">「今日の5社」タブで AI が選んだ企業を「採用」すると、ここに追加されます</p>
                   </div>
                 ) : myLeads.map(l => {
                   const drafts = sa.approaches.filter(a => a.leadId === l.id);

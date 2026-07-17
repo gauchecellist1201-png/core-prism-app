@@ -305,7 +305,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
   // ─── 週次計画を CMO に委任 ───
   const delegateToCMO = useCallback(() => {
     if (weeklyDays.length === 0) {
-      notifyInApp({ kind: 'info', title: '先に週次計画を作ってください', body: '「今週の 7 日計画を AI に」ボタンから' });
+      notifyInApp({ kind: 'info', title: '先に週次計画を作ってください', body: '「今週の 7 日計画を AI に作ってもらう」ボタンから' });
       return;
     }
     setDelegating(true);
@@ -467,7 +467,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                   fontSize: '0.85rem', fontWeight: 800, cursor: weeklyBusy ? 'not-allowed' : 'pointer',
                   whiteSpace: 'nowrap',
                 }}
-              >{weeklyBusy ? '計画中…' : '✨ 今週の 7 日計画を AI に'}</button>
+              >{weeklyBusy ? '計画中…' : '✨ 今週の 7 日計画を AI に作ってもらう'}</button>
               <button
                 onClick={delegateToCMO}
                 disabled={delegating || weeklyDays.length === 0}
@@ -603,7 +603,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                 iconKey="calendar"
                 title="まだ 7 日計画はありません"
                 description={'AI が「月: note 告知 → 火: X リール → 週末: ライブ」のように、来週 7 日分を一気に並べます。\n各日カードから本文と画像のドラフトまで AI に下書きしてもらえます。'}
-                ctaLabel="今週の 7 日計画を AI に"
+                ctaLabel="今週の 7 日計画を AI に作ってもらう"
                 onCta={buildWeeklyPlan}
                 accent={accent}
                 preview="月 note / 火 X / 水 Instagram / 木 LinkedIn / 金 YouTube / 土 ライブ / 日 まとめ"
