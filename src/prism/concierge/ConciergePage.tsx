@@ -663,6 +663,43 @@ function Showcase() {
   // 生成直後の Q — FAQ カードを1枚ずつ下からスライドインさせる (感動演出)
   const [genNewQs, setGenNewQs] = useState<string[]>([]);
 
+  // ライブ連携 (Anima 等) — 連携URLはサーバー保存。共有URL(?c=)には載らない
+  const liveSite = useMemo(() => conciergeSiteId(config), [config.brandName, config.industry]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [liveUrl, setLiveUrl] = useState('');
+  const [liveBusy, setLiveBusy] = useState(false);
+  const [liveState, setLiveState] = useState<{ connected: boolean; host?: string; msg?: string; ok?: boolean } | null>(null);
+  useEffect(() => {
+    let dead = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/crystal-live?site=${liveSite}`);
+        const d = await res.json();
+        if (!dead) setLiveState({ connected: !!d.configured, host: d.sourceHost });
+      } catch { if (!dead) setLiveState({ connected: false }); }
+    })();
+    return () => { dead = true; };
+  }, [liveSite]);
+  const saveLive = async () => {
+    const url = liveUrl.trim();
+    if (!/^https:\/\//.test(url)) { setLiveState(v => ({ ...(v ?? { connected: false }), msg: 'https:// で始まる連携URLを貼り付けてください', ok: false })); return; }
+    setLiveBusy(true);
+    try {
+      const res = await fetch('/api/crystal-live', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ site: liveSite, url }) });
+      const d = await res.json();
+      if (d.ok) { setLiveState({ connected: true, host: (() => { try { return new URL(url).hostname; } catch { return undefined; } })(), msg: '連携しました。Crystal が会話のたびに最新の状況を参照します', ok: true }); setLiveUrl(''); }
+      else setLiveState(v => ({ ...(v ?? { connected: false }), msg: d.error || '保存できませんでした', ok: false }));
+    } catch { setLiveState(v => ({ ...(v ?? { connected: false }), msg: '通信できませんでした。もう一度お試しください', ok: false })); }
+    finally { setLiveBusy(false); }
+  };
+  const disconnectLive = async () => {
+    setLiveBusy(true);
+    try {
+      await fetch('/api/crystal-live', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ site: liveSite, action: 'disconnect' }) });
+      setLiveState({ connected: false, msg: '連携を解除しました', ok: true });
+    } catch { setLiveState(v => ({ ...(v ?? { connected: false }), msg: '通信できませんでした', ok: false })); }
+    finally { setLiveBusy(false); }
+  };
+
   const generateFaq = async () => {
     const src = (config.knowledge || '').trim();
     if (src.length < 40) {
@@ -997,6 +1034,45 @@ function Showcase() {
                   )}
                   <span>{genMsg.text}</span>
                 </div>
+              )}
+            </Field>
+            <Field
+              label="ライブ連携 (Anima などの業務システム)"
+              hint="連携すると、Crystal が会話のたびに相手システムの「今」(進捗・予算・支払予定・資金) を読んでから答えます。数字の言い間違いが起きません"
+            >
+              {liveState?.connected ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#9ED3BC', fontWeight: 700 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 99, background: '#9ED3BC', boxShadow: '0 0 8px rgba(158,211,188,0.9)' }} />
+                    連携中{liveState.host ? `：${liveState.host}` : ''}
+                  </span>
+                  <button
+                    onClick={() => void disconnectLive()}
+                    disabled={liveBusy}
+                    style={{ minHeight: 40, padding: '8px 16px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${P.line}`, background: 'transparent', color: P.silver, fontSize: 12, fontWeight: 700 }}
+                  >
+                    連携を解除
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input
+                    style={{ ...inputStyle, flex: 1, minWidth: 200, fontSize: 12 }}
+                    value={liveUrl}
+                    onChange={e => setLiveUrl(e.target.value)}
+                    placeholder="Anima の「設定 → Crystalと連携」で発行した連携URLを貼り付け"
+                  />
+                  <button
+                    onClick={() => void saveLive()}
+                    disabled={liveBusy}
+                    style={{ minHeight: 44, padding: '10px 20px', borderRadius: 999, cursor: liveBusy ? 'default' : 'pointer', border: '1.5px solid rgba(217,228,245,0.75)', background: 'rgba(217,228,245,0.12)', color: '#E7EEF9', fontSize: 13, fontWeight: 700, flexShrink: 0 }}
+                  >
+                    {liveBusy ? '接続中…' : '連携する'}
+                  </button>
+                </div>
+              )}
+              {liveState?.msg && (
+                <div style={{ fontSize: 12, lineHeight: 1.7, marginTop: 6, color: liveState.ok ? '#9ED3BC' : '#F2B8C6' }}>{liveState.msg}</div>
               )}
             </Field>
             <Field label="応対の人格 (トーン)">

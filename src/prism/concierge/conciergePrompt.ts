@@ -13,7 +13,7 @@ const TONE_GUIDE: Record<string, string> = {
   sharp: '一流の専門家。簡潔・的確・無駄なし。敬語は保つが、装飾を削ぎ落とす。',
 };
 
-export function buildConciergePrompt(cfg: ConciergeConfig): string {
+export function buildConciergePrompt(cfg: ConciergeConfig, liveStatus?: string): string {
   const name = cfg.conciergeName || 'コンシェルジュ';
   const fp = cfg.firstPerson || '私';
 
@@ -28,6 +28,10 @@ export function buildConciergePrompt(cfg: ConciergeConfig): string {
   const contactLines: string[] = [];
   if (cfg.bookingUrl) contactLines.push(`- ご予約ページ: ${cfg.bookingUrl} (日程のご希望が固まった方にだけ、そっとご案内する)`);
   if (cfg.contactEmail) contactLines.push(`- 連絡先メール: ${cfg.contactEmail}`);
+
+  const liveBlock = liveStatus?.trim()
+    ? `\n## 現在の制作・経営データ (ライブ連携・たった今の事実。進捗/予算/支払/資金の数字は必ずここからだけ答える)\n${liveStatus.trim()}\n`
+    : '';
 
   const knowledgeBlock = cfg.knowledge?.trim()
     ? `\n## ブランドの資料 (最優先の根拠。ここに書いてあることだけを事実として答える)\n${cfg.knowledge.trim()}\n`
@@ -61,7 +65,7 @@ ${servicesBlock}
 
 ## よくあるご質問 (この内容に沿って答える)
 ${faqBlock}
-${coachingBlock}${knowledgeBlock}${qualifyBlock}
+${coachingBlock}${liveBlock}${knowledgeBlock}${qualifyBlock}
 ${contactLines.length ? `## ご案内先\n${contactLines.join('\n')}\n` : ''}
 ## アクション記号 (お客様には見えない内部記号。該当する時だけ、応答の最後に単独の行で書く)
 ${actionLines.join('\n')}

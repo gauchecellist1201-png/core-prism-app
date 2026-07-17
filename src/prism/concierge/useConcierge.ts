@@ -152,6 +152,26 @@ export function useConcierge(cfg: ConciergeConfig) {
     return '';
   }, [messages]);
 
+  // ライブ連携 (Anima 等) — 60秒キャッシュ。落ちていても会話は普通に続ける
+  const liveRef = useRef<{ text: string; at: number } | null>(null);
+  const fetchLiveStatus = useCallback(async (): Promise<string> => {
+    const cached = liveRef.current;
+    if (cached && Date.now() - cached.at < 60_000) return cached.text;
+    try {
+      const ctrl = new AbortController();
+      const timer = window.setTimeout(() => ctrl.abort(), 3500);
+      const res = await fetch(`/api/crystal-live?site=${conciergeSiteId(cfgRef.current)}`, { signal: ctrl.signal });
+      window.clearTimeout(timer);
+      if (!res.ok) return cached?.text ?? '';
+      const data = await res.json();
+      const text = data?.configured && typeof data.text === 'string' ? data.text : '';
+      liveRef.current = { text, at: Date.now() };
+      return text;
+    } catch {
+      return cached?.text ?? '';
+    }
+  }, []);
+
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
@@ -166,6 +186,7 @@ export function useConcierge(cfg: ConciergeConfig) {
     try {
       const reply = await enqueueClaudeCall(async () => {
         const history = next.slice(-14).map(m => ({ role: m.role, content: m.content }));
+        const liveStatus = await fetchLiveStatus();
         const ctrl = new AbortController();
         const timer = window.setTimeout(() => ctrl.abort(), TIMEOUT_MS);
         let res: Response;
@@ -176,7 +197,7 @@ export function useConcierge(cfg: ConciergeConfig) {
             body: JSON.stringify({
               model: 'claude-haiku-4-5',
               max_tokens: 500,
-              system: buildConciergePrompt(cfgRef.current),
+              system: buildConciergePrompt(cfgRef.current, liveStatus),
               messages: history,
             }),
             signal: ctrl.signal,
