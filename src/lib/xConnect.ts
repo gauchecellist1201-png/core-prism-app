@@ -44,7 +44,29 @@ export async function fetchXStatus(): Promise<XStatus> {
 /** 連携開始：サーバーの /api/x/start へ遷移（PKCE / state はサーバーが発行）。 */
 export function startXConnect(): void {
   const uid = getXUid();
-  window.location.href = `/api/x/start?uid=${encodeURIComponent(uid)}`;
+  const url = `/api/x/start?uid=${encodeURIComponent(uid)}`;
+  // 未設定(not-configured)のままJSONエラーページへ遷移すると「白い画面に英語のエラー」
+  // という最悪の体験になる(実ユーザー報告 2026-07-17)。先にfetchで判定し、
+  // 遷移できない時は画面内で日本語の案内を出す。
+  void (async () => {
+    try {
+      const r = await fetch(url, { redirect: 'manual' });
+      // 302(オペーク含む)=OAuthへ進める → 通常遷移
+      if (r.type === 'opaqueredirect' || (r.status >= 300 && r.status < 400)) {
+        window.location.href = url;
+        return;
+      }
+      const j = await r.json().catch(() => ({} as { error?: string; message?: string }));
+      const msg = j?.error === 'not-configured'
+        ? 'X連携は現在準備中です（運営側でX API設定を作業中）。公開まで今しばらくお待ちください。'
+        : (j?.message || 'X連携を開始できませんでした。時間をおいてもう一度お試しください。');
+      const { notifyInApp } = await import('./inAppNotify');
+      notifyInApp({ kind: 'error', title: 'X連携を開始できません', body: msg, duration: 6000 });
+    } catch {
+      // fetch自体が失敗する特殊環境では従来どおり遷移に賭ける
+      window.location.href = url;
+    }
+  })();
 }
 
 export interface XPostResult {
