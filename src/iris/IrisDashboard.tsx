@@ -1483,18 +1483,18 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
         {/* 複数アカウント運用 (運用代行) 時: 今どのクライアントの作業空間かを常時表示 */}
         {multiAccount.accounts.length >= 2 && multiAccount.active && (
           <div style={{
-            maxWidth: 1280, margin: '0.35rem auto 0',
+            maxWidth: 'min(1280px, 100%)', margin: '0.35rem auto 0',
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '0.25rem 0.6rem', borderRadius: 999,
             background: `${ACCOUNT_TYPE_META[multiAccount.active.type].color}0e`,
             border: `1px solid ${ACCOUNT_TYPE_META[multiAccount.active.type].color}33`,
-            width: 'fit-content',
+            width: 'fit-content', boxSizing: 'border-box',
           }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: ACCOUNT_TYPE_META[multiAccount.active.type].color, flexShrink: 0 }} />
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: bg.ink, whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: bg.ink, whiteSpace: 'nowrap', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
               作業中: @{multiAccount.active.handle.replace(/^@/, '')}
             </span>
-            <span style={{ fontSize: '0.68rem', color: bg.inkSoft, whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '0.68rem', color: bg.inkSoft, whiteSpace: 'nowrap', flexShrink: 0 }}>
               {ACCOUNT_TYPE_META[multiAccount.active.type].label} ・ {multiAccount.accounts.length} アカウント連携中
             </span>
           </div>
@@ -3856,6 +3856,7 @@ function BrandDealCard({ bg, deal, score, onOpen }: {
         {/* カテゴリチップ (左上) */}
         <span style={{
           position: 'absolute', top: 10, left: 12,
+          maxWidth: '46%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
           background: 'rgba(255,255,255,0.92)', color: meta.color,
           padding: '0.25rem 0.7rem', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700,
           boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
@@ -3865,13 +3866,14 @@ function BrandDealCard({ bg, deal, score, onOpen }: {
         {/* マッチスコア (右上) */}
         <span style={{
           position: 'absolute', top: 10, right: 12,
+          maxWidth: '46%', overflow: 'hidden',
           background: score.color, color: 'white',
           padding: '0.25rem 0.7rem', borderRadius: 999,
           fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap',
           boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
           display: 'inline-flex', alignItems: 'center', gap: 4,
         }}>
-          <Zap size={12} strokeWidth={2.4} /> {score.total}% {score.label}
+          <Zap size={12} strokeWidth={2.4} style={{ flexShrink: 0 }} /> <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{score.total}% {score.label}</span>
         </span>
         {/* ロゴ + ブランド名 (下部) */}
         <div style={{
