@@ -94,6 +94,8 @@ import CxoWelcomeCard from './components/CxoWelcomeCard';
 import StripeFailureBanner from './components/StripeFailureBanner';
 import InstallPwaBanner from './components/InstallPwaBanner';
 import { readSharedFromUrl } from './lib/shareLink';
+import { routeCommand } from './lib/prismCommandRouter';
+import InlineActionExecutor from './components/InlineActionExecutor';
 import { parseBookingFromUrl } from './lib/scheduling';
 import { CoreDock } from './components/CoreDock';
 import { readCoreHandoff } from './components/coreLink';
@@ -753,7 +755,30 @@ export default function App() {
     }
   }, [activePersona, chatMessages, sendMessage, getForPersona]);
 
-  const handleSendMessage = useCallback((message: string) => runSend(message, true), [runSend]);
+  // チャット指令 (2026-07-19 オーナー指示): 「Prism 〇〇して」で機能起動/AI実行。
+  // キーワード即断 → 該当スタジオ起動 or InlineActionExecutor で計画→納品。外れたら従来のAI会話。
+  const [executorAction, setExecutorAction] = useState<string | null>(null);
+  const pushCommandEcho = useCallback((userText: string, reply: string) => {
+    const ts = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+    setChatMessages(prev => [...prev,
+      { role: 'user', content: userText, timestamp: ts },
+      { role: 'assistant', content: reply, timestamp: ts },
+    ]);
+  }, []);
+  const handleSendMessage = useCallback(async (message: string) => {
+    const hit = routeCommand(message);
+    if (hit.type === 'open-modal') {
+      window.dispatchEvent(new CustomEvent('core:open-modal', { detail: { modal: hit.modal } }));
+      pushCommandEcho(message, `▶ ${hit.label} を開きました。そのまま続きを進められます。`);
+      return;
+    }
+    if (hit.type === 'execute') {
+      setExecutorAction(hit.action);
+      pushCommandEcho(message, `▶ 承知しました。「${hit.action}」を実行します — 右下で計画→実行→納品まで進みます。`);
+      return;
+    }
+    await runSend(message, true);
+  }, [runSend, pushCommandEcho]);
   const handleRetryMessage = useCallback(() => {
     if (retryMessage) runSend(retryMessage, false);
   }, [retryMessage, runSend]);
@@ -928,6 +953,18 @@ export default function App() {
           onSend={handleSendMessage}
           isLoading={isChatLoading}
         />
+      )}
+
+      {/* チャット指令の実行パネル — 「Prism 〇〇して」を計画→実行→納品 (2026-07-19) */}
+      {executorAction && activePersona && (
+        <div className="fixed inset-x-3 bottom-44 md:inset-x-auto md:right-6 md:bottom-28 md:w-[440px] z-[60]">
+          <InlineActionExecutor
+            action={executorAction}
+            persona={activePersona}
+            settings={settings}
+            onClose={() => setExecutorAction(null)}
+          />
+        </div>
       )}
       {/* AI 会社 作戦本部 — 常駐ウィジェット (承認したタスクの実行を可視化)
           2026-06-05 オーナー指示: コマンドセンター 開いて いる 間 は 非表示 */}

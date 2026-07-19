@@ -62,7 +62,9 @@ export default function FeedbackWidget({ brand }: Props) {
         className="cp-feedback-fab"
         style={{
           position: 'fixed',
-          left: 'max(12px, env(safe-area-inset-left))',
+          // 「改善提案」チップ(left12・幅~90px)と完全同座標で二重表示になっていた
+          // → その右隣へ (重なりゼロ規約 2026-07-19)
+          left: 'calc(max(12px, env(safe-area-inset-left)) + 92px)',
           bottom: 'max(12px, env(safe-area-inset-bottom))',
           zIndex: 9998,
           background: `linear-gradient(135deg, ${accent}, ${accentLight})`,

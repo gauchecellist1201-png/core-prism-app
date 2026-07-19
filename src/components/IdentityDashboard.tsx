@@ -298,22 +298,17 @@ export default function IdentityDashboard({
   const [showCredit, setShowCredit] = useState(false);
   const [creditTab, setCreditTab] = useState<'topup' | 'plan'>('topup');
 
-  // 焦点モード (オーナー指示 2026-05-28): 開いた瞬間は「今日の最優先 1 つ + 数字」だけ。
-  // 残りは「すべての機能を見る」で展開。設定は localStorage に保存。
-  const [dashboardExpanded, setDashboardExpanded] = useState<boolean>(() => {
-    try { return localStorage.getItem('core_dashboard_expanded_v1') === '1'; } catch { return false; }
-  });
-  const toggleDashboardExpanded = useCallback(() => {
-    setDashboardExpanded(prev => {
-      const next = !prev;
-      try { localStorage.setItem('core_dashboard_expanded_v1', next ? '1' : '0'); } catch { /* */ }
-      return next;
-    });
-  }, []);
+  // 旧「焦点モード展開」(dashboardExpanded) はページナビ化(2026-07-19)で廃止。
+  // 全機能はページ『クイックアクション』ほか左サイドバーの各ページへ移行。
   const [activeTab, setActiveTab] = useState<'files' | 'tasks'>('files');
-  // 1画面完結タブ (オーナー指示 2026-07-19): 展開後の30+セクションを縦積みせず、
-  // 「機能/記録/会社/つながる/カラダ」のタブで画面を切り替える。長い縦スクロール廃止。
-  const [homeTab, setHomeTab] = useState<'apps' | 'records' | 'company' | 'connect' | 'body'>('apps');
+  // ページナビ (オーナー指示 2026-07-19): 左サイドバーの「ページ」で画面全体を切替。
+  // 'home'=AI役員の見開き1枚のみ。他ページは該当セクションだけを表示 (縦積み廃止)。
+  const [homeTab, setHomeTab] = useState<'home' | 'apps' | 'records' | 'company' | 'connect' | 'body'>('home');
+  const goPage = useCallback((p: 'home' | 'apps' | 'records' | 'company' | 'connect' | 'body') => {
+    setHomeTab(p);
+    // ページ切替は必ず先頭から (前ページのスクロール位置を引き継いで「勝手に飛んだ」ように見せない)
+    try { document.querySelector('.cp-main-scroll')?.scrollTo({ top: 0 }); } catch { /* */ }
+  }, []);
   // モバイルの7参謀は1タップ展開 (初期1画面完結)。PCは従来通り常時表示
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
@@ -441,6 +436,16 @@ export default function IdentityDashboard({
       case 'dailyReport': setShowDailyReport(true); break;
     }
   }, [onOpenSettings]);
+
+  // チャット指令 (2026-07-19): 下部チャット「Prism 〇〇して」→ core:open-modal で該当スタジオを起動
+  useEffect(() => {
+    const h = (e: Event) => {
+      const d = (e as CustomEvent).detail as { modal?: ModalKey } | undefined;
+      if (d?.modal) handleCmdKOpen(d.modal);
+    };
+    window.addEventListener('core:open-modal', h);
+    return () => window.removeEventListener('core:open-modal', h);
+  }, [handleCmdKOpen]);
 
   // ── 今日のレポート: 経費 + AI タスクキューを集める
   const expensesHook = useExpenses();
@@ -663,13 +668,36 @@ export default function IdentityDashboard({
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {/* ページ選択(モバイル) — 長い1枚ページをやめ、行きたい場所へ直行(オーナー指示 2026-07-17) */}
-          <div className="md:hidden mb-4">
+          {/* ページ — 左タブで画面全体を切替 (オーナー指示 2026-07-19: SaaS標準のサイドバーナビ・PC/モバイル共通) */}
+          <div className="mb-4">
             <p className="text-fg-muted text-xs tracking-widest uppercase px-2 mb-1.5">ページ</p>
             {([
-              { label: 'ホーム', icon: Sparkles, act: () => { setShowMobileSidebar(false); window.scrollTo({ top: 0 }); } },
-              { label: '機能一覧', icon: Zap, act: () => { setShowMobileSidebar(false); if (!dashboardExpanded) toggleDashboardExpanded(); } },
-              { label: '記録・履歴', icon: Inbox, act: () => { setShowMobileSidebar(false); if (!dashboardExpanded) toggleDashboardExpanded(); setTimeout(() => document.getElementById('activity-log')?.scrollIntoView({ behavior: 'smooth' }), 250); } },
+              { key: 'home' as const, label: 'ホーム', icon: Sparkles },
+              { key: 'apps' as const, label: 'クイックアクション', icon: Zap },
+              { key: 'connect' as const, label: 'つながる (連携)', icon: Inbox },
+              { key: 'records' as const, label: '記録・履歴', icon: BarChart3 },
+              { key: 'company' as const, label: '会社 (役員・司令塔)', icon: Users },
+              { key: 'body' as const, label: 'カラダ', icon: HeartPulse },
+            ]).map(pg => {
+              const active = homeTab === pg.key;
+              return (
+                <button
+                  key={pg.key}
+                  onClick={() => { setShowMobileSidebar(false); goPage(pg.key); }}
+                  className={`w-full flex items-center gap-2.5 px-2 rounded-lg transition-colors text-left ${active ? '' : 'hover:bg-surface-3'}`}
+                  style={{
+                    minHeight: 44,
+                    background: active ? `${persona.accentColor}1a` : undefined,
+                    borderLeft: active ? `2px solid ${persona.accentColor}` : '2px solid transparent',
+                  }}
+                >
+                  <pg.icon size={16} strokeWidth={2.2} className="flex-shrink-0" style={{ color: active ? persona.accentColor : 'var(--fg-muted)' }} />
+                  <span className="text-sm" style={{ color: active ? persona.accentColor : 'var(--fg)', fontWeight: active ? 700 : 400 }}>{pg.label}</span>
+                </button>
+              );
+            })}
+            {/* モーダル系ページ (既存機能への直行) */}
+            {([
               { label: 'ナレッジ', icon: BookOpen, act: () => { setShowMobileSidebar(false); setShowKnowledge(true); } },
               { label: '決算書 (P/L・B/S)', icon: BarChart3, act: () => { setShowMobileSidebar(false); setShowFinStatements(true); } },
               { label: 'ヘルス', icon: HeartPulse, act: () => { setShowMobileSidebar(false); setShowHealth(true); } },
@@ -1001,7 +1029,7 @@ export default function IdentityDashboard({
           />
 
           <div
-            className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-3 md:p-4 relative"
+            className="cp-main-scroll flex-1 overflow-y-auto overflow-x-hidden px-3 pt-3 md:p-4 relative"
             style={{
               // 下部の AgentTeamMonitor / チャット FAB に隠れない余白を確保 (mobile)
               paddingBottom: 'calc(140px + env(safe-area-inset-bottom, 0px))',
@@ -1015,6 +1043,8 @@ export default function IdentityDashboard({
                 onUpgrade={() => { setCreditTab('plan'); setShowCredit(true); }}
               />
 
+              {/* ページ『ホーム』= AI役員の見開き1枚 (参謀+ブリーフ+売上のみ) */}
+              <div className={homeTab === 'home' ? 'space-y-3' : 'hidden'}>
               {/* 7 つのエージェント — PC は常時トップ固定 (2026-05-28)。
                   モバイルのみ 1 タップ展開に畳む (2026-07-19 初期1画面完結・機能削除ゼロ) */}
               <div data-tour-id="agents-orbit">
@@ -1147,13 +1177,17 @@ export default function IdentityDashboard({
                 />
               </div>
 
-              {/* 1画面完結タブバー (2026-07-19): 展開中は縦積みでなくタブで切替 */}
-              {dashboardExpanded && (
-                <div style={{
-                  display: 'flex', gap: 6, overflowX: 'auto',
+              </div>
+              {/* ↑ ページ『ホーム』ここまで */}
+
+              {/* ページタブバー (モバイル用・PCは左サイドバーで切替)。
+                  display は className 側で制御 (inline flex だと md:hidden に勝ってPCにも出る罠) */}
+              <div className="flex md:hidden" style={{
+                  gap: 6, overflowX: 'auto',
                   scrollbarWidth: 'none', paddingBottom: 2,
                 }}>
                   {([
+                    ['home', 'ホーム'],
                     ['apps', '機能'],
                     ['records', '記録'],
                     ['company', '会社'],
@@ -1165,7 +1199,7 @@ export default function IdentityDashboard({
                       <button
                         key={id}
                         type="button"
-                        onClick={() => setHomeTab(id)}
+                        onClick={() => goPage(id)}
                         style={{
                           flexShrink: 0,
                           padding: '10px 16px', minHeight: 44,
@@ -1184,11 +1218,10 @@ export default function IdentityDashboard({
                     );
                   })}
                 </div>
-              )}
 
-              {/* 二次カード群は「奥へ整理」— タブ『会社』『つながる』に格納
-                  (2026-07-19 1画面完結タブ化。機能削除ゼロ・移動のみ) */}
-              <div className={dashboardExpanded && (homeTab === 'company' || homeTab === 'connect') ? 'space-y-3' : 'hidden'}>
+              {/* 二次カード群 — ページ『会社』『つながる』に格納
+                  (2026-07-19 ページナビ化。機能削除ゼロ・移動のみ) */}
+              <div className={homeTab === 'company' || homeTab === 'connect' ? 'space-y-3' : 'hidden'}>
               <div className={homeTab === 'company' ? 'space-y-3' : 'hidden'}>
               {/* 🏢 デジタル 会社 ヒーロー — 「役員 会議室」 (2026-06-05 オーナー指示) */}
               <DigitalCompanyHero
@@ -1233,7 +1266,9 @@ export default function IdentityDashboard({
               </div>
               </div>
 
-              {/* PC 専用: 焦点モード (今日の最優先 1 つ + 数字 1 行) — iPhone では上のブリーフ + 売上に置き換え */}
+              {/* PC 専用: 焦点モード (今日の最優先 1 つ + 数字 1 行) — ページ『ホーム』のみ。
+                  「すべての機能」はページ『クイックアクション』へ誘導 (縦展開廃止・2026-07-19) */}
+              {homeTab === 'home' && (
               <div id="brief-anchor-desktop" className="hidden md:block">
                 <FocusHero
                   persona={persona}
@@ -1241,40 +1276,16 @@ export default function IdentityDashboard({
                   isGenerating={proactive.isGenerating || coach.isGenerating}
                   onPrimaryAction={onAcceptProactiveAction}
                   onGenerate={() => proactive.generate(settings.voiceEnabled !== false)}
-                  expanded={dashboardExpanded}
-                  onToggleExpanded={toggleDashboardExpanded}
+                  expanded={false}
+                  onToggleExpanded={() => goPage('apps')}
                   hiddenCount={30}
                   settings={settings}
                 />
               </div>
+              )}
 
-              {/* iPhone 専用: 全機能を見るための展開ボタン (FocusHero を mobile で隠した代わり) */}
-              <div className="md:hidden">
-                <button
-                  onClick={toggleDashboardExpanded}
-                  type="button"
-                  style={{
-                    width: '100%',
-                    padding: '14px 18px',
-                    borderRadius: 14,
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(142,92,255,0.28)',
-                    color: 'var(--fg)',
-                    fontSize: 14,
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {dashboardExpanded ? '▲ 折りたたむ' : '▼ すべての機能を見る (CRM / 請求書 / 議事録 ほか 30+ )'}
-                </button>
-              </div>
-
-              {/* ↓ 「すべての機能を見る」で展開する全コンテンツ (1画面完結タブで切替・2026-07-19) */}
-              {dashboardExpanded && (<>
+              {/* ↓ ホーム以外のページ本体 (左サイドバー/上部タブで切替・2026-07-19) */}
+              {homeTab !== 'home' && (<>
 
               {/* タブ『機能』: ブリーフ(PC)+Stripe CTA+クイックアクション */}
               <div className={homeTab === 'apps' ? 'space-y-3' : 'hidden'}>
@@ -2236,8 +2247,9 @@ export default function IdentityDashboard({
         )}
       </AnimatePresence>
 
+      {/* 下部FAB/役員ドック帯(~90px)を避けて表示 — 重なりゼロ規約 2026-07-19 */}
       {settings.proactiveEnabled !== false && proactive.error && (
-        <div className="fixed bottom-4 right-4 z-30 max-w-sm w-[calc(100vw-2rem)] md:w-80">
+        <div className="fixed bottom-44 md:bottom-24 right-20 md:right-4 z-30 max-w-sm w-[calc(100vw-7rem)] md:w-80">
           <div className="p-3 rounded-lg" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)' }}>
             <p className="text-red-300 text-xs">{proactive.error}</p>
           </div>

@@ -2791,3 +2791,19 @@ time {
 .lp-plan-card { transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .35s, box-shadow .35s; }
 .lp-plan-card:hover { transform: translateY(-5px); border-color: rgba(201,169,110,.6) !important; box-shadow: 0 26px 60px -30px rgba(201,169,110,.4); }
 @media (prefers-reduced-motion: reduce) { .lp-plan-card, .lp-plan-card:hover { transition: none; transform: none; } }
+
+/* ============================================================
+   下部固定レーン規約 (PC ≥768px) — 重なりゼロ 2026-07-19
+   右下は「役員ドック(右14, 幅420)」が最優先。FABはその左レーンへ。
+   右端縦積み: AIと話す(左レーン) / mic予約FAB は + FAB の上へ。 */
+@media (min-width: 768px) {
+  .cp-ai-fab-wrap {
+    /* 役員ドック (right14 + 420px) の左へ退避 */
+    right: calc(env(safe-area-inset-right, 0px) + 446px) !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 14px) !important;
+  }
+  .prism-task-fab {
+    /* 右端の + FAB (bottom~150, 52px) の上へ (16px 重なりの根治) */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 214px) !important;
+  }
+}

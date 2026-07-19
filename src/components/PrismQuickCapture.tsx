@@ -40,7 +40,8 @@ export default function PrismQuickCapture({ onAddNote, accentColor = '#8b5cf6' }
   // 左下・既存コマンドバーFABの上に重ねて置く（両端の SupportChat / コマンドFAB と被らない）。
   const wrapStyle: React.CSSProperties = {
     position: 'fixed',
-    left: 16,
+    // 左下の Core オーブ (52px @left14) と被らないよう右へ — 重なりゼロ規約 2026-07-19
+    left: 'calc(env(safe-area-inset-left, 0px) + 80px)',
     bottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)',
     zIndex: 30,
   };

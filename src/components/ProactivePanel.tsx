@@ -38,7 +38,8 @@ export default function ProactivePanel({
   const display = latestProposal;
 
   return (
-    <div className="fixed bottom-4 right-4 z-30 max-w-sm w-[calc(100vw-2rem)] md:w-96 pointer-events-none">
+    // 下部FAB/役員ドック帯(~90px)を避けて bottom-24 — 重なりゼロ規約 2026-07-19
+    <div className="fixed bottom-44 md:bottom-24 right-20 md:right-4 z-30 max-w-sm w-[calc(100vw-7rem)] md:w-96 pointer-events-none">
       <AnimatePresence mode="wait">
         {display && !showHistory && (
           <motion.div
