@@ -473,6 +473,92 @@ export default function CoreSite() {
             url="https://crystal-nine-self.vercel.app/"
             reversed
           />
+
+          {/* STUDIO — サイト制作・受託開発 (プロダクトではなく「手」のサービス。
+              Studio のデザイントークン (生成り#f7f5f0×墨#23261f×森緑#1e3a2e×琥珀金#a8823c)
+              をそのまま使い、暗い製品群の最後に静かな紙のカードとして置く) */}
+          <a
+            href="/studio"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: '0.9rem',
+              padding: 'clamp(2.2rem, 4vw, 3.2rem) clamp(1.4rem, 4vw, 3rem)',
+              background: '#f7f5f0',
+              border: '1px solid rgba(168,130,60,0.35)',
+              borderRadius: 24,
+              textDecoration: 'none',
+              transition: 'transform 260ms cubic-bezier(.4,0,.2,1), box-shadow 260ms ease',
+            }}
+            className="lp-feature-product"
+          >
+            <span
+              style={{
+                fontFamily: FONT_DISPLAY,
+                fontSize: '0.68rem',
+                letterSpacing: '0.42em',
+                color: '#a8823c',
+                fontWeight: 700,
+              }}
+            >
+              CORE STUDIO
+            </span>
+            <span
+              style={{
+                fontFamily: FONT_SERIF_JA,
+                fontSize: 'clamp(1.3rem, 2.6vw, 1.7rem)',
+                fontWeight: 700,
+                lineHeight: 1.6,
+                letterSpacing: '0.05em',
+                color: '#1e3a2e',
+              }}
+            >
+              サイト制作・受託開発も、
+              <span style={{ display: 'inline-block' }}>承ります。</span>
+            </span>
+            <span
+              style={{
+                fontFamily: FONT_SERIF_JA,
+                fontSize: '0.92rem',
+                lineHeight: 2,
+                color: '#23261f',
+                maxWidth: 560,
+              }}
+            >
+              六つのプロダクトを自社で作り続けてきた手で、
+              あなたのホームページ・LP・業務システムをお作りします。
+            </span>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: 48,
+                marginTop: '0.4rem',
+                padding: '0 1.9rem',
+                borderRadius: 999,
+                background: '#1e3a2e',
+                color: '#f7f5f0',
+                fontFamily: FONT_SANS,
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+              }}
+            >
+              制作スタジオを見る →
+            </span>
+            <span
+              style={{
+                fontFamily: FONT_SANS,
+                fontSize: '0.72rem',
+                letterSpacing: '0.06em',
+                color: '#6f8074',
+              }}
+            >
+              LP 1枚から、予約・決済つきの本格サイトまで
+            </span>
+          </a>
         </div>
       </section>
 
@@ -481,7 +567,7 @@ export default function CoreSite() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section
         className="lp-section-pad"
-        style={{ padding: '6rem 1.5rem', background: 'linear-gradient(180deg, #0a0805, #12100a 55%, #0a0805)', color: '#F1E9D8' }}
+        style={{ padding: '7rem 1.5rem', background: 'linear-gradient(180deg, #0a0805, #12100a 55%, #0a0805)', color: '#F1E9D8' }}
       >
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>

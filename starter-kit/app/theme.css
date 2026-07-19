@@ -1,0 +1,123 @@
+/* ================================================================
+   theme.css — 案件ごとに「ここだけ」差し替えるデザイントークン
+   ----------------------------------------------------------------
+   初期値は CORE Studio の標準トークン。
+   新規案件では :root の変数値を書き換えるだけで全体の
+   色・フォント・角丸・余白リズムが一括で切り替わる。
+   コンポーネント側に色やフォントのハードコードは無い。
+   ================================================================ */
+
+:root {
+  /* ---- カラー (案件ごとに差し替え) ---- */
+  --bg: #f7f5f0;            /* ページ背景 (淡) */
+  --surface: #ffffff;       /* カード背景 */
+  --ink: #23261f;           /* 本文 (淡背景=濃文字を厳守) */
+  --ink-muted: #5c6156;     /* 補足文 */
+  --primary: #1e3a2e;       /* 主色 (森緑) — 見出し/フッター/主ボタン */
+  --primary-ink: #f7f5f0;   /* 主色の上に載せる文字色 */
+  --accent: #a8823c;        /* 差し色 (琥珀金) — 強調/リンク/価格 */
+  --line: #e3dfd4;          /* 罫線 */
+  --sage: #6f8074;          /* 第三色 (セージ) — タグ/小見出し */
+
+  /* ---- タイポグラフィ (案件ごとに差し替え) ---- */
+  --font-serif: "Shippori Mincho", "Hiragino Mincho ProN", serif; /* 見出し */
+  --font-sans: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; /* 本文 */
+
+  /* ---- 形・リズム (通常は触らなくてよい) ---- */
+  --radius: 14px;
+  --section-y: clamp(64px, 12vw, 120px);  /* セクション縦余白 */
+  --container: 1080px;
+  --shadow: 0 2px 24px rgba(35, 38, 31, 0.07);
+}
+
+/* ================================================================
+   ベース (トークンを参照するだけ。案件で触らない)
+   ================================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.9;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: var(--primary);
+}
+
+a { color: var(--accent); text-decoration: none; }
+
+img { max-width: 100%; height: auto; display: block; }
+
+/* ---- 共通レイアウト ---- */
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 20px; /* 375px でも見切れない左右余白 */
+}
+
+.section { padding: var(--section-y) 0; }
+
+.section-label {
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  color: var(--sage);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: clamp(26px, 5vw, 38px);
+  margin-bottom: 18px;
+}
+
+.section-lead {
+  color: var(--ink-muted);
+  max-width: 620px;
+  margin-bottom: 48px;
+}
+
+/* ---- ボタン (44px タップ確保) ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 32px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.2s ease;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--primary); color: var(--primary-ink); }
+.btn-outline { background: transparent; color: var(--primary); border-color: var(--primary); }
+
+/* ---- カード ---- */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px 28px;
+}
+
+/* ---- グリッド (モバイル1列 → 768px以上で自動複列) ---- */
+.grid { display: grid; gap: 20px; grid-template-columns: 1fr; }
+@media (min-width: 768px) {
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+}
