@@ -12,7 +12,7 @@ import {
   Image as ImageIcon, Film, Music, Play, Square, Download, Share2,
   Sparkles, Wand2, ChevronRight, Plus, X, Trash2, Settings2, Loader2,
   Flame, Scissors, ArrowLeft, ArrowRight, Eye, Type as TypeIcon,
-  AlertCircle, Copy, MessageSquare, Layers, Camera,
+  AlertCircle, Copy, MessageSquare, Layers, Camera, Mic,
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -169,6 +169,67 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [presetId, setPresetId] = useState<PresetId | null>(null);
   // AI 台本生成 (テーマ → 3 シーン)
   const [scriptBusy, setScriptBusy] = useState(false);
+
+  // ── 音声→字幕: 喋るだけで空きカットから順に字幕が入る (リール特化の要) ──
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [voiceLive, setVoiceLive] = useState(''); // 認識途中のテキスト (確定前)
+  const voiceRecRef = useRef<any>(null);
+  const voiceCutIdxRef = useRef(0);
+  const clipsLenRef = useRef(0);
+  useEffect(() => { clipsLenRef.current = clips.length; }, [clips]);
+  const voiceSupported = typeof window !== 'undefined'
+    && !!((window as any).webkitSpeechRecognition || (window as any).SpeechRecognition);
+
+  const stopVoice = useCallback(() => {
+    try { voiceRecRef.current?.stop(); } catch { /* */ }
+    voiceRecRef.current = null;
+    setVoiceOn(false); setVoiceLive('');
+  }, []);
+
+  const startVoice = useCallback(() => {
+    const SR: any = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!SR || clips.length === 0) return;
+    // 字幕が空のカットの先頭から埋める (全部埋まっていれば最後のカットに追記)
+    const firstEmpty = clips.findIndex(c => !(c.captionText || '').trim());
+    voiceCutIdxRef.current = firstEmpty >= 0 ? firstEmpty : clips.length - 1;
+    const rec = new SR();
+    rec.lang = 'ja-JP';
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.onresult = (e: any) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) {
+          const text = (r[0]?.transcript || '').trim();
+          if (text) {
+            const idx = Math.min(voiceCutIdxRef.current, Math.max(0, clipsLenRef.current - 1));
+            setClips(prev => prev.map((c, i2) => i2 === idx
+              ? { ...c, captionText: ((c.captionText || '').trim() ? `${c.captionText} ` : '') + text }
+              : c));
+            // ひと息(確定)ごとに次のカットへ進む — 話す順=カット順で自然に埋まる
+            if (voiceCutIdxRef.current < clipsLenRef.current - 1) voiceCutIdxRef.current += 1;
+          }
+        } else {
+          interim += r[0]?.transcript || '';
+        }
+      }
+      setVoiceLive(interim);
+    };
+    rec.onerror = () => {
+      // マイク拒否や無音タイムアウト — 固まらせず静かに停止 (再タップで再開できる)
+      voiceRecRef.current = null;
+      setVoiceOn(false); setVoiceLive('');
+    };
+    rec.onend = () => {
+      voiceRecRef.current = null;
+      setVoiceOn(false); setVoiceLive('');
+    };
+    try { rec.start(); voiceRecRef.current = rec; setVoiceOn(true); } catch { /* 二重start等は無視 */ }
+  }, [clips]);
+
+  // アンマウント時に確実に停止 (裏で録音が残る事故防止)
+  useEffect(() => () => { try { voiceRecRef.current?.stop(); } catch { /* */ } }, []);
   const [scriptPhase, setScriptPhase] = useState<string>(''); // 「今 AI が何をしているか」の実況
   const [scriptErr, setScriptErr] = useState<string>('');
   const [scriptResult, setScriptResult] = useState<ReelScriptResult | null>(null);
@@ -1547,6 +1608,48 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       3 シーン ・ 合計 {scriptResult.scenes.reduce((s, x) => s + x.duration, 0).toFixed(1)} 秒 ・ CTA: {scriptResult.cta}
                     </div>
                   </div>
+                )}
+
+                {/* 音声→字幕: 喋るだけでカットに字幕が入る */}
+                {voiceSupported && clips.length > 0 && (
+                  <>
+                    <button
+                      onClick={() => (voiceOn ? stopVoice() : startVoice())}
+                      style={{
+                        width: '100%', padding: '0.85rem 1rem',
+                        background: voiceOn ? '#DC2626' : 'rgba(255,255,255,0.9)',
+                        color: voiceOn ? '#fff' : bg.ink,
+                        border: voiceOn ? 'none' : '1.5px dashed rgba(225,48,108,0.45)',
+                        borderRadius: 14, fontSize: 14, fontWeight: 800,
+                        cursor: 'pointer', fontFamily: IRIS_FONTS.body,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        minHeight: 48, marginBottom: 8,
+                        boxShadow: voiceOn ? '0 8px 22px rgba(220,38,38,0.3)' : 'none',
+                      }}
+                    >
+                      {voiceOn
+                        ? <><Square size={14} /> 停止 (字幕に反映中)</>
+                        : <><Mic size={15} /> 喋って字幕にする</>}
+                    </button>
+                    {voiceOn && (
+                      <div style={{
+                        marginBottom: 10, padding: '0.55rem 0.7rem',
+                        background: 'rgba(220,38,38,0.07)',
+                        border: '1px solid rgba(220,38,38,0.2)',
+                        borderRadius: 12, fontSize: 11.5, color: bg.ink,
+                        display: 'flex', alignItems: 'center', gap: 8, lineHeight: 1.5,
+                      }}>
+                        <span aria-hidden style={{
+                          width: 6, height: 6, borderRadius: 999,
+                          background: '#DC2626', flexShrink: 0,
+                          animation: 'iris-pulse 1s ease-in-out infinite',
+                        }} />
+                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {voiceLive || '聞いています… ひと息ごとに次のカットへ字幕が入ります'}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {/* カット毎の字幕編集 */}

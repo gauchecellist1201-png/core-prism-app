@@ -41,8 +41,8 @@ import {
   Download, Clipboard, Wand2,
   Bookmark, BookmarkPlus, Send, Trash2, Brain, User,
   Wallet, Calendar, Hourglass, ShieldAlert, Inbox, Lock,
-  CheckCircle2, AlertTriangle, Bot, Lightbulb, Sun,
-  Briefcase, Rocket, Heart, Smartphone,
+  CheckCircle2, AlertTriangle, Bot, Lightbulb,
+  Briefcase, Smartphone,
   Save, X, Target, Zap, Smile, PartyPopper,
 } from 'lucide-react';
 import IrisCommandBar from './IrisCommandBar';
@@ -79,29 +79,30 @@ const IRIS_TAB_ICON: Record<string, LucideIcon> = {
 // ─── タブ グループ (Phase 2 — 5 カテゴリ) ──────────
 interface TabDef { id: string; l: string }
 interface TabGroup { id: string; label: string; color: string; icon: LucideIcon; tabs: TabDef[] }
+// 2026-07-19 リール特化リデザイン: Iris の顔を「リールが簡単に作れる」に一本化。
+// 表に出すのはリール制作系のみ。それ以外の全機能は「その他」に格納（機能削除ゼロ）。
 const TAB_GROUPS: TabGroup[] = [
-  { id: 'today',  label: '今日',   color: '#E1306C', icon: Sun,
-    tabs: [{ id: 'home', l: 'ホーム' }, { id: 'schedule', l: '予約投稿' }] },
-  { id: 'create', label: 'つくる', color: '#833AB4', icon: Wand2,
+  { id: 'reelmain', label: 'リール', color: '#E1306C', icon: Film,
     tabs: [
-      { id: 'studio', l: 'スタジオ' },
-      { id: 'script', l: '企画・台本' },
-      { id: 'reel', l: 'リール' }, { id: 'draft', l: '投稿を書く' },
-      { id: 'director', l: '動画おまかせ' }, { id: 'image', l: '写真を直す' },
+      { id: 'reel', l: 'リールを作る' },
+      { id: 'director', l: '動画おまかせ' },
+      { id: 'schedule', l: '予約投稿' },
     ] },
-  { id: 'earn',   label: '稼ぐ',   color: '#F77737', icon: Briefcase,
+  { id: 'plan', label: '企画', color: '#833AB4', icon: Wand2,
     tabs: [
+      { id: 'script', l: '企画・台本' },
+      { id: 'image', l: '写真を直す' },
+    ] },
+  { id: 'other', label: 'その他', color: '#3B82F6', icon: MenuIcon,
+    tabs: [
+      { id: 'home', l: 'ホーム' },
+      { id: 'studio', l: 'スタジオ' },
+      { id: 'draft', l: '投稿を書く' },
       { id: 'triage', l: 'お仕事確認' }, { id: 'deals', l: 'お仕事' },
       { id: 'replies', l: '返信センター' },
       { id: 'negotiate', l: 'お返事' }, { id: 'brands', l: 'お仕事を探す' },
-    ] },
-  { id: 'grow',   label: '伸ばす', color: '#3B82F6', icon: Rocket,
-    tabs: [
       { id: 'strategy', l: '伸ばす作戦' }, { id: 'invite', l: '友達紹介' },
       { id: 'community', l: 'みんなの広場' }, { id: 'team', l: '仲間' },
-    ] },
-  { id: 'care',   label: 'ととのえる', color: '#10B981', icon: Heart,
-    tabs: [
       { id: 'health', l: 'カラダ管理' }, { id: 'beauty', l: '美容のはなし' },
       { id: 'knowledge', l: 'ナレッジ' },
       { id: 'guideline', l: '私らしさ設定' },
@@ -200,7 +201,8 @@ function IrisSidebar({
   onBgPicker: () => void;
   onLeave: () => void;
 }) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  // 「その他」(旧全機能) はデフォルト畳み — リール制作を主役に保つ
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ other: true });
   const toggleGroup = (id: string) => setCollapsed(p => ({ ...p, [id]: !p[id] }));
 
   return (
@@ -360,12 +362,11 @@ function IrisBottomDock({
   bg: IrisBackgroundDef;
   onMore: () => void;
 }) {
+  // リール特化: 中央FAB=リール作成。左右は企画/予約とその他のみ (3+1ボタン)
   const DOCK_ITEMS = [
-    { group: TAB_GROUPS[0], defaultTab: 'home' as Tab },
-    { group: TAB_GROUPS[2], defaultTab: 'triage' as Tab },
-    { group: TAB_GROUPS[1], defaultTab: 'studio' as Tab, isFab: true },
-    { group: TAB_GROUPS[3], defaultTab: 'strategy' as Tab },
-    { group: TAB_GROUPS[4], defaultTab: 'health' as Tab },
+    { group: TAB_GROUPS[1], defaultTab: 'script' as Tab },
+    { group: TAB_GROUPS[0], defaultTab: 'reel' as Tab, isFab: true },
+    { group: TAB_GROUPS[2], defaultTab: 'home' as Tab },
   ];
 
   return (
@@ -1109,7 +1110,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
     // LPヒーローの「自分のDMでやってみる」から来た人は、約束した
     // DMスクショ→案件登録に直行させる(ホームで迷子にしない)
     try { if (sessionStorage.getItem('iris_intent_dm_capture') === '1') return 'deals'; } catch { /* */ }
-    return 'home';
+    // リール特化リデザイン(2026-07-19): 起動即「リールを作る」。迷子ゼロで本体価値へ直行
+    return 'reel';
   });
   const [moreOpen, setMoreOpen] = useState(false);
   // ホームの二次ウィジェット (参謀オービット / 稼ぐヒーロー / 健康 / AIチャット) は
@@ -1506,7 +1508,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           display: 'flex', alignItems: 'center', gap: 6,
           overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2,
         }}>
-          {TAB_GROUPS.map((group, gi) => {
+          {/* 「その他」16タブは上部ナビに並べず「全機能」シートからのみ (要素削減) */}
+          {TAB_GROUPS.filter(g => g.id !== 'other').map((group, gi) => {
             const isActiveGroup = TAB_TO_GROUP[tab] === group.id;
             const GIco = group.icon;
             return (
