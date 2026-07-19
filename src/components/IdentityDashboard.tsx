@@ -311,6 +311,11 @@ export default function IdentityDashboard({
     });
   }, []);
   const [activeTab, setActiveTab] = useState<'files' | 'tasks'>('files');
+  // 1画面完結タブ (オーナー指示 2026-07-19): 展開後の30+セクションを縦積みせず、
+  // 「機能/記録/会社/つながる/カラダ」のタブで画面を切り替える。長い縦スクロール廃止。
+  const [homeTab, setHomeTab] = useState<'apps' | 'records' | 'company' | 'connect' | 'body'>('apps');
+  // モバイルの7参謀は1タップ展開 (初期1画面完結)。PCは従来通り常時表示
+  const [agentsOpen, setAgentsOpen] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showMobileAI, setShowMobileAI] = useState(false);
   const [showMinutes, setShowMinutes] = useState(false);
@@ -996,7 +1001,7 @@ export default function IdentityDashboard({
           />
 
           <div
-            className="flex-1 overflow-auto px-3 pt-3 md:p-4 relative"
+            className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-3 md:p-4 relative"
             style={{
               // 下部の AgentTeamMonitor / チャット FAB に隠れない余白を確保 (mobile)
               paddingBottom: 'calc(140px + env(safe-area-inset-bottom, 0px))',
@@ -1010,8 +1015,26 @@ export default function IdentityDashboard({
                 onUpgrade={() => { setCreditTab('plan'); setShowCredit(true); }}
               />
 
-              {/* 7 つのエージェント — 常時トップ固定 (オーナー指示 2026-05-28: ここは閉じない) */}
+              {/* 7 つのエージェント — PC は常時トップ固定 (2026-05-28)。
+                  モバイルのみ 1 タップ展開に畳む (2026-07-19 初期1画面完結・機能削除ゼロ) */}
               <div data-tour-id="agents-orbit">
+              <button
+                type="button"
+                onClick={() => setAgentsOpen(v => !v)}
+                className="md:hidden"
+                style={{
+                  width: '100%', padding: '12px 16px', minHeight: 44,
+                  borderRadius: 14,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(142,92,255,0.28)',
+                  color: 'var(--fg)', fontSize: 14, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  cursor: 'pointer',
+                }}
+              >
+                {agentsOpen ? '▲ 7人の参謀を閉じる' : '▼ 7人の参謀に相談する'}
+              </button>
+              <div className={agentsOpen ? '' : 'hidden md:block'}>
               <AgentsOrbit
                 specs={PRISM_SPECS}
                 order={PRISM_ORDER}
@@ -1086,6 +1109,7 @@ export default function IdentityDashboard({
                 ]}
               />
               </div>
+              </div>
 
               {/* iPhone 専用: 7 agents の直下に「ブリーフ → 売上」を常時 巨大表示
                   (オーナー指示 2026-06-03: モバイルはペライチ的にわかりやすく、情報を間引いて巨大化) */}
@@ -1123,10 +1147,49 @@ export default function IdentityDashboard({
                 />
               </div>
 
-              {/* 二次カード群は「奥へ整理」— モバイルは初期画面をスッキリさせ、
-                  『すべての機能を見る』展開時のみ表示。デスクトップは常時表示のまま
-                  (2026-07-13 夜間: トップを分かりやすく・ごちゃごちゃ解消) */}
-              <div className={dashboardExpanded ? 'space-y-3' : 'hidden'}>
+              {/* 1画面完結タブバー (2026-07-19): 展開中は縦積みでなくタブで切替 */}
+              {dashboardExpanded && (
+                <div style={{
+                  display: 'flex', gap: 6, overflowX: 'auto',
+                  scrollbarWidth: 'none', paddingBottom: 2,
+                }}>
+                  {([
+                    ['apps', '機能'],
+                    ['records', '記録'],
+                    ['company', '会社'],
+                    ['connect', 'つながる'],
+                    ['body', 'カラダ'],
+                  ] as const).map(([id, l]) => {
+                    const active = homeTab === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setHomeTab(id)}
+                        style={{
+                          flexShrink: 0,
+                          padding: '10px 16px', minHeight: 44,
+                          borderRadius: 999,
+                          background: active
+                            ? 'linear-gradient(135deg, #2E6FFF, #8E5CFF)'
+                            : 'rgba(255,255,255,0.05)',
+                          border: active ? 'none' : '1px solid rgba(142,92,255,0.25)',
+                          color: active ? '#fff' : 'var(--fg)',
+                          fontSize: 13.5, fontWeight: 700,
+                          cursor: 'pointer', whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {l}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 二次カード群は「奥へ整理」— タブ『会社』『つながる』に格納
+                  (2026-07-19 1画面完結タブ化。機能削除ゼロ・移動のみ) */}
+              <div className={dashboardExpanded && (homeTab === 'company' || homeTab === 'connect') ? 'space-y-3' : 'hidden'}>
+              <div className={homeTab === 'company' ? 'space-y-3' : 'hidden'}>
               {/* 🏢 デジタル 会社 ヒーロー — 「役員 会議室」 (2026-06-05 オーナー指示) */}
               <DigitalCompanyHero
                 persona={persona}
@@ -1149,9 +1212,10 @@ export default function IdentityDashboard({
                 try { document.getElementById('command-tower')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* */ }
               }} />
 
-              {/* 連携・スタジオ系は初期画面の密度を下げる: モバイルは「すべての機能を見る」展開後に整理
-                  (2026-07-13 分かりやすさ: ごちゃごちゃ解消。デスクトップは常時表示・機能は消さない) */}
-              <div className={`space-y-3 ${dashboardExpanded ? '' : 'hidden'}`}>
+              </div>
+
+              {/* 連携・スタジオ系 — タブ『つながる』に格納 (2026-07-19) */}
+              <div className={homeTab === 'connect' ? 'space-y-3' : 'hidden'}>
                 {/* 📧 Gmail インサイト (2026-06-05 オーナー指示: 連携 = 価値) */}
                 <GmailInsightsCard />
 
@@ -1209,8 +1273,11 @@ export default function IdentityDashboard({
                 </button>
               </div>
 
-              {/* ↓ 「すべての機能を見る」で展開する全コンテンツ */}
+              {/* ↓ 「すべての機能を見る」で展開する全コンテンツ (1画面完結タブで切替・2026-07-19) */}
               {dashboardExpanded && (<>
+
+              {/* タブ『機能』: ブリーフ(PC)+Stripe CTA+クイックアクション */}
+              <div className={homeTab === 'apps' ? 'space-y-3' : 'hidden'}>
 
               {/*
                 EarningsAndTimeHero (2026-05-25 オーナー指示):
@@ -1409,6 +1476,10 @@ export default function IdentityDashboard({
                 ]}
               />
 
+              </div>
+
+              {/* タブ『カラダ』: 健康3カード */}
+              <div className={homeTab === 'body' ? 'space-y-3' : 'hidden'}>
               {/* 健康が積み上がっている実感を見せる (オーナー指示 2026-05-17) */}
               <WellnessTracker
                 today={healthCtx.today}
@@ -1426,6 +1497,10 @@ export default function IdentityDashboard({
                 onOpen={() => setShowHealth(true)}
               />
 
+              </div>
+
+              {/* タブ『記録』: 認知/パルス/インサイト/資料タスク/収支/タイムライン */}
+              <div className={homeTab === 'records' ? 'space-y-3' : 'hidden'}>
               {/* 認知プロファイルと回復スコアを横並びに (右の余白解消・高さ揃え) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
                 <div className="h-full [&>*]:h-full">
@@ -1672,6 +1747,10 @@ export default function IdentityDashboard({
                 />
               </div>
 
+              </div>
+
+              {/* タブ『会社』(続き): 共創+司令塔 */}
+              <div className={homeTab === 'company' ? 'space-y-3' : 'hidden'}>
               {/* 共創フィードバック — 「このアプリを一緒に良くする」をギルドに届ける導線 */}
               <PrismCoCreateCard />
 
@@ -1679,6 +1758,7 @@ export default function IdentityDashboard({
                   分かりにくいとの指摘(2026-06-18)で、優先度を下げて「すべての機能を見る」展開内の最下部へ移動。 */}
               <div id="command-tower">
                 <CommandTowerHub />
+              </div>
               </div>
 
               </>)}
