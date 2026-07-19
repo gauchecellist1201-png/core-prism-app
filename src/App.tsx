@@ -60,6 +60,7 @@ const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./legal/TermsOfService'));
 const CoreSite = lazy(() => import('./corporate/CoreSite'));
+const StudioSite = lazy(() => import('./studio/StudioSite'));
 const ContinuumLanding = lazy(() => import('./corporate/ContinuumLanding'));
 const StrategyDashboard = lazy(() => import('./corporate/StrategyDashboard'));
 const PricingPage = lazy(() => import('./corporate/PricingPage'));
@@ -273,6 +274,12 @@ function isCorpPath(): boolean {
   return p === '/corp' || p.startsWith('/corp/') || p === '/corp.html' || p === '/company' || p.startsWith('/company/');
 }
 
+function isStudioPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  return p === '/studio' || p.startsWith('/studio/');
+}
+
 function isStrategyPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
@@ -410,6 +417,11 @@ export default function App() {
   // /concierge — 高級コンシェルジュ・チャットウィジェット (ショーケース + ?embed=1 埋め込み)
   if (isConciergePath()) {
     return <Suspense fallback={<RouteFallback />}><ConciergePage /></Suspense>;
+  }
+
+  // /studio — CORE Studio (サイト制作・受託開発スタジオ)
+  if (isStudioPath()) {
+    return <Suspense fallback={<RouteFallback />}><StudioSite /></Suspense>;
   }
 
   // /corp — CORE 法人 LP

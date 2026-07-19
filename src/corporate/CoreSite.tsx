@@ -173,6 +173,7 @@ export default function CoreSite() {
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
             <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
             <a href="/continuum" style={navLink} className="lp-nav-link">Continuum</a>
+            <a href="/studio" style={navLink} className="lp-nav-link">制作スタジオ</a>
             <a href="#connect" style={navLink} className="lp-nav-link">つながり</a>
             <a href="#journey" style={navLink} className="lp-nav-link">歩み</a>
             <a href="#about" style={navLink} className="lp-nav-link">会社概要</a>
@@ -1509,6 +1510,7 @@ export default function CoreSite() {
           </div>
           <div>
             <p style={footHead}>会社</p>
+            <a href="/studio" style={footLink} className="lp-tap-link">制作スタジオ</a>
             <a href="#mission" style={footLink} className="lp-tap-link">理念</a>
             <a href="#about" style={footLink} className="lp-tap-link">会社概要</a>
             <a href="#contact" style={footLink} className="lp-tap-link">お問い合わせ</a>
