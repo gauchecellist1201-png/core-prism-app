@@ -101,11 +101,11 @@ export function estimate(answers: EstimateAnswers): EstimateResult {
   const budgetMax = BUDGET_MAX[answers.budget];
   let note: string;
   if (budgetMax < min) {
-    note = `ご予算の範囲では、機能を絞った段階的なスタート (まず${budgetMax}万円以内で第一弾→育てる) をご提案できます。まずはご相談ください。`;
+    note = `ご予算の範囲では、機能を絞った段階的な構築 (第一弾を${budgetMax}万円以内で公開し、順次拡張) をご提案できます。まずはご相談ください。`;
   } else if (answers.timeline === 'asap') {
-    note = '特急対応 (+20%) を含んだ概算です。内容を絞れば通常価格での短納期も可能です。';
+    note = '特急対応 (+20%) を含む概算です。要件を絞ることで、通常価格での短納期に対応できる場合があります。';
   } else {
-    note = 'ヒアリングのうえ、この範囲内で正式なお見積りを固定します。追加費用が後から発生しない一括見積りです。';
+    note = 'ヒアリングの上、この範囲内で正式なお見積りを確定します。ご契約後の追加費用は発生しません。';
   }
 
   return { plan, planId, kind: isDev ? 'dev' : 'production', minPrice: min, maxPrice: max, note };

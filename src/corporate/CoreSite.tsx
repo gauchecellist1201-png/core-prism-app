@@ -474,9 +474,9 @@ export default function CoreSite() {
             reversed
           />
 
-          {/* STUDIO — サイト制作・受託開発 (プロダクトではなく「手」のサービス。
-              /corp 正統トークン (黒 × 金 #C9A96E × Cinzel) のダークガラスカードとして、
-              暗い製品群の最後に静かに置く) */}
+          {/* STUDIO — ウェブ制作・受託開発 (受託サービスの導線。
+              リンク先 /studio は白基調・法人トーンのため、暗い製品群の中で
+              白いカードとして置き、世界観を一致させる) */}
           <a
             href="/studio"
             style={{
@@ -486,8 +486,8 @@ export default function CoreSite() {
               textAlign: 'center',
               gap: '0.9rem',
               padding: 'clamp(2.2rem, 4vw, 3.2rem) clamp(1.4rem, 4vw, 3rem)',
-              background: 'linear-gradient(165deg, rgba(201,169,110,0.13), rgba(201,169,110,0.02))',
-              border: '1px solid rgba(201,169,110,0.5)',
+              background: '#FFFFFF',
+              border: '1px solid rgba(168,130,60,0.4)',
               borderRadius: 24,
               textDecoration: 'none',
               transition: 'transform 260ms cubic-bezier(.4,0,.2,1), box-shadow 260ms ease',
@@ -496,14 +496,14 @@ export default function CoreSite() {
           >
             <span
               style={{
-                fontFamily: FONT_DISPLAY,
+                fontFamily: FONT_SANS,
                 fontSize: '0.68rem',
-                letterSpacing: '0.42em',
-                color: '#C9A96E',
+                letterSpacing: '0.32em',
+                color: '#A8823C',
                 fontWeight: 700,
               }}
             >
-              CORE STUDIO
+              CORE STUDIO — WEB PRODUCTION &amp; DEVELOPMENT
             </span>
             <span
               style={{
@@ -511,27 +511,24 @@ export default function CoreSite() {
                 fontSize: 'clamp(1.3rem, 2.6vw, 1.7rem)',
                 fontWeight: 700,
                 lineHeight: 1.6,
-                letterSpacing: '0.05em',
-                background: 'linear-gradient(110deg,#F7EAD0,#E7C987 55%,#C9A96E)',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                letterSpacing: '0.04em',
+                color: '#111827',
               }}
             >
-              あなたの事業の顔も、
-              <span style={{ display: 'inline-block' }}>この手で。</span>
+              成果から逆算する、
+              <span style={{ display: 'inline-block' }}>ウェブ制作と受託開発。</span>
             </span>
             <span
               style={{
-                fontFamily: FONT_SERIF_JA,
+                fontFamily: FONT_SANS,
                 fontSize: '0.92rem',
                 lineHeight: 2,
-                color: 'rgba(240,233,216,0.82)',
+                color: '#374151',
                 maxWidth: 560,
               }}
             >
-              六つのプロダクトを磨き続けてきた同じ手が、
-              あなたのホームページ・LP・業務システムを仕立てます。
+              6つの自社プロダクトを開発・運営する体制で、
+              貴社のサイト制作からシステム開発まで一貫して承ります。
             </span>
             <span
               style={{
@@ -540,9 +537,9 @@ export default function CoreSite() {
                 minHeight: 48,
                 marginTop: '0.4rem',
                 padding: '0 1.9rem',
-                borderRadius: 999,
-                background: 'linear-gradient(90deg,#E7C987,#C9A96E)',
-                color: '#141414',
+                borderRadius: 6,
+                background: '#111827',
+                color: '#FFFFFF',
                 fontFamily: FONT_SANS,
                 fontSize: '0.88rem',
                 fontWeight: 700,
@@ -556,10 +553,10 @@ export default function CoreSite() {
                 fontFamily: FONT_SANS,
                 fontSize: '0.72rem',
                 letterSpacing: '0.06em',
-                color: 'rgba(240,233,216,0.55)',
+                color: '#6B7280',
               }}
             >
-              LP 1枚から、予約・決済つきの本格サイトまで
+              LP 1枚から、予約・決済つきサイト、業務システムまで
             </span>
           </a>
         </div>
