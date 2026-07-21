@@ -5,6 +5,16 @@
 // ターゲット: 女性のライフステージ・予防医学に関心がある層。
 // ITに詳しくなくても直感的にわかる「やさしい日本語」を最優先する。
 //
+// デザイン言語 (2026-07 刷新):
+//   女性向けヘルスケア(Flo/Clue系)×ハイエンド美容ブランド(SHIRO/Aesop/IPSA)×
+//   自由診療クリニックの上質サイト。
+//   - パレット: アイボリー #FAF7F4 / ローズベージュ #C9A192 / モーブブラウン #8A6D5C /
+//     温かい濃茶 #3E3833 / シャンパンゴールド #C9B37E(線・ラベルのみ)
+//   - タイポ: 見出し=Noto Serif JP(明朝)。数値=細身(300)で大きく・letter-spacing広め。
+//     ラベル=小さくtracking広めのうす茶
+//   - 形: 大きな角丸(24-28px)・細い罫線・淡い影・ヒーローに有機曲線の装飾
+//   - 信頼: データの扱い明記 / 医療機器でない旨 / 記録=専門家相談の確かな資料
+//
 // 構成 (1画面完結タブ型):
 //   LP (未入場) → きょう / 記録 / つながる / 設定
 //
@@ -15,15 +25,15 @@
 //   - /api/health/ingest (Apple Watch ショートカット同期・本番実測済)
 //   - webBluetoothHR / healthLiveSession (心拍計ライブ計測・保存)
 //
-// ルール: 絵文字UI禁止 / 375px見切れゼロ / コントラスト遵守 /
-//         fetch はタイムアウト付き / loading は finally で解除
+// ルール: 絵文字UI禁止 / 375px見切れゼロ / コントラスト4.5:1厳守 /
+//         fetch はタイムアウト付き / loading は必ず finally で解除
 // ============================================================
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   HeartPulse, Moon, Footprints, Sun, NotebookPen, Settings, Bluetooth,
   Smartphone, Check, Copy, Trash2, Mail, ArrowRight, ShieldCheck, Activity,
   Loader2, AlertTriangle, Droplets, ChevronRight, Smile, Meh, Frown, SmilePlus,
-  RefreshCw, Info,
+  RefreshCw, Info, Lock, FileText, Stethoscope,
 } from 'lucide-react';
 import { useHealth } from '../hooks/useHealth';
 import { detectAnomalies, type HealthAnomaly } from '../data/healthAnomaly';
@@ -32,21 +42,46 @@ import { fetchWithTimeout, isAbort } from '../lib/fetchWithTimeout';
 import { emailToHash, checkIngestStatus, saveLiveHRSession, type HealthIdentity } from '../lib/healthLiveSession';
 import { HeartRateMonitor, isWebBluetoothSupported, type HRReading } from '../lib/webBluetoothHR';
 
-// ── カラー (コーラル/ローズ系・白基調。Prism紫紺 / Studio金 とは別世界観) ──
+// ── カラー (アイボリー×ローズベージュ×モーブブラウン。上質なくすみトーン) ──
+// 文字系はすべて白背景で 4.5:1 以上を実測して選定:
+//   ink #3E3833 = 10.9:1 / sub #6E5F56 = 6.1:1 / accent #8A6D5C = 4.75:1 /
+//   goldText #7E6B40 = 5.2:1 / good #2E6B4F = 6.2:1 / warn #8A5620 = 5.4:1
 const C = {
-  bg: '#FBF6F3',
+  bg: '#FAF7F4',          // アイボリー
   card: '#FFFFFF',
-  line: '#F0DFD8',
-  ink: '#46322E',
-  sub: '#7C625C',
-  accent: '#C2483F',      // 濃コーラル (白文字で 4.5:1 以上)
-  accentSoft: '#FBEAE6',
-  rose: '#D97066',
-  good: '#2E7D5B',
-  goodSoft: '#E9F4EE',
-  warn: '#9A5A14',
-  warnSoft: '#FBF0E0',
+  line: '#EBE2DA',        // 細い罫線 (温かいベージュ)
+  ink: '#3E3833',         // 温かい濃茶
+  sub: '#6E5F56',         // うす茶 (本文サブ)
+  accent: '#8A6D5C',      // モーブブラウン (ボタン・文字アクセント)
+  accentSoft: '#F4ECE6',  // モーブの淡い面
+  mauve: '#9C7A6C',       // 中間モーブ (図形・アイコンのみ)
+  rose: '#C9A192',        // ローズベージュ (グラフ・装飾のみ)
+  roseSoft: '#F6EDE8',
+  gold: '#C9B37E',        // シャンパンゴールド (線・装飾のみ)
+  goldText: '#7E6B40',    // ゴールドの文字用 (ラベル)
+  good: '#2E6B4F',
+  goodSoft: '#EDF4EF',
+  warn: '#8A5620',
+  warnSoft: '#F9F0E4',
 };
+
+// ── タイポグラフィ ──
+const SERIF = "'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif";
+const NUM_STYLE: React.CSSProperties = {
+  fontFamily: "'Inter', 'Noto Sans JP', sans-serif",
+  fontWeight: 300,
+  letterSpacing: '0.03em',
+  fontVariantNumeric: 'tabular-nums',
+};
+/** 小さくtracking広めのラベル (うす茶 or ゴールド文字) */
+function labelStyle(color: string = C.sub): React.CSSProperties {
+  return {
+    fontSize: 11,
+    fontWeight: 600,
+    color,
+    letterSpacing: '0.16em',
+  };
+}
 
 const ENTERED_KEY = 'pulse_entered_v1';
 const PROFILE_KEY = 'pulse_profile_v1';
@@ -84,14 +119,15 @@ function loadMemos(): PulseMemo[] {
   } catch { return []; }
 }
 
-// ── ロゴ (鼓動の波形・カスタムSVG) ──
+// ── ロゴ (鼓動の波形・カスタムSVG。ゴールドの細いリング×モーブの波形) ──
 function PulseMark({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden>
-      <circle cx="16" cy="16" r="15" fill={C.accentSoft} stroke={C.accent} strokeWidth="1.4" />
+      <circle cx="16" cy="16" r="15" fill="#FFFFFF" stroke={C.gold} strokeWidth="1" />
+      <circle cx="16" cy="16" r="12.5" fill={C.roseSoft} />
       <path
-        d="M5.5 16.5h5l2.2-6 3.6 11 2.8-8 1.6 3h6"
-        stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        d="M6.5 16.5h4l2.2-6 3.6 11 2.8-8 1.6 3h5"
+        stroke={C.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
       />
     </svg>
   );
@@ -208,8 +244,9 @@ function memoToHint(text: string, mood: PulseMemo['mood']): string {
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <div style={{
-      background: C.card, border: `1px solid ${C.line}`, borderRadius: 18,
-      padding: 16, ...style,
+      background: C.card, border: `1px solid ${C.line}`, borderRadius: 26,
+      padding: 22, boxShadow: '0 1px 2px rgba(62,56,51,0.03), 0 8px 28px rgba(138,109,92,0.05)',
+      ...style,
     }}>
       {children}
     </div>
@@ -217,9 +254,9 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
 }
 function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
       {icon}
-      <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>{children}</div>
+      <div style={{ fontSize: 15.5, fontWeight: 600, color: C.ink, fontFamily: SERIF, letterSpacing: '0.04em' }}>{children}</div>
     </div>
   );
 }
@@ -228,10 +265,12 @@ function PrimaryButton({ onClick, href, children, full }: {
 }) {
   const style: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-    minHeight: 48, padding: '12px 22px', borderRadius: 999,
-    background: C.accent, color: '#FFFFFF', fontSize: 15, fontWeight: 700,
+    minHeight: 50, padding: '13px 26px', borderRadius: 999,
+    background: C.accent, color: '#FFFFFF', fontSize: 14.5, fontWeight: 600,
+    letterSpacing: '0.06em',
     border: 'none', cursor: 'pointer', textDecoration: 'none',
     width: full ? '100%' : undefined, boxSizing: 'border-box',
+    boxShadow: '0 6px 18px rgba(138,109,92,0.22)',
   };
   if (href) return <a href={href} style={style}>{children}</a>;
   return <button type="button" onClick={onClick} style={style}>{children}</button>;
@@ -241,9 +280,10 @@ function GhostButton({ onClick, href, children, full }: {
 }) {
   const style: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-    minHeight: 48, padding: '12px 22px', borderRadius: 999,
-    background: '#FFFFFF', color: C.accent, fontSize: 15, fontWeight: 700,
-    border: `1.5px solid ${C.accent}`, cursor: 'pointer', textDecoration: 'none',
+    minHeight: 50, padding: '13px 26px', borderRadius: 999,
+    background: '#FFFFFF', color: C.accent, fontSize: 14.5, fontWeight: 600,
+    letterSpacing: '0.06em',
+    border: `1px solid ${C.accent}`, cursor: 'pointer', textDecoration: 'none',
     width: full ? '100%' : undefined, boxSizing: 'border-box',
   };
   if (href) return <a href={href} style={style}>{children}</a>;
@@ -252,11 +292,11 @@ function GhostButton({ onClick, href, children, full }: {
 function CopyField({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div style={{ marginTop: 10 }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: C.sub, marginBottom: 4 }}>{label}</div>
+    <div style={{ marginTop: 12 }}>
+      <div style={{ ...labelStyle(), marginBottom: 6 }}>{label}</div>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
-        background: C.bg, border: `1px solid ${C.line}`, borderRadius: 12, padding: '8px 10px',
+        background: C.bg, border: `1px solid ${C.line}`, borderRadius: 14, padding: '9px 12px',
       }}>
         <div style={{
           flex: 1, fontSize: 12, fontFamily: 'ui-monospace, monospace', color: C.ink,
@@ -269,7 +309,7 @@ function CopyField({ label, value }: { label: string; value: string }) {
           }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
-            minHeight: 36, padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700,
+            minHeight: 36, padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
             background: copied ? C.goodSoft : '#FFFFFF', color: copied ? C.good : C.accent,
             border: `1px solid ${copied ? C.good : C.accent}`, cursor: 'pointer',
           }}
@@ -282,28 +322,60 @@ function CopyField({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ── 7日間ミニグラフ (棒・SVG) ──
+// ── 7日間ミニグラフ (棒・SVG。ローズベージュの柔らかな棒) ──
 function WeekBars({ week, metric, color, goal }: {
   week: DailyHealth[]; metric: 'sleepHours' | 'steps'; color: string; goal?: number;
 }) {
   const vals = week.map((d) => d[metric] ?? 0);
   const max = Math.max(...vals, goal ?? 0, 1);
-  const W = 260; const H = 64; const gap = 6;
+  const W = 260; const H = 64; const gap = 7;
   const bw = (W - gap * (vals.length - 1)) / Math.max(vals.length, 1);
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }} aria-hidden>
       {typeof goal === 'number' && goal > 0 && (
         <line x1={0} x2={W} y1={H - (goal / max) * (H - 8)} y2={H - (goal / max) * (H - 8)}
-          stroke={C.sub} strokeWidth={1} strokeDasharray="4 4" opacity={0.5} />
+          stroke={C.gold} strokeWidth={1} strokeDasharray="1 5" strokeLinecap="round" />
       )}
       {vals.map((v, i) => {
         const h = Math.max(3, (v / max) * (H - 8));
         return (
-          <rect key={i} x={i * (bw + gap)} y={H - h} width={bw} height={h} rx={3}
-            fill={i === vals.length - 1 ? color : `${color}55`} />
+          <rect key={i} x={i * (bw + gap)} y={H - h} width={bw} height={h} rx={Math.min(6, bw / 2)}
+            fill={i === vals.length - 1 ? color : `${color}4D`} />
         );
       })}
     </svg>
+  );
+}
+
+// ── ヒーロー装飾 (淡い有機曲線・CSSのみ) ──
+function HeroArcs() {
+  return (
+    <div aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      {/* 右上のローズの円弧 */}
+      <div style={{
+        position: 'absolute', top: -180, right: -140, width: 380, height: 380, borderRadius: '50%',
+        background: 'radial-gradient(circle at 35% 65%, rgba(201,161,146,0.16), rgba(201,161,146,0) 68%)',
+      }} />
+      {/* 左のモーブのにじみ */}
+      <div style={{
+        position: 'absolute', top: 120, left: -160, width: 340, height: 340, borderRadius: '50%',
+        background: 'radial-gradient(circle at 60% 40%, rgba(156,122,108,0.10), rgba(156,122,108,0) 66%)',
+      }} />
+      {/* ゴールドの細いリング */}
+      <div style={{
+        position: 'absolute', top: 30, right: -60, width: 240, height: 240, borderRadius: '50%',
+        border: `1px solid rgba(201,179,126,0.35)`,
+      }} />
+      <div style={{
+        position: 'absolute', top: 260, left: -80, width: 180, height: 180, borderRadius: '50%',
+        border: `1px solid rgba(201,161,146,0.28)`,
+      }} />
+      {/* 下辺のやわらかな波 */}
+      <svg viewBox="0 0 720 80" preserveAspectRatio="none" style={{ position: 'absolute', bottom: -1, left: 0, width: '100%', height: 56 }}>
+        <path d="M0 58 C 160 22, 320 78, 480 46 C 580 26, 660 40, 720 30 L 720 80 L 0 80 Z" fill="rgba(246,237,232,0.65)" />
+        <path d="M0 70 C 180 40, 360 84, 540 58 C 630 46, 690 52, 720 48" fill="none" stroke="rgba(201,179,126,0.4)" strokeWidth="1" />
+      </svg>
+    </div>
   );
 }
 
@@ -325,7 +397,24 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
     {
       Icon: HeartPulse,
       title: '気になる変化に、はやく気づける',
-      body: 'ふだんのあなたと比べて「いつもとちがう」変化があると、そっとお知らせ。予防のいちばんの近道は、はやく気づくことです。',
+      body: 'ふだんのあなたと比べて「いつもとちがう」変化があると、そっとお知らせ。予防医学の考え方でも、いちばんの近道は、はやく気づくことです。',
+    },
+  ];
+  const trust = [
+    {
+      Icon: Lock,
+      title: 'あなたの記録は、あなたのものです',
+      body: 'からだの記録は、あなたのアカウント（お使いの端末）にだけ保存されます。ほかの誰かに見られたり、勝手に使われたりすることはありません。',
+    },
+    {
+      Icon: FileText,
+      title: '専門家に相談するときの、確かな資料に',
+      body: 'からだの記録は、医師や専門家に相談するときの確かな資料になります。「いつから・どのくらい」が伝えられるだけで、相談の質は大きく変わります。',
+    },
+    {
+      Icon: Stethoscope,
+      title: '予防医学の考え方にもとづくヒント',
+      body: 'お届けするのは、予防医学の考え方にもとづく生活のヒントです。気になる変化が続くときは、早めに信頼できる専門機関へ。その判断を、記録がそっと支えます。',
     },
   ];
   return (
@@ -333,54 +422,66 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
       {/* ヘッダー */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 18px', maxWidth: 960, margin: '0 auto', boxSizing: 'border-box',
+        padding: '16px 20px', maxWidth: 960, margin: '0 auto', boxSizing: 'border-box',
+        position: 'relative', zIndex: 2,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <PulseMark size={30} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <PulseMark size={32} />
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '0.02em' }}>CORE Pulse</div>
-            <div style={{ fontSize: 10.5, color: C.sub }}>からだ見守りAI（エーアイ）</div>
+            <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: '0.08em', fontFamily: SERIF }}>CORE Pulse</div>
+            <div style={{ fontSize: 10, color: C.sub, letterSpacing: '0.14em', marginTop: 1 }}>からだ見守りAI（エーアイ）</div>
           </div>
         </div>
         <button type="button" onClick={onEnter} style={{
-          minHeight: 40, padding: '8px 16px', borderRadius: 999, fontSize: 13, fontWeight: 700,
-          background: '#FFFFFF', color: C.accent, border: `1.5px solid ${C.accent}`, cursor: 'pointer',
+          minHeight: 40, padding: '8px 18px', borderRadius: 999, fontSize: 13, fontWeight: 600,
+          letterSpacing: '0.04em',
+          background: '#FFFFFF', color: C.accent, border: `1px solid ${C.accent}`, cursor: 'pointer',
         }}>
           アプリを開く
         </button>
       </header>
 
       {/* ヒーロー */}
-      <section style={{ maxWidth: 720, margin: '0 auto', padding: '36px 20px 12px', textAlign: 'center', boxSizing: 'border-box' }}>
-        <h1 style={{ fontSize: 'clamp(26px, 6.4vw, 40px)', lineHeight: 1.35, fontWeight: 800, margin: 0 }}>
-          毎日のからだを、<br />AIがやさしく見守る。
-        </h1>
-        <p style={{ fontSize: 15, lineHeight: 1.9, color: C.sub, margin: '18px auto 0', maxWidth: 560 }}>
-          Apple Watchや iPhoneをつなぐだけで、睡眠・心拍・歩数から今日の調子を読みとき、
-          毎朝「ことば」でお届けします。症状やきぶんのメモからは、予防のヒントを。
-          女性のライフステージの変化にも、そっと寄り添います。
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 340, margin: '26px auto 0' }}>
-          <PrimaryButton onClick={onEnter} full>
-            無料でためしてみる <ArrowRight size={16} />
-          </PrimaryButton>
-          <GhostButton href={MONITOR_MAILTO} full>
-            <Mail size={15} /> 先行モニターに申し込む
-          </GhostButton>
-        </div>
-        <div style={{ fontSize: 12, color: C.sub, marginTop: 12 }}>
-          登録なしで、見本のデータをそのままさわれます
+      <section style={{ position: 'relative' }}>
+        <HeroArcs />
+        <div style={{
+          position: 'relative', maxWidth: 720, margin: '0 auto',
+          padding: '52px 20px 64px', textAlign: 'center', boxSizing: 'border-box', zIndex: 1,
+        }}>
+          <div style={{ ...labelStyle(C.goldText), marginBottom: 18 }}>DAILY WELLNESS, GENTLY WATCHED</div>
+          <h1 style={{
+            fontSize: 'clamp(27px, 6.6vw, 42px)', lineHeight: 1.5, fontWeight: 600, margin: 0,
+            fontFamily: SERIF, letterSpacing: '0.02em',
+          }}>
+            毎日のからだを、<br />AIがやさしく見守る。
+          </h1>
+          <p style={{ fontSize: 15, lineHeight: 2.1, color: C.sub, margin: '22px auto 0', maxWidth: 560 }}>
+            Apple Watchや iPhoneをつなぐだけで、睡眠・心拍・歩数から今日の調子を読みとき、
+            毎朝「ことば」でお届けします。症状やきぶんのメモからは、予防のヒントを。
+            女性のライフステージの変化にも、そっと寄り添います。
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 340, margin: '32px auto 0' }}>
+            <PrimaryButton onClick={onEnter} full>
+              無料でためしてみる <ArrowRight size={16} />
+            </PrimaryButton>
+            <GhostButton href={MONITOR_MAILTO} full>
+              <Mail size={15} /> 先行モニターに申し込む
+            </GhostButton>
+          </div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 14, letterSpacing: '0.04em' }}>
+            登録なしで、見本のデータをそのままさわれます
+          </div>
         </div>
       </section>
 
       {/* けさのことば サンプル */}
-      <section style={{ maxWidth: 480, margin: '28px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
-        <Card style={{ textAlign: 'left', boxShadow: '0 10px 30px rgba(194,72,63,0.08)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <Sun size={16} color={C.accent} />
-            <div style={{ fontSize: 12, fontWeight: 800, color: C.accent, letterSpacing: '0.06em' }}>けさのことば（見本）</div>
+      <section style={{ maxWidth: 500, margin: '4px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+        <Card style={{ textAlign: 'left', boxShadow: '0 14px 44px rgba(138,109,92,0.10)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <Sun size={15} color={C.goldText} />
+            <div style={labelStyle(C.goldText)}>けさのことば（見本）</div>
           </div>
-          <p style={{ fontSize: 14, lineHeight: 1.9, margin: 0, color: C.ink }}>
+          <p style={{ fontSize: 14.5, lineHeight: 2.05, margin: 0, color: C.ink, fontFamily: SERIF }}>
             おはようございます。きのうのねむりは6時間10分と、すこし少なめでした。
             今夜は30分だけ早くおふとんへ。歩いた量は8,200歩で、とてもよいペースです。
             心拍のゆらぎが下がりぎみなので、今日はむりせずゆっくりめに。
@@ -389,48 +490,79 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
       </section>
 
       {/* 3つの価値 */}
-      <section style={{ maxWidth: 960, margin: '40px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+      <section style={{ maxWidth: 960, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
         <div className="pulse-value-grid">
           {values.map((v) => (
             <Card key={v.title}>
               <div style={{
-                width: 44, height: 44, borderRadius: 14, background: C.accentSoft,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+                width: 46, height: 46, borderRadius: '50%', background: C.roseSoft,
+                border: `1px solid ${C.line}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
               }}>
-                <v.Icon size={22} color={C.accent} />
+                <v.Icon size={21} color={C.accent} strokeWidth={1.6} />
               </div>
-              <div style={{ fontSize: 15.5, fontWeight: 800, marginBottom: 8 }}>{v.title}</div>
-              <div style={{ fontSize: 13.5, lineHeight: 1.85, color: C.sub }}>{v.body}</div>
+              <div style={{ fontSize: 15.5, fontWeight: 600, marginBottom: 10, fontFamily: SERIF, letterSpacing: '0.02em', lineHeight: 1.6 }}>{v.title}</div>
+              <div style={{ fontSize: 13.5, lineHeight: 2.0, color: C.sub }}>{v.body}</div>
             </Card>
           ))}
         </div>
       </section>
 
+      {/* 信頼 — 安心して続けられる理由 */}
+      <section style={{ maxWidth: 640, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+          <div style={{ ...labelStyle(C.goldText), marginBottom: 12 }}>TRUST</div>
+          <h2 style={{ fontSize: 21, fontWeight: 600, margin: 0, fontFamily: SERIF, letterSpacing: '0.03em' }}>
+            安心して、続けられるように。
+          </h2>
+        </div>
+        <Card style={{ padding: '10px 24px' }}>
+          {trust.map((tr, i) => (
+            <div key={tr.title} style={{
+              display: 'flex', gap: 14, alignItems: 'flex-start', padding: '18px 0',
+              borderTop: i === 0 ? 'none' : `1px solid ${C.line}`,
+            }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: '50%', background: C.accentSoft,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2,
+              }}>
+                <tr.Icon size={17} color={C.accent} strokeWidth={1.6} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 14.5, fontWeight: 600, fontFamily: SERIF, letterSpacing: '0.02em', lineHeight: 1.6 }}>{tr.title}</div>
+                <div style={{ fontSize: 13, lineHeight: 1.95, color: C.sub, marginTop: 5 }}>{tr.body}</div>
+              </div>
+            </div>
+          ))}
+        </Card>
+      </section>
+
       {/* 料金 */}
-      <section style={{ maxWidth: 480, margin: '40px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
-        <Card style={{ textAlign: 'center', border: `1.5px solid ${C.accent}` }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: C.accent, letterSpacing: '0.08em' }}>料金</div>
-          <div style={{ fontSize: 30, fontWeight: 800, marginTop: 8 }}>
-            月額 ¥2,980 <span style={{ fontSize: 14, fontWeight: 700, color: C.sub }}>（予定）</span>
+      <section style={{ maxWidth: 500, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+        <Card style={{ textAlign: 'center', border: `1px solid ${C.gold}` }}>
+          <div style={labelStyle(C.goldText)}>料金</div>
+          <div style={{ marginTop: 14, ...NUM_STYLE, fontSize: 38, color: C.ink, lineHeight: 1 }}>
+            ¥2,980
+            <span style={{ fontSize: 14, fontWeight: 400, color: C.sub, letterSpacing: '0.04em', marginLeft: 8, fontFamily: "'Noto Sans JP', sans-serif" }}>/月（予定）</span>
           </div>
           <div style={{
-            display: 'inline-block', marginTop: 10, padding: '6px 14px', borderRadius: 999,
-            background: C.goodSoft, color: C.good, fontSize: 13, fontWeight: 800,
+            display: 'inline-block', marginTop: 14, padding: '7px 16px', borderRadius: 999,
+            background: C.goodSoft, color: C.good, fontSize: 13, fontWeight: 600, letterSpacing: '0.03em',
           }}>
             いまは先行モニター募集中・無料
           </div>
-          <p style={{ fontSize: 13, lineHeight: 1.8, color: C.sub, margin: '14px 0 0' }}>
+          <p style={{ fontSize: 13, lineHeight: 1.9, color: C.sub, margin: '16px 0 0' }}>
             正式スタート前のいまは、無料でぜんぶの機能をお使いいただけます。
             使ってみた感想を、メールでひとこと聞かせてください。
           </p>
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 18 }}>
             <PrimaryButton href={MONITOR_MAILTO} full>
               <Mail size={15} /> 先行モニターに申し込む
             </PrimaryButton>
           </div>
           <div style={{
-            marginTop: 14, padding: '10px 12px', borderRadius: 12, background: C.bg,
-            fontSize: 12.5, lineHeight: 1.7, color: C.sub, textAlign: 'left',
+            marginTop: 16, padding: '12px 14px', borderRadius: 14, background: C.bg,
+            fontSize: 12.5, lineHeight: 1.8, color: C.sub, textAlign: 'left',
             display: 'flex', gap: 8, alignItems: 'flex-start',
           }}>
             <Info size={14} style={{ flexShrink: 0, marginTop: 2 }} />
@@ -440,32 +572,35 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
       </section>
 
       {/* 安心 */}
-      <section style={{ maxWidth: 560, margin: '32px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+      <section style={{ maxWidth: 560, margin: '40px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', justifyContent: 'center' }}>
           <ShieldCheck size={16} color={C.good} style={{ flexShrink: 0, marginTop: 3 }} />
-          <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.sub, margin: 0 }}>
-            からだの記録はあなたの端末に保存されます。CORE Pulseは診断を行うものではありません。
-            気になる症状が続くときは、必ずお医者さんにご相談ください。
+          <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.sub, margin: 0 }}>
+            あなたの記録は、あなたのアカウントにだけ保存されます。
+            気になる変化が続くときは、早めに信頼できる専門機関へご相談ください。
           </p>
         </div>
       </section>
 
       {/* フッター */}
       <footer style={{
-        marginTop: 44, padding: '22px 20px calc(28px + env(safe-area-inset-bottom))',
+        marginTop: 56, padding: '26px 20px calc(32px + env(safe-area-inset-bottom))',
         borderTop: `1px solid ${C.line}`, textAlign: 'center',
       }}>
-        <div style={{ display: 'flex', gap: 18, justifyContent: 'center', fontSize: 12 }}>
+        <div style={{ display: 'flex', gap: 20, justifyContent: 'center', fontSize: 12 }}>
           <a href="/privacy" style={{ color: C.sub, textDecoration: 'none' }}>プライバシーポリシー</a>
           <a href="/tokushoho" style={{ color: C.sub, textDecoration: 'none' }}>特定商取引法に基づく表記</a>
         </div>
-        <div style={{ fontSize: 11.5, color: C.sub, marginTop: 10, opacity: 0.8 }}>
+        <p style={{ fontSize: 11.5, lineHeight: 1.9, color: C.sub, margin: '14px auto 0', maxWidth: 480 }}>
+          CORE Pulseは医療機器ではありません。診断・治療は医療機関にご相談ください。
+        </p>
+        <div style={{ fontSize: 11, color: C.sub, marginTop: 10, letterSpacing: '0.1em', opacity: 0.85 }}>
           CORE Pulse — CORE（設立準備中）
         </div>
       </footer>
 
       <style>{`
-        .pulse-value-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+        .pulse-value-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
         @media (min-width: 760px) { .pulse-value-grid { grid-template-columns: repeat(3, 1fr); } }
       `}</style>
     </div>
@@ -567,29 +702,29 @@ function ConnectView({ profile, onSaveEmail, health }: {
 
   return (
     <Card>
-      <SectionTitle icon={<Smartphone size={18} color={C.accent} />}>
+      <SectionTitle icon={<Smartphone size={17} color={C.accent} strokeWidth={1.6} />}>
         Apple Watch / iPhone とつなぐ
       </SectionTitle>
-      <p style={{ fontSize: 13, lineHeight: 1.8, color: C.sub, margin: '0 0 4px' }}>
+      <p style={{ fontSize: 13, lineHeight: 1.9, color: C.sub, margin: '0 0 4px' }}>
         iPhoneの「ショートカット」というアプリを使うと、毎朝の睡眠・歩数・心拍が自動でここに届きます。
         設定は一度だけ。3つの手順でできます。
       </p>
 
       {/* 手順1 */}
-      <div style={{ marginTop: 14 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>手順1. メールアドレスを入れる</div>
-        <div style={{ fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginTop: 4 }}>
+      <div style={{ marginTop: 16 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 600, color: C.ink, fontFamily: SERIF }}>手順1. メールアドレスを入れる</div>
+        <div style={{ fontSize: 12.5, color: C.sub, lineHeight: 1.8, marginTop: 5 }}>
           あなた専用の「合いことば（識別番号）」を作るために使います。メールが送られることはありません。
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="例: hana@example.com"
             style={{
-              flex: '1 1 180px', minWidth: 0, minHeight: 44, fontSize: 16, color: C.ink,
-              padding: '8px 12px', borderRadius: 12, border: `1px solid ${C.line}`,
+              flex: '1 1 180px', minWidth: 0, minHeight: 46, fontSize: 16, color: C.ink,
+              padding: '8px 14px', borderRadius: 14, border: `1px solid ${C.line}`,
               background: C.bg, boxSizing: 'border-box',
             }}
           />
@@ -597,7 +732,8 @@ function ConnectView({ profile, onSaveEmail, health }: {
             type="button"
             onClick={() => onSaveEmail(email.trim())}
             style={{
-              minHeight: 44, padding: '8px 18px', borderRadius: 999, fontSize: 13.5, fontWeight: 700,
+              minHeight: 46, padding: '8px 20px', borderRadius: 999, fontSize: 13.5, fontWeight: 600,
+              letterSpacing: '0.04em',
               background: C.accent, color: '#FFF', border: 'none', cursor: 'pointer', flexShrink: 0,
             }}
           >
@@ -608,9 +744,9 @@ function ConnectView({ profile, onSaveEmail, health }: {
 
       {/* 手順2 */}
       {hash && (
-        <div style={{ marginTop: 18 }}>
-          <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>手順2. iPhoneのショートカットに、この2つを貼る</div>
-          <div style={{ fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginTop: 4 }}>
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 600, color: C.ink, fontFamily: SERIF }}>手順2. iPhoneのショートカットに、この2つを貼る</div>
+          <div style={{ fontSize: 12.5, color: C.sub, lineHeight: 1.8, marginTop: 5 }}>
             「ショートカット」アプリで新しいショートカットを作り、「URLの内容を取得」で下の送り先へ、
             ヘルスケアの数値（歩数・睡眠・心拍）を毎朝送るようにします。合いことばは
             「X-User-Email-Hash」という名前のヘッダー（送り主の名札のようなもの）に貼ってください。
@@ -622,18 +758,18 @@ function ConnectView({ profile, onSaveEmail, health }: {
 
       {/* 手順3 */}
       {hash && (
-        <div style={{ marginTop: 18 }}>
-          <div style={{ fontSize: 13.5, fontWeight: 800, color: C.ink }}>手順3. 届いているか確認する</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 600, color: C.ink, fontFamily: SERIF }}>手順3. 届いているか確認する</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
             <GhostButton onClick={verify} full>
               {checking ? <Loader2 size={15} className="pulse-spin" /> : <RefreshCw size={15} />}
               届いているか確認
             </GhostButton>
             {checkResult && (
               <div style={{
-                fontSize: 13, lineHeight: 1.7, padding: '10px 12px', borderRadius: 12,
+                fontSize: 13, lineHeight: 1.8, padding: '11px 14px', borderRadius: 14,
                 background: checkOk ? C.goodSoft : C.warnSoft,
-                color: checkOk ? C.good : C.warn, fontWeight: 600,
+                color: checkOk ? C.good : C.warn, fontWeight: 500,
               }}>
                 {checkResult}
               </div>
@@ -644,8 +780,8 @@ function ConnectView({ profile, onSaveEmail, health }: {
             </PrimaryButton>
             {importMsg && (
               <div style={{
-                fontSize: 13, lineHeight: 1.7, padding: '10px 12px', borderRadius: 12,
-                background: C.accentSoft, color: C.accent, fontWeight: 600,
+                fontSize: 13, lineHeight: 1.8, padding: '11px 14px', borderRadius: 14,
+                background: C.accentSoft, color: C.accent, fontWeight: 500,
               }}>
                 {importMsg}
               </div>
@@ -710,26 +846,27 @@ function HeartMonitorView({ identity }: { identity: HealthIdentity | null }) {
 
   return (
     <Card>
-      <SectionTitle icon={<Bluetooth size={18} color={C.accent} />}>
+      <SectionTitle icon={<Bluetooth size={17} color={C.accent} strokeWidth={1.6} />}>
         胸につける心拍計でその場で計る
       </SectionTitle>
-      <p style={{ fontSize: 13, lineHeight: 1.8, color: C.sub, margin: 0 }}>
+      <p style={{ fontSize: 13, lineHeight: 1.9, color: C.sub, margin: 0 }}>
         お手持ちの心拍計（胸ベルト式など）があれば、いまの心拍をその場で計れます。お持ちでなければ飛ばしてOKです。
       </p>
       {status === 'connected' || status === 'reconnecting' ? (
         <div style={{
-          marginTop: 12, borderRadius: 14, background: C.accentSoft, padding: 16, textAlign: 'center',
+          marginTop: 14, borderRadius: 20, background: C.roseSoft, padding: 20, textAlign: 'center',
+          border: `1px solid ${C.line}`,
         }}>
-          <div style={{ fontSize: 44, fontWeight: 800, color: C.accent, lineHeight: 1 }}>
+          <div style={{ ...NUM_STYLE, fontSize: 52, color: C.ink, lineHeight: 1 }}>
             {bpm ?? '—'}
-            <span style={{ fontSize: 14, fontWeight: 700, marginLeft: 6 }}>回/分</span>
+            <span style={{ fontSize: 14, fontWeight: 400, marginLeft: 8, color: C.sub, fontFamily: "'Noto Sans JP', sans-serif" }}>回/分</span>
           </div>
-          <div style={{ fontSize: 12.5, color: C.sub, marginTop: 6 }}>
+          <div style={{ fontSize: 12.5, color: C.sub, marginTop: 8 }}>
             心拍のゆらぎ: {hrv && hrv > 0 ? `${hrv}` : '計測中…'}
             {status === 'reconnecting' && ' ・つなぎ直しています…'}
           </div>
           {identity && (
-            <div style={{ marginTop: 12 }}>
+            <div style={{ marginTop: 14 }}>
               <GhostButton onClick={save} full>
                 {saving ? <Loader2 size={15} className="pulse-spin" /> : <Check size={15} />}
                 この計測を記録に保存
@@ -738,7 +875,7 @@ function HeartMonitorView({ identity }: { identity: HealthIdentity | null }) {
           )}
         </div>
       ) : (
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 14 }}>
           <GhostButton onClick={connect} full>
             <Bluetooth size={15} />
             {status === 'pairing' ? 'さがしています…' : '心拍計をつなぐ'}
@@ -747,9 +884,9 @@ function HeartMonitorView({ identity }: { identity: HealthIdentity | null }) {
       )}
       {error && (
         <div style={{
-          marginTop: 10, display: 'flex', gap: 8, alignItems: 'flex-start',
-          fontSize: 12.5, lineHeight: 1.7, color: C.warn, background: C.warnSoft,
-          borderRadius: 12, padding: '10px 12px',
+          marginTop: 12, display: 'flex', gap: 8, alignItems: 'flex-start',
+          fontSize: 12.5, lineHeight: 1.8, color: C.warn, background: C.warnSoft,
+          borderRadius: 14, padding: '11px 14px',
         }}>
           <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
           {error}
@@ -757,8 +894,8 @@ function HeartMonitorView({ identity }: { identity: HealthIdentity | null }) {
       )}
       {saveMsg && (
         <div style={{
-          marginTop: 10, fontSize: 12.5, lineHeight: 1.7, color: C.good,
-          background: C.goodSoft, borderRadius: 12, padding: '10px 12px', fontWeight: 600,
+          marginTop: 12, fontSize: 12.5, lineHeight: 1.8, color: C.good,
+          background: C.goodSoft, borderRadius: 14, padding: '11px 14px', fontWeight: 500,
         }}>
           {saveMsg}
         </div>
@@ -834,77 +971,88 @@ function PulseHome() {
       {/* ヘッダー */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 16px', maxWidth: 640, margin: '0 auto', boxSizing: 'border-box',
+        padding: '14px 18px', maxWidth: 640, margin: '0 auto', boxSizing: 'border-box',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <PulseMark size={26} />
-          <div style={{ fontSize: 15, fontWeight: 800 }}>CORE Pulse</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <PulseMark size={28} />
+          <div style={{ fontSize: 15, fontWeight: 600, fontFamily: SERIF, letterSpacing: '0.06em' }}>CORE Pulse</div>
         </div>
-        <div style={{ fontSize: 12.5, color: C.sub, fontWeight: 600 }}>{todayLabel()}</div>
+        <div style={{ fontSize: 12, color: C.sub, fontWeight: 500, letterSpacing: '0.06em' }}>{todayLabel()}</div>
       </header>
 
       <main style={{
         maxWidth: 640, margin: '0 auto',
-        padding: '4px 16px calc(96px + env(safe-area-inset-bottom))', boxSizing: 'border-box',
-        display: 'flex', flexDirection: 'column', gap: 14,
+        padding: '6px 18px calc(100px + env(safe-area-inset-bottom))', boxSizing: 'border-box',
+        display: 'flex', flexDirection: 'column', gap: 16,
       }}>
         {/* ── きょう ── */}
         {tab === 'today' && (
           <>
-            <Card style={{ background: 'linear-gradient(140deg, #FFFFFF, #FDF0EC)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <Sun size={16} color={C.accent} />
-                <div style={{ fontSize: 12, fontWeight: 800, color: C.accent, letterSpacing: '0.06em' }}>けさのことば</div>
+            <Card style={{ background: 'linear-gradient(150deg, #FFFFFF 30%, #F6EDE8)', position: 'relative', overflow: 'hidden' }}>
+              <div aria-hidden style={{
+                position: 'absolute', top: -70, right: -70, width: 190, height: 190, borderRadius: '50%',
+                border: `1px solid rgba(201,179,126,0.30)`,
+              }} />
+              <div aria-hidden style={{
+                position: 'absolute', bottom: -90, right: -30, width: 170, height: 170, borderRadius: '50%',
+                background: 'radial-gradient(circle at 40% 40%, rgba(201,161,146,0.13), rgba(201,161,146,0) 70%)',
+              }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, position: 'relative' }}>
+                <Sun size={15} color={C.goldText} />
+                <div style={labelStyle(C.goldText)}>けさのことば</div>
               </div>
               {morning.map((line, i) => (
-                <p key={i} style={{ fontSize: 14.5, lineHeight: 1.95, margin: i === 0 ? 0 : '8px 0 0' }}>{line}</p>
+                <p key={i} style={{
+                  fontSize: 14.5, lineHeight: 2.05, margin: i === 0 ? 0 : '10px 0 0',
+                  fontFamily: SERIF, position: 'relative',
+                }}>{line}</p>
               ))}
             </Card>
 
             {/* きょうの数値 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {[
                 { Icon: Moon, label: 'ねむり', value: fmtSleep(t?.sleepHours), sub: '昨夜の睡眠' },
                 { Icon: Footprints, label: '歩いた量', value: fmtNum(t?.steps, '歩'), sub: `目標 ${profile.goalSteps.toLocaleString()}歩` },
                 { Icon: HeartPulse, label: '休んでいるときの脈', value: fmtNum(t?.restingHR, ' 回/分'), sub: '低いほどゆったり' },
                 { Icon: Droplets, label: '水分', value: t?.hydrationL ? `${t.hydrationL}L` : '—', sub: 'きのうの合計' },
               ].map((x) => (
-                <Card key={x.label} style={{ padding: 14 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                    <x.Icon size={15} color={C.accent} />
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.sub }}>{x.label}</div>
+                <Card key={x.label} style={{ padding: '16px 16px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                    <x.Icon size={14} color={C.mauve} strokeWidth={1.6} />
+                    <div style={{ fontSize: 10.5, fontWeight: 600, color: C.sub, letterSpacing: '0.1em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.label}</div>
                   </div>
-                  <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.01em' }}>{x.value}</div>
-                  <div style={{ fontSize: 11, color: C.sub, marginTop: 3 }}>{x.sub}</div>
+                  <div style={{ ...NUM_STYLE, fontSize: 24, color: C.ink, lineHeight: 1.2 }}>{x.value}</div>
+                  <div style={{ fontSize: 11, color: C.sub, marginTop: 5 }}>{x.sub}</div>
                 </Card>
               ))}
             </div>
 
             {/* 気づき */}
             <Card>
-              <SectionTitle icon={<Activity size={17} color={C.accent} />}>気づき — いつもとちがう変化</SectionTitle>
+              <SectionTitle icon={<Activity size={16} color={C.accent} strokeWidth={1.6} />}>気づき — いつもとちがう変化</SectionTitle>
               {importantAnomalies.length === 0 ? (
                 <div style={{
-                  display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13.5, lineHeight: 1.8,
-                  color: C.good, background: C.goodSoft, borderRadius: 12, padding: '12px 14px', fontWeight: 600,
+                  display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13.5, lineHeight: 1.9,
+                  color: C.good, background: C.goodSoft, borderRadius: 16, padding: '13px 16px', fontWeight: 500,
                 }}>
-                  <Check size={15} style={{ flexShrink: 0, marginTop: 3 }} />
+                  <Check size={15} style={{ flexShrink: 0, marginTop: 4 }} />
                   きょうは大きな変化はありません。いいリズムです。
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {importantAnomalies.map((a) => {
                     const p = anomalyToPlain(a);
                     return (
                       <div key={a.id} style={{
-                        borderRadius: 12, padding: '12px 14px',
+                        borderRadius: 16, padding: '13px 16px',
                         background: a.severity === 'alert' ? C.accentSoft : C.warnSoft,
                       }}>
                         <div style={{
-                          fontSize: 13.5, fontWeight: 800,
+                          fontSize: 13.5, fontWeight: 600, fontFamily: SERIF, lineHeight: 1.7,
                           color: a.severity === 'alert' ? C.accent : C.warn,
                         }}>{p.title}</div>
-                        <div style={{ fontSize: 13, lineHeight: 1.8, color: C.ink, marginTop: 4 }}>{p.detail}</div>
+                        <div style={{ fontSize: 13, lineHeight: 1.9, color: C.ink, marginTop: 5 }}>{p.detail}</div>
                       </div>
                     );
                   })}
@@ -914,15 +1062,24 @@ function PulseHome() {
 
             {/* 7日間のうつりかわり */}
             <Card>
-              <SectionTitle icon={<Moon size={17} color={C.accent} />}>この7日間のねむり</SectionTitle>
+              <SectionTitle icon={<Moon size={16} color={C.accent} strokeWidth={1.6} />}>この7日間のねむり</SectionTitle>
               <WeekBars week={health.week} metric="sleepHours" color={C.rose} goal={profile.goalSleep} />
-              <div style={{ fontSize: 11.5, color: C.sub, marginTop: 6 }}>点線 = あなたの目標（{profile.goalSleep}時間）・いちばん右がきのう</div>
+              <div style={{ fontSize: 11.5, color: C.sub, marginTop: 8 }}>点線 = あなたの目標（{profile.goalSleep}時間）・いちばん右がきのう</div>
             </Card>
             <Card>
-              <SectionTitle icon={<Footprints size={17} color={C.accent} />}>この7日間の歩いた量</SectionTitle>
-              <WeekBars week={health.week} metric="steps" color={C.accent} goal={profile.goalSteps} />
-              <div style={{ fontSize: 11.5, color: C.sub, marginTop: 6 }}>点線 = あなたの目標（{profile.goalSteps.toLocaleString()}歩）</div>
+              <SectionTitle icon={<Footprints size={16} color={C.accent} strokeWidth={1.6} />}>この7日間の歩いた量</SectionTitle>
+              <WeekBars week={health.week} metric="steps" color={C.mauve} goal={profile.goalSteps} />
+              <div style={{ fontSize: 11.5, color: C.sub, marginTop: 8 }}>点線 = あなたの目標（{profile.goalSteps.toLocaleString()}歩）</div>
             </Card>
+
+            {/* 記録の価値 (予防医療の文脈・誠実に) */}
+            <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '2px 6px' }}>
+              <FileText size={14} color={C.sub} style={{ flexShrink: 0, marginTop: 3 }} />
+              <p style={{ fontSize: 12, lineHeight: 1.9, color: C.sub, margin: 0 }}>
+                からだの記録は、医師や専門家に相談するときの確かな資料になります。
+                気になる変化が続くときは、早めに信頼できる専門機関へ。
+              </p>
+            </div>
           </>
         )}
 
@@ -930,8 +1087,8 @@ function PulseHome() {
         {tab === 'log' && (
           <>
             <Card>
-              <SectionTitle icon={<NotebookPen size={17} color={C.accent} />}>きぶん・からだのメモ</SectionTitle>
-              <p style={{ fontSize: 13, lineHeight: 1.8, color: C.sub, margin: '0 0 10px' }}>
+              <SectionTitle icon={<NotebookPen size={16} color={C.accent} strokeWidth={1.6} />}>きぶん・からだのメモ</SectionTitle>
+              <p style={{ fontSize: 13, lineHeight: 1.9, color: C.sub, margin: '0 0 12px' }}>
                 「頭が重い」「よく眠れた」など、ひとことでOK。メモから予防のヒントをお返しします。
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
@@ -941,15 +1098,15 @@ function PulseHome() {
                     type="button"
                     onClick={() => setMemoMood(m.v)}
                     style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                      minHeight: 58, padding: '8px 4px', borderRadius: 12, cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                      minHeight: 60, padding: '9px 4px', borderRadius: 16, cursor: 'pointer',
                       background: memoMood === m.v ? C.accentSoft : C.bg,
-                      border: `1.5px solid ${memoMood === m.v ? C.accent : C.line}`,
+                      border: `1px solid ${memoMood === m.v ? C.accent : C.line}`,
                       color: memoMood === m.v ? C.accent : C.sub,
                     }}
                   >
-                    <m.Icon size={20} />
-                    <span style={{ fontSize: 11, fontWeight: 700 }}>{m.label}</span>
+                    <m.Icon size={20} strokeWidth={1.6} />
+                    <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.02em' }}>{m.label}</span>
                   </button>
                 ))}
               </div>
@@ -959,12 +1116,12 @@ function PulseHome() {
                 placeholder="例: 朝から頭が重い。昨夜は寝るのが遅かった。"
                 rows={3}
                 style={{
-                  width: '100%', boxSizing: 'border-box', marginTop: 10, fontSize: 16, color: C.ink,
-                  padding: '10px 12px', borderRadius: 12, border: `1px solid ${C.line}`,
+                  width: '100%', boxSizing: 'border-box', marginTop: 12, fontSize: 16, color: C.ink,
+                  padding: '11px 14px', borderRadius: 16, border: `1px solid ${C.line}`,
                   background: C.bg, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.7,
                 }}
               />
-              <div style={{ marginTop: 10 }}>
+              <div style={{ marginTop: 12 }}>
                 <PrimaryButton onClick={addMemo} full>
                   メモを残す <ChevronRight size={16} />
                 </PrimaryButton>
@@ -973,7 +1130,7 @@ function PulseHome() {
 
             {memos.length === 0 ? (
               <Card>
-                <div style={{ fontSize: 13.5, lineHeight: 1.8, color: C.sub }}>
+                <div style={{ fontSize: 13.5, lineHeight: 1.95, color: C.sub }}>
                   まだメモはありません。今日のきぶんをひとこと、残してみましょう。
                   続けるほど、あなたのからだのリズムが見えてきます。
                 </div>
@@ -984,11 +1141,11 @@ function PulseHome() {
                 return (
                   <Card key={m.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: C.sub }}>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: C.sub, letterSpacing: '0.03em' }}>
                         {d.getMonth() + 1}月{d.getDate()}日 {String(d.getHours()).padStart(2, '0')}:{String(d.getMinutes()).padStart(2, '0')}
                         <span style={{
-                          marginLeft: 8, padding: '2px 8px', borderRadius: 999,
-                          background: C.accentSoft, color: C.accent, fontSize: 11,
+                          marginLeft: 8, padding: '3px 10px', borderRadius: 999,
+                          background: C.accentSoft, color: C.accent, fontSize: 11, fontWeight: 600,
                         }}>{moodLabel(m.mood)}</span>
                       </div>
                       <button
@@ -1003,14 +1160,14 @@ function PulseHome() {
                         <Trash2 size={15} />
                       </button>
                     </div>
-                    <div style={{ fontSize: 14, lineHeight: 1.8, marginTop: 6 }}>{m.text}</div>
+                    <div style={{ fontSize: 14, lineHeight: 1.9, marginTop: 8 }}>{m.text}</div>
                     <div style={{
-                      marginTop: 10, borderRadius: 12, background: C.bg, padding: '10px 12px',
+                      marginTop: 12, borderRadius: 16, background: C.bg, padding: '11px 14px',
                       display: 'flex', gap: 8, alignItems: 'flex-start',
                     }}>
-                      <HeartPulse size={14} color={C.accent} style={{ flexShrink: 0, marginTop: 3 }} />
-                      <div style={{ fontSize: 12.5, lineHeight: 1.8, color: C.sub }}>
-                        <span style={{ fontWeight: 800, color: C.accent }}>予防のヒント: </span>
+                      <HeartPulse size={14} color={C.accent} style={{ flexShrink: 0, marginTop: 4 }} strokeWidth={1.6} />
+                      <div style={{ fontSize: 12.5, lineHeight: 1.9, color: C.sub }}>
+                        <span style={{ fontWeight: 600, color: C.accent }}>予防のヒント: </span>
                         {memoToHint(m.text, m.mood)}
                       </div>
                     </div>
@@ -1032,10 +1189,10 @@ function PulseHome() {
             <HeartMonitorView identity={identity} />
             <Card>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                <ShieldCheck size={15} color={C.good} style={{ flexShrink: 0, marginTop: 2 }} />
-                <div style={{ fontSize: 12.5, lineHeight: 1.8, color: C.sub }}>
+                <ShieldCheck size={15} color={C.good} style={{ flexShrink: 0, marginTop: 3 }} strokeWidth={1.6} />
+                <div style={{ fontSize: 12.5, lineHeight: 1.9, color: C.sub }}>
                   つなぎ方がわからないときは、メールでお気軽にどうぞ。いっしょに設定します。
-                  <a href={MONITOR_MAILTO} style={{ color: C.accent, fontWeight: 700 }}> core.guild.inc@gmail.com</a>
+                  <a href={MONITOR_MAILTO} style={{ color: C.accent, fontWeight: 600 }}> core.guild.inc@gmail.com</a>
                 </div>
               </div>
             </Card>
@@ -1046,8 +1203,8 @@ function PulseHome() {
         {tab === 'settings' && (
           <>
             <Card>
-              <SectionTitle icon={<Settings size={17} color={C.accent} />}>あなたのこと</SectionTitle>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: C.sub }}>
+              <SectionTitle icon={<Settings size={16} color={C.accent} strokeWidth={1.6} />}>あなたのこと</SectionTitle>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: C.sub }}>
                 おなまえ（けさのことばで呼びかけます）
                 <input
                   type="text"
@@ -1055,27 +1212,27 @@ function PulseHome() {
                   onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
                   placeholder="例: はな"
                   style={{
-                    display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 6,
-                    minHeight: 44, fontSize: 16, color: C.ink, padding: '8px 12px',
-                    borderRadius: 12, border: `1px solid ${C.line}`, background: C.bg,
+                    display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 7,
+                    minHeight: 46, fontSize: 16, color: C.ink, padding: '8px 14px',
+                    borderRadius: 14, border: `1px solid ${C.line}`, background: C.bg,
                   }}
                 />
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
-                <label style={{ fontSize: 12.5, fontWeight: 700, color: C.sub }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
+                <label style={{ fontSize: 12.5, fontWeight: 600, color: C.sub }}>
                   歩数の目標（歩）
                   <input
                     type="number"
                     value={profile.goalSteps}
                     onChange={(e) => setProfile((p) => ({ ...p, goalSteps: Math.max(0, Number(e.target.value) || 0) }))}
                     style={{
-                      display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 6,
-                      minHeight: 44, fontSize: 16, color: C.ink, padding: '8px 12px',
-                      borderRadius: 12, border: `1px solid ${C.line}`, background: C.bg,
+                      display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 7,
+                      minHeight: 46, fontSize: 16, color: C.ink, padding: '8px 14px',
+                      borderRadius: 14, border: `1px solid ${C.line}`, background: C.bg,
                     }}
                   />
                 </label>
-                <label style={{ fontSize: 12.5, fontWeight: 700, color: C.sub }}>
+                <label style={{ fontSize: 12.5, fontWeight: 600, color: C.sub }}>
                   ねむりの目標（時間）
                   <input
                     type="number"
@@ -1083,9 +1240,9 @@ function PulseHome() {
                     value={profile.goalSleep}
                     onChange={(e) => setProfile((p) => ({ ...p, goalSleep: Math.max(0, Number(e.target.value) || 0) }))}
                     style={{
-                      display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 6,
-                      minHeight: 44, fontSize: 16, color: C.ink, padding: '8px 12px',
-                      borderRadius: 12, border: `1px solid ${C.line}`, background: C.bg,
+                      display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 7,
+                      minHeight: 46, fontSize: 16, color: C.ink, padding: '8px 14px',
+                      borderRadius: 14, border: `1px solid ${C.line}`, background: C.bg,
                     }}
                   />
                 </label>
@@ -1093,8 +1250,8 @@ function PulseHome() {
             </Card>
 
             <Card>
-              <SectionTitle icon={<RefreshCw size={16} color={C.accent} />}>データ</SectionTitle>
-              <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.sub, margin: '0 0 10px' }}>
+              <SectionTitle icon={<RefreshCw size={15} color={C.accent} strokeWidth={1.6} />}>データ</SectionTitle>
+              <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.sub, margin: '0 0 12px' }}>
                 いま表示されている記録が見本データのときは、下のボタンで新しい見本に入れかえられます。
                 実際のデータをつなぐと（「つながる」タブ）、見本は上書きされていきます。
               </p>
@@ -1103,9 +1260,9 @@ function PulseHome() {
               </GhostButton>
             </Card>
 
-            <Card style={{ border: `1.5px solid ${C.accent}` }}>
-              <SectionTitle icon={<Mail size={16} color={C.accent} />}>先行モニター募集中</SectionTitle>
-              <p style={{ fontSize: 13, lineHeight: 1.8, color: C.sub, margin: '0 0 10px' }}>
+            <Card style={{ border: `1px solid ${C.gold}` }}>
+              <SectionTitle icon={<Mail size={15} color={C.accent} strokeWidth={1.6} />}>先行モニター募集中</SectionTitle>
+              <p style={{ fontSize: 13, lineHeight: 1.9, color: C.sub, margin: '0 0 12px' }}>
                 正式版は月額 ¥2,980（予定）。いまは無料でぜんぶの機能をお使いいただけます。
                 感想をひとこと送っていただける方を募集しています。
               </p>
@@ -1115,15 +1272,22 @@ function PulseHome() {
             </Card>
 
             <Card>
-              <div style={{ fontSize: 12.5, lineHeight: 1.9, color: C.sub }}>
+              <div style={{ fontSize: 12.5, lineHeight: 2.0, color: C.sub }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                  <Info size={14} style={{ flexShrink: 0, marginTop: 3 }} />
+                  <Lock size={14} style={{ flexShrink: 0, marginTop: 4 }} strokeWidth={1.6} />
                   <span>
+                    あなたの記録は、あなたのアカウントにだけ保存されます。
                     CORE Prismをお使いの方は、そのままのデータでCORE Pulseを使えます（同じ端末なら記録は共通です）。
-                    CORE Pulseは診断を行うものではありません。気になる症状が続くときは、必ずお医者さんにご相談ください。
                   </span>
                 </div>
-                <div style={{ marginTop: 10, display: 'flex', gap: 16 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10 }}>
+                  <Info size={14} style={{ flexShrink: 0, marginTop: 4 }} strokeWidth={1.6} />
+                  <span>
+                    CORE Pulseは医療機器ではありません。診断・治療は医療機関にご相談ください。
+                    気になる変化が続くときは、早めに信頼できる専門機関へ。からだの記録は、そのときの確かな資料になります。
+                  </span>
+                </div>
+                <div style={{ marginTop: 12, display: 'flex', gap: 18 }}>
                   <a href="/privacy" style={{ color: C.sub }}>プライバシーポリシー</a>
                   <a href="/tokushoho" style={{ color: C.sub }}>特商法表記</a>
                 </div>
@@ -1136,7 +1300,8 @@ function PulseHome() {
       {/* 下部タブ (44px以上・safe-area対応) */}
       <nav style={{
         position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 20,
-        background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(10px)',
+        background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         borderTop: `1px solid ${C.line}`,
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
@@ -1152,13 +1317,13 @@ function PulseHome() {
                 type="button"
                 onClick={() => setTab(n.key)}
                 style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                   minHeight: 58, padding: '9px 4px 7px', background: 'none', border: 'none', cursor: 'pointer',
                   color: active ? C.accent : C.sub,
                 }}
               >
-                <n.Icon size={21} strokeWidth={active ? 2.4 : 1.8} />
-                <span style={{ fontSize: 10.5, fontWeight: active ? 800 : 600 }}>{n.label}</span>
+                <n.Icon size={20} strokeWidth={active ? 2 : 1.5} />
+                <span style={{ fontSize: 10.5, fontWeight: active ? 700 : 500, letterSpacing: '0.06em' }}>{n.label}</span>
               </button>
             );
           })}
