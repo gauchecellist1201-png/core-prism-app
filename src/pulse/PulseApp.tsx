@@ -39,6 +39,7 @@ import { useHealth } from '../hooks/useHealth';
 import { detectAnomalies, type HealthAnomaly } from '../data/healthAnomaly';
 import type { DailyHealth } from '../types/health';
 import { fetchWithTimeout, isAbort } from '../lib/fetchWithTimeout';
+import { scorePulseDay, scoreLastDays, SCORE_GOOD_LINE, STEPS_FULL, SLEEP_HOURS_FULL, type PulseScoreResult } from './pulseScore';
 import { emailToHash, checkIngestStatus, saveLiveHRSession, type HealthIdentity } from '../lib/healthLiveSession';
 import { HeartRateMonitor, isWebBluetoothSupported, type HRReading } from '../lib/webBluetoothHR';
 
@@ -86,6 +87,8 @@ function labelStyle(color: string = C.sub): React.CSSProperties {
 const ENTERED_KEY = 'pulse_entered_v1';
 const PROFILE_KEY = 'pulse_profile_v1';
 const MEMO_KEY = 'pulse_memos_v1';
+const STREAK_KEY = 'pulse_record_days_v1'; // アプリを開いて記録した日 (YYYY-MM-DD の配列)
+const CHIP_KEY = 'pulse_chips_v1';         // ワンタップ記録 { 'YYYY-MM-DD': chipId[] }
 const MONITOR_MAILTO =
   'mailto:core.guild.inc@gmail.com?subject=' + encodeURIComponent('CORE Pulse 先行モニター希望');
 
@@ -117,6 +120,62 @@ function loadMemos(): PulseMemo[] {
     const arr = raw ? JSON.parse(raw) : [];
     return Array.isArray(arr) ? arr : [];
   } catch { return []; }
+}
+
+// ── 継続日数 (ストリーク) — 開いて記録した日を localStorage で数える ──
+function localDateStr(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+/** きょうを記録日に加え、きょうまで連続している日数を返す */
+function recordTodayAndGetStreak(): number {
+  try {
+    const raw = localStorage.getItem(STREAK_KEY);
+    const arr: unknown = raw ? JSON.parse(raw) : [];
+    const set = new Set<string>(Array.isArray(arr) ? (arr as string[]) : []);
+    set.add(localDateStr());
+    localStorage.setItem(STREAK_KEY, JSON.stringify([...set].sort().slice(-400)));
+    let streak = 0;
+    const d = new Date();
+    while (set.has(localDateStr(d))) { streak += 1; d.setDate(d.getDate() - 1); }
+    return streak;
+  } catch { return 1; }
+}
+
+// ── きぶん・からだのワンタップ記録 (Flo型・10秒で完了) ──
+const BODY_CHIPS: Array<{ id: string; label: string }> = [
+  { id: 'slept-well', label: 'よく眠れた' },
+  { id: 'tired', label: 'だるい' },
+  { id: 'headache', label: '頭が重い' },
+  { id: 'cold', label: '冷え' },
+  { id: 'skin-good', label: '肌の調子がいい' },
+  { id: 'low-mood', label: '気分が晴れない' },
+  { id: 'shoulder', label: '肩こり' },
+  { id: 'no-appetite', label: '食欲がない' },
+  { id: 'period', label: '生理中' },
+  { id: 'swelling', label: 'むくみ' },
+];
+/** チップ → けさのことばに足すひとこと (決まった文・推測なし) */
+const CHIP_WORDS: Record<string, string> = {
+  'slept-well': '「よく眠れた」の記録、なによりです。よいねむりは今日いちにちの土台になります。',
+  'tired': '「だるい」の記録がありました。今日は予定をひとつ減らして、休む時間を先に確保しましょう。',
+  'headache': '「頭が重い」の記録がありました。こまめな水分と、画面から目を離す休憩を。つらいときはがまんせず病院へ。',
+  'cold': '「冷え」の記録がありました。足首・おなか・首もとをあたためて、白湯（さゆ）を1杯どうぞ。',
+  'skin-good': '「肌の調子がいい」の記録、うれしいですね。睡眠と水分のリズムが合っているサインです。',
+  'low-mood': '「気分が晴れない」の記録がありました。10分だけ外の空気を吸うと、少し軽くなることがあります。むりは禁物です。',
+  'shoulder': '「肩こり」の記録がありました。1時間に1回、肩をゆっくり回して深呼吸を。',
+  'no-appetite': '「食欲がない」の記録がありました。消化にやさしいあたたかいものを少しずつ。続くときは早めにご相談を。',
+  'period': '「生理中」の記録がありました。からだを冷やさず、休みをいつもより多めに。つらさが強い月が続くなら、婦人科への相談も大切な予防です。',
+  'swelling': '「むくみ」の記録がありました。水分は控えるよりこまめにとって、足首をやさしく動かすのがおすすめです。',
+};
+function loadChips(): Record<string, string[]> {
+  try {
+    const raw = localStorage.getItem(CHIP_KEY);
+    const obj = raw ? JSON.parse(raw) : {};
+    return obj && typeof obj === 'object' && !Array.isArray(obj) ? obj : {};
+  } catch { return {}; }
 }
 
 // ── ロゴ (鼓動の波形・カスタムSVG。ゴールドの細いリング×モーブの波形) ──
@@ -192,6 +251,7 @@ function buildMorningWords(
   today: DailyHealth | undefined,
   week: DailyHealth[],
   anomalies: HealthAnomaly[],
+  chipIds: string[] = [],
 ): string[] {
   const lines: string[] = [];
   const hour = new Date().getHours();
@@ -214,6 +274,10 @@ function buildMorningWords(
   } else if (today.steps > 0) {
     lines.push(`歩いた量は${fmtNum(today.steps, '歩')}。午後に10分のお散歩を足せると、ぐっと整います。`);
   }
+
+  // ワンタップ記録 (きぶん・からだ) への応え — 最初のひとつに寄り添う
+  const chipLine = chipIds.map((id) => CHIP_WORDS[id]).find(Boolean);
+  if (chipLine) lines.push(chipLine);
 
   const important = anomalies.filter((a) => a.severity !== 'info');
   if (important.length > 0) {
@@ -347,6 +411,63 @@ function WeekBars({ week, metric, color, goal }: {
   );
 }
 
+// ── 「きょうの調子」リングゲージ (Oura型・SVG) ──
+function ScoreRing({ score }: { score: PulseScoreResult }) {
+  const total = Math.max(0, Math.min(100, score.total));
+  const R = 64;
+  const CIRC = 2 * Math.PI * R;
+  return (
+    <div style={{ position: 'relative', width: 164, height: 164, margin: '0 auto' }}>
+      <svg width={164} height={164} viewBox="0 0 164 164" aria-hidden style={{ display: 'block' }}>
+        <defs>
+          <linearGradient id="pulseScoreGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={C.rose} />
+            <stop offset="100%" stopColor={C.accent} />
+          </linearGradient>
+        </defs>
+        <circle cx="82" cy="82" r={R} fill="none" stroke={C.roseSoft} strokeWidth="10" />
+        <circle
+          cx="82" cy="82" r={R} fill="none"
+          stroke="url(#pulseScoreGrad)" strokeWidth="10" strokeLinecap="round"
+          strokeDasharray={`${CIRC}`} strokeDashoffset={CIRC * (1 - total / 100)}
+          transform="rotate(-90 82 82)"
+          style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+        />
+      </svg>
+      <div style={{
+        position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 2,
+      }}>
+        <div style={{ ...NUM_STYLE, fontSize: 46, color: C.ink, lineHeight: 1 }}>{total}</div>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: C.accent, fontFamily: SERIF, letterSpacing: '0.08em' }}>
+          {score.label}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 7日間の調子トレンド (折れ線・SVG。ゴールド点線 = 「よい」の目安) ──
+function ScoreTrendChart({ scores }: { scores: Array<{ total: number }> }) {
+  const W = 260; const H = 76; const P = 8;
+  const n = scores.length;
+  if (n === 0) return null;
+  const x = (i: number) => (n > 1 ? P + (i * (W - 2 * P)) / (n - 1) : W / 2);
+  const y = (v: number) => H - 8 - (Math.max(0, Math.min(100, v)) / 100) * (H - 18);
+  const pts = scores.map((s, i) => `${x(i)},${y(s.total)}`).join(' ');
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }} aria-hidden>
+      <line x1={0} x2={W} y1={y(SCORE_GOOD_LINE)} y2={y(SCORE_GOOD_LINE)}
+        stroke={C.gold} strokeWidth={1} strokeDasharray="1 5" strokeLinecap="round" />
+      {n > 1 && <polyline points={pts} fill="none" stroke={C.rose} strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round" />}
+      {scores.map((s, i) => (
+        <circle key={i} cx={x(i)} cy={y(s.total)} r={i === n - 1 ? 4 : 2.5}
+          fill={i === n - 1 ? C.accent : C.rose} />
+      ))}
+    </svg>
+  );
+}
+
 // ── ヒーロー装飾 (淡い有機曲線・CSSのみ) ──
 function HeroArcs() {
   return (
@@ -385,6 +506,11 @@ function HeroArcs() {
 function PulseLanding({ onEnter }: { onEnter: () => void }) {
   const values = [
     {
+      Icon: Activity,
+      title: '今日の調子が、ひと目でわかる',
+      body: '睡眠・心拍のゆらぎ・脈・歩いた量から「きょうの調子」を0〜100の数字で表示します。内訳まで見えるので、なぜその数字なのかも納得できます。開いて1秒で、今日の自分がわかります。',
+    },
+    {
       Icon: Smartphone,
       title: 'からだの記録が、自動で集まる',
       body: 'Apple Watchや iPhoneをつなぐと、睡眠・心拍・歩数が毎朝自動でこのアプリに届きます。あなたが入力する手間はありません。',
@@ -392,12 +518,12 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
     {
       Icon: Sun,
       title: 'AIが毎朝、ことばで教えてくれる',
-      body: '数字の一覧ではなく「きのうは少し寝不足。今夜は30分早くおふとんへ」のような、やさしいことばで今日の調子をお届けします。',
+      body: '数字の一覧ではなく「きのうは少し寝不足。今夜は30分早くおふとんへ」のような、やさしいことばで今日の調子をお届けします。きぶん・からだの記録もタップするだけ。10秒で完了します。',
     },
     {
       Icon: HeartPulse,
       title: '気になる変化に、はやく気づける',
-      body: 'ふだんのあなたと比べて「いつもとちがう」変化があると、そっとお知らせ。予防医学の考え方でも、いちばんの近道は、はやく気づくことです。',
+      body: 'ふだんのあなたと比べて「いつもとちがう」変化があると、そっとお知らせ。7日間のうつりかわりもグラフでひと目です。予防医学の考え方でも、いちばんの近道は、はやく気づくことです。',
     },
   ];
   const trust = [
@@ -455,7 +581,14 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
           }}>
             毎日のからだを、<br />AIがやさしく見守る。
           </h1>
-          <p style={{ fontSize: 15, lineHeight: 2.1, color: C.sub, margin: '22px auto 0', maxWidth: 560 }}>
+          <p style={{
+            fontSize: 15.5, lineHeight: 1.9, color: C.accent, margin: '18px 0 0',
+            fontFamily: SERIF, fontWeight: 600, letterSpacing: '0.06em',
+          }}>
+            <span style={{ display: 'inline-block' }}>がんばるためではなく、</span>
+            <span style={{ display: 'inline-block' }}>健やかでいるために。</span>
+          </p>
+          <p style={{ fontSize: 15, lineHeight: 2.1, color: C.sub, margin: '18px auto 0', maxWidth: 560 }}>
             Apple Watchや iPhoneをつなぐだけで、睡眠・心拍・歩数から今日の調子を読みとき、
             毎朝「ことば」でお届けします。症状やきぶんのメモからは、予防のヒントを。
             女性のライフステージの変化にも、そっと寄り添います。
@@ -482,8 +615,9 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
             <div style={labelStyle(C.goldText)}>けさのことば（見本）</div>
           </div>
           <p style={{ fontSize: 14.5, lineHeight: 2.05, margin: 0, color: C.ink, fontFamily: SERIF }}>
-            おはようございます。きのうのねむりは6時間10分と、すこし少なめでした。
-            今夜は30分だけ早くおふとんへ。歩いた量は8,200歩で、とてもよいペースです。
+            おはようございます。きょうの調子は72点「よい」です。
+            きのうのねむりは6時間10分と、すこし少なめでした。今夜は30分だけ早くおふとんへ。
+            歩いた量は8,200歩で、とてもよいペースです。
             心拍のゆらぎが下がりぎみなので、今日はむりせずゆっくりめに。
           </p>
         </Card>
@@ -601,7 +735,7 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
 
       <style>{`
         .pulse-value-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-        @media (min-width: 760px) { .pulse-value-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 760px) { .pulse-value-grid { grid-template-columns: repeat(2, 1fr); } }
       `}</style>
     </div>
   );
@@ -919,6 +1053,21 @@ function PulseHome() {
   const [memoText, setMemoText] = useState('');
   const [memoMood, setMemoMood] = useState<PulseMemo['mood']>(3);
   const [hash, setHash] = useState('');
+  const [streak] = useState<number>(recordTodayAndGetStreak);
+  const [chipsByDate, setChipsByDate] = useState<Record<string, string[]>>(loadChips);
+  const todayKey = localDateStr();
+  const todayChips = useMemo(() => chipsByDate[todayKey] ?? [], [chipsByDate, todayKey]);
+  const toggleChip = useCallback((id: string) => {
+    setChipsByDate((prev) => {
+      const cur = prev[todayKey] ?? [];
+      const next = {
+        ...prev,
+        [todayKey]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
+      };
+      saveJson(CHIP_KEY, next); // タップした瞬間に保存 (10秒で完了)
+      return next;
+    });
+  }, [todayKey]);
 
   useEffect(() => { saveJson(PROFILE_KEY, profile); }, [profile]);
   useEffect(() => { saveJson(MEMO_KEY, memos); }, [memos]);
@@ -932,10 +1081,17 @@ function PulseHome() {
   const anomalies = useMemo(() => detectAnomalies(health.days), [health.days]);
   const importantAnomalies = anomalies.filter((a) => a.severity !== 'info').slice(0, 3);
   const morning = useMemo(
-    () => buildMorningWords(profile.name, health.today, health.week, anomalies),
-    [profile.name, health.today, health.week, anomalies],
+    () => buildMorningWords(profile.name, health.today, health.week, anomalies, todayChips),
+    [profile.name, health.today, health.week, anomalies, todayChips],
   );
   const identity: HealthIdentity | null = hash ? { kind: 'hash', id: hash } : null;
+
+  // 「きょうの調子」スコア (コード確定の純粋関数・当日より前をふだんとして使う)
+  const score = useMemo(
+    () => (health.today ? scorePulseDay(health.today, health.days.slice(0, -1)) : null),
+    [health.today, health.days],
+  );
+  const scoreTrend = useMemo(() => scoreLastDays(health.days, 7), [health.days]);
 
   const addMemo = useCallback(() => {
     const text = memoText.trim();
@@ -988,6 +1144,42 @@ function PulseHome() {
         {/* ── きょう ── */}
         {tab === 'today' && (
           <>
+            {/* きょうの調子 — 0-100 スコア + リング (Oura型・主役) */}
+            {score && score.hasData && (
+              <Card style={{ position: 'relative', overflow: 'hidden' }}>
+                <div aria-hidden style={{
+                  position: 'absolute', top: -80, left: -80, width: 200, height: 200, borderRadius: '50%',
+                  background: 'radial-gradient(circle at 60% 60%, rgba(201,161,146,0.10), rgba(201,161,146,0) 70%)',
+                }} />
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 8, flexWrap: 'wrap', marginBottom: 14, position: 'relative',
+                }}>
+                  <div style={labelStyle(C.goldText)}>きょうの調子</div>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px',
+                    borderRadius: 999, background: C.roseSoft, border: `1px solid ${C.line}`,
+                    fontSize: 11.5, fontWeight: 600, color: C.accent, letterSpacing: '0.03em',
+                  }}>
+                    <Check size={12} />
+                    {streak >= 2 ? `記録 ${streak}日つづいています` : 'きょうから記録スタート'}
+                  </div>
+                </div>
+                <ScoreRing score={score} />
+                {/* 内訳の透明表示 (Whoop型・内訳の合計 = 総合点) */}
+                <div style={{
+                  marginTop: 14, textAlign: 'center', fontSize: 12.5, color: C.sub,
+                  fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1.9,
+                }}>
+                  ねむり +{score.parts.sleep} ・ ゆらぎ +{score.parts.hrv} ・ 脈 +{score.parts.resting} ・ 歩いた量 +{score.parts.steps}
+                </div>
+                <div style={{ marginTop: 8, textAlign: 'center', fontSize: 11, color: C.sub, lineHeight: 1.8, opacity: 0.9 }}>
+                  ねむりは{SLEEP_HOURS_FULL}時間・歩いた量は{STEPS_FULL.toLocaleString()}歩で満点。
+                  ゆらぎと脈は、あなたのふだん（過去4週間の記録）と比べた、決まった計算式です
+                </div>
+              </Card>
+            )}
+
             <Card style={{ background: 'linear-gradient(150deg, #FFFFFF 30%, #F6EDE8)', position: 'relative', overflow: 'hidden' }}>
               <div aria-hidden style={{
                 position: 'absolute', top: -70, right: -70, width: 190, height: 190, borderRadius: '50%',
@@ -1007,6 +1199,54 @@ function PulseHome() {
                   fontFamily: SERIF, position: 'relative',
                 }}>{line}</p>
               ))}
+            </Card>
+
+            {/* きぶん・からだのワンタップ記録 (Flo型・タップで即保存) */}
+            <Card>
+              <SectionTitle icon={<NotebookPen size={16} color={C.accent} strokeWidth={1.6} />}>
+                きょうのからだ・きぶん
+              </SectionTitle>
+              <p style={{ fontSize: 13, lineHeight: 1.9, color: C.sub, margin: '0 0 12px' }}>
+                あてはまるものをタップするだけ（そのまま保存されます）。「けさのことば」にも反映されます。
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {BODY_CHIPS.map((c) => {
+                  const on = todayChips.includes(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => toggleChip(c.id)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        minHeight: 40, padding: '8px 14px', borderRadius: 999, cursor: 'pointer',
+                        fontSize: 13, fontWeight: 600, letterSpacing: '0.02em',
+                        background: on ? C.accentSoft : '#FFFFFF',
+                        color: on ? C.accent : C.sub,
+                        border: `1px solid ${on ? C.accent : C.line}`,
+                      }}
+                    >
+                      {on ? (
+                        <Check size={13} />
+                      ) : (
+                        <svg width={9} height={9} viewBox="0 0 9 9" aria-hidden>
+                          <circle cx="4.5" cy="4.5" r="3.4" fill="none" stroke={C.rose} strokeWidth="1.3" />
+                        </svg>
+                      )}
+                      {c.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {todayChips.length > 0 && (
+                <div style={{
+                  marginTop: 12, fontSize: 12.5, lineHeight: 1.8, color: C.good,
+                  background: C.goodSoft, borderRadius: 14, padding: '10px 14px', fontWeight: 500,
+                }}>
+                  きょうは{todayChips.length}こ記録できました。続けるほど、あなたのリズムが見えてきます。
+                </div>
+              )}
             </Card>
 
             {/* きょうの数値 */}
@@ -1061,6 +1301,15 @@ function PulseHome() {
             </Card>
 
             {/* 7日間のうつりかわり */}
+            {scoreTrend.length > 0 && (
+              <Card>
+                <SectionTitle icon={<Activity size={16} color={C.accent} strokeWidth={1.6} />}>この7日間の調子</SectionTitle>
+                <ScoreTrendChart scores={scoreTrend} />
+                <div style={{ fontSize: 11.5, color: C.sub, marginTop: 8 }}>
+                  点線 = 「よい」の目安（{SCORE_GOOD_LINE}点）・いちばん右がきょう
+                </div>
+              </Card>
+            )}
             <Card>
               <SectionTitle icon={<Moon size={16} color={C.accent} strokeWidth={1.6} />}>この7日間のねむり</SectionTitle>
               <WeekBars week={health.week} metric="sleepHours" color={C.rose} goal={profile.goalSleep} />
