@@ -16,7 +16,8 @@ import AgentProposalCard from './AgentProposalCard';
 import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
 import ContextualUpgradeCard from './ContextualUpgradeCard';
-import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
+import { isAuthorized as isAuthorizedFn, loadBillingUser, getEffectivePlan, getEffectivePlanPriceJpy, checkFeature, isMasterAuth } from '../lib/billing';
+import { FREE_KNOWLEDGE_CAP } from '../hooks/useKnowledge';
 import { sortRisksByPriority } from '../lib/riskPriority';
 import { summarizeMeeting, stripCaptions } from '../lib/meetingSummarize';
 import MeetingRecorder from './MeetingRecorder';
@@ -155,7 +156,7 @@ interface Props {
   persona: Persona;
   settings: AppSettings;
   items: KnowledgeItem[];
-  onAddFile: (file: File) => Promise<KnowledgeItem>;
+  onAddFile: (file: File, batchId?: string) => Promise<KnowledgeItem>;
   onAddNote: (title: string, content: string) => KnowledgeItem;
   onDelete: (id: string) => void;
   onReanalyze?: (id: string) => Promise<void>;
@@ -219,6 +220,15 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
     setSelectedIds(new Set());
     setSelectMode(false);
   };
+  // 「この取込でまとめて消す」— 同じフォルダ取込 (batchId) 単位の一括削除。
+  // 旧データは batchId 無し = 個別削除のみ (安全)。
+  const deleteBatch = (batchId: string) => {
+    const targets = items.filter(i => i.batchId === batchId);
+    if (targets.length === 0) return;
+    if (!window.confirm(`同じ取込の ${targets.length} 件をまとめて削除します。よろしいですか？`)) return;
+    targets.forEach(i => onDelete(i.id));
+    setExpanded(null);
+  };
   const [tab, setTab] = useState<'propose' | 'list' | 'add-file' | 'add-note'>(items.length > 0 ? 'propose' : 'add-file');
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
@@ -226,6 +236,8 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedItem, setUploadedItem] = useState<KnowledgeItem | null>(null);
   const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
+  // フォルダ/複数ファイル選択後、すぐ取り込まず確認を挟む (児玉さんFB 2026-07-21: 意図しない一括取込の防止)
+  const [pendingBatch, setPendingBatch] = useState<File[] | null>(null);
   // 大量データ取込のプラン制限に当たった時のアップグレード案内
   const [capNotice, setCapNotice] = useState<string | null>(null);
   const isCapError = (e: unknown) => /¥29,800|統合ナレッジ脳|30 件まで/.test(e instanceof Error ? e.message : String(e));
@@ -405,13 +417,15 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
   const handleBatch = useCallback(async (files: File[]) => {
     const supported = files.filter(f => isSupported(f.name));
     if (supported.length === 0) return;
+    // 同じ取込をあとから「まとめて消す」ためのバッチID (この一括取込単位で共通)
+    const batchId = `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setBatchProgress({ total: supported.length, done: 0, current: '', failed: [] });
     const failed: string[] = [];
     for (let i = 0; i < supported.length; i++) {
       const f = supported[i];
       setBatchProgress({ total: supported.length, done: i, current: f.name, failed: [...failed] });
       try {
-        await onAddFile(f);
+        await onAddFile(f, batchId);
       } catch (err) {
         if (isCapError(err)) { setCapNotice(err instanceof Error ? err.message : ''); break; } // プラン上限 → 以降は中断して案内
         failed.push(f.name);
@@ -447,7 +461,10 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
     if (allFiles.length === 1) {
       handleFile(allFiles[0]);
     } else if (allFiles.length > 1) {
-      handleBatch(allFiles);
+      // すぐ取り込まず「n件を保存します。よろしいですか？」の確認を挟む
+      const supported = allFiles.filter(f => isSupported(f.name));
+      if (supported.length === 1) handleFile(supported[0]);
+      else if (supported.length > 1) setPendingBatch(supported);
     }
   }, [handleFile, handleBatch]);
 
@@ -455,8 +472,11 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
     if (!files || files.length === 0) return;
     const arr: File[] = [];
     for (let i = 0; i < files.length; i++) arr.push(files[i]);
-    if (arr.length === 1) handleFile(arr[0]);
-    else handleBatch(arr);
+    if (arr.length === 1) { handleFile(arr[0]); return; }
+    // フォルダ選択/複数選択はすぐ取り込まず確認を挟む (児玉さんFB 2026-07-21)
+    const supported = arr.filter(f => isSupported(f.name));
+    if (supported.length === 1) handleFile(supported[0]);
+    else if (supported.length > 1) setPendingBatch(supported);
   }, [handleFile, handleBatch]);
 
   // ── 会議録画 → AI 要約 → ナレッジ追加 (オーナー指示 2026-06-03) ──
@@ -537,6 +557,13 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
 
   const sourceIcon = (type: string) => ({ file: '📄', note: '🗒', url: '🔗', auto: '🤖' }[type] ?? '📄');
 
+  // ── 容量のプラン別明示 (児玉さんFB 2026-07-21): 保存先と実際の上限値を正直に常時表示 ──
+  // 判定は useKnowledge の bulkUnlocked と同一ロジック (数字の嘘禁止)
+  const billing = loadBillingUser();
+  const bulkUnlocked = isMasterAuth()
+    || getEffectivePlanPriceJpy(billing) >= 29800
+    || checkFeature(getEffectivePlan(billing), 'knowledge-brain').allowed;
+
   return (
     <motion.div
       className="fixed inset-0 z-50 flex"
@@ -563,7 +590,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
             <PersonaGlyph icon={persona.icon} color={persona.accentColor} size={18} />
             <div>
               <p className="text-fg text-sm font-light">{persona.name}</p>
-              <p className="text-neutral-600 text-xs">ナレッジベース · {items.length}件</p>
+              <p className="text-neutral-600 text-xs">ナレッジ（AIに読ませる資料）· {items.length}件</p>
             </div>
           </div>
           <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle text-xl flex items-center justify-center" style={{ minWidth: 44, minHeight: 44 }} aria-label="閉じる">✕</button>
@@ -584,6 +611,18 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
               {label}
             </button>
           ))}
+        </div>
+
+        {/* 容量の常時明示 — 保存先と「いまのプラン」の実際の上限 (児玉さんFB 2026-07-21) */}
+        <div className="px-4 py-2 space-y-0.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.02)' }}>
+          <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.62)' }}>
+            保存先: クラウド（端末が変わっても引き継がれます）· この人格の資料 {items.length} 件
+          </p>
+          <p className="text-xs leading-relaxed" style={{ color: persona.accentColor }}>
+            {bulkUnlocked
+              ? 'いまのプラン: 件数無制限で一括取込できます。容量の心配はいりません'
+              : `いまのプラン: 全人格あわせて ${FREE_KNOWLEDGE_CAP} 件まで取込（¥29,800〜のプランで無制限）`}
+          </p>
         </div>
 
         {/* Content */}
@@ -924,7 +963,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                                 ) : (item.analysisStatus === 'done' || item.analysisStatus === 'error' || !item.analysisStatus) && (
                                   <p className="pt-3 text-white/60 text-xs">分析結果はまだありません</p>
                                 )}
-                                <div className="flex items-center gap-2 pt-2">
+                                <div className="flex items-center gap-2 pt-2 flex-wrap">
                                   {onReanalyze && (
                                     <button
                                       onClick={(e) => { e.stopPropagation(); onReanalyze(item.id); }}
@@ -941,6 +980,16 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                                   >
                                     削除
                                   </button>
+                                  {/* 同じフォルダ取込 (batchId) が複数残っている時だけ「まとめて消す」を出す */}
+                                  {item.batchId && items.filter(i => i.batchId === item.batchId).length > 1 && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); deleteBatch(item.batchId!); }}
+                                      className="text-xs px-3 py-1.5 rounded-lg transition-all"
+                                      style={{ border: '1px solid rgba(248,113,113,0.4)', color: '#fda4af', background: 'rgba(248,113,113,0.08)' }}
+                                    >
+                                      この取込でまとめて消す ({items.filter(i => i.batchId === item.batchId).length}件)
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </motion.div>
@@ -967,7 +1016,42 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                     </button>
                   </motion.div>
                 )}
-                {batchProgress ? (
+                {pendingBatch ? (
+                  /* 取込前の確認 — フォルダ/複数選択は勝手に取り込まない (児玉さんFB 2026-07-21) */
+                  <motion.div className="space-y-3" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${persona.accentColor}40` }}>
+                      <p className="text-white text-sm font-bold mb-1">
+                        {pendingBatch.length} 件のファイルをナレッジに保存します。よろしいですか？
+                      </p>
+                      <p className="text-white/55 text-xs mb-3">
+                        保存後は一覧から個別にも、この取込単位でまとめても削除できます。
+                      </p>
+                      <ul className="space-y-1 mb-1">
+                        {pendingBatch.slice(0, 5).map((f, i) => (
+                          <li key={i} className="text-white/80 text-xs flex gap-2 min-w-0">
+                            <span style={{ color: persona.accentColor }}>·</span>
+                            <span className="flex-1 truncate">{f.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {pendingBatch.length > 5 && (
+                        <p className="text-white/45 text-xs">…ほか {pendingBatch.length - 5} 件</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { const files = pendingBatch; setPendingBatch(null); void handleBatch(files); }}
+                        className="flex-1 py-3 rounded-xl text-sm font-bold"
+                        style={{ background: `linear-gradient(135deg, ${persona.accentColor}, ${persona.accentColor}cc)`, color: '#fff', minHeight: 48 }}
+                      >{pendingBatch.length} 件を保存する</button>
+                      <button
+                        onClick={() => setPendingBatch(null)}
+                        className="px-5 py-3 rounded-xl text-sm font-medium"
+                        style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.12)', minHeight: 48 }}
+                      >やめる</button>
+                    </div>
+                  </motion.div>
+                ) : batchProgress ? (
                   <motion.div className="py-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <div className="mb-3">
                       {batchProgress.done === batchProgress.total
@@ -1035,18 +1119,21 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                       )}
                     </div>
 
-                    {/* ファイル選択 + フォルダ選択ボタン */}
-                    <div className="flex gap-2 mb-4">
+                    {/* ファイル選択 + フォルダ選択ボタン (375px でも見切れないよう縦積み) */}
+                    <div className="flex flex-col gap-2 mb-4">
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex-1 text-sm py-2.5 rounded-lg font-medium transition-all"
-                        style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)' }}
+                        className="w-full text-sm py-2.5 rounded-lg font-medium transition-all"
+                        style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)', minHeight: 44 }}
                       >📄 ファイルを選択 (複数可)</button>
                       <button
                         onClick={() => folderInputRef.current?.click()}
-                        className="flex-1 text-sm py-2.5 rounded-lg font-medium transition-all"
-                        style={{ background: persona.accentColorLight, border: `1px solid ${persona.accentColor}50`, color: persona.accentColor }}
-                      >📁 フォルダを選択</button>
+                        className="w-full text-sm py-2.5 rounded-lg font-medium transition-all"
+                        style={{ background: persona.accentColorLight, border: `1px solid ${persona.accentColor}50`, color: persona.accentColor, minHeight: 44 }}
+                      >📁 フォルダの中身をまとめて取り込む</button>
+                      <p className="text-fg-muted text-xs text-center" style={{ marginTop: -2 }}>
+                        フォルダを選ぶと、中のファイル一覧を確認してから保存できます（勝手に取込みません）
+                      </p>
                     </div>
 
                     {/* 会議の取り込み (オーナー指示 2026-06-03)

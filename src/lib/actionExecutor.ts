@@ -21,6 +21,7 @@
 import { enqueueClaudeCall } from './apiQueue';
 import type { AppSettings, Persona } from '../types/identity';
 import type { CxoRole } from '../hooks/useAgentTaskQueue';
+import { personaInstructionBlock } from './personaInstructions';
 import type { DeliverableCategory } from './cxoDeliverables';
 
 // ── 成果物の型 ─────────────────────────────────────────
@@ -142,7 +143,7 @@ const SYSTEM_PROMPT = `あなたはオーナーの隣で実務を肩代わりす
 
 function buildUserPrompt(action: string, persona: Persona | null, context?: string): string {
   const who = persona
-    ? `【オーナーの状況】${persona.name} (${persona.subtitle})\n${persona.description}\n`
+    ? `【オーナーの状況】${persona.name} (${persona.subtitle})\n${persona.description}${personaInstructionBlock(persona)}\n`
     : '';
   const ctx = context ? `\n【追加コンテキスト】\n${context}\n` : '';
   return `${who}${ctx}

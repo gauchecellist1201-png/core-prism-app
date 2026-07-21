@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { ChatMessage, KnowledgeChunk, KnowledgeItem, Persona, AppSettings } from '../types/identity';
 import { toneInstruction } from '../lib/aiTone';
 import { callAiWithFallback } from '../lib/aiFallbackChain';
+import { personaInstructionBlock } from '../lib/personaInstructions';
 
 const MODELS = {
   'claude-haiku-4-5': { input: 1.0, output: 5.0 },   // USD per MTok
@@ -119,7 +120,7 @@ function buildSystemPrompt(
 オーナーが蓄積してきた資料・数字・タスクを全部覚えていて、必要に応じて提案・代筆・分析・整理を即座に行います。
 ${localeLine}
 ## 担当している役割
-${persona.description || `${persona.name} (${persona.subtitle})`}
+${persona.description || `${persona.name} (${persona.subtitle})`}${personaInstructionBlock(persona)}
 
 ${toneInstruction(aiTone)}
 

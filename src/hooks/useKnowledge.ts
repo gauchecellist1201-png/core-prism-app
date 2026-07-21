@@ -18,7 +18,7 @@ const STORAGE_KEY = 'core_knowledge';
 
 // 大量データの取込（統合ナレッジ脳）は最上位＝¥29,800 以上のプラン限定。
 // それ未満は少量（プレビュー用途）に制限し、明確にアップグレードへ誘導する。
-const FREE_KNOWLEDGE_CAP = 30;
+export const FREE_KNOWLEDGE_CAP = 30;
 const CHUNK_SIZE = 400; // characters per chunk
 
 // ── テキストをチャンクに分割 ─────────────────────────────
@@ -224,7 +224,7 @@ export function useKnowledge(
   //   summarizing (analyzeKnowledge 中: 一番時間がかかる)
   //   extracting  (looksLikeFinancialData が true の場合のみ: 数字抽出中)
   //   done / error
-  const addFromFile = useCallback(async (personaId: PersonaId, file: File): Promise<KnowledgeItem> => {
+  const addFromFile = useCallback(async (personaId: PersonaId, file: File, batchId?: string): Promise<KnowledgeItem> => {
     if (!bulkUnlocked && items.length >= FREE_KNOWLEDGE_CAP) {
       setCapacityError(CAP_MSG);
       throw new Error(CAP_MSG);
@@ -242,6 +242,7 @@ export function useKnowledge(
       fileSize: file.size,
       createdAt: new Date().toISOString(),
       tags: [],
+      batchId,
       analysisStatus: 'parsing',
     };
     setItems(prev => [placeholder, ...prev]);
@@ -424,6 +425,8 @@ export function useKnowledge(
     }
     setCapacityError(null);
     let added = 0, skipped = 0, failed = 0;
+    // この一括取込 (フォルダ単位) をあとから「まとめて削除」できるよう共通 ID を付与
+    const batchId = uuidv4();
     const total = files.length;
     const seen = new Set(items.map(i => `${i.fileName}::${i.fileSize}`));
     for (let idx = 0; idx < files.length; idx++) {
@@ -448,6 +451,7 @@ export function useKnowledge(
           pages: parsed.pages,
           createdAt: new Date().toISOString(),
           tags: inferTags(content),
+          batchId,
           analysisStatus: 'done',
         };
         seen.add(key);

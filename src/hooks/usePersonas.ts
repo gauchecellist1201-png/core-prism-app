@@ -140,6 +140,7 @@ export function usePersonas() {
     description: string,
     accentColor: string,
     accentColorLight: string,
+    instructions?: string,
   ): Persona => {
     // TT (2026-06-03): 名前から決定的 SVG アバターを自動生成
     const avatarUrl: string | undefined = (() => {
@@ -152,6 +153,7 @@ export function usePersonas() {
       icon,
       avatarUrl,
       description,
+      instructions,
       accentColor,
       accentColorLight,
       createdAt: new Date().toISOString(),

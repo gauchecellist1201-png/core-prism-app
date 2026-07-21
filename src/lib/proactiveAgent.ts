@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
 import { buildIndustryContext } from '../prism/industryPacks';
+import { personaInstructionBlock } from './personaInstructions';
 
 // API キーは main.tsx の interceptor が localStorage から自動付与
 
@@ -116,7 +117,7 @@ export async function generateProposal(
   const userPrompt = `${industryBlock ? industryBlock + '\n' : ''}## 現在
 - 時刻: ${new Date().toLocaleString('ja-JP')} (${timeOfDay()})
 - アクティブ人格: ${persona.name} (${persona.subtitle})
-- 人格の役割: ${persona.description || '(未設定)'}
+- 人格の役割: ${persona.description || '(未設定)'}${personaInstructionBlock(persona)}
 
 ## 未完了タスク
 ${openTasks}

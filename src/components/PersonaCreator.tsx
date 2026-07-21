@@ -109,7 +109,7 @@ const PRESETS: Preset[] = [
 
 interface Props {
   existingPersonas: Persona[];
-  onSave: (name: string, subtitle: string, icon: string, description: string, accentColor: string, accentColorLight: string) => void;
+  onSave: (name: string, subtitle: string, icon: string, description: string, accentColor: string, accentColorLight: string, instructions: string) => void;
   onCancel: () => void;
   /** 既存ペルソナ編集モード (省略時は新規作成) */
   editing?: Persona;
@@ -123,6 +123,7 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
   const [subtitle, setSubtitle] = useState(editing?.subtitle ?? '');
   const [icon, setIcon] = useState(editing?.icon ?? ICON_OPTIONS[existingPersonas.length % ICON_OPTIONS.length]);
   const [description, setDescription] = useState(editing?.description ?? '');
+  const [instructions, setInstructions] = useState(editing?.instructions ?? '');
   const [selectedColor, setSelectedColor] = useState(defaultColor);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const isEdit = !!editing;
@@ -328,7 +329,26 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
             )}
           </div>
 
-          {/* ④ AIへの人格説明（任意） */}
+          {/* ④ 指示書 — この人格のAIに常時守らせるルール (児玉さんFB 2026-07-21 公式機能化) */}
+          <div>
+            <label className="block text-white text-[13px] font-medium mb-1">
+              指示書 <span className="text-white/40 text-[11px] font-normal">任意・いつでも編集可</span>
+            </label>
+            <p className="text-white/45 text-xs mb-2 leading-relaxed">
+              この人格のAIに、いつも守ってほしいこと（例: 文体・ルール・前提・目標）。
+              保存すると、この人格でのAI会話・提案すべてに毎回反映されます。
+            </p>
+            <textarea
+              value={instructions}
+              onChange={e => setInstructions(e.target.value)}
+              placeholder={'例：\n・敬語は使わず、フランクに短く話す\n・提案は必ず費用の目安つきで\n・今期の目標は月商100万円。逆算して助言する'}
+              className="w-full bg-white/5 text-white text-sm font-light outline-none rounded-lg px-3 py-2.5 placeholder:text-white/30 resize-none leading-relaxed"
+              style={{ border: `1px solid ${instructions ? selectedColor.color + '66' : 'rgba(255,255,255,0.08)'}`, minHeight: '110px', fontSize: 16 }}
+              rows={5}
+            />
+          </div>
+
+          {/* ⑤ AIへの人格説明（任意） */}
           <div>
             <button
               type="button"
@@ -363,7 +383,7 @@ export default function PersonaCreator({ existingPersonas, onSave, onCancel, edi
             キャンセル
           </button>
           <motion.button
-            onClick={() => canSave && onSave(name, subtitle, icon, description, selectedColor.color, selectedColor.light)}
+            onClick={() => canSave && onSave(name, subtitle, icon, description, selectedColor.color, selectedColor.light, instructions)}
             disabled={!canSave}
             className="px-6 py-2 rounded-lg text-sm font-medium transition-all"
             style={{

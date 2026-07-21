@@ -814,20 +814,21 @@ export default function App() {
 
   const handleCreatePersona = useCallback((
     name: string, subtitle: string, icon: string,
-    description: string, accentColor: string, accentColorLight: string
+    description: string, accentColor: string, accentColorLight: string,
+    instructions: string,
   ) => {
     if (editingPersonaId) {
-      updatePersona(editingPersonaId, { name, subtitle, icon, description, accentColor, accentColorLight });
+      updatePersona(editingPersonaId, { name, subtitle, icon, description, accentColor, accentColorLight, instructions });
       setEditingPersonaId(null);
     } else {
-      createPersona(name, subtitle, icon, description, accentColor, accentColorLight);
+      createPersona(name, subtitle, icon, description, accentColor, accentColorLight, instructions);
     }
     setShowPersonaCreator(false);
   }, [createPersona, updatePersona, editingPersonaId]);
 
-  const handleAddKnowledgeFile = useCallback(async (file: File) => {
+  const handleAddKnowledgeFile = useCallback(async (file: File, batchId?: string) => {
     if (!activePersona) throw new Error('No active persona');
-    return addFromFile(activePersona.id, file);
+    return addFromFile(activePersona.id, file, batchId);
   }, [activePersona, addFromFile]);
 
   const handleAddKnowledgeNote = useCallback((title: string, content: string) => {

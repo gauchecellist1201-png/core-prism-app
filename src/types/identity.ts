@@ -14,6 +14,8 @@ export interface Persona {
   accentColor: string;
   accentColorLight: string;
   description: string;           // AIへの人格説明
+  /** 指示書 — この人格のAIに常時守らせるルール (文体・前提・目標など)。全AI会話/提案のシステムプロンプトへ注入 */
+  instructions?: string;
   createdAt: string;
   meetingSlug: string;           // ミーティングリンク用スラグ
   calendarColor?: string;        // Googleカレンダー連携カラー
@@ -46,6 +48,8 @@ export interface KnowledgeItem {
   imageBase64?: string;
   createdAt: string;
   tags: string[];
+  /** 同じフォルダ取込 (一括取込) 単位の ID。まとめて削除に使う。旧データは未設定=個別削除のみ */
+  batchId?: string;
   analysis?: KnowledgeAnalysis;
   /**
    * 取り込み進捗。'pending' は互換のため残置 (≈ 'parsing')。

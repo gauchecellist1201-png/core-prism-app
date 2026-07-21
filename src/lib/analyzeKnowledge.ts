@@ -4,6 +4,7 @@
 import type { AppSettings, KnowledgeAnalysis, KnowledgeItem, Persona } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
+import { personaInstructionBlock } from './personaInstructions';
 
 // 財務関連キーワード (タイトル/本文に含まれていたら財務データと判断)
 const FIN_KEYWORDS = [
@@ -138,7 +139,7 @@ ${title}
 
 ## 人格コンテキスト
 ${persona.name} (${persona.subtitle})
-${persona.description || ''}
+${persona.description || ''}${personaInstructionBlock(persona)}
 
 ## 資料本文
 ${truncated}${content.length > truncated.length ? '\n\n[...以降省略]' : ''}`;
@@ -329,7 +330,7 @@ export async function proposeKnowledgeUses(opts: {
 ユーザーは何も入力しません。あなたが具体的な活用アクションまで考えます。
 
 ## 人格コンテキスト
-${opts.persona.description || '(なし)'}
+${opts.persona.description || '(なし)'}${personaInstructionBlock(opts.persona)}
 
 ## 出力フォーマット (JSON のみ、コードブロック・説明文なし)
 {

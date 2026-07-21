@@ -132,7 +132,7 @@ interface Props {
   onCreatePersona: () => void;
   /** 人格の名前・肩書きを変更（ヘッダーでその場編集） */
   onRenamePersona?: (id: string, updates: { name?: string; subtitle?: string }) => void;
-  onAddKnowledgeFile: (file: File) => Promise<KnowledgeItem>;
+  onAddKnowledgeFile: (file: File, batchId?: string) => Promise<KnowledgeItem>;
   onAddKnowledgeNote: (title: string, content: string) => KnowledgeItem;
   onDeleteKnowledge: (id: string) => void;
   onReanalyzeKnowledge: (id: string) => Promise<void>;
@@ -205,6 +205,18 @@ function EditablePersonaTitle({ persona, onRename }: { persona: Persona; onRenam
       </p>
       <p className="text-fg-muted text-xs truncate">{persona.subtitle || '＋ 肩書きを追加'}</p>
     </button>
+  );
+}
+
+/** 各ページ冒頭の薄い1行説明 — 初見でも「この画面が何か」1秒でわかるように (2026-07-21) */
+function PageIntro({ text, accent }: { text: string; accent: string }) {
+  return (
+    <p
+      className="text-xs leading-relaxed"
+      style={{ color: 'var(--fg-muted)', borderLeft: `2px solid ${accent}66`, paddingLeft: 8, margin: '0 2px' }}
+    >
+      {text}
+    </p>
   );
 }
 
@@ -699,9 +711,9 @@ export default function IdentityDashboard({
             })}
             {/* モーダル系ページ (既存機能への直行) */}
             {([
-              { label: 'ナレッジ', icon: BookOpen, act: () => { setShowMobileSidebar(false); setShowKnowledge(true); } },
+              { label: 'ナレッジ（AIに読ませる資料）', icon: BookOpen, act: () => { setShowMobileSidebar(false); setShowKnowledge(true); } },
               { label: '決算書 (P/L・B/S)', icon: BarChart3, act: () => { setShowMobileSidebar(false); setShowFinStatements(true); } },
-              { label: 'ヘルス', icon: HeartPulse, act: () => { setShowMobileSidebar(false); setShowHealth(true); } },
+              { label: 'ヘルス（体調の記録）', icon: HeartPulse, act: () => { setShowMobileSidebar(false); setShowHealth(true); } },
               { label: '設定', icon: Settings, act: () => { setShowMobileSidebar(false); onOpenSettings(); } },
             ] as const).map(pg => (
               <button
@@ -1046,6 +1058,10 @@ export default function IdentityDashboard({
 
               {/* ページ『ホーム』= AI役員の見開き1枚 (参謀+ブリーフ+売上のみ) */}
               <div className={homeTab === 'home' ? 'space-y-3' : 'hidden'}>
+              {/* 初見1秒で「何のアプリか」わかる1行 (2026-07-21) */}
+              <p className="text-xs md:text-sm leading-relaxed" style={{ color: 'var(--fg-muted)', margin: '0 2px' }}>
+                <strong style={{ color: 'var(--fg)' }}>Prism</strong> — 経営まるごとおまかせのAI参謀。数字も事務もSNSも、これひとつ。
+              </p>
               {/* 7 つのエージェント — PC は常時トップ固定 (2026-05-28)。
                   モバイルのみ 1 タップ展開に畳む (2026-07-19 初期1画面完結・機能削除ゼロ) */}
               <div data-tour-id="agents-orbit">
@@ -1224,6 +1240,7 @@ export default function IdentityDashboard({
                   (2026-07-19 ページナビ化。機能削除ゼロ・移動のみ) */}
               <div className={homeTab === 'company' || homeTab === 'connect' ? 'space-y-3' : 'hidden'}>
               <div className={homeTab === 'company' ? 'space-y-3' : 'hidden'}>
+              <PageIntro accent={persona.accentColor} text="会社 = あなた専属のAI役員（CXO）が動く場所。仕事を任せて、進み具合をここで見ます。" />
               {/* 🏢 デジタル 会社 ヒーロー — 「役員 会議室」 (2026-06-05 オーナー指示) */}
               <DigitalCompanyHero
                 persona={persona}
@@ -1250,6 +1267,7 @@ export default function IdentityDashboard({
 
               {/* 連携・スタジオ系 — タブ『つながる』に格納 (2026-07-19) */}
               <div className={homeTab === 'connect' ? 'space-y-3' : 'hidden'}>
+                <PageIntro accent={persona.accentColor} text="つながる = Gmail・カレンダー・SNSをつないで、AIにあなたの文脈を渡す場所。つなぐほど提案が賢くなります。" />
                 {/* 📧 Gmail インサイト (2026-06-05 オーナー指示: 連携 = 価値) */}
                 <GmailInsightsCard />
 
@@ -1290,6 +1308,7 @@ export default function IdentityDashboard({
 
               {/* タブ『機能』: ブリーフ(PC)+Stripe CTA+クイックアクション */}
               <div className={homeTab === 'apps' ? 'space-y-3' : 'hidden'}>
+              <PageIntro accent={persona.accentColor} text="クイックアクション = やりたい事をタップするだけ。請求書・SNS・議事録など、AIが作成まで進めます。" />
 
               {/*
                 EarningsAndTimeHero (2026-05-25 オーナー指示):
@@ -1492,6 +1511,7 @@ export default function IdentityDashboard({
 
               {/* タブ『カラダ』: 健康3カード */}
               <div className={homeTab === 'body' ? 'space-y-3' : 'hidden'}>
+              <PageIntro accent={persona.accentColor} text="カラダ = 睡眠・歩数などの体調データをAIが見守り、仕事のリズムづくりに活かす場所。" />
               {/* CORE Pulse (からだ専用アプリ) への誘致バナー — 2026-07-21 単体サービス切り出し */}
               <PulseBanner />
               {/* 健康が積み上がっている実感を見せる (オーナー指示 2026-05-17) */}
@@ -1515,6 +1535,7 @@ export default function IdentityDashboard({
 
               {/* タブ『記録』: 認知/パルス/インサイト/資料タスク/収支/タイムライン */}
               <div className={homeTab === 'records' ? 'space-y-3' : 'hidden'}>
+              <PageIntro accent={persona.accentColor} text="記録・履歴 = たまった資料・タスク・収支をふり返る場所。AIの提案の元データはここに育ちます。" />
               {/* 認知プロファイルと回復スコアを横並びに (右の余白解消・高さ揃え) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
                 <div className="h-full [&>*]:h-full">
