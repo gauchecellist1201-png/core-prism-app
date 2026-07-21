@@ -65,6 +65,7 @@ const ContinuumLanding = lazy(() => import('./corporate/ContinuumLanding'));
 const StrategyDashboard = lazy(() => import('./corporate/StrategyDashboard'));
 const PricingPage = lazy(() => import('./corporate/PricingPage'));
 const IrisApp = lazy(() => import('./iris/IrisApp'));
+const PulseApp = lazy(() => import('./pulse/PulseApp'));
 const BillingSuccess = lazy(() => import('./components/BillingSuccess'));
 const KeynoteLanding = lazy(() => import('./keynote/KeynoteLanding'));
 const SharedArtifactView = lazy(() => import('./components/SharedArtifactView'));
@@ -156,6 +157,12 @@ function isMasterPath(): boolean {
   if (typeof window === 'undefined') return false;
   const p = window.location.pathname;
   return p === '/master' || p.startsWith('/master/');
+}
+
+/** CORE Pulse (ヘルスケア特化・単体ブランド) — /pulse で起動 */
+function isPulsePath(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.pathname.startsWith('/pulse');
 }
 
 function isStripeStatusPath(): boolean {
@@ -527,6 +534,16 @@ export default function App() {
   // /billing/success — Stripe 決済完了ページ
   if (isBillingSuccessPath()) {
     return <Suspense fallback={<RouteFallback />}><BillingSuccess /></Suspense>;
+  }
+
+  // CORE Pulse (ヘルスケア特化ブランド) — /pulse で単体起動。
+  // Prism の人格・CXO・経営文脈は一切出さない、からだ見守り専用の UX。
+  if (isPulsePath()) {
+    return (
+      <Suspense fallback={<RouteFallback />}>
+        <PulseApp />
+      </Suspense>
+    );
   }
 
   // CORE Iris (姉妹ブランド) ルート — /iris で別ブランドを起動

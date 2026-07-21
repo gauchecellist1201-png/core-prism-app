@@ -32,6 +32,7 @@ import { useStripeRevenue } from '../hooks/useStripeRevenue';
 import { useInvoices } from '../hooks/useInvoices';
 import type { BusinessSnapshot } from '../lib/coachScheduler';
 import TodaysBodyCard from '../prism/TodaysBodyCard';
+import PulseBanner from '../pulse/PulseBanner';
 import { loadBillingUser, extendTrial } from '../lib/billing';
 // CoreRevenueCard はマスター専用経営画面へ移設予定 (ペルソナ画面からは撤去)
 const MeetingMinutesModal = lazy(() => import('./MeetingMinutes'));
@@ -1491,6 +1492,8 @@ export default function IdentityDashboard({
 
               {/* タブ『カラダ』: 健康3カード */}
               <div className={homeTab === 'body' ? 'space-y-3' : 'hidden'}>
+              {/* CORE Pulse (からだ専用アプリ) への誘致バナー — 2026-07-21 単体サービス切り出し */}
+              <PulseBanner />
               {/* 健康が積み上がっている実感を見せる (オーナー指示 2026-05-17) */}
               <WellnessTracker
                 today={healthCtx.today}

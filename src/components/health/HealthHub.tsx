@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Activity, BarChart3, MessageCircle, Stethoscope, FileText, Cable, Pill } from 'lucide-react';
 import { MockShell, PRISM } from '../prism/MockShell';
+import PulseBanner from '../../pulse/PulseBanner';
 import { useHealth } from '../../hooks/useHealth';
 import { useMedicalHistory } from '../../hooks/useMedicalHistory';
 import { detectAnomalies } from '../../data/healthAnomaly';
@@ -102,6 +103,10 @@ export default function HealthHub({ persona, settings, onClose }: Props) {
           syncValue={settings.userName || persona.name}
           syncSpinner
         >
+          {/* CORE Pulse (からだ専用アプリ) への誘致バナー — 2026-07-21 単体サービス切り出し */}
+          <div className="mb-3">
+            <PulseBanner />
+          </div>
           <div className="min-h-[560px]">
             {tab === 'overview' && (
               <HealthOverview
