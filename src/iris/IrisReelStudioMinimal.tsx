@@ -910,6 +910,163 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           </p>
         </motion.div>
 
+        {/* PHONE CANVAS */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          style={{
+            position: 'relative',
+            width: 'min(260px, 70vw)',
+            margin: '0 auto 1.4rem',
+          }}>
+          <div style={{
+            position: 'relative',
+            paddingTop: '177.7%',
+            background: '#0a0a0f',
+            borderRadius: 30,
+            boxShadow: '0 32px 64px rgba(225, 48, 108, 0.16), 0 12px 32px rgba(0, 0, 0, 0.14), 0 0 0 7px rgba(255, 255, 255, 0.85), 0 0 0 8px rgba(225, 48, 108, 0.18)',
+            overflow: 'hidden',
+          }}>
+            <canvas
+              ref={canvasRef} width={CANVAS_W} height={CANVAS_H}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
+            />
+            {clips.length === 0 && (
+              <label
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={e => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files) addFiles(e.dataTransfer.files); }}
+                style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  color: 'rgba(255,255,255,0.72)', fontSize: 13,
+                  textAlign: 'center', padding: '1.6rem', gap: 12, cursor: 'pointer',
+                  background: dragOver ? 'rgba(225,48,108,0.18)' : 'transparent',
+                  transition: 'background 0.2s',
+                }}>
+                <span style={{
+                  width: 58, height: 58, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: IRIS_GRADIENT, boxShadow: '0 10px 28px rgba(225,48,108,0.5)',
+                }}>
+                  <Plus size={30} color="#fff" strokeWidth={2} />
+                </span>
+                <span style={{ fontFamily: IRIS_FONTS.body, fontWeight: 800, fontSize: 14.5, color: '#fff' }}>
+                  写真・動画を入れる
+                </span>
+                <span style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+                  タップ、またはドロップ
+                </span>
+                <input type="file" multiple accept="image/*,video/*" style={{ display: 'none' }}
+                  onChange={e => e.target.files && addFiles(e.target.files)} />
+              </label>
+            )}
+            {recording && (
+              <div style={{
+                position: 'absolute', top: 14, left: 14,
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '4px 9px', background: '#EF4444', color: '#fff',
+                borderRadius: 999, fontSize: 10, fontWeight: 800,
+                fontFamily: IRIS_FONTS.body,
+              }}>
+                ● REC {Math.round(progress * 100)}%
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* PRIMARY ACTIONS */}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: '1.8rem' }}>
+          {!playing && !recording ? (
+            <button onClick={startPlay} disabled={!clips.length} style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              minHeight: 48, padding: '0.85rem 1.6rem',
+              background: clips.length ? IRIS_GRADIENT : 'rgba(255,255,255,0.4)',
+              color: '#fff', border: 'none', borderRadius: 999,
+              fontSize: 14, fontWeight: 800, cursor: clips.length ? 'pointer' : 'not-allowed',
+              boxShadow: clips.length ? '0 8px 24px rgba(225, 48, 108, 0.32)' : 'none',
+              opacity: clips.length ? 1 : 0.5,
+              fontFamily: IRIS_FONTS.body,
+            }}>
+              <Play size={15} fill="#fff" /> 再生
+            </button>
+          ) : (
+            <button onClick={stopPlay} style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              minHeight: 48, padding: '0.85rem 1.6rem',
+              background: 'rgba(255,255,255,0.9)', color: bg.ink,
+              border: `1.5px solid ${bg.accent}`, borderRadius: 999,
+              fontSize: 14, fontWeight: 800, cursor: 'pointer',
+              fontFamily: IRIS_FONTS.body,
+            }}>
+              <Square size={14} fill={bg.ink} /> 停止
+            </button>
+          )}
+        </div>
+
+        {/* ✨ AI 自動字幕ボタン (一番目立つ位置) */}
+        {clips.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{ marginBottom: 14 }}
+          >
+            <button
+              onClick={runAiCaption}
+              disabled={aiBusy}
+              style={{
+                width: '100%', padding: '0.95rem 1rem',
+                background: aiBusy ? 'rgba(255,255,255,0.5)' : IRIS_GRADIENT,
+                color: '#fff', border: 'none', borderRadius: 18,
+                fontSize: 14.5, fontWeight: 800,
+                cursor: aiBusy ? 'wait' : 'pointer',
+                boxShadow: aiBusy ? 'none' : '0 12px 32px rgba(225,48,108,0.32)',
+                fontFamily: IRIS_FONTS.body,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              {aiBusy
+                ? <><Loader2 size={16} className="iris-spin" /> {aiPhase || '分析中…'}</>
+                : <><Sparkles size={16} /> AI が動画を見て字幕をつける</>}
+            </button>
+            {aiErr && (
+              <div style={{
+                marginTop: 8, padding: '0.65rem 0.8rem',
+                background: '#FEE2E2', color: '#991B1B',
+                borderRadius: 12, fontSize: 12,
+                display: 'flex', alignItems: 'flex-start', gap: 6,
+                lineHeight: 1.5,
+              }}>
+                <AlertCircle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+                <div style={{ flex: 1 }}>
+                  {aiErr}
+                  <button onClick={() => { setAiErr(''); runAiCaption(); }} style={{
+                    display: 'block', marginTop: 6,
+                    background: 'transparent', border: 'none',
+                    color: '#991B1B', textDecoration: 'underline',
+                    cursor: 'pointer', fontSize: 11, padding: 0,
+                  }}>もう一度試す</button>
+                </div>
+              </div>
+            )}
+            {aiResult && !aiBusy && !aiErr && (
+              <div style={{
+                marginTop: 8, padding: '0.55rem 0.7rem',
+                background: 'rgba(225,48,108,0.08)',
+                color: bg.ink,
+                borderRadius: 10, fontSize: 11,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <Eye size={12} color={bg.accent} />
+                <span><b>テーマ:</b> {aiResult.themeGuess || '—'}</span>
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* 3 秒でわかる説明 + サンプル出力 — まだ素材が無い初見の人に「何が出るか」を触らず見せる */}
         {/* JSアニメ非依存の素のdiv: rAFが止まる環境(低電力モード等)でも初見の説明が必ず見える */}
         {clips.length === 0 && (
@@ -1022,145 +1179,6 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             );
           })()}
         </div>
-
-        {/* PHONE CANVAS */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          style={{
-            position: 'relative',
-            width: 'min(260px, 70vw)',
-            margin: '0 auto 1.4rem',
-          }}>
-          <div style={{
-            position: 'relative',
-            paddingTop: '177.7%',
-            background: '#0a0a0f',
-            borderRadius: 30,
-            boxShadow: '0 32px 64px rgba(225, 48, 108, 0.16), 0 12px 32px rgba(0, 0, 0, 0.14), 0 0 0 7px rgba(255, 255, 255, 0.85), 0 0 0 8px rgba(225, 48, 108, 0.18)',
-            overflow: 'hidden',
-          }}>
-            <canvas
-              ref={canvasRef} width={CANVAS_W} height={CANVAS_H}
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
-            />
-            {clips.length === 0 && (
-              <div style={{
-                position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                color: 'rgba(255,255,255,0.55)', fontSize: 13,
-                fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
-                textAlign: 'center', padding: '2rem', gap: 10,
-              }}>
-                <Sparkles size={28} strokeWidth={1.4} />
-                <span>ここに あなたの世界</span>
-              </div>
-            )}
-            {recording && (
-              <div style={{
-                position: 'absolute', top: 14, left: 14,
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '4px 9px', background: '#EF4444', color: '#fff',
-                borderRadius: 999, fontSize: 10, fontWeight: 800,
-                fontFamily: IRIS_FONTS.body,
-              }}>
-                ● REC {Math.round(progress * 100)}%
-              </div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* PRIMARY ACTIONS */}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: '1.8rem' }}>
-          {!playing && !recording ? (
-            <button onClick={startPlay} disabled={!clips.length} style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              minHeight: 48, padding: '0.85rem 1.6rem',
-              background: clips.length ? IRIS_GRADIENT : 'rgba(255,255,255,0.4)',
-              color: '#fff', border: 'none', borderRadius: 999,
-              fontSize: 14, fontWeight: 800, cursor: clips.length ? 'pointer' : 'not-allowed',
-              boxShadow: clips.length ? '0 8px 24px rgba(225, 48, 108, 0.32)' : 'none',
-              opacity: clips.length ? 1 : 0.5,
-              fontFamily: IRIS_FONTS.body,
-            }}>
-              <Play size={15} fill="#fff" /> 再生
-            </button>
-          ) : (
-            <button onClick={stopPlay} style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              minHeight: 48, padding: '0.85rem 1.6rem',
-              background: 'rgba(255,255,255,0.9)', color: bg.ink,
-              border: `1.5px solid ${bg.accent}`, borderRadius: 999,
-              fontSize: 14, fontWeight: 800, cursor: 'pointer',
-              fontFamily: IRIS_FONTS.body,
-            }}>
-              <Square size={14} fill={bg.ink} /> 停止
-            </button>
-          )}
-        </div>
-
-        {/* ✨ AI 自動字幕ボタン (一番目立つ位置) */}
-        {clips.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            style={{ marginBottom: 14 }}
-          >
-            <button
-              onClick={runAiCaption}
-              disabled={aiBusy}
-              style={{
-                width: '100%', padding: '0.95rem 1rem',
-                background: aiBusy ? 'rgba(255,255,255,0.5)' : IRIS_GRADIENT,
-                color: '#fff', border: 'none', borderRadius: 18,
-                fontSize: 14.5, fontWeight: 800,
-                cursor: aiBusy ? 'wait' : 'pointer',
-                boxShadow: aiBusy ? 'none' : '0 12px 32px rgba(225,48,108,0.32)',
-                fontFamily: IRIS_FONTS.body,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}
-            >
-              {aiBusy
-                ? <><Loader2 size={16} className="iris-spin" /> {aiPhase || '分析中…'}</>
-                : <><Sparkles size={16} /> AI が動画を見て字幕をつける</>}
-            </button>
-            {aiErr && (
-              <div style={{
-                marginTop: 8, padding: '0.65rem 0.8rem',
-                background: '#FEE2E2', color: '#991B1B',
-                borderRadius: 12, fontSize: 12,
-                display: 'flex', alignItems: 'flex-start', gap: 6,
-                lineHeight: 1.5,
-              }}>
-                <AlertCircle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
-                <div style={{ flex: 1 }}>
-                  {aiErr}
-                  <button onClick={() => { setAiErr(''); runAiCaption(); }} style={{
-                    display: 'block', marginTop: 6,
-                    background: 'transparent', border: 'none',
-                    color: '#991B1B', textDecoration: 'underline',
-                    cursor: 'pointer', fontSize: 11, padding: 0,
-                  }}>もう一度試す</button>
-                </div>
-              </div>
-            )}
-            {aiResult && !aiBusy && !aiErr && (
-              <div style={{
-                marginTop: 8, padding: '0.55rem 0.7rem',
-                background: 'rgba(225,48,108,0.08)',
-                color: bg.ink,
-                borderRadius: 10, fontSize: 11,
-                display: 'flex', alignItems: 'center', gap: 6,
-              }}>
-                <Eye size={12} color={bg.accent} />
-                <span><b>テーマ:</b> {aiResult.themeGuess || '—'}</span>
-              </div>
-            )}
-          </motion.div>
-        )}
 
         {/* タイムライン (キャンバス下) — Edits 風 */}
         {clips.length > 0 && (
