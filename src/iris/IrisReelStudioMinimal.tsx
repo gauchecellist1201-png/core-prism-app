@@ -35,6 +35,10 @@ import {
   REEL_PRESETS, getPreset, drawPresetDecorations, drawPresetBackground,
   type PresetId,
 } from './reelStudio/Presets';
+import {
+  routeEditCommand, interpretEditWithAi, applyActions,
+  type ReelEditCtx, type ColorMoodId,
+} from './reelChatEdit';
 
 /** キャプションの「最初の1行」を別フックに差し替える（2行目以降は維持） */
 function swapFirstLine(caption: string, newHook: string): string {
@@ -307,6 +311,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     }
     if (failed.length) setUploadErr(failed.join('\n'));
     if (newClips.length) setClips(prev => [...prev, ...newClips]);
+    // チャットバー等の呼び出し元が「何件入ったか」を正直に伝えられるよう件数を返す
+    return newClips.length;
   }, []);
 
   // 「素材から構成」の結果をマウント時に1回だけ展開（一気通貫の最終段）。
@@ -1033,12 +1039,142 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   // ─── 削除 ─────
   const removeClip = (id: string) => setClips(prev => prev.filter(c => c.id !== id));
 
+  // ─── チャット型動画編集 (下部固定バー) ─────
+  // 素材を投げて「暖かい感じで15秒にして」と言うだけで編集が進む。
+  // 一段目: キーワードルーター (コード確定・即時) / 二段目: AI 解釈 (reelChatEdit.ts)
+  const [chatMsgs, setChatMsgs] = useState<{ id: string; role: 'user' | 'assistant'; text: string }[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatDragOver, setChatDragOver] = useState(false);
+  const [chatVoiceOn, setChatVoiceOn] = useState(false);
+  const chatRecRef = useRef<any>(null);
+  const chatListRef = useRef<HTMLDivElement>(null);
+  const clipsRef = useRef<Clip[]>([]);
+  useEffect(() => { clipsRef.current = clips; }, [clips]);
+
+  const pushChat = useCallback((role: 'user' | 'assistant', text: string) => {
+    setChatMsgs(prev => [...prev.slice(-19), { id: makeId(), role, text }]);
+    setChatOpen(true);
+  }, []);
+
+  // 履歴は常に最新へスクロール (最大高 40vh の内部スクロール)
+  useEffect(() => {
+    const el = chatListRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [chatMsgs, chatOpen, chatBusy]);
+
+  /** 既存セッターを reelChatEdit の器 (ctx) に橋渡し。状態は常に最新の clipsRef から作る */
+  const buildChatCtx = useCallback((): ReelEditCtx => {
+    const cur = clipsRef.current;
+    return {
+      state: {
+        clipCount: cur.length,
+        totalSec: cur.reduce((s, c) => s + c.duration, 0),
+        presetId,
+        colorMood: colorMood as ColorMoodId,
+        durations: cur.map(c => c.duration),
+        captions: cur.map(c => c.captionText || ''),
+      },
+      applyPreset: (id) => applyPreset(id),
+      setColorMood: (m) => setColorMood(m as ColorMood),
+      autoDistribute: (sec) => autoDistribute(sec),
+      setClipDuration: (i, sec) => { const c = clipsRef.current[i]; if (c) setClipDuration(c.id, sec); },
+      reorder: (from, to) => reorderClip(from, to),
+      setTransition: (i, tr) => {
+        if (i === 'all') setClips(prev => prev.map(c => ({ ...c, transition: tr as ClipTransition })));
+        else { const c = clipsRef.current[i]; if (c) setClipTransition(c.id, tr as ClipTransition); }
+      },
+      setCaption: (i, text) => { const c = clipsRef.current[i]; if (c) setClipCaption(c.id, text); },
+      removeClip: (i) => { const c = clipsRef.current[i]; if (c) removeClip(c.id); },
+      runAiCaptions: () => { void runAiCaption(); },
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetId, colorMood, applyPreset, runAiCaption]);
+
+  /** チャットバーへの素材添付/ドロップ → 既存 addFiles で取込 → 件数を正直に応答 */
+  const handleChatFiles = useCallback(async (files: FileList | File[]) => {
+    const n = await addFiles(files);
+    if (n > 0) {
+      pushChat('assistant', `素材 ${n} 件を追加しました。「暖かい感じで 15 秒にして」のように話しかけてください`);
+    } else {
+      pushChat('assistant', '追加できる素材がありませんでした。画像 (jpg/png/webp) か動画 (mp4/mov/webm) を選んでください');
+    }
+  }, [addFiles, pushChat]);
+
+  /** テキスト/音声の指示 → ルーター即適用、または AI 解釈 → 適用 → 要約返答 */
+  const handleChatSend = useCallback(async (raw?: string) => {
+    const text = (raw ?? chatInput).trim();
+    if (!text || chatBusy) return;
+    setChatInput('');
+    pushChat('user', text);
+    const ctx = buildChatCtx();
+    // 一段目: キーワードルーター (コード確定・即時・無料)
+    const routed = routeEditCommand(text, ctx.state);
+    if (routed.length) {
+      const summaries = applyActions(routed, ctx);
+      pushChat('assistant', summaries.length ? `✓ ${summaries.join('。')}` : 'この指示には操作が見つかりませんでした');
+      return;
+    }
+    // 二段目: AI 解釈 (30s タイムアウト・失敗時フォールバック文言)
+    setChatBusy(true);
+    try {
+      const out = await interpretEditWithAi(text, ctx.state);
+      if (out.actions.length) {
+        const summaries = applyActions(out.actions, buildChatCtx());
+        pushChat('assistant', (summaries.length ? `✓ ${summaries.join('。')}` : '') + (out.reply ? `${summaries.length ? '\n' : ''}${out.reply}` : ''));
+      } else if (out.reply) {
+        pushChat('assistant', out.reply);
+      } else {
+        throw new Error('empty');
+      }
+    } catch {
+      pushChat('assistant', 'うまく聞き取れませんでした。「暖かい感じで 15 秒に」のように言ってみてください');
+    } finally {
+      setChatBusy(false);
+    }
+  }, [chatInput, chatBusy, buildChatCtx, pushChat]);
+
+  /** マイク: 話し終わると入力欄へ入り自動送信 (ja-JP・非対応ブラウザではボタン非表示) */
+  const stopChatVoice = useCallback(() => {
+    try { chatRecRef.current?.stop(); } catch { /* */ }
+  }, []);
+  const startChatVoice = useCallback(() => {
+    const SR: any = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!SR) return;
+    stopVoice(); // 字幕用の音声入力と同時起動しない (マイク競合防止)
+    const rec = new SR();
+    rec.lang = 'ja-JP';
+    rec.continuous = false;
+    rec.interimResults = true;
+    let finalText = '';
+    rec.onresult = (e: any) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) finalText += (r[0]?.transcript || '');
+        else interim += r[0]?.transcript || '';
+      }
+      setChatInput((finalText || interim).trim());
+    };
+    rec.onerror = () => { chatRecRef.current = null; setChatVoiceOn(false); };
+    rec.onend = () => {
+      chatRecRef.current = null;
+      setChatVoiceOn(false);
+      const t = finalText.trim();
+      if (t) void handleChatSend(t);
+    };
+    try { rec.start(); chatRecRef.current = rec; setChatVoiceOn(true); } catch { /* 二重 start 等は無視 */ }
+  }, [handleChatSend, stopVoice]);
+  // アンマウント時に確実に停止
+  useEffect(() => () => { try { chatRecRef.current?.stop(); } catch { /* */ } }, []);
+
   return (
     <div style={{
       position: 'relative',
       minHeight: '100dvh',
-      // safe-area-inset 配慮: 下部はホームインジケータ分余白を確保
-      paddingBottom: 'max(6rem, calc(4.5rem + env(safe-area-inset-bottom, 0px)))',
+      // safe-area-inset 配慮: 下部はホームインジケータ + Dock + チャット編集バー分の余白を確保
+      paddingBottom: 'max(11.5rem, calc(10rem + env(safe-area-inset-bottom, 0px)))',
       paddingTop: 'env(safe-area-inset-top, 0px)',
       // iPhone 幅で ambient BG 円 (520x520, right: -100) が横にはみ出すのを抑制
       overflowX: 'hidden',
@@ -2476,9 +2612,168 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         )}
       </div>
 
+      {/* ─── チャット型動画編集バー (下部固定・safe-area / Dock 重なりゼロ) ─── */}
+      <div className="iris-reelchat-bar" style={{
+        position: 'fixed', left: 0, right: 0, zIndex: 45, // AI FAB (z-40) より上・ごほうび演出 (z-60) より下
+        padding: '0 0.75rem', pointerEvents: 'none',
+      }}>
+        <div
+          style={{ maxWidth: 480, margin: '0 auto', pointerEvents: 'auto' }}
+          onDragOver={e => { e.preventDefault(); setChatDragOver(true); }}
+          onDragLeave={() => setChatDragOver(false)}
+          onDrop={e => { e.preventDefault(); setChatDragOver(false); if (e.dataTransfer.files?.length) void handleChatFiles(e.dataTransfer.files); }}
+        >
+          {/* 会話履歴 (折りたたみ・最大高 40vh の内部スクロール) */}
+          {chatMsgs.length > 0 && chatOpen && (
+            <div ref={chatListRef} style={{
+              maxHeight: '40vh', overflowY: 'auto',
+              display: 'flex', flexDirection: 'column', gap: 6,
+              marginBottom: 8, padding: '0.6rem',
+              background: 'rgba(255,255,255,0.94)',
+              backdropFilter: 'blur(18px)',
+              border: '1px solid rgba(225,48,108,0.2)',
+              borderRadius: 16,
+              boxShadow: '0 10px 30px rgba(31,26,46,0.14)',
+            }}>
+              {chatMsgs.slice(-6).map(m => (
+                <div key={m.id} style={{
+                  alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+                  maxWidth: '86%',
+                  padding: '0.45rem 0.7rem', borderRadius: 12,
+                  fontSize: 12, lineHeight: 1.55, whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  background: m.role === 'user' ? IRIS_GRADIENT : 'rgba(31,26,46,0.06)',
+                  color: m.role === 'user' ? '#FFFFFF' : '#1F1A2E',
+                  fontWeight: 600, fontFamily: IRIS_FONTS.body,
+                }}>{m.text}</div>
+              ))}
+              {chatBusy && (
+                <div style={{
+                  alignSelf: 'flex-start',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '0.45rem 0.7rem', borderRadius: 12,
+                  fontSize: 12, background: 'rgba(31,26,46,0.06)', color: '#1F1A2E',
+                  fontWeight: 600, fontFamily: IRIS_FONTS.body,
+                }}>
+                  <Loader2 size={12} className="iris-spin" /> 編集内容を考えています…
+                </div>
+              )}
+            </div>
+          )}
+          {/* 履歴のたたむ/ひらく */}
+          {chatMsgs.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+              <button onClick={() => setChatOpen(o => !o)} style={{
+                padding: '0.2rem 0.85rem', minHeight: 26,
+                background: 'rgba(255,255,255,0.92)', color: '#1F1A2E',
+                border: '1px solid rgba(225,48,108,0.25)', borderRadius: 999,
+                fontSize: 10.5, fontWeight: 800, cursor: 'pointer',
+                fontFamily: IRIS_FONTS.body,
+                boxShadow: '0 4px 12px rgba(31,26,46,0.1)',
+              }}>{chatOpen ? '履歴をたたむ' : `履歴 (${chatMsgs.length})`}</button>
+            </div>
+          )}
+          {/* 入力バー: 添付 + テキスト + マイク + 送信 */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '0.35rem 0.4rem',
+            background: 'rgba(255,255,255,0.96)',
+            backdropFilter: 'blur(18px)',
+            border: chatDragOver ? '1.5px dashed #E1306C' : '1px solid rgba(225,48,108,0.28)',
+            borderRadius: 999,
+            boxShadow: '0 12px 32px rgba(31,26,46,0.18)',
+          }}>
+            {/* 素材添付 (自作クリップ SVG) */}
+            <label title="素材を添付" style={{
+              width: 42, height: 42, minWidth: 42, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: '#E1306C',
+              background: 'rgba(225,48,108,0.09)',
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+              <input
+                type="file" multiple accept="image/*,video/*,audio/*" style={{ display: 'none' }}
+                onChange={e => { if (e.target.files?.length) { void handleChatFiles(e.target.files); e.target.value = ''; } }}
+              />
+            </label>
+            <input
+              type="text"
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); void handleChatSend(); } }}
+              placeholder={clips.length === 0 ? 'まず素材を入れて、あとは話しかけるだけ' : 'どう編集する？（例: 暖かい感じで15秒にして）'}
+              style={{
+                flex: 1, minWidth: 0,
+                border: 'none', outline: 'none', background: 'transparent',
+                fontSize: 16, // iOS Safari 自動ズーム回避
+                minHeight: 44, color: '#1F1A2E',
+                fontFamily: IRIS_FONTS.body,
+              }}
+            />
+            {/* マイク (音声入力・非対応ブラウザでは非表示) */}
+            {voiceSupported && (
+              <button
+                onClick={() => (chatVoiceOn ? stopChatVoice() : startChatVoice())}
+                title={chatVoiceOn ? '停止して送信' : '話して指示する'}
+                style={{
+                  width: 42, height: 42, minWidth: 42, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: 'none', cursor: 'pointer',
+                  background: chatVoiceOn ? '#DC2626' : 'rgba(225,48,108,0.09)',
+                  color: chatVoiceOn ? '#FFFFFF' : '#E1306C',
+                  boxShadow: chatVoiceOn ? '0 0 0 4px rgba(220,38,38,0.22)' : 'none',
+                  animation: chatVoiceOn ? 'iris-reelchat-pulse 1.1s ease-in-out infinite' : undefined,
+                }}
+              >
+                <Mic size={17} />
+              </button>
+            )}
+            {/* 送信 (自作の上向き矢印 SVG) */}
+            <button
+              onClick={() => void handleChatSend()}
+              disabled={chatBusy || !chatInput.trim()}
+              title="送信"
+              style={{
+                width: 42, height: 42, minWidth: 42, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: 'none',
+                cursor: chatBusy || !chatInput.trim() ? 'not-allowed' : 'pointer',
+                background: chatBusy || !chatInput.trim() ? 'rgba(31,26,46,0.12)' : IRIS_GRADIENT,
+                color: '#FFFFFF',
+                boxShadow: chatBusy || !chatInput.trim() ? 'none' : '0 6px 16px rgba(225,48,108,0.34)',
+              }}
+            >
+              {chatBusy
+                ? <Loader2 size={16} className="iris-spin" />
+                : (
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M12 19V5" /><path d="M5 12l7-7 7 7" />
+                  </svg>
+                )}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <style>{`
         @keyframes iris-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
         .iris-spin { animation: iris-spin 0.9s linear infinite; }
+        @keyframes iris-reelchat-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.35); } 50% { box-shadow: 0 0 0 7px rgba(220,38,38,0.12); } }
+        /* デスクトップ (>900px): Dock なし → 画面最下部。サイドバー 220px を避けて中央へ */
+        .iris-reelchat-bar { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+        @media (min-width: 901px) { .iris-reelchat-bar { left: 220px; } }
+        /* モバイル (≤900px): 下部ナビ Dock (64px + safe-area) の真上に。重なりゼロ */
+        @media (max-width: 900px) { .iris-reelchat-bar { bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); left: 0; } }
+        /* リールスタジオ表示中だけ: 既存の浮遊ボタン群をチャット編集バーの上へ退避 (重なりゼロ) */
+        @media (max-width: 900px) {
+          .cp-ai-fab-wrap, body[data-iris-dock] .cp-ai-fab-wrap { bottom: calc(env(safe-area-inset-bottom, 0px) + 142px) !important; }
+          body[data-iris-dock] .agent-monitor-dock[data-open="false"] { bottom: calc(env(safe-area-inset-bottom, 0px) + 142px) !important; }
+        }
+        @media (min-width: 901px) {
+          .cp-ai-fab-wrap { bottom: calc(env(safe-area-inset-bottom, 0px) + 92px) !important; }
+        }
         ::-webkit-scrollbar { display: none; }
       `}</style>
     </div>

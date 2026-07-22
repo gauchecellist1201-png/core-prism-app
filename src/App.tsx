@@ -551,8 +551,10 @@ export default function App() {
     return (
       <Suspense fallback={<RouteFallback />}>
         <IrisApp />
-        {/* CORE 共通ドック（下部中央・current=iris） */}
-        <CoreDock current="iris" />
+        {/* CORE 共通ドック（下部中央・current=iris）。
+            Iris は下部ナビ Dock(64px) + リールのチャット編集バー(≈56px) が最下段に並ぶため、
+            オーブがそれらに乗り上げないよう下端から 150px 持ち上げてクランプする */}
+        <CoreDock current="iris" bottomClearance={150} />
       </Suspense>
     );
   }
