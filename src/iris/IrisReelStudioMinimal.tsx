@@ -995,15 +995,17 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     transition: 'all 0.18s',
                   }}
                 >
-                  {/* OS絵文字禁止: プリセットIDごとの自作ラインSVG */}
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#fff' : bg.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    {p.id === 'teach' && <><path d="M12 4 2 9l10 5 10-5-10-5z" /><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" /></>}
-                    {p.id === 'story' && <><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /><path d="M9 7h6M9 11h6" /></>}
-                    {p.id === 'news' && <><rect x="3" y="4" width="15" height="16" rx="2" /><path d="M18 8h2a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2h-1zM7 8h7M7 12h7M7 16h4" /></>}
-                    {p.id === 'qa' && <><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" /><path d="M9.5 9.5a2.5 2.5 0 0 1 4.3 1.7c0 1.6-2.3 2-2.3 3.3" /><path d="M12 17.5h.01" /></>}
-                    {p.id !== 'teach' && p.id !== 'story' && p.id !== 'news' && p.id !== 'qa' && <><rect x="4" y="4" width="16" height="16" rx="3" /><path d="m10 9 5 3-5 3z" /></>}
-                  </svg>
-                  <div style={{ fontSize: 11, lineHeight: 1.1 }}>{p.label}</div>
+                  {/* テーマの実配色を映すミニ見本 (一目で仕上がりが分かる) */}
+                  <span aria-hidden style={{
+                    width: 24, height: 24, borderRadius: 7, background: p.bg,
+                    border: `1.5px solid ${active ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.12)'}`,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: 2, overflow: 'hidden', flexShrink: 0,
+                  }}>
+                    <span style={{ width: 13, height: 3.5, borderRadius: 2, background: p.captionColor }} />
+                    <span style={{ width: 8, height: 3.5, borderRadius: 2, background: p.accent }} />
+                  </span>
+                  <div style={{ fontSize: 10.5, lineHeight: 1.15, textAlign: 'center' }}>{p.label}</div>
                 </button>
               );
             })}
