@@ -1115,6 +1115,43 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
     return 'reel';
   });
   const [moreOpen, setMoreOpen] = useState(false);
+  // タブバーの端フェード (見切れがバグに見えない、プロ仕様のスクロール手掛かり)
+  const tabNavRef = useRef<HTMLElement | null>(null);
+  const [tabEdges, setTabEdges] = useState({ l: false, r: false });
+  const updateTabEdges = useCallback(() => {
+    const el = tabNavRef.current;
+    if (!el) return;
+    const l = el.scrollLeft > 4;
+    const r = el.scrollLeft < el.scrollWidth - el.clientWidth - 4;
+    // 値が変わった時だけ setState (ref 再アタッチ→setState の無限ループ防止)
+    setTabEdges(prev => (prev.l === l && prev.r === r ? prev : { l, r }));
+  }, []);
+  useEffect(() => {
+    // レイアウト確定後に初期計測 (マウント直後は scrollWidth が未確定のことがある)
+    const raf = requestAnimationFrame(updateTabEdges);
+    window.addEventListener('resize', updateTabEdges);
+    // フォント読込・タブ増減など「幅が後から変わる」全ケースを拾う。
+    // 注意: nav 自身の可視幅は不変で scrollWidth だけ伸びるため、中身(子)も観測する
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => updateTabEdges()) : null;
+    if (ro && tabNavRef.current) {
+      ro.observe(tabNavRef.current);
+      Array.from(tabNavRef.current.children).forEach(c => ro.observe(c));
+    }
+    // Webフォント適用でタブ幅が増えるのはこのタイミング
+    try { (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts?.ready.then(() => updateTabEdges()); } catch { /* */ }
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', updateTabEdges);
+      ro?.disconnect();
+    };
+  }, [updateTabEdges]);
+  const tabMask = tabEdges.l && tabEdges.r
+    ? 'linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 34px), transparent 100%)'
+    : tabEdges.r
+      ? 'linear-gradient(90deg, #000 0, #000 calc(100% - 34px), transparent 100%)'
+      : tabEdges.l
+        ? 'linear-gradient(90deg, transparent 0, #000 26px, #000 100%)'
+        : undefined;
   // ホームの二次ウィジェット (参謀オービット / 稼ぐヒーロー / 健康 / AIチャット) は
   // モバイル初期画面の密度を下げるため「すべての機能を見る」展開時のみ表示。
   // デスクトップは常時表示・機能は消さない。(2026-07-13 夜間: 分かりやすく・ごちゃごちゃ解消)
@@ -1505,12 +1542,21 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
           </div>
         )}
 
-        {/* モバイル用 タブ ナビゲーション (コンパクト横スクロール) */}
-        <nav className="iris-tabs-v2 iris-mobile-tabs" style={{
-          maxWidth: 1280, margin: '0.4rem auto 0',
-          display: 'flex', alignItems: 'center', gap: 6,
-          overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2,
-        }}>
+        {/* モバイル用 タブ ナビゲーション (コンパクト横スクロール・端フェードで「まだ右にある」を可視化) */}
+        <nav
+          ref={el => {
+            tabNavRef.current = el;
+            // マウント直後に計測 (rAF 経由 = コミット外なので安全。prev比較ガードで再レンダーもしない)
+            if (el) requestAnimationFrame(updateTabEdges);
+          }}
+          onScroll={updateTabEdges}
+          className="iris-tabs-v2 iris-mobile-tabs"
+          style={{
+            maxWidth: 1280, margin: '0.4rem auto 0',
+            display: 'flex', alignItems: 'center', gap: 6,
+            overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2,
+            WebkitMaskImage: tabMask, maskImage: tabMask,
+          }}>
           {/* 「その他」16タブは上部ナビに並べず「全機能」シートからのみ (要素削減) */}
           {TAB_GROUPS.filter(g => g.id !== 'other').map((group, gi) => {
             const isActiveGroup = TAB_TO_GROUP[tab] === group.id;
