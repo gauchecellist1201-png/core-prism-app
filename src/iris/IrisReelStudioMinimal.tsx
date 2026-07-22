@@ -2700,6 +2700,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             </label>
             <input
               type="text"
+              className="iris-reelchat-input"
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); void handleChatSend(); } }}
@@ -2761,6 +2762,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         @keyframes iris-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
         .iris-spin { animation: iris-spin 0.9s linear infinite; }
         @keyframes iris-reelchat-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.35); } 50% { box-shadow: 0 0 0 7px rgba(220,38,38,0.12); } }
+        /* プレースホルダーは淡背景に濃文字 (見えない文字ゼロ) */
+        .iris-reelchat-input::placeholder { color: rgba(31,26,46,0.5); opacity: 1; }
         /* デスクトップ (>900px): Dock なし → 画面最下部。サイドバー 220px を避けて中央へ */
         .iris-reelchat-bar { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
         @media (min-width: 901px) { .iris-reelchat-bar { left: 220px; } }
