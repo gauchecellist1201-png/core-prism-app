@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
-import { BGM_LIBRARY, VIRAL_PATTERNS, TREND_PULSE_2026_Q2 } from './IrisReelStudio';
+import { BGM_LIBRARY, VIRAL_PATTERNS, TREND_PULSE_2026_Q2, loadVideo, VIDEO_FORMAT_HELP } from './IrisReelStudio';
 import {
   generateReelCaptions,
   type ReelAiResult,
@@ -112,18 +112,8 @@ function loadImage(url: string): Promise<HTMLImageElement> {
     img.src = url;
   });
 }
-function loadVideo(url: string): Promise<HTMLVideoElement> {
-  return new Promise((resolve, reject) => {
-    const v = document.createElement('video');
-    v.src = url;
-    v.crossOrigin = 'anonymous';
-    v.muted = true;
-    v.playsInline = true;
-    v.preload = 'auto';
-    v.onloadeddata = () => resolve(v);
-    v.onerror = reject;
-  });
-}
+// loadVideo は IrisReelStudio の 10 秒タイムアウト + HEVC 案内つき実装を共用
+// (HEVC の .mov は onerror すら発火せず永久ハングするため、素の onloadeddata 待ちは禁止)
 const easeInOut = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
 function drawCover(ctx: CanvasRenderingContext2D, el: HTMLImageElement | HTMLVideoElement, sw: number, sh: number, dw: number, dh: number, progress = 0) {
@@ -256,22 +246,28 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const addFiles = useCallback(async (files: FileList | File[]) => {
     setUploadErr('');
     const arr = Array.from(files);
-    const imgs = arr.filter(f => f.type.startsWith('image/'));
-    const vids = arr.filter(f => f.type.startsWith('video/'));
-    const auds = arr.filter(f => f.type.startsWith('audio/'));
+    // f.type が空になる環境 (D&D の .mov 等) があるため拡張子でも振り分ける
+    const imgs = arr.filter(f => f.type.startsWith('image/') || /\.(jpe?g|png|webp|heic|gif)$/i.test(f.name));
+    const vids = arr.filter(f => f.type.startsWith('video/') || /\.(mp4|mov|webm|m4v)$/i.test(f.name));
+    const auds = arr.filter(f => f.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg)$/i.test(f.name));
     if (auds[0]) setBgmFile(auds[0]);
 
     const newClips: Clip[] = [];
+    const failed: string[] = [];
     for (const f of imgs) {
       const url = URL.createObjectURL(f);
       try { const el = await loadImage(url); newClips.push({ id: makeId(), kind: 'image', url, duration: 2.5, el }); }
-      catch { setUploadErr(`画像を読めませんでした: ${f.name}`); URL.revokeObjectURL(url); }
+      catch { failed.push(`${f.name}: 画像を読めませんでした`); URL.revokeObjectURL(url); }
     }
     for (const f of vids) {
       const url = URL.createObjectURL(f);
       try { const el = await loadVideo(url); newClips.push({ id: makeId(), kind: 'video', url, duration: Math.min(el.duration || 3, 6), el }); }
-      catch { setUploadErr(`動画を読めませんでした: ${f.name}`); URL.revokeObjectURL(url); }
+      catch (err: any) { failed.push(`${f.name}: ${err?.message || `動画を読めませんでした。${VIDEO_FORMAT_HELP}`}`); URL.revokeObjectURL(url); }
     }
+    if (!imgs.length && !vids.length && !auds.length && arr.length) {
+      failed.push('対応形式: 画像 (jpg/png/webp), 動画 (mp4/mov/webm), 音楽 (mp3/wav/m4a)');
+    }
+    if (failed.length) setUploadErr(failed.join('\n'));
     if (newClips.length) setClips(prev => [...prev, ...newClips]);
   }, []);
 
@@ -738,7 +734,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       setCurrentTime(t);
       setProgress(t / totalDuration);
       if (t >= totalDuration) { rec.stop(); setCurrentTime(0); return; }
-      animRef.current = requestAnimationFrame(tick);
+      // rAF はタブが隠れると止まり書き出しが永久に終わらないため setTimeout 駆動
+      setTimeout(tick, 1000 / 30);
     };
     tick();
   };
@@ -2150,9 +2147,10 @@ function ErrorMsg({ msg }: { msg: string }) {
       margin: '8px 12px 12px', padding: '0.55rem 0.7rem',
       background: '#FEE2E2', color: '#991B1B',
       borderRadius: 8, fontSize: 11,
-      display: 'flex', alignItems: 'center', gap: 5,
+      display: 'flex', alignItems: 'flex-start', gap: 5,
+      whiteSpace: 'pre-wrap' as const,
     }}>
-      <Trash2 size={11} /> {msg}
+      <AlertCircle size={11} style={{ flexShrink: 0, marginTop: 1 }} /> <span>{msg}</span>
     </div>
   );
 }

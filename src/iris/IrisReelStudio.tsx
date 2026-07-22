@@ -16,7 +16,14 @@ import {
   Image as ImageIcon, Film, Type, Music, Download, Share2,
   Play, Square, Trash2, ChevronUp, ChevronDown, Sparkles,
   Mic, Loader2, Wand2, AlertCircle, UploadCloud, Copy, Check,
+  Minus, RotateCcw,
 } from 'lucide-react';
+import { composeReelFromClips, type CutInput, type ReelComposition, type BgmMood } from './reelAiCaption';
+import {
+  putReelAsset, getReelAsset, saveReelProject, loadReelProject,
+  pruneReelAssets, clearReelStore,
+  type StoredClipMeta,
+} from './reelStore';
 import {
   COLOR_GRADES, applyGradeOverlay, getGrade,
   type GradeId,
@@ -914,6 +921,11 @@ function loadFont(href: string) {
 
 // ─── 字幕スタイル ──────────────────────────────
 type CaptionAnim = 'none' | 'fade-in' | 'pop' | 'slide-up';
+/** 描画モード (Submagic 流の 3 スタイル + 従来 plain)
+ *  pop-word  : 単語(文節)ごとに大きく跳ねる + 黄ハイライト
+ *  cinema    : 下部の黒帯 + 明朝
+ *  clean     : 中央・白・細身 */
+type CaptionMode = 'plain' | 'pop-word' | 'cinema' | 'clean';
 interface CaptionStyle {
   font: string;
   size: number;
@@ -922,6 +934,7 @@ interface CaptionStyle {
   strokeWidth: number;
   shadow: boolean;
   anim: CaptionAnim;
+  mode?: CaptionMode;
 }
 
 const DEFAULT_CAPTION: CaptionStyle = {
@@ -932,7 +945,24 @@ const DEFAULT_CAPTION: CaptionStyle = {
   strokeWidth: 6,
   shadow: true,
   anim: 'fade-in',
+  mode: 'plain',
 };
+
+/** 選ぶだけの字幕スタイル 3 種 (Submagic 流) */
+const CAPTION_STYLE_PRESETS: { id: CaptionMode; name: string; desc: string; patch: Partial<CaptionStyle> }[] = [
+  {
+    id: 'pop-word', name: 'ポップ', desc: '単語ごとに跳ねる・黄ハイライト',
+    patch: { font: '"Dela Gothic One"', size: 62, color: '#FFFFFF', stroke: '#000000', strokeWidth: 7, shadow: true, anim: 'none', mode: 'pop-word' },
+  },
+  {
+    id: 'cinema', name: 'シネマ', desc: '下部の帯 + 明朝で上品に',
+    patch: { font: '"Shippori Mincho"', size: 50, color: '#FFF8F0', stroke: '#000000', strokeWidth: 0, shadow: false, anim: 'fade-in', mode: 'cinema' },
+  },
+  {
+    id: 'clean', name: 'クリーン', desc: '中央・白・細身でシンプル',
+    patch: { font: '"Noto Sans JP"', size: 46, color: '#FFFFFF', stroke: '#1F1A2E', strokeWidth: 2, shadow: true, anim: 'fade-in', mode: 'clean' },
+  },
+];
 
 // ─── クリップ ────────────────────────────────
 type ClipKind = 'image' | 'video';
@@ -949,6 +979,12 @@ interface Clip {
   speed?: number;
   /** カラーグレード LUT ID */
   grade?: GradeId;
+  /** 元ファイル (IndexedDB 永続化用) */
+  blob?: Blob;
+  /** IndexedDB 内の素材 ID (永続化済みの目印) */
+  assetId?: string;
+  /** 元ファイル名 (取込結果の表示用) */
+  name?: string;
 }
 
 interface Caption {
@@ -975,17 +1011,38 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-/** 動画をロード (メタデータ + 1フレーム待ち) */
-function loadVideo(url: string): Promise<HTMLVideoElement> {
+/** iPhone の HEVC (.mov) が Chrome で読めない時などの具体的な解決案内 */
+export const VIDEO_FORMAT_HELP =
+  'iPhoneの動画は 設定→カメラ→フォーマット→「互換性優先」で撮ると確実です。' +
+  '既存動画は共有シートで「互換性」を選ぶか、写真アプリから書き出すとH.264になります。';
+
+/** 動画をロード (メタデータ + 1フレーム待ち)。
+ *  HEVC 等デコード不能な形式は onerror すら発火しないことがあるため、
+ *  10 秒タイムアウト + v.load() 明示で永久ハングを根治する。 */
+export function loadVideo(url: string, timeoutMs = 10000): Promise<HTMLVideoElement> {
   return new Promise((resolve, reject) => {
     const v = document.createElement('video');
-    v.src = url;
+    let settled = false;
+    const finish = (ok: boolean, err?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      v.onloadeddata = null;
+      v.onerror = null;
+      if (ok) resolve(v);
+      else reject(err || new Error('動画を読み込めませんでした'));
+    };
+    const timer = setTimeout(() => {
+      finish(false, new Error(`読み込みが10秒応答なし — この形式(HEVC/H.265等)はブラウザで再生できない可能性があります。${VIDEO_FORMAT_HELP}`));
+    }, timeoutMs);
+    v.onloadeddata = () => finish(true);
+    v.onerror = () => finish(false, new Error(`この動画形式はブラウザで再生できません。${VIDEO_FORMAT_HELP}`));
     v.crossOrigin = 'anonymous';
     v.muted = true;
     v.playsInline = true;
     v.preload = 'auto';
-    v.onloadeddata = () => resolve(v);
-    v.onerror = reject;
+    v.src = url;
+    try { v.load(); } catch { /* 古い実装で load() が無い場合は無視 */ }
   });
 }
 
@@ -1096,7 +1153,28 @@ function applyTransition(
   }
 }
 
-/** 字幕を描画 */
+/** 日本語対応の文節分割 (pop-word 用)。Intl.Segmenter があれば単語単位、無ければ 3 文字チャンク */
+function segmentWords(text: string): string[] {
+  try {
+    const Seg = (Intl as any).Segmenter;
+    if (Seg) {
+      const seg = new Seg('ja', { granularity: 'word' });
+      const out: string[] = [];
+      for (const s of seg.segment(text)) {
+        const t = String(s.segment);
+        if (!t.trim()) continue;
+        out.push(t);
+      }
+      if (out.length) return out;
+    }
+  } catch { /* fallback */ }
+  const chars = Array.from(text.replace(/\s+/g, ''));
+  const out: string[] = [];
+  for (let i = 0; i < chars.length; i += 3) out.push(chars.slice(i, i + 3).join(''));
+  return out.length ? out : [text];
+}
+
+/** 字幕を描画 (mode: plain / pop-word / cinema / clean) */
 function drawCaption(
   ctx: CanvasRenderingContext2D,
   cap: Caption,
@@ -1108,6 +1186,7 @@ function drawCaption(
   if (globalT < cap.start || globalT > cap.end) return;
   const dur = cap.end - cap.start;
   const local = (globalT - cap.start) / Math.max(dur, 0.001);
+  const mode: CaptionMode = styleDef.mode || 'plain';
 
   let alpha = 1;
   let yOff = 0;
@@ -1148,7 +1227,77 @@ function drawCaption(
 
   const lineH = fontSize * 1.25;
   const totalH = lines.length * lineH;
-  const baseY = H * 0.78 - totalH / 2 + yOff;
+  let baseY = H * 0.78 - totalH / 2 + yOff;
+  if (mode === 'clean') baseY = H * 0.5 - totalH / 2 + yOff;
+  if (mode === 'cinema') baseY = H * 0.8 - totalH / 2 + yOff;
+
+  // シネマ: 文字の背後に黒帯
+  if (mode === 'cinema') {
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    const padY = fontSize * 0.55;
+    ctx.fillRect(0, baseY - lineH / 2 - padY, W, totalH + padY * 2);
+  }
+
+  // ポップ (単語カラオケ): 進行に合わせて文節を順に出し、現在の文節を大きく + 黄ハイライト
+  if (mode === 'pop-word') {
+    const words = segmentWords(cap.text);
+    const activeIdx = Math.min(words.length - 1, Math.floor(local * words.length));
+    // 表示する単語 (現在まで) を行に詰め直す
+    const visible = words.slice(0, activeIdx + 1);
+    const wLines: string[][] = [];
+    let cur: string[] = [];
+    for (const w of visible) {
+      const trial = [...cur, w].join('');
+      if (ctx.measureText(trial).width > maxLineW && cur.length) {
+        wLines.push(cur);
+        cur = [w];
+      } else {
+        cur.push(w);
+      }
+    }
+    if (cur.length) wLines.push(cur);
+    const pTotalH = wLines.length * lineH;
+    const pBaseY = H * 0.72 - pTotalH / 2 + yOff;
+    let drawn = 0;
+    wLines.forEach((ws, li) => {
+      const y = pBaseY + li * lineH;
+      const lineText = ws.join('');
+      const lineW = ctx.measureText(lineText).width;
+      let x = W / 2 - lineW / 2;
+      for (const w of ws) {
+        const isActive = drawn === activeIdx;
+        // 現在の単語は 1.18 倍 + 黄ハイライト、出た瞬間に軽く跳ねる
+        const wordLocal = clamp(local * words.length - drawn, 0, 1);
+        const bounce = isActive ? (wordLocal < 0.3 ? 0.85 + (wordLocal / 0.3) * 0.33 : 1.18) : 1;
+        const fs = fontSize * bounce;
+        ctx.font = `900 ${fs}px ${styleDef.font}, "Noto Sans JP", sans-serif`;
+        const ww = ctx.measureText(w).width;
+        ctx.textAlign = 'left';
+        if (styleDef.shadow) {
+          ctx.shadowColor = 'rgba(0,0,0,0.55)';
+          ctx.shadowBlur = 12 * scaleFactor;
+          ctx.shadowOffsetY = 4 * scaleFactor;
+        }
+        if (styleDef.strokeWidth > 0) {
+          ctx.lineWidth = styleDef.strokeWidth * scaleFactor;
+          ctx.strokeStyle = styleDef.stroke;
+          ctx.lineJoin = 'round';
+          ctx.strokeText(w, x, y);
+        }
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.fillStyle = isActive ? '#FFE14D' : styleDef.color;
+        ctx.fillText(w, x, y);
+        // 幅は基準フォントで進める (行のガタつき防止)
+        ctx.font = `900 ${fontSize}px ${styleDef.font}, "Noto Sans JP", sans-serif`;
+        x += Math.max(ww, ctx.measureText(w).width);
+        drawn++;
+      }
+      ctx.textAlign = 'center';
+    });
+    ctx.restore();
+    return;
+  }
 
   lines.forEach((ln, i) => {
     const y = baseY + i * lineH;
@@ -1283,6 +1432,19 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, initialProject, o
   // アップロードエラー / D&D 表示
   const [uploadError, setUploadError] = useState<string>('');
   const [dragOver, setDragOver] = useState(false);
+  const dragTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ファイルごとの取込進捗 (silent fail 禁止: 読み込み中… → 追加 / 失敗(理由) を必ず見せる)
+  const [importItems, setImportItems] = useState<{ id: string; name: string; status: 'loading' | 'ok' | 'error'; message?: string }[]>([]);
+  // 前回セッションの復元 (IndexedDB)
+  const [restoreInfo, setRestoreInfo] = useState<{ count: number; savedAt: number } | null>(null);
+  const [restoring, setRestoring] = useState(false);
+  // おまかせで作る (素材→完成リールの自動監督)
+  const [autoBusy, setAutoBusy] = useState(false);
+  const [autoPhase, setAutoPhase] = useState<string>('');
+  const [autoErr, setAutoErr] = useState<string>('');
+  const [autoDone, setAutoDone] = useState<string>('');
+  // MP4 変換失敗時の正直な案内 + 再試行
+  const [convertErr, setConvertErr] = useState<string>('');
   // 背景除去の進捗・失敗をクリップ単位で持つ
   const [bgRemoval, setBgRemoval] = useState<Record<string, 'busy' | { error: string } | undefined>>({});
   // BGM ライブラリ プレビュー
@@ -1331,13 +1493,13 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, initialProject, o
           if (isVideo) {
             const v = await loadVideo(url);
             const dur = clamp(seed.durationSec || v.duration || 4, 2, Math.max(2, v.duration || 6));
-            built.push({ id: makeId(), kind: 'video', url, duration: dur, kenBurns: 'none', transition: 'whip', el: v, speed: 1 });
+            built.push({ id: makeId(), kind: 'video', url, duration: dur, kenBurns: 'none', transition: 'whip', el: v, speed: 1, blob: seed.file, assetId: makeId(), name: seed.file.name });
             if (seed.overlayText) caps.push({ start: t, end: t + dur, text: seed.overlayText });
             t += dur;
           } else {
             const img = await loadImage(url);
             const dur = clamp(seed.durationSec || 3, 1.5, 8);
-            built.push({ id: makeId(), kind: 'image', url, duration: dur, kenBurns: 'in', transition: 'fade', el: img });
+            built.push({ id: makeId(), kind: 'image', url, duration: dur, kenBurns: 'in', transition: 'fade', el: img, blob: seed.file, assetId: makeId(), name: seed.file.name });
             if (seed.overlayText) caps.push({ start: t, end: t + dur, text: seed.overlayText });
             t += dur;
           }
@@ -1355,6 +1517,132 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, initialProject, o
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialProject]);
+
+  // ─── 素材 + 設定の永続化 (IndexedDB) — リロードしても素材が消えない ─────
+  const savedAssetIdsRef = useRef<Set<string>>(new Set());
+  const hadClipsRef = useRef(false);
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clipsRef = useRef<Clip[]>([]);
+  useEffect(() => { clipsRef.current = clips; }, [clips]);
+
+  useEffect(() => {
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+    // 全削除された時: 保存済みプロジェクトも消す (次回に古い素材を復元させない)
+    if (!clips.length) {
+      if (hadClipsRef.current) {
+        hadClipsRef.current = false;
+        void clearReelStore();
+        savedAssetIdsRef.current.clear();
+      }
+      return;
+    }
+    hadClipsRef.current = true;
+    persistTimerRef.current = setTimeout(() => {
+      void (async () => {
+        try {
+          const metas: StoredClipMeta[] = [];
+          for (const c of clipsRef.current) {
+            if (!c.assetId || !c.blob) continue; // blob が無い素材 (背景除去後など) はスキップ
+            if (!savedAssetIdsRef.current.has(c.assetId)) {
+              const ok = await putReelAsset(c.assetId, c.blob, c.name);
+              if (!ok) continue; // 保存不能 (容量/プライベートモード) — メタにも入れない
+              savedAssetIdsRef.current.add(c.assetId);
+            }
+            metas.push({
+              assetId: c.assetId, kind: c.kind, duration: c.duration,
+              kenBurns: c.kenBurns, transition: c.transition,
+              speed: c.speed, grade: c.grade, name: c.name,
+            });
+          }
+          if (!metas.length) return;
+          await saveReelProject({
+            clips: metas,
+            captions: captions.map(cp => ({ start: cp.start, end: cp.end, text: cp.text })),
+            capStyle: capStyle as unknown as Record<string, unknown>,
+            savedAt: Date.now(),
+          });
+          void pruneReelAssets(metas.map(m => m.assetId));
+        } catch { /* 永続化失敗は本体機能に影響させない */ }
+      })();
+    }, 1200);
+    return () => { if (persistTimerRef.current) clearTimeout(persistTimerRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clips, captions, capStyle]);
+
+  // 起動時: 保存済みプロジェクトがあれば「復元しますか？」を出す
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (initialProject?.clips?.length) return; // 外部シードが優先
+      const p = await loadReelProject();
+      if (cancelled || !p || !p.clips.length) return;
+      setRestoreInfo({ count: p.clips.length, savedAt: p.savedAt });
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const restoreSaved = async () => {
+    setRestoring(true);
+    try {
+      const p = await loadReelProject();
+      if (!p || !p.clips.length) {
+        setUploadError('保存データが見つかりませんでした。素材を追加し直してください。');
+        setRestoreInfo(null);
+        return;
+      }
+      const built: Clip[] = [];
+      const failed: string[] = [];
+      for (const meta of p.clips) {
+        const asset = await getReelAsset(meta.assetId);
+        if (!asset) { failed.push(meta.name || meta.assetId); continue; }
+        const url = URL.createObjectURL(asset.blob);
+        try {
+          if (meta.kind === 'video') {
+            const v = await loadVideo(url);
+            built.push({
+              id: makeId(), kind: 'video', url,
+              duration: meta.duration, kenBurns: 'none',
+              transition: (meta.transition as Transition) || 'whip',
+              el: v, speed: meta.speed, grade: meta.grade as GradeId | undefined,
+              blob: asset.blob, assetId: meta.assetId, name: meta.name,
+            });
+          } else {
+            const img = await loadImage(url);
+            built.push({
+              id: makeId(), kind: 'image', url,
+              duration: meta.duration,
+              kenBurns: (meta.kenBurns as KenBurns) || 'in',
+              transition: (meta.transition as Transition) || 'fade',
+              el: img, grade: meta.grade as GradeId | undefined,
+              blob: asset.blob, assetId: meta.assetId, name: meta.name,
+            });
+          }
+          savedAssetIdsRef.current.add(meta.assetId);
+        } catch {
+          failed.push(meta.name || meta.assetId);
+          URL.revokeObjectURL(url);
+        }
+      }
+      if (built.length) {
+        setClips(prev => [...prev, ...built]);
+        if (p.captions?.length) setCaptions(p.captions);
+        if (p.capStyle) setCapStyle(prev => ({ ...prev, ...(p.capStyle as Partial<CaptionStyle>) }));
+      }
+      if (failed.length) {
+        setUploadError(`一部の素材を復元できませんでした: ${failed.join(', ')}`);
+      }
+      setRestoreInfo(null);
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const discardSaved = async () => {
+    setRestoreInfo(null);
+    await clearReelStore();
+    savedAssetIdsRef.current.clear();
+  };
 
   // ─── CapCut Pro killer 機能 (LUT / ステッカー / TTS / 翻訳 / 4K / ハイライト) ─────
   const [stickers, setStickers] = useState<StickerInstance[]>([]);
@@ -1917,12 +2205,18 @@ JSON のみで返答。`;
     });
   };
 
-  // ─── クリップ追加 ─────────────────────
+  // ─── クリップ追加 (ファイルごとに 読み込み中→追加/失敗(理由) を可視化) ─────
+  const markImport = (id: string, patch: Partial<{ status: 'loading' | 'ok' | 'error'; message: string }>) => {
+    setImportItems(prev => prev.map(it => it.id === id ? { ...it, ...patch } : it));
+  };
+
   const addImages = async (files: FileList | File[]) => {
     const arr = Array.from(files);
+    const entries = arr.map(f => ({ file: f, itemId: makeId() }));
+    setImportItems(prev => [...prev, ...entries.map(e => ({ id: e.itemId, name: e.file.name, status: 'loading' as const }))]);
     const newClips: Clip[] = [];
-    const failed: string[] = [];
-    for (const f of arr) {
+    let anyFail = false;
+    for (const { file: f, itemId } of entries) {
       const url = URL.createObjectURL(f);
       try {
         const img = await loadImage(url);
@@ -1934,22 +2228,28 @@ JSON のみで返答。`;
           kenBurns: 'in',
           transition: 'fade',
           el: img,
+          blob: f,
+          assetId: makeId(),
+          name: f.name,
         });
+        markImport(itemId, { status: 'ok' });
       } catch {
-        failed.push(f.name);
+        anyFail = true;
+        markImport(itemId, { status: 'error', message: '画像を読み込めませんでした (対応形式: jpg / png / webp / gif)' });
         URL.revokeObjectURL(url);
       }
     }
-    setClips(prev => [...prev, ...newClips]);
-    if (failed.length) setUploadError(`画像を読み込めませんでした: ${failed.join(', ')}`);
-    else if (newClips.length) setUploadError('');
+    if (newClips.length) setClips(prev => [...prev, ...newClips]);
+    if (!anyFail && newClips.length) setUploadError('');
   };
 
   const addVideos = async (files: FileList | File[]) => {
     const arr = Array.from(files);
+    const entries = arr.map(f => ({ file: f, itemId: makeId() }));
+    setImportItems(prev => [...prev, ...entries.map(e => ({ id: e.itemId, name: e.file.name, status: 'loading' as const }))]);
     const newClips: Clip[] = [];
-    const failed: string[] = [];
-    for (const f of arr) {
+    let anyFail = false;
+    for (const { file: f, itemId } of entries) {
       const url = URL.createObjectURL(f);
       try {
         const v = await loadVideo(url);
@@ -1961,21 +2261,21 @@ JSON のみで返答。`;
           kenBurns: 'none',
           transition: 'whip',
           el: v,
+          blob: f,
+          assetId: makeId(),
+          name: f.name,
         });
+        markImport(itemId, { status: 'ok' });
+        // 素材を 1 本ずつ即反映 (大量投入でも「動いている」ことが見える)
+        const clip = newClips[newClips.length - 1];
+        setClips(prev => [...prev, clip]);
       } catch (err) {
-        failed.push(`${f.name} (${(err as any)?.message || 'デコード不能'})`);
+        anyFail = true;
+        markImport(itemId, { status: 'error', message: (err as any)?.message || `デコードできませんでした。${VIDEO_FORMAT_HELP}` });
         URL.revokeObjectURL(url);
       }
     }
-    setClips(prev => [...prev, ...newClips]);
-    if (failed.length) {
-      setUploadError(
-        `動画を読み込めませんでした: ${failed.join(', ')}\n` +
-        `→ Safari/iPhone は .mov に弱いので、.mp4 (H.264) を試してください`
-      );
-    } else if (newClips.length) {
-      setUploadError('');
-    }
+    if (!anyFail && newClips.length) setUploadError('');
   };
 
   // ─── 共通: ドロップされたファイルを画像/動画に振り分け ─────
@@ -2076,6 +2376,129 @@ JSON のみで返答。`;
     let cut = presetCut;
     if (beatCut && bpm) cut = 60 / bpm;
     setClips(prev => prev.map(c => c.kind === 'image' ? { ...c, duration: cut } : c));
+  };
+
+  // ─── 「おまかせで作る」— 素材を入れるだけで完成リール (Opus Clip / Submagic 流) ─────
+  //  1) AI が素材の文脈を読み、伸びる順番 + 字幕 + 投稿本文を設計 (composeReelFromClips)
+  //  2) 尺はコード確定で配分: 冒頭 1.5-2s (フック) / 以降 2.5-3s / 合計 15-30s
+  //  3) トランジション whip/fade 交互・画像は Ken Burns 自動・字幕スタイル「ポップ」
+  //  4) BGM を AI の mood からライブラリ自動選曲 → プレビュー自動再生
+  const runAutoDirect = async () => {
+    const base = clipsRef.current;
+    if (!base.length || autoBusy) return;
+    setAutoBusy(true);
+    setAutoErr('');
+    setAutoDone('');
+    setAutoPhase('素材を読み取っています…');
+    try {
+      // 1) AI 構成 (失敗しても尺・演出の自動化は続行する)
+      let composition: ReelComposition | null = null;
+      let aiFailMsg = '';
+      const inputs: CutInput[] = base.filter(c => c.el).map(c => ({ kind: c.kind, el: c.el!, duration: c.duration }));
+      if (inputs.length === base.length && inputs.length > 0) {
+        try {
+          composition = await composeReelFromClips(inputs, {
+            onProgress: (phase) => setAutoPhase(phase),
+          });
+        } catch (e: any) {
+          aiFailMsg = e?.message || 'AI との通信に失敗しました';
+        }
+      } else {
+        aiFailMsg = '一部の素材がまだ読み込み中です';
+      }
+
+      setAutoPhase('尺と演出を配分中…');
+      // 2) 並べ替え (AI 構成があれば sourceIndex 順、なければ現状維持)
+      const order = composition
+        ? composition.cuts.map(c => c.sourceIndex).filter(i => i >= 0 && i < base.length)
+        : base.map((_, i) => i);
+      const seen = new Set<number>();
+      const ordered: Clip[] = [];
+      for (const i of order) { if (!seen.has(i)) { seen.add(i); ordered.push(base[i]); } }
+      for (let i = 0; i < base.length; i++) { if (!seen.has(i)) ordered.push(base[i]); }
+
+      // 3) 尺の自動配分 (コード確定・リールの定石)
+      const n = ordered.length;
+      const maxFor = (c: Clip) => c.kind === 'video' && c.el instanceof HTMLVideoElement
+        ? Math.max(1, c.el.duration || 6)
+        : 8;
+      const durs = ordered.map((c, i) => Math.min(i === 0 ? 1.8 : 2.7, maxFor(c)));
+      let total = durs.reduce((s, d) => s + d, 0);
+      if (total > 30 && n > 1) {
+        // 超過分をフック以外から均等圧縮 (下限 1.5s)
+        const factor = (30 - durs[0]) / Math.max(0.1, total - durs[0]);
+        for (let i = 1; i < n; i++) durs[i] = Math.max(1.5, durs[i] * factor);
+      } else if (total < 15) {
+        // 足りない分を画像/長尺動画から 3.0s → 4.0s へ伸ばして 15s に近づける
+        for (const cap of [3.0, 3.5, 4.0]) {
+          for (let i = 1; i < n && total < 15; i++) {
+            const room = Math.min(cap, maxFor(ordered[i])) - durs[i];
+            if (room > 0) {
+              const add = Math.min(room, 15 - total);
+              durs[i] += add;
+              total += add;
+            }
+          }
+        }
+      }
+      const round1 = (v: number) => Math.round(v * 10) / 10;
+
+      // 4) トランジション交互 + 画像 Ken Burns 自動
+      const kbCycle: KenBurns[] = ['in', 'out', 'left', 'right'];
+      const newClips: Clip[] = ordered.map((c, i) => ({
+        ...c,
+        duration: round1(durs[i]),
+        transition: (i % 2 === 0 ? 'whip' : 'fade') as Transition,
+        kenBurns: c.kind === 'image' ? kbCycle[i % kbCycle.length] : 'none',
+      }));
+      setClips(newClips);
+
+      // 5) 字幕を全編に自動配置 + 字幕スタイル「ポップ」
+      if (composition) {
+        const srcToCut = new Map(composition.cuts.map(c => [c.sourceIndex, c]));
+        const caps: Caption[] = [];
+        let t = 0;
+        newClips.forEach((c, i) => {
+          const srcIdx = base.indexOf(ordered[i]);
+          const cut = srcToCut.get(srcIdx);
+          const text = i === 0
+            ? (composition!.title || cut?.overlayText || '')
+            : (cut?.overlayText || '');
+          if (text) caps.push({ start: round1(t), end: round1(t + c.duration), text });
+          t += c.duration;
+        });
+        if (caps.length) {
+          setCaptions(caps);
+          const preset = CAPTION_STYLE_PRESETS[0]; // ポップ
+          const f = FONTS.find(x => x.cssName === preset.patch.font);
+          if (f) loadFont(f.href);
+          setCapStyle(prev => ({ ...prev, ...preset.patch }));
+        }
+        if (composition.caption) setScheduleCaption(composition.caption);
+        if (composition.hashtags?.length) setScheduleHashtags(composition.hashtags.join(' '));
+
+        // 6) BGM 自動選曲 (未設定時のみ・失敗しても続行)
+        if (!bgmFile && composition.bgmMood) {
+          setAutoPhase('BGM を選んでいます…');
+          const moodMap: Record<BgmMood, string> = { up: 'happy-uplift', pop: 'chill-pop', soft: 'lofi-study', emo: 'dreams' };
+          const track = BGM_LIBRARY.find(tr => tr.id === moodMap[composition!.bgmMood!]);
+          if (track) { try { await applyBgmFromLibrary(track); } catch { /* BGM は任意 */ } }
+        }
+        setAutoDone('完成しました。プレビューを自動再生します — 良ければ「リール書き出し開始」で保存できます。');
+      } else {
+        setAutoErr(
+          `AI 字幕はつけられませんでした (${aiFailMsg})。尺・切替・動きの演出だけ自動適用しています。` +
+          'もう一度「おまかせで作る」を押すと再試行できます。',
+        );
+      }
+
+      // 7) プレビュー自動再生
+      setPlaying(false);
+      setTimeout(() => setPlaying(true), 350);
+    } finally {
+      setAutoBusy(false);
+      setAutoPhase('');
+    }
   };
 
   // ─── 描画 ───────────────────────────
@@ -2346,9 +2769,11 @@ JSON のみで返答。`;
         start,
       );
     }
+    // rAF はタブが隠れると完全停止し書き出しが永久に終わらないため、
+    // 壁時計ベースの setTimeout 駆動にする (バックグラウンドでも必ず完走する)
     await new Promise<void>(resolve => {
-      const step = (now: number) => {
-        const t = (now - start) / 1000;
+      const step = () => {
+        const t = (performance.now() - start) / 1000;
         if (t >= totalDuration) {
           drawAt(totalDuration - 0.001);
           resolve();
@@ -2356,9 +2781,9 @@ JSON のみで返答。`;
         }
         drawAt(t);
         setProgress(t / totalDuration);
-        requestAnimationFrame(step);
+        setTimeout(step, 1000 / FPS);
       };
-      requestAnimationFrame(step);
+      step();
     });
     // 末尾を 200ms 押さえる
     await new Promise(r => setTimeout(r, 200));
@@ -2377,17 +2802,26 @@ JSON のみで返答。`;
     drawAt(0);
   };
 
+  // MP4 変換失敗時の正直な案内 (silent fail 禁止: webm でも投稿できる事実を伝える)
+  const WEBM_HONEST_HELP =
+    'Instagram アプリへは webm のままアップロードできます (下の「ダウンロード」→ Instagram で選択)。' +
+    'iPhone のカメラロールに保存したい場合は、通信が安定した場所で「再試行」するか、PC の Chrome で書き出すと MP4 になります。';
+
   const convertToMp4 = async () => {
     if (!exportUrl) return;
     setConverting(true);
+    setConvertErr('');
     try {
       const res = await fetchWithTimeout(exportUrl, {}, 30000);
       const blob = await res.blob();
       const mp4 = await convertWebmToMp4(blob);
-      if (mp4) setConvertedMp4(URL.createObjectURL(mp4));
-      else notifyInApp({ kind: 'warn', title: 'MP4 への変換ができませんでした', body: 'webm のままでもダウンロードできます。' });
+      if (mp4) {
+        setConvertedMp4(URL.createObjectURL(mp4));
+      } else {
+        setConvertErr(`この環境では MP4 変換ツール (ffmpeg) を読み込めませんでした。${WEBM_HONEST_HELP}`);
+      }
     } catch (e) {
-      notifyInApp({ kind: 'warn', title: 'MP4 への変換中にエラーが起きました', body: 'webm のままダウンロードできます。' + (e instanceof Error ? ` (${e.message})` : '') });
+      setConvertErr(`MP4 への変換中にエラーが起きました${e instanceof Error ? ` (${e.message})` : ''}。${WEBM_HONEST_HELP}`);
     } finally {
       setConverting(false);
     }
@@ -2442,7 +2876,39 @@ JSON のみで返答。`;
   });
 
   return (
-    <div style={{ display: 'grid', gap: '1.25rem' }}>
+    <div
+      className="reelstudio-root"
+      style={{ display: 'grid', gap: '1.25rem', position: 'relative', minWidth: 0, maxWidth: '100%' }}
+      onDragOver={e => {
+        e.preventDefault();
+        setDragOver(true);
+        // dragleave はネストで信頼できないため、dragover が途絶えたら自動解除
+        if (dragTimerRef.current) clearTimeout(dragTimerRef.current);
+        dragTimerRef.current = setTimeout(() => setDragOver(false), 800);
+      }}
+      onDrop={e => {
+        e.preventDefault();
+        if (dragTimerRef.current) clearTimeout(dragTimerRef.current);
+        setDragOver(false);
+        if (e.dataTransfer.files?.length) handleDroppedFiles(e.dataTransfer.files);
+      }}
+    >
+      {/* 画面のどこにドロップしても取り込める (dragover 中は全体を強調) */}
+      {dragOver && (
+        <div style={{
+          position: 'absolute', inset: -6, zIndex: 5, pointerEvents: 'none',
+          border: `2.5px dashed ${bg.accent}`, borderRadius: 20,
+          background: `${bg.accent}0d`,
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        }}>
+          <span style={{
+            marginTop: 24, padding: '0.5rem 1rem', borderRadius: 999,
+            background: bg.accent, color: '#fff', fontSize: '0.85rem', fontWeight: 800,
+          }}>
+            ここに画像 / 動画 / 音楽をドロップ
+          </span>
+        </div>
+      )}
       <div>
         <p style={{
           fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
@@ -2499,6 +2965,85 @@ JSON のみで返答。`;
         </div>
       )}
 
+      {/* 前回の素材を復元 (IndexedDB) — リロードしても素材が消えない */}
+      {restoreInfo && !clips.length && (
+        <div style={{
+          padding: '0.9rem 1.05rem',
+          background: `linear-gradient(135deg, ${bg.accent}14, ${bg.accent}06)`,
+          border: `1px solid ${bg.accent}44`,
+          borderRadius: 16,
+          display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div style={{ minWidth: 200, flex: '1 1 220px' }}>
+            <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: bg.ink }}>
+              <RotateCcw size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />
+              前回の素材を復元しますか？
+            </p>
+            <p style={{ margin: '3px 0 0', fontSize: 11.5, color: bg.inkSoft }}>
+              素材 {restoreInfo.count} 件と設定がこの端末に保存されています
+              ({new Date(restoreInfo.savedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 時点)
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={restoreSaved} disabled={restoring} style={{ ...btn(true), minHeight: 44 }}>
+              {restoring ? <Loader2 size={14} className="spin" /> : <RotateCcw size={14} />}
+              {restoring ? '復元中…' : '復元する'}
+            </button>
+            <button onClick={discardSaved} disabled={restoring} style={{ ...btn(), minHeight: 44 }}>
+              削除して新しく作る
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* おまかせで作る — 素材を入れたら最初に見える一番大きなボタン */}
+      {clips.length > 0 && (
+        <div style={{
+          padding: '1rem 1.1rem',
+          background: `linear-gradient(135deg, ${bg.accent}1e 0%, ${bg.accent}09 100%)`,
+          border: `1.5px solid ${bg.accent}55`,
+          borderRadius: 18,
+        }}>
+          <button
+            onClick={runAutoDirect}
+            disabled={autoBusy || recording}
+            style={{
+              width: '100%',
+              minHeight: 56,
+              background: autoBusy ? `${bg.accent}99` : `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+              color: '#fff', border: 'none', borderRadius: 14,
+              fontSize: '1.02rem', fontWeight: 800, cursor: autoBusy ? 'wait' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              fontFamily: IRIS_FONTS.body,
+            }}>
+            {autoBusy ? <Loader2 size={18} className="spin" /> : <Wand2 size={18} />}
+            {autoBusy ? (autoPhase || '自動編集中…') : 'おまかせで作る — 尺・演出・字幕・BGM まで全自動'}
+          </button>
+          <p style={{ margin: '8px 0 0', fontSize: 11.5, color: bg.inkSoft, lineHeight: 1.5 }}>
+            AI が素材の中身を見て、伸びる順番に並べ替え → 冒頭フック 1.5-2 秒 / 以降 2.5-3 秒に自動配分 →
+            字幕と切替の演出 → BGM 選曲まで一気に仕上げます。操作は「素材を入れる → おまかせ → 書き出す」の 3 タップ。
+          </p>
+          {autoDone && (
+            <div style={{
+              marginTop: 8, padding: '0.5rem 0.7rem', background: '#ECFDF5', color: '#065F46',
+              borderRadius: 10, fontSize: '0.78rem', display: 'flex', gap: 6, alignItems: 'flex-start',
+            }}>
+              <Check size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>{autoDone}</span>
+            </div>
+          )}
+          {autoErr && (
+            <div style={{
+              marginTop: 8, padding: '0.5rem 0.7rem', background: '#FEF3C7', color: '#92400E',
+              borderRadius: 10, fontSize: '0.78rem', display: 'flex', gap: 6, alignItems: 'flex-start',
+            }}>
+              <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>{autoErr}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       <DelegateToAgentTeamBanner
         taskTitle="リール台本を CMO + CDO に書いてもらう"
         suggestedCxos={['CMO', 'CDO']}
@@ -2507,8 +3052,8 @@ JSON のみで返答。`;
         brand="iris"
       />
 
-      {/* レイアウト: 左にキャンバス、右に編集 */}
-      <div style={{ display: 'grid', gap: '1.25rem', gridTemplateColumns: 'minmax(260px, 1fr) minmax(280px, 1.4fr)' }}>
+      {/* レイアウト: 左にキャンバス、右に編集 (スマホは 1 カラムに積む — 375px 見切れゼロ) */}
+      <div className="reelstudio-cols" style={{ display: 'grid', gap: '1.25rem', gridTemplateColumns: '1fr' }}>
         {/* キャンバス + 再生 */}
         <div style={{ display: 'grid', gap: '0.8rem' }}>
           <div style={{
@@ -3014,6 +3559,7 @@ JSON のみで返答。`;
             onDragLeave={() => setDragOver(false)}
             onDrop={e => {
               e.preventDefault();
+              e.stopPropagation(); // 親 (画面全体) の onDrop と二重取込しない
               setDragOver(false);
               if (e.dataTransfer.files) handleDroppedFiles(e.dataTransfer.files);
             }}
@@ -3040,6 +3586,35 @@ JSON のみで返答。`;
                   onChange={e => setBgmFile(e.target.files?.[0] || null)} />
               </label>
             </div>
+            {/* 取込の進捗と結果 (ファイルごと・silent fail 禁止) */}
+            {importItems.length > 0 && (
+              <div style={{ marginTop: '0.6rem', display: 'grid', gap: 4 }}>
+                {importItems.map(it => (
+                  <div key={it.id} style={{
+                    display: 'flex', gap: 6, alignItems: 'flex-start',
+                    padding: '0.4rem 0.6rem', borderRadius: 8,
+                    background: it.status === 'error' ? '#FEE2E2' : it.status === 'ok' ? '#ECFDF5' : '#F4F0FA',
+                    color: it.status === 'error' ? '#991B1B' : it.status === 'ok' ? '#065F46' : bg.ink,
+                    fontSize: '0.75rem',
+                  }}>
+                    {it.status === 'loading' && <Loader2 size={13} className="spin" style={{ flexShrink: 0, marginTop: 1 }} />}
+                    {it.status === 'ok' && <Check size={13} style={{ flexShrink: 0, marginTop: 1 }} />}
+                    {it.status === 'error' && <AlertCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} />}
+                    <span style={{ wordBreak: 'break-all' }}>
+                      <strong>{it.name}</strong>
+                      {it.status === 'loading' && ' — 読み込み中…'}
+                      {it.status === 'ok' && ' — 追加しました'}
+                      {it.status === 'error' && ` — 失敗: ${it.message || '原因不明'}`}
+                    </span>
+                  </div>
+                ))}
+                {importItems.every(it => it.status !== 'loading') && (
+                  <button onClick={() => setImportItems([])} style={{ ...btn(), fontSize: '0.72rem', padding: '0.3rem 0.6rem', justifySelf: 'start' }}>
+                    表示をクリア
+                  </button>
+                )}
+              </div>
+            )}
             {uploadError && (
               <div style={{
                 marginTop: '0.6rem', padding: '0.55rem 0.75rem',
@@ -3285,7 +3860,30 @@ JSON のみで返答。`;
               ))}
             </div>
 
-            <p style={{ ...label, marginTop: '1rem' }}>字幕スタイル</p>
+            <p style={{ ...label, marginTop: '1rem' }}>字幕スタイル (選ぶだけ)</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 6, marginBottom: '0.6rem' }}>
+              {CAPTION_STYLE_PRESETS.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    const f = FONTS.find(x => x.cssName === p.patch.font);
+                    if (f) loadFont(f.href);
+                    setCapStyle(s => ({ ...s, ...p.patch }));
+                  }}
+                  style={{
+                    ...btn(capStyle.mode === p.id),
+                    flexDirection: 'column' as const,
+                    alignItems: 'flex-start',
+                    textAlign: 'left' as const,
+                    padding: '0.55rem 0.7rem',
+                    gap: 2,
+                    minHeight: 52,
+                  }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>{p.name}</span>
+                  <span style={{ fontSize: '0.68rem', opacity: 0.75 }}>{p.desc}</span>
+                </button>
+              ))}
+            </div>
             <div style={{ display: 'grid', gap: 8 }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
                 <Type size={13} color={bg.inkSoft} />
@@ -3543,6 +4141,46 @@ JSON のみで返答。`;
           {/* 書き出し */}
           <div style={card}>
             <p style={label}>書き出し</p>
+            {/* 完成度メーター (コード確定判定・書き出し前の最終チェック) */}
+            {clips.length > 0 && (() => {
+              const capCov = totalDuration > 0
+                ? captions.reduce((s, c) => s + Math.max(0, c.end - c.start), 0) / totalDuration
+                : 0;
+              const checks: { label: string; ok: boolean; hint: string }[] = [
+                { label: 'フック', ok: clips[0].duration <= 2, hint: '冒頭クリップを 2 秒以内に' },
+                { label: `字幕 ${Math.round(capCov * 100)}%`, ok: capCov >= 0.5, hint: '「おまかせ」か「AI で字幕生成」で全編に' },
+                { label: `長さ ${totalDuration.toFixed(0)}s`, ok: totalDuration >= 7 && totalDuration <= 30, hint: '7-30 秒が伸びる帯' },
+                { label: 'BGM', ok: !!bgmFile, hint: 'BGM ライブラリから 1 曲' },
+              ];
+              const okCount = checks.filter(c => c.ok).length;
+              return (
+                <div style={{ marginBottom: '0.7rem' }}>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 800, color: bg.ink }}>
+                      完成度 {okCount}/{checks.length}
+                    </span>
+                    {checks.map((c, i) => (
+                      <span key={i} title={c.ok ? '' : c.hint} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        padding: '0.25rem 0.55rem', borderRadius: 999,
+                        fontSize: '0.72rem', fontWeight: 700,
+                        background: c.ok ? '#ECFDF5' : '#F4F0FA',
+                        color: c.ok ? '#065F46' : bg.inkSoft,
+                        border: `1px solid ${c.ok ? '#A7F3D0' : bg.cardBorder}`,
+                      }}>
+                        {c.ok ? <Check size={11} /> : <Minus size={11} />}
+                        {c.label}
+                      </span>
+                    ))}
+                  </div>
+                  {okCount < checks.length && (
+                    <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: bg.inkSoft }}>
+                      未達の項目: {checks.filter(c => !c.ok).map(c => `${c.label} → ${c.hint}`).join(' / ')}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', color: bg.ink }}>
                 <input type="checkbox" checked={export4K}
@@ -3584,6 +4222,23 @@ JSON のみで返答。`;
                 </button>
               )}
             </div>
+            {/* MP4 変換失敗時の正直な案内 + 再試行 */}
+            {convertErr && (
+              <div style={{
+                marginTop: '0.7rem', padding: '0.6rem 0.75rem',
+                background: '#FEF3C7', color: '#92400E', borderRadius: 10,
+                fontSize: '0.78rem', display: 'grid', gap: 8,
+              }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                  <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                  <span>{convertErr}</span>
+                </div>
+                <button onClick={convertToMp4} disabled={converting} style={{ ...btn(), justifySelf: 'start', minHeight: 40 }}>
+                  {converting ? <Loader2 size={13} className="spin" /> : <RotateCcw size={13} />}
+                  MP4 変換を再試行
+                </button>
+              </div>
+            )}
             {exportUrl && (
               <video src={convertedMp4 || exportUrl} controls
                 style={{ width: '100%', maxWidth: 360, marginTop: '0.8rem', borderRadius: 12, background: '#000' }} />
@@ -3595,6 +4250,13 @@ JSON のみで返答。`;
       <style>{`
         @keyframes iris-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
         .spin { animation: iris-spin 0.9s linear infinite; }
+        @media (min-width: 720px) {
+          .reelstudio-cols { grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.4fr) !important; }
+        }
+        /* grid の min-content 膨張 (375px で横に見切れる) を根治 */
+        .reelstudio-root, .reelstudio-root * { min-width: 0; }
+        .reelstudio-root canvas { max-width: 100% !important; }
+        .reelstudio-cols { max-width: 100%; }
       `}</style>
 
       {/* ── 投稿予約モーダル ────────────────────────────── */}

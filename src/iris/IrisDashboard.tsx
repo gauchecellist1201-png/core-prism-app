@@ -138,8 +138,9 @@ const IrisDirectorView = React.lazy(() => import('./IrisDirectorView'));
 const IrisScriptStudio = React.lazy(() => import('./IrisScriptStudio'));
 const VideoStudio = React.lazy(() => import('../components/VideoStudio'));
 // 抜本リデザインされた美しい Minimal 版が default
-// 旧フル機能版は ./IrisReelStudio に残る (詳細モードで呼ぶ用)
+// フル機能版 (おまかせ自動編集 / 素材の復元 / 字幕スタイル 3 種 / 完成度メーター) は詳細モードで呼ぶ
 const IrisReelStudio = React.lazy(() => import('./IrisReelStudioMinimal'));
+const IrisReelStudioFull = React.lazy(() => import('./IrisReelStudio'));
 const IrisStudioHub = React.lazy(() => import('./IrisStudioHub'));
 const IrisCoverStudio = React.lazy(() => import('./IrisCoverStudio'));
 const IrisPostQueueView = React.lazy(() => import('./IrisPostQueueView'));
@@ -1129,6 +1130,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   const [showIgConnect, setShowIgConnect] = useState(false);
   // 「素材から構成」→ リールスタジオへ渡す下書き（順番・秒数・字幕＋素材）
   const [reelSeed, setReelSeed] = useState<ReelStudioSeed | null>(null);
+  // リールスタジオ詳細モード (フル機能版: おまかせ自動編集 / 素材の復元 / 字幕スタイル 3 種)
+  const [reelAdvanced, setReelAdvanced] = useState(false);
   // 朝ブリーフ/フローの「今日の一手」テーマ → リールタブで自動台本生成（手入力ゼロの一気通貫）
   const [reelTheme, setReelTheme] = useState<string | null>(null);
   // 連携完了の祝祭（Iris の第一歩を祝う）
@@ -1944,19 +1947,48 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               <React.Suspense fallback={
                 <LoaderBlock accent={bg.accent} message="リールスタジオを準備してます" padding="4rem 0" />
               }>
-                <IrisReelStudio
-                  bg={bg}
-                  myDeals={myDeals}
-                  postQueue={postQueue}
-                  settings={settings}
-                  persona={irisPersonaStub}
-                  mediaKit={mediaKit}
-                  onJumpToSchedule={() => setTab('schedule')}
-                  initialProject={reelSeed}
-                  onConsumeInitial={() => setReelSeed(null)}
-                  initialTheme={reelTheme}
-                  onConsumeTheme={() => setReelTheme(null)}
-                />
+                {reelAdvanced ? (
+                  <div style={{ display: 'grid', gap: '0.8rem', minWidth: 0, maxWidth: '100%' }}>
+                    <button
+                      onClick={() => setReelAdvanced(false)}
+                      style={{
+                        justifySelf: 'start',
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        padding: '0.5rem 0.9rem', minHeight: 40,
+                        background: 'transparent', color: bg.inkSoft,
+                        border: `1px solid ${bg.cardBorder}`, borderRadius: 999,
+                        fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      }}>
+                      ← かんたんモードに戻る
+                    </button>
+                    <IrisReelStudioFull
+                      bg={bg}
+                      myDeals={myDeals}
+                      postQueue={postQueue}
+                      settings={settings}
+                      persona={irisPersonaStub}
+                      mediaKit={mediaKit}
+                      onJumpToSchedule={() => setTab('schedule')}
+                      initialProject={reelSeed}
+                      onConsumeInitial={() => setReelSeed(null)}
+                    />
+                  </div>
+                ) : (
+                  <IrisReelStudio
+                    bg={bg}
+                    myDeals={myDeals}
+                    postQueue={postQueue}
+                    settings={settings}
+                    persona={irisPersonaStub}
+                    mediaKit={mediaKit}
+                    onJumpToSchedule={() => setTab('schedule')}
+                    onOpenAdvanced={() => setReelAdvanced(true)}
+                    initialProject={reelSeed}
+                    onConsumeInitial={() => setReelSeed(null)}
+                    initialTheme={reelTheme}
+                    onConsumeTheme={() => setReelTheme(null)}
+                  />
+                )}
               </React.Suspense>
             )}
             {tab === 'schedule' && <IrisPostQueueView bg={bg} queue={postQueue} />}
