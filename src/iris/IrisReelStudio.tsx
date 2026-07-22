@@ -817,9 +817,13 @@ export const BGM_LIBRARY: BgmTrack[] = [
  * ユーザーは書き出すだけにする（一気通貫の最終段）。
  */
 export interface ReelStudioSeed {
-  clips: { file: File; durationSec: number; overlayText?: string }[];
+  clips: { file: File; durationSec: number; overlayText?: string; transition?: string }[];
   caption?: string;
   hashtags?: string[];
+  /** おまかせ編集が素材/テーマから自動選定したカラーの雰囲気 (none|bright|warm|cool|film|mono|vivid) */
+  colorMood?: string;
+  /** 「カラー: warm / 繋ぎ: 自動 / 15秒」のような、何が自動で決まったかの一言 */
+  autoSummary?: string;
 }
 
 interface Props {

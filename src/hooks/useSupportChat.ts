@@ -126,16 +126,28 @@ export function useSupportChat(ctx: SupportContext) {
         const reply = await enqueueClaudeCall(async () => {
           // 直近 12 メッセージだけ送る (コスト対策)
           const history = next.slice(-12).map(m => ({ role: m.role, content: m.content }));
-          const res = await fetch('/api/ai', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              model: 'claude-haiku-4-5',
-              max_tokens: 800,
-              system: buildSystemPrompt(ctx),
-              messages: history,
-            }),
-          });
+          // 一時的な 404/5xx/瞬断は 1 回だけ自動リトライ (サポートで生エラーを見せない)
+          let res: Response | null = null;
+          for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+              res = await fetch('/api/ai', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                  model: 'claude-haiku-4-5',
+                  max_tokens: 800,
+                  system: buildSystemPrompt(ctx),
+                  messages: history,
+                }),
+                signal: AbortSignal.timeout(30000),
+              });
+            } catch {
+              res = null;
+            }
+            if (res && res.ok) break;
+            if (attempt === 0) await new Promise(r => setTimeout(r, 900));
+          }
+          if (!res) throw new Error('network');
           if (!res.ok) {
             let msg = `HTTP ${res.status}`;
             try {
@@ -184,7 +196,7 @@ export function useSupportChat(ctx: SupportContext) {
           {
             id: `a_err_${Date.now()}`,
             role: 'assistant',
-            content: `⚠️ 応答できませんでした\n${msg}\n\n少し待ってから再送するか、設定 → マスターモードを ON にしてください。`,
+            content: `いま少し混み合っているようです。\nお手数ですが、もう一度送ってみてください。\n\n繰り返し届かないときは、通信環境の良い場所でお試しいただくか、少し時間をおいてからお願いします。`,
             ts: Date.now(),
           },
         ]);

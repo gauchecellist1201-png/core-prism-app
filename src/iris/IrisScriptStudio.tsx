@@ -86,12 +86,12 @@ function ScriptStudioLock({ bg }: { bg: IrisBackgroundDef }) {
     '撮影台本をワンタップで書き出し → 担当へそのまま共有',
   ];
   return (
-    <div style={{ display: 'grid', gap: '1.1rem' }}>
-      <div>
+    <div style={{ display: 'grid', gap: '1.1rem', gridTemplateColumns: 'minmax(0, 1fr)', maxWidth: '100%' }}>
+      <div style={{ minWidth: 0 }}>
         <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.76rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.3rem' }}>
           Plan & Script — 運用代行モード
         </p>
-        <h2 style={{ fontFamily: IRIS_FONTS.display, fontSize: '2rem', color: bg.ink, margin: 0, fontWeight: 700 }}>企画・台本</h2>
+        <h2 style={{ fontFamily: IRIS_FONTS.display, fontSize: 'clamp(1.5rem, 7vw, 2rem)', color: bg.ink, margin: 0, fontWeight: 700 }}>企画・台本</h2>
       </div>
       <div style={{ ...card, textAlign: 'center', background: `linear-gradient(160deg, ${bg.accent}14, ${bg.card})` }}>
         <div style={{ width: 64, height: 64, margin: '0 auto 0.9rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${bg.accent}1f`, border: `1px solid ${bg.accent}55` }}>

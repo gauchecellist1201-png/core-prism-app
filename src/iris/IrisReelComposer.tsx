@@ -32,7 +32,38 @@ interface Props {
   scheduled?: boolean;
   onViewSchedule?: () => void;
   /** 構成（順番・秒数・字幕）と素材をリールスタジオへ渡して動画化する */
-  onSendToStudio?: (seed: { clips: { file: File; durationSec: number; overlayText?: string }[]; caption?: string; hashtags?: string[] }) => void;
+  onSendToStudio?: (seed: { clips: { file: File; durationSec: number; overlayText?: string; transition?: string }[]; caption?: string; hashtags?: string[]; colorMood?: string; autoSummary?: string }) => void;
+}
+
+// ── おまかせ編集の自動選定ヘルパー ──────────────────────
+// 素材/テーマの文脈から「カラーの雰囲気」と「カット間の繋ぎ」を決め、単調にならない仕上がりにする。
+// AI の JSON 契約は変えず、返ってきた themeGuess / role 列からクライアントで決める(誇大表現なし)。
+const MOOD_LABEL_JA: Record<string, string> = {
+  none: 'そのまま', bright: '明るく', warm: '暖色', cool: '寒色', film: 'シネマ', mono: 'モノクロ', vivid: '鮮やか',
+};
+function pickColorMood(text: string): string {
+  const t = text || '';
+  if (/カフェ|コーヒー|グルメ|料理|ごはん|ご飯|パン|スイーツ|飲食|レストラン|居酒屋|暖|温|秋|紅葉|夕/.test(t)) return 'warm';
+  if (/モード|高級|ラグジュアリー|ラグジ|モノトーン|都会|クール|夜|luxury|fashion|モノクロ|白黒/i.test(t)) return 'film';
+  if (/海|空|水|清涼|夏|プール|涼|旅|トラベル|scenery/i.test(t)) return 'cool';
+  if (/日常|朝|ルーティン|明る|ナチュラル|自然|健康|フィットネス|運動|ヨガ|ベビー|子ども|ペット/.test(t)) return 'bright';
+  if (/コスメ|美容|メイク|スキンケア|ネイル|カラフル|ポップ|派手/.test(t)) return 'vivid';
+  return 'none';
+}
+/** role 列から、冒頭=白フラッシュ / 締め前=ディゾルブ余韻 / 間は fade・dissolve・white を散らして単調回避 */
+function pickTransitions(roles: string[]): string[] {
+  const n = roles.length;
+  const palette = ['fade', 'dissolve', 'white'];
+  const out: string[] = [];
+  let p = 0;
+  for (let i = 0; i < n; i++) {
+    if (i === n - 1) { out.push('none'); continue; }      // 最後のカットは次が無いので繋ぎ不要
+    if (i === 0) { out.push('white'); continue; }          // 冒頭は白フラッシュで勢い
+    if (i === n - 2) { out.push('dissolve'); continue; }   // 締め直前はディゾルブで余韻
+    if (roles[i + 1] === 'payoff') { out.push('dissolve'); continue; } // 山場へはディゾルブ
+    out.push(palette[p % palette.length]); p++;
+  }
+  return out;
 }
 
 const ROLE_META: Record<CutRole, { label: string; color: string }> = {
@@ -143,14 +174,31 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSc
   // 構成（順番・秒数・字幕）と素材ファイルをリールスタジオへ渡す
   const sendToStudio = () => {
     if (!comp || !onSendToStudio) return;
-    const seedClips: { file: File; durationSec: number; overlayText?: string }[] = [];
-    for (const cut of comp.cuts) {
+    // カット数が多い時はテンポUP: 各尺を詰める (合計 30 秒上限を目安に係数を掛ける)
+    const rawTotal = comp.cuts.reduce((s, c) => s + (c.durationSec || 0), 0);
+    const tempoScale = rawTotal > 30 ? 30 / rawTotal : 1;
+    // role 列 → 繋ぎ(transition) を自動配分 (単調回避)
+    const roles = comp.cuts.map(c => c.role);
+    const trans = pickTransitions(roles);
+    // カラーの雰囲気を素材/テーマから自動選定
+    const moodSrc = [comp.themeGuess, context?.theme, context?.brand, comp.title].filter(Boolean).join(' ');
+    const colorMood = pickColorMood(moodSrc);
+
+    const seedClips: { file: File; durationSec: number; overlayText?: string; transition?: string }[] = [];
+    comp.cuts.forEach((cut, i) => {
       const clip = clips[cut.sourceIndex];
       const file = clip ? fileMap.current.get(clip.id) : undefined;
-      if (file) seedClips.push({ file, durationSec: cut.durationSec, overlayText: cut.overlayText });
-    }
+      if (file) seedClips.push({
+        file,
+        durationSec: Math.max(1.2, Math.round((cut.durationSec || 2.5) * tempoScale * 10) / 10),
+        overlayText: cut.overlayText,
+        transition: trans[i],
+      });
+    });
     if (!seedClips.length) return;
-    onSendToStudio({ clips: seedClips, caption: comp.caption, hashtags: comp.hashtags });
+    const finalTotal = seedClips.reduce((s, c) => s + c.durationSec, 0);
+    const autoSummary = `カラー: ${MOOD_LABEL_JA[colorMood] || 'そのまま'} / 繋ぎ: 自動 / ${finalTotal.toFixed(0)}秒`;
+    onSendToStudio({ clips: seedClips, caption: comp.caption, hashtags: comp.hashtags, colorMood, autoSummary });
   };
 
   return (

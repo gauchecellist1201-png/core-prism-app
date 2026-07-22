@@ -329,13 +329,14 @@ export default function IrisDirectorView({ bg, settings }: Props) {
 
   // ─── render ───
   return (
-    <div style={{ display: 'grid', gap: '1.25rem' }}>
+    // 1画面完結・見切れゼロ: 列を minmax(0,1fr) にして子(920pxグリッド等)が親を押し広げないよう封じ込め
+    <div style={{ display: 'grid', gap: '1.25rem', gridTemplateColumns: 'minmax(0, 1fr)', maxWidth: '100%' }}>
       {/* ヘッダ */}
-      <div>
+      <div style={{ minWidth: 0 }}>
         <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.4rem' }}>
           The Creative Director
         </p>
-        <h2 style={{ fontFamily: IRIS_FONTS.display, fontSize: '2.4rem', color: bg.ink, margin: 0, fontWeight: 700, letterSpacing: '-0.01em' }}>
+        <h2 style={{ fontFamily: IRIS_FONTS.display, fontSize: 'clamp(1.6rem, 7vw, 2.4rem)', color: bg.ink, margin: 0, fontWeight: 700, letterSpacing: '-0.01em', wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>
           クリエイティブ司令塔
         </h2>
         <p style={{ color: bg.inkSoft, fontSize: '0.92rem', marginTop: '0.4rem' }}>
@@ -394,12 +395,12 @@ export default function IrisDirectorView({ bg, settings }: Props) {
           </div>
         )}
 
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto', minWidth: 0, WebkitOverflowScrolling: 'touch' }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: `90px repeat(7, minmax(120px, 1fr))`,
+            gridTemplateColumns: `76px repeat(7, minmax(110px, 1fr))`,
             gap: 6,
-            minWidth: 920,
+            minWidth: 840,
           }}>
             {/* ヘッダ行 */}
             <div />
