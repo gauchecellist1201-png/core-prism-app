@@ -5,6 +5,7 @@
 // ============================================================
 import { motion } from 'framer-motion';
 import { PrismLogo } from './Logo';
+import { useMasterTap } from '../lib/masterTap';
 import { useT, type Lang, type Dictionary } from '../i18n';
 import {
   Compass, Briefcase, TrendingUp, Sparkles, BookOpen, Users, Heart,
@@ -59,6 +60,7 @@ const sectionPad = '5.5rem 1.25rem';
 
 export default function LandingPage({ onEnterApp }: Props) {
   const { lang, setLang, t } = useT();
+  const tapMaster = useMasterTap();
   const [pendingRef, setPendingRef] = useState<string | null>(null);
   const [pendingInviter, setPendingInviter] = useState<string>('');
   const [pendingMsg, setPendingMsg] = useState<string>('');
@@ -174,7 +176,10 @@ export default function LandingPage({ onEnterApp }: Props) {
       {/* ── ヘッダ ────────────────────────────── */}
       <header className="lp-safe" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,10,20,0.92)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-          <PrismLogo size={28} withWordmark />
+          {/* ロゴ5回タップ = オーナー専用の隠しマスターログイン (PWA対策) */}
+          <span onClick={tapMaster} style={{ cursor: 'default', display: 'inline-flex' }}>
+            <PrismLogo size={28} withWordmark />
+          </span>
           <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
             <a href="#agents" style={navLink} className="lp-nav-link">{t.nav.agents}</a>
             <a href="#exec" style={navLink} className="lp-nav-link">{t.nav.exec}</a>

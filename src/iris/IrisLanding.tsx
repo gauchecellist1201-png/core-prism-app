@@ -9,6 +9,7 @@ import type { LucideIcon } from 'lucide-react';
 import IrisHeroDemo from './IrisHeroDemo';
 import IrisBloomHero from './IrisBloomHero';
 import { useState, useMemo } from 'react';
+import { useMasterTap } from '../lib/masterTap';
 import { IRIS_COLORS, IRIS_FONTS } from './irisStyle';
 import { IrisLogo } from '../components/Logo';
 import { useLocale } from '../hooks/useLocale';
@@ -59,6 +60,7 @@ const PLANS = [
 
 export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
   const { locale, setLocale, t } = useLocale();
+  const tapMaster = useMasterTap();
 
   const handlePlan = (id: string) => {
     if (onSelectPlan) onSelectPlan(id);
@@ -109,7 +111,10 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
         borderBottom: `1px solid ${IRIS_COLORS.purpleDeep}40`,
       }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-          <IrisLogo size={28} withWordmark />
+          {/* ロゴ5回タップ = オーナー専用の隠しマスターログイン (PWAでlocalStorageが分かれる対策) */}
+          <span onClick={tapMaster} style={{ cursor: 'default', display: 'inline-flex' }}>
+            <IrisLogo size={28} withWordmark />
+          </span>
           <nav style={{ display: 'flex', gap: '0.85rem', alignItems: 'center' }}>
             <a href="#wow" style={navLink} className="lp-nav-link iris-lp-nav-link">体験</a>
             <a href="#facets" style={navLink} className="lp-nav-link iris-lp-nav-link">機能</a>
