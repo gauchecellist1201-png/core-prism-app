@@ -475,6 +475,23 @@ export default function CoreSite() {
             reversed
           />
 
+          {/* PULSE — 毎日のからだを見守るヘルスケアAI (第7のプロダクト) */}
+          <FeatureProduct
+            brand="pulse"
+            badge="からだ見守り AI ／ Apple Watch をつなぐだけ"
+            tagline="毎日のからだを、AIがやさしく見守る。"
+            taglineEn="Daily wellness, gently watched."
+            description="睡眠・心拍・歩数から「きょうの調子」を100点満点で読みとき、毎朝やさしいことばでお届け。がんばるためではなく、健やかでいるために。ピンクの光が呼吸する、からだ専用のAIです。"
+            features={[
+              'Apple Watch や iPhone をつなぐだけで自動記録',
+              '「きょうの調子」スコアと、けさのことばを毎朝',
+              'いつもと違う変化にはやく気づき、専門家に見せられる記録に',
+            ]}
+            accentColor="#FF5C8A"
+            accentGradient="linear-gradient(135deg,#FF5C8A,#E8859E,#C9A192)"
+            url="/pulse"
+          />
+
           {/* STUDIO — ウェブ制作・受託開発 (受託サービスの導線。
               リンク先 /studio は白基調・法人トーンのため、暗い製品群の中で
               白いカードとして置き、世界観を一致させる) */}
@@ -1795,7 +1812,7 @@ function FeatureProduct({
   url,
   reversed,
 }: {
-  brand: 'prism' | 'iris' | 'guild' | 'resonance' | 'lume' | 'crystal';
+  brand: 'prism' | 'iris' | 'guild' | 'resonance' | 'lume' | 'crystal' | 'pulse';
   badge: string;
   tagline: string;
   taglineEn: string;
@@ -1812,6 +1829,7 @@ function FeatureProduct({
     brand === 'resonance' ? ResonanceLogo :
     brand === 'lume' ? LumeLogo :
     brand === 'crystal' ? CrystalLogo :
+    brand === 'pulse' ? PulseLogo :
     PrismLogo;
   const productName =
     brand === 'iris' ? 'CORE Iris' :
@@ -1819,6 +1837,7 @@ function FeatureProduct({
     brand === 'resonance' ? 'CORE Resonance' :
     brand === 'lume' ? 'CORE Lume' :
     brand === 'crystal' ? 'Crystal' :
+    brand === 'pulse' ? 'CORE Pulse' :
     'CORE Prism';
 
   return (
