@@ -316,17 +316,20 @@ export const CARE_PLANS: CarePlan[] = [
 export type Work = {
   id: string;
   name: string;
-  category: '企業サイト' | 'アプリ' | '個人';
+  category: '企業サイト' | 'EC・ブランド' | 'アプリ' | '個人';
   copy: string;
   url: string;
+  /** トップページの実物スクリーンショット (public/studio/) */
+  img: string;
 };
 
 export const WORKS: Work[] = [
-  { id: 'crossover', name: '株式会社クロスオーバー', category: '企業サイト', copy: 'エンタメ総合商社のコーポレートサイト。7ページ構成・お問い合わせフォームを含むフルスクラッチ開発。', url: 'https://crossover-psi.vercel.app/' },
-  { id: 'gauche', name: 'GAUCHE チェロ音楽教室', category: '企業サイト', copy: '音楽教室のブランドサイト。体験申込までの導線を設計し、教室の世界観を保ったまま集客につなげる構成。', url: 'https://gauche-cello-school.vercel.app/' },
-  { id: 'asahikan', name: '朝日館', category: '企業サイト', copy: '老舗旅館の体験プラン直販サイト。オンライン決済を実装し、外部手数料のかからない直接予約を実現。', url: 'https://asahikan-premium.vercel.app/' },
-  { id: 'anima', name: 'ANIMA', category: 'アプリ', copy: 'アニメ制作会社向けの進行管理システム。進捗・報告・経理 (源泉徴収の自動計算)・CRMを一元化した業務OS。', url: 'https://core-anime-os.vercel.app/demo' },
-  { id: 'morikawa', name: 'モデル個人サイト', category: '個人', copy: 'モデルの個人サイト。プロフィールと実績を1ページに集約し、キャスティング担当者が確認しやすい構成に。', url: 'https://morikawa-model.vercel.app/' },
+  { id: 'crossover', name: '株式会社クロスオーバー', category: '企業サイト', copy: 'エンタメ総合商社のコーポレートサイト。7ページ構成・フルスクラッチ開発。', url: 'https://crossover-psi.vercel.app/', img: '/studio/works-crossover.jpg' },
+  { id: 'gauche', name: 'GAUCHE チェロ音楽教室', category: '企業サイト', copy: '音楽教室のブランドサイト。世界観を保ったまま、体験申込までの導線を設計。', url: 'https://gauche-cello-school.vercel.app/', img: '/studio/works-cello.jpg' },
+  { id: 'asahikan', name: '朝日館', category: '企業サイト', copy: '老舗旅館の体験プラン直販サイト。外部手数料のかからない直接予約を実現。', url: 'https://asahikan-premium.vercel.app/', img: '/studio/works-asahikan.jpg' },
+  { id: 'radhookah', name: 'RAD HOOKAH', category: 'EC・ブランド', copy: 'プレミアムシーシャブランドのECサイト。ブランドの格を保ったまま卸売・通販へ。', url: 'https://rad-hooka.vercel.app/', img: '/studio/works-radhookah.jpg' },
+  { id: 'anima', name: 'ANIMA', category: 'アプリ', copy: 'アニメ制作会社向けの業務OS。進捗・報告・経理・CRMを一元化。', url: 'https://core-anime-os.vercel.app/demo', img: '/studio/works-anima.jpg' },
+  { id: 'morikawa', name: 'モデル個人サイト', category: '個人', copy: 'プロフィールと実績を1ページに。キャスティング担当者が確認しやすい構成。', url: 'https://morikawa-model.vercel.app/', img: '/studio/works-morikawa.jpg' },
 ];
 
 // ------------------------------------------------------------

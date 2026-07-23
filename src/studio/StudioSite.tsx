@@ -256,14 +256,18 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
       {/* 実績ダイジェスト */}
       <Band alt>
         <H2 en="Works" sub="いずれも公開中のサイト・システムです。実物をご確認いただけます。">制作実績</H2>
-        <div style={{ display: 'grid', gap: 10 }}>
+        {/* 実物のトップページで語る (文字カード廃止) */}
+        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))' }}>
           {WORKS.slice(0, 3).map(w => (
-            <a key={w.id} href={w.url} target="_blank" rel="noopener noreferrer" className="st-card st-worklink" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div>
-                <div className="st-serif" style={{ fontSize: 15.5, fontWeight: 700, color: 'inherit' }}>{w.name}</div>
-                <div style={{ fontSize: 13, color: C.body, marginTop: 4, lineHeight: 1.8 }}>{w.copy}</div>
+            <a key={w.id} href={w.url} target="_blank" rel="noopener noreferrer" className="st-card st-workcard" style={{ textDecoration: 'none', padding: 0, overflow: 'hidden' }}>
+              <div style={{ position: 'relative', aspectRatio: '16 / 10', overflow: 'hidden', borderBottom: `1px solid ${C.line}` }}>
+                <img src={w.img} alt={`${w.name} のトップページ`} loading="lazy"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
               </div>
-              <IconArrow color={C.gold} />
+              <div style={{ padding: '12px 14px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <div className="st-serif" style={{ fontSize: 14.5, fontWeight: 700, color: C.ink }}>{w.name}</div>
+                <IconArrow color={C.gold} />
+              </div>
             </a>
           ))}
         </div>
@@ -438,7 +442,7 @@ function CareTab({ go }: { go: (t: TabId) => void }) {
 // Works
 // ============================================================
 function WorksTab({ go }: { go: (t: TabId) => void }) {
-  const cats = ['企業サイト', 'アプリ', '個人'] as const;
+  const cats = ['企業サイト', 'EC・ブランド', 'アプリ', '個人'] as const;
   return (
     <Band>
       <H2 en="Works" sub="いずれも公開中のサイト・システムです。実物をご確認ください。">制作実績</H2>
@@ -448,16 +452,33 @@ function WorksTab({ go }: { go: (t: TabId) => void }) {
         return (
           <div key={cat} style={{ marginBottom: 28 }}>
             <div className="st-label" style={{ fontSize: 11, marginBottom: 10 }}>{cat}</div>
-            <div style={{ display: 'grid', gap: 12 }}>
+            {/* 実物のトップページを主役に (文字だけの無機質カード廃止) */}
+            <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))' }}>
               {list.map(w => (
-                <div key={w.id} className="st-card">
-                  <div className="st-serif" style={{ fontSize: 17, fontWeight: 700, color: C.ink }}>{w.name}</div>
-                  <p style={{ fontSize: 13.5, lineHeight: 1.9, color: C.body, margin: '8px 0 14px' }}>{w.copy}</p>
-                  <a className="st-worklink" href={w.url} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 600, textDecoration: 'none', borderBottom: `1px solid ${C.gold}`, paddingBottom: 2, minHeight: 44 }}>
-                    サイトを見る <IconArrow color={C.gold} />
-                  </a>
-                </div>
+                <a
+                  key={w.id}
+                  className="st-card st-workcard"
+                  href={w.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: 'none', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+                >
+                  <div style={{ position: 'relative', aspectRatio: '16 / 10', overflow: 'hidden', borderBottom: `1px solid ${C.line}` }}>
+                    <img
+                      src={w.img}
+                      alt={`${w.name} のトップページ`}
+                      loading="lazy"
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
+                    />
+                  </div>
+                  <div style={{ padding: '14px 16px 16px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                    <div className="st-serif" style={{ fontSize: 16.5, fontWeight: 700, color: C.ink }}>{w.name}</div>
+                    <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.body, margin: 0, flex: 1 }}>{w.copy}</p>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: C.ink, marginTop: 4 }}>
+                      サイトを見る <IconArrow color={C.gold} />
+                    </span>
+                  </div>
+                </a>
               ))}
             </div>
           </div>
