@@ -1976,7 +1976,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                 <VideoStudio bg={bg} settings={settings} />
               ) : (
                 <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--surface-3, rgba(255,255,255,0.04))', border: '1px solid var(--border, rgba(255,255,255,0.1))' }}>
-                  <div className="text-4xl mb-3">🎥</div>
+                  <div className="mb-3 flex justify-center"><Film size={40} strokeWidth={1.5} color="#E1306C" /></div>
                   <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--fg, #fff)' }}>AI動画生成は、最上位プラン限定です</h3>
                   <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--fg-muted, rgba(255,255,255,0.6))', maxWidth: 420, margin: '0 auto 1.25rem' }}>
                     動画AIは生成1本ごとのコストが大きいため、最上位プランでのみご利用いただけます。
@@ -2863,7 +2863,7 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
       desk.addNego({ ...r, dealId: deal.id, status: 'draft' });
       setDismissed(d => [...d, deal.id]);
     } catch (e: any) {
-      setErr((e?.message || '文章の作成に失敗しました') + ' — 通信環境を確認して、もう一度 ✓ を押してください');
+      setErr((e?.message || '文章の作成に失敗しました') + ' — 通信環境を確認して、もう一度お試しください');
     } finally { setBusyId(null); }
   };
 
@@ -2978,7 +2978,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
       desk.updateDeal(deal.id, { draftCopy: full, stage: deal.stage === 'inquiry' || deal.stage === 'negotiating' ? 'drafting' : deal.stage });
       setDismissed(d => [...d, deal.id]);
     } catch (e: any) {
-      setErr((e?.message || '文章の作成に失敗しました') + ' — 通信環境を確認して、もう一度 ✓ を押してください');
+      setErr((e?.message || '文章の作成に失敗しました') + ' — 通信環境を確認して、もう一度お試しください');
     } finally { setBusyId(null); }
   };
 

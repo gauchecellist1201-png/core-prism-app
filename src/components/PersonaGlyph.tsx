@@ -10,10 +10,22 @@
 //   任意アイコン文字列) はそのまま文字として描画し、後方互換を保つ。
 // ============================================================
 import type { CSSProperties } from 'react';
+import { Sparkles, Star, Flame, Heart, type LucideIcon } from 'lucide-react';
 import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
 import { MetaIcon } from './ExecIcon';
 
 const ROLE_SET = new Set(Object.keys(CXO_META));
+
+// OS絵文字を渡された場合の救済マップ (恒久ルール: UIにOSカラー絵文字を出さない)。
+// 役割コードでない生の絵文字は、対応するLucideライン系アイコンに置き換えて描く。
+const EMOJI_GLYPH: Record<string, LucideIcon> = {
+  '✨': Sparkles,
+  '⭐': Star,
+  '🌟': Star,
+  '🔥': Flame,
+  '❤️': Heart,
+  '💗': Heart,
+};
 
 /** icon 文字列が CxoRole (役割コード) かどうか */
 export function isRoleCode(icon: string | undefined | null): icon is CxoRole {
@@ -40,6 +52,11 @@ export default function PersonaGlyph({
       />
     );
   }
-  // 後方互換: 役割コードでない文字列アイコンはそのまま表示
+  // OS絵文字はLucideライン系アイコンへ置換 (恒久ルール)
+  const EmojiIcon = icon ? EMOJI_GLYPH[icon.trim()] : undefined;
+  if (EmojiIcon) {
+    return <EmojiIcon size={size} color={color ?? '#fff'} strokeWidth={strokeWidth} style={style} />;
+  }
+  // 後方互換: 役割コードでも既知絵文字でもない文字列アイコンはそのまま表示
   return <span style={{ fontSize: size, lineHeight: 1, color, ...style }}>{icon}</span>;
 }
