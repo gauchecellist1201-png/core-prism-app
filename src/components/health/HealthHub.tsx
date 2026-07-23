@@ -16,18 +16,67 @@ import HealthPrescriptionView from './HealthPrescriptionView';
 import { HealthSymptomCheck } from './HealthSymptomCheck';
 import { HealthHistoryView } from './HealthHistoryView';
 import { HealthSourcesView } from './HealthSourcesView';
+import { StudioIntro } from '../StudioIntro';
 
 type Tab = 'overview' | 'rx' | 'vitals' | 'coach' | 'symptoms' | 'history' | 'sources';
 
+// タブ名はやさしい日本語で。英語（Overview / Vitals …）だと一般ユーザーが読めない。
 const NAV = [
-  { key: 'overview',  label: 'Overview',     Icon: BarChart3 },
-  { key: 'rx',        label: 'AI 処方箋',     Icon: Pill },
-  { key: 'vitals',    label: 'Vitals',       Icon: Activity },
-  { key: 'coach',     label: 'AI Coach',     Icon: MessageCircle },
-  { key: 'symptoms',  label: 'Symptom Check',Icon: Stethoscope },
-  { key: 'history',   label: 'Medical Hx',   Icon: FileText },
-  { key: 'sources',   label: 'Sources',      Icon: Cable },
+  { key: 'overview',  label: '今日の状態',   Icon: BarChart3 },
+  { key: 'rx',        label: 'AI 処方箋',    Icon: Pill },
+  { key: 'vitals',    label: '数値で見る',   Icon: Activity },
+  { key: 'coach',     label: 'AI に相談',    Icon: MessageCircle },
+  { key: 'symptoms',  label: '症状チェック', Icon: Stethoscope },
+  { key: 'history',   label: '通院・服薬',   Icon: FileText },
+  { key: 'sources',   label: 'データ連携',   Icon: Cable },
 ] as const;
+
+// 各タブの一番上に出す「3 秒でわかる説明」。初見の人が触らずに
+// 「この画面は何ができて / まず何を押すか / どんな結果になるか」を分かるようにする。
+const INTROS: Record<Tab, { icon: typeof BarChart3; what: string; tryThis: string; example: string }> = {
+  overview: {
+    icon: BarChart3,
+    what: '今日のからだの状態を 1 画面でまとめて確認できます',
+    tryThis: '睡眠・心拍・回復スコアと「注意点」に目を通す',
+    example: '睡眠 6.2h ／ 安静時心拍 58 ／ 回復スコア 72',
+  },
+  rx: {
+    icon: Pill,
+    what: '今日のからだに合った過ごし方を AI が「処方」します',
+    tryThis: '「処方箋を作る」を押す',
+    example: '午前は集中作業 → 15 時に 10 分の散歩 → 就寝は 23 時',
+  },
+  vitals: {
+    icon: Activity,
+    what: '睡眠・心拍・歩数などの数値を時系列のグラフで見られます',
+    tryThis: '気になる指標のカードを選ぶ',
+    example: '今週の平均睡眠 6.4h（先週より +18 分）',
+  },
+  coach: {
+    icon: MessageCircle,
+    what: 'からだの悩みを、あなたの数値を踏まえて AI に相談できます',
+    tryThis: '下の入力欄に気になる事を書く',
+    example: '「最近寝つきが悪い」→ 考えられる原因と対処を 3 つ',
+  },
+  symptoms: {
+    icon: Stethoscope,
+    what: '気になる症状から、受診の目安をやさしく整理します（診断ではありません）',
+    tryThis: '当てはまる症状を選ぶ',
+    example: '頭痛＋めまい → 考えられる原因と「受診したほうがよい目安」',
+  },
+  history: {
+    icon: FileText,
+    what: '通院・服薬・既往歴・アレルギーをまとめて記録しておけます',
+    tryThis: '「記録を追加」で 1 件入れてみる',
+    example: '2026-06 健康診断 ／ 常用薬 2 件 ／ アレルギー 1 件',
+  },
+  sources: {
+    icon: Cable,
+    what: 'Apple Watch など、からだデータの取り込み元を管理します',
+    tryThis: '連携したい機器を選ぶ',
+    example: 'Apple Watch 同期済 ／ 手入力 2 件',
+  },
+};
 
 interface Props {
   persona: Persona;
@@ -108,6 +157,20 @@ export default function HealthHub({ persona, settings, onClose }: Props) {
             <PulseBanner />
           </div>
           <div className="min-h-[560px]">
+            {/* 各タブの「3 秒でわかる説明」。閉じるとそのタブでは二度と出ない */}
+            {(() => {
+              const intro = INTROS[tab];
+              return (
+                <StudioIntro
+                  id={`health-${tab}`}
+                  accent={PRISM.empathy}
+                  icon={intro.icon}
+                  what={intro.what}
+                  tryThis={intro.tryThis}
+                  example={intro.example}
+                />
+              );
+            })()}
             {tab === 'overview' && (
               <HealthOverview
                 health={health}
