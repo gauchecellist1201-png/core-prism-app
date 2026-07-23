@@ -23,6 +23,7 @@ import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import { isDemoActive } from '../lib/onboarding';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { aiFetch } from '../lib/aiFetch';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -431,6 +432,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
       >
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
+            <StudioBackButton onClick={onClose} />
             <IconBadge icon={Target} color={persona.accentColor} size={40} variant="soft" />
             <div className="min-w-0">
               <p className="cp-h2 truncate">商談 AI エージェント</p>

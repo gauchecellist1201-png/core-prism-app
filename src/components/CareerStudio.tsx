@@ -18,6 +18,7 @@ import type { LucideIcon } from 'lucide-react';
 import { callAiWithFallback } from '../lib/aiFallbackChain';
 import ThinkingIndicator from './ThinkingIndicator';
 import { StudioIntro } from './StudioIntro';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   open: boolean;
@@ -222,6 +223,7 @@ export default function CareerStudio({ open, onClose, defaultIndustry }: Props) 
               borderBottom: '1px solid rgba(255,255,255,0.08)',
               background: 'linear-gradient(180deg, rgba(167,139,250,0.12), transparent)',
             }}>
+              <StudioBackButton onClick={onClose} />
               <div style={{
                 width: 32, height: 32, borderRadius: 10,
                 background: 'linear-gradient(135deg, #06B6D4, #A78BFA)',

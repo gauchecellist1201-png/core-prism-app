@@ -7,6 +7,7 @@ import { parseFile } from '../lib/fileParser';
 import { transcribeAudioFile, isAudioFile } from '../lib/audioTranscribe';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { StudioIntro } from './StudioIntro';
+import StudioBackButton from './StudioBackButton';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
@@ -560,6 +561,7 @@ export default function MeetingMinutesModal({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}

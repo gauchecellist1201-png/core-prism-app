@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GenerationOrb from './GenerationOrb';
 import PersonaGlyph from './PersonaGlyph';
+import StudioBackButton from './StudioBackButton';
 import type { KnowledgeItem, Persona, AppSettings } from '../types/identity';
 
 /** いつもの「PRISM マークが回る」生成演出（脳の絵文字の置き換え） */
@@ -586,7 +587,8 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
       >
         {/* Header */}
         <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <StudioBackButton onClick={onClose} />
             <PersonaGlyph icon={persona.icon} color={persona.accentColor} size={18} />
             <div>
               <p className="text-fg text-sm font-light">{persona.name}</p>

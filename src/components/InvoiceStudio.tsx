@@ -14,6 +14,7 @@ import { LoaderDots } from './MicroLoader';
 import { StudioIntro } from './StudioIntro';
 import EmptyState from './EmptyState';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
+import StudioBackButton from './StudioBackButton';
 import { useCelebrate } from '../hooks/useCelebrate';
 
 interface Props {
@@ -219,6 +220,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}

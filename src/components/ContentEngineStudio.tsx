@@ -28,6 +28,7 @@ import {
 } from '../lib/xConnect';
 import ThreadsPostPanel from './ThreadsPostPanel';
 import { BrandIcon } from './BrandIcons';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -367,6 +368,7 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
           display: 'flex', alignItems: 'center', gap: '0.75rem',
           position: 'sticky', top: 0, zIndex: 5, backdropFilter: 'blur(12px)',
         }}>
+          <StudioBackButton onClick={onClose} />
           <div style={{ width: 38, height: 38, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', background: `linear-gradient(135deg, ${accent}, ${accent}99)`, boxShadow: `0 6px 18px ${accent}55`, flexShrink: 0 }}>
             📡
           </div>

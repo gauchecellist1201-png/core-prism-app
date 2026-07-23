@@ -14,6 +14,7 @@ import {
 } from '../lib/imageGen';
 import { confirmAction } from '../lib/confirmDialog';
 import ShareArtifactButton from './ShareArtifactButton';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -455,6 +456,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}

@@ -15,6 +15,7 @@ import {
 import { parseFile } from '../lib/fileParser';
 import { sortRisksByPriority } from '../lib/riskPriority';
 import { StudioIntro } from './StudioIntro';
+import StudioBackButton from './StudioBackButton';
 import AILoadingState from './AILoadingState';
 
 interface Props {
@@ -58,6 +59,7 @@ export default function PremiumHubModal({ persona, settings, knowledge, onClose,
           }}
         >
           <div className="flex items-center gap-3 min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}>👑</div>
             <div className="min-w-0">

@@ -4,6 +4,7 @@ import type { Persona } from '../types/identity';
 import { copyText } from '../lib/clipboard';
 import { StudioIntro } from './StudioIntro';
 import PersonaGlyph from './PersonaGlyph';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -55,6 +56,7 @@ export default function MeetingHub({ persona, onClose }: Props) {
       >
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
+            <StudioBackButton onClick={onClose} />
             <PersonaGlyph icon={persona.icon} color={persona.accentColor} size={18} />
             <p className="text-fg text-sm font-light">ミーティングリンク</p>
           </div>

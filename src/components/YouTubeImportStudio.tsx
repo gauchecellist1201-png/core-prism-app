@@ -19,6 +19,7 @@ import ApiErrorCard from './ApiErrorCard';
 import SafeImg from './SafeImg';
 import { StudioIntro } from './StudioIntro';
 import ThinkingIndicator from './ThinkingIndicator';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -320,6 +321,7 @@ export default function YouTubeImportStudio({ persona, settings, onClose, onSave
         {/* Header */}
         <div className="cp-modal-header">
           <div className="flex items-center gap-2">
+            <StudioBackButton onClick={onClose} />
             <span className="text-xl">🎬</span>
             <div>
               <p className="text-fg font-semibold text-sm">YouTube 取込</p>

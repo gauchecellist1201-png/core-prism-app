@@ -28,6 +28,7 @@ import { generateImage, type GenerateImageResult } from '../lib/imageGen';
 import ShareArtifactButton from './ShareArtifactButton';
 import { StudioIntro } from './StudioIntro';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -563,6 +564,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}

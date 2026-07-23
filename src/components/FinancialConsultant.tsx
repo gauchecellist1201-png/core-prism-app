@@ -23,6 +23,7 @@ import ApiErrorCard from './ApiErrorCard';
 import { StudioIntro } from './StudioIntro';
 import ThinkingIndicator from './ThinkingIndicator';
 import { aiFetch } from '../lib/aiFetch';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -316,6 +317,7 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
 
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: accent }}>🧮</div>
             <div className="min-w-0">

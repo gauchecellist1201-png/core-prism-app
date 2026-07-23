@@ -14,6 +14,7 @@ import { useCelebrate } from '../hooks/useCelebrate';
 import { confirmAction } from '../lib/confirmDialog';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -204,6 +205,7 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
         {/* Header */}
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}

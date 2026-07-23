@@ -12,6 +12,7 @@ import {
 } from '../lib/peopleAnalyst';
 import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
+import StudioBackButton from './StudioBackButton';
 import { LoaderDots } from './MicroLoader';
 import { confirmAction } from '../lib/confirmDialog';
 import { copyText } from '../lib/clipboard';
@@ -255,6 +256,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
       >
         <div className="cp-modal-header" style={{ paddingTop: 'max(12px, env(safe-area-inset-top, 0px))' }}>
           <div className="cp-row min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}>👥</div>
             <div className="min-w-0">

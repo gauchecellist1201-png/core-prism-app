@@ -21,6 +21,7 @@ import { fmtJpy } from '../lib/invoiceCalc';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
+import StudioBackButton from './StudioBackButton';
 import { aiFetch } from '../lib/aiFetch';
 
 interface Props {
@@ -266,6 +267,7 @@ ${kbBlock}`;
       >
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: accent }}>🧭</div>
             <div className="min-w-0">

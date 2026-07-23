@@ -9,6 +9,7 @@ import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import type { CRMDeal } from '../types/crm';
 import ApiErrorCard from './ApiErrorCard';
 import { StudioIntro } from './StudioIntro';
+import StudioBackButton from './StudioBackButton';
 import { notifyInApp } from '../lib/inAppNotify';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -573,6 +574,7 @@ export default function VoiceCaptureStudio({ persona, settings, onClose, onAddKn
         {/* Header */}
         <div className="cp-modal-header">
           <div className="flex items-center gap-2">
+            <StudioBackButton onClick={onClose} />
             <span className="text-xl">🎤</span>
             <div>
               <p className="text-fg font-semibold text-sm">音声メモ</p>

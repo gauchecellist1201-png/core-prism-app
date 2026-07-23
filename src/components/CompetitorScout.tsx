@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, Sparkles, ExternalLink, Copy, Check, Download, ArrowRight } from 'lucide-react';
 import { callAiWithFallback } from '../lib/aiFallbackChain';
 import ThinkingIndicator from './ThinkingIndicator';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   open: boolean;
@@ -146,6 +147,7 @@ export default function CompetitorScout({ open, onClose, defaultIndustry }: Prop
               borderBottom: '1px solid rgba(255,255,255,0.08)',
               background: 'linear-gradient(180deg, rgba(167,139,250,0.12), transparent)',
             }}>
+              <StudioBackButton onClick={onClose} />
               <div style={{
                 width: 32, height: 32, borderRadius: 10,
                 background: 'linear-gradient(135deg, #F472B6, #A78BFA)',

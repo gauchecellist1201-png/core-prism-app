@@ -7,6 +7,7 @@ import { parseFile } from '../lib/fileParser';
 import { copyText } from '../lib/clipboard';
 import ApiErrorCard from './ApiErrorCard';
 import { StudioIntro } from './StudioIntro';
+import StudioBackButton from './StudioBackButton';
 import ThinkingIndicator from './ThinkingIndicator';
 
 interface Props {
@@ -138,6 +139,7 @@ export default function SlideGeneratorModal({ persona, settings, knowledge, onCl
       >
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}

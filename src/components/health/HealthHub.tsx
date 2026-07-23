@@ -130,6 +130,16 @@ export default function HealthHub({ persona, settings, onClose }: Props) {
         >
           <X className="h-4 w-4" /> 閉じる
         </button>
+        {/* 左上の戻る (←) — 全サービス共通ルール (2026-07) */}
+        <button
+          onClick={onClose}
+          aria-label="戻る"
+          title="戻る"
+          className="absolute top-2 left-2 z-30 flex items-center justify-center rounded-full border border-white/15 bg-black/70 text-fg backdrop-blur-md hover:bg-black/85"
+          style={{ width: 44, height: 44, minWidth: 44, minHeight: 44 }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m15 18-6-6 6-6" /></svg>
+        </button>
 
         <MockShell
           module="HEALTH"

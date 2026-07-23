@@ -15,6 +15,7 @@ import {
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import ApiErrorCard from './ApiErrorCard';
 import { StudioIntro } from './StudioIntro';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -241,11 +242,14 @@ export default function SaasAgentStudio({ persona, settings, onClose }: Props) {
           className="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 flex-shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}
         >
+          <div className="flex items-center gap-2 min-w-0">
+          <StudioBackButton onClick={onClose} />
           <div className="min-w-0">
             <p className="text-fg text-base font-semibold truncate">🤖 SaaS エージェント</p>
             <p className="text-fg-muted text-xs mt-0.5 truncate">
               Notion / Slack / Linear など 14 サービスを 1 行依頼で代理操作
             </p>
+          </div>
           </div>
           <button
             onClick={onClose}

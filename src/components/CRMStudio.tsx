@@ -28,6 +28,7 @@ import { useCelebrate } from '../hooks/useCelebrate';
 import { usePhaseButton } from '../hooks/usePhaseButton';
 import { suggestNextAction, heuristicNextAction, priorityScore, daysSinceLastActivity } from '../lib/crmNextAction';
 import { SAMPLE_LEAD_INDUSTRIES, addLeadsToCrm, hasSampleLeads, type LeadIndustry } from '../lib/salesLeadSeed';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -190,6 +191,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
       >
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}>🤝</div>
             <div className="min-w-0">

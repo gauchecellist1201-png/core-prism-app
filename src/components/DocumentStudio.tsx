@@ -9,6 +9,7 @@ import { computeTotals, fmtJpy, calcDueDate } from '../lib/invoiceCalc';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
+import StudioBackButton from './StudioBackButton';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import ThinkingIndicator from './ThinkingIndicator';
 import { notifyInApp } from '../lib/inAppNotify';
@@ -202,6 +203,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
         {/* ヘッダー */}
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}>📄</div>
             <div className="min-w-0">

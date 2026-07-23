@@ -20,6 +20,7 @@ import { StudioIntro } from './StudioIntro';
 import { usePersonas } from '../hooks/usePersonas';
 import { useAgentTaskQueue, CXO_META, type CxoRole, type ProposalDraft } from '../hooks/useAgentTaskQueue';
 import { RewardBurst } from './visualFx';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -402,6 +403,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
       >
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}>
               <ListChecks size={20} strokeWidth={2.2} />

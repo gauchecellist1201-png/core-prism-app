@@ -4,6 +4,7 @@ import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import ApiErrorCard from './ApiErrorCard';
 import EmptyState from './EmptyState';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
+import StudioBackButton from './StudioBackButton';
 import type { DecisionMemo, DecisionInput } from '../lib/decisionMemo';
 import { sortRisksByPriority } from '../lib/riskPriority';
 import {
@@ -114,6 +115,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div
               className="rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ width: 44, height: 44, background: persona.accentColorLight, color: persona.accentColor }}

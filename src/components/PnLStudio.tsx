@@ -8,6 +8,7 @@ import { fmtJpy } from '../lib/invoiceCalc';
 import { EXPENSE_CATEGORIES } from '../types/expense';
 import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
+import StudioBackButton from './StudioBackButton';
 
 interface Props {
   persona: Persona;
@@ -136,6 +137,7 @@ export default function PnLStudio({ persona, onClose }: Props) {
 
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
+            <StudioBackButton onClick={onClose} />
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ background: persona.accentColorLight, color: persona.accentColor }}>📊</div>
             <div className="min-w-0">
