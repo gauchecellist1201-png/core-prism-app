@@ -34,7 +34,7 @@ import {
   HeartPulse, Moon, Footprints, Sun, NotebookPen, Settings, Bluetooth,
   Smartphone, Check, Copy, Trash2, Mail, ArrowRight, ShieldCheck, Activity,
   Loader2, AlertTriangle, Droplets, ChevronRight, Smile, Meh, Frown, SmilePlus,
-  RefreshCw, Info, Lock, FileText, Stethoscope, TrendingUp, TrendingDown, Minus,
+  RefreshCw, Info, Lock, FileText, TrendingUp, TrendingDown, Minus,
   CalendarDays, Compass, ChevronDown,
 } from 'lucide-react';
 import { useHealth } from '../hooks/useHealth';
@@ -878,43 +878,78 @@ function AppPreviewMock() {
 // LP (未入場)
 // ============================================================
 function PulseLanding({ onEnter }: { onEnter: () => void }) {
-  const values = [
+  // ── 課題あるある (共感・自分ごと化) ──
+  const pains = [
     {
-      Icon: Activity,
-      title: '今日の調子が、ひと目でわかる',
-      body: '睡眠・脈・歩いた量から、0〜100のひとつの数字に。',
+      Icon: AlertTriangle,
+      title: 'なんとなく不調を、放置してる',
+      body: '「疲れてるだけ」「歳のせい」で流して、気づけば何週間も。どこからが「見過ごしちゃいけない変化」なのか、わからない。',
     },
     {
-      Icon: Smartphone,
-      title: 'からだの記録が、自動で集まる',
-      body: 'Apple Watchをつなぐだけ。入力の手間はありません。',
+      Icon: RefreshCw,
+      title: '体調管理が、続かない',
+      body: '記録アプリを入れても3日坊主。毎日入力するのが面倒で、気づけば開かなくなっている。',
+    },
+    {
+      Icon: Info,
+      title: '数字だけ見ても、意味がわからない',
+      body: '「睡眠6時間10分」「心拍62」…で、私は今日どうすればいいの？数字の先の「ことば」がない。',
+    },
+  ];
+  // ── できること (Before → After) ──
+  const solutions = [
+    {
+      Icon: Activity,
+      tag: 'きょうの調子スコア',
+      title: '今日の調子が、100点満点のひと目で',
+      before: '睡眠・脈・歩数…バラバラの数字を眺めて、結局よくわからない',
+      after: 'ぜんぶまとめて0〜100のひとつの数字に。内訳タップで「何が下げてるか」もわかる',
     },
     {
       Icon: Sun,
+      tag: 'けさのことば',
       title: 'AIが毎朝、ことばで教えてくれる',
-      body: '「今夜は30分早くおふとんへ」のような、やさしい一言。',
+      before: 'グラフを見ても「で、どうすれば？」が残る',
+      after: '「今夜は30分早くおふとんへ」— 今日やることが、やさしい一言で届く',
     },
     {
-      Icon: HeartPulse,
-      title: '気になる変化に、はやく気づける',
-      body: '「いつもとちがう」サインを、そっとお知らせします。',
+      Icon: SmilePlus,
+      tag: 'ワンタップ記録 + 7日トレンド',
+      title: '記録は、タップひとつだけ',
+      before: '毎日の入力が面倒で、3日で挫折',
+      after: '「頭痛」「よく眠れた」をポンと押すだけ。7日の流れがグラフで見えてくる',
+    },
+    {
+      Icon: Smartphone,
+      tag: 'Apple Watch 自動記録',
+      title: 'つないだら、あとは自動',
+      before: '睡眠時間や歩数を、手で書き写す',
+      after: 'Apple Watchをつなぐだけで、寝ている間も記録が集まる。入力の手間はゼロ',
     },
   ];
-  const trust = [
+  // ── 使い方3ステップ ──
+  const steps = [
+    { Icon: ArrowRight, n: '1', title: 'アプリを開く', body: '登録なしで、見本のデータをそのままさわれます。合うかどうか、まず確かめて。' },
+    { Icon: Smartphone, n: '2', title: 'Apple Watchをつなぐ', body: '一度つなげば、睡眠・脈・歩いた量は自動で集まります。手入力はいりません。' },
+    { Icon: Sun, n: '3', title: '毎朝、届く', body: 'きょうの調子とけさのことばが毎朝届きます。あとは、いつもの暮らしのままで。' },
+  ];
+  // ── FAQ/安心 ──
+  const faqs = [
     {
-      Icon: Lock,
-      title: 'あなたの記録は、あなたのものです',
-      body: 'からだの記録は、あなたのアカウント（お使いの端末）にだけ保存されます。ほかの誰かに見られたり、勝手に使われたりすることはありません。',
+      q: 'Apple Watchがなくても使えますか？',
+      a: '使えます。気分や症状のワンタップ記録、メモ、けさのことばはApple Watchなしでも動きます。睡眠・脈・歩いた量の自動記録を使いたいときに、あとからつなげば大丈夫です。',
     },
     {
-      Icon: FileText,
-      title: '専門家に相談するときの、確かな資料に',
-      body: 'からだの記録は、医師や専門家に相談するときの確かな資料になります。「いつから・どのくらい」が伝えられるだけで、相談の質は大きく変わります。',
+      q: '本当に無料ですか？あとから請求されませんか？',
+      a: 'いまは先行モニター募集中のため、すべての機能が無料です。クレジットカードの登録もないので、あとから勝手に請求されることはありません（正式版は月¥2,980を予定）。',
     },
     {
-      Icon: Stethoscope,
-      title: '予防医学の考え方にもとづくヒント',
-      body: 'お届けするのは、予防医学の考え方にもとづく生活のヒントです。気になる変化が続くときは、早めに信頼できる専門機関へ。その判断を、記録がそっと支えます。',
+      q: 'からだの記録は、誰かに見られませんか？',
+      a: '記録はあなたのアカウント（お使いの端末）にだけ保存されます。ほかの誰かに見られたり、勝手に使われたりすることはありません。',
+    },
+    {
+      q: 'これは医療のアプリですか？',
+      a: 'いいえ。CORE Pulseは医療機器ではなく、予防医学の考え方にもとづく生活のヒントをお届けするものです。気になる変化が続くときは早めに医療機関へ。そのとき記録は「いつから・どのくらい」を伝える確かな資料になります。',
     },
   ];
   return (
@@ -941,29 +976,31 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
         </button>
       </header>
 
-      {/* ヒーロー */}
+      {/* ══ 1. ヒーロー: 課題を言い当てる + 実物モック + CTA ══ */}
       <section style={{ position: 'relative' }}>
         <HeroArcs />
         <div style={{
           position: 'relative', maxWidth: 720, margin: '0 auto',
-          padding: '52px 20px 64px', textAlign: 'center', boxSizing: 'border-box', zIndex: 1,
+          padding: '48px 20px 56px', textAlign: 'center', boxSizing: 'border-box', zIndex: 1,
         }}>
           <div style={{ ...labelStyle(C.goldText), marginBottom: 18 }}>DAILY WELLNESS, GENTLY WATCHED</div>
           <h1 style={{
-            fontSize: 'clamp(27px, 6.6vw, 42px)', lineHeight: 1.5, fontWeight: 600, margin: 0,
+            fontSize: 'clamp(26px, 6.4vw, 42px)', lineHeight: 1.55, fontWeight: 600, margin: 0,
             fontFamily: SERIF, letterSpacing: '0.02em',
           }}>
-            毎日のからだを、<br />AIがやさしく見守る。
+            その「なんとなく不調」、
+            <br />
+            AIがやさしく見守ります。
           </h1>
           <p style={{
             fontSize: 15.5, lineHeight: 1.9, color: C.accent, margin: '18px 0 0',
             fontFamily: SERIF, fontWeight: 600, letterSpacing: '0.06em',
           }}>
-            <span style={{ display: 'inline-block' }}>がんばるためではなく、</span>
-            <span style={{ display: 'inline-block' }}>健やかでいるために。</span>
+            <span style={{ display: 'inline-block' }}>毎朝、きょうの調子が</span>
+            <span style={{ display: 'inline-block' }}>100点満点のひと目でわかる。</span>
           </p>
           <p style={{ fontSize: 14.5, lineHeight: 2.0, color: C.sub, margin: '16px auto 0', maxWidth: 560 }}>
-            Apple Watchをつなぐだけ。毎朝、今日の調子が数字とことばで届きます。
+            Apple Watchをつなぐだけ。数字と「けさのことば」が、毎朝届きます。
           </p>
 
           {/* アプリ画面の実物モック — 読ませるより、見せる */}
@@ -980,97 +1017,139 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
             </GhostButton>
           </div>
           <div style={{ fontSize: 12, color: C.sub, marginTop: 14, letterSpacing: '0.04em' }}>
-            登録なしで、見本のデータをそのままさわれます
+            登録なし・いまは先行モニターで無料。見本のデータをそのままさわれます
           </div>
         </div>
       </section>
 
-      {/* けさのことば サンプル */}
-      <section style={{ maxWidth: 500, margin: '4px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
-        <Card style={{ textAlign: 'left', boxShadow: '0 14px 44px rgba(255,92,138,0.12)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Sun size={15} color={C.goldText} />
-            <div style={labelStyle(C.goldText)}>けさのことば（見本）</div>
-          </div>
-          <p style={{ fontSize: 14.5, lineHeight: 2.05, margin: 0, color: C.ink, fontFamily: SERIF }}>
-            おはようございます。きょうの調子は72点「よい」です。
-            きのうのねむりは6時間10分と、すこし少なめでした。今夜は30分だけ早くおふとんへ。
-            歩いた量は8,200歩で、とてもよいペースです。
-            心拍のゆらぎが下がりぎみなので、今日はむりせずゆっくりめに。
-          </p>
-        </Card>
-      </section>
-
-      {/* 3つの価値 */}
-      <section style={{ maxWidth: 960, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+      {/* ══ 2. 課題ブロック: こんな悩みありませんか ══ */}
+      <section style={{ maxWidth: 960, margin: '28px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+          <div style={{ ...labelStyle(C.goldText), marginBottom: 12 }}>SOUND FAMILIAR?</div>
+          <h2 style={{ fontSize: 'clamp(20px, 4.6vw, 26px)', fontWeight: 600, margin: 0, fontFamily: SERIF, letterSpacing: '0.03em', lineHeight: 1.6 }}>
+            こんなこと、ありませんか。
+          </h2>
+        </div>
         <div className="pulse-value-grid">
-          {values.map((v) => (
-            <Card key={v.title}>
+          {pains.map((p) => (
+            <Card key={p.title}>
               <div style={{
                 width: 46, height: 46, borderRadius: '50%', background: C.roseSoft,
                 border: `1px solid ${C.line}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
               }}>
-                <v.Icon size={21} color={C.accent} strokeWidth={1.6} />
+                <p.Icon size={21} color={C.accent} strokeWidth={1.6} />
               </div>
-              <div style={{ fontSize: 15.5, fontWeight: 600, marginBottom: 10, fontFamily: SERIF, letterSpacing: '0.02em', lineHeight: 1.6 }}>{v.title}</div>
-              <div style={{ fontSize: 13.5, lineHeight: 2.0, color: C.sub }}>{v.body}</div>
+              <div style={{ fontSize: 15.5, fontWeight: 600, marginBottom: 10, fontFamily: SERIF, letterSpacing: '0.02em', lineHeight: 1.6 }}>{p.title}</div>
+              <div style={{ fontSize: 13.5, lineHeight: 2.0, color: C.sub }}>{p.body}</div>
+            </Card>
+          ))}
+        </div>
+        <p style={{ textAlign: 'center', fontSize: 14.5, lineHeight: 2.0, color: C.ink, margin: '26px 0 0', fontFamily: SERIF }}>
+          がんばるためではなく、健やかでいるために。<br />Pulseは、その3つをそっと解きます。
+        </p>
+      </section>
+
+      {/* ══ 3. 解決ブロック: できること (Before → After) ══ */}
+      <section style={{ maxWidth: 960, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+          <div style={{ ...labelStyle(C.goldText), marginBottom: 12 }}>WHAT PULSE DOES</div>
+          <h2 style={{ fontSize: 'clamp(20px, 4.6vw, 26px)', fontWeight: 600, margin: 0, fontFamily: SERIF, letterSpacing: '0.03em', lineHeight: 1.6 }}>
+            数字を、ことばに。<br />記録を、安心に。
+          </h2>
+        </div>
+        <div className="pulse-value-grid">
+          {solutions.map((s) => (
+            <Card key={s.tag}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                <div style={{
+                  width: 42, height: 42, borderRadius: '50%', background: C.accentSoft,
+                  border: `1px solid ${C.line}`, flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <s.Icon size={19} color={C.accent} strokeWidth={1.6} />
+                </div>
+                <div style={labelStyle(C.goldText)}>{s.tag}</div>
+              </div>
+              <div style={{ fontSize: 15.5, fontWeight: 600, marginBottom: 12, fontFamily: SERIF, letterSpacing: '0.02em', lineHeight: 1.6 }}>{s.title}</div>
+              <div style={{ fontSize: 12.5, lineHeight: 1.9, color: C.sub }}>
+                <span style={{ ...labelStyle(C.sub), fontSize: 10 }}>いままで</span><br />{s.before}
+              </div>
+              <div aria-hidden style={{ height: 1, background: `linear-gradient(90deg, transparent, ${C.line}, transparent)`, margin: '12px 0' }} />
+              <div style={{ fontSize: 13.5, lineHeight: 1.95, color: C.ink }}>
+                <span style={{ ...labelStyle(C.accent), fontSize: 10 }}>PULSEなら</span><br />{s.after}
+              </div>
             </Card>
           ))}
         </div>
       </section>
 
-      {/* 信頼 — 安心して続けられる理由 */}
-      <section style={{ maxWidth: 640, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+      {/* ══ 4. 使い方3ステップ ══ */}
+      <section style={{ maxWidth: 720, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: 22 }}>
-          <div style={{ ...labelStyle(C.goldText), marginBottom: 12 }}>TRUST</div>
-          <h2 style={{ fontSize: 21, fontWeight: 600, margin: 0, fontFamily: SERIF, letterSpacing: '0.03em' }}>
-            安心して、続けられるように。
+          <div style={{ ...labelStyle(C.goldText), marginBottom: 12 }}>HOW IT WORKS</div>
+          <h2 style={{ fontSize: 'clamp(20px, 4.6vw, 26px)', fontWeight: 600, margin: 0, fontFamily: SERIF, letterSpacing: '0.03em' }}>
+            はじめ方は、3つだけ。
           </h2>
         </div>
         <Card style={{ padding: '10px 24px' }}>
-          {trust.map((tr, i) => (
-            <div key={tr.title} style={{
+          {steps.map((st, i) => (
+            <div key={st.n} style={{
               display: 'flex', gap: 14, alignItems: 'flex-start', padding: '18px 0',
               borderTop: i === 0 ? 'none' : `1px solid ${C.line}`,
             }}>
               <div style={{
                 width: 38, height: 38, borderRadius: '50%', background: C.accentSoft,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2,
+                border: `1px solid ${C.line}`,
               }}>
-                <tr.Icon size={17} color={C.accent} strokeWidth={1.6} />
+                <span style={{ ...NUM_STYLE, fontSize: 16, color: C.accent, fontWeight: 400 }}>{st.n}</span>
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14.5, fontWeight: 600, fontFamily: SERIF, letterSpacing: '0.02em', lineHeight: 1.6 }}>{tr.title}</div>
-                <div style={{ fontSize: 13, lineHeight: 1.95, color: C.sub, marginTop: 5 }}>{tr.body}</div>
+                <div style={{ fontSize: 14.5, fontWeight: 600, fontFamily: SERIF, letterSpacing: '0.02em', lineHeight: 1.6 }}>{st.title}</div>
+                <div style={{ fontSize: 13, lineHeight: 1.95, color: C.sub, marginTop: 5 }}>{st.body}</div>
               </div>
             </div>
           ))}
         </Card>
+        <div style={{ maxWidth: 340, margin: '24px auto 0' }}>
+          <PrimaryButton onClick={onEnter} full>
+            いま、ためしてみる <ArrowRight size={16} />
+          </PrimaryButton>
+        </div>
       </section>
 
-      {/* 料金 */}
+      {/* ══ 5. 料金 ══ */}
       <section style={{ maxWidth: 500, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+          <div style={{ ...labelStyle(C.goldText), marginBottom: 12 }}>PRICING</div>
+          <h2 style={{ fontSize: 'clamp(20px, 4.6vw, 26px)', fontWeight: 600, margin: 0, fontFamily: SERIF, letterSpacing: '0.03em' }}>
+            いまは、無料です。
+          </h2>
+        </div>
         <Card style={{ textAlign: 'center', border: `1px solid ${C.gold}` }}>
-          <div style={labelStyle(C.goldText)}>料金</div>
-          <div style={{ marginTop: 14, ...NUM_STYLE, fontSize: 40, color: C.ink, lineHeight: 1, textShadow: NUM_GLOW }}>
-            ¥2,980
-            <span style={{ fontSize: 14, fontWeight: 400, color: C.sub, letterSpacing: '0.04em', marginLeft: 8, fontFamily: "'Noto Sans JP', sans-serif" }}>/月（予定）</span>
-          </div>
           <div style={{
-            display: 'inline-block', marginTop: 14, padding: '7px 16px', borderRadius: 999,
+            display: 'inline-block', padding: '7px 16px', borderRadius: 999,
             background: C.goodSoft, color: C.good, fontSize: 13, fontWeight: 600, letterSpacing: '0.03em',
           }}>
-            いまは先行モニター募集中・無料
+            先行モニター募集中・全機能 無料
+          </div>
+          <div style={{ marginTop: 16, ...NUM_STYLE, fontSize: 40, color: C.ink, lineHeight: 1, textShadow: NUM_GLOW }}>
+            ¥0
+            <span style={{ fontSize: 14, fontWeight: 400, color: C.sub, letterSpacing: '0.04em', marginLeft: 8, fontFamily: "'Noto Sans JP', sans-serif" }}>いま参加すると</span>
           </div>
           <p style={{ fontSize: 13, lineHeight: 1.9, color: C.sub, margin: '16px 0 0' }}>
-            正式スタート前のいまは、無料でぜんぶの機能をお使いいただけます。
+            正式版は月¥2,980を予定しています。
+            クレジットカードの登録はなく、あとから勝手に請求されることはありません。
             使ってみた感想を、メールでひとこと聞かせてください。
           </p>
-          <div style={{ marginTop: 18 }}>
-            <PrimaryButton href={MONITOR_MAILTO} full>
-              <Mail size={15} /> 先行モニターに申し込む
+          <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <PrimaryButton onClick={onEnter} full>
+              無料でためしてみる <ArrowRight size={16} />
             </PrimaryButton>
+            <GhostButton href={MONITOR_MAILTO} full>
+              <Mail size={15} /> 先行モニターに申し込む
+            </GhostButton>
           </div>
           <div style={{
             marginTop: 16, padding: '12px 14px', borderRadius: 14, background: C.bgDeep,
@@ -1083,14 +1162,37 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
         </Card>
       </section>
 
-      {/* 安心 */}
-      <section style={{ maxWidth: 560, margin: '40px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', justifyContent: 'center' }}>
+      {/* ══ 6. FAQ / 安心 ══ */}
+      <section style={{ maxWidth: 640, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+          <div style={{ ...labelStyle(C.goldText), marginBottom: 12 }}>FAQ</div>
+          <h2 style={{ fontSize: 'clamp(20px, 4.6vw, 26px)', fontWeight: 600, margin: 0, fontFamily: SERIF, letterSpacing: '0.03em' }}>
+            安心して、はじめられるように。
+          </h2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {faqs.map((f) => <PulseFaqItem key={f.q} q={f.q} a={f.a} />)}
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', justifyContent: 'center', marginTop: 22 }}>
           <ShieldCheck size={16} color={C.good} style={{ flexShrink: 0, marginTop: 3 }} />
           <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.sub, margin: 0 }}>
-            あなたの記録は、あなたのアカウントにだけ保存されます。
-            気になる変化が続くときは、早めに信頼できる専門機関へご相談ください。
+            記録はあなたのアカウントにだけ保存。医師や専門家に相談するときの、確かな資料にもなります。
           </p>
+        </div>
+      </section>
+
+      {/* ══ 7. 最終CTA ══ */}
+      <section style={{ position: 'relative', maxWidth: 640, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box', textAlign: 'center' }}>
+        <h2 style={{ fontSize: 'clamp(21px, 5vw, 28px)', fontWeight: 600, margin: 0, fontFamily: SERIF, letterSpacing: '0.03em', lineHeight: 1.7 }}>
+          あしたの朝から、<br />からだのことばが届きます。
+        </h2>
+        <p style={{ fontSize: 13.5, lineHeight: 2.0, color: C.sub, margin: '14px auto 0', maxWidth: 460 }}>
+          登録なし・いまは無料。まずは見本のデータで、けさのことばを見てみてください。
+        </p>
+        <div style={{ maxWidth: 340, margin: '22px auto 0' }}>
+          <PrimaryButton onClick={onEnter} full>
+            無料でためしてみる <ArrowRight size={16} />
+          </PrimaryButton>
         </div>
       </section>
 
@@ -1116,6 +1218,26 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
         @media (min-width: 760px) { .pulse-value-grid { grid-template-columns: repeat(2, 1fr); } }
         ${PULSE_CSS}
       `}</style>
+    </div>
+  );
+}
+
+// ── LP用: FAQ 開閉アイテム ──
+function PulseFaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, overflow: 'hidden' }}>
+      <button type="button" onClick={() => setOpen((o) => !o)} className="pulse-press" style={{
+        width: '100%', minHeight: 48, background: 'transparent', border: 'none', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        padding: '14px 16px', textAlign: 'left',
+      }}>
+        <span style={{ fontSize: 13.5, fontWeight: 600, color: C.ink, fontFamily: SERIF, letterSpacing: '0.02em', lineHeight: 1.7 }}>{q}</span>
+        <ChevronDown size={16} color={C.accent} style={{ flexShrink: 0, transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none' }} />
+      </button>
+      {open && (
+        <div className="pulse-detail-open" style={{ padding: '0 16px 14px', fontSize: 12.5, lineHeight: 1.95, color: C.sub }}>{a}</div>
+      )}
     </div>
   );
 }
