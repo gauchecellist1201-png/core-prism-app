@@ -4,7 +4,7 @@
 // 「Instagram で開く」 → キャプションを自動コピー → IG アプリへ
 // ============================================================
 import { useMemo, useState } from 'react';
-import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image as ImageIcon, Video as VideoIcon, CalendarClock, X } from 'lucide-react';
+import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image as ImageIcon, Video as VideoIcon, CalendarClock, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { usePostQueue, buildCaptionText, suggestNextSlot, type ScheduledPost } from './usePostQueue';
@@ -25,12 +25,54 @@ const STATUS_META: Record<ScheduledPost['status'], { label: string; color: strin
   skipped:   { label: 'スキップ', color: '#737373', bg: '#F5F5F5' },
 };
 
+// ── カレンダー用ヘルパー（すべてローカル時刻基準。ISO を slice すると +9h ずれるので new Date で扱う） ──
+const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+/** ローカル時刻での YYYY-MM-DD キー */
+const localDayKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+/** 月を n ヶ月ずらした「その月の1日」を返す */
+const shiftMonth = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1);
+
 export default function IrisPostQueueView({ bg, queue }: Props) {
   const sorted = useMemo(() => queue.upcoming(), [queue]);
   // コピー成功フィードバック (silent fail 撲滅) — どの予約のコピーが直近で成功したか
   const [copiedId, setCopiedId] = useState<string>('');
-  // 表示モード：リスト（詳細）／グリッド（フィードの見た目プレビュー＝Later風）。
-  const [view, setView] = useState<'list' | 'grid'>('list');
+  // 表示モード：リスト（詳細）／グリッド（フィードの見た目プレビュー＝Later風）／カレンダー（月グリッド）。
+  const [view, setView] = useState<'list' | 'grid' | 'calendar'>('list');
+  // カレンダー：表示中の月（その月の1日）と、選択中の日（既定はきょう）
+  const [calCursor, setCalCursor] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [selectedDay, setSelectedDay] = useState<string>(() => localDayKey(new Date()));
+  const todayKey = localDayKey(new Date());
+
+  // 予約を日付（ローカル）でまとめる。時刻昇順。
+  const postsByDay = useMemo(() => {
+    const m: Record<string, ScheduledPost[]> = {};
+    queue.posts.forEach(p => {
+      const d = new Date(p.scheduledAt);
+      if (isNaN(d.getTime())) return;
+      const k = localDayKey(d);
+      (m[k] ||= []).push(p);
+    });
+    Object.values(m).forEach(arr => arr.sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)));
+    return m;
+  }, [queue.posts]);
+
+  // 表示月の 6×7 セル（必要な行数だけ）。前後の月の日で埋める。
+  const calCells = useMemo(() => {
+    const first = new Date(calCursor.getFullYear(), calCursor.getMonth(), 1);
+    const startDow = first.getDay();
+    const daysInMonth = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 0).getDate();
+    const rows = Math.ceil((startDow + daysInMonth) / 7);
+    const gridStart = new Date(first);
+    gridStart.setDate(1 - startDow);
+    const cells: Date[] = [];
+    for (let i = 0; i < rows * 7; i++) {
+      const d = new Date(gridStart);
+      d.setDate(gridStart.getDate() + i);
+      cells.push(d);
+    }
+    return cells;
+  }, [calCursor]);
 
   const copyCaption = (p: ScheduledPost) => {
     navigator.clipboard?.writeText(buildCaptionText(p))
@@ -99,6 +141,38 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
       cursor = slot;
     });
   }
+
+  // カレンダーの月ナビ ボタン共通スタイル
+  const navBtnStyle = {
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    width: 40, height: 40, borderRadius: 999,
+    border: `1px solid ${bg.cardBorder}`, background: bg.card, color: bg.ink, cursor: 'pointer',
+  };
+
+  // カレンダーで選んだ日の予約カード（コンパクト版）。投稿 / コピーの実アクション付き。
+  const renderDayCard = (p: ScheduledPost) => {
+    const when = new Date(p.scheduledAt);
+    const st = STATUS_META[p.status];
+    return (
+      <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '52px 1fr auto', gap: 10, alignItems: 'center', padding: '0.6rem 0.7rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 12 }}>
+        <div style={{ width: 52, height: 68, borderRadius: 8, background: '#000', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {p.thumbDataUrl ? <img src={p.thumbDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <VideoIcon size={18} color="rgba(255,255,255,0.4)" />}
+        </div>
+        <div style={{ minWidth: 0, display: 'grid', gap: 3 }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.62rem', fontWeight: 800, padding: '1px 6px', borderRadius: 999, background: st.bg, color: st.color }}>{st.label}</span>
+            <span style={{ fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 600 }}>{when.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</span>
+            {p.brandName && <span style={{ fontSize: '0.7rem', color: bg.accent, fontWeight: 700 }}>PR · {p.brandName}</span>}
+          </div>
+          <p style={{ margin: 0, fontSize: '0.8rem', color: bg.ink, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.caption}</p>
+        </div>
+        <div style={{ display: 'grid', gap: 4 }}>
+          <button onClick={() => open(p)} title="Instagram で開く (キャプ自動コピー)" style={{ padding: '0.4rem 0.6rem', background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`, color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', gap: 4, alignItems: 'center' }}><ExternalLink size={11} /> 投稿</button>
+          <button onClick={() => copyCaption(p)} title="本文+ハッシュタグをコピー" style={{ padding: '0.35rem 0.6rem', background: copiedId === p.id ? '#ECFDF5' : 'transparent', color: copiedId === p.id ? '#065F46' : bg.ink, border: `1px solid ${copiedId === p.id ? '#10B98180' : bg.cardBorder}`, borderRadius: 8, fontSize: '0.68rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', gap: 4, alignItems: 'center' }}>{copiedId === p.id ? <><Check size={11} /> コピー済</> : <><Copy size={11} /> コピー</>}</button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div style={{ display: 'grid', gap: '1rem', fontFamily: IRIS_FONTS.body }}>
@@ -177,14 +251,14 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
       {/* 表示切替：リスト⇄グリッド（フィードの見た目プレビュー＝Later風） */}
       {sorted.length > 0 && (
         <div style={{ display: 'flex', gap: 6, alignSelf: 'flex-start' }}>
-          {(['list', 'grid'] as const).map(v => (
+          {(['list', 'grid', 'calendar'] as const).map(v => (
             <button key={v} onClick={() => setView(v)} style={{
               padding: '6px 14px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
               border: `1px solid ${view === v ? bg.accent : bg.cardBorder}`,
               background: view === v ? bg.accent : 'transparent',
               color: view === v ? '#fff' : bg.inkSoft,
               transition: 'background 0.15s, color 0.15s, border-color 0.15s',
-            }}>{v === 'list' ? 'リスト' : 'グリッド'}</button>
+            }}>{v === 'list' ? 'リスト' : v === 'grid' ? 'グリッド' : 'カレンダー'}</button>
           ))}
         </div>
       )}
@@ -249,6 +323,80 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
               </button>
             );
           })}
+        </div>
+      ) : view === 'calendar' ? (
+        <div style={{ display: 'grid', gap: 12 }}>
+          {/* 月ナビ */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <button onClick={() => setCalCursor(shiftMonth(calCursor, -1))} aria-label="前の月" style={navBtnStyle}>
+              <ChevronLeft size={18} />
+            </button>
+            <div style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.1rem', fontWeight: 700, color: bg.ink }}>
+              {calCursor.getFullYear()}年 {calCursor.getMonth() + 1}月
+            </div>
+            <button onClick={() => setCalCursor(shiftMonth(calCursor, 1))} aria-label="次の月" style={navBtnStyle}>
+              <ChevronRight size={18} />
+            </button>
+          </div>
+          {/* 曜日ヘッダ */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+            {WEEKDAYS.map((w, i) => (
+              <div key={w} style={{ textAlign: 'center', fontSize: '0.66rem', fontWeight: 700, color: i === 0 ? '#DC2626' : i === 6 ? '#2563EB' : bg.inkSoft, padding: '2px 0' }}>{w}</div>
+            ))}
+          </div>
+          {/* 日グリッド */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+            {calCells.map((d) => {
+              const k = localDayKey(d);
+              const inMonth = d.getMonth() === calCursor.getMonth();
+              const isToday = k === todayKey;
+              const isSel = k === selectedDay;
+              const dayPosts = postsByDay[k] || [];
+              const dow = d.getDay();
+              return (
+                <button key={k} onClick={() => setSelectedDay(isSel ? '' : k)} title={dayPosts.length ? `${dayPosts.length}件の予約` : undefined} style={{
+                  position: 'relative', aspectRatio: '1 / 1', minHeight: 44, borderRadius: 10, cursor: 'pointer',
+                  border: isSel ? `2px solid ${bg.accent}` : isToday ? `1px solid ${bg.accent}80` : `1px solid ${bg.cardBorder}`,
+                  background: isSel ? `${bg.accent}14` : dayPosts.length ? `${bg.accent}0A` : bg.card,
+                  opacity: inMonth ? 1 : 0.38,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
+                  padding: '4px 2px', gap: 3, overflow: 'hidden',
+                }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: isToday ? 800 : 600, color: dow === 0 ? '#DC2626' : dow === 6 ? '#2563EB' : bg.ink }}>{d.getDate()}</span>
+                  {dayPosts.length > 0 && (
+                    <span style={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+                      {dayPosts.slice(0, 3).map(p => (
+                        <span key={p.id} style={{ width: 5, height: 5, borderRadius: 999, background: STATUS_META[p.status].color }} />
+                      ))}
+                      {dayPosts.length > 3 && <span style={{ fontSize: 8, fontWeight: 700, color: bg.inkSoft, lineHeight: '5px' }}>+{dayPosts.length - 3}</span>}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {/* 選択日の予約 */}
+          {selectedDay ? (() => {
+            const dayPosts = postsByDay[selectedDay] || [];
+            const [yy, mm, dd] = selectedDay.split('-').map(Number);
+            const labelD = new Date(yy, mm - 1, dd);
+            return (
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: bg.ink }}>
+                  {labelD.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' })} の予約{dayPosts.length > 0 ? ` (${dayPosts.length})` : ''}
+                </div>
+                {dayPosts.length === 0 ? (
+                  <div style={{ padding: '0.9rem 1rem', border: `1px dashed ${bg.cardBorder}`, borderRadius: 12, fontSize: '0.8rem', color: bg.inkSoft, textAlign: 'center' }}>
+                    この日の予約はまだありません。
+                  </div>
+                ) : dayPosts.map(renderDayCard)}
+              </div>
+            );
+          })() : (
+            <div style={{ padding: '0.8rem 1rem', border: `1px dashed ${bg.cardBorder}`, borderRadius: 12, fontSize: '0.78rem', color: bg.inkSoft, textAlign: 'center' }}>
+              日付をタップすると、その日の予約が表示されます。
+            </div>
+          )}
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 10 }}>
