@@ -90,3 +90,35 @@ export function getActivitySummary(days = 7): ActivitySummary {
   }
   return { days, total, byType, hasAny: all.length > 0 };
 }
+
+export interface LifetimeSummary {
+  /** 記録されている全期間の総件数 (直近 MAX 件までが対象) */
+  total: number;
+  /** 種別ごとの件数 */
+  byType: Record<IrisActivityType, number>;
+  /** 記録されている中で最も古いイベントの epoch ms (無ければ 0) */
+  earliestTs: number;
+}
+
+/**
+ * 記録されている“これまで”の活動を全部集計する (日付フィルタなし)。
+ * 注意: ストアは直近 MAX 件で打ち切られるため、厳密には「記録が残っている
+ * 範囲での累計」。誇張はしない (honest-numbers)。UI では「これまで」と表現し、
+ * 特定の開始日は断言しない。
+ */
+export function getLifetimeSummary(): LifetimeSummary {
+  const all = load();
+  const byType: Record<IrisActivityType, number> = {
+    script: 0, caption: 0, ideas: 0, mediakit: 0, dm: 0,
+  };
+  let total = 0;
+  let earliestTs = 0;
+  for (const e of all) {
+    if (!e || typeof e.ts !== 'number') continue;
+    if (byType[e.t] === undefined) continue;
+    byType[e.t]++;
+    total++;
+    if (earliestTs === 0 || e.ts < earliestTs) earliestTs = e.ts;
+  }
+  return { total, byType, earliestTs };
+}

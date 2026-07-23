@@ -14,7 +14,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Type, Lightbulb, IdCard, Send, Sparkles } from 'lucide-react';
-import { getActivitySummary, type IrisActivityType } from './irisActivity';
+import { getActivitySummary, getLifetimeSummary, type IrisActivityType } from './irisActivity';
 import { IRIS_COLORS } from './irisStyle';
 import { EASE_OUT_FM } from './motion';
 
@@ -46,11 +46,20 @@ type Props = {
   variant?: 'mobile' | 'desktop';
 };
 
+/** 種別ごとの件数を「外注相場での目安金額」に翻訳する（誇張しない・下限相場）。 */
+function estYenFrom(byType: Record<IrisActivityType, number>): number {
+  return META.reduce((sum, m) => sum + (byType[m.t] || 0) * m.rateYen, 0);
+}
+
 export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
   const [summary, setSummary] = useState(() => getActivitySummary(7));
+  const [lifetime, setLifetime] = useState(() => getLifetimeSummary());
 
   useEffect(() => {
-    const refresh = () => setSummary(getActivitySummary(7));
+    const refresh = () => {
+      setSummary(getActivitySummary(7));
+      setLifetime(getLifetimeSummary());
+    };
     window.addEventListener('iris-activity', refresh);
     window.addEventListener('storage', refresh);
     // 別画面で生成→ホーム復帰した時も拾えるよう、可視化復帰でも更新
@@ -62,15 +71,24 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
     };
   }, []);
 
-  // 直近 7 日で 1 件も無ければ出さない (honest: 0 を誇示しない)
-  if (summary.total <= 0) return null;
+  const isMobile = variant === 'mobile';
+  const lifeYen = estYenFrom(lifetime.byType);
+
+  // これまで一度も作っていない新規ユーザーはホームを汚さない (honest: 0 を誇示しない)。
+  if (lifetime.total <= 0) return null;
+
+  // 直近 7 日は 0 だが、これまでの実績はある “静かな週” の返ってきたユーザー。
+  // ここは解約が起きやすい瞬間 — 累計の価値をそっと思い出させ、次の一歩を促す
+  // (最優先方針 #5 転換・継続)。数字は記録済みの実数のみ (honest)。
+  if (summary.total <= 0) {
+    return <QuietWeekCard lifetime={lifetime} lifeYen={lifeYen} isMobile={isMobile} />;
+  }
 
   const rows = META.filter(m => summary.byType[m.t] > 0);
-  const isMobile = variant === 'mobile';
 
   // 外注に出した場合の相場での目安（実データの件数 × 控えめな下限相場）。
   // 実際の支払額ではなく参考値であることを必ず明記する（honest-numbers）。
-  const estYen = META.reduce((sum, m) => sum + summary.byType[m.t] * m.rateYen, 0);
+  const estYen = estYenFrom(summary.byType);
 
   return (
     <motion.div
@@ -202,6 +220,19 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
         </div>
       )}
 
+      {/* これまでの累計 — 今週分より積み上がっている時だけ出す。月額を「もう十分ペイしている」
+          感覚に翻訳して継続を後押し（実数のみ・honest）。 */}
+      {lifetime.total > summary.total && (
+        <p style={{
+          marginTop: isMobile ? 9 : 11, marginBottom: 0,
+          fontSize: isMobile ? '0.72rem' : '0.78rem', color: 'rgba(255,255,255,0.72)',
+          lineHeight: 1.5, fontWeight: 600,
+        }}>
+          これまでの累計 <span style={{ color: IRIS_COLORS.cream, fontWeight: 800 }}>{lifetime.total.toLocaleString()}</span> 点
+          {lifeYen > 0 && <> ・ 外注相場で約 <span style={{ color: IRIS_COLORS.gold, fontWeight: 800 }}>¥{lifeYen.toLocaleString()}</span> 相当</>}
+        </p>
+      )}
+
       <p style={{
         marginTop: isMobile ? 9 : 11, marginBottom: 0,
         fontSize: '0.66rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.45,
@@ -209,6 +240,61 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
         直近7日で Iris が実際に作った成果物の数です。金額は台本・企画・デザインをフリーランスへ外注した場合の
         一般的な相場での目安で、実際の支払額ではありません。手を動かすほど、ここが積み上がります。
       </p>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// 静かな週カード — 今週は 0 だが、これまでの実績はある返ってきたユーザー向け。
+// 累計の価値を思い出させ、次の一歩をそっと促す。数字は記録済みの実数のみ。
+// ─────────────────────────────────────────────────────────
+function QuietWeekCard({
+  lifetime, lifeYen, isMobile,
+}: {
+  lifetime: import('./irisActivity').LifetimeSummary;
+  lifeYen: number;
+  isMobile: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: EASE_OUT_FM }}
+      style={{
+        position: 'relative',
+        zIndex: 1,
+        background: `linear-gradient(135deg, ${IRIS_COLORS.purpleDeep}22 0%, ${IRIS_COLORS.inkBlack} 100%)`,
+        border: `1px solid ${IRIS_COLORS.gold}33`,
+        borderRadius: 16,
+        padding: isMobile ? '0.9rem 0.85rem' : '1.15rem 1.4rem',
+        margin: isMobile ? '0.5rem 0.75rem' : '0 0 1rem',
+        overflow: 'hidden',
+        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+      }}
+    >
+      <div style={{
+        width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+        background: `${IRIS_COLORS.gold}22`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Sparkles size={17} color={IRIS_COLORS.gold} />
+      </div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p style={{
+          fontSize: '0.6rem', letterSpacing: '0.22em',
+          color: IRIS_COLORS.gold, fontWeight: 700, margin: '0 0 3px',
+        }}>
+          これまでの累計
+        </p>
+        <p style={{
+          fontSize: isMobile ? '0.92rem' : '1.02rem', fontWeight: 700,
+          color: IRIS_COLORS.cream, margin: 0, lineHeight: 1.35,
+        }}>
+          Iris はこれまで <span style={{ color: IRIS_COLORS.gold, fontWeight: 800 }}>{lifetime.total.toLocaleString()}</span> 点
+          {lifeYen > 0 && <>（外注相場で約 <span style={{ color: IRIS_COLORS.gold, fontWeight: 800 }}>¥{lifeYen.toLocaleString()}</span> 相当）</>}
+          を作ってきました。今週も、ひとつ作りにいきましょう。
+        </p>
+      </div>
     </motion.div>
   );
 }
