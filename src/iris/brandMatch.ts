@@ -9,6 +9,7 @@ import type { MediaKit, Platform, ContentType } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { PLATFORM_META } from '../types/influencerDeal';
+import { aiFetch } from '../lib/aiFetch';
 
 const PRISM_COMPANIES_KEY = 'core_sales_companies_v1';
 
@@ -84,7 +85,7 @@ ${opts.customNote || '(なし)'}
 このブランドに、上記のフォーマットでタイアップを打診するメールを書いてください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

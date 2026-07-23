@@ -7,6 +7,7 @@
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
+import { aiFetch } from '../lib/aiFetch';
 
 // ─── 型定義 ─────────────────────────────────────────────────────
 
@@ -174,7 +175,7 @@ ${toneInstruction()}`;
 
   try {
     const data = await enqueueClaudeCall(async () => {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

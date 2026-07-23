@@ -6,6 +6,7 @@
 // AI で人格コンテキストを織り込んだ初稿を作る。失敗時は静的テンプレで継続。
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
+import { aiFetch } from './aiFetch';
 
 export type DocTemplateKind =
   | 'proposal'      // 提案書
@@ -125,7 +126,7 @@ ${instruction}
 - 全体 30 行前後 (お礼メール・紹介状は 15-20 行)`;
 
   try {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

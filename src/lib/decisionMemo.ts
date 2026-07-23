@@ -3,6 +3,7 @@
 // ============================================================
 import type { AppSettings, Persona, KnowledgeItem } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -113,7 +114,7 @@ ${relevantKnowledge}
 上記を踏まえて、構造化された意思決定メモを JSON で出力してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -200,7 +201,7 @@ ${rawText}
 上記から 6 要素を JSON で抽出してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

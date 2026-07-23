@@ -37,6 +37,7 @@ import {
 } from './fanCapture';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
+import { aiFetch } from '../lib/aiFetch';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -380,7 +381,7 @@ ${toneInstruction()}
 最大 10 件。bondScore と関係性、話題の豊富さを総合判断。`;
 
       const data = await enqueueClaudeCall(async () => {
-        const res = await fetch('/api/ai', {
+        const res = await aiFetch({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -448,7 +449,7 @@ ${toneInstruction()}
 }`;
 
       const data = await enqueueClaudeCall(async () => {
-        const res = await fetch('/api/ai', {
+        const res = await aiFetch({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -499,7 +500,7 @@ ${toneInstruction()}
 話題: ${fan.topics.join(', ') || 'なし'}
 最近のメッセージ: 「${lastMsg}」`;
       const data = await enqueueClaudeCall(async () => {
-        const res = await fetch('/api/ai', {
+        const res = await aiFetch({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -555,7 +556,7 @@ ${recent}
 このファンへの「お礼 DM」を書いてください。`;
 
       const data = await enqueueClaudeCall(async () => {
-        const res = await fetch('/api/ai', {
+        const res = await aiFetch({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

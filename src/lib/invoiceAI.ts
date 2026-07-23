@@ -12,6 +12,7 @@ import type { InvoiceLine, TaxRate } from '../types/invoice';
 import { enqueueClaudeCall } from './apiQueue';
 import { isMasterAuth } from './billing';
 import { v4 as uuidv4 } from 'uuid';
+import { aiFetch } from './aiFetch';
 
 export interface AISuggestedInvoice {
   subject: string;
@@ -115,7 +116,7 @@ ${opts.issueDate ? `## 発行日\n${opts.issueDate}\n` : ''}
     if (isMasterAuth()) headers['x-master-key'] = 'GAUCHE2026';
 
     const data = await enqueueClaudeCall(async () => {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers,
         body: JSON.stringify({

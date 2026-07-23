@@ -9,6 +9,7 @@
 // - 営業も、解決も、AI が動く。ユーザーは方向性を示すだけ
 // ============================================================
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 const STORAGE_KEY = 'core_auto_agent_suggestions_v2_plain'; // v2: やさしい日本語ルール導入でキャッシュ無効化
 const CACHE_TTL = 25 * 60_000; // 25 分
@@ -236,7 +237,7 @@ ${hasKnowledge
 JSON で返答。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -310,7 +311,7 @@ ${ctx.deals ? `## 案件状況\n${ctx.deals}\n` : ''}
 ${ctx.kpis ? `## KPI\n${ctx.kpis}\n` : ''}`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'heavy' },
       body: JSON.stringify({
@@ -350,7 +351,7 @@ export async function refineSuggestion(s: Suggestion, refinement: string, ctx: A
 }`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

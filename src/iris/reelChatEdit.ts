@@ -7,6 +7,7 @@
 // ============================================================
 import { REEL_PRESETS, getPreset, type PresetId } from './reelStudio/Presets';
 import { enqueueClaudeCall } from '../lib/apiQueue';
+import { aiFetch } from '../lib/aiFetch';
 
 export type ColorMoodId = 'none' | 'bright' | 'warm' | 'cool' | 'film' | 'mono' | 'vivid';
 export type ChatTransition = 'none' | 'fade' | 'white' | 'dissolve' | 'slide';
@@ -334,7 +335,7 @@ actions に使える type (index は 0 始まり):
  */
 export async function interpretEditWithAi(text: string, state: ReelEditState): Promise<{ actions: EditAction[]; reply: string }> {
   return enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({

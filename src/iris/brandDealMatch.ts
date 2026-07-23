@@ -7,6 +7,7 @@ import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { logIrisActivity } from './irisActivity';
+import { aiFetch } from '../lib/aiFetch';
 
 // ─── マッチスコア ───────────────────────────────────────────
 export interface MatchScore {
@@ -178,7 +179,7 @@ ${opts.knowledgeContext}
 この案件に応募するメールを書いてください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

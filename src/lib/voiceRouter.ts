@@ -3,6 +3,7 @@
 // ============================================================
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 export type VoiceCategory = 'task' | 'knowledge' | 'crm' | 'expense' | 'idea';
 
@@ -62,7 +63,7 @@ export async function routeVoiceMemo(
   settings: AppSettings,
 ): Promise<VoiceRoutingResult> {
   const result = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

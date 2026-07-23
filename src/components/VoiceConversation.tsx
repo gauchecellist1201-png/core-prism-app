@@ -9,6 +9,7 @@ import { useVoiceInput } from '../hooks/useVoiceInput';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import AnimatedAvatar, { type AvatarMood } from './AnimatedAvatar';
+import { aiFetch } from '../lib/aiFetch';
 
 interface Props {
   open: boolean;
@@ -77,7 +78,7 @@ export default function VoiceConversation({ open, onClose, brand, accentColor, c
     setPhase('processing');
     try {
       const reply = await enqueueClaudeCall(async () => {
-        const res = await fetch('/api/ai', {
+        const res = await aiFetch({
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({

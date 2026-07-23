@@ -4,6 +4,7 @@
 // ============================================================
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
+import { aiFetch } from '../lib/aiFetch';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -58,7 +59,7 @@ export async function generateScript(
 - インフルエンサー本人の声で、押し売りではなく体験ベース`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -21,6 +21,7 @@
 
 // 失敗ログは console.warn にフォールバック (errorCapture が console を hook している)
 import { recordFailure, recordSuccess, sleepIfNeeded } from './aiBackoff';
+import { aiFetch } from './aiFetch';
 
 export interface AiPayload {
   model: string;
@@ -80,7 +81,7 @@ async function callOnce(
   try {
     // PPP (2026-06-04): 直近 429/503 で待機時間が残っていれば待つ
     await sleepIfNeeded();
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

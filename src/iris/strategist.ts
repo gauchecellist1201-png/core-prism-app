@@ -8,6 +8,7 @@ import type { Platform, ContentType, MediaKit, PlatformMetrics } from '../types/
 import { PLATFORM_META, CONTENT_TYPE_META } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
+import { aiFetch } from '../lib/aiFetch';
 
 const KEY_POSTS = 'core_iris_posthistory_v1';
 
@@ -123,7 +124,7 @@ ${opts.posts.slice(0, 30).map(formatPost).join('\n\n')}
 これらを分析して、JSON で返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -194,7 +195,7 @@ ${opts.mediaKit ? `平均ER: ${JSON.stringify(opts.mediaKit.avgEngagementRate ||
 この投稿、フィードバックお願い。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -291,7 +292,7 @@ ${opts.knowledgeContext}
 次の ${opts.count || 3} 本、提案してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -386,7 +387,7 @@ ${opts.knowledgeContext}
 30 日のストーリーアーク、設計してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

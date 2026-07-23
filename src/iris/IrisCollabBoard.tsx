@@ -23,6 +23,7 @@ import { notifyInApp } from '../lib/inAppNotify';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { loadIgProfile } from './instagramConnect';
 import type { IgProfile } from './instagramConnect';
+import { aiFetch } from '../lib/aiFetch';
 
 const IrisDmDraftModal = lazy(() => import('./IrisDmDraftModal'));
 
@@ -218,7 +219,7 @@ async function recommendCollabPartners(
 
   try {
     const data = await enqueueClaudeCall(async () => {
-      const r = await fetch('/api/ai', {
+      const r = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

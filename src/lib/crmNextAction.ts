@@ -10,6 +10,7 @@
 import type { CRMDeal } from '../types/crm';
 import { STAGE_META } from '../types/crm';
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 const CACHE_KEY = 'core_crm_next_action_cache_v1';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -106,7 +107,7 @@ export async function suggestNextAction(d: CRMDeal, opts?: { force?: boolean }):
     const prompt = `# 商談\n- タイトル: ${d.title}\n- 顧客: ${d.contact?.name || '未設定'}${d.contact?.company ? ` (${d.contact.company})` : ''}\n- ステージ: ${STAGE_META[d.stage].label}\n- 想定金額: ${d.amount ? `¥${d.amount.toLocaleString()}` : '未設定'}\n- 確度: ${d.probability ?? 30}%\n- クローズ予定: ${d.expectedCloseDate || '未設定'}\n- 最終活動から: ${days != null ? `${days} 日経過` : '不明'}\n- メモ: ${d.description || '(なし)'}\n\n## 直近の活動\n${recent}\n\n次に取るべき一手を 1 文で。`;
 
     const r = await enqueueClaudeCall(async () => {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

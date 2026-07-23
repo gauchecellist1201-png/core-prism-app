@@ -4,6 +4,7 @@
 import type { AppSettings } from '../types/identity';
 import type { ExpenseCategory, ExpenseTaxRate } from '../types/expense';
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 export interface OCRResult {
   date?: string;          // YYYY-MM-DD
@@ -46,7 +47,7 @@ export async function extractFromReceipt(opts: {
   const data = match[2];
 
   const result = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -135,7 +136,7 @@ ${opts.instruction}
 修正を反映した仕訳を JSON で返してください。`;
 
   const result = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

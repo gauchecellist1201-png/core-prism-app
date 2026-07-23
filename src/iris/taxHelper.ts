@@ -5,6 +5,7 @@
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
+import { aiFetch } from '../lib/aiFetch';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -135,7 +136,7 @@ export async function generateTaxChecklist(opts: {
 ${opts.categories.map(c => `- ${c.category}: ¥${c.total.toLocaleString()}`).join('\n')}`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -3,6 +3,7 @@
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 // API キーは main.tsx の interceptor が localStorage から自動付与
 
@@ -196,7 +197,7 @@ export async function evaluateNegotiation(
 async function callClaude(settings: AppSettings, system: string, messages: Array<{ role: string; content: string }>): Promise<string> {
   // キュー経由 (並列2・自動リトライ・サーキットブレーカー) で 429/過負荷に強く
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

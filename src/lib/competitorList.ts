@@ -5,6 +5,7 @@
 import { enqueueClaudeCall } from './apiQueue';
 import type { AppSettings } from '../types/identity';
 import { getIndustryInfo } from './benchmarkAnalyst';
+import { aiFetch } from './aiFetch';
 
 export interface CompetitorBrand {
   /** 表示名 (公開情報の社名・サービス名) */
@@ -117,7 +118,7 @@ export async function generateCompetitorList(
   let competitors: CompetitorBrand[] = [];
   try {
     const data = await enqueueClaudeCall(async () => {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'light' },
         body: JSON.stringify({

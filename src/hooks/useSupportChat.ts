@@ -4,6 +4,7 @@
 // ============================================================
 import { useCallback, useEffect, useState } from 'react';
 import { enqueueClaudeCall } from '../lib/apiQueue';
+import { aiFetch } from '../lib/aiFetch';
 
 export type SupportBrand = 'prism' | 'iris';
 
@@ -130,7 +131,7 @@ export function useSupportChat(ctx: SupportContext) {
           let res: Response | null = null;
           for (let attempt = 0; attempt < 2; attempt++) {
             try {
-              res = await fetch('/api/ai', {
+              res = await aiFetch({
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({

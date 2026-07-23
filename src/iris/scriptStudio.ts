@@ -15,6 +15,7 @@ import { toneInstruction } from '../lib/aiTone';
 import { logIrisActivity } from './irisActivity';
 import type { IgProfile } from './instagramConnect';
 import type { PostHistoryItem } from './strategist';
+import { aiFetch } from '../lib/aiFetch';
 
 // ─── クライアント (代行先アカウント) プロフィール ───────────
 export interface IrisClient {
@@ -183,7 +184,7 @@ ${opts.focus || '(指定なし — このアカウントの強みを伸ばす方
 上記のジャンル・実際の過去投稿に必ず沿って、投稿ネタを ${count} 本、JSON で出してください。アカウントと無関係なジャンルのネタは禁止です。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-ai-format': 'json' },
       body: JSON.stringify({
@@ -519,7 +520,7 @@ ${fmt} / ${dur}秒前後
 撮影者・編集者がそのまま動ける本格台本を JSON で。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-ai-format': 'json' },
       body: JSON.stringify({

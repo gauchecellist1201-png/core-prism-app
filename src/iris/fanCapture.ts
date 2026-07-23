@@ -10,6 +10,7 @@
 // ============================================================
 
 import { enqueueClaudeCall } from '../lib/apiQueue';
+import { aiFetch } from '../lib/aiFetch';
 
 export interface CapturedFanCandidate {
   name: string;
@@ -91,7 +92,7 @@ export async function captureFansFromScreenshots(files: File[]): Promise<FanCapt
     content.push({ type: 'text', text: 'この DM 一覧スクショに写っている差出人を全員リストアップしてください。' });
 
     const data = await enqueueClaudeCall(async () => {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

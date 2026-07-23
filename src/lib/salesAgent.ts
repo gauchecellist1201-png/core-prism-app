@@ -5,6 +5,7 @@ import type { AppSettings, Persona } from '../types/identity';
 import type { CompanyResearch, SalesLead, ApproachDraft, IntentSignal } from '../types/salesAgent';
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
+import { aiFetch } from './aiFetch';
 
 // API キー / master key / gemini key は main.tsx の fetch interceptor が
 // localStorage から自動付与する。手動で渡さない。
@@ -57,7 +58,7 @@ ${opts.persona.description || ''}
 上記企業を営業対象として研究し、JSON で返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -136,7 +137,7 @@ ${ctx}
 スコアと理由を JSON で返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -225,7 +226,7 @@ ${opts.tone || '丁寧で温かい'}
 上記を踏まえて、JSON でメール下書きを返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -304,7 +305,7 @@ ${opts.ownProduct || '(未指定)'}
 各企業の業界傾向から、最近起きていそうな動きを JSON で返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

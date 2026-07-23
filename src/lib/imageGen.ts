@@ -3,6 +3,7 @@
 // ============================================================
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 export type ImageProvider = 'pollinations' | 'dalle3';
 export type ImageAspect =
@@ -66,7 +67,7 @@ export async function generateImagePrompt(opts: {
   const userPrompt = `## テキスト\n${opts.topic}\n\n${opts.context ? `## 文脈\n${opts.context}\n` : ''}\n上記の本質を視覚化する画像プロンプトを作ってください。`;
   try {
     const data = await enqueueClaudeCall(async () => {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

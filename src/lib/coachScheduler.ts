@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
 import { buildIndustryContext } from '../prism/industryPacks';
+import { aiFetch } from './aiFetch';
 
 export type CoachSlot = 'morning' | 'noon' | 'evening';
 
@@ -261,7 +262,7 @@ ${buildSlotInstruction(slot)}
 **業務 (お金 / 案件 / タスク) を必ず中心に。** 体調は業務に影響していなければ言及しない。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

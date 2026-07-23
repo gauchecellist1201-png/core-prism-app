@@ -9,6 +9,7 @@ import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
 import { buildIndustryContext } from '../prism/industryPacks';
 import { personaInstructionBlock } from './personaInstructions';
+import { aiFetch } from './aiFetch';
 
 // API キーは main.tsx の interceptor が localStorage から自動付与
 
@@ -134,7 +135,7 @@ ${patrolInstruction}
 体調・健康・睡眠・水分の話は一切しない (ヘルスケアのアラートが別途担当)。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

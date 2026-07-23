@@ -14,6 +14,7 @@
 // ============================================================
 import { enqueueClaudeCall } from './apiQueue';
 import type { KnowledgeAnalysis } from '../types/identity';
+import { aiFetch } from './aiFetch';
 
 export type MeetingSource = 'zoom' | 'meet' | 'teams' | 'unknown';
 
@@ -116,7 +117,7 @@ export async function summarizeMeeting(opts: {
   const userPrompt = `【会議タイトル】${title}\n【ソース】${source}\n【日時】${date}\n\n【文字起こし】\n${truncated}`;
 
   return enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

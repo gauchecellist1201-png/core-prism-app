@@ -7,6 +7,7 @@ import type { Platform, ContentType } from '../types/influencerDeal';
 import { PLATFORM_META, CONTENT_TYPE_META } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
+import { aiFetch } from '../lib/aiFetch';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -100,7 +101,7 @@ ${opts.ngWords?.join(', ') || '(なし)'}
 これで台本・テロップ・キャプション・ハッシュタグを全部作って。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -202,7 +203,7 @@ ${opts.focus || '(指定なし — クリエイターの強みを活かす方向
 来週のリール 3 本 / ストーリー 7 本 / 投稿 4 本を JSON で。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -279,7 +280,7 @@ ${opts.contentTopic || '(指定なし)'}
 5 つのロケ地候補を JSON で。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -352,7 +353,7 @@ ${opts.audience || '同年代の女性'}
 衣装・小道具・ヘアメイク チェックリストを JSON で。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

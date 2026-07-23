@@ -19,6 +19,7 @@ import { TONE_HEADLINE } from '../lib/aiTone';
 import { logIrisActivity } from './irisActivity';
 import { IRIS_FONTS, type IrisBackgroundDef } from './irisStyle';
 import GenerationOrb from '../components/GenerationOrb';
+import { aiFetch } from '../lib/aiFetch';
 
 // ─── 生成結果の型 (IrisPlatformCards と共有) ─────
 export interface ThoughtDropResult {
@@ -70,7 +71,7 @@ function extractJson(text: string): any {
 // ─── メイン生成 (1 リクエストで 3 プラットフォーム一括) ─────
 export async function generateThoughtDrop(thought: string, model?: string): Promise<ThoughtDropResult> {
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -155,7 +156,7 @@ export async function expandNoteArticle(
   ].filter(Boolean).join('\n');
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

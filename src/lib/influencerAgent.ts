@@ -10,6 +10,7 @@ import {
 } from '../types/influencerDeal';
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
+import { aiFetch } from './aiFetch';
 
 // API キー / master key / gemini key は main.tsx の fetch interceptor が
 // localStorage から自動付与する。手動で渡さない。
@@ -104,7 +105,7 @@ ${opts.targetFee ? `\n## 希望報酬\n¥${opts.targetFee.toLocaleString()}` : '
 上記の案件に対して「${meta.label}」のメッセージを生成してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -195,7 +196,7 @@ ${opts.knowledgeContext}
 上記の案件で投稿する下書きを作ってください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -270,7 +271,7 @@ ${fmtMediaKit(opts.mediaKit)}
 この提示は妥当ですか? 判定してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -367,7 +368,7 @@ ${opts.persona.name} (${opts.persona.subtitle})
 このデータで、ブランド/代理店に提出するレポートを作ってください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

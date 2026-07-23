@@ -12,6 +12,7 @@ import { enqueueClaudeCall } from '../../lib/apiQueue';
 import { conciergeSiteId, type ConciergeConfig } from './conciergeConfig';
 import { buildConciergePrompt, summarizeConversation } from './conciergePrompt';
 import { addReservation } from './reservations';
+import { aiFetch } from '../../lib/aiFetch';
 
 /** 会話中に受け取る予約カードの入力（お客様が埋める最小項目） */
 export interface ReservationInput {
@@ -192,7 +193,7 @@ export function useConcierge(cfg: ConciergeConfig) {
         const timer = window.setTimeout(() => ctrl.abort(), TIMEOUT_MS);
         let res: Response;
         try {
-          res = await fetch('/api/ai', {
+          res = await aiFetch({
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({

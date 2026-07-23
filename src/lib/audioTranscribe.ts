@@ -9,6 +9,7 @@
 // ブラウザ内で処理され、分割した音声だけが順番に送られる。
 // ============================================================
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 const CHUNK_SEC = 110;       // 1 チャンクの長さ (長めにして往復回数を削減＝高速化。110s×16kHz×2byte ≒ 3.5MB)
 const TARGET_RATE = 16000;   // 文字起こしに十分な品質
@@ -105,7 +106,7 @@ async function decodeAndResample(file: File): Promise<Float32Array> {
 // ── 1 チャンクを文字起こし ──
 async function transcribeChunk(wavB64: string, model: string): Promise<string> {
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'light' },
       body: JSON.stringify({

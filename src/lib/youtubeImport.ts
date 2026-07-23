@@ -3,6 +3,7 @@
 // ============================================================
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 export interface VideoMeta {
   videoId: string;
@@ -212,7 +213,7 @@ export async function summarizeWithClaude(
   const userPrompt = `## 動画タイトル\n${meta.title}\n## チャンネル\n${meta.author}\n## URL\n${meta.url}\n\n## 字幕 / テキスト\n${transcript.slice(0, 15000)}`;
 
   return enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

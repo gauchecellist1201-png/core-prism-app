@@ -23,6 +23,7 @@ import type { AppSettings, Persona } from '../types/identity';
 import type { CxoRole } from '../hooks/useAgentTaskQueue';
 import { personaInstructionBlock } from './personaInstructions';
 import type { DeliverableCategory } from './cxoDeliverables';
+import { aiFetch } from './aiFetch';
 
 // ── 成果物の型 ─────────────────────────────────────────
 export type DeliverableKind = 'text' | 'checklist' | 'email' | 'table' | 'memo';
@@ -165,7 +166,7 @@ export async function executeAction(
 ): Promise<ExecutionPlan> {
   return enqueueClaudeCall(async () => {
     const userPrompt = buildUserPrompt(action, persona, context);
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

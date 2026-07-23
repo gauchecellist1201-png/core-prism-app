@@ -10,6 +10,7 @@ import { PLATFORM_META } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { logIrisActivity } from './irisActivity';
+import { aiFetch } from '../lib/aiFetch';
 
 export interface MediaKitDoc {
   /** 一言キャッチ（肩書き的なフレーズ） */
@@ -96,7 +97,7 @@ ${kitFacts(opts.mediaKit)}
 この情報から、企業にそのまま送れるメディアキットの文章を書いてください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

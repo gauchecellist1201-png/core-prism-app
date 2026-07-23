@@ -3,6 +3,7 @@
 // ============================================================
 import type { AppSettings, Persona, KnowledgeItem } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 export type SocialTone = 'professional' | 'casual' | 'promotional' | 'storytelling' | 'educational';
 export type ContentType = 'note-article' | 'x-single' | 'x-thread';
@@ -88,7 +89,7 @@ ${opts.persona.description || '(なし)'}
     : `ナレッジはまだありません。${opts.persona.name} の役割から、発信すると良い投稿を 3 案提案してください。`;
 
   return enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -169,7 +170,7 @@ ${opts.customInstruction ? `## 追加指示\n${opts.customInstruction}\n` : ''}
 上記を踏まえて、note 記事の下書きを JSON で返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -259,7 +260,7 @@ ${opts.customInstruction ? `## 追加指示\n${opts.customInstruction}\n` : ''}
 ${isThread ? `${threadCount}本のスレッド` : '1ツイート'}を JSON で返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -428,7 +429,7 @@ ${opts.customInstruction ? `## 追加指示\n${opts.customInstruction}\n` : ''}
 上記を踏まえて、${platforms.length} プラットフォーム分の投稿文 + ハッシュタグを JSON で返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -489,7 +490,7 @@ export async function suggestHashtags(opts: {
 - 流行り言葉/煽り語/英語の汎用語 (#love #photooftheday 等) は禁止`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -583,7 +584,7 @@ ${kbCtx ? `## 参照ナレッジ\n${kbCtx}\n` : ''}
 上記の 7 日分の投稿計画を JSON で返してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

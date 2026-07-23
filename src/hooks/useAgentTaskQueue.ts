@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Crown, Cpu, Target, Palette, Megaphone, Briefcase, BarChart3, FolderKanban, Microscope, Scale, Sparkles, Eye, ShieldCheck, Handshake } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { aiFetch } from '../lib/aiFetch';
 
 export type CxoRole =
   | 'CEO'   // 戦略・最終判断 (オーナー対話)
@@ -221,7 +222,7 @@ export function useAgentTaskQueue() {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 45000);
         try {
-          const r = await fetch('/api/ai', {
+          const r = await aiFetch({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

@@ -4,6 +4,7 @@
 import { INDUSTRY_BENCHMARKS, INDUSTRIES, type IndustryId, type BenchmarkEntry } from './benchmarkData';
 import { enqueueClaudeCall } from './apiQueue';
 import type { AppSettings } from '../types/identity';
+import { aiFetch } from './aiFetch';
 
 export interface UserMetrics {
   [key: string]: number;
@@ -244,7 +245,7 @@ export async function analyzeAgainstIndustry(
 
   try {
     const data = await enqueueClaudeCall(async () => {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -510,7 +511,7 @@ export async function inferIndustry(
 
   try {
     const data = await enqueueClaudeCall(async () => {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'light' },
         body: JSON.stringify({
@@ -674,7 +675,7 @@ export async function estimateMetricsFromQA(
 
   try {
     const data = await enqueueClaudeCall(async () => {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-ai-weight': 'light' },
         body: JSON.stringify({

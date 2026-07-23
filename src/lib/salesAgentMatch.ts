@@ -8,6 +8,7 @@ import type { AppSettings, Persona } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
 import { COMPANIES_JP, sampleCompanies, todaySeed, type CompanyEntry } from '../data/companies-jp';
+import { aiFetch } from './aiFetch';
 
 export interface AiPick {
   /** 静的 DB の company.id */
@@ -136,7 +137,7 @@ ${pool.map(c => `- id: ${c.id} / 社名: ${c.name} / 業界: ${c.industry} / 規
   // 「ずっとエラーになる」= master キー未添付時の 429 で止まる問題の根治)
   try {
     const data = await enqueueClaudeCall(async () => {
-      const res = await fetch('/api/ai', {
+      const res = await aiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

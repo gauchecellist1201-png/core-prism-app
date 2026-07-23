@@ -5,6 +5,7 @@ import type { AppSettings } from '../types/identity';
 import type { Platform, ContentType, DealStage } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
+import { aiFetch } from '../lib/aiFetch';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -90,7 +91,7 @@ export async function extractDealFromImages(opts: {
   content.push({ type: 'text', text: textBlock });
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -155,7 +156,7 @@ export async function extractDealFromText(opts: {
 ${toneInstruction()}`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

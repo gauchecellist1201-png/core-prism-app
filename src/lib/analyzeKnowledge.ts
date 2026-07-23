@@ -5,6 +5,7 @@ import type { AppSettings, KnowledgeAnalysis, KnowledgeItem, Persona } from '../
 import { enqueueClaudeCall } from './apiQueue';
 import { toneInstruction } from './aiTone';
 import { personaInstructionBlock } from './personaInstructions';
+import { aiFetch } from './aiFetch';
 
 // 財務関連キーワード (タイトル/本文に含まれていたら財務データと判断)
 const FIN_KEYWORDS = [
@@ -73,7 +74,7 @@ export async function extractFinancialData(
     const truncated = content.slice(0, 12000);
     const userPrompt = `## タイトル\n${title}\n\n## 本文\n${truncated}\n\n金額を抽出してJSONで返してください。`;
 
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -158,7 +159,7 @@ ${truncated}${content.length > truncated.length ? '\n\n[...以降省略]' : ''}`
   userContent.push({ type: 'text', text: userText });
 
   return enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -285,7 +286,7 @@ async function callKnowledgeAi(
   label: string,
 ): Promise<string> {
   return enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

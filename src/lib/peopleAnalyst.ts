@@ -1,6 +1,7 @@
 import type { AppSettings } from '../types/identity';
 import type { PersonRecord, PersonInteraction } from '../types/people';
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 export interface PersonAnalysis {
   trustTrend: 'improving' | 'stable' | 'declining' | 'unknown';
@@ -76,7 +77,7 @@ ${all.map(i => `- [${i.date}] ${i.type}: ${i.summary}`).join('\n') || '記録な
   return enqueueClaudeCall(async () => {
     // Anthropic 直叩き → /api/ai 経由 (env Gemini fallback / master ルーティング / CORS 安全)
     // API キーは main.tsx interceptor が自動付与
-    const resp = await fetch('/api/ai', {
+    const resp = await aiFetch({
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -157,7 +158,7 @@ ${recent.map(i =>
 上の人物像と履歴を踏まえ、5 ブロックの 1on1 アジェンダ JSON を返してください。`;
 
   return enqueueClaudeCall(async () => {
-    const resp = await fetch('/api/ai', {
+    const resp = await aiFetch({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -208,7 +209,7 @@ ${person.name}${person.role ? ` (${person.role})` : ''}${person.company ? ` / ${
 「最近どうですか?」を軽やかに送る文を 1 通作ってください。`;
 
   return enqueueClaudeCall(async () => {
-    const resp = await fetch('/api/ai', {
+    const resp = await aiFetch({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({

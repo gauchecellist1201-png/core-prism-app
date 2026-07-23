@@ -5,6 +5,7 @@
 import pptxgen from 'pptxgenjs';
 import type { AppSettings, Persona } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -154,7 +155,7 @@ ${input.source.slice(0, 30000)}${input.source.length > 30000 ? '\n[...省略]' :
 上記素材から、力強く伝わるスライドデッキの設計を JSON で出力してください。`;
 
   const data = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

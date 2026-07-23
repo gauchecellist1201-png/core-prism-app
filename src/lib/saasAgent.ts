@@ -7,6 +7,7 @@
 // ============================================================
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from './apiQueue';
+import { aiFetch } from './aiFetch';
 
 export type SaasTarget =
   | 'notion'
@@ -232,7 +233,7 @@ export async function inferSaasIntent(
   settings: AppSettings,
 ): Promise<SaasIntent> {
   const parsed = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -279,7 +280,7 @@ ${payload}
 上記を実行するための実行プランと、Claude チャットへのコピー用スクリプトを JSON で生成してください。`;
 
   const parsed = await enqueueClaudeCall(async () => {
-    const res = await fetch('/api/ai', {
+    const res = await aiFetch({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
