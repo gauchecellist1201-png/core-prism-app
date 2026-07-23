@@ -1,101 +1,171 @@
 // ============================================================
-// CORE Prism OS — 公開ランディングページ (LP)
-// コンセプト: ひとつの白光が 7 つの人格に分散する「人格統合 OS」
-// 各人格には専属エージェント AI が付き、商談・財務・創作まで実行する
+// CORE Prism — 公開ランディングページ (2026-07-24 全面再作成)
+// ポジション: 「経営まるごとおまかせのAI参謀」
+// 骨格: ヒーロー(課題言い当て+実物モック+CTA) → 課題あるある3 →
+//       できること4(Before/After) → 使い方3ステップ → 料金 → FAQ → 最終CTA
+// ルール: 絵文字UI禁止 / 375px見切れゼロ / コントラスト遵守 / 数字の嘘禁止
 // ============================================================
 import { motion } from 'framer-motion';
 import { PrismLogo } from './Logo';
 import { useMasterTap } from '../lib/masterTap';
-import { useT, type Lang, type Dictionary } from '../i18n';
 import {
-  Compass, Briefcase, TrendingUp, Sparkles, BookOpen, Users, Heart,
-  FileText, FileSpreadsheet, ScrollText, Target, Mail, Receipt, Palette, Mic,
-  Mic2, Handshake, Receipt as ReceiptIcon, ArrowRight, Sparkles as SparklesIcon,
-  Gift, MessageSquare,
+  Camera, MessageSquare, Users, FileText, Check, ArrowRight,
+  Sparkles as SparklesIcon, Gift, Receipt, LayoutDashboard, Send,
+  Moon, HelpCircle, BookOpen, Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
-import GenerationOrb from './GenerationOrb';
-import PrismApproveDemo from './PrismApproveDemo';
-import AnimatedExecStage from './AnimatedExecStage';
-import CxoProfileModal from './CxoProfileModal';
-import type { CxoRole } from '../hooks/useAgentTaskQueue';
-import HeroExecLoop from './HeroExecLoop';
-import PrismBloomHero from './PrismBloomHero';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
-import LaunchCountdownBanner from './LaunchCountdownBanner';
-import PwaInstallNudge from './PwaInstallNudge';
 
 interface Props {
   onEnterApp: () => void;
   onOpenLegal: (kind: 'terms' | 'privacy' | 'tokushou') => void;
 }
 
-// ─── PRISM 7色 (虹のスペクトル) — 色とアイコンのみここで定義、文字は i18n から ───────
-type AgentKey = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'indigo' | 'violet';
-const SPECTRUM: { key: AgentKey; color: string; Icon: LucideIcon }[] = [
-  { key: 'red',    color: '#ff5757', Icon: Compass    },
-  { key: 'orange', color: '#ff9842', Icon: Briefcase  },
-  { key: 'yellow', color: '#fbbf24', Icon: TrendingUp },
-  { key: 'green',  color: '#4ade80', Icon: Sparkles   },
-  { key: 'blue',   color: '#60a5fa', Icon: BookOpen   },
-  { key: 'indigo', color: '#a78bfa', Icon: Users      },
-  { key: 'violet', color: '#f472b6', Icon: Heart      },
+const INK = '#16162A';
+const A_PURPLE = '#7C5CFA'; // 白背景で読める紫 (4.5:1付近の濃さはテキスト用に#6D28D9を使う)
+const T_PURPLE = '#6D28D9'; // テキスト用の濃い紫
+const A_BLUE = '#3B82F6';
+const T_BLUE = '#1D4ED8';
+const A_PINK = '#EC4899';
+const T_PINK = '#BE185D';
+const A_GREEN = '#22C55E';
+const T_GREEN = '#15803D';
+const A_AMBER = '#F59E0B';
+const T_AMBER = '#B45309';
+const GRAD = `linear-gradient(120deg, ${A_BLUE} 0%, ${A_PURPLE} 50%, ${A_PINK} 100%)`;
+const sectionPad = '4.5rem 1.25rem';
+
+// ─── 課題あるある ───────────────────────────────────────────
+const PAINS: { Icon: LucideIcon; title: string; body: string; color: string; textColor: string }[] = [
+  {
+    Icon: Moon,
+    title: '事務作業に、時間が溶ける',
+    body: '請求書、帳簿、メール返信…。本業が終わった夜に「もうひとつの仕事」が始まって、1日が終わる。',
+    color: A_PURPLE, textColor: T_PURPLE,
+  },
+  {
+    Icon: HelpCircle,
+    title: '数字が、よくわからない',
+    body: '「今月いくら残るのか」が、いつも税理士待ち。売上・経費・利益が見えないまま、なんとなく不安。',
+    color: A_BLUE, textColor: T_BLUE,
+  },
+  {
+    Icon: Users,
+    title: '人を雇う余裕は、ない',
+    body: '経理も営業も広報も、ぜんぶ自分。手伝ってほしいけど、人件費を払える売上ではまだない。',
+    color: A_PINK, textColor: T_PINK,
+  },
 ];
 
-const EXEC_ICONS: { key: keyof Dictionary['exec']['items']; color: string; Icon: LucideIcon }[] = [
-  { key: 'minutes',  color: '#60a5fa', Icon: FileText },
-  { key: 'slides',   color: '#a78bfa', Icon: FileSpreadsheet },
-  { key: 'contract', color: '#f472b6', Icon: ScrollText },
-  { key: 'deal',     color: '#ff5757', Icon: Target },
-  { key: 'email',    color: '#ff9842', Icon: Mail },
-  { key: 'invoice',  color: '#fbbf24', Icon: Receipt },
-  { key: 'image',    color: '#4ade80', Icon: Palette },
-  { key: 'voice',    color: '#60a5fa', Icon: Mic },
+// ─── できること (Before → After) ─────────────────────────────
+const SOLUTIONS: {
+  Icon: LucideIcon; tag: string; title: string; before: string; after: string; color: string; textColor: string;
+}[] = [
+  {
+    Icon: LayoutDashboard,
+    tag: '経営の数字が1画面',
+    title: '売上・経費・請求書・決算書を、開いた瞬間に',
+    before: '売上はExcel、経費はレシートの山、請求書は別アプリ。全体像は月末までわからない',
+    after: '売上・経費・請求書・決算書が1画面に。「今月いくら残るか」が、いつでも見える',
+    color: A_BLUE, textColor: T_BLUE,
+  },
+  {
+    Icon: Camera,
+    tag: 'レシート撮るだけ帳簿',
+    title: '撮影1回で、記帳が終わる',
+    before: '日付・店名・金額・科目を1枚ずつ手入力。溜めた月末に半日かかる',
+    after: 'レシートを撮るだけ。AIが日付・店舗・科目まで読み取って帳簿に載せる',
+    color: A_GREEN, textColor: T_GREEN,
+  },
+  {
+    Icon: MessageSquare,
+    tag: 'チャットで指令',
+    title: '「Prism、請求書開いて」で実行される',
+    before: 'メニューを探し、画面を行き来し、やり方を思い出すところから始まる',
+    after: '話しかけるだけ。請求書作成もSNS・メールの下書きも、AIがその場で実行',
+    color: A_PURPLE, textColor: T_PURPLE,
+  },
+  {
+    Icon: Users,
+    tag: '13名のAI役員',
+    title: '営業も財務も広報も、専門AIが参謀に',
+    before: '判断も相談もぜんぶひとり。壁打ち相手がいない',
+    after: 'CFO・CMOなど13名のAI役員に相談。人格ごとの指示書とナレッジで、あなたの事業を覚えて動く',
+    color: A_PINK, textColor: T_PINK,
+  },
 ];
 
-const BG_DARK = '#F6F7FB';
-const sectionPad = '5.5rem 1.25rem';
+// ─── 使い方3ステップ ─────────────────────────────────────────
+const STEPS: { Icon: LucideIcon; n: string; title: string; body: string }[] = [
+  { Icon: SparklesIcon, n: '1', title: '無料ではじめる', body: '登録は1分。クレジットカードはいりません。サンプルデータで先に触ることもできます。' },
+  { Icon: Camera, n: '2', title: '撮る・話しかける', body: 'レシートを撮る。「請求書開いて」と話しかける。それだけで数字が集まりはじめます。' },
+  { Icon: Send, n: '3', title: 'AI役員が実行', body: '帳簿づけ、請求書、メールやSNSの下書きまで。あなたは確認して、承認するだけ。' },
+];
+
+// ─── 料金 (明快な2プラン) ────────────────────────────────────
+const PLANS = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    tag: '個人事業・ひとり社長',
+    price: '¥2,980',
+    features: ['売上・経費・請求書・決算書 1画面', 'レシート撮るだけ帳簿', 'チャット指令 (音声つき)', 'SNS・メール下書きAI'],
+    highlight: true,
+  },
+  {
+    id: 'standard',
+    name: 'Standard',
+    tag: 'もっと任せたい人に',
+    price: '¥9,800',
+    features: ['Starter の全機能', '13名のAI役員 フル解放', '人格ごと指示書 + ナレッジ学習', '見積→請求の一気通貫', '優先サポート'],
+  },
+];
+
+// ─── FAQ ─────────────────────────────────────────────────────
+const FAQS: { q: string; a: string }[] = [
+  {
+    q: 'AIの知識やAPIキーの設定は必要ですか？',
+    a: '不要です。AIはすべて内蔵されているので、登録した瞬間から使えます。設定画面と格闘する時間はありません。',
+  },
+  {
+    q: '簿記や経理の知識がなくても使えますか？',
+    a: 'はい。レシートを撮れば科目までAIが判断します。わからないことは「これって経費になる？」とチャットで聞けば、AI役員が答えます。',
+  },
+  {
+    q: 'スマホだけで使えますか？',
+    a: '使えます。スマホのブラウザでそのまま動き、ホーム画面に追加すればアプリのように使えます。PCでも同じデータが開けます。',
+  },
+  {
+    q: '無料体験のあと、勝手に課金されませんか？',
+    a: `されません。無料体験（${TRIAL_BASE_DAYS}日間）はクレジットカード登録なしで始まります。体験が終わっても請求は発生せず、続けたい場合にだけプランを選びます。`,
+  },
+];
 
 export default function LandingPage({ onEnterApp }: Props) {
-  const { lang, setLang, t } = useT();
   const tapMaster = useMasterTap();
   const [pendingRef, setPendingRef] = useState<string | null>(null);
   const [pendingInviter, setPendingInviter] = useState<string>('');
   const [pendingMsg, setPendingMsg] = useState<string>('');
-  // LLLLLL (2026-06-04): CXO ピル を タップで プロフィール モーダル
-  const [openCxo, setOpenCxo] = useState<CxoRole | null>(null);
   useEffect(() => {
     try { setPendingRef(sessionStorage.getItem('pending_ref')); } catch { /* */ }
     setPendingInviter(getPendingReferralInviter());
     setPendingMsg(getPendingReferralMessage());
   }, []);
 
-  // 「サンプルで触ってみる」: 実物品質のデモデータを localStorage に投入してから入室。
-  // 投入後、7エージェントが1人ずつ「着任」するブート演出を約2.5秒見せてから入場
-  // (タップでスキップ可 / prefers-reduced-motion は演出なしで即入場)。
-  const [sampleBooting, setSampleBooting] = useState(false);
+  // 「サンプルで触ってみる」: 実物品質のデモデータを投入してから入室
   const handleSampleEnter = () => {
-    if (sampleBooting) return;
     try {
       seedDemoData();
       setDemoActive(true);
     } catch { /* quota — そのまま入室 */ }
-    let reduce = false;
-    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { /* */ }
-    if (reduce) { onEnterApp(); return; }
-    setSampleBooting(true);
+    onEnterApp();
   };
 
   return (
-    <div style={{ background: BG_DARK, color: '#16162A', minHeight: '100dvh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
-      {/* サンプル入場ブート演出: 7エージェントが1人ずつ着任 → 入場。
-          終了時は必ず overlay を畳む (入場が checkout モーダル表示になるケースでも塞がない) */}
-      {sampleBooting && <SampleBootOverlay dict={t} onDone={() => { setSampleBooting(false); onEnterApp(); }} />}
-      {/* ── 紹介リンク経由バナー (?ref=XXX 検出時のみ) ───────────────
-          招待された友達は全画面ヒーローで +N 日プレゼントを見落とすため、
-          ヒーローより上 (=ファーストビュー最上部) に固定して必ず目に入るようにする。 */}
+    <div style={{ background: '#FFFFFF', color: INK, minHeight: '100dvh', fontFamily: '"Inter","游ゴシック","Hiragino Kaku Gothic ProN",sans-serif', overflowX: 'hidden' }}>
+      {/* ── 紹介リンク経由バナー (?ref=XXX 検出時のみ) ── */}
       {pendingRef && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -103,10 +173,8 @@ export default function LandingPage({ onEnterApp }: Props) {
           transition={{ duration: 0.5 }}
           style={{
             background: 'linear-gradient(90deg, #16A34A, #22C55E, #84CC16)',
-            color: '#fff', textAlign: 'center',
-            padding: '0.85rem 1rem',
-            fontSize: '0.92rem', fontWeight: 800,
-            letterSpacing: '0.02em',
+            color: '#fff', textAlign: 'center', padding: '0.85rem 1rem',
+            fontSize: '0.92rem', fontWeight: 800, letterSpacing: '0.02em',
             position: 'sticky', top: 0, zIndex: 70,
             boxShadow: '0 4px 18px rgba(22,163,74,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -114,7 +182,7 @@ export default function LandingPage({ onEnterApp }: Props) {
           }}
           data-testid="referral-welcome-banner"
         >
-          <span className="inline-flex" style={{ alignItems: 'center' }}><Gift size={19} strokeWidth={2.2} /></span>
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Gift size={19} strokeWidth={2.2} /></span>
           <span>
             {pendingInviter ? (
               <><strong style={{ background: 'rgba(0,0,0,0.22)', padding: '0.1rem 0.55rem', borderRadius: 8 }}>{pendingInviter} さん</strong>からの招待で </>
@@ -127,747 +195,455 @@ export default function LandingPage({ onEnterApp }: Props) {
           <button
             onClick={onEnterApp}
             style={{
-              background: '#fff', color: '#16A34A',
-              border: 'none', borderRadius: 999,
+              background: '#fff', color: '#16A34A', border: 'none', borderRadius: 999,
               padding: '0.32rem 0.95rem', fontSize: '0.82rem', fontWeight: 800,
-              cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              whiteSpace: 'nowrap',
+              cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', whiteSpace: 'nowrap',
             }}
           >
             登録して受け取る →
           </button>
           {pendingMsg && (
-            <p
-              data-testid="referral-inviter-message"
-              style={{
-                flexBasis: '100%', margin: '0.15rem 0 0', textAlign: 'center',
-                fontSize: '0.84rem', fontWeight: 600, fontStyle: 'italic',
-                color: 'rgba(0,0,0,0.96)', lineHeight: 1.5,
-              }}
-            >
-              <span className="inline-flex" style={{ verticalAlign: 'middle', marginRight: '0.3rem' }}><MessageSquare size={15} strokeWidth={2.2} /></span>「{pendingMsg}」{pendingInviter ? ` — ${pendingInviter} さん` : ''}
+            <p data-testid="referral-inviter-message" style={{ flexBasis: '100%', margin: '0.15rem 0 0', textAlign: 'center', fontSize: '0.84rem', fontWeight: 600, fontStyle: 'italic', color: 'rgba(0,0,0,0.96)', lineHeight: 1.5 }}>
+              <span style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: '0.3rem' }}><MessageSquare size={15} strokeWidth={2.2} /></span>「{pendingMsg}」{pendingInviter ? ` — ${pendingInviter} さん` : ''}
             </p>
           )}
         </motion.div>
       )}
 
-      {/* ── 1画面目: 全画面プリズム開花ヒーロー (Crystal級・2026-07-02) ── */}
-      <PrismBloomHero onStart={onEnterApp} />
-      {/* ── 6/1 一般公開カウントダウン ───────────── */}
-      <LaunchCountdownBanner kind="prism" />
-      {/* WW (2026-06-03): PWA インストール促進 (3 訪問目以降に 1 日 1 回) */}
-      <PwaInstallNudge />
-
-      {/* ── ベータ公開告知バー ────────────────────────────── */}
+      {/* ── 告知バー ── */}
       <div style={{
-        background: 'linear-gradient(90deg, #FFB347, #FF6FA9, #B07BD9)',
-        color: '#16162A',
-        textAlign: 'center',
-        padding: '0.5rem 1rem',
-        fontSize: '0.78rem',
-        fontWeight: 700,
-        letterSpacing: '0.04em',
-        position: 'relative',
-        zIndex: 60,
+        background: GRAD, color: '#fff', textAlign: 'center', padding: '0.5rem 1rem',
+        fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1.6,
+        position: 'relative', zIndex: 60,
       }}>
-        {t.banner}
+        <span style={{ whiteSpace: 'nowrap' }}>{TRIAL_BASE_DAYS}日間 完全無料</span>{' · '}
+        <span style={{ whiteSpace: 'nowrap' }}>クレカ登録不要</span>{' · '}
+        <span style={{ whiteSpace: 'nowrap' }}>招待リンクでお互い +{REFERRAL_BONUS_DAYS}日</span>
       </div>
 
-      {/* ── ヘッダ ────────────────────────────── */}
-      <header className="lp-safe" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,10,20,0.92)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-          {/* ロゴ5回タップ = オーナー専用の隠しマスターログイン (PWA対策) */}
+      {/* ── ヘッダ ── */}
+      <header className="lp-safe" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0.8rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+          {/* ロゴ5回タップ = オーナー専用の隠しマスターログイン */}
           <span onClick={tapMaster} style={{ cursor: 'default', display: 'inline-flex' }}>
             <PrismLogo size={28} withWordmark />
           </span>
-          <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-            <a href="#agents" style={navLink} className="lp-nav-link">{t.nav.agents}</a>
-            <a href="#exec" style={navLink} className="lp-nav-link">{t.nav.exec}</a>
-            <a href="#pricing" style={navLink} className="lp-nav-link">{t.nav.pricing}</a>
-            <a href="#faq" style={navLink} className="lp-nav-link">{t.nav.faq}</a>
-            <LangToggle lang={lang} setLang={setLang} />
-            <button onClick={onEnterApp} style={ctaBtnSmall}>{t.nav.cta}</button>
+          <nav style={{ display: 'flex', gap: '0.9rem', alignItems: 'center' }}>
+            <a href="#solutions" style={navLink} className="lp-nav-link">できること</a>
+            <a href="#steps" style={navLink} className="lp-nav-link">使い方</a>
+            <a href="#pricing" style={navLink} className="lp-nav-link">料金</a>
+            <a href="#faq" style={navLink} className="lp-nav-link">FAQ</a>
+            <button onClick={onEnterApp} style={ctaBtnSmall}>無料でためす</button>
           </nav>
         </div>
       </header>
 
-      {/* ── HERO ──────────────────────────────────────────── */}
-      <section className="lp-hero-pad lp-safe" style={{ position: 'relative', padding: '6.5rem 1.25rem 5.5rem', overflow: 'hidden' }}>
-        {/* YY (2026-06-03): Hero 背景に CXO 14 名がうっすら浮遊する 8 秒ループ */}
-        <HeroExecLoop density="normal" />
-        <PrismHeroBackdrop />
+      {/* ══ 1. ヒーロー ══════════════════════════════════════ */}
+      <section className="lp-hero-pad lp-safe" style={{ position: 'relative', padding: '4.5rem 1.25rem 4rem', overflow: 'hidden' }}>
+        {/* プリズム光背景 */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', top: -140, right: -120, width: 430, height: 430, borderRadius: '50%', background: A_PURPLE, opacity: 0.12, filter: 'blur(90px)' }} />
+          <div style={{ position: 'absolute', top: 180, left: -160, width: 400, height: 400, borderRadius: '50%', background: A_BLUE, opacity: 0.12, filter: 'blur(90px)' }} />
+          <div style={{ position: 'absolute', bottom: -140, right: '22%', width: 380, height: 380, borderRadius: '50%', background: A_PINK, opacity: 0.1, filter: 'blur(90px)' }} />
+        </div>
 
-        <div className="lp-hero-grid" style={{ maxWidth: 1240, margin: '0 auto', position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: '1.05fr 0.95fr', gap: '3rem', alignItems: 'center' }}>
-          {/* ── 左: 文言 + CTA ───────── */}
+        <div className="lp-hero-grid" style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: '1.05fr 0.95fr', gap: '3rem', alignItems: 'center' }}>
+          {/* 左: コピー + CTA */}
           <div className="lp-hero-copy">
-            <motion.p
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              style={{ fontSize: '0.72rem', letterSpacing: '0.35em', fontWeight: 700, marginBottom: '1.1rem', background: 'linear-gradient(90deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-            >
-              {t.hero.eyebrow}
+            <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+              style={{ fontSize: '0.68rem', letterSpacing: '0.38em', fontWeight: 700, marginBottom: '1.2rem', background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              CORE PRISM — AI CHIEF OF STAFF
             </motion.p>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1 }}
-              style={{ fontSize: 'clamp(2.2rem, 4.8vw, 4.4rem)', fontWeight: 900, lineHeight: 1.08, letterSpacing: '-0.02em', marginBottom: '1.25rem' }}
-            >
-              <span style={{ background: 'linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.hero.h1Line1}</span>
+            <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.1 }}
+              style={{ fontSize: 'clamp(2.05rem, 5vw, 4rem)', fontWeight: 900, lineHeight: 1.22, letterSpacing: '-0.02em', marginBottom: '1.2rem' }}>
+              夜の事務作業は、
               <br />
-              <span style={{ background: 'linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.hero.h1Line2}</span>
+              <span style={{ background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>AIの役員たち</span>に。
             </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.25 }}
-              style={{ fontSize: 'clamp(1rem, 1.55vw, 1.18rem)', color: 'rgba(0,0,0,0.8)', lineHeight: 1.75, marginBottom: '2rem', maxWidth: 560 }}
-            >
-              <strong style={{ color: '#16162A' }}>{t.hero.sub1}</strong>
-              <br />
-              {t.hero.sub2}
+            <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.28 }}
+              style={{ fontSize: 'clamp(1rem, 1.6vw, 1.18rem)', color: 'rgba(0,0,0,0.75)', lineHeight: 1.9, marginBottom: '1.8rem', maxWidth: 540 }}>
+              売上・経費・請求書・決算書を<strong style={{ color: INK }}>1画面</strong>に。
+              レシートは<strong style={{ color: T_GREEN }}>撮るだけ</strong>、指示は
+              <strong style={{ color: T_PURPLE }}>「Prism、請求書開いて」</strong>のひとこと。
+              経営まるごとおまかせのAI参謀です。
             </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}
-            >
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.42 }}
+              style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <button onClick={onEnterApp} style={ctaBtnHero} className="lp-hero-cta-primary">
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                  {t.hero.cta} <ArrowRight size={18} strokeWidth={2.6} />
+                  無料でためす <ArrowRight size={18} strokeWidth={2.6} />
                 </span>
               </button>
-              <a href="/pricing" style={ctaBtnGhost} className="lp-hero-cta-secondary">
-                {t.hero.cta2}
-              </a>
+              <a href="#pricing" style={ctaBtnGhost} className="lp-hero-cta-secondary">料金を見る</a>
             </motion.div>
-
-            <p style={{ fontSize: '0.78rem', color: 'rgba(0,0,0,0.5)', marginTop: '1.1rem', lineHeight: 1.6 }}>
-              {t.hero.free}
+            <p style={{ fontSize: '0.78rem', color: 'rgba(0,0,0,0.55)', marginTop: '1rem', lineHeight: 1.6 }}>
+              {TRIAL_BASE_DAYS}日間ぜんぶ無料 · クレカ登録不要 · 解約は1タップ
             </p>
-
-            <button
-              type="button"
-              onClick={handleSampleEnter}
-              style={{
-                marginTop: '0.85rem',
-                background: 'transparent',
-                color: 'rgba(0,0,0,0.78)',
-                border: '1px dashed rgba(167,139,250,0.55)',
-                borderRadius: 10,
-                padding: '0.55rem 1rem',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-              }}
-            >
-              <SparklesIcon size={14} color="#a78bfa" />
-              <span>{t.hero.sample}</span>
-              <span style={{ fontSize: '0.7rem', color: 'rgba(0,0,0,0.5)' }}>{t.hero.sampleNote}</span>
+            <button type="button" onClick={handleSampleEnter} style={{
+              marginTop: '0.8rem', background: 'transparent', color: 'rgba(0,0,0,0.82)',
+              border: `1px dashed ${A_PURPLE}80`, borderRadius: 10, padding: '0.55rem 1rem',
+              fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+            }}>
+              <SparklesIcon size={14} color={T_PURPLE} />
+              <span>サンプルで触ってみる</span>
+              <span style={{ fontSize: '0.7rem', color: 'rgba(0,0,0,0.55)' }}>(架空の会社データで体験)</span>
             </button>
           </div>
 
-          {/* ── 右: Live AgentTeamMonitor 風モック ───────── */}
-          <motion.div
-            initial={{ opacity: 0, y: 24, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.9, delay: 0.3, ease: 'easeOut' }}
-            className="lp-hero-mock"
-          >
-            <PrismApproveDemo onEnter={onEnterApp} />
+          {/* 右: 経営ダッシュボード実物風モック */}
+          <motion.div initial={{ opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.9, delay: 0.3, ease: 'easeOut' }} className="lp-hero-mock">
+            <PrismDashboardMock />
           </motion.div>
         </div>
-
-        {/* ── ヒーロー直下: Before → After 3 実例カード ───────── */}
-        <BeforeAfterShowcase />
-
-        {/* 7色プリズム可視化 (元のまま、下に移動) */}
-        <div style={{ maxWidth: 980, margin: '4rem auto 0', position: 'relative', zIndex: 2 }}>
-          <PrismFanVisualization dict={t} onEnterApp={onEnterApp} />
-        </div>
       </section>
 
-      {/* ── 14 役員 リアルタイム稼働ステージ (FF) ───────────────────────────── */}
-      {/* LLLLLL (2026-06-04): CXO タップ で プロフィール モーダル */}
-      <AnimatedExecStage onCta={onEnterApp} ctaLabel={t.hero.cta} onCxoClick={(c) => setOpenCxo(c)} />
-      <CxoProfileModal role={openCxo} onClose={() => setOpenCxo(null)} />
-
-      {/* ── セクション: 7 つのエージェント ──────────────────────────────────────────────────── */}
-      <section id="agents" className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#F6F7FB 0%,#ECEEF6 100%)' }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#a78bfa', fontWeight: 700, marginBottom: '0.75rem' }}>
-              {t.agents.eyebrow}
-            </p>
-            <h2 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.75rem)', fontWeight: 800, lineHeight: 1.2, marginBottom: '1rem' }}>
-              {t.agents.h2Line1}
-              <br />
-              <span style={{ background: 'linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                {t.agents.h2Line2}
-              </span>
+      {/* ══ 2. 課題ブロック ══════════════════════════════════ */}
+      <section className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg, #FFFFFF 0%, #F3F2FB 100%)' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.75rem' }}>
+            <p style={{ fontSize: '0.68rem', letterSpacing: '0.38em', fontWeight: 700, color: T_PURPLE, marginBottom: '0.8rem' }}>SOUND FAMILIAR?</p>
+            <h2 style={h2Style}>
+              ひとりの経営、<br className="prism-sp-br" />
+              <span style={{ background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>こうなっていませんか。</span>
             </h2>
-            <p style={{ color: 'rgba(0,0,0,0.6)', maxWidth: 700, margin: '0 auto', fontSize: '1rem', lineHeight: 1.7 }}>
-              {t.agents.sub}
-            </p>
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
-            {SPECTRUM.map((s, i) => {
-              const item = t.agents.items[s.key];
-              return (
-                <motion.div
-                  key={s.key}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-50px' }}
-                  transition={{ duration: 0.5, delay: i * 0.05 }}
-                  style={{ position: 'relative', background: 'rgba(0,0,0,0.025)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: '1.5rem 1.25rem', overflow: 'hidden' }}
-                >
-                  <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: s.color, opacity: 0.18, filter: 'blur(40px)', pointerEvents: 'none' }} />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', position: 'relative', zIndex: 2 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${s.color}, ${s.color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 24px ${s.color}55, inset 0 1px 0 rgba(0,0,0,0.2)` }}>
-                      <s.Icon size={22} color="#FFFFFF" strokeWidth={2.2} />
-                    </div>
-                    <div>
-                      <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: s.color, fontWeight: 700, marginBottom: 2 }}>{item.role.toUpperCase()}</p>
-                      <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#16162A' }}>{item.name}{t.agents.suffix}</p>
-                    </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
+            {PAINS.map((p, i) => (
+              <motion.div key={p.title} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.5, delay: i * 0.08 }}
+                style={{ position: 'relative', background: '#FFFFFF', border: `1px solid ${p.color}30`, borderRadius: 18, padding: '1.5rem 1.35rem', overflow: 'hidden', boxShadow: '0 8px 28px rgba(22,22,42,0.06)' }}>
+                <div aria-hidden style={{ position: 'absolute', top: -50, right: -50, width: 160, height: 160, borderRadius: '50%', background: p.color, opacity: 0.13, filter: 'blur(50px)', pointerEvents: 'none' }} />
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${p.color}, ${p.color}cc)`, boxShadow: `0 6px 16px ${p.color}50`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>
+                    <p.Icon size={22} color="#fff" strokeWidth={2.2} />
                   </div>
-                  <p style={{ fontSize: '0.875rem', color: 'rgba(0,0,0,0.7)', lineHeight: 1.7, position: 'relative', zIndex: 2 }}>{item.desc}</p>
-                </motion.div>
-              );
-            })}
+                  <h3 style={{ fontSize: '1.08rem', fontWeight: 800, marginBottom: '0.5rem', color: INK }}>{p.title}</h3>
+                  <p style={{ fontSize: '0.88rem', color: 'rgba(0,0,0,0.68)', lineHeight: 1.75, margin: 0 }}>{p.body}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
+          <p style={{ textAlign: 'center', marginTop: '2.25rem', fontSize: 'clamp(1rem, 2vw, 1.15rem)', color: 'rgba(22,22,42,0.82)', lineHeight: 1.9, fontWeight: 600 }}>
+            その「もうひとつの仕事」を、Prismがぜんぶ引き受けます。
+          </p>
         </div>
       </section>
 
-      {/* ── セクション: 実行する AI ──────────────────────────────────────────────────── */}
-      <section id="exec" className="lp-section-pad" style={{ padding: sectionPad, background: '#ECEEF6' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#fbbf24', fontWeight: 700, marginBottom: '0.75rem' }}>{t.exec.eyebrow}</p>
-            <h2 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.75rem)', fontWeight: 800, lineHeight: 1.2, marginBottom: '1rem' }}>
-              {t.exec.h2Line1}
-              <br />
-              <span style={{ background: 'linear-gradient(90deg,#fbbf24,#ff9842,#ff5757)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.exec.h2Line2}</span>
+      {/* ══ 3. 解決ブロック (Before → After) ═════════════════ */}
+      <section id="solutions" className="lp-section-pad" style={{ padding: sectionPad, background: '#F3F2FB' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.75rem' }}>
+            <p style={{ fontSize: '0.68rem', letterSpacing: '0.38em', fontWeight: 700, color: T_BLUE, marginBottom: '0.8rem' }}>WHAT PRISM DOES</p>
+            <h2 style={h2Style}>
+              数字も、書類も、下書きも。<br className="prism-sp-br" />
+              <span style={{ background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ぜんぶここで終わる。</span>
             </h2>
-            <p style={{ color: 'rgba(0,0,0,0.6)', maxWidth: 700, margin: '0 auto', fontSize: '1rem', lineHeight: 1.7 }}>
-              {t.exec.sub}
+            <p style={{ color: 'rgba(0,0,0,0.62)', maxWidth: 640, margin: '0.9rem auto 0', fontSize: '0.95rem', lineHeight: 1.85 }}>
+              経理ソフトでも、チャットAIでもない。あなたの会社を覚えて動く「AIの経営チーム」。
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            {EXEC_ICONS.map((f, i) => {
-              const item = t.exec.items[f.key];
-              return (
-                <motion.div key={f.key} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.4, delay: (i % 4) * 0.05 }} style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 14, padding: '1.25rem' }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 10,
-                    background: `linear-gradient(135deg, ${f.color}, ${f.color}cc)`,
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    marginBottom: '0.75rem',
-                    boxShadow: `0 6px 16px ${f.color}44, inset 0 1px 0 rgba(0,0,0,0.2)`,
-                  }}>
-                    <f.Icon size={20} color="#fff" strokeWidth={2.2} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1rem' }}>
+            {SOLUTIONS.map((s, i) => (
+              <motion.div key={s.tag} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.5, delay: i * 0.07 }}
+                style={{ position: 'relative', background: '#FFFFFF', border: `1px solid ${s.color}30`, borderRadius: 20, padding: '1.5rem 1.35rem', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 32px rgba(22,22,42,0.07)' }}>
+                <div aria-hidden style={{ position: 'absolute', top: -60, right: -60, width: 180, height: 180, borderRadius: '50%', background: s.color, opacity: 0.12, filter: 'blur(55px)', pointerEvents: 'none' }} />
+                <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: `linear-gradient(135deg, ${s.color}, ${s.color}cc)`, boxShadow: `0 6px 14px ${s.color}50`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <s.Icon size={19} color="#fff" strokeWidth={2.3} />
                   </div>
-                  <p style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{item.label}</p>
-                  <p style={{ fontSize: '0.8rem', color: 'rgba(0,0,0,0.6)', lineHeight: 1.6 }}>{item.desc}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── ONE PRISM ──────────────────────────────────────────── */}
-      <section className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#ECEEF6 0%,#F6F7FB 100%)' }}>
-        <div className="lp-two-col" style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', alignItems: 'center' }}>
-          <div>
-            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#60a5fa', fontWeight: 700, marginBottom: '0.75rem' }}>{t.prism.eyebrow}</p>
-            <h2 style={{ fontSize: 'clamp(1.75rem, 3.2vw, 2.5rem)', fontWeight: 800, lineHeight: 1.2, marginBottom: '1.25rem' }}>{t.prism.h2Line1}<br />{t.prism.h2Line2}</h2>
-            <p style={{ color: 'rgba(0,0,0,0.7)', fontSize: '1rem', lineHeight: 1.8, marginBottom: '1.5rem' }}>{t.prism.body}<strong style={{ color: '#16162A' }}>{t.prism.bodyEm}</strong>{t.prism.bodyTail}</p>
-            <p style={{ color: 'rgba(0,0,0,0.55)', fontSize: '0.9rem', lineHeight: 1.7 }}>{t.prism.sub}</p>
-          </div>
-          <PrismDashboardMock dict={t} />
-        </div>
-      </section>
-
-      {/* ── 価格 ──────────────────────────────────────────── */}
-      {/* 章扉：実物で語る（雑誌のリズム） */}
-      <section style={{ padding: '5.5rem 1.5rem', background: 'linear-gradient(150deg, #0d1022, #151735 55%, #0d1022)' }}>
-        <div style={{ maxWidth: 980, margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '2.5rem' }}>
-            <div style={{ flex: '0 0 auto', width: 'min(320px, 78vw)', borderRadius: 18, overflow: 'hidden', border: '1px solid #A78BFA44', boxShadow: '0 40px 80px -40px rgba(0,0,0,.9)' }}>
-              <img src="/lp/prism-poster.jpg" alt="Prismが実際に生成したアクションプランのポスター" loading="lazy" style={{ width: '100%', display: 'block' }} />
-            </div>
-            <div style={{ maxWidth: 460, textAlign: 'left' }}>
-              <p style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', letterSpacing: '0.32em', textTransform: 'uppercase', color: '#A78BFA', fontSize: '0.78rem', margin: 0 }}>Real Output</p>
-              <h2 style={{ fontSize: 'clamp(1.5rem, 3.4vw, 2.1rem)', fontWeight: 700, lineHeight: 1.6, letterSpacing: '0.03em', margin: '0.7rem 0 0.9rem', color: '#fff' }}>会議メモが、<br />1枚の“作戦”になる。</h2>
-              <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.92rem', lineHeight: 2, margin: 0 }}>走り書きのメモを渡すだけで、AIが「見出し・要約・やること・根拠」を整理し、そのまま共有できる美しい一枚に仕上げます。</p>
-              <p style={{ color: '#A78BFA', fontSize: '0.75rem', letterSpacing: '0.06em', marginTop: '1rem' }}>↑ Prism 成果物スタジオの実際の出力</p>
-            </div>
-        </div>
-      </section>
-
-      <section id="pricing" className="lp-section-pad" style={{ padding: sectionPad, background: '#F6F7FB' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#f472b6', fontWeight: 700, marginBottom: '0.75rem' }}>{t.pricing.eyebrow}</p>
-            <h2 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.5rem)', fontWeight: 800, marginBottom: '0.5rem' }}>{t.pricing.h2Lead}<span style={{ background: 'linear-gradient(90deg,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.pricing.h2Accent}</span></h2>
-            <p style={{ color: 'rgba(0,0,0,0.6)', fontSize: '0.95rem' }}>{t.pricing.sub}</p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
-            <PriceCard plan={t.pricing.plans.starter} suffix={t.pricing.suffixMonth} cta={t.pricing.ctaTrial} popularLabel={t.pricing.popular} onClick={onEnterApp} />
-            <PriceCard plan={t.pricing.plans.standard} suffix={t.pricing.suffixMonth} cta={t.pricing.ctaTrial} popularLabel={t.pricing.popular} highlight onClick={onEnterApp} />
-            <PriceCard plan={t.pricing.plans.exclusive} suffix={t.pricing.suffixMonth} cta={t.pricing.ctaApply} popularLabel={t.pricing.popular} onClick={onEnterApp} />
-          </div>
-          <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'rgba(0,0,0,0.5)', marginTop: '1.75rem' }}>{t.pricing.annual}</p>
-        </div>
-      </section>
-
-      {/* ── FAQ ──────────────────────────────────────────── */}
-      <section id="faq" className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg,#F6F7FB 0%,#F1F2F9 100%)' }}>
-        <div style={{ maxWidth: 820, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: '#4ade80', fontWeight: 700, marginBottom: '0.75rem' }}>{t.faq.eyebrow}</p>
-            <h2 style={{ fontSize: 'clamp(1.75rem, 3.2vw, 2.4rem)', fontWeight: 800, marginBottom: '0.75rem' }}>{t.faq.h2}</h2>
-            <p style={{ color: 'rgba(0,0,0,0.6)', fontSize: '0.95rem' }}>{t.faq.sub}</p>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {t.faq.items.map((item, i) => (
-              <FaqItem key={i} question={item.q} answer={item.a} />
+                  <span style={{ fontSize: '0.64rem', letterSpacing: '0.18em', fontWeight: 800, color: s.textColor, textTransform: 'uppercase' }}>{s.tag}</span>
+                </div>
+                <h3 style={{ position: 'relative', zIndex: 2, fontSize: '1.05rem', fontWeight: 800, color: INK, lineHeight: 1.5, margin: '0 0 0.85rem' }}>{s.title}</h3>
+                <div style={{ position: 'relative', zIndex: 2, marginBottom: '0.7rem' }}>
+                  <p style={{ fontSize: '0.62rem', letterSpacing: '0.18em', fontWeight: 700, color: 'rgba(0,0,0,0.42)', margin: '0 0 0.3rem' }}>BEFORE</p>
+                  <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.6)', lineHeight: 1.65, margin: 0 }}>{s.before}</p>
+                </div>
+                <div aria-hidden style={{ height: 1, background: `linear-gradient(90deg, transparent, ${s.color}66, transparent)`, margin: '0.2rem 0 0.8rem' }} />
+                <div style={{ position: 'relative', zIndex: 2, marginTop: 'auto' }}>
+                  <p style={{ fontSize: '0.62rem', letterSpacing: '0.18em', fontWeight: 800, color: s.textColor, margin: '0 0 0.3rem' }}>WITH PRISM</p>
+                  <p style={{ fontSize: '0.92rem', color: INK, lineHeight: 1.7, fontWeight: 600, margin: 0 }}>{s.after}</p>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── 最終 CTA ──────────────────────────────────────────── */}
-      <section style={{ padding: '5rem 1.25rem', background: 'radial-gradient(ellipse at center, rgba(168,85,247,0.18) 0%, #F6F7FB 70%)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 50%, rgba(255,87,87,0.1) 0%, transparent 40%), radial-gradient(circle at 70% 50%, rgba(96,165,250,0.1) 0%, transparent 40%)' }} />
-        <div style={{ position: 'relative', zIndex: 2, maxWidth: 760, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', fontWeight: 900, lineHeight: 1.2, marginBottom: '1.25rem' }}>
-            {t.final.h2Lead} <span style={{ background: 'linear-gradient(90deg,#ff5757,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.final.h2Accent}</span> {t.final.h2Tail}
+      {/* ══ 4. 使い方3ステップ ═══════════════════════════════ */}
+      <section id="steps" className="lp-section-pad" style={{ padding: sectionPad, background: '#FFFFFF' }}>
+        <div style={{ maxWidth: 980, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.75rem' }}>
+            <p style={{ fontSize: '0.68rem', letterSpacing: '0.38em', fontWeight: 700, color: T_AMBER, marginBottom: '0.8rem' }}>HOW IT WORKS</p>
+            <h2 style={h2Style}>
+              はじめ方は、<span style={{ background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>3ステップ。</span>
+            </h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
+            {STEPS.map((st, i) => (
+              <motion.div key={st.n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.5, delay: i * 0.1 }}
+                style={{ background: 'linear-gradient(180deg, #F3F2FB, #FFFFFF)', border: '1px solid rgba(22,22,42,0.08)', borderRadius: 18, padding: '1.6rem 1.35rem 1.5rem', textAlign: 'center' }}>
+                <div style={{ width: 54, height: 54, borderRadius: '50%', margin: '0 auto 0.9rem', background: GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 10px 24px ${A_PURPLE}45` }}>
+                  <st.Icon size={24} color="#fff" strokeWidth={2.2} />
+                </div>
+                <p style={{ fontSize: '0.75rem', color: T_PURPLE, margin: '0 0 0.35rem', fontWeight: 800, letterSpacing: '0.18em' }}>STEP {st.n}</p>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: INK, margin: '0 0 0.5rem' }}>{st.title}</h3>
+                <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.66)', lineHeight: 1.75, margin: 0 }}>{st.body}</p>
+              </motion.div>
+            ))}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '2.25rem' }}>
+            <button onClick={onEnterApp} style={{ ...ctaBtnHero, fontSize: '0.95rem', padding: '0.9rem 1.85rem' }}>
+              いま、無料ではじめる
+            </button>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.5)', marginTop: '0.8rem' }}>{TRIAL_BASE_DAYS}日間無料 · クレカ不要</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 5. 料金 ══════════════════════════════════════════ */}
+      <section id="pricing" className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg, #FFFFFF 0%, #F3F2FB 100%)' }}>
+        <div style={{ maxWidth: 880, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+            <p style={{ fontSize: '0.68rem', letterSpacing: '0.38em', fontWeight: 700, color: T_PINK, marginBottom: '0.8rem' }}>PRICING</p>
+            <h2 style={h2Style}>
+              まず{TRIAL_BASE_DAYS}日間、<span style={{ background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>無料でぜんぶ。</span>
+            </h2>
+            <p style={{ color: 'rgba(0,0,0,0.62)', fontSize: '0.92rem', marginTop: '0.8rem', lineHeight: 1.8 }}>
+              クレジットカード登録は不要。人を1人雇うより、はるかに軽い月額で。
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
+            {PLANS.map((p) => (
+              <motion.div key={p.id} whileHover={{ y: -4 }} transition={{ duration: 0.2 }}
+                style={{
+                  position: 'relative',
+                  background: p.highlight ? `linear-gradient(180deg, ${A_PURPLE}14, #FFFFFF 55%)` : '#FFFFFF',
+                  border: p.highlight ? `1.5px solid ${A_PURPLE}` : '1px solid rgba(22,22,42,0.12)',
+                  borderRadius: 20, padding: '1.8rem 1.5rem',
+                  boxShadow: p.highlight ? `0 18px 48px ${A_PURPLE}28` : '0 6px 20px rgba(22,22,42,0.05)',
+                }}>
+                {p.highlight && (
+                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: GRAD, color: '#fff', fontSize: '0.65rem', fontWeight: 800, padding: '0.3rem 0.9rem', borderRadius: 999, letterSpacing: '0.15em', whiteSpace: 'nowrap' }}>人気</div>
+                )}
+                <p style={{ fontSize: '0.78rem', color: T_PURPLE, margin: '0 0 0.4rem', fontWeight: 700 }}>— {p.tag}</p>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.3rem' }}>{p.name}</h3>
+                <p style={{ margin: '0 0 0.4rem' }}>
+                  <span style={{ fontSize: '2.1rem', fontWeight: 800 }}>{p.price}</span>
+                  <span style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.5)', fontWeight: 500 }}> / 月</span>
+                </p>
+                <div aria-hidden style={{ height: 1, background: 'rgba(22,22,42,0.1)', margin: '0.9rem 0' }} />
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.4rem' }}>
+                  {p.features.map((f) => (
+                    <li key={f} style={{ fontSize: '0.87rem', color: 'rgba(0,0,0,0.78)', lineHeight: 1.7, marginBottom: '0.45rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <Check size={15} color={A_PURPLE} strokeWidth={2.6} style={{ flexShrink: 0, marginTop: 3 }} />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button onClick={onEnterApp} style={{
+                  width: '100%',
+                  background: p.highlight ? GRAD : 'rgba(22,22,42,0.05)',
+                  color: p.highlight ? '#fff' : INK,
+                  border: p.highlight ? 'none' : '1px solid rgba(22,22,42,0.18)',
+                  padding: '0.95rem 1rem', borderRadius: 12,
+                  fontSize: '0.92rem', fontWeight: 800, cursor: 'pointer',
+                  boxShadow: p.highlight ? `0 10px 28px ${A_PURPLE}50` : 'none',
+                  letterSpacing: '0.02em',
+                }}>
+                  {p.name} を{TRIAL_BASE_DAYS}日間 無料でためす
+                </button>
+                <p style={{ textAlign: 'center', fontSize: '0.7rem', color: 'rgba(0,0,0,0.5)', margin: '0.55rem 0 0' }}>クレカ不要 · いつでも解約</p>
+              </motion.div>
+            ))}
+          </div>
+          <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'rgba(0,0,0,0.5)', marginTop: '1.5rem' }}>年払いで2ヶ月分割引 · 法人・チームは別途お問い合わせください</p>
+        </div>
+      </section>
+
+      {/* ══ 6. FAQ ═══════════════════════════════════════════ */}
+      <section id="faq" className="lp-section-pad" style={{ padding: sectionPad, background: '#F3F2FB' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+            <p style={{ fontSize: '0.68rem', letterSpacing: '0.38em', fontWeight: 700, color: T_GREEN, marginBottom: '0.8rem' }}>FAQ</p>
+            <h2 style={h2Style}>よくあるご質問</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {FAQS.map((f) => <FaqItem key={f.q} question={f.q} answer={f.a} />)}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 7. 最終CTA ═══════════════════════════════════════ */}
+      <section style={{ padding: '4.5rem 1.25rem 5rem', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#FFFFFF' }}>
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 30% 40%, ${A_PURPLE}18 0%, transparent 45%), radial-gradient(circle at 70% 60%, ${A_BLUE}16 0%, transparent 45%)` }} />
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: 720, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 'clamp(1.8rem, 4.5vw, 2.9rem)', fontWeight: 900, lineHeight: 1.35, marginBottom: '1.1rem' }}>
+            今夜の事務作業を、
+            <br />
+            <span style={{ background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>最後の夜にしよう。</span>
           </h2>
-          <p style={{ color: 'rgba(0,0,0,0.65)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.7 }}>{t.final.sub}</p>
-          <button onClick={onEnterApp} style={{ ...ctaBtnHero, display: 'inline-flex', alignItems: 'center', gap: '0.55rem' }}>
-            {t.final.cta}
+          <p style={{ color: 'rgba(0,0,0,0.62)', fontSize: '0.95rem', marginBottom: '1.8rem', lineHeight: 1.85 }}>
+            {TRIAL_BASE_DAYS}日間、すべての機能を無料で。AI役員たちは、今日から出社できます。
+          </p>
+          <button onClick={onEnterApp} style={ctaBtnHero}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              無料でためす <ArrowRight size={18} strokeWidth={2.6} />
+            </span>
           </button>
         </div>
       </section>
 
-      {/* ── フッタ ──────────────────────────────────────────── */}
-      <footer id="contact" style={{ background: '#FFFFFF', padding: '3rem 1.25rem 2rem', borderTop: '1px solid rgba(0,0,0,0.04)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
+      {/* ── フッタ ── */}
+      <footer id="contact" style={{ background: '#FFFFFF', padding: '3rem 1.25rem 2rem', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
           <div>
             <PrismLogo size={28} withWordmark />
-            <p style={{ fontSize: '0.8rem', color: 'rgba(0,0,0,0.45)', marginTop: '0.75rem', lineHeight: 1.7 }}>{t.footer.tagline}</p>
+            <p style={{ fontSize: '0.8rem', color: 'rgba(0,0,0,0.5)', marginTop: '0.75rem', lineHeight: 1.7 }}>
+              経営まるごとおまかせの<br />AI参謀。
+            </p>
           </div>
           <div>
-            <p style={footHead}>{t.footer.product}</p>
-            <a href="#agents" style={footLink}>{t.footer.agents}</a>
-            <a href="#exec" style={footLink}>{t.footer.exec}</a>
-            <a href="#pricing" style={footLink}>{t.footer.pricing}</a>
-            <a href="/iris" style={footLink}>{t.footer.iris}</a>
+            <p style={footHead}>PRODUCT</p>
+            <a href="#solutions" style={footLink} className="lp-tap-link">できること</a>
+            <a href="#pricing" style={footLink} className="lp-tap-link">料金</a>
+            <a href="/iris" style={footLink} className="lp-tap-link">姉妹ブランド · CORE Iris</a>
           </div>
           <div>
-            <p style={footHead}>{t.footer.company}</p>
-            <a href="/faq" style={footLink}>よくある質問</a>
-            <a href="/terms" style={footLink}>{t.footer.terms}</a>
-            <a href="/privacy" style={footLink}>{t.footer.privacy}</a>
-            <a href="/tokushoho" style={footLink}>{t.footer.tokushou}</a>
+            <p style={footHead}>COMPANY</p>
+            <a href="/faq" style={footLink} className="lp-tap-link">よくある質問</a>
+            <a href="/terms" style={footLink} className="lp-tap-link">利用規約</a>
+            <a href="/privacy" style={footLink} className="lp-tap-link">プライバシー</a>
+            <a href="/tokushoho" style={footLink} className="lp-tap-link">特商法表記</a>
           </div>
           <div>
-            <p style={footHead}>{t.footer.contact}</p>
-            <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', lineHeight: 1.7 }}>{t.footer.contactText}<br /><a href="mailto:hello@coreprism.app" style={{ color: '#a78bfa', textDecoration: 'none', display: 'inline-block', padding: '0.65rem 0.25rem', margin: '-0.35rem -0.25rem' }}>hello@coreprism.app</a></p>
+            <p style={footHead}>CONTACT</p>
+            <p style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)', lineHeight: 1.7 }}>
+              お気軽にどうぞ。<br />
+              <a href="mailto:hello@coreprism.app" style={{ color: T_PURPLE, textDecoration: 'none', display: 'inline-block', padding: '0.65rem 0.25rem', margin: '-0.35rem -0.25rem' }}>hello@coreprism.app</a>
+            </p>
           </div>
         </div>
-        <div style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: 'rgba(0,0,0,0.35)' }}>
-          {t.footer.copyright.replace('{year}', String(new Date().getFullYear()))}
+        <div style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: 'rgba(0,0,0,0.4)' }}>
+          © {new Date().getFullYear()} CORE Prism — AI Chief of Staff
         </div>
       </footer>
+
+      {/* モバイル調整 */}
+      <style>{`
+        .prism-sp-br { display: none; }
+        @media (max-width: 767px) {
+          .prism-sp-br { display: inline; }
+        }
+      `}</style>
     </div>
   );
 }
 
-// ─── Before → After 3 実例ショーケース ──────────────────────────
-// オーナー指示: 動く例 + 数字 + 計算式の明示で「触らなくても伝わる」LP
-// 単価¥3,000/h ベースで節約金額を計算 (¥50/分 = ¥3,000/60)
-function BeforeAfterShowcase() {
-  const items: {
-    Icon: LucideIcon;
-    tag: string;
-    color: string;
-    before: { label: string; body: string };
-    after: { label: string; body: string };
-    save: { minutes: number; calcNote: string; monthlyHint?: string };
-  }[] = [
-    {
-      Icon: Mic2,
-      tag: '議事録',
-      color: '#60a5fa',
-      before: { label: '1 時間の会議録音 + 殴り書きメモ', body: '聞き直し → 整形 → 共有まで 60 分かかる' },
-      after:  { label: '3 分で章立て + アクション + 担当者付き', body: 'COO 役員 AI が要点・決定・宿題を自動構造化' },
-      save:   { minutes: 57, calcNote: '60 分 → 3 分 = 節約 57 分 (¥3,000/h 換算で約 ¥2,850 相当)' },
-    },
-    {
-      Icon: Handshake,
-      tag: 'DM 案件 (Iris)',
-      color: '#f472b6',
-      before: { label: 'ブランドからの DM スクショ 1 枚', body: '条件・希望ギャラ・締切を読み直し → 表に転記で 5 分' },
-      after:  { label: '30 秒で案件カード (ブランド/報酬/締切/1 文要約)', body: 'CSO 役員 AI が文面を読み取り、CRM に自動登録' },
-      save:   { minutes: 4.5, calcNote: '5 分 → 30 秒 = 節約 4.5 分 (¥3,000/h で約 ¥225/件)', monthlyHint: '月 10 件で ¥2,250 / 月' },
-    },
-    {
-      Icon: ReceiptIcon,
-      tag: '経費レシート',
-      color: '#4ade80',
-      before: { label: 'レシート 1 枚撮影 → 手で入力', body: '日付・店舗・科目・税率を手打ちで 3 分' },
-      after:  { label: '日付・店舗・科目・税率を自動入力', body: 'CFO 役員 AI が OCR + 仕訳 + freee/弥生 連携まで' },
-      save:   { minutes: 2.5, calcNote: '3 分 → 30 秒 = 節約 2.5 分 (¥3,000/h で約 ¥125/枚)', monthlyHint: '月 30 枚で ¥3,750 / 月' },
-    },
+// ─── ヒーロー: 経営ダッシュボード実物風モック ─────────────────
+// 「1画面に数字が集まる + チャット指令で実行」を1枚の画で伝える。
+// 数字は「サンプル」表記つき (数字の嘘禁止)。
+function PrismDashboardMock() {
+  const metrics = [
+    { Icon: Wallet, label: '今月の売上', value: '¥812,400', color: A_BLUE, textColor: T_BLUE },
+    { Icon: Receipt, label: '経費', value: '¥238,900', color: A_GREEN, textColor: T_GREEN },
+    { Icon: FileText, label: '未回収の請求書', value: '2件', color: A_AMBER, textColor: T_AMBER },
+    { Icon: BookOpen, label: '決算書', value: '自動更新', color: A_PINK, textColor: T_PINK },
   ];
-
   return (
-    <div className="lp-hero-examples" style={{ maxWidth: 1100, margin: '3.5rem auto 0', position: 'relative', zIndex: 2 }}>
-      <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: '#a78bfa', fontWeight: 700, marginBottom: '0.55rem' }}>
-          3 EXAMPLES · BEFORE / AFTER
-        </p>
-        <h2 style={{ fontSize: 'clamp(1.4rem, 2.6vw, 1.95rem)', fontWeight: 800, lineHeight: 1.35, margin: 0 }}>
-          触らなくても伝わる、<span style={{ background: 'linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>3 つの実例</span>。
-        </h2>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1rem' }}>
-        {items.map((ex, i) => (
-          <motion.div
-            key={ex.tag}
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-30px' }}
-            transition={{ duration: 0.5, delay: i * 0.08 }}
-            style={{
-              position: 'relative',
-              // 半透明だと背後の演出が透けて「黒ずみ」に見える。カードは常に不透明なクリーン白。
-              background: '#FFFFFF',
-              border: `1px solid ${ex.color}38`,
-              borderRadius: 18,
-              padding: '1.2rem 1.2rem 1.3rem',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              boxShadow: '0 10px 34px rgba(22,22,42,0.08)',
-            }}
-          >
-            <div aria-hidden style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', background: ex.color, opacity: 0.18, filter: 'blur(50px)', pointerEvents: 'none' }} />
-
-            {/* タグ */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.85rem', position: 'relative', zIndex: 2 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: `linear-gradient(135deg, ${ex.color}, ${ex.color}cc)`,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: `0 6px 14px ${ex.color}55, inset 0 1px 0 rgba(0,0,0,0.2)`,
-              }}>
-                <ex.Icon size={19} color="#fff" strokeWidth={2.3} />
+    <div style={{ maxWidth: 420, margin: '0 auto', width: '100%' }}>
+      <div style={{
+        borderRadius: 22, padding: '16px 16px 18px',
+        background: 'linear-gradient(170deg, #1B1B33, #101022)',
+        border: `1px solid ${A_PURPLE}55`,
+        boxShadow: `0 26px 70px rgba(22,22,42,0.4), 0 0 60px ${A_PURPLE}22`,
+      }}>
+        {/* ウィンドウバー */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5757' }} />
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24' }} />
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80' }} />
+          <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>coreprism.app · サンプル</span>
+        </div>
+        {/* 数字グリッド */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {metrics.map((m) => (
+            <div key={m.label} style={{ borderRadius: 12, padding: '10px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                <m.Icon size={11} color={m.color} strokeWidth={2.2} />
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.65)', letterSpacing: '0.06em' }}>{m.label}</span>
               </div>
-              <span style={{ fontSize: '0.66rem', letterSpacing: '0.22em', fontWeight: 700, color: ex.color, textTransform: 'uppercase' }}>{ex.tag}</span>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{m.value}</div>
             </div>
-
-            {/* Before */}
-            <div style={{ position: 'relative', zIndex: 2, marginBottom: '0.7rem' }}>
-              <p style={{ fontSize: '0.62rem', letterSpacing: '0.2em', fontWeight: 700, color: 'rgba(0,0,0,0.42)', marginBottom: '0.35rem' }}>
-                BEFORE · いま
-              </p>
-              <p style={{ fontSize: '0.88rem', color: 'rgba(0,0,0,0.65)', lineHeight: 1.55, margin: 0 }}>
-                <strong style={{ color: 'rgba(0,0,0,0.85)' }}>{ex.before.label}</strong>
-              </p>
-              <p style={{ fontSize: '0.78rem', color: 'rgba(0,0,0,0.5)', lineHeight: 1.6, margin: '0.25rem 0 0' }}>
-                {ex.before.body}
-              </p>
-            </div>
-
-            {/* 矢印 */}
-            <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0.2rem 0 0.7rem' }}>
-              <motion.div
-                animate={{ y: [0, 4, 0] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                  fontSize: '0.7rem', fontWeight: 700, color: ex.color, letterSpacing: '0.1em',
-                }}
-              >
-                ↓ AI が引き受ける ↓
-              </motion.div>
-            </div>
-
-            {/* After */}
-            <div style={{ position: 'relative', zIndex: 2, marginBottom: '0.85rem' }}>
-              <p style={{ fontSize: '0.62rem', letterSpacing: '0.2em', fontWeight: 700, color: ex.color, marginBottom: '0.35rem' }}>
-                AFTER · Prism なら
-              </p>
-              <p style={{ fontSize: '0.95rem', color: '#16162A', lineHeight: 1.5, margin: 0, fontWeight: 700 }}>
-                {ex.after.label}
-              </p>
-              <p style={{ fontSize: '0.8rem', color: 'rgba(0,0,0,0.72)', lineHeight: 1.65, margin: '0.3rem 0 0' }}>
-                {ex.after.body}
-              </p>
-            </div>
-
-            {/* 節約バッジ (計算式付き) */}
-            <div style={{
-              position: 'relative', zIndex: 2,
-              marginTop: 'auto',
-              background: `${ex.color}1a`,
-              border: `1px solid ${ex.color}40`,
-              borderRadius: 12,
-              padding: '0.6rem 0.75rem',
-            }}>
-              <p style={{ fontSize: '0.78rem', fontWeight: 800, color: ex.color, margin: 0, lineHeight: 1.35 }}>
-                {ex.save.calcNote}
-              </p>
-              {ex.save.monthlyHint && (
-                <p style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.7)', margin: '0.2rem 0 0', lineHeight: 1.4 }}>
-                  → {ex.save.monthlyHint}
-                </p>
-              )}
-            </div>
-          </motion.div>
-        ))}
+          ))}
+        </div>
+        {/* チャット指令 */}
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ alignSelf: 'flex-end', maxWidth: '86%', background: GRAD, borderRadius: '12px 12px 3px 12px', padding: '7px 12px' }}>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', lineHeight: 1.5 }}>Prism、今月の請求書ぜんぶ送って</span>
+          </div>
+          <div style={{ alignSelf: 'flex-start', maxWidth: '92%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '12px 12px 12px 3px', padding: '7px 12px' }}>
+            <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.92)', lineHeight: 1.6 }}>
+              <Check size={10} color="#4ade80" strokeWidth={2.6} style={{ verticalAlign: -1, marginRight: 4 }} />
+              請求書3件の下書きができました。確認して承認すると送信します。
+            </span>
+          </div>
+        </div>
+        {/* AI役員行 */}
+        <div style={{ display: 'flex', gap: 6, marginTop: 12, overflow: 'hidden' }}>
+          {[
+            { label: 'CFO 財務', color: A_BLUE },
+            { label: 'CMO 広報', color: A_PINK },
+            { label: 'CSO 営業', color: A_AMBER },
+            { label: '+10名', color: A_PURPLE },
+          ].map((c) => (
+            <span key={c.label} style={{ flexShrink: 0, fontSize: 9.5, fontWeight: 700, color: '#fff', background: `${c.color}33`, border: `1px solid ${c.color}66`, borderRadius: 999, padding: '3px 9px', letterSpacing: '0.04em' }}>{c.label}</span>
+          ))}
+        </div>
       </div>
-
-      {/* 注記: ぼかしグレー背景上でも読めるよう、半透明白の帯 + 濃文字 (コントラスト4.5:1確保) */}
-      <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'rgba(0,0,0,0.68)', margin: '0.95rem auto 0', lineHeight: 1.6, background: 'rgba(255,255,255,0.75)', borderRadius: 10, padding: '0.5rem 0.85rem', width: 'fit-content', maxWidth: '100%' }}>
-        ※ 時間単価 ¥3,000/h で試算した目安です。業種・スキルにより個人差があります。
+      <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'rgba(0,0,0,0.55)', marginTop: '0.8rem', lineHeight: 1.6 }}>
+        数字は1画面 → 指示はチャット → 実行はAI役員 (画面はサンプル)
       </p>
     </div>
-  );
-}
-
-function PrismHeroBackdrop() {
-  return (
-    <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
-      {/* 光源はブランド色のやわらかい光に（黒い霧は白LP上で「汚れ」に見えるため禁止）。
-          top はモバイルでヒーローが縦に伸びても実例カードの背後に降りてこないよう px 上限でクランプ。 */}
-      <motion.div animate={{ opacity: [0.4, 0.7, 0.4], scale: [1, 1.1, 1] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', left: '50%', top: 'min(38%, 480px)', width: 380, height: 380, marginLeft: -190, marginTop: -190, borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.30) 0%, rgba(167,139,250,0) 60%)', filter: 'blur(40px)' }} />
-      {SPECTRUM.map((s, i) => {
-        const angle = -75 + i * 25;
-        return <motion.div key={s.key} initial={{ opacity: 0 }} animate={{ opacity: [0.18, 0.35, 0.18] }} transition={{ duration: 4 + i * 0.3, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 }} style={{ position: 'absolute', left: '50%', top: 'min(38%, 480px)', width: 4, height: '42vh', transformOrigin: 'top center', transform: `translateX(-50%) rotate(${angle}deg)`, background: `linear-gradient(180deg, ${s.color}cc 0%, ${s.color}00 80%)`, filter: 'blur(8px)' }} />;
-      })}
-      <div style={{ position: 'absolute', top: -200, right: -200, width: 600, height: 600, borderRadius: '50%', background: '#a78bfa', opacity: 0.12, filter: 'blur(80px)' }} />
-      <div style={{ position: 'absolute', bottom: -200, left: -200, width: 600, height: 600, borderRadius: '50%', background: '#60a5fa', opacity: 0.12, filter: 'blur(80px)' }} />
-    </div>
-  );
-}
-
-function PrismFanVisualization({ dict, onEnterApp }: { dict: Dictionary; onEnterApp: () => void }) {
-  // モバイルでは横スクロールに続きがあることを可視化する:
-  // 右端フェード + 矢印 + スワイプヒント。最後(Life)まで見たら「7人そろいました」の到達報酬を出す。
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const [scrollable, setScrollable] = useState(false);
-  const [atEnd, setAtEnd] = useState(false);
-  const [reached, setReached] = useState(false);
-
-  const measure = useCallback(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const canScroll = el.scrollWidth > el.clientWidth + 8;
-    setScrollable(canScroll);
-    const end = el.scrollLeft + el.clientWidth >= el.scrollWidth - 12;
-    setAtEnd(end);
-    if (canScroll && end) setReached(true);
-  }, []);
-
-  useEffect(() => {
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [measure]);
-
-  return (
-    <div>
-      <div className="lp-prism-fan" style={{ position: 'relative', width: '100%', height: 320, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-        <motion.div animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, #fff 0%, rgba(0,0,0,0.4) 50%, transparent 100%)', boxShadow: '0 0 60px rgba(0,0,0,0.5)', zIndex: 5 }} />
-        <div ref={scrollerRef} onScroll={measure} className="lp-prism-fan-cards" style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', width: '100%', maxWidth: 880 }}>
-          {SPECTRUM.map((s, i) => {
-            const offset = i - 3;
-            const rotateBase = offset * 8;
-            const item = dict.agents.items[s.key];
-            return <motion.div key={s.key} className="lp-prism-fan-card-min" initial={{ opacity: 0, y: 20, rotate: 0 }} animate={{ opacity: 1, y: 0, rotate: rotateBase }} transition={{ duration: 0.7, delay: 0.4 + i * 0.08, ease: 'easeOut' }} style={{ flex: '1 1 0', minWidth: 70, maxWidth: 130, aspectRatio: '3 / 5', borderRadius: 14, background: `linear-gradient(180deg, ${s.color} 0%, ${s.color}88 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0.6rem 0.4rem', color: '#16162A', fontSize: '0.7rem', fontWeight: 700, textAlign: 'center', boxShadow: `0 12px 32px ${s.color}55`, transformOrigin: 'bottom center' }}><div style={{ marginBottom: 6, display: 'flex' }}><s.Icon size={22} color="#FFFFFF" strokeWidth={2.2} /></div><div style={{ opacity: 0.95 }}>{item.name}</div><div style={{ fontSize: '0.55rem', opacity: 0.75, marginTop: 2, letterSpacing: '0.05em' }}>{item.role}</div></motion.div>;
-          })}
-        </div>
-        {/* 右端フェード + 矢印: 「まだ続きがある」ことの可視化 (スクロール可能時のみ・末尾では消える) */}
-        {scrollable && (
-          <div aria-hidden style={{ position: 'absolute', right: 0, bottom: 0, height: 170, width: 64, zIndex: 6, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 4, background: 'linear-gradient(90deg, rgba(246,247,251,0) 0%, rgba(246,247,251,0.92) 72%)', opacity: atEnd ? 0 : 1, transition: 'opacity .3s ease' }}>
-            <ArrowRight size={17} color="rgba(22,22,42,0.6)" />
-          </div>
-        )}
-      </div>
-      {scrollable && !reached && (
-        <p style={{ margin: '0.55rem 0 0', textAlign: 'center', fontSize: '0.72rem', color: 'rgba(0,0,0,0.55)' }}>{dict.fan.hint}</p>
-      )}
-      {/* 到達報酬: 最後(Life)までスクロールした瞬間、分光ハローのバッジ + CTA が出現 */}
-      {reached && (
-        <motion.div initial={{ opacity: 0, y: 12, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.55, ease: 'easeOut' }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.65rem', marginTop: '1.1rem' }}>
-          <div style={{ padding: 2, borderRadius: 999, background: 'conic-gradient(from 0deg, #ff5757, #ff9842, #fbbf24, #4ade80, #60a5fa, #a78bfa, #f472b6, #ff5757)', boxShadow: '0 10px 32px rgba(167,139,250,0.4)' }}>
-            <div style={{ borderRadius: 999, background: '#FFFFFF', padding: '0.5rem 1.1rem', color: '#16162A', fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <SparklesIcon size={14} color="#a78bfa" /> {dict.fan.complete}
-            </div>
-          </div>
-          <p style={{ margin: 0, fontSize: '0.78rem', color: 'rgba(0,0,0,0.62)', textAlign: 'center', lineHeight: 1.6, padding: '0 1rem' }}>{dict.fan.completeSub}</p>
-          <button type="button" onClick={onEnterApp} style={{ minHeight: 44, padding: '0.6rem 1.5rem', borderRadius: 999, border: 'none', cursor: 'pointer', background: 'linear-gradient(90deg,#a78bfa,#60a5fa)', color: '#fff', fontWeight: 800, fontSize: '0.9rem', boxShadow: '0 10px 26px -8px #6366F1' }}>
-            {dict.hero.cta}
-          </button>
-        </motion.div>
-      )}
-    </div>
-  );
-}
-
-// ─── サンプル入場ブート演出 ──────────────────────────────
-// 「サンプルで触ってみる」タップ直後、GenerationOrb が回りながら
-// 7エージェントが1人ずつ着任していくのを見せてから入場する (約2.5秒・タップでスキップ)。
-// seedDemoData は既に投入済みなので、見せている内容に嘘はない。
-function SampleBootOverlay({ dict, onDone }: { dict: Dictionary; onDone: () => void }) {
-  const [step, setStep] = useState(0);
-  const doneRef = useRef(false);
-  const finish = useCallback(() => {
-    if (doneRef.current) return;
-    doneRef.current = true;
-    onDone();
-  }, [onDone]);
-
-  useEffect(() => {
-    const timers: number[] = [];
-    SPECTRUM.forEach((_, i) => {
-      timers.push(window.setTimeout(() => setStep(i + 1), 300 + i * 230));
-    });
-    // 全員着任後、少し余韻を置いて入場 (万一に備え finish は必ず呼ばれる)
-    timers.push(window.setTimeout(finish, 300 + SPECTRUM.length * 230 + 600));
-    return () => timers.forEach((t) => window.clearTimeout(t));
-  }, [finish]);
-
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      onClick={finish}
-      style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(8,8,18,0.96)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.1rem', cursor: 'pointer', padding: '2rem 1.5rem' }}
-    >
-      <GenerationOrb brand="prism" size={72} />
-      <p style={{ margin: 0, color: '#fff', fontWeight: 800, fontSize: '0.95rem', textAlign: 'center', letterSpacing: '0.02em' }}>{dict.sampleBoot.title}</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minHeight: SPECTRUM.length * 26, width: 'min(78vw, 280px)' }}>
-        {SPECTRUM.slice(0, step).map((s) => {
-          const item = dict.agents.items[s.key];
-          return (
-            <motion.div key={s.key} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255,255,255,0.9)', fontSize: '0.82rem', fontWeight: 600 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, boxShadow: `0 0 8px ${s.color}`, flexShrink: 0 }} />
-              <span style={{ flex: 1 }}>{item.name} AI — {dict.sampleBoot.joined}</span>
-              <span style={{ color: '#4ade80', fontWeight: 800 }}>✓</span>
-            </motion.div>
-          );
-        })}
-      </div>
-      <p style={{ margin: 0, color: 'rgba(255,255,255,0.45)', fontSize: '0.72rem' }}>{dict.sampleBoot.skip}</p>
-    </div>
-  );
-}
-
-function PrismDashboardMock({ dict }: { dict: Dictionary }) {
-  return (
-    <div style={{ borderRadius: 18, background: 'linear-gradient(135deg, #15152a 0%, #F1F2F9 100%)', border: '1px solid rgba(0,0,0,0.08)', padding: '1.25rem', boxShadow: '0 24px 64px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, borderRadius: '50%', background: '#a78bfa', opacity: 0.18, filter: 'blur(50px)' }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5757' }} />
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24' }} />
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80' }} />
-        <div style={{ marginLeft: 'auto', fontSize: '0.65rem', color: 'rgba(0,0,0,0.4)', fontFamily: 'monospace' }}>coreprism.app</div>
-      </div>
-      <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-        {SPECTRUM.map(s => {
-          const item = dict.agents.items[s.key];
-          return <div key={s.key} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', background: `${s.color}25`, color: s.color, border: `1px solid ${s.color}50`, borderRadius: 999, padding: '0.3rem 0.6rem', fontSize: '0.7rem', fontWeight: 700 }}><s.Icon size={12} strokeWidth={2.4} /><span>{item.name}</span></div>;
-        })}
-      </div>
-      <div style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.18), rgba(96,165,250,0.1))', border: '1px solid rgba(167,139,250,0.3)', borderRadius: 12, padding: '0.85rem 1rem', marginBottom: '0.75rem' }}>
-        <p style={{ fontSize: '0.6rem', letterSpacing: '0.2em', color: '#c4b5fd', fontWeight: 700, marginBottom: 4 }}>{dict.prism.briefLabel}</p>
-        <p style={{ fontSize: '0.85rem', color: '#16162A', fontWeight: 600, lineHeight: 1.4 }}>{dict.prism.briefBody}</p>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-        {dict.prism.todoItems.map((tt, i) => <div key={i} style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 10, padding: '0.6rem 0.75rem', fontSize: '0.7rem', color: 'rgba(0,0,0,0.85)' }}>{tt}</div>)}
-      </div>
-    </div>
-  );
-}
-
-type PlanT = { name: string; tag: string; price: string; features: readonly string[] };
-function PriceCard({ plan, suffix, cta, popularLabel, highlight, onClick }: { plan: PlanT; suffix: string; cta: string; popularLabel: string; highlight?: boolean; onClick: () => void }) {
-  return (
-    <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} style={{ background: highlight ? 'linear-gradient(180deg, rgba(167,139,250,0.18), rgba(244,114,182,0.08))' : 'rgba(0,0,0,0.025)', border: highlight ? '1px solid rgba(167,139,250,0.4)' : '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: '1.75rem 1.5rem', position: 'relative', boxShadow: highlight ? '0 16px 48px rgba(167,139,250,0.15)' : 'none' }}>
-      {highlight && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #a78bfa, #f472b6)', color: '#16162A', fontSize: '0.65rem', fontWeight: 700, padding: '0.3rem 0.75rem', borderRadius: 999, letterSpacing: '0.1em' }}>{popularLabel}</div>}
-      <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: 'rgba(0,0,0,0.5)', fontWeight: 700, marginBottom: '0.5rem' }}>{plan.tag.toUpperCase()}</p>
-      <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>{plan.name}</h3>
-      <p style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.25rem' }}>{plan.price}<span style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.5)', fontWeight: 500 }}>{suffix}</span></p>
-      <div style={{ height: 1, background: 'rgba(0,0,0,0.08)', margin: '1rem 0' }} />
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0, marginBottom: '1.5rem' }}>
-        {plan.features.map((f, i) => <li key={i} style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.78)', lineHeight: 1.7, marginBottom: '0.4rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}><span style={{ color: highlight ? '#a78bfa' : '#4ade80', flexShrink: 0 }}>✓</span><span>{f}</span></li>)}
-      </ul>
-      <button onClick={onClick} style={{ width: '100%', background: highlight ? 'linear-gradient(135deg, #a78bfa, #f472b6)' : 'rgba(0,0,0,0.06)', color: '#16162A', border: highlight ? 'none' : '1px solid rgba(0,0,0,0.15)', padding: '0.85rem 1rem', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', boxShadow: highlight ? '0 8px 24px rgba(167,139,250,0.4)' : 'none' }}>{cta}</button>
-    </motion.div>
   );
 }
 
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, overflow: 'hidden' }}>
+    <div style={{ background: '#FFFFFF', border: '1px solid rgba(22,22,42,0.1)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 4px 14px rgba(22,22,42,0.04)' }}>
       <button
-        onClick={() => setOpen(o => !o)}
-        style={{ width: '100%', background: 'transparent', border: 'none', padding: '1.1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', textAlign: 'left', color: '#16162A', fontSize: '0.95rem', fontWeight: 600, gap: '1rem' }}
+        onClick={() => setOpen((o) => !o)}
+        style={{ width: '100%', background: 'transparent', border: 'none', padding: '1.05rem 1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', textAlign: 'left', color: INK, fontSize: '0.93rem', fontWeight: 700, gap: '1rem', minHeight: 44 }}
       >
         <span>{question}</span>
-        <span style={{ flexShrink: 0, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.08)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', transition: 'transform 0.2s', transform: open ? 'rotate(45deg)' : 'rotate(0deg)' }}>+</span>
+        <span aria-hidden style={{ flexShrink: 0, width: 22, height: 22, borderRadius: '50%', background: `${A_PURPLE}18`, color: T_PURPLE, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 800, transition: 'transform 0.2s', transform: open ? 'rotate(45deg)' : 'none' }}>+</span>
       </button>
       {open && (
-        <div style={{ padding: '0 1.25rem 1.1rem', color: 'rgba(0,0,0,0.7)', fontSize: '0.875rem', lineHeight: 1.75 }}>
-          {answer}
-        </div>
+        <div style={{ padding: '0 1.2rem 1.05rem', color: 'rgba(0,0,0,0.7)', fontSize: '0.87rem', lineHeight: 1.8 }}>{answer}</div>
       )}
     </div>
   );
 }
 
-function LangToggle({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
-  const opts: { key: Lang; label: string }[] = [
-    { key: 'ja', label: '日本語' },
-    { key: 'en', label: 'EN' },
-  ];
-  return (
-    <div style={{ display: 'flex', gap: 2, background: 'rgba(0,0,0,0.08)', borderRadius: 8, padding: 2 }}>
-      {opts.map(o => (
-        <button
-          key={o.key}
-          onClick={() => setLang(o.key)}
-          aria-label={o.key === 'ja' ? 'Switch to Japanese' : 'Switch to English'}
-          style={{ background: lang === o.key ? 'rgba(0,0,0,0.18)' : 'transparent', color: lang === o.key ? '#fff' : 'rgba(0,0,0,0.5)', border: 'none', borderRadius: 8, padding: '0.45rem 0.75rem', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s, color 0.15s', minWidth: 44, minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-const navLink: React.CSSProperties = { fontSize: '0.85rem', color: 'rgba(0,0,0,0.7)', textDecoration: 'none', fontWeight: 500 };
-const ctaBtnSmall: React.CSSProperties = { background: 'linear-gradient(135deg, #a78bfa, #f472b6)', color: '#16162A', padding: '0.55rem 1.1rem', borderRadius: 10, fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(167,139,250,0.35)' };
-const ctaBtnHero: React.CSSProperties = { background: 'linear-gradient(135deg, #ff5757, #fbbf24, #4ade80, #60a5fa, #a78bfa, #f472b6)', backgroundSize: '300% 100%', color: '#16162A', padding: '1.05rem 2.25rem', borderRadius: 14, fontSize: '1.05rem', fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 12px 36px rgba(167,139,250,0.45)', letterSpacing: '0.02em' };
-const ctaBtnGhost: React.CSSProperties = { background: 'rgba(0,0,0,0.05)', color: '#16162A', padding: '1.05rem 2rem', borderRadius: 14, fontSize: '1rem', fontWeight: 700, border: '1px solid rgba(0,0,0,0.15)', textDecoration: 'none', display: 'inline-block' };
-const footHead: React.CSSProperties = { fontSize: '0.7rem', letterSpacing: '0.2em', color: 'rgba(0,0,0,0.45)', marginBottom: '0.75rem', fontWeight: 700 };
-// footer リンクは 44px 基準のタップ領域を確保 (flex + minHeight で行ごと押せる)
-const footLink: React.CSSProperties = { display: 'flex', alignItems: 'center', minHeight: 44, color: 'rgba(0,0,0,0.7)', fontSize: '0.85rem', textDecoration: 'none' };
+// ─── 共有スタイル ───────────────────────────────────────────
+const h2Style: React.CSSProperties = {
+  fontSize: 'clamp(1.65rem, 4vw, 2.6rem)', fontWeight: 800, lineHeight: 1.35, margin: 0, color: INK,
+};
+const navLink: React.CSSProperties = { fontSize: '0.85rem', color: 'rgba(0,0,0,0.72)', textDecoration: 'none', fontWeight: 600 };
+const ctaBtnSmall: React.CSSProperties = {
+  background: GRAD, color: '#fff', padding: '0.55rem 1.1rem', borderRadius: 10,
+  fontSize: '0.85rem', fontWeight: 800, border: 'none', cursor: 'pointer',
+  boxShadow: `0 4px 14px ${A_PURPLE}45`, whiteSpace: 'nowrap',
+};
+const ctaBtnHero: React.CSSProperties = {
+  background: GRAD, color: '#fff', padding: '1.05rem 2.2rem', borderRadius: 14,
+  fontSize: '1.02rem', fontWeight: 800, border: 'none', cursor: 'pointer',
+  boxShadow: `0 12px 36px ${A_PURPLE}55`, letterSpacing: '0.02em',
+};
+const ctaBtnGhost: React.CSSProperties = {
+  background: 'rgba(22,22,42,0.05)', color: INK, padding: '1.05rem 1.8rem', borderRadius: 14,
+  fontSize: '0.98rem', fontWeight: 700, border: '1px solid rgba(22,22,42,0.16)',
+  textDecoration: 'none', display: 'inline-block',
+};
+const footHead: React.CSSProperties = { fontSize: '0.7rem', letterSpacing: '0.22em', color: 'rgba(0,0,0,0.5)', marginBottom: '0.75rem', fontWeight: 800 };
+const footLink: React.CSSProperties = { display: 'block', color: 'rgba(0,0,0,0.7)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '0.5rem' };
