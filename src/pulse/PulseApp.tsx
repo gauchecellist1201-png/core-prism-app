@@ -35,7 +35,7 @@ import {
   Smartphone, Check, Copy, Trash2, Mail, ArrowRight, ShieldCheck, Activity,
   Loader2, AlertTriangle, Droplets, ChevronRight, Smile, Meh, Frown, SmilePlus,
   RefreshCw, Info, Lock, FileText, Stethoscope, TrendingUp, TrendingDown, Minus,
-  CalendarDays, Compass,
+  CalendarDays, Compass, ChevronDown,
 } from 'lucide-react';
 import { useHealth } from '../hooks/useHealth';
 import { PulseLogo } from '../components/Logo';
@@ -90,8 +90,26 @@ const PULSE_CSS = `
   }
   .pulse-ecg-flow { stroke-dasharray: 260 740; animation: pulse-ecg-flow 5.5s linear infinite; }
   @keyframes pulse-ecg-flow { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: -1000; } }
+  /* 横スワイプカード (Flo型・snapスクロール) */
+  .pulse-carousel {
+    display: flex; gap: 12px; overflow-x: auto;
+    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+    margin: 0 -18px; padding: 4px 18px 8px;
+    scrollbar-width: none;
+  }
+  .pulse-carousel::-webkit-scrollbar { display: none; }
+  .pulse-metric-card { flex: 0 0 62%; max-width: 230px; scroll-snap-align: start; box-sizing: border-box; }
+  /* ワンタップ記録チップ (横1行スクロール) */
+  .pulse-chip-row {
+    display: flex; gap: 8px; overflow-x: auto;
+    margin: 0 -22px; padding: 2px 22px 6px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .pulse-chip-row::-webkit-scrollbar { display: none; }
+  .pulse-detail-open { animation: pulse-detail-in .32s ease; }
+  @keyframes pulse-detail-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) {
-    .pulse-breathe, .pulse-ecg-flow { animation: none; }
+    .pulse-breathe, .pulse-ecg-flow, .pulse-detail-open { animation: none; }
   }
 `;
 
@@ -425,31 +443,6 @@ function CopyField({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ── 7日間ミニグラフ (棒・SVG。ローズベージュの柔らかな棒) ──
-function WeekBars({ week, metric, color, goal }: {
-  week: DailyHealth[]; metric: 'sleepHours' | 'steps'; color: string; goal?: number;
-}) {
-  const vals = week.map((d) => d[metric] ?? 0);
-  const max = Math.max(...vals, goal ?? 0, 1);
-  const W = 260; const H = 64; const gap = 7;
-  const bw = (W - gap * (vals.length - 1)) / Math.max(vals.length, 1);
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }} aria-hidden>
-      {typeof goal === 'number' && goal > 0 && (
-        <line x1={0} x2={W} y1={H - (goal / max) * (H - 8)} y2={H - (goal / max) * (H - 8)}
-          stroke={C.gold} strokeWidth={1} strokeDasharray="1 5" strokeLinecap="round" />
-      )}
-      {vals.map((v, i) => {
-        const h = Math.max(3, (v / max) * (H - 8));
-        return (
-          <rect key={i} x={i * (bw + gap)} y={H - h} width={bw} height={h} rx={Math.min(6, bw / 2)}
-            fill={i === vals.length - 1 ? color : `${color}4D`} />
-        );
-      })}
-    </svg>
-  );
-}
-
 // ── スコアのカウントアップ (0 → 総合点。数字が息を吹き返す演出) ──
 function useCountUp(target: number, duration = 1000): number {
   const [v, setV] = useState(0);
@@ -469,12 +462,14 @@ function useCountUp(target: number, duration = 1000): number {
 }
 
 // ── 「きょうの調子」リングゲージ (主役・大径。鼓動のように呼吸する光) ──
-function ScoreRing({ score }: { score: PulseScoreResult }) {
+function ScoreRing({ score, size = 196, numSize = 62, stroke = 11 }: {
+  score: PulseScoreResult; size?: number; numSize?: number; stroke?: number;
+}) {
   const total = Math.max(0, Math.min(100, score.total));
   const shown = useCountUp(total, 1100);
-  const R = 82;
+  const S = size;
+  const R = S / 2 - 16;
   const CIRC = 2 * Math.PI * R;
-  const S = 196;
   return (
     <div style={{ position: 'relative', width: S, height: S, margin: '0 auto' }}>
       {/* 呼吸するピンクの光 (ハロー) */}
@@ -498,11 +493,11 @@ function ScoreRing({ score }: { score: PulseScoreResult }) {
           </filter>
         </defs>
         {/* トラック (うっすら) */}
-        <circle cx={S / 2} cy={S / 2} r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="11" />
+        <circle cx={S / 2} cy={S / 2} r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} />
         {/* 進捗アーク (発光) */}
         <circle
           cx={S / 2} cy={S / 2} r={R} fill="none"
-          stroke="url(#pulseScoreGrad)" strokeWidth="11" strokeLinecap="round"
+          stroke="url(#pulseScoreGrad)" strokeWidth={stroke} strokeLinecap="round"
           strokeDasharray={`${CIRC}`} strokeDashoffset={CIRC * (1 - total / 100)}
           transform={`rotate(-90 ${S / 2} ${S / 2})`}
           filter="url(#pulseRingGlow)"
@@ -513,8 +508,8 @@ function ScoreRing({ score }: { score: PulseScoreResult }) {
         position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 3,
       }}>
-        <div style={{ ...NUM_STYLE, fontSize: 62, color: C.ink, lineHeight: 1, textShadow: NUM_GLOW }}>{shown}</div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: C.accent, fontFamily: SERIF, letterSpacing: '0.14em' }}>
+        <div style={{ ...NUM_STYLE, fontSize: numSize, color: C.ink, lineHeight: 1, textShadow: NUM_GLOW }}>{shown}</div>
+        <div style={{ fontSize: Math.max(12, Math.round(numSize * 0.21)), fontWeight: 600, color: C.accent, fontFamily: SERIF, letterSpacing: '0.14em' }}>
           {score.label}
         </div>
       </div>
@@ -522,24 +517,80 @@ function ScoreRing({ score }: { score: PulseScoreResult }) {
   );
 }
 
-// ── 7日間の調子トレンド (折れ線・SVG。ゴールド点線 = 「よい」の目安) ──
-function ScoreTrendChart({ scores }: { scores: Array<{ total: number }> }) {
-  const W = 260; const H = 76; const P = 8;
-  const n = scores.length;
-  if (n === 0) return null;
+// ── 7日ミニスパークライン (スワイプカード用・棒 or 折れ線) ──
+function MiniSpark({ vals, color, goal, kind }: {
+  vals: number[]; color: string; goal?: number; kind: 'bar' | 'line';
+}) {
+  const W = 132; const H = 40;
+  const n = vals.length;
+  if (n === 0) return <div style={{ height: H }} />;
+  if (kind === 'bar') {
+    const max = Math.max(...vals, goal ?? 0, 1);
+    const gap = 5;
+    const bw = (W - gap * (n - 1)) / n;
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }} aria-hidden>
+        {typeof goal === 'number' && goal > 0 && (
+          <line x1={0} x2={W} y1={H - (goal / max) * (H - 6)} y2={H - (goal / max) * (H - 6)}
+            stroke={C.gold} strokeWidth={1} strokeDasharray="1 4" strokeLinecap="round" />
+        )}
+        {vals.map((v, i) => {
+          const h = Math.max(2.5, (Math.max(0, v) / max) * (H - 6));
+          return (
+            <rect key={i} x={i * (bw + gap)} y={H - h} width={bw} height={h} rx={Math.min(4, bw / 2)}
+              fill={i === n - 1 ? color : `${color}42`} />
+          );
+        })}
+      </svg>
+    );
+  }
+  // line
+  const valid = vals.filter((v) => isFinite(v));
+  const lo = Math.min(...valid, goal ?? Infinity);
+  const hi = Math.max(...valid, goal ?? -Infinity, lo + 0.0001);
+  const P = 4;
   const x = (i: number) => (n > 1 ? P + (i * (W - 2 * P)) / (n - 1) : W / 2);
-  const y = (v: number) => H - 8 - (Math.max(0, Math.min(100, v)) / 100) * (H - 18);
-  const pts = scores.map((s, i) => `${x(i)},${y(s.total)}`).join(' ');
+  const y = (v: number) => H - 6 - ((Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo)) * (H - 14);
+  const pts = vals.map((v, i) => `${x(i)},${y(v)}`).join(' ');
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }} aria-hidden>
-      <line x1={0} x2={W} y1={y(SCORE_GOOD_LINE)} y2={y(SCORE_GOOD_LINE)}
-        stroke={C.gold} strokeWidth={1} strokeDasharray="1 5" strokeLinecap="round" />
-      {n > 1 && <polyline points={pts} fill="none" stroke={C.rose} strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round" />}
-      {scores.map((s, i) => (
-        <circle key={i} cx={x(i)} cy={y(s.total)} r={i === n - 1 ? 4 : 2.5}
-          fill={i === n - 1 ? C.accent : C.rose} />
+      {typeof goal === 'number' && isFinite(goal) && (
+        <line x1={0} x2={W} y1={y(goal)} y2={y(goal)}
+          stroke={C.gold} strokeWidth={1} strokeDasharray="1 4" strokeLinecap="round" />
+      )}
+      {n > 1 && <polyline points={pts} fill="none" stroke={color} strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round" />}
+      {vals.map((v, i) => (
+        <circle key={i} cx={x(i)} cy={y(v)} r={i === n - 1 ? 3.4 : 0}
+          fill={color} />
       ))}
     </svg>
+  );
+}
+
+// ── 横スワイプのメトリクスカード (Whoop型: 大数字+単位+7日スパーク) ──
+function MetricCard({ Icon, label, value, unit, vals, color, goal, kind }: {
+  Icon: typeof Moon; label: string; value: string; unit?: string;
+  vals: number[]; color: string; goal?: number; kind: 'bar' | 'line';
+}) {
+  return (
+    <div className="pulse-metric-card pulse-card" style={{
+      background: 'linear-gradient(165deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025))',
+      border: `1px solid ${C.line}`, borderRadius: 22, padding: '16px 16px 14px',
+      backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 10px 30px rgba(0,0,0,0.32)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+        <Icon size={14} color={C.mauve} strokeWidth={1.6} />
+        <div style={{ fontSize: 10.5, fontWeight: 600, color: C.sub, letterSpacing: '0.1em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+      </div>
+      <div style={{ ...NUM_STYLE, fontSize: 28, color: C.ink, lineHeight: 1.1, textShadow: NUM_GLOW, whiteSpace: 'nowrap' }}>
+        {value}
+        {unit && <span style={{ fontSize: 12, fontWeight: 400, color: C.sub, marginLeft: 5, letterSpacing: '0.03em', fontFamily: "'Noto Sans JP', sans-serif" }}>{unit}</span>}
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <MiniSpark vals={vals} color={color} goal={goal} kind={kind} />
+      </div>
+    </div>
   );
 }
 
@@ -560,6 +611,70 @@ export function weakestPart(parts: PulseScoreParts): keyof PulseScoreParts {
     if (ratio < worstRatio) { worstRatio = ratio; worst = k; }
   }
   return worst;
+}
+
+// ── スコア内訳 — 初期表示は4アイコン+数値の1行のみ。タップで内訳と計算式が開く ──
+const PART_META: Array<{ key: keyof PulseScoreParts; label: string; Icon: typeof Moon }> = [
+  { key: 'sleep', label: 'ねむり', Icon: Moon },
+  { key: 'hrv', label: 'ゆらぎ', Icon: Activity },
+  { key: 'resting', label: '脈', Icon: HeartPulse },
+  { key: 'steps', label: '歩いた量', Icon: Footprints },
+];
+function ScorePartsRow({ parts, open, onToggle }: {
+  parts: PulseScoreParts; open: boolean; onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-label="スコアの内訳をひらく"
+      className="pulse-press"
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 13,
+        margin: '14px auto 0', minHeight: 44, padding: '8px 14px', borderRadius: 999,
+        background: 'rgba(255,255,255,0.035)', border: `1px solid ${C.line}`, cursor: 'pointer',
+      }}
+    >
+      {PART_META.map(({ key, Icon }) => (
+        <span key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <Icon size={13} color={C.mauve} strokeWidth={1.7} />
+          <span style={{ ...NUM_STYLE, fontSize: 13.5, fontWeight: 500, color: C.ink }}>{parts[key]}</span>
+        </span>
+      ))}
+      <ChevronDown size={14} color={C.sub} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
+    </button>
+  );
+}
+function ScoreBreakdown({ parts }: { parts: PulseScoreParts }) {
+  return (
+    <div className="pulse-detail-open" style={{
+      marginTop: 14, borderRadius: 18, background: C.bgDeep,
+      padding: '14px 16px', border: `1px solid ${C.line}`,
+    }}>
+      {PART_META.map(({ key, label, Icon }) => {
+        const v = parts[key];
+        const max = SCORE_MAX[key];
+        return (
+          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
+            <Icon size={13} color={C.mauve} strokeWidth={1.7} style={{ flexShrink: 0 }} />
+            <div style={{ fontSize: 11.5, fontWeight: 600, color: C.sub, letterSpacing: '0.04em', width: 58, flexShrink: 0 }}>{label}</div>
+            <div style={{ flex: 1, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', minWidth: 0 }}>
+              <div style={{
+                width: `${Math.round((v / max) * 100)}%`, height: '100%', borderRadius: 999,
+                background: 'linear-gradient(90deg, #FF5C8A, #E8859E)',
+              }} />
+            </div>
+            <div style={{ ...NUM_STYLE, fontSize: 12.5, color: C.ink, flexShrink: 0, width: 46, textAlign: 'right' }}>+{v}<span style={{ color: C.sub, fontSize: 10.5 }}>/{max}</span></div>
+          </div>
+        );
+      })}
+      <div style={{ marginTop: 8, fontSize: 11, color: C.sub, lineHeight: 1.8 }}>
+        ねむりは{SLEEP_HOURS_FULL}時間・歩いた量は{STEPS_FULL.toLocaleString()}歩で満点。
+        ゆらぎと脈は、あなたのふだん（過去4週間の記録）と比べた、決まった計算式です。内訳の合計＝総合点です。
+      </div>
+    </div>
+  );
 }
 
 // ── 今週のまとめ (週間レポート・コード確定計算) ──
@@ -692,6 +807,73 @@ function HeroArcs() {
   );
 }
 
+// ── LP用: アプリ画面の実物ミニプレビュー (HTML/CSSで再現・読ませるより見せる) ──
+const MOCK_SCORE: PulseScoreResult = {
+  total: 72, parts: { sleep: 30, hrv: 20, resting: 14, steps: 8 }, label: 'よい', hasData: true,
+};
+function AppPreviewMock() {
+  return (
+    <div aria-label="アプリ画面のプレビュー" style={{
+      width: 'min(300px, 82vw)', margin: '0 auto', boxSizing: 'border-box',
+      borderRadius: 38, padding: '18px 16px 20px',
+      background: 'linear-gradient(170deg, #161016, #0D0A0F)',
+      border: '1px solid rgba(255,124,163,0.30)',
+      boxShadow: '0 24px 70px rgba(0,0,0,0.55), 0 0 60px rgba(255,92,138,0.14), 0 1px 0 rgba(255,255,255,0.06) inset',
+    }}>
+      {/* ミニヘッダー */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <PulseLogo size={20} withWordmark={false} />
+          <span style={{ fontSize: 11, fontWeight: 600, fontFamily: SERIF, letterSpacing: '0.06em', color: C.ink }}>CORE Pulse</span>
+        </div>
+        <span style={{ fontSize: 9.5, color: C.sub, letterSpacing: '0.08em' }}>{todayLabel()}</span>
+      </div>
+      {/* リング */}
+      <div style={{ marginTop: 10 }}>
+        <ScoreRing score={MOCK_SCORE} size={150} numSize={44} stroke={9} />
+      </div>
+      {/* 内訳ミニ行 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 11, marginTop: 10 }}>
+        {PART_META.map(({ key, Icon }) => (
+          <span key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            <Icon size={11} color={C.mauve} strokeWidth={1.7} />
+            <span style={{ ...NUM_STYLE, fontSize: 11.5, color: C.ink }}>{MOCK_SCORE.parts[key]}</span>
+          </span>
+        ))}
+      </div>
+      {/* きょうのフォーカス 1行 */}
+      <div style={{
+        marginTop: 12, display: 'flex', gap: 7, alignItems: 'center',
+        borderRadius: 12, padding: '8px 11px', background: C.accentSoft, border: `1px solid ${C.line}`,
+      }}>
+        <Compass size={12} color={C.accent} strokeWidth={1.8} style={{ flexShrink: 0 }} />
+        <span style={{ fontSize: 10.5, lineHeight: 1.5, color: C.ink, textAlign: 'left' }}>きょうは30分早くおふとんへ</span>
+      </div>
+      {/* ミニカード2枚 (大数字+スパーク) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
+        {[
+          { Icon: Moon, label: 'ねむり', value: '6:10', vals: [6.8, 7.2, 6.4, 7.5, 6.9, 5.8, 6.17], color: C.rose },
+          { Icon: Footprints, label: '歩いた量', value: '8,200', vals: [6200, 7400, 5100, 9000, 7800, 6600, 8200], color: C.mauve },
+        ].map((m) => (
+          <div key={m.label} style={{
+            borderRadius: 14, padding: '9px 10px', textAlign: 'left',
+            background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.line}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <m.Icon size={10} color={C.mauve} strokeWidth={1.7} />
+              <span style={{ fontSize: 8.5, fontWeight: 600, color: C.sub, letterSpacing: '0.08em' }}>{m.label}</span>
+            </div>
+            <div style={{ ...NUM_STYLE, fontSize: 17, color: C.ink, marginTop: 4, textShadow: NUM_GLOW }}>{m.value}</div>
+            <div style={{ marginTop: 5 }}>
+              <MiniSpark vals={m.vals} color={m.color} kind="bar" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ============================================================
 // LP (未入場)
 // ============================================================
@@ -700,22 +882,22 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
     {
       Icon: Activity,
       title: '今日の調子が、ひと目でわかる',
-      body: '睡眠・心拍のゆらぎ・脈・歩いた量から「きょうの調子」を0〜100の数字で表示します。内訳まで見えるので、なぜその数字なのかも納得できます。開いて1秒で、今日の自分がわかります。',
+      body: '睡眠・脈・歩いた量から、0〜100のひとつの数字に。',
     },
     {
       Icon: Smartphone,
       title: 'からだの記録が、自動で集まる',
-      body: 'Apple Watchや iPhoneをつなぐと、睡眠・心拍・歩数が毎朝自動でこのアプリに届きます。あなたが入力する手間はありません。',
+      body: 'Apple Watchをつなぐだけ。入力の手間はありません。',
     },
     {
       Icon: Sun,
       title: 'AIが毎朝、ことばで教えてくれる',
-      body: '数字の一覧ではなく「きのうは少し寝不足。今夜は30分早くおふとんへ」のような、やさしいことばで今日の調子をお届けします。きぶん・からだの記録もタップするだけ。10秒で完了します。',
+      body: '「今夜は30分早くおふとんへ」のような、やさしい一言。',
     },
     {
       Icon: HeartPulse,
       title: '気になる変化に、はやく気づける',
-      body: 'ふだんのあなたと比べて「いつもとちがう」変化があると、そっとお知らせ。7日間のうつりかわりもグラフでひと目です。予防医学の考え方でも、いちばんの近道は、はやく気づくことです。',
+      body: '「いつもとちがう」サインを、そっとお知らせします。',
     },
   ];
   const trust = [
@@ -780,12 +962,16 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
             <span style={{ display: 'inline-block' }}>がんばるためではなく、</span>
             <span style={{ display: 'inline-block' }}>健やかでいるために。</span>
           </p>
-          <p style={{ fontSize: 15, lineHeight: 2.1, color: C.sub, margin: '18px auto 0', maxWidth: 560 }}>
-            Apple Watchや iPhoneをつなぐだけで、睡眠・心拍・歩数から今日の調子を読みとき、
-            毎朝「ことば」でお届けします。症状やきぶんのメモからは、予防のヒントを。
-            女性のライフステージの変化にも、そっと寄り添います。
+          <p style={{ fontSize: 14.5, lineHeight: 2.0, color: C.sub, margin: '16px auto 0', maxWidth: 560 }}>
+            Apple Watchをつなぐだけ。毎朝、今日の調子が数字とことばで届きます。
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 340, margin: '32px auto 0' }}>
+
+          {/* アプリ画面の実物モック — 読ませるより、見せる */}
+          <div style={{ margin: '30px auto 0' }}>
+            <AppPreviewMock />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 340, margin: '30px auto 0' }}>
             <PrimaryButton onClick={onEnter} full>
               無料でためしてみる <ArrowRight size={16} />
             </PrimaryButton>
@@ -1248,6 +1434,8 @@ function PulseHome() {
   const [memoMood, setMemoMood] = useState<PulseMemo['mood']>(3);
   const [hash, setHash] = useState('');
   const [streak] = useState<number>(recordTodayAndGetStreak);
+  const [scoreDetailOpen, setScoreDetailOpen] = useState(false); // スコア内訳 (タップで開く)
+  const [wordsOpen, setWordsOpen] = useState(false);             // けさのことば つづき
   const [chipsByDate, setChipsByDate] = useState<Record<string, string[]>>(loadChips);
   const todayKey = localDateStr();
   const todayChips = useMemo(() => chipsByDate[todayKey] ?? [], [chipsByDate, todayKey]);
@@ -1339,46 +1527,80 @@ function PulseHome() {
         {/* ── きょう ── */}
         {tab === 'today' && (
           <>
-            {/* きょうの調子 — 0-100 スコア + リング (Oura型・主役) */}
+            {/* きょうの調子 — 大径リングが主役 (Oura型)。内訳・計算式はタップで開く */}
             {score && score.hasData && (
-              <Card style={{ position: 'relative', overflow: 'hidden', paddingBottom: 24 }}>
+              <Card style={{ position: 'relative', overflow: 'hidden', padding: '20px 22px 20px' }}>
                 <div aria-hidden style={{
                   position: 'absolute', top: -90, left: -90, width: 240, height: 240, borderRadius: '50%',
                   background: 'radial-gradient(circle at 60% 60%, rgba(255,92,138,0.14), rgba(255,92,138,0) 70%)',
                 }} />
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: 8, flexWrap: 'wrap', marginBottom: 14, position: 'relative',
+                  gap: 8, flexWrap: 'wrap', marginBottom: 16, position: 'relative',
                 }}>
                   <div style={labelStyle(C.goldText)}>きょうの調子</div>
                   <StreakRings streak={streak} />
                 </div>
-                <ScoreRing score={score} />
-                {/* 内訳の透明表示 (Whoop型・内訳の合計 = 総合点) */}
-                <div style={{
-                  marginTop: 16, textAlign: 'center', fontSize: 12.5, color: C.sub,
-                  fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1.9,
-                }}>
-                  ねむり +{score.parts.sleep} ・ ゆらぎ +{score.parts.hrv} ・ 脈 +{score.parts.resting} ・ 歩いた量 +{score.parts.steps}
-                </div>
-                {/* きょうのフォーカス — いちばん弱い項目からの1行提案 (決まったルール) */}
-                <div style={{
-                  marginTop: 14, display: 'flex', gap: 9, alignItems: 'flex-start',
-                  borderRadius: 16, padding: '12px 15px',
-                  background: C.accentSoft, border: `1px solid ${C.line}`, position: 'relative',
-                }}>
-                  <Compass size={15} color={C.accent} style={{ flexShrink: 0, marginTop: 3 }} strokeWidth={1.8} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: '0.12em', marginBottom: 3 }}>きょうのフォーカス</div>
-                    <div style={{ fontSize: 13, lineHeight: 1.9, color: C.ink }}>{FOCUS_WORDS[weakestPart(score.parts)]}</div>
-                  </div>
-                </div>
-                <div style={{ marginTop: 10, textAlign: 'center', fontSize: 11, color: C.sub, lineHeight: 1.8, opacity: 0.9 }}>
-                  ねむりは{SLEEP_HOURS_FULL}時間・歩いた量は{STEPS_FULL.toLocaleString()}歩で満点。
-                  ゆらぎと脈は、あなたのふだん（過去4週間の記録）と比べた、決まった計算式です
+                <ScoreRing score={score} size={248} numSize={78} stroke={13} />
+                {/* 内訳 — 4アイコン+数値の1行 (タップで内訳と計算式が開く) */}
+                <div style={{ position: 'relative', textAlign: 'center' }}>
+                  <ScorePartsRow
+                    parts={score.parts}
+                    open={scoreDetailOpen}
+                    onToggle={() => setScoreDetailOpen((v) => !v)}
+                  />
+                  {scoreDetailOpen && <ScoreBreakdown parts={score.parts} />}
                 </div>
               </Card>
             )}
+
+            {/* きょうのフォーカス — アイコン+1行の帯 */}
+            {score && score.hasData && (
+              <div style={{
+                display: 'flex', gap: 9, alignItems: 'center',
+                borderRadius: 16, padding: '12px 15px',
+                background: C.accentSoft, border: `1px solid ${C.line}`,
+              }}>
+                <Compass size={15} color={C.accent} style={{ flexShrink: 0 }} strokeWidth={1.8} />
+                <div style={{ fontSize: 13, lineHeight: 1.75, color: C.ink, minWidth: 0 }}>{FOCUS_WORDS[weakestPart(score.parts)]}</div>
+              </div>
+            )}
+
+            {/* 数値カード — 横スワイプカルーセル (Flo型: 1枚=大数字+7日スパーク) */}
+            <div>
+              <div className="pulse-carousel">
+                {scoreTrend.length > 0 && (
+                  <MetricCard
+                    Icon={Activity} label="7日間の調子" kind="line"
+                    value={score && score.hasData ? String(score.total) : '—'} unit="点"
+                    vals={scoreTrend.map((s) => s.total)} color={C.accent} goal={SCORE_GOOD_LINE}
+                  />
+                )}
+                <MetricCard
+                  Icon={Moon} label="ねむり" kind="bar"
+                  value={fmtSleep(t?.sleepHours)}
+                  vals={health.week.map((d) => d.sleepHours ?? 0)} color={C.rose} goal={profile.goalSleep}
+                />
+                <MetricCard
+                  Icon={Footprints} label="歩いた量" kind="bar"
+                  value={fmtNum(t?.steps)} unit="歩"
+                  vals={health.week.map((d) => d.steps ?? 0)} color={C.mauve} goal={profile.goalSteps}
+                />
+                <MetricCard
+                  Icon={HeartPulse} label="休んでいるときの脈" kind="line"
+                  value={fmtNum(t?.restingHR)} unit="回/分"
+                  vals={health.week.map((d) => d.restingHR ?? 0)} color={C.gold}
+                />
+                <MetricCard
+                  Icon={Droplets} label="水分" kind="bar"
+                  value={t?.hydrationL ? `${t.hydrationL}` : '—'} unit="L"
+                  vals={health.week.map((d) => d.hydrationL ?? 0)} color={C.good}
+                />
+              </div>
+              <div style={{ fontSize: 11, color: C.sub, marginTop: 2, letterSpacing: '0.04em' }}>
+                横にスワイプ ・ 点線＝目標 ・ いちばん右がきょう
+              </div>
+            </div>
 
             <Card style={{ background: 'linear-gradient(150deg, rgba(255,255,255,0.07) 30%, rgba(255,92,138,0.08))', position: 'relative', overflow: 'hidden' }}>
               <div aria-hidden style={{
@@ -1393,12 +1615,34 @@ function PulseHome() {
                 <Sun size={15} color={C.goldText} />
                 <div style={labelStyle(C.goldText)}>けさのことば</div>
               </div>
-              {morning.map((line, i) => (
-                <p key={i} style={{
-                  fontSize: 14.5, lineHeight: 2.05, margin: i === 0 ? 0 : '10px 0 0',
+              {/* 最初の1文だけ見せて「つづきを読む」で展開 */}
+              <p style={{ fontSize: 14.5, lineHeight: 2.05, margin: 0, fontFamily: SERIF, position: 'relative' }}>
+                {morning[0]}
+              </p>
+              {wordsOpen && morning.slice(1).map((line, i) => (
+                <p key={i} className="pulse-detail-open" style={{
+                  fontSize: 14.5, lineHeight: 2.05, margin: '10px 0 0',
                   fontFamily: SERIF, position: 'relative',
                 }}>{line}</p>
               ))}
+              {morning.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setWordsOpen((v) => !v)}
+                  aria-expanded={wordsOpen}
+                  className="pulse-press"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 12,
+                    minHeight: 40, padding: '8px 16px', borderRadius: 999, cursor: 'pointer',
+                    fontSize: 12.5, fontWeight: 600, letterSpacing: '0.04em',
+                    background: 'rgba(255,255,255,0.05)', color: C.accent,
+                    border: '1px solid rgba(255,92,138,0.4)', position: 'relative',
+                  }}
+                >
+                  {wordsOpen ? 'とじる' : 'つづきを読む'}
+                  <ChevronDown size={13} style={{ transform: wordsOpen ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
+                </button>
+              )}
             </Card>
 
             {/* きぶん・からだのワンタップ記録 (Flo型・タップで即保存) */}
@@ -1406,10 +1650,10 @@ function PulseHome() {
               <SectionTitle icon={<NotebookPen size={16} color={C.accent} strokeWidth={1.6} />}>
                 きょうのからだ・きぶん
               </SectionTitle>
-              <p style={{ fontSize: 13, lineHeight: 1.9, color: C.sub, margin: '0 0 12px' }}>
-                あてはまるものをタップするだけ（そのまま保存されます）。「けさのことば」にも反映されます。
+              <p style={{ fontSize: 12, lineHeight: 1.7, color: C.sub, margin: '0 0 10px' }}>
+                タップするだけで保存されます
               </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <div className="pulse-chip-row">
                 {BODY_CHIPS.map((c) => {
                   const on = todayChips.includes(c.id);
                   return (
@@ -1423,6 +1667,7 @@ function PulseHome() {
                         display: 'inline-flex', alignItems: 'center', gap: 6,
                         minHeight: 40, padding: '8px 14px', borderRadius: 999, cursor: 'pointer',
                         fontSize: 13, fontWeight: 600, letterSpacing: '0.02em',
+                        whiteSpace: 'nowrap', flexShrink: 0,
                         background: on
                           ? 'linear-gradient(120deg, rgba(255,92,138,0.28), rgba(232,133,158,0.18))'
                           : 'rgba(255,255,255,0.045)',
@@ -1445,45 +1690,28 @@ function PulseHome() {
               </div>
               {todayChips.length > 0 && (
                 <div style={{
-                  marginTop: 12, fontSize: 12.5, lineHeight: 1.8, color: C.good,
-                  background: C.goodSoft, borderRadius: 14, padding: '10px 14px', fontWeight: 500,
+                  marginTop: 10, display: 'flex', gap: 6, alignItems: 'center',
+                  fontSize: 12, color: C.good, fontWeight: 600,
                 }}>
-                  きょうは{todayChips.length}こ記録できました。続けるほど、あなたのリズムが見えてきます。
+                  <Check size={13} style={{ flexShrink: 0 }} />
+                  きょうは{todayChips.length}こ記録できました
                 </div>
               )}
             </Card>
 
-            {/* きょうの数値 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {[
-                { Icon: Moon, label: 'ねむり', value: fmtSleep(t?.sleepHours), sub: '昨夜の睡眠' },
-                { Icon: Footprints, label: '歩いた量', value: fmtNum(t?.steps, '歩'), sub: `目標 ${profile.goalSteps.toLocaleString()}歩` },
-                { Icon: HeartPulse, label: '休んでいるときの脈', value: fmtNum(t?.restingHR, ' 回/分'), sub: '低いほどゆったり' },
-                { Icon: Droplets, label: '水分', value: t?.hydrationL ? `${t.hydrationL}L` : '—', sub: 'きのうの合計' },
-              ].map((x) => (
-                <Card key={x.label} style={{ padding: '16px 16px 14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                    <x.Icon size={14} color={C.mauve} strokeWidth={1.6} />
-                    <div style={{ fontSize: 10.5, fontWeight: 600, color: C.sub, letterSpacing: '0.1em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.label}</div>
-                  </div>
-                  <div style={{ ...NUM_STYLE, fontSize: 25, color: C.ink, lineHeight: 1.2, textShadow: NUM_GLOW }}>{x.value}</div>
-                  <div style={{ fontSize: 11, color: C.sub, marginTop: 5 }}>{x.sub}</div>
-                </Card>
-              ))}
-            </div>
-
-            {/* 気づき */}
-            <Card>
-              <SectionTitle icon={<Activity size={16} color={C.accent} strokeWidth={1.6} />}>気づき — いつもとちがう変化</SectionTitle>
-              {importantAnomalies.length === 0 ? (
-                <div style={{
-                  display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13.5, lineHeight: 1.9,
-                  color: C.good, background: C.goodSoft, borderRadius: 16, padding: '13px 16px', fontWeight: 500,
-                }}>
-                  <Check size={15} style={{ flexShrink: 0, marginTop: 4 }} />
-                  きょうは大きな変化はありません。いいリズムです。
-                </div>
-              ) : (
+            {/* 気づき — 変化があるときだけカード。ないときは1行の帯 */}
+            {importantAnomalies.length === 0 ? (
+              <div style={{
+                display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, lineHeight: 1.7,
+                color: C.good, background: C.goodSoft, borderRadius: 16, padding: '12px 15px', fontWeight: 500,
+                border: `1px solid rgba(125,219,168,0.22)`,
+              }}>
+                <Check size={15} style={{ flexShrink: 0 }} />
+                きょうは大きな変化はありません。いいリズムです。
+              </div>
+            ) : (
+              <Card>
+                <SectionTitle icon={<Activity size={16} color={C.accent} strokeWidth={1.6} />}>気づき — いつもとちがう変化</SectionTitle>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {importantAnomalies.map((a) => {
                     const p = anomalyToPlain(a);
@@ -1501,8 +1729,8 @@ function PulseHome() {
                     );
                   })}
                 </div>
-              )}
-            </Card>
+              </Card>
+            )}
 
             {/* 今週のまとめ (週間レポート・コード確定計算) */}
             {weekly.daysCount > 0 && (
@@ -1545,27 +1773,6 @@ function PulseHome() {
                 </div>
               </Card>
             )}
-
-            {/* 7日間のうつりかわり */}
-            {scoreTrend.length > 0 && (
-              <Card>
-                <SectionTitle icon={<Activity size={16} color={C.accent} strokeWidth={1.6} />}>この7日間の調子</SectionTitle>
-                <ScoreTrendChart scores={scoreTrend} />
-                <div style={{ fontSize: 11.5, color: C.sub, marginTop: 8 }}>
-                  点線 = 「よい」の目安（{SCORE_GOOD_LINE}点）・いちばん右がきょう
-                </div>
-              </Card>
-            )}
-            <Card>
-              <SectionTitle icon={<Moon size={16} color={C.accent} strokeWidth={1.6} />}>この7日間のねむり</SectionTitle>
-              <WeekBars week={health.week} metric="sleepHours" color={C.rose} goal={profile.goalSleep} />
-              <div style={{ fontSize: 11.5, color: C.sub, marginTop: 8 }}>点線 = あなたの目標（{profile.goalSleep}時間）・いちばん右がきのう</div>
-            </Card>
-            <Card>
-              <SectionTitle icon={<Footprints size={16} color={C.accent} strokeWidth={1.6} />}>この7日間の歩いた量</SectionTitle>
-              <WeekBars week={health.week} metric="steps" color={C.mauve} goal={profile.goalSteps} />
-              <div style={{ fontSize: 11.5, color: C.sub, marginTop: 8 }}>点線 = あなたの目標（{profile.goalSteps.toLocaleString()}歩）</div>
-            </Card>
 
             {/* 記録の価値 (予防医療の文脈・誠実に) */}
             <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '2px 6px' }}>
