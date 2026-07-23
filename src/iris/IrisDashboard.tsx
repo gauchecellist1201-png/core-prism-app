@@ -356,18 +356,20 @@ function IrisSidebar({
 
 // ── モバイル下部 Dock ───────────────────────────────────────────
 function IrisBottomDock({
-  tab, setTab, bg,
+  tab, setTab, bg, onMore,
 }: {
   tab: Tab;
   setTab: (t: Tab) => void;
   bg: IrisBackgroundDef;
   onMore: () => void;
 }) {
-  // リール特化: 中央FAB=リール作成。左右は企画/予約とその他のみ (3+1ボタン)
+  // リール特化: 中央FAB=リール作成。左=企画、右=その他(=全機能シートを開く)。
+  // 「その他」はメニュー(≡)アイコン＝タップで16機能の一覧シートを親指の届く位置から直接開く。
+  // (旧: その他ボタンがホームへ遷移していたため、≡アイコンなのに一覧が出ず16機能が下部から到達不能だった)
   const DOCK_ITEMS = [
     { group: TAB_GROUPS[1], defaultTab: 'script' as Tab },
     { group: TAB_GROUPS[0], defaultTab: 'reel' as Tab, isFab: true },
-    { group: TAB_GROUPS[2], defaultTab: 'home' as Tab },
+    { group: TAB_GROUPS[2], defaultTab: 'home' as Tab, isMore: true },
   ];
 
   return (
@@ -390,7 +392,7 @@ function IrisBottomDock({
         boxShadow: '0 -4px 20px rgba(31,26,46,0.08)',
       }}
     >
-      {DOCK_ITEMS.map(({ group, defaultTab, isFab }) => {
+      {DOCK_ITEMS.map(({ group, defaultTab, isFab, isMore }) => {
         const GIco = group.icon;
         const isActive = TAB_TO_GROUP[tab] === group.id;
         if (isFab) {
@@ -417,7 +419,8 @@ function IrisBottomDock({
         return (
           <button
             key={group.id}
-            onClick={() => setTab(defaultTab)}
+            onClick={() => (isMore ? onMore() : setTab(defaultTab))}
+            aria-label={isMore ? '全機能メニューを開く' : group.label}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem',
               padding: '0.1rem 0.8rem',
