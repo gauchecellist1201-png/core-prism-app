@@ -255,7 +255,8 @@ export default function CoreSite() {
             <br />
             そして <strong style={{ color: '#2dd4bf', fontWeight: 600 }}>Guild</strong> が、お客様を“ファン”から、ともに動く“仲間”へ変える。
             <br />
-            六つは、別々の道具ではない。掛け合わさって、ひとつの知性になる。
+            からだの調子は <strong style={{ color: '#FF5C8A', fontWeight: 600 }}>Pulse</strong> が見守り、経営者自身も整える。<br />
+            七つは、別々の道具ではない。掛け合わさって、ひとつの知性になる。
             <br />
             <strong style={{ color: '#F1E9D8', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
           </p>
@@ -302,7 +303,8 @@ export default function CoreSite() {
               <FlowStep n="03" color="#06C755" tool="Resonance" Logo={ResonanceLogo} body="いま響く一文を、LINE でその人だけに届ける。" />
               <FlowStep n="04" color="#C9A96E" tool="Crystal" Logo={CrystalLogo} body="サイトに来た方は Crystal がお迎えし、商談の日程まで受け取る。" />
               <FlowStep n="05" color="#a78bfa" tool="Prism" Logo={PrismLogo} body="すべてを記録し、13 名の AI 役員が次の一手を出す。" />
-              <FlowStep n="06" color="#2dd4bf" tool="Guild" Logo={GuildLogo} body="決まった一手を、貢献で動くチーム〈ギルド〉が実行する。" last />
+              <FlowStep n="06" color="#2dd4bf" tool="Guild" Logo={GuildLogo} body="決まった一手を、貢献で動くチーム〈ギルド〉が実行する。" />
+              <FlowStep n="07" color="#FF5C8A" tool="Pulse" Logo={PulseLogo} body="走り続けるあなたのからだは、Pulse が毎朝やさしく見守る。" last />
             </div>
 
             <p style={{
@@ -313,7 +315,7 @@ export default function CoreSite() {
               marginTop: '2.75rem',
               fontWeight: 400,
             }}>
-              六つのサービスが連携し、ひとつの流れになる。
+              七つのサービスが連携し、ひとつの流れになる。
               <br />
               <strong style={{ color: '#F1E9D8', fontWeight: 700 }}>あなたは、最後に確認するだけ。</strong>
             </p>
@@ -348,7 +350,7 @@ export default function CoreSite() {
                 letterSpacing: '0.04em',
               }}
             >
-              六つの専門。ひとつの、頭脳。
+              七つの専門。ひとつの、頭脳。
             </h2>
             <p
               style={{
@@ -545,7 +547,7 @@ export default function CoreSite() {
                 maxWidth: 560,
               }}
             >
-              6つの自社プロダクトを開発・運営する体制で、
+              7つの自社プロダクトを開発・運営する体制で、
               貴社のサイト制作からシステム開発まで一貫して承ります。
             </span>
             <span
@@ -592,7 +594,7 @@ export default function CoreSite() {
             <p style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A24B', fontSize: '0.8rem', margin: 0 }}>Real Screens</p>
             <h2 style={{ fontSize: 'clamp(1.6rem, 3.6vw, 2.4rem)', fontWeight: 600, letterSpacing: '0.04em', margin: '0.6rem 0 0.4rem' }}>実物で、ご覧ください。</h2>
             <p style={{ color: 'rgba(240,233,216,0.68)', fontSize: '0.92rem', lineHeight: 2, maxWidth: 560, margin: '0 auto' }}>
-              モックアップではなく、いま本番で動いている6つの画面。<br />気になった一枚から、そのまま触れられます。
+              モックアップではなく、いま本番で動いている画面。<br />気になった一枚から、そのまま触れられます。
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
@@ -733,7 +735,7 @@ export default function CoreSite() {
             </h2>
             <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.95rem, 1.45vw, 1.05rem)', lineHeight: 2.15, maxWidth: 660, margin: '0 auto' }}>
               LINEの返信、問い合わせ対応、Instagram、予約の管理、資料と売上の数字。
-              その全部を、6つのAIエージェントが引き受けます。
+              その全部を、7つのAIエージェントが引き受けます。
               <br />
               あなたに残る仕事は、<strong style={{ color: '#E7C987', fontWeight: 600 }}>「決めること」だけ</strong>。
               空いた時間で、大切な人と過ごす。趣味に没頭する。
@@ -2125,11 +2127,13 @@ function InfoRow({
 function ConnectedSuite() {
   // 衛星ノード（正方形コンテナ内の % 座標。左右対称＝Prism を完全中央に）
   // GUILD の「場」(六角フィールド) に収まるよう、やや内側に配置。
+  // Pulse を加えた 5 衛星のペンタゴン配置 (中心 50,50・半径 34・上から時計回り 72°間隔)
   const sats = [
-    { key: 'iris', Logo: IrisLogo, name: 'Iris', role: 'Instagram', color: '#E1306C', x: 50, y: 18 },
-    { key: 'resonance', Logo: ResonanceLogo, name: 'Resonance', role: 'LINE', color: '#06C755', x: 22, y: 50 },
-    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#FFA42A', x: 78, y: 50 },
-    { key: 'crystal', Logo: CrystalLogo, name: 'Crystal', role: 'コンシェルジュ', color: '#C9A96E', x: 50, y: 82 },
+    { key: 'iris', Logo: IrisLogo, name: 'Iris', role: 'Instagram', color: '#E1306C', x: 50, y: 16 },
+    { key: 'lume', Logo: LumeLogo, name: 'Lume', role: 'リンク', color: '#FFA42A', x: 82, y: 39.5 },
+    { key: 'crystal', Logo: CrystalLogo, name: 'Crystal', role: 'コンシェルジュ', color: '#C9A96E', x: 70, y: 78 },
+    { key: 'pulse', Logo: PulseLogo, name: 'Pulse', role: 'からだ', color: '#FF5C8A', x: 30, y: 78 },
+    { key: 'resonance', Logo: ResonanceLogo, name: 'Resonance', role: 'LINE', color: '#06C755', x: 18, y: 39.5 },
   ];
   // GUILD の場（4プロダクトを包む）のティール
   const GUILD = '#2dd4bf';

@@ -92,7 +92,7 @@ export default function ContinuumLanding() {
         </p>
 
         {/* 黄金の環 — 6ロゴが CORE を巡る */}
-        <div className="ct-orbit-wrap" aria-label="6つのAIエージェントがCOREを巡る">
+        <div className="ct-orbit-wrap" aria-label="7つのAIエージェントがCOREを巡る">
           <div className="ct-beam" aria-hidden />
           <div className="ct-ring" aria-hidden />
           <div className="ct-ring ct-ring2" aria-hidden />
@@ -118,7 +118,7 @@ export default function ContinuumLanding() {
         <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.94rem, 2vw, 1.1rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.8)', maxWidth: 640, position: 'relative' }}>
           LINEの返信、問い合わせ対応、Instagram、予約の管理、資料と売上の数字。
           <br />
-          その全部を、6つのAIエージェントが引き受けます。
+          その全部を、7つのAIエージェントが引き受けます。
           <br />
           あなたに残る仕事は、<strong style={{ color: GOLD_HI }}>「決めること」だけ</strong>。
         </p>
@@ -198,7 +198,7 @@ export default function ContinuumLanding() {
           <p className="ct-label">The Six</p>
           <h2 className="ct-h2">担当は、この6人。</h2>
           <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.9rem, 1.5vw, 1rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.7)', maxWidth: 620, margin: '0 auto' }}>
-            それぞれ単体でも売られているAIサービスです。Continuum では6つがつながり、
+            それぞれ単体でも売られているAIサービスです。Continuum では7つがつながり、
             お客様の情報も、あなたの話し方も、自動で引き継がれます。
           </p>
         </div>
@@ -282,7 +282,7 @@ export default function ContinuumLanding() {
           ))}
         </div>
         <p style={{ textAlign: 'center', marginTop: '1.8rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.42)', lineHeight: 2 }}>
-          6つを単品でそろえると 月 約¥109,000。いつでも解約できます。
+          単品でそろえると 月 約¥109,000。いつでも解約できます。
           <br />
           決済ページ公開までは、ボタンからそのままご相談ください（1営業日以内にお返事します）。
         </p>
