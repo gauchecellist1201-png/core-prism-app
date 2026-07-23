@@ -553,8 +553,10 @@ export default function App() {
         <IrisApp />
         {/* CORE 共通ドック（下部中央・current=iris）。
             Iris は下部ナビ Dock(64px) + リールのチャット編集バー(≈56px) が最下段に並ぶため、
-            オーブがそれらに乗り上げないよう下端から 150px 持ち上げてクランプする */}
-        <CoreDock current="iris" bottomClearance={150} />
+            オーブがそれらに乗り上げないよう下端から 150px 持ち上げてクランプする。
+            zIndex=50: 全機能シート(z=60)などのモーダルの上に浮いてボタンを塞がないよう、
+            シートより下・常駐FAB(z=40)より上に置く (2026-07-22 機械巡回で検出) */}
+        <CoreDock current="iris" bottomClearance={150} zIndex={50} />
       </Suspense>
     );
   }

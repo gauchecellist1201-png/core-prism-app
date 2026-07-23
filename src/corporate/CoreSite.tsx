@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo } from '../components/Logo';
 import { CONTINUUM_PLANS } from './continuumPlans';
 
 const COMPANY = {
@@ -30,6 +30,7 @@ const PLATFORM_PLANS: Array<{
   { name: 'Guild', role: 'Community OS', copy: '提案と投票で動く組織OS。まずは無料の入口から。', price: '¥980〜', priceNote: '/ 月（税込）', accent: '#2DD4BF', url: 'https://guild-gauches-projects.vercel.app/?lp=1', Logo: GuildLogo, step: 'STEP 2 — チームで' },
   { name: 'Prism', role: 'AI Business OS', copy: '経営の司令塔。13名のAIエージェントが事業を動かす。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#C9A96E', url: '/pricing', Logo: PrismLogo, step: 'STEP 3 — 経営に' },
   { name: 'Iris', role: 'Instagram AI', copy: 'Instagram運用のすべてをAIと。分析から案件まで。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#E1306C', url: '/iris?lp=1', Logo: IrisLogo, step: 'STEP 3 — 集客に' },
+  { name: 'Pulse', role: 'Health AI', copy: '毎日のからだを見守るAI。睡眠・心拍・歩数を、毎朝やさしいことばに。', price: '無料〜', priceNote: '先行モニター中・正式版 ¥2,980/月（予定）', accent: '#FF5C8A', url: '/pulse', Logo: PulseLogo, step: 'STEP 3 — からだに' },
   { name: 'Resonance', role: 'LINE AI', copy: '一人ひとりに書き分けるLINE個別配信と自動応対。', price: '¥6,980〜', priceNote: '/ 月（税込）', accent: '#06C755', url: 'https://resonancebot-ivory.vercel.app/lp', Logo: ResonanceLogo, step: 'STEP 4 — ファンを資産に' },
   { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: 'https://crystal-nine-self.vercel.app/', Logo: CrystalLogo, step: 'STEP 5 — 最上位のおもてなし', featured: true },
 ];
@@ -134,7 +135,7 @@ export default function CoreSite() {
         zIndex: 60,
         fontFamily: FONT_SERIF_JA,
       }}>
-        Prism ・ Iris ・ Guild ・ Resonance ・ Lume ・ Crystal —— 六つのプロダクト、ベータ公開中
+        Prism ・ Iris ・ Guild ・ Resonance ・ Lume ・ Crystal ・ Pulse —— 七つのプロダクト、ベータ公開中
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -633,7 +634,7 @@ export default function CoreSite() {
             <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(240,233,216,0.7)', fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', maxWidth: 680, margin: '0 auto', lineHeight: 2 }}>
               どのプロダクトも、月々数千円から。事業が育ったら、そのまま上位プランへ。
               <br />
-              六つすべてが、ひとつの CORE でつながっています。
+              七つすべてが、ひとつの CORE でつながっています。
             </p>
           </div>
           <div className="lp-platform-grid">
@@ -1420,7 +1421,7 @@ export default function CoreSite() {
             <InfoRow label="代表取締役" subLabel="CEO"           value={COMPANY.ceoJa}    subValue={COMPANY.ceoEn} />
             <InfoRow label="本社所在地" subLabel="Headquarters" value={COMPANY.addressJa} subValue={COMPANY.addressEn} />
             <InfoRow label="事業内容"   subLabel="Business"     value="エージェントAIを中心とした SaaS の開発・運営" />
-            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）／ Crystal（AI コンシェルジュ・接客サイト向け）" isLast />
+            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）／ Crystal（AI コンシェルジュ・接客サイト向け）／ CORE Pulse（からだ見守りAI）" isLast />
           </dl>
         </div>
       </section>
@@ -1593,6 +1594,7 @@ export default function CoreSite() {
             <a href="https://resonancebot-ivory.vercel.app/lp" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Resonance</a>
             <a href="https://lume-deploy-five.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Lume</a>
             <a href="https://crystal-nine-self.vercel.app/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">Crystal</a>
+            <a href="/pulse" style={footLink} className="lp-tap-link">CORE Pulse</a>
           </div>
           <div>
             <p style={footHead}>会社</p>

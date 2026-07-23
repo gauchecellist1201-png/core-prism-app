@@ -321,7 +321,9 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
   };
 
   return (
-    <div style={{ display: 'grid', gap: '1.1rem' }}>
+    // minmax(0,1fr): 中身(nowrapピル等)の max-content で grid が画面幅を超えて膨らみ、
+    // 右側が丸ごと見切れるのを封じ込め (2026-07-22 機械巡回で検出)
+    <div style={{ display: 'grid', gap: '1.1rem', gridTemplateColumns: 'minmax(0, 1fr)', maxWidth: '100%' }}>
       {/* ヘッダ */}
       <div>
         <p style={{ ...sectionLabel, marginBottom: '0.3rem' }}>Plan & Script — 運用代行モード</p>

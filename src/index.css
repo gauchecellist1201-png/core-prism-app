@@ -2807,3 +2807,11 @@ time {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 214px) !important;
   }
 }
+
+/* ============================================================
+   下部見切れゼロ恒久ルール (2026-07-22 オーナー指示)
+   固定の下部ナビ・FAB帯が本文の最後を覆わないよう、
+   本文末尾に「バー高+セーフエリア+余裕」を常に確保する。 */
+.iris-main {
+  padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px)) !important;
+}

@@ -495,6 +495,124 @@ export function CrystalLogo({ size = 28, withWordmark = true, variant = 'default
 }
 
 // ─────────────────────────────────────────────
+//  CORE Pulse — 鼓動が描くハート (ヘルスケア・ピンク)
+//  脈波(心拍ライン)がハートの中を流れる、生命感のあるマーク。
+//  ピンクグラデ #FF5C8A → #E8859E → #C9A192。淡いグローで上品に発光
+// ─────────────────────────────────────────────
+export function PulseLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
+  const isMono = variant === 'mono';
+  const gradId = `pulse-grad-${size}`;
+  const ecgGradId = `pulse-ecg-grad-${size}`;
+  const glowId = `pulse-glow-${size}`;
+
+  return (
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: withWordmark ? 10 : 0, lineHeight: 1 }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="CORE Pulse"
+        style={{ flexShrink: 0 }}
+      >
+        <defs>
+          {/* ハート輪郭: ピンク → ローズ → ローズベージュ */}
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FF5C8A" />
+            <stop offset="55%" stopColor="#E8859E" />
+            <stop offset="100%" stopColor="#C9A192" />
+          </linearGradient>
+          {/* 脈波: 明るいピンクの光 */}
+          <linearGradient id={ecgGradId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#FFB8CC" />
+            <stop offset="50%" stopColor="#FF5C8A" />
+            <stop offset="100%" stopColor="#FFB8CC" />
+          </linearGradient>
+          {/* 淡いグロー (にじむ光) */}
+          <filter id={glowId} x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="1.6" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* ハート輪郭 — 一筆書き風のひらいた曲線 (下の頂点から両翼へ) */}
+        <path
+          d="M50 84
+             C 34 72, 16 58, 14 42
+             C 12.5 29, 21 19.5, 32 19.5
+             C 41 19.5, 47 25.5, 50 32.5
+             C 53 25.5, 59 19.5, 68 19.5
+             C 79 19.5, 87.5 29, 86 42
+             C 84 58, 66 72, 50 84 Z"
+          stroke={isMono ? 'currentColor' : `url(#${gradId})`}
+          strokeWidth="4.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+          filter={isMono ? undefined : `url(#${glowId})`}
+          opacity={isMono ? 0.9 : 1}
+        />
+
+        {/* 脈波 (心拍ライン) — ハートの中を流れる鼓動 */}
+        <path
+          d="M27 51 h11 l5.5 -11 8 22 6 -16 3.5 5 h12"
+          stroke={isMono ? 'currentColor' : `url(#${ecgGradId})`}
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+          filter={isMono ? undefined : `url(#${glowId})`}
+        />
+
+        {/* 鼓動の光点 */}
+        {!isMono && <circle cx="73" cy="51" r="2.6" fill="#FFD3E0" filter={`url(#${glowId})`} />}
+      </svg>
+
+      {withWordmark && (
+        <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
+          <span
+            style={{
+              fontFamily: '"Cormorant Garamond", "Playfair Display", "Noto Serif JP", serif',
+              fontWeight: 600,
+              fontSize: size * 0.42,
+              letterSpacing: '0.3em',
+              ...(isMono ? { color: 'currentColor' } : { color: '#E8859E' }),
+            }}
+          >
+            CORE
+          </span>
+          <span
+            style={{
+              fontFamily: '"Cormorant Garamond", "Playfair Display", "Noto Serif JP", serif',
+              fontStyle: 'italic',
+              fontWeight: 500,
+              fontSize: size * 0.58,
+              letterSpacing: '0.04em',
+              marginTop: 2,
+              ...(isMono ? { color: 'currentColor' } : {
+                background: 'linear-gradient(120deg, #FF5C8A 0%, #E8859E 55%, #C9A192 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }),
+            }}
+          >
+            Pulse
+          </span>
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────
 //  CORE — 法人ロゴ (同心円 + 8 本スポーク + 中央の核)
 //  「核」の本質: 中心から世界へ放射する光
 //  青白いシアン基調の発光、Apple Vision/SF 的な精緻さ

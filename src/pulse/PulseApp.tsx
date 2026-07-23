@@ -5,14 +5,15 @@
 // ターゲット: 女性のライフステージ・予防医学に関心がある層。
 // ITに詳しくなくても直感的にわかる「やさしい日本語」を最優先する。
 //
-// デザイン言語 (2026-07 刷新):
-//   女性向けヘルスケア(Flo/Clue系)×ハイエンド美容ブランド(SHIRO/Aesop/IPSA)×
-//   自由診療クリニックの上質サイト。
-//   - パレット: アイボリー #FAF7F4 / ローズベージュ #C9A192 / モーブブラウン #8A6D5C /
-//     温かい濃茶 #3E3833 / シャンパンゴールド #C9B37E(線・ラベルのみ)
-//   - タイポ: 見出し=Noto Serif JP(明朝)。数値=細身(300)で大きく・letter-spacing広め。
-//     ラベル=小さくtracking広めのうす茶
-//   - 形: 大きな角丸(24-28px)・細い罫線・淡い影・ヒーローに有機曲線の装飾
+// デザイン言語 (2026-07-22 大刷新「プレミアム・ヘルステック」):
+//   Whoop / Oura 級の「デバイスと繋がるテック製品」感 × 女性向けヘルスケアの品。
+//   - パレット: 深い夜色 #0D0A0F〜#1A1218 のダークベースに、
+//     ピンク #FF5C8A / ローズ #E8859E のネオングロー(淡く上品に)。
+//     ローズベージュ #C9A192 は線・ラベルの流儀として残す
+//   - タイポ: 見出し=Noto Serif JP(明朝)。数値=細身(200-300)・特大・tabular-nums・
+//     ピンクのソフトグロー(text-shadow)で発光
+//   - 形: ガラス質カード(白4-6%+blur)+1pxピンク罫+角丸24px。ホバー/タップで浮く・弾む
+//   - 主役: 「きょうの調子」大径リング。鼓動のようにゆっくり呼吸する光+スコアのカウントアップ
 //   - 信頼: データの扱い明記 / 医療機器でない旨 / 記録=専門家相談の確かな資料
 //
 // 構成 (1画面完結タブ型):
@@ -33,38 +34,66 @@ import {
   HeartPulse, Moon, Footprints, Sun, NotebookPen, Settings, Bluetooth,
   Smartphone, Check, Copy, Trash2, Mail, ArrowRight, ShieldCheck, Activity,
   Loader2, AlertTriangle, Droplets, ChevronRight, Smile, Meh, Frown, SmilePlus,
-  RefreshCw, Info, Lock, FileText, Stethoscope,
+  RefreshCw, Info, Lock, FileText, Stethoscope, TrendingUp, TrendingDown, Minus,
+  CalendarDays, Compass,
 } from 'lucide-react';
 import { useHealth } from '../hooks/useHealth';
+import { PulseLogo } from '../components/Logo';
 import { detectAnomalies, type HealthAnomaly } from '../data/healthAnomaly';
 import type { DailyHealth } from '../types/health';
 import { fetchWithTimeout, isAbort } from '../lib/fetchWithTimeout';
-import { scorePulseDay, scoreLastDays, SCORE_GOOD_LINE, STEPS_FULL, SLEEP_HOURS_FULL, type PulseScoreResult } from './pulseScore';
+import { scorePulseDay, scoreLastDays, SCORE_GOOD_LINE, SCORE_MAX, STEPS_FULL, SLEEP_HOURS_FULL, type PulseScoreResult, type PulseScoreParts } from './pulseScore';
 import { emailToHash, checkIngestStatus, saveLiveHRSession, type HealthIdentity } from '../lib/healthLiveSession';
 import { HeartRateMonitor, isWebBluetoothSupported, type HRReading } from '../lib/webBluetoothHR';
 
-// ── カラー (アイボリー×ローズベージュ×モーブブラウン。上質なくすみトーン) ──
-// 文字系はすべて白背景で 4.5:1 以上を実測して選定:
-//   ink #3E3833 = 10.9:1 / sub #6E5F56 = 6.1:1 / accent #8A6D5C = 4.75:1 /
-//   goldText #7E6B40 = 5.2:1 / good #2E6B4F = 6.2:1 / warn #8A5620 = 5.4:1
+// ── カラー (深い夜色×ピンクグロー。プレミアム・ヘルステック) ──
+// 文字系はすべて夜色背景 #0D0A0F で 4.5:1 以上になる明るさを選定:
+//   ink #F6EEF3 ≈ 17:1 / sub #BFAABA ≈ 8.6:1 / accent #FF8FB2 ≈ 8:1 /
+//   goldText #D9B9AC ≈ 10:1 / good #7DDBA8 ≈ 10:1 / warn #FFBE85 ≈ 10:1
 const C = {
-  bg: '#FAF7F4',          // アイボリー
-  card: '#FFFFFF',
-  line: '#EBE2DA',        // 細い罫線 (温かいベージュ)
-  ink: '#3E3833',         // 温かい濃茶
-  sub: '#6E5F56',         // うす茶 (本文サブ)
-  accent: '#8A6D5C',      // モーブブラウン (ボタン・文字アクセント)
-  accentSoft: '#F4ECE6',  // モーブの淡い面
-  mauve: '#9C7A6C',       // 中間モーブ (図形・アイコンのみ)
-  rose: '#C9A192',        // ローズベージュ (グラフ・装飾のみ)
-  roseSoft: '#F6EDE8',
-  gold: '#C9B37E',        // シャンパンゴールド (線・装飾のみ)
-  goldText: '#7E6B40',    // ゴールドの文字用 (ラベル)
-  good: '#2E6B4F',
-  goodSoft: '#EDF4EF',
-  warn: '#8A5620',
-  warnSoft: '#F9F0E4',
+  bg: '#0D0A0F',                          // 深い夜色 (ベース)
+  bgDeep: '#1A1218',                      // 夜色の面 (入力・くぼみ)
+  card: 'rgba(255,255,255,0.045)',        // ガラス質カード
+  line: 'rgba(255,124,163,0.18)',         // 1px ピンク罫
+  ink: '#F6EEF3',                         // 明るい生成り (本文)
+  sub: '#BFAABA',                         // うすいモーブグレー (サブ)
+  accent: '#FF8FB2',                      // 明るいピンク (文字アクセント)
+  pink: '#FF5C8A',                        // ブランドピンク (図形・グロー)
+  accentSoft: 'rgba(255,92,138,0.14)',    // ピンクの淡い面
+  mauve: '#E8859E',                       // ローズ (図形・アイコン)
+  rose: '#E8859E',                        // ローズ (グラフ・装飾)
+  roseSoft: 'rgba(232,133,158,0.12)',
+  gold: '#C9A192',                        // ローズベージュ (線・装飾)
+  goldText: '#D9B9AC',                    // ローズベージュの文字用 (ラベル)
+  good: '#7DDBA8',
+  goodSoft: 'rgba(125,219,168,0.12)',
+  warn: '#FFBE85',
+  warnSoft: 'rgba(255,190,133,0.12)',
 };
+/** ピンクのソフトグロー (数字の発光) */
+const NUM_GLOW = '0 0 22px rgba(255,92,138,0.45)';
+
+// ── 共通アニメーションCSS (LP・アプリ両方に注入) ──
+const PULSE_CSS = `
+  .pulse-spin { animation: pulse-rotate 1s linear infinite; }
+  @keyframes pulse-rotate { to { transform: rotate(360deg); } }
+  .pulse-press { transition: transform .18s cubic-bezier(.34, 1.56, .64, 1); }
+  .pulse-press:active { transform: scale(.95); }
+  .pulse-card { transition: transform .25s ease, border-color .25s ease; }
+  @media (hover: hover) {
+    .pulse-card:hover { transform: translateY(-2px); border-color: rgba(255,124,163,0.36); }
+  }
+  .pulse-breathe { animation: pulse-breathe 3.6s ease-in-out infinite; }
+  @keyframes pulse-breathe {
+    0%, 100% { opacity: .55; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.03); }
+  }
+  .pulse-ecg-flow { stroke-dasharray: 260 740; animation: pulse-ecg-flow 5.5s linear infinite; }
+  @keyframes pulse-ecg-flow { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: -1000; } }
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-breathe, .pulse-ecg-flow { animation: none; }
+  }
+`;
 
 // ── タイポグラフィ ──
 const SERIF = "'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif";
@@ -178,19 +207,7 @@ function loadChips(): Record<string, string[]> {
   } catch { return {}; }
 }
 
-// ── ロゴ (鼓動の波形・カスタムSVG。ゴールドの細いリング×モーブの波形) ──
-function PulseMark({ size = 28 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden>
-      <circle cx="16" cy="16" r="15" fill="#FFFFFF" stroke={C.gold} strokeWidth="1" />
-      <circle cx="16" cy="16" r="12.5" fill={C.roseSoft} />
-      <path
-        d="M6.5 16.5h4l2.2-6 3.6 11 2.8-8 1.6 3h5"
-        stroke={C.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+// ── ロゴ — 共通ブランドロゴ (src/components/Logo.tsx の PulseLogo) を使用 ──
 
 // ── やさしい言葉の変換ヘルパー ──
 function fmtSleep(h?: number): string {
@@ -240,6 +257,24 @@ function anomalyToPlain(a: HealthAnomaly): { title: string; detail: string } {
     return {
       title: 'ストレスのサインが高めに出ています',
       detail: '深呼吸をゆっくり3回。あたたかい飲みものを片手に、ひと休みする時間をつくってみてください。',
+    };
+  }
+  if (m === 'alcoholDrinks') {
+    return {
+      title: 'この1週間、お酒が多めのようです',
+      detail: 'お酒はねむりの質をそっと下げてしまいます。今夜は休肝日にして、あたたかいお茶でひと息つきませんか。',
+    };
+  }
+  if (m === 'caffeineMg') {
+    return {
+      title: 'カフェインが多めの日が続いています',
+      detail: '午後のコーヒーをノンカフェインに替えるだけで、ねむりがぐっと深くなることがあります。',
+    };
+  }
+  if (m === 'recoveryScore') {
+    return {
+      title: 'このところ、とても調子がいいようです',
+      detail: 'からだの回復がしっかりできている時期です。新しいことを始めるのにぴったりのタイミングかもしれません。',
     };
   }
   return { title: 'いつもと少しちがう変化がありました', detail: a.detail };
@@ -307,9 +342,12 @@ function memoToHint(text: string, mood: PulseMemo['mood']): string {
 // ── 共通UI部品 ──
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{
-      background: C.card, border: `1px solid ${C.line}`, borderRadius: 26,
-      padding: 22, boxShadow: '0 1px 2px rgba(62,56,51,0.03), 0 8px 28px rgba(138,109,92,0.05)',
+    <div className="pulse-card" style={{
+      background: 'linear-gradient(165deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025))',
+      border: `1px solid ${C.line}`, borderRadius: 24,
+      padding: 22,
+      backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 14px 38px rgba(0,0,0,0.38)',
       ...style,
     }}>
       {children}
@@ -330,14 +368,15 @@ function PrimaryButton({ onClick, href, children, full }: {
   const style: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
     minHeight: 50, padding: '13px 26px', borderRadius: 999,
-    background: C.accent, color: '#FFFFFF', fontSize: 14.5, fontWeight: 600,
+    background: 'linear-gradient(120deg, #FF5C8A, #E8859E)',
+    color: '#2A0D17', fontSize: 14.5, fontWeight: 700,
     letterSpacing: '0.06em',
     border: 'none', cursor: 'pointer', textDecoration: 'none',
     width: full ? '100%' : undefined, boxSizing: 'border-box',
-    boxShadow: '0 6px 18px rgba(138,109,92,0.22)',
+    boxShadow: '0 8px 26px rgba(255,92,138,0.35), 0 0 44px rgba(255,92,138,0.16)',
   };
-  if (href) return <a href={href} style={style}>{children}</a>;
-  return <button type="button" onClick={onClick} style={style}>{children}</button>;
+  if (href) return <a href={href} className="pulse-press" style={style}>{children}</a>;
+  return <button type="button" onClick={onClick} className="pulse-press" style={style}>{children}</button>;
 }
 function GhostButton({ onClick, href, children, full }: {
   onClick?: () => void; href?: string; children: React.ReactNode; full?: boolean;
@@ -345,13 +384,13 @@ function GhostButton({ onClick, href, children, full }: {
   const style: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
     minHeight: 50, padding: '13px 26px', borderRadius: 999,
-    background: '#FFFFFF', color: C.accent, fontSize: 14.5, fontWeight: 600,
+    background: 'rgba(255,255,255,0.045)', color: C.accent, fontSize: 14.5, fontWeight: 600,
     letterSpacing: '0.06em',
-    border: `1px solid ${C.accent}`, cursor: 'pointer', textDecoration: 'none',
+    border: '1px solid rgba(255,92,138,0.5)', cursor: 'pointer', textDecoration: 'none',
     width: full ? '100%' : undefined, boxSizing: 'border-box',
   };
-  if (href) return <a href={href} style={style}>{children}</a>;
-  return <button type="button" onClick={onClick} style={style}>{children}</button>;
+  if (href) return <a href={href} className="pulse-press" style={style}>{children}</a>;
+  return <button type="button" onClick={onClick} className="pulse-press" style={style}>{children}</button>;
 }
 function CopyField({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
@@ -360,7 +399,7 @@ function CopyField({ label, value }: { label: string; value: string }) {
       <div style={{ ...labelStyle(), marginBottom: 6 }}>{label}</div>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
-        background: C.bg, border: `1px solid ${C.line}`, borderRadius: 14, padding: '9px 12px',
+        background: C.bgDeep, border: `1px solid ${C.line}`, borderRadius: 14, padding: '9px 12px',
       }}>
         <div style={{
           flex: 1, fontSize: 12, fontFamily: 'ui-monospace, monospace', color: C.ink,
@@ -374,8 +413,8 @@ function CopyField({ label, value }: { label: string; value: string }) {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
             minHeight: 36, padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
-            background: copied ? C.goodSoft : '#FFFFFF', color: copied ? C.good : C.accent,
-            border: `1px solid ${copied ? C.good : C.accent}`, cursor: 'pointer',
+            background: copied ? C.goodSoft : 'rgba(255,255,255,0.05)', color: copied ? C.good : C.accent,
+            border: `1px solid ${copied ? C.good : 'rgba(255,92,138,0.5)'}`, cursor: 'pointer',
           }}
         >
           {copied ? <Check size={13} /> : <Copy size={13} />}
@@ -411,35 +450,71 @@ function WeekBars({ week, metric, color, goal }: {
   );
 }
 
-// ── 「きょうの調子」リングゲージ (Oura型・SVG) ──
+// ── スコアのカウントアップ (0 → 総合点。数字が息を吹き返す演出) ──
+function useCountUp(target: number, duration = 1000): number {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - t0) / duration);
+      const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+      setV(Math.round(target * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return v;
+}
+
+// ── 「きょうの調子」リングゲージ (主役・大径。鼓動のように呼吸する光) ──
 function ScoreRing({ score }: { score: PulseScoreResult }) {
   const total = Math.max(0, Math.min(100, score.total));
-  const R = 64;
+  const shown = useCountUp(total, 1100);
+  const R = 82;
   const CIRC = 2 * Math.PI * R;
+  const S = 196;
   return (
-    <div style={{ position: 'relative', width: 164, height: 164, margin: '0 auto' }}>
-      <svg width={164} height={164} viewBox="0 0 164 164" aria-hidden style={{ display: 'block' }}>
+    <div style={{ position: 'relative', width: S, height: S, margin: '0 auto' }}>
+      {/* 呼吸するピンクの光 (ハロー) */}
+      <div aria-hidden className="pulse-breathe" style={{
+        position: 'absolute', inset: 10, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(255,92,138,0.28) 0%, rgba(255,92,138,0.07) 55%, rgba(255,92,138,0) 72%)',
+      }} />
+      <svg width={S} height={S} viewBox={`0 0 ${S} ${S}`} aria-hidden style={{ display: 'block', position: 'relative' }}>
         <defs>
           <linearGradient id="pulseScoreGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={C.rose} />
-            <stop offset="100%" stopColor={C.accent} />
+            <stop offset="0%" stopColor="#FF5C8A" />
+            <stop offset="60%" stopColor="#E8859E" />
+            <stop offset="100%" stopColor="#C9A192" />
           </linearGradient>
+          <filter id="pulseRingGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
-        <circle cx="82" cy="82" r={R} fill="none" stroke={C.roseSoft} strokeWidth="10" />
+        {/* トラック (うっすら) */}
+        <circle cx={S / 2} cy={S / 2} r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="11" />
+        {/* 進捗アーク (発光) */}
         <circle
-          cx="82" cy="82" r={R} fill="none"
-          stroke="url(#pulseScoreGrad)" strokeWidth="10" strokeLinecap="round"
+          cx={S / 2} cy={S / 2} r={R} fill="none"
+          stroke="url(#pulseScoreGrad)" strokeWidth="11" strokeLinecap="round"
           strokeDasharray={`${CIRC}`} strokeDashoffset={CIRC * (1 - total / 100)}
-          transform="rotate(-90 82 82)"
-          style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+          transform={`rotate(-90 ${S / 2} ${S / 2})`}
+          filter="url(#pulseRingGlow)"
+          style={{ transition: 'stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1)' }}
         />
       </svg>
       <div style={{
         position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: 2,
+        alignItems: 'center', justifyContent: 'center', gap: 3,
       }}>
-        <div style={{ ...NUM_STYLE, fontSize: 46, color: C.ink, lineHeight: 1 }}>{total}</div>
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: C.accent, fontFamily: SERIF, letterSpacing: '0.08em' }}>
+        <div style={{ ...NUM_STYLE, fontSize: 62, color: C.ink, lineHeight: 1, textShadow: NUM_GLOW }}>{shown}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.accent, fontFamily: SERIF, letterSpacing: '0.14em' }}>
           {score.label}
         </div>
       </div>
@@ -468,33 +543,150 @@ function ScoreTrendChart({ scores }: { scores: Array<{ total: number }> }) {
   );
 }
 
-// ── ヒーロー装飾 (淡い有機曲線・CSSのみ) ──
+// ── きょうのフォーカス — スコア内訳のいちばん弱い項目から1行提案 (コード確定・LLM不要) ──
+const FOCUS_WORDS: Record<keyof PulseScoreParts, string> = {
+  sleep: 'きょうは30分早くおふとんへ。ねむりが伸びると、あしたの点がいちばん上がります。',
+  hrv: 'きょうはがんばりすぎない日に。深呼吸を3回と、あたたかい飲みものをどうぞ。',
+  resting: '脈が高めのサインです。カフェインを控えめに、今夜はゆったり過ごしましょう。',
+  steps: '午後に10分のお散歩を。8,000歩に近づくほど、点はぐっと上がります。',
+};
+/** 内訳のうち満点比がいちばん低い項目を返す (同率なら配点の大きい順に優先) */
+export function weakestPart(parts: PulseScoreParts): keyof PulseScoreParts {
+  const order: Array<keyof PulseScoreParts> = ['sleep', 'hrv', 'resting', 'steps'];
+  let worst: keyof PulseScoreParts = 'sleep';
+  let worstRatio = Infinity;
+  for (const k of order) {
+    const ratio = parts[k] / SCORE_MAX[k];
+    if (ratio < worstRatio) { worstRatio = ratio; worst = k; }
+  }
+  return worst;
+}
+
+// ── 今週のまとめ (週間レポート・コード確定計算) ──
+interface WeeklySummary {
+  avgScore: number | null;      // 今週 (直近7日) の平均スコア
+  prevAvgScore: number | null;  // 先週 (その前7日) の平均スコア
+  sleepSum: number;             // 今週のねむり合計 (時間)
+  prevSleepSum: number | null;
+  stepsSum: number;             // 今週の歩数合計
+  prevStepsSum: number | null;
+  daysCount: number;            // 今週のデータ日数
+}
+export function summarizeWeek(days: DailyHealth[]): WeeklySummary {
+  const last7 = days.slice(-7);
+  const prev7 = days.slice(-14, -7);
+  const totals = scoreLastDays(days, 14);
+  const curTotals = totals.slice(-last7.length);
+  const prevTotals = totals.slice(0, Math.max(0, totals.length - last7.length));
+  const mean = (arr: number[]) => (arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null);
+  const sum = (arr: DailyHealth[], pick: (d: DailyHealth) => number) =>
+    arr.reduce((s, d) => { const v = pick(d); return s + (isFinite(v) && v > 0 ? v : 0); }, 0);
+  const avg = mean(curTotals.map((t) => t.total));
+  const prevAvg = prev7.length >= 3 ? mean(prevTotals.map((t) => t.total)) : null;
+  return {
+    avgScore: avg === null ? null : Math.round(avg),
+    prevAvgScore: prevAvg === null ? null : Math.round(prevAvg),
+    sleepSum: sum(last7, (d) => d.sleepHours),
+    prevSleepSum: prev7.length >= 3 ? sum(prev7, (d) => d.sleepHours) : null,
+    stepsSum: sum(last7, (d) => d.steps),
+    prevStepsSum: prev7.length >= 3 ? sum(prev7, (d) => d.steps) : null,
+    daysCount: last7.length,
+  };
+}
+/** 先週比の矢印。cur/prev から ▲(良) ▼(注意) →(横ばい) を決める */
+function DeltaArrow({ cur, prev, unit, betterIsUp = true }: {
+  cur: number; prev: number | null; unit: string; betterIsUp?: boolean;
+}) {
+  if (prev === null || prev <= 0) {
+    return <span style={{ fontSize: 10.5, color: C.sub, opacity: 0.8 }}>先週分はまだありません</span>;
+  }
+  const diff = cur - prev;
+  const flat = Math.abs(diff) < Math.max(prev * 0.03, 0.0001);
+  const isGood = flat ? null : (diff > 0) === betterIsUp;
+  const Icon = flat ? Minus : diff > 0 ? TrendingUp : TrendingDown;
+  const color = flat ? C.sub : isGood ? C.good : C.warn;
+  const fmt = (v: number) => (unit === '時間' ? fmtSleep(Math.abs(v)) : `${Math.round(Math.abs(v)).toLocaleString()}${unit}`);
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color }}>
+      <Icon size={12} />
+      {flat ? '先週なみ' : `先週より${fmt(diff)}${diff > 0 ? '多い' : '少ない'}`}
+    </span>
+  );
+}
+
+// ── ストリーク — ピンクのリング連鎖 (7日ぶんの小さなリングが灯る) ──
+function StreakRings({ streak }: { streak: number }) {
+  const lit = Math.max(0, Math.min(streak, 7));
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 13px',
+      borderRadius: 999, background: 'rgba(255,92,138,0.10)', border: `1px solid ${C.line}`,
+    }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }} aria-hidden>
+        {Array.from({ length: 7 }).map((_, i) => (
+          <svg key={i} width={11} height={11} viewBox="0 0 12 12">
+            <circle cx="6" cy="6" r="4.4" fill="none"
+              stroke={i < lit ? '#FF5C8A' : 'rgba(255,255,255,0.18)'}
+              strokeWidth={i < lit ? 1.9 : 1.1} />
+            {i < lit && <circle cx="6" cy="6" r="1.8" fill="rgba(255,92,138,0.75)" />}
+          </svg>
+        ))}
+      </span>
+      <span style={{ fontSize: 11.5, fontWeight: 600, color: C.accent, letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>
+        {streak >= 2 ? `${streak}日連続` : 'きょうから'}
+      </span>
+    </div>
+  );
+}
+
+// ── ヒーロー装飾 (夜色にピンクのネオングロー + 流れる脈波ライン) ──
 function HeroArcs() {
   return (
     <div aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-      {/* 右上のローズの円弧 */}
+      {/* 右上のピンクのにじみ */}
       <div style={{
-        position: 'absolute', top: -180, right: -140, width: 380, height: 380, borderRadius: '50%',
-        background: 'radial-gradient(circle at 35% 65%, rgba(201,161,146,0.16), rgba(201,161,146,0) 68%)',
+        position: 'absolute', top: -180, right: -140, width: 420, height: 420, borderRadius: '50%',
+        background: 'radial-gradient(circle at 35% 65%, rgba(255,92,138,0.20), rgba(255,92,138,0) 68%)',
       }} />
-      {/* 左のモーブのにじみ */}
+      {/* 左のローズのにじみ */}
       <div style={{
-        position: 'absolute', top: 120, left: -160, width: 340, height: 340, borderRadius: '50%',
-        background: 'radial-gradient(circle at 60% 40%, rgba(156,122,108,0.10), rgba(156,122,108,0) 66%)',
+        position: 'absolute', top: 140, left: -170, width: 380, height: 380, borderRadius: '50%',
+        background: 'radial-gradient(circle at 60% 40%, rgba(232,133,158,0.13), rgba(232,133,158,0) 66%)',
       }} />
-      {/* ゴールドの細いリング */}
+      {/* 呼吸するピンクの細いリング */}
+      <div className="pulse-breathe" style={{
+        position: 'absolute', top: 26, right: -70, width: 260, height: 260, borderRadius: '50%',
+        border: '1px solid rgba(255,92,138,0.4)',
+        boxShadow: '0 0 44px rgba(255,92,138,0.14), inset 0 0 30px rgba(255,92,138,0.08)',
+      }} />
       <div style={{
-        position: 'absolute', top: 30, right: -60, width: 240, height: 240, borderRadius: '50%',
-        border: `1px solid rgba(201,179,126,0.35)`,
+        position: 'absolute', top: 280, left: -90, width: 190, height: 190, borderRadius: '50%',
+        border: '1px solid rgba(232,133,158,0.28)',
       }} />
-      <div style={{
-        position: 'absolute', top: 260, left: -80, width: 180, height: 180, borderRadius: '50%',
-        border: `1px solid rgba(201,161,146,0.28)`,
-      }} />
-      {/* 下辺のやわらかな波 */}
-      <svg viewBox="0 0 720 80" preserveAspectRatio="none" style={{ position: 'absolute', bottom: -1, left: 0, width: '100%', height: 56 }}>
-        <path d="M0 58 C 160 22, 320 78, 480 46 C 580 26, 660 40, 720 30 L 720 80 L 0 80 Z" fill="rgba(246,237,232,0.65)" />
-        <path d="M0 70 C 180 40, 360 84, 540 58 C 630 46, 690 52, 720 48" fill="none" stroke="rgba(201,179,126,0.4)" strokeWidth="1" />
+      {/* 流れる脈波ライン (心電図。描かれては消えるループ) */}
+      <svg viewBox="0 0 720 120" preserveAspectRatio="none"
+        style={{ position: 'absolute', bottom: 8, left: 0, width: '100%', height: 90 }}>
+        <defs>
+          <linearGradient id="pulseHeroEcg" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="rgba(255,92,138,0)" />
+            <stop offset="18%" stopColor="#FF5C8A" />
+            <stop offset="60%" stopColor="#E8859E" />
+            <stop offset="100%" stopColor="rgba(201,161,146,0)" />
+          </linearGradient>
+        </defs>
+        <path
+          className="pulse-ecg-flow"
+          d="M0 66 H150 l14 -26 20 52 14 -38 10 12 H340 l12 -20 18 40 12 -28 8 8 H540 l13 -24 18 46 13 -32 9 10 H720"
+          pathLength={1000}
+          fill="none" stroke="url(#pulseHeroEcg)" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round"
+          style={{ filter: 'drop-shadow(0 0 6px rgba(255,92,138,0.55))' }}
+        />
+        <path
+          d="M0 66 H150 l14 -26 20 52 14 -38 10 12 H340 l12 -20 18 40 12 -28 8 8 H540 l13 -24 18 46 13 -32 9 10 H720"
+          fill="none" stroke="rgba(255,92,138,0.14)" strokeWidth="1"
+          strokeLinecap="round" strokeLinejoin="round"
+        />
       </svg>
     </div>
   );
@@ -552,16 +744,16 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
         position: 'relative', zIndex: 2,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <PulseMark size={32} />
+          <PulseLogo size={34} withWordmark={false} />
           <div>
             <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: '0.08em', fontFamily: SERIF }}>CORE Pulse</div>
             <div style={{ fontSize: 10, color: C.sub, letterSpacing: '0.14em', marginTop: 1 }}>からだ見守りAI（エーアイ）</div>
           </div>
         </div>
-        <button type="button" onClick={onEnter} style={{
+        <button type="button" onClick={onEnter} className="pulse-press" style={{
           minHeight: 40, padding: '8px 18px', borderRadius: 999, fontSize: 13, fontWeight: 600,
           letterSpacing: '0.04em',
-          background: '#FFFFFF', color: C.accent, border: `1px solid ${C.accent}`, cursor: 'pointer',
+          background: 'rgba(255,255,255,0.05)', color: C.accent, border: '1px solid rgba(255,92,138,0.5)', cursor: 'pointer',
         }}>
           アプリを開く
         </button>
@@ -609,7 +801,7 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
 
       {/* けさのことば サンプル */}
       <section style={{ maxWidth: 500, margin: '4px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
-        <Card style={{ textAlign: 'left', boxShadow: '0 14px 44px rgba(138,109,92,0.10)' }}>
+        <Card style={{ textAlign: 'left', boxShadow: '0 14px 44px rgba(255,92,138,0.12)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Sun size={15} color={C.goldText} />
             <div style={labelStyle(C.goldText)}>けさのことば（見本）</div>
@@ -675,7 +867,7 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
       <section style={{ maxWidth: 500, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
         <Card style={{ textAlign: 'center', border: `1px solid ${C.gold}` }}>
           <div style={labelStyle(C.goldText)}>料金</div>
-          <div style={{ marginTop: 14, ...NUM_STYLE, fontSize: 38, color: C.ink, lineHeight: 1 }}>
+          <div style={{ marginTop: 14, ...NUM_STYLE, fontSize: 40, color: C.ink, lineHeight: 1, textShadow: NUM_GLOW }}>
             ¥2,980
             <span style={{ fontSize: 14, fontWeight: 400, color: C.sub, letterSpacing: '0.04em', marginLeft: 8, fontFamily: "'Noto Sans JP', sans-serif" }}>/月（予定）</span>
           </div>
@@ -695,7 +887,7 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
             </PrimaryButton>
           </div>
           <div style={{
-            marginTop: 16, padding: '12px 14px', borderRadius: 14, background: C.bg,
+            marginTop: 16, padding: '12px 14px', borderRadius: 14, background: C.bgDeep,
             fontSize: 12.5, lineHeight: 1.8, color: C.sub, textAlign: 'left',
             display: 'flex', gap: 8, alignItems: 'flex-start',
           }}>
@@ -736,6 +928,7 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
       <style>{`
         .pulse-value-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
         @media (min-width: 760px) { .pulse-value-grid { grid-template-columns: repeat(2, 1fr); } }
+        ${PULSE_CSS}
       `}</style>
     </div>
   );
@@ -859,7 +1052,7 @@ function ConnectView({ profile, onSaveEmail, health }: {
             style={{
               flex: '1 1 180px', minWidth: 0, minHeight: 46, fontSize: 16, color: C.ink,
               padding: '8px 14px', borderRadius: 14, border: `1px solid ${C.line}`,
-              background: C.bg, boxSizing: 'border-box',
+              background: C.bgDeep, boxSizing: 'border-box',
             }}
           />
           <button
@@ -868,7 +1061,8 @@ function ConnectView({ profile, onSaveEmail, health }: {
             style={{
               minHeight: 46, padding: '8px 20px', borderRadius: 999, fontSize: 13.5, fontWeight: 600,
               letterSpacing: '0.04em',
-              background: C.accent, color: '#FFF', border: 'none', cursor: 'pointer', flexShrink: 0,
+              background: 'linear-gradient(120deg, #FF5C8A, #E8859E)', color: '#2A0D17',
+              border: 'none', cursor: 'pointer', flexShrink: 0,
             }}
           >
             決定
@@ -991,7 +1185,7 @@ function HeartMonitorView({ identity }: { identity: HealthIdentity | null }) {
           marginTop: 14, borderRadius: 20, background: C.roseSoft, padding: 20, textAlign: 'center',
           border: `1px solid ${C.line}`,
         }}>
-          <div style={{ ...NUM_STYLE, fontSize: 52, color: C.ink, lineHeight: 1 }}>
+          <div style={{ ...NUM_STYLE, fontSize: 52, color: C.ink, lineHeight: 1, textShadow: NUM_GLOW }}>
             {bpm ?? '—'}
             <span style={{ fontSize: 14, fontWeight: 400, marginLeft: 8, color: C.sub, fontFamily: "'Noto Sans JP', sans-serif" }}>回/分</span>
           </div>
@@ -1092,6 +1286,7 @@ function PulseHome() {
     [health.today, health.days],
   );
   const scoreTrend = useMemo(() => scoreLastDays(health.days, 7), [health.days]);
+  const weekly = useMemo(() => summarizeWeek(health.days), [health.days]);
 
   const addMemo = useCallback(() => {
     const text = memoText.trim();
@@ -1130,7 +1325,7 @@ function PulseHome() {
         padding: '14px 18px', maxWidth: 640, margin: '0 auto', boxSizing: 'border-box',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <PulseMark size={28} />
+          <PulseLogo size={30} withWordmark={false} />
           <div style={{ fontSize: 15, fontWeight: 600, fontFamily: SERIF, letterSpacing: '0.06em' }}>CORE Pulse</div>
         </div>
         <div style={{ fontSize: 12, color: C.sub, fontWeight: 500, letterSpacing: '0.06em' }}>{todayLabel()}</div>
@@ -1146,48 +1341,53 @@ function PulseHome() {
           <>
             {/* きょうの調子 — 0-100 スコア + リング (Oura型・主役) */}
             {score && score.hasData && (
-              <Card style={{ position: 'relative', overflow: 'hidden' }}>
+              <Card style={{ position: 'relative', overflow: 'hidden', paddingBottom: 24 }}>
                 <div aria-hidden style={{
-                  position: 'absolute', top: -80, left: -80, width: 200, height: 200, borderRadius: '50%',
-                  background: 'radial-gradient(circle at 60% 60%, rgba(201,161,146,0.10), rgba(201,161,146,0) 70%)',
+                  position: 'absolute', top: -90, left: -90, width: 240, height: 240, borderRadius: '50%',
+                  background: 'radial-gradient(circle at 60% 60%, rgba(255,92,138,0.14), rgba(255,92,138,0) 70%)',
                 }} />
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   gap: 8, flexWrap: 'wrap', marginBottom: 14, position: 'relative',
                 }}>
                   <div style={labelStyle(C.goldText)}>きょうの調子</div>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px',
-                    borderRadius: 999, background: C.roseSoft, border: `1px solid ${C.line}`,
-                    fontSize: 11.5, fontWeight: 600, color: C.accent, letterSpacing: '0.03em',
-                  }}>
-                    <Check size={12} />
-                    {streak >= 2 ? `記録 ${streak}日つづいています` : 'きょうから記録スタート'}
-                  </div>
+                  <StreakRings streak={streak} />
                 </div>
                 <ScoreRing score={score} />
                 {/* 内訳の透明表示 (Whoop型・内訳の合計 = 総合点) */}
                 <div style={{
-                  marginTop: 14, textAlign: 'center', fontSize: 12.5, color: C.sub,
+                  marginTop: 16, textAlign: 'center', fontSize: 12.5, color: C.sub,
                   fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1.9,
                 }}>
                   ねむり +{score.parts.sleep} ・ ゆらぎ +{score.parts.hrv} ・ 脈 +{score.parts.resting} ・ 歩いた量 +{score.parts.steps}
                 </div>
-                <div style={{ marginTop: 8, textAlign: 'center', fontSize: 11, color: C.sub, lineHeight: 1.8, opacity: 0.9 }}>
+                {/* きょうのフォーカス — いちばん弱い項目からの1行提案 (決まったルール) */}
+                <div style={{
+                  marginTop: 14, display: 'flex', gap: 9, alignItems: 'flex-start',
+                  borderRadius: 16, padding: '12px 15px',
+                  background: C.accentSoft, border: `1px solid ${C.line}`, position: 'relative',
+                }}>
+                  <Compass size={15} color={C.accent} style={{ flexShrink: 0, marginTop: 3 }} strokeWidth={1.8} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: '0.12em', marginBottom: 3 }}>きょうのフォーカス</div>
+                    <div style={{ fontSize: 13, lineHeight: 1.9, color: C.ink }}>{FOCUS_WORDS[weakestPart(score.parts)]}</div>
+                  </div>
+                </div>
+                <div style={{ marginTop: 10, textAlign: 'center', fontSize: 11, color: C.sub, lineHeight: 1.8, opacity: 0.9 }}>
                   ねむりは{SLEEP_HOURS_FULL}時間・歩いた量は{STEPS_FULL.toLocaleString()}歩で満点。
                   ゆらぎと脈は、あなたのふだん（過去4週間の記録）と比べた、決まった計算式です
                 </div>
               </Card>
             )}
 
-            <Card style={{ background: 'linear-gradient(150deg, #FFFFFF 30%, #F6EDE8)', position: 'relative', overflow: 'hidden' }}>
+            <Card style={{ background: 'linear-gradient(150deg, rgba(255,255,255,0.07) 30%, rgba(255,92,138,0.08))', position: 'relative', overflow: 'hidden' }}>
               <div aria-hidden style={{
                 position: 'absolute', top: -70, right: -70, width: 190, height: 190, borderRadius: '50%',
-                border: `1px solid rgba(201,179,126,0.30)`,
+                border: '1px solid rgba(255,92,138,0.28)',
               }} />
               <div aria-hidden style={{
                 position: 'absolute', bottom: -90, right: -30, width: 170, height: 170, borderRadius: '50%',
-                background: 'radial-gradient(circle at 40% 40%, rgba(201,161,146,0.13), rgba(201,161,146,0) 70%)',
+                background: 'radial-gradient(circle at 40% 40%, rgba(232,133,158,0.14), rgba(232,133,158,0) 70%)',
               }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, position: 'relative' }}>
                 <Sun size={15} color={C.goldText} />
@@ -1218,13 +1418,17 @@ function PulseHome() {
                       type="button"
                       aria-pressed={on}
                       onClick={() => toggleChip(c.id)}
+                      className="pulse-press"
                       style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
                         minHeight: 40, padding: '8px 14px', borderRadius: 999, cursor: 'pointer',
                         fontSize: 13, fontWeight: 600, letterSpacing: '0.02em',
-                        background: on ? C.accentSoft : '#FFFFFF',
-                        color: on ? C.accent : C.sub,
-                        border: `1px solid ${on ? C.accent : C.line}`,
+                        background: on
+                          ? 'linear-gradient(120deg, rgba(255,92,138,0.28), rgba(232,133,158,0.18))'
+                          : 'rgba(255,255,255,0.045)',
+                        color: on ? '#FFD3E0' : C.sub,
+                        border: `1px solid ${on ? 'rgba(255,92,138,0.65)' : C.line}`,
+                        boxShadow: on ? '0 0 16px rgba(255,92,138,0.22)' : 'none',
                       }}
                     >
                       {on ? (
@@ -1262,7 +1466,7 @@ function PulseHome() {
                     <x.Icon size={14} color={C.mauve} strokeWidth={1.6} />
                     <div style={{ fontSize: 10.5, fontWeight: 600, color: C.sub, letterSpacing: '0.1em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.label}</div>
                   </div>
-                  <div style={{ ...NUM_STYLE, fontSize: 24, color: C.ink, lineHeight: 1.2 }}>{x.value}</div>
+                  <div style={{ ...NUM_STYLE, fontSize: 25, color: C.ink, lineHeight: 1.2, textShadow: NUM_GLOW }}>{x.value}</div>
                   <div style={{ fontSize: 11, color: C.sub, marginTop: 5 }}>{x.sub}</div>
                 </Card>
               ))}
@@ -1299,6 +1503,48 @@ function PulseHome() {
                 </div>
               )}
             </Card>
+
+            {/* 今週のまとめ (週間レポート・コード確定計算) */}
+            {weekly.daysCount > 0 && (
+              <Card>
+                <SectionTitle icon={<CalendarDays size={16} color={C.accent} strokeWidth={1.6} />}>今週のまとめ</SectionTitle>
+                {[
+                  {
+                    label: '週平均スコア',
+                    value: weekly.avgScore === null ? '—' : `${weekly.avgScore}点`,
+                    delta: weekly.avgScore === null ? null : (
+                      <DeltaArrow cur={weekly.avgScore} prev={weekly.prevAvgScore} unit="点" />
+                    ),
+                  },
+                  {
+                    label: 'ねむり合計',
+                    value: fmtSleep(weekly.sleepSum),
+                    delta: <DeltaArrow cur={weekly.sleepSum} prev={weekly.prevSleepSum} unit="時間" />,
+                  },
+                  {
+                    label: '歩数合計',
+                    value: fmtNum(weekly.stepsSum, '歩'),
+                    delta: <DeltaArrow cur={weekly.stepsSum} prev={weekly.prevStepsSum} unit="歩" />,
+                  },
+                ].map((row, i) => (
+                  <div key={row.label} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+                    padding: '13px 0', borderTop: i === 0 ? 'none' : `1px solid ${C.line}`,
+                  }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, color: C.sub, letterSpacing: '0.04em' }}>{row.label}</div>
+                      <div style={{ marginTop: 4 }}>{row.delta}</div>
+                    </div>
+                    <div style={{ ...NUM_STYLE, fontSize: 24, color: C.ink, textShadow: NUM_GLOW, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                      {row.value}
+                    </div>
+                  </div>
+                ))}
+                <div style={{ fontSize: 11, color: C.sub, lineHeight: 1.8, opacity: 0.9, marginTop: 2 }}>
+                  直近7日間と、その前の7日間をくらべた決まった計算です（記録のある日だけを数えます）
+                </div>
+              </Card>
+            )}
 
             {/* 7日間のうつりかわり */}
             {scoreTrend.length > 0 && (
@@ -1349,7 +1595,7 @@ function PulseHome() {
                     style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
                       minHeight: 60, padding: '9px 4px', borderRadius: 16, cursor: 'pointer',
-                      background: memoMood === m.v ? C.accentSoft : C.bg,
+                      background: memoMood === m.v ? C.accentSoft : 'rgba(255,255,255,0.04)',
                       border: `1px solid ${memoMood === m.v ? C.accent : C.line}`,
                       color: memoMood === m.v ? C.accent : C.sub,
                     }}
@@ -1367,7 +1613,7 @@ function PulseHome() {
                 style={{
                   width: '100%', boxSizing: 'border-box', marginTop: 12, fontSize: 16, color: C.ink,
                   padding: '11px 14px', borderRadius: 16, border: `1px solid ${C.line}`,
-                  background: C.bg, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.7,
+                  background: C.bgDeep, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.7,
                 }}
               />
               <div style={{ marginTop: 12 }}>
@@ -1411,7 +1657,7 @@ function PulseHome() {
                     </div>
                     <div style={{ fontSize: 14, lineHeight: 1.9, marginTop: 8 }}>{m.text}</div>
                     <div style={{
-                      marginTop: 12, borderRadius: 16, background: C.bg, padding: '11px 14px',
+                      marginTop: 12, borderRadius: 16, background: C.bgDeep, padding: '11px 14px',
                       display: 'flex', gap: 8, alignItems: 'flex-start',
                     }}>
                       <HeartPulse size={14} color={C.accent} style={{ flexShrink: 0, marginTop: 4 }} strokeWidth={1.6} />
@@ -1463,7 +1709,7 @@ function PulseHome() {
                   style={{
                     display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 7,
                     minHeight: 46, fontSize: 16, color: C.ink, padding: '8px 14px',
-                    borderRadius: 14, border: `1px solid ${C.line}`, background: C.bg,
+                    borderRadius: 14, border: `1px solid ${C.line}`, background: C.bgDeep,
                   }}
                 />
               </label>
@@ -1477,7 +1723,7 @@ function PulseHome() {
                     style={{
                       display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 7,
                       minHeight: 46, fontSize: 16, color: C.ink, padding: '8px 14px',
-                      borderRadius: 14, border: `1px solid ${C.line}`, background: C.bg,
+                      borderRadius: 14, border: `1px solid ${C.line}`, background: C.bgDeep,
                     }}
                   />
                 </label>
@@ -1491,7 +1737,7 @@ function PulseHome() {
                     style={{
                       display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 7,
                       minHeight: 46, fontSize: 16, color: C.ink, padding: '8px 14px',
-                      borderRadius: 14, border: `1px solid ${C.line}`, background: C.bg,
+                      borderRadius: 14, border: `1px solid ${C.line}`, background: C.bgDeep,
                     }}
                   />
                 </label>
@@ -1549,8 +1795,8 @@ function PulseHome() {
       {/* 下部タブ (44px以上・safe-area対応) */}
       <nav style={{
         position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 20,
-        background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        background: 'rgba(13,10,15,0.88)', backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         borderTop: `1px solid ${C.line}`,
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
@@ -1579,10 +1825,7 @@ function PulseHome() {
         </div>
       </nav>
 
-      <style>{`
-        .pulse-spin { animation: pulse-rotate 1s linear infinite; }
-        @keyframes pulse-rotate { to { transform: rotate(360deg); } }
-      `}</style>
+      <style>{PULSE_CSS}</style>
     </div>
   );
 }
