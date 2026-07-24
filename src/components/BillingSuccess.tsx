@@ -5,8 +5,9 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Gift, Copy, Check, MessageCircle, Share2 } from 'lucide-react';
 import { syncFromStripe } from '../lib/billing';
-import { getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS } from '../lib/referral';
+import { getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS } from '../lib/referral';
 
 type Status = 'loading' | 'success' | 'error';
 
@@ -202,13 +203,14 @@ function ReferralBlock({ brand, accent, grad }: { brand: 'iris' | 'prism'; accen
     } catch { /* */ }
   };
 
+  const shareBody = brand === 'iris'
+    ? `Iris (SNS クリエイター向け AI チーム) を使い始めました。私の紹介リンクからの登録で、あなたも ${TRIAL_BASE_DAYS} 日無料 + さらに +${REFERRAL_BONUS_DAYS} 日 (合計 ${TRIAL_WITH_REFERRAL_DAYS} 日無料) です:`
+    : `CORE Prism (経営者向け AI 役員 13 名) を使い始めました。私の紹介リンクからの登録で、あなたも ${TRIAL_BASE_DAYS} 日無料 + さらに +${REFERRAL_BONUS_DAYS} 日 (合計 ${TRIAL_WITH_REFERRAL_DAYS} 日無料) です:`;
+
   const handleShare = async () => {
-    const text = brand === 'iris'
-      ? `Iris (SNS クリエイター向け AI チーム) を使い始めました。私の紹介リンクからの登録で、お互い +${REFERRAL_BONUS_DAYS} 日無料です:`
-      : `CORE Prism (経営者向け AI 役員 13 名) を使い始めました。私の紹介リンクからの登録で、お互い +${REFERRAL_BONUS_DAYS} 日無料です:`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: brand === 'iris' ? 'CORE Iris' : 'CORE Prism', text, url });
+        await navigator.share({ title: brand === 'iris' ? 'CORE Iris' : 'CORE Prism', text: shareBody, url });
         setShared(true);
         setTimeout(() => setShared(false), 2000);
       } catch { /* user cancelled */ }
@@ -217,10 +219,13 @@ function ReferralBlock({ brand, accent, grad }: { brand: 'iris' | 'prism'; accen
     }
   };
 
+  // LINE — 日本での最有力チャネル。決済直後の最も温度の高い共有導線に必ず置く。
+  const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(`${shareBody}\n${url}`)}`;
+
   const xUrl = `https://x.com/intent/post?text=${encodeURIComponent(
     brand === 'iris'
-      ? `Iris (SNS クリエイター向け 6 人の AI チーム) を始めました ✨\n紹介リンクからの登録で、お互い +${REFERRAL_BONUS_DAYS} 日無料に。\n`
-      : `CORE Prism (経営者の AI 役員 13 名) を始めました 👑\n紹介リンクからの登録で、お互い +${REFERRAL_BONUS_DAYS} 日無料に。\n`
+      ? `Iris (SNS クリエイター向け 6 人の AI チーム) を始めました。\n紹介リンクからの登録で、あなたも合計 ${TRIAL_WITH_REFERRAL_DAYS} 日無料に。\n`
+      : `CORE Prism (経営者の AI 役員 13 名) を始めました。\n紹介リンクからの登録で、あなたも合計 ${TRIAL_WITH_REFERRAL_DAYS} 日無料に。\n`
   )}&url=${encodeURIComponent(url)}`;
 
   return (
@@ -235,8 +240,9 @@ function ReferralBlock({ brand, accent, grad }: { brand: 'iris' | 'prism'; accen
       <div style={{
         fontSize: 10.5, letterSpacing: '0.2em', color: accent,
         fontWeight: 800, marginBottom: 6,
+        display: 'inline-flex', alignItems: 'center', gap: 5,
       }}>
-        🎁 友達紹介で +{REFERRAL_BONUS_DAYS} 日無料
+        <Gift size={13} strokeWidth={2.4} /> 友達紹介で +{REFERRAL_BONUS_DAYS} 日無料
       </div>
       <p style={{ fontSize: 13, color: '#1F1A2E', lineHeight: 1.7, marginBottom: 10, fontWeight: 600 }}>
         友達 1 人紹介 → <strong>お互いに +{REFERRAL_BONUS_DAYS} 日</strong> 無料が延長されます
@@ -249,19 +255,33 @@ function ReferralBlock({ brand, accent, grad }: { brand: 'iris' | 'prism'; accen
       }}>
         {url}
       </div>
+      {/* LINE を最上段・全幅で最優先 (決済直後 = 最も温度が高い共有モーメント) */}
+      <a
+        href={lineUrl}
+        target="_blank" rel="noopener noreferrer"
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          padding: '10px 12px', borderRadius: 8, marginBottom: 6,
+          background: '#06C755', color: '#fff', textDecoration: 'none',
+          fontSize: 13, fontWeight: 800,
+        }}
+      >
+        <MessageCircle size={16} strokeWidth={2.3} /> LINE で友達に送る
+      </a>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         <button
           onClick={handleCopy}
           style={{
             flex: 1, minWidth: 100,
             padding: '8px 12px', borderRadius: 8,
-            background: copied ? '#34D399' : grad,
+            background: copied ? '#16A34A' : grad,
             color: '#fff', border: 'none', cursor: 'pointer',
             fontSize: 12.5, fontWeight: 800,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
             transition: 'all 0.2s',
           }}
         >
-          {copied ? '✓ コピーしました' : '📋 リンクをコピー'}
+          {copied ? <><Check size={14} strokeWidth={2.5} /> コピーしました</> : <><Copy size={14} strokeWidth={2.2} /> リンクをコピー</>}
         </button>
         <a
           href={xUrl}
@@ -283,9 +303,10 @@ function ReferralBlock({ brand, accent, grad }: { brand: 'iris' | 'prism'; accen
               background: 'rgba(0,0,0,0.06)', color: '#3A3A4E',
               border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer',
               fontSize: 12.5, fontWeight: 700,
+              display: 'inline-flex', alignItems: 'center', gap: 4,
             }}
           >
-            {shared ? '✓' : '📤 共有'}
+            {shared ? <Check size={14} strokeWidth={2.5} /> : <><Share2 size={14} strokeWidth={2.2} /> 共有</>}
           </button>
         )}
       </div>
