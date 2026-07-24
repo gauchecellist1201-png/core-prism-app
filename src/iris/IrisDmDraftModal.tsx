@@ -736,8 +736,11 @@ function HistoryPanel({
         </button>
       </div>
       {history.length === 0 ? (
-        <div style={{ padding: '2rem 1rem', textAlign: 'center', ...IRIS_TYPE.small, opacity: 0.7 }}>
-          まだ下書きの履歴はありません
+        <div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
+          <div style={{ ...IRIS_TYPE.small, fontWeight: 700, opacity: 0.9, marginBottom: 6 }}>まだ下書きの履歴はありません</div>
+          <div style={{ ...IRIS_TYPE.small, opacity: 0.65, lineHeight: 1.7 }}>
+            AI で作った DM 文案は、ここに自動で保存されます。<br />気に入った文面を、次からワンタップで使い回せます。
+          </div>
         </div>
       ) : (
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>

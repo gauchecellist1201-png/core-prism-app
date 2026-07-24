@@ -1181,7 +1181,7 @@ function RecruitBoard(props: {
                     style={{ overflow: 'hidden' }}>
                     <div style={{ marginTop: 10, borderTop: `1px solid ${bg.cardBorder}`, paddingTop: 10 }}>
                       {post.chats.length === 0 && (
-                        <p style={{ fontSize: '0.78rem', color: bg.inkSoft, textAlign: 'center', padding: '0.4rem 0' }}>まだメッセージはありません</p>
+                        <p style={{ fontSize: '0.78rem', color: bg.inkSoft, textAlign: 'center', padding: '0.4rem 0', lineHeight: 1.7 }}>まだメッセージはありません。<br />下の入力欄に書くと、この相手とのやりとりがここに残ります。</p>
                       )}
                       {post.chats.map(c => (
                         <div key={c.id} style={{ marginBottom: 5 }}>

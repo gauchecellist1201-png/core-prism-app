@@ -588,7 +588,12 @@ export default function ConciergeStage({ config, standalone }: { config: Concier
       {/* ── 会話履歴シート ── */}
       <Sheet open={historyOpen} onClose={() => setHistoryOpen(false)} title="会話履歴">
         {cz.rawMessages.length === 0 ? (
-          <div style={{ fontSize: 13, color: T.fgSubtle, padding: '12px 2px' }}>まだ会話はありません。</div>
+          <div style={{ padding: '12px 2px' }}>
+            <div style={{ fontSize: 13.5, color: T.fgMuted, fontWeight: 700, marginBottom: 4 }}>まだ会話はありません</div>
+            <div style={{ fontSize: 12.5, color: T.fgSubtle, lineHeight: 1.8 }}>
+              シートを閉じてアバターに話しかけると、やりとりがここに時系列で残ります。あとから見返せます。
+            </div>
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 8 }}>
             {cz.rawMessages.map(m => (
