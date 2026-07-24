@@ -64,6 +64,99 @@ function kitFacts(kit?: MediaKit): string {
   return lines.length ? lines.join('\n') : '(ほとんど未入力。一般的なクリエイターとして、無理に数字を作らず書いてください)';
 }
 
+// ============================================================
+// 料金の目安を「自動計算」する（honest / 手入力ゼロ）
+//
+// インフルエンサーが一番つまずく「いくらで受ければいいのか」を、
+// 実際のフォロワー数と反応率だけから、透明な計算式で出す。
+// LLM の当てずっぽうではなく決まった式で計算するので、根拠を全部見せられる。
+//
+// 相場の根拠（日本市場 2025 / instagramAnalyzer と同一の考え方）:
+//   - フィード1本 = フォロワー × 1人あたり1〜4円（反応率が高いほど上振れ）
+//   - リール     = フィードの 1.2〜1.5 倍
+//   - ストーリーズ = フィード投稿の 10〜20%
+// ============================================================
+
+export interface RateBand { min: number; max: number }
+export interface RateSuggestion {
+  platformLabel: string;   // 算出に使ったプラットフォーム（一番フォロワーが多い所）
+  followers: number;
+  engagementRate?: number; // % （あれば）
+  perFollower: RateBand;   // 1人あたり単価の下限/上限（円）
+  feed: RateBand;
+  reel: RateBand;
+  story: RateBand;
+  conservative: boolean;   // 反応率が未計測 → 控えめに算出したか
+  basis: string;           // 根拠（1行）
+}
+
+/** 反応率(%)から「1フォロワーあたり単価」の下限/上限を出す（円） */
+function perFollowerBand(er?: number): { band: RateBand; conservative: boolean } {
+  if (er == null || !(er > 0)) return { band: { min: 1.0, max: 2.0 }, conservative: true };
+  if (er < 1)    return { band: { min: 1.0, max: 1.8 }, conservative: false };
+  if (er < 2)    return { band: { min: 1.3, max: 2.4 }, conservative: false };
+  if (er < 3.5)  return { band: { min: 1.8, max: 3.0 }, conservative: false };
+  if (er < 5)    return { band: { min: 2.4, max: 3.6 }, conservative: false };
+  return { band: { min: 3.0, max: 4.0 }, conservative: false }; // 相場上限に張り付き
+}
+
+/** step 円単位で丸める（最低 step は下回らない） */
+function roundYen(n: number, step: number): number {
+  return Math.max(step, Math.round(n / step) * step);
+}
+
+/**
+ * メディアキットの実数字から料金の目安を計算する。
+ * フォロワー数が1つも無ければ null（数字が無い時は作らない = honest）。
+ */
+export function suggestRatesFromKit(kit?: MediaKit): RateSuggestion | null {
+  if (!kit) return null;
+  const platforms: Platform[] = ['instagram', 'tiktok', 'youtube', 'x'];
+  // 一番フォロワーが多いプラットフォームを算出基準にする
+  let best: { p: Platform; f: number } | null = null;
+  for (const p of platforms) {
+    const f = kit.followers?.[p];
+    if (f && f > 0 && (!best || f > best.f)) best = { p, f };
+  }
+  if (!best) return null;
+
+  const er = kit.avgEngagementRate?.[best.p];
+  const { band, conservative } = perFollowerBand(er);
+
+  const feed: RateBand = {
+    min: roundYen(best.f * band.min, 1000),
+    max: roundYen(best.f * band.max, 1000),
+  };
+  const reel: RateBand = {
+    min: roundYen(feed.min * 1.2, 1000),
+    max: roundYen(feed.max * 1.5, 1000),
+  };
+  const story: RateBand = {
+    min: roundYen(feed.min * 0.1, 500),
+    max: roundYen(feed.max * 0.2, 500),
+  };
+
+  const basis = `${PLATFORM_META[best.p].label} ${best.f.toLocaleString()}人 × 1人あたり${band.min}〜${band.max}円` +
+    (er && er > 0 ? `（反応率${er}%で補正）` : '（反応率は未計測のため控えめに算出）');
+
+  return { platformLabel: PLATFORM_META[best.p].label, followers: best.f, engagementRate: er, perFollower: band, feed, reel, story, conservative, basis };
+}
+
+/** ¥12,000 のような表記に */
+export function yenLabel(n: number): string {
+  return `¥${n.toLocaleString('ja-JP')}`;
+}
+
+/** 料金レンジを rateCard 欄にそのまま入れられるテキストにする */
+export function ratesToRateCardText(r: RateSuggestion): string {
+  return [
+    `フィード投稿 ${yenLabel(r.feed.min)}〜${yenLabel(r.feed.max)}`,
+    `リール ${yenLabel(r.reel.min)}〜${yenLabel(r.reel.max)}`,
+    `ストーリーズ ${yenLabel(r.story.min)}〜${yenLabel(r.story.max)}`,
+    `（${r.basis}／案件内容で調整可）`,
+  ].join('\n');
+}
+
 /** メディアキットの文章を生成 */
 export async function generateMediaKitDoc(opts: {
   settings: AppSettings;

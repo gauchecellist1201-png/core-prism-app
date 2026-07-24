@@ -29,7 +29,7 @@ import {
   type InfluencerDeal, type MediaKit,
 } from '../types/influencerDeal';
 import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMessage } from './beautyAdvisor';
-import { generateMediaKitDoc, mediaKitDocToMarkdown, mediaKitDocToHtml, mediaKitStats, type MediaKitDoc } from './mediaKitDoc';
+import { generateMediaKitDoc, mediaKitDocToMarkdown, mediaKitDocToHtml, mediaKitStats, suggestRatesFromKit, ratesToRateCardText, yenLabel, type MediaKitDoc, type RateSuggestion } from './mediaKitDoc';
 import { shareToInstagram } from './instagramShare';
 import { notifyInApp } from '../lib/inAppNotify';
 import { copyText } from '../lib/clipboard';
@@ -3217,6 +3217,23 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
   const [doc, setDoc] = useState<MediaKitDoc | null>(null);
   const [genLoading, setGenLoading] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
+  const [rate, setRate] = useState<RateSuggestion | null>(null);
+
+  // フォロワー数と反応率から「いくらで受ければいいか」を決まった式で自動計算し、
+  // 料金欄にそのまま入れる（手入力ゼロ・数字は実データのみ = honest）。
+  const calcRate = () => {
+    const r = suggestRatesFromKit({ ...d, personaId: IRIS_PERSONA_ID });
+    if (!r) {
+      notifyInApp({ kind: 'info', title: 'まずフォロワー数を入れてください', body: 'フォロワー数を1つでも入れると、反応率も見て料金の目安を自動で計算します。' });
+      return;
+    }
+    setRate(r);
+    const text = ratesToRateCardText(r);
+    const next: MediaKit = { ...d, rateCard: text };
+    setD(next);
+    desk.setMediaKit(IRIS_PERSONA_ID, { ...next, personaId: IRIS_PERSONA_ID });
+    notifyInApp({ kind: 'success', title: '料金の目安を計算しました', body: '下の「希望する金額の目安」に入れました。案件内容に合わせて自由に直せます。' });
+  };
 
   const hasInput = !!(d.handleName || d.audienceProfile || d.caseHistory ||
     (d.followers && Object.values(d.followers).some(v => v && v > 0)));
@@ -3344,7 +3361,30 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
         </div>
 
         <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="よく見てくれる人 (例: 25-34歳の女性)" value={d.audienceProfile || ''} onChange={e => setD({ ...d, audienceProfile: e.target.value })} />
-        <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="希望する金額の目安" value={d.rateCard || ''} onChange={e => setD({ ...d, rateCard: e.target.value })} />
+        <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+          <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: bg.ink }}>希望する金額の目安</p>
+          <button onClick={calcRate} style={{ ...btnSecondary(bg), whiteSpace: 'nowrap' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><TrendingUp size={14} color={bg.accent} /> 数字から料金を自動計算</span>
+          </button>
+        </div>
+        {rate && (
+          <div style={{ marginTop: '0.5rem', padding: '0.85rem 0.95rem', borderRadius: 14, background: 'rgba(225,48,108,0.06)', border: `1px solid ${bg.cardBorder}`, display: 'grid', gap: '0.55rem' }}>
+            {([
+              { label: 'フィード投稿', band: rate.feed },
+              { label: 'リール', band: rate.reel },
+              { label: 'ストーリーズ', band: rate.story },
+            ]).map(row => (
+              <div key={row.label} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontSize: '0.83rem', color: bg.inkSoft }}>{row.label}</span>
+                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: bg.ink }}>{yenLabel(row.band.min)}〜{yenLabel(row.band.max)}</span>
+              </div>
+            ))}
+            <p style={{ margin: 0, paddingTop: '0.15rem', fontSize: '0.74rem', color: bg.inkSoft, lineHeight: 1.6 }}>
+              {rate.basis}{rate.conservative ? '。反応率を入れるともっと正確になります。' : ''}
+            </p>
+          </div>
+        )}
+        <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={3} placeholder="希望する金額の目安（上の「自動計算」でも入れられます）" value={d.rateCard || ''} onChange={e => setD({ ...d, rateCard: e.target.value })} />
         <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="大切にしたいこと・NGなこと" value={d.brandValues || ''} onChange={e => setD({ ...d, brandValues: e.target.value })} />
 
         <button onClick={save} style={{ ...btnPrimary(bg), marginTop: '0.75rem' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Save size={14} /> 保存</span></button>
