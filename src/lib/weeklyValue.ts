@@ -81,6 +81,16 @@ export function computeWeeklyValue(now: number = Date.now()): {
    * 日付を持たず二重計上になるため除外する。実際の支払額ではなく比較のための下限目安。
    */
   estimatedYen: number;
+  /**
+   * 連続稼働日数（today から遡って実活動があった日が何日続いているか）。
+   * honest-numbers: dailySeries（タイムスタンプのある実活動だけ）から算出。捏造なし。
+   * 今日がまだ0件でも、昨日までの連続はまだ「途切れていない」ので streakAtRisk=true で数える
+   *  → UI は「今日動かせば ◯日連続」と継続を促せる（放置で途切れる＝解約前の踏みとどまり）。
+   * 集計窓が7日なので最大7。7に達したら「7日以上」の可能性があるため UI 側で控えめに扱う。
+   */
+  streak: number;
+  /** 今日がまだ0件で、streak が「今日で途切れうる」状態か（昨日までは連続していた） */
+  streakAtRisk: boolean;
 } {
   const cutoff = now - WEEK_MS;
   const dayStart = startOfLocalDay(now);
@@ -177,5 +187,19 @@ export function computeWeeklyValue(now: number = Date.now()): {
     isToday: ds === today0,
   }));
 
-  return { metrics, total, todayTotal, dailySeries, estimatedYen };
+  // 連続稼働日数 — dailySeries は古い→新しい。末尾（今日）から遡って count>0 が続く日数を数える。
+  // 今日がまだ0なら昨日までの連続を数え、streakAtRisk=true（今日動かせば伸び、放置で途切れる）。
+  let streak = 0;
+  let streakAtRisk = false;
+  const lastIdx = dailySeries.length - 1;
+  if (lastIdx >= 0) {
+    if (dailySeries[lastIdx].count > 0) {
+      for (let i = lastIdx; i >= 0 && dailySeries[i].count > 0; i--) streak++;
+    } else {
+      for (let i = lastIdx - 1; i >= 0 && dailySeries[i].count > 0; i--) streak++;
+      streakAtRisk = streak > 0;
+    }
+  }
+
+  return { metrics, total, todayTotal, dailySeries, estimatedYen, streak, streakAtRisk };
 }

@@ -6,7 +6,7 @@
 //   0 のときは捏造せず「これから貯まる」導線を出す（honest-numbers）。
 // ============================================================
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
-import { Sparkles, Send, BookOpen, Briefcase, Activity, FileCheck, TrendingUp, Users, Check, UserRound, Coins } from 'lucide-react';
+import { Sparkles, Send, BookOpen, Briefcase, Activity, FileCheck, TrendingUp, Users, Check, UserRound, Coins, Flame } from 'lucide-react';
 import { computeWeeklyValue, type ValueMetric, type DayBucket } from '../lib/weeklyValue';
 import { statsForLastDays } from '../lib/aiSuggestionLog';
 import { cxoActivityLastDays } from '../lib/cxoDeliverables';
@@ -105,7 +105,7 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
     };
   }, []);
 
-  const { metrics, total, todayTotal, dailySeries, estimatedYen } = data;
+  const { metrics, total, todayTotal, dailySeries, estimatedYen, streak, streakAtRisk } = data;
   // 役員の稼働記録も「動いた量」の一部。metrics が全0でも役員が動いていれば空状態にしない。
   const empty = total === 0 && execs.length === 0;
   // 直近7日に1日でも実活動があれば momentum バーを出す（嘘の0埋めは見せても、全0なら出さない）
@@ -185,7 +185,7 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
 
       {/* 7日 momentum — AIが「毎日動いている」を正直に可視化（実活動のある日だけ色が立つ） */}
       {!empty && seriesMax > 0 && (
-        <Sparkbar series={dailySeries} max={seriesMax} activeDays={activeDays} />
+        <Sparkbar series={dailySeries} max={seriesMax} activeDays={activeDays} streak={streak} streakAtRisk={streakAtRisk} />
       )}
 
       {/* 動いた役員 — 「誰が」あなたのために動いたかを実データで見せる（提案の記録件数＝honest-numbers） */}
@@ -342,15 +342,35 @@ function Payback({ estimatedYen, monthlyPrice }: { estimatedYen: number; monthly
 }
 
 // 7日 momentum バー — 実活動のある日だけ色が立つ。高さは件数比（最低でも触知できる芯を残す）。
-function Sparkbar({ series, max, activeDays }: { series: DayBucket[]; max: number; activeDays: number }) {
+// streak（連続稼働日数）は実データから算出した honest な継続指標。2日以上で「炎」バッジを出し、
+// 継続の手応え（=毎日たまる価値）を体感させる。今日まだ0なら「今日動かせば ◯日連続」で継続を促す。
+function Sparkbar({ series, max, activeDays, streak, streakAtRisk }: { series: DayBucket[]; max: number; activeDays: number; streak: number; streakAtRisk: boolean }) {
+  const showStreak = streak >= 2;
+  const streakLabel = streak >= 7 ? '7日以上連続' : `${streak}日連続`;
   return (
     <div style={{
       marginBottom: 12, padding: '10px 12px 8px', borderRadius: 12,
       background: 'var(--surface-3)', border: '1px solid rgba(142,92,255,0.18)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--fg-muted)', letterSpacing: '0.01em' }}>
-          この1週間の動き
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+          <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--fg-muted)', letterSpacing: '0.01em' }}>
+            この1週間の動き
+          </span>
+          {showStreak && (
+            <span
+              title={streakAtRisk ? '昨日まで連続で稼働中。今日も動かすと途切れません' : '連続で毎日AIが動いています'}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 3,
+                fontSize: 10, fontWeight: 900, padding: '2px 8px', borderRadius: 999,
+                background: streakAtRisk ? 'rgba(255,159,64,0.14)' : 'rgba(255,107,53,0.15)',
+                color: streakAtRisk ? '#FF9F40' : '#FF6B35',
+                border: `1px solid ${streakAtRisk ? 'rgba(255,159,64,0.4)' : 'rgba(255,107,53,0.42)'}`,
+              }}
+            >
+              <Flame size={11} strokeWidth={2.5} /> {streakLabel}
+            </span>
+          )}
         </span>
         <span style={{ fontSize: 10.5, fontWeight: 800, color: '#06C755' }}>
           7日のうち {activeDays} 日 稼働
@@ -377,6 +397,12 @@ function Sparkbar({ series, max, activeDays }: { series: DayBucket[]; max: numbe
           );
         })}
       </div>
+      {/* 継続の踏みとどまり — 今日まだ0で連続が途切れうる時だけ、正直に一手を促す（放置で途切れる＝解約前の引き止め） */}
+      {streakAtRisk && (
+        <p style={{ fontSize: 10, fontWeight: 700, color: '#FF9F40', margin: '8px 2px 0', lineHeight: 1.5 }}>
+          今日はまだ動いていません。一手を作ると {streak >= 7 ? '7日以上' : `${streak + 1}日`} 連続になります。
+        </p>
+      )}
     </div>
   );
 }
