@@ -362,6 +362,35 @@ export default function AgentsOrbit({
         })}
       </div>
 
+      {/* まだ何も選ばれていないとき: 「オーブは触れる」ことを一言で伝える。
+          初見の人は、球体が並んでいても "これは押せるの?" と分からない。
+          タッチ端末は「タップ→説明→もう一度で開く」の2段を、
+          PC は「触れると出る」を、それぞれ正直に案内する。
+          プレビューが出たら消す（説明パネルと二重にしない）。 */}
+      {!previewKey && (
+        <div style={{
+          margin: '0.6rem 0.8rem 0',
+          padding: '9px 12px',
+          borderRadius: 12,
+          background: 'rgba(255,255,255,0.035)',
+          border: '1px dashed rgba(255,255,255,0.14)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          textAlign: 'center',
+        }}>
+          <motion.span
+            animate={{ opacity: [0.35, 0.9, 0.35] }}
+            transition={{ duration: 1.8, repeat: Infinity }}
+            style={{ fontSize: 13, lineHeight: 1 }}
+            aria-hidden
+          >👆</motion.span>
+          <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5, fontWeight: 600 }}>
+            {isTouchRef.current
+              ? 'オーブをタップ → その担当の「できること」が出ます（もう一度タップで開く）'
+              : 'オーブに触れると、その担当の「できること」が見えます'}
+          </span>
+        </div>
+      )}
+
       {/* プレビュー: 「これは何ができる?」3 行 + ひと言アドバイス */}
       <AnimatePresence>
         {previewKey && (() => {
