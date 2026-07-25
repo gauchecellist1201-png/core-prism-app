@@ -526,34 +526,51 @@ export default function SevenAgentsOrbit({ agents }: Props) {
               </motion.div>
             </AnimatePresence>
 
-            {/* ローテーション進捗インジケーター (ホバー外のみ) */}
+            {/* ローテーション進捗インジケーター (ホバー外のみ)
+                スマホには "ホバー" が無いので、この枠が自分で切り替わることを
+                一言そえておくと「自分は何もしなくていい」と伝わる。 */}
             {!hoverKey && (
               <div style={{
-                display: 'flex', gap: 3, justifyContent: 'center',
-                marginTop: 7,
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: 4, marginTop: 7,
               }}>
-                {ORDER.map((k, i) => (
-                  <span key={k} style={{
-                    width: i === spotIdx ? 14 : 4,
-                    height: 3, borderRadius: 2,
-                    background: i === spotIdx ? SPECS[k].color : 'rgba(255,255,255,0.18)',
-                    transition: 'all 0.4s ease',
-                  }} />
-                ))}
+                <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
+                  {ORDER.map((k, i) => (
+                    <span key={k} style={{
+                      width: i === spotIdx ? 14 : 4,
+                      height: 3, borderRadius: 2,
+                      background: i === spotIdx ? SPECS[k].color : 'rgba(255,255,255,0.18)',
+                      transition: 'all 0.4s ease',
+                    }} />
+                  ))}
+                </div>
+                <span style={{
+                  fontSize: 8.5, color: 'rgba(255,255,255,0.4)',
+                  letterSpacing: '0.08em', fontWeight: 600,
+                }}>
+                  数秒ごとに次の担当へ
+                </span>
               </div>
             )}
           </div>
         );
       })()}
 
+      {/* 案内文 — スマホ（触る＝タップの1操作しかない）でも矛盾しないように、
+          「読む場所」と「開く操作」を分けて書く。
+          下の枠が7人を自動で紹介 → 全員の説明はそこで読める。
+          オーブのタップは "開く" 専用。 */}
       <p style={{
         marginTop: '0.55rem',
         textAlign: 'center',
-        fontSize: 10, color: 'rgba(255,255,255,0.5)',
-        letterSpacing: '0.2em', fontWeight: 700,
-        lineHeight: 1.5,
+        fontSize: 10.5, color: 'rgba(255,255,255,0.62)',
+        fontWeight: 600,
+        lineHeight: 1.7,
       }}>
-        触ると詳しく見えます · タップでそのエージェントを開きます
+        下の枠で 7 人の「できること」を順番に紹介中<br />
+        <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>
+          オーブをタップ → その担当の画面へ
+        </span>
       </p>
 
       {/* クリック爆発エフェクト */}
