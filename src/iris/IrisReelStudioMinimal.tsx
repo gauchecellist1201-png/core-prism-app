@@ -5,14 +5,14 @@
 // ・少ない文字、美しさ重視、ガラスモーフィズム
 // ・既存のフル機能は IrisReelStudio.tsx に残る (詳細モード)
 // ============================================================
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Image as ImageIcon, Film, Music, Play, Square, Download, Share2,
   Sparkles, Wand2, ChevronRight, Plus, X, Trash2, Settings2, Loader2,
   Flame, Scissors, ArrowLeft, ArrowRight, Eye, Type as TypeIcon,
-  AlertCircle, Copy, MessageSquare, Layers, Camera, Mic,
+  AlertCircle, Copy, MessageSquare, Layers, Camera, Mic, Clock,
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -27,6 +27,8 @@ import {
 import { generateReelScript, generateReelCaption, type ReelScriptResult } from './reelAiScript';
 import type { ReelStudioSeed } from './IrisReelStudio';
 import { suggestNextSlot, type ScheduledPost } from './usePostQueue';
+import { usePostHistory } from './strategist';
+import { computeBestPostTime, DOW_LABELS } from './bestPostTime';
 import { notifyInApp } from '../lib/inAppNotify';
 import ShareArtifactButton from '../components/ShareArtifactButton';
 import GenerationReward from '../components/GenerationReward';
@@ -183,6 +185,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [aiPhase, setAiPhase] = useState<string>('');
   const [aiErr, setAiErr] = useState<string>('');
   const [aiResult, setAiResult] = useState<ReelAiResult | null>(null);
+  // 過去投稿の“伸び”から、書き出した直後に「いつ出すと伸びやすいか」を honest に提案する
+  const { posts: historyPosts } = usePostHistory();
+  const bestTime = useMemo(() => computeBestPostTime(historyPosts), [historyPosts]);
   // タイムライン
   const [currentTime, setCurrentTime] = useState(0);
   const [scheduled, setScheduled] = useState(false);
@@ -2403,6 +2408,54 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                         )}
                       </div>
                     )}
+
+                    {/* いつ出す？ — 過去投稿の“伸び”から honest に提案（データ4件未満は一般的な目安と明記） */}
+                    <div style={{
+                      marginBottom: 12,
+                      padding: '0.7rem 0.85rem',
+                      background: 'rgba(225,48,108,0.05)',
+                      border: `1px solid ${bg.accent}2a`,
+                      borderRadius: 12,
+                    }}>
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        fontSize: 9, letterSpacing: '0.18em', fontWeight: 800,
+                        color: bg.accent, marginBottom: 5, textTransform: 'uppercase',
+                      }}>
+                        <Clock size={12} strokeWidth={2.2} /> いつ出す？
+                      </div>
+                      {bestTime.enough ? (
+                        <>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: bg.ink, lineHeight: 1.5 }}>
+                            あなたが一番伸びるのは <span style={{ color: bg.accent }}>{DOW_LABELS[bestTime.bestDow.d]}曜</span> の <span style={{ color: bg.accent }}>{bestTime.bestBand.band}</span>
+                          </p>
+                          <p style={{ margin: '4px 0 0', fontSize: 11, color: bg.inkSoft, lineHeight: 1.55 }}>
+                            あなたの実績（{bestTime.n}投稿）から算出。この枠を狙うと伸びやすいです。
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: bg.ink, lineHeight: 1.5 }}>
+                            まずは <span style={{ color: bg.accent }}>平日の朝（7〜9時）・夜（19〜21時）</span> が狙い目
+                          </p>
+                          <p style={{ margin: '4px 0 0', fontSize: 11, color: bg.inkSoft, lineHeight: 1.55 }}>
+                            ※一般的な目安です。投稿の実績が{bestTime.n}/4件たまると「あなた専用の時間」に切り替わります（数字は実データのみ）。
+                          </p>
+                        </>
+                      )}
+                      {onJumpToSchedule && (
+                        <button
+                          onClick={onJumpToSchedule}
+                          style={{
+                            marginTop: 8, width: '100%', minHeight: 40,
+                            padding: '0.5rem 0.8rem', borderRadius: 999,
+                            background: bg.accent, color: '#fff', border: 'none',
+                            fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                            fontFamily: IRIS_FONTS.body,
+                          }}
+                        >この枠で予約する</button>
+                      )}
+                    </div>
 
                     <div style={{ display: 'grid', gap: 8 }}>
                       <button onClick={download} style={{ ...btnPri(), width: '100%' }}>
