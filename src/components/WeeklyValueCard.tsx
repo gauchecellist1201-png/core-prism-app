@@ -243,8 +243,20 @@ export default function WeeklyValueCard({ onRunLoop }: { onRunLoop?: () => void 
   );
 }
 
+// 役員チップのタップ → 「作戦本部」(AgentTeamMonitor) を開いて実際に動いている様子へ導く。
+// hover の効かない iPhone でも「見えるものが増える」実感を作る（silent fail 無し＝必ず開いて所定位置へ）。
+function openWarRoom() {
+  try { window.dispatchEvent(new CustomEvent('core:agent-monitor-open')); } catch { /* */ }
+  try {
+    document.querySelector('[data-tour-id="agent-team-monitor"]')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch { /* */ }
+}
+
 // 動いた役員 — 「誰が」あなたのために動いたかを顔（Lucideアイコン）付きで見せる。
 // 件数は statsForLastDays が返す実際の提案記録数。上位6名まで、多い順。採用があれば控えめに併記。
+// 各チップはタップ可能（44px・作戦本部を開く）。採用件数は hover に頼らずチップ内に出す
+// （iPhone は hover が無く title が見えないため／honest-numbers: adopted>0 のときだけ）。
 function ExecRoster({ rows }: { rows: ExecRow[] }) {
   const top = rows.slice(0, 6);
   const hidden = rows.length - top.length;
@@ -268,11 +280,20 @@ function ExecRoster({ rows }: { rows: ExecRow[] }) {
         {top.map((r) => {
           const Icon = r.Icon;
           return (
-            <div key={r.key} title={`${r.name}: ${r.count}件${r.adopted > 0 ? `（採用${r.adopted}）` : ''}`} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7,
-              padding: '5px 10px 5px 6px', borderRadius: 999,
-              background: `${r.color}14`, border: `1px solid ${r.color}44`,
-            }}>
+            <button
+              key={r.key}
+              type="button"
+              onClick={openWarRoom}
+              title={`${r.name}: ${r.count}件${r.adopted > 0 ? `（採用${r.adopted}）` : ''} — タップで作戦本部を開く`}
+              aria-label={`${r.name} が ${r.count}件動きました${r.adopted > 0 ? `。うち採用${r.adopted}件` : ''}。タップで作戦本部を開く`}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                padding: '5px 10px 5px 6px', minHeight: 44, borderRadius: 999,
+                background: `${r.color}14`, border: `1px solid ${r.color}44`,
+                cursor: 'pointer', appearance: 'none', font: 'inherit',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
               <span style={{
                 width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -285,7 +306,17 @@ function ExecRoster({ rows }: { rows: ExecRow[] }) {
                 fontSize: 10.5, fontWeight: 900, color: r.color,
                 padding: '1px 7px', borderRadius: 999, background: `${r.color}1f`,
               }}>{r.count}</span>
-            </div>
+              {/* 採用件数は hover の効かない iPhone でも見えるようチップ内に併記（実データ・0なら出さない） */}
+              {r.adopted > 0 && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 2,
+                  fontSize: 9.5, fontWeight: 800, color: '#06C755',
+                  paddingLeft: 2, whiteSpace: 'nowrap',
+                }}>
+                  <Check size={10} strokeWidth={3} />{r.adopted}
+                </span>
+              )}
+            </button>
           );
         })}
         {hidden > 0 && (
@@ -294,6 +325,10 @@ function ExecRoster({ rows }: { rows: ExecRow[] }) {
           </span>
         )}
       </div>
+      {/* タップできることを一言。放置される静的表示にせず、実際に動く様子（作戦本部）へ橋渡し（テーマ①） */}
+      <p style={{ fontSize: 9.5, color: 'var(--fg-subtle)', margin: '8px 2px 0', lineHeight: 1.4 }}>
+        役員をタップすると、いま動いている作戦本部が開きます。
+      </p>
     </div>
   );
 }
