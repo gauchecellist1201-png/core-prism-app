@@ -207,6 +207,17 @@ interface Props {
   hideHeading?: boolean;
 }
 
+// ─── 書き出しの種 (白紙を見せない・入力を消す §0.5) ─────
+// タップすると本人が続きを書く「書き出し」を差し込みカーソルを末尾へ。
+// 例文そのものを投稿にするのではなく、本人の実体験を引き出す stem。
+const THOUGHT_STARTERS: { label: string; stem: string }[] = [
+  { label: '今日の気づき', stem: '今日気づいたんだけど、' },
+  { label: 'おすすめ',     stem: '最近よかったのは、' },
+  { label: '本音',         stem: '正直に言うと、' },
+  { label: 'よく聞かれる', stem: 'よく聞かれるのが、' },
+  { label: '失敗談',       stem: 'この前やらかしたのが、' },
+];
+
 export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Props) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -214,6 +225,21 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
   const [stageIdx, setStageIdx] = useState(0);
   const lastThoughtRef = useRef('');
   const stageTimerRef = useRef<number | null>(null);
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // 書き出しチップ: 空欄に stem を入れて本人が続きを書ける状態に（カーソル末尾）
+  const applyStarter = (stem: string) => {
+    if (busy) return;
+    setText(stem);
+    // 描画後にフォーカス＆カーソルを末尾へ（続きをそのまま打てる）
+    requestAnimationFrame(() => {
+      const ta = taRef.current;
+      if (!ta) return;
+      ta.focus();
+      const end = stem.length;
+      try { ta.setSelectionRange(end, end); } catch { /* 一部環境で未対応でも無害 */ }
+    });
+  };
 
   // 音声入力(2026-07-08 iOS対応):
   //  ・PC/Android(Chrome): Web Speech でリアルタイム文字起こし
@@ -318,6 +344,7 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
         boxShadow: '0 4px 24px rgba(31,26,46,0.08), 0 1px 0 rgba(255,255,255,0.9) inset',
       }}>
         <textarea
+          ref={taRef}
           className="iris-tdrop-ta"
           value={text}
           onChange={e => setText(e.target.value)}
@@ -340,6 +367,40 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
             opacity: busy ? 0.55 : 1,
           }}
         />
+
+        {/* 書き出しチップ: 空欄のときだけ（白紙を見せない・§0.5）。
+            タップで本人が続きを書ける「書き出し」を差し込む＝最初の一歩の入力ゼロ */}
+        {!busy && !listening && text.trim().length === 0 && (
+          <div style={{ margin: '0.1rem 0 0.35rem' }}>
+            <p style={{
+              margin: '0 0 0.5rem', fontSize: '0.72rem', color: '#8A7AA0',
+              fontFamily: IRIS_FONTS.body,
+            }}>
+              書き出しから選ぶ
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {THOUGHT_STARTERS.map(s => (
+                <motion.button
+                  key={s.label}
+                  type="button"
+                  onClick={() => applyStarter(s.stem)}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    minHeight: 40, padding: '0.4rem 0.85rem',
+                    borderRadius: 999,
+                    border: `1.5px solid ${bg.accent}44`,
+                    background: `${bg.accent}12`,
+                    color: '#3D3247', fontSize: '0.82rem', fontWeight: 600,
+                    fontFamily: IRIS_FONTS.body, cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center',
+                  }}
+                >
+                  {s.label}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* リアルタイム文字起こし (確定前の中間テキスト) */}
         <AnimatePresence>
