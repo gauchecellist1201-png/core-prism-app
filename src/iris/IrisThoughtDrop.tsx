@@ -386,7 +386,7 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
                   onClick={() => applyStarter(s.stem)}
                   whileTap={{ scale: 0.95 }}
                   style={{
-                    minHeight: 40, padding: '0.4rem 0.85rem',
+                    minHeight: 44, padding: '0.45rem 0.9rem',
                     borderRadius: 999,
                     border: `1.5px solid ${bg.accent}44`,
                     background: `${bg.accent}12`,

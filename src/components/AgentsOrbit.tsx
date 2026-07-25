@@ -12,7 +12,7 @@
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { LucideIcon } from 'lucide-react';
+import { Pointer, type LucideIcon } from 'lucide-react';
 
 export interface AgentSpec {
   key: string;
@@ -380,9 +380,9 @@ export default function AgentsOrbit({
           <motion.span
             animate={{ opacity: [0.35, 0.9, 0.35] }}
             transition={{ duration: 1.8, repeat: Infinity }}
-            style={{ fontSize: 13, lineHeight: 1 }}
+            style={{ display: 'inline-flex', lineHeight: 1, color: 'rgba(255,255,255,0.72)' }}
             aria-hidden
-          >👆</motion.span>
+          ><Pointer size={14} strokeWidth={2.2} /></motion.span>
           <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5, fontWeight: 600 }}>
             {isTouchRef.current
               ? 'オーブをタップ → その担当の「できること」が出ます（もう一度タップで開く）'
@@ -511,7 +511,7 @@ export default function AgentsOrbit({
       <p style={{
         marginTop: '0.6rem',
         textAlign: 'center',
-        fontSize: 10, color: 'rgba(255,255,255,0.5)',
+        fontSize: 10, color: 'rgba(255,255,255,0.62)',
         letterSpacing: '0.25em', fontWeight: 700,
       }}>
         {footerLabel}
