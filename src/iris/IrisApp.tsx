@@ -176,9 +176,9 @@ export default function IrisApp() {
       {showFirstRunTour && (
         <IrisFirstRunTour
           onClose={() => setShowFirstRunTour(false)}
-          onGotoReel={() => {
+          onGotoReel={(theme) => {
             setShowFirstRunTour(false);
-            window.dispatchEvent(new CustomEvent('iris:goto-tab', { detail: { tab: 'reel' } }));
+            window.dispatchEvent(new CustomEvent('iris:goto-tab', { detail: { tab: 'reel', theme } }));
           }}
         />
       )}

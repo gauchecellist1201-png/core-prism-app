@@ -43,8 +43,9 @@ function markSeen() {
 }
 
 interface Props {
-  /** 「リール台本スタジオを開く」で呼ばれる。dashboard 側で setTab('reel') する */
-  onGotoReel: () => void;
+  /** 「リール台本スタジオを開く」で呼ばれる。dashboard 側で setTab('reel') する。
+   *  theme を渡すと、着地した瞬間にそのテーマで台本＋3カットが出来上がる（約束したものが出る） */
+  onGotoReel: (theme?: string) => void;
   /** 閉じる（後で自分のアカウントで試す） */
   onClose: () => void;
 }
@@ -91,7 +92,9 @@ export default function IrisFirstRunTour({ onGotoReel, onClose }: Props) {
   const next = () => {
     if (step < steps - 1) { tactileTap(); setStep(s => s + 1); }
   };
-  const finish = () => { tactileReward(); markSeen(); onGotoReel(); };
+  // ツアーで見せた台本のテーマをそのまま持って行く。
+  // 「作る」と言って空っぽのアップローダーに着地させない（見せた約束を必ず果たす）
+  const finish = () => { tactileReward(); markSeen(); onGotoReel(SAMPLE_REEL.theme); };
 
   const accent = IRIS_COLORS.hotPink;
 
@@ -197,7 +200,7 @@ export default function IrisFirstRunTour({ onGotoReel, onClose }: Props) {
                 onClick={finish}
                 style={primaryBtn(accent)}
               >
-                <Film size={18} /> この台本を、自分のテーマで作る
+                <Film size={18} /> このテーマで、いま 1 本つくる
               </button>
             )}
             <button

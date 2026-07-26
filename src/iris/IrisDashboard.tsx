@@ -1234,7 +1234,10 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
   useEffect(() => {
     const onGoto = (e: Event) => {
       const t = (e as CustomEvent).detail?.tab as Tab | undefined;
+      const theme = (e as CustomEvent).detail?.theme as string | undefined;
       if (t) {
+        // ツアーで見せた台本のテーマを持ち込む → 着地した瞬間に台本＋3カットが出来上がる
+        if (t === 'reel' && theme && theme.trim()) setReelTheme(theme.trim());
         // 明示的な行き先指定(ツアーの「この台本を自分のテーマで作る」等)を
         // 連携ゲートで遮らない。「あとで連携する」と同義に扱い、約束した画面に必ず着地させる
         dismissConnectGate();

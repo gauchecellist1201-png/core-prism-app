@@ -88,6 +88,8 @@ interface Clip {
   captionText?: string;
   /** カット毎の context (AI が読み取った文脈) */
   aiContext?: string;
+  /** 素材ゼロで台本から作った「文字だけカット」。写真/動画を入れたら中身を差し替える */
+  isPlaceholder?: boolean;
   /** 字幕の縦位置 (0=上 〜 1=下、デフォルト 0.78) */
   captionY?: number;
   /** カット毎の BGM ジャンル (AI 提案 or 手動) */
@@ -315,7 +317,17 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       failed.push('対応形式: 画像 (jpg/png/webp), 動画 (mp4/mov/webm), 音楽 (mp3/wav/m4a)');
     }
     if (failed.length) setUploadErr(failed.join('\n'));
-    if (newClips.length) setClips(prev => [...prev, ...newClips]);
+    if (newClips.length) setClips(prev => {
+      // 「テーマだけで作った文字リール」に素材が入ってきたら、足し算せず“差し替える”。
+      // 字幕と秒数は台本のまま引き継ぐので、写真を入れた瞬間に完成度が上がる。
+      const allPlaceholder = prev.length > 0 && prev.every(c => c.isPlaceholder);
+      if (allPlaceholder) {
+        return newClips.map((c, i) => prev[i]
+          ? { ...c, captionText: prev[i].captionText, captionY: prev[i].captionY, duration: prev[i].duration }
+          : c);
+      }
+      return [...prev, ...newClips];
+    });
     // チャットバー等の呼び出し元が「何件入ったか」を正直に伝えられるよう件数を返す
     return newClips.length;
   }, []);
@@ -473,15 +485,21 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             duration: result.scenes[i]?.duration || c.duration,
           }));
         }
-        // 素材がまだ無い場合 — 字幕だけのプレースホルダー (色のみ) を 3 枚作る
+        // 素材がまだ無い場合 — 字幕だけの「文字リール」カットを 3 枚作る。
+        // 単色ベタだと安っぽいので、テーマ色の縦グラデーションにして 1 本目から見られる画にする。
         const preset = getPreset(presetId);
-        const palette = preset ? [preset.bg, preset.accent + 'cc', preset.bg] : ['#1F1A2E', '#E1306C', '#0F172A'];
+        const pairs: [string, string][] = preset
+          ? [[preset.bg, preset.accent], [preset.accent, preset.bg], [preset.bg, preset.accent]]
+          : [['#2A1030', '#E1306C'], ['#E1306C', '#F77737'], ['#1B1030', '#8A3FFC']];
         const placeholders: Clip[] = result.scenes.map((s, i) => {
-          // 色塗りキャンバスを画像化
           const c = document.createElement('canvas');
           c.width = OUT_W; c.height = OUT_H;
           const cx = c.getContext('2d')!;
-          cx.fillStyle = palette[i % palette.length];
+          const [from, to] = pairs[i % pairs.length];
+          const grad = cx.createLinearGradient(0, 0, OUT_W * 0.6, OUT_H);
+          grad.addColorStop(0, from);
+          grad.addColorStop(1, to);
+          cx.fillStyle = grad;
           cx.fillRect(0, 0, OUT_W, OUT_H);
           const url = c.toDataURL('image/png');
           const img = new Image();
@@ -493,6 +511,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             duration: s.duration,
             el: img,
             captionText: s.caption,
+            isPlaceholder: true,
           };
         });
         return [...prev, ...placeholders];
@@ -1367,6 +1386,34 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           )}
         </div>
 
+        {/* 文字だけリールであることを隠さない — 「動画に見えて実は色だけ」を黙って出さないため */}
+        {clips.length > 0 && clips.every(c => c.isPlaceholder) && (
+          <div style={{
+            marginBottom: 14, padding: '0.8rem 0.9rem',
+            background: 'rgba(255,255,255,0.7)',
+            border: `1px solid ${bg.cardBorder}`,
+            borderRadius: 14,
+          }}>
+            <p style={{ margin: 0, fontSize: 11.5, color: bg.inkSoft, lineHeight: 1.55 }}>
+              いまは<b style={{ color: bg.ink }}>文字だけのリール</b>です。このままでも書き出せます。
+              写真や動画を入れると、字幕はそのままでこの {clips.length} カットの中身が差し替わります。
+            </p>
+            <label style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+              marginTop: 9, minHeight: 44, padding: '0.6rem 1rem', width: '100%',
+              background: 'rgba(255,255,255,0.95)', color: bg.ink,
+              border: `1.5px solid ${bg.accent}66`, borderRadius: 999,
+              fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
+              fontFamily: IRIS_FONTS.body, boxSizing: 'border-box',
+            }}>
+              <ImageIcon size={14} color={bg.accent} />
+              写真・動画を入れて差し替える
+              <input type="file" multiple accept="image/*,video/*" style={{ display: 'none' }}
+                onChange={e => e.target.files && addFiles(e.target.files)} />
+            </label>
+          </div>
+        )}
+
         {/* ✨ AI 自動字幕ボタン (一番目立つ位置) */}
         {clips.length > 0 && (
           <motion.div
@@ -1426,6 +1473,97 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               </div>
             )}
           </motion.div>
+        )}
+
+        {/* 素材ゼロでも 1 本 — 手持ちの写真が無い初日でも「完成」まで行ける入口。
+            (この機能自体は前からあったが、字幕ステップの奥に埋もれていて初見では見つからなかった) */}
+        {clips.length === 0 && (
+          <div style={{
+            marginBottom: '1.4rem',
+            padding: '1rem 1.05rem',
+            background: 'rgba(255,255,255,0.72)',
+            border: `1.5px solid ${bg.accent}55`,
+            borderRadius: 18,
+            boxShadow: '0 8px 24px rgba(225,48,108,0.10)',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6,
+              fontSize: 13.5, fontWeight: 800, color: bg.ink, fontFamily: IRIS_FONTS.body,
+            }}>
+              <Wand2 size={14} color={bg.accent} />
+              素材がなくても、いま 1 本つくれます
+            </div>
+            <p style={{ margin: '0 0 10px', fontSize: 11.5, color: bg.inkSoft, lineHeight: 1.55 }}>
+              テーマをひとこと入れるだけ。AI が 3 シーンの台本と字幕を書いて、そのまま出せる縦型リールにします。
+              写真や動画は<b style={{ color: bg.ink }}>あとから入れると、この 3 カットに差し替わります</b>。
+            </p>
+            <input
+              type="text"
+              value={themeHint}
+              onChange={e => setThemeHint(e.target.value)}
+              placeholder="例: 朝の 3 分ルーティン"
+              style={{
+                width: '100%', padding: '0.8rem 0.9rem',
+                background: '#fff',
+                border: `1px solid ${bg.cardBorder}`,
+                borderRadius: 12,
+                fontSize: 16, // iOS の自動ズーム回避
+                fontFamily: 'inherit',
+                minHeight: 44, marginBottom: 8,
+                boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+              {['朝の 3 分ルーティン', '買ってよかったもの 3 つ', 'よくある失敗と、その直し方'].map(t => (
+                <button key={t} onClick={() => setThemeHint(t)} style={{
+                  padding: '0.4rem 0.7rem', minHeight: 32,
+                  background: themeHint === t ? IRIS_GRADIENT : 'rgba(255,255,255,0.9)',
+                  color: themeHint === t ? '#fff' : bg.ink,
+                  border: `1px solid ${themeHint === t ? 'transparent' : bg.cardBorder}`,
+                  borderRadius: 999, fontSize: 11, fontWeight: 700,
+                  cursor: 'pointer', fontFamily: IRIS_FONTS.body,
+                }}>{t}</button>
+              ))}
+            </div>
+            <button
+              onClick={() => runAiScript()}
+              disabled={scriptBusy || !themeHint.trim()}
+              style={{
+                width: '100%', minHeight: 48, padding: '0.9rem 1rem',
+                background: scriptBusy || !themeHint.trim() ? 'rgba(255,255,255,0.55)' : IRIS_GRADIENT,
+                color: scriptBusy || !themeHint.trim() ? bg.inkSoft : '#fff',
+                border: scriptBusy || !themeHint.trim() ? `1px solid ${bg.cardBorder}` : 'none',
+                borderRadius: 16, fontSize: 14, fontWeight: 800,
+                cursor: scriptBusy ? 'wait' : (themeHint.trim() ? 'pointer' : 'not-allowed'),
+                boxShadow: scriptBusy || !themeHint.trim() ? 'none' : '0 10px 26px rgba(225,48,108,0.30)',
+                fontFamily: IRIS_FONTS.body,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              {scriptBusy
+                ? <><Loader2 size={15} className="iris-spin" /> {scriptPhase || '台本を考え中…'}</>
+                : <><Film size={15} /> テーマだけで 1 本つくる</>}
+            </button>
+            {!themeHint.trim() && !scriptBusy && (
+              <p style={{ margin: '7px 0 0', fontSize: 10.5, color: bg.inkSoft, textAlign: 'center' }}>
+                上の欄にテーマを入れる（または候補を 1 つタップ）と押せます
+              </p>
+            )}
+            {scriptErr && (
+              <div style={{
+                marginTop: 8, padding: '0.7rem 0.8rem',
+                background: '#FEE2E2', color: '#991B1B',
+                borderRadius: 12, fontSize: 11.5, lineHeight: 1.5,
+              }}>
+                {scriptErr}
+                <button onClick={() => { setScriptErr(''); runAiScript(); }} style={{
+                  display: 'block', marginTop: 7, minHeight: 36, padding: '0.4rem 0.9rem',
+                  background: '#991B1B', color: '#fff', border: 'none',
+                  borderRadius: 999, fontSize: 11.5, fontWeight: 800, cursor: 'pointer',
+                }}>もう一度ためす</button>
+              </div>
+            )}
+          </div>
         )}
 
         {/* 3 秒でわかる説明 + サンプル出力 — まだ素材が無い初見の人に「何が出るか」を触らず見せる */}
