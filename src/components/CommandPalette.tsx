@@ -73,6 +73,15 @@ const CATEGORY_LABEL: Record<CategoryKey, string> = {
   help: 'ヘルプ・設定',
 };
 
+/**
+ * タブに出す短い名前。iPhone 375px ではタブが横1列に並ぶため、
+ * 長い見出しをそのまま出すと隣のタブとぶつかって読めなくなる。
+ * 見出し（リスト内）は説明的なまま、タブだけ短くする。
+ */
+const CATEGORY_TAB_LABEL: Partial<Record<CategoryKey, string>> = {
+  saved: 'よく使う依頼',
+};
+
 // ナビ系 (既存 MODAL_LIST 拡張)
 const MODAL_LIST: { key: ModalKey; label: string; emoji: string; subtitle?: string }[] = [
   { key: 'dailyReport', label: '今日のレポート',         emoji: '📊', subtitle: '売上・AI 完了・明日の 3 手を 1 枚で' },
@@ -935,13 +944,17 @@ export default function CommandPalette({
             >
               {TAB_ORDER.map((tab) => {
                 const isActive = activeTab === tab;
-                const label = tab === 'all' ? 'すべて' : CATEGORY_LABEL[tab as CategoryKey];
+                const label = tab === 'all'
+                  ? 'すべて'
+                  : (CATEGORY_TAB_LABEL[tab as CategoryKey] ?? CATEGORY_LABEL[tab as CategoryKey]);
                 const accent = tab === 'all' ? 'var(--prism-creative, #A78BFA)' : categoryAccent(tab as CategoryKey);
                 return (
                   <button
                     key={tab}
                     onClick={() => { setActiveTab(tab); setSelectedIdx(0); inputRef.current?.focus(); }}
-                    className="px-2.5 py-1 rounded-md text-xs whitespace-nowrap transition-all flex items-center gap-1.5"
+                    // flex-shrink-0: 375px ではタブが縮んで文字同士が重なり読めなくなる。
+                    // 縮ませずに横スクロールさせる (親は overflow-x-auto)。
+                    className="px-2.5 py-1 rounded-md text-xs whitespace-nowrap transition-all flex items-center gap-1.5 flex-shrink-0"
                     style={{
                       background: isActive ? `${accent}22` : 'transparent',
                       color: isActive ? accent : 'var(--fg-subtle)',
