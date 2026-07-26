@@ -11,7 +11,7 @@
 //   - 「閉じる」では非表示にできない (誤認防止) — 代わりに切替 / 隠す (低 opacity)
 // ============================================================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ArrowRight, EyeOff, Eye } from 'lucide-react';
 import { isDemoActive, setDemoActive, clearDemoData } from '../lib/onboarding';
@@ -43,6 +43,35 @@ export default function SampleModeBanner() {
     };
   }, []);
 
+  // ★2026-07-27 帯がヘッダーを覆っていた問題の根治 (375px 実測)
+  //   この帯は position:fixed・z-80 で画面最上部に出るが、誰も帯のぶんの
+  //   場所を空けていなかったため、Iris のヘッダー1段目
+  //   (ロゴ / Iris に頼む / 背景を変える / メニュー / 戻る) が丸ごと帯の下に
+  //   隠れて押せなくなっていた (elementFromPoint が帯を返す)。
+  //   BottomChatDock と同じやり方で「実測した高さ」を CSS 変数に流し込み、
+  //   ヘッダー側がその高さぶん下がれるようにする (決め打ちの px を使わない
+  //   ＝細くする/広げる・画面回転・折返しでもズレない)。
+  const barRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!active) return;
+    const root = document.documentElement;
+    document.body.dataset.coreSampleBanner = '1';
+    const measure = () => {
+      const h = barRef.current?.getBoundingClientRect().height ?? 0;
+      if (h > 0) root.style.setProperty('--core-sample-banner-h', `${Math.round(h)}px`);
+    };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (ro && barRef.current) ro.observe(barRef.current);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', measure);
+      delete document.body.dataset.coreSampleBanner;
+      root.style.removeProperty('--core-sample-banner-h');
+    };
+  }, [active, collapsed]);
+
   const switchToReal = async () => {
     if (!(await confirmAction({ title: '自分のアカウント用に切り替えます', body: 'サンプルデータはすべて消えて、初期セットアップから始まります。よろしいですか?', tone: 'danger', okLabel: '切り替える' }))) return;
     try { clearDemoData(); } catch { /* */ }
@@ -67,6 +96,7 @@ export default function SampleModeBanner() {
   return (
     <AnimatePresence>
       <motion.div
+        ref={barRef}
         data-explain-id="demo-banner"
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: collapsed ? 0.55 : 1 }}

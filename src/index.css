@@ -2171,6 +2171,23 @@ body[data-iris-dock="on"] {
 }
 
 /* ============================================================
+   サンプル帯とヘッダーの被り根治 — 2026-07-27 (375px 実測)
+   症状: 「サンプルで触ってみる」で入ると SampleModeBanner (fixed・z-80) が
+        Iris のスリムヘッダー (sticky・top:0・z-40) の1段目に重なり、
+        ロゴ / Iris に頼む / 背景を変える / メニュー / 戻る が全部隠れて
+        押せなかった (elementFromPoint が帯を返す・スクショでも1段目が不可視)。
+        ＝LP が約束した「体験」に入った人が、いちばん使うメニューを失う。
+   対策: 帯が実測して流し込む --core-sample-banner-h ぶん、ヘッダーを下げる。
+        margin-top = スクロール0のときの位置 / top = 追従して張り付く位置。
+        両方を同じ値にしないと、どちらかで必ず帯の下に潜る。
+   帯が出ていない時 (data 属性なし) は一切影響しない。
+   ============================================================ */
+body[data-core-sample-banner] .iris-header-sticky {
+  margin-top: var(--core-sample-banner-h, 0px);
+  top: var(--core-sample-banner-h, 0px) !important;
+}
+
+/* ============================================================
    iPhone 横オーバーフロー対策 (オーナー指摘 2026-05-25):
    ヘッダー右側に CommandBar + Account + Palette + Menu + Back が
    並ぶが、iPhone 幅 (390-414px) では収まり切らず端が切れる。
@@ -2697,6 +2714,17 @@ time {
   /* 右列を縦に積む */
   button[aria-label="音声でタスク予約"] {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
+  }
+  /* ★2026-07-27 (375px 実測) マイクが AI オーブの真ん中に重なっていた根治。
+     .cp-ai-fab-wrap は bottom:24px・高さ118px (オーブ80 + ラベル「AI と話す」)
+     ＝画面下から 24〜142px を占めるので、bottom:80px のマイク(56px)は
+     オーブの中心に丸かぶりし、elementFromPoint がマイクを返す状態だった
+     (＝「プリズム と話す」の中心が押せず、金のオーブも三日月にしか見えない)。
+     縦に積み増すと浮遊ボタンが画面の 1/3 まで登って「ごちゃごちゃ」が増えるため、
+     同じ段のまま左隣へ逃がす (オーブ幅95px + 余白11px = 右から122px)。
+     オーブが無い画面では従来位置 (右16px) のままにする。 */
+  body:has(.cp-ai-fab-wrap) button[aria-label="音声でタスク予約"] {
+    right: calc(env(safe-area-inset-right, 0px) + 122px) !important;
   }
   button[aria-label="役員 日報 を 見る"] {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 146px) !important;
