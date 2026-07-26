@@ -283,6 +283,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [igBusy, setIgBusy] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  /** 再生中/書き出し中か (字幕フェードを掛けるのは動いている時だけ) */
+  const liveRef = useRef(false);
   const animRef = useRef<number>(0);
   const playStartRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -614,13 +616,17 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     // プリセット装飾 (オーバーレイ + 下部バー)
     if (preset) drawPresetDecorations(ctx, preset, canvas.width, canvas.height, t);
 
-    // 字幕 (カット毎)。0.25s フェードイン / 0.25s フェードアウト
+    // 字幕 (カット毎)。0.25s フェードイン / 0.25s フェードアウト。
+    // ただし停止中の静止プレビューは常に不透明で出す — t=0 はフェードイン開始点なので
+    // そのまま計算すると「字幕を入れたのに画面に字幕が無い」ように見えてしまう。
     const overlay = cur.captionText || '';
     if (overlay) {
       const dur = cur.duration;
       const fadeIn  = Math.min(1, (t - acc) / 0.25);
       const fadeOut = Math.min(1, (acc + dur - t) / 0.25);
-      const alpha = Math.max(0, Math.min(1, fadeIn, fadeOut));
+      const alpha = liveRef.current
+        ? Math.max(0, Math.min(1, fadeIn, fadeOut))
+        : 1;
       ctx.save();
       ctx.globalAlpha = alpha;
       // プリセットがあればそちらを優先 (色・フォント・位置)
@@ -664,12 +670,13 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const startPlay = () => {
     if (!clips.length) return;
     setPlaying(true);
+    liveRef.current = true;
     playStartRef.current = performance.now() - currentTime * 1000;
     const tick = () => {
       const t = (performance.now() - playStartRef.current) / 1000;
       setCurrentTime(t);
       drawAt(t);
-      if (t >= totalDuration) { setPlaying(false); setCurrentTime(0); return; }
+      if (t >= totalDuration) { liveRef.current = false; setPlaying(false); setCurrentTime(0); return; }
       animRef.current = requestAnimationFrame(tick);
     };
     if (bgmFile) {
@@ -683,6 +690,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const stopPlay = () => {
     cancelAnimationFrame(animRef.current);
     if (audioRef.current) { try { audioRef.current.pause(); } catch {/* */} }
+    liveRef.current = false;
     setPlaying(false);
     setCurrentTime(0);
     drawAt(0);
@@ -858,6 +866,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const startRecord = async () => {
     if (!canvasRef.current || !clips.length) return;
     setRecording(true); setProgress(0); setExportUrl(null);
+    liveRef.current = true; // 書き出し中は字幕のフェードを本来どおり掛ける
     const stream = (canvasRef.current as HTMLCanvasElement).captureStream(30);
     // 音声トラックを混ぜる + fade in/out (失敗してもユーザーに気づかせる)
     if (bgmFile) {
@@ -900,9 +909,11 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     rec.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: mime });
       setExportUrl(URL.createObjectURL(blob));
+      liveRef.current = false;
       setRecording(false); setProgress(1);
     };
     rec.onerror = () => {
+      liveRef.current = false;
       setRecording(false); setProgress(0);
       if (animRef.current) cancelAnimationFrame(animRef.current);
       notifyInApp({
