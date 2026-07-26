@@ -1,7 +1,14 @@
 // CORE Prism OS — Service Worker
 // 役割: オフラインキャッシュ + 将来のプッシュ通知対応
 // v3: network-first 化 + 古い JS/CSS をフラッシュ (旧 SW 由来の真っ白問題を解消)
-const CACHE_VERSION = 'core-prism-v3';
+// v4 (2026-07-26): ★/api/ を絶対にキャッシュしないよう修正。
+//   これまで API の GET 応答が「キャッシュ優先」の分岐に落ちており、一度掴んだ
+//   応答を永久に返し続けていた。実害: Google 連携の設定を有効化した後も
+//   ブラウザが古い {"configured":false} を返し続け、新方式が使われず
+//   「連携したのに毎回切れる」状態が続いた（オーナー報告 2026-07-26）。
+//   連携状態・残高・通知など「今の値」を返す API がすべて同じ地雷を踏むため、
+//   パス単位で除外する。
+const CACHE_VERSION = 'core-prism-v4';
 const STATIC_ASSETS = ['/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -26,6 +33,10 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // ★API は絶対にキャッシュしない (2026-07-26)
+  //   連携状態などの「今の値」を返すため、1回でもキャッシュすると古い答えを
+  //   返し続けて不具合の原因になる。SW は一切介入せずネットワークに素通しする。
+  if (url.pathname.startsWith('/api/')) return;
   // ナビゲーション要求はネットワーク優先 + 失敗時キャッシュ
   if (req.mode === 'navigate') {
     event.respondWith(

@@ -40,11 +40,22 @@ export interface GoogleServerStatus {
   picture?: string;
 }
 
-/** サーバー側連携が使えるか／つながっているか。失敗時は configured:false（＝従来方式へ）。 */
+/**
+ * サーバー側連携が使えるか／つながっているか。失敗時は configured:false（＝従来方式へ）。
+ *
+ * ★t=Date.now() と cache:'no-store' は必須（2026-07-26 の実害）。
+ *   Service Worker が API 応答をキャッシュしており、設定を有効化した後も
+ *   古い {"configured":false} を返し続けて新方式が使われなかった。
+ *   SW 側も /api/ を除外したが、既に配布済みの古い SW を持つ端末でも
+ *   正しく動くよう、こちら側でもキャッシュを確実に外す。
+ */
 export async function fetchGoogleServerStatus(): Promise<GoogleServerStatus> {
   const uid = getGoogleUid();
   try {
-    const res = await fetch(`/api/google/oauth?action=status&uid=${encodeURIComponent(uid)}`);
+    const res = await fetch(
+      `/api/google/oauth?action=status&uid=${encodeURIComponent(uid)}&t=${Date.now()}`,
+      { cache: 'no-store' },
+    );
     if (!res.ok) return { configured: false, connected: false };
     return (await res.json()) as GoogleServerStatus;
   } catch {
@@ -60,7 +71,11 @@ export async function fetchGoogleServerStatus(): Promise<GoogleServerStatus> {
 export async function getServerGoogleToken(): Promise<string | null> {
   const uid = getGoogleUid();
   try {
-    const res = await fetch(`/api/google/oauth?action=token&uid=${encodeURIComponent(uid)}`);
+    // 期限切れ間際のトークンをキャッシュから掴むと必ず 401 になるため no-store 必須。
+    const res = await fetch(
+      `/api/google/oauth?action=token&uid=${encodeURIComponent(uid)}&t=${Date.now()}`,
+      { cache: 'no-store' },
+    );
     if (!res.ok) return null;
     const j = (await res.json()) as { ok?: boolean; access_token?: string };
     return j?.ok && j.access_token ? j.access_token : null;
@@ -76,7 +91,7 @@ export async function startGoogleServerConnect(): Promise<{ ok: boolean; message
   try {
     // 未設定のまま遷移すると「白い画面に英語のエラー」になるので、先に判定する
     // （X 連携 startXConnect と同じ配慮）。
-    const r = await fetch(url, { redirect: 'manual' });
+    const r = await fetch(`${url}&t=${Date.now()}`, { redirect: 'manual', cache: 'no-store' });
     if (r.type === 'opaqueredirect' || (r.status >= 300 && r.status < 400)) {
       window.location.href = url;
       return { ok: true };
