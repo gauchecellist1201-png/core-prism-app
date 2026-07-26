@@ -59,6 +59,14 @@ export interface AgentTask {
   steps: AgentStep[];
   /** 最終成果物の格納先 (ナレッジ / 案件 / 提案書 など) */
   resultLink?: string;
+  /**
+   * ★2026-07-27: @メンションで指した対象から読んだ「実データ本文」。
+   * AI にだけ渡し、画面には出さない (タスクカードが読めなくなるため)。
+   * 終わった / 失敗した時点で捨てる = localStorage が太らない。
+   */
+  contextText?: string;
+  /** 参照元の表示名 (例: '@カレンダー')。こちらは画面に出す。 */
+  contextLabel?: string;
 }
 
 const QUEUE_KEY = 'core_agent_task_queue_v1';
@@ -85,6 +93,10 @@ export interface ProposalDraft {
   expected?: string;
   dueDays?: number;
   steps: Array<Omit<AgentStep, 'status'>>;
+  /** @メンションで読んだ実データ本文 (AI 専用・非表示) */
+  contextText?: string;
+  /** 参照元の表示名 (画面に出す) */
+  contextLabel?: string;
 }
 
 export function useAgentTaskQueue() {
@@ -136,6 +148,8 @@ export function useAgentTaskQueue() {
       status: 'proposed',
       proposedAt: new Date().toISOString(),
       steps: draft.steps.map(s => ({ ...s, status: 'pending' as const })),
+      contextText: draft.contextText,
+      contextLabel: draft.contextLabel,
     };
     setTasks(prev => [t, ...prev]);
     return t;
@@ -169,8 +183,8 @@ export function useAgentTaskQueue() {
         steps[stepIdx + 1] = { ...steps[stepIdx + 1], status: 'working', startedAt: new Date().toISOString() };
         return { ...t, steps };
       }
-      // 全完了
-      const finished = { ...t, steps, status: 'done' as const, completedAt: new Date().toISOString() };
+      // 全完了 — 添えていた実データはもう不要なので捨てる (localStorage を太らせない)
+      const finished = { ...t, steps, status: 'done' as const, completedAt: new Date().toISOString(), contextText: undefined };
       // ★2026-07-26 オーナー要望: 終わったことを公式LINEへ飛ばす。
       //   設定でONにしている人だけ・同じタスクは1回だけ（LINEの無料通数を無駄にしない）。
       //   失敗しても画面は止めない。
@@ -216,8 +230,19 @@ export function useAgentTaskQueue() {
 
       const sys = `あなたは CORE 株式会社の ${CXO_META[step.cxo].name} (${CXO_META[step.cxo].tagline}) です。
 ユーザーが承認したタスク「${latest.title}」を、自分の専門領域から実行に移します。
-返答は「実行結果」を 1 文 (40 字以内) で簡潔に。例: "保存率上位 3 投稿を抽出: チェックリスト型が +24% 強い"`;
-      const userPrompt = `# タスク\n${latest.title}\n\n# 概要\n${latest.summary}\n\n# あなたの担当ステップ\n${step.label}\n\n上記を実行し、結果を 1 文で報告してください。`;
+返答は「実行結果」を 1 文 (40 字以内) で簡潔に。例: "保存率上位 3 投稿を抽出: チェックリスト型が +24% 強い"${
+  latest.contextText
+    ? `
+★このタスクには実データが添えられています。答えは必ずその実データだけを根拠にしてください。
+実データに書かれていないことは推測で埋めず、「実データに無い」と正直に書いてください。
+架空の名前・架空の数字・「[アカウント名A]」のような穴埋めは禁止です。`
+    : ''
+}`;
+      const userPrompt = `# タスク\n${latest.title}\n\n# 概要\n${latest.summary}\n\n# あなたの担当ステップ\n${step.label}${
+        latest.contextText
+          ? `\n\n# 参照する実データ (${latest.contextLabel || '指定された対象'})\n${latest.contextText}`
+          : ''
+      }\n\n上記を実行し、結果を 1 文で報告してください。`;
 
       // AI 呼び出し — 一時的なネット不調は最大 2 回まで自動リトライ
       // 1 回あたり最大 45 秒で打ち切り (オーナー報告 2026-06-03: 偽の長時間「実行中」を撲滅)

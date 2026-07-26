@@ -7,6 +7,9 @@
 //   ・最近使った 10 件を localStorage 永続化
 //   ・AI 依頼は「よく使う依頼」として自動保存 → 次回は入力ゼロで 1 タップ再実行
 //     (2026-07-26: 同じ依頼を毎回打ち直していた摩擦の根治。消す→元に戻すも 1 タップ)
+//   ・@ で対象を指してから頼む (2026-07-27): @ナレッジ / @カレンダー / @メール / @売上。
+//     指した対象の"実データだけ"を読んで実行する = AI が何を見たかが目に見える。
+//     繋がっていない連携は候補に出さない。読めなければ理由を出して止める (黙って一般論を書かせない)。
 //   ・キーボード操作 (↑↓選択 / Enter実行 / Tabカテゴリ切替 / Cmd+Enter AI 依頼)
 //   ・モバイル: 下からシート、input 16px+ で iOS 自動ズーム回避
 // ============================================================
@@ -14,9 +17,13 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Sparkles, Compass, Plus, Bot, Wrench, Settings as SettingsIcon,
-  Clock, ArrowRight, CornerDownLeft, Command, Play, Star, X, Undo2,
+  Clock, ArrowRight, CornerDownLeft, Command, Play, Star, X, Undo2, AtSign, Loader2,
 } from 'lucide-react';
 import type { Persona, KnowledgeItem } from '../types/identity';
+import {
+  listMentionTargets, resolveMentionTarget, buildMentionContext, mentionErrorMessage,
+  type MentionTarget,
+} from '../lib/mentionTargets';
 import { useAgentTaskQueue, CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
 import { notifyInApp } from '../lib/inAppNotify';
 import { seedDemoData, setDemoActive, clearDemoData, isDemoActive } from '../lib/onboarding';
@@ -30,7 +37,7 @@ export type CmdAction =
   | { kind: 'jump-task'; taskId: string; personaId: string; label: string; subtitle: string; emoji: string }
   | { kind: 'quick-create'; modal: ModalKey; label: string; emoji: string; subtitle: string }
   | { kind: 'cxo'; cxo: CxoRole; label: string; subtitle: string; emoji: string; color: string; actionLabel: string }
-  | { kind: 'ai-delegate'; prompt: string; label: string; subtitle: string; emoji: string }
+  | { kind: 'ai-delegate'; prompt: string; label: string; subtitle: string; emoji: string; mentionId?: string }
   | { kind: 'data-op'; id: string; label: string; subtitle: string; emoji: string; onRun: () => void }
   | { kind: 'help'; id: string; label: string; subtitle: string; emoji: string; onRun: () => void }
   | { kind: 'custom'; id: string; label: string; subtitle?: string; emoji: string; onRun: () => void };
@@ -166,6 +173,13 @@ interface SavedPrompt {
   prompt: string;
   ts: number;
   count: number;
+  /** @で指した対象 (2026-07-27)。保存するのは対象の ID だけ = 再実行時に最新データを読み直す。 */
+  mentionId?: string;
+}
+
+/** 同じ依頼でも「見る対象」が違えば別物として保存する */
+function savedKey(prompt: string, mentionId?: string): string {
+  return (mentionId ? mentionId + '|' : '') + prompt;
 }
 
 function loadSavedPrompts(): SavedPrompt[] {
@@ -177,7 +191,12 @@ function loadSavedPrompts(): SavedPrompt[] {
     // 壊れた要素が 1 つ混ざっても全体を捨てない (沈黙して全消えを防ぐ)
     return arr
       .filter((x: any) => x && typeof x.prompt === 'string' && x.prompt.trim())
-      .map((x: any) => ({ prompt: String(x.prompt), ts: Number(x.ts) || 0, count: Number(x.count) || 1 }))
+      .map((x: any) => ({
+        prompt: String(x.prompt),
+        ts: Number(x.ts) || 0,
+        count: Number(x.count) || 1,
+        mentionId: typeof x.mentionId === 'string' && x.mentionId ? String(x.mentionId) : undefined,
+      }))
       .slice(0, SAVED_MAX);
   } catch { return []; }
 }
@@ -192,22 +211,23 @@ function saveSavedPrompts(list: SavedPrompt[]) {
  *   単純に末尾を切ると、たまたま単発の依頼が続いただけで、毎週使う依頼が
  *   押し出されて消える (= よく使う依頼が消える) ため。
  */
-function recordSavedPrompt(list: SavedPrompt[], prompt: string): SavedPrompt[] {
+function recordSavedPrompt(list: SavedPrompt[], prompt: string, mentionId?: string): SavedPrompt[] {
   const p = prompt.trim();
   if (p.length < SAVED_MIN_LEN) return list;
-  const prev = list.find(s => s.prompt === p);
+  const key = savedKey(p, mentionId);
+  const prev = list.find(s => savedKey(s.prompt, s.mentionId) === key);
   const merged: SavedPrompt[] = [
-    { prompt: p, ts: Date.now(), count: (prev?.count ?? 0) + 1 },
-    ...list.filter(s => s.prompt !== p),
+    { prompt: p, mentionId, ts: Date.now(), count: (prev?.count ?? 0) + 1 },
+    ...list.filter(s => savedKey(s.prompt, s.mentionId) !== key),
   ];
   if (merged.length <= SAVED_MAX) return merged;
   const keep = new Set(
     [...merged]
       .sort((a, b) => b.count - a.count || b.ts - a.ts)
       .slice(0, SAVED_MAX)
-      .map(s => s.prompt),
+      .map(s => savedKey(s.prompt, s.mentionId)),
   );
-  return merged.filter(s => keep.has(s.prompt));
+  return merged.filter(s => keep.has(savedKey(s.prompt, s.mentionId)));
 }
 
 function actionId(item: CmdAction): string {
@@ -218,7 +238,7 @@ function actionId(item: CmdAction): string {
     case 'jump-task':      return 'task:' + item.taskId;
     case 'quick-create':   return 'create:' + item.modal;
     case 'cxo':            return 'cxo:' + item.cxo;
-    case 'ai-delegate':    return 'ai:' + item.prompt;
+    case 'ai-delegate':    return 'ai:' + (item.mentionId ? item.mentionId + '|' : '') + item.prompt;
     case 'data-op':        return 'op:' + item.id;
     case 'help':           return 'help:' + item.id;
     case 'custom':         return 'custom:' + item.id;
@@ -239,6 +259,10 @@ export default function CommandPalette({
   const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>(loadSavedPrompts);
   /** 消した直後の 1 件。「元に戻す」で復活させる (取り消せない削除を作らない)。 */
   const [undoSaved, setUndoSaved] = useState<SavedPrompt | null>(null);
+  /** @で指した対象。ここが埋まっている間、AI はこの対象の実データだけを見る。 */
+  const [mention, setMention] = useState<MentionTarget | null>(null);
+  /** 実データを読んでいる間 (押しっぱなしの二重実行を防ぐ) */
+  const [mentionBusy, setMentionBusy] = useState(false);
   // MMMMMM (2026-06-04): changelog.json から 直近 新機能 5 件
   const [changelogFeats, setChangelogFeats] = useState<Array<{ hash: string; date: string; message: string }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -247,7 +271,8 @@ export default function CommandPalette({
   const queue = useAgentTaskQueue();
 
   // 開き直したら「元に戻す」の帯は畳む (古い取り消しが残り続けないように)
-  useEffect(() => { if (open) setUndoSaved(null); }, [open]);
+  // @の対象も毎回まっさらに戻す (前回の対象が残っていて意図しない範囲で実行される事故を防ぐ)
+  useEffect(() => { if (open) { setUndoSaved(null); setMention(null); setMentionBusy(false); } }, [open]);
 
   // MMMMMM: open 時に changelog.json を 1 度だけ 取得 (キャッシュ可)
   useEffect(() => {
@@ -325,9 +350,30 @@ export default function CommandPalette({
   // ────────────────────────────────────────────────────────
   // AI 自然言語依頼 (どの CXO が動くかは CEO が判断)
   // ────────────────────────────────────────────────────────
-  const delegateToAi = useCallback((prompt: string) => {
+  const delegateToAi = useCallback(async (prompt: string, target?: MentionTarget | null): Promise<boolean> => {
     const trimmed = prompt.trim();
-    if (!trimmed) return;
+    if (!trimmed) return false;
+
+    // ★@で対象を指している時は、先に実データを読む。
+    //   読めなければ「それらしい一般論」を作らせず、理由を出して止める (silent fail 禁止)。
+    let ctx: { text: string; note: string } | null = null;
+    if (target) {
+      setMentionBusy(true);
+      try {
+        ctx = await buildMentionContext(target, knowledge);
+      } catch (e) {
+        setMentionBusy(false);
+        notifyInApp({
+          kind: 'warn',
+          title: `${target.label} を読めませんでした`,
+          body: mentionErrorMessage(e),
+          duration: 6000,
+        });
+        return false;
+      }
+      setMentionBusy(false);
+    }
+
     // 簡易ヒューリスティクス: キーワードから担当 CXO を推定
     let cxo: CxoRole = 'CEO';
     if (/数字|売上|収支|p&?l|損益|予算|経費|請求/.test(trimmed)) cxo = 'CFO';
@@ -339,27 +385,36 @@ export default function CommandPalette({
     else if (/契約|nda|規約|法務|リスク/i.test(trimmed)) cxo = 'CLO';
     else if (/整理|スケジュール|運用|片付け|滞留/i.test(trimmed)) cxo = 'COO';
     else if (/仕様|機能|プロダクト|ロードマップ/i.test(trimmed)) cxo = 'CPO';
+    // 文面から担当が決まらなかった時だけ、指した対象をヒントに使う
+    else if (target) {
+      if (target.kind === 'revenue') cxo = 'CFO';
+      else if (target.kind === 'mail' || target.kind === 'calendar') cxo = 'COO';
+    }
 
     const meta = CXO_META[cxo];
     const task = queue.propose({
       title: `AI 依頼: ${trimmed.slice(0, 40)}${trimmed.length > 40 ? '…' : ''}`,
-      summary: trimmed,
-      why: 'Cmd+K の自然言語入力から',
+      summary: target ? `${trimmed}\n(対象: ${target.label})` : trimmed,
+      why: target ? `Cmd+K で ${target.label} を指しての依頼` : 'Cmd+K の自然言語入力から',
       expected: '1 文の実行結果',
       dueDays: 1,
       steps: [
         { cxo: 'CEO', label: '依頼内容を解釈し担当を決定' },
         { cxo, label: trimmed.slice(0, 60) },
       ],
+      contextText: ctx?.text,
+      contextLabel: target?.label,
     });
     queue.approve(task.id);
     notifyInApp({
       kind: 'success',
       title: `${meta.emoji} ${meta.shortLabel} に依頼しました`,
-      body: trimmed.slice(0, 60),
+      // 何を読んだかは実測値だけを出す (件数を盛らない)
+      body: ctx ? `${ctx.note}／${trimmed.slice(0, 40)}` : trimmed.slice(0, 60),
       duration: 3500,
     });
-  }, [queue]);
+    return true;
+  }, [queue, knowledge]);
 
   // ────────────────────────────────────────────────────────
   // 全候補をビルド
@@ -596,15 +651,53 @@ export default function CommandPalette({
   const savedItems = useMemo<CmdAction[]>(() => {
     return [...savedPrompts]
       .sort((a, b) => b.count - a.count || b.ts - a.ts)
-      .map((s): CmdAction => ({
-        kind: 'ai-delegate',
-        prompt: s.prompt,
-        label: s.prompt.length > 60 ? s.prompt.slice(0, 60) + '…' : s.prompt,
-        // 回数は実測値のみ。1 回目は「1 回使いました」と正直に出す (数字を盛らない)
-        subtitle: `${s.count} 回使いました・タップでもう一度 AI に依頼`,
-        emoji: '🪄',
-      }));
-  }, [savedPrompts]);
+      .map((s): CmdAction => {
+        // 保存しているのは対象の ID だけ = 再実行のたびに最新データを読み直す
+        const t = s.mentionId ? resolveMentionTarget(s.mentionId, knowledge) : null;
+        return {
+          kind: 'ai-delegate',
+          prompt: s.prompt,
+          mentionId: t ? s.mentionId : undefined, // 対象が消えた/接続が切れた時は対象なしに落とす
+          label: (t ? t.label + ' ' : '') + (s.prompt.length > 60 ? s.prompt.slice(0, 60) + '…' : s.prompt),
+          // 回数は実測値のみ。1 回目は「1 回使いました」と正直に出す (数字を盛らない)
+          subtitle: t
+            ? `${s.count} 回使いました・${t.label} の最新データを読んで実行`
+            : `${s.count} 回使いました・タップでもう一度 AI に依頼`,
+          emoji: '🪄',
+        };
+      });
+  }, [savedPrompts, knowledge]);
+
+  // ────────────────────────────────────────────────────────
+  // @ で対象を指す
+  //
+  // 「@」を打った直後 (まだ空白を打っていない) だけ対象ピッカーに切り替える。
+  // 繋がっていない連携は listMentionTargets が最初から返さない = 偽の器を出さない。
+  // ────────────────────────────────────────────────────────
+  const mentionQuery = useMemo<string | null>(() => {
+    if (mention) return null; // すでに 1 つ指している間は普通の検索に戻す
+    const m = /(?:^|\s)@([^\s@]*)$/.exec(query);
+    return m ? m[1] : null;
+  }, [query, mention]);
+
+  const mentionCandidates = useMemo<MentionTarget[]>(() => {
+    if (mentionQuery === null) return [];
+    return listMentionTargets(personaKnowledge, mentionQuery);
+  }, [mentionQuery, personaKnowledge]);
+
+  /** @ ボタンを出すかどうか (指せる対象が 1 つも無い人には出さない) */
+  const hasMentionTargets = useMemo(
+    () => listMentionTargets(personaKnowledge).length > 0,
+    [personaKnowledge],
+  );
+
+  /** 対象を確定し、入力欄からは「@…」の断片を消す (チップに置き換わる) */
+  const pickMention = useCallback((t: MentionTarget) => {
+    setMention(t);
+    setQuery(q => q.replace(/(?:^|\s)@[^\s@]*$/, (m) => (m.startsWith(' ') ? ' ' : '')));
+    setSelectedIdx(0);
+    inputRef.current?.focus();
+  }, []);
 
   // ────────────────────────────────────────────────────────
   // フィルタリング (ファジー、複数語 AND)
@@ -680,15 +773,21 @@ export default function CommandPalette({
       item: {
         kind: 'ai-delegate',
         prompt: q,
-        label: `AI に依頼する: "${q.slice(0, 50)}${q.length > 50 ? '…' : ''}"`,
-        subtitle: '担当 CXO が自動で動きます (Cmd+Enter)',
+        mentionId: mention?.id,
+        label: mention
+          ? `${mention.label} を見て: "${q.slice(0, 40)}${q.length > 40 ? '…' : ''}"`
+          : `AI に依頼する: "${q.slice(0, 50)}${q.length > 50 ? '…' : ''}"`,
+        subtitle: mention
+          ? `${mention.hint} (Cmd+Enter)`
+          : '担当 CXO が自動で動きます (Cmd+Enter)',
         emoji: '🪄',
       },
     };
     // すでに同じ ID があれば追加しない
     if (filtered.some(f => actionId(f.item) === actionId(aiEntry.item))) return filtered;
-    return [...filtered, aiEntry];
-  }, [filtered, query]);
+    // 対象を指している間は「その対象に頼む」が主目的なので最上段に置く
+    return mention ? [aiEntry, ...filtered] : [...filtered, aiEntry];
+  }, [filtered, query, mention]);
 
   // ────────────────────────────────────────────────────────
   // 0 件時の「もしかして」候補 (bigram 重なりスコア)
@@ -725,8 +824,10 @@ export default function CommandPalette({
   // selectedIdx を範囲内に保つ
   // ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (selectedIdx >= filteredWithAi.length) setSelectedIdx(Math.max(0, filteredWithAi.length - 1));
-  }, [filteredWithAi.length, selectedIdx]);
+    // 対象ピッカー中は候補数、それ以外は結果数で頭打ちにする (選択が枠外に飛ばないように)
+    const len = mentionQuery !== null ? mentionCandidates.length : filteredWithAi.length;
+    if (selectedIdx >= len) setSelectedIdx(Math.max(0, len - 1));
+  }, [filteredWithAi.length, mentionCandidates.length, mentionQuery, selectedIdx]);
 
   // 選択行を可視に
   useEffect(() => {
@@ -748,7 +849,7 @@ export default function CommandPalette({
     // AI 依頼は prompt そのものを鍵にして「よく使う依頼」へ保存する。
     // (recent は allItems に実体があるコマンドしか復元できないため別枠にする)
     if (item.kind === 'ai-delegate') {
-      const nextSaved = recordSavedPrompt(savedPrompts, item.prompt);
+      const nextSaved = recordSavedPrompt(savedPrompts, item.prompt, item.mentionId);
       saveSavedPrompts(nextSaved);
       setSavedPrompts(nextSaved);
       setUndoSaved(null);
@@ -786,10 +887,18 @@ export default function CommandPalette({
         onClose();
         delegateToCxo(item.cxo, item.actionLabel);
         break;
-      case 'ai-delegate':
-        onClose();
-        delegateToAi(item.prompt);
+      case 'ai-delegate': {
+        const target = item.mentionId ? resolveMentionTarget(item.mentionId, knowledge) : null;
+        if (target) {
+          // 実データを読み終えるまでパレットは開けたまま。
+          // 「押したのに何も起きない数秒」を作らず、失敗したら開いたまま直せるようにする。
+          void delegateToAi(item.prompt, target).then(ok => { if (ok) onClose(); });
+        } else {
+          onClose();
+          void delegateToAi(item.prompt);
+        }
         break;
+      }
       case 'data-op':
       case 'help':
       case 'custom':
@@ -797,12 +906,12 @@ export default function CommandPalette({
         item.onRun();
         break;
     }
-  }, [recent, savedPrompts, onClose, onOpenModal, onSwitchPersona, onOpenKnowledgeId, delegateToCxo, delegateToAi]);
+  }, [recent, savedPrompts, knowledge, onClose, onOpenModal, onSwitchPersona, onOpenKnowledgeId, delegateToCxo, delegateToAi]);
 
   // 保存した依頼を消す / 元に戻す (どちらも 1 タップ・確認ダイアログを挟まない)
-  const removeSavedPrompt = useCallback((prompt: string) => {
-    const target = savedPrompts.find(s => s.prompt === prompt) || null;
-    const next = savedPrompts.filter(s => s.prompt !== prompt);
+  const removeSavedPrompt = useCallback((key: string) => {
+    const target = savedPrompts.find(s => savedKey(s.prompt, s.mentionId) === key) || null;
+    const next = savedPrompts.filter(s => savedKey(s.prompt, s.mentionId) !== key);
     saveSavedPrompts(next);
     setSavedPrompts(next);
     setUndoSaved(target);
@@ -810,7 +919,8 @@ export default function CommandPalette({
 
   const restoreSavedPrompt = useCallback(() => {
     if (!undoSaved) return;
-    const next = [undoSaved, ...savedPrompts.filter(s => s.prompt !== undoSaved.prompt)].slice(0, SAVED_MAX);
+    const undoKey = savedKey(undoSaved.prompt, undoSaved.mentionId);
+    const next = [undoSaved, ...savedPrompts.filter(s => savedKey(s.prompt, s.mentionId) !== undoKey)].slice(0, SAVED_MAX);
     saveSavedPrompts(next);
     setSavedPrompts(next);
     setUndoSaved(null);
@@ -824,25 +934,41 @@ export default function CommandPalette({
     ? ['all', 'saved', 'nav', 'create', 'ai', 'data', 'help']
     : ['all', 'nav', 'create', 'ai', 'data', 'help'];
 
+  const picking = mentionQuery !== null && mentionCandidates.length > 0;
+  /** 「@」を打っている間 (候補 0 件でも、その事実を正直に出すため画面は切り替える) */
+  const mentionMode = mentionQuery !== null;
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // 対象ピッカーを出している間は、そちらの上下・決定を優先する
+    if (picking) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setSelectedIdx(i => Math.min(mentionCandidates.length - 1, i + 1)); return; }
+      if (e.key === 'ArrowUp')   { e.preventDefault(); setSelectedIdx(i => Math.max(0, i - 1)); return; }
+      if (e.key === 'Enter')     { e.preventDefault(); const t = mentionCandidates[selectedIdx]; if (t) pickMention(t); return; }
+    }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIdx(i => Math.min(filteredWithAi.length - 1, i + 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedIdx(i => Math.max(0, i - 1));
+    } else if (e.key === 'Backspace' && mention && !query) {
+      // 入力が空のまま Backspace → 指した対象を外す (チップの標準的な消し方)
+      e.preventDefault();
+      setMention(null);
     } else if (e.key === 'Enter') {
       e.preventDefault();
+      if (mentionBusy) return; // 読み込み中の二重実行を防ぐ
       // Cmd+Enter → AI 依頼を強制
       if ((e.metaKey || e.ctrlKey) && query.trim()) {
-        onClose();
-        delegateToAi(query);
+        void delegateToAi(query, mention).then(ok => { if (ok) onClose(); });
         return;
       }
       const entry = filteredWithAi[selectedIdx];
       if (entry) runItem(entry.item);
     } else if (e.key === 'Escape') {
       e.preventDefault();
+      // 対象を指している時は、まず対象だけ外す (閉じてやり直しにしない)
+      if (mention) { setMention(null); return; }
       onClose();
     } else if (e.key === 'Tab') {
       e.preventDefault();
@@ -934,10 +1060,59 @@ export default function CommandPalette({
                 autoCorrect="off"
                 spellCheck={false}
               />
-              <span className="cp-pill" style={{ fontSize: '0.65rem' }}>ESC</span>
+              {!mention && hasMentionTargets && (
+                <button
+                  onClick={() => {
+                    setQuery(q => (q && !q.endsWith(' ') ? q + ' @' : q + '@'));
+                    setSelectedIdx(0);
+                    inputRef.current?.focus();
+                  }}
+                  aria-label="対象を指定する"
+                  title="@ で対象を指定 (ナレッジ / カレンダー / メール / 売上)"
+                  className="flex items-center justify-center rounded-lg flex-shrink-0"
+                  style={{ width: 44, height: 44, color: 'var(--prism-creative, #A78BFA)', border: '1px solid var(--border)' }}
+                >
+                  <AtSign size={17} />
+                </button>
+              )}
+              <span className="cp-pill flex-shrink-0" style={{ fontSize: '0.65rem' }}>ESC</span>
             </div>
 
-            {/* カテゴリ タブ */}
+            {/* 指した対象 — 「AI がこれだけを見る」を目に見える形にする */}
+            {mention && (
+              <div
+                className="px-4 py-2 flex items-center gap-2 flex-wrap"
+                style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-3)' }}
+              >
+                <span
+                  className="flex items-center gap-1.5 px-2.5 rounded-full flex-shrink-0"
+                  style={{ minHeight: 32, border: '1px solid #A78BFA66', background: '#A78BFA1A', color: '#A78BFA', fontSize: '0.75rem', fontWeight: 600 }}
+                >
+                  <AtSign size={12} />
+                  {mention.label.replace(/^@/, '')}
+                </span>
+                <span className="cp-meta" style={{ flex: '1 1 140px', minWidth: 0 }}>
+                  {mentionBusy ? (
+                    <span className="flex items-center gap-1.5">
+                      <Loader2 size={12} className="animate-spin" />
+                      実データを読んでいます…
+                    </span>
+                  ) : mention.hint}
+                </span>
+                <button
+                  onClick={() => setMention(null)}
+                  aria-label="この対象を外す"
+                  title="対象を外す"
+                  className="flex items-center justify-center rounded-md flex-shrink-0"
+                  style={{ minWidth: 44, height: 44, color: 'var(--fg-subtle)' }}
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            )}
+
+            {/* カテゴリ タブ (対象を選んでいる最中は隠す = 迷わせない) */}
+            {!mentionMode && (
             <div
               className="px-3 py-2 flex items-center gap-1 overflow-x-auto"
               style={{ borderBottom: '1px solid var(--border)' }}
@@ -968,12 +1143,52 @@ export default function CommandPalette({
                 );
               })}
             </div>
+            )}
 
             {/* 結果リスト */}
             <div ref={listRef} className="flex-1 overflow-y-auto py-2">
               {/* 消した直後だけ出る「元に戻す」。
                   ★リストの外に置くのが要点: 最後の 1 件を消すと「よく使う依頼」の
                   かたまり自体が消えるため、中に入れると取り消しボタンごと消える。 */}
+              {mentionMode ? (
+                <div className="py-1">
+                  <div className="cp-tiny px-5 py-1.5 flex items-center gap-1.5" style={{ color: '#A78BFA', fontWeight: 600 }}>
+                    <AtSign size={12} />
+                    <span>どれを見て考えますか (選んだものだけを読みます)</span>
+                  </div>
+                  {mentionCandidates.length === 0 ? (
+                    /* 指せる対象がまだ無い人に空の候補を見せない。何をすれば出るかを書く。 */
+                    <p className="px-5 py-3 cp-meta" style={{ lineHeight: 1.7 }}>
+                      いま指せる対象はありません。<br />
+                      ナレッジに資料やメモを入れるか、カレンダー / メール / 売上 を繋ぐとここに出ます。
+                    </p>
+                  ) : mentionCandidates.map((t, i) => {
+                    const isSel = selectedIdx === i;
+                    return (
+                      <button
+                        key={t.id}
+                        data-cmd-idx={i}
+                        onMouseEnter={() => setSelectedIdx(i)}
+                        onClick={() => pickMention(t)}
+                        className="w-full text-left px-5 py-2.5 flex items-center gap-3 transition-all"
+                        style={{
+                          minHeight: 44,
+                          background: isSel ? 'var(--surface-3)' : 'transparent',
+                          borderLeft: isSel ? '3px solid #A78BFA' : '3px solid transparent',
+                        }}
+                      >
+                        <AtSign size={16} className="flex-shrink-0" style={{ color: '#A78BFA' }} />
+                        <div className="flex-1 min-w-0">
+                          <p className="cp-body truncate" style={{ fontWeight: isSel ? 600 : 400 }}>{t.label}</p>
+                          <p className="cp-meta truncate">{t.hint}</p>
+                        </div>
+                        <ArrowRight size={14} className="flex-shrink-0" style={{ color: 'var(--fg-subtle)' }} />
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+              <>
               {undoSaved && (
                 <div
                   className="mx-3 mb-2 px-3 py-2 flex items-center gap-2 rounded-lg"
@@ -1064,7 +1279,7 @@ export default function CommandPalette({
                   <div className="cp-zero-ctas">
                     {query.trim() && (
                       <button
-                        onClick={() => { onClose(); delegateToAi(query); }}
+                        onClick={() => { void delegateToAi(query, mention).then(ok => { if (ok) onClose(); }); }}
                         className="cp-zero-cta-primary"
                       >
                         <Bot size={14} />
@@ -1111,7 +1326,7 @@ export default function CommandPalette({
                         const barColor = 'color' in item && item.color ? item.color : accent;
                         // 保存した依頼だけは「消す」を持つので、行を button で包まず横並びにする
                         if (category === 'saved' && item.kind === 'ai-delegate') {
-                          const prompt = item.prompt;
+                          const removeKey = savedKey(item.prompt, item.mentionId);
                           return (
                             <div
                               key={actionId(item) + flatIdx}
@@ -1135,7 +1350,7 @@ export default function CommandPalette({
                                 </div>
                               </button>
                               <button
-                                onClick={() => removeSavedPrompt(prompt)}
+                                onClick={() => removeSavedPrompt(removeKey)}
                                 aria-label="この依頼を保存から消す"
                                 title="保存から消す"
                                 className="flex items-center justify-center mr-2 rounded-md flex-shrink-0"
@@ -1180,6 +1395,8 @@ export default function CommandPalette({
                   );
                 })
               )}
+              </>
+              )}
             </div>
 
             {/* フッタヒント */}
@@ -1190,9 +1407,10 @@ export default function CommandPalette({
               <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>↑↓</kbd>選択</span>
               <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>↵</kbd>実行</span>
               <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>Tab</kbd>カテゴリ</span>
+              <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>@</kbd>対象を指す</span>
               <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>⌘↵</kbd>AI 依頼</span>
               <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>Esc</kbd>閉じる</span>
-              <span className="ml-auto">{flatItems.length} 件</span>
+              <span className="ml-auto">{(mentionQuery !== null ? mentionCandidates.length : flatItems.length)} 件</span>
             </div>
           </motion.div>
         </motion.div>
