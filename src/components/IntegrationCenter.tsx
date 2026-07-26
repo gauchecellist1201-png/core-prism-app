@@ -41,6 +41,7 @@ import {
   fetchThreadsStatus, startThreadsConnect, disconnectThreads, readThreadsCallbackResult,
 } from '../lib/threadsConnect';
 import IntegrationCelebrate from './IntegrationCelebrate';
+import { isLineConnected, isLineNotifyEnabled, setLineNotifyEnabled, notifyLine } from '../lib/lineNotify';
 
 interface Props {
   onClose: () => void;
@@ -519,6 +520,7 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
   // LINE Messaging API 連携用: token + userId を別々に保持
   const [lineToken, setLineToken] = useState('');
   const [lineUserId, setLineUserId] = useState('');
+  const [lineNotify, setLineNotify] = useState(() => isLineNotifyEnabled());
 
   const total = tool.steps.length;
   const step = tool.steps[stepIdx];
@@ -1198,6 +1200,55 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                       >
                         テスト送信して確かめる
                       </button>
+                    )}
+                    {/* ★2026-07-26 オーナー要望: Prismの実行内容をLINEへ飛ばす。
+                        既定OFF。LINEの無料メッセージ数を勝手に消費しないため。 */}
+                    {isLineConnected() && (
+                      <div style={{
+                        marginTop: 11, padding: '10px 12px', borderRadius: 10,
+                        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)',
+                      }}>
+                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={lineNotify}
+                            onChange={e => { setLineNotifyEnabled(e.target.checked); setLineNotify(e.target.checked); }}
+                            style={{ width: 17, height: 17, marginTop: 1, flexShrink: 0, accentColor: tool.color }}
+                          />
+                          <span style={{ minWidth: 0 }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', display: 'block' }}>
+                              AI役員が仕事を終えたらLINEに知らせる
+                            </span>
+                            <span style={{ fontSize: 10.5, lineHeight: 1.7, color: 'rgba(255,255,255,0.5)', display: 'block', marginTop: 2 }}>
+                              終わったタスクの要点が、公式LINEに届きます。
+                              ※こちらから送る通知は、LINEの月間無料メッセージ数を1通ぶん使います
+                            </span>
+                          </span>
+                        </label>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={async () => {
+                            setErr(null); setVerifyOk(null); setBusy(true);
+                            const r = await notifyLine(
+                              'CORE Prism から通知のテストです。\nこのメッセージが届いたら、AI役員が仕事を終えたときにここへお知らせが届きます。',
+                              undefined,
+                              true,
+                            );
+                            setBusy(false);
+                            if (r.ok) setVerifyOk('テスト通知を送りました。LINEをご確認ください。');
+                            else setErr(r.message || 'テスト通知を送れませんでした。');
+                          }}
+                          style={{
+                            width: '100%', marginTop: 9, fontSize: 11.5, fontWeight: 700,
+                            color: 'rgba(255,255,255,0.75)', background: 'rgba(255,255,255,0.07)',
+                            border: '1px solid rgba(255,255,255,0.14)', borderRadius: 9,
+                            padding: '9px 12px', cursor: busy ? 'wait' : 'pointer',
+                          }}
+                        >
+                          通知のテストを送る
+                        </button>
+                      </div>
                     )}
                     {verifyOk && (
                       <motion.div

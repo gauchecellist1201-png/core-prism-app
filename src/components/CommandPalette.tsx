@@ -5,6 +5,8 @@
 //   ・50+ コマンド (ナビ / クイック作成 / CXO 直接呼出 / データ操作 / ヘルプ)
 //   ・AI 自然言語入力 (マッチしない時「AI に依頼する」候補)
 //   ・最近使った 10 件を localStorage 永続化
+//   ・AI 依頼は「よく使う依頼」として自動保存 → 次回は入力ゼロで 1 タップ再実行
+//     (2026-07-26: 同じ依頼を毎回打ち直していた摩擦の根治。消す→元に戻すも 1 タップ)
 //   ・キーボード操作 (↑↓選択 / Enter実行 / Tabカテゴリ切替 / Cmd+Enter AI 依頼)
 //   ・モバイル: 下からシート、input 16px+ で iOS 自動ズーム回避
 // ============================================================
@@ -12,7 +14,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Sparkles, Compass, Plus, Bot, Wrench, Settings as SettingsIcon,
-  Clock, ArrowRight, CornerDownLeft, Command, Play,
+  Clock, ArrowRight, CornerDownLeft, Command, Play, Star, X, Undo2,
 } from 'lucide-react';
 import type { Persona, KnowledgeItem } from '../types/identity';
 import { useAgentTaskQueue, CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
@@ -54,9 +56,10 @@ interface Props {
 // ────────────────────────────────────────────────────────────
 // カテゴリ定義
 // ────────────────────────────────────────────────────────────
-type CategoryKey = 'recent' | 'nav' | 'create' | 'ai' | 'suggestion' | 'changelog' | 'data' | 'persona' | 'knowledge' | 'task' | 'help';
+type CategoryKey = 'saved' | 'recent' | 'nav' | 'create' | 'ai' | 'suggestion' | 'changelog' | 'data' | 'persona' | 'knowledge' | 'task' | 'help';
 
 const CATEGORY_LABEL: Record<CategoryKey, string> = {
+  saved: 'よく使う依頼 (タップでもう一度)',
   recent: 'よく使う・最近',
   nav: 'ナビ',
   create: '新規作成',
@@ -137,6 +140,67 @@ function saveRecent(entries: RecentEntry[]) {
   try { localStorage.setItem(RECENT_KEY, JSON.stringify(entries.slice(0, RECENT_MAX))); } catch { /* */ }
 }
 
+// ────────────────────────────────────────────────────────────
+// よく使う依頼 (AI 依頼の自動保存)
+//
+// ★なぜ (2026-07-26): AI 依頼 (ai-delegate) は prompt が毎回違うため recent から
+//   意図的に除外されていた。結果、同じ依頼を毎回ゼロから打ち直す状態だった。
+//   ここでは prompt そのものを鍵にして別枠で保存し、2 回目以降を「入力ゼロ・
+//   1 タップ」にする。保存が 0 件の人には何も見せない (空カードを出さない)。
+// ────────────────────────────────────────────────────────────
+const SAVED_KEY = 'core_cmd_saved_prompts_v1';
+const SAVED_MAX = 8;
+/** 誤爆保存を防ぐ最短文字数。1〜2 文字の打ち間違いは残さない。 */
+const SAVED_MIN_LEN = 4;
+
+interface SavedPrompt {
+  prompt: string;
+  ts: number;
+  count: number;
+}
+
+function loadSavedPrompts(): SavedPrompt[] {
+  try {
+    const raw = localStorage.getItem(SAVED_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    // 壊れた要素が 1 つ混ざっても全体を捨てない (沈黙して全消えを防ぐ)
+    return arr
+      .filter((x: any) => x && typeof x.prompt === 'string' && x.prompt.trim())
+      .map((x: any) => ({ prompt: String(x.prompt), ts: Number(x.ts) || 0, count: Number(x.count) || 1 }))
+      .slice(0, SAVED_MAX);
+  } catch { return []; }
+}
+
+function saveSavedPrompts(list: SavedPrompt[]) {
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify(list.slice(0, SAVED_MAX))); } catch { /* 保存できなくても操作は続行 */ }
+}
+
+/**
+ * 実行した依頼を先頭へ。同じ依頼なら回数だけ増やす。
+ * ★あふれた時は「一番古い」ではなく「一番使っていない」を落とす。
+ *   単純に末尾を切ると、たまたま単発の依頼が続いただけで、毎週使う依頼が
+ *   押し出されて消える (= よく使う依頼が消える) ため。
+ */
+function recordSavedPrompt(list: SavedPrompt[], prompt: string): SavedPrompt[] {
+  const p = prompt.trim();
+  if (p.length < SAVED_MIN_LEN) return list;
+  const prev = list.find(s => s.prompt === p);
+  const merged: SavedPrompt[] = [
+    { prompt: p, ts: Date.now(), count: (prev?.count ?? 0) + 1 },
+    ...list.filter(s => s.prompt !== p),
+  ];
+  if (merged.length <= SAVED_MAX) return merged;
+  const keep = new Set(
+    [...merged]
+      .sort((a, b) => b.count - a.count || b.ts - a.ts)
+      .slice(0, SAVED_MAX)
+      .map(s => s.prompt),
+  );
+  return merged.filter(s => keep.has(s.prompt));
+}
+
 function actionId(item: CmdAction): string {
   switch (item.kind) {
     case 'open-modal':     return 'modal:' + item.modal;
@@ -163,12 +227,18 @@ export default function CommandPalette({
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [activeTab, setActiveTab] = useState<CategoryKey | 'all'>('all');
   const [recent, setRecent] = useState<RecentEntry[]>(loadRecent);
+  const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>(loadSavedPrompts);
+  /** 消した直後の 1 件。「元に戻す」で復活させる (取り消せない削除を作らない)。 */
+  const [undoSaved, setUndoSaved] = useState<SavedPrompt | null>(null);
   // MMMMMM (2026-06-04): changelog.json から 直近 新機能 5 件
   const [changelogFeats, setChangelogFeats] = useState<Array<{ hash: string; date: string; message: string }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const queue = useAgentTaskQueue();
+
+  // 開き直したら「元に戻す」の帯は畳む (古い取り消しが残り続けないように)
+  useEffect(() => { if (open) setUndoSaved(null); }, [open]);
 
   // MMMMMM: open 時に changelog.json を 1 度だけ 取得 (キャッシュ可)
   useEffect(() => {
@@ -512,6 +582,22 @@ export default function CommandPalette({
   }, [allItems, recent]);
 
   // ────────────────────────────────────────────────────────
+  // よく使う依頼 → そのまま実行できる候補に変換
+  // ────────────────────────────────────────────────────────
+  const savedItems = useMemo<CmdAction[]>(() => {
+    return [...savedPrompts]
+      .sort((a, b) => b.count - a.count || b.ts - a.ts)
+      .map((s): CmdAction => ({
+        kind: 'ai-delegate',
+        prompt: s.prompt,
+        label: s.prompt.length > 60 ? s.prompt.slice(0, 60) + '…' : s.prompt,
+        // 回数は実測値のみ。1 回目は「1 回使いました」と正直に出す (数字を盛らない)
+        subtitle: `${s.count} 回使いました・タップでもう一度 AI に依頼`,
+        emoji: '🪄',
+      }));
+  }, [savedPrompts]);
+
+  // ────────────────────────────────────────────────────────
   // フィルタリング (ファジー、複数語 AND)
   // ────────────────────────────────────────────────────────
   const filtered = useMemo<Array<{ item: CmdAction; category: CategoryKey }>>(() => {
@@ -520,6 +606,16 @@ export default function CommandPalette({
     if (!q) {
       const result: Array<{ item: CmdAction; category: CategoryKey }> = [];
       const seen = new Set<string>();
+      // ★入力ゼロで「前にやった依頼」が最上段に並ぶ = 2 回目以降が 1 タップ
+      if (activeTab === 'all' || activeTab === 'saved') {
+        for (const s of savedItems) {
+          const id = actionId(s);
+          if (seen.has(id)) continue;
+          seen.add(id);
+          result.push({ item: s, category: 'saved' });
+        }
+      }
+      if (activeTab === 'saved') return result;
       for (const r of recentItems) {
         const id = actionId(r);
         if (seen.has(id)) continue;
@@ -537,6 +633,15 @@ export default function CommandPalette({
     }
     // クエリあり → スコア順にフィルタ
     const parts = q.split(/\s+/);
+    // 保存した依頼は「打ち直さずに拾える」ことが価値なので、部分一致したら先頭に出す
+    const savedHits: Array<{ item: CmdAction; category: CategoryKey }> = [];
+    if (activeTab === 'all' || activeTab === 'saved') {
+      for (const s of savedItems) {
+        const hay = ('prompt' in s ? s.prompt : s.label).toLowerCase();
+        if (parts.every(p => hay.includes(p))) savedHits.push({ item: s, category: 'saved' });
+      }
+    }
+    if (activeTab === 'saved') return savedHits;
     const scored: Array<{ entry: { item: CmdAction; category: CategoryKey }; score: number }> = [];
     for (const entry of allItems) {
       if (activeTab !== 'all' && entry.category !== activeTab) continue;
@@ -553,8 +658,9 @@ export default function CommandPalette({
       scored.push({ entry, score });
     }
     scored.sort((a, b) => b.score - a.score);
-    return scored.map(s => s.entry);
-  }, [allItems, recentItems, query, activeTab]);
+    const savedIds = new Set(savedHits.map(h => actionId(h.item)));
+    return [...savedHits, ...scored.map(s => s.entry).filter(e => !savedIds.has(actionId(e.item)))];
+  }, [allItems, recentItems, savedItems, query, activeTab]);
 
   // クエリにマッチが無い (または少ない) 時、AI 依頼候補を末尾に追加
   const filteredWithAi = useMemo<Array<{ item: CmdAction; category: CategoryKey }>>(() => {
@@ -630,7 +736,16 @@ export default function CommandPalette({
   // 実行
   // ────────────────────────────────────────────────────────
   const runItem = useCallback((item: CmdAction) => {
-    // recent に記録 (ai-delegate は prompt が毎回違うので除外)
+    // AI 依頼は prompt そのものを鍵にして「よく使う依頼」へ保存する。
+    // (recent は allItems に実体があるコマンドしか復元できないため別枠にする)
+    if (item.kind === 'ai-delegate') {
+      const nextSaved = recordSavedPrompt(savedPrompts, item.prompt);
+      saveSavedPrompts(nextSaved);
+      setSavedPrompts(nextSaved);
+      setUndoSaved(null);
+    }
+
+    // recent に記録 (ai-delegate は上の「よく使う依頼」で扱う)
     if (item.kind !== 'ai-delegate') {
       const id = actionId(item);
       const prevCount = recent.find(r => r.id === id)?.count ?? 0;
@@ -673,12 +788,32 @@ export default function CommandPalette({
         item.onRun();
         break;
     }
-  }, [recent, onClose, onOpenModal, onSwitchPersona, onOpenKnowledgeId, delegateToCxo, delegateToAi]);
+  }, [recent, savedPrompts, onClose, onOpenModal, onSwitchPersona, onOpenKnowledgeId, delegateToCxo, delegateToAi]);
+
+  // 保存した依頼を消す / 元に戻す (どちらも 1 タップ・確認ダイアログを挟まない)
+  const removeSavedPrompt = useCallback((prompt: string) => {
+    const target = savedPrompts.find(s => s.prompt === prompt) || null;
+    const next = savedPrompts.filter(s => s.prompt !== prompt);
+    saveSavedPrompts(next);
+    setSavedPrompts(next);
+    setUndoSaved(target);
+  }, [savedPrompts]);
+
+  const restoreSavedPrompt = useCallback(() => {
+    if (!undoSaved) return;
+    const next = [undoSaved, ...savedPrompts.filter(s => s.prompt !== undoSaved.prompt)].slice(0, SAVED_MAX);
+    saveSavedPrompts(next);
+    setSavedPrompts(next);
+    setUndoSaved(null);
+  }, [undoSaved, savedPrompts]);
 
   // ────────────────────────────────────────────────────────
   // キーボード
   // ────────────────────────────────────────────────────────
-  const TAB_ORDER: Array<CategoryKey | 'all'> = ['all', 'nav', 'create', 'ai', 'data', 'help'];
+  // 保存が 0 件のうちは「よく使う依頼」タブを出さない (空タブを見せない)
+  const TAB_ORDER: Array<CategoryKey | 'all'> = savedItems.length > 0
+    ? ['all', 'saved', 'nav', 'create', 'ai', 'data', 'help']
+    : ['all', 'nav', 'create', 'ai', 'data', 'help'];
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -729,6 +864,7 @@ export default function CommandPalette({
   const categoryIcon = (c: CategoryKey) => {
     const props = { size: 12, strokeWidth: 2 };
     switch (c) {
+      case 'saved':     return <Star {...props} />;
       case 'recent':    return <Clock {...props} />;
       case 'nav':       return <Compass {...props} />;
       case 'create':    return <Plus {...props} />;
@@ -745,6 +881,7 @@ export default function CommandPalette({
 
   const categoryAccent = (c: CategoryKey) => {
     switch (c) {
+      case 'saved':     return '#E8B84B';
       case 'recent':    return '#94A3B8';
       case 'nav':       return '#60A5FA';
       case 'create':    return '#34D399';
@@ -848,6 +985,27 @@ export default function CommandPalette({
                     </div>
                   )}
 
+                  {/* よく使う依頼 — 見つからなかった時の逃げ道にもなる */}
+                  {savedItems.length > 0 && (
+                    <div className="cp-zero-section">
+                      <div className="cp-zero-section-label">
+                        <Star size={11} style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} />
+                        前にやった依頼をもう一度
+                      </div>
+                      {savedItems.slice(0, 3).map((item) => (
+                        <button
+                          key={'sv:' + actionId(item)}
+                          onClick={() => runItem(item)}
+                          className="cp-zero-row"
+                        >
+                          <span className="cp-zero-row-emoji">{item.emoji}</span>
+                          <span className="cp-zero-row-label">{item.label}</span>
+                          <ArrowRight size={14} style={{ color: 'var(--fg-subtle)' }} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   {/* 最近使った 3 件 — クエリ無しでも常に出して行き止まりを作らない */}
                   {recentItems.length > 0 && (
                     <div className="cp-zero-section">
@@ -913,11 +1071,64 @@ export default function CommandPalette({
                         <span>{CATEGORY_LABEL[category]}</span>
                         <span style={{ marginLeft: 'auto', color: 'var(--fg-subtle)', fontWeight: 400 }}>{items.length}</span>
                       </div>
+                      {/* 消した直後だけ出る「元に戻す」— 取り消せない削除を作らない */}
+                      {category === 'saved' && undoSaved && (
+                        <div
+                          className="px-5 py-2 flex items-center gap-2"
+                          style={{ background: 'var(--surface-3)', fontSize: '0.72rem', color: 'var(--fg-muted, #94A3B8)' }}
+                        >
+                          <span className="truncate flex-1">1 件を消しました</span>
+                          <button
+                            onClick={restoreSavedPrompt}
+                            className="flex items-center gap-1 px-2.5 rounded-md"
+                            style={{ minHeight: 32, color: accent, border: `1px solid ${accent}55`, fontWeight: 600 }}
+                          >
+                            <Undo2 size={12} />元に戻す
+                          </button>
+                        </div>
+                      )}
                       {items.map((item) => {
                         const flatIdx = flatItems.indexOf(item);
                         const isSelected = flatIdx === selectedIdx;
                         const subtitle = 'subtitle' in item ? item.subtitle : undefined;
                         const barColor = 'color' in item && item.color ? item.color : accent;
+                        // 保存した依頼だけは「消す」を持つので、行を button で包まず横並びにする
+                        if (category === 'saved' && item.kind === 'ai-delegate') {
+                          const prompt = item.prompt;
+                          return (
+                            <div
+                              key={actionId(item) + flatIdx}
+                              className="w-full flex items-center transition-all"
+                              style={{
+                                background: isSelected ? 'var(--surface-3)' : 'transparent',
+                                borderLeft: isSelected ? `3px solid ${barColor}` : '3px solid transparent',
+                              }}
+                            >
+                              <button
+                                data-cmd-idx={flatIdx}
+                                onMouseEnter={() => setSelectedIdx(flatIdx)}
+                                onClick={() => runItem(item)}
+                                className="flex-1 min-w-0 text-left pl-5 pr-2 py-2.5 flex items-center gap-3"
+                                style={{ minHeight: 44 }}
+                              >
+                                <span className="text-xl flex-shrink-0">{item.emoji}</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="cp-body truncate" style={{ fontWeight: isSelected ? 600 : 400 }}>{item.label}</p>
+                                  {subtitle && <p className="cp-meta truncate">{subtitle}</p>}
+                                </div>
+                              </button>
+                              <button
+                                onClick={() => removeSavedPrompt(prompt)}
+                                aria-label="この依頼を保存から消す"
+                                title="保存から消す"
+                                className="flex items-center justify-center mr-2 rounded-md flex-shrink-0"
+                                style={{ width: 44, height: 44, color: 'var(--fg-subtle)' }}
+                              >
+                                <X size={15} />
+                              </button>
+                            </div>
+                          );
+                        }
                         return (
                           <button
                             key={actionId(item) + flatIdx}

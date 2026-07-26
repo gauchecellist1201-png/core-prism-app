@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Crown, Cpu, Target, Palette, Megaphone, Briefcase, BarChart3, FolderKanban, Microscope, Scale, Sparkles, Eye, ShieldCheck, Handshake } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { aiFetch } from '../lib/aiFetch';
+import { notifyLine, formatTaskDone } from '../lib/lineNotify';
 
 export type CxoRole =
   | 'CEO'   // 戦略・最終判断 (オーナー対話)
@@ -169,7 +170,12 @@ export function useAgentTaskQueue() {
         return { ...t, steps };
       }
       // 全完了
-      return { ...t, steps, status: 'done', completedAt: new Date().toISOString() };
+      const finished = { ...t, steps, status: 'done' as const, completedAt: new Date().toISOString() };
+      // ★2026-07-26 オーナー要望: 終わったことを公式LINEへ飛ばす。
+      //   設定でONにしている人だけ・同じタスクは1回だけ（LINEの無料通数を無駄にしない）。
+      //   失敗しても画面は止めない。
+      void notifyLine(formatTaskDone(finished), `task:${finished.id}`).catch(() => {});
+      return finished;
     }));
   }, []);
 
