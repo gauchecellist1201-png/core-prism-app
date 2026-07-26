@@ -41,6 +41,7 @@ import { useHealth } from '../hooks/useHealth';
 import { PulseLogo } from '../components/Logo';
 import { detectAnomalies, type HealthAnomaly } from '../data/healthAnomaly';
 import { aiMorningWords, loadCachedMorning } from './aiMorningWords';
+import { useEmailBlobSync } from '../hooks/useEmailBlobSync';
 import type { DailyHealth } from '../types/health';
 import { fetchWithTimeout, isAbort } from '../lib/fetchWithTimeout';
 import { scorePulseDay, scoreLastDays, SCORE_GOOD_LINE, SCORE_MAX, STEPS_FULL, SLEEP_HOURS_FULL, type PulseScoreResult, type PulseScoreParts } from './pulseScore';
@@ -925,7 +926,7 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
       tag: 'Apple Watch 自動記録',
       title: 'つないだら、あとは自動',
       before: '睡眠時間や歩数を、手で書き写す',
-      after: 'Apple Watchをつなぐだけで、寝ている間も記録が集まる。入力の手間はゼロ',
+      after: '最初に一度だけiPhoneのショートカットを入れれば、あとは寝ている間も自動で集まる',
     },
   ];
   // ── 使い方3ステップ ──
@@ -1001,7 +1002,7 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
             <span style={{ display: 'inline-block' }}>100点満点のひと目でわかる。</span>
           </p>
           <p style={{ fontSize: 14.5, lineHeight: 2.0, color: C.sub, margin: '16px auto 0', maxWidth: 560 }}>
-            Apple Watchをつなぐだけ。数字と「けさのことば」が、毎朝届きます。
+            Apple Watchをお持ちなら、最初の設定は一度だけ。数字と「けさのことば」が、毎朝届きます。
           </p>
 
           {/* アプリ画面の実物モック — 読ませるより、見せる */}
@@ -1118,6 +1119,58 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
             いま、ためしてみる <ArrowRight size={16} />
           </PrimaryButton>
         </div>
+      </section>
+
+      {/* ══ 4.5 採点式の公開 ══
+           ★ここがOura/WHOOPに勝てる唯一の場所（2026-07-26 競合調査の結論）。
+             競合のスコアは全社ブラックボックス。配点を全部見せることは、
+             差別化であると同時に、薬機法(プログラム医療機器 該当性ガイドライン)の
+             「アドバイスの根拠が利用者に検証可能な形で示されることが望ましい」を
+             そのまま満たす安全装置でもある。 */}
+      <section style={{ maxWidth: 560, margin: '56px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+          <div style={{ ...labelStyle(C.accent), marginBottom: 12 }}>HOW IT WORKS</div>
+          <h2 style={{ fontSize: 'clamp(20px, 4.6vw, 26px)', fontWeight: 600, margin: 0, fontFamily: SERIF, letterSpacing: '0.03em' }}>
+            点数のつけ方を、全部お見せします。
+          </h2>
+          <p style={{ fontSize: 13.5, lineHeight: 2.0, color: C.sub, margin: '14px auto 0', maxWidth: 460 }}>
+            他のサービスの点数は、どう計算されたのか分かりません。
+            <br />
+            Pulseは、100点の内訳をすべて公開しています。
+          </p>
+        </div>
+        <Card>
+          {[
+            { name: 'ねむり', max: SCORE_MAX.sleep, how: `${SLEEP_HOURS_FULL}時間で満点。短い日はその分だけ下がります` },
+            { name: '心拍のゆらぎ', max: SCORE_MAX.hrv, how: 'あなたのふだんの値と比べて、回復できているか' },
+            { name: '休息時の脈', max: SCORE_MAX.resting, how: 'ふだんより高い日は、疲れのサインとして下がります' },
+            { name: '歩いた量', max: SCORE_MAX.steps, how: `${STEPS_FULL.toLocaleString()}歩で満点` },
+          ].map((r) => (
+            <div key={r.name} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '11px 0', borderBottom: `1px solid ${C.line}` }}>
+              <div style={{ minWidth: 52, fontSize: 20, fontWeight: 700, color: C.accent, fontFamily: SERIF, lineHeight: 1.2 }}>
+                {r.max}
+                <span style={{ fontSize: 11, color: C.sub, fontWeight: 400 }}>点</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{r.name}</div>
+                <div style={{ fontSize: 12, lineHeight: 1.8, color: C.sub, marginTop: 2 }}>{r.how}</div>
+              </div>
+            </div>
+          ))}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12 }}>
+            <span style={{ fontSize: 13, color: C.sub }}>合計</span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: C.ink, fontFamily: SERIF }}>
+              100<span style={{ fontSize: 12, color: C.sub, fontWeight: 400 }}>点</span>
+            </span>
+          </div>
+        </Card>
+        <p style={{ fontSize: 12, lineHeight: 1.9, color: C.sub, margin: '14px auto 0', maxWidth: 460, textAlign: 'center' }}>
+          「ふだん」は、直近28日のあなた自身の平均です。他の人とは比べません。
+          <br />
+          病名は言いません。「いつもとちがう」までをお伝えします。
+          <br />
+          気になる変化が続くときは、記録を持って医療機関にご相談ください。
+        </p>
       </section>
 
       {/* ══ 5. 料金 ══ */}
@@ -1560,6 +1613,44 @@ function PulseHome() {
   const [scoreDetailOpen, setScoreDetailOpen] = useState(false); // スコア内訳 (タップで開く)
   const [wordsOpen, setWordsOpen] = useState(false);             // けさのことば つづき
   const [chipsByDate, setChipsByDate] = useState<Record<string, string[]>>(loadChips);
+  // ★2026-07-26 課金の前提: 記録を端末の外にも保存する。
+  //   これまで localStorage だけだったため、キャッシュ削除・機種変更で
+  //   スコアの土台になる「ふだん＝直近28日」が消えていた。
+  //   この状態では月額課金に耐えないため、既存の /api/account/blob に載せる。
+  //   メールを入れていない人はこれまでどおり端末保存のみ（強制しない）。
+  const pulseBlob = useMemo(
+    () => ({ profile, memos, chips: chipsByDate }),
+    [profile, memos, chipsByDate],
+  );
+  useEmailBlobSync<{ profile: PulseProfile; memos: PulseMemo[]; chips: Record<string, string[]> }>({
+    key: 'pulse',
+    enabled: Boolean(profile.email),
+    email: profile.email,
+    value: pulseBlob,
+    isEmpty: (v) => !v || (v.memos.length === 0 && Object.keys(v.chips || {}).length === 0),
+    onRemote: (merged) => {
+      if (merged.profile) { setProfile(merged.profile); saveJson(PROFILE_KEY, merged.profile); }
+      if (Array.isArray(merged.memos)) { setMemos(merged.memos); saveJson(MEMO_KEY, merged.memos); }
+      if (merged.chips) { setChipsByDate(merged.chips); saveJson(CHIP_KEY, merged.chips); }
+    },
+    // 同じ日の記録は「多い方」を残す＝別端末で押した記録を消さない
+    merge: (local, remote) => {
+      const chips: Record<string, string[]> = { ...(remote?.chips || {}) };
+      for (const [day, ids] of Object.entries(local?.chips || {})) {
+        const prev = chips[day] || [];
+        chips[day] = Array.from(new Set([...prev, ...ids]));
+      }
+      const byId = new Map<string, PulseMemo>();
+      for (const m of remote?.memos || []) byId.set(m.id, m);
+      for (const m of local?.memos || []) byId.set(m.id, m);
+      return {
+        profile: local?.profile?.name ? local.profile : (remote?.profile || local.profile),
+        memos: Array.from(byId.values()),
+        chips,
+      };
+    },
+  });
+
   const todayKey = localDateStr();
   const todayChips = useMemo(() => chipsByDate[todayKey] ?? [], [chipsByDate, todayKey]);
   const toggleChip = useCallback((id: string) => {

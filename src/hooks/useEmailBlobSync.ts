@@ -13,7 +13,7 @@ import { useEffect, useRef } from 'react';
 
 interface Options<T> {
   /** blob API の key（サーバ側 api/account/blob.ts の ALLOWED_KEYS と必ず一致させる） */
-  key: 'knowledge' | 'personas' | 'settings' | 'products';
+  key: 'knowledge' | 'personas' | 'settings' | 'products' | 'pulse';
   /** ログイン中ユーザーのメール（無ければ同期しない） */
   email: string | null | undefined;
   /** 現在の値 */
