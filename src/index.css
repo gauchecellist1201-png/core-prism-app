@@ -540,6 +540,10 @@ select option {
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
+  /* グラデ文字は背景を文字型に切り抜くため、行の高さが足りないと
+     下端(g/y のはらい等)が欠ける。実測で3px切れていたので余裕を持たせる。 */
+  line-height: 1.25;
+  padding-bottom: 0.08em;
 }
 
 .text-gradient-brass {
@@ -2784,6 +2788,79 @@ time {
   /* PWA インストールバナーも Dock の上 (full-width バーが Dock に被る) */
   body[data-iris-dock] .install-pwa-banner {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 84px) !important;
+  }
+}
+
+/* ============================================================
+   Prism 下部チャットドックとの衝突ガード — 2026-07-26
+   症状(オーナー報告): 「文字がかぶっている」。
+   実測: BottomChatDock (全幅・bottom:12px・z-index:46) と
+        AgentTeamMonitor の折りたたみドック (bottom:12px・z-index:40) が
+        375px 実機で 239x62px 重なり、「役員 会議室」が完全に隠れていた。
+        両方が bottom:12px を基準にしていたため、必ず重なる状態だった。
+   対策: ドックの実測高さ (--prism-dock-h) の上へ、下部固定要素を逃がす。
+        高さは BottomChatDock が ResizeObserver で常に書き込むので、
+        展開・折りたたみ・画面回転のいずれでもズレない。
+   PC/Iris のレイアウトには影響しない (data 属性が付くのは Prism のドック表示時のみ)。
+   ============================================================ */
+body[data-prism-chat-dock] .agent-monitor-dock[data-open='false'] {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-dock-h, 62px) + 12px) !important;
+}
+body[data-prism-chat-dock] .agent-monitor-dock[data-open='true'] {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-dock-h, 62px) + 12px) !important;
+  max-height: calc(100svh - env(safe-area-inset-bottom, 0px) - var(--prism-dock-h, 62px) - 96px) !important;
+}
+
+/* ── スマホの「ごちゃごちゃ感」を下げる (≤640px) — 2026-07-26 ──
+   実測: 375px の画面に position:fixed の浮遊要素が同時に 7 つ出ており、
+   それぞれが独立して bottom / right を決めていたため、1つ直すと別が重なる
+   状態だった（オーナー報告「ごちゃごちゃ感と文字かぶり」）。
+   常時出ている必要のない「役員 会議室」の待機バーだけを畳み、
+   浮遊要素を 7 → 6 に減らして重なりを解消する。
+   機能は消さない: 左メニューの「会社 (役員・司令塔)」からこれまでどおり開ける。
+   開いた状態 (data-open="true") はそのまま表示する。 */
+@media (max-width: 640px) {
+  body[data-prism-chat-dock] .agent-monitor-dock[data-open='false'] {
+    display: none !important;
+  }
+}
+/* PWA インストールバナーも全幅なので同じくドックの上へ */
+body[data-prism-chat-dock] .install-pwa-banner {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-dock-h, 62px) + 12px) !important;
+}
+/* ── 画面下の「段(レーン)」— ごちゃごちゃ感の根治 2026-07-26 ──
+   これまで下部の固定要素が各自バラバラに bottom を決めていた
+   (12px / 74px / 76px / 80px / 88px / 96px / 150px …)。
+   そのため1つ直すと別が重なる、を繰り返していた（実測で重なり多数）。
+   ドックの実測高さを起点に段を定義し、全員がこの段に乗るようにする。 */
+:root {
+  --prism-lane-1: 74px;  /* ドックのすぐ上 */
+  --prism-lane-2: 130px; /* その上 */
+  --prism-lane-3: 186px; /* さらに上 */
+}
+body[data-prism-chat-dock] {
+  --prism-lane-1: calc(var(--prism-dock-h, 62px) + 12px);
+  /* 段2は「役員 会議室」ドック(高さ68px)の上に出る必要がある */
+  --prism-lane-2: calc(var(--prism-dock-h, 62px) + 88px);
+  --prism-lane-3: calc(var(--prism-dock-h, 62px) + 150px);
+}
+
+/* 段1: ドックの真上（左右に分かれるので互いに当たらない） */
+.prism-cmdk-entry {
+  bottom: 1rem;
+}
+body[data-prism-chat-dock] .prism-cmdk-entry,
+body[data-prism-chat-dock] .cp-feedback-fab {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-lane-1)) !important;
+}
+/* 段2: 通知・メモなど（フィードバックFABの上に逃がす） */
+body[data-prism-chat-dock] .prism-side-toast {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-lane-3)) !important;
+}
+/* 右下のFAB列(幅約66px)を避ける。ここを空けないと通知がFABに重なる。 */
+@media (min-width: 768px) {
+  body[data-prism-chat-dock] .prism-side-toast {
+    right: 88px !important;
   }
 }
 

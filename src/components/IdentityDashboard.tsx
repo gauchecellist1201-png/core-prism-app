@@ -2305,7 +2305,7 @@ export default function IdentityDashboard({
 
       {/* 下部FAB/役員ドック帯(~90px)を避けて表示 — 重なりゼロ規約 2026-07-19 */}
       {settings.proactiveEnabled !== false && proactive.error && (
-        <div className="fixed bottom-44 md:bottom-24 right-20 md:right-4 z-30 max-w-sm w-[calc(100vw-7rem)] md:w-80">
+        <div className="prism-side-toast fixed right-20 md:right-4 z-30 max-w-sm w-[calc(100vw-7rem)] md:w-80">
           <div className="p-3 rounded-lg" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)' }}>
             <p className="text-red-300 text-xs">{proactive.error}</p>
           </div>
@@ -2335,7 +2335,7 @@ export default function IdentityDashboard({
 
       <button
         onClick={() => setShowCmdK(true)}
-        className="hidden md:flex fixed bottom-4 left-1/2 -translate-x-1/2 z-20 items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all hover:scale-105"
+        className="prism-cmdk-entry hidden md:flex fixed left-1/2 -translate-x-1/2 z-20 items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all hover:scale-105"
         style={{
           background: 'rgba(20, 20, 30, 0.7)',
           backdropFilter: 'blur(20px)',

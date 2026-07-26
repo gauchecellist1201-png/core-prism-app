@@ -32,10 +32,43 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
   });
   const taRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // 画面幅は「描画時に1回だけ」ではなく追従させる（回転・ウィンドウ変更でも崩れないように）
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 640);
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth <= 640);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     try { localStorage.setItem(MINIMIZED_KEY, minimized ? '1' : '0'); } catch { /* noop */ }
   }, [minimized]);
+
+  // ★2026-07-26 文字かぶりの根治（オーナー報告「文字がかぶっている」）
+  //   このドックは画面下に固定表示されるが、同じく bottom 固定の
+  //   「役員 会議室」ドック等と重なり、下の要素が完全に隠れていた（実測 239x62px の重なり）。
+  //   ドックの実測高さを CSS 変数 --prism-dock-h に流し込み、
+  //   他の下部固定要素が必ずその上へ逃げられるようにする（決め打ちの px を使わない）。
+  useEffect(() => {
+    const root = document.documentElement;
+    document.body.dataset.prismChatDock = '1';
+    const measure = () => {
+      const h = rootRef.current?.getBoundingClientRect().height ?? 0;
+      root.style.setProperty('--prism-dock-h', `${Math.round(h)}px`);
+    };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (ro && rootRef.current) ro.observe(rootRef.current);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', measure);
+      delete document.body.dataset.prismChatDock;
+      root.style.removeProperty('--prism-dock-h');
+    };
+  }, [minimized, expanded]);
 
   // 送信や新着で会話末尾へスクロール
   useEffect(() => {
@@ -61,17 +94,27 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
 
   const hasMsgs = messages.length > 0;
 
+  // ★2026-07-26 見切れの根治（オーナー報告「文字がかぶっている」）
+  //   375px 実機で `${name} に聞く… (Enterで送信)` が3行に折り返し、
+  //   1行分の高さしかない入力欄から 48px はみ出して切れていた（実測）。
+  //   狭い画面では要素を削って1行に収める。名前が長い人格でも切れないよう短縮する。
+  //   入力欄の内側は実測 132px しか無かった（右に FAB 用の余白を 84px 取っていたため）。
+  //   FAB 群はドックより上の帯にいて重ならないので、狭い画面では余白を返して入力欄を広げる。
+  const placeholder = narrow ? 'AIに聞く…' : `${name} に聞く… (Enterで送信)`;
+  const dockPaddingRight = narrow ? 12 : 84;
+
   // 待機状態: 帯だけ残し、下のコンテンツが見えるスペースを確保する。
   if (minimized) {
     return (
       <div
+        ref={rootRef}
         style={{
           position: 'fixed',
           left: 0,
           right: 0,
           bottom: 'max(12px, env(safe-area-inset-bottom))',
           paddingLeft: 12,
-          paddingRight: 84,
+          paddingRight: dockPaddingRight,
           display: 'flex',
           justifyContent: 'center',
           zIndex: 46,
@@ -112,6 +155,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
 
   return (
     <div
+      ref={rootRef}
       style={{
         position: 'fixed',
         left: 0,
@@ -119,7 +163,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
         bottom: 'max(12px, env(safe-area-inset-bottom))',
         // 右下の常駐FAB群（役員日報/音声/アシスタント）と重ならないよう右側を空ける
         paddingLeft: 12,
-        paddingRight: 84,
+        paddingRight: dockPaddingRight,
         display: 'flex',
         justifyContent: 'center',
         zIndex: 46,
@@ -234,7 +278,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
           onKeyDown={onKey}
           onFocus={() => { if (hasMsgs) setExpanded(true); }}
           rows={1}
-          placeholder={`${name} に聞く… (Enterで送信)`}
+          placeholder={placeholder}
           style={{
             flex: 1,
             background: 'transparent',

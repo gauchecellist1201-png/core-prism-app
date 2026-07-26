@@ -42,7 +42,7 @@ export default function PrismQuickCapture({ onAddNote, accentColor = '#8b5cf6' }
     position: 'fixed',
     // 左下の Core オーブ (52px @left14) と被らないよう右へ — 重なりゼロ規約 2026-07-19
     left: 'calc(env(safe-area-inset-left, 0px) + 80px)',
-    bottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)',
+    bottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--prism-lane-2, 76px))',
     zIndex: 30,
   };
 

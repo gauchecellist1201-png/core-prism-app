@@ -1081,7 +1081,9 @@ export default function App() {
             top: '50%', right: 0,
             transform: 'translateY(-50%)',
             zIndex: 38,
-            width: 44, height: 64,
+            // 縦書き "COMMAND" (7文字) + アイコンが 64px に収まらず 5px 切れていた(実測 2026-07-26)。
+            // 中身に合わせて伸ばし、文字を絶対に欠けさせない。
+            width: 44, minHeight: 64, paddingTop: 10, paddingBottom: 10,
             background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
             color: '#fff',
             border: 'none',
