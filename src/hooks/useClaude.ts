@@ -93,6 +93,8 @@ function buildSystemPrompt(
   uiLanguage?: 'ja' | 'en' | 'zh',
   knowledgeItems?: KnowledgeItem[],
   historySummary?: string,
+  /** プロダクト（人格を横断する箱）の文脈。未選択なら空文字。 */
+  productBlock?: string,
 ): string {
   // チャンク本文 — 詳細な根拠
   const ragContext = knowledgeChunks.length > 0
@@ -120,7 +122,7 @@ function buildSystemPrompt(
 オーナーが蓄積してきた資料・数字・タスクを全部覚えていて、必要に応じて提案・代筆・分析・整理を即座に行います。
 ${localeLine}
 ## 担当している役割
-${persona.description || `${persona.name} (${persona.subtitle})`}${personaInstructionBlock(persona)}
+${persona.description || `${persona.name} (${persona.subtitle})`}${personaInstructionBlock(persona)}${productBlock || ''}
 
 ${toneInstruction(aiTone)}
 
@@ -148,6 +150,8 @@ export function useClaude(settings: AppSettings, onUpdateStats?: (tokens: number
     history: ChatMessage[],
     knowledgeChunks: KnowledgeChunk[],
     knowledgeItems?: KnowledgeItem[],
+    /** プロダクト横断の文脈（App.tsx が productContextBlock で作る） */
+    productBlock?: string,
   ): Promise<ChatMessage | null> => {
     // API キーガードは不要 — /api/ai は env Gemini で fallback できる
     setIsLoading(true);
@@ -162,6 +166,7 @@ export function useClaude(settings: AppSettings, onUpdateStats?: (tokens: number
       settings.uiLanguage,
       knowledgeItems,
       historySummary,
+      productBlock,
     );
     const model = settings.preferredModel;
 

@@ -73,7 +73,7 @@ const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
 import { REFERRAL_BONUS_DAYS, getReferralData, syncReferralStatus, consumePendingBonusDays } from '../lib/referral';
-import { Gift, FileDown, Database, Brain, BarChart3, Search, ShieldCheck, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem, Users } from 'lucide-react';
+import { Gift, FileDown, Database, Brain, BarChart3, Search, ShieldCheck, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem, Users, Layers } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import CoreCreditsPanel from './CoreCreditsPanel';
 import { getBalance as getCreditBalance, earnDaily as earnCreditDaily, earnOnce as earnCreditOnce } from '../lib/coreCredits';
@@ -130,6 +130,10 @@ interface Props {
   onBackToSelection: () => void;
   onOpenSettings: () => void;
   onCreatePersona: () => void;
+  /** プロダクト（人格を横断する箱）を開く。未指定なら項目自体を出さない。 */
+  onOpenProducts?: () => void;
+  /** いま選んでいるプロダクト名（未選択なら undefined） */
+  activeProductName?: string;
   /** 人格の名前・肩書きを変更（ヘッダーでその場編集） */
   onRenamePersona?: (id: string, updates: { name?: string; subtitle?: string }) => void;
   onAddKnowledgeFile: (file: File, batchId?: string) => Promise<KnowledgeItem>;
@@ -236,6 +240,8 @@ export default function IdentityDashboard({
   onBackToSelection,
   onOpenSettings,
   onCreatePersona,
+  onOpenProducts,
+  activeProductName,
   onRenamePersona,
   onAddKnowledgeFile,
   onAddKnowledgeNote,
@@ -727,6 +733,32 @@ export default function IdentityDashboard({
               </button>
             ))}
           </div>
+          {/* プロダクト（人格を横断する箱）— 人格の上に置く。
+              「どの商品の話をしているか」→「どの立場で話すか」の順が自然なため。 */}
+          {onOpenProducts && (
+            <>
+              <p className="text-fg-muted text-xs tracking-widest uppercase px-2 mb-1.5">プロダクト</p>
+              <button
+                onClick={onOpenProducts}
+                className="w-full flex items-center gap-2.5 px-2 rounded-lg transition-colors hover:bg-surface-3 text-left mb-3"
+                style={{
+                  minHeight: 44,
+                  background: activeProductName ? `${persona.accentColor}1a` : undefined,
+                  border: activeProductName ? `1px solid ${persona.accentColor}44` : '1px solid transparent',
+                }}
+              >
+                <Layers size={16} strokeWidth={2.2} className="text-fg-muted flex-shrink-0" />
+                <span className="min-w-0 flex-1">
+                  <span className="text-fg text-sm block truncate">
+                    {activeProductName || 'プロダクトを選ぶ'}
+                  </span>
+                  {activeProductName && (
+                    <span className="text-fg-muted text-[10px] block">立場をまたいで参照中</span>
+                  )}
+                </span>
+              </button>
+            </>
+          )}
           <p className="text-fg-muted text-xs tracking-widest uppercase px-2 mb-1.5">人格</p>
           <ModeSwitcher activeId={persona.id} onSwitch={onSwitch} isTransitioning={isTransitioning} />
 

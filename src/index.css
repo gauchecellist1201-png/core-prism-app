@@ -1606,9 +1606,12 @@ html { scroll-behavior: smooth; }
     display: flex !important;
     align-items: center;
   }
-  /* iPhone Safari の安全な水平スクロール抑制 */
+  /* iPhone Safari の安全な水平スクロール抑制
+     ★ hidden は禁止。反対軸が auto 扱いになり (1) iOS でフッターまで届かない
+       (2) position: sticky のヘッダー/タブがモバイルだけ追従しなくなる。
+       上部 (223行) と同じく clip を使う。clip は反対軸を触らない。 */
   html, body {
-    overflow-x: hidden;
+    overflow-x: clip;
     max-width: 100vw;
   }
   /* 7 エージェントカードの padding 圧縮 */

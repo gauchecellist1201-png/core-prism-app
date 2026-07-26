@@ -59,6 +59,26 @@
   ],
   "rewrites": [
     {
+      "source": "/ultima",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/ultima/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/vertical",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/vertical/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/vertical/ultima",
+      "destination": "/index.html"
+    },
+    {
       "source": "/master",
       "destination": "/master.html"
     },

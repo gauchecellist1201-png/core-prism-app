@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import './index.css';
 
 import { usePersonas } from './hooks/usePersonas';
+import { useProducts } from './hooks/useProducts';
+import { productContextBlock, scopeForProduct } from './lib/productContext';
 import { useKnowledge } from './hooks/useKnowledge';
 import { useSettings } from './hooks/useSettings';
 import { useClaude, selectRelevantKnowledge } from './hooks/useClaude';
@@ -13,6 +15,7 @@ import { useMemo } from 'react';
 import OnboardingFlow from './components/OnboardingFlow';
 import IdentitySelection from './components/IdentitySelection';
 import IdentityDashboard from './components/IdentityDashboard';
+import ProductHub from './components/ProductHub';
 import PersonaCreator from './components/PersonaCreator';
 import SettingsModal from './components/SettingsModal';
 import LandingPage from './components/LandingPage';
@@ -75,6 +78,9 @@ const FAQPage = lazy(() => import('./pages/FAQPage'));
 const TokushohoPage = lazy(() => import('./pages/TokushohoPage'));
 const MusicSchoolLanding = lazy(() => import('./components/MusicSchoolLanding'));
 const IndustryLanding = lazy(() => import('./components/IndustryLanding'));
+// CORE Vertical — 業界特化ライン（プラットフォームとは別の棚）
+const VerticalHub = lazy(() => import('./vertical/VerticalHub'));
+const UltimaLanding = lazy(() => import('./vertical/UltimaLanding'));
 const ConciergePage = lazy(() => import('./prism/concierge/ConciergePage'));
 import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, isTrialExpired, syncSubscriptionState, type Plan } from './lib/billing';
 import TrialExpiredLock from './components/TrialExpiredLock';
@@ -339,6 +345,20 @@ function isMusicSchoolLpPath(): boolean {
   return p === '/lp/music-school' || p === '/lp/music-school/';
 }
 
+/** /vertical — CORE Vertical（業界特化ライン）のハブ */
+function isVerticalPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname.replace(/\/$/, '');
+  return p === '/vertical' || p === '/verticals' || p === '/industry-ai';
+}
+
+/** /ultima — 建設・電気設備工事の AI 現場基盤 (CORE Vertical 01) */
+function isUltimaPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname.replace(/\/$/, '');
+  return p === '/ultima' || p === '/vertical/ultima' || p === '/lp/ultima';
+}
+
 /** /lp/<slug> 業界別 LP のパス判定 (music-school は別途専用) */
 function getIndustryLpSlug(): string | null {
   if (typeof window === 'undefined') return null;
@@ -396,6 +416,17 @@ export default function App() {
   // /tokushoho, /iris/tokushoho — 特定商取引法に基づく表記
   if (isTokushohoPath()) {
     return <Suspense fallback={<RouteFallback />}><TokushohoPage /></Suspense>;
+  }
+
+  // /ultima — ULTIMA（建設・電気設備工事の AI 現場基盤・CORE Vertical 01）
+  // ※ /lp/ultima も拾うので、下の getIndustryLpSlug() より必ず前に置く
+  if (isUltimaPath()) {
+    return <Suspense fallback={<RouteFallback />}><UltimaLanding /></Suspense>;
+  }
+
+  // /vertical — CORE Vertical（業界特化ライン）のハブ
+  if (isVerticalPath()) {
+    return <Suspense fallback={<RouteFallback />}><VerticalHub /></Suspense>;
   }
 
   // /lp/music-school — 音楽スクール 業界特化 LP (1 業界垂直立ち上げ第 1 弾)
@@ -567,11 +598,21 @@ export default function App() {
   const { t: lpDict } = useT();
   const { settings, updateSettings, updateUsageStats, resetStats } = useSettings();
   const { personas, activePersona, createPersona, updatePersona, selectPersona, toggleTask, addTask, updateCashflow } = usePersonas();
+  // プロダクト（人格を横断する箱）。未選択なら従来どおり人格ごとに閉じて動く。
+  const productsApi = useProducts();
+  const { activeProduct } = productsApi;
   const { items: knowledgeItems, getForPersona, addFromFile, addFilesBulk, addNote, deleteItem, reanalyze, recomputeCashflow } = useKnowledge(
     settings,
     useCallback(() => activePersona, [activePersona]),
     updateCashflow,
   );
+  // 人格ごとの資料の件数（プロダクト画面で「横断すると何件になるか」を実数で見せる）
+  const knowledgeCountByPersona = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const it of knowledgeItems) map[it.personaId] = (map[it.personaId] || 0) + 1;
+    return map;
+  }, [knowledgeItems]);
+
   const health = useHealth();
   const healthAnomalies = useMemo(() => detectAnomalies(health.days), [health.days]);
   const healthCtx = useMemo(() => ({
@@ -635,6 +676,7 @@ export default function App() {
   }, []);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [showPersonaCreator, setShowPersonaCreator] = useState(false);
+  const [showProducts, setShowProducts] = useState(false);
   const [editingPersonaId, setEditingPersonaId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'basic' | 'ai' | 'integrations' | 'privacy' | 'other'>('basic');
@@ -742,10 +784,16 @@ export default function App() {
   const runSend = useCallback(async (message: string, append: boolean) => {
     if (!activePersona) return;
 
-    const personaKnowledge = getForPersona(activePersona.id);
+    // ★プロダクト横断 (2026-07-26): プロダクトを選んでいるときは、その箱に入っている
+    //   人格の資料もまとめて対象にする。未選択なら従来どおり今の人格の資料だけ。
+    const scopeIds = scopeForProduct(activeProduct, activePersona.id);
+    const personaKnowledge = scopeIds.length === 1
+      ? getForPersona(activePersona.id)
+      : knowledgeItems.filter(i => scopeIds.includes(i.personaId));
 
     // Top-k 関連 item を選定 (タイトル + 要約 + タグでスコア)
-    const relevantItems = selectRelevantKnowledge(message, personaKnowledge, 5);
+    // 横断時は候補が増えるぶん、拾う数を少し広げる（トークンは chunk 側で 4 件に抑える）。
+    const relevantItems = selectRelevantKnowledge(message, personaKnowledge, scopeIds.length > 1 ? 8 : 5);
 
     // チャンク単位の RAG (item で絞り込んだ後にチャンクを並べる → 精度↑)
     const candidatePool = relevantItems.length > 0 ? relevantItems : personaKnowledge;
@@ -779,14 +827,18 @@ export default function App() {
     }
     setRetryMessage(null);
 
-    const reply = await sendMessage(activePersona, message, baseHistory, relevantChunks, relevantItems);
+    const reply = await sendMessage(
+      activePersona, message, baseHistory, relevantChunks, relevantItems,
+      // いま扱っているプロダクトの説明（未選択なら空文字＝従来どおり）
+      productContextBlock(activeProduct, personas),
+    );
     if (reply) {
       setChatMessages(prev => [...prev, reply]);
     } else {
       // 失敗 — 同じ内容をワンタップで再送できるよう保持
       setRetryMessage(message);
     }
-  }, [activePersona, chatMessages, sendMessage, getForPersona]);
+  }, [activePersona, chatMessages, sendMessage, getForPersona, activeProduct, personas, knowledgeItems]);
 
   // チャット指令 (2026-07-19 オーナー指示): 「Prism 〇〇して」で機能起動/AI実行。
   // キーワード即断 → 該当スタジオ起動 or InlineActionExecutor で計画→納品。外れたら従来のAI会話。
@@ -913,6 +965,8 @@ export default function App() {
             onBackToSelection={() => { setView('selection'); setChatMessages([]); }}
             onOpenSettings={() => { setSettingsInitialTab('basic'); setShowSettings(true); }}
             onCreatePersona={() => setShowPersonaCreator(true)}
+            onOpenProducts={() => setShowProducts(true)}
+            activeProductName={activeProduct?.name}
             onRenamePersona={(id, updates) => updatePersona(id, updates)}
             onAddKnowledgeFile={handleAddKnowledgeFile}
             onAddKnowledgeNote={handleAddKnowledgeNote}
@@ -930,6 +984,17 @@ export default function App() {
 
       {/* Global overlays */}
       <AnimatePresence>
+        {showProducts && activePersona && (
+          <ProductHub
+            onClose={() => setShowProducts(false)}
+            personas={personas}
+            activePersonaId={activePersona.id}
+            products={productsApi}
+            knowledgeCountByPersona={knowledgeCountByPersona}
+            accent={activePersona.accentColor}
+          />
+        )}
+
         {showPersonaCreator && (
           <PersonaCreator
             key="creator"

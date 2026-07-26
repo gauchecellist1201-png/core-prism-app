@@ -16,7 +16,7 @@ import { kvGet, kvSet, isUpstashConfigured } from "../_lib/upstash";
 export const config = { runtime: "edge" };
 
 const MAX_BYTES = 900_000; // 1リクエストの value 上限（~900KB。重い画像は除外前提）
-const ALLOWED_KEYS = new Set(["knowledge", "personas", "settings"]);
+const ALLOWED_KEYS = new Set(["knowledge", "personas", "settings", "products"]);
 
 async function sha256Hex(s: string): Promise<string> {
   const data = new TextEncoder().encode(s);

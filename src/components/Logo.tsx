@@ -725,3 +725,155 @@ export function CoreLogo({ size = 32, withWordmark = true, variant = 'default', 
     </span>
   );
 }
+
+// ─────────────────────────────────────────────
+//  ULTIMA — 建設・電気設備工事の AI 現場基盤 (CORE Vertical 第1弾)
+//  意匠: 測量の三角点 × 通電のアーク。琥珀色の光が芯を通る
+// ─────────────────────────────────────────────
+export function UltimaLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
+  const isMono = variant === 'mono';
+  const gBody = `ultBody-${size}`;
+  const gCore = `ultCore-${size}`;
+
+  return (
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: withWordmark ? 10 : 0, lineHeight: 1 }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="ULTIMA"
+        style={{ flexShrink: 0 }}
+      >
+        <defs>
+          <linearGradient id={gBody} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#F3D9A4" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="#C57F1E" stopOpacity="0.75" />
+          </linearGradient>
+          <radialGradient id={gCore}>
+            <stop offset="0%" stopColor="#FFF3DC" stopOpacity="1" />
+            <stop offset="100%" stopColor="#E8A33D" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        {/* 三角点（測量標） */}
+        <path
+          d="M50 12 L86 76 L14 76 Z"
+          stroke={isMono ? 'currentColor' : `url(#${gBody})`}
+          strokeWidth="4"
+          strokeLinejoin="round"
+          fill="none"
+        />
+        {/* 基準線 */}
+        <path
+          d="M28 60 L72 60"
+          stroke={isMono ? 'currentColor' : '#E8A33D'}
+          strokeOpacity="0.55"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        {/* 通電のアーク（芯を通る光） */}
+        <path
+          d="M54 30 L42 54 L52 54 L46 72"
+          stroke={isMono ? 'currentColor' : '#FFE0A6'}
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
+        {!isMono && <circle cx="50" cy="52" r="26" fill={`url(#${gCore})`} opacity="0.5" />}
+      </svg>
+      {withWordmark && (
+        <span
+          style={{
+            fontFamily: '"Cinzel", serif',
+            fontSize: size * 0.62,
+            fontWeight: 600,
+            letterSpacing: '0.18em',
+            color: isMono ? 'currentColor' : '#F3D9A4',
+            lineHeight: 1,
+          }}
+        >
+          ULTIMA
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  ANIMA — アニメ制作進行 OS (CORE Vertical 第2弾)
+//  意匠: 回るフィルムのコマ × 息づく光（anima = 魂）
+// ─────────────────────────────────────────────
+export function AnimaLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
+  const isMono = variant === 'mono';
+  const gRing = `anmRing-${size}`;
+  const gCore = `anmCore-${size}`;
+
+  return (
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: withWordmark ? 10 : 0, lineHeight: 1 }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="ANIMA"
+        style={{ flexShrink: 0 }}
+      >
+        <defs>
+          <linearGradient id={gRing} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#CFC6FF" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="#6C5BD4" stopOpacity="0.7" />
+          </linearGradient>
+          <radialGradient id={gCore}>
+            <stop offset="0%" stopColor="#EFE9FF" stopOpacity="1" />
+            <stop offset="100%" stopColor="#8B7BE8" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <circle
+          cx="50" cy="50" r="34"
+          stroke={isMono ? 'currentColor' : `url(#${gRing})`}
+          strokeWidth="4"
+          fill="none"
+        />
+        {/* フィルムのコマ（4つの矩形） */}
+        {[
+          { x: 44, y: 12 }, { x: 44, y: 76 },
+        ].map((r, i) => (
+          <rect key={`v${i}`} x={r.x} y={r.y} width="12" height="12" rx="2.5"
+            fill={isMono ? 'currentColor' : '#8B7BE8'} opacity="0.9" />
+        ))}
+        {[
+          { x: 12, y: 44 }, { x: 76, y: 44 },
+        ].map((r, i) => (
+          <rect key={`h${i}`} x={r.x} y={r.y} width="12" height="12" rx="2.5"
+            fill={isMono ? 'currentColor' : '#8B7BE8'} opacity="0.9" />
+        ))}
+        {/* 息づく芯 */}
+        <circle cx="50" cy="50" r="11" fill={isMono ? 'currentColor' : '#CFC6FF'} opacity="0.95" />
+        {!isMono && <circle cx="50" cy="50" r="26" fill={`url(#${gCore})`} opacity="0.45" />}
+      </svg>
+      {withWordmark && (
+        <span
+          style={{
+            fontFamily: '"Cinzel", serif',
+            fontSize: size * 0.62,
+            fontWeight: 600,
+            letterSpacing: '0.18em',
+            color: isMono ? 'currentColor' : '#CFC6FF',
+            lineHeight: 1,
+          }}
+        >
+          ANIMA
+        </span>
+      )}
+    </span>
+  );
+}

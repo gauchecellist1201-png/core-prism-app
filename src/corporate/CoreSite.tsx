@@ -7,8 +7,9 @@ import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo } from '../components/Logo';
 import { CONTINUUM_PLANS } from './continuumPlans';
+import { VERTICALS } from '../vertical/verticalData';
 
 const COMPANY = {
   nameJa: 'CORE',
@@ -173,6 +174,7 @@ export default function CoreSite() {
           </a>
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
             <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
+            <a href="#vertical" style={navLink} className="lp-nav-link">業界特化</a>
             <a href="/continuum" style={navLink} className="lp-nav-link">Continuum</a>
             <a href="/studio" style={navLink} className="lp-nav-link">制作スタジオ</a>
             <a href="#connect" style={navLink} className="lp-nav-link">つながり</a>
@@ -704,6 +706,94 @@ export default function CoreSite() {
           <p style={{ textAlign: 'center', marginTop: '1.6rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(240,233,216,0.48)', lineHeight: 1.9 }}>
             ※ 価格は税込・月額の入口プランです。詳細は各プロダクトのページでご確認ください。
           </p>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  CORE VERTICAL — 業界特化ライン（プラットフォームとは別の棚） */}
+      {/*  第1弾 ULTIMA（建設・電気設備工事） / 第2弾 ANIMA（アニメ制作進行） */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section
+        id="vertical"
+        className="lp-section-pad"
+        style={{ padding: '7rem 1.5rem', background: 'radial-gradient(120% 100% at 50% 0%, #0e0b06 0%, #050505 68%)', scrollMarginTop: 70 }}
+      >
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <p style={sectionLabel}>
+              <span style={sectionLabelMain}>業&nbsp;界&nbsp;特&nbsp;化</span>
+              <span style={sectionLabelSub}>CORE&nbsp;VERTICAL</span>
+            </p>
+            <h2 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.85rem, 3.8vw, 2.85rem)', fontWeight: 700, lineHeight: 1.5, marginBottom: '1.25rem', letterSpacing: '0.04em' }}>
+              業界の中に、入り込むAI。
+            </h2>
+            <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(240,233,216,0.7)', fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', maxWidth: 680, margin: '0 auto', lineHeight: 2 }}>
+              どの業界でも使える道具とは別に、ひとつの業界の仕事そのものを引き受けるAIを作っています。
+              <br />
+              その業界の言葉で話し、その業界の書類を作り、その業界の法令の中で動きます。
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            {VERTICALS.map(v => {
+              const Logo = v.key === 'ultima' ? UltimaLogo : AnimaLogo;
+              return (
+                <a
+                  key={v.key}
+                  href={v.path}
+                  target={v.external ? '_blank' : undefined}
+                  rel={v.external ? 'noopener' : undefined}
+                  className="lp-tap-link"
+                  style={{
+                    display: 'flex', flexDirection: 'column', gap: '0.55rem', textDecoration: 'none', color: '#F1E9D8',
+                    padding: '1.8rem 1.6rem 1.6rem', borderRadius: 18,
+                    background: `linear-gradient(165deg, ${v.accent}1C, rgba(255,255,255,0.02))`,
+                    border: `1px solid ${v.accent}4D`,
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    <span style={{
+                      width: 50, height: 50, borderRadius: 14, display: 'grid', placeItems: 'center', flexShrink: 0,
+                      background: `radial-gradient(circle at 50% 30%, ${v.accent}2E, #0c0a07)`,
+                      border: `1px solid ${v.accent}66`, boxShadow: `0 0 20px ${v.accent}26`,
+                    }}>
+                      <Logo size={31} withWordmark={false} />
+                    </span>
+                    <span style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.42rem', fontWeight: 600, letterSpacing: '0.06em', lineHeight: 1.2 }}>{v.name}</span>
+                      <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.6rem', letterSpacing: '0.22em', color: v.accent, textTransform: 'uppercase', marginTop: 3 }}>{v.role}</span>
+                    </span>
+                  </span>
+                  <span style={{ fontFamily: FONT_SANS, fontSize: '0.68rem', color: 'rgba(240,233,216,0.45)', letterSpacing: '0.05em', marginTop: '0.7rem' }}>{v.industry}</span>
+                  <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.02rem', fontWeight: 700, lineHeight: 1.65 }}>{v.tagline}</span>
+                  <span style={{ fontFamily: FONT_SANS, fontSize: '0.81rem', color: 'rgba(240,233,216,0.65)', lineHeight: 1.9 }}>{v.body}</span>
+                  <span style={{
+                    marginTop: 'auto', paddingTop: '1rem', borderTop: `1px solid ${v.accent}33`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', flexWrap: 'wrap',
+                  }}>
+                    <span style={{ fontFamily: FONT_SANS, fontSize: '0.7rem', color: 'rgba(240,233,216,0.45)' }}>{v.status}</span>
+                    <span style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', fontWeight: 700, color: v.accent, whiteSpace: 'nowrap' }}>
+                      {v.external ? '見にいく ↗' : '詳しく見る →'}
+                    </span>
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <a
+              href="/vertical"
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 48,
+                padding: '0 26px', borderRadius: 999, textDecoration: 'none',
+                fontFamily: FONT_SANS, fontSize: '0.85rem', fontWeight: 800, letterSpacing: '0.05em',
+                color: '#F1E6CE', border: '1px solid rgba(201,169,110,0.55)', background: 'rgba(201,169,110,0.08)',
+              }}
+            >
+              業界特化ラインを見る →
+            </a>
+          </div>
         </div>
       </section>
 
