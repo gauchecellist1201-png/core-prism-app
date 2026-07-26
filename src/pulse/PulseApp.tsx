@@ -78,6 +78,12 @@ const C = {
 /** ピンクのソフトグロー (数字の発光) */
 const NUM_GLOW = '0 0 22px rgba(255,92,138,0.45)';
 
+/** フッターの法務リンク (指で押せる44pxの面を確保する) */
+const LEGAL_LINK: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: '0 12px',
+  color: C.sub, textDecoration: 'none',
+};
+
 // ── 共通アニメーションCSS (LP・アプリ両方に注入) ──
 const PULSE_CSS = `
   /* ── 配色（既定＝夜色）── */
@@ -1314,9 +1320,10 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
         marginTop: 56, padding: '26px 20px calc(32px + env(safe-area-inset-bottom))',
         borderTop: `1px solid ${C.line}`, textAlign: 'center',
       }}>
-        <div style={{ display: 'flex', gap: 20, justifyContent: 'center', fontSize: 12 }}>
-          <a href="/privacy" style={{ color: C.sub, textDecoration: 'none' }}>プライバシーポリシー</a>
-          <a href="/tokushoho" style={{ color: C.sub, textDecoration: 'none' }}>特定商取引法に基づく表記</a>
+        {/* 法務リンクは指で押す物なので、文字の高さ(18px)ではなく44px以上の面を持たせる */}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', fontSize: 12 }}>
+          <a href="/privacy" style={LEGAL_LINK}>プライバシーポリシー</a>
+          <a href="/tokushoho" style={LEGAL_LINK}>特定商取引法に基づく表記</a>
         </div>
         <p style={{ fontSize: 11.5, lineHeight: 1.9, color: C.sub, margin: '14px auto 0', maxWidth: 480 }}>
           CORE Pulseは医療機器ではありません。診断・治療は医療機関にご相談ください。
