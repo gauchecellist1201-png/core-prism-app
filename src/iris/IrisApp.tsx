@@ -18,6 +18,8 @@ import CheckoutModal from '../components/CheckoutModal';
 import { useBillingUser, IRIS_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, isTrialExpired, syncSubscriptionState, type Plan } from '../lib/billing';
 import TrialExpiredLock from '../components/TrialExpiredLock';
 import IrisFirstRunTour, { shouldShowFirstRunTour } from './IrisFirstRunTour';
+import SampleModeBanner from '../components/SampleModeBanner';
+import { isDemoActive } from '../lib/onboarding';
 
 const ENTERED_KEY = 'core_iris_entered_v1';
 
@@ -27,6 +29,11 @@ const ENTERED_KEY = 'core_iris_entered_v1';
  */
 function hasEntered(): boolean {
   if (isMasterAuth()) return true;
+  // 2026-07-27: 「サンプルで触ってみる (架空データで体験)」で入った人。
+  //   これが無いと、LP で約束した体験の代わりに料金プランの画面が出ていた
+  //   (＝押した人が約束と違うものを見る、いちばんやってはいけない壊れ方)。
+  //   見えるのは架空データだけで、実データ・実連携・保存は従来どおり申し込みが要る。
+  if (isDemoActive()) return true;
   return isAuthorizedFn();
 }
 function markEntered() {
@@ -148,6 +155,8 @@ export default function IrisApp() {
   return (
     <>
       <OfflineNotice />
+      {/* サンプルで入った人に「これは架空データ」と常に見せる (数字を本物と誤解させない) */}
+      <SampleModeBanner />
       {/* 課金失敗 (past_due / unpaid) 救済バナー — Iris ダッシュボード上部 */}
       <StripeFailureBanner brand="iris" />
       <IrisDashboard settings={settings} onLeave={() => setEntered(false)} />

@@ -968,6 +968,12 @@ const CAPTION_STYLE_PRESETS: { id: CaptionMode; name: string; desc: string; patc
   },
 ];
 
+/** プレビュー描画用に既定値とマージ済みのスタイル (毎レンダーで作り直さない) */
+const CAPTION_PRESET_STYLE = CAPTION_STYLE_PRESETS.reduce((acc, p) => {
+  acc[p.id] = { ...DEFAULT_CAPTION, ...p.patch };
+  return acc;
+}, {} as Record<CaptionMode, CaptionStyle>);
+
 // ─── クリップ ────────────────────────────────
 type ClipKind = 'image' | 'video';
 interface Clip {
@@ -1324,6 +1330,131 @@ function drawCaption(
   ctx.restore();
 }
 
+// ─── 字幕スタイルの「実物プレビュー」───────────────────────
+// 名前と説明だけのボタンでは「どう見えるか」が分からず、1つずつ当てては
+// プレビューを見に行く往復が発生していた。ここでは書き出しと同じ drawCaption を
+// そのまま小さな 9:16 の画面に描くので、見えているものが本番と一致する。
+const CAPTION_PREVIEW_TEXT = '損する3つのコツ';
+/** プレビュー1枚の再生ループ長 (秒) — ポップは1周で全文節が出きる長さに */
+const CAPTION_PREVIEW_DUR = 2.6;
+/** 見本の文字を実寸より大きく描く倍率。
+ *  実寸のままだと 9:16 を親指幅に縮めた時点で文字が数ピクセルになり、
+ *  縁取り・帯・黄ハイライトの違いが見えない = 選べない。
+ *  ここで見せたいのは「大きさ」ではなく「見た目の型」なので、
+ *  色見本と同じ考え方で拡大する (実際の大きさは細かい調整で決められる)。 */
+const CAPTION_PREVIEW_SCALE = 1.8;
+
+function CaptionStylePreview({ style, active, accent }: { style: CaptionStyle; active: boolean; accent: string }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  const visibleRef = useRef(true);
+
+  useEffect(() => {
+    const cv = ref.current;
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+    if (!ctx) return;
+
+    // このスタイルの書体を先に読み込む (読み込めるまでは代替書体で描かれ、届いた瞬間に切り替わる)
+    const fontDef = FONTS.find(f => f.cssName === style.font);
+    if (fontDef) loadFont(fontDef.href);
+
+    // 画面外ではアニメを止める (モバイルのバッテリーを無駄に使わない)
+    let io: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver !== 'undefined') {
+      io = new IntersectionObserver(([e]) => { visibleRef.current = !!e?.isIntersecting; }, { threshold: 0.05 });
+      io.observe(cv);
+    }
+    const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const W = cv.width;
+    const H = cv.height;
+    const cap: Caption = { start: 0, end: CAPTION_PREVIEW_DUR, text: CAPTION_PREVIEW_TEXT };
+    // 縁取りの太さも一緒に拡大しないと、大きな文字に細い線がついた別物になる
+    const shown: CaptionStyle = {
+      ...style,
+      size: style.size * CAPTION_PREVIEW_SCALE,
+      strokeWidth: style.strokeWidth * CAPTION_PREVIEW_SCALE,
+      // 見本では「出てくる時の動き」は切る。フェードインは 1 周のうち一定時間
+      // 文字が薄い or 消えている状態になり、見比べたい瞬間に見えないことがある。
+      // ポップだけは 1 語ずつ光る動き自体がそのスタイルの正体なので残す。
+      anim: style.mode === 'pop-word' ? style.anim : 'none',
+    };
+    let raf = 0;
+    let t0 = 0;
+    let last = -1;
+
+    const frame = (now: number) => {
+      raf = requestAnimationFrame(frame);
+      if (!visibleRef.current) return;
+      if (!t0) t0 = now;
+      // 20fps に間引く (小さな絵なので十分なめらか・端末に優しい)
+      if (now - last < 50) return;
+      last = now;
+
+      // 背景: 実写の代わりに、字幕の読みやすさが正しく分かる中間トーンの下地
+      const g = ctx.createLinearGradient(0, 0, W, H);
+      g.addColorStop(0, '#3B2F4A');
+      g.addColorStop(0.55, '#6E4A63');
+      g.addColorStop(1, '#2A2233');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+      // 明るい面と暗い面の両方で確認できるよう、上に薄い光を置く
+      const glow = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.3, W * 0.9);
+      glow.addColorStop(0, 'rgba(255,255,255,0.22)');
+      glow.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+
+      const t = reduce ? CAPTION_PREVIEW_DUR * 0.8 : ((now - t0) / 1000) % CAPTION_PREVIEW_DUR;
+      drawCaption(ctx, cap, shown, t, W, H);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => { cancelAnimationFrame(raf); io?.disconnect(); };
+  }, [style]);
+
+  return (
+    <canvas
+      ref={ref}
+      width={216}
+      height={384}
+      aria-hidden
+      style={{
+        width: '100%', aspectRatio: '9 / 16', display: 'block', borderRadius: 10,
+        border: active ? `2px solid ${accent}` : '2px solid transparent',
+        boxShadow: active ? `0 6px 18px ${accent}44` : '0 2px 8px rgba(31,26,46,0.14)',
+      }}
+    />
+  );
+}
+
+// ─── 字幕を「見せられる状態」に整える ──────────────────────
+// 自動字幕には (音楽) や ♪、「えー」「あのー」といった、そのままでは
+// 出せないものが混ざる。消したいのは中身ではなく雑音なので、
+// 落としたものは必ず件数で伝え、1タップで元に戻せるようにする。
+const SOUND_LABEL_RE = /[（(\[【]\s*(?:音楽|BGM|bgm|拍手|笑|笑い|効果音|無音|沈黙|ノイズ|咳|ため息|息|♪+)\s*[)）\]】]/g;
+const LEADING_FILLER_RE = /^(?:えーと|えっと|えー|あのー|あの|そのー|えっ|んー|うーん|まあ|ま、)(?:[、,]\s*)?/;
+
+/** 効果音ラベル・言いよどみ・空の字幕を落とす (純粋関数) */
+function tidyCaptions(caps: Caption[]): { next: Caption[]; removed: number; trimmed: number } {
+  let trimmed = 0;
+  const next: Caption[] = [];
+  for (const c of caps) {
+    const before = c.text;
+    let text = before.replace(SOUND_LABEL_RE, '').replace(/♪+/g, '');
+    // 先頭の言いよどみは、消したあとに中身が残る時だけ落とす
+    for (let i = 0; i < 3; i++) {
+      const stripped = text.replace(LEADING_FILLER_RE, '');
+      if (stripped === text || !stripped.trim()) break;
+      text = stripped;
+    }
+    text = text.replace(/\s+/g, ' ').trim();
+    if (!text) continue;          // 中身が無くなった = 出す意味が無い
+    if (text !== before) trimmed++;
+    next.push({ ...c, text });
+  }
+  return { next, removed: caps.length - next.length, trimmed };
+}
+
 // ─── 合計尺・タイムライン ────────────────────
 function timeline(clips: Clip[]) {
   let t = 0;
@@ -1422,6 +1553,10 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, initialProject, o
 
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [capStyle, setCapStyle] = useState<CaptionStyle>(DEFAULT_CAPTION);
+  // 細かい調整 (フォント・大きさ・色…) は既定で隠す。選ぶだけで終わる人の邪魔をしない
+  const [showCapAdvanced, setShowCapAdvanced] = useState(false);
+  // 「整える」の直前の字幕。1タップで戻せるように持っておく (消えっぱなしにしない)
+  const [preTidyCaptions, setPreTidyCaptions] = useState<Caption[] | null>(null);
   const [transcribing, setTranscribing] = useState(false);
   const [transcribeErr, setTranscribeErr] = useState<string | null>(null);
 
@@ -3842,6 +3977,35 @@ JSON のみで返答。`;
                 AI で字幕生成
               </button>
               <button onClick={addManualCaption} style={btn()}>+ 手動追加</button>
+              {/* 自動字幕に混ざる (音楽) ♪ 「えー」「あのー」を1タップで落とす。
+                  落とした数は必ず出し、1タップで元に戻せる (黙って消さない) */}
+              {captions.length > 0 && !preTidyCaptions && (
+                <button
+                  onClick={() => {
+                    const { next, removed, trimmed } = tidyCaptions(captions);
+                    if (!removed && !trimmed) {
+                      notifyInApp({ kind: 'info', title: 'すでにきれいでした', body: '消したほうがよい効果音や言いよどみは見つかりませんでした。' });
+                      return;
+                    }
+                    setPreTidyCaptions(captions);
+                    setCaptions(next);
+                    notifyInApp({
+                      kind: 'success',
+                      title: '字幕を整えました',
+                      body: `${removed > 0 ? `${removed}件を削除・` : ''}${trimmed}件を書き直しました。元に戻すこともできます。`,
+                    });
+                  }}
+                  style={btn()}>
+                  <Wand2 size={13} /> 効果音・言いよどみを消す
+                </button>
+              )}
+              {preTidyCaptions && (
+                <button
+                  onClick={() => { setCaptions(preTidyCaptions); setPreTidyCaptions(null); }}
+                  style={btn()}>
+                  <RotateCcw size={13} /> 整える前に戻す
+                </button>
+              )}
             </div>
             {transcribeErr && <p style={{ color: '#C8385C', fontSize: '0.78rem', marginTop: 6 }}>{transcribeErr}</p>}
             <div style={{ display: 'grid', gap: 6, marginTop: '0.6rem' }}>
@@ -3864,31 +4028,50 @@ JSON のみで返答。`;
               ))}
             </div>
 
-            <p style={{ ...label, marginTop: '1rem' }}>字幕スタイル (選ぶだけ)</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 6, marginBottom: '0.6rem' }}>
-              {CAPTION_STYLE_PRESETS.map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    const f = FONTS.find(x => x.cssName === p.patch.font);
-                    if (f) loadFont(f.href);
-                    setCapStyle(s => ({ ...s, ...p.patch }));
-                  }}
-                  style={{
-                    ...btn(capStyle.mode === p.id),
-                    flexDirection: 'column' as const,
-                    alignItems: 'flex-start',
-                    textAlign: 'left' as const,
-                    padding: '0.55rem 0.7rem',
-                    gap: 2,
-                    minHeight: 52,
-                  }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>{p.name}</span>
-                  <span style={{ fontSize: '0.68rem', opacity: 0.75 }}>{p.desc}</span>
-                </button>
-              ))}
+            {/* 字幕スタイル — 名前ではなく「見え方」で選ぶ。
+                書き出しと同じ描画をそのまま小さく再生しているので、見えたものがそのまま出る。 */}
+            <p style={{ ...label, marginTop: '1rem' }}>字幕スタイル (見て選ぶだけ)</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, marginBottom: '0.6rem' }}>
+              {CAPTION_STYLE_PRESETS.map(p => {
+                const on = capStyle.mode === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    aria-pressed={on}
+                    aria-label={`字幕スタイル ${p.name} — ${p.desc}`}
+                    onClick={() => {
+                      const f = FONTS.find(x => x.cssName === p.patch.font);
+                      if (f) loadFont(f.href);
+                      setCapStyle(s => ({ ...s, ...p.patch }));
+                    }}
+                    style={{
+                      display: 'grid', gap: 5, padding: 0, border: 'none', background: 'none',
+                      cursor: 'pointer', textAlign: 'center', minHeight: 44, WebkitTapHighlightColor: 'transparent',
+                    }}>
+                    <CaptionStylePreview style={CAPTION_PRESET_STYLE[p.id]} active={on} accent={bg.accent} />
+                    <span style={{
+                      fontSize: '0.82rem', fontWeight: 800, lineHeight: 1.25,
+                      color: on ? bg.accent : bg.ink,
+                    }}>
+                      {on ? '● ' : ''}{p.name}
+                    </span>
+                    <span style={{ fontSize: '0.66rem', lineHeight: 1.35, color: bg.inkSoft }}>{p.desc}</span>
+                  </button>
+                );
+              })}
             </div>
-            <div style={{ display: 'grid', gap: 8 }}>
+
+            {/* 細かい調整は畳んでおく。3枚から選んで終われる人に、設定の壁を見せない */}
+            <button
+              type="button"
+              onClick={() => setShowCapAdvanced(v => !v)}
+              aria-expanded={showCapAdvanced}
+              style={{ ...btn(), minHeight: 44, marginBottom: showCapAdvanced ? '0.6rem' : 0 }}>
+              {showCapAdvanced ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              {showCapAdvanced ? '細かい調整を閉じる' : '細かく調整する (書体・大きさ・色)'}
+            </button>
+            <div style={{ display: showCapAdvanced ? 'grid' : 'none', gap: 8 }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
                 <Type size={13} color={bg.inkSoft} />
                 <select value={capStyle.font} onChange={e => {

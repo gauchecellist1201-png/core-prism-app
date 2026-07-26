@@ -149,12 +149,21 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
   };
 
   // サンプル入場: 実物品質のデモデータを投入してから入室
+  // 「サンプルで触ってみる」: 架空データを入れてから、そのまま中に入る。
+  //
+  // 2026-07-27 修正: ここは onEnter() を呼んでいたが、未契約の人に対して
+  //   onEnter は料金プランの画面を開く。つまり「架空データで体験」と書いてある
+  //   ボタンを押すと、体験ではなく申し込み画面が出ていた (375px 実測で確認)。
+  //   Prism 側は同日に直したが Iris が取り残されていた。
+  //   デモを入れたあとは読み込み直して入る (いま入れた架空データを確実に拾うため)。
   const handleSampleEnter = () => {
     try {
       clearDemoData();
       seedDemoData({ profile: 'creator' });
       setDemoActive(true);
-    } catch { /* quota — そのまま入室 */ }
+      window.location.assign('/iris');
+      return;
+    } catch { /* 保存できなかった時だけ、これまでどおりの入口に戻す */ }
     onEnter();
   };
 

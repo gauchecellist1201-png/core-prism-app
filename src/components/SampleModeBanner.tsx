@@ -49,8 +49,9 @@ export default function SampleModeBanner() {
     setDemoActive(false);
     setActive(false);
     try { window.dispatchEvent(new CustomEvent('core:demo-state-changed')); } catch { /* */ }
-    // /onboarding に戻して 初期セットアップから
-    window.location.href = '/?fresh=1';
+    // 初期セットアップから。いま居るサービスに戻す (Iris からPrism に飛ばさない)
+    const brandPath = window.location.pathname.startsWith('/iris') ? '/iris' : '/';
+    window.location.href = `${brandPath}?fresh=1`;
   };
 
   const toggleCollapse = () => {
