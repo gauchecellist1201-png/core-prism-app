@@ -83,6 +83,8 @@ import MyAiUsageInsights from './MyAiUsageInsights';
 import CareerStudio from './CareerStudio';
 import CompetitorScout from './CompetitorScout';
 import TotpSetup from './TotpSetup';
+import FaceIdLockRow from './FaceIdLockRow';
+import CalendarAgentBrief from './CalendarAgentBrief';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
 import { useDailyCoach } from '../hooks/useDailyCoach';
 import { useDailyStreak } from '../hooks/useDailyStreak';
@@ -686,7 +688,9 @@ export default function IdentityDashboard({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        {/* cp-side-nav-scroll: 末尾に浮遊ピル帯(メモ/改善提案/フィードバック)ぶんの余白を
+            index.css で確保する。無いと固定ピルが最後のメニュー項目に必ず被る。 */}
+        <div className="cp-side-nav-scroll flex-1 overflow-y-auto">
           {/* ページ — 左タブで画面全体を切替 (オーナー指示 2026-07-19: SaaS標準のサイドバーナビ・PC/モバイル共通) */}
           <div className="mb-4">
             <p className="text-fg-muted text-xs tracking-widest uppercase px-2 mb-1.5">ページ</p>
@@ -877,6 +881,8 @@ export default function IdentityDashboard({
             <ShieldCheck size={14} className="text-fg-muted group-hover:text-fg" />
             <span className="text-fg-muted group-hover:text-fg text-sm">2 段階認証</span>
           </button>
+          {/* Face ID アプリロック (2026-07-26 オーナー指示: 全サービスに導入) */}
+          <FaceIdLockRow />
         </div>
       </div>
       {/* CCCC (2026-06-04): キャリア レポート モーダル */}
@@ -929,8 +935,9 @@ export default function IdentityDashboard({
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/* Topbar */}
-          <div className="flex items-center justify-between gap-2 px-3 md:px-4 py-2.5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          {/* Topbar — モバイルは右上の固定テーマ切替(44px)の下にチップが潜らないよう
+              右に余白を空ける (pr-14)。md+ は右カラム側にテーマ切替が住むので不要。 */}
+          <div className="flex items-center justify-between gap-2 px-3 pr-14 md:px-4 md:pr-4 py-2.5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <button
                 onClick={() => setShowMobileSidebar(true)}
@@ -1321,6 +1328,13 @@ export default function IdentityDashboard({
                   「すべての機能」はページ『クイックアクション』へ誘導 (縦展開廃止・2026-07-19) */}
               {homeTab === 'home' && (
               <div id="brief-anchor-desktop" className="hidden md:block">
+                {/* 📆 連携エージェント — Googleカレンダーをつなぐと、AIが予定を読んで
+                    準備ブリーフ・空き時間の一手・衝突警告を自分から出す（未連携なら非表示） */}
+                <CalendarAgentBrief
+                  personaName={persona.name}
+                  personaRole={persona.subtitle}
+                  onAddTask={(text) => { try { window.dispatchEvent(new CustomEvent('prism-task-quick-add', { detail: { text } })); } catch { /* noop */ } }}
+                />
                 <FocusHero
                   persona={persona}
                   proposal={briefOverride ?? proactive.latestProposal ?? (coach.brief ? coachBriefToProposal(coach.brief) : null)}
@@ -1835,7 +1849,7 @@ export default function IdentityDashboard({
         </motion.div>
 
       {/* Right Panel (desktop) */}
-      <div className="hidden md:flex w-64 flex-col flex-shrink-0" style={{ borderLeft: '1px solid rgba(255,255,255,0.04)' }}>
+      <div className="cp-right-col hidden md:flex w-64 flex-col flex-shrink-0" style={{ borderLeft: '1px solid rgba(255,255,255,0.04)' }}>
         {lastBenchmark && (
           <motion.button
             onClick={() => setShowBenchmark(true)}

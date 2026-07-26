@@ -38,6 +38,75 @@ const GRAD = `linear-gradient(120deg, ${A_BLUE} 0%, ${A_PURPLE} 50%, ${A_PINK} 1
 const sectionPad = '4.5rem 1.25rem';
 
 // ─── 課題あるある ───────────────────────────────────────────
+// 全機能カタログ (2026-07-26)。実装済みの機能だけを載せる — 存在しない機能を書くのは嘘なので禁止。
+const ALL_FEATURES: { group: string; items: string[] }[] = [
+  {
+    group: 'AIの経営チーム',
+    items: [
+      '7人の参謀AI (経営・営業・財務・創造・学び・人材・生活)',
+      '13名のAI役員 (CXO) に仕事を依頼 → 承認して納品',
+      '今日の最優先を毎朝1つ提案 (実データが根拠)',
+      '人格 (ペルソナ) を複数作って事業ごとに切替',
+      '人格ごとの指示書 + 口調の学習',
+      'プロダクト横断 — 人格をまたいで1つの商品を扱う',
+    ],
+  },
+  {
+    group: '経理・お金',
+    items: [
+      '売上・経費・請求書・決算書 (P/L・B/S) を1画面で',
+      'レシートを撮るだけで帳簿に (OCR)',
+      '見積 → 請求の一気通貫',
+      'Stripe 連携で売上を自動反映',
+      '数字を CSV / 全データを JSON で持ち出し (ロックインなし)',
+      '5年後のキャリア・お金のシミュレーション',
+    ],
+  },
+  {
+    group: '営業・顧客',
+    items: [
+      'CRM (営業先・案件・進捗の管理)',
+      '営業文・提案書の下書きAI',
+      '交渉コーチ (値付け・断り方の相談)',
+      '競合スカウト (同業の動きを定点観測)',
+      '会議の録音 → AI議事録・要約',
+      'ミーティング予約リンクの発行',
+    ],
+  },
+  {
+    group: 'SNS・発信',
+    items: [
+      'X / Threads のバイラル投稿スタジオ (分析→生成→投稿)',
+      'Instagram 運用 (Iris): 分析・戦略・リール台本・返信',
+      '画像スタジオ (バナー・アイキャッチ生成)',
+      'スライド・資料の自動生成',
+      'メールの下書き・仕分けAI',
+    ],
+  },
+  {
+    group: 'つながる (連携)',
+    items: [
+      'Google カレンダー連携 — AIが予定を読んで準備ブリーフ・空き時間の一手・衝突警告を自動提案',
+      'Gmail インサイト (受信の要点を抽出)',
+      'LINE通知 — AI役員の納品やタスク完了が公式LINEに届く',
+      'Apple Watch・心拍計との健康データ連携',
+      '資料・PDF・議事録を放り込むナレッジ (AIの記憶)',
+      '会話やメモから自動でアクション分解 → チェックリスト化',
+    ],
+  },
+  {
+    group: '毎日の使いやすさ',
+    items: [
+      '音声でタスク予約 (「明日9時に◯◯して」)',
+      '横断検索 (⌘K) — 全機能・全データを1発で',
+      'スマホ対応PWA — ホーム画面に追加してアプリとして使える',
+      '2段階認証・Face ID / Touch ID ロック',
+      'ライト / ダークモード',
+      '健康の記録 (体調・睡眠) と経営数字の突き合わせ',
+    ],
+  },
+];
+
 const PAINS: { Icon: LucideIcon; title: string; body: string; color: string; textColor: string }[] = [
   {
     Icon: Moon,
@@ -401,6 +470,45 @@ export default function LandingPage({ onEnterApp }: Props) {
       </section>
 
       {/* ══ 5. 料金 ══════════════════════════════════════════ */}
+      {/* ══ 4.5 全機能カタログ ═══════════════════════════════
+          オーナー指示 2026-07-26: 「一部抜粋だけでなく、全部の機能が分かるように」。
+          実装済みの機能だけを載せる (存在しない機能を書くのは禁止)。 */}
+      <section id="all-features" className="lp-section-pad" style={{ padding: sectionPad, background: '#F3F2FB' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+            <p style={{ fontSize: '0.68rem', letterSpacing: '0.38em', fontWeight: 700, color: T_PURPLE, marginBottom: '0.8rem' }}>ALL FEATURES</p>
+            <h2 style={h2Style}>
+              全機能カタログ。<br className="prism-sp-br" />
+              <span style={{ background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>これ全部、ひとつの月額で。</span>
+            </h2>
+            <p style={{ color: 'rgba(0,0,0,0.62)', maxWidth: 640, margin: '0.9rem auto 0', fontSize: '0.95rem', lineHeight: 1.85 }}>
+              上のカードは代表例の抜粋です。実際に入っている機能を、隠さず全部並べます。
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1rem' }}>
+            {ALL_FEATURES.map((g) => (
+              <div key={g.group} style={{ background: '#FFFFFF', border: '1px solid rgba(22,22,42,0.08)', borderRadius: 18, padding: '1.35rem 1.3rem', boxShadow: '0 8px 28px rgba(22,22,42,0.06)' }}>
+                <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: INK, margin: '0 0 0.75rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span aria-hidden style={{ width: 8, height: 8, borderRadius: 99, background: GRAD, display: 'inline-block', flexShrink: 0 }} />
+                  {g.group}
+                </h3>
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                  {g.items.map((f) => (
+                    <li key={f} style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.72)', lineHeight: 1.6, paddingLeft: '1.1em', position: 'relative' }}>
+                      <span aria-hidden style={{ position: 'absolute', left: 0, top: '0.05em', color: T_PURPLE, fontWeight: 800 }}>✓</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <p style={{ textAlign: 'center', marginTop: '1.8rem', fontSize: '0.85rem', color: 'rgba(0,0,0,0.55)' }}>
+            ここに載っている機能は、すべて実装済み・利用可能なものだけです。
+          </p>
+        </div>
+      </section>
+
       <section id="pricing" className="lp-section-pad" style={{ padding: sectionPad, background: 'linear-gradient(180deg, #FFFFFF 0%, #F3F2FB 100%)' }}>
         <div style={{ maxWidth: 880, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>

@@ -2857,10 +2857,74 @@ body[data-prism-chat-dock] .cp-feedback-fab {
 body[data-prism-chat-dock] .prism-side-toast {
   bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-lane-3)) !important;
 }
-/* 右下のFAB列(幅約66px)を避ける。ここを空けないと通知がFABに重なる。 */
+/* ============================================================
+   デスクトップ被りゼロ・レーン再設計 (md≥768px) — 2026-07-26
+   実測(1440px): 右端の縦FAB列(テーマ切替/COMMAND/予定FAB/マイク/＋)が
+   右カラム(w-64)の上に乗り、役員会議室ドック・提案トーストが右カラムの
+   チャット入力に被り、左の浮遊ピル群がサイドバー末尾のメニューに被っていた。
+   方針: 「浮遊要素には専用の土地を与える」。
+   ① 右端に 72px のFABレーンを確保 (dashboard-root の padding-right)
+      → 右端固定の全ボタンはこのレーン内に収まり、本文/右カラムと二度と重ならない
+   ② 本文/サイドバー/右カラムは末尾に固定帯ぶんの余白を確保
+      → スクロールし切れば必ず全ての内容が固定要素の上に出る (見切れ・被りゼロ)
+   ============================================================ */
 @media (min-width: 768px) {
+  .dashboard-root {
+    padding-right: 72px;
+  }
+  /* 役員会議室ドックはFABレーン(右72px)に食い込ませない。
+     right:14のままだとレーン内のFAB列(マイク/＋/字幕/翻訳など)と横並びで重なる
+     (オーナー実機スクショ 2026-07-26)。レーンの左端+14pxで止める。 */
+  .agent-monitor-dock {
+    right: 86px !important;
+  }
+  /* 提案トースト: 右カラム(256px)+FABレーン(72px)の左に出す */
   body[data-prism-chat-dock] .prism-side-toast {
-    right: 88px !important;
+    right: 344px !important;
+  }
+  /* 「AIと話す」FABは下部チャットドックと同じ入口の重複。
+     ドック表示中はドックが正・FABは出さない (実測でドックの帯に埋まっていた) */
+  body[data-prism-chat-dock] .cp-ai-fab-wrap {
+    display: none !important;
+  }
+  /* 右カラム: 下端のチャット入力が役員会議室ドック+下部バーの帯に沈まないよう
+     帯ぶんの余白で終わらせる */
+  body[data-prism-chat-dock] .cp-right-col {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-dock-h, 62px) + 96px);
+  }
+}
+/* 本文スクロールの末尾余白 — 下部バー(62px)+役員ドック(68px)+マージン。
+   これが無いと本文最後のカード(KPIスパークライン等)が固定要素の下に必ず沈む */
+body[data-prism-chat-dock] .cp-main-scroll {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-dock-h, 62px) + 160px) !important;
+}
+/* 左サイドバーのメニュー末尾余白 — 左下に残る浮遊物(ドラッグ可能なCoreオーブ等)ぶん */
+.dashboard-root .cp-side-nav-scroll {
+  padding-bottom: 120px;
+}
+/* 左の浮遊ピル群はサイドバーの「上」ではなく本文レーン(サイドバー右)に住まわせる。
+   サイドバーは縦スクロールするメニューなので、上に浮くピルは必ずどこかの項目に被る。
+   本文側は末尾余白(上記 cp-main-scroll)がありスクロールし切れば全内容が出る。 */
+@media (min-width: 768px) {
+  /* 改善提案ピル → 段1・サイドバー(208px)の右 */
+  [data-tour-id="suggestion-fab"] {
+    left: 224px !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-lane-1, 74px)) !important;
+  }
+  /* メモを放り込む → 段2・サイドバーの右 (段は据え置き) */
+  .cp-quickcapture {
+    left: 224px !important;
+  }
+  /* フィードバックFABは「改善提案」と入口が重複 — デスクトップでは改善提案に一本化 */
+  .cp-feedback-fab {
+    display: none !important;
+  }
+}
+/* ⌘K ピル(中央下)は 768〜1099px では役員会議室ドック(幅420・右14)と帯がぶつかる。
+   ショートカットの案内でしかないので、この帯域では出さない (⌘K 自体は使える)。 */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .prism-cmdk-entry {
+    display: none !important;
   }
 }
 

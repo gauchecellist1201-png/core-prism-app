@@ -23,8 +23,9 @@ import CheckoutModal from './components/CheckoutModal';
 import QuickAskFab from './components/QuickAskFab';
 import SuggestionFab from './components/SuggestionFab';
 import ExplainOnTouch from './components/ExplainOnTouch';
-import EveningFeed from './components/EveningFeed';
-import MorningCoach from './components/MorningCoach';
+// EveningFeed は 2026-07-26 オーナー指示で廃止（自動ポップが邪魔・役員日報と重複）
+import AppLockGate from './components/AppLockGate';
+// MorningCoach も朝の自動ポップとして 2026-07-26 廃止（FocusHero に一本化）
 import QuickKpiSparkline from './components/QuickKpiSparkline';
 import { initWebVitals } from './lib/initWebVitals';
 
@@ -370,6 +371,16 @@ function getIndustryLpSlug(): string | null {
 }
 
 export default function App() {
+  // Face ID / Touch ID アプリロック (2026-07-26 オーナー指示: 全サービスに導入)。
+  // 有効時のみ、開くたびに本人確認が通るまで全画面を覆う。設定は左サイドバー最下段。
+  return (
+    <AppLockGate>
+      <AppRoutes />
+    </AppLockGate>
+  );
+}
+
+function AppRoutes() {
   // ?book=... — ゲストが受け取った日程調整リンクの受信ページ
   const booking = parseBookingFromUrl();
   if (booking) {
@@ -1238,11 +1249,13 @@ export default function App() {
       {/* 2026-06-05 オーナー指示: ホーム 内 で 触った 場所 に 説明 が 浮かぶ 学習 モード */}
       {view === 'dashboard' && <ExplainOnTouch brand="prism" />}
       {/* VVV (2026-06-04): 夜のフィード — 18 時以降 1 日 1 回 */}
-      {view === 'dashboard' && <EveningFeed />}
+      {/* EveningFeed(朝晩の右上カード)はオーナー指示で廃止 (2026-07-26)
+          「全然いらない」— 自動ポップは邪魔で、内容も役員日報と重複していた */}
       {/* UUUUU (2026-06-04): ダッシュ 上端に 3 KPI sparkline */}
       {view === 'dashboard' && <div data-tour-id="kpi-sparkline" style={{ position: 'sticky', top: 0, zIndex: 30, background: 'rgba(7,7,18,0.78)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}><QuickKpiSparkline /></div>}
       {/* KKKKK (2026-06-04): 朝の「今日のひとこと」 (4-12 時 JST 1 日 1 回) */}
-      {view === 'dashboard' && <MorningCoach personaName={activePersona?.name} />}
+      {/* MorningCoach(朝の自動ポップ)も EveningFeed と同時に廃止 (2026-07-26 オーナー指示
+          「朝晩で出てくるカードいらない」)。朝の提案はホームの FocusHero に一本化。 */}
       {/* GGGG (2026-06-04): 業種別 AI ペルソナ プリセット 4 名 提案 */}
       {view === 'dashboard' && <PersonaPresetSuggestion />}
       {/* ZZ (2026-06-03): 全画面常駐 FAB — LP / Pricing / Billing / Dashboard */}

@@ -293,7 +293,14 @@ export default function ExplainOnTouch({ brand = 'prism' }: { brand?: 'prism' | 
       {/* PC では左サイドバー(幅52=208px)に被らないよう左オフセットをずらす */}
       <style>{`
         .explain-progress-badge { left: calc(env(safe-area-inset-left, 0px) + 14px); }
-        @media (min-width: 768px) { .explain-progress-badge { left: calc(208px + 16px) !important; } }
+        /* PC: 段2(lane-2)・「メモを放り込む」(left224, 幅~370px)の右隣。
+           bottom:100 のままだと段1の「改善提案」(left224)と縦横ともに被る(実測 2026-07-26) */
+        @media (min-width: 768px) {
+          .explain-progress-badge {
+            left: 400px !important;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-lane-2, 130px)) !important;
+          }
+        }
         /* モバイルは下部 FAB が混み合うため学習バッジは非表示 (2026-06-10) */
         @media (max-width: 767px) { .explain-progress-badge { display: none !important; } }
       `}</style>

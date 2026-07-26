@@ -103,6 +103,20 @@ export default function PrismTaskScheduler() {
     scheduledAt: string; kind: TaskKind; title: string; description: string; prompt: string;
   }>(null);
 
+  // 外部(カレンダー連携エージェント等)からの「このテキストでタスクを作る」橋
+  // — CustomEvent('prism-task-quick-add', {detail:{text}}) を受けて compose を開き本文を流し込む
+  useEffect(() => {
+    const onQuickAdd = (ev: Event) => {
+      const text = (ev as CustomEvent<{ text?: string }>).detail?.text;
+      if (!text) return;
+      setOpen(true);
+      setView('compose');
+      setVoiceText(text);
+    };
+    window.addEventListener('prism-task-quick-add', onQuickAdd);
+    return () => window.removeEventListener('prism-task-quick-add', onQuickAdd);
+  }, []);
+
   // 完了通知 (アプリ内バッジ)
   const [unseenDone, setUnseenDone] = useState(0);
   useEffect(() => {

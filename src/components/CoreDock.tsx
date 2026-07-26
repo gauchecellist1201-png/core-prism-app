@@ -77,7 +77,9 @@ function CoreMark({ size = 26, beat }: { size?: number; beat: boolean }) {
 }
 
 // ── ドラッグで自由に動かせる位置の永続化 ─────────────────────────────
-const POS_KEY = "core_dock_pos_v1";
+// v2: レーン再設計(2026-07-26)以前の保存位置は右パネル/サイドバーに被る場所が
+// 多かったため、一度だけ既定位置(被りゼロのレーン内)へリセットする。
+const POS_KEY = "core_dock_pos_v2";
 const DOCK_SIZE = 52;
 const EDGE_MARGIN = 14;
 const DRAG_THRESHOLD = 6; // これ未満の移動は「タップ」扱い
@@ -91,7 +93,13 @@ function clampPos(x: number, y: number, bottomClearance = 0) {
   return { x: Math.min(Math.max(x, EDGE_MARGIN), maxX), y: Math.min(Math.max(y, minY), maxY) };
 }
 function defaultPos(bottomClearance = 0) {
-  // 既定位置=左下(中央のチャット入力バー・右下の常駐FAB群と重ならない)
+  // 既定位置:
+  //  デスクトップ(≥768)= 右上のFABレーン内(テーマ切替の下)。左下だとサイドバーの
+  //  メニュー項目に必ず被る(実測 2026-07-26)。レーンは専用の土地なので被りゼロ。
+  //  モバイル= 従来どおり左下(中央チャットバー・右下FAB群と重ならない)。
+  if (window.innerWidth >= 768) {
+    return clampPos(window.innerWidth - DOCK_SIZE - EDGE_MARGIN, 110, bottomClearance);
+  }
   return clampPos(EDGE_MARGIN, window.innerHeight - DOCK_SIZE - EDGE_MARGIN - 74, bottomClearance);
 }
 function loadPos(bottomClearance = 0): { x: number; y: number } | null {

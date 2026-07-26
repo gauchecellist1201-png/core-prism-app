@@ -51,6 +51,7 @@ export default function PrismQuickCapture({ onAddNote, accentColor = '#8b5cf6' }
       <button
         onClick={expand}
         aria-label="ひらめきを知識に放り込む"
+        className="cp-quickcapture"
         style={{
           ...wrapStyle,
           display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 48, padding: '0 16px',
@@ -68,6 +69,7 @@ export default function PrismQuickCapture({ onAddNote, accentColor = '#8b5cf6' }
 
   return (
     <div
+      className="cp-quickcapture"
       style={{
         ...wrapStyle, width: 'min(340px, calc(100vw - 32px))',
         background: 'rgba(22, 22, 32, 0.96)', backdropFilter: 'blur(22px)',
