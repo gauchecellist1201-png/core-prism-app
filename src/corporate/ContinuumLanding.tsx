@@ -4,11 +4,11 @@
 // 旗艦ブランドの世界観ページ。金×黒・派手に、しかし上品に。
 // コピーは抽象を避け「何が消えて、何が残るか」を具体で言い切る：
 //   H1『あなたが働かなくても、事業が回り続ける。』
-//   消える仕事(6つの雑務→引き受けるAI) / AIが働く一日 / 6つの力 / プラン。
+//   消える仕事(6つの雑務→引き受けるAI) / AIが働く一日 / 7つの力 / プラン。
 // プランは continuumPlans.ts を /corp と共有（価格の二重管理を防ぐ）。
 // ============================================================
 import { useEffect } from 'react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo } from '../components/Logo';
 import { CONTINUUM_PLANS, CONTINUUM_CONTACT_EMAIL } from './continuumPlans';
 
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
@@ -20,14 +20,17 @@ const GOLD = '#C9A96E';
 const GOLD_HI = '#E7C987';
 const GOLD_PALE = '#F7EAD0';
 
-// 環に乗る6サービス（角度は上から時計回り）。
+// 環に乗る7サービス（角度は上から時計回り・360/7 = 約51.4度刻み）。
+// 本文で「7つのAIエージェント」と書いているのに環は6つしか無く、
+// 数字が合っていなかったため Pulse を追加した（2026-07-26・数字の嘘禁止）。
 const ORBIT: Array<{ key: string; deg: number; Logo: typeof PrismLogo }> = [
   { key: 'prism', deg: 0, Logo: PrismLogo },
-  { key: 'resonance', deg: 60, Logo: ResonanceLogo },
-  { key: 'crystal', deg: 120, Logo: CrystalLogo },
-  { key: 'iris', deg: 180, Logo: IrisLogo },
-  { key: 'guild', deg: 240, Logo: GuildLogo },
-  { key: 'lume', deg: 300, Logo: LumeLogo },
+  { key: 'resonance', deg: 51.4, Logo: ResonanceLogo },
+  { key: 'crystal', deg: 102.9, Logo: CrystalLogo },
+  { key: 'iris', deg: 154.3, Logo: IrisLogo },
+  { key: 'pulse', deg: 205.7, Logo: PulseLogo },
+  { key: 'guild', deg: 257.1, Logo: GuildLogo },
+  { key: 'lume', deg: 308.6, Logo: LumeLogo },
 ];
 
 // あなたの毎日から消える仕事（具体の雑務 → 引き受けるAI）。
@@ -56,6 +59,7 @@ const SIX: Array<{ Logo: typeof PrismLogo; name: string; role: string; hand: str
   { Logo: IrisLogo, name: 'Iris', role: 'Instagramの毎日', hand: '投稿の企画・台本・案件DMまで、専属マネージャーAIが用意。' },
   { Logo: GuildLogo, name: 'Guild', role: 'チームの意思決定', hand: '提案と投票で、会議をしなくても組織が動く。' },
   { Logo: LumeLogo, name: 'Lume', role: 'あなたの入口', hand: 'すべてのリンクと導線をひとつに。いちばん軽い名刺。' },
+  { Logo: PulseLogo, name: 'Pulse', role: 'あなたのからだ', hand: '睡眠と調子を毎朝ひとつの数字に。動ける状態を保つのも、事業のうち。' },
 ];
 
 export default function ContinuumLanding() {
@@ -192,11 +196,11 @@ export default function ContinuumLanding() {
 
       <GoldLine />
 
-      {/* ───────── THE SIX ───────── */}
+      {/* ───────── THE SEVEN ───────── */}
       <section id="six" style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(4.5rem, 9vw, 7.5rem) 1.5rem', scrollMarginTop: 20 }}>
         <div style={{ textAlign: 'center', marginBottom: '2.8rem' }}>
-          <p className="ct-label">The Six</p>
-          <h2 className="ct-h2">担当は、この6人。</h2>
+          <p className="ct-label">The Seven</p>
+          <h2 className="ct-h2">担当は、この7人。</h2>
           <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(0.9rem, 1.5vw, 1rem)', lineHeight: 2.2, color: 'rgba(247,234,208,0.7)', maxWidth: 620, margin: '0 auto' }}>
             それぞれ単体でも売られているAIサービスです。Continuum では7つがつながり、
             お客様の情報も、あなたの話し方も、自動で引き継がれます。
