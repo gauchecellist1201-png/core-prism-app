@@ -30,6 +30,7 @@ const OFFICIAL_ICON: Record<string, BrandName> = {
 import {
   isGmailConfigured, isGmailConnected, connectGmail, clearGmailToken,
 } from '../lib/gmail';
+import { forgetAgentLink } from '../lib/agentLink';
 import {
   isCalConfigured, isCalConnected, connectCalendar, clearCalToken, syncCalConnectionFromServer,
 } from '../lib/googleCalendar';
@@ -350,7 +351,8 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
   const connectedCount = CATALOG.filter(isConnected).length;
 
   const disconnect = (t: Tool) => {
-    if (t.id === 'gmail') clearGmailToken();
+    // 自分で解除した人には、あとで「外れています／つなぎ直す」を出さない
+    if (t.id === 'gmail') { clearGmailToken(); forgetAgentLink('gmail'); }
     // サーバー側に預けた refresh_token も一緒に消す（端末だけ消しても繋がったままになるため）
     else if (t.id === 'gcal') { clearCalToken(); void disconnectGoogleServer(); }
     else if (t.id === 'threads') { disconnectThreads(); clearTokenLS('threads'); setThStatus(s => ({ ...s, connected: false })); }

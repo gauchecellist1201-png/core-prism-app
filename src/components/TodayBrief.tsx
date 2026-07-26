@@ -325,9 +325,11 @@ export default function TodayBrief({
             <div className="min-w-0">
               <p className="text-sm font-bold m-0 mb-1" style={{ color: '#fca5a5' }}>提案を作れませんでした</p>
               <p className="text-xs leading-relaxed m-0" style={{ color: '#fca5a5' }}>
+                {/* genError 自体に「次にどうすればいいか」が入っている（aiErrorMessage）。
+                    二重に指示を出すとかえって迷うので、ここでは戻り道だけ添える */}
                 {genError}
                 <br />
-                通信状況をご確認のうえ、下の「もう一度ためす」を押してください。
+                下の「もう一度ためす」からやり直せます。
               </p>
             </div>
           </div>

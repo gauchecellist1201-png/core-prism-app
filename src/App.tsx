@@ -84,6 +84,7 @@ const VerticalHub = lazy(() => import('./vertical/VerticalHub'));
 const UltimaLanding = lazy(() => import('./vertical/UltimaLanding'));
 const ConciergePage = lazy(() => import('./prism/concierge/ConciergePage'));
 import { useBillingUser, PRISM_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, isTrialExpired, syncSubscriptionState, type Plan } from './lib/billing';
+import { isDemoActive } from './lib/onboarding';
 import TrialExpiredLock from './components/TrialExpiredLock';
 import { PrismBackground } from './components/PrismBackground';
 import GlobalVoiceInput from './components/GlobalVoiceInput';
@@ -139,6 +140,11 @@ function hasEnteredApp(): boolean {
   if (typeof window === 'undefined') return false;
   // /master 経由のオーナー (Claude API キー有り) は無制限
   if (isMasterAuth()) return true;
+  // 2026-07-27: 「サンプルで触ってみる（架空の会社データで体験）」で入った人。
+  //   これが無いと、LPで約束した体験の代わりに料金プランの画面が出ていた
+  //   （＝押した人が約束と違うものを見る、いちばんやってはいけない壊れ方）。
+  //   見えるのは架空データだけで、実データ・実連携・保存は従来どおり申し込みが要る。
+  if (isDemoActive()) return true;
   // billing user の有無 + プラン有効性をチェック
   return isAuthorizedFn();
 }

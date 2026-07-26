@@ -10,6 +10,7 @@ import { toneInstruction } from './aiTone';
 import { buildIndustryContext } from '../prism/industryPacks';
 import { personaInstructionBlock } from './personaInstructions';
 import { aiFetch } from './aiFetch';
+import { aiErrorMessage } from './aiErrorMessage';
 
 // API キーは main.tsx の interceptor が localStorage から自動付与
 
@@ -151,8 +152,9 @@ ${patrolInstruction}
     });
 
     if (!res.ok) {
+      // APIの英語原文やステータス番号を人に見せない（原文は console にだけ残す）
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `提案APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'proactiveAgent'));
     }
     return res.json();
   });

@@ -8,6 +8,7 @@ import type { HealthAnomaly } from '../data/healthAnomaly';
 import { generateProposal } from '../lib/proactiveAgent';
 import { getCrossServiceContext } from '../lib/crossServiceData';
 import { speakNatural, stopSpeakingNatural, loadVoices } from '../lib/tts';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 const STORAGE_KEY = 'core_proposals';
 const MAX_HISTORY = 20;
@@ -74,8 +75,8 @@ export function useProactiveAgent(
       void forceVoice;
       return proposal;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
+      // 英語の原文やステータス番号を画面に出さない（次にどうすればいいかまで書いた一文にする）
+      setError(humanizeAiError(err));
       return null;
     } finally {
       setIsGenerating(false);

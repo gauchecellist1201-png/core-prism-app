@@ -9,6 +9,7 @@ import { PLATFORM_META, CONTENT_TYPE_META } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { aiFetch } from '../lib/aiFetch';
+import { aiErrorMessage } from '../lib/aiErrorMessage';
 
 const KEY_POSTS = 'core_iris_posthistory_v1';
 
@@ -305,8 +306,9 @@ ${opts.knowledgeContext}
       }),
     });
     if (!res.ok) {
+      // APIの英語原文やステータス番号を人に見せない（原文は console にだけ残す）
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `提案APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'iris.strategist'));
     }
     return res.json();
   });

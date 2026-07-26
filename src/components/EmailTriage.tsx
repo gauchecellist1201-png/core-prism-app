@@ -23,6 +23,7 @@ import {
   type GmailMessage,
   type GmailUserInfo,
 } from '../lib/gmail';
+import { forgetAgentLink } from '../lib/agentLink';
 
 interface Props {
   persona: Persona;
@@ -151,6 +152,8 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
 
   const handleDisconnectGmail = useCallback(() => {
     clearGmailToken();
+    // 自分で解除した人には「外れています／つなぎ直す」を出さない
+    forgetAgentLink('gmail');
     setGmailConnected(false);
     setGmailMessages([]);
   }, []);

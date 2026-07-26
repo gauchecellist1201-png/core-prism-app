@@ -11,13 +11,15 @@
 // 費用ガード: 1日1回だけ自動実行。更新ボタンで明示的に作り直せる。
 // 未連携なら何も出さない(偽の器を見せない)。
 // ============================================================
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Mail } from 'lucide-react';
-import { isGmailConnected, fetchInbox, createGmailDraft } from '../lib/gmail';
+import { isGmailConnected, fetchInbox, createGmailDraft, connectGmail } from '../lib/gmail';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import { isLineConnected, notifyLine } from '../lib/lineNotify';
 import { useAgentBrief, askAgentRows, todayKey, type BriefRow, type BriefResult } from '../lib/agentBrief';
+import { recallAgentLink } from '../lib/agentLink';
 import AgentBriefShell, { ACCENT_EMERALD, type BriefAction } from './AgentBriefShell';
+import AgentLinkLostCard from './AgentLinkLostCard';
 
 const BRIEF_KEY = 'prism_mail_agent_brief_v1';
 const CTX_KEY = 'prism_mail_agent_ctx_v1';
@@ -64,7 +66,17 @@ export default function MailAgentBrief({
   personaRole?: string;
   onAddTask?: (text: string) => void;
 }) {
-  const connected = typeof window !== 'undefined' && isGmailConnected();
+  // つなぎ直しの直後に画面へ反映させるための再判定トリガー
+  const [linkTick, setLinkTick] = useState(0);
+  const connected = useMemo(
+    () => typeof window !== 'undefined' && isGmailConnected(),
+    [linkTick],
+  );
+  /** つながっていない × 一度つないだ ＝ 「外れています」を出す相手 */
+  const lost = useMemo(
+    () => (connected || typeof window === 'undefined' ? null : recallAgentLink('gmail')),
+    [connected, linkTick],
+  );
   const [busyIdx, setBusyIdx] = useState<number | null>(null);
   const [doneIdx, setDoneIdx] = useState<number | null>(null);
   const personaRef = useRef({ personaName, personaRole });
@@ -116,7 +128,22 @@ export default function MailAgentBrief({
 
   const { rows, meta, loading, error, refresh } = useAgentBrief(BRIEF_KEY, connected, runner);
 
-  if (!connected) return null;
+  if (!connected) {
+    // 一度もつないでいない人には何も出さない（偽の器を作らない）
+    if (!lost) return null;
+    // つないでいた人には、黙って消えずに「外れた理由」と「つなぎ直す」を出す
+    return (
+      <AgentLinkLostCard
+        id="gmail"
+        icon={<Mail size={16} strokeWidth={2.1} />}
+        title="メール連携エージェント"
+        accent={ACCENT_EMERALD}
+        lastLinkedAt={lost.at}
+        reconnect={connectGmail}
+        onChanged={() => setLinkTick((t) => t + 1)}
+      />
+    );
+  }
 
   const hasLine = typeof window !== 'undefined' && isLineConnected();
 

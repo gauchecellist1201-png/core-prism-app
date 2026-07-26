@@ -8,6 +8,8 @@
 //   https://www.googleapis.com/auth/gmail.send      (返信送信)
 //   https://www.googleapis.com/auth/gmail.modify    (既読・ラベル操作)
 
+import { rememberAgentLink } from './agentLink';
+
 declare global {
   interface Window {
     google?: any;
@@ -107,6 +109,9 @@ function loadToken(): GmailTokenInfo | null {
 function saveToken(info: GmailTokenInfo) {
   localStorage.setItem(TOKEN_KEY, info.accessToken);
   localStorage.setItem(TOKEN_EXPIRY_KEY, String(info.expiresAt));
+  // 「一度つないだ」という事実だけ別に残す。トークンが1時間で切れても、
+  // 連携エージェントが黙って消えず「外れています／つなぎ直す」を出せるようにするため。
+  rememberAgentLink('gmail');
 }
 
 export function clearGmailToken() {

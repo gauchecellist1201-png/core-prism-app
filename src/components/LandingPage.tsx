@@ -223,11 +223,19 @@ export default function LandingPage({ onEnterApp }: Props) {
   }, []);
 
   // 「サンプルで触ってみる」: 実物品質のデモデータを投入してから入室
+  //
+  // 2026-07-27 修正: ここは onEnterApp() を呼んでいたが、未契約の人に対して
+  //   onEnterApp は料金プランの画面を開く。つまり「架空の会社データで体験」と
+  //   書いてあるボタンを押すと、体験ではなく申し込み画面が出ていた（本番で実測）。
+  //   デモを入れたあとは、そのまま読み込み直して中に入る。
+  //   （読み込み直すのは、いま入れたばかりのデモの人格・数字を確実に拾うため）
   const handleSampleEnter = () => {
     try {
       seedDemoData();
       setDemoActive(true);
-    } catch { /* quota — そのまま入室 */ }
+      window.location.assign('/');
+      return;
+    } catch { /* 保存できなかった時だけ、これまでどおりの入口に戻す */ }
     onEnterApp();
   };
 

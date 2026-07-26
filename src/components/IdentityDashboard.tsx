@@ -2316,14 +2316,12 @@ export default function IdentityDashboard({
         )}
       </AnimatePresence>
 
-      {/* 下部FAB/役員ドック帯(~90px)を避けて表示 — 重なりゼロ規約 2026-07-19 */}
-      {settings.proactiveEnabled !== false && proactive.error && (
-        <div className="prism-side-toast fixed right-20 md:right-4 z-30 max-w-sm w-[calc(100vw-7rem)] md:w-80">
-          <div className="p-3 rounded-lg" style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)' }}>
-            <p className="text-red-300 text-xs">{proactive.error}</p>
-          </div>
-        </div>
-      )}
+      {/* 2026-07-27 撤去: 提案の失敗を浮いたトーストでも出していたが、
+          同じ内容を TodayBrief が画面内に（見出し＋理由＋「もう一度ためす」付きで）
+          必ず出しているため完全な二重表示だった。しかも浮いたトーストが
+          その「もう一度ためす」ボタンの上に重なり、押せる場所を隠していた（375px実測）。
+          TodayBrief はこのダッシュボードで常に描画されるので、
+          裏で自動生成が失敗したときもインライン側で必ず気づける。 */}
 
       <CommandPalette
         open={showCmdK}
