@@ -176,6 +176,7 @@ import WellnessTracker from '../components/WellnessTracker';
 import IgConnectModal from './IgConnectModal';
 import IrisConnectFirst from './IrisConnectFirst';
 import IrisFlowHub from './IrisFlowHub';
+import InstagramAgentBrief from './InstagramAgentBrief';
 import Celebrate from '../components/Celebrate';
 import type { ReelStudioSeed } from './IrisReelStudio';
 import { loadIgProfile, consumeOauthCallback, fetchOauthProfile, saveIgProfile, syncOauthMediaToHistory, oauthReasonToMessage, type IgProfile } from './instagramConnect';
@@ -1777,6 +1778,14 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     hideHeading
                   />
                 </IrisCrystalHero>
+                {/* Instagram連携エージェント — つないだあと放置せず、Irisが本人の実投稿を読んで
+                    「投稿が途切れている」「リーチが落ちている」「次に出す企画」を自分から出す。
+                    未連携なら何も出さない (2026-07-26) */}
+                <InstagramAgentBrief
+                  handle={mediaKit?.handleName}
+                  onOpenReelStudio={(theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab('reel'); }}
+                />
+
                 {/* 連携済みなら、まず一気通貫プラン（分析→戦略→リール→稼ぐ）を最上部に。
                     迷わず1本道で「次へ」進める ＝ 価値に0スクロールで届く。(2026-06-29 抜本的に使いやすく) */}
                 {igProfile && (

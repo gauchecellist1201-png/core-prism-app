@@ -86,6 +86,16 @@ function readCache(): RevenueSnapshot | null {
   } catch { return null; }
 }
 
+/**
+ * 直近に取得した実データが「Stripe 接続済み」を示しているか。
+ * 売上連携エージェントの表示ゲート用 — 非同期で確かめてから出すと
+ * 未接続の人に一瞬カードが見えてしまうため、同期で判定できる形にしている。
+ */
+export function isRevenueConnectedCached(): boolean {
+  const c = readCache();
+  return !!c && c.stripeConfigured === true;
+}
+
 function writeCache(snap: RevenueSnapshot): void {
   try { localStorage.setItem(CACHE_KEY, JSON.stringify(snap)); } catch { /* */ }
 }

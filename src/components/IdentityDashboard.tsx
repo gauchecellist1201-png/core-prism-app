@@ -84,7 +84,7 @@ import CareerStudio from './CareerStudio';
 import CompetitorScout from './CompetitorScout';
 import TotpSetup from './TotpSetup';
 import FaceIdLockRow from './FaceIdLockRow';
-import CalendarAgentBrief from './CalendarAgentBrief';
+import AgentBriefLane from './AgentBriefLane';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
 import { useDailyCoach } from '../hooks/useDailyCoach';
 import { useDailyStreak } from '../hooks/useDailyStreak';
@@ -1200,6 +1200,9 @@ export default function IdentityDashboard({
               {/* iPhone 専用: 7 agents の直下に「ブリーフ → 売上」を常時 巨大表示
                   (オーナー指示 2026-06-03: モバイルはペライチ的にわかりやすく、情報を間引いて巨大化) */}
               <div id="brief-anchor-mobile" className="md:hidden space-y-3">
+                {/* 連携エージェント — つないだもの(カレンダー/メール/売上)だけが、
+                    AIが自分で読んで出した提案として並ぶ。未連携なら1枚も出ない */}
+                <AgentBriefLane personaName={persona.name} personaRole={persona.subtitle} />
                 {/* モバイル用ブリーフ — 余計な飾りを削いで TodayBrief 本体だけを大きく */}
                 <div style={{
                   borderRadius: 18,
@@ -1328,13 +1331,9 @@ export default function IdentityDashboard({
                   「すべての機能」はページ『クイックアクション』へ誘導 (縦展開廃止・2026-07-19) */}
               {homeTab === 'home' && (
               <div id="brief-anchor-desktop" className="hidden md:block">
-                {/* 📆 連携エージェント — Googleカレンダーをつなぐと、AIが予定を読んで
-                    準備ブリーフ・空き時間の一手・衝突警告を自分から出す（未連携なら非表示） */}
-                <CalendarAgentBrief
-                  personaName={persona.name}
-                  personaRole={persona.subtitle}
-                  onAddTask={(text) => { try { window.dispatchEvent(new CustomEvent('prism-task-quick-add', { detail: { text } })); } catch { /* noop */ } }}
-                />
+                {/* 連携エージェント — カレンダー/メール/売上をつなぐと、AIが実データを読んで
+                    準備ブリーフ・返信の下書き・次の一手を自分から出す（未連携なら非表示） */}
+                <AgentBriefLane personaName={persona.name} personaRole={persona.subtitle} />
                 <FocusHero
                   persona={persona}
                   proposal={briefOverride ?? proactive.latestProposal ?? (coach.brief ? coachBriefToProposal(coach.brief) : null)}
