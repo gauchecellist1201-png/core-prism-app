@@ -304,6 +304,9 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
   const [thStatus, setThStatus] = useState<{ configured: boolean; connected: boolean }>({ configured: false, connected: false });
   // Google の同意画面から失敗して戻ってきたときに、画面上部で理由を伝える（silent fail 禁止）
   const [errTop, setErrTop] = useState<string | null>(null);
+  // カレンダーが「どちらの方式でつながっているか」を明示する。
+  //   server = つなぎっぱなし方式 / none = 未接続 / legacy = 旧方式(1時間で切れる)しか使えない環境
+  const [gcalMode, setGcalMode] = useState<'server' | 'none' | 'legacy'>('none');
 
   // Threads: OAuthコールバック結果を拾い、運営側設定(configured)と接続状態(connected)を取得
   useEffect(() => {
@@ -320,7 +323,12 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
     if (cb && cb.ok === false && cb.error) {
       setErrTop(translateGoogleCallbackError(cb.error));
     }
-    void syncCalConnectionFromServer().then(ok => { if (ok) refresh(); });
+    // サーバー方式の状態を取り、画面表示を必ずサーバーに合わせる
+    // （古い端末の印で「連携済み」に見えたまま実は切れている、を防ぐ）。
+    void fetchGoogleServerStatus().then(st => {
+      setGcalMode(st.configured ? (st.connected ? 'server' : 'none') : 'legacy');
+      return syncCalConnectionFromServer();
+    }).then(() => refresh());
   }, []);
 
   const isConnected = (t: Tool): boolean => {
@@ -397,6 +405,19 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
             background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.35)',
           }}>
             {errTop}
+          </div>
+        )}
+
+        {/* カレンダーが「つなぎっぱなし方式」で繋がっているかを一目で分かるようにする。
+            これが出ていれば、二度とつなぎ直しは不要。 */}
+        {gcalMode === 'server' && (
+          <div style={{
+            marginBottom: '0.9rem', padding: '9px 12px', borderRadius: 10,
+            fontSize: 11.5, lineHeight: 1.6, fontWeight: 700, color: '#34D399',
+            background: 'rgba(52,211,153,0.10)', border: '1px solid rgba(52,211,153,0.3)',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            <Check size={13} /> Google カレンダーは「つなぎっぱなし」で連携中です（もうつなぎ直し不要）
           </div>
         )}
 

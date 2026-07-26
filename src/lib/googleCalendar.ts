@@ -8,7 +8,7 @@
 //
 // 2026-07-26: 「毎回つなぎ直しになる」根治のため、サーバー側 refresh_token 経路
 //             (googleServerAuth) を優先し、無ければ従来の GIS 方式に落ちる構成へ。
-import { getServerGoogleToken } from './googleServerAuth';
+import { getServerGoogleToken, fetchGoogleServerStatus } from './googleServerAuth';
 
 declare global {
   interface Window {
@@ -111,6 +111,16 @@ export function isCalConnected(): boolean { return !!loadToken(); }
  */
 export async function syncCalConnectionFromServer(): Promise<boolean> {
   try {
+    // ★2026-07-26: サーバー方式が使える環境では、サーバーを唯一の正とする。
+    //   旧方式(1時間で切れる localStorage トークン)が残っていると画面は「連携済み」に
+    //   見えるのに実際は毎回切れる、という最悪の食い違いが起きる（実際に起きた）。
+    //   サーバーが「つながっていない」と言うなら、端末の古い印は消して
+    //   正しい方式でつなぎ直させる。
+    const st = await fetchGoogleServerStatus();
+    if (st.configured && !st.connected) {
+      clearCalToken();
+      return false;
+    }
     const tok = await getServerGoogleToken();
     if (!tok) return false;
     // サーバーが必要に応じて更新済み。表示用に約1時間の期限で保持する。
