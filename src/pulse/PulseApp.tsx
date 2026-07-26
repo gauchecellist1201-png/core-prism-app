@@ -53,30 +53,75 @@ import { HeartRateMonitor, isWebBluetoothSupported, type HRReading } from '../li
 //   ink #F6EEF3 ≈ 17:1 / sub #BFAABA ≈ 8.6:1 / accent #FF8FB2 ≈ 8:1 /
 //   goldText #D9B9AC ≈ 10:1 / good #7DDBA8 ≈ 10:1 / warn #FFBE85 ≈ 10:1
 const C = {
-  bg: '#0D0A0F',                          // 深い夜色 (ベース)
-  bgDeep: '#1A1218',                      // 夜色の面 (入力・くぼみ)
-  card: 'rgba(255,255,255,0.045)',        // ガラス質カード
-  line: 'rgba(255,124,163,0.18)',         // 1px ピンク罫
-  ink: '#F6EEF3',                         // 明るい生成り (本文)
-  sub: '#BFAABA',                         // うすいモーブグレー (サブ)
-  accent: '#FF8FB2',                      // 明るいピンク (文字アクセント)
-  pink: '#FF5C8A',                        // ブランドピンク (図形・グロー)
-  accentSoft: 'rgba(255,92,138,0.14)',    // ピンクの淡い面
-  mauve: '#E8859E',                       // ローズ (図形・アイコン)
-  rose: '#E8859E',                        // ローズ (グラフ・装飾)
-  roseSoft: 'rgba(232,133,158,0.12)',
-  gold: '#C9A192',                        // ローズベージュ (線・装飾)
-  goldText: '#D9B9AC',                    // ローズベージュの文字用 (ラベル)
-  good: '#7DDBA8',
-  goodSoft: 'rgba(125,219,168,0.12)',
-  warn: '#FFBE85',
-  warnSoft: 'rgba(255,190,133,0.12)',
+  // ★2026-07-26: 配色をCSS変数に逃がし、LPだけ「明るくやわらかい」テーマに切替えられるようにした。
+  //   （オーナー要望: わかりやすく・安心感・女性ウケ）
+  //   既定値は従来の夜色。`.pulse-light` を付けた範囲だけが明るいトーンになる。
+  bg: 'var(--pl-bg)',
+  bgDeep: 'var(--pl-bg-deep)',
+  card: 'var(--pl-card)',
+  line: 'var(--pl-line)',
+  ink: 'var(--pl-ink)',
+  sub: 'var(--pl-sub)',
+  accent: 'var(--pl-accent)',
+  pink: 'var(--pl-pink)',
+  accentSoft: 'var(--pl-accent-soft)',
+  mauve: 'var(--pl-mauve)',
+  rose: 'var(--pl-rose)',
+  roseSoft: 'var(--pl-rose-soft)',
+  gold: 'var(--pl-gold)',
+  goldText: 'var(--pl-gold-text)',
+  good: 'var(--pl-good)',
+  goodSoft: 'var(--pl-good-soft)',
+  warn: 'var(--pl-warn)',
+  warnSoft: 'var(--pl-warn-soft)',
 };
 /** ピンクのソフトグロー (数字の発光) */
 const NUM_GLOW = '0 0 22px rgba(255,92,138,0.45)';
 
 // ── 共通アニメーションCSS (LP・アプリ両方に注入) ──
 const PULSE_CSS = `
+  /* ── 配色（既定＝夜色）── */
+  .pulse-root {
+    --pl-bg: #0D0A0F; --pl-bg-deep: #1A1218;
+    --pl-card: rgba(255,255,255,0.045);
+    --pl-line: rgba(255,124,163,0.18);
+    --pl-ink: #F6EEF3; --pl-sub: #BFAABA;
+    --pl-accent: #FF8FB2; --pl-pink: #FF5C8A;
+    --pl-accent-soft: rgba(255,92,138,0.14);
+    --pl-mauve: #E8859E; --pl-rose: #E8859E;
+    --pl-rose-soft: rgba(232,133,158,0.12);
+    --pl-gold: #C9A192; --pl-gold-text: #D9B9AC;
+    --pl-good: #7DDBA8; --pl-good-soft: rgba(125,219,168,0.12);
+    --pl-warn: #FFBE85; --pl-warn-soft: rgba(255,190,133,0.12);
+  }
+  /* ── 明るく、やわらかい安心トーン（LPで使用）──
+     暗い画面は「検査・診断」を連想させて身構えさせる。
+     生成りに近い温かい白＋くすみピンクで、朝の光の中にいるような印象にする。
+     文字色は白地でも読める濃さに落としてコントラストを確保（淡背景に淡文字は禁止）。 */
+  .pulse-light {
+    --pl-bg: #FFF8F9; --pl-bg-deep: #FDEFF3;
+    --pl-card: #FFFFFF;
+    --pl-line: rgba(214,140,163,0.28);
+    --pl-ink: #3E2B33;          /* 真っ黒でなく、温かみのある濃茶 */
+    --pl-sub: #7C6670;
+    --pl-accent: #C02C58;       /* 白地で本文サイズでも読める濃さ(実測4.5以上) */
+    --pl-pink: #F2789B;
+    --pl-accent-soft: rgba(242,120,155,0.12);
+    --pl-mauve: #C9718C; --pl-rose: #D98BA1;
+    --pl-rose-soft: rgba(217,139,161,0.14);
+    --pl-gold: #C9A192; --pl-gold-text: #8A5843;
+    --pl-good: #1F7A50; --pl-good-soft: rgba(31,122,80,0.13);
+    --pl-warn: #B9702A; --pl-warn-soft: rgba(185,112,42,0.12);
+  }
+  /* カードも明るい面に（影はやわらかく、線は細く） */
+  .pulse-light .pulse-card {
+    background: #FFFFFF !important;
+    border-color: rgba(214,140,163,0.22) !important;
+    box-shadow: 0 2px 10px rgba(190,120,145,0.07), 0 12px 34px rgba(190,120,145,0.09) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
   .pulse-spin { animation: pulse-rotate 1s linear infinite; }
   @keyframes pulse-rotate { to { transform: rotate(360deg); } }
   .pulse-press { transition: transform .18s cubic-bezier(.34, 1.56, .64, 1); }
@@ -955,7 +1000,7 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
     },
   ];
   return (
-    <div style={{ minHeight: '100svh', background: C.bg, color: C.ink }}>
+    <div className="pulse-root pulse-light" style={{ minHeight: '100svh', background: C.bg, color: C.ink }}>
       {/* ヘッダー */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1005,8 +1050,10 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
             Apple Watchをお持ちなら、最初の設定は一度だけ。数字と「けさのことば」が、毎朝届きます。
           </p>
 
-          {/* アプリ画面の実物モック — 読ませるより、見せる */}
-          <div style={{ margin: '30px auto 0' }}>
+          {/* アプリ画面の実物モック — 読ませるより、見せる。
+              ここだけは実物どおり暗い画面なので、配色を夜色に戻す
+              （明るいLPの変数を継ぐと、暗い面に濃い文字が乗って読めなくなる） */}
+          <div className="pulse-root" style={{ margin: '30px auto 0' }}>
             <AppPreviewMock />
           </div>
 
@@ -1747,7 +1794,7 @@ function PulseHome() {
   ];
 
   return (
-    <div style={{ minHeight: '100svh', background: C.bg, color: C.ink }}>
+    <div className="pulse-root" style={{ minHeight: '100svh', background: C.bg, color: C.ink }}>
       {/* ヘッダー */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',

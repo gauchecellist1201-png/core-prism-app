@@ -958,6 +958,26 @@ export default function CommandPalette({
 
             {/* 結果リスト */}
             <div ref={listRef} className="flex-1 overflow-y-auto py-2">
+              {/* 消した直後だけ出る「元に戻す」。
+                  ★リストの外に置くのが要点: 最後の 1 件を消すと「よく使う依頼」の
+                  かたまり自体が消えるため、中に入れると取り消しボタンごと消える。 */}
+              {undoSaved && (
+                <div
+                  className="mx-3 mb-2 px-3 py-2 flex items-center gap-2 rounded-lg"
+                  style={{ background: 'var(--surface-3)', border: '1px solid #E8B84B44', fontSize: '0.72rem' }}
+                >
+                  <span className="truncate flex-1" style={{ color: 'var(--fg)' }}>
+                    「{undoSaved.prompt.slice(0, 20)}{undoSaved.prompt.length > 20 ? '…' : ''}」を消しました
+                  </span>
+                  <button
+                    onClick={restoreSavedPrompt}
+                    className="flex items-center gap-1 px-3 rounded-md flex-shrink-0"
+                    style={{ minHeight: 36, color: '#E8B84B', border: '1px solid #E8B84B77', fontWeight: 600 }}
+                  >
+                    <Undo2 size={12} />元に戻す
+                  </button>
+                </div>
+              )}
               {flatItems.length === 0 ? (
                 <div className="cp-zero">
                   <p className="cp-empty-icon" style={{ marginTop: 8 }}><Search size={32} /></p>
@@ -1071,22 +1091,6 @@ export default function CommandPalette({
                         <span>{CATEGORY_LABEL[category]}</span>
                         <span style={{ marginLeft: 'auto', color: 'var(--fg-subtle)', fontWeight: 400 }}>{items.length}</span>
                       </div>
-                      {/* 消した直後だけ出る「元に戻す」— 取り消せない削除を作らない */}
-                      {category === 'saved' && undoSaved && (
-                        <div
-                          className="px-5 py-2 flex items-center gap-2"
-                          style={{ background: 'var(--surface-3)', fontSize: '0.72rem', color: 'var(--fg-muted, #94A3B8)' }}
-                        >
-                          <span className="truncate flex-1">1 件を消しました</span>
-                          <button
-                            onClick={restoreSavedPrompt}
-                            className="flex items-center gap-1 px-2.5 rounded-md"
-                            style={{ minHeight: 32, color: accent, border: `1px solid ${accent}55`, fontWeight: 600 }}
-                          >
-                            <Undo2 size={12} />元に戻す
-                          </button>
-                        </div>
-                      )}
                       {items.map((item) => {
                         const flatIdx = flatItems.indexOf(item);
                         const isSelected = flatIdx === selectedIdx;
