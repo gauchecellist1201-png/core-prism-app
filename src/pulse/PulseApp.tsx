@@ -40,6 +40,7 @@ import {
 import { useHealth } from '../hooks/useHealth';
 import { PulseLogo } from '../components/Logo';
 import { detectAnomalies, type HealthAnomaly } from '../data/healthAnomaly';
+import { aiMorningWords, loadCachedMorning } from './aiMorningWords';
 import type { DailyHealth } from '../types/health';
 import { fetchWithTimeout, isAbort } from '../lib/fetchWithTimeout';
 import { scorePulseDay, scoreLastDays, SCORE_GOOD_LINE, SCORE_MAX, STEPS_FULL, SLEEP_HOURS_FULL, type PulseScoreResult, type PulseScoreParts } from './pulseScore';
@@ -1176,7 +1177,7 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', justifyContent: 'center', marginTop: 22 }}>
           <ShieldCheck size={16} color={C.good} style={{ flexShrink: 0, marginTop: 3 }} />
           <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.sub, margin: 0 }}>
-            記録はあなたのアカウントにだけ保存。医師や専門家に相談するときの、確かな資料にもなります。
+            記録はお使いの端末に保存されます。Apple Watchの数値をお預かりする場合も、メールアドレスから作った符号でのみ保管し、こちらからあなたが誰かは分かりません。医師や専門家に相談するときの、確かな資料にもなります。
           </p>
         </div>
       </section>
@@ -1584,10 +1585,15 @@ function PulseHome() {
 
   const anomalies = useMemo(() => detectAnomalies(health.days), [health.days]);
   const importantAnomalies = anomalies.filter((a) => a.severity !== 'info').slice(0, 3);
-  const morning = useMemo(
+  // ルールベースの文面（即座に出す・AIが失敗してもこれが残る）
+  const morningBase = useMemo(
     () => buildMorningWords(profile.name, health.today, health.week, anomalies, todayChips),
     [profile.name, health.today, health.week, anomalies, todayChips],
   );
+  // ★2026-07-26: 「AIが見守る」を事実にする。
+  //   まずルールベースを表示し、AIが書けたら差し替える（待たせない・落ちない）。
+  const [morningAi, setMorningAi] = useState<string[] | null>(() => loadCachedMorning());
+  const morning = morningAi ?? morningBase;
   const identity: HealthIdentity | null = hash ? { kind: 'hash', id: hash } : null;
 
   // 「きょうの調子」スコア (コード確定の純粋関数・当日より前をふだんとして使う)
@@ -1595,6 +1601,28 @@ function PulseHome() {
     () => (health.today ? scorePulseDay(health.today, health.days.slice(0, -1)) : null),
     [health.today, health.days],
   );
+  // けさのことばをAIに書かせる（1日1回・失敗してもルールベースのまま）
+  useEffect(() => {
+    if (morningAi) return;              // 今日はもう生成済み
+    if (!health.today) return;          // データが無いなら憶測で書かせない
+    let alive = true;
+    void aiMorningWords({
+      name: profile.name,
+      sleepHours: health.today.sleepHours,
+      restingHr: health.today.restingHR,
+      steps: health.today.steps,
+      score: score?.hasData ? score.total : null,
+      anomalies: anomalies.map((a) => `${a.title}: ${a.detail}`).filter(Boolean).slice(0, 3),
+      chips: todayChips,
+      fallback: morningBase,
+    }).then((lines) => {
+      if (alive && lines) setMorningAi(lines);
+    });
+    return () => { alive = false; };
+    // score/morningBase は同じ日のうちは実質固定。無限ループを避けるため依存は最小にする。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [health.today?.date, morningAi]);
+
   const scoreTrend = useMemo(() => scoreLastDays(health.days, 7), [health.days]);
   const weekly = useMemo(() => summarizeWeek(health.days), [health.days]);
 
