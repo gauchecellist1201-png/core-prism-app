@@ -10,30 +10,6 @@ interface Props {
   onOpenIntegrations?: () => void;
 }
 
-function TimeRing({ persona, index }: { persona: Persona; index: number }) {
-  const radius = 34 - index * 8;
-  const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference - (persona.timeAllocation / 100) * circumference;
-
-  return (
-    <>
-      <circle cx="50" cy="50" r={radius} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="4.5" />
-      <motion.circle
-        cx="50" cy="50" r={radius}
-        fill="none"
-        stroke={persona.accentColor}
-        strokeWidth="4.5"
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={circumference}
-        style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
-        animate={{ strokeDashoffset: dashOffset }}
-        transition={{ delay: 0.2 + index * 0.1, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-      />
-    </>
-  );
-}
-
 export default function CognitiveDashboard({ activeId, personas, onEditFinance, onOpenIntegrations }: Props) {
   const totalIncome = personas.reduce((s, p) => s + Math.max(p.cashflow.income, 0), 0);
   const totalExpense = personas.reduce((s, p) => s + Math.abs(Math.min(p.cashflow.expense, 0)), 0);
@@ -44,34 +20,8 @@ export default function CognitiveDashboard({ activeId, personas, onEditFinance, 
 
   return (
     <div className="space-y-3">
-      {/* Time rings */}
-      <div className="p-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="mb-3">
-          <p className="text-neutral-600 text-xs tracking-widest uppercase">時間投資</p>
-          <p className="text-neutral-500 text-[10px] mt-0.5 leading-snug">どのペルソナ(役割)に何% 時間を使っているかを見る場所</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex-shrink-0">
-            <svg width="100" height="100" viewBox="0 0 100 100">
-              {personas.map((p, i) => <TimeRing key={p.id} persona={p} index={i} />)}
-            </svg>
-          </div>
-          <div className="flex-1 space-y-1.5 min-w-0">
-            {personas.map(p => (
-              <div key={p.id} className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: p.accentColor }} />
-                  <span className="text-xs text-neutral-500 font-light truncate">{p.name}</span>
-                </div>
-                <span className="text-xs font-light ml-1 flex-shrink-0"
-                  style={{ color: p.id === activeId ? p.accentColor : '#3a3a4a' }}>
-                  {p.timeAllocation}%
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* 時間投資リングは 2026-07-26 オーナー指示で廃止（「必要ない」）。
+          代わりに売上(財務核心)が右カラムの一番上=一等地に来る。 */}
 
       {/* Finance */}
       <div className="p-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
