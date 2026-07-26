@@ -724,13 +724,15 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
 
             {/* 提案ゼロ */}
             {!proposalsBusy && proposals.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-                <p style={{ fontSize: '0.85rem', color: 'var(--fg-muted)', marginBottom: 10 }}>提案がまだありません</p>
-                <button onClick={loadProposals} style={{
-                  padding: '0.6rem 1.1rem', background: accent, color: '#fff', border: 'none',
-                  borderRadius: 10, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
-                }}>🔄 AI に考えてもらう</button>
-              </div>
+              <EmptyState
+                iconKey="knowledge"
+                accent={accent}
+                title="まだ書くネタの提案はありません"
+                description="あなたの人格と実績をもとに、AI が「今週これを書くと効く」というテーマを3つ出します。気に入ったものを選べば、note の記事と X の投稿までその場で書き上がります。"
+                ctaLabel="今週書くテーマを3つ出してもらう"
+                onCta={loadProposals}
+                showSample={false}
+              />
             )}
 
             {/* 別の 3 案 */}
