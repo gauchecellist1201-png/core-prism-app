@@ -93,6 +93,10 @@ const PULSE_CSS = `
     --pl-gold: #C9A192; --pl-gold-text: #D9B9AC;
     --pl-good: #7DDBA8; --pl-good-soft: rgba(125,219,168,0.12);
     --pl-warn: #FFBE85; --pl-warn-soft: rgba(255,190,133,0.12);
+    /* 副ボタン（枠線ボタン）の面と線。夜色では白のうすい膜が“ガラス”に見える */
+    --pl-btn-soft: rgba(255,255,255,0.045);
+    --pl-btn-line: rgba(255,92,138,0.5);
+    --pl-line-hover: rgba(255,124,163,0.36);
   }
   /* ── 明るく、やわらかい安心トーン（LPで使用）──
      暗い画面は「検査・診断」を連想させて身構えさせる。
@@ -112,6 +116,11 @@ const PULSE_CSS = `
     --pl-gold: #C9A192; --pl-gold-text: #8A5843;
     --pl-good: #1F7A50; --pl-good-soft: rgba(31,122,80,0.13);
     --pl-warn: #B9702A; --pl-warn-soft: rgba(185,112,42,0.12);
+    /* ★白地では「白のうすい膜」は完全に見えない＝副ボタンが面のない文字だけになる。
+       明るいトーンではうすいピンクの面＋濃い枠線にして、押せる物として見えるようにする。 */
+    --pl-btn-soft: rgba(242,120,155,0.10);
+    --pl-btn-line: rgba(192,44,88,0.45);
+    --pl-line-hover: rgba(192,44,88,0.34);
   }
   /* カードも明るい面に（影はやわらかく、線は細く） */
   .pulse-light .pulse-card {
@@ -128,7 +137,10 @@ const PULSE_CSS = `
   .pulse-press:active { transform: scale(.95); }
   .pulse-card { transition: transform .25s ease, border-color .25s ease; }
   @media (hover: hover) {
-    .pulse-card:hover { transform: translateY(-2px); border-color: rgba(255,124,163,0.36); }
+    .pulse-card:hover { transform: translateY(-2px); border-color: var(--pl-line-hover); }
+    /* 明るいトーンのカードは border-color を !important で塗っているため、
+       同じ強さで上書きしないとホバーの反応が消える（＝マウスで触っても無反応に見える）。 */
+    .pulse-light .pulse-card:hover { border-color: var(--pl-line-hover) !important; }
   }
   .pulse-breathe { animation: pulse-breathe 3.6s ease-in-out infinite; }
   @keyframes pulse-breathe {
@@ -449,9 +461,9 @@ function GhostButton({ onClick, href, children, full }: {
   const style: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
     minHeight: 50, padding: '13px 26px', borderRadius: 999,
-    background: 'rgba(255,255,255,0.045)', color: C.accent, fontSize: 14.5, fontWeight: 600,
+    background: 'var(--pl-btn-soft)', color: C.accent, fontSize: 14.5, fontWeight: 600,
     letterSpacing: '0.06em',
-    border: '1px solid rgba(255,92,138,0.5)', cursor: 'pointer', textDecoration: 'none',
+    border: '1px solid var(--pl-btn-line)', cursor: 'pointer', textDecoration: 'none',
     width: full ? '100%' : undefined, boxSizing: 'border-box',
   };
   if (href) return <a href={href} className="pulse-press" style={style}>{children}</a>;
@@ -477,9 +489,9 @@ function CopyField({ label, value }: { label: string; value: string }) {
           }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
-            minHeight: 36, padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
-            background: copied ? C.goodSoft : 'rgba(255,255,255,0.05)', color: copied ? C.good : C.accent,
-            border: `1px solid ${copied ? C.good : 'rgba(255,92,138,0.5)'}`, cursor: 'pointer',
+            minHeight: 44, padding: '10px 16px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+            background: copied ? C.goodSoft : 'var(--pl-btn-soft)', color: copied ? C.good : C.accent,
+            border: `1px solid ${copied ? C.good : 'var(--pl-btn-line)'}`, cursor: 'pointer',
           }}
         >
           {copied ? <Check size={13} /> : <Copy size={13} />}
@@ -1015,9 +1027,9 @@ function PulseLanding({ onEnter }: { onEnter: () => void }) {
           </div>
         </div>
         <button type="button" onClick={onEnter} className="pulse-press" style={{
-          minHeight: 40, padding: '8px 18px', borderRadius: 999, fontSize: 13, fontWeight: 600,
+          minHeight: 44, padding: '10px 18px', borderRadius: 999, fontSize: 13, fontWeight: 600,
           letterSpacing: '0.04em',
-          background: 'rgba(255,255,255,0.05)', color: C.accent, border: '1px solid rgba(255,92,138,0.5)', cursor: 'pointer',
+          background: 'var(--pl-btn-soft)', color: C.accent, border: '1px solid var(--pl-btn-line)', cursor: 'pointer',
         }}>
           アプリを開く
         </button>
