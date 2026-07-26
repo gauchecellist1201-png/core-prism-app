@@ -5,6 +5,10 @@
 // 必要スコープ:
 //   https://www.googleapis.com/auth/calendar.readonly
 //   https://www.googleapis.com/auth/calendar.events  (将来書込時)
+//
+// 2026-07-26: 「毎回つなぎ直しになる」根治のため、サーバー側 refresh_token 経路
+//             (googleServerAuth) を優先し、無ければ従来の GIS 方式に落ちる構成へ。
+import { getServerGoogleToken } from './googleServerAuth';
 
 declare global {
   interface Window {
@@ -98,6 +102,28 @@ export function clearCalToken() {
   localStorage.removeItem(USER_INFO_KEY);
 }
 export function isCalConnected(): boolean { return !!loadToken(); }
+
+/**
+ * サーバー側に refresh_token があれば、そこから取り直したアクセストークンを
+ * localStorage にも入れて「接続済み」表示を保つ。
+ * 画面を開いた時に一度呼ぶだけでよい（1時間経過後の「未接続」表示を防ぐ）。
+ * @returns サーバー経由でつながっていれば true
+ */
+export async function syncCalConnectionFromServer(): Promise<boolean> {
+  try {
+    const tok = await getServerGoogleToken();
+    if (!tok) return false;
+    // サーバーが必要に応じて更新済み。表示用に約1時間の期限で保持する。
+    saveToken({ accessToken: tok, expiresAt: Date.now() + 55 * 60 * 1000 });
+    if (!loadCalUser()) {
+      const u = await fetchUserInfo(tok);
+      if (u) saveCalUser(u);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function loadCalUser(): CalUserInfo | null {
   try {
@@ -206,6 +232,16 @@ export async function connectCalendar(): Promise<{ token: CalTokenInfo; user: Ca
 }
 
 async function getValidToken(): Promise<string> {
+  // ★2026-07-26 根治: まずサーバー側（refresh_token 保持）に聞く。
+  //   サーバーが持っていれば、期限切れでも自動更新されたトークンが返る＝
+  //   ユーザーは二度とつなぎ直さなくてよい。
+  //   未設定・未連携なら null が返るので、従来の GIS 方式にそのまま落ちる（後退しない）。
+  try {
+    const serverTok = await getServerGoogleToken();
+    if (serverTok) return serverTok;
+  } catch {
+    /* サーバー経路の失敗で機能を止めない。従来方式へ */
+  }
   const t = loadToken();
   if (t) return t.accessToken;
   const fresh = await connectCalendar();

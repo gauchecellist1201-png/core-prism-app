@@ -34,6 +34,8 @@ export interface AiResponse {
   content?: Array<{ text?: string; type?: string }>;
   usage?: { input_tokens?: number; output_tokens?: number };
   model?: string;
+  /** 'max_tokens' なら出力途中で打ち切られている（＝生成物が壊れている可能性） */
+  stop_reason?: string;
   /** 実際にどのモデルで応答が返ったか (フォールバックのトレース) */
   resolvedModel?: string;
   /** どのステップで成功したか (0=最初, 1=2 段目, 2=最終) */

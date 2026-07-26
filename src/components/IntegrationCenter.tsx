@@ -31,8 +31,12 @@ import {
   isGmailConfigured, isGmailConnected, connectGmail, clearGmailToken,
 } from '../lib/gmail';
 import {
-  isCalConfigured, isCalConnected, connectCalendar, clearCalToken,
+  isCalConfigured, isCalConnected, connectCalendar, clearCalToken, syncCalConnectionFromServer,
 } from '../lib/googleCalendar';
+import {
+  fetchGoogleServerStatus, startGoogleServerConnect, disconnectGoogleServer,
+  readGoogleCallbackResult, translateGoogleCallbackError,
+} from '../lib/googleServerAuth';
 import {
   fetchThreadsStatus, startThreadsConnect, disconnectThreads, readThreadsCallbackResult,
 } from '../lib/threadsConnect';
@@ -298,12 +302,25 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
   const [celebratedId, setCelebratedId] = useState<string | null>(null);
   const refresh = () => force(n => n + 1);
   const [thStatus, setThStatus] = useState<{ configured: boolean; connected: boolean }>({ configured: false, connected: false });
+  // Google の同意画面から失敗して戻ってきたときに、画面上部で理由を伝える（silent fail 禁止）
+  const [errTop, setErrTop] = useState<string | null>(null);
 
   // Threads: OAuthコールバック結果を拾い、運営側設定(configured)と接続状態(connected)を取得
   useEffect(() => {
     const cb = readThreadsCallbackResult();
     if (cb?.connected) saveTokenLS('threads', '__done__');
     fetchThreadsStatus().then(s => setThStatus({ configured: !!s.configured, connected: !!s.connected }));
+  }, []);
+
+  // Google カレンダー: 戻り値の処理＋「つながったまま」を画面に反映する。
+  // ★2026-07-26: サーバーに refresh_token があれば、1時間経っていても接続済みとして扱う
+  //   （旧実装は localStorage の1時間トークンだけを見ていたため、毎回「未接続」に見えていた）。
+  useEffect(() => {
+    const cb = readGoogleCallbackResult();
+    if (cb && cb.ok === false && cb.error) {
+      setErrTop(translateGoogleCallbackError(cb.error));
+    }
+    void syncCalConnectionFromServer().then(ok => { if (ok) refresh(); });
   }, []);
 
   const isConnected = (t: Tool): boolean => {
@@ -325,7 +342,8 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
 
   const disconnect = (t: Tool) => {
     if (t.id === 'gmail') clearGmailToken();
-    else if (t.id === 'gcal') clearCalToken();
+    // サーバー側に預けた refresh_token も一緒に消す（端末だけ消しても繋がったままになるため）
+    else if (t.id === 'gcal') { clearCalToken(); void disconnectGoogleServer(); }
     else if (t.id === 'threads') { disconnectThreads(); clearTokenLS('threads'); setThStatus(s => ({ ...s, connected: false })); }
     else clearTokenLS(t.id);
     refresh();
@@ -370,6 +388,17 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
           つなぎたいアプリをタップ → 案内どおり進むだけで連携完了。
           {connectedCount > 0 && <strong style={{ color: '#10B981' }}> 連携済み {connectedCount} 件。</strong>}
         </p>
+
+        {/* Google の同意画面から失敗して戻ってきた理由（黙って失敗させない） */}
+        {errTop && (
+          <div style={{
+            marginBottom: '0.9rem', padding: '10px 12px', borderRadius: 10,
+            fontSize: 12, lineHeight: 1.6, fontWeight: 600, color: '#FCA5A5',
+            background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.35)',
+          }}>
+            {errTop}
+          </div>
+        )}
 
         {/* API キー不要で取り込むためのショートカット (オーナー指示 2026-05-26) */}
         <EasyImportPanel accent={accent} />
@@ -565,8 +594,23 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
     }
     setBusy(true);
     try {
-      if (provider === 'gmail') await connectGmail();
-      else await connectCalendar();
+      if (provider === 'gmail') {
+        await connectGmail();
+      } else {
+        // ★2026-07-26 根治: サーバー側の連携（refresh_token 保持＝つなぎっぱなし）が
+        //   使えるならそちらへ。使えない環境では従来のポップアップ方式に落ちる。
+        const st = await fetchGoogleServerStatus();
+        if (st.configured) {
+          const r = await startGoogleServerConnect();
+          if (!r.ok) {
+            setErr(r.message || 'Google 連携を開始できませんでした。');
+            setBusy(false);
+            return;
+          }
+          return; // Google の同意画面へ遷移する（戻りは callback が処理）
+        }
+        await connectCalendar();
+      }
       setJustDone(true);
       setTimeout(onConnected, 1400);
     } catch (e: any) {
@@ -961,15 +1005,60 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                 )}
 
                 {step.action.kind === 'lineConnect' && (() => {
-                  const tokenOk = lineToken.trim().length >= 50;
-                  const userIdOk = /^U[0-9a-f]{20,}$/.test(lineUserId.trim());
-                  const bothOk = tokenOk && userIdOk;
+                  // ★2026-07-26 根治: 接続条件を「トークンだけ」に変更（オーナー報告「userId が何度やっても通らない」）。
+                  //   旧実装は userId 必須 + 実際に push が1通成功することを接続条件にしていたため、
+                  //   (a) コピペに不可視文字が混ざる (b) プロバイダ違いの userId (c) 友だち未追加
+                  //   のどれか1つで接続不能になっていた。さらにボタンが disabled だったので
+                  //   「押しても何も起きない・理由も出ない」状態だった。
+                  //   Resonance と同じく /v2/bot/info にトークンを通すだけで接続完了にする。
+                  // 不可視文字(ゼロ幅スペース/BOM/全角空白)を除去。.trim() はこれらを消せないため必須。
+                  const clean = (v: string) => v.replace(/[\u200B-\u200D\uFEFF\s\u3000]/g, '');
+                  const cleanToken = clean(lineToken);
+                  const cleanUserId = clean(lineUserId);
+                  const tokenOk = cleanToken.length >= 50;
+                  // サーバー側 line-push.ts と同じ判定に統一（大文字hexも許容）。userId は任意入力。
+                  const userIdOk = /^U[0-9a-fA-F]{20,}$/.test(cleanUserId);
+                  const userIdFilled = cleanUserId.length > 0;
+
+                  // トークンだけで接続を完了する（本命の導線）。
+                  const connectWithToken = async () => {
+                    setErr(null); setVerifyOk(null);
+                    if (!tokenOk) {
+                      setErr('アクセストークンが短すぎます。LINE Developers の「チャネルアクセストークン (長期)」を全文コピーして貼ってください。');
+                      return;
+                    }
+                    setBusy(true);
+                    try {
+                      const r = await fetch('/api/integrations/line-info', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-line-token': cleanToken },
+                      });
+                      const j = await r.json().catch(() => ({}));
+                      if (r.status === 200 && j.ok) {
+                        // userId は任意。入っていれば一緒に保存する（テスト送信・個別通知に使う）。
+                        const payload = userIdOk ? `${cleanToken}|${cleanUserId}` : cleanToken;
+                        const who = j.displayName || j.basicId || '公式アカウント';
+                        setVerifyOk(`「${who}」に接続しました。`);
+                        setTimeout(() => completeConnection(payload), 1200);
+                        return;
+                      }
+                      setErr(j?.message || `LINE に接続できませんでした (HTTP ${r.status})`);
+                    } catch {
+                      setErr('ネットワークエラーで LINE に接続できませんでした。少し待ってからもう一度。');
+                    } finally {
+                      setBusy(false);
+                    }
+                  };
+
+                  // 任意: userId を入れた人だけ、実際に1通届くかを確かめられる。
                   const sendTest = async () => {
                     setErr(null); setVerifyOk(null);
-                    if (!bothOk) {
-                      setErr(!tokenOk
-                        ? 'アクセストークンが短すぎます。LINE Developers の「長期トークン」を全文コピーしてください。'
-                        : 'userId の形式が違います。"U" で始まる 33 文字前後の文字列を貼ってください。');
+                    if (!tokenOk) {
+                      setErr('先にアクセストークンを貼ってください。');
+                      return;
+                    }
+                    if (!userIdOk) {
+                      setErr('テスト送信には userId が必要です。"U" で始まる 33 文字前後の文字列を貼ってください（空欄のままでも「接続する」で連携は完了します）。');
                       return;
                     }
                     setBusy(true);
@@ -978,17 +1067,15 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                         method: 'POST',
                         headers: {
                           'Content-Type': 'application/json',
-                          'x-line-token': lineToken.trim(),
-                          'x-line-userid': lineUserId.trim(),
+                          'x-line-token': cleanToken,
+                          'x-line-userid': cleanUserId,
                         },
                         body: JSON.stringify({ test: true }),
                       });
                       const j = await r.json().catch(() => ({}));
                       if (r.status === 200 && j.ok) {
-                        // 成功 → token + userId を ` | ` 区切りで保存
-                        const payload = `${lineToken.trim()}|${lineUserId.trim()}`;
                         setVerifyOk('テストメッセージを送信しました。LINE をご確認ください。');
-                        setTimeout(() => completeConnection(payload), 1500);
+                        setTimeout(() => completeConnection(`${cleanToken}|${cleanUserId}`), 1500);
                         return;
                       }
                       setErr(j?.message || `LINE へ送信できませんでした (HTTP ${r.status})`);
@@ -1009,7 +1096,7 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                     </div>
                     {/* アクセストークン */}
                     <label style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
-                      ① チャネルアクセストークン (長期)
+                      ① チャネルアクセストークン (長期) <span style={{ color: '#34D399' }}>— これだけで連携できます</span>
                     </label>
                     <textarea
                       value={lineToken}
@@ -1030,20 +1117,20 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                         fontFamily: 'ui-monospace, "SF Mono", monospace',
                       }}
                     />
-                    {/* userId */}
+                    {/* userId — 任意。テスト送信したい人だけ入れればよい。 */}
                     <label style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
-                      ② あなたの userId (LINE Developers「あなたのユーザーID」)
+                      ② あなたの userId <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>— 任意（テスト送信したいときだけ）</span>
                     </label>
                     <input
                       type="text"
                       value={lineUserId}
                       onChange={e => { setLineUserId(e.target.value); setErr(null); setVerifyOk(null); }}
-                      placeholder="U で始まる 33 文字前後"
+                      placeholder="空欄のままで大丈夫です"
                       style={{
                         width: '100%', fontSize: 12, padding: '10px 12px', borderRadius: 9,
                         background: 'rgba(255,255,255,0.06)', color: '#fff',
                         border: `1px solid ${
-                          lineUserId.length >= 4 && !userIdOk
+                          userIdFilled && !userIdOk
                             ? 'rgba(248,113,113,0.6)'
                             : userIdOk
                               ? 'rgba(52,211,153,0.6)'
@@ -1053,25 +1140,44 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
                         fontFamily: 'ui-monospace, "SF Mono", monospace',
                       }}
                     />
+                    {/* ★本命の接続ボタン。トークンだけで完了する。
+                        disabled にしない＝押せば必ず理由が出る（旧実装は押せず理由も出なかった）。 */}
                     <button
                       type="button"
-                      disabled={busy || !bothOk}
-                      onClick={sendTest}
+                      disabled={busy}
+                      onClick={connectWithToken}
                       style={{
                         width: '100%', fontSize: 12.5, fontWeight: 800, color: '#fff',
-                        background: bothOk
-                          ? `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`
-                          : 'rgba(255,255,255,0.08)',
+                        background: `linear-gradient(135deg, ${tool.color}, ${tool.color}cc)`,
                         border: 'none', borderRadius: 10, padding: '11px 16px',
-                        cursor: bothOk ? (busy ? 'wait' : 'pointer') : 'not-allowed',
-                        opacity: bothOk ? (busy ? 0.7 : 1) : 0.6,
+                        cursor: busy ? 'wait' : 'pointer',
+                        opacity: busy ? 0.7 : 1,
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                       }}
                     >
                       {busy
-                        ? <><Loader2 size={14} className="spin" /> LINE へ送信中…</>
-                        : <>📩 テスト送信して連携完了 <ArrowRight size={13} /></>}
+                        ? <><Loader2 size={14} className="spin" /> LINE に接続中…</>
+                        : <>トークンだけで接続する <ArrowRight size={13} /></>}
                     </button>
+                    {/* 任意: userId を入れた人だけ、実際に1通届くかを確かめられる */}
+                    {userIdFilled && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={sendTest}
+                        style={{
+                          width: '100%', fontSize: 11.5, fontWeight: 700,
+                          color: 'rgba(255,255,255,0.75)',
+                          background: 'rgba(255,255,255,0.07)',
+                          border: '1px solid rgba(255,255,255,0.14)', borderRadius: 10,
+                          padding: '9px 16px', marginTop: 7,
+                          cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        }}
+                      >
+                        テスト送信して確かめる
+                      </button>
+                    )}
                     {verifyOk && (
                       <motion.div
                         initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}

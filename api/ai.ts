@@ -474,8 +474,21 @@ export default async function handler(req: Request) {
   // Gemini の responseMimeType=application/json で「必ず正しい JSON」を強制する。
   const sysText = String(body.system || '');
   const formatHint = (req.headers.get('x-ai-format') || '').toLowerCase();
+  // ★2026-07-26 修正（オーナー報告「SVGボタンが必ず『抽出できませんでした』になる」の根治）
+  //   下の自動判定は「system に json という語があり、かつ だけ/のみ 等がある」で JSON 強制する。
+  //   ところが SVG 生成のプロンプトは「**JSON ではなく** SVG コード本体**だけ**を返して」なので
+  //   両方に一致し、JSON を出すなという指示なのに Gemini へ responseMimeType=application/json を
+  //   強制していた（＝応答が JSON になり <svg> が取れず必ず失敗）。
+  //   そこで (1) x-ai-format に json 以外が明示されていたら自動判定を無効化し、
+  //         (2) 「JSONではなく」のような否定文脈は自動判定から除外する。
+  const formatExplicitlyNotJson = formatHint !== '' && formatHint !== 'json';
+  const jsonNegated = /json\s*(では|じゃ)?\s*(なく|ではなく|ではありません|は不要|禁止)/i.test(sysText)
+    || /not\s+json/i.test(sysText);
   const jsonMode = formatHint === 'json'
-    || (/json/i.test(sysText) && /(スキーマ|schema|だけ|のみ|only|JSON1|JSON 1)/i.test(sysText));
+    || (!formatExplicitlyNotJson
+      && !jsonNegated
+      && /json/i.test(sysText)
+      && /(スキーマ|schema|だけ|のみ|only|JSON1|JSON 1)/i.test(sysText));
   const candidateModels = pickGeminiModels(body.model);
   const geminiBody = anthropicToGemini(body, jsonMode);
 

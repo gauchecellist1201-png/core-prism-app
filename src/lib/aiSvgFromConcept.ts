@@ -56,7 +56,7 @@ const SYSTEM_PROMPT = `あなたは SVG アーティストです。ユーザー�
 - soft: 淡いグラデーション + 角丸
 - bold: コントラスト高い太線 + 大きな図形
 
-JSON ではなく **SVG コード本体だけ** を返してください。`;
+説明文やコードフェンスを付けず、**SVG コード本体だけ** を返してください。`;
 
 /** Claude の応答から最初の <svg>...</svg> を抜き出す (codefence / 文章混在に対応) */
 function extractSvg(text: string): string | null {
@@ -94,20 +94,30 @@ export async function aiSvgFromConcept(input: SvgFromConceptInput): Promise<SvgF
   const resp = await callAiWithFallback(
     {
       model: 'claude-haiku-4-5',
-      max_tokens: 2500,
+      // SVG は 2500 だと複雑な絵で末尾の </svg> まで届かず途中で切れることがある。
+      max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userPrompt }],
     },
     {
       signal: input.signal,
-      timeoutMs: 60_000,
+      // aiFetch 側が 40 秒で abort するため、それより長い値を指定しても効かない。実値に合わせる。
+      timeoutMs: 40_000,
     },
   );
 
   const raw = resp.content?.[0]?.text || '';
   const svg = extractSvg(raw);
   if (!svg) {
-    throw new Error('SVG を抽出できませんでした。raw レスポンス: ' + raw.slice(0, 200));
+    // 原因を切り分けて伝える（「抽出できませんでした」だけでは何をすればよいか分からない）。
+    if (resp.stop_reason === 'max_tokens') {
+      throw new Error('絵が複雑すぎて、途中までしか描けませんでした。もう少し簡単な言葉にするか、スタイルを「line」にしてもう一度お試しください。');
+    }
+    const head = raw.trim().slice(0, 120);
+    throw new Error(
+      'AI が絵（SVG）の形で返してくれませんでした。もう一度お試しください。' +
+        (head ? `\n（AIの返答の冒頭: ${head}）` : ''),
+    );
   }
   return {
     svg: sanitizeSvg(svg),
