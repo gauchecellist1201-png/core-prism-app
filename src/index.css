@@ -2186,6 +2186,12 @@ body[data-core-sample-banner] .iris-header-sticky {
   margin-top: var(--core-sample-banner-h, 0px);
   top: var(--core-sample-banner-h, 0px) !important;
 }
+/* 左サイドバー (fixed・top:0) も同じ理由で1段目が帯の下だった。
+   1440px 実測: ホームへ戻る「Iris」ロゴボタンが帯に覆われて押せなかった。
+   ※サイドバーはデスクトップのみ表示 (≤900px は下部ドックに切替) */
+body[data-core-sample-banner] .iris-sidebar {
+  top: var(--core-sample-banner-h, 0px) !important;
+}
 
 /* ============================================================
    iPhone 横オーバーフロー対策 (オーナー指摘 2026-05-25):
