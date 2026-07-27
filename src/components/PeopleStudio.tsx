@@ -1,6 +1,9 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Legend, CartesianGrid } from 'recharts';
+import {
+  Mic, ClipboardList, Bot, Copy, FileDown, PenLine, Brain, Trash2, UserPlus, Plus,
+} from 'lucide-react';
 import type { Persona, AppSettings } from '../types/identity';
 import type { PersonRecord, PersonInteraction, SentimentType, InteractionType } from '../types/people';
 import { usePeople } from '../hooks/usePeople';
@@ -273,13 +276,13 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
               <>
                 <button onClick={() => setView('interview')}
                   className="cp-btn cp-btn-ghost cp-btn-sm"
-                  style={{ minHeight: 44, color: persona.accentColor, border: `1px solid ${persona.accentColor}55` }}>
-                  🎤 採用面接
+                  style={{ minHeight: 44, color: persona.accentColor, border: `1px solid ${persona.accentColor}55`, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Mic size={14} strokeWidth={2.2} />面接の質問をつくる
                 </button>
                 <button onClick={() => setView('compose')}
                   className="cp-btn cp-btn-primary cp-btn-sm"
-                  style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
-                  ＋ 人物を追加
+                  style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <UserPlus size={14} strokeWidth={2.2} />人物を追加
                 </button>
               </>
             )}
@@ -293,7 +296,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
             accent={persona.accentColor}
             iconKey="people"
             what="関わる人 1 人 1 人の「いま元気か / 何を考えているか」を 1 画面で見守る場所です。"
-            tryThis="人物カードを開いて「🗒 1on1 アジェンダを作る」を押す → 雑談・進捗・課題・次の一歩・フィードバックの 5 ブロックが揃います。"
+            tryThis="人物カードを開いて「1on1 で話す 5 項目をつくる」を押す → 雑談・進捗・課題・次の一歩・フィードバックの 5 ブロックが揃います。"
             example="チームメンバーの過去 1on1 5 件 → 信頼トレンド・リスクフラグ・次の話題 3 案を 30 秒で。"
             sampleLabel="出来上がる人物カード"
             samplePreview={
@@ -489,9 +492,12 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                       background: persona.accentColor,
                       color: '#0a0a0f',
                       opacity: (interviewBusy || !interviewRole.trim()) ? 0.5 : 1,
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
                     }}
                   >
-                    {interviewBusy ? '🧠 面接パックを組み立て中…' : '🎤 面接パックを作る'}
+                    {interviewBusy
+                      ? <><Brain size={14} strokeWidth={2.2} />質問を組み立て中…</>
+                      : <><Mic size={14} strokeWidth={2.2} />聞くべき質問と評価軸をつくる</>}
                   </button>
                   {interviewError && (
                     <div className="cp-banner-error">⚠ {interviewError}</div>
@@ -545,7 +551,8 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                         void copyText(text, '面接パック');
                       }}
                       className="cp-btn cp-btn-sm"
-                    >📋 面接パックを全部コピー</button>
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                    ><Copy size={14} strokeWidth={2.2} />質問・評価軸をまるごとコピー</button>
                   </>
                 )}
               </div>
@@ -751,18 +758,22 @@ function PersonDetail({
         <div className="cp-row" style={{ flexWrap: 'wrap', gap: 6 }}>
           <button onClick={handleBuildAgenda} disabled={agendaBusy}
             className="cp-btn cp-btn-primary cp-btn-sm"
-            style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
-            {agendaBusy ? <LoaderDots label="話す論点を選んでます" /> : '🗒 1on1 アジェンダを作る'}
+            style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {agendaBusy
+              ? <LoaderDots label="話す論点を選んでます" />
+              : <><ClipboardList size={14} strokeWidth={2.2} />1on1 で話す 5 項目をつくる</>}
           </button>
           <button onClick={handleAnalyze} disabled={analyzing}
             className="cp-btn cp-btn-sm"
-            style={{ minHeight: 44 }}>
-            {analyzing ? <LoaderDots label="関係性を読み解き中" /> : '🤖 AI 関係性分析'}
+            style={{ minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {analyzing
+              ? <LoaderDots label="関係性を読み解き中" />
+              : <><Brain size={14} strokeWidth={2.2} />この人との関係を診断してもらう</>}
           </button>
-          <button onClick={handleExport} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 44 }}>
-            📋 Markdown 書き出し
+          <button onClick={handleExport} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <FileDown size={14} strokeWidth={2.2} />この人の記録を .md で書き出す
           </button>
-          <button onClick={onDelete} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ color: '#f87171', minHeight: 44 }}>削除</button>
+          <button onClick={onDelete} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ color: '#f87171', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Trash2 size={14} strokeWidth={2.2} />この人を削除</button>
         </div>
       </div>
 
@@ -788,13 +799,15 @@ function PersonDetail({
                 {cs.status === 'cold' && (
                   <button onClick={handleBuildReopen} disabled={reopenBusy}
                     className="cp-btn cp-btn-primary cp-btn-sm"
-                    style={{ background: chip.fg, color: '#0a0a0f', minHeight: 44 }}>
-                    {reopenBusy ? <LoaderDots label="送る言葉を選んでます" /> : '✍ 再開メッセージを書く'}
+                    style={{ background: chip.fg, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    {reopenBusy
+                      ? <LoaderDots label="送る言葉を選んでます" />
+                      : <><PenLine size={14} strokeWidth={2.2} />久しぶりの連絡文を書いてもらう</>}
                   </button>
                 )}
                 <button onClick={handleDelegateReopen}
-                  className="cp-btn cp-btn-sm" style={{ minHeight: 44 }}>
-                  🤖 AI 会社に委任
+                  className="cp-btn cp-btn-sm" style={{ minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Bot size={14} strokeWidth={2.2} />連絡の再開を AI 社員に任せる
                 </button>
               </div>
             </div>
@@ -808,7 +821,7 @@ function PersonDetail({
                       setExportToast(ok ? '📋 メッセージをコピーしました' : 'コピーできませんでした');
                       setTimeout(() => setExportToast(null), 2000);
                     }}
-                    className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 36 }}>📋 コピー</button>
+                    className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 36, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Copy size={13} strokeWidth={2.2} />この連絡文をコピー</button>
                 </div>
                 <p className="cp-body" style={{ whiteSpace: 'pre-wrap' }}>{reopen.body}</p>
               </div>
@@ -888,10 +901,10 @@ function PersonDetail({
                     setExportToast(ok ? '📋 アジェンダをコピーしました' : 'コピーできませんでした');
                     setTimeout(() => setExportToast(null), 2000);
                   }}
-                  className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 36 }}>📋 コピー</button>
+                  className="cp-btn cp-btn-ghost cp-btn-sm" style={{ minHeight: 36, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Copy size={13} strokeWidth={2.2} />アジェンダをコピー</button>
                 <button onClick={handleDelegateNextCheckIn}
-                  className="cp-btn cp-btn-sm" style={{ minHeight: 36 }}>
-                  🤖 確認事項を AI 会社へ
+                  className="cp-btn cp-btn-sm" style={{ minHeight: 36, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Bot size={13} strokeWidth={2.2} />次の確認事項を AI 社員に任せる
                 </button>
               </div>
             </div>
@@ -1074,8 +1087,8 @@ function PersonDetail({
           onAddInteraction({ date: interDate, type: interType, summary: interSummary, sentiment: interSentiment });
           setInterSummary('');
         }} className="cp-btn cp-btn-primary cp-btn-sm"
-          style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
-          記録を追加
+          style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Plus size={14} strokeWidth={2.2} />このやり取りを履歴に残す
         </button>
       </div>
 
@@ -1213,8 +1226,8 @@ function PersonForm({ persona, onSave, onCancel }: {
               });
             }}
             className="cp-btn cp-btn-primary"
-            style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
-            登録
+            style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <UserPlus size={14} strokeWidth={2.2} />この人を名簿に追加
           </button>
         </div>
       </div>

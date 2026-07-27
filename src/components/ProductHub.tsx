@@ -303,8 +303,9 @@ export default function ProductHub({
                   background: name.trim() ? `linear-gradient(135deg, ${accent}, ${accent}cc)` : 'rgba(255,255,255,0.08)',
                   border: 'none', borderRadius: 10, padding: '10px 16px',
                   cursor: name.trim() ? 'pointer' : 'not-allowed', opacity: name.trim() ? 1 : 0.6,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
-              >作る</button>
+              ><Plus size={14} strokeWidth={2.2} />この商品を登録する</button>
               <button
                 type="button" onClick={() => { setCreating(false); setName(''); setDesc(''); }}
                 style={{

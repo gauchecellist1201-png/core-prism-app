@@ -64,8 +64,8 @@ export default function WellnessTracker({ today, accent = '#8E5CFF', accentSoft,
         <div style={{
           fontSize: 11, fontWeight: 800, color: accent,
           border: `1px solid ${accent}`, borderRadius: 999,
-          padding: '5px 12px', flexShrink: 0,
-        }}>つなぐ</div>
+          padding: '5px 12px', flexShrink: 0, whiteSpace: 'nowrap',
+        }}>健康アプリをつなぐ</div>
       </button>
     );
   }
