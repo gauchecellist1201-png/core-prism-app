@@ -108,7 +108,11 @@ function scanBands(): Bands {
     const s = getComputedStyle(el);
     if (s.position !== "fixed" && s.position !== "sticky") continue;
     if (s.display === "none" || s.visibility === "hidden" || Number(s.opacity) === 0) continue;
-    if (s.pointerEvents === "none") continue; // 背景グラデ等の飾りは帯ではない
+    // 飾り(背景グラデ等)は「奥に置かれている」ことで見分ける。
+    // pointer-events:none で弾いてはいけない: Prism の下部バーは
+    // 外枠が pointer-events:none・中身だけ auto という作りで、
+    // それで弾くとバーが見つからずオーブが乗り上げる(実測 2026-07-27)。
+    if (Number(s.zIndex) < 0) continue;
     const r = el.getBoundingClientRect();
     // 画面幅いっぱいに近い「帯」だけを対象にする(小さなFABは避けなくてよい)
     if (r.width < vw * 0.6 || r.height < 24 || r.height > vh * 0.5) continue;
