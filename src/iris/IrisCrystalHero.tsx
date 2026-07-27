@@ -43,7 +43,7 @@ function FallbackFlower() {
     <svg
       viewBox="-140 -140 280 280"
       aria-hidden
-      style={{ width: 'min(58%, 290px)', height: 'auto', display: 'block' }}
+      style={{ width: 'min(52%, 260px)', height: 'auto', display: 'block' }}
     >
       <defs>
         <linearGradient id="irisHeroPetalOuter" x1="0" y1="0" x2="0" y2="1">
@@ -92,14 +92,23 @@ const CHIPS: Array<{ tab: IrisHeroTab; label: string; Icon: typeof CalendarClock
   { tab: 'strategy', label: '分析',       Icon: TrendingUp,    grad: 'linear-gradient(135deg, #F77737 0%, #E1306C 100%)' },
 ];
 
-export default function IrisCrystalHero({ bg, onNavigate, children }: Props) {
+/**
+ * IrisBloomStage — ガラスの花 + IRIS + 一言 のステージ。
+ *
+ * 以前はホーム最上部に置いていたが、iPhone 375×812 の実測で
+ * 巨大入力カードが y=669 から始まり折返し(下部ドック y=748)の外へ沈んでいた
+ * ＝0スクロールでは入力の上半分しか見えず、「3つの投稿に変える」にも
+ * 「声で投げる」にも届かない。花を縮めて上に残す案も測ったが、
+ * 右下の「AIと話す」(y=614〜)・左の切替オーブ(y=596〜)が必ず送信ボタンに被るため成立しない。
+ * 「思考を投げる」こそ Iris ホームの価値なので、入力を先頭にし、花はそのすぐ下で咲かせる。
+ * 大きさは元のまま＝見た目は一切削っていない。
+ */
+export function IrisBloomStage() {
   return (
-    <section aria-label="Iris ホーム ヒーロー" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
-      {/* ── 花のステージ (100svh にはしない — 下へスクロールで続く) ── */}
       <div style={{
         position: 'relative',
-        height: 'min(54svh, 560px)',
-        minHeight: 340,
+        height: 'min(46svh, 480px)',
+        minHeight: 300,
         borderRadius: 28,
         overflow: 'hidden',
         // フォールバック兼、canvas 読込前の下地 (深いインクプラム + 上部のピンクの光)
@@ -110,7 +119,7 @@ export default function IrisCrystalHero({ bg, onNavigate, children }: Props) {
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          paddingBottom: '17%',
+          paddingBottom: '20%',
         }}>
           <FallbackFlower />
         </div>
@@ -127,7 +136,7 @@ export default function IrisCrystalHero({ bg, onNavigate, children }: Props) {
         {/* 前面下部: IRIS + 一言 (濃背景に白文字 + text-shadow) */}
         <div style={{
           position: 'absolute', left: 0, right: 0, bottom: 0,
-          padding: '3rem 1rem 1.2rem',
+          padding: '2.6rem 1rem 1.1rem',
           textAlign: 'center',
           background: 'linear-gradient(180deg, rgba(26,10,38,0) 0%, rgba(26,10,38,0.66) 85%)',
           pointerEvents: 'none',
@@ -136,7 +145,7 @@ export default function IrisCrystalHero({ bg, onNavigate, children }: Props) {
             margin: 0,
             fontFamily: IRIS_FONTS.display,
             fontWeight: 600,
-            fontSize: 'clamp(2rem, 9vw, 3rem)',
+            fontSize: 'clamp(1.9rem, 8.6vw, 2.9rem)',
             letterSpacing: '0.4em',
             paddingLeft: '0.4em', // letter-spacing の右余りを打ち消して光学的にセンターへ
             textTransform: 'uppercase',
@@ -147,23 +156,32 @@ export default function IrisCrystalHero({ bg, onNavigate, children }: Props) {
             Iris
           </h1>
           <p style={{
-            margin: '0.55rem 0 0',
+            margin: '0.4rem 0 0',
             fontFamily: IRIS_FONTS.serif,
             fontStyle: 'italic',
             fontWeight: 500,
-            fontSize: 'clamp(0.98rem, 4.2vw, 1.25rem)',
-            lineHeight: 1.6,
+            fontSize: 'clamp(0.92rem, 3.9vw, 1.2rem)',
+            lineHeight: 1.5,
             color: '#FFFFFF',
             wordBreak: 'keep-all',
             overflowWrap: 'break-word',
             textShadow: '0 2px 18px rgba(26,10,38,0.9), 0 1px 3px rgba(26,10,38,0.65)',
           }}>
-            思考を投げるだけ。<br />あとは Iris が、投稿から案件まで仕上げる。
+            思考を投げるだけ。あとは Iris が仕上げる。
           </p>
         </div>
       </div>
+  );
+}
 
-      {/* ── 巨大入力 (IrisThoughtDropSection) ── */}
+export default function IrisCrystalHero({ bg, onNavigate, children }: Props) {
+  return (
+    // gridTemplateColumns は minmax(0,1fr) 固定。既定の auto 列は中身の max-content に
+    // 合わせて伸びるため、入力カード内に1行横スクロール(nowrap)を置くと列ごと画面外へ
+    // はみ出す(実測 335px の器が 493px になった)。0 を下限にして器の幅に必ず収める。
+    <section aria-label="Iris ホーム ヒーロー" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '0.8rem', marginBottom: '1.25rem' }}>
+      {/* 巨大入力 (IrisThoughtDropSection)。花のステージは入力のすぐ下に
+          描かれる (IrisBloomStage を stage プロップで受け取っている) */}
       {children}
 
       {/* ── ガラスチップ 3 つ: 多機能への入口 ── */}

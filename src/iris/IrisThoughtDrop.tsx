@@ -312,7 +312,9 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
   const canSubmit = !busy && (text.trim().length > 0 || interim.trim().length > 0);
 
   return (
-    <section aria-label="思考を投げる" style={{ display: 'grid', gap: '0.9rem' }}>
+    // minmax(0,1fr): 既定の auto 列だと下の書き出しチップ(1行 nowrap)の max-content に
+    // 合わせて列が伸び、カードごと画面右へはみ出す。0 を下限にして器の幅に必ず収める。
+    <section aria-label="思考を投げる" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '0.9rem' }}>
       {/* 見出し */}
       {!hideHeading && (
       <div style={{ textAlign: 'center', padding: '0.25rem 0.5rem 0' }}>
@@ -369,36 +371,41 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
         />
 
         {/* 書き出しチップ: 空欄のときだけ（白紙を見せない・§0.5）。
-            タップで本人が続きを書ける「書き出し」を差し込む＝最初の一歩の入力ゼロ */}
+            タップで本人が続きを書ける「書き出し」を差し込む＝最初の一歩の入力ゼロ。
+            2段折返し＋見出し行だと入力カードが縦に伸びて送信ボタンが折返し外へ沈むため、
+            1行の横スクロールに畳む（見出しは読まなくても分かるので消す・§0.5 言葉を減らす）*/}
         {!busy && !listening && text.trim().length === 0 && (
-          <div style={{ margin: '0.1rem 0 0.35rem' }}>
-            <p style={{
-              margin: '0 0 0.5rem', fontSize: '0.72rem', color: '#8A7AA0',
-              fontFamily: IRIS_FONTS.body,
-            }}>
-              書き出しから選ぶ
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {THOUGHT_STARTERS.map(s => (
-                <motion.button
-                  key={s.label}
-                  type="button"
-                  onClick={() => applyStarter(s.stem)}
-                  whileTap={{ scale: 0.95 }}
-                  style={{
-                    minHeight: 44, padding: '0.45rem 0.9rem',
-                    borderRadius: 999,
-                    border: `1.5px solid ${bg.accent}44`,
-                    background: `${bg.accent}12`,
-                    color: '#3D3247', fontSize: '0.82rem', fontWeight: 600,
-                    fontFamily: IRIS_FONTS.body, cursor: 'pointer',
-                    display: 'inline-flex', alignItems: 'center',
-                  }}
-                >
-                  {s.label}
-                </motion.button>
-              ))}
-            </div>
+          <div
+            className="iris-tdrop-starters"
+            style={{
+              display: 'flex', gap: 8, margin: '0.15rem 0 0.5rem',
+              overflowX: 'auto', overflowY: 'hidden',
+              // チップの影・フォーカスリングが上下で切れないぶんだけ器を広げる
+              padding: '2px 0',
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
+            {THOUGHT_STARTERS.map(s => (
+              <motion.button
+                key={s.label}
+                type="button"
+                onClick={() => applyStarter(s.stem)}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  flex: '0 0 auto',
+                  minHeight: 44, padding: '0.45rem 0.9rem',
+                  borderRadius: 999,
+                  border: `1.5px solid ${bg.accent}44`,
+                  background: `${bg.accent}12`,
+                  color: '#3D3247', fontSize: '0.82rem', fontWeight: 600,
+                  fontFamily: IRIS_FONTS.body, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {s.label}
+              </motion.button>
+            ))}
           </div>
         )}
 
@@ -418,40 +425,12 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
           )}
         </AnimatePresence>
 
-        {/* マイク (録音中は波形パルス) */}
-        <div style={{ textAlign: 'center', margin: '0.35rem 0 0.9rem' }}>
-          {listening && <WaveBars accent={bg.accent} />}
-          {isAvailable && (
-            <motion.button
-              type="button"
-              onClick={toggleMic}
-              disabled={busy || transcribing}
-              whileTap={!busy && !transcribing ? { scale: 0.92 } : {}}
-              aria-label={listening ? '録音を止めて文字にする' : transcribing ? '文字起こし中' : '声で投げる'}
-              style={{
-                width: 64, height: 64, borderRadius: '50%',
-                background: listening ? '#1F1A2E' : bg.accent,
-                color: '#FFFFFF',
-                border: 'none',
-                cursor: busy || transcribing ? 'wait' : 'pointer',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                padding: 0,
-                boxShadow: listening
-                  ? `0 0 0 10px ${bg.accent}1e, 0 0 0 20px ${bg.accent}0c, 0 8px 22px rgba(31,26,46,0.35)`
-                  : `0 8px 24px ${bg.accent}55`,
-                animation: listening ? 'iris-tdrop-pulse 1.6s ease-in-out infinite' : 'none',
-                opacity: busy ? 0.5 : 1,
-              }}
-            >
-              {transcribing
-                ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={24} strokeWidth={2.4} /></motion.span>
-                : listening
-                  ? <Square size={20} fill="#FFFFFF" strokeWidth={0} />
-                  : <Mic size={26} strokeWidth={2} />}
-            </motion.button>
-          )}
-          <p style={{
-            marginTop: '0.55rem', marginBottom: 0,
+        {/* 声のいまの状態 (録音中/文字起こし中/エラー/非対応) だけを出す。
+            平常時の「タップして、声で投げる」は マイクの aria-label と見た目で伝わるので出さない
+            ＝入力カードが縦に伸びず、送信ボタンが折返しの内側に留まる (§0.5 言葉を減らす) */}
+        {(voiceErr || transcribing || listening || !isAvailable) && (
+          <p role={voiceErr ? 'alert' : undefined} style={{
+            margin: '0 0 0.5rem', textAlign: 'center',
             color: voiceErr ? '#C8102E' : '#8A7AA0', fontSize: '0.74rem', fontFamily: IRIS_FONTS.body,
           }}>
             {voiceErr
@@ -459,14 +438,17 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
               : transcribing
                 ? '文字にしています…'
                 : listening
-                  ? (useRecorder ? '録音中 ─ タップで文字にする' : '聞いています ─ タップで止める')
-                  : isAvailable
-                    ? 'タップして、声で投げる'
-                    : 'この端末は音声に対応していないので、書いて投げてください'}
+                  ? (useRecorder ? '録音中 ─ 左のボタンで文字にする' : '聞いています ─ 左のボタンで止める')
+                  : 'この端末は音声に対応していないので、書いて投げてください'}
           </p>
-        </div>
+        )}
+        {listening && (
+          <div style={{ textAlign: 'center', marginBottom: '0.4rem' }}>
+            <WaveBars accent={bg.accent} />
+          </div>
+        )}
 
-        {/* 生成中 / 送信ボタン */}
+        {/* 生成中 / 「声で投げる」＋「3つの投稿に変える」を1行に (縦を1ブロック分減らす) */}
         {busy ? (
           <div role="status" aria-live="polite" style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.7rem',
@@ -487,29 +469,61 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
             </p>
           </div>
         ) : (
-          <motion.button
-            type="button"
-            onClick={submit}
-            disabled={!canSubmit}
-            whileTap={canSubmit ? { scale: 0.98 } : {}}
-            style={{
-              width: '100%', minHeight: 52,
-              borderRadius: 16, border: 'none',
-              background: canSubmit
-                ? 'linear-gradient(135deg, #E1306C 0%, #833AB4 100%)'
-                : 'rgba(31,26,46,0.08)',
-              color: canSubmit ? '#FFFFFF' : '#8A7AA0',
-              fontSize: '0.95rem', fontWeight: 700,
-              fontFamily: IRIS_FONTS.body,
-              cursor: canSubmit ? 'pointer' : 'not-allowed',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              boxShadow: canSubmit ? '0 8px 22px rgba(225,48,108,0.35)' : 'none',
-              transition: 'box-shadow 0.2s, background 0.2s',
-            }}
-          >
-            <Sparkles size={17} strokeWidth={2.2} />
-            3つの投稿に変える
-          </motion.button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {isAvailable && (
+              <motion.button
+                type="button"
+                onClick={toggleMic}
+                disabled={busy || transcribing}
+                whileTap={!busy && !transcribing ? { scale: 0.92 } : {}}
+                aria-label={listening ? '録音を止めて文字にする' : transcribing ? '文字起こし中' : '声で投げる'}
+                style={{
+                  flex: '0 0 auto',
+                  width: 52, height: 52, borderRadius: '50%',
+                  background: listening ? '#1F1A2E' : bg.accent,
+                  color: '#FFFFFF',
+                  border: 'none',
+                  cursor: busy || transcribing ? 'wait' : 'pointer',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  padding: 0,
+                  boxShadow: listening
+                    ? `0 0 0 8px ${bg.accent}1e, 0 0 0 16px ${bg.accent}0c, 0 8px 22px rgba(31,26,46,0.35)`
+                    : `0 8px 24px ${bg.accent}55`,
+                  animation: listening ? 'iris-tdrop-pulse 1.6s ease-in-out infinite' : 'none',
+                  opacity: busy ? 0.5 : 1,
+                }}
+              >
+                {transcribing
+                  ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={22} strokeWidth={2.4} /></motion.span>
+                  : listening
+                    ? <Square size={18} fill="#FFFFFF" strokeWidth={0} />
+                    : <Mic size={23} strokeWidth={2} />}
+              </motion.button>
+            )}
+            <motion.button
+              type="button"
+              onClick={submit}
+              disabled={!canSubmit}
+              whileTap={canSubmit ? { scale: 0.98 } : {}}
+              style={{
+                flex: 1, minWidth: 0, minHeight: 52,
+                borderRadius: 16, border: 'none',
+                background: canSubmit
+                  ? 'linear-gradient(135deg, #E1306C 0%, #833AB4 100%)'
+                  : 'rgba(31,26,46,0.08)',
+                color: canSubmit ? '#FFFFFF' : '#8A7AA0',
+                fontSize: '0.95rem', fontWeight: 700,
+                fontFamily: IRIS_FONTS.body,
+                cursor: canSubmit ? 'pointer' : 'not-allowed',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                boxShadow: canSubmit ? '0 8px 22px rgba(225,48,108,0.35)' : 'none',
+                transition: 'box-shadow 0.2s, background 0.2s',
+              }}
+            >
+              <Sparkles size={17} strokeWidth={2.2} />
+              3つの投稿に変える
+            </motion.button>
+          </div>
         )}
 
         {/* エラー: 必ず再試行とセット (silent fail 禁止) */}
@@ -545,6 +559,9 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
 
       <style>{`
         .iris-tdrop-ta::placeholder { color: #A99BBE; }
+        /* 書き出しチップの1行横スクロール — バーは出さない(親指でなぞる) */
+        .iris-tdrop-starters { scrollbar-width: none; -ms-overflow-style: none; }
+        .iris-tdrop-starters::-webkit-scrollbar { display: none; }
         @keyframes iris-tdrop-pulse {
           0%, 100% { box-shadow: 0 0 0 10px ${bg.accent}1e, 0 0 0 20px ${bg.accent}0c, 0 8px 22px rgba(31,26,46,0.35); }
           50%      { box-shadow: 0 0 0 18px ${bg.accent}10, 0 0 0 34px ${bg.accent}06, 0 8px 28px rgba(31,26,46,0.4); }

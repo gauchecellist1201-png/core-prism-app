@@ -151,7 +151,7 @@ const IrisStrategistView = React.lazy(() => import('./IrisStrategistView'));
 import IrisQuickAdd from './IrisQuickAdd';
 import IrisVoiceHome from './IrisVoiceHome';
 import IrisThoughtDropSection from './IrisThoughtDropSection';
-import IrisCrystalHero from './IrisCrystalHero';
+import IrisCrystalHero, { IrisBloomStage } from './IrisCrystalHero';
 import { IrisLogo } from '../components/Logo';
 import SupportChat from '../components/SupportChat';
 import ShortcutHelpModal from '../components/ShortcutHelpModal';
@@ -1771,7 +1771,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
             {tab === 'home' && (
               <>
                 {/* ★フラッグシップ (2026-07-02): クリスタルの花のヒーロー + 思考を投げるだけ。
-                    ガラスの花(ブランドロゴ再現・開花アニメ)→見出し→巨大入力→3つの入口 */}
+                    巨大入力→ガラスの花(ブランドロゴ再現・開花アニメ)→3つの入口。
+                    入力を先頭に置いているのは、花が先頭だと入力が折返しの外へ沈み
+                    0スクロールで送信ボタンに届かなかったため (2026-07-27 実測・§0.5) */}
                 <IrisCrystalHero bg={bg} onNavigate={(t) => setTab(t as Tab)}>
                   <IrisThoughtDropSection
                     bg={bg}
@@ -1779,6 +1781,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     postQueue={postQueue}
                     handle={mediaKit?.handleName}
                     hideHeading
+                    stage={<IrisBloomStage />}
                   />
                 </IrisCrystalHero>
                 {/* Instagram連携エージェント — つないだあと放置せず、Irisが本人の実投稿を読んで
