@@ -89,38 +89,49 @@ const DRAG_THRESHOLD = 6; // これ未満の移動は「タップ」扱い
 // Iris のヘッダー(ロゴ行＋タブ行)は実測 183px あり、120px ではオーブがタブ行の上に
 // 乗って 1 つ目のタブ(「リールを作る」)を完全に覆っていた(375px 実測)。
 // 画面に実際に出ている固定/追従の帯を測って、その下からを可動域にする。
-const TOP_BAND_SELECTOR = 'header, [data-app-header], [class*="header-sticky"], [class*="sample-banner"]';
-const BOTTOM_BAND_SELECTOR = '[data-bottom-dock], [class*="bottom-dock"], [class*="reelchat-bar"], [class*="chat-dock"]';
+// クラス名で探してはいけない: Prism の下部バーには目印のクラスが無く(実測)、
+// 名前の一覧で探すと「一覧に載っているアプリだけ直る」ことになる。
+// 見た目の条件(画面幅いっぱい・固定/追従・上か下の 1/4 に居る)だけで判定する。
+const BAND_SCAN_LIMIT = 4000; // 走査の上限(重い画面でも固まらせない)
 
-function measureBand(selector: string, side: "top" | "bottom") {
-  if (typeof document === "undefined") return 0;
+type Bands = { top: number; bottom: number; els: HTMLElement[] };
+
+function scanBands(): Bands {
+  const out: Bands = { top: 0, bottom: 0, els: [] };
+  if (typeof document === "undefined") return out;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  let band = 0;
-  document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+  const all = document.body.querySelectorAll<HTMLElement>("*");
+  const n = Math.min(all.length, BAND_SCAN_LIMIT);
+  for (let i = 0; i < n; i++) {
+    const el = all[i];
     const s = getComputedStyle(el);
-    if (s.position !== "fixed" && s.position !== "sticky") return;
-    if (s.display === "none" || s.visibility === "hidden" || Number(s.opacity) === 0) return;
+    if (s.position !== "fixed" && s.position !== "sticky") continue;
+    if (s.display === "none" || s.visibility === "hidden" || Number(s.opacity) === 0) continue;
+    if (s.pointerEvents === "none") continue; // 背景グラデ等の飾りは帯ではない
     const r = el.getBoundingClientRect();
     // 画面幅いっぱいに近い「帯」だけを対象にする(小さなFABは避けなくてよい)
-    if (r.width < vw * 0.6 || r.height < 24) return;
+    if (r.width < vw * 0.6 || r.height < 24 || r.height > vh * 0.5) continue;
     // 上の帯 = 画面の上 1/4 に居るもの。「上端に触れているか」で判定してはいけない:
     // Iris はサンプル帯(上端)に押されてヘッダーが top=60 から始まるため、
     // 上端判定だとヘッダー(＝タブ行)が数えられず素通りしてしまう(実測)。
-    if (side === "top" && r.top < vh * 0.25) band = Math.max(band, r.bottom);
+    if (r.top < vh * 0.25 && r.bottom > 0) { out.top = Math.max(out.top, r.bottom); out.els.push(el); }
     // 下の帯 = 画面の下 1/4 に居るもの(下部ドックの上に入力バーが重なる形も拾う)
-    if (side === "bottom" && r.bottom > vh * 0.75) band = Math.max(band, vh - r.top);
-  });
-  return Math.max(0, Math.round(band));
+    else if (r.bottom > vh * 0.75 && r.top < vh) { out.bottom = Math.max(out.bottom, vh - r.top); out.els.push(el); }
+  }
+  out.top = Math.max(0, Math.round(out.top));
+  out.bottom = Math.max(0, Math.round(out.bottom));
+  return out;
 }
 
 function clampPos(x: number, y: number, bottomClearance = 0) {
   // モバイルは上部=ヘッダー帯(タイトル/タブ行/サンプル帯)を進入禁止に。
   // ドラッグ保存位置が左上に残ってヘッダーの文字やタブに被る事故を構造的に防ぐ(オーナー指示 2026-07-17)。
   const mobile = window.innerWidth < 768;
-  const minY = mobile ? Math.max(120, measureBand(TOP_BAND_SELECTOR, "top") + 8) : EDGE_MARGIN;
+  const bands = mobile ? scanBands() : { top: 0, bottom: 0, els: [] };
+  const minY = mobile ? Math.max(120, bands.top + 8) : EDGE_MARGIN;
   // 下も同じ考え方で実測し、指定された bottomClearance と大きい方を採る。
-  const bottom = Math.max(bottomClearance, mobile ? measureBand(BOTTOM_BAND_SELECTOR, "bottom") + 8 : 0);
+  const bottom = Math.max(bottomClearance, mobile ? bands.bottom + 8 : 0);
   const maxX = Math.max(EDGE_MARGIN, window.innerWidth - DOCK_SIZE - EDGE_MARGIN);
   const maxY = Math.max(minY, window.innerHeight - DOCK_SIZE - EDGE_MARGIN - bottom);
   return { x: Math.min(Math.max(x, EDGE_MARGIN), maxX), y: Math.min(Math.max(y, minY), maxY) };
@@ -192,10 +203,8 @@ export function CoreDock({
   // 変わったら可動域を測り直して被りを防ぐ。ドラッグ中は動かさない。
   useEffect(() => {
     if (typeof ResizeObserver === "undefined") return;
-    const targets = [
-      ...document.querySelectorAll<HTMLElement>(TOP_BAND_SELECTOR),
-      ...document.querySelectorAll<HTMLElement>(BOTTOM_BAND_SELECTOR),
-    ];
+    if (window.innerWidth >= 768) return; // 帯を避けるのはモバイルだけ
+    const targets = scanBands().els;
     if (!targets.length) return;
     const ro = new ResizeObserver(() => {
       if (dragRef.current) return;
