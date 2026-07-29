@@ -9,6 +9,7 @@ import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo } from '../components/Logo';
 import { CONTINUUM_PLANS } from './continuumPlans';
+import ServiceFinder from './ServiceFinder';
 import { VERTICALS } from '../vertical/verticalData';
 
 const COMPANY = {
@@ -173,6 +174,7 @@ export default function CoreSite() {
             <CoreLogo size={36} withWordmark />
           </a>
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
+            <a href="#finder" style={navLink} className="lp-nav-link">自分に合うのは</a>
             <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
             <a href="#vertical" style={navLink} className="lp-nav-link">業界特化</a>
             <a href="/continuum" style={navLink} className="lp-nav-link">Continuum</a>
@@ -189,6 +191,12 @@ export default function CoreSite() {
       {/*  HERO                       */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <HeroVideo />
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  「あなたにはどれ？」3問診断 ＋ 7つの比較  */}
+      {/*  ヒーロー直下に置く。7つを全部読まないと選べない状態をここで終わらせる */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <ServiceFinder />
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  CONNECT (一気通貫 / つながり)  */}
