@@ -2,7 +2,7 @@
 
 最終更新: 2026 年 6 月 4 日 (v3 改定)
 
-株式会社 CORE (以下「当社」) は、CORE Prism / CORE Iris (以下総称して「本サービス」) における
+CORE (設立準備中・運営責任者 井出 直毅。以下「当社」) は、CORE Prism / CORE Iris (以下総称して「本サービス」) における
 個人情報および利用者データの取り扱いについて、以下のとおり定めます。
 
 ## 1. 取得する情報
@@ -111,6 +111,6 @@ CORE Iris は、利用者ご本人の同意のもと **Instagram API (Instagram 
 
 ## 9. 連絡先
 
-- 株式会社 CORE
+- CORE (設立準備中) ／ 運営責任者: 井出 直毅
 - メール: [core.guild.inc@gmail.com](mailto:core.guild.inc@gmail.com)
 - 件名に「プライバシー」と明記してください

@@ -604,7 +604,7 @@ function ProposalSheet() {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             fontSize: 11, color: '#666',
           }}>
-            <span>株式会社 CORE — core-prism-app.vercel.app</span>
+            <span>CORE（設立準備中） — core-prism-app.vercel.app</span>
             <span>{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' })}</span>
           </div>
         </div>
@@ -661,7 +661,7 @@ function Footer() {
         <a href="/terms" style={footerLink}>利用規約</a>
       </div>
       <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
-        © 2026 株式会社 CORE — Music School Edition
+        © 2026 CORE（設立準備中） — Music School Edition
       </p>
     </footer>
   );

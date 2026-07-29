@@ -115,7 +115,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
             className="h-0.5 rounded-full"
             style={{
               width: i === step ? '24px' : '8px',
-              background: i <= step ? '#c9a96e' : 'rgba(255,255,255,0.1)',
+              background: i <= step ? '#c9a96e' : 'var(--border)',
             }}
             animate={{ width: i === step ? '24px' : '8px' }}
             transition={{ duration: 0.3 }}
@@ -134,19 +134,19 @@ export default function OnboardingFlow({ onComplete }: Props) {
             animate={{ opacity: 1, y: 0 }}
           >
             <p className="text-prism text-5xl font-extralight mb-2">CORE</p>
-            <p className="text-sm tracking-widest uppercase mb-8" style={{ color: 'rgba(255,255,255,0.7)' }}>Prism</p>
+            <p className="text-sm tracking-widest uppercase mb-8" style={{ color: 'var(--fg-muted)' }}>Prism</p>
             {presetPack && (
-              <div className="inline-block px-3 py-1 rounded-full mb-6 text-xs" style={{ background:'rgba(201,169,110,0.10)', border:'1px solid rgba(201,169,110,0.25)', color:'#c9a96e' }}>
+              <div className="inline-block px-3 py-1 rounded-full mb-6 text-xs" style={{ background:'rgba(201,169,110,0.10)', border:'1px solid rgba(201,169,110,0.25)', color:'var(--brass-text)' }}>
                 {presetPack.label} 向けに準備中
               </div>
             )}
             <h2 className="text-fg text-2xl font-bold mb-4 leading-relaxed">
               AI 役員 13 名が、<br />あなたの右腕になります。
             </h2>
-            <p className="text-sm font-light leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            <p className="text-sm font-light leading-relaxed mb-6" style={{ color: 'var(--fg-muted)' }}>
               ひとりの社長が、ひとりで抱えなくていい時代へ。
             </p>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <p className="text-xs" style={{ color: 'var(--fg-muted)' }}>
               3日間無料 ・ カード登録なし ・ いつでも解約できます
             </p>
           </motion.div>
@@ -160,14 +160,16 @@ export default function OnboardingFlow({ onComplete }: Props) {
             animate={{ opacity: 1, y: 0 }}
           >
             <h2 className="text-fg text-2xl font-extralight mb-2">あなたのお名前は？</h2>
-            <p className="text-sm mb-8" style={{ color: 'rgba(255,255,255,0.65)' }}>AIがあなたに合わせた対話を行います</p>
+            <p className="text-sm mb-8" style={{ color: 'var(--fg-muted)' }}>AIがあなたに合わせた対話を行います</p>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="例：田中 太郎"
               className="w-full bg-transparent text-fg outline-none border-b pb-3"
-              style={{ borderColor: name ? '#c9a96e' : 'rgba(255,255,255,0.1)', fontSize: 18, minHeight: 44 }}
+              /* 未入力のときの下線は「どこに書くのか」の唯一の手がかり。
+                 薄すぎると入力欄が消えて見えるので --border-strong を使う */
+              style={{ borderColor: name ? '#c9a96e' : 'var(--border-strong)', fontSize: 18, minHeight: 44 }}
               onKeyDown={e => e.key === 'Enter' && goNext()}
               autoFocus
             />
@@ -182,9 +184,9 @@ export default function OnboardingFlow({ onComplete }: Props) {
             animate={{ opacity: 1, y: 0 }}
           >
             <h2 className="text-fg text-2xl font-extralight mb-2 px-2">あなたのお仕事に近いのは？</h2>
-            <p className="text-sm mb-6 leading-relaxed px-2" style={{ color: 'rgba(255,255,255,0.65)' }}>
+            <p className="text-sm mb-6 leading-relaxed px-2" style={{ color: 'var(--fg-muted)' }}>
               近いものを選ぶと、AI がその業界の言葉で提案します。<br />
-              <span style={{ color: '#c9a96e' }}>ぴったり無くても大丈夫</span> — あとからいつでも変えられます。
+              <span style={{ color: 'var(--brass-text)' }}>ぴったり無くても大丈夫</span> — あとからいつでも変えられます。
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[56vh] overflow-y-auto pr-1 pb-2">
               {INDUSTRY_LIST.map(ind => {
@@ -195,8 +197,11 @@ export default function OnboardingFlow({ onComplete }: Props) {
                     onClick={() => { setIndustry(ind.id); setNoIndustry(false); }}
                     className="text-left p-4 rounded-2xl transition-all duration-200"
                     style={{
-                      background: selected ? 'rgba(201,169,110,0.12)' : 'rgba(255,255,255,0.035)',
-                      boxShadow: selected ? '0 8px 24px -10px rgba(201,169,110,0.45)' : '0 2px 12px -6px rgba(0,0,0,0.4)',
+                      /* 面と枠はテーマトークンで。白の半透明を直に書くと明るいテーマで
+                         カードが背景に溶けて「選ぶものが見えない」状態になる */
+                      background: selected ? 'rgba(201,169,110,0.16)' : 'var(--surface)',
+                      border: `1px solid ${selected ? '#c9a96e' : 'var(--border-2)'}`,
+                      boxShadow: selected ? '0 8px 24px -10px rgba(201,169,110,0.45)' : 'var(--cp-elev-1)',
                       minHeight: 76,
                     }}
                     whileTap={{ scale: 0.97 }}
@@ -205,7 +210,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
                         style={{
                           background: selected ? '#c9a96e' : 'rgba(201,169,110,0.14)',
-                          color: selected ? '#0a0a0f' : '#c9a96e',
+                          color: selected ? '#0a0a0f' : 'var(--brass-text)',
                         }}>
                         {selected ? (
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -213,7 +218,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
                       </span>
                       <span className="text-fg text-sm font-medium">{ind.label}</span>
                     </div>
-                    <p className="text-[11px] leading-snug" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                    <p className="text-[11px] leading-snug" style={{ color: 'var(--fg-muted)' }}>
                       {ind.shortDescription}
                     </p>
                   </motion.button>
@@ -226,8 +231,9 @@ export default function OnboardingFlow({ onComplete }: Props) {
                 onClick={() => { setIndustry(''); setNoIndustry(true); }}
                 className="text-left p-4 rounded-2xl transition-all duration-200"
                 style={{
-                  background: noIndustry ? 'rgba(201,169,110,0.12)' : 'rgba(255,255,255,0.035)',
-                  boxShadow: noIndustry ? '0 8px 24px -10px rgba(201,169,110,0.45)' : '0 2px 12px -6px rgba(0,0,0,0.4)',
+                  background: noIndustry ? 'rgba(201,169,110,0.16)' : 'var(--surface)',
+                  border: `1px solid ${noIndustry ? '#c9a96e' : 'var(--border-2)'}`,
+                  boxShadow: noIndustry ? '0 8px 24px -10px rgba(201,169,110,0.45)' : 'var(--cp-elev-1)',
                   minHeight: 76,
                 }}
                 whileTap={{ scale: 0.97 }}
@@ -236,7 +242,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
                     style={{
                       background: noIndustry ? '#c9a96e' : 'rgba(201,169,110,0.14)',
-                      color: noIndustry ? '#0a0a0f' : '#c9a96e',
+                      color: noIndustry ? '#0a0a0f' : 'var(--brass-text)',
                     }}>
                     {noIndustry ? (
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -244,7 +250,7 @@ export default function OnboardingFlow({ onComplete }: Props) {
                   </span>
                   <span className="text-fg text-sm font-medium">その他・まだ決めていない</span>
                 </div>
-                <p className="text-[11px] leading-snug" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                <p className="text-[11px] leading-snug" style={{ color: 'var(--fg-muted)' }}>
                   この中に無い業種でもOK。まずは使ってみて、あとで選べます
                 </p>
               </motion.button>
@@ -259,17 +265,26 @@ export default function OnboardingFlow({ onComplete }: Props) {
       className="fixed bottom-0 left-0 right-0 z-40"
       style={{
         padding: '12px 20px calc(12px + env(safe-area-inset-bottom))',
-        background: 'linear-gradient(180deg, rgba(10,10,15,0), rgba(10,10,15,0.88) 34%)',
+        /* 下地の色に溶けるグラデーション。決め打ちの黒だと明るいテーマで
+           画面の下だけ黒い板が乗ったように見える */
+        background: 'var(--scrim-bottom)',
         backdropFilter: 'blur(14px)',
         WebkitBackdropFilter: 'blur(14px)',
       }}
     >
+      {/* 進めない理由を必ず言葉にする。黙って灰色のボタンが置いてあるだけだと、
+          「押したのに何も起きない = 壊れている」と受け取られる。 */}
+      {!canNext() && (
+        <p className="mx-auto mb-2 max-w-md text-center text-xs" style={{ color: 'var(--fg-muted)' }}>
+          {isNameStep ? 'お名前を入れると次へ進めます' : '近いものを1つ選ぶと次へ進めます'}
+        </p>
+      )}
       <div className="mx-auto flex max-w-md items-center gap-3">
         {step > 0 && (
           <button
             onClick={() => setStep(s => s - 1)}
             className="flex items-center justify-center rounded-full text-sm transition-colors hover:text-fg"
-            style={{ color: 'rgba(255,255,255,0.7)', minWidth: 44, minHeight: 52 }}
+            style={{ color: 'var(--fg-muted)', minWidth: 44, minHeight: 52 }}
             aria-label="戻る"
           >
             ←
@@ -281,8 +296,10 @@ export default function OnboardingFlow({ onComplete }: Props) {
           className="flex-1 rounded-full text-base font-semibold transition-all duration-200"
           style={{
             minHeight: 52,
-            background: canNext() ? 'linear-gradient(135deg, #c9a96e, #a07840)' : 'rgba(255,255,255,0.06)',
-            color: canNext() ? '#0a0a0f' : 'rgba(255,255,255,0.35)',
+            background: canNext() ? 'linear-gradient(135deg, #c9a96e, #a07840)' : 'var(--surface-3)',
+            border: canNext() ? 'none' : '1px solid var(--border)',
+            /* 待機中でも「ここにボタンがある」ことは見えていないといけない */
+            color: canNext() ? '#0a0a0f' : 'var(--fg-muted)',
           }}
           whileTap={canNext() ? { scale: 0.98 } : {}}
         >

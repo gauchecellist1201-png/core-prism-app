@@ -27,6 +27,23 @@ export default function SampleModeBanner() {
     try { return localStorage.getItem(COLLAPSED_KEY) === '1'; } catch { return false; }
   });
 
+  // ★2026-07-29 375px で文言が「これは サンプル モー…」と切れていた問題の根治。
+  //   帯は1行固定で、右の切替ボタンが縮まないため、狭い画面では本文だけが潰れていた。
+  //   → 画面幅で言い回しを短いものに差し替える（文字を小さくして読めなくする、はしない）。
+  const [narrow, setNarrow] = useState<boolean>(() => {
+    try { return window.innerWidth < 480; } catch { return false; }
+  });
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth < 480);
+    onResize();
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, []);
+
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key && (e.key.includes('demo') || e.key.includes('Demo'))) {
@@ -126,7 +143,9 @@ export default function SampleModeBanner() {
         <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {collapsed
             ? 'サンプルモード'
-            : 'これは サンプル モード です — 表示は架空のデモデータ'}
+            : narrow
+              ? 'サンプル表示中（架空のデータ）'
+              : 'これはサンプルモードです — 表示は架空のデモデータ'}
         </span>
         {!collapsed && (
           <button
@@ -144,7 +163,7 @@ export default function SampleModeBanner() {
               flexShrink: 0,
             }}
           >
-            自分のアカウントに切替 <ArrowRight size={11} />
+            {narrow ? '自分の画面へ' : '自分のアカウントに切替'} <ArrowRight size={11} />
           </button>
         )}
         <button

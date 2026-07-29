@@ -110,6 +110,19 @@
     --core-brass-1: #c9a96e;
     --core-brass-2: #e8c97d;
     --core-brass-3: #a07840;
+    /* 金を「文字」に使うときの色。装飾用の #c9a96e は明るい面 (--bg #F6F4EE) に
+       対して 2.04:1 しか出ず、読める文字にならない。文字にはこちらを使う
+       (light 5.8:1 / dark 11.6:1 実測)。面の飾り・枠線は従来の brass-1 のままでよい。 */
+    --brass-text: #7A5A26;
+    /* 画面下に固定したバーの下地。透明→下地色へ溶ける幕。
+       rgba を明示するのは、gradient の "transparent" が Safari で
+       透明な黒として補間され、灰色のにじみが出るため。 */
+    --scrim-bottom: linear-gradient(180deg, rgba(246,244,238,0), rgba(246,244,238,0.92) 34%);
+  }
+
+  [data-theme="dark"] {
+    --brass-text: #e8c97d;
+    --scrim-bottom: linear-gradient(180deg, rgba(14,14,18,0), rgba(14,14,18,0.92) 34%);
   }
 
   * {

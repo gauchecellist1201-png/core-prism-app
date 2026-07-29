@@ -159,7 +159,7 @@ export default function StudioSite() {
         <div className="st-serif" style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', color: C.ink, marginBottom: 8 }}>CORE STUDIO</div>
         <a href={`mailto:${STUDIO.email}`} style={{ fontSize: 12.5, color: C.mute, textDecoration: 'underline' }}>{STUDIO.email}</a>
         <div style={{ fontSize: 11.5, color: C.mute, marginTop: 10, letterSpacing: '0.04em', lineHeight: 1.9 }}>
-          CORE (2027年 株式会社CORE として法人登記予定)<br />代表 井出直毅
+          CORE（設立準備中）<br />代表 井出直毅
         </div>
       </footer>
     </div>

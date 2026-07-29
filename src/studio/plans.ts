@@ -346,7 +346,7 @@ export const COMPANY = {
   repName: '井出 直毅',
   repTitle: '代表',
   profile: [
-    { label: '名称', value: 'CORE (2027年 株式会社CORE として法人登記予定)' },
+    { label: '名称', value: 'CORE（設立準備中）' },
     { label: '代表', value: '井出 直毅' },
     { label: '事業内容', value: 'Webサイト制作・システム受託開発・AIプロダクトの開発運営 (Prism, Iris, Resonance, Crystal, Guild, Lume)' },
     { label: '連絡先', value: 'core.guild.inc@gmail.com' },
