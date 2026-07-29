@@ -248,10 +248,12 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
 
         {/* Tabs */}
         {/* iPhone 幅 (375px) では 4 つ並べると入りきらないので、
-            折り返さず横スクロールさせる。折り返すと「新 / し / く / 作 / る」と
-            1 文字ずつ縦積みになり読めなくなる。 */}
+            折り返さず横スクロールさせる。折り返すと「新 / し / く / 作 る」と
+            1 文字ずつ縦積みになり読めなくなる。
+            flex-shrink-0 も必須。無いと縦に潰されてタブの下半分が
+            本文の下に隠れる (index.css がタブに min-height:44px を効かせるため)。 */}
         <div
-          className="flex gap-1 px-5 pt-3 overflow-x-auto"
+          className="flex gap-1 px-5 pt-3 overflow-x-auto flex-shrink-0"
           style={{ borderBottom: '1px solid var(--border)', flexWrap: 'nowrap', scrollbarWidth: 'none' }}
         >
           {([
