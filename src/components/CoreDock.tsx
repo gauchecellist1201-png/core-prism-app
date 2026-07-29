@@ -271,19 +271,33 @@ export function CoreDock({
   useEffect(() => {
     if (typeof MutationObserver === "undefined") return;
     let t: ReturnType<typeof setTimeout> | null = null;
-    const check = () => setHidden(isCoveredByModal(btnRef.current));
+    let last = 0;
+    const check = () => {
+      last = Date.now();
+      setHidden(isCoveredByModal(btnRef.current));
+    };
+    // ★ここは「間引き」であって「先送り」にしてはいけない(2026-07-29 事故)。
+    //   毎回 clearTimeout する書き方(デバウンス)にしたところ、Prism は画面が
+    //   絶えず動いている(件数の更新・アニメーション)ため点検が永久に先送りされ、
+    //   一度隠れたドックが二度と戻らなかった＝本番でCOREの行き来が消えた。
+    //   予約済みなら何もしない・必ず 200ms 以内に1回は走る、に変更。
     const schedule = () => {
-      if (t) clearTimeout(t);
-      t = setTimeout(check, 180);
+      if (t) return;
+      t = setTimeout(() => {
+        t = null;
+        check();
+      }, Math.max(0, 200 - (Date.now() - last)));
     };
     check();
     const mo = new MutationObserver(schedule);
     mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
     window.addEventListener("resize", schedule);
+    window.addEventListener("scroll", schedule, { passive: true });
     return () => {
       if (t) clearTimeout(t);
       mo.disconnect();
       window.removeEventListener("resize", schedule);
+      window.removeEventListener("scroll", schedule);
     };
   }, []);
 
