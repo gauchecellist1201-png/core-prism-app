@@ -3,7 +3,7 @@
 // 「すべての時代の、核となるものを。」
 // 配置: /corp ルート、noindex で検索エンジンには載せない
 // ============================================================
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
@@ -45,6 +45,99 @@ const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"EB Garamond", "Cormorant Garamond", "Noto Serif JP", serif';
 const FONT_SANS = '"Noto Sans JP", "Inter", "游ゴシック", sans-serif';
 
+// ============================================================
+//  useIsMobile — iPhone幅かどうか（縦長すぎるLPをモバイルだけ畳むために使う）
+//  デスクトップの見え方は一切変えない。
+// ============================================================
+function useIsMobile(query = '(max-width: 640px)') {
+  const [is, setIs] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = () => setIs(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [query]);
+  return is;
+}
+
+// ============================================================
+//  MobileJump — iPhoneでは上部ナビが全部隠れていて、
+//  32,000px を指でこすらないと目的地に着けなかった。その解決。
+//  横スクロールの章チップ。いま見ている章が光る。
+// ============================================================
+const JUMP_ITEMS = [
+  { href: '#finder', label: '自分に合うのは' },
+  { href: '#products', label: 'プロダクト' },
+  { href: '#vertical', label: '業界特化' },
+  { href: '#platform', label: '料金' },
+  { href: '#connect', label: 'つながり' },
+  { href: '#journey', label: '歩み' },
+  { href: '#about', label: '会社概要' },
+  { href: '#contact', label: 'お問い合わせ' },
+];
+
+function MobileJump() {
+  const [active, setActive] = useState<string>('');
+  const barRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ids = JUMP_ITEMS.map(i => i.href.slice(1));
+    const els = ids
+      .map(id => document.getElementById(id))
+      .filter((e): e is HTMLElement => !!e);
+    if (!els.length) return;
+    const io = new IntersectionObserver(
+      entries => {
+        const hit = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (hit) setActive('#' + hit.target.id);
+      },
+      { rootMargin: '-45% 0px -45% 0px', threshold: [0, 0.01, 0.5] }
+    );
+    els.forEach(e => io.observe(e));
+    return () => io.disconnect();
+  }, []);
+
+  // いま光っているチップを、チップバーの中でも見えるところへ寄せる
+  useEffect(() => {
+    if (!active || !barRef.current) return;
+    const chip = barRef.current.querySelector<HTMLElement>(`a[href="${active}"]`);
+    if (chip) {
+      const bar = barRef.current;
+      const target = chip.offsetLeft - bar.clientWidth / 2 + chip.clientWidth / 2;
+      bar.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+    }
+  }, [active]);
+
+  return (
+    <div className="lp-jump" ref={barRef} aria-label="ページ内の移動">
+      {JUMP_ITEMS.map(i => (
+        <a key={i.href} href={i.href} className={'lp-jump-chip' + (active === i.href ? ' is-on' : '')}>
+          {i.label}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
+//  MobileFold — モバイルだけ折りたたむ。デスクトップはそのまま出す。
+//  「読まなくても困らないが、無いと不信になる」情報（会社概要など）に使う。
+// ============================================================
+function MobileFold({ summary, children }: { summary: string; children: ReactNode }) {
+  const isMobile = useIsMobile();
+  if (!isMobile) return <>{children}</>;
+  return (
+    <details className="lp-fold">
+      <summary>{summary}</summary>
+      <div className="lp-fold-body">{children}</div>
+    </details>
+  );
+}
 
 export default function CoreSite() {
   const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
@@ -185,6 +278,8 @@ export default function CoreSite() {
             <a href="#contact" style={ctaSmall}>お問い合わせ</a>
           </nav>
         </div>
+        {/* iPhone用の章ジャンプ（デスクトップでは非表示） */}
+        <MobileJump />
       </header>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -395,6 +490,7 @@ export default function CoreSite() {
             accentColor="#a78bfa"
             accentGradient="linear-gradient(135deg,#ff5757,#ff9842,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)"
             url="/?lp=1"
+            defaultOpen
           />
 
           {/* IRIS — Instagram を AI で */}
@@ -607,7 +703,7 @@ export default function CoreSite() {
               モックアップではなく、いま本番で動いている画面。<br />気になった一枚から、そのまま触れられます。
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          <div className="lp-shot-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             {[
               { img: '/lp/shot-prism.jpg', name: 'Prism', cap: 'あなた専属のAI経営参謀', url: '/' },
               { img: '/lp/shot-iris.jpg', name: 'Iris', cap: 'インフルエンサーの相棒AI', url: '/iris?lp=1' },
@@ -742,7 +838,7 @@ export default function CoreSite() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+          <div className="lp-vertical-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
             {VERTICALS.map(v => {
               const Logo = v.key === 'ultima' ? UltimaLogo : v.key === 'anima' ? AnimaLogo : VeritasLogo;
               return (
@@ -1522,6 +1618,7 @@ export default function CoreSite() {
             </div>
           </div>
 
+          <MobileFold summary="会社情報（設立・所在地・事業内容）">
           <dl
             style={{
               display: 'grid',
@@ -1540,6 +1637,7 @@ export default function CoreSite() {
             <InfoRow label="事業内容"   subLabel="Business"     value="エージェントAIを中心とした SaaS の開発・運営" />
             <InfoRow label="提供サービス" subLabel="Products"   value="CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）／ Crystal（AI コンシェルジュ・接客サイト向け）／ CORE Pulse（からだ見守りAI）" isLast />
           </dl>
+          </MobileFold>
         </div>
       </section>
 
@@ -1911,6 +2009,7 @@ function FeatureProduct({
   accentGradient,
   url,
   reversed,
+  defaultOpen,
 }: {
   brand: 'prism' | 'iris' | 'guild' | 'resonance' | 'lume' | 'crystal' | 'pulse';
   badge: string;
@@ -1922,6 +2021,8 @@ function FeatureProduct({
   accentGradient: string;
   url: string;
   reversed?: boolean;
+  /** モバイルで最初から開いておくか（先頭のPrismだけ true） */
+  defaultOpen?: boolean;
 }) {
   const Logo =
     brand === 'iris' ? IrisLogo :
@@ -1940,13 +2041,18 @@ function FeatureProduct({
     brand === 'pulse' ? 'CORE Pulse' :
     'CORE Prism';
 
+  // モバイルでは7枚を畳む。デスクトップは常に開いたまま（見え方を変えない）。
+  const isMobile = useIsMobile();
+  const [open, setOpen] = useState(!!defaultOpen);
+  const expanded = !isMobile || open;
+
   return (
     <motion.div
       initial={{ y: 24 }}
       whileInView={{ y: 0 }}
       viewport={{ once: true, margin: '-100px' }}
       transition={{ duration: 0.7 }}
-      className="lp-feature-product"
+      className={'lp-feature-product' + (isMobile ? ' is-mobile' : '') + (expanded ? ' is-open' : '')}
       style={{
         position: 'relative',
         marginBottom: '2rem',
@@ -1979,7 +2085,38 @@ function FeatureProduct({
         }}
       />
 
+      {/* モバイルだけの見出し行。タップで開閉する（閉じている時はこれだけが見える） */}
+      {isMobile && (
+        <button
+          type="button"
+          className="lp-fp-head"
+          aria-expanded={expanded}
+          onClick={() => setOpen(o => !o)}
+        >
+          <span className="lp-fp-head-logo" style={{ boxShadow: `0 0 18px ${accentColor}33` }}>
+            <Logo size={30} withWordmark={false} />
+          </span>
+          <span className="lp-fp-head-txt">
+            <span
+              className="lp-fp-head-brand"
+              style={{
+                background: accentGradient,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              {brand.toUpperCase()}
+            </span>
+            <span className="lp-fp-head-tag">{tagline}</span>
+          </span>
+          <span className="lp-fp-head-mark" style={{ color: accentColor }} aria-hidden>
+            {expanded ? '−' : '＋'}
+          </span>
+        </button>
+      )}
+
       {/* ロゴ + 視覚要素 */}
+      {!isMobile && (
       <div
         style={{
           display: 'flex',
@@ -2028,8 +2165,10 @@ function FeatureProduct({
           {productName}
         </p>
       </div>
+      )}
 
       {/* テキストコンテンツ */}
+      {expanded && (
       <div style={{ position: 'relative', zIndex: 2, maxWidth: 680, width: '100%', margin: '0 auto' }}>
         <span
           style={{
@@ -2049,6 +2188,7 @@ function FeatureProduct({
           {badge}
         </span>
         <h3
+          className="lp-fp-title"
           style={{
             fontFamily: FONT_SERIF_JA,
             fontSize: 'clamp(1.85rem, 3.4vw, 2.5rem)',
@@ -2061,6 +2201,7 @@ function FeatureProduct({
           {tagline}
         </h3>
         <p
+          className="lp-fp-title-en"
           style={{
             fontFamily: FONT_SERIF_EN,
             fontSize: '0.9rem',
@@ -2139,6 +2280,7 @@ function FeatureProduct({
           {productName} を見る →
         </a>
       </div>
+      )}
     </motion.div>
   );
 }

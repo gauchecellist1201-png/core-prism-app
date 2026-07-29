@@ -3031,3 +3031,225 @@ body[data-prism-chat-dock] .cp-main-scroll {
 .iris-main {
   padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px)) !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   /corp を iPhone で読めるようにするための圧縮
+   32,000px（39画面分）を指でこすらせない。デスクトップは一切変えない。
+   ════════════════════════════════════════════════════════════ */
+
+/* ── 章ジャンプのチップ（モバイルのみ。上部ナビが隠れる幅で出す） ── */
+.lp-jump { display: none; }
+
+@media (max-width: 768px) {
+  .lp-jump {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 0.9rem 0.55rem;
+    border-top: 1px solid rgba(201, 169, 110, 0.1);
+  }
+  .lp-jump::-webkit-scrollbar { display: none; }
+
+  .lp-jump-chip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 0 0.8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(201, 169, 110, 0.28);
+    background: rgba(201, 169, 110, 0.06);
+    color: rgba(240, 233, 216, 0.72);
+    font-size: 0.74rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.25s, color 0.25s, border-color 0.25s;
+  }
+  .lp-jump-chip.is-on {
+    background: rgba(201, 169, 110, 0.2);
+    border-color: rgba(201, 169, 110, 0.62);
+    color: #f1e6ce;
+    font-weight: 700;
+  }
+
+  /* チップバーのぶんヘッダーが高くなるので、アンカー着地点をずらす */
+  #top, #finder, #products, #vertical, #platform,
+  #connect, #journey, #about, #contact, #continuum, #executive, #who {
+    scroll-margin-top: 118px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  /* ── 7プロダクト: 縦積み7,700px → タップで開く畳み表示 ── */
+  .lp-feature-product.is-mobile {
+    padding: 0 !important;
+    margin-bottom: 0.6rem !important;
+    gap: 0 !important;
+    border-radius: 16px !important;
+  }
+  .lp-feature-product.is-mobile.is-open {
+    padding: 0 0 1.25rem !important;
+  }
+
+  .lp-fp-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 62px;
+    padding: 0.7rem 0.9rem;
+    background: none;
+    border: none;
+    text-align: left;
+    color: inherit;
+    position: relative;
+    z-index: 2;
+  }
+  .lp-fp-head-logo {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(201, 169, 110, 0.22);
+  }
+  .lp-fp-head-txt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  .lp-fp-head-brand {
+    font-family: "Cinzel", serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    line-height: 1.2;
+  }
+  .lp-fp-head-tag {
+    font-family: "Noto Serif JP", serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: rgba(240, 233, 216, 0.92);
+    line-height: 1.45;
+    margin-top: 2px;
+  }
+  .lp-fp-head-mark { flex: none; font-size: 1.15rem; line-height: 1; width: 22px; text-align: center; }
+
+  /* 開いた中身は左右の余白をヘッダーと揃える */
+  .lp-feature-product.is-mobile > div[style*="max-width: 680px"],
+  .lp-feature-product.is-mobile > div[style*="maxWidth"] { padding: 0 0.9rem; }
+
+  /* 本文の行間を少しだけ詰める（読みやすさは保つ） */
+  .lp-feature-product.is-mobile p { line-height: 1.9 !important; }
+
+  /* ── 実物スクショ6枚: 縦積み → 横スワイプ ── */
+  .lp-shot-grid {
+    display: flex !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0.7rem !important;
+    margin: 0 -1rem;
+    padding: 0 1rem 0.6rem;
+  }
+  .lp-shot-grid::-webkit-scrollbar { display: none; }
+  .lp-shot-grid > a { flex: 0 0 60%; scroll-snap-align: center; }
+
+  /* ── 章タイトルまわりの余白を詰める ── */
+  .lp-section-pad { padding: 3.2rem 1rem !important; }
+}
+
+/* ── 横スワイプで畳む棚（料金・使い方・つながり） ──
+   縦に積むと1棚で2,000px超になるものを、iPhoneでは横スワイプに。
+   次のカードが少し見えている幅にして「横に続く」ことを分からせる。 */
+@media (max-width: 640px) {
+  .lp-platform-grid,
+  .lp-usecase-grid,
+  .lp-vertical-grid,
+  .lp-flow-grid {
+    display: flex !important;
+    grid-template-columns: none !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0.7rem !important;
+    margin: 0 -1rem;
+    padding: 0 1rem 0.6rem;
+    align-items: stretch;
+  }
+  .lp-platform-grid::-webkit-scrollbar,
+  .lp-usecase-grid::-webkit-scrollbar,
+  .lp-vertical-grid::-webkit-scrollbar,
+  .lp-flow-grid::-webkit-scrollbar { display: none; }
+
+  .lp-platform-grid > *,
+  .lp-usecase-grid > *,
+  .lp-vertical-grid > *,
+  .lp-flow-grid > * {
+    flex: 0 0 82%;
+    scroll-snap-align: center;
+    margin-bottom: 0 !important;
+  }
+}
+
+/* ── モバイルだけの折りたたみ（会社概要など） ── */
+@media (max-width: 640px) {
+  .lp-fold {
+    border: 1px solid rgba(201, 169, 110, 0.24);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.025);
+    overflow: hidden;
+  }
+  .lp-fold > summary {
+    list-style: none;
+    cursor: pointer;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    font-family: "Noto Serif JP", serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: rgba(240, 233, 216, 0.9);
+  }
+  .lp-fold > summary::-webkit-details-marker { display: none; }
+  .lp-fold > summary::after {
+    content: "＋";
+    color: #c9a24b;
+    font-size: 1.05rem;
+    margin-left: 0.75rem;
+  }
+  .lp-fold[open] > summary::after { content: "−"; }
+  .lp-fold[open] > summary { border-bottom: 1px solid rgba(201, 169, 110, 0.18); }
+  .lp-fold-body > dl { border: none !important; border-radius: 0 !important; background: none !important; }
+}
+
+/* ── iPhone向けの詰め（見出しが画面の半分を食っていた） ── */
+@media (max-width: 640px) {
+  .lp-section-pad h2 {
+    font-size: 1.62rem !important;
+    line-height: 1.5 !important;
+    margin-bottom: 0.8rem !important;
+  }
+  /* 章見出しブロックの下余白（インラインで 3〜4.5rem 指定されているもの） */
+  .lp-section-pad [style*="margin-bottom: 4.5rem"],
+  .lp-section-pad [style*="margin-bottom: 3.5rem"],
+  .lp-section-pad [style*="margin-bottom: 3rem"] {
+    margin-bottom: 1.6rem !important;
+  }
+
+  /* 折りたたみ見出しに出している名前とコピーを、開いた中身で繰り返さない */
+  .lp-feature-product.is-mobile .lp-fp-title,
+  .lp-feature-product.is-mobile .lp-fp-title-en { display: none; }
+
+  /* 「歩み」の項目が opacity:0 のまま残り、黒い空白帯になることがある。
+     モバイルでは出現アニメを使わず、必ず見える状態にする。 */
+  #journey li {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
