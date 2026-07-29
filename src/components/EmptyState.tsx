@@ -1,32 +1,11 @@
 import { motion } from 'framer-motion';
-import {
-  Users, FolderKanban, Handshake, Calendar, Files, BarChart2, Receipt,
-  CheckSquare, Image as ImageIcon, Compass, BookOpen, FolderOpen, Camera,
-  Sparkles,
-} from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
-
-/**
- * 空状態アイコン登録簿。StudioIntro / QuickActions と同じブランド・ライン・アイコン言語に揃え、
- * OS 標準のカラー絵文字を一掃する (no-cheap-emoji 恒久ルール)。
- * 各画面は icon="👥" → iconKey="people" の 1 語差し替えだけでブランド・アイコンが付く。
- */
-const EMPTY_ICONS: Record<string, LucideIcon> = {
-  people: Users,
-  crm: FolderKanban,
-  deals: Handshake,
-  calendar: Calendar,
-  briefing: Files,
-  benchmark: BarChart2,
-  invoice: Receipt,
-  tasks: CheckSquare,
-  image: ImageIcon,
-  decision: Compass,
-  knowledge: BookOpen,
-  folder: FolderOpen,
-  expense: Camera,
-};
+// 空っぽ画面のアイコンも、タイル・画面上部の説明とまったく同じ台帳から引く
+// (lib/featureIcons.ts)。「まだ商談がありません」の握手マークと、
+// QuickActions の商談タイルが必ず同じ絵・同じ色になる。
+import { resolveFeatureIcon } from '../lib/featureIcons';
 
 interface Props {
   /** 大きな emoji (no-cheap-emoji 移行中の後方互換)。iconKey があればそちら優先 */
@@ -70,7 +49,10 @@ export default function EmptyState({
   preview,
   maxWidth = 420,
 }: Props) {
-  const ResolvedIcon: LucideIcon | undefined = iconKey ? EMPTY_ICONS[iconKey] : undefined;
+  const registered = resolveFeatureIcon(iconKey);
+  const ResolvedIcon: LucideIcon | undefined = registered?.Icon;
+  // その機能の色。空っぽ画面は面積が広いので、地は淡く・線とアイコンで色を出す
+  const iconColor = registered?.color || accent;
 
   const handleSample = () => {
     try {
@@ -97,10 +79,13 @@ export default function EmptyState({
           style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 72, height: 72, borderRadius: 18, margin: '0 auto',
-            background: `${accent}1A`, border: `1px solid ${accent}3A`,
+            // タイル・画面上部の説明と同じ「濃い色の四角 + 白いアイコン」。
+            // 明るいテーマでも暗いテーマでも必ず見える (文字コントラスト恒久ルール)
+            background: `linear-gradient(135deg, ${iconColor}, ${iconColor}cc)`,
+            boxShadow: `0 8px 20px ${iconColor}44, inset 0 1px 0 rgba(255,255,255,0.18)`,
           }}
         >
-          <ResolvedIcon size={34} color={accent} strokeWidth={1.8} />
+          <ResolvedIcon size={34} color="#fff" strokeWidth={1.9} />
         </div>
       ) : (
         <div className="cp-empty-pro-icon" aria-hidden>{icon}</div>

@@ -1,49 +1,14 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import {
-  Lightbulb, Mic, Film, MailOpen, BookOpen, FileText, Quote, Palette,
-  Handshake, MessagesSquare, Send, Image as ImageIcon, Radio, Receipt,
-  ScrollText, BarChart3, Camera, Files, FolderKanban,
-  Users, Sword, Target, Bot, CheckSquare, Crown, Calendar, HeartPulse,
-  Sun, Sparkles, BarChart2, Zap, Search, Star, Link2, Calculator,
+  BarChart3, Users, Sun, Sparkles, Zap, Search, Star,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Persona } from '../types/identity';
 import { tactileTap, triggerHaptic, playClick } from '../lib/haptic';
-
-const QUICK_ICON_MAP: Record<string, { Icon: LucideIcon; color: string }> = {
-  brief:        { Icon: Lightbulb,     color: '#F59E0B' },
-  voice:        { Icon: Mic,           color: '#FF5C9C' },
-  youtube:      { Icon: Film,          color: '#FF0033' },
-  shadow:       { Icon: MailOpen,      color: '#A78BFA' },
-  kb:           { Icon: BookOpen,      color: '#5BA8FF' },
-  note:         { Icon: FileText,      color: '#5BA8FF' },
-  minutes:      { Icon: Quote,         color: '#9088A8' },
-  slides:       { Icon: Palette,       color: '#C084FC' },
-  nego:         { Icon: Handshake,     color: '#FFA94D' },
-  decision:     { Icon: MessagesSquare,color: '#A78BFA' },
-  email:        { Icon: MailOpen,      color: '#A78BFA' },
-  post:         { Icon: Send,          color: '#FF6FB5' },
-  image:        { Icon: ImageIcon,     color: '#C084FC' },
-  engine:       { Icon: Radio,         color: '#4ADE80' },
-  invoice:      { Icon: Receipt,       color: '#5BA8FF' },
-  sales:        { Icon: ScrollText,    color: '#10B981' },
-  pnl:          { Icon: BarChart3,     color: '#10B981' },
-  'fin-consult':{ Icon: Calculator,    color: '#10B981' },
-  expense:      { Icon: Camera,        color: '#FFA94D' },
-  benchmark:    { Icon: BarChart2,     color: '#5BA8FF' },
-  crm:          { Icon: FolderKanban,  color: '#FFA94D' },
-  documents:    { Icon: Files,         color: '#9CA3AF' },
-  people:       { Icon: Users,         color: '#FF6FB5' },
-  team:         { Icon: Sword,         color: '#9088A8' },
-  'sales-agent':{ Icon: Target,        color: '#10B981' },
-  'saas-agent': { Icon: Bot,           color: '#A78BFA' },
-  integrations: { Icon: Link2,         color: '#5BA8FF' },
-  'tasks-hub':  { Icon: CheckSquare,   color: '#4ADE80' },
-  premium:      { Icon: Crown,         color: '#FACC15' },
-  meet:         { Icon: Calendar,      color: '#5BA8FF' },
-  health:       { Icon: HeartPulse,    color: '#F472B6' },
-};
+// 機能アイコンは 1 か所の台帳から引く。
+// (同じ機能が画面ごとに違う絵・違う色で出るのを止めるため → lib/featureIcons.ts)
+import { resolveFeatureIcon } from '../lib/featureIcons';
 
 // ── カテゴリは 4 つだけ。迷子をなくす ───────────────────────────
 type CatName = '今すぐ' | 'つくる' | '商い' | 'つながる';
@@ -147,7 +112,7 @@ function Tile({
 }: {
   a: Action; persona: Persona; big?: boolean; onTap: (id: string) => void;
 }) {
-  const map = QUICK_ICON_MAP[a.id];
+  const map = resolveFeatureIcon(a.id);
   const Icon = map?.Icon;
   const color = map?.color || persona.accentColor;
   const iconBox = big ? 46 : 38;

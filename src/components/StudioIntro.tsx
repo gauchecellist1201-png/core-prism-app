@@ -1,48 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  X, Users, FolderKanban, Compass, BarChart3, Megaphone, Film,
-  Clapperboard, Radio, Target, Scale, Receipt, BarChart2, CheckSquare,
-  BookOpen, Quote, Calendar, Files, Presentation, MailOpen, Calculator,
-  Bot, Camera, Image as ImageIcon, Mic, Send, Link2,
-} from 'lucide-react';
+import { X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-
-/**
- * 各スタジオ intro 用ブランド・ライン・アイコン登録簿。
- * 関連機能は QuickActions の QUICK_ICON_MAP と同じアイコン言語に揃え、
- * OS 標準のカラー絵文字を一掃する (no-cheap-emoji 恒久ルール)。
- */
-const STUDIO_ICONS: Record<string, LucideIcon> = {
-  people: Users,
-  crm: FolderKanban,
-  ceo: Compass,
-  pnl: BarChart3,
-  influencer: Megaphone,
-  youtube: Film,
-  video: Clapperboard,
-  content: Radio,
-  strategy: Target,
-  legal: Scale,
-  finance: BarChart3,
-  invoice: Receipt,
-  benchmark: BarChart2,
-  team: Users,
-  tasks: CheckSquare,
-  knowledge: BookOpen,
-  minutes: Quote,
-  meeting: Calendar,
-  document: Files,
-  slides: Presentation,
-  email: MailOpen,
-  finConsult: Calculator,
-  saas: Bot,
-  expense: Camera,
-  image: ImageIcon,
-  voice: Mic,
-  autopost: Send,
-  integrations: Link2,
-};
+// アイコンと色は 1 か所の台帳から引く。
+// QuickActions のタイルとまったく同じ絵・同じ色になり、
+// 「タイルで押した機能」と「開いた画面の上」が一目でつながる。
+import { resolveFeatureIcon } from '../lib/featureIcons';
 
 /**
  * 各スタジオの一番上に出る「3 秒でわかる説明 + サンプル出力」ストリップ。
@@ -75,7 +38,12 @@ export function StudioIntro({
   samplePreview?: ReactNode;
   sampleLabel?: string;
 }) {
-  const ResolvedIcon: LucideIcon | undefined = Icon || (iconKey ? STUDIO_ICONS[iconKey] : undefined);
+  // 台帳に無い id でも取りこぼさないよう、画面の id 自体でももう一度引く
+  // (以前は briefing / calendar / deals / folder / decision でアイコンが消えていた)
+  const registered = resolveFeatureIcon(iconKey) || resolveFeatureIcon(id);
+  const ResolvedIcon: LucideIcon | undefined = Icon || registered?.Icon;
+  // アイコンの色は「その機能の色」。タイルと同じ色で出す (無ければペルソナ色)
+  const iconColor = registered?.color || accent;
   const storageKey = `cp-studio-intro-dismissed-${id}`;
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -124,10 +92,13 @@ export function StudioIntro({
                     flexShrink: 0,
                     width: 36, height: 36, borderRadius: 10,
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    background: `${accent}1F`, border: `1px solid ${accent}40`,
+                    // QuickActions のタイルと同じ「濃い色の四角 + 白いアイコン」。
+                    // 明るいテーマでも暗いテーマでも必ず読める (文字コントラスト恒久ルール)
+                    background: `linear-gradient(135deg, ${iconColor}, ${iconColor}cc)`,
+                    boxShadow: `0 5px 12px ${iconColor}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
                   }}
                 >
-                  <ResolvedIcon size={20} color={accent} strokeWidth={2.2} />
+                  <ResolvedIcon size={20} color="#fff" strokeWidth={2.2} />
                 </span>
               ) : (
                 <span style={{ fontSize: '1.35rem', lineHeight: 1.2, flexShrink: 0 }}>{emoji}</span>
