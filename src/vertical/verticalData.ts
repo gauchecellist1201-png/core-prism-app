@@ -12,7 +12,7 @@
 
 export interface VerticalProduct {
   /** URL slug（/vertical/<slug> ではなく専用パスを持つものは path で指定） */
-  key: 'ultima' | 'anima';
+  key: 'ultima' | 'anima' | 'veritas';
   name: string;
   /** 英字の役割ラベル（Cinzel で小さく） */
   role: string;
@@ -58,6 +58,19 @@ export const VERTICALS: VerticalProduct[] = [
     accent: '#8B7BE8',
     status: '本番稼働中',
     points: ['進捗・納品報告の一元管理', '源泉自動計算＋支払明細書PDF', 'スキル・条約期限つきCRM'],
+  },
+  {
+    key: 'veritas',
+    name: 'VERITAS',
+    role: 'Ad Spend Truth',
+    industry: '広告代理店・インハウス広告運用／継続課金事業',
+    tagline: '報告された数字から、嘘を剥がす。',
+    body: '自然検索で1位を取れているキーワードに広告を出し続けていないか。Google広告とSearch Consoleを突き合わせ、広告がなくても取れていたCVを剥がして「真のCPA」を出します。浮いた予算は、いちばん長く続く紹介顧客への還元に自動で付け替え。',
+    path: 'https://core-veritas.vercel.app',
+    external: true,
+    accent: '#3FB68B',
+    status: 'デモ公開中・サンプルデータで全機能を確認できます',
+    points: ['指名検索カニバリの被害額を自動算出', '自然検索1位＋競合なしなら入札を自動停止', 'チャネル別の真のLTV・解約率を可視化'],
   },
 ];
 

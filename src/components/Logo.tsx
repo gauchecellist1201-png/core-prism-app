@@ -877,3 +877,60 @@ export function AnimaLogo({ size = 28, withWordmark = true, variant = 'default',
     </span>
   );
 }
+
+/**
+ * VERITAS — 広告代理店特化ライン（真のROI・LTV）のマーク。
+ * 見せかけの数字（細い中空バー）を、実測の数字（太い実線バー）が上回る形。
+ * 横一文字は「剥がす」線。
+ */
+export function VeritasLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
+  const isMono = variant === 'mono';
+  const gRing = `vrtRing-${size}`;
+  const green = '#3FB68B';
+  const lite = '#9BE3C6';
+
+  return (
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: withWordmark ? 10 : 0, lineHeight: 1 }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="VERITAS"
+        style={{ flexShrink: 0 }}
+      >
+        <defs>
+          <linearGradient id={gRing} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={lite} stopOpacity="0.95" />
+            <stop offset="100%" stopColor={green} stopOpacity="0.6" />
+          </linearGradient>
+        </defs>
+        <circle cx="50" cy="50" r="34" stroke={isMono ? 'currentColor' : `url(#${gRing})`} strokeWidth="4" fill="none" />
+        {/* 見せかけの数字 */}
+        <rect x="34" y="46" width="10" height="24" rx="2.5" fill="none" stroke={isMono ? 'currentColor' : lite} strokeWidth="2.5" opacity="0.55" />
+        {/* 実測の数字 */}
+        <rect x="56" y="30" width="10" height="40" rx="2.5" fill={isMono ? 'currentColor' : green} opacity="0.95" />
+        {/* 剥がす線 */}
+        <path d="M26 40 H74" stroke={isMono ? 'currentColor' : lite} strokeWidth="3" strokeLinecap="round" opacity="0.9" />
+      </svg>
+      {withWordmark && (
+        <span
+          style={{
+            fontFamily: '"Cinzel", serif',
+            fontSize: size * 0.62,
+            fontWeight: 600,
+            letterSpacing: '0.18em',
+            color: isMono ? 'currentColor' : lite,
+            lineHeight: 1,
+          }}
+        >
+          VERITAS
+        </span>
+      )}
+    </span>
+  );
+}

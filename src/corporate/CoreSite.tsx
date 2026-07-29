@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo, VeritasLogo } from '../components/Logo';
 import { CONTINUUM_PLANS } from './continuumPlans';
 import ServiceFinder from './ServiceFinder';
 import { VERTICALS } from '../vertical/verticalData';
@@ -744,7 +744,7 @@ export default function CoreSite() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
             {VERTICALS.map(v => {
-              const Logo = v.key === 'ultima' ? UltimaLogo : AnimaLogo;
+              const Logo = v.key === 'ultima' ? UltimaLogo : v.key === 'anima' ? AnimaLogo : VeritasLogo;
               return (
                 <a
                   key={v.key}
