@@ -15,6 +15,8 @@ import { confirmAction } from '../lib/confirmDialog';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 import StudioBackButton from './StudioBackButton';
+import StudioHeaderIcon from './StudioHeaderIcon';
+import { resolveTabIcon } from '../lib/featureIcons';
 
 interface Props {
   persona: Persona;
@@ -206,10 +208,11 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
             <StudioBackButton onClick={onClose} />
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}
-            >📷</div>
+            <StudioHeaderIcon
+              iconKey="expense"
+              fallbackColor={persona.accentColor}
+              fallbackBg={persona.accentColorLight}
+            />
             <div className="min-w-0">
               <p className="cp-h2 truncate">経費管理</p>
               <p className="cp-meta truncate">{persona.name} · レシート OCR で撮影即仕訳</p>
@@ -232,16 +235,22 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
         {/* Tabs */}
         <div className="cp-modal-tabs">
           {([
-            { id: 'ocr' as Tab,    label: '📷 レシート読込' },
-            { id: 'manual' as Tab, label: '✍ 手動入力' },
-            { id: 'list' as Tab,   label: `🗂 一覧 (${personaEntries.length})` },
-            { id: 'summary' as Tab,label: '📊 月次サマリ' },
-          ]).map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className="cp-modal-tab" data-active={tab === t.id}
-              style={{ color: tab === t.id ? persona.accentColor : undefined }}
-            >{t.label}</button>
-          ))}
+            { id: 'ocr' as Tab,    label: 'レシートを撮る' },
+            { id: 'manual' as Tab, label: '手で入力する' },
+            { id: 'list' as Tab,   label: `登録した経費 (${personaEntries.length})` },
+            { id: 'summary' as Tab,label: '今月いくら使ったか' },
+          ]).map(t => {
+            const TabIcon = resolveTabIcon(t.id);
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className="cp-modal-tab inline-flex items-center gap-1.5" data-active={tab === t.id}
+                style={{ color: tab === t.id ? persona.accentColor : undefined }}
+              >
+                {TabIcon ? <TabIcon size={15} strokeWidth={1.8} aria-hidden="true" /> : null}
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         <div className="cp-modal-body cp-stack">

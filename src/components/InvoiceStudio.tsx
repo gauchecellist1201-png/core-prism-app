@@ -15,6 +15,8 @@ import { StudioIntro } from './StudioIntro';
 import EmptyState from './EmptyState';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import StudioBackButton from './StudioBackButton';
+import StudioHeaderIcon from './StudioHeaderIcon';
+import { resolveTabIcon } from '../lib/featureIcons';
 import { useCelebrate } from '../hooks/useCelebrate';
 
 interface Props {
@@ -221,10 +223,11 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
             <StudioBackButton onClick={onClose} />
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}
-            >🧾</div>
+            <StudioHeaderIcon
+              iconKey="invoice"
+              fallbackColor={persona.accentColor}
+              fallbackBg={persona.accentColorLight}
+            />
             <div className="min-w-0">
               <p className="text-fg text-base font-semibold leading-tight truncate">請求書スタジオ</p>
               <p className="text-fg-muted text-xs truncate">{persona.name} · インボイス制度準拠 · AI で明細を自動構成</p>
@@ -246,22 +249,28 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
         {/* Tabs */}
         <div className="flex gap-1 px-5 pt-3" style={{ borderBottom: '1px solid var(--border)' }}>
           {([
-            { id: 'compose' as Tab, label: '✍ 新規作成' },
-            { id: 'history' as Tab, label: `🗂 履歴 (${personaInvoices.length})` },
-            { id: 'issuer' as Tab, label: '🏢 発行者' },
-            { id: 'clients' as Tab, label: `👥 顧客 (${personaClients.length})` },
-          ]).map(t => (
-            <button
-              key={t.id}
-              onClick={() => { setTab(t.id); setError(null); }}
-              className="text-sm px-4 py-2 rounded-t-md font-medium"
-              style={{
-                background: tab === t.id ? persona.accentColorLight : 'transparent',
-                color: tab === t.id ? persona.accentColor : 'var(--fg-muted)',
-                borderBottom: tab === t.id ? `2px solid ${persona.accentColor}` : '2px solid transparent',
-              }}
-            >{t.label}</button>
-          ))}
+            { id: 'compose' as Tab, label: '新しく作る' },
+            { id: 'history' as Tab, label: `出した請求書 (${personaInvoices.length})` },
+            { id: 'issuer' as Tab, label: '自社の情報' },
+            { id: 'clients' as Tab, label: `請求先 (${personaClients.length})` },
+          ]).map(t => {
+            const TabIcon = resolveTabIcon(t.id);
+            return (
+              <button
+                key={t.id}
+                onClick={() => { setTab(t.id); setError(null); }}
+                className="text-sm px-4 py-2 rounded-t-md font-medium inline-flex items-center gap-1.5"
+                style={{
+                  background: tab === t.id ? persona.accentColorLight : 'transparent',
+                  color: tab === t.id ? persona.accentColor : 'var(--fg-muted)',
+                  borderBottom: tab === t.id ? `2px solid ${persona.accentColor}` : '2px solid transparent',
+                }}
+              >
+                {TabIcon ? <TabIcon size={15} strokeWidth={1.8} aria-hidden="true" /> : null}
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">

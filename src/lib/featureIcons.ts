@@ -26,7 +26,7 @@ import {
   ScrollText, BarChart3, BarChart2, Calculator, FileSpreadsheet, Camera,
   FolderKanban, FolderOpen, Files, ClipboardList, Users, Sword, Target, Flag,
   Bot, Link2, CheckSquare, Crown, Calendar, HeartPulse, Megaphone, Scale,
-  Landmark,
+  Landmark, PenLine, History, Building2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -104,6 +104,32 @@ const ALIASES: Record<string, string> = {
   saas: 'saas-agent',
   tasks: 'tasks-hub',
 };
+
+/**
+ * スタジオ内の「タブ」のアイコン台帳。
+ *
+ * これまでタブのラベルは '✍ 新規作成' のように OS 標準の絵文字を直書きしていた。
+ * 端末によって絵が変わる / 機能タイルの絵と揃わない / 恒久ルール (絵文字禁止) 違反、
+ * の 3 つが同時に起きていたので、動作の名前 → ブランドのアイコン をここで 1 本化する。
+ *
+ * タブは「機能」ではなく「その画面の中の動作」なので FEATURE_ICONS とは分ける。
+ * 色は付けない (選択中はその画面のアクセント色、非選択は薄い文字色に従う)。
+ */
+export const TAB_ICONS: Record<string, LucideIcon> = {
+  compose: PenLine,     // 新規作成 / 下書き
+  manual: PenLine,      // 手動で入力
+  history: History,     // 履歴
+  list: Files,          // 一覧
+  issuer: Building2,    // 発行者 (自社)
+  clients: Users,       // 顧客
+  ocr: Camera,          // 写真から読み取り
+  summary: BarChart3,   // サマリ・集計
+};
+
+/** タブ id からアイコンを引く。無ければ undefined (ラベルの文字だけで出す) */
+export function resolveTabIcon(key?: string): LucideIcon | undefined {
+  return key ? TAB_ICONS[key] : undefined;
+}
 
 /** id (別名可) から アイコン + 色 を引く。無ければ undefined */
 export function resolveFeatureIcon(key?: string): FeatureIcon | undefined {

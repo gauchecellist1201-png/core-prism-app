@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PrismLogo } from './Logo';
 import { markOnboarded, seedDemoData, setDemoActive } from '../lib/onboarding';
 import { logEvent } from '../lib/onboardingAnalytics';
+import { resolveFeatureIcon } from '../lib/featureIcons';
 
 interface Props {
   onComplete: () => void;
@@ -150,23 +151,34 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2.5">
+                  {/* 絵も色も featureIcons の台帳から引く。ここで見た絵が、
+                      あとでホームの機能タイルにそのまま並ぶので迷わない。
+                      ラベルも「AI 戦略提案」→「やることを提案してくれる」のように
+                      横文字を外し、何が起きるかで書く。 */}
                   {[
-                    { icon: '🧠', label: 'AI 戦略提案' },
-                    { icon: '📚', label: 'ナレッジ RAG' },
-                    { icon: '🤝', label: 'CRM 案件管理' },
-                    { icon: '🧾', label: '請求書・書類' },
-                    { icon: '🎙', label: '議事録 AI' },
-                    { icon: '📊', label: 'P&L レポート' },
-                  ].map(f => (
-                    <div
-                      key={f.label}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg"
-                      style={{ background: accentBg, border: `1px solid ${accentBorder}` }}
-                    >
-                      <span className="text-base">{f.icon}</span>
-                      <span className="text-xs font-medium" style={{ color: 'var(--fg, #f0f0f0)' }}>{f.label}</span>
-                    </div>
-                  ))}
+                    { id: 'strategy', label: '次の一手を提案' },
+                    { id: 'kb',       label: '資料を覚えて答える' },
+                    { id: 'crm',      label: '案件と進み具合' },
+                    { id: 'invoice',  label: '請求書を作る' },
+                    { id: 'minutes',  label: '会議を文字に起こす' },
+                    { id: 'pnl',      label: '利益をグラフで見る' },
+                  ].map(f => {
+                    const entry = resolveFeatureIcon(f.id);
+                    const Icon = entry?.Icon;
+                    return (
+                      <div
+                        key={f.id}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                        style={{ background: accentBg, border: `1px solid ${accentBorder}` }}
+                      >
+                        {Icon ? (
+                          <Icon size={16} strokeWidth={1.8} aria-hidden="true"
+                            style={{ color: entry!.color, flexShrink: 0 }} />
+                        ) : null}
+                        <span className="text-xs font-medium" style={{ color: 'var(--fg, #f0f0f0)' }}>{f.label}</span>
+                      </div>
+                    );
+                  })}
                 </div>
                 <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
                   数分でセットアップ完了 — まずはデモを試しませんか？
