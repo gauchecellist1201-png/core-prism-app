@@ -30,9 +30,30 @@ export function rememberAgentLink(id: AgentLinkId): void {
   } catch { /* localStorage が使えなくても本筋は止めない */ }
 }
 
+/**
+ * 連携の状態が変わったことを、画面じゅうの同じカードに知らせる合図 (2026-07-29)。
+ *
+ * なぜ要るか（実機で見つけた不具合）:
+ *   連携エージェントのカードは PC 版とモバイル版の2箇所に置かれていて、
+ *   画面には片方しか映っていないが、React としては2枚とも生きている。
+ *   見えている方で「この連携はもう使わない」を押しても、もう1枚は
+ *   自分の中の状態を持ったままなので、画面幅が変わった瞬間に
+ *   消したはずのカードがまた出てくる（＝押した操作が効いていないように見える）。
+ *
+ * ★rememberAgentLink からは投げない。
+ *   「つながっている」を書き直すたびに全カードが再判定し、
+ *   再判定がまた書き直す…という無限ループになるため。
+ */
+export const AGENT_LINK_EVENT = 'core:agent-link-changed';
+
+export function notifyAgentLinkChanged(): void {
+  try { window.dispatchEvent(new CustomEvent(AGENT_LINK_EVENT)); } catch { /* noop */ }
+}
+
 /** ユーザー自身が「解除」を押したときに呼ぶ（＝もう出さない） */
 export function forgetAgentLink(id: AgentLinkId): void {
   try { localStorage.removeItem(`${KEY_PREFIX}${id}`); } catch { /* noop */ }
+  notifyAgentLinkChanged();
 }
 
 /** 一度でもつないだことがあるか。あれば最後につながっていた時刻を返す */

@@ -354,7 +354,7 @@ export default function IntegrationCenter({ onClose, accent = '#2E6FFF', focusTo
     // 自分で解除した人には、あとで「外れています／つなぎ直す」を出さない
     if (t.id === 'gmail') { clearGmailToken(); forgetAgentLink('gmail'); }
     // サーバー側に預けた refresh_token も一緒に消す（端末だけ消しても繋がったままになるため）
-    else if (t.id === 'gcal') { clearCalToken(); void disconnectGoogleServer(); }
+    else if (t.id === 'gcal') { clearCalToken(); forgetAgentLink('gcal'); void disconnectGoogleServer(); }
     else if (t.id === 'threads') { disconnectThreads(); clearTokenLS('threads'); setThStatus(s => ({ ...s, connected: false })); }
     else clearTokenLS(t.id);
     refresh();

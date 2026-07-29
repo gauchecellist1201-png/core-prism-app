@@ -22,6 +22,8 @@ export default function AgentLinkLostCard({
   title,
   accent,
   lastLinkedAt,
+  reason,
+  initialError,
   reconnect,
   onChanged,
 }: {
@@ -31,13 +33,24 @@ export default function AgentLinkLostCard({
   title: string;
   accent: AgentBriefAccent;
   lastLinkedAt: number;
+  /**
+   * なぜ外れたのかの説明。連携ごとに切れる理由が違うので差し替えられるようにする
+   * （既定はブラウザだけで完結する方式＝1時間で必ず切れる、の説明）。
+   * ここに合わない文言を使い回すと「嘘の理由」を出すことになるので必ず実態に合わせる。
+   */
+  reason?: string;
+  /**
+   * 直前のつなぎ直しが失敗して戻ってきたときの理由（やさしい日本語で渡す）。
+   * 失敗の理由をどこにも出さない＝silent fail なので、必ずカード内に出す。
+   */
+  initialError?: string;
   /** 実際につなぎ直す処理（成功したら解決する） */
   reconnect: () => Promise<unknown>;
   /** つなぎ直し成功／解除で、親に再描画してもらう */
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState(initialError || '');
   const since = describeLastLinked(lastLinkedAt);
 
   async function handleReconnect() {
@@ -97,8 +110,8 @@ export default function AgentLinkLostCard({
 
       <p style={{ fontSize: 12.5, color: 'var(--fg-muted, #B4B8C2)', margin: '8px 0 0', lineHeight: 1.65 }}>
         {since ? `${since}つながっていました。` : ''}
-        Googleの認証は一定時間でかならず切れます（あなたの操作ミスではありません）。
-        つなぎ直すと、このAIはすぐにまた働き始めます。
+        {reason
+          ?? 'Googleの認証は一定時間でかならず切れます（あなたの操作ミスではありません）。つなぎ直すと、このAIはすぐにまた働き始めます。'}
       </p>
 
       {err && (

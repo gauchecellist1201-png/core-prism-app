@@ -11,13 +11,13 @@
 // 費用ガード: 1日1回だけ自動実行。更新ボタンで明示的に作り直せる。
 // 未連携なら何も出さない(偽の器を見せない)。
 // ============================================================
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Mail } from 'lucide-react';
 import { isGmailConnected, fetchInbox, createGmailDraft, connectGmail } from '../lib/gmail';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import { isLineConnected, notifyLine } from '../lib/lineNotify';
 import { useAgentBrief, askAgentRows, todayKey, type BriefRow, type BriefResult } from '../lib/agentBrief';
-import { recallAgentLink } from '../lib/agentLink';
+import { recallAgentLink, notifyAgentLinkChanged, AGENT_LINK_EVENT } from '../lib/agentLink';
 import AgentBriefShell, { ACCENT_EMERALD, type BriefAction } from './AgentBriefShell';
 import AgentLinkLostCard from './AgentLinkLostCard';
 
@@ -77,6 +77,13 @@ export default function MailAgentBrief({
     () => (connected || typeof window === 'undefined' ? null : recallAgentLink('gmail')),
     [connected, linkTick],
   );
+  // このカードは PC 版/モバイル版の2箇所に置かれている。見えている方で
+  // 「もう使わない」等を押したとき、もう1枚だけ古い状態で残らないようにする。
+  useEffect(() => {
+    const onChange = () => setLinkTick((t) => t + 1);
+    window.addEventListener(AGENT_LINK_EVENT, onChange);
+    return () => window.removeEventListener(AGENT_LINK_EVENT, onChange);
+  }, []);
   const [busyIdx, setBusyIdx] = useState<number | null>(null);
   const [doneIdx, setDoneIdx] = useState<number | null>(null);
   const personaRef = useRef({ personaName, personaRole });
@@ -140,7 +147,7 @@ export default function MailAgentBrief({
         accent={ACCENT_EMERALD}
         lastLinkedAt={lost.at}
         reconnect={connectGmail}
-        onChanged={() => setLinkTick((t) => t + 1)}
+        onChanged={notifyAgentLinkChanged}
       />
     );
   }

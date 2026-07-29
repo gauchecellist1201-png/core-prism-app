@@ -9,6 +9,7 @@
 // 2026-07-26: 「毎回つなぎ直しになる」根治のため、サーバー側 refresh_token 経路
 //             (googleServerAuth) を優先し、無ければ従来の GIS 方式に落ちる構成へ。
 import { getServerGoogleToken, fetchGoogleServerStatus } from './googleServerAuth';
+import { rememberAgentLink } from './agentLink';
 
 declare global {
   interface Window {
@@ -95,6 +96,11 @@ function loadToken(): CalTokenInfo | null {
 function saveToken(info: CalTokenInfo) {
   localStorage.setItem(TOKEN_KEY, info.accessToken);
   localStorage.setItem(TOKEN_EXPIRY_KEY, String(info.expiresAt));
+  // 「一度つながっていた」事実だけを残す (2026-07-29)。
+  // これが無いと、認証が切れたときにカレンダー連携エージェントが
+  // 画面から黙って消えて「AIが勝手にいなくなった」ように見える。
+  // 保存するのは時刻だけ。トークンも中身も渡さない。
+  rememberAgentLink('gcal');
 }
 export function clearCalToken() {
   localStorage.removeItem(TOKEN_KEY);

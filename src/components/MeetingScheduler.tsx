@@ -7,6 +7,7 @@ import {
   isCalConfigured, isCalConnected, connectCalendar, fetchBusy, fetchUpcomingEvents, clearCalToken, loadCalUser,
   type CalUserInfo, type CalEvent,
 } from '../lib/googleCalendar';
+import { forgetAgentLink } from '../lib/agentLink';
 import { computeFreeSlots, buildBookingUrl, formatSlot, groupSlotsByDay } from '../lib/scheduling';
 import { copyText } from '../lib/clipboard';
 import { confirmAction } from '../lib/confirmDialog';
@@ -67,6 +68,8 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
 
   const handleDisconnect = useCallback(() => {
     clearCalToken();
+    // 自分で解除した人には、あとで「外れています／つなぎ直す」を出さない
+    forgetAgentLink('gcal');
     setCalConnected(false);
     setCalUser(null);
     setUpcomingEvents([]);
