@@ -99,6 +99,7 @@ import WowOnboarding from './components/WowOnboarding';
 import OfflineNotice from './components/OfflineNotice';
 import AgentTeamMonitor from './components/AgentTeamMonitor';
 import BottomChatDock from './components/BottomChatDock';
+import CommandRail from './components/CommandRail';
 import ExtensionCaptureToast from './components/ExtensionCaptureToast';
 import CxoWelcomeCard from './components/CxoWelcomeCard';
 import StripeFailureBanner from './components/StripeFailureBanner';
@@ -1086,35 +1087,11 @@ function AppRoutes() {
           2026-06-05 オーナー指示: コマンドセンター 開いて いる 間 は 非表示 */}
       {view === 'dashboard' && !commandCenterOpen && <AgentTeamMonitor brand="prism" />}
 
-      {/* 🔮 プリズム コマンド センター 起動 ボタン (右端 中央 固定) */}
+      {/* 🔮 プリズム コマンド センター 起動 ボタン (右端 中央 固定)
+          2026-07-29: 本文かぶりの根治のため CommandRail に切り出した
+          (自分の幅を実測して --prism-rail-w に流し、本文がその分よける) */}
       {view === 'dashboard' && !commandCenterOpen && activePersona && (
-        <button
-          onClick={() => setCommandCenterOpen(true)}
-          aria-label="プリズム コマンド センター を 開く"
-          data-explain-id="prism-mark"
-          title="プリズム コマンド センター"
-          style={{
-            position: 'fixed',
-            top: '50%', right: 0,
-            transform: 'translateY(-50%)',
-            zIndex: 38,
-            // 縦書き "COMMAND" (7文字) + アイコンが 64px に収まらず 5px 切れていた(実測 2026-07-26)。
-            // 中身に合わせて伸ばし、文字を絶対に欠けさせない。
-            width: 44, minHeight: 64, paddingTop: 10, paddingBottom: 10,
-            background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
-            color: '#fff',
-            border: 'none',
-            borderTopLeftRadius: 14, borderBottomLeftRadius: 14,
-            cursor: 'pointer',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            gap: 4,
-            boxShadow: '-6px 0 22px rgba(99,102,241,0.45)',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
-          <span style={{ fontSize: 8, fontWeight: 900, letterSpacing: '0.04em', writingMode: 'vertical-rl', textOrientation: 'mixed' }}>COMMAND</span>
-        </button>
+        <CommandRail onOpen={() => setCommandCenterOpen(true)} />
       )}
 
       {/* 🔮 コマンド センター 本体 */}

@@ -2932,6 +2932,18 @@ body[data-prism-chat-dock] .prism-side-toast {
 body[data-prism-chat-dock] .cp-main-scroll {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-dock-h, 62px) + 160px) !important;
 }
+/* ============================================================
+   右端の COMMAND レーンが本文の文字を覆わない (2026-07-29)
+   実測(375px・本番): 幅44pxのレーンが本文カードの右端42pxに乗り、
+   ブリーフ見出しの文字が読めなくなっていた(elementFromPoint で38点が被覆)。
+   レーン(CommandRail)は自分の実測幅を --prism-rail-w に書き込むので、
+   本文側はその値ぶんだけ右に余白を空ける。決め打ちの px は使わない。
+   デスクトップ(md+)は本文レーンが右端まで伸びておらず被覆ゼロなので対象外。 */
+@media (max-width: 767px) {
+  body[data-prism-command-rail] .cp-main-scroll {
+    padding-right: calc(0.75rem + var(--prism-rail-w, 22px) + 4px);
+  }
+}
 /* 左サイドバーのメニュー末尾余白 — 左下に残る浮遊物(ドラッグ可能なCoreオーブ等)ぶん */
 .dashboard-root .cp-side-nav-scroll {
   padding-bottom: 120px;
