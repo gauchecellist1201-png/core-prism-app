@@ -290,8 +290,20 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  /** 書き出しの見張り番 (時間切れ / 描画の連続失敗で必ず終わらせる) */
+  const exportWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exportDoneRef = useRef(false);
 
   const totalDuration = clips.reduce((s, c) => s + c.duration, 0);
+
+  // 画面を離れたら書き出しの見張り番も必ず片づける (裏で回り続けさせない)
+  useEffect(() => () => {
+    exportDoneRef.current = true;
+    if (tickTimerRef.current) clearTimeout(tickTimerRef.current);
+    if (exportWatchdogRef.current) clearTimeout(exportWatchdogRef.current);
+    try { recorderRef.current?.state === 'recording' && recorderRef.current.stop(); } catch { /* noop */ }
+  }, []);
 
   // ─── アップロード ─────
   const addFiles = useCallback(async (files: FileList | File[]) => {
@@ -863,11 +875,53 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   };
 
   // ─── 録画 → WebM 書き出し ─────
+  /**
+   * 書き出しを必ず終わらせるための後始末。
+   * 「書き出し中…」のまま永久に戻ってこない = 素材を入れ直しても二度と作れない、が
+   * このプロダクトで一番やってはいけない壊れ方なので、どの失敗経路からもここを通す。
+   */
+  const finishExport = () => {
+    exportDoneRef.current = true;
+    liveRef.current = false;
+    setRecording(false);
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    if (tickTimerRef.current) { clearTimeout(tickTimerRef.current); tickTimerRef.current = null; }
+    if (exportWatchdogRef.current) { clearTimeout(exportWatchdogRef.current); exportWatchdogRef.current = null; }
+  };
+
+  /** 失敗を黙って飲み込まない: 理由 + もう一度できることを必ず伝えて元の状態に戻す */
+  const failExport = (body: string) => {
+    if (exportDoneRef.current) return; // 二重通知を出さない
+    finishExport();
+    setProgress(0);
+    notifyInApp({
+      kind: 'warn',
+      title: '動画の書き出しに失敗しました',
+      body,
+      duration: 9000,
+    });
+  };
+
   const startRecord = async () => {
     if (!canvasRef.current || !clips.length) return;
+    if (recording) return;
+    exportDoneRef.current = false;
     setRecording(true); setProgress(0); setExportUrl(null);
     liveRef.current = true; // 書き出し中は字幕のフェードを本来どおり掛ける
-    const stream = (canvasRef.current as HTMLCanvasElement).captureStream(30);
+
+    // 画面の取り込みが使えない端末 (古い Safari など) はここで止まる。
+    // 掴めないまま進むと「書き出し中」から戻ってこないので、理由を出して引き返す。
+    let stream: MediaStream;
+    try {
+      const canvas = canvasRef.current as HTMLCanvasElement & { captureStream?: (fps: number) => MediaStream };
+      if (typeof canvas.captureStream !== 'function') throw new Error('captureStream 非対応');
+      stream = canvas.captureStream(30);
+      if (!stream) throw new Error('captureStream が空');
+    } catch {
+      failExport('お使いのブラウザが動画の取り込みに対応していないようです。Safari か Chrome の最新版でお試しください。素材はそのまま残しています。');
+      return;
+    }
+
     // 音声トラックを混ぜる + fade in/out (失敗してもユーザーに気づかせる)
     if (bgmFile) {
       try {
@@ -897,45 +951,106 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       }
     }
     chunksRef.current = [];
-    // MP4 をまず試す (Safari / 新しめの Chrome で対応)。落ちたら WebM
-    const mime = (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4'))
-      ? 'video/mp4'
-      : (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/webm;codecs=vp9'))
-        ? 'video/webm;codecs=vp9'
-        : 'video/webm';
+    // MP4 をまず試す (Safari / 新しめの Chrome で対応)。落ちたら WebM。
+    // isTypeSupported が true でも実際の生成で弾く端末があるので、順に組み立てて通ったものを使う。
+    const candidates = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm', ''];
+    let rec: MediaRecorder | null = null;
+    let mime = 'video/webm';
+    if (typeof MediaRecorder === 'undefined') {
+      failExport('お使いのブラウザが動画の作成に対応していないようです。Safari か Chrome の最新版でお試しください。素材はそのまま残しています。');
+      return;
+    }
+    for (const m of candidates) {
+      try {
+        if (m && !MediaRecorder.isTypeSupported(m)) continue;
+        rec = m ? new MediaRecorder(stream, { mimeType: m }) : new MediaRecorder(stream);
+        mime = m || (rec.mimeType || 'video/webm');
+        break;
+      } catch { /* 次の形式を試す */ }
+    }
+    if (!rec) {
+      failExport('この端末で使える動画の形式が見つかりませんでした。Safari か Chrome の最新版でお試しください。素材はそのまま残しています。');
+      return;
+    }
     setExportMime(mime);
-    const rec = new MediaRecorder(stream, { mimeType: mime });
     rec.ondataavailable = e => { if (e.data.size) chunksRef.current.push(e.data); };
     rec.onstop = () => {
+      if (exportDoneRef.current) return;
       const blob = new Blob(chunksRef.current, { type: mime });
+      // 中身が空 = 壊れたリールを掴ませてしまう。渡さずに理由を出す。
+      if (!blob.size) {
+        failExport('動画の中身が空のまま終わりました。書き出し中は画面をこのままにして、もう一度「書き出す」を押してください。素材はそのまま残しています。');
+        return;
+      }
+      finishExport();
       setExportUrl(URL.createObjectURL(blob));
-      liveRef.current = false;
-      setRecording(false); setProgress(1);
+      setProgress(1);
     };
     rec.onerror = () => {
-      liveRef.current = false;
-      setRecording(false); setProgress(0);
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-      notifyInApp({
-        kind: 'warn',
-        title: '動画の書き出しに失敗しました',
-        body: 'もう一度「書き出す」ボタンを押してください。素材はそのまま残しています。',
-        duration: 7000,
-      });
+      failExport('もう一度「書き出す」ボタンを押してください。素材はそのまま残しています。');
     };
     recorderRef.current = rec;
-    rec.start();
+    try {
+      rec.start();
+    } catch {
+      failExport('動画の記録を開始できませんでした。もう一度「書き出す」ボタンを押してください。素材はそのまま残しています。');
+      return;
+    }
+
+    // 見張り番: 想定の尺を大きく超えても終わらないときは、必ずこちらから終わらせる。
+    // (タブが裏に回る / 描画が固まる、でも「書き出し中」のまま放置しない)
+    const limitMs = Math.round(totalDuration * 1000) + 20000;
+    exportWatchdogRef.current = setTimeout(() => {
+      if (exportDoneRef.current) return;
+      try { rec.stop(); } catch { /* 既に止まっている */ }
+      // stop が onstop を呼べば通常経路で片づく。呼ばれなければここで打ち切る。
+      setTimeout(() => {
+        if (exportDoneRef.current) return;
+        const blob = new Blob(chunksRef.current, { type: mime });
+        if (blob.size) {
+          finishExport();
+          setExportUrl(URL.createObjectURL(blob));
+          setProgress(1);
+          notifyInApp({
+            kind: 'warn',
+            title: '書き出しに時間がかかりました',
+            body: '途中までの動画を用意しました。最後まで入っていない場合は、もう一度「書き出す」を押してください。',
+            duration: 9000,
+          });
+        } else {
+          failExport('時間内に書き出しが終わりませんでした。カットの数を減らすか、もう一度「書き出す」を押してください。素材はそのまま残しています。');
+        }
+      }, 1200);
+    }, limitMs);
+
     // 再生開始
     playStartRef.current = performance.now();
     setCurrentTime(0);
+    let drawFails = 0;
     const tick = () => {
+      if (exportDoneRef.current) return;
       const t = (performance.now() - playStartRef.current) / 1000;
-      drawAt(t);
+      // 1コマの描画で落ちてもループごと死なせない (死ぬと録画が永久に終わらない)
+      try {
+        drawAt(t);
+        drawFails = 0;
+      } catch {
+        drawFails += 1;
+        if (drawFails >= 10) {
+          try { rec.stop(); } catch { /* noop */ }
+          failExport('素材のどれかが読み込めず、映像を描けませんでした。写真や動画を入れ直してから、もう一度「書き出す」を押してください。');
+          return;
+        }
+      }
       setCurrentTime(t);
-      setProgress(t / totalDuration);
-      if (t >= totalDuration) { rec.stop(); setCurrentTime(0); return; }
+      setProgress(Math.min(1, t / totalDuration));
+      if (t >= totalDuration) {
+        try { rec.stop(); } catch { failExport('書き出しの終了処理に失敗しました。もう一度「書き出す」ボタンを押してください。'); }
+        setCurrentTime(0);
+        return;
+      }
       // rAF はタブが隠れると止まり書き出しが永久に終わらないため setTimeout 駆動
-      setTimeout(tick, 1000 / 30);
+      tickTimerRef.current = setTimeout(tick, 1000 / 30);
     };
     tick();
   };
