@@ -128,6 +128,31 @@ function scanBands(): Bands {
   return out;
 }
 
+// ── 全画面のモーダル(オンボーディング等)が出ている間は引っ込む(2026-07-29) ────
+// Prism の初回オンボーディング(fixed inset-0 z-70)より丸ボタン(z-80)が上に出るため、
+// 新規ユーザーが最初に見る画面でカードの左下隅と「← 戻る」に被っていた(375px 実測)。
+// Lume で採った「ウィザードが出ている間はドックを隠す」と同じ考え方を、
+// クラス名に頼らず“見た目の条件”で判定する。
+// 画面中央の要素スタックだけを見るので軽い(全要素の走査をしない)。
+function isCoveredByModal(dock: HTMLElement | null): boolean {
+  if (typeof document === "undefined") return false;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const stack = document.elementsFromPoint(Math.round(vw / 2), Math.round(vh / 2)) as HTMLElement[];
+  for (const el of stack) {
+    if (!el || el === dock || (dock && el.contains(dock))) continue;
+    const s = getComputedStyle(el);
+    if (s.position !== "fixed") continue;
+    if (s.pointerEvents === "none") continue; // 飾り(背景グラデ等)は素通しなので対象外
+    const z = Number(s.zIndex);
+    if (!Number.isFinite(z) || z < 50) continue; // アプリの土台(z無し/低い)は隠す理由にしない
+    const r = el.getBoundingClientRect();
+    if (r.width < vw * 0.9 || r.height < vh * 0.8) continue; // 画面をほぼ覆うものだけ=モーダル
+    return true;
+  }
+  return false;
+}
+
 function clampPos(x: number, y: number, bottomClearance = 0) {
   // モバイルは上部=ヘッダー帯(タイトル/タブ行/サンプル帯)を進入禁止に。
   // ドラッグ保存位置が左上に残ってヘッダーの文字やタブに被る事故を構造的に防ぐ(オーナー指示 2026-07-17)。
@@ -150,13 +175,14 @@ function defaultPos(bottomClearance = 0) {
   }
   return clampPos(EDGE_MARGIN, window.innerHeight - DOCK_SIZE - EDGE_MARGIN - 74, bottomClearance);
 }
-function loadPos(bottomClearance = 0): { x: number; y: number } | null {
+// 保存された「素の」位置(帯を避ける前)。避け直しは毎回ここから測る。
+function loadRawPos(): { x: number; y: number } | null {
   try {
     const raw = localStorage.getItem(POS_KEY);
     if (!raw) return null;
     const p = JSON.parse(raw);
     if (typeof p?.x !== "number" || typeof p?.y !== "number") return null;
-    return clampPos(p.x, p.y, bottomClearance);
+    return { x: p.x, y: p.y };
   } catch { return null; }
 }
 function savePos(x: number, y: number) {
@@ -178,30 +204,88 @@ export function CoreDock({
   const [name, setName] = useState<string | null>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number; moved: boolean } | null>(null);
   // 自分でドラッグして置き場所を決めたか(＝既定位置に戻してはいけないか)
   const userMovedRef = useRef(false);
+  // 自分で決めた「素の」置き場所。避け直しは毎回ここから測る。
+  // 今の位置から挟み直すと、帯に押し上げられた位置がそのまま新しい基準になり、
+  // 帯が引っ込んでも下に戻れず、じりじり上へ登っていく(2026-07-29)。
+  const savedRef = useRef<{ x: number; y: number } | null>(null);
+
+  // 置き場所を測り直す(帯の出入り・画面サイズ変化・スクロール停止のたび)。
+  // 自分で動かしていれば「保存した素の位置」から、動かしていなければ既定位置から。
+  const clearanceRef = useRef(bottomClearance);
+  clearanceRef.current = bottomClearance;
+  const reposition = () => {
+    if (dragRef.current) return; // ドラッグ中は指の下から逃がさない
+    const c = clearanceRef.current;
+    const base = userMovedRef.current ? savedRef.current : null;
+    setPos(base ? clampPos(base.x, base.y, c) : defaultPos(c));
+  };
 
   useEffect(() => {
     const h = readCoreHandoff();
     if (h?.name) setName(h.name);
-    const saved = loadPos(bottomClearance);
-    userMovedRef.current = saved !== null;
-    setPos(saved ?? defaultPos(bottomClearance));
+    const raw = loadRawPos();
+    userMovedRef.current = raw !== null;
+    savedRef.current = raw;
+    setPos(raw ? clampPos(raw.x, raw.y, bottomClearance) : defaultPos(bottomClearance));
     // ★2026-07-27 根治: これまで resize で「今の位置を挟み直す」だけだったため、
     //   画面が一瞬でも縦に短い状態(横向き・分割表示・小さいウィンドウ・読み込み直後)で
     //   位置が上限まで押し上げられると、画面が広がっても二度と戻らずヘッダー帯に
     //   貼り付いたままになっていた(＝タブが押せない)。
     //   自分でドラッグしていない間は、そのつど既定位置を計算し直す。
-    const onResize = () =>
-      setPos((p) => (userMovedRef.current ? (p ? clampPos(p.x, p.y, bottomClearance) : p) : defaultPos(bottomClearance)));
+    const onResize = () => reposition();
     window.addEventListener("resize", onResize);
     window.addEventListener("orientationchange", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("orientationchange", onResize);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bottomClearance]);
+
+  // 帯は「大きさが変わる」だけでなく「あとから滑り込んでくる」。
+  // Prism の下部サマリー(オンボ完了/件数)はスクロールで画面外から上がってくるので、
+  // 読み込み時に測った可動域のままだと丸ボタンがその上に居座り、数字を隠す
+  // (「0 件」「合計 7 件」が読めない＝375px 実測 2026-07-29)。スクロールが止まったら測り直す。
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const onScroll = () => {
+      if (dragRef.current) return;
+      if (t) clearTimeout(t);
+      t = setTimeout(() => reposition(), 150);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      if (t) clearTimeout(t);
+      window.removeEventListener("scroll", onScroll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bottomClearance]);
+
+  // 全画面モーダルが出ている間は引っ込む(出入りは DOM の変化で拾う)
+  useEffect(() => {
+    if (typeof MutationObserver === "undefined") return;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const check = () => setHidden(isCoveredByModal(btnRef.current));
+    const schedule = () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(check, 180);
+    };
+    check();
+    const mo = new MutationObserver(schedule);
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
+    window.addEventListener("resize", schedule);
+    return () => {
+      if (t) clearTimeout(t);
+      mo.disconnect();
+      window.removeEventListener("resize", schedule);
+    };
+  }, []);
 
   // 帯(ヘッダー/下部ドック)はタブ切替や表示条件で高さが変わるので、
   // 変わったら可動域を測り直して被りを防ぐ。ドラッグ中は動かさない。
@@ -210,12 +294,10 @@ export function CoreDock({
     if (window.innerWidth >= 768) return; // 帯を避けるのはモバイルだけ
     const targets = scanBands().els;
     if (!targets.length) return;
-    const ro = new ResizeObserver(() => {
-      if (dragRef.current) return;
-      setPos((p) => (userMovedRef.current ? (p ? clampPos(p.x, p.y, bottomClearance) : p) : defaultPos(bottomClearance)));
-    });
+    const ro = new ResizeObserver(() => reposition());
     targets.forEach((t) => ro.observe(t));
     return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bottomClearance, current]);
 
   // 表示順: 現在のアプリは先頭に出さず、行き先だけを並べる
@@ -247,7 +329,10 @@ export function CoreDock({
     if (d && d.moved) {
       userMovedRef.current = true;
       setPos((p) => {
-        if (p) savePos(p.x, p.y);
+        if (p) {
+          savedRef.current = { x: p.x, y: p.y };
+          savePos(p.x, p.y);
+        }
         return p;
       });
     } else {
@@ -262,6 +347,7 @@ export function CoreDock({
     <>
       {/* 常駐ドック(ドラッグ可能な円形FAB・safe-area・タップ44px以上) */}
       <button
+        ref={btnRef}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -275,6 +361,8 @@ export function CoreDock({
           width: DOCK_SIZE,
           height: DOCK_SIZE,
           touchAction: "none",
+          // 全画面モーダルの上には出さない(スイッチャーを開いている間は自分が主役なので出す)
+          display: hidden && !open ? "none" : undefined,
           transition: dragging ? "none" : "left .15s ease, top .15s ease",
         }}
       >
