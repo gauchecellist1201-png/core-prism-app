@@ -3253,3 +3253,24 @@ body[data-prism-chat-dock] .cp-main-scroll {
     transform: none !important;
   }
 }
+
+/* Continuum のプラン3枚 / Executive の内容3枚 も横スワイプに */
+@media (max-width: 640px) {
+  .lp-continuum-grid,
+  .lp-exec-grid {
+    display: flex !important;
+    grid-template-columns: none !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0.7rem !important;
+    margin: 0 -1rem !important;
+    padding: 1rem 1rem 0.6rem; /* 上は「いちばん選ばれています」バッジのぶん */
+    align-items: stretch;
+  }
+  .lp-continuum-grid::-webkit-scrollbar,
+  .lp-exec-grid::-webkit-scrollbar { display: none; }
+  .lp-continuum-grid > *,
+  .lp-exec-grid > * { flex: 0 0 82%; scroll-snap-align: center; }
+}

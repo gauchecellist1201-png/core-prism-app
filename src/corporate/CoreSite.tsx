@@ -971,7 +971,7 @@ export default function CoreSite() {
           </div>
 
           {/* 3プラン(Ascension: Light → Complete(推奨) → Zero) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.1rem', alignItems: 'stretch' }}>
+          <div className="lp-continuum-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.1rem', alignItems: 'stretch' }}>
             {CONTINUUM_PLANS.map(pl => (
               <div
                 key={pl.name}
@@ -1075,7 +1075,7 @@ export default function CoreSite() {
             <strong style={{ color: '#E7C987', fontWeight: 600 }}> GAUCHE </strong>
             による特別な体験を、御社の福利厚生とブランドに。
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', margin: '2.2rem 0 2.4rem' }}>
+          <div className="lp-exec-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', margin: '2.2rem 0 2.4rem' }}>
             {[
               { t: '周年・VIP レセプションでの出張演奏', d: 'リッツ・カールトン、Loro Piana Milano で磨いた演奏が、御社のイベントの「格」を引き上げます。' },
               { t: 'チェロスクール法人契約（福利厚生）', d: '従業員は GAUCHE Cello School の受け放題レッスンへ。楽器は無料貸与、手ぶらで始められます。' },
@@ -1341,6 +1341,7 @@ export default function CoreSite() {
           </div>
 
           {/* 縦タイムライン */}
+          <MobileFold summary="これまでの歩み（2025年〜）">
           <ol style={{ listStyle: 'none', padding: 0, margin: 0, position: 'relative' }}>
             {/* 縦線 */}
             <div aria-hidden style={{
@@ -1443,6 +1444,7 @@ export default function CoreSite() {
               </motion.li>
             ))}
           </ol>
+          </MobileFold>
 
         </div>
       </section>
