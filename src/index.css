@@ -2944,6 +2944,19 @@ body[data-prism-chat-dock] .cp-main-scroll {
     padding-right: calc(0.75rem + var(--prism-rail-w, 22px) + 4px);
   }
 }
+/* このレーンは幅22pxなので、上の「小さいアイコンボタンは ::after で44pxの
+   当たり判定を足す」共通ルールに一致してしまう。その当たり判定は左右に11pxずつ
+   はみ出すため、せっかく空けた余白の上に「見えない押せる帯」が戻ってきて、
+   カードを押したつもりがコマンドセンターが開く事故になる(375px実測で3px重なり)。
+   このレーンだけ当たり判定を自分の箱にそろえる。縦132pxあるので押しやすさは保てる。 */
+.prism-command-rail::after {
+  top: 0 !important;
+  left: auto !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  transform: none !important;
+}
 /* 左サイドバーのメニュー末尾余白 — 左下に残る浮遊物(ドラッグ可能なCoreオーブ等)ぶん */
 .dashboard-root .cp-side-nav-scroll {
   padding-bottom: 120px;

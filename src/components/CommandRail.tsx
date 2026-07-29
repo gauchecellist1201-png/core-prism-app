@@ -54,6 +54,7 @@ export default function CommandRail({ onOpen }: { onOpen: () => void }) {
       onClick={onOpen}
       aria-label="プリズム コマンド センター を 開く"
       data-explain-id="prism-mark"
+      className="prism-command-rail"
       title="プリズム コマンド センター"
       style={{
         position: 'fixed',
