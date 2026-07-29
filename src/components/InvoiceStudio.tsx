@@ -247,7 +247,13 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
         />
 
         {/* Tabs */}
-        <div className="flex gap-1 px-5 pt-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        {/* iPhone 幅 (375px) では 4 つ並べると入りきらないので、
+            折り返さず横スクロールさせる。折り返すと「新 / し / く / 作 / る」と
+            1 文字ずつ縦積みになり読めなくなる。 */}
+        <div
+          className="flex gap-1 px-5 pt-3 overflow-x-auto"
+          style={{ borderBottom: '1px solid var(--border)', flexWrap: 'nowrap', scrollbarWidth: 'none' }}
+        >
           {([
             { id: 'compose' as Tab, label: '新しく作る' },
             { id: 'history' as Tab, label: `出した請求書 (${personaInvoices.length})` },
@@ -259,7 +265,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
               <button
                 key={t.id}
                 onClick={() => { setTab(t.id); setError(null); }}
-                className="text-sm px-4 py-2 rounded-t-md font-medium inline-flex items-center gap-1.5"
+                className="text-sm px-4 py-2 rounded-t-md font-medium inline-flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
                 style={{
                   background: tab === t.id ? persona.accentColorLight : 'transparent',
                   color: tab === t.id ? persona.accentColor : 'var(--fg-muted)',
