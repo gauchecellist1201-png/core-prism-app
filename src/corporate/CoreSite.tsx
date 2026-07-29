@@ -3,7 +3,7 @@
 // 「すべての時代の、核となるものを。」
 // 配置: /corp ルート、noindex で検索エンジンには載せない
 // ============================================================
-import { useEffect, useState, useRef, type ReactNode } from 'react';
+import { useEffect, useState, useRef, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
@@ -64,6 +64,24 @@ function useIsMobile(query = '(max-width: 640px)') {
 }
 
 // ============================================================
+//  jumpToHash — モバイルの章チップ専用のページ内ジャンプ。
+//  標準のアンカー移動でも飛べるが、着地点は CSS の scroll-margin-top
+//  固定値まかせになり、告知バーの有無でヘッダー高が変わると見出しが隠れる。
+//  ここではヘッダーの実測高を引くので、常に見出しの真上に着地する。
+//  17,908px を smooth で流すと数秒かかるため、ジャンプは即時にする。
+// ============================================================
+function jumpToHash(e: ReactMouseEvent<HTMLAnchorElement>, href: string) {
+  if (!href.startsWith('#')) return;
+  const el = document.getElementById(href.slice(1));
+  if (!el) return;
+  e.preventDefault();
+  const header = document.querySelector('header');
+  const offset = (header?.getBoundingClientRect().height ?? 64) + 8;
+  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'auto' });
+  history.replaceState(null, '', href);
+}
+
+// ============================================================
 //  MobileJump — iPhoneでは上部ナビが全部隠れていて、
 //  32,000px を指でこすらないと目的地に着けなかった。その解決。
 //  横スクロールの章チップ。いま見ている章が光る。
@@ -116,7 +134,12 @@ function MobileJump() {
   return (
     <div className="lp-jump" ref={barRef} aria-label="ページ内の移動">
       {JUMP_ITEMS.map(i => (
-        <a key={i.href} href={i.href} className={'lp-jump-chip' + (active === i.href ? ' is-on' : '')}>
+        <a
+          key={i.href}
+          href={i.href}
+          onClick={e => jumpToHash(e, i.href)}
+          className={'lp-jump-chip' + (active === i.href ? ' is-on' : '')}
+        >
           {i.label}
         </a>
       ))}
