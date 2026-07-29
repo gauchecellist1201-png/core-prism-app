@@ -63,7 +63,13 @@ export default function CommandRail({ onOpen }: { onOpen: () => void }) {
         // 縦書き "COMMAND" (7文字) + アイコンが 64px に収まらず 5px 切れていた(実測 2026-07-26)。
         // 中身に合わせて伸ばし、文字を絶対に欠けさせない。
         width: narrow ? 22 : 44,
-        minHeight: narrow ? 132 : 64,
+        // ★狭い画面は minHeight ではなく height で縦を伸ばす。
+        //   index.css の「inline で幅22〜40pxの小さいボタンは min-height:0 !important にして
+        //   ::after で44pxの当たり判定を足す」共通ルールに、この帯も一致してしまうため
+        //   min-height だと無視される(本番で computed 0px を実測)。
+        //   height なら効き、22px 幅でも 132px の縦長で押しやすい。
+        minHeight: narrow ? undefined : 64,
+        height: narrow ? 132 : undefined,
         paddingTop: 10, paddingBottom: 10,
         background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
         color: '#fff',
