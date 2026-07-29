@@ -20,29 +20,37 @@ interface Props {
   fallbackBg: string;
 }
 
-/** 台帳の色を、薄い下地色に変換する (16 進 → 18% 透過) */
-function tint(hex: string): string {
-  const h = hex.replace('#', '');
-  if (h.length !== 6) return hex;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, 0.18)`;
-}
-
 export function StudioHeaderIcon({ iconKey, fallbackColor, fallbackBg }: Props) {
   const entry = resolveFeatureIcon(iconKey);
-  const color = entry?.color || fallbackColor;
-  const bg = entry ? tint(entry.color) : fallbackBg;
   const Icon = entry?.Icon;
 
+  // 台帳に無い時だけ、これまで通り人格の色で出す (見た目の後退なし)
+  if (!Icon) {
+    return (
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background: fallbackBg, color: fallbackColor }}
+        aria-hidden="true"
+      />
+    );
+  }
+
+  // QuickActions のタイルと "まったく同じ" 描き方にする:
+  //   濃い台帳色のベタ塗り + 白いアイコン。
+  // 薄い色を敷いて同色のアイコンを載せると、明るいテーマで
+  // コントラストが 1.4:1 まで落ちて見えなくなる (文字コントラストの恒久ルール)。
+  // 台帳の色はもともと「白いアイコンを載せる前提の濃さ」で選んである。
+  const color = entry.color;
   return (
     <div
-      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-      style={{ background: bg, color }}
+      className="w-10 h-10 rounded-xl inline-flex items-center justify-center flex-shrink-0"
+      style={{
+        background: `linear-gradient(135deg, ${color}, ${color}cc)`,
+        boxShadow: `0 6px 14px ${color}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
+      }}
       aria-hidden="true"
     >
-      {Icon ? <Icon size={20} strokeWidth={1.8} /> : null}
+      <Icon size={20} color="#fff" strokeWidth={2.2} />
     </div>
   );
 }
