@@ -14,6 +14,7 @@ import {
   Flame, Scissors, ArrowLeft, ArrowRight, Eye, Type as TypeIcon,
   AlertCircle, Copy, MessageSquare, Layers, Camera, Mic, Clock,
 } from 'lucide-react';
+import { takePendingReelTheme } from './reelHandoff';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
 import { BGM_LIBRARY, VIRAL_PATTERNS, TREND_PULSE_2026_Q2, loadVideo, VIDEO_FORMAT_HELP } from './IrisReelStudio';
@@ -183,6 +184,10 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [uploadErr, setUploadErr] = useState<string>('');
   // AI 自動字幕
   const [themeHint, setThemeHint] = useState<string>('');
+  // ツアー/朝ブリーフの「このテーマで 1 本つくる」から着地したときのテーマ。
+  // 空でない = ユーザーは「もう作り始まっている」と思って着地している (画面でそう見せる責任がある)
+  const [arrivedTheme, setArrivedTheme] = useState<string>('');
+  const themeCardRef = useRef<HTMLDivElement | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiPhase, setAiPhase] = useState<string>('');
   const [aiErr, setAiErr] = useState<string>('');
@@ -473,7 +478,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     // 「今 AI が何をしているか」を順番に見せる実況ティッカー。
     // 1 回の通信中でも画面が動き続けるので「固まった？」という不安が消える。
     const phases = [
-      '🪄 テーマを読み解いています…',
+      'テーマを読み解いています…',
       '3 シーンの流れを組み立てています…',
       '字幕を短く言い切る形にしています…',
       'ハッシュタグと投稿文を整えています…',
@@ -547,13 +552,44 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   // タップ → 何も打たずに台本ができあがる一気通貫（手入力ゼロ）。マウント時に1回だけ。
   const themeSeededRef = useRef(false);
   useEffect(() => {
-    const t = (initialTheme || '').trim();
-    if (themeSeededRef.current || !t) return;
+    if (themeSeededRef.current) return;
+    // prop で届かなかった場合の保険 (この画面が遅れて読み込まれても約束を落とさない)。
+    // ツアーの「このテーマで、いま 1 本つくる」は約束そのものなので、取りこぼしを許さない。
+    const stashed = takePendingReelTheme();   // 読んだ時点で消える (次回訪問で勝手に作らない)
+    const t = (initialTheme || '').trim() || stashed;
+    if (!t) return;
     themeSeededRef.current = true;
     setThemeHint(t);
+    setArrivedTheme(t);
     onConsumeTheme?.();
     void runAiScript(t);
   }, [initialTheme, onConsumeTheme, runAiScript]);
+
+  // テーマを持って着地したら、その場（テーマ入力＋進捗＋結果が出るカード）まで画面を送る。
+  // これが無いと、押した直後に見えるのは画面いちばん上の「一本目の素材を入れて、はじめましょう」＋
+  // 空の取り込み枠だけ = 約束した「いま 1 本つくる」が起きていないように見える (iPhone 実機で確認)。
+  useEffect(() => {
+    if (!arrivedTheme) return;
+    // 着地直後は入場アニメと画像読み込みでページの高さが変わり続ける。
+    // 1 回だけだと「目的地」がずれて画面が動かないので、落ち着くまで数回やり直す。
+    let stopped = false;
+    const stop = () => { stopped = true; };  // 指で動かした人の邪魔をしない
+    window.addEventListener('wheel', stop, { passive: true });
+    window.addEventListener('touchmove', stop, { passive: true });
+    const timers = [280, 750, 1400].map(ms => window.setTimeout(() => {
+      if (stopped) return;
+      const el = themeCardRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (r.top >= 72 && r.bottom <= window.innerHeight - 72) return; // もう見えている
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, ms));
+    return () => {
+      timers.forEach(t => window.clearTimeout(t));
+      window.removeEventListener('wheel', stop);
+      window.removeEventListener('touchmove', stop);
+    };
+  }, [arrivedTheme]);
 
   // ─── キャンバス描画 ─────
   const drawAt = useCallback((t: number) => {
@@ -1397,7 +1433,15 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
             letterSpacing: '0.02em',
           }}>
-            {clips.length === 0 ? '一本目の素材を入れて、はじめましょう' : `${clips.length} クリップ ・ ${totalDuration.toFixed(1)} 秒`}
+            {clips.length > 0
+              ? `${clips.length} クリップ ・ ${totalDuration.toFixed(1)} 秒`
+              : arrivedTheme
+                // 「このテーマで、いま 1 本つくる」を押して着地した人に、
+                // 「素材を入れて」と真逆のことを言わない。今やっていることをそのまま出す
+                ? (scriptBusy
+                    ? `「${arrivedTheme}」の台本を書いています…`
+                    : `「${arrivedTheme}」で作っています`)
+                : '一本目の素材を入れて、はじめましょう'}
           </p>
         </motion.div>
 
@@ -1604,24 +1648,37 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         {/* 素材ゼロでも 1 本 — 手持ちの写真が無い初日でも「完成」まで行ける入口。
             (この機能自体は前からあったが、字幕ステップの奥に埋もれていて初見では見つからなかった) */}
         {clips.length === 0 && (
-          <div style={{
+          <div ref={themeCardRef} style={{
             marginBottom: '1.4rem',
             padding: '1rem 1.05rem',
             background: 'rgba(255,255,255,0.72)',
-            border: `1.5px solid ${bg.accent}55`,
+            border: `1.5px solid ${bg.accent}${arrivedTheme ? '' : '55'}`,
             borderRadius: 18,
-            boxShadow: '0 8px 24px rgba(225,48,108,0.10)',
+            boxShadow: arrivedTheme
+              ? '0 10px 30px rgba(225,48,108,0.20)'
+              : '0 8px 24px rgba(225,48,108,0.10)',
+            scrollMarginTop: 96,
           }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6,
               fontSize: 13.5, fontWeight: 800, color: bg.ink, fontFamily: IRIS_FONTS.body,
             }}>
               <Wand2 size={14} color={bg.accent} />
-              素材がなくても、いま 1 本つくれます
+              {arrivedTheme ? 'いま、このテーマで 1 本つくっています' : '素材がなくても、いま 1 本つくれます'}
             </div>
             <p style={{ margin: '0 0 10px', fontSize: 11.5, color: bg.inkSoft, lineHeight: 1.55 }}>
-              テーマをひとこと入れるだけ。AI が 3 シーンの台本と字幕を書いて、そのまま出せる縦型リールにします。
-              写真や動画は<b style={{ color: bg.ink }}>あとから入れると、この 3 カットに差し替わります</b>。
+              {arrivedTheme ? (
+                <>
+                  さっき見た台本のテーマを、そのまま持ってきました。AI が 3 シーンの台本と字幕を書いて、
+                  そのまま出せる縦型リールにします。写真や動画は
+                  <b style={{ color: bg.ink }}>あとから入れると、この 3 カットに差し替わります</b>。
+                </>
+              ) : (
+                <>
+                  テーマをひとこと入れるだけ。AI が 3 シーンの台本と字幕を書いて、そのまま出せる縦型リールにします。
+                  写真や動画は<b style={{ color: bg.ink }}>あとから入れると、この 3 カットに差し替わります</b>。
+                </>
+              )}
             </p>
             <input
               type="text"

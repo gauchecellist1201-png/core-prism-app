@@ -179,6 +179,7 @@ import IrisFlowHub from './IrisFlowHub';
 import InstagramAgentBrief from './InstagramAgentBrief';
 import Celebrate from '../components/Celebrate';
 import type { ReelStudioSeed } from './IrisReelStudio';
+import { stashPendingReelTheme } from './reelHandoff';
 import { loadIgProfile, consumeOauthCallback, fetchOauthProfile, saveIgProfile, syncOauthMediaToHistory, oauthReasonToMessage, type IgProfile } from './instagramConnect';
 import IrisDmDraftModal from './IrisDmDraftModal';
 import InstagramGlyph from './InstagramGlyph';
@@ -1236,8 +1237,13 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
       const t = (e as CustomEvent).detail?.tab as Tab | undefined;
       const theme = (e as CustomEvent).detail?.theme as string | undefined;
       if (t) {
-        // ツアーで見せた台本のテーマを持ち込む → 着地した瞬間に台本＋3カットが出来上がる
-        if (t === 'reel' && theme && theme.trim()) setReelTheme(theme.trim());
+        // ツアーで見せた台本のテーマを持ち込む → 着地した瞬間に台本＋3カットが出来上がる。
+        // sessionStorage にも置くのは、リールスタジオが遅れて読み込まれる回線でも
+        // 約束したテーマを落とさないため (受け取った側が使ったらすぐ消す)
+        if (t === 'reel' && theme && theme.trim()) {
+          setReelTheme(theme.trim());
+          stashPendingReelTheme(theme.trim());
+        }
         // 明示的な行き先指定(ツアーの「この台本を自分のテーマで作る」等)を
         // 連携ゲートで遮らない。「あとで連携する」と同義に扱い、約束した画面に必ず着地させる
         dismissConnectGate();
@@ -1789,7 +1795,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     未連携なら何も出さない (2026-07-26) */}
                 <InstagramAgentBrief
                   handle={mediaKit?.handleName}
-                  onOpenReelStudio={(theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab('reel'); }}
+                  onOpenReelStudio={(theme) => { if (theme && theme.trim()) { setReelTheme(theme.trim()); stashPendingReelTheme(theme.trim()); } setTab('reel'); }}
                 />
 
                 {/* 連携済みなら、まず一気通貫プラン（分析→戦略→リール→稼ぐ）を最上部に。
@@ -1801,7 +1807,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     settings={settings}
                     mediaKit={mediaKit}
                     onNavigate={(t) => setTab(t as Tab)}
-                    onOpenReelStudio={(theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab('reel'); }}
+                    onOpenReelStudio={(theme) => { if (theme && theme.trim()) { setReelTheme(theme.trim()); stashPendingReelTheme(theme.trim()); } setTab('reel'); }}
                     onScheduleReel={(p) => postQueue.add({
                       platform: 'instagram_reel',
                       source: 'reel',
@@ -1831,7 +1837,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                       postQueue={postQueue}
                       knowledge={knowledge}
                       igProfile={igProfile}
-                      onNavigate={(t, theme) => { if (theme && theme.trim()) setReelTheme(theme.trim()); setTab(t as Tab); }}
+                      onNavigate={(t, theme) => { if (theme && theme.trim()) { setReelTheme(theme.trim()); stashPendingReelTheme(theme.trim()); } setTab(t as Tab); }}
                       settings={settings}
                       mediaKit={mediaKit}
                       onConnectInstagram={() => setShowIgConnect(true)}

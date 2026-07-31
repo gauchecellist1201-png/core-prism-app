@@ -54,4 +54,10 @@ export interface BookingConfig {
   /** 事前計算済みの空き時間スナップショット (ISO) */
   slots: string[];
   generatedAt: string;
+  /**
+   * ホストの受信箱 ID (b + 16桁の16進)。
+   * 相手が予約を押したとき、この ID 宛に1件送って Prism の画面に出す。
+   * これが入る前に配ったリンクからの予約は届かない (省略可)。
+   */
+  inbox?: string;
 }

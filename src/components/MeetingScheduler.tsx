@@ -9,6 +9,7 @@ import {
 } from '../lib/googleCalendar';
 import { forgetAgentLink } from '../lib/agentLink';
 import { computeFreeSlots, buildBookingUrl, formatSlot, groupSlotsByDay } from '../lib/scheduling';
+import { getOrCreateInbox, claimInbox } from '../lib/bookingInbox';
 import { copyText } from '../lib/clipboard';
 import { confirmAction } from '../lib/confirmDialog';
 
@@ -173,6 +174,10 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
       setPreviewSlots(embedded);
       setSlotsTrimmed(slots.length - embedded.length);
 
+      // 受信箱は URL を配る前に「自分のもの」として押さえる（鍵は URL に入れない）
+      const inbox = getOrCreateInbox();
+      await claimInbox(inbox);
+
       const cfg = {
         v: 1 as const,
         host: persona.name,
@@ -188,6 +193,8 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
         customLocation: mt.customLocation,
         slots: embedded, // 上限 60 枠 (URL 過大化防止)
         generatedAt: new Date().toISOString(),
+        // 相手が押した予約を、この端末の受信箱へ届ける (Google の招待メール頼みをやめる)
+        inbox: inbox.id,
       };
       const url = buildBookingUrl(cfg);
       setGeneratedUrl(url);

@@ -5,6 +5,7 @@ import {
   groupSlotsByDay, formatSlot, bookingLocationLabel,
   buildGoogleCalendarUrl, buildIcs, type BookingDetails,
 } from '../lib/scheduling';
+import { sendBooking } from '../lib/bookingInbox';
 
 /**
  * ゲストが予約リンク (?book=...) を開いたときに表示する受信ページ。
@@ -19,6 +20,8 @@ export default function BookingPage({ cfg }: { cfg: BookingConfig }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [done, setDone] = useState(false);
+  // null = 送信中 / true = ホストの Prism に届いた / false = 届かなかった
+  const [notified, setNotified] = useState<boolean | null>(null);
 
   const emailOk = /.+@.+\..+/.test(email.trim());
   const canBook = !!slot && name.trim().length > 0 && emailOk;
@@ -29,8 +32,18 @@ export default function BookingPage({ cfg }: { cfg: BookingConfig }) {
 
   function confirm() {
     if (!details) return;
+    // window.open はクリックと同じ処理の中で呼ばないとブロックされるので、先に開く。
     window.open(buildGoogleCalendarUrl(details), '_blank', 'noopener');
     setDone(true);
+    if (cfg.inbox) {
+      setNotified(null);
+      void sendBooking(cfg, {
+        slotIso: details.slotIso,
+        guestName: details.guestName,
+        guestEmail: details.guestEmail,
+        locationLabel: bookingLocationLabel(cfg),
+      }).then(r => setNotified(r.delivered));
+    }
   }
 
   function downloadIcs() {
@@ -63,6 +76,13 @@ export default function BookingPage({ cfg }: { cfg: BookingConfig }) {
               別タブで <b className="text-fg">Google カレンダー</b> が開きました。「保存」を押すと予定が登録され、
               <b className="text-fg">{cfg.host}</b> さんにも招待メールが届きます。
             </p>
+            {cfg.inbox && (
+              <p className="text-fg-subtle text-xs mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+                {notified === null && 'この日時を ' + cfg.host + ' さんの画面へお知らせしています…'}
+                {notified === true && `この日時は ${cfg.host} さんの画面にも表示されました。`}
+                {notified === false && `${cfg.host} さんの画面へのお知らせは届きませんでした。上の Google カレンダーを保存すれば、招待メールで伝わります。`}
+              </p>
+            )}
           </div>
           <button onClick={downloadIcs}
             className="w-full min-h-[48px] rounded-xl text-sm font-semibold"
