@@ -12,7 +12,7 @@
 
 export interface VerticalProduct {
   /** URL slug（/vertical/<slug> ではなく専用パスを持つものは path で指定） */
-  key: 'ultima' | 'anima' | 'veritas';
+  key: 'ultima' | 'anima' | 'veritas' | 'soma';
   name: string;
   /** 英字の役割ラベル（Cinzel で小さく） */
   role: string;
@@ -71,6 +71,19 @@ export const VERTICALS: VerticalProduct[] = [
     accent: '#3FB68B',
     status: 'デモ公開中・サンプルデータで全機能を確認できます',
     points: ['指名検索カニバリの被害額を自動算出', '自然検索1位＋競合なしなら入札を自動停止', 'チャネル別の真のLTV・解約率を可視化'],
+  },
+  {
+    key: 'soma',
+    name: 'SOMA',
+    role: 'Forestry Documents',
+    industry: '林業経営体・森林組合・素材生産業',
+    tagline: '現場から申請まで、林業の書類業務をひとつに。',
+    body: '同じ面積を、提出先ごとにヘクタール・アール・平方メートルへ書き換える。その手作業を無くします。1つの施業地データから提出4様式が同時に仕上がり、県の森林クラウドへは自動で入力。写真はLINEで送るだけ、出役はチェックするだけで労務費と林退共の証紙まで揃います。',
+    path: 'https://soma-indol-gamma.vercel.app',
+    external: true,
+    accent: '#8FBF5E',
+    status: 'デモ公開中・実際の様式は導入時に作り込みます',
+    points: ['原本1回で提出4様式を同時生成', '造林事業補助金28区分を電子キャビネットに', '出役チェックだけで労務費と証紙枚数まで'],
   },
 ];
 

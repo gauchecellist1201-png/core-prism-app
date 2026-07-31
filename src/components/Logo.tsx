@@ -934,3 +934,59 @@ export function VeritasLogo({ size = 28, withWordmark = true, variant = 'default
     </span>
   );
 }
+
+/**
+ * SOMA — 林業特化ライン（提出書類プラットフォーム）のマーク。
+ * モチーフは年輪。同心の弧＝森が育ててきた時間と、1つの原本から外へ広がる提出先。
+ * 中心の金の点＝施業地マスター（すべての起点）。右に開いた欠き＝外へ出ていく書類の流れ。
+ */
+export function SomaLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
+  const isMono = variant === 'mono';
+  const gRing = `somaRing-${size}`;
+  const lite = '#8FBF5E';
+
+  return (
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: withWordmark ? 10 : 0, lineHeight: 1 }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="SOMA"
+        style={{ flexShrink: 0 }}
+      >
+        <defs>
+          <linearGradient id={gRing} x1="16" y1="88" x2="84" y2="16" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#2D6A4F" />
+            <stop offset="0.55" stopColor="#52B788" />
+            <stop offset="1" stopColor="#8FBF5E" />
+          </linearGradient>
+        </defs>
+        {/* 年輪：外側ほど太く、右に欠きを開ける */}
+        <path d="M69.8 84.3 A39.6 39.6 0 1 1 69.8 15.7" stroke={isMono ? 'currentColor' : `url(#${gRing})`} strokeWidth="5.4" strokeLinecap="round" />
+        <path d="M63.5 73.5 A27.1 27.1 0 1 1 63.5 26.5" stroke={isMono ? 'currentColor' : `url(#${gRing})`} strokeWidth="4.6" strokeLinecap="round" opacity="0.85" />
+        <path d="M57.3 62.6 A14.6 14.6 0 1 1 57.3 37.4" stroke={isMono ? 'currentColor' : `url(#${gRing})`} strokeWidth="3.8" strokeLinecap="round" opacity="0.7" />
+        {/* 中心＝施業地マスター（原本） */}
+        <circle cx="50" cy="50" r="6.5" fill={isMono ? 'currentColor' : '#D4A537'} />
+      </svg>
+      {withWordmark && (
+        <span
+          style={{
+            fontFamily: '"Cinzel", serif',
+            fontSize: size * 0.62,
+            fontWeight: 600,
+            letterSpacing: '0.18em',
+            color: isMono ? 'currentColor' : lite,
+            lineHeight: 1,
+          }}
+        >
+          SOMA
+        </span>
+      )}
+    </span>
+  );
+}

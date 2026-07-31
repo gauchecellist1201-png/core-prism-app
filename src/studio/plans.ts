@@ -21,7 +21,7 @@ export type Stat = { value: string; label: string };
 
 export const STATS: Stat[] = [
   { value: '6', label: '自社開発・運営プロダクト' },
-  { value: '5+', label: '公開済みサイト実績' },
+  { value: '6+', label: '公開済みサイト実績' },
   { value: '2週間〜', label: '最短公開' },
   { value: 'AI-native', label: '開発体制' },
 ];
@@ -329,6 +329,7 @@ export const WORKS: Work[] = [
   { id: 'asahikan', name: '朝日館', category: '企業サイト', copy: '老舗旅館の体験プラン直販サイト。外部手数料のかからない直接予約を実現。', url: 'https://asahikan-premium.vercel.app/', img: '/studio/works-asahikan.jpg' },
   { id: 'radhookah', name: 'RAD HOOKAH', category: 'EC・ブランド', copy: 'プレミアムシーシャブランドのECサイト。ブランドの格を保ったまま卸売・通販へ。', url: 'https://rad-hooka.vercel.app/', img: '/studio/works-radhookah.jpg' },
   { id: 'anima', name: 'ANIMA', category: 'アプリ', copy: 'アニメ制作会社向けの業務OS。進捗・報告・経理・CRMを一元化。', url: 'https://core-anime-os.vercel.app/demo', img: '/studio/works-anima.jpg' },
+  { id: 'soma', name: 'SOMA', category: 'アプリ', copy: '林業経営体向けの提出書類プラットフォーム。1つの施業地データから提出4様式を同時生成。', url: 'https://soma-indol-gamma.vercel.app/', img: '/studio/works-soma.jpg' },
   { id: 'morikawa', name: 'モデル個人サイト', category: '個人', copy: 'プロフィールと実績を1ページに。キャスティング担当者が確認しやすい構成。', url: 'https://morikawa-model.vercel.app/', img: '/studio/works-morikawa.jpg' },
 ];
 

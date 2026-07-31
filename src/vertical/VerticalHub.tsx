@@ -3,11 +3,11 @@
 //
 // プラットフォーム（Prism / Iris / Resonance …）とは別の棚。
 // 「どの業界でも使える道具」ではなく「その業界の仕事そのものを動かすもの」を並べる。
-// 第1弾 ULTIMA（建設・電気設備工事） / 第2弾 ANIMA（アニメ制作進行） / 第3弾 VERITAS（広告運用）。
+// 第1弾 ULTIMA（建設・電気設備工事） / 第2弾 ANIMA（アニメ制作進行） / 第3弾 VERITAS（広告運用） / 第4弾 SOMA（林業）。
 // ============================================================
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CoreLogo, UltimaLogo, AnimaLogo, VeritasLogo } from '../components/Logo';
+import { CoreLogo, UltimaLogo, AnimaLogo, VeritasLogo, SomaLogo } from '../components/Logo';
 import { VERTICALS, type VerticalProduct } from './verticalData';
 
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
@@ -29,6 +29,7 @@ const LOGOS: Record<VerticalProduct['key'], typeof UltimaLogo> = {
   ultima: UltimaLogo,
   anima: AnimaLogo,
   veritas: VeritasLogo,
+  soma: SomaLogo,
 };
 
 export default function VerticalHub() {
@@ -44,7 +45,7 @@ export default function VerticalHub() {
       }
       m.setAttribute(attr, value);
     };
-    const desc = 'CORE Vertical — ひとつの業界の仕事そのものを動かす特化プロダクト。建設・電気設備工事の ULTIMA、アニメ制作進行の ANIMA、広告運用の VERITAS。';
+    const desc = 'CORE Vertical — ひとつの業界の仕事そのものを動かす特化プロダクト。建設・電気設備工事の ULTIMA、アニメ制作進行の ANIMA、広告運用の VERITAS、林業の SOMA。';
     setMeta('meta[name="description"]', 'content', desc);
     setMeta('meta[property="og:title"]', 'content', 'CORE Vertical — 業界の中に、入り込むAI。');
     setMeta('meta[property="og:description"]', 'content', desc);
