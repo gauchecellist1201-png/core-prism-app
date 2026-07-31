@@ -8,10 +8,11 @@
 //   は右下 / SuggestionFab は左下 と被らない) に小さなボタン。
 // ============================================================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sun, Moon } from 'lucide-react';
 import { currentTheme, subscribeTheme, toggleTheme, type Theme } from '../lib/themeManager';
+import { useCoveredByModal } from '../hooks/useCoveredByModal';
 
 function isDashboardOrIris(): boolean {
   if (typeof window === 'undefined') return false;
@@ -23,6 +24,13 @@ function isDashboardOrIris(): boolean {
 export default function PublicThemeToggle() {
   const [theme, setTheme] = useState<Theme>(() => currentTheme());
   const [hide, setHide] = useState<boolean>(isDashboardOrIris());
+
+  // 全画面モーダル(初回オンボーディング等)が出ている間はこのボタンも引っ込む(2026-07-31)。
+  // このボタンは z-70 でオンボ・モーダル(fixed inset-0 z-70)と同じ高さ＝暗幕の上に残り、
+  // オンボの途中でもテーマを切り替えられてしまっていた(2026-07-29 の ※残)。
+  // 判定は CoreDock / マイクFAB と同じ仕組みを共有(閉じれば自動で戻る)。
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const coveredByModal = useCoveredByModal(btnRef);
 
   useEffect(() => {
     const unsub = subscribeTheme((t) => setTheme(t));
@@ -45,9 +53,11 @@ export default function PublicThemeToggle() {
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.06 }}
       whileTap={{ scale: 0.94 }}
+      ref={btnRef}
       onClick={() => toggleTheme()}
       aria-label={isLight ? 'ダークモードに切替' : 'ライトモードに切替'}
       title={isLight ? 'ダークモードに切替' : 'ライトモードに切替'}
+      aria-hidden={coveredByModal ? true : undefined}
       style={{
         position: 'fixed',
         top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
@@ -60,7 +70,7 @@ export default function PublicThemeToggle() {
         boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        display: coveredByModal ? 'none' : 'inline-flex', alignItems: 'center', justifyContent: 'center',
         cursor: 'pointer',
       }}
     >
