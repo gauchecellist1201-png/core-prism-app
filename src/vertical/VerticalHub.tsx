@@ -21,7 +21,7 @@ const C = {
   goldLite: '#E9CD8A',
   ink: '#F1E9D8',
   mute: 'rgba(240,233,216,0.66)',
-  faint: 'rgba(240,233,216,0.45)',
+  faint: 'rgba(240,233,216,0.62)', // 2026-07-30: 0.45は黒地で3.87:1と基準未達だった
   line: 'rgba(201,162,75,0.22)',
 };
 
@@ -200,7 +200,7 @@ export default function VerticalHub() {
         }}>
           <p style={{ display: 'flex', alignItems: 'baseline', gap: '0.8rem', margin: '0 0 1rem' }}>
             <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.84rem', letterSpacing: '0.34em', fontWeight: 700 }}>考え方</span>
-            <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.56rem', letterSpacing: '0.38em', color: 'rgba(201,162,75,0.6)' }}>WHY VERTICAL</span>
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.56rem', letterSpacing: '0.38em', color: 'rgba(201,162,75,0.85)' }}>WHY VERTICAL</span>
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.4rem' }}>
             {[
@@ -229,7 +229,7 @@ export default function VerticalHub() {
             <CoreLogo size={22} withWordmark={false} />
             <span style={{ fontSize: '0.74rem', letterSpacing: '0.1em' }}>CORE のトップへ</span>
           </a>
-          <p style={{ fontSize: '0.68rem', color: 'rgba(240,233,216,0.34)', margin: 0 }}>
+          <p style={{ fontSize: '0.68rem', color: 'rgba(240,233,216,0.55)', margin: 0 }}>
             © {new Date().getFullYear()} CORE（設立準備中）
           </p>
         </div>

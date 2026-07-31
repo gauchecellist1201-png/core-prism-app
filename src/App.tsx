@@ -602,12 +602,10 @@ function AppRoutes() {
     return (
       <Suspense fallback={<RouteFallback />}>
         <IrisApp />
-        {/* CORE 共通ドック（下部中央・current=iris）。
-            Iris は下部ナビ Dock(64px) + リールのチャット編集バー(≈56px) が最下段に並ぶため、
-            オーブがそれらに乗り上げないよう下端から 150px 持ち上げてクランプする。
-            zIndex=50: 全機能シート(z=60)などのモーダルの上に浮いてボタンを塞がないよう、
-            シートより下・常駐FAB(z=40)より上に置く (2026-07-22 機械巡回で検出) */}
-        <CoreDock current="iris" bottomClearance={150} zIndex={50} />
+        {/* CORE 共通ドックは IrisApp の中（アプリに入ったあと）で描画する。
+            2026-07-30 本番実測: ここで常時描画していたため LP のヒーローにも重なり、
+            「料金を見る」の1文字目を隠して「金を見る」と読めていた。
+            LP はこれから買う人の画面で、他アプリへの切替口は出口にしかならない。 */}
       </Suspense>
     );
   }

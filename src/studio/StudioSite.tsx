@@ -21,7 +21,10 @@ const C = {
   body: '#374151',                // 本文
   mute: '#6B7280',                // 補足
   line: '#E5E7EB',                // 罫線
-  gold: '#A8823C',                // アクセント (線・ラベル・ホバーのみ)
+  gold: '#A8823C',                // アクセント (線・面のみ。文字には使わない)
+  // 2026-07-30 巡回で是正: #A8823C は白地で 3.55:1 しかなく、番号やラベルの文字が読めなかった。
+  // 線の金は見た目を保ちたいので変えず、文字用にだけ濃い金を新設する。
+  goldText: '#8f6d2f',            // 白地で 4.78:1 (文字用)
   goldLine: 'rgba(168,130,60,0.4)',
   dark: '#111827',                // CTAボタン
 };
@@ -133,7 +136,7 @@ export default function StudioSite() {
       <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: `1px solid ${C.line}`, paddingTop: 'env(safe-area-inset-top)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 760, margin: '0 auto', padding: '15px 20px 9px' }}>
           <button onClick={() => go('home')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}>
-            <span className="st-serif" style={{ fontSize: 17, fontWeight: 700, letterSpacing: '0.16em', color: C.ink }}>CORE <span style={{ color: C.gold }}>STUDIO</span></span>
+            <span className="st-serif" style={{ fontSize: 17, fontWeight: 700, letterSpacing: '0.16em', color: C.ink }}>CORE <span style={{ color: C.goldText }}>STUDIO</span></span>
           </button>
           <a href="/corp" style={{ fontSize: 12, color: C.mute, textDecoration: 'none', letterSpacing: '0.05em', minHeight: 44, display: 'inline-flex', alignItems: 'center' }}>CORE公式サイト</a>
         </div>
@@ -226,7 +229,7 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
           {REASONS.map((r, i) => (
             <div key={r.id} className="st-card">
               <div style={{ display: 'flex', gap: 14, alignItems: 'baseline' }}>
-                <span className="st-serif" style={{ fontSize: 15, fontWeight: 700, color: C.gold, flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
+                <span className="st-serif" style={{ fontSize: 15, fontWeight: 700, color: C.goldText, flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
                 <div>
                   <div className="st-serif" style={{ fontSize: 17, fontWeight: 700, color: C.ink, lineHeight: 1.6 }}>{r.title}</div>
                   <p style={{ fontSize: 14, lineHeight: 2, color: C.body, margin: '8px 0 0' }}>{r.body}</p>
@@ -243,7 +246,7 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
         <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {PROCESS.map((p, i) => (
             <li key={p.no} style={{ display: 'flex', gap: 16, padding: '16px 0', borderBottom: i < PROCESS.length - 1 ? `1px solid ${C.line}` : 'none' }}>
-              <span className="st-serif" style={{ fontSize: 14, fontWeight: 700, color: C.gold, flexShrink: 0, minWidth: 26, paddingTop: 2 }}>{p.no}</span>
+              <span className="st-serif" style={{ fontSize: 14, fontWeight: 700, color: C.goldText, flexShrink: 0, minWidth: 26, paddingTop: 2 }}>{p.no}</span>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>{p.title}</div>
                 <p style={{ fontSize: 13.5, lineHeight: 1.9, color: C.body, margin: '4px 0 0' }}>{p.body}</p>
@@ -326,7 +329,7 @@ function PlanCard({ p }: { p: ProductionPlan }) {
           <div key={f.q} style={{ borderTop: `1px solid ${C.line}` }}>
             <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
               style={{ width: '100%', minHeight: 44, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '10px 0', fontSize: 13.5, color: C.ink, fontFamily: SANS, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <span>Q. {f.q}</span><span style={{ color: C.gold, fontSize: 16, lineHeight: 1 }}>{openFaq === i ? '−' : '+'}</span>
+              <span>Q. {f.q}</span><span style={{ color: C.goldText, fontSize: 16, lineHeight: 1 }}>{openFaq === i ? '−' : '+'}</span>
             </button>
             {openFaq === i && <p style={{ fontSize: 13, lineHeight: 1.9, color: C.body, margin: '0 0 12px' }}>{f.a}</p>}
           </div>

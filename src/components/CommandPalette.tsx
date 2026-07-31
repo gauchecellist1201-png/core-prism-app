@@ -18,7 +18,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Sparkles, Compass, Plus, Bot, Wrench, Settings as SettingsIcon,
   Clock, ArrowRight, CornerDownLeft, Command, Play, Star, X, Undo2, AtSign, Loader2,
+  CreditCard, Square, RefreshCw, Map as MapIcon, History, KeyRound, SunMoon,
+  FileText, FileImage, FileType2,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { Persona, KnowledgeItem } from '../types/identity';
 import {
   listMentionTargets, resolveMentionTarget, buildMentionContext, mentionErrorMessage,
@@ -29,18 +32,23 @@ import { notifyInApp } from '../lib/inAppNotify';
 import { seedDemoData, setDemoActive, clearDemoData, isDemoActive } from '../lib/onboarding';
 import { listSuggestions, setStatus as setSuggestionStatus, type SuggestionEntry } from '../lib/aiSuggestionLog';
 import PersonaGlyph, { isRoleCode } from './PersonaGlyph';
+// ⌘K の検索結果も、ホームのタイル・からっぽ画面とまったく同じ台帳から絵と色を引く。
+// (これが無い間、同じ「スライドを作る」がタイルでは紫の投影機・⌘K では 🎨 に見えていた)
+import { resolveFeatureIcon } from '../lib/featureIcons';
 
 export type CmdAction =
-  | { kind: 'open-modal'; modal: ModalKey; label: string; emoji: string; subtitle?: string }
+  // iconKey … 機能アイコン台帳 (lib/featureIcons.ts) の ID。
+  //   ある行はブランドのアイコン + 色で出る。無い行だけ従来どおり emoji を出す。
+  | { kind: 'open-modal'; modal: ModalKey; label: string; emoji: string; iconKey?: string; subtitle?: string }
   | { kind: 'switch-persona'; personaId: string; label: string; emoji: string; color: string }
-  | { kind: 'jump-knowledge'; knowledgeId: string; label: string; subtitle: string; emoji: string }
-  | { kind: 'jump-task'; taskId: string; personaId: string; label: string; subtitle: string; emoji: string }
-  | { kind: 'quick-create'; modal: ModalKey; label: string; emoji: string; subtitle: string }
+  | { kind: 'jump-knowledge'; knowledgeId: string; label: string; subtitle: string; emoji: string; iconKey?: string }
+  | { kind: 'jump-task'; taskId: string; personaId: string; label: string; subtitle: string; emoji: string; iconKey?: string }
+  | { kind: 'quick-create'; modal: ModalKey; label: string; emoji: string; iconKey?: string; subtitle: string }
   | { kind: 'cxo'; cxo: CxoRole; label: string; subtitle: string; emoji: string; color: string; actionLabel: string }
   | { kind: 'ai-delegate'; prompt: string; label: string; subtitle: string; emoji: string; mentionId?: string }
-  | { kind: 'data-op'; id: string; label: string; subtitle: string; emoji: string; onRun: () => void }
-  | { kind: 'help'; id: string; label: string; subtitle: string; emoji: string; onRun: () => void }
-  | { kind: 'custom'; id: string; label: string; subtitle?: string; emoji: string; onRun: () => void };
+  | { kind: 'data-op'; id: string; label: string; subtitle: string; emoji: string; iconKey?: string; onRun: () => void }
+  | { kind: 'help'; id: string; label: string; subtitle: string; emoji: string; iconKey?: string; onRun: () => void }
+  | { kind: 'custom'; id: string; label: string; subtitle?: string; emoji: string; iconKey?: string; onRun: () => void };
 
 export type ModalKey =
   | 'knowledge' | 'meeting' | 'health' | 'minutes' | 'slides' | 'nego'
@@ -90,47 +98,111 @@ const CATEGORY_TAB_LABEL: Partial<Record<CategoryKey, string>> = {
 };
 
 // ナビ系 (既存 MODAL_LIST 拡張)
-const MODAL_LIST: { key: ModalKey; label: string; emoji: string; subtitle?: string }[] = [
-  { key: 'dailyReport', label: '今日のレポート',         emoji: '📊', subtitle: '売上・AI 完了・明日の 3 手を 1 枚で' },
-  { key: 'knowledge', label: 'ナレッジを開く',          emoji: '📚', subtitle: '資料・メモ・PDF・画像を一覧' },
-  { key: 'tasks',     label: 'タスクハブを開く',        emoji: '✅', subtitle: '全人格のタスクを横断管理' },
-  { key: 'health',    label: 'ヘルス Hub を開く',       emoji: '🩺', subtitle: '体調・睡眠・運動の記録' },
-  { key: 'minutes',   label: '議事録 AI を開く',         emoji: '🎩', subtitle: '会議の音声を要約' },
-  { key: 'slides',    label: 'スライド生成を開く',       emoji: '🎨', subtitle: '台本から PPTX を生成' },
-  { key: 'nego',      label: '交渉コーチを開く',         emoji: '🤝', subtitle: '商談の戦略を相談' },
-  { key: 'decision',  label: '意思決定メモを開く',       emoji: '💭', subtitle: '判断の根拠を残す' },
-  { key: 'post',      label: '投稿生成 (note / X)',     emoji: '📢', subtitle: 'SNS / ブログ用文章' },
-  { key: 'image',     label: '画像生成を開く',           emoji: '🖼', subtitle: 'OG 画像・アイキャッチ' },
-  { key: 'voice',     label: '音声メモを開く',           emoji: '🎤', subtitle: '録音 → 自動振り分け' },
-  { key: 'youtube',   label: 'YouTube 取込を開く',       emoji: '📺', subtitle: 'URL から字幕要約' },
-  { key: 'salesAgent', label: '商談 AI エージェント',     emoji: '🎯', subtitle: '案件を自動追跡' },
-  { key: 'saasAgent',  label: 'SaaS エージェント',       emoji: '🤖', subtitle: 'ツール統合の自律エージェント' },
-  { key: 'email',     label: 'メールトリアージ',         emoji: '📬', subtitle: '受信箱を AI で仕分け' },
-  { key: 'premium',   label: 'プレミアム Hub',           emoji: '👑', subtitle: '上位プランの管理' },
-  { key: 'invoice',   label: '請求書スタジオ',           emoji: '🧾', subtitle: '発行・入金管理' },
-  { key: 'sales',     label: '売上台帳',                  emoji: '📒', subtitle: '日次の売上を記録' },
-  { key: 'expense',   label: '経費 / OCR',               emoji: '📷', subtitle: 'レシートを撮って計上' },
-  { key: 'pnl',       label: 'P&L 損益計算書',           emoji: '📊', subtitle: '今月の損益を見る' },
-  { key: 'finConsult', label: '財務コンサルタント',        emoji: '🧮', subtitle: 'AI に数字を相談' },
-  { key: 'crm',       label: 'CRM パイプライン',          emoji: '🗂', subtitle: '案件の進捗を管理' },
-  { key: 'documents', label: '書類スタジオ',              emoji: '📄', subtitle: '契約書・提案書を作る' },
-  { key: 'people',    label: '人物カルテ / 1on1',         emoji: '👥', subtitle: '関係者を記録' },
-  { key: 'meeting',   label: '会議リンク',                emoji: '📅', subtitle: '会議スケジュール' },
+// iconKey は QuickActions のタイル ID と同じもの。ここを揃えることで、
+// ホームで見た絵と ⌘K で見つけた絵が必ず一致する。
+const MODAL_LIST: { key: ModalKey; label: string; emoji: string; iconKey: string; subtitle?: string }[] = [
+  { key: 'dailyReport', label: '今日のレポート',         emoji: '📊', iconKey: 'briefing',    subtitle: '売上・AI 完了・明日の 3 手を 1 枚で' },
+  { key: 'knowledge', label: 'ナレッジを開く',          emoji: '📚', iconKey: 'kb',          subtitle: '資料・メモ・PDF・画像を一覧' },
+  { key: 'tasks',     label: 'タスクハブを開く',        emoji: '✅', iconKey: 'tasks-hub',   subtitle: '全人格のタスクを横断管理' },
+  { key: 'health',    label: 'ヘルス Hub を開く',       emoji: '🩺', iconKey: 'health',      subtitle: '体調・睡眠・運動の記録' },
+  { key: 'minutes',   label: '議事録 AI を開く',         emoji: '🎩', iconKey: 'minutes',     subtitle: '会議の音声を要約' },
+  { key: 'slides',    label: 'スライド生成を開く',       emoji: '🎨', iconKey: 'slides',      subtitle: '台本から PPTX を生成' },
+  { key: 'nego',      label: '交渉コーチを開く',         emoji: '🤝', iconKey: 'nego',        subtitle: '商談の戦略を相談' },
+  { key: 'decision',  label: '意思決定メモを開く',       emoji: '💭', iconKey: 'decision',    subtitle: '判断の根拠を残す' },
+  { key: 'post',      label: '投稿生成 (note / X)',     emoji: '📢', iconKey: 'post',        subtitle: 'SNS / ブログ用文章' },
+  { key: 'image',     label: '画像生成を開く',           emoji: '🖼', iconKey: 'image',       subtitle: 'OG 画像・アイキャッチ' },
+  { key: 'voice',     label: '音声メモを開く',           emoji: '🎤', iconKey: 'voice',       subtitle: '録音 → 自動振り分け' },
+  { key: 'youtube',   label: 'YouTube 取込を開く',       emoji: '📺', iconKey: 'youtube',     subtitle: 'URL から字幕要約' },
+  { key: 'salesAgent', label: '商談 AI エージェント',     emoji: '🎯', iconKey: 'sales-agent', subtitle: '案件を自動追跡' },
+  { key: 'saasAgent',  label: 'SaaS エージェント',       emoji: '🤖', iconKey: 'saas-agent',  subtitle: 'ツール統合の自律エージェント' },
+  { key: 'email',     label: 'メールトリアージ',         emoji: '📬', iconKey: 'email',       subtitle: '受信箱を AI で仕分け' },
+  { key: 'premium',   label: 'プレミアム Hub',           emoji: '👑', iconKey: 'premium',     subtitle: '上位プランの管理' },
+  { key: 'invoice',   label: '請求書スタジオ',           emoji: '🧾', iconKey: 'invoice',     subtitle: '発行・入金管理' },
+  { key: 'sales',     label: '売上台帳',                  emoji: '📒', iconKey: 'sales',       subtitle: '日次の売上を記録' },
+  { key: 'expense',   label: '経費 / OCR',               emoji: '📷', iconKey: 'expense',     subtitle: 'レシートを撮って計上' },
+  { key: 'pnl',       label: 'P&L 損益計算書',           emoji: '📊', iconKey: 'pnl',         subtitle: '今月の損益を見る' },
+  { key: 'finConsult', label: '財務コンサルタント',        emoji: '🧮', iconKey: 'fin-consult', subtitle: 'AI に数字を相談' },
+  { key: 'crm',       label: 'CRM パイプライン',          emoji: '🗂', iconKey: 'crm',         subtitle: '案件の進捗を管理' },
+  { key: 'documents', label: '書類スタジオ',              emoji: '📄', iconKey: 'documents',   subtitle: '契約書・提案書を作る' },
+  { key: 'people',    label: '人物カルテ / 1on1',         emoji: '👥', iconKey: 'people',      subtitle: '関係者を記録' },
+  { key: 'meeting',   label: '会議リンク',                emoji: '📅', iconKey: 'meet',        subtitle: '会議スケジュール' },
 ];
 
 // クイック作成
-const QUICK_CREATE: { modal: ModalKey; label: string; emoji: string; subtitle: string }[] = [
-  { modal: 'tasks',     label: '+ 新規タスク',          emoji: '✅', subtitle: 'タスクハブを開いて追加' },
-  { modal: 'invoice',   label: '+ 新規請求書',          emoji: '🧾', subtitle: '請求書スタジオで発行' },
-  { modal: 'knowledge', label: '+ 新規ナレッジメモ',     emoji: '📚', subtitle: 'メモを追加' },
-  { modal: 'people',    label: '+ 新規人物',            emoji: '👥', subtitle: '人物カルテに登録' },
-  { modal: 'expense',   label: '+ 新規経費',            emoji: '📷', subtitle: 'レシートを追加' },
-  { modal: 'crm',       label: '+ 新規案件',            emoji: '🗂', subtitle: 'CRM に案件を作る' },
-  { modal: 'post',      label: '+ 新規投稿',            emoji: '📢', subtitle: '投稿を下書き' },
-  { modal: 'documents', label: '+ 新規書類',            emoji: '📄', subtitle: '契約書/提案書を作成' },
-  { modal: 'decision',  label: '+ 新規意思決定メモ',     emoji: '💭', subtitle: '判断を残す' },
-  { modal: 'minutes',   label: '+ 新規議事録',          emoji: '🎩', subtitle: '会議を要約する' },
+const QUICK_CREATE: { modal: ModalKey; label: string; emoji: string; iconKey: string; subtitle: string }[] = [
+  { modal: 'tasks',     label: '+ 新規タスク',          emoji: '✅', iconKey: 'tasks-hub', subtitle: 'タスクハブを開いて追加' },
+  { modal: 'invoice',   label: '+ 新規請求書',          emoji: '🧾', iconKey: 'invoice',   subtitle: '請求書スタジオで発行' },
+  { modal: 'knowledge', label: '+ 新規ナレッジメモ',     emoji: '📚', iconKey: 'kb',        subtitle: 'メモを追加' },
+  { modal: 'people',    label: '+ 新規人物',            emoji: '👥', iconKey: 'people',    subtitle: '人物カルテに登録' },
+  { modal: 'expense',   label: '+ 新規経費',            emoji: '📷', iconKey: 'expense',   subtitle: 'レシートを追加' },
+  { modal: 'crm',       label: '+ 新規案件',            emoji: '🗂', iconKey: 'crm',       subtitle: 'CRM に案件を作る' },
+  { modal: 'post',      label: '+ 新規投稿',            emoji: '📢', iconKey: 'post',      subtitle: '投稿を下書き' },
+  { modal: 'documents', label: '+ 新規書類',            emoji: '📄', iconKey: 'documents', subtitle: '契約書/提案書を作成' },
+  { modal: 'decision',  label: '+ 新規意思決定メモ',     emoji: '💭', iconKey: 'decision',  subtitle: '判断を残す' },
+  { modal: 'minutes',   label: '+ 新規議事録',          emoji: '🎩', iconKey: 'minutes',   subtitle: '会議を要約する' },
 ];
+
+// ────────────────────────────────────────────────────────────
+// 機能ではない行 (データ操作・ヘルプ・ファイル種別) のアイコン台帳。
+// 機能タイルの台帳 (featureIcons.ts) には無い行なので、ここで面倒を見る。
+// 目的は同じ = 端末によって絵が変わる OS 標準の絵文字をやめ、
+// 「どの端末で見ても同じ絵」にする (しょぼい絵文字を使わない 恒久ルール)。
+// 色は「何が起きるか」で選ぶ: 灰=見るだけ / 緑=始まる / 橙=止まる・戻る。
+// ────────────────────────────────────────────────────────────
+const UTIL_ICONS: Record<string, { Icon: LucideIcon; color: string }> = {
+  'stripe-sync': { Icon: CreditCard,  color: '#635BFF' }, // Stripe ブランド紫
+  'demo-start':  { Icon: Play,        color: '#10B981' },
+  'demo-end':    { Icon: Square,      color: '#FFA94D' },
+  reload:        { Icon: RefreshCw,   color: '#5BA8FF' },
+  sitemap:       { Icon: MapIcon,     color: '#5BA8FF' },
+  history:       { Icon: History,     color: '#9088A8' },
+  'api-keys':    { Icon: KeyRound,    color: '#FACC15' },
+  settings:      { Icon: SettingsIcon, color: '#9CA3AF' },
+  theme:         { Icon: SunMoon,     color: '#A78BFA' },
+  // ナレッジの中身 (画像 / PDF / それ以外) も絵文字をやめる
+  'file-image':  { Icon: FileImage,   color: '#C084FC' },
+  'file-pdf':    { Icon: FileType2,   color: '#FF5C5C' },
+  'file-doc':    { Icon: FileText,    color: '#5BA8FF' },
+};
+
+/** 台帳 (機能 → 汎用) の順に引く。どちらにも無ければ undefined = 絵文字のまま */
+function resolveRowIcon(key?: string): { Icon: LucideIcon; color: string } | undefined {
+  if (!key) return undefined;
+  return resolveFeatureIcon(key) || UTIL_ICONS[key];
+}
+
+/**
+ * ⌘K の 1 行の左側に出す絵。優先順は
+ *   1. 台帳のアイコン (濃い色の角丸 + 白いアイコン ← タイル・からっぽ画面と完全に同じ見た目)
+ *   2. 人格グリフ
+ *   3. 従来の絵文字 (台帳に無い行の保険)
+ * 明るいテーマでも暗いテーマでも白いアイコンが必ず読める (文字コントラスト恒久ルール)。
+ */
+function RowGlyph({ item, size }: { item: CmdAction; size: number }) {
+  const key = 'iconKey' in item ? item.iconKey : undefined;
+  const reg = resolveRowIcon(key);
+  if (reg) {
+    const box = size + 12;
+    return (
+      <span
+        aria-hidden
+        style={{
+          flexShrink: 0,
+          width: box, height: box, borderRadius: Math.round(box * 0.3),
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          background: `linear-gradient(135deg, ${reg.color}, ${reg.color}cc)`,
+          boxShadow: `0 2px 8px ${reg.color}33, inset 0 1px 0 rgba(255,255,255,0.18)`,
+        }}
+      >
+        <reg.Icon size={size} color="#fff" strokeWidth={2} />
+      </span>
+    );
+  }
+  if (isRoleCode(item.emoji)) {
+    return <PersonaGlyph icon={item.emoji} size={size} color="currentColor" />;
+  }
+  return <span style={{ flexShrink: 0, fontSize: size * 1.05, lineHeight: 1 }}>{item.emoji}</span>;
+}
 
 // ────────────────────────────────────────────────────────────
 // 最近使った
@@ -426,7 +498,7 @@ export default function CommandPalette({
     for (const m of MODAL_LIST) {
       out.push({
         category: 'nav',
-        item: { kind: 'open-modal', modal: m.key, label: m.label, emoji: m.emoji, subtitle: m.subtitle },
+        item: { kind: 'open-modal', modal: m.key, label: m.label, emoji: m.emoji, iconKey: m.iconKey, subtitle: m.subtitle },
       });
     }
 
@@ -434,7 +506,7 @@ export default function CommandPalette({
     for (const c of QUICK_CREATE) {
       out.push({
         category: 'create',
-        item: { kind: 'quick-create', modal: c.modal, label: c.label, emoji: c.emoji, subtitle: c.subtitle },
+        item: { kind: 'quick-create', modal: c.modal, label: c.label, emoji: c.emoji, iconKey: c.iconKey, subtitle: c.subtitle },
       });
     }
 
@@ -504,7 +576,8 @@ export default function CommandPalette({
       { id: 'reload', label: 'ページを再読み込み', subtitle: '最新の状態を取得', emoji: '🔁', onRun: () => window.location.reload() },
     ];
     for (const d of dataOps) {
-      out.push({ category: 'data', item: { kind: 'data-op', ...d } });
+      // id と UTIL_ICONS の鍵は同じ = そのまま絵と色が決まる
+      out.push({ category: 'data', item: { kind: 'data-op', ...d, iconKey: d.id } });
     }
 
     // 人格切替
@@ -532,6 +605,7 @@ export default function CommandPalette({
           label: k.title,
           subtitle: `${k.fileKind || 'note'}${k.tags.length > 0 ? ' · ' + k.tags.slice(0, 2).join(', ') : ''}`,
           emoji: k.fileKind === 'image' ? '🖼' : k.fileKind === 'pdf' ? '📑' : '📄',
+          iconKey: k.fileKind === 'image' ? 'file-image' : k.fileKind === 'pdf' ? 'file-pdf' : 'file-doc',
         },
       });
     }
@@ -625,7 +699,7 @@ export default function CommandPalette({
       { id: 'theme', label: 'テーマ切替', subtitle: 'ライト / ダーク', emoji: '🌓', onRun: handleThemeToggle },
     ];
     for (const h of helpItems) {
-      out.push({ category: 'help', item: { kind: 'help', ...h } });
+      out.push({ category: 'help', item: { kind: 'help', ...h, iconKey: h.id } });
     }
 
     return out;
@@ -1225,7 +1299,7 @@ export default function CommandPalette({
                           onClick={() => runItem(item)}
                           className="cp-zero-row"
                         >
-                          <span className="cp-zero-row-emoji">{isRoleCode(item.emoji) ? <PersonaGlyph icon={item.emoji} size={18} color="currentColor" /> : item.emoji}</span>
+                          <RowGlyph item={item} size={16} />
                           <span className="cp-zero-row-label">{item.label}</span>
                           <ArrowRight size={14} style={{ color: 'var(--fg-subtle)' }} />
                         </button>
@@ -1246,7 +1320,7 @@ export default function CommandPalette({
                           onClick={() => runItem(item)}
                           className="cp-zero-row"
                         >
-                          <span className="cp-zero-row-emoji">{item.emoji}</span>
+                          <RowGlyph item={item} size={16} />
                           <span className="cp-zero-row-label">{item.label}</span>
                           <ArrowRight size={14} style={{ color: 'var(--fg-subtle)' }} />
                         </button>
@@ -1267,7 +1341,7 @@ export default function CommandPalette({
                           onClick={() => runItem(item)}
                           className="cp-zero-row"
                         >
-                          <span className="cp-zero-row-emoji">{isRoleCode(item.emoji) ? <PersonaGlyph icon={item.emoji} size={18} color="currentColor" /> : item.emoji}</span>
+                          <RowGlyph item={item} size={16} />
                           <span className="cp-zero-row-label">{item.label}</span>
                           <ArrowRight size={14} style={{ color: 'var(--fg-subtle)' }} />
                         </button>
@@ -1343,7 +1417,7 @@ export default function CommandPalette({
                                 className="flex-1 min-w-0 text-left pl-5 pr-2 py-2.5 flex items-center gap-3"
                                 style={{ minHeight: 44 }}
                               >
-                                <span className="text-xl flex-shrink-0">{item.emoji}</span>
+                                <RowGlyph item={item} size={18} />
                                 <div className="flex-1 min-w-0">
                                   <p className="cp-body truncate" style={{ fontWeight: isSelected ? 600 : 400 }}>{item.label}</p>
                                   {subtitle && <p className="cp-meta truncate">{subtitle}</p>}
@@ -1374,7 +1448,7 @@ export default function CommandPalette({
                               transform: isSelected ? 'translateX(2px)' : 'none',
                             }}
                           >
-                            <span className="text-xl flex-shrink-0">{isRoleCode(item.emoji) ? <PersonaGlyph icon={item.emoji} size={20} color="currentColor" /> : item.emoji}</span>
+                            <RowGlyph item={item} size={18} />
                             <div className="flex-1 min-w-0">
                               <p className="cp-body truncate" style={{ fontWeight: isSelected ? 600 : 400 }}>{item.label}</p>
                               {subtitle && <p className="cp-meta truncate">{subtitle}</p>}

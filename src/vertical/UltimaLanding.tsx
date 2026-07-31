@@ -27,7 +27,7 @@ const C = {
   amber: '#E8A33D',
   ink: '#F1E9D8',
   mute: 'rgba(240,233,216,0.66)',
-  faint: 'rgba(240,233,216,0.45)',
+  faint: 'rgba(240,233,216,0.62)', // 2026-07-30: 0.45は黒地で3.87:1と基準未達だった
   line: 'rgba(201,162,75,0.22)',
 };
 
@@ -601,7 +601,7 @@ export default function UltimaLanding() {
             <a href="/tokushoho" style={footLink}>特定商取引法</a>
           </div>
         </div>
-        <p style={{ maxWidth: 1080, margin: '1.6rem auto 0', fontSize: '0.68rem', color: 'rgba(240,233,216,0.34)', lineHeight: 1.9 }}>
+        <p style={{ maxWidth: 1080, margin: '1.6rem auto 0', fontSize: '0.68rem', color: 'rgba(240,233,216,0.55)', lineHeight: 1.9 }}>
           ULTIMA は CORE の業界特化プロダクトです。AIが作成した書類は、建設業法にもとづき有資格者による最終確認を前提としています。補助金に関する情報は参考提供であり、申請の責任はお客様に帰属します。<br />
           © {new Date().getFullYear()} CORE（設立準備中）
         </p>
@@ -630,7 +630,7 @@ function TabHead({ jp, en, head, lead }: { jp: string; en: string; head: string;
     <div style={{ marginBottom: '1.9rem' }}>
       <p style={{ display: 'flex', alignItems: 'baseline', gap: '0.8rem', margin: '0 0 0.9rem' }}>
         <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.86rem', letterSpacing: '0.34em', color: 'rgba(240,233,216,0.9)', fontWeight: 700 }}>{jp}</span>
-        <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.58rem', letterSpacing: '0.38em', color: 'rgba(201,162,75,0.6)' }}>{en}</span>
+        <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.58rem', letterSpacing: '0.38em', color: 'rgba(201,162,75,0.85)' }}>{en}</span>
       </p>
       <h2 style={{
         fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.25rem, 4.4vw, 1.85rem)', fontWeight: 700,

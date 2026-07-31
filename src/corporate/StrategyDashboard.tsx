@@ -490,7 +490,7 @@ export default function StrategyDashboard() {
 
       <footer style={{ background: '#000', padding: '2rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
         <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.3)' }}>
-          © {new Date().getFullYear()} CORE INC. — STRATEGY COMMAND CENTER
+          © {new Date().getFullYear()} CORE（設立準備中） — STRATEGY COMMAND CENTER
         </p>
       </footer>
 

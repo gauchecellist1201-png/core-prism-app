@@ -12,6 +12,7 @@ import ExtensionCaptureToast from '../components/ExtensionCaptureToast';
 import StripeFailureBanner from '../components/StripeFailureBanner';
 import InstallPwaBanner from '../components/InstallPwaBanner';
 import IrisDashboard from './IrisDashboard';
+import { CoreDock } from '../components/CoreDock';
 import TutorialOverlay from '../components/TutorialOverlay';
 import WowOnboarding from '../components/WowOnboarding';
 import CheckoutModal from '../components/CheckoutModal';
@@ -160,6 +161,12 @@ export default function IrisApp() {
       {/* 課金失敗 (past_due / unpaid) 救済バナー — Iris ダッシュボード上部 */}
       <StripeFailureBanner brand="iris" />
       <IrisDashboard settings={settings} onLeave={() => setEntered(false)} />
+      {/* CORE 共通ドック（current=iris）。アプリに入ったあとだけ出す。
+          Iris は下部ナビ Dock(64px) + リールのチャット編集バー(≈56px) が最下段に並ぶため、
+          オーブがそれらに乗り上げないよう下端から 150px 持ち上げてクランプする。
+          zIndex=50: 全機能シート(z=60)などのモーダルの上に浮いてボタンを塞がないよう、
+          シートより下・常駐FAB(z=40)より上に置く (2026-07-22 機械巡回で検出) */}
+      <CoreDock current="iris" bottomClearance={150} zIndex={50} />
       {/* Chrome 拡張機能から ?capture= で届いた取り込みのお知らせ */}
       <ExtensionCaptureToast brand="iris" />
       {/* 旧: AgentTeamMonitor / CxoWelcomeCard は Prism の「13/14 CXO 役員会議室」を
