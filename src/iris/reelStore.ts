@@ -4,8 +4,10 @@
 // 目的: リールスタジオの素材 (Blob) + クリップ設定 + 字幕を端末内に保存し、
 //       リロード / 再訪しても「前回の続き」から再開できるようにする。
 // 方針:
-//   - 失敗しても本体機能を壊さない (全 API は throw せず null / false を返す)
-//   - IndexedDB が使えない環境 (プライベートモード等) では静かに無効化
+//   - 失敗しても本体機能を壊さない (全 API は throw しない)
+//   - ただし「保存できなかった」は絶対に黙らない。書き込み系は成否だけの boolean を
+//     やめ、理由つきの SaveResult を返す (2026-08-01)。boolean だと画面に理由を出す道が
+//     型の時点で閉じてしまい、素材が消えた本当の原因をユーザーに伝えられなかった。
 //   - open は 5 秒タイムアウト (壊れた DB で永久ハングさせない)
 // ============================================================
 
@@ -23,6 +25,11 @@ export interface StoredClipMeta {
   speed?: number;
   grade?: string;
   name?: string;
+  // ── リールスタジオ (既定の画面) 用。上級版には無い項目なので全て任意 ──
+  /** カット毎の字幕 */
+  captionText?: string;
+  /** 字幕の縦位置 (0=上 〜 1=下) */
+  captionY?: number;
 }
 
 export interface StoredCaption { start: number; end: number; text: string }
@@ -32,6 +39,45 @@ export interface StoredProject {
   captions: StoredCaption[];
   capStyle?: Record<string, unknown>;
   savedAt: number;
+  /** リール全体のカラーの雰囲気 (既定のリールスタジオ) */
+  colorMood?: string;
+  /** 字幕のフォントプリセット id (既定のリールスタジオ) */
+  captionPresetId?: string;
+}
+
+/** 保存できなかった理由。画面には message をそのまま出せる日本語で入れる */
+export type SaveFailReason = 'quota' | 'unavailable' | 'timeout' | 'unknown';
+
+export type SaveResult =
+  | { ok: true }
+  | { ok: false; reason: SaveFailReason; message: string };
+
+/** 例外から「なぜ保存できなかったか」を、そのまま画面に出せる日本語にする */
+function toSaveFail(e: unknown): { ok: false; reason: SaveFailReason; message: string } {
+  const name = (e as { name?: string } | null)?.name || '';
+  const text = e instanceof Error ? e.message : String(e ?? '');
+  if (name === 'QuotaExceededError' || /quota|容量/i.test(text)) {
+    return {
+      ok: false, reason: 'quota',
+      message: 'この端末の空き容量が足りず、素材を保存できませんでした。',
+    };
+  }
+  if (/非対応|ブロック/.test(text)) {
+    return {
+      ok: false, reason: 'unavailable',
+      message: 'この端末では保存領域が使えませんでした（プライベートモードなど）。',
+    };
+  }
+  if (/タイムアウト/.test(text)) {
+    return {
+      ok: false, reason: 'timeout',
+      message: '保存に時間がかかりすぎたため、中断しました。',
+    };
+  }
+  return {
+    ok: false, reason: 'unknown',
+    message: `保存できませんでした（${text || '原因不明'}）。`,
+  };
 }
 
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
@@ -64,17 +110,17 @@ function txDone(tx: IDBTransaction): Promise<void> {
   });
 }
 
-/** 素材 Blob を保存 (同じ assetId は上書き)。成功 true */
-export async function putReelAsset(id: string, blob: Blob, name?: string): Promise<boolean> {
+/** 素材 Blob を保存 (同じ assetId は上書き)。失敗しても throw せず理由を返す */
+export async function putReelAsset(id: string, blob: Blob, name?: string): Promise<SaveResult> {
   try {
     const db = await openDb();
     try {
       const tx = db.transaction(STORE_ASSETS, 'readwrite');
       tx.objectStore(STORE_ASSETS).put({ id, blob, name: name || '', type: blob.type || '' });
       await withTimeout(txDone(tx), 30000, '素材の保存');
-      return true;
+      return { ok: true };
     } finally { db.close(); }
-  } catch { return false; }
+  } catch (e) { return toSaveFail(e); }
 }
 
 /** 素材 Blob を取得。無ければ null */
@@ -94,17 +140,17 @@ export async function getReelAsset(id: string): Promise<{ blob: Blob; name: stri
   } catch { return null; }
 }
 
-/** プロジェクト設定 (メタのみ・Blob 以外) を保存。成功 true */
-export async function saveReelProject(p: StoredProject): Promise<boolean> {
+/** プロジェクト設定 (メタのみ・Blob 以外) を保存。失敗しても throw せず理由を返す */
+export async function saveReelProject(p: StoredProject): Promise<SaveResult> {
   try {
     const db = await openDb();
     try {
       const tx = db.transaction(STORE_PROJECT, 'readwrite');
       tx.objectStore(STORE_PROJECT).put(p, 'current');
       await withTimeout(txDone(tx), 10000, 'プロジェクトの保存');
-      return true;
+      return { ok: true };
     } finally { db.close(); }
-  } catch { return false; }
+  } catch (e) { return toSaveFail(e); }
 }
 
 /** 保存済みプロジェクトのメタを取得 (無ければ null) */
@@ -124,7 +170,11 @@ export async function loadReelProject(): Promise<StoredProject | null> {
   } catch { return null; }
 }
 
-/** 使っていない素材を掃除 (プロジェクトに残っている assetId 以外を削除) */
+/** 使っていない素材を掃除 (プロジェクトに残っている assetId 以外を削除)
+ *
+ *  ⚠ 必ず saveReelProject が ok:true を返した後にだけ呼ぶこと。
+ *  保存に失敗したまま掃除すると、保存済みプロジェクトはまだ古い assetId を指しているのに
+ *  その実体を消してしまい、次回の復元で素材が欠ける (2026-08-01 に発見・修正)。 */
 export async function pruneReelAssets(keepIds: string[]): Promise<void> {
   try {
     const keep = new Set(keepIds);

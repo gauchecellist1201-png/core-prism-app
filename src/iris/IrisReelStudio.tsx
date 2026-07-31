@@ -16,13 +16,13 @@ import {
   Image as ImageIcon, Film, Type, Music, Download, Share2,
   Play, Square, Trash2, ChevronUp, ChevronDown, Sparkles,
   Mic, Loader2, Wand2, AlertCircle, UploadCloud, Copy, Check,
-  Minus, RotateCcw,
+  Minus, RotateCcw, HardDrive,
 } from 'lucide-react';
 import { composeReelFromClips, type CutInput, type ReelComposition, type BgmMood } from './reelAiCaption';
 import {
   putReelAsset, getReelAsset, saveReelProject, loadReelProject,
   pruneReelAssets, clearReelStore,
-  type StoredClipMeta,
+  type StoredClipMeta, type SaveFailReason,
 } from './reelStore';
 import {
   COLOR_GRADES, applyGradeOverlay, getGrade,
@@ -1577,6 +1577,17 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, initialProject, o
   // 前回セッションの復元 (IndexedDB)
   const [restoreInfo, setRestoreInfo] = useState<{ count: number; savedAt: number } | null>(null);
   const [restoring, setRestoring] = useState(false);
+  // この端末への保存の状態 (silent fail 禁止)。
+  // 「リロードしても素材が消えない」と約束している以上、保存できていない時は必ず見せる。
+  const [persist, setPersist] = useState<{
+    state: 'idle' | 'saving' | 'saved' | 'partial' | 'failed';
+    savedAt?: number;
+    count?: number;
+    message?: string;
+    unsaved?: string[];
+    /** 「空き容量を空けて」の案内は容量不足の時だけ (プライベートモードでは直せない案内になる) */
+    reason?: SaveFailReason;
+  }>({ state: 'idle' });
   // おまかせで作る (素材→完成リールの自動監督)
   const [autoBusy, setAutoBusy] = useState(false);
   const [autoPhase, setAutoPhase] = useState<string>('');
@@ -1679,12 +1690,22 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, initialProject, o
     persistTimerRef.current = setTimeout(() => {
       void (async () => {
         try {
+          setPersist({ state: 'saving' });
           const metas: StoredClipMeta[] = [];
+          const unsaved: string[] = [];   // 端末に置けなかった素材の名前
+          let firstFail = '';             // 最初に出た理由 (そのまま画面に出す)
+          let firstReason: SaveFailReason | undefined;
           for (const c of clipsRef.current) {
             if (!c.assetId || !c.blob) continue; // blob が無い素材 (背景除去後など) はスキップ
             if (!savedAssetIdsRef.current.has(c.assetId)) {
-              const ok = await putReelAsset(c.assetId, c.blob, c.name);
-              if (!ok) continue; // 保存不能 (容量/プライベートモード) — メタにも入れない
+              const r = await putReelAsset(c.assetId, c.blob, c.name);
+              if (!r.ok) {
+                // 保存不能 (容量/プライベートモード) — メタにも入れない。
+                // ただし黙って落とさない: 何が保存できなかったかを画面に出す
+                unsaved.push(c.name || '素材');
+                if (!firstFail) { firstFail = r.message; firstReason = r.reason; }
+                continue;
+              }
               savedAssetIdsRef.current.add(c.assetId);
             }
             metas.push({
@@ -1693,15 +1714,32 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, initialProject, o
               speed: c.speed, grade: c.grade, name: c.name,
             });
           }
-          if (!metas.length) return;
-          await saveReelProject({
+          if (!metas.length) {
+            setPersist(unsaved.length
+              ? { state: 'failed', message: firstFail, unsaved, reason: firstReason }
+              : { state: 'idle' });
+            return;
+          }
+          const saved = await saveReelProject({
             clips: metas,
             captions: captions.map(cp => ({ start: cp.start, end: cp.end, text: cp.text })),
             capStyle: capStyle as unknown as Record<string, unknown>,
             savedAt: Date.now(),
           });
+          if (!saved.ok) {
+            // 保存できていないのに掃除すると、前回の保存が指している素材まで消えて
+            // 次回の復元が壊れる。掃除は成功したときだけ。
+            setPersist({ state: 'failed', message: saved.message, unsaved, reason: saved.reason });
+            return;
+          }
           void pruneReelAssets(metas.map(m => m.assetId));
-        } catch { /* 永続化失敗は本体機能に影響させない */ }
+          setPersist(unsaved.length
+            ? { state: 'partial', message: firstFail, unsaved, reason: firstReason, savedAt: Date.now(), count: metas.length }
+            : { state: 'saved', savedAt: Date.now(), count: metas.length });
+        } catch (e) {
+          // ここに来るのは想定外の例外。それでも「保存できた」とは絶対に言わない
+          setPersist({ state: 'failed', message: e instanceof Error ? e.message : '保存できませんでした。' });
+        }
       })();
     }, 1200);
     return () => { if (persistTimerRef.current) clearTimeout(persistTimerRef.current); };
@@ -3133,6 +3171,55 @@ JSON のみで返答。`;
             </button>
           </div>
         </div>
+      )}
+
+      {/* この端末に保存できたか (silent fail 禁止)。
+          「リロードしても素材が消えない」と約束しているので、保存できていない時は必ず出す。
+          成功時は小さく一行だけ (安心の合図)、失敗時は理由と、いま何をすべきかを出す。 */}
+      {clips.length > 0 && persist.state !== 'idle' && (
+        persist.state === 'failed' || persist.state === 'partial' ? (
+          <div style={{
+            padding: '0.85rem 1rem',
+            background: 'rgba(220,38,38,0.10)',
+            border: '1px solid rgba(220,38,38,0.42)',
+            borderRadius: 14,
+            display: 'flex', gap: 10, alignItems: 'flex-start',
+          }}>
+            <AlertCircle size={16} style={{ color: '#f87171', flexShrink: 0, marginTop: 2 }} />
+            <div style={{ minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: bg.ink, overflowWrap: 'break-word' }}>
+                {persist.state === 'partial'
+                  ? 'この端末に置けなかった素材があります'
+                  : 'この端末に保存できませんでした'}
+              </p>
+              <p style={{ margin: '4px 0 0', fontSize: 11.5, lineHeight: 1.65, color: bg.inkSoft, overflowWrap: 'break-word' }}>
+                {persist.message}
+                {persist.unsaved?.length ? `（${persist.unsaved.slice(0, 3).join('・')}${persist.unsaved.length > 3 ? ` ほか${persist.unsaved.length - 3}件` : ''}）` : ''}
+                <br />
+                いまの編集は<strong style={{ color: bg.ink }}>この画面を開いている間だけ</strong>残ります。
+                閉じる前に「書き出す」で動画を保存してください。
+                {persist.reason === 'quota'
+                  ? ' 端末の空き容量を空けると、次から保存できるようになります。'
+                  : ''}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p style={{
+            margin: 0, fontSize: 11.5, color: bg.inkSoft,
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            {persist.state === 'saving'
+              ? <><Loader2 size={12} className="spin" style={{ flexShrink: 0 }} />この端末に保存中…</>
+              : <>
+                  <HardDrive size={12} style={{ flexShrink: 0 }} />
+                  <Check size={12} style={{ color: '#4ade80', flexShrink: 0 }} />
+                  素材 {persist.count} 件をこの端末に保存しました
+                  {persist.savedAt ? `（${new Date(persist.savedAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}）` : ''}
+                  — 閉じても次に続きから開けます
+                </>}
+          </p>
+        )
       )}
 
       {/* おまかせで作る — 素材を入れたら最初に見える一番大きなボタン */}

@@ -27,6 +27,10 @@ import {
 } from './reelAiCaption';
 import { generateReelScript, generateReelCaption, type ReelScriptResult } from './reelAiScript';
 import type { ReelStudioSeed } from './IrisReelStudio';
+import {
+  putReelAsset, getReelAsset, saveReelProject, loadReelProject,
+  pruneReelAssets, clearReelStore, type StoredClipMeta, type SaveFailReason,
+} from './reelStore';
 import { suggestNextSlot, type ScheduledPost } from './usePostQueue';
 import { usePostHistory } from './strategist';
 import { computeBestPostTime, DOW_LABELS } from './bestPostTime';
@@ -99,6 +103,13 @@ interface Clip {
   emojiOptions?: string[];
   /** このカットの終わり→次への繋ぎ (未指定はプリセットの transition を使う) */
   transition?: ClipTransition;
+  // ── この端末への保存用 (2026-08-01) ──
+  /** 元ファイル。これが無いと保存できない (文字だけカットなど) */
+  blob?: Blob;
+  /** 保存領域の中でこの素材を指す id */
+  assetId?: string;
+  /** 元のファイル名 (保存できなかった時に「どれが」を言うために使う) */
+  name?: string;
 }
 
 /** クリップ間フェード (per-clip)。none=そのまま/fade=黒/white=白フラッシュ/dissolve=次とクロス/slide=横スライド */
@@ -182,6 +193,22 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [progress, setProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const [uploadErr, setUploadErr] = useState<string>('');
+  // ─── この端末への保存 (2026-08-01 新設) ─────
+  // それまでリールスタジオは何も保存しておらず、画面を閉じたり iPhone が
+  // タブを捨てたりすると、入れた写真も字幕も全部消えて、警告すら出なかった。
+  // (保存の仕組み自体は「上級モード」にだけ有り、既定の画面からは使われていなかった)
+  const [persist, setPersist] = useState<{
+    state: 'idle' | 'saving' | 'saved' | 'partial' | 'failed';
+    savedAt?: number;
+    count?: number;
+    message?: string;
+    unsaved?: string[];
+    /** 失敗の理由。「空き容量を空けて」の案内は容量不足の時だけ出す
+     *  (プライベートモードで空き容量の話をしても、その人には直せない) */
+    reason?: SaveFailReason;
+  }>({ state: 'idle' });
+  const [restoreInfo, setRestoreInfo] = useState<{ count: number; savedAt: number } | null>(null);
+  const [restoring, setRestoring] = useState(false);
   // AI 自動字幕
   const [themeHint, setThemeHint] = useState<string>('');
   // ツアー/朝ブリーフの「このテーマで 1 本つくる」から着地したときのテーマ。
@@ -310,6 +337,151 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     try { recorderRef.current?.state === 'recording' && recorderRef.current.stop(); } catch { /* noop */ }
   }, []);
 
+  // ─── 素材 + 設定をこの端末に保存 (閉じても続きから開ける) ─────
+  const savedAssetIdsRef = useRef<Set<string>>(new Set());
+  const hadClipsRef = useRef(false);
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // clipsRef (最新の clips) はチャット編集側で既に持っているものを共用する
+
+  useEffect(() => {
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+    // 全部消した時は保存も消す (次回に古い素材を勝手に戻さない)
+    if (!clips.length) {
+      if (hadClipsRef.current) {
+        hadClipsRef.current = false;
+        void clearReelStore();
+        savedAssetIdsRef.current.clear();
+        setPersist({ state: 'idle' });
+      }
+      return;
+    }
+    hadClipsRef.current = true;
+    persistTimerRef.current = setTimeout(() => {
+      void (async () => {
+        try {
+          setPersist(p => (p.state === 'saved' ? p : { state: 'saving' }));
+          const metas: StoredClipMeta[] = [];
+          const unsaved: string[] = [];
+          let firstFail = '';
+          let firstReason: SaveFailReason | undefined;
+          for (const c of clipsRef.current) {
+            // 文字だけカット (isPlaceholder) は元ファイルが無いので保存対象外
+            if (!c.assetId || !c.blob) continue;
+            if (!savedAssetIdsRef.current.has(c.assetId)) {
+              const r = await putReelAsset(c.assetId, c.blob, c.name);
+              if (!r.ok) {
+                // 黙って落とさない: 何が置けなかったかを画面に出す
+                unsaved.push(c.name || '素材');
+                if (!firstFail) { firstFail = r.message; firstReason = r.reason; }
+                continue;
+              }
+              savedAssetIdsRef.current.add(c.assetId);
+            }
+            metas.push({
+              assetId: c.assetId, kind: c.kind, duration: c.duration,
+              kenBurns: 'none', transition: c.transition || 'none',
+              name: c.name, captionText: c.captionText, captionY: c.captionY,
+            });
+          }
+          if (!metas.length) {
+            setPersist(unsaved.length
+              ? { state: 'failed', message: firstFail, unsaved, reason: firstReason }
+              : { state: 'idle' });
+            return;
+          }
+          const saved = await saveReelProject({
+            clips: metas,
+            captions: [],
+            savedAt: Date.now(),
+            colorMood,
+            captionPresetId: captionPreset.id,
+          });
+          if (!saved.ok) {
+            // 保存できていないのに掃除すると、前回の保存が指す素材まで消えて復元が壊れる
+            setPersist({ state: 'failed', message: saved.message, unsaved, reason: saved.reason });
+            return;
+          }
+          void pruneReelAssets(metas.map(m => m.assetId));
+          setPersist(unsaved.length
+            ? { state: 'partial', message: firstFail, unsaved, reason: firstReason, savedAt: Date.now(), count: metas.length }
+            : { state: 'saved', savedAt: Date.now(), count: metas.length });
+        } catch (e) {
+          // 想定外の失敗。それでも「保存できた」とは絶対に言わない
+          setPersist({ state: 'failed', message: e instanceof Error ? e.message : '保存できませんでした。' });
+        }
+      })();
+    }, 1200);
+    return () => { if (persistTimerRef.current) clearTimeout(persistTimerRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clips, colorMood, captionPreset]);
+
+  // 起動時: 前回の続きがあれば「復元しますか？」を出す (勝手には戻さない)
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (initialProject?.clips?.length) return; // 外から渡された素材が優先
+      const p = await loadReelProject();
+      if (cancelled || !p || !p.clips.length) return;
+      setRestoreInfo({ count: p.clips.length, savedAt: p.savedAt });
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const restoreSaved = async () => {
+    setRestoring(true);
+    try {
+      const p = await loadReelProject();
+      if (!p || !p.clips.length) {
+        setUploadErr('保存データが見つかりませんでした。素材を入れ直してください。');
+        setRestoreInfo(null);
+        return;
+      }
+      const built: Clip[] = [];
+      const failed: string[] = [];
+      for (const meta of p.clips) {
+        const asset = await getReelAsset(meta.assetId);
+        if (!asset) { failed.push(meta.name || '素材'); continue; }
+        const url = URL.createObjectURL(asset.blob);
+        try {
+          const el = meta.kind === 'video' ? await loadVideo(url) : await loadImage(url);
+          built.push({
+            id: makeId(), kind: meta.kind, url, el,
+            duration: meta.duration,
+            captionText: meta.captionText,
+            captionY: meta.captionY,
+            transition: (meta.transition as ClipTransition) || undefined,
+            blob: asset.blob, assetId: meta.assetId, name: meta.name,
+          });
+          savedAssetIdsRef.current.add(meta.assetId);
+        } catch {
+          failed.push(meta.name || '素材');
+          URL.revokeObjectURL(url);
+        }
+      }
+      if (built.length) {
+        setClips(built);
+        const validMoods = new Set<ColorMood>(['none', 'bright', 'warm', 'cool', 'film', 'mono', 'vivid']);
+        if (p.colorMood && validMoods.has(p.colorMood as ColorMood)) setColorMood(p.colorMood as ColorMood);
+        const preset = FONT_PRESETS.find(f => f.id === p.captionPresetId);
+        if (preset) setCaptionPreset(preset);
+      }
+      // 一部だけ戻せなかった時も黙らない
+      if (failed.length) {
+        setUploadErr(`一部の素材を復元できませんでした: ${failed.join('、')}`);
+      }
+      setRestoreInfo(null);
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const discardSaved = async () => {
+    setRestoreInfo(null);
+    await clearReelStore();
+    savedAssetIdsRef.current.clear();
+  };
+
   // ─── アップロード ─────
   const addFiles = useCallback(async (files: FileList | File[]) => {
     setUploadErr('');
@@ -324,12 +496,12 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     const failed: string[] = [];
     for (const f of imgs) {
       const url = URL.createObjectURL(f);
-      try { const el = await loadImage(url); newClips.push({ id: makeId(), kind: 'image', url, duration: 2.5, el }); }
+      try { const el = await loadImage(url); newClips.push({ id: makeId(), kind: 'image', url, duration: 2.5, el, blob: f, assetId: makeId(), name: f.name }); }
       catch { failed.push(`${f.name}: 画像を読めませんでした`); URL.revokeObjectURL(url); }
     }
     for (const f of vids) {
       const url = URL.createObjectURL(f);
-      try { const el = await loadVideo(url); newClips.push({ id: makeId(), kind: 'video', url, duration: Math.min(el.duration || 3, 6), el }); }
+      try { const el = await loadVideo(url); newClips.push({ id: makeId(), kind: 'video', url, duration: Math.min(el.duration || 3, 6), el, blob: f, assetId: makeId(), name: f.name }); }
       catch (err: any) { failed.push(`${f.name}: ${err?.message || `動画を読めませんでした。${VIDEO_FORMAT_HELP}`}`); URL.revokeObjectURL(url); }
     }
     if (!imgs.length && !vids.length && !auds.length && arr.length) {
@@ -370,10 +542,10 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         try {
           if (isVideo) {
             const el = await loadVideo(url);
-            built.push({ id: makeId(), kind: 'video', url, duration: Math.min(seed.durationSec || el.duration || 4, Math.max(2, el.duration || 6)), el, captionText: seed.overlayText, transition: seedTrans(seed.transition) });
+            built.push({ id: makeId(), kind: 'video', url, duration: Math.min(seed.durationSec || el.duration || 4, Math.max(2, el.duration || 6)), el, captionText: seed.overlayText, transition: seedTrans(seed.transition), blob: seed.file, assetId: makeId(), name: seed.file.name });
           } else {
             const el = await loadImage(url);
-            built.push({ id: makeId(), kind: 'image', url, duration: Math.max(1.5, Math.min(seed.durationSec || 2.5, 8)), el, captionText: seed.overlayText, transition: seedTrans(seed.transition) });
+            built.push({ id: makeId(), kind: 'image', url, duration: Math.max(1.5, Math.min(seed.durationSec || 2.5, 8)), el, captionText: seed.overlayText, transition: seedTrans(seed.transition), blob: seed.file, assetId: makeId(), name: seed.file.name });
           }
         } catch { URL.revokeObjectURL(url); /* 壊れた素材はスキップ（残りは展開） */ }
       }
@@ -1408,14 +1580,22 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         </div>
       )}
 
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: 480, margin: '0 auto', padding: '1rem' }}>
+      {/* 縦並びを flex にしてあるのは order で並べ替えるため。
+          素材がまだ 1 つも無い人には「テーマだけで 1 本つくる」を最初の画面に出したい
+          (ここが下にあると、素材を持っていない人は空っぽの電話を見て帰ってしまう) */}
+      <div style={{
+        position: 'relative', zIndex: 1, maxWidth: 480, margin: '0 auto', padding: '1rem',
+        display: 'flex', flexDirection: 'column',
+      }}>
 
         {/* HERO */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          // 素材ゼロのときは見出しの下を詰める。ここで 8px 詰めると
+          // 「テーマだけで 1 本つくる」が下のチャットバーの帯から完全に外れる (375px 実測)
+          style={{ textAlign: 'center', marginBottom: clips.length === 0 ? '1rem' : '1.5rem', order: -2 }}>
           <p style={{
             fontSize: 11, letterSpacing: '0.5em', color: bg.accent, fontWeight: 800,
             marginBottom: 6, opacity: 0.7, textTransform: 'uppercase',
@@ -1441,7 +1621,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                 ? (scriptBusy
                     ? `「${arrivedTheme}」の台本を書いています…`
                     : `「${arrivedTheme}」で作っています`)
-                : '一本目の素材を入れて、はじめましょう'}
+                // 素材を持っていない人に「素材を入れて」から言わない。
+                // 下のカードで、テーマひとことから 1 本つくれる
+                : '素材が無くても、テーマひとことから 1 本つくれます'}
           </p>
         </motion.div>
 
@@ -1467,7 +1649,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           transition={{ duration: 0.5, delay: 0.1 }}
           style={{
             position: 'relative',
-            width: 'min(260px, 70vw)',
+            // 素材ゼロのときは電話を小さくする。等身大だと空っぽの黒い板だけで
+            // 1 画面を使い切ってしまい、下にある入口まで指が届かない
+            width: clips.length === 0 ? 'min(190px, 52vw)' : 'min(260px, 70vw)',
             margin: '0 auto 1.4rem',
           }}>
           <div style={{
@@ -1649,6 +1833,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             (この機能自体は前からあったが、字幕ステップの奥に埋もれていて初見では見つからなかった) */}
         {clips.length === 0 && (
           <div ref={themeCardRef} style={{
+            order: -1, // ヒーローのすぐ下 = 最初の画面に入れる
             marginBottom: '1.4rem',
             padding: '1rem 1.05rem',
             background: 'rgba(255,255,255,0.72)',
@@ -1764,14 +1949,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             <p style={{
               margin: 0, fontSize: 13.5, fontWeight: 800, color: bg.ink, lineHeight: 1.5,
             }}>
-              写真や動画を入れるだけ。<span style={{ color: bg.accent }}>AI が字幕と投稿文をつけて</span>、そのまま出せる縦型リールにします。
+              写真や動画を入れるだけ（無ければテーマひとことでも）。<span style={{ color: bg.accent }}>AI が字幕と投稿文をつけて</span>、そのまま出せる縦型リールにします。
             </p>
             {/* 3 ステップ */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: 6,
               margin: '10px 0 8px', flexWrap: 'wrap',
             }}>
-              {['素材を入れる', 'AI が字幕・色・BGMを整える', 'Instagram に投稿'].map((t, i) => (
+              {['素材を入れる（無ければテーマ）', 'AI が字幕・色・BGMを整える', 'Instagram に投稿'].map((t, i) => (
                 <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <span style={{
                     fontSize: 11, fontWeight: 700, color: bg.ink,
@@ -2183,6 +2368,91 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                   </label>
                   {uploadErr && <ErrorMsg msg={uploadErr} />}
                 </Glass>
+
+                {/* 前回の続きを復元 (勝手には戻さず、必ず聞く) */}
+                {restoreInfo && !clips.length && (
+                  <div style={{
+                    marginTop: 12,
+                    padding: '0.9rem 1rem',
+                    background: `linear-gradient(135deg, ${bg.accent}14, ${bg.accent}06)`,
+                    border: `1px solid ${bg.accent}44`,
+                    borderRadius: 16,
+                  }}>
+                    <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: bg.ink, overflowWrap: 'break-word' }}>
+                      前回のつづきから始めますか？
+                    </p>
+                    <p style={{ margin: '3px 0 10px', fontSize: 11.5, lineHeight: 1.6, color: bg.inkSoft, overflowWrap: 'break-word' }}>
+                      素材 {restoreInfo.count} 件と字幕・雰囲気がこの端末に残っています
+                      （{new Date(restoreInfo.savedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 時点）
+                    </p>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button onClick={restoreSaved} disabled={restoring} style={{
+                        minHeight: 44, padding: '0 1rem', flexShrink: 0, whiteSpace: 'nowrap',
+                        background: bg.accent, color: '#fff', border: 'none', borderRadius: 12,
+                        fontSize: 13, fontWeight: 800, cursor: restoring ? 'wait' : 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 6,
+                      }}>
+                        {restoring ? <Loader2 size={14} className="spin" /> : <Layers size={14} />}
+                        {restoring ? '復元中…' : 'つづきから'}
+                      </button>
+                      <button onClick={discardSaved} disabled={restoring} style={{
+                        minHeight: 44, padding: '0 1rem', flexShrink: 0, whiteSpace: 'nowrap',
+                        background: 'transparent', color: bg.inkSoft, border: `1px solid ${bg.accent}44`,
+                        borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                      }}>
+                        消して新しく作る
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* この端末に保存できたか (silent fail 禁止)。
+                    失敗した時は理由と「いま何をすべきか」を必ず出す */}
+                {clips.length > 0 && persist.state !== 'idle' && (
+                  persist.state === 'failed' || persist.state === 'partial' ? (
+                    <div style={{
+                      marginTop: 12,
+                      padding: '0.85rem 1rem',
+                      background: 'rgba(220,38,38,0.10)',
+                      border: '1px solid rgba(220,38,38,0.42)',
+                      borderRadius: 14,
+                      display: 'flex', gap: 10, alignItems: 'flex-start',
+                    }}>
+                      <AlertCircle size={16} style={{ color: '#e11d48', flexShrink: 0, marginTop: 2 }} />
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: bg.ink, overflowWrap: 'break-word' }}>
+                          {persist.state === 'partial'
+                            ? 'この端末に置けなかった素材があります'
+                            : 'この端末に保存できませんでした'}
+                        </p>
+                        <p style={{ margin: '4px 0 0', fontSize: 11.5, lineHeight: 1.65, color: bg.inkSoft, overflowWrap: 'break-word' }}>
+                          {persist.message}
+                          {persist.unsaved?.length
+                            ? `（${persist.unsaved.slice(0, 3).join('、')}${persist.unsaved.length > 3 ? ` ほか ${persist.unsaved.length - 3} 件` : ''}）`
+                            : ''}
+                          <br />
+                          いまの編集は<strong style={{ color: bg.ink }}>この画面を開いている間だけ</strong>残ります。
+                          閉じる前に「書き出す」で動画を保存してください。
+                          {persist.reason === 'quota' ? ' 端末の空き容量を空けると、次から保存できます。' : ''}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p style={{
+                      margin: '10px 2px 0', fontSize: 11.5, color: bg.inkSoft,
+                      display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+                    }}>
+                      {persist.state === 'saving'
+                        ? <><Loader2 size={12} className="spin" style={{ flexShrink: 0 }} />この端末に保存中…</>
+                        : <>
+                            <Layers size={12} style={{ flexShrink: 0, color: bg.accent }} />
+                            素材 {persist.count} 件をこの端末に保存しました
+                            {persist.savedAt ? `（${new Date(persist.savedAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}）` : ''}
+                            — 閉じても、つづきから開けます
+                          </>}
+                    </p>
+                  )
+                )}
 
                 {/* クリップ一覧 (横スクロール) */}
                 {clips.length > 0 && (
@@ -3143,9 +3413,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         @media (min-width: 901px) { .iris-reelchat-bar { left: 220px; } }
         /* モバイル (≤900px): 下部ナビ Dock (64px + safe-area) の真上に。重なりゼロ */
         @media (max-width: 900px) { .iris-reelchat-bar { bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); left: 0; } }
-        /* リールスタジオ表示中だけ: 既存の浮遊ボタン群をチャット編集バーの上へ退避 (重なりゼロ) */
+        /* リールスタジオ表示中だけ: 既存の浮遊ボタン群をチャット編集バーの上へ退避 (重なりゼロ)
+           2026-07-31 追記: iPhone では「AI と話す」の丸ボタン(92x118)を畳む。
+           この画面には全幅のチャット編集バーが常に出ていて AI の入口が二重になっており、
+           実測(375px)で本文の「テーマだけで 1 本つくる」を 15%、候補チップを 38% 覆っていた。
+           畳むのはこの画面だけなので、ほかのタブでは今までどおり出る
+           (Prism で 2026-07-31 に同じ判断をしたのと同じ理由・同じやり方) */
         @media (max-width: 900px) {
-          .cp-ai-fab-wrap, body[data-iris-dock] .cp-ai-fab-wrap { bottom: calc(env(safe-area-inset-bottom, 0px) + 142px) !important; }
+          .cp-ai-fab-wrap, body[data-iris-dock] .cp-ai-fab-wrap { display: none !important; }
           body[data-iris-dock] .agent-monitor-dock[data-open="false"] { bottom: calc(env(safe-area-inset-bottom, 0px) + 142px) !important; }
         }
         @media (min-width: 901px) {
