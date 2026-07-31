@@ -3,7 +3,7 @@
 // ダーク基調 + 中立アクセント (Prism #A78BFA / Iris #E1306C どちらにも馴染む)
 // 最大幅 700px、章ごとに id でアンカー対応
 // ============================================================
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 export interface TocItem {
   id: string;
@@ -35,6 +35,15 @@ const COLORS = {
 };
 
 export default function LegalPageLayout({ eyebrow = 'CORE', title, updatedAt, toc, children }: Props) {
+  // タブの名前が「CORE Prism — すべての事業家に…」のままだと、
+  // 規約・FAQ・特商法をタブで開いた人が、いま何のページを見ているのか分からない。
+  // 共通レイアウトで直せば 4 ページまとめて直る（2026-07-31）
+  useEffect(() => {
+    const prev = document.title;
+    document.title = `${title} — CORE`;
+    return () => { document.title = prev; };
+  }, [title]);
+
   return (
     <div
       style={{

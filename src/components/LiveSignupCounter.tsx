@@ -1,5 +1,5 @@
 // ============================================================
-// LiveSignupCounter — 業界 LP に「累計 N 社が 7 日 無料 を 始めました」
+// LiveSignupCounter — 業界 LP に「累計 N 社が 3 日間 無料 を 始めました」
 //
 // オーナー指示 (2026-06-04 第 45 波 SSSSSS):
 //   /api/signup-count を 取得し、Hero と Pain の間に 大きく 表示。
@@ -99,7 +99,7 @@ export default function LiveSignupCounter({ accentLeft = '#A78BFA', accentRight 
             {display.toLocaleString('ja-JP')}
           </span>
           <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'rgba(255,255,255,0.85)' }}>
-            社が 7 日無料 を 始めました
+            社が 3 日間無料 を 始めました
           </span>
         </div>
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 8, lineHeight: 1.6 }}>

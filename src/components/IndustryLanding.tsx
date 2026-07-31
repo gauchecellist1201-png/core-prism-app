@@ -948,7 +948,7 @@ function PlanCard({ name, subtitle, price, yearly, isRecommended, accentLeft, ac
           border: isRecommended ? 'none' : '1px solid rgba(255,255,255,0.15)',
         }}
       >
-        7 日 無料で始める
+        3 日間 無料で始める
       </a>
     </motion.div>
   );

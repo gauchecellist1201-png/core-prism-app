@@ -124,7 +124,7 @@ export default function KeynoteLanding() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 1.2 }}
           style={{ fontSize: '0.78rem', color: 'rgba(255,250,245,0.45)', marginTop: '2rem', fontStyle: 'italic' }}>
-          14 日無料 · クレカ不要 · 講演会限定 30 日延長コード <strong style={{ color: '#FCB045' }}>KEYNOTE30</strong>
+          3 日間無料 · クレカ不要 · いつでも解約可
         </motion.p>
       </section>
 
@@ -219,7 +219,7 @@ export default function KeynoteLanding() {
           </a>
         </div>
         <p style={{ marginTop: '2rem', fontSize: '0.78rem', color: 'rgba(255,250,245,0.4)' }}>
-          講演会限定コード <strong style={{ color: '#FCB045' }}>KEYNOTE30</strong> を入力すると、トライアルが 30 日に延長されます (Phase 2 で実装予定)
+          クレジットカードの登録なしで 3 日間、すべての機能をお試しいただけます。
         </p>
       </section>
 

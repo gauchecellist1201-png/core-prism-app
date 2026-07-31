@@ -148,7 +148,7 @@ export default function SharedArtifactView({ artifact, onEnterApp }: Props) {
             CORE {isIris ? 'Iris' : 'Prism'} なら 5 分で同じものが作れます
           </h2>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', margin: '0 0 16px' }}>
-            14 日間無料・クレジットカード不要・いつでも解約可
+            3 日間無料・クレジットカード不要・いつでも解約可
           </p>
           <button
             type="button"

@@ -7,7 +7,7 @@ import { useEffect, useState, useRef, type ReactNode, type MouseEvent as ReactMo
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo, VeritasLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo, VeritasLogo, SomaLogo } from '../components/Logo';
 import { CONTINUUM_PLANS } from './continuumPlans';
 import ServiceFinder from './ServiceFinder';
 import { VERTICALS } from '../vertical/verticalData';
@@ -868,7 +868,7 @@ export default function CoreSite() {
 
           <div className="lp-vertical-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
             {VERTICALS.map(v => {
-              const Logo = v.key === 'ultima' ? UltimaLogo : v.key === 'anima' ? AnimaLogo : VeritasLogo;
+              const Logo = v.key === 'ultima' ? UltimaLogo : v.key === 'anima' ? AnimaLogo : v.key === 'soma' ? SomaLogo : VeritasLogo;
               return (
                 <a
                   key={v.key}
@@ -1718,8 +1718,12 @@ export default function CoreSite() {
               <MailIcon size={17} strokeWidth={2.2} />
               {COMPANY.email}
             </a>
-            <p style={{ fontSize: '0.78rem', color: 'rgba(240,233,216,0.48)', marginTop: '1.25rem', fontFamily: FONT_SERIF_JA }}>
-              よくある質問は <a href="/faq" style={{ color: '#E7C987', textDecoration: 'underline', textUnderlineOffset: 3 }}>FAQ ページ</a> で先にご確認いただけます。
+            {/* メールを書く前に、ほとんどの人が確かめたいのは
+                「誰がやっているのか」「いくらか」「やめられるか」の 3 つ。
+                リンクの文言でそれが分かるようにする（2026-07-31） */}
+            <p style={{ fontSize: '0.78rem', color: 'rgba(240,233,216,0.48)', marginTop: '1.25rem', fontFamily: FONT_SERIF_JA, lineHeight: 1.8 }}>
+              <a href="/faq" style={{ color: '#E7C987', textDecoration: 'underline', textUnderlineOffset: 3 }}>よくある質問</a>
+              {' '}に、誰が作っているか・料金・解約・データの扱いをまとめています。
             </p>
           </div>
         </div>

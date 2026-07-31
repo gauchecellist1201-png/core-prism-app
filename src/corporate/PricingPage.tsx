@@ -939,7 +939,10 @@ function PlanCard({ plan, yearly, brand }: { plan: any; yearly: boolean; brand: 
           boxShadow: plan.highlight ? `0 8px 24px ${accent}50` : 'none',
         }}
       >
-        7 日 無料で試す
+        {/* 実際に付与されるのは 3 日（api/trial/claim.ts の TRIAL_DAYS）。
+            同じカードの中で「3 日間 無料トライアル」と並んでいるのに、
+            ここだけ 7 日と書いていた（2026-07-31 是正） */}
+        3 日間 無料で試す
       </a>
     </motion.div>
   );

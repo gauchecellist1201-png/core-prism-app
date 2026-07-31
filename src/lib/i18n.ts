@@ -38,9 +38,11 @@ const TRANSLATIONS: Translations = {
   'lp.hero.cta':  { ja: 'Prism を試す', en: 'Try Prism', zh: '试用 Prism' },
   'lp.hero.cta2': { ja: 'エージェントを見る',      en: 'See Agents',              zh: '查看智能体' },
   'lp.hero.free': {
-    ja: '14 日間無料 · クレカ不要 · いつでも解約可',
-    en: '14-day free trial · No credit card · Cancel anytime',
-    zh: '14天免费体验 · 无需信用卡 · 随时取消',
+    // 実際に付与されるのは 3 日（api/trial/claim.ts の TRIAL_DAYS）。
+    // 14 日と書いて 3 日しか使えないのは、いちばん最初の約束を破ることになる（2026-07-31 是正）
+    ja: '3 日間無料 · クレカ不要 · いつでも解約可',
+    en: '3-day free trial · No credit card · Cancel anytime',
+    zh: '3天免费体验 · 无需信用卡 · 随时取消',
   },
 
   'lp.agents.eyebrow':  { ja: '7 AGENTS, 1 OS',       en: '7 AGENTS, 1 OS',         zh: '7个智能体，1个OS' },
@@ -76,7 +78,7 @@ const TRANSLATIONS: Translations = {
   'lp.final.h2.line1':  { ja: 'あなたの中の',               en: 'For the',             zh: '为你内心的' },
   'lp.final.h2.accent': { ja: '7 つの可能性',               en: '7 possibilities',     zh: '7种可能' },
   'lp.final.h2.line2':  { ja: 'に、\nエージェント AI を。', en: 'within you,\nagent AI awaits.', zh: '，\n注入智能体AI。' },
-  'lp.final.sub':       { ja: '14 日間、すべてのエージェントを無料でお試しできます。', en: 'Try all agents free for 14 days.', zh: '14天免费体验所有智能体。' },
+  'lp.final.sub':       { ja: '3 日間、すべてのエージェントを無料でお試しできます。', en: 'Try all agents free for 3 days.', zh: '3天免费体验所有智能体。' },
   'lp.final.cta':       { ja: '無料で Prism を試す', en: 'Try Prism for free', zh: '免费试用 Prism' },
 
   'lp.footer.tagline':      { ja: 'すべての事業家に、\nエージェント AI を。', en: 'Agent AI\nfor every entrepreneur.', zh: '为每一位创业者，\n注入智能体AI。' },
@@ -116,9 +118,11 @@ const TRANSLATIONS: Translations = {
   'iris.hero.cta':  { ja: 'Iris を試す', en: 'Try Iris', zh: '试用 Iris' },
   'iris.hero.cta2': { ja: '機能を見る',              en: 'See Features',       zh: '查看功能' },
   'iris.hero.free': {
-    ja: '14 日間無料 · クレカ不要 · いつでも解約可',
-    en: '14-day free trial · No credit card · Cancel anytime',
-    zh: '14天免费体验 · 无需信用卡 · 随时取消',
+    // 実際に付与されるのは 3 日（api/trial/claim.ts の TRIAL_DAYS）。
+    // 14 日と書いて 3 日しか使えないのは、いちばん最初の約束を破ることになる（2026-07-31 是正）
+    ja: '3 日間無料 · クレカ不要 · いつでも解約可',
+    en: '3-day free trial · No credit card · Cancel anytime',
+    zh: '3天免费体验 · 无需信用卡 · 随时取消',
   },
 
   'iris.facets.eyebrow': { ja: 'SIX FACETS OF LIGHT', en: 'SIX FACETS OF LIGHT', zh: '光的六个面' },
@@ -131,7 +135,7 @@ const TRANSLATIONS: Translations = {
 
   'iris.final.h2.line1': { ja: 'あなたの光を、', en: 'Your light,',        zh: '你的光芒，' },
   'iris.final.h2.line2': { ja: 'いま、世界へ。', en: 'to the world, now.', zh: '现在，释放到世界。' },
-  'iris.final.sub':      { ja: '14 日間、すべての機能を無料でお試しできます。', en: 'Try all features free for 14 days.', zh: '14天免费体验所有功能。' },
+  'iris.final.sub':      { ja: '3 日間、すべての機能を無料でお試しできます。', en: 'Try all features free for 3 days.', zh: '3天免费体验所有功能。' },
   'iris.final.cta':      { ja: '無料で Iris を試す', en: 'Try Iris for free', zh: '免费试用 Iris' },
   'iris.footer.tagline': { ja: 'すべてのインフルエンサーに、\nエージェント AI を。', en: 'Agent AI\nfor every creator.', zh: '为每一位创作者，\n注入智能体AI。' },
 
