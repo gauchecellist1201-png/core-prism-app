@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
+import { useCoveredByModal } from './hooks/useCoveredByModal';
 import { AnimatePresence, motion } from 'framer-motion';
 import './index.css';
 
@@ -664,6 +665,12 @@ function AppRoutes() {
   const [commandCenterOpen, setCommandCenterOpen] = useState<boolean>(false);
   // 右下ツールFAB群(成果物/統合脳/役員日報)を1つに畳む。モバイルの浮遊ボタン過密・重なりを解消。
   const [toolsFabOpen, setToolsFabOpen] = useState<boolean>(false);
+  // ★2026-07-31 実測: 初回オンボーディング(fixed inset-0 z-70)を出している間も
+  //   この「＋」だけが暗幕の上に残り、押せてしまっていた
+  //   (elementFromPoint が「ツールを開く」を返す＝一番上に居る)。
+  //   COREの丸ボタン/マイクFAB/下部チャットバーと同じ判定で引っ込める。
+  const toolsFabRef = useRef<HTMLDivElement>(null);
+  const toolsFabCovered = useCoveredByModal(toolsFabRef);
   // 役員 日報 タブ オーバーレイ (2026-06-05 オーナー指示)
   const [briefingsOpen, setBriefingsOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -1107,8 +1114,9 @@ function AppRoutes() {
       )}
       {/* 右下ツールFAB群 — 3つ(成果物/統合脳/役員日報)を1つのトグルに集約。
           モバイルで浮遊ボタンが密集・重なる問題を根治。展開時だけ縦に開く。 */}
-      {view === 'dashboard' && !commandCenterOpen && activePersona && (
+      {view === 'dashboard' && !commandCenterOpen && activePersona && !toolsFabCovered && (
         <div
+          ref={toolsFabRef}
           style={{
             position: 'fixed',
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 150px)',

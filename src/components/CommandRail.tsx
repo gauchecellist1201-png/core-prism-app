@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useCoveredByModal } from '../hooks/useCoveredByModal';
 
 /**
  * CommandRail — 画面右端の中央に固定される「COMMAND」タブ（コマンドセンターの入口）。
@@ -20,6 +21,12 @@ export default function CommandRail({ onOpen }: { onOpen: () => void }) {
   const [narrow, setNarrow] = useState<boolean>(
     () => (typeof window !== 'undefined' ? window.innerWidth < 768 : false),
   );
+
+  // ★2026-07-31 実測: 初回オンボーディング(fixed inset-0 z-70)の暗幕の上に
+  //   この帯だけが残り、押すとオンボの裏でコマンドセンターが開いてしまっていた
+  //   (elementFromPoint がこの帯を返す＝一番上に居る)。
+  //   COREの丸ボタン/マイクFAB/下部チャットバー/＋ツールと同じ判定で引っ込める。
+  const coveredByModal = useCoveredByModal(ref);
 
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < 768);
@@ -78,7 +85,7 @@ export default function CommandRail({ onOpen }: { onOpen: () => void }) {
         borderTopLeftRadius: narrow ? 10 : 14,
         borderBottomLeftRadius: narrow ? 10 : 14,
         cursor: 'pointer',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        display: coveredByModal ? 'none' : 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         gap: 4,
         boxShadow: '-6px 0 22px rgba(99,102,241,0.45)',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',

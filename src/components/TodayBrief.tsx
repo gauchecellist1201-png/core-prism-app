@@ -136,7 +136,12 @@ export default function TodayBrief({
             <p className="text-fg-muted text-xs tracking-widest uppercase brief-eyebrow-mobile">今日のブリーフ · {greet}</p>
             <p
               className="text-fg font-extrabold leading-tight brief-title-mobile"
-              style={{ fontSize: 18, wordBreak: 'keep-all', lineHeight: 1.35 }}
+              /* ★2026-07-31 375px本番実測の根治: wordBreak:'keep-all' だけを指定していたため、
+                 日本語の連続（例「神泉物件の最終確認を進めましょう」）が1つの塊として扱われて
+                 折り返せず、箱(209px)から87pxはみ出して見出しが途中で切れていた
+                 （＝ユーザーが最初に読む1行が読めない）。keep-all は英単語の不自然な分割を
+                 防ぐためのものなので、収まらない時だけ折る overflowWrap を必ず添える。 */
+              style={{ fontSize: 18, wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: 1.35 }}
             >
               {proposal?.title || (isGenerating ? <LoaderDots label="今日の打ち手を選んでます" /> : 'AIから提案を受け取る')}
             </p>
@@ -247,7 +252,7 @@ export default function TodayBrief({
                         </span>
                         <span
                           className="text-fg flex-1 brief-action-text-mobile"
-                          style={{ fontSize: 14.5, lineHeight: 1.55, wordBreak: 'keep-all' }}
+                          style={{ fontSize: 14.5, lineHeight: 1.55, wordBreak: 'keep-all', overflowWrap: 'break-word' }}
                         >{a}</span>
                       </button>
                       <AnimatePresence>

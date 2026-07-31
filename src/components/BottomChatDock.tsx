@@ -10,6 +10,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ChatMessage } from '../types/identity';
 import { readableTextColor } from '../lib/contrast';
+import { useCoveredByModal } from '../hooks/useCoveredByModal';
 
 interface Props {
   /** アクセント色（persona.accentColor）。 */
@@ -45,6 +46,24 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
   useEffect(() => {
     try { localStorage.setItem(MINIMIZED_KEY, minimized ? '1' : '0'); } catch { /* noop */ }
   }, [minimized]);
+
+  // ★2026-07-31 通話ボタン。iPhone(375px)で「プリズム と話す」オーブを畳んだぶん、
+  //   オーブでしか行けなかった音声通話の入口をここに移す。
+  //   受け手(SupportChat)が居る画面でだけ出す — 押しても何も起きないボタンを作らないため。
+  //   SupportChat は画面によって出たり消えたりするので、body の目印を見張って追従する。
+  // ★2026-07-31 オンボーディング(全画面モーダル)の暗幕の上に、この下部バーだけが
+  //   出たままで押せてしまっていた。COREの丸ボタン(2026-07-29)・マイクFAB(2026-07-31)は
+  //   既に引っ込むようにしてあるので、同じ判定をここにも当てる(閉じれば自動で戻る)。
+  const coveredByModal = useCoveredByModal(rootRef);
+
+  const [canCall, setCanCall] = useState(false);
+  useEffect(() => {
+    const sync = () => setCanCall(document.body.dataset.prismVoiceCall === '1');
+    sync();
+    const ob = new MutationObserver(sync);
+    ob.observe(document.body, { attributes: true, attributeFilter: ['data-prism-voice-call'] });
+    return () => ob.disconnect();
+  }, []);
 
   // ★2026-07-26 文字かぶりの根治（オーナー報告「文字がかぶっている」）
   //   このドックは画面下に固定表示されるが、同じく bottom 固定の
@@ -115,7 +134,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
           bottom: 'max(12px, env(safe-area-inset-bottom))',
           paddingLeft: 12,
           paddingRight: dockPaddingRight,
-          display: 'flex',
+          display: coveredByModal ? 'none' : 'flex',
           justifyContent: 'center',
           zIndex: 46,
           pointerEvents: 'none',
@@ -164,7 +183,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
         // 右下の常駐FAB群（役員日報/音声/アシスタント）と重ならないよう右側を空ける
         paddingLeft: 12,
         paddingRight: dockPaddingRight,
-        display: 'flex',
+        display: coveredByModal ? 'none' : 'flex',
         justifyContent: 'center',
         zIndex: 46,
         pointerEvents: 'none',
@@ -281,6 +300,9 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
           placeholder={placeholder}
           style={{
             flex: 1,
+            // minWidth:0 が無いと textarea の既定の最小幅(20文字ぶん)で下限が決まり、
+            // 右側のボタンが増えたときにバー全体が画面からはみ出す
+            minWidth: 0,
             background: 'transparent',
             border: 'none',
             outline: 'none',
@@ -301,6 +323,16 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
             style={{ height: 44, minWidth: 44, borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'var(--fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 9l3.5-3.5L11 9" /></svg>
+          </button>
+        )}
+        {canCall && (
+          <button
+            onClick={() => window.dispatchEvent(new Event('prism:open-voice-call'))}
+            aria-label="通話（声で話す）"
+            title={`${name} と声で話す`}
+            style={{ height: 44, minWidth: 44, borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'var(--fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92z" /></svg>
           </button>
         )}
         <button

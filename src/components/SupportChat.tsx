@@ -9,6 +9,7 @@ import { useTypewriter } from '../hooks/useTypewriter';
 import VoiceConversation from './VoiceConversation';
 import { PrismLogo, IrisLogo } from './Logo';
 import { confirmAction } from '../lib/confirmDialog';
+import { Phone } from 'lucide-react';
 
 interface Props {
   brand: 'prism' | 'iris';
@@ -54,6 +55,22 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, open]);
+
+  // ★2026-07-31 通話の入口を下部チャットバーからも開けるようにする。
+  //   iPhone(375px)では下部バーと「プリズム と話す」オーブが同じ入口の重複で、
+  //   オーブ(95x118)が本文のアクションボタンを覆っていた。オーブを畳む代わりに、
+  //   オーブでしか行けなかった「通話」を下部バーへ移す。
+  //   目印(data-prism-voice-call)を body に立てるのは、下部バー側が
+  //   「受け手がいる時だけ」通話ボタンを出すため（押しても何も起きないボタンを作らない）。
+  useEffect(() => {
+    const openCall = () => setVoiceCallOpen(true);
+    window.addEventListener('prism:open-voice-call', openCall);
+    document.body.dataset.prismVoiceCall = '1';
+    return () => {
+      window.removeEventListener('prism:open-voice-call', openCall);
+      delete document.body.dataset.prismVoiceCall;
+    };
+  }, []);
 
   // Cmd+/ または Ctrl+/ で開閉
   useEffect(() => {
@@ -278,7 +295,8 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                 title={`${aiName} に電話する`}
                 aria-label="通話"
               >
-                📞
+                {/* OS標準のカラー絵文字(📞)はドクトリン違反なのでライン系アイコンに統一 */}
+                <Phone size={16} strokeWidth={2.2} />
               </button>
               {messages.length > 0 && (
                 <button

@@ -124,9 +124,9 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
           <button
             onClick={handleSkip}
             className="text-xs transition-colors"
-            style={{ color: 'rgba(255,255,255,0.3)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}
+            style={{ color: 'rgba(255,255,255,0.62)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.92)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.62)')}
           >
             スキップ
           </button>
@@ -142,10 +142,10 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                 <div className="flex flex-col items-center text-center space-y-3 py-2">
                   <PrismLogo size={48} withWordmark />
                   <div>
-                    <h2 className="text-lg font-medium" style={{ color: 'var(--fg, #f0f0f0)' }}>
+                    <h2 className="text-lg font-medium" style={{ color: '#f2f2f7' }}>
                       CORE Prism へようこそ
                     </h2>
-                    <p className="text-sm mt-1" style={{ color: 'var(--fg-muted, rgba(255,255,255,0.5))' }}>
+                    <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.74)' }}>
                       複数の人格を持ち、それぞれに特化した AI と共に働く OS
                     </p>
                   </div>
@@ -175,12 +175,12 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                           <Icon size={16} strokeWidth={1.8} aria-hidden="true"
                             style={{ color: entry!.color, flexShrink: 0 }} />
                         ) : null}
-                        <span className="text-xs font-medium" style={{ color: 'var(--fg, #f0f0f0)' }}>{f.label}</span>
+                        <span className="text-xs font-medium" style={{ color: '#f2f2f7' }}>{f.label}</span>
                       </div>
                     );
                   })}
                 </div>
-                <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.62)' }}>
                   数分でセットアップ完了 — まずはデモを試しませんか？
                 </p>
               </motion.div>
@@ -190,10 +190,10 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
             {step === 1 && (
               <motion.div key="s1" className="p-6 space-y-4" {...STEP_SLIDE}>
                 <div className="text-center">
-                  <h2 className="text-base font-medium" style={{ color: 'var(--fg, #f0f0f0)' }}>
+                  <h2 className="text-base font-medium" style={{ color: '#f2f2f7' }}>
                     どこから始めますか？
                   </h2>
-                  <p className="text-xs mt-1" style={{ color: 'var(--fg-muted, rgba(255,255,255,0.5))' }}>
+                  <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.74)' }}>
                     デモデータで全機能を体験するか、空の状態から始められます
                   </p>
                 </div>
@@ -210,10 +210,10 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                   <div className="flex items-start gap-3">
                     <span className="text-2xl mt-0.5">☕</span>
                     <div>
-                      <p className="font-medium text-sm" style={{ color: 'var(--fg, #f0f0f0)' }}>
+                      <p className="font-medium text-sm" style={{ color: '#f2f2f7' }}>
                         デモを試す（推奨）
                       </p>
-                      <p className="text-xs mt-1" style={{ color: 'var(--fg-muted, rgba(255,255,255,0.5))' }}>
+                      <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.74)' }}>
                         カフェ経営者・田中健一のデータで全機能を体験。
                         タスク5件・ナレッジ3件・CRM案件2件・見積書1枚を投入します。
                       </p>
@@ -236,10 +236,10 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                   <div className="flex items-start gap-3">
                     <span className="text-2xl mt-0.5">✦</span>
                     <div>
-                      <p className="font-medium text-sm" style={{ color: 'var(--fg, #f0f0f0)' }}>
+                      <p className="font-medium text-sm" style={{ color: '#f2f2f7' }}>
                         空から始める
                       </p>
-                      <p className="text-xs mt-1" style={{ color: 'var(--fg-muted, rgba(255,255,255,0.5))' }}>
+                      <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.74)' }}>
                         自分のデータだけで使い始めます。
                       </p>
                     </div>
@@ -252,10 +252,10 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
             {step === 2 && (
               <motion.div key="s2" className="p-6 space-y-4" {...STEP_SLIDE}>
                 <div className="text-center">
-                  <h2 className="text-base font-medium" style={{ color: 'var(--fg, #f0f0f0)' }}>
+                  <h2 className="text-base font-medium" style={{ color: '#f2f2f7' }}>
                     主な機能をご紹介
                   </h2>
-                  <p className="text-xs mt-1" style={{ color: 'var(--fg-muted, rgba(255,255,255,0.5))' }}>
+                  <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.74)' }}>
                     {tourIdx + 1} / {TOUR_HIGHLIGHTS.length}
                   </p>
                 </div>
@@ -272,10 +272,10 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                       transition={{ duration: 0.2 }}
                     >
                       <div className="text-4xl">{TOUR_HIGHLIGHTS[tourIdx].icon}</div>
-                      <p className="font-semibold text-sm" style={{ color: 'var(--fg, #f0f0f0)' }}>
+                      <p className="font-semibold text-sm" style={{ color: '#f2f2f7' }}>
                         {TOUR_HIGHLIGHTS[tourIdx].title}
                       </p>
-                      <p className="text-xs leading-relaxed" style={{ color: 'var(--fg-muted, rgba(255,255,255,0.6))' }}>
+                      <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.74)' }}>
                         {TOUR_HIGHLIGHTS[tourIdx].desc}
                       </p>
                     </motion.div>
@@ -304,10 +304,10 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
               <motion.div key="s3" className="p-6 space-y-4 text-center" {...STEP_SLIDE}>
                 <div className="text-5xl py-2">🚀</div>
                 <div>
-                  <h2 className="text-base font-medium" style={{ color: 'var(--fg, #f0f0f0)' }}>
+                  <h2 className="text-base font-medium" style={{ color: '#f2f2f7' }}>
                     準備完了！
                   </h2>
-                  <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--fg-muted, rgba(255,255,255,0.5))' }}>
+                  <p className="text-xs mt-2 leading-relaxed" style={{ color: 'rgba(255,255,255,0.74)' }}>
                     {choice === 'demo'
                       ? 'デモデータを投入します。ページが更新され、ペルソナ選択画面で「カフェ経営者・田中健一」を選ぶと全機能を体験できます。'
                       : '実データで始めましょう。人格を作成してナレッジを追加するところからスタートです。'}
@@ -318,8 +318,14 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                     className="p-3 rounded-lg text-left space-y-1"
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
                   >
-                    <p className="text-xs font-medium" style={{ color: accent }}>📦 投入されるデモデータ</p>
-                    <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    {/* OS標準のカラー絵文字(📦)はドクトリン違反なのでライン系アイコンに置き換え */}
+                    <p className="text-xs font-medium flex items-center gap-1.5" style={{ color: accent }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}>
+                        <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" />
+                      </svg>
+                      投入されるデモデータ
+                    </p>
+                    <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
                       ペルソナ × 1、タスク × 5、ナレッジ × 3、CRM案件 × 2、見積書 × 1
                     </p>
                   </div>
@@ -334,7 +340,7 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
           <button
             onClick={() => setStep(s => Math.max(0, s - 1))}
             className="text-sm px-4 py-2 rounded-lg transition-colors"
-            style={{ color: 'rgba(255,255,255,0.4)', visibility: step === 0 ? 'hidden' : 'visible' }}
+            style={{ color: 'rgba(255,255,255,0.7)', visibility: step === 0 ? 'hidden' : 'visible' }}
           >
             ← 戻る
           </button>

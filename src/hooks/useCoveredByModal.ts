@@ -29,6 +29,11 @@ export function isCoveredByModal(self: HTMLElement | null): boolean {
     const s = getComputedStyle(el);
     if (s.position !== "fixed") continue;
     if (s.pointerEvents === "none") continue; // 飾り(背景グラデ等)は素通しなので対象外
+    // ★2026-07-31 追加: 透明な覆いは「覆い」と見なさない。
+    //   閉じるアニメーションの途中や、rAF が止まっている(タブが裏)ときに
+    //   opacity:0 のモーダルが DOM に残ることがあり、これを覆いと数えると
+    //   浮遊ボタンが二度と戻らない(このファイル冒頭の鉄則「戻す経路を飢えさせない」に反する)。
+    if (Number(s.opacity) < 0.05) continue;
     const z = Number(s.zIndex);
     if (!Number.isFinite(z) || z < 50) continue; // アプリの土台(z無し/低い)は隠す理由にしない
     const r = el.getBoundingClientRect();

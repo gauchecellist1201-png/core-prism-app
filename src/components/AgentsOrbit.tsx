@@ -353,7 +353,7 @@ export default function AgentsOrbit({
                 fontSize: 9.5, color: active ? spec.color : 'rgba(255,255,255,0.5)',
                 fontWeight: 600, lineHeight: 1.25,
                 textAlign: 'center', minHeight: '2.2em',
-                maxWidth: 80, wordBreak: 'keep-all',
+                maxWidth: 80, wordBreak: 'keep-all', overflowWrap: 'break-word',
               }}>
                 {live?.status || '待機中'}
               </div>
