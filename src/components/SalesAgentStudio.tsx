@@ -23,6 +23,7 @@ import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import { isDemoActive } from '../lib/onboarding';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { aiFetch } from '../lib/aiFetch';
+import { pushLeadToCrm, countSalesAgentDeals, openCrmStudio } from '../lib/salesToCrm';
 import StudioBackButton from './StudioBackButton';
 
 interface Props {
@@ -77,6 +78,24 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
   const [tab, setTab] = useState<Tab>('today');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'pick' | 'edit' | null>(null);
+
+  // ─── 採用した相手を「案件を管理」(CRM) にも渡す ───────────
+  // これまで採用しても案件一覧には一件も出ず、成果が届いていなかった。
+  const [crmCount, setCrmCount] = useState(() => countSalesAgentDeals(persona.id));
+  const [crmFailed, setCrmFailed] = useState<string | null>(null);
+  useEffect(() => { setCrmCount(countSalesAgentDeals(persona.id)); }, [persona.id]);
+  const handOffToCrm = useCallback((input: {
+    companyName: string; contactName?: string; email?: string; reason?: string; origin: string;
+  }) => {
+    const result = pushLeadToCrm(persona.id, input);
+    if (result === 'failed') {
+      setCrmFailed(`${input.companyName} を「案件を管理」に入れられませんでした（この端末の保存できる量がいっぱいの可能性があります）。採用済みの一覧には残っています。`);
+    } else {
+      setCrmFailed(null);
+      setCrmCount(countSalesAgentDeals(persona.id));
+    }
+    return result;
+  }, [persona.id]);
 
   const ownProduct = sa.getOwnProduct(persona.id);
   const myLeads = useMemo(() => sa.getLeadsForPersona(persona.id), [sa.leads, persona.id]);
@@ -203,11 +222,19 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
         hitProbability: draft.hitProbability, status: 'draft',
         generatedAt: new Date().toISOString(),
       });
+      // 案件管理 (CRM) にも渡す = Gmail から見つけた相手も案件一覧に出る
+      handOffToCrm({
+        companyName: p.companyGuess,
+        contactName: p.isPersonal ? p.name : undefined,
+        email: p.email,
+        reason: p.fitReason,
+        origin: 'Gmail の受信箱',
+      });
       setDraftedEmails(prev => ({ ...prev, [p.email]: true }));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'メール下書きの作成に失敗しました');
     } finally { setDraftingEmail(null); }
-  }, [settings, persona, ownProduct, sa]);
+  }, [settings, persona, ownProduct, sa, handOffToCrm]);
 
   // ─── 今日のピックアップ ─────────
   const [picks, setPicks] = useState<AiPick[]>([]);
@@ -295,8 +322,14 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
       status: 'draft',
       generatedAt: new Date().toISOString(),
     });
+    // 3) 案件管理 (CRM) にも「リード」として渡す = 採用した成果が一覧に出る
+    handOffToCrm({
+      companyName: pick.companyName,
+      reason: pick.reason,
+      origin: '今日の5社',
+    });
     setApprovedIds(prev => [...prev, pick.companyId]);
-  }, [sa, persona.id, approvedIds]);
+  }, [sa, persona.id, approvedIds, handOffToCrm]);
 
   const handleReject = useCallback((pick: AiPick) => {
     setRejectedIds(prev => [...prev, pick.companyId]);
@@ -468,6 +501,27 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
 
         <div className="cp-modal-body cp-stack">
           <ApiErrorCard error={error} onRetry={() => runPick(false)} variant="auto" />
+
+          {/* 採用した相手が「案件を管理」にも入っていることを見せる (成果の行き先を隠さない) */}
+          {crmFailed && (
+            <div className="cp-card cp-stack-sm" style={{ border: '1px solid rgba(255,169,77,0.5)', background: 'rgba(255,169,77,0.08)' }}>
+              <p className="cp-body" style={{ margin: 0 }}>{crmFailed}</p>
+            </div>
+          )}
+          {crmCount > 0 && (
+            <div className="cp-card cp-row-between" style={{ gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              <p className="cp-meta" style={{ textTransform: 'none', margin: 0, minWidth: 0 }}>
+                採用した相手は<strong style={{ color: 'var(--fg)' }}>「案件を管理」にも {crmCount} 件</strong>入っています（段階・次の動きはそちらで進めます）
+              </p>
+              <button
+                onClick={() => { openCrmStudio(); onClose(); }}
+                className="cp-btn cp-btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0, minHeight: 44 }}
+              >
+                <Handshake size={15} strokeWidth={2.2} /> 案件を管理をひらく
+              </button>
+            </div>
+          )}
           <AILoadingState
             active={busy === 'pick'}
             label="AI が営業先を選定しています"
@@ -845,9 +899,9 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                   <IconChip icon={FolderOpen} color={persona.accentColor} size={18} />
                   採用済のリード
                 </p>
-                <p className="cp-meta">
-                  「採用」したものはここに溜まります。メール下書きは {draftCount} 件保存中。
-                  シャドー秘書 (毎朝の自動チェック) がこの一覧から優先度の高い相手に動きます。
+                <p className="cp-meta" style={{ textTransform: 'none' }}>
+                  「採用」したものはここに溜まります。メールの下書きは {draftCount} 件保存中（この端末に保存。自動では送りません）。
+                  同じ相手は<strong style={{ color: 'var(--fg)' }}>「案件を管理」にも案件として入っています</strong>ので、段階（リード → 商談中 → 受注）はそちらで進めてください。
                 </p>
               </div>
 
@@ -856,7 +910,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                   <div className="cp-empty">
                     <p className="cp-empty-icon"><Inbox size={34} strokeWidth={1.6} color={persona.accentColor} /></p>
                     <p>まだ採用したリードはありません</p>
-                    <p className="cp-meta">「今日の5社」タブで AI が選んだ企業を「採用」すると、ここに追加されます</p>
+                    <p className="cp-meta" style={{ textTransform: 'none' }}>「今日の5社」タブで AI が選んだ企業を「採用」すると、ここと「案件を管理」の両方に追加されます</p>
                   </div>
                 ) : myLeads.map(l => {
                   const drafts = sa.approaches.filter(a => a.leadId === l.id);

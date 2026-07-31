@@ -11,6 +11,13 @@
 // ============================================================
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Handshake, X as XIcon, Sprout, Coffee, ClipboardList, PartyPopper,
+  Lightbulb, PenLine, BellRing, Check, Hourglass, Pin, RefreshCw, Package,
+  ClipboardCheck, Truck, Receipt, Mail as MailIcon, Phone, StickyNote,
+  ArrowDown, Target, Plus, type LucideIcon,
+} from 'lucide-react';
+import { IconChip } from './icons';
 import type { Persona } from '../types/identity';
 import type { CRMDeal, CRMStage } from '../types/crm';
 import { STAGE_META, STAGE_ORDER } from '../types/crm';
@@ -28,6 +35,7 @@ import { useCelebrate } from '../hooks/useCelebrate';
 import { usePhaseButton } from '../hooks/usePhaseButton';
 import { suggestNextAction, heuristicNextAction, priorityScore, daysSinceLastActivity } from '../lib/crmNextAction';
 import { SAMPLE_LEAD_INDUSTRIES, addLeadsToCrm, hasSampleLeads, type LeadIndustry } from '../lib/salesLeadSeed';
+import { SALES_AGENT_SOURCE } from '../lib/salesToCrm';
 import StudioBackButton from './StudioBackButton';
 
 interface Props {
@@ -36,6 +44,16 @@ interface Props {
 }
 
 type View = 'kanban' | 'list' | 'summary';
+
+// ─── 段階アイコン (絵文字は使わない: OS 依存でダサく崩れるため) ───
+const STAGE_ICON: Record<CRMStage, LucideIcon> = {
+  lead: Sprout,
+  qualified: Coffee,
+  proposal: ClipboardList,
+  negotiation: Handshake,
+  won: PartyPopper,
+  lost: XIcon,
+};
 
 // ─── モバイル判定 (768px 未満) ────────────────────────────────
 function useIsMobile() {
@@ -193,16 +211,22 @@ export default function CRMStudio({ persona, onClose }: Props) {
           <div className="cp-row min-w-0">
             <StudioBackButton onClick={onClose} />
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}>🤝</div>
+              style={{ background: persona.accentColorLight, color: persona.accentColor }}>
+              <Handshake size={20} strokeWidth={2.2} />
+            </div>
             <div className="min-w-0">
               <p className="cp-h2 truncate">CRM パイプライン</p>
               <p className="cp-meta truncate">{persona.name} · ドラッグで遷移 · AI が次の一手を提案</p>
             </div>
           </div>
-          <div className="cp-row">
+          <div className="cp-row" style={{ flexShrink: 0 }}>
             <button onClick={() => handleNewDeal()} className="cp-btn cp-btn-primary cp-btn-sm"
-              style={{ background: persona.accentColor, color: '#0a0a0f' }}>＋ 案件追加</button>
-            <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
+              style={{
+                background: persona.accentColor, color: '#0a0a0f',
+                whiteSpace: 'nowrap', flexShrink: 0, minHeight: 44,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+              }}><Plus size={15} strokeWidth={2.6} />案件追加</button>
+            <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm" aria-label="閉じる"><XIcon size={16} strokeWidth={2.4} /></button>
           </div>
         </div>
 
@@ -226,7 +250,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
             accent={persona.accentColor}
             iconKey="crm"
             what="商談がいま どこまで進んでいるか を一覧で見える画面です。"
-            tryThis="右上の「＋ 案件追加」で、追いかけたい商談を 1 件登録します。"
+            tryThis="右上の「案件追加」で、追いかけたい商談を 1 件登録します。"
             example="「A社サイト制作」を“提案中”に置く → 受注できたら“受注”の列へドラッグ。AI が次の一手も提案します。"
             sampleLabel="出来上がりイメージ"
             samplePreview={
@@ -264,7 +288,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
                   <strong style={{ color: persona.accentColor, fontSize: 10 }}>¥330,000 · 60%</strong>
                 </div>
                 <div style={{ marginTop: 4, paddingTop: 3, borderTop: '1px dashed #e2e8f0', fontSize: 6, color: '#5b21b6' }}>
-                  💡 3 日連絡なし → リマインダーが効きます
+                  <Lightbulb size={7} strokeWidth={2.4} style={{ display: 'inline', verticalAlign: '-1px', marginRight: 2 }} />3 日連絡なし → リマインダーが効きます
                 </div>
               </div>
             }
@@ -298,7 +322,11 @@ export default function CRMStudio({ persona, onClose }: Props) {
                           borderColor: meta.color + '70',
                           cursor: 'pointer',
                         }}
-                      >{meta.emoji} {meta.label} ({n})</button>
+                      >
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <IconChip icon={STAGE_ICON[s]} color="currentColor" size={13} />{meta.label} ({n})
+                        </span>
+                      </button>
                     );
                   })}
                 </div>
@@ -314,7 +342,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
                     return (
                       <div key={stage}>
                         <div className="cp-row" style={{ gap: 6, marginBottom: 4 }}>
-                          <span>{meta.emoji}</span>
+                          <IconChip icon={STAGE_ICON[stage]} color={meta.color} size={15} />
                           <span className="cp-h3" style={{ color: meta.color }}>{meta.label}</span>
                           <span className="cp-meta">{dealsHere.length}</span>
                         </div>
@@ -341,7 +369,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
                         ctaLabel="最初の案件を作る"
                         onCta={() => handleNewDeal('lead')}
                         accent={persona.accentColor}
-                        preview="🌱 山田太郎 (株式会社サンプル)　→ 提案中　次の一手: 木曜にラフ案を送る"
+                        preview="山田太郎 (株式会社サンプル)　→ 提案中　次の一手: 木曜にラフ案を送る"
                       />
                       <SampleLeadsPicker
                         accent={persona.accentColor}
@@ -365,12 +393,12 @@ export default function CRMStudio({ persona, onClose }: Props) {
                       >
                         <div className="cp-row-between mb-2">
                           <div className="cp-row" style={{ gap: 6 }}>
-                            <span className="text-base">{meta.emoji}</span>
+                            <IconChip icon={STAGE_ICON[stage]} color={meta.color} size={16} />
                             <span className="cp-h3" style={{ color: meta.color }}>{meta.label}</span>
                             <span className="cp-meta">{dealsHere.length}</span>
                           </div>
                           {stage === 'lead' && (
-                            <button onClick={() => handleNewDeal('lead')} className="cp-btn cp-btn-ghost cp-btn-sm" title="この列に追加">＋</button>
+                            <button onClick={() => handleNewDeal('lead')} className="cp-btn cp-btn-ghost cp-btn-sm" title="この列に追加" aria-label="この列に案件を追加"><Plus size={14} strokeWidth={2.6} /></button>
                           )}
                         </div>
                         <div className="rounded-lg p-2 cp-stack-sm transition-all"
@@ -380,8 +408,10 @@ export default function CRMStudio({ persona, onClose }: Props) {
                             minHeight: '420px',
                           }}>
                           {dealsHere.length === 0 && (
-                            <p className="cp-tiny text-center py-6">
-                              {isDragTarget ? '↓ ここにドロップ' : `${meta.label}なし`}
+                            <p className="cp-tiny text-center py-6" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                              {isDragTarget
+                                ? <><ArrowDown size={12} strokeWidth={2.4} />ここにドロップ</>
+                                : `${meta.label}なし`}
                             </p>
                           )}
                           {dealsHere.map(d => (
@@ -418,7 +448,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
                     ctaLabel="最初の案件を作る"
                     onCta={() => handleNewDeal('lead')}
                     accent={persona.accentColor}
-                    preview="🌱 山田太郎 (株式会社サンプル)　→ 提案中　次の一手: 木曜にラフ案を送る"
+                    preview="山田太郎 (株式会社サンプル)　→ 提案中　次の一手: 木曜にラフ案を送る"
                   />
                   <SampleLeadsPicker
                     accent={persona.accentColor}
@@ -432,7 +462,9 @@ export default function CRMStudio({ persona, onClose }: Props) {
                     className="cp-card text-left w-full cp-row-between">
                     <div className="cp-row min-w-0">
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-                        style={{ background: meta.color + '20', color: meta.color }}>{meta.emoji}</div>
+                        style={{ background: meta.color + '20', color: meta.color }}>
+                        <IconChip icon={STAGE_ICON[d.stage]} color={meta.color} size={17} />
+                      </div>
                       <div className="min-w-0">
                         <p className="cp-h3 truncate">{d.title}</p>
                         <p className="cp-meta truncate">
@@ -494,7 +526,9 @@ export default function CRMStudio({ persona, onClose }: Props) {
                   return (
                     <div key={stage}>
                       <div className="cp-row-between" style={{ gap: 8 }}>
-                        <span className="text-fg"><span className="mr-1">{meta.emoji}</span>{meta.label}</span>
+                        <span className="text-fg" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          <IconChip icon={STAGE_ICON[stage]} color={meta.color} size={14} />{meta.label}
+                        </span>
                         <span className="cp-meta font-mono">{count}件 <span className="cp-tiny">{pct.toFixed(0)}%</span></span>
                       </div>
                       <div className="h-1.5 rounded-full overflow-hidden mt-1" style={{ background: 'var(--surface-3)' }}>
@@ -588,7 +622,13 @@ function DealCard({ deal, accent, onOpen, onMove, onPropose, proposing, compact 
           )}
           {deal.expectedCloseDate && <span className="cp-tiny" style={{ textTransform: 'none' }}>～{deal.expectedCloseDate}</span>}
           {stale && (
-            <span className="cp-pill" style={{ color: '#FFA94D', borderColor: '#FFA94D55' }}>📌 {days}日 連絡なし</span>
+            <span className="cp-pill" style={{ color: '#FFA94D', borderColor: '#FFA94D55', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Pin size={11} strokeWidth={2.4} />{days}日 連絡なし</span>
+          )}
+          {/* どこから来た案件かを隠さない (営業エージェントで採用した相手はここに出る) */}
+          {(deal.source || '').startsWith(SALES_AGENT_SOURCE) && (
+            <span className="cp-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, textTransform: 'none' }}>
+              <Target size={11} strokeWidth={2.4} />商談 AI エージェントで採用
+            </span>
           )}
         </div>
       </button>
@@ -600,7 +640,7 @@ function DealCard({ deal, accent, onOpen, onMove, onPropose, proposing, compact 
           borderTop: '1px dashed ' + meta.color + '30',
           display: 'flex', alignItems: 'flex-start', gap: 6,
         }}>
-          <span style={{ fontSize: 12, lineHeight: 1.4 }}>💡</span>
+          <Lightbulb size={12} strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 1, color: 'var(--fg-muted)' }} />
           <p className="cp-tiny" style={{ flex: 1, textTransform: 'none', color: 'var(--fg-muted)', lineHeight: 1.5 }}>
             {loadingAI ? (
               <span style={{ opacity: 0.6 }}>AI が次の一手を考え中…</span>
@@ -629,7 +669,12 @@ function DealCard({ deal, accent, onOpen, onMove, onPropose, proposing, compact 
             }}
             title="提案文を書く — CSO/CMO がこの顧客向けの提案文を 1 通ドラフトします"
           >
-            {proposeBtn.isPending ? '⏳ 依頼中…' : proposeBtn.isSuccess ? '✓ 依頼しました' : proposing ? '送信中…' : '✍️ 提案文を書く'}
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              {proposeBtn.isPending ? <><Hourglass size={11} strokeWidth={2.4} />依頼中…</>
+                : proposeBtn.isSuccess ? <><Check size={11} strokeWidth={2.8} />依頼しました</>
+                : proposing ? '送信中…'
+                : <><PenLine size={11} strokeWidth={2.4} />提案文を書く</>}
+            </span>
           </button>
           {stale && (
             <button
@@ -646,7 +691,12 @@ function DealCard({ deal, accent, onOpen, onMove, onPropose, proposing, compact 
                 transition: 'background 0.22s ease-out, border-color 0.22s ease-out',
               }}
             >
-              {followupBtn.isPending ? '⏳ 依頼中…' : followupBtn.isSuccess ? '✓ 送りました' : proposing ? '…' : '📮 リマインダー'}
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                {followupBtn.isPending ? <><Hourglass size={11} strokeWidth={2.4} />依頼中…</>
+                  : followupBtn.isSuccess ? <><Check size={11} strokeWidth={2.8} />送りました</>
+                  : proposing ? '…'
+                  : <><BellRing size={11} strokeWidth={2.4} />リマインダー</>}
+              </span>
             </button>
           )}
         </div>
@@ -662,9 +712,14 @@ function DealCard({ deal, accent, onOpen, onMove, onPropose, proposing, compact 
               <button key={s}
                 onClick={(e) => { e.stopPropagation(); onMove(s); }}
                 className="cp-pill"
-                style={{ fontSize: 9, padding: '2px 6px', cursor: 'pointer', color: sm.color, borderColor: sm.color + '40' }}
+                style={{
+                  fontSize: 10.5, padding: '6px 10px', cursor: 'pointer',
+                  color: sm.color, borderColor: sm.color + '40',
+                  minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 4,
+                }}
                 title={`${sm.label}に移動`}
-              >{sm.emoji}</button>
+                aria-label={`${sm.label}に移動`}
+              ><IconChip icon={STAGE_ICON[s]} color={sm.color} size={12} />{sm.label}</button>
             );
           })}
         </div>
@@ -673,7 +728,8 @@ function DealCard({ deal, accent, onOpen, onMove, onPropose, proposing, compact 
   );
 }
 
-const DOC_KIND_LABEL: Record<string, string> = { estimate: '📋 見積書', order: '📦 発注書', delivery: '🚚 納品書', invoice: '🧾 請求書' };
+const DOC_KIND_LABEL: Record<string, string> = { estimate: '見積書', order: '発注書', delivery: '納品書', invoice: '請求書' };
+const DOC_KIND_ICON: Record<string, LucideIcon> = { estimate: ClipboardCheck, order: Package, delivery: Truck, invoice: Receipt };
 const DOC_STATUS_LABEL: Record<string, string> = { draft: '下書き', sent: '送付済', approved: '承認済', delivered: '納品済', paid: '支払済', cancelled: '取消' };
 
 function DealEditorWithDocs(props: {
@@ -740,8 +796,12 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
   };
 
   const ACT_LABEL: Record<string, string> = {
-    meeting: '🤝 商談', email: '📧 メール', call: '📞 電話',
-    note: '📝 メモ', proposal: '📋 提案', invoice: '🧾 請求',
+    meeting: '商談', email: 'メール', call: '電話',
+    note: 'メモ', proposal: '提案', invoice: '請求',
+  };
+  const ACT_ICON: Record<string, LucideIcon> = {
+    meeting: Handshake, email: MailIcon, call: Phone,
+    note: StickyNote, proposal: ClipboardList, invoice: Receipt,
   };
   const ACT_COLOR: Record<string, string> = {
     meeting: '#5BA8FF', email: '#A78BFA', call: '#4ADE80',
@@ -763,15 +823,17 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
       >
         <div className="cp-modal-header">
           <p className="cp-h2">案件詳細</p>
-          <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
+          <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm" aria-label="閉じる"><XIcon size={16} strokeWidth={2.4} /></button>
         </div>
         <div className="cp-modal-body cp-stack">
           {/* AI 次アクション + AgentTaskQueue 連携 */}
           <div className="cp-card-section" style={{ borderLeft: `3px solid ${persona.accentColor}`, background: persona.accentColor + '08' }}>
             <div className="cp-row-between" style={{ marginBottom: 6 }}>
-              <p className="cp-section-head" style={{ color: persona.accentColor }}>💡 次の一手 (AI 提案)</p>
+              <p className="cp-section-head" style={{ color: persona.accentColor, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <Lightbulb size={14} strokeWidth={2.4} />次の一手 (AI 提案)
+              </p>
               <button onClick={refreshAI} disabled={refreshingAI} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ fontSize: 10 }}>
-                {refreshingAI ? '考え中…' : '🔄 再生成'}
+                {refreshingAI ? '考え中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><RefreshCw size={11} strokeWidth={2.4} />再生成</span>}
               </button>
             </div>
             <AILoadingState active={refreshingAI} label="次の一手を考えています" stages={['案件の状況を整理', '直近の活動を確認', '効く打ち手を 1 つ選定']} skeletonLines={2} hint="Claude Haiku が判断中" />
@@ -793,7 +855,12 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
                   transition: 'background 0.22s ease-out, box-shadow 0.22s ease-out',
                 }}
               >
-                {editorProposeBtn.isPending ? '⏳ CXO に依頼中…' : editorProposeBtn.isSuccess ? '✓ 依頼しました' : proposing ? '送信中…' : '✍️ CSO/CMO に提案文を書かせる'}
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                  {editorProposeBtn.isPending ? <><Hourglass size={13} strokeWidth={2.4} />CXO に依頼中…</>
+                    : editorProposeBtn.isSuccess ? <><Check size={13} strokeWidth={2.8} />依頼しました</>
+                    : proposing ? '送信中…'
+                    : <><PenLine size={13} strokeWidth={2.4} />CSO/CMO に提案文を書かせる</>}
+                </span>
               </button>
               <button
                 onClick={() => editorFollowupBtn.run(() => onPropose('followup'))}
@@ -807,7 +874,12 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
                   transition: 'background 0.22s ease-out, border-color 0.22s ease-out',
                 }}
               >
-                {editorFollowupBtn.isPending ? '⏳ 依頼中…' : editorFollowupBtn.isSuccess ? '✓ 送りました' : proposing ? '…' : '📮 フォローアップ文を作る'}
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                  {editorFollowupBtn.isPending ? <><Hourglass size={13} strokeWidth={2.4} />依頼中…</>
+                    : editorFollowupBtn.isSuccess ? <><Check size={13} strokeWidth={2.8} />送りました</>
+                    : proposing ? '…'
+                    : <><BellRing size={13} strokeWidth={2.4} />フォローアップ文を作る</>}
+                </span>
               </button>
             </div>
           </div>
@@ -821,7 +893,7 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
             <div>
               <label className="cp-label">ステージ</label>
               <select value={deal.stage} onChange={e => onUpdate({ stage: e.target.value as CRMStage })} className="cp-select">
-                {STAGE_ORDER.map(s => <option key={s} value={s}>{STAGE_META[s].emoji} {STAGE_META[s].label}</option>)}
+                {STAGE_ORDER.map(s => <option key={s} value={s}>{STAGE_META[s].label}</option>)}
               </select>
             </div>
             <div>
@@ -872,8 +944,11 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
               {(['meeting', 'email', 'call', 'note', 'proposal', 'invoice'] as const).map(t => (
                 <button key={t} onClick={() => setActType(t)}
                   className="cp-btn cp-btn-sm"
-                  style={actType === t ? { background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' } : {}}>
-                  {ACT_LABEL[t]}
+                  style={{
+                    ...(actType === t ? { background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' } : {}),
+                    display: 'inline-flex', alignItems: 'center', gap: 5, minHeight: 44,
+                  }}>
+                  <IconChip icon={ACT_ICON[t]} color="currentColor" size={14} />{ACT_LABEL[t]}
                 </button>
               ))}
             </div>
@@ -885,7 +960,7 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
                 onAddActivity({ date: new Date().toISOString().slice(0, 10), type: actType, summary: actSummary });
                 setActSummary('');
               }} className="cp-btn cp-btn-primary"
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}>追加</button>
+                style={{ background: persona.accentColor, color: '#0a0a0f', whiteSpace: 'nowrap', flexShrink: 0, minHeight: 44 }}>追加</button>
             </div>
           </div>
 
@@ -913,8 +988,8 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
                       }} />
                       <div className="cp-row" style={{ gap: 6, marginBottom: 2 }}>
                         <span className="cp-meta font-mono">{a.date}</span>
-                        <span className="cp-pill" style={{ color, borderColor: color + '50', fontSize: 9 }}>
-                          {ACT_LABEL[a.type]}
+                        <span className="cp-pill" style={{ color, borderColor: color + '50', fontSize: 9, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                          <IconChip icon={ACT_ICON[a.type] || StickyNote} color="currentColor" size={10} />{ACT_LABEL[a.type]}
                         </span>
                       </div>
                       <p className="cp-body" style={{ fontSize: 13, lineHeight: 1.5 }}>{a.summary}</p>
@@ -942,7 +1017,9 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
                   return (
                     <div key={doc.id} className="cp-row-between">
                       <div className="cp-row min-w-0">
-                        <span className="cp-pill flex-shrink-0">{DOC_KIND_LABEL[doc.kind]}</span>
+                        <span className="cp-pill flex-shrink-0" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <IconChip icon={DOC_KIND_ICON[doc.kind] || Receipt} color="currentColor" size={11} />{DOC_KIND_LABEL[doc.kind]}
+                        </span>
                         <span className="cp-body truncate">{doc.subject}</span>
                       </div>
                       <div className="cp-row flex-shrink-0">
@@ -994,8 +1071,7 @@ function SampleLeadsPicker({ accent, onImport }: { accent: string; onImport: (in
             width: 36, height: 36, borderRadius: 10,
             background: `${accent}30`, color: accent,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18,
-          }}>📦</div>
+          }}><Package size={18} strokeWidth={2.2} /></div>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: 13.5, fontWeight: 800 }}>
               サンプル営業先を 1 タップで取込
@@ -1041,7 +1117,7 @@ function SampleLeadsPicker({ accent, onImport }: { accent: string; onImport: (in
                   </span>
                 </div>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>
-                  {already ? '✓ 取込済 (上書き)' : 'タップで一括追加'}
+                  {already ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={11} strokeWidth={2.8} />取込済 (上書き)</span> : 'タップで一括追加'}
                 </div>
               </button>
             );
