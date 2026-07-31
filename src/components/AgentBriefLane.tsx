@@ -7,6 +7,7 @@
 // PC版とモバイル版の2箇所に置いても、useAgentBrief 側で
 // 「1日1回・実行は1本」に束ねてあるのでAI呼び出しは二重にならない。
 // ============================================================
+import MilestoneRadar from './MilestoneRadar';
 import CalendarAgentBrief from './CalendarAgentBrief';
 import MailAgentBrief from './MailAgentBrief';
 import RevenueAgentBrief from './RevenueAgentBrief';
@@ -26,6 +27,9 @@ export default function AgentBriefLane({
 
   return (
     <>
+      {/* 節目レーダーは連携ゼロでも出る（暦だけで決まるため）。
+          言うことが無い日は自分で消えるので、常時マウントで良い */}
+      <MilestoneRadar onAddTask={onAddTask} />
       <CalendarAgentBrief {...p} />
       <MailAgentBrief {...p} />
       <RevenueAgentBrief {...p} />

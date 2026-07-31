@@ -378,6 +378,96 @@ export async function fetchInbox(maxResults = 20): Promise<GmailMessage[]> {
   return messages;
 }
 
+// ─── 返事が止まっているやりとり (節目レーダー用・2026-08-01) ──────
+//
+// ★「たぶん返していない」を作らないこと。
+//   受信箱だけを見ても「自分が返したか」は分からない（返信は送信済みへ入り、
+//   受信箱には相手のメールが残ったままになる）。そこで **スレッド単位**で取り、
+//   **最後の1通が自分の送信(SENT)かどうか**で確定させる。
+//   最後が相手＝こちらが止めている。ここを推測でやると、返した相手にまで
+//   「返していません」と言ってしまい、カードごと信用されなくなる。
+//
+// 自動送信の宛先(noreply 等)は、そもそも返事を待っていないので外す。
+
+/** 返事を待っていない差出人（通知系）を外すための印 */
+const NO_REPLY_HINTS = [
+  'noreply', 'no-reply', 'no_reply', 'donotreply', 'do-not-reply',
+  'notification', 'notifications', 'mailer-daemon', 'postmaster', 'automated',
+];
+
+/** 'Foo Bar <foo@bar.com>' → 'Foo Bar' / 無ければ 'foo' */
+export function displayNameFromAddress(raw: string): string {
+  const s = (raw || '').trim();
+  const m = s.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/);
+  const name = m ? m[1].trim() : '';
+  const addr = m ? m[2].trim() : s;
+  if (name) return name;
+  const local = addr.split('@')[0] || addr;
+  return local || addr;
+}
+
+function isNoReplyAddress(raw: string): boolean {
+  const s = (raw || '').toLowerCase();
+  return NO_REPLY_HINTS.some((h) => s.includes(h));
+}
+
+export interface StalledThreadRaw {
+  threadId: string;
+  who: string;
+  subject: string;
+  /** 相手の最後の発言からの日数 */
+  days: number;
+}
+
+/**
+ * 「相手の発言で止まっていて、こちらが返していない」やりとりを返す。
+ * minDays 日以上たっている物だけ。取れなければ空配列（＝カードに何も出さない）。
+ */
+export async function fetchStalledThreads(minDays = 3, maxThreads = 8): Promise<StalledThreadRaw[]> {
+  const q = `in:inbox -category:promotions -category:social newer_than:30d older_than:${minDays}d`;
+  const list = await gmailFetch(
+    `/gmail/v1/users/me/threads?maxResults=${maxThreads}&q=${encodeURIComponent(q)}`,
+  );
+  const ids: string[] = (list.threads || []).map((t: any) => t.id).filter(Boolean);
+  if (ids.length === 0) return [];
+
+  const details = await Promise.all(
+    ids.slice(0, maxThreads).map((id) =>
+      gmailFetch(
+        `/gmail/v1/users/me/threads/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`,
+      ).catch(() => null),
+    ),
+  );
+
+  const now = Date.now();
+  const out: StalledThreadRaw[] = [];
+  for (const t of details) {
+    const msgs: any[] = t?.messages || [];
+    if (msgs.length === 0) continue;
+
+    const last = msgs[msgs.length - 1];
+    const labels: string[] = last.labelIds || [];
+    // 最後に発言したのが自分＝止めているのは相手。ここでは扱わない
+    if (labels.includes('SENT') || labels.includes('DRAFT')) continue;
+
+    const from = getHeader(last.payload?.headers, 'From');
+    if (!from || isNoReplyAddress(from)) continue;
+
+    const ms = Number(last.internalDate);
+    if (!Number.isFinite(ms) || ms <= 0) continue;
+    const days = Math.floor((now - ms) / 86400000);
+    if (days < minDays) continue;
+
+    out.push({
+      threadId: t.id,
+      who: displayNameFromAddress(from),
+      subject: getHeader(msgs[0].payload?.headers, 'Subject'),
+      days,
+    });
+  }
+  return out;
+}
+
 // ─── 軽量サマリ (未読数 + 上位件名だけ) ──────────────────
 // 能動提案(今日の一手)の根拠用。本文は取らず format=metadata で件名/差出人のみ。
 // 接続済みトークンがある時だけ呼ぶこと (getValidToken は再取得の popup を起こしうる)。

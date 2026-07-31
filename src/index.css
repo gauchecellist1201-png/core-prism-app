@@ -120,9 +120,37 @@
     --scrim-bottom: linear-gradient(180deg, rgba(246,244,238,0), rgba(246,244,238,0.92) 34%);
   }
 
+  /* 連携エージェントカード (AgentBriefShell) の「文字・アイコン」用の色。
+     ★2026-08-01 実測の事故: カードの面(bg/border)に使う淡い色をそのまま
+       アイコンと操作ボタンの文字にも流用していたため、明るいテーマでは
+       「タスクに入れる」が 1.01:1 ＝ 完全に見えなくなっていた
+       (＝押せるのに誰も気づけないボタン。4枚すべてで同じ穴)。
+       面と文字で役割を分ける。面は従来どおり ACCENT_* の bg/border を使う。 */
+  :root {
+    --brief-ink-indigo: #4338CA;
+    --brief-ink-emerald: #046C50;
+    --brief-ink-rose: #B0175C;
+    --brief-ink-gold: #7A5A26;
+    /* 行の下地と枠。ダーク前提の rgba(0,0,0,.18) を明るいテーマに出すと
+       灰色に沈み、説明文が 4.3:1 (AA落第) まで落ちる */
+    --brief-row-bg: rgba(0, 0, 0, 0.045);
+    --brief-row-border: rgba(0, 0, 0, 0.10);
+    /* 警告の赤も同じ理由でテーマ別に持つ (#F87171 は明るい面で 2.9:1) */
+    --brief-ink-danger: #B42318;
+    --brief-ink-done: #087443;
+  }
+
   [data-theme="dark"] {
     --brass-text: #e8c97d;
     --scrim-bottom: linear-gradient(180deg, rgba(14,14,18,0), rgba(14,14,18,0.92) 34%);
+    --brief-ink-indigo: #A5B4FC;
+    --brief-ink-emerald: #6EE7B7;
+    --brief-ink-rose: #F9A8D4;
+    --brief-ink-gold: #E3C77E;
+    --brief-row-bg: rgba(0, 0, 0, 0.18);
+    --brief-row-border: rgba(255, 255, 255, 0.10);
+    --brief-ink-danger: #F87171;
+    --brief-ink-done: #34D399;
   }
 
   * {
@@ -2180,6 +2208,16 @@ body[data-iris-dock="on"] {
   --surface-2: rgba(255, 255, 255, 0.85);
   --surface-3: rgba(255, 255, 255, 0.60);
   --border: rgba(42, 26, 58, 0.14);
+  /* Iris は常に明色。html が dark でも、カードの文字は明色用に戻す
+     (戻さないと Instagram 連携カードの操作ボタンが白地に淡ピンクで消える) */
+  --brief-ink-indigo: #4338CA;
+  --brief-ink-emerald: #046C50;
+  --brief-ink-rose: #B0175C;
+  --brief-ink-gold: #7A5A26;
+  --brief-row-bg: rgba(0, 0, 0, 0.045);
+  --brief-row-border: rgba(0, 0, 0, 0.10);
+  --brief-ink-danger: #B42318;
+  --brief-ink-done: #087443;
 }
 
 .iris-main {

@@ -16,33 +16,38 @@ export interface BriefAction {
 }
 
 export interface AgentBriefAccent {
-  /** カード背景のグラデーション */
+  /** カード背景のグラデーション (面) */
   bg: string;
-  /** カード枠線 */
+  /** カード枠線 (面) */
   border: string;
-  /** 見出しアイコン色 / リンク色 */
+  /**
+   * 見出しアイコン / 操作ボタンの文字の色。
+   * ★必ずテーマ変数を通すこと (index.css の --brief-ink-*)。
+   *   面と同じ淡い色を直接ここへ書くと、明るいテーマで 1.01:1 になり
+   *   「タスクに入れる」が見えなくなる (2026-08-01 実測・4枚とも同じ穴だった)。
+   */
   ink: string;
 }
 
 export const ACCENT_INDIGO: AgentBriefAccent = {
   bg: 'linear-gradient(135deg, rgba(99,102,241,0.10), rgba(167,139,250,0.06))',
   border: '1px solid rgba(129,140,248,0.28)',
-  ink: '#A5B4FC',
+  ink: 'var(--brief-ink-indigo, #A5B4FC)',
 };
 export const ACCENT_EMERALD: AgentBriefAccent = {
   bg: 'linear-gradient(135deg, rgba(16,185,129,0.10), rgba(45,212,191,0.06))',
   border: '1px solid rgba(52,211,153,0.28)',
-  ink: '#6EE7B7',
+  ink: 'var(--brief-ink-emerald, #6EE7B7)',
 };
 export const ACCENT_ROSE: AgentBriefAccent = {
   bg: 'linear-gradient(135deg, rgba(232,75,151,0.10), rgba(244,114,182,0.06))',
   border: '1px solid rgba(244,114,182,0.28)',
-  ink: '#F9A8D4',
+  ink: 'var(--brief-ink-rose, #F9A8D4)',
 };
 export const ACCENT_GOLD: AgentBriefAccent = {
   bg: 'linear-gradient(135deg, rgba(201,162,75,0.12), rgba(234,179,8,0.06))',
   border: '1px solid rgba(201,162,75,0.32)',
-  ink: '#E3C77E',
+  ink: 'var(--brief-ink-gold, #E3C77E)',
 };
 
 export default function AgentBriefShell({
@@ -97,7 +102,7 @@ export default function AgentBriefShell({
           title="いま作り直す"
           style={{
             marginLeft: 'auto', width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-            border: '1px solid rgba(255,255,255,0.14)', background: 'transparent',
+            border: '1px solid var(--border, rgba(255,255,255,0.14))', background: 'transparent',
             color: 'var(--fg-muted, #9CA3AF)', cursor: loading ? 'default' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
@@ -115,7 +120,7 @@ export default function AgentBriefShell({
         </p>
       )}
       {error && !loading && (
-        <p style={{ fontSize: 12.5, color: '#FCA5A5', margin: '10px 0 2px' }}>
+        <p style={{ fontSize: 12.5, color: 'var(--brief-ink-danger, #FCA5A5)', margin: '10px 0 2px' }}>
           {error} — 右上の更新でもう一度ためせます。
         </p>
       )}
@@ -133,12 +138,12 @@ export default function AgentBriefShell({
                 style={{
                   display: 'flex', gap: 10, alignItems: 'flex-start',
                   padding: '10px 12px', borderRadius: 12,
-                  background: 'rgba(0,0,0,0.18)',
-                  border: `1px solid ${it.tone === 'alert' ? 'rgba(248,113,113,0.4)' : 'rgba(255,255,255,0.10)'}`,
+                  background: 'var(--brief-row-bg, rgba(0,0,0,0.18))',
+                  border: `1px solid ${it.tone === 'alert' ? 'rgba(248,113,113,0.4)' : 'var(--brief-row-border, rgba(255,255,255,0.10))'}`,
                 }}
               >
                 {it.tone === 'alert'
-                  ? <AlertTriangle size={15} strokeWidth={2.2} style={{ color: '#F87171', flexShrink: 0, marginTop: 2 }} />
+                  ? <AlertTriangle size={15} strokeWidth={2.2} style={{ color: 'var(--brief-ink-danger, #F87171)', flexShrink: 0, marginTop: 2 }} />
                   : <Sparkles size={15} strokeWidth={2.2} style={{ color: accent.ink, flexShrink: 0, marginTop: 2 }} />}
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg, #E5E7EB)', margin: 0 }}>
@@ -152,8 +157,10 @@ export default function AgentBriefShell({
                   <p style={{ fontSize: 12.5, color: 'var(--fg-muted, #B4B8C2)', margin: '3px 0 0', lineHeight: 1.6 }}>
                     {it.detail}
                   </p>
+                  {/* タップ対象を 44px 確保する。文字リンクに見せたまま高さだけ稼ぐため
+                      上の余白を詰めて相殺する (2026-08-01: 32px しかなく押しにくかった) */}
                   {actions.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 0 }}>
                       {actions.map((a, ai) => {
                         const id = i * 100 + ai;
                         const busy = busyIdx === id;
@@ -164,8 +171,8 @@ export default function AgentBriefShell({
                             onClick={() => { void a.run(); }}
                             disabled={busy}
                             style={{
-                              fontSize: 12, fontWeight: 700, minHeight: 32,
-                              color: done ? '#34D399' : accent.ink,
+                              fontSize: 12, fontWeight: 700, minHeight: 44,
+                              color: done ? 'var(--brief-ink-done, #34D399)' : accent.ink,
                               background: 'none', border: 'none', padding: 0,
                               cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1,
                             }}
