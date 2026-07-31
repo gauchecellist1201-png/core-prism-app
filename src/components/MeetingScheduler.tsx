@@ -14,7 +14,8 @@ import { confirmAction } from '../lib/confirmDialog';
 
 interface Props {
   persona: Persona;
-  settings: AppSettings;
+  /** 今は使っていない。呼び出し側に持たせないため任意 */
+  settings?: AppSettings;
   onClose: () => void;
 }
 
@@ -26,6 +27,42 @@ const LOCATION_LABELS: Record<LocationKind, string> = {
   'custom': 'カスタム',
 };
 
+/** 直近の予定を何日ぶん出すか。見出しの「◯日間」と必ず同じ数字を使う（別々だと表示が嘘になる） */
+const UPCOMING_DAYS = 7;
+
+/** URL に埋め込める空き枠の上限。URL が長くなりすぎるのを防ぐ */
+const MAX_EMBEDDED_SLOTS = 60;
+
+// ─── カレンダーの失敗を「やさしい言葉 + 直し方」に変える ──────────
+//
+// なぜ要るか（実際にあった最悪の壊れ方）:
+//   Google のトークンは1時間で切れる。切れたまま URL を作ると、
+//   「予定を読み取れなかった」→「予定ゼロ」→「全部の時間が空いています」
+//   という予約リンクが出来上がる。すでに商談が入っている時間にゲストが
+//   予約してしまい、ダブルブッキングになる。しかも画面には赤い英語が
+//   出るだけで、リンク自体は普通に作られてしまっていた。
+//   → 読み取れなかったら URL は作らない。理由と直し方を必ず出す。
+interface CalTrouble {
+  /** 何が起きたか（やさしい日本語） */
+  message: string;
+  /** つなぎ直せば直るか */
+  canReconnect: boolean;
+}
+
+function readCalTrouble(e: unknown): CalTrouble {
+  const raw = e instanceof Error ? e.message : String(e);
+  if (/認証期限切れ|401|invalid_grant|unauthorized/i.test(raw)) {
+    return { message: 'Google カレンダーとの接続が切れていました（接続は1時間で切れます）。', canReconnect: true };
+  }
+  if (/Failed to fetch|NetworkError|ネットワーク|timeout/i.test(raw)) {
+    return { message: '通信が届きませんでした。電波の良いところで、もう一度お試しください。', canReconnect: false };
+  }
+  if (/403|rate|quota/i.test(raw)) {
+    return { message: 'Google 側が一時的に受け付けてくれませんでした。少し待ってからもう一度お試しください。', canReconnect: false };
+  }
+  return { message: `カレンダーとのやり取りに失敗しました（${raw.slice(0, 80)}）`, canReconnect: true };
+}
+
 export default function MeetingScheduler({ persona, onClose }: Props) {
   const { create, update, remove, getForPersona } = useMeetingTypes();
   const personaTypes = getForPersona(persona.id);
@@ -35,6 +72,14 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
   const [calUser, setCalUser] = useState<CalUserInfo | null>(loadCalUser());
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** カレンダーの読み取りに失敗した理由（＝「つなぎ直す」を出す条件） */
+  const [trouble, setTrouble] = useState<CalTrouble | null>(null);
+  /** 予定が読めなくて URL 発行を止めた予約タイプ（つなぎ直したら、これをやり直す） */
+  const [blockedType, setBlockedType] = useState<MeetingType | null>(null);
+  /** 予定を見ずに作った URL かどうか（作ったあとも警告を出し続ける） */
+  const [busyUnchecked, setBusyUnchecked] = useState(false);
+  /** 上限を超えて URL に入らなかった枠の数（0 なら全部入っている） */
+  const [slotsTrimmed, setSlotsTrimmed] = useState(0);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'list' | 'preview'>('list');
@@ -45,26 +90,38 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
   const [previewBusy, setPreviewBusy] = useState<boolean>(false);
   const [generatedUrl, setGeneratedUrl] = useState<string>('');
   const [upcomingEvents, setUpcomingEvents] = useState<CalEvent[]>([]);
+  /** 直近の予定の読み込み状態。'error' のときは黙って消さず「読み込めませんでした／もう一度」を出す */
+  const [eventsPhase, setEventsPhase] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
 
   useEffect(() => { setCalConnected(isCalConnected()); }, []);
 
+  const loadUpcoming = useCallback(async () => {
+    setEventsPhase('loading');
+    try {
+      const evs = await fetchUpcomingEvents(UPCOMING_DAYS);
+      setUpcomingEvents(evs);
+      setEventsPhase('ok');
+    } catch (e) {
+      // 黙って空にすると「予定が1件もない」と嘘をつくことになる
+      setUpcomingEvents([]);
+      setEventsPhase('error');
+      setTrouble(readCalTrouble(e));
+    }
+  }, []);
+
   const handleConnect = useCallback(async () => {
-    setError(null); setConnecting(true);
+    setError(null); setTrouble(null); setConnecting(true);
     try {
       const { user } = await connectCalendar();
       setCalConnected(true);
       setCalUser(user);
-      // 直近イベントを取得
-      try {
-        const evs = await fetchUpcomingEvents(7);
-        setUpcomingEvents(evs);
-      } catch { /* ignore */ }
+      await loadUpcoming();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setTrouble(readCalTrouble(e));
     } finally {
       setConnecting(false);
     }
-  }, []);
+  }, [loadUpcoming]);
 
   const handleDisconnect = useCallback(() => {
     clearCalToken();
@@ -73,17 +130,19 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
     setCalConnected(false);
     setCalUser(null);
     setUpcomingEvents([]);
+    setEventsPhase('idle');
+    setTrouble(null);
+    setBlockedType(null);
   }, []);
 
   // 既に接続済みなら直近イベント取得
   useEffect(() => {
-    if (calConnected) {
-      fetchUpcomingEvents(7).then(setUpcomingEvents).catch(() => {});
-    }
-  }, [calConnected]);
+    if (calConnected) void loadUpcoming();
+  }, [calConnected, loadUpcoming]);
 
   // 予約 URL を生成
-  const generateBookingUrl = useCallback(async (mt: MeetingType) => {
+  // ignoreBusy = ユーザーが警告を読んだうえで「予定を見ずに作る」を選んだときだけ true
+  const generateBookingUrl = useCallback(async (mt: MeetingType, ignoreBusy = false) => {
     setPreviewBusy(true);
     setError(null);
     setPreviewType(mt);
@@ -92,16 +151,27 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
       const future = new Date(now); future.setDate(now.getDate() + mt.rules.advanceMaxDays);
 
       let busy: { start: string; end: string }[] = [];
-      if (calConnected) {
-        try { busy = await fetchBusy(now.toISOString(), future.toISOString()); }
-        catch (e) {
-          // トークン切れ等の場合は空配列で続行
-          busy = [];
-          setError(e instanceof Error ? e.message : String(e));
+      if (calConnected && !ignoreBusy) {
+        try {
+          busy = await fetchBusy(now.toISOString(), future.toISOString());
+          setTrouble(null);
+          setBlockedType(null);
+        } catch (e) {
+          // ここで空配列のまま進めると「予定ゼロ＝全部空いている」URL が出来てしまう。
+          // ダブルブッキングに直結するので、URL は作らずに止めて、直し方を出す。
+          setTrouble(readCalTrouble(e));
+          setBlockedType(mt);
+          return;
         }
       }
+      setBusyUnchecked(ignoreBusy && calConnected);
+      if (ignoreBusy) setBlockedType(null);
       const slots = computeFreeSlots({ rules: mt.rules, durationMin: mt.duration, busy, now });
-      setPreviewSlots(slots);
+      // URL に入るのは先頭 60 枠だけ。画面には全部（287枠など）を出していたので、
+      // 「埋め込み済み」の件数が実際より多く見えていた。ゲストに届く数と必ず同じにする。
+      const embedded = slots.slice(0, MAX_EMBEDDED_SLOTS);
+      setPreviewSlots(embedded);
+      setSlotsTrimmed(slots.length - embedded.length);
 
       const cfg = {
         v: 1 as const,
@@ -116,7 +186,7 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
         duration: mt.duration,
         location: mt.location,
         customLocation: mt.customLocation,
-        slots: slots.slice(0, 60), // 上限 60 枠 (URL 過大化防止)
+        slots: embedded, // 上限 60 枠 (URL 過大化防止)
         generatedAt: new Date().toISOString(),
       };
       const url = buildBookingUrl(cfg);
@@ -126,6 +196,25 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
       setPreviewBusy(false);
     }
   }, [calConnected, persona]);
+
+  /** 「つなぎ直す」＝ 認証しなおして、止まっていた作業をそのまま続きから終わらせる */
+  const reconnectAndRetry = useCallback(async (retryFor?: MeetingType) => {
+    setConnecting(true);
+    try {
+      const { user } = await connectCalendar();
+      setCalConnected(true);
+      setCalUser(user);
+      setTrouble(null);
+      const pending = retryFor ?? blockedType;
+      setBlockedType(null);
+      await loadUpcoming();
+      if (pending) await generateBookingUrl(pending);
+    } catch (e) {
+      setTrouble(readCalTrouble(e));
+    } finally {
+      setConnecting(false);
+    }
+  }, [blockedType, loadUpcoming, generateBookingUrl]);
 
   const copyUrl = useCallback(() => {
     if (generatedUrl) copyText(generatedUrl, 'リンク');
@@ -213,6 +302,48 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
               {error}
             </div>
           )}
+
+          {/* 失敗したときは必ず「何が起きたか」と「押せば直るボタン」を出す */}
+          {trouble && (
+            <div className="mt-2 p-3 rounded-lg" style={{ background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.35)' }}>
+              <p className="text-sm font-semibold" style={{ color: '#f87171' }}>
+                {blockedType ? '予約 URL は作りませんでした' : 'カレンダーを読み取れませんでした'}
+              </p>
+              <p className="text-fg-muted text-xs mt-1 leading-relaxed">{trouble.message}</p>
+              {blockedType && (
+                <p className="text-fg-muted text-xs mt-1 leading-relaxed">
+                  いまの予定が分からないまま作ると、<strong className="text-fg">すでに予定が入っている時間まで「空いています」</strong>と表示され、
+                  ゲストが二重に予約してしまいます。
+                </p>
+              )}
+              <div className="flex gap-2 flex-wrap mt-2.5">
+                <button
+                  onClick={() => void reconnectAndRetry()}
+                  disabled={connecting}
+                  className="text-xs px-3 py-1.5 rounded-lg font-semibold disabled:opacity-50"
+                  style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                >{connecting ? 'つなぎ直しています…' : '🔄 つなぎ直す'}</button>
+                {!trouble.canReconnect && eventsPhase === 'error' && (
+                  <button
+                    onClick={() => void loadUpcoming()}
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium text-fg-muted hover:text-fg"
+                    style={{ border: '1px solid var(--border)' }}
+                  >もう一度読み込む</button>
+                )}
+                {blockedType && (
+                  <button
+                    onClick={() => { const mt = blockedType; setTrouble(null); void generateBookingUrl(mt, true); }}
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium text-fg-muted hover:text-fg"
+                    style={{ border: '1px solid var(--border)' }}
+                  >予定を見ずに作る</button>
+                )}
+                <button
+                  onClick={() => { setTrouble(null); setBlockedType(null); }}
+                  className="text-xs px-2 py-1.5 rounded-lg text-fg-subtle hover:text-fg-muted"
+                >閉じる</button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tabs */}
@@ -268,12 +399,36 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
                 style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
               >＋ 新しい予約タイプを作成</button>
 
-              {/* カレンダー直近イベント */}
-              {calConnected && upcomingEvents.length > 0 && (
+              {/* カレンダー直近イベント。読めなかったときも黙って消さない */}
+              {calConnected && (
                 <div className="mt-4 rounded-xl p-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
-                  <p className="text-fg-muted text-xs tracking-wider uppercase mb-2">直近の予定 (3日間)</p>
+                  <p className="text-fg-muted text-xs tracking-wider uppercase mb-2">直近の予定 ({UPCOMING_DAYS}日間)</p>
+
+                  {eventsPhase === 'loading' && (
+                    <div className="space-y-1.5" aria-label="読み込み中">
+                      {[0, 1, 2].map(i => (
+                        <div key={i} className="h-4 rounded" style={{ background: 'var(--surface)', opacity: 0.7 - i * 0.15 }} />
+                      ))}
+                    </div>
+                  )}
+
+                  {eventsPhase === 'error' && (
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <p className="text-fg-muted text-xs">予定を読み込めませんでした（0件ではありません）</p>
+                      <button
+                        onClick={() => void loadUpcoming()}
+                        className="text-xs px-2.5 py-1 rounded-lg font-medium"
+                        style={{ background: persona.accentColorLight, color: persona.accentColor }}
+                      >もう一度読み込む</button>
+                    </div>
+                  )}
+
+                  {eventsPhase === 'ok' && upcomingEvents.length === 0 && (
+                    <p className="text-fg-muted text-xs">この{UPCOMING_DAYS}日間に予定はありません</p>
+                  )}
+
                   <div className="space-y-1">
-                    {upcomingEvents.slice(0, 8).map(ev => {
+                    {eventsPhase === 'ok' && upcomingEvents.slice(0, 8).map(ev => {
                       const d = new Date(ev.start);
                       return (
                         <div key={ev.id} className="flex items-center gap-2 text-xs">
@@ -290,12 +445,28 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
             </>
           )}
 
+          {activeTab === 'preview' && busyUnchecked && (
+            <div className="rounded-xl p-3" style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.4)' }}>
+              <p className="text-sm font-semibold" style={{ color: '#fbbf24' }}>この URL はカレンダーを見ずに作りました</p>
+              <p className="text-fg-muted text-xs mt-1 leading-relaxed">
+                すでに予定が入っている時間も「空いています」と出ます。送る前に、つなぎ直して作り直すことをおすすめします。
+              </p>
+              <button
+                onClick={() => { if (previewType) void reconnectAndRetry(previewType); }}
+                disabled={connecting}
+                className="mt-2 text-xs px-3 py-1.5 rounded-lg font-semibold disabled:opacity-50"
+                style={{ background: persona.accentColor, color: '#0a0a0f' }}
+              >{connecting ? 'つなぎ直しています…' : '🔄 つなぎ直して作り直す'}</button>
+            </div>
+          )}
+
           {activeTab === 'preview' && (
             <PreviewPanel
               persona={persona}
               type={previewType}
               slots={previewSlots}
               url={generatedUrl}
+              trimmed={slotsTrimmed}
               onCopy={copyUrl}
               onBack={() => setActiveTab('list')}
             />
@@ -483,9 +654,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function PreviewPanel({
-  persona, type, slots, url, onCopy, onBack,
+  persona, type, slots, url, trimmed, onCopy, onBack,
 }: {
-  persona: Persona; type: MeetingType | null; slots: string[]; url: string; onCopy: () => void; onBack: () => void;
+  persona: Persona; type: MeetingType | null; slots: string[]; url: string; trimmed: number;
+  onCopy: () => void; onBack: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   if (!type) {
@@ -522,7 +694,10 @@ function PreviewPanel({
       </div>
 
       <div className="rounded-xl p-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
-        <p className="text-fg-muted text-xs tracking-wider uppercase mb-2">埋め込み済みの空き時間 ({slots.length}枠)</p>
+        <p className="text-fg-muted text-xs tracking-wider uppercase mb-2">
+          ゲストに見える空き時間 ({slots.length}枠)
+          {trimmed > 0 && <span className="ml-1 normal-case tracking-normal">— 上限のため、これより先の{trimmed}枠は入っていません</span>}
+        </p>
         {slots.length === 0 ? (
           <p className="text-fg-muted text-sm py-4 text-center">条件に合う空き時間がありません。曜日・時刻・期間を見直してください</p>
         ) : (

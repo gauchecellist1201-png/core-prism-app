@@ -5,6 +5,7 @@ import { copyText } from '../lib/clipboard';
 import { StudioIntro } from './StudioIntro';
 import PersonaGlyph from './PersonaGlyph';
 import StudioBackButton from './StudioBackButton';
+import MeetingScheduler from './MeetingScheduler';
 
 interface Props {
   persona: Persona;
@@ -16,26 +17,22 @@ const DURATIONS = [15, 30, 45, 60] as const;
 export default function MeetingHub({ persona, onClose }: Props) {
   const [duration, setDuration] = useState<15 | 30 | 45 | 60>(30);
   const [title, setTitle] = useState(`${persona.name}とのミーティング`);
-  const [copied, setCopied] = useState(false);
+  const [showScheduler, setShowScheduler] = useState(false);
 
-  // ミーティングリンクは現状デモ用 (受信側の予約ページは未実装)
-  // 実装まではユーザーに「準備中」と明示し、Google カレンダー連携で実用は満たす
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://core-prism-app.vercel.app';
-  const meetingUrl = `${origin}/meet/${persona.meetingSlug || persona.id}/${duration}min`;
-
-  const handleCopy = async () => {
-    const ok = await copyText(meetingUrl, 'リンク', { silentSuccess: true });
-    if (ok) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+  // 2026-07-31: ここは長いあいだ `/meet/<slug>/30min` という**どこにも繋がっていない URL** を
+  // コピーさせていた（この経路のページは存在しない）。相手に送っても予約できないので、
+  // 実際に動く「予約リンク（?book=…）」を作る画面へつなぎ替えた。
+  // 受信側は BookingPage が既に実装済み。作る側だけが画面から呼ばれていなかった。
 
   const handleGoogleCalendar = () => {
     const text = encodeURIComponent(title);
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&details=${encodeURIComponent(`ミーティングリンク: ${meetingUrl}`)}&duration=${String(duration).padStart(2, '0')}00`;
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&duration=${String(duration).padStart(2, '0')}00`;
     window.open(url, '_blank');
   };
+
+  if (showScheduler) {
+    return <MeetingScheduler persona={persona} onClose={() => setShowScheduler(false)} />;
+  }
 
   return (
     <motion.div
@@ -67,9 +64,9 @@ export default function MeetingHub({ persona, onClose }: Props) {
           id="meetinghub"
           accent={persona.accentColor}
           iconKey="meeting"
-          what="オンライン会議の入室リンクを作って、相手にコピペで送れる場所です。"
-          tryThis="ミーティング名と時間を選んで、出てきたリンクをコピーするだけ。"
-          example="「30 分の打ち合わせ」を作る → 1 本の URL ができ、相手に貼って送れます。"
+          what="打ち合わせの日程を、相手に選んでもらうためのリンクを作る場所です。"
+          tryThis="ミーティング名と時間を選んで「予約リンクを作る」を押すだけ。"
+          example="「30 分の打ち合わせ」を作る → 空いている時間が並んだ 1 本の URL ができ、相手が押した時間で確定します。"
           sampleLabel="こんなリンクが出ます"
           samplePreview={
             <div
@@ -98,11 +95,11 @@ export default function MeetingHub({ persona, onClose }: Props) {
                 }}
               >
                 <span style={{ fontSize: 6, opacity: 0.85, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                  meet.core/abc-1234
+                  空き時間から選んで予約
                 </span>
                 <span style={{ fontSize: 5.5, fontWeight: 800, color: persona.accentColor }}>コピー</span>
               </div>
-              <div style={{ fontSize: 5.5, opacity: 0.6 }}>相手に貼って送るだけで入室できます</div>
+              <div style={{ fontSize: 5.5, opacity: 0.6 }}>相手に送るだけ。押された時間で確定します</div>
             </div>
           }
         />
@@ -140,24 +137,20 @@ export default function MeetingHub({ persona, onClose }: Props) {
           </div>
         </div>
 
-        {/* URL */}
-        <div
-          className="flex items-center gap-2 p-3 rounded-xl mb-4"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+        {/* 予約リンクを作る（本命の導線） */}
+        <motion.button
+          onClick={() => setShowScheduler(true)}
+          className="w-full py-3 rounded-xl text-sm font-medium mb-2 flex items-center justify-center gap-2"
+          style={{ background: persona.accentColor, color: '#0a0a0f' }}
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
         >
-          <p className="flex-1 text-xs font-mono text-fg-subtle truncate">{meetingUrl}</p>
-          <motion.button
-            onClick={handleCopy}
-            className="text-xs px-3 py-1 rounded-lg flex-shrink-0 transition-all"
-            style={{
-              background: copied ? 'rgba(52,211,153,0.15)' : persona.accentColorLight,
-              color: copied ? '#34d399' : persona.accentColor,
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            {copied ? '✓ コピー済' : 'コピー'}
-          </motion.button>
-        </div>
+          🔗 空き時間つきの予約リンクを作る
+        </motion.button>
+        <p className="text-fg-muted text-[11px] leading-relaxed mb-4">
+          Google カレンダーの空き時間を読んで、相手が押すだけで決まるリンクを作ります。
+          （カレンダー未接続でも、曜日と時間帯だけで作れます）
+        </p>
 
         {/* アクション */}
         <div className="grid grid-cols-2 gap-3">
@@ -176,7 +169,7 @@ export default function MeetingHub({ persona, onClose }: Props) {
           </motion.button>
           <motion.button
             onClick={() => copyText(
-              `${title}\n時間: ${duration}分\nリンク: ${meetingUrl}`,
+              `${title}\n時間: ${duration}分`,
               'ミーティング情報',
             )}
             className="py-3 rounded-xl text-xs font-light flex items-center justify-center gap-2 transition-all"
@@ -195,11 +188,11 @@ export default function MeetingHub({ persona, onClose }: Props) {
         {/* 説明 */}
         <div
           className="mt-4 p-3 rounded-xl"
-          style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)' }}
+          style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
         >
-          <p className="text-xs text-amber-300 leading-relaxed">
-            ⚠️ 予約ページは現在準備中です。確実にミーティングを設定するには <b>Googleカレンダーへ</b> を押してください。
-            URL のコピー / シェアは予約ページ完成までは案内目的でお使いください。
+          <p className="text-fg-muted text-xs leading-relaxed">
+            日時がもう決まっているなら <b className="text-fg">Googleカレンダーへ</b>。
+            相手に選んでもらうなら <b className="text-fg">予約リンク</b>。どちらも相手のアプリだけで完了します。
           </p>
         </div>
       </motion.div>
