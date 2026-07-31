@@ -285,7 +285,8 @@ export default function ContinuumLanding() {
             </div>
           ))}
         </div>
-        <p style={{ textAlign: 'center', marginTop: '1.8rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.42)', lineHeight: 2 }}>
+        {/* 2026-07-31 巡回: /corp 側と同じ注記。0.42(3.94:1)→0.62 で両ページの見え方をそろえる。 */}
+        <p style={{ textAlign: 'center', marginTop: '1.8rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.62)', lineHeight: 2 }}>
           単品でそろえると 月 約¥109,000。いつでも解約できます。
           <br />
           決済ページ公開までは、ボタンからそのままご相談ください（1営業日以内にお返事します）。

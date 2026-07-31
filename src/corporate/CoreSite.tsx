@@ -28,13 +28,16 @@ const PLATFORM_PLANS: Array<{
   name: string; role: string; copy: string; price: string; priceNote: string;
   accent: string; url: string; Logo: typeof PrismLogo; step: string; featured?: boolean;
 }> = [
-  { name: 'Lume', role: 'Link Hub', copy: 'すべてのリンクをひとつに。いちばん軽い入口。', price: '無料〜', priceNote: '', accent: '#FFA42A', url: 'https://lume-deploy-five.vercel.app/', Logo: LumeLogo, step: 'STEP 1 — まず無料で' },
-  { name: 'Guild', role: 'Community OS', copy: '提案と投票で動く組織OS。まずは無料の入口から。', price: '¥980〜', priceNote: '/ 月（税込）', accent: '#2DD4BF', url: 'https://guild-gauches-projects.vercel.app/?lp=1', Logo: GuildLogo, step: 'STEP 2 — チームで' },
-  { name: 'Prism', role: 'AI Business OS', copy: '経営の司令塔。13名のAIエージェントが事業を動かす。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#C9A96E', url: '/pricing', Logo: PrismLogo, step: 'STEP 3 — 経営に' },
-  { name: 'Iris', role: 'Instagram AI', copy: 'Instagram運用のすべてをAIと。分析から案件まで。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#E1306C', url: '/iris?lp=1', Logo: IrisLogo, step: 'STEP 3 — 集客に' },
-  { name: 'Pulse', role: 'Health AI', copy: '毎日のからだを見守るAI。睡眠・心拍・歩数を、毎朝やさしいことばに。', price: '無料〜', priceNote: '先行モニター中・正式版 ¥2,980/月（予定）', accent: '#FF5C8A', url: '/pulse', Logo: PulseLogo, step: 'STEP 3 — からだに' },
-  { name: 'Resonance', role: 'LINE AI', copy: '一人ひとりに書き分けるLINE個別配信と自動応対。', price: '¥6,980〜', priceNote: '/ 月（税込）', accent: '#06C755', url: 'https://resonancebot-ivory.vercel.app/lp', Logo: ResonanceLogo, step: 'STEP 4 — ファンを資産に' },
-  { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: 'https://crystal-nine-self.vercel.app/', Logo: CrystalLogo, step: 'STEP 5 — 最上位のおもてなし', featured: true },
+  // オーナー指示 2026-07-30: 主力は Prism → Resonance → Crystal。この順で先頭に置く。
+  // ラベルは「STEP 1..5」の導線順だったが、主力を先に出す並びと矛盾するため
+  // 「主力 / そのほか」の役割表記に変えた（読み手が順番を導線と誤解しないように）。
+  { name: 'Prism', role: 'AI Business OS', copy: '経営の司令塔。13名のAIエージェントが事業を動かす。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#C9A96E', url: '/pricing', Logo: PrismLogo, step: '主力 — 経営のすべてを', featured: true },
+  { name: 'Resonance', role: 'LINE AI', copy: '一人ひとりに書き分けるLINE個別配信と自動応対。', price: '¥6,980〜', priceNote: '/ 月（税込）', accent: '#06C755', url: 'https://resonancebot-ivory.vercel.app/lp', Logo: ResonanceLogo, step: '主力 — LINEの集客を', featured: true },
+  { name: 'Crystal', role: 'AI Concierge', copy: 'サイトに1行で住みつく、白と金のAIコンシェルジュ。', price: '¥29,800〜', priceNote: '/ 月（税込）・¥49,800プランあり', accent: '#C9A96E', url: 'https://crystal-nine-self.vercel.app/', Logo: CrystalLogo, step: '主力 — サイトの接客を', featured: true },
+  { name: 'Iris', role: 'Instagram AI', copy: 'Instagram運用のすべてをAIと。分析から案件まで。', price: '¥2,980〜', priceNote: '/ 月（税込）', accent: '#E1306C', url: '/iris?lp=1', Logo: IrisLogo, step: 'Instagram の運用に' },
+  { name: 'Lume', role: 'Link Hub', copy: 'すべてのリンクをひとつに。いちばん軽い入口。', price: '無料〜', priceNote: '', accent: '#FFA42A', url: 'https://lume-deploy-five.vercel.app/', Logo: LumeLogo, step: 'まず無料ではじめる' },
+  { name: 'Guild', role: 'Community OS', copy: '提案と投票で動く組織OS。まずは無料の入口から。', price: '¥980〜', priceNote: '/ 月（税込）', accent: '#2DD4BF', url: 'https://guild-gauches-projects.vercel.app/?lp=1', Logo: GuildLogo, step: 'チームで動かす' },
+  { name: 'Pulse', role: 'Health AI', copy: '毎日のからだを見守るAI。睡眠・心拍・歩数を、毎朝やさしいことばに。', price: '無料〜', priceNote: '先行モニター中・正式版 ¥2,980/月（予定）', accent: '#FF5C8A', url: '/pulse', Logo: PulseLogo, step: 'からだを見守る' },
 ];
 
 
@@ -516,6 +519,44 @@ export default function CoreSite() {
             defaultOpen
           />
 
+          {/* オーナー指示 2026-07-30: 主力は Prism → Resonance → Crystal。この順に並べる。
+              reversed は左右交互のレイアウト指定なので、並べ替えに合わせて偶数番目に付け直した。 */}
+
+          {/* RESONANCE — LINE を AI で（主力2） */}
+          <FeatureProduct
+            brand="resonance"
+            badge="LINE を、AI エージェントに"
+            tagline="LINE のご縁を、AIが温める。"
+            taglineEn="Run LINE with an AI agent."
+            description="名簿の一人ひとりに、その人のための一文を AI が書き分け、LINE で手紙のように届ける個別配信。Iris や Lume が見つけた「いま関心のある人」へ、最適なタイミングで届きます。"
+            features={[
+              '一人ひとりに、AIが文面を書き分ける',
+              '送る前に必ず全件を確認できる安心設計',
+              'Iris・Lume の来訪データで宛先を最適化',
+            ]}
+            accentColor="#06C755"
+            accentGradient="linear-gradient(135deg,#34D399,#06C755,#0EA5E9)"
+            url="https://resonancebot-ivory.vercel.app/lp"
+            reversed
+          />
+
+          {/* CRYSTAL — 話しかけるだけの AI コンシェルジュ（主力3） */}
+          <FeatureProduct
+            brand="crystal"
+            badge="AI コンシェルジュ ／ サイトに1行で"
+            tagline="話しかけるだけで、すべて解決。"
+            taglineEn="Speak, and it is handled."
+            description="画面いっぱいに咲くクリスタルの花に、声で話しかけるだけ。あなたのサイトを訪れたお客様を 24 時間お迎えし、質問に答え、見込みの高い方から商談の日程まで受け取る、白と金の AI コンシェルジュです。"
+            features={[
+              '会社案内を貼るだけで学習・FAQ も自動生成',
+              '有望なお客様を見極めて日程と連絡先を獲得',
+              '設置は HTML にタグ1行、多言語で自動応対',
+            ]}
+            accentColor="#C9A96E"
+            accentGradient="linear-gradient(135deg,#6B7A99,#8C7A5E,#C9A96E)"
+            url="https://crystal-nine-self.vercel.app/"
+          />
+
           {/* IRIS — Instagram を AI で */}
           <FeatureProduct
             brand="iris"
@@ -531,41 +572,6 @@ export default function CoreSite() {
             accentColor="#E1306C"
             accentGradient="linear-gradient(135deg,#FCB045,#E1306C,#833AB4)"
             url="/iris?lp=1"
-            reversed
-          />
-
-          {/* GUILD — 貢献で決める組織 OS（5サービスの中央） */}
-          <FeatureProduct
-            brand="guild"
-            badge="チーム ／ 貢献で決める組織 OS"
-            tagline="肩書きではなく、貢献で動く。"
-            taglineEn="Run your team by contribution."
-            description="社員・副業・フリーランス・AI を、ひとつの「ギルド」へ。意思決定は提案と投票で透明に行い、決まったことは改ざんできない記録として刻まれます。Prism が率いる 13 名の AI 役員も、このギルドの一員として動きます。"
-            features={[
-              '提案 → 投票で、チーム全員が意思決定に参加',
-              '決定は改ざん検知つきのタイムラインに記録',
-              '社員・副業・フリーランス・AI を一つのギルドに',
-            ]}
-            accentColor="#2DD4BF"
-            accentGradient="linear-gradient(135deg,#5EEAD4,#22D3EE,#2DD4BF)"
-            url="https://guild-gauches-projects.vercel.app/?lp=1"
-          />
-
-          {/* RESONANCE — LINE を AI で */}
-          <FeatureProduct
-            brand="resonance"
-            badge="LINE を、AI エージェントに"
-            tagline="LINE のご縁を、AIが温める。"
-            taglineEn="Run LINE with an AI agent."
-            description="名簿の一人ひとりに、その人のための一文を AI が書き分け、LINE で手紙のように届ける個別配信。Iris や Lume が見つけた「いま関心のある人」へ、最適なタイミングで届きます。"
-            features={[
-              '一人ひとりに、AIが文面を書き分ける',
-              '送る前に必ず全件を確認できる安心設計',
-              'Iris・Lume の来訪データで宛先を最適化',
-            ]}
-            accentColor="#06C755"
-            accentGradient="linear-gradient(135deg,#34D399,#06C755,#0EA5E9)"
-            url="https://resonancebot-ivory.vercel.app/lp"
             reversed
           />
 
@@ -586,23 +592,21 @@ export default function CoreSite() {
             url="https://lume-deploy-five.vercel.app/"
           />
 
-          {/* CRYSTAL — 話しかけるだけの AI コンシェルジュ (第6のプロダクト) */}
+          {/* GUILD — 貢献で決める組織 OS */}
           <FeatureProduct
-            brand="crystal"
-            badge="AI コンシェルジュ ／ サイトに1行で"
-            tagline="話しかけるだけで、すべて解決。"
-            taglineEn="Speak, and it is handled."
-            description="画面いっぱいに咲くクリスタルの花に、声で話しかけるだけ。あなたのサイトを訪れたお客様を 24 時間お迎えし、質問に答え、見込みの高い方から商談の日程まで受け取る、白と金の AI コンシェルジュです。"
+            brand="guild"
+            badge="チーム ／ 貢献で決める組織 OS"
+            tagline="肩書きではなく、貢献で動く。"
+            taglineEn="Run your team by contribution."
+            description="社員・副業・フリーランス・AI を、ひとつの「ギルド」へ。意思決定は提案と投票で透明に行い、決まったことは改ざんできない記録として刻まれます。Prism が率いる 13 名の AI 役員も、このギルドの一員として動きます。"
             features={[
-              '会社案内を貼るだけで学習・FAQ も自動生成',
-              '有望なお客様を見極めて日程と連絡先を獲得',
-              '設置は HTML にタグ1行、多言語で自動応対',
+              '提案 → 投票で、チーム全員が意思決定に参加',
+              '決定は改ざん検知つきのタイムラインに記録',
+              '社員・副業・フリーランス・AI を一つのギルドに',
             ]}
-            accentColor="#C9A96E"
-            // 白×薄青×金は暗背景前提のグラデ。白ベース化後のコーポ(淡背景)では
-            // 白に近い色が背景と同化して読めなくなるため、コーポ向けは濃色側に寄せる
-            accentGradient="linear-gradient(135deg,#6B7A99,#8C7A5E,#C9A96E)"
-            url="https://crystal-nine-self.vercel.app/"
+            accentColor="#2DD4BF"
+            accentGradient="linear-gradient(135deg,#5EEAD4,#22D3EE,#2DD4BF)"
+            url="https://guild-gauches-projects.vercel.app/?lp=1"
             reversed
           />
 
@@ -648,7 +652,7 @@ export default function CoreSite() {
                 fontFamily: FONT_SANS,
                 fontSize: '0.68rem',
                 letterSpacing: '0.32em',
-                color: '#A8823C',
+                color: '#8f6d2f', /* 2026-07-30: #A8823C は白カード上で 3.55:1 と基準未達だった */
                 fontWeight: 700,
               }}
             >
@@ -728,12 +732,13 @@ export default function CoreSite() {
           </div>
           <div className="lp-shot-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             {[
+              // 主力3つ (Prism → Resonance → Crystal) を先頭に。以降は上の PRODUCTS と同じ並び。
               { img: '/lp/shot-prism.jpg', name: 'Prism', cap: 'あなた専属のAI経営参謀', url: '/' },
-              { img: '/lp/shot-iris.jpg', name: 'Iris', cap: 'インフルエンサーの相棒AI', url: '/iris?lp=1' },
               { img: '/lp/shot-resonance.jpg', name: 'Resonance', cap: 'LINEの返信を、AIが先に', url: 'https://resonancebot-ivory.vercel.app/lp' },
-              { img: '/lp/shot-guild.jpg', name: 'Guild', cap: 'みんなで決める組織OS', url: 'https://guild-hazel.vercel.app/?lp=1' },
-              { img: '/lp/shot-lume.jpg', name: 'Lume', cap: 'プロフィールを最も美しく', url: 'https://lume-deploy-five.vercel.app/' },
               { img: '/lp/shot-crystal.jpg', name: 'Crystal', cap: '話しかけられるAI接客', url: 'https://crystal-nine-self.vercel.app/' },
+              { img: '/lp/shot-iris.jpg', name: 'Iris', cap: 'インフルエンサーの相棒AI', url: '/iris?lp=1' },
+              { img: '/lp/shot-lume.jpg', name: 'Lume', cap: 'プロフィールを最も美しく', url: 'https://lume-deploy-five.vercel.app/' },
+              { img: '/lp/shot-guild.jpg', name: 'Guild', cap: 'みんなで決める組織OS', url: 'https://guild-hazel.vercel.app/?lp=1' },
             ].map((s) => (
               <a
                 key={s.name}
@@ -1029,7 +1034,9 @@ export default function CoreSite() {
             ))}
           </div>
 
-          <p style={{ textAlign: 'center', marginTop: '1.8rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.42)', lineHeight: 2 }}>
+          {/* 2026-07-31 巡回: 0.42 は黒地で 3.94:1 と基準(4.5:1)未達。
+              「いつでも解約できます」は買う前にいちばん読みたい一文なので 0.62 (6.5:1) に上げる。 */}
+          <p style={{ textAlign: 'center', marginTop: '1.8rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.62)', lineHeight: 2 }}>
             単品でそろえると 月 約¥109,000 相当（Guild・Prism・Iris・Resonance・Crystal・Lume 上位プラン合計）。
             <br />
             いつでも解約できます。決済ページ公開までは、ボタンからそのままご相談ください（1営業日以内にお返事します）。
@@ -1090,7 +1097,8 @@ export default function CoreSite() {
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.2rem', justifyContent: 'space-between' }}>
             <p style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.3rem', letterSpacing: '0.14em', color: '#E7C987' }}>
               By Invitation
-              <span style={{ display: 'block', fontFamily: FONT_SANS, fontSize: '0.72rem', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
+              {/* 2026-07-31 巡回: 0.45(4.43:1) は 0.72rem の字送り広めの文だとさらに読みにくい。0.62 に。 */}
+              <span style={{ display: 'block', fontFamily: FONT_SANS, fontSize: '0.72rem', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.62)', marginTop: 4 }}>
                 上位プラン契約企業さま限定 ・ 完全個別お見積り
               </span>
             </p>
@@ -1563,85 +1571,10 @@ export default function CoreSite() {
             </div>
           </div>
 
-          {/* AI 役員 13 名 — 「これがチームです」 */}
-          <div style={{ marginBottom: '3.5rem' }}>
-            <p style={{
-              fontFamily: FONT_SERIF_EN,
-              fontSize: '0.78rem',
-              letterSpacing: '0.22em',
-              color: 'rgba(240,233,216,0.55)',
-              textTransform: 'uppercase',
-              textAlign: 'center',
-              marginBottom: '0.6rem',
-            }}>
-              The 13 AI Officers
-            </p>
-            <h3 style={{
-              fontFamily: FONT_SERIF_JA,
-              fontSize: 'clamp(1.3rem, 2.2vw, 1.7rem)',
-              fontWeight: 700,
-              textAlign: 'center',
-              marginBottom: '0.6rem',
-              color: '#F1E9D8',
-              letterSpacing: '0.04em',
-            }}>
-              AI 役員 13 名が、あなたを支えます
-            </h3>
-            <p style={{
-              fontFamily: FONT_SERIF_JA,
-              fontSize: '0.88rem',
-              color: 'rgba(240,233,216,0.6)',
-              textAlign: 'center',
-              lineHeight: 1.85,
-              maxWidth: 640,
-              margin: '0 auto 2rem',
-            }}>
-              四つのプロダクトすべてに、13 名の専門エージェントが控えています。経営、営業、財務、創造、データ、人材、法務 —— 経営者ひとりの頭脳に、13 の参謀が並走する設計です。
-            </p>
-            <div
-              className="lp-officer-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
-                gap: '0.6rem',
-                maxWidth: 720,
-                margin: '0 auto',
-              }}
-            >
-              {[
-                { t: 'CEO', d: '経営戦略' },
-                { t: 'CTO', d: '技術' },
-                { t: 'CPO', d: '製品' },
-                { t: 'CDO', d: 'デザイン' },
-                { t: 'CMO', d: 'マーケ' },
-                { t: 'CSO', d: '営業' },
-                { t: 'CFO', d: '財務' },
-                { t: 'COO', d: '運営' },
-                { t: 'CDS', d: 'データ' },
-                { t: 'CLO', d: '法務' },
-                { t: 'UIE', d: 'UI' },
-                { t: 'UXE', d: 'UX' },
-                { t: 'QAE', d: '品質' },
-              ].map((o, i) => (
-                <div key={i} style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '1rem 0.4rem',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(201,169,110,0.2)',
-                  borderRadius: 10,
-                  textAlign: 'center',
-                  gap: 5,
-                }}>
-                  <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#F1E9D8', letterSpacing: '0.14em', fontFamily: FONT_SERIF_EN }}>{o.t}</span>
-                  <span aria-hidden style={{ width: 14, height: 1, background: 'rgba(201,169,110,0.45)' }} />
-                  <span style={{ fontSize: '0.64rem', color: 'rgba(240,233,216,0.6)', fontFamily: FONT_SERIF_JA, letterSpacing: '0.04em' }}>{o.d}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* オーナー指示 2026-07-30: 「AI 役員 13 名」ブロックは削除。
+              会社紹介の途中で製品の内部構成（CXO の一覧）を並べると、
+              読み手の関心が「誰の会社か」から逸れて縦も伸びる。
+              役員の話は Prism 側の LP に置く。 */}
 
           <MobileFold summary="会社情報（設立・所在地・事業内容）">
           <dl
@@ -1849,7 +1782,7 @@ export default function CoreSite() {
             <p
               style={{
                 fontSize: '0.72rem',
-                color: 'rgba(201,169,110,0.6)',
+                color: 'rgba(201,169,110,0.85)',
                 lineHeight: 1.8,
                 marginTop: '0.5rem',
                 fontFamily: FONT_SERIF_JA,
@@ -2355,7 +2288,7 @@ function InfoRow({
             fontFamily: FONT_DISPLAY,
             fontSize: '0.65rem',
             letterSpacing: '0.25em',
-            color: 'rgba(201,169,110,0.6)',
+            color: 'rgba(201,169,110,0.85)',
             marginTop: 4,
             fontWeight: 600,
           }}
@@ -2688,7 +2621,7 @@ const sectionLabelSub: React.CSSProperties = {
   fontFamily: FONT_DISPLAY,
   fontSize: '0.65rem',
   letterSpacing: '0.45em',
-  color: 'rgba(201,169,110,0.6)',
+  color: 'rgba(201,169,110,0.85)',
   fontWeight: 600,
 };
 const footHead: React.CSSProperties = {

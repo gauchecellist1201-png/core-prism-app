@@ -421,7 +421,8 @@ function CompareView({ onBack }: { onBack: () => void }) {
         })}
       </div>
 
-      <p style={{ fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.95, marginTop: '1rem', textAlign: 'center' }}>
+      {/* 2026-07-31 巡回: 0.45 は黒地で 4.43:1 と基準未達。税込表記と解約条件は読めないと困る。 */}
+      <p style={{ fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.95, marginTop: '1rem', textAlign: 'center' }}>
         表示はすべて税込です。いつでも解約できます。
         <br />
         「どれか分からない」ままで大丈夫です。3問に答えるか、そのままご相談ください。

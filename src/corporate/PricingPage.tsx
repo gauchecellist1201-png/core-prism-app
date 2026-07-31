@@ -327,7 +327,8 @@ export default function PricingPage() {
         <h1 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 700, lineHeight: 1.4, letterSpacing: '0.04em', marginBottom: '1.25rem' }}>
           人を雇うより、<span style={{ background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>圧倒的に安い。</span>
         </h1>
-        <p style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.9rem', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic', letterSpacing: '0.15em', marginBottom: '1.25rem' }}>
+        {/* 2026-07-31 巡回: 0.45(4.43:1)。斜体＋字送り広めで実際はもっと薄く見えるので 0.62 に。 */}
+        <p style={{ fontFamily: FONT_SERIF_EN, fontSize: '0.9rem', color: 'rgba(255,255,255,0.62)', fontStyle: 'italic', letterSpacing: '0.15em', marginBottom: '1.25rem' }}>
           Cheaper than hiring. Smarter than alone.
         </p>
         <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1rem', color: 'rgba(255,255,255,0.7)', lineHeight: 2, maxWidth: 700, margin: '0 auto 2rem' }}>
@@ -864,8 +865,10 @@ export default function PricingPage() {
             </button>
           ))}
         </div>
-        <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.3)' }}>
-          © {new Date().getFullYear()} CORE INC.
+        {/* 2026-07-30 是正: 個人事業フェーズのため「CORE INC.」は使わない（恒久ルール）。
+            あわせて 0.3 は黒地で 2.48:1 と読めなかったので 0.55 に上げる。 */}
+        <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.7rem', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.55)' }}>
+          © {new Date().getFullYear()} CORE（設立準備中）
         </p>
       </footer>
       {legalKind && (
@@ -904,7 +907,7 @@ function PlanCard({ plan, yearly, brand }: { plan: any; yearly: boolean; brand: 
       <h3 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.4rem', letterSpacing: '0.1em' }}>{plan.name}</h3>
       {listPrice > 0 && (
         <p style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: 2 }}>
-          <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', color: 'rgba(255,255,255,0.4)', textDecoration: 'line-through', fontWeight: 600 }}>定価 {fmt(listPrice)}</span>
+          <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', color: 'rgba(255,255,255,0.55)', textDecoration: 'line-through', fontWeight: 600 }}>定価 {fmt(listPrice)}</span>
           <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff', background: accentGrad, padding: '0.12rem 0.4rem', borderRadius: 999, letterSpacing: '0.05em' }}>50% OFF</span>
         </p>
       )}
