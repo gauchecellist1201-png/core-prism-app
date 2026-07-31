@@ -7,6 +7,10 @@
 // ============================================================
 import type { AppSettings, Persona } from '../types/identity';
 import { aiFetch } from './aiFetch';
+import {
+  FileText, StickyNote, BarChart3, MailOpen, IdCard, Handshake,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 export type DocTemplateKind =
   | 'proposal'      // 提案書
@@ -19,7 +23,10 @@ export type DocTemplateKind =
 export interface DocTemplateMeta {
   kind: DocTemplateKind;
   label: string;
-  emoji: string;
+  /** 絵 (OS 標準の絵文字は使わない。featureIcons と同じ lucide にそろえる) */
+  Icon: LucideIcon;
+  /** 押して選ぶチップの色。白いアイコンではなく色つきの線画で出す */
+  color: string;
   blurb: string;
   /** プレースホルダー入力欄のヒント */
   inputHint: string;
@@ -27,32 +34,32 @@ export interface DocTemplateMeta {
 
 export const DOC_TEMPLATE_META: Record<DocTemplateKind, DocTemplateMeta> = {
   proposal: {
-    kind: 'proposal', label: '提案書', emoji: '📑',
+    kind: 'proposal', label: '提案書', Icon: FileText, color: '#5BA8FF',
     blurb: '背景 → 課題 → 解決 → 価格 の 4 章で意思決定者に届く形式',
     inputHint: 'テンプレを選ぶか、テーマを書いてください (例: 取引先 A への提案書 / 現状の課題は SEO 流入低下、予算 200 万円想定)',
   },
   memo: {
-    kind: 'memo', label: '会議外メモ', emoji: '🗒',
+    kind: 'memo', label: '会議外メモ', Icon: StickyNote, color: '#9088A8',
     blurb: '会議以外の場で出てきた論点・決め事を残す軽い議事メモ',
     inputHint: '例: ランチでの雑談で出た新サービスの仮説 3 つと次回検討事項',
   },
   report: {
-    kind: 'report', label: 'レポート', emoji: '📊',
+    kind: 'report', label: 'レポート', Icon: BarChart3, color: '#10B981',
     blurb: '要約 → 詳細 → 結論 の三層構造で読み手を疲れさせない',
     inputHint: '例: 5 月の SNS 運用結果、フォロワー +320、反応の良かった投稿は…',
   },
   thanks: {
-    kind: 'thanks', label: 'お礼メール', emoji: '💌',
+    kind: 'thanks', label: 'お礼メール', Icon: MailOpen, color: '#A78BFA',
     blurb: '商談・会食・面談後の即送り用。短く具体的に',
     inputHint: '例: ◯◯さん、昨日の打ち合わせで紹介いただいた事例について',
   },
   jobPost: {
-    kind: 'jobPost', label: '求人票', emoji: '🪪',
+    kind: 'jobPost', label: '求人票', Icon: IdCard, color: '#FF6FB5',
     blurb: '仕事内容 / 求める人 / 条件 / 応募方法 を分かりやすく',
     inputHint: '例: フルリモートの Web エンジニア 1 名、Next.js 経験者、業務委託 月 60-80 万',
   },
   introLetter: {
-    kind: 'introLetter', label: '取引先紹介状', emoji: '🤝',
+    kind: 'introLetter', label: '取引先紹介状', Icon: Handshake, color: '#FFA94D',
     blurb: '人を別の人へつなぐときの紹介文。失礼のない型',
     inputHint: '例: ◯◯さん (デザイナー) を △△社の □□さんに紹介、リブランディングの相談として',
   },
