@@ -26,7 +26,7 @@ import {
   ScrollText, BarChart3, BarChart2, Calculator, FileSpreadsheet, Camera,
   FolderKanban, FolderOpen, Files, ClipboardList, Users, Sword, Target, Flag,
   Bot, Link2, CheckSquare, Crown, Calendar, HeartPulse, Megaphone, Scale,
-  Landmark, PenLine, History, Building2,
+  Landmark, PenLine, History, Building2, PlusCircle, Wand2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -124,6 +124,12 @@ export const TAB_ICONS: Record<string, LucideIcon> = {
   clients: Users,       // 顧客
   ocr: Camera,          // 写真から読み取り
   summary: BarChart3,   // サマリ・集計
+  // 売上台帳
+  overview: BarChart3,  // まとめ (summary と同じ絵にそろえる)
+  entries: Files,       // 明細 (list と同じ絵にそろえる)
+  add: PlusCircle,      // 手動で足す
+  // 画像生成スタジオ
+  create: Wand2,        // 作る (生成)
 };
 
 /** タブ id からアイコンを引く。無ければ undefined (ラベルの文字だけで出す) */

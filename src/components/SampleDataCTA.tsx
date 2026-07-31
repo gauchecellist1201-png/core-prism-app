@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Wand2 } from 'lucide-react';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
 
 interface Props {
@@ -16,7 +17,7 @@ interface Props {
  * リロードして全機能をすぐ体験できる状態にする。
  */
 export default function SampleDataCTA({
-  label = '✨ お試しデータで触ってみる',
+  label = 'お試しデータで触ってみる',
   accent = '#c9a96e',
   hint = '実際の使い心地をそのまま体験できます (あとで消せます)',
 }: Props) {
@@ -38,9 +39,12 @@ export default function SampleDataCTA({
         className="cp-sample-cta"
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
-        style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+        style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, gap: 8 }}
       >
-        {label}
+        {/* 絵の部分はブランドのアイコンで出す。呼び出し側が昔の '✨ ' 付き文言を
+            渡してきても、ここで剥がして二重に絵が出ないようにする (恒久: 絵文字禁止)。 */}
+        <Wand2 size={16} strokeWidth={2.2} aria-hidden="true" />
+        {label.replace(/^[✨🎁🪄]\s*/u, '')}
       </motion.button>
       {hint && <p className="cp-sample-cta-hint">{hint}</p>}
     </div>

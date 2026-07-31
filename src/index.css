@@ -609,20 +609,20 @@ select option {
    ============================================================ */
 
 /* タイポグラフィ統一 */
-.cp-h1 { font-size: 1.5rem; line-height: 1.35; font-weight: 600; letter-spacing: -0.012em; color: var(--fg); text-wrap: balance; }
-.cp-h2 { font-size: 1.125rem; line-height: 1.42; font-weight: 600; letter-spacing: -0.008em; color: var(--fg); text-wrap: balance; }
-.cp-h3 { font-size: 0.95rem; line-height: 1.48; font-weight: 600; letter-spacing: -0.005em; color: var(--fg); text-wrap: balance; }
-.cp-body { font-size: 0.9rem; line-height: 1.7; color: var(--fg); text-wrap: pretty; }
-.cp-meta { font-size: 0.78rem; line-height: 1.5; color: var(--fg-muted); text-wrap: pretty; }
+.cp-h1 { font-size: 1.5rem; line-height: 1.35; font-weight: 600; letter-spacing: -0.012em; color: var(--fg); text-wrap-style: balance; }
+.cp-h2 { font-size: 1.125rem; line-height: 1.42; font-weight: 600; letter-spacing: -0.008em; color: var(--fg); text-wrap-style: balance; }
+.cp-h3 { font-size: 0.95rem; line-height: 1.48; font-weight: 600; letter-spacing: -0.005em; color: var(--fg); text-wrap-style: balance; }
+.cp-body { font-size: 0.9rem; line-height: 1.7; color: var(--fg); text-wrap-style: pretty; }
+.cp-meta { font-size: 0.78rem; line-height: 1.5; color: var(--fg-muted); text-wrap-style: pretty; }
 .cp-tiny { font-size: 0.7rem; line-height: 1.4; color: var(--fg-subtle); letter-spacing: 0.05em; text-transform: uppercase; }
-.cp-lead { font-size: 1rem; line-height: 1.65; color: var(--fg); text-wrap: pretty; }
+.cp-lead { font-size: 1rem; line-height: 1.65; color: var(--fg); text-wrap-style: pretty; }
 
 /* 段落の落ち着き — 最後の 1 単語だけ取り残される「孤児」を消す。
    text-wrap: balance は見出し向け (2-4 行を均等割)、pretty は本文向け (寡婦を解消)。
    Safari 17.4+ / Chrome 114+ / Firefox 121+ に対応。未対応ブラウザは無視 (壊れない)。 */
 .cp-body p,
 .cp-lead p {
-  text-wrap: pretty;
+  text-wrap-style: pretty;
 }
 
 /* 引用符・句読点の「ぶら下げ」— 行頭の「『 や 〈 が左端を超えてぶら下がり、
@@ -1166,6 +1166,25 @@ select option {
 /* 行・グリッド統一 */
 .cp-row { display: flex; align-items: center; gap: 10px; }
 .cp-row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+/* 狭い画面だけ隠す共通クラス。
+   Tailwind の `hidden` は .cp-btn / .cp-pill などの cp-* クラスに
+   display を上書きされて効かない (utilities が先に出力されるため)。
+   cp-* と同じ層で !important を持つこの 1 本を使う。 */
+@media (max-width: 640px) {
+  .cp-hide-narrow { display: none !important; }
+}
+
+/* 書類スタジオの 1 行。
+   iPhone だと右側のボタン (編集 / ○○化 / 請求化 / 削除) と金額で幅を使い切ってしまい、
+   左の件名が 44px まで潰れて「2号店 / 内装リノ / ベーショ / ン」と 1〜4 文字ずつ
+   縦積みになっていた。狭い画面では縦に積み、ボタン列は折り返す。 */
+.cp-doc-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cp-doc-row-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+@media (max-width: 700px) {
+  .cp-doc-row { flex-direction: column; align-items: stretch; }
+  .cp-doc-row-actions { flex-wrap: wrap; justify-content: flex-end; }
+}
 .cp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 640px) {
   .cp-grid-2 { grid-template-columns: 1fr; }

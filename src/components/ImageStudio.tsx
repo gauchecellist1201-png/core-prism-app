@@ -15,6 +15,14 @@ import {
 import { confirmAction } from '../lib/confirmDialog';
 import ShareArtifactButton from './ShareArtifactButton';
 import StudioBackButton from './StudioBackButton';
+import StudioHeaderIcon from './StudioHeaderIcon';
+import { resolveTabIcon } from '../lib/featureIcons';
+import {
+  Globe, Square, Printer, LayoutGrid, Clapperboard, Newspaper,
+  CircleUserRound, Link2, BarChart3, Zap, Wand2, Lock, Image as ImageIcon,
+  Check, Dices, Download, BookOpen, ClipboardCopy, RefreshCw, AlertTriangle,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface Props {
   persona: Persona;
@@ -87,7 +95,7 @@ function HistoryThumb({ url, width, height, reloadKey, onClick }: HistoryThumbPr
           position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: 'rgba(255,255,255,0.55)', fontSize: 11, gap: 6, flexDirection: 'column',
         }}>
-          <span style={{ fontSize: 24, animation: 'iris-spin 1.4s linear infinite', display: 'inline-block' }}>🎨</span>
+          <span style={{ animation: 'iris-spin 1.4s linear infinite', display: 'inline-flex' }}><ImageIcon size={22} strokeWidth={2} /></span>
           <span>読み込み中…</span>
         </div>
       )}
@@ -97,34 +105,35 @@ function HistoryThumb({ url, width, height, reloadKey, onClick }: HistoryThumbPr
           flexDirection: 'column', gap: 8, padding: 12,
           background: 'rgba(0,0,0,0.7)', color: 'rgba(255,255,255,0.85)',
         }}>
-          <span style={{ fontSize: 22 }}>⚠️</span>
+          <span style={{ display: 'inline-flex' }}><AlertTriangle size={20} strokeWidth={2.2} /></span>
           <span style={{ fontSize: 11, textAlign: 'center' }}>画像を読み込めません</span>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setBust(Date.now()); setState('loading'); }}
+            className="inline-flex items-center gap-1"
             style={{
               fontSize: 11, padding: '4px 10px', borderRadius: 6,
               background: 'rgba(251,191,36,0.18)', color: '#FBBF24',
               border: '1px solid rgba(251,191,36,0.4)', cursor: 'pointer', fontWeight: 700,
             }}
-          >🔄 再読込</button>
+          ><RefreshCw size={12} strokeWidth={2.4} />再読込</button>
         </div>
       )}
     </div>
   );
 }
 
-const ASPECT_GROUPS: { id: 'social' | 'free' | 'doc'; label: string; emoji: string }[] = [
-  { id: 'social', label: 'SNS / Web', emoji: '🌐' },
-  { id: 'free',   label: '汎用',     emoji: '⬜' },
-  { id: 'doc',    label: '印刷',     emoji: '📄' },
+const ASPECT_GROUPS: { id: 'social' | 'free' | 'doc'; label: string; Icon: LucideIcon }[] = [
+  { id: 'social', label: 'SNS / Web', Icon: Globe },
+  { id: 'free',   label: '汎用',     Icon: Square },
+  { id: 'doc',    label: '印刷',     Icon: Printer },
 ];
 
 // ─── プリセット 6 種 ───────────────────────────────────────
 // 1 タップでテーマ・サイズ・スタイル・枚数を「使われやすい組合せ」にする
 interface Preset {
   id: string;
-  emoji: string;
+  Icon: LucideIcon;
   label: string;
   hint: string;         // 入力欄プレースホルダー
   aspect: ImageAspect;
@@ -136,37 +145,37 @@ interface Preset {
 }
 const PRESETS: Preset[] = [
   {
-    id: 'ig-feed', emoji: '📷', label: 'Instagram 投稿サムネ',
+    id: 'ig-feed', Icon: LayoutGrid, label: 'Instagram 投稿サムネ',
     hint: '例: ブランドの新商品 / カフェの新メニュー',
     aspect: 'ig-square', aspectGroup: 'social', style: 'editorial', batch: 4,
     prefix: 'Instagram feed post thumbnail, modern, brand-friendly:',
   },
   {
-    id: 'reel-cover', emoji: '🎬', label: 'リール表紙',
+    id: 'reel-cover', Icon: Clapperboard, label: 'リール表紙',
     hint: '例: 朝のルーティン / 新作リール「3分で分かる…」',
     aspect: 'ig-story', aspectGroup: 'social', style: 'cinematic', batch: 4,
     prefix: 'Instagram reel cover image, bold large title space at top, vertical 9:16, eye-catching:',
   },
   {
-    id: 'blog-hero', emoji: '📰', label: 'ブログヘッダー',
+    id: 'blog-hero', Icon: Newspaper, label: 'ブログヘッダー',
     hint: '例: AI 時代の働き方 / 副業で月10万円までのロードマップ',
     aspect: 'note-hero', aspectGroup: 'social', style: 'photo', batch: 2,
     prefix: 'Blog article hero header, photorealistic, editorial:',
   },
   {
-    id: 'icon', emoji: '⚫', label: 'アイコン',
+    id: 'icon', Icon: CircleUserRound, label: 'アイコン',
     hint: '例: AI アシスタント / 音楽ブランド「GAUCHE」',
     aspect: 'square', aspectGroup: 'free', style: 'minimal', batch: 4,
     prefix: 'Simple round profile icon, minimal flat design, centered subject, neutral background:',
   },
   {
-    id: 'og', emoji: '🔗', label: 'OG 画像',
+    id: 'og', Icon: Link2, label: 'OG 画像',
     hint: '例: ランディングページのタイトル / プロダクト名',
     aspect: 'x-post', aspectGroup: 'social', style: 'editorial', batch: 2,
     prefix: 'Open Graph share card, centered visual focus with title space, 16:9, professional:',
   },
   {
-    id: 'infographic', emoji: '📊', label: 'インフォグラフィック',
+    id: 'infographic', Icon: BarChart3, label: 'インフォグラフィック',
     hint: '例: 3 ステップで分かる / 比較表 / プロセス図',
     aspect: 'portrait', aspectGroup: 'free', style: 'pop', batch: 2,
     prefix: 'Infographic-style illustration, clean visual diagram with abstract shapes representing data, modern:',
@@ -402,10 +411,10 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
         width: img.width,
         height: img.height,
       });
-      setToast(ok ? '✅ Iris の投稿キューに追加しました' : '❌ 投稿キューへの追加に失敗しました');
+      setToast(ok ? 'Iris の投稿キューに追加しました' : '投稿キューへの追加に失敗しました');
     } catch (e) {
       console.warn('[ImageStudio] send to Instagram failed', e);
-      setToast('❌ 画像取得に失敗しました');
+      setToast('画像を取り込めませんでした');
     }
   }, [topic]);
 
@@ -457,10 +466,11 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
         <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
             <StudioBackButton onClick={onClose} />
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}
-            >🎨</div>
+            <StudioHeaderIcon
+              iconKey="image"
+              fallbackColor={persona.accentColor}
+              fallbackBg={persona.accentColorLight}
+            />
             <div className="min-w-0">
               <p className="text-fg text-base font-semibold leading-tight truncate">画像生成スタジオ</p>
               <p className="text-fg-muted text-xs truncate">
@@ -478,23 +488,33 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 px-4 sm:px-5 pt-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        {/* 折り返さず横スクロール + flex-shrink-0 は請求書スタジオと同じ理由 (縦積み・下半分の隠れ防止) */}
+        <div
+          className="flex gap-1 px-4 sm:px-5 pt-3 overflow-x-auto flex-shrink-0"
+          style={{ borderBottom: '1px solid var(--border)', flexWrap: 'nowrap', scrollbarWidth: 'none' }}
+        >
           {([
-            { id: 'create' as const, label: '✨ 生成' },
-            { id: 'history' as const, label: `🗂 履歴 (${history.length})` },
-          ]).map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className="text-sm px-4 rounded-t-md font-medium"
-              style={{
-                minHeight: 44,
-                background: tab === t.id ? persona.accentColorLight : 'transparent',
-                color: tab === t.id ? persona.accentColor : 'var(--fg-muted)',
-                borderBottom: tab === t.id ? `2px solid ${persona.accentColor}` : '2px solid transparent',
-              }}
-            >{t.label}</button>
-          ))}
+            { id: 'create' as const, label: '画像を作る' },
+            { id: 'history' as const, label: `作った画像 (${history.length})` },
+          ]).map(t => {
+            const TabIcon = resolveTabIcon(t.id);
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className="text-sm px-4 rounded-t-md font-medium inline-flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+                style={{
+                  minHeight: 44,
+                  background: tab === t.id ? persona.accentColorLight : 'transparent',
+                  color: tab === t.id ? persona.accentColor : 'var(--fg-muted)',
+                  borderBottom: tab === t.id ? `2px solid ${persona.accentColor}` : '2px solid transparent',
+                }}
+              >
+                {TabIcon && <TabIcon size={14} strokeWidth={2.2} />}
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
@@ -505,7 +525,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                 accent={persona.accentColor}
                 iconKey="image"
                 what="テーマを日本語で 1 行書くだけで、AI が SNS や記事向けの画像を作る画面です。"
-                tryThis="まず下の「プリセット」を 1 つ選び、「画像のテーマ」に作りたい絵を書いて「✨ 生成」を押します。"
+                tryThis="まず下の「プリセット」を 1 つ選び、「画像のテーマ」に作りたい絵を書いて「画像を作る」を押します。"
                 example="「秋のカフェのスペシャルティコーヒー」 → note のヘッダー画像が 1 枚完成。"
                 sampleLabel="出来上がりイメージ"
                 samplePreview={
@@ -551,7 +571,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
 
               {/* ─── プリセット 6 種 ───── 1 タップで構成済 */}
               <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
-                <label className="block text-fg-muted text-xs tracking-wider uppercase mb-2">⚡ プリセット (1 タップで構成)</label>
+                <label className="flex items-center gap-1.5 text-fg-muted text-xs tracking-wider uppercase mb-2"><Zap size={12} strokeWidth={2.4} />プリセット (1 タップで構成)</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
                   {PRESETS.map(p => {
                     const active = activePreset === p.id;
@@ -567,7 +587,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                           color: active ? persona.accentColor : 'var(--fg)',
                         }}
                       >
-                        <div className="text-base leading-none mb-1">{p.emoji}</div>
+                        <div className="mb-1 leading-none"><p.Icon size={16} strokeWidth={2.2} /></div>
                         <div className="text-[12px] font-semibold leading-tight">{p.label}</div>
                         <div className="text-[10px] mt-0.5" style={{ color: active ? persona.accentColor : 'var(--fg-muted)', opacity: 0.7 }}>
                           {ASPECTS[p.aspect].width}×{ASPECTS[p.aspect].height} · {p.batch}枚
@@ -637,7 +657,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                         color: style === s.value ? persona.accentColor : 'var(--fg-muted)',
                         border: `1px solid ${style === s.value ? persona.accentColor + '50' : 'var(--border)'}`,
                       }}
-                    >{s.emoji} {s.label}</button>
+                    >{s.label}</button>
                   ))}
                 </div>
               </div>
@@ -656,14 +676,14 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                           .find(([, v]) => v.group === g.id);
                         if (first && ASPECTS[aspect].group !== g.id) setAspect(first[0]);
                       }}
-                      className="text-xs px-3 rounded-md font-medium"
+                      className="text-xs px-3 rounded-md font-medium inline-flex items-center gap-1.5 whitespace-nowrap"
                       style={{
                         minHeight: 36,
                         background: aspectGroup === g.id ? persona.accentColor : 'var(--surface-3)',
                         color: aspectGroup === g.id ? '#0a0a0f' : 'var(--fg-muted)',
                         border: `1px solid ${aspectGroup === g.id ? persona.accentColor : 'var(--border)'}`,
                       }}
-                    >{g.emoji} {g.label}</button>
+                    ><g.Icon size={13} strokeWidth={2.2} />{g.label}</button>
                   ))}
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5">
@@ -700,7 +720,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                         color: provider === 'pollinations' ? persona.accentColor : 'var(--fg-muted)',
                         border: `1px solid ${provider === 'pollinations' ? persona.accentColor + '50' : 'var(--border)'}`,
                       }}
-                    >⚡ Flux<br /><span className="text-[10px] opacity-70">無料 / 高速</span></button>
+                    ><span className="inline-flex items-center gap-1"><Zap size={13} strokeWidth={2.4} />Flux</span><br /><span className="text-[10px] opacity-70">無料 / 高速</span></button>
                     <button
                       onClick={() => setProvider('dalle3')}
                       disabled={!dalleAvailable}
@@ -711,7 +731,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                         color: provider === 'dalle3' ? persona.accentColor : 'var(--fg-muted)',
                         border: `1px solid ${provider === 'dalle3' ? persona.accentColor + '50' : 'var(--border)'}`,
                       }}
-                    >✨ DALL-E 3{!dalleAvailable && '🔒'}<br /><span className="text-[10px] opacity-70">{dalleAvailable ? '高品質' : '要API設定'}</span></button>
+                    ><span className="inline-flex items-center gap-1"><Wand2 size={13} strokeWidth={2.4} />DALL-E 3{!dalleAvailable && <Lock size={11} strokeWidth={2.4} />}</span><br /><span className="text-[10px] opacity-70">{dalleAvailable ? '高品質' : '要API設定'}</span></button>
                   </div>
                 </div>
                 <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
@@ -758,14 +778,14 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                           if (on) next.delete(a); else next.add(a);
                           setMultiTargets(next);
                         }}
-                        className="rounded-full px-3 text-xs font-medium transition-all"
+                        className="rounded-full px-3 text-xs font-medium transition-all inline-flex items-center gap-1"
                         style={{
                           minHeight: 40,
                           background: on ? persona.accentColorLight : 'var(--surface)',
                           border: `1px solid ${on ? persona.accentColor : 'var(--border)'}`,
                           color: on ? persona.accentColor : 'var(--fg-muted)',
                         }}
-                      >{on ? '✓ ' : ''}{label}</button>
+                      >{on && <Check size={12} strokeWidth={3} />}{label}</button>
                     );
                   })}
                 </div>
@@ -775,7 +795,10 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                   className="w-full rounded-xl text-sm font-semibold disabled:opacity-40"
                   style={{ minHeight: 48, background: multiTargets.size > 0 ? persona.accentColor : 'var(--surface)', color: multiTargets.size > 0 ? '#0a0a0f' : 'var(--fg-muted)', border: multiTargets.size > 0 ? 'none' : '1px solid var(--border)' }}
                 >
-                  {busy ? '🎨 一括生成中…' : multiTargets.size > 0 ? `✨ 選んだ ${multiTargets.size} 用途を同時生成` : '上のチップから用途を選んでください'}
+                  {busy ? '選んだ用途ぶんを作っています…'
+                    : multiTargets.size > 0
+                      ? `選んだ ${multiTargets.size} 用途を同時に作る`
+                      : '上のチップから用途を選んでください'}
                 </button>
               </div>
 
@@ -820,7 +843,9 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                   }}
                   whileTap={!busy ? { scale: 0.99 } : {}}
                 >
-                  {busy ? '🎨 生成中…' : `✨ ${batchCount}枚 生成 (${ASPECTS[aspect].width}×${ASPECTS[aspect].height})`}
+                  {busy
+                    ? '画像を作っています…'
+                    : `${batchCount}枚の画像を作る (${ASPECTS[aspect].width}×${ASPECTS[aspect].height})`}
                 </motion.button>
                 {batchResults.length > 0 && (
                   <button
@@ -828,7 +853,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                     disabled={busy}
                     className="px-4 rounded-xl text-sm font-medium disabled:opacity-50"
                     style={{ minHeight: 56, background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg)' }}
-                  >🎲 別シードで</button>
+                  ><Dices size={13} strokeWidth={2.2} />別シードで</button>
                 )}
               </div>
 
@@ -873,7 +898,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                               onClick={() => handleDownload(r, i)}
                               className="text-[11px] px-3 rounded text-fg-muted hover:text-fg"
                               style={{ minHeight: 36, background: 'var(--surface)', border: '1px solid var(--border)' }}
-                            >⬇ DL</button>
+                            ><Download size={13} strokeWidth={2.4} />DL</button>
                             <button
                               onClick={() => handleSendToInstagram(r)}
                               className="text-[11px] px-3 rounded font-semibold"
@@ -883,19 +908,19 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                                 color: '#fff',
                               }}
                               title="Iris の投稿キューに追加して Instagram 投稿に使う"
-                            >📷 Instagram 投稿に使う</button>
+                            ><LayoutGrid size={13} strokeWidth={2.2} />Instagram 投稿に使う</button>
                             {onSaveAsKnowledge && (
                               <button
                                 onClick={() => handleSaveToKb(r)}
                                 className="text-[11px] px-3 rounded text-fg-muted hover:text-fg"
                                 style={{ minHeight: 36, background: 'var(--surface)', border: '1px solid var(--border)' }}
-                              >📚 ナレッジ</button>
+                              ><BookOpen size={13} strokeWidth={2.2} />ナレッジ</button>
                             )}
                             <button
                               onClick={() => handleCopyPrompt(r.prompt)}
                               className="text-[11px] px-3 rounded text-fg-muted hover:text-fg"
                               style={{ minHeight: 36, background: 'var(--surface)', border: '1px solid var(--border)' }}
-                            >📋 プロンプト</button>
+                            ><ClipboardCopy size={13} strokeWidth={2.2} />プロンプト</button>
                             <ShareArtifactButton
                               variant="pill"
                               size="sm"
@@ -947,11 +972,11 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                     <p className="text-fg-muted text-xs">最大 {MAX_HISTORY} 件まで自動保存</p>
                     <div className="flex gap-2 items-center">
                       <button
-                        onClick={() => { setHistoryReloadKey(Date.now()); setToast('🔄 全サムネを再読込しています…'); }}
+                        onClick={() => { setHistoryReloadKey(Date.now()); setToast('全部のサムネを読み込み直しています…'); }}
                         className="text-xs hover:text-fg"
                         style={{ minHeight: 36, padding: '0 12px', color: '#FBBF24', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 6 }}
                         title="表示が崩れた / 黒くなった 時に 押す"
-                      >🔄 全再読込</button>
+                      ><RefreshCw size={13} strokeWidth={2.2} />全部を読み込み直す</button>
                       <button
                         onClick={async () => { if (await confirmAction({ title: '画像生成の履歴をすべて削除しますか?', body: '保存した画像のサムネイル一覧が空になります。', tone: 'danger', okLabel: '全消去' })) setHistory([]); }}
                         className="text-xs text-fg-muted hover:text-red-400"
@@ -990,9 +1015,10 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                             >再利用</button>
                             <button
                               onClick={() => handleDownload(h)}
-                              className="text-[10px] px-2 rounded text-fg-muted hover:text-fg"
+                              className="text-[10px] px-2 rounded text-fg-muted hover:text-fg inline-flex items-center justify-center"
                               style={{ minHeight: 32, background: 'var(--surface)' }}
-                            >⬇</button>
+                              aria-label="ダウンロード"
+                            ><Download size={12} strokeWidth={2.4} /></button>
                             <button
                               onClick={() => handleSendToInstagram(h)}
                               className="text-[10px] px-2 rounded font-semibold"
@@ -1002,13 +1028,13 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                                 color: '#fff',
                               }}
                               title="Instagram 投稿に使う"
-                            >📷 IG</button>
+                            ><LayoutGrid size={12} strokeWidth={2.2} /></button>
                             {onSaveAsKnowledge && (
                               <button
                                 onClick={() => handleSaveToKb(h)}
                                 className="text-[10px] px-2 rounded text-fg-muted hover:text-fg"
                                 style={{ minHeight: 32, background: 'var(--surface)' }}
-                              >📚</button>
+                              ><BookOpen size={12} strokeWidth={2.2} /></button>
                             )}
                             <button
                               onClick={() => setHistory(prev => prev.filter(x => x.id !== h.id))}

@@ -13,6 +13,9 @@ import { CountUp } from './visualFx';
 import { confirmAction } from '../lib/confirmDialog';
 import SampleDataCTA from './SampleDataCTA';
 import StudioBackButton from './StudioBackButton';
+import StudioHeaderIcon from './StudioHeaderIcon';
+import { resolveTabIcon } from '../lib/featureIcons';
+import { Download, AlertTriangle, Files, Users, PlusCircle } from 'lucide-react';
 
 interface Props {
   persona: Persona;
@@ -104,10 +107,11 @@ export default function SalesLedger({ persona, onClose }: Props) {
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
             <StudioBackButton onClick={onClose} />
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}
-            >📒</div>
+            <StudioHeaderIcon
+              iconKey="sales"
+              fallbackColor={persona.accentColor}
+              fallbackBg={persona.accentColorLight}
+            />
             <div className="min-w-0">
               <p className="text-fg text-base font-semibold leading-tight truncate">売上台帳</p>
               <p className="text-fg-muted text-xs truncate">{persona.name} · 請求書と自動連動 · CSV出力対応 (freee/MFインポート可)</p>
@@ -117,9 +121,9 @@ export default function SalesLedger({ persona, onClose }: Props) {
             <button
               onClick={handleExportCsv}
               disabled={personaEntries.length === 0}
-              className="text-xs px-3 py-1.5 rounded-md font-semibold disabled:opacity-40"
+              className="text-xs px-3 py-1.5 rounded-md font-semibold disabled:opacity-40 inline-flex items-center gap-1.5 whitespace-nowrap"
               style={{ background: persona.accentColor, color: '#0a0a0f' }}
-            >⬇ CSV 出力</button>
+            ><Download size={13} strokeWidth={2.4} />CSV 出力</button>
             <button
               onClick={onClose}
               className="w-9 h-9 rounded-full flex items-center justify-center text-fg-muted hover:text-fg hover:bg-surface text-xl leading-none"
@@ -128,24 +132,37 @@ export default function SalesLedger({ persona, onClose }: Props) {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 px-5 pt-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        {/* iPhone 幅 (390px) では 4 つ並べると入りきらないので、折り返さず横スクロールさせる。
+            折り返すと「サ / マリ」「取 / 引先」と 1〜2 文字ずつ縦積みになり読めなくなる。
+            flex-shrink-0 も必須。無いと縦に潰れてタブの下半分が本文の下に隠れる
+            (index.css がタブに min-height:44px を効かせるため)。請求書スタジオと同じ形。 */}
+        <div
+          className="flex gap-1 px-5 pt-3 overflow-x-auto flex-shrink-0"
+          style={{ borderBottom: '1px solid var(--border)', flexWrap: 'nowrap', scrollbarWidth: 'none' }}
+        >
           {([
-            { id: 'overview' as Tab, label: '📊 サマリ' },
-            { id: 'entries' as Tab,  label: `🗂 明細 (${personaEntries.length})` },
-            { id: 'clients' as Tab,  label: '👥 取引先' },
-            { id: 'add' as Tab,      label: '＋ 手動追加' },
-          ]).map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className="text-sm px-4 py-2 rounded-t-md font-medium"
-              style={{
-                background: tab === t.id ? persona.accentColorLight : 'transparent',
-                color: tab === t.id ? persona.accentColor : 'var(--fg-muted)',
-                borderBottom: tab === t.id ? `2px solid ${persona.accentColor}` : '2px solid transparent',
-              }}
-            >{t.label}</button>
-          ))}
+            { id: 'overview' as Tab, label: 'まとめ' },
+            { id: 'entries' as Tab,  label: `明細 (${personaEntries.length})` },
+            { id: 'clients' as Tab,  label: '取引先' },
+            { id: 'add' as Tab,      label: '手動で足す' },
+          ]).map(t => {
+            const TabIcon = resolveTabIcon(t.id);
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className="text-sm px-4 py-2 rounded-t-md font-medium inline-flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+                style={{
+                  background: tab === t.id ? persona.accentColorLight : 'transparent',
+                  color: tab === t.id ? persona.accentColor : 'var(--fg-muted)',
+                  borderBottom: tab === t.id ? `2px solid ${persona.accentColor}` : '2px solid transparent',
+                }}
+              >
+                {TabIcon && <TabIcon size={14} strokeWidth={2.2} />}
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -167,7 +184,9 @@ export default function SalesLedger({ persona, onClose }: Props) {
               {personaEntries.some(e => e.status !== 'paid') && (
                 <div className="rounded-xl p-4" style={{ background: 'var(--surface-3)', border: `1px solid ${persona.accentColor}40` }}>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-fg text-sm font-semibold">⚠ 未入金</p>
+                    <p className="text-fg text-sm font-semibold inline-flex items-center gap-1.5">
+                      <AlertTriangle size={14} strokeWidth={2.4} style={{ color: persona.accentColor }} />未入金
+                    </p>
                     <p className="text-xs text-fg-muted">
                       合計 <span className="text-fg font-mono">{fmtJpy(personaEntries.filter(e => e.status !== 'paid').reduce((s, e) => s + e.totalIncl, 0))}</span>
                     </p>
@@ -195,20 +214,20 @@ export default function SalesLedger({ persona, onClose }: Props) {
             <div className="space-y-1.5">
               {personaEntries.length === 0 ? (
                 <div className="text-center py-12 flex flex-col items-center gap-2">
-                  <p className="text-4xl mb-1">📭</p>
+                  <p className="mb-1" style={{ color: persona.accentColor }}><Files size={34} strokeWidth={1.6} /></p>
                   <p className="text-fg text-sm font-semibold">ここに「いつ・誰から・いくら」が並びます</p>
                   <p className="text-fg-muted text-xs max-w-[260px] leading-relaxed">
-                    請求書を発行するか「＋ 手動追加」で 1 件登録すると、月ごとの売上と入金状況がここに自動でたまっていきます。
+                    請求書を発行するか「手動で足す」で 1 件登録すると、月ごとの売上と入金状況がここに自動でたまっていきます。
                   </p>
                   <button
                     onClick={() => setTab('add')}
                     className="cp-btn cp-btn-primary mt-2"
-                    style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, padding: '0 18px' }}>
-                    ＋ 最初の売上を手で 1 件入れる
+                    style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, padding: '0 18px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <PlusCircle size={15} strokeWidth={2.4} />最初の売上を手で 1 件入れる
                   </button>
                   <SampleDataCTA
                     accent={persona.accentColor}
-                    label="✨ サンプルの売上で中を見てみる"
+                    label="サンプルの売上で中を見てみる"
                     hint="カフェ田中さんの 12 ヶ月分の売上が入り、画面の使い方がすぐ分かります（あとで消せます）"
                   />
                 </div>
@@ -260,14 +279,14 @@ export default function SalesLedger({ persona, onClose }: Props) {
             <div className="space-y-2">
               {clients.length === 0 ? (
                 <div className="text-center py-10 flex flex-col items-center gap-2">
-                  <p className="text-4xl mb-1">🏷️</p>
+                  <p className="mb-1" style={{ color: persona.accentColor }}><Users size={34} strokeWidth={1.6} /></p>
                   <p className="text-fg text-sm font-semibold">「誰がいくら買ってくれたか」のランキングが出ます</p>
                   <p className="text-fg-muted text-xs max-w-[260px] leading-relaxed">
                     売上を登録すると、取引先ごとの合計金額が自動でまとまり、大切なお客さまがひと目で分かります。
                   </p>
                   <SampleDataCTA
                     accent={persona.accentColor}
-                    label="✨ サンプルの取引先で中を見てみる"
+                    label="サンプルの取引先で中を見てみる"
                     hint="カフェ田中さんのお客さま一覧が入ります（あとで消せます）"
                   />
                 </div>

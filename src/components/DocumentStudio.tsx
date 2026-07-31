@@ -16,6 +16,12 @@ import { notifyInApp } from '../lib/inAppNotify';
 import { confirmAction } from '../lib/confirmDialog';
 import { copyText } from '../lib/clipboard';
 import {
+  ClipboardList, Package, Truck, Receipt,
+  PlusCircle, ArrowLeft, PenLine, Upload, Bot,
+} from 'lucide-react';
+import StudioHeaderIcon from './StudioHeaderIcon';
+import type { LucideIcon } from 'lucide-react';
+import {
   DOC_TEMPLATE_META,
   generateTemplateDoc,
   markdownToHtml,
@@ -33,11 +39,15 @@ interface Props {
 type Tab = DocumentKind;
 type View = 'list' | 'compose' | 'detail';
 
-const KIND_META: Record<DocumentKind, { label: string; emoji: string; color: string; prefix: string }> = {
-  estimate: { label: '見積書', emoji: '📋', color: '#60a5fa', prefix: 'EST' },
-  order:    { label: '発注書', emoji: '📦', color: '#a78bfa', prefix: 'ORD' },
-  delivery: { label: '納品書', emoji: '🚚', color: '#34d399', prefix: 'DEL' },
-  invoice:  { label: '請求書', emoji: '🧾', color: '#f59e0b', prefix: 'INV' },
+// 書類 4 種の 絵 + 色 の唯一の台帳。
+// これまで OS 標準の絵文字 (📋📦🚚🧾) を 6 か所で使い回していたので、
+// 端末によって絵が変わり、機能タイル側のアイコンとも揃っていなかった。
+// lucide のアイコンに置き換えて「同じ書類はどこでも同じ絵」にする。
+const KIND_META: Record<DocumentKind, { label: string; Icon: LucideIcon; color: string; prefix: string }> = {
+  estimate: { label: '見積書', Icon: ClipboardList, color: '#60a5fa', prefix: 'EST' },
+  order:    { label: '発注書', Icon: Package,       color: '#a78bfa', prefix: 'ORD' },
+  delivery: { label: '納品書', Icon: Truck,         color: '#34d399', prefix: 'DEL' },
+  invoice:  { label: '請求書', Icon: Receipt,       color: '#f59e0b', prefix: 'INV' },
 };
 
 const STATUS_LABEL: Record<DocumentStatus, { label: string; color: string }> = {
@@ -202,28 +212,37 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
       >
         {/* ヘッダー */}
         <div className="cp-modal-header">
-          <div className="cp-row min-w-0">
+          <div className="cp-row min-w-0 flex-1">
             <StudioBackButton onClick={onClose} />
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}>📄</div>
-            <div className="min-w-0">
-              <p className="cp-h2 truncate">書類スタジオ</p>
-              <p className="cp-meta truncate">{persona.name} · 見積書→発注書→納品書→請求書</p>
+            <StudioHeaderIcon
+              iconKey="documents"
+              fallbackColor={persona.accentColor}
+              fallbackBg={persona.accentColorLight}
+            />
+            {/* flex-1 min-w-0 + whitespace-nowrap が無いと、右の「新しく作る」に押されて
+                見出しが「書類ス / タジオ」と 2 行に割れる (truncate だけでは折り返しが止まらない) */}
+            <div className="min-w-0 flex-1">
+              <p className="cp-h2 truncate whitespace-nowrap">書類スタジオ</p>
+              <p className="cp-meta truncate whitespace-nowrap">{persona.name} · 見積 → 発注 → 納品 → 請求</p>
             </div>
           </div>
           <div className="cp-row">
             {view === 'list' && (
               <button onClick={openCompose}
-                className="cp-btn cp-btn-primary cp-btn-sm"
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}>
-                ＋ 新規作成
+                className="cp-btn cp-btn-primary cp-btn-sm whitespace-nowrap flex-shrink-0"
+                style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <PlusCircle size={14} strokeWidth={2.4} />新しく作る
               </button>
             )}
             {view !== 'list' && (
               <button onClick={() => { setView('list'); setEditingDoc(null); setViewingDoc(null); }}
-                className="cp-btn cp-btn-ghost cp-btn-sm">← 一覧</button>
+                className="cp-btn cp-btn-ghost cp-btn-sm whitespace-nowrap flex-shrink-0" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <ArrowLeft size={13} strokeWidth={2.4} />一覧にもどる</button>
             )}
-            <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
+            {/* iPhone 幅では ✕ を出さない。すぐ左の「‹」と同じ onClose で、
+                同じ働きのボタンが 2 つあるだけ。その 56px を見出しに回すと
+                「書類ス / タジオ」と割れずに 1 行で読めるようになる。 */}
+            <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm cp-hide-narrow" aria-label="閉じる">✕</button>
           </div>
         </div>
 
@@ -238,24 +257,24 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
         <div className="flex gap-1.5 px-3 py-2" style={{ borderBottom: '1px solid var(--border)' }}>
           <button
             onClick={() => setTopMode('invoice')}
-            className="text-sm px-3 py-2 rounded-lg font-medium transition-all"
+            className="text-sm px-3 py-2 rounded-lg font-medium transition-all inline-flex items-center gap-1.5 whitespace-nowrap"
             style={{
               background: topMode === 'invoice' ? persona.accentColorLight : 'var(--surface-3)',
               color: topMode === 'invoice' ? persona.accentColor : 'var(--fg-muted)',
               border: `1px solid ${topMode === 'invoice' ? persona.accentColor + '50' : 'var(--border)'}`,
               minHeight: 40,
             }}
-          >🧾 取引書類</button>
+          ><Receipt size={14} strokeWidth={2.2} />取引の書類</button>
           <button
             onClick={() => setTopMode('template')}
-            className="text-sm px-3 py-2 rounded-lg font-medium transition-all"
+            className="text-sm px-3 py-2 rounded-lg font-medium transition-all inline-flex items-center gap-1.5 whitespace-nowrap"
             style={{
               background: topMode === 'template' ? persona.accentColorLight : 'var(--surface-3)',
               color: topMode === 'template' ? persona.accentColor : 'var(--fg-muted)',
               border: `1px solid ${topMode === 'template' ? persona.accentColor + '50' : 'var(--border)'}`,
               minHeight: 40,
             }}
-          >📝 テンプレ文書</button>
+          ><PenLine size={14} strokeWidth={2.2} />ひな形から書く</button>
         </div>
 
         {/* タブ (取引書類モードのみ) */}
@@ -268,7 +287,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
                 <button key={k} onClick={() => { setTab(k); setView('list'); }}
                   className="cp-modal-tab" data-active={tab === k}
                   style={{ color: tab === k ? m.color : undefined }}>
-                  {m.emoji} {m.label} {cnt > 0 && <span className="cp-meta">({cnt})</span>}
+                  <m.Icon size={14} strokeWidth={2.2} /> {m.label} {cnt > 0 && <span className="cp-meta">({cnt})</span>}
                 </button>
               );
             })}
@@ -286,7 +305,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
             accent={persona.accentColor}
             iconKey="document"
             what="見積書・発注書・納品書・請求書を、日本のルール（インボイス）に沿って作れる画面です。"
-            tryThis="上のタブで作りたい書類を選び、「＋ 新規」で 1 枚作ってみます。"
+            tryThis="上のタブで作りたい書類を選び、右上の「新しく作る」で 1 枚作ってみます。"
             example="「Webサイト制作 30万円」の見積書を作る → そのまま請求書に変換。"
             sampleLabel="出来上がりイメージ"
             samplePreview={
@@ -325,12 +344,14 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 {docsForTab.length === 0 ? (
                   <div className="cp-empty">
-                    <p className="cp-empty-icon">{KIND_META[tab].emoji}</p>
+                    <p className="cp-empty-icon" style={{ color: KIND_META[tab].color }}>
+                      {(() => { const I = KIND_META[tab].Icon; return <I size={34} strokeWidth={1.8} />; })()}
+                    </p>
                     <p>{KIND_META[tab].label}がまだありません</p>
                     <button onClick={openCompose}
-                      className="cp-btn cp-btn-primary mt-3"
-                      style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}>
-                      ＋ 最初の{KIND_META[tab].label}を作成
+                      className="cp-btn cp-btn-primary mt-3 whitespace-nowrap"
+                      style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <PlusCircle size={14} strokeWidth={2.4} />最初の{KIND_META[tab].label}を作る
                     </button>
                     <SampleDataCTA accent={persona.accentColor} hint="サンプルの見積書が入り、書類の作りをすぐ確認できます" />
                   </div>
@@ -341,7 +362,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
                       const st = STATUS_LABEL[doc.status];
                       const nextKind = NEXT_KIND[doc.kind];
                       return (
-                        <div key={doc.id} className="cp-card cp-row-between">
+                        <div key={doc.id} className="cp-card cp-doc-row">
                           <button className="flex-1 text-left cp-row min-w-0" onClick={() => openDetail(doc)}>
                             <div className="min-w-0">
                               <div className="cp-row" style={{ gap: 6 }}>
@@ -355,7 +376,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
                               <p className="cp-tiny">{doc.issueDate}</p>
                             </div>
                           </button>
-                          <div className="cp-row flex-shrink-0" style={{ gap: 8 }}>
+                          <div className="cp-doc-row-actions">
                             <span className="font-mono cp-body">{fmtJpy(totDoc.total)}</span>
                             <div className="cp-row" style={{ gap: 4 }}>
                               <button onClick={() => openEdit(doc)}
@@ -365,7 +386,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
                                   onClick={() => handleDuplicate(doc, nextKind)}
                                   className="cp-btn cp-btn-sm text-xs"
                                   style={{ color: KIND_META[nextKind].color, borderColor: KIND_META[nextKind].color + '40' }}>
-                                  {KIND_META[nextKind].emoji} {KIND_META[nextKind].label}化
+                                  {(() => { const I = KIND_META[nextKind].Icon; return <I size={13} strokeWidth={2.2} />; })()} {KIND_META[nextKind].label}化
                                 </button>
                               )}
                               {doc.kind !== 'invoice' && (
@@ -373,7 +394,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
                                   onClick={() => handleDuplicate(doc, 'invoice')}
                                   className="cp-btn cp-btn-sm text-xs"
                                   style={{ color: KIND_META.invoice.color, borderColor: KIND_META.invoice.color + '40' }}>
-                                  🧾 請求化
+                                  <Receipt size={13} strokeWidth={2.2} /> 請求化
                                 </button>
                               )}
                               <button onClick={async () => {
@@ -581,7 +602,7 @@ function DocDetail({ doc, persona, deals, onEdit, onDuplicate, onStatusChange }:
       <div className="cp-row-between">
         <div>
           <div className="cp-row" style={{ gap: 8, marginBottom: 4 }}>
-            <span className="text-lg">{meta.emoji}</span>
+            <span style={{ color: meta.color, display: 'inline-flex' }}><meta.Icon size={18} strokeWidth={2.2} /></span>
             <span className="cp-h2" style={{ color: meta.color }}>{doc.number}</span>
             <span className="cp-pill" style={{ color: STATUS_LABEL[doc.status].color, borderColor: STATUS_LABEL[doc.status].color + '40' }}>
               {STATUS_LABEL[doc.status].label}
@@ -615,14 +636,14 @@ function DocDetail({ doc, persona, deals, onEdit, onDuplicate, onStatusChange }:
           <button onClick={() => onDuplicate(doc, nextKind)}
             className="cp-btn cp-btn-sm text-xs"
             style={{ color: KIND_META[nextKind].color, borderColor: KIND_META[nextKind].color + '40' }}>
-            {KIND_META[nextKind].emoji} {KIND_META[nextKind].label}として複製
+            {(() => { const I = KIND_META[nextKind].Icon; return <I size={13} strokeWidth={2.2} />; })()} {KIND_META[nextKind].label}として複製
           </button>
         )}
         {doc.kind !== 'invoice' && doc.kind !== 'delivery' && (
           <button onClick={() => onDuplicate(doc, 'invoice')}
             className="cp-btn cp-btn-sm text-xs"
             style={{ color: KIND_META.invoice.color, borderColor: KIND_META.invoice.color + '40' }}>
-            🧾 請求書として複製
+            <Receipt size={13} strokeWidth={2.2} /> 請求書として複製
           </button>
         )}
       </div>
@@ -642,7 +663,7 @@ function DocDetail({ doc, persona, deals, onEdit, onDuplicate, onStatusChange }:
           <p className="cp-body">{doc.clientSnapshot.name}</p>
           {doc.clientSnapshot.contactName && <p className="cp-meta">{doc.clientSnapshot.contactName}</p>}
           {doc.clientSnapshot.address && <p className="cp-meta">{doc.clientSnapshot.address}</p>}
-          {deal && <p className="cp-meta">🤝 案件: {deal.title}</p>}
+          {deal && <p className="cp-meta">案件: {deal.title}</p>}
         </div>
       </div>
 
@@ -793,7 +814,7 @@ function TemplateDocStudio({
     <div className="cp-stack">
       {/* テンプレ選択 (6 枚カード) */}
       <div>
-        <p className="cp-section-head mb-2">📝 テンプレを選ぶ</p>
+        <p className="cp-section-head mb-2 inline-flex items-center gap-1.5"><PenLine size={13} strokeWidth={2.4} />ひな形を選ぶ</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {(Object.keys(DOC_TEMPLATE_META) as DocTemplateKind[]).map(k => {
             const meta = DOC_TEMPLATE_META[k];
@@ -810,7 +831,7 @@ function TemplateDocStudio({
                 }}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">{meta.emoji}</span>
+                  <span style={{ color: meta.color, display: 'inline-flex' }}><meta.Icon size={20} strokeWidth={2.2} /></span>
                   <p className="font-semibold text-sm" style={{ color: active ? persona.accentColor : 'var(--fg)' }}>
                     {meta.label}
                   </p>
@@ -842,12 +863,12 @@ function TemplateDocStudio({
               background: persona.accentColor, color: '#0a0a0f',
               minHeight: 48, opacity: isGenerating ? 0.6 : 1,
             }}
-          >{isGenerating ? '✨ 生成中...' : '✨ AI で初稿を作る'}</button>
+          >{isGenerating ? 'AI が下書きを書いています…' : 'AI で下書きを作る'}</button>
           <button
             onClick={() => setMarkdown(staticTemplate(kind, persona, topic))}
             className="cp-btn cp-btn-ghost"
             style={{ minHeight: 48 }}
-          >🧱 雛形だけ挿入</button>
+          >ひな形だけ入れる</button>
         </div>
         {isGenerating && (
           <div className="mt-3">
@@ -881,7 +902,7 @@ function TemplateDocStudio({
               minHeight: 36,
             }}
           >
-            {v === 'split' ? '⚌ 並べて表示' : v === 'edit' ? '📝 編集のみ' : '👁 プレビュー'}
+            {v === 'split' ? '並べて表示' : v === 'edit' ? '書くだけ' : '仕上がりを見る'}
           </button>
         ))}
       </div>
@@ -892,7 +913,7 @@ function TemplateDocStudio({
       >
         {(viewMode === 'split' || viewMode === 'edit') && (
           <div>
-            <p className="cp-meta mb-1">📝 Markdown 編集</p>
+            <p className="cp-meta mb-1">文章を書く (Markdown)</p>
             <textarea
               value={markdown}
               onChange={e => setMarkdown(e.target.value)}
@@ -909,7 +930,7 @@ function TemplateDocStudio({
 
         {(viewMode === 'split' || viewMode === 'preview') && (
           <div>
-            <p className="cp-meta mb-1">👁 プレビュー</p>
+            <p className="cp-meta mb-1">仕上がりの見た目</p>
             <div
               className="cp-card-section overflow-y-auto"
               style={{
@@ -927,29 +948,29 @@ function TemplateDocStudio({
 
       {/* エクスポート */}
       <div className="cp-card-section">
-        <p className="cp-section-head mb-2">📤 エクスポート</p>
+        <p className="cp-section-head mb-2 inline-flex items-center gap-1.5"><Upload size={13} strokeWidth={2.4} />書き出す</p>
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={handleCopyMd}
             className="cp-btn cp-btn-ghost"
             style={{ minHeight: 56 }}
-          >📋 MD コピー</button>
+          >MD をコピー</button>
           <button
             onClick={handleDownloadMd}
             className="cp-btn cp-btn-ghost"
             style={{ minHeight: 56 }}
-          >📥 .md ダウンロード</button>
+          >.md で保存</button>
           <button
             onClick={handleDownloadTxt}
             className="cp-btn cp-btn-ghost"
             style={{ minHeight: 56 }}
-          >📄 .txt ダウンロード</button>
+          >.txt で保存</button>
         </div>
       </div>
 
       {/* Agent 委任 */}
       <div className="cp-card-section">
-        <p className="cp-section-head mb-1">🤖 AI 会社の専門家に委ねる</p>
+        <p className="cp-section-head mb-1 inline-flex items-center gap-1.5"><Bot size={13} strokeWidth={2.4} />AI 会社の専門家に任せる</p>
         <p className="cp-meta mb-2">下書きを次の段階に進めます。タスクキューに「提案」が積まれ、承認すると実行が始まります。</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button
@@ -961,7 +982,7 @@ function TemplateDocStudio({
               color: '#FB923C',
               minHeight: 56,
             }}
-          >📣 CMO に推敲を依頼</button>
+          >CMO に文章を直してもらう</button>
           <button
             onClick={() => handleDelegate('CLO')}
             className="cp-btn"
@@ -971,7 +992,7 @@ function TemplateDocStudio({
               color: '#6366F1',
               minHeight: 56,
             }}
-          >⚖️ CLO に法的チェックを依頼</button>
+          >CLO に法律の面を見てもらう</button>
         </div>
       </div>
     </div>
