@@ -146,6 +146,13 @@ export async function loadInbox(): Promise<InboxState> {
   try {
     const res = await req({ url: `${API}?inbox=${encodeURIComponent(inbox.id)}&key=${encodeURIComponent(inbox.key)}` });
     const j = await res.json().catch(() => null);
+    if (res.status === 403) {
+      // 受信箱の持ち主が別端末。つながらないのとは原因が違うので、そう書く。
+      return {
+        phase: 'error',
+        message: 'この受信箱は別の端末のものです。予約リンクを作った端末で開いてください。',
+      };
+    }
     if (!res.ok || !j?.ok) {
       return { phase: 'error', message: 'いまサーバーにつながりませんでした。' };
     }
