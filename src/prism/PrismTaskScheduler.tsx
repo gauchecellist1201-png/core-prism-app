@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Sparkles, X, Calendar, Check, Clock, Loader2, Trash2, AlertCircle, Copy, ListChecks, History, RefreshCw, Pencil, Zap } from 'lucide-react';
 import { usePrismTaskQueue, parseVoiceCommand, type PrismTask, type TaskKind } from './usePrismTaskQueue';
 import { confirmAction } from '../lib/confirmDialog';
+import { useCoveredByModal } from '../hooks/useCoveredByModal';
 
 const KIND_LABEL: Record<TaskKind, string> = {
   flyer: 'チラシ', post: '投稿文', email: 'メール',
@@ -116,6 +117,12 @@ export default function PrismTaskScheduler() {
     window.addEventListener('prism-task-quick-add', onQuickAdd);
     return () => window.removeEventListener('prism-task-quick-add', onQuickAdd);
   }, []);
+
+  // 全画面モーダル(初回オンボーディング等)が出ている間はマイクFABも引っ込む(2026-07-31)。
+  // CoreDock の丸ボタンだけを隠しても、この FAB(z-9997)は暗幕の上に出たままで
+  // オンボ中に押せてしまっていた(2026-07-29 の ※残)。判定は CoreDock と同じ仕組みを共有。
+  const fabRef = useRef<HTMLButtonElement | null>(null);
+  const fabCovered = useCoveredByModal(fabRef);
 
   // 完了通知 (アプリ内バッジ)
   const [unseenDone, setUnseenDone] = useState(0);
@@ -284,9 +291,11 @@ export default function PrismTaskScheduler() {
       {/* フローティング ボタン (右下、AI と話すの少し上) */}
       <button
         type="button"
+        ref={fabRef}
         onClick={() => setOpen(true)}
         aria-label="音声でタスク予約"
         className="prism-task-fab"
+        aria-hidden={fabCovered && !open ? true : undefined}
         style={{
           position: 'fixed',
           right: 'calc(env(safe-area-inset-right, 0px) + 16px)',
@@ -297,7 +306,10 @@ export default function PrismTaskScheduler() {
           color: '#fff', border: 'none',
           boxShadow: '0 8px 24px rgba(0,51,160,0.42)',
           cursor: 'pointer',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          // 覆われている間は出さない(閉じれば自動で戻る)。自分のパネルを開いている
+          // ときは対象外＝パネルの下に居るだけなので隠す必要がない。
+          display: fabCovered && !open ? 'none' : 'inline-flex',
+          alignItems: 'center', justifyContent: 'center',
         }}
       >
         <Mic size={22} />

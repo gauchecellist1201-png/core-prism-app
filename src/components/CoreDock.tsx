@@ -19,6 +19,7 @@
 // ============================================================
 import { useEffect, useRef, useState } from "react";
 import { withCoreHandoff, readCoreHandoff, type CoreAppKey } from "./coreLink";
+import { useCoveredByModal } from "../hooks/useCoveredByModal";
 
 type App = { key: Exclude<CoreAppKey, "core">; name: string; tag: string; color: string; url: string };
 
@@ -133,25 +134,8 @@ function scanBands(): Bands {
 // 新規ユーザーが最初に見る画面でカードの左下隅と「← 戻る」に被っていた(375px 実測)。
 // Lume で採った「ウィザードが出ている間はドックを隠す」と同じ考え方を、
 // クラス名に頼らず“見た目の条件”で判定する。
-// 画面中央の要素スタックだけを見るので軽い(全要素の走査をしない)。
-function isCoveredByModal(dock: HTMLElement | null): boolean {
-  if (typeof document === "undefined") return false;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const stack = document.elementsFromPoint(Math.round(vw / 2), Math.round(vh / 2)) as HTMLElement[];
-  for (const el of stack) {
-    if (!el || el === dock || (dock && el.contains(dock))) continue;
-    const s = getComputedStyle(el);
-    if (s.position !== "fixed") continue;
-    if (s.pointerEvents === "none") continue; // 飾り(背景グラデ等)は素通しなので対象外
-    const z = Number(s.zIndex);
-    if (!Number.isFinite(z) || z < 50) continue; // アプリの土台(z無し/低い)は隠す理由にしない
-    const r = el.getBoundingClientRect();
-    if (r.width < vw * 0.9 || r.height < vh * 0.8) continue; // 画面をほぼ覆うものだけ=モーダル
-    return true;
-  }
-  return false;
-}
+// 2026-07-31: 同じ画面に浮いている他の常駐ボタン(Prism のマイクFAB)でも使えるよう
+// `hooks/useCoveredByModal` へ切り出した(判定・間引きの仕様はそのまま)。
 
 function clampPos(x: number, y: number, bottomClearance = 0) {
   // モバイルは上部=ヘッダー帯(タイトル/タブ行/サンプル帯)を進入禁止に。
@@ -204,8 +188,9 @@ export function CoreDock({
   const [name, setName] = useState<string | null>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [dragging, setDragging] = useState(false);
-  const [hidden, setHidden] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
+  // 全画面モーダル(オンボ等)が出ている間は引っ込む。閉じれば自動で戻る。
+  const hidden = useCoveredByModal(btnRef);
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number; moved: boolean } | null>(null);
   // 自分でドラッグして置き場所を決めたか(＝既定位置に戻してはいけないか)
   const userMovedRef = useRef(false);
@@ -266,40 +251,6 @@ export function CoreDock({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bottomClearance]);
-
-  // 全画面モーダルが出ている間は引っ込む(出入りは DOM の変化で拾う)
-  useEffect(() => {
-    if (typeof MutationObserver === "undefined") return;
-    let t: ReturnType<typeof setTimeout> | null = null;
-    let last = 0;
-    const check = () => {
-      last = Date.now();
-      setHidden(isCoveredByModal(btnRef.current));
-    };
-    // ★ここは「間引き」であって「先送り」にしてはいけない(2026-07-29 事故)。
-    //   毎回 clearTimeout する書き方(デバウンス)にしたところ、Prism は画面が
-    //   絶えず動いている(件数の更新・アニメーション)ため点検が永久に先送りされ、
-    //   一度隠れたドックが二度と戻らなかった＝本番でCOREの行き来が消えた。
-    //   予約済みなら何もしない・必ず 200ms 以内に1回は走る、に変更。
-    const schedule = () => {
-      if (t) return;
-      t = setTimeout(() => {
-        t = null;
-        check();
-      }, Math.max(0, 200 - (Date.now() - last)));
-    };
-    check();
-    const mo = new MutationObserver(schedule);
-    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
-    window.addEventListener("resize", schedule);
-    window.addEventListener("scroll", schedule, { passive: true });
-    return () => {
-      if (t) clearTimeout(t);
-      mo.disconnect();
-      window.removeEventListener("resize", schedule);
-      window.removeEventListener("scroll", schedule);
-    };
-  }, []);
 
   // 帯(ヘッダー/下部ドック)はタブ切替や表示条件で高さが変わるので、
   // 変わったら可動域を測り直して被りを防ぐ。ドラッグ中は動かさない。
