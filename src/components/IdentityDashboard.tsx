@@ -73,7 +73,7 @@ const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
 import { REFERRAL_BONUS_DAYS, getReferralData, syncReferralStatus, consumePendingBonusDays } from '../lib/referral';
-import { Gift, FileDown, Database, Brain, BarChart3, Search, ShieldCheck, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem, Users, Layers } from 'lucide-react';
+import { Gift, FileDown, Database, Brain, BarChart3, Search, ShieldCheck, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem, Users, Layers, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import CoreCreditsPanel from './CoreCreditsPanel';
 import { getBalance as getCreditBalance, earnDaily as earnCreditDaily, earnOnce as earnCreditOnce } from '../lib/coreCredits';
@@ -487,7 +487,7 @@ export default function IdentityDashboard({
     } catch { /* */ }
   }, []);
   const [globalDrag, setGlobalDrag] = useState(false);
-  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number; current: string } | null>(null);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number; current: string; failed: number } | null>(null);
 
   const personaKnowledge = knowledgeItems.filter(i => i.personaId === persona.id);
 
@@ -551,14 +551,17 @@ export default function IdentityDashboard({
     }
     const supported = allFiles.filter(f => isSupported(f.name));
     if (supported.length === 0) return;
-    setBulkProgress({ done: 0, total: supported.length, current: supported[0].name });
+    setBulkProgress({ done: 0, total: supported.length, current: supported[0].name, failed: 0 });
+    let failed = 0;
     for (let i = 0; i < supported.length; i++) {
       const f = supported[i];
-      setBulkProgress({ done: i, total: supported.length, current: f.name });
-      try { await onAddKnowledgeFile(f); } catch { /* skip */ }
+      setBulkProgress({ done: i, total: supported.length, current: f.name, failed });
+      // 失敗を握りつぶすと「全部完了」と嘘をつくことになる。数えて必ず画面に出す。
+      try { await onAddKnowledgeFile(f); } catch { failed++; }
     }
-    setBulkProgress({ done: supported.length, total: supported.length, current: '' });
-    setTimeout(() => setBulkProgress(null), 2000);
+    setBulkProgress({ done: supported.length, total: supported.length, current: '', failed });
+    // 入らなかったファイルがある時は、読む時間が要るので長めに出す
+    setTimeout(() => setBulkProgress(null), failed > 0 ? 6000 : 2000);
   }, [onAddKnowledgeFile]);
 
   // ── モバイル表示モード ──
@@ -2292,16 +2295,26 @@ export default function IdentityDashboard({
             exit={{ y: 100, opacity: 0 }}
           >
             <div className="flex items-center gap-3">
-              <span className="flex items-center">{bulkProgress.done === bulkProgress.total ? <CheckCircle2 size={24} strokeWidth={2.2} /> : <Brain size={24} strokeWidth={2.2} />}</span>
+              <span className="flex items-center" style={bulkProgress.done === bulkProgress.total && bulkProgress.failed > 0 ? { color: '#FBBF24' } : undefined}>
+                {bulkProgress.done === bulkProgress.total
+                  ? (bulkProgress.failed > 0 ? <AlertTriangle size={24} strokeWidth={2.2} /> : <CheckCircle2 size={24} strokeWidth={2.2} />)
+                  : <Brain size={24} strokeWidth={2.2} />}
+              </span>
               <div className="flex-1 min-w-0">
                 <p className="text-white text-sm font-semibold">
                   {bulkProgress.done === bulkProgress.total
-                    ? `${bulkProgress.total}ファイル取り込み完了`
+                    ? (bulkProgress.failed > 0
+                        ? `${bulkProgress.total - bulkProgress.failed}件を取り込み・${bulkProgress.failed}件は入りませんでした`
+                        : `${bulkProgress.total}ファイル取り込み完了`)
                     : `${bulkProgress.done} / ${bulkProgress.total} 取り込み中…`}
                 </p>
-                {bulkProgress.current && (
+                {bulkProgress.done === bulkProgress.total && bulkProgress.failed > 0 ? (
+                  <p className="text-xs" style={{ color: 'rgba(251,191,36,0.95)', overflowWrap: 'break-word' }}>
+                    入らなかったファイルは一覧に⚠️で残っています。開くと理由が読めます。
+                  </p>
+                ) : bulkProgress.current ? (
                   <p className="text-white/60 text-xs truncate">{bulkProgress.current}</p>
-                )}
+                ) : null}
               </div>
             </div>
             <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>

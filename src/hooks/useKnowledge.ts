@@ -7,6 +7,7 @@ async function parseFile(file: File) {
   const mod = await import('../lib/fileParser');
   return mod.parseFile(file);
 }
+import { friendlyFileError } from '../lib/fileErrorMessage';
 import { analyzeKnowledge, looksLikeFinancialData, extractFinancialData } from '../lib/analyzeKnowledge';
 import { useCloudSync } from './useCloudSync';
 import { useEmailBlobSync } from './useEmailBlobSync';
@@ -252,8 +253,17 @@ export function useKnowledge(
       parsed = await parseFile(file);
     } catch (err) {
       const raw = err instanceof Error ? err.message : String(err);
-      updateAnalysis(id, { analysisStatus: 'error', analysisError: friendlyError(raw) });
+      updateAnalysis(id, { analysisStatus: 'error', analysisError: friendlyFileError(err, file.name) || friendlyError(raw) });
       throw err;
+    }
+
+    // parseFile は投げずに warning を返す設計 (壊れた PDF・パスワード付き・未対応形式)。
+    // ここで拾わないと「[読み込みエラー: ...]」という本文のまま ✅追加完了 として保存され、
+    // 後で AI がそのエラー文を資料の中身だと思って答えてしまう。→ 失敗として扱い、AI 要約もしない。
+    if (parsed.warning) {
+      const msg = friendlyFileError(parsed.warning, file.name);
+      updateAnalysis(id, { analysisStatus: 'error', analysisError: msg });
+      throw new Error(msg);
     }
 
     const content = parsed.text;

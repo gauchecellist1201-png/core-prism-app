@@ -4,6 +4,7 @@ import GenerationOrb from './GenerationOrb';
 import PersonaGlyph from './PersonaGlyph';
 import StudioBackButton from './StudioBackButton';
 import type { KnowledgeItem, Persona, AppSettings } from '../types/identity';
+import { friendlyFileError } from '../lib/fileErrorMessage';
 
 /** いつもの「PRISM マークが回る」生成演出（脳の絵文字の置き換え） */
 function SpinningPrism({ size = 56 }: { size?: number }) {
@@ -171,6 +172,12 @@ interface BatchProgress {
   failed: string[];
 }
 
+/** 取り込みに失敗したファイル — 名前だけでなく File 本体を持つ (これが無いと再取込できない) */
+interface FailedFile {
+  file: File;
+  reason: string;
+}
+
 const SUPPORTED_EXT = new Set([
   'pdf','docx','pptx','xlsx','xls','csv','txt','md','markdown','json','html','htm',
   'xml','yaml','yml','log','tsv','png','jpg','jpeg','gif','webp','svg',
@@ -241,6 +248,10 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
   const [pendingBatch, setPendingBatch] = useState<File[] | null>(null);
   // 大量データ取込のプラン制限に当たった時のアップグレード案内
   const [capNotice, setCapNotice] = useState<string | null>(null);
+  // 取り込みに失敗したファイル — 黙って消さず、この場で「もう一度」できるように残す
+  // (2026-07-31: 以前は単発失敗が例外のまま宙に消え、画面には何も出なかった)
+  const [failedFiles, setFailedFiles] = useState<FailedFile[] | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const isCapError = (e: unknown) => /¥29,800|統合ナレッジ脳|30 件まで/.test(e instanceof Error ? e.message : String(e));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -403,13 +414,16 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
   const handleFile = useCallback(async (file: File) => {
     setIsUploading(true);
     setCapNotice(null);
+    setFailedFiles(null);
     try {
       const item = await onAddFile(file);
       setUploadedItem(item);
       setTimeout(() => { setUploadedItem(null); setTab('list'); }, 2000);
     } catch (e) {
       if (isCapError(e)) setCapNotice(e instanceof Error ? e.message : '');
-      else throw e;
+      // 以前はここで throw していた → 呼び出し元が await していないので例外が宙に消え、
+      // 画面には何も出ないまま「📂 ドロップ可能」に戻っていた。必ず理由と再試行を出す。
+      else setFailedFiles([{ file, reason: friendlyFileError(e, file.name) }]);
     } finally {
       setIsUploading(false);
     }
@@ -418,26 +432,56 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
   const handleBatch = useCallback(async (files: File[]) => {
     const supported = files.filter(f => isSupported(f.name));
     if (supported.length === 0) return;
+    setFailedFiles(null);
     // 同じ取込をあとから「まとめて消す」ためのバッチID (この一括取込単位で共通)
     const batchId = `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setBatchProgress({ total: supported.length, done: 0, current: '', failed: [] });
-    const failed: string[] = [];
+    const failed: FailedFile[] = [];
     for (let i = 0; i < supported.length; i++) {
       const f = supported[i];
-      setBatchProgress({ total: supported.length, done: i, current: f.name, failed: [...failed] });
+      setBatchProgress({ total: supported.length, done: i, current: f.name, failed: failed.map(x => x.file.name) });
       try {
         await onAddFile(f, batchId);
       } catch (err) {
         if (isCapError(err)) { setCapNotice(err instanceof Error ? err.message : ''); break; } // プラン上限 → 以降は中断して案内
-        failed.push(f.name);
+        failed.push({ file: f, reason: friendlyFileError(err, f.name) });
       }
     }
-    setBatchProgress({ total: supported.length, done: supported.length, current: '', failed });
+    setBatchProgress({ total: supported.length, done: supported.length, current: '', failed: failed.map(x => x.file.name) });
+    if (failed.length > 0) {
+      // 失敗があるときは自動で閉じない。2.5秒で消すと、何が入らなかったか読む前に消える。
+      setBatchProgress(null);
+      setFailedFiles(failed);
+      return;
+    }
     setTimeout(() => {
       setBatchProgress(null);
       setTab('list');
     }, 2500);
   }, [onAddFile]);
+
+  /** 失敗したぶんだけ、もう一度取り込む */
+  const handleRetryFailed = useCallback(async () => {
+    if (!failedFiles || retrying) return;
+    setRetrying(true);
+    const batchId = `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const stillFailed: FailedFile[] = [];
+    for (const { file } of failedFiles) {
+      try {
+        await onAddFile(file, failedFiles.length > 1 ? batchId : undefined);
+      } catch (err) {
+        if (isCapError(err)) { setCapNotice(err instanceof Error ? err.message : ''); break; }
+        stillFailed.push({ file, reason: friendlyFileError(err, file.name) });
+      }
+    }
+    setRetrying(false);
+    if (stillFailed.length === 0) {
+      setFailedFiles(null);
+      setTab('list');
+    } else {
+      setFailedFiles(stillFailed);
+    }
+  }, [failedFiles, retrying, onAddFile]);
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
@@ -925,7 +969,9 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                                     <KnowledgeProgressBar status={item.analysisStatus} accent={persona.accentColor} />
                                   )}
                                   {item.analysisStatus === 'error' && (
-                                    <p className="text-xs text-red-400">分析エラー: {item.analysisError}</p>
+                                    <p className="text-xs text-red-400" style={{ overflowWrap: 'break-word' }}>
+                                      <span aria-hidden>⚠️ </span>{item.analysisError}
+                                    </p>
                                   )}
                                   {item.analysisStatus === 'done' && item.analysis?.summary && (
                                     <p className="text-xs text-white/70 mt-1 line-clamp-2">{item.analysis.summary}</p>
@@ -1051,6 +1097,47 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                         className="px-5 py-3 rounded-xl text-sm font-medium"
                         style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.12)', minHeight: 48 }}
                       >やめる</button>
+                    </div>
+                  </motion.div>
+                ) : failedFiles ? (
+                  /* 取り込めなかったファイル — 黙って消さず、理由と「もう一度」を必ず出す
+                     (2026-07-31: 単発は無言で消滅、一括は 2.5 秒で自動的に閉じていた) */
+                  <motion.div className="py-6" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                    <p className="text-4xl text-center mb-2">⚠️</p>
+                    <p className="text-fg text-base text-center font-medium">
+                      {failedFiles.length} 件が取り込めませんでした
+                    </p>
+                    <p className="text-fg-muted text-xs text-center mt-1">
+                      入らなかったぶんだけ、もう一度ためせます
+                    </p>
+                    <div className="mt-4 space-y-2" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                      {failedFiles.map(({ file, reason }, i) => (
+                        <div
+                          key={`${file.name}-${i}`}
+                          className="p-3 rounded-xl text-left"
+                          style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.28)' }}
+                        >
+                          <p className="text-fg text-xs font-medium truncate" title={file.name}>{file.name}</p>
+                          <p className="text-xs mt-1" style={{ color: 'rgba(248,113,113,0.95)', overflowWrap: 'break-word' }}>{reason}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <button
+                        onClick={() => void handleRetryFailed()}
+                        disabled={retrying}
+                        className="flex-1 py-3 rounded-xl text-sm font-bold"
+                        style={{
+                          background: retrying ? 'rgba(255,255,255,0.10)' : `linear-gradient(135deg, ${persona.accentColor}, ${persona.accentColor}cc)`,
+                          color: '#fff', minHeight: 48,
+                          cursor: retrying ? 'default' : 'pointer',
+                        }}
+                      >{retrying ? '取り込み中…' : `この ${failedFiles.length} 件をもう一度`}</button>
+                      <button
+                        onClick={() => { setFailedFiles(null); setTab('list'); }}
+                        className="px-5 py-3 rounded-xl text-sm font-medium"
+                        style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.12)', minHeight: 48 }}
+                      >閉じる</button>
                     </div>
                   </motion.div>
                 ) : batchProgress ? (
