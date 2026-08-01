@@ -835,7 +835,9 @@ export default function CoreSite() {
               </a>
             ))}
           </div>
-          <p style={{ textAlign: 'center', marginTop: '1.6rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(240,233,216,0.48)', lineHeight: 1.9 }}>
+          {/* 2026-08-02: 0.48=4.27:1 で AA(4.5:1) に届いていなかった。料金の但し書きは
+              いちばん読まれないと困る文。0.60=6.2:1 に上げる（薄さの序列は 0.56<0.58<0.60 で維持）。 */}
+          <p style={{ textAlign: 'center', marginTop: '1.6rem', fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(240,233,216,0.60)', lineHeight: 1.9 }}>
             ※ 価格は税込・月額の入口プランです。詳細は各プロダクトのページでご確認ください。
           </p>
         </div>
@@ -896,14 +898,17 @@ export default function CoreSite() {
                       <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.6rem', letterSpacing: '0.22em', color: v.accent, textTransform: 'uppercase', marginTop: 3 }}>{v.role}</span>
                     </span>
                   </span>
-                  <span style={{ fontFamily: FONT_SANS, fontSize: '0.68rem', color: 'rgba(240,233,216,0.45)', letterSpacing: '0.05em', marginTop: '0.7rem' }}>{v.industry}</span>
+                  {/* 2026-08-02: 0.45=3.87:1 で AA 落第。10.9px しかない業種名が
+                      いちばん薄いのは逆＝小さい字ほど濃くする。0.58=5.9:1。 */}
+                  <span style={{ fontFamily: FONT_SANS, fontSize: '0.68rem', color: 'rgba(240,233,216,0.58)', letterSpacing: '0.05em', marginTop: '0.7rem' }}>{v.industry}</span>
                   <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.02rem', fontWeight: 700, lineHeight: 1.65 }}>{v.tagline}</span>
                   <span style={{ fontFamily: FONT_SANS, fontSize: '0.81rem', color: 'rgba(240,233,216,0.65)', lineHeight: 1.9 }}>{v.body}</span>
                   <span style={{
                     marginTop: 'auto', paddingTop: '1rem', borderTop: `1px solid ${v.accent}33`,
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', flexWrap: 'wrap',
                   }}>
-                    <span style={{ fontFamily: FONT_SANS, fontSize: '0.7rem', color: 'rgba(240,233,216,0.45)' }}>{v.status}</span>
+                    {/* 同上。「本番稼働中 / デモ公開中」は買う前にいちばん確かめたい一行。 */}
+                    <span style={{ fontFamily: FONT_SANS, fontSize: '0.7rem', color: 'rgba(240,233,216,0.58)' }}>{v.status}</span>
                     <span style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', fontWeight: 700, color: v.accent, whiteSpace: 'nowrap' }}>
                       {v.external ? '見にいく ↗' : '詳しく見る →'}
                     </span>
@@ -1721,7 +1726,9 @@ export default function CoreSite() {
             {/* メールを書く前に、ほとんどの人が確かめたいのは
                 「誰がやっているのか」「いくらか」「やめられるか」の 3 つ。
                 リンクの文言でそれが分かるようにする（2026-07-31） */}
-            <p style={{ fontSize: '0.78rem', color: 'rgba(240,233,216,0.48)', marginTop: '1.25rem', fontFamily: FONT_SERIF_JA, lineHeight: 1.8 }}>
+            {/* 2026-08-02: 0.48=4.27:1 で AA 落第。料金・解約・データの扱いへの導線＝
+                いちばん薄くしてはいけない一行だった。0.60=6.2:1。 */}
+            <p style={{ fontSize: '0.78rem', color: 'rgba(240,233,216,0.60)', marginTop: '1.25rem', fontFamily: FONT_SERIF_JA, lineHeight: 1.8 }}>
               <a href="/faq" style={{ color: '#E7C987', textDecoration: 'underline', textUnderlineOffset: 3 }}>よくある質問</a>
               {' '}に、誰が作っているか・料金・解約・データの扱いをまとめています。
             </p>
@@ -1819,7 +1826,9 @@ export default function CoreSite() {
             paddingTop: '1.75rem',
             textAlign: 'center',
             fontSize: '0.7rem',
-            color: 'rgba(240,233,216,0.4)',
+            /* 2026-08-02: 0.4=3.26:1。11.2px で会社名・運営責任者を名乗る行が
+               ページ中いちばん読みにくかった（法務表記は読めることが要件）。0.56=5.5:1。 */
+            color: 'rgba(240,233,216,0.56)',
             fontFamily: FONT_DISPLAY,
             letterSpacing: '0.25em',
           }}
@@ -2560,7 +2569,7 @@ function UseCaseCard({ persona, headline, body, tools, lead }: {
           }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: t.c, boxShadow: `0 0 7px ${t.c}` }} />
             {t.t}
-            {i < tools.length - 1 && <span style={{ color: 'rgba(240,233,216,0.4)', marginLeft: '0.3rem', fontStyle: 'normal' }}>＋</span>}
+            {i < tools.length - 1 && <span style={{ color: 'rgba(240,233,216,0.56)', marginLeft: '0.3rem', fontStyle: 'normal' }}>＋</span>}
           </span>
         ))}
       </div>

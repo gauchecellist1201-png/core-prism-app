@@ -3151,7 +3151,10 @@ body[data-prism-chat-dock] .cp-main-scroll {
     flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
-    min-height: 34px;
+    /* 2026-08-02: 34px だった＝指の当たり判定が Apple/Google の最小 44px に届いておらず、
+       スクロールする横並びの中で押し損ねやすかった（実測 8個すべて 34px）。
+       見た目の丸みは変えず、高さだけ 44px にして「押せる行」にする。 */
+    min-height: 44px;
     padding: 0 0.8rem;
     border-radius: 999px;
     border: 1px solid rgba(201, 169, 110, 0.28);
@@ -3173,7 +3176,8 @@ body[data-prism-chat-dock] .cp-main-scroll {
   /* チップバーのぶんヘッダーが高くなるので、アンカー着地点をずらす */
   #top, #finder, #products, #vertical, #platform,
   #connect, #journey, #about, #contact, #continuum, #executive, #who {
-    scroll-margin-top: 118px !important;
+    /* チップを 34px→44px にしたぶん、着地点も 10px 下げる（見出しがバーの下に隠れる） */
+    scroll-margin-top: 128px !important;
   }
 }
 
