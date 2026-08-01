@@ -56,18 +56,67 @@ export async function listReservations(site: string): Promise<ReservationsResult
   }
 }
 
-/** 予約を1件追加（チャット捕捉・手動追加の両方で使う）。成功したら作成された Reservation を返す。 */
-export async function addReservation(site: string, draft: ReservationDraft): Promise<Reservation | null> {
+/**
+ * 予約を1件追加した結果。
+ *
+ * 【2026-08-01 根治】以前は `Reservation | null` を返していた。
+ * 保存先(Upstash)が未設定のとき、サーバーは正直に
+ * `{ ok:true, persisted:false, configured:false }`（202）を返しているのに、
+ * 呼び出し側は「reservation が無い＝失敗」としか受け取れず、
+ * お客様には「通信環境をご確認ください」と出していた。
+ * 通信は正常で、原因はこちらの設定漏れ。**お客様に自分のせいだと思わせ、予約は消える**。
+ *
+ * 成否を真偽値ひとつで返す関数は、理由を画面に出す道が型の時点で閉じている。
+ * だから理由まで返す形にする。
+ */
+export type AddReservationResult =
+  | { ok: true; reservation: Reservation }
+  /** 通信は届いたが保存されていない（保存先が未設定）。予約は残っていない。 */
+  | { ok: false; reason: 'not-persisted'; configured: false; hint?: string }
+  /** サーバーが受け付けなかった（入力不足など）。 */
+  | { ok: false; reason: 'rejected'; status: number; error?: string; hint?: string }
+  /** そもそも届かなかった（回線・タイムアウト）。 */
+  | { ok: false; reason: 'network' };
+
+/** 予約を1件追加（チャット捕捉・手動追加の両方で使う）。 */
+export async function addReservation(site: string, draft: ReservationDraft): Promise<AddReservationResult> {
   try {
     const res = await fetchWithTimeout(EP, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ site, reservation: draft }),
     }, 15000);
-    const j = await res.json().catch(() => ({}));
-    return res.ok && j?.reservation ? (j.reservation as Reservation) : null;
+    const j = await res.json().catch(() => ({} as Record<string, unknown>));
+
+    if (res.ok && j?.reservation) return { ok: true, reservation: j.reservation as Reservation };
+
+    // 200/202 でも中身が空＝保存されていない。ここを「通信の失敗」と混ぜてはいけない。
+    if (res.ok) {
+      return { ok: false, reason: 'not-persisted', configured: false, hint: typeof j?.hint === 'string' ? j.hint : undefined };
+    }
+    return {
+      ok: false,
+      reason: 'rejected',
+      status: res.status,
+      error: typeof j?.error === 'string' ? j.error : undefined,
+      hint: typeof j?.hint === 'string' ? j.hint : undefined,
+    };
   } catch {
-    return null;
+    return { ok: false, reason: 'network' };
+  }
+}
+
+/** 画面にそのまま出せる日本語にする（原因ごとに、次にどうすればよいかまで言う）。 */
+export function addReservationMessage(r: Exclude<AddReservationResult, { ok: true }>, forOwner: boolean): string {
+  switch (r.reason) {
+    case 'not-persisted':
+      return forOwner
+        ? `保存先が未設定のため、予約が保存されていません。${r.hint ?? 'UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN を設定してください。'}`
+        : '申し訳ありません。ただいまご予約をお預かりできませんでした。お手数ですが、お電話またはメールでご連絡ください。';
+    case 'rejected':
+      return r.hint ?? '入力内容をご確認のうえ、もう一度お試しください。';
+    case 'network':
+      return '通信が届きませんでした。電波のよい場所で、もう一度お試しください。';
   }
 }
 

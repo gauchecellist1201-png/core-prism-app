@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { enqueueClaudeCall } from '../../lib/apiQueue';
 import { conciergeSiteId, type ConciergeConfig } from './conciergeConfig';
 import { buildConciergePrompt, summarizeConversation } from './conciergePrompt';
-import { addReservation } from './reservations';
+import { addReservation, addReservationMessage } from './reservations';
 import { aiFetch } from '../../lib/aiFetch';
 
 /** 会話中に受け取る予約カードの入力（お客様が埋める最小項目） */
@@ -320,7 +320,15 @@ export function useConcierge(cfg: ConciergeConfig) {
         }),
         signal: ctrl.signal,
       }).finally(() => window.clearTimeout(timer));
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        // 「送れなかった」は同じでも、原因が回線かこちら側かで、次にすべきことが変わる。
+        setLeadError(
+          res.status >= 500
+            ? 'ただいま受付が混み合っています。お手数ですが、少し時間をおいてもう一度お試しください。入力内容は残しています。'
+            : '内容をお預かりできませんでした。お手数ですが、入力内容をご確認のうえ、もう一度お試しください。',
+        );
+        return false;
+      }
       setLeadSent(true);
       leadSentRef.current = true;
       setLeadOpen(false);
@@ -332,8 +340,14 @@ export function useConcierge(cfg: ConciergeConfig) {
         ts: Date.now(),
       }]);
       return true;
-    } catch {
-      setLeadError('送信できませんでした。通信環境をご確認のうえ、もう一度お試しください。');
+    } catch (e) {
+      // 中断（20秒の打ち切り）と、そもそも届かなかった場合を分ける。
+      const aborted = e instanceof DOMException && e.name === 'AbortError';
+      setLeadError(
+        aborted
+          ? '時間内に送れませんでした。電波のよい場所で、もう一度お試しください。入力内容は残しています。'
+          : '通信が届きませんでした。電波のよい場所で、もう一度お試しください。入力内容は残しています。',
+      );
       return false;
     } finally {
       setLeadSending(false);
@@ -362,7 +376,12 @@ export function useConcierge(cfg: ConciergeConfig) {
         name, whenText, contact, contactType: ctype as 'email' | 'phone' | 'other',
         note: input.note?.trim() || undefined, source: 'chat',
       });
-      if (!created) throw new Error('failed');
+      if (!created.ok) {
+        // 原因ごとに言い分ける。保存先が未設定のとき「通信環境をご確認ください」と出すのは
+        // お客様に自分のせいだと思わせる嘘になる（2026-08-01 根治）。
+        setReservationError(addReservationMessage(created, false));
+        return false;
+      }
       setReservationSent(true);
       reservationSentRef.current = true;
       setReservationOpen(false);

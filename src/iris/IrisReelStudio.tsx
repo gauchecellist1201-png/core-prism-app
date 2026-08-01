@@ -7,6 +7,7 @@
 // ============================================================
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
+import { logIrisActivity } from './irisActivity';
 import { aiFetch } from '../lib/aiFetch';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS } from './irisStyle';
@@ -2923,6 +2924,8 @@ JSON のみで返答。`;
       const blob = new Blob(chunksRef.current, { type: mime });
       setExportUrl(URL.createObjectURL(blob));
       setRecording(false);
+      // 中身が空のときは数えない（成果の数字に嘘をつかない）。
+      if (blob.size) logIrisActivity('reel');
     };
     mr.start();
 

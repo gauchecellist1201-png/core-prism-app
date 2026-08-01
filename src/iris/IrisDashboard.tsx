@@ -2059,6 +2059,15 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     onConsumeTheme={() => setReelTheme(null)}
                   />
                 )}
+                {/* 【2026-08-01】成果カードをリール画面の下にも置く。
+                    2026-07-19 のリール特化で着地タブが 'home' から 'reel' に変わって以来、
+                    「今週 Iris が動いた量」はホームに置かれたまま＝ほとんど誰の目にも入っていなかった。
+                    毎週の価値の可視化は続ける理由そのものなので、着地画面から見えるところに出す。
+                    置くのは**スタジオの下**。上に足すと「起動即リール」が遅れてしまう。
+                    実績が1件も無いうちは中で null を返すので、初めての人の画面には何も増えない。 */}
+                <div style={{ marginTop: '1.25rem' }}>
+                  <IrisValueReceipt variant="desktop" />
+                </div>
               </React.Suspense>
             )}
             {tab === 'schedule' && <IrisPostQueueView bg={bg} queue={postQueue} />}

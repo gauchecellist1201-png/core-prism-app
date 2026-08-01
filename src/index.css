@@ -1492,6 +1492,22 @@ html { scroll-behavior: smooth; }
   .lp-section-pad { padding: 4rem 1rem !important; }
   .lp-hero-pad { padding: 5rem 1rem 4rem !important; }
 
+  /* お問い合わせの3つの窓口。375px では3列のままだと1枚あたり約110pxしかなく、
+     「法人 / 導入相談」が2行・説明が5行に折れて読めなくなっていた（2026-08-01 実測）。
+     スマホでは1列にして、1枚を「押せる行」として見せる。 */
+  .lp-contact-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+  .lp-contact-grid > a {
+    /* 横並びにはしない。窓口名と説明を左右に置くと、説明(18文字)が結局折り返すため。
+       1枚を画面幅いっぱいに使い、左揃えの2行に落ち着かせる。 */
+    align-items: flex-start !important;
+    text-align: left !important;
+    padding: 1rem 1.1rem !important;
+    gap: 0.3rem !important;
+  }
+
   /* プリズム扇形は横スクロール許可 + コンパクト化。
      カード幅は「4.5枚見え」で右端に次カードが必ず半分見える計算
      (100vw - hero横pad 2rem - cards内pad 1rem - 見えるgap 4本×0.3rem = 4.5枚分)。

@@ -13,6 +13,7 @@
 //     - ideas    : 企画(投稿アイデア)プールを生成した
 //     - mediakit : メディアキットを書き出した
 //     - dm       : 営業 DM 下書きを生成した
+//     - reel     : リール動画を書き出せた（中身のある動画がユーザーの手に渡った時だけ）
 //
 //   マルチアカウント切替で数字が混ざらないよう、アクティブアカウント単位で
 //   scope する。容量は直近 MAX 件で打ち切り (古いものから捨てる)。
@@ -20,7 +21,7 @@
 
 import { getActiveAccount } from './multiAccount';
 
-export type IrisActivityType = 'script' | 'caption' | 'ideas' | 'mediakit' | 'dm';
+export type IrisActivityType = 'script' | 'caption' | 'ideas' | 'mediakit' | 'dm' | 'reel';
 
 interface ActivityEntry {
   t: IrisActivityType;
@@ -78,7 +79,7 @@ export function getActivitySummary(days = 7): ActivitySummary {
   const all = load();
   const since = Date.now() - days * 24 * 60 * 60 * 1000;
   const byType: Record<IrisActivityType, number> = {
-    script: 0, caption: 0, ideas: 0, mediakit: 0, dm: 0,
+    script: 0, caption: 0, ideas: 0, mediakit: 0, dm: 0, reel: 0,
   };
   let total = 0;
   for (const e of all) {
@@ -109,7 +110,7 @@ export interface LifetimeSummary {
 export function getLifetimeSummary(): LifetimeSummary {
   const all = load();
   const byType: Record<IrisActivityType, number> = {
-    script: 0, caption: 0, ideas: 0, mediakit: 0, dm: 0,
+    script: 0, caption: 0, ideas: 0, mediakit: 0, dm: 0, reel: 0,
   };
   let total = 0;
   let earliestTs = 0;

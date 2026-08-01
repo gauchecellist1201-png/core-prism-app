@@ -21,7 +21,7 @@ import {
 } from './conciergeConfig';
 import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 import {
-  listReservations, addReservation, updateReservationStatus,
+  listReservations, addReservation, addReservationMessage, updateReservationStatus,
   SOURCE_LABEL, STATUS_LABEL,
   type Reservation, type ReservationSource, type ReservationStatus,
 } from './reservations';
@@ -302,12 +302,13 @@ function CrystalReservationsSection({ config }: { config: ConciergeConfig }) {
       note: form.note.trim() || undefined, source: form.source,
     });
     setSaving(false);
-    if (created) {
-      setItems((prev) => [created, ...(prev || [])]);
+    if (created.ok) {
+      setItems((prev) => [created.reservation, ...(prev || [])]);
       setForm({ name: '', whenText: '', contact: '', service: '', party: '', note: '', source: 'phone' });
       setShowAdd(false);
     } else {
-      setError('保存できませんでした。通信環境をご確認のうえ、もう一度お試しください。');
+      // お店の人には、原因と「次にどうすれば直るか」まで出す（設定漏れを黙って通信のせいにしない）。
+      setError(addReservationMessage(created, true));
     }
   };
 
@@ -408,21 +409,39 @@ function CrystalReservationsSection({ config }: { config: ConciergeConfig }) {
 
       {error && <div style={{ ...cardBg, borderColor: 'rgba(176,107,107,0.4)', color: '#E7B4B4', fontSize: 13 }}>{error}</div>}
 
+      {/* 【2026-08-01】言い方を変えた。以前は「設定後、ここに予約が並びます」という
+          穏やかな案内で、**いまお客様が送っているご予約が消えている**ことが伝わらなかった。
+          さらに下の「まだ予約はありません」が同時に出るので、「誰も予約していない」と
+          読めてしまう（原因は設定漏れなのに）。起きている事実を先に言い切る。 */}
       {!configured && !busy && (
-        <div style={{ ...cardBg, fontSize: 13, color: P.fgMuted }}>
-          予約の保存にはサーバーの保存設定（Upstash）が必要です。設定後、ここに予約が並びます。
+        <div style={{ ...cardBg, borderColor: 'rgba(214,158,46,0.55)', background: 'rgba(214,158,46,0.10)' }}>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#E9C46A' }}>
+            いま、チャットからのご予約は保存されていません
+          </div>
+          <div style={{ fontSize: 12.5, color: P.fg, marginTop: 6, lineHeight: 1.9 }}>
+            保存先（Upstash）が未設定のため、お客様が送信されたご予約はここに残りません。
+            <br />
+            <span style={{ color: P.fgMuted }}>
+              直し方：Vercel の環境変数に <code>UPSTASH_REDIS_REST_URL</code> と{' '}
+              <code>UPSTASH_REDIS_REST_TOKEN</code> を設定して、もう一度この画面を開いてください。
+            </span>
+          </div>
         </div>
       )}
 
       {busy && items === null ? (
         <p style={{ fontSize: 13, color: P.fgSubtle }}>読み込んでいます…</p>
       ) : active.length === 0 && closed.length === 0 ? (
+        // 保存先が未設定のときは「まだ予約はありません」を出さない。
+        // 本当は届いているかもしれないのに「誰も予約していない」と読める＝数字に嘘をつくことになる。
+        configured ? (
         <div style={{ ...cardBg, textAlign: 'center', padding: '28px 16px' }}>
           <div style={{ fontSize: 14, color: P.fg, fontWeight: 700 }}>まだ予約はありません</div>
           <div style={{ fontSize: 12.5, color: P.fgMuted, marginTop: 6, lineHeight: 1.8 }}>
             チャットで予約希望のお客様がいれば自動でここに届きます。電話やメールでいただいた予約は「＋ 予約を手動で追加」から。
           </div>
         </div>
+        ) : null
       ) : (
         <>
           {active.map((r) => <Row key={r.id} r={r} />)}

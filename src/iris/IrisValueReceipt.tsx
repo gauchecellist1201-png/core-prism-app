@@ -13,7 +13,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Type, Lightbulb, IdCard, Send, Sparkles } from 'lucide-react';
+import { FileText, Type, Lightbulb, IdCard, Send, Sparkles, Film, Clock } from 'lucide-react';
 import { getActivitySummary, getLifetimeSummary, type IrisActivityType } from './irisActivity';
 import { IRIS_COLORS } from './irisStyle';
 import { EASE_OUT_FM } from './motion';
@@ -30,15 +30,24 @@ type MetaRow = {
    * 台本ライター/企画者/デザイナーへ外注した時の下限をとっている（honest: 誇張しない）。
    */
   rateYen: number;
+  /**
+   * 自分の手でやったら何分かかるか（控えめな下限の目安・分）。
+   * 「編集3時間が1時間に」のように**時間で言う**のがいちばん伝わるため入れている。
+   * 実測ではなく目安なので、画面には必ず「目安」と書き、根拠（手作業の下限）も添える。
+   */
+  minutes: number;
 };
 
 // 表示順 = 価値の伝わりやすい順 (収益に近い順)
 const META: MetaRow[] = [
-  { t: 'script',   label: '台本',          unit: '本', icon: FileText,  accent: IRIS_COLORS.gold,          rateYen: 3000 },
-  { t: 'caption',  label: 'キャプション',  unit: '本', icon: Type,      accent: IRIS_COLORS.purpleLt,      rateYen: 800 },
-  { t: 'ideas',    label: '企画',          unit: '件', icon: Lightbulb, accent: IRIS_COLORS.goldChampagne, rateYen: 1500 },
-  { t: 'mediakit', label: 'メディアキット', unit: '枚', icon: IdCard,    accent: IRIS_COLORS.hotPink,        rateYen: 5000 },
-  { t: 'dm',       label: '営業DM',        unit: '通', icon: Send,      accent: IRIS_COLORS.goldDeep,       rateYen: 500 },
+  // リールが先頭。Iris がいちばん時間を肩代わりしているのはここで、
+  // 「◯本できた」が続ける理由そのものになるため（2026-08-01 追加）。
+  { t: 'reel',     label: 'リール',        unit: '本', icon: Film,      accent: IRIS_COLORS.hotPink,        rateYen: 5000, minutes: 30 },
+  { t: 'script',   label: '台本',          unit: '本', icon: FileText,  accent: IRIS_COLORS.gold,          rateYen: 3000, minutes: 20 },
+  { t: 'caption',  label: 'キャプション',  unit: '本', icon: Type,      accent: IRIS_COLORS.purpleLt,      rateYen: 800,  minutes: 8 },
+  { t: 'ideas',    label: '企画',          unit: '件', icon: Lightbulb, accent: IRIS_COLORS.goldChampagne, rateYen: 1500, minutes: 15 },
+  { t: 'mediakit', label: 'メディアキット', unit: '枚', icon: IdCard,    accent: IRIS_COLORS.hotPink,        rateYen: 5000, minutes: 45 },
+  { t: 'dm',       label: '営業DM',        unit: '通', icon: Send,      accent: IRIS_COLORS.goldDeep,       rateYen: 500,  minutes: 5 },
 ];
 
 type Props = {
@@ -49,6 +58,20 @@ type Props = {
 /** 種別ごとの件数を「外注相場での目安金額」に翻訳する（誇張しない・下限相場）。 */
 function estYenFrom(byType: Record<IrisActivityType, number>): number {
   return META.reduce((sum, m) => sum + (byType[m.t] || 0) * m.rateYen, 0);
+}
+
+/** 件数を「自分の手でやったら何分か」に翻訳する（誇張しない・下限の目安）。 */
+function estMinutesFrom(byType: Record<IrisActivityType, number>): number {
+  return META.reduce((sum, m) => sum + (byType[m.t] || 0) * m.minutes, 0);
+}
+
+/** 分を「◯時間◯分」に。1時間未満は「◯分」だけにする（見栄えのために盛らない）。 */
+export function formatMinutes(total: number): string {
+  const m = Math.max(0, Math.round(total));
+  if (m < 60) return `${m}分`;
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  return rest === 0 ? `${h}時間` : `${h}時間${rest}分`;
 }
 
 export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
@@ -73,6 +96,7 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
 
   const isMobile = variant === 'mobile';
   const lifeYen = estYenFrom(lifetime.byType);
+  const lifeMin = estMinutesFrom(lifetime.byType);
 
   // これまで一度も作っていない新規ユーザーはホームを汚さない (honest: 0 を誇示しない)。
   if (lifetime.total <= 0) return null;
@@ -81,7 +105,7 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
   // ここは解約が起きやすい瞬間 — 累計の価値をそっと思い出させ、次の一歩を促す
   // (最優先方針 #5 転換・継続)。数字は記録済みの実数のみ (honest)。
   if (summary.total <= 0) {
-    return <QuietWeekCard lifetime={lifetime} lifeYen={lifeYen} isMobile={isMobile} />;
+    return <QuietWeekCard lifetime={lifetime} lifeYen={lifeYen} lifeMin={lifeMin} isMobile={isMobile} />;
   }
 
   const rows = META.filter(m => summary.byType[m.t] > 0);
@@ -89,6 +113,7 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
   // 外注に出した場合の相場での目安（実データの件数 × 控えめな下限相場）。
   // 実際の支払額ではなく参考値であることを必ず明記する（honest-numbers）。
   const estYen = estYenFrom(summary.byType);
+  const estMin = estMinutesFrom(summary.byType);
 
   return (
     <motion.div
@@ -98,7 +123,10 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
       style={{
         position: 'relative',
         zIndex: 1,
-        background: `linear-gradient(135deg, ${IRIS_COLORS.purpleDeep}22 0%, ${IRIS_COLORS.inkBlack} 100%)`,
+        // 【2026-08-01】始点が半透明（purpleDeep 13%）だったため、明るい画面の上に置くと
+        // カード左上が下地の色に染まり、クリーム色の文字が読めなくなっていた。
+        // 見た目を変えずに直すため、暗い下地に重ねた時と同じ色（#230F33）を不透明で置く。
+        background: `linear-gradient(135deg, #230F33 0%, ${IRIS_COLORS.inkBlack} 100%)`,
         border: `1px solid ${IRIS_COLORS.gold}33`,
         borderRadius: 16,
         padding: isMobile ? '0.9rem 0.85rem' : '1.15rem 1.4rem',
@@ -183,6 +211,43 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
         })}
       </div>
 
+      {/* 時間の目安 — 「◯円ぶん」より「◯時間ぶん」の方が実感が強い（競合 Vrew の一番の武器）。
+          実測ではないので「目安」と必ず書き、根拠（手作業の下限）も下の注記で示す。 */}
+      {estMin > 0 && (
+        <div style={{
+          marginTop: isMobile ? 11 : 13,
+          padding: isMobile ? '0.7rem 0.8rem' : '0.8rem 1rem',
+          borderRadius: 12,
+          background: `linear-gradient(120deg, ${IRIS_COLORS.hotPink}1c 0%, ${IRIS_COLORS.hotPink}08 100%)`,
+          border: `1px solid ${IRIS_COLORS.hotPink}33`,
+          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+        }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+            background: `${IRIS_COLORS.hotPink}22`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Clock size={15} color={IRIS_COLORS.hotPink} />
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{
+              fontSize: '0.58rem', letterSpacing: '0.18em',
+              color: IRIS_COLORS.hotPink, fontWeight: 700, margin: '0 0 2px',
+            }}>
+              浮いた時間の目安
+            </p>
+            <p style={{
+              fontSize: isMobile ? '0.9rem' : '1rem', fontWeight: 700,
+              color: IRIS_COLORS.cream, margin: 0, lineHeight: 1.3,
+            }}>
+              約<span style={{ color: IRIS_COLORS.hotPink, fontSize: isMobile ? '1.2rem' : '1.35rem', fontWeight: 800 }}>
+                {formatMinutes(estMin)}
+              </span>ぶんの手作業を、Iris が今週代わりにやりました
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 外注に出した場合の相場での目安 — 件数を「お金の価値」に翻訳して、月額を軽く感じさせる。
           実際の支払額ではなく参考値であることを明記（honest-numbers）。 */}
       {estYen > 0 && (
@@ -229,6 +294,7 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
           lineHeight: 1.5, fontWeight: 600,
         }}>
           これまでの累計 <span style={{ color: IRIS_COLORS.cream, fontWeight: 800 }}>{lifetime.total.toLocaleString()}</span> 点
+          {lifeMin > 0 && <> ・ 手作業なら約 <span style={{ color: IRIS_COLORS.hotPink, fontWeight: 800 }}>{formatMinutes(lifeMin)}</span></>}
           {lifeYen > 0 && <> ・ 外注相場で約 <span style={{ color: IRIS_COLORS.gold, fontWeight: 800 }}>¥{lifeYen.toLocaleString()}</span> 相当</>}
         </p>
       )}
@@ -238,7 +304,9 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
         fontSize: '0.66rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.45,
       }}>
         直近7日で Iris が実際に作った成果物の数です。金額は台本・企画・デザインをフリーランスへ外注した場合の
-        一般的な相場での目安で、実際の支払額ではありません。手を動かすほど、ここが積み上がります。
+        一般的な相場での目安で、実際の支払額ではありません。時間は「同じものを自分の手で作ったらかかる時間」の
+        控えめな目安（リール1本30分・台本1本20分など）で、実際に計った時間ではありません。
+        手を動かすほど、ここが積み上がります。
       </p>
     </motion.div>
   );
@@ -249,10 +317,11 @@ export default function IrisValueReceipt({ variant = 'desktop' }: Props) {
 // 累計の価値を思い出させ、次の一歩をそっと促す。数字は記録済みの実数のみ。
 // ─────────────────────────────────────────────────────────
 function QuietWeekCard({
-  lifetime, lifeYen, isMobile,
+  lifetime, lifeYen, lifeMin, isMobile,
 }: {
   lifetime: import('./irisActivity').LifetimeSummary;
   lifeYen: number;
+  lifeMin: number;
   isMobile: boolean;
 }) {
   return (
@@ -263,7 +332,10 @@ function QuietWeekCard({
       style={{
         position: 'relative',
         zIndex: 1,
-        background: `linear-gradient(135deg, ${IRIS_COLORS.purpleDeep}22 0%, ${IRIS_COLORS.inkBlack} 100%)`,
+        // 【2026-08-01】始点が半透明（purpleDeep 13%）だったため、明るい画面の上に置くと
+        // カード左上が下地の色に染まり、クリーム色の文字が読めなくなっていた。
+        // 見た目を変えずに直すため、暗い下地に重ねた時と同じ色（#230F33）を不透明で置く。
+        background: `linear-gradient(135deg, #230F33 0%, ${IRIS_COLORS.inkBlack} 100%)`,
         border: `1px solid ${IRIS_COLORS.gold}33`,
         borderRadius: 16,
         padding: isMobile ? '0.9rem 0.85rem' : '1.15rem 1.4rem',
@@ -291,7 +363,8 @@ function QuietWeekCard({
           color: IRIS_COLORS.cream, margin: 0, lineHeight: 1.35,
         }}>
           Iris はこれまで <span style={{ color: IRIS_COLORS.gold, fontWeight: 800 }}>{lifetime.total.toLocaleString()}</span> 点
-          {lifeYen > 0 && <>（外注相場で約 <span style={{ color: IRIS_COLORS.gold, fontWeight: 800 }}>¥{lifeYen.toLocaleString()}</span> 相当）</>}
+          {lifeMin > 0 && <>（手作業なら約 <span style={{ color: IRIS_COLORS.hotPink, fontWeight: 800 }}>{formatMinutes(lifeMin)}</span>
+          {lifeYen > 0 && <> ・ 外注相場で約 ¥{lifeYen.toLocaleString()} 相当</>}）</>}
           を作ってきました。今週も、ひとつ作りにいきましょう。
         </p>
       </div>

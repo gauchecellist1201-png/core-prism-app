@@ -7,6 +7,7 @@
 // ============================================================
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
+import { logIrisActivity } from './irisActivity';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Image as ImageIcon, Film, Music, Play, Square, Download, Share2,
@@ -1193,6 +1194,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       finishExport();
       setExportUrl(URL.createObjectURL(blob));
       setProgress(1);
+      // 中身のある動画がユーザーの手に渡った時だけ数える。
+      // failExport も finishExport を通るので、そちらでは絶対に呼ばない（数字が嘘になる）。
+      logIrisActivity('reel');
     };
     rec.onerror = () => {
       failExport('もう一度「書き出す」ボタンを押してください。素材はそのまま残しています。');
@@ -1219,6 +1223,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           finishExport();
           setExportUrl(URL.createObjectURL(blob));
           setProgress(1);
+          logIrisActivity('reel'); // 途中まででも「動画は渡せた」＝1本として数える
           notifyInApp({
             kind: 'warn',
             title: '書き出しに時間がかかりました',

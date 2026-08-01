@@ -137,6 +137,84 @@ function scanBands(): Bands {
 // 2026-07-31: 同じ画面に浮いている他の常駐ボタン(Prism のマイクFAB)でも使えるよう
 // `hooks/useCoveredByModal` へ切り出した(判定・間引きの仕様はそのまま)。
 
+
+// ── 中身に被らない置き場所を実測で選ぶ（2026-08-01・GUILD から移植） ───────────
+// 帯（ヘッダー・下部ドック）を避けるだけでは足りない。帯の間の“本文”の上に
+// 丸ボタンが乗ると、数字や見出しが読めなくなる（実測：Iris の成果カードの
+// 「4本 キャプション」が丸ボタンで隠れていた 2026-08-01）。
+//
+// 測るのは要素の箱ではなく **文字が実際に描かれている行の箱**。要素の箱で数えると
+// カードの余白まで「埋まっている」ことになり、空きがゼロ＝画面の一番上へ逃げてしまう。
+const INK_LIMIT = 1200; // 重い画面でも固まらせない上限
+
+type Ink = { r: DOMRect; w: number };
+
+function inkRects(exclude: Element | null): Ink[] {
+  const out: Ink[] = [];
+  if (typeof document === "undefined") return out;
+  const vh = window.innerHeight;
+  const inView = (r: DOMRect) => r.bottom > 0 && r.top < vh;
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const range = document.createRange();
+  for (let n = walker.nextNode(); n && out.length < INK_LIMIT; n = walker.nextNode()) {
+    if (!(n.textContent ?? "").trim()) continue;
+    const parent = (n as Text).parentElement;
+    if (!parent || (exclude && exclude.contains(parent))) continue;
+    range.selectNodeContents(n);
+    for (const r of range.getClientRects()) {
+      if (r.width > 2 && r.height > 2 && inView(r)) out.push({ r, w: 3 });
+    }
+  }
+  for (const el of document.querySelectorAll("a,button,input,textarea,select")) {
+    if (out.length >= INK_LIMIT) break;
+    if (exclude && exclude.contains(el)) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width > 8 && r.height > 8 && inView(r)) out.push({ r, w: 10 });
+  }
+  return out;
+}
+
+/**
+ * minY..maxY の範囲で、いちばん覆わない置き場所を選ぶ。
+ * 「空きを探す」ではなく「いちばん覆わない場所を選ぶ」のは、文字が画面いっぱいの
+ * 画面でも破綻させないため（空きゼロで既定位置に戻すと、隠したくない物の上に戻る）。
+ */
+function leastCoveringPos(
+  minY: number,
+  maxY: number,
+  exclude: Element | null,
+  /** いま居る場所。ここが何も覆っていなければ動かさない（読んでいる最中に飛び回らせない）。 */
+  current?: { x: number; y: number } | null,
+): { x: number; y: number } | null {
+  const inks = inkRects(exclude);
+  if (!inks.length) return null; // まだ描画されていない＝判断材料が無い
+  const columns = [EDGE_MARGIN, window.innerWidth - DOCK_SIZE - EDGE_MARGIN];
+  const cost = (x: number, y: number) => {
+    let total = 0;
+    for (const { r, w } of inks) {
+      const ow = Math.min(r.right, x + DOCK_SIZE) - Math.max(r.left, x);
+      const oh = Math.min(r.bottom, y + DOCK_SIZE) - Math.max(r.top, y);
+      if (ow > 0 && oh > 0) total += ow * oh * w;
+    }
+    return total;
+  };
+  const currentCost = current ? cost(current.x, current.y) : Number.POSITIVE_INFINITY;
+  if (currentCost === 0) return current ?? null; // 何も隠していない＝動かす理由がない
+
+  let best: { x: number; y: number; c: number } | null = null;
+  // 下から上へ。同じ高さでは左→右（「左であること」より「下であること」を優先）。
+  for (let y = maxY; y >= minY; y -= 8) {
+    for (const x of columns) {
+      const c = cost(x, y);
+      if (c === 0) return { x, y };
+      if (!best || c < best.c) best = { x, y, c };
+    }
+  }
+  // 今より良くならないなら動かさない（意味のない移動を見せない）。
+  if (!best || best.c >= currentCost) return current ?? null;
+  return { x: best.x, y: best.y };
+}
+
 function clampPos(x: number, y: number, bottomClearance = 0) {
   // モバイルは上部=ヘッダー帯(タイトル/タブ行/サンプル帯)を進入禁止に。
   // ドラッグ保存位置が左上に残ってヘッダーの文字やタブに被る事故を構造的に防ぐ(オーナー指示 2026-07-17)。
@@ -198,6 +276,10 @@ export function CoreDock({
   // 今の位置から挟み直すと、帯に押し上げられた位置がそのまま新しい基準になり、
   // 帯が引っ込んでも下に戻れず、じりじり上へ登っていく(2026-07-29)。
   const savedRef = useRef<{ x: number; y: number } | null>(null);
+  // 自分で動かしていない人のための「実測で選んだ既定位置」。
+  // スクロールのたびに測り直すと丸ボタンが読んでいる最中に飛び回るので、
+  // ここは**最初と画面サイズが変わった時だけ**測る。
+  const autoBaseRef = useRef<{ x: number; y: number } | null>(null);
 
   // 置き場所を測り直す(帯の出入り・画面サイズ変化・スクロール停止のたび)。
   // 自分で動かしていれば「保存した素の位置」から、動かしていなければ既定位置から。
@@ -206,8 +288,27 @@ export function CoreDock({
   const reposition = () => {
     if (dragRef.current) return; // ドラッグ中は指の下から逃がさない
     const c = clearanceRef.current;
-    const base = userMovedRef.current ? savedRef.current : null;
+    const base = userMovedRef.current ? savedRef.current : autoBaseRef.current;
     setPos(base ? clampPos(base.x, base.y, c) : defaultPos(c));
+  };
+
+  // 本文に被らない既定位置を測り直す（モバイルのみ・自分で動かした人には効かせない）。
+  const remeasureAutoBase = () => {
+    if (typeof window === "undefined") return;
+    if (window.innerWidth >= 768) { autoBaseRef.current = null; return; } // PCは右上のFABレーン固定
+    if (userMovedRef.current) return;
+    const c = clearanceRef.current;
+    const bands = scanBands();
+    const minY = Math.max(120, bands.top + 8);
+    const maxY = Math.max(minY, window.innerHeight - DOCK_SIZE - EDGE_MARGIN - Math.max(c, bands.bottom + 8));
+    const now = btnRef.current
+      ? { x: btnRef.current.getBoundingClientRect().left, y: btnRef.current.getBoundingClientRect().top }
+      : null;
+    const found = leastCoveringPos(minY, maxY, btnRef.current, now);
+    if (found) {
+      autoBaseRef.current = found;
+      setPos(clampPos(found.x, found.y, c));
+    }
   };
 
   useEffect(() => {
@@ -217,15 +318,23 @@ export function CoreDock({
     userMovedRef.current = raw !== null;
     savedRef.current = raw;
     setPos(raw ? clampPos(raw.x, raw.y, bottomClearance) : defaultPos(bottomClearance));
+
+    // 画面の中身は少し遅れて確定する（画像・フォント・あとから届く一覧）。
+    // 落ち着くまで数回測り直し、6秒で打ち切る（読んでいる最中に動き続けない）。
+    const settleTimers: number[] = [];
+    if (!raw) {
+      for (const ms of [120, 700, 1800, 3500]) settleTimers.push(window.setTimeout(remeasureAutoBase, ms));
+    }
     // ★2026-07-27 根治: これまで resize で「今の位置を挟み直す」だけだったため、
     //   画面が一瞬でも縦に短い状態(横向き・分割表示・小さいウィンドウ・読み込み直後)で
     //   位置が上限まで押し上げられると、画面が広がっても二度と戻らずヘッダー帯に
     //   貼り付いたままになっていた(＝タブが押せない)。
     //   自分でドラッグしていない間は、そのつど既定位置を計算し直す。
-    const onResize = () => reposition();
+    const onResize = () => { remeasureAutoBase(); reposition(); };
     window.addEventListener("resize", onResize);
     window.addEventListener("orientationchange", onResize);
     return () => {
+      settleTimers.forEach(clearTimeout);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("orientationchange", onResize);
     };
@@ -242,7 +351,14 @@ export function CoreDock({
     const onScroll = () => {
       if (dragRef.current) return;
       if (t) clearTimeout(t);
-      t = setTimeout(() => reposition(), 150);
+      t = setTimeout(() => {
+        // 帯だけでなく本文も見る。スクロールで数字がボタンの下に入ってくるため
+        // （Iris の成果カードの「4本」が隠れていた・2026-08-01 実測）。
+        // 今の場所が何も覆っていなければ leastCoveringPos が現状維持を返すので、
+        // 読んでいる最中に飛び回ることはない。
+        remeasureAutoBase();
+        reposition();
+      }, 150);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
@@ -293,6 +409,7 @@ export function CoreDock({
     setDragging(false);
     if (d && d.moved) {
       userMovedRef.current = true;
+      autoBaseRef.current = null; // 本人が決めた場所が正。以後こちらで選び直さない
       setPos((p) => {
         if (p) {
           savedRef.current = { x: p.x, y: p.y };
