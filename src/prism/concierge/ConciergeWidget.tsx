@@ -32,8 +32,10 @@ const SILK = { type: 'spring' as const, stiffness: 260, damping: 30, mass: 0.9 }
 // パネル内で使う自前トークン (背景がどんな色でも成立する深色ガラス)
 const T = {
   fg: '#F4F1E8',
-  fgMuted: 'rgba(244,241,232,0.66)',
-  fgSubtle: 'rgba(244,241,232,0.45)',
+  // 埋め込み先が白いサイトだと glass(0.86〜0.93)越しに下地が透けて面が明るくなる。
+  // その最悪ケースでも AA を満たす薄さにする（序列 1.0 > 0.86 > 0.70 は保つ）。
+  fgMuted: 'rgba(244,241,232,0.86)',
+  fgSubtle: 'rgba(244,241,232,0.7)',
   glass: 'linear-gradient(168deg, rgba(24,27,43,0.86) 0%, rgba(10,11,20,0.93) 100%)',
   surface: 'rgba(255,255,255,0.07)',
   border: 'rgba(255,255,255,0.16)',

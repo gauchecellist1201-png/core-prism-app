@@ -35,8 +35,9 @@ const SANS = `-apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP'
 
 const T = {
   fg: '#F4F7FC',
-  fgMuted: 'rgba(244,247,252,0.72)',
-  fgSubtle: 'rgba(244,247,252,0.5)',
+  // ConciergePage の P と同じ理由で 0.86 / 0.70（明るいガラス面の上でも AA を満たす薄さ）
+  fgMuted: 'rgba(244,247,252,0.86)',
+  fgSubtle: 'rgba(244,247,252,0.7)',
   line: 'rgba(255,255,255,0.16)',
   glass: 'rgba(24,33,52,0.55)',
   glassLight: 'rgba(255,255,255,0.08)',

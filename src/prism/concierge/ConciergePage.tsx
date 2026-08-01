@@ -34,8 +34,10 @@ const P = {
   bg0: '#1B2333',
   bg1: '#28354C',
   fg: '#F4F7FC',
-  fgMuted: 'rgba(244,247,252,0.72)',
-  fgSubtle: 'rgba(244,247,252,0.5)',
+  // 下地は bg1→bg0 のグラデ＋glass(0.07)/glassStrong(0.12) が重なる＝いちばん明るいところで
+  // 成立させる。薄さの序列 1.0 > 0.86 > 0.70 は保つ（階層は潰さない）。
+  fgMuted: 'rgba(244,247,252,0.86)',
+  fgSubtle: 'rgba(244,247,252,0.7)',
   line: 'rgba(255,255,255,0.16)',
   lineSoft: 'rgba(255,255,255,0.1)',
   glass: 'rgba(255,255,255,0.07)',
@@ -1068,7 +1070,7 @@ function Showcase() {
                   <button
                     onClick={() => void disconnectLive()}
                     disabled={liveBusy}
-                    style={{ minHeight: 40, padding: '8px 16px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${P.line}`, background: 'transparent', color: P.silver, fontSize: 12, fontWeight: 700 }}
+                    style={{ minHeight: 44, padding: '10px 16px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${P.line}`, background: 'transparent', color: P.silver, fontSize: 12, fontWeight: 700 }}
                   >
                     連携を解除
                   </button>
