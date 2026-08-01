@@ -284,14 +284,86 @@ export function oauthReasonToMessage(reason?: string): { message: string; recove
 }
 
 /**
- * Cookie ベースで OAuth 連携済みなら IG プロフィールを取得して正規化
+ * 連携済みなのに実データが読めなかった理由。
+ * null を返して黙って消えると「連携済みなのに何も出ない」画面になるため、
+ * 必ず理由と次の一手を持ち回る (silent fail 禁止 / 2026-08-01)。
  */
-export async function fetchOauthProfile(): Promise<IgProfile | null> {
+export interface IgReadFailure {
+  reason: 'expired' | 'network' | 'server' | 'empty';
+  message: string;
+  recovery: string;
+  /** つなぎ直しが必要か = 「つなぎ直す」ボタンを出すか */
+  needsReconnect: boolean;
+}
+
+export type IgProfileResult =
+  | { ok: true; profile: IgProfile }
+  | { ok: false; failure: IgReadFailure };
+
+/** HTTP ステータス / 例外 を、ユーザーに見せる日本語の理由に変換 */
+export function toIgReadFailure(statusOrError: number | unknown): IgReadFailure {
+  if (typeof statusOrError === 'number') {
+    if (statusOrError === 401 || statusOrError === 403) {
+      return {
+        reason: 'expired',
+        message: 'Instagramとのつながりが切れています',
+        recovery: '「つなぎ直す」を押すと、1分で元どおりになります',
+        needsReconnect: true,
+      };
+    }
+    return {
+      reason: 'server',
+      message: 'Instagramのデータを読み込めませんでした',
+      recovery: '「もう一度読み込む」を押してください。続く場合は少し時間をおいてください',
+      needsReconnect: false,
+    };
+  }
+  return {
+    reason: 'network',
+    message: '通信が届かず、Instagramのデータを読み込めませんでした',
+    recovery: '電波の良い場所で「もう一度読み込む」を押してください',
+    needsReconnect: false,
+  };
+}
+
+/**
+ * Cookie ベースで OAuth 連携済みなら IG プロフィールを取得して正規化。
+ * 失敗理由つき。画面に理由と復旧ボタンを出すのはこちらを使う。
+ */
+export async function fetchOauthProfileResult(): Promise<IgProfileResult> {
   try {
     const resp = await fetchWithTimeout('/api/instagram/profile', { credentials: 'include' }, 15000);
-    if (!resp.ok) return null;
+    if (!resp.ok) return { ok: false, failure: toIgReadFailure(resp.status) };
     const data = await resp.json() as Partial<IgProfile> & { handle?: string; raw?: { mediaCount?: number; avatarUrl?: string } };
-    if (!data.handle) return null;
+    if (!data.handle) {
+      return {
+        ok: false,
+        failure: {
+          reason: 'empty',
+          message: 'Instagramのアカウント情報が空で返ってきました',
+          recovery: 'つなぎ直すと直ることが多いです。直らない場合は「手入力」でも始められます',
+          needsReconnect: true,
+        },
+      };
+    }
+    return { ok: true, profile: normalizeOauthProfile(data) };
+  } catch (e) {
+    return { ok: false, failure: toIgReadFailure(e) };
+  }
+}
+
+/**
+ * Cookie ベースで OAuth 連携済みなら IG プロフィールを取得して正規化
+ * (理由が要らない呼び出し元向けの薄い包み。新規は Result 版を使うこと)
+ */
+export async function fetchOauthProfile(): Promise<IgProfile | null> {
+  const r = await fetchOauthProfileResult();
+  return r.ok ? r.profile : null;
+}
+
+function normalizeOauthProfile(
+  data: Partial<IgProfile> & { handle?: string; raw?: { mediaCount?: number; avatarUrl?: string } },
+): IgProfile {
     const followers = data.followers || 0;
     const avgLikes = data.avgLikes || 0;
     const avgComments = data.avgComments || 0;
@@ -300,7 +372,7 @@ export async function fetchOauthProfile(): Promise<IgProfile | null> {
       ? Math.round(((avgLikes + avgComments) / followers) * 1000) / 10
       : undefined;
     return {
-      handle: data.handle,
+      handle: data.handle || '',
       followers,
       avgLikes,
       avgComments,
@@ -318,7 +390,6 @@ export async function fetchOauthProfile(): Promise<IgProfile | null> {
       engagementRate,
       avatarUrl: data.raw?.avatarUrl,
     };
-  } catch { return null; }
 }
 
 /** OAuth 連携済みの本人の投稿 (インサイト付き) */

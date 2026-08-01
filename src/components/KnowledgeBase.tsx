@@ -838,12 +838,16 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
 
                     {proposals.length === 0 && !proposalError && (
                       <div className="text-center py-8">
-                        <p className="text-neutral-500 text-sm mb-3">提案がまだありません</p>
+                        <p className="text-fg text-sm font-semibold mb-1">使いみちの提案はまだありません</p>
+                        <p className="text-fg-muted text-xs leading-relaxed mb-3" style={{ maxWidth: 340, margin: '0 auto 12px' }}>
+                          入れてある資料を AI が読んで、「この資料はこう使えます」という案を出します。
+                          気に入った案は、その場で成果物（営業文・投稿・企画書など）にできます。
+                        </p>
                         <button
                           onClick={loadProposals}
                           className="text-xs px-4 py-2 rounded-lg font-medium"
-                          style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
-                        >🔄 AI に考えてもらう</button>
+                          style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40`, minHeight: 40, whiteSpace: 'nowrap' }}
+                        >🔄 資料の使いみちを考えてもらう</button>
                       </div>
                     )}
 
@@ -1009,7 +1013,14 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                                     )}
                                   </>
                                 ) : (item.analysisStatus === 'done' || item.analysisStatus === 'error' || !item.analysisStatus) && (
-                                  <p className="pt-3 text-white/60 text-xs">分析結果はまだありません</p>
+                                  // 白決め打ちにすると明るいテーマで文字ごと消える。必ず var(--fg-*) 系で書く。
+                                  <div className="pt-3">
+                                    <p className="text-fg text-xs font-semibold mb-1">この資料はまだ読み込んでいません</p>
+                                    <p className="text-fg-muted text-[11px] leading-relaxed">
+                                      読み込むと、重要ポイント・戦略の案・やること・気をつける点の 4 つに分けて出します。
+                                      下の「この資料を読み込む」を押すと、いまから読みはじめます（1 分ほど）。
+                                    </p>
+                                  </div>
                                 )}
                                 <div className="flex items-center gap-2 pt-2 flex-wrap">
                                   {onReanalyze && (
@@ -1018,12 +1029,13 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                                       className="text-xs px-3 py-1.5 rounded-lg transition-all"
                                       style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
                                     >
-                                      🔄 再分析
+                                      {/* 「再分析」だと初回の人に意味が通らない。押したら何が起きるかを書く */}
+                                      🔄 {item.analysis ? 'もう一度読み込む' : 'この資料を読み込む'}
                                     </button>
                                   )}
                                   <button
                                     onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                                    className="text-xs px-3 py-1.5 rounded-lg text-white/60 hover:text-red-400 transition-all"
+                                    className="text-xs px-3 py-1.5 rounded-lg text-fg-muted hover:text-red-400 transition-all"
                                     style={{ border: '1px solid rgba(255,255,255,0.08)' }}
                                   >
                                     削除

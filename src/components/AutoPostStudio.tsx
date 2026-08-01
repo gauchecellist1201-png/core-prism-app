@@ -2,7 +2,7 @@
 // AutoPostStudio — 6 SNS 同時生成 + ハッシュタグ AI + 投稿予約
 // 旧 note 長文 / X 単独生成は残し、新しい「⚡ 6 SNS 同時」タブを追加
 // ============================================================
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Calendar, History, Zap, FileText, MessageCircle, Hash, Copy,
@@ -94,12 +94,55 @@ function saveSchedule(items: ScheduledPost[]) {
   try { localStorage.setItem(SCHEDULE_KEY, JSON.stringify(items)); } catch { /* */ }
 }
 
+/**
+ * 空っぽの棚。「まだありません」だけで終わる行き止まりを禁止するための共通表示。
+ * 必ず 3 つを言う: ①ここに何が並ぶのか ②どうすれば並ぶのか ③今すぐ押せるボタン
+ */
+function EmptyShelf({
+  icon: Icon, title, whatLands, howTo, ctaLabel, onCta, accent,
+}: {
+  icon: typeof Calendar;
+  title: string;
+  whatLands: string;
+  howTo: string;
+  ctaLabel?: string;
+  onCta?: () => void;
+  accent: string;
+}) {
+  return (
+    <div className="px-5 py-7 text-center flex flex-col items-center gap-2">
+      <div
+        className="w-11 h-11 rounded-xl flex items-center justify-center mb-0.5"
+        style={{ background: `${accent}1f`, color: accent, border: `1px solid ${accent}33` }}
+        aria-hidden
+      ><Icon size={20} strokeWidth={2} /></div>
+      <p className="text-fg text-sm font-semibold">{title}</p>
+      <p className="text-fg-muted text-xs leading-relaxed" style={{ maxWidth: 320 }}>{whatLands}</p>
+      <p className="text-fg-subtle text-[11px] leading-relaxed" style={{ maxWidth: 320 }}>{howTo}</p>
+      {ctaLabel && onCta && (
+        <button
+          onClick={onCta}
+          className="mt-1.5 text-xs px-4 rounded-full font-semibold inline-flex items-center gap-1.5"
+          style={{
+            minHeight: 40, height: 40,
+            background: accent, color: '#0a0a0f',
+            whiteSpace: 'nowrap', flexShrink: 0,
+          }}
+        ><Sparkles size={13} strokeWidth={2.4} />{ctaLabel}</button>
+      )}
+    </div>
+  );
+}
+
 export default function AutoPostStudio({ persona, settings, knowledge, onClose, onSaveAsKnowledge }: Props) {
   const [tab, setTab] = useState<Tab>('multi');
   // note記事と同時に作る X / Threads 告知文（オーナー要望: 記事・画像・SNS文がワンセットで完成）
   const [noteSns, setNoteSns] = useState<{ x?: string; threads?: string } | null>(null);
   const [noteSnsBusy, setNoteSnsBusy] = useState(false);
   const [topic, setTopic] = useState('');
+  // 空っぽの棚 (予約 0 件 / 履歴 0 件) から、実際にテーマを書く欄まで連れて行くための目印。
+  // 「まだありません」で終わらせず、必ず次の一手に着地させる。
+  const topicRef = useRef<HTMLInputElement | null>(null);
   const [tone, setTone] = useState<SocialTone>('storytelling');
   const [customInstr, setCustomInstr] = useState('');
   const [selectedKnowledge, setSelectedKnowledge] = useState<Set<string>>(new Set());
@@ -133,6 +176,17 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
   // ─── 履歴 ───
   const [history, setHistory] = useState<PostHistory[]>(() => loadHistory());
   const [showHistory, setShowHistory] = useState(false);
+
+  // 空っぽの棚から「テーマを書く欄」へ戻す。開いているパネルを閉じて、
+  // 入力欄までスクロールしてカーソルを置くだけ (新しい機能は足さない)。
+  const goWriteTopic = useCallback(() => {
+    setShowSchedule(false);
+    setShowHistory(false);
+    setTimeout(() => {
+      topicRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      topicRef.current?.focus();
+    }, 220);
+  }, []);
 
   // 旧来 (note 長文 / X 単独)
   const [targetWords, setTargetWords] = useState(1500);
@@ -684,7 +738,15 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                   <p className="text-fg-muted text-[11px]">※ ローカル保存。X以外は投稿APIが無いため手動投稿の目安です</p>
                 </div>
                 {schedule.length === 0 ? (
-                  <p className="text-fg-muted text-sm text-center py-6">まだ予約はありません</p>
+                  <EmptyShelf
+                    icon={Calendar}
+                    accent={persona.accentColor}
+                    title="予約はまだ 1 件もありません"
+                    whatLands="ここには「この日のこの時間に出す」と決めた投稿が、時計つきで並びます。時間が来たらお知らせします。"
+                    howTo="やり方は 3 歩です。① テーマを書く ② 投稿を作ってもらう ③ 出したい日時を選んで「予約する」を押す。"
+                    ctaLabel="テーマを書くところへ行く"
+                    onCta={goWriteTopic}
+                  />
                 ) : (
                   <div className="max-h-60 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
                     {schedule.map(s => {
@@ -734,7 +796,15 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                   <p className="text-fg font-semibold text-sm inline-flex items-center gap-1.5"><History size={14} strokeWidth={2.2} />過去の生成 ({history.length}件、最大 {MAX_HISTORY} 件)</p>
                 </div>
                 {history.length === 0 ? (
-                  <p className="text-fg-muted text-sm text-center py-6">まだ履歴はありません</p>
+                  <EmptyShelf
+                    icon={History}
+                    accent={persona.accentColor}
+                    title="過去に作った投稿はまだありません"
+                    whatLands={`ここには、AI に作ってもらった投稿が新しい順に最大 ${MAX_HISTORY} 件たまります。前に書いたものを押すと、その内容がそのまま入力欄に戻ります。`}
+                    howTo="一度作れば自動でたまります。作り直したいときは、ここから呼び出して直すのがいちばん速いです。"
+                    ctaLabel="さいしょの 1 本を作る"
+                    onCta={goWriteTopic}
+                  />
                 ) : (
                   <div className="max-h-72 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
                     {history.map(h => (
@@ -843,6 +913,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
             <div>
               <label className="block text-fg-muted text-xs tracking-wider uppercase mb-1.5">テーマ / 主題</label>
               <input
+                ref={topicRef}
                 type="text" value={topic}
                 onChange={e => setTopic(e.target.value)}
                 placeholder={tab === 'multi' ? '投稿テーマを入れてください (例: 新サービスのお知らせ、25-34 歳女性向け)' : tab === 'note' ? '投稿テーマを入れてください (例: 起業 1 年目で学んだ顧客インタビューの本質)' : '投稿テーマを入れてください (例: 今日の経営判断の裏側を 1 ツイートで)'}
@@ -1006,7 +1077,15 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                 >
                   <div className="rounded-lg p-2 max-h-40 overflow-y-auto" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                     {personaKnowledge.length === 0 ? (
-                      <p className="text-fg-muted text-xs text-center py-4">この人格にはまだナレッジがありません</p>
+                      <div className="px-3 py-3 text-center">
+                        <p className="text-fg text-xs font-semibold mb-1">「{persona.name}」の資料はまだ 0 件です</p>
+                        <p className="text-fg-muted text-[11px] leading-relaxed">
+                          ここに資料を入れておくと、その中身をふまえた投稿になります（会社案内・過去の投稿・商品説明など）。
+                        </p>
+                        <p className="text-fg-subtle text-[11px] leading-relaxed mt-1">
+                          入れ方: この画面を閉じて、ホームの「ナレッジ」から資料を追加してください。空のままでも投稿は作れます。
+                        </p>
+                      </div>
                     ) : (
                       personaKnowledge.slice(0, 30).map(k => {
                         const sel = selectedKnowledge.has(k.id);
