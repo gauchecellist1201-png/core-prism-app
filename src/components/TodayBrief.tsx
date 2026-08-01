@@ -11,6 +11,7 @@ import { LoaderDots } from './MicroLoader';
 import { logDeliverable } from '../lib/cxoDeliverables';
 import { CXO_META } from '../hooks/useAgentTaskQueue';
 import { resolveDeliverableCxo } from '../lib/actionExecutor';
+import { readableInk } from '../lib/ink';
 
 // 連携根拠チップ: ソースのラベル→Lucideアイコン。未知ラベルは汎用(Radio)にフォールバック。
 // 絵文字は使わない(オーナー指示)。ここに出るのは「実際にデータが返った」連携だけ(嘘の根拠を出さない)。
@@ -56,6 +57,11 @@ export default function TodayBrief({
   settings,
   genError = null,
 }: Props) {
+  // ペルソナの accentColor はカードの「面」の色。そのまま文字にも使うと、
+  // 明るいテーマでは根拠チップ「Stripe」「LINE配信」が 2.03:1 になり、
+  // 「AI が何をもとにこう言っているのか」が読めなくなる (2026-08-02 本番実測)。
+  const accentInk = readableInk(persona.accentColor);
+
   const [briefSending, setBriefSending] = useState(false);
   const [briefSent, setBriefSent] = useState(false);
   // 送信失敗を黙って隠さない（silent fail撲滅）。失敗時は理由＋再送導線を出す。
@@ -126,7 +132,7 @@ export default function TodayBrief({
         <div className="flex items-center gap-3 mb-4">
           <motion.div
             className="rounded-xl flex items-center justify-center flex-shrink-0 brief-icon-mobile"
-            style={{ background: `${persona.accentColor}30`, color: persona.accentColor, width: 44, height: 44, fontSize: 22 }}
+            style={{ background: `${persona.accentColor}30`, color: accentInk, width: 44, height: 44, fontSize: 22 }}
             animate={isSpeaking ? { scale: [1, 1.12, 1] } : {}}
             transition={{ duration: 0.7, repeat: Infinity }}
           >
@@ -172,7 +178,7 @@ export default function TodayBrief({
                         borderRadius: 999,
                         background: `${persona.accentColor}12`,
                         border: `1px solid ${persona.accentColor}33`,
-                        color: persona.accentColor,
+                        color: accentInk,
                       }}
                     >
                       <Icon size={11} strokeWidth={2.4} /> {s}
@@ -190,7 +196,7 @@ export default function TodayBrief({
                   borderRadius: 999,
                   background: `${persona.accentColor}14`,
                   border: `1px solid ${persona.accentColor}33`,
-                  color: persona.accentColor,
+                  color: accentInk,
                 }}
               >
                 <BookOpen size={12} strokeWidth={2.4} />
@@ -219,7 +225,7 @@ export default function TodayBrief({
                     style={{
                       background: 'transparent',
                       border: `1px solid ${persona.accentColor}66`,
-                      color: persona.accentColor,
+                      color: accentInk,
                     }}
                     title="まとめてタスクに追加 (実行はしない)"
                   >
@@ -362,9 +368,9 @@ export default function TodayBrief({
               <button
                 onClick={onStopSpeak}
                 className="text-sm px-4 py-2.5 rounded-lg transition-all inline-flex items-center gap-1.5"
-                style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.4)', color: '#f87171' }}
+                style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.4)', color: 'var(--brief-ink-danger)' }}
               >
-                <Square size={14} strokeWidth={2.4} fill="#f87171" /> 停止
+                <Square size={14} strokeWidth={2.4} fill="currentColor" /> 停止
               </button>
             ) : (
               <button
@@ -382,7 +388,7 @@ export default function TodayBrief({
               style={{
                 background: 'rgba(201,169,110,0.12)',
                 border: '1px solid rgba(201,169,110,0.35)',
-                color: '#c9a96e',
+                color: 'var(--brass-text)',
               }}
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}

@@ -9,7 +9,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ChatMessage } from '../types/identity';
-import { readableTextColor } from '../lib/contrast';
+import { onAccentInk } from '../lib/contrast';
 import { useCoveredByModal } from '../hooks/useCoveredByModal';
 
 interface Props {
@@ -153,7 +153,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
             padding: '0 18px',
             borderRadius: 999,
             border: `1px solid ${accent}55`,
-            background: 'rgba(16,16,28,0.94)',
+            background: 'var(--dock-surface)',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',
             boxShadow: '0 10px 34px rgba(0,0,0,0.45)',
@@ -203,10 +203,10 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
               marginBottom: 8,
               maxHeight: '52vh',
               overflowY: 'auto',
-              background: 'rgba(12,12,22,0.92)',
+              background: 'var(--dock-surface-2)',
               backdropFilter: 'blur(14px)',
               WebkitBackdropFilter: 'blur(14px)',
-              border: '1px solid rgba(255,255,255,0.10)',
+              border: '1px solid var(--dock-hairline)',
               borderRadius: 16,
               padding: '12px 12px 10px',
               boxShadow: '0 18px 50px rgba(0,0,0,0.5)',
@@ -219,7 +219,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
               <button
                 onClick={() => setExpanded(false)}
                 aria-label="閉じる"
-                style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'var(--fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--dock-hairline)', background: 'transparent', color: 'var(--fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 5l3.5 3.5L10 5" /></svg>
               </button>
@@ -236,7 +236,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
                       lineHeight: 1.65,
                       whiteSpace: 'pre-wrap',
                       background: m.role === 'user' ? accent : 'var(--surface-3)',
-                      color: m.role === 'user' ? readableTextColor(accent) : 'var(--fg)',
+                      color: m.role === 'user' ? onAccentInk(accent) : 'var(--fg)',
                       border: m.role === 'user' ? `1px solid ${accent}` : '1px solid var(--border)',
                     }}
                   >
@@ -273,12 +273,12 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
           alignItems: 'flex-end',
           gap: 8,
           padding: '8px 10px 8px 14px',
-          background: 'rgba(16,16,28,0.94)',
+          background: 'var(--dock-surface)',
           backdropFilter: 'blur(14px)',
           WebkitBackdropFilter: 'blur(14px)',
           border: `1px solid ${accent}55`,
           borderRadius: 16,
-          boxShadow: `0 10px 34px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.02)`,
+          boxShadow: `0 10px 34px rgba(0,0,0,0.22), 0 0 0 1px var(--dock-hairline)`,
         }}
       >
         <span style={{ width: 9, height: 9, borderRadius: 999, background: accent, boxShadow: `0 0 10px ${accent}`, flexShrink: 0, marginBottom: 12 }} />
@@ -286,7 +286,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
           onClick={() => setMinimized(true)}
           aria-label="チャットを待機（畳む）"
           title="チャットを待機（畳む）"
-          style={{ width: 44, height: 44, borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'var(--fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          style={{ width: 44, height: 44, borderRadius: 12, border: '1px solid var(--dock-hairline)', background: 'transparent', color: 'var(--fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 5.5l4 4 4-4" /></svg>
         </button>
@@ -320,7 +320,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
           <button
             onClick={() => setExpanded(true)}
             aria-label="会話を開く"
-            style={{ height: 44, minWidth: 44, borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'var(--fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+            style={{ height: 44, minWidth: 44, borderRadius: 12, border: '1px solid var(--dock-hairline)', background: 'transparent', color: 'var(--fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 9l3.5-3.5L11 9" /></svg>
           </button>
@@ -330,7 +330,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
             onClick={() => window.dispatchEvent(new Event('prism:open-voice-call'))}
             aria-label="通話（声で話す）"
             title={`${name} と声で話す`}
-            style={{ height: 44, minWidth: 44, borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'var(--fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+            style={{ height: 44, minWidth: 44, borderRadius: 12, border: '1px solid var(--dock-hairline)', background: 'transparent', color: 'var(--fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92z" /></svg>
           </button>
@@ -346,7 +346,7 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
             border: 'none',
             cursor: input.trim() && !isLoading ? 'pointer' : 'default',
             background: input.trim() && !isLoading ? accent : 'var(--surface-3)',
-            color: input.trim() && !isLoading ? readableTextColor(accent) : 'var(--fg-muted)',
+            color: input.trim() && !isLoading ? onAccentInk(accent) : 'var(--fg-muted)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

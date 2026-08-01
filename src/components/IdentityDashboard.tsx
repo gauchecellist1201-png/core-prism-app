@@ -115,6 +115,7 @@ import CreditBar from './CreditBar';
 import CreditModal from './CreditModal';
 import MobileGeminiDashboard from './MobileGeminiDashboard';
 import PersonaGlyph from './PersonaGlyph';
+import { readableInk } from '../lib/ink';
 
 interface Props {
   persona: Persona;
@@ -489,6 +490,10 @@ export default function IdentityDashboard({
   const [globalDrag, setGlobalDrag] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number; current: string; failed: number } | null>(null);
 
+  // accentColor はカードやピルの「面」の色。同じ値で文字も書いていたため、
+  // 明るいテーマでヘッダーの残数「(8)」や左メニューの現在地が 2.03:1 になっていた。
+  const accentInk = readableInk(persona.accentColor);
+
   const personaKnowledge = knowledgeItems.filter(i => i.personaId === persona.id);
 
   // 上で取得済の Stripe 実売上を「今月の収支」表示にも使う
@@ -717,8 +722,8 @@ export default function IdentityDashboard({
                     borderLeft: active ? `2px solid ${persona.accentColor}` : '2px solid transparent',
                   }}
                 >
-                  <pg.icon size={16} strokeWidth={2.2} className="flex-shrink-0" style={{ color: active ? persona.accentColor : 'var(--fg-muted)' }} />
-                  <span className="text-sm" style={{ color: active ? persona.accentColor : 'var(--fg)', fontWeight: active ? 700 : 400 }}>{pg.label}</span>
+                  <pg.icon size={16} strokeWidth={2.2} className="flex-shrink-0" style={{ color: active ? accentInk : 'var(--fg-muted)' }} />
+                  <span className="text-sm" style={{ color: active ? accentInk : 'var(--fg)', fontWeight: active ? 700 : 400 }}>{pg.label}</span>
                 </button>
               );
             })}
@@ -788,8 +793,8 @@ export default function IdentityDashboard({
               border: `1px solid ${persona.accentColor}44`,
             }}
           >
-            <Gift size={14} style={{ color: persona.accentColor }} strokeWidth={2.4} />
-            <span className="text-sm font-semibold" style={{ color: persona.accentColor }}>友達招待 +{REFERRAL_BONUS_DAYS}日</span>
+            <Gift size={14} style={{ color: accentInk }} strokeWidth={2.4} />
+            <span className="text-sm font-semibold" style={{ color: accentInk }}>友達招待 +{REFERRAL_BONUS_DAYS}日</span>
           </button>
           {/* 招待者の手応えバッジ — 実際に登録した友達がいる時だけ正直に表示 (0 は出さない) */}
           {referralStat.referredCount > 0 && (
@@ -799,9 +804,9 @@ export default function IdentityDashboard({
               aria-label={`友達 ${referralStat.referredCount} 人が登録済み・累計 ${referralStat.bonusDays} 日もらいました`}
               title={`友達 ${referralStat.referredCount} 人が登録 / 累計 +${referralStat.bonusDays} 日`}
             >
-              <Users size={13} style={{ color: persona.accentColor }} strokeWidth={2.2} />
+              <Users size={13} style={{ color: accentInk }} strokeWidth={2.2} />
               <span className="text-xs font-medium text-fg-muted">
-                <span style={{ color: persona.accentColor, fontWeight: 700 }}>{referralStat.referredCount}人</span> 登録 · 累計 <span style={{ color: persona.accentColor, fontWeight: 700 }}>+{referralStat.bonusDays}日</span>
+                <span style={{ color: accentInk, fontWeight: 700 }}>{referralStat.referredCount}人</span> 登録 · 累計 <span style={{ color: accentInk, fontWeight: 700 }}>+{referralStat.bonusDays}日</span>
               </span>
             </button>
           )}
@@ -811,9 +816,9 @@ export default function IdentityDashboard({
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
             aria-label="CORE Credits を開く"
           >
-            <Gem size={14} style={{ color: persona.accentColor }} strokeWidth={2.2} />
+            <Gem size={14} style={{ color: accentInk }} strokeWidth={2.2} />
             <span className="text-fg-muted group-hover:text-fg text-sm flex-1">CORE Credits</span>
-            <span className="text-xs font-bold" style={{ color: persona.accentColor }}>{creditBalance.toLocaleString()}</span>
+            <span className="text-xs font-bold" style={{ color: accentInk }}>{creditBalance.toLocaleString()}</span>
           </button>
           <button
             onClick={onOpenSettings}
@@ -952,7 +957,7 @@ export default function IdentityDashboard({
               </button>
               <motion.div
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: persona.accentColorLight, color: persona.accentColor }}
+                style={{ background: persona.accentColorLight, color: accentInk }}
                 layoutId="activeIcon"
               >
                 <PersonaGlyph icon={persona.icon} color={persona.accentColor} size={18} />
@@ -966,7 +971,7 @@ export default function IdentityDashboard({
                 style={{
                   background: `${persona.accentColor}18`,
                   border: `1px solid ${persona.accentColor}44`,
-                  color: persona.accentColor,
+                  color: accentInk,
                 }}
                 whileHover={{ background: `${persona.accentColor}28` }}
                 aria-label="今日のレポート"
@@ -991,7 +996,7 @@ export default function IdentityDashboard({
                 onClick={() => setShowMeeting(true)}
                 className="hidden md:flex text-xs px-3 py-1.5 rounded-lg items-center gap-1.5 transition-all"
                 style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--fg-muted)' }}
-                whileHover={{ borderColor: persona.accentColor + '40', color: persona.accentColor }}
+                whileHover={{ borderColor: persona.accentColor + '40', color: accentInk }}
               >
                 <Calendar size={14} strokeWidth={2.2} /> ミーティングリンク
               </motion.button>
@@ -1001,7 +1006,7 @@ export default function IdentityDashboard({
                 style={{
                   background: personaKnowledge.length > 0 ? persona.accentColorLight : 'var(--surface-3)',
                   border: `1px solid ${personaKnowledge.length > 0 ? persona.accentColor + '40' : 'var(--border)'}`,
-                  color: personaKnowledge.length > 0 ? persona.accentColor : 'var(--fg-muted)',
+                  color: personaKnowledge.length > 0 ? accentInk : 'var(--fg-muted)',
                 }}
                 aria-label="ナレッジ"
               >
@@ -1013,7 +1018,7 @@ export default function IdentityDashboard({
                 style={{
                   background: `${persona.accentColor}1a`,
                   border: `1px solid ${persona.accentColor}44`,
-                  color: persona.accentColor,
+                  color: accentInk,
                 }}
                 aria-label={`友達招待 +${REFERRAL_BONUS_DAYS}日`}
                 title={`友達招待 +${REFERRAL_BONUS_DAYS}日`}
@@ -1026,7 +1031,7 @@ export default function IdentityDashboard({
                 style={{
                   background: persona.accentColorLight,
                   border: `1px solid ${persona.accentColor}40`,
-                  color: persona.accentColor,
+                  color: accentInk,
                 }}
                 aria-label="AIチャット"
               >
@@ -1036,7 +1041,7 @@ export default function IdentityDashboard({
                 <motion.button
                   onClick={() => { if (coach.brief) setBriefOverride(coachBriefToProposal(coach.brief)); }}
                   className="hidden md:flex text-xs px-2 py-1 rounded-full items-center gap-1 transition-all"
-                  style={{ background: `${persona.accentColor}18`, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
+                  style={{ background: `${persona.accentColor}18`, color: accentInk, border: `1px solid ${persona.accentColor}40` }}
                   animate={{ opacity: [0.7, 1, 0.7] }}
                   transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
                   title="コーチブリーフを表示"
@@ -1046,7 +1051,7 @@ export default function IdentityDashboard({
               )}
               <div
                 className="hidden md:block text-xs px-2 py-1 rounded-full"
-                style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}30` }}
+                style={{ background: persona.accentColorLight, color: accentInk, border: `1px solid ${persona.accentColor}30` }}
               >
                 起動中
               </div>
@@ -1625,7 +1630,7 @@ export default function IdentityDashboard({
                     className={`text-sm px-3.5 py-2 rounded-lg transition-all font-medium ${activeTab === id ? '' : 'bg-surface-3 border-edge text-fg-muted'}`}
                     style={activeTab === id ? {
                       background: persona.accentColorLight,
-                      color: persona.accentColor,
+                      color: accentInk,
                       border: `1px solid ${persona.accentColor}50`,
                       display: 'inline-flex', alignItems: 'center', gap: 5,
                     } : { border: '1px solid var(--border)', display: 'inline-flex', alignItems: 'center', gap: 5 }}
@@ -1650,7 +1655,7 @@ export default function IdentityDashboard({
                         <button
                           onClick={() => setShowKnowledge(true)}
                           className="text-sm px-4 py-2 rounded-lg transition-all"
-                          style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
+                          style={{ background: persona.accentColorLight, color: accentInk, border: `1px solid ${persona.accentColor}40` }}
                         >
                           ＋ 最初の資料を追加
                         </button>
@@ -1681,14 +1686,14 @@ export default function IdentityDashboard({
                               </p>
                               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                 {item.tags.slice(0, 3).map(tag => (
-                                  <span key={tag} className="text-xs px-1.5 py-0.5 rounded" style={{ background: persona.accentColorLight, color: persona.accentColor }}>{tag}</span>
+                                  <span key={tag} className="text-xs px-1.5 py-0.5 rounded" style={{ background: persona.accentColorLight, color: accentInk }}>{tag}</span>
                                 ))}
                                 {(item.analysisStatus === 'pending' ||
                                   item.analysisStatus === 'parsing' ||
                                   item.analysisStatus === 'tagging' ||
                                   item.analysisStatus === 'summarizing' ||
                                   item.analysisStatus === 'extracting') && (
-                                  <span className="text-xs" style={{ color: persona.accentColor, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                  <span className="text-xs" style={{ color: accentInk, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                                     <Brain size={12} strokeWidth={2.2} /> {item.analysisStatus === 'parsing' ? 'ファイル解析中'
                                       : item.analysisStatus === 'tagging' ? 'タグ生成中'
                                       : item.analysisStatus === 'summarizing' ? 'AI 要約中'
@@ -1726,7 +1731,7 @@ export default function IdentityDashboard({
                         <button
                           onClick={() => setShowTaskHub(true)}
                           className="text-sm px-4 py-2 rounded-lg transition-all"
-                          style={{ background: persona.accentColorLight, color: persona.accentColor, border: `1px solid ${persona.accentColor}40` }}
+                          style={{ background: persona.accentColorLight, color: accentInk, border: `1px solid ${persona.accentColor}40` }}
                         >
                           ＋ 最初のやる事を足す
                         </button>
@@ -1765,7 +1770,7 @@ export default function IdentityDashboard({
                                 borderColor: task.done ? persona.accentColor : 'var(--border)',
                                 background: task.done ? persona.accentColorLight : 'transparent',
                               }}>
-                              {task.done && <span style={{ color: persona.accentColor, display: 'inline-flex', alignItems: 'center' }}><CheckCircle2 size={12} strokeWidth={2.2} /></span>}
+                              {task.done && <span style={{ color: accentInk, display: 'inline-flex', alignItems: 'center' }}><CheckCircle2 size={12} strokeWidth={2.2} /></span>}
                             </div>
                           </motion.button>
                         ))}

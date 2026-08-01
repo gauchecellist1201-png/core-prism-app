@@ -22,6 +22,7 @@ import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { useCRM } from '../hooks/useCRM';
 import { realStatsForPersona, CATEGORY_LABEL, type DeliverableCategory } from '../lib/cxoDeliverables';
 import { copyText } from '../lib/clipboard';
+import { readableInk } from '../lib/ink';
 import type { Persona } from '../types/identity';
 
 interface Props {
@@ -97,6 +98,9 @@ interface CardProps {
 function MetricCard({ accent, label, value, valueFormatter, subtitle, footnote, emptyCta, delay = 0 }: CardProps) {
   const isEmpty = value === null || !Number.isFinite(value as number) || (value as number) <= 0;
   const clickable = !!(emptyCta && isEmpty);
+  // accent は「面」の色。金額そのものをこの色で書くと、明るいテーマでは
+  // 緑 #34D399 が 1.75:1 になり、一番大事な今月の売上が読めなくなる。
+  const ink = readableInk(accent);
 
   return (
     <motion.div
@@ -110,8 +114,8 @@ function MetricCard({ accent, label, value, valueFormatter, subtitle, footnote, 
         minWidth: 0,
         padding: '1.15rem 1rem 1.05rem 1.2rem',
         borderRadius: 16,
-        background: clickable ? `${accent}08` : 'rgba(255,255,255,0.03)',
-        border: `1px solid ${clickable ? `${accent}30` : 'rgba(255,255,255,0.07)'}`,
+        background: clickable ? `${accent}08` : 'var(--brief-row-bg)',
+        border: `1px solid ${clickable ? `${accent}30` : 'var(--brief-row-border)'}`,
         overflow: 'hidden',
         cursor: clickable ? 'pointer' : 'default',
         transition: 'background 0.2s ease, border-color 0.2s ease',
@@ -156,7 +160,7 @@ function MetricCard({ accent, label, value, valueFormatter, subtitle, footnote, 
           fontSize: 'clamp(1.8rem, 5.8vw, 2.4rem)',
           fontWeight: 700,
           lineHeight: 1.1,
-          color: isEmpty ? 'var(--fg-muted)' : accent,
+          color: isEmpty ? 'var(--fg-muted)' : ink,
           letterSpacing: '-0.02em',
           textShadow: isEmpty ? 'none' : `0 0 24px ${accent}33`,
         }}
@@ -181,11 +185,11 @@ function MetricCard({ accent, label, value, valueFormatter, subtitle, footnote, 
             fontFamily: '"SF Mono", "JetBrains Mono", "Menlo", monospace',
             fontSize: 10.5,
             letterSpacing: '0.02em',
-            color: 'rgba(255,255,255,0.55)',
+            color: 'var(--fg-muted)',
           }}
         >
           <span style={{ fontFamily: 'inherit', opacity: 0.7 }}>{footnote.label}</span>
-          <span style={{ color: `${accent}cc`, fontWeight: 600 }}>{footnote.value}</span>
+          <span style={{ color: ink, fontWeight: 600 }}>{footnote.value}</span>
         </motion.div>
       )}
 
@@ -203,7 +207,7 @@ function MetricCard({ accent, label, value, valueFormatter, subtitle, footnote, 
           marginTop: 10,
           fontSize: 12,
           fontWeight: 600,
-          color: accent,
+          color: ink,
           display: 'inline-flex',
           alignItems: 'center',
           gap: 4,
@@ -340,7 +344,7 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
           fontSize: 10,
           letterSpacing: '0.3em',
           fontWeight: 800,
-          color: '#34D399',
+          color: 'var(--brief-ink-done)',
           textTransform: 'uppercase',
           marginBottom: 4,
           display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -445,8 +449,8 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
             marginTop: '0.8rem',
             padding: '0.7rem 0.9rem',
             borderRadius: 14,
-            background: 'rgba(255,255,255,0.035)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'var(--brief-row-bg)',
+            border: '1px solid var(--brief-row-border)',
             display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
           }}
         >
@@ -454,12 +458,12 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
             display: 'inline-flex', alignItems: 'center', gap: 6,
             fontSize: 12, color: 'var(--fg-muted)', fontWeight: 600,
           }}>
-            <Users size={13} strokeWidth={2.2} style={{ color: '#8E5CFF' }} />
+            <Users size={13} strokeWidth={2.2} style={{ color: 'var(--brief-ink-violet)' }} />
             今週、役員があなたのために
           </span>
           <span style={{
             fontFamily: '"SF Mono", "JetBrains Mono", "Menlo", monospace',
-            fontSize: '1.15rem', fontWeight: 700, color: '#8E5CFF', letterSpacing: '-0.01em',
+            fontSize: '1.15rem', fontWeight: 700, color: 'var(--brief-ink-violet)', letterSpacing: '-0.01em',
           }}>
             <CountUp value={execWeek.weekCount} formatter={(n) => `${Math.round(n)} 件`} durationMs={1100} /> 仕上げました
           </span>
@@ -554,13 +558,13 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
   );
   const state: { tone: 'green' | 'yellow' | 'red' | 'gray'; icon: ReactNode; line1: string; line2: string } = (() => {
     if (stripe.loading) {
-      return { tone: 'yellow', icon: dot('#FBBF24'), line1: 'Stripe から取得中…', line2: '数秒お待ちください' };
+      return { tone: 'yellow', icon: dot('var(--brief-ink-amber)'), line1: 'Stripe から取得中…', line2: '数秒お待ちください' };
     }
     if (stripe.error) {
-      return { tone: 'red', icon: dot('#EF4444'), line1: 'Stripe エラー', line2: stripe.error };
+      return { tone: 'red', icon: dot('var(--brief-ink-danger)'), line1: 'Stripe エラー', line2: stripe.error };
     }
     if (!stripe.connected) {
-      return { tone: 'gray', icon: dot('rgba(255,255,255,0.4)'), line1: 'Stripe 未連携', line2: '右上の連携センターから rk_live_ を貼ると数字が出ます' };
+      return { tone: 'gray', icon: dot('var(--fg-muted)'), line1: 'Stripe 未連携', line2: '右上の連携センターから rk_live_ を貼ると数字が出ます' };
     }
     if (stripe.source === 'manual') {
       return { tone: 'yellow', icon: <ClipboardList size={13} strokeWidth={2.2} />, line1: '手動入力データ (Stripe 未連携)', line2: 'rk_live_ を貼ると自動取得に切り替わります' };
@@ -573,7 +577,7 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
         if (d.chargesOk && (d.chargesCount || 0) === 0) {
           return {
             tone: 'yellow',
-            icon: dot('#FBBF24'),
+            icon: dot('var(--brief-ink-amber)'),
             line1: `Stripe 連携中 (${stripe.keyMasked}) — Charges 12 ヶ月で 0 件`,
             line2: '本当に取引が無いか、別の Stripe アカウントの可能性。ダッシュボード URL (acct_xxx) と一致するキーを使ってください',
           };
@@ -581,7 +585,7 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
         if (!d.chargesOk) {
           return {
             tone: 'red',
-            icon: dot('#EF4444'),
+            icon: dot('var(--brief-ink-danger)'),
             line1: `Stripe — Charges 取得失敗`,
             line2: `Stripe で「Charges → 読み取り」を有効にして作り直してください。詳細: ${(d.errors || []).join(' / ')}`,
           };
@@ -589,7 +593,7 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
       }
       return {
         tone: 'yellow',
-        icon: dot('#FBBF24'),
+        icon: dot('var(--brief-ink-amber)'),
         line1: `Stripe 連携中 (${stripe.keyMasked}) — 取引 0 件`,
         line2: '今月の取引がまだ無いか、キーの権限不足の可能性。Stripe で Charges を「読み取り」に',
       };
@@ -602,11 +606,14 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
     };
   })();
 
+  // 面(bg/border)と文字(fg)は役割が違うので色を分ける。
+  // ここを同じ色で兼用していたため、明るいテーマでは
+  // 「Stripe エラー」が 2.52:1、失敗理由の本文が 1.06:1 (＝完全に見えない) だった。
   const colors = {
-    green:  { bg: 'rgba(16,185,129,0.10)', border: 'rgba(16,185,129,0.35)', fg: '#34D399' },
-    yellow: { bg: 'rgba(251,191,36,0.10)',  border: 'rgba(251,191,36,0.35)',  fg: '#FBBF24' },
-    red:    { bg: 'rgba(248,113,113,0.10)', border: 'rgba(248,113,113,0.40)', fg: '#F87171' },
-    gray:   { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.10)', fg: 'rgba(255,255,255,0.55)' },
+    green:  { bg: 'rgba(16,185,129,0.10)', border: 'rgba(16,185,129,0.35)', fg: 'var(--brief-ink-done)' },
+    yellow: { bg: 'rgba(251,191,36,0.10)',  border: 'rgba(251,191,36,0.35)',  fg: 'var(--brief-ink-amber)' },
+    red:    { bg: 'rgba(248,113,113,0.10)', border: 'rgba(248,113,113,0.40)', fg: 'var(--brief-ink-danger)' },
+    gray:   { bg: 'var(--brief-row-bg)',    border: 'var(--brief-row-border)', fg: 'var(--fg-muted)' },
   }[state.tone];
 
   return (
@@ -623,7 +630,9 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
         <div style={{ fontSize: 11.5, fontWeight: 800, color: colors.fg, lineHeight: 1.4, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
           {state.icon}{state.line1}
         </div>
-        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.55, marginTop: 1 }}>
+        {/* ここが「何が起きたか」と「次にどうすればいいか」を書いてある唯一の行。
+            白の決め打ちだと明るいテーマで 1.06:1 ＝ 書いていないのと同じになる */}
+        <div style={{ fontSize: 10.5, color: 'var(--fg-muted)', lineHeight: 1.55, marginTop: 1 }}>
           {state.line2}
         </div>
       </div>
@@ -672,8 +681,8 @@ function StripeDiagnosticChip({ stripe, onReconnect }: {
       {detailOpen && (
         <div style={{
           width: '100%', marginTop: 8,
-          background: 'rgba(0,0,0,0.55)',
-          border: '1px solid rgba(255,255,255,0.12)',
+          background: 'rgba(0,0,0,0.86)',
+          border: '1px solid rgba(255,255,255,0.18)',
           borderRadius: 8, padding: '8px 10px',
         }}>
           <div style={{

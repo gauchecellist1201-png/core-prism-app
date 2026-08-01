@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Plus } from 'lucide-react';
 import { getCredits, PLANS, type CreditView } from '../lib/credits';
+import { readableInk } from '../lib/ink';
 
 interface Props {
   onTopUp?: () => void;
@@ -39,7 +40,13 @@ export default function CreditBar({ onTopUp, onUpgrade }: Props) {
     : view.warning === 'soft' ? '#FBBF24'
     : '#34D399';
 
-  const trackColor = 'rgba(255,255,255,0.06)';
+  // barColor は「バーの面」の色。同じ値を残数の文字にも使っていたため、
+  // 明るいテーマでは「あと 998」が 1.75:1 ＝ 読めなかった (2026-08-02 本番実測)。
+  const inkColor = readableInk(barColor);
+
+  // 残りの目盛りの下地。白の決め打ちは明るいテーマで消え、
+  // 「どれだけ使ったか」が全く分からなくなる
+  const trackColor = 'var(--brief-row-bg)';
 
   return (
     <div style={{
@@ -70,10 +77,10 @@ export default function CreditBar({ onTopUp, onUpgrade }: Props) {
             <strong style={{ color: 'var(--fg)', fontSize: 13 }}>{view.used.toLocaleString()}</strong>
             <span style={{ opacity: 0.5 }}> / {total.toLocaleString()}</span>
             {view.addon > 0 && (
-              <span style={{ color: '#34D399', marginLeft: 6, fontSize: 10 }}>(+{view.addon} 追加)</span>
+              <span style={{ color: 'var(--brief-ink-done)', marginLeft: 6, fontSize: 10 }}>(+{view.addon} 追加)</span>
             )}
           </span>
-          <span style={{ color: barColor, fontWeight: 700 }}>
+          <span style={{ color: inkColor, fontWeight: 700 }}>
             {view.warning === 'over' ? '⚠ 上限超過' : `あと ${view.available.toLocaleString()}`}
           </span>
         </div>

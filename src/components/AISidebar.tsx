@@ -8,7 +8,7 @@ import ContextualUpgradeCard from './ContextualUpgradeCard';
 import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
-import { readableTextColor } from '../lib/contrast';
+import { onAccentInk } from '../lib/contrast';
 
 // ブランド ライン グリフ — OS カラー絵文字は使わない(恒久ルール)。currentColor 継承で文脈色に馴染む
 const glyphBase = (size: number) => ({
@@ -221,7 +221,7 @@ export default function AISidebar({
                   : 'max-w-[88%] px-3 py-2 rounded-xl text-sm leading-relaxed bg-surface-3 border-edge border text-fg'}
                 style={
                   msg.role === 'user'
-                    ? { background: persona.accentColor, color: readableTextColor(persona.accentColor), border: `1px solid ${persona.accentColor}` }
+                    ? { background: persona.accentColor, color: onAccentInk(persona.accentColor), border: `1px solid ${persona.accentColor}` }
                     : undefined
                 }
               >

@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { ConciergeConfig } from './conciergeConfig';
 import { useConcierge } from './useConcierge';
 import ConciergeAvatar, { type AvatarProvider } from './ConciergeAvatar';
-import { readableTextColor } from '../../lib/contrast';
+import { onAccentInk } from '../../lib/contrast';
 
 interface Props {
   config: ConciergeConfig;
@@ -85,7 +85,7 @@ function IconCheck({ size = 14 }: { size?: number }) {
 export default function ConciergeWidget({ config, variant = 'inline', avatarProvider = 'portrait', onOpenChange, onPeekChange }: Props) {
   const c = useConcierge(config);
   const accent = config.accentColor;
-  const accentFg = readableTextColor(accent);
+  const accentFg = onAccentInk(accent);
   const [open, setOpen] = useState(variant === 'inline');
   const [input, setInput] = useState('');
   const [lead, setLead] = useState({ name: '', email: '', note: '' });

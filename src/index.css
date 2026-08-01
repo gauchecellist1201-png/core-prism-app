@@ -138,6 +138,36 @@
     /* 警告の赤も同じ理由でテーマ別に持つ (#F87171 は明るい面で 2.9:1) */
     --brief-ink-danger: #B42318;
     --brief-ink-done: #087443;
+    /* 「取得中」の黄と「AIが動いた」の紫。#FBBF24 は明るい面で 1.9:1、
+       #8E5CFF は 4.0:1 で、どちらも小さい文字だと読めない */
+    --brief-ink-amber: #8A5A00;
+    --brief-ink-violet: #5B21B6;
+  }
+
+  /* ------------------------------------------------------------
+     どんなアクセント色でも「読める文字色」に落とすための土台。
+     ★2026-08-02 実測の事故: ペルソナごとに変わる accentColor (例 #c9a96e) を
+       チップの面にも文字にも同じ値で使っていたため、明るいテーマでは
+       ブリーフの根拠チップ「Stripe」「LINE配信」が 2.03:1、
+       クレジット残の「あと 998」が 1.75:1 ＝ 事実上見えなかった。
+       色が実行時に決まるので CSS 変数では固定できない。そこで
+       「その色を、テーマの反対方向へ一定量だけ寄せる」式を共有する
+       (src/lib/ink.ts の readableInk)。面(bg/border)は従来の値のままでよい。
+     ------------------------------------------------------------ */
+  :root {
+    --ink-toward: #000;
+    --ink-amount: 55%;
+  }
+
+  /* 画面下に出しっぱなしのチャットバー (BottomChatDock) の面。
+     ★2026-08-02 実測: 面だけ rgba(16,16,28,.94) の黒決め打ちなのに、
+       中の文字・アイコンは var(--fg-muted) を使っていたため、
+       明るいテーマでは「黒い板に暗い灰色の文字」になり、
+       送信・通話・畳むの3つのボタンがどこにあるか分からなかった。 */
+  :root {
+    --dock-surface: rgba(252, 251, 248, 0.94);
+    --dock-surface-2: rgba(255, 255, 255, 0.94);
+    --dock-hairline: rgba(0, 0, 0, 0.12);
   }
 
   [data-theme="dark"] {
@@ -151,6 +181,14 @@
     --brief-row-border: rgba(255, 255, 255, 0.10);
     --brief-ink-danger: #F87171;
     --brief-ink-done: #34D399;
+    --brief-ink-amber: #FBBF24;
+    --brief-ink-violet: #C4B5FD;
+    /* 暗い面の上では、逆に白へ寄せないと沈む */
+    --ink-toward: #fff;
+    --ink-amount: 45%;
+    --dock-surface: rgba(16, 16, 28, 0.94);
+    --dock-surface-2: rgba(12, 12, 22, 0.92);
+    --dock-hairline: rgba(255, 255, 255, 0.12);
   }
 
   * {
@@ -2234,6 +2272,14 @@ body[data-iris-dock="on"] {
   --brief-row-border: rgba(0, 0, 0, 0.10);
   --brief-ink-danger: #B42318;
   --brief-ink-done: #087443;
+  --brief-ink-amber: #8A5A00;
+  --brief-ink-violet: #5B21B6;
+  /* Iris は常に明色。html が dark でも文字は黒方向へ寄せる */
+  --ink-toward: #000;
+  --ink-amount: 55%;
+  --dock-surface: rgba(252, 251, 248, 0.94);
+  --dock-surface-2: rgba(255, 255, 255, 0.94);
+  --dock-hairline: rgba(0, 0, 0, 0.12);
 }
 
 .iris-main {
