@@ -80,7 +80,7 @@ export default function StatusPage() {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
     }}>
       <div style={{ maxWidth: 880, margin: '0 auto', padding: '32px 18px 80px' }}>
-        <a href="/corp" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 24 }}>
+        <a href="/corp" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 12 }}>
           <ArrowLeft size={14} /> CORE のトップへ
         </a>
 
@@ -103,7 +103,9 @@ export default function StatusPage() {
           }}>{pal.icon}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10, letterSpacing: '0.28em', color: pal.color, fontWeight: 800 }}>CORE 稼働状況</div>
-            <h1 style={{ fontSize: 'clamp(1.25rem, 4.4vw, 2rem)', margin: '4px 0 4px', fontWeight: 900, lineHeight: 1.3 }}>{pal.label}</h1>
+            <h1 style={{ fontSize: 'clamp(1.25rem, 4.4vw, 2rem)', margin: '4px 0 4px', fontWeight: 900, lineHeight: 1.3 }}>
+              {err && !loading ? 'いま 確認できていません' : pal.label}
+            </h1>
             <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>
               {loading
                 ? 'いま ひとつずつ ひらいて確かめています…'
