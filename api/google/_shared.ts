@@ -18,6 +18,13 @@ export const G_TOKEN = 'https://oauth2.googleapis.com/token';
 export const G_USERINFO = 'https://www.googleapis.com/oauth2/v3/userinfo';
 
 // src/lib/googleCalendar.ts の CAL_SCOPES と揃える（カレンダー＋本人確認）。
+//
+// ★2026-08-02 判断: ドライブ (drive.readonly) を **ここに足さない**。
+//   ドライブ閲覧は Google の「制限付きスコープ」で、CASA 審査を通すまで
+//   一般ユーザーはブロックされる（Gmail 読み取りと同じ扱い）。
+//   ここに混ぜると、いま普通に使えているカレンダー連携まで巻き添えで
+//   弾かれる恐れがある。ドライブは別の同意 (src/lib/driveIngest.ts の
+//   DRIVE_SCOPES) として、押した人だけに求める。
 export const G_SCOPES = [
   'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/calendar.events',

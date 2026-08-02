@@ -95,6 +95,12 @@ function buildSystemPrompt(
   historySummary?: string,
   /** プロダクト（人格を横断する箱）の文脈。未選択なら空文字。 */
   productBlock?: string,
+  /**
+   * この人格が持っている資料の **全一覧**（本文は渡さない）。
+   * ★2026-08-02 追加 — これが無いと、AI は検索で拾えた数件しか「存在を知らない」。
+   *   「〇〇の資料ありましたっけ」に「ありません」と答えてしまうのを止める。
+   */
+  knowledgeCatalog?: KnowledgeItem[],
 ): string {
   // チャンク本文 — 詳細な根拠
   const ragContext = knowledgeChunks.length > 0
@@ -109,6 +115,24 @@ function buildSystemPrompt(
         return `[K${i + 1}] ${it.title}${tags}${summary}`;
       }).join('\n')}`
     : '';
+
+  // 手元にある資料の全一覧（タイトルだけ）。中身は読んでいないので、そう明記する。
+  let catalogContext = '';
+  if (knowledgeCatalog && knowledgeCatalog.length > 0) {
+    const CATALOG_BUDGET = 4000;
+    const lines: string[] = [];
+    let used = 0;
+    let omitted = 0;
+    for (const it of [...knowledgeCatalog].sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
+      const line = `- ${it.title}${it.tags.length ? ` [${it.tags.slice(0, 2).join('/')}]` : ''} (${(it.createdAt || '').slice(0, 10)})`;
+      if (used + line.length > CATALOG_BUDGET) { omitted++; continue; }
+      lines.push(line);
+      used += line.length + 1;
+    }
+    catalogContext = `\n\n## 手元にある資料の一覧 (全${knowledgeCatalog.length}件${omitted > 0 ? `中 ${lines.length}件を掲載` : ''} — タイトルのみ。中身はまだ読んでいない):\n${lines.join('\n')}\n`
+      + `この一覧にある資料の**中身を語ってはいけない**。必要なら「〇〇という資料があります。中身を読みますか」と尋ねる。`
+      + `一覧に無いものは「見当たりません」と正直に答える。`;
+  }
 
   const historyBlock = historySummary
     ? `\n\n## 過去の会話の要約 (古い順):\n${historySummary}\n上記の文脈を踏まえて回答する。`
@@ -132,7 +156,7 @@ ${toneInstruction(aiTone)}
 - 大事な提案は **「理由 → やること → いつまでに」** の順で短く。
 - 体調・生活の話題は本文の最後に1文だけ。事業の話を中心にする。
 - 数字・期日・固有名詞を入れて具体的に。「がんばりましょう」だけは禁止。
-- 資料を参照した場合は「○○ (タイトル) によると…」のように出典をはっきり示す。${itemContext}${ragContext}${historyBlock}
+- 資料を参照した場合は「○○ (タイトル) によると…」のように出典をはっきり示す。${catalogContext}${itemContext}${ragContext}${historyBlock}
 
 ---
 今日の日付: ${new Date().toLocaleDateString('ja-JP')}`;
@@ -152,6 +176,8 @@ export function useClaude(settings: AppSettings, onUpdateStats?: (tokens: number
     knowledgeItems?: KnowledgeItem[],
     /** プロダクト横断の文脈（App.tsx が productContextBlock で作る） */
     productBlock?: string,
+    /** この人格の資料の全一覧（タイトルのみ）。「何を持っているか」を取りこぼさないため。 */
+    knowledgeCatalog?: KnowledgeItem[],
   ): Promise<ChatMessage | null> => {
     // API キーガードは不要 — /api/ai は env Gemini で fallback できる
     setIsLoading(true);
@@ -167,6 +193,7 @@ export function useClaude(settings: AppSettings, onUpdateStats?: (tokens: number
       knowledgeItems,
       historySummary,
       productBlock,
+      knowledgeCatalog,
     );
     const model = settings.preferredModel;
 

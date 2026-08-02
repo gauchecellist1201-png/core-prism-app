@@ -8,7 +8,9 @@ import { useCallback, useRef, useState } from 'react';
 import type { SVGProps } from 'react';
 import type { Persona, KnowledgeItem, AppSettings, PersonaId } from '../types/identity';
 import { checkFeature, type PlanId } from '../lib/billing';
-import { filterIngestible, synthesizeKnowledge, generateBrainInsights } from './knowledgeBrain';
+import {
+  filterIngestible, countSkips, synthesizeKnowledge, generateBrainInsights, buildConciergeBrief,
+} from './knowledgeBrain';
 
 const GRAD = 'linear-gradient(135deg, #A78BFA, #6366F1)';
 const INK = '#1e1b3a';
@@ -42,6 +44,21 @@ function SparkIcon({ size = 16, color = 'currentColor' }: { size?: number; color
     </svg>
   );
 }
+function CloudIcon({ size = 18, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg {...svgBase(size)} style={{ color, flex: 'none' }} aria-hidden>
+      <path d="M7 18h10a4 4 0 0 0 .4-7.98A6 6 0 0 0 6.1 9.2 3.5 3.5 0 0 0 7 18Z" />
+    </svg>
+  );
+}
+function CompassIcon({ size = 18, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg {...svgBase(size)} style={{ color, flex: 'none' }} aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m15.2 8.8-2 4.4-4.4 2 2-4.4z" />
+    </svg>
+  );
+}
 
 interface Props {
   persona: Persona;
@@ -67,11 +84,24 @@ export default function KnowledgeBrainView({ persona, plan, knowledgeItems, sett
 
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
+  const [readNote, setReadNote] = useState('');
   const [thinking, setThinking] = useState(false);
   const [stepModel, setStepModel] = useState('');
   const [insights, setInsights] = useState('');
   const [insightLoading, setInsightLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // コンシェルジュ（いま何をすべきか の一枚）
+  const [brief, setBrief] = useState('');
+  const [briefNote, setBriefNote] = useState('');
+  const [briefLoading, setBriefLoading] = useState(false);
+
+  // Google ドライブ まるごと取り込み
+  const [driveBusy, setDriveBusy] = useState(false);
+  const [driveProgress, setDriveProgress] = useState<{ phase: string; done: number; total: number; name: string } | null>(null);
+  const [driveResult, setDriveResult] = useState<string | null>(null);
+  const [driveFolderUrl, setDriveFolderUrl] = useState('');
+  const [showDriveFolder, setShowDriveFolder] = useState(false);
 
   // 取り込んだ資料の件数 (この人格 + 全体)
   const myItems = knowledgeItems.filter(i => i.personaId === persona.id);
@@ -82,8 +112,13 @@ export default function KnowledgeBrainView({ persona, plan, knowledgeItems, sett
   const onFilesPicked = useCallback(async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
     const files = filterIngestible(fileList);
+    // 入らなかったものを黙って捨てない。理由ごとに数えて、あとで画面に出す。
+    const skips = countSkips(fileList);
+    const skipNote = skips.total > 0
+      ? ` / 対象外 ${skips.total}件 (${Object.entries(skips.byReason).map(([r, n]) => `${r}${n}`).join('・')})`
+      : '';
     if (files.length === 0) {
-      setIngestResult('読み取れる資料 (md / txt / pdf / Word / Excel / CSV など) が見つかりませんでした。');
+      setIngestResult(`読み取れる資料が見つかりませんでした。${skipNote.replace(/^ \/ /, '')}`);
       return;
     }
     setIngesting(true);
@@ -94,7 +129,7 @@ export default function KnowledgeBrainView({ persona, plan, knowledgeItems, sett
       const parts = [`${res.added}件を取り込みました`];
       if (res.skipped) parts.push(`${res.skipped}件はスキップ (取り込み済み/空)`);
       if (res.failed) parts.push(`${res.failed}件は読み取り失敗`);
-      setIngestResult(parts.join(' / '));
+      setIngestResult(parts.join(' / ') + skipNote);
     } catch {
       setError('取り込み中にエラーが発生しました。もう一度お試しください。');
     } finally {
@@ -104,17 +139,92 @@ export default function KnowledgeBrainView({ persona, plan, knowledgeItems, sett
     }
   }, [addFilesBulk, persona.id]);
 
+  // ── Google ドライブを丸ごと取り込む ────────────────
+  // 種類を問わず (ドキュメント/スプレッドシート/スライド/PDF/Word/Excel/PowerPoint/テキスト)、
+  // 入れ子のフォルダも辿って全件。読めなかったものは理由つきで表示する。
+  const onIngestDrive = useCallback(async () => {
+    if (driveBusy) return;
+    setDriveBusy(true);
+    setDriveResult(null);
+    setError('');
+    try {
+      const { isDriveReady, connectDrive, ingestDriveAll, summarizeSkips, parseDriveFolderId } =
+        await import('../lib/driveIngest');
+
+      if (!(await isDriveReady())) await connectDrive();
+
+      const folderId = driveFolderUrl.trim() ? parseDriveFolderId(driveFolderUrl.trim()) : undefined;
+      if (driveFolderUrl.trim() && !folderId) {
+        setError('フォルダの URL を読み取れませんでした。ドライブでフォルダを開いたときの URL（…/folders/… を含むもの）を貼ってください。');
+        return;
+      }
+
+      const existingKeys = new Set(
+        knowledgeItems.filter(i => i.fileName).map(i => `${i.fileName}::${i.fileSize ?? 0}`),
+      );
+
+      const res = await ingestDriveAll({
+        folderId: folderId || undefined,
+        existingKeys,
+        sink: (files) => addFilesBulk(persona.id, files),
+        onProgress: (p) => setDriveProgress({
+          phase: p.phase === 'listing' ? '中身を数えています' : p.phase === 'done' ? '完了' : '読み込み中',
+          done: p.done, total: p.total, name: p.currentName,
+        }),
+      });
+
+      const parts = [`ドライブの ${res.found} 件を確認し、${res.added} 件を取り込みました`];
+      if (res.capped) parts.push('（件数が多いため上限まで）');
+      const skipLine = summarizeSkips(res.skipped);
+      setDriveResult(parts.join('') + (skipLine ? `\n${skipLine}` : ''));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Google ドライブの取り込みに失敗しました。もう一度お試しください。');
+    } finally {
+      setDriveBusy(false);
+      setDriveProgress(null);
+    }
+  }, [driveBusy, driveFolderUrl, knowledgeItems, addFilesBulk, persona.id]);
+
+  // ── コンシェルジュ：いま何をすべきか ────────────────
+  const onBrief = useCallback(async () => {
+    if (briefLoading || myItems.length === 0) return;
+    setBriefLoading(true);
+    setBrief('');
+    setBriefNote('');
+    setError('');
+    try {
+      const res = await buildConciergeBrief(myItems, settings, { focus: question.trim() || undefined });
+      setBrief(res.text);
+      setBriefNote(
+        `全 ${res.totalCount} 件のうち ${res.readCount} 件を本文まで読みました`
+        + (res.omittedCount > 0 ? ` / ${res.omittedCount} 件はタイトルも渡せていません` : ' / 残りはタイトルまで把握しています'),
+      );
+    } catch {
+      setError('AI が混雑しています。少し待って再度お試しください。右上の歯車から無料の Gemini キーを登録すると安定します。');
+    } finally {
+      setBriefLoading(false);
+    }
+  }, [briefLoading, myItems, settings, question]);
+
   // ── 統合して考える ────────────────────────────────
   const onAsk = useCallback(async () => {
     const q = question.trim();
     if (!q || thinking) return;
     setThinking(true);
     setAnswer('');
+    setReadNote('');
     setError('');
     setStepModel('');
     try {
       const res = await synthesizeKnowledge(myItems, q, settings, { onStep: (m) => setStepModel(m) });
       setAnswer(res.answer);
+      // 「何件のうち何件を本当に読んだか」を毎回出す（読んだふりをしない）
+      setReadNote(
+        `全 ${res.ctx.totalCount} 件のうち ${res.ctx.deepCount} 件を本文まで読み、`
+        + `${res.ctx.indexedCount} 件はタイトルを把握`
+        + (res.ctx.omittedCount > 0 ? ` / ${res.ctx.omittedCount} 件は渡せていません` : '')
+        + (res.ctx.deepTitles.length ? `\n読んだ資料: ${res.ctx.deepTitles.slice(0, 8).join('、')}${res.ctx.deepTitles.length > 8 ? ` ほか${res.ctx.deepTitles.length - 8}件` : ''}` : ''),
+      );
     } catch {
       setError('AI が混雑しています。少し待って再度お試しください。右上の歯車から無料の Gemini キーを登録すると安定します。');
     } finally {
@@ -207,11 +317,12 @@ export default function KnowledgeBrainView({ persona, plan, knowledgeItems, sett
       {/* 取り込みカード */}
       <div style={{ border: '1px solid #ece9fb', borderRadius: 16, padding: 16, marginBottom: 16, background: '#faf9ff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <div style={{ fontWeight: 800, fontSize: 14.5 }}>① フォルダを取り込む</div>
+          <div style={{ fontWeight: 800, fontSize: 14.5 }}>① 資料を取り込む</div>
           <span style={{ fontSize: 12, fontWeight: 800, color: '#6366F1' }}>資料 {myItems.length} 件</span>
         </div>
         <p style={{ fontSize: 12.5, color: SUB, margin: '0 0 12px', lineHeight: 1.65 }}>
-          デスクトップのフォルダを選ぶと、中の資料 (md / txt / PDF / Word / Excel / CSV / JSON) を自動で読み取りナレッジに追加します。中身は端末内に保存され、勝手に外部送信しません。
+          パソコンのフォルダを選ぶと、中の資料 (PDF / Word / Excel / PowerPoint / CSV / テキスト / Markdown など) を、
+          フォルダの中の中まで自動で読み取ります。中身は端末内に保存され、勝手に外部送信しません。
         </p>
         <input
           ref={fileInputRef}
@@ -241,12 +352,97 @@ export default function KnowledgeBrainView({ persona, plan, knowledgeItems, sett
             </div>
           </div>
         )}
-        {ingestResult && <div style={{ fontSize: 12.5, color: '#16a34a', marginTop: 10, fontWeight: 700 }}>✓ {ingestResult}</div>}
+        {ingestResult && <div style={{ fontSize: 12.5, color: '#166534', marginTop: 10, fontWeight: 700, lineHeight: 1.6 }}>✓ {ingestResult}</div>}
+
+        {/* Google ドライブ — 種類を問わず、入れ子のフォルダも辿って全件 */}
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #ece9fb' }}>
+          <p style={{ fontSize: 12.5, color: SUB, margin: '0 0 10px', lineHeight: 1.65 }}>
+            Google ドライブなら、<strong style={{ color: INK }}>ドキュメント・スプレッドシート・スライド・PDF・Word・Excel・PowerPoint</strong> を
+            種類を問わず、フォルダの中の中まで辿って読み込みます。
+          </p>
+          <button onClick={onIngestDrive} disabled={driveBusy || ingesting} style={{
+            width: '100%', minHeight: 50, borderRadius: 13, cursor: driveBusy || ingesting ? 'default' : 'pointer',
+            border: '1px solid #c7bff0', background: driveBusy ? '#f2f0fb' : '#fff',
+            color: driveBusy ? SUB : '#4338ca', fontWeight: 800, fontSize: 15,
+          }}>
+            {driveBusy ? '取り込み中…' : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <CloudIcon size={18} color="#4338ca" />Google ドライブをまるごと取り込む
+              </span>
+            )}
+          </button>
+          {driveProgress && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ height: 6, borderRadius: 6, background: '#e7e3fb', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${driveProgress.total ? Math.round((driveProgress.done / driveProgress.total) * 100) : 8}%`, background: GRAD, transition: 'width .2s' }} />
+              </div>
+              <div style={{ fontSize: 11.5, color: SUB, marginTop: 5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {driveProgress.phase}　{driveProgress.total ? `${driveProgress.done}/${driveProgress.total}` : ''}　{driveProgress.name}
+              </div>
+            </div>
+          )}
+          {!driveBusy && (
+            <button onClick={() => setShowDriveFolder(v => !v)} style={{
+              marginTop: 8, minHeight: 44, padding: '0 4px', background: 'none', border: 'none',
+              color: SUB, fontSize: 12, cursor: 'pointer', textAlign: 'left', width: '100%',
+            }}>
+              {showDriveFolder ? '範囲の指定をやめる（ドライブ全体を読む）' : 'フォルダを指定して読む'}
+            </button>
+          )}
+          {showDriveFolder && !driveBusy && (
+            <input
+              value={driveFolderUrl}
+              onChange={(e) => setDriveFolderUrl(e.target.value)}
+              placeholder="ドライブでフォルダを開いたときの URL を貼る"
+              style={{
+                width: '100%', boxSizing: 'border-box', marginTop: 6, minHeight: 44,
+                borderRadius: 11, border: '1px solid #ddd7f3', padding: '10px 12px',
+                fontSize: 16, color: INK, fontFamily: 'inherit',
+              }}
+            />
+          )}
+          {driveResult && (
+            <div style={{ fontSize: 12.5, color: '#166534', marginTop: 10, fontWeight: 700, whiteSpace: 'pre-line', lineHeight: 1.65 }}>
+              ✓ {driveResult}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* コンシェルジュ — 全部を踏まえて「次に何をすべきか」 */}
+      <div style={{ border: '1px solid #ddd6fe', borderRadius: 16, padding: 16, marginBottom: 16, background: 'linear-gradient(180deg,#f5f3ff,#fff)' }}>
+        <div style={{ fontWeight: 800, fontSize: 14.5, marginBottom: 4 }}>② いま何をすべきかを出す</div>
+        <p style={{ fontSize: 12.5, color: SUB, margin: '0 0 12px', lineHeight: 1.65 }}>
+          取り込んだ資料を全部踏まえて、<strong style={{ color: INK }}>止まっているもの・期限が近いもの・今日やる3つ</strong>を一枚にまとめます。
+        </p>
+        <button onClick={onBrief} disabled={briefLoading || myItems.length === 0} style={{
+          width: '100%', minHeight: 52, borderRadius: 13, border: 'none',
+          cursor: briefLoading || myItems.length === 0 ? 'default' : 'pointer',
+          background: briefLoading || myItems.length === 0 ? '#cfcae8' : GRAD,
+          color: '#fff', fontWeight: 900, fontSize: 16,
+        }}>
+          {briefLoading ? '全部に目を通しています…' : (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <CompassIcon size={18} color="#fff" />いまの全体像と、次にやること
+            </span>
+          )}
+        </button>
+        {myItems.length === 0 && (
+          <div style={{ fontSize: 12, color: SUB, marginTop: 8, lineHeight: 1.6 }}>
+            先に上の①で資料を取り込むと押せるようになります。
+          </div>
+        )}
+        {brief && (
+          <div style={{ marginTop: 14, border: '1px solid #ece9fb', borderRadius: 14, padding: 16, background: '#fff' }}>
+            <div style={{ fontSize: 14, lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{brief}</div>
+            {briefNote && <div style={{ fontSize: 11.5, color: SUB, marginTop: 12, lineHeight: 1.6 }}>{briefNote}</div>}
+          </div>
+        )}
       </div>
 
       {/* 統合して考える */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontWeight: 800, fontSize: 14.5, marginBottom: 8 }}>② 全部を統合して考える</div>
+        <div style={{ fontWeight: 800, fontSize: 14.5, marginBottom: 8 }}>③ 聞きたいことを聞く</div>
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
@@ -286,6 +482,9 @@ export default function KnowledgeBrainView({ persona, plan, knowledgeItems, sett
         <div style={{ border: '1px solid #ece9fb', borderRadius: 14, padding: 16, marginBottom: 14, background: '#fff' }}>
           <div style={{ fontSize: 11.5, fontWeight: 800, color: '#6366F1', marginBottom: 8 }}>統合した答え</div>
           <div style={{ fontSize: 14, lineHeight: 1.85, whiteSpace: 'pre-wrap' }}>{answer}</div>
+          {readNote && (
+            <div style={{ fontSize: 11.5, color: SUB, marginTop: 12, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{readNote}</div>
+          )}
         </div>
       )}
 

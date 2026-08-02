@@ -831,7 +831,9 @@ function AppRoutes() {
           })))
           .filter(c => c.score > 0)
           .sort((a, b) => b.score - a.score)
-          .slice(0, 4)
+          // 4件だと根拠が薄く「資料を入れたのに答えが浅い」になる。
+          // 1チャンク400文字なので10件でも4千字程度。根拠の厚みを優先する。
+          .slice(0, 10)
       : [];
 
     // 履歴: 新規送信は現在の chatMessages、再送は末尾の失敗ユーザー吹き出しを
@@ -856,6 +858,8 @@ function AppRoutes() {
       activePersona, message, baseHistory, relevantChunks, relevantItems,
       // いま扱っているプロダクトの説明（未選択なら空文字＝従来どおり）
       productContextBlock(activeProduct, personas),
+      // 検索で拾えなかった資料も「持っていること」は必ず伝える（見落としを防ぐ）
+      personaKnowledge,
     );
     if (reply) {
       setChatMessages(prev => [...prev, reply]);
