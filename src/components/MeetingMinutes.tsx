@@ -5,6 +5,10 @@ import type { MeetingMinutes } from '../lib/meetingAnalyzer';
 import { analyzeMeeting, minutesToMarkdown, minutesToSlack, minutesToNotion, extractAssignedActions } from '../lib/meetingAnalyzer';
 import { parseFile } from '../lib/fileParser';
 import { transcribeAudioFile, isAudioFile } from '../lib/audioTranscribe';
+import {
+  loadMeetingDraft, saveMeetingDraft, clearMeetingDraft,
+  draftCharCount, formatDraftTime, type MeetingDraft,
+} from '../lib/meetingDraft';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { StudioIntro } from './StudioIntro';
 import StudioBackButton from './StudioBackButton';
@@ -76,6 +80,10 @@ export default function MeetingMinutesModal({
   // 文字起こしの状態: live=順調 / audio-only=録音のみ続行中 / off=未対応
   const [recStatus, setRecStatus] = useState<'live' | 'audio-only' | 'off'>('live');
   const [recNote, setRecNote] = useState<string>('');
+  // 文字起こしが止まったまま戻れていない状態（黙って止まらせないための旗）
+  const [recStalled, setRecStalled] = useState(false);
+  // 前回の途中書き起こし（開き直したときに復帰させる）
+  const [recoveredDraft, setRecoveredDraft] = useState<MeetingDraft | null>(null);
 
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -91,6 +99,8 @@ export default function MeetingMinutesModal({
   const speakerGapRef = useRef(false);
   const currentSpeakerRef = useRef(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // 文字起こしの再起動が続けて失敗したら「止まった」と認めて画面に出す
+  const restartFailRef = useRef(0);
 
   const SR = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
 
@@ -132,6 +142,14 @@ export default function MeetingMinutesModal({
     if (stream) stream.getTracks().forEach(t => t.stop());
 
     setMicLevel(0);
+  }, []);
+
+  // 文字起こしが戻れなくなった時に、必ず画面に出す（黙って止まるのが一番こわい）
+  const markRecognitionStalled = useCallback(() => {
+    if (!recordingActiveRef.current) return;
+    setRecStalled(true);
+    setRecStatus('audio-only');
+    setRecNote('文字起こしが止まりました。録音（音声）は続いています。ここまでの文字は保存済みです。「文字起こしを再開」を押すと、続きから文字にします。');
   }, []);
 
   // ── 音声認識の起動（録音中は自動再起動して途切れさせない） ──
@@ -200,7 +218,13 @@ export default function MeetingMinutesModal({
           // すぐに再起動できない場合は少し待ってリトライ
           window.setTimeout(() => {
             if (recordingActiveRef.current && recognitionRef.current === r) {
-              try { r.start(); } catch { /* noop */ }
+              try {
+                r.start();
+                restartFailRef.current = 0;
+              } catch {
+                // 2度続けて戻れなかった＝止まっている。黙って止まらせない。
+                markRecognitionStalled();
+              }
             }
           }, 400);
         }
@@ -211,18 +235,37 @@ export default function MeetingMinutesModal({
     try {
       r.start();
       setRecStatus('live');
+      setRecStalled(false);
+      restartFailRef.current = 0;
     } catch {
       setRecStatus('audio-only');
       setRecNote('文字起こしの起動に失敗しました。録音は続行します。');
     }
-  }, [SR]);
+  }, [SR, markRecognitionStalled]);
+
+  // 文字起こしを手で入れ直す（止まったあとの「もう一度」）
+  const restartRecognition = useCallback(() => {
+    const old = recognitionRef.current;
+    recognitionRef.current = null;
+    if (old) { try { old.stop(); } catch { /* noop */ } }
+    setRecNote('');
+    setRecStalled(false);
+    restartFailRef.current = 0;
+    startRecognition();
+  }, [startRecognition]);
 
   // ── 録音開始 ──
-  const startRecording = useCallback(async () => {
+  // keep=true なら、今ある書き起こしの続きから録る（復帰したときに消さない）
+  const startRecording = useCallback(async (keep = false) => {
     setError(null);
     setRecNote('');
-    setSegments([]);
-    setSpeakerNames({});
+    setRecStalled(false);
+    restartFailRef.current = 0;
+    if (!keep) {
+      setSegments([]);
+      setSpeakerNames({});
+      clearMeetingDraft();
+    }
     // 前回の録音 blob を破棄してから新規録音へ
     if (audioUrlRef.current) {
       try { URL.revokeObjectURL(audioUrlRef.current); } catch { /* */ }
@@ -325,6 +368,74 @@ export default function MeetingMinutesModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── 途中で切れても失わない: 書き起こしを端末に自動保存 ──
+  // 見出し・参加者・長さは1秒ごとに動くので、保存の引き金は「文字が増えた時」だけにする
+  const draftMetaRef = useRef({ title: '', participants: '', recordingMs: 0, speakerNames: {} as Record<number, string> });
+  useEffect(() => {
+    draftMetaRef.current = { title, participants, recordingMs, speakerNames };
+  }, [title, participants, recordingMs, speakerNames]);
+
+  useEffect(() => {
+    if (segments.length === 0) return;
+    const m = draftMetaRef.current;
+    saveMeetingDraft({
+      savedAt: Date.now(),
+      title: m.title,
+      participants: m.participants,
+      segments,
+      speakerNames: m.speakerNames,
+      recordingMs: m.recordingMs,
+    });
+  }, [segments]);
+
+  // 開いた時に、前回の途中書き起こしが残っていれば拾い上げる
+  useEffect(() => {
+    const d = loadMeetingDraft();
+    if (d) setRecoveredDraft(d);
+  }, []);
+
+  const handleRestoreDraft = useCallback(() => {
+    const d = recoveredDraft;
+    if (!d) return;
+    setMode('record');
+    setSegments(d.segments);
+    setSpeakerNames(d.speakerNames || {});
+    setTitle(t => t || d.title);
+    setParticipants(p => p || d.participants);
+    setRecordingMs(d.recordingMs);
+    setRecoveredDraft(null);
+  }, [recoveredDraft]);
+
+  const handleDiscardDraft = useCallback(() => {
+    clearMeetingDraft();
+    setRecoveredDraft(null);
+  }, []);
+
+  // 画面を消す/別アプリへ切り替えると文字起こしは止まる。戻ってきたら入れ直す。
+  const recStalledRef = useRef(false);
+  useEffect(() => { recStalledRef.current = recStalled; }, [recStalled]);
+  useEffect(() => {
+    if (!isRecording) return;
+    const onVis = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!recordingActiveRef.current) return;
+      const r = recognitionRef.current;
+      if (!r) return;
+      try {
+        r.start();
+        if (recStalledRef.current) {
+          setRecStalled(false);
+          setRecStatus('live');
+          setRecNote('画面が戻ったので、文字起こしを再開しました。');
+        }
+      } catch {
+        // すでに動いていれば何もしなくてよい
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [isRecording]);
 
   // 録音した発言を「話者: 発言」形式のテキストに変換
   const segmentsToTranscript = useCallback((): string => {
@@ -450,6 +561,8 @@ export default function MeetingMinutesModal({
     if (!minutes) return;
     const md = minutesToMarkdown(minutes);
     onSaveAsKnowledge(`📅 ${minutes.title}`, md);
+    // 議事録として残せた＝下書きの役目は終わり
+    clearMeetingDraft();
     onClose();
   }, [minutes, onSaveAsKnowledge, onClose]);
 
@@ -613,6 +726,35 @@ export default function MeetingMinutesModal({
               ))}
             </div>
 
+            {/* 前回の途中書き起こしが残っている時（途切れても失わせない） */}
+            {recoveredDraft && !isRecording && (
+              <div
+                className="mx-5 mt-4 rounded-xl p-3.5"
+                style={{ background: persona.accentColorLight, border: `1px solid ${persona.accentColor}55` }}
+              >
+                <p className="text-fg text-sm font-medium mb-1">
+                  前回の書き起こしが、{draftCharCount(recoveredDraft)}文字ぶん残っています
+                </p>
+                <p className="text-fg-muted text-xs mb-3">
+                  {formatDraftTime(recoveredDraft.savedAt)} まで保存されています
+                  {recoveredDraft.title ? `（${recoveredDraft.title}）` : ''}。
+                  続きから使えます。
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleRestoreDraft}
+                    className="flex-1 rounded-lg text-sm font-semibold"
+                    style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}
+                  >続きから使う</button>
+                  <button
+                    onClick={handleDiscardDraft}
+                    className="px-4 rounded-lg text-sm font-medium bg-surface-3 border-edge border text-fg"
+                    style={{ minHeight: 44 }}
+                  >捨てる</button>
+                </div>
+              </div>
+            )}
+
             <div className="p-5 space-y-4">
               <StudioIntro
                 id="meeting-minutes"
@@ -689,8 +831,19 @@ export default function MeetingMinutesModal({
                       <p className="text-fg text-base font-medium mb-1">会議をまるごと録音</p>
                       <p className="text-fg-muted text-xs mb-1">部屋全体の声を録音しながら、自動で文字起こしします。</p>
                       <p className="text-fg-muted text-xs mb-3">話の切れ目で「話者1・話者2…」に分けます（あとで名前を付けられます）。</p>
+                      {/* できないことを先に言う（あとで裏切らないため） */}
+                      <div
+                        className="text-left text-xs px-3 py-2 rounded-lg mb-3"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--fg-muted)' }}
+                      >
+                        {SR
+                          ? '画面を消す・ほかのアプリに切り替えると、文字起こしは止まります（音声の録音は続きます）。画面に戻ると自動で再開します。'
+                          : 'このブラウザは自動の文字起こしに対応していません。録音だけ行い、停止後に音声を保存できます。'}
+                        <br />
+                        書き起こしは自動で下書き保存されるので、途中で切れても、そこまでは残ります。
+                      </div>
                       <button
-                        onClick={startRecording}
+                        onClick={() => startRecording()}
                         className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
                         style={{ background: persona.accentColor, color: '#0a0a0f' }}
                       >▶ 録音をはじめる</button>
@@ -736,9 +889,18 @@ export default function MeetingMinutesModal({
                       {recNote && (
                         <div
                           className="text-xs px-3 py-2 rounded-lg"
-                          style={{ background: 'rgba(201,169,110,0.12)', border: '1px solid rgba(201,169,110,0.35)', color: '#c9a96e' }}
+                          style={recStalled
+                            ? { background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.45)', color: '#f87171' }
+                            : { background: 'rgba(201,169,110,0.12)', border: '1px solid rgba(201,169,110,0.35)', color: '#c9a96e' }}
                         >
                           {recNote}
+                          {recStalled && isRecording && (
+                            <button
+                              onClick={restartRecognition}
+                              className="mt-2 w-full rounded-lg text-xs font-semibold"
+                              style={{ background: '#f87171', color: '#0a0a0f', minHeight: 44 }}
+                            >文字起こしを再開</button>
+                          )}
                         </div>
                       )}
 
@@ -823,10 +985,20 @@ export default function MeetingMinutesModal({
                               >💾 音声</button>
                             </div>
                           )}
-                          <button
-                            onClick={startRecording}
-                            className="w-full px-5 py-2 rounded-lg text-sm font-medium transition-all bg-surface-3 border-edge border text-fg"
-                          >🎙 録音をやり直す</button>
+                          <div className="flex gap-2">
+                            {hasRecordContent && (
+                              <button
+                                onClick={() => startRecording(true)}
+                                className="flex-1 px-4 rounded-lg text-sm font-semibold transition-all"
+                                style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}
+                              >▶ 続きから録る</button>
+                            )}
+                            <button
+                              onClick={() => startRecording()}
+                              className={`${hasRecordContent ? 'px-4' : 'flex-1 px-5'} rounded-lg text-sm font-medium transition-all bg-surface-3 border-edge border text-fg`}
+                              style={{ minHeight: 44 }}
+                            >🎙 {hasRecordContent ? '最初から' : '録音をやり直す'}</button>
+                          </div>
                         </>
                       )}
                     </div>
