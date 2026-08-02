@@ -1605,16 +1605,21 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          // 素材ゼロのときは見出しの下を詰める。ここで 8px 詰めると
-          // 「テーマだけで 1 本つくる」が下のチャットバーの帯から完全に外れる (375px 実測)
+          // 素材ゼロのときは見出しの下を詰める。
+          // 縦の短い端末 (iPhone SE = 667px) では、これでもまだ 2 つの入口が
+          // 下の入力バーの帯に潜る。その端末だけ下の CSS でさらに詰める
+          className={clips.length === 0 ? 'iris-reel-emptyhero' : undefined}
           style={{ textAlign: 'center', marginBottom: clips.length === 0 ? '1rem' : '1.5rem', order: -2 }}>
           <p style={{
             fontSize: 11, letterSpacing: '0.5em', color: bg.accentText, fontWeight: 800,
-            marginBottom: 6, opacity: 0.7, textTransform: 'uppercase',
+            marginBottom: clips.length === 0 ? 3 : 6, opacity: 0.7, textTransform: 'uppercase',
           }}>REEL STUDIO</p>
           <h1 style={{
             fontFamily: IRIS_FONTS.display, fontStyle: 'italic',
-            fontSize: 'clamp(3rem, 13vw, 4.4rem)', margin: 0, fontWeight: 500,
+            // 素材ゼロの人にとって、この見出しは「読むもの」ではなく「今どこにいるか」の目印。
+            // 大きいままだと 2 つの入口 (テーマから / 写真から) が最初の画面から押し出される
+            fontSize: clips.length === 0 ? 'clamp(2.1rem, 8.6vw, 2.9rem)' : 'clamp(3rem, 13vw, 4.4rem)',
+            margin: 0, fontWeight: 500,
             background: IRIS_GRADIENT,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
@@ -1624,6 +1629,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             marginTop: 8, fontSize: 12.5, color: bg.inkSoft,
             fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
             letterSpacing: '0.02em',
+            ...(clips.length === 0 ? { marginTop: 5, fontSize: 12 } : null),
           }}>
             {clips.length > 0
               ? `${clips.length} クリップ ・ ${totalDuration.toFixed(1)} 秒`
@@ -1876,8 +1882,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                 </>
               ) : (
                 <>
-                  テーマをひとこと入れるだけ。AI が 3 シーンの台本と字幕を書いて、そのまま出せる縦型リールにします。
-                  写真や動画は<b style={{ color: bg.ink }}>あとから入れると、この 3 カットに差し替わります</b>。
+                  テーマをひとこと入れるだけ。AI が 3 シーンの台本と字幕を書きます。
+                  写真や動画は<b style={{ color: bg.ink }}>あとから足せます</b>。
                 </>
               )}
             </p>
@@ -1897,7 +1903,17 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                 boxSizing: 'border-box',
               }}
             />
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+            {/* 候補は横 1 列でこする。折り返すと 375px で 3 行 (132px) になり、
+                その 132px のぶんだけ「テーマだけで 1 本つくる」が下の入力バーの帯に潜り込む。
+                日本語は全部の文字が折り返し点になるので、nowrap と flexShrink:0 は必ずセットで
+                (これが無いと 1 文字ずつ縦に潰れる) */}
+            <div style={{
+              display: 'flex', gap: 6, marginBottom: 10,
+              overflowX: 'auto', overflowY: 'hidden',
+              WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
+              // 端まで色が続いて「まだ右にある」と分かるように、カードの余白ぶん外へ出す
+              margin: '0 -1.05rem 10px', padding: '0 1.05rem',
+            }}>
               {['朝の 3 分ルーティン', '買ってよかったもの 3 つ', 'よくある失敗と、その直し方'].map(t => (
                 <button key={t} onClick={() => setThemeHint(t)} style={{
                   padding: '0.55rem 0.85rem', minHeight: 44,
@@ -1906,6 +1922,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                   border: `1px solid ${themeHint === t ? 'transparent' : bg.cardBorder}`,
                   borderRadius: 999, fontSize: 11, fontWeight: 700,
                   cursor: 'pointer', fontFamily: IRIS_FONTS.body,
+                  whiteSpace: 'nowrap', flexShrink: 0,
                 }}>{t}</button>
               ))}
             </div>
@@ -1932,6 +1949,27 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               <p style={{ margin: '7px 0 0', fontSize: 10.5, color: bg.inkSoft, textAlign: 'center' }}>
                 上の欄にテーマを入れる（または候補を 1 つタップ）と押せます
               </p>
+            )}
+
+            {/* もう 1 つの入口をここに並べる。
+                いままで「写真・動画を入れる」は下の電話の中にしか無く、375px の最初の画面より
+                260px 下 (実測) だった＝素材を持っている人には入口が見えていなかった。
+                押すと開くのは下の電話と同じファイル選択なので、動きは 1 つに揃っている */}
+            {!arrivedTheme && !scriptBusy && (
+              <label style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                marginTop: 9, minHeight: 44, padding: '0.6rem 0.9rem',
+                background: 'rgba(255,255,255,0.9)',
+                border: `1px solid ${bg.cardBorder}`,
+                borderRadius: 14, cursor: 'pointer',
+                fontSize: 12.5, fontWeight: 700, color: INK_ON_LIGHT,
+                fontFamily: IRIS_FONTS.body,
+              }}>
+                <ImageIcon size={14} color={bg.accentText} />
+                手持ちの写真・動画から作る
+                <input type="file" multiple accept="image/*,video/*" style={{ display: 'none' }}
+                  onChange={e => e.target.files && addFiles(e.target.files)} />
+              </label>
             )}
             {scriptErr && (
               <div style={{
@@ -3433,6 +3471,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         @keyframes iris-reelchat-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.35); } 50% { box-shadow: 0 0 0 7px rgba(220,38,38,0.12); } }
         /* プレースホルダーは淡背景に濃文字 (見えない文字ゼロ) */
         .iris-reelchat-input::placeholder { color: rgba(31,26,46,0.5); opacity: 1; }
+        /* 縦が短い端末 (iPhone SE 667px 等) では、素材ゼロの最初の画面から
+           2 つの入口 (テーマから / 写真から) が下の入力バーの帯に潜る。
+           見えているのに押すと下のバーに取られる＝いちばん質の悪い壊れ方なので、
+           その端末でだけ飾りの見出しを畳む。上のタブで「リールを作る」が光っているので、
+           畳んでもいまどこにいるかは分かる。押せる物は 1 つも減らさない */
+        @media (max-height: 720px) {
+          .iris-reel-emptyhero { display: none; }
+        }
         /* デスクトップ (>900px): Dock なし → 画面最下部。サイドバー 220px を避けて中央へ */
         .iris-reelchat-bar { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
         @media (min-width: 901px) { .iris-reelchat-bar { left: 220px; } }
