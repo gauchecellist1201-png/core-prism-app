@@ -38,7 +38,9 @@ import type { ReelStudioSeed } from './IrisReelStudio';
 import {
   putReelAsset, getReelAsset, saveReelProject, loadReelProject,
   pruneReelAssets, clearReelStore, type StoredClipMeta, type SaveFailReason,
+  putLibraryItem, markLibraryUsed, type LibraryItem,
 } from './reelStore';
+import IrisAssetShelf, { makeThumbDataUrl } from './IrisAssetShelf';
 import { suggestNextSlot, type ScheduledPost } from './usePostQueue';
 import { usePostHistory } from './strategist';
 import { computeBestPostTime, DOW_LABELS } from './bestPostTime';
@@ -238,6 +240,10 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   }>({ state: 'idle' });
   const [restoreInfo, setRestoreInfo] = useState<{ count: number; savedAt: number } | null>(null);
   const [restoring, setRestoring] = useState(false);
+  // 棚 (素材ライブラリ) を読み直す合図。素材を足した / 書き出した時に増やす
+  const [shelfKey, setShelfKey] = useState(0);
+  // 空の棚の「写真・動画を選ぶ」から、上のファイル選択をそのまま開くため
+  const pickFileRef = useRef<HTMLInputElement>(null);
   // AI 自動字幕
   const [themeHint, setThemeHint] = useState<string>('');
   // ツアー/朝ブリーフの「このテーマで 1 本つくる」から着地したときのテーマ。
@@ -565,8 +571,55 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       }
       return [...prev, ...newClips];
     });
+    // 棚に残す (2026-08-03)。一度読み込んだ素材は、このリールを作り終えても消えない。
+    // 失敗しても取込自体は成功させる — 棚に載らなかっただけで作業は止めない。
+    if (newClips.length) {
+      void (async () => {
+        let added = 0;
+        for (const c of newClips) {
+          if (!c.assetId || !c.blob) continue;
+          const r = await putLibraryItem({
+            id: c.assetId,
+            name: c.name || '素材',
+            kind: c.kind,
+            type: c.blob.type || '',
+            size: c.blob.size,
+            addedAt: Date.now(),
+            usedCount: 0,
+            thumb: c.el ? makeThumbDataUrl(c.el) : undefined,
+          }, c.blob);
+          if (r.ok) added++;
+        }
+        if (added) setShelfKey(k => k + 1);
+      })();
+    }
     // チャットバー等の呼び出し元が「何件入ったか」を正直に伝えられるよう件数を返す
     return newClips.length;
+  }, []);
+
+  /** 棚のタイルを押した時 — その素材を、いま作っているリールの最後に足す */
+  const addFromShelf = useCallback(async (item: LibraryItem) => {
+    const asset = await getReelAsset(item.id);
+    if (!asset) throw new Error('この端末に実体が見つかりませんでした');
+    const url = URL.createObjectURL(asset.blob);
+    try {
+      const el = item.kind === 'video' ? await loadVideo(url) : await loadImage(url);
+      const clip: Clip = {
+        id: makeId(), kind: item.kind, url, el,
+        duration: item.kind === 'video' ? Math.min((el as HTMLVideoElement).duration || 3, 6) : 2.5,
+        blob: asset.blob, assetId: item.id, name: item.name,
+      };
+      setClips(prev => {
+        // 文字だけカットしか無いなら、棚の素材で置き換える (足し算にしない)
+        const allPlaceholder = prev.length > 0 && prev.every(c => c.isPlaceholder);
+        if (allPlaceholder) return [{ ...clip, captionText: prev[0].captionText, captionY: prev[0].captionY, duration: prev[0].duration }, ...prev.slice(1)];
+        return [...prev, clip];
+      });
+      setUploadErr('');
+    } catch (e) {
+      URL.revokeObjectURL(url);
+      throw e;
+    }
   }, []);
 
   // 「素材から構成」の結果をマウント時に1回だけ展開（一気通貫の最終段）。
@@ -1242,6 +1295,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       // 中身のある動画がユーザーの手に渡った時だけ数える。
       // failExport も finishExport を通るので、そちらでは絶対に呼ばない（数字が嘘になる）。
       logIrisActivity('reel');
+      // 棚に「使った」印をつける（同じ絵を続けて使わないため）。実際に動画が出来た時だけ。
+      void markLibraryUsed(clipsRef.current.map(c => c.assetId).filter(Boolean) as string[])
+        .then(() => setShelfKey(k => k + 1));
     };
     rec.onerror = () => {
       failExport('もう一度「書き出す」ボタンを押してください。素材はそのまま残しています。');
@@ -1269,6 +1325,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           setExportUrl(URL.createObjectURL(blob));
           setProgress(1);
           logIrisActivity('reel'); // 途中まででも「動画は渡せた」＝1本として数える
+          void markLibraryUsed(clipsRef.current.map(c => c.assetId).filter(Boolean) as string[])
+            .then(() => setShelfKey(k => k + 1));
           notifyInApp({
             kind: 'warn',
             title: '書き出しに時間がかかりました',
@@ -2487,10 +2545,19 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     <p style={{ marginTop: 2, fontSize: 11, color: bg.inkSoft }}>
                       カメラロールから、その場で撮ってもOK
                     </p>
-                    <input type="file" multiple accept="image/*,video/*" style={{ display: 'none' }}
+                    <input ref={pickFileRef} type="file" multiple accept="image/*,video/*" style={{ display: 'none' }}
                       onChange={e => e.target.files && addFiles(e.target.files)} />
                   </label>
                   {uploadErr && <ErrorMsg msg={uploadErr} />}
+
+                  {/* 棚 — 一度入れた素材はここに残る。2 本目からはカメラロールを開かなくていい */}
+                  <IrisAssetShelf
+                    bg={bg}
+                    activeAssetIds={clips.map(c => c.assetId).filter(Boolean) as string[]}
+                    onPick={addFromShelf}
+                    onRequestAdd={() => pickFileRef.current?.click()}
+                    refreshKey={shelfKey}
+                  />
                 </Glass>
 
                 {/* 前回の続きを復元 (勝手には戻さず、必ず聞く) */}

@@ -22,9 +22,11 @@ import {
 import { composeReelFromClips, type CutInput, type ReelComposition, type BgmMood } from './reelAiCaption';
 import {
   putReelAsset, getReelAsset, saveReelProject, loadReelProject,
-  pruneReelAssets, clearReelStore,
+  pruneReelAssets, clearReelStore, putLibraryItem, markLibraryUsed,
   type StoredClipMeta, type SaveFailReason,
 } from './reelStore';
+import IrisAssetShelf, { makeThumbDataUrl } from './IrisAssetShelf';
+import type { LibraryItem } from './reelStore';
 import {
   COLOR_GRADES, applyGradeOverlay, getGrade,
   type GradeId,
@@ -1578,6 +1580,9 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, initialProject, o
   // 前回セッションの復元 (IndexedDB)
   const [restoreInfo, setRestoreInfo] = useState<{ count: number; savedAt: number } | null>(null);
   const [restoring, setRestoring] = useState(false);
+  // 棚 (素材ライブラリ) を読み直す合図
+  const [shelfKey, setShelfKey] = useState(0);
+  const pickFileRef = useRef<HTMLInputElement>(null);
   // この端末への保存の状態 (silent fail 禁止)。
   // 「リロードしても素材が消えない」と約束している以上、保存できていない時は必ず見せる。
   const [persist, setPersist] = useState<{
@@ -2388,6 +2393,54 @@ JSON のみで返答。`;
     setImportItems(prev => prev.map(it => it.id === id ? { ...it, ...patch } : it));
   };
 
+  /** 取り込んだ素材を「棚」に残す (2026-08-03)。
+   *  棚に載らなくても取込自体は成功させる — 作業は止めない。 */
+  const shelveClips = (list: Clip[]) => {
+    if (!list.length) return;
+    void (async () => {
+      let added = 0;
+      for (const c of list) {
+        if (!c.assetId || !c.blob) continue;
+        const r = await putLibraryItem({
+          id: c.assetId, name: c.name || '素材', kind: c.kind,
+          type: c.blob.type || '', size: c.blob.size,
+          addedAt: Date.now(), usedCount: 0,
+          thumb: c.el ? makeThumbDataUrl(c.el) : undefined,
+        }, c.blob);
+        if (r.ok) added++;
+      }
+      if (added) setShelfKey(k => k + 1);
+    })();
+  };
+
+  /** 棚のタイルを押した時 — その素材をタイムラインの最後に足す */
+  const addFromShelf = async (item: LibraryItem) => {
+    const asset = await getReelAsset(item.id);
+    if (!asset) throw new Error('この端末に実体が見つかりませんでした');
+    const url = URL.createObjectURL(asset.blob);
+    try {
+      if (item.kind === 'video') {
+        const v = await loadVideo(url);
+        setClips(prev => [...prev, {
+          id: makeId(), kind: 'video', url, duration: Math.min(v.duration || 3, 6),
+          kenBurns: 'none', transition: 'whip', el: v, speed: 1,
+          blob: asset.blob, assetId: item.id, name: item.name,
+        }]);
+      } else {
+        const img = await loadImage(url);
+        setClips(prev => [...prev, {
+          id: makeId(), kind: 'image', url, duration: 3,
+          kenBurns: 'in', transition: 'fade', el: img,
+          blob: asset.blob, assetId: item.id, name: item.name,
+        }]);
+      }
+      setUploadError('');
+    } catch (e) {
+      URL.revokeObjectURL(url);
+      throw e;
+    }
+  };
+
   const addImages = async (files: FileList | File[]) => {
     const arr = Array.from(files);
     const entries = arr.map(f => ({ file: f, itemId: makeId() }));
@@ -2418,6 +2471,7 @@ JSON のみで返答。`;
       }
     }
     if (newClips.length) setClips(prev => [...prev, ...newClips]);
+    shelveClips(newClips);
     if (!anyFail && newClips.length) setUploadError('');
   };
 
@@ -2453,6 +2507,7 @@ JSON のみで返答。`;
         URL.revokeObjectURL(url);
       }
     }
+    shelveClips(newClips);
     if (!anyFail && newClips.length) setUploadError('');
   };
 
@@ -2925,7 +2980,12 @@ JSON のみで返答。`;
       setExportUrl(URL.createObjectURL(blob));
       setRecording(false);
       // 中身が空のときは数えない（成果の数字に嘘をつかない）。
-      if (blob.size) logIrisActivity('reel');
+      if (blob.size) {
+        logIrisActivity('reel');
+        // 棚に「使った」印をつける。実際に動画が出来た時だけ。
+        void markLibraryUsed(clipsRef.current.map(c => c.assetId).filter(Boolean) as string[])
+          .then(() => setShelfKey(k => k + 1));
+      }
     };
     mr.start();
 
@@ -3802,7 +3862,7 @@ JSON のみで返答。`;
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <label style={btn()}>
                 <ImageIcon size={14} /> 画像 (複数可)
-                <input type="file" accept="image/*" multiple style={{ display: 'none' }}
+                <input ref={pickFileRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
                   onChange={e => { if (e.target.files) addImages(e.target.files); e.target.value = ''; }} />
               </label>
               <label style={btn()}>
@@ -3816,6 +3876,15 @@ JSON のみで返答。`;
                   onChange={e => setBgmFile(e.target.files?.[0] || null)} />
               </label>
             </div>
+
+            {/* 棚 — 一度入れた素材はここに残る。2 本目からはカメラロールを開かなくていい */}
+            <IrisAssetShelf
+              bg={bg}
+              activeAssetIds={clips.map(c => c.assetId).filter(Boolean) as string[]}
+              onPick={addFromShelf}
+              onRequestAdd={() => pickFileRef.current?.click()}
+              refreshKey={shelfKey}
+            />
             {/* 取込の進捗と結果 (ファイルごと・silent fail 禁止) */}
             {importItems.length > 0 && (
               <div style={{ marginTop: '0.6rem', display: 'grid', gap: 4 }}>
