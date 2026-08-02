@@ -1539,6 +1539,11 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   // アンマウント時に確実に停止
   useEffect(() => () => { try { chatRecRef.current?.stop(); } catch { /* */ } }, []);
 
+  // 素材が 1 つも無い間は、どのステップにいても「素材」の画面だけを出す。
+  // (タブ自体を隠すので、素材を全部消した直後に「書出」のまま取り残される＝
+  //  戻る手段が画面から消える、という行き止まりを作らないための保険)
+  const viewStep = clips.length === 0 ? 'material' : step;
+
   return (
     <div style={{
       position: 'relative',
@@ -1709,7 +1714,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                   写真・動画を入れる
                 </span>
                 <span style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
-                  タップ、またはドロップ
+                  ここをタップして選ぶ
                 </span>
                 <input type="file" multiple accept="image/*,video/*" style={{ display: 'none' }}
                   onChange={e => e.target.files && addFiles(e.target.files)} />
@@ -2028,12 +2033,16 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             <p style={{
               margin: 0, fontSize: 11.5, color: bg.inkSoft, lineHeight: 1.5,
             }}>
-              例: スキンケアの動画 3 本 → <span style={{ color: bg.ink, fontWeight: 700 }}>「朝の 5 分ルーティン🌿」</span>の字幕付き 15 秒リール＋投稿文が 1 分で完成。
+              例: スキンケアの動画 3 本 → <span style={{ color: bg.ink, fontWeight: 700 }}>「朝の 5 分ルーティン」</span>の字幕付き 15 秒リール＋投稿文が 1 分で完成。
             </p>
           </div>
         )}
 
-        {/* PRESET TEMPLATES (4 種) — 1 タップで色/フォント/レイアウト切替 */}
+        {/* PRESET TEMPLATES (4 種) — 1 タップで色/フォント/レイアウト切替
+            素材がまだ 1 つも無い間は出さない。この時キャンバスは「写真・動画を入れる」の
+            覆いで隠れており、テンプレートも色味も画面上は何も変わらない＝押しても
+            何も起きない選択肢が 18 個並んでいた。1 本できた瞬間に現れる。 */}
+        {clips.length > 0 && (
         <div style={{ marginBottom: '1.2rem' }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
@@ -2100,8 +2109,11 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             );
           })()}
         </div>
+        )}
 
-        {/* カラーの雰囲気 (color mood) — 選ぶと即プレビュー反映。リール全体の色味を変える */}
+        {/* カラーの雰囲気 (color mood) — 選ぶと即プレビュー反映。リール全体の色味を変える
+            テンプレートと同じ理由で、素材が入るまでは出さない（掛ける相手がまだ無い）。 */}
+        {clips.length > 0 && (
         <div style={{ marginBottom: '1.2rem' }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
@@ -2147,6 +2159,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             })}
           </div>
         </div>
+        )}
 
         {/* タイムライン (キャンバス下) — Edits 風 */}
         {clips.length > 0 && (
@@ -2353,7 +2366,11 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           </div>
         )}
 
-        {/* STEP TABS */}
+        {/* STEP TABS
+            素材が 1 つも無い間は出さない。この時「編集」「字幕」「書出」は押しても
+            行き止まり（「先に素材を追加してください」／押せない書き出しボタン）で、
+            初見の人に 3 つの空振りを見せていた。素材が入った瞬間に 4 つとも現れる。 */}
+        {clips.length > 0 && (
         <div style={{
           display: 'flex', gap: 2,
           padding: 4,
@@ -2382,10 +2399,11 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             }}>{s.label}</button>
           ))}
         </div>
+        )}
 
         {/* STEP PANELS — 退場アニメ待ち禁止(rAF停止環境でステップ切替が凍結する)・キー切替入場のみ */}
         <motion.div
-            key={step}
+            key={viewStep}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.22 }}
@@ -2393,7 +2411,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           >
 
             {/* === STEP 1: 素材 === */}
-            {step === 'material' && (
+            {viewStep === 'material' && (
               <>
                 <Glass>
                   <label
@@ -2412,10 +2430,10 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     }}>
                     <Plus size={28} color={bg.accent} strokeWidth={1.6} />
                     <p style={{ marginTop: 8, fontSize: 14, fontWeight: 700, color: bg.ink }}>
-                      画像 / 動画 をドロップ
+                      写真・動画を選ぶ
                     </p>
                     <p style={{ marginTop: 2, fontSize: 11, color: bg.inkSoft }}>
-                      または タップして選ぶ
+                      カメラロールから、その場で撮ってもOK
                     </p>
                     <input type="file" multiple accept="image/*,video/*" style={{ display: 'none' }}
                       onChange={e => e.target.files && addFiles(e.target.files)} />
@@ -2549,7 +2567,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                   </div>
                 )}
 
-                {/* BGM ライブラリ */}
+                {/* BGM ライブラリ — 素材が入るまでは出さない。
+                    まだ音を乗せる相手が無く、選んでも何も鳴らない 8 枚だった。 */}
+                {clips.length > 0 && (
                 <div style={{ marginTop: 16 }}>
                   <Label icon={<Music size={11} />}>BGM (CC0)</Label>
                   <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'none' }}>
@@ -2576,11 +2596,12 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     })}
                   </div>
                 </div>
+                )}
               </>
             )}
 
             {/* === STEP 2: 編集 === */}
-            {step === 'edit' && (
+            {viewStep === 'edit' && (
               <>
                 <Label icon={<Flame size={11} color="#EA580C" />}>2026 Q2 伸びてる型</Label>
                 <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, marginBottom: 14, scrollbarWidth: 'none' }}>
@@ -2637,7 +2658,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             )}
 
             {/* === STEP 3: 字幕 (カット毎) === */}
-            {step === 'subtitle' && (
+            {viewStep === 'subtitle' && (
               <>
                 {/* AI ヒント (テーマ) */}
                 <Label icon={<Sparkles size={11} />}>テーマ (AI のヒント / 台本生成にも使う)</Label>
@@ -2939,7 +2960,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             )}
 
             {/* === STEP 4: 書き出し === */}
-            {step === 'export' && (
+            {viewStep === 'export' && (
               <>
                 {!exportUrl ? (
                   <>
