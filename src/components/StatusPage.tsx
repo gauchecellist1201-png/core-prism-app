@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from 'react';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
-import { ArrowLeft, ShieldCheck, ShieldAlert, ShieldX, ShieldQuestion, RefreshCw, CheckCircle2, AlertCircle, XCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ShieldCheck, ShieldAlert, ShieldX, ShieldQuestion, RefreshCw, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
 
 interface PublicService { name: string; what?: string; ok: boolean | null; latencyMs: number | null; note: string }
 interface Incident { date: string; title: string; status: 'investigating' | 'monitoring' | 'resolved'; minutesDown?: number }
@@ -205,9 +205,9 @@ export default function StatusPage() {
 
         {/* 近くのページ */}
         <div style={{ marginTop: 28, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          <a href="/trust" style={linkStyle}>データの取り扱い <ExternalLink size={12} /></a>
-          <a href="/faq" style={linkStyle}>よくある質問 <ExternalLink size={12} /></a>
-          <a href="/contact" style={linkStyle}>お問い合わせ <ExternalLink size={12} /></a>
+          <a href="/trust" style={linkStyle}>データの取り扱い <ArrowRight size={12} /></a>
+          <a href="/faq" style={linkStyle}>よくある質問 <ArrowRight size={12} /></a>
+          <a href="/contact" style={linkStyle}>お問い合わせ <ArrowRight size={12} /></a>
         </div>
 
         <div style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: 1.8 }}>
