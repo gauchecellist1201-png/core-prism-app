@@ -907,6 +907,8 @@ export default function CoreSite() {
             {[
               // 主力3つ (Prism → Resonance → Crystal) を先頭に。以降は上の PRODUCTS と同じ並び。
               { img: '/lp/shot-prism.jpg', name: 'Prism', cap: 'あなた専属のAI経営参謀', url: '/' },
+              // Universe は別格。上の PRODUCTS タブと同じく Prism の直後に置く。
+              { img: '/lp/shot-universe.jpg', name: 'Universe', cap: 'AIに任せられる仕事の地図', url: 'https://core-universe.vercel.app' },
               { img: '/lp/shot-resonance.jpg', name: 'Resonance', cap: 'LINEの返信を、AIが先に', url: 'https://resonancebot-ivory.vercel.app/lp' },
               { img: '/lp/shot-crystal.jpg', name: 'Crystal', cap: '話しかけられるAI接客', url: 'https://crystal-nine-self.vercel.app/' },
               { img: '/lp/shot-iris.jpg', name: 'Iris', cap: 'インフルエンサーの相棒AI', url: '/iris?lp=1' },
