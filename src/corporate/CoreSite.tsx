@@ -1966,6 +1966,11 @@ export default function CoreSite() {
               <a href="/faq" style={{ color: '#E7C987', textDecoration: 'underline', textUnderlineOffset: 3 }}>よくある質問</a>
               {' '}に、誰が作っているか・料金・解約・データの扱いをまとめています。
             </p>
+            {/* 2026-08-03: 「動いているのか」を確かめる場所を、問い合わせる前に置く */}
+            <p style={{ fontSize: '0.78rem', color: 'rgba(240,233,216,0.60)', marginTop: '0.6rem', fontFamily: FONT_SERIF_JA, lineHeight: 1.8 }}>
+              <a href="/status" style={{ color: '#E7C987', textDecoration: 'underline', textUnderlineOffset: 3 }}>いまの稼働状況</a>
+              {' '}では、7つのサービスがこの瞬間ひらけるかを実際に測って出しています。
+            </p>
           </div>
         </div>
       </section>
@@ -2036,6 +2041,15 @@ export default function CoreSite() {
             >
               {COMPANY.addressJa}
             </p>
+          </div>
+          {/* 2026-08-03: 競合 board は「稼働状況・更新履歴・ロードマップ」を常設で持っている。
+              CORE は /status と /trust を作ってあったのに、どのページからもリンクが無く
+              誰も辿り着けなかった。約束ではなく「いまどうなっているか」を常設で置く。 */}
+          <div>
+            <p style={footHead}>安心のために</p>
+            <a href="/faq" style={footLink} className="lp-tap-link">よくある質問</a>
+            <a href="/status" style={footLink} className="lp-tap-link">いまの稼働状況</a>
+            <a href="/trust" style={footLink} className="lp-tap-link">データの取り扱い</a>
           </div>
           <div>
             <p style={footHead}>法務</p>

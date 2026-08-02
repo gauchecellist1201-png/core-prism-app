@@ -1,45 +1,62 @@
 // ============================================================
-// StatusPage — /status 公式 ステータス ページ
+// StatusPage — /status 公開 稼働状況 ページ
 //
-// オーナー指示 (2026-06-04 第 29 波 WWWW):
-//   サービスごとの up/down + 直近 90 日 のインシデント を 公開閲覧モードで。
-//   /api/status (新規, 公開) を 120 秒 cache で叩く。
+// 2026-08-03 作り直し:
+//   旧版は /api/status が 22 秒かかるのに 12 秒で打ち切っていたため、
+//   実際には毎回失敗していた。にもかかわらず見出しは「すべて正常」のまま、
+//   その下に英語のエラー原文と内部用語 (env keys / Upstash) が出ていた。
+//
+//   直したこと:
+//   1. **測れていないものを「正常」と言わない** (取得前・失敗時は「確認中 / 確認できません」)
+//   2. エラーは日本語で「何が起きたか + 次にどうするか」+ もう一度ためすボタン
+//   3. 90 日ヒートマップを廃止 — 障害記録が 1 件も無い状態で 90 日ぶんを緑に
+//      塗るのは「無事故だった」という作り話になるため
+//   4. 中身を「7 つのサービスが今ひらけるか」の実測に統一
 // ============================================================
 
 import { useEffect, useState } from 'react';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
-import { ArrowLeft, ShieldCheck, ShieldAlert, ShieldX, RefreshCw, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, ShieldAlert, ShieldX, ShieldQuestion, RefreshCw, CheckCircle2, AlertCircle, XCircle, ExternalLink } from 'lucide-react';
 
-interface PublicService { name: string; ok: boolean | null; latencyMs: number | null; note: string; }
-interface Incident { date: string; title: string; status: 'investigating' | 'monitoring' | 'resolved'; minutesDown?: number; }
+interface PublicService { name: string; what?: string; ok: boolean | null; latencyMs: number | null; note: string }
+interface Incident { date: string; title: string; status: 'investigating' | 'monitoring' | 'resolved'; minutesDown?: number }
 
 interface StatusData {
   asOf: string;
-  overall: 'operational' | 'degraded' | 'major_outage';
+  overall: 'operational' | 'degraded' | 'major_outage' | 'unknown';
   services: PublicService[];
   incidents: Incident[];
+  incidentsKnown?: boolean;
+  recordingSince?: string;
 }
 
 const PALETTE = {
-  operational: { color: '#34D399', bg: 'rgba(52,211,153,0.12)', icon: <ShieldCheck size={26} />, label: 'すべて正常' },
-  degraded:    { color: '#FBBF24', bg: 'rgba(251,191,36,0.12)', icon: <ShieldAlert size={26} />, label: '一部 劣化' },
-  major_outage:{ color: '#F87171', bg: 'rgba(248,113,113,0.12)', icon: <ShieldX size={26} />,    label: '主要障害 発生中' },
+  operational: { color: '#34D399', bg: 'rgba(52,211,153,0.12)', icon: <ShieldCheck size={26} />,    label: '7つとも ひらけています' },
+  degraded:    { color: '#FBBF24', bg: 'rgba(251,191,36,0.12)', icon: <ShieldAlert size={26} />,    label: '一部で 不具合が出ています' },
+  major_outage:{ color: '#F87171', bg: 'rgba(248,113,113,0.12)', icon: <ShieldX size={26} />,       label: '複数のサービスが ひらけません' },
+  unknown:     { color: '#94A3B8', bg: 'rgba(148,163,184,0.12)', icon: <ShieldQuestion size={26} />,label: 'いま 確認しています' },
 } as const;
+
+const BORDER = '1px solid rgba(255,255,255,0.08)';
+const CARD_BG = 'rgba(255,255,255,0.04)';
 
 export default function StatusPage() {
   const [data, setData] = useState<StatusData | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => { document.title = '稼働状況（いま ひらけるか） — CORE'; }, []);
+
   const load = async () => {
     setLoading(true); setErr(null);
     try {
-      const res = await fetchWithTimeout('/api/status', { headers: { 'Accept': 'application/json' } }, 12000);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const j = await res.json() as StatusData;
-      setData(j);
-    } catch (e) {
-      setErr((e as Error).message);
+      // 実測に 8 秒ほどかかることがあるため 20 秒まで待つ
+      const res = await fetchWithTimeout(`/api/status?t=${Date.now()}`, { headers: { Accept: 'application/json' } }, 20000);
+      if (!res.ok) throw new Error('SERVER');
+      setData(await res.json() as StatusData);
+    } catch {
+      setData(null);
+      setErr('いまの状況を取りにいけませんでした。通信が不安定なときに起きます。');
     } finally {
       setLoading(false);
     }
@@ -47,49 +64,34 @@ export default function StatusPage() {
 
   useEffect(() => { load(); }, []);
   useEffect(() => {
-    // 2 分ごとに自動 リフレッシュ
     const id = setInterval(load, 120_000);
     return () => clearInterval(id);
   }, []);
 
-  const overall = data?.overall || 'operational';
+  // データが無いあいだは「正常」と言わない
+  const overall: keyof typeof PALETTE = data?.overall || 'unknown';
   const pal = PALETTE[overall];
-
-  // 90 日 ヒートマップ (incidents 集合)
-  const incByDate = new Map<string, Incident>();
-  (data?.incidents || []).forEach((i) => incByDate.set(i.date, i));
-  const days: { date: string; sev: 'ok' | 'minor' | 'major'; inc?: Incident }[] = [];
-  for (let i = 89; i >= 0; i--) {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() - i);
-    const date = d.toISOString().slice(0, 10);
-    const inc = incByDate.get(date);
-    const sev: 'ok' | 'minor' | 'major' = !inc
-      ? 'ok'
-      : (inc.minutesDown && inc.minutesDown >= 30) ? 'major' : 'minor';
-    days.push({ date, sev, inc });
-  }
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100svh',
       background: 'linear-gradient(180deg, #070712 0%, #0d0d1c 100%)',
       color: '#fff',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
     }}>
       <div style={{ maxWidth: 880, margin: '0 auto', padding: '32px 18px 80px' }}>
-        <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 24 }}>
-          <ArrowLeft size={14} /> ホームへ戻る
+        <a href="/corp" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 24 }}>
+          <ArrowLeft size={14} /> CORE のトップへ
         </a>
 
-        {/* Overall Banner */}
+        {/* 全体 */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 14,
           background: pal.bg,
           border: `1px solid ${pal.color}44`,
           borderRadius: 18,
           padding: '20px 22px',
-          marginBottom: 24,
+          marginBottom: 18,
         }}>
           <div style={{
             width: 56, height: 56, borderRadius: 16,
@@ -100,131 +102,98 @@ export default function StatusPage() {
             flexShrink: 0,
           }}>{pal.icon}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, letterSpacing: '0.3em', color: pal.color, fontWeight: 800 }}>CORE PRISM STATUS</div>
-            <h1 style={{ fontSize: 'clamp(1.4rem, 4vw, 2rem)', margin: '4px 0 4px', fontWeight: 900 }}>{pal.label}</h1>
+            <div style={{ fontSize: 10, letterSpacing: '0.28em', color: pal.color, fontWeight: 800 }}>CORE 稼働状況</div>
+            <h1 style={{ fontSize: 'clamp(1.25rem, 4.4vw, 2rem)', margin: '4px 0 4px', fontWeight: 900, lineHeight: 1.3 }}>{pal.label}</h1>
             <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>
-              {data?.asOf
-                ? `最終チェック: ${new Date(data.asOf).toLocaleString('ja-JP')}`
-                : '読み込み中…'}
+              {loading
+                ? 'いま ひとつずつ ひらいて確かめています…'
+                : data?.asOf
+                  ? `${new Date(data.asOf).toLocaleString('ja-JP')} に確認`
+                  : 'まだ確認できていません'}
             </div>
           </div>
-          <button
-            onClick={load}
-            disabled={loading}
-            style={{
-              padding: '8px 12px', borderRadius: 10,
-              background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700,
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-            }}
-          >
-            <RefreshCw size={12} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
-            更新
-          </button>
         </div>
+
+        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, margin: '0 0 22px' }}>
+          このページを開くたびに、CORE の 7 つのサービスの本番ページへ実際にアクセスして、
+          ひらけたかどうかを測っています。書いてあるのは実測の結果だけです。
+        </p>
 
         {err && (
           <div style={{
-            padding: 12, borderRadius: 10,
-            background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)',
-            color: '#FCA5A5', fontSize: '0.85rem', marginBottom: 18,
+            padding: '14px 16px', borderRadius: 12,
+            background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.32)',
+            color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem', marginBottom: 18, lineHeight: 1.75,
           }}>
-            ステータス取得に失敗: {err}
+            <strong style={{ color: '#FBBF24' }}>いま 状況を確認できていません</strong><br />
+            {err}<br />
+            もう一度おためしいただくか、しばらくしてからご覧ください。
+            それでも直らないときは <a href="/contact" style={{ color: '#93C5FD' }}>お問い合わせ</a> からお知らせください。
+            <div style={{ marginTop: 12 }}>
+              <button onClick={load} disabled={loading} style={btnStyle}>
+                <RefreshCw size={13} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} /> もう一度ためす
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Services */}
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '8px 0 12px' }}>サービス別 ステータス</h2>
-        <div style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 16, overflow: 'hidden',
-          marginBottom: 28,
-        }}>
-          {(data?.services || []).map((s, i) => (
+        {/* サービス一覧 */}
+        <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '8px 0 12px' }}>サービスごとの状況</h2>
+        <div style={{ background: CARD_BG, border: BORDER, borderRadius: 16, overflow: 'hidden', marginBottom: 14 }}>
+          {(data?.services || []).map((s, i, arr) => (
             <div key={s.name} style={{
               display: 'flex', alignItems: 'center', gap: 12,
-              padding: '14px 18px',
-              borderBottom: i === (data?.services?.length || 0) - 1 ? 'none' : '1px solid rgba(255,255,255,0.06)',
+              padding: '14px 16px',
+              borderBottom: i === arr.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.06)',
             }}>
               <ServiceIcon ok={s.ok} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>{s.name}</div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
-                  {s.note}{s.latencyMs ? ` · ${s.latencyMs}ms` : ''}
+                  {s.what ? `${s.what} · ` : ''}{s.note}{s.latencyMs ? ` · ${s.latencyMs}ミリ秒` : ''}
                 </div>
               </div>
               <ServiceBadge ok={s.ok} />
             </div>
           ))}
-          {(!data?.services || data.services.length === 0) && !loading && (
+          {(!data?.services || data.services.length === 0) && (
             <div style={{ padding: 18, fontSize: '0.85rem', color: 'rgba(255,255,255,0.55)' }}>
-              ステータス情報が未設定です (env keys 未設定 / Upstash 未接続)。
+              {loading ? 'ひとつずつ ひらいて確かめています…' : 'まだ確認できていません。上の「もう一度ためす」を押してください。'}
             </div>
           )}
         </div>
 
-        {/* 90 day heatmap */}
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '8px 0 12px' }}>直近 90 日 (一目で)</h2>
-        <div style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 16,
-          padding: 18,
-          marginBottom: 28,
-        }}>
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(30, 1fr)', gap: 4,
-          }}>
-            {days.map((d) => {
-              const c = d.sev === 'ok' ? '#1F2937'
-                      : d.sev === 'minor' ? '#FBBF24' : '#F87171';
-              const ring = d.sev === 'ok' ? 'rgba(52,211,153,0.55)' : c;
-              return (
-                <div
-                  key={d.date}
-                  title={d.inc ? `${d.date} — ${d.inc.title} (${d.inc.minutesDown || '?'}min, ${d.inc.status})` : `${d.date} — 正常`}
-                  style={{
-                    width: '100%', aspectRatio: '1/1', borderRadius: 3,
-                    background: c,
-                    boxShadow: d.sev === 'ok' ? 'inset 0 0 0 1px rgba(52,211,153,0.25)' : `0 0 0 1px ${ring}`,
-                  }}
-                />
-              );
-            })}
-          </div>
-          <div style={{ display: 'flex', gap: 12, marginTop: 12, fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
-            <Legend color="#1F2937" label="正常" ring="rgba(52,211,153,0.5)" />
-            <Legend color="#FBBF24" label="軽微 障害" />
-            <Legend color="#F87171" label="重大 障害" />
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 28 }}>
+          <button onClick={load} disabled={loading} style={btnStyle}>
+            <RefreshCw size={13} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} /> いま測りなおす
+          </button>
         </div>
 
-        {/* Incident List */}
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '8px 0 12px' }}>インシデント履歴 (直近 90 日)</h2>
-        <div style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 16, overflow: 'hidden',
-        }}>
+        {/* 障害の記録 */}
+        <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '8px 0 12px' }}>不具合の記録</h2>
+        <div style={{ background: CARD_BG, border: BORDER, borderRadius: 16, overflow: 'hidden' }}>
           {(data?.incidents || []).length === 0 ? (
-            <div style={{ padding: 18, fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
-              直近 90 日 に 記録された インシデント はありません 🎉
+            <div style={{ padding: '16px 18px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.8 }}>
+              いまのところ、記録されている不具合はありません。
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 6 }}>
+                記録をとりはじめたのは {data?.recordingSince || '2026-08-03'} です。
+                それより前に不具合が無かった、という意味ではありません。
+                これから起きたものは、日付と内容をここに残していきます。
+              </div>
             </div>
           ) : (
             (data?.incidents || []).map((inc, i, arr) => (
               <div key={inc.date + i} style={{
                 display: 'flex', alignItems: 'flex-start', gap: 12,
-                padding: '12px 18px',
+                padding: '12px 16px',
                 borderBottom: i === arr.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.06)',
               }}>
                 <IncidentDot status={inc.status} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>{inc.title}</div>
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
-                    {inc.date} · {inc.status === 'resolved' ? '✅ 解決済' : inc.status === 'monitoring' ? '👀 経過観察' : '🔧 調査中'}
-                    {inc.minutesDown ? ` · 推定影響 ${inc.minutesDown} 分` : ''}
+                    {inc.date} · {inc.status === 'resolved' ? '解決済み' : inc.status === 'monitoring' ? '様子を見ています' : '調べています'}
+                    {inc.minutesDown ? ` · 影響したと思われる時間 ${inc.minutesDown} 分` : ''}
                   </div>
                 </div>
               </div>
@@ -232,8 +201,15 @@ export default function StatusPage() {
           )}
         </div>
 
-        <div style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
-          このページは <code>/api/status</code> を 120 秒キャッシュで叩いています。最終チェック日時は カード右側 をご確認ください。
+        {/* 近くのページ */}
+        <div style={{ marginTop: 28, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          <a href="/trust" style={linkStyle}>データの取り扱い <ExternalLink size={12} /></a>
+          <a href="/faq" style={linkStyle}>よくある質問 <ExternalLink size={12} /></a>
+          <a href="/contact" style={linkStyle}>お問い合わせ <ExternalLink size={12} /></a>
+        </div>
+
+        <div style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: 1.8 }}>
+          2 分ごとに自動で測りなおします。運営責任者: 井出 直毅（CORE）
         </div>
       </div>
 
@@ -242,37 +218,44 @@ export default function StatusPage() {
   );
 }
 
+const btnStyle: React.CSSProperties = {
+  minHeight: 44, padding: '10px 16px', borderRadius: 12,
+  background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)',
+  border: '1px solid rgba(255,255,255,0.15)',
+  cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700,
+  display: 'inline-flex', alignItems: 'center', gap: 6,
+};
+
+const linkStyle: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6,
+  minHeight: 44, padding: '10px 16px', borderRadius: 12,
+  background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.85)',
+  border: '1px solid rgba(255,255,255,0.12)',
+  textDecoration: 'none', fontSize: '0.85rem', fontWeight: 700,
+};
+
 function ServiceIcon({ ok }: { ok: boolean | null }) {
   if (ok === true)  return <CheckCircle2 size={22} color="#34D399" />;
   if (ok === false) return <XCircle size={22} color="#F87171" />;
   return <AlertCircle size={22} color="rgba(255,255,255,0.4)" />;
 }
+
 function ServiceBadge({ ok }: { ok: boolean | null }) {
   const map = ok === true
-    ? { c: '#34D399', t: '正常' }
+    ? { c: '#34D399', t: 'ひらけます' }
     : ok === false
-      ? { c: '#F87171', t: '不調' }
-      : { c: 'rgba(255,255,255,0.4)', t: '未設定' };
+      ? { c: '#F87171', t: 'ひらけません' }
+      : { c: 'rgba(255,255,255,0.45)', t: '確認できず' };
   return (
     <span style={{
-      fontSize: 11, fontWeight: 800,
-      padding: '4px 10px', borderRadius: 999,
+      fontSize: 11, fontWeight: 800, whiteSpace: 'nowrap',
+      padding: '5px 10px', borderRadius: 999,
       background: `${map.c}22`, color: map.c,
       border: `1px solid ${map.c}55`,
     }}>{map.t}</span>
   );
 }
-function Legend({ color, label, ring }: { color: string; label: string; ring?: string }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-      <span style={{
-        width: 12, height: 12, borderRadius: 3,
-        background: color,
-        boxShadow: ring ? `inset 0 0 0 1px ${ring}` : 'none',
-      }} /> {label}
-    </span>
-  );
-}
+
 function IncidentDot({ status }: { status: Incident['status'] }) {
   const c = status === 'resolved' ? '#34D399'
           : status === 'monitoring' ? '#FBBF24' : '#F87171';

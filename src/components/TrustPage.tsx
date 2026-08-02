@@ -14,13 +14,14 @@
 //   6. 法令 (個人情報保護法 / GDPR / SOC2 ロードマップ)
 // ============================================================
 
-import { ArrowLeft, ShieldCheck, MapPin, Users, Trash2, Sparkles, Lock, Scale, Mail, Download, FileText } from 'lucide-react';
+import { useEffect } from 'react';
+import { ArrowLeft, ShieldCheck, MapPin, Users, Trash2, Sparkles, Lock, Scale, Mail, Download, FileText, Activity } from 'lucide-react';
 
 const COLOR_BG = 'linear-gradient(180deg, #070712 0%, #0d0d1c 100%)';
 const SECTION_BG = 'rgba(255,255,255,0.04)';
 const BORDER = 'rgba(255,255,255,0.08)';
 
-const UPDATED = '2026-06-04';
+const UPDATED = '2026-08-03';
 
 type Section = {
   id: string;
@@ -53,12 +54,12 @@ const SECTIONS: Section[] = [
     title: '誰が データに 触れますか',
     oneLine: '原則 ご本人のみ。弊社からは 緊急対応 + 監査時のみ、ログ付きで閲覧します。',
     rows: [
-      { label: '本人',          value: 'ログイン後 自分のデータのみ閲覧 (他のユーザーには 隔離 — KK 巡回済み)' },
-      { label: '同じ会社のメンバー', value: 'チーム招待 (QQQ) で 役割 別 (オーナー / 編集 / 閲覧)。退会で即取消し' },
+      { label: '本人',          value: 'ログイン後 自分のデータのみ閲覧 (他のユーザーには見えないように分けています)' },
+      { label: '同じ会社のメンバー', value: 'チーム招待で 役割 別 (オーナー / 編集 / 閲覧)。退会で即取消し' },
       { label: '運営者 (CORE)', value: '緊急バグ調査・法令対応のみ。閲覧時は ログ + 本人通知 (audit log) を残す方針' },
       { label: '第三者',        value: '原則なし。例外: Stripe (決済) / Resend (メール) / Anthropic / Google (AI) は 利用規約 で定めた範囲のみ' },
     ],
-    note: '弊社の従業員アクセス は 監査ログ + 2 段階認証 (TOTP, LLLL) を必須にしています。',
+    note: '弊社の従業員アクセス は 監査ログ + 2 段階認証 (TOTP) を必須にしています。',
   },
   {
     id: 'delete',
@@ -66,8 +67,8 @@ const SECTIONS: Section[] = [
     title: '退会 / 削除 はどうやって',
     oneLine: '設定 → 個人情報 → 「全データ JSON エクスポート」「全データ削除」 で 30 秒で完了。',
     rows: [
-      { label: '全データ エクスポート', value: '設定 → 個人情報 → 全データ JSON ダウンロード (JJJ, 30秒)' },
-      { label: '会話履歴 エクスポート', value: 'モバイル チャット 履歴を .txt / .md で (LLL)' },
+      { label: '全データ エクスポート', value: '設定 → 個人情報 → 全データ JSON ダウンロード (30 秒)' },
+      { label: '会話履歴 エクスポート', value: 'モバイル チャット 履歴を .txt / .md で保存' },
       { label: '退会 / 削除',         value: '設定 → 個人情報 → 「すべて削除」 をタップ → 確認 → 即時削除 (バックアップから 30 日以内に消滅)' },
       { label: 'サブスク解約',         value: 'Stripe カスタマー ポータル (自動 リンク) で 即時 解約' },
       { label: '通信履歴 / メール',    value: 'メールアドレス を 削除依頼 として core.inc.guild@gmail.com に送信 → 7 日以内に対応' },
@@ -85,7 +86,7 @@ const SECTIONS: Section[] = [
       { label: 'ログ保持',          value: 'API の呼び出しログ は 90 日 (Anthropic) / 30 日 (Google) で消滅。弊社では生 ログを保管しません' },
       { label: 'プロンプトの 二次利用', value: 'なし。 弊社内部の 分析用 ダッシュボード ですら 個別プロンプトの内容 は表示しません' },
     ],
-    note: 'AI 利用状況 (XXX) で「自分が どの モデル を 何回 呼んだか」 はいつでも 確認できます。',
+    note: 'AI 利用状況の画面で「自分が どの モデル を 何回 呼んだか」 はいつでも 確認できます。',
   },
   {
     id: 'security',
@@ -96,7 +97,7 @@ const SECTIONS: Section[] = [
       { label: '通信暗号化',     value: 'HTTPS / TLS 1.3 (HSTS preload, vercel.json 設定済)' },
       { label: '保管暗号化',     value: 'Upstash: AES-256 / Stripe: PCI DSS Level 1 / Vercel KV: AES-256' },
       { label: 'バックアップ',   value: 'Upstash: PITR (Point-In-Time Recovery 35 日)。アプリ ソース は GitHub' },
-      { label: '監視',          value: '自前 error tracker (UU) + secrets-health (FFF) + anomaly-detect (UUUU) で 24/7 監視' },
+      { label: '監視',          value: '自前のエラー記録 + 鍵の疎通チェック + 異常検知 の 3 つを 24 時間動かしています' },
       { label: '障害時の連絡',    value: 'メール (オーナーは Resend) / Slack (オーナー Webhook) で 30 分以内に第一報' },
     ],
   },
@@ -109,7 +110,7 @@ const SECTIONS: Section[] = [
       { label: '個人情報保護法 (日本)', value: '対応済。事業者: 井出 直毅（屋号: CORE）' },
       { label: 'GDPR (EU)',            value: '対応済 (アクセス / 訂正 / 削除 / 持ち出し / 異議申立 の権利を保証)' },
       { label: 'CCPA (米 加州)',        value: '対応済 (Do Not Sell / Share — 弊社は そもそも 個人データを 売却しません)' },
-      { label: 'SOC2 / ISO27001',       value: '取得 ロードマップ中 (Type I を 2026Q3, Type II を 2026Q4 目標)' },
+      { label: 'SOC2 / ISO27001',       value: 'まだ取得していません。個人事業の規模のため取得時期を約束できないので、代わりに この ページ で 中身を 全部 公開しています' },
       { label: '特定商取引法',           value: '/tokushoho に 事業者情報・販売条件・解約 を 全文掲載' },
       { label: '個人情報保護管理者',     value: '井出直毅 (core.inc.guild@gmail.com)' },
     ],
@@ -117,12 +118,13 @@ const SECTIONS: Section[] = [
 ];
 
 export default function TrustPage() {
+  useEffect(() => { document.title = 'データの取り扱い（トラストセンター） — CORE'; }, []);
   return (
-    <div style={{ minHeight: '100vh', background: COLOR_BG, color: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif' }}>
+    <div style={{ minHeight: '100svh', background: COLOR_BG, color: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif' }}>
       <div style={{ maxWidth: 880, margin: '0 auto', padding: '32px 18px 80px' }}>
         {/* Back */}
-        <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 24 }}>
-          <ArrowLeft size={14} /> ホームへ戻る
+        <a href="/corp" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 24 }}>
+          <ArrowLeft size={14} /> CORE のトップへ
         </a>
 
         {/* Hero */}
@@ -142,7 +144,7 @@ export default function TrustPage() {
               データは どこに / 誰が触れる / 削除はどう
             </h1>
             <p style={{ fontSize: '0.92rem', color: 'rgba(255,255,255,0.72)', margin: 0, lineHeight: 1.7 }}>
-              CORE Prism / Iris の データ取り扱い を 1 ページにまとめました。
+              CORE の 7 つのサービス (Prism / Iris / Guild / Resonance / Lume / Crystal / Pulse) に共通の データ取り扱い を 1 ページにまとめました。
               監査・営業先・パートナー の方は そのまま PDF として 印刷 してご活用ください。
             </p>
           </div>
@@ -282,6 +284,15 @@ export default function TrustPage() {
             }}>
               <FileText size={14} /> 利用規約
             </a>
+            <a href="/status" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '10px 16px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)',
+              textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem',
+              border: `1px solid ${BORDER}`,
+            }}>
+              <Activity size={14} /> いまの稼働状況
+            </a>
             <button
               onClick={() => window.print()}
               style={{
@@ -299,7 +310,7 @@ export default function TrustPage() {
 
         {/* Tiny footer */}
         <div style={{ marginTop: 28, fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
-          © Naoki Ide (CORE) — CORE Prism / Iris.   最終更新: {UPDATED}
+          © Naoki Ide (CORE) — CORE の 7 つのサービス共通。   最終更新: {UPDATED}
         </div>
       </div>
     </div>

@@ -33,7 +33,7 @@ interface Column {
 const SHIPPING: RoadmapItem[] = [
   { id: 'agent-team-monitor',    title: 'AI 役員 14 名 ライブ',      desc: '判断 / 営業 / 採用 を 並列で 動かす 中枢',         tag: 'AI', estimate: '6 月' },
   { id: 'industry-lp-7',         title: '業界 LP 7 種',                desc: '中小 / 不動産 / コンサル / 個人 / クリエイター / フリーランス / SaaS', tag: 'LP', estimate: '6 月' },
-  { id: 'stripe-v2-billing',     title: 'Stripe v2 + Coupon + 試用',  desc: 'BtoC ¥3K〜 / BtoB ¥20K〜 / 7 日無料 / クーポン',  tag: '料金', estimate: '6 月' },
+  { id: 'stripe-v2-billing',     title: 'Stripe v2 + Coupon + 試用',  desc: 'BtoC ¥3K〜 / BtoB ¥20K〜 / 3 日無料 / クーポン',  tag: '料金', estimate: '6 月' },
   { id: 'trust-status-page',     title: 'Trust + Status 公開',         desc: 'データの所在 / 監査 + サービス健康診断 + 90 日インシデント',     tag: '信頼', estimate: '6 月' },
 ];
 

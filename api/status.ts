@@ -1,41 +1,68 @@
 // ============================================================
 // /api/status — 公開ステータス エンドポイント (認証なし)
 //
-// オーナー指示 (2026-06-04 第 29 波 WWWW):
-//   /status (公開ページ) が叩く。FFF /master/secrets-health は master key
-//   が必要だが、こちらは「サービスの ON/OFF / 直近の生死」だけ返す。
-//   キー値・サブスク名は一切含めない (Trust v3 と整合)。
+// 2026-08-03 作り直し:
+//   旧版は「鍵の疎通チェック (Anthropic / Stripe / Resend)」を直列で叩き、
+//   さらに Upstash へ 90 回 連続で HGETALL していたため **応答に 22 秒** かかっていた。
+//   /status ページ側のタイムアウトは 12 秒なので、実際には**必ず失敗**していたのに
+//   ページは「すべて正常」と出していた (＝嘘の緑)。
 //
-// レスポンス例:
-//   {
-//     asOf: "2026-06-04T03:00:00Z",
-//     services: [
-//       { name: "Anthropic Claude", ok: true, latencyMs: 240, note: "model 取得 OK" },
-//       { name: "Stripe", ok: true, latencyMs: 180, note: "live, charges=ON" },
-//       …
-//     ],
-//     incidents: [{ date: "2026-05-15", title: "Stripe 遅延 30 分", status: "resolved" }]
-//   }
-//
-// Upstash: incident:<date> ハッシュ (title / status / minutesDown) を直近 90 日分 走査
+//   作り直しの方針:
+//   1. お客様が知りたいのは「いま CORE の 7 つのサービスが開けるか」なので、
+//      本番 URL を **実際に取りに行って** 生死を測る (実測しかしない)
+//   2. すべて **並列** + 6 秒で打ち切り → 全体で 3 秒以内に返す
+//   3. 測れなかったものは "unknown"。**測れていないものを「正常」と言わない**
+//   4. 障害の記録は Upstash を **1 回の pipeline** で読む (90 往復をやめる)
 // ============================================================
 
 export const config = { runtime: 'edge' };
 
-import { runSecretsHealth } from './_lib/secretsHealth';
-
 const UP_URL = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_URL) || '';
 const UP_TOK = (typeof process !== 'undefined' && process.env?.UPSTASH_REDIS_REST_TOKEN) || '';
 
-async function upstash(cmd: (string | number)[]): Promise<any> {
-  if (!UP_URL || !UP_TOK) throw new Error('UPSTASH_NOT_CONFIGURED');
-  const res = await fetch(UP_URL, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${UP_TOK}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(cmd),
-  });
-  if (!res.ok) throw new Error(`upstash ${res.status}`);
-  return res.json();
+// 障害の記録を取り始めた日。これより前の「無事故」は主張しない
+const RECORDING_SINCE = '2026-08-03';
+
+// 公開している 7 つのサービス (/corp の「七つのプロダクト」と同じ並び)
+const SERVICES: { name: string; url: string; what: string }[] = [
+  { name: 'CORE Prism',    url: 'https://core-prism-app.vercel.app/',           what: '経営のAI参謀' },
+  { name: 'CORE Iris',     url: 'https://core-prism-app.vercel.app/iris',       what: 'リール制作' },
+  { name: 'CORE Guild',    url: 'https://guild-hazel.vercel.app/',              what: '集まって決める場' },
+  { name: 'CORE Resonance',url: 'https://resonancebot-ivory.vercel.app/lp',     what: 'LINE集客' },
+  { name: 'CORE Lume',     url: 'https://lume-deploy-five.vercel.app/',         what: 'リンクをひとつに' },
+  { name: 'CORE Crystal',  url: 'https://crystal-nine-self.vercel.app/',        what: '電話とチャットのAI' },
+  { name: 'CORE Pulse',    url: 'https://core-prism-app.vercel.app/pulse',      what: '見守り' },
+  { name: 'CORE 本体サイト', url: 'https://core-prism-app.vercel.app/corp',      what: '会社のご案内' },
+];
+
+interface PublicService { name: string; what: string; ok: boolean | null; latencyMs: number | null; note: string }
+interface Incident { date: string; title: string; status: 'investigating' | 'monitoring' | 'resolved'; minutesDown?: number }
+
+async function probe(s: { name: string; url: string; what: string }): Promise<PublicService> {
+  const start = Date.now();
+  try {
+    const res = await fetch(s.url, {
+      method: 'GET',
+      redirect: 'follow',
+      headers: { 'User-Agent': 'CORE-StatusBot/1.0 (+https://core-prism-app.vercel.app/status)' },
+      signal: AbortSignal.timeout(6000),
+    });
+    const ms = Date.now() - start;
+    if (!res.ok) {
+      return { name: s.name, what: s.what, ok: false, latencyMs: ms, note: `開けませんでした (HTTP ${res.status})` };
+    }
+    return { name: s.name, what: s.what, ok: true, latencyMs: ms, note: '開けました' };
+  } catch {
+    // 時間切れ / 接続できない
+    return { name: s.name, what: s.what, ok: null, latencyMs: null, note: '今回は確認できませんでした' };
+  }
+}
+
+function parseHash(arr: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!Array.isArray(arr)) return out;
+  for (let i = 0; i + 1 < arr.length; i += 2) out[String(arr[i])] = String(arr[i + 1]);
+  return out;
 }
 
 function dateOffsetDays(daysAgo: number): string {
@@ -44,86 +71,71 @@ function dateOffsetDays(daysAgo: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-function parseHash(res: any): Record<string, string> {
-  const out: Record<string, string> = {};
-  const arr = res?.result;
-  if (!Array.isArray(arr)) return out;
-  for (let i = 0; i + 1 < arr.length; i += 2) {
-    out[String(arr[i])] = String(arr[i + 1]);
+/** 直近 90 日の障害記録を pipeline 1 回で読む。読めなければ null (＝「無事故」とは言わない) */
+async function loadIncidents(): Promise<Incident[] | null> {
+  if (!UP_URL || !UP_TOK) return null;
+  const dates = Array.from({ length: 90 }, (_, i) => dateOffsetDays(i));
+  try {
+    const res = await fetch(`${UP_URL.replace(/\/$/, '')}/pipeline`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${UP_TOK}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(dates.map((d) => ['HGETALL', `incident:${d}`])),
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return null;
+    const rows = await res.json() as { result?: unknown }[];
+    if (!Array.isArray(rows)) return null;
+    const out: Incident[] = [];
+    rows.forEach((row, i) => {
+      const h = parseHash(row?.result);
+      if (!h.title) return;
+      out.push({
+        date: dates[i],
+        title: h.title,
+        status: (h.status || 'resolved') as Incident['status'],
+        minutesDown: h.minutesDown ? Number(h.minutesDown) : undefined,
+      });
+    });
+    return out;
+  } catch {
+    return null;
   }
-  return out;
 }
 
-interface PublicService { name: string; ok: boolean | null; latencyMs: number | null; note: string; }
-interface Incident { date: string; title: string; status: 'investigating' | 'monitoring' | 'resolved'; minutesDown?: number; }
-
 export default async function handler(req: Request): Promise<Response> {
-  // 公開 — CORS 全許可、GET のみ
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET',
     } });
   }
-  if (req.method !== 'GET') {
-    return new Response('Method Not Allowed', { status: 405 });
-  }
+  if (req.method !== 'GET') return new Response('Method Not Allowed', { status: 405 });
 
-  // health: 内部の secretsHealth を 叩くが 値はマスク + キー名公開しない
-  let services: PublicService[] = [];
-  try {
-    const sh = await runSecretsHealth();
-    services = sh.checks
-      // 「公開して問題ないサービス名」のみ並べる (env キー名は外に出さない)
-      .filter((c) => ['Anthropic Claude', 'Stripe', 'Resend', 'Gemini', 'Upstash', 'Slack Webhook', 'X (Twitter)', 'VAPID (Web Push)'].includes(c.label))
-      .map((c) => ({
-        name: c.label,
-        ok: c.reachOk,
-        latencyMs: c.reachLatencyMs,
-        // 詳細な「URL 形式 OK」 などは外向きでは丸める
-        note: c.reachOk === false ? '不調' : c.reachOk === true ? 'OK' : '未設定',
-      }));
-  } catch {
-    // secretsHealth で例外 — vercel build 時はキー無しなので
-    services = [];
-  }
+  const [services, incidents] = await Promise.all([
+    Promise.all(SERVICES.map(probe)),
+    loadIncidents(),
+  ]);
 
-  // incidents: 直近 90 日 を 1 日ずつ HGETALL (キャッシュ 5 分)
-  const incidents: Incident[] = [];
-  if (UP_URL && UP_TOK) {
-    try {
-      for (let i = 0; i < 90; i++) {
-        const date = dateOffsetDays(i);
-        const r = await upstash(['HGETALL', `incident:${date}`]);
-        const h = parseHash(r);
-        if (!h.title) continue;
-        const status = (h.status || 'resolved') as Incident['status'];
-        incidents.push({
-          date,
-          title: h.title,
-          status,
-          minutesDown: h.minutesDown ? Number(h.minutesDown) : undefined,
-        });
-      }
-    } catch {
-      // upstash 無設定 / エラーは無視 (公開ページは ok 表示が大事)
-    }
-  }
-
-  // 全体ステータス (OK / 一部劣化 / 障害)
-  const downs = services.filter((s) => s.ok === false).length;
-  const overall = downs === 0 ? 'operational' : downs <= 1 ? 'degraded' : 'major_outage';
+  const down = services.filter((s) => s.ok === false).length;
+  const unknown = services.filter((s) => s.ok === null).length;
+  const overall: 'operational' | 'degraded' | 'major_outage' | 'unknown' =
+    down === 0 && unknown === 0 ? 'operational'
+    : down >= 2 ? 'major_outage'
+    : down === 1 ? 'degraded'
+    : 'unknown'; // 落ちてはいないが、確認できなかったものがある
 
   return new Response(JSON.stringify({
     asOf: new Date().toISOString(),
     overall,
     services,
-    incidents,
+    incidents: incidents || [],
+    incidentsKnown: incidents !== null,
+    recordingSince: RECORDING_SINCE,
   }), {
     status: 200,
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=120, s-maxage=120, stale-while-revalidate=240',
+      'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=180',
       'Access-Control-Allow-Origin': '*',
     },
   });
