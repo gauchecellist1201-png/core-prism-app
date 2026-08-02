@@ -11,6 +11,7 @@ import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, Crys
 import { CONTINUUM_PLANS } from './continuumPlans';
 import ServiceFinder from './ServiceFinder';
 import { VERTICALS } from '../vertical/verticalData';
+import { VerticalIndustryIcon } from '../vertical/VerticalIndustryIcon';
 
 const COMPANY = {
   nameJa: 'CORE',
@@ -20,7 +21,7 @@ const COMPANY = {
   ceoEn: 'Naoki Ide',
   addressJa: '〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11番7号',
   addressEn: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0025, Japan',
-  email: 'core.inc.guild@gmail.com',
+  email: 'core.guild.inc@gmail.com',
 };
 
 // プラットフォーム価格グリッド — 安い入口→最上位Crystalへ昇る並び。製品追加は1オブジェクト追加で並ぶ
@@ -85,70 +86,77 @@ function jumpToHash(e: ReactMouseEvent<HTMLAnchorElement>, href: string) {
 }
 
 // ============================================================
-//  MobileJump — iPhoneでは上部ナビが全部隠れていて、
-//  32,000px を指でこすらないと目的地に着けなかった。その解決。
-//  横スクロールの章チップ。いま見ている章が光る。
+//  タブ（2026-08-02 オーナー指示で全面導入）
+//
+//  なぜ:
+//    「縦に長すぎる。タブで使い分けて、1ページあたりの情報量を少なくしたい。
+//      自社サービスは自社サービスだけでホームに置いて、他は他でタブで切り替えたい」
+//    1枚に12章すべてを積んでいたため、iPhone で 15,000px 超。
+//    会社概要にたどり着くまでに全プロダクトを通過させられていた。
+//
+//  設計（[[ux_one_screen_tab_doctrine]] 準拠）:
+//    ・タブを押すと画面が「入れ替わる」。下に足していかない。
+//    ・切り替えたら必ず先頭へ戻す（前のタブのスクロール位置を持ち越さない）。
+//    ・既存の #リンク（フッタ・CTA・共有された URL）を殺さない。
+//      SECTION_TAB でどの章がどのタブに載っているかを引き、
+//      必要ならタブを切り替えてからその章へ送る。
 // ============================================================
-const JUMP_ITEMS = [
-  { href: '#finder', label: '自分に合うのは' },
-  { href: '#products', label: 'プロダクト' },
-  { href: '#vertical', label: '業界特化' },
-  { href: '#platform', label: '料金' },
-  { href: '#connect', label: 'つながり' },
-  { href: '#journey', label: '歩み' },
-  { href: '#about', label: '会社概要' },
-  { href: '#contact', label: 'お問い合わせ' },
+export type CoreTabKey = 'home' | 'vertical' | 'connect' | 'company' | 'contact';
+
+/**
+ * short — 狭い画面用の短い名札。
+ * 実測(iPhone 390px): 長い名札のままだと 5枚で 530px になり 140px はみ出して、
+ * いちばん右の「お問い合わせ」が画面外に完全に消えていた。
+ * 英字の副題も 640px 以下では隠す（CSS 側）。
+ */
+const CORE_TABS: { key: CoreTabKey; label: string; short: string; sub: string }[] = [
+  { key: 'home', label: '自社サービス', short: 'サービス', sub: 'PRODUCTS' },
+  { key: 'vertical', label: '業界特化', short: '業界特化', sub: 'VERTICAL' },
+  { key: 'connect', label: 'つながり', short: 'つながり', sub: 'ONE FLOW' },
+  { key: 'company', label: '会社について', short: '会社', sub: 'COMPANY' },
+  { key: 'contact', label: 'お問い合わせ', short: '問い合わせ', sub: 'CONTACT' },
 ];
 
-function MobileJump() {
-  const [active, setActive] = useState<string>('');
-  const barRef = useRef<HTMLDivElement>(null);
+/** 章 id → その章が載っているタブ。既存の #リンクを生かすための対応表。 */
+const SECTION_TAB: Record<string, CoreTabKey> = {
+  top: 'home', finder: 'home', products: 'home', platform: 'home', screens: 'home',
+  vertical: 'vertical',
+  'vertical-ultima': 'vertical', 'vertical-anima': 'vertical',
+  'vertical-veritas': 'vertical', 'vertical-soma': 'vertical',
+  connect: 'connect', continuum: 'connect', who: 'connect',
+  mission: 'company', executive: 'company', journey: 'company', about: 'company',
+  contact: 'contact',
+};
 
-  useEffect(() => {
-    const ids = JUMP_ITEMS.map(i => i.href.slice(1));
-    const els = ids
-      .map(id => document.getElementById(id))
-      .filter((e): e is HTMLElement => !!e);
-    if (!els.length) return;
-    const io = new IntersectionObserver(
-      entries => {
-        const hit = entries
-          .filter(e => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (hit) setActive('#' + hit.target.id);
-      },
-      { rootMargin: '-45% 0px -45% 0px', threshold: [0, 0.01, 0.5] }
-    );
-    els.forEach(e => io.observe(e));
-    return () => io.disconnect();
-  }, []);
-
-  // いま光っているチップを、チップバーの中でも見えるところへ寄せる
-  useEffect(() => {
-    if (!active || !barRef.current) return;
-    const chip = barRef.current.querySelector<HTMLElement>(`a[href="${active}"]`);
-    if (chip) {
-      const bar = barRef.current;
-      const target = chip.offsetLeft - bar.clientWidth / 2 + chip.clientWidth / 2;
-      bar.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
-    }
-  }, [active]);
-
-  return (
-    <div className="lp-jump" ref={barRef} aria-label="ページ内の移動">
-      {JUMP_ITEMS.map(i => (
-        <a
-          key={i.href}
-          href={i.href}
-          onClick={e => jumpToHash(e, i.href)}
-          className={'lp-jump-chip' + (active === i.href ? ' is-on' : '')}
-        >
-          {i.label}
-        </a>
-      ))}
-    </div>
-  );
+/** URL のハッシュから初期タブを決める。共有された #about が直接開けるように。 */
+function tabFromHash(): CoreTabKey {
+  if (typeof window === 'undefined') return 'home';
+  const id = window.location.hash.replace('#', '');
+  return SECTION_TAB[id] ?? 'home';
 }
+
+/**
+ * 業種チップ → その業種のカードへ。
+ *
+ * 罠: 640px 以下では .lp-vertical-grid が「横スワイプの棚」になる（index.css）。
+ *     カードは縦ではなく横にずれた位置にあるので、window.scrollTo（＝縦だけ）では
+ *     画面が1ミリも動かず「押しても何も起きない」ように見える。
+ *     inline:'center' を伴う scrollIntoView なら、棚の横位置も一緒に合う。
+ */
+function scrollToVerticalCard(e: ReactMouseEvent<HTMLAnchorElement>, id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  e.preventDefault();
+  el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+  history.replaceState(null, '', '#' + id);
+}
+
+// ============================================================
+//  （旧 MobileJump は 2026-08-02 のタブ導入で廃止）
+//  横スクロールの章チップは「1枚の長いページの中を移動する」ための道具だった。
+//  タブで画面そのものが入れ替わるようになり、役割が重複したため削除。
+//  移動手段は .lp-tabs 1本に統一する（モバイルで移動手段が消えないこと＝巡回の観点2）。
+// ============================================================
 
 // ============================================================
 //  MobileFold — モバイルだけ折りたたむ。デスクトップはそのまま出す。
@@ -167,6 +175,73 @@ function MobileFold({ summary, children }: { summary: string; children: ReactNod
 
 export default function CoreSite() {
   const [legalKind, setLegalKind] = useState<LegalKind | null>(null);
+
+  // ── タブ（2026-08-02）。押すと画面が入れ替わる。下に足していかない。 ──
+  const [tab, setTab] = useState<CoreTabKey>(() => tabFromHash());
+  const isNarrow = useIsMobile('(max-width: 640px)');
+  const tabBarRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 選んでいるタブを、タブバーの中でも必ず見える位置へ寄せる。
+   * これが無いと、右端の「お問い合わせ」を選んでも本人が画面外のままで、
+   * どこにいるのか分からなくなる（旧 MobileJump が持っていた挙動を引き継ぐ）。
+   */
+  useEffect(() => {
+    const bar = tabBarRef.current;
+    if (!bar) return;
+    const chip = bar.querySelector<HTMLElement>(`[data-tab="${tab}"]`);
+    if (!chip) return;
+    const target = chip.offsetLeft - bar.clientWidth / 2 + chip.clientWidth / 2;
+    bar.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+  }, [tab]);
+
+  /**
+   * タブを切り替える。
+   * scrollTo(0,0) を必ず伴う ＝ 前のタブで下まで読んでいた位置を持ち越すと、
+   * 切り替えた先の途中から始まって「押しても何も起きない」ように見えるため。
+   */
+  const goTab = (next: CoreTabKey, hash?: string) => {
+    setTab(next);
+    if (hash) {
+      history.replaceState(null, '', hash);
+      // 章指定つきの場合は、描画が入れ替わってから位置を合わせる
+      requestAnimationFrame(() => {
+        const el = document.getElementById(hash.replace('#', ''));
+        if (!el) { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
+        const header = document.querySelector('header');
+        const offset = (header?.getBoundingClientRect().height ?? 64) + 8;
+        window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'auto' });
+      });
+    } else {
+      history.replaceState(null, '', '#' + next);
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  };
+
+  /**
+   * ページ内の #リンクを全部拾う共通ハンドラ。
+   * 別タブにある章を指していたら、まずタブを切り替えてから送る。
+   * （フッタの「会社概要」やヒーローの「プロダクトを見る」を殺さないため）
+   */
+  const handleAnchor = (e: ReactMouseEvent<HTMLAnchorElement>, href: string) => {
+    if (!href.startsWith('#')) return;
+    const id = href.slice(1);
+    const target = SECTION_TAB[id];
+    if (target && target !== tab) {
+      e.preventDefault();
+      goTab(target, href);
+      return;
+    }
+    jumpToHash(e, href);
+  };
+
+  // 戻る/進むでタブが追従するように
+  useEffect(() => {
+    const onHash = () => setTab(tabFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
   useEffect(() => {
     document.title = 'CORE — すべての時代の、核となるものを。';
 
@@ -286,42 +361,63 @@ export default function CoreSite() {
         >
           <a
             href="#top"
+            onClick={e => { e.preventDefault(); goTab('home'); }}
             style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}
             aria-label="CORE"
             className="lp-tap-link"
           >
             <CoreLogo size={36} withWordmark />
           </a>
+          {/* 別ページ（タブでは切り替わらない別ルート）だけをここに残す */}
           <nav style={{ display: 'flex', gap: '1.6rem', alignItems: 'center' }}>
-            <a href="#finder" style={navLink} className="lp-nav-link">自分に合うのは</a>
-            <a href="#products" style={navLink} className="lp-nav-link">プロダクト</a>
-            <a href="#vertical" style={navLink} className="lp-nav-link">業界特化</a>
             <a href="/continuum" style={navLink} className="lp-nav-link">Continuum</a>
             <a href="/studio" style={navLink} className="lp-nav-link">制作スタジオ</a>
-            <a href="#connect" style={navLink} className="lp-nav-link">つながり</a>
-            <a href="#journey" style={navLink} className="lp-nav-link">歩み</a>
-            <a href="#about" style={navLink} className="lp-nav-link">会社概要</a>
-            <a href="#contact" style={ctaSmall}>お問い合わせ</a>
+            <a href="#contact" onClick={e => handleAnchor(e, '#contact')} style={ctaSmall}>お問い合わせ</a>
           </nav>
         </div>
-        {/* iPhone用の章ジャンプ（デスクトップでは非表示） */}
-        <MobileJump />
+
+        {/*
+          タブ本体。デスクトップも iPhone も同じ1本を使う。
+          旧 MobileJump（章ジャンプのチップ）は、タブが同じ役割を果たすので廃止した。
+        */}
+        <div className="lp-tabs" role="tablist" aria-label="CORE サイトの切り替え" ref={tabBarRef}>
+          {CORE_TABS.map(t => (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              data-tab={t.key}
+              aria-selected={tab === t.key}
+              aria-label={t.label}
+              onClick={() => goTab(t.key)}
+              className={'lp-tab' + (tab === t.key ? ' is-on' : '')}
+            >
+              {isNarrow ? t.short : t.label}
+              <span className="lp-tab-sub">{t.sub}</span>
+            </button>
+          ))}
+        </div>
       </header>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  HERO                       */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'home' && (
       <HeroVideo />
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  「あなたにはどれ？」3問診断 ＋ 7つの比較  */}
       {/*  ヒーロー直下に置く。7つを全部読まないと選べない状態をここで終わらせる */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'home' && (
       <ServiceFinder />
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  CONNECT (一気通貫 / つながり)  */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'connect' && (
       <section
         id="connect"
         className="lp-section-pad"
@@ -453,10 +549,12 @@ export default function CoreSite() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  PRODUCTS                  */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'home' && (
       <section
         id="products"
         className="lp-section-pad"
@@ -714,11 +812,14 @@ export default function CoreSite() {
           </a>
         </div>
       </section>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  REAL SCREENS — 実物で、ご覧ください（本番スクリーンショット6面の章扉） */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'home' && (
       <section
+        id="screens"
         className="lp-section-pad"
         style={{ padding: '7rem 1.5rem', background: 'linear-gradient(180deg, #0a0805, #12100a 55%, #0a0805)', color: '#F1E9D8' }}
       >
@@ -766,10 +867,12 @@ export default function CoreSite() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  PLATFORM — 価格グリッド    */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'home' && (
       <section
         id="platform"
         className="lp-section-pad"
@@ -842,11 +945,13 @@ export default function CoreSite() {
           </p>
         </div>
       </section>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  CORE VERTICAL — 業界特化ライン（プラットフォームとは別の棚） */}
       {/*  第1弾 ULTIMA（建設・電気設備工事） / 第2弾 ANIMA（アニメ制作進行） */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'vertical' && (
       <section
         id="vertical"
         className="lp-section-pad"
@@ -859,13 +964,42 @@ export default function CoreSite() {
               <span style={sectionLabelSub}>CORE&nbsp;VERTICAL</span>
             </p>
             <h2 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.85rem, 3.8vw, 2.85rem)', fontWeight: 700, lineHeight: 1.5, marginBottom: '1.25rem', letterSpacing: '0.04em' }}>
-              業界の中に、入り込むAI。
+              あなたの業界の、AI。
             </h2>
-            <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(240,233,216,0.7)', fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', maxWidth: 680, margin: '0 auto', lineHeight: 2 }}>
+            <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(240,233,216,0.7)', fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', maxWidth: 680, margin: '0 auto 2rem', lineHeight: 2 }}>
               どの業界でも使える道具とは別に、ひとつの業界の仕事そのものを引き受けるAIを作っています。
               <br />
               その業界の言葉で話し、その業界の書類を作り、その業界の法令の中で動きます。
             </p>
+
+            {/*
+              2026-08-02 オーナー指摘「どの業界なのか分かりづらい」への対応。
+              まず業種の名札だけを並べて「自分の業界はどれか」を先に決めてもらう。
+              押すとその業界のカードへ。色は業種ごとに必ず違う色相（verticalData.ts）。
+            */}
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', gap: '0.6rem', justifyContent: 'center',
+            }}>
+              {VERTICALS.map(v => (
+                <a
+                  key={v.key}
+                  href={`#vertical-${v.key}`}
+                  onClick={e => scrollToVerticalCard(e, `vertical-${v.key}`)}
+                  className="lp-tap-link"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                    minHeight: 44, padding: '0 1.05rem', borderRadius: 999,
+                    textDecoration: 'none', color: v.accent,
+                    background: `${v.accent}14`, border: `1px solid ${v.accent}59`,
+                    fontFamily: FONT_SANS, fontSize: '0.84rem', fontWeight: 800, letterSpacing: '0.04em',
+                    whiteSpace: 'nowrap', flexShrink: 0,
+                  }}
+                >
+                  <VerticalIndustryIcon kind={v.industryIcon} size={17} />
+                  {v.industryShort}
+                </a>
+              ))}
+            </div>
           </div>
 
           <div className="lp-vertical-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
@@ -874,43 +1008,60 @@ export default function CoreSite() {
               return (
                 <a
                   key={v.key}
+                  id={`vertical-${v.key}`}
                   href={v.path}
                   target={v.external ? '_blank' : undefined}
                   rel={v.external ? 'noopener' : undefined}
                   className="lp-tap-link"
                   style={{
                     display: 'flex', flexDirection: 'column', gap: '0.55rem', textDecoration: 'none', color: '#F1E9D8',
-                    padding: '1.8rem 1.6rem 1.6rem', borderRadius: 18,
+                    padding: 0, borderRadius: 18, overflow: 'hidden', scrollMarginTop: 84,
                     background: `linear-gradient(165deg, ${v.accent}1C, rgba(255,255,255,0.02))`,
                     border: `1px solid ${v.accent}4D`,
                   }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                    <span style={{
-                      width: 50, height: 50, borderRadius: 14, display: 'grid', placeItems: 'center', flexShrink: 0,
-                      background: `radial-gradient(circle at 50% 30%, ${v.accent}2E, #0c0a07)`,
-                      border: `1px solid ${v.accent}66`, boxShadow: `0 0 20px ${v.accent}26`,
-                    }}>
-                      <Logo size={31} withWordmark={false} />
-                    </span>
-                    <span style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.42rem', fontWeight: 600, letterSpacing: '0.06em', lineHeight: 1.2 }}>{v.name}</span>
-                      <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.6rem', letterSpacing: '0.22em', color: v.accent, textTransform: 'uppercase', marginTop: 3 }}>{v.role}</span>
-                    </span>
-                  </span>
-                  {/* 2026-08-02: 0.45=3.87:1 で AA 落第。10.9px しかない業種名が
-                      いちばん薄いのは逆＝小さい字ほど濃くする。0.58=5.9:1。 */}
-                  <span style={{ fontFamily: FONT_SANS, fontSize: '0.68rem', color: 'rgba(240,233,216,0.58)', letterSpacing: '0.05em', marginTop: '0.7rem' }}>{v.industry}</span>
-                  <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.02rem', fontWeight: 700, lineHeight: 1.65 }}>{v.tagline}</span>
-                  <span style={{ fontFamily: FONT_SANS, fontSize: '0.81rem', color: 'rgba(240,233,216,0.65)', lineHeight: 1.9 }}>{v.body}</span>
+                  {/*
+                    業種の帯 — カードのいちばん上に、業種だけを大きく。
+                    ここを読めば「自分向けかどうか」が製品名を知らなくても分かる。
+                  */}
                   <span style={{
-                    marginTop: 'auto', paddingTop: '1rem', borderTop: `1px solid ${v.accent}33`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', flexWrap: 'wrap',
+                    display: 'flex', alignItems: 'center', gap: '0.55rem',
+                    padding: '0.7rem 1.6rem', background: `${v.accent}24`,
+                    borderBottom: `1px solid ${v.accent}40`, color: v.accent,
+                    fontFamily: FONT_SANS, fontSize: '0.86rem', fontWeight: 800, letterSpacing: '0.06em',
                   }}>
-                    {/* 同上。「本番稼働中 / デモ公開中」は買う前にいちばん確かめたい一行。 */}
-                    <span style={{ fontFamily: FONT_SANS, fontSize: '0.7rem', color: 'rgba(240,233,216,0.58)' }}>{v.status}</span>
-                    <span style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', fontWeight: 700, color: v.accent, whiteSpace: 'nowrap' }}>
-                      {v.external ? '見にいく ↗' : '詳しく見る →'}
+                    <VerticalIndustryIcon kind={v.industryIcon} size={18} />
+                    {v.industryShort}のかたへ
+                  </span>
+
+                  <span style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', padding: '1.3rem 1.6rem 1.6rem', flex: 1 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                      <span style={{
+                        width: 50, height: 50, borderRadius: 14, display: 'grid', placeItems: 'center', flexShrink: 0,
+                        background: `radial-gradient(circle at 50% 30%, ${v.accent}2E, #0c0a07)`,
+                        border: `1px solid ${v.accent}66`, boxShadow: `0 0 20px ${v.accent}26`,
+                      }}>
+                        <Logo size={31} withWordmark={false} />
+                      </span>
+                      <span style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.42rem', fontWeight: 600, letterSpacing: '0.06em', lineHeight: 1.2 }}>{v.name}</span>
+                        <span style={{ fontFamily: FONT_DISPLAY, fontSize: '0.6rem', letterSpacing: '0.22em', color: v.accent, textTransform: 'uppercase', marginTop: 3 }}>{v.role}</span>
+                      </span>
+                    </span>
+                    {/* 2026-08-02: 0.45=3.87:1 で AA 落第。10.9px しかない業種名が
+                        いちばん薄いのは逆＝小さい字ほど濃くする。0.58=5.9:1。 */}
+                    <span style={{ fontFamily: FONT_SANS, fontSize: '0.68rem', color: 'rgba(240,233,216,0.58)', letterSpacing: '0.05em', marginTop: '0.5rem' }}>{v.industry}</span>
+                    <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.02rem', fontWeight: 700, lineHeight: 1.65 }}>{v.tagline}</span>
+                    <span style={{ fontFamily: FONT_SANS, fontSize: '0.81rem', color: 'rgba(240,233,216,0.65)', lineHeight: 1.9 }}>{v.body}</span>
+                    <span style={{
+                      marginTop: 'auto', paddingTop: '1rem', borderTop: `1px solid ${v.accent}33`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', flexWrap: 'wrap',
+                    }}>
+                      {/* 同上。「本番稼働中 / デモ公開中」は買う前にいちばん確かめたい一行。 */}
+                      <span style={{ fontFamily: FONT_SANS, fontSize: '0.7rem', color: 'rgba(240,233,216,0.58)' }}>{v.status}</span>
+                      <span style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', fontWeight: 700, color: v.accent, whiteSpace: 'nowrap' }}>
+                        {v.external ? '見にいく ↗' : '詳しく見る →'}
+                      </span>
                     </span>
                   </span>
                 </a>
@@ -933,12 +1084,14 @@ export default function CoreSite() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  CORE CONTINUUM — 統合パッケージ(旗艦ブランド)  */}
       {/*  訴求: 仕事をAIエージェントに全部任せ、仕事時間をほぼゼロへ。 */}
       {/*  空いた時間で人生(人間関係・趣味・家族)を豊かに = ライフプランの見直し。 */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'connect' && (
       <section
         id="continuum"
         className="lp-section-pad"
@@ -1048,96 +1201,13 @@ export default function CoreSite() {
           </p>
         </div>
       </section>
+      )}
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  EXECUTIVE WELL-BEING PACKAGE */}
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <section
-        id="executive"
-        className="lp-section-pad"
-        style={{ padding: '7rem 1.5rem', background: '#050505' }}
-      >
-        <div
-          style={{
-            maxWidth: 1080, margin: '0 auto', position: 'relative', overflow: 'hidden',
-            borderRadius: 24, padding: 'clamp(2.4rem, 5vw, 4.2rem)',
-            /* 白ベース化でも、この演奏ショーケースは金×黒の高級タイルとして暗いまま残す(白ページ上のアクセント) */
-            background: 'radial-gradient(140% 120% at 85% -20%, #1a1508 0%, #070707 60%)',
-            border: '1px solid rgba(201,169,110,0.5)',
-            boxShadow: '0 40px 90px -40px rgba(201,169,110,0.55), inset 0 0 80px rgba(201,169,110,0.05)',
-          }}
-        >
-          <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.74rem', letterSpacing: '0.3em', color: '#C9A96E', textTransform: 'uppercase', marginBottom: '1.2rem' }}>
-            Executive Well-being Package
-          </p>
-          <h2
-            style={{
-              fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.6rem, 3.4vw, 2.5rem)', fontWeight: 700, lineHeight: 1.7, letterSpacing: '0.04em',
-              background: 'linear-gradient(120deg, #F7EAD0, #C9A96E)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              marginBottom: '1.2rem',
-            }}
-          >
-            AI が事業を伸ばし、
-            <br />
-            音楽が組織を潤す。
-          </h2>
-          <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(255,255,255,0.68)', fontSize: 'clamp(0.92rem, 1.4vw, 1.02rem)', lineHeight: 2.1, maxWidth: 640 }}>
-            CORE の上位プランをご契約の企業さまだけにご案内する、招待制の最上位パッケージ。
-            主宰・井出直毅のもう一つの顔 —— 世界のラグジュアリーの現場で演奏するチェリスト
-            <strong style={{ color: '#E7C987', fontWeight: 600 }}> GAUCHE </strong>
-            による特別な体験を、御社の福利厚生とブランドに。
-          </p>
-          <div className="lp-exec-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', margin: '2.2rem 0 2.4rem' }}>
-            {[
-              { t: '周年・VIP レセプションでの出張演奏', d: 'リッツ・カールトン、Loro Piana Milano で磨いた演奏が、御社のイベントの「格」を引き上げます。' },
-              { t: 'チェロスクール法人契約（福利厚生）', d: '従業員は GAUCHE Cello School の受け放題レッスンへ。楽器は無料貸与、手ぶらで始められます。' },
-              { t: '経営層向け Executive Private 優先枠', d: '役員・経営層のための完全1対1レッスン。多忙な予定に合わせるフルフレックス制。' },
-            ].map(f => (
-              <div key={f.t} style={{ padding: '1.3rem 1.2rem', borderRadius: 14, background: 'rgba(201,169,110,0.05)', border: '1px solid rgba(201,169,110,0.22)' }}>
-                <p style={{ fontFamily: FONT_SERIF_JA, fontWeight: 600, fontSize: '0.95rem', color: '#F1E6CE', lineHeight: 1.8, marginBottom: '0.5rem' }}>{f.t}</p>
-                <p style={{ fontFamily: FONT_SANS, fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.9 }}>{f.d}</p>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.2rem', justifyContent: 'space-between' }}>
-            <p style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.3rem', letterSpacing: '0.14em', color: '#E7C987' }}>
-              By Invitation
-              {/* 2026-07-31 巡回: 0.45(4.43:1) は 0.72rem の字送り広めの文だとさらに読みにくい。0.62 に。 */}
-              <span style={{ display: 'block', fontFamily: FONT_SANS, fontSize: '0.72rem', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.62)', marginTop: 4 }}>
-                上位プラン契約企業さま限定 ・ 完全個別お見積り
-              </span>
-            </p>
-            <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
-              <a
-                href={`mailto:${COMPANY.email}?subject=${encodeURIComponent('【Executive Well-being Package】ご相談')}`}
-                className="lp-tap-link"
-                style={{
-                  fontFamily: FONT_SANS, fontSize: '0.88rem', fontWeight: 700, padding: '0.95rem 1.9rem', borderRadius: 999,
-                  background: 'linear-gradient(135deg, #E7C987, #C9A96E)', color: '#14100a', textDecoration: 'none',
-                }}
-              >
-                導入の相談をする
-              </a>
-              <a
-                href="https://gauche-artist.vercel.app/"
-                target="_blank"
-                rel="noopener"
-                className="lp-tap-link"
-                style={{
-                  fontFamily: FONT_SANS, fontSize: '0.88rem', fontWeight: 600, padding: '0.95rem 1.9rem', borderRadius: 999,
-                  border: '1px solid rgba(201,169,110,0.5)', color: '#E7C987', textDecoration: 'none',
-                }}
-              >
-                GAUCHE の演奏を見る ↗
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  USE CASES (誰のための CORE か) */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'connect' && (
       <section
         id="who"
         className="lp-section-pad"
@@ -1193,11 +1263,14 @@ export default function CoreSite() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  PHILOSOPHY                */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'company' && (
       <section
+        id="mission"
         className="lp-section-pad"
         style={{
           padding: '7rem 1.5rem',
@@ -1306,10 +1379,12 @@ export default function CoreSite() {
           </p>
         </div>
       </section>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  JOURNEY (歩み)              */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'company' && (
       <section
         id="journey"
         className="lp-section-pad"
@@ -1461,10 +1536,12 @@ export default function CoreSite() {
 
         </div>
       </section>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  ABOUT (会社概要)            */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'company' && (
       <section
         id="about"
         className="lp-section-pad"
@@ -1603,10 +1680,100 @@ export default function CoreSite() {
           </MobileFold>
         </div>
       </section>
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/*  EXECUTIVE WELL-BEING PACKAGE */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'company' && (
+      <section
+        id="executive"
+        className="lp-section-pad"
+        style={{ padding: '7rem 1.5rem', background: '#050505' }}
+      >
+        <div
+          style={{
+            maxWidth: 1080, margin: '0 auto', position: 'relative', overflow: 'hidden',
+            borderRadius: 24, padding: 'clamp(2.4rem, 5vw, 4.2rem)',
+            /* 白ベース化でも、この演奏ショーケースは金×黒の高級タイルとして暗いまま残す(白ページ上のアクセント) */
+            background: 'radial-gradient(140% 120% at 85% -20%, #1a1508 0%, #070707 60%)',
+            border: '1px solid rgba(201,169,110,0.5)',
+            boxShadow: '0 40px 90px -40px rgba(201,169,110,0.55), inset 0 0 80px rgba(201,169,110,0.05)',
+          }}
+        >
+          <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.74rem', letterSpacing: '0.3em', color: '#C9A96E', textTransform: 'uppercase', marginBottom: '1.2rem' }}>
+            Executive Well-being Package
+          </p>
+          <h2
+            style={{
+              fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.6rem, 3.4vw, 2.5rem)', fontWeight: 700, lineHeight: 1.7, letterSpacing: '0.04em',
+              background: 'linear-gradient(120deg, #F7EAD0, #C9A96E)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              marginBottom: '1.2rem',
+            }}
+          >
+            AI が事業を伸ばし、
+            <br />
+            音楽が組織を潤す。
+          </h2>
+          <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(255,255,255,0.68)', fontSize: 'clamp(0.92rem, 1.4vw, 1.02rem)', lineHeight: 2.1, maxWidth: 640 }}>
+            CORE の上位プランをご契約の企業さまだけにご案内する、招待制の最上位パッケージ。
+            主宰・井出直毅のもう一つの顔 —— 世界のラグジュアリーの現場で演奏するチェリスト
+            <strong style={{ color: '#E7C987', fontWeight: 600 }}> GAUCHE </strong>
+            による特別な体験を、御社の福利厚生とブランドに。
+          </p>
+          <div className="lp-exec-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', margin: '2.2rem 0 2.4rem' }}>
+            {[
+              { t: '周年・VIP レセプションでの出張演奏', d: 'リッツ・カールトン、Loro Piana Milano で磨いた演奏が、御社のイベントの「格」を引き上げます。' },
+              { t: 'チェロスクール法人契約（福利厚生）', d: '従業員は GAUCHE Cello School の受け放題レッスンへ。楽器は無料貸与、手ぶらで始められます。' },
+              { t: '経営層向け Executive Private 優先枠', d: '役員・経営層のための完全1対1レッスン。多忙な予定に合わせるフルフレックス制。' },
+            ].map(f => (
+              <div key={f.t} style={{ padding: '1.3rem 1.2rem', borderRadius: 14, background: 'rgba(201,169,110,0.05)', border: '1px solid rgba(201,169,110,0.22)' }}>
+                <p style={{ fontFamily: FONT_SERIF_JA, fontWeight: 600, fontSize: '0.95rem', color: '#F1E6CE', lineHeight: 1.8, marginBottom: '0.5rem' }}>{f.t}</p>
+                <p style={{ fontFamily: FONT_SANS, fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.9 }}>{f.d}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.2rem', justifyContent: 'space-between' }}>
+            <p style={{ fontFamily: FONT_SERIF_EN, fontSize: '1.3rem', letterSpacing: '0.14em', color: '#E7C987' }}>
+              By Invitation
+              {/* 2026-07-31 巡回: 0.45(4.43:1) は 0.72rem の字送り広めの文だとさらに読みにくい。0.62 に。 */}
+              <span style={{ display: 'block', fontFamily: FONT_SANS, fontSize: '0.72rem', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.62)', marginTop: 4 }}>
+                上位プラン契約企業さま限定 ・ 完全個別お見積り
+              </span>
+            </p>
+            <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
+              <a
+                href={`mailto:${COMPANY.email}?subject=${encodeURIComponent('【Executive Well-being Package】ご相談')}`}
+                className="lp-tap-link"
+                style={{
+                  fontFamily: FONT_SANS, fontSize: '0.88rem', fontWeight: 700, padding: '0.95rem 1.9rem', borderRadius: 999,
+                  background: 'linear-gradient(135deg, #E7C987, #C9A96E)', color: '#14100a', textDecoration: 'none',
+                }}
+              >
+                導入の相談をする
+              </a>
+              <a
+                href="https://gauche-artist.vercel.app/"
+                target="_blank"
+                rel="noopener"
+                className="lp-tap-link"
+                style={{
+                  fontFamily: FONT_SANS, fontSize: '0.88rem', fontWeight: 600, padding: '0.95rem 1.9rem', borderRadius: 999,
+                  border: '1px solid rgba(201,169,110,0.5)', color: '#E7C987', textDecoration: 'none',
+                }}
+              >
+                GAUCHE の演奏を見る ↗
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  CONTACT                    */}
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tab === 'contact' && (
       <section
         id="contact"
         className="lp-section-pad"
@@ -1735,6 +1902,7 @@ export default function CoreSite() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
       {/*  FOOTER                     */}
@@ -1783,9 +1951,9 @@ export default function CoreSite() {
           <div>
             <p style={footHead}>会社</p>
             <a href="/studio" style={footLink} className="lp-tap-link">制作スタジオ</a>
-            <a href="#mission" style={footLink} className="lp-tap-link">理念</a>
-            <a href="#about" style={footLink} className="lp-tap-link">会社概要</a>
-            <a href="#contact" style={footLink} className="lp-tap-link">お問い合わせ</a>
+            <a href="#mission" onClick={e => handleAnchor(e, '#mission')} style={footLink} className="lp-tap-link">理念</a>
+            <a href="#about" onClick={e => handleAnchor(e, '#about')} style={footLink} className="lp-tap-link">会社概要</a>
+            <a href="#contact" onClick={e => handleAnchor(e, '#contact')} style={footLink} className="lp-tap-link">お問い合わせ</a>
           </div>
           <div>
             <p style={footHead}>連絡先</p>

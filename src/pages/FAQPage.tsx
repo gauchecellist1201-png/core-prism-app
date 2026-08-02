@@ -22,7 +22,7 @@ import LegalPageLayout from '../legal/LegalPageLayout';
 import { REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS } from '../lib/referral';
 
 /** 会社が公開している唯一の連絡先（/corp のフッター・お問い合わせと同じもの） */
-const CONTACT_MAIL = 'core.inc.guild@gmail.com';
+const CONTACT_MAIL = 'core.guild.inc@gmail.com';
 
 interface FaqItem {
   q: string;

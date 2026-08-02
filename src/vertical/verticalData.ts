@@ -18,6 +18,14 @@ export interface VerticalProduct {
   role: string;
   /** 対象業界 */
   industry: string;
+  /**
+   * 業種の短い名札（2026-08-02 追加）。カード最上部に大きな帯で出す。
+   * オーナー指摘「アルティマとかソマとか、どの業界なのか分かりづらい」への対応。
+   * industry は正確さ優先で長いので、ひと目で分かる 4〜7 文字をここに持つ。
+   */
+  industryShort: string;
+  /** 業種アイコンの種類（VerticalIndustryIcon が描き分ける） */
+  industryIcon: 'construction' | 'anime' | 'ads' | 'forestry';
   /** 1行コピー */
   tagline: string;
   /** 3行程度の説明 */
@@ -26,6 +34,12 @@ export interface VerticalProduct {
   path: string;
   /** 外部URLならtrue */
   external?: boolean;
+  /**
+   * 業種ごとに必ず違う色相にする（2026-08-02 オーナー指摘で再設計）。
+   * 旧: VERITAS #3FB68B(158°) と SOMA #8FBF5E(90°) がどちらも緑で見分けられなかった。
+   * 新: 琥珀36° / 森緑90° / 空色198° / 菫270° — 隣り合う色相差は最小54°、
+   *     いずれも背景 #050505 に対して 6.3:1 以上（文字色としても使うため）。
+   */
   accent: string;
   /** ステータス表示（正直に） */
   status: string;
@@ -39,9 +53,14 @@ export const VERTICALS: VerticalProduct[] = [
     name: 'ULTIMA',
     role: 'Construction AI',
     industry: '建設業・電気設備工事業・プラント工事業',
+    industryShort: '建設・設備',
+    industryIcon: 'construction',
     tagline: '現場の声で、書類が生まれる。',
     body: 'LINEで写真を送る、現場のことばで話しかける。それだけで写真は整理され、計算も見積も提案書も日報も出来上がっていく。夜のうちにAIが明日の段取りを決め、翌朝もうひとりのAIがその仕事を検査する。',
-    path: '/ultima',
+    // 2026-08-02 オーナー指示: 専用LPが独自ドメインで公開されたのでそちらへ送る。
+    // 旧: '/ultima'（アプリ内LP）。内部ルート自体は App.tsx に残してあるので直打ちは今も開ける。
+    path: 'https://ultima.erfolg1225.com/',
+    external: true,
     accent: '#E8A33D',
     status: 'β運用中・月¥29,800（税込）まるごと1本',
     points: ['LINEで写真・音声・計算・補助金', '朝4:30にAIが今日の段取りを決める', '翌朝4:20にAI監査役が前日を検査'],
@@ -51,11 +70,13 @@ export const VERTICALS: VerticalProduct[] = [
     name: 'ANIMA',
     role: 'Anime Production OS',
     industry: 'アニメ制作・制作進行',
+    industryShort: 'アニメ制作',
+    industryIcon: 'anime',
     tagline: '制作進行の一日を、まるごと引き受ける。',
     body: '進捗・報告・経理・CRM・財務まで、アニメ制作会社の事務をひとつのOSに。源泉徴収の自動計算から支払明細書のPDF発行、条約期限の管理まで、制作進行が本来の仕事に戻れるように。',
     path: 'https://core-anime-os.vercel.app',
     external: true,
-    accent: '#8B7BE8',
+    accent: '#B072F0',
     status: '本番稼働中',
     points: ['進捗・納品報告の一元管理', '源泉自動計算＋支払明細書PDF', 'スキル・条約期限つきCRM'],
   },
@@ -64,11 +85,13 @@ export const VERTICALS: VerticalProduct[] = [
     name: 'VERITAS',
     role: 'Ad Spend Truth',
     industry: '広告代理店・インハウス広告運用／継続課金事業',
+    industryShort: '広告・マーケ',
+    industryIcon: 'ads',
     tagline: '報告された数字から、嘘を剥がす。',
     body: '自然検索で1位を取れているキーワードに広告を出し続けていないか。Google広告とSearch Consoleを突き合わせ、広告がなくても取れていたCVを剥がして「真のCPA」を出します。浮いた予算は、いちばん長く続く紹介顧客への還元に自動で付け替え。',
     path: 'https://core-veritas.vercel.app',
     external: true,
-    accent: '#3FB68B',
+    accent: '#45B8E8',
     status: 'デモ公開中・サンプルデータで全機能を確認できます',
     points: ['指名検索カニバリの被害額を自動算出', '自然検索1位＋競合なしなら入札を自動停止', 'チャネル別の真のLTV・解約率を可視化'],
   },
@@ -77,6 +100,8 @@ export const VERTICALS: VerticalProduct[] = [
     name: 'SOMA',
     role: 'Forestry Documents',
     industry: '林業経営体・森林組合・素材生産業',
+    industryShort: '林業',
+    industryIcon: 'forestry',
     tagline: '現場から申請まで、林業の書類業務をひとつに。',
     body: '同じ面積を、提出先ごとにヘクタール・アール・平方メートルへ書き換える。その手作業を無くします。1つの施業地データから提出4様式が同時に仕上がり、県の森林クラウドへは自動で入力。写真はLINEで送るだけ、出役はチェックするだけで労務費と林退共の証紙まで揃います。',
     path: 'https://soma-indol-gamma.vercel.app',

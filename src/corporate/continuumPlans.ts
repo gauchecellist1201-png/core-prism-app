@@ -5,7 +5,7 @@
 // 空の間は mailto の個別相談に自動フォールバック（動かないボタンを出さない）。
 // ============================================================
 
-export const CONTINUUM_CONTACT_EMAIL = 'core.inc.guild@gmail.com';
+export const CONTINUUM_CONTACT_EMAIL = 'core.guild.inc@gmail.com';
 
 export interface ContinuumPlan {
   name: string;

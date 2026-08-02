@@ -3178,6 +3178,76 @@ body[data-prism-chat-dock] .cp-main-scroll {
    32,000px（39画面分）を指でこすらせない。デスクトップは一切変えない。
    ════════════════════════════════════════════════════════════ */
 
+/* ══════════════════════════════════════════════════════════
+   CORE サイトのタブ（2026-08-02 オーナー指示）
+
+   なぜ: 1枚に12章を積んで iPhone で 15,000px 超えていた。
+        タブで画面を「入れ替える」ことで 1ページあたりの情報量を減らす。
+   仕様: デスクトップは中央寄せの行、狭い画面は横スクロール。
+        高さは指の最小 44px を必ず確保する。
+   ══════════════════════════════════════════════════════════ */
+.lp-tabs {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0.9rem 0.6rem;
+  border-top: 1px solid rgba(201, 169, 110, 0.1);
+}
+.lp-tabs::-webkit-scrollbar { display: none; }
+
+.lp-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 44px;
+  padding: 0 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 169, 110, 0.26);
+  background: rgba(201, 169, 110, 0.05);
+  color: rgba(240, 233, 216, 0.74);
+  /* 日本語は文全体が1トークン扱いになり折り返せないので、必ず nowrap + 縮まない指定を
+     セットで持つ（[[env_flex_squeeze_stacks_japanese_button]] の再発防止） */
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.22s, color 0.22s, border-color 0.22s;
+}
+.lp-tab .lp-tab-sub {
+  font-family: 'Cinzel', serif;
+  font-size: 0.53rem;
+  letter-spacing: 0.2em;
+  opacity: 0.72;
+  font-weight: 600;
+}
+.lp-tab:hover { border-color: rgba(201, 169, 110, 0.5); color: #f1e6ce; }
+.lp-tab.is-on {
+  background: rgba(201, 169, 110, 0.2);
+  border-color: rgba(201, 169, 110, 0.66);
+  color: #f6ead2;
+}
+
+@media (max-width: 768px) {
+  .lp-tabs { justify-content: flex-start; }
+  .lp-tab { font-size: 0.78rem; padding: 0 0.78rem; }
+}
+
+@media (max-width: 640px) {
+  /* 英字の副題は幅を決めている張本人（PRODUCTS で約81px）。
+     狭い画面では隠して、日本語の短い名札だけで並べる。 */
+  .lp-tab .lp-tab-sub { display: none; }
+  .lp-tabs { padding-bottom: 0.5rem; }
+}
+
 /* ── 章ジャンプのチップ（モバイルのみ。上部ナビが隠れる幅で出す） ── */
 .lp-jump { display: none; }
 

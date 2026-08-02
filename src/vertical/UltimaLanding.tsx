@@ -31,7 +31,7 @@ const C = {
   line: 'rgba(201,162,75,0.22)',
 };
 
-const CONTACT_MAIL = 'core.inc.guild@gmail.com';
+const CONTACT_MAIL = 'core.guild.inc@gmail.com';
 const CONTACT_HREF = `mailto:${CONTACT_MAIL}?subject=${encodeURIComponent('ULTIMA 導入相談')}&body=${encodeURIComponent('会社名：\nご担当者名：\n現場の数（月あたり）：\n気になっている機能（現場／営業／両方）：\n\n')}`;
 
 type TabId = 'field' | 'office' | 'flow' | 'price' | 'faq';
