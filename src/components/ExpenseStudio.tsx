@@ -54,10 +54,10 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback(async (file: File) => {
+  // レシート画像 1 枚を AI に読ませる。撮り直さず「もう一度」できるよう、
+  // 画像の受け取り (handleFile) と読み取り (runOcr) を分けてある。
+  const runOcr = useCallback(async (dataUrl: string) => {
     setOcrError(null);
-    const dataUrl = await fileToDataUrl(file);
-    setOcrPreview(dataUrl);
     setOcrBusy(true);
     try {
       const result = await extractFromReceipt({ settings, imageDataUrl: dataUrl });
@@ -79,6 +79,12 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
       setOcrBusy(false);
     }
   }, [settings]);
+
+  const handleFile = useCallback(async (file: File) => {
+    const dataUrl = await fileToDataUrl(file);
+    setOcrPreview(dataUrl);
+    await runOcr(dataUrl);
+  }, [runOcr]);
 
   // 先回り提案カードの「✏️ 直す」: 1 行指示で AI が仕訳を直す
   const handleRefine = useCallback(async (instruction: string) => {
@@ -349,7 +355,11 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
                 </div>
               )}
 
-              <ApiErrorCard error={ocrError} />
+              {/* 読み取りに失敗しても、撮り直さず同じ写真でもう一度ためせる */}
+              <ApiErrorCard
+                error={ocrError}
+                onRetry={ocrPreview && !ocrBusy ? () => runOcr(ocrPreview) : undefined}
+              />
               <AILoadingState
                 active={ocrBusy}
                 label="レシートを読み取り中"

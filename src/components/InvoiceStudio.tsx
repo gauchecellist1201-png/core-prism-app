@@ -282,7 +282,11 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          <ApiErrorCard error={error} />
+          {/* 失敗しても依頼文を打ち直さずにもう一度ためせる */}
+          <ApiErrorCard
+            error={error}
+            onRetry={aiPrompt.trim() && !aiBusy ? handleAi : undefined}
+          />
           <AILoadingState
             active={aiBusy}
             label="請求書の明細を AI で組み立て中"

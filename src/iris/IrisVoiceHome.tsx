@@ -69,6 +69,12 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
   const [textInput, setTextInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // 直前に送った中身 (失敗時の「もう一度ためす」用)
+  const lastAttemptRef = useRef<{
+    history: AssistantMessage[];
+    userMessage: string;
+    userImages?: { data: string; mediaType: string }[];
+  } | null>(null);
   const [pendingImages, setPendingImages] = useState<{ data: string; mediaType: string; preview: string }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -177,11 +183,28 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
     setErr(null);
     setBusy(true);
 
+    // 失敗したときに「打ち直さずもう一度」送れるよう、送った中身を控えておく
+    lastAttemptRef.current = {
+      history,
+      userMessage: userText || '(画像)',
+      userImages: userMsg.images,
+    };
+    await deliver(lastAttemptRef.current);
+  };
+
+  // 実際に AI へ投げる部分。送信と再送で同じ道を通す (再送だけ挙動が違う、を作らない)
+  const deliver = async (payload: {
+    history: AssistantMessage[];
+    userMessage: string;
+    userImages?: { data: string; mediaType: string }[];
+  }) => {
+    setBusy(true);
     try {
       const res = await chatWithIris({
-        settings, history,
-        userMessage: userText || '(画像)',
-        userImages: userMsg.images,
+        settings,
+        history: payload.history,
+        userMessage: payload.userMessage,
+        userImages: payload.userImages,
         mediaKit,
         bondContext: bond.aiContext,
       });
@@ -193,9 +216,18 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
         timestamp: new Date().toISOString(),
       };
       setHistory(prev => [...prev, aiMsg]);
+      setErr(null);
     } catch (e: any) {
       setErr(e.message || '送信失敗');
     } finally { setBusy(false); }
+  };
+
+  // 「もう一度ためす」— 直前と全く同じ内容を、打ち直さずに再送する
+  const retryLast = async () => {
+    const p = lastAttemptRef.current;
+    if (!p || busy) return;
+    setErr(null);
+    await deliver(p);
   };
 
   const clearChat = async () => {
@@ -635,7 +667,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
         )}
       </div>
 
-      <ApiErrorCard error={err} variant="light" />
+      <ApiErrorCard error={err} variant="light" onRetry={lastAttemptRef.current ? retryLast : undefined} />
 
       {/* 入力エリア (中央に大きいマイク + 補助テキスト + 画像添付) */}
       <div style={{

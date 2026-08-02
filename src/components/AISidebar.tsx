@@ -150,7 +150,12 @@ export default function AISidebar({
       {/* No API key warning は env Gemini fallback により不要になったので撤去 */}
 
       {/* Error — ポップ + dismiss 永続化 (60秒) + 解消手順 */}
-      <ApiErrorCard error={error} onOpenSettings={onOpenSettings} variant="auto" />
+      <ApiErrorCard
+        error={error}
+        onOpenSettings={onOpenSettings}
+        variant="auto"
+        onRetry={canRetry && onRetry ? onRetry : undefined}
+      />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">

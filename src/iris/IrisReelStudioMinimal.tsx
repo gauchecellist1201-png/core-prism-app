@@ -184,6 +184,27 @@ function drawCover(ctx: CanvasRenderingContext2D, el: HTMLImageElement | HTMLVid
   ctx.filter = prevFilter;
 }
 
+// 音声認識の失敗を「やさしい日本語 + 次の一手」に翻訳する。
+// マイクは拒否・無音・電波で日常的に落ちる。黙って止まると「壊れてる」としか思えないので、
+// 必ず理由と直し方を本人に見せる (Prism の PrismTaskScheduler / GlobalVoiceInput と同じ思想)。
+function friendlyVoiceError(code: string): string {
+  switch (code) {
+    case 'not-allowed':
+    case 'service-not-allowed':
+      return 'マイクの使用がオフになっています。アドレスバー横のカギのマークからマイクを「許可」にして、もう一度お試しください。';
+    case 'audio-capture':
+      return 'マイクが見つかりませんでした。マイクの接続を確かめて、もう一度お試しください。';
+    case 'network':
+      return '通信が不安定で聞き取れませんでした。電波のよい場所で、もう一度お試しください。';
+    case 'no-speech':
+      return '音声が聞き取れませんでした。マイクに近づいて、もう一度お試しください。';
+    case 'aborted':
+      return '';  // 自分で止めた場合 — 失敗ではないので何も出さない
+    default:
+      return 'うまく聞き取れませんでした。もう一度ゆっくり話してみてください。';
+  }
+}
+
 // ─── Main Component ─────
 export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdvanced, postQueue, initialProject, onConsumeInitial, initialTheme, onConsumeTheme }: Props) {
   const [step, setStep] = useState<'material' | 'edit' | 'subtitle' | 'export'>('material');
@@ -252,7 +273,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   // ── 音声→字幕: 喋るだけで空きカットから順に字幕が入る (リール特化の要) ──
   const [voiceOn, setVoiceOn] = useState(false);
   const [voiceLive, setVoiceLive] = useState(''); // 認識途中のテキスト (確定前)
+  const [voiceErr, setVoiceErr] = useState(''); // 失敗理由 (空なら出さない)
   const voiceRecRef = useRef<any>(null);
+  const voiceGotRef = useRef(false); // このセッションで 1 文字でも字幕が入ったか
   const voiceCutIdxRef = useRef(0);
   const clipsLenRef = useRef(0);
   useEffect(() => { clipsLenRef.current = clips.length; }, [clips]);
@@ -260,6 +283,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     && !!((window as any).webkitSpeechRecognition || (window as any).SpeechRecognition);
 
   const stopVoice = useCallback(() => {
+    voiceGotRef.current = true; // 自分で止めたので「聞き取れませんでした」は出さない
     try { voiceRecRef.current?.stop(); } catch { /* */ }
     voiceRecRef.current = null;
     setVoiceOn(false); setVoiceLive('');
@@ -268,6 +292,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const startVoice = useCallback(() => {
     const SR: any = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     if (!SR || clips.length === 0) return;
+    setVoiceErr('');
+    voiceGotRef.current = false;
     // 字幕が空のカットの先頭から埋める (全部埋まっていれば最後のカットに追記)
     const firstEmpty = clips.findIndex(c => !(c.captionText || '').trim());
     voiceCutIdxRef.current = firstEmpty >= 0 ? firstEmpty : clips.length - 1;
@@ -282,6 +308,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
         if (r.isFinal) {
           const text = (r[0]?.transcript || '').trim();
           if (text) {
+            voiceGotRef.current = true;
             const idx = Math.min(voiceCutIdxRef.current, Math.max(0, clipsLenRef.current - 1));
             setClips(prev => prev.map((c, i2) => i2 === idx
               ? { ...c, captionText: ((c.captionText || '').trim() ? `${c.captionText} ` : '') + text }
@@ -295,16 +322,27 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       }
       setVoiceLive(interim);
     };
-    rec.onerror = () => {
-      // マイク拒否や無音タイムアウト — 固まらせず静かに停止 (再タップで再開できる)
+    rec.onerror = (e: any) => {
+      // マイク拒否・無音・電波切れ。以前はここで黙って止めていたので
+      // 「押しても何も起きない」ようにしか見えなかった。必ず理由を出す。
       voiceRecRef.current = null;
       setVoiceOn(false); setVoiceLive('');
+      const msg = friendlyVoiceError(String(e?.error || ''));
+      if (msg) { voiceGotRef.current = true; setVoiceErr(msg); }
     };
     rec.onend = () => {
       voiceRecRef.current = null;
       setVoiceOn(false); setVoiceLive('');
+      // 喋ったのに 1 文字も入らずに終わった場合も「無言の失敗」。理由を出す。
+      if (!voiceGotRef.current) setVoiceErr(friendlyVoiceError('no-speech'));
     };
-    try { rec.start(); voiceRecRef.current = rec; setVoiceOn(true); } catch { /* 二重start等は無視 */ }
+    try {
+      rec.start(); voiceRecRef.current = rec; setVoiceOn(true);
+    } catch {
+      // 二重 start / マイク占有 — ここも黙って終わらせない
+      setVoiceOn(false);
+      setVoiceErr('マイクを開始できませんでした。ほかのアプリやタブがマイクを使っていないか確かめて、もう一度お試しください。');
+    }
   }, [clips]);
 
   // アンマウント時に確実に停止 (裏で録音が残る事故防止)
@@ -1418,6 +1456,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [chatOpen, setChatOpen] = useState(false);
   const [chatDragOver, setChatDragOver] = useState(false);
   const [chatVoiceOn, setChatVoiceOn] = useState(false);
+  const [chatVoiceErr, setChatVoiceErr] = useState(''); // マイクの失敗理由 (空なら出さない)
   const chatRecRef = useRef<any>(null);
   const chatListRef = useRef<HTMLDivElement>(null);
   const clipsRef = useRef<Clip[]>([]);
@@ -1512,6 +1551,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const startChatVoice = useCallback(() => {
     const SR: any = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     if (!SR) return;
+    setChatVoiceErr('');
     stopVoice(); // 字幕用の音声入力と同時起動しない (マイク競合防止)
     const rec = new SR();
     rec.lang = 'ja-JP';
@@ -1527,14 +1567,26 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       }
       setChatInput((finalText || interim).trim());
     };
-    rec.onerror = () => { chatRecRef.current = null; setChatVoiceOn(false); };
+    let errShown = false;
+    rec.onerror = (e: any) => {
+      chatRecRef.current = null; setChatVoiceOn(false);
+      const msg = friendlyVoiceError(String(e?.error || ''));
+      if (msg) { errShown = true; setChatVoiceErr(msg); }
+    };
     rec.onend = () => {
       chatRecRef.current = null;
       setChatVoiceOn(false);
       const t = finalText.trim();
-      if (t) void handleChatSend(t);
+      if (t) { void handleChatSend(t); return; }
+      // 話したのに 1 文字も取れなかった = 以前は無反応のまま終わっていた
+      if (!errShown) setChatVoiceErr(friendlyVoiceError('no-speech'));
     };
-    try { rec.start(); chatRecRef.current = rec; setChatVoiceOn(true); } catch { /* 二重 start 等は無視 */ }
+    try {
+      rec.start(); chatRecRef.current = rec; setChatVoiceOn(true);
+    } catch {
+      setChatVoiceOn(false);
+      setChatVoiceErr('マイクを開始できませんでした。ほかのアプリやタブがマイクを使っていないか確かめて、もう一度お試しください。');
+    }
   }, [handleChatSend, stopVoice]);
   // アンマウント時に確実に停止
   useEffect(() => () => { try { chatRecRef.current?.stop(); } catch { /* */ } }, []);
@@ -2817,7 +2869,57 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                         </span>
                       </div>
                     )}
+                    {!voiceOn && voiceErr && (
+                      <div style={{
+                        marginBottom: 10, padding: '0.6rem 0.75rem',
+                        // 濃い赤文字を必ず白地に置く。テーマの bg.card は暗い背景だと
+                        // 半透明の白 (18%) になるため、そこに #7F1D1D を置くと読めなくなる。
+                        background: 'rgba(255,255,255,0.97)',
+                        border: '1px solid rgba(220,38,38,0.32)',
+                        borderRadius: 12, fontSize: 12, color: '#7F1D1D',
+                        lineHeight: 1.6, fontFamily: IRIS_FONTS.body,
+                      }}>
+                        <div style={{ fontWeight: 800, marginBottom: 4 }}>字幕を聞き取れませんでした</div>
+                        <div style={{ fontWeight: 600 }}>{voiceErr}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                          <button
+                            onClick={() => { setVoiceErr(''); startVoice(); }}
+                            style={{
+                              minHeight: 44, padding: '0 1rem',
+                              background: '#DC2626', color: '#FFFFFF',
+                              border: 'none', borderRadius: 999,
+                              fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
+                              fontFamily: IRIS_FONTS.body,
+                              display: 'inline-flex', alignItems: 'center', gap: 6,
+                            }}
+                          ><Mic size={14} /> もう一度話す</button>
+                          <button
+                            onClick={() => setVoiceErr('')}
+                            style={{
+                              minHeight: 44, padding: '0 1rem',
+                              background: 'transparent', color: '#7F1D1D',
+                              border: '1px solid rgba(220,38,38,0.35)', borderRadius: 999,
+                              fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+                              fontFamily: IRIS_FONTS.body,
+                            }}
+                          >手で字幕を打つ</button>
+                        </div>
+                      </div>
+                    )}
                   </>
+                )}
+                {/* このブラウザに音声入力が無い場合 — ボタンを消すだけだと
+                    「喋って字幕にする機能が消えた」ようにしか見えないので、理由を 1 行置く */}
+                {!voiceSupported && clips.length > 0 && (
+                  <div style={{
+                    marginBottom: 10, padding: '0.55rem 0.75rem',
+                    background: 'rgba(31,26,46,0.05)',
+                    border: `1px solid ${bg.cardBorder}`,
+                    borderRadius: 12, fontSize: 11.5, color: bg.ink,
+                    lineHeight: 1.6, fontFamily: IRIS_FONTS.body, fontWeight: 600,
+                  }}>
+                    このブラウザは音声入力に対応していません。下の欄に字幕を打つか、Chrome / Safari の最新版で開くと「喋って字幕にする」が使えます。
+                  </div>
                 )}
 
                 {/* カット毎の字幕編集 */}
@@ -3399,6 +3501,44 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                 fontFamily: IRIS_FONTS.body,
                 boxShadow: '0 4px 12px rgba(31,26,46,0.1)',
               }}>{chatOpen ? '履歴をたたむ' : `履歴 (${chatMsgs.length})`}</button>
+            </div>
+          )}
+          {/* マイクの失敗 — 黙って止まらせず、理由と「もう一度話す」を必ず出す */}
+          {chatVoiceErr && (
+            <div style={{
+              marginBottom: 8, padding: '0.6rem 0.75rem',
+              background: 'rgba(255,255,255,0.97)',
+              border: '1px solid rgba(220,38,38,0.32)',
+              borderRadius: 16,
+              boxShadow: '0 10px 30px rgba(31,26,46,0.16)',
+              fontSize: 12, color: '#7F1D1D', lineHeight: 1.6,
+              fontFamily: IRIS_FONTS.body,
+            }}>
+              <div style={{ fontWeight: 800, marginBottom: 4 }}>マイクで聞き取れませんでした</div>
+              <div style={{ fontWeight: 600 }}>{chatVoiceErr}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                <button
+                  onClick={() => { setChatVoiceErr(''); startChatVoice(); }}
+                  style={{
+                    minHeight: 44, padding: '0 1rem',
+                    background: '#DC2626', color: '#FFFFFF',
+                    border: 'none', borderRadius: 999,
+                    fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
+                    fontFamily: IRIS_FONTS.body,
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                  }}
+                ><Mic size={14} /> もう一度話す</button>
+                <button
+                  onClick={() => setChatVoiceErr('')}
+                  style={{
+                    minHeight: 44, padding: '0 1rem',
+                    background: 'transparent', color: '#7F1D1D',
+                    border: '1px solid rgba(220,38,38,0.35)', borderRadius: 999,
+                    fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+                    fontFamily: IRIS_FONTS.body,
+                  }}
+                >キーボードで打つ</button>
+              </div>
             </div>
           )}
           {/* 入力バー: 添付 + テキスト + マイク + 送信 */}
