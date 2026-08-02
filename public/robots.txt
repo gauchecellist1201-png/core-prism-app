@@ -1,8 +1,7 @@
 User-agent: *
 Allow: /
 
-# 法人化前の暫定公開ページは検索除外
-Disallow: /corp
+# 講演会後の限定ランディングは検索除外
 Disallow: /keynote
 
 # オーナー / 管理者専用ページは検索除外

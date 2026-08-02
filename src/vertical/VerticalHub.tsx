@@ -3,11 +3,11 @@
 //
 // プラットフォーム（Prism / Iris / Resonance …）とは別の棚。
 // 「どの業界でも使える道具」ではなく「その業界の仕事そのものを動かすもの」を並べる。
-// 第1弾 ULTIMA（建設・電気設備工事） / 第2弾 ANIMA（アニメ制作進行） / 第3弾 VERITAS（広告運用） / 第4弾 SOMA（林業）。
+// 第1弾 ULTIMA（建設・電気設備工事） / 第2弾 ANIMA（アニメ制作進行） / 第3弾 VERITAS（広告運用） / 第4弾 SOMA（林業） / 第5弾 Tabitto（出張・経費精算）。
 // ============================================================
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CoreLogo, UltimaLogo, AnimaLogo, VeritasLogo, SomaLogo } from '../components/Logo';
+import { CoreLogo, UltimaLogo, AnimaLogo, VeritasLogo, SomaLogo, TabittoLogo } from '../components/Logo';
 import { VERTICALS, type VerticalProduct } from './verticalData';
 
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
@@ -30,6 +30,7 @@ const LOGOS: Record<VerticalProduct['key'], typeof UltimaLogo> = {
   anima: AnimaLogo,
   veritas: VeritasLogo,
   soma: SomaLogo,
+  tabitto: TabittoLogo,
 };
 
 export default function VerticalHub() {

@@ -162,7 +162,11 @@ export default function ContactPage() {
                       key={t.id}
                       onClick={() => setTopic(t.id)}
                       style={{
-                        padding: '8px 10px',
+                        // 指で押す的は 44px 以上。8px+8px+文字1行だと約35px しかなかった。
+                        minHeight: 44,
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '8px 12px',
                         borderRadius: 10,
                         background: topic === t.id ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.04)',
                         border: `1px solid ${topic === t.id ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.08)'}`,
@@ -171,6 +175,7 @@ export default function ContactPage() {
                         fontWeight: topic === t.id ? 700 : 500,
                         cursor: 'pointer',
                         textAlign: 'left',
+                        transition: 'background 0.2s, border-color 0.2s',
                       }}
                     >
                       <span style={{ marginRight: 6 }}>{t.icon}</span>{t.label}
@@ -182,7 +187,7 @@ export default function ContactPage() {
               {/* お名前 (任意) */}
               <div style={{ marginBottom: 12 }}>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
-                  お名前 <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>(任意)</span>
+                  お名前 <span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 400 }}>(任意)</span>
                 </label>
                 <input
                   type="text"
@@ -224,7 +229,7 @@ export default function ContactPage() {
                   disabled={phase === 'sending'}
                   style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
                 />
-                <div style={{ marginTop: 4, fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>
+                <div style={{ marginTop: 4, fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)' }}>
                   {message.length} 文字
                 </div>
               </div>
@@ -250,6 +255,7 @@ export default function ContactPage() {
                 disabled={!valid || phase === 'sending'}
                 style={{
                   width: '100%',
+                  minHeight: 48,
                   padding: '12px 0',
                   borderRadius: 12,
                   background: !valid || phase === 'sending'
@@ -278,7 +284,7 @@ export default function ContactPage() {
           )}
         </AnimatePresence>
 
-        <div style={{ marginTop: 32, fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
+        <div style={{ marginTop: 32, fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', textAlign: 'center' }}>
           直接メール: <a href="mailto:core.inc.guild@gmail.com" style={{ color: '#60a5fa', fontWeight: 600, textDecoration: 'underline' }}>core.inc.guild@gmail.com</a>
         </div>
       </div>
@@ -291,9 +297,11 @@ const inputStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.05)',
   border: '1px solid rgba(255,255,255,0.1)',
   borderRadius: 10,
-  padding: '10px 12px',
+  padding: '11px 12px',
   color: '#fff',
-  fontSize: '0.88rem',
+  // 16px 未満だと iOS Safari が入力欄をタップした瞬間に画面を勝手に拡大し、
+  // そのまま戻らない。フォームの入力欄は必ず 16px 以上にする。
+  fontSize: '16px',
   outline: 'none',
   boxSizing: 'border-box',
 };

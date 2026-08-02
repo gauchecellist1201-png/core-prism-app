@@ -12,7 +12,7 @@
 
 export interface VerticalProduct {
   /** URL slug（/vertical/<slug> ではなく専用パスを持つものは path で指定） */
-  key: 'ultima' | 'anima' | 'veritas' | 'soma';
+  key: 'ultima' | 'anima' | 'veritas' | 'soma' | 'tabitto';
   name: string;
   /** 英字の役割ラベル（Cinzel で小さく） */
   role: string;
@@ -25,7 +25,7 @@ export interface VerticalProduct {
    */
   industryShort: string;
   /** 業種アイコンの種類（VerticalIndustryIcon が描き分ける） */
-  industryIcon: 'construction' | 'anime' | 'ads' | 'forestry';
+  industryIcon: 'construction' | 'anime' | 'ads' | 'forestry' | 'travel';
   /** 1行コピー */
   tagline: string;
   /** 3行程度の説明 */
@@ -109,6 +109,21 @@ export const VERTICALS: VerticalProduct[] = [
     accent: '#8FBF5E',
     status: 'デモ公開中・実際の様式は導入時に作り込みます',
     points: ['原本1回で提出4様式を同時生成', '造林事業補助金28区分を電子キャビネットに', '出役チェックだけで労務費と証紙枚数まで'],
+  },
+  {
+    key: 'tabitto',
+    name: 'Tabitto',
+    role: 'AI Travel & Expense',
+    industry: '総務・経理・出張管理／バックオフィス業務',
+    industryShort: '総務・経理',
+    industryIcon: 'travel',
+    tagline: '話しかけるだけで、出張申請が終わる。',
+    body: '出張先・出発日・宿泊数・目的の4つを話すだけでAIが費用を計算。交通ルートの逆算、旅費規程内のホテル検索、接待の店提案、領収書のAI読み取り、旅費規程のAI相談まで。経営者向けには出張費の分析ダッシュボードも。',
+    path: 'https://tabitto-lp.vercel.app/',
+    external: true,
+    accent: '#E8637E',
+    status: 'β提供準備中',
+    points: ['4項目を話すだけでAIが費用計算', '規程内ホテル検索・接待の店提案', '領収書AI読み取り＋旅費規程AI相談'],
   },
 ];
 

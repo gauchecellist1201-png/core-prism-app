@@ -300,7 +300,7 @@ export default function UltimaLanding() {
                           background: 'rgba(6,199,85,0.07)', border: '1px solid rgba(6,199,85,0.22)',
                           fontSize: '0.76rem', color: 'rgba(240,233,216,0.82)', lineHeight: 1.7,
                         }}>
-                          <span style={{ color: '#06C755', fontSize: '0.62rem', letterSpacing: '0.16em', display: 'block', marginBottom: 4 }}>LINE でこう送るだけ</span>
+                          <span style={{ color: '#06C755', fontSize: '0.72rem', letterSpacing: '0.16em', display: 'block', marginBottom: 4 }}>LINE でこう送るだけ</span>
                           {f.voice}
                         </p>
                       )}
@@ -601,7 +601,8 @@ export default function UltimaLanding() {
             <a href="/tokushoho" style={footLink}>特定商取引法</a>
           </div>
         </div>
-        <p style={{ maxWidth: 1080, margin: '1.6rem auto 0', fontSize: '0.68rem', color: 'rgba(240,233,216,0.55)', lineHeight: 1.9 }}>
+        {/* 建設業法・補助金の但し書き。10.9px では読ませる気がない字になっていたので 12.2px に。 */}
+        <p style={{ maxWidth: 1080, margin: '1.6rem auto 0', fontSize: '0.76rem', color: 'rgba(240,233,216,0.66)', lineHeight: 1.9 }}>
           ULTIMA は CORE の業界特化プロダクトです。AIが作成した書類は、建設業法にもとづき有資格者による最終確認を前提としています。補助金に関する情報は参考提供であり、申請の責任はお客様に帰属します。<br />
           © {new Date().getFullYear()} CORE（設立準備中）
         </p>

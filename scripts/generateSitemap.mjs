@@ -68,6 +68,7 @@ const URLS = [
   { path: '/terms',        file: 'src/legal/TermsOfService.tsx',        priority: '0.4', changefreq: 'monthly' },
   { path: '/tokushoho',    file: 'src/pages/TokushohoPage.tsx',         priority: '0.4', changefreq: 'monthly' },
   { path: '/faq',          file: 'src/pages/FAQPage.tsx',               priority: '0.5', changefreq: 'monthly' },
+  { path: '/corp',         file: 'src/corporate/CoreSite.tsx',          priority: '0.7', changefreq: 'monthly' },
   // 業界別 LP (industries.ts 由来)
   ...INDUSTRY_SLUGS.map((slug) => ({
     path: `/lp/${slug}`,

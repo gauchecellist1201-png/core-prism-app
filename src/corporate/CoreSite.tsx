@@ -1,13 +1,13 @@
 // ============================================================
 // CORE — 法人 LP (Corporate Landing)
 // 「すべての時代の、核となるものを。」
-// 配置: /corp ルート、noindex で検索エンジンには載せない
+// 配置: /corp ルート（法人化準備中。2026-08-02 検索インデックス解禁）
 // ============================================================
 import { useEffect, useState, useRef, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo, VeritasLogo, SomaLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo, VeritasLogo, SomaLogo, TabittoLogo } from '../components/Logo';
 import { CONTINUUM_PLANS } from './continuumPlans';
 import ServiceFinder from './ServiceFinder';
 import { VERTICALS } from '../vertical/verticalData';
@@ -285,15 +285,6 @@ export default function CoreSite() {
     setMeta('meta[name="twitter:title"]', 'content', 'CORE');
     setMeta('meta[name="twitter:description"]', 'content', 'すべての時代の、核となるものを。');
     setMeta('meta[name="description"]', 'content', 'CORE — あなたの仕事と SNS を、AI エージェントで一気通貫に。司令塔 Prism に、Instagram の Iris・LINE の Resonance・リンクの Lume がつながる、ひとつの AI エージェント OS。');
-
-    // 検索エンジンには載せない (noindex)
-    let robots = document.querySelector('meta[name="robots"]');
-    if (!robots) {
-      robots = document.createElement('meta');
-      robots.setAttribute('name', 'robots');
-      document.head.appendChild(robots);
-    }
-    robots.setAttribute('content', 'noindex, nofollow');
   }, []);
 
   return (
@@ -919,7 +910,7 @@ export default function CoreSite() {
                 key={s.name}
                 href={s.url}
                 target={s.url.startsWith('http') ? '_blank' : undefined}
-                rel="noopener"
+                rel={s.url.startsWith('http') ? 'noopener noreferrer' : undefined}
                 style={{
                   display: 'block', textDecoration: 'none', color: 'inherit',
                   border: '1px solid rgba(201,162,75,0.25)', borderRadius: 16, overflow: 'hidden',
@@ -934,7 +925,9 @@ export default function CoreSite() {
                 </div>
                 <div style={{ padding: '0.8rem 0.9rem 0.95rem', borderTop: '1px solid rgba(201,162,75,0.2)' }}>
                   <div style={{ fontFamily: '"Cinzel", serif', fontSize: '0.85rem', letterSpacing: '0.12em', color: '#E9CD8A' }}>{s.name}</div>
-                  <div style={{ fontSize: '0.74rem', color: 'rgba(240,233,216,0.62)', marginTop: 2 }}>{s.cap} ↗</div>
+                  {/* ↗ は「別タブで開く」の印。サイト内へ飛ぶ Prism / Iris には付けない（1137行の
+                      v.external ? '見にいく ↗' : '詳しく見る →' と同じルールに揃える）。 */}
+                  <div style={{ fontSize: '0.74rem', color: 'rgba(240,233,216,0.62)', marginTop: 2 }}>{s.cap} {s.url.startsWith('http') ? '↗' : '→'}</div>
                 </div>
               </a>
             ))}
@@ -1078,7 +1071,7 @@ export default function CoreSite() {
 
           <div className="lp-vertical-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
             {VERTICALS.map(v => {
-              const Logo = v.key === 'ultima' ? UltimaLogo : v.key === 'anima' ? AnimaLogo : v.key === 'soma' ? SomaLogo : VeritasLogo;
+              const Logo = v.key === 'ultima' ? UltimaLogo : v.key === 'anima' ? AnimaLogo : v.key === 'soma' ? SomaLogo : v.key === 'tabitto' ? TabittoLogo : VeritasLogo;
               return (
                 <a
                   key={v.key}

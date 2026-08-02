@@ -990,3 +990,59 @@ export function SomaLogo({ size = 28, withWordmark = true, variant = 'default', 
     </span>
   );
 }
+
+// ─────────────────────────────────────────────
+//  CORE Vertical 第5弾 — Tabitto（出張・経費精算 AI）
+//  スーツケース＋話しかけるAI＝「話すだけで出張申請が終わる」を1本のラインで表す
+// ─────────────────────────────────────────────
+export function TabittoLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
+  const isMono = variant === 'mono';
+  const gCase = `tabittoCase-${size}`;
+  const lite = '#E8637E';
+
+  return (
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: withWordmark ? 10 : 0, lineHeight: 1 }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="Tabitto"
+        style={{ flexShrink: 0 }}
+      >
+        <defs>
+          <linearGradient id={gCase} x1="20" y1="82" x2="80" y2="22" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#B8395A" />
+            <stop offset="0.55" stopColor="#D9506E" />
+            <stop offset="1" stopColor="#E8637E" />
+          </linearGradient>
+        </defs>
+        {/* スーツケース本体 */}
+        <rect x="21" y="34" width="58" height="46" rx="8" stroke={isMono ? 'currentColor' : `url(#${gCase})`} strokeWidth="5.2" />
+        {/* 持ち手 */}
+        <path d="M39 34V25a5 5 0 0 1 5-5h12a5 5 0 0 1 5 5v9" stroke={isMono ? 'currentColor' : `url(#${gCase})`} strokeWidth="5.2" strokeLinecap="round" />
+        {/* 移動の軌跡（話しかけるだけで進む道のり） */}
+        <path d="M50 46v22" stroke={isMono ? 'currentColor' : '#0c0a07'} strokeWidth="4.4" strokeLinecap="round" opacity="0.35" />
+        <circle cx="50" cy="57" r="6.5" fill={isMono ? 'currentColor' : '#D4A537'} />
+      </svg>
+      {withWordmark && (
+        <span
+          style={{
+            fontFamily: '"Cinzel", serif',
+            fontSize: size * 0.62,
+            fontWeight: 600,
+            letterSpacing: '0.14em',
+            color: isMono ? 'currentColor' : lite,
+            lineHeight: 1,
+          }}
+        >
+          TABITTO
+        </span>
+      )}
+    </span>
+  );
+}
