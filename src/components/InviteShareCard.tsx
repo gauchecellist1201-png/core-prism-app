@@ -377,7 +377,7 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
           padding: '0.25rem 0.65rem', borderRadius: 999,
           marginBottom: '0.65rem',
         }}>
-          <Gift size={12} strokeWidth={2.5} /> 友達招待プログラム
+          <Gift size={12} strokeWidth={2.5} /> ユーザー招待プログラム
         </div>
         <h2 style={{
           margin: 0,

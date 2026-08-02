@@ -14,6 +14,8 @@ import { INDUSTRY_LIST, type IndustryId } from '../prism/industryPacks';
 import { isSoundEnabled, setSoundEnabled, playChime, tactileTap } from '../lib/haptic';
 import { isTelemetryOptedIn, setTelemetryOptIn } from '../lib/errorCapture';
 import { confirmAction } from '../lib/confirmDialog';
+import FaceIdLockRow from './FaceIdLockRow';
+import { downloadUserExport } from '../lib/userDataExport';
 
 interface Props {
   settings: AppSettings;
@@ -103,6 +105,11 @@ const SEARCH_INDEX: SearchableRow[] = [
   { id: 'integrations', tab: 'integrations', label: '連携 (Gmail / Calendar / Stripe / Notion)', desc: '外部サービスとつなぐ', keywords: 'integration gmail calendar stripe notion 連携' },
 
   { id: 'telemetry', tab: 'privacy', label: 'エラー報告を送る (匿名)', desc: '画面エラーを匿名でチームに送る', keywords: 'telemetry error 匿名 エラー' },
+  { id: 'totp', tab: 'privacy', label: '2 段階認証', desc: 'Google Authenticator 互換 (TOTP)', keywords: 'totp 2fa 二段階 2段階 認証 セキュリティ' },
+  { id: 'faceid', tab: 'privacy', label: 'Face ID ロック', desc: 'アプリを生体認証でロック', keywords: 'face id faceid 顔 ロック 生体' },
+  { id: 'exportJson', tab: 'privacy', label: '全データを JSON で持ち出す', desc: 'GDPR/個情法 対応の一括エクスポート', keywords: 'json export gdpr 持ち出し エクスポート' },
+  { id: 'credits', tab: 'other', label: 'CORE Credits', desc: '貯まる/使えるポイント', keywords: 'credits クレジット ポイント' },
+  { id: 'exportCsv', tab: 'other', label: '数字を CSV で出力', desc: '今月の数字を 1 CSV に', keywords: 'csv export 出力 数字' },
   { id: 'errorLog', tab: 'privacy', label: '不具合ログを見る', desc: '直近 50 件のエラー履歴', keywords: 'log error ログ 不具合' },
   { id: 'cloudSync', tab: 'privacy', label: 'クラウド同期', desc: '(準備中)', keywords: 'cloud sync 同期' },
   { id: 'deleteKeys', tab: 'privacy', label: 'API キーを削除', desc: '保存中の AI キーを全削除', keywords: 'delete api key 削除' },
@@ -747,11 +754,54 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     <div className="text-sm font-medium" style={{ color: '#F87171' }}>API キーを削除</div>
                     <div className="text-fg-muted text-[11px] mt-1">保存中の Gemini / Claude キーを全部消す</div>
                   </button>
+
+                  {/* サイドメニュー最小化 (2026-08-02 オーナー指示) に伴いここへ移設。
+                      モーダル本体は IdentityDashboard 側に住み、イベントで開く (error-log と同じ作法)。
+                      TOTP(z110)/Credits(z70) は設定(z50)の上に出るので閉じる必要はない */}
+                  <button
+                    type="button"
+                    onClick={() => { window.dispatchEvent(new CustomEvent('prism:open-totp')); track('totp'); }}
+                    className="w-full text-left p-3 rounded-xl transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', minHeight: 44 }}
+                  >
+                    <div className="text-fg text-sm font-medium">2 段階認証</div>
+                    <div className="text-fg-muted text-[11px] mt-1">Google Authenticator 互換 (TOTP) で守る</div>
+                  </button>
+                  {/* 生体認証が無い端末では行ごと消える (FaceIdLockRow が null を返す) ので枠は付けない */}
+                  <FaceIdLockRow />
+                  <button
+                    type="button"
+                    onClick={() => { downloadUserExport().catch(e => alert(`エクスポート失敗: ${(e as Error).message}`)); track('exportJson'); }}
+                    className="w-full text-left p-3 rounded-xl transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', minHeight: 44 }}
+                  >
+                    <div className="text-fg text-sm font-medium">全データを JSON で持ち出す</div>
+                    <div className="text-fg-muted text-[11px] mt-1">localStorage 全件 + Stripe 顧客情報 + サーバ集計 (GDPR/個情法)</div>
+                  </button>
                 </motion.div>
               )}
 
               {tab === 'other' && (
                 <motion.div key="other" className="space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  {/* サイドメニュー最小化 (2026-08-02) で移設: Credits と CSV 出力 */}
+                  <button
+                    type="button"
+                    onClick={() => { window.dispatchEvent(new CustomEvent('prism:open-credits')); track('credits'); }}
+                    className="w-full text-left p-3 rounded-xl transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', minHeight: 44 }}
+                  >
+                    <div className="text-fg text-sm font-medium">CORE Credits</div>
+                    <div className="text-fg-muted text-[11px] mt-1">貯まる / 使えるポイントの残高と履歴</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { window.dispatchEvent(new CustomEvent('prism:export-csv')); track('exportCsv'); }}
+                    className="w-full text-left p-3 rounded-xl transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', minHeight: 44 }}
+                  >
+                    <div className="text-fg text-sm font-medium">数字を CSV で出力</div>
+                    <div className="text-fg-muted text-[11px] mt-1">今月の CRM Deals / タスク / 収支 / SNS を 1 CSV に</div>
+                  </button>
                   {/* 使用統計 */}
                   <CollapsibleSection title="使用統計" defaultOpen>
                     <div className="grid grid-cols-2 gap-2 mb-3">

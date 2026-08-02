@@ -18,7 +18,6 @@ import KnowledgeBase from './KnowledgeBase';
 import StudioOpeningSheet from './StudioOpeningSheet';
 const MeetingHub = lazy(() => import('./MeetingHub'));
 const HealthHub = lazy(() => import('./health/HealthHub'));
-import { ThemeToggle } from './ThemeToggle';
 import TodayBrief from './TodayBrief';
 import PrismProposalCard from './ProposalCard';
 import type { CxoRole as PrismCxoRole } from '../hooks/useAgentTaskQueue';
@@ -73,17 +72,15 @@ const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
 import { REFERRAL_BONUS_DAYS, getReferralData, syncReferralStatus, consumePendingBonusDays } from '../lib/referral';
-import { Gift, FileDown, Database, Brain, BarChart3, Search, ShieldCheck, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem, Users, Layers, AlertTriangle } from 'lucide-react';
+import { Gift, Brain, BarChart3, Search, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem, Users, Layers, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import CoreCreditsPanel from './CoreCreditsPanel';
 import { getBalance as getCreditBalance, earnDaily as earnCreditDaily, earnOnce as earnCreditOnce } from '../lib/coreCredits';
 import { downloadMonthlyCsv } from '../lib/monthlyCsvExport';
-import { downloadUserExport } from '../lib/userDataExport';
 import MyAiUsageInsights from './MyAiUsageInsights';
 import CareerStudio from './CareerStudio';
 import CompetitorScout from './CompetitorScout';
 import TotpSetup from './TotpSetup';
-import FaceIdLockRow from './FaceIdLockRow';
 import AgentBriefLane from './AgentBriefLane';
 import { useProactiveAgent } from '../hooks/useProactiveAgent';
 import { useDailyCoach } from '../hooks/useDailyCoach';
@@ -297,7 +294,8 @@ export default function IdentityDashboard({
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboarded());
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [showCredits, setShowCredits] = useState(false);
-  const [creditBalance, setCreditBalance] = useState(0);
+  // 残高表示はサイドメニュー最小化で環境設定内 (CoreCreditsPanel) に一本化。付与だけ続ける
+  const [, setCreditBalance] = useState(0);
 
   // CORE Credits：起動時に「毎日ひらく(+5)」「初回利用(+100)」を付与し、残高を表示。
   useEffect(() => {
@@ -308,6 +306,22 @@ export default function IdentityDashboard({
     window.addEventListener('core-credits-changed', refresh);
     return () => window.removeEventListener('core-credits-changed', refresh);
   }, []);
+
+  // サイドメニュー最小化 (2026-08-02) 後の入口: 環境設定 (SettingsModal) からの
+  // イベントで、ここに住む Credits / TOTP モーダルと CSV 出力を開く
+  useEffect(() => {
+    const openCredits = () => setShowCredits(true);
+    const openTotp = () => setShowTotp(true);
+    const exportCsv = () => downloadMonthlyCsv({ personaId: persona.id, personaName: persona.name });
+    window.addEventListener('prism:open-credits', openCredits);
+    window.addEventListener('prism:open-totp', openTotp);
+    window.addEventListener('prism:export-csv', exportCsv);
+    return () => {
+      window.removeEventListener('prism:open-credits', openCredits);
+      window.removeEventListener('prism:open-totp', openTotp);
+      window.removeEventListener('prism:export-csv', exportCsv);
+    };
+  }, [persona.id, persona.name]);
   const [showAiInsights, setShowAiInsights] = useState(false); // XXX (2026-06-04)
   const [showCareer, setShowCareer] = useState(false); // CCCC (2026-06-04)
   const [showScout, setShowScout] = useState(false);   // MMMM (2026-06-04)
@@ -371,7 +385,7 @@ export default function IdentityDashboard({
   const [showCmdK, setShowCmdK] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   // 招待者の手応え: 自分のコードで実際に登録した人数 / 累計獲得日数 (起動時にサーバ同期)
-  const [referralStat, setReferralStat] = useState(() => {
+  const [, setReferralStat] = useState(() => {
     const d = getReferralData();
     return { referredCount: d.referredCount, bonusDays: d.bonusDays };
   });
@@ -784,6 +798,10 @@ export default function IdentityDashboard({
           </motion.button>
         </div>
 
+        {/* サイドメニューは必要最小限の2つだけ (2026-08-02 オーナー指示)。
+            Credits/CSV/JSON/2FA/Face ID/利用状況は「環境設定」内へ移設済み
+            (SettingsModal — privacy/other タブ。prism:open-* イベントでここのモーダルを開く)。
+            テーマ切替は右上の固定トグルが正。 */}
         <div className="space-y-0.5">
           <button
             onClick={() => setShowInvite(true)}
@@ -791,106 +809,20 @@ export default function IdentityDashboard({
             style={{
               background: `${persona.accentColor}1a`,
               border: `1px solid ${persona.accentColor}44`,
+              minHeight: 44,
             }}
           >
             <Gift size={14} style={{ color: accentInk }} strokeWidth={2.4} />
-            <span className="text-sm font-semibold" style={{ color: accentInk }}>友達招待 +{REFERRAL_BONUS_DAYS}日</span>
-          </button>
-          {/* 招待者の手応えバッジ — 実際に登録した友達がいる時だけ正直に表示 (0 は出さない) */}
-          {referralStat.referredCount > 0 && (
-            <button
-              onClick={() => setShowInvite(true)}
-              className="w-full flex items-center gap-2 px-2 py-1 rounded-lg text-left transition-colors hover:bg-surface-3"
-              aria-label={`友達 ${referralStat.referredCount} 人が登録済み・累計 ${referralStat.bonusDays} 日もらいました`}
-              title={`友達 ${referralStat.referredCount} 人が登録 / 累計 +${referralStat.bonusDays} 日`}
-            >
-              <Users size={13} style={{ color: accentInk }} strokeWidth={2.2} />
-              <span className="text-xs font-medium text-fg-muted">
-                <span style={{ color: accentInk, fontWeight: 700 }}>{referralStat.referredCount}人</span> 登録 · 累計 <span style={{ color: accentInk, fontWeight: 700 }}>+{referralStat.bonusDays}日</span>
-              </span>
-            </button>
-          )}
-          {/* CORE Credits（貯まる/使えるポイント） */}
-          <button
-            onClick={() => setShowCredits(true)}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
-            aria-label="CORE Credits を開く"
-          >
-            <Gem size={14} style={{ color: accentInk }} strokeWidth={2.2} />
-            <span className="text-fg-muted group-hover:text-fg text-sm flex-1">CORE Credits</span>
-            <span className="text-xs font-bold" style={{ color: accentInk }}>{creditBalance.toLocaleString()}</span>
+            <span className="text-sm font-semibold" style={{ color: accentInk }}>ユーザーを招待</span>
           </button>
           <button
             onClick={onOpenSettings}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
+            style={{ minHeight: 44 }}
           >
             <span className="text-fg-muted group-hover:text-fg inline-flex"><Settings size={15} strokeWidth={2} /></span>
             <span className="text-fg-muted group-hover:text-fg text-sm">環境設定</span>
           </button>
-          {/* PP (2026-06-03): 今月の数字 CSV エクスポート */}
-          <button
-            onClick={() => downloadMonthlyCsv({ personaId: persona.id, personaName: persona.name })}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
-            title="今月の CRM Deals / タスク / 収支 / SNS スナップショットを 1 CSV にまとめてダウンロード"
-          >
-            <FileDown size={14} className="text-fg-muted group-hover:text-fg" />
-            <span className="text-fg-muted group-hover:text-fg text-sm">数字を CSV で出力</span>
-          </button>
-          {/* JJJ (2026-06-04): GDPR/個情法 対応 — 全データを 1 JSON で持ち出し */}
-          <button
-            onClick={() => { downloadUserExport().catch(e => alert(`エクスポート失敗: ${(e as Error).message}`)); }}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
-            title="localStorage 全件 + Stripe 顧客情報 + サーバ集計 を 1 JSON でダウンロード (GDPR/個情法 対応)"
-          >
-            <Database size={14} className="text-fg-muted group-hover:text-fg" />
-            <span className="text-fg-muted group-hover:text-fg text-sm">全データを JSON で持ち出す</span>
-          </button>
-          <div className="px-2 py-1.5 flex items-center justify-between gap-2">
-            <span className="text-fg-muted text-xs tracking-widest uppercase">表示</span>
-            <ThemeToggle />
-          </div>
-          <div className="px-2 py-1 flex items-baseline justify-between">
-            <span className="text-fg text-sm">¥{Math.round(settings.usageStats.estimatedCostUsd * 150)}</span>
-            <span className="text-fg-subtle text-[10px]">今月のAPI</span>
-          </div>
-          {/* XXX (2026-06-04): 詳細な利用インサイト ボタン */}
-          <button
-            onClick={() => setShowAiInsights(true)}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
-            title="今月の AI 利用状況を詳しく見る"
-          >
-            <Brain size={14} className="text-fg-muted group-hover:text-fg" />
-            <span className="text-fg-muted group-hover:text-fg text-sm">AI 利用状況</span>
-          </button>
-          {/* CCCC (2026-06-04): 5 年後のキャリア レポート */}
-          <button
-            onClick={() => setShowCareer(true)}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
-            title="CFO + CDS の AI に「5 年後のキャリア」を作ってもらう"
-          >
-            <BarChart3 size={14} className="text-fg-muted group-hover:text-fg" />
-            <span className="text-fg-muted group-hover:text-fg text-sm">5 年後のキャリア</span>
-          </button>
-          {/* MMMM (2026-06-04): 競合スカウト */}
-          <button
-            onClick={() => setShowScout(true)}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
-            title="業種を伝えるだけで、AI が日本の代表的な競合 5 社を出します"
-          >
-            <Search size={14} className="text-fg-muted group-hover:text-fg" />
-            <span className="text-fg-muted group-hover:text-fg text-sm">競合スカウト</span>
-          </button>
-          {/* LLLL (2026-06-04): 2 段階認証 */}
-          <button
-            onClick={() => setShowTotp(true)}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
-            title="Google Authenticator 互換 (TOTP) で 2 段階認証を設定"
-          >
-            <ShieldCheck size={14} className="text-fg-muted group-hover:text-fg" />
-            <span className="text-fg-muted group-hover:text-fg text-sm">2 段階認証</span>
-          </button>
-          {/* Face ID アプリロック (2026-07-26 オーナー指示: 全サービスに導入) */}
-          <FaceIdLockRow />
         </div>
       </div>
       {/* CCCC (2026-06-04): キャリア レポート モーダル */}
@@ -1020,8 +952,8 @@ export default function IdentityDashboard({
                   border: `1px solid ${persona.accentColor}44`,
                   color: accentInk,
                 }}
-                aria-label={`友達招待 +${REFERRAL_BONUS_DAYS}日`}
-                title={`友達招待 +${REFERRAL_BONUS_DAYS}日`}
+                aria-label={`ユーザーを招待 (+${REFERRAL_BONUS_DAYS}日)`}
+                title={`ユーザーを招待 (+${REFERRAL_BONUS_DAYS}日)`}
               >
                 <Gift size={15} strokeWidth={2.4} />
               </button>

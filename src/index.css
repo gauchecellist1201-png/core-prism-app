@@ -3064,6 +3064,13 @@ body[data-prism-chat-dock] .prism-side-toast {
 body[data-prism-chat-dock] .cp-main-scroll {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-dock-h, 62px) + 160px) !important;
 }
+/* KPIスパークラインは .cp-main-scroll の外・文書の最後に居る (App.tsx)。
+   上の余白では守れず、実測(2026-08-02 375×812/667): 最大スクロールでも
+   「💴 月次売上」の行がドック帯(738-800)の下に恒久被覆だった。
+   ドック表示中はブロック自身に帯ぶんの逃げ場を持たせる */
+body[data-prism-chat-dock] [data-tour-id="kpi-sparkline"] {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--prism-dock-h, 62px) + 24px);
+}
 /* ============================================================
    右端の COMMAND レーンが本文の文字を覆わない (2026-07-29)
    実測(375px・本番): 幅44pxのレーンが本文カードの右端42pxに乗り、
