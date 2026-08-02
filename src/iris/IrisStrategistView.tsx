@@ -114,7 +114,7 @@ function AdvancedView({ bg, settings, mediaKit, knowledge, onBack }: Props & { o
         <p style={{
           fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
           fontSize: '0.78rem', letterSpacing: '0.3em',
-          textTransform: 'uppercase', color: bg.accent, marginBottom: '0.4rem',
+          textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.4rem',
         }}>
           The Strategist · Advanced
         </p>
@@ -298,7 +298,7 @@ function HistoryTab({ bg, history, inp, card, btnPrimary }: any) {
                 <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>
                   {new Date(p.postedAt).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </span>
-                {p.brand && <span style={{ background: bg.accent + '22', color: bg.accent, padding: '0.15rem 0.5rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 600 }}>PR: {p.brand}</span>}
+                {p.brand && <span style={{ background: bg.accent + '22', color: bg.accentText, padding: '0.15rem 0.5rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 600 }}>PR: {p.brand}</span>}
               </div>
               <p style={{ fontWeight: 700, color: bg.ink, marginBottom: '0.3rem', fontSize: '1rem' }}>{p.title}</p>
               <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginBottom: '0.5rem' }}>
@@ -306,7 +306,7 @@ function HistoryTab({ bg, history, inp, card, btnPrimary }: any) {
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.3rem 0.6rem', fontSize: '0.78rem', marginTop: '0.4rem' }}>
                 {m.reach !== undefined && <span style={{ color: bg.inkSoft }}>{m.reach.toLocaleString()}</span>}
-                {m.engagementRate !== undefined && <span style={{ color: bg.accent, fontWeight: 700 }}>ER {m.engagementRate}%</span>}
+                {m.engagementRate !== undefined && <span style={{ color: bg.accentText, fontWeight: 700 }}>ER {m.engagementRate}%</span>}
                 {m.likes !== undefined && <span style={{ color: bg.inkSoft }}>{m.likes.toLocaleString()}</span>}
                 {m.comments !== undefined && <span style={{ color: bg.inkSoft }}>{m.comments.toLocaleString()}</span>}
                 {m.saves !== undefined && <span style={{ color: bg.inkSoft }}>{m.saves.toLocaleString()}</span>}
@@ -359,7 +359,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
       {result && (
         <>
           <div style={card}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>
               Summary
             </p>
             <p style={{ color: bg.ink, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{result.summary}</p>
@@ -395,7 +395,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
 
           {result.patterns.length > 0 && (
             <div style={card}>
-              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>
                 Patterns
               </p>
               {result.patterns.map((p, i) => (
@@ -416,7 +416,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
 
           {result.quickWins.length > 0 && (
             <div style={card}>
-              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>
                 Quick Wins (今すぐやれる)
               </p>
               <ol style={{ paddingLeft: '1.2rem', color: bg.ink, lineHeight: 1.9 }}>
@@ -427,7 +427,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
 
           {result.growthForecast && (
             <div style={card}>
-              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>
                 30日後の予測
               </p>
               <p style={{ color: bg.ink, lineHeight: 1.8 }}>{result.growthForecast}</p>
@@ -438,7 +438,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
 
       {/* 個別投稿フィードバック */}
       <div style={card}>
-        <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>
+        <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>
           単発フィードバック
         </p>
         <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginBottom: '0.75rem' }}>
@@ -474,7 +474,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
               </div>
             )}
             {singleFb.r.nextVariation && (
-              <p style={{ marginTop: '0.5rem', color: bg.accent, fontStyle: 'italic' }}>
+              <p style={{ marginTop: '0.5rem', color: bg.accentText, fontStyle: 'italic' }}>
                 → {singleFb.r.nextVariation}
               </p>
             )}
@@ -560,7 +560,7 @@ function SuggestTab({ bg, settings, history, mediaKit, knowledge, card, btnPrima
             <p style={{
               fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
               fontSize: '0.78rem', letterSpacing: '0.25em', textTransform: 'uppercase',
-              color: bg.accent,
+              color: bg.accentText,
             }}>
               No. {String(i + 1).padStart(2, '0')}
             </p>
@@ -571,7 +571,7 @@ function SuggestTab({ bg, settings, history, mediaKit, knowledge, card, btnPrima
           <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.5rem', fontWeight: 600, color: bg.ink, lineHeight: 1.2, marginBottom: '0.5rem' }}>
             {s.title}
           </p>
-          <p style={{ color: bg.accent, fontWeight: 600, marginBottom: '0.5rem' }}>
+          <p style={{ color: bg.accentText, fontWeight: 600, marginBottom: '0.5rem' }}>
             HOOK: {s.hook}
           </p>
           <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginBottom: '0.5rem' }}>
@@ -588,7 +588,7 @@ function SuggestTab({ bg, settings, history, mediaKit, knowledge, card, btnPrima
             <p style={{ color: bg.ink, fontSize: '0.88rem', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{s.brief}</p>
           </div>
           {s.hashtagsHint?.length > 0 && (
-            <p style={{ marginTop: '0.5rem', color: bg.accent, fontSize: '0.85rem' }}>
+            <p style={{ marginTop: '0.5rem', color: bg.accentText, fontSize: '0.85rem' }}>
               {s.hashtagsHint.join(' ')}
             </p>
           )}
@@ -678,7 +678,7 @@ function ArcTab({ bg, settings, history, mediaKit, knowledge, card, btnPrimary, 
       {result && (
         <>
           <div style={card}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>
               Concept
             </p>
             <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.6rem', fontWeight: 600, color: bg.ink, lineHeight: 1.2 }}>
@@ -691,7 +691,7 @@ function ArcTab({ bg, settings, history, mediaKit, knowledge, card, btnPrimary, 
 
           {result.weeks?.map((w, wi) => (
             <div key={wi} style={card}>
-              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.4rem' }}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.4rem' }}>
                 Week {w.weekNum}
               </p>
               <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.3rem', fontWeight: 600, color: bg.ink, marginBottom: '0.75rem' }}>
@@ -706,7 +706,7 @@ function ArcTab({ bg, settings, history, mediaKit, knowledge, card, btnPrimary, 
                   }}>
                     <span style={{
                       minWidth: 50, fontSize: '0.78rem', fontWeight: 700,
-                      color: bg.accent, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
+                      color: bg.accentText, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
                     }}>
                       {p.day}
                     </span>
@@ -724,7 +724,7 @@ function ArcTab({ bg, settings, history, mediaKit, knowledge, card, btnPrimary, 
           ))}
 
           <div style={{ ...card, background: bg.accent + '11', borderColor: bg.accent + '44' }}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>
               Culmination
             </p>
             <p style={{ color: bg.ink, fontSize: '1rem', lineHeight: 1.8 }}>
@@ -1015,7 +1015,7 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
         ))}
         {samples.length < 5 && (
           <button onClick={() => setSamples([...samples, { url: '', caption: '', metrics: '' }])} style={{
-            background: 'transparent', color: bg.accent, border: `1px dashed ${bg.cardBorder}`,
+            background: 'transparent', color: bg.accentText, border: `1px dashed ${bg.cardBorder}`,
             borderRadius: 10, padding: '0.4rem 0.9rem', fontSize: '0.85rem', cursor: 'pointer',
             fontFamily: IRIS_FONTS.body,
           }}>
@@ -1050,7 +1050,7 @@ function SectionHead({ bg, step, title, optional }: { bg: any; step: string; tit
     <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.6rem' }}>
       <span style={{
         fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
-        fontSize: '0.78rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700,
+        fontSize: '0.78rem', letterSpacing: '0.2em', color: bg.accentText, fontWeight: 700,
       }}>
         Step {step}
       </span>
@@ -1072,7 +1072,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
           <ScoreCircle value={result.totalScore} color={bg.accent} size={120} />
           <div style={{ flex: 1, minWidth: 200 }}>
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 700, marginBottom: '0.4rem' }}>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 700, marginBottom: '0.4rem' }}>
               TOTAL SCORE
             </p>
             <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.5rem', color: bg.ink, fontWeight: 600, lineHeight: 1.4 }}>
@@ -1084,7 +1084,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
 
       {/* レーダー (5 軸) */}
       <div style={card}>
-        <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>
+        <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>
           5 軸スコア
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 280px) 1fr', gap: '1.5rem', alignItems: 'center' }}>
@@ -1100,7 +1100,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
               <div key={k}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <span style={{ fontSize: '0.85rem', fontWeight: 600, color: bg.ink }}>{label}</span>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 700, color: bg.accent, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 700, color: bg.accentText, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
                     {result.scores[k].value}
                   </span>
                 </div>
@@ -1113,7 +1113,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
                 </div>
                 <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: '0.25rem', lineHeight: 1.6 }}>{result.scores[k].reason}</p>
                 {result.scores[k].toLevelUp && (
-                  <p style={{ fontSize: '0.78rem', color: bg.accent, marginTop: '0.15rem', fontStyle: 'italic' }}>
+                  <p style={{ fontSize: '0.78rem', color: bg.accentText, marginTop: '0.15rem', fontStyle: 'italic' }}>
                     → {result.scores[k].toLevelUp}
                   </p>
                 )}
@@ -1125,7 +1125,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
 
       {/* ブランド観 */}
       <div style={card}>
-        <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>
+        <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>
           Brand Identity
         </p>
         <p style={{ color: bg.ink, lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{result.brandIdentity}</p>
@@ -1134,7 +1134,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
       {/* オーディエンス + 業界 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
         <div style={card}>
-          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>
+          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>
             推定オーディエンス
           </p>
           <p style={{ color: bg.ink, fontWeight: 600, lineHeight: 1.7 }}>{result.estimatedAudience.primary}</p>
@@ -1144,19 +1144,19 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
             </p>
           )}
           {result.estimatedAudience.estimatedSize && (
-            <p style={{ color: bg.accent, fontSize: '0.88rem', marginTop: '0.4rem', fontStyle: 'italic' }}>
+            <p style={{ color: bg.accentText, fontSize: '0.88rem', marginTop: '0.4rem', fontStyle: 'italic' }}>
               推定リーチ: {result.estimatedAudience.estimatedSize}
             </p>
           )}
         </div>
         {result.targetableBrands?.length > 0 && (
           <div style={card}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>
               狙えるブランド業界
             </p>
             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
               {result.targetableBrands.map((b, i) => (
-                <span key={i} style={{ background: bg.accent + '22', color: bg.accent, padding: '0.3rem 0.85rem', borderRadius: 999, fontSize: '0.85rem', fontWeight: 600 }}>{b}</span>
+                <span key={i} style={{ background: bg.accent + '22', color: bg.accentText, padding: '0.3rem 0.85rem', borderRadius: 999, fontSize: '0.85rem', fontWeight: 600 }}>{b}</span>
               ))}
             </div>
           </div>
@@ -1186,7 +1186,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
       {/* 競合 */}
       {result.competitors?.length > 0 && (
         <div style={card}>
-          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>
+          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>
             参考にすべきアカウント
           </p>
           <div style={{ display: 'grid', gap: '0.6rem' }}>
@@ -1194,7 +1194,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
               <div key={i} style={{ padding: '0.65rem 0.85rem', borderRadius: 12, background: 'rgba(255,255,255,0.5)' }}>
                 <p style={{ fontWeight: 700, color: bg.ink, marginBottom: '0.2rem' }}>{c.handle}</p>
                 <p style={{ fontSize: '0.85rem', color: bg.inkSoft, lineHeight: 1.7 }}>{c.whyRefer}</p>
-                <p style={{ fontSize: '0.85rem', color: bg.accent, lineHeight: 1.7, fontStyle: 'italic', marginTop: '0.2rem' }}>
+                <p style={{ fontSize: '0.85rem', color: bg.accentText, lineHeight: 1.7, fontStyle: 'italic', marginTop: '0.2rem' }}>
                   → {c.learnFrom}
                 </p>
               </div>
@@ -1206,7 +1206,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
       {/* 想定報酬 (3 種別) */}
       {result.estimatedFee && (
         <div style={card}>
-          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>
+          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>
             想定報酬レンジ
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.6rem' }}>
@@ -1238,7 +1238,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
       {/* 30 日プラン */}
       {result.next30Days && (
         <div style={card}>
-          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>
+          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>
             30 日アクションプラン
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.6rem' }}>
@@ -1247,7 +1247,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
               if (!w) return null;
               return (
                 <div key={wk} style={{ padding: '0.85rem', borderRadius: 12, background: 'rgba(255,255,255,0.5)', borderLeft: `3px solid ${bg.accent}` }}>
-                  <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700, marginBottom: '0.25rem' }}>
+                  <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: bg.accentText, fontWeight: 700, marginBottom: '0.25rem' }}>
                     Week {i + 1}
                   </p>
                   <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', fontWeight: 600, color: bg.ink, marginBottom: '0.4rem' }}>
@@ -1266,7 +1266,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
       {/* 投稿アイデア 5 つ */}
       {result.quickPostIdeas?.length > 0 && (
         <div style={card}>
-          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>
+          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>
             すぐ撮れる投稿アイデア
           </p>
           <div style={{ display: 'grid', gap: '0.5rem' }}>
@@ -1275,7 +1275,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                   <p style={{ fontWeight: 700, color: bg.ink }}>{idea.title}</p>
                   <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    <span style={{ background: bg.accent + '22', color: bg.accent, padding: '0.15rem 0.5rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700 }}>{idea.format}</span>
+                    <span style={{ background: bg.accent + '22', color: bg.accentText, padding: '0.15rem 0.5rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700 }}>{idea.format}</span>
                     <span style={{
                       background: idea.expectedReachLevel === 'high' ? '#10B98122' : idea.expectedReachLevel === 'medium' ? '#FFA94D22' : '#9CA3AF22',
                       color: idea.expectedReachLevel === 'high' ? '#10B981' : idea.expectedReachLevel === 'medium' ? '#FFA94D' : '#9CA3AF',
@@ -1285,7 +1285,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
                     </span>
                   </div>
                 </div>
-                <p style={{ fontSize: '0.85rem', color: bg.accent, fontStyle: 'italic', marginTop: '0.2rem' }}>
+                <p style={{ fontSize: '0.85rem', color: bg.accentText, fontStyle: 'italic', marginTop: '0.2rem' }}>
                   HOOK: {idea.hook}
                 </p>
               </div>
@@ -1298,11 +1298,11 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
       {result.bioSuggestion && (
         <div style={card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent }}>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText }}>
               バイオ書き直し案
             </p>
             <button onClick={() => navigator.clipboard?.writeText(result.bioSuggestion)} style={{
-              background: 'transparent', color: bg.accent, border: `1px solid ${bg.accent}55`,
+              background: 'transparent', color: bg.accentText, border: `1px solid ${bg.accent}55`,
               borderRadius: 999, padding: '0.3rem 0.8rem', fontSize: '0.78rem', cursor: 'pointer',
             }}>コピー</button>
           </div>
@@ -1317,7 +1317,7 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
       {/* ハッシュタグ */}
       {result.hashtagStrategy && (
         <div style={card}>
-          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>
+          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>
             ハッシュタグ戦略
           </p>
           {result.hashtagStrategy.advice && (
@@ -1327,13 +1327,13 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
           )}
           {result.hashtagStrategy.mainSet?.length > 0 && (
             <p style={{ marginBottom: '0.4rem' }}>
-              <span style={{ fontSize: '0.78rem', color: bg.accent, fontWeight: 700, marginRight: '0.5rem' }}>MAIN:</span>
+              <span style={{ fontSize: '0.78rem', color: bg.accentText, fontWeight: 700, marginRight: '0.5rem' }}>MAIN:</span>
               <span style={{ color: bg.ink }}>{result.hashtagStrategy.mainSet.join(' ')}</span>
             </p>
           )}
           {result.hashtagStrategy.nicheSet?.length > 0 && (
             <p>
-              <span style={{ fontSize: '0.78rem', color: bg.accent, fontWeight: 700, marginRight: '0.5rem' }}>NICHE:</span>
+              <span style={{ fontSize: '0.78rem', color: bg.accentText, fontWeight: 700, marginRight: '0.5rem' }}>NICHE:</span>
               <span style={{ color: bg.ink }}>{result.hashtagStrategy.nicheSet.join(' ')}</span>
             </p>
           )}
@@ -1343,13 +1343,13 @@ function ResultView({ bg, card, result }: { bg: any; card: any; result: IGAnalys
       {/* 投稿時間帯 */}
       {result.postingSchedule?.length > 0 && (
         <div style={card}>
-          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>
+          <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>
             おすすめ投稿時間
           </p>
           <div style={{ display: 'grid', gap: '0.4rem' }}>
             {result.postingSchedule.map((p, i) => (
               <div key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', padding: '0.5rem 0.75rem', borderRadius: 10, background: 'rgba(255,255,255,0.5)' }}>
-                <span style={{ fontWeight: 700, color: bg.accent, minWidth: 60 }}>{p.day}</span>
+                <span style={{ fontWeight: 700, color: bg.accentText, minWidth: 60 }}>{p.day}</span>
                 <span style={{ fontWeight: 700, color: bg.ink, minWidth: 70 }}>{p.time}</span>
                 <span style={{ color: bg.inkSoft, fontSize: '0.85rem', flex: 1 }}>{p.reason}</span>
               </div>

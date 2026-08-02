@@ -34,7 +34,10 @@ export const IRIS_COLORS = {
   inkDim:      '#8A7AA0',   // メタ情報
 
   // Instagram 系ピンク (上品で柔らかい)
-  hotPink:     '#E1306C',   // Instagram Pink (公式)
+  hotPink:     '#E1306C',   // Instagram Pink (公式) — 「面」用（塗り・枠・アイコン）
+  // 「文字」用のピンク。公式ピンクをそのまま明るい下地の文字に使うと 3.94〜4.34:1 で
+  // AA 落第する（10〜12px の見出しが多いので実害が大きい）。色相は同じで濃さだけ違う。
+  hotPinkText: '#B81B57',
   pink:        '#FD7CB8',   // ソフトピンク
   pinkLt:      '#FFB8D6',
   pinkSoft:    '#FFD4E5',
@@ -115,8 +118,23 @@ export interface IrisBackgroundDef {
   emoji: string;
   /** メインの背景 (CSS gradient 等) */
   background: string;
-  /** アクセント色 (テキストやボタン用) */
+  /** アクセント色 — 「面」用 (ボタンの塗り・枠・アイコン・グラデ)。ブランドのトーンそのもの */
   accent: string;
+  /**
+   * アクセント色 — 「文字」用。
+   * 2026-08-02: accent を面と文字で兼用していたため、Instagram ピンク #E1306C を
+   * 明るい下地に文字として置くと 3.94〜4.34:1 で AA 落第していた（リールスタジオの
+   * 見出し約 40 個が該当）。面の色は 1px も変えずにトーンを保ったまま、
+   * 文字のときだけ同じ色相の濃い方を使う＝役割分離。
+   * 暗いテーマでは文字も面と同じ色でよい（下地が暗いので落第しない）。
+   */
+  accentText: string;
+  /**
+   * アクセント色 — 「白い文字を乗せるベタ塗り」用。
+   * accent(#E1306C) に白文字だと 4.34:1 で、12px 前後のボタン文字は AA 落第する。
+   * グラデ・枠・アイコン・淡い塗りは accent のままで、ベタ塗りボタンだけこれを使う。
+   */
+  accentSolid: string;
   /** メインの文字色 */
   ink: string;
   /** サブ文字色 */
@@ -136,6 +154,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '',
     background: 'radial-gradient(circle at 15% 20%, #833AB422 0%, transparent 50%), radial-gradient(circle at 85% 80%, #FCB04522 0%, transparent 50%), radial-gradient(circle at 60% 50%, #E1306C22 0%, transparent 45%), linear-gradient(135deg, #FFFAF7 0%, #FFE5EE 50%, #FFF5E5 100%)',
     accent: '#E1306C',
+    accentSolid: '#C2185B',
+    accentText: '#B81B57',
     ink: '#1F1A2E',          // 黒寄り強化 (もっとはっきり)
     inkSoft: '#3D3247',      // サブも濃く
     card: 'rgba(255,255,255,0.95)',  // ほぼ不透明白
@@ -147,6 +167,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '',
     background: 'radial-gradient(circle at 20% 30%, #FFB8D633 0%, transparent 55%), radial-gradient(circle at 80% 70%, #FCB04522 0%, transparent 50%), linear-gradient(180deg, #FFFAFB 0%, #FFEBF1 100%)',
     accent: '#E1306C',
+    accentSolid: '#C2185B',
+    accentText: '#B81B57',
     ink: '#1F1A2E',
     inkSoft: '#3D3247',
     card: 'rgba(255,255,255,0.94)',
@@ -158,6 +180,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '',
     background: 'radial-gradient(circle at 25% 30%, #FCB04533 0%, transparent 50%), radial-gradient(circle at 75% 70%, #FFB8D622 0%, transparent 50%), linear-gradient(135deg, #FFF9F0 0%, #FFE5DC 100%)',
     accent: '#F77737',
+    accentSolid: '#B2521F',
+    accentText: '#9C4318',
     ink: '#1F1A2E',
     inkSoft: '#3D3247',
     card: 'rgba(255,255,255,0.94)',
@@ -169,6 +193,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '',
     background: 'radial-gradient(circle at 30% 20%, #B07BD933 0%, transparent 55%), radial-gradient(circle at 70% 80%, #FFB8D622 0%, transparent 50%), linear-gradient(180deg, #FAF5FF 0%, #FFEBF1 100%)',
     accent: '#833AB4',
+    accentSolid: '#833AB4',
+    accentText: '#833AB4',
     ink: '#1F1A2E',
     inkSoft: '#3D3247',
     card: 'rgba(255,255,255,0.94)',
@@ -180,6 +206,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     emoji: '',
     background: 'linear-gradient(135deg, #FFE5DC 0%, #FFD4E5 35%, #FFE5EE 70%, #FAF5FF 100%)',
     accent: '#E1306C',
+    accentSolid: '#C2185B',
+    accentText: '#B81B57',
     ink: '#1F1A2E',
     inkSoft: '#3D3247',
     card: 'rgba(255,255,255,0.94)',
@@ -192,6 +220,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     // 一番安心感のあるニュートラル
     background: 'linear-gradient(180deg, #FFFAF7 0%, #FFF5F8 50%, #FFFAF7 100%)',
     accent: '#E1306C',
+    accentSolid: '#C2185B',
+    accentText: '#B81B57',
     ink: '#1F1A2E',
     inkSoft: '#3D3247',
     card: 'rgba(255,255,255,0.95)',
@@ -204,6 +234,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     // ダーク版 (派手好きの方向け)
     background: 'radial-gradient(circle at 20% 30%, #833AB4cc 0%, transparent 55%), radial-gradient(circle at 80% 70%, #E1306Ccc 0%, transparent 55%), radial-gradient(circle at 60% 50%, #FCB04588 0%, transparent 45%), linear-gradient(135deg, #1A0A26 0%, #2A1A3A 100%)',
     accent: '#FCB045',
+    accentSolid: '#FCB045',
+    accentText: '#FCB045',
     ink: '#FFFFFF',
     inkSoft: '#FFEAF5',
     card: 'rgba(255,255,255,0.18)',
@@ -216,6 +248,8 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     // Instagram グラデの主流派生
     background: 'linear-gradient(135deg, #833AB433 0%, #E1306C33 25%, #F7773733 50%, #FCB04533 75%, #FFDC8033 100%), linear-gradient(180deg, #FFFAF7 0%, #FFF5F8 100%)',
     accent: '#E1306C',
+    accentSolid: '#C2185B',
+    accentText: '#B81B57',
     ink: '#1F1A2E',
     inkSoft: '#3D3247',
     card: 'rgba(255,255,255,0.94)',
@@ -232,9 +266,63 @@ export interface CustomIrisBackground extends Omit<IrisBackgroundDef, 'id'> {
   isCustom: true;
 }
 
+/** 相対輝度 (WCAG) */
+function relLum(hex: string): number {
+  const h = hex.replace('#', '');
+  const v = [0, 2, 4].map((i) => {
+    const c = parseInt(h.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+}
+function contrast(a: string, b: string): number {
+  const [x, y] = [relLum(a), relLum(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+}
+
+/**
+ * 「文字用アクセント」を計算で出す。
+ * 自作テーマ（保存済みのものを含む）は accentText を持っていないので、
+ * 色相・彩度は保ったまま明るさだけ下げて AA (4.5:1) を満たす、いちばん明るい色を選ぶ。
+ * ＝ ブランドの色みは変えずに読めるところまでだけ暗くする。
+ * 暗い下地のテーマでは逆に暗くしてはいけないので、そのまま返す。
+ */
+export function deriveAccentText(accent: string, isDarkTheme: boolean): string {
+  try {
+    // 暗いテーマは下地が暗いので、アクセントはそのままで読める（暗くしたら逆に消える）
+    if (isDarkTheme) return accent;
+    // hexToHsl の s / l は 0〜1。ここを 1 刻みで回すと 1 周で終わり、
+    // 何も暗くならないまま元の色を返す（＝黙って効かない）。必ず 0.01 刻みで。
+    const [h, s, l] = hexToHsl(accent);
+    // 基準は純白ではなく、Iris でいちばん明るい「地」(#F6F4EE)。
+    // 白で 4.6 を満たしても、わずかに暗い地の上では 4.2 まで落ちて落第する。
+    for (let i = l; i >= 0; i -= 0.01) {
+      const c = hslToHex(h, s, i);
+      if (contrast(c, '#F6F4EE') >= 4.6) return c;
+    }
+    return accent;
+  } catch {
+    return accent;
+  }
+}
+
+/** accentText を持たない古い自作テーマに、計算値を補う（画面側は必ず accentText を読める） */
+function withAccentText<T extends { accent: string; accentText?: string; accentSolid?: string; card?: string; ink?: string }>(b: T): T {
+  if (b.accentText && b.accentSolid) return b;
+  // ink が白＝暗いテーマ、という自作テーマの作られ方に合わせて判定する
+  const dark = (b.ink || '').toUpperCase().startsWith('#FFF');
+  return {
+    ...b,
+    accentText: b.accentText || deriveAccentText(b.accent, dark),
+    accentSolid: b.accentSolid || (dark ? b.accent : deriveAccentText(b.accent, false)),
+  };
+}
+
 function loadCustomList(): CustomIrisBackground[] {
-  try { const r = localStorage.getItem(CUSTOM_LIST_KEY); return r ? JSON.parse(r) : []; }
-  catch { return []; }
+  try {
+    const r = localStorage.getItem(CUSTOM_LIST_KEY);
+    return r ? (JSON.parse(r) as CustomIrisBackground[]).map(withAccentText) : [];
+  } catch { return []; }
 }
 
 function saveCustomList(list: CustomIrisBackground[]) {

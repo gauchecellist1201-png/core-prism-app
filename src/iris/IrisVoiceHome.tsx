@@ -418,7 +418,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
 
       {/* AI 名前 + 開始メッセージ */}
       <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
-        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.8rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 700, marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.8rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 700, marginBottom: '0.4rem', textTransform: 'uppercase' }}>
           あなたの相棒
         </p>
         <h2 style={{
@@ -537,7 +537,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
                   </div>
                 )}
                 <div style={{
-                  background: m.role === 'user' ? bg.accent : 'rgba(255,255,255,0.94)',
+                  background: m.role === 'user' ? bg.accentSolid : 'rgba(255,255,255,0.94)',
                   color: m.role === 'user' ? '#FFFFFF' : '#1F1A2E',
                   padding: '0.7rem 1rem',
                   borderRadius: m.role === 'user' ? '20px 20px 6px 20px' : '20px 20px 20px 6px',
@@ -556,7 +556,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
                         style={{
                           background: 'rgba(255,255,255,0.94)',
                           border: `1px solid ${bg.accent}55`,
-                          color: bg.accent,
+                          color: bg.accentText,
                           borderRadius: 999, padding: '0.4rem 0.95rem',
                           fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
                           fontFamily: IRIS_FONTS.body,
@@ -595,7 +595,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
                       style={{
                         background: 'rgba(255,255,255,0.94)',
                         border: `1px solid ${bg.accent}55`,
-                        color: bg.accent,
+                        color: bg.accentText,
                         borderRadius: 999, padding: '0.5rem 1.1rem',
                         fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
                         fontFamily: IRIS_FONTS.body,
@@ -710,7 +710,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
             {listening ? '聞いています…' : voiceAvailable ? 'タップして話す' : '(音声非対応)'}
           </p>
           {interim && (
-            <p style={{ marginTop: '0.3rem', color: bg.accent, fontSize: '0.85rem', fontStyle: 'italic', fontFamily: IRIS_FONTS.serif }}>
+            <p style={{ marginTop: '0.3rem', color: bg.accentText, fontSize: '0.85rem', fontStyle: 'italic', fontFamily: IRIS_FONTS.serif }}>
               {interim}
             </p>
           )}

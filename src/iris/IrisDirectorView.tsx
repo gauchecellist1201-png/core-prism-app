@@ -169,7 +169,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
     fontSize: '0.78rem',
     letterSpacing: '0.25em',
     textTransform: 'uppercase' as const,
-    color: bg.accent,
+    color: bg.accentText,
     marginBottom: '0.5rem',
   };
 
@@ -333,7 +333,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
     <div style={{ display: 'grid', gap: '1.25rem', gridTemplateColumns: 'minmax(0, 1fr)', maxWidth: '100%' }}>
       {/* ヘッダ */}
       <div style={{ minWidth: 0 }}>
-        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.4rem' }}>
+        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.4rem' }}>
           The Creative Director
         </p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontSize: 'clamp(1.6rem, 7vw, 2.4rem)', color: bg.ink, margin: 0, fontWeight: 700, letterSpacing: '-0.01em', wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>
@@ -467,7 +467,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
                             {lane === 'shoot' && (
                               <button onClick={() => fetchWardrobe(s)} disabled={wardrobeBusy === s.id} style={{
                                 fontSize: '0.62rem', padding: '0.18rem 0.35rem', borderRadius: 999,
-                                background: bg.accent, color: '#fff', border: 'none', cursor: 'pointer',
+                                background: bg.accentSolid, color: '#fff', border: 'none', cursor: 'pointer',
                               }}>
                                 {wardrobeBusy === s.id ? '…' : '衣装AI'}
                               </button>
@@ -489,7 +489,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
                         marginTop: 'auto',
                         background: 'transparent',
                         border: 'none',
-                        color: bg.accent,
+                        color: bg.accentText,
                         fontSize: '0.7rem',
                         cursor: 'pointer',
                         padding: '0.2rem',
@@ -530,7 +530,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
                   {weekly.reels.map((r, i) => (
                     <div key={i} style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.6)', borderRadius: 10, borderLeft: `3px solid ${LANE_META.shoot.color}` }}>
                       <p style={{ fontWeight: 700, color: bg.ink }}>{r.title}</p>
-                      <p style={{ fontSize: '0.78rem', color: bg.accent, fontStyle: 'italic' }}>HOOK: {r.hook}</p>
+                      <p style={{ fontSize: '0.78rem', color: bg.accentText, fontStyle: 'italic' }}>HOOK: {r.hook}</p>
                       <p style={{ fontSize: '0.78rem', color: bg.inkSoft }}>{r.scene}</p>
                     </div>
                   ))}
@@ -544,7 +544,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 6 }}>
                   {weekly.stories.map((s, i) => (
                     <div key={i} style={{ padding: '0.5rem 0.7rem', background: 'rgba(255,255,255,0.55)', borderRadius: 10, borderLeft: `3px solid ${LANE_META.post.color}` }}>
-                      <p style={{ fontSize: '0.72rem', color: bg.accent, fontWeight: 700 }}>{s.day}</p>
+                      <p style={{ fontSize: '0.72rem', color: bg.accentText, fontWeight: 700 }}>{s.day}</p>
                       <p style={{ fontSize: '0.8rem', color: bg.ink }}>{s.idea}</p>
                     </div>
                   ))}
@@ -596,7 +596,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
               <div key={i} style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.6)', borderRadius: 10, borderLeft: `3px solid ${bg.accent}` }}>
                 <p style={{ fontWeight: 700, color: bg.ink }}>{l.name}</p>
                 <p style={{ fontSize: '0.8rem', color: bg.inkSoft }}>{l.vibe}</p>
-                <p style={{ fontSize: '0.74rem', color: bg.accent, marginTop: 3 }}>⏰ {l.bestTime} · ⚠️ {l.permission}</p>
+                <p style={{ fontSize: '0.74rem', color: bg.accentText, marginTop: 3 }}>⏰ {l.bestTime} · ⚠️ {l.permission}</p>
               </div>
             ))}
           </div>
@@ -655,23 +655,23 @@ export default function IrisDirectorView({ bg, settings }: Props) {
       {result && (
         <>
           <div style={card}>
-            <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>
+            <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>
               Concept
             </p>
             <p style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.6rem', fontWeight: 700, color: bg.ink, lineHeight: 1.2 }}>
               {result.title}
             </p>
             <p style={{ fontStyle: 'italic', color: bg.inkSoft, marginTop: '0.5rem' }}>
-              <span style={{ color: bg.accent }}>HOOK:</span> {result.hook}
+              <span style={{ color: bg.accentText }}>HOOK:</span> {result.hook}
             </p>
           </div>
 
           <div style={card}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>Scene Plan</p>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>Scene Plan</p>
             {result.scenes.map((s, i) => (
               <div key={i} style={{ paddingBottom: '0.75rem', marginBottom: '0.75rem', borderBottom: `1px solid ${bg.cardBorder}` }}>
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                  <span style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', color: bg.accent, minWidth: 70 }}>{s.time}</span>
+                  <span style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', color: bg.accentText, minWidth: 70 }}>{s.time}</span>
                   <div style={{ flex: 1 }}>
                     <p style={{ fontWeight: 600, color: bg.ink, marginBottom: '0.2rem' }}>{s.scene}</p>
                     <p style={{ fontSize: '0.85rem', color: bg.inkSoft }}>{s.visual}</p>
@@ -683,36 +683,36 @@ export default function IrisDirectorView({ bg, settings }: Props) {
           </div>
 
           <div style={card}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>Captions</p>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>Captions</p>
             {result.captions.map((c, i) => (
               <div key={i} style={{ display: 'flex', gap: '0.75rem', padding: '0.4rem 0', borderBottom: i < result.captions.length - 1 ? `1px solid ${bg.cardBorder}` : 'none' }}>
-                <span style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', color: bg.accent, minWidth: 70 }}>{c.time}</span>
+                <span style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', color: bg.accentText, minWidth: 70 }}>{c.time}</span>
                 <span style={{ flex: 1, fontWeight: 500, color: bg.ink }}>{c.text}</span>
               </div>
             ))}
           </div>
 
           <div style={card}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>Post Caption</p>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>Post Caption</p>
             <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: bg.ink, lineHeight: 1.7 }}>{result.postCaption}</pre>
           </div>
 
           <div style={card}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>Hashtags</p>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>Hashtags</p>
             {(['main', 'category', 'longtail'] as const).map(k => (
               <div key={k} style={{ marginBottom: '0.5rem' }}>
                 <p style={{ fontSize: '0.7rem', color: bg.inkSoft, marginBottom: '0.3rem', fontStyle: 'italic' }}>{k}</p>
-                <p style={{ color: bg.accent, lineHeight: 1.7 }}>{result.hashtags[k].join(' ')}</p>
+                <p style={{ color: bg.accentText, lineHeight: 1.7 }}>{result.hashtags[k].join(' ')}</p>
               </div>
             ))}
           </div>
 
           <div style={card}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>Prep Checklist</p>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>Prep Checklist</p>
             <ul style={{ paddingLeft: '1.2rem', color: bg.ink, lineHeight: 1.9 }}>
               {result.prep.map((p, i) => <li key={i}>{p}</li>)}
             </ul>
-            <p style={{ marginTop: '0.75rem', color: bg.accent, fontStyle: 'italic' }}>CTA: {result.cta}</p>
+            <p style={{ marginTop: '0.75rem', color: bg.accentText, fontStyle: 'italic' }}>CTA: {result.cta}</p>
           </div>
 
           <div style={card}>

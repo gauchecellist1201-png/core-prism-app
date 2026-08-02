@@ -86,7 +86,7 @@ export default function IrisReplyCenter({ bg, account, onConnect }: Props) {
     <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* タイトル + 作業中アカウント (運用代行で「どのクライアントか」を常に明示) */}
       <div>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.28em', color: bg.accent, fontWeight: 700, marginBottom: 4 }}>返信センター</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.28em', color: bg.accentText, fontWeight: 700, marginBottom: 4 }}>返信センター</p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>
           ぜんぶ、ここで返す。
         </h2>
@@ -219,7 +219,7 @@ function CommentsPanel({ bg, accountId, onConnect }: { bg: Bg; accountId: string
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <p style={{ margin: 0, fontSize: '0.82rem', color: bg.inkSoft }}>
-          未返信 <strong style={{ color: bg.accent }}>{pending.length}</strong> 件
+          未返信 <strong style={{ color: bg.accentText }}>{pending.length}</strong> 件
           {answered.length > 0 && <> ・ 返信済み {answered.length} 件</>}
         </p>
         <button onClick={() => void load()} title="再読み込み" aria-label="再読み込み" style={{ ...btn(bg), minHeight: 44, padding: '0 0.85rem' }}>
@@ -336,7 +336,7 @@ function CommentCard({ bg, media, comment, onSent }: {
           <p style={{ margin: '3px 0 0', fontSize: '0.9rem', color: bg.ink, lineHeight: 1.5 }}>{comment.text}</p>
           {media.permalink && (
             <a href={media.permalink} target="_blank" rel="noreferrer"
-              style={{ fontSize: '0.72rem', color: bg.accent, fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 3 }}>
+              style={{ fontSize: '0.72rem', color: bg.accentText, fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 3 }}>
               投稿を見る <ExternalLink size={11} strokeWidth={2.4} />
             </a>
           )}

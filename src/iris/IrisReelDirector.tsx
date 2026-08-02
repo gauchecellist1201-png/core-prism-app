@@ -121,7 +121,7 @@ export default function IrisReelDirector({ bg, script, clientName, onShotsChange
   const sectionLabel: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: 6,
     fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.76rem',
-    letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.6rem',
+    letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.6rem',
   };
   const inp: React.CSSProperties = {
     background: 'rgba(255,255,255,0.94)', border: `1px solid ${bg.cardBorder}`,
@@ -193,7 +193,7 @@ export default function IrisReelDirector({ bg, script, clientName, onShotsChange
               background: `${bg.accent}0E`, border: `1px solid ${bg.accent}33`,
               borderRadius: 10, fontSize: '0.78rem', color: bg.ink, lineHeight: 1.55,
             }}>
-              <strong style={{ color: bg.accent }}>なぜ伸びる:</strong> {t.why}
+              <strong style={{ color: bg.accentText }}>なぜ伸びる:</strong> {t.why}
             </div>
           );
         })()}
@@ -258,7 +258,7 @@ export default function IrisReelDirector({ bg, script, clientName, onShotsChange
                 {i < project.cuts.length - 1 && (
                   <span style={{
                     alignSelf: 'center', flexShrink: 0,
-                    fontSize: 8.5, fontWeight: 800, color: bg.accent,
+                    fontSize: 8.5, fontWeight: 800, color: bg.accentText,
                     background: `${bg.accent}14`, border: `1px solid ${bg.accent}33`,
                     borderRadius: 6, padding: '2px 4px', maxWidth: 44,
                     textAlign: 'center', lineHeight: 1.2,
@@ -272,7 +272,7 @@ export default function IrisReelDirector({ bg, script, clientName, onShotsChange
           <button onClick={addCut} title="カットを足す" style={{
             ...iconBtn(false), flexShrink: 0, alignSelf: 'center',
             width: 44, height: 96, borderRadius: 12, borderStyle: 'dashed',
-            color: bg.accent,
+            color: bg.accentText,
           }}>
             <Plus size={18} />
           </button>
@@ -286,7 +286,7 @@ export default function IrisReelDirector({ bg, script, clientName, onShotsChange
             borderRadius: 14,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.86rem', fontWeight: 900, color: bg.accent }}>カット {selectedIdx + 1}</span>
+              <span style={{ fontSize: '0.86rem', fontWeight: 900, color: bg.accentText }}>カット {selectedIdx + 1}</span>
               <span style={{ fontSize: '0.72rem', color: bg.inkSoft }}>並べ替え:</span>
               <button onClick={() => moveCut(selected.id, -1)} disabled={selectedIdx === 0} title="左へ" style={iconBtn(selectedIdx === 0)}>
                 <ArrowLeft size={15} />

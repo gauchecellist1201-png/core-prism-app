@@ -538,7 +538,7 @@ export default function IrisPlatformCards({ bg, result, queue, handle, model }: 
                 type="button" onClick={writeNoteArticle}
                 style={{
                   minHeight: 44, padding: '0.45rem 0.9rem', borderRadius: 12, border: 'none',
-                  background: '#E1306C', color: '#FFFFFF', fontSize: '0.82rem', fontWeight: 700,
+                  background: '#C2185B', color: '#FFFFFF', fontSize: '0.82rem', fontWeight: 700,  // 白文字が 4.34:1 だったので面を一段濃く
                   cursor: 'pointer', fontFamily: IRIS_FONTS.body,
                   display: 'inline-flex', alignItems: 'center', gap: 6,
                 }}

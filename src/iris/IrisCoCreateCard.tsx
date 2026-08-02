@@ -102,7 +102,7 @@ export default function IrisCoCreateCard({ bg }: Props) {
                 style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   minHeight: 44, borderRadius: 12, padding: '0 1rem',
-                  background: bg.accent, color: '#fff', fontWeight: 700, fontSize: '0.85rem',
+                  background: bg.accentSolid, color: '#fff', fontWeight: 700, fontSize: '0.85rem',
                   fontFamily: IRIS_FONTS.body, textDecoration: 'none',
                 }}
               >
@@ -173,7 +173,7 @@ export default function IrisCoCreateCard({ bg }: Props) {
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             minHeight: 48, width: '100%', borderRadius: 12, border: 'none',
-            background: bg.accent, color: '#fff', fontWeight: 700, fontSize: '0.9rem',
+            background: bg.accentSolid, color: '#fff', fontWeight: 700, fontSize: '0.9rem',
             fontFamily: IRIS_FONTS.body, cursor: sending || !bodyText.trim() ? 'default' : 'pointer',
             opacity: sending || !bodyText.trim() ? 0.55 : 1,
           }}

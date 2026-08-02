@@ -162,7 +162,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.62rem', fontWeight: 800, padding: '1px 6px', borderRadius: 999, background: st.bg, color: st.color }}>{st.label}</span>
             <span style={{ fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 600 }}>{when.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</span>
-            {p.brandName && <span style={{ fontSize: '0.7rem', color: bg.accent, fontWeight: 700 }}>PR · {p.brandName}</span>}
+            {p.brandName && <span style={{ fontSize: '0.7rem', color: bg.accentText, fontWeight: 700 }}>PR · {p.brandName}</span>}
           </div>
           <p style={{ margin: 0, fontSize: '0.8rem', color: bg.ink, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.caption}</p>
         </div>
@@ -186,7 +186,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
       />
       {/* ヘッダ */}
       <div>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>POST QUEUE</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600 }}>POST QUEUE</p>
         <h1 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', color: bg.ink, margin: '0.25rem 0 0.5rem', fontWeight: 500 }}>
           投稿予約。
         </h1>
@@ -255,7 +255,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
             <button key={v} onClick={() => setView(v)} style={{
               padding: '6px 14px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
               border: `1px solid ${view === v ? bg.accent : bg.cardBorder}`,
-              background: view === v ? bg.accent : 'transparent',
+              background: view === v ? bg.accentSolid : 'transparent',
               color: view === v ? '#fff' : bg.inkSoft,
               transition: 'background 0.15s, color 0.15s, border-color 0.15s',
             }}>{v === 'list' ? 'リスト' : v === 'grid' ? 'グリッド' : 'カレンダー'}</button>
@@ -268,7 +268,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
         <button onClick={bulkBestSlots} style={{
           alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 7,
           padding: '9px 15px', borderRadius: 12, cursor: 'pointer', border: 'none',
-          background: bg.accent, color: '#fff', fontFamily: IRIS_FONTS.body, fontWeight: 700, fontSize: '0.84rem',
+          background: bg.accentSolid, color: '#fff', fontFamily: IRIS_FONTS.body, fontWeight: 700, fontSize: '0.84rem',
           boxShadow: `0 8px 20px ${bg.accent}44`,
         }}>
           <CalendarClock size={15} strokeWidth={2.2} />
@@ -451,7 +451,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                       fontSize: '0.66rem', fontWeight: 800, padding: '2px 7px',
                       borderRadius: 999, background: st.bg, color: st.color, letterSpacing: '0.05em',
                     }}>{st.label}</span>
-                    {p.brandName && <span style={{ fontSize: '0.74rem', color: bg.accent, fontWeight: 700 }}>PR · {p.brandName}</span>}
+                    {p.brandName && <span style={{ fontSize: '0.74rem', color: bg.accentText, fontWeight: 700 }}>PR · {p.brandName}</span>}
                     <span style={{ fontSize: '0.72rem', color: overdue ? '#DC2626' : bg.inkSoft, fontWeight: overdue ? 700 : 500 }}>
                       {whenText}
                     </span>
@@ -464,7 +464,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                     {p.caption}
                   </p>
                   {p.hashtags?.length > 0 && (
-                    <p style={{ margin: 0, fontSize: '0.72rem', color: bg.accent, lineHeight: 1.4 }}>
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: bg.accentText, lineHeight: 1.4 }}>
                       {p.hashtags.slice(0, 6).join(' ')}{p.hashtags.length > 6 ? ' …' : ''}
                     </p>
                   )}
@@ -501,7 +501,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                   {(overdue || p.status === 'draft') && (
                     <button onClick={() => reschedule(p)} title={`次のベスト投稿時間 (${slotLabel(suggestNextSlot())}) に予約し直す`} style={{
                       padding: '0.4rem 0.7rem',
-                      background: 'transparent', color: bg.accent,
+                      background: 'transparent', color: bg.accentText,
                       border: `1px solid ${bg.accent}80`, borderRadius: 8,
                       fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
                       display: 'inline-flex', gap: 4, alignItems: 'center',

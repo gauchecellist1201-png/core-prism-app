@@ -264,7 +264,7 @@ export function IrisHeroGreeting({ bg, handle, preparedReel, readyPostCount = 0,
       <div style={{ marginBottom: '1rem', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
           <Flame size={11} color={bg.accent} />
-          <span style={{ fontSize: '0.62rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 800 }}>
+          <span style={{ fontSize: '0.62rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 800 }}>
             {handle ? handle.toUpperCase() : '@YOU'} · IRIS が動いていました
           </span>
         </div>

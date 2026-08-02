@@ -211,7 +211,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <div>
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 700, textTransform: 'uppercase' }}>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 700, textTransform: 'uppercase' }}>
               Quick Add
             </p>
             <h3 style={{
@@ -266,7 +266,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
           {mode === 'screenshot' && !extracted && (
             <motion.div key="ss" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <button onClick={() => setMode('choose')} style={{
-                background: 'transparent', border: 'none', color: bg.accent,
+                background: 'transparent', border: 'none', color: bg.accentText,
                 cursor: 'pointer', fontSize: '0.85rem', marginBottom: '0.75rem', padding: 0,
               }}>← 戻る</button>
 
@@ -330,7 +330,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
           {mode === 'voice' && !extracted && (
             <motion.div key="voice" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <button onClick={() => setMode('choose')} style={{
-                background: 'transparent', border: 'none', color: bg.accent,
+                background: 'transparent', border: 'none', color: bg.accentText,
                 cursor: 'pointer', fontSize: '0.85rem', marginBottom: '0.75rem', padding: 0,
               }}>← 戻る</button>
 
@@ -394,7 +394,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
           {mode === 'manual' && !extracted && (
             <motion.div key="manual" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <button onClick={() => setMode('choose')} style={{
-                background: 'transparent', border: 'none', color: bg.accent,
+                background: 'transparent', border: 'none', color: bg.accentText,
                 cursor: 'pointer', fontSize: '0.85rem', marginBottom: '0.75rem', padding: 0,
               }}>← 戻る</button>
               <div style={{ ...card, padding: '1.5rem', textAlign: 'center' }}>
@@ -411,7 +411,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
             <motion.div key="preview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <p style={{
                 fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase',
-                color: bg.accent, fontWeight: 700, marginBottom: '0.5rem',
+                color: bg.accentText, fontWeight: 700, marginBottom: '0.5rem',
               }}>
                 AI の読み取り結果 — 編集して保存
               </p>
@@ -424,7 +424,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
                       width: `${(extracted.confidence || 0) * 100}%`, height: '100%',
                     }} />
                   </div>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: bg.accent }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: bg.accentText }}>
                     {Math.round((extracted.confidence || 0) * 100)}%
                   </span>
                 </div>

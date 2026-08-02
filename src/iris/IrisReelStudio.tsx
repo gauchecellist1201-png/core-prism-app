@@ -3037,7 +3037,7 @@ JSON のみで返答。`;
   };
   const label: React.CSSProperties = {
     fontSize: '0.7rem', letterSpacing: '0.18em', textTransform: 'uppercase',
-    color: bg.accent, fontWeight: 700, marginBottom: '0.5rem',
+    color: bg.accentText, fontWeight: 700, marginBottom: '0.5rem',
   };
   const inp: React.CSSProperties = {
     width: '100%', padding: '0.55rem 0.7rem',
@@ -3083,7 +3083,7 @@ JSON のみで返答。`;
         }}>
           <span style={{
             marginTop: 24, padding: '0.5rem 1rem', borderRadius: 999,
-            background: bg.accent, color: '#fff', fontSize: '0.85rem', fontWeight: 800,
+            background: bg.accentSolid, color: '#fff', fontSize: '0.85rem', fontWeight: 800,
           }}>
             ここに画像 / 動画 / 音楽をドロップ
           </span>
@@ -3093,7 +3093,7 @@ JSON のみで返答。`;
         <p style={{
           fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
           fontSize: '0.78rem', letterSpacing: '0.3em', textTransform: 'uppercase',
-          color: bg.accent, marginBottom: '0.4rem',
+          color: bg.accentText, marginBottom: '0.4rem',
         }}>
           Reel Studio
         </p>
@@ -3119,7 +3119,7 @@ JSON のみで返答。`;
           borderRadius: 16,
         }}>
           <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: bg.ink, lineHeight: 1.5 }}>
-            動画づくりの知識はいりません。<span style={{ color: bg.accent }}>写真を数枚えらぶだけで、見栄えのする縦動画ができます。</span>
+            動画づくりの知識はいりません。<span style={{ color: bg.accentText }}>写真を数枚えらぶだけで、見栄えのする縦動画ができます。</span>
           </p>
           {/* 3 ステップ */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '10px 0 8px', flexWrap: 'wrap' }}>
@@ -3130,9 +3130,9 @@ JSON のみで返答。`;
                   background: 'rgba(255,255,255,0.7)', border: `1px solid ${bg.cardBorder}`,
                   borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap',
                 }}>
-                  <span style={{ color: bg.accent, fontWeight: 800 }}>{i + 1}.</span> {t}
+                  <span style={{ color: bg.accentText, fontWeight: 800 }}>{i + 1}.</span> {t}
                 </span>
-                {i < 2 && <span style={{ color: bg.accent, fontSize: 12, fontWeight: 800 }}>→</span>}
+                {i < 2 && <span style={{ color: bg.accentText, fontSize: 12, fontWeight: 800 }}>→</span>}
               </span>
             ))}
           </div>
@@ -3370,7 +3370,7 @@ JSON のみで返答。`;
                   background: '#fff', padding: '0.4rem 0.8rem', borderRadius: 12,
                   border: `1px solid ${bg.cardBorder}`,
                 }}>
-                  <span style={{ fontSize: '1.6rem', fontWeight: 800, color: bg.accent, fontFamily: IRIS_FONTS.display }}>
+                  <span style={{ fontSize: '1.6rem', fontWeight: 800, color: bg.accentText, fontFamily: IRIS_FONTS.display }}>
                     {reelScore.score}
                   </span>
                   <span style={{ fontSize: '0.7rem', color: bg.inkSoft }}>/100</span>
@@ -3434,7 +3434,7 @@ JSON のみで返答。`;
                 <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 2 }}>2026 Q2 IG Reels アルゴリズム準拠</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                <span style={{ fontFamily: IRIS_FONTS.display, fontSize: '2.2rem', fontWeight: 800, color: bg.accent }}>
+                <span style={{ fontFamily: IRIS_FONTS.display, fontSize: '2.2rem', fontWeight: 800, color: bg.accentText }}>
                   {algoScore.viral}
                 </span>
                 <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>/100</span>
@@ -3451,7 +3451,7 @@ JSON のみで返答。`;
                 <div key={axis.key}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: 2 }}>
                     <span style={{ color: bg.ink, fontWeight: 700 }}>{axis.key} <span style={{ color: bg.inkSoft, fontWeight: 400 }}>· {axis.hint}</span></span>
-                    <span style={{ color: bg.accent, fontWeight: 700 }}>{axis.val}</span>
+                    <span style={{ color: bg.accentText, fontWeight: 700 }}>{axis.val}</span>
                   </div>
                   <div style={{ height: 5, background: '#fff', borderRadius: 999, overflow: 'hidden' }}>
                     <div style={{
@@ -3473,7 +3473,8 @@ JSON のみで返答。`;
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <div>
-                <p style={{ ...label, color: '#EA580C' }}>TREND PULSE</p>
+                {/* #EA580C は 11.2px の文字だと 3.24:1 で落第するため、文字用に一段濃いオレンジ */}
+                <p style={{ ...label, color: '#C2410C' }}>TREND PULSE</p>
                 <p style={{ fontSize: '0.72rem', color: bg.inkSoft, marginTop: 2 }}>2026年 5月時点で最も伸びてる 5 フォーマット</p>
               </div>
             </div>
@@ -3674,7 +3675,7 @@ JSON のみで返答。`;
                   </div>
                   <div style={{
                     fontSize: '0.65rem', fontWeight: 700,
-                    background: bg.accent, color: '#fff',
+                    background: bg.accentSolid, color: '#fff',
                     padding: '4px 8px', borderRadius: 8, flexShrink: 0,
                   }}>適用</div>
                 </button>
@@ -3722,7 +3723,7 @@ JSON のみで返答。`;
                   padding: '0.45rem 0.6rem',
                   gap: 2,
                 }}>
-                  <span style={{ fontSize: '0.62rem', color: bg.accent, fontWeight: 700, letterSpacing: '0.1em' }}>
+                  <span style={{ fontSize: '0.62rem', color: bg.accentText, fontWeight: 700, letterSpacing: '0.1em' }}>
                     {h.cat}
                   </span>
                   <span style={{ fontSize: '0.78rem', lineHeight: 1.4, color: bg.ink, whiteSpace: 'normal' as const }}>
@@ -4585,7 +4586,7 @@ JSON のみで返答。`;
                 disabled={scheduleGenerating}
                 style={{
                   padding: '0.55rem 0.85rem',
-                  background: bg.accent, color: '#fff',
+                  background: bg.accentSolid, color: '#fff',
                   border: 'none', borderRadius: 8, fontWeight: 700,
                   fontSize: '0.78rem', cursor: scheduleGenerating ? 'not-allowed' : 'pointer',
                   opacity: scheduleGenerating ? 0.7 : 1,
@@ -4609,7 +4610,7 @@ JSON のみで返答。`;
             {/* キャプション */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
               <label style={{ fontSize: '0.78rem', fontWeight: 700 }}>
-                キャプション {scheduleGenerating && <span style={{ color: bg.accent, fontWeight: 500 }}>(AI 生成中…)</span>}
+                キャプション {scheduleGenerating && <span style={{ color: bg.accentText, fontWeight: 500 }}>(AI 生成中…)</span>}
               </label>
               <button
                 type="button"

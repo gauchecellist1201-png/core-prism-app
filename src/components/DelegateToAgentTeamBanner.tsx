@@ -38,6 +38,9 @@ export default function DelegateToAgentTeamBanner({
   const [proposed, setProposed] = useState(false);
 
   const accent = brand === 'iris' ? '#E1306C' : '#A78BFA';
+  // 面の色をそのまま 10.5px の文字に使うと Iris ピンクで 3.94:1 / 紫でも薄い。
+  // 面(グラデ・枠・光)は accent のまま、文字だけ濃い方を使う。
+  const accentText = brand === 'iris' ? '#B81B57' : '#6D4AC4';
   const safeCxos = suggestedCxos.length > 0 ? suggestedCxos : (['COO'] as CxoRole[]);
 
   const handleDelegate = () => {
@@ -109,7 +112,7 @@ export default function DelegateToAgentTeamBanner({
           <div
             style={{
               fontSize: 10.5, fontWeight: 800, letterSpacing: '0.1em',
-              color: accent, textTransform: 'uppercase',
+              color: accentText, textTransform: 'uppercase',
               display: 'flex', alignItems: 'center', gap: 5,
             }}
           >

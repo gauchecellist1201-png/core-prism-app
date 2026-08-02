@@ -618,7 +618,7 @@ ${recent}
     <div style={{ display: 'grid', gap: '1.25rem', fontFamily: IRIS_FONTS.body, paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* ヘッダ */}
       <div>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>FAN CARE</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600 }}>FAN CARE</p>
         <h1 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', color: bg.ink, margin: '0.25rem 0 0.5rem', fontWeight: 500 }}>
           ファンとの絆を育てる。
         </h1>
@@ -682,7 +682,7 @@ ${recent}
         {showAddFan && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             style={{ padding: '1.25rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: '1rem' }}>ADD FAN</p>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, marginBottom: '1rem' }}>ADD FAN</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
               <FField label="名前"><input value={fanForm.name} onChange={e => setFanForm(f => ({ ...f, name: e.target.value }))} placeholder="さくらちゃん" style={inp(bg)} /></FField>
               <FField label="ハンドル (@)"><input value={fanForm.handle} onChange={e => setFanForm(f => ({ ...f, handle: e.target.value }))} placeholder="@sakura_fan" style={inp(bg)} /></FField>
@@ -706,7 +706,7 @@ ${recent}
         {showScreenshot && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             style={{ padding: '1.25rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: '0.6rem' }}>DM 受信箱スクショから取り込む</p>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, marginBottom: '0.6rem' }}>DM 受信箱スクショから取り込む</p>
             <p style={{ fontSize: '0.78rem', color: bg.inkSoft, lineHeight: 1.7, marginBottom: '0.8rem' }}>
               Instagram / TikTok / X の <strong>DM 一覧画面</strong> のスクショを 1〜3 枚送ると、差出人を一括で読み取って追加できます。
             </p>
@@ -759,7 +759,7 @@ ${recent}
                             </p>
                           )}
                         </div>
-                        <span style={{ fontSize: '0.65rem', color: bg.accent, fontWeight: 700 }}>{c.tagGuess || '新規'}</span>
+                        <span style={{ fontSize: '0.65rem', color: bg.accentText, fontWeight: 700 }}>{c.tagGuess || '新規'}</span>
                       </label>
                     );
                   })}
@@ -780,7 +780,7 @@ ${recent}
         {showCsv && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             style={{ padding: '1.25rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: '0.5rem' }}>CSV インポート</p>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, marginBottom: '0.5rem' }}>CSV インポート</p>
             <p style={{ fontSize: '0.76rem', color: bg.inkSoft, lineHeight: 1.7, marginBottom: '0.6rem' }}>
               1 行 1 ファン。列順: <code>handle, name, tags, lastContact</code> (tags はセミコロン区切り可)。1 行目は見出しでも OK。
             </p>
@@ -815,7 +815,7 @@ ${recent}
         {top10 && top10.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             style={{ padding: '1.25rem', background: `linear-gradient(135deg, ${bg.accent}12, ${bg.accent}06)`, border: `1px solid ${bg.accent}30`, borderRadius: 16 }}>
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: '0.75rem' }}>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, marginBottom: '0.75rem' }}>
               高エンゲージメント TOP10
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem' }}>
@@ -825,7 +825,7 @@ ${recent}
                   padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.7)',
                   borderRadius: 10, border: `1px solid ${bg.cardBorder}`,
                 }}>
-                  <span style={{ fontWeight: 800, color: bg.accent, minWidth: 22, fontSize: '0.9rem' }}>#{i + 1}</span>
+                  <span style={{ fontWeight: 800, color: bg.accentText, minWidth: 22, fontSize: '0.9rem' }}>#{i + 1}</span>
                   <div>
                     <p style={{ fontWeight: 600, color: bg.ink, fontSize: '0.85rem' }}>{t.name}</p>
                     <p style={{ fontSize: '0.75rem', color: bg.inkSoft, lineHeight: 1.5 }}>{t.reason}</p>
@@ -898,7 +898,7 @@ ${recent}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.85rem' }}>
               <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600 }}>FAN DETAIL</p>
+                <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600 }}>FAN DETAIL</p>
                 <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.4rem', color: bg.ink, fontWeight: 500 }}>
                   {selectedFan.name}
                 </h3>
@@ -941,7 +941,7 @@ ${recent}
             {selectedFan.topics.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.85rem' }}>
                 {selectedFan.topics.map(t => (
-                  <span key={t} style={{ background: `${bg.accent}15`, color: bg.accent, borderRadius: 999, fontSize: '0.72rem', padding: '0.2rem 0.65rem', fontWeight: 600 }}>
+                  <span key={t} style={{ background: `${bg.accent}15`, color: bg.accentText, borderRadius: 999, fontSize: '0.72rem', padding: '0.2rem 0.65rem', fontWeight: 600 }}>
                     {t}
                   </span>
                 ))}
@@ -951,16 +951,16 @@ ${recent}
             {/* お礼 DM */}
             {thanksDm && thanksFanId === selectedFan.id && (
               <div style={{ marginBottom: '0.9rem', padding: '1rem', background: `linear-gradient(135deg, ${bg.accent}14, ${bg.accent}06)`, border: `1px solid ${bg.accent}40`, borderRadius: 12 }}>
-                <p style={{ fontSize: '0.7rem', color: bg.accent, fontWeight: 700, marginBottom: 6, letterSpacing: '0.18em' }}>
+                <p style={{ fontSize: '0.7rem', color: bg.accentText, fontWeight: 700, marginBottom: 6, letterSpacing: '0.18em' }}>
                   <MessageCircleHeart size={11} style={{ verticalAlign: -1, marginRight: 4 }} />
                   お礼 DM (押し売り禁止 / 個別質問 1 つ)
                 </p>
                 <p style={{ fontSize: '0.9rem', color: bg.ink, lineHeight: 1.85, whiteSpace: 'pre-wrap', fontFamily: IRIS_FONTS.serif }}>{thanksDm}</p>
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button onClick={() => copyText(thanksDm, 'お礼 DM')} style={{ background: bg.accent, color: '#fff', border: 'none', borderRadius: 999, padding: '0.45rem 1.1rem', fontSize: '0.78rem', cursor: 'pointer', fontFamily: IRIS_FONTS.body, fontWeight: 700 }}>
+                  <button onClick={() => copyText(thanksDm, 'お礼 DM')} style={{ background: bg.accentSolid, color: '#fff', border: 'none', borderRadius: 999, padding: '0.45rem 1.1rem', fontSize: '0.78rem', cursor: 'pointer', fontFamily: IRIS_FONTS.body, fontWeight: 700 }}>
                     <Send size={11} style={{ verticalAlign: -1, marginRight: 4 }} /> コピーして送る
                   </button>
-                  <button onClick={() => generateThanksDm(selectedFan)} style={{ background: 'none', border: `1px solid ${bg.accent}40`, color: bg.accent, borderRadius: 999, padding: '0.45rem 1rem', fontSize: '0.78rem', cursor: 'pointer', fontFamily: IRIS_FONTS.body }}>
+                  <button onClick={() => generateThanksDm(selectedFan)} style={{ background: 'none', border: `1px solid ${bg.accent}40`, color: bg.accentText, borderRadius: 999, padding: '0.45rem 1rem', fontSize: '0.78rem', cursor: 'pointer', fontFamily: IRIS_FONTS.body }}>
                     別案を作る
                   </button>
                 </div>
@@ -970,9 +970,9 @@ ${recent}
             {/* 返信テンプレ */}
             {replyTemplate && replyFanId === selectedFan.id && (
               <div style={{ marginBottom: '0.9rem', padding: '0.95rem', background: `${bg.accent}0d`, border: `1px solid ${bg.accent}25`, borderRadius: 10 }}>
-                <p style={{ fontSize: '0.7rem', color: bg.accent, fontWeight: 600, marginBottom: 6 }}>AI 返信テンプレ</p>
+                <p style={{ fontSize: '0.7rem', color: bg.accentText, fontWeight: 600, marginBottom: 6 }}>AI 返信テンプレ</p>
                 <p style={{ fontSize: '0.875rem', color: bg.ink, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{replyTemplate}</p>
-                <button onClick={() => copyText(replyTemplate, '返信文')} style={{ marginTop: 8, background: 'none', border: `1px solid ${bg.accent}40`, color: bg.accent, borderRadius: 999, padding: '0.3rem 0.85rem', fontSize: '0.75rem', cursor: 'pointer', fontFamily: IRIS_FONTS.body }}>
+                <button onClick={() => copyText(replyTemplate, '返信文')} style={{ marginTop: 8, background: 'none', border: `1px solid ${bg.accent}40`, color: bg.accentText, borderRadius: 999, padding: '0.3rem 0.85rem', fontSize: '0.75rem', cursor: 'pointer', fontFamily: IRIS_FONTS.body }}>
                   コピー
                 </button>
               </div>
@@ -980,7 +980,7 @@ ${recent}
 
             {/* インタラクション追加 */}
             <div style={{ marginBottom: '0.75rem' }}>
-              <button onClick={() => setShowAddInteraction(v => !v)} style={{ background: 'none', border: `1px solid ${bg.cardBorder}`, color: bg.accent, borderRadius: 999, padding: '0.55rem 1.1rem', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, fontFamily: IRIS_FONTS.body, minHeight: 36 }}>
+              <button onClick={() => setShowAddInteraction(v => !v)} style={{ background: 'none', border: `1px solid ${bg.cardBorder}`, color: bg.accentText, borderRadius: 999, padding: '0.55rem 1.1rem', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, fontFamily: IRIS_FONTS.body, minHeight: 36 }}>
                 + DM / コメントを記録
               </button>
             </div>
@@ -1018,7 +1018,7 @@ ${recent}
                     background: 'rgba(255,255,255,0.55)', border: `1px solid ${bg.cardBorder}`,
                     display: 'flex', gap: '0.7rem', alignItems: 'flex-start',
                   }}>
-                    <span style={{ fontSize: '0.7rem', color: bg.accent, fontWeight: 700, minWidth: 46 }}>
+                    <span style={{ fontSize: '0.7rem', color: bg.accentText, fontWeight: 700, minWidth: 46 }}>
                       {i.type === 'dm' ? 'DM' : i.type === 'comment' ? 'コメント' : '返信'}
                     </span>
                     <span style={{ fontSize: '0.75rem', color: bg.inkSoft, minWidth: 72 }}>{i.date}</span>
@@ -1097,7 +1097,7 @@ function WeeklyFiveCard({ bg, cache, loading, onGenerate, fansCount }: {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: cache ? '0.7rem' : 0 }}>
         <div>
-          <p style={{ fontSize: '0.68rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 700 }}>
+          <p style={{ fontSize: '0.68rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 700 }}>
             <Sparkles size={10} style={{ verticalAlign: -1, marginRight: 4 }} />
             今週連絡すべき 5 人
           </p>
@@ -1125,7 +1125,7 @@ function WeeklyFiveCard({ bg, cache, loading, onGenerate, fansCount }: {
               padding: '0.6rem 0.75rem', background: 'rgba(255,255,255,0.7)',
               borderRadius: 10, border: `1px solid ${bg.cardBorder}`,
             }}>
-              <span style={{ fontWeight: 800, color: bg.accent, minWidth: 22, fontSize: '0.95rem' }}>#{i + 1}</span>
+              <span style={{ fontWeight: 800, color: bg.accentText, minWidth: 22, fontSize: '0.95rem' }}>#{i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontWeight: 700, color: bg.ink, fontSize: '0.88rem' }}>
                   {it.name} <span style={{ fontWeight: 400, color: bg.inkSoft, fontSize: '0.78rem' }}>· {it.handle}</span>
@@ -1134,7 +1134,7 @@ function WeeklyFiveCard({ bg, cache, loading, onGenerate, fansCount }: {
                 {it.whisper && (
                   <div style={{ marginTop: 6, padding: '0.45rem 0.7rem', background: `${bg.accent}10`, borderRadius: 8, fontSize: '0.78rem', color: bg.ink, lineHeight: 1.6, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
                     「{it.whisper}」
-                    <button onClick={() => copyText(it.whisper, '声かけ案')} style={{ marginLeft: 8, background: 'none', border: 'none', color: bg.accent, fontSize: '0.7rem', cursor: 'pointer', fontWeight: 700 }}>
+                    <button onClick={() => copyText(it.whisper, '声かけ案')} style={{ marginLeft: 8, background: 'none', border: 'none', color: bg.accentText, fontSize: '0.7rem', cursor: 'pointer', fontWeight: 700 }}>
                       コピー
                     </button>
                   </div>
@@ -1286,7 +1286,7 @@ function btnPrimary(bg: IrisBackgroundDef): React.CSSProperties {
 function btnSecondary(bg: IrisBackgroundDef): React.CSSProperties {
   return {
     background: 'rgba(255,255,255,0.85)',
-    color: bg.accent, border: `1px solid ${bg.accent}40`,
+    color: bg.accentText, border: `1px solid ${bg.accent}40`,
     borderRadius: 999, padding: '0.65rem 1.1rem',
     fontWeight: 600, cursor: 'pointer',
     fontSize: '0.85rem', fontFamily: IRIS_FONTS.body,

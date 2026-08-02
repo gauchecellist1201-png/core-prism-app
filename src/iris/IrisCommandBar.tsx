@@ -164,7 +164,7 @@ export default function IrisCommandBar({ bg, settings, onRoute }: Props) {
           color: bg.inkSoft,
           cursor: 'pointer',
           fontFamily: 'inherit',
-          minHeight: 36,
+          minHeight: 44,
         }}
       >
         <Sparkles size={14} color={bg.accent} strokeWidth={2.4} />
@@ -224,7 +224,7 @@ export default function IrisCommandBar({ bg, settings, onRoute }: Props) {
                   onClick={() => submit()}
                   disabled={busy || !query.trim()}
                   style={{
-                    background: bg.accent, color: '#fff',
+                    background: bg.accentSolid, color: '#fff',
                     border: 'none', borderRadius: 10,
                     padding: '0.45rem 0.8rem',
                     fontSize: '0.78rem', fontWeight: 700,
@@ -246,7 +246,7 @@ export default function IrisCommandBar({ bg, settings, onRoute }: Props) {
                   display: 'flex', alignItems: 'center', gap: 8,
                 }}>
                   <Sparkles size={12} color={bg.accent} />
-                  <span>「<strong style={{ color: bg.accent }}>{suggestion.matched}</strong>」を検知 → <strong style={{ color: bg.ink }}>{TAB_NAME[suggestion.tab] || suggestion.tab}</strong> に飛びます (Enter)</span>
+                  <span>「<strong style={{ color: bg.accentText }}>{suggestion.matched}</strong>」を検知 → <strong style={{ color: bg.ink }}>{TAB_NAME[suggestion.tab] || suggestion.tab}</strong> に飛びます (Enter)</span>
                 </div>
               )}
 
@@ -260,7 +260,7 @@ export default function IrisCommandBar({ bg, settings, onRoute }: Props) {
               <div style={{ padding: '0.85rem 1.25rem 1.1rem' }}>
                 <p style={{
                   fontSize: '0.68rem', letterSpacing: '0.2em',
-                  color: bg.accent, fontWeight: 700, margin: '0 0 0.55rem',
+                  color: bg.accentText, fontWeight: 700, margin: '0 0 0.55rem',
                 }}>TRY</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {[

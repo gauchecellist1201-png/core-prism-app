@@ -211,7 +211,7 @@ export default function IrisEarnHero({ onOpenDeals, onConnectInstagram, igConnec
         <div style={{
           position: 'absolute', top: 10, right: 10,
           fontSize: 9, fontWeight: 800,
-          background: '#E1306C', color: '#fff',
+          background: '#C2185B', color: '#fff',  // 白文字が 4.34:1 だったので面を一段濃く
           padding: '3px 8px', borderRadius: 99,
           letterSpacing: '0.05em',
         }}>注目</div>

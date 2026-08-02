@@ -674,7 +674,7 @@ JSON だけ返し、\`\`\`json は不要。`;
           </div>
           <span style={{
             marginTop: '0.9rem', fontSize: '0.8rem', fontWeight: 700,
-            color: bg.accent, padding: '0.3rem 0.85rem', borderRadius: 999,
+            color: bg.accentText, padding: '0.3rem 0.85rem', borderRadius: 999,
             background: `${bg.accent}15`,
           }}>
             選んだあと「おまかせ」で AI が自動補正
@@ -696,7 +696,7 @@ JSON だけ返し、\`\`\`json は不要。`;
               <div style={{
                 width: 34, height: 34, borderRadius: 10, flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: `${bg.accent}15`, color: bg.accent,
+                background: `${bg.accent}15`, color: bg.accentText,
               }}>
                 <c.Icon size={18} />
               </div>
@@ -1025,7 +1025,7 @@ JSON だけ返し、\`\`\`json は不要。`;
                   fontWeight: 600,
                   border: 'none',
                   borderRadius: 10,
-                  background: activeTab === t.id ? bg.accent : 'transparent',
+                  background: activeTab === t.id ? bg.accentSolid : 'transparent',
                   color: activeTab === t.id ? '#fff' : bg.ink,
                   cursor: 'pointer',
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
@@ -1092,7 +1092,7 @@ JSON だけ返し、\`\`\`json は不要。`;
                         fontSize: 12,
                         fontWeight: 600,
                         textAlign: 'center',
-                        background: filter === f.id ? bg.accent : 'rgba(255,255,255,0.6)',
+                        background: filter === f.id ? bg.accentSolid : 'rgba(255,255,255,0.6)',
                         color: filter === f.id ? '#fff' : bg.ink,
                       }}>{f.label}</div>
                     </button>
@@ -1119,7 +1119,7 @@ JSON だけ返し、\`\`\`json は不要。`;
             {activeTab === 'text' && (
               <div style={{ display: 'grid', gap: 10 }}>
                 <button onClick={addText} style={{
-                  background: bg.accent, color: '#fff', border: 'none',
+                  background: bg.accentSolid, color: '#fff', border: 'none',
                   padding: '0.7rem', borderRadius: 12,
                   fontWeight: 700, cursor: 'pointer', fontSize: 14,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -1357,7 +1357,7 @@ function tipText(bg: IrisBackgroundDef): React.CSSProperties {
 function Header({ bg, title, subtitle }: { bg: IrisBackgroundDef; title: string; subtitle: string }) {
   return (
     <div style={{ marginBottom: '0.4rem' }}>
-      <p style={{ fontSize: 11, letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accent, margin: 0 }}>
+      <p style={{ fontSize: 11, letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accentText, margin: 0 }}>
         {subtitle}
       </p>
       <h2 style={{ fontSize: '1.6rem', color: bg.ink, margin: 0, fontWeight: 700 }}>{title}</h2>
@@ -1383,7 +1383,7 @@ function ToggleBtn({ bg, active, onClick, children, title }: {
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 4,
         padding: '0.35rem 0.55rem',
-        background: active ? bg.accent : 'rgba(255,255,255,0.7)',
+        background: active ? bg.accentSolid : 'rgba(255,255,255,0.7)',
         color: active ? '#fff' : bg.ink,
         border: `1px solid ${active ? bg.accent : bg.cardBorder}`,
         borderRadius: 8, cursor: 'pointer',

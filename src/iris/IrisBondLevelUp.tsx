@@ -106,7 +106,7 @@ export default function IrisBondLevelUp({ bg }: Props) {
             </motion.div>
             <div style={{
               fontSize: '0.62rem', letterSpacing: '0.28em',
-              color: bg.accent, fontWeight: 800,
+              color: bg.accentText, fontWeight: 800,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               marginBottom: 6,
             }}>

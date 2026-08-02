@@ -79,7 +79,7 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
         example="例: 相場より安い依頼 → 「交渉して受ける・提示額は◯◯円が妥当」と根拠つきで表示。怪しい相手なら警告も出る"
       />
       <div>
-        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.4rem' }}>
+        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.4rem' }}>
           The Triage
         </p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontSize: '2.4rem', color: bg.ink, margin: 0, fontWeight: 700, letterSpacing: '-0.01em' }}>
@@ -107,7 +107,7 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
           <div style={card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
-                <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent }}>Verdict</p>
+                <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText }}>Verdict</p>
                 <p style={{ fontFamily: IRIS_FONTS.display, fontSize: '2rem', fontWeight: 800, color: verdictMeta(result.verdict).color, lineHeight: 1.1, margin: '0.25rem 0' }}>
                   {verdictMeta(result.verdict).emoji} {verdictMeta(result.verdict).label}
                 </p>
@@ -155,7 +155,7 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
 
           {/* 推奨アクション */}
           <div style={card}>
-            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>
+            <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>
               Recommended Actions
             </p>
             <ol style={{ paddingLeft: '1.2rem', color: bg.ink, lineHeight: 1.9 }}>
@@ -166,13 +166,13 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
           {/* 報酬妥当性 */}
           {result.feeAssessment && (
             <div style={card}>
-              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem' }}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem' }}>
                 Fee Assessment
               </p>
               <p style={{ color: bg.ink }}>
                 妥当レンジ: ¥{result.feeAssessment.estimatedFair.min.toLocaleString()} 〜 ¥{result.feeAssessment.estimatedFair.max.toLocaleString()}
                 {result.feeAssessment.detected && (
-                  <span style={{ marginLeft: '1rem', color: bg.accent }}>
+                  <span style={{ marginLeft: '1rem', color: bg.accentText }}>
                     提示: ¥{result.feeAssessment.detected.toLocaleString()} ({result.feeAssessment.verdict})
                   </span>
                 )}
@@ -184,7 +184,7 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
           {/* 抽出メタ情報 */}
           {Object.keys(result.extracted).length > 0 && (
             <div style={card}>
-              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.75rem' }}>
+              <p style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.75rem' }}>
                 Extracted
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem' }}>

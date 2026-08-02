@@ -112,7 +112,7 @@ export default function IrisHealthView({ bg, health }: Props) {
     <div style={{ display: 'grid', gap: '1.25rem', fontFamily: IRIS_FONTS.body }}>
       {/* ヘッダ */}
       <div>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>HEALTH</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600 }}>HEALTH</p>
         <h1 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', color: bg.ink, margin: '0.25rem 0 0.5rem', fontWeight: 500 }}>
           美しさは、内側から。
         </h1>
@@ -184,7 +184,7 @@ export default function IrisHealthView({ bg, health }: Props) {
           border: `1px solid ${bg.cardBorder}`,
           borderRadius: 14,
         }}>
-          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: '0.85rem' }}>WEEKLY AVERAGE</p>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, marginBottom: '0.85rem' }}>WEEKLY AVERAGE</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }} className="lp-info-row">
             <div>
               <p style={{ fontSize: '0.7rem', color: bg.inkSoft }}>心拍</p>
@@ -216,7 +216,7 @@ export default function IrisHealthView({ bg, health }: Props) {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: advice ? '1rem' : '0.5rem' }}>
             <div>
-              <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600, marginBottom: 6 }}>AI ADVICE</p>
+              <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600, marginBottom: 6 }}>AI ADVICE</p>
               <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.4rem', color: bg.ink, fontWeight: 500, margin: 0 }}>
                 あなただけの処方箋。
               </h3>
@@ -274,7 +274,7 @@ export default function IrisHealthView({ bg, health }: Props) {
                     background: '#fff',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <span style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.4rem', fontWeight: 800, color: bg.accent }}>
+                    <span style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.4rem', fontWeight: 800, color: bg.accentText }}>
                       {advice.score}
                     </span>
                   </div>
@@ -303,7 +303,7 @@ export default function IrisHealthView({ bg, health }: Props) {
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                       <span style={{ fontSize: '0.95rem' }}>{b.icon}</span>
-                      <p style={{ fontSize: '0.62rem', color: bg.accent, letterSpacing: '0.2em', fontWeight: 700 }}>{b.label}</p>
+                      <p style={{ fontSize: '0.62rem', color: bg.accentText, letterSpacing: '0.2em', fontWeight: 700 }}>{b.label}</p>
                     </div>
                     <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.05rem', color: bg.ink, fontWeight: 500, marginBottom: 6 }}>
                       {b.title}
@@ -320,21 +320,21 @@ export default function IrisHealthView({ bg, health }: Props) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
                   {advice.tonightAction && (
                     <div style={{ padding: '0.95rem 1.05rem', background: `linear-gradient(135deg, ${bg.accent}1c, ${bg.accent}08)`, border: `1px solid ${bg.accent}40`, borderRadius: 12 }}>
-                      <p style={{ fontSize: '0.62rem', color: bg.accent, letterSpacing: '0.22em', fontWeight: 700, marginBottom: 4 }}>TONIGHT</p>
+                      <p style={{ fontSize: '0.62rem', color: bg.accentText, letterSpacing: '0.22em', fontWeight: 700, marginBottom: 4 }}>TONIGHT</p>
                       <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.02rem', color: bg.ink, fontWeight: 500, marginBottom: 4 }}>今夜のアクション</p>
                       <p style={{ fontSize: '0.83rem', color: bg.ink, lineHeight: 1.7 }}>{advice.tonightAction}</p>
                     </div>
                   )}
                   {advice.tomorrowWorkout && (
                     <div style={{ padding: '0.95rem 1.05rem', background: `linear-gradient(135deg, ${bg.accent}1c, ${bg.accent}08)`, border: `1px solid ${bg.accent}40`, borderRadius: 12 }}>
-                      <p style={{ fontSize: '0.62rem', color: bg.accent, letterSpacing: '0.22em', fontWeight: 700, marginBottom: 4 }}>TOMORROW</p>
+                      <p style={{ fontSize: '0.62rem', color: bg.accentText, letterSpacing: '0.22em', fontWeight: 700, marginBottom: 4 }}>TOMORROW</p>
                       <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.02rem', color: bg.ink, fontWeight: 500, marginBottom: 4 }}>明日の運動</p>
                       <p style={{ fontSize: '0.83rem', color: bg.ink, lineHeight: 1.7 }}>{advice.tomorrowWorkout}</p>
                     </div>
                   )}
                   {advice.dinnerTiming && (
                     <div style={{ padding: '0.95rem 1.05rem', background: `linear-gradient(135deg, ${bg.accent}1c, ${bg.accent}08)`, border: `1px solid ${bg.accent}40`, borderRadius: 12 }}>
-                      <p style={{ fontSize: '0.62rem', color: bg.accent, letterSpacing: '0.22em', fontWeight: 700, marginBottom: 4 }}>DINNER</p>
+                      <p style={{ fontSize: '0.62rem', color: bg.accentText, letterSpacing: '0.22em', fontWeight: 700, marginBottom: 4 }}>DINNER</p>
                       <p style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.02rem', color: bg.ink, fontWeight: 500, marginBottom: 4 }}>夕食タイミング</p>
                       <p style={{ fontSize: '0.83rem', color: bg.ink, lineHeight: 1.7 }}>{advice.dinnerTiming}</p>
                     </div>
@@ -371,7 +371,7 @@ export default function IrisHealthView({ bg, health }: Props) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.85rem', marginBottom: '0.7rem' }}>
           <div style={{ minWidth: 0 }}>
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600, marginBottom: 6 }}>AUTO SYNC ✦ NEW</p>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600, marginBottom: 6 }}>AUTO SYNC ✦ NEW</p>
             <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.4rem', color: bg.ink, fontWeight: 500, marginBottom: 4 }}>
               ZIP は、もう要らない。
             </h3>
@@ -453,7 +453,7 @@ export default function IrisHealthView({ bg, health }: Props) {
         }}
       >
         <div style={{ marginBottom: '1rem' }}>
-          <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600, marginBottom: 6 }}>APPLE HEALTH SYNC</p>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600, marginBottom: 6 }}>APPLE HEALTH SYNC</p>
           <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.4rem', color: bg.ink, fontWeight: 500, marginBottom: 4 }}>
             データを取込む
           </h3>
@@ -501,7 +501,7 @@ export default function IrisHealthView({ bg, health }: Props) {
         border: `1px solid ${bg.accent}30`,
         borderRadius: 16,
       }}>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600, marginBottom: 8 }}>SELF-CARE</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600, marginBottom: 8 }}>SELF-CARE</p>
         <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.25rem', color: bg.ink, fontWeight: 500, marginBottom: '0.85rem' }}>
           光を、内側から。
         </h3>
@@ -578,7 +578,7 @@ function CreatorRoutines({ bg }: { bg: IrisBackgroundDef }) {
       borderRadius: 16,
     }}>
       <div style={{ marginBottom: '1rem' }}>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600, marginBottom: 6 }}>CREATOR ROUTINES</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600, marginBottom: 6 }}>CREATOR ROUTINES</p>
         <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.4rem', color: bg.ink, fontWeight: 500, marginBottom: 4 }}>
           シーンに、整える。
         </h3>
@@ -609,7 +609,7 @@ function CreatorRoutines({ bg }: { bg: IrisBackgroundDef }) {
               }}
               aria-expanded={active}
             >
-              <div style={{ fontSize: '0.6rem', letterSpacing: '0.22em', color: bg.accent, fontWeight: 700, marginBottom: 2 }}>{r.label}</div>
+              <div style={{ fontSize: '0.6rem', letterSpacing: '0.22em', color: bg.accentText, fontWeight: 700, marginBottom: 2 }}>{r.label}</div>
               <div style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1rem', fontWeight: 500 }}>{r.title}</div>
             </button>
           );
@@ -634,7 +634,7 @@ function CreatorRoutines({ bg }: { bg: IrisBackgroundDef }) {
                   <span style={{
                     flexShrink: 0,
                     width: 20, height: 20, borderRadius: '50%',
-                    background: `${bg.accent}22`, color: bg.accent,
+                    background: `${bg.accent}22`, color: bg.accentText,
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: 700, fontSize: '0.72rem',
                   }}>{i + 1}</span>

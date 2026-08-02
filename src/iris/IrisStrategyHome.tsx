@@ -364,7 +364,7 @@ function HeroBanner({ bg, stats }: { bg: IrisBackgroundDef; stats: ReturnType<ty
         fontSize: '0.72rem',
         letterSpacing: '0.32em',
         textTransform: 'uppercase',
-        color: bg.accent,
+        color: bg.accentText,
         marginBottom: '0.4rem',
       }}>
         The Strategist
@@ -573,7 +573,7 @@ function CaptureZone({
       >
         {extracting ? (
           <>
-            <Loader2 size={28} style={{ color: bg.accent, animation: 'spin 1s linear infinite' }} />
+            <Loader2 size={28} style={{ color: bg.accentText, animation: 'spin 1s linear infinite' }} />
             <p style={{ fontWeight: 600, color: bg.ink, fontSize: '0.95rem' }}>
               AI が画像を読み取っています...
             </p>
@@ -581,7 +581,7 @@ function CaptureZone({
           </>
         ) : (
           <>
-            <Camera size={28} style={{ color: bg.accent }} />
+            <Camera size={28} style={{ color: bg.accentText }} />
             <p style={{ fontWeight: 600, color: bg.ink, fontSize: '0.98rem' }}>
               インサイト画面のスクショをドロップ
             </p>
@@ -838,7 +838,7 @@ function ExtractedReview({
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.6rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Sparkles size={16} style={{ color: bg.accent }} />
+          <Sparkles size={16} style={{ color: bg.accentText }} />
           <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', color: bg.ink, fontWeight: 600 }}>
             {extracted.length} 件 検出しました
           </p>
@@ -946,7 +946,7 @@ function ExtractedReview({
                   onClick={() => onAccept(p)}
                   style={{
                     background: bg.accent + '22',
-                    color: bg.accent,
+                    color: bg.accentText,
                     border: `1px solid ${bg.accent}55`,
                     borderRadius: 999,
                     padding: '0.4rem 0.9rem',
@@ -1113,7 +1113,7 @@ function InsightsHero({
               borderRadius: '0 16px 16px 0',
               padding: '0.9rem 1.1rem',
             }}>
-              <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, marginBottom: '0.3rem' }}>
+              <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, fontWeight: 700, marginBottom: '0.3rem' }}>
                 リーチを倍にするには
               </p>
               <p style={{ fontSize: '1.05rem', fontWeight: 700, color: bg.ink, marginBottom: '0.4rem', lineHeight: 1.4 }}>
@@ -1132,7 +1132,7 @@ function InsightsHero({
 
           {insights.nextWinningPatterns?.length > 0 && (
             <div>
-              <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, marginBottom: '0.6rem' }}>
+              <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, fontWeight: 700, marginBottom: '0.6rem' }}>
                 次に伸びそうな 3 パターン
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.6rem' }}>
@@ -1151,7 +1151,7 @@ function InsightsHero({
                       transition: BASE_ALL,
                     }}
                   >
-                    <p style={{ fontSize: '0.68rem', color: bg.accent, fontWeight: 700, letterSpacing: '0.18em' }}>
+                    <p style={{ fontSize: '0.68rem', color: bg.accentText, fontWeight: 700, letterSpacing: '0.18em' }}>
                       No.{String(i + 1).padStart(2, '0')}
                     </p>
                     <p style={{ fontWeight: 700, color: bg.ink, fontSize: '0.95rem', marginTop: '0.2rem', lineHeight: 1.4 }}>
@@ -1161,7 +1161,7 @@ function InsightsHero({
                       {p.reason}
                     </p>
                     {p.example && (
-                      <p style={{ fontSize: '0.78rem', color: bg.accent, marginTop: '0.5rem', fontStyle: 'italic', lineHeight: 1.6 }}>
+                      <p style={{ fontSize: '0.78rem', color: bg.accentText, marginTop: '0.5rem', fontStyle: 'italic', lineHeight: 1.6 }}>
                         例: {p.example}
                       </p>
                     )}
@@ -1173,7 +1173,7 @@ function InsightsHero({
 
           {insights.bestPostingTimes?.length > 0 && (
             <div>
-              <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, marginBottom: '0.6rem' }}>
+              <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, fontWeight: 700, marginBottom: '0.6rem' }}>
                 おすすめの時間帯
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -1185,7 +1185,7 @@ function InsightsHero({
                     padding: '0.5rem 0.9rem',
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
                   }}>
-                    <Clock size={14} style={{ color: bg.accent }} />
+                    <Clock size={14} style={{ color: bg.accentText }} />
                     <div>
                       <p style={{ fontWeight: 700, color: bg.ink, fontSize: '0.85rem' }}>
                         {t.day} {t.time}
@@ -1208,7 +1208,7 @@ function InsightsHero({
               lineHeight: 1.7,
               borderLeft: `3px solid ${bg.accent}66`,
             }}>
-              <strong style={{ color: bg.accent }}>ベストフォーマット:</strong> {insights.bestFormatSummary}
+              <strong style={{ color: bg.accentText }}>ベストフォーマット:</strong> {insights.bestFormatSummary}
             </p>
           )}
         </div>
@@ -1233,7 +1233,7 @@ function Dashboard({
       {stats.timeline.length >= 2 && (
         <div style={glassCard}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem', flexWrap: 'wrap' }}>
-            <TrendingUp size={16} style={{ color: bg.accent }} />
+            <TrendingUp size={16} style={{ color: bg.accentText }} />
             <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', fontWeight: 600, color: bg.ink, margin: 0 }}>
               直近 30 日の伸び
             </p>
@@ -1248,7 +1248,7 @@ function Dashboard({
       {stats.heatmapMax > 0 && (
         <div style={glassCard}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
-            <BarChart3 size={16} style={{ color: bg.accent }} />
+            <BarChart3 size={16} style={{ color: bg.accentText }} />
             <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', fontWeight: 600, color: bg.ink }}>
               曜日 × 時間帯 × 反応率
             </p>
@@ -1260,7 +1260,7 @@ function Dashboard({
               {stats.bestSlots.map((s, i) => (
                 <span key={i} style={{
                   background: bg.accent + '15',
-                  color: bg.accent,
+                  color: bg.accentText,
                   padding: '0.2rem 0.6rem',
                   borderRadius: 999,
                   fontSize: '0.75rem',
@@ -1285,7 +1285,7 @@ function Dashboard({
       {stats.byFormat.length > 0 && (
         <div style={glassCard}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
-            <TrendingUp size={16} style={{ color: bg.accent }} />
+            <TrendingUp size={16} style={{ color: bg.accentText }} />
             <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', fontWeight: 600, color: bg.ink }}>
               フォーマット別パフォーマンス
             </p>
@@ -1317,7 +1317,7 @@ function Dashboard({
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.6rem', fontSize: '0.78rem', color: bg.inkSoft, minWidth: 130, textAlign: 'right', justifyContent: 'flex-end' }}>
-                  <span style={{ color: bg.accent, fontWeight: 700 }}>{f.avgER.toFixed(1)}%</span>
+                  <span style={{ color: bg.accentText, fontWeight: 700 }}>{f.avgER.toFixed(1)}%</span>
                   <span>{f.count} 本</span>
                 </div>
               </div>
@@ -1530,7 +1530,7 @@ function TrendChart({
       }}>
         <span>{formatShortDate(series[0]?.date)}</span>
         {peak && peak.reach > 0 && (
-          <span style={{ color: bg.accent, fontWeight: 700 }}>
+          <span style={{ color: bg.accentText, fontWeight: 700 }}>
             ピーク {formatShortDate(peak.date)} · リーチ {formatNumber(peak.reach)}
           </span>
         )}
@@ -1598,8 +1598,8 @@ function TopList({
   return (
     <div style={glassCard}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.7rem' }}>
-        <span style={{ color: bg.accent }}>{icon}</span>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700 }}>
+        <span style={{ color: bg.accentText }}>{icon}</span>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, fontWeight: 700 }}>
           {title}
         </p>
       </div>
@@ -1615,14 +1615,14 @@ function TopList({
             }}>
               <span style={{
                 fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
-                fontSize: '1.1rem', color: bg.accent, fontWeight: 700, minWidth: 22,
+                fontSize: '1.1rem', color: bg.accentText, fontWeight: 700, minWidth: 22,
               }}>
                 {i + 1}
               </span>
               <span style={{ flex: 1, fontSize: '0.85rem', color: bg.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
                 {item.title}
               </span>
-              <span style={{ fontSize: '0.85rem', color: bg.accent, fontWeight: 700, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
+              <span style={{ fontSize: '0.85rem', color: bg.accentText, fontWeight: 700, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
                 {item.value}
               </span>
             </li>
@@ -1649,7 +1649,7 @@ function Gallery({
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.8rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <ImageIcon size={16} style={{ color: bg.accent }} />
+          <ImageIcon size={16} style={{ color: bg.accentText }} />
           <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.05rem', fontWeight: 600, color: bg.ink }}>
             投稿 ({posts.length})
           </p>
@@ -1865,7 +1865,7 @@ function DetailModal({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.6rem' }}>
           <div>
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, marginBottom: '0.3rem' }}>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: bg.accentText, fontWeight: 700, marginBottom: '0.3rem' }}>
               {CONTENT_TYPE_META[post.contentType]} · {new Date(post.postedAt).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </p>
             <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.4rem', fontWeight: 600, color: bg.ink, lineHeight: 1.3 }}>
@@ -1907,7 +1907,7 @@ function DetailModal({
           <div style={{ marginTop: '0.7rem', display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
             {post.tags.map((t, i) => (
               <span key={i} style={{
-                background: bg.accent + '15', color: bg.accent,
+                background: bg.accent + '15', color: bg.accentText,
                 padding: '0.2rem 0.6rem', borderRadius: 999,
                 fontSize: '0.72rem', fontWeight: 600,
               }}>{t}</span>
@@ -2015,7 +2015,7 @@ function BrandApplyKpiBlock({ bg }: { bg: IrisBackgroundDef }) {
       background: bg.card, border: `1px solid ${bg.cardBorder}`,
       borderRadius: 22, padding: '1.1rem 1.25rem', backdropFilter: 'blur(10px)',
     }}>
-      <p style={{ fontSize: '0.7rem', letterSpacing: '0.22em', color: bg.accent, fontWeight: 700, marginBottom: 6 }}>BRAND APPLICATIONS</p>
+      <p style={{ fontSize: '0.7rem', letterSpacing: '0.22em', color: bg.accentText, fontWeight: 700, marginBottom: 6 }}>BRAND APPLICATIONS</p>
       <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.5rem', color: bg.ink, marginBottom: '0.85rem' }}>
         応募の成果
       </p>

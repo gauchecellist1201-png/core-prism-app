@@ -86,7 +86,7 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
         example="例:「一緒にリールを撮れる人を募集（東京・美容）」と投稿 → 同じジャンルの人がコメントで手を挙げてくれる"
       />
       <div>
-        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.4rem' }}>
+        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.78rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.4rem' }}>
           The House
         </p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontSize: '2.4rem', color: bg.ink, margin: 0, fontWeight: 700, letterSpacing: '-0.01em' }}>
@@ -113,7 +113,7 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
       {/* タイプフィルタ */}
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <button onClick={() => setFilter('all')} style={{
-          background: filter === 'all' ? bg.accent : 'rgba(255,255,255,0.5)',
+          background: filter === 'all' ? bg.accentSolid : 'rgba(255,255,255,0.5)',
           color: filter === 'all' ? '#fff' : bg.ink,
           border: `1px solid ${bg.cardBorder}`,
           borderRadius: 999, padding: '0.4rem 1rem',
@@ -219,7 +219,7 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
             {p.tags && p.tags.length > 0 && (
               <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
                 {p.tags.map(t => (
-                  <span key={t} style={{ fontSize: '0.78rem', color: bg.accent, fontStyle: 'italic' }}>
+                  <span key={t} style={{ fontSize: '0.78rem', color: bg.accentText, fontStyle: 'italic' }}>
                     {t}
                   </span>
                 ))}
@@ -249,7 +249,7 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
                     background: 'rgba(255,255,255,0.4)',
                     marginBottom: '0.35rem',
                   }}>
-                    <span style={{ fontSize: '0.78rem', color: bg.accent, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', marginRight: '0.5rem' }}>
+                    <span style={{ fontSize: '0.78rem', color: bg.accentText, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', marginRight: '0.5rem' }}>
                       {cm.authorHandle}
                     </span>
                     <span style={{ color: bg.ink, fontSize: '0.88rem' }}>{cm.body}</span>
@@ -272,7 +272,7 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
             ) : (
               <button onClick={() => setActiveCommentId(p.id)} style={{
                 background: 'transparent', border: 'none',
-                color: bg.accent, fontStyle: 'italic',
+                color: bg.accentText, fontStyle: 'italic',
                 fontFamily: IRIS_FONTS.serif, fontSize: '0.88rem',
                 cursor: 'pointer', padding: 0, marginTop: '0.4rem',
               }}>

@@ -281,7 +281,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
         {/* header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <div>
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 700, textTransform: 'uppercase', margin: 0 }}>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 700, textTransform: 'uppercase', margin: 0 }}>
               DM Capture
             </p>
             <h3 style={{
@@ -339,7 +339,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
                         borderRadius: 14,
                         minHeight: 110,
                         cursor: 'pointer',
-                        color: bg.accent,
+                        color: bg.accentText,
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
                       }}>
                       <Plus size={22} />
@@ -453,7 +453,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
                 {followUpQuestions.map((q, i) => (
                   <div key={i}>
                     <label style={label}>
-                      <span style={{ color: bg.accent, fontWeight: 800 }}>{`Q${i + 1}.`}</span>{' '}
+                      <span style={{ color: bg.accentText, fontWeight: 800 }}>{`Q${i + 1}.`}</span>{' '}
                       {q}
                     </label>
                     <input
@@ -533,7 +533,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
                     <button
                       onClick={applySimilarFee}
                       style={{
-                        background: bg.accent, color: '#fff', border: 'none',
+                        background: bg.accentSolid, color: '#fff', border: 'none',
                         borderRadius: 999, padding: '0.5rem 0.9rem', fontWeight: 700,
                         fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0,
                       }}
@@ -577,7 +577,7 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
                   color: ink,
                   lineHeight: 1.7,
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: bg.accent, marginBottom: 4, letterSpacing: '0.1em' }}>AI 要約</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: bg.accentText, marginBottom: 4, letterSpacing: '0.1em' }}>AI 要約</div>
                   {deal.summary}
                 </div>
               )}

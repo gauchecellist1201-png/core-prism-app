@@ -23,20 +23,20 @@ export default function IrisBestTime({ bg }: { bg: IrisBackgroundDef }) {
   };
   const iconWrap: React.CSSProperties = {
     width: 38, height: 38, flexShrink: 0, borderRadius: 12, display: 'grid', placeItems: 'center',
-    background: `${bg.accent}1f`, color: bg.accent,
+    background: `${bg.accent}1f`, color: bg.accentText,
   };
 
   return (
     <div style={card}>
       <span style={iconWrap}><Clock size={19} strokeWidth={2.1} /></span>
       <div style={{ minWidth: 0 }}>
-        <p style={{ fontSize: '0.72rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, margin: 0 }}>
+        <p style={{ fontSize: '0.72rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: bg.accentText, fontWeight: 700, margin: 0 }}>
           投稿のおすすめ時間
         </p>
         {result.enough ? (
           <>
             <p style={{ color: bg.ink, fontSize: '0.98rem', fontWeight: 700, margin: '4px 0 0', lineHeight: 1.45 }}>
-              あなたが一番伸びるのは <span style={{ color: bg.accent }}>{DOW[result.bestDow.d]}曜</span> の <span style={{ color: bg.accent }}>{result.bestBand.band}</span>
+              あなたが一番伸びるのは <span style={{ color: bg.accentText }}>{DOW[result.bestDow.d]}曜</span> の <span style={{ color: bg.accentText }}>{result.bestBand.band}</span>
             </p>
             <p style={{ color: bg.inkSoft, fontSize: '0.8rem', margin: '4px 0 0', lineHeight: 1.6 }}>
               あなたの実績（{result.n}投稿）から算出。平均反応率は {result.bestBand.band} が約 {result.bestBand.avg.toFixed(1)}%、{DOW[result.bestDow.d]}曜が約 {result.bestDow.avg.toFixed(1)}%。次の投稿はこの枠を狙うと伸びやすいです。
@@ -45,7 +45,7 @@ export default function IrisBestTime({ bg }: { bg: IrisBackgroundDef }) {
         ) : (
           <>
             <p style={{ color: bg.ink, fontSize: '0.98rem', fontWeight: 700, margin: '4px 0 0', lineHeight: 1.45 }}>
-              まずは <span style={{ color: bg.accent }}>平日の朝（7〜9時）・夜（19〜21時）</span> が一般的な狙い目です
+              まずは <span style={{ color: bg.accentText }}>平日の朝（7〜9時）・夜（19〜21時）</span> が一般的な狙い目です
             </p>
             <p style={{ color: bg.inkSoft, fontSize: '0.8rem', margin: '4px 0 0', lineHeight: 1.6 }}>
               ※これは一般的な目安です。あなたの投稿が{result.n}/4件たまると、実績から「あなた専用のおすすめ時間」に切り替わります（数字は実データのみ・推測で作りません）。

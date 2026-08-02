@@ -17,7 +17,14 @@ import {
 } from 'lucide-react';
 import { takePendingReelTheme } from './reelHandoff';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, IRIS_COLORS } from './irisStyle';
+
+// この画面のパネル面のいくつかは「白」で固定されていて、テーマに追随しない。
+// 暗いテーマ(Neon Night)では bg.ink / bg.inkSoft が白なので、その白い面に置くと
+// 文字がまるごと消える（明るいテーマだけ見ていると絶対に気づけない壊れ方）。
+// 白で固定された面に乗る文字は、テーマによらずこの濃いインクを使う。
+const INK_ON_LIGHT = '#2A1A3A';
+const INK_ON_LIGHT_SOFT = '#3D3247';
 import { BGM_LIBRARY, VIRAL_PATTERNS, TREND_PULSE_2026_Q2, loadVideo, VIDEO_FORMAT_HELP } from './IrisReelStudio';
 import {
   generateReelCaptions,
@@ -1602,7 +1609,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           // 「テーマだけで 1 本つくる」が下のチャットバーの帯から完全に外れる (375px 実測)
           style={{ textAlign: 'center', marginBottom: clips.length === 0 ? '1rem' : '1.5rem', order: -2 }}>
           <p style={{
-            fontSize: 11, letterSpacing: '0.5em', color: bg.accent, fontWeight: 800,
+            fontSize: 11, letterSpacing: '0.5em', color: bg.accentText, fontWeight: 800,
             marginBottom: 6, opacity: 0.7, textTransform: 'uppercase',
           }}>REEL STUDIO</p>
           <h1 style={{
@@ -1706,7 +1713,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               <div style={{
                 position: 'absolute', top: 14, left: 14,
                 display: 'flex', alignItems: 'center', gap: 5,
-                padding: '4px 9px', background: '#EF4444', color: '#fff',
+                padding: '4px 9px', background: '#DC2626', color: '#fff',  // 白文字が 3.76:1 だったので一段濃い赤へ
                 borderRadius: 999, fontSize: 10, fontWeight: 800,
                 fontFamily: IRIS_FONTS.body,
               }}>
@@ -1722,20 +1729,22 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             <button onClick={startPlay} disabled={!clips.length} style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               minHeight: 48, padding: '0.85rem 1.6rem',
-              background: clips.length ? IRIS_GRADIENT : 'rgba(255,255,255,0.4)',
-              color: '#fff', border: 'none', borderRadius: 999,
+              background: clips.length ? IRIS_GRADIENT : 'rgba(255,255,255,0.7)',
+              // 素材ゼロのとき、白い面に白文字だと 1.10:1 ＝ ボタンの文字が消えていた。
+              // 押せないときこそ「何のボタンか」が読めないと次の一手が分からない。
+              color: clips.length ? '#fff' : INK_ON_LIGHT_SOFT,
+              border: clips.length ? 'none' : `1px solid ${bg.cardBorder}`, borderRadius: 999,
               fontSize: 14, fontWeight: 800, cursor: clips.length ? 'pointer' : 'not-allowed',
               boxShadow: clips.length ? '0 8px 24px rgba(225, 48, 108, 0.32)' : 'none',
-              opacity: clips.length ? 1 : 0.5,
               fontFamily: IRIS_FONTS.body,
             }}>
-              <Play size={15} fill="#fff" /> 再生
+              <Play size={15} fill={clips.length ? '#fff' : bg.inkSoft} /> 再生
             </button>
           ) : (
             <button onClick={stopPlay} style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               minHeight: 48, padding: '0.85rem 1.6rem',
-              background: 'rgba(255,255,255,0.9)', color: bg.ink,
+              background: 'rgba(255,255,255,0.9)', color: INK_ON_LIGHT,
               border: `1.5px solid ${bg.accent}`, borderRadius: 999,
               fontSize: 14, fontWeight: 800, cursor: 'pointer',
               fontFamily: IRIS_FONTS.body,
@@ -1760,7 +1769,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             <label style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
               marginTop: 9, minHeight: 44, padding: '0.6rem 1rem', width: '100%',
-              background: 'rgba(255,255,255,0.95)', color: bg.ink,
+              background: 'rgba(255,255,255,0.95)', color: INK_ON_LIGHT,
               border: `1.5px solid ${bg.accent}66`, borderRadius: 999,
               fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
               fontFamily: IRIS_FONTS.body, boxSizing: 'border-box',
@@ -1786,8 +1795,10 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               disabled={aiBusy}
               style={{
                 width: '100%', padding: '0.95rem 1rem',
-                background: aiBusy ? 'rgba(255,255,255,0.5)' : IRIS_GRADIENT,
-                color: '#fff', border: 'none', borderRadius: 18,
+                background: aiBusy ? 'rgba(255,255,255,0.7)' : IRIS_GRADIENT,
+                // 待っている間の実況（「分析中…」等）が白い面に白文字で消えていた
+                color: aiBusy ? INK_ON_LIGHT_SOFT : '#fff',
+                border: aiBusy ? `1px solid ${bg.cardBorder}` : 'none', borderRadius: 18,
                 fontSize: 14.5, fontWeight: 800,
                 cursor: aiBusy ? 'wait' : 'pointer',
                 boxShadow: aiBusy ? 'none' : '0 12px 32px rgba(225,48,108,0.32)',
@@ -1889,9 +1900,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
               {['朝の 3 分ルーティン', '買ってよかったもの 3 つ', 'よくある失敗と、その直し方'].map(t => (
                 <button key={t} onClick={() => setThemeHint(t)} style={{
-                  padding: '0.4rem 0.7rem', minHeight: 32,
+                  padding: '0.55rem 0.85rem', minHeight: 44,
                   background: themeHint === t ? IRIS_GRADIENT : 'rgba(255,255,255,0.9)',
-                  color: themeHint === t ? '#fff' : bg.ink,
+                  color: themeHint === t ? '#fff' : INK_ON_LIGHT,
                   border: `1px solid ${themeHint === t ? 'transparent' : bg.cardBorder}`,
                   borderRadius: 999, fontSize: 11, fontWeight: 700,
                   cursor: 'pointer', fontFamily: IRIS_FONTS.body,
@@ -1904,7 +1915,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               style={{
                 width: '100%', minHeight: 48, padding: '0.9rem 1rem',
                 background: scriptBusy || !themeHint.trim() ? 'rgba(255,255,255,0.55)' : IRIS_GRADIENT,
-                color: scriptBusy || !themeHint.trim() ? bg.inkSoft : '#fff',
+                color: scriptBusy || !themeHint.trim() ? INK_ON_LIGHT_SOFT : '#fff',
                 border: scriptBusy || !themeHint.trim() ? `1px solid ${bg.cardBorder}` : 'none',
                 borderRadius: 16, fontSize: 14, fontWeight: 800,
                 cursor: scriptBusy ? 'wait' : (themeHint.trim() ? 'pointer' : 'not-allowed'),
@@ -1930,7 +1941,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               }}>
                 {scriptErr}
                 <button onClick={() => { setScriptErr(''); runAiScript(); }} style={{
-                  display: 'block', marginTop: 7, minHeight: 36, padding: '0.4rem 0.9rem',
+                  display: 'block', marginTop: 7, minHeight: 44, padding: '0.65rem 0.9rem',
                   background: '#991B1B', color: '#fff', border: 'none',
                   borderRadius: 999, fontSize: 11.5, fontWeight: 800, cursor: 'pointer',
                 }}>もう一度ためす</button>
@@ -1954,7 +1965,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             <p style={{
               margin: 0, fontSize: 13.5, fontWeight: 800, color: bg.ink, lineHeight: 1.5,
             }}>
-              写真や動画を入れるだけ（無ければテーマひとことでも）。<span style={{ color: bg.accent }}>AI が字幕と投稿文をつけて</span>、そのまま出せる縦型リールにします。
+              写真や動画を入れるだけ（無ければテーマひとことでも）。<span style={{ color: bg.accentText }}>AI が字幕と投稿文をつけて</span>、そのまま出せる縦型リールにします。
             </p>
             {/* 3 ステップ */}
             <div style={{
@@ -1964,14 +1975,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               {['素材を入れる（無ければテーマ）', 'AI が字幕・色・BGMを整える', 'Instagram に投稿'].map((t, i) => (
                 <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <span style={{
-                    fontSize: 11, fontWeight: 700, color: bg.ink,
+                    fontSize: 11, fontWeight: 700, color: INK_ON_LIGHT,
                     background: 'rgba(255,255,255,0.7)',
                     border: `1px solid ${bg.cardBorder}`,
                     borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap',
                   }}>
-                    <span style={{ color: bg.accent, fontWeight: 800 }}>{i + 1}.</span> {t}
+                    <span style={{ color: bg.accentText, fontWeight: 800 }}>{i + 1}.</span> {t}
                   </span>
-                  {i < 2 && <span style={{ color: bg.accent, fontSize: 12, fontWeight: 800 }}>→</span>}
+                  {i < 2 && <span style={{ color: bg.accentText, fontSize: 12, fontWeight: 800 }}>→</span>}
                 </span>
               ))}
             </div>
@@ -1989,7 +2000,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
             fontSize: 10, letterSpacing: '0.22em', fontWeight: 800,
-            color: bg.accent, textTransform: 'uppercase',
+            color: bg.accentText, textTransform: 'uppercase',
             marginBottom: 7, paddingLeft: 2,
           }}>
             <Layers size={11} /> テンプレート
@@ -2013,7 +2024,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     minHeight: 64,
                     padding: '0.6rem 0.3rem',
                     background: active ? IRIS_GRADIENT : 'rgba(255,255,255,0.7)',
-                    color: active ? '#fff' : bg.ink,
+                    color: active ? '#fff' : INK_ON_LIGHT,
                     border: `1.5px solid ${active ? 'transparent' : bg.cardBorder}`,
                     borderRadius: 14,
                     fontSize: 11, fontWeight: 800,
@@ -2057,7 +2068,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
             fontSize: 10, letterSpacing: '0.22em', fontWeight: 800,
-            color: bg.accent, textTransform: 'uppercase',
+            color: bg.accentText, textTransform: 'uppercase',
             marginBottom: 7, paddingLeft: 2,
           }}>
             <Sparkles size={11} /> カラーの雰囲気
@@ -2080,7 +2091,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     flexShrink: 0, minWidth: 52,
                     padding: '0.4rem 0.5rem 0.45rem',
                     background: active ? IRIS_GRADIENT : 'rgba(255,255,255,0.7)',
-                    color: active ? '#fff' : bg.ink,
+                    color: active ? '#fff' : INK_ON_LIGHT,
                     border: `1.5px solid ${active ? 'transparent' : bg.cardBorder}`,
                     borderRadius: 12,
                     cursor: 'pointer', fontFamily: IRIS_FONTS.body,
@@ -2112,8 +2123,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
               {[15, 30].map(sec => (
                 <button key={sec} onClick={() => autoDistribute(sec)} style={{
-                  flex: 1, minHeight: 34, padding: '0.4rem 0.5rem',
-                  background: 'rgba(255,255,255,0.85)', color: bg.ink,
+                  flex: 1, minHeight: 44, padding: '0.65rem 0.5rem',
+                  background: 'rgba(255,255,255,0.85)', color: INK_ON_LIGHT,
                   border: `1px solid ${bg.cardBorder}`, borderRadius: 10,
                   fontSize: 11.5, fontWeight: 800, cursor: 'pointer',
                   fontFamily: IRIS_FONTS.body,
@@ -2222,7 +2233,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                   borderRadius: 12,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: bg.accent }}>カット {idx + 1}</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: bg.accentText }}>カット {idx + 1}</span>
                     <button onClick={() => moveClip(c.id, -1)} disabled={idx === 0} style={iconBtn(bg, idx === 0)}>
                       <ArrowLeft size={11} />
                     </button>
@@ -2245,7 +2256,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                         <button key={sec} onClick={() => setClipDuration(c.id, sec)} style={{
                           flex: 1, minHeight: 30, padding: '0.3rem 0.2rem',
                           background: on ? IRIS_GRADIENT : 'rgba(255,255,255,0.85)',
-                          color: on ? '#fff' : bg.ink,
+                          color: on ? '#fff' : INK_ON_LIGHT,
                           border: `1px solid ${on ? 'transparent' : bg.cardBorder}`,
                           borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: 'pointer',
                           fontFamily: IRIS_FONTS.body,
@@ -2276,7 +2287,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                             <button key={tr.id} onClick={() => setClipTransition(c.id, tr.id)} style={{
                               padding: '3px 9px',
                               background: on ? IRIS_GRADIENT : 'rgba(255,255,255,0.85)',
-                              color: on ? '#fff' : bg.ink,
+                              color: on ? '#fff' : INK_ON_LIGHT,
                               border: `1px solid ${on ? 'transparent' : bg.cardBorder}`,
                               borderRadius: 999, fontSize: 10.5, fontWeight: 800, cursor: 'pointer',
                               fontFamily: IRIS_FONTS.body,
@@ -2393,7 +2404,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <button onClick={restoreSaved} disabled={restoring} style={{
                         minHeight: 44, padding: '0 1rem', flexShrink: 0, whiteSpace: 'nowrap',
-                        background: bg.accent, color: '#fff', border: 'none', borderRadius: 12,
+                        background: bg.accentSolid, color: '#fff', border: 'none', borderRadius: 12,
                         fontSize: 13, fontWeight: 800, cursor: restoring ? 'wait' : 'pointer',
                         display: 'flex', alignItems: 'center', gap: 6,
                       }}>
@@ -2450,7 +2461,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       {persist.state === 'saving'
                         ? <><Loader2 size={12} className="spin" style={{ flexShrink: 0 }} />この端末に保存中…</>
                         : <>
-                            <Layers size={12} style={{ flexShrink: 0, color: bg.accent }} />
+                            <Layers size={12} style={{ flexShrink: 0, color: bg.accentText }} />
                             素材 {persist.count} 件をこの端末に保存しました
                             {persist.savedAt ? `（${new Date(persist.savedAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}）` : ''}
                             — 閉じても、つづきから開けます
@@ -2512,7 +2523,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                           flexShrink: 0, minWidth: 140,
                           padding: '0.55rem 0.7rem',
                           background: active ? IRIS_GRADIENT : 'rgba(255,255,255,0.7)',
-                          color: active ? '#fff' : bg.ink,
+                          color: active ? '#fff' : INK_ON_LIGHT,
                           border: `1px solid ${active ? 'transparent' : bg.cardBorder}`,
                           borderRadius: 12, textAlign: 'left',
                           cursor: 'pointer', fontFamily: IRIS_FONTS.body,
@@ -2543,7 +2554,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                         flexShrink: 0, minWidth: 150,
                         padding: '0.65rem 0.8rem',
                         background: active ? IRIS_GRADIENT : 'rgba(255,255,255,0.7)',
-                        color: active ? '#fff' : bg.ink,
+                        color: active ? '#fff' : INK_ON_LIGHT,
                         border: `1px solid ${active ? 'transparent' : bg.cardBorder}`,
                         borderRadius: 12, textAlign: 'left',
                         cursor: 'pointer', fontFamily: IRIS_FONTS.body,
@@ -2565,7 +2576,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       <button key={p.id} onClick={() => applyPattern(p)} style={{
                         padding: '0.7rem 0.9rem',
                         background: active ? IRIS_GRADIENT : 'rgba(255,255,255,0.6)',
-                        color: active ? '#fff' : bg.ink,
+                        color: active ? '#fff' : INK_ON_LIGHT,
                         border: `1px solid ${active ? 'transparent' : bg.cardBorder}`,
                         borderRadius: 12,
                         cursor: 'pointer', fontFamily: IRIS_FONTS.body,
@@ -2614,15 +2625,18 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                   disabled={scriptBusy || !themeHint.trim()}
                   style={{
                     width: '100%', padding: '0.85rem 1rem',
-                    background: scriptBusy ? 'rgba(255,255,255,0.5)' : (themeHint.trim() ? IRIS_GRADIENT : 'rgba(255,255,255,0.4)'),
-                    color: '#fff', border: 'none', borderRadius: 14,
+                    background: scriptBusy ? 'rgba(255,255,255,0.7)' : (themeHint.trim() ? IRIS_GRADIENT : 'rgba(255,255,255,0.7)'),
+                    // 白い面に白文字で 1.10:1 だった。とくに生成中は「台本を考え中…」が
+                    // 消えてしまい、いちばん不安な待ち時間に何も伝わっていなかった。
+                    color: !scriptBusy && themeHint.trim() ? '#fff' : INK_ON_LIGHT_SOFT,
+                    border: !scriptBusy && themeHint.trim() ? 'none' : `1px solid ${bg.cardBorder}`,
+                    borderRadius: 14,
                     fontSize: 14, fontWeight: 800,
                     cursor: scriptBusy ? 'wait' : (themeHint.trim() ? 'pointer' : 'not-allowed'),
                     boxShadow: themeHint.trim() && !scriptBusy ? '0 8px 22px rgba(225,48,108,0.28)' : 'none',
                     fontFamily: IRIS_FONTS.body,
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     minHeight: 48, marginBottom: 8,
-                    opacity: themeHint.trim() || scriptBusy ? 1 : 0.55,
                   }}
                 >
                   {scriptBusy
@@ -2713,7 +2727,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       style={{
                         width: '100%', padding: '0.85rem 1rem',
                         background: voiceOn ? '#DC2626' : 'rgba(255,255,255,0.9)',
-                        color: voiceOn ? '#fff' : bg.ink,
+                        color: voiceOn ? '#fff' : INK_ON_LIGHT,
                         border: voiceOn ? 'none' : '1.5px dashed rgba(225,48,108,0.45)',
                         borderRadius: 14, fontSize: 14, fontWeight: 800,
                         cursor: 'pointer', fontFamily: IRIS_FONTS.body,
@@ -2835,7 +2849,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                                     style={{
                                       padding: '2px 7px',
                                       background: active ? IRIS_GRADIENT : 'rgba(255,255,255,0.8)',
-                                      color: active ? '#fff' : bg.ink,
+                                      color: active ? '#fff' : INK_ON_LIGHT,
                                       border: `1px solid ${active ? 'transparent' : bg.cardBorder}`,
                                       borderRadius: 999,
                                       fontSize: 10, fontWeight: 800,
@@ -2873,7 +2887,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       <button key={p.id} onClick={() => setCaptionPreset(p)} style={{
                         padding: '0.5rem 0.95rem',
                         background: active ? IRIS_GRADIENT : 'rgba(255,255,255,0.7)',
-                        color: active ? '#fff' : bg.ink,
+                        color: active ? '#fff' : INK_ON_LIGHT,
                         border: `1px solid ${active ? 'transparent' : bg.cardBorder}`,
                         borderRadius: 999,
                         fontSize: 12, fontWeight: 700, cursor: 'pointer',
@@ -2896,8 +2910,12 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     </p>
                     <button onClick={startRecord} disabled={!clips.length || recording} style={{
                       width: '100%', minHeight: 64, padding: '1.1rem',
-                      background: clips.length && !recording ? IRIS_GRADIENT : 'rgba(255,255,255,0.4)',
-                      color: '#fff', border: 'none', borderRadius: 18,
+                      background: clips.length && !recording ? IRIS_GRADIENT : 'rgba(255,255,255,0.7)',
+                      // 白い面に白文字で 1.10:1。開いた直後（素材ゼロ）に、いちばん大事な
+                      // 「リールを書き出す」の文字が読めない状態だった。
+                      color: clips.length && !recording ? '#fff' : INK_ON_LIGHT_SOFT,
+                      border: clips.length && !recording ? 'none' : `1px solid ${bg.cardBorder}`,
+                      borderRadius: 18,
                       fontSize: 16, fontWeight: 800,
                       cursor: clips.length && !recording ? 'pointer' : 'not-allowed',
                       boxShadow: clips.length ? '0 12px 32px rgba(225,48,108,0.32)' : 'none',
@@ -2929,14 +2947,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                           fontSize: 12.5, lineHeight: 1.55,
                           whiteSpace: 'pre-wrap',
                           marginBottom: 8,
-                          color: bg.ink,
+                          color: INK_ON_LIGHT,
                         }}>{aiResult.caption || '—'}</div>
                         {/* ── フックの別案（最初の1行＝伸びるかの9割）。タップで冒頭を差し替え ── */}
                         {aiResult.hookOptions && aiResult.hookOptions.length > 0 && (
                           <div style={{ marginBottom: 8 }}>
                             <div style={{
                               fontSize: 9, letterSpacing: '0.18em', fontWeight: 800,
-                              color: bg.accent, marginBottom: 5, textTransform: 'uppercase',
+                              color: bg.accentText, marginBottom: 5, textTransform: 'uppercase',
                             }}>最初の1行を選ぶ（伸びるかの9割）</div>
                             <div style={{ display: 'grid', gap: 5 }}>
                               {aiResult.hookOptions.map((hook, hi) => {
@@ -2949,8 +2967,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                                       textAlign: 'left',
                                       minHeight: 40,
                                       padding: '0.5rem 0.7rem',
-                                      background: active ? bg.accent : 'rgba(255,255,255,0.7)',
-                                      color: active ? '#fff' : bg.ink,
+                                      background: active ? bg.accentSolid : 'rgba(255,255,255,0.7)',
+                                      color: active ? '#fff' : INK_ON_LIGHT,
                                       border: `1px solid ${active ? bg.accent : bg.cardBorder}`,
                                       borderRadius: 10,
                                       fontSize: 12, lineHeight: 1.45, fontWeight: active ? 700 : 500,
@@ -2969,7 +2987,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                             border: `1px solid ${bg.accent}33`,
                             borderRadius: 10,
                             fontSize: 11.5, lineHeight: 1.6,
-                            color: bg.accent, fontWeight: 700,
+                            color: bg.accentText, fontWeight: 700,
                             wordBreak: 'break-all',
                           }}>{aiResult.hashtags.join(' ')}</div>
                         )}
@@ -3016,14 +3034,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: 6,
                         fontSize: 9, letterSpacing: '0.18em', fontWeight: 800,
-                        color: bg.accent, marginBottom: 5, textTransform: 'uppercase',
+                        color: bg.accentText, marginBottom: 5, textTransform: 'uppercase',
                       }}>
                         <Clock size={12} strokeWidth={2.2} /> いつ出す？
                       </div>
                       {bestTime.enough ? (
                         <>
                           <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: bg.ink, lineHeight: 1.5 }}>
-                            あなたが一番伸びるのは <span style={{ color: bg.accent }}>{DOW_LABELS[bestTime.bestDow.d]}曜</span> の <span style={{ color: bg.accent }}>{bestTime.bestBand.band}</span>
+                            あなたが一番伸びるのは <span style={{ color: bg.accentText }}>{DOW_LABELS[bestTime.bestDow.d]}曜</span> の <span style={{ color: bg.accentText }}>{bestTime.bestBand.band}</span>
                           </p>
                           <p style={{ margin: '4px 0 0', fontSize: 11, color: bg.inkSoft, lineHeight: 1.55 }}>
                             あなたの実績（{bestTime.n}投稿）から算出。この枠を狙うと伸びやすいです。
@@ -3032,7 +3050,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       ) : (
                         <>
                           <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: bg.ink, lineHeight: 1.5 }}>
-                            まずは <span style={{ color: bg.accent }}>平日の朝（7〜9時）・夜（19〜21時）</span> が狙い目
+                            まずは <span style={{ color: bg.accentText }}>平日の朝（7〜9時）・夜（19〜21時）</span> が狙い目
                           </p>
                           <p style={{ margin: '4px 0 0', fontSize: 11, color: bg.inkSoft, lineHeight: 1.55 }}>
                             ※一般的な目安です。投稿の実績が{bestTime.n}/4件たまると「あなた専用の時間」に切り替わります（数字は実データのみ）。
@@ -3045,7 +3063,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                           style={{
                             marginTop: 8, width: '100%', minHeight: 40,
                             padding: '0.5rem 0.8rem', borderRadius: 999,
-                            background: bg.accent, color: '#fff', border: 'none',
+                            background: bg.accentSolid, color: '#fff', border: 'none',
                             fontSize: 12, fontWeight: 700, cursor: 'pointer',
                             fontFamily: IRIS_FONTS.body,
                           }}
@@ -3077,7 +3095,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       }}>
                         <div style={{
                           fontSize: 10, letterSpacing: '0.22em', fontWeight: 800,
-                          color: bg.accent, textTransform: 'uppercase',
+                          color: bg.accentText, textTransform: 'uppercase',
                           marginBottom: 8, paddingLeft: 2,
                           display: 'flex', alignItems: 'center', gap: 5,
                         }}>
@@ -3090,8 +3108,10 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                             style={{
                               width: '100%', minHeight: 56,
                               padding: '0.85rem 1rem',
-                              background: igBusy ? 'rgba(255,255,255,0.5)' : 'linear-gradient(135deg, #833AB4, #E1306C, #F77737)',
-                              color: '#fff', border: 'none', borderRadius: 14,
+                              background: igBusy ? 'rgba(255,255,255,0.7)' : 'linear-gradient(135deg, #833AB4, #E1306C, #F77737)',
+                              // 「共有中…」が白い面に白文字で消えていた
+                              color: igBusy ? INK_ON_LIGHT_SOFT : '#fff',
+                              border: igBusy ? `1px solid ${bg.cardBorder}` : 'none', borderRadius: 14,
                               fontSize: 14, fontWeight: 800,
                               cursor: igBusy ? 'wait' : 'pointer',
                               boxShadow: igBusy ? 'none' : '0 8px 22px rgba(225,48,108,0.32)',
@@ -3115,7 +3135,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                                 minHeight: 44,
                                 padding: '0.6rem 0.4rem',
                                 background: 'rgba(255,255,255,0.85)',
-                                color: bg.ink,
+                                color: INK_ON_LIGHT,
                                 border: `1px solid ${bg.cardBorder}`,
                                 borderRadius: 12,
                                 fontSize: 12, fontWeight: 700, cursor: 'pointer',
@@ -3132,7 +3152,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                                 minHeight: 44,
                                 padding: '0.6rem 0.4rem',
                                 background: capBusy ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.85)',
-                                color: bg.ink,
+                                color: INK_ON_LIGHT,
                                 border: `1px solid ${bg.cardBorder}`,
                                 borderRadius: 12,
                                 fontSize: 12, fontWeight: 700,
@@ -3160,12 +3180,12 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                             background: 'rgba(255,255,255,0.85)',
                             border: `1px solid ${bg.cardBorder}`,
                             borderRadius: 10, fontSize: 12, lineHeight: 1.55,
-                            whiteSpace: 'pre-wrap', color: bg.ink,
+                            whiteSpace: 'pre-wrap', color: INK_ON_LIGHT,
                           }}>
                             {aiCaption.caption}
                             {aiCaption.hashtags.length > 0 && (
                               <div style={{
-                                marginTop: 6, color: bg.accent, fontWeight: 700,
+                                marginTop: 6, color: bg.accentText, fontWeight: 700,
                                 wordBreak: 'break-all', fontSize: 11.5,
                               }}>{aiCaption.hashtags.join(' ')}</div>
                             )}
@@ -3454,7 +3474,8 @@ function Label({ children, icon }: { children: React.ReactNode; icon?: React.Rea
     <div style={{
       display: 'flex', alignItems: 'center', gap: 5,
       fontSize: 10, letterSpacing: '0.22em', fontWeight: 800,
-      color: '#E1306C', textTransform: 'uppercase',
+      // 10px の見出しをブランドピンクのまま置くと 3.94:1。文字用の濃いピンクへ
+      color: IRIS_COLORS.hotPinkText, textTransform: 'uppercase',
       marginBottom: 7,
     }}>{icon}{children}</div>
   );
@@ -3487,7 +3508,7 @@ function btnSec(bg: IrisBackgroundDef): React.CSSProperties {
   return {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
     padding: '0.85rem 1.4rem',
-    background: 'rgba(255,255,255,0.75)', color: bg.ink,
+    background: 'rgba(255,255,255,0.75)', color: INK_ON_LIGHT,
     border: `1.5px solid ${bg.accent}`, borderRadius: 999,
     fontSize: 13, fontWeight: 700, cursor: 'pointer',
     fontFamily: IRIS_FONTS.body,
@@ -3500,7 +3521,7 @@ function iconBtn(bg: IrisBackgroundDef, disabled: boolean): React.CSSProperties 
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     padding: 0,
     background: disabled ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.9)',
-    color: bg.ink,
+    color: INK_ON_LIGHT,
     border: `1px solid ${bg.cardBorder}`,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.4 : 1,

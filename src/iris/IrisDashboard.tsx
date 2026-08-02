@@ -8,6 +8,7 @@ import type { AppSettings } from '../types/identity';
 import {
   IRIS_BACKGROUNDS, type IrisBackgroundDef, loadIrisBackground, saveIrisBackground,
   IRIS_COLORS, IRIS_FONTS, getAllBackgrounds, removeCustomBackground, type CustomIrisBackground,
+  deriveAccentText,
 } from './irisStyle';
 import { IRIS_TYPE, IRIS_SHADOW, IRIS_RADIUS, IRIS_GRADIENT, IRIS_MOTION, IRIS_SIDEBAR_W, IRIS_DOCK_H } from './irisDesign';
 // 重い「タブを開いたときだけ要る」エディタは lazy 化して main から切り出す
@@ -269,7 +270,7 @@ function IrisSidebar({
                   padding: '0.45rem 0.6rem', borderRadius: IRIS_RADIUS.md,
                   background: isActiveGroup ? `${group.color}12` : 'transparent',
                   border: 'none', cursor: 'pointer',
-                  color: isActiveGroup ? group.color : '#1F1A2E',
+                  color: isActiveGroup ? deriveAccentText(group.color, false) : '#1F1A2E',
                   marginBottom: '0.1rem',
                   transition: 'background 0.15s',
                 }}
@@ -300,7 +301,7 @@ function IrisSidebar({
                         ? `linear-gradient(135deg, ${group.color}18, ${group.color}0c)`
                         : 'transparent',
                       border: 'none', cursor: 'pointer',
-                      color: active ? group.color : '#2A1A3A',
+                      color: active ? deriveAccentText(group.color, false) : '#2A1A3A',
                       fontFamily: IRIS_FONTS.body,
                       fontSize: '0.84rem',
                       fontWeight: active ? 700 : 500,
@@ -427,7 +428,11 @@ function IrisBottomDock({
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem',
               padding: '0.1rem 0.8rem',
               background: 'transparent', border: 'none', cursor: 'pointer',
-              color: isActive ? group.color : '#8A7AA0',
+              // 未選択の文字は #8A7AA0 で 3.55:1 だった。9.6px しかない常時表示のナビが
+              // ページ中いちばん読みにくい、という逆転が起きていた（絵は 3:1 でよいので据え置き）。
+              // 選択中の色も、そのままだと文字として薄い（リールのピンク 4.34 / その他の青 3.68）。
+              // 絵は group.color のまま・文字だけ読める濃さに落として役割を分ける。
+              color: isActive ? deriveAccentText(group.color, false) : '#665778',
               transition: 'color 0.15s',
             }}
           >
@@ -720,7 +725,7 @@ function IrisEditorialHome({
                 <span style={{
                   ...IRIS_TYPE.caption,
                   background: `${bg.accent}14`,
-                  color: bg.accent,
+                  color: bg.accentText,
                   padding: '0.25rem 0.6rem',
                   borderRadius: IRIS_RADIUS.full,
                   fontWeight: 700, whiteSpace: 'nowrap',
@@ -778,7 +783,7 @@ function IrisEditorialHome({
                     borderRadius: IRIS_RADIUS.md,
                     fontSize: '0.78rem', color: bg.ink, lineHeight: 1.55,
                   }}>
-                    <strong style={{ color: bg.accent, fontSize: '0.7rem', display: 'block', marginBottom: 2 }}>
+                    <strong style={{ color: bg.accentText, fontSize: '0.7rem', display: 'block', marginBottom: 2 }}>
                       オーディエンス分析
                     </strong>
                     {strategy.data.audienceInsight}
@@ -844,7 +849,7 @@ function IrisEditorialHome({
                           {s.title}
                           <span style={{
                             marginLeft: 6, fontSize: '0.65rem', fontWeight: 700,
-                            color: bg.accent, background: `${bg.accent}14`,
+                            color: bg.accentText, background: `${bg.accent}14`,
                             padding: '1px 6px', borderRadius: 999,
                           }}>{s.dueDays}日以内</span>
                         </p>
@@ -854,7 +859,7 @@ function IrisEditorialHome({
                         <p style={{ ...IRIS_TYPE.caption, color: bg.ink, margin: '2px 0', lineHeight: 1.6 }}>
                           <strong>やる:</strong> {s.action}
                         </p>
-                        <p style={{ ...IRIS_TYPE.caption, color: bg.accent, margin: 0, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <p style={{ ...IRIS_TYPE.caption, color: bg.accentText, margin: 0, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <Target size={12} strokeWidth={2.2} /> {s.kpi}
                         </p>
                       </div>
@@ -981,7 +986,7 @@ function IrisEditorialHome({
                     <span style={{ ...IRIS_TYPE.small, color: bg.ink, fontWeight: 600, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat}</span>
                     <span style={{
                       ...IRIS_TYPE.caption,
-                      color: bg.accent, fontWeight: 700,
+                      color: bg.accentText, fontWeight: 700,
                       background: `${bg.accent}14`,
                       padding: '0.2rem 0.5rem', borderRadius: IRIS_RADIUS.full,
                       flexShrink: 0,
@@ -1467,7 +1472,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   width: 'auto', padding: '0 0.7rem',
                   gap: '0.35rem', display: 'inline-flex', alignItems: 'center',
                   fontSize: '0.72rem', fontWeight: 700,
-                  minHeight: 36, height: 36,
+                  minHeight: 44, height: 44,
                 }}>
                 {/* アカウント種別の色ドット (どのクライアントの作業空間か一目で分かる) */}
                 {multiAccount.active
@@ -1518,7 +1523,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     style={{
                       display: 'block', width: '100%', padding: '0.65rem 0.85rem', textAlign: 'left',
                       background: 'transparent', border: 'none', cursor: 'pointer',
-                      fontSize: '0.8rem', color: bg.accent, fontWeight: 700,
+                      fontSize: '0.8rem', color: bg.accentText, fontWeight: 700,
                     }}>
                     + アカウントを管理
                   </button>
@@ -1601,7 +1606,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                       padding: '0.3rem 0.55rem',
                       fontSize: '0.62rem', letterSpacing: '0.18em',
                       fontWeight: 800,
-                      color: isActiveGroup ? group.color : 'rgba(31,26,46,0.45)',
+                      color: isActiveGroup ? deriveAccentText(group.color, false) : 'rgba(31,26,46,0.62)',
                       textTransform: 'uppercase',
                       whiteSpace: 'nowrap',
                     }}>
@@ -1692,7 +1697,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               }} />
               <p style={{
                 textAlign: 'center', fontSize: '0.7rem', letterSpacing: '0.3em',
-                color: bg.accent, fontWeight: 700, margin: '0 0 1rem',
+                color: bg.accentText, fontWeight: 700, margin: '0 0 1rem',
               }}>
                 ALL FEATURES
               </p>
@@ -1704,7 +1709,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                       display: 'flex', alignItems: 'center', gap: 6,
                       margin: '0 0 0.55rem 0.25rem',
                       fontSize: '0.65rem', letterSpacing: '0.22em', fontWeight: 800,
-                      color: group.color, textTransform: 'uppercase',
+                      // 全機能メニューの章見出し。面の色をそのまま 10.4px の文字に使うと
+                      // ピンク 4.34 / 青 3.68 で落第する（絵は group.color のまま）。
+                      color: deriveAccentText(group.color, false), textTransform: 'uppercase',
                     }}>
                       <GIco size={12} strokeWidth={2.8} />
                       {group.label}
@@ -2024,7 +2031,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                       style={{
                         justifySelf: 'start',
                         display: 'inline-flex', alignItems: 'center', gap: 5,
-                        padding: '0.5rem 0.9rem', minHeight: 40,
+                        padding: '0.7rem 0.9rem', minHeight: 44,
                         background: 'transparent', color: bg.inkSoft,
                         border: `1px solid ${bg.cardBorder}`, borderRadius: 999,
                         fontSize: 12, fontWeight: 600, cursor: 'pointer',
@@ -2353,7 +2360,7 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
       <div style={{ marginBottom: '0.5rem' }}>
-        <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>TODAY</p>
+        <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600 }}>TODAY</p>
         <h1 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(2rem, 5vw, 3rem)', color: bg.ink, margin: '0.25rem 0 0' }}>
           おかえりなさい。
         </h1>
@@ -2403,7 +2410,7 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
       <Card bg={bg}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: bg.accent, fontWeight: 700, marginBottom: '0.25rem' }}>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: bg.accentText, fontWeight: 700, marginBottom: '0.25rem' }}>
               AI からの提案
             </p>
             <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.5rem', color: bg.ink, margin: 0, fontWeight: 500 }}>
@@ -2499,7 +2506,7 @@ function ProposalCard({
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 5,
           fontSize: 10, letterSpacing: '0.16em', fontWeight: 800,
-          color: bg.accent, marginBottom: 8,
+          color: bg.accentText, marginBottom: 8,
         }}>
           <Sparkles size={11} /> {badge || 'AI からの提案'}
         </div>
@@ -2511,7 +2518,7 @@ function ProposalCard({
           marginTop: 10, padding: '0.7rem 0.85rem', borderRadius: 12,
           background: `${bg.accent}14`, border: `1px solid ${bg.accent}33`,
         }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: bg.accent, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: bg.accentText, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             {reasonLabel || <><Lightbulb size={11} strokeWidth={2.4} /> AI がこれをすすめる理由</>}
           </div>
           <div style={{ fontSize: '0.86rem', color: bg.ink, lineHeight: 1.65 }}>{reason}</div>
@@ -2704,7 +2711,7 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Wallet size={16} strokeWidth={2.2} color={bg.accent} />
-            <span style={{ fontSize: '0.72rem', letterSpacing: '0.22em', color: bg.accent, fontWeight: 700 }}>今月の案件チャンス</span>
+            <span style={{ fontSize: '0.72rem', letterSpacing: '0.22em', color: bg.accentText, fontWeight: 700 }}>今月の案件チャンス</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.9rem', fontWeight: 600, color: bg.ink, lineHeight: 1 }}>
@@ -2932,7 +2939,7 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
                     {Object.entries(NEGOTIATION_TYPE_META).map(([k, v]) => (
                       <button key={k} onClick={() => setTypeOverride(t => ({ ...t, [deal.id]: k as NegotiationType }))}
                         style={{
-                          background: type === k ? bg.accent : 'rgba(255,255,255,0.6)',
+                          background: type === k ? bg.accentSolid : 'rgba(255,255,255,0.6)',
                           color: type === k ? '#fff' : bg.ink,
                           border: `1px solid ${bg.cardBorder}`, borderRadius: 10,
                           padding: '0.4rem 0.5rem', fontSize: '0.78rem', cursor: 'pointer',
@@ -3152,7 +3159,7 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
       <div>
-        <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>BEAUTY</p>
+        <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600 }}>BEAUTY</p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: '0.25rem 0 0' }}>
           なんでも、話して。
         </h2>
@@ -3161,7 +3168,7 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
         {Object.entries(BEAUTY_TOPIC_META).map(([k, v]) => (
           <button key={k} onClick={() => setTopic(k as BeautyTopic)} style={{
-            background: topic === k ? bg.accent : 'rgba(255,255,255,0.5)',
+            background: topic === k ? bg.accentSolid : 'rgba(255,255,255,0.5)',
             color: topic === k ? '#fff' : bg.ink,
             border: `1px solid ${bg.cardBorder}`,
             borderRadius: 999, padding: '0.45rem 0.95rem',
@@ -3186,7 +3193,7 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
               maxWidth: '85%',
               padding: '0.7rem 1rem',
               borderRadius: 18,
-              background: m.role === 'user' ? bg.accent : 'rgba(255,255,255,0.7)',
+              background: m.role === 'user' ? bg.accentSolid : 'rgba(255,255,255,0.7)',
               color: m.role === 'user' ? '#fff' : bg.ink,
               whiteSpace: 'pre-wrap',
               fontSize: '0.92rem',
@@ -3424,7 +3431,7 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
       <Card bg={bg}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div>
-            <p style={{ fontSize: '0.72rem', letterSpacing: '0.28em', color: bg.accent, fontWeight: 700, margin: 0 }}>MEDIA KIT</p>
+            <p style={{ fontSize: '0.72rem', letterSpacing: '0.28em', color: bg.accentText, fontWeight: 700, margin: 0 }}>MEDIA KIT</p>
             <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.5rem', color: bg.ink, margin: '0.2rem 0 0' }}>
               企業に送れる自己紹介資料
             </h3>
@@ -3455,7 +3462,7 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
           <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.66)', border: `1px solid ${bg.cardBorder}`, borderRadius: 18, padding: '1.2rem 1.3rem', display: 'grid', gap: '1rem' }}>
             <div>
               {d.handleName && <p style={{ margin: 0, fontWeight: 700, color: bg.ink, fontSize: '1.05rem' }}>{d.handleName}</p>}
-              {doc.tagline && <p style={{ margin: '0.15rem 0 0', fontFamily: IRIS_FONTS.display, fontStyle: 'italic', color: bg.accent, fontSize: '1.15rem' }}>{doc.tagline}</p>}
+              {doc.tagline && <p style={{ margin: '0.15rem 0 0', fontFamily: IRIS_FONTS.display, fontStyle: 'italic', color: bg.accentText, fontSize: '1.15rem' }}>{doc.tagline}</p>}
             </div>
 
             {stats.length > 0 && (
@@ -3473,7 +3480,7 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
 
             {doc.strengths.length > 0 && (
               <div>
-                <p style={{ margin: '0 0 0.4rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700 }}>強み</p>
+                <p style={{ margin: '0 0 0.4rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accentText, fontWeight: 700 }}>強み</p>
                 <div style={{ display: 'grid', gap: '0.5rem' }}>
                   {doc.strengths.map((s, i) => (
                     <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -3490,21 +3497,21 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
 
             {doc.audience && (
               <div>
-                <p style={{ margin: '0 0 0.3rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700 }}>よく見てくれる人</p>
+                <p style={{ margin: '0 0 0.3rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accentText, fontWeight: 700 }}>よく見てくれる人</p>
                 <p style={{ margin: 0, color: bg.ink, lineHeight: 1.7 }}>{doc.audience}</p>
               </div>
             )}
 
             {doc.whyCollab && (
               <div>
-                <p style={{ margin: '0 0 0.3rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700 }}>一緒にできること</p>
+                <p style={{ margin: '0 0 0.3rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accentText, fontWeight: 700 }}>一緒にできること</p>
                 <p style={{ margin: 0, color: bg.ink, lineHeight: 1.7 }}>{doc.whyCollab}</p>
               </div>
             )}
 
             {doc.collabFormats.length > 0 && (
               <div>
-                <p style={{ margin: '0 0 0.4rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700 }}>コラボの形</p>
+                <p style={{ margin: '0 0 0.4rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accentText, fontWeight: 700 }}>コラボの形</p>
                 <div style={{ display: 'grid', gap: '0.4rem' }}>
                   {doc.collabFormats.map((c, i) => (
                     <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -3521,7 +3528,7 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
 
             {d.rateCard && (
               <div>
-                <p style={{ margin: '0 0 0.3rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 700 }}>金額の目安</p>
+                <p style={{ margin: '0 0 0.3rem', fontSize: '0.72rem', letterSpacing: '0.2em', color: bg.accentText, fontWeight: 700 }}>金額の目安</p>
                 <p style={{ margin: 0, color: bg.ink, lineHeight: 1.7 }}>{d.rateCard}</p>
               </div>
             )}
@@ -3604,7 +3611,7 @@ function TeamView({ bg, team, desk, myDeals }: {
     <div style={{ display: 'grid', gap: '1rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>TEAM</p>
+          <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600 }}>TEAM</p>
           <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: '0.25rem 0 0' }}>
             みんなで、咲く。
           </h2>
@@ -3689,7 +3696,7 @@ function TeamView({ bg, team, desk, myDeals }: {
               <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: `1px solid ${bg.cardBorder}` }}>
                 <div>
                   <div style={{ fontSize: '0.7rem', color: bg.inkSoft }}>進行中</div>
-                  <div style={{ fontWeight: 700, color: bg.accent }}>{activeCount} 件</div>
+                  <div style={{ fontWeight: 700, color: bg.accentText }}>{activeCount} 件</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.7rem', color: bg.inkSoft }}>累計報酬</div>
@@ -3831,12 +3838,12 @@ function BrandMatchView({ bg, desk, mediaKit, settings, knowledge }: {
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
       <div>
-        <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>お仕事を、自分から</p>
+        <p style={{ fontSize: '0.75rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600 }}>お仕事を、自分から</p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: '0.25rem 0 0' }}>
           お仕事を、見つける。
         </h2>
         <p style={{ color: bg.inkSoft, marginTop: '0.5rem', fontSize: '0.9rem' }}>
-          相場感をつかむ<strong style={{ color: bg.accent }}>サンプル案件 {allDeals.length} 件</strong>です（練習用・実在の募集ではありません）。AI が応募文の下書きや交渉のコツを教えます。<br />
+          相場感をつかむ<strong style={{ color: bg.accentText }}>サンプル案件 {allDeals.length} 件</strong>です（練習用・実在の募集ではありません）。AI が応募文の下書きや交渉のコツを教えます。<br />
           <span style={{ fontSize: '0.8rem' }}>本物の募集とつながると、ここに「今すぐ応募できる案件」が並びます。</span>
         </p>
       </div>
@@ -4347,7 +4354,7 @@ function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied
 
         {deal.postExample && (
           <div style={{ background: 'rgba(255,255,255,0.45)', borderRadius: 12, padding: '0.6rem 0.85rem', marginBottom: '0.85rem' }}>
-            <p style={{ fontSize: '0.72rem', letterSpacing: '0.15em', color: bg.accent, fontWeight: 700, marginBottom: 4 }}>投稿イメージ</p>
+            <p style={{ fontSize: '0.72rem', letterSpacing: '0.15em', color: bg.accentText, fontWeight: 700, marginBottom: 4 }}>投稿イメージ</p>
             <p style={{ fontSize: '0.85rem', color: bg.ink, lineHeight: 1.6 }}>{deal.postExample}</p>
           </div>
         )}
@@ -4365,7 +4372,7 @@ function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied
             <p style={{ fontSize: '0.72rem', letterSpacing: '0.15em', color: bg.inkSoft, fontWeight: 600, marginBottom: 4 }}>必須ハッシュタグ</p>
             <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
               {deal.requiredHashtags.map((t, i) => (
-                <span key={i} style={{ background: bg.accent + '22', color: bg.accent, padding: '0.15rem 0.5rem', borderRadius: 999, fontSize: '0.78rem', fontWeight: 600 }}>{t}</span>
+                <span key={i} style={{ background: bg.accent + '22', color: bg.accentText, padding: '0.15rem 0.5rem', borderRadius: 999, fontSize: '0.78rem', fontWeight: 600 }}>{t}</span>
               ))}
             </div>
           </div>
@@ -4628,7 +4635,7 @@ function PrismResearchSection({ bg, desk, mediaKit, settings, companies }: {
 }
 
 const chip = (bg: IrisBackgroundDef, active: boolean): React.CSSProperties => ({
-  background: active ? bg.accent : 'rgba(255,255,255,0.5)',
+  background: active ? bg.accentSolid : 'rgba(255,255,255,0.5)',
   color: active ? '#fff' : bg.ink,
   border: `1px solid ${active ? bg.accent : bg.cardBorder}`,
   borderRadius: 999,
@@ -4800,7 +4807,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
     <div style={{ maxWidth: 840, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* タイトル */}
       <div>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.28em', color: bg.accent, fontWeight: 700, marginBottom: 4 }}>私らしさ設定</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.28em', color: bg.accentText, fontWeight: 700, marginBottom: 4 }}>私らしさ設定</p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>私らしさを決める。</h2>
         <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginTop: 4 }}>色・話しかた・使わない言葉を覚えさせると、AI が投稿を書くときにそろえてくれます。</p>
       </div>
@@ -4872,7 +4879,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
               <button onClick={() => multiAccount.switchTo(acct.id)}
                 style={{
                   padding: '0.3rem 0.75rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                  background: acct.id === multiAccount.active?.id ? bg.accent : 'rgba(255,255,255,0.7)',
+                  background: acct.id === multiAccount.active?.id ? bg.accentSolid : 'rgba(255,255,255,0.7)',
                   color: acct.id === multiAccount.active?.id ? '#fff' : bg.ink,
                   border: `1px solid ${bg.cardBorder}`,
                 }}>
@@ -4942,7 +4949,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                 }}>
                   <div style={{
                     fontSize: '0.62rem', letterSpacing: '0.22em',
-                    color: bg.accent, fontWeight: 800, marginBottom: 6,
+                    color: bg.accentText, fontWeight: 800, marginBottom: 6,
                   }}>
                     QUICK ADD &mdash; ハンドルだけで即追加
                   </div>
@@ -5064,7 +5071,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                     <button key={t} onClick={() => setDraft(p => p ? { ...p, tone: t } : p)}
                       style={{
                         padding: '0.35rem 0.85rem', borderRadius: 999, fontSize: '0.78rem', cursor: 'pointer',
-                        background: draft.tone === t ? bg.accent : 'rgba(255,255,255,0.7)',
+                        background: draft.tone === t ? bg.accentSolid : 'rgba(255,255,255,0.7)',
                         color: draft.tone === t ? '#fff' : bg.ink,
                         border: `1px solid ${bg.cardBorder}`, fontWeight: 600,
                       }}>
@@ -5102,7 +5109,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                     <button key={s} onClick={() => setDraft(p => p ? { ...p, emojiStyle: s } : p)}
                       style={{
                         padding: '0.35rem 0.85rem', borderRadius: 999, fontSize: '0.78rem', cursor: 'pointer',
-                        background: draft.emojiStyle === s ? bg.accent : 'rgba(255,255,255,0.7)',
+                        background: draft.emojiStyle === s ? bg.accentSolid : 'rgba(255,255,255,0.7)',
                         color: draft.emojiStyle === s ? '#fff' : bg.ink,
                         border: `1px solid ${bg.cardBorder}`, fontWeight: 600,
                       }}>
@@ -5122,7 +5129,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
               {g.bio && <p style={{ fontSize: '0.85rem', color: bg.inkSoft, margin: 0 }}>{g.bio}</p>}
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>話しかた:</span>
-                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: bg.accent }}>{TONE_META[g.tone].emoji} {TONE_META[g.tone].label}</span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: bg.accentText }}>{TONE_META[g.tone].emoji} {TONE_META[g.tone].label}</span>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>色:</span>
@@ -5145,7 +5152,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                 <div>
                   <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>必ず入れる: </span>
                   {g.mustWords.map(w => (
-                    <span key={w} style={{ fontSize: '0.75rem', background: `${bg.accent}15`, color: bg.accent, borderRadius: 999, padding: '0.15rem 0.55rem', marginRight: 4 }}>{w}</span>
+                    <span key={w} style={{ fontSize: '0.75rem', background: `${bg.accent}15`, color: bg.accentText, borderRadius: 999, padding: '0.15rem 0.55rem', marginRight: 4 }}>{w}</span>
                   ))}
                 </div>
               )}
@@ -5180,7 +5187,7 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             style={{ marginTop: '1rem', padding: '1rem', borderRadius: 14, background: `${bg.accent}0d`, border: `1px solid ${bg.accent}33` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
-              <span style={{ fontSize: '1.4rem', fontWeight: 700, color: bg.accent }}>{checkResult.score}</span>
+              <span style={{ fontSize: '1.4rem', fontWeight: 700, color: bg.accentText }}>{checkResult.score}</span>
               <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>/ 100 pts</span>
               <div style={{
                 marginLeft: 'auto', height: 8, width: 120, borderRadius: 999,
@@ -5195,13 +5202,13 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
             )}
             {checkResult.suggestions.length > 0 && (
               <div style={{ marginBottom: '0.5rem' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: bg.accent, marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Lightbulb size={12} /> こうしてみては</p>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: bg.accentText, marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Lightbulb size={12} /> こうしてみては</p>
                 {checkResult.suggestions.map((s, i) => <p key={i} style={{ fontSize: '0.82rem', color: bg.inkSoft, margin: '0 0 2px' }}>· {s}</p>)}
               </div>
             )}
             {checkResult.revised && (
               <div style={{ marginTop: '0.5rem', padding: '0.75rem', borderRadius: 10, background: 'rgba(255,255,255,0.7)', border: `1px solid ${bg.cardBorder}` }}>
-                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: bg.accent, marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={12} /> 直してみたもの</p>
+                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: bg.accentText, marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Sparkles size={12} /> 直してみたもの</p>
                 <p style={{ fontSize: '0.85rem', color: bg.ink, margin: 0, whiteSpace: 'pre-wrap' }}>{checkResult.revised}</p>
               </div>
             )}

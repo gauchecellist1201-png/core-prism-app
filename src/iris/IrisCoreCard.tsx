@@ -46,9 +46,9 @@ export default function IrisCoreCard({ bg }: { bg: IrisBackgroundDef }) {
         onClick={() => setOpen((v) => !v)}
         style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', cursor: 'pointer', color: bg.ink, fontFamily: IRIS_FONTS.display, fontSize: '1rem', fontWeight: 700, padding: 0 }}
       >
-        <Sparkles size={18} style={{ color: bg.accent }} />
+        <Sparkles size={18} style={{ color: bg.accentText }} />
         あなたの核（人格・目的・ゴール）
-        {filled && <Check size={15} style={{ color: bg.accent, marginLeft: 'auto' }} />}
+        {filled && <Check size={15} style={{ color: bg.accentText, marginLeft: 'auto' }} />}
       </button>
       <p style={{ color: bg.inkSoft, fontSize: '0.8rem', lineHeight: 1.6, marginTop: 6, fontFamily: IRIS_FONTS.body }}>
         あなたの自己紹介や投稿を貼ると、AIが人柄・目的・ゴールを読み取ります。保存すると、Irisの分析・戦略・リール台本が<strong style={{ color: bg.ink }}>“あなたらしさ”</strong>で生成されます。
@@ -90,7 +90,7 @@ export default function IrisCoreCard({ bg }: { bg: IrisBackgroundDef }) {
 
           <button
             onClick={() => { replace({}); setSaved(true); }}
-            style={{ width: '100%', background: 'transparent', color: bg.accent, border: `1px solid ${bg.accent}`, borderRadius: 12, padding: '0.7rem', fontFamily: IRIS_FONTS.display, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+            style={{ width: '100%', background: 'transparent', color: bg.accentText, border: `1px solid ${bg.accent}`, borderRadius: 12, padding: '0.7rem', fontFamily: IRIS_FONTS.display, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
           >
             {saved ? '保存しました ✓' : 'この核で保存する'}
           </button>

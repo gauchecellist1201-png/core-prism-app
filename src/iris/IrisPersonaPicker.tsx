@@ -70,7 +70,7 @@ export default function IrisPersonaPicker({ bg, open, onClose }: Props) {
               <div>
                 <div style={{
                   fontSize: '0.6rem', letterSpacing: '0.22em',
-                  color: bg.accent, fontWeight: 800, marginBottom: 6,
+                  color: bg.accentText, fontWeight: 800, marginBottom: 6,
                 }}>
                   IRIS PERSONALITY
                 </div>

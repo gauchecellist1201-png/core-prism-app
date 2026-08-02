@@ -88,7 +88,7 @@ function ScriptStudioLock({ bg }: { bg: IrisBackgroundDef }) {
   return (
     <div style={{ display: 'grid', gap: '1.1rem', gridTemplateColumns: 'minmax(0, 1fr)', maxWidth: '100%' }}>
       <div style={{ minWidth: 0 }}>
-        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.76rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.3rem' }}>
+        <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.76rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.3rem' }}>
           Plan & Script — 運用代行モード
         </p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontSize: 'clamp(1.5rem, 7vw, 2rem)', color: bg.ink, margin: 0, fontWeight: 700 }}>企画・台本</h2>
@@ -97,7 +97,7 @@ function ScriptStudioLock({ bg }: { bg: IrisBackgroundDef }) {
         <div style={{ width: 64, height: 64, margin: '0 auto 0.9rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${bg.accent}1f`, border: `1px solid ${bg.accent}55` }}>
           <Lock size={28} color={bg.accent} strokeWidth={2.2} />
         </div>
-        <p style={{ display: 'inline-block', fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em', color: '#fff', background: bg.accent, padding: '0.2rem 0.7rem', borderRadius: 999, marginBottom: '0.8rem' }}>
+        <p style={{ display: 'inline-block', fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em', color: '#fff', background: bg.accentSolid, padding: '0.2rem 0.7rem', borderRadius: 999, marginBottom: '0.8rem' }}>
           最上位プラン Pro 限定
         </p>
         <h3 style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.4rem', color: bg.ink, fontWeight: 700, lineHeight: 1.35, margin: '0 0 0.5rem' }}>
@@ -186,7 +186,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
   };
   const sectionLabel: React.CSSProperties = {
     fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.76rem',
-    letterSpacing: '0.22em', textTransform: 'uppercase', color: bg.accent, marginBottom: '0.5rem',
+    letterSpacing: '0.22em', textTransform: 'uppercase', color: bg.accentText, marginBottom: '0.5rem',
   };
 
   // ─── client CRUD ───
@@ -345,7 +345,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
           borderRadius: 16,
         }}>
           <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: bg.ink, lineHeight: 1.5 }}>
-            クライアントを 1 人だけ登録すれば、<span style={{ color: bg.accent }}>あとは AI が企画も台本も書きます。</span>
+            クライアントを 1 人だけ登録すれば、<span style={{ color: bg.accentText }}>あとは AI が企画も台本も書きます。</span>
           </p>
           {/* 3 ステップ */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '10px 0 8px', flexWrap: 'wrap' }}>
@@ -356,9 +356,9 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                   background: 'rgba(255,255,255,0.7)', border: `1px solid ${bg.cardBorder}`,
                   borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap',
                 }}>
-                  <span style={{ color: bg.accent, fontWeight: 800 }}>{i + 1}.</span> {t}
+                  <span style={{ color: bg.accentText, fontWeight: 800 }}>{i + 1}.</span> {t}
                 </span>
-                {i < 2 && <span style={{ color: bg.accent, fontSize: 12, fontWeight: 800 }}>→</span>}
+                {i < 2 && <span style={{ color: bg.accentText, fontSize: 12, fontWeight: 800 }}>→</span>}
               </span>
             ))}
           </div>
@@ -475,9 +475,9 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
               const on = focus === t.focus;
               return (
                 <button key={t.label} type="button" onClick={() => setFocus(on ? '' : t.focus)} style={{
-                  flexShrink: 0, minHeight: 36, padding: '7px 13px', borderRadius: 999,
+                  flexShrink: 0, minHeight: 44, padding: '11px 13px', borderRadius: 999,
                   border: `1px solid ${on ? bg.accent : bg.cardBorder}`,
-                  background: on ? bg.accent : 'transparent',
+                  background: on ? bg.accentSolid : 'transparent',
                   color: on ? '#fff' : bg.ink,
                   fontSize: '0.8rem', fontFamily: IRIS_FONTS.body, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
                   transition: 'background 0.15s, color 0.15s, border-color 0.15s',
@@ -505,7 +505,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
               <p style={{ fontSize: '0.78rem', color: bg.inkSoft, fontWeight: 700, margin: 0 }}>
                 {ideas.length} 本の企画ができました
               </p>
-              <button onClick={copyIdeaPool} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
+              <button onClick={copyIdeaPool} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accentText, fontWeight: 700 }}>
                 投稿プランを丸ごとコピー
               </button>
             </div>
@@ -516,17 +516,17 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                   <span style={{ flexShrink: 0, fontSize: '0.66rem', fontWeight: 800, color: '#1c1c24', background: EFFORT_COLOR[it.effort], padding: '0.1rem 0.5rem', borderRadius: 999 }}>{it.format}・手間{it.effort}</span>
                 </div>
                 <p style={{ fontSize: '0.8rem', color: bg.inkSoft, marginTop: 3 }}>{it.angle}</p>
-                <p style={{ fontSize: '0.74rem', color: bg.accent, marginTop: 2, fontStyle: 'italic' }}>狙い: {it.why}</p>
+                <p style={{ fontSize: '0.74rem', color: bg.accentText, marginTop: 2, fontStyle: 'italic' }}>狙い: {it.why}</p>
                 {it.caption && (
                   <div style={{ marginTop: 8, padding: '0.55rem 0.7rem', background: `${bg.accent}0E`, border: `1px solid ${bg.accent}33`, borderRadius: 10 }}>
                     <p style={{ fontSize: '0.78rem', color: bg.ink, whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{it.caption}</p>
                     {it.hashtags && it.hashtags.length > 0 && (
-                      <p style={{ fontSize: '0.74rem', color: bg.accent, marginTop: 4, fontWeight: 600 }}>{it.hashtags.join(' ')}</p>
+                      <p style={{ fontSize: '0.74rem', color: bg.accentText, marginTop: 4, fontWeight: 600 }}>{it.hashtags.join(' ')}</p>
                     )}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                  <button onClick={() => runScript(it.hook + ' — ' + it.angle)} disabled={scriptBusy} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
+                  <button onClick={() => runScript(it.hook + ' — ' + it.angle)} disabled={scriptBusy} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accentText, fontWeight: 700 }}>
                     この案で台本を作る →
                   </button>
                   {it.caption && (
@@ -569,12 +569,12 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={openMonthlyOnePager} style={btnPrimary}>承認用ページを開く（PDF保存）</button>
-              <button onClick={copyMonthly} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>カレンダーをコピー</button>
+              <button onClick={copyMonthly} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accentText, fontWeight: 700 }}>カレンダーをコピー</button>
               <button onClick={copyShootingList} style={{ ...btnGhost, fontWeight: 700 }}>今月の撮影リストをコピー</button>
             </div>
             {Array.from(new Set(monthly.map(m => m.week))).sort((a, b) => a - b).map(w => (
               <div key={w}>
-                <p style={{ fontSize: '0.74rem', fontWeight: 800, color: bg.accent, margin: '4px 0' }}>第{w + 1}週</p>
+                <p style={{ fontSize: '0.74rem', fontWeight: 800, color: bg.accentText, margin: '4px 0' }}>第{w + 1}週</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {monthly.filter(m => m.week === w).map((it, i) => (
                     <div key={i} style={{ display: 'flex', gap: 10, padding: '0.55rem 0.8rem', background: 'rgba(255,255,255,0.62)', borderRadius: 12, borderLeft: `3px solid ${bg.accent}` }}>
@@ -590,12 +590,12 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                           <div style={{ marginTop: 6, padding: '0.45rem 0.6rem', background: `${bg.accent}0E`, border: `1px solid ${bg.accent}33`, borderRadius: 9 }}>
                             <p style={{ fontSize: '0.76rem', color: bg.ink, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{it.caption}</p>
                             {it.hashtags && it.hashtags.length > 0 && (
-                              <p style={{ fontSize: '0.72rem', color: bg.accent, marginTop: 3, fontWeight: 600 }}>{it.hashtags.join(' ')}</p>
+                              <p style={{ fontSize: '0.72rem', color: bg.accentText, marginTop: 3, fontWeight: 600 }}>{it.hashtags.join(' ')}</p>
                             )}
                           </div>
                         )}
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                          <button onClick={() => runScript(it.hook + ' — ' + it.angle)} disabled={scriptBusy} style={{ ...btnGhost, fontSize: '0.74rem', padding: '0.35rem 0.8rem', background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
+                          <button onClick={() => runScript(it.hook + ' — ' + it.angle)} disabled={scriptBusy} style={{ ...btnGhost, fontSize: '0.74rem', padding: '0.35rem 0.8rem', background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accentText, fontWeight: 700 }}>
                             この案で台本を作る →
                           </button>
                           {it.caption && (
@@ -623,9 +623,9 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
               const on = freeTopic === t.topic;
               return (
                 <button key={t.label} type="button" onClick={() => setFreeTopic(on ? '' : t.topic)} style={{
-                  flexShrink: 0, minHeight: 36, padding: '7px 13px', borderRadius: 999,
+                  flexShrink: 0, minHeight: 44, padding: '11px 13px', borderRadius: 999,
                   border: `1px solid ${on ? bg.accent : bg.cardBorder}`,
-                  background: on ? bg.accent : 'transparent',
+                  background: on ? bg.accentSolid : 'transparent',
                   color: on ? '#fff' : bg.ink,
                   fontSize: '0.8rem', fontFamily: IRIS_FONTS.body, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
                   transition: 'background 0.15s, color 0.15s, border-color 0.15s',
@@ -641,9 +641,9 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
             const on = dur === d;
             return (
               <button key={d} type="button" onClick={() => setDur(d)} style={{
-                minHeight: 34, padding: '6px 13px', borderRadius: 999, cursor: 'pointer',
+                minHeight: 44, padding: '11px 13px', borderRadius: 999, cursor: 'pointer',
                 border: `1px solid ${on ? bg.accent : bg.cardBorder}`,
-                background: on ? bg.accent : 'transparent', color: on ? '#fff' : bg.ink,
+                background: on ? bg.accentSolid : 'transparent', color: on ? '#fff' : bg.ink,
                 fontSize: '0.8rem', fontWeight: 700, fontFamily: IRIS_FONTS.body,
               }}>{d}秒</button>
             );
@@ -686,7 +686,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
                 <p style={{ fontSize: '0.8rem', color: bg.inkSoft, marginTop: 3 }}>{script.format} / 約{script.durationSec}秒{script.bgmMood ? ` / BGM: ${script.bgmMood}` : ''}</p>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button onClick={copySubtitles} style={{ ...btnGhost, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }} title="テロップ/セリフから字幕(SRT)を作り、CapCut/Editsに読み込めます">字幕を作る（CapCut/Edits用）</button>
+                <button onClick={copySubtitles} style={{ ...btnGhost, borderColor: bg.accent, color: bg.accentText, fontWeight: 700 }} title="テロップ/セリフから字幕(SRT)を作り、CapCut/Editsに読み込めます">字幕を作る（CapCut/Edits用）</button>
                 <button onClick={copyScript} style={btnPrimary}>撮影台本をコピー</button>
               </div>
             </div>
@@ -731,12 +731,12 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
           <div style={card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <p style={{ ...sectionLabel, marginBottom: 0 }}>投稿本文</p>
-              <button onClick={copyCaption} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accent, fontWeight: 700 }}>
+              <button onClick={copyCaption} style={{ ...btnGhost, background: `${bg.accent}18`, borderColor: bg.accent, color: bg.accentText, fontWeight: 700 }}>
                 投稿本文をコピー
               </button>
             </div>
             <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: bg.ink, lineHeight: 1.7, fontSize: '0.88rem', margin: 0 }}>{script.caption}</pre>
-            {script.hashtags.length > 0 && <p style={{ color: bg.accent, lineHeight: 1.7, marginTop: 10, fontSize: '0.84rem' }}>{script.hashtags.join(' ')}</p>}
+            {script.hashtags.length > 0 && <p style={{ color: bg.accentText, lineHeight: 1.7, marginTop: 10, fontSize: '0.84rem' }}>{script.hashtags.join(' ')}</p>}
           </div>
         </>
       )}

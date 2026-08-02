@@ -319,7 +319,7 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
       {!hideHeading && (
       <div style={{ textAlign: 'center', padding: '0.25rem 0.5rem 0' }}>
         <p style={{
-          fontSize: '0.66rem', letterSpacing: '0.32em', color: bg.accent,
+          fontSize: '0.66rem', letterSpacing: '0.32em', color: bg.accentText,
           fontWeight: 800, margin: '0 0 0.45rem', textTransform: 'uppercase',
           fontFamily: IRIS_FONTS.body,
         }}>
@@ -416,7 +416,7 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               style={{
                 margin: '0 0 0.4rem', padding: '0 0.1rem',
-                color: bg.accent, fontSize: '0.92rem', lineHeight: 1.6,
+                color: bg.accentText, fontSize: '0.92rem', lineHeight: 1.6,
                 fontStyle: 'italic', fontFamily: IRIS_FONTS.serif,
               }}
             >
@@ -480,7 +480,7 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
                 style={{
                   flex: '0 0 auto',
                   width: 52, height: 52, borderRadius: '50%',
-                  background: listening ? '#1F1A2E' : bg.accent,
+                  background: listening ? '#1F1A2E' : bg.accentSolid,
                   color: '#FFFFFF',
                   border: 'none',
                   cursor: busy || transcribing ? 'wait' : 'pointer',
@@ -544,7 +544,7 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
               style={{
                 minHeight: 44, padding: '0.5rem 1rem',
                 borderRadius: 12, border: 'none',
-                background: '#E1306C', color: '#FFFFFF',
+                background: '#C2185B', color: '#FFFFFF',  // 白文字が 4.34:1 だったので面を一段濃く
                 fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer',
                 fontFamily: IRIS_FONTS.body,
                 display: 'inline-flex', alignItems: 'center', gap: 6,

@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   buildGradient, pickInkForBackground,
-  addCustomBackground, type CustomIrisBackground, type GradientPattern,
+  addCustomBackground, deriveAccentText, type CustomIrisBackground, type GradientPattern,
   IRIS_COLORS, IRIS_FONTS,
   complementaryColor, buildComplementaryPalette,
 } from './irisStyle';
@@ -62,6 +62,11 @@ export default function IrisCustomBgEditor({ onClose, onCreated }: Props) {
       emoji,
       background: preview,
       accent,
+      // 自作テーマでも「文字のアクセント」は読める濃さを計算で決める
+      // （選んだ色をそのまま文字に使うと、淡い色を選んだ人の画面だけ読めなくなる）
+      accentText: deriveAccentText(accent, inkPick.ink.toUpperCase().startsWith('#FFF')),
+      // 白文字を乗せるベタ塗りボタン用（明るいテーマでは同じく濃い方を使う）
+      accentSolid: deriveAccentText(accent, inkPick.ink.toUpperCase().startsWith('#FFF')),
       ink: inkPick.ink,
       inkSoft: inkPick.inkSoft,
       card: inkPick.card,

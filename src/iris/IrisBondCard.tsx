@@ -47,7 +47,7 @@ export default function IrisBondCard({ bg, variant = 'inline' }: Props) {
       }}>
         <div style={{
           width: 36, height: 36, borderRadius: '50%',
-          background: bg.accent, color: '#fff',
+          background: bg.accentSolid, color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <Heart size={18} fill="#fff" />
@@ -101,7 +101,7 @@ export default function IrisBondCard({ bg, variant = 'inline' }: Props) {
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 2 }}>
             <Sparkles size={10} color={bg.accent} />
-            <span style={{ fontSize: '0.6rem', letterSpacing: '0.18em', color: bg.accent, fontWeight: 800 }}>
+            <span style={{ fontSize: '0.6rem', letterSpacing: '0.18em', color: bg.accentText, fontWeight: 800 }}>
               IRIS と仲良くなる · LV.{bond.level} {vibe.emoji}
             </span>
           </div>
@@ -143,7 +143,7 @@ export default function IrisBondCard({ bg, variant = 'inline' }: Props) {
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 4 }}>
               <Heart size={11} fill={bg.accent} color={bg.accent} />
-              <span style={{ fontSize: '0.6rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 800 }}>
+              <span style={{ fontSize: '0.6rem', letterSpacing: '0.2em', color: bg.accentText, fontWeight: 800 }}>
                 LV.{bond.level} {vibe.title.toUpperCase()}
               </span>
             </div>
@@ -262,7 +262,7 @@ export default function IrisBondCard({ bg, variant = 'inline' }: Props) {
                     onClick={() => setMultiValue(prev => selected ? prev.filter(v => v !== opt.value) : [...prev, opt.value])}
                     style={{
                       padding: '0.5rem 0.85rem',
-                      background: selected ? bg.accent : 'rgba(255,255,255,0.7)',
+                      background: selected ? bg.accentSolid : 'rgba(255,255,255,0.7)',
                       border: `1px solid ${selected ? bg.accent : bg.cardBorder}`,
                       borderRadius: 999,
                       fontSize: '0.82rem', fontWeight: 600,
@@ -342,7 +342,7 @@ export default function IrisBondCard({ bg, variant = 'inline' }: Props) {
             }}>
             <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 4 }}>
               <Star size={11} color={bg.accent} fill={bg.accent} />
-              <span style={{ fontSize: '0.6rem', letterSpacing: '0.2em', color: bg.accent, fontWeight: 800 }}>
+              <span style={{ fontSize: '0.6rem', letterSpacing: '0.2em', color: bg.accentText, fontWeight: 800 }}>
                 四柱推命 · 日干 {bond.fortune.dayStem}{bond.fortune.dayBranch}
               </span>
             </div>
@@ -369,7 +369,7 @@ export function BondLevelBadge({ bg }: { bg: IrisBackgroundDef }) {
       border: `1px solid ${bg.accent}44`,
       borderRadius: 999,
       fontSize: '0.68rem', fontWeight: 700,
-      color: bg.accent,
+      color: bg.accentText,
       letterSpacing: '0.05em',
     }}>
       <Heart size={9} fill={bg.accent} />

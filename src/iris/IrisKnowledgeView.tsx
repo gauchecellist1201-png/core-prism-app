@@ -84,7 +84,7 @@ export default function IrisKnowledgeView({ bg, knowledge }: Props) {
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
       <div>
-        <p style={{ fontSize: '0.72rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 700 }}>KNOWLEDGE</p>
+        <p style={{ fontSize: '0.72rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 700 }}>KNOWLEDGE</p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: '0.25rem 0 0' }}>
           あなたの資料、{knowledge.count} 件。
         </h2>
@@ -117,7 +117,7 @@ export default function IrisKnowledgeView({ bg, knowledge }: Props) {
             />
           </div>
           <button onClick={() => setAddOpen(v => !v)} style={{
-            background: bg.accent, color: '#fff', border: 'none',
+            background: bg.accentSolid, color: '#fff', border: 'none',
             borderRadius: 12, padding: '0.55rem 0.95rem',
             fontFamily: IRIS_FONTS.body, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
             display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -160,7 +160,7 @@ export default function IrisKnowledgeView({ bg, knowledge }: Props) {
           />
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
             <button onClick={addManualNote} disabled={!newTitle.trim() || !newContent.trim()} style={{
-              background: bg.accent, color: '#fff', border: 'none',
+              background: bg.accentSolid, color: '#fff', border: 'none',
               borderRadius: 12, padding: '0.55rem 1rem', fontWeight: 700, fontSize: '0.85rem',
               cursor: 'pointer', opacity: (!newTitle.trim() || !newContent.trim()) ? 0.4 : 1,
             }}>

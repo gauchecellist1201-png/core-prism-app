@@ -509,7 +509,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
     <div style={{ maxWidth: 880, margin: '0 auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* ヘッダ */}
       <div style={{ marginBottom: '1.25rem' }}>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600, marginBottom: 4 }}>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600, marginBottom: 4 }}>
           COLLAB
         </p>
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.6rem, 4vw, 2rem)', color: bg.ink, margin: 0 }}>
@@ -554,7 +554,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
           <button key={c} onClick={() => { const next = c === myCategory ? '' : c; setMyCategory(next); saveMyCategory(next); }}
             style={{
               padding: '0.4rem 0.85rem', borderRadius: 999, fontSize: '0.78rem',
-              background: myCategory === c ? bg.accent : 'rgba(255,255,255,0.85)',
+              background: myCategory === c ? bg.accentSolid : 'rgba(255,255,255,0.85)',
               color: myCategory === c ? '#fff' : bg.ink,
               border: `1px solid ${bg.cardBorder}`, cursor: 'pointer', fontWeight: 600,
               minHeight: 36,
@@ -719,7 +719,7 @@ function PlanBoard(props: {
       {/* AI 推薦結果 */}
       {recommendations.length > 0 && (
         <div style={card}>
-          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 700, marginBottom: 10 }}>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 700, marginBottom: 10 }}>
             AI RECOMMENDATIONS
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
@@ -747,7 +747,7 @@ function PlanBoard(props: {
                 <button onClick={() => addRecToPlans(r)}
                   style={{
                     width: '100%', padding: '0.5rem', borderRadius: 8,
-                    background: bg.accent, color: '#fff', border: 'none',
+                    background: bg.accentSolid, color: '#fff', border: 'none',
                     fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', minHeight: 40,
                   }}>
                   + 候補に追加
@@ -835,7 +835,7 @@ function PlanBoard(props: {
             </div>
             <p style={{ fontSize: '0.95rem', color: bg.ink, fontWeight: 600, margin: '0 0 6px' }}>{plan.topic}</p>
             {plan.reason && (
-              <p style={{ fontSize: '0.75rem', color: bg.accent, background: `${bg.accent}0d`, borderRadius: 8, padding: '0.35rem 0.6rem', marginBottom: 8 }}>
+              <p style={{ fontSize: '0.75rem', color: bg.accentText, background: `${bg.accent}0d`, borderRadius: 8, padding: '0.35rem 0.6rem', marginBottom: 8 }}>
                 {plan.reason}
               </p>
             )}
@@ -931,7 +931,7 @@ function PlanBoard(props: {
                   rows={3} style={{ ...modalInput(), resize: 'vertical', borderRadius: 12 }} />
               </FieldWrap>
               <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-                <button onClick={submitPlan} style={{ flex: 1, padding: '0.75rem', borderRadius: 999, background: bg.accent, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, minHeight: 44 }}>
+                <button onClick={submitPlan} style={{ flex: 1, padding: '0.75rem', borderRadius: 999, background: bg.accentSolid, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, minHeight: 44 }}>
                   追加
                 </button>
                 <button onClick={() => setShowNewPlan(false)} style={{ padding: '0.75rem 1.25rem', borderRadius: 999, background: 'rgba(0,0,0,0.05)', border: '1px solid #E0D4EC', cursor: 'pointer', minHeight: 44 }}>
@@ -981,7 +981,7 @@ function EvaluationModal({ bg, plan, onSave, onClose }: {
               <button key={n} onClick={() => setScore(n)}
                 style={{
                   flex: 1, padding: '0.9rem 0', borderRadius: 12,
-                  background: n <= score ? bg.accent : 'rgba(0,0,0,0.05)',
+                  background: n <= score ? bg.accentSolid : 'rgba(0,0,0,0.05)',
                   color: n <= score ? '#fff' : '#5A4570',
                   border: 'none', cursor: 'pointer', fontSize: '1.3rem',
                   minHeight: 56,
@@ -1027,7 +1027,7 @@ function EvaluationModal({ bg, plan, onSave, onClose }: {
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={() => onSave({ effectScore: score, wouldRepeat, note: note.trim() || undefined, recordedAt: new Date().toISOString() })}
-            style={{ flex: 1, padding: '0.75rem', borderRadius: 999, background: bg.accent, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, minHeight: 44 }}>
+            style={{ flex: 1, padding: '0.75rem', borderRadius: 999, background: bg.accentSolid, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, minHeight: 44 }}>
             保存
           </button>
           <button onClick={onClose}
@@ -1081,7 +1081,7 @@ function RecruitBoard(props: {
           <button key={c} onClick={() => setFilterCat(c)}
             style={{
               padding: '0.45rem 0.9rem', borderRadius: 999, fontSize: '0.78rem',
-              background: filterCat === c ? bg.accent : 'rgba(255,255,255,0.85)',
+              background: filterCat === c ? bg.accentSolid : 'rgba(255,255,255,0.85)',
               color: filterCat === c ? '#fff' : bg.ink,
               border: `1px solid ${bg.cardBorder}`, cursor: 'pointer', fontWeight: 600,
               minHeight: 36,
@@ -1102,7 +1102,7 @@ function RecruitBoard(props: {
 
       {myCategory && (
         <div style={{ ...card, padding: '0.65rem 1rem', background: `${bg.accent}10`, border: `1px solid ${bg.accent}33` }}>
-          <span style={{ fontSize: '0.78rem', color: bg.accent, fontWeight: 700 }}>
+          <span style={{ fontSize: '0.78rem', color: bg.accentText, fontWeight: 700 }}>
             AI が「もしかして合うかも」と判断した順に並んでいます
           </span>
         </div>
@@ -1149,12 +1149,12 @@ function RecruitBoard(props: {
               {post.tags.length > 0 && (
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
                   {post.tags.map(t => (
-                    <span key={t} style={{ fontSize: '0.7rem', color: bg.accent, background: `${bg.accent}10`, borderRadius: 999, padding: '0.15rem 0.5rem' }}>{t}</span>
+                    <span key={t} style={{ fontSize: '0.7rem', color: bg.accentText, background: `${bg.accent}10`, borderRadius: 999, padding: '0.15rem 0.5rem' }}>{t}</span>
                   ))}
                 </div>
               )}
               {post.aiMatchReason && post.aiMatchScore && post.aiMatchScore >= 70 && (
-                <p style={{ fontSize: '0.72rem', color: bg.accent, background: `${bg.accent}0d`, borderRadius: 8, padding: '0.35rem 0.6rem', marginBottom: 8 }}>
+                <p style={{ fontSize: '0.72rem', color: bg.accentText, background: `${bg.accent}0d`, borderRadius: 8, padding: '0.35rem 0.6rem', marginBottom: 8 }}>
                   {post.aiMatchReason}
                 </p>
               )}
@@ -1168,7 +1168,7 @@ function RecruitBoard(props: {
                 <button onClick={() => setOpenChat(isOpen ? null : post.id)}
                   style={{
                     marginLeft: 'auto', padding: '0.4rem 1rem', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700,
-                    background: isOpen ? bg.accent : 'rgba(255,255,255,0.85)',
+                    background: isOpen ? bg.accentSolid : 'rgba(255,255,255,0.85)',
                     color: isOpen ? '#fff' : bg.ink,
                     border: `1px solid ${isOpen ? bg.accent : bg.cardBorder}`, cursor: 'pointer', minHeight: 36,
                   }}>
@@ -1185,7 +1185,7 @@ function RecruitBoard(props: {
                       )}
                       {post.chats.map(c => (
                         <div key={c.id} style={{ marginBottom: 5 }}>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: bg.accent }}>{c.author} </span>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: bg.accentText }}>{c.author} </span>
                           <span style={{ fontSize: '0.8rem', color: bg.ink }}>{c.text}</span>
                         </div>
                       ))}
@@ -1199,7 +1199,7 @@ function RecruitBoard(props: {
                             color: bg.ink, outline: 'none',
                           }} />
                         <button onClick={() => sendChat(post.id)}
-                          style={{ padding: '0.5rem 0.9rem', borderRadius: 999, background: bg.accent, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem', minHeight: 40 }}>
+                          style={{ padding: '0.5rem 0.9rem', borderRadius: 999, background: bg.accentSolid, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem', minHeight: 40 }}>
                           <Send size={14} />
                         </button>
                       </div>
@@ -1250,7 +1250,7 @@ function RecruitBoard(props: {
                     <button key={c} onClick={() => setPostForm({ ...postForm, category: c })}
                       style={{
                         padding: '0.4rem 0.85rem', borderRadius: 999, fontSize: '0.75rem',
-                        background: postForm.category === c ? bg.accent : 'rgba(0,0,0,0.04)',
+                        background: postForm.category === c ? bg.accentSolid : 'rgba(0,0,0,0.04)',
                         color: postForm.category === c ? '#fff' : '#1F1A2E',
                         border: `1px solid ${postForm.category === c ? bg.accent : '#E0D4EC'}`,
                         cursor: 'pointer', fontWeight: 600, minHeight: 36,
@@ -1326,7 +1326,7 @@ function btnSmall(bg: IrisBackgroundDef | CustomIrisBackground): React.CSSProper
 
 function btnSmallPrimary(bg: IrisBackgroundDef | CustomIrisBackground): React.CSSProperties {
   return {
-    background: bg.accent, color: '#fff',
+    background: bg.accentSolid, color: '#fff',
     border: 'none', borderRadius: 8,
     padding: '0.4rem 0.75rem', fontWeight: 700, cursor: 'pointer',
     fontSize: '0.75rem', minHeight: 36,

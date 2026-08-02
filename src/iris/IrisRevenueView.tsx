@@ -351,7 +351,7 @@ export default function IrisRevenueView({ bg }: Props) {
     <div style={{ display: 'grid', gap: '1.5rem', fontFamily: IRIS_FONTS.body }}>
       {/* ヘッダ */}
       <div>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accent, fontWeight: 600 }}>REVENUE</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: bg.accentText, fontWeight: 600 }}>REVENUE</p>
         <h1 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', color: bg.ink, margin: '0.25rem 0 0.5rem', fontWeight: 500 }}>
           収益を、見える化。
         </h1>
@@ -389,7 +389,7 @@ export default function IrisRevenueView({ bg }: Props) {
       <div style={{ padding: '1.25rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           <Target size={16} color={bg.accent} />
-          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, margin: 0 }}>MONTHLY GOAL</p>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, margin: 0 }}>MONTHLY GOAL</p>
           <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: bg.inkSoft, fontFamily: IRIS_FONTS.mono }}>
             ¥{summary.monthlyTotal.toLocaleString()} / ¥{goal.toLocaleString()} ({Math.round(goalPct)}%)
           </span>
@@ -419,14 +419,14 @@ export default function IrisRevenueView({ bg }: Props) {
             step={10000}
           />
           {goalPct >= 100 && (
-            <span style={{ fontSize: '0.85rem', color: bg.accent, fontWeight: 700 }}>目標達成 おめでとう！</span>
+            <span style={{ fontSize: '0.85rem', color: bg.accentText, fontWeight: 700 }}>目標達成 おめでとう！</span>
           )}
         </div>
       </div>
 
       {/* 来月予測の内訳 */}
       <div style={{ padding: '1.25rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: 10 }}>NEXT MONTH FORECAST</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, marginBottom: 10 }}>NEXT MONTH FORECAST</p>
         <p style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.6rem', color: bg.ink, fontWeight: 700, margin: '0 0 6px' }}>
           <CountUp value={nextMonthForecast.forecast} format={(n) => `¥${Math.round(n).toLocaleString()}`} />
         </p>
@@ -439,7 +439,7 @@ export default function IrisRevenueView({ bg }: Props) {
 
       {/* 税金見積もり */}
       <div style={{ padding: '1.25rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: 10 }}>TAX ESTIMATE — 経費 0 円ベース (保守)</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, marginBottom: 10 }}>TAX ESTIMATE — 経費 0 円ベース (保守)</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
           <div>
             <p style={{ fontSize: '0.7rem', color: bg.inkSoft, marginBottom: 4 }}>年間概算所得税</p>
@@ -467,7 +467,7 @@ export default function IrisRevenueView({ bg }: Props) {
 
       {/* 月次棒グラフ */}
       <div style={{ padding: '1.5rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
-        <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: '1rem' }}>MONTHLY TREND — 12ヶ月</p>
+        <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, marginBottom: '1rem' }}>MONTHLY TREND — 12ヶ月</p>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={barData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
             <XAxis dataKey="month" tick={{ fontSize: 11, fill: bg.inkSoft }} axisLine={false} tickLine={false} />
@@ -491,7 +491,7 @@ export default function IrisRevenueView({ bg }: Props) {
       {/* 収入源別 Pie */}
       {pieData.length > 0 && (
         <div style={{ padding: '1.5rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
-          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: '0.5rem' }}>SOURCE BREAKDOWN — 今年</p>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, marginBottom: '0.5rem' }}>SOURCE BREAKDOWN — 今年</p>
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie
@@ -533,7 +533,7 @@ export default function IrisRevenueView({ bg }: Props) {
           initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           style={{ padding: '1.5rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}
         >
-          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: '1rem' }}>NEW ENTRY</p>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, marginBottom: '1rem' }}>NEW ENTRY</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
             <FieldWrap label="日付" bg={bg}>
               <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
@@ -560,7 +560,7 @@ export default function IrisRevenueView({ bg }: Props) {
               キャンセル
             </button>
             <button onClick={addEntry}
-              style={{ background: bg.accent, color: '#fff', border: 'none', borderRadius: 999, padding: '0.6rem 1.5rem', fontWeight: 700, cursor: 'pointer', fontFamily: IRIS_FONTS.body }}>
+              style={{ background: bg.accentSolid, color: '#fff', border: 'none', borderRadius: 999, padding: '0.6rem 1.5rem', fontWeight: 700, cursor: 'pointer', fontFamily: IRIS_FONTS.body }}>
               保存
             </button>
           </div>
@@ -570,7 +570,7 @@ export default function IrisRevenueView({ bg }: Props) {
       {/* 収益一覧 */}
       {allEntries.length > 0 && (
         <div style={{ padding: '1.5rem', background: bg.card, border: `1px solid ${bg.cardBorder}`, borderRadius: 16 }}>
-          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accent, fontWeight: 600, marginBottom: '0.85rem' }}>
+          <p style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: bg.accentText, fontWeight: 600, marginBottom: '0.85rem' }}>
             HISTORY ({allEntries.length}件 / 案件自動取込: {dealEntries.length}件)
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: 360, overflowY: 'auto' }}>
@@ -588,10 +588,10 @@ export default function IrisRevenueView({ bg }: Props) {
                     background: SOURCE_COLORS[e.source], flexShrink: 0,
                   }} />
                   <span style={{ fontSize: '0.75rem', color: bg.inkSoft, minWidth: 80 }}>{e.date}</span>
-                  <span style={{ fontSize: '0.75rem', color: bg.accent, fontWeight: 600, minWidth: 90 }}>{e.source}</span>
+                  <span style={{ fontSize: '0.75rem', color: bg.accentText, fontWeight: 600, minWidth: 90 }}>{e.source}</span>
                   <span style={{ flex: 1, fontSize: '0.85rem', color: bg.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {e.description}
-                    {isDealAuto && <span style={{ marginLeft: 8, fontSize: '0.65rem', color: bg.accent, background: `${bg.accent}18`, padding: '1px 6px', borderRadius: 999 }}>案件自動</span>}
+                    {isDealAuto && <span style={{ marginLeft: 8, fontSize: '0.65rem', color: bg.accentText, background: `${bg.accent}18`, padding: '1px 6px', borderRadius: 999 }}>案件自動</span>}
                   </span>
                   <span style={{ fontWeight: 700, color: bg.ink, fontFamily: IRIS_FONTS.mono, whiteSpace: 'nowrap' }}>
                     ¥{e.amountJPY.toLocaleString()}
