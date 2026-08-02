@@ -617,6 +617,78 @@ export default function CoreSite() {
             defaultOpen
           />
 
+          {/* ── UNIVERSE — 別格（オーナー指示 2026-08-02: 司令塔 Prism の横に、これだけは別格として置く） ──
+              通常の FeatureProduct カードにせず、星空の一枚バナーで「格の違い」を出す。 */}
+          <a
+            href="https://core-universe.vercel.app/"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="CORE Universe — AIに任せられる仕事の宇宙図を開く"
+            style={{
+              display: 'block',
+              margin: '2.5rem 0',
+              padding: 'clamp(1.8rem, 4vw, 3rem) clamp(1.4rem, 4vw, 3rem)',
+              borderRadius: 26,
+              border: '1px solid rgba(201,162,75,0.45)',
+              background:
+                'radial-gradient(120% 140% at 85% 0%, rgba(59,52,94,0.55) 0%, rgba(10,13,20,0.96) 55%), #0a0d14',
+              position: 'relative',
+              overflow: 'hidden',
+              textDecoration: 'none',
+              color: '#F1E9D8',
+            }}
+          >
+            {/* 星々（飾り） */}
+            <svg aria-hidden width="100%" height="100%" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.85 }} viewBox="0 0 1000 300" preserveAspectRatio="xMidYMid slice">
+              <g fill="#ece5d8">
+                <circle cx="760" cy="60" r="2" opacity="0.7" /><circle cx="835" cy="140" r="14" opacity="0.95" />
+                <circle cx="905" cy="80" r="6" opacity="0.8" /><circle cx="930" cy="210" r="9" opacity="0.85" />
+                <circle cx="700" cy="230" r="4" opacity="0.6" /><circle cx="640" cy="90" r="2.4" opacity="0.5" />
+                <circle cx="90" cy="40" r="1.8" opacity="0.4" /><circle cx="180" cy="260" r="2.2" opacity="0.35" />
+              </g>
+              <g stroke="#ece5d8" strokeOpacity="0.3">
+                <line x1="760" y1="60" x2="835" y2="140" /><line x1="835" y1="140" x2="905" y2="80" />
+                <line x1="835" y1="140" x2="930" y2="210" /><line x1="835" y1="140" x2="700" y2="230" />
+              </g>
+              <circle cx="798" cy="100" r="3" fill="#d9b36a" />
+              <ellipse cx="835" cy="140" rx="24" ry="8" fill="none" stroke="#d9b36a" strokeOpacity="0.5" transform="rotate(-18 835 140)" />
+            </svg>
+
+            <div style={{ position: 'relative', maxWidth: 640 }}>
+              <p style={{ fontSize: '0.72rem', letterSpacing: '0.34em', color: '#d9b36a', fontWeight: 700, marginBottom: '0.9rem' }}>
+                別格 ─ CORE UNIVERSE
+              </p>
+              <h3
+                style={{
+                  fontFamily: FONT_SERIF_JA,
+                  fontSize: 'clamp(1.5rem, 3.2vw, 2.2rem)',
+                  fontWeight: 700,
+                  lineHeight: 1.6,
+                  letterSpacing: '0.04em',
+                  marginBottom: '1rem',
+                }}
+              >
+                AIに任せられる仕事が、
+                <br />
+                ぜんぶ見える宇宙図。
+              </h3>
+              <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(240,233,216,0.75)', fontSize: '0.95rem', lineHeight: 2, marginBottom: '1.4rem' }}>
+                30の仕事を星座に。星を押すと「人がやる → AIが下書き → 全自動」の3段のはしごが見え、
+                どの仕事から任せるべきかが分かります。宇宙図は無料。すべてのCOREサービスは、この宇宙のどこかの星です。
+              </p>
+              <span
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  minHeight: 48, padding: '0 1.6rem', borderRadius: 999,
+                  border: '1px solid rgba(201,162,75,0.6)', color: '#E8CF9A',
+                  fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.06em',
+                }}
+              >
+                宇宙図をひらく →
+              </span>
+            </div>
+          </a>
+
           {/* オーナー指示 2026-07-30: 主力は Prism → Resonance → Crystal。この順に並べる。
               reversed は左右交互のレイアウト指定なので、並べ替えに合わせて偶数番目に付け直した。 */}
 
@@ -1675,7 +1747,7 @@ export default function CoreSite() {
             <InfoRow label="代表取締役" subLabel="CEO"           value={COMPANY.ceoJa}    subValue={COMPANY.ceoEn} />
             <InfoRow label="本社所在地" subLabel="Headquarters" value={COMPANY.addressJa} subValue={COMPANY.addressEn} />
             <InfoRow label="事業内容"   subLabel="Business"     value="エージェントAIを中心とした SaaS の開発・運営" />
-            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）／ Crystal（AI コンシェルジュ・接客サイト向け）／ CORE Pulse（からだ見守りAI）" isLast />
+            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Universe（AIに任せられる仕事の宇宙図）／ CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）／ Crystal（AI コンシェルジュ・接客サイト向け）／ CORE Pulse（からだ見守りAI）" isLast />
           </dl>
           </MobileFold>
         </div>
