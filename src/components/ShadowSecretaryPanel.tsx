@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona } from '../types/identity';
 import type { ShadowDraft } from '../hooks/useShadowSecretary';
+import { StudioIntro } from './StudioIntro';
 
 interface Props {
   persona: Persona;
@@ -110,6 +111,17 @@ export default function ShadowSecretaryPanel({
 
         {/* ── Body ── */}
         <div className="cp-modal-body" style={{ padding: '12px' }}>
+          {/* 初見の人が「この画面は何をする所か」を触らずに分かるように。
+              ✕ を押すと二度と出ない (StudioIntro が localStorage に覚える)。
+              この画面は幅 520px と狭いので、見本は付けず言葉だけにする。 */}
+          <StudioIntro
+            id="shadow"
+            accent={persona.accentColor}
+            iconKey="shadow"
+            what="返事が必要なメールを AI が先に見つけて、返信の下書きまで書いておく所です。"
+            tryThis="Gmail をつないでおけば 30 分ごとに自分で見に行きます。今すぐ見てほしい時は右上の「🔄 更新」。"
+            example="お客様からの見積依頼 → 「急ぎ」の印つきで並び、返信文が 1 通できている。読んで直して送るだけ。"
+          />
           {drafts.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-4xl mb-3">✉️</p>

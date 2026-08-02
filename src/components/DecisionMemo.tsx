@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona, AppSettings, KnowledgeItem } from '../types/identity';
 import ApiErrorCard from './ApiErrorCard';
 import EmptyState from './EmptyState';
+import { StudioIntro } from './StudioIntro';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import StudioBackButton from './StudioBackButton';
 import type { DecisionMemo, DecisionInput } from '../lib/decisionMemo';
@@ -152,6 +153,42 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
         {/* Phase: Speak (1 textarea → 直接 result) */}
         {phase === 'speak' && (
           <div className="flex-1 overflow-y-auto p-5 space-y-3">
+            {/* 初見の人が「この画面は何をする所か」を触らずに分かるように。
+                ✕ を押すと二度と出ない (StudioIntro が localStorage に覚える)。 */}
+            <StudioIntro
+              id="decision"
+              accent={persona.accentColor}
+              iconKey="decision"
+              what="決めきれない事を書くと、AI が「賛成・反対・おすすめ」に整理して返す所です。"
+              tryThis="下の枠に、迷っている事を 1 行書くだけで始まります。背景や候補を足すほど答えが具体的になります。"
+              example="「A 社の提案を受けるべきか」→ 賛成 3 点・反対 3 点・おすすめの案と自信度 %・次にやる事まで出ます。"
+              sampleLabel="出てくる答え"
+              samplePreview={
+                <div style={{ width: 150, fontSize: 8.5, lineHeight: 1.5 }}>
+                  <div
+                    style={{
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 6,
+                      padding: '7px 8px',
+                    }}
+                  >
+                    <p className="text-fg-muted" style={{ fontSize: 7.5, letterSpacing: '0.06em' }}>おすすめ</p>
+                    <p className="text-fg" style={{ fontSize: 10, fontWeight: 700, marginTop: 1 }}>A 案で進める</p>
+                    <span
+                      style={{
+                        display: 'inline-block', marginTop: 3, fontSize: 7.5, fontWeight: 700,
+                        borderRadius: 3, padding: '1px 5px',
+                        background: `${persona.accentColor}1F`, color: persona.accentColor,
+                      }}
+                    >自信度 72%</span>
+                    <p className="text-fg-muted" style={{ marginTop: 5, fontSize: 7.5 }}>◎ 賛成 3 点</p>
+                    <p className="text-fg-muted" style={{ fontSize: 7.5 }}>△ 反対 3 点</p>
+                    <p className="text-fg-muted" style={{ fontSize: 7.5 }}>→ 次にやる事 2 つ</p>
+                  </div>
+                </div>
+              }
+            />
             <div>
               <p className="text-fg text-base font-semibold mb-1">迷ってることを話してください</p>
               <p className="text-fg-muted text-xs leading-relaxed">

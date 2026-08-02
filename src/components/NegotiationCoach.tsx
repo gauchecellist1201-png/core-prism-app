@@ -5,6 +5,7 @@ import type { NegotiationScene, NegoTurn, NegoEvaluation } from '../lib/negotiat
 import { NEGO_PRESETS, counterpartReply, evaluateNegotiation } from '../lib/negotiationCoach';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
+import { StudioIntro } from './StudioIntro';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import StudioBackButton from './StudioBackButton';
 
@@ -186,6 +187,40 @@ export default function NegotiationCoachModal({ persona, settings, onClose }: Pr
         {/* Phase: Select */}
         {phase === 'select' && (
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {/* 初見の人が「この画面は何をする所か」を触らずに分かるように。
+                ✕ を押すと二度と出ない (StudioIntro が localStorage に覚える)。 */}
+            <StudioIntro
+              id="nego"
+              accent={persona.accentColor}
+              iconKey="nego"
+              what="本番の商談の前に、相手役の AI と値段や条件の交渉を練習する所です。"
+              tryThis="下のシナリオを 1 つ押すだけで始まります。自分の状況に合わせて作りたい時は「自分で作る」へ。"
+              example="「値下げを迫られる」を選ぶ → AI が渋い担当者役で返してくる。終わると点数と直す所が出ます。"
+              sampleLabel="終わった後に出るもの"
+              samplePreview={
+                <div style={{ width: 150, fontSize: 8.5, lineHeight: 1.5 }}>
+                  <div
+                    style={{
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 6,
+                      padding: '7px 8px',
+                    }}
+                  >
+                    <p className="text-fg-muted" style={{ fontSize: 7.5, letterSpacing: '0.06em' }}>交渉スコア</p>
+                    <p className="text-fg" style={{ fontSize: 16, fontWeight: 300, fontFamily: 'ui-monospace, monospace' }}>
+                      78<span style={{ fontSize: 8 }}> / 100</span>
+                    </p>
+                    <div style={{ height: 4, borderRadius: 2, background: 'var(--surface-3)', marginTop: 3 }}>
+                      <div style={{ width: '78%', height: '100%', borderRadius: 2, background: persona.accentColor }} />
+                    </div>
+                    <p className="text-fg-muted" style={{ marginTop: 5, fontSize: 7.5 }}>◎ よかった所 3 つ</p>
+                    <p className="text-fg-muted" style={{ fontSize: 7.5 }}>△ 直す所 3 つ</p>
+                    <p className="text-fg-muted" style={{ fontSize: 7.5 }}>→ 言い換えの例文つき</p>
+                  </div>
+                </div>
+              }
+            />
             <p className="text-fg-muted text-sm">
               現実的な相手役の AI と本番さながらに練習。終わったら詳細フィードバック。
             </p>

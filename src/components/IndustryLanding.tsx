@@ -97,7 +97,7 @@ export default function IndustryLanding({ slug }: Props) {
       contactPoint: {
         '@type': 'ContactPoint',
         contactType: 'customer support',
-        email: 'core.guild.inc@gmail.com',
+        email: 'core.inc.guild@gmail.com',
       },
     };
     const videoObject = {

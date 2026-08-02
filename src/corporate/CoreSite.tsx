@@ -21,7 +21,7 @@ const COMPANY = {
   ceoEn: 'Naoki Ide',
   addressJa: '〒658-0025 兵庫県神戸市東灘区魚崎南町7丁目11番7号',
   addressEn: '7-11-7 Uozaki-Minamimachi, Higashinada-ku, Kobe, Hyogo 658-0025, Japan',
-  email: 'core.guild.inc@gmail.com',
+  email: 'core.inc.guild@gmail.com',
 };
 
 // プラットフォーム価格グリッド — 安い入口→最上位Crystalへ昇る並び。製品追加は1オブジェクト追加で並ぶ

@@ -127,7 +127,7 @@ export default function InviteGate({ onAccepted }: Props) {
         <p className="text-fg-subtle text-xs mt-8">
           招待コードをお持ちでない方は
           <a
-            href="mailto:core.guild.inc@gmail.com"
+            href="mailto:core.inc.guild@gmail.com"
             className="underline ml-1 text-fg-muted"
           >
             こちら

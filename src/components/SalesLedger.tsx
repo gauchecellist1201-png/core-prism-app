@@ -12,6 +12,7 @@ import { fmtJpy } from '../lib/invoiceCalc';
 import { CountUp } from './visualFx';
 import { confirmAction } from '../lib/confirmDialog';
 import SampleDataCTA from './SampleDataCTA';
+import { StudioIntro } from './StudioIntro';
 import StudioBackButton from './StudioBackButton';
 import StudioHeaderIcon from './StudioHeaderIcon';
 import { resolveTabIcon } from '../lib/featureIcons';
@@ -166,6 +167,51 @@ export default function SalesLedger({ persona, onClose }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {/* 初見の人が「この画面は何をする所か」を触らずに分かるように。
+              ✕ を押すと二度と出ない (StudioIntro が localStorage に覚える)。 */}
+          <StudioIntro
+            id="sales"
+            accent={persona.accentColor}
+            iconKey="sales"
+            what="「今月いくら売れて、いくらまだ入金されていないか」を 1 画面で見る所です。"
+            tryThis="請求書スタジオで出した請求は、ここに自動で入ります。現金・振込だけの売上は「手動で足す」タブから。"
+            example="Web制作 50万円を請求 → 今月の売上に足され、入金されるまで「未入金」に並びます。"
+            sampleLabel="出てくるまとめ"
+            samplePreview={
+              <div style={{ width: 150 }}>
+                <div
+                  style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 6,
+                    padding: '7px 8px',
+                    marginBottom: 5,
+                  }}
+                >
+                  <p className="text-fg-muted" style={{ fontSize: 8, letterSpacing: '0.06em' }}>今月の売上</p>
+                  <p className="text-fg" style={{ fontSize: 15, fontWeight: 300, fontFamily: 'ui-monospace, monospace' }}>¥1,240,000</p>
+                  <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                    <span style={{ flex: 1, fontSize: 7.5, borderRadius: 3, padding: '2px 3px', background: 'rgba(74,222,128,0.14)', color: '#3FA96A' }}>入金済 ¥860,000</span>
+                    <span style={{ flex: 1, fontSize: 7.5, borderRadius: 3, padding: '2px 3px', background: `${persona.accentColor}1F`, color: persona.accentColor }}>未入金 ¥380,000</span>
+                  </div>
+                </div>
+                {/* 過去12ヶ月の棒グラフの見た目だけを小さく再現 */}
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 24 }}>
+                  {[38, 52, 44, 70, 61, 83, 58, 74, 90, 66, 96, 80].map((h, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        flex: 1,
+                        height: `${h}%`,
+                        borderRadius: 1.5,
+                        background: i === 11 ? persona.accentColor : `${persona.accentColor}55`,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            }
+          />
           {tab === 'overview' && (
             <>
               {/* 当月 / 当年 サマリ */}

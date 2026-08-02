@@ -812,12 +812,12 @@ function Showcase() {
     }
   };
 
-  const daikouMailto = `mailto:core.guild.inc@gmail.com?subject=${encodeURIComponent('【Crystal 設置代行】お願いします')}&body=${encodeURIComponent(
+  const daikouMailto = `mailto:core.inc.guild@gmail.com?subject=${encodeURIComponent('【Crystal 設置代行】お願いします')}&body=${encodeURIComponent(
     `サイトURL: \nブランド名: ${config.brandName}\nご希望 (あれば): \n\n--- 以下はそのままで大丈夫です (あなたの設定データ) ---\n${pageUrl}`,
   )}`;
 
   const mailtoCta = (plan: string) =>
-    `mailto:core.guild.inc@gmail.com?subject=${encodeURIComponent(`【Crystal 導入相談】${plan}`)}&body=${encodeURIComponent(
+    `mailto:core.inc.guild@gmail.com?subject=${encodeURIComponent(`【Crystal 導入相談】${plan}`)}&body=${encodeURIComponent(
       `ブランド名: ${config.brandName}\n業種: ${config.industry}\nご希望プラン: ${plan}\nサイトURL: \nご相談内容: `,
     )}`;
 
@@ -889,7 +889,7 @@ function Showcase() {
             </button>
             <p style={{ margin: '12px 0 0', fontSize: 11.5, lineHeight: 1.8, color: P.fgSubtle, textAlign: 'center' }}>
               ご不明点はメール1通で:{' '}
-              <a href="mailto:core.guild.inc@gmail.com" style={{ color: P.gold, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>core.guild.inc@gmail.com</a>{' '}
+              <a href="mailto:core.inc.guild@gmail.com" style={{ color: P.gold, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>core.inc.guild@gmail.com</a>{' '}
               — 24時間以内にご返信します。
             </p>
           </div>
@@ -1430,7 +1430,7 @@ function Showcase() {
               <p style={{ margin: '0 0 12px', fontSize: 12.5, lineHeight: 1.8, color: P.fgMuted }}>
                 下のボタンを押すと、あなたの設定データ入りのメールが用意されます。
                 サイトの URL を書いて送るだけで、こちらで設置まで行います (初期費用に含まれます)。
-                メールが開かない場合は、上の専用リンクをコピーして core.guild.inc@gmail.com へ送ってください。
+                メールが開かない場合は、上の専用リンクをコピーして core.inc.guild@gmail.com へ送ってください。
               </p>
               <a
                 href={daikouMailto}

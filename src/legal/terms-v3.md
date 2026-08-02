@@ -94,4 +94,4 @@ CORE (設立準備中・運営責任者 井出 直毅。以下「当社」) が�
 ## 13. 連絡先
 
 - CORE (設立準備中) ／ 運営責任者: 井出 直毅
-- メール: [core.guild.inc@gmail.com](mailto:core.guild.inc@gmail.com)
+- メール: [core.inc.guild@gmail.com](mailto:core.inc.guild@gmail.com)

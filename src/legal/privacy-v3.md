@@ -112,5 +112,5 @@ CORE Iris は、利用者ご本人の同意のもと **Instagram API (Instagram 
 ## 9. 連絡先
 
 - CORE (設立準備中) ／ 運営責任者: 井出 直毅
-- メール: [core.guild.inc@gmail.com](mailto:core.guild.inc@gmail.com)
+- メール: [core.inc.guild@gmail.com](mailto:core.inc.guild@gmail.com)
 - 件名に「プライバシー」と明記してください

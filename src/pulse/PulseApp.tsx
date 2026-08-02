@@ -202,7 +202,7 @@ const MEMO_KEY = 'pulse_memos_v1';
 const STREAK_KEY = 'pulse_record_days_v1'; // アプリを開いて記録した日 (YYYY-MM-DD の配列)
 const CHIP_KEY = 'pulse_chips_v1';         // ワンタップ記録 { 'YYYY-MM-DD': chipId[] }
 const MONITOR_MAILTO =
-  'mailto:core.guild.inc@gmail.com?subject=' + encodeURIComponent('CORE Pulse 先行モニター希望');
+  'mailto:core.inc.guild@gmail.com?subject=' + encodeURIComponent('CORE Pulse 先行モニター希望');
 
 interface PulseProfile {
   name: string;
@@ -2201,7 +2201,7 @@ function PulseHome() {
                 <ShieldCheck size={15} color={C.good} style={{ flexShrink: 0, marginTop: 3 }} strokeWidth={1.6} />
                 <div style={{ fontSize: 12.5, lineHeight: 1.9, color: C.sub }}>
                   つなぎ方がわからないときは、メールでお気軽にどうぞ。いっしょに設定します。
-                  <a href={MONITOR_MAILTO} style={{ color: C.accent, fontWeight: 600 }}> core.guild.inc@gmail.com</a>
+                  <a href={MONITOR_MAILTO} style={{ color: C.accent, fontWeight: 600 }}> core.inc.guild@gmail.com</a>
                 </div>
               </div>
             </Card>

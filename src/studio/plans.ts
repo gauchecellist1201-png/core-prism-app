@@ -10,7 +10,7 @@ export const STUDIO = {
   nameJa: 'CORE ウェブ制作・受託開発',
   tagline: '成果から逆算する、ウェブ制作と受託開発。',
   taglineSub: 'COREは、AIプロダクトを自社で開発・運営する制作スタジオです。',
-  email: 'core.guild.inc@gmail.com',
+  email: 'core.inc.guild@gmail.com',
   url: 'https://core-prism-app.vercel.app/studio',
 } as const;
 
@@ -350,6 +350,6 @@ export const COMPANY = {
     { label: '名称', value: 'CORE（設立準備中）' },
     { label: '代表', value: '井出 直毅' },
     { label: '事業内容', value: 'Webサイト制作・システム受託開発・AIプロダクトの開発運営 (Prism, Iris, Resonance, Crystal, Guild, Lume)' },
-    { label: '連絡先', value: 'core.guild.inc@gmail.com' },
+    { label: '連絡先', value: 'core.inc.guild@gmail.com' },
   ],
 } as const;
