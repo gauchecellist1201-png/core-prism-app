@@ -1247,7 +1247,12 @@ export default function CoreSite() {
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                   {pl.features.map(f => (
                     <li key={f} style={{ fontFamily: FONT_SANS, fontSize: '0.8rem', color: 'rgba(255,255,255,0.74)', lineHeight: 1.8, paddingLeft: '1.15rem', position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: 0, top: 1, color: '#C9A96E' }}>◆</span>
+                      {/* 記号文字は環境で字形が変わる。線画のチェックで描く（恒久ルール） */}
+                      <svg aria-hidden width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#C9A96E"
+                        strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+                        style={{ position: 'absolute', left: 0, top: 6 }}>
+                        <path d="M2 7.4l3 3 7-7.4" />
+                      </svg>
                       {f}
                     </li>
                   ))}

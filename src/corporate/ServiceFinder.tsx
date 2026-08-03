@@ -19,6 +19,28 @@ const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
 const FONT_SANS = '"Noto Sans JP", "Inter", "游ゴシック", sans-serif';
 
+/* 記号文字（◆）は環境ごとに字形も太さも変わり、フォント未搭載だと豆腐になる。
+   選択肢の目印は線画アイコンで描く（恒久ルール）。 */
+function MarkSelect({ size = 15, color = '#C9A96E' }: { size?: number; color?: string }) {
+  return (
+    <svg aria-hidden width={size} height={size} viewBox="0 0 16 16" fill="none"
+      stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <circle cx="8" cy="8" r="6.2" />
+      <path d="M5.6 8.2l1.7 1.7 3.2-3.6" />
+    </svg>
+  );
+}
+
+function MarkStep({ size = 15, color = '#C9A96E' }: { size?: number; color?: string }) {
+  return (
+    <svg aria-hidden width={size} height={size} viewBox="0 0 16 16" fill="none"
+      stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <path d="M2.5 8h9.5" />
+      <path d="M8.6 4.4L12.2 8l-3.6 3.6" />
+    </svg>
+  );
+}
+
 export type ServiceKey = 'lume' | 'guild' | 'prism' | 'iris' | 'pulse' | 'resonance' | 'crystal';
 
 type Service = {
@@ -284,7 +306,7 @@ function QuestionView({ q, step, onAnswer, onBack, onCompare }: {
               display: 'flex', alignItems: 'center', gap: '0.7rem',
             }}
           >
-            <span aria-hidden style={{ color: '#C9A96E', fontSize: '0.7rem', flexShrink: 0 }}>◆</span>
+            <MarkSelect />
             <span>{c.label}</span>
           </button>
         ))}
@@ -338,7 +360,7 @@ function ResultView({ result, onReset, onCompare }: {
       </div>
 
       <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginBottom: '1.2rem' }}>
-        <span aria-hidden style={{ color: '#C9A96E', fontSize: '0.7rem', marginTop: 6, flexShrink: 0 }}>◆</span>
+        <span style={{ marginTop: 5, display: 'inline-flex', flexShrink: 0 }}><MarkStep /></span>
         <p style={{ fontFamily: FONT_SANS, fontSize: '0.84rem', color: 'rgba(255,255,255,0.74)', lineHeight: 1.9 }}>
           <strong style={{ color: '#F1E6CE', fontWeight: 700 }}>はじめの一歩：</strong>{top.firstStep}
         </p>
