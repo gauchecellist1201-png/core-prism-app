@@ -215,7 +215,8 @@ export default function SalesLedger({ persona, onClose }: Props) {
           {tab === 'overview' && (
             <>
               {/* 当月 / 当年 サマリ */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* iPhone 幅では 2 枚並べると金額が重なって読めない → 縦積み。読めない数字は最悪の型 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <SummaryCard title={`今月 (${thisMonth})`} summary={monthSummary} color={persona.accentColor} />
                 <SummaryCard title={`今年 (${thisYear})`} summary={yearSummary} color={persona.accentColor} />
               </div>
@@ -240,14 +241,15 @@ export default function SalesLedger({ persona, onClose }: Props) {
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {personaEntries.filter(e => e.status !== 'paid').slice(0, 12).map(e => (
                       <div key={e.id} className="flex items-center justify-between text-xs gap-2 py-1">
-                        <span className="text-fg-muted font-mono w-20 flex-shrink-0">{e.date}</span>
-                        <span className="text-fg truncate flex-1">{e.clientName}</span>
-                        <span className="text-fg font-mono">{fmtJpy(e.totalIncl)}</span>
+                        {/* 狭い画面では日付より「誰から・いくら」が先。日付は sm 以上で出す */}
+                        <span className="text-fg-muted font-mono w-20 flex-shrink-0 hidden sm:inline">{e.date}</span>
+                        <span className="text-fg truncate flex-1 min-w-0">{e.clientName}</span>
+                        <span className="text-fg font-mono flex-shrink-0">{fmtJpy(e.totalIncl)}</span>
                         <button
                           onClick={() => ledger.markPaid(e.id)}
-                          className="text-[10px] px-2 py-0.5 rounded font-semibold"
-                          style={{ background: '#34D399', color: '#0a0a0f' }}
-                        >入金済に</button>
+                          className="text-[10px] px-2 rounded font-semibold flex-shrink-0"
+                          style={{ background: '#34D399', color: '#0a0a0f', minHeight: 32 }}
+                        >入金済みにする</button>
                       </div>
                     ))}
                   </div>
@@ -280,33 +282,36 @@ export default function SalesLedger({ persona, onClose }: Props) {
               ) : personaEntries.map(e => (
                 <div key={e.id} className="rounded-xl p-3 flex items-center justify-between gap-3"
                   style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
-                  <div className="min-w-0 flex-1 grid grid-cols-12 gap-2 items-center text-xs">
-                    <span className="col-span-2 text-fg-muted font-mono">{e.date}</span>
-                    <span className="col-span-3 text-fg truncate">{e.clientName}</span>
-                    <span className="col-span-3 text-fg-muted truncate">{e.subject}</span>
-                    <span className="col-span-2 text-fg font-mono text-right">{fmtJpy(e.totalIncl)}</span>
-                    <span className="col-span-1 text-center">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded"
+                  {/* iPhone 幅では 12 カラムに詰めると日付と金額が重なる →
+                      「誰から・いくら」を上段、「いつ・何の・どこから」を下段の 2 段組みにする。
+                      横に広い画面 (sm 以上) では 1 行に戻す。 */}
+                  <div className="min-w-0 flex-1 text-xs">
+                    <div className="flex items-baseline justify-between gap-2 min-w-0">
+                      <span className="text-fg truncate font-semibold">{e.clientName}</span>
+                      <span className="text-fg font-mono flex-shrink-0">{fmtJpy(e.totalIncl)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1 min-w-0 flex-wrap">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded flex-shrink-0"
                         style={{
                           background: e.status === 'paid' ? 'rgba(74,222,128,0.15)' : `${persona.accentColor}20`,
-                          color: e.status === 'paid' ? '#4ADE80' : persona.accentColor,
+                          color: e.status === 'paid' ? 'var(--money-in)' : persona.accentColor,
                         }}>
-                        {e.status === 'paid' ? '入金済' : e.status === 'partial' ? '一部' : '未入金'}
+                        {e.status === 'paid' ? '入金済み' : e.status === 'partial' ? '一部だけ入金' : '未入金'}
                       </span>
-                    </span>
-                    <span className="col-span-1 text-center">
-                      <span className="text-[10px] text-fg-subtle">
-                        {e.source === 'invoice' ? '請求書' : '手動'}
+                      <span className="text-fg-muted font-mono text-[10px] flex-shrink-0">{e.date}</span>
+                      <span className="text-fg-subtle text-[10px] flex-shrink-0">
+                        {e.source === 'invoice' ? '請求書から' : '手で入力'}
                       </span>
-                    </span>
+                      {e.subject && <span className="text-fg-muted truncate min-w-0">{e.subject}</span>}
+                    </div>
                   </div>
                   <div className="flex gap-1 flex-shrink-0">
                     {e.status !== 'paid' && (
                       <button
                         onClick={() => ledger.markPaid(e.id)}
-                        className="text-[10px] px-2 py-1 rounded text-fg-muted hover:text-fg"
-                        style={{ background: 'var(--surface)' }}
-                      >入金済</button>
+                        className="text-[10px] px-2 rounded text-fg-muted hover:text-fg"
+                        style={{ background: 'var(--surface)', minHeight: 32 }}
+                      >入金済みにする</button>
                     )}
                     {e.source === 'manual' && (
                       <button
@@ -441,18 +446,20 @@ function SummaryCard({ title, summary, color }: { title: string; summary: Return
     >
       <p className="text-fg-muted text-[10px] tracking-wider uppercase mb-2">{title}</p>
       <CountUp className="text-fg text-2xl font-mono font-light" value={summary.totalIncl} format={fmtJpy} />
-      <p className="text-fg-muted text-xs mt-1">税抜 {fmtJpy(summary.totalExcl)} · 消費税 {fmtJpy(summary.totalTax)}</p>
+      <p className="text-fg-muted text-[11px] mt-1">うち消費税 {fmtJpy(summary.totalTax)}（税抜 {fmtJpy(summary.totalExcl)}）</p>
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-        <div className="rounded p-2" style={{ background: 'rgba(74,222,128,0.10)', border: '1px solid rgba(74,222,128,0.25)' }}>
-          <p className="text-[10px] text-fg-muted">入金済</p>
-          <CountUp className="font-mono" style={{ color: '#4ADE80' }} value={summary.paidIncl} format={fmtJpy} />
+        <div className="rounded p-2 min-w-0" style={{ background: 'rgba(74,222,128,0.10)', border: '1px solid rgba(74,222,128,0.25)' }}>
+          <p className="text-[10px] text-fg-muted">入金済み</p>
+          <CountUp className="font-mono block" style={{ color: 'var(--money-in)' }} value={summary.paidIncl} format={fmtJpy} />
+          <p className="text-[9px] text-fg-subtle mt-0.5 leading-tight">もう入ったお金</p>
         </div>
-        <div className="rounded p-2" style={{ background: `${color}10`, border: `1px solid ${color}40` }}>
+        <div className="rounded p-2 min-w-0" style={{ background: `${color}10`, border: `1px solid ${color}40` }}>
           <p className="text-[10px] text-fg-muted">未入金</p>
-          <CountUp className="font-mono" style={{ color }} value={summary.unpaidIncl} format={fmtJpy} />
+          <CountUp className="font-mono block" style={{ color }} value={summary.unpaidIncl} format={fmtJpy} />
+          <p className="text-[9px] text-fg-subtle mt-0.5 leading-tight">請求済み・まだ入っていない</p>
         </div>
       </div>
-      <p className="text-[10px] text-fg-subtle mt-2">{summary.count}件</p>
+      <p className="text-[10px] text-fg-subtle mt-2">売上 {summary.count} 件ぶんの合計です</p>
     </motion.div>
   );
 }

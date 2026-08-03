@@ -74,6 +74,11 @@
     --cp-skeleton-base: rgba(20, 20, 40, 0.05);
     --cp-skeleton-sheen: rgba(20, 20, 40, 0.09);
     --cp-skeleton-tempo: 1.8s;
+
+    /* ─── 「入ったお金」の緑 ───
+       金額の文字色。明るいテーマで #4ADE80 を使うと白地に対して 1.7:1 しか出ず、
+       金額が読めない = 読み違える。テーマごとに濃さを変え、どちらでも 4.5:1 以上を守る。 */
+    --money-in: #1B7F4C;
   }
 
   [data-theme="dark"] {
@@ -95,6 +100,7 @@
     --cp-elev-2: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 26px -8px rgba(0, 0, 0, 0.60);
     --cp-elev-3: 0 4px 10px rgba(0, 0, 0, 0.50), 0 20px 46px -12px rgba(0, 0, 0, 0.66);
     --cp-elev-4: 0 8px 22px rgba(0, 0, 0, 0.55), 0 40px 96px -20px rgba(0, 0, 0, 0.72);
+    --money-in: #4ADE80;   /* 暗い面ではこの明るさで 12:1。明るいテーマ側は :root を参照 */
     --orb-blend: screen;
     --orb-opacity-low: 0.35;
     --orb-opacity-high: 0.7;

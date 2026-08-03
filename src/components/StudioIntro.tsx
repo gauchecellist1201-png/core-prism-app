@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, CornerDownRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 // アイコンと色は 1 か所の台帳から引く。
 // QuickActions のタイルとまったく同じ絵・同じ色になり、
@@ -73,9 +73,13 @@ export function StudioIntro({
             background: `linear-gradient(135deg, ${accent}18, ${accent}06 60%)`,
             border: `1px solid ${accent}40`,
             borderRadius: 14,
-            padding: '14px 16px',
+            // ✕ を右上に固定するので、その 44px ぶんだけ右を空ける。
+            // 以前は ✕ が flex の兄弟だったため、狭い画面で折り返して帯の左下に落ちていた
+            // (31 画面すべてで「閉じるボタンが迷子」になっていた)
+            padding: '14px 52px 14px 16px',
             marginBottom: 14,
             overflow: 'hidden',
+            position: 'relative',
           }}
         >
           <div
@@ -131,9 +135,10 @@ export function StudioIntro({
                     letterSpacing: '0.04em',
                     textTransform: 'uppercase',
                     fontSize: '0.65rem',
+                    display: 'inline-flex', alignItems: 'center', gap: 3,
                   }}
                 >
-                  ▼ {sampleLabel}
+                  <CornerDownRight size={11} strokeWidth={2.6} />{sampleLabel}
                 </span>
                 <div
                   style={{
@@ -151,16 +156,25 @@ export function StudioIntro({
               </div>
             )}
 
-            <button
-              onClick={dismiss}
-              className="cp-btn cp-btn-ghost cp-btn-sm"
-              style={{ flexShrink: 0 }}
-              title="この説明を閉じる"
-              aria-label="この説明を閉じる"
-            >
-              <X size={15} strokeWidth={2.4} />
-            </button>
           </div>
+
+          <button
+            onClick={dismiss}
+            className="cp-btn cp-btn-ghost"
+            style={{
+              position: 'absolute',
+              top: 6,
+              right: 6,
+              width: 44, height: 44,
+              minWidth: 44, minHeight: 44,
+              padding: 0,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            title="この説明を閉じる"
+            aria-label="この説明を閉じる"
+          >
+            <X size={16} strokeWidth={2.4} />
+          </button>
         </motion.div>
       )}
     </AnimatePresence>
