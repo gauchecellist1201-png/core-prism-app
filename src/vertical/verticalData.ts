@@ -74,7 +74,8 @@ export const VERTICALS: VerticalProduct[] = [
     industryIcon: 'anime',
     tagline: '制作進行の一日を、まるごと引き受ける。',
     body: '進捗・報告・経理・CRM・財務まで、アニメ制作会社の事務をひとつのOSに。源泉徴収の自動計算から支払明細書のPDF発行、条約期限の管理まで、制作進行が本来の仕事に戻れるように。',
-    path: 'https://core-anime-os.vercel.app',
+    // 2026-08-03 いきなりログイン画面に飛ばさず、まず課題解決を説明するLPへ着地させる
+    path: 'https://core-anime-os.vercel.app/lp',
     external: true,
     accent: '#B072F0',
     status: '本番稼働中',
