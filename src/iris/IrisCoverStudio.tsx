@@ -11,9 +11,10 @@
 // ・AI 失敗でも提案は必ず返る（coverProposal.ts 側でフォールバック）
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
-import { Sparkles, ImagePlus, Download, Wand2, Check, RefreshCw } from 'lucide-react';
+import { Sparkles, ImagePlus, Download, Wand2, Check, RefreshCw, AlertTriangle } from 'lucide-react';
 import { IRIS_FONTS, IRIS_COLORS } from './irisStyle';
 import { generateCoverProposal, type CoverMood, type CoverLayout, type CoverProposal } from './coverProposal';
+import IrisGridPreview from './IrisGridPreview';
 
 interface CoverBg {
   accent?: string; ink?: string; inkSoft?: string; card?: string; cardBorder?: string;
@@ -89,6 +90,13 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const textCardRef = useRef<HTMLDivElement>(null);
+
+  // 並びプレビュー用: 描き終わった1枚と、実際に描いた見出しの文字サイズ
+  const [gridSrc, setGridSrc] = useState('');
+  const [titlePx, setTitlePx] = useState(0);
+  /** 見出しが長すぎて画像に入りきらなかった文字数（0 なら全部入っている） */
+  const [titleClipped, setTitleClipped] = useState(0);
 
   const [theme, setTheme] = useState('');
   const [thinking, setThinking] = useState(false);
@@ -152,6 +160,7 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
     const ctx = cv.getContext('2d');
     if (!ctx) return;
     let cancelled = false;
+    let gridTimer: number | undefined;
 
     (async () => {
       try { await (document as any).fonts?.ready; } catch { /* フォント未対応でも続行 */ }
@@ -200,14 +209,22 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
       const titleText = (title || '').trim() || (proposal?.titles[0] ?? '見出しを入力');
       let titleSize = Math.round(96 * scale * (H / W > 1.6 ? 1.05 : 1));
       const titleFont = (s: number) => `italic 700 ${s}px ${IRIS_FONTS.display}`;
+      // 4行に収まるまで小さくする。収まったかどうかは「切り詰める前の行数」で見る
+      // （切り詰めた後を見ると必ず4行に見えるので、いつまでも縮まず、はみ出した文字が黙って消える）
       let lines: string[] = [];
+      const MAX_LINES = 4;
       for (; titleSize >= Math.round(52 * scale); titleSize -= 3) {
         ctx.font = titleFont(titleSize);
-        lines = wrapLines(ctx, titleText, maxW, 4);
-        const widest = Math.max(...lines.map((l) => ctx.measureText(l).width));
-        if (widest <= maxW && lines.length <= 4) break;
+        const all = wrapLines(ctx, titleText, maxW, 99);
+        if (all.length <= MAX_LINES) { lines = all; break; }
+        lines = all.slice(0, MAX_LINES);
       }
+      // それでも入りきらない時は、黙って消さずに「入っていない文字数」を画面に出す
+      const plainLen = titleText.replace(/\s+/g, '').length;
+      const drawnLen = lines.join('').replace(/\s+/g, '').length;
+      setTitleClipped(Math.max(0, plainLen - drawnLen));
       const titleLH = titleSize * 1.12;
+      setTitlePx(titleSize); // 並びの中で読めるかの判定に使う（推定ではなく実際に描いた大きさ）
 
       const kickerSize = Math.round(26 * scale);
       const subSize = Math.round(30 * scale);
@@ -280,9 +297,16 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
         ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
         ctx.fillText(h, W - padX, H - Math.round(H * 0.045));
       }
+
+      // 並びプレビュー用の1枚。打つたびに書き出すと重いので、手が止まってから作る。
+      if (!cancelled) {
+        gridTimer = window.setTimeout(() => {
+          try { setGridSrc(cv.toDataURL('image/jpeg', 0.72)); } catch { /* 書き出せない時は前の1枚のまま */ }
+        }, 300);
+      }
     })();
 
-    return () => { cancelled = true; };
+    return () => { cancelled = true; if (gridTimer) clearTimeout(gridTimer); };
   }, [aspect, mood, layout, kicker, title, subtitle, handle, photo, accentCol, proposal, inkSoft]);
 
   function download() {
@@ -460,11 +484,17 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
           </div>
 
           {/* テキスト */}
-          <div style={{ background: card, border: `1px solid ${cardBorder}`, borderRadius: 14, padding: '0.9rem 1rem', display: 'grid', gap: 9 }}>
+          <div ref={textCardRef} style={{ background: card, border: `1px solid ${cardBorder}`, borderRadius: 14, padding: '0.9rem 1rem', display: 'grid', gap: 9 }}>
             <div style={labelStyle}>文字</div>
             <div style={{ display: 'grid', gap: 7 }}>
               <input value={kicker} onChange={(e) => setKicker(e.target.value.slice(0, 14))} placeholder="上の小ラベル（例: BEAUTY / 朝の習慣）" style={inputStyle} />
               <input value={title} onChange={(e) => setTitle(e.target.value.slice(0, 40))} placeholder="大見出し（指が止まるフック）" style={inputStyle} />
+              {titleClipped > 0 && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 11.5, color: '#C8102E', fontWeight: 600, lineHeight: 1.5 }}>
+                  <AlertTriangle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <span>見出しの終わり <b>{titleClipped} 文字</b>が画像に入っていません。そのぶん短くするか、添え文に移すと全部入ります。</span>
+                </div>
+              )}
               <input value={subtitle} onChange={(e) => setSubtitle(e.target.value.slice(0, 50))} placeholder="小さな添え文（例: 保存して見返してね）" style={inputStyle} />
               <input value={handle} onChange={(e) => setHandle(e.target.value.slice(0, 24))} placeholder="アカウント名（任意・例: @your_id）" style={inputStyle} />
             </div>
@@ -506,6 +536,28 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
           </div>
         </div>
       </div>
+
+      {/* ③ 並んだ時の見え方（Later の視覚プランナー） */}
+      <IrisGridPreview
+        currentSrc={gridSrc}
+        titlePx={titlePx}
+        canvasW={(ASPECTS.find((x) => x.id === aspect) || ASPECTS[0]).w}
+        aspect={aspect}
+        ink={ink}
+        inkSoft={inkSoft}
+        accent={accent}
+        card={card}
+        cardBorder={cardBorder}
+        onFixText={() => {
+          const el = textCardRef.current;
+          if (!el) return;
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // 並びで読めない原因は大見出し＝2番目の欄。そこに直接カーソルを置く。
+          const input = el.querySelectorAll('input')[1] as HTMLInputElement | undefined;
+          // スクロールが終わってから当てる（途中で当てると画面が飛ぶ端末がある）
+          window.setTimeout(() => input?.focus({ preventScroll: true }), 420);
+        }}
+      />
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }

@@ -452,6 +452,8 @@ export async function syncOauthMediaToHistory(): Promise<number> {
     const existing = byUrl.get(m.permalink);
     if (existing) {
       existing.metrics = { ...(existing.metrics || {}), ...metrics };
+      // サムネイルの URL は期限切れするので、取り込むたびに最新に差し替える(並びプレビュー用)
+      if (m.thumbnailUrl) existing.thumbUrl = m.thumbnailUrl;
     } else {
       posts.unshift({
         id: 'ig_' + m.id,
@@ -461,6 +463,7 @@ export async function syncOauthMediaToHistory(): Promise<number> {
         title: (m.caption || '(キャプションなし)').slice(0, 40),
         caption: m.caption,
         url: m.permalink,
+        thumbUrl: m.thumbnailUrl || '',
         notes: 'Instagram連携から自動取得',
         metrics,
       });
