@@ -19,7 +19,7 @@ import {
   Search, Sparkles, Compass, Plus, Bot, Wrench, Settings as SettingsIcon,
   Clock, ArrowRight, CornerDownLeft, Command, Play, Star, X, Undo2, AtSign, Loader2,
   CreditCard, Square, RefreshCw, Map as MapIcon, History, KeyRound, SunMoon,
-  FileText, FileImage, FileType2,
+  FileText, FileImage, FileType2, ChevronDown,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Persona, KnowledgeItem } from '../types/identity';
@@ -95,6 +95,21 @@ const CATEGORY_LABEL: Record<CategoryKey, string> = {
  */
 const CATEGORY_TAB_LABEL: Partial<Record<CategoryKey, string>> = {
   saved: 'よく使う依頼',
+};
+
+/**
+ * 件数が多くなる区分だけ、最初は少しだけ出す数。
+ *
+ * ★これは「打ち切り」ではなく「たたみ方」。
+ *   2026-08-03 まで、ナレッジは `personaKnowledge.slice(0, 50)` で 51 件目以降を
+ *   検索の候補にすら入れていなかった。つまり在るのに「見つかりません」と出る状態で、
+ *   探し物が見つからない最悪の型だった (タスクも 31 件目以降が同じ)。
+ *   いまは検索は必ず全件が対象。ここで絞るのは画面に並べる数だけで、
+ *   隠した数は必ず「ほかに◯件あります」と画面に出す (黙って切らない)。
+ */
+const PREVIEW_CAP: Partial<Record<CategoryKey, number>> = {
+  knowledge: 8,
+  task: 8,
 };
 
 // ナビ系 (既存 MODAL_LIST 拡張)
@@ -327,6 +342,8 @@ export default function CommandPalette({
   const [query, setQuery] = useState('');
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [activeTab, setActiveTab] = useState<CategoryKey | 'all'>('all');
+  /** 「ほかに◯件あります・すべて見る」を押して、全部出した区分 */
+  const [expandedCats, setExpandedCats] = useState<Set<CategoryKey>>(new Set());
   const [recent, setRecent] = useState<RecentEntry[]>(loadRecent);
   const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>(loadSavedPrompts);
   /** 消した直後の 1 件。「元に戻す」で復活させる (取り消せない削除を作らない)。 */
@@ -384,6 +401,7 @@ export default function CommandPalette({
       setQuery('');
       setSelectedIdx(0);
       setActiveTab('all');
+      setExpandedCats(new Set());
       setRecent(loadRecent());
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -595,8 +613,8 @@ export default function CommandPalette({
       });
     }
 
-    // ナレッジ
-    for (const k of personaKnowledge.slice(0, 50)) {
+    // ナレッジ (全件。画面に並べる数だけ PREVIEW_CAP で畳む = 検索からは1件も落とさない)
+    for (const k of personaKnowledge) {
       out.push({
         category: 'knowledge',
         item: {
@@ -612,7 +630,7 @@ export default function CommandPalette({
 
     // タスク
     if (activePersona) {
-      for (const t of activePersona.tasks.filter(t => !t.done).slice(0, 30)) {
+      for (const t of activePersona.tasks.filter(t => !t.done)) {
         out.push({
           category: 'task',
           item: {
@@ -838,10 +856,37 @@ export default function CommandPalette({
     return [...savedHits, ...scored.map(s => s.entry).filter(e => !savedIds.has(actionId(e.item)))];
   }, [allItems, recentItems, savedItems, query, activeTab]);
 
+  // ────────────────────────────────────────────────────────
+  // 画面に並べる数だけ畳む (検索の対象は上の filtered = 全件のまま)
+  //
+  // 隠した件数は必ず数えて画面に出す。ここで数えたものが
+  // 「ほかに◯件あります・すべて見る」になる = 黙って切らない。
+  // ────────────────────────────────────────────────────────
+  const capped = useMemo(() => {
+    const shown = new Map<CategoryKey, number>();
+    const hidden = new Map<CategoryKey, number>();
+    const list: Array<{ item: CmdAction; category: CategoryKey }> = [];
+    for (const entry of filtered) {
+      const cap = PREVIEW_CAP[entry.category];
+      if (cap === undefined || expandedCats.has(entry.category)) {
+        list.push(entry);
+        continue;
+      }
+      const n = (shown.get(entry.category) ?? 0) + 1;
+      if (n <= cap) {
+        shown.set(entry.category, n);
+        list.push(entry);
+      } else {
+        hidden.set(entry.category, (hidden.get(entry.category) ?? 0) + 1);
+      }
+    }
+    return { list, hidden };
+  }, [filtered, expandedCats]);
+
   // クエリにマッチが無い (または少ない) 時、AI 依頼候補を末尾に追加
   const filteredWithAi = useMemo<Array<{ item: CmdAction; category: CategoryKey }>>(() => {
     const q = query.trim();
-    if (!q) return filtered;
+    if (!q) return capped.list;
     const aiEntry: { item: CmdAction; category: CategoryKey } = {
       category: 'ai',
       item: {
@@ -858,10 +903,10 @@ export default function CommandPalette({
       },
     };
     // すでに同じ ID があれば追加しない
-    if (filtered.some(f => actionId(f.item) === actionId(aiEntry.item))) return filtered;
+    if (capped.list.some(f => actionId(f.item) === actionId(aiEntry.item))) return capped.list;
     // 対象を指している間は「その対象に頼む」が主目的なので最上段に置く
-    return mention ? [aiEntry, ...filtered] : [...filtered, aiEntry];
-  }, [filtered, query, mention]);
+    return mention ? [aiEntry, ...capped.list] : [...capped.list, aiEntry];
+  }, [capped, query, mention]);
 
   // ────────────────────────────────────────────────────────
   // 0 件時の「もしかして」候補 (bigram 重なりスコア)
@@ -1383,6 +1428,8 @@ export default function CommandPalette({
               ) : (
                 grouped.map(([category, items]) => {
                   const accent = categoryAccent(category);
+                  // 畳んで隠している件数。0 なら何も隠していない。
+                  const hiddenHere = capped.hidden.get(category) ?? 0;
                   return (
                     <div key={category} className="mb-1">
                       <div
@@ -1391,7 +1438,10 @@ export default function CommandPalette({
                       >
                         {categoryIcon(category)}
                         <span>{CATEGORY_LABEL[category]}</span>
-                        <span style={{ marginLeft: 'auto', color: 'var(--fg-subtle)', fontWeight: 400 }}>{items.length}</span>
+                        {/* 見出しの数字は必ず「本当の総数」。畳んでいる時は 出している数 / 総数 と書く */}
+                        <span style={{ marginLeft: 'auto', color: 'var(--fg-subtle)', fontWeight: 400 }}>
+                          {hiddenHere > 0 ? `${items.length} / ${items.length + hiddenHere}` : items.length}
+                        </span>
                       </div>
                       {items.map((item) => {
                         const flatIdx = flatItems.indexOf(item);
@@ -1465,6 +1515,20 @@ export default function CommandPalette({
                           </button>
                         );
                       })}
+                      {/* 畳んだぶんを必ず言う。押せば全部出る (黙って切らない) */}
+                      {hiddenHere > 0 && (
+                        <button
+                          onClick={() => setExpandedCats(prev => new Set(prev).add(category))}
+                          className="w-full text-left px-5 flex items-center gap-2"
+                          // 48px: 親指で押す行。上下の行 (約 61px) の間で押し損ねない大きさにする
+                          style={{ minHeight: 48, color: accent }}
+                        >
+                          <ChevronDown size={14} />
+                          <span className="cp-meta" style={{ color: accent }}>
+                            ほかに {hiddenHere} 件あります・すべて見る
+                          </span>
+                        </button>
+                      )}
                     </div>
                   );
                 })
