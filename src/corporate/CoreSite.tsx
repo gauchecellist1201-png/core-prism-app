@@ -629,23 +629,35 @@ export default function CoreSite() {
               color: '#F1E9D8',
             }}
           >
-            {/* 星々（飾り） */}
-            <svg aria-hidden width="100%" height="100%" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.85 }} viewBox="0 0 1000 300" preserveAspectRatio="xMidYMid slice">
-              <g fill="#ece5d8">
-                <circle cx="760" cy="60" r="2" opacity="0.7" /><circle cx="835" cy="140" r="14" opacity="0.95" />
-                <circle cx="905" cy="80" r="6" opacity="0.8" /><circle cx="930" cy="210" r="9" opacity="0.85" />
-                <circle cx="700" cy="230" r="4" opacity="0.6" /><circle cx="640" cy="90" r="2.4" opacity="0.5" />
-                <circle cx="90" cy="40" r="1.8" opacity="0.4" /><circle cx="180" cy="260" r="2.2" opacity="0.35" />
-              </g>
-              <g stroke="#ece5d8" strokeOpacity="0.3">
-                <line x1="760" y1="60" x2="835" y2="140" /><line x1="835" y1="140" x2="905" y2="80" />
-                <line x1="835" y1="140" x2="930" y2="210" /><line x1="835" y1="140" x2="700" y2="230" />
-              </g>
-              <circle cx="798" cy="100" r="3" fill="#d9b36a" />
-              <ellipse cx="835" cy="140" rx="24" ry="8" fill="none" stroke="#d9b36a" strokeOpacity="0.5" transform="rotate(-18 835 140)" />
-            </svg>
+            {/* Universe マーク（オーナー提供画像 2026-08-03。素材: ~/Desktop/00-CORE/Universe/logo/universe-mark-v6-transparent.png）
+                モバイルは右バナー配置だと見出しに重なるため、見出しの上に中央寄せで流し込む。 */}
+            {!isNarrow && (
+              <img
+                src="/universe-mark.png"
+                alt=""
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  right: 'clamp(-60px, -2vw, 10px)',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 'clamp(220px, 28vw, 380px)',
+                  height: 'auto',
+                  opacity: 0.92,
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
 
-            <div style={{ position: 'relative', maxWidth: 640 }}>
+            <div style={{ position: 'relative', maxWidth: 640, textAlign: isNarrow ? 'center' : undefined }}>
+              {isNarrow && (
+                <img
+                  src="/universe-mark.png"
+                  alt=""
+                  aria-hidden
+                  style={{ display: 'block', width: 132, height: 132, margin: '0 auto 1.2rem', opacity: 0.92 }}
+                />
+              )}
               <p style={{ fontSize: '0.72rem', letterSpacing: '0.34em', color: '#d9b36a', fontWeight: 700, marginBottom: '0.9rem' }}>
                 別格 ─ CORE UNIVERSE
               </p>
