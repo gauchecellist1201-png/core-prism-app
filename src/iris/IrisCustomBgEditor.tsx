@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   buildGradient, pickInkForBackground,
-  addCustomBackground, deriveAccentText, type CustomIrisBackground, type GradientPattern,
+  addCustomBackground, deriveAccentText, whiteSafeFace, type CustomIrisBackground, type GradientPattern,
   IRIS_COLORS, IRIS_FONTS,
   complementaryColor, buildComplementaryPalette,
 } from './irisStyle';
@@ -65,8 +65,10 @@ export default function IrisCustomBgEditor({ onClose, onCreated }: Props) {
       // 自作テーマでも「文字のアクセント」は読める濃さを計算で決める
       // （選んだ色をそのまま文字に使うと、淡い色を選んだ人の画面だけ読めなくなる）
       accentText: deriveAccentText(accent, inkPick.ink.toUpperCase().startsWith('#FFF')),
-      // 白文字を乗せるベタ塗りボタン用（明るいテーマでは同じく濃い方を使う）
-      accentSolid: deriveAccentText(accent, inkPick.ink.toUpperCase().startsWith('#FFF')),
+      // 白文字を乗せるベタ塗りボタン用＝白が 4.6:1 通るところまで明るさだけ落とす。
+      // deriveAccentText は「明るい地に置く"文字"の色」で、暗いテーマでは明るい色を返す＝
+      // それを面に使うと白文字が乗らない（プリセット Neon Night で 1.84:1 を本番実測）。
+      accentSolid: whiteSafeFace(accent),
       ink: inkPick.ink,
       inkSoft: inkPick.inkSoft,
       card: inkPick.card,

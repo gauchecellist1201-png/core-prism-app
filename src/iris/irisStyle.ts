@@ -133,6 +133,14 @@ export interface IrisBackgroundDef {
    * アクセント色 — 「白い文字を乗せるベタ塗り」用。
    * accent(#E1306C) に白文字だと 4.34:1 で、12px 前後のボタン文字は AA 落第する。
    * グラデ・枠・アイコン・淡い塗りは accent のままで、ベタ塗りボタンだけこれを使う。
+   *
+   * ⚠️ここに入る色は **白が 4.6:1 通ることを whiteSafeFace で保証する**（下の
+   * `IRIS_BACKGROUNDS` と `withAccentText` の両方を通す）。画面側 50 箇所すべてが
+   * `background: bg.accentSolid, color: '#fff'` と書いており、面の側でしか守れない。
+   * 2026-08-05 本番実測: Neon Night のアクセント #FCB045 をそのままベタ塗りにしていたため
+   * 「写真・動画を選ぶ」等の主ボタンが白文字 **1.84:1**＝この背景を選んだ人には読めなかった。
+   * 面のトーン（鮮やかなオレンジ等）を保ったまま文字だけ濃くしたい場所は
+   * accentSolid ではなく `accentFaceBg()` + `accentFaceInk()` を使うこと。
    */
   accentSolid: string;
   /** メインの文字色 */
@@ -147,7 +155,7 @@ export interface IrisBackgroundDef {
 
 // Instagram (Edits) 系の柔らかいグラデーション背景プリセット
 // 派手さより「安心感」を優先 — ピンク→オレンジ→パープルの上品な遷移
-export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
+const RAW_IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
   {
     id: 'instagram-soft',
     label: 'Instagram Soft',
@@ -256,6 +264,18 @@ export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = [
     cardBorder: 'rgba(225,48,108,0.2)',
   },
 ];
+
+/**
+ * 「白文字を乗せるベタ塗り」の約束を、テーマの側で必ず守らせる。
+ * 画面側は 50 箇所すべてが `background: bg.accentSolid, color: '#fff'` と書いていて、
+ * 白が通るかどうかは面を決めるここでしか担保できない（1 箇所ずつ書き手に守らせる約束は必ず漏れる）。
+ * すでに通っている色（#C2185B 5.87 等）は素通りするので、見た目が変わるのは落第していた面だけ。
+ */
+function withSafeSolid<T extends { accent: string; accentSolid?: string }>(b: T): T {
+  return { ...b, accentSolid: whiteSafeFace(b.accentSolid || b.accent) };
+}
+
+export const IRIS_BACKGROUNDS: IrisBackgroundDef[] = RAW_IRIS_BACKGROUNDS.map(withSafeSolid);
 
 const STORAGE_KEY = 'core_iris_bg_v1';
 const CUSTOM_LIST_KEY = 'core_iris_custom_bgs_v1';
@@ -386,13 +406,15 @@ export function accentFaceInk(accent: string): string {
 
 /** accentText を持たない古い自作テーマに、計算値を補う（画面側は必ず accentText を読める） */
 function withAccentText<T extends { accent: string; accentText?: string; accentSolid?: string; card?: string; ink?: string }>(b: T): T {
-  if (b.accentText && b.accentSolid) return b;
   // ink が白＝暗いテーマ、という自作テーマの作られ方に合わせて判定する
   const dark = (b.ink || '').toUpperCase().startsWith('#FFF');
+  // accentSolid は「白文字を乗せる面」なので、保存済みの自作テーマも必ず whiteSafeFace を通す。
+  // 暗いテーマの既定値がアクセントそのままだったため、明るいアクセント（オレンジ・黄）を選んだ人は
+  // ベタ塗りボタンの文字が読めなかった（プリセット Neon Night で白 1.84:1 を本番実測）。
   return {
     ...b,
     accentText: b.accentText || deriveAccentText(b.accent, dark),
-    accentSolid: b.accentSolid || (dark ? b.accent : deriveAccentText(b.accent, false)),
+    accentSolid: whiteSafeFace(b.accentSolid || b.accent),
   };
 }
 
