@@ -327,7 +327,9 @@ function ResultView({ result, onReset, onCompare }: {
 }) {
   const { top, second, painLabel, channelPhrase } = result;
   const TopLogo = top.Logo;
+  const SecondLogo = second.Logo;
   const external = top.url.startsWith('http');
+  const secondExternal = second.url.startsWith('http');
   return (
     <div style={{ ...cardBase, padding: '1.6rem 1.15rem 1.3rem', borderColor: 'rgba(201,169,110,0.55)', boxShadow: '0 34px 80px -40px rgba(201,169,110,0.5)' }}>
       <p style={{ fontFamily: FONT_SANS, fontSize: '0.74rem', letterSpacing: '0.1em', color: '#C9A96E', fontWeight: 800, marginBottom: '1rem' }}>
@@ -380,12 +382,45 @@ function ResultView({ result, onReset, onCompare }: {
         {top.name} を見る →
       </a>
 
-      <p style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.9, marginTop: '1.1rem' }}>
-        {channelPhrase}。であれば、
-        <strong style={{ color: '#F1E6CE', fontWeight: 700 }}>次に足すなら {second.name}。</strong>
-        {second.can}（{second.price}{second.priceNote}）。
-        <br />
-        CORE の7つは、あとからつなげます。最初から全部そろえる必要はありません。
+      {/* 2026-08-05 夜間: ここは「次に足すなら Lume」と名前と金額まで出しておきながら、
+          そこへ行くリンクが1本も無い行き止まりだった（興味がいちばん高い瞬間に道が無い）。
+          マネーフォワードの「必要な時に必要なサービスだけ導入」導線を参考に、実際に行けるようにした。 */}
+      <div
+        style={{
+          marginTop: '1.1rem', borderRadius: 14,
+          border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.035)',
+          padding: '0.95rem 1rem',
+        }}
+      >
+        <p style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.9 }}>
+          {channelPhrase}。であれば、
+          <strong style={{ color: '#F1E6CE', fontWeight: 700 }}>次に足すなら {second.name}。</strong>
+          {second.can}（{second.price}{second.priceNote}）。
+          <br />
+          CORE の7つは、あとからつなげます。最初から全部そろえる必要はありません。
+        </p>
+
+        <a
+          href={second.url}
+          target={secondExternal ? '_blank' : undefined}
+          rel={secondExternal ? 'noopener' : undefined}
+          style={{
+            marginTop: '0.85rem',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.55rem', minHeight: 48,
+            borderRadius: 999, textDecoration: 'none',
+            border: '1px solid rgba(201,169,110,0.45)', background: 'rgba(201,169,110,0.08)',
+            color: '#F1E6CE', fontFamily: FONT_SANS, fontSize: '0.84rem', fontWeight: 700,
+          }}
+        >
+          <span style={{ lineHeight: 0, flexShrink: 0 }}><SecondLogo size={20} withWordmark={false} /></span>
+          <span>{second.name} も見てみる →</span>
+        </a>
+      </div>
+
+      {/* 2026-08-05 夜間: 「税込・いつでも解約」は比較画面にはあったのに、決断にいちばん近い
+          この結果画面には無かった。押す直前に金銭の不安を残さないため、同じ文言をここにも置く。 */}
+      <p style={{ fontFamily: FONT_SANS, fontSize: '0.74rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.9, marginTop: '0.9rem', textAlign: 'center' }}>
+        表示はすべて税込です。いつでも解約できます。
       </p>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', marginTop: '1.1rem' }}>
