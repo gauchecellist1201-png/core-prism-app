@@ -252,9 +252,9 @@ export default function IntegrationsHub() {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h4 className="text-fg text-sm font-medium flex items-center gap-1.5"><span className="inline-flex"><Radio size={15} strokeWidth={2} /></span>連携サービス ダッシュボード</h4>
           <div className="flex items-center gap-1.5 text-xs">
-            <span style={{ color: STATUS_META.connected.color }}>● {counts.connected} 接続</span>
-            <span style={{ color: STATUS_META.pending.color }}>● {counts.pending} 未接続</span>
-            <span style={{ color: STATUS_META.error.color }}>● {counts.error} エラー</span>
+            <span style={{ color: readableInk(STATUS_META.connected.color) }}>● {counts.connected} 接続</span>
+            <span style={{ color: readableInk(STATUS_META.pending.color) }}>● {counts.pending} 未接続</span>
+            <span style={{ color: readableInk(STATUS_META.error.color) }}>● {counts.error} エラー</span>
           </div>
         </div>
 
@@ -308,7 +308,7 @@ export default function IntegrationsHub() {
                       <p className="text-fg text-sm font-semibold truncate">{svc.name}</p>
                       <span
                         className="text-[10px] px-1.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1"
-                        style={{ background: meta.color + '22', color: meta.color, border: `1px solid ${meta.color}55` }}
+                        style={{ background: meta.color + '22', color: readableInk(meta.color), border: `1px solid ${meta.color}55` }}
                       >
                         <StatusDot color={meta.color} size={6} />{meta.label}
                       </span>
@@ -319,7 +319,7 @@ export default function IntegrationsHub() {
 
                 {/* 権限 1 行 */}
                 <div className="text-[11px] leading-snug space-y-0.5 mb-2">
-                  <p style={{ color: '#4ade80' }} className="flex items-start gap-1"><span className="inline-flex mt-0.5"><CheckCircle2 size={12} strokeWidth={2.2} /></span>{svc.does}</p>
+                  <p style={{ color: 'var(--brief-ink-done)' }} className="flex items-start gap-1"><span className="inline-flex mt-0.5"><CheckCircle2 size={12} strokeWidth={2.2} /></span>{svc.does}</p>
                   <p className="text-fg-muted flex items-start gap-1"><span className="inline-flex mt-0.5"><XCircle size={12} strokeWidth={2.2} /></span>{svc.doesNot}</p>
                 </div>
 
@@ -373,8 +373,8 @@ export default function IntegrationsHub() {
                         style={{
                           background: STATUS_META.error.bg,
                           border: `1px solid ${STATUS_META.error.color}55`,
-                          color: STATUS_META.error.color,
-                          minHeight: 32,
+                          color: readableInk(STATUS_META.error.color),
+                          minHeight: 44,
                         }}
                       >
                         <span className="inline-flex items-center justify-center gap-1"><RotateCw size={12} strokeWidth={2} />トークン再発行</span>

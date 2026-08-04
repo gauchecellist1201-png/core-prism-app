@@ -1220,7 +1220,7 @@ export default function CommandPalette({
               >
                 <span
                   className="flex items-center gap-1.5 px-2.5 rounded-full flex-shrink-0"
-                  style={{ minHeight: 32, border: '1px solid #A78BFA66', background: '#A78BFA1A', color: '#A78BFA', fontSize: '0.75rem', fontWeight: 600 }}
+                  style={{ minHeight: 32, border: '1px solid #A78BFA66', background: '#A78BFA1A', color: 'var(--brief-ink-violet)', fontSize: '0.75rem', fontWeight: 600 }}
                 >
                   <AtSign size={12} />
                   {mention.label.replace(/^@/, '')}
@@ -1286,7 +1286,7 @@ export default function CommandPalette({
                   かたまり自体が消えるため、中に入れると取り消しボタンごと消える。 */}
               {mentionMode ? (
                 <div className="py-1">
-                  <div className="cp-tiny px-5 py-1.5 flex items-center gap-1.5" style={{ color: '#A78BFA', fontWeight: 600 }}>
+                  <div className="cp-tiny px-5 py-1.5 flex items-center gap-1.5" style={{ color: 'var(--brief-ink-violet)', fontWeight: 600 }}>
                     <AtSign size={12} />
                     <span>どれを見て考えますか (選んだものだけを読みます)</span>
                   </div>
@@ -1311,7 +1311,7 @@ export default function CommandPalette({
                           borderLeft: isSel ? '3px solid #A78BFA' : '3px solid transparent',
                         }}
                       >
-                        <AtSign size={16} className="flex-shrink-0" style={{ color: '#A78BFA' }} />
+                        <AtSign size={16} className="flex-shrink-0" style={{ color: 'var(--brief-ink-violet)' }} />
                         <div className="flex-1 min-w-0">
                           <p className="cp-body truncate" style={{ fontWeight: isSel ? 600 : 400 }}>{t.label}</p>
                           <p className="cp-meta truncate">{t.hint}</p>
@@ -1334,7 +1334,7 @@ export default function CommandPalette({
                   <button
                     onClick={restoreSavedPrompt}
                     className="flex items-center gap-1 px-3 rounded-md flex-shrink-0"
-                    style={{ minHeight: 36, color: '#E8B84B', border: '1px solid #E8B84B77', fontWeight: 600 }}
+                    style={{ minHeight: 44, color: 'var(--brass-text)', border: '1px solid #E8B84B77', fontWeight: 600 }}
                   >
                     <Undo2 size={12} />元に戻す
                   </button>

@@ -923,7 +923,7 @@ export default function IdentityDashboard({
                 style={{
                   background: 'rgba(255,111,181,0.08)',
                   border: '1px solid rgba(255,111,181,0.25)',
-                  color: '#FF6FB5',
+                  color: readableInk('#FF6FB5'),
                 }}
                 whileHover={{ background: 'rgba(255,111,181,0.15)' }}
                 aria-label="ヘルス"
@@ -1739,7 +1739,7 @@ export default function IdentityDashboard({
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-baseline gap-3 flex-wrap">
                     {displayIncome > 0 && (
-                      <span className="text-xl font-light" style={{ color: '#34d399' }}>
+                      <span className="text-xl font-light" style={{ color: 'var(--brief-ink-done)' }}>
                         +¥{(displayIncome / 10000).toFixed(0)}万
                       </span>
                     )}
