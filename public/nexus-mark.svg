@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="512" height="512" role="img" aria-label="CORE NEXUS">
+  <defs>
+    <radialGradient id="nCore" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#bdeaff"/>
+      <stop offset="100%" stop-color="#2fa9ff"/>
+    </radialGradient>
+    <linearGradient id="nRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8fdcff"/>
+      <stop offset="100%" stop-color="#2b8fe0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="50" fill="#010a18"/>
+  <g fill="none" stroke="url(#nRing)" stroke-linecap="round">
+    <circle cx="50" cy="50" r="37" stroke-width="1.6" stroke-dasharray="3 7" opacity=".55"/>
+    <circle cx="50" cy="50" r="28.5" stroke-width="1.8" stroke-dasharray="10 6"/>
+    <path d="M50 20 A30 30 0 0 1 78.5 44" stroke-width="2.4" opacity=".9"/>
+    <path d="M50 80 A30 30 0 0 1 21.5 56" stroke-width="2.4" opacity=".9"/>
+  </g>
+  <g fill="none" stroke="#eaf7ff" stroke-width="2.1" stroke-linecap="round" opacity=".95">
+    <path d="M34 41 v18"/>
+    <path d="M42 33 v34"/>
+    <path d="M50 38 v24"/>
+    <path d="M58 33 v34"/>
+    <path d="M66 41 v18"/>
+  </g>
+  <circle cx="50" cy="50" r="9.5" fill="url(#nCore)"/>
+  <circle cx="78.5" cy="44" r="2.1" fill="#8fdcff"/>
+  <circle cx="21.5" cy="56" r="2.1" fill="#8fdcff"/>
+</svg>
