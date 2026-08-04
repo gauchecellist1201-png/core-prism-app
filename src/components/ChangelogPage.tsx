@@ -162,7 +162,7 @@ export default function ChangelogPage() {
           }}>
             読み込み失敗: {err}<br />
             <span style={{ fontSize: '0.78rem', color: 'rgba(252,165,165,0.7)' }}>
-              → リポジトリで <code>node scripts/syncChangelog.mjs</code> を実行し、 <code>public/changelog.json</code> を 生成してから デプロイしてください。
+              → ただいま最新情報を準備しております。しばらくしてから再度お試しください。
             </span>
           </div>
         )}
@@ -297,8 +297,7 @@ export default function ChangelogPage() {
         })}
 
         <div style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
-          このページは <code>public/changelog.json</code> を 読み込んでいます。
-          オーナー が <code>node scripts/syncChangelog.mjs</code> を実行する度に 最新化されます。
+          このページの内容は、最新の更新に合わせて随時反映されます。
         </div>
 
         <style>{`@keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }`}</style>

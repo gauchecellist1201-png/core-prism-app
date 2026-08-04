@@ -96,7 +96,7 @@ export default function ContactPage() {
         </div>
 
         <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.88rem', lineHeight: 1.7, marginBottom: 28 }}>
-          何でも気軽に。返信は通常 1-3 営業日以内です。<br />
+          どのようなご相談でも、お気軽にお問い合わせください。通常、1〜3営業日以内にご返信いたします。<br />
           営業時間外 / 週末 / 祝日 のお問い合わせは翌営業日にお返事します。
         </p>
 
@@ -225,7 +225,7 @@ export default function ContactPage() {
                   onChange={(e) => setMessage(e.target.value)}
                   required
                   rows={6}
-                  placeholder="お気軽にどうぞ。具体的な機能名や現象、エラーメッセージなどがあれば助かります。"
+                  placeholder="具体的な機能名や症状、エラーメッセージなどをご記入いただけますと幸いです。"
                   disabled={phase === 'sending'}
                   style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
                 />

@@ -31,9 +31,9 @@ interface StatusData {
 }
 
 const PALETTE = {
-  operational: { color: '#34D399', bg: 'rgba(52,211,153,0.12)', icon: <ShieldCheck size={26} />,    label: '7つとも ひらけています' },
+  operational: { color: '#34D399', bg: 'rgba(52,211,153,0.12)', icon: <ShieldCheck size={26} />,    label: 'すべてのサービスが正常に稼働しています' },
   degraded:    { color: '#FBBF24', bg: 'rgba(251,191,36,0.12)', icon: <ShieldAlert size={26} />,    label: '一部で 不具合が出ています' },
-  major_outage:{ color: '#F87171', bg: 'rgba(248,113,113,0.12)', icon: <ShieldX size={26} />,       label: '複数のサービスが ひらけません' },
+  major_outage:{ color: '#F87171', bg: 'rgba(248,113,113,0.12)', icon: <ShieldX size={26} />,       label: '複数のサービスが利用できません' },
   unknown:     { color: '#94A3B8', bg: 'rgba(148,163,184,0.12)', icon: <ShieldQuestion size={26} />,label: 'いま 確認しています' },
 } as const;
 
@@ -56,7 +56,7 @@ export default function StatusPage() {
       setData(await res.json() as StatusData);
     } catch {
       setData(null);
-      setErr('いまの状況を取りにいけませんでした。通信が不安定なときに起きます。');
+      setErr('いまの状況を取得できませんでした。通信が不安定なときに起きます。');
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ export default function StatusPage() {
             </h1>
             <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>
               {loading
-                ? 'いま ひとつずつ ひらいて確かめています…'
+                ? '各サービスの状況を順に確認しています…'
                 : data?.asOf
                   ? `${new Date(data.asOf).toLocaleString('ja-JP')} に確認`
                   : 'まだ確認できていません'}
@@ -160,7 +160,7 @@ export default function StatusPage() {
           ))}
           {(!data?.services || data.services.length === 0) && (
             <div style={{ padding: 18, fontSize: '0.85rem', color: 'rgba(255,255,255,0.55)' }}>
-              {loading ? 'ひとつずつ ひらいて確かめています…' : 'まだ確認できていません。上の「もう一度ためす」を押してください。'}
+              {loading ? '各サービスの状況を順に確認しています…' : 'まだ確認できていません。上の「もう一度ためす」を押してください。'}
             </div>
           )}
         </div>
@@ -244,10 +244,10 @@ function ServiceIcon({ ok }: { ok: boolean | null }) {
 
 function ServiceBadge({ ok }: { ok: boolean | null }) {
   const map = ok === true
-    ? { c: '#34D399', t: 'ひらけます' }
+    ? { c: '#34D399', t: '利用できます' }
     : ok === false
-      ? { c: '#F87171', t: 'ひらけません' }
-      : { c: 'rgba(255,255,255,0.45)', t: '確認できず' };
+      ? { c: '#F87171', t: '利用できません' }
+      : { c: 'rgba(255,255,255,0.45)', t: '確認中' };
   return (
     <span style={{
       fontSize: 11, fontWeight: 800, whiteSpace: 'nowrap',

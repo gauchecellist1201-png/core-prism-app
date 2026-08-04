@@ -355,7 +355,7 @@ function Hero({ config, accentLeft, accentRight }: { config: IndustryConfig; acc
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = `${accentLeft}22`; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLButtonElement).style.transform = 'none'; }}
           >
-            🎮 データ無し で 触る
+            データなしで試す
           </button>
           <a href="#pricing" style={ctaGhost}>
             プランを見る
@@ -449,7 +449,7 @@ function Solution({ config, accentLeft, accentRight }: { config: IndustryConfig;
         </div>
         <h2 style={sectionTitle}>AI が代わりにやること</h2>
         <p style={sectionLead}>
-          あなたは「確認」と「送信」だけ。下書きはぜんぶ AI が作ります。
+          あなたが行うのは「確認」と「送信」のみです。下書きはすべて AI が作成します。
         </p>
         <div style={{
           marginTop: '3rem',

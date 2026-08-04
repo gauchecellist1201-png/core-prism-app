@@ -7,7 +7,7 @@
 //
 // 訴求軸:
 //   1. 「事務時間を 1/3 に」のシンプル ROI
-//   2. 「使ったぶんだけ」の納得料金
+//   2. 「使った分だけ」の納得料金
 //   3. 業界の生々しい数字 (生徒数 × 月謝 → 取り戻せる時間)
 // ============================================================
 import { useState, useMemo } from 'react';
@@ -133,7 +133,7 @@ function Hero() {
             自分の数字で試算する <ArrowRight size={15} />
           </a>
           <a href="#demo" style={ctaGhost}>
-            🎻 デモデータで触る
+            デモデータで試す
           </a>
         </motion.div>
 
@@ -155,7 +155,7 @@ function Hero() {
         >
           {[
             { v: '7日', l: '完全無料体験' },
-            { v: '¥2,980〜', l: '使ったぶんだけ' },
+            { v: '¥2,980〜', l: '使った分だけ' },
             { v: '5分', l: '導入の所要時間' },
           ].map((s, i) => (
             <div key={i} style={{ textAlign: 'center' }}>
@@ -407,7 +407,7 @@ function BeforeAfter() {
   const pains: PainPoint[] = [
     { emoji: '📅', before: '振替日程は LINE で 1 件ずつ調整', after: 'AI が候補 3 つ出して、ボタン 1 つで送信' },
     { emoji: '💸', before: '月初は請求書発行で半日つぶれる', after: '「25 名分発行」と言えば 30 秒で全員分 PDF' },
-    { emoji: '😟', before: '退会が出てから「あ、ヤバい」と気づく', after: 'AI が兆候を察知して早めにアラート' },
+    { emoji: '😟', before: '退会が出てから、初めて事態に気づく', after: 'AI が兆候を察知して早めにアラート' },
     { emoji: '🎶', before: '体験予約のメールに 1 件ずつ返信', after: 'DM 一覧から AI が体験予約まで自動誘導' },
   ];
 
@@ -453,7 +453,7 @@ function Pricing() {
   return (
     <section style={{ padding: '5rem 1.5rem', background: 'linear-gradient(180deg, #0A0A12 0%, #14101F 100%)' }}>
       <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
-        <h2 style={sectionTitle}>使ったぶんだけ。</h2>
+        <h2 style={sectionTitle}>使った分だけ。</h2>
         <p style={sectionLead}>月額に上限を設け、超えたぶんは買い足し。決して気づかぬ間に高額にならない料金設計です。</p>
 
         <div style={{
@@ -470,7 +470,7 @@ function Pricing() {
             ¥9,800<span style={{ fontSize: 14, opacity: 0.6, marginLeft: 4 }}>/月</span>
           </div>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 16 }}>
-            音楽スクールの大半はこのプランで余裕で足ります。
+            音楽スクールの大半は、このプランで十分に足ります。
           </p>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'left' }}>
             {['全機能利用可', 'クレジット 1,000/月 (生徒 80 名規模の事務時間相当)', 'Stripe / Google カレンダー 連携', '3 日間 完全無料体験'].map((p, i) => (

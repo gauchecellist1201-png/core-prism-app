@@ -40,11 +40,11 @@ const SHIPPING: RoadmapItem[] = [
 // 7 月 (building) — 次 やる
 const BUILDING: RoadmapItem[] = [
   { id: 'onboarding-video',       title: '60-90 秒 オンボ チュートリアル動画', desc: '5 シーン (LP→料金→ダッシュ→CXO→Iris) を 1 本にまとめる',  tag: '動画', estimate: '7 月' },
-  { id: 'sales-auto-mail',        title: 'AI 営業メール 一括 下書き',   desc: 'enrichLeadList → draftSalesEmail で 100 社 を 30 分で',     tag: '営業', estimate: '7 月' },
+  { id: 'sales-auto-mail',        title: 'AI 営業メール 一括 下書き',   desc: '見込み客リストの自動分析からメール文面作成までを、100 社分 30 分で',     tag: '営業', estimate: '7 月' },
   { id: 'morning-coach',          title: '朝コーチ / 提案 履歴',        desc: '毎朝 3 案 + 採用率を CXO 別に追跡',                      tag: 'AI', estimate: '7 月' },
   { id: 'mascot-iris-prism',      title: '公式 マスコット 確定',       desc: 'PRISM / Iris の キャラクター 1 本に 絞る',                tag: 'ブランド', estimate: '7 月' },
   { id: 'mrr-stripe-dash',        title: '/master MRR + 解約率 公式版', desc: 'Stripe 12 ヶ月 棒グラフ + 折れ線 + 累計',                tag: '経営', estimate: '7 月' },
-  { id: 'retention-snapshot',     title: 'リテンション スナップ 自動',  desc: '毎日 6 UTC に DAU / 7 日 / 30 日 を スナップ + 週報',        tag: '計測', estimate: '7 月' },
+  { id: 'retention-snapshot',     title: 'リテンション スナップ 自動',  desc: '毎日、利用状況（日次・週次・月次）を自動集計し、週次レポートで共有',        tag: '計測', estimate: '7 月' },
 ];
 
 // 8-9 月 (planning) — 後 やる
@@ -57,9 +57,9 @@ const PLANNING: RoadmapItem[] = [
 ];
 
 const COLUMNS: Column[] = [
-  { status: 'shipping', title: '今 動いてる',       subtitle: '出荷済 / 出荷中',                color: '#34D399', bg: 'rgba(52,211,153,0.10)', items: SHIPPING },
+  { status: 'shipping', title: '今 提供中',       subtitle: '出荷済 / 出荷中',                color: '#34D399', bg: 'rgba(52,211,153,0.10)', items: SHIPPING },
   { status: 'building', title: '次 来る (7 月)',     subtitle: '実装中 + 確認中',                color: '#A78BFA', bg: 'rgba(167,139,250,0.10)', items: BUILDING },
-  { status: 'planning', title: '後 やる (8-9 月)',  subtitle: '構想中 — 投票で 順番 が変わる',  color: '#FBBF24', bg: 'rgba(251,191,36,0.10)', items: PLANNING },
+  { status: 'planning', title: '後日 予定 (8-9 月)',  subtitle: '構想中 — 投票で 順番 が変わる',  color: '#FBBF24', bg: 'rgba(251,191,36,0.10)', items: PLANNING },
 ];
 
 const LS_VOTED = 'core_roadmap_voted_v1';

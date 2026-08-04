@@ -110,7 +110,7 @@ const SECTIONS: Section[] = [
       { label: '個人情報保護法 (日本)', value: '対応済。事業者: 井出 直毅（屋号: CORE）' },
       { label: 'GDPR (EU)',            value: '対応済 (アクセス / 訂正 / 削除 / 持ち出し / 異議申立 の権利を保証)' },
       { label: 'CCPA (米 加州)',        value: '対応済 (Do Not Sell / Share — 弊社は そもそも 個人データを 売却しません)' },
-      { label: 'SOC2 / ISO27001',       value: 'まだ取得していません。個人事業の規模のため取得時期を約束できないので、代わりに この ページ で 中身を 全部 公開しています' },
+      { label: 'SOC2 / ISO27001',       value: '現時点では未取得です。事業規模の都合上、取得時期は確定しておりませんが、代替として本ページにて運用状況を包括的に開示しています' },
       { label: '特定商取引法',           value: '/tokushoho に 事業者情報・販売条件・解約 を 全文掲載' },
       { label: '個人情報保護管理者',     value: '井出直毅 (core.inc.guild@gmail.com)' },
     ],

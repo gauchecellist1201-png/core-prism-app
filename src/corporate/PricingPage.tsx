@@ -140,7 +140,7 @@ const PRISM_PLANS_V2 = [
     id: 'v2-btoB-pro',
     name: '法人プロ',
     nameJa: '法人プロ',
-    tag: '法人上位 / 強い ROI 期待層',
+    tag: '法人上位プラン / 高い投資対効果をお求めの方向け',
     price: 50000,
     yearly: 500000,
     btob: true,
@@ -451,7 +451,7 @@ export default function PricingPage() {
               あなた専用の<span style={{ background: 'linear-gradient(90deg,#fbbf24,#a78bfa,#E1306C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 900 }}>月額換算</span>
             </h2>
             <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', marginTop: 12, lineHeight: 1.9 }}>
-              5 つの数字を動かすだけ。「今やってる作業」を AI に任せた瞬間、何円浮くか — その場で出ます。
+              5 つの数字を動かすだけ。「今行っている作業」を AI に任せた瞬間、何円浮くか — その場で出ます。
             </p>
           </div>
 
