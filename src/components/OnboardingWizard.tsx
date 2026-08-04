@@ -1,47 +1,59 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { PrismLogo } from './Logo';
 import { markOnboarded, seedDemoData, setDemoActive } from '../lib/onboarding';
 import { logEvent } from '../lib/onboardingAnalytics';
 import { resolveFeatureIcon } from '../lib/featureIcons';
+import {
+  Lightbulb, LayoutGrid, MessageSquare, BookOpen, Search,
+  PlayCircle, PenLine, Check, Package, Rocket, type LucideIcon,
+} from 'lucide-react';
 
 interface Props {
   onComplete: () => void;
   accentColor?: string;
 }
 
-const TOUR_HIGHLIGHTS = [
+// 使い方の紹介は「iPhone で実際に見えているもの」だけを指す。
+// (⌘K・左サイドバーはスマホに存在しないので、主語をスマホ側に置き換えた)
+const TOUR_HIGHLIGHTS: { Icon: LucideIcon; color: string; title: string; desc: string }[] = [
   {
-    icon: '💡',
-    title: '今日のブリーフ',
-    desc: 'AIが毎朝あなたの状況を分析し、今日やるべき最優先アクションを提案します。人格ごとに最適化されています。',
+    Icon: Lightbulb,
+    color: '#FACC15',
+    title: '毎朝、やる事を 3 つ出します',
+    desc: 'ホームのいちばん上のカードです。あなたの売上・予定・案件を AI が読んで、「今日はこれをやると効く」を 3 つ並べます。「やる」を押すと、その場で下書きまで作ります。',
   },
   {
-    icon: '⚡',
-    title: 'クイックアクション',
-    desc: '請求書・CRM・議事録・スライド生成など、全機能にワンクリックでアクセス。何でもここから始められます。',
+    Icon: LayoutGrid,
+    color: '#C084FC',
+    title: 'やりたい事の名前から選ぶ',
+    desc: 'その下に「請求書を作る」「会議を文字に起こす」「利益を確認」のように、やる事の名前が並んでいます。押すとその画面が開きます。迷ったら上の 3 つから。',
   },
   {
-    icon: '🔮',
-    title: 'Cmd+K 横断検索',
-    desc: 'キーボードショートカット（⌘K）で人格もナレッジも機能も瞬時に横断検索。手を離さずに操作できます。',
+    Icon: MessageSquare,
+    color: '#5BA8FF',
+    title: '画面の下の欄に、話しかけるだけ',
+    desc: '「先月の利益は？」「この案件に返信を書いて」と書けば答えます。となりのマイクを押せば、声でもかまいません。',
   },
   {
-    icon: '⚙',
-    title: '環境設定',
-    desc: 'AIモデルの選択・文体の調整・音声設定をカスタマイズ。左サイドバー下部の「環境設定」から。',
+    Icon: BookOpen,
+    color: '#4ADE80',
+    title: '自分の資料を渡すと、答えが変わります',
+    desc: 'PDF・写真・議事録を渡すと AI が覚えて、次からはあなたの会社の中身で答えます。何も渡さないと、どこにでもある一般論しか返せません。',
   },
   {
-    icon: '👑',
-    title: 'プレミアム機能',
-    desc: '戦略分析・法務レビュー・交渉コーチなど高度なAI機能を解放。クイックアクションの「プレミアム」から。',
+    Icon: Search,
+    color: '#FF6FB5',
+    title: '探す時は、画面の右はし',
+    desc: '右はしの細いつまみを引くと、機能もお客さんも資料もまとめて探せます。パソコンでは Command キー + K でも開きます。',
   },
 ];
 
+// 退場アニメは付けない。AnimatePresence mode="wait" は退場の完了を待つため、
+// 画面が固まって次のスライドが永久に出てこない事故 (=詰み) を起こす。入場だけにする。
 const STEP_SLIDE = {
   initial: { opacity: 0, x: 40 },
   animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -40 },
   transition: { duration: 0.28, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
 };
 
@@ -54,7 +66,16 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
   const accentBg = `${accent}22`;
   const accentBorder = `${accent}55`;
 
+  // このウィザードを最後まで見た / 飛ばした人に、直後にもう 1 つ同じ内容の
+  // 使い方ガイド (TutorialOverlay) が出て「スキップ」を 2 回押させていた。
+  // ここで見たことにして、説明の二度出しを止める。
+  // (設定 →「使い方ガイドをもう一度見る」からはこれまで通り開ける)
+  const suppressDuplicateTutorial = () => {
+    try { localStorage.setItem('core_tutorial_seen_prism_v1', '1'); } catch { /* quota */ }
+  };
+
   const handleComplete = () => {
+    suppressDuplicateTutorial();
     if (choice === 'demo') {
       const count = seedDemoData();
       setDemoActive(true);
@@ -70,6 +91,7 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
   };
 
   const handleSkip = () => {
+    suppressDuplicateTutorial();
     markOnboarded();
     logEvent('onboarding_skipped', { step });
     onComplete();
@@ -128,13 +150,13 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
             onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.92)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.62)')}
           >
-            スキップ
+            説明を飛ばして使う
           </button>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          <AnimatePresence mode="wait">
+          <>
 
             {/* Step 0: Welcome */}
             {step === 0 && (
@@ -145,8 +167,8 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                     <h2 className="text-lg font-medium" style={{ color: '#f2f2f7' }}>
                       CORE Prism へようこそ
                     </h2>
-                    <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.74)' }}>
-                      複数の人格を持ち、それぞれに特化した AI と共に働く OS
+                    <p className="text-sm mt-1 leading-relaxed" style={{ color: 'rgba(255,255,255,0.86)' }}>
+                      請求書・議事録・資料づくり・売上の管理を、AI がまとめて引き受けます。
                     </p>
                   </div>
                 </div>
@@ -156,12 +178,12 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                       ラベルも「AI 戦略提案」→「やることを提案してくれる」のように
                       横文字を外し、何が起きるかで書く。 */}
                   {[
-                    { id: 'strategy', label: '次の一手を提案' },
-                    { id: 'kb',       label: '資料を覚えて答える' },
-                    { id: 'crm',      label: '案件と進み具合' },
+                    { id: 'strategy', label: '次の一手を出す' },
+                    { id: 'kb',       label: '資料を覚えさせる' },
+                    { id: 'crm',      label: '案件を管理する' },
                     { id: 'invoice',  label: '請求書を作る' },
-                    { id: 'minutes',  label: '会議を文字に起こす' },
-                    { id: 'pnl',      label: '利益をグラフで見る' },
+                    { id: 'minutes',  label: '会議を文字に' },
+                    { id: 'pnl',      label: '利益を見る' },
                   ].map(f => {
                     const entry = resolveFeatureIcon(f.id);
                     const Icon = entry?.Icon;
@@ -180,8 +202,9 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                     );
                   })}
                 </div>
-                <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.62)' }}>
-                  数分でセットアップ完了 — まずはデモを試しませんか？
+                <p className="text-xs text-center leading-relaxed" style={{ color: 'rgba(255,255,255,0.72)' }}>
+                  この案内はあと 3 枚です。最後まで 30 秒ほど。<br />
+                  中身の入った状態で触ってみることもできます。
                 </p>
               </motion.div>
             )}
@@ -193,8 +216,9 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                   <h2 className="text-base font-medium" style={{ color: '#f2f2f7' }}>
                     どこから始めますか？
                   </h2>
-                  <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.74)' }}>
-                    デモデータで全機能を体験するか、空の状態から始められます
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: 'rgba(255,255,255,0.86)' }}>
+                    中身が入った状態で触るか、まっさらから始めるか。<br />
+                    どちらを選んでも、あとから切り替えられます。
                   </p>
                 </div>
                 <motion.button
@@ -208,17 +232,20 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                   whileTap={{ scale: 0.99 }}
                 >
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl mt-0.5">☕</span>
+                    <PlayCircle size={22} strokeWidth={1.8} aria-hidden="true"
+                      style={{ color: accent, flexShrink: 0, marginTop: 2 }} />
                     <div>
                       <p className="font-medium text-sm" style={{ color: '#f2f2f7' }}>
-                        デモを試す（推奨）
+                        見本の会社で、中を触ってみる（おすすめ）
                       </p>
-                      <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.74)' }}>
-                        カフェ経営者・田中健一のデータで全機能を体験。
-                        タスク5件・ナレッジ3件・CRM案件2件・見積書1枚を投入します。
+                      <p className="text-xs mt-1 leading-relaxed" style={{ color: 'rgba(255,255,255,0.86)' }}>
+                        架空のカフェ店主「田中健一」さんの 1 週間ぶんが入ります。
+                        やる事 5 件・覚えさせた資料 3 件・商談 2 件・見積書 1 枚。
+                        空っぽの画面を手さぐりしなくて済みます。
                       </p>
-                      <p className="text-xs mt-1.5" style={{ color: accent }}>
-                        ✓ 後でワンクリックで削除できます
+                      <p className="text-xs mt-1.5 flex items-start gap-1" style={{ color: accent }}>
+                        <Check size={13} strokeWidth={2.6} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
+                        <span>いつでも 1 タップで消せます。あなたの本物のデータとは混ざりません。</span>
                       </p>
                     </div>
                   </div>
@@ -234,13 +261,14 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                   whileTap={{ scale: 0.99 }}
                 >
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl mt-0.5">✦</span>
+                    <PenLine size={22} strokeWidth={1.8} aria-hidden="true"
+                      style={{ color: 'rgba(255,255,255,0.8)', flexShrink: 0, marginTop: 2 }} />
                     <div>
                       <p className="font-medium text-sm" style={{ color: '#f2f2f7' }}>
-                        空から始める
+                        まっさらから始める
                       </p>
-                      <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.74)' }}>
-                        自分のデータだけで使い始めます。
+                      <p className="text-xs mt-1 leading-relaxed" style={{ color: 'rgba(255,255,255,0.86)' }}>
+                        見本は入れません。自分の仕事の情報だけを、これから足していきます。
                       </p>
                     </div>
                   </div>
@@ -253,47 +281,77 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
               <motion.div key="s2" className="p-6 space-y-4" {...STEP_SLIDE}>
                 <div className="text-center">
                   <h2 className="text-base font-medium" style={{ color: '#f2f2f7' }}>
-                    主な機能をご紹介
+                    ホーム画面の、どこを見ればいいか
                   </h2>
                   <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.74)' }}>
-                    {tourIdx + 1} / {TOUR_HIGHLIGHTS.length}
+                    {tourIdx + 1} 枚目 / 全 {TOUR_HIGHLIGHTS.length} 枚
                   </p>
                 </div>
 
+                {/* 退場アニメ (AnimatePresence mode="wait") は使わない。
+                    退場の完了を待ち続けて中身が 1 枚目のまま固まり、点と「5 枚目 / 全 5 枚」だけが
+                    進む = 説明を 4 枚読み飛ばさせる実害が出ていた。入場アニメだけにする。 */}
                 <div className="relative overflow-hidden" style={{ minHeight: '160px' }}>
-                  <AnimatePresence mode="wait">
+                  <div>
                     <motion.div
                       key={tourIdx}
                       className="p-5 rounded-xl text-center space-y-3"
                       style={{ background: accentBg, border: `1px solid ${accentBorder}` }}
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -12 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <div className="text-4xl">{TOUR_HIGHLIGHTS[tourIdx].icon}</div>
-                      <p className="font-semibold text-sm" style={{ color: '#f2f2f7' }}>
-                        {TOUR_HIGHLIGHTS[tourIdx].title}
-                      </p>
-                      <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.74)' }}>
-                        {TOUR_HIGHLIGHTS[tourIdx].desc}
-                      </p>
+                      {(() => {
+                        const t = TOUR_HIGHLIGHTS[tourIdx];
+                        return (
+                          <>
+                            <div
+                              className="mx-auto inline-flex items-center justify-center rounded-xl"
+                              aria-hidden="true"
+                              style={{
+                                width: 44, height: 44,
+                                background: `linear-gradient(135deg, ${t.color}, ${t.color}bb)`,
+                                boxShadow: `0 4px 14px ${t.color}55`,
+                              }}
+                            >
+                              <t.Icon size={22} strokeWidth={2.1} color="#FFFFFF" />
+                            </div>
+                            <p className="font-semibold text-sm" style={{ color: '#f2f2f7' }}>
+                              {t.title}
+                            </p>
+                            <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.86)' }}>
+                              {t.desc}
+                            </p>
+                          </>
+                        );
+                      })()}
                     </motion.div>
-                  </AnimatePresence>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-center gap-1.5">
+                {/* 今どこかを示す点。button に効く共通の min-width/min-height 44px が
+                    そのまま当たると 44px の巨大な丸 5 つになって「押す物」に見えてしまうため、
+                    指のあたり判定 (44px) は透明な button 側で確保し、見た目の点は中の span で描く */}
+                <div className="flex items-center justify-center">
                   {TOUR_HIGHLIGHTS.map((_, i) => (
                     <button
                       key={i}
                       onClick={() => setTourIdx(i)}
-                      className="rounded-full transition-all duration-200"
-                      style={{
-                        width: i === tourIdx ? '18px' : '6px',
-                        height: '6px',
-                        background: i === tourIdx ? accent : 'rgba(255,255,255,0.2)',
-                      }}
-                    />
+                      aria-label={`${i + 1} 枚目の説明を見る`}
+                      aria-current={i === tourIdx ? 'true' : undefined}
+                      className="flex items-center justify-center"
+                      style={{ width: 30, height: 44, background: 'transparent', border: 'none', padding: 0 }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="rounded-full transition-all duration-200 block"
+                        style={{
+                          width: i === tourIdx ? 18 : 6,
+                          height: 6,
+                          background: i === tourIdx ? accent : 'rgba(255,255,255,0.28)',
+                        }}
+                      />
+                    </button>
                   ))}
                 </div>
               </motion.div>
@@ -302,15 +360,27 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
             {/* Step 3: Complete */}
             {step === 3 && (
               <motion.div key="s3" className="p-6 space-y-4 text-center" {...STEP_SLIDE}>
-                <div className="text-5xl py-2">🚀</div>
+                <div className="flex justify-center py-1">
+                  <div
+                    className="inline-flex items-center justify-center rounded-2xl"
+                    aria-hidden="true"
+                    style={{
+                      width: 56, height: 56,
+                      background: `linear-gradient(135deg, ${accent}, ${accent}bb)`,
+                      boxShadow: `0 6px 18px ${accent}55`,
+                    }}
+                  >
+                    <Rocket size={28} strokeWidth={2} color="#0a0a0f" />
+                  </div>
+                </div>
                 <div>
                   <h2 className="text-base font-medium" style={{ color: '#f2f2f7' }}>
-                    準備完了！
+                    {choice === 'demo' ? 'これで、中を見られます' : 'これで、始められます'}
                   </h2>
-                  <p className="text-xs mt-2 leading-relaxed" style={{ color: 'rgba(255,255,255,0.74)' }}>
+                  <p className="text-xs mt-2 leading-relaxed" style={{ color: 'rgba(255,255,255,0.86)' }}>
                     {choice === 'demo'
-                      ? 'デモデータを投入します。ページが更新され、ペルソナ選択画面で「カフェ経営者・田中健一」を選ぶと全機能を体験できます。'
-                      : '実データで始めましょう。人格を作成してナレッジを追加するところからスタートです。'}
+                      ? '下のボタンを押すと、見本のデータが入って画面が読み込み直されます。そのあと「だれとして使うか」を選ぶ画面で「カフェ経営者・田中健一」を選んでください。'
+                      : '下のボタンでホーム画面に進みます。まず「だれとして使うか」を 1 つ決めて、そのあと自分の資料を読ませると、AI の答えがあなたの会社の中身になります。'}
                   </p>
                 </div>
                 {choice === 'demo' && (
@@ -320,25 +390,27 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                   >
                     {/* OS標準のカラー絵文字(📦)はドクトリン違反なのでライン系アイコンに置き換え */}
                     <p className="text-xs font-medium flex items-center gap-1.5" style={{ color: accent }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}>
-                        <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" />
-                      </svg>
-                      投入されるデモデータ
+                      <Package size={13} strokeWidth={1.9} aria-hidden="true" style={{ flex: 'none' }} />
+                      入る見本データ
                     </p>
-                    <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                      ペルソナ × 1、タスク × 5、ナレッジ × 3、CRM案件 × 2、見積書 × 1
+                    <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.82)' }}>
+                      使う人 1 人ぶん ／ やる事 5 件 ／ 覚えさせる資料 3 件 ／ 商談 2 件 ／ 見積書 1 枚
                     </p>
                   </div>
                 )}
               </motion.div>
             )}
-          </AnimatePresence>
+          </>
         </div>
 
         {/* Footer buttons */}
         <div className="flex items-center justify-between gap-3 px-5 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <button
-            onClick={() => setStep(s => Math.max(0, s - 1))}
+            onClick={() => {
+              // 使い方の紹介の中にいるときは、まず紹介を 1 枚戻る
+              if (step === 2 && tourIdx > 0) { setTourIdx(i => i - 1); return; }
+              setStep(s => Math.max(0, s - 1));
+            }}
             className="text-sm px-4 py-2 rounded-lg transition-colors"
             style={{ color: 'rgba(255,255,255,0.7)', visibility: step === 0 ? 'hidden' : 'visible' }}
           >
@@ -349,6 +421,12 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
             <motion.button
               onClick={() => {
                 if (step === 1 && choice === null) return;
+                // 使い方の紹介 (5 枚) は、この 1 つのボタンで最後までめくれる。
+                // 以前は 1 枚目で「次へ」を押すと残り 4 枚を見ないまま飛ばしていた。
+                if (step === 2 && tourIdx < TOUR_HIGHLIGHTS.length - 1) {
+                  setTourIdx(i => i + 1);
+                  return;
+                }
                 setStep(s => s + 1);
                 if (step === 0) logEvent('onboarding_started');
               }}
@@ -356,12 +434,20 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
               style={{
                 background: `linear-gradient(135deg, ${accent}, ${accent}bb)`,
                 color: '#0a0a0f',
-                opacity: step === 1 && choice === null ? 0.4 : 1,
+                // 0.4 だと「選んでください」の文字自体が読めなくなる (指示が読めないのが一番困る)
+                opacity: step === 1 && choice === null ? 0.62 : 1,
               }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              {step === 0 ? '始める →' : '次へ →'}
+              {/* ボタンは「押すと何が起きるか」で書く。「次へ」だけだと何枚あるかも分からない */}
+              {step === 0 && 'どこから始めるか選ぶ →'}
+              {step === 1 && (choice === null ? '上のどちらかを選んでください' : '使い方を 5 枚で見る →')}
+              {step === 2 && (
+                tourIdx < TOUR_HIGHLIGHTS.length - 1
+                  ? `次の説明へ（${tourIdx + 2}/${TOUR_HIGHLIGHTS.length}）→`
+                  : '最後の確認へ →'
+              )}
             </motion.button>
           ) : (
             <motion.button
@@ -374,7 +460,7 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              {choice === 'demo' ? '🚀 デモを開始！' : '✦ ダッシュボードへ'}
+              {choice === 'demo' ? '見本データを入れて、中を見る' : 'ホーム画面へ進む'}
             </motion.button>
           )}
         </div>
