@@ -109,6 +109,15 @@ export default function MasterEntry() {
     }, 200);
   };
 
+  // 別ドメインのCOREサービスへ、マスターキーをURLで引き継いで遷移
+  // (NEXUS / Universe とも ?master=... を localStorage に取り込んで解錠する)
+  const goToExternal = (base: string) => {
+    handleSave();
+    const key = master.trim();
+    const url = key ? `${base}/?master=${encodeURIComponent(key)}` : base;
+    setTimeout(() => { window.location.href = url; }, 200);
+  };
+
   return (
     <div
       style={{
@@ -425,6 +434,44 @@ export default function MasterEntry() {
             }}
           >
             ▸ Iris へ進む
+          </button>
+        </div>
+
+        {/* 別ドメインのCOREサービス (マスターキーをURLで引き継ぐ) */}
+        <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => goToExternal('https://core-nexus-kappa.vercel.app')}
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              borderRadius: 12,
+              background:
+                'linear-gradient(135deg, rgba(77,195,255,0.25), rgba(34,211,238,0.2))',
+              border: '1px solid rgba(77,195,255,0.45)',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            ◈ NEXUS (AI中枢) へ
+          </button>
+          <button
+            onClick={() => goToExternal('https://core-universe.vercel.app')}
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              borderRadius: 12,
+              background:
+                'linear-gradient(135deg, rgba(129,140,248,0.25), rgba(168,85,247,0.2))',
+              border: '1px solid rgba(129,140,248,0.45)',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            ◈ Universe (会社の頭脳) へ
           </button>
         </div>
 
