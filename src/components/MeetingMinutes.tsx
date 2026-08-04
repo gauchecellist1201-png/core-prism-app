@@ -4,6 +4,7 @@ import type { Persona, AppSettings } from '../types/identity';
 import type { MeetingMinutes } from '../lib/meetingAnalyzer';
 import { analyzeMeeting, minutesToMarkdown, minutesToSlack, minutesToNotion, extractAssignedActions } from '../lib/meetingAnalyzer';
 import { parseFile } from '../lib/fileParser';
+import { readableInk } from '../lib/ink';
 import { transcribeAudioFile, isAudioFile } from '../lib/audioTranscribe';
 import {
   loadMeetingDraft, saveMeetingDraft, clearMeetingDraft,
@@ -890,8 +891,8 @@ export default function MeetingMinutesModal({
                         <div
                           className="text-xs px-3 py-2 rounded-lg"
                           style={recStalled
-                            ? { background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.45)', color: '#f87171' }
-                            : { background: 'rgba(201,169,110,0.12)', border: '1px solid rgba(201,169,110,0.35)', color: '#c9a96e' }}
+                            ? { background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.45)', color: 'var(--brief-ink-danger)' }
+                            : { background: 'rgba(201,169,110,0.12)', border: '1px solid rgba(201,169,110,0.35)', color: 'var(--brass-text)' }}
                         >
                           {recNote}
                           {recStalled && isRecording && (
@@ -1163,14 +1164,14 @@ export default function MeetingMinutesModal({
               {/* 要約 */}
               <ResultSection
                 title="📋 要約"
-                color={persona.accentColor}
+                color={readableInk(persona.accentColor)}
               >
                 <p className="text-fg text-sm leading-relaxed whitespace-pre-wrap">{minutes.summary}</p>
               </ResultSection>
 
               {/* 章立て (30 分以上の会議で特に効く) */}
               {minutes.chapters.length > 0 && (
-                <ResultSection title="📖 章立て" color="#60a5fa">
+                <ResultSection title="📖 章立て" color="var(--brief-ink-indigo)">
                   <div className="space-y-2.5">
                     {minutes.chapters.map((c, i) => (
                       <div
@@ -1181,7 +1182,7 @@ export default function MeetingMinutesModal({
                         <div className="flex items-baseline gap-2 mb-1">
                           <span
                             className="text-xs font-bold flex-shrink-0"
-                            style={{ color: '#60a5fa' }}
+                            style={{ color: 'var(--brief-ink-indigo)' }}
                           >Ch.{i + 1}</span>
                           <p className="text-fg text-sm font-semibold leading-tight">{c.title}</p>
                           {c.timeRange && (
@@ -1194,7 +1195,7 @@ export default function MeetingMinutesModal({
                           <ul className="space-y-0.5 mt-1 pl-3">
                             {c.points.map((p, j) => (
                               <li key={j} className="text-fg-muted text-xs flex gap-1.5 leading-relaxed">
-                                <span style={{ color: '#60a5fa' }}>·</span>
+                                <span style={{ color: 'var(--brief-ink-indigo)' }}>·</span>
                                 <span>{p}</span>
                               </li>
                             ))}
@@ -1208,7 +1209,7 @@ export default function MeetingMinutesModal({
 
               {/* 議題 */}
               {minutes.agenda.length > 0 && (
-                <ResultSection title="🗒 議題" color={persona.accentColor}>
+                <ResultSection title="🗒 議題" color={readableInk(persona.accentColor)}>
                   <div className="space-y-2.5">
                     {minutes.agenda.map((a, i) => (
                       <div key={i}>
@@ -1222,11 +1223,11 @@ export default function MeetingMinutesModal({
 
               {/* 決定事項 */}
               {minutes.decisions.length > 0 && (
-                <ResultSection title="✓ 決定事項" color="#34d399">
+                <ResultSection title="✓ 決定事項" color="var(--brief-ink-emerald)">
                   <ul className="space-y-1.5">
                     {minutes.decisions.map((d, i) => (
                       <li key={i} className="text-fg text-sm flex gap-2 leading-relaxed">
-                        <span style={{ color: '#34d399' }}>·</span>
+                        <span style={{ color: 'var(--brief-ink-emerald)' }}>·</span>
                         <span>{d}</span>
                       </li>
                     ))}
@@ -1236,7 +1237,7 @@ export default function MeetingMinutesModal({
 
               {/* アクション */}
               {minutes.actions.length > 0 && (
-                <ResultSection title="🎯 アクション" color="#34d399">
+                <ResultSection title="🎯 アクション" color="var(--brief-ink-emerald)">
                   {/* 担当者がついた宿題を一括で AI 会社へ */}
                   {extractAssignedActions(minutes).length > 0 && (
                     <div className="flex items-center justify-between gap-2 mb-2.5 px-1">
@@ -1249,7 +1250,7 @@ export default function MeetingMinutesModal({
                         className="text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 font-medium transition-all disabled:opacity-50"
                         style={{
                           background: proposedAll ? 'rgba(52,211,153,0.25)' : 'rgba(167,139,250,0.18)',
-                          color: proposedAll ? '#34d399' : '#a78bfa',
+                          color: proposedAll ? 'var(--brief-ink-emerald)' : 'var(--brief-ink-violet)',
                           border: `1px solid ${proposedAll ? 'rgba(52,211,153,0.5)' : 'rgba(167,139,250,0.45)'}`,
                         }}
                         title="担当者が決まったアクションを AI 会社の宿題として一括で proposed に登録"
@@ -1268,7 +1269,7 @@ export default function MeetingMinutesModal({
                         className="flex items-start gap-2 p-2.5 rounded-lg"
                         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
                       >
-                        <span style={{ color: '#34d399' }} className="text-sm flex-shrink-0 mt-0.5">▸</span>
+                        <span style={{ color: 'var(--brief-ink-emerald)' }} className="text-sm flex-shrink-0 mt-0.5">▸</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-fg text-sm leading-snug">{a.item}</p>
                           {(a.owner || a.due) && (
@@ -1283,7 +1284,7 @@ export default function MeetingMinutesModal({
                             className="text-xs px-2 py-1 rounded transition-all"
                             style={{
                               background: 'rgba(52,211,153,0.15)',
-                              color: '#34d399',
+                              color: 'var(--brief-ink-emerald)',
                               border: '1px solid rgba(52,211,153,0.4)',
                             }}
                             title="自分のタスクに追加"
@@ -1295,7 +1296,7 @@ export default function MeetingMinutesModal({
                               className="text-xs px-2 py-1 rounded transition-all disabled:opacity-60"
                               style={{
                                 background: proposed ? 'rgba(167,139,250,0.3)' : 'rgba(167,139,250,0.15)',
-                                color: '#a78bfa',
+                                color: 'var(--brief-ink-violet)',
                                 border: '1px solid rgba(167,139,250,0.45)',
                               }}
                               title="AI 会社の宿題として propose"
@@ -1311,7 +1312,7 @@ export default function MeetingMinutesModal({
 
               {/* 発言者ごとの寄与サマリ */}
               {Object.keys(minutes.speakerSummary).length > 0 && (
-                <ResultSection title="🎤 発言者ごとの要点" color="#f472b6">
+                <ResultSection title="🎤 発言者ごとの要点" color="var(--brief-ink-rose)">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {Object.entries(minutes.speakerSummary).map(([name, s], i) => (
                       <div
@@ -1331,7 +1332,7 @@ export default function MeetingMinutesModal({
                           <ul className="space-y-0.5">
                             {s.keyPoints.map((p, j) => (
                               <li key={j} className="text-fg-muted text-xs flex gap-1.5 leading-relaxed">
-                                <span style={{ color: '#f472b6' }}>·</span>
+                                <span style={{ color: 'var(--brief-ink-rose)' }}>·</span>
                                 <span>{p}</span>
                               </li>
                             ))}
@@ -1347,11 +1348,11 @@ export default function MeetingMinutesModal({
 
               {/* Q&A */}
               {minutes.questions.length > 0 && (
-                <ResultSection title="❓ Q&A" color="#a78bfa">
+                <ResultSection title="❓ Q&A" color="var(--brief-ink-violet)">
                   <div className="space-y-2">
                     {minutes.questions.map((q, i) => (
                       <div key={i}>
-                        <p className="text-fg text-sm"><span className="font-semibold" style={{ color: '#a78bfa' }}>Q.</span> {q.q}</p>
+                        <p className="text-fg text-sm"><span className="font-semibold" style={{ color: 'var(--brief-ink-violet)' }}>Q.</span> {q.q}</p>
                         <p className="text-fg-muted text-sm mt-0.5"><span className="font-semibold">A.</span> {q.a}</p>
                       </div>
                     ))}
@@ -1361,7 +1362,7 @@ export default function MeetingMinutesModal({
 
               {/* 次回 */}
               {minutes.nextSteps.length > 0 && (
-                <ResultSection title="📌 次回確認事項" color={persona.accentColor}>
+                <ResultSection title="📌 次回確認事項" color={readableInk(persona.accentColor)}>
                   <ul className="space-y-1">
                     {minutes.nextSteps.map((n, i) => (
                       <li key={i} className="text-fg text-sm flex gap-2"><span>·</span><span>{n}</span></li>
@@ -1372,11 +1373,11 @@ export default function MeetingMinutesModal({
 
               {/* 次回アジェンダ提案 */}
               {minutes.nextAgenda.length > 0 && (
-                <ResultSection title="🗓 次回アジェンダ提案" color="#60a5fa">
+                <ResultSection title="🗓 次回アジェンダ提案" color="var(--brief-ink-indigo)">
                   <ul className="space-y-1.5">
                     {minutes.nextAgenda.map((n, i) => (
                       <li key={i} className="text-fg text-sm flex gap-2 leading-relaxed">
-                        <span style={{ color: '#60a5fa' }} className="font-bold flex-shrink-0">{i + 1}.</span>
+                        <span style={{ color: 'var(--brief-ink-indigo)' }} className="font-bold flex-shrink-0">{i + 1}.</span>
                         <span>{n}</span>
                       </li>
                     ))}
@@ -1386,11 +1387,11 @@ export default function MeetingMinutesModal({
 
               {/* インサイト */}
               {minutes.insights.length > 0 && (
-                <ResultSection title={`💡 ${persona.name} 視点のインサイト`} color="#c9a96e">
+                <ResultSection title={`💡 ${persona.name} 視点のインサイト`} color="var(--brass-text)">
                   <ul className="space-y-1">
                     {minutes.insights.map((i2, i) => (
                       <li key={i} className="text-fg text-sm flex gap-2 leading-relaxed">
-                        <span style={{ color: '#c9a96e' }}>·</span><span>{i2}</span>
+                        <span style={{ color: 'var(--brass-text)' }}>·</span><span>{i2}</span>
                       </li>
                     ))}
                   </ul>
@@ -1399,10 +1400,10 @@ export default function MeetingMinutesModal({
 
               {/* リスク */}
               {minutes.risks.length > 0 && (
-                <ResultSection title="⚠ リスク・懸念" color="#f87171">
+                <ResultSection title="⚠ リスク・懸念" color="var(--brief-ink-danger)">
                   <ul className="space-y-1">
                     {minutes.risks.map((r, i) => (
-                      <li key={i} className="text-fg text-sm flex gap-2"><span style={{ color: '#f87171' }}>·</span><span>{r}</span></li>
+                      <li key={i} className="text-fg text-sm flex gap-2"><span style={{ color: 'var(--brief-ink-danger)' }}>·</span><span>{r}</span></li>
                     ))}
                   </ul>
                 </ResultSection>
