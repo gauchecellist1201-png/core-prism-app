@@ -306,6 +306,49 @@ export function deriveAccentText(accent: string, isDarkTheme: boolean): string {
   }
 }
 
+/**
+ * アクセント色を「面」にして、その上に文字やアイコンを置くときの 面と文字の組。
+ * deriveAccentText は「明るい地の上に置く“文字の色”」を出すもので、その逆＝
+ * 「色の面の上に置く文字」は誰も守っていなかった。実測(2026-08-05 本番 375px):
+ * 白 on リールのピンク #E1306C = 4.34、白 on その他の青 #3B82F6 = 3.68（要 4.5）。
+ * さらに面の終端が半透明(`${accent}cc`)だと明るい地が透けてもっと薄くなる（実測 3.88）。
+ *
+ * 選び方は 2 段階。
+ *  ① 色みは変えずに明るさだけ少し(最大 15%)落として白が通るならそれ＝見た目のトーンは保つ。
+ *  ② それでも通らない明るい面(オレンジ・黄)は、面を明るいまま残して文字を濃くする。
+ *     ここで面を暗くすると、ブランドのオレンジが茶色になってしまう。
+ * faceEnd は「文字と反対側」へずらす＝白文字なら濃く、濃い文字なら明るく。
+ * グラデーションの終端で contrast が落ちる事故（半透明終端の再来）を防ぐ。
+ */
+export function onAccentFace(accent: string): { face: string; faceEnd: string; ink: string } {
+  const fallback = { face: accent, faceEnd: accent, ink: '#FFFFFF' };
+  try {
+    const [h, s, l] = hexToHsl(accent);
+    const deeper = (base: string) => {
+      const [bh, bs, bl] = hexToHsl(base);
+      return hslToHex(bh, bs, Math.max(0, bl * 0.88));
+    };
+    const lighter = (base: string) => {
+      const [bh, bs, bl] = hexToHsl(base);
+      return hslToHex(bh, bs, Math.min(1, bl * 1.06));
+    };
+    if (contrast('#FFFFFF', accent) >= 4.6) {
+      return { face: accent, faceEnd: deeper(accent), ink: '#FFFFFF' };
+    }
+    for (let i = l; i >= l * 0.85; i -= 0.01) {
+      const c = hslToHex(h, s, i);
+      if (contrast('#FFFFFF', c) >= 4.6) return { face: c, faceEnd: deeper(c), ink: '#FFFFFF' };
+    }
+    for (let i = 0.45; i >= 0; i -= 0.01) {
+      const ink = hslToHex(h, Math.min(s, 0.55), i);
+      if (contrast(ink, accent) >= 4.6) return { face: accent, faceEnd: lighter(accent), ink };
+    }
+    return { face: accent, faceEnd: accent, ink: '#141018' };
+  } catch {
+    return fallback;
+  }
+}
+
 /** accentText を持たない古い自作テーマに、計算値を補う（画面側は必ず accentText を読める） */
 function withAccentText<T extends { accent: string; accentText?: string; accentSolid?: string; card?: string; ink?: string }>(b: T): T {
   if (b.accentText && b.accentSolid) return b;

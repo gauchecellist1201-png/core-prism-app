@@ -125,7 +125,7 @@ export default function ChangelogPage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 18 }}>
           <div style={{
             width: 56, height: 56, borderRadius: 16,
-            background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
+            background: 'linear-gradient(135deg, #743DF5, #4346EF)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', boxShadow: '0 12px 24px rgba(167,139,250,0.4)',
             flexShrink: 0,

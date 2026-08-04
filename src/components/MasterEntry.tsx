@@ -843,7 +843,7 @@ function FreshUserDemoButtons() {
             onClick={() => setConfirming('prism')}
             style={{
               padding: '10px 12px', borderRadius: 10, fontSize: 12, fontWeight: 800,
-              background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
+              background: 'linear-gradient(135deg, #743DF5, #4346EF)',
               color: '#fff', border: 'none', cursor: 'pointer',
               boxShadow: '0 6px 18px rgba(167,139,250,0.4)',
               display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3,

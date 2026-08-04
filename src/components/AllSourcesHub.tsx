@@ -186,7 +186,7 @@ export default function AllSourcesHub({ onOpenIntegration }: { onOpenIntegration
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <div style={{
           width: 40, height: 40, borderRadius: 10,
-          background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
+          background: 'linear-gradient(135deg, #743DF5, #4346EF)',
           color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 4px 14px rgba(167,139,250,0.5)', flexShrink: 0,
         }}>

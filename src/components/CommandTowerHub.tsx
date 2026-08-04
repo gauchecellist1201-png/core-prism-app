@@ -140,7 +140,7 @@ export default function CommandTowerHub() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <div style={{
           width: 40, height: 40, borderRadius: 11, flexShrink: 0,
-          background: 'linear-gradient(135deg,#A78BFA,#6366F1)', color: '#fff',
+          background: 'linear-gradient(135deg,#743DF5,#4346EF)', color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19,
           boxShadow: '0 4px 14px rgba(167,139,250,0.45)',
         }}><Radio size={20} strokeWidth={2.2} /></div>

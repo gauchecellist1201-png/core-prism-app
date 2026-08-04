@@ -8,7 +8,7 @@ import type { AppSettings } from '../types/identity';
 import {
   IRIS_BACKGROUNDS, type IrisBackgroundDef, loadIrisBackground, saveIrisBackground,
   IRIS_COLORS, IRIS_FONTS, getAllBackgrounds, removeCustomBackground, type CustomIrisBackground,
-  deriveAccentText,
+  deriveAccentText, onAccentFace,
 } from './irisStyle';
 import { IRIS_TYPE, IRIS_SHADOW, IRIS_RADIUS, IRIS_GRADIENT, IRIS_MOTION, IRIS_SIDEBAR_W, IRIS_DOCK_H } from './irisDesign';
 // 重い「タブを開いたときだけ要る」エディタは lazy 化して main から切り出す
@@ -1616,15 +1616,19 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   {group.tabs.map(t => {
                     const Ico = IRIS_TAB_ICON[t.id] || Sparkles;
                     const active = tab === t.id;
+                    // 選択中のタブは「色の面 + 白文字」だった。本番実測でピンク 4.34 /
+                    // 青 3.68、しかも終端 `cc`(80%) から明るい地が透けて 3.88 まで落ちていた。
+                    // 面と文字の組は onAccentFace に決めさせる（トーンは保ったまま読める側へ）。
+                    const face = onAccentFace(group.color);
                     return (
                       <button key={t.id}
                         onClick={() => setTab(t.id as Tab)}
                         className={`iris-tab-btn${active ? ' is-active-tab' : ''}`}
                         style={{
                           background: active
-                            ? `linear-gradient(135deg, ${group.color}, ${group.color}cc)`
+                            ? `linear-gradient(135deg, ${face.face}, ${face.faceEnd})`
                             : 'rgba(255,255,255,0.92)',
-                          color: active ? '#FFFFFF' : '#1F1A2E',
+                          color: active ? face.ink : '#1F1A2E',
                           border: active ? 'none' : '1px solid rgba(31,26,46,0.08)',
                           borderRadius: 999,
                           padding: '0.5rem 0.95rem',

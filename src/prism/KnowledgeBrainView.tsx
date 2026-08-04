@@ -12,7 +12,7 @@ import {
   filterIngestible, countSkips, synthesizeKnowledge, generateBrainInsights, buildConciergeBrief,
 } from './knowledgeBrain';
 
-const GRAD = 'linear-gradient(135deg, #A78BFA, #6366F1)';
+const GRAD = 'linear-gradient(135deg, #743DF5, #4346EF)';
 const INK = '#1e1b3a';
 const SUB = '#6b6890';
 

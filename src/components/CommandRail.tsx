@@ -79,7 +79,11 @@ export default function CommandRail({ onOpen }: { onOpen: () => void }) {
         minHeight: narrow ? undefined : 64,
         height: narrow ? 132 : undefined,
         paddingTop: 10, paddingBottom: 10,
-        background: 'linear-gradient(135deg, #A78BFA, #6366F1)',
+        // ★この紫の面は Prism 全体で 10 箇所に同じ文字列で置かれていて、どれも白を乗せている。
+        //   元の #A78BFA→#6366F1 は白が 2.72 / 4.47（要 4.5・アイコンは 3）で、明るい端では
+        //   9px の "COMMAND" がほぼ読めなかった（2026-08-05 本番 375px でピクセル実測 3.23）。
+        //   色み(紫→藍)はそのまま、明るさだけ落として 5.63 / 6.25 に。全 10 箇所を同じ値に揃えた。
+        background: 'linear-gradient(135deg, #743DF5, #4346EF)',
         color: '#fff',
         border: 'none',
         borderTopLeftRadius: narrow ? 10 : 14,

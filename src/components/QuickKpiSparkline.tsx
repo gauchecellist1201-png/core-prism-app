@@ -151,7 +151,10 @@ function SparkCard({ title, emoji, color, bg, loading, series, unit, formatValue
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 5,
           fontSize: 10, letterSpacing: '0.15em',
-          color: 'rgba(255,255,255,0.6)', fontWeight: 800,
+          // ★カードの地は暗いが、白の薄め方が強すぎて 10px の字が沈んでいた。
+          //   実測(2026-08-05 本番 375px): 合計 4.18 / データなし 3.50（要 4.5）。
+          //   薄い→濃いの順番は保ったまま、いちばん薄いところを 4.5 の上へ持ち上げる。
+          color: 'rgba(255,255,255,0.82)', fontWeight: 800,
         }}>
           <span style={{ fontSize: 14 }}>{emoji}</span> {title}
         </span>
@@ -170,17 +173,17 @@ function SparkCard({ title, emoji, color, bg, loading, series, unit, formatValue
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ minWidth: 0 }}>
           {loading ? (
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.74)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <Sparkles size={12} style={{ animation: 'spin 2s linear infinite' }} /> 集計中…
             </div>
           ) : !series || series.length === 0 ? (
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.45)' }}>データなし</div>
+            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.74)' }}>データなし</div>
           ) : (
             <>
               <div style={{ fontSize: '1.2rem', fontWeight: 900, color, lineHeight: 1.15 }}>
                 {fmt(stats.last)}
               </div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.74)', marginTop: 2 }}>
                 合計 {fmt(stats.total)}
               </div>
             </>

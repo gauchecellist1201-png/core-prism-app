@@ -1131,9 +1131,9 @@ function AppRoutes() {
         >
           {toolsFabOpen && (
             [
-              { label: '成果物', onClick: () => { setArtifactOpen(true); setToolsFabOpen(false); }, grad: '#A78BFA,#6366F1', icon: <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /> },
-              { label: '統合脳', onClick: () => { setBrainOpen(true); setToolsFabOpen(false); }, grad: '#8B5CF6,#4F46E5', icon: <><path d="M9.5 3.5A2.5 2.5 0 0 0 7 6a2.5 2.5 0 0 0-1.5 4.5A2.5 2.5 0 0 0 7 15a2.5 2.5 0 0 0 2.5 2.5V3.5Z" /><path d="M14.5 3.5A2.5 2.5 0 0 1 17 6a2.5 2.5 0 0 1 1.5 4.5A2.5 2.5 0 0 1 17 15a2.5 2.5 0 0 1-2.5 2.5V3.5Z" /><path d="M12 3.5v14" /></> },
-              { label: '役員日報', onClick: () => { setBriefingsOpen(true); setToolsFabOpen(false); }, grad: '#A78BFA,#6366F1', icon: <><path d="M9 3h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V4a1 1 0 0 1 1-1z" /><path d="M9 11h6M9 15h4" /></> },
+              { label: '成果物', onClick: () => { setArtifactOpen(true); setToolsFabOpen(false); }, grad: '#743DF5,#4346EF', icon: <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /> },
+              { label: '統合脳', onClick: () => { setBrainOpen(true); setToolsFabOpen(false); }, grad: '#743DF5,#4346EF', icon: <><path d="M9.5 3.5A2.5 2.5 0 0 0 7 6a2.5 2.5 0 0 0-1.5 4.5A2.5 2.5 0 0 0 7 15a2.5 2.5 0 0 0 2.5 2.5V3.5Z" /><path d="M14.5 3.5A2.5 2.5 0 0 1 17 6a2.5 2.5 0 0 1 1.5 4.5A2.5 2.5 0 0 1 17 15a2.5 2.5 0 0 1-2.5 2.5V3.5Z" /><path d="M12 3.5v14" /></> },
+              { label: '役員日報', onClick: () => { setBriefingsOpen(true); setToolsFabOpen(false); }, grad: '#743DF5,#4346EF', icon: <><path d="M9 3h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V4a1 1 0 0 1 1-1z" /><path d="M9 11h6M9 15h4" /></> },
             ].map((t) => (
               <button
                 key={t.label}
@@ -1158,7 +1158,7 @@ function AppRoutes() {
             aria-expanded={toolsFabOpen}
             style={{
               width: 52, height: 52, borderRadius: 999,
-              background: 'linear-gradient(135deg, #A78BFA, #6366F1)', color: '#fff',
+              background: 'linear-gradient(135deg, #743DF5, #4346EF)', color: '#fff',
               border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
               boxShadow: '0 8px 24px rgba(99,102,241,0.5)',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
