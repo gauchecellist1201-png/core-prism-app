@@ -1762,6 +1762,33 @@ export default function CoreSite() {
             <InfoRow label="提供サービス" subLabel="Products"   value="CORE Universe（AIに任せられる仕事の宇宙図）／ CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）／ Crystal（AI コンシェルジュ・接客サイト向け）／ CORE Pulse（からだ見守りAI）" isLast />
           </dl>
           </MobileFold>
+
+          {/* 現在の提供状況について（feedback_lp_selling_structure §8 と同型。各サービスのFAQ/約款で
+              既に開示済みの事実のみを転記し、法人サイト側にも同じ開示を横展開する。新規の数字・約束は作らない） */}
+          <div style={{ marginTop: '3.5rem' }}>
+            <p style={{ fontFamily: FONT_DISPLAY, fontSize: '0.72rem', letterSpacing: '0.28em', color: '#C9A96E', textTransform: 'uppercase', marginBottom: '0.8rem', textAlign: 'center' }}>
+              Current Status
+            </p>
+            <h3 style={{ fontFamily: FONT_SERIF_JA, fontSize: 'clamp(1.25rem, 2.3vw, 1.6rem)', fontWeight: 700, textAlign: 'center', marginBottom: '0.8rem', letterSpacing: '0.03em' }}>
+              現在の提供状況について
+            </h3>
+            <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.9rem', color: 'rgba(240,233,216,0.68)', lineHeight: 1.9, textAlign: 'center', maxWidth: 620, margin: '0 auto 2.2rem' }}>
+              各サービスを正しくご検討いただけるよう、現在対応が完了していない点も含めて開示します。
+            </p>
+            <div style={{ display: 'grid', gap: '0.9rem' }}>
+              {[
+                { t: '運営会社は設立準備中です', d: '法人としての設立準備を進めており、現在は個人事業として運営しています。安心してお試しいただけるよう、各サービスに無料お試し期間といつでも解約可能な仕組みを設けています。' },
+                { t: '「絶対に継続する」とはお約束できません', d: 'これはどの事業者にも共通する点です。解約はいつでも各サービスの画面から行え、電話等での引き止めは行いません。' },
+                { t: '導入実績・効果数値は、公開できる段階のもののみ記載しています', d: '「導入◯◯社」「効果◯◯%」といった数字は、実績として公開できる段階に至るまでは記載しません。公開可能になり次第、各サービスのページに掲載します。' },
+                { t: '一部の管理機能は開発中です', d: '例えば Prism では、アプリ内での領収書発行画面が現時点では未実装です。必要な方はメールにてご連絡いただければ個別に対応します。' },
+              ].map((c) => (
+                <div key={c.t} style={{ padding: '1.4rem 1.6rem', borderRadius: 14, border: '1px solid rgba(201,169,110,0.24)', background: 'rgba(255,255,255,0.025)' }}>
+                  <p style={{ fontFamily: FONT_SERIF_JA, fontWeight: 600, fontSize: '0.95rem', color: '#F1E9D8', lineHeight: 1.8, marginBottom: '0.5rem' }}>{c.t}</p>
+                  <p style={{ fontFamily: FONT_SANS, fontSize: '0.82rem', color: 'rgba(240,233,216,0.62)', lineHeight: 1.9 }}>{c.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
       )}
