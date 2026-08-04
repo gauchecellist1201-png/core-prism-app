@@ -1,213 +1,214 @@
 // ============================================================
-// guidedTourSteps — Prism / Iris 用 ガイド ツアー 定義
+// guidedTourSteps — Prism / Iris の「使い方の案内」の中身
 //
-// 各 ステップ:
-//   - target: 実 UI 要素 の セレクタ (data-tour-id="xxx" 推奨)
-//   - title / body: HubSpot 風 説明
-//   - preAction: 必要 なら タブ 切替 / モーダル 開く
+// 各ステップ:
+//   - target: 実 UI 要素のセレクタ (data-tour-id="xxx")
+//   - title / body: 何ができるかを、やさしい言葉で
+//   - preAction: 必要ならタブ切替 / モーダルを開く
 //
-// 設計 方針:
-//   - 「機能 を 触る 順番」 で 並べる (見せる → やらせる)
-//   - 14 ステップ 以内 で 主要 機能 を 1 周
-//   - 触れ ない 要素 (master 専用 等) は 説明 だけ で 進める
+// 書き方のルール (2026-08-04 見直し):
+//   - 絵文字は使わない (画面の飾りは線画アイコンに寄せる)
+//   - 日本語のあいだに余分な空白を入れない
+//   - iPhone に無い操作を案内しない (Cmd キー・左サイドバー等)
+//   - 触れない要素は説明だけで進める
 // ============================================================
 import type { TourStep } from '../components/GuidedTourSpotlight';
 
-// ── Prism (BtoB) ツアー: 14 ステップ ────────────────────
+// ── Prism (BtoB) の案内: 15 ステップ ────────────────────
 export const PRISM_TOUR: TourStep[] = [
   {
     id: 'welcome',
-    title: '👋 CORE Prism へ ようこそ',
-    body: 'これ から 1 分 30 秒 で、 「あなた の デジタル 会社」 と 14 名 の AI 役員 が 仕事 を こなす 仕組み を 案内 します。 触り ながら 覚えられる 様 に なって います。',
+    title: 'CORE Prism へようこそ',
+    body: 'これから1分半で、請求書・議事録・資料づくり・売上の管理を、14名のAI役員がまとめて引き受ける仕組みを案内します。読むだけでなく、実際に触りながら進められます。',
     placement: 'auto',
   },
   {
     id: 'company-hero',
-    title: '🏢 これ が あなた の デジタル 会社 です',
-    body: 'ダッシュ 最上段 に 「あなた の 役員 会議室」 が ある の が 見えます か? ここ に 14 名 の 役員 が 在籍 して います。 名前 / 役職 / 今 動いて いる か が 全部 見えます。',
+    title: 'ここがあなたの会社の入口です',
+    body: '画面のいちばん上にある「あなたの役員会議室」に、14名のAI役員がいます。名前・担当・いま動いているかが、ひと目で分かります。',
     target: '[data-tour-id="digital-company-hero"]',
     placement: 'auto',
     waitMs: 4000,
   },
   {
     id: 'cxo-grid',
-    title: '👥 14 名 の 役員 が ここ に います',
-    body: 'CEO / CFO / CMO / CTO… 各 役員 が 担当 領域 を 持って います。 タップ する と 「今 任せられる 3 件」 が 出ます。',
+    title: '14名の役員が並んでいます',
+    body: '経理・営業・広報・開発など、担当がそれぞれ決まっています。タップすると「いま任せられる仕事3件」が出てきます。',
     target: '[data-tour-id="cxo-grid"]',
-    tapLabel: '役員 を 1 人 タップ',
+    tapLabel: '役員を1人タップ',
     placement: 'top',
   },
   {
     id: 'agent-team-monitor',
-    title: '💼 右下 = 役員 の 待機 室',
-    body: 'タスク を 渡す と この パネル に 動き が 出ます。 「実行 中 / 完了」 が ライブ で 見えるので、 自分 が 動かなくて も 会社 が 動いて いる 感覚 が 掴めます。',
+    title: '仕事を渡すと、ここが動きます',
+    body: '任せた仕事の「やっています / 終わりました」がここに出ます。自分が手を動かしていない間も進んでいるのが見えます。',
     target: '[data-tour-id="agent-team-monitor"]',
     placement: 'left',
     waitMs: 4000,
   },
   {
     id: 'briefings-button',
-    title: '📋 成果物 は ここ に 全部 蓄積',
-    body: '役員 が 作った 「文書 / 計画 / 分析」 が 全部 役員 日報 に 自動 保存 されます。 検索 / DL / ナレッジ 化 も できる。',
+    title: 'できあがったものは全部ここに残ります',
+    body: '役員がつくった文書・計画・分析は、すべて「役員日報」に自動で保存されます。あとから探す・保存する・資料として使い回すことができます。',
     target: '[data-tour-id="briefings-button"]',
-    tapLabel: '役員 日報 を 開く',
+    tapLabel: '役員日報を開く',
     placement: 'top',
   },
   {
     id: 'morning-brief',
-    title: '🌅 朝 開くと これ が 出ます',
-    body: '毎朝 自動 で 「昨日 の 数字 + 今日 30 分 で やる 3 件」 を 役員 が 提案。 触らなくて も 仕事 が 前 に 進む 仕掛け です。',
+    title: '朝ひらくと、これが出ます',
+    body: '毎朝「昨日の数字」と「今日30分でやる3件」が用意されます。何から手をつけるかを考えなくて済みます。',
     target: '[data-tour-id="morning-brief"]',
     placement: 'auto',
     waitMs: 2000,
   },
   {
     id: 'kpi-sparkline',
-    title: '📊 主要 数字 が 一目 で',
-    body: 'オンボ 完了 率 / DAU / 月次 売上 の 30 日 推移。 異常 値 は 赤 で 警告。',
+    title: '大事な数字がひと目で分かります',
+    body: '直近30日の動きを線で表示します。おかしな数字は赤で知らせます。実際に入っているデータだけを出すので、見た数字はそのまま信じて大丈夫です。',
     target: '[data-tour-id="kpi-sparkline"]',
     placement: 'bottom',
   },
   {
     id: 'knowledge-base',
-    title: '🧠 ナレッジ ベース = 役員 の 脳',
-    body: 'ファイル / メモ / 議事 録 を 渡す ほど、 役員 が 「あなた の 文脈」 で 動ける 様 に なります。 ドラッグ で 取込 OK。',
+    title: 'ナレッジ = 役員が読む資料の棚',
+    body: '書類・メモ・議事録を入れるほど、役員があなたの事情をふまえて動けるようになります。ファイルを選んで入れるだけです。',
     target: '[data-tour-id="knowledge-section"]',
     placement: 'auto',
   },
   {
     id: 'studios',
-    title: '🛠 10 種 の Studio (専門 作業 場)',
-    body: '請求書 / 文書 / 画像 / 動画 / CRM / 損益 / 経費 等、 業務 別 の 専門 画面。 各 Studio で AI が 1 件 完結 で 仕上げ ます。',
+    title: '仕事の種類ごとの作業場が10個あります',
+    body: '請求書・文書・画像・動画・顧客管理・損益・経費など、それぞれ専用の画面です。ひとつの用事がその画面だけで終わります。',
     target: '[data-tour-id="studios-section"]',
     placement: 'auto',
   },
   {
-    id: 'cmd-k',
-    title: '⌘ Cmd+K で 全機能 を 一発 検索',
-    body: 'キーボード で Cmd+K を 押す と 「全機能 + 過去 AI 提案」 が 横断 検索 できます。 慣れ たら 最速 で 動ける 操作 です。',
+    id: 'search-all',
+    title: 'どこにあるか分からない時は、検索',
+    body: '機能も、過去にAIが出した提案も、まとめて1か所で探せます。iPhone では画面下の入力欄から、パソコンでは Cmd+K（Windows は Ctrl+K）でも開きます。見つかった件数は隠さず全部出します。',
     placement: 'auto',
   },
   {
     id: 'quick-ask',
-    title: '💬 困った 時 は 右下 の ✦',
-    body: '画面 右下 の 紺色 FAB を タップ する と 「今 AI に 質問」 できます。 ナレッジ を 横断 して 答えて くれます。',
+    title: '困ったらここから質問できます',
+    body: 'ここを押すと、その場でAIに質問できます。入れてある資料をまとめて読んだうえで答えます。',
     target: '[data-tour-id="quick-ask"]',
     placement: 'left',
   },
   {
     id: 'feedback',
-    title: '💡 「こう したい」 は 左下 へ',
-    body: '改善 提案 ボタン から 「ここ こう したい」 を 即 送信 → 開発 へ 直 結 します。',
+    title: '「こうしたい」はここから送れます',
+    body: '使っていて気になったところを、その場で送れます。開発にそのまま届きます。',
     target: '[data-tour-id="suggestion-fab"]',
     placement: 'right',
   },
   {
     id: 'settings',
-    title: '⚙️ 設定 + 連携',
-    body: 'Stripe / Gmail / Calendar / LINE / Instagram の 連携 は 設定 から。 連携 すれば 役員 が 自動 で 数字 を 取り に 行きます。',
+    title: '設定と、外のサービスとのつなぎ込み',
+    body: '決済・メール・カレンダー・LINE・Instagram とつなぐ設定はここです。つなぐと、役員が数字を自分で取りに行けるようになります。',
     target: '[data-tour-id="settings-button"]',
     placement: 'auto',
   },
   {
     id: 'persona-switch',
-    title: '🎭 複数 事業 を 持つ なら ペルソナ で 分ける',
-    body: '本業 / 副業 を ペルソナ 別 に 切り替え られます。 ナレッジ / 案件 / 役員 の 文脈 は 完全 隔離。',
+    title: '事業が複数あるなら、ここで切り替えます',
+    body: '本業と副業などを分けて持てます。資料も案件も役員のおぼえている内容も、混ざりません。',
     target: '[data-tour-id="persona-switch"]',
     placement: 'bottom',
   },
   {
     id: 'finish',
-    title: '🎉 これ で 一通り 終わり です',
-    body: 'まず は CXO を 1 人 タップ → 「今週 の 集客 案 3 つ」 を 任せて みて ください。 60 秒 で 成果物 が 役員 日報 に 入ります。 もう 一度 ツアー したい 時 は Cmd+K で 「ツアー」 と 検索。',
+    title: 'ここまでで、ひと通りです',
+    body: 'まずは役員を1人タップして「今週の集客案を3つ」と頼んでみてください。1分ほどで、できあがったものが役員日報に入ります。もう一度この案内を見たい時は、検索で「使い方」と打ってください。',
     placement: 'auto',
   },
 ];
 
-// ── Iris (Creator) ツアー: 12 ステップ ─────────────────
+// ── Iris (Creator) の案内: 12 ステップ ─────────────────
 export const IRIS_TOUR: TourStep[] = [
   {
     id: 'welcome',
-    title: 'CORE Iris へ ようこそ',
-    body: 'これ から 1 分 で、 6 名 の AI 役員 が 「Instagram / 案件 / 単価」 を 上げる 仕組み を 案内 します。 触り ながら 覚えられます。',
+    title: 'CORE Iris へようこそ',
+    body: 'これから1分で、6名のAI担当が Instagram の投稿・お仕事の話・単価の相談をまとめて引き受ける仕組みを案内します。触りながら進められます。',
     placement: 'auto',
   },
   {
     id: 'ig-connect',
-    title: '📸 まず Instagram を 繋ぐ',
-    body: 'Iris の 中核 は IG 連携。 OAuth で プロフィール / 投稿 / DM を 取得 → 役員 が 戦略 に 反映 します。',
+    title: 'まず Instagram をつなぎます',
+    body: 'つなぐと、プロフィール・投稿・DMを読み取って、投稿の中身や返事づくりに反映できるようになります。',
     target: '[data-tour-id="ig-connect"]',
-    tapLabel: 'IG 連携 へ',
+    tapLabel: 'Instagram をつなぐ',
     placement: 'auto',
   },
   {
     id: 'iris-agents',
-    title: '👥 6 名 の クリエイター 役員',
-    body: 'コンテンツ / 案件 / DM / 分析 / 美容 / 戦略 の 6 名 が 役員 として 動きます。 タップ で 任せる。',
+    title: '6名の担当がいます',
+    body: '投稿づくり・お仕事の話・DMの返事・数字の分析・美容・全体の作戦、それぞれ担当が分かれています。タップして任せます。',
     target: '[data-tour-id="iris-cxo-grid"]',
-    tapLabel: '役員 を タップ',
+    tapLabel: '担当を1人タップ',
     placement: 'top',
   },
   {
     id: 'reel-studio',
-    title: '🎬 リール Studio',
-    body: '台本 / 字幕 / BGM / ハッシュタグ を 1 タップ で 設計。 投稿 予約 まで 一気 通貫。',
+    title: 'リールをつくる場所',
+    body: '台本・字幕・音・ハッシュタグを、選ぶだけで組み立てられます。投稿の予約まで、この画面のなかで終わります。',
     target: '[data-tour-id="reel-studio"]',
     placement: 'auto',
   },
   {
     id: 'deal-capture',
-    title: '💌 DM スクショ で 案件 取込',
-    body: 'ブランド から の DM を スクショ → AI が 金額 / 期限 / 業務 内容 を 抽出 → 自動 で 案件 化。',
+    title: 'DMのスクショから、お仕事の話を取り込めます',
+    body: '企業から届いたDMのスクリーンショットを入れると、金額・期限・やることを読み取って、案件として残します。',
     target: '[data-tour-id="deal-capture"]',
     placement: 'auto',
   },
   {
     id: 'fan-engagement',
-    title: '💕 ファン エンゲージ',
-    body: 'DM 一括 自動 返信 + 案件 候補 抽出。 24h 以内 返信 で エンゲージ メント 維持。',
+    title: 'DMの返事をまとめて用意します',
+    body: 'たまったDMの返事の下書きを一度に用意し、お仕事につながりそうなものを見つけ出します。',
     target: '[data-tour-id="fan-engagement"]',
     placement: 'auto',
   },
   {
     id: 'post-queue',
-    title: '📅 投稿 予約 キュー',
-    body: '複数 媒体 (IG / X / TikTok) に 時刻 予約。 失敗 通知 + 容量 自動 調整 で 落とさない。',
+    title: '投稿の予約リスト',
+    body: 'Instagram・X・TikTok に時間を決めて予約できます。失敗した時は必ず知らせます。黙って落ちることはありません。',
     target: '[data-tour-id="post-queue"]',
     placement: 'auto',
   },
   {
     id: 'brand-match',
-    title: '🤝 ブランド 案件 マッチ',
-    body: '相性 良い ブランド 5 社 を AI が リスト + 提案 文 を 自動 生成。 こちら から 営業 する 仕組み。',
+    title: '相性の良い企業を探します',
+    body: '合いそうな企業を並べて、送る文章の下書きまで用意します。待つのではなく、こちらから声をかけられます。',
     target: '[data-tour-id="brand-match"]',
     placement: 'auto',
   },
   {
     id: 'iris-knowledge',
-    title: '🧠 ナレッジ = あなた の 世界 観',
-    body: 'プロフィール / 過去 投稿 / ブランド 観 を 渡す ほど、 役員 が 「あなた らしい 文章 / 提案」 を 書ける 様 に。',
+    title: 'ナレッジ = あなたらしさの置き場',
+    body: 'プロフィール・過去の投稿・大事にしていることを入れるほど、出てくる文章があなたの言い方に近づきます。',
     target: '[data-tour-id="iris-knowledge"]',
     placement: 'auto',
   },
   {
     id: 'iris-briefings',
-    title: '📋 成果物 は 役員 日報 タブ に',
-    body: '役員 が 作った 投稿 案 / 提案 文 / 分析 を 全部 蓄積。 検索 / DL / IG 直 シェア も できる。',
+    title: 'できたものは日報タブに残ります',
+    body: '投稿案・提案文・分析はすべてここに貯まります。あとから探す・保存する・そのまま Instagram に送ることができます。',
     target: '[data-tour-id="iris-briefings"]',
     placement: 'top',
   },
   {
     id: 'iris-share',
-    title: '📲 IG 直 シェア',
-    body: 'Web Share API → Instagram アプリ に 即 ジャンプ。 ストーリー / フィード / リール どこに でも 投稿 可能。',
+    title: 'Instagram にそのまま送れます',
+    body: 'ここを押すと Instagram アプリが開きます。ストーリー・フィード・リールのどれにでも送れます。',
     target: '[data-tour-id="iris-share-button"]',
     placement: 'left',
   },
   {
     id: 'finish',
-    title: '🎉 これ で 一通り 終わり です',
-    body: 'まず DM スクショ を 1 枚 入れて 案件 取込 を 試して ください。 60 秒 で AI が 提案 文 を 作って くれます。 もう 一度 ツアー は Cmd+K → 「ツアー」。',
+    title: 'ここまでで、ひと通りです',
+    body: 'まずはDMのスクリーンショットを1枚入れて、お仕事の取り込みを試してみてください。1分ほどで提案文までできます。もう一度この案内を見たい時は、検索で「使い方」と打ってください。',
     placement: 'auto',
   },
 ];

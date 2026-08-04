@@ -169,6 +169,7 @@ const UTIL_ICONS: Record<string, { Icon: LucideIcon; color: string }> = {
   'demo-start':  { Icon: Play,        color: '#10B981' },
   'demo-end':    { Icon: Square,      color: '#FFA94D' },
   reload:        { Icon: RefreshCw,   color: '#5BA8FF' },
+  'guided-tour': { Icon: Compass,     color: '#10B981' }, // 緑 = ここから始まる
   sitemap:       { Icon: MapIcon,     color: '#5BA8FF' },
   history:       { Icon: History,     color: '#9088A8' },
   'api-keys':    { Icon: KeyRound,    color: '#FACC15' },
@@ -710,6 +711,20 @@ export default function CommandPalette({
     } catch { /* */ }
 
     const helpItems: Array<{ id: string; label: string; subtitle: string; emoji: string; onRun: () => void }> = [
+      // 使い方の案内 (GuidedTourSpotlight)。ここが唯一の入口 —
+      // 自動起動は「うざい」とのオーナー指示で廃止済みなので、呼べる場所が無いと
+      // 案内そのものが誰にも届かない状態になる (2026-08-04 に発見して復旧)。
+      {
+        id: 'guided-tour',
+        label: '使い方を案内してもらう',
+        subtitle: '画面の上で「ここをタップ」と順に教えます。途中でやめられます（はじめての人向けの案内ツアー）',
+        emoji: '🧭',
+        onRun: () => {
+          const brand = (window.location.pathname.startsWith('/iris') || window.location.search.includes('brand=iris'))
+            ? 'iris' : 'prism';
+          window.dispatchEvent(new CustomEvent('core:start-guided-tour', { detail: { brand } }));
+        },
+      },
       { id: 'sitemap',  label: '全機能マップ', subtitle: '全ページ / 全機能 を 1 画面で (Cmd+Shift+/)', emoji: '🗺️', onRun: openSitemapPalette },
       { id: 'history',  label: 'AI 提案 履歴 (7 日)', subtitle: '採用 / 却下 / 採用率 (Cmd+Shift+H)', emoji: '🕘', onRun: openAiHistory },
       { id: 'api-keys', label: 'API キー設定', subtitle: 'OpenAI / Stripe などの接続', emoji: '🔑', onRun: () => onOpenModal('settings') },
