@@ -19,7 +19,7 @@ import {
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { CountUp, Sparkline, RewardBurst } from '../components/visualFx';
 import { v4 as uuidv4 } from 'uuid';
 import EmptyInvite from './EmptyInvite';
@@ -695,8 +695,8 @@ function inputStyle(bg: IrisBackgroundDef): React.CSSProperties {
 
 function btnPrimary(bg: IrisBackgroundDef): React.CSSProperties {
   return {
-    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-    color: '#fff', border: 'none', borderRadius: 999,
+    background: accentFaceBg(bg.accent),
+    color: accentFaceInk(bg.accent), border: 'none', borderRadius: 999,
     padding: '0.65rem 1.4rem', fontWeight: 700, cursor: 'pointer',
     fontSize: '0.85rem', boxShadow: `0 6px 18px ${bg.accent}44`,
     fontFamily: IRIS_FONTS.body, minHeight: 44,

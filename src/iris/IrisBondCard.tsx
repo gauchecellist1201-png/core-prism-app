@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Sparkles, X, Check, ChevronRight, Star } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { useIrisBond, LEVEL_VIBE } from './useIrisBond';
 
 interface Props {
@@ -297,8 +297,8 @@ export default function IrisBondCard({ bg, variant = 'inline' }: Props) {
               disabled={q.kind === 'multi' ? !multiValue.length : !inputValue}
               style={{
                 flex: 1, padding: '0.65rem',
-                background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-                color: '#fff', border: 'none', borderRadius: 999,
+                background: accentFaceBg(bg.accent),
+                color: accentFaceInk(bg.accent), border: 'none', borderRadius: 999,
                 fontSize: '0.88rem', fontWeight: 800,
                 cursor: (q.kind === 'multi' ? multiValue.length : inputValue) ? 'pointer' : 'not-allowed',
                 opacity: (q.kind === 'multi' ? multiValue.length : inputValue) ? 1 : 0.5,

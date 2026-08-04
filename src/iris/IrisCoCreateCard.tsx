@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import { Sparkles, Send, CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { loadIgProfile } from './instagramConnect';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 
@@ -81,10 +81,10 @@ export default function IrisCoCreateCard({ bg }: Props) {
           <span style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-            background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+            background: accentFaceBg(bg.accent),
             boxShadow: `0 8px 20px ${bg.accent}55`,
           }}>
-            <CheckCircle2 size={22} color="#fff" strokeWidth={2.2} />
+            <CheckCircle2 size={22} color={accentFaceInk(bg.accent)} strokeWidth={2.2} />
           </span>
           <div style={{ minWidth: 0 }}>
             <h3 style={{ fontFamily: IRIS_FONTS.display, fontSize: '1.05rem', color: bg.ink, margin: 0 }}>

@@ -7,7 +7,7 @@ import type { AppSettings } from '../types/identity';
 import type { MediaKit } from '../types/influencerDeal';
 import { triageOffer, type OfferTriageResult } from './offerTriage';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import IrisIntro from './IrisIntro';
 
 interface Props {
@@ -43,8 +43,8 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
   } as React.CSSProperties;
 
   const btnPrimary = {
-    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-    color: '#fff', border: 'none', borderRadius: 999,
+    background: accentFaceBg(bg.accent),
+    color: accentFaceInk(bg.accent), border: 'none', borderRadius: 999,
     padding: '0.75rem 1.6rem', fontWeight: 600, cursor: 'pointer',
     fontSize: '0.88rem', fontFamily: IRIS_FONTS.body,
     boxShadow: `0 8px 22px ${bg.accent}55`,

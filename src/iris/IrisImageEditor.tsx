@@ -9,6 +9,7 @@ import {
   RefreshCw, X,
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
+import { accentFaceBg, accentFaceInk } from './irisStyle';
 import type { AppSettings } from '../types/identity';
 import { shareToInstagram } from './instagramShare';
 import { aiFetch } from '../lib/aiFetch';
@@ -745,8 +746,8 @@ JSON だけ返し、\`\`\`json は不要。`;
         <div style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6, flexWrap: 'nowrap', flex: 'none' }}>
           <button onClick={omakase} disabled={!!busy} style={{
             ...topBtn(bg), flex: 'none',
-            background: busy === 'omakase' ? bg.accent + '90' : `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-            color: '#fff',
+            background: busy === 'omakase' ? bg.accent + '90' : accentFaceBg(bg.accent),
+            color: accentFaceInk(bg.accent),
             border: 'none',
             opacity: busy ? 0.7 : 1,
           }}>

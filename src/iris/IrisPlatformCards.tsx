@@ -316,7 +316,7 @@ export default function IrisPlatformCards({ bg, result, queue, handle, model }: 
           <header style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
             <div style={{
               width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-              background: 'linear-gradient(135deg, #FCB045, #E1306C 55%, #833AB4)',
+              background: 'linear-gradient(135deg, #A86303, #DF2363 55%, #833AB4)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#FFFFFF', fontWeight: 800, fontSize: '0.85rem',
             }}>

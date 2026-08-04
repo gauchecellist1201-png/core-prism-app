@@ -9,7 +9,7 @@ import { AppleHealthImport } from '../components/health/AppleHealthImport';
 import { HealthAutoSyncModal } from '../components/health/HealthAutoSyncModal';
 import type { useHealth } from '../hooks/useHealth';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { generateHealthAdvice, buildStatBundle, type HealthAdvice } from '../lib/healthAdvisor';
 import { getHealthToken, getLastPullAt, pullIngestedDays } from '../lib/healthIngest';
 import type { DailyHealth } from '../types/health';
@@ -159,8 +159,8 @@ export default function IrisHealthView({ bg, health }: Props) {
             onClick={() => health.reseed()}
             style={{
               padding: '0.7rem 1.6rem', borderRadius: 999,
-              background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-              color: '#fff', fontWeight: 700, fontSize: '0.9rem',
+              background: accentFaceBg(bg.accent),
+              color: accentFaceInk(bg.accent), fontWeight: 700, fontSize: '0.9rem',
               border: 'none', cursor: 'pointer',
               boxShadow: `0 8px 22px ${bg.accent}44`,
               minHeight: 44,
@@ -229,8 +229,8 @@ export default function IrisHealthView({ bg, health }: Props) {
               disabled={adviceBusy || !hasData}
               style={{
                 minHeight: 44,
-                background: adviceBusy ? `${bg.accent}80` : `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-                color: '#fff',
+                background: adviceBusy ? `${bg.accent}80` : accentFaceBg(bg.accent),
+                color: accentFaceInk(bg.accent),
                 border: 'none',
                 borderRadius: 999,
                 padding: '0.7rem 1.2rem',
@@ -385,8 +385,8 @@ export default function IrisHealthView({ bg, health }: Props) {
               onClick={() => setSyncOpen(true)}
               style={{
                 minHeight: 44,
-                background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-                color: '#fff', border: 'none', borderRadius: 999,
+                background: accentFaceBg(bg.accent),
+                color: accentFaceInk(bg.accent), border: 'none', borderRadius: 999,
                 padding: '0.75rem 1.3rem', fontSize: '0.9rem', fontWeight: 700,
                 cursor: 'pointer', whiteSpace: 'nowrap',
                 fontFamily: IRIS_FONTS.body,

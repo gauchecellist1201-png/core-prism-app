@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { MessagesSquare, Plus } from 'lucide-react';
 import { useCommunity, POST_TYPE_META, type CommunityPostType } from './community';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { confirmAction } from '../lib/confirmDialog';
 import EmptyInvite from './EmptyInvite';
 import InviteShareCard from '../components/InviteShareCard';
@@ -47,8 +47,8 @@ export default function IrisCommunityView({ bg, myHandle }: Props) {
   } as React.CSSProperties;
 
   const btnPrimary = {
-    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-    color: '#fff', border: 'none', borderRadius: 999,
+    background: accentFaceBg(bg.accent),
+    color: accentFaceInk(bg.accent), border: 'none', borderRadius: 999,
     padding: '0.6rem 1.4rem', fontWeight: 600, cursor: 'pointer',
     fontSize: '0.85rem', fontFamily: IRIS_FONTS.body,
   } as React.CSSProperties;

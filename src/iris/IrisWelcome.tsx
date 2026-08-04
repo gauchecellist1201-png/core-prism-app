@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Flame, Clapperboard, Mail, CalendarClock, ChevronRight } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 
 const SESSION_KEY = 'iris_welcome_seen_v2';
 
@@ -323,8 +323,8 @@ export function IrisHeroGreeting({ bg, handle, preparedReel, readyPostCount = 0,
           >
             <div style={{
               width: 32, height: 32, borderRadius: 10,
-              background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-              color: '#fff',
+              background: accentFaceBg(bg.accent),
+              color: accentFaceInk(bg.accent),
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}>

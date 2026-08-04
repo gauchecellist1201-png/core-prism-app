@@ -10,7 +10,7 @@ import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import { logIrisActivity } from './irisActivity';
 import { aiFetch } from '../lib/aiFetch';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { shareToInstagram } from './instagramShare';
 import { notifyInApp } from '../lib/inAppNotify';
 import {
@@ -3106,8 +3106,8 @@ JSON のみで返答。`;
     fontFamily: IRIS_FONTS.body,
   };
   const btn = (active = false): React.CSSProperties => ({
-    background: active ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)` : 'rgba(255,255,255,0.92)',
-    color: active ? '#fff' : bg.ink,
+    background: active ? accentFaceBg(bg.accent) : 'rgba(255,255,255,0.92)',
+    color: active ? accentFaceInk(bg.accent) : bg.ink,
     border: active ? 'none' : `1px solid ${bg.cardBorder}`,
     borderRadius: 10, padding: '0.55rem 0.9rem',
     fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
@@ -3299,8 +3299,8 @@ JSON のみで返答。`;
             style={{
               width: '100%',
               minHeight: 56,
-              background: autoBusy ? `${bg.accent}99` : `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-              color: '#fff', border: 'none', borderRadius: 14,
+              background: autoBusy ? `${bg.accent}99` : accentFaceBg(bg.accent),
+              color: accentFaceInk(bg.accent), border: 'none', borderRadius: 14,
               fontSize: '1.02rem', fontWeight: 800, cursor: autoBusy ? 'wait' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               fontFamily: IRIS_FONTS.body,
@@ -3445,7 +3445,7 @@ JSON のみで返答。`;
               <div style={{ height: 6, background: '#fff', borderRadius: 999, overflow: 'hidden', marginBottom: '0.7rem' }}>
                 <div style={{
                   width: `${reelScore.score}%`, height: '100%',
-                  background: `linear-gradient(90deg, ${bg.accent}, ${bg.accent}cc)`,
+                  background: accentFaceBg(bg.accent, 90),
                   transition: 'width 0.3s',
                 }} />
               </div>
@@ -3516,7 +3516,7 @@ JSON のみで返答。`;
                   <div style={{ height: 5, background: '#fff', borderRadius: 999, overflow: 'hidden' }}>
                     <div style={{
                       width: `${axis.val}%`, height: '100%',
-                      background: `linear-gradient(90deg, ${bg.accent}, ${bg.accent}cc)`,
+                      background: accentFaceBg(bg.accent, 90),
                       transition: 'width 0.3s',
                     }} />
                   </div>
@@ -4782,8 +4782,8 @@ JSON のみで返答。`;
                 }}>キャンセル</button>
                 <button onClick={saveSchedule} disabled={!scheduleCaption.trim() || scheduleGenerating} style={{
                   flex: 2, padding: '0.75rem',
-                  background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-                  color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800,
+                  background: accentFaceBg(bg.accent),
+                  color: accentFaceInk(bg.accent), border: 'none', borderRadius: 10, fontWeight: 800,
                   fontSize: '0.92rem', cursor: 'pointer',
                   opacity: scheduleGenerating ? 0.6 : 1,
                 }}>予約キューに保存</button>
@@ -4792,8 +4792,8 @@ JSON のみで返答。`;
             {scheduleSaved && onJumpToSchedule && (
               <button onClick={() => { setScheduleOpen(false); onJumpToSchedule(); }} style={{
                 width: '100%', padding: '0.75rem',
-                background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-                color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800,
+                background: accentFaceBg(bg.accent),
+                color: accentFaceInk(bg.accent), border: 'none', borderRadius: 10, fontWeight: 800,
                 fontSize: '0.92rem', cursor: 'pointer',
               }}>予約一覧を開く</button>
             )}

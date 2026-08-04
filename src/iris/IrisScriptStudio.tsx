@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Lock, Check } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { notifyInApp } from '../lib/inAppNotify';
 import { copyText } from './copyText';
 import ThinkingIndicator from '../components/ThinkingIndicator';
@@ -116,7 +116,7 @@ function ScriptStudioLock({ bg }: { bg: IrisBackgroundDef }) {
           ))}
         </div>
         <button onClick={openPlans} style={{
-          background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`, color: '#fff', border: 'none',
+          background: accentFaceBg(bg.accent), color: accentFaceInk(bg.accent), border: 'none',
           borderRadius: 999, padding: '0.85rem 2rem', fontWeight: 700, cursor: 'pointer',
           fontSize: '0.95rem', fontFamily: IRIS_FONTS.body, boxShadow: `0 10px 26px ${bg.accent}55`,
         }}>
@@ -176,7 +176,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
   };
   const label: React.CSSProperties = { fontSize: '0.72rem', color: bg.inkSoft, fontWeight: 700, marginBottom: 4, display: 'block' };
   const btnPrimary: React.CSSProperties = {
-    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`, color: '#fff',
+    background: accentFaceBg(bg.accent), color: accentFaceInk(bg.accent),
     border: 'none', borderRadius: 999, padding: '0.7rem 1.4rem', fontWeight: 700, minHeight: 44,
     cursor: 'pointer', fontSize: '0.88rem', fontFamily: IRIS_FONTS.body, boxShadow: `0 8px 22px ${bg.accent}44`,
     transition: 'background 0.15s, box-shadow 0.15s, opacity 0.15s',

@@ -6,7 +6,7 @@
 import { useMemo, useState } from 'react';
 import { Calendar, ExternalLink, Trash2, Copy, Check, Clock, AlertCircle, Image as ImageIcon, Video as VideoIcon, CalendarClock, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { usePostQueue, buildCaptionText, suggestNextSlot, type ScheduledPost } from './usePostQueue';
 import IrisIntro from './IrisIntro';
 import { confirmAction } from '../lib/confirmDialog';
@@ -167,7 +167,7 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
           <p style={{ margin: 0, fontSize: '0.8rem', color: bg.ink, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.caption}</p>
         </div>
         <div style={{ display: 'grid', gap: 4 }}>
-          <button onClick={() => open(p)} title="Instagram で開く (キャプ自動コピー)" style={{ padding: '0.4rem 0.6rem', background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`, color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', gap: 4, alignItems: 'center' }}><ExternalLink size={11} /> 投稿</button>
+          <button onClick={() => open(p)} title="Instagram で開く (キャプ自動コピー)" style={{ padding: '0.4rem 0.6rem', background: accentFaceBg(bg.accent), color: accentFaceInk(bg.accent), border: 'none', borderRadius: 8, fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', gap: 4, alignItems: 'center' }}><ExternalLink size={11} /> 投稿</button>
           <button onClick={() => copyCaption(p)} title="本文+ハッシュタグをコピー" style={{ padding: '0.35rem 0.6rem', background: copiedId === p.id ? '#ECFDF5' : 'transparent', color: copiedId === p.id ? '#065F46' : bg.ink, border: `1px solid ${copiedId === p.id ? '#10B98180' : bg.cardBorder}`, borderRadius: 8, fontSize: '0.68rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', gap: 4, alignItems: 'center' }}>{copiedId === p.id ? <><Check size={11} /> コピー済</> : <><Copy size={11} /> コピー</>}</button>
         </div>
       </div>
@@ -479,8 +479,8 @@ export default function IrisPostQueueView({ bg, queue }: Props) {
                 <div style={{ display: 'grid', gap: 4 }}>
                   <button onClick={() => open(p)} title="Instagram で開く (キャプ自動コピー)" style={{
                     padding: '0.5rem 0.7rem',
-                    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-                    color: '#fff', border: 'none', borderRadius: 8,
+                    background: accentFaceBg(bg.accent),
+                    color: accentFaceInk(bg.accent), border: 'none', borderRadius: 8,
                     fontSize: '0.74rem', fontWeight: 800, cursor: 'pointer',
                     display: 'inline-flex', gap: 4, alignItems: 'center',
                     transition: 'background 0.15s, color 0.15s, border-color 0.15s',

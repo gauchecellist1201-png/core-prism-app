@@ -8,7 +8,7 @@ import type { AppSettings } from '../types/identity';
 import {
   IRIS_BACKGROUNDS, type IrisBackgroundDef, loadIrisBackground, saveIrisBackground,
   IRIS_COLORS, IRIS_FONTS, getAllBackgrounds, removeCustomBackground, type CustomIrisBackground,
-  deriveAccentText, onAccentFace,
+  deriveAccentText, onAccentFace, accentFaceBg, accentFaceInk,
 } from './irisStyle';
 import { IRIS_TYPE, IRIS_SHADOW, IRIS_RADIUS, IRIS_GRADIENT, IRIS_MOTION, IRIS_SIDEBAR_W, IRIS_DOCK_H } from './irisDesign';
 // 重い「タブを開いたときだけ要る」エディタは lazy 化して main から切り出す
@@ -406,7 +406,7 @@ function IrisBottomDock({
               style={{
                 width: 52, height: 52,
                 borderRadius: IRIS_RADIUS.full,
-                background: IRIS_GRADIENT.cta,
+                background: IRIS_GRADIENT.ctaText,
                 border: 'none', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 boxShadow: IRIS_SHADOW.glow(bg.accent),
@@ -566,7 +566,7 @@ function IrisEditorialHome({
           }}>
             {greeting},<br />
             <span style={{
-              background: IRIS_GRADIENT.cta,
+              background: IRIS_GRADIENT.textOnLight,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
@@ -840,8 +840,8 @@ function IrisEditorialHome({
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
                       <div style={{
                         width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                        background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-                        color: '#fff', fontSize: 11, fontWeight: 900,
+                        background: accentFaceBg(bg.accent),
+                        color: accentFaceInk(bg.accent), fontSize: 11, fontWeight: 900,
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                       }}>{i + 2}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -1081,8 +1081,8 @@ function EditorialCard({
 
 function ctaButtonSm(bg: IrisBackgroundDef) {
   return {
-    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-    color: '#fff',
+    background: accentFaceBg(bg.accent),
+    color: accentFaceInk(bg.accent),
     border: 'none',
     borderRadius: IRIS_RADIUS.full,
     padding: '0.55rem 1rem',
@@ -1701,7 +1701,9 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               }} />
               <p style={{
                 textAlign: 'center', fontSize: '0.7rem', letterSpacing: '0.3em',
-                color: bg.accentText, fontWeight: 700, margin: '0 0 1rem',
+                // このシートの地はテーマに関係なく白。暗いテーマの accentText は
+                // 「暗い地の上で読める明るい色」なのでここでは 1.67 まで落ちる（実測・neon-night の金）。
+                color: deriveAccentText(bg.accent, false), fontWeight: 700, margin: '0 0 1rem',
               }}>
                 ALL FEATURES
               </p>
@@ -2423,8 +2425,8 @@ function HomeView({ bg, myDeals, setTab }: { bg: IrisBackgroundDef; desk: Return
           </div>
           {setTab && (
             <button onClick={() => setTab('strategy')} style={{
-              background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-              color: '#fff', border: 'none', borderRadius: 999,
+              background: accentFaceBg(bg.accent),
+              color: accentFaceInk(bg.accent), border: 'none', borderRadius: 999,
               padding: '0.6rem 1.4rem', fontWeight: 700, cursor: 'pointer',
               fontSize: '0.85rem', boxShadow: `0 6px 20px ${bg.accent}55`,
             }}>
@@ -2676,8 +2678,8 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
         onClick={() => setCaptureOpen(true)}
         style={{
           width: '100%',
-          background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-          color: '#fff',
+          background: accentFaceBg(bg.accent),
+          color: accentFaceInk(bg.accent),
           border: 'none',
           borderRadius: 18,
           padding: '0.95rem 1.2rem',
@@ -3108,7 +3110,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
               }}
               style={{
                 flex: '1 1 auto', minWidth: 140,
-                background: 'linear-gradient(135deg, #FCB045 0%, #E1306C 50%, #833AB4 100%)',
+                background: IRIS_GRADIENT.ctaText,
                 color: '#fff', border: 'none', borderRadius: 12,
                 padding: '0.75rem 1rem', fontSize: '0.88rem', fontWeight: 700,
                 cursor: 'pointer', boxShadow: '0 6px 18px rgba(225,48,108,0.35)',
@@ -4696,8 +4698,8 @@ const inp = (bg: IrisBackgroundDef): React.CSSProperties => ({
 });
 
 const btnPrimary = (bg: IrisBackgroundDef): React.CSSProperties => ({
-  background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-  color: '#fff',
+  background: accentFaceBg(bg.accent),
+  color: accentFaceInk(bg.accent),
   border: 'none',
   borderRadius: 999,
   padding: '0.65rem 1.4rem',
@@ -4975,9 +4977,9 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
                       style={{
                         padding: '0.55rem 1.1rem', borderRadius: 999,
                         background: (newAcct.handle || '').trim()
-                          ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`
+                          ? accentFaceBg(bg.accent)
                           : 'rgba(0,0,0,0.08)',
-                        color: (newAcct.handle || '').trim() ? '#fff' : '#999',
+                        color: (newAcct.handle || '').trim() ? accentFaceInk(bg.accent) : '#999',
                         border: 'none', fontSize: '0.85rem', fontWeight: 800,
                         cursor: (newAcct.handle || '').trim() ? 'pointer' : 'not-allowed',
                         boxShadow: (newAcct.handle || '').trim() ? `0 6px 16px ${bg.accent}55` : 'none',

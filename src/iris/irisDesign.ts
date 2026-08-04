@@ -159,6 +159,20 @@ export const IRIS_GRADIENT = {
   cta:      'linear-gradient(135deg, #E1306C 0%, #833AB4 50%, #FCB045 100%)',
   ctaHover: 'linear-gradient(135deg, #D11F5F 0%, #722D9E 50%, #E8A035 100%)',
 
+  /**
+   * 白い文字・アイコンを乗せてよい CTA グラデ。
+   * 上の `cta` は金の端 #FCB045 で白が 1.84 まで落ちる（2026-08-05 実測・初回ツアーの「次へ」）。
+   * 色み(38°/340°)は変えず明るさだけ落として、どの位置でも白が 4.6 以上通るようにしたもの。
+   * 文字が乗らない飾りの面は、明るいままの `cta` を使ってよい。
+   */
+  ctaText:  'linear-gradient(135deg, #A86303 0%, #DF2363 50%, #833AB4 100%)',
+
+  /**
+   * 明るい地（アイボリー #F6F4EE）の上で「文字そのものをグラデにする」時の色。
+   * `cta` をそのまま文字にすると金の端が 1.67 で消える。
+   */
+  textOnLight: 'linear-gradient(135deg, #D41F5C 0%, #833AB4 50%, #A05F03 100%)',
+
   /** Instagram 公式 */
   instagram: 'linear-gradient(135deg, #833AB4, #FD1D1D 50%, #FCB045)',
 

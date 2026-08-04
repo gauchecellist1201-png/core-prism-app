@@ -17,7 +17,7 @@ import {
 import { extractInstagramHandle, analyzeInstagramProfile, type IGAnalysisResult } from './instagramAnalyzer';
 import { confirmAction } from '../lib/confirmDialog';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import VoiceInputButton from '../components/VoiceInputButton';
 import IrisStrategyHome from './IrisStrategyHome';
 
@@ -64,8 +64,8 @@ function AdvancedView({ bg, settings, mediaKit, knowledge, onBack }: Props & { o
     padding: '1.4rem',
   };
   const btnPrimary: React.CSSProperties = {
-    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-    color: '#fff',
+    background: accentFaceBg(bg.accent),
+    color: accentFaceInk(bg.accent),
     border: 'none',
     borderRadius: 999,
     padding: '0.75rem 1.6rem',
@@ -140,8 +140,8 @@ function AdvancedView({ bg, settings, mediaKit, knowledge, onBack }: Props & { o
           { id: 'arc' as SubTab,      e: '', l: '30日プラン' },
         ].map(t => (
           <button key={t.id} onClick={() => setSub(t.id)} style={{
-            background: sub === t.id ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)` : 'rgba(255,255,255,0.92)',
-            color: sub === t.id ? '#FFFFFF' : '#1F1A2E',
+            background: sub === t.id ? accentFaceBg(bg.accent) : 'rgba(255,255,255,0.92)',
+            color: sub === t.id ? accentFaceInk(bg.accent) : '#1F1A2E',
             border: sub === t.id ? 'none' : '1px solid rgba(31,26,46,0.08)',
             borderRadius: 999, padding: '0.5rem 1.1rem',
             fontSize: '0.85rem', fontWeight: sub === t.id ? 700 : 600,
@@ -856,8 +856,8 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
           { id: 'other' as const, e: '', l: '他のアカウントをリサーチ' },
         ].map(m => (
           <button key={m.id} onClick={() => setMode(m.id)} style={{
-            background: mode === m.id ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)` : 'rgba(255,255,255,0.92)',
-            color: mode === m.id ? '#FFFFFF' : '#1F1A2E',
+            background: mode === m.id ? accentFaceBg(bg.accent) : 'rgba(255,255,255,0.92)',
+            color: mode === m.id ? accentFaceInk(bg.accent) : '#1F1A2E',
             border: mode === m.id ? 'none' : '1px solid rgba(31,26,46,0.08)',
             borderRadius: 999, padding: '0.65rem 1.4rem',
             fontSize: '0.92rem', fontWeight: mode === m.id ? 700 : 600,

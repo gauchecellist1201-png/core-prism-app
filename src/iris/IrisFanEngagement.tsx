@@ -20,7 +20,7 @@ import {
 import IrisIntro from './IrisIntro';
 import type { AppSettings } from '../types/identity';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { copyText } from '../lib/clipboard';
 import { toneInstruction } from '../lib/aiTone';
@@ -1106,8 +1106,8 @@ function WeeklyFiveCard({ bg, cache, loading, onGenerate, fansCount }: {
           </p>
         </div>
         <button onClick={onGenerate} disabled={loading || fansCount === 0} style={{
-          background: fresh ? 'transparent' : `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-          color: fresh ? bg.accent : '#fff',
+          background: fresh ? 'transparent' : accentFaceBg(bg.accent),
+          color: fresh ? bg.accent : accentFaceInk(bg.accent),
           border: fresh ? `1px solid ${bg.accent}55` : 'none',
           borderRadius: 999, padding: '0.55rem 1.1rem',
           fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
@@ -1274,8 +1274,8 @@ function inp(bg: IrisBackgroundDef): React.CSSProperties {
 
 function btnPrimary(bg: IrisBackgroundDef): React.CSSProperties {
   return {
-    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-    color: '#fff', border: 'none', borderRadius: 999,
+    background: accentFaceBg(bg.accent),
+    color: accentFaceInk(bg.accent), border: 'none', borderRadius: 999,
     padding: '0.65rem 1.2rem', fontWeight: 700, cursor: 'pointer',
     fontSize: '0.85rem', fontFamily: IRIS_FONTS.body,
     boxShadow: `0 4px 14px ${bg.accent}40`,

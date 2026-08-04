@@ -349,6 +349,41 @@ export function onAccentFace(accent: string): { face: string; faceEnd: string; i
   }
 }
 
+/**
+ * 画面側で毎回書かれていた `linear-gradient(135deg, ${accent}, ${accent}cc)` の置き換え。
+ * 終端の `cc`(80%) は下の明るい地が透けて、面がグラデの中で一番薄いところを作る＝
+ * そこに白文字が乗ると実測で 3.88 まで落ちていた（2026-08-05 本番計測）。
+ * onAccentFace が決めた「文字と反対側へずらした終端」を使うので、面のどこでも読める。
+ */
+export function accentFaceBg(accent: string, deg: number = 135): string {
+  const f = onAccentFace(accent);
+  return `linear-gradient(${deg}deg, ${f.face}, ${f.faceEnd})`;
+}
+
+/**
+ * 「白い文字を乗せる面」の色。色みは変えず、白が 4.6:1 通るまで明るさだけ落とす。
+ * onAccentFace と違って濃い文字への逃げ道を持たない＝ 3 色以上のグラデのように
+ * 「面の中で明るさが大きく動く」ところで、どの位置でも白が通るようにするために使う。
+ */
+export function whiteSafeFace(hex: string): string {
+  try {
+    const [h, s, l] = hexToHsl(hex);
+    if (contrast('#FFFFFF', hex) >= 4.6) return hex;
+    for (let i = l; i >= 0; i -= 0.005) {
+      const c = hslToHex(h, s, i);
+      if (contrast('#FFFFFF', c) >= 4.6) return c;
+    }
+    return hex;
+  } catch {
+    return hex;
+  }
+}
+
+/** accentFaceBg の面に乗せる文字色。白が通らない明るい面（オレンジ・黄）では自動で濃い文字になる。 */
+export function accentFaceInk(accent: string): string {
+  return onAccentFace(accent).ink;
+}
+
 /** accentText を持たない古い自作テーマに、計算値を補う（画面側は必ず accentText を読める） */
 function withAccentText<T extends { accent: string; accentText?: string; accentSolid?: string; card?: string; ink?: string }>(b: T): T {
   if (b.accentText && b.accentSolid) return b;

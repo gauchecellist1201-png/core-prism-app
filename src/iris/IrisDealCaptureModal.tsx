@@ -15,7 +15,7 @@ import {
   Plus, Trash2, History, ShieldAlert, MessageCircleQuestion,
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import {
   captureDealFromScreenshots, capturedDealToDealInput,
   findSimilarPastDeal, detectCaptureWarnings,
@@ -211,8 +211,8 @@ export default function IrisDealCaptureModal({ bg, onClose, onSave, pastDeals = 
     fontSize: 12, fontWeight: 700, color: inkSoft, marginBottom: 4, display: 'block',
   };
   const btnPrimary: React.CSSProperties = {
-    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-    color: '#fff', border: 'none', borderRadius: 999,
+    background: accentFaceBg(bg.accent),
+    color: accentFaceInk(bg.accent), border: 'none', borderRadius: 999,
     padding: '0.9rem 1.8rem', fontWeight: 700, cursor: 'pointer',
     fontSize: '0.98rem', fontFamily: IRIS_FONTS.body,
     boxShadow: `0 10px 28px ${bg.accent}55`,

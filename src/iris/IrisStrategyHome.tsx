@@ -14,7 +14,7 @@ import {
 import type { AppSettings } from '../types/identity';
 import type { ContentType, MediaKit } from '../types/influencerDeal';
 import { CONTENT_TYPE_META } from '../types/influencerDeal';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { BASE_ALL, DUR_BASE, EASE_OUT } from './motion';
 import {
   usePostHistory, type PostHistoryItem,
@@ -213,7 +213,7 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
   const detail = detailId ? history.posts.find(p => p.id === detailId) : null;
 
   // ─── スタイル定数 ──
-  const accentGradient = `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`;
+  const accentGradient = accentFaceBg(bg.accent);
   const glassCard: React.CSSProperties = {
     background: 'rgba(255,255,255,0.72)',
     backdropFilter: 'blur(18px) saturate(140%)',
@@ -657,8 +657,8 @@ function ErrorRecovery({
     <button
       onClick={onClick}
       style={{
-        background: primary ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)` : 'rgba(255,255,255,0.9)',
-        color: primary ? '#fff' : bg.ink,
+        background: primary ? accentFaceBg(bg.accent) : 'rgba(255,255,255,0.9)',
+        color: primary ? accentFaceInk(bg.accent) : bg.ink,
         border: primary ? 'none' : `1px solid ${bg.cardBorder}`,
         borderRadius: 999,
         padding: '0.5rem 1rem',
@@ -683,8 +683,8 @@ function ErrorRecovery({
       style={{
         background: retryPhase === 'success'
           ? 'linear-gradient(135deg, #34D399, #34D399cc)'
-          : `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-        color: '#fff',
+          : accentFaceBg(bg.accent),
+        color: accentFaceInk(bg.accent),
         border: 'none',
         borderRadius: 999,
         padding: '0.5rem 1rem',
@@ -846,8 +846,8 @@ function ExtractedReview({
         <button
           onClick={onAcceptAll}
           style={{
-            background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-            color: '#fff',
+            background: accentFaceBg(bg.accent),
+            color: accentFaceInk(bg.accent),
             border: 'none',
             borderRadius: 999,
             padding: '0.5rem 1.2rem',
@@ -1665,8 +1665,8 @@ function Gallery({
               key={k}
               onClick={() => setSort(k)}
               style={{
-                background: sort === k ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)` : 'rgba(255,255,255,0.7)',
-                color: sort === k ? '#fff' : bg.inkSoft,
+                background: sort === k ? accentFaceBg(bg.accent) : 'rgba(255,255,255,0.7)',
+                color: sort === k ? accentFaceInk(bg.accent) : bg.inkSoft,
                 border: sort === k ? 'none' : `1px solid ${bg.cardBorder}`,
                 borderRadius: 999,
                 padding: '0.32rem 0.85rem',

@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { LayoutGrid, PencilLine, AlertTriangle, CheckCircle2, Images } from 'lucide-react';
 import { loadPostedGrid, gridLegibility, cropNote, type GridTile } from './coverGrid';
+import { accentFaceBg, accentFaceInk } from './irisStyle';
 
 interface Props {
   /** いま作っている表紙（canvas の書き出し） */
@@ -83,7 +84,7 @@ export default function IrisGridPreview({
                   ? <img src={currentSrc} alt="いま作っている表紙" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   : <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 9.5, color: inkSoft }}>準備中</span>}
                 <span style={{
-                  position: 'absolute', left: 3, top: 3, background: accent, color: '#fff',
+                  position: 'absolute', left: 3, top: 3, background: accentFaceBg(accent), color: accentFaceInk(accent),
                   fontSize: 9, fontWeight: 800, borderRadius: 999, padding: '2px 6px', lineHeight: 1.2,
                 }}>いま作成中</span>
               </div>

@@ -19,7 +19,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowRight, Sparkles, TrendingUp, Film, Check } from 'lucide-react';
-import { IRIS_COLORS, IRIS_FONTS } from './irisStyle';
+import { IRIS_COLORS, IRIS_FONTS, whiteSafeFace } from './irisStyle';
 import InstagramGlyph from './InstagramGlyph';
 import { tactileTap, tactileReward, tactileClose } from '../lib/haptic';
 
@@ -403,7 +403,8 @@ function primaryBtn(accent: string): React.CSSProperties {
   return {
     width: '100%', minHeight: 50,
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-    background: `linear-gradient(120deg, ${IRIS_COLORS.gold}, ${accent}, ${IRIS_COLORS.purple})`,
+    // 金の端で白が 1.84 まで落ちるので、色みは保ったまま「白が通る濃さ」に揃える
+    background: `linear-gradient(120deg, ${whiteSafeFace(IRIS_COLORS.gold)}, ${whiteSafeFace(accent)}, ${whiteSafeFace(IRIS_COLORS.purple)})`,
     color: '#fff', border: 'none', borderRadius: 14,
     fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer',
     boxShadow: '0 6px 20px rgba(225,48,108,0.34)',

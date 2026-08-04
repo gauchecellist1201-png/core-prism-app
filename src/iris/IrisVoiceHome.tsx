@@ -31,7 +31,7 @@ import { useIrisBond } from './useIrisBond';
 import AutoAgentHero from '../components/AutoAgentHero';
 import type { AgentContext } from '../lib/autoAgent';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import { useDailyStreak } from '../hooks/useDailyStreak';
 import { useReengagement } from '../hooks/useReengagement';
@@ -483,12 +483,12 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem', textAlign: 'center' }}>
             <div style={{
               width: 64, height: 64, borderRadius: 18,
-              background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
+              background: accentFaceBg(bg.accent),
               boxShadow: `0 10px 28px ${bg.accent}66, inset 0 1px 0 rgba(255,255,255,0.22)`,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               marginBottom: '0.85rem',
             }}>
-              <Sparkles size={30} color="#fff" strokeWidth={2.2} />
+              <Sparkles size={30} color={accentFaceInk(bg.accent)} strokeWidth={2.2} />
             </div>
             <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '1.15rem', color: bg.ink, marginBottom: '0.5rem' }}>
               何から、はなしましょうか?

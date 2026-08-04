@@ -9,7 +9,7 @@ import type { Platform, ContentType, DealStage, InfluencerDeal } from '../types/
 import { PLATFORM_META, CONTENT_TYPE_META, DEAL_STAGE_META } from '../types/influencerDeal';
 import { extractDealFromImages, extractDealFromText, type ExtractedDeal } from './dealOCR';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 
 interface Props {
@@ -47,8 +47,8 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
     outline: 'none',
   };
   const btnPrimary: React.CSSProperties = {
-    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-    color: '#fff', border: 'none', borderRadius: 999,
+    background: accentFaceBg(bg.accent),
+    color: accentFaceInk(bg.accent), border: 'none', borderRadius: 999,
     padding: '0.85rem 1.8rem', fontWeight: 700, cursor: 'pointer',
     fontSize: '0.95rem', fontFamily: IRIS_FONTS.body,
     boxShadow: `0 8px 22px ${bg.accent}55`,
@@ -420,7 +420,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
                   <span style={{ fontSize: '0.8rem', color: '#5A4570' }}>信頼度:</span>
                   <div style={{ flex: 1, background: 'rgba(0,0,0,0.06)', borderRadius: 999, height: 8, overflow: 'hidden', maxWidth: 200 }}>
                     <div style={{
-                      background: `linear-gradient(90deg, ${bg.accent}, ${bg.accent}cc)`,
+                      background: accentFaceBg(bg.accent, 90),
                       width: `${(extracted.confidence || 0) * 100}%`, height: '100%',
                     }} />
                   </div>
@@ -542,8 +542,8 @@ function ModeBtn({ emoji, label, desc, accent, gradient, onClick, disabled, badg
       {badge && (
         <div style={{
           position: 'absolute', top: 12, right: 12,
-          background: gradient || `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-          color: '#fff', padding: '0.18rem 0.55rem', borderRadius: 999,
+          background: gradient || accentFaceBg(accent),
+          color: accentFaceInk(accent), padding: '0.18rem 0.55rem', borderRadius: 999,
           fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.08em',
           textTransform: 'uppercase',
         }}>
@@ -567,7 +567,7 @@ function ModeBtn({ emoji, label, desc, accent, gradient, onClick, disabled, badg
       <div style={{
         fontFamily: IRIS_FONTS.serif, fontStyle: 'italic',
         fontSize: '1.3rem', fontWeight: 600, marginBottom: '0.3rem',
-        background: gradient || `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+        background: gradient || accentFaceBg(accent),
         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
       }}>
         {label}

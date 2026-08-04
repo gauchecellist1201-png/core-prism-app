@@ -16,7 +16,7 @@ import { Sparkles, ListChecks, MessageCircle, Star, ChevronRight, Plus, Send } f
 import { confirmAction } from '../lib/confirmDialog';
 import type { IrisBackgroundDef } from './irisStyle';
 import type { CustomIrisBackground } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
 import { notifyInApp } from '../lib/inAppNotify';
@@ -537,8 +537,8 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
           <button key={t.v} onClick={() => setViewMode(t.v)}
             style={{
               padding: '0.55rem 1.2rem', borderRadius: 999, fontSize: '0.85rem', fontWeight: 700,
-              background: viewMode === t.v ? `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)` : 'transparent',
-              color: viewMode === t.v ? '#fff' : bg.ink,
+              background: viewMode === t.v ? accentFaceBg(bg.accent) : 'transparent',
+              color: viewMode === t.v ? accentFaceInk(bg.accent) : bg.ink,
               border: 'none', cursor: 'pointer', minHeight: 44,
               boxShadow: viewMode === t.v ? `0 4px 12px ${bg.accent}55` : 'none',
             }}>
@@ -1092,8 +1092,8 @@ function RecruitBoard(props: {
         <button onClick={() => setShowNewPost(true)}
           style={{
             marginLeft: 'auto', padding: '0.55rem 1.2rem', borderRadius: 999,
-            background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-            color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem',
+            background: accentFaceBg(bg.accent),
+            color: accentFaceInk(bg.accent), border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem',
             minHeight: 44,
           }}>
           + 募集を出す
@@ -1262,7 +1262,7 @@ function RecruitBoard(props: {
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={submitPost}
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: 999, background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, minHeight: 44 }}>
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: 999, background: accentFaceBg(bg.accent), color: accentFaceInk(bg.accent), border: 'none', cursor: 'pointer', fontWeight: 700, minHeight: 44 }}>
                   投稿する
                 </button>
                 <button onClick={() => setShowNewPost(false)}
@@ -1298,8 +1298,8 @@ function modalInput(): React.CSSProperties {
 
 function btnPrimary(bg: IrisBackgroundDef | CustomIrisBackground): React.CSSProperties {
   return {
-    background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}cc)`,
-    color: '#fff', border: 'none', borderRadius: 999,
+    background: accentFaceBg(bg.accent),
+    color: accentFaceInk(bg.accent), border: 'none', borderRadius: 999,
     padding: '0.65rem 1.4rem', fontWeight: 700, cursor: 'pointer',
     fontSize: '0.85rem', boxShadow: `0 6px 18px ${bg.accent}44`,
     fontFamily: IRIS_FONTS.body, minHeight: 44,
