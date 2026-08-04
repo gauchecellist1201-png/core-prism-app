@@ -64,7 +64,7 @@
   <div class="top">
     <img class="logo" src="/core-512-v2.png" alt="CORE">
     <h1>CORE マスターハブ</h1>
-    <p class="sub">5サービスを「全機能フル解放（Maxプラン）」で開く、オーナー専用の入口です。</p>
+    <p class="sub">COREの全サービスを「全機能フル解放（Maxプラン）」で開く、オーナー専用の入口です。</p>
     <span class="badge">MASTER MODE</span>
   </div>
 
@@ -106,6 +106,18 @@
       <div><div class="nm">Crystal</div><div class="ds">話しかけるだけのAIコンシェルジュ — 開く</div></div>
       <span class="go">→</span>
     </a>
+    <a class="card" id="lnk-nexus" style="background:rgba(77,195,255,0.06);border-color:rgba(77,195,255,0.3);">
+      <div class="ic" style="display:flex;align-items:center;justify-content:center;">
+        <svg width="34" height="34" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="26" stroke="#4dc3ff" stroke-width="3" stroke-dasharray="8 5"/><circle cx="32" cy="32" r="12" fill="#4dc3ff"/></svg>
+      </div>
+      <div><div class="nm">NEXUS</div><div class="ds">会話するAI中枢 — 声で話す執事エージェント</div></div>
+      <span class="go">→</span>
+    </a>
+    <a class="card" id="lnk-universe">
+      <img class="ic" src="https://core-universe.vercel.app/icon-512.png" alt="">
+      <div><div class="nm">Universe</div><div class="ds">会社の頭脳 — ナレッジ星図を開く</div></div>
+      <span class="go">→</span>
+    </a>
     <a class="card" id="lnk-tools" href="/master/keys" target="_blank" rel="noopener" style="background:rgba(216,168,59,0.07);border-color:rgba(216,168,59,0.3);">
       <div class="ic" style="display:flex;align-items:center;justify-content:center;font-size:26px;">🔑</div>
       <div><div class="nm">マスターツール</div><div class="ds">Claude APIキー・KPI・初回ユーザー体験</div></div>
@@ -125,7 +137,9 @@
     "lnk-reso":  "https://resonancebot-ivory.vercel.app/?" + M,
     "lnk-lume":  "https://lume-deploy-five.vercel.app/app.html?" + M,
     "lnk-guild": "https://guild-hazel.vercel.app/?" + M,
-    "lnk-crystal": "https://crystal-nine-self.vercel.app/app?" + M
+    "lnk-crystal": "https://crystal-nine-self.vercel.app/app?" + M,
+    "lnk-nexus": "https://core-nexus-kappa.vercel.app/?" + M,
+    "lnk-universe": "https://core-universe.vercel.app/?" + M
   };
   function reveal(){
     Object.keys(LINKS).forEach(function(id){
