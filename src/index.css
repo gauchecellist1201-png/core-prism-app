@@ -2391,13 +2391,17 @@ body[data-core-sample-banner] .iris-sidebar {
   .iris-cmdbar-label {
     display: none !important;
   }
-  /* アイコンボタンを少し小さく (36→32) して全部入るように */
+  /* アイコンボタンは 44px を割らない (2026-08-04)。
+     以前は「全部入るように」32px へ縮めていたが、指で押す的が 32px しかなく押し外す。
+     375px で実測: ロゴ 82 + 右クラスタ 5個 × 44 + gap 4.8×4 ≒ 327px < 使える 351px。
+     入るのに縮めていた、が結論。横あふれの保険として縮まないことだけ明示する。 */
   .iris-header-sticky button[aria-label="背景を変える"],
   .iris-header-sticky button[aria-label="メニュー"],
   .iris-header-sticky button[aria-label="戻る"] {
-    min-width: 32px !important;
-    width: 32px !important;
-    height: 32px !important;
+    min-width: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+    flex-shrink: 0 !important;
   }
 }
 

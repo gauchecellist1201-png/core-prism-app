@@ -154,7 +154,7 @@ export default function IrisFirstRunTour({ onGotoReel, onClose }: Props) {
               onClick={close}
               aria-label="閉じる"
               style={{
-                width: 36, height: 36, minWidth: 36, borderRadius: 12,
+                width: 44, height: 44, minWidth: 44, borderRadius: 13,
                 border: 'none', background: 'rgba(26,10,38,0.06)',
                 color: IRIS_COLORS.inkSoft, cursor: 'pointer',
                 display: 'grid', placeItems: 'center',

@@ -3570,6 +3570,31 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               }}>{chatOpen ? '履歴をたたむ' : `履歴 (${chatMsgs.length})`}</button>
             </div>
           )}
+          {/* 「話しかけるだけで直せる」ことは、プレースホルダーの例文でしか伝えていなかった。
+              その例文は 375px で切れて読めなかったので、押せるチップに出す。
+              素材が入っていて、まだ一度も話しかけていない人にだけ 1 回出す（出しっぱなしにしない） */}
+          {clips.length > 0 && chatMsgs.length === 0 && (
+            <div style={{
+              display: 'flex', gap: 6, marginBottom: 7,
+              overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 2,
+              scrollbarWidth: 'none',
+            }}>
+              {['暖かい感じで 15 秒にして', '字幕をもっと大きく', '最初の 2 秒に結論を', 'BGM を静かめに'].map(ex => (
+                <button
+                  key={ex}
+                  onClick={() => setChatInput(ex)}
+                  style={{
+                    flexShrink: 0, minHeight: 44, padding: '0 0.9rem',
+                    background: 'rgba(255,255,255,0.96)', color: '#1F1A2E',
+                    border: '1px solid rgba(225,48,108,0.28)', borderRadius: 999,
+                    fontSize: 11.5, fontWeight: 700, cursor: 'pointer',
+                    fontFamily: IRIS_FONTS.body, whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 12px rgba(31,26,46,0.1)',
+                  }}
+                >{ex}</button>
+              ))}
+            </div>
+          )}
           {/* マイクの失敗 — 黙って止まらせず、理由と「もう一度話す」を必ず出す */}
           {chatVoiceErr && (
             <div style={{
@@ -3620,7 +3645,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           }}>
             {/* 素材添付 (自作クリップ SVG) */}
             <label title="素材を添付" style={{
-              width: 42, height: 42, minWidth: 42, borderRadius: '50%',
+              width: 44, height: 44, minWidth: 44, borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', color: '#E1306C',
               background: 'rgba(225,48,108,0.09)',
@@ -3639,7 +3664,10 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); void handleChatSend(); } }}
-              placeholder={clips.length === 0 ? 'まず素材を入れて、あとは話しかけるだけ' : 'どう編集する？（例: 暖かい感じで15秒にして）'}
+              // 375px では入力欄の実寸が 188px しかなく、長い文はここで必ず切れる
+              // （実測: 旧文「まず素材を入れて…」は 276px 必要だった＝末尾が読めない）。
+              // 例文は下のチップに逃がして、プレースホルダーは切れない長さに収める。
+              placeholder={clips.length === 0 ? '素材を入れると使えます' : 'どう編集する？'}
               style={{
                 flex: 1, minWidth: 0,
                 border: 'none', outline: 'none', background: 'transparent',
@@ -3654,7 +3682,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                 onClick={() => (chatVoiceOn ? stopChatVoice() : startChatVoice())}
                 title={chatVoiceOn ? '停止して送信' : '話して指示する'}
                 style={{
-                  width: 42, height: 42, minWidth: 42, borderRadius: '50%',
+                  width: 44, height: 44, minWidth: 44, borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   border: 'none', cursor: 'pointer',
                   background: chatVoiceOn ? '#DC2626' : 'rgba(225,48,108,0.09)',
@@ -3672,7 +3700,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
               disabled={chatBusy || !chatInput.trim()}
               title="送信"
               style={{
-                width: 42, height: 42, minWidth: 42, borderRadius: '50%',
+                width: 44, height: 44, minWidth: 44, borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 border: 'none',
                 cursor: chatBusy || !chatInput.trim() ? 'not-allowed' : 'pointer',

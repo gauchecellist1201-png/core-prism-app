@@ -12,7 +12,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BarChart3, Sparkles, Search, ArrowRight, Eye, ChevronDown,
+  BarChart3, Search, ArrowRight, Eye, ChevronDown,
   TrendingUp, Clapperboard, Handshake,
 } from 'lucide-react';
 import { IrisLogo } from '../components/Logo';
@@ -25,10 +25,12 @@ interface Props {
   onSkip: () => void;
 }
 
+// 看板は「リールが簡単に作れる」。ここが入口なのに、以前はリールの話が1文字も無かった
+// （2026-08-02 の日報で指摘）。下のサンプル(STEP B)で実際に見せている内容だけを書く。
 const BENEFITS: { Icon: typeof BarChart3; title: string; desc: string }[] = [
+  { Icon: Clapperboard, title: '今日のリール台本ができる', desc: 'フック・3シーンの流れ・字幕まで、書いた状態で出てきます' },
   { Icon: BarChart3, title: '伸びる時間とテーマがわかる', desc: 'あなたの投稿データから、保存される投稿の共通点を分析します' },
   { Icon: Search, title: '相性の良い案件が届く', desc: 'フォロワー層に合うブランド案件を、毎日 AI が探してきます' },
-  { Icon: Sparkles, title: '世界観に合った原稿を自動で', desc: 'キャプション・サムネ・リール構成をあなた専用に作ります' },
 ];
 
 // ── サンプル（連携前に「中身」を 30 秒で見せる）。実物品質の作例＝プレースホルダー禁止。
@@ -188,10 +190,11 @@ export default function IrisConnectFirst({ onConnect, onSkip }: Props) {
             <InstagramGlyph size={12} color="#E1306C" /> STEP 1 — まずはここから
           </div>
           <h1 style={{ fontSize: '1.55rem', fontWeight: 800, lineHeight: 1.4, margin: '0 0 0.6rem' }}>
-            Instagram をつなぐと、<br />Iris があなた専用になります
+            Instagram をつなぐと、<br />リールが“あなた専用”に。
           </h1>
           <p style={{ fontSize: '0.92rem', color: '#5A5562', lineHeight: 1.75, margin: 0 }}>
-            連携は <strong style={{ color: '#1F1A2E' }}>30 秒</strong>。スクショ 1 枚でも始められます。
+            連携は <strong style={{ color: '#1F1A2E' }}>30 秒</strong>。スクショ 1 枚でも始められます。<br />
+            連携しなくても、リールは今すぐ 1 本つくれます。
           </p>
         </motion.div>
 
@@ -277,18 +280,22 @@ export default function IrisConnectFirst({ onConnect, onSkip }: Props) {
           <InstagramGlyph size={19} color="#fff" /> Instagram を連携する <ArrowRight size={18} />
         </motion.button>
 
+        {/* 連携できない事情の人を行き止まりにしない。リール作成は連携なしで動くので、
+            「あとで」ではなく「今すぐ何ができるか」を書く（薄いグレーの下線文字だと見つからない） */}
         <button
           type="button"
           onClick={onSkip}
           style={{
-            width: '100%', minHeight: 44,
-            background: 'transparent', border: 'none',
-            color: '#8A8593', fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', marginTop: 14,
-            textDecoration: 'underline', textUnderlineOffset: 3,
+            width: '100%', minHeight: 48,
+            background: '#fff', border: '1px solid rgba(225,48,108,0.24)',
+            borderRadius: 14,
+            color: '#5A5562', fontSize: 13.5, fontWeight: 700,
+            cursor: 'pointer', marginTop: 12,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
           }}
         >
-          あとで連携する（先にアプリを触ってみる）
+          <Clapperboard size={16} color={accent} strokeWidth={2.3} />
+          連携せずに、先にリールを 1 本つくる
         </button>
       </div>
     </div>

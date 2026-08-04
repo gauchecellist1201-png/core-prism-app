@@ -130,7 +130,8 @@ export default function SampleModeBanner() {
           color: collapsed ? '#fde68a' : '#1a1a2e',
           fontSize: collapsed ? 11 : 12,
           fontWeight: 800,
-          padding: collapsed ? '4px 12px' : '8px 14px',
+          padding: collapsed ? '4px 12px' : '6px 10px 6px 14px',
+          cursor: collapsed ? 'pointer' : undefined,
           display: 'flex', alignItems: 'center', gap: 8,
           boxShadow: collapsed ? 'none' : '0 4px 16px rgba(0,0,0,0.18)',
           backdropFilter: 'blur(8px)',
@@ -138,6 +139,8 @@ export default function SampleModeBanner() {
         }}
         role="status"
         aria-live="polite"
+        onClick={collapsed ? toggleCollapse : undefined}
+        title={collapsed ? '帯を広げる' : undefined}
       >
         <Sparkles size={collapsed ? 11 : 14} />
         <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -166,22 +169,30 @@ export default function SampleModeBanner() {
             {narrow ? '自分の画面へ' : '自分のアカウントに切替'} <ArrowRight size={11} />
           </button>
         )}
-        <button
-          onClick={toggleCollapse}
-          title={collapsed ? '帯を広げる' : '帯を細くする'}
-          aria-label={collapsed ? '帯を広げる' : '帯を細くする'}
-          style={{
-            width: 24, height: 24, borderRadius: 12,
-            background: collapsed ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)',
-            border: 'none',
-            color: collapsed ? '#fde68a' : '#1a1a2e',
-            cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          {collapsed ? <Eye size={11} /> : <EyeOff size={11} />}
-        </button>
+        {/* 2026-08-04: 24x24 しかなく、指では押し外す大きさだった（375px実測）。
+            広げた状態では 44x44 に。細くした状態は「細いこと」が価値なので帯を高くはせず、
+            帯そのものを押せるようにして的を 375px 幅に広げてある（上の onClick）。
+            帯の高さは ResizeObserver で --core-sample-banner-h に反映されるので、
+            44 にしてもレイアウトはずれない。 */}
+        {!collapsed && (
+          <button
+            onClick={toggleCollapse}
+            title="帯を細くする"
+            aria-label="帯を細くする"
+            style={{
+              width: 44, height: 44, minWidth: 44, borderRadius: 14,
+              background: 'rgba(0,0,0,0.1)',
+              border: 'none',
+              color: '#1a1a2e',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <EyeOff size={15} />
+          </button>
+        )}
+        {collapsed && <Eye size={11} style={{ flexShrink: 0 }} aria-hidden />}
       </motion.div>
     </AnimatePresence>
   );

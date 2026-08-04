@@ -85,17 +85,32 @@ export default function InstallPwaBanner({ brand }: Props) {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, [dismissed]);
 
+  // 作業中の人の手元を塞がないための判定 (2026-08-04)。
+  // この案内は 343x330 の板で画面の真ん中に出る。375px 実測で、リールスタジオの
+  // 入力バー (文字入力・マイク・送信の3つ) と例文チップを丸ごと覆っていた
+  // ＝素材を入れた直後の人が「話しかけて直す」を一切押せない状態になっていた。
+  // 開いている板 (ツアー・モーダル) があるとき、リールスタジオの入力バーが出ているときは出さず、
+  // 10秒ごとに手が空くのを待ってから出す。
+  const busyNow = () => {
+    if (document.querySelector('.iris-reelchat-bar')) return true;      // リール作成中
+    if (document.querySelector('[role="dialog"]:not(.install-pwa-banner)')) return true; // 別の板が開いている
+    return false;
+  };
+
   // 表示タイミング判定: 初回訪問から数秒で案内（Resonance と同じく“すぐ気づける”ように）。
   useEffect(() => {
     if (dismissed) return;
-    const timer = window.setTimeout(() => {
+    let timer = 0;
+    const tick = () => {
       if (isStandalone()) return;
+      if (busyNow()) { timer = window.setTimeout(tick, 10_000); return; }
       if (bipEvent) {
         setShowAndroid(true);
       } else if (isIOSSafari()) {
         setShowIOS(true);
       }
-    }, 6_000);
+    };
+    timer = window.setTimeout(tick, 6_000);
     return () => window.clearTimeout(timer);
   }, [bipEvent, dismissed]);
 
