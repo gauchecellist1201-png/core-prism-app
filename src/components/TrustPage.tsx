@@ -123,7 +123,7 @@ export default function TrustPage() {
     <div style={{ minHeight: '100svh', background: COLOR_BG, color: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif' }}>
       <div style={{ maxWidth: 880, margin: '0 auto', padding: '32px 18px 80px' }}>
         {/* Back */}
-        <a href="/corp" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 24 }}>
+        <a href="/corp" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 24 }}>
           <ArrowLeft size={14} /> CORE のトップへ
         </a>
 
@@ -182,7 +182,7 @@ export default function TrustPage() {
           <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 6 }}>
             {SECTIONS.map((s) => (
               <li key={s.id}>
-                <a href={`#${s.id}`} style={{ color: 'rgba(255,255,255,0.78)', textDecoration: 'none', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <a href={`#${s.id}`} style={{ color: 'rgba(255,255,255,0.78)', textDecoration: 'none', fontSize: '0.86rem', display: 'flex', alignItems: 'center', gap: 6, minHeight: 44 }}>
                   <span style={{ color: 'rgba(255,255,255,0.5)' }}>{s.icon}</span> {s.title}
                 </a>
               </li>
@@ -258,7 +258,7 @@ export default function TrustPage() {
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             <a href="mailto:core.inc.guild@gmail.com?subject=%5BCORE%20Trust%5D%20%E5%95%8F%E5%90%88%E3%82%8F%E3%81%9B" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
+              display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44,
               padding: '10px 16px', borderRadius: 10,
               background: 'linear-gradient(135deg, #6366F1, #A855F7)', color: '#fff',
               textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem',
@@ -267,7 +267,7 @@ export default function TrustPage() {
               <Mail size={14} /> 監査担当に問い合わせ
             </a>
             <a href="/privacy" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
+              display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44,
               padding: '10px 16px', borderRadius: 10,
               background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)',
               textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem',
@@ -276,7 +276,7 @@ export default function TrustPage() {
               <FileText size={14} /> プライバシーポリシー 全文
             </a>
             <a href="/terms" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
+              display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44,
               padding: '10px 16px', borderRadius: 10,
               background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)',
               textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem',
@@ -285,7 +285,7 @@ export default function TrustPage() {
               <FileText size={14} /> 利用規約
             </a>
             <a href="/status" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
+              display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44,
               padding: '10px 16px', borderRadius: 10,
               background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)',
               textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem',
@@ -296,7 +296,7 @@ export default function TrustPage() {
             <button
               onClick={() => window.print()}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
+                display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44,
                 padding: '10px 16px', borderRadius: 10,
                 background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)',
                 border: `1px solid ${BORDER}`, fontSize: '0.88rem', fontWeight: 700,
