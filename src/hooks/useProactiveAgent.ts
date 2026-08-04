@@ -9,6 +9,7 @@ import { generateProposal } from '../lib/proactiveAgent';
 import { getCrossServiceContext } from '../lib/crossServiceData';
 import { speakNatural, stopSpeakingNatural, loadVoices } from '../lib/tts';
 import { humanizeAiError } from '../lib/aiErrorMessage';
+import { duePatrol, bumpTries, markPatrolDone, readPatrol, writePatrol } from '../lib/patrolSchedule';
 
 const STORAGE_KEY = 'core_proposals';
 const MAX_HISTORY = 20;
@@ -43,6 +44,10 @@ export function useProactiveAgent(
   const [error, setError] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const lastGenAtRef = useRef<number>(0);
+  // isGenerating(state) は同じ描画サイクル内では古い値のまま見えるので、
+  // 「起動直後に人格切替と朝の巡回が同時に走る」ような重なりを止められない。
+  // 誰が先に取ったかをその場で決めるために ref で持つ。
+  const generatingRef = useRef(false);
 
   useEffect(() => { save(proposals); }, [proposals]);
 
@@ -53,7 +58,8 @@ export function useProactiveAgent(
 
   const generate = useCallback(async (forceVoice = false, patrolMode: 'morning' | 'evening' | null = null) => {
     if (!persona) return null;
-    if (isGenerating) return null;
+    if (generatingRef.current) return null;
+    generatingRef.current = true;
     setIsGenerating(true);
     setError(null);
     try {
@@ -79,9 +85,10 @@ export function useProactiveAgent(
       setError(humanizeAiError(err));
       return null;
     } finally {
+      generatingRef.current = false;
       setIsGenerating(false);
     }
-  }, [persona, knowledge, proposals, settings, isGenerating, health]);
+  }, [persona, knowledge, proposals, settings, health]);
 
   const speakProposal = useCallback((p: Proposal) => {
     setIsSpeaking(true);
@@ -121,41 +128,29 @@ export function useProactiveAgent(
     const intervalMs = intervalMin * 60 * 1000;
 
     const PATROL_KEY = `core_patrol_${persona.id}`;
-    const lastPatrol = (): { morning?: string; evening?: string } => {
-      try { return JSON.parse(localStorage.getItem(PATROL_KEY) || '{}'); } catch { return {}; }
-    };
-    const setPatrol = (kind: 'morning' | 'evening') => {
-      const cur = lastPatrol();
-      cur[kind] = new Date().toISOString().slice(0, 10);
-      localStorage.setItem(PATROL_KEY, JSON.stringify(cur));
-    };
 
-    const tick = () => {
+    const tick = async () => {
       const now = new Date();
-      const today = now.toISOString().slice(0, 10);
-      const last = lastPatrol();
+      const kind = duePatrol(readPatrol(PATROL_KEY), now);
 
-      // 朝のブリーフ: 6時〜9時の間で当日初回
-      if (now.getHours() >= 6 && now.getHours() < 10 && last.morning !== today) {
-        setPatrol('morning');
-        generate(true, 'morning');
-        return;
-      }
-      // 夜のレビュー: 20時〜23時の間で当日初回
-      if (now.getHours() >= 20 && now.getHours() < 24 && last.evening !== today) {
-        setPatrol('evening');
-        generate(true, 'evening');
+      if (kind) {
+        // 「作る前に印を付ける」のをやめた。作れなかった日に朝のブリーフが
+        // 二度と出なくなっていた (silent fail)。試行だけ数え、成功した時に印を付ける。
+        writePatrol(PATROL_KEY, bumpTries(readPatrol(PATROL_KEY), kind, now));
+        const made = await generate(true, kind);
+        if (made) writePatrol(PATROL_KEY, markPatrolDone(readPatrol(PATROL_KEY), kind, now));
         return;
       }
       // 通常の定期巡回
       const since = Date.now() - lastGenAtRef.current;
-      if (since >= intervalMs) generate(false);
+      if (since >= intervalMs) void generate(false);
     };
 
-    const timer = window.setInterval(tick, 60_000);
-    // 起動直後にも一度チェック (アプリを開いた時刻が朝/夜なら即発火)
-    setTimeout(tick, 5000);
-    return () => clearInterval(timer);
+    const timer = window.setInterval(() => { void tick(); }, 60_000);
+    // 起動直後にも一度チェック (アプリを開いた時刻が朝/夜なら即発火)。
+    // ここを片付けないと、依存が変わるたびに古いタイマーが残って多重に走る。
+    const kick = window.setTimeout(() => { void tick(); }, 5000);
+    return () => { clearInterval(timer); clearTimeout(kick); };
   }, [persona, settings.proactiveEnabled, settings.proactiveIntervalMin, generate]);
 
   // 人格切替時に初回生成 (前回から5分以上経過時)
@@ -163,9 +158,22 @@ export function useProactiveAgent(
     if (!persona || settings.proactiveEnabled === false) return;
     const last = personaProposals[0];
     const since = last ? Date.now() - new Date(last.generatedAt).getTime() : Infinity;
-    if (since > 5 * 60 * 1000) {
-      generate(false);
+    if (since <= 5 * 60 * 1000) return;
+
+    // 朝/夜の時間帯にアプリを開いた時は、ここで先に普通の提案を作ってしまうと
+    // 5 秒後の巡回が弾かれ、その日の「朝のブリーフ」が出ないまま終わっていた。
+    // 出すのは 1 本だけ。その 1 本を「朝のブリーフ」にする。
+    const PATROL_KEY = `core_patrol_${persona.id}`;
+    const kind = duePatrol(readPatrol(PATROL_KEY));
+    if (kind) {
+      const now = new Date();
+      writePatrol(PATROL_KEY, bumpTries(readPatrol(PATROL_KEY), kind, now));
+      void generate(true, kind).then((made) => {
+        if (made) writePatrol(PATROL_KEY, markPatrolDone(readPatrol(PATROL_KEY), kind, now));
+      });
+      return;
     }
+    void generate(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [persona?.id]);
 
