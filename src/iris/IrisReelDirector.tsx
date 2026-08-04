@@ -13,7 +13,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp, Clapperboard, Clock,
-  Copy, FileText, Layers, ListChecks, MessageSquare, Plus, Smartphone,
+  Copy, FileText, Film, Layers, ListChecks, MessageSquare, Plus, RotateCcw, Save, Smartphone,
   Sparkles, Trash2, Type as TypeIcon, X,
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
@@ -25,10 +25,13 @@ import {
   REEL_TEMPLATES, applyTemplate,
   TELOP_STYLES, loadTelopFont, type TelopStyleId,
   TRANSITIONS, type TransitionId,
-  runReelChecks,
+  runReelChecks, unassignedBroll, toggleCutBroll,
   projectToSrt, projectTelopText, projectToCutSheet, projectCaptionBlock,
   type ReelCut, type ReelProject,
 } from './reelDirector';
+import {
+  loadDirectorState, saveDirectorState, clearDirectorState, savedAtLabel,
+} from './reelDirectorStore';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -36,6 +39,8 @@ interface Props {
   clientName?: string;
   /** カット編集を台本へ書き戻す (既存のコピー動線も最新化される) */
   onShotsChange?: (shots: ScriptShot[], durationSec: number) => void;
+  /** 生成時のテーマ (端末内保存に一緒に入れ、再読み込み後も何の台本か分かるようにする) */
+  topic?: string;
 }
 
 const IRIS_GRADIENT = 'linear-gradient(135deg, #E1306C 0%, #F77737 50%, #FBBF24 100%)';
@@ -55,12 +60,33 @@ function copyText(text: string, okTitle: string, okBody: string): void {
   }
 }
 
-export default function IrisReelDirector({ bg, script, clientName, onShotsChange }: Props) {
-  const [project, setProject] = useState<ReelProject>(() => scriptToProject(script));
-  const [selectedId, setSelectedId] = useState<string | null>(() => scriptToProject(script).cuts[0]?.id ?? null);
-  const [telopStyleId, setTelopStyleId] = useState<TelopStyleId>('subtitle');
+export default function IrisReelDirector({ bg, script, clientName, onShotsChange, topic }: Props) {
+  // 端末内に「この台本の続き」が残っていればそこから開く (無ければ台本から作る)。
+  // 台本を作り直した時は generatedAt が変わるので、古い続きを混ぜない。
+  const restored = useMemo(() => {
+    const s = loadDirectorState();
+    return s && s.scriptId === script.generatedAt ? s : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [script.generatedAt]);
+
+  const [project, setProject] = useState<ReelProject>(() => restored?.project ?? scriptToProject(script));
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => (restored?.project ?? scriptToProject(script)).cuts[0]?.id ?? null,
+  );
+  const [telopStyleId, setTelopStyleId] = useState<TelopStyleId>(
+    () => (restored?.telopStyleId as TelopStyleId) || 'subtitle',
+  );
   const [guideOpen, setGuideOpen] = useState<'capcut' | 'edits' | null>(null);
+  const [savedAt, setSavedAt] = useState<string>(() => restored?.savedAt ?? '');
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [restoredNotice, setRestoredNotice] = useState<boolean>(() => !!restored);
+  const [brollInput, setBrollInput] = useState('');
   const initRef = useRef(false);
+  // 「保存済みの中身と同じなら書かない」ための指紋。
+  // 復元しただけで書き直すと「前回 3:42 保存」が開いた時刻に化けて表示が嘘になる。
+  const lastSavedSigRef = useRef<string>(
+    restored ? JSON.stringify({ p: restored.project, t: restored.telopStyleId }) : '',
+  );
 
   // 選択中カット (無ければ先頭)
   const selected = project.cuts.find(c => c.id === selectedId) || project.cuts[0] || null;
@@ -80,6 +106,35 @@ export default function IrisReelDirector({ bg, script, clientName, onShotsChange
     onShotsChange?.(projectToShots(project), Math.round(total));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project]);
+
+  // 端末内へ自動保存 (打つたびに書かず、手が止まって 500ms 後に1回)。
+  // 書けなかった時は黙って失敗させず、下のバッジで「保存できていない」と出す。
+  useEffect(() => {
+    const sig = JSON.stringify({ p: project, t: telopStyleId });
+    if (sig === lastSavedSigRef.current) return;   // 中身が変わっていない＝書かない
+    const t = window.setTimeout(() => {
+      const now = new Date().toISOString();
+      const ok = saveDirectorState(
+        { scriptId: script.generatedAt, script, project, telopStyleId, topic: topic || '' },
+        now,
+      );
+      setSaveFailed(!ok);
+      // 一度でも直したら「前回の続き」ではなく「いま保存した」表示に切り替える
+      if (ok) { lastSavedSigRef.current = sig; setSavedAt(now); setRestoredNotice(false); }
+    }, 500);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project, telopStyleId, script.generatedAt]);
+
+  /** 台本どおりのカット割りに戻す (編集をすべて捨てるので、その旨を出してから) */
+  const resetToScript = () => {
+    const fresh = scriptToProject(script);
+    setProject(fresh);
+    setSelectedId(fresh.cuts[0]?.id ?? null);
+    setRestoredNotice(false);
+    clearDirectorState();
+    notifyInApp({ kind: 'info', title: '台本どおりに戻しました', body: 'カットの編集内容は元に戻りました' });
+  };
 
   // ─── カット操作 ───
   const updateCut = (id: string, patch: Partial<ReelCut>) => {
@@ -103,7 +158,7 @@ export default function IrisReelDirector({ bg, script, clientName, onShotsChange
     });
   };
   const addCut = () => {
-    const c: ReelCut = { id: cutUid(), durationSec: 2, shot: '', line: '', telop: '', transition: 'cut', editNote: '' };
+    const c: ReelCut = { id: cutUid(), durationSec: 2, shot: '', line: '', telop: '', transition: 'cut', editNote: '', broll: [] };
     setProject(p => ({ ...p, cuts: [...p.cuts, c] }));
     setSelectedId(c.id);
   };
@@ -170,6 +225,40 @@ export default function IrisReelDirector({ bg, script, clientName, onShotsChange
 
   return (
     <div style={{ display: 'grid', gap: '1.1rem' }}>
+
+      {/* ── ⓪ 続きの復元 / 保存の状態 ──
+          台本もカット編集も、以前は再読み込みで全部消えていた。いまは端末内に自動保存する。
+          「保存されている」ことが見えないと安心して閉じられないので、時刻まで出す。 */}
+      {(restoredNotice || savedAt || saveFailed) && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+          padding: '0.6rem 0.8rem', borderRadius: 12,
+          background: saveFailed ? 'rgba(220,38,38,0.08)' : `${bg.accent}0E`,
+          border: `1px solid ${saveFailed ? 'rgba(220,38,38,0.35)' : `${bg.accent}33`}`,
+        }}>
+          <Save size={14} style={{ flexShrink: 0, color: saveFailed ? '#DC2626' : bg.accentText }} />
+          <span style={{ fontSize: '0.76rem', color: bg.ink, lineHeight: 1.5, flex: 1, minWidth: 160 }}>
+            {saveFailed
+              ? 'この端末に保存できませんでした。閉じると編集が消えるので、下の「撮影指示書」をコピーして残してください。'
+              : restoredNotice
+                ? <>前回の続きから開いています{savedAt && savedAtLabel(savedAt) ? `（${savedAtLabel(savedAt)} 保存）` : ''}。この端末にだけ残しています。</>
+                : <>この端末に自動保存しました{savedAt && savedAtLabel(savedAt) ? `（${savedAtLabel(savedAt)}）` : ''}。閉じても続きから開けます。</>}
+          </span>
+          <button
+            onClick={resetToScript}
+            title="カットの編集を捨てて、台本どおりのカット割りに戻します"
+            style={{
+              flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
+              minHeight: 44, padding: '0 12px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.9)', border: `1px solid ${bg.cardBorder}`,
+              color: bg.ink, fontWeight: 700, fontSize: '0.76rem',
+              fontFamily: IRIS_FONTS.body, cursor: 'pointer',
+            }}
+          >
+            <RotateCcw size={13} /> 台本どおりに戻す
+          </button>
+        </div>
+      )}
 
       {/* ── ① 構成テンプレ (今伸びている型) ── */}
       <div style={card}>
@@ -253,6 +342,20 @@ export default function IrisReelDirector({ bg, script, clientName, onShotsChange
                   }}>
                     {(c.telop || c.shot || '未入力').slice(0, 14)}
                   </span>
+                  {/* 参考素材を割り当てたカットだけ、フィルムの印＋件数を出す (色だけに頼らない) */}
+                  {(c.broll || []).length > 0 && (
+                    <span
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 2,
+                        fontSize: 9, fontWeight: 900, lineHeight: 1,
+                        padding: '2px 4px', borderRadius: 5,
+                        background: on ? 'rgba(255,255,255,0.28)' : `${bg.accent}1F`,
+                        color: on ? '#fff' : bg.accentText,
+                      }}
+                    >
+                      <Film size={9} /> 素材{(c.broll || []).length}
+                    </span>
+                  )}
                 </button>
                 {/* カット間の切替バッジ */}
                 {i < project.cuts.length - 1 && (
@@ -384,6 +487,106 @@ export default function IrisReelDirector({ bg, script, clientName, onShotsChange
             ) : (
               <p style={{ fontSize: '0.72rem', color: bg.inkSoft, margin: 0 }}>最後のカットです (切替効果はありません)</p>
             )}
+
+            {/* (f) このカットで使う参考素材 (B-roll)
+                台本は素材案を一覧でしか出さないので「どのカットで使うのか」が撮影者に伝わらなかった。
+                カットに割り当てると、カット表・撮影台本のどこから見ても同じ内容になる。 */}
+            <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${bg.cardBorder}` }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: bg.inkSoft, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
+                <Film size={12} /> このカットで使う参考素材（Bロール）
+              </label>
+
+              {/* 割り当て済み: タップで外す */}
+              {(selected.broll || []).length > 0 ? (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                  {(selected.broll || []).map(b => (
+                    <button
+                      key={b}
+                      onClick={() => updateCut(selected.id, { broll: toggleCutBroll(selected, b) })}
+                      title="このカットから外す"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        minHeight: 44, padding: '0 10px', borderRadius: 10,
+                        background: `${bg.accent}1A`, border: `1.5px solid ${bg.accent}`,
+                        color: bg.accentText, fontWeight: 800, fontSize: '0.78rem',
+                        fontFamily: IRIS_FONTS.body, cursor: 'pointer',
+                        maxWidth: '100%', textAlign: 'left', lineHeight: 1.35,
+                      }}
+                    >
+                      <span style={{ overflowWrap: 'anywhere' }}>{b}</span>
+                      <X size={13} style={{ flexShrink: 0 }} />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: '0.72rem', color: bg.inkSoft, margin: '0 0 8px', lineHeight: 1.5 }}>
+                  まだ割り当てていません。下から選ぶか、撮るものを書き足すと、カット表に「このカットで撮るもの」として並びます。
+                </p>
+              )}
+
+              {/* 台本が出した素材案から選ぶ (まだどのカットにも付いていないものだけ) */}
+              {unassignedBroll(project).length > 0 && (
+                <>
+                  <p style={{ fontSize: '0.7rem', color: bg.inkSoft, margin: '0 0 5px', fontWeight: 700 }}>
+                    台本の素材案から選ぶ（残り{unassignedBroll(project).length}件）
+                  </p>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                    {unassignedBroll(project).map(b => (
+                      <button
+                        key={b}
+                        onClick={() => updateCut(selected.id, { broll: toggleCutBroll(selected, b) })}
+                        title="このカットに割り当てる"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          minHeight: 44, padding: '0 10px', borderRadius: 10,
+                          background: 'rgba(255,255,255,0.9)', border: `1px dashed ${bg.cardBorder}`,
+                          color: bg.ink, fontWeight: 700, fontSize: '0.78rem',
+                          fontFamily: IRIS_FONTS.body, cursor: 'pointer',
+                          maxWidth: '100%', textAlign: 'left', lineHeight: 1.35,
+                        }}
+                      >
+                        <Plus size={13} style={{ flexShrink: 0, color: bg.accentText }} />
+                        <span style={{ overflowWrap: 'anywhere' }}>{b}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* 自分で書き足す */}
+              <div style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
+                <input
+                  style={{ ...inp, flex: 1 }}
+                  value={brollInput}
+                  onChange={e => setBrollInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && brollInput.trim()) {
+                      e.preventDefault();
+                      updateCut(selected.id, { broll: toggleCutBroll(selected, brollInput) });
+                      setBrollInput('');
+                    }
+                  }}
+                  placeholder="例: 商品を開ける手元 / 店の外観"
+                />
+                <button
+                  onClick={() => {
+                    if (!brollInput.trim()) {
+                      notifyInApp({ kind: 'info', title: '撮るものを入れてください', body: '例:「商品を開ける手元」' });
+                      return;
+                    }
+                    updateCut(selected.id, { broll: toggleCutBroll(selected, brollInput) });
+                    setBrollInput('');
+                  }}
+                  style={{
+                    flexShrink: 0, minHeight: 44, padding: '0 14px', borderRadius: 10,
+                    border: 'none', background: IRIS_GRADIENT, color: '#fff',
+                    fontWeight: 800, fontSize: '0.8rem', fontFamily: IRIS_FONTS.body, cursor: 'pointer',
+                  }}
+                >
+                  足す
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

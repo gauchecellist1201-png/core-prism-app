@@ -53,6 +53,8 @@ export interface ReelCut {
   transition: TransitionId;
   /** 編集メモ (効果音・速度など。台本の editNote を引き継ぐ) */
   editNote: string;
+  /** このカットに割り当てた参考素材 (B-roll)。台本の broll から選ぶ or 自由入力 */
+  broll: string[];
 }
 
 export interface ReelProject {
@@ -62,6 +64,8 @@ export interface ReelProject {
   hashtags: string[];
   /** 適用中の構成テンプレ id (未適用は null) */
   templateId: string | null;
+  /** 台本が出した B-roll 案の一覧 (カットへ割り当てる候補。実データのみ・勝手に増やさない) */
+  brollPool: string[];
 }
 
 export const cutUid = (): string => 'cut_' + Math.random().toString(36).slice(2, 9);
@@ -81,6 +85,7 @@ export function scriptToProject(s: ProductionScript): ReelProject {
     caption: s.caption,
     hashtags: s.hashtags,
     templateId: null,
+    brollPool: (s.broll || []).map(b => String(b).trim()).filter(Boolean),
     cuts: s.shots.map(sh => ({
       id: cutUid(),
       durationSec: Math.round(shotDuration(sh.time, fallback) * 10) / 10,
@@ -89,6 +94,7 @@ export function scriptToProject(s: ProductionScript): ReelProject {
       telop: sh.onScreenText || '',
       transition: guessTransition(sh.editNote),
       editNote: sh.editNote || '',
+      broll: [],
     })),
   };
 }
@@ -101,9 +107,12 @@ export function projectToShots(p: ReelProject): ScriptShot[] {
     acc += c.durationSec;
     const trans = transitionLabel(c.transition);
     const baseNote = (c.editNote || '').trim();
-    const note = baseNote
+    const withTrans = baseNote
       ? (baseNote.includes(trans) ? baseNote : `${baseNote} / 切替: ${trans}`)
       : `切替: ${trans}`;
+    const broll = (c.broll || []).map(b => b.trim()).filter(Boolean);
+    // 割り当てた参考素材は編集メモに載せる＝台本コピー/カット表/撮影指示のどこから見ても同じ内容になる
+    const note = broll.length ? `${withTrans} / 参考素材: ${broll.join('、')}` : withTrans;
     return {
       no: i + 1,
       time: `${fmtSec(start)}-${fmtSec(acc)}秒`,
@@ -123,6 +132,21 @@ function fmtSec(n: number): string {
 
 export function totalDuration(cuts: ReelCut[]): number {
   return Math.round(cuts.reduce((s, c) => s + c.durationSec, 0) * 10) / 10;
+}
+
+/** どのカットにも割り当てられていない B-roll 案 (台本が出したものだけ・順序は台本のまま) */
+export function unassignedBroll(p: ReelProject): string[] {
+  const used = new Set<string>();
+  p.cuts.forEach(c => (c.broll || []).forEach(b => used.add(b.trim())));
+  return (p.brollPool || []).map(b => b.trim()).filter(b => b && !used.has(b));
+}
+
+/** カットへの参考素材の割り当てを入れ替える (重複を作らない・空文字は入れない) */
+export function toggleCutBroll(cut: ReelCut, item: string): string[] {
+  const v = item.trim();
+  if (!v) return cut.broll || [];
+  const cur = (cut.broll || []).map(b => b.trim()).filter(Boolean);
+  return cur.includes(v) ? cur.filter(b => b !== v) : [...cur, v];
 }
 
 // ─── ① 2025-26 に伸びている構成テンプレ ───────────────────
@@ -259,6 +283,7 @@ export function applyTemplate(cuts: ReelCut[], tpl: ReelTemplate): ReelCut[] {
         durationSec: beat.sec,
         shot: src.shot || beat.shotHint,
         telop: src.telop || beat.telopHint,
+        broll: src.broll || [],   // 型を当て直しても割り当て済みの参考素材は消さない
       });
     } else {
       out.push({
@@ -269,6 +294,7 @@ export function applyTemplate(cuts: ReelCut[], tpl: ReelTemplate): ReelCut[] {
         telop: beat.telopHint,
         transition: tpl.id === 'listicle' ? 'slide' : tpl.id === 'loop' ? 'match' : 'cut',
         editNote: '',
+        broll: [],
       });
     }
   }
@@ -496,10 +522,18 @@ export function projectToCutSheet(p: ReelProject, clientName?: string): string {
     if (c.shot) L.push(`- 画角・撮り方: ${c.shot}`);
     if (c.line) L.push(`- セリフ: 「${c.line}」`);
     if (c.telop) L.push(`- テロップ: ${c.telop}`);
+    const bs = (c.broll || []).map(b => b.trim()).filter(Boolean);
+    if (bs.length) bs.forEach(b => L.push(`- 参考素材(Bロール): ${b}`));
     L.push(`- 次への切替: ${transitionLabel(c.transition)}`);
     if (c.editNote) L.push(`- 編集メモ: ${c.editNote}`);
     L.push('');
   });
+  const unused = unassignedBroll(p);
+  if (unused.length) {
+    L.push('## まだどのカットにも割り当てていない参考素材');
+    unused.forEach(b => L.push(`- ${b}`));
+    L.push('');
+  }
   L.push('---');
   L.push('切替効果は CapCut なら「トランジション」、Edits なら「切り替え」から同名のものを選んでください。');
   return L.join('\n');

@@ -13,6 +13,7 @@ import ThinkingIndicator from '../components/ThinkingIndicator';
 import { loadIgProfile } from './instagramConnect';
 import { usePostHistory } from './strategist';
 import IrisReelDirector from './IrisReelDirector';
+import { loadDirectorState } from './reelDirectorStore';
 import {
   loadClients, saveClients, clientUid,
   generateIdeaPool, type IdeaItem,
@@ -153,9 +154,11 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
   // 台本
   const [freeTopic, setFreeTopic] = useState('');
   const [dur, setDur] = useState(30); // 台本の尺（秒）：15/30/60 から選ぶ＝媒体に合わせた“尺違い”を即生成
-  const [script, setScript] = useState<ProductionScript | null>(null);
+  // 再読み込みしても台本が消えないよう、端末内の保存から復元する
+  // (以前は state だけで、タブを閉じた瞬間に生成した台本ごと消えていた)
+  const [script, setScript] = useState<ProductionScript | null>(() => loadDirectorState()?.script ?? null);
   const [scriptBusy, setScriptBusy] = useState(false);
-  const [scriptTopic, setScriptTopic] = useState('');
+  const [scriptTopic, setScriptTopic] = useState(() => loadDirectorState()?.topic ?? '');
   const [err, setErr] = useState<string | null>(null);
 
   const activeClient = clients.find(c => c.id === activeId) || null;
@@ -714,6 +717,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
             bg={bg}
             script={script}
             clientName={activeClient?.name}
+            topic={scriptTopic}
             onShotsChange={(shots, durationSec) =>
               setScript(prev => prev ? { ...prev, shots, durationSec } : prev)}
           />
