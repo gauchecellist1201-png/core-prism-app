@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Landmark, CreditCard, Sparkles, Briefcase, Coffee, Mic, Lock, CheckCircle2, AlertTriangle, Star, Target, Crown, Settings } from 'lucide-react';
+import { Landmark, CreditCard, Sparkles, Briefcase, Coffee, Mic, Lock, CheckCircle2, AlertTriangle, Star, Target, Crown, Settings, Search } from 'lucide-react';
 import { usePhaseButton } from '../hooks/usePhaseButton';
 import type { AppSettings, Persona } from '../types/identity';
 import { estimateMonthlyCost } from '../hooks/useClaude';
@@ -260,10 +260,10 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
       onClick={onClose}
     >
       <motion.div
-        className="w-full max-w-lg m-4 rounded-2xl overflow-hidden flex flex-col"
+        className="cp-modal-surface w-full max-w-lg m-4 rounded-2xl overflow-hidden flex flex-col"
         style={{
-          background: '#12121a',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'var(--modal-surface)',
+          border: '1px solid var(--modal-hairline)',
           maxHeight: 'calc(100dvh - 2rem)',
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
@@ -274,7 +274,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
         onClick={e => e.stopPropagation()}
       >
         {/* ヘッダー */}
-        <div className="flex items-center justify-between p-5 pb-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="flex items-center justify-between p-5 pb-3 flex-shrink-0" style={{ borderBottom: '1px solid var(--modal-row-2)' }}>
           <p className="text-fg text-sm font-light tracking-wide">環境設定</p>
           <button onClick={onClose} className="text-neutral-600 hover:text-fg-subtle text-xl" style={{ minWidth: 44, minHeight: 44 }} aria-label="閉じる">✕</button>
         </div>
@@ -284,12 +284,14 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
           <div
             className="flex items-center gap-2 px-3 rounded-xl"
             style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'var(--modal-row-2)',
+              border: '1px solid var(--modal-hairline)',
               minHeight: 40,
             }}
           >
-            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 14 }}>⌕</span>
+            {/* 記号文字ではなく線画アイコン (オーナー恒久ルール)。明るいテーマでも見えるよう
+                --fg-subtle ではなく --fg-muted (実測 3.04:1 → 4.6:1) */}
+            <Search size={14} strokeWidth={2} style={{ color: 'var(--fg-muted)' }} aria-hidden />
             <input
               ref={searchRef}
               type="text"
@@ -324,7 +326,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                 className="px-3 py-1.5 rounded-lg text-xs transition-all"
                 style={{
                   background: tab === id ? 'rgba(201,169,110,0.12)' : 'transparent',
-                  color: tab === id ? '#c9a96e' : '#4a4a6a',
+                  color: tab === id ? 'var(--brass-text)' : 'var(--fg-muted)',
                   whiteSpace: 'nowrap',
                   flexShrink: 0,
                   minHeight: 44,
@@ -349,7 +351,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                   style={{
                     background: 'rgba(201,169,110,0.06)',
                     border: '1px solid rgba(201,169,110,0.18)',
-                    color: '#c9a96e',
+                    color: 'var(--brass-text)',
                   }}
                 >
                   {r.label}
@@ -374,7 +376,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                       onChange={e => { setUserName(e.target.value); track('userName'); }}
                       placeholder="あなたのお名前"
                       className="bg-transparent text-fg text-sm font-light outline-none border-b py-1 text-right"
-                      style={{ borderColor: 'rgba(255,255,255,0.1)', minWidth: 140, fontSize: 16 }}
+                      style={{ borderColor: 'var(--modal-hairline)', minWidth: 140, fontSize: 16 }}
                     />
                   </SettingRow>
 
@@ -385,7 +387,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                       value={uiLanguage}
                       onChange={e => { setUiLanguage(e.target.value as 'ja' | 'en' | 'zh'); track('language'); }}
                       className="bg-transparent text-fg text-sm outline-none"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px', fontSize: 16 }}
+                      style={{ background: 'var(--modal-row-2)', border: '1px solid var(--modal-hairline)', borderRadius: 8, padding: '6px 10px', fontSize: 16 }}
                     >
                       <option value="ja">日本語</option>
                       <option value="en">English</option>
@@ -405,9 +407,9 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                           onClick={() => { setFontSize(s); setFontSizeState(s); track('fontSize'); }}
                           className="px-2.5 py-1 rounded-md text-xs"
                           style={{
-                            background: fontSize === s ? 'rgba(201,169,110,0.18)' : 'rgba(255,255,255,0.04)',
-                            color: fontSize === s ? '#c9a96e' : 'rgba(255,255,255,0.6)',
-                            border: `1px solid ${fontSize === s ? 'rgba(201,169,110,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                            background: fontSize === s ? 'rgba(201,169,110,0.18)' : 'var(--modal-row-2)',
+                            color: fontSize === s ? 'var(--brass-text)' : 'var(--fg-muted)',
+                            border: `1px solid ${fontSize === s ? 'rgba(201,169,110,0.4)' : 'var(--modal-hairline)'}`,
                             minHeight: 44,
                           }}
                         >
@@ -463,7 +465,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                         window.location.reload();
                       }}
                       className="text-xs px-3 py-1.5 rounded-full flex-shrink-0"
-                      style={{ background: 'rgba(201,169,110,0.12)', color: '#c9a96e', border: '1px solid rgba(201,169,110,0.3)', minHeight: 44 }}
+                      style={{ background: 'rgba(201,169,110,0.12)', color: 'var(--brass-text)', border: '1px solid rgba(201,169,110,0.3)', minHeight: 44 }}
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     >
                       再表示
@@ -488,8 +490,8 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                           onClick={() => { setAiTone(opt.v); track('tone'); }}
                           className="w-full text-left p-3 rounded-xl transition-all"
                           style={{
-                            background: aiTone === opt.v ? 'rgba(180,124,252,0.10)' : 'rgba(255,255,255,0.02)',
-                            border: `1px solid ${aiTone === opt.v ? 'rgba(180,124,252,0.50)' : 'rgba(255,255,255,0.06)'}`,
+                            background: aiTone === opt.v ? 'rgba(180,124,252,0.10)' : 'var(--modal-row)',
+                            border: `1px solid ${aiTone === opt.v ? 'rgba(180,124,252,0.50)' : 'var(--modal-row-border)'}`,
                           }}
                         >
                           <p className="text-fg text-sm font-light flex items-center gap-1.5"><span className="inline-flex"><opt.icon size={15} strokeWidth={2} /></span>{opt.t}</p>
@@ -521,8 +523,8 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                             onClick={() => { setModel(m.id as typeof model); track('model'); }}
                             className="w-full text-left p-3 rounded-xl transition-all"
                             style={{
-                              background: model === m.id ? 'rgba(201,169,110,0.08)' : 'rgba(255,255,255,0.02)',
-                              border: `1px solid ${model === m.id ? 'rgba(201,169,110,0.4)' : 'rgba(255,255,255,0.05)'}`,
+                              background: model === m.id ? 'rgba(201,169,110,0.08)' : 'var(--modal-row)',
+                              border: `1px solid ${model === m.id ? 'rgba(201,169,110,0.4)' : 'var(--modal-row-2)'}`,
                             }}
                             whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                           >
@@ -532,7 +534,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                                 <p className="text-neutral-500 text-xs">{m.note}</p>
                               </div>
                               <div className="text-right">
-                                <p className="text-xs font-light" style={{ color: '#c9a96e' }}>
+                                <p className="text-xs font-light" style={{ color: 'var(--brass-text)' }}>
                                   ¥{jpy150(est.usd)}/月
                                 </p>
                                 <p className="text-neutral-700 text-xs">${m.input}/${m.output} per MTok</p>
@@ -543,7 +545,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                       })}
                     </div>
                     <div className="mt-3 p-3 rounded-xl" style={{ background: 'rgba(201,169,110,0.05)', border: '1px solid rgba(201,169,110,0.1)' }}>
-                      <p className="text-xs" style={{ color: '#c9a96e' }}>
+                      <p className="text-xs" style={{ color: 'var(--brass-text)' }}>
                         選択中: {MODELS.find(m => m.id === model)?.name} — 月額 約¥{jpy150(monthlyEst.usd)}
                       </p>
                     </div>
@@ -559,8 +561,8 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                           onClick={() => { setIndustry(ind.id); track('industry'); }}
                           className="text-left p-2.5 rounded-lg transition-all"
                           style={{
-                            background: industry === ind.id ? 'rgba(201,169,110,0.10)' : 'rgba(255,255,255,0.02)',
-                            border: `1px solid ${industry === ind.id ? 'rgba(201,169,110,0.45)' : 'rgba(255,255,255,0.06)'}`,
+                            background: industry === ind.id ? 'rgba(201,169,110,0.10)' : 'var(--modal-row)',
+                            border: `1px solid ${industry === ind.id ? 'rgba(201,169,110,0.45)' : 'var(--modal-row-border)'}`,
                           }}
                         >
                           <div className="flex items-center gap-1.5">
@@ -584,8 +586,8 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                   {/* 音声読み上げ */}
                   <CollapsibleSection title="音声読み上げ">
                     <div className="p-3 rounded-xl mb-3" style={{
-                      background: openaiAvailable ? 'rgba(180,124,252,0.10)' : 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${openaiAvailable ? 'rgba(180,124,252,0.40)' : 'rgba(255,255,255,0.06)'}`,
+                      background: openaiAvailable ? 'rgba(180,124,252,0.10)' : 'var(--modal-row)',
+                      border: `1px solid ${openaiAvailable ? 'rgba(180,124,252,0.40)' : 'var(--modal-row-border)'}`,
                     }}>
                       <p className="text-fg text-xs font-medium mb-1 flex items-center gap-1.5">
                         <span className="inline-flex">{openaiAvailable ? <Mic size={14} strokeWidth={2} /> : <Lock size={14} strokeWidth={2} />}</span>
@@ -615,8 +617,8 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                               onClick={() => { setOpenaiVoice(v.value); track('voiceTTS'); }}
                               className="text-left p-2.5 rounded-lg transition-all"
                               style={{
-                                background: openaiVoice === v.value ? 'rgba(180,124,252,0.10)' : 'rgba(255,255,255,0.02)',
-                                border: `1px solid ${openaiVoice === v.value ? 'rgba(180,124,252,0.50)' : 'rgba(255,255,255,0.06)'}`,
+                                background: openaiVoice === v.value ? 'rgba(180,124,252,0.10)' : 'var(--modal-row)',
+                                border: `1px solid ${openaiVoice === v.value ? 'rgba(180,124,252,0.50)' : 'var(--modal-row-border)'}`,
                               }}
                             >
                               <p className="text-fg text-xs font-medium">{v.label}</p>
@@ -632,13 +634,13 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                   <CollapsibleSection title="人格 (Persona)">
                     <p className="text-xs text-fg-muted mb-2">登録済みの人格 (アイコン・名前・色の編集)</p>
                     {(!personas || personas.length === 0) ? (
-                      <div className="text-xs text-fg-muted p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="text-xs text-fg-muted p-3 rounded-xl" style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-border)' }}>
                         まだ人格が作成されていません。ダッシュボードから「人格を追加」してください。
                       </div>
                     ) : personas.map(p => (
                       <div key={p.id}
                         className="flex items-center gap-3 p-3 rounded-xl mb-2"
-                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                        style={{ background: 'var(--modal-row-2)', border: '1px solid var(--modal-row-border)' }}
                       >
                         <div style={{
                           width: 36, height: 36, borderRadius: '50%',
@@ -657,7 +659,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                           className="text-xs px-3 py-1.5 rounded-lg"
                           style={{
                             background: 'rgba(201,169,110,0.14)',
-                            color: '#c9a96e',
+                            color: 'var(--brass-text)',
                             border: '1px solid rgba(201,169,110,0.25)',
                             cursor: 'pointer',
                             minHeight: 44,
@@ -684,7 +686,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                 <motion.div key="privacy" className="space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <label
                     className="flex items-start gap-3 p-3 rounded-xl cursor-pointer"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', minHeight: 44 }}
+                    style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-border)', minHeight: 44 }}
                   >
                     <input
                       type="checkbox"
@@ -710,8 +712,8 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     onClick={() => { window.dispatchEvent(new CustomEvent('core:open-error-log')); track('errorLog'); }}
                     className="w-full text-left p-3 rounded-xl transition-colors"
                     style={{
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.06)',
+                      background: 'var(--modal-row)',
+                      border: '1px solid var(--modal-row-border)',
                       cursor: 'pointer',
                       minHeight: 44,
                     }}
@@ -724,8 +726,8 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                   <div
                     className="p-3 rounded-xl flex items-center justify-between gap-3"
                     style={{
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.06)',
+                      background: 'var(--modal-row)',
+                      border: '1px solid var(--modal-row-border)',
                       opacity: 0.65,
                     }}
                   >
@@ -735,7 +737,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     </div>
                     <span
                       className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0"
-                      style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)' }}
+                      style={{ background: 'var(--modal-chip)', color: 'var(--fg-muted)', border: '1px solid var(--modal-hairline)' }}
                     >準備中</span>
                   </div>
 
@@ -762,7 +764,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     type="button"
                     onClick={() => { window.dispatchEvent(new CustomEvent('prism:open-totp')); track('totp'); }}
                     className="w-full text-left p-3 rounded-xl transition-colors"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', minHeight: 44 }}
+                    style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-border)', cursor: 'pointer', minHeight: 44 }}
                   >
                     <div className="text-fg text-sm font-medium">2 段階認証</div>
                     <div className="text-fg-muted text-[11px] mt-1">Google Authenticator 互換 (TOTP) で守る</div>
@@ -773,7 +775,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     type="button"
                     onClick={() => { downloadUserExport().catch(e => alert(`エクスポート失敗: ${(e as Error).message}`)); track('exportJson'); }}
                     className="w-full text-left p-3 rounded-xl transition-colors"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', minHeight: 44 }}
+                    style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-border)', cursor: 'pointer', minHeight: 44 }}
                   >
                     <div className="text-fg text-sm font-medium">全データを JSON で持ち出す</div>
                     <div className="text-fg-muted text-[11px] mt-1">localStorage 全件 + Stripe 顧客情報 + サーバ集計 (GDPR/個情法)</div>
@@ -788,7 +790,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     type="button"
                     onClick={() => { window.dispatchEvent(new CustomEvent('prism:open-credits')); track('credits'); }}
                     className="w-full text-left p-3 rounded-xl transition-colors"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', minHeight: 44 }}
+                    style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-border)', cursor: 'pointer', minHeight: 44 }}
                   >
                     <div className="text-fg text-sm font-medium">CORE Credits</div>
                     <div className="text-fg-muted text-[11px] mt-1">貯まる / 使えるポイントの残高と履歴</div>
@@ -797,7 +799,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     type="button"
                     onClick={() => { window.dispatchEvent(new CustomEvent('prism:export-csv')); track('exportCsv'); }}
                     className="w-full text-left p-3 rounded-xl transition-colors"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', minHeight: 44 }}
+                    style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-border)', cursor: 'pointer', minHeight: 44 }}
                   >
                     <div className="text-fg text-sm font-medium">数字を CSV で出力</div>
                     <div className="text-fg-muted text-[11px] mt-1">今月の CRM Deals / タスク / 収支 / SNS を 1 CSV に</div>
@@ -812,7 +814,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                         { label: '円換算', value: `¥${Math.round(settings.usageStats.estimatedCostUsd * 150)}` },
                       ].map(item => (
                         <div key={item.label} className="p-2.5 rounded-xl"
-                          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}
+                          style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-2)' }}
                         >
                           <p className="text-neutral-600 text-[10px] mb-1">{item.label}</p>
                           <p className="text-fg text-sm font-extralight">{item.value}</p>
@@ -870,7 +872,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
 
                   {/* バージョン情報 */}
                   <div className="p-3 rounded-xl"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}
+                    style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-2)' }}
                   >
                     <p className="text-neutral-600 text-[10px] mb-0.5">バージョン</p>
                     <p className="text-fg text-sm font-light">CORE Prism / Iris</p>
@@ -884,7 +886,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
                     type="button"
                     onClick={() => { window.dispatchEvent(new CustomEvent('core:open-feedback')); track('feedback'); }}
                     className="w-full text-left p-3 rounded-xl"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', minHeight: 44 }}
+                    style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-border)', cursor: 'pointer', minHeight: 44 }}
                   >
                     <div className="text-fg text-sm font-medium">フィードバックを送る</div>
                     <div className="text-fg-muted text-[11px] mt-1">「ここ使いづらい」を直接届ける</div>
@@ -896,7 +898,7 @@ export default function SettingsModal({ settings, onSave, onClose, onResetStats,
         </div>
 
         {/* フッター */}
-        <div className="flex justify-end gap-3 px-5 pb-5 flex-shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 14 }}>
+        <div className="flex justify-end gap-3 px-5 pb-5 flex-shrink-0" style={{ borderTop: '1px solid var(--modal-row-2)', paddingTop: 14 }}>
           <button onClick={onClose} className="px-4 py-2 text-sm text-neutral-600 hover:text-fg-subtle transition-colors" style={{ minHeight: 44 }}>
             キャンセル
           </button>
@@ -958,7 +960,7 @@ function SettingRow({ label, desc, children }: { label: string; desc?: string; c
   return (
     <div
       className="flex items-center justify-between gap-3 p-3 rounded-xl transition-colors hover:bg-white/[0.03]"
-      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', minHeight: 56 }}
+      style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-2)', minHeight: 56 }}
     >
       <div className="flex-1 min-w-0">
         <p className="text-fg text-sm">{label}</p>
@@ -980,7 +982,7 @@ function ToggleRow({ label, desc, on, onChange }: { label: string; desc?: string
         className="relative flex-shrink-0 rounded-full transition-colors"
         style={{
           width: 46, height: 26,
-          background: on ? 'linear-gradient(135deg, #c9a96e, #a07840)' : 'rgba(255,255,255,0.12)',
+          background: on ? 'linear-gradient(135deg, #c9a96e, #a07840)' : 'var(--modal-hairline)',
         }}
       >
         <motion.span
@@ -1000,7 +1002,7 @@ function CollapsibleSection({ title, defaultOpen, children }: { title: string; d
   return (
     <div
       className="rounded-xl overflow-hidden"
-      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+      style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-2)' }}
     >
       <button
         onClick={() => { setOpen(o => !o); tactileTap(); }}
@@ -1012,7 +1014,7 @@ function CollapsibleSection({ title, defaultOpen, children }: { title: string; d
         <motion.span
           animate={{ rotate: open ? 90 : 0 }}
           transition={{ duration: 0.18 }}
-          style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}
+          style={{ color: 'var(--fg-muted)', fontSize: 12 }}
         >›</motion.span>
       </button>
       <AnimatePresence initial={false}>
@@ -1050,7 +1052,7 @@ function SearchResults({ results, onJump }: { results: SearchableRow[]; onJump: 
           key={r.id}
           onClick={() => onJump(r)}
           className="w-full flex items-center justify-between gap-3 p-3 rounded-xl text-left transition-colors"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', minHeight: 56, cursor: 'pointer' }}
+          style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-row-2)', minHeight: 56, cursor: 'pointer' }}
         >
           <div className="flex-1 min-w-0">
             <p className="text-fg text-sm">{r.label}</p>
@@ -1058,7 +1060,7 @@ function SearchResults({ results, onJump }: { results: SearchableRow[]; onJump: 
           </div>
           <span
             className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0"
-            style={{ background: 'rgba(201,169,110,0.10)', color: '#c9a96e', border: '1px solid rgba(201,169,110,0.25)' }}
+            style={{ background: 'rgba(201,169,110,0.10)', color: 'var(--brass-text)', border: '1px solid rgba(201,169,110,0.25)' }}
           >
             {TABS.find(t => t.id === r.tab)?.label}
           </span>
@@ -1121,8 +1123,8 @@ function ApiKeySetupBox({
       {/* Gemini 鍵 (おすすめ・無料) */}
       <div style={{
         padding: '1rem', borderRadius: 14,
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'var(--modal-row)',
+        border: '1px solid var(--modal-hairline)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
           <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--fg)', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1140,10 +1142,10 @@ function ApiKeySetupBox({
           >無料で取得 →</a>
         </div>
         <p style={{ fontSize: 11, color: 'var(--fg-muted)', lineHeight: 1.65, marginBottom: 8 }}>
-          aistudio.google.com で Google アカウントでログイン → 「Create API key」→ <code style={{ background: 'rgba(255,255,255,0.05)', padding: '1px 4px', borderRadius: 4, fontFamily: 'monospace' }}>AIzaSy...</code> を下に貼り付け
+          aistudio.google.com で Google アカウントでログイン → 「Create API key」→ <code style={{ background: 'var(--modal-row-2)', padding: '1px 4px', borderRadius: 4, fontFamily: 'monospace' }}>AIzaSy...</code> を下に貼り付け
         </p>
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
+          style={{ background: 'var(--modal-row-2)', border: '1px solid var(--modal-hairline)' }}>
           <input
             type={geminiVisible ? 'text' : 'password'}
             value={geminiKey}
@@ -1171,14 +1173,14 @@ function ApiKeySetupBox({
           <span className="inline-flex"><Target size={14} strokeWidth={2} /></span>Claude キーを登録 (有料・高品質) — 上級者向け
         </summary>
         <div style={{ marginTop: 8, padding: '0.85rem 1rem', borderRadius: 12,
-          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          background: 'var(--modal-row)', border: '1px solid var(--modal-hairline)' }}>
           <p style={{ fontSize: 11, color: 'var(--fg-muted)', lineHeight: 1.65, marginBottom: 8 }}>
             <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer"
               style={{ color: '#A78BFA', textDecoration: 'underline' }}>console.anthropic.com</a> で
             「Settings → API Keys → Create Key」→ <code>sk-ant-...</code> を貼り付け
           </p>
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
+            style={{ background: 'var(--modal-row-2)', border: '1px solid var(--modal-hairline)' }}>
             <input type={apiKeyVisible ? 'text' : 'password'} value={apiKey === 'proxy' ? '' : apiKey}
               onChange={e => setApiKey(e.target.value.trim())}
               placeholder="sk-ant-..."
@@ -1250,8 +1252,8 @@ function MasterModeBox({ onChange }: { onChange?: () => void }) {
     <div className="p-4 rounded-xl" style={{
       background: isOwner
         ? 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,107,53,0.10))'
-        : 'rgba(255,255,255,0.03)',
-      border: `1px solid ${isOwner ? 'rgba(255,215,0,0.35)' : 'rgba(255,255,255,0.08)'}`,
+        : 'var(--modal-row)',
+      border: `1px solid ${isOwner ? 'rgba(255,215,0,0.35)' : 'var(--modal-hairline)'}`,
     }}>
       <div className="flex items-center justify-between gap-2 mb-2">
         <p className="text-fg text-sm font-medium flex items-center gap-1.5">
@@ -1277,7 +1279,7 @@ function MasterModeBox({ onChange }: { onChange?: () => void }) {
             type="text" value={code} onChange={e => setCode(e.target.value)}
             placeholder="Owner キーを入力"
             className="w-full bg-transparent text-fg font-mono outline-none border-b py-2"
-            style={{ borderColor: 'rgba(255,255,255,0.1)', fontSize: 16 }}
+            style={{ borderColor: 'var(--modal-hairline)', fontSize: 16 }}
           />
           <div className="flex gap-2">
             <button onClick={apply} disabled={!code.trim()}

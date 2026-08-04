@@ -176,6 +176,23 @@
     --dock-hairline: rgba(0, 0, 0, 0.12);
   }
 
+  /* 設定モーダル (SettingsModal / IntegrationsHub) の面。
+     ★2026-08-04 実測: 板が #12121a の黒決め打ち・中の行は rgba(255,255,255,0.02〜0.06)
+       という「暗い面の上でだけ意味がある白の薄膜」なのに、行の見出しだけ var(--fg) を
+       使っていたため、明るいテーマでは「黒い板に黒い文字」。375px で
+       「効果音」「フォントサイズ」「アニメーションを控えめに」「組織」「プラン」
+       「ガイドツアーを再表示」「2段階認証」など**設定の名前が全部 1.23〜1.32:1 で消えていた**
+       （＝説明文だけが浮いていて、何の設定か分からない）。面をテーマに追従させて根治する。
+       暗いテーマの値は従来と同一なので、ダーク側の見え方は変わらない。 */
+  :root {
+    --modal-surface: #FBFAF7;
+    --modal-hairline: rgba(0, 0, 0, 0.10);
+    --modal-row: rgba(0, 0, 0, 0.035);
+    --modal-row-2: rgba(0, 0, 0, 0.055);
+    --modal-row-border: rgba(0, 0, 0, 0.10);
+    --modal-chip: rgba(0, 0, 0, 0.06);
+  }
+
   [data-theme="dark"] {
     --brass-text: #e8c97d;
     --scrim-bottom: linear-gradient(180deg, rgba(14,14,18,0), rgba(14,14,18,0.92) 34%);
@@ -195,6 +212,12 @@
     --dock-surface: rgba(16, 16, 28, 0.94);
     --dock-surface-2: rgba(12, 12, 22, 0.92);
     --dock-hairline: rgba(255, 255, 255, 0.12);
+    --modal-surface: #12121a;
+    --modal-hairline: rgba(255, 255, 255, 0.08);
+    --modal-row: rgba(255, 255, 255, 0.025);
+    --modal-row-2: rgba(255, 255, 255, 0.045);
+    --modal-row-border: rgba(255, 255, 255, 0.06);
+    --modal-chip: rgba(255, 255, 255, 0.06);
   }
 
   * {
@@ -2286,6 +2309,13 @@ body[data-iris-dock="on"] {
   --dock-surface: rgba(252, 251, 248, 0.94);
   --dock-surface-2: rgba(255, 255, 255, 0.94);
   --dock-hairline: rgba(0, 0, 0, 0.12);
+  /* Iris は常に明色なので、設定モーダルの面も明色を強制する */
+  --modal-surface: #FFFDFB;
+  --modal-hairline: rgba(42, 26, 58, 0.12);
+  --modal-row: rgba(42, 26, 58, 0.04);
+  --modal-row-2: rgba(42, 26, 58, 0.06);
+  --modal-row-border: rgba(42, 26, 58, 0.11);
+  --modal-chip: rgba(42, 26, 58, 0.07);
 }
 
 .iris-main {
@@ -2387,6 +2417,26 @@ body[data-core-sample-banner] .iris-sidebar {
   .text-neutral-700 { color: rgb(180 180 200) !important; }
   .text-neutral-600 { color: rgb(200 200 215) !important; }
   .text-neutral-500 { color: rgb(215 215 225) !important; }
+}
+/* ↑の補強は「暗い面の上」を前提に一律で明るい灰へ持ち上げる (max-width:768px の !important)。
+   ★2026-08-04 実測(375px・明るいテーマ): 環境設定の板を明るくした結果、この一律の持ち上げが
+   そのまま残り、設定の**説明文**が rgb(200,200,215) のまま白い板に乗って
+   「AI が呼びかけるときに使う名前」「タップ・完了でやわらかな音」「画面全体の文字サイズ」
+   「UI の言語」が **1.47:1**、「キャンセル」が **1.58:1** ＝ ほぼ見えない状態だった
+   (設定の名前だけ 12.5:1 で読めて、何のための設定かの説明が消えている)。
+   面を明るくしたところだけ、同じ濃さの階層を暗い側へ折り返す。
+   他画面(人格選択・議事録・ナレッジ等)はまだ暗い面のままなので触らない＝退行を作らない。 */
+@media (max-width: 768px) {
+  [data-theme="light"] .cp-modal-surface .text-neutral-900,
+  body[data-iris-dock="on"] .cp-modal-surface .text-neutral-900 { color: rgb(58 56 68) !important; }
+  [data-theme="light"] .cp-modal-surface .text-neutral-800,
+  body[data-iris-dock="on"] .cp-modal-surface .text-neutral-800 { color: rgb(66 64 76) !important; }
+  [data-theme="light"] .cp-modal-surface .text-neutral-700,
+  body[data-iris-dock="on"] .cp-modal-surface .text-neutral-700 { color: rgb(76 74 88) !important; }
+  [data-theme="light"] .cp-modal-surface .text-neutral-600,
+  body[data-iris-dock="on"] .cp-modal-surface .text-neutral-600 { color: rgb(88 86 100) !important; }
+  [data-theme="light"] .cp-modal-surface .text-neutral-500,
+  body[data-iris-dock="on"] .cp-modal-surface .text-neutral-500 { color: rgb(100 98 114) !important; }
 }
 
 /* iPhone 専用: 全ての固定ヘッダ / モーダルでテキストが切れないようにフォントサイズ下限 */
@@ -3105,6 +3155,22 @@ body[data-prism-chat-dock] [data-tour-id="kpi-sparkline"] {
 /* 左サイドバーのメニュー末尾余白 — 左下に残る浮遊物(ドラッグ可能なCoreオーブ等)ぶん */
 .dashboard-root .cp-side-nav-scroll {
   padding-bottom: 120px;
+}
+/* サイドメニュー最下段(ユーザーを招待/環境設定)は上のスクロール領域の「外」に
+   固定で座っているため、上の末尾余白では守れない。
+   ★2026-08-04 実測(375×812): メニューを開いた直後、「環境設定」は y=756〜800 に居て
+   下部チャットドック(y=738〜800)に**全面を被覆**され、elementFromPoint がドックの入力欄を
+   返した＝そこへのタップはドックに吸われる。ドックは「全画面の覆いが出たら引っ込む」
+   (useCoveredByModal) ので、メニューの黒い覆いを検知すると約200ms後に消える＝
+   被覆は**開いた直後の一瞬だけ**だが、環境設定は テーマ/文字サイズ/2段階認証/プラン/
+   Credits/CSV・JSON書き出し/ガイド再表示 の唯一の入口で、開いてすぐ親指が伸びる場所。
+   ドックの実測高さ(--prism-dock-h)ぶん逃がす。ただしドックが引っ込むと この変数は 0px に
+   なるので、素で使うと余白が 74px→12px と縮んで**指を伸ばしている最中にボタンが動く**。
+   max() で下限を置き、ドックが在る画面では常に同じ位置に座らせる。 */
+@media (max-width: 767px) {
+  body[data-prism-chat-dock] .dashboard-root .cp-side-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + max(var(--prism-dock-h, 62px), 62px) + 12px);
+  }
 }
 /* 左の浮遊ピル群はサイドバーの「上」ではなく本文レーン(サイドバー右)に住まわせる。
    サイドバーは縦スクロールするメニューなので、上に浮くピルは必ずどこかの項目に被る。

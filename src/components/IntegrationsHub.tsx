@@ -16,6 +16,7 @@ import {
   sendBrief,
   type IntegrationConfig,
 } from '../lib/integrations';
+import { readableInk } from '../lib/ink';
 import AccountingIntegration from './AccountingIntegration';
 import { StudioIntro } from './StudioIntro';
 
@@ -265,9 +266,9 @@ export default function IntegrationsHub() {
               onClick={() => setFilter(f)}
               className="text-xs px-3 py-1.5 rounded-full whitespace-nowrap transition-all flex-shrink-0"
               style={{
-                background: filter === f ? (f === 'all' ? 'rgba(201,169,110,0.18)' : STATUS_META[f].bg) : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${filter === f ? (f === 'all' ? 'rgba(201,169,110,0.45)' : STATUS_META[f].color + '55') : 'rgba(255,255,255,0.08)'}`,
-                color: filter === f ? (f === 'all' ? '#c9a96e' : STATUS_META[f].color) : 'var(--fg-muted)',
+                background: filter === f ? (f === 'all' ? 'rgba(201,169,110,0.18)' : STATUS_META[f].bg) : 'var(--modal-row-2)',
+                border: `1px solid ${filter === f ? (f === 'all' ? 'rgba(201,169,110,0.45)' : STATUS_META[f].color + '55') : 'var(--modal-hairline)'}`,
+                color: filter === f ? (f === 'all' ? 'var(--brass-text)' : readableInk(STATUS_META[f].color)) : 'var(--fg-muted)',
                 minHeight: 32,
               }}
             >
@@ -400,7 +401,7 @@ export default function IntegrationsHub() {
                       style={{
                         background: 'rgba(201,169,110,0.12)',
                         border: '1px solid rgba(201,169,110,0.4)',
-                        color: '#c9a96e',
+                        color: 'var(--brass-text)',
                         minHeight: 32,
                       }}
                     >
@@ -440,7 +441,7 @@ export default function IntegrationsHub() {
             <motion.button
               onClick={() => setAdding(true)}
               className="text-xs px-3 py-1.5 rounded-full"
-              style={{ background: 'rgba(201,169,110,0.12)', color: '#c9a96e', border: '1px solid rgba(201,169,110,0.3)', minHeight: 32 }}
+              style={{ background: 'rgba(201,169,110,0.12)', color: 'var(--brass-text)', border: '1px solid rgba(201,169,110,0.3)', minHeight: 32 }}
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               + 追加
             </motion.button>
@@ -451,16 +452,16 @@ export default function IntegrationsHub() {
           <motion.div
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
             className="p-4 rounded-xl space-y-3"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            style={{ background: 'var(--modal-row)', border: '1px solid var(--modal-hairline)' }}>
             <div className="flex gap-2">
               {(['slack', 'discord'] as const).map(k => (
                 <button key={k}
                   onClick={() => setForm(f => ({ ...f, kind: k }))}
                   className="flex-1 py-2 rounded-lg text-xs transition-all"
                   style={{
-                    background: form.kind === k ? 'rgba(201,169,110,0.15)' : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${form.kind === k ? 'rgba(201,169,110,0.5)' : 'rgba(255,255,255,0.06)'}`,
-                    color: form.kind === k ? '#c9a96e' : '#4a4a6a',
+                    background: form.kind === k ? 'rgba(201,169,110,0.15)' : 'var(--modal-row)',
+                    border: `1px solid ${form.kind === k ? 'rgba(201,169,110,0.5)' : 'var(--modal-row-border)'}`,
+                    color: form.kind === k ? 'var(--brass-text)' : 'var(--fg-muted)',
                     minHeight: 36,
                   }}>
                   {k === 'slack' ? 'Slack' : 'Discord'}
@@ -475,14 +476,14 @@ export default function IntegrationsHub() {
               value={form.webhookUrl}
               onChange={e => setForm(f => ({ ...f, webhookUrl: e.target.value }))}
               className="w-full bg-transparent text-fg text-sm font-light outline-none border-b py-2"
-              style={{ borderColor: 'rgba(255,255,255,0.1)', fontSize: 16 }} />
+              style={{ borderColor: 'var(--modal-hairline)', fontSize: 16 }} />
             <input
               type="text"
               placeholder="チャンネル名 (例: #general)"
               value={form.channelName}
               onChange={e => setForm(f => ({ ...f, channelName: e.target.value }))}
               className="w-full bg-transparent text-fg text-sm font-light outline-none border-b py-2"
-              style={{ borderColor: 'rgba(255,255,255,0.1)', fontSize: 16 }} />
+              style={{ borderColor: 'var(--modal-hairline)', fontSize: 16 }} />
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -525,8 +526,8 @@ export default function IntegrationsHub() {
               animate={{ opacity: 1 }}
               className="p-3 rounded-xl"
               style={{
-                background: cfg.enabled ? 'rgba(201,169,110,0.05)' : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${st === 'error' ? '#f8717155' : cfg.enabled ? 'rgba(201,169,110,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                background: cfg.enabled ? 'rgba(201,169,110,0.05)' : 'var(--modal-row)',
+                border: `1px solid ${st === 'error' ? '#f8717155' : cfg.enabled ? 'rgba(201,169,110,0.2)' : 'var(--modal-row-2)'}`,
               }}>
               <div className="flex items-start gap-3 flex-wrap">
                 <div className="flex-1 min-w-0">
@@ -548,9 +549,9 @@ export default function IntegrationsHub() {
                     onClick={() => handleToggle(cfg, 'enabled')}
                     className="text-xs px-2.5 py-1.5 rounded-full transition-all"
                     style={{
-                      background: cfg.enabled ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${cfg.enabled ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.07)'}`,
-                      color: cfg.enabled ? '#4ade80' : '#4a4a6a',
+                      background: cfg.enabled ? 'rgba(74,222,128,0.1)' : 'var(--modal-row-2)',
+                      border: `1px solid ${cfg.enabled ? 'rgba(74,222,128,0.3)' : 'var(--modal-row-border)'}`,
+                      color: cfg.enabled ? 'var(--brief-ink-done)' : 'var(--fg-muted)',
                       minHeight: 32, minWidth: 44,
                     }}>
                     {cfg.enabled ? 'ON' : 'OFF'}
@@ -560,8 +561,8 @@ export default function IntegrationsHub() {
                     disabled={st === 'testing'}
                     className="text-xs px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50"
                     style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.07)',
+                      background: 'var(--modal-row-2)',
+                      border: '1px solid var(--modal-row-border)',
                       color: st === 'ok' ? '#4ade80' : st === 'error' ? '#f87171' : '#a0a0c0',
                       minHeight: 32,
                     }}>

@@ -765,7 +765,7 @@ export default function IdentityDashboard({
             <>
               <p className="text-fg-muted text-xs tracking-widest uppercase px-2 mb-1.5">プロダクト</p>
               <button
-                onClick={onOpenProducts}
+                onClick={() => { setShowMobileSidebar(false); onOpenProducts(); }}
                 className="w-full flex items-center gap-2.5 px-2 rounded-lg transition-colors hover:bg-surface-3 text-left mb-3"
                 style={{
                   minHeight: 44,
@@ -786,10 +786,10 @@ export default function IdentityDashboard({
             </>
           )}
           <p className="text-fg-muted text-xs tracking-widest uppercase px-2 mb-1.5">人格</p>
-          <ModeSwitcher activeId={persona.id} onSwitch={onSwitch} isTransitioning={isTransitioning} />
+          <ModeSwitcher activeId={persona.id} onSwitch={(id) => { setShowMobileSidebar(false); onSwitch(id); }} isTransitioning={isTransitioning} />
 
           <motion.button
-            onClick={onCreatePersona}
+            onClick={() => { setShowMobileSidebar(false); onCreatePersona(); }}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg mt-1.5 transition-colors hover:bg-surface-3 group"
             whileTap={{ scale: 0.97 }}
           >
@@ -802,9 +802,15 @@ export default function IdentityDashboard({
             Credits/CSV/JSON/2FA/Face ID/利用状況は「環境設定」内へ移設済み
             (SettingsModal — privacy/other タブ。prism:open-* イベントでここのモーダルを開く)。
             テーマ切替は右上の固定トグルが正。 */}
-        <div className="space-y-0.5">
+        {/* ★2026-08-04 実測(375px): この帯のボタンは押しても
+            サイドメニューを閉じていなかったため、開いたモーダルがメニューの
+            裏に隠れ、iPhone では「押したのに何も起きない」ように見えていた
+            （上の「ページ」の各項目は最初から閉じている）。同じ扱いに揃える。 */}
+        {/* cp-side-bottom: この帯はスクロール領域の外に固定で座っているので、
+            下部チャットドックぶんの逃げ場を index.css で確保する(モバイルのみ)。 */}
+        <div className="cp-side-bottom space-y-0.5">
           <button
-            onClick={() => setShowInvite(true)}
+            onClick={() => { setShowMobileSidebar(false); setShowInvite(true); }}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors"
             style={{
               background: `${persona.accentColor}1a`,
@@ -816,7 +822,7 @@ export default function IdentityDashboard({
             <span className="text-sm font-semibold" style={{ color: accentInk }}>ユーザーを招待</span>
           </button>
           <button
-            onClick={onOpenSettings}
+            onClick={() => { setShowMobileSidebar(false); onOpenSettings(); }}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-surface-3 group transition-colors"
             style={{ minHeight: 44 }}
           >
