@@ -638,10 +638,12 @@ export default function CoreSite() {
                 aria-hidden
                 style={{
                   position: 'absolute',
-                  right: 'clamp(-60px, -2vw, 10px)',
+                  // right を負にすると、親が overflow:hidden なので球体の右側が切り落とされる。
+                  // 実測(1920px)で -38px ぶん欠けていたため、必ず 0 以上に収める。
+                  right: 'clamp(0px, 1.5vw, 28px)',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  width: 'clamp(220px, 28vw, 380px)',
+                  width: 'clamp(200px, 26vw, 340px)',
                   height: 'auto',
                   opacity: 0.92,
                   pointerEvents: 'none',
@@ -649,7 +651,15 @@ export default function CoreSite() {
               />
             )}
 
-            <div style={{ position: 'relative', maxWidth: 640, textAlign: isNarrow ? 'center' : undefined }}>
+            {/* 球体を右に収めた分、中幅(641〜900px程度)では本文が球体の上に乗って読めなくなる。
+                テキスト側の幅も球体の手前で止める。 */}
+            <div
+              style={{
+                position: 'relative',
+                maxWidth: isNarrow ? 640 : 'min(640px, calc(100% - 220px))',
+                textAlign: isNarrow ? 'center' : undefined,
+              }}
+            >
               {isNarrow && (
                 <img
                   src="/universe-mark.png"
