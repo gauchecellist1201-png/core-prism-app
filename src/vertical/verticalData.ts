@@ -90,7 +90,7 @@ export const VERTICALS: VerticalProduct[] = [
     industryIcon: 'ads',
     tagline: '報告された数字から、嘘を剥がす。',
     body: '自然検索で1位を取れているキーワードに広告を出し続けていないか。Google広告とSearch Consoleを突き合わせ、広告がなくても取れていたCVを剥がして「真のCPA」を出します。浮いた予算は、いちばん長く続く紹介顧客への還元に自動で付け替え。',
-    path: 'https://core-veritas.vercel.app',
+    path: 'https://veritas-gauches-projects.vercel.app',
     external: true,
     accent: '#45B8E8',
     status: 'デモ公開中・サンプルデータで全機能を確認できます',
