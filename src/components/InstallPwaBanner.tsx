@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 const DISMISS_KEY = 'core_pwa_dismiss_v1';
 const VISIT_COUNT_KEY = 'core_pwa_visit_count_v1';
 const LATER_KEY = 'core_pwa_later_v1'; // セッション「あとで」記憶
+const FIRST_SEEN_KEY = 'core_pwa_first_seen_v1'; // はじめて来た時刻 (初日は案内を出さない)
+const QUIET_MS = 24 * 60 * 60 * 1000; // 初日は黙る
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>;
@@ -71,6 +73,25 @@ export default function InstallPwaBanner({ brand }: Props) {
       // 訪問回数カウント
       const cur = parseInt(localStorage.getItem(VISIT_COUNT_KEY) || '0', 10) || 0;
       localStorage.setItem(VISIT_COUNT_KEY, String(cur + 1));
+
+      // ★はじめて来た日は出さない (2026-08-08 本番実測で発見)
+      //   「ホーム画面に追加してください」は、気に入ってくれた人へのお願いであって、
+      //   中身をまだ何も見ていない人への割り込みではない。
+      //   375px の本番で「登録せずに、中を見る」から入ると、入室 6 秒後に
+      //   高さ 331px の板が『今日のブリーフ』(Prism の主役) を覆っていた。
+      //   ＝はじめて見る画面が「アプリを追加してください」というお願いだった。
+      //   翌日また来てくれた人 = 気に入ってくれた人にだけ出す。
+      const firstRaw = localStorage.getItem(FIRST_SEEN_KEY);
+      if (!firstRaw) {
+        localStorage.setItem(FIRST_SEEN_KEY, String(Date.now()));
+        setDismissed(true);
+        return;
+      }
+      const firstMs = parseInt(firstRaw, 10) || Date.now();
+      if (Date.now() - firstMs < QUIET_MS) {
+        setDismissed(true);
+        return;
+      }
     } catch {}
   }, []);
 
@@ -171,7 +192,9 @@ export default function InstallPwaBanner({ brand }: Props) {
             left: 16,
             right: 16,
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
-            zIndex: 70,
+            // マイクFAB(9997)より上。下だと「もう表示しない」の右端が
+            // マイクに隠れて押せない (375px 本番実測: 9 点中 2 点が被覆)
+            zIndex: 9998,
             maxWidth: 480,
             margin: '0 auto',
             background: 'rgba(15,15,25,0.94)',
@@ -273,7 +296,9 @@ export default function InstallPwaBanner({ brand }: Props) {
             left: 16,
             right: 16,
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
-            zIndex: 70,
+            // マイクFAB(9997)より上。下だと「もう表示しない」の右端が
+            // マイクに隠れて押せない (375px 本番実測: 9 点中 2 点が被覆)
+            zIndex: 9998,
             maxWidth: 480,
             margin: '0 auto',
             background: 'rgba(15,15,25,0.96)',

@@ -60,6 +60,11 @@ function readKey(): string {
   } catch { return ''; }
 }
 
+/** デモ体験用の擬似キー (rk_test_demo_… )。本物のキーはこの形にならない。 */
+function isDemoKey(k: string): boolean {
+  return /^(rk|sk)_test_demo_/.test(k);
+}
+
 interface ManualRevenue {
   thisMonthRevenueJpy: number;
   thisMonthExpenseJpy: number;
@@ -106,10 +111,14 @@ function readCache(currentKey: string): StripeRevenue | null {
     if (!raw) return null;
     const c = JSON.parse(raw) as Cache;
     if (c.key !== currentKey.slice(0, 8)) return null;
-    if (Date.now() - c.fetchedAt > CACHE_TTL_MS) return null;
+    // デモ体験の数字は seed した中身がすべて (取りに行く先が無い)。
+    // 5 分で期限切れにすると、体験の途中で売上が消えて「—」になる。
+    const demo = isDemoKey(currentKey);
+    if (!demo && Date.now() - c.fetchedAt > CACHE_TTL_MS) return null;
     // 旧コード (2026-05-26 修正前) のキャッシュは diag 未保存。
     // それを返すと「0 件」が永続化されるので破棄して再取得を促す。
-    if (!c.data.diag) return null;
+    // ただし demo の seed も diag を持たないので、demo は対象外。
+    if (!demo && !c.data.diag) return null;
     return c.data;
   } catch { return null; }
 }
@@ -139,6 +148,21 @@ export function useStripeRevenue() {
 
   const fetchNow = useCallback(async (k: string, force = false) => {
     if (!k) return;
+    // ★デモ体験中は本物の Stripe へ出ない (2026-08-08 本番実測で発見)
+    //   擬似キー rk_test_demo_… で /api/revenue/snapshot を叩くと必ず失敗し、
+    //   「登録せずに、中を見る」で入った人の最初の画面が
+    //     ・今月稼いだ → 「—」「まだ今月の取引はありません」
+    //     ・赤いカードで「このキーでは売上を読み取れませんでした。Stripe で
+    //       Charges 権限を『読み取り』にして作り直してください」
+    //   になっていた。デモの人は Stripe の鍵など持っていないので、自分では
+    //   絶対に直せないエラーを、体験の一番最初に見せていたことになる。
+    //   seed 済みのキャッシュをそのまま使い、通信そのものをしない。
+    if (isDemoKey(k)) {
+      setData(readCache(k));
+      setErr(null);
+      setLoading(false);
+      return;
+    }
     if (!force) {
       const cached = readCache(k);
       if (cached) {
