@@ -113,6 +113,7 @@ import CreditModal from './CreditModal';
 import MobileGeminiDashboard from './MobileGeminiDashboard';
 import PersonaGlyph from './PersonaGlyph';
 import { readableInk } from '../lib/ink';
+import { onAccentInk } from '../lib/contrast';
 
 interface Props {
   persona: Persona;
@@ -385,7 +386,9 @@ export default function IdentityDashboard({
   const [showCmdK, setShowCmdK] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   // 招待者の手応え: 自分のコードで実際に登録した人数 / 累計獲得日数 (起動時にサーバ同期)
-  const [, setReferralStat] = useState(() => {
+  // ★2026-08-07: 取得はしていたのに値を捨てていた (const [, setReferralStat]) ため、
+  //   紹介の成果はモーダルを開くまでどこにも出ていなかった。招待ボタンに常時バッジで出す。
+  const [referralStat, setReferralStat] = useState(() => {
     const d = getReferralData();
     return { referredCount: d.referredCount, bonusDays: d.bonusDays };
   });
@@ -818,8 +821,18 @@ export default function IdentityDashboard({
               minHeight: 44,
             }}
           >
-            <Gift size={14} style={{ color: accentInk }} strokeWidth={2.4} />
-            <span className="text-sm font-semibold" style={{ color: accentInk }}>ユーザーを招待</span>
+            <Gift size={14} className="flex-shrink-0" style={{ color: accentInk }} strokeWidth={2.4} />
+            {/* 成果の行は横に並べると「ユーザーを招/待」と語の途中で折れるため縦に積む */}
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold whitespace-nowrap" style={{ color: accentInk }}>ユーザーを招待</span>
+              {/* 紹介の成果は 0 件のうちは出さない (0 を誇らしげに置かない)。
+                  1 人でも登録があれば「何人 / 何日増えたか」を常時ここに出す。 */}
+              {referralStat.referredCount > 0 && (
+                <span className="block text-[12px] font-bold whitespace-nowrap" style={{ color: accentInk, opacity: 0.95 }}>
+                  {referralStat.referredCount}人が登録 → +{referralStat.bonusDays}日
+                </span>
+              )}
+            </span>
           </button>
           <button
             onClick={() => { setShowMobileSidebar(false); onOpenSettings(); }}
@@ -952,16 +965,30 @@ export default function IdentityDashboard({
               </motion.button>
               <button
                 onClick={() => setShowInvite(true)}
-                className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg transition-all flex-shrink-0"
+                className="md:hidden relative w-9 h-9 flex items-center justify-center rounded-lg transition-all flex-shrink-0"
                 style={{
                   background: `${persona.accentColor}1a`,
                   border: `1px solid ${persona.accentColor}44`,
                   color: accentInk,
                 }}
-                aria-label={`ユーザーを招待 (+${REFERRAL_BONUS_DAYS}日)`}
-                title={`ユーザーを招待 (+${REFERRAL_BONUS_DAYS}日)`}
+                aria-label={referralStat.referredCount > 0
+                  ? `ユーザーを招待 — ${referralStat.referredCount}人が登録済み、あなたのトライアルは +${referralStat.bonusDays}日 延長されています`
+                  : `ユーザーを招待 (+${REFERRAL_BONUS_DAYS}日)`}
+                title={referralStat.referredCount > 0
+                  ? `紹介 ${referralStat.referredCount}人 / +${referralStat.bonusDays}日`
+                  : `ユーザーを招待 (+${REFERRAL_BONUS_DAYS}日)`}
               >
                 <Gift size={15} strokeWidth={2.4} />
+                {/* 成果があるときだけ人数バッジ。色だけに頼らず数字そのものを出す */}
+                {referralStat.referredCount > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full text-[10px] font-extrabold"
+                    style={{ background: persona.accentColor, color: onAccentInk(persona.accentColor) }}
+                  >
+                    {referralStat.referredCount}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setShowMobileAI(true)}
