@@ -1752,8 +1752,8 @@ function PostCard({ bg, post, onTap }: { bg: IrisBackgroundDef; post: PostHistor
         </span>
         {typeof m.engagementRate === 'number' && (
           <span style={{
-            background: `linear-gradient(135deg, ${bg.accent}, ${bg.accent}dd)`,
-            color: '#fff',
+            background: accentFaceBg(bg.accent),
+            color: accentFaceInk(bg.accent),
             padding: '0.2rem 0.55rem',
             borderRadius: 999,
             fontSize: '0.68rem',
