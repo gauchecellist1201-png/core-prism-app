@@ -305,8 +305,8 @@ function Hero({ config, accentLeft, accentRight }: { config: IndustryConfig; acc
           href="#video"
           aria-label="75 秒 で わかる 公式 動画 を 再生"
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '8px 16px', borderRadius: 999,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            minHeight: 44, padding: '8px 16px', borderRadius: 999,
             background: `linear-gradient(135deg, ${accentLeft}22, ${accentRight}22)`,
             border: `1px solid ${accentRight}66`,
             color: '#fff', textDecoration: 'none',

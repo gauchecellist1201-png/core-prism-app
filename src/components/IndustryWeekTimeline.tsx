@@ -65,7 +65,7 @@ export default function IndustryWeekTimeline({
       <div style={{ maxWidth: 1080, margin: '0 auto' }}>
         <div style={{
           fontFamily: '"Inter","Hiragino Kaku Gothic ProN",sans-serif',
-          fontSize: 11, letterSpacing: '0.3em', color: accent,
+          fontSize: 11, letterSpacing: '0.3em', color: accentInkOnDark(accent),
           textAlign: 'center', fontWeight: 700, marginBottom: 8,
         }}>
           A TYPICAL FIRST WEEK

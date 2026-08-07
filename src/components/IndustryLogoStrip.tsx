@@ -170,7 +170,7 @@ export default function IndustryLogoStrip({ slug }: Props) {
 
       <div style={{
         textAlign: 'center', marginTop: 10,
-        fontSize: 10, color: 'rgba(255,255,255,0.35)',
+        fontSize: 10, color: 'rgba(255,255,255,0.62)',
       }}>
         ※ 上記は <strong>架空企業名</strong> の表示です (実在企業ではありません)。
         実際の 事例は 詳細を 個別 ご共有可能 — お問い合わせ ください。

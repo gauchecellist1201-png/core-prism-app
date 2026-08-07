@@ -123,7 +123,7 @@ export default function IndustryVideoSection({ config, accentLeft, accentRight }
 
         <p style={{
           marginTop: 14,
-          fontSize: 11, color: 'rgba(255,255,255,0.45)',
+          fontSize: 11, color: 'rgba(255,255,255,0.55)',
           textAlign: 'center',
         }}>
           ※ サムネタップで再生。Cookie 配慮のため youtube-nocookie ドメインを使用しています。
