@@ -1728,8 +1728,10 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                           <button key={t.id}
                             onClick={() => { setTab(t.id as Tab); setMoreOpen(false); }}
                             style={{
-                              background: isActive ? `linear-gradient(135deg, ${group.color}, ${group.color}dd)` : 'rgba(248,244,252,1)',
-                              color: isActive ? '#fff' : '#1F1A2E',
+                              // 選択中のタイルは「色の面に白文字」。素の group.color だと桃 4.34 / 青 3.68 で落第し、
+                              // さらに終端 dd(87%) から明るいカードが透けてもっと薄くなる（2026-08-05 と同型）。
+                              background: isActive ? accentFaceBg(group.color) : 'rgba(248,244,252,1)',
+                              color: isActive ? accentFaceInk(group.color) : '#1F1A2E',
                               border: 'none', borderRadius: 14,
                               padding: '0.95rem 0.5rem 0.85rem', fontSize: '0.85rem', fontWeight: 600,
                               cursor: 'pointer', textAlign: 'center',
