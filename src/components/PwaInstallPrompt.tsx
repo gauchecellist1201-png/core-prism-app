@@ -4,6 +4,7 @@
 // ============================================================
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { accentFaceBg, accentFaceInk, whiteFaceBg } from '../lib/accentFace';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -117,7 +118,7 @@ export default function PwaInstallPrompt({ accentColor = '#a78bfa' }: Props) {
             <div
               style={{
                 width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                background: `linear-gradient(135deg, ${accentColor}, ${accentColor}99)`,
+                background: whiteFaceBg(accentColor),
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 22,
               }}
@@ -137,8 +138,8 @@ export default function PwaInstallPrompt({ accentColor = '#a78bfa' }: Props) {
                   style={{
                     flex: 1,
                     padding: '7px 12px',
-                    background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
-                    color: '#fff',
+                    background: accentFaceBg(accentColor),
+                    color: accentFaceInk(accentColor),
                     border: 'none',
                     borderRadius: 8,
                     fontSize: 12,

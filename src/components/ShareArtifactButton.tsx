@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Share2, Check, AlertCircle } from 'lucide-react';
 import { buildShareUrl, shareOrCopy, type SharedArtifact } from '../lib/shareLink';
 import { notifyInApp } from '../lib/inAppNotify';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 interface Props {
   /** 共有する成果物 (kind / title / body / imageUrl など) */
@@ -97,10 +98,10 @@ export default function ShareArtifactButton({
         display: 'inline-flex', alignItems: 'center', gap: 6,
         background: state === 'failed' ? '#F8717122'
           : (state === 'shared' || state === 'copied') ? '#10B98122'
-          : `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+          : accentFaceBg(accent),
         color: state === 'failed' ? '#F87171'
           : (state === 'shared' || state === 'copied') ? '#10B981'
-          : '#fff',
+          : accentFaceInk(accent),
         border: state !== 'idle' ? `1px solid currentColor` : 'none',
         borderRadius: 999,
         padding: size === 'sm' ? '8px 14px' : '10px 18px',

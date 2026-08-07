@@ -25,6 +25,7 @@ import type { KnowledgeItem } from '../types/identity';
 import { executeAction, type ExecutionPlan } from '../lib/actionExecutor';
 import { CXO_META, cxoDisplayName, type CxoRole } from '../hooks/useAgentTaskQueue';
 import PersonaGlyph from './PersonaGlyph';
+import { accentFaceBg, accentFaceInk, whiteFaceBg } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -270,7 +271,7 @@ export default function MobileGeminiDashboard({
         >
           <div style={{
             width: 32, height: 32, borderRadius: 10,
-            background: `linear-gradient(135deg, ${accent}, ${accent}99)`,
+            background: whiteFaceBg(accent),
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}><PersonaGlyph icon={persona.icon} color="#fff" size={17} /></div>
@@ -700,8 +701,8 @@ export default function MobileGeminiDashboard({
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <div style={{
                     maxWidth: '85%',
-                    background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-                    color: '#fff',
+                    background: accentFaceBg(accent),
+                    color: accentFaceInk(accent),
                     padding: '10px 14px',
                     borderRadius: '18px 18px 4px 18px',
                     fontSize: 14, lineHeight: 1.6,
@@ -823,7 +824,7 @@ export default function MobileGeminiDashboard({
             disabled={!input.trim() || busy}
             style={{
               width: 38, height: 38, borderRadius: '50%',
-              background: input.trim() && !busy ? `linear-gradient(135deg, ${accent}, ${accent}cc)` : 'rgba(255,255,255,0.06)',
+              background: input.trim() && !busy ? whiteFaceBg(accent) : 'rgba(255,255,255,0.06)',
               color: '#fff', border: 'none', flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: input.trim() && !busy ? 'pointer' : 'not-allowed',

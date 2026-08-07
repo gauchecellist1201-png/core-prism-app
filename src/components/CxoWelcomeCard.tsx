@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, ArrowRight, Building2 } from 'lucide-react';
 import { CXO_META, type CxoRole, useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { MetaIcon } from './ExecIcon';
+import { accentFaceBg, accentFaceInk, whiteFaceBg } from '../lib/accentFace';
 
 const SEEN_KEY = 'core_cxo_welcome_seen_v1';
 
@@ -154,7 +155,7 @@ export default function CxoWelcomeCard({ brand = 'prism', force = false }: Props
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
             <div style={{
               width: 44, height: 44, borderRadius: 12,
-              background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+              background: whiteFaceBg(accent),
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
               boxShadow: `0 0 20px ${accent}66`,
@@ -242,9 +243,9 @@ export default function CxoWelcomeCard({ brand = 'prism', force = false }: Props
                   style={{
                     flex: 1,
                     padding: '12px 16px',
-                    background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                    background: accentFaceBg(accent),
                     border: 'none', borderRadius: 12,
-                    color: '#fff', fontSize: 13.5, fontWeight: 800,
+                    color: accentFaceInk(accent), fontSize: 13.5, fontWeight: 800,
                     cursor: 'pointer',
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     boxShadow: `0 6px 20px ${accent}55`,

@@ -43,6 +43,7 @@ import {
 } from '../lib/threadsConnect';
 import IntegrationCelebrate from './IntegrationCelebrate';
 import { isLineConnected, isLineNotifyEnabled, setLineNotifyEnabled, notifyLine } from '../lib/lineNotify';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 interface Props {
   onClose: () => void;
@@ -1317,8 +1318,8 @@ function ToolCard({ tool, accent, connected, comingSoon = false, open, focused =
 
 function nextBtn(accent: string): React.CSSProperties {
   return {
-    fontSize: 12, fontWeight: 800, color: '#fff',
-    background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+    fontSize: 12, fontWeight: 800, color: accentFaceInk(accent),
+    background: accentFaceBg(accent),
     border: 'none', borderRadius: 9, padding: '9px 14px', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
     flexShrink: 0,

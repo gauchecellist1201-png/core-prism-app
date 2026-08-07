@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, X, ArrowRight } from 'lucide-react';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 export type UpgradeTrigger =
   | 'generation-cap'     // 無料枠の生成回数を使い切った
@@ -142,8 +143,8 @@ export default function ContextualUpgradeCard({
         onClick={onUpgrade}
         style={{
           marginTop: 10, alignSelf: 'flex-start',
-          background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-          color: '#fff', border: 'none', borderRadius: 999,
+          background: accentFaceBg(accent),
+          color: accentFaceInk(accent), border: 'none', borderRadius: 999,
           padding: '8px 18px', fontSize: 12, fontWeight: 800,
           cursor: 'pointer', minHeight: 36,
           display: 'inline-flex', alignItems: 'center', gap: 4,

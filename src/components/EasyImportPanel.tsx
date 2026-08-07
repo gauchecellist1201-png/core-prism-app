@@ -18,6 +18,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, FileSpreadsheet, Pencil, Check, X, Sparkles } from 'lucide-react';
 import { confirmAction } from '../lib/confirmDialog';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 export interface ManualRevenue {
   thisMonthRevenueJpy: number;
@@ -268,8 +269,8 @@ function ManualEntryForm({
             padding: '11px 14px', borderRadius: 9,
             background: saved
               ? 'linear-gradient(135deg, #10B981, #059669)'
-              : `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-            color: '#fff', border: 'none',
+              : accentFaceBg(accent),
+            color: saved ? '#fff' : accentFaceInk(accent), border: 'none',
             fontSize: 12.5, fontWeight: 800, cursor: saved ? 'default' : 'pointer',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
           }}

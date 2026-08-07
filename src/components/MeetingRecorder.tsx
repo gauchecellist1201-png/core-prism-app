@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Pause, Play, Sparkles, Check, X, Video, Link2, MonitorSpeaker, Pin, BookOpen, AlertTriangle } from 'lucide-react';
 import { summarizeMeeting } from '../lib/meetingSummarize';
 import { transcribeAudioFile } from '../lib/audioTranscribe';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 interface Props {
   onClose: () => void;
@@ -609,9 +610,10 @@ function ctlBtn(accent: string, primary: boolean): React.CSSProperties {
     padding: '12px 14px',
     borderRadius: 12,
     background: primary
-      ? `linear-gradient(135deg, ${accent}, ${accent}cc)`
+      ? accentFaceBg(accent)
       : 'rgba(255,255,255,0.08)',
-    color: '#fff',
+    // 面がアクセント色のときだけ、その面で読める文字色にする（暗い面のときは白のまま）
+    color: primary ? accentFaceInk(accent) : '#fff',
     fontSize: 13, fontWeight: 800,
     border: 'none', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,

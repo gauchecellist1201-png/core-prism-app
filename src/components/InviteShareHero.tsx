@@ -20,6 +20,7 @@ import {
   getReferralData, getReferralUrl, getInviterName, getInviterMessage,
   REFERRAL_BONUS_DAYS, recordShare,
 } from '../lib/referral';
+import { whiteFaceBg } from '../lib/accentFace';
 
 // X (Twitter) glyph (lucide が削除済のため自前 SVG)
 function XGlyph({ size = 14 }: { size?: number }) {
@@ -107,7 +108,7 @@ export default function InviteShareHero({ brand = 'prism' }: Props) {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, position: 'relative' }}>
         <div style={{
           width: 36, height: 36, borderRadius: 10,
-          background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+          background: whiteFaceBg(accent),
           color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
@@ -139,7 +140,7 @@ export default function InviteShareHero({ brand = 'prism' }: Props) {
           { key: 'x',    label: 'X',         icon: <XGlyph size={14} />,            onClick: shareX,    bg: '#000', color: '#fff' },
           { key: 'line', label: 'LINE',      icon: <MessageCircle size={14} />,     onClick: shareLine, bg: '#06C755', color: '#fff' },
           { key: 'mail', label: 'メール',    icon: <Mail size={14} />,              onClick: shareMail, bg: 'rgba(255,255,255,0.08)', color: 'var(--fg)' },
-          { key: 'web',  label: 'シェア',    icon: <Share2 size={14} />,            onClick: shareWeb,  bg: `linear-gradient(135deg, ${accent}, ${accent}cc)`, color: '#fff' },
+          { key: 'web',  label: 'シェア',    icon: <Share2 size={14} />,            onClick: shareWeb,  bg: whiteFaceBg(accent), color: '#fff' },
         ].map(b => (
           <button
             key={b.key}

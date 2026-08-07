@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Wand2 } from 'lucide-react';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 interface Props {
   /** ボタン文言 (省略時は標準コピー) */
@@ -39,7 +40,7 @@ export default function SampleDataCTA({
         className="cp-sample-cta"
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
-        style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, gap: 8 }}
+        style={{ background: accentFaceBg(accent), color: accentFaceInk(accent), gap: 8 }}
       >
         {/* 絵の部分はブランドのアイコンで出す。呼び出し側が昔の '✨ ' 付き文言を
             渡してきても、ここで剥がして二重に絵が出ないようにする (恒久: 絵文字禁止)。 */}

@@ -16,6 +16,7 @@ import { ChevronDown, ChevronUp, ArrowRight, Sparkles } from 'lucide-react';
 import type { Persona, Proposal, AppSettings } from '../types/identity';
 import { useStripeRevenue } from '../hooks/useStripeRevenue';
 import InlineActionExecutor from './InlineActionExecutor';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 type Urgency = 'now' | 'week' | 'anytime';
 
@@ -264,8 +265,8 @@ export default function FocusHero({
                 style={{
                   marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 6,
                   padding: '10px 18px', borderRadius: 10,
-                  background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-                  color: '#fff', border: 'none', fontSize: 13.5, fontWeight: 800,
+                  background: accentFaceBg(accent),
+                  color: accentFaceInk(accent), border: 'none', fontSize: 13.5, fontWeight: 800,
                   cursor: 'pointer', boxShadow: `0 8px 20px ${accent}44`,
                 }}
               >

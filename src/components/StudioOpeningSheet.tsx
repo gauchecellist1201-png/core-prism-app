@@ -12,6 +12,7 @@
 // ============================================================
 import { motion } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
+import { whiteFaceBg } from '../lib/accentFace';
 
 interface Props {
   /** ブランドカラー (prism=紫, iris=ピンク) */
@@ -50,7 +51,7 @@ export default function StudioOpeningSheet({ brand = 'prism', label = 'ひらい
               transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
               style={{
                 width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                background: `linear-gradient(135deg, ${accent}, ${accent}bb)`,
+                background: whiteFaceBg(accent),
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               }}
             >

@@ -5,6 +5,7 @@
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, ImageOff } from 'lucide-react';
 import type { SharedArtifact } from '../lib/shareLink';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 interface Props {
   artifact: SharedArtifact;
@@ -155,8 +156,8 @@ export default function SharedArtifactView({ artifact, onEnterApp }: Props) {
             onClick={onEnterApp}
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-              color: '#fff', border: 'none', borderRadius: 999,
+              background: accentFaceBg(accent),
+              color: accentFaceInk(accent), border: 'none', borderRadius: 999,
               padding: '12px 26px',
               fontSize: 14, fontWeight: 800, cursor: 'pointer',
               boxShadow: `0 10px 30px ${accent}55`,

@@ -8,6 +8,7 @@ import {
   Lightbulb, LayoutGrid, MessageSquare, BookOpen, Search,
   PlayCircle, PenLine, Check, Package, Rocket, type LucideIcon,
 } from 'lucide-react';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 interface Props {
   onComplete: () => void;
@@ -366,7 +367,7 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                     aria-hidden="true"
                     style={{
                       width: 56, height: 56,
-                      background: `linear-gradient(135deg, ${accent}, ${accent}bb)`,
+                      background: accentFaceBg(accent),
                       boxShadow: `0 6px 18px ${accent}55`,
                     }}
                   >
@@ -432,8 +433,8 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
               }}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all"
               style={{
-                background: `linear-gradient(135deg, ${accent}, ${accent}bb)`,
-                color: '#0a0a0f',
+                background: accentFaceBg(accent),
+                color: accentFaceInk(accent),
                 // 0.4 だと「選んでください」の文字自体が読めなくなる (指示が読めないのが一番困る)
                 opacity: step === 1 && choice === null ? 0.62 : 1,
               }}
@@ -454,8 +455,8 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
               onClick={handleComplete}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium"
               style={{
-                background: `linear-gradient(135deg, ${accent}, ${accent}bb)`,
-                color: '#0a0a0f',
+                background: accentFaceBg(accent),
+                color: accentFaceInk(accent),
               }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

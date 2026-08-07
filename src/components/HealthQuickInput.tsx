@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Moon, Smile, Footprints } from 'lucide-react';
 import type { DailyHealth } from '../types/health';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 const KEY_DAYS = 'core_phr_daily_v1';
 
@@ -198,8 +199,9 @@ export default function HealthQuickInput({ accent = '#8E5CFF', onSaved }: Props)
         onClick={save}
         disabled={!ready}
         style={{
-          width: '100%', fontSize: 13, fontWeight: 800, color: '#fff',
-          background: ready ? `linear-gradient(135deg, ${accent}, ${accent}cc)` : 'rgba(255,255,255,0.08)',
+          width: '100%', fontSize: 13, fontWeight: 800,
+          color: ready ? accentFaceInk(accent) : '#fff',
+          background: ready ? accentFaceBg(accent) : 'rgba(255,255,255,0.08)',
           border: 'none', borderRadius: 999, padding: '11px 16px',
           cursor: ready ? 'pointer' : 'not-allowed',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,

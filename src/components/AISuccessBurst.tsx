@@ -20,6 +20,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { whiteFaceBg } from '../lib/accentFace';
 
 interface Props {
   /** この数値が変わるたびに 1 回だけ演出を出す (0 や初期値では出さない) */
@@ -111,7 +112,7 @@ export default function AISuccessBurst({
               width: 52,
               height: 52,
               borderRadius: 16,
-              background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+              background: whiteFaceBg(accent),
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',

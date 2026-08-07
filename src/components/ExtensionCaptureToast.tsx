@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, ExternalLink, Image as ImageIcon, User2, Lightbulb } from 'lucide-react';
+import { accentFaceBg, accentFaceInk, whiteFaceBg } from '../lib/accentFace';
 
 const STORAGE_KEY = 'core_extension_capture_v1';
 
@@ -87,7 +88,7 @@ export default function ExtensionCaptureToast({ brand = 'prism' }: { brand?: 'pr
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <div style={{
               width: 30, height: 30, borderRadius: 9,
-              background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+              background: whiteFaceBg(accent),
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}>
@@ -157,9 +158,9 @@ export default function ExtensionCaptureToast({ brand = 'prism' }: { brand?: 'pr
               }}
               style={{
                 flex: 1, padding: '8px 10px',
-                background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                background: accentFaceBg(accent),
                 border: 'none', borderRadius: 10,
-                color: '#fff', fontSize: 11.5, fontWeight: 700,
+                color: accentFaceInk(accent), fontSize: 11.5, fontWeight: 700,
                 cursor: 'pointer',
               }}
             >{meta.cta}</button>

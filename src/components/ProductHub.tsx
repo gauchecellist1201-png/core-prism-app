@@ -18,6 +18,7 @@ import { X, Plus, Check, Trash2, Layers } from 'lucide-react';
 import type { Persona } from '../types/identity';
 import type { Product } from '../types/product';
 import type { useProducts } from '../hooks/useProducts';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 interface Props {
   onClose: () => void;
@@ -299,8 +300,9 @@ export default function ProductHub({
               <button
                 type="button" onClick={handleCreate} disabled={!name.trim()}
                 style={{
-                  flex: 1, fontSize: 12.5, fontWeight: 800, color: '#fff',
-                  background: name.trim() ? `linear-gradient(135deg, ${accent}, ${accent}cc)` : 'rgba(255,255,255,0.08)',
+                  flex: 1, fontSize: 12.5, fontWeight: 800,
+                  color: name.trim() ? accentFaceInk(accent) : '#fff',
+                  background: name.trim() ? accentFaceBg(accent) : 'rgba(255,255,255,0.08)',
                   border: 'none', borderRadius: 10, padding: '10px 16px',
                   cursor: name.trim() ? 'pointer' : 'not-allowed', opacity: name.trim() ? 1 : 0.6,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -321,8 +323,8 @@ export default function ProductHub({
             type="button"
             onClick={() => setCreating(true)}
             style={{
-              width: '100%', fontSize: 12.5, fontWeight: 800, color: '#fff',
-              background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+              width: '100%', fontSize: 12.5, fontWeight: 800, color: accentFaceInk(accent),
+              background: accentFaceBg(accent),
               border: 'none', borderRadius: 10, padding: '11px 16px', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               marginTop: 4,

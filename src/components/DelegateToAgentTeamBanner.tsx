@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Users, Check } from 'lucide-react';
 import { useAgentTaskQueue, CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
+import { accentFaceBg, accentFaceInk, whiteFaceBg } from '../lib/accentFace';
 
 interface Props {
   /** AI 会社に依頼するタスクの 1 行タイトル */
@@ -99,7 +100,7 @@ export default function DelegateToAgentTeamBanner({
         <div
           style={{
             width: 34, height: 34, borderRadius: 10,
-            background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+            background: whiteFaceBg(accent),
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', flexShrink: 0,
             boxShadow: `0 0 16px ${accent}55`,
@@ -146,8 +147,8 @@ export default function DelegateToAgentTeamBanner({
           border: 'none',
           background: proposed
             ? '#10B981'
-            : `linear-gradient(135deg, ${accent}, ${accent}dd)`,
-          color: '#fff',
+            : accentFaceBg(accent),
+          color: proposed ? '#fff' : accentFaceInk(accent),
           fontSize: 12.5, fontWeight: 800, letterSpacing: '0.02em',
           cursor: proposed ? 'default' : 'pointer',
           boxShadow: proposed

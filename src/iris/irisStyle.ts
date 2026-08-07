@@ -3,6 +3,11 @@
 // 「自分の色で、咲く。」 — 女性インフルエンサー向け 視覚優先 UI
 // ============================================================
 
+import {
+  hexToHsl, hslToHex, contrast,
+  onAccentFace, accentFaceBg, accentFaceInk, whiteSafeFace, whiteSafeGradient,
+} from '../lib/accentFace';
+
 export const IRIS_BRAND = {
   name: 'IRIS',
   tagline: 'An Agent for Every Creator.',
@@ -286,19 +291,10 @@ export interface CustomIrisBackground extends Omit<IrisBackgroundDef, 'id'> {
   isCustom: true;
 }
 
-/** 相対輝度 (WCAG) */
-function relLum(hex: string): number {
-  const h = hex.replace('#', '');
-  const v = [0, 2, 4].map((i) => {
-    const c = parseInt(h.slice(i, i + 2), 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
-}
-function contrast(a: string, b: string): number {
-  const [x, y] = [relLum(a), relLum(b)].sort((p, q) => q - p);
-  return (x + 0.05) / (y + 0.05);
-}
+// 色の計算は Prism 共有部品(src/components/**)と同じ壊れ方を直すために
+// `src/lib/accentFace.ts` へ移した（出どころを 1 つにする）。ここは再輸出だけ＝
+// Iris 側の呼び出し(`from './irisStyle'`)は今までどおり。
+export { onAccentFace, accentFaceBg, accentFaceInk, whiteSafeFace, whiteSafeGradient };
 
 /**
  * 「文字用アクセント」を計算で出す。
@@ -324,102 +320,6 @@ export function deriveAccentText(accent: string, isDarkTheme: boolean): string {
   } catch {
     return accent;
   }
-}
-
-/**
- * アクセント色を「面」にして、その上に文字やアイコンを置くときの 面と文字の組。
- * deriveAccentText は「明るい地の上に置く“文字の色”」を出すもので、その逆＝
- * 「色の面の上に置く文字」は誰も守っていなかった。実測(2026-08-05 本番 375px):
- * 白 on リールのピンク #E1306C = 4.34、白 on その他の青 #3B82F6 = 3.68（要 4.5）。
- * さらに面の終端が半透明(`${accent}cc`)だと明るい地が透けてもっと薄くなる（実測 3.88）。
- *
- * 選び方は 2 段階。
- *  ① 色みは変えずに明るさだけ少し(最大 15%)落として白が通るならそれ＝見た目のトーンは保つ。
- *  ② それでも通らない明るい面(オレンジ・黄)は、面を明るいまま残して文字を濃くする。
- *     ここで面を暗くすると、ブランドのオレンジが茶色になってしまう。
- * faceEnd は「文字と反対側」へずらす＝白文字なら濃く、濃い文字なら明るく。
- * グラデーションの終端で contrast が落ちる事故（半透明終端の再来）を防ぐ。
- */
-export function onAccentFace(accent: string): { face: string; faceEnd: string; ink: string } {
-  const fallback = { face: accent, faceEnd: accent, ink: '#FFFFFF' };
-  try {
-    const [h, s, l] = hexToHsl(accent);
-    const deeper = (base: string) => {
-      const [bh, bs, bl] = hexToHsl(base);
-      return hslToHex(bh, bs, Math.max(0, bl * 0.88));
-    };
-    const lighter = (base: string) => {
-      const [bh, bs, bl] = hexToHsl(base);
-      return hslToHex(bh, bs, Math.min(1, bl * 1.06));
-    };
-    if (contrast('#FFFFFF', accent) >= 4.6) {
-      return { face: accent, faceEnd: deeper(accent), ink: '#FFFFFF' };
-    }
-    for (let i = l; i >= l * 0.85; i -= 0.01) {
-      const c = hslToHex(h, s, i);
-      if (contrast('#FFFFFF', c) >= 4.6) return { face: c, faceEnd: deeper(c), ink: '#FFFFFF' };
-    }
-    for (let i = 0.45; i >= 0; i -= 0.01) {
-      const ink = hslToHex(h, Math.min(s, 0.55), i);
-      if (contrast(ink, accent) >= 4.6) return { face: accent, faceEnd: lighter(accent), ink };
-    }
-    return { face: accent, faceEnd: accent, ink: '#141018' };
-  } catch {
-    return fallback;
-  }
-}
-
-/**
- * 画面側で毎回書かれていた `linear-gradient(135deg, ${accent}, ${accent}cc)` の置き換え。
- * 終端の `cc`(80%) は下の明るい地が透けて、面がグラデの中で一番薄いところを作る＝
- * そこに白文字が乗ると実測で 3.88 まで落ちていた（2026-08-05 本番計測）。
- * onAccentFace が決めた「文字と反対側へずらした終端」を使うので、面のどこでも読める。
- */
-export function accentFaceBg(accent: string, deg: number = 135): string {
-  const f = onAccentFace(accent);
-  return `linear-gradient(${deg}deg, ${f.face}, ${f.faceEnd})`;
-}
-
-/**
- * 「白い文字を乗せる面」の色。色みは変えず、白が 4.6:1 通るまで明るさだけ落とす。
- * onAccentFace と違って濃い文字への逃げ道を持たない＝ 3 色以上のグラデのように
- * 「面の中で明るさが大きく動く」ところで、どの位置でも白が通るようにするために使う。
- */
-export function whiteSafeFace(hex: string): string {
-  try {
-    const [h, s, l] = hexToHsl(hex);
-    if (contrast('#FFFFFF', hex) >= 4.6) return hex;
-    for (let i = l; i >= 0; i -= 0.005) {
-      const c = hslToHex(h, s, i);
-      if (contrast('#FFFFFF', c) >= 4.6) return c;
-    }
-    return hex;
-  } catch {
-    return hex;
-  }
-}
-
-/** accentFaceBg の面に乗せる文字色。白が通らない明るい面（オレンジ・黄）では自動で濃い文字になる。 */
-export function accentFaceInk(accent: string): string {
-  return onAccentFace(accent).ink;
-}
-
-/**
- * 「白文字を乗せるグラデーションの面」を、色ごとに白が通るところまで暗くして組み立てる。
- *
- * Iris はブランドの IG グラデ（紫 #833AB4 → 桃 #E1306C → 橙 #F77737 → 黄 #FBBF24）を
- * 面に使い、その上に白い文字と線画アイコンを **50 箇所以上でべた書き** していた。
- * ところが白の比は 紫 6.50 / 桃 4.34 / **橙 2.75** / **黄 1.67**＝
- * グラデの右半分では文字もアイコンも読めない（テーマを変えても直らない＝色が固定値のため）。
- * 面のいちばん薄いところで落第する、という 2026-08-05 の `${accent}cc` と同じ壊れ方。
- *
- * 色相・彩度は変えず明るさだけ落とすので、紫→桃→橙 の流れ（ブランドのトーン）は保たれる。
- * 代償: 橙 #F77737 → #ca4908 / 黄 #FBBF24 → #956c03 と深くなる。
- * 停止位置（`'#E1306C 0%'` のような指定）はそのまま温存する。
- */
-export function whiteSafeGradient(stops: string[], deg: number = 135): string {
-  const safe = stops.map((s) => s.replace(/#[0-9a-fA-F]{6}\b/, (m) => whiteSafeFace(m)));
-  return `linear-gradient(${deg}deg, ${safe.join(', ')})`;
 }
 
 /** Iris の主ボタンで使い回されている「アクセント → 橙」の面。両端とも白が 4.6:1 通る。 */
@@ -505,45 +405,6 @@ export function buildGradient(pattern: GradientPattern, c1: string, c2: string, 
     case 'minimal':
       return `linear-gradient(180deg, ${c1} 0%, #FFFFFF 100%)`;
   }
-}
-
-/** Hex を HSL に変換 */
-function hexToHsl(hex: string): [number, number, number] {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.slice(0, 2), 16) / 255;
-  const g = parseInt(h.slice(2, 4), 16) / 255;
-  const b = parseInt(h.slice(4, 6), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let H = 0, S = 0;
-  const L = (max + min) / 2;
-  if (max !== min) {
-    const d = max - min;
-    S = L > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: H = ((g - b) / d + (g < b ? 6 : 0)); break;
-      case g: H = ((b - r) / d + 2); break;
-      case b: H = ((r - g) / d + 4); break;
-    }
-    H *= 60;
-  }
-  return [H, S, L];
-}
-
-/** HSL を Hex に変換 */
-function hslToHex(h: number, s: number, l: number): string {
-  h = ((h % 360) + 360) % 360;
-  const c = (1 - Math.abs(2 * l - 1)) * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = l - c / 2;
-  let [r, g, b] = [0, 0, 0];
-  if (h < 60)        [r, g, b] = [c, x, 0];
-  else if (h < 120)  [r, g, b] = [x, c, 0];
-  else if (h < 180)  [r, g, b] = [0, c, x];
-  else if (h < 240)  [r, g, b] = [0, x, c];
-  else if (h < 300)  [r, g, b] = [x, 0, c];
-  else               [r, g, b] = [c, 0, x];
-  const to2 = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, '0');
-  return '#' + to2(r) + to2(g) + to2(b);
 }
 
 /** 補色 (色相環180度反対) を返す */

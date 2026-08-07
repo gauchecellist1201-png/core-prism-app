@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, X, MessageSquare, Sparkles, Clock, Target } from 'lucide-react';
 import { useAgentTaskQueue, CXO_META, type ProposalDraft } from '../hooks/useAgentTaskQueue';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 interface Props {
   proposal: ProposalDraft;
@@ -164,8 +165,8 @@ export default function ProposalCard({ proposal, brand = 'prism', onApproved, on
             flex: 2,
             background: alreadyApproved
               ? 'rgba(16,185,129,0.18)'
-              : `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-            color: alreadyApproved ? '#10B981' : '#fff',
+              : accentFaceBg(accent),
+            color: alreadyApproved ? '#10B981' : accentFaceInk(accent),
             border: alreadyApproved ? '1px solid #10B98155' : 'none',
             borderRadius: 12,
             padding: '12px 14px', fontSize: 13, fontWeight: 800,

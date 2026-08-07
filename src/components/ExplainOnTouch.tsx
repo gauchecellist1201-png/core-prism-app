@@ -18,6 +18,7 @@
 // ============================================================
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 // 学習 すべき 要素 の カタログ (data-explain-id ごと)
 export const EXPLAIN_CATALOG: Record<string, { title: string; body: string; emoji: string }> = {
@@ -246,8 +247,8 @@ export default function ExplainOnTouch({ brand = 'prism' }: { brand?: 'prism' | 
                 }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: 10,
-                    background: `linear-gradient(135deg, ${accent}, ${accent}aa)`,
-                    color: '#0a0a0f',
+                    background: accentFaceBg(accent),
+                    color: accentFaceInk(accent),
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 20, flexShrink: 0,
                     boxShadow: `0 4px 14px ${accent}55`,
@@ -277,8 +278,8 @@ export default function ExplainOnTouch({ brand = 'prism' }: { brand?: 'prism' | 
                     onClick={() => dismiss(true)}
                     style={{
                       flex: 1.4, fontSize: 12, padding: '9px 12px', borderRadius: 8, fontWeight: 900,
-                      background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-                      color: '#0a0a0f', border: 'none', cursor: 'pointer',
+                      background: accentFaceBg(accent),
+                      color: accentFaceInk(accent), border: 'none', cursor: 'pointer',
                       boxShadow: `0 4px 14px ${accent}55`,
                     }}
                   >わかった、 実行 する →</button>
@@ -314,9 +315,9 @@ export default function ExplainOnTouch({ brand = 'prism' }: { brand?: 'prism' | 
             zIndex: 35,
             padding: '8px 12px', borderRadius: 999,
             background: mode
-              ? `linear-gradient(135deg, ${accent}, ${accent}cc)`
+              ? accentFaceBg(accent)
               : 'rgba(255,255,255,0.08)',
-            color: mode ? '#0a0a0f' : 'rgba(255,255,255,0.7)',
+            color: mode ? accentFaceInk(accent) : 'rgba(255,255,255,0.7)',
             border: `1px solid ${mode ? accent : 'rgba(255,255,255,0.15)'}`,
             fontSize: 11, fontWeight: 800, cursor: 'pointer',
             boxShadow: mode ? `0 6px 18px ${accent}55` : '0 4px 12px rgba(0,0,0,0.3)',
@@ -338,8 +339,8 @@ export default function ExplainOnTouch({ brand = 'prism' }: { brand?: 'prism' | 
             style={{
               position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)', left: '50%',
               padding: '10px 18px', borderRadius: 12, zIndex: 9999,
-              background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-              color: '#0a0a0f', fontSize: 13, fontWeight: 900,
+              background: accentFaceBg(accent),
+              color: accentFaceInk(accent), fontSize: 13, fontWeight: 900,
               border: 'none', boxShadow: `0 12px 28px ${accent}88`,
               fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
             }}

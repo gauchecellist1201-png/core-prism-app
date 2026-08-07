@@ -8,6 +8,7 @@ import { useVoiceInput } from '../hooks/useVoiceInput';
 import { useAudioDictation, isIosSafari } from '../hooks/useAudioDictation';
 import { triggerHaptic, playClick, tactileError } from '../lib/haptic';
 import { notifyInApp } from '../lib/inAppNotify';
+import { whiteFaceBg } from '../lib/accentFace';
 
 /** エラーコード → やさしい復旧メッセージ */
 function recoveryMessage(code: string | null): { title: string; body: string } {
@@ -183,7 +184,7 @@ export default function VoiceInputButton({
         background: isError
           ? 'linear-gradient(135deg, #FFB020, #F58A00)'
           : isListening
-            ? `linear-gradient(135deg, ${accentColor}, ${accentColor}aa)`
+            ? whiteFaceBg(accentColor)
             : 'rgba(255,255,255,0.92)',
         color: isError ? '#FFFFFF' : isListening ? '#FFFFFF' : '#1F1A2E',
         border: `1px solid ${isError ? '#F58A00' : isListening ? accentColor : 'rgba(31,26,46,0.12)'}`,

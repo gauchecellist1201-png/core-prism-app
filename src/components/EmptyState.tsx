@@ -6,6 +6,7 @@ import { seedDemoData, setDemoActive } from '../lib/onboarding';
 // (lib/featureIcons.ts)。「まだ商談がありません」の握手マークと、
 // QuickActions の商談タイルが必ず同じ絵・同じ色になる。
 import { resolveFeatureIcon } from '../lib/featureIcons';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 interface Props {
   /** 大きな emoji (no-cheap-emoji 移行中の後方互換)。iconKey があればそちら優先 */
@@ -107,7 +108,7 @@ export default function EmptyState({
             className="cp-empty-pro-cta-primary"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+            style={{ background: accentFaceBg(accent), color: accentFaceInk(accent) }}
           >
             {ctaLabel}
           </motion.button>

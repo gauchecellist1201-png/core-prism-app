@@ -10,6 +10,7 @@ import VoiceConversation from './VoiceConversation';
 import { PrismLogo, IrisLogo } from './Logo';
 import { confirmAction } from '../lib/confirmDialog';
 import { Phone } from 'lucide-react';
+import { accentFaceBg, accentFaceInk, whiteFaceBg } from '../lib/accentFace';
 
 interface Props {
   brand: 'prism' | 'iris';
@@ -134,7 +135,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                 onClick={() => setOpen(true)}
                 className="cp-ai-fab relative flex items-center justify-center rounded-full"
                 style={{
-                  background: `radial-gradient(circle at 30% 28%, rgba(255,255,255,0.22), transparent 55%), linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
+                  background: `radial-gradient(circle at 30% 28%, rgba(255,255,255,0.22), transparent 55%), ${whiteFaceBg(accentColor)}`,
                   color: '#fff',
                   boxShadow: `0 16px 44px ${accentColor}88, 0 6px 14px rgba(0,0,0,0.3), inset 0 0 18px rgba(255,255,255,0.12)`,
                   border: `1px solid ${accentColor}aa`,
@@ -186,8 +187,8 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
             <span
               className="cp-ai-fab-label"
               style={{
-                color: '#fff',
-                background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
+                color: accentFaceInk(accentColor),
+                background: accentFaceBg(accentColor),
                 boxShadow: `0 4px 12px ${accentColor}55`,
               }}
             >
@@ -268,7 +269,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center text-lg flex-shrink-0"
                 style={{
-                  background: `linear-gradient(135deg, ${accentColor}, ${accentColor}99)`,
+                  background: whiteFaceBg(accentColor),
                   boxShadow: `0 4px 12px ${accentColor}55`,
                 }}
               >
@@ -287,7 +288,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                 className="rounded-full transition-all flex items-center justify-center font-semibold flex-shrink-0"
                 style={{
                   width: 36, height: 36,
-                  background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
+                  background: whiteFaceBg(accentColor),
                   color: '#fff',
                   boxShadow: `0 2px 8px ${accentColor}55`,
                   fontSize: 15,
@@ -394,8 +395,8 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
                       style={
                         msg.role === 'user'
                           ? {
-                              background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
-                              color: '#fff',
+                              background: accentFaceBg(accentColor),
+                              color: accentFaceInk(accentColor),
                               borderBottomRightRadius: 4,
                             }
                           : {

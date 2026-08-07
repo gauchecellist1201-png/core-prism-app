@@ -79,6 +79,7 @@ function saveHistory(items: History[]) {
 
 // TTT (2026-06-04): SVG 生成デモ (Claude → SVG)
 import SvgFromConceptDemo from './SvgFromConceptDemo';
+import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 export default function ContentEngineStudio({ persona, settings, knowledge, onClose }: Props) {
   const [mode, setMode] = useState<'single' | 'weekly'>('single');
@@ -464,8 +465,8 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                 disabled={weeklyBusy}
                 style={{
                   padding: '0.7rem 1.2rem',
-                  background: weeklyBusy ? 'rgba(255,255,255,0.06)' : `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-                  color: '#fff', border: 'none', borderRadius: 10,
+                  background: weeklyBusy ? 'rgba(255,255,255,0.06)' : accentFaceBg(accent),
+                  color: weeklyBusy ? '#fff' : accentFaceInk(accent), border: 'none', borderRadius: 10,
                   fontSize: '0.85rem', fontWeight: 800, cursor: weeklyBusy ? 'not-allowed' : 'pointer',
                   whiteSpace: 'nowrap',
                 }}
@@ -782,8 +783,8 @@ export default function ContentEngineStudio({ persona, settings, knowledge, onCl
                   disabled={isGen || !topic.trim()}
                   style={{
                     width: '100%', marginTop: 14, padding: '0.85rem',
-                    background: topic.trim() ? `linear-gradient(135deg, ${accent}, ${accent}cc)` : 'var(--surface-3)',
-                    color: topic.trim() ? '#fff' : 'var(--fg-muted)',
+                    background: topic.trim() ? accentFaceBg(accent) : 'var(--surface-3)',
+                    color: topic.trim() ? accentFaceInk(accent) : 'var(--fg-muted)',
                     border: 'none', borderRadius: 12,
                     fontSize: '0.9rem', fontWeight: 800, letterSpacing: '0.06em',
                     cursor: topic.trim() ? 'pointer' : 'not-allowed',

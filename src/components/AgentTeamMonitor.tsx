@@ -20,6 +20,7 @@ import InlineActionExecutor from './InlineActionExecutor';
 import CxoProfileModal from './CxoProfileModal';
 import { MetaIcon } from './ExecIcon';
 import { logSuggestion, setStatus as setSuggestionStatus } from '../lib/aiSuggestionLog';
+import { whiteFaceBg } from '../lib/accentFace';
 
 interface Props {
   /** Iris か Prism — Iris は dock 上、Prism は別位置 */
@@ -231,7 +232,7 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
             width: 42, height: 42, borderRadius: 12,
             background: (failedTask && !activeTask)
               ? 'linear-gradient(135deg, #F59E0B, #DC2626)'
-              : `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+              : whiteFaceBg(accent),
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 22, color: '#fff',
             boxShadow: (failedTask && !activeTask)
