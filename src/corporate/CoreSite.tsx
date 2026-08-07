@@ -845,7 +845,7 @@ export default function CoreSite() {
               border: '1px solid rgba(168,130,60,0.4)',
               borderRadius: 24,
               textDecoration: 'none',
-              transition: 'transform 260ms cubic-bezier(.4,0,.2,1), box-shadow 260ms ease',
+              transition: 'transform 0.2s cubic-bezier(.4,0,.2,1), box-shadow 0.2s ease',
             }}
             className="lp-feature-product"
           >
@@ -956,7 +956,7 @@ export default function CoreSite() {
                   display: 'block', textDecoration: 'none', color: 'inherit',
                   border: '1px solid rgba(201,162,75,0.25)', borderRadius: 16, overflow: 'hidden',
                   background: '#0b0a07',
-                  transition: 'transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s, border-color .35s',
+                  transition: 'transform 0.2s cubic-bezier(.22,1,.36,1), box-shadow 0.2s, border-color 0.2s',
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.borderColor = '#C9A24B'; e.currentTarget.style.boxShadow = '0 26px 56px -26px rgba(0,0,0,.85)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(201,162,75,0.25)'; e.currentTarget.style.boxShadow = 'none'; }}
@@ -1039,7 +1039,7 @@ export default function CoreSite() {
                 }}>
                   <span style={{ fontFamily: FONT_SANS, fontWeight: 700, fontSize: '1.26rem', color: p.featured ? '#E7C987' : '#F1E9D8', fontVariantNumeric: 'tabular-nums' }}>
                     {p.price}
-                    <small style={{ fontSize: '0.66rem', fontWeight: 400, color: 'rgba(240,233,216,0.6)', marginLeft: 6 }}>{p.priceNote}</small>
+                    <small style={{ fontSize: '0.72rem', fontWeight: 400, color: 'rgba(240,233,216,0.6)', marginLeft: 6 }}>{p.priceNote}</small>
                   </span>
                   <span style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', fontWeight: 600, color: p.accent, whiteSpace: 'nowrap' }}>詳しく →</span>
                 </span>
@@ -1158,7 +1158,7 @@ export default function CoreSite() {
                     </span>
                     {/* 2026-08-02: 0.45=3.87:1 で AA 落第。10.9px しかない業種名が
                         いちばん薄いのは逆＝小さい字ほど濃くする。0.58=5.9:1。 */}
-                    <span style={{ fontFamily: FONT_SANS, fontSize: '0.68rem', color: 'rgba(240,233,216,0.58)', letterSpacing: '0.05em', marginTop: '0.5rem' }}>{v.industry}</span>
+                    <span style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', color: 'rgba(240,233,216,0.58)', letterSpacing: '0.05em', marginTop: '0.5rem' }}>{v.industry}</span>
                     <span style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.02rem', fontWeight: 700, lineHeight: 1.65 }}>{v.tagline}</span>
                     <span style={{ fontFamily: FONT_SANS, fontSize: '0.81rem', color: 'rgba(240,233,216,0.65)', lineHeight: 1.9 }}>{v.body}</span>
                     <span style={{

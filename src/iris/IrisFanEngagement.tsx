@@ -760,7 +760,7 @@ ${recent}
                             </p>
                           )}
                         </div>
-                        <span style={{ fontSize: '0.65rem', color: bg.accentText, fontWeight: 700 }}>{c.tagGuess || '新規'}</span>
+                        <span style={{ fontSize: '0.72rem', color: bg.accentText, fontWeight: 700 }}>{c.tagGuess || '新規'}</span>
                       </label>
                     );
                   })}
@@ -1227,7 +1227,7 @@ function FanBondMeter({ fan, bg }: { fan: FanContact; bg: IrisBackgroundDef }) {
           transition: 'width 0.5s',
         }} />
       </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6, fontSize: '0.66rem', color: bg.inkSoft }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6, fontSize: '0.72rem', color: bg.inkSoft }}>
         <span>やり取り {b.parts.interaction}</span>
         <span>·</span>
         <span>タグ {b.parts.tag}</span>
@@ -1262,7 +1262,7 @@ function FanCard({ fan, bg, bond, isSelected, onSelect, onDelete }: {
         padding: '0.85rem 0.95rem', borderRadius: 12,
         background: isSelected ? `${bg.accent}0e` : bg.card,
         border: `1px solid ${isSelected ? bg.accent : bg.cardBorder}`,
-        cursor: 'pointer', transition: 'all 0.15s',
+        cursor: 'pointer', transition: 'all 0.2s',
         minHeight: 96,
       }}
     >
@@ -1280,7 +1280,7 @@ function FanCard({ fan, bg, bond, isSelected, onSelect, onDelete }: {
         </button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.45rem', gap: 4 }}>
-        <span style={{ background: tagColor.bg, color: tagColor.text, fontSize: '0.65rem', fontWeight: 700, borderRadius: 999, padding: '0.18rem 0.55rem' }}>
+        <span style={{ background: tagColor.bg, color: tagColor.text, fontSize: '0.72rem', fontWeight: 700, borderRadius: 999, padding: '0.18rem 0.55rem' }}>
           {fan.tag}
         </span>
         <span style={{ fontSize: '0.7rem', color: bg.inkSoft, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -1291,7 +1291,7 @@ function FanCard({ fan, bg, bond, isSelected, onSelect, onDelete }: {
         <div style={{
           width: `${bond?.total ?? 0}%`, height: '100%',
           background: `linear-gradient(90deg, ${lvMeta.color}, #F472B6)`,
-          transition: 'width 0.4s',
+          transition: 'width 0.5s',
         }} />
       </div>
     </div>

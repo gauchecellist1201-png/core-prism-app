@@ -3572,3 +3572,16 @@ body[data-prism-chat-dock] [data-tour-id="kpi-sparkline"] {
   .lp-continuum-grid > *,
   .lp-exec-grid > * { flex: 0 0 82%; scroll-snap-align: center; }
 }
+
+/* ───── 動きを減らす設定への取りこぼし対策 (2026-08-07 仕上げ磨き) ─────
+   index.css の reduced-motion 対応は「クラス名を1つずつ指定する」方式なので、
+   JSX に style={{ animation: '... infinite' }} と直接書いた点滅は素通りしていた。
+   (LiveSignupCounter の心拍リング / Iris の録音・音声インジケータ 3 箇所)
+   inline style は詳細度が最強なので、属性セレクタ + !important でしか届かない。
+   止めるのではなく「1回で終わらせる」: 上記 3 つの keyframe はどれも終了状態が
+   静かな状態 (opacity 0 / scale 1 / 影なし) なので、これで自然に静止する。 */
+@media (prefers-reduced-motion: reduce) {
+  [style*="infinite"] {
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -387,7 +387,7 @@ export default function NewVenturesTab() {
               <div key={i} style={{ position: 'relative', padding: '1.4rem 1.2rem', borderRadius: 16,
                 background: p.pop ? `linear-gradient(180deg, ${v.accent}25, ${v.accent2}10)` : 'rgba(255,255,255,0.03)',
                 border: p.pop ? `1px solid ${v.accent}` : '1px solid rgba(255,255,255,0.1)' }}>
-                {p.pop && <span style={{ position: 'absolute', top: -10, left: 16, fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: `linear-gradient(135deg,${v.accent},${v.accent2})` }}>人気</span>}
+                {p.pop && <span style={{ position: 'absolute', top: -10, left: 16, fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: `linear-gradient(135deg,${v.accent},${v.accent2})` }}>人気</span>}
                 <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>{p.plan}</p>
                 <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '1.5rem', fontWeight: 800, margin: '4px 0' }}>{p.price}</p>
                 {p.net !== '—' && <p style={{ fontSize: '0.7rem', color: '#86efac', fontFamily: 'monospace' }}>手数料引き後 {p.net}</p>}

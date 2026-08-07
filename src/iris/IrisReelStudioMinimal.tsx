@@ -2239,7 +2239,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     boxShadow: active ? '0 6px 18px rgba(225,48,108,0.32)' : '0 1px 3px rgba(0,0,0,0.04)',
                     display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center', gap: 2,
-                    transition: 'all 0.18s',
+                    transition: 'all 0.2s',
                   }}
                 >
                   {/* テーマの実配色を映すミニ見本 (一目で仕上がりが分かる) */}
@@ -2373,7 +2373,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       cursor: 'grab', padding: 0,
                       opacity: isDragging ? 0.35 : 1,
                       touchAction: 'pan-x',
-                      transition: 'opacity 0.12s, box-shadow 0.12s',
+                      transition: 'opacity 0.2s, box-shadow 0.2s',
                     }}>
                     {c.kind === 'image'
                       ? <img src={c.url} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />

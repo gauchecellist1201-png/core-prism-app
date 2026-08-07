@@ -474,7 +474,7 @@ export default function DailyReport({
                     border: `1px solid ${copied ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.12)'}`,
                     color: copied ? '#34D399' : '#F4ECFF',
                     borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                    transition: 'all 200ms',
+                    transition: 'all 0.2s',
                   }}
                 >
                   {copied ? '✓ コピーしました' : '📋 Markdown でコピー'}

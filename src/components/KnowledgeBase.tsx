@@ -685,7 +685,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
               example="業界レポートを 1 枚入れる → そこから使える提案・戦略・気をつける点を AI が抜き出してくれます。"
               sampleLabel="入れると出ます"
               samplePreview={
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.66rem', lineHeight: 1.35 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.72rem', lineHeight: 1.35 }}>
                   <span style={{ color: persona.accentColor, fontWeight: 700 }}>● 提案 3 件</span>
                   <span style={{ opacity: 0.85 }}>● 戦略 2 件</span>
                   <span style={{ opacity: 0.7 }}>● 気をつける点 1 件</span>

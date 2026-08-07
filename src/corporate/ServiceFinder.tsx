@@ -500,7 +500,7 @@ function CompareView({ onBack }: { onBack: () => void }) {
 function CompareRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p style={{ fontFamily: FONT_SANS, fontSize: '0.66rem', fontWeight: 800, letterSpacing: '0.1em', color: 'rgba(201,169,110,0.85)', marginBottom: 3 }}>{label}</p>
+      <p style={{ fontFamily: FONT_SANS, fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', color: 'rgba(201,169,110,0.85)', marginBottom: 3 }}>{label}</p>
       <p style={{ fontFamily: FONT_SANS, fontSize: '0.82rem', color: 'rgba(255,255,255,0.78)', lineHeight: 1.85 }}>{value}</p>
     </div>
   );
