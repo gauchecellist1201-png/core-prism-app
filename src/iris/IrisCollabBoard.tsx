@@ -12,7 +12,7 @@
 // ============================================================
 import React, { useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ListChecks, MessageCircle, Star, ChevronRight, Plus, Send } from 'lucide-react';
+import { Sparkles, ListChecks, MessageCircle, Star, ChevronRight, Plus, Send, Search, Copy, Check } from 'lucide-react';
 import { confirmAction } from '../lib/confirmDialog';
 import type { IrisBackgroundDef } from './irisStyle';
 import type { CustomIrisBackground } from './irisStyle';
@@ -45,8 +45,12 @@ export interface CollabPost {
   reactions: Record<string, number>;
   chats: { id: string; author: string; text: string; at: string }[];
   createdAt: string;
-  aiMatchScore?: number;
-  aiMatchReason?: string;
+}
+
+/** 一覧に出す時だけ付ける、ジャンルの近さ (保存はしない) */
+export interface CollabPostWithFit extends CollabPost {
+  fitLevel: FitLevel;
+  fitReason: string;
 }
 
 /** B. コラボ計画 — 自分が動かしているコラボ案件 */
@@ -95,60 +99,53 @@ const PLANS_KEY = 'core_iris_collab_plans_v1';
 const MY_CATEGORY_KEY = 'core_iris_my_collab_category_v1';
 const MY_HANDLE_KEY = 'core_iris_my_collab_handle_v1';
 
-// ─── 募集ボード seed (旧データ互換) ──────────────────────────
+// ─── 募集の下書き 永続化 ──────────────────────────────────────
+// この一覧は「この端末に保存された自分の下書き」だけ。
+// 他人の募集を混ぜて置かない（＝架空の相手に話しかけさせない）。
+// 旧版が書き込んだ架空の 3 人 (seed-1〜3) は読み込み時に取り除く。
+export function stripLegacySeedPosts(posts: CollabPost[]): CollabPost[] {
+  return posts.filter(p => !/^seed-/.test(p.id));
+}
 function loadPosts(): CollabPost[] {
   try {
     const r = localStorage.getItem(POSTS_KEY);
-    if (r) return JSON.parse(r);
+    if (!r) return [];
+    const parsed = JSON.parse(r);
+    if (!Array.isArray(parsed)) return [];
+    const cleaned = stripLegacySeedPosts(parsed as CollabPost[]);
+    if (cleaned.length !== parsed.length) {
+      try { localStorage.setItem(POSTS_KEY, JSON.stringify(cleaned)); } catch { /* */ }
+    }
+    return cleaned;
   } catch { /* */ }
-  const seeds: CollabPost[] = [
-    {
-      id: 'seed-1',
-      authorHandle: '@hana_cosme', category: 'cosme',
-      title: '一緒にコスメレビューしたい！韓国コスメ特集',
-      body: '韓国コスメの最新アイテムをダブルレビューしませんか？各自が購入して同日投稿、お互いをタグ付けする形で。フォロワー1万前後の方歓迎',
-      tags: ['#コスメ', '#韓国コスメ', '#コラボ'],
-      followerRange: '5K〜20K',
-      reactions: {}, chats: [],
-      createdAt: new Date(Date.now() - 1000 * 3600 * 3).toISOString(),
-      aiMatchScore: 92,
-      aiMatchReason: 'コスメカテゴリが一致。フォロワー規模も近い。',
-    },
-    {
-      id: 'seed-2',
-      authorHandle: '@tabi_noa', category: 'travel',
-      title: 'ダブルで旅企画！沖縄リゾートホテルタイアップ',
-      body: '7月に沖縄のリゾートホテルとタイアップ交渉中。2名以上だと条件が良くなりそう。',
-      tags: ['#旅', '#沖縄', '#タイアップ'],
-      location: '沖縄', dateRange: '2026年7月', followerRange: '10K〜50K',
-      reactions: {}, chats: [],
-      createdAt: new Date(Date.now() - 1000 * 3600 * 8).toISOString(),
-      aiMatchScore: 78,
-      aiMatchReason: '旅カテゴリ。規模感が合えばよいマッチ。',
-    },
-    {
-      id: 'seed-3',
-      authorHandle: '@mika_fashion', category: 'fashion',
-      title: 'ファッション × コスメ コラボ動画',
-      body: 'コーデ紹介とメイクを組み合わせたリール動画を一緒に作りたい！',
-      tags: ['#ファッション', '#コスメ', '#リール'],
-      followerRange: '3K〜15K',
-      reactions: {}, chats: [],
-      createdAt: new Date(Date.now() - 1000 * 3600 * 24).toISOString(),
-      aiMatchScore: 85,
-      aiMatchReason: 'コスメ×ファッションのクロスジャンル。',
-    },
-  ];
-  localStorage.setItem(POSTS_KEY, JSON.stringify(seeds));
-  return seeds;
+  return [];
 }
 function savePosts(p: CollabPost[]) {
   try { localStorage.setItem(POSTS_KEY, JSON.stringify(p)); } catch { /* */ }
 }
 
 // ─── コラボ計画 永続化 ────────────────────────────────────────
+/**
+ * 旧版は AI 推薦を「候補に追加」した時に、実在しない相手 (@cosme_creator_1 等) を
+ * そのまま相手として書き込んでいた。その分だけ相手を空に戻し、探し直せるようにする。
+ * 自分で打ち込んだ実在のアカウントは触らない (見分けがつく形だけを消す)。
+ */
+const FABRICATED_HANDLE = /^@(cosme|travel|food|fashion|fitness|lifestyle|other)_creator_\d+$/;
+export function clearFabricatedPartners(plans: CollabPlan[]): CollabPlan[] {
+  return plans.map(p => (FABRICATED_HANDLE.test(p.partnerHandle) ? { ...p, partnerHandle: '' } : p));
+}
 function loadPlans(): CollabPlan[] {
-  try { const r = localStorage.getItem(PLANS_KEY); return r ? JSON.parse(r) : []; } catch { return []; }
+  try {
+    const r = localStorage.getItem(PLANS_KEY);
+    if (!r) return [];
+    const parsed = JSON.parse(r);
+    if (!Array.isArray(parsed)) return [];
+    const cleaned = clearFabricatedPartners(parsed as CollabPlan[]);
+    if (cleaned.some((p, i) => p.partnerHandle !== (parsed as CollabPlan[])[i].partnerHandle)) {
+      try { localStorage.setItem(PLANS_KEY, JSON.stringify(cleaned)); } catch { /* */ }
+    }
+    return cleaned;
+  } catch { return []; }
 }
 function savePlans(p: CollabPlan[]) {
   try { localStorage.setItem(PLANS_KEY, JSON.stringify(p)); } catch { /* */ }
@@ -164,31 +161,74 @@ function saveMyCategory(c: CollabCategory | '') {
   } catch { /* */ }
 }
 
-// ─── ローカル AI マッチング (既存) ────────────────────────────
-function computeAiMatch(post: CollabPost, myCategory: CollabCategory | ''): { score: number; reason: string } {
-  if (!myCategory) return { score: Math.floor(60 + Math.random() * 30), reason: 'プロフィール未設定' };
-  if (post.category === myCategory) return { score: 88 + Math.floor(Math.random() * 12), reason: `同じ「${CATEGORY_META[myCategory].label}」カテゴリです！` };
-  const crossMap: Partial<Record<CollabCategory, CollabCategory[]>> = {
-    cosme: ['fashion', 'lifestyle'],
-    fashion: ['cosme', 'lifestyle'],
-    travel: ['food', 'lifestyle'],
-    food: ['travel', 'lifestyle'],
-    fitness: ['lifestyle'],
-    lifestyle: ['cosme', 'travel', 'fashion', 'food', 'fitness'],
-  };
-  if (crossMap[myCategory]?.includes(post.category)) {
-    return { score: 70 + Math.floor(Math.random() * 15), reason: 'クロスジャンルでエンゲージメント向上が狙えます。' };
+// ─── ジャンルの近さ (数えられるものだけを言う) ────────────────
+// 以前はここで乱数の「相性 %」を作って画面に出していた。
+// 測っていない数字は出さない。言葉と形だけで、根拠も必ず一緒に見せる。
+export type FitLevel = 'same' | 'near' | 'far' | 'unknown';
+
+const CROSS_MAP: Partial<Record<CollabCategory, CollabCategory[]>> = {
+  cosme: ['fashion', 'lifestyle'],
+  fashion: ['cosme', 'lifestyle'],
+  travel: ['food', 'lifestyle'],
+  food: ['travel', 'lifestyle'],
+  fitness: ['lifestyle'],
+  lifestyle: ['cosme', 'travel', 'fashion', 'food', 'fitness'],
+};
+
+export const FIT_META: Record<FitLevel, { label: string; order: number }> = {
+  same:    { label: '同じジャンル', order: 3 },
+  near:    { label: '近いジャンル', order: 2 },
+  far:     { label: '別のジャンル', order: 1 },
+  unknown: { label: 'ジャンル未設定', order: 0 },
+};
+
+export function computeCategoryFit(
+  postCategory: CollabCategory,
+  myCategory: CollabCategory | '',
+): { level: FitLevel; reason: string } {
+  if (!myCategory) {
+    return { level: 'unknown', reason: '自分のジャンルを選ぶと、近い順に並びます。' };
   }
-  return { score: 40 + Math.floor(Math.random() * 25), reason: '異なるジャンルですが意外なコラボも話題を呼ぶことがあります。' };
+  if (postCategory === myCategory) {
+    return { level: 'same', reason: `どちらも「${CATEGORY_META[myCategory].label}」です。` };
+  }
+  if (CROSS_MAP[myCategory]?.includes(postCategory)) {
+    return {
+      level: 'near',
+      reason: `「${CATEGORY_META[myCategory].label}」と「${CATEGORY_META[postCategory].label}」は、見ている人が重なりやすい組み合わせです。`,
+    };
+  }
+  return {
+    level: 'far',
+    reason: `「${CATEGORY_META[postCategory].label}」は自分のジャンルから離れています。新しい層に届く反面、反応は読みにくくなります。`,
+  };
 }
 
 // ─── AI コラボ候補推薦 (ペルソナベース) ──────────────────────
+// AI が提案するのは「ジャンルと企画」まで。
+// 実在しない相手 (@handle) は絶対に作らない — ユーザーが存在しない人に DM を送ってしまう。
 interface RecommendedPartner {
   category: CollabCategory;
   reason: string;
   exampleTopic: string;
-  exampleHandle: string; // ダミーハンドル (実 IG データなし時)
   followerRange: string;
+  /** そのジャンルの人を Instagram で実際に探すためのハッシュタグ */
+  searchTags: string[];
+}
+
+/** ジャンルごとの、実在するハッシュタグ (相手探しの入口) */
+const CATEGORY_SEARCH_TAGS: Record<CollabCategory, string[]> = {
+  cosme:     ['コスメ好きさんと繋がりたい', 'コスメ購入品', 'メイク動画'],
+  travel:    ['旅好きな人と繋がりたい', '旅行好きな人と繋がりたい', '国内旅行'],
+  food:      ['グルメ好きな人と繋がりたい', 'カフェ巡り', 'おうちごはん'],
+  fashion:   ['ファッション好きな人と繋がりたい', '今日のコーデ', 'プチプラコーデ'],
+  fitness:   ['筋トレ女子と繋がりたい', '宅トレ', 'ダイエット記録'],
+  lifestyle: ['暮らしを楽しむ', '丁寧な暮らし', '暮らしの記録'],
+  other:     ['インスタグラマーさんと繋がりたい', 'クリエイターと繋がりたい'],
+};
+
+export function instagramTagUrl(tag: string): string {
+  return `https://www.instagram.com/explore/tags/${encodeURIComponent(tag.replace(/^#/, ''))}/`;
 }
 
 async function recommendCollabPartners(
@@ -205,10 +245,10 @@ async function recommendCollabPartners(
   { "category": "cosme|travel|food|fashion|fitness|lifestyle|other",
     "reason": "なぜ効くか 40字以内",
     "exampleTopic": "コラボ企画例 30字以内",
-    "exampleHandle": "@dummy_handle (実際にいそうな架空のハンドル)",
     "followerRange": "1K〜10K" }
 ] }
-4 件のうち 1 件は同ジャンル、2 件はクロスジャンル、1 件は意外な組み合わせ。`;
+4 件のうち 1 件は同ジャンル、2 件はクロスジャンル、1 件は意外な組み合わせ。
+絶対禁止: 実在しないアカウント名・@ハンドル・人名を書くこと。提案するのはジャンルと企画だけ。`;
 
   const userPrompt = `自分のジャンル: ${CATEGORY_META[myCategory].label}
 フォロワー: ${followers.toLocaleString()} 名
@@ -237,7 +277,14 @@ async function recommendCollabPartners(
     const parsed = JSON.parse(m ? m[0] : text);
     const arr = parsed.recommendations as RecommendedPartner[];
     if (!Array.isArray(arr)) throw new Error('not array');
-    return arr.slice(0, 4);
+    // AI が @ハンドルを勝手に混ぜてきても捨てる。相手探しは実在するタグに固定する。
+    return arr.slice(0, 4).map(r => ({
+      category: r.category,
+      reason: String(r.reason || '').replace(/@[A-Za-z0-9._]+/g, '').trim(),
+      exampleTopic: String(r.exampleTopic || '').replace(/@[A-Za-z0-9._]+/g, '').trim(),
+      followerRange: r.followerRange || followerRange,
+      searchTags: CATEGORY_SEARCH_TAGS[r.category] ?? CATEGORY_SEARCH_TAGS.other,
+    }));
   } catch {
     // フォールバック
     const cross: Record<CollabCategory, CollabCategory[]> = {
@@ -254,8 +301,8 @@ async function recommendCollabPartners(
       category: cat,
       reason: i === 0 ? `同ジャンルで濃いフォロワーを共有` : i === 3 ? '意外性で話題化が狙える' : 'クロスジャンルで新規層を獲得',
       exampleTopic: i === 0 ? `${CATEGORY_META[cat].label}の徹底比較` : `${CATEGORY_META[myCategory].label}×${CATEGORY_META[cat].label}企画`,
-      exampleHandle: `@${cat}_creator_${i + 1}`,
       followerRange,
+      searchTags: CATEGORY_SEARCH_TAGS[cat],
     }));
   }
 }
@@ -276,8 +323,6 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
   const [posts, setPosts] = useState<CollabPost[]>(loadPosts);
   const [filterCat, setFilterCat] = useState<CollabCategory | 'all'>('all');
   const [showNewPost, setShowNewPost] = useState(false);
-  const [openChat, setOpenChat] = useState<string | null>(null);
-  const [chatInput, setChatInput] = useState('');
   const [postForm, setPostForm] = useState({
     title: '', body: '', category: 'cosme' as CollabCategory,
     tags: '', location: '', dateRange: '', followerRange: '',
@@ -335,10 +380,11 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
   }, [myCategory]);
 
   // ─── 候補を計画に追加 ──
+  // AI が出すのはジャンルと企画まで。相手はまだ「空」で入れて、探す導線を出す。
   const addRecToPlans = useCallback((rec: RecommendedPartner) => {
     const newPlan: CollabPlan = {
       id: 'plan-' + Date.now().toString(36),
-      partnerHandle: rec.exampleHandle,
+      partnerHandle: '',
       partnerCategory: rec.category,
       topic: rec.exampleTopic,
       stage: 'candidate',
@@ -348,7 +394,20 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
       updatedAt: new Date().toISOString(),
     };
     updatePlans([newPlan, ...plans]);
-    notifyInApp({ kind: 'success', title: '候補に追加しました', body: rec.exampleHandle });
+    notifyInApp({
+      kind: 'success',
+      title: '候補に追加しました',
+      body: `${CATEGORY_META[rec.category].label}の企画。次は相手を探して決めます`,
+    });
+  }, [plans, updatePlans]);
+
+  // 相手が決まったら書き込む
+  const setPlanPartner = useCallback((id: string, rawHandle: string) => {
+    const h = rawHandle.trim().replace(/^@+/, '');
+    if (!h) return;
+    updatePlans(plans.map(p => p.id === id
+      ? { ...p, partnerHandle: '@' + h, updatedAt: new Date().toISOString() }
+      : p));
   }, [plans, updatePlans]);
 
   // ─── 手動で計画追加 ──
@@ -392,6 +451,15 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
 
   // ─── DM 下書き起動 ──
   const launchDmDraft = useCallback((plan: CollabPlan) => {
+    // 相手が決まっていないのに DM 文を作ると、宛先のない手紙になる
+    if (!plan.partnerHandle) {
+      notifyInApp({
+        kind: 'info',
+        title: '先に相手を決めてください',
+        body: 'カードの「相手を決める」に、実際のアカウント名を入れると DM 下書きが作れます',
+      });
+      return;
+    }
     setDmModalState({ partnerHandle: plan.partnerHandle, topic: plan.topic, category: plan.partnerCategory });
     // 連絡中に自動移動
     if (plan.stage === 'candidate') moveStage(plan.id, 'contacting');
@@ -406,7 +474,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
       title: '今月コラボ 3 件を設定する計画',
       summary: `現状: 候補 ${candidates} 件 / 連絡中 ${contacting} 件。今月中に新規コラボを 3 件「確定」まで持っていく動きを、CMO と CSO が 1 枚にまとめます。`,
       why: 'コラボはフォロワー獲得の最短ルート。月 3 件を「確定」に動かすには、候補出し → DM → フォロー → 日程確定の 4 ステップを並列で回す必要がある。',
-      expected: '今月のコラボ候補 10 件 + 各人への DM 文 + 連絡の優先順位を 1 枚に。',
+      expected: '今月のコラボ企画案 + 相手の探し方 + 連絡の優先順位を 1 枚に。',
       dueDays: 2,
       steps: [
         { cxo: 'CSO', label: '自分のジャンル/規模に合う候補を 10 名抽出 (重なる層 × 異なるアプローチ)' },
@@ -419,17 +487,10 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
     setTimeout(() => setProposing(false), 600);
   }, [plans, queue]);
 
-  // ─── 募集ボード処理 (旧) ──
-  function addReaction(id: string, emoji: string) {
-    updatePosts(posts.map(p => p.id === id ? { ...p, reactions: { ...p.reactions, [emoji]: (p.reactions[emoji] || 0) + 1 } } : p));
-  }
-  function sendChat(postId: string) {
-    if (!chatInput.trim()) return;
-    updatePosts(posts.map(p => p.id === postId ? {
-      ...p,
-      chats: [...p.chats, { id: Date.now().toString(), author: handle, text: chatInput.trim(), at: new Date().toISOString() }],
-    } : p));
-    setChatInput('');
+  // ─── 募集文の下書き ──
+  async function deletePost(id: string) {
+    if (!(await confirmAction({ title: 'この募集文を削除しますか?', tone: 'danger', okLabel: '削除する' }))) return;
+    updatePosts(posts.filter(p => p.id !== id));
   }
   function submitPost() {
     if (!postForm.title.trim() || !postForm.body.trim()) return;
@@ -451,12 +512,16 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
     setShowNewPost(false);
   }
 
-  const displayedPosts = useMemo(() => {
+  const displayedPosts = useMemo<CollabPostWithFit[]>(() => {
     const base = filterCat === 'all' ? posts : posts.filter(p => p.category === filterCat);
-    return base.map(p => {
-      const m = computeAiMatch(p, myCategory);
-      return { ...p, aiMatchScore: p.aiMatchScore ?? m.score, aiMatchReason: p.aiMatchReason ?? m.reason };
-    }).sort((a, b) => (b.aiMatchScore ?? 0) - (a.aiMatchScore ?? 0));
+    return base
+      .map(p => {
+        const fit = computeCategoryFit(p.category, myCategory);
+        return { ...p, fitLevel: fit.level, fitReason: fit.reason };
+      })
+      .sort((a, b) =>
+        FIT_META[b.fitLevel].order - FIT_META[a.fitLevel].order
+        || b.createdAt.localeCompare(a.createdAt));
   }, [posts, filterCat, myCategory]);
 
   // ─── ステージ別件数 ──
@@ -516,15 +581,15 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
           一緒に、つくろう。
         </h2>
         <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginTop: 4, lineHeight: 1.7 }}>
-          AI がコラボ相手を提案 → DM 下書き → ステージ管理 → 完了後の評価まで、一連の流れを 1 か所で。
+          AI が「組むと効くジャンルと企画」を提案 → 相手を Instagram で探す → DM 下書き → 進み具合の管理 → 完了後の評価まで、1 か所で。
         </p>
       </div>
 
       <DelegateToAgentTeamBanner
-        taskTitle="コラボ候補を CSO + CMO に探してもらう"
+        taskTitle="コラボ企画を CSO + CMO に考えてもらう"
         suggestedCxos={['CSO', 'CMO']}
-        why="伸びるアカウントは「正しい相手とのコラボ」で加速。AI 会社が候補と DM 文面まで作ります"
-        expected="コラボ候補 5 件 + DM 下書き"
+        why="伸びるアカウントは「正しい相手とのコラボ」で加速。AI 会社が組むジャンルと声のかけ方まで作ります"
+        expected="組むと効くジャンルと企画 + 声のかけ方の下書き"
         brand="iris"
       />
 
@@ -532,7 +597,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
       <div style={{ display: 'flex', gap: 8, marginBottom: '1rem', background: 'rgba(0,0,0,0.04)', padding: 4, borderRadius: 999, width: 'fit-content' }}>
         {[
           { v: 'plan' as const, label: '計画ボード', count: plans.length },
-          { v: 'board' as const, label: '募集ボード', count: posts.length },
+          { v: 'board' as const, label: '募集文の下書き', count: posts.length },
         ].map(t => (
           <button key={t.v} onClick={() => setViewMode(t.v)}
             style={{
@@ -586,6 +651,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
           moveStage={moveStage}
           deletePlan={deletePlan}
           launchDmDraft={launchDmDraft}
+          setPlanPartner={setPlanPartner}
           setEvalPlanId={setEvalPlanId}
           proposeCollabPlan={proposeCollabPlan}
           proposing={proposing}
@@ -601,12 +667,7 @@ export default function IrisCollabBoard({ bg, myHandle }: Props) {
           postForm={postForm}
           setPostForm={setPostForm}
           submitPost={submitPost}
-          addReaction={addReaction}
-          openChat={openChat}
-          setOpenChat={setOpenChat}
-          chatInput={chatInput}
-          setChatInput={setChatInput}
-          sendChat={sendChat}
+          deletePost={deletePost}
           myCategory={myCategory}
         />
       )}
@@ -668,6 +729,7 @@ function PlanBoard(props: {
   moveStage: (id: string, next: CollabStage) => void;
   deletePlan: (id: string) => void;
   launchDmDraft: (p: CollabPlan) => void;
+  setPlanPartner: (id: string, handle: string) => void;
   setEvalPlanId: (id: string) => void;
   proposeCollabPlan: () => void;
   proposing: boolean;
@@ -677,7 +739,7 @@ function PlanBoard(props: {
     recommendations, recLoading, myCategory, evalStats,
     showNewPlan, setShowNewPlan, planForm, setPlanForm, submitPlan,
     fetchRecommendations, addRecToPlans,
-    moveStage, deletePlan, launchDmDraft, setEvalPlanId,
+    moveStage, deletePlan, launchDmDraft, setPlanPartner, setEvalPlanId,
     proposeCollabPlan, proposing,
   } = props;
 
@@ -704,7 +766,7 @@ function PlanBoard(props: {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button onClick={fetchRecommendations} disabled={recLoading || !myCategory} style={btnPrimary(bg)}>
           <Sparkles size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
-          {recLoading ? 'AI が考え中…' : 'AI コラボ候補を提案'}
+          {recLoading ? 'AI が考え中…' : 'AI にコラボ企画を出させる'}
         </button>
         <button onClick={() => setShowNewPlan(true)} style={btnSecondary(bg)}>
           <Plus size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
@@ -744,6 +806,9 @@ function PlanBoard(props: {
                 </div>
                 <p style={{ fontSize: '0.85rem', fontWeight: 600, color: bg.ink, marginBottom: 4 }}>{r.exampleTopic}</p>
                 <p style={{ fontSize: '0.75rem', color: bg.inkSoft, lineHeight: 1.6, marginBottom: 8 }}>{r.reason}</p>
+                <p style={{ fontSize: '0.72rem', color: bg.inkSoft, lineHeight: 1.6, marginBottom: 8 }}>
+                  相手はまだ決まっていません。候補に入れてから、Instagram で実際に探します。
+                </p>
                 <button onClick={() => addRecToPlans(r)}
                   style={{
                     width: '100%', padding: '0.5rem', borderRadius: 8,
@@ -798,7 +863,7 @@ function PlanBoard(props: {
             </p>
             <p style={{ fontSize: '0.78rem', marginTop: 8, lineHeight: 1.6 }}>
               {activeStage === 'candidate' && (
-                <>あなたのジャンルで伸びそうな相手を AI が探します。<br />「AI コラボ候補を提案」を押すと 5 人ずつ出てきます。</>
+                <>あなたのジャンルと相性のいい「組むジャンルと企画」を AI が 4 件出します。<br />相手そのものは、候補に入れたあと Instagram で探して決めます。</>
               )}
               {activeStage === 'contacting' && '候補から DM 下書きを送ると、ここに自動で移動します。返信が来たら次の段へ。'}
               {activeStage === 'confirmed' && '相手から OK が出たら「確定」へ動かしましょう。撮影日と内容を 1 枚にまとめられます。'}
@@ -808,7 +873,7 @@ function PlanBoard(props: {
               <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 14 }}>
                 <button onClick={fetchRecommendations} disabled={recLoading || !myCategory} style={btnPrimary(bg)}>
                   <Sparkles size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
-                  AI に候補を出させる
+                  AI に企画を出させる
                 </button>
                 <button onClick={() => setShowNewPlan(true)} style={btnSecondary(bg)}>
                   <Plus size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
@@ -830,10 +895,15 @@ function PlanBoard(props: {
               }}>
                 {CATEGORY_META[plan.partnerCategory].label}
               </span>
-              <span style={{ fontSize: '0.82rem', color: bg.ink, fontWeight: 600 }}>{plan.partnerHandle}</span>
+              {plan.partnerHandle
+                ? <span style={{ fontSize: '0.82rem', color: bg.ink, fontWeight: 600 }}>{plan.partnerHandle}</span>
+                : <span style={{ fontSize: '0.78rem', color: bg.inkSoft, fontWeight: 600 }}>相手はこれから探す</span>}
               {plan.followerRange && <span style={{ fontSize: '0.72rem', color: bg.inkSoft }}>{plan.followerRange}</span>}
             </div>
             <p style={{ fontSize: '0.95rem', color: bg.ink, fontWeight: 600, margin: '0 0 6px' }}>{plan.topic}</p>
+            {!plan.partnerHandle && (
+              <PartnerSlot bg={bg} plan={plan} onSet={h => setPlanPartner(plan.id, h)} />
+            )}
             {plan.reason && (
               <p style={{ fontSize: '0.75rem', color: bg.accentText, background: `${bg.accent}0d`, borderRadius: 8, padding: '0.35rem 0.6rem', marginBottom: 8 }}>
                 {plan.reason}
@@ -856,7 +926,12 @@ function PlanBoard(props: {
             {/* アクション */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
               {(plan.stage === 'candidate' || plan.stage === 'contacting') && (
-                <button onClick={() => launchDmDraft(plan)} style={btnSmallPrimary(bg)}>
+                <button onClick={() => launchDmDraft(plan)}
+                  aria-disabled={!plan.partnerHandle}
+                  title={plan.partnerHandle ? undefined : '相手を決めると使えます'}
+                  style={plan.partnerHandle
+                    ? btnSmallPrimary(bg)
+                    : { ...btnSmall(bg), color: bg.inkSoft, borderStyle: 'dashed' }}>
                   <MessageCircle size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
                   AI DM 下書き
                 </button>
@@ -1041,11 +1116,74 @@ function EvaluationModal({ bg, plan, onSave, onClose }: {
 }
 
 // ============================================================
+// 相手がまだ決まっていない計画の「相手を探す → 決める」
+// AI は企画までしか作らない。相手は本人が実在の人から選ぶ。
+// ============================================================
+function PartnerSlot({ bg, plan, onSet }: {
+  bg: IrisBackgroundDef | CustomIrisBackground;
+  plan: CollabPlan;
+  onSet: (handle: string) => void;
+}) {
+  const [value, setValue] = useState('');
+  const tags = CATEGORY_SEARCH_TAGS[plan.partnerCategory] ?? CATEGORY_SEARCH_TAGS.other;
+
+  return (
+    <div style={{
+      border: `1px dashed ${bg.cardBorder}`, borderRadius: 12,
+      padding: '0.7rem 0.8rem', marginBottom: 8,
+      background: 'rgba(255,255,255,0.55)',
+    }}>
+      <p style={{ fontSize: '0.75rem', color: bg.inkSoft, lineHeight: 1.7, margin: '0 0 8px' }}>
+        この企画に合う人を Instagram で探して、見つけたアカウント名を入れてください。
+      </p>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+        {tags.slice(0, 3).map(t => (
+          <a key={t} href={instagramTagUrl(t)} target="_blank" rel="noopener noreferrer"
+            style={{
+              ...btnSmall(bg), textDecoration: 'none', minHeight: 44,
+              padding: '0.55rem 0.9rem', fontSize: '0.78rem',
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+            }}>
+            <Search size={12} />
+            #{t}
+          </a>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { onSet(value); setValue(''); } }}
+          placeholder="@ 相手のアカウント名"
+          aria-label="コラボ相手のアカウント名"
+          style={{
+            flex: 1, minWidth: 0, padding: '0.55rem 0.8rem', borderRadius: 10,
+            fontSize: '16px', border: `1px solid ${bg.cardBorder}`,
+            background: 'rgba(255,255,255,0.9)', color: bg.ink, outline: 'none',
+            minHeight: 44,
+          }} />
+        <button
+          onClick={() => { onSet(value); setValue(''); }}
+          disabled={!value.trim()}
+          style={{
+            ...btnSmall(bg), minHeight: 44, whiteSpace: 'nowrap',
+            ...(value.trim()
+              ? { background: accentFaceBg(bg.accent), color: accentFaceInk(bg.accent), border: 'none', fontWeight: 700 }
+              : { color: bg.inkSoft, cursor: 'not-allowed' }),
+          }}>
+          相手を決める
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // 募集ボード (旧機能を内包)
 // ============================================================
 function RecruitBoard(props: {
   bg: IrisBackgroundDef | CustomIrisBackground;
-  posts: CollabPost[];
+  posts: CollabPostWithFit[];
   filterCat: CollabCategory | 'all';
   setFilterCat: (c: CollabCategory | 'all') => void;
   showNewPost: boolean;
@@ -1053,20 +1191,30 @@ function RecruitBoard(props: {
   postForm: any;
   setPostForm: (v: any) => void;
   submitPost: () => void;
-  addReaction: (id: string, e: string) => void;
-  openChat: string | null;
-  setOpenChat: (s: string | null) => void;
-  chatInput: string;
-  setChatInput: (s: string) => void;
-  sendChat: (postId: string) => void;
+  deletePost: (id: string) => void;
   myCategory: CollabCategory | '';
 }) {
   const {
     bg, posts, filterCat, setFilterCat,
     showNewPost, setShowNewPost, postForm, setPostForm, submitPost,
-    addReaction, openChat, setOpenChat, chatInput, setChatInput, sendChat,
-    myCategory,
+    deletePost, myCategory,
   } = props;
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyPost = useCallback(async (post: CollabPost) => {
+    const text = [post.title, '', post.body,
+      post.location ? `場所: ${post.location}` : '',
+      post.dateRange ? `時期: ${post.dateRange}` : '',
+      post.followerRange ? `希望フォロワー: ${post.followerRange}` : '',
+      '', post.tags.join(' ')].filter(Boolean).join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(post.id);
+      setTimeout(() => setCopiedId(c => (c === post.id ? null : c)), 2000);
+    } catch {
+      notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: '文章を長押しして選択してください' });
+    }
+  }, []);
 
   const card: React.CSSProperties = {
     background: bg.card, border: `1px solid ${bg.cardBorder}`,
@@ -1096,37 +1244,45 @@ function RecruitBoard(props: {
             color: accentFaceInk(bg.accent), border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem',
             minHeight: 44,
           }}>
-          + 募集を出す
+          + 募集文をつくる
         </button>
       </div>
 
-      {myCategory && (
-        <div style={{ ...card, padding: '0.65rem 1rem', background: `${bg.accent}10`, border: `1px solid ${bg.accent}33` }}>
-          <span style={{ fontSize: '0.78rem', color: bg.accentText, fontWeight: 700 }}>
-            AI が「もしかして合うかも」と判断した順に並んでいます
-          </span>
-        </div>
-      )}
+      {/* この場所が何なのかを、はっきり言う */}
+      {/* この一文がこの画面でいちばん大事なので、薄い字にしない */}
+      <div style={{ ...card, padding: '0.7rem 1rem', background: 'rgba(255,255,255,0.55)' }}>
+        <p style={{ fontSize: '0.8rem', color: bg.ink, lineHeight: 1.7, margin: 0 }}>
+          ここに残るのは <b style={{ color: bg.ink }}>自分の募集文の下書き</b> だけです。
+          他の人には届きません。書いた文章はコピーして、Instagram のストーリーズや投稿にそのまま貼って使えます。
+          {myCategory && '（自分のジャンルに近い順に並びます）'}
+        </p>
+      </div>
 
       {/* 投稿リスト */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {posts.length === 0 && (
+          <div style={{ ...card, textAlign: 'center', padding: '2.4rem 1rem' }}>
+            <div style={{ marginBottom: 12, color: bg.inkSoft, opacity: 0.7 }} aria-hidden>
+              <MessageCircle size={44} strokeWidth={1.6} />
+            </div>
+            <p style={{ fontSize: '0.95rem', color: bg.ink, fontWeight: 600, margin: 0 }}>
+              募集文の下書きはまだありません
+            </p>
+            <p style={{ fontSize: '0.78rem', color: bg.inkSoft, marginTop: 8, lineHeight: 1.7 }}>
+              「こんな人と組みたい」を一度ここに書いておくと、<br />
+              思い立った時にコピーして、そのまま Instagram に貼れます。
+            </p>
+            <button onClick={() => setShowNewPost(true)}
+              style={{ ...btnPrimary(bg), marginTop: 14 }}>
+              <Plus size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
+              募集文をつくる
+            </button>
+          </div>
+        )}
         {posts.map(post => {
           const meta = CATEGORY_META[post.category];
-          const isOpen = openChat === post.id;
           return (
             <motion.div key={post.id} layout style={{ ...card, position: 'relative' }}>
-              {post.aiMatchScore != null && (
-                <div style={{
-                  position: 'absolute', top: '0.85rem', right: '0.85rem',
-                  background: post.aiMatchScore >= 80 ? `${bg.accent}22` : 'rgba(255,255,255,0.7)',
-                  border: `1px solid ${post.aiMatchScore >= 80 ? bg.accent : bg.cardBorder}`,
-                  borderRadius: 999, padding: '0.2rem 0.6rem',
-                  fontSize: '0.7rem', fontWeight: 700,
-                  color: post.aiMatchScore >= 80 ? bg.accent : bg.inkSoft,
-                }}>
-                  {post.aiMatchScore}%
-                </div>
-              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
                 <span style={{
                   background: `${meta.color}18`, color: meta.color,
@@ -1135,12 +1291,23 @@ function RecruitBoard(props: {
                 }}>
                   {meta.label}
                 </span>
-                <span style={{ fontSize: '0.78rem', color: bg.inkSoft }}>{post.authorHandle}</span>
+                {post.fitLevel !== 'unknown' && (
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    border: `1px solid ${post.fitLevel === 'same' ? bg.accent : bg.cardBorder}`,
+                    background: post.fitLevel === 'same' ? `${bg.accent}18` : 'rgba(255,255,255,0.7)',
+                    color: post.fitLevel === 'same' ? bg.accentText : bg.inkSoft,
+                    borderRadius: post.fitLevel === 'far' ? 6 : 999,
+                    padding: '0.15rem 0.55rem', fontSize: '0.7rem', fontWeight: 700,
+                  }}>
+                    {FIT_META[post.fitLevel].label}
+                  </span>
+                )}
                 {post.location && <span style={{ fontSize: '0.72rem', color: bg.inkSoft }}>{post.location}</span>}
                 {post.dateRange && <span style={{ fontSize: '0.72rem', color: bg.inkSoft }}>{post.dateRange}</span>}
                 {post.followerRange && <span style={{ fontSize: '0.72rem', color: bg.inkSoft }}>{post.followerRange}</span>}
               </div>
-              <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.05rem', color: bg.ink, margin: '0 0 0.4rem', paddingRight: '4rem' }}>
+              <h3 style={{ fontFamily: IRIS_FONTS.serif, fontSize: '1.05rem', color: bg.ink, margin: '0 0 0.4rem' }}>
                 {post.title}
               </h3>
               <p style={{ fontSize: '0.82rem', color: bg.inkSoft, lineHeight: 1.65, margin: '0 0 0.65rem', whiteSpace: 'pre-wrap' }}>
@@ -1153,60 +1320,34 @@ function RecruitBoard(props: {
                   ))}
                 </div>
               )}
-              {post.aiMatchReason && post.aiMatchScore && post.aiMatchScore >= 70 && (
-                <p style={{ fontSize: '0.72rem', color: bg.accentText, background: `${bg.accent}0d`, borderRadius: 8, padding: '0.35rem 0.6rem', marginBottom: 8 }}>
-                  {post.aiMatchReason}
+              {post.fitLevel !== 'unknown' && (
+                <p style={{ fontSize: '0.72rem', color: bg.accentText, background: `${bg.accent}0d`, borderRadius: 8, padding: '0.35rem 0.6rem', marginBottom: 8, lineHeight: 1.6 }}>
+                  {post.fitReason}
                 </p>
               )}
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                {['👍', '🔥', '💛', '🤝'].map(e => (
-                  <button key={e} onClick={() => addReaction(post.id, e)}
-                    style={{ background: 'rgba(255,255,255,0.7)', border: `1px solid ${bg.cardBorder}`, borderRadius: 999, padding: '0.3rem 0.65rem', fontSize: '0.8rem', cursor: 'pointer', minHeight: 36 }}>
-                    {e} {post.reactions[e] || ''}
-                  </button>
-                ))}
-                <button onClick={() => setOpenChat(isOpen ? null : post.id)}
+                <button onClick={() => copyPost(post)}
+                  style={{ ...btnSmallPrimary(bg), minHeight: 44, padding: '0.55rem 1rem', fontSize: '0.8rem' }}>
+                  {copiedId === post.id
+                    ? <><Check size={13} style={{ marginRight: 5, verticalAlign: -2 }} />コピーしました</>
+                    : <><Copy size={13} style={{ marginRight: 5, verticalAlign: -2 }} />文章をコピー</>}
+                </button>
+                <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer"
                   style={{
-                    marginLeft: 'auto', padding: '0.4rem 1rem', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700,
-                    background: isOpen ? bg.accentSolid : 'rgba(255,255,255,0.85)',
-                    color: isOpen ? '#fff' : bg.ink,
-                    border: `1px solid ${isOpen ? bg.accent : bg.cardBorder}`, cursor: 'pointer', minHeight: 36,
+                    ...btnSmall(bg), minHeight: 44, padding: '0.55rem 1rem', fontSize: '0.8rem',
+                    textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5,
                   }}>
-                  チャット {post.chats.length > 0 ? `(${post.chats.length})` : ''}
+                  <Send size={13} />
+                  Instagram を開く
+                </a>
+                <button onClick={() => deletePost(post.id)}
+                  style={{
+                    ...btnSmall(bg), minHeight: 44, padding: '0.55rem 1rem', fontSize: '0.8rem',
+                    marginLeft: 'auto', color: '#B91C1C', borderColor: '#B91C1C33',
+                  }}>
+                  削除
                 </button>
               </div>
-              <AnimatePresence>
-                {isOpen && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    style={{ overflow: 'hidden' }}>
-                    <div style={{ marginTop: 10, borderTop: `1px solid ${bg.cardBorder}`, paddingTop: 10 }}>
-                      {post.chats.length === 0 && (
-                        <p style={{ fontSize: '0.78rem', color: bg.inkSoft, textAlign: 'center', padding: '0.4rem 0', lineHeight: 1.7 }}>まだメッセージはありません。<br />下の入力欄に書くと、この相手とのやりとりがここに残ります。</p>
-                      )}
-                      {post.chats.map(c => (
-                        <div key={c.id} style={{ marginBottom: 5 }}>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: bg.accentText }}>{c.author} </span>
-                          <span style={{ fontSize: '0.8rem', color: bg.ink }}>{c.text}</span>
-                        </div>
-                      ))}
-                      <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                        <input value={chatInput} onChange={e => setChatInput(e.target.value)}
-                          onKeyDown={e => e.key === 'Enter' && sendChat(post.id)}
-                          placeholder="メッセージを送る…"
-                          style={{
-                            flex: 1, padding: '0.55rem 0.85rem', borderRadius: 999, fontSize: '16px',
-                            border: `1px solid ${bg.cardBorder}`, background: 'rgba(255,255,255,0.9)',
-                            color: bg.ink, outline: 'none',
-                          }} />
-                        <button onClick={() => sendChat(post.id)}
-                          style={{ padding: '0.5rem 0.9rem', borderRadius: 999, background: bg.accentSolid, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem', minHeight: 40 }}>
-                          <Send size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </motion.div>
           );
         })}
@@ -1222,7 +1363,7 @@ function RecruitBoard(props: {
               onClick={e => e.stopPropagation()}
               style={{ background: '#fff', borderRadius: 20, padding: '1.5rem', maxWidth: 520, width: '100%', maxHeight: 'calc(100dvh - 2rem)', overflow: 'auto' }}>
               <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.3rem', color: '#1F1A2E', margin: '0 0 1rem' }}>
-                コラボ募集を出す
+                募集文をつくる
               </h3>
               {[
                 { label: 'タイトル *', key: 'title', placeholder: '一緒にコスメレビューしたい！', type: 'text' },
