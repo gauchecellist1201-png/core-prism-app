@@ -65,6 +65,7 @@ const StripeStatusPage = lazy(() => import('./components/StripeStatusPage'));
 const PrivacyPolicy = lazy(() => import('./legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./legal/TermsOfService'));
 const CoreSite = lazy(() => import('./corporate/CoreSite'));
+const CorpStickyCta = lazy(() => import('./corporate/CorpStickyCta'));
 const StudioSite = lazy(() => import('./studio/StudioSite'));
 const ContinuumLanding = lazy(() => import('./corporate/ContinuumLanding'));
 const StrategyDashboard = lazy(() => import('./corporate/StrategyDashboard'));
@@ -485,7 +486,8 @@ function AppRoutes() {
   if (isCorpPath()) {
     // 追従CTAは「8つのうち、あなたにはどれ？」の3問診断へ送る。
     // 8つ並べても選べないのが最大の離脱理由なので、いちばん押される場所を選ぶ入口にする。
-    return <Suspense fallback={<RouteFallback />}><CoreSite /><LpStickyCta title="8つのうち、あなたにはどれ？" sub="3問でわかります・登録もメールも不要" cta="3問で選ぶ" href="#finder" accent1="#e9cd8a" accent2="#c9a24b" /></Suspense>;
+    // 答え終わった人には、その人の一手（例:「Iris を見る →」）へ中身が入れ替わる（CorpStickyCta）。
+    return <Suspense fallback={<RouteFallback />}><CoreSite /><CorpStickyCta /></Suspense>;
   }
 
   // /continuum — CORE Continuum 特設LP(旗艦ブランド・金×黒)

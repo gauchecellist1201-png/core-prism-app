@@ -3585,3 +3585,12 @@ body[data-prism-chat-dock] [data-tour-id="kpi-sparkline"] {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ── 3問診断の下に、追従CTAぶんの逃げ場を作る（2026-08-08 実測） ──
+   画面下の追従バーは高さ67px。375pxの本番で3問に答えると、結果カードの
+   「◯◯ も見てみる →」ボタン(top 746) がバー(top 745)にちょうど覆われていた。
+   バーが出るのは 760px 未満のときだけなので、その幅でだけ下の余白を足す。
+   .lp-section-pad 側が !important の一括指定なので、こちらも同じ強さで上書きする。 */
+@media (max-width: 759px) {
+  .lp-section-pad.finder-section { padding-bottom: calc(4rem + 84px) !important; }
+}

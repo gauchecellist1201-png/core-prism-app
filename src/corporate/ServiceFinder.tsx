@@ -12,8 +12,9 @@
 //   ・「はじめの一歩」は “つないだ直後に実際に起きること” だけを書く（成果の予告はしない）
 //   ・1画面1完結。質問→結果→比較 と画面が入れ替わる（縦に足さない）
 // ============================================================
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CrystalLogo, PulseLogo, NexusLogo } from '../components/Logo';
+import { setFinderPick } from './finderStore';
 
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
@@ -222,12 +223,23 @@ export default function ServiceFinder() {
 
   const result = step >= 3 ? recommend(ans[0], ans[1], ans[2]) : null;
 
+  // 結果が出ている間だけ、画面下の追従CTAへ「この人への一手」を渡す。
+  // 比較画面に切り替えている間は渡さない（その画面ではまだ1つに決まっていないため）。
+  const pickName = mode === 'finder' && result ? result.top.name : null;
+  const pickUrl = mode === 'finder' && result ? result.top.url : null;
+  useEffect(() => {
+    setFinderPick(pickName && pickUrl ? { name: pickName, url: pickUrl } : null);
+    return () => setFinderPick(null);
+  }, [pickName, pickUrl]);
+
   return (
     <section
       id="finder"
-      className="lp-section-pad"
+      className="lp-section-pad finder-section"
       style={{
-        padding: '4.5rem 1.25rem',
+        paddingTop: '4.5rem',
+        paddingLeft: '1.25rem',
+        paddingRight: '1.25rem',
         background: 'radial-gradient(120% 100% at 50% 0%, #0E0E0E 0%, #060606 72%)',
         borderTop: '1px solid rgba(201,169,110,0.16)',
         borderBottom: '1px solid rgba(201,169,110,0.16)',
