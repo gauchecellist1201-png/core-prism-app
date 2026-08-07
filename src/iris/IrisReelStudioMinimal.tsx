@@ -87,6 +87,11 @@ interface Props {
   onConsumeTheme?: () => void;
 }
 
+// 実際に書き出す動画の大きさ。Instagram のリール推奨サイズ (1080×1920)。
+// プレビューはこれを 1/3 に縮めた 360×640 で描くが、**書き出す瞬間だけ**
+// キャンバスの中身を 1080×1920 に上げてから録画する。
+// (プレビューのまま録ると 360×640 の動画が出来上がり、Instagram 側で 3 倍に
+//  引き伸ばされて文字がにじむ。作った本人には気づけない壊れ方だった)
 const OUT_W = 1080;
 const OUT_H = 1920;
 const CANVAS_W = 360;
@@ -378,6 +383,11 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const exportWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const exportDoneRef = useRef(false);
+  /** できあがった動画の実寸 (推定しない。出来たファイルから読んだ値だけ出す) */
+  const [outSize, setOutSize] = useState<{ w: number; h: number } | null>(null);
+  /** 書き出し中に実際に描けたコマ数 (fps を偽らないため実測して持つ) */
+  const drawnFramesRef = useRef(0);
+  const [exportFps, setExportFps] = useState<number | null>(null);
 
   const totalDuration = clips.reduce((s, c) => s + c.duration, 0);
 
@@ -983,7 +993,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   }, [clips, captionPreset, totalDuration, presetId, colorMood]);
 
   // ─── 静止描画 (再生してない時) ─────
-  useEffect(() => { if (!playing) drawAt(currentTime); }, [drawAt, playing, clips, captionPreset, currentTime, presetId, colorMood]);
+  // 書き出し中は録画側の tick が毎コマ描いているので、ここで重ねて描かない
+  // (同じ絵を 2 回描くだけで、1080×1920 では純粋に倍の負荷になる)
+  useEffect(() => { if (!playing && !recording) drawAt(currentTime); }, [drawAt, playing, recording, clips, captionPreset, currentTime, presetId, colorMood]);
 
   // ─── 再生ループ ─────
   const startPlay = () => {
@@ -1194,6 +1206,14 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     if (animRef.current) cancelAnimationFrame(animRef.current);
     if (tickTimerRef.current) { clearTimeout(tickTimerRef.current); tickTimerRef.current = null; }
     if (exportWatchdogRef.current) { clearTimeout(exportWatchdogRef.current); exportWatchdogRef.current = null; }
+    // 画面用の軽い大きさに必ず戻す。どの失敗経路から来ても戻す
+    // (1080×1920 のまま置いておくと、以後のプレビューが 9 倍重くなる)
+    const canvas = canvasRef.current;
+    if (canvas && canvas.width !== CANVAS_W) {
+      canvas.width = CANVAS_W;
+      canvas.height = CANVAS_H;
+      try { drawAt(0); } catch { /* 素材が外れていても落とさない */ }
+    }
   };
 
   /** 失敗を黙って飲み込まない: 理由 + もう一度できることを必ず伝えて元の状態に戻す */
@@ -1214,7 +1234,17 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     if (recording) return;
     exportDoneRef.current = false;
     setRecording(true); setProgress(0); setExportUrl(null);
+    setOutSize(null); setExportFps(null); drawnFramesRef.current = 0;
     liveRef.current = true; // 書き出し中は字幕のフェードを本来どおり掛ける
+
+    // ここから先は「投稿する動画」を作る。プレビュー用の 360×640 のままだと
+    // Instagram で 3 倍に引き伸ばされて文字がにじむので、録画を掴む前に
+    // 中身だけ 1080×1920 に上げる (見た目の大きさは CSS 側なので変わらない)。
+    // 元に戻すのは finishExport — どの失敗経路もそこを通る。
+    canvasRef.current.width = OUT_W;
+    canvasRef.current.height = OUT_H;
+    // 1 コマ目を先に描いておく。空のキャンバスを掴むと冒頭が黒くなる。
+    try { drawAt(0); } catch { /* 描けなくても録画側の失敗処理に任せる */ }
 
     // 画面の取り込みが使えない端末 (古い Safari など) はここで止まる。
     // 掴めないまま進むと「書き出し中」から戻ってこないので、理由を出して引き返す。
@@ -1292,6 +1322,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       finishExport();
       setExportUrl(URL.createObjectURL(blob));
       setProgress(1);
+      // 実際に描けたコマ数から本当の滑らかさを出す (30fps と名乗らない)
+      if (totalDuration > 0) setExportFps(drawnFramesRef.current / totalDuration);
       // 中身のある動画がユーザーの手に渡った時だけ数える。
       // failExport も finishExport を通るので、そちらでは絶対に呼ばない（数字が嘘になる）。
       logIrisActivity('reel');
@@ -1349,6 +1381,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       // 1コマの描画で落ちてもループごと死なせない (死ぬと録画が永久に終わらない)
       try {
         drawAt(t);
+        drawnFramesRef.current += 1;
         drawFails = 0;
       } catch {
         drawFails += 1;
@@ -1370,6 +1403,23 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     };
     tick();
   };
+
+  // できあがった動画の実寸を、出来たファイル自身から読む。
+  // 「1080×1920 で書き出しました」と名乗るのではなく、本当にそうなったかを毎回測る。
+  useEffect(() => {
+    if (!exportUrl) { setOutSize(null); return; }
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.muted = true;
+    let stopped = false;
+    const onMeta = () => {
+      if (stopped) return;
+      if (v.videoWidth && v.videoHeight) setOutSize({ w: v.videoWidth, h: v.videoHeight });
+    };
+    v.addEventListener('loadedmetadata', onMeta);
+    v.src = exportUrl;
+    return () => { stopped = true; v.removeEventListener('loadedmetadata', onMeta); v.src = ''; };
+  }, [exportUrl]);
 
   const download = async () => {
     if (!exportUrl) return;
@@ -3154,6 +3204,10 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                         ? <><Loader2 size={16} className="iris-spin" /> 書き出し中 {Math.round(progress * 100)}%</>
                         : <><Wand2 size={16} /> リールを書き出す</>}
                     </button>
+                    <p style={{ margin: '10px 0 0', fontSize: 12, color: bg.inkSoft, lineHeight: 1.6 }}>
+                      {OUT_W}×{OUT_H}（Instagram のリール推奨サイズ）で書き出します。
+                      画面のプレビューは軽くするために小さく描いていますが、保存される動画はこの大きさです。
+                    </p>
                   </>
                 ) : (
                   <>
@@ -3162,6 +3216,35 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                       display: 'block', borderRadius: 18,
                       boxShadow: '0 12px 32px rgba(225,48,108,0.18)', background: '#000',
                     }} />
+
+                    {/* できた動画の実寸。カタログ値ではなく、出来たファイルから読んだ値だけ出す。
+                        推奨サイズに届かなかった時は、その事実をそのまま伝える。 */}
+                    {outSize && (outSize.w >= OUT_W ? (
+                      <p style={{ margin: '-6px 0 14px', textAlign: 'center', fontSize: 12, color: bg.inkSoft, lineHeight: 1.6 }}>
+                        できた動画は <b style={{ color: bg.ink }}>{outSize.w}×{outSize.h}</b>（Instagram のリール推奨サイズ）です
+                      </p>
+                    ) : (
+                      <div style={{
+                        margin: '-6px 0 14px', padding: '0.55rem 0.7rem',
+                        background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.4)',
+                        borderRadius: 10, fontSize: 12, color: bg.ink, lineHeight: 1.6,
+                      }}>
+                        できた動画は {outSize.w}×{outSize.h} で、推奨の {OUT_W}×{OUT_H} より小さいままです。
+                        もう一度「別ver. を書き出す」を押すと直ることがあります。
+                      </div>
+                    ))}
+                    {/* なめらかさも実測で出す。書き出し中に別のアプリへ移るとコマ数が落ちて
+                        カクつくが、作った本人には気づけないまま投稿してしまう。 */}
+                    {exportFps !== null && exportFps < 20 && (
+                      <div style={{
+                        margin: '-6px 0 14px', padding: '0.55rem 0.7rem',
+                        background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.4)',
+                        borderRadius: 10, fontSize: 12, color: bg.ink, lineHeight: 1.6,
+                      }}>
+                        この動画は 1 秒あたり約 {Math.max(1, Math.round(exportFps))} コマで、少しカクついています。
+                        書き出しの間はこの画面を開いたままにしておくと、なめらかになります。
+                      </div>
+                    )}
 
                     {/* AI 生成キャプション + ハッシュタグ */}
                     {aiResult && (
