@@ -10,6 +10,7 @@
 import { useState } from 'react';
 import { PlayCircle } from 'lucide-react';
 
+import { accentInkOnDark, whiteSafeGradient } from '../lib/accentFace';
 interface Props {
   /** カスタム URL を渡せる (例: 業界別動画) — 未指定なら /onboarding-video.mp4 */
   src?: string;
@@ -36,7 +37,7 @@ export default function OnboardingVideoEmbed({ src, accentLeft = '#A78BFA', acce
       scrollMarginTop: 24,
     }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 11, letterSpacing: '0.25em', fontWeight: 800, color: accentLeft }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 11, letterSpacing: '0.25em', fontWeight: 800, color: accentInkOnDark(accentLeft) }}>
           <PlayCircle size={14} />
           75 秒 で わかる
         </div>
@@ -66,7 +67,7 @@ export default function OnboardingVideoEmbed({ src, accentLeft = '#A78BFA', acce
             >
               <div style={{
                 width: 72, height: 72, borderRadius: 36,
-                background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+                background: whiteSafeGradient([accentLeft, accentRight], 135),
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 boxShadow: `0 12px 30px ${accentLeft}66`,
               }}>

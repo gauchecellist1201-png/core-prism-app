@@ -24,6 +24,7 @@ import { summarizeMeeting } from '../lib/meetingSummarize';
 import { transcribeAudioFile } from '../lib/audioTranscribe';
 import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
+import { whiteSafeGradient } from '../lib/accentFace';
 interface Props {
   onClose: () => void;
   onSavedToKnowledge: (title: string, content: string) => void;
@@ -396,7 +397,7 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
                 width: '100%',
                 padding: '16px 18px',
                 borderRadius: 14,
-                background: `linear-gradient(135deg, ${accentColor}, #E84B97)`,
+                background: whiteSafeGradient([accentColor, '#E84B97'], 135),
                 color: '#fff',
                 fontSize: 16, fontWeight: 800,
                 border: 'none', cursor: 'pointer',

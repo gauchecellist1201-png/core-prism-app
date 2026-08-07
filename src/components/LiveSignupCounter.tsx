@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useHonestCountUp } from '../hooks/useHonestCountUp';
 
+import { accentInkOnDark } from '../lib/accentFace';
 interface Resp { ok: boolean; count: number; source: 'live' | 'demo' | 'fallback'; asOf: string; }
 
 interface Props {
@@ -65,7 +66,7 @@ export default function LiveSignupCounter({ accentLeft = '#A78BFA', accentRight 
         }}
       >
         <div style={{
-          fontSize: 10, letterSpacing: '0.32em', color: accentRight,
+          fontSize: 10, letterSpacing: '0.32em', color: accentInkOnDark(accentRight),
           fontWeight: 800, marginBottom: 8,
         }}>
           {isDemo ? 'LIVE (デモ表示)' : 'LIVE COUNT'}

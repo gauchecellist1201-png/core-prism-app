@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, CheckCircle2, Plus } from 'lucide-react';
 
+import { accentInkOnDark } from '../lib/accentFace';
 interface Step {
   num: number;
   emoji: string;
@@ -91,7 +92,7 @@ export default function HowItWorks({ accentLeft = '#A78BFA', accentRight = '#F47
       <div style={{ maxWidth: 880, margin: '0 auto' }}>
         <div style={{
           textAlign: 'center', fontSize: 11, letterSpacing: '0.3em',
-          color: accentRight, fontWeight: 700, marginBottom: 8,
+          color: accentInkOnDark(accentRight), fontWeight: 700, marginBottom: 8,
         }}>
           HOW IT WORKS
         </div>
@@ -155,12 +156,12 @@ export default function HowItWorks({ accentLeft = '#A78BFA', accentRight = '#F47
                   }}>{s.emoji}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 11, color: accentRight, fontWeight: 800, letterSpacing: '0.18em' }}>
+                      <span style={{ fontSize: 11, color: accentInkOnDark(accentRight), fontWeight: 800, letterSpacing: '0.18em' }}>
                         STEP {s.num}
                       </span>
                       <span style={{
                         fontSize: 11, padding: '2px 9px', borderRadius: 999,
-                        background: `${accentLeft}22`, color: accentLeft, fontWeight: 800,
+                        background: `${accentLeft}22`, color: accentInkOnDark(accentLeft), fontWeight: 800,
                       }}>{s.duration}</span>
                     </div>
                     <h3 style={{ margin: '4px 0 4px', fontSize: '1.05rem', fontWeight: 900, lineHeight: 1.4 }}>{s.title}</h3>
@@ -171,7 +172,7 @@ export default function HowItWorks({ accentLeft = '#A78BFA', accentRight = '#F47
                     transition={{ duration: 0.2 }}
                     style={{ flexShrink: 0 }}
                   >
-                    <ChevronDown size={20} color={`${accentLeft}cc`} />
+                    <ChevronDown size={20} color={accentInkOnDark(accentLeft)} />
                   </motion.div>
                 </button>
                 <AnimatePresence initial={false}>

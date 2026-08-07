@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail } from 'lucide-react';
 import { submitFeedback } from '../lib/feedback';
 
+import { whiteSafeGradient } from '../lib/accentFace';
 interface Props {
   brand: 'prism' | 'iris';
 }
@@ -67,19 +68,21 @@ export default function FeedbackWidget({ brand }: Props) {
           left: 'calc(max(12px, env(safe-area-inset-left)) + 92px)',
           bottom: 'max(12px, env(safe-area-inset-bottom))',
           zIndex: 9998,
-          background: `linear-gradient(135deg, ${accent}, ${accentLight})`,
+          background: whiteSafeGradient([accent, accentLight], 135),
           color: '#fff',
           border: 'none',
           borderRadius: '50%',
           width: 40, height: 40, padding: 0,
           cursor: 'pointer',
-          boxShadow: '0 4px 14px rgba(0,0,0,0.28)',
           display: 'inline-flex',
           alignItems: 'center', justifyContent: 'center',
-          opacity: 0.72,
+          // opacity で「静かに」していたが、opacity は面だけでなく中の白アイコンも一緒に薄める
+          // ＝面とアイコンの差そのものが縮んで見えなくなる（[[env_opacity_button_kills_text_contrast]]）。
+          // 静けさは影の弱さで出し、アイコンは満額のままにする。
+          boxShadow: '0 3px 10px rgba(0,0,0,0.22)',
         }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '0.72')}
+        onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.34)')}
+        onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 3px 10px rgba(0,0,0,0.22)')}
       >
         <Mail size={16} strokeWidth={2.25} aria-hidden />
       </button>
@@ -138,7 +141,7 @@ export default function FeedbackWidget({ brand }: Props) {
                     type="button"
                     onClick={close}
                     style={{
-                      background: `linear-gradient(135deg, ${accent}, ${accentLight})`,
+                      background: whiteSafeGradient([accent, accentLight], 135),
                       color: '#fff',
                       border: 'none',
                       borderRadius: 999,
@@ -260,8 +263,9 @@ export default function FeedbackWidget({ brand }: Props) {
                     disabled={nps === null || submitting}
                     style={{
                       width: '100%',
-                      background: nps === null ? '#C4C0D0' : `linear-gradient(135deg, ${accent}, ${accentLight})`,
-                      color: '#fff',
+                      background: nps === null ? '#C4C0D0' : whiteSafeGradient([accent, accentLight], 135),
+                      // 押せない間も「送信する」の文字は読めること。灰色の面に白は 1.86 で消える
+                      color: nps === null ? '#413C4B' : '#fff',
                       border: 'none',
                       borderRadius: 999,
                       padding: '14px',

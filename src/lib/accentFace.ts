@@ -184,3 +184,29 @@ export function whiteSafeGradient(stops: string[], deg: number = 135): string {
   const safe = stops.map((s) => s.replace(/#[0-9a-fA-F]{6}\b/, (m) => whiteSafeFace(m)));
   return `linear-gradient(${deg}deg, ${safe.join(', ')})`;
 }
+
+/**
+ * 「暗い面の上で、アクセント色そのものを“文字”に使う」ときの色。
+ *
+ * 面に白を乗せる話の裏返し。業界LPの小見出し（`FOR SMB OWNERS` `PROOF` `USE CASES` 等・11px）は
+ * `color: accentLeft` をそのまま使っていたが、紫 `#9333EA` は黒に近い地の上で **3.40〜3.70**
+ * ＝小さい文字に必要な 4.5 に届いていなかった（2026-08-08 本番実測）。
+ * 面と違って「地を暗くする」逃げ道が無い（地はページ全体）ので、**文字のほうを明るく**する。
+ * 色相・彩度は変えないのでブランドの紫/桃のままに見える。
+ *
+ * bg は「その文字が乗りうる、いちばん明るい地」を渡すこと（チップの淡い面など）。
+ */
+export function accentInkOnDark(accent: string, bg: string = '#271A44'): string {
+  if (!normalizeHex(accent)) return accent;
+  try {
+    if (contrast(accent, bg) >= 4.6) return accent;
+    const [h, s, l] = hexToHsl(accent);
+    for (let i = l; i <= 1; i += 0.005) {
+      const c = hslToHex(h, s, i);
+      if (contrast(c, bg) >= 4.6) return c;
+    }
+    return '#FFFFFF';
+  } catch {
+    return accent;
+  }
+}

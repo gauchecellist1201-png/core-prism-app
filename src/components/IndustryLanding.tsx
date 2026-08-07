@@ -18,6 +18,7 @@ import HowItWorks from './HowItWorks';
 import LiveSignupCounter from './LiveSignupCounter';
 import SocialShareButtons from './SocialShareButtons';
 
+import { accentInkOnDark, whiteSafeGradient } from '../lib/accentFace';
 const FONT_SERIF_JA = '"Noto Serif JP", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"Cinzel", "Cormorant Garamond", serif';
 const FONT_SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -221,7 +222,7 @@ function Hero({ config, accentLeft, accentRight }: { config: IndustryConfig; acc
             border: `1px solid ${accentLeft}55`,
             fontFamily: FONT_SERIF_EN,
             fontSize: 11, letterSpacing: '0.25em',
-            color: accentLeft, fontWeight: 700,
+            color: accentInkOnDark(accentLeft), fontWeight: 700,
             marginBottom: '2rem',
           }}
         >
@@ -291,7 +292,7 @@ function Hero({ config, accentLeft, accentRight }: { config: IndustryConfig; acc
             marginBottom: '2rem',
           }}
         >
-          <div style={{ fontSize: 11, color: accentRight, letterSpacing: '0.2em', fontWeight: 700, marginBottom: 4 }}>
+          <div style={{ fontSize: 11, color: accentInkOnDark(accentRight), letterSpacing: '0.2em', fontWeight: 700, marginBottom: 4 }}>
             {config.heroHeroNumber.label}
           </div>
           <div style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 900, color: '#fff' }}>
@@ -319,7 +320,7 @@ function Hero({ config, accentLeft, accentRight }: { config: IndustryConfig; acc
         >
           <span aria-hidden="true" style={{
             width: 24, height: 24, borderRadius: 12,
-            background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+            background: whiteSafeGradient([accentLeft, accentRight], 135),
             color: '#fff',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 13, lineHeight: 1,
@@ -442,7 +443,7 @@ function Solution({ config, accentLeft, accentRight }: { config: IndustryConfig;
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
         <div style={{
           fontFamily: FONT_SERIF_EN,
-          fontSize: 11, letterSpacing: '0.3em', color: accentRight,
+          fontSize: 11, letterSpacing: '0.3em', color: accentInkOnDark(accentRight),
           textAlign: 'center', fontWeight: 700, marginBottom: 8,
         }}>
           SOLUTION
@@ -498,7 +499,7 @@ function Solution({ config, accentLeft, accentRight }: { config: IndustryConfig;
                   padding: '4px 12px',
                   borderRadius: 999,
                   background: `${accentRight}22`,
-                  color: accentRight,
+                  color: accentInkOnDark(accentRight),
                   fontSize: 11,
                   fontWeight: 800,
                   letterSpacing: '0.05em',
@@ -545,7 +546,7 @@ function Proof({ config, accentLeft, accentRight }: { config: IndustryConfig; ac
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
         <div style={{
           fontFamily: FONT_SERIF_EN,
-          fontSize: 11, letterSpacing: '0.3em', color: accentLeft,
+          fontSize: 11, letterSpacing: '0.3em', color: accentInkOnDark(accentLeft),
           textAlign: 'center', fontWeight: 700, marginBottom: 8,
         }}>
           PROOF
@@ -611,7 +612,7 @@ function Cases({ config, accentLeft, accentRight }: { config: IndustryConfig; ac
       <div style={{ maxWidth: 1080, margin: '0 auto' }}>
         <div style={{
           fontFamily: FONT_SERIF_EN,
-          fontSize: 11, letterSpacing: '0.3em', color: accentLeft,
+          fontSize: 11, letterSpacing: '0.3em', color: accentInkOnDark(accentLeft),
           textAlign: 'center', fontWeight: 700, marginBottom: 8,
         }}>
           USE CASES
@@ -640,7 +641,7 @@ function Cases({ config, accentLeft, accentRight }: { config: IndustryConfig; ac
               }}
             >
               <div style={{
-                fontSize: 10, letterSpacing: '0.2em', color: accentRight,
+                fontSize: 10, letterSpacing: '0.2em', color: accentInkOnDark(accentRight),
                 fontWeight: 800, marginBottom: 10,
               }}>
                 CASE 0{i + 1}
@@ -653,7 +654,7 @@ function Cases({ config, accentLeft, accentRight }: { config: IndustryConfig; ac
                 {c.persona}
               </p>
               <div style={{
-                fontSize: 11, color: accentLeft, fontWeight: 700,
+                fontSize: 11, color: accentInkOnDark(accentLeft), fontWeight: 700,
                 letterSpacing: '0.1em', marginBottom: 6,
               }}>使い方</div>
               <p style={{
@@ -663,7 +664,7 @@ function Cases({ config, accentLeft, accentRight }: { config: IndustryConfig; ac
                 {c.usage}
               </p>
               <div style={{
-                fontSize: 11, color: accentRight, fontWeight: 700,
+                fontSize: 11, color: accentInkOnDark(accentRight), fontWeight: 700,
                 letterSpacing: '0.1em', marginBottom: 6,
               }}>効果</div>
               <p style={{
@@ -719,7 +720,7 @@ function Comparison({ config, accentLeft, accentRight }: { config: IndustryConfi
       <div style={{ maxWidth: 1080, margin: '0 auto' }}>
         <div style={{
           fontFamily: FONT_SERIF_EN,
-          fontSize: 11, letterSpacing: '0.3em', color: accentRight,
+          fontSize: 11, letterSpacing: '0.3em', color: accentInkOnDark(accentRight),
           textAlign: 'center', fontWeight: 700, marginBottom: 8,
         }}>
           COMPARISON
@@ -826,7 +827,7 @@ function Pricing({ config, accentLeft, accentRight }: { config: IndustryConfig; 
             onClick={() => setYearly(false)}
             style={{
               padding: '8px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700,
-              background: !yearly ? `linear-gradient(135deg, ${accentLeft}, ${accentRight})` : 'rgba(255,255,255,0.06)',
+              background: !yearly ? whiteSafeGradient([accentLeft, accentRight], 135) : 'rgba(255,255,255,0.06)',
               color: '#fff', border: 'none', cursor: 'pointer',
             }}
           >月額</button>
@@ -834,7 +835,7 @@ function Pricing({ config, accentLeft, accentRight }: { config: IndustryConfig; 
             onClick={() => setYearly(true)}
             style={{
               padding: '8px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700,
-              background: yearly ? `linear-gradient(135deg, ${accentLeft}, ${accentRight})` : 'rgba(255,255,255,0.06)',
+              background: yearly ? whiteSafeGradient([accentLeft, accentRight], 135) : 'rgba(255,255,255,0.06)',
               color: '#fff', border: 'none', cursor: 'pointer',
             }}
           >年額 (2 ヶ月分お得)</button>
@@ -908,14 +909,14 @@ function PlanCard({ name, subtitle, price, yearly, isRecommended, accentLeft, ac
       {isRecommended && (
         <div style={{
           position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-          background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+          background: whiteSafeGradient([accentLeft, accentRight], 135),
           color: '#fff', fontSize: 10, fontWeight: 800,
           padding: '4px 14px', borderRadius: 999, letterSpacing: '0.15em',
         }}>
           ★ 推奨
         </div>
       )}
-      <p style={{ fontSize: 11, color: accentRight, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 4 }}>
+      <p style={{ fontSize: 11, color: accentInkOnDark(accentRight), fontWeight: 700, letterSpacing: '0.1em', marginBottom: 4 }}>
         {subtitle}
       </p>
       <h3 style={{ fontFamily: FONT_SERIF_JA, fontSize: 22, fontWeight: 800, marginBottom: 12 }}>
@@ -939,7 +940,7 @@ function PlanCard({ name, subtitle, price, yearly, isRecommended, accentLeft, ac
           marginTop: 18,
           borderRadius: 12,
           background: isRecommended
-            ? `linear-gradient(135deg, ${accentLeft}, ${accentRight})`
+            ? whiteSafeGradient([accentLeft, accentRight], 135)
             : 'rgba(255,255,255,0.06)',
           color: '#fff',
           textDecoration: 'none',
@@ -1107,7 +1108,7 @@ function ctaPrimary(accentLeft: string, accentRight: string): React.CSSPropertie
   return {
     display: 'inline-flex', alignItems: 'center', gap: 6,
     padding: '13px 22px', borderRadius: 999,
-    background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+    background: whiteSafeGradient([accentLeft, accentRight], 135),
     color: '#fff', fontWeight: 800, fontSize: 14,
     textDecoration: 'none',
     boxShadow: `0 8px 24px ${accentRight}55`,

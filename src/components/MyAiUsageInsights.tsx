@@ -17,6 +17,7 @@ import { Brain, MessageSquare, TrendingUp, Sparkles } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import { CXO_META, cxoDisplayName, type CxoRole, type AgentTask } from '../hooks/useAgentTaskQueue';
 
+import { whiteSafeGradient } from '../lib/accentFace';
 interface Props {
   settings: AppSettings;
 }
@@ -121,7 +122,7 @@ export default function MyAiUsageInsights({ settings }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, position: 'relative' }}>
         <div style={{
           width: 36, height: 36, borderRadius: 10,
-          background: `linear-gradient(135deg, ${accent}, #F472B6)`,
+          background: whiteSafeGradient([accent, '#F472B6'], 135),
           color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,

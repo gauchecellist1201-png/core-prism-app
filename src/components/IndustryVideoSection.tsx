@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { Play } from 'lucide-react';
 import type { IndustryConfig } from '../lp/industries';
 
+import { accentInkOnDark, whiteSafeGradient } from '../lib/accentFace';
 interface Props {
   config: IndustryConfig;
   accentLeft: string;
@@ -33,7 +34,7 @@ export default function IndustryVideoSection({ config, accentLeft, accentRight }
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
         <div style={{
           fontFamily: '"Inter","Hiragino Kaku Gothic ProN",sans-serif',
-          fontSize: 11, letterSpacing: '0.3em', color: accentLeft,
+          fontSize: 11, letterSpacing: '0.3em', color: accentInkOnDark(accentLeft),
           textAlign: 'center', fontWeight: 700, marginBottom: 8,
         }}>
           WATCH IN 2 MIN
@@ -89,7 +90,7 @@ export default function IndustryVideoSection({ config, accentLeft, accentRight }
                   top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)',
                   width: 76, height: 76, borderRadius: 38,
-                  background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+                  background: whiteSafeGradient([accentLeft, accentRight], 135),
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: `0 16px 36px ${accentLeft}66`,
                 }}

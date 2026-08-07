@@ -35,6 +35,7 @@ import { listDeliverables, logDeliverable } from '../lib/cxoDeliverables';
 import type { Persona } from '../types/identity';
 import { aiFetch } from '../lib/aiFetch';
 
+import { whiteSafeGradient } from '../lib/accentFace';
 interface Props {
   persona: Persona;
   open: boolean;
@@ -685,7 +686,7 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
                 style={{
                   width: 32, height: 32, borderRadius: 8,
                   background: input.trim() && !busy
-                    ? `linear-gradient(135deg, ${accent}, ${accent2})`
+                    ? whiteSafeGradient([accent, accent2], 135)
                     : 'rgba(255,255,255,0.08)',
                   color: input.trim() && !busy ? '#fff' : 'rgba(255,255,255,0.3)',
                   border: 'none', cursor: input.trim() && !busy ? 'pointer' : 'not-allowed',

@@ -3,6 +3,7 @@
 // 「読んでいる途中で始めたくなった瞬間」を逃さない、売れる導線の最後の一押し。
 // corp / Prism / Iris / Crystal の各LPが、自分のブランド色と主CTAを渡して使う。
 import { useEffect, useState } from 'react';
+import { contrast, whiteSafeGradient } from '../lib/accentFace';
 
 export default function LpStickyCta({
   title,
@@ -40,6 +41,14 @@ export default function LpStickyCta({
     };
   }, []);
 
+  // 白い文字を乗せる回（Prism LP は #a78bfa→#6366F1 で白 2.20、Iris は #E1306C で 4.34）だけ
+  // 面の側を「白が通るところまで」暗くする。金の面は濃い文字(ctaColor=#1a1408)を乗せるので触らない。
+  // ＝ページを読んでいる途中で「始めたくなった瞬間」に出る最後の一押しが読めない事故を面の側で塞ぐ。
+  const inkIsWhite = contrast(ctaColor, '#000000') > 15;
+  const faceBg = inkIsWhite
+    ? whiteSafeGradient([accent1, accent2], 135)
+    : `linear-gradient(135deg, ${accent1}, ${accent2})`;
+
   const btnStyle: React.CSSProperties = {
     flex: 'none',
     display: 'inline-flex',
@@ -48,7 +57,7 @@ export default function LpStickyCta({
     minHeight: 46,
     padding: '12px 20px',
     borderRadius: 999,
-    background: `linear-gradient(135deg, ${accent1}, ${accent2})`,
+    background: faceBg,
     color: ctaColor,
     fontWeight: 800,
     fontSize: 14,

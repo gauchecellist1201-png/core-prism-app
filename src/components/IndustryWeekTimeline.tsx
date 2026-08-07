@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, Sparkles, TrendingUp, Sunrise, Zap, Rocket } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
+import { accentInkOnDark, whiteSafeGradient } from '../lib/accentFace';
 interface WeekStep {
   day: string;     // '初日 (Day 1)' 等
   Icon: LucideIcon;
@@ -138,7 +139,7 @@ export default function IndustryWeekTimeline({
                     top: -22, left: '50%',
                     transform: 'translateX(-50%)',
                     width: 44, height: 44, borderRadius: 22,
-                    background: `linear-gradient(135deg, ${accent}, #F472B6)`,
+                    background: whiteSafeGradient([accent, '#F472B6'], 135),
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: `0 6px 16px ${accent}77`,
                   }}
@@ -147,7 +148,7 @@ export default function IndustryWeekTimeline({
                 </div>
 
                 <div style={{
-                  fontSize: 11, letterSpacing: '0.18em', color: accent,
+                  fontSize: 11, letterSpacing: '0.18em', color: accentInkOnDark(accent),
                   fontWeight: 800, marginTop: 24, marginBottom: 6,
                   fontFamily: '"Inter",sans-serif',
                 }}>
