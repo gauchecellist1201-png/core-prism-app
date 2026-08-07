@@ -432,12 +432,16 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                 if (step === 0) logEvent('onboarding_started');
               }}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={{
-                background: accentFaceBg(accent),
-                color: accentFaceInk(accent),
-                // 0.4 だと「選んでください」の文字自体が読めなくなる (指示が読めないのが一番困る)
-                opacity: step === 1 && choice === null ? 0.62 : 1,
-              }}
+              style={
+                // まだ選んでいない間は「押せない」と分かる見た目にする。
+                // ここで opacity を掛けると **面だけでなく中の文字まで薄まる**ので、
+                // 指示（「上のどちらかを選んでください」）自体が読めなくなる。
+                // 0.62 でも本番の実効は 3 以下だった＝薄めるのではなく、
+                // 面を落ち着いた面に差し替えて文字は満額のまま出す。
+                step === 1 && choice === null
+                  ? { background: 'var(--surface-3)', color: 'var(--fg)', border: '1px solid var(--border)' }
+                  : { background: accentFaceBg(accent), color: accentFaceInk(accent) }
+              }
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
