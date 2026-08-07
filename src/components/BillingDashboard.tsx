@@ -13,6 +13,7 @@ import {
 import { sendEmail } from '../lib/emailNotify';
 import { confirmAction } from '../lib/confirmDialog';
 import CancelFlowDialog from './CancelFlowDialog';
+import { whiteSafeFace, whiteSafeGradient, contrast, hexToHsl, hslToHex } from '../lib/accentFace';
 
 interface Props {
   onClose: () => void;
@@ -91,13 +92,53 @@ export default function BillingDashboard({ onClose }: Props) {
 
   const plan = findPlan(user.brand, user.plan);
   const accent = user.brand === 'iris' ? '#E1306C' : '#0033A0';
+  // Iris の桃 #E1306C は白文字でも白地の文字でも 4.34 で落第する（2026-08-08 実測）。
+  // 色みは変えずに明るさだけ落として 4.6 を確保した「読める側の accent」。
+  // ここは解約とプラン変更の画面なので、読めないと解約できない＝いちばん壊してはいけない。
+  const accentInk = whiteSafeFace(accent);
+  // プランカードの地は `${accent}0d` ＝ accent を 5% だけ白に重ねた膜。
+  // 純白より少し暗いので、白地で 4.61 の accentInk でもこの上では 4.31 に落ちる（実測）。
+  // その膜の実際の色を出してから、そこで 4.6 を通る濃さまで落とす。
+  const tintFace = (() => {
+    try {
+      const n = parseInt(accent.slice(1), 16);
+      const a = 0x0d / 255;
+      const mix = (c: number) => Math.round(c * a + 255 * (1 - a));
+      return `#${[mix(n >> 16 & 255), mix(n >> 8 & 255), mix(n & 255)].map(v => v.toString(16).padStart(2, '0')).join('')}`;
+    } catch { return '#FFFFFF'; }
+  })();
+  const accentInkOnTint = (() => {
+    try {
+      if (contrast(accentInk, tintFace) >= 4.6) return accentInk;
+      const [h, s, l] = hexToHsl(accent);
+      for (let i = l; i >= 0; i -= 0.005) {
+        const c = hslToHex(h, s, i);
+        if (contrast(c, tintFace) >= 4.6) return c;
+      }
+      return '#1F1A2E';
+    } catch { return accentInk; }
+  })();
   const grad = user.brand === 'iris'
-    ? 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)'
+    // 3 色グラデ（紫→桃→橙）は橙の側で白が 2 台まで落ちる。面の側で白を保証する
+    ? whiteSafeGradient(['#833AB4', '#E1306C', '#F77737'])
     : 'linear-gradient(135deg, #0033A0, #1A4FC4)';
 
-  const periodEnd = user.currentPeriodEnd
-    ? new Date(user.currentPeriodEnd * 1000).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
-    : null;
+  // 次回更新日。currentPeriodEnd は「Unix 秒の数値」の約束だが、
+  // /api/stripe/* の戻り(line 959 / 1147)は型を検査せずそのまま入れているので、
+  // 文字列や ISO 日付が入り込むと `x * 1000` が NaN になり、お金を払っている人の
+  // 請求画面に「Invalid Date」と出る。日付が確かめられない時は、嘘を出さずに黙る。
+  const periodEnd = (() => {
+    const v = user.currentPeriodEnd as unknown;
+    if (v == null) return null;
+    let d: Date | null = null;
+    if (typeof v === 'number' && Number.isFinite(v)) d = new Date(v * 1000);
+    else if (typeof v === 'string') {
+      const n = Number(v);
+      d = Number.isFinite(n) && v.trim() !== '' ? new Date(n * 1000) : new Date(v);
+    }
+    if (!d || Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+  })();
 
   const handleCancel = async () => {
     if (!user.subscriptionId) {
@@ -149,8 +190,13 @@ export default function BillingDashboard({ onClose }: Props) {
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(15,10,25,0.7)', backdropFilter: 'blur(16px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '1rem',
+        // 375x812 の実測で中身は 976px あり、中央寄せだと上下がはみ出して
+        // ✕ が -45px の画面外へ行き、どこもスクロールしないので**閉じられなかった**
+        // (お金を払っている人が解約画面に閉じ込められる / 2026-08-08 実測・根治)。
+        // 上寄せ + 自分がスクロールする、に変える。
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain',
+        padding: 'max(1rem, env(safe-area-inset-top, 0px)) 1rem calc(1rem + env(safe-area-inset-bottom, 0px))',
       }}
     >
       <motion.div
@@ -160,15 +206,20 @@ export default function BillingDashboard({ onClose }: Props) {
         style={{
           background: '#FFFFFF', borderRadius: 24, padding: '2rem',
           maxWidth: 480, width: '100%',
+          flexShrink: 0, margin: 'auto 0',
           fontFamily: 'Inter, -apple-system, sans-serif',
           color: '#1F1A2E',
           boxShadow: '0 30px 80px rgba(15,10,25,0.4)',
         }}
       >
-        {/* ヘッダ */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        {/* ヘッダ — 縦に長いので、閉じる(✕)はスクロールしても必ず手が届く位置に貼り付ける */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem',
+          position: 'sticky', top: '-2rem', zIndex: 2,
+          background: '#FFFFFF', padding: '2rem 0 0.75rem', margin: '-2rem 0 1.25rem',
+        }}>
           <div>
-            <div style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: accent, fontWeight: 700, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '0.3em', color: accentInk, fontWeight: 700, textTransform: 'uppercase' }}>
               {user.brand === 'iris' ? 'CORE Iris' : 'CORE Prism'} · 請求情報
             </div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0.2rem 0 0' }}>プラン管理</h2>
@@ -189,7 +240,7 @@ export default function BillingDashboard({ onClose }: Props) {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <p style={{ fontSize: '0.78rem', color: '#8A8593', marginBottom: '0.25rem' }}>現在のプラン</p>
+              <p style={{ fontSize: '0.78rem', color: '#6E6979', marginBottom: '0.25rem' }}>現在のプラン</p>
               <div style={{ fontSize: '1.4rem', fontWeight: 900, color: accent }}>
                 {plan?.name || user.plan}
               </div>
@@ -210,7 +261,7 @@ export default function BillingDashboard({ onClose }: Props) {
 
           {periodEnd && (
             <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-              <p style={{ fontSize: '0.78rem', color: '#8A8593', marginBottom: '0.15rem' }}>
+              <p style={{ fontSize: '0.78rem', color: '#6E6979', marginBottom: '0.15rem' }}>
                 {cancelDone ? '利用終了日' : '次回更新日'}
               </p>
               <p style={{ fontSize: '0.95rem', fontWeight: 600 }}>{periodEnd}</p>
@@ -220,7 +271,7 @@ export default function BillingDashboard({ onClose }: Props) {
           {/* プランに含まれる主な機能 (やさしい日本語で 4 つだけ) */}
           {plan?.features && plan.features.length > 0 && (
             <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-              <p style={{ fontSize: '0.72rem', letterSpacing: '0.15em', color: '#8A8593', fontWeight: 700, marginBottom: '0.5rem' }}>
+              <p style={{ fontSize: '0.72rem', letterSpacing: '0.15em', color: '#6E6979', fontWeight: 700, marginBottom: '0.5rem' }}>
                 このプランで できること
               </p>
               <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: '0.3rem' }}>
@@ -229,7 +280,7 @@ export default function BillingDashboard({ onClose }: Props) {
                     fontSize: '0.82rem', color: '#1F1A2E', display: 'flex',
                     alignItems: 'flex-start', gap: '0.45rem', lineHeight: 1.5,
                   }}>
-                    <span style={{ color: accent, fontWeight: 800, flexShrink: 0 }}>✓</span>
+                    <span style={{ color: accentInkOnTint, fontWeight: 800, flexShrink: 0 }}>✓</span>
                     <span>{f}</span>
                   </li>
                 ))}
@@ -283,7 +334,7 @@ export default function BillingDashboard({ onClose }: Props) {
           background: '#F8F7FA', border: '1px solid rgba(0,0,0,0.06)',
           marginBottom: '1.25rem',
         }}>
-          <p style={{ fontSize: '0.78rem', color: '#8A8593', marginBottom: '0.3rem' }}>登録メールアドレス</p>
+          <p style={{ fontSize: '0.78rem', color: '#6E6979', marginBottom: '0.3rem' }}>登録メールアドレス</p>
           <p style={{ fontFamily: 'monospace', fontSize: '0.92rem', fontWeight: 600 }}>{user.email}</p>
         </div>
 
@@ -294,7 +345,7 @@ export default function BillingDashboard({ onClose }: Props) {
               <button
                 onClick={() => { setShowPlanSwitcher(s => !s); setSwitchMsg(null); }}
                 style={{
-                  flex: 1, background: showPlanSwitcher ? '#1F1A2E' : accent, color: '#fff',
+                  flex: 1, background: showPlanSwitcher ? '#1F1A2E' : accentInk, color: '#fff',
                   border: 'none', borderRadius: 999, padding: '0.7rem',
                   fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer',
                 }}
@@ -306,8 +357,8 @@ export default function BillingDashboard({ onClose }: Props) {
                 disabled={portalBusy || !user.stripeCustomerId}
                 title={!user.stripeCustomerId ? 'サブスク開始後に利用可能' : 'Stripe で詳細管理'}
                 style={{
-                  flex: 1, background: '#fff', color: accent,
-                  border: `1px solid ${accent}`, borderRadius: 999, padding: '0.7rem',
+                  flex: 1, background: '#fff', color: accentInk,
+                  border: `1px solid ${accentInk}`, borderRadius: 999, padding: '0.7rem',
                   fontSize: '0.88rem', fontWeight: 700,
                   cursor: portalBusy ? 'wait' : 'pointer',
                   opacity: !user.stripeCustomerId ? 0.5 : 1,
@@ -364,17 +415,17 @@ export default function BillingDashboard({ onClose }: Props) {
                               <div style={{ fontSize: '0.92rem', fontWeight: 700, color: isCurrent ? accent : '#1F1A2E' }}>
                                 {p.name}
                               </div>
-                              <div style={{ fontSize: '0.72rem', color: '#8A8593' }}>{p.tagline}</div>
+                              <div style={{ fontSize: '0.72rem', color: '#6E6979' }}>{p.tagline}</div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                               <div style={{ fontSize: '0.95rem', fontWeight: 800, color: isCurrent ? accent : '#1F1A2E' }}>
                                 ¥{p.priceJpy.toLocaleString()}
-                                <span style={{ fontSize: '0.7rem', fontWeight: 500, color: '#8A8593' }}>/月</span>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 500, color: '#6E6979' }}>/月</span>
                               </div>
                               {isCurrent && (
-                                <div style={{ fontSize: '0.65rem', color: accent, fontWeight: 700, letterSpacing: '0.1em' }}>現在</div>
+                                <div style={{ fontSize: '0.65rem', color: accentInk, fontWeight: 700, letterSpacing: '0.1em' }}>現在</div>
                               )}
-                              {busy && <div style={{ fontSize: '0.7rem', color: '#8A8593' }}>変更中…</div>}
+                              {busy && <div style={{ fontSize: '0.7rem', color: '#6E6979' }}>変更中…</div>}
                             </div>
                           </button>
                         );
@@ -453,7 +504,7 @@ export default function BillingDashboard({ onClose }: Props) {
                 <button
                   onClick={() => setConfirmCancel(true)}
                   style={{
-                    width: '100%', background: 'transparent', color: '#8A8593',
+                    width: '100%', background: 'transparent', color: '#6E6979',
                     border: '1px solid rgba(0,0,0,0.12)', borderRadius: 999,
                     padding: '0.75rem', fontSize: '0.88rem', cursor: 'pointer',
                     transition: 'border-color 0.2s, color 0.2s',
@@ -472,7 +523,7 @@ export default function BillingDashboard({ onClose }: Props) {
           borderTop: '1px solid rgba(0,0,0,0.08)',
         }}>
           <p style={{
-            fontSize: '0.7rem', letterSpacing: '0.2em', color: '#8A8593',
+            fontSize: '0.7rem', letterSpacing: '0.2em', color: '#6E6979',
             fontWeight: 700, marginBottom: '0.6rem', textTransform: 'uppercase',
           }}>
             アカウント
@@ -496,7 +547,7 @@ export default function BillingDashboard({ onClose }: Props) {
               <button
                 onClick={() => setConfirmLogout('reset')}
                 style={{
-                  width: '100%', background: 'transparent', color: '#8A8593',
+                  width: '100%', background: 'transparent', color: '#6E6979',
                   border: '1px dashed rgba(0,0,0,0.15)', borderRadius: 12,
                   padding: '0.6rem', fontSize: '0.78rem', cursor: 'pointer',
                 }}
@@ -505,7 +556,9 @@ export default function BillingDashboard({ onClose }: Props) {
                 このブラウザのデータをぜんぶ消して最初から
               </button>
               <p style={{
-                margin: '0.2rem 0 0', fontSize: '0.7rem', color: '#A8A3B0',
+                // ここは「ログアウトしても課金は止まらない」＝お金の話。実測 2.46 で
+                // いちばん読めない文字だった（読み落とすと請求が続く）ので、本文と同じ濃さに
+                margin: '0.2rem 0 0', fontSize: '0.7rem', color: '#6E6979',
                 lineHeight: 1.6, textAlign: 'center',
               }}>
                 ※ ログアウトしてもプランや課金は止まりません。<br />

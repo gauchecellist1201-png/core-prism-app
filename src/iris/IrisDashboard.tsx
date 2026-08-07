@@ -43,6 +43,7 @@ import {
   CheckCircle2, AlertTriangle, Bot, Lightbulb,
   Briefcase, Smartphone,
   Save, X, Target, Zap, Smile, PartyPopper,
+  CreditCard, ChevronRight,
 } from 'lucide-react';
 import IrisCommandBar from './IrisCommandBar';
 import IrisDealCaptureModal from './IrisDealCaptureModal';
@@ -1754,6 +1755,39 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   </div>
                 );
               })}
+              {/* お支払い・解約 — LP と申し込み画面で「解約は1タップ」と約束しているのに、
+                  Iris にはその入口が1つも無かった (2026-08-08 根治)。
+                  お金を払っている人がいる時だけ出す＝押しても何も無い入口は作らない。 */}
+              {billingUser && (
+                <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(31,26,46,0.08)' }}>
+                  <button
+                    onClick={() => { setMoreOpen(false); window.dispatchEvent(new CustomEvent('iris:open-billing')); }}
+                    style={{
+                      width: '100%', minHeight: 56,
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      background: 'rgba(248,244,252,1)', border: '1px solid rgba(31,26,46,0.08)',
+                      borderRadius: 14, padding: '0.9rem 1rem',
+                      fontSize: '0.9rem', fontWeight: 700, color: '#1F1A2E',
+                      cursor: 'pointer', textAlign: 'left',
+                      fontFamily: IRIS_FONTS.body,
+                    }}>
+                    <span style={{
+                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                      background: 'rgba(31,26,46,0.06)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <CreditCard size={18} color="#1F1A2E" strokeWidth={2.2} />
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'block' }}>お支払い・解約</span>
+                      <span style={{ display: 'block', fontSize: '0.74rem', fontWeight: 500, color: '#5A4570', marginTop: 2, lineHeight: 1.4 }}>
+                        解約はこの中のボタン1つ。電話も、理由の入力も、引き止めもありません
+                      </span>
+                    </span>
+                    <ChevronRight size={18} color="#5A4570" strokeWidth={2.2} />
+                  </button>
+                </div>
+              )}
               <button onClick={() => setMoreOpen(false)}
                 style={{
                   width: '100%', marginTop: '1rem',

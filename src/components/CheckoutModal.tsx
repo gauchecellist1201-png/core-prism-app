@@ -484,7 +484,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
               </button>
 
               {/* Day 2: 不安解消の FAQ 3 件 (accordion) — 「やめられる?」「データ消える?」「請求書は?」 */}
-              <FaqAccordion />
+              <FaqAccordion brand={brand} />
             </motion.div>
           )}
 
@@ -805,13 +805,18 @@ function getPlanOneLiner(brand: Brand, planId: string): string {
 }
 
 // ─── Day 2: 不安解消 FAQ 3 件 (accordion) ───
-function FaqAccordion() {
+function FaqAccordion({ brand }: { brand: Brand }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  // 解約の場所はブランドで違う。実際に存在する場所だけを書く
+  // (Iris は「設定」が無く、下の「全機能」→「お支払い・解約」が入口)
+  const cancelPath = brand === 'iris'
+    ? '画面下の「全機能」→「お支払い・解約」'
+    : 'ダッシュボード右上の「設定 → 課金」';
   const faqs: Array<{ id: string; q: string; a: string }> = [
     {
       id: 'cancel',
       q: '解約はいつでもできますか?',
-      a: 'はい、いつでもダッシュボード右上の「設定 → 課金」から 1 クリックで解約できます。違約金や引き止めの電話は一切ありません。解約後も契約期間の末日まではそのまま使えます。',
+      a: `はい、いつでも${cancelPath}から 1 クリックで解約できます。違約金や引き止めの電話は一切ありません。解約後も契約期間の末日まではそのまま使えます。`,
     },
     {
       id: 'data',

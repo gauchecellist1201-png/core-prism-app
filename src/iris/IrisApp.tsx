@@ -18,6 +18,7 @@ import WowOnboarding from '../components/WowOnboarding';
 import CheckoutModal from '../components/CheckoutModal';
 import { useBillingUser, IRIS_PLANS, isAuthorized as isAuthorizedFn, isMasterAuth, isTrialExpired, syncSubscriptionState, type Plan } from '../lib/billing';
 import TrialExpiredLock from '../components/TrialExpiredLock';
+import BillingDashboard from '../components/BillingDashboard';
 import IrisFirstRunTour, { shouldShowFirstRunTour } from './IrisFirstRunTour';
 import SampleModeBanner from '../components/SampleModeBanner';
 import { isDemoActive } from '../lib/onboarding';
@@ -51,6 +52,11 @@ export default function IrisApp() {
     return hasEntered();
   });
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
+  // 「お支払い・解約」画面。LP と申し込み画面で「解約は1タップ」と約束しているのに、
+  // Iris には設定/課金の入口が1つも無く、SettingsModal(→BillingDashboard) は
+  // Prism 本体ルート(App.tsx)にしか置かれていなかった＝Iris の有料会員は
+  // アプリの中から解約もプラン変更も領収書のダウンロードもできなかった (2026-08-08 根治)。
+  const [showBilling, setShowBilling] = useState(false);
   const [tutorialDoneTick, setTutorialDoneTick] = useState(0);
   // 初回 3 ステップの Wow ツアー（入室後に 1 回だけ）
   const [showFirstRunTour, setShowFirstRunTour] = useState(false);
@@ -132,6 +138,13 @@ export default function IrisApp() {
     return () => window.removeEventListener('iris:open-plan', onOpenPlan as EventListener);
   }, []);
 
+  // 「お支払い・解約」を開く (全機能シートの入口 / 今後ふえる導線から)
+  useEffect(() => {
+    const open = () => setShowBilling(true);
+    window.addEventListener('iris:open-billing', open);
+    return () => window.removeEventListener('iris:open-billing', open);
+  }, []);
+
   if (!entered) {
     return (
       <>
@@ -211,6 +224,10 @@ export default function IrisApp() {
           onSuccess={() => { markEntered(); setEntered(true); }}
         />
       )}
+      {/* お支払い・解約 (プラン / 次回更新日 / 解約 / 領収書 / ログアウト) */}
+      <AnimatePresence>
+        {showBilling && <BillingDashboard key="iris-billing" onClose={() => setShowBilling(false)} />}
+      </AnimatePresence>
     </>
   );
 }

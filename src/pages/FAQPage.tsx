@@ -24,6 +24,16 @@ import { REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS } from '
 /** 会社が公開している唯一の連絡先（/corp のフッター・お問い合わせと同じもの） */
 const CONTACT_MAIL = 'core.inc.guild@gmail.com';
 
+/**
+ * 解約ボタンの場所は Prism と Iris で違う。このページは /faq と /iris/faq の
+ * 両方で出るので、実際にその人の画面に存在する道順だけを書く。
+ * （2026-08-08: Iris には「設定」自体が無いのに Prism の道順を書いていた）
+ */
+const IS_IRIS_FAQ = typeof window !== 'undefined' && window.location.pathname.startsWith('/iris');
+const CANCEL_PATH = IS_IRIS_FAQ
+  ? '画面下の「全機能」→「お支払い・解約」→「サブスクリプションを解約する」'
+  : '設定 → プラン → 「サブスクリプションを解約する」';
+
 interface FaqItem {
   q: string;
   a: React.ReactNode;
@@ -137,7 +147,7 @@ const FAQS: FaqItem[] = [
     a: (
       <>
         <p>
-          はい。アプリの <strong>設定 → プラン → 「サブスクリプションを解約する」</strong> から、その場で手続きできます。
+          はい。アプリの <strong>{CANCEL_PATH}</strong> から、その場で手続きできます。
           電話での確認や、こちらからの引き止めの連絡は一切ありません。
         </p>
         <p>
