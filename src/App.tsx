@@ -483,9 +483,9 @@ function AppRoutes() {
 
   // /corp — CORE 法人 LP
   if (isCorpPath()) {
-    // 追従CTAは「7つのうち、あなたにはどれ？」の3問診断へ送る。
-    // 7つ並べても選べないのが最大の離脱理由なので、いちばん押される場所を選ぶ入口にする。
-    return <Suspense fallback={<RouteFallback />}><CoreSite /><LpStickyCta title="7つのうち、あなたにはどれ？" sub="3問でわかります・登録もメールも不要" cta="3問で選ぶ" href="#finder" accent1="#e9cd8a" accent2="#c9a24b" /></Suspense>;
+    // 追従CTAは「8つのうち、あなたにはどれ？」の3問診断へ送る。
+    // 8つ並べても選べないのが最大の離脱理由なので、いちばん押される場所を選ぶ入口にする。
+    return <Suspense fallback={<RouteFallback />}><CoreSite /><LpStickyCta title="8つのうち、あなたにはどれ？" sub="3問でわかります・登録もメールも不要" cta="3問で選ぶ" href="#finder" accent1="#e9cd8a" accent2="#c9a24b" /></Suspense>;
   }
 
   // /continuum — CORE Continuum 特設LP(旗艦ブランド・金×黒)

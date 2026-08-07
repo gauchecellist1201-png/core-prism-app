@@ -1,5 +1,5 @@
 // ============================================================
-// ServiceFinder — 「7つのうち、あなたにはどれ？」3問診断＋7サービス比較
+// ServiceFinder — 「8つのうち、あなたにはどれ？」3問診断＋8サービス比較
 // 配置: /corp のヒーロー直下（初めて来た人が最初に出会う分岐）
 //
 // 設計の意図（2026-07-29 夜間アップグレード）:
@@ -13,7 +13,7 @@
 //   ・1画面1完結。質問→結果→比較 と画面が入れ替わる（縦に足さない）
 // ============================================================
 import { useState } from 'react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CrystalLogo, PulseLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CrystalLogo, PulseLogo, NexusLogo } from '../components/Logo';
 
 const FONT_DISPLAY = '"Cinzel", "Noto Serif JP", serif';
 const FONT_SERIF_JA = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
@@ -41,7 +41,7 @@ function MarkStep({ size = 15, color = '#C9A96E' }: { size?: number; color?: str
   );
 }
 
-export type ServiceKey = 'lume' | 'guild' | 'prism' | 'iris' | 'pulse' | 'resonance' | 'crystal';
+export type ServiceKey = 'lume' | 'guild' | 'prism' | 'iris' | 'pulse' | 'resonance' | 'crystal' | 'nexus';
 
 type Service = {
   key: ServiceKey;
@@ -61,6 +61,14 @@ type Service = {
 
 // 価格は src/corporate/CoreSite.tsx の PLATFORM_PLANS と同じ実額
 export const SERVICES: Service[] = [
+  {
+    key: 'nexus', name: 'Nexus',
+    who: '夢や目標はあるのに、日々のことに追われて前に進めない人',
+    can: '価値観・夢・目標から今日の一手までをつなぎ、話しかけると画面に描きながら並走する',
+    price: '無料', priceNote: '〜 / 上位 ¥9,800・¥19,800 / 月（税込）',
+    firstStep: '大切にしていることを3つ書くと、あなたの夢リストづくりが始まります',
+    accent: '#4dc3ff', url: 'https://core-nexus-kappa.vercel.app/lp/', Logo: NexusLogo,
+  },
   {
     key: 'lume', name: 'Lume',
     who: 'まず、ネットの上に自分の入口をひとつ持ちたい人',
@@ -140,6 +148,7 @@ export const QUESTIONS: Question[] = [
       { id: 'manage', label: '数字も事務もぐちゃぐちゃで、経営の判断ができない', scores: { prism: 10, guild: 3 } },
       { id: 'team', label: 'チームで決まらない。決めても動かない', scores: { guild: 10, prism: 3 } },
       { id: 'body', label: '自分のからだが心配。この働き方が続かない', scores: { pulse: 10 } },
+      { id: 'dream', label: '夢や目標はあるのに、日々のことに追われて前に進まない', scores: { nexus: 10, prism: 2 } },
     ],
   },
   {
@@ -151,7 +160,7 @@ export const QUESTIONS: Question[] = [
       { id: 'line', label: 'LINE', phrase: 'お客様がいるのは LINE', scores: { resonance: 4 } },
       { id: 'site', label: '自分のサイト、またはお店', phrase: 'お客様は自分のサイトやお店に来る', scores: { crystal: 4, lume: 2 } },
       { id: 'none', label: 'まだ、ほとんど無い', phrase: '接点は、これから作る', scores: { lume: 4, iris: 2 } },
-      { id: 'inside', label: '社内の話なので、お客様の接点は関係ない', phrase: '社外よりも、まず社内を整えたい', scores: { prism: 2, guild: 2, pulse: 2 } },
+      { id: 'inside', label: '社内の話なので、お客様の接点は関係ない', phrase: '社外よりも、まず社内を整えたい', scores: { prism: 2, guild: 2, pulse: 2, nexus: 2 } },
     ],
   },
   {
@@ -159,7 +168,7 @@ export const QUESTIONS: Question[] = [
     title: 'いま、動かしているのは？',
     note: '規模でおすすめが変わります',
     choices: [
-      { id: 'solo', label: 'ひとり（個人・フリーランス）', scores: { lume: 1, iris: 1, pulse: 1 } },
+      { id: 'solo', label: 'ひとり（個人・フリーランス）', scores: { lume: 1, iris: 1, pulse: 1, nexus: 1 } },
       { id: 'small', label: '数人のチーム', scores: { guild: 1, prism: 1 } },
       { id: 'shop', label: 'お店・会社（お客様がいらっしゃる）', scores: { crystal: 1, resonance: 1, prism: 1 } },
     ],
@@ -170,10 +179,10 @@ export const QUESTIONS: Question[] = [
  * 3つの答えから、おすすめ1つと「次に足すなら」1つを決める純粋関数。
  * 同点のときは下の TIE_ORDER（軽い入口が先）で決まるので、答えは毎回同じになる。
  */
-const TIE_ORDER: ServiceKey[] = ['lume', 'iris', 'resonance', 'prism', 'guild', 'crystal', 'pulse'];
+const TIE_ORDER: ServiceKey[] = ['nexus', 'lume', 'iris', 'resonance', 'prism', 'guild', 'crystal', 'pulse'];
 
 export function recommend(a1: string, a2: string, a3: string) {
-  const total: Record<ServiceKey, number> = { lume: 0, guild: 0, prism: 0, iris: 0, pulse: 0, resonance: 0, crystal: 0 };
+  const total: Record<ServiceKey, number> = { lume: 0, guild: 0, prism: 0, iris: 0, pulse: 0, resonance: 0, crystal: 0, nexus: 0 };
   const picked = [
     QUESTIONS[0].choices.find(c => c.id === a1),
     QUESTIONS[1].choices.find(c => c.id === a2),
@@ -238,7 +247,7 @@ export default function ServiceFinder() {
               marginBottom: '0.8rem',
             }}
           >
-            7つのうち、あなたにはどれ？
+            8つのうち、あなたにはどれ？
           </h2>
           <p style={{ fontFamily: FONT_SANS, fontSize: '0.84rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.95 }}>
             3つ答えるだけで、いまのあなたに効く1つと、その理由・料金までお見せします。
@@ -316,7 +325,7 @@ function QuestionView({ q, step, onAnswer, onBack, onCompare }: {
         {onBack ? (
           <button type="button" onClick={onBack} style={subtleBtn}>← ひとつ戻る</button>
         ) : <span />}
-        <button type="button" onClick={onCompare} style={subtleBtn}>7つを見比べる →</button>
+        <button type="button" onClick={onCompare} style={subtleBtn}>8つを見比べる →</button>
       </div>
     </div>
   );
@@ -397,7 +406,7 @@ function ResultView({ result, onReset, onCompare }: {
           <strong style={{ color: '#F1E6CE', fontWeight: 700 }}>次に足すなら {second.name}。</strong>
           {second.can}（{second.price}{second.priceNote}）。
           <br />
-          CORE の7つは、あとからつなげます。最初から全部そろえる必要はありません。
+          CORE の8つは、あとからつなげます。最初から全部そろえる必要はありません。
         </p>
 
         <a
@@ -425,7 +434,7 @@ function ResultView({ result, onReset, onCompare }: {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', marginTop: '1.1rem' }}>
         <button type="button" onClick={onReset} style={subtleBtn}>← もう一度やる</button>
-        <button type="button" onClick={onCompare} style={subtleBtn}>7つを見比べる →</button>
+        <button type="button" onClick={onCompare} style={subtleBtn}>8つを見比べる →</button>
       </div>
     </div>
   );
@@ -435,7 +444,7 @@ function CompareView({ onBack }: { onBack: () => void }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
-        <p style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', fontWeight: 800, color: '#C9A96E', letterSpacing: '0.06em' }}>7つ、すべて</p>
+        <p style={{ fontFamily: FONT_SANS, fontSize: '0.78rem', fontWeight: 800, color: '#C9A96E', letterSpacing: '0.06em' }}>8つ、すべて</p>
         <button type="button" onClick={onBack} style={subtleBtn}>← 3問で選ぶ</button>
       </div>
 
