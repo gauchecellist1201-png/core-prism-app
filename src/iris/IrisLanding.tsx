@@ -23,6 +23,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useMasterTap } from '../lib/masterTap';
 import { IRIS_COLORS, IRIS_FONTS } from './irisStyle';
+import { whiteSafeGradient } from '../lib/accentFace';
 import { IrisLogo } from '../components/Logo';
 import { seedDemoData, setDemoActive, clearDemoData } from '../lib/onboarding';
 import { REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS } from '../lib/referral';
@@ -46,7 +47,13 @@ const G_GOLD = IRIS_COLORS.gold;       // #FCB045 — 暗背景でそのまま�
 const G_PINK = IRIS_COLORS.hotPink;    // #E1306C — 面・枠用
 const PINK_TXT = '#FF6B9D';            // 暗背景で読めるピンク文字
 const G_PURPLE = IRIS_COLORS.purpleLt; // #B07BD9
+// 文字を「グラデで塗る」用（暗い地の上に明るい色が乗る＝そのままで読める）
 const GRAD = `linear-gradient(120deg, ${G_GOLD} 0%, ${G_PINK} 50%, ${G_PURPLE} 100%)`;
+// 「面」にして白文字を乗せる用。この3色は白に対して 金1.84 / 桃4.34 / 紫3.14 ＝
+// Prism LP と同じ壊れ方で、主CTA（無料でためす・3日間 無料ではじめる・
+// プラン名 を3日間 無料でためす）の文字が読めていなかった（2026-08-08 実測）。
+// 色相・彩度は変えず明るさだけ落とす＝金→桃→紫の流れは保ったまま白が 4.6 通る。
+const GRAD_FACE = whiteSafeGradient([`${G_GOLD} 0%`, `${G_PINK} 50%`, `${G_PURPLE} 100%`], 120);
 const sectionPad = '4.75rem 1.25rem';
 
 // ─── 痛み ────────────────────────────────────────────────────
@@ -430,7 +437,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 style={{ position: 'relative', background: SURFACE, border: `1px solid ${LINE}`, borderRadius: 18, padding: '1.7rem 1.35rem 1.55rem', textAlign: 'center' }}>
                 <div style={{
                   width: 54, height: 54, borderRadius: '50%', margin: '0 auto 0.95rem',
-                  background: GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: GRAD_FACE, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: `0 10px 30px ${G_PINK}55`,
                 }}>
                   <st.Icon size={24} color="#fff" strokeWidth={2.2} />
@@ -473,7 +480,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                   boxShadow: p.highlight ? `0 22px 60px ${G_PINK}33` : 'none',
                 }}>
                 {p.highlight && (
-                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: GRAD, color: '#fff', fontSize: '0.65rem', fontWeight: 800, padding: '0.32rem 0.95rem', borderRadius: 999, letterSpacing: '0.15em', whiteSpace: 'nowrap' }}>人気</div>
+                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: GRAD_FACE, color: '#fff', fontSize: '0.65rem', fontWeight: 800, padding: '0.32rem 0.95rem', borderRadius: 999, letterSpacing: '0.15em', whiteSpace: 'nowrap' }}>人気</div>
                 )}
                 <p style={{ fontFamily: IRIS_FONTS.serif, fontStyle: 'italic', fontSize: '0.85rem', color: G_GOLD, margin: '0 0 0.4rem' }}>— {p.tag}</p>
                 <h3 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '1.7rem', fontWeight: 500, margin: '0 0 0.3rem', color: TXT }}>{p.name}</h3>
@@ -492,7 +499,7 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 </ul>
                 <button onClick={() => handlePlan(p.id)} style={{
                   width: '100%',
-                  background: p.highlight ? GRAD : 'rgba(255,255,255,0.07)',
+                  background: p.highlight ? GRAD_FACE : 'rgba(255,255,255,0.07)',
                   color: '#fff',
                   border: p.highlight ? 'none' : `1px solid ${LINE}`,
                   padding: '1rem', borderRadius: 12,
@@ -714,12 +721,12 @@ const eyebrow = (color: string): React.CSSProperties => ({
 });
 const navLink: React.CSSProperties = { fontSize: '0.85rem', color: 'rgba(246,240,250,0.72)', textDecoration: 'none', fontWeight: 600 };
 const ctaBtnSmall: React.CSSProperties = {
-  background: GRAD, color: '#fff', padding: '0.6rem 1.1rem', borderRadius: 10,
+  background: GRAD_FACE, color: '#fff', padding: '0.6rem 1.1rem', borderRadius: 10,
   fontSize: '0.85rem', fontWeight: 800, border: 'none', cursor: 'pointer',
   boxShadow: `0 4px 16px ${G_PINK}55`, whiteSpace: 'nowrap',
 };
 const ctaBtnHero: React.CSSProperties = {
-  background: GRAD, color: '#fff', padding: '1.05rem 2.1rem', borderRadius: 14,
+  background: GRAD_FACE, color: '#fff', padding: '1.05rem 2.1rem', borderRadius: 14,
   fontSize: '1.02rem', fontWeight: 800, border: 'none', cursor: 'pointer',
   boxShadow: `0 14px 40px ${G_PINK}66`, letterSpacing: '0.02em', minHeight: 44,
 };

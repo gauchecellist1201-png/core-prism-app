@@ -28,6 +28,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS, TRIAL_WITH_REFERRAL_DAYS, getPendingReferralInviter, getPendingReferralMessage } from '../lib/referral';
 import { seedDemoData, setDemoActive } from '../lib/onboarding';
+import { whiteSafeGradient } from '../lib/accentFace';
 
 // ─── 黒ベースの色設計 ────────────────────────────────────────
 // 暗背景では「濃い色」は読めない。文字と枠には必ず明るい側(400番台)を使う。
@@ -47,7 +48,14 @@ const A_GREEN = '#4ADE80';
 const A_AMBER = '#FBBF24';
 const GOLD = '#C9A24B'; // CORE 共通の格
 
+// 文字を「グラデで塗る」用（暗い地の上に明るい色が乗る＝そのままで読める）
 const GRAD = `linear-gradient(120deg, ${A_BLUE} 0%, ${A_PURPLE} 50%, ${A_PINK} 100%)`;
+// 「面」にして白文字を乗せる用。この3色は白に対して 青2.54 / 紫2.72 / 桃2.65 ＝
+// LPの主CTA（無料でためす・3日間 無料ではじめる・いま、無料ではじめる・
+// Starter を3日間 無料でためす）の文字が全部読めていなかった（2026-08-08 実測）。
+// 色相・彩度は変えず明るさだけ落とす＝青→紫→桃の流れは保ったまま白が 4.6 通る。
+// 停止位置(0%/50%/100%)は温存＝見た目の配分は不変。
+const GRAD_FACE = whiteSafeGradient([`${A_BLUE} 0%`, `${A_PURPLE} 50%`, `${A_PINK} 100%`], 120);
 const sectionPad = '4.75rem 1.25rem';
 
 // ─── 全機能カタログ ──────────────────────────────────────────
@@ -538,7 +546,7 @@ export default function LandingPage({ onEnterApp }: Props) {
             {STEPS.map((st, i) => (
               <motion.div key={st.n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.5, delay: i * 0.1 }}
                 style={{ background: SURFACE, border: `1px solid ${LINE}`, borderRadius: 18, padding: '1.7rem 1.35rem 1.55rem', textAlign: 'center' }}>
-                <div style={{ width: 54, height: 54, borderRadius: '50%', margin: '0 auto 0.95rem', background: GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 10px 30px ${A_PURPLE}55` }}>
+                <div style={{ width: 54, height: 54, borderRadius: '50%', margin: '0 auto 0.95rem', background: GRAD_FACE, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 10px 30px ${A_PURPLE}55` }}>
                   <st.Icon size={24} color="#fff" strokeWidth={2.2} />
                 </div>
                 <p style={{ fontSize: '0.72rem', color: A_PURPLE, margin: '0 0 0.4rem', fontWeight: 800, letterSpacing: '0.18em' }}>STEP {st.n}</p>
@@ -619,7 +627,7 @@ export default function LandingPage({ onEnterApp }: Props) {
                   boxShadow: p.highlight ? `0 22px 60px ${A_PURPLE}30` : 'none',
                 }}>
                 {p.highlight && (
-                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: GRAD, color: '#fff', fontSize: '0.65rem', fontWeight: 800, padding: '0.32rem 0.95rem', borderRadius: 999, letterSpacing: '0.15em', whiteSpace: 'nowrap' }}>人気</div>
+                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: GRAD_FACE, color: '#fff', fontSize: '0.65rem', fontWeight: 800, padding: '0.32rem 0.95rem', borderRadius: 999, letterSpacing: '0.15em', whiteSpace: 'nowrap' }}>人気</div>
                 )}
                 <p style={{ fontSize: '0.78rem', color: A_PURPLE, margin: '0 0 0.4rem', fontWeight: 700 }}>— {p.tag}</p>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.3rem', color: TXT }}>{p.name}</h3>
@@ -638,7 +646,7 @@ export default function LandingPage({ onEnterApp }: Props) {
                 </ul>
                 <button onClick={onEnterApp} style={{
                   width: '100%',
-                  background: p.highlight ? GRAD : 'rgba(255,255,255,0.07)',
+                  background: p.highlight ? GRAD_FACE : 'rgba(255,255,255,0.07)',
                   color: '#fff',
                   border: p.highlight ? 'none' : `1px solid ${LINE}`,
                   padding: '1rem', borderRadius: 12,
@@ -806,7 +814,7 @@ function PrismDashboardMock() {
         </div>
         {/* チャット指令 */}
         <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ alignSelf: 'flex-end', maxWidth: '86%', background: GRAD, borderRadius: '12px 12px 3px 12px', padding: '7px 12px' }}>
+          <div style={{ alignSelf: 'flex-end', maxWidth: '86%', background: GRAD_FACE, borderRadius: '12px 12px 3px 12px', padding: '7px 12px' }}>
             <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', lineHeight: 1.5 }}>Prism、今月の請求書ぜんぶ送って</span>
           </div>
           <div style={{ alignSelf: 'flex-start', maxWidth: '92%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '12px 12px 12px 3px', padding: '7px 12px' }}>
@@ -865,12 +873,12 @@ const eyebrow = (color: string): React.CSSProperties => ({
 });
 const navLink: React.CSSProperties = { fontSize: '0.85rem', color: 'rgba(244,242,255,0.72)', textDecoration: 'none', fontWeight: 600 };
 const ctaBtnSmall: React.CSSProperties = {
-  background: GRAD, color: '#fff', padding: '0.6rem 1.1rem', borderRadius: 10,
+  background: GRAD_FACE, color: '#fff', padding: '0.6rem 1.1rem', borderRadius: 10,
   fontSize: '0.85rem', fontWeight: 800, border: 'none', cursor: 'pointer',
   boxShadow: `0 4px 16px ${A_PURPLE}55`, whiteSpace: 'nowrap',
 };
 const ctaBtnHero: React.CSSProperties = {
-  background: GRAD, color: '#fff', padding: '1.05rem 2.1rem', borderRadius: 14,
+  background: GRAD_FACE, color: '#fff', padding: '1.05rem 2.1rem', borderRadius: 14,
   fontSize: '1.02rem', fontWeight: 800, border: 'none', cursor: 'pointer',
   boxShadow: `0 14px 40px ${A_PURPLE}66`, letterSpacing: '0.02em', minHeight: 44,
 };
