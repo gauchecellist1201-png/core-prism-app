@@ -1046,3 +1046,73 @@ export function TabittoLogo({ size = 28, withWordmark = true, variant = 'default
     </span>
   );
 }
+
+// ─────────────────────────────────────────────
+//  NEXUS — 話しながら画面に描くAIエージェント秘書
+//  意匠: public/nexus-mark.svg（2026-08-05制作の正式ロゴ）をLogo.tsxのパターンへ移植。軌道リング＋中心の光核
+// ─────────────────────────────────────────────
+export function NexusLogo({ size = 28, withWordmark = true, variant = 'default', className }: LogoProps) {
+  const isMono = variant === 'mono';
+  const gCore = `nexCore-${size}`;
+  const gRing = `nexRing-${size}`;
+  const cyan = '#4dc3ff';
+
+  return (
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: withWordmark ? 10 : 0, lineHeight: 1 }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="CORE NEXUS"
+        style={{ flexShrink: 0 }}
+      >
+        <defs>
+          <radialGradient id={gCore} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="35%" stopColor="#bdeaff" />
+            <stop offset="100%" stopColor="#2fa9ff" />
+          </radialGradient>
+          <linearGradient id={gRing} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#8fdcff" />
+            <stop offset="100%" stopColor="#2b8fe0" />
+          </linearGradient>
+        </defs>
+        {!isMono && <circle cx="50" cy="50" r="50" fill="#010a18" />}
+        <g fill="none" stroke={isMono ? 'currentColor' : `url(#${gRing})`} strokeLinecap="round">
+          <circle cx="50" cy="50" r="37" strokeWidth="1.6" strokeDasharray="3 7" opacity={isMono ? 0.4 : 0.55} />
+          <circle cx="50" cy="50" r="28.5" strokeWidth="1.8" strokeDasharray="10 6" />
+          <path d="M50 20 A30 30 0 0 1 78.5 44" strokeWidth="2.4" opacity="0.9" />
+          <path d="M50 80 A30 30 0 0 1 21.5 56" strokeWidth="2.4" opacity="0.9" />
+        </g>
+        <g fill="none" stroke={isMono ? 'currentColor' : '#eaf7ff'} strokeWidth="2.1" strokeLinecap="round" opacity="0.95">
+          <path d="M34 41 v18" />
+          <path d="M42 33 v34" />
+          <path d="M50 38 v24" />
+          <path d="M58 33 v34" />
+          <path d="M66 41 v18" />
+        </g>
+        <circle cx="50" cy="50" r="9.5" fill={isMono ? 'currentColor' : `url(#${gCore})`} />
+        <circle cx="78.5" cy="44" r="2.1" fill={isMono ? 'currentColor' : '#8fdcff'} />
+        <circle cx="21.5" cy="56" r="2.1" fill={isMono ? 'currentColor' : '#8fdcff'} />
+      </svg>
+      {withWordmark && (
+        <span
+          style={{
+            fontFamily: '"Cinzel", serif',
+            fontSize: size * 0.62,
+            fontWeight: 600,
+            letterSpacing: '0.18em',
+            color: isMono ? 'currentColor' : cyan,
+            lineHeight: 1,
+          }}
+        >
+          NEXUS
+        </span>
+      )}
+    </span>
+  );
+}

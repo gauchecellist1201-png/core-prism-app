@@ -7,7 +7,7 @@ import { useEffect, useState, useRef, type ReactNode, type MouseEvent as ReactMo
 import { motion } from 'framer-motion';
 import LegalModal, { type LegalKind } from '../components/LegalModal';
 import { Mail as MailIcon } from 'lucide-react';
-import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo, VeritasLogo, SomaLogo, TabittoLogo } from '../components/Logo';
+import { PrismLogo, IrisLogo, ResonanceLogo, LumeLogo, GuildLogo, CoreLogo, CrystalLogo, PulseLogo, UltimaLogo, AnimaLogo, VeritasLogo, SomaLogo, TabittoLogo, NexusLogo } from '../components/Logo';
 import { CONTINUUM_PLANS } from './continuumPlans';
 import ServiceFinder from './ServiceFinder';
 import { VERTICALS } from '../vertical/verticalData';
@@ -29,6 +29,8 @@ const PLATFORM_PLANS: Array<{
   name: string; role: string; copy: string; price: string; priceNote: string;
   accent: string; url: string; Logo: typeof PrismLogo; step: string; featured?: boolean;
 }> = [
+  // オーナー指示 2026-08-07: NEXUS（話しながら画面に描く秘書）を最上段に追加。
+  { name: 'Nexus', role: 'AI Secretary', copy: '話しながら画面に描くAI秘書。価値観→夢→今日の一手まで並走する。', price: '無料〜', priceNote: '上位 ¥9,800・¥19,800 / 月（税込）', accent: '#4dc3ff', url: 'https://core-nexus-kappa.vercel.app/lp/', Logo: NexusLogo, step: '新登場 — 夢を叶える秘書を', featured: true },
   // オーナー指示 2026-07-30: 主力は Prism → Resonance → Crystal。この順で先頭に置く。
   // ラベルは「STEP 1..5」の導線順だったが、主力を先に出す並びと矛盾するため
   // 「主力 / そのほか」の役割表記に変えた（読み手が順番を導線と誤解しないように）。
@@ -322,7 +324,7 @@ export default function CoreSite() {
         zIndex: 60,
         fontFamily: FONT_SERIF_JA,
       }}>
-        Prism ・ Iris ・ Guild ・ Resonance ・ Lume ・ Crystal ・ Pulse —— 七つのプロダクト、ベータ公開中
+        Nexus ・ Prism ・ Iris ・ Guild ・ Resonance ・ Lume ・ Crystal ・ Pulse —— 八つのプロダクト、ベータ公開中
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -570,7 +572,7 @@ export default function CoreSite() {
                 letterSpacing: '0.04em',
               }}
             >
-              七つの専門。ひとつの、頭脳。
+              八つの専門。ひとつの、頭脳。
             </h2>
             <p
               style={{
@@ -701,6 +703,23 @@ export default function CoreSite() {
               </span>
             </div>
           </a>
+
+          {/* NEXUS — 話しながら画面に描くAI秘書（2026-08-07 追加。トップ側に配置） */}
+          <FeatureProduct
+            brand="nexus"
+            badge="AI秘書 ／ 夢を叶えてくれる相棒"
+            tagline="話しながら、画面に描く秘書。"
+            taglineEn="Your AI secretary that draws while it talks."
+            description="価値観 → 夢 → 長期・中間・短期の目標 → 今日の一手、まで一緒に並走するAI秘書。優先順位は締切ではなく「夢との距離」で決め、毎日15分の計画で迷いを減らします。"
+            features={[
+              '価値観・夢から逆算して、今日やることまで落とし込む',
+              '話しかけるだけで、AIが画面に構造化して描き出す',
+              '無料から。上位プランで日々の伴走が深くなる',
+            ]}
+            accentColor="#4dc3ff"
+            accentGradient="linear-gradient(135deg,#a5e6ff,#4dc3ff,#2f9fd6)"
+            url="https://core-nexus-kappa.vercel.app/lp/"
+          />
 
           {/* オーナー指示 2026-07-30: 主力は Prism → Resonance → Crystal。この順に並べる。
               reversed は左右交互のレイアウト指定なので、並べ替えに合わせて偶数番目に付け直した。 */}
@@ -979,7 +998,7 @@ export default function CoreSite() {
             <p style={{ fontFamily: FONT_SERIF_JA, color: 'rgba(240,233,216,0.7)', fontSize: 'clamp(0.95rem, 1.4vw, 1.05rem)', maxWidth: 680, margin: '0 auto', lineHeight: 2 }}>
               どのプロダクトも、月々数千円から。事業が育ったら、そのまま上位プランへ。
               <br />
-              七つすべてが、ひとつの CORE でつながっています。
+              八つすべてが、ひとつの CORE でつながっています。
             </p>
           </div>
           <div className="lp-platform-grid">
@@ -1769,7 +1788,7 @@ export default function CoreSite() {
             <InfoRow label="代表取締役" subLabel="CEO"           value={COMPANY.ceoJa}    subValue={COMPANY.ceoEn} />
             <InfoRow label="本社所在地" subLabel="Headquarters" value={COMPANY.addressJa} subValue={COMPANY.addressEn} />
             <InfoRow label="事業内容"   subLabel="Business"     value="エージェントAIを中心とした SaaS の開発・運営" />
-            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Universe（AIに任せられる仕事の宇宙図）／ CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）／ Crystal（AI コンシェルジュ・接客サイト向け）／ CORE Pulse（からだ見守りAI）" isLast />
+            <InfoRow label="提供サービス" subLabel="Products"   value="CORE Nexus（話しながら画面に描くAI秘書）／ CORE Universe（AIに任せられる仕事の宇宙図）／ CORE Prism（事業家向け）／ CORE Iris（インフルエンサー向け）／ CORE Resonance（店舗・サロン・教室向け）／ CORE Lume（クリエイター向け）／ Crystal（AI コンシェルジュ・接客サイト向け）／ CORE Pulse（からだ見守りAI）" isLast />
           </dl>
           </MobileFold>
 
@@ -2066,6 +2085,7 @@ export default function CoreSite() {
           </div>
           <div>
             <p style={footHead}>プロダクト</p>
+            <a href="https://core-nexus-kappa.vercel.app/lp/" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Nexus</a>
             <a href="/?lp=1" style={footLink} className="lp-tap-link">CORE Prism</a>
             <a href="/iris?lp=1" style={footLink} className="lp-tap-link">CORE Iris</a>
             <a href="https://guild-gauches-projects.vercel.app/?lp=1" target="_blank" rel="noopener noreferrer" style={footLink} className="lp-tap-link">CORE Guild</a>
@@ -2285,7 +2305,7 @@ function FeatureProduct({
   reversed,
   defaultOpen,
 }: {
-  brand: 'prism' | 'iris' | 'guild' | 'resonance' | 'lume' | 'crystal' | 'pulse';
+  brand: 'prism' | 'iris' | 'guild' | 'resonance' | 'lume' | 'crystal' | 'pulse' | 'nexus';
   badge: string;
   tagline: string;
   taglineEn: string;
@@ -2305,6 +2325,7 @@ function FeatureProduct({
     brand === 'lume' ? LumeLogo :
     brand === 'crystal' ? CrystalLogo :
     brand === 'pulse' ? PulseLogo :
+    brand === 'nexus' ? NexusLogo :
     PrismLogo;
   const productName =
     brand === 'iris' ? 'CORE Iris' :
@@ -2313,6 +2334,7 @@ function FeatureProduct({
     brand === 'lume' ? 'CORE Lume' :
     brand === 'crystal' ? 'Crystal' :
     brand === 'pulse' ? 'CORE Pulse' :
+    brand === 'nexus' ? 'CORE Nexus' :
     'CORE Prism';
 
   // モバイルでは7枚を畳む。デスクトップは常に開いたまま（見え方を変えない）。

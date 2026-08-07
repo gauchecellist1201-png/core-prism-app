@@ -242,7 +242,7 @@ export default function StrategyDashboard() {
       {tab === 'ventures' && (
         <section className="lp-section-pad" style={{ padding: '2.5rem 1.5rem 4rem', background: 'linear-gradient(180deg,#000 0%,#0a0a18 100%)' }}>
           <div style={{ maxWidth: 1180, margin: '0 auto' }}>
-            <SectionHeader subtitle="NEW VENTURES" title="新規事業ポートフォリオ" desc="Prism / Iris / Resonance / Lume — 4事業の事業計画と、この価格での実利益。各事業からLPへ移動できます。" />
+            <SectionHeader subtitle="NEW VENTURES" title="新規事業ポートフォリオ" desc="Prism / Iris / Resonance / Lume / DX顧問（受託開発・DX事業） — 5事業の事業計画。SaaS4事業はこの価格での実利益、DX顧問は案件ベースの戦略と受注基準。各事業からLPへ移動できます。" />
             <NewVenturesTab />
           </div>
         </section>
