@@ -983,7 +983,7 @@ function PlanBoard(props: {
               </h3>
               <FieldWrap label="相手のハンドル *">
                 <input value={planForm.partnerHandle} onChange={e => setPlanForm({ ...planForm, partnerHandle: e.target.value })}
-                  placeholder="@hana_cosme" style={modalInput()} />
+                  placeholder="@ 相手のアカウント名" style={modalInput()} />
               </FieldWrap>
               <FieldWrap label="相手のジャンル">
                 <select value={planForm.partnerCategory} onChange={e => setPlanForm({ ...planForm, partnerCategory: e.target.value as CollabCategory })}
