@@ -184,9 +184,12 @@ export default function ThinkingIndicator({
       {/* 工程メッセージ — すっと入れ替わる */}
       <div style={{ minHeight: variant === 'full' ? 28 : 22, marginBottom: 6 }}>
         {/* 退場アニメ待ち禁止(rAF停止環境で文言が固まる/二重表示になる)・キー切替入場のみ */}
+          {/* 透明から始めない。裏タブ / 省電力で rAF が止まると opacity 0.04 のまま固まり、
+              いちばん読ませたい「今なにをしているか」の 1 行が消える (実測 2026-08-07)。
+              動きは y のずれだけに留め、止まっても必ず読める状態にする。 */}
           <motion.p
             key={idx}
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 1, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.32 }}
             style={{
@@ -221,7 +224,8 @@ export default function ThinkingIndicator({
       <AnimatePresence>
         {showRescue && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            // 90 秒待った人の唯一の逃げ道。ここも透明から始めない (rAF が止まると薄いまま固まる)
+            initial={{ opacity: 1, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.32 }}

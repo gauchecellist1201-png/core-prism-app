@@ -17,6 +17,7 @@ import EmptyState from './EmptyState';
 import { StudioIntro } from './StudioIntro';
 import StudioBackButton from './StudioBackButton';
 import { LoaderDots } from './MicroLoader';
+import ThinkingIndicator from './ThinkingIndicator';
 import { confirmAction } from '../lib/confirmDialog';
 import { copyText } from '../lib/clipboard';
 import { aiFetch } from '../lib/aiFetch';
@@ -501,6 +502,22 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                   </button>
                   {interviewError && (
                     <div className="cp-banner-error">⚠ {interviewError}</div>
+                  )}
+                  {/* 質問 5 つ + 評価軸まで作るので 30 秒以上かかる。無音にしない */}
+                  {interviewBusy && (
+                    <ThinkingIndicator
+                      accent={persona.accentColor}
+                      variant="compact"
+                      messages={[
+                        '書いてもらった募集の内容を読んでいます…',
+                        'この職種で本当に見るべき点を考えています…',
+                        '経歴を聞くだけにならない質問を 5 つ選んでいます…',
+                        '答えが薄かった時の、もう一歩ふみこむ質問を足しています…',
+                        '面接のあとに〇△× を付けられる評価軸を作っています…',
+                      ]}
+                      subtitle="面接で使う質問 5 つと、採用・見送りの基準をつくっています"
+                      onRetry={generateInterviewPack}
+                    />
                   )}
                 </div>
 

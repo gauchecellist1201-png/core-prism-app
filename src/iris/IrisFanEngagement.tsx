@@ -38,6 +38,7 @@ import {
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
 import { aiFetch } from '../lib/aiFetch';
+import ThinkingIndicator from '../components/ThinkingIndicator';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -669,11 +670,11 @@ ${recent}
         </button>
         <button onClick={extractTop10} disabled={top10Loading} style={btnSecondary(bg)}>
           <Sparkles size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
-          {top10Loading ? '分析中…' : 'TOP10 AI'}
+          {top10Loading ? 'ファンを見比べています…' : '大事にしたい 10 人を選ぶ'}
         </button>
         <button onClick={proposeWeeklyPlan} disabled={proposing} style={btnSecondary(bg)}>
           <ListChecks size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
-          {proposing ? '委任中…' : 'CMO+CDS に委任'}
+          {proposing ? '今週の予定を組んでいます…' : '今週やることを AI にまかせる'}
         </button>
       </div>
 
@@ -803,6 +804,22 @@ ${recent}
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* TOP10 を選んでいる間 — 押しても何も出ない時間をなくす */}
+      {top10Loading && (
+        <ThinkingIndicator
+          accent={bg.accent}
+          variant="compact"
+          messages={[
+            `記録してあるファン ${fans.length} 人を見ています…`,
+            'コメントや DM のやりとりの多さを数えています…',
+            '最近も続いているか、久しぶりかを見ています…',
+            'いま一番あなたを応援してくれている 10 人に絞っています…',
+          ]}
+          subtitle="今いちばん大事にしたいファン 10 人を選んでいます"
+          onRetry={extractTop10}
+        />
+      )}
 
       {/* TOP10 結果 (既存) */}
       <AnimatePresence>
@@ -946,6 +963,37 @@ ${recent}
                   </span>
                 ))}
               </div>
+            )}
+
+            {/* お礼 DM を書いている間 — ボタンの「生成中…」だけだと止まったように見える */}
+            {thanksLoading && thanksFanId === selectedFan.id && (
+              <ThinkingIndicator
+                accent={bg.accent}
+                variant="compact"
+                messages={[
+                  `${selectedFan.name} さんとのこれまでのやりとりを読み返しています…`,
+                  'この人が好きな話題を思い出しています…',
+                  '売り込みにならない、お礼の言葉を選んでいます…',
+                  '返事をもらいやすい質問を 1 つだけ足しています…',
+                ]}
+                subtitle="このファンにだけ当てはまる、お礼の DM を書いています"
+                onRetry={() => generateThanksDm(selectedFan)}
+              />
+            )}
+
+            {/* 返信テンプレを書いている間 */}
+            {replyLoading && replyFanId === selectedFan.id && (
+              <ThinkingIndicator
+                accent={bg.accent}
+                variant="compact"
+                messages={[
+                  'もらったコメントや DM を読んでいます…',
+                  'いつもの話し方に合わせています…',
+                  'そのまま送れる返信文にまとめています…',
+                ]}
+                subtitle="コピーしてすぐ送れる返信文を作っています"
+                onRetry={() => generateReply(selectedFan)}
+              />
             )}
 
             {/* お礼 DM */}

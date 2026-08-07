@@ -24,6 +24,8 @@ import { sortRisksByPriority } from '../lib/riskPriority';
 import { summarizeMeeting, stripCaptions } from '../lib/meetingSummarize';
 import MeetingRecorder from './MeetingRecorder';
 import { aiFetch } from '../lib/aiFetch';
+import ThinkingIndicator from './ThinkingIndicator';
+import { Sparkles } from 'lucide-react';
 import {
   proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse, extractActionPlan,
   KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal, type KnowledgeAction,
@@ -317,7 +319,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
       if (!res.ok) throw new Error('AI エラー');
       const data = await res.json();
       const text = data?.content?.[0]?.text ?? '';
-      if (text.trim()) setResult({ title: `🔮 ${items.length} 件の資料を横断した気づき`, body: text.trim() });
+      if (text.trim()) setResult({ title: `${items.length} 件の資料を全部読んで見えた気づき`, body: text.trim() });
     } catch {
       setResult({ title: '横断インサイト', body: 'いま混み合っているようです。少し待ってからもう一度お試しください。' });
     } finally {
@@ -792,10 +794,20 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                     )}
                   </motion.div>
                 ) : proposalsBusy ? (
-                  <div className="text-center py-12">
-                    <div className="mb-3"><SpinningPrism size={56} /></div>
-                    <p className="text-white text-sm font-medium">AI が資料の活かし方を考えています…</p>
-                  </div>
+                  // 静止した 1 文だけだと 20 秒で「止まった」と思われる。工程を順に出す
+                  <ThinkingIndicator
+                    accent={persona.accentColor}
+                    variant="full"
+                    messages={[
+                      '入れてある資料を開いています…',
+                      '書いてある中身を読んでいます…',
+                      'この資料が何に使えるかを考えています…',
+                      '営業文・投稿・企画書など、作れる物を選んでいます…',
+                      'おすすめ順に並べています…',
+                    ]}
+                    subtitle="「この資料はこう使えます」という案を作っています"
+                    onRetry={loadProposals}
+                  />
                 ) : (
                   <>
                     {/* 横断インサイト — 全資料を一度に読んで点をつなぐ (オーナー指示 2026-05-28) */}
@@ -808,10 +820,28 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                           background: `linear-gradient(135deg, ${persona.accentColor}, ${persona.accentColor}cc)`,
                           color: '#fff', border: 'none', cursor: crossBusy ? 'wait' : 'pointer',
                           boxShadow: `0 8px 20px ${persona.accentColor}44`, opacity: crossBusy ? 0.6 : 1,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                         }}
                       >
-                        {crossBusy ? '🧠 全資料を横断して考え中…' : `🔮 ${items.length} 件を横断して「気づき」を出す`}
+                        <Sparkles size={15} strokeWidth={2.4} />
+                        {crossBusy ? '全部の資料を読んでいます…' : `${items.length} 件を全部まとめて読んで、気づきを出す`}
                       </button>
+                    )}
+                    {/* 押したあと数十秒 AI が動く。何をしているか出さないと「固まった」と思われる */}
+                    {crossBusy && (
+                      <ThinkingIndicator
+                        accent={persona.accentColor}
+                        variant="compact"
+                        messages={[
+                          `ためた資料 ${Math.min(items.length, 40)} 件を、順番に読んでいます…`,
+                          '資料どうしで、同じことを言っている所を探しています…',
+                          'くり返し出てくる流れ・方向性をまとめています…',
+                          '組み合わせると見えてくる、手つかずのチャンスを探しています…',
+                          '今週じゅうに答えを出すべき問いを、3 つに絞っています…',
+                        ]}
+                        subtitle="1 件ずつ見ていては気づけないことを探しています。長くて 40 秒ほどです"
+                        onRetry={runCrossInsight}
+                      />
                     )}
                     <p className="text-white/60 text-xs leading-relaxed">
                       ためた {items.length} 件の資料から、AI が「こう活かせます」を先に提案します。

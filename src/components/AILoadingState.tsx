@@ -80,7 +80,7 @@ export default function AILoadingState({
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
@@ -106,12 +106,14 @@ export default function AILoadingState({
               </span>
             </div>
             {stageText && (
-              <AnimatePresence mode="wait">
+              // mode="wait" と opacity 0 スタートを併用しない。
+              // 裏タブ / 省電力で rAF が止まると、退場待ちで次が出てこない or 透明のまま固まり、
+              // 「今なにをしているか」の 1 行が消える (2026-08-07 実測)。
+              <AnimatePresence>
                 <motion.div
                   key={stageIdx}
-                  initial={{ opacity: 0, y: 4 }}
+                  initial={{ opacity: 1, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.25 }}
                   style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.62)', marginTop: 2 }}
                 >
@@ -128,7 +130,8 @@ export default function AILoadingState({
           {showAbort && onAbort && (
             <motion.button
               type="button"
-              initial={{ opacity: 0, scale: 0.9 }}
+              // 中断ボタンも透明から始めない (rAF 停止時に押せない・見えないになる)
+              initial={{ opacity: 1, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.2 }}
               onClick={onAbort}
