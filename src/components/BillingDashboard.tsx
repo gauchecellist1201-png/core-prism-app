@@ -14,6 +14,7 @@ import { sendEmail } from '../lib/emailNotify';
 import { confirmAction } from '../lib/confirmDialog';
 import CancelFlowDialog from './CancelFlowDialog';
 import { whiteSafeFace, whiteSafeGradient, contrast, hexToHsl, hslToHex } from '../lib/accentFace';
+import { X, AlarmClock, AlertTriangle, Gift, LogOut } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
@@ -228,7 +229,7 @@ export default function BillingDashboard({ onClose }: Props) {
             background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%',
             width: 44, height: 44, cursor: 'pointer', fontSize: '1rem',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-          }} aria-label="閉じる">✕</button>
+          }} aria-label="閉じる"><X size={18} strokeWidth={2.4} color="#1F1A2E" /></button>
         </div>
 
         {/* 現在のプラン */}
@@ -238,10 +239,13 @@ export default function BillingDashboard({ onClose }: Props) {
           border: `1px solid ${accent}33`,
           marginBottom: '1.25rem',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
+          {/* プラン名は「3 日間 無料トライアル」のように長いものがある。375px で折り返すと
+              右の「有効」バッジの下に潜って重なっていた（2026-08-08 本番実測）。
+              左に minWidth:0 を、バッジに flexShrink:0 を入れて、必ず横に並べる */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.6rem' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontSize: '0.78rem', color: '#6E6979', marginBottom: '0.25rem' }}>現在のプラン</p>
-              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: accent }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: accent, overflowWrap: 'anywhere' }}>
                 {plan?.name || user.plan}
               </div>
               {plan && plan.priceJpy > 0 && (
@@ -254,6 +258,7 @@ export default function BillingDashboard({ onClose }: Props) {
               background: grad, color: '#fff',
               padding: '0.25rem 0.7rem', borderRadius: 999,
               fontSize: '0.7rem', fontWeight: 700,
+              flexShrink: 0, whiteSpace: 'nowrap',
             }}>
               {cancelDone ? '解約予約済' : '有効'}
             </span>
@@ -301,8 +306,13 @@ export default function BillingDashboard({ onClose }: Props) {
             border: `1px solid ${trialExpired ? '#FCA5A5' : trialDaysLeft <= 2 ? '#FCD34D' : '#86EFAC'}`,
             display: 'flex', alignItems: 'center', gap: '0.7rem',
           }}>
-            <div style={{ fontSize: '1.4rem', flexShrink: 0 }}>
-              {trialExpired ? '⏰' : trialDaysLeft <= 2 ? '⚠️' : '🎁'}
+            {/* OS のカラー絵文字は使わない（端末ごとに絵が変わり、字の色も揃わない）。線画で統一 */}
+            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+              {(() => {
+                const c = trialExpired ? '#9B1B30' : trialDaysLeft <= 2 ? '#92400E' : '#166534';
+                const Ico = trialExpired ? AlarmClock : trialDaysLeft <= 2 ? AlertTriangle : Gift;
+                return <Ico size={22} strokeWidth={2.2} color={c} />;
+              })()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{
@@ -542,7 +552,7 @@ export default function BillingDashboard({ onClose }: Props) {
                 }}
                 aria-label="ログアウト"
               >
-                ↩ ログアウト
+                <LogOut size={16} strokeWidth={2.2} /> ログアウト
               </button>
               <button
                 onClick={() => setConfirmLogout('reset')}
