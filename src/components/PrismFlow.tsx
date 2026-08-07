@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Persona } from '../types/identity';
+import { useHonestCountUp } from '../hooks/useHonestCountUp';
 
 interface Props {
   persona: Persona;
@@ -55,23 +56,9 @@ function useAnimatedTime(active = true): number {
 }
 
 // カウントアップ用フック (数値が変わったら短時間でアニメーション)
+// 途中で裏タブに回っても、必ず本当の件数に着地する (共通の安全網つき)。
 function useCountUp(target: number, durationMs = 700): number {
-  const [val, setVal] = useState(target);
-  useEffect(() => {
-    if (target === val) return;
-    const from = val;
-    const start = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
-      setVal(Math.round(from + (target - from) * eased));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target]); // eslint-disable-line react-hooks/exhaustive-deps
-  return val;
+  return Math.round(useHonestCountUp(target, { durationMs, startFromZero: false }));
 }
 
 export default function PrismFlow({ persona, knowledgeCount, taskCount, proposalCount }: Props) {

@@ -26,6 +26,7 @@ import type { ExpenseEntry } from '../types/expense';
 import type { AgentTask } from '../hooks/useAgentTaskQueue';
 import { CXO_META } from '../hooks/useAgentTaskQueue';
 import type { CoachBrief } from '../lib/coachScheduler';
+import { useHonestCountUp } from '../hooks/useHonestCountUp';
 
 interface DailyReportProps {
   open: boolean;
@@ -85,22 +86,10 @@ function formatTime(iso?: string): string {
 // ────────────────────────────────────────────────────────────
 // カウントアップ数字
 // ────────────────────────────────────────────────────────────
+// 裏タブ・画面ロック・省電力で rAF が止まると、売上が「¥0 のまま」固まって
+// 本当ではない金額を見せてしまう。共通の hook が必ず本当の数字に着地させる。
 function useCountUp(target: number, durationMs = 900): number {
-  const [v, setV] = useState(0);
-  useEffect(() => {
-    if (!isFinite(target) || target === 0) { setV(0); return; }
-    const start = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setV(Math.round(target * eased));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, durationMs]);
-  return v;
+  return Math.round(useHonestCountUp(target, { durationMs }));
 }
 
 // ────────────────────────────────────────────────────────────

@@ -5,8 +5,7 @@
 // ユーザーが一番見たい数字に“命”を吹き込む小さな感動装置。Prism / Iris 共用。
 // prefers-reduced-motion を尊重（その場合は即値表示で揺らさない）。
 // ============================================================
-import { useEffect, useRef, useState } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useHonestCountUp } from '../hooks/useHonestCountUp';
 
 interface Props {
   value: number;
@@ -25,26 +24,9 @@ export default function CountUp({
   value, durationMs = 1100, format = (n) => Math.round(n).toLocaleString('ja-JP'),
   prefix = '', suffix = '', style, className,
 }: Props) {
-  const reduce = useReducedMotion();
-  const [display, setDisplay] = useState(reduce ? value : 0);
-  const rafRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (reduce || !isFinite(value)) { setDisplay(value); return; }
-    const start = performance.now();
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic — 勢いよく入って優しく着地
-      setDisplay(value * eased);
-      if (p < 1) rafRef.current = requestAnimationFrame(tick);
-      else setDisplay(value);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    // 安全網: rAF が（非表示タブ等で）止まっても必ず最終値に着地させる。
-    // 「0 のまま固まって誤った数字を見せる」事故を絶対に作らない。
-    const guard = setTimeout(() => setDisplay(value), durationMs + 400);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); clearTimeout(guard); };
-  }, [value, durationMs, reduce]);
+  // 動きを減らす設定・裏タブ・rAF 停止の安全網は useHonestCountUp が持つ。
+  // 「0 のまま固まって誤った数字を見せる」事故を絶対に作らない。
+  const display = useHonestCountUp(value, { durationMs });
 
   return <span className={className} style={style}>{prefix}{format(display)}{suffix}</span>;
 }

@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useHonestCountUp } from '../hooks/useHonestCountUp';
 
 interface Resp { ok: boolean; count: number; source: 'live' | 'demo' | 'fallback'; asOf: string; }
 
@@ -19,7 +20,6 @@ interface Props {
 
 export default function LiveSignupCounter({ accentLeft = '#A78BFA', accentRight = '#F472B6' }: Props) {
   const [data, setData] = useState<Resp | null>(null);
-  const [display, setDisplay] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,23 +31,10 @@ export default function LiveSignupCounter({ accentLeft = '#A78BFA', accentRight 
   }, []);
 
   // 数字 カウント アップ アニメ (1.2 秒)
-  useEffect(() => {
-    if (!data?.count) return;
-    const target = data.count;
-    const start = Date.now();
-    const dur = 1200;
-    let raf: number | null = null;
-    const tick = () => {
-      const t = Math.min(1, (Date.now() - start) / dur);
-      // easeOutQuad
-      const eased = 1 - (1 - t) * (1 - t);
-      setDisplay(Math.floor(eased * target));
-      if (t < 1) raf = requestAnimationFrame(tick);
-      else setDisplay(target);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => { if (raf !== null) cancelAnimationFrame(raf); };
-  }, [data?.count]);
+  // ここは「累計 N 社」= 公開ページの実数。裏タブ・省電力で rAF が止まると
+  // 途中の値や 0 のまま固まり、少ない社数を本当の数字として見せてしまうため、
+  // 必ず最終値に着地する共通 hook を使う (嘘禁止)。
+  const display = Math.floor(useHonestCountUp(data?.count ?? 0, { durationMs: 1200 }));
 
   // 0 or fallback の時 は そもそも 表示しない (嘘禁止)
   if (!data || data.count <= 0 || data.source === 'fallback') return null;

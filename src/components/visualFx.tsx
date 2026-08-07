@@ -2,34 +2,15 @@
 // visualFx — 「見て気持ちいい」共通ビジュアル部品
 // カウントアップ / スパークライン / リング / ごほうび演出
 // ============================================================
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' &&
-  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+import { useHonestCountUp } from '../hooks/useHonestCountUp';
 
 // ─── 数値カウントアップ ──────────────────────────────────────
+// 中身は共通の useHonestCountUp。売上・KPI をここで出しているので、
+// 裏タブ / 画面ロックで数字が途中の値のまま固まる = 嘘の金額、を作らない。
 export function useCountUp(target: number, durationMs = 900): number {
-  const [val, setVal] = useState(0);
-  const fromRef = useRef(0);
-  useEffect(() => {
-    if (prefersReducedMotion()) { setVal(target); fromRef.current = target; return; }
-    const from = fromRef.current;
-    const start = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
-      const next = from + (target - from) * eased;
-      setVal(next);
-      if (p < 1) raf = requestAnimationFrame(tick);
-      else fromRef.current = target;
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, durationMs]);
-  return val;
+  return useHonestCountUp(target, { durationMs });
 }
 
 /** カウントアップしながら表示する数値。format で ¥ や % を付ける */
