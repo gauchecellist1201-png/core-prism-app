@@ -17,7 +17,7 @@ import {
   Image as ImageIcon, Film, Type, Clapperboard, Camera,
   Sparkles, Wand2, ArrowRight, LayoutTemplate,
 } from 'lucide-react';
-import { IRIS_FONTS } from './irisStyle';
+import {IRIS_FONTS, warmFaceBg, whiteSafeGradient} from './irisStyle';
 import { TOGGLE, HOVER_LIFT, DUR_ENTER } from './motion';
 
 interface StudioBg {
@@ -56,7 +56,7 @@ export default function IrisStudioHub({ bg, onOpen }: { bg: StudioBg; onOpen: (t
       <div style={{
         position: 'relative', overflow: 'hidden',
         borderRadius: 20, padding: '1.5rem 1.4rem',
-        background: 'linear-gradient(135deg, #E1306C 0%, #833AB4 55%, #F77737 100%)',
+        background: whiteSafeGradient(['#E1306C 0%', '#833AB4 55%', '#F77737 100%']),
         color: '#fff', boxShadow: '0 18px 40px rgba(225,48,108,0.28)',
       }}>
         <div style={{ position: 'absolute', right: -30, top: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }} />
@@ -88,7 +88,7 @@ export default function IrisStudioHub({ bg, onOpen }: { bg: StudioBg; onOpen: (t
             <button key={m.id} onClick={() => setMode(m.id)} style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               padding: '0.7rem 0.5rem', borderRadius: 10, border: 'none', cursor: 'pointer',
-              background: on ? `linear-gradient(135deg, ${accent}, #833AB4)` : 'transparent',
+              background: on ? whiteSafeGradient([`${accent}`, '#833AB4']) : 'transparent',
               color: on ? '#fff' : bg.inkSoft, transition: TOGGLE,
               boxShadow: on ? '0 6px 16px rgba(225,48,108,0.3)' : 'none',
             }}>
@@ -153,7 +153,7 @@ export default function IrisStudioHub({ bg, onOpen }: { bg: StudioBg; onOpen: (t
         </div>
         <button onClick={() => onOpen(mode === 'design' ? 'image' : 'director')} style={{
           display: 'inline-flex', alignItems: 'center', gap: 7,
-          background: `linear-gradient(135deg, ${accent}, #F77737)`, color: '#fff',
+          background: warmFaceBg(accent), color: '#fff',
           border: 'none', borderRadius: 999, padding: '0.65rem 1.3rem',
           fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 20px rgba(225,48,108,0.3)',
         }}>

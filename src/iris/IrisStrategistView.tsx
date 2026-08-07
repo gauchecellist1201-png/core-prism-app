@@ -17,7 +17,7 @@ import {
 import { extractInstagramHandle, analyzeInstagramProfile, type IGAnalysisResult } from './instagramAnalyzer';
 import { confirmAction } from '../lib/confirmDialog';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
+import {IRIS_FONTS, accentFaceBg, accentFaceInk, whiteSafeGradient} from './irisStyle';
 import VoiceInputButton from '../components/VoiceInputButton';
 import IrisStrategyHome from './IrisStrategyHome';
 
@@ -879,7 +879,7 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <div style={{
               width: 48, height: 48, borderRadius: 14,
-              background: `linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)`,
+              background: whiteSafeGradient(['#833AB4', '#E1306C 50%', '#F77737']),
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '1.6rem', flexShrink: 0,
             }}></div>

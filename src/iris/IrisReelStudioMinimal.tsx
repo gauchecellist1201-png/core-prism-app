@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { takePendingReelTheme } from './reelHandoff';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS, IRIS_COLORS } from './irisStyle';
+import {IRIS_FONTS, IRIS_COLORS, whiteSafeGradient} from './irisStyle';
 
 // この画面のパネル面のいくつかは「白」で固定されていて、テーマに追随しない。
 // 暗いテーマ(Neon Night)では bg.ink / bg.inkSoft が白なので、その白い面に置くと
@@ -157,7 +157,7 @@ const FONT_PRESETS = [
   { id: 'soft',    label: 'ソフト',     font: '"Noto Sans JP"',     size: 54, color: '#FFFFFF', stroke: '#3B2A2A', strokeWidth: 4 },
 ];
 
-const IRIS_GRADIENT = 'linear-gradient(135deg, #E1306C 0%, #F77737 50%, #FBBF24 100%)';
+const IRIS_GRADIENT = whiteSafeGradient(['#E1306C 0%', '#F77737 50%', '#FBBF24 100%']);
 
 // ─── Helpers ─────
 const makeId = () => Math.random().toString(36).slice(2, 10);
@@ -3419,7 +3419,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                             style={{
                               width: '100%', minHeight: 56,
                               padding: '0.85rem 1rem',
-                              background: igBusy ? 'rgba(255,255,255,0.7)' : 'linear-gradient(135deg, #833AB4, #E1306C, #F77737)',
+                              background: igBusy ? 'rgba(255,255,255,0.7)' : whiteSafeGradient(['#833AB4', '#E1306C', '#F77737']),
                               // 「共有中…」が白い面に白文字で消えていた
                               color: igBusy ? INK_ON_LIGHT_SOFT : '#fff',
                               border: igBusy ? `1px solid ${bg.cardBorder}` : 'none', borderRadius: 14,

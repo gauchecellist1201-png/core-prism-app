@@ -8,6 +8,7 @@ import { ExternalLink, BadgeCheck, ArrowUpRight, Sparkles } from 'lucide-react';
 import { getRealOpenCalls, rankOpenCalls, inferPreferredCategories, KIND_META } from './realOpenCalls';
 import { CATEGORY_META } from './brandDeals';
 import type { MediaKit } from '../types/influencerDeal';
+import { warmFaceBg } from './irisStyle';
 
 interface Bg { accent: string; ink: string; inkSoft: string; card: string; cardBorder: string; }
 
@@ -60,7 +61,7 @@ export default function IrisRealOpenCalls({ bg, mediaKit }: { bg: Bg; mediaKit?:
                 {c.matched && (
                   <span style={{
                     fontSize: 9.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999,
-                    background: `linear-gradient(135deg, ${cat.color}, #F77737)`, color: '#fff',
+                    background: warmFaceBg(cat.color), color: '#fff',
                     display: 'inline-flex', alignItems: 'center', gap: 3,
                   }}>
                     <Sparkles size={10} /> あなたに合いそう
@@ -81,7 +82,7 @@ export default function IrisRealOpenCalls({ bg, mediaKit }: { bg: Bg; mediaKit?:
               <a href={c.applyUrl} target="_blank" rel="noopener noreferrer" style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                 marginTop: 2, textDecoration: 'none',
-                background: `linear-gradient(135deg, ${bg.accent}, #F77737)`, color: '#fff',
+                background: warmFaceBg(bg.accent), color: '#fff',
                 borderRadius: 999, padding: '0.6rem 1rem', fontSize: 12.5, fontWeight: 800,
                 boxShadow: '0 6px 16px rgba(225,48,108,0.28)',
               }}>

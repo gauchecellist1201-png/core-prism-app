@@ -173,8 +173,16 @@ export const IRIS_GRADIENT = {
    */
   textOnLight: 'linear-gradient(135deg, #D41F5C 0%, #833AB4 50%, #A05F03 100%)',
 
-  /** Instagram 公式 */
+  /** Instagram 公式（飾りの面・文字をグラデにする用。白文字は乗せない） */
   instagram: 'linear-gradient(135deg, #833AB4, #FD1D1D 50%, #FCB045)',
+
+  /**
+   * 白い文字・アイコンを乗せてよい Instagram グラデ。
+   * 上の `instagram` は金の端 #FCB045 で白が 1.84、赤 #FD1D1D でも 3.91（要 4.5）。
+   * `ctaText` と同じ考え方で、色み(280°/0°/38°)は変えず明るさだけ落として
+   * どの位置でも白が 4.6 以上通るようにしたもの。
+   */
+  instagramText: 'linear-gradient(135deg, #833AB4, #ea0202 50%, #a86303)',
 
   /** ソフト ピンク (カード・背景用) */
   pink:  'linear-gradient(135deg, #FFE5EE, #FFD4E5)',

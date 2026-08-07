@@ -7,6 +7,7 @@ import { X, ArrowRight, Check, Key, ExternalLink, AlertCircle, Loader2, ImageUp,
 import InstagramGlyph from './InstagramGlyph';
 import { createSelfReportedProfile, saveIgProfile, tryOauthConnect, connectWithToken, connectFromScreenshot } from './instagramConnect';
 import type { IgProfile } from './instagramConnect';
+import { whiteSafeGradient } from './irisStyle';
 
 interface Props {
   onClose: () => void;
@@ -182,7 +183,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
         <button type="button" onClick={handleOauth} disabled={oauthState === 'unavailable'} style={{
           width: '100%', textAlign: 'left',
           padding: '0.9rem 1rem', borderRadius: 14,
-          background: 'linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)',
+          background: whiteSafeGradient(['#833AB4', '#E1306C 50%', '#F77737']),
           color: '#fff', border: 'none',
           cursor: oauthState === 'unavailable' ? 'not-allowed' : 'pointer',
           opacity: oauthState === 'unavailable' ? 0.5 : 1,
@@ -355,7 +356,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
                 width: '100%',
                 background: shotStatus === 'success'
                   ? 'linear-gradient(135deg, #10B981, #059669)'
-                  : 'linear-gradient(135deg, #E1306C, #F77737)',
+                  : whiteSafeGradient(['#E1306C', '#F77737']),
                 color: '#fff', border: 'none', borderRadius: 99,
                 padding: '1rem 1.4rem', fontSize: 15, fontWeight: 800,
                 cursor: (shotStatus === 'reading' || shotStatus === 'success') ? 'not-allowed' : 'pointer',
@@ -457,7 +458,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
               disabled={tokenStatus === 'connecting' || tokenStatus === 'success'}
               style={{
                 width: '100%',
-                background: 'linear-gradient(135deg, #E1306C, #F77737)',
+                background: whiteSafeGradient(['#E1306C', '#F77737']),
                 color: '#fff', border: 'none', borderRadius: 99,
                 padding: '0.85rem 1.4rem', fontSize: 14, fontWeight: 800,
                 cursor: (tokenStatus === 'connecting' || tokenStatus === 'success') ? 'not-allowed' : 'pointer',
@@ -506,7 +507,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
               return (
                 <button key={c} type="button" onClick={() => toggleCat(c)} style={{
                   padding: '0.35rem 0.7rem', borderRadius: 99,
-                  background: isSel ? 'linear-gradient(135deg, #E1306C, #F77737)' : 'rgba(0,0,0,0.04)',
+                  background: isSel ? whiteSafeGradient(['#E1306C', '#F77737']) : 'rgba(0,0,0,0.04)',
                   color: isSel ? '#fff' : '#5A5562',
                   border: isSel ? 'none' : '1px solid rgba(0,0,0,0.08)',
                   fontSize: 11, fontWeight: 700, cursor: 'pointer',
@@ -529,7 +530,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
 
         <button type="button" onClick={handleSelfSubmit} style={{
           width: '100%',
-          background: 'linear-gradient(135deg, #E1306C, #F77737)',
+          background: whiteSafeGradient(['#E1306C', '#F77737']),
           color: '#fff', border: 'none', borderRadius: 99,
           padding: '0.85rem 1.4rem', fontSize: 14, fontWeight: 800,
           cursor: 'pointer',

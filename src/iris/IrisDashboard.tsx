@@ -5,11 +5,9 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings } from '../types/identity';
-import {
-  IRIS_BACKGROUNDS, type IrisBackgroundDef, loadIrisBackground, saveIrisBackground,
+import {IRIS_BACKGROUNDS, type IrisBackgroundDef, loadIrisBackground, saveIrisBackground,
   IRIS_COLORS, IRIS_FONTS, getAllBackgrounds, removeCustomBackground, type CustomIrisBackground,
-  deriveAccentText, onAccentFace, accentFaceBg, accentFaceInk,
-} from './irisStyle';
+  deriveAccentText, onAccentFace, accentFaceBg, accentFaceInk, whiteSafeGradient } from './irisStyle';
 import { IRIS_TYPE, IRIS_SHADOW, IRIS_RADIUS, IRIS_GRADIENT, IRIS_MOTION, IRIS_SIDEBAR_W, IRIS_DOCK_H } from './irisDesign';
 // 重い「タブを開いたときだけ要る」エディタは lazy 化して main から切り出す
 const IrisCustomBgEditor = React.lazy(() => import('./IrisCustomBgEditor'));
@@ -930,7 +928,7 @@ function IrisEditorialHome({
                   <button onClick={onConnectInstagram} style={{
                     marginTop: '0.5rem', width: '100%',
                     ...IRIS_TYPE.small, fontWeight: 800,
-                    background: IRIS_GRADIENT.instagram, color: '#fff', border: 'none',
+                    background: IRIS_GRADIENT.instagramText, color: '#fff', border: 'none',
                     padding: '0.6rem 1rem', borderRadius: IRIS_RADIUS.full, cursor: 'pointer',
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
                     boxShadow: IRIS_SHADOW.glow('#E1306C'),
@@ -946,7 +944,7 @@ function IrisEditorialHome({
                 </p>
                 <button onClick={onConnectInstagram} style={{
                   ...IRIS_TYPE.small,
-                  background: IRIS_GRADIENT.instagram,
+                  background: IRIS_GRADIENT.instagramText,
                   color: '#fff', border: 'none',
                   padding: '0.65rem 1.25rem',
                   borderRadius: IRIS_RADIUS.full,
@@ -1005,7 +1003,7 @@ function IrisEditorialHome({
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                           border: 'none', cursor: 'pointer',
                           borderRadius: IRIS_RADIUS.full,
-                          background: IRIS_GRADIENT.instagram,
+                          background: IRIS_GRADIENT.instagramText,
                           color: '#fff',
                           boxShadow: IRIS_SHADOW.sm,
                           flexShrink: 0,
@@ -1452,7 +1450,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
               fontSize: '1.6rem',
               letterSpacing: '-0.01em',
               lineHeight: 1,
-              background: `linear-gradient(135deg, #833AB4, #E1306C 50%, #F77737)`,
+              background: whiteSafeGradient(['#833AB4', '#E1306C 50%', '#F77737']),
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',

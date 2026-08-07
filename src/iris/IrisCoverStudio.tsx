@@ -12,7 +12,7 @@
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
 import { Sparkles, ImagePlus, Download, Wand2, Check, RefreshCw, AlertTriangle } from 'lucide-react';
-import { IRIS_FONTS, IRIS_COLORS } from './irisStyle';
+import {IRIS_FONTS, IRIS_COLORS, warmFaceBg, whiteSafeGradient} from './irisStyle';
 import { generateCoverProposal, type CoverMood, type CoverLayout, type CoverProposal } from './coverProposal';
 import IrisGridPreview from './IrisGridPreview';
 
@@ -334,7 +334,7 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
       {/* ヒーロー */}
       <div style={{
         position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '1.2rem 1.3rem',
-        background: 'linear-gradient(135deg, #E1306C 0%, #833AB4 60%, #F77737 100%)', color: '#fff',
+        background: whiteSafeGradient(['#E1306C 0%', '#833AB4 60%', '#F77737 100%']), color: '#fff',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}>
           <Sparkles size={18} />
@@ -398,7 +398,7 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
             disabled={thinking || !theme.trim()}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 7, border: 'none', cursor: thinking || !theme.trim() ? 'default' : 'pointer',
-              background: `linear-gradient(135deg, ${accent}, #F77737)`, color: '#fff', borderRadius: 999,
+              background: warmFaceBg(accent), color: '#fff', borderRadius: 999,
               padding: '0.6rem 1.2rem', fontSize: 13, fontWeight: 800, opacity: thinking || !theme.trim() ? 0.6 : 1,
             }}
           >
@@ -461,7 +461,7 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
           <button
             onClick={download}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: 'none', cursor: 'pointer', width: '100%', justifyContent: 'center',
-              background: `linear-gradient(135deg, ${accent}, #833AB4)`, color: '#fff', borderRadius: 12, padding: '0.7rem 1rem', fontSize: 13.5, fontWeight: 800 }}
+              background: whiteSafeGradient([`${accent}`, '#833AB4']), color: '#fff', borderRadius: 12, padding: '0.7rem 1rem', fontSize: 13.5, fontWeight: 800 }}
           >
             <Download size={16} /> 画像を書き出す（PNG）
           </button>

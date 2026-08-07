@@ -13,7 +13,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { CalendarClock, Clapperboard, TrendingUp } from 'lucide-react';
-import { IRIS_FONTS, type IrisBackgroundDef } from './irisStyle';
+import {IRIS_FONTS, type IrisBackgroundDef, whiteSafeGradient} from './irisStyle';
 
 const IrisCrystalBloom = React.lazy(() => import('./IrisCrystalBloom'));
 
@@ -87,9 +87,9 @@ function FallbackFlower() {
 
 // ─── 3 つのガラスチップ (多機能への入口) ───
 const CHIPS: Array<{ tab: IrisHeroTab; label: string; Icon: typeof CalendarClock; grad: string }> = [
-  { tab: 'schedule', label: '予約投稿',   Icon: CalendarClock, grad: 'linear-gradient(135deg, #E1306C 0%, #833AB4 100%)' },
-  { tab: 'script',   label: '企画・台本', Icon: Clapperboard,  grad: 'linear-gradient(135deg, #833AB4 0%, #E1306C 100%)' },
-  { tab: 'strategy', label: '分析',       Icon: TrendingUp,    grad: 'linear-gradient(135deg, #F77737 0%, #E1306C 100%)' },
+  { tab: 'schedule', label: '予約投稿',   Icon: CalendarClock, grad: whiteSafeGradient(['#E1306C 0%', '#833AB4 100%']) },
+  { tab: 'script',   label: '企画・台本', Icon: Clapperboard,  grad: whiteSafeGradient(['#833AB4 0%', '#E1306C 100%']) },
+  { tab: 'strategy', label: '分析',       Icon: TrendingUp,    grad: whiteSafeGradient(['#F77737 0%', '#E1306C 100%']) },
 ];
 
 /**

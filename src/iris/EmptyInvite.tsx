@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import type { ComponentType, ReactNode } from 'react';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 
 /**
  * 「まだ◯◯がありません」の灰色 1 行を、
@@ -148,8 +148,8 @@ export default function EmptyInvite({
             alignItems: 'center',
             gap: 8,
             padding: '0.65rem 1.4rem',
-            background: `linear-gradient(135deg, ${accent} 0%, ${accent}cc 100%)`,
-            color: '#fff',
+            background: accentFaceBg(accent),
+            color: accentFaceInk(accent),
             border: 'none',
             borderRadius: 999,
             fontSize: '0.88rem',

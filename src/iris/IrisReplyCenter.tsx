@@ -13,7 +13,7 @@ import {
   MessageSquareReply, Copy, ExternalLink, Lock,
 } from 'lucide-react';
 import type { IrisBackgroundDef, CustomIrisBackground } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import {IRIS_FONTS, whiteSafeGradient} from './irisStyle';
 import type { IrisAccount } from './multiAccount';
 import { ACCOUNT_TYPE_META } from './multiAccount';
 import {
@@ -50,7 +50,7 @@ const btn = (bg: Bg, primary?: boolean): React.CSSProperties => ({
   justifyContent: 'center',
   gap: 6,
   border: primary ? 'none' : `1px solid ${bg.cardBorder}`,
-  background: primary ? `linear-gradient(135deg, #833AB4, #E1306C 60%, #F77737)` : 'rgba(255,255,255,0.75)',
+  background: primary ? whiteSafeGradient(['#833AB4', '#E1306C 60%', '#F77737']) : 'rgba(255,255,255,0.75)',
   color: primary ? '#fff' : bg.ink,
 });
 

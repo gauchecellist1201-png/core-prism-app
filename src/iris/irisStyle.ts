@@ -404,6 +404,29 @@ export function accentFaceInk(accent: string): string {
   return onAccentFace(accent).ink;
 }
 
+/**
+ * 「白文字を乗せるグラデーションの面」を、色ごとに白が通るところまで暗くして組み立てる。
+ *
+ * Iris はブランドの IG グラデ（紫 #833AB4 → 桃 #E1306C → 橙 #F77737 → 黄 #FBBF24）を
+ * 面に使い、その上に白い文字と線画アイコンを **50 箇所以上でべた書き** していた。
+ * ところが白の比は 紫 6.50 / 桃 4.34 / **橙 2.75** / **黄 1.67**＝
+ * グラデの右半分では文字もアイコンも読めない（テーマを変えても直らない＝色が固定値のため）。
+ * 面のいちばん薄いところで落第する、という 2026-08-05 の `${accent}cc` と同じ壊れ方。
+ *
+ * 色相・彩度は変えず明るさだけ落とすので、紫→桃→橙 の流れ（ブランドのトーン）は保たれる。
+ * 代償: 橙 #F77737 → #ca4908 / 黄 #FBBF24 → #956c03 と深くなる。
+ * 停止位置（`'#E1306C 0%'` のような指定）はそのまま温存する。
+ */
+export function whiteSafeGradient(stops: string[], deg: number = 135): string {
+  const safe = stops.map((s) => s.replace(/#[0-9a-fA-F]{6}\b/, (m) => whiteSafeFace(m)));
+  return `linear-gradient(${deg}deg, ${safe.join(', ')})`;
+}
+
+/** Iris の主ボタンで使い回されている「アクセント → 橙」の面。両端とも白が 4.6:1 通る。 */
+export function warmFaceBg(accent: string, deg: number = 135): string {
+  return whiteSafeGradient([accent, '#F77737'], deg);
+}
+
 /** accentText を持たない古い自作テーマに、計算値を補う（画面側は必ず accentText を読める） */
 function withAccentText<T extends { accent: string; accentText?: string; accentSolid?: string; card?: string; ink?: string }>(b: T): T {
   // ink が白＝暗いテーマ、という自作テーマの作られ方に合わせて判定する

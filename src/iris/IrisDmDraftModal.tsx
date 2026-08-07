@@ -247,7 +247,7 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
       >
         {/* ── ヘッダー ────────────────────────────── */}
         <div style={{
-          background: IRIS_GRADIENT.instagram,
+          background: IRIS_GRADIENT.instagramText,
           color: '#fff',
           padding: '1rem 1.1rem 1.1rem',
           position: 'relative',
@@ -679,7 +679,7 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
             disabled={!editedBody || loading}
             style={{
               flex: 1.4, minHeight: 48,
-              background: IRIS_GRADIENT.instagram,
+              background: IRIS_GRADIENT.instagramText,
               border: 'none',
               borderRadius: IRIS_RADIUS.lg,
               color: '#fff',

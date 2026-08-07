@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { IrisLogo } from '../components/Logo';
 import InstagramGlyph from './InstagramGlyph';
+import { whiteSafeGradient } from './irisStyle';
 
 interface Props {
   /** 「Instagram を連携する」= 連携モーダルを開く */
@@ -169,7 +170,7 @@ export default function IrisConnectFirst({ onConnect, onSkip }: Props) {
         >
           <div style={{
             width: 88, height: 88, borderRadius: 26,
-            background: 'linear-gradient(135deg, #833AB4 0%, #E1306C 50%, #F77737 100%)',
+            background: whiteSafeGradient(['#833AB4 0%', '#E1306C 50%', '#F77737 100%']),
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 18px 44px rgba(225,48,108,0.4)',
           }}>
@@ -269,7 +270,7 @@ export default function IrisConnectFirst({ onConnect, onSkip }: Props) {
           whileTap={{ scale: 0.97 }}
           style={{
             width: '100%', minHeight: 56,
-            background: 'linear-gradient(135deg, #833AB4 0%, #E1306C 50%, #F77737 100%)',
+            background: whiteSafeGradient(['#833AB4 0%', '#E1306C 50%', '#F77737 100%']),
             color: '#fff', border: 'none', borderRadius: 99,
             padding: '1rem 1.4rem', fontSize: 16, fontWeight: 800,
             cursor: 'pointer',

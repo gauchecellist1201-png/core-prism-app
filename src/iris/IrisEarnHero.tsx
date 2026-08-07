@@ -10,6 +10,7 @@
 import { motion } from 'framer-motion';
 import { Sparkles, TrendingUp, Clock, Award, ArrowRight, Camera } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { whiteSafeGradient } from './irisStyle';
 
 interface Brand {
   id: string;
@@ -150,7 +151,7 @@ export default function IrisEarnHero({ onOpenDeals, onConnectInstagram, igConnec
           type="button"
           onClick={onOpenDeals}
           style={{
-            background: 'linear-gradient(135deg, #E1306C, #F77737)', color: '#fff',
+            background: whiteSafeGradient(['#E1306C', '#F77737']), color: '#fff',
             border: 'none', borderRadius: 999,
             padding: '0.5rem 1rem', fontSize: 12, fontWeight: 700,
             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,

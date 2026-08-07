@@ -17,7 +17,7 @@ import {
   Sparkles, Trash2, Type as TypeIcon, X,
 } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
-import { IRIS_FONTS } from './irisStyle';
+import {IRIS_FONTS, whiteSafeGradient} from './irisStyle';
 import { notifyInApp } from '../lib/inAppNotify';
 import type { ProductionScript, ScriptShot } from './scriptStudio';
 import {
@@ -43,7 +43,7 @@ interface Props {
   topic?: string;
 }
 
-const IRIS_GRADIENT = 'linear-gradient(135deg, #E1306C 0%, #F77737 50%, #FBBF24 100%)';
+const IRIS_GRADIENT = whiteSafeGradient(['#E1306C 0%', '#F77737 50%', '#FBBF24 100%']);
 
 /** クリップボードへ (silent fail 禁止: 成功も失敗も必ず通知) */
 function copyText(text: string, okTitle: string, okBody: string): void {

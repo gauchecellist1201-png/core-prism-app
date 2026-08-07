@@ -16,6 +16,7 @@ import {
 import { REEL_TEMPLATES, type ReelTemplate } from './reelTemplates';
 import { buildHashtagPlan, splitCaptionAndTags, BAND_META } from './hashtagStrategy';
 import type { IrisBackgroundDef } from './irisStyle';
+import { warmFaceBg, whiteSafeGradient } from './irisStyle';
 
 const TPL_ICON = { sparkles: Sparkles, list: List, sun: Sun, messageCircle: MessageCircle, alertTriangle: AlertTriangle, gift: Gift } as const;
 
@@ -285,7 +286,7 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSc
               </div>
 
               <button type="button" onClick={() => fileRef.current?.click()}
-                style={{ marginTop: 11, width: '100%', minHeight: 46, background: `linear-gradient(135deg, ${accent}, #F77737)`, color: '#fff', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: `0 6px 18px ${accent}33` }}>
+                style={{ marginTop: 11, width: '100%', minHeight: 46, background: warmFaceBg(accent), color: '#fff', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: `0 6px 18px ${accent}33` }}>
                 <Upload size={15} /> この型で撮った素材を入れる
               </button>
               <p style={{ margin: '7px 2px 0', fontSize: 10.5, color: bg.inkSoft, lineHeight: 1.5 }}>
@@ -327,7 +328,7 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSc
         <button type="button" onClick={compose} disabled={!clips.length}
           style={{
             width: '100%', minHeight: 50, marginBottom: 4,
-            background: clips.length ? `linear-gradient(135deg, ${accent}, #F77737)` : `${accent}44`,
+            background: clips.length ? warmFaceBg(accent) : `${accent}44`,
             color: '#fff', border: 'none', borderRadius: 14, fontSize: 14.5, fontWeight: 800,
             cursor: clips.length ? 'pointer' : 'not-allowed',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -468,7 +469,7 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSc
           {/* リールスタジオで動画化（順番・秒数・字幕を引き継ぐ） */}
           {onSendToStudio && (
             <button type="button" onClick={sendToStudio}
-              style={{ marginTop: 10, width: '100%', background: `linear-gradient(135deg, #833AB4, ${accent} 55%, #F77737)`, border: 'none', color: '#fff', fontSize: 13.5, fontWeight: 800, borderRadius: 12, padding: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: `0 8px 22px ${accent}40` }}>
+              style={{ marginTop: 10, width: '100%', background: whiteSafeGradient(['#833AB4', `${accent} 55%`, '#F77737']), border: 'none', color: '#fff', fontSize: 13.5, fontWeight: 800, borderRadius: 12, padding: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: `0 8px 22px ${accent}40` }}>
               <Film size={15} /> この構成でリールスタジオを開く（動画化） <ArrowRight size={14} />
             </button>
           )}
@@ -488,7 +489,7 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSc
             ) : (
               <button type="button"
                 onClick={() => onSchedule({ caption: comp.caption || comp.title, hashtags: comp.hashtags, title: comp.title })}
-                style={{ marginTop: 10, width: '100%', background: `linear-gradient(135deg, ${accent}, #F77737)`, border: 'none', color: '#fff', fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                style={{ marginTop: 10, width: '100%', background: warmFaceBg(accent), border: 'none', color: '#fff', fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <CalendarPlus size={14} /> この構成を投稿予約に追加
               </button>
             )

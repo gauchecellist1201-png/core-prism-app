@@ -37,6 +37,7 @@ import type { AppSettings } from '../types/identity';
 import type { MediaKit } from '../types/influencerDeal';
 import { usePostQueue, type ScheduledPost } from './usePostQueue';
 import { copyText } from './copyText';
+import { warmFaceBg } from './irisStyle';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -69,7 +70,7 @@ function DealLinkPicker({ deals, value, onChange, accent, bg }: {
             <button key={opt.id ?? 'none'} type="button" onClick={() => onChange(opt.id)}
               style={{
                 fontSize: 11.5, fontWeight: 700, borderRadius: 99, padding: '9px 14px', minHeight: 40, cursor: 'pointer',
-                background: sel ? `linear-gradient(135deg, ${accent}, #F77737)` : 'transparent',
+                background: sel ? warmFaceBg(accent) : 'transparent',
                 color: sel ? '#fff' : bg.inkSoft,
                 border: sel ? 'none' : `1px solid ${bg.cardBorder}`,
               }}>
@@ -524,7 +525,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
             disabled={!defaultTheme}
             style={{
               width: '100%', minHeight: 50,
-              background: defaultTheme ? `linear-gradient(135deg, ${accent}, #F77737)` : `${accent}55`,
+              background: defaultTheme ? warmFaceBg(accent) : `${accent}55`,
               color: '#fff', border: 'none', borderRadius: 14,
               fontSize: 14.5, fontWeight: 800, cursor: defaultTheme ? 'pointer' : 'not-allowed',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -614,7 +615,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                   <button type="button" onClick={() => makeDraft(deal)} disabled={draftLoading && draftDealId === deal.id}
-                    style={{ flex: 1, minHeight: 44, background: `linear-gradient(135deg, ${accent}, #F77737)`, border: 'none', color: '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                    style={{ flex: 1, minHeight: 44, background: warmFaceBg(accent), border: 'none', color: '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                     <Mail size={13} /> {draftLoading && draftDealId === deal.id ? '作成中…' : '応募文を作る'}
                   </button>
                   <button type="button" onClick={() => onNavigate('deals')}
@@ -638,7 +639,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
                     <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                       <button type="button"
                         onClick={() => { void copyDraft(deal.id); }}
-                        style={{ flex: 1, minHeight: 44, background: copiedDealId === deal.id ? 'rgba(16,185,129,0.12)' : `linear-gradient(135deg, ${accent}, #F77737)`, border: copiedDealId === deal.id ? '1px solid rgba(16,185,129,0.4)' : 'none', color: copiedDealId === deal.id ? '#0F7D63' : '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                        style={{ flex: 1, minHeight: 44, background: copiedDealId === deal.id ? 'rgba(16,185,129,0.12)' : warmFaceBg(accent), border: copiedDealId === deal.id ? '1px solid rgba(16,185,129,0.4)' : 'none', color: copiedDealId === deal.id ? '#0F7D63' : '#fff', fontSize: 12, fontWeight: 800, borderRadius: 10, padding: '9px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                         {copiedDealId === deal.id ? <><CheckCircle2 size={13} /> コピーしました</> : <><Copy size={13} /> 応募文をコピー</>}
                       </button>
                       {deal.contact?.type === 'email' ? (
@@ -789,7 +790,7 @@ function FeedGridPreview({ bg, accent, posts, onReorder }: {
             aria-label="1つ前に移動"
             style={{
               width: 44, height: 44, borderRadius: 12, border: 'none', cursor: selected === 0 ? 'not-allowed' : 'pointer',
-              background: selected === 0 ? `${accent}14` : `linear-gradient(135deg, ${accent}, #F77737)`,
+              background: selected === 0 ? `${accent}14` : warmFaceBg(accent),
               color: selected === 0 ? bg.inkSoft : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
             <ChevronLeft size={18} />
@@ -801,7 +802,7 @@ function FeedGridPreview({ bg, accent, posts, onReorder }: {
             aria-label="1つ後ろに移動"
             style={{
               width: 44, height: 44, borderRadius: 12, border: 'none', cursor: selected === posts.length - 1 ? 'not-allowed' : 'pointer',
-              background: selected === posts.length - 1 ? `${accent}14` : `linear-gradient(135deg, ${accent}, #F77737)`,
+              background: selected === posts.length - 1 ? `${accent}14` : warmFaceBg(accent),
               color: selected === posts.length - 1 ? bg.inkSoft : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
             <ChevronRight size={18} />
@@ -941,7 +942,7 @@ function ReelScriptCard({ reel, theme, accent, bg, onRegenerate, onOpenStudio }:
           <RefreshCw size={13} /> 別案
         </button>
         <button type="button" onClick={onOpenStudio}
-          style={{ flex: 2, minHeight: 44, background: `linear-gradient(135deg, ${accent}, #F77737)`, border: 'none', color: '#fff', fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+          style={{ flex: 2, minHeight: 44, background: warmFaceBg(accent), border: 'none', color: '#fff', fontSize: 12.5, fontWeight: 800, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
           <Clapperboard size={14} /> 動画にして仕上げる <ArrowRight size={13} />
         </button>
       </div>
