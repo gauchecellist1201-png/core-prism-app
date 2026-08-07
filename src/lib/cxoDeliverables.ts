@@ -80,9 +80,25 @@ function loadAll(): CxoDeliverable[] {
   } catch { return []; }
 }
 
-function saveAll(items: CxoDeliverable[]) {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS))); }
-  catch { /* quota */ }
+/**
+ * 保存を「やったつもり」にしない (2026-08-08)。
+ * 端末の保存がいっぱいだと localStorage.setItem は例外を投げる。以前はそれを握りつぶしていたので、
+ * 呼び出し側は失敗を知る手段が無く、画面には「記録しました」と出たまま実体は消えていた。
+ * ここでは ①失敗したら古いものから捨てて段階的に再挑戦 ②最後に書けたか確認して真偽値を返す。
+ * 捨てるのは古い成果物だけ (新しい 1 件は必ず残す優先度)。
+ */
+function saveAll(items: CxoDeliverable[]): boolean {
+  const capped = items.slice(0, MAX_ITEMS);
+  // MAX_ITEMS → 200 → 50 → 10 → 3 → 1 と、諦める前に入るところまで詰める
+  const attempts = [capped.length, 200, 50, 10, 3, 1].filter((n, i, arr) => n > 0 && arr.indexOf(n) === i);
+  for (const n of attempts) {
+    if (n > capped.length) continue;
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(capped.slice(0, n)));
+      return true;
+    } catch { /* 次はもっと少ない件数で試す */ }
+  }
+  return false;
 }
 
 function makeId(): string {
@@ -100,8 +116,14 @@ export function listAllDeliverables(): CxoDeliverable[] {
   return loadAll().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-/** CXO 実行 完了 時 に 呼ぶ — 成果物 を 1 件 記録 */
-export function logDeliverable(input: Omit<CxoDeliverable, 'id' | 'createdAt' | 'viewed'> & { createdAt?: string }): CxoDeliverable {
+/**
+ * CXO 実行 完了 時 に 呼ぶ — 成果物 を 1 件 記録し、**本当に残ったか** を返す (2026-08-08)。
+ * 「記録しました」と画面で言い切る前に、書けたことを読み直して確かめる。
+ * 残らなかった時は core:deliverable-added も出さない (出すと他の画面が幻の 1 件を数える)。
+ */
+export function logDeliverableChecked(
+  input: Omit<CxoDeliverable, 'id' | 'createdAt' | 'viewed'> & { createdAt?: string },
+): { item: CxoDeliverable; persisted: boolean } {
   const all = loadAll();
   const item: CxoDeliverable = {
     id: makeId(),
@@ -109,11 +131,20 @@ export function logDeliverable(input: Omit<CxoDeliverable, 'id' | 'createdAt' | 
     viewed: false,
     ...input,
   };
-  saveAll([item, ...all]);
-  try {
-    window.dispatchEvent(new CustomEvent('core:deliverable-added', { detail: item }));
-  } catch { /* SSR */ }
-  return item;
+  const wrote = saveAll([item, ...all]);
+  // 書けたつもりでも読み直して実在を確認する (別タブが同時に書いて上書きした場合も拾える)
+  const persisted = wrote && loadAll().some((d) => d.id === item.id);
+  if (persisted) {
+    try {
+      window.dispatchEvent(new CustomEvent('core:deliverable-added', { detail: item }));
+    } catch { /* SSR */ }
+  }
+  return { item, persisted };
+}
+
+/** CXO 実行 完了 時 に 呼ぶ — 成果物 を 1 件 記録 (既存 呼び出し 互換) */
+export function logDeliverable(input: Omit<CxoDeliverable, 'id' | 'createdAt' | 'viewed'> & { createdAt?: string }): CxoDeliverable {
+  return logDeliverableChecked(input).item;
 }
 
 export function markViewed(id: string) {

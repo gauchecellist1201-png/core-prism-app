@@ -70,15 +70,30 @@ export function listArtifacts(personaId: string): SavedArtifact[] {
   } catch { return []; }
 }
 
-export function saveArtifact(a: SavedArtifact): void {
+/**
+ * 成果物を端末に保存し、**本当に残ったか** を返す (2026-08-08)。
+ * 以前は quota 例外を握りつぶして void を返していたため、画面には「自動保存済み」と出たまま
+ * 実体は 1 件も残っていない、という嘘が起きていた。成果物は AI が働いた証拠そのものなので、
+ * 失敗したら失敗と言い、コピーで救ってもらう。
+ * 端末がいっぱいの時は古い成果物から捨てて詰め直す (今できた 1 件を最優先で残す)。
+ */
+export function saveArtifact(a: SavedArtifact): boolean {
+  let all: SavedArtifact[] = [];
   try {
     const raw = localStorage.getItem(ARTIFACT_KEY);
-    const all: SavedArtifact[] = raw ? JSON.parse(raw) : [];
-    all.unshift(a);
-    // 直近 50 件まで保持
-    const trimmed = all.slice(0, 50);
-    localStorage.setItem(ARTIFACT_KEY, JSON.stringify(trimmed));
-  } catch { /* quota */ }
+    all = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(all)) all = [];
+  } catch { all = []; }
+  all.unshift(a);
+  // 直近 50 件まで保持。入らなければ 20 → 8 → 3 → 1 と減らして、今の 1 件だけでも残す
+  for (const n of [50, 20, 8, 3, 1]) {
+    if (n > all.length && n !== 1) continue;
+    try {
+      localStorage.setItem(ARTIFACT_KEY, JSON.stringify(all.slice(0, n)));
+      return listArtifacts(a.personaId).some(x => x.id === a.id);
+    } catch { /* 次はもっと少ない件数で試す */ }
+  }
+  return false;
 }
 
 export function deleteArtifact(id: string): void {

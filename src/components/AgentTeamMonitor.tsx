@@ -20,7 +20,6 @@ import InlineActionExecutor from './InlineActionExecutor';
 import CxoProfileModal from './CxoProfileModal';
 import { MetaIcon } from './ExecIcon';
 import { logSuggestion, setStatus as setSuggestionStatus } from '../lib/aiSuggestionLog';
-import { logDeliverable } from '../lib/cxoDeliverables';
 
 interface Props {
   /** Iris か Prism — Iris は dock 上、Prism は別位置 */
@@ -500,26 +499,11 @@ export default function AgentTeamMonitor({ brand = 'prism', initialOpen = false 
                       persona={activePersona}
                       settings={settings}
                       onClose={() => setInlineExec(null)}
-                      onComplete={(deliverable, act) => {
-                        // 役員 日報 へ 自動 記録 (2026-06-05 オーナー指示)
-                        try {
-                          const meta = CXO_META[inlineExec.cxo];
-                          const kindToCategory: Record<string, 'plan' | 'copy' | 'analysis' | 'outreach' | 'design' | 'finance' | 'product' | 'ops' | 'other'> = {
-                            text: 'copy', checklist: 'plan', email: 'outreach', table: 'analysis', memo: 'copy',
-                          };
-                          logDeliverable({
-                            personaId: activePersona.id,
-                            cxoRole: inlineExec.cxo,
-                            cxoName: cxoDisplayName(inlineExec.cxo),
-                            cxoEmoji: meta.emoji,
-                            title: deliverable.title || act,
-                            summary: act,
-                            content: deliverable.content,
-                            category: kindToCategory[deliverable.kind] || 'other',
-                            source: 'agent-monitor',
-                          });
-                        } catch { /* */ }
-                      }}
+                      // 役員日報への記録 (2026-06-05 オーナー指示) は
+                      // InlineActionExecutor 側に 1 本化した (2026-08-08)。
+                      // ここでは「誰が納品したか」だけ渡す。
+                      cxo={inlineExec.cxo}
+                      logSource="agent-monitor"
                       onAddAsTask={(act) => {
                         // 完了した成果物をタスクキューにも残したい場合の保険
                         const proposal = propose({

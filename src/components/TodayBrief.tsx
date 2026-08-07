@@ -8,9 +8,6 @@ import { RewardBurst } from './visualFx';
 import ThinkingIndicator from './ThinkingIndicator';
 import InlineActionExecutor from './InlineActionExecutor';
 import { LoaderDots } from './MicroLoader';
-import { logDeliverable } from '../lib/cxoDeliverables';
-import { CXO_META } from '../hooks/useAgentTaskQueue';
-import { resolveDeliverableCxo } from '../lib/actionExecutor';
 import { readableInk } from '../lib/ink';
 
 // 連携根拠チップ: ソースのラベル→Lucideアイコン。未知ラベルは汎用(Radio)にフォールバック。
@@ -261,6 +258,10 @@ export default function TodayBrief({
                           style={{ fontSize: 14.5, lineHeight: 1.55, wordBreak: 'keep-all', overflowWrap: 'break-word' }}
                         >{a}</span>
                       </button>
+                      {/* 「今日の一手」タップ→AI成果物の役員日報への記録は
+                          InlineActionExecutor 側に 1 本化した (2026-08-08)。
+                          ここで記録していた頃は、記録するかどうかが入口ごとに分かれ、
+                          記録していない入口でも画面は「記録しました」と出ていた。 */}
                       <AnimatePresence>
                         {executingIdx === i && (
                           <InlineActionExecutor
@@ -269,26 +270,6 @@ export default function TodayBrief({
                             persona={persona}
                             settings={settings}
                             contextText={proposal.context}
-                            onComplete={(deliverable, act) => {
-                              // 「今日の一手」タップ→AI成果物を役員日報へ確実に記録(silent fail撲滅)。
-                              // これが無いと、成果物は自動保存されるのに日報の「動いた量」に載らず
-                              // 価値が見えないままだった(2026-07-06)。
-                              try {
-                                const { cxo, category } = resolveDeliverableCxo(deliverable.kind);
-                                const meta = CXO_META[cxo];
-                                logDeliverable({
-                                  personaId: persona.id,
-                                  cxoRole: cxo,
-                                  cxoName: meta.name,
-                                  cxoEmoji: meta.emoji,
-                                  title: deliverable.title || act,
-                                  summary: act,
-                                  content: deliverable.content,
-                                  category,
-                                  source: 'inline-executor',
-                                });
-                              } catch { /* 記録失敗は握りつぶさず、成果物自体は保存済み */ }
-                            }}
                             onAddAsTask={(act) => {
                               onAcceptAction(act);
                               setShowReward(true);

@@ -13,7 +13,7 @@
 //      下からせり上がる
 //   5) コピー / 保存 / もう一度 / タスクに追加 のボタン
 // ============================================================
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Copy, Save, RotateCw, Plus, AlertCircle, Sparkles, Mail, FileText, MessageSquare } from 'lucide-react';
 import type { AppSettings, Persona } from '../types/identity';
@@ -22,7 +22,9 @@ import {
   type ExecutionPlan, type Deliverable, type SavedArtifact,
   STEP_REVEAL_MS, STEP_THINKING_MS,
 } from '../lib/actionExecutor';
-import { CXO_META } from '../hooks/useAgentTaskQueue';
+import { CXO_META, cxoDisplayName, type CxoRole } from '../hooks/useAgentTaskQueue';
+import { logDeliverableChecked, type CxoDeliverable } from '../lib/cxoDeliverables';
+import { readableInk } from '../lib/ink';
 
 interface Props {
   action: string;
@@ -34,8 +36,17 @@ interface Props {
   onClose: () => void;
   /** 追加コンテキスト (オーナーのその日のメモ等) */
   contextText?: string;
-  /** 完了時 に 親側 (AgentTeamMonitor 等) で 役員日報 へ logDeliverable する 用 (2026-06-05) */
+  /**
+   * 完了時に親へ知らせる (画面遷移など、親固有の後始末用)。
+   * **役員日報への記録はここではなく、このコンポーネント自身が必ず行う** (2026-08-08)。
+   * 以前は記録が親の onComplete 任せで、渡していない入口 (チャット指令・焦点モード) では
+   * 1 件も記録されないのに画面だけ「記録しました」と言っていた。
+   */
   onComplete?: (deliverable: Deliverable, action: string) => void;
+  /** 誰が納品したことにするか。省略時は成果物の種類から決める (resolveDeliverableCxo) */
+  cxo?: CxoRole;
+  /** 日報に残す出所。省略時は inline-executor */
+  logSource?: CxoDeliverable['source'];
 }
 
 type Phase = 'planning' | 'streaming' | 'done' | 'error';
@@ -46,8 +57,18 @@ interface StreamedStep {
   status: 'thinking' | 'done';
 }
 
+/** 納品後の「残せたか」— 端末への保存と日報への記録を、言い切る前に実測した結果 */
+interface DeliveryOutcome {
+  /** 成果物そのものを端末に保存できたか (localStorage) */
+  savedArtifact: boolean;
+  /** 役員日報 = 「動いた量」に 1 件として記録できたか */
+  recordedInReport: boolean;
+  /** 記録した役員 (記録できた時のみ表示に使う) */
+  cxo: CxoRole;
+}
+
 export default function InlineActionExecutor({
-  action, persona, settings, onAddAsTask, onClose, contextText, onComplete,
+  action, persona, settings, onAddAsTask, onClose, contextText, onComplete, cxo, logSource,
 }: Props) {
   const [phase, setPhase] = useState<Phase>('planning');
   const [plan, setPlan] = useState<ExecutionPlan | null>(null);
@@ -55,6 +76,8 @@ export default function InlineActionExecutor({
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [outcome, setOutcome] = useState<DeliveryOutcome | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const [runKey, setRunKey] = useState(0); // 「もう一度」で再実行する key
 
   // ── 1) 起動と同時に AI 呼び出し ─────────────────────
@@ -66,6 +89,7 @@ export default function InlineActionExecutor({
     setErrMsg(null);
     setCopied(false);
     setSaved(false);
+    setOutcome(null);
 
     executeAction(action, persona, settings, contextText)
       .then(p => {
@@ -104,24 +128,74 @@ export default function InlineActionExecutor({
     return () => { cancelled = true; };
   }, [phase, plan]);
 
-  // ── 3) 完了時に成果物を localStorage に保存 ─────────
+  // ── 3) 完了時に「端末へ保存」と「役員日報へ記録」を必ず自分でやる ─────────
+  //   どの入口から開かれても同じことが起きるように、記録はここに 1 本化した (2026-08-08)。
+  //   親の onComplete 任せだった頃は、チャット指令(App.tsx)・焦点モード(FocusHero)から
+  //   実行した成果物が「動いた量」に 1 件も入らないのに、画面は「記録しました」と出していた。
+  //   やり直しでは「まだ済んでいない方だけ」を実行する (二重に記録して件数を水増ししない)。
+  const runDelivery = useCallback((
+    p: ExecutionPlan,
+    todo: { artifact: boolean; report: boolean },
+  ): DeliveryOutcome => {
+    const fallback = resolveDeliverableCxo(p.deliverable.kind);
+    const useCxo: CxoRole = cxo ?? fallback.cxo;
+
+    let savedArtifact = !todo.artifact;
+    if (todo.artifact) {
+      const a: SavedArtifact = {
+        id: `art-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        personaId: persona.id,
+        action,
+        plan: p,
+        createdAt: new Date().toISOString(),
+      };
+      try { savedArtifact = saveArtifact(a); } catch { savedArtifact = false; }
+    }
+
+    let recordedInReport = !todo.report;
+    if (todo.report) {
+      try {
+        const meta = CXO_META[useCxo];
+        const res = logDeliverableChecked({
+          personaId: persona.id,
+          cxoRole: useCxo,
+          cxoName: cxoDisplayName(useCxo),
+          cxoEmoji: meta.emoji,
+          title: p.deliverable.title || action,
+          summary: action,
+          content: p.deliverable.content,
+          category: fallback.category,
+          source: logSource ?? 'inline-executor',
+        });
+        recordedInReport = res.persisted;
+      } catch { recordedInReport = false; }
+      // 価値カード(WeeklyValueCard)へ即時反映 — 本当に記録できた時だけ知らせる (幻の 1 件を数えさせない)
+      if (recordedInReport) {
+        try { window.dispatchEvent(new CustomEvent('core:value-updated')); } catch { /* */ }
+      }
+    }
+    return { savedArtifact, recordedInReport, cxo: useCxo };
+  }, [action, persona.id, cxo, logSource]);
+
   useEffect(() => {
     if (phase !== 'done' || !plan || saved) return;
-    const id = `art-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const a: SavedArtifact = {
-      id,
-      personaId: persona.id,
-      action,
-      plan,
-      createdAt: new Date().toISOString(),
-    };
-    saveArtifact(a);
+    setOutcome(runDelivery(plan, { artifact: true, report: true }));
     setSaved(true);
-    // 価値カード(WeeklyValueCard)へ即時反映 — AIが動いた瞬間に「今週/今日の件数」が増える体感を作る
-    try { window.dispatchEvent(new CustomEvent('core:value-updated')); } catch { /* */ }
-    // 親 へ 完了 通知 (AgentTeamMonitor が 役員日報 へ logDeliverable する)
+    // 親 へ 完了 通知 (画面遷移などの親固有の後始末。記録は上で済ませている)
     try { onComplete?.(plan.deliverable, action); } catch { /* */ }
-  }, [phase, plan, saved, persona.id, action, onComplete]);
+  }, [phase, plan, saved, action, onComplete, runDelivery]);
+
+  // 保存 or 記録に失敗した時の「もう一度残す」— 黙って諦めない
+  const handleRetrySave = () => {
+    if (!plan || retrying || !outcome) return;
+    setRetrying(true);
+    const next = runDelivery(plan, {
+      artifact: !outcome.savedArtifact,
+      report: !outcome.recordedInReport,
+    });
+    setOutcome(next);
+    setRetrying(false);
+  };
 
   const handleCopy = async () => {
     if (!plan) return;
@@ -309,12 +383,11 @@ export default function InlineActionExecutor({
               {plan.deliverable.title}
             </span>
           </div>
-          {/* 納品した役員 + 「動いた量に記録」を honest に見せる。
+          {/* 納品した役員 + 「動いた量に記録」— 実際に記録できた時だけ、そう言う。
               タップ→成果→日報/価値カード の輪を、その場で目に見える形にする(価値の可視化)。
-              onComplete で役員日報へ記録し core:value-updated を dispatch 済 = 記録は本当。 */}
-          {(() => {
-            const { cxo } = resolveDeliverableCxo(plan.deliverable.kind);
-            const meta = CXO_META[cxo];
+              記録は上の runDelivery が実行し、書けたことを読み直して確かめている(honest)。 */}
+          {outcome && outcome.recordedInReport && (() => {
+            const meta = CXO_META[outcome.cxo];
             const CxoIcon = meta.Icon;
             return (
               <div style={{
@@ -331,7 +404,7 @@ export default function InlineActionExecutor({
                   <CxoIcon size={11} strokeWidth={2.4} />
                 </span>
                 <span style={{ minWidth: 0 }}>
-                  <span style={{ fontWeight: 800, color: 'var(--fg)' }}>{meta.name}</span>
+                  <span style={{ fontWeight: 800, color: 'var(--fg)' }}>{cxoDisplayName(outcome.cxo)}</span>
                   {' が納品 · 今週の'}
                   <span style={{ fontWeight: 700, color: persona.accentColor }}>「動いた量」</span>
                   {'に記録しました'}
@@ -339,6 +412,53 @@ export default function InlineActionExecutor({
               </div>
             );
           })()}
+
+          {/* 残せなかった時 — 黙って「保存済み」と言わない。何が起きたかと、いま何をすれば
+              成果物を失わずに済むかを出す (端末の空きが無い時に起きる) */}
+          {outcome && (!outcome.recordedInReport || !outcome.savedArtifact) && (
+            <div style={{
+              padding: '9px 12px',
+              borderBottom: '1px solid var(--border)',
+              background: 'rgba(251,191,36,0.10)',
+            }}>
+              <div style={{
+                display: 'flex', gap: 7, alignItems: 'flex-start',
+                fontSize: 11.5, lineHeight: 1.6, color: 'var(--fg)',
+              }}>
+                {/* 明るいテーマでは生の琥珀色(#F59E0B)は面に対して 1.55:1 で読めない (375px 実測)。
+                    面の色をそのまま文字に使わない = readableInk でテーマの反対方向へ寄せる。 */}
+                <AlertCircle size={14} strokeWidth={2.4} style={{ flexShrink: 0, marginTop: 2, color: readableInk('#F59E0B') }} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, marginBottom: 2 }}>
+                    {!outcome.savedArtifact && !outcome.recordedInReport
+                      ? 'この端末に残せませんでした'
+                      : !outcome.savedArtifact
+                        ? '成果物をこの端末に保存できませんでした'
+                        : '「動いた量」に記録できませんでした'}
+                  </div>
+                  <div style={{ color: 'var(--fg-muted)' }}>
+                    端末の保存できる場所がいっぱいです。
+                    {!outcome.savedArtifact && 'この画面を閉じると、いまの成果物は消えます。先に下の「コピー」で控えてください。'}
+                    {outcome.savedArtifact && !outcome.recordedInReport && '成果物は残っていますが、今週の件数には入っていません。'}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handleRetrySave}
+                disabled={retrying}
+                style={{
+                  marginTop: 8, minHeight: 44,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  padding: '0 16px', fontSize: 12.5, fontWeight: 800,
+                  // ペルソナ色の面に #0a0a0f を載せると紫(#9333EA)で 3.67:1 しか出ない。
+                  // 救済ボタンは読めないと意味がないので、ペルソナ色に依存しない濃い琥珀 + 白 (5.3:1)。
+                  background: '#B45309', color: '#FFFFFF',
+                  border: 'none', borderRadius: 10,
+                  cursor: retrying ? 'default' : 'pointer', opacity: retrying ? 0.6 : 1,
+                }}
+              ><RotateCw size={13} strokeWidth={2.6} /> {retrying ? '残しています…' : 'もう一度残す'}</button>
+            </div>
+          )}
           <DeliverableView deliverable={plan.deliverable} accent={persona.accentColor} />
           {plan.note && (
             <div style={{
@@ -381,11 +501,17 @@ export default function InlineActionExecutor({
             <button onClick={() => setRunKey(k => k + 1)} style={btnStyle('ghost', persona.accentColor)}>
               <RotateCw size={11} /> もう一度
             </button>
+            {/* 「自動保存済み」は本当に保存できた時だけ出す (2026-08-08)。
+                以前は保存の失敗を握りつぶしていたので、消えている成果物にこの文字が付いていた。 */}
             <span style={{
-              marginLeft: 'auto', fontSize: 10.5, color: 'var(--fg-muted)',
+              marginLeft: 'auto', fontSize: 10.5,
+              color: outcome && !outcome.savedArtifact ? readableInk('#F59E0B') : 'var(--fg-muted)',
+              fontWeight: outcome && !outcome.savedArtifact ? 800 : 400,
               display: 'inline-flex', alignItems: 'center', gap: 4,
             }}>
-              <Save size={10} /> 自動保存済み
+              {outcome && !outcome.savedArtifact
+                ? <><AlertCircle size={10} strokeWidth={2.6} /> 未保存</>
+                : <><Save size={10} /> 自動保存済み</>}
             </span>
           </div>
         </motion.div>

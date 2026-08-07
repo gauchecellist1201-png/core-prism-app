@@ -15,9 +15,9 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Users, Briefcase, Package, Lightbulb, CheckCircle2, MousePointerClick, Sparkles } from 'lucide-react';
-import { CXO_META, type CxoRole, cxoDisplayName } from '../hooks/useAgentTaskQueue';
+import { CXO_META, type CxoRole } from '../hooks/useAgentTaskQueue';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
-import { realStatsForPersona, listDeliverables, logDeliverable } from '../lib/cxoDeliverables';
+import { realStatsForPersona, listDeliverables } from '../lib/cxoDeliverables';
 import type { Persona } from '../types/identity';
 import { useSettings } from '../hooks/useSettings';
 import InlineActionExecutor from './InlineActionExecutor';
@@ -538,26 +538,11 @@ function CxoActionPopover({
             persona={persona}
             settings={settings}
             onClose={() => { setPhase('idle'); setSelectedTask(null); }}
-            onComplete={(deliverable, act) => {
-              // 役員 日報 に 自動 記録
-              try {
-                const kindToCategory: Record<string, 'plan' | 'copy' | 'analysis' | 'outreach' | 'design' | 'finance' | 'product' | 'ops' | 'other'> = {
-                  text: 'copy', checklist: 'plan', email: 'outreach', table: 'analysis', memo: 'copy',
-                };
-                logDeliverable({
-                  personaId: persona.id,
-                  cxoRole: role,
-                  cxoName: cxoDisplayName(role),
-                  cxoEmoji: meta.emoji,
-                  title: deliverable.title || act,
-                  summary: act,
-                  content: deliverable.content,
-                  category: kindToCategory[deliverable.kind] || 'other',
-                  source: 'agent-monitor',
-                });
-              } catch { /* */ }
-              setPhase('done');
-            }}
+            // 役員日報への記録は InlineActionExecutor 側に 1 本化 (2026-08-08)。
+            // ここでは「誰が納品したか」だけ渡し、記録できたかの表示も向こうが持つ。
+            cxo={role}
+            logSource="agent-monitor"
+            onComplete={() => { setPhase('done'); }}
           />
         )}
 
