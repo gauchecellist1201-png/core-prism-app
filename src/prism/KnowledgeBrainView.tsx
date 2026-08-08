@@ -499,9 +499,33 @@ export default function KnowledgeBrainView({ persona, plan, knowledgeItems, sett
       {myItems.length === 0 && !ingesting && (
         <div style={{ border: '1px dashed #d8d2f5', borderRadius: 14, padding: 16, background: '#faf9ff', textAlign: 'center' }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: INK, marginBottom: 4 }}>まだ知識がありません</div>
+          {/* 淡い面 (#faf9ff) の上の強調色。#6366F1 だと 4.23:1 で AA に届かないので
+              #4F46E5 (実測 5.99:1) を使う — 恒久ルール: 文字コントラスト */}
           <div style={{ fontSize: 12.5, color: SUB, lineHeight: 1.8 }}>
-            上の<strong style={{ color: '#6366F1' }}>「フォルダを丸ごと取り込む」</strong>で会議メモや資料を入れると、Prismがそれを
-            <strong style={{ color: '#6366F1' }}>根拠に</strong>提案・回答します。入れるほど賢くなります（貯める→効く）。
+            会議メモや資料を入れると、Prismがそれを<strong style={{ color: '#4F46E5' }}>根拠に</strong>提案・回答します。
+            入れるほど賢くなります（貯める→効く）。
+          </div>
+          {/* 「上のボタンで」と文字で指すだけだと、初見の人はどれか分からず止まる。
+              ここから直接フォルダ選択を開ける押せる入口を置く (2026-08-08 わかりやすさ回) */}
+          <button
+            type="button"
+            onClick={onPickFolder}
+            disabled={ingesting}
+            style={{
+              marginTop: 14, minHeight: 44, padding: '0 1.3rem',
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              background: GRAD, color: '#fff', border: 'none', borderRadius: 999,
+              fontSize: 13.5, fontWeight: 800, cursor: ingesting ? 'default' : 'pointer',
+              boxShadow: '0 6px 16px rgba(99,102,241,0.28)',
+            }}
+          >
+            <FolderIcon size={15} color="#fff" />最初のフォルダを取り込む
+          </button>
+          {/* 取り込んだ「あと」に何ができるようになるかを、抽象語でなく実例で見せる */}
+          <div style={{ fontSize: 12.5, color: SUB, marginTop: 12, lineHeight: 1.8 }}>
+            入れたあとに、こう聞けます —<br />
+            「<span style={{ color: '#4F46E5', fontWeight: 700 }}>あの件、前回はいくらで見積もった?</span>」<br />
+            「<span style={{ color: '#4F46E5', fontWeight: 700 }}>今期の方針を3行にまとめて</span>」
           </div>
         </div>
       )}

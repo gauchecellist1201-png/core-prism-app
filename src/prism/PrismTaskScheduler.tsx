@@ -643,8 +643,26 @@ export default function PrismTaskScheduler() {
                         textAlign: 'center', color: '#6B7280',
                       }}>
                         <History size={28} style={{ opacity: 0.4, marginBottom: 6 }} />
-                        <div style={{ fontSize: '0.88rem' }}>履歴はまだありません</div>
-                        <div style={{ fontSize: '0.74rem', marginTop: 4 }}>完了・失敗・キャンセルしたタスクがここに残ります</div>
+                        <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#374151' }}>履歴はまだありません</div>
+                        <div style={{ fontSize: '0.78rem', marginTop: 4, lineHeight: 1.7 }}>
+                          予約したタスクが動き終わると、その下書きがここに残ります。<br />
+                          あとから読み返したり、同じ内容でもう一度使えます。
+                        </div>
+                        {/* 隣の「予約中」タブと同じ入口をここにも置く。
+                            片方だけ行き止まりだと、初見の人はこのタブで止まる (2026-08-08 わかりやすさ回) */}
+                        <button
+                          type="button"
+                          onClick={() => setView('compose')}
+                          style={{
+                            marginTop: 14, minHeight: 44, padding: '0 1.3rem',
+                            display: 'inline-flex', alignItems: 'center', gap: 7,
+                            background: 'linear-gradient(135deg,#3B5BFF,#0033A0)', color: '#fff',
+                            border: 'none', borderRadius: 999, fontSize: '0.85rem', fontWeight: 700,
+                            cursor: 'pointer', boxShadow: '0 6px 16px rgba(0,51,160,0.28)',
+                          }}
+                        >
+                          <Sparkles size={15} /> 最初の予約をつくる
+                        </button>
                       </div>
                     );
                   }

@@ -70,8 +70,12 @@ export default function TodaysBodyCard({ email }: Props) {
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
-    if (!email) return;
     let alive = true;
+    // メール未登録の人 (無料で触り始めた直後・マスターキー利用) は hash が作れない。
+    // ここで return するだけだと loading が true のまま固まり、
+    // 「読み込み中…」が永久に回って設定の案内に一生たどり着けなかった。
+    // 待つものが無いと分かった時点で、待つのをやめて案内を出す。(2026-08-08)
+    if (!email) { setLoading(false); return; }
     sha256Hex(email).then((h) => { if (alive) setHash(h); });
     return () => { alive = false; };
   }, [email]);
@@ -106,7 +110,9 @@ export default function TodaysBodyCard({ email }: Props) {
   const subtitle = useMemo(() => {
     if (loading) return '読み込み中…';
     if (error) return `読み込みに失敗: ${error}`;
-    if (!day) return 'まだ届いていません — 下のボタンから iPhone の設定をしましょう';
+    // 見出しが既に「まだ届いていません」なので、ここで繰り返さない。
+    // 同じ言葉が 2 行続くと、読む人は 2 回目を読み飛ばす。
+    if (!day) return 'iPhone とつなぐと、明日の朝から自動で届きます';
     if (isToday) return '今朝の iPhone から届きました';
     return `${day.date} に届いた最新データ`;
   }, [loading, error, day, isToday]);
@@ -135,13 +141,16 @@ export default function TodaysBodyCard({ email }: Props) {
           <button
             type="button"
             onClick={() => setShowGuide(true)}
-            className="text-xs px-2.5 py-1.5 rounded-md font-medium"
+            className="text-xs px-2.5 rounded-md font-medium flex-shrink-0"
             style={{
               background: 'rgba(255,255,255,0.08)',
               border: '1px solid rgba(255,255,255,0.12)',
+              // 375px で「3分で設定する」が 2 行に折れて潰れていた。折らずに 44px を確保する
+              whiteSpace: 'nowrap',
+              minHeight: 44,
             }}
           >
-            {empty ? 'セットアップする' : '同期の設定'}
+            {empty ? '3分で設定する' : '同期の設定'}
           </button>
         </header>
 
@@ -159,10 +168,34 @@ export default function TodaysBodyCard({ email }: Props) {
           </div>
         )}
 
+        {/* 空っぽの時、文章だけだと「何が埋まるのか」が想像できず設定する気にならない。
+            埋まる枠そのものを（数字は入れず「—」のまま）先に見せる。
+            嘘の数字は絶対に出さない — 見えているのは空欄と見出しだけ (2026-08-08 わかりやすさ回) */}
         {empty && (
-          <p className="text-sm opacity-80 mt-3">
-            iPhone の「ショートカット」を一度だけ設定すれば、明日の朝から毎日この欄が埋まります。
-          </p>
+          <>
+            <p className="text-sm opacity-80 mt-3">
+              iPhone の「ショートカット」を一度だけ設定すれば、明日の朝から毎日この欄が埋まります。
+              アプリの追加は要りません。3 分ほどで終わります。
+            </p>
+            {/* Metric をそのまま並べると、空欄用の opacity 0.55 が全部に掛かって
+                文字が読めないうえ、2 列 × 3 段で画面が伸びる。
+                「何が届くか」だけ伝わればいいので、読める濃さの 1 行にする */}
+            <div className="text-[11px] tracking-wide opacity-75 mt-4 mb-2">明日の朝、ここに届くもの</div>
+            <div className="flex flex-wrap gap-1.5">
+              {[['🚶', '歩数'], ['😴', '睡眠'], ['❤', '心拍'], ['⚖', '体重'], ['🙂', '気分']].map(([e, l]) => (
+                <span
+                  key={l}
+                  className="text-[11.5px] px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1"
+                  style={{
+                    background: 'rgba(0,0,0,0.25)',
+                    border: '1px solid rgba(255,255,255,0.10)',
+                  }}
+                >
+                  <span aria-hidden>{e}</span>{l}
+                </span>
+              ))}
+            </div>
+          </>
         )}
 
         {configured === false && (
