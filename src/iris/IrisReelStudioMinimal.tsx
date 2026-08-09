@@ -56,6 +56,11 @@ import {
   routeEditCommand, interpretEditWithAi, applyActions,
   type ReelEditCtx, type ColorMoodId,
 } from './reelChatEdit';
+import {
+  REEL_DESTINATIONS, getReelDestination, type ReelDestId,
+  REEL_SAFE_TOP, REEL_SAFE_BOTTOM,
+  wrapCaptionLines, captionHiddenSide, safeCaptionY,
+} from './reelSafeArea';
 
 /** キャプションの「最初の1行」を別フックに差し替える（2行目以降は維持） */
 function swapFirstLine(caption: string, newHook: string): string {
@@ -87,15 +92,18 @@ interface Props {
   onConsumeTheme?: () => void;
 }
 
-// 実際に書き出す動画の大きさ。Instagram のリール推奨サイズ (1080×1920)。
-// プレビューはこれを 1/3 に縮めた 360×640 で描くが、**書き出す瞬間だけ**
-// キャンバスの中身を 1080×1920 に上げてから録画する。
-// (プレビューのまま録ると 360×640 の動画が出来上がり、Instagram 側で 3 倍に
+// 実際に書き出す動画の幅。出し先 (リール / フィード / 正方形) が変わっても
+// 幅は 1080 のまま、高さだけ変える。字幕の大きさは `canvas.width / OUT_W` で
+// 決まっているので、幅を動かすと同じ台本でも出し先ごとに文字の大きさが変わる。
+// プレビューはこれを 1/3 に縮めて描くが、**書き出す瞬間だけ**キャンバスの中身を
+// 1080 幅に上げてから録画する。
+// (プレビューのまま録ると 360 幅の動画が出来上がり、Instagram 側で 3 倍に
 //  引き伸ばされて文字がにじむ。作った本人には気づけない壊れ方だった)
 const OUT_W = 1080;
-const OUT_H = 1920;
+const OUT_H = 1920;      // 9:16 の高さ (既定の出し先)
 const CANVAS_W = 360;
-const CANVAS_H = 640;
+/** 出し先の高さから、プレビューの高さを出す (常に 1/3) */
+const previewHeightFor = (outH: number) => Math.round((CANVAS_W * outH) / OUT_W);
 
 type ClipKind = 'image' | 'video';
 interface Clip {
@@ -222,6 +230,12 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [bgmActiveId, setBgmActiveId] = useState<string | null>(null);
   const [activePattern, setActivePattern] = useState<string | null>(null);
   const [captionPreset, setCaptionPreset] = useState<typeof FONT_PRESETS[0]>(FONT_PRESETS[0]);
+  // 出し先。既定はこれまでどおり 9:16 (リール / ストーリーズ)＝前の版と同じ動きから始まる
+  const [destId, setDestId] = useState<ReelDestId>('reel');
+  // 「隠れる帯」の目安をプレビューに重ねるか。既定は出す (知らないまま投稿させない)
+  const [showSafeGuide, setShowSafeGuide] = useState(true);
+  const dest = getReelDestination(destId);
+  const previewH = previewHeightFor(dest.h);
   const [playing, setPlaying] = useState(false);
   const [recording, setRecording] = useState(false);
   const [exportUrl, setExportUrl] = useState<string | null>(null);
@@ -372,6 +386,8 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const [igBusy, setIgBusy] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // 書き出しに使った高さ。後始末 (finishExport) は必ずこの高さのプレビューへ戻す。
+  const exportOutHRef = useRef<number>(OUT_H);
   /** 再生中/書き出し中か (字幕フェードを掛けるのは動いている時だけ) */
   const liveRef = useRef(false);
   const animRef = useRef<number>(0);
@@ -971,14 +987,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       ctx.strokeStyle = useStroke;
       ctx.lineWidth = useStrokeW * (canvas.width / OUT_W);
       ctx.lineJoin = 'round';
-      // wrap to ~14 chars
-      const chars = overlay.split('');
-      const lines: string[] = []; let line = '';
-      for (const ch of chars) {
-        line += ch;
-        if (line.length >= 14 && /[\s、。!\?！？]/.test(ch)) { lines.push(line); line = ''; }
-      }
-      if (line) lines.push(line);
+      // 折り返しは reelSafeArea が正本。「隠れるかどうか」の計算と必ず同じ規則で折る
+      // (別々に持つと、警告が出ないのに実際は隠れている、が起きる)
+      const lines = wrapCaptionLines(overlay);
       const lh = useSize * 1.15 * (canvas.width / OUT_W);
       lines.forEach((ln, i) => {
         const yi = y - (lines.length - 1) * lh / 2 + i * lh;
@@ -995,7 +1006,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   // ─── 静止描画 (再生してない時) ─────
   // 書き出し中は録画側の tick が毎コマ描いているので、ここで重ねて描かない
   // (同じ絵を 2 回描くだけで、1080×1920 では純粋に倍の負荷になる)
-  useEffect(() => { if (!playing && !recording) drawAt(currentTime); }, [drawAt, playing, recording, clips, captionPreset, currentTime, presetId, colorMood]);
+  // previewH を入れているのは、出し先を変えると canvas の height 属性が変わって
+  // 中身が消えるため。描き直さないと、切り替えた瞬間だけ真っ黒になる。
+  useEffect(() => { if (!playing && !recording) drawAt(currentTime); }, [drawAt, playing, recording, clips, captionPreset, currentTime, presetId, colorMood, previewH]);
 
   // ─── 再生ループ ─────
   const startPlay = () => {
@@ -1079,6 +1092,31 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
   const setClipCaptionY = (id: string, y: number) => {
     const clamped = Math.max(0.1, Math.min(0.95, y));
     setClips(prev => prev.map(c => c.id === id ? { ...c, captionY: clamped } : c));
+  };
+
+  // ─── 字幕がアプリの部品に隠れていないか ─────
+  // 9:16 は上に名前・音源、下に本文・いいね・返信欄が乗る。プレビューでは全部見えるので、
+  // 投稿して初めて「肝心の一言が半分隠れている」と分かる = 本人には気づけない壊れ方。
+  const captionFontSize = getPreset(presetId)?.captionSize ?? captionPreset.size;
+  const captionYOf = (c: Clip) => c.captionY ?? getPreset(presetId)?.captionY ?? 0.78;
+  const hiddenCaptionCount = useMemo(() => {
+    if (!dest.hasOverlay) return 0;
+    return clips.filter(c => captionHiddenSide({
+      text: c.captionText || '', yRatio: captionYOf(c),
+      fontSize: captionFontSize, outH: dest.h, hasOverlay: true,
+    }) !== null).length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clips, dest, presetId, captionFontSize]);
+
+  /** 隠れている字幕だけを、隠れない位置へ動かす。隠れていない字幕は 1px も触らない。 */
+  const moveHiddenCaptionsToSafe = () => {
+    setClips(prev => prev.map(c => {
+      const text = c.captionText || '';
+      const yRatio = c.captionY ?? getPreset(presetId)?.captionY ?? 0.78;
+      const args = { text, yRatio, fontSize: captionFontSize, outH: dest.h };
+      if (captionHiddenSide({ ...args, hasOverlay: true }) === null) return c;
+      return { ...c, captionY: safeCaptionY(args) };
+    }));
   };
   /** カットの BGM ジャンルを選択。同時にカット長をビートにスナップ (テンポ合わせ) */
   const setClipBgmMood = (id: string, mood: BgmMood) => {
@@ -1207,11 +1245,13 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     if (tickTimerRef.current) { clearTimeout(tickTimerRef.current); tickTimerRef.current = null; }
     if (exportWatchdogRef.current) { clearTimeout(exportWatchdogRef.current); exportWatchdogRef.current = null; }
     // 画面用の軽い大きさに必ず戻す。どの失敗経路から来ても戻す
-    // (1080×1920 のまま置いておくと、以後のプレビューが 9 倍重くなる)
+    // (1080 幅のまま置いておくと、以後のプレビューが 9 倍重くなる)
+    // 戻す高さは「いま選ばれている出し先」のプレビュー高さ。9:16 固定で戻すと、
+    // 4:5 を選んでいる人のプレビューだけ、書き出しの後から縦長のまま残る。
     const canvas = canvasRef.current;
     if (canvas && canvas.width !== CANVAS_W) {
       canvas.width = CANVAS_W;
-      canvas.height = CANVAS_H;
+      canvas.height = previewHeightFor(exportOutHRef.current);
       try { drawAt(0); } catch { /* 素材が外れていても落とさない */ }
     }
   };
@@ -1237,12 +1277,13 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     setOutSize(null); setExportFps(null); drawnFramesRef.current = 0;
     liveRef.current = true; // 書き出し中は字幕のフェードを本来どおり掛ける
 
-    // ここから先は「投稿する動画」を作る。プレビュー用の 360×640 のままだと
+    // ここから先は「投稿する動画」を作る。プレビュー用の 360 幅のままだと
     // Instagram で 3 倍に引き伸ばされて文字がにじむので、録画を掴む前に
-    // 中身だけ 1080×1920 に上げる (見た目の大きさは CSS 側なので変わらない)。
-    // 元に戻すのは finishExport — どの失敗経路もそこを通る。
+    // 中身だけ 1080 幅に上げる (見た目の大きさは CSS 側なので変わらない)。
+    // 高さは選ばれている出し先のもの。元に戻すのは finishExport — どの失敗経路もそこを通る。
+    exportOutHRef.current = dest.h;
     canvasRef.current.width = OUT_W;
-    canvasRef.current.height = OUT_H;
+    canvasRef.current.height = dest.h;
     // 1 コマ目を先に描いておく。空のキャンバスを掴むと冒頭が黒くなる。
     try { drawAt(0); } catch { /* 描けなくても録画側の失敗処理に任せる */ }
 
@@ -1839,16 +1880,43 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
           }}>
           <div style={{
             position: 'relative',
-            paddingTop: '177.7%',
+            // 出し先の比率そのまま。9:16 は 177.7%、4:5 は 125%、1:1 は 100%
+            paddingTop: `${((dest.h / OUT_W) * 100).toFixed(1)}%`,
             background: '#0a0a0f',
             borderRadius: 30,
             boxShadow: '0 32px 64px rgba(225, 48, 108, 0.16), 0 12px 32px rgba(0, 0, 0, 0.14), 0 0 0 7px rgba(255, 255, 255, 0.85), 0 0 0 8px rgba(225, 48, 108, 0.18)',
             overflow: 'hidden',
           }}>
             <canvas
-              ref={canvasRef} width={CANVAS_W} height={CANVAS_H}
+              ref={canvasRef} width={CANVAS_W} height={previewH}
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
             />
+            {/* 9:16 で Instagram のアプリの部品が重なる帯。**プレビューだけ**に出す DOM で、
+                キャンバスには一切描かない = 書き出した動画にこの帯は入らない。
+                録画中は消す (録画中の見た目を、出来上がる動画と食い違わせない)。 */}
+            {dest.hasOverlay && !recording && clips.length > 0 && showSafeGuide && (
+              <>
+                <div aria-hidden style={{
+                  position: 'absolute', left: 0, right: 0, top: 0, height: `${REEL_SAFE_TOP * 100}%`,
+                  background: 'rgba(10,10,15,0.42)',
+                  borderBottom: '1px dashed rgba(255,255,255,0.45)',
+                  pointerEvents: 'none',
+                }} />
+                <div aria-hidden style={{
+                  position: 'absolute', left: 0, right: 0, bottom: 0, height: `${REEL_SAFE_BOTTOM * 100}%`,
+                  background: 'rgba(10,10,15,0.42)',
+                  borderTop: '1px dashed rgba(255,255,255,0.45)',
+                  pointerEvents: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: 9.5, fontWeight: 700, lineHeight: 1.4,
+                  textAlign: 'center', padding: '0 8px',
+                  textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                  fontFamily: IRIS_FONTS.body,
+                }}>
+                  ここは本文・いいね・返信欄で隠れます
+                </div>
+              </>
+            )}
             {clips.length === 0 && (
               <label
                 onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -3186,6 +3254,95 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     <p style={{ fontSize: 13, color: bg.inkSoft, marginBottom: 16, fontFamily: IRIS_FONTS.serif, fontStyle: 'italic' }}>
                       準備ができたら、書き出して Instagram へ
                     </p>
+
+                    {/* ── 出し先を選ぶ。比率はここで決まり、プレビューもその場で同じ形になる ── */}
+                    <Label>どこに出しますか</Label>
+                    <div style={{ display: 'grid', gap: 8, marginBottom: 6 }}>
+                      {REEL_DESTINATIONS.map(d => {
+                        const active = d.id === destId;
+                        return (
+                          <button
+                            key={d.id}
+                            onClick={() => setDestId(d.id)}
+                            disabled={recording}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 10,
+                              width: '100%', minHeight: 56, padding: '0.7rem 0.85rem',
+                              textAlign: 'left',
+                              background: active ? IRIS_GRADIENT : 'rgba(255,255,255,0.78)',
+                              color: active ? '#fff' : INK_ON_LIGHT,
+                              border: `1px solid ${active ? 'transparent' : bg.cardBorder}`,
+                              borderRadius: 14,
+                              cursor: recording ? 'not-allowed' : 'pointer',
+                              opacity: recording ? 0.6 : 1,
+                              boxShadow: active ? '0 8px 22px rgba(225,48,108,0.28)' : 'none',
+                              fontFamily: IRIS_FONTS.body,
+                            }}>
+                            {/* 比率そのものを小さな図で見せる（言葉より速い） */}
+                            <span aria-hidden style={{
+                              flexShrink: 0, width: 26, display: 'flex', justifyContent: 'center',
+                            }}>
+                              <span style={{
+                                display: 'block', width: 18, height: Math.round((18 * d.h) / OUT_W),
+                                maxHeight: 32,
+                                borderRadius: 3,
+                                border: `2px solid ${active ? '#fff' : INK_ON_LIGHT}`,
+                              }} />
+                            </span>
+                            <span style={{ minWidth: 0 }}>
+                              <span style={{ display: 'block', fontSize: 13.5, fontWeight: 800 }}>
+                                {d.label}　<span style={{ opacity: 0.85, fontWeight: 700 }}>{d.ratio}</span>
+                              </span>
+                              <span style={{
+                                display: 'block', fontSize: 11, lineHeight: 1.5, marginTop: 2,
+                                color: active ? 'rgba(255,255,255,0.92)' : INK_ON_LIGHT_SOFT,
+                              }}>{d.why}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* ── 9:16 のときだけ: 隠れる帯の目安を出すかどうか ── */}
+                    {dest.hasOverlay && (
+                      <button
+                        onClick={() => setShowSafeGuide(v => !v)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          minHeight: 44, padding: '0 0.7rem', marginBottom: 10,
+                          background: 'transparent', border: 'none',
+                          color: bg.accentText, fontSize: 12, fontWeight: 800,
+                          cursor: 'pointer', fontFamily: IRIS_FONTS.body,
+                        }}>
+                        <Eye size={13} />
+                        {showSafeGuide ? '隠れる場所の目安を消す' : '隠れる場所の目安を出す'}
+                      </button>
+                    )}
+
+                    {/* ── 実測: 隠れている字幕があるなら、件数と直し方を出す ── */}
+                    {hiddenCaptionCount > 0 && (
+                      <div style={{
+                        margin: '0 0 12px', padding: '0.65rem 0.75rem',
+                        background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.4)',
+                        borderRadius: 12, fontSize: 12, color: bg.ink, lineHeight: 1.65,
+                      }}>
+                        <b style={{ color: bg.ink }}>{hiddenCaptionCount} 枚</b>の字幕が、
+                        Instagram の本文・いいね・返信欄に重なる位置にあります。
+                        プレビューでは見えていますが、投稿すると半分ほど隠れます。
+                        <button
+                          onClick={moveHiddenCaptionsToSafe}
+                          style={{
+                            display: 'block', width: '100%', minHeight: 44, marginTop: 8,
+                            background: '#B45309', color: '#fff',
+                            border: 'none', borderRadius: 10,
+                            fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                            fontFamily: IRIS_FONTS.body,
+                          }}>
+                          隠れる {hiddenCaptionCount} 枚だけ、見える位置へ動かす
+                        </button>
+                      </div>
+                    )}
+
                     <button onClick={startRecord} disabled={!clips.length || recording} style={{
                       width: '100%', minHeight: 64, padding: '1.1rem',
                       background: clips.length && !recording ? IRIS_GRADIENT : 'rgba(255,255,255,0.7)',
@@ -3202,10 +3359,10 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                     }}>
                       {recording
                         ? <><Loader2 size={16} className="iris-spin" /> 書き出し中 {Math.round(progress * 100)}%</>
-                        : <><Wand2 size={16} /> リールを書き出す</>}
+                        : <><Wand2 size={16} /> {dest.label}で書き出す</>}
                     </button>
                     <p style={{ margin: '10px 0 0', fontSize: 12, color: bg.inkSoft, lineHeight: 1.6 }}>
-                      {OUT_W}×{OUT_H}（Instagram のリール推奨サイズ）で書き出します。
+                      {OUT_W}×{dest.h}（{dest.ratio}・Instagram の推奨サイズ）で書き出します。
                       画面のプレビューは軽くするために小さく描いていますが、保存される動画はこの大きさです。
                     </p>
                   </>
@@ -3219,9 +3376,9 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
 
                     {/* できた動画の実寸。カタログ値ではなく、出来たファイルから読んだ値だけ出す。
                         推奨サイズに届かなかった時は、その事実をそのまま伝える。 */}
-                    {outSize && (outSize.w >= OUT_W ? (
+                    {outSize && ((outSize.w >= OUT_W && outSize.h >= dest.h) ? (
                       <p style={{ margin: '-6px 0 14px', textAlign: 'center', fontSize: 12, color: bg.inkSoft, lineHeight: 1.6 }}>
-                        できた動画は <b style={{ color: bg.ink }}>{outSize.w}×{outSize.h}</b>（Instagram のリール推奨サイズ）です
+                        できた動画は <b style={{ color: bg.ink }}>{outSize.w}×{outSize.h}</b>（{dest.ratio}・{dest.label}の推奨サイズ）です
                       </p>
                     ) : (
                       <div style={{
@@ -3229,7 +3386,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                         background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.4)',
                         borderRadius: 10, fontSize: 12, color: bg.ink, lineHeight: 1.6,
                       }}>
-                        できた動画は {outSize.w}×{outSize.h} で、推奨の {OUT_W}×{OUT_H} より小さいままです。
+                        できた動画は {outSize.w}×{outSize.h} で、狙った {OUT_W}×{dest.h}（{dest.ratio}）になっていません。
                         もう一度「別ver. を書き出す」を押すと直ることがあります。
                       </div>
                     ))}
