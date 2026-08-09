@@ -24,6 +24,7 @@ import {
   type GmailUserInfo,
 } from '../lib/gmail';
 import { forgetAgentLink } from '../lib/agentLink';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -445,7 +446,7 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
                         onClick={handleFetchGmail}
                         disabled={gmailFetching || isAnalyzing}
                         className="text-xs px-3 py-1.5 rounded-md font-semibold transition-all disabled:opacity-50"
-                        style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                        style={{ ...onAccent(persona.accentColor) }}
                       >{gmailFetching ? '📥 取り込み中…' : '✨ 受信トレイから一括取込'}</button>
                       <button
                         onClick={handleDisconnectGmail}
@@ -509,7 +510,7 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
                 onClick={handleAnalyze}
                 disabled={!raw.trim() || isAnalyzing}
                 className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                style={{ ...onAccent(persona.accentColor) }}
                 whileHover={!isAnalyzing ? { scale: 1.02 } : {}}
                 whileTap={!isAnalyzing ? { scale: 0.98 } : {}}
               >
@@ -658,7 +659,7 @@ export default function EmailTriageModal({ persona, settings, onClose, onAcceptA
                                             onClick={(ev) => { ev.stopPropagation(); handleSendGmail(e as any); }}
                                             disabled={sendingId === e.id}
                                             className="text-[10px] px-2 py-1 rounded font-semibold disabled:opacity-50"
-                                            style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                                            style={{ ...onAccent(persona.accentColor) }}
                                           >{sendingId === e.id ? '送信中…' : '📤 Gmail送信'}</button>
                                         )
                                       )}

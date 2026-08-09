@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { onAccent } from '../lib/accentFace';
 
 export interface AgentProposalCardProps {
   icon: string;
@@ -116,7 +117,7 @@ export default function AgentProposalCard({
                 disabled={!instruction.trim() || busy}
                 onClick={() => { onRefine(instruction.trim()); setEditing(false); setInstruction(''); }}
                 className="cp-btn cp-btn-primary cp-btn-sm"
-                style={{ background: accentColor, color: '#0a0a0f' }}
+                style={{ ...onAccent(accentColor) }}
               >
                 {busy ? '🧠 直してる…' : '✏️ これで直す'}
               </button>
@@ -146,7 +147,7 @@ export default function AgentProposalCard({
             onClick={onApprove}
             disabled={busy}
             className="cp-btn cp-btn-primary cp-btn-sm"
-            style={{ background: accentColor, color: '#0a0a0f' }}
+            style={{ ...onAccent(accentColor) }}
           >
             {approveLabel}
           </button>

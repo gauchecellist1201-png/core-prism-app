@@ -37,6 +37,7 @@ import { suggestNextAction, heuristicNextAction, priorityScore, daysSinceLastAct
 import { SAMPLE_LEAD_INDUSTRIES, addLeadsToCrm, hasSampleLeads, type LeadIndustry } from '../lib/salesLeadSeed';
 import { SALES_AGENT_SOURCE } from '../lib/salesToCrm';
 import StudioBackButton from './StudioBackButton';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -222,7 +223,7 @@ export default function CRMStudio({ persona, onClose }: Props) {
           <div className="cp-row" style={{ flexShrink: 0 }}>
             <button onClick={() => handleNewDeal()} className="cp-btn cp-btn-primary cp-btn-sm"
               style={{
-                background: persona.accentColor, color: '#0a0a0f',
+                ...onAccent(persona.accentColor),
                 whiteSpace: 'nowrap', flexShrink: 0, minHeight: 44,
                 display: 'inline-flex', alignItems: 'center', gap: 4,
               }}><Plus size={15} strokeWidth={2.6} />案件追加</button>
@@ -848,8 +849,9 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
                 aria-live="polite"
                 className={`cp-btn cp-btn-sm ${editorProposeBtn.successClass ?? ''}`}
                 style={{
-                  background: editorProposeBtn.isSuccess ? 'linear-gradient(135deg, #34D399, #10B981)' : persona.accentColor,
-                  color: '#0a0a0f',
+                  ...(editorProposeBtn.isSuccess
+                    ? { background: 'linear-gradient(135deg, #34D399, #10B981)', color: '#0a0a0f' }
+                    : onAccent(persona.accentColor)),
                   borderColor: 'transparent',
                   boxShadow: editorProposeBtn.isSuccess ? '0 4px 14px rgba(52, 211, 153, 0.45)' : undefined,
                   transition: 'background 0.22s ease-out, box-shadow 0.22s ease-out',
@@ -945,7 +947,7 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
                 <button key={t} onClick={() => setActType(t)}
                   className="cp-btn cp-btn-sm"
                   style={{
-                    ...(actType === t ? { background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' } : {}),
+                    ...(actType === t ? { ...onAccent(persona.accentColor), borderColor: 'transparent' } : {}),
                     display: 'inline-flex', alignItems: 'center', gap: 5, minHeight: 44,
                   }}>
                   <IconChip icon={ACT_ICON[t]} color="currentColor" size={14} />{ACT_LABEL[t]}
@@ -960,7 +962,7 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
                 onAddActivity({ date: new Date().toISOString().slice(0, 10), type: actType, summary: actSummary });
                 setActSummary('');
               }} className="cp-btn cp-btn-primary"
-                style={{ background: persona.accentColor, color: '#0a0a0f', whiteSpace: 'nowrap', flexShrink: 0, minHeight: 44 }}>追加</button>
+                style={{ ...onAccent(persona.accentColor), whiteSpace: 'nowrap', flexShrink: 0, minHeight: 44 }}>追加</button>
             </div>
           </div>
 
@@ -1036,7 +1038,7 @@ function DealEditor({ persona, deal, onClose, onUpdate, onDelete, onAddActivity,
           <div className="cp-row-between pt-2">
             <button onClick={onDelete} className="cp-btn cp-btn-ghost cp-btn-sm" style={{ color: '#f87171' }}>削除</button>
             <button onClick={onClose} className="cp-btn cp-btn-primary"
-              style={{ background: persona.accentColor, color: '#0a0a0f' }}>完了</button>
+              style={{ ...onAccent(persona.accentColor) }}>完了</button>
           </div>
         </div>
       </motion.div>

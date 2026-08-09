@@ -26,6 +26,7 @@ import MeetingRecorder from './MeetingRecorder';
 import { aiFetch } from '../lib/aiFetch';
 import ThinkingIndicator from './ThinkingIndicator';
 import { Sparkles } from 'lucide-react';
+import { onAccentInk } from '../lib/accentFace';
 import {
   proposeKnowledgeUses, refineKnowledgeUse, expandKnowledgeUse, extractActionPlan,
   KNOWLEDGE_USE_LABEL, type KnowledgeUseKind, type KnowledgeUseProposal, type KnowledgeAction,
@@ -967,7 +968,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                                   className="flex-shrink-0 flex items-center justify-center rounded-md mt-0.5"
                                   style={{ width: 22, height: 22, border: `2px solid ${selectedIds.has(item.id) ? persona.accentColor : 'rgba(255,255,255,0.3)'}`, background: selectedIds.has(item.id) ? persona.accentColor : 'transparent' }}
                                 >
-                                  {selectedIds.has(item.id) && <span style={{ color: '#0a0a0f', fontSize: 13, fontWeight: 900 }}>✓</span>}
+                                  {selectedIds.has(item.id) && <span style={{ color: onAccentInk(persona.accentColor), fontSize: 13, fontWeight: 900 }}>✓</span>}
                                 </span>
                               )}
                               <span className="text-base flex-shrink-0">{item.fileKind === 'image' ? '🖼' : sourceIcon(item.sourceType)}</span>

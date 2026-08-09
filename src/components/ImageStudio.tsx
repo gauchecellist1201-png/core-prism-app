@@ -23,6 +23,7 @@ import {
   Check, Dices, Download, BookOpen, ClipboardCopy, RefreshCw, AlertTriangle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -837,8 +838,7 @@ export default function ImageStudio({ persona, settings, onClose, onSaveAsKnowle
                   className="flex-1 rounded-xl text-sm font-semibold disabled:opacity-50"
                   style={{
                     minHeight: 56,
-                    background: persona.accentColor,
-                    color: '#0a0a0f',
+                    ...onAccent(persona.accentColor),
                     boxShadow: `0 8px 24px ${persona.accentColor}50`,
                   }}
                   whileTap={!busy ? { scale: 0.99 } : {}}

@@ -13,6 +13,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Music, Clock, Calendar, MessageCircle, FileText, TrendingUp, Check, ArrowRight, Printer } from 'lucide-react';
+import { onAccent, darkSafeGradient } from '../lib/accentFace';
 
 const FONT_SERIF_JA = '"Noto Serif JP", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"Cinzel", "Cormorant Garamond", serif';
@@ -536,7 +537,7 @@ function ProposalSheet() {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '8px 14px', borderRadius: 8,
-              background: ACCENT_GOLD, color: '#0a0a0f',
+              ...onAccent(ACCENT_GOLD),
               border: 'none', fontSize: 12.5, fontWeight: 800,
               cursor: 'pointer',
             }}
@@ -693,7 +694,9 @@ const sectionLead: React.CSSProperties = {
 const ctaPrimary: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 6,
   padding: '13px 22px', borderRadius: 999,
-  background: `linear-gradient(135deg, ${ACCENT_PRIMARY}, ${ACCENT_GOLD})`,
+  // 紫→金 は明るさの幅が大きく、黒文字は紫の側で 3.67 しか出ていなかった（2026-08-09 実測）。
+  // 金は格を出している側なので暗くせず、紫だけ黒が通るまで明るくする。
+  background: darkSafeGradient([`${ACCENT_PRIMARY} 0%`, `${ACCENT_GOLD} 100%`], 135),
   color: '#0a0a0f', fontWeight: 800, fontSize: 14,
   textDecoration: 'none',
   boxShadow: `0 8px 24px ${ACCENT_PRIMARY}55`,

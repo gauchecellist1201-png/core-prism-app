@@ -9,6 +9,7 @@ import { isAuthorized as isAuthorizedFn, loadBillingUser } from '../lib/billing'
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
 import { onAccentInk } from '../lib/contrast';
+import { onAccent } from '../lib/accentFace';
 
 // ブランド ライン グリフ — OS カラー絵文字は使わない(恒久ルール)。currentColor 継承で文脈色に馴染む
 const glyphBase = (size: number) => ({
@@ -298,7 +299,7 @@ export default function AISidebar({
               <motion.button
                 onClick={onRetry}
                 className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                style={{ background: '#f87171', color: '#0a0a0f' }}
+                style={{ ...onAccent('#f87171') }}
                 whileTap={{ scale: 0.95 }}
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

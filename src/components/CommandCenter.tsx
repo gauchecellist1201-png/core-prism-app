@@ -35,7 +35,8 @@ import { listDeliverables, logDeliverable } from '../lib/cxoDeliverables';
 import type { Persona } from '../types/identity';
 import { aiFetch } from '../lib/aiFetch';
 
-import { whiteSafeGradient } from '../lib/accentFace';
+import { whiteSafeGradient, onAccentGradient, onAccentInk } from '../lib/accentFace';
+import { onAccent } from '../lib/accentFace';
 interface Props {
   persona: Persona;
   open: boolean;
@@ -434,16 +435,16 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
                       <div style={{
                         position: 'absolute', top: 2, right: 2,
                         fontSize: 7, padding: '0 3px', borderRadius: 999, fontWeight: 800,
-                        background: meta.color, color: '#0a0a0f', lineHeight: 1.4,
+                        ...onAccent(meta.color), lineHeight: 1.4,
                       }}>{st.doneCount}</div>
                     )}
                     <div style={{
                       width: 22, height: 22, borderRadius: 999, margin: '0 auto',
-                      background: `linear-gradient(135deg, ${meta.color}, ${meta.color}aa)`,
+                      ...onAccentGradient(meta.color),
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 12, color: '#0a0a0f',
+                      fontSize: 12,
                       boxShadow: active ? `0 0 8px ${meta.color}` : 'none',
-                    }}><MetaIcon meta={meta} size={13} color="#0a0a0f" strokeWidth={2.4} /></div>
+                    }}><MetaIcon meta={meta} size={13} color={onAccentInk(meta.color)} strokeWidth={2.4} /></div>
                     <div style={{ fontSize: 8, fontWeight: 800, marginTop: 2, color: active ? meta.color : 'rgba(255,255,255,0.7)' }}>{role}</div>
                     <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.55)' }}>{name}</div>
                   </div>
@@ -550,12 +551,11 @@ export default function CommandCenter({ persona, open, onClose, brand = 'prism' 
                           {l.cxo && meta ? (
                             <div style={{
                               width: 20, height: 20, borderRadius: 999,
-                              background: `linear-gradient(135deg, ${meta.color}, ${meta.color}aa)`,
-                              color: '#0a0a0f',
+                              ...onAccentGradient(meta.color),
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: 11,
                               boxShadow: pending ? `0 0 10px ${meta.color}` : 'none',
-                            }}><MetaIcon meta={meta} size={12} color="#0a0a0f" strokeWidth={2.4} /></div>
+                            }}><MetaIcon meta={meta} size={12} color={onAccentInk(meta.color)} strokeWidth={2.4} /></div>
                           ) : (
                             <div style={{
                               width: 20, height: 20, borderRadius: 999,

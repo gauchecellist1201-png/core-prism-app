@@ -16,6 +16,7 @@ import { generateNegotiation, generateDraftCopy, evaluateOffer, generateBrandRep
 import { confirmAction } from '../lib/confirmDialog';
 import { LoaderDots } from './MicroLoader';
 import { StudioIntro } from './StudioIntro';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -373,7 +374,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                   <textarea className="cp-input md:col-span-2" rows={2} placeholder="ガイドライン (#PR必須・NGワード等)" value={newDeal.guidelines || ''} onChange={e => setNewDeal({ ...newDeal, guidelines: e.target.value })} />
                   <textarea className="cp-input md:col-span-2" rows={2} placeholder="メモ" value={newDeal.notes || ''} onChange={e => setNewDeal({ ...newDeal, notes: e.target.value })} />
                 </div>
-                <button onClick={handleAddDeal} className="cp-btn cp-btn-primary mt-3" style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                <button onClick={handleAddDeal} className="cp-btn cp-btn-primary mt-3" style={{ ...onAccent(persona.accentColor) }}>
                   追加
                 </button>
               </details>
@@ -487,7 +488,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                   <div className="flex gap-2">
                     <button onClick={handleGenerateNego} disabled={busy || !selectedDealId}
                       className="cp-btn cp-btn-primary"
-                      style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                      style={{ ...onAccent(persona.accentColor) }}>
                       {busy ? <LoaderDots label="交渉文を書いてます" /> : '✨ 交渉文を生成'}
                     </button>
                     <button onClick={handleEvaluate} disabled={busy || !selectedDealId} className="cp-btn cp-btn-secondary">
@@ -556,7 +557,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                 <input className="cp-input w-full mb-2" placeholder="トーン (例: 親しみやすく / クール / 詩的)" value={toneNote} onChange={e => setToneNote(e.target.value)} />
                 <button onClick={handleGenerateDraft} disabled={busy || !draftDealId}
                   className="cp-btn cp-btn-primary"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                  style={{ ...onAccent(persona.accentColor) }}>
                   {busy ? <LoaderDots label="下書きを組み立て中" /> : '✨ 下書きを作る'}
                 </button>
               </div>
@@ -605,7 +606,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                 <textarea className="cp-input w-full mt-2" rows={2} placeholder="自分の振り返り (任意)" value={reflection} onChange={e => setReflection(e.target.value)} />
                 <button onClick={handleGenerateReport} disabled={busy || !reportDealId}
                   className="cp-btn cp-btn-primary mt-2"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                  style={{ ...onAccent(persona.accentColor) }}>
                   {busy ? <LoaderDots label="成果をまとめてます" /> : '✨ レポートを書く'}
                 </button>
               </div>
@@ -686,7 +687,7 @@ export default function InfluencerDeskStudio({ persona, settings, onClose }: Pro
                 </div>
 
                 <button onClick={saveKit} className="cp-btn cp-btn-primary"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                  style={{ ...onAccent(persona.accentColor) }}>
                   💾 メディアキットを保存
                 </button>
               </div>

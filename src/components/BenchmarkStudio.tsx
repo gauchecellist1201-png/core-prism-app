@@ -41,6 +41,7 @@ import EmptyState from './EmptyState';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import { StudioIntro } from './StudioIntro';
 import StudioBackButton from './StudioBackButton';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -286,7 +287,7 @@ function CustomIndustryEditor({
       <div className="cp-row justify-between mt-2 gap-2">
         <button onClick={onCancel} className="cp-btn cp-btn-ghost cp-btn-sm">キャンセル</button>
         <button onClick={save} className="cp-btn cp-btn-sm"
-          style={{ background: accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+          style={{ ...onAccent(accentColor), borderColor: 'transparent' }}>
           保存して使う
         </button>
       </div>
@@ -630,7 +631,7 @@ function StepResult({
         <button
           onClick={handlePdf}
           className="cp-btn w-full"
-          style={{ background: accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+          style={{ ...onAccent(accentColor), borderColor: 'transparent' }}>
           PDF レポート (印刷)
         </button>
       </div>
@@ -830,7 +831,7 @@ function CompetitorBrandsSection({
           <div className="cp-row justify-between gap-2">
             <button onClick={() => setShowAddForm(false)} className="cp-btn cp-btn-ghost cp-btn-sm">キャンセル</button>
             <button onClick={handleAddUser} className="cp-btn cp-btn-sm"
-              style={{ background: accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+              style={{ ...onAccent(accentColor), borderColor: 'transparent' }}>
               追加
             </button>
           </div>
@@ -873,7 +874,7 @@ function AssistIndustryStep({
         <p className="text-fg">業種の自動推定ができませんでした</p>
         <p className="cp-tiny">{error || '情報が不足しています'}</p>
         <button onClick={onRetry} className="cp-btn cp-btn-sm"
-          style={{ background: accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+          style={{ ...onAccent(accentColor), borderColor: 'transparent' }}>
           もう一度試す
         </button>
       </div>
@@ -927,7 +928,7 @@ function AssistIndustryStep({
       <div className="cp-row justify-between gap-2">
         <button onClick={onRetry} className="cp-btn cp-btn-ghost cp-btn-sm cp-row gap-1"><RefreshCw size={12} /> 再推定</button>
         <button onClick={onConfirm} className="cp-btn cp-btn-sm"
-          style={{ background: accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+          style={{ ...onAccent(accentColor), borderColor: 'transparent' }}>
           この業種で進める →
         </button>
       </div>
@@ -1048,7 +1049,7 @@ function AssistQaStep({
         <div className="flex gap-2">
           <button onClick={onSkip} className="cp-btn cp-btn-ghost cp-btn-sm">スキップ</button>
           <button onClick={onSubmit} className="cp-btn cp-btn-sm"
-            style={{ background: accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+            style={{ ...onAccent(accentColor), borderColor: 'transparent' }}>
             この回答で分析する →
           </button>
         </div>
@@ -1577,7 +1578,7 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
               <div key={s.n} className="flex items-center gap-1.5">
                 <div className="w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0"
                   style={step >= s.n
-                    ? { background: persona.accentColor, color: '#0a0a0f' }
+                    ? { ...onAccent(persona.accentColor) }
                     : { background: 'var(--surface-3)', color: 'var(--fg-muted)' }}>
                   {step > s.n ? '✓' : s.n}
                 </div>
@@ -1680,7 +1681,7 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
                       <div className="cp-card-section text-center py-8">
                         <p className="text-fg-muted text-sm">{error || '分析を開始してください'}</p>
                         <button onClick={() => setAssistStage('qa')} className="cp-btn cp-btn-sm mt-3"
-                          style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>
+                          style={{ ...onAccent(persona.accentColor), borderColor: 'transparent' }}>
                           質問に戻る
                         </button>
                       </div>
@@ -1720,7 +1721,7 @@ export default function BenchmarkStudio({ persona, settings, onClose }: Props) {
                         disabled={!canAnalyze}
                         className="cp-btn cp-btn-sm"
                         style={canAnalyze
-                          ? { background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' }
+                          ? { ...onAccent(persona.accentColor), borderColor: 'transparent' }
                           : {}}>
                         AI 分析を実行 →
                       </button>

@@ -186,6 +186,120 @@ export function whiteSafeGradient(stops: string[], deg: number = 135): string {
 }
 
 /**
+ * whiteSafeGradient の裏返し＝**黒い文字を乗せるグラデの面**。明るさだけ上げる。
+ *
+ * 両端の明るさが大きく違うグラデ（紫 #9333EA → 金 #FBBF24 のような）は、
+ * 白でも黒でもどちらか片端が必ず落ちる。どちらを直すかは
+ * 「ブランドの顔になっている色を残せる側」で決める。
+ * 例: 音楽スクールLPの主CTA は金が格を出している側なので、金を暗くせず紫を明るくする。
+ */
+export function darkSafeFace(hex: string, ink: string = '#0a0a0f'): string {
+  if (!normalizeHex(hex)) return hex;
+  try {
+    if (contrast(ink, hex) >= 4.6) return hex;
+    const [h, s, l] = hexToHsl(hex);
+    for (let i = l; i <= 1; i += 0.005) {
+      const c = hslToHex(h, s, i);
+      if (contrast(ink, c) >= 4.6) return c;
+    }
+    return hex;
+  } catch {
+    return hex;
+  }
+}
+
+/** 黒文字を乗せるグラデの面。停止位置（`'#9333EA 0%'`）はそのまま温存する。 */
+export function darkSafeGradient(stops: string[], deg: number = 135, ink: string = '#0a0a0f'): string {
+  const safe = stops.map((s) => s.replace(/#[0-9a-fA-F]{6}\b/, (m) => darkSafeFace(m, ink)));
+  return `linear-gradient(${deg}deg, ${safe.join(', ')})`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// onAccent — 「アクセント色でベタ塗りした面」に、いまある黒い文字を残したまま読ませる
+//
+// 上の onAccentFace は「白文字を乗せたい面」用（グラデ + 白が既定）。
+// こちらは **もう黒い文字が乗っている面** 用。Prism の主ボタン
+// （コピー・追加・保存・完了・◯◯を作る…）は全画面で
+//   `background: persona.accentColor, color: '#0a0a0f'`
+// = ペルソナ色の面にほぼ黒、で固定されていた。明るいアクセント（黄・緑・水色）
+// なら 7〜11 通るが、中〜暗のアクセントでは黒が沈む（2026-08-09 実測）:
+//   #7C3AED 3.47 / #9333EA 3.67 / #DC2626 4.09 / #6B7280 4.09 / #6366F1 4.42
+// #9333EA は Prism のブランド紫そのもの（デモのペルソナもこれ）＝
+// **いちばん押してほしいボタンの文字が、いちばん読めない** 状態だった。
+//
+// ここで onAccentFace に寄せて全部を白文字＋暗い面にすると、
+// 黄・緑のボタンまで見た目が変わってしまう。通っている色はそのまま残し、
+// 落ちている色だけ直すのが、いちばん壊さない。
+// ─────────────────────────────────────────────────────────────
+
+/** いまボタンに使われているほぼ黒。既存の見た目を変えないため同じ値を使う。 */
+const INK_DARK = '#0a0a0f';
+const INK_LIGHT = '#FFFFFF';
+/** WCAG AA（通常サイズの文字） */
+const AA = 4.5;
+/** 面をずらして作る時の目標。hover の brightness(1.08) 分の余白を持たせる */
+const AA_WITH_HEADROOM = 5.0;
+
+/**
+ * アクセント色でベタ塗りした面 と、その上で 4.5:1 以上になる文字色 の組を返す。
+ *
+ * 使い方: `style={{ ...onAccent(persona.accentColor), border: 'none' }}`
+ *
+ * - 明るいアクセント（黄・緑・水色…）は これまで通り `#0a0a0f`＝見た目は変わらない
+ * - 暗いアクセント（紫・濃赤…）は白文字に変わる
+ * - どちらでも届かない中間色（#6366F1 など）は、色相・彩度を変えずに面だけずらす
+ * - hex で書かれていない色（`var(--accent)`・グラデ・rgba）は判定できないので
+ *   これまでの `#0a0a0f` のまま返す＝勝手に白にして明るい面を壊さない
+ */
+export function onAccent(accent: string): { background: string; color: string } {
+  if (!normalizeHex(accent)) return { background: accent, color: INK_DARK };
+  try {
+    const withDark = contrast(accent, INK_DARK);
+    const withLight = contrast(accent, INK_LIGHT);
+    if (withDark >= AA || withLight >= AA) {
+      return { background: accent, color: withDark >= withLight ? INK_DARK : INK_LIGHT };
+    }
+    // 黒でも白でも読めない中間の明るさ。有利な側の文字色を選び、面をその反対へ寄せる。
+    const useLight = withLight >= withDark;
+    const ink = useLight ? INK_LIGHT : INK_DARK;
+    const [h, s, l] = hexToHsl(accent);
+    const step = useLight ? -0.005 : 0.005;
+    for (let i = l + step; i >= 0 && i <= 1; i += step) {
+      const c = hslToHex(h, s, i);
+      if (contrast(c, ink) >= AA_WITH_HEADROOM) return { background: c, color: ink };
+    }
+    return { background: useLight ? '#000000' : '#FFFFFF', color: ink };
+  } catch {
+    return { background: accent, color: INK_DARK };
+  }
+}
+
+/** onAccent の面と離れた場所（面の中に置くチェック印など）で文字色だけ欲しい時に。 */
+export function onAccentInk(accent: string): string {
+  return onAccent(accent).color;
+}
+
+/**
+ * 画面側に散っていた `linear-gradient(135deg, ${accent}, ${accent}cc)` + 黒文字 の置き換え。
+ * 終端の `cc`(80%) は下の地が透けるので、面の中で明るさが一番動くところを作る。
+ * onAccent が決めた面から、終端を **文字と反対側** へずらす＝グラデのどこでも読める。
+ */
+export function onAccentGradient(accent: string, deg: number = 135): { background: string; color: string } {
+  const { background, color } = onAccent(accent);
+  if (!normalizeHex(background)) return { background, color };
+  try {
+    const [h, s, l] = hexToHsl(background);
+    // 白文字なら終端を暗く、黒文字なら終端を明るく
+    const end = color === INK_LIGHT
+      ? hslToHex(h, s, Math.max(0, l * 0.88))
+      : hslToHex(h, s, Math.min(1, l * 1.06));
+    return { background: `linear-gradient(${deg}deg, ${background}, ${end})`, color };
+  } catch {
+    return { background, color };
+  }
+}
+
+/**
  * 「暗い面の上で、アクセント色そのものを“文字”に使う」ときの色。
  *
  * 面に白を乗せる話の裏返し。業界LPの小見出し（`FOR SMB OWNERS` `PROOF` `USE CASES` 等・11px）は

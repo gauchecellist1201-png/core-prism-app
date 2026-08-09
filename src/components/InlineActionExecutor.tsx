@@ -25,6 +25,7 @@ import {
 import { CXO_META, cxoDisplayName, type CxoRole } from '../hooks/useAgentTaskQueue';
 import { logDeliverableChecked, type CxoDeliverable } from '../lib/cxoDeliverables';
 import { readableInk } from '../lib/ink';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   action: string;
@@ -274,7 +275,7 @@ export default function InlineActionExecutor({
               marginTop: 8,
               display: 'inline-flex', alignItems: 'center', gap: 5,
               padding: '6px 12px', fontSize: 11.5, fontWeight: 700,
-              background: persona.accentColor, color: '#0a0a0f',
+              ...onAccent(persona.accentColor),
               border: 'none', borderRadius: 999, cursor: 'pointer',
             }}
           ><RotateCw size={11} /> もう一度</button>
@@ -647,7 +648,7 @@ function btnStyle(variant: 'primary' | 'ghost', accent: string): React.CSSProper
     return {
       display: 'inline-flex', alignItems: 'center', gap: 5,
       padding: '6px 11px', fontSize: 11.5, fontWeight: 800,
-      background: accent, color: '#0a0a0f',
+      ...onAccent(accent),
       border: 'none', borderRadius: 8, cursor: 'pointer',
     };
   }

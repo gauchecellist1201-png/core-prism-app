@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, Plus } from 'lucide-react';
 import { getCredits, PLANS, type CreditView } from '../lib/credits';
 import { readableInk } from '../lib/ink';
+import { onAccentGradient } from '../lib/accentFace';
 
 interface Props {
   onTopUp?: () => void;
@@ -110,8 +111,8 @@ export default function CreditBar({ onTopUp, onUpgrade }: Props) {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
               padding: '6px 12px', borderRadius: 8,
-              background: `linear-gradient(135deg, ${barColor}, ${barColor}cc)`,
-              color: '#0a0a0f', border: 'none', fontSize: 11.5, fontWeight: 800,
+              ...onAccentGradient(barColor),
+              border: 'none', fontSize: 11.5, fontWeight: 800,
               cursor: 'pointer', boxShadow: `0 4px 12px ${barColor}44`,
             }}
           >

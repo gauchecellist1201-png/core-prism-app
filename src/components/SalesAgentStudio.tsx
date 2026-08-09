@@ -25,6 +25,7 @@ import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { aiFetch } from '../lib/aiFetch';
 import { pushLeadToCrm, countSalesAgentDeals, openCrmStudio } from '../lib/salesToCrm';
 import StudioBackButton from './StudioBackButton';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -652,7 +653,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                   <div className="cp-row" style={{ gap: 6, flexShrink: 0 }}>
                     <button onClick={() => runPick(false)} disabled={busy === 'pick'}
                       className="cp-btn cp-btn-primary"
-                      style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                      style={{ ...onAccent(persona.accentColor), display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                       {busy === 'pick' ? (
                         <><Brain size={16} strokeWidth={2.4} /><span>AI が選定中…</span></>
                       ) : picks.length === 0 ? (
@@ -771,7 +772,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                             rows={8} className="cp-textarea" />
                           <div className="cp-row" style={{ gap: 6 }}>
                             <button onClick={saveEdit} className="cp-btn cp-btn-primary"
-                              style={{ background: persona.accentColor, color: '#0a0a0f' }}>保存</button>
+                              style={{ ...onAccent(persona.accentColor) }}>保存</button>
                             <button onClick={() => setEditingId(null)} className="cp-btn cp-btn-ghost">取消</button>
                           </div>
                         </div>
@@ -786,7 +787,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                             className="cp-btn cp-btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Pencil size={14} strokeWidth={2.4} /> 直す</button>
                           <button onClick={() => handleApprove(p)}
                             className="cp-btn cp-btn-primary cp-btn-sm"
-                            style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                            style={{ ...onAccent(persona.accentColor), display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                             <Check size={14} strokeWidth={2.6} /> 採用 → メール下書きを保存
                           </button>
                         </div>
@@ -819,13 +820,13 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                     ) : !gmailConnected ? (
                       <button onClick={connectGmailFlow} disabled={gmailBusy === 'connect'}
                         className="cp-btn cp-btn-primary"
-                        style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                        style={{ ...onAccent(persona.accentColor), display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                         <Mail size={16} strokeWidth={2.4} /><span>{gmailBusy === 'connect' ? '連携中…' : 'Gmail を連携する'}</span>
                       </button>
                     ) : (
                       <button onClick={scanInboxForProspects} disabled={gmailBusy === 'scan'}
                         className="cp-btn cp-btn-primary"
-                        style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                        style={{ ...onAccent(persona.accentColor), display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                         {gmailBusy === 'scan'
                           ? <><Brain size={16} strokeWidth={2.4} /><span>探しています…</span></>
                           : <><Sparkles size={16} strokeWidth={2.4} /><span>受信メールから営業先を探す</span></>}
@@ -863,7 +864,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                         </p>
                         <p className="cp-meta" style={{ wordBreak: 'break-all' }}>{p.email}{p.lastSubject ? ` ・ 直近件名「${p.lastSubject}」` : ''}</p>
                       </div>
-                      <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, color: '#0a0a0f', background: p.fit >= 70 ? '#34D399' : p.fit >= 40 ? '#FBBF24' : '#cbd5e1', borderRadius: 999, padding: '3px 10px' }}>相性 {p.fit}</span>
+                      <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, ...onAccent(p.fit >= 70 ? '#34D399' : p.fit >= 40 ? '#FBBF24' : '#cbd5e1'), borderRadius: 999, padding: '3px 10px' }}>相性 {p.fit}</span>
                     </div>
                     <p className="cp-meta" style={{ lineHeight: 1.6 }}>{p.fitReason}</p>
                     {p.angle && <p className="cp-tiny" style={{ color: persona.accentColor }}>刺さる切り口: {p.angle}</p>}
@@ -876,7 +877,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                         <>
                           <button onClick={() => draftEmailForProspect(p)} disabled={draftingEmail === p.email}
                             className="cp-btn cp-btn-primary"
-                            style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            style={{ ...onAccent(persona.accentColor), display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                             {draftingEmail === p.email
                               ? <><Brain size={15} strokeWidth={2.4} /><span>作成中…</span></>
                               : <><Mail size={15} strokeWidth={2.4} /><span>最適な営業メールを作る → Gmail下書き</span></>}
@@ -979,7 +980,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                   onClick={generateScript}
                   disabled={scriptBusy || !scriptTarget.trim()}
                   className="cp-btn cp-btn-primary"
-                  style={{ background: persona.accentColor, color: '#0a0a0f', opacity: (scriptBusy || !scriptTarget.trim()) ? 0.5 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
+                  style={{ ...onAccent(persona.accentColor), opacity: (scriptBusy || !scriptTarget.trim()) ? 0.5 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
                 >
                   {scriptBusy ? (
                     <><Brain size={16} strokeWidth={2.4} /><span>台本を作成中…</span></>
@@ -1090,7 +1091,7 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                 rows={10} className="cp-textarea" />
               <button onClick={saveProduct} className="cp-btn cp-btn-primary"
                 disabled={!!productSavedMsg}
-                style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                style={{ ...onAccent(persona.accentColor), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 {productSavedMsg ? <><Check size={15} strokeWidth={2.6} /> AI 起動中…</> : '保存 → AI に今日の 5 社を選ばせる'}
               </button>
               {productSavedMsg && (

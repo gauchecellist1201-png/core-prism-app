@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import StudioHeaderIcon from './StudioHeaderIcon';
 import type { LucideIcon } from 'lucide-react';
+import { onAccent } from '../lib/accentFace';
 import {
   DOC_TEMPLATE_META,
   generateTemplateDoc,
@@ -230,7 +231,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
             {view === 'list' && (
               <button onClick={openCompose}
                 className="cp-btn cp-btn-primary cp-btn-sm whitespace-nowrap flex-shrink-0"
-                style={{ background: persona.accentColor, color: '#0a0a0f', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                style={{ ...onAccent(persona.accentColor), display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                 <PlusCircle size={14} strokeWidth={2.4} />新しく作る
               </button>
             )}
@@ -350,7 +351,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
                     <p>{KIND_META[tab].label}がまだありません</p>
                     <button onClick={openCompose}
                       className="cp-btn cp-btn-primary mt-3 whitespace-nowrap"
-                      style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      style={{ ...onAccent(persona.accentColor), minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                       <PlusCircle size={14} strokeWidth={2.4} />最初の{KIND_META[tab].label}を作る
                     </button>
                     <SampleDataCTA accent={persona.accentColor} hint="サンプルの見積書が入り、書類の作りをすぐ確認できます" />
@@ -548,7 +549,7 @@ export default function DocumentStudio({ persona, settings, onClose }: Props) {
                         className="cp-btn cp-btn-ghost">下書き保存</button>
                       <button onClick={() => handleSave('sent')}
                         className="cp-btn cp-btn-primary"
-                        style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                        style={{ ...onAccent(persona.accentColor) }}>
                         発送済として保存
                       </button>
                     </div>
@@ -622,7 +623,7 @@ function DocDetail({ doc, persona, deals, onEdit, onDuplicate, onStatusChange }:
           <button key={s} onClick={() => onStatusChange(s)}
             className="cp-btn cp-btn-sm text-xs"
             style={doc.status === s
-              ? { background: STATUS_LABEL[s].color, color: '#0a0a0f', borderColor: 'transparent' }
+              ? { ...onAccent(STATUS_LABEL[s].color), borderColor: 'transparent' }
               : { color: STATUS_LABEL[s].color, borderColor: STATUS_LABEL[s].color + '40' }}>
             {STATUS_LABEL[s].label}
           </button>
@@ -860,7 +861,7 @@ function TemplateDocStudio({
             disabled={isGenerating}
             className="cp-btn cp-btn-primary"
             style={{
-              background: persona.accentColor, color: '#0a0a0f',
+              ...onAccent(persona.accentColor),
               minHeight: 48, opacity: isGenerating ? 0.6 : 1,
             }}
           >{isGenerating ? 'AI が下書きを書いています…' : 'AI で下書きを作る'}</button>

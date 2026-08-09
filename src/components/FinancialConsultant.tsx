@@ -24,6 +24,7 @@ import { StudioIntro } from './StudioIntro';
 import ThinkingIndicator from './ThinkingIndicator';
 import { aiFetch } from '../lib/aiFetch';
 import StudioBackButton from './StudioBackButton';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -510,7 +511,7 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
               <p className="cp-h3">🤖 AI 財務コンサルの助言</p>
               <button onClick={runConsult} disabled={aiLoading}
                 className="cp-btn cp-btn-sm"
-                style={{ background: accent, color: '#0a0a0f', borderColor: 'transparent', opacity: aiLoading ? 0.5 : 1 }}>
+                style={{ ...onAccent(accent), borderColor: 'transparent', opacity: aiLoading ? 0.5 : 1 }}>
                 {aiLoading ? '数字を読んでいます…' : consult ? '↻ もう一度' : '✨ 助言をもらう'}
               </button>
             </div>
@@ -573,7 +574,7 @@ export default function FinancialConsultant({ persona, onClose }: Props) {
                         <div key={i} className="cp-row" style={{ gap: 8, alignItems: 'flex-start' }}>
                           <span className="flex-shrink-0" style={{
                             width: 20, height: 20, borderRadius: 999, fontSize: 11, fontWeight: 800,
-                            background: accent, color: '#0a0a0f',
+                            ...onAccent(accent),
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                           }}>{i + 1}</span>
                           <span className="cp-body text-fg">{a}</span>

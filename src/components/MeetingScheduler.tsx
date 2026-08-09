@@ -12,6 +12,7 @@ import { computeFreeSlots, buildBookingUrl, formatSlot, groupSlotsByDay } from '
 import { getOrCreateInbox, claimInbox } from '../lib/bookingInbox';
 import { copyText } from '../lib/clipboard';
 import { confirmAction } from '../lib/confirmDialog';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -328,7 +329,7 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
                   onClick={() => void reconnectAndRetry()}
                   disabled={connecting}
                   className="text-xs px-3 py-1.5 rounded-lg font-semibold disabled:opacity-50"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                  style={{ ...onAccent(persona.accentColor) }}
                 >{connecting ? 'つなぎ直しています…' : '🔄 つなぎ直す'}</button>
                 {!trouble.canReconnect && eventsPhase === 'error' && (
                   <button
@@ -462,7 +463,7 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
                 onClick={() => { if (previewType) void reconnectAndRetry(previewType); }}
                 disabled={connecting}
                 className="mt-2 text-xs px-3 py-1.5 rounded-lg font-semibold disabled:opacity-50"
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                style={{ ...onAccent(persona.accentColor) }}
               >{connecting ? 'つなぎ直しています…' : '🔄 つなぎ直して作り直す'}</button>
             </div>
           )}
@@ -510,7 +511,7 @@ function MeetingTypeRow({
             onClick={onGenerate}
             disabled={generating}
             className="text-xs px-3 py-1.5 rounded-lg font-semibold disabled:opacity-50"
-            style={{ background: persona.accentColor, color: '#0a0a0f' }}
+            style={{ ...onAccent(persona.accentColor) }}
           >{generating ? '計算中…' : '🔗 URL生成'}</button>
           <button onClick={onEdit} className="text-xs px-2 py-1.5 rounded text-fg-muted hover:text-fg">{isEditing ? '閉じる' : '編集'}</button>
         </div>

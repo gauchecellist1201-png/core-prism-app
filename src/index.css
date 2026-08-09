@@ -7,6 +7,9 @@
     --prism-logic: #2E6FFF;
     --prism-empathy: #E84B97;
     --prism-creative: #8E5CFF;
+    /* 「白文字を乗せる面」用の紫。--prism-creative は白に対し 4.10 しかなく、
+       主ボタン (.cp-btn-primary) の文字が AA(4.5) 未達だった。色相・彩度は同じ。 */
+    --prism-creative-face: #8149FF;
     --prism-action: #FF7A1A;
     --prism-ethics: #D9A41A;
 
@@ -906,7 +909,12 @@ select option {
   outline-offset: 2px;
 }
 .cp-btn-primary {
-  background: var(--prism-creative);
+  /* --prism-creative (#8E5CFF) をそのまま面にすると 白文字が 4.10 で AA(4.5) 未達だった
+     (2026-08-09 本番実測・下タブの「ホーム」など全画面の主ボタン)。
+     ブランド紫の色相・彩度は変えず、明るさだけ落として白が通る面を別に持つ。
+     hover の brightness(1.08) を掛けても 4.51 残る所まで下げてある。
+     枠線・focus リング・グラデ等の --prism-creative は「面でない」ので従来のまま。 */
+  background: var(--prism-creative-face);
   color: #fff;
   border-color: transparent;
   /* primary は奥行きを少しだけ加え、押すと影が縮む (= 沈んで見える) */

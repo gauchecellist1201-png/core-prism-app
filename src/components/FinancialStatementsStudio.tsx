@@ -20,6 +20,7 @@ import { fmtJpy } from '../lib/invoiceCalc';
 import { StudioIntro } from './StudioIntro';
 import StudioBackButton from './StudioBackButton';
 import { notifyInApp } from '../lib/inAppNotify';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -456,7 +457,7 @@ export default function FinancialStatementsStudio({ persona, onClose }: Props) {
           <button onClick={exportCsv} className="text-xs px-3 rounded-lg text-fg-muted hover:text-fg inline-flex items-center gap-1.5" style={{ minHeight: 44, background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <Download size={14} strokeWidth={2.2} />CSV（表示中）
           </button>
-          <button onClick={exportXlsx} className="text-xs px-4 rounded-lg font-semibold inline-flex items-center gap-1.5" style={{ minHeight: 44, background: persona.accentColor, color: '#0a0a0f', border: 'none' }}>
+          <button onClick={exportXlsx} className="text-xs px-4 rounded-lg font-semibold inline-flex items-center gap-1.5" style={{ minHeight: 44, ...onAccent(persona.accentColor), border: 'none' }}>
             <FileSpreadsheet size={15} strokeWidth={2.2} />Excel で出力（BS・PL）
           </button>
         </div>

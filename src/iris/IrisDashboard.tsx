@@ -51,6 +51,7 @@ import IrisMorningBrief from './IrisMorningBrief';
 import IrisValueReceipt from './IrisValueReceipt';
 import InviteShareCard from '../components/InviteShareCard';
 import type { LucideIcon } from 'lucide-react';
+import { onAccent } from '../lib/accentFace';
 
 // ─── タブ用 Lucide アイコンマップ ──────────────
 const IRIS_TAB_ICON: Record<string, LucideIcon> = {
@@ -2053,7 +2054,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                   <button
                     onClick={() => window.dispatchEvent(new CustomEvent('iris:open-plan', { detail: { planId: videoGenGate.upgradeTo || 'studio' } }))}
                     className="inline-flex items-center justify-center rounded-xl px-6 font-semibold"
-                    style={{ minHeight: 48, background: bg.accent, color: '#0a0a0f' }}
+                    style={{ minHeight: 48, ...onAccent(bg.accent) }}
                   >
                     最上位プランを見る →
                   </button>

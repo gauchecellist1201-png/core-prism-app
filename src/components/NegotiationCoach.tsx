@@ -8,6 +8,7 @@ import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import StudioBackButton from './StudioBackButton';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -284,7 +285,7 @@ export default function NegotiationCoachModal({ persona, settings, onClose }: Pr
                   <button
                     onClick={handleCustomStart}
                     className="w-full mt-2 py-2.5 rounded-lg text-sm font-semibold transition-all"
-                    style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                    style={{ ...onAccent(persona.accentColor) }}
                   >▶ ロールプレイ開始</button>
                 </div>
               )}
@@ -383,7 +384,7 @@ export default function NegotiationCoachModal({ persona, settings, onClose }: Pr
                   onClick={send}
                   disabled={!input.trim() || isThinking}
                   className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 disabled:opacity-50"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                  style={{ ...onAccent(persona.accentColor) }}
                 >→</button>
               </div>
               <div className="flex items-center justify-between mt-2 gap-2">
@@ -473,7 +474,7 @@ export default function NegotiationCoachModal({ persona, settings, onClose }: Pr
               <button
                 onClick={reset}
                 className="px-4 py-2 rounded-lg text-sm font-semibold"
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                style={{ ...onAccent(persona.accentColor) }}
               >🔄 別のシナリオ</button>
             </div>
           </div>

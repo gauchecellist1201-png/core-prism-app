@@ -17,6 +17,7 @@ import StudioBackButton from './StudioBackButton';
 import StudioHeaderIcon from './StudioHeaderIcon';
 import { resolveTabIcon } from '../lib/featureIcons';
 import { Download, AlertTriangle, Files, Users, PlusCircle } from 'lucide-react';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -123,7 +124,7 @@ export default function SalesLedger({ persona, onClose }: Props) {
               onClick={handleExportCsv}
               disabled={personaEntries.length === 0}
               className="text-xs px-3 py-1.5 rounded-md font-semibold disabled:opacity-40 inline-flex items-center gap-1.5 whitespace-nowrap"
-              style={{ background: persona.accentColor, color: '#0a0a0f' }}
+              style={{ ...onAccent(persona.accentColor) }}
             ><Download size={13} strokeWidth={2.4} />CSV 出力</button>
             <button
               onClick={onClose}
@@ -248,7 +249,7 @@ export default function SalesLedger({ persona, onClose }: Props) {
                         <button
                           onClick={() => ledger.markPaid(e.id)}
                           className="text-[10px] px-2 rounded font-semibold flex-shrink-0"
-                          style={{ background: '#34D399', color: '#0a0a0f', minHeight: 32 }}
+                          style={{ ...onAccent('#34D399'), minHeight: 32 }}
                         >入金済みにする</button>
                       </div>
                     ))}
@@ -270,7 +271,7 @@ export default function SalesLedger({ persona, onClose }: Props) {
                   <button
                     onClick={() => setTab('add')}
                     className="cp-btn cp-btn-primary mt-2"
-                    style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, padding: '0 18px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    style={{ ...onAccent(persona.accentColor), minHeight: 44, padding: '0 18px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <PlusCircle size={15} strokeWidth={2.4} />最初の売上を手で 1 件入れる
                   </button>
                   <SampleDataCTA
@@ -423,7 +424,7 @@ export default function SalesLedger({ persona, onClose }: Props) {
                 <button
                   onClick={handleAdd}
                   className="text-sm px-5 py-2 rounded-lg font-semibold"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                  style={{ ...onAccent(persona.accentColor) }}
                 >＋ 売上に追加</button>
               </div>
             </div>

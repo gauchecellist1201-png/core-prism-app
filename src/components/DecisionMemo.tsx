@@ -8,6 +8,7 @@ import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import StudioBackButton from './StudioBackButton';
 import type { DecisionMemo, DecisionInput } from '../lib/decisionMemo';
 import { sortRisksByPriority } from '../lib/riskPriority';
+import { onAccent } from '../lib/accentFace';
 import {
   generateDecisionMemo,
   saveDecision,
@@ -250,7 +251,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
                 onClick={handleDecide}
                 disabled={!rawText.trim() || isBusy}
                 className="rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
-                style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, padding: '0 20px' }}
+                style={{ ...onAccent(persona.accentColor), minHeight: 44, padding: '0 20px' }}
                 whileHover={!isBusy ? { scale: 1.02 } : {}}
                 whileTap={!isBusy ? { scale: 0.98 } : {}}
               >
@@ -374,7 +375,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
                 <button
                   onClick={handleSaveToKnowledge}
                   className="rounded-lg text-sm font-semibold"
-                  style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, padding: '0 16px' }}
+                  style={{ ...onAccent(persona.accentColor), minHeight: 44, padding: '0 16px' }}
                 >📚 ナレッジに保存</button>
               </div>
             </div>
@@ -419,7 +420,7 @@ export default function DecisionMemoModal({ persona, settings, knowledge, onClos
             <button
               onClick={handleReset}
               className="w-full mt-3 rounded-lg text-sm font-semibold"
-              style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 48 }}
+              style={{ ...onAccent(persona.accentColor), minHeight: 48 }}
             >＋ 新しい意思決定を AI に手伝ってもらう</button>
           </div>
         )}

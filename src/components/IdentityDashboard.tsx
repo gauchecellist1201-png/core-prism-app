@@ -113,6 +113,7 @@ import CreditModal from './CreditModal';
 import MobileGeminiDashboard from './MobileGeminiDashboard';
 import PersonaGlyph from './PersonaGlyph';
 import { readableInk } from '../lib/ink';
+import { onAccent, whiteSafeGradient } from '../lib/accentFace';
 import { onAccentInk } from '../lib/contrast';
 
 interface Props {
@@ -1237,7 +1238,9 @@ export default function IdentityDashboard({
                           padding: '10px 16px', minHeight: 44,
                           borderRadius: 999,
                           background: active
-                            ? 'linear-gradient(135deg, #2E6FFF, #8E5CFF)'
+                            // 選ばれているタブは白文字。#8E5CFF の側で 4.10 しか出ておらず
+                            // 全画面のナビが AA 未達だった (2026-08-09 実測)。色相はそのまま明るさだけ落とす。
+                            ? whiteSafeGradient(['#2E6FFF', '#8E5CFF'], 135)
                             : 'rgba(255,255,255,0.05)',
                           border: active ? 'none' : '1px solid rgba(142,92,255,0.25)',
                           color: active ? '#fff' : 'var(--fg)',
@@ -1833,7 +1836,7 @@ export default function IdentityDashboard({
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-fg-muted">{lastBenchmark.industryLabel}業界</span>
               <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                style={{ ...onAccent(persona.accentColor) }}>
                 上位 {100 - lastBenchmark.overallPercentile}%
               </span>
             </div>

@@ -21,6 +21,7 @@ import { realStatsForPersona, listDeliverables } from '../lib/cxoDeliverables';
 import type { Persona } from '../types/identity';
 import { useSettings } from '../hooks/useSettings';
 import InlineActionExecutor from './InlineActionExecutor';
+import { onAccent, onAccentInk } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -240,7 +241,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                 <div style={{
                   position: 'absolute', top: 5, right: 5,
                   fontSize: 8, padding: '1px 5px', borderRadius: 999, fontWeight: 800,
-                  background: meta.color, color: '#0a0a0f', lineHeight: 1.4,
+                  ...onAccent(meta.color), lineHeight: 1.4,
                 }}>{st.doneCount}</div>
               )}
               {/* アバター 円 (大きめ + ホバー で 光る) */}
@@ -250,8 +251,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                 style={{
                   width: 46, height: 46, borderRadius: 999,
                   // 1エージェント1カラー：単色で塗り、上部にだけ軽い艶。暗い影は入れず黒い丸が出ないように。
-                  background: meta.color,
-                  color: '#0a0a0f',
+                  ...onAccent(meta.color),
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 22, fontWeight: 900,
                   // 外側にカラーグロー（輝き）＋上だけ淡いハイライト。下方向の黒い影は入れない。
@@ -261,7 +261,7 @@ export default function DigitalCompanyHero({ persona, onCxoClick }: Props) {
                   marginBottom: 3,
                 }}
               >
-                <meta.Icon size={22} color="#0a0a0f" strokeWidth={2.4} />
+                <meta.Icon size={22} color={onAccentInk(meta.color)} strokeWidth={2.4} />
               </motion.div>
               {/* 役職 ピル (大きめ) */}
               <div style={{
@@ -420,14 +420,14 @@ function CxoActionPopover({
             transition={{ type: 'spring', stiffness: 340, damping: 18 }}
             style={{
               width: 72, height: 72, borderRadius: 20,
-              background: meta.color,
+              ...onAccent(meta.color),
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 36, color: '#0a0a0f', flexShrink: 0,
+              fontSize: 36, flexShrink: 0,
               boxShadow: `0 0 30px ${meta.color}bb, 0 8px 20px ${meta.color}44, inset 0 3px 6px rgba(255,255,255,0.45)`,
               position: 'relative',
             }}
           >
-            <meta.Icon size={34} color="#0a0a0f" strokeWidth={2.2} />
+            <meta.Icon size={34} color={onAccentInk(meta.color)} strokeWidth={2.2} />
             {/* 動いて いる 時 の パルス */}
             {phase === 'running' && (
               <motion.div
@@ -513,7 +513,7 @@ function CxoActionPopover({
                   {i === 0 && (
                     <span style={{
                       fontSize: 9, padding: '2px 6px', borderRadius: 999, fontWeight: 800,
-                      background: meta.color, color: '#0a0a0f', letterSpacing: '0.06em', flexShrink: 0,
+                      ...onAccent(meta.color), letterSpacing: '0.06em', flexShrink: 0,
                     }}>おすすめ</span>
                   )}
                   <span style={{ color: meta.color, flexShrink: 0, display: 'inline-flex' }}><Sparkles size={16} strokeWidth={2.2} /></span>

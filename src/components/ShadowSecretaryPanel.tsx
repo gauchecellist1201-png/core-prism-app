@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona } from '../types/identity';
 import type { ShadowDraft } from '../hooks/useShadowSecretary';
 import { StudioIntro } from './StudioIntro';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -256,8 +257,7 @@ export default function ShadowSecretaryPanel({
                                   disabled={isSending}
                                   className="text-xs px-3 py-2 rounded-lg font-semibold transition-all disabled:opacity-50 flex-1 min-w-[80px]"
                                   style={{
-                                    background: persona.accentColor,
-                                    color: '#0a0a0f',
+                                    ...onAccent(persona.accentColor),
                                   }}
                                 >
                                   {isSending ? '送信中…' : '✉️ 送信'}

@@ -21,6 +21,7 @@ import ThinkingIndicator from './ThinkingIndicator';
 import { confirmAction } from '../lib/confirmDialog';
 import { copyText } from '../lib/clipboard';
 import { aiFetch } from '../lib/aiFetch';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -282,7 +283,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                 </button>
                 <button onClick={() => setView('compose')}
                   className="cp-btn cp-btn-primary cp-btn-sm"
-                  style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  style={{ ...onAccent(persona.accentColor), minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <UserPlus size={14} strokeWidth={2.2} />人物を追加
                 </button>
               </>
@@ -319,7 +320,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                   <div
                     style={{
                       width: 14, height: 14, borderRadius: '50%',
-                      background: persona.accentColor, color: '#0a0a0f',
+                      ...onAccent(persona.accentColor),
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 7, fontWeight: 800, flexShrink: 0,
                     }}
@@ -490,8 +491,7 @@ export default function PeopleStudio({ persona, settings, onClose }: Props) {
                     disabled={interviewBusy || !interviewRole.trim()}
                     className="cp-btn cp-btn-primary"
                     style={{
-                      background: persona.accentColor,
-                      color: '#0a0a0f',
+                      ...onAccent(persona.accentColor),
                       opacity: (interviewBusy || !interviewRole.trim()) ? 0.5 : 1,
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                     }}
@@ -775,7 +775,7 @@ function PersonDetail({
         <div className="cp-row" style={{ flexWrap: 'wrap', gap: 6 }}>
           <button onClick={handleBuildAgenda} disabled={agendaBusy}
             className="cp-btn cp-btn-primary cp-btn-sm"
-            style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            style={{ ...onAccent(persona.accentColor), minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {agendaBusy
               ? <LoaderDots label="話す論点を選んでます" />
               : <><ClipboardList size={14} strokeWidth={2.2} />1on1 で話す 5 項目をつくる</>}
@@ -816,7 +816,7 @@ function PersonDetail({
                 {cs.status === 'cold' && (
                   <button onClick={handleBuildReopen} disabled={reopenBusy}
                     className="cp-btn cp-btn-primary cp-btn-sm"
-                    style={{ background: chip.fg, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    style={{ ...onAccent(chip.fg), minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     {reopenBusy
                       ? <LoaderDots label="送る言葉を選んでます" />
                       : <><PenLine size={14} strokeWidth={2.2} />久しぶりの連絡文を書いてもらう</>}
@@ -1076,7 +1076,7 @@ function PersonDetail({
             <button key={t} onClick={() => setInterType(t)}
               className="cp-btn cp-btn-sm text-xs"
               style={interType === t
-                ? { background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent', minHeight: 40 }
+                ? { ...onAccent(persona.accentColor), borderColor: 'transparent', minHeight: 40 }
                 : { minHeight: 40 }}>
               {INTERACTION_LABEL[t]}
             </button>
@@ -1104,7 +1104,7 @@ function PersonDetail({
           onAddInteraction({ date: interDate, type: interType, summary: interSummary, sentiment: interSentiment });
           setInterSummary('');
         }} className="cp-btn cp-btn-primary cp-btn-sm"
-          style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          style={{ ...onAccent(persona.accentColor), minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <Plus size={14} strokeWidth={2.2} />このやり取りを履歴に残す
         </button>
       </div>
@@ -1243,7 +1243,7 @@ function PersonForm({ persona, onSave, onCancel }: {
               });
             }}
             className="cp-btn cp-btn-primary"
-            style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            style={{ ...onAccent(persona.accentColor), minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <UserPlus size={14} strokeWidth={2.2} />この人を名簿に追加
           </button>
         </div>

@@ -26,6 +26,7 @@ import { executeAction, type ExecutionPlan } from '../lib/actionExecutor';
 import { CXO_META, cxoDisplayName, type CxoRole } from '../hooks/useAgentTaskQueue';
 import PersonaGlyph from './PersonaGlyph';
 import { accentFaceBg, accentFaceInk, whiteFaceBg } from '../lib/accentFace';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -889,7 +890,7 @@ function PlanCard({ plan, accent, icon }: { plan: ExecutionPlan; accent: string;
             onClick={() => navigator.clipboard?.writeText(plan.deliverable.content)}
             style={{
               marginTop: 8, padding: '6px 12px', borderRadius: 999,
-              background: accent, color: '#0a0a0f', border: 'none',
+              ...onAccent(accent), border: 'none',
               fontSize: 11, fontWeight: 800, cursor: 'pointer',
             }}
           >📋 コピー</button>

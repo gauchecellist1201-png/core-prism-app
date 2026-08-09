@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import type { Persona } from '../types/identity';
 import type { CoachBrief } from '../lib/coachScheduler';
 import { getSlotLabel } from '../lib/coachScheduler';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   brief: CoachBrief;
@@ -83,8 +84,7 @@ export default function IncomingBriefBanner({
               onClick={onRead}
               className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all active:scale-95"
               style={{
-                background: persona.accentColor,
-                color: '#0a0a0f',
+                ...onAccent(persona.accentColor),
                 boxShadow: `0 4px 12px ${persona.accentColor}44`,
               }}
             >

@@ -25,6 +25,7 @@ import { transcribeAudioFile } from '../lib/audioTranscribe';
 import { accentFaceBg, accentFaceInk } from '../lib/accentFace';
 
 import { whiteSafeGradient } from '../lib/accentFace';
+import { onAccent } from '../lib/accentFace';
 interface Props {
   onClose: () => void;
   onSavedToKnowledge: (title: string, content: string) => void;
@@ -437,7 +438,7 @@ export default function MeetingRecorder({ onClose, onSavedToKnowledge, accentCol
               )}
               <button onClick={stopAndProcess} style={{
                 ...ctlBtn(accentColor, true),
-                background: '#34D399', color: '#0a0a0f',
+                ...onAccent('#34D399'),
               }}>
                 <Check size={16} /> 終了 → 要約
               </button>

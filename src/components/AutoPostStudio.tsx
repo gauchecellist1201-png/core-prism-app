@@ -29,6 +29,7 @@ import ShareArtifactButton from './ShareArtifactButton';
 import { StudioIntro } from './StudioIntro';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import StudioBackButton from './StudioBackButton';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -125,7 +126,7 @@ function EmptyShelf({
           className="mt-1.5 text-xs px-4 rounded-full font-semibold inline-flex items-center gap-1.5"
           style={{
             minHeight: 40, height: 40,
-            background: accent, color: '#0a0a0f',
+            ...onAccent(accent),
             whiteSpace: 'nowrap', flexShrink: 0,
           }}
         ><Sparkles size={13} strokeWidth={2.4} />{ctaLabel}</button>
@@ -831,7 +832,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
                           <button
                             onClick={() => handleRemix(h)}
                             className="text-xs px-3 rounded font-semibold inline-flex items-center gap-1"
-                            style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 36 }}
+                            style={{ ...onAccent(persona.accentColor), minHeight: 36 }}
                           ><Shuffle size={13} strokeWidth={2.2} />再アレンジ</button>
                         </div>
                       </div>
@@ -1155,7 +1156,7 @@ export default function AutoPostStudio({ persona, settings, knowledge, onClose, 
               onClick={tab === 'multi' ? handleGenerateMulti : handleGenerate}
               disabled={!topic.trim() || isGenerating || (tab === 'multi' && enabledPlatforms.size === 0)}
               className="w-full rounded-lg font-semibold disabled:opacity-50 inline-flex items-center justify-center gap-2"
-              style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 56, fontSize: 16 }}
+              style={{ ...onAccent(persona.accentColor), minHeight: 56, fontSize: 16 }}
               whileTap={!isGenerating ? { scale: 0.99 } : {}}
             >
               {isGenerating

@@ -21,6 +21,7 @@ import { usePersonas } from '../hooks/usePersonas';
 import { useAgentTaskQueue, CXO_META, type CxoRole, type ProposalDraft } from '../hooks/useAgentTaskQueue';
 import { RewardBurst } from './visualFx';
 import StudioBackButton from './StudioBackButton';
+import { onAccent, onAccentInk } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -577,7 +578,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
                 <input type="text" value={newDue} onChange={e => setNewDue(e.target.value)} placeholder="今日 / 明日 / 2026-05-30" className="cp-input" style={{ flex: '1 1 130px' }} />
                 <input type="number" value={newEst} onChange={e => setNewEst(e.target.value)} placeholder="分" className="cp-input" style={{ flex: '0 0 80px' }} min={5} step={5} />
                 <button onClick={handleAdd} className="cp-btn cp-btn-sm" disabled={!newTitle.trim()}
-                  style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent', minHeight: 44, minWidth: 64 }}>
+                  style={{ ...onAccent(persona.accentColor), borderColor: 'transparent', minHeight: 44, minWidth: 64 }}>
                   追加
                 </button>
               </div>
@@ -594,7 +595,7 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
             ]).map(s => (
               <button key={s.id} onClick={() => setSortMode(s.id)}
                 className="cp-btn cp-btn-sm"
-                style={{ minHeight: 44, ...(sortMode === s.id ? { background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' } : {}) }}>
+                style={{ minHeight: 44, ...(sortMode === s.id ? { ...onAccent(persona.accentColor), borderColor: 'transparent' } : {}) }}>
                 {s.label}
               </button>
             ))}
@@ -782,7 +783,7 @@ function TaskRow({
           background: task.done ? persona.accentColor : 'transparent',
           border: `1.5px solid ${task.done ? persona.accentColor : priColor}`,
         }}>
-          {task.done && <span style={{ color: '#0a0a0f', fontSize: 14 }}>✓</span>}
+          {task.done && <span style={{ color: onAccentInk(persona.accentColor), fontSize: 14 }}>✓</span>}
         </span>
       </button>
       <div className="min-w-0 flex-1">
@@ -825,7 +826,7 @@ function TaskRow({
 
       {task.isProposal ? (
         <button onClick={onAccept} className="cp-btn cp-btn-sm flex-shrink-0"
-          style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent', minHeight: 44 }}>
+          style={{ ...onAccent(persona.accentColor), borderColor: 'transparent', minHeight: 44 }}>
           + タスク化
         </button>
       ) : !task.done && (

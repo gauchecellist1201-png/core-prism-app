@@ -23,6 +23,7 @@ import AILoadingState from './AILoadingState';
 import { StudioIntro } from './StudioIntro';
 import StudioBackButton from './StudioBackButton';
 import { aiFetch } from '../lib/aiFetch';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -336,7 +337,7 @@ ${kbBlock}`;
               <button
                 onClick={runAnalysis}
                 className="cp-btn"
-                style={{ background: accent, color: '#0a0a0f' }}
+                style={{ ...onAccent(accent) }}
               >
                 ↻ もう一度分析する
               </button>
@@ -417,7 +418,7 @@ ${kbBlock}`;
                         flexShrink: 0,
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         width: 24, height: 24, borderRadius: 6,
-                        background: accent, color: '#0a0a0f', fontWeight: 800, fontSize: '0.8rem',
+                        ...onAccent(accent), fontWeight: 800, fontSize: '0.8rem',
                       }}>{i + 1}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 600, lineHeight: 1.5 }}>{a.action}</div>

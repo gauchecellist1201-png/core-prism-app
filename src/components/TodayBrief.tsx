@@ -9,6 +9,7 @@ import ThinkingIndicator from './ThinkingIndicator';
 import InlineActionExecutor from './InlineActionExecutor';
 import { LoaderDots } from './MicroLoader';
 import { readableInk } from '../lib/ink';
+import { onAccent } from '../lib/accentFace';
 
 // 連携根拠チップ: ソースのラベル→Lucideアイコン。未知ラベルは汎用(Radio)にフォールバック。
 // 絵文字は使わない(オーナー指示)。ここに出るのは「実際にデータが返った」連携だけ(嘘の根拠を出さない)。
@@ -246,8 +247,7 @@ export default function TodayBrief({
                         <span
                           className="flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform inline-flex items-center justify-center"
                           style={{
-                            color: '#0a0a0f',
-                            background: persona.accentColor,
+                            ...onAccent(persona.accentColor),
                             width: 32, height: 32, borderRadius: 8,
                           }}
                         >
@@ -338,8 +338,7 @@ export default function TodayBrief({
             disabled={isGenerating}
             className="text-sm px-4 py-2.5 rounded-lg font-semibold transition-all disabled:opacity-50"
             style={{
-              background: persona.accentColor,
-              color: '#0a0a0f',
+              ...onAccent(persona.accentColor),
             }}
           >
             {isGenerating ? <LoaderDots label="提案を考えてます" /> : genError ? <span className="inline-flex items-center gap-1.5"><RefreshCw size={15} strokeWidth={2.4} /> もう一度ためす</span> : proposal ? <span className="inline-flex items-center gap-1.5"><RefreshCw size={15} strokeWidth={2.4} /> 新しい提案</span> : <span className="inline-flex items-center gap-1.5"><Sparkles size={15} strokeWidth={2.4} /> 提案を生成</span>}

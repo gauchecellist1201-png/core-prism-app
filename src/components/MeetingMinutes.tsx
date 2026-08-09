@@ -5,6 +5,7 @@ import type { MeetingMinutes } from '../lib/meetingAnalyzer';
 import { analyzeMeeting, minutesToMarkdown, minutesToSlack, minutesToNotion, extractAssignedActions } from '../lib/meetingAnalyzer';
 import { parseFile } from '../lib/fileParser';
 import { readableInk } from '../lib/ink';
+import { onAccent } from '../lib/accentFace';
 import { transcribeAudioFile, isAudioFile } from '../lib/audioTranscribe';
 import {
   loadMeetingDraft, saveMeetingDraft, clearMeetingDraft,
@@ -745,7 +746,7 @@ export default function MeetingMinutesModal({
                   <button
                     onClick={handleRestoreDraft}
                     className="flex-1 rounded-lg text-sm font-semibold"
-                    style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}
+                    style={{ ...onAccent(persona.accentColor), minHeight: 44 }}
                   >続きから使う</button>
                   <button
                     onClick={handleDiscardDraft}
@@ -846,7 +847,7 @@ export default function MeetingMinutesModal({
                       <button
                         onClick={() => startRecording()}
                         className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
-                        style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                        style={{ ...onAccent(persona.accentColor) }}
                       >▶ 録音をはじめる</button>
                     </div>
                   ) : (
@@ -899,7 +900,7 @@ export default function MeetingMinutesModal({
                             <button
                               onClick={restartRecognition}
                               className="mt-2 w-full rounded-lg text-xs font-semibold"
-                              style={{ background: '#f87171', color: '#0a0a0f', minHeight: 44 }}
+                              style={{ ...onAccent('#f87171'), minHeight: 44 }}
                             >文字起こしを再開</button>
                           )}
                         </div>
@@ -954,7 +955,7 @@ export default function MeetingMinutesModal({
                         <button
                           onClick={stopRecording}
                           className="w-full px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
-                          style={{ background: '#f87171', color: '#0a0a0f' }}
+                          style={{ ...onAccent('#f87171') }}
                         >■ 録音を停止</button>
                       ) : (
                         <>
@@ -991,7 +992,7 @@ export default function MeetingMinutesModal({
                               <button
                                 onClick={() => startRecording(true)}
                                 className="flex-1 px-4 rounded-lg text-sm font-semibold transition-all"
-                                style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 44 }}
+                                style={{ ...onAccent(persona.accentColor), minHeight: 44 }}
                               >▶ 続きから録る</button>
                             )}
                             <button
@@ -1138,7 +1139,7 @@ export default function MeetingMinutesModal({
                   onClick={handleAnalyze}
                   disabled={!canAnalyze || isAnalyzing || isRecording || transcribing}
                   className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                  style={{ ...onAccent(persona.accentColor) }}
                   whileHover={!isAnalyzing ? { scale: 1.02 } : {}}
                   whileTap={!isAnalyzing ? { scale: 0.98 } : {}}
                 >
@@ -1457,7 +1458,7 @@ export default function MeetingMinutesModal({
                 <button
                   onClick={handleSaveToKnowledge}
                   className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                  style={{ ...onAccent(persona.accentColor) }}
                 >📚 ナレッジに保存</button>
               </div>
             </div>

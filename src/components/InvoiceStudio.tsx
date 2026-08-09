@@ -18,6 +18,7 @@ import StudioBackButton from './StudioBackButton';
 import StudioHeaderIcon from './StudioHeaderIcon';
 import { resolveTabIcon } from '../lib/featureIcons';
 import { useCelebrate } from '../hooks/useCelebrate';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -180,7 +181,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
             <button
               onClick={handlePrint}
               className="px-4 py-1.5 rounded-md text-sm font-semibold"
-              style={{ background: persona.accentColor, color: '#0a0a0f' }}
+              style={{ ...onAccent(persona.accentColor) }}
             >🖨 印刷 / PDF保存</button>
             <button
               onClick={() => { setIssued(null); }}
@@ -367,7 +368,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
                     onClick={handleAi}
                     disabled={aiBusy || !aiPrompt.trim()}
                     className="text-xs px-3 py-2 rounded font-semibold disabled:opacity-50"
-                    style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                    style={{ ...onAccent(persona.accentColor) }}
                   >{aiBusy ? <LoaderDots label="明細を組み立て中" /> : '✨ 構成'}</button>
                 </div>
                 {/* 構成成功フィードバック */}
@@ -620,7 +621,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
                   <button
                     onClick={handleIssue}
                     className="text-sm px-5 py-2.5 rounded-lg font-bold"
-                    style={{ background: persona.accentColor, color: '#0a0a0f', boxShadow: `0 6px 18px ${persona.accentColor}55` }}
+                    style={{ ...onAccent(persona.accentColor), boxShadow: `0 6px 18px ${persona.accentColor}55` }}
                   >🧾 請求書を発行</button>
                 </div>
               </div>
@@ -658,7 +659,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
                     </div>
                     <div className="flex gap-1.5">
                       <button onClick={() => setIssued(invItem)} className="text-xs px-3 py-1.5 rounded font-semibold"
-                        style={{ background: persona.accentColor, color: '#0a0a0f' }}>表示</button>
+                        style={{ ...onAccent(persona.accentColor) }}>表示</button>
                       {invItem.status !== 'paid' && (
                         <button onClick={() => inv.updateInvoice(invItem.id, { status: 'paid' })} className="text-xs px-2 py-1.5 rounded text-fg-muted hover:text-fg">入金済に</button>
                       )}
@@ -723,7 +724,7 @@ export default function InvoiceStudio({ persona, settings, onClose }: Props) {
                 <button
                   onClick={() => { inv.upsertIssuer(issuer); setError(null); setTab('compose'); }}
                   className="text-sm px-4 py-2 rounded-lg font-semibold"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                  style={{ ...onAccent(persona.accentColor) }}
                 >保存して請求書作成へ →</button>
               </div>
             </div>

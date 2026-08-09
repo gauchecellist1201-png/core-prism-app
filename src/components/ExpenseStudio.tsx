@@ -17,6 +17,7 @@ import AILoadingState from './AILoadingState';
 import StudioBackButton from './StudioBackButton';
 import StudioHeaderIcon from './StudioHeaderIcon';
 import { resolveTabIcon } from '../lib/featureIcons';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -344,7 +345,7 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
                   onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
                 />
                 <button onClick={() => fileInputRef.current?.click()} className="cp-btn cp-btn-primary mt-3"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                  style={{ ...onAccent(persona.accentColor) }}>
                   画像を選択 / 撮影
                 </button>
               </div>
@@ -447,7 +448,7 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
                       ・税額 <strong className="text-fg">{fmtJpy(calcExpenseAmounts(draft.amountIncl || 0, (draft.taxRate || 10) as ExpenseTaxRate).taxAmount)}</strong>
                     </p>
                     <button onClick={() => handleSave('ocr')} className="cp-btn cp-btn-primary"
-                      style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                      style={{ ...onAccent(persona.accentColor) }}>
                       経費に追加
                     </button>
                   </div>
@@ -508,7 +509,7 @@ export default function ExpenseStudio({ persona, settings, onClose }: Props) {
                   ・税額 <strong className="text-fg">{fmtJpy(calcExpenseAmounts(draft.amountIncl || 0, (draft.taxRate || 10) as ExpenseTaxRate).taxAmount)}</strong>
                 </p>
                 <button onClick={() => handleSave('manual')} className="cp-btn cp-btn-primary"
-                  style={{ background: persona.accentColor, color: '#0a0a0f' }}>
+                  style={{ ...onAccent(persona.accentColor) }}>
                   経費に追加
                 </button>
               </div>

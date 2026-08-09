@@ -17,6 +17,7 @@ import { sortRisksByPriority } from '../lib/riskPriority';
 import { StudioIntro } from './StudioIntro';
 import StudioBackButton from './StudioBackButton';
 import AILoadingState from './AILoadingState';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -211,7 +212,7 @@ function StrategyPanel({ persona, settings, knowledge, onSave }: {
             <motion.button
               onClick={run} disabled={!question.trim() || loading}
               className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
-              style={{ background: persona.accentColor, color: '#0a0a0f' }}
+              style={{ ...onAccent(persona.accentColor) }}
               whileHover={!loading ? { scale: 1.02 } : {}}
               whileTap={!loading ? { scale: 0.98 } : {}}
             >{loading ? '🧠 分析中...' : `✨ ${FRAMEWORKS[framework].label} で 4 象限の表を作ってもらう`}</motion.button>
@@ -268,7 +269,7 @@ function StrategyPanel({ persona, settings, knowledge, onSave }: {
               <button
                 onClick={() => onSave(`🎯 ${FRAMEWORKS[result.framework].label}: ${result.question}`, strategyToMarkdown(result))}
                 className="px-4 py-2 rounded-lg text-sm font-semibold"
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                style={{ ...onAccent(persona.accentColor) }}
               >📚 ナレッジに保存</button>
             </div>
           </div>
@@ -392,7 +393,7 @@ function ContractPanel({ persona, settings, onSave }: {
             <motion.button
               onClick={run} disabled={!text.trim() || loading}
               className="px-5 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
-              style={{ background: persona.accentColor, color: '#0a0a0f' }}
+              style={{ ...onAccent(persona.accentColor) }}
               whileTap={!loading ? { scale: 0.98 } : {}}
             >{loading ? '⚖ レビュー中...' : '✨ 危ない条文を 赤・黄・青 で振り分けてもらう'}</motion.button>
           </div>
@@ -490,7 +491,7 @@ function ContractPanel({ persona, settings, onSave }: {
               <button
                 onClick={() => onSave(`⚖ 契約レビュー: ${result.documentTitle}`, contractToMarkdown(result))}
                 className="px-4 py-2 rounded-lg text-sm font-semibold"
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                style={{ ...onAccent(persona.accentColor) }}
               >📚 ナレッジに保存</button>
             </div>
           </div>
@@ -592,7 +593,7 @@ function FinancialPanel({ persona, settings, onSave }: {
             <motion.button
               onClick={run} disabled={!text.trim() || loading}
               className="px-5 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
-              style={{ background: persona.accentColor, color: '#0a0a0f' }}
+              style={{ ...onAccent(persona.accentColor) }}
               whileTap={!loading ? { scale: 0.98 } : {}}
             >{loading ? '🧠 分析中...' : '✨ 健全度 ★5 段階 + 改善案 3 つ を出してもらう'}</motion.button>
           </div>
@@ -698,7 +699,7 @@ function FinancialPanel({ persona, settings, onSave }: {
               <button
                 onClick={() => onSave(`📊 財務分析: ${result.documentTitle}`, financialToMarkdown(result))}
                 className="px-4 py-2 rounded-lg text-sm font-semibold"
-                style={{ background: persona.accentColor, color: '#0a0a0f' }}
+                style={{ ...onAccent(persona.accentColor) }}
               >📚 ナレッジに保存</button>
             </div>
           </div>

@@ -9,6 +9,7 @@ import { EXPENSE_CATEGORIES } from '../types/expense';
 import SampleDataCTA from './SampleDataCTA';
 import { StudioIntro } from './StudioIntro';
 import StudioBackButton from './StudioBackButton';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -148,7 +149,7 @@ export default function PnLStudio({ persona, onClose }: Props) {
           <div className="cp-row">
             <button onClick={handleExportCsv}
               className="cp-btn cp-btn-sm"
-              style={{ background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' }}>⬇ CSV</button>
+              style={{ ...onAccent(persona.accentColor), borderColor: 'transparent' }}>⬇ CSV</button>
             <button onClick={onClose} className="cp-btn cp-btn-ghost cp-btn-sm">✕</button>
           </div>
         </div>
@@ -232,7 +233,7 @@ export default function PnLStudio({ persona, onClose }: Props) {
             ]).map(p => (
               <button key={p.id} onClick={() => setPeriod(p.id)}
                 className="cp-btn cp-btn-sm"
-                style={period === p.id ? { background: persona.accentColor, color: '#0a0a0f', borderColor: 'transparent' } : {}}>
+                style={period === p.id ? { ...onAccent(persona.accentColor), borderColor: 'transparent' } : {}}>
                 {p.label}
               </button>
             ))}

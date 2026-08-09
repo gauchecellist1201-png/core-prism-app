@@ -9,6 +9,7 @@ import ApiErrorCard from './ApiErrorCard';
 import { StudioIntro } from './StudioIntro';
 import StudioBackButton from './StudioBackButton';
 import ThinkingIndicator from './ThinkingIndicator';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -358,7 +359,7 @@ export default function SlideGeneratorModal({ persona, settings, knowledge, onCl
                   onClick={handleGenerate}
                   disabled={!source.trim()}
                   className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
-                  style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 48 }}
+                  style={{ ...onAccent(persona.accentColor), minHeight: 48 }}
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                 >✨ デッキを生成</motion.button>
               </div>
@@ -435,7 +436,7 @@ export default function SlideGeneratorModal({ persona, settings, knowledge, onCl
               <button
                 onClick={handleDownloadPptx}
                 className="px-3 py-3 rounded-lg text-sm font-semibold transition-all col-span-2 sm:col-span-1"
-                style={{ background: persona.accentColor, color: '#0a0a0f', minHeight: 56 }}
+                style={{ ...onAccent(persona.accentColor), minHeight: 56 }}
               >📥 .pptx</button>
               <button
                 onClick={handleDownloadMarkdown}

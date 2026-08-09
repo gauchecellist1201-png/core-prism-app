@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Persona } from '../types/identity';
 import PersonaGlyph from './PersonaGlyph';
+import { onAccent } from '../lib/accentFace';
 
 interface Props {
   persona: Persona;
@@ -136,7 +137,7 @@ export default function FinanceEditor({ persona, hasFinancialKnowledge, onSave, 
               onClick={handleRecompute}
               disabled={recomputing || !hasFinancialKnowledge}
               className="w-full py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
-              style={{ background: persona.accentColor, color: '#0a0a0f' }}
+              style={{ ...onAccent(persona.accentColor) }}
             >
               {recomputing ? '🧠 抽出中…(順次処理)' : '✨ 資料から金額を抽出'}
             </button>
@@ -216,7 +217,7 @@ export default function FinanceEditor({ persona, hasFinancialKnowledge, onSave, 
           <button
             onClick={handleSave}
             className="px-5 py-2 text-sm font-semibold rounded-lg"
-            style={{ background: persona.accentColor, color: '#0a0a0f' }}
+            style={{ ...onAccent(persona.accentColor) }}
           >保存</button>
         </div>
       </motion.div>

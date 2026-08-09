@@ -371,7 +371,9 @@ export default function OnboardingWizard({ onComplete, accentColor = '#c9a96e' }
                       boxShadow: `0 6px 18px ${accent}55`,
                     }}
                   >
-                    <Rocket size={28} strokeWidth={2} color="#0a0a0f" />
+                    {/* 面は accentFaceBg＝白文字前提で暗くした面。そこに黒アイコンを置いていた。
+                        面が決めた文字色 (accentFaceInk) を使う。 */}
+                    <Rocket size={28} strokeWidth={2} color={accentFaceInk(accent)} />
                   </div>
                 </div>
                 <div>

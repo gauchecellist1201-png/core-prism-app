@@ -8,6 +8,7 @@ import PersonaGlyph from './PersonaGlyph';
 import StudioBackButton from './StudioBackButton';
 import MeetingScheduler from './MeetingScheduler';
 import { formatSlot } from '../lib/scheduling';
+import { onAccent } from '../lib/accentFace';
 import {
   loadInbox, markInboxSeen, unreadCount,
   type InboxState, type InboxBooking,
@@ -178,7 +179,7 @@ export default function MeetingHub({ persona, onClose }: Props) {
         <motion.button
           onClick={() => setShowScheduler(true)}
           className="w-full py-3 rounded-xl text-sm font-medium mb-2 flex items-center justify-center gap-2"
-          style={{ background: persona.accentColor, color: '#0a0a0f' }}
+          style={{ ...onAccent(persona.accentColor) }}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -266,7 +267,7 @@ function BookingInbox({
         {unread > 0 && (
           <span
             className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-            style={{ background: accent, color: '#0a0a0f' }}
+            style={{ ...onAccent(accent) }}
           >
             新着 {unread}
           </span>
