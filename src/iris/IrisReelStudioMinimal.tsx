@@ -1908,12 +1908,18 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                   borderTop: '1px dashed rgba(255,255,255,0.45)',
                   pointerEvents: 'none',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: 9.5, fontWeight: 700, lineHeight: 1.4,
-                  textAlign: 'center', padding: '0 8px',
-                  textShadow: '0 1px 3px rgba(0,0,0,0.9)',
-                  fontFamily: IRIS_FONTS.body,
+                  padding: '0 6px',
                 }}>
-                  ここは本文・いいね・返信欄で隠れます
+                  {/* 文字は写真の上に直接置かない。写真が明るいと白文字が読めなくなり、
+                      しかも素材ごとに変わるので測りようがない。濃い面を必ず自分で持つ。 */}
+                  <span style={{
+                    background: 'rgba(10,10,15,0.88)',
+                    color: '#fff', fontSize: 10.5, fontWeight: 700, lineHeight: 1.35,
+                    textAlign: 'center', padding: '4px 8px', borderRadius: 8,
+                    fontFamily: IRIS_FONTS.body,
+                  }}>
+                    ここは本文・いいね・返信欄で隠れます
+                  </span>
                 </div>
               </>
             )}
@@ -3402,6 +3408,27 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
                         書き出しの間はこの画面を開いたままにしておくと、なめらかになります。
                       </div>
                     )}
+
+                    {/* 同じ素材を、別の出し先の形でもう1本。ここに置かないと
+                        「別ver. を書き出す」まで戻らないと形を変えられず、
+                        リールとフィードに同じ動画を出す人がいちばん困る */}
+                    <div style={{ marginBottom: 14 }}>
+                      <Label>同じ素材を、別の形でも出す</Label>
+                      <div style={{ display: 'grid', gap: 8 }}>
+                        {REEL_DESTINATIONS.filter(d => d.id !== destId).map(d => (
+                          <button
+                            key={d.id}
+                            onClick={() => {
+                              setDestId(d.id);
+                              setExportUrl(null); setProgress(0);
+                              setScheduled(false); setScheduledMsg('');
+                            }}
+                            style={{ ...btnSec(bg), width: '100%', minHeight: 44 }}>
+                            <Film size={14} /> {d.label}（{d.ratio}）で作り直す
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
                     {/* AI 生成キャプション + ハッシュタグ */}
                     {aiResult && (
