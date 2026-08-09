@@ -328,6 +328,50 @@ export default function FinancialStatementsStudio({ persona, onClose }: Props) {
             what="請求と経費から P/L を自動作成。B/S は残高を入れるだけで完成し、Excel で出せます"
             tryThis="上のタブで P/L と B/S を切替"
             example="売上高 → 営業利益 → 当期純利益／資産・負債・純資産"
+            // 押す前に「どんな紙が出てくるか」を 1 枚見せる。
+            // ここの金額はすべて説明用の例で、この人格の実績ではない
+            // (「こんなのが出ます」の見出しと点線枠つきで出る)。
+            // いま開いているタブに合わせて見本も入れ替える。
+            samplePreview={
+              <div
+                aria-label={tab === 'pl' ? '損益計算書のサンプル' : '貸借対照表のサンプル'}
+                style={{
+                  width: 138,
+                  background: '#ffffff',
+                  color: '#0f172a',
+                  borderRadius: 6,
+                  borderTop: `3px solid ${persona.accentColor}`,
+                  padding: '7px 8px',
+                  fontSize: 8,
+                  lineHeight: 1.45,
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.22)',
+                }}
+              >
+                {/* すぐ下に本物の決算書が並ぶので、見本だと一目で分かるよう題に書いておく */}
+                <div style={{ fontSize: 8.5, fontWeight: 800, marginBottom: 4 }}>
+                  {tab === 'pl' ? '損益計算書' : '貸借対照表'}
+                  <span style={{ fontWeight: 700, color: '#475569' }}>（見本）</span>
+                </div>
+                {(tab === 'pl'
+                  ? [['売上高', '8,400,000'], ['売上総利益', '5,120,000'], ['営業利益', '1,860,000'], ['当期純利益', '1,270,000']]
+                  : [['資産の部', '12,300,000'], ['負債の部', '4,600,000'], ['純資産の部', '7,700,000'], ['貸借の差', '0']]
+                ).map(([label, v], i, arr) => (
+                  <div
+                    key={label}
+                    style={{
+                      display: 'flex', justifyContent: 'space-between', gap: 6,
+                      // 一番下の行 (利益 / 純資産) を太字にして「行き着く先」を示す
+                      fontWeight: i === arr.length - 1 ? 800 : 400,
+                      color: i === arr.length - 1 ? '#0f172a' : '#475569',
+                    }}
+                  >
+                    <span>{label}</span>
+                    <span style={{ fontVariantNumeric: 'tabular-nums' }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            }
           />
 
           {tab === 'pl' ? (

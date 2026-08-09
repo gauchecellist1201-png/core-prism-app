@@ -114,7 +114,11 @@ export default function ShadowSecretaryPanel({
         <div className="cp-modal-body" style={{ padding: '12px' }}>
           {/* 初見の人が「この画面は何をする所か」を触らずに分かるように。
               ✕ を押すと二度と出ない (StudioIntro が localStorage に覚える)。
-              この画面は幅 520px と狭いので、見本は付けず言葉だけにする。 */}
+
+              見本 (こんなのが出ます) も付ける。幅 520px でも、説明の帯は
+              狭くなったら見本が説明文の下に回り込むので潰れない。
+              以前は「狭いから」と付けていなかったが、他のスタジオと違って
+              ここだけ「押したら何が返ってくるか」が想像できなかった。 */}
           <StudioIntro
             id="shadow"
             accent={persona.accentColor}
@@ -122,6 +126,40 @@ export default function ShadowSecretaryPanel({
             what="返事が必要なメールを AI が先に見つけて、返信の下書きまで書いておく所です。"
             tryThis="Gmail をつないでおけば 30 分ごとに自分で見に行きます。今すぐ見てほしい時は右上の「🔄 更新」。"
             example="お客様からの見積依頼 → 「急ぎ」の印つきで並び、返信文が 1 通できている。読んで直して送るだけ。"
+            // 下の文面は説明用の例で、本物のメールではない
+            samplePreview={
+              <div
+                aria-label="返信下書きのサンプル"
+                style={{
+                  width: 140,
+                  background: '#ffffff',
+                  color: '#0f172a',
+                  borderRadius: 6,
+                  borderTop: `3px solid ${persona.accentColor}`,
+                  padding: '7px 8px',
+                  fontSize: 8,
+                  lineHeight: 1.45,
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.22)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+                  <span
+                    style={{
+                      background: '#B91C1C', color: '#fff', fontWeight: 800,
+                      fontSize: 7, borderRadius: 3, padding: '1px 4px',
+                    }}
+                  >急ぎ</span>
+                  <span style={{ fontWeight: 800, fontSize: 8.5 }}>見積のご依頼</span>
+                </div>
+                {/* 本物のメールと取り違えないよう、見本だと書いておく */}
+                <div style={{ color: '#475569', marginBottom: 3 }}>山田様 14:02（見本）</div>
+                <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: 3 }}>
+                  お世話になっております。ご依頼の件、
+                  <br />明後日までにお見積りを…
+                </div>
+              </div>
+            }
           />
           {drafts.length === 0 ? (
             <div className="text-center py-12">
