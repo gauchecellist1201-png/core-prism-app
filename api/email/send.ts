@@ -62,7 +62,7 @@ export default async function handler(req: Request) {
     return json({ error: 'Unknown template' }, 400, ch);
   }
 
-  const from = process.env.EMAIL_FROM || 'noreply@coreprism.app';
+  const from = process.env.EMAIL_FROM || 'core.inc.guild@gmail.com';
   const { subject, html } = buildEmail(template as Template, data);
 
   let resp: Response;

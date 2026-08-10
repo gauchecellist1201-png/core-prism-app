@@ -16,15 +16,21 @@ const ROWS: Row[] = [
     label: '所在地',
     value: (
       <>
-        請求があった場合は遅滞なく開示します (
-        <a href="mailto:support@core-prism.com">support@core-prism.com</a>
+        兵庫県神戸市東灘区 (番地以降は請求があった場合、遅滞なく開示します。
+        <a href="mailto:core.inc.guild@gmail.com">core.inc.guild@gmail.com</a>
         {' '}までご連絡ください)
       </>
     ),
   },
   {
     label: '連絡先',
-    value: <a href="mailto:support@core-prism.com">support@core-prism.com</a>,
+    value: (
+      <>
+        <a href="mailto:core.inc.guild@gmail.com">core.inc.guild@gmail.com</a>
+        {' / '}
+        <a href="tel:090-6326-1783">090-6326-1783</a> (受付時間 平日10:00〜18:00)
+      </>
+    ),
   },
   {
     label: '販売価格',
@@ -93,7 +99,7 @@ export default function TokushohoPage() {
           </tbody>
         </table>
         <p className="note">
-          ご不明な点は <a href="mailto:support@core-prism.com">support@core-prism.com</a> までお問い合わせください。法人契約や請求書払いのご相談も同じ窓口で承ります。
+          ご不明な点は <a href="mailto:core.inc.guild@gmail.com">core.inc.guild@gmail.com</a> または <a href="tel:090-6326-1783">090-6326-1783</a> (平日10:00〜18:00) までお問い合わせください。法人契約や請求書払いのご相談も同じ窓口で承ります。
         </p>
       </section>
     </LegalPageLayout>

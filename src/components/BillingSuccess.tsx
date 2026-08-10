@@ -171,7 +171,7 @@ export default function BillingSuccess() {
               }}>
                 アプリへ進む
               </a>
-              <a href="mailto:support@coreprism.app" style={{
+              <a href="mailto:core.inc.guild@gmail.com" style={{
                 display: 'inline-block',
                 background: 'rgba(0,0,0,0.06)', color: '#5A5562',
                 border: '1px solid rgba(0,0,0,0.1)',

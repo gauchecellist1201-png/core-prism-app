@@ -412,7 +412,7 @@ export default function PricingPage() {
               <p style={{ fontFamily: FONT_SERIF_JA, fontSize: 12.5, color: 'rgba(255,255,255,0.65)', marginTop: 8, lineHeight: 1.8 }}>
                 専属導入 + 月次定例 + SLA 99.9% + 24h サポート + SSO / 監査ログ / カスタム AI モデル調整 + 請求書払い (口座振込)
               </p>
-              <a href="mailto:enterprise@core-prism-app.vercel.app?subject=Enterprise%20%E3%81%94%E7%9B%B8%E8%AB%87" style={{
+              <a href="mailto:core.inc.guild@gmail.com?subject=Enterprise%20%E3%81%94%E7%9B%B8%E8%AB%87" style={{
                 display: 'inline-block', marginTop: 14,
                 padding: '10px 22px', borderRadius: 999,
                 background: 'linear-gradient(135deg, #60A5FA, #a78bfa)',

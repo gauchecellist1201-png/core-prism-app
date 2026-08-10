@@ -593,7 +593,8 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
           </div>
           <div>
             <p style={footHead}>COMPANY</p>
-            <a href="mailto:hello@coreprism.app" style={footLink} className="lp-tap-link">お問い合わせ</a>
+            <a href="mailto:core.inc.guild@gmail.com" style={footLink} className="lp-tap-link">お問い合わせ core.inc.guild@gmail.com</a>
+            <a href="tel:090-6326-1783" style={footLink} className="lp-tap-link">電話 090-6326-1783 (平日10:00〜18:00)</a>
             <a href="/faq" style={footLink} className="lp-tap-link">よくある質問</a>
             <a href="/iris/terms" style={footLink} className="lp-tap-link">利用規約</a>
             <a href="/iris/privacy" style={footLink} className="lp-tap-link">プライバシー</a>

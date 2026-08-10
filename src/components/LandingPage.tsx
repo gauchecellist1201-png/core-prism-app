@@ -390,16 +390,16 @@ export default function LandingPage({ onEnterApp }: Props) {
             </motion.p>
             <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.1 }}
               style={{ fontSize: 'clamp(2.15rem, 5.2vw, 4.1rem)', fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.025em', marginBottom: '1.25rem', color: TXT }}>
-              その事務作業は、
+              レシートは、撮るだけ。
               <br />
-              <span style={{ background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>今夜が最後</span>です。
+              <span style={{ background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>請求書も営業文も、AIが作る。</span>
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.28 }}
               style={{ fontSize: 'clamp(1rem, 1.6vw, 1.18rem)', color: TXT_SUB, lineHeight: 1.9, marginBottom: '1.9rem', maxWidth: 545 }}>
-              レシートは<strong style={{ color: A_GREEN, fontWeight: 700 }}>撮るだけ</strong>。指示は
-              <strong style={{ color: A_PURPLE, fontWeight: 700 }}>話すだけ</strong>。
-              売上・経費・請求書・決算書が<strong style={{ color: TXT, fontWeight: 700 }}>1画面</strong>にそろう、
-              経営まるごとおまかせのAI参謀です。
+              ひとり社長の事務を<strong style={{ color: GOLD, fontWeight: 700 }}>月2,980円</strong>で引き受けるAI参謀。
+              指示は<strong style={{ color: A_PURPLE, fontWeight: 700 }}>話すだけ</strong>で、
+              売上・経費・請求書・決算書が<strong style={{ color: TXT, fontWeight: 700 }}>1画面</strong>にそろいます。
+              {TRIAL_BASE_DAYS}日間無料・クレカ不要。
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.42 }}
               style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -750,7 +750,11 @@ export default function LandingPage({ onEnterApp }: Props) {
             <p style={footHead}>CONTACT</p>
             <p style={{ fontSize: '0.85rem', color: TXT_MUTE, lineHeight: 1.7 }}>
               お気軽にどうぞ。<br />
-              <a href="mailto:hello@coreprism.app" style={{ color: A_PURPLE, textDecoration: 'none', display: 'inline-block', padding: '0.65rem 0.25rem', margin: '-0.35rem -0.25rem' }}>hello@coreprism.app</a>
+              <a href="mailto:core.inc.guild@gmail.com" style={{ color: A_PURPLE, textDecoration: 'none', display: 'inline-block', padding: '0.65rem 0.25rem', margin: '-0.35rem -0.25rem', wordBreak: 'break-all' }}>core.inc.guild@gmail.com</a>
+              <br />
+              <a href="tel:090-6326-1783" style={{ color: A_PURPLE, textDecoration: 'none', display: 'inline-block', padding: '0.65rem 0.25rem', margin: '-0.35rem -0.25rem' }}>090-6326-1783</a>
+              <br />
+              受付時間 平日10:00〜18:00
             </p>
           </div>
         </div>
@@ -798,7 +802,7 @@ function PrismDashboardMock() {
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5757' }} />
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24' }} />
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80' }} />
-          <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>coreprism.app · サンプル</span>
+          <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>CORE Prism · サンプル</span>
         </div>
         {/* 数字グリッド */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
