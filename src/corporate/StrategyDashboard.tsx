@@ -14,14 +14,16 @@ import KpiActualsTab from './KpiActualsTab';
 import ProductsTab from './ProductsTab';
 import NewVenturesTab from './NewVenturesTab';
 import ServiceGalleryTab from './ServiceGalleryTab';
+import ServiceGuideTab from './ServiceGuideTab';
 import RoboticsPlan from './RoboticsPlan';
 import { isMasterAuth } from '../lib/billing';
 
-type StrategyTab = 'services' | 'overview' | 'actuals' | 'plan' | 'products' | 'ventures' | 'robotics' | 'simulation' | 'crystal';
+type StrategyTab = 'services' | 'guides' | 'overview' | 'actuals' | 'plan' | 'products' | 'ventures' | 'robotics' | 'simulation' | 'crystal';
 
 function getInitialTab(): StrategyTab {
   if (typeof window === 'undefined') return 'overview';
   const p = window.location.pathname;
+  if (/\/guides?(\/|$)/.test(p)) return 'guides';
   if (/\/services|\/lp-?list|\/gallery/.test(p)) return 'services';
   if (/\/plan(\/|$)/.test(p)) return 'plan';
   if (/\/actuals|\/kpi/.test(p)) return 'actuals';
@@ -182,6 +184,7 @@ export default function StrategyDashboard() {
           {/* タブ */}
           <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <TabBtn active={tab === 'services'} onClick={() => setTab('services')}>全サービス</TabBtn>
+            <TabBtn active={tab === 'guides'} onClick={() => setTab('guides')}>使い方・営業資料</TabBtn>
             <TabBtn active={tab === 'overview'} onClick={() => setTab('overview')}>概要</TabBtn>
             {masterMode && <TabBtn active={tab === 'actuals'} onClick={() => setTab('actuals')}>KPI 実行値</TabBtn>}
             {masterMode && <TabBtn active={tab === 'plan'} onClick={() => setTab('plan')}>事業計画</TabBtn>}
@@ -253,6 +256,8 @@ export default function StrategyDashboard() {
 
       {/* TAB: 全サービスのLPを1枚に */}
       {tab === 'services' && <ServiceGalleryTab />}
+
+      {tab === 'guides' && <ServiceGuideTab />}
 
       {/* TAB: CORE Robotics 事業計画 */}
       {tab === 'robotics' && <RoboticsPlan />}
