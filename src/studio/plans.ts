@@ -324,6 +324,7 @@ export type Work = {
 };
 
 export const WORKS: Work[] = [
+  { id: 'tengoku', name: 'ヘッドスパ「天国」', category: '企業サイト', copy: '出張型ドライヘッドスパのブランドサイト。白×ゴールドの世界観づくりから、施術の流れ・料金・予約導線までを1ページに。', url: 'https://headspa-luxury.vercel.app/', img: '/studio/works-tengoku.jpg' },
   { id: 'crossover', name: '株式会社クロスオーバー', category: '企業サイト', copy: 'エンタメ総合商社のコーポレートサイト。7ページ構成・フルスクラッチ開発。', url: 'https://crossover-psi.vercel.app/', img: '/studio/works-crossover.jpg' },
   { id: 'gauche', name: 'GAUCHE チェロ音楽教室', category: '企業サイト', copy: '音楽教室のブランドサイト。世界観を保ったまま、体験申込までの導線を設計。', url: 'https://gauche-cello-school.vercel.app/', img: '/studio/works-cello.jpg' },
   { id: 'asahikan', name: '朝日館', category: '企業サイト', copy: '老舗旅館の体験プラン直販サイト。外部手数料のかからない直接予約を実現。', url: 'https://asahikan-premium.vercel.app/', img: '/studio/works-asahikan.jpg' },
