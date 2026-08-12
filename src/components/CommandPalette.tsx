@@ -20,6 +20,7 @@ import {
   Clock, ArrowRight, CornerDownLeft, Command, Play, Star, X, Undo2, AtSign, Loader2,
   CreditCard, Square, RefreshCw, Map as MapIcon, History, KeyRound, SunMoon,
   FileText, FileImage, FileType2, ChevronDown,
+  CheckCircle2, AlertTriangle, RotateCcw, Copy, CornerUpLeft,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Persona, KnowledgeItem } from '../types/identity';
@@ -353,6 +354,15 @@ export default function CommandPalette({
   const [mention, setMention] = useState<MentionTarget | null>(null);
   /** 実データを読んでいる間 (押しっぱなしの二重実行を防ぐ) */
   const [mentionBusy, setMentionBusy] = useState(false);
+  /**
+   * ★2026-08-12: 依頼の「答え」をこのパレットの中で見せる (Raycast の浮かぶ窓)。
+   * これが無い間、ひとこと訊くたびにパレットが閉じて役員の画面へ飛ばされていた
+   * = 見ていた画面を失うので、訊くこと自体をためらう。
+   * ここに taskId を入れている間だけ、リストの代わりに答えの札を出す。
+   */
+  const [inlineTaskId, setInlineTaskId] = useState<string | null>(null);
+  /** 答えの札に出す「AI が実際に何を読んだか」(実測値のまま・盛らない) */
+  const [inlineNote, setInlineNote] = useState<string | null>(null);
   // MMMMMM (2026-06-04): changelog.json から 直近 新機能 5 件
   const [changelogFeats, setChangelogFeats] = useState<Array<{ hash: string; date: string; message: string }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -362,7 +372,19 @@ export default function CommandPalette({
 
   // 開き直したら「元に戻す」の帯は畳む (古い取り消しが残り続けないように)
   // @の対象も毎回まっさらに戻す (前回の対象が残っていて意図しない範囲で実行される事故を防ぐ)
-  useEffect(() => { if (open) { setUndoSaved(null); setMention(null); setMentionBusy(false); } }, [open]);
+  useEffect(() => { if (open) { setUndoSaved(null); setMention(null); setMentionBusy(false); setInlineTaskId(null); } }, [open]);
+
+  /** 答えを出している依頼。queue.tasks の実体を毎回引き直す (2 か所で持たない) */
+  const inlineTask = useMemo(
+    () => (inlineTaskId ? queue.tasks.find(t => t.id === inlineTaskId) ?? null : null),
+    [inlineTaskId, queue.tasks]
+  );
+  /** 答えの本文 = 最後に終わったステップが実際に返した文。無い間は null (作らない)。 */
+  const answerText = useMemo(() => {
+    if (!inlineTask) return null;
+    const done = inlineTask.steps.filter(s => s.status === 'done' && s.output);
+    return done.length > 0 ? (done[done.length - 1].output as string) : null;
+  }, [inlineTask]);
 
   // MMMMMM: open 時に changelog.json を 1 度だけ 取得 (キャッシュ可)
   useEffect(() => {
@@ -430,12 +452,9 @@ export default function CommandPalette({
       ],
     });
     queue.approve(task.id);
-    notifyInApp({
-      kind: 'success',
-      title: `${meta.emoji} ${meta.shortLabel} に依頼しました`,
-      body: actionLabel,
-      duration: 3000,
-    });
+    // 答えはこのパレットの中で出す (画面を移らない)。トーストは出さない = 同じ報せを 2 か所で出さない。
+    setInlineNote(null);
+    setInlineTaskId(task.id);
   }, [queue]);
 
   // ────────────────────────────────────────────────────────
@@ -482,7 +501,6 @@ export default function CommandPalette({
       else if (target.kind === 'mail' || target.kind === 'calendar') cxo = 'COO';
     }
 
-    const meta = CXO_META[cxo];
     const task = queue.propose({
       title: `AI 依頼: ${trimmed.slice(0, 40)}${trimmed.length > 40 ? '…' : ''}`,
       summary: target ? `${trimmed}\n(対象: ${target.label})` : trimmed,
@@ -497,13 +515,9 @@ export default function CommandPalette({
       contextLabel: target?.label,
     });
     queue.approve(task.id);
-    notifyInApp({
-      kind: 'success',
-      title: `${meta.emoji} ${meta.shortLabel} に依頼しました`,
-      // 何を読んだかは実測値だけを出す (件数を盛らない)
-      body: ctx ? `${ctx.note}／${trimmed.slice(0, 40)}` : trimmed.slice(0, 60),
-      duration: 3500,
-    });
+    // 答えはこのパレットの中で出す。何を読んだか (ctx.note) も実測値のまま札に出す。
+    setInlineNote(ctx?.note ?? null);
+    setInlineTaskId(task.id);
     return true;
   }, [queue, knowledge]);
 
@@ -1018,19 +1032,14 @@ export default function CommandPalette({
         onOpenModal('tasks');
         break;
       case 'cxo':
-        onClose();
+        // 閉じない。答えはこのパレットの中に出る (いた場所から動かさない)
         delegateToCxo(item.cxo, item.actionLabel);
         break;
       case 'ai-delegate': {
         const target = item.mentionId ? resolveMentionTarget(item.mentionId, knowledge) : null;
-        if (target) {
-          // 実データを読み終えるまでパレットは開けたまま。
-          // 「押したのに何も起きない数秒」を作らず、失敗したら開いたまま直せるようにする。
-          void delegateToAi(item.prompt, target).then(ok => { if (ok) onClose(); });
-        } else {
-          onClose();
-          void delegateToAi(item.prompt);
-        }
+        // 実データを読み終えるまでも、答えが出たあともパレットは開けたまま。
+        // 「押したのに何も起きない数秒」を作らず、失敗したら開いたまま直せるようにする。
+        void delegateToAi(item.prompt, target);
         break;
       }
       case 'data-op':
@@ -1041,6 +1050,25 @@ export default function CommandPalette({
         break;
     }
   }, [recent, savedPrompts, knowledge, onClose, onOpenModal, onSwitchPersona, onOpenKnowledgeId, delegateToCxo, delegateToAi]);
+
+  /**
+   * 答えの札を畳んでリストに戻る。
+   * まだ動いている途中で畳む時だけ、「まだ続いている・どこで見られるか」を必ず告げる
+   * (黙って消すと、押したのに何も起きなかったように見える = 沈黙する失敗)。
+   */
+  const dismissInline = useCallback(() => {
+    if (inlineTask && inlineTask.status === 'running') {
+      notifyInApp({
+        kind: 'info',
+        title: 'AI 会社が続けています',
+        body: '札を閉じても実行は止まりません',
+        duration: 3000,
+      });
+    }
+    setInlineTaskId(null);
+    setInlineNote(null);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, [inlineTask]);
 
   // 保存した依頼を消す / 元に戻す (どちらも 1 タップ・確認ダイアログを挟まない)
   const removeSavedPrompt = useCallback((key: string) => {
@@ -1073,6 +1101,15 @@ export default function CommandPalette({
   const mentionMode = mentionQuery !== null;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // 答えの札を出している間は、そこが主役。上下・決定でリストを触らせない。
+    // Esc は「閉じる」ではなく「札を畳んでリストに戻る」= 一気に画面を失わせない。
+    if (inlineTaskId) {
+      if (e.key === 'Escape') { e.preventDefault(); dismissInline(); return; }
+      if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Tab') {
+        e.preventDefault();
+        return;
+      }
+    }
     // 対象ピッカーを出している間は、そちらの上下・決定を優先する
     if (picking) {
       if (e.key === 'ArrowDown') { e.preventDefault(); setSelectedIdx(i => Math.min(mentionCandidates.length - 1, i + 1)); return; }
@@ -1094,7 +1131,7 @@ export default function CommandPalette({
       if (mentionBusy) return; // 読み込み中の二重実行を防ぐ
       // Cmd+Enter → AI 依頼を強制
       if ((e.metaKey || e.ctrlKey) && query.trim()) {
-        void delegateToAi(query, mention).then(ok => { if (ok) onClose(); });
+        void delegateToAi(query, mention);
         return;
       }
       const entry = filteredWithAi[selectedIdx];
@@ -1185,9 +1222,19 @@ export default function CommandPalette({
                 ref={inputRef}
                 type="text"
                 value={query}
-                onChange={e => { setQuery(e.target.value); setSelectedIdx(0); }}
+                onChange={e => {
+                  setQuery(e.target.value);
+                  setSelectedIdx(0);
+                  // 答えを見終わった人が次を打ち始めたら、札は自動で畳む。
+                  // (まだ動いている途中は畳まない = 進み具合を目の前から消さない)
+                  if (inlineTask && inlineTask.status !== 'running') dismissInline();
+                }}
                 onKeyDown={handleKeyDown}
-                placeholder="やりたいこと、機能、AI への依頼を入力…"
+                placeholder={
+                  inlineTask && inlineTask.status === 'running'
+                    ? '答えが出るまで、ここで待てます…'
+                    : 'やりたいこと、機能、AI への依頼を入力…'
+                }
                 className="flex-1 bg-transparent text-fg outline-none placeholder:text-fg-subtle"
                 style={{ fontSize: '17px' /* iOS 自動ズーム回避 (16px+) */ }}
                 autoComplete="off"
@@ -1245,8 +1292,8 @@ export default function CommandPalette({
               </div>
             )}
 
-            {/* カテゴリ タブ (対象を選んでいる最中は隠す = 迷わせない) */}
-            {!mentionMode && (
+            {/* カテゴリ タブ (対象を選んでいる最中と、答えを出している間は隠す = 迷わせない) */}
+            {!mentionMode && !inlineTask && (
             <div
               className="px-3 py-2 flex items-center gap-1 overflow-x-auto"
               style={{ borderBottom: '1px solid var(--border)' }}
@@ -1284,7 +1331,103 @@ export default function CommandPalette({
               {/* 消した直後だけ出る「元に戻す」。
                   ★リストの外に置くのが要点: 最後の 1 件を消すと「よく使う依頼」の
                   かたまり自体が消えるため、中に入れると取り消しボタンごと消える。 */}
-              {mentionMode ? (
+              {inlineTask ? (
+                /* ── 答えの札 ────────────────────────────────────
+                   ここに答えを出すために、依頼しても閉じない。
+                   出すのは実際に返ってきた文だけ。まだ返っていない時は
+                   「返ってきた風の文」を置かず、いま何をしているかだけを書く。 */
+                <div className="px-4 py-3">
+                  <div
+                    className="rounded-xl px-4 py-3.5"
+                    style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
+                  >
+                    {/* 何を頼んだか */}
+                    <p className="cp-tiny" style={{ color: 'var(--fg-subtle)' }}>頼んだこと</p>
+                    <p className="cp-body" style={{ fontWeight: 600, lineHeight: 1.6, marginTop: 2 }}>
+                      {inlineTask.summary.split('\n')[0]}
+                    </p>
+                    {(inlineTask.contextLabel || inlineNote) && (
+                      <p className="cp-meta flex items-center gap-1.5" style={{ marginTop: 6 }}>
+                        <AtSign size={12} className="flex-shrink-0" />
+                        <span>
+                          {inlineTask.contextLabel ? `${inlineTask.contextLabel} を読みました` : '実データを読みました'}
+                          {inlineNote ? `（${inlineNote}）` : ''}
+                        </span>
+                      </p>
+                    )}
+
+                    {/* 誰が、いま何をしているか (実際のステップだけ) */}
+                    <div className="mt-3 pt-3" style={{ borderTop: '1px dashed var(--border)' }}>
+                      {inlineTask.steps.map((s, i) => {
+                        const m = CXO_META[s.cxo];
+                        const isWorking = s.status === 'working';
+                        const isDone = s.status === 'done';
+                        const isFailed = s.status === 'failed';
+                        return (
+                          <div key={i} className="flex items-start gap-2.5" style={{ padding: '5px 0' }}>
+                            <span className="flex-shrink-0" style={{ marginTop: 2, color: isFailed ? '#F87171' : isDone ? '#34D399' : m.color }}>
+                              {isWorking ? <Loader2 size={14} className="animate-spin" />
+                                : isDone ? <CheckCircle2 size={14} />
+                                : isFailed ? <AlertTriangle size={14} />
+                                : <Clock size={14} style={{ opacity: 0.5 }} />}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="cp-meta" style={{ color: isWorking ? 'var(--fg)' : undefined }}>
+                                {m.shortLabel}
+                                {isWorking ? ' が考えています…' : isDone ? ' が終えました' : isFailed ? ' で止まりました' : ' は待っています'}
+                              </p>
+                              {isDone && s.output && (
+                                <p className="cp-body" style={{ lineHeight: 1.7, marginTop: 3 }}>{s.output}</p>
+                              )}
+                              {isFailed && s.error && (
+                                <p className="cp-meta" style={{ color: '#FCA5A5', lineHeight: 1.7, marginTop: 3 }}>{s.error}</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* 手当て — 失敗はやり直す / 終わったら答えを持ち出す */}
+                    <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 12 }}>
+                      {inlineTask.status === 'failed' && (
+                        <button
+                          onClick={() => queue.retry(inlineTask.id)}
+                          className="flex items-center gap-1.5 px-3 rounded-lg"
+                          style={{ minHeight: 44, border: '1px solid #F8717188', color: '#FCA5A5', fontSize: '0.78rem', fontWeight: 600 }}
+                        >
+                          <RotateCcw size={14} />やり直す
+                        </button>
+                      )}
+                      {inlineTask.status === 'done' && answerText && (
+                        <button
+                          onClick={() => {
+                            void navigator.clipboard?.writeText(answerText).then(
+                              () => notifyInApp({ kind: 'success', title: '答えをコピーしました', body: answerText.slice(0, 40), duration: 2000 }),
+                              () => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'この端末では文字をコピーできません', duration: 3000 }),
+                            );
+                          }}
+                          className="flex items-center gap-1.5 px-3 rounded-lg"
+                          style={{ minHeight: 44, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.78rem', fontWeight: 600 }}
+                        >
+                          <Copy size={14} />答えをコピー
+                        </button>
+                      )}
+                      <button
+                        onClick={dismissInline}
+                        className="flex items-center gap-1.5 px-3 rounded-lg"
+                        style={{ minHeight: 44, border: '1px solid var(--border)', color: 'var(--fg-subtle)', fontSize: '0.78rem', fontWeight: 600 }}
+                      >
+                        <CornerUpLeft size={14} />ほかのことをする
+                      </button>
+                    </div>
+                  </div>
+                  <p className="cp-tiny" style={{ color: 'var(--fg-subtle)', textAlign: 'center', marginTop: 10, lineHeight: 1.7 }}>
+                    この札は、さっきまで見ていた画面の上に出ています。<br />
+                    Esc を押すと札だけ畳んで、元の場所に戻ります。
+                  </p>
+                </div>
+              ) : mentionMode ? (
                 <div className="py-1">
                   <div className="cp-tiny px-5 py-1.5 flex items-center gap-1.5" style={{ color: 'var(--brief-ink-violet)', fontWeight: 600 }}>
                     <AtSign size={12} />
@@ -1413,7 +1556,7 @@ export default function CommandPalette({
                   <div className="cp-zero-ctas">
                     {query.trim() && (
                       <button
-                        onClick={() => { void delegateToAi(query, mention).then(ok => { if (ok) onClose(); }); }}
+                        onClick={() => { void delegateToAi(query, mention); }}
                         className="cp-zero-cta-primary"
                       >
                         <Bot size={14} />
@@ -1552,7 +1695,21 @@ export default function CommandPalette({
               )}
             </div>
 
-            {/* フッタヒント */}
+            {/* フッタヒント — 答えを出している間は、そこで効くキーだけを書く
+                (効かない「↑↓ 選択」を並べたままにしない) */}
+            {inlineTask ? (
+              <div
+                className="px-5 py-2 flex items-center gap-3 flex-wrap text-fg-subtle"
+                style={{ borderTop: '1px solid var(--border)', fontSize: '0.7rem' }}
+              >
+                <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>Esc</kbd>札を畳んで戻る</span>
+                <span className="ml-auto">
+                  {inlineTask.status === 'running' ? '実行中'
+                    : inlineTask.status === 'failed' ? '止まりました'
+                    : '終わりました'}
+                </span>
+              </div>
+            ) : (
             <div
               className="px-5 py-2 flex items-center gap-3 flex-wrap text-fg-subtle"
               style={{ borderTop: '1px solid var(--border)', fontSize: '0.7rem' }}
@@ -1565,6 +1722,7 @@ export default function CommandPalette({
               <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>Esc</kbd>閉じる</span>
               <span className="ml-auto">{(mentionQuery !== null ? mentionCandidates.length : flatItems.length)} 件</span>
             </div>
+            )}
           </motion.div>
         </motion.div>
       )}
