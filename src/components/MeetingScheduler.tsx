@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+// 空っぽ画面のアイコンも機能台帳と同じ絵にする (meet = Calendar / #5BA8FF)
+import { Calendar as CalendarIcon } from 'lucide-react';
 import type { Persona, AppSettings } from '../types/identity';
 import type { MeetingType, MeetingDuration, LocationKind } from '../types/scheduling';
 import { useMeetingTypes } from '../hooks/useMeetingTypes';
@@ -375,10 +377,16 @@ export default function MeetingScheduler({ persona, onClose }: Props) {
             <>
               {/* 予約タイプ一覧 */}
               {personaTypes.length === 0 && (
-                <div className="text-center py-8 rounded-xl" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
-                  <p className="text-3xl mb-2">📭</p>
-                  <p className="text-fg-muted text-sm">予約タイプがまだありません</p>
-                  <p className="text-fg-subtle text-xs mt-1">「+ 新しい予約タイプ」から作成しましょう</p>
+                // 「予約タイプ」は社内語。何が手に入るのかを先に言い切る。
+                // (2026-08-12 わかりやすさ回)
+                <div className="text-center py-8 px-4 rounded-xl" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+                  <CalendarIcon size={32} strokeWidth={1.7} style={{ color: '#5BA8FF', margin: '0 auto 10px' }} />
+                  <p className="text-fg text-sm font-medium">相手が自分で時間を選べる URL を作れます</p>
+                  <p className="text-fg-muted text-xs mt-2 leading-relaxed">
+                    「30 分の打ち合わせ」のように 1 つ作ると、その URL を相手に送るだけで済みます。<br />
+                    空いている時間はカレンダーから自動で出るので、日程調整のやりとりが要りません。
+                  </p>
+                  <p className="text-fg-subtle text-xs mt-2.5">下のボタンから、1 つめを作れます</p>
                 </div>
               )}
               {personaTypes.map(t => (

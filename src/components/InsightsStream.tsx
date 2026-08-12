@@ -1,5 +1,9 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  BookOpen, CheckSquare, Flag, Lightbulb, AlertTriangle,
+  PlusCircle, ArrowRight, type LucideIcon,
+} from 'lucide-react';
 import type { KnowledgeItem, Persona } from '../types/identity';
 import { severityOf, SEVERITY_LABELS, type RiskSeverity } from '../lib/riskPriority';
 
@@ -11,6 +15,19 @@ interface Props {
 }
 
 type Tab = 'insights' | 'strategy' | 'actions' | 'risks';
+
+// 待っている間に出す「いま何をしているか」。
+// KnowledgeBase の STAGE_LABEL は社内語 (タグ生成 / 抽出) なので、
+// 初見の人にそのまま見せず、やさしい言葉に置き換えたものをここに持つ。
+const WORKING_LABEL: Record<NonNullable<KnowledgeItem['analysisStatus']>, string> = {
+  pending:     'AI が資料を読みはじめています',
+  parsing:     'AI が資料を読んでいます',
+  tagging:     'AI が話題ごとに仕分けています',
+  summarizing: 'AI が要点をまとめています',
+  extracting:  'AI が数字と、やる事を取り出しています',
+  done:        'まとめ終わりました',
+  error:       '読み取れませんでした',
+};
 
 interface Bucket {
   text: string;
@@ -49,11 +66,33 @@ export default function InsightsStream({ persona, items, onAcceptAction, onOpenK
     return { insights: ins, strategy: str, actions: act, risks: rsk };
   }, [items]);
 
-  const TABS: { id: Tab; label: string; emoji: string; color: string; data: Bucket[] }[] = [
-    { id: 'actions', label: 'アクション', emoji: '✓', color: '#34d399', data: buckets.actions },
-    { id: 'strategy', label: '戦略', emoji: '🎯', color: persona.accentColor, data: buckets.strategy },
-    { id: 'insights', label: '洞察', emoji: '💡', color: '#c9a96e', data: buckets.insights },
-    { id: 'risks', label: 'リスク', emoji: '⚠', color: '#f87171', data: buckets.risks },
+  // 4 つのタブは「言葉」だけだと何が入っているか分からない (洞察? 戦略? の違いが伝わらない)。
+  // 絵文字をやめて線画アイコンに統一し、タブごとに 1 行の説明と、
+  // 空だったときの「ここに何が出るはずか」までセットで持たせる。(2026-08-12 わかりやすさ回)
+  const TABS: {
+    id: Tab; label: string; Icon: LucideIcon; color: string; data: Bucket[];
+    hint: string; emptyHint: string;
+  }[] = [
+    {
+      id: 'actions', label: 'やる事', Icon: CheckSquare, color: '#34d399', data: buckets.actions,
+      hint: '資料の中から見つけた「今すぐ動けること」。押すと、やる事リストに入ります。',
+      emptyHint: '「やる事」は、資料に期限や担当が書かれていると見つかります。',
+    },
+    {
+      id: 'strategy', label: '打ち手', Icon: Flag, color: persona.accentColor, data: buckets.strategy,
+      hint: 'すぐには終わらないけれど、長い目で効いてくる打ち手です。',
+      emptyHint: '「打ち手」は、事業計画や提案書のような、先の話が書かれた資料から出ます。',
+    },
+    {
+      id: 'insights', label: '気づき', Icon: Lightbulb, color: '#c9a96e', data: buckets.insights,
+      hint: '資料を読んで分かった事実です。まず現状を掴みたいときに見ます。',
+      emptyHint: '「気づき」は、数字や実績が書かれた資料から出ます。',
+    },
+    {
+      id: 'risks', label: '危ないところ', Icon: AlertTriangle, color: '#f87171', data: buckets.risks,
+      hint: '先に気づいておきたい所です。危険度の高い順に並べています。',
+      emptyHint: '「危ないところ」は、契約書や見積のような、約束事が書かれた資料から出ます。',
+    },
   ];
 
   const total = buckets.insights.length + buckets.strategy.length + buckets.actions.length + buckets.risks.length;
@@ -63,7 +102,7 @@ export default function InsightsStream({ persona, items, onAcceptAction, onOpenK
   }
 
   if (total === 0) {
-    const pending = items.some(i =>
+    const working = items.find(i =>
       i.analysisStatus === 'pending' ||
       i.analysisStatus === 'parsing' ||
       i.analysisStatus === 'tagging' ||
@@ -75,11 +114,49 @@ export default function InsightsStream({ persona, items, onAcceptAction, onOpenK
         className="rounded-2xl p-4"
         style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}
       >
-        <p className="text-fg-muted text-sm">
-          {pending
-            ? '🧠 資料を分析しています… しばらくお待ちください。'
-            : '分析結果がまだありません。資料を追加すると AI が自動でインサイトを抽出します。'}
-        </p>
+        {working ? (
+          // 待っている間、「今 AI が何をしているか」を必ず出す。
+          // 「分析しています」だけだと、固まったのか動いているのか分からず離脱する。
+          <div className="flex items-start gap-2.5">
+            <span
+              className="flex-shrink-0 mt-0.5 rounded-full animate-spin"
+              style={{
+                width: 14, height: 14,
+                border: `2px solid ${persona.accentColor}`,
+                borderTopColor: 'transparent',
+              }}
+            />
+            <div className="min-w-0">
+              <p className="text-fg text-sm font-medium">{WORKING_LABEL[working.analysisStatus || 'pending']}</p>
+              <p className="text-fg-muted text-xs mt-1 leading-relaxed">
+                いま読んでいるのは「{working.title}」です。<br />
+                だいたい 30 秒ほどで、やる事・打ち手・気づき・危ないところに分けて出します。
+              </p>
+            </div>
+          </div>
+        ) : (
+          // 読み終わったのに何も出なかった時。ここで終わると行き止まりになるので、
+          // 「なぜ出なかったか」と「次にどうするか」を必ず置く。
+          <div>
+            <p className="text-fg text-sm font-medium">取り出せることが見つかりませんでした</p>
+            <p className="text-fg-muted text-xs mt-1.5 leading-relaxed">
+              いまの資料は、写真だけ・文字がとても少ない、といった内容かもしれません。<br />
+              数字や日付、決めごとが書かれた資料をもう 1 つ足すと、ここに中身が出ます。
+            </p>
+            <button
+              onClick={onOpenKnowledge}
+              className="mt-3 text-sm rounded-lg inline-flex items-center gap-1.5 px-4"
+              style={{
+                minHeight: 44,
+                background: `${persona.accentColor}22`,
+                color: persona.accentColor,
+                border: `1px solid ${persona.accentColor}55`,
+              }}
+            >
+              <PlusCircle size={15} strokeWidth={2.2} />資料をもう 1 つ足す
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -95,38 +172,55 @@ export default function InsightsStream({ persona, items, onAcceptAction, onOpenK
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
     >
-      <div className="flex items-center justify-between px-3 pt-3 pb-2">
-        <p className="text-fg text-sm font-medium">📚 ナレッジから抽出</p>
+      <div className="flex items-start justify-between gap-2 px-3 pt-3 pb-2">
+        {/* 「ナレッジから抽出」だけでは、何が起きた結果なのか分からない。
+            どこから来た情報かを 1 行で言い切る。 */}
+        <div className="min-w-0">
+          <p className="text-fg text-sm font-medium flex items-center gap-1.5">
+            <BookOpen size={15} strokeWidth={2.1} style={{ color: '#5BA8FF' }} />
+            読ませた資料から、AI が取り出したこと
+          </p>
+          <p className="text-fg-muted text-xs mt-0.5">
+            {items.length} 件の資料を読んで、{total} 件見つけました
+          </p>
+        </div>
         <button
           onClick={onOpenKnowledge}
-          className="text-fg-muted hover:text-fg text-xs"
+          className="text-fg-muted hover:text-fg text-xs flex-shrink-0 inline-flex items-center gap-1 px-2"
+          style={{ minHeight: 44 }}
         >
-          {items.length}件の資料 →
+          もとの資料を見る<ArrowRight size={12} strokeWidth={2.2} />
         </button>
       </div>
 
       {/* タブ */}
-      <div className="flex gap-1 px-3 pb-2 overflow-x-auto">
+      <div className="flex gap-1 px-3 pb-1.5 overflow-x-auto">
         {TABS.map(t => {
           const active = tab === t.id;
+          const TabIcon = t.Icon;
           return (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap flex-shrink-0"
+              className="flex items-center gap-1.5 px-3 rounded-md text-xs font-medium transition-all whitespace-nowrap flex-shrink-0"
               style={{
+                minHeight: 44,
                 background: active ? `${t.color}25` : 'var(--surface)',
                 color: active ? t.color : 'var(--fg-muted)',
                 border: `1px solid ${active ? t.color + '50' : 'var(--border)'}`,
               }}
             >
-              <span>{t.emoji}</span>
+              <TabIcon size={14} strokeWidth={2.2} />
               <span>{t.label}</span>
               <span className="opacity-60">{t.data.length}</span>
             </button>
           );
         })}
       </div>
+
+      {/* 選んでいるタブが「何のことか」を 1 行で言う。
+          タブ名だけだと、打ち手と気づきの違いが初見の人には分からない。 */}
+      <p className="px-3 pb-2 text-fg-muted text-xs leading-relaxed">{currentTab.hint}</p>
 
       {/* 内容 */}
       <div className="px-3 pb-3">
@@ -140,9 +234,37 @@ export default function InsightsStream({ persona, items, onAcceptAction, onOpenK
             transition={{ duration: 0.2 }}
           >
             {currentData.length === 0 && (
-              <p className="text-fg-muted text-sm py-3 col-span-full">
-                まだ {currentTab.label} が抽出されていません。
-              </p>
+              // このタブだけ空のとき。ここで終わると「壊れている」ように見えるので、
+              // 何が出るはずかを言い、中身が入っている隣のタブへ必ず逃がす。
+              <div className="col-span-full py-3">
+                <p className="text-fg text-sm font-medium">この中には、まだ何もありません</p>
+                <p className="text-fg-muted text-xs mt-1 leading-relaxed">{currentTab.emptyHint}</p>
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                  {TABS.filter(t => t.id !== tab && t.data.length > 0).map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => setTab(t.id)}
+                      className="text-xs rounded-lg inline-flex items-center gap-1.5 px-3"
+                      style={{
+                        minHeight: 44,
+                        background: `${t.color}20`,
+                        color: t.color,
+                        border: `1px solid ${t.color}50`,
+                      }}
+                    >
+                      <t.Icon size={13} strokeWidth={2.2} />
+                      {t.label}なら {t.data.length} 件あります
+                    </button>
+                  ))}
+                  <button
+                    onClick={onOpenKnowledge}
+                    className="text-xs rounded-lg inline-flex items-center gap-1.5 px-3 text-fg-muted"
+                    style={{ minHeight: 44, background: 'var(--surface)', border: '1px solid var(--border)' }}
+                  >
+                    <PlusCircle size={13} strokeWidth={2.2} />資料を足す
+                  </button>
+                </div>
+              </div>
             )}
             {currentData.slice(0, 12).map((b, i) => {
               const isAction = tab === 'actions';
@@ -179,11 +301,8 @@ export default function InsightsStream({ persona, items, onAcceptAction, onOpenK
                       {sevMeta.label}
                     </span>
                   ) : (
-                    <span
-                      className="text-sm flex-shrink-0 mt-0.5"
-                      style={{ color: currentTab.color }}
-                    >
-                      {currentTab.emoji}
+                    <span className="flex-shrink-0 mt-0.5" style={{ color: currentTab.color }}>
+                      <currentTab.Icon size={15} strokeWidth={2.1} />
                     </span>
                   )}
                   <div className="flex-1 min-w-0">
@@ -191,17 +310,20 @@ export default function InsightsStream({ persona, items, onAcceptAction, onOpenK
                     <p className="text-fg-muted text-xs mt-1 truncate">— {b.source}</p>
                   </div>
                   {isAction && (
+                    // 以前は opacity-0 + group-hover で、ホバーの無い iPhone では
+                    // 「見えないのに押せるボタン」になっていた。常に見せる。
+                    // 文言も「＋追加」では何に追加されるか分からないので言い切る。
                     <button
                       onClick={() => onAcceptAction(b.text)}
-                      className="text-xs px-2 py-1 rounded transition-all flex-shrink-0 opacity-0 group-hover:opacity-100"
+                      className="text-xs px-2.5 rounded transition-all flex-shrink-0 inline-flex items-center gap-1 whitespace-nowrap"
                       style={{
+                        minHeight: 44,
                         background: `${currentTab.color}25`,
                         color: currentTab.color,
                         border: `1px solid ${currentTab.color}50`,
                       }}
-                      title="タスクに追加"
                     >
-                      ＋追加
+                      <PlusCircle size={12} strokeWidth={2.4} />やる事に入れる
                     </button>
                   )}
                 </motion.div>
@@ -211,9 +333,16 @@ export default function InsightsStream({ persona, items, onAcceptAction, onOpenK
         </AnimatePresence>
 
         {currentData.length > 12 && (
-          <p className="text-fg-muted text-xs text-center mt-2">
-            他 {currentData.length - 12} 件 — 資料画面で詳細を見る
-          </p>
+          // 「資料画面で詳細を見る」と書いてあるのに押せない文字だった。押せるようにする。
+          <div className="text-center mt-2">
+            <button
+              onClick={onOpenKnowledge}
+              className="text-fg-muted hover:text-fg text-xs inline-flex items-center gap-1 px-3"
+              style={{ minHeight: 44 }}
+            >
+              残り {currentData.length - 12} 件を資料画面で見る<ArrowRight size={12} strokeWidth={2.2} />
+            </button>
+          </div>
         )}
       </div>
     </motion.div>
