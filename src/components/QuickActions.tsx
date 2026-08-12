@@ -9,9 +9,15 @@ import { tactileTap, triggerHaptic, playClick } from '../lib/haptic';
 // 機能アイコンは 1 か所の台帳から引く。
 // (同じ機能が画面ごとに違う絵・違う色で出るのを止めるため → lib/featureIcons.ts)
 import { resolveFeatureIcon } from '../lib/featureIcons';
+// 検索は「変換前のひらがな」でも当たり、0 件でも近い機能を返す (行き止まり防止)
+import { searchActions } from '../lib/actionSearch';
 
 // ── カテゴリは 4 つだけ。迷子をなくす ───────────────────────────
 type CatName = '今すぐ' | 'つくる' | '商い' | 'つながる';
+
+// 0 件のときに何を見せているか。文言をこれに合わせる (見つかっているのに
+// 「ありません」と言わないため)
+type NearKind = 'none' | 'othercat' | 'near';
 
 const CAT_ICONS: Record<CatName, { Icon: LucideIcon; color: string }> = {
   '今すぐ':   { Icon: Sun,       color: '#FACC15' },
@@ -34,39 +40,41 @@ const CATEGORY: Record<string, CatName> = {
   integrations: 'つながる', premium: 'つながる', health: 'つながる',
 };
 
-// 「やりたいこと」でも引けるよう、機能名以外の言葉も検索対象に
+// 「やりたいこと」でも引けるよう、機能名以外の言葉も検索対象に。
+// ひらがなの読みも入れてある: 日本語入力では「変換する前のひらがな」がそのまま
+// 入力欄に流れてくるため、読みが無いと打っている最中ずっと 0 件になる。
 const KEYWORDS: Record<string, string> = {
-  brief: '次の一手 提案 おすすめ やること',
-  voice: '声 録音 音声 話す メモ',
-  youtube: '動画 ユーチューブ 要約 学ぶ',
-  shadow: '返信 メール 下書き',
-  kb: '資料 pdf ppt 画像 取込 読ませる ナレッジ',
-  note: 'ノート メモ 議事録 書く',
-  minutes: '会議 議事録 文字起こし 録音',
-  slides: 'スライド パワポ プレゼン 資料 powerpoint',
-  nego: '交渉 練習 リハーサル 商談',
-  decision: '迷い 決める 選択 整理',
-  email: 'メール 仕分け 返信',
-  post: 'sns 投稿 note x ツイート 文章',
-  image: '画像 写真 イラスト 図 生成',
-  engine: '記事 一気に コンテンツ note x',
-  invoice: '請求書 インボイス 発行',
-  sales: '売上 売り上げ 記録',
-  pnl: '利益 損益 収支 お金 pl',
-  'fin-consult': '財務 コンサル 相談 改善 資金繰り 数字 経営 アドバイス',
-  expense: '経費 レシート 領収書 撮影',
-  benchmark: '比較 業界 平均 ベンチマーク',
-  crm: '案件 商談 顧客 管理',
-  documents: '見積 発注 納品 請求 取引 書類',
-  people: '人 1on1 部下 メンバー 気づかい',
-  team: '招待 仲間 共有 チーム',
-  'sales-agent': '営業 商談 リード 攻める 準備',
-  'saas-agent': 'notion gmail 操作 自動 代理',
-  integrations: '連携 接続 gmail watch',
-  'tasks-hub': 'タスク やること todo 一覧',
-  premium: '専門 相談 戦略 法務 財務 プロ',
-  meet: '会議 予約 カレンダー 日程',
-  health: '体調 健康 睡眠 活動',
+  brief: '次の一手 提案 おすすめ やること ていあん つぎのいって',
+  voice: '声 録音 音声 話す メモ こえ ろくおん おんせい',
+  youtube: '動画 ユーチューブ 要約 学ぶ どうが ようやく',
+  shadow: '返信 メール 下書き へんしん したがき',
+  kb: '資料 pdf ppt 画像 取込 読ませる ナレッジ しりょう がぞう とりこみ',
+  note: 'ノート メモ 議事録 書く のーと ぎじろく',
+  minutes: '会議 議事録 文字起こし 録音 かいぎ ぎじろく もじおこし',
+  slides: 'スライド パワポ プレゼン 資料 powerpoint すらいど しりょう',
+  nego: '交渉 練習 リハーサル 商談 こうしょう れんしゅう しょうだん',
+  decision: '迷い 決める 選択 整理 まよい きめる せんたく',
+  email: 'メール 仕分け 返信 めーる しわけ へんしん',
+  post: 'sns 投稿 note x ツイート 文章 とうこう ぶんしょう',
+  image: '画像 写真 イラスト 図 生成 がぞう しゃしん せいせい',
+  engine: '記事 一気に コンテンツ note x きじ',
+  invoice: '請求書 インボイス 発行 せいきゅうしょ はっこう',
+  sales: '売上 売り上げ 記録 うりあげ きろく',
+  pnl: '利益 損益 収支 お金 pl りえき そんえき しゅうし おかね',
+  'fin-consult': '財務 コンサル 相談 改善 資金繰り 数字 経営 アドバイス ざいむ そうだん しきんぐり けいえい',
+  expense: '経費 レシート 領収書 撮影 けいひ れしーと りょうしゅうしょ',
+  benchmark: '比較 業界 平均 ベンチマーク ひかく ぎょうかい へいきん',
+  crm: '案件 商談 顧客 管理 あんけん しょうだん こきゃく かんり',
+  documents: '見積 発注 納品 請求 取引 書類 みつもり はっちゅう のうひん せいきゅう しょるい',
+  people: '人 1on1 部下 メンバー 気づかい ぶか めんばー',
+  team: '招待 仲間 共有 チーム しょうたい なかま きょうゆう ちーむ',
+  'sales-agent': '営業 商談 リード 攻める 準備 えいぎょう しょうだん じゅんび',
+  'saas-agent': 'notion gmail 操作 自動 代理 そうさ じどう だいり',
+  integrations: '連携 接続 gmail watch れんけい せつぞく',
+  'tasks-hub': 'タスク やること todo 一覧 たすく いちらん',
+  premium: '専門 相談 戦略 法務 財務 プロ せんもん そうだん せんりゃく ほうむ',
+  meet: '会議 予約 カレンダー 日程 かいぎ よやく にってい',
+  health: '体調 健康 睡眠 活動 たいちょう けんこう すいみん かつどう',
 };
 
 // ── よく使う順を覚える (localStorage) ──────────────────────────
@@ -190,21 +198,31 @@ export default function QuickActions({ persona, actions }: Props) {
     return c;
   }, [actions]);
 
-  // 検索 — 機能名・説明・やりたいこと どれでもヒット
-  const q = query.trim().toLowerCase();
-  const visible = useMemo(() => {
-    let list = sortedAll;
-    if (activeCat !== 'all') {
-      list = list.filter(a => ((a.group as CatName) || CATEGORY[a.id] || 'つながる') === activeCat);
-    }
-    if (q) {
-      list = list.filter(a => {
-        const hay = `${a.label} ${a.desc} ${KEYWORDS[a.id] || ''}`.toLowerCase();
-        return hay.includes(q);
-      });
-    }
-    return list;
+  // 検索 — 機能名・説明・やりたいこと・ひらがなの読み どれでもヒット
+  const q = query.trim();
+  const { visible, near, nearKind } = useMemo(() => {
+    const none = { visible: [] as Action[], near: [] as Action[], nearKind: 'none' as NearKind };
+    const inCat = (a: Action) => ((a.group as CatName) || CATEGORY[a.id] || 'つながる') === activeCat;
+    const list = activeCat === 'all' ? sortedAll : sortedAll.filter(inCat);
+    if (!q) return { ...none, visible: list };
+
+    const r = searchActions(list, q, KEYWORDS);
+    if (r.hits.length > 0) return { ...none, visible: r.hits };
+
+    // この分類には無かった。分類のせいで行き止まりにしないため、必ず全部からも探し直す。
+    // (「せいきゅうしょ」を「つくる」タブで打つと、請求書は「商い」に居るので
+    //  今までは "ありませんでした" だけが出て、そこで手が止まっていた)
+    const whole = activeCat === 'all' ? r : searchActions(sortedAll, q, KEYWORDS);
+    if (whole.hits.length > 0) return { ...none, near: whole.hits.slice(0, 3), nearKind: 'othercat' };
+    if (whole.near.length > 0) return { ...none, near: whole.near, nearKind: 'near' };
+    return none;
   }, [sortedAll, activeCat, q]);
+
+  // 「もしかして」も出せない時に見せる、よく使われている 3 つ (行き止まりを作らない)
+  const rescue = useMemo(
+    () => (near.length > 0 ? [] : sortedAll.slice(0, 3)),
+    [near, sortedAll],
+  );
 
   return (
     <motion.div
@@ -313,12 +331,39 @@ export default function QuickActions({ persona, actions }: Props) {
         ) : (
           <motion.div
             key="empty"
-            className="text-center py-8 text-fg-muted text-sm"
+            className="py-5"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            「{query}」に合う機能はありませんでした。<br />
-            <span className="text-xs">別の言葉で探してみてください。</span>
+            {/* 見つかっているのに「ありません」と言わない。文言は実際の結果に合わせる */}
+            <p className="text-fg text-sm text-center mb-1">
+              {nearKind === 'othercat'
+                ? `「${query}」は、いま開いている分類の外にありました。`
+                : `「${query}」そのものはありませんでした。`}
+            </p>
+            <p className="text-fg-muted text-xs text-center mb-3">
+              {nearKind === 'othercat' ? 'こちらです。'
+                : nearKind === 'near' ? 'こちらではありませんか？'
+                : 'よく使われているのはこの 3 つです。'}
+            </p>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {(near.length > 0 ? near : rescue).map(a => (
+                <Tile key={`near-${a.id}`} a={a} persona={persona} onTap={onTap} />
+              ))}
+            </div>
+            <div className="text-center">
+              <button
+                onClick={() => { triggerHaptic('light'); playClick('tap'); setQuery(''); setActiveCat('all'); }}
+                className="text-fg text-xs font-medium rounded-full px-4"
+                style={{
+                  minHeight: 44,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                ぜんぶの機能（{actions.length}）から選ぶ
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
