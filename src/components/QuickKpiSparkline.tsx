@@ -13,7 +13,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { isMasterAuth } from '../lib/billing';
-import { TrendingUp, TrendingDown, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, Sparkles, Sprout, Users, JapaneseYen } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface CardProps {
   title: string;
@@ -23,7 +24,9 @@ interface CardProps {
   err?: string | null;
   color: string;
   bg: string;
-  emoji: string;
+  // ★OSカラー絵文字(🌱👥💴)は端末ごとに絵柄も色も変わる＝こちらで決めた色も
+  //   コントラストも効かないので線画アイコンに。色はカードのアクセント色に揃える。
+  Icon: LucideIcon;
   formatValue?: (n: number) => string;
 }
 
@@ -97,7 +100,7 @@ export default function QuickKpiSparkline() {
     }}>
       <SparkCard
         title="オンボ 完了 (30 日)"
-        emoji="🌱"
+        Icon={Sprout}
         color="#34D399"
         bg="rgba(52,211,153,0.08)"
         loading={loading}
@@ -106,7 +109,7 @@ export default function QuickKpiSparkline() {
       />
       <SparkCard
         title="DAU (30 日)"
-        emoji="👥"
+        Icon={Users}
         color="#6366F1"
         bg="rgba(99,102,241,0.08)"
         loading={loading}
@@ -116,7 +119,7 @@ export default function QuickKpiSparkline() {
       {isMaster && (
         <SparkCard
           title="月次売上 (12 ヶ月)"
-          emoji="💴"
+          Icon={JapaneseYen}
           color="#FBBF24"
           bg="rgba(251,191,36,0.08)"
           loading={loading}
@@ -128,7 +131,7 @@ export default function QuickKpiSparkline() {
   );
 }
 
-function SparkCard({ title, emoji, color, bg, loading, series, unit, formatValue }: CardProps) {
+function SparkCard({ title, Icon, color, bg, loading, series, unit, formatValue }: CardProps) {
   const stats = useMemo(() => {
     if (!series || series.length === 0) return { total: 0, last: 0, prev: 0, delta: 0 };
     const total = series.reduce((a, b) => a + b, 0);
@@ -156,7 +159,7 @@ function SparkCard({ title, emoji, color, bg, loading, series, unit, formatValue
           //   薄い→濃いの順番は保ったまま、いちばん薄いところを 4.5 の上へ持ち上げる。
           color: 'rgba(255,255,255,0.82)', fontWeight: 800,
         }}>
-          <span style={{ fontSize: 14 }}>{emoji}</span> {title}
+          <Icon size={14} strokeWidth={2.2} color={color} aria-hidden="true" style={{ flexShrink: 0 }} /> {title}
         </span>
         {series && (
           <span style={{
