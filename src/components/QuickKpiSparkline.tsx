@@ -110,8 +110,12 @@ export default function QuickKpiSparkline() {
       <SparkCard
         title="DAU (30 日)"
         Icon={Users}
-        color="#6366F1"
-        bg="rgba(99,102,241,0.08)"
+        // ★藍 #6366F1 はこのカードの地(実効 rgb(62,62,81)＝暗い帯の上)で 2.31:1。
+        //   絵文字のときは「色つきの絵」だったので問題にならなかったが、線画にすると
+        //   アイコンも折れ線も数字も同じ色＝2.31 のまま消える。明るい藍 #A5B4FC (4.80:1) へ。
+        //   緑 #34D399=5.36 / 金 #FBBF24=6.17 は同じ地で足りているので据え置き。
+        color="#A5B4FC"
+        bg="rgba(165,180,252,0.08)"
         loading={loading}
         series={dau}
         unit="人"
