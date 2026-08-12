@@ -19,6 +19,8 @@ export interface GridTile {
   /** ツールチップ用の短い説明（キャプション先頭など） */
   label: string;
   from: 'queue' | 'instagram';
+  /** true = まだ出していない予約ぶん（マスの隅に日付を出す） */
+  planned?: boolean;
 }
 
 const QUEUE_KEY = 'iris_post_queue_v1';
@@ -83,6 +85,65 @@ export function loadPostedGrid(limit = 8): GridTile[] {
     .sort((a, b) => b.at - a.at)
     .filter((t) => (seen.has(t.src) ? false : (seen.add(t.src), true)))
     .slice(0, limit);
+}
+
+/** 予約ぶんの読み取り結果。並びに出せなかったもの（画像がまだ無い）も正直に数える。 */
+export interface PlannedGrid {
+  tiles: GridTile[];
+  /** 予約はあるが画像がまだ無いので並びに出せなかった件数 */
+  withoutImage: number;
+}
+
+/**
+ * 「これから出る予約ぶん」を、プロフィールに並ぶ順（新しい順＝いちばん先の予約が左上）で返す。
+ * 対象は status が scheduled（時刻待ち）と ready（時刻は来たがまだ出していない）だけ。
+ * draft（下書き）と skipped は「出す約束をしていない」ので入れない。
+ * 画像がまだ無い予約は並びに出さず、件数だけ返す（空のマスを架空に埋めない）。
+ */
+export function loadPlannedGrid(limit = 8): PlannedGrid {
+  if (typeof window === 'undefined') return { tiles: [], withoutImage: 0 };
+  const tiles: GridTile[] = [];
+  let withoutImage = 0;
+
+  try {
+    const raw = localStorage.getItem(QUEUE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(arr)) {
+      for (const p of arr) {
+        if (!p || typeof p !== 'object') continue;
+        if (p.status !== 'scheduled' && p.status !== 'ready') continue;
+        const at = toMs(p.scheduledAt);
+        if (!at) continue; // 予約時刻が読めないものは「いつ並ぶか」を言えないので出さない
+        const src = p.thumbDataUrl || (p.mediaKind === 'image' ? p.mediaDataUrl : '');
+        if (typeof src !== 'string' || !src) { withoutImage += 1; continue; }
+        tiles.push({
+          id: String(p.id || `s${tiles.length}`),
+          src,
+          at,
+          label: String(p.caption || '').slice(0, 30),
+          from: 'queue',
+          planned: true,
+        });
+      }
+    }
+  } catch { /* 壊れた保存は無いものとして扱う */ }
+
+  const seen = new Set<string>();
+  return {
+    tiles: tiles
+      .sort((a, b) => b.at - a.at)
+      .filter((t) => (seen.has(t.src) ? false : (seen.add(t.src), true)))
+      .slice(0, limit),
+    withoutImage,
+  };
+}
+
+/** マスの隅に出す日付。「8/12」だけ（年・時刻は並びの判断に要らない）。 */
+export function plannedDateLabel(at: number): string {
+  if (!at || !Number.isFinite(at)) return '';
+  const d = new Date(at);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 export interface Legibility {

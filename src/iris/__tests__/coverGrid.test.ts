@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { loadPostedGrid, gridLegibility, cropNote } from '../coverGrid';
+import { loadPostedGrid, loadPlannedGrid, plannedDateLabel, gridLegibility, cropNote } from '../coverGrid';
 
 // ============================================================
 // coverGrid — 並びプレビューが「実データだけ」を新しい順で出すことの固定
@@ -70,6 +70,95 @@ describe('loadPostedGrid', () => {
   it('保存が壊れていても落ちない', () => {
     localStorage.setItem(QUEUE_KEY, '{壊れた');
     expect(loadPostedGrid()).toEqual([]);
+  });
+});
+
+// ============================================================
+// loadPlannedGrid — 「これから出る予約ぶん」を並びに入れる
+//
+// なぜこのテストが要るか:
+//   ここで下書きや画像の無い予約まで並べてしまうと、
+//   「来週こう並びます」と言いながら、出るかどうか分からないものを見せることになる。
+//   出す約束をした（時刻がある）ものだけが、その時刻の順に並ぶことを振る舞いで固定する。
+// ============================================================
+describe('loadPlannedGrid', () => {
+  beforeEach(() => {
+    localStorage.removeItem(QUEUE_KEY);
+    localStorage.removeItem(HISTORY_KEY);
+  });
+
+  it('1件も無ければ空（架空の枠を並べない）', () => {
+    expect(loadPlannedGrid()).toEqual({ tiles: [], withoutImage: 0 });
+  });
+
+  it('scheduled と ready だけ入れる（下書き・投稿済み・見送りは入れない）', () => {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify([
+      q('s', 'scheduled', '2026-08-20T00:00:00Z', 'data:1'),
+      q('r', 'ready', '2026-08-19T00:00:00Z', 'data:2'),
+      q('d', 'draft', '2026-08-21T00:00:00Z', 'data:3'),
+      q('p', 'posted', '2026-08-18T00:00:00Z', 'data:4'),
+      q('k', 'skipped', '2026-08-22T00:00:00Z', 'data:5'),
+    ]));
+    expect(loadPlannedGrid().tiles.map((t) => t.id)).toEqual(['s', 'r']);
+  });
+
+  it('いちばん先の予約が左上（新しい順）・上限まで', () => {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify([
+      q('near', 'scheduled', '2026-08-13T00:00:00Z', 'data:1'),
+      q('far', 'scheduled', '2026-08-30T00:00:00Z', 'data:2'),
+      q('mid', 'scheduled', '2026-08-20T00:00:00Z', 'data:3'),
+    ]));
+    expect(loadPlannedGrid().tiles.map((t) => t.id)).toEqual(['far', 'mid', 'near']);
+    expect(loadPlannedGrid(2).tiles.map((t) => t.id)).toEqual(['far', 'mid']);
+  });
+
+  it('画像がまだ無い予約は並べず、件数だけ返す', () => {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify([
+      q('withImg', 'scheduled', '2026-08-20T00:00:00Z', 'data:1'),
+      q('noImg1', 'scheduled', '2026-08-21T00:00:00Z'),
+      q('noImg2', 'ready', '2026-08-22T00:00:00Z'),
+    ]));
+    const r = loadPlannedGrid();
+    expect(r.tiles.map((t) => t.id)).toEqual(['withImg']);
+    expect(r.withoutImage).toBe(2);
+  });
+
+  it('予約時刻が読めないものは出さない（いつ並ぶか言えないため）', () => {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify([
+      { id: 'x', status: 'scheduled', scheduledAt: 'めちゃくちゃ', createdAt: '2026-08-01T00:00:00Z', thumbDataUrl: 'data:1' },
+    ]));
+    expect(loadPlannedGrid().tiles).toEqual([]);
+  });
+
+  it('予約ぶんには planned 印が付く（マスの日付を出す判定に使う）', () => {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify([q('s', 'scheduled', '2026-08-20T00:00:00Z', 'data:1')]));
+    expect(loadPlannedGrid().tiles[0].planned).toBe(true);
+    localStorage.setItem(QUEUE_KEY, JSON.stringify([q('p', 'posted', '2026-08-01T00:00:00Z', 'data:1')]));
+    expect(loadPostedGrid()[0].planned).toBeUndefined();
+  });
+
+  it('同じ画像は1回だけ（並びが水増しされない）', () => {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify([
+      q('a', 'scheduled', '2026-08-20T00:00:00Z', 'data:same'),
+      q('b', 'scheduled', '2026-08-21T00:00:00Z', 'data:same'),
+    ]));
+    expect(loadPlannedGrid().tiles).toHaveLength(1);
+  });
+
+  it('保存が壊れていても落ちない', () => {
+    localStorage.setItem(QUEUE_KEY, '{壊れた');
+    expect(loadPlannedGrid()).toEqual({ tiles: [], withoutImage: 0 });
+  });
+});
+
+describe('plannedDateLabel', () => {
+  it('日付だけを出す（年も時刻も出さない）', () => {
+    expect(plannedDateLabel(new Date(2026, 7, 12, 20, 0).getTime())).toBe('8/12');
+    expect(plannedDateLabel(new Date(2026, 0, 3, 7, 30).getTime())).toBe('1/3');
+  });
+  it('読めない時刻は空（画面に NaN を出さない）', () => {
+    expect(plannedDateLabel(0)).toBe('');
+    expect(plannedDateLabel(NaN)).toBe('');
   });
 });
 

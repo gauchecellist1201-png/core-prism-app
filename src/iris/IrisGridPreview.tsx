@@ -9,7 +9,7 @@
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
 import { LayoutGrid, PencilLine, AlertTriangle, CheckCircle2, Images } from 'lucide-react';
-import { loadPostedGrid, gridLegibility, cropNote, type GridTile } from './coverGrid';
+import { loadPostedGrid, loadPlannedGrid, plannedDateLabel, gridLegibility, cropNote, type GridTile } from './coverGrid';
 import { accentFaceBg, accentFaceInk } from './irisStyle';
 
 interface Props {
@@ -31,11 +31,27 @@ export default function IrisGridPreview({
   currentSrc, titlePx, canvasW, aspect, ink, inkSoft, accent, card, cardBorder, onFixText,
 }: Props) {
   const [tiles, setTiles] = useState<GridTile[]>([]);
+  const [plannedNoImage, setPlannedNoImage] = useState(0);
   const [broken, setBroken] = useState<Set<string>>(new Set());
   const [cellPx, setCellPx] = useState(0);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setTiles(loadPostedGrid(8)); }, []);
+  // 「これから出る予約ぶん」を先に、そのうしろに投稿済み。
+  // ＝プロフィールを開いた人が来週見る並びが、そのままここに出る。
+  useEffect(() => {
+    const load = () => {
+      const planned = loadPlannedGrid(8);
+      const usedSrc = new Set(planned.tiles.map((t) => t.src));
+      const posted = loadPostedGrid(8).filter((t) => !usedSrc.has(t.src));
+      setTiles([...planned.tiles, ...posted].slice(0, 8));
+      setPlannedNoImage(planned.withoutImage);
+    };
+    load();
+    // 予約リストは別画面で足される。戻ってきた時に古い並びのままにしない。
+    const onStorage = (e: StorageEvent) => { if (e.key === 'iris_post_queue_v1') load(); };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   // マスの実寸を測る（推定しない。実際に画面で何 px かで読めるかを判定する）
   useEffect(() => {
@@ -58,6 +74,7 @@ export default function IrisGridPreview({
   }, []);
 
   const shown = tiles.filter((t) => !broken.has(t.id));
+  const plannedCount = shown.filter((t) => t.planned).length;
   const leg = gridLegibility(titlePx, canvasW, cellPx);
   const crop = cropNote(aspect);
   const cells = 9;
@@ -72,7 +89,11 @@ export default function IrisGridPreview({
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <LayoutGrid size={15} color={accent} />
         <span style={{ fontSize: 12.5, fontWeight: 800, color: ink }}>③ 並んだ時の見え方</span>
-        <span style={{ fontSize: 11, color: inkSoft }}>プロフィールを開いた人が最初に見るのは、1枚ではなく並びです</span>
+        <span style={{ fontSize: 11, color: inkSoft }}>
+          {plannedCount > 0
+            ? '予約ぶんも入れた「これからのプロフィール」です。出す前にしか直せません'
+            : 'プロフィールを開いた人が最初に見るのは、1枚ではなく並びです'}
+        </span>
       </div>
 
       <div ref={gridRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3, maxWidth: 360 }}>
@@ -92,15 +113,22 @@ export default function IrisGridPreview({
           }
           const t = shown[i - 1];
           if (t) {
+            const day = t.planned ? plannedDateLabel(t.at) : '';
             return (
               <div key={t.id} data-cell style={cellBase}>
                 <img
                   src={t.src}
-                  alt={t.label || '投稿済み'}
-                  title={t.label}
+                  alt={t.planned ? `${day} に出す予約` : (t.label || '投稿済み')}
+                  title={t.planned ? `${day} の予約 ${t.label}`.trim() : t.label}
                   onError={() => setBroken((prev) => new Set(prev).add(t.id))}
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
+                {day && (
+                  <span style={{
+                    position: 'absolute', right: 3, top: 3, background: 'rgba(17,10,15,0.72)', color: '#fff',
+                    fontSize: 9, fontWeight: 800, borderRadius: 999, padding: '2px 5px', lineHeight: 1.2,
+                  }}>{day}</span>
+                )}
               </div>
             );
           }
@@ -116,7 +144,7 @@ export default function IrisGridPreview({
             <div>
               <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: ink, lineHeight: 1.5 }}>まだ並べる投稿がありません</p>
               <p style={{ margin: '3px 0 0', fontSize: 11.5, color: inkSoft, lineHeight: 1.55 }}>
-                予約リストで「投稿した」にした分と、Instagram 連携で取り込んだ投稿が、ここに新しい順で並びます。見本の画像は出しません（実際のあなたの並びだけを見せるためです）。
+                これから出す予約（画像がついたもの）と、予約リストで「投稿した」にした分、Instagram 連携で取り込んだ投稿が、ここに並びます。見本の画像は出しません（実際のあなたの並びだけを見せるためです）。
               </p>
             </div>
           </div>
@@ -133,7 +161,17 @@ export default function IrisGridPreview({
         </div>
       ) : (
         <p style={{ margin: 0, fontSize: 11, color: inkSoft, lineHeight: 1.5 }}>
-          投稿済みの直近 {shown.length} 件を新しい順で並べています（実データのみ）。プロフィールの並びと同じ 4:5 で切り取って表示しています。
+          {plannedCount > 0
+            ? `これから出る予約 ${plannedCount} 件（日付つき）を先に、そのうしろに投稿済み ${shown.length - plannedCount} 件を並べています。＝この並びが、いちばん先の予約が出たあとのプロフィールです。`
+            : `投稿済みの直近 ${shown.length} 件を新しい順で並べています（実データのみ）。`}
+          プロフィールの並びと同じ 4:5 で切り取って表示しています。
+        </p>
+      )}
+
+      {/* 予約はあるのに画像がまだ無いものは、空のマスを架空に埋めずに件数だけ正直に出す */}
+      {plannedNoImage > 0 && (
+        <p style={{ margin: 0, fontSize: 11, color: inkSoft, lineHeight: 1.5 }}>
+          予約のうち {plannedNoImage} 件は、まだ画像がないので並びに出していません（何が並ぶか分からないマスを、それらしく埋めないためです）。
         </p>
       )}
 
