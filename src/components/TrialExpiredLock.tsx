@@ -181,7 +181,8 @@ export default function TrialExpiredLock({ brand, accent, onChoose, onSignout }:
           <div style={{ textAlign: 'center', marginTop: 14 }}>
             <button
               onClick={onSignout}
-              style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 8, minHeight: 40 }}
+              /* 2026-08-12: 40px だったので 44px に（375px 実測で唯一の 44px 未満）*/
+              style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: '0 12px', minHeight: 44 }}
             >
               別のアカウントでログイン
             </button>

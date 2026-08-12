@@ -14,7 +14,7 @@ import { sendEmail } from '../lib/emailNotify';
 import { confirmAction } from '../lib/confirmDialog';
 import CancelFlowDialog from './CancelFlowDialog';
 import { whiteSafeFace, whiteSafeGradient, contrast, hexToHsl, hslToHex } from '../lib/accentFace';
-import { X, AlarmClock, AlertTriangle, Gift, LogOut } from 'lucide-react';
+import { X, AlarmClock, AlertTriangle, Gift, LogOut, CheckCircle2, ShieldCheck, Hourglass } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
@@ -23,7 +23,10 @@ interface Props {
 export default function BillingDashboard({ onClose }: Props) {
   const { user, changePlan } = useBillingUser();
   const [cancelBusy, setCancelBusy] = useState(false);
-  const [cancelDone, setCancelDone] = useState(false);
+  // 解約の結末。「たぶん成功した」を作らないため、成功/不成功の1bitではなく
+  // **何が起きたか**を持つ（止まった / 止めるものが無かった / 既に解約済み / テスト購入を戻した）
+  const [cancelOutcome, setCancelOutcome] = useState<null | 'canceled' | 'nothing_to_cancel' | 'already' | 'test_only'>(null);
+  const cancelDone = cancelOutcome !== null;
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [showPlanSwitcher, setShowPlanSwitcher] = useState(false);
@@ -141,12 +144,34 @@ export default function BillingDashboard({ onClose }: Props) {
     return d.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
   })();
 
+  // ─── 解約 ───────────────────────────────────────────────
+  // 2026-08-12: ここには「たぶん成功した」経路があった。
+  //   `!user.subscriptionId` だけで**Stripeを一度も呼ばずに**ローカルのプランを free に戻し、
+  //   「解約のお手続きが完了しました」と断言していた（コメントは「テストモード」だが
+  //   条件に isTestCheckout が入っていない）。api/billing/lookup.ts は
+  //   subscription_id: null を返しうるので、**実際にお金を払った人が subscriptionId 無しで
+  //   有料プランになれる**。その人が解約を押すと、画面は「解約できました」、
+  //   カードは引き落とされ続ける。
+  //   競合5社（Vrew/Opus Clip/CapCut/InVideo AI/Canva）のうち4社が★1を集めているのが
+  //   まさにこの壊れ方（「解約したのに請求が続いた」）。
+  // 方針: 止まったことを確かめられた時だけ「止まりました」と言う。
+  //   確かめられない時は、はっきり「まだ止まっていません」と言って復旧手段を出す。
   const handleCancel = async () => {
-    if (!user.subscriptionId) {
-      // テストモード: ローカルでプランをフリーに戻す
+    // ¥0 のテスト購入だけは、Stripe に契約が存在しないのでローカル処理でよい。
+    // （ただし「解約」ではなく「テスト購入を戻した」と正直に言う）
+    if (user.isTestCheckout === true && !user.subscriptionId) {
       changePlan('free');
-      sendEmail(user.email, 'cancel_save', { name: user.email.split('@')[0], code: 'COMEBACK50' });
-      setCancelDone(true);
+      setCancelOutcome('test_only');
+      return;
+    }
+
+    // 手元に subscriptionId が無くても、customer_id があれば Stripe 側で引き直せる
+    if (!user.subscriptionId && !user.stripeCustomerId) {
+      setCancelError(
+        'お客様の契約情報をこの端末から特定できませんでした。'
+        + 'お手数ですが core.inc.guild@gmail.com にこのメールアドレスをお送りください。'
+        + '当社側で解約を確認してお返事します（料金は止めます）。',
+      );
       return;
     }
 
@@ -156,17 +181,32 @@ export default function BillingDashboard({ onClose }: Props) {
       const resp = await fetch('/api/stripe/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription_id: user.subscriptionId }),
+        body: JSON.stringify({
+          subscription_id: user.subscriptionId,
+          customer_id: user.stripeCustomerId,
+        }),
       });
-      if (!resp.ok) {
-        const err = await resp.json() as { error?: string };
-        throw new Error(err.error || '解約処理に失敗しました');
+      const data = await resp.json().catch(() => ({})) as {
+        success?: boolean; error?: string; code?: string;
+      };
+
+      // 止めるものが無かった（＝もともと課金されていない / 既に解約済み）。
+      // これは失敗ではないが「解約しました」とも言わない。事実をそのまま出す。
+      if (resp.status === 404 && (data.code === 'NO_ACTIVE_SUBSCRIPTION' || data.code === 'ALREADY_CANCELED')) {
+        changePlan('free');
+        setCancelOutcome(data.code === 'ALREADY_CANCELED' ? 'already' : 'nothing_to_cancel');
+        return;
       }
-      // キャンセルセーブメール (非同期)
+
+      if (!resp.ok || data.success !== true) {
+        throw new Error(data.error || '解約の手続きが完了しませんでした');
+      }
+
+      // ここまで来た時だけ = Stripe 側で期間末解約が立ったことを確認できた時だけ
       sendEmail(user.email, 'cancel_save', { name: user.email.split('@')[0], code: 'COMEBACK50' });
-      setCancelDone(true);
+      setCancelOutcome('canceled');
     } catch (e: any) {
-      setCancelError(e.message);
+      setCancelError(e?.message || '通信できませんでした');
     } finally {
       setCancelBusy(false);
     }
@@ -310,7 +350,12 @@ export default function BillingDashboard({ onClose }: Props) {
             <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
               {(() => {
                 const c = trialExpired ? '#9B1B30' : trialDaysLeft <= 2 ? '#92400E' : '#166534';
-                const Ico = trialExpired ? AlarmClock : trialDaysLeft <= 2 ? AlertTriangle : Gift;
+                // 2026-08-12: 残り2日で「⚠ 警告の三角」を出していた。
+                //   中身は「カード未登録＝自動課金なし」という**安心の情報**なのに、
+                //   絵だけが「対応が必要／このあと請求が来る」と読める。
+                //   競合(Canva/InVideo)の★1が「トライアル後の不意打ち課金」に集中しているので、
+                //   ここで怖がらせるのは一番損。残り日数は砂時計、切れたら時計にする。
+                const Ico = trialExpired ? AlarmClock : trialDaysLeft <= 2 ? Hourglass : Gift;
                 return <Ico size={22} strokeWidth={2.2} color={c} />;
               })()}
             </div>
@@ -332,7 +377,7 @@ export default function BillingDashboard({ onClose }: Props) {
               }}>
                 {trialExpired
                   ? 'プランを選ぶと続けて使えます。カード登録は今までしていません。'
-                  : 'カード登録は不要。プラン選択で課金が始まります。'}
+                  : 'カードは登録されていません。自動で課金されることはありません。'}
               </p>
             </div>
           </div>
@@ -362,20 +407,25 @@ export default function BillingDashboard({ onClose }: Props) {
               >
                 {showPlanSwitcher ? '閉じる' : 'プランを変更'}
               </button>
-              <button
-                onClick={handleOpenPortal}
-                disabled={portalBusy || !user.stripeCustomerId}
-                title={!user.stripeCustomerId ? 'サブスク開始後に利用可能' : 'Stripe で詳細管理'}
-                style={{
-                  flex: 1, background: '#fff', color: accentInk,
-                  border: `1px solid ${accentInk}`, borderRadius: 999, padding: '0.7rem',
-                  fontSize: '0.88rem', fontWeight: 700,
-                  cursor: portalBusy ? 'wait' : 'pointer',
-                  opacity: !user.stripeCustomerId ? 0.5 : 1,
-                }}
-              >
-                {portalBusy ? '読み込み中…' : 'Stripe ポータル'}
-              </button>
+              {/* 2026-08-12: Stripe に顧客がまだ無い人（お試し中など）には、この釦は
+                  押しても何も起きない。理由は title 属性に書いてあったが、
+                  iPhone にはマウスオーバーが無いので**誰にも読めない**＝
+                  「押しても何も起きないボタン」そのもの。無い人には出さない。 */}
+              {user.stripeCustomerId && (
+                <button
+                  onClick={handleOpenPortal}
+                  disabled={portalBusy}
+                  title="Stripe で詳細管理"
+                  style={{
+                    flex: 1, background: '#fff', color: accentInk,
+                    border: `1px solid ${accentInk}`, borderRadius: 999, padding: '0.7rem',
+                    fontSize: '0.88rem', fontWeight: 700,
+                    cursor: portalBusy ? 'wait' : 'pointer',
+                  }}
+                >
+                  {portalBusy ? '読み込み中…' : 'Stripe ポータル'}
+                </button>
+              )}
             </div>
 
             <AnimatePresence>
@@ -457,11 +507,90 @@ export default function BillingDashboard({ onClose }: Props) {
                 padding: '1rem', borderRadius: 12,
                 background: '#F0FDF4', border: '1px solid #86EFAC',
                 fontSize: '0.88rem', color: '#166534', lineHeight: 1.7,
+                display: 'flex', gap: '0.6rem', alignItems: 'flex-start',
               }}
             >
-              ✅ 解約のお手続きが完了しました。<br />
-              ご利用期間終了まで引き続きご利用いただけます。<br />
-              <strong>復帰クーポン (COMEBACK50)</strong> をメールでお送りしました。
+              {/* OS のカラー絵文字（✅）は端末ごとに絵が変わるので線画に。面が薄緑なので色は明示する */}
+              <CheckCircle2 size={20} strokeWidth={2.2} color="#166534" style={{ flexShrink: 0, marginTop: 2 }} />
+              <div style={{ minWidth: 0 }}>
+                {cancelOutcome === 'canceled' && (<>
+                  <strong>次回の請求を止めました。</strong><br />
+                  これ以上お引き落としはありません。
+                  ご利用期間の終わりまでは、そのままお使いいただけます。<br />
+                  <strong>復帰クーポン (COMEBACK50)</strong> をメールでお送りしました。
+                </>)}
+                {cancelOutcome === 'already' && (<>
+                  <strong>すでに解約のお手続きが済んでいました。</strong><br />
+                  新たなお引き落としはありません。
+                </>)}
+                {cancelOutcome === 'nothing_to_cancel' && (<>
+                  <strong>お引き落としの対象となるご契約はありませんでした。</strong><br />
+                  止めるものが無いので、このままで料金は発生しません。
+                </>)}
+                {cancelOutcome === 'test_only' && (<>
+                  <strong>無料（¥0）のご利用を、フリープランに戻しました。</strong><br />
+                  もともとお支払いは発生していません。
+                </>)}
+              </div>
+            </motion.div>
+          ) : cancelError ? (
+            /* 2026-08-12: 止まったことを確かめられない時は、成功と言わずに
+               「まだ止まっていません」と言って、必ず復旧手段とセットで出す */
+            <motion.div
+              key="failed"
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              style={{
+                padding: '1rem', borderRadius: 12,
+                background: '#FEF2F2', border: '1px solid #FCA5A5',
+              }}
+            >
+              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
+                <AlertTriangle size={20} strokeWidth={2.2} color="#9B1B30" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div style={{ minWidth: 0, fontSize: '0.88rem', color: '#9B1B30', lineHeight: 1.7 }}>
+                  <strong>まだ料金は止まっていません。</strong><br />
+                  {cancelError}
+                </div>
+              </div>
+              <div style={{ display: 'grid', gap: '0.5rem' }}>
+                <button
+                  onClick={() => { setCancelError(null); handleCancel(); }}
+                  disabled={cancelBusy}
+                  style={{
+                    width: '100%', minHeight: 44, background: '#9B1B30', color: '#fff',
+                    border: 'none', borderRadius: 999, padding: '0.7rem',
+                    fontSize: '0.88rem', fontWeight: 700,
+                    cursor: cancelBusy ? 'wait' : 'pointer', opacity: cancelBusy ? 0.6 : 1,
+                  }}
+                >
+                  {cancelBusy ? '確認中…' : 'もう一度、止めてみる'}
+                </button>
+                {user.stripeCustomerId && (
+                  <button
+                    onClick={handleOpenPortal}
+                    disabled={portalBusy}
+                    style={{
+                      width: '100%', minHeight: 44, background: '#fff', color: '#9B1B30',
+                      border: '1px solid #FCA5A5', borderRadius: 999, padding: '0.7rem',
+                      fontSize: '0.88rem', fontWeight: 700,
+                      cursor: portalBusy ? 'wait' : 'pointer',
+                    }}
+                  >
+                    {portalBusy ? '開いています…' : 'Stripe の画面で自分で止める'}
+                  </button>
+                )}
+                <a
+                  href={`mailto:core.inc.guild@gmail.com?subject=${encodeURIComponent('解約のお願い')}&body=${encodeURIComponent(`登録メールアドレス: ${user.email}\n\nアプリから解約できなかったため、解約をお願いします。`)}`}
+                  style={{
+                    width: '100%', minHeight: 44, background: 'transparent', color: '#9B1B30',
+                    border: '1px solid rgba(155,27,48,0.35)', borderRadius: 999,
+                    fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+                    padding: '0.7rem',
+                  }}
+                >
+                  メールで解約を頼む（当社が止めます）
+                </a>
+              </div>
             </motion.div>
           ) : confirmCancel ? (
             <motion.div
@@ -473,15 +602,17 @@ export default function BillingDashboard({ onClose }: Props) {
                 marginBottom: '0.75rem',
               }}
             >
-              <p style={{ fontSize: '0.88rem', color: '#7C2D12', marginBottom: '1rem', lineHeight: 1.7 }}>
-                ⚠ 本当に解約しますか？<br />
-                現在の請求期間が終了するまでご利用いただけます。
+              {/* カラー絵文字（⚠）を線画に。面が薄い赤なので色は明示する */}
+              <p style={{
+                fontSize: '0.88rem', color: '#7C2D12', marginBottom: '1rem', lineHeight: 1.7,
+                display: 'flex', gap: '0.5rem', alignItems: 'flex-start',
+              }}>
+                <AlertTriangle size={19} strokeWidth={2.2} color="#7C2D12" style={{ flexShrink: 0, marginTop: 3 }} />
+                <span>
+                  本当に解約しますか？<br />
+                  現在の請求期間が終了するまでご利用いただけます。
+                </span>
               </p>
-              {cancelError && (
-                <p style={{ fontSize: '0.83rem', color: '#9B1B30', marginBottom: '0.75rem' }}>
-                  エラー: {cancelError}
-                </p>
-              )}
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button
                   onClick={() => setConfirmCancel(false)}
@@ -510,6 +641,48 @@ export default function BillingDashboard({ onClose }: Props) {
             </motion.div>
           ) : (
             <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              {/* 2026-08-12: お試し中（plan==='free'）は、ここが**1文字も描画されていなかった**。
+                  入口のボタンは「お支払い・解約」、副題は「解約はこの中のボタン1つ」なのに、
+                  開くと解約の話がどこにも無い＝入口で約束したものが無い状態だった。
+                  Iris のお試しはカード未登録なので、正しい答えは「何もしなくて大丈夫」。
+                  競合(Canva/InVideo AI)の最多苦情が「トライアル解約したのに課金された」なので、
+                  ここを黙っていると、そこで焼かれた人には同じものに見える。 */}
+              {user.plan === 'free' && !trialExpired && (
+                <div style={{
+                  padding: '1rem', borderRadius: 12,
+                  background: '#F0FDF4', border: '1px solid #86EFAC',
+                }}>
+                  <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+                    <ShieldCheck size={20} strokeWidth={2.2} color="#166534" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <div style={{ minWidth: 0, fontSize: '0.88rem', color: '#166534', lineHeight: 1.75 }}>
+                      <strong>やめたいときは、何もしなくて大丈夫です。</strong><br />
+                      カードを登録していないので、<strong>勝手に課金されることはありません</strong>。
+                      お試し期間が終わると、そのまま自動で止まります。
+                      続けたいと思ったときだけ、ご自分でプランを選んでください。
+                    </div>
+                  </div>
+                  <p style={{
+                    margin: '0.75rem 0 0', fontSize: '0.78rem',
+                    color: '#166534', opacity: 0.85, lineHeight: 1.6,
+                  }}>
+                    いますぐアカウントを消したい場合は、下の「アカウント」からできます。
+                  </p>
+                </div>
+              )}
+              {user.plan === 'free' && trialExpired && (
+                <div style={{
+                  padding: '1rem', borderRadius: 12,
+                  background: '#F8F7FA', border: '1px solid rgba(0,0,0,0.08)',
+                }}>
+                  <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+                    <ShieldCheck size={20} strokeWidth={2.2} color="#3F3A4A" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <div style={{ minWidth: 0, fontSize: '0.88rem', color: '#3F3A4A', lineHeight: 1.75 }}>
+                      <strong>お試しは終わっていて、料金は発生していません。</strong><br />
+                      解約のお手続きは要りません。このまま放っておいて大丈夫です。
+                    </div>
+                  </div>
+                </div>
+              )}
               {user.plan !== 'free' && (
                 <button
                   onClick={() => setConfirmCancel(true)}
