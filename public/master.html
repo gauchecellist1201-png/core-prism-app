@@ -327,6 +327,8 @@
   function lock(){
     hub.classList.add("hidden");
     lockwrap.classList.remove("hidden");
+    var k = document.getElementById("key");
+    if (k) { k.value = ""; k.focus(); }
   }
   function isTouch(){
     return (window.matchMedia && window.matchMedia("(pointer:coarse)").matches) || "ontouchstart" in window;
@@ -369,17 +371,21 @@
     var c = el("div","card");
 
     var mk = el("div","mark");
+    function monogram(){
+      mk.textContent = s.nm.slice(0,1);
+      mk.style.background = s.c;
+    }
     if (s.mark){
       var img = document.createElement("img");
       img.src = s.mark; img.alt = "";
       img.addEventListener("error", function(){
-        mk.textContent = s.nm.slice(0,1);
-        mk.style.background = s.c;
+        // 壊れた画像が頭文字の上に残らないよう、必ず取り除いてから差し替える
+        if (img.parentNode) img.parentNode.removeChild(img);
+        monogram();
       });
       mk.appendChild(img);
     } else {
-      mk.textContent = s.nm.slice(0,1);
-      mk.style.background = s.c;
+      monogram();
     }
     c.appendChild(mk);
 
@@ -399,7 +405,13 @@
     if (primaryUrl){
       var a = el("a","stretch");
       a.href = primaryUrl;
-      a.setAttribute("aria-label", s.nm + "を" + (s.app ? "開く" : "見る"));
+      // 見た目の文字はリンクの外にあるので、読み上げが二重にならないよう
+      // 名前・状態・説明をリンク側の名前にまとめ、見た目側は読み上げ対象から外す
+      a.setAttribute("aria-label",
+        s.nm + "。" + (s.mm ? "マスターモードで開けます。" : "") +
+        (!s.app ? "営業ページのみ。" : "") + s.ds + "。" + (s.app ? "開く" : "見る"));
+      mk.setAttribute("aria-hidden","true");
+      body.setAttribute("aria-hidden","true");
       if (primaryUrl.charAt(0) !== "/") { a.target = "_blank"; a.rel = "noopener"; }
       a.addEventListener("click", function(){ pushRecent(s.id); });
       c.insertBefore(a, c.firstChild);
@@ -435,15 +447,19 @@
       navigator.clipboard.writeText(url).then(function(){ done(true); }, function(){ fallback(); });
     } else { fallback(); }
     function fallback(){
+      var ta = null;
       try{
-        var ta = document.createElement("textarea");
+        ta = document.createElement("textarea");
         ta.value = url; ta.setAttribute("readonly","");
         ta.style.position = "fixed"; ta.style.top = "-1000px";
         document.body.appendChild(ta); ta.select();
-        var ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-        done(ok);
-      }catch(e){ done(false); }
+        done(document.execCommand("copy"));
+      }catch(e){
+        done(false);
+      }finally{
+        // 例外が出ても不可視の textarea を DOM に残さない
+        if (ta && ta.parentNode) ta.parentNode.removeChild(ta);
+      }
     }
   }
 
@@ -548,7 +564,7 @@
   q.addEventListener("keydown", function(e){
     if (e.key === "Escape"){ q.value=""; state.q=""; clearq.classList.remove("on"); render(); }
     if (e.key === "Enter"){
-      var first = document.querySelector("#list .card a.btn.pri");
+      var first = document.querySelector("#list .card a.stretch");
       if (first) first.click();
     }
   });
@@ -565,6 +581,16 @@
   document.getElementById("signout").addEventListener("click", function(e){
     e.preventDefault();
     try{ localStorage.removeItem("core_hub_key"); }catch(err){}
+    // URL に ?key= が残っていると、再読み込みで即また解錠されてしまう
+    try{
+      if (window.history && history.replaceState){
+        var u = new URL(location.href);
+        if (u.searchParams.has("key")){
+          u.searchParams.delete("key");
+          history.replaceState(null, "", u.pathname + (u.search || "") + u.hash);
+        }
+      }
+    }catch(err){}
     lock();
   });
 
