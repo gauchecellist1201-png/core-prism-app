@@ -7,7 +7,7 @@
 // ============================================================
 
 import { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Megaphone } from 'lucide-react';
 
 // lucide-react から Twitter/Facebook/Linkedin は 除去されたので 自前テキストアイコン (aria-label で a11y)
 const XIcon = ({ size = 16 }: { size?: number }) => (
@@ -103,8 +103,13 @@ export default function SocialShareButtons({ url, text = '', hashtags, compact =
       }}
     >
       {!compact && (
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 700, letterSpacing: '0.12em', marginRight: 4 }}>
-          📣 SHARE
+        <span style={{
+          fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 700, letterSpacing: '0.12em', marginRight: 4,
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+        }}>
+          {/* OS カラー絵文字 (📣) は端末ごとに絵柄も色も変わるので線画に統一 */}
+          <Megaphone size={13} strokeWidth={2} aria-hidden="true" />
+          SHARE
         </span>
       )}
       {NETWORKS.map((n) => {

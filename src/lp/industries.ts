@@ -6,13 +6,25 @@
 //   共通骨格 Hero/Pain/Solution/Proof/Pricing/FAQ/CTA は LpTemplate.tsx 側で実装
 // ============================================================
 
+import {
+  AlarmClock, BarChart3, Brain, Briefcase, Calculator, CircleDollarSign, Clapperboard,
+  Clock, Coins, Eye, EyeOff, FileText, Files, FolderOpen, FolderTree, Frown, Handshake,
+  HelpCircle, Hourglass, Layers, LineChart, Mail, MessageSquare, MessagesSquare, Moon,
+  PenLine, PiggyBank, Plug, Presentation, Receipt, Recycle, Rocket, Scale, ScrollText,
+  Search, Send, Sunrise, Target, TrendingDown, UserPlus, UserX, Users, VideoOff, Workflow,
+  type LucideIcon,
+} from 'lucide-react';
+
 export interface IndustryPainPoint {
-  emoji: string;
+  /** 悩みの絵柄は **線画 (lucide)**。OS カラー絵文字は端末ごとに絵柄も色も変わり、
+   *  こちらで決めたブランド色もコントラストも効かない（[[feedback_no_cheap_emoji]]） */
+  Icon: LucideIcon;
   text: string;
 }
 
 export interface IndustryFeature {
-  icon: string;
+  /** 解決の絵柄も線画 (lucide)。白で描く面なので whiteSafeGradient で面の側を保証すること */
+  Icon: LucideIcon;
   title: string;
   body: string;
   /** 月間で削減できる時間 (時間単位) — Proof セクションで合算表示 */
@@ -88,15 +100,15 @@ const SME: IndustryConfig = {
   heroSub: '経営判断・営業提案・財務分析 — 1 人の社長がいまや 1 人で抱えなくていい時代へ。',
   heroHeroNumber: { value: '月 ¥170 万', label: 'コンサル代の節約効果' },
   pain: [
-    { emoji: '😔', text: '経営判断のたびに孤独に悩む。相談相手がいない' },
-    { emoji: '⏰', text: '提案資料 / 営業文 / 議事録 を全部自分で書いている' },
-    { emoji: '📉', text: '数字を見ても、どこに手を打つべきか分からない' },
-    { emoji: '💸', text: 'コンサルは高すぎる、タイミングも違う' },
+    { Icon: Frown, text: '経営判断のたびに孤独に悩む。相談相手がいない' },
+    { Icon: AlarmClock, text: '提案資料 / 営業文 / 議事録 を全部自分で書いている' },
+    { Icon: TrendingDown, text: '数字を見ても、どこに手を打つべきか分からない' },
+    { Icon: CircleDollarSign, text: 'コンサルは高すぎる、タイミングも違う' },
   ],
   features: [
-    { icon: '👔', title: '13 名の AI 役員会', body: 'CEO / CFO / CSO / CTO / CMO / COO / CPO / CDO / CDS / CHR / CLO / CAO / CCO が常時待機。経営判断に 3 案 + 推奨 1 案を 10 分で提示', savesHours: 6 },
-    { icon: '✍', title: '営業文 / 提案資料 / 月次 P/L', body: '「お願いします」の 1 タップで成果物完成。確認 → 修正 → 送信まで 5 分', savesHours: 12 },
-    { icon: '🤝', title: '商談 → クロージング', body: '顧客状況に合わせた CVR の高い提案を即時生成。新人でもプロの提案ができる', savesHours: 8 },
+    { Icon: Briefcase, title: '13 名の AI 役員会', body: 'CEO / CFO / CSO / CTO / CMO / COO / CPO / CDO / CDS / CHR / CLO / CAO / CCO が常時待機。経営判断に 3 案 + 推奨 1 案を 10 分で提示', savesHours: 6 },
+    { Icon: PenLine, title: '営業文 / 提案資料 / 月次 P/L', body: '「お願いします」の 1 タップで成果物完成。確認 → 修正 → 送信まで 5 分', savesHours: 12 },
+    { Icon: Handshake, title: '商談 → クロージング', body: '顧客状況に合わせた CVR の高い提案を即時生成。新人でもプロの提案ができる', savesHours: 8 },
   ],
   proofStats: [
     { value: '▲ 87%', label: '事務作業時間 削減', caveat: 'owner-experience' },
@@ -152,15 +164,15 @@ const REAL_FINANCE: IndustryConfig = {
   heroSub: '顧客プロフィールを入れた瞬間に、潜在ニーズ・法的リスク・競合比較・反論想定まで全部 AI が抽出。',
   heroHeroNumber: { value: '8h → 30min', label: '提案準備時間' },
   pain: [
-    { emoji: '🕒', text: '顧客 1 人あたり提案準備に 4-5 時間' },
-    { emoji: '🤔', text: '反論ハンドリングは経験頼み、新人が育たない' },
-    { emoji: '⚖', text: '法律・契約リスクの見落としが怖い' },
-    { emoji: '💭', text: '顧客の本当のニーズに気付くタイミングが遅い' },
+    { Icon: Clock, text: '顧客 1 人あたり提案準備に 4-5 時間' },
+    { Icon: HelpCircle, text: '反論ハンドリングは経験頼み、新人が育たない' },
+    { Icon: Scale, text: '法律・契約リスクの見落としが怖い' },
+    { Icon: Search, text: '顧客の本当のニーズに気付くタイミングが遅い' },
   ],
   features: [
-    { icon: '🎯', title: '潜在ニーズ 自動抽出', body: '顧客資料 → 表面の課題だけでなく潜在ニーズ・法的リスク・解決策まで 2 分で抽出', savesHours: 24 },
-    { icon: '💬', title: '反論ハンドリング 20 パターン', body: '「高い」「考えます」「他社と比較中」など、想定 20 パターン + クロージング文を即時生成', savesHours: 8 },
-    { icon: '📜', title: 'クロージング文 + 契約書ドラフト', body: '商談メモから提案書 → クロージングメール → 契約書ドラフトまで一気通貫', savesHours: 16 },
+    { Icon: Target, title: '潜在ニーズ 自動抽出', body: '顧客資料 → 表面の課題だけでなく潜在ニーズ・法的リスク・解決策まで 2 分で抽出', savesHours: 24 },
+    { Icon: MessagesSquare, title: '反論ハンドリング 20 パターン', body: '「高い」「考えます」「他社と比較中」など、想定 20 パターン + クロージング文を即時生成', savesHours: 8 },
+    { Icon: ScrollText, title: 'クロージング文 + 契約書ドラフト', body: '商談メモから提案書 → クロージングメール → 契約書ドラフトまで一気通貫', savesHours: 16 },
   ],
   proofStats: [
     { value: '▲ 87%', label: '提案準備時間 削減', caveat: 'estimate' },
@@ -210,15 +222,15 @@ const CONSULTING: IndustryConfig = {
   heroSub: 'リサーチ・整理・資料作成の作業時間 80% カット。クライアント数を 2 倍に、品質はそのままに。',
   heroHeroNumber: { value: '同時 5 → 12 案件', label: '1 人あたり対応可能案件数' },
   pain: [
-    { emoji: '🌙', text: '分析・調査・資料作成で夜中まで残業' },
-    { emoji: '🤯', text: '1 人が抱える案件数に限界がある' },
-    { emoji: '👀', text: 'ジュニアの調査作業をレビューする時間が無い' },
-    { emoji: '📁', text: '報告書 / 提案書のテンプレ化が出来ていない' },
+    { Icon: Moon, text: '分析・調査・資料作成で夜中まで残業' },
+    { Icon: Layers, text: '1 人が抱える案件数に限界がある' },
+    { Icon: Eye, text: 'ジュニアの調査作業をレビューする時間が無い' },
+    { Icon: FolderOpen, text: '報告書 / 提案書のテンプレ化が出来ていない' },
   ],
   features: [
-    { icon: '📊', title: '論点抽出 + 章立て + 数字グラフ', body: '資料 (Word/PDF/Excel) を入れる → 論点抽出 + 章立て + 数字グラフ案を AI が作成', savesHours: 20 },
-    { icon: '📝', title: '月次レポート / 議事録 / Q&A', body: 'クライアント向けの月次レポート・議事録・FAQ メールを下書き。署名するだけ', savesHours: 18 },
-    { icon: '♻', title: '過去案件 → ナレッジ', body: '過去案件をナレッジ化 → 類似案件で提案を再利用。新案件の立ち上がりが 3 倍速', savesHours: 12 },
+    { Icon: BarChart3, title: '論点抽出 + 章立て + 数字グラフ', body: '資料 (Word/PDF/Excel) を入れる → 論点抽出 + 章立て + 数字グラフ案を AI が作成', savesHours: 20 },
+    { Icon: FileText, title: '月次レポート / 議事録 / Q&A', body: 'クライアント向けの月次レポート・議事録・FAQ メールを下書き。署名するだけ', savesHours: 18 },
+    { Icon: Recycle, title: '過去案件 → ナレッジ', body: '過去案件をナレッジ化 → 類似案件で提案を再利用。新案件の立ち上がりが 3 倍速', savesHours: 12 },
   ],
   proofStats: [
     { value: '▲ 81%', label: '報告書作成時間 削減', caveat: 'estimate' },
@@ -268,15 +280,15 @@ const SOLO: IndustryConfig = {
   heroSub: '月 30 時間の事務作業 → 8 時間に。残った 22 時間で売上を作る側に回ろう。',
   heroHeroNumber: { value: '月 22h', label: '本業に戻ってくる時間' },
   pain: [
-    { emoji: '📚', text: '事務作業 (請求書 / 議事録 / メール返信) で本業の時間が消える' },
-    { emoji: '🧾', text: '経営の数字が見えない。Excel で手入力疲れ' },
-    { emoji: '😨', text: '営業文を書くのが苦手で、送信ボタンが押せない' },
-    { emoji: '🫥', text: '相談相手がいない (税理士は数字の話だけ)' },
+    { Icon: Files, text: '事務作業 (請求書 / 議事録 / メール返信) で本業の時間が消える' },
+    { Icon: Receipt, text: '経営の数字が見えない。Excel で手入力疲れ' },
+    { Icon: Send, text: '営業文を書くのが苦手で、送信ボタンが押せない' },
+    { Icon: UserX, text: '相談相手がいない (税理士は数字の話だけ)' },
   ],
   features: [
-    { icon: '🔌', title: '繋ぐだけで自動集計', body: 'Stripe / Gmail / Google カレンダーを繋ぐ → 数字と予定が自動で見える。Excel から卒業', savesHours: 8 },
-    { icon: '🌅', title: '朝のブリーフ → AI 実行', body: '「今日まず何をやる?」 → アクションタップで AI がその場で実行 → 成果物を納品', savesHours: 14 },
-    { icon: '✉', title: '営業文 / 提案 / 議事録 / 請求書', body: '全部 1 タップで下書き完成。「私が下手だから書けない」がもう言い訳にならない', savesHours: 8 },
+    { Icon: Plug, title: '繋ぐだけで自動集計', body: 'Stripe / Gmail / Google カレンダーを繋ぐ → 数字と予定が自動で見える。Excel から卒業', savesHours: 8 },
+    { Icon: Sunrise, title: '朝のブリーフ → AI 実行', body: '「今日まず何をやる?」 → アクションタップで AI がその場で実行 → 成果物を納品', savesHours: 14 },
+    { Icon: Mail, title: '営業文 / 提案 / 議事録 / 請求書', body: '全部 1 タップで下書き完成。「私が下手だから書けない」がもう言い訳にならない', savesHours: 8 },
   ],
   proofStats: [
     { value: '30h → 8h', label: '月の事務時間 (オーナー実体験)', caveat: 'owner-experience' },
@@ -326,15 +338,15 @@ const CREATOR: IndustryConfig = {
   heroSub: '「映え」より「いくら入ったか」。リール台本 5 秒、DM 返信 AI、案件管理 全部入り。',
   heroHeroNumber: { value: '5 秒', label: 'リール台本完成' },
   pain: [
-    { emoji: '😩', text: '毎日のリールネタが切れる' },
-    { emoji: '💌', text: 'DM 返信が間に合わず案件を取りこぼす' },
-    { emoji: '👁', text: '「いくら入ったか」の数字が見えない' },
-    { emoji: '🤐', text: 'ブランド案件の交渉が苦手' },
+    { Icon: VideoOff, text: '毎日のリールネタが切れる' },
+    { Icon: MessageSquare, text: 'DM 返信が間に合わず案件を取りこぼす' },
+    { Icon: EyeOff, text: '「いくら入ったか」の数字が見えない' },
+    { Icon: Handshake, text: 'ブランド案件の交渉が苦手' },
   ],
   features: [
-    { icon: '🎬', title: 'リール台本 5 秒で完成', body: 'テーマ 1 行入れる → フック / 本編 / CTA / ハッシュタグまで構造化された台本が 5 秒で', savesHours: 20 },
-    { icon: '💬', title: 'DM 受信 → AI 返信案', body: '案件確度判定 (高 / 中 / 低) + 返信文ドラフト。承認するだけで送信', savesHours: 12 },
-    { icon: '👥', title: '6 人の AI チーム', body: '戦略 / 演出 / 案件 / ファン / 収益 / 健康 の 6 エージェントが代わりに考えてくれる', savesHours: 16 },
+    { Icon: Clapperboard, title: 'リール台本 5 秒で完成', body: 'テーマ 1 行入れる → フック / 本編 / CTA / ハッシュタグまで構造化された台本が 5 秒で', savesHours: 20 },
+    { Icon: MessagesSquare, title: 'DM 受信 → AI 返信案', body: '案件確度判定 (高 / 中 / 低) + 返信文ドラフト。承認するだけで送信', savesHours: 12 },
+    { Icon: Users, title: '6 人の AI チーム', body: '戦略 / 演出 / 案件 / ファン / 収益 / 健康 の 6 エージェントが代わりに考えてくれる', savesHours: 16 },
   ],
   proofStats: [
     { value: '5 秒', label: 'リール台本作成 (30 分 → 5 秒)', caveat: 'estimate' },
@@ -384,15 +396,15 @@ const FREELANCE_PRO: IndustryConfig = {
   heroSub: '税理士不要、議事録不要、提案作成不要 — 「制作」だけに集中できる環境を月¥15,000 で。',
   heroHeroNumber: { value: '月 +¥30 万', label: '案件単価アップ効果' },
   pain: [
-    { emoji: '⏳', text: '提案 / 見積 / 契約書 で 1 案件 6 時間' },
-    { emoji: '🙇', text: '単価交渉が苦手で安く受けてしまう' },
-    { emoji: '💀', text: '確定申告期に死ぬ' },
-    { emoji: '🗂', text: '案件管理が Notion で散らかっている' },
+    { Icon: Hourglass, text: '提案 / 見積 / 契約書 で 1 案件 6 時間' },
+    { Icon: TrendingDown, text: '単価交渉が苦手で安く受けてしまう' },
+    { Icon: Calculator, text: '確定申告期に死ぬ' },
+    { Icon: FolderTree, text: '案件管理が Notion で散らかっている' },
   ],
   features: [
-    { icon: '💰', title: '適正単価 + 交渉文 + 契約書', body: '案件登録 → AI が適正単価 + 交渉文 + 契約書ドラフト。安く受けるが「断る」に変わる', savesHours: 14 },
-    { icon: '📊', title: 'Stripe + freee 連携で常に最新', body: '確定申告の準備が常に最新。月 6 時間 → 30 分。1 月分の労働で済む', savesHours: 18 },
-    { icon: '🧠', title: '議事録 AI + 案件メモ AI', body: '「あれ何の話だっけ」を撲滅。クライアントとのやり取りすべてが構造化', savesHours: 10 },
+    { Icon: Coins, title: '適正単価 + 交渉文 + 契約書', body: '案件登録 → AI が適正単価 + 交渉文 + 契約書ドラフト。安く受けるが「断る」に変わる', savesHours: 14 },
+    { Icon: BarChart3, title: 'Stripe + freee 連携で常に最新', body: '確定申告の準備が常に最新。月 6 時間 → 30 分。1 月分の労働で済む', savesHours: 18 },
+    { Icon: Brain, title: '議事録 AI + 案件メモ AI', body: '「あれ何の話だっけ」を撲滅。クライアントとのやり取りすべてが構造化', savesHours: 10 },
   ],
   proofStats: [
     { value: '+¥30 万/月', label: '案件単価アップ (交渉 AI 使用後)', caveat: 'estimate' },
@@ -442,15 +454,15 @@ const SAAS_STARTUP: IndustryConfig = {
   heroSub: 'プロダクト・営業・PR・採用 を 1 画面で。創業期に いちばん必要な「右腕」を月¥30,000 で雇える。',
   heroHeroNumber: { value: '1人 → 14人', label: '実質チーム規模 (AI 役員 13 + 自分)' },
   pain: [
-    { emoji: '🌀', text: 'プロダクトと営業と採用 を 全部 1 人で回している' },
-    { emoji: '📈', text: '数字を見て次の打ち手 を 1 日中考えてる' },
-    { emoji: '🪙', text: 'シリーズ A まで CFO / CMO / CTO を 雇えない' },
-    { emoji: '😶‍🌫️', text: '相談相手の VC / 先輩は 反応が遅い' },
+    { Icon: Workflow, text: 'プロダクトと営業と採用 を 全部 1 人で回している' },
+    { Icon: LineChart, text: '数字を見て次の打ち手 を 1 日中考えてる' },
+    { Icon: PiggyBank, text: 'シリーズ A まで CFO / CMO / CTO を 雇えない' },
+    { Icon: Clock, text: '相談相手の VC / 先輩は 反応が遅い' },
   ],
   features: [
-    { icon: '🚀', title: 'AI 役員 13 名 で 経営即決', body: 'CEO / CTO / CFO / CMO / CPO / CSO / COO / CDO / CHR / CDS / CCO / CLO / CAO が常駐。判断 → 3 案 + 推奨 を 10 分', savesHours: 12 },
-    { icon: '💸', title: 'ピッチ資料 + 投資家 メール + KPI ダッシュ', body: '次の投資家ミーティング向け資料を 1 タップで。 KPI と 来月の目標 を 自動で 1 枚に', savesHours: 8 },
-    { icon: '🧑‍💻', title: '採用 JD + スカウト DM + 面接質問', body: 'JD 作成 + LinkedIn スカウト + 面接質問 + 評価シート まで AI が下書き。エンジニア採用が 1 週間早まる', savesHours: 10 },
+    { Icon: Rocket, title: 'AI 役員 13 名 で 経営即決', body: 'CEO / CTO / CFO / CMO / CPO / CSO / COO / CDO / CHR / CDS / CCO / CLO / CAO が常駐。判断 → 3 案 + 推奨 を 10 分', savesHours: 12 },
+    { Icon: Presentation, title: 'ピッチ資料 + 投資家 メール + KPI ダッシュ', body: '次の投資家ミーティング向け資料を 1 タップで。 KPI と 来月の目標 を 自動で 1 枚に', savesHours: 8 },
+    { Icon: UserPlus, title: '採用 JD + スカウト DM + 面接質問', body: 'JD 作成 + LinkedIn スカウト + 面接質問 + 評価シート まで AI が下書き。エンジニア採用が 1 週間早まる', savesHours: 10 },
   ],
   proofStats: [
     { value: '▲ 75%', label: '創業期 雑務時間 削減', caveat: 'estimate' },

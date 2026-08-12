@@ -410,7 +410,15 @@ function Pain({ config, accentLeft }: { config: IndustryConfig; accentLeft: stri
                 display: 'flex', alignItems: 'flex-start', gap: 12,
               }}
             >
-              <span style={{ fontSize: 28, flexShrink: 0 }}>{p.emoji}</span>
+              {/* 線画にした瞬間、その色は「地の上で 3:1 以上」でないと消える。
+                  地はカード（暗い面）なので accentInkOnDark で文字側を明るくする。 */}
+              <p.Icon
+                size={26}
+                strokeWidth={1.9}
+                color={accentInkOnDark(accentLeft, '#12121d')}
+                aria-hidden="true"
+                style={{ flexShrink: 0 }}
+              />
               <p style={{ fontSize: 14.5, color: '#fff', lineHeight: 1.7, margin: 0, fontFamily: FONT_SERIF_JA }}>
                 {p.text}
               </p>
@@ -472,13 +480,15 @@ function Solution({ config, accentLeft, accentRight }: { config: IndustryConfig;
                 borderRadius: 18,
               }}
             >
-              <div style={{
+              {/* 白い線画を乗せる面なので、面の側で明るさを保証する
+                  （業界ごとの accentRight は黄 #FBBF24 = 白 1.67 まで明るくなる） */}
+              <div aria-hidden="true" style={{
                 width: 60, height: 60, borderRadius: 14,
-                background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+                background: whiteSafeGradient([accentLeft, accentRight]),
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 28, marginBottom: '1.25rem',
+                color: '#fff', marginBottom: '1.25rem',
               }}>
-                {f.icon}
+                <f.Icon size={28} strokeWidth={1.9} />
               </div>
               <h3 style={{
                 fontFamily: FONT_SERIF_JA,
