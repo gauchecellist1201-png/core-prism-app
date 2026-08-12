@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CORE マスターハブ</title>
 <meta name="robots" content="noindex,nofollow">
-<meta name="description" content="CORE — 5サービスをマスターモード（全機能フル解放／Maxプラン）で開く、オーナー専用ハブ。">
+<meta name="description" content="CORE — 15サービスの「使う入口」と「見せる営業ページ」を一箇所から開く、オーナー専用ハブ。">
 <!-- OG画像＝マスターモードの王冠マーク -->
 <meta property="og:title" content="CORE Master Mode — オーナー専用ハブ">
-<meta property="og:description" content="5サービスを全機能フル解放（Maxプラン）で開く、オーナー専用の入口。">
+<meta property="og:description" content="15サービスの入口と営業ページを一箇所から。オーナー専用。">
 <meta property="og:image" content="https://core-prism-app.vercel.app/og-master-crown-v1.png?v=20260622">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -26,141 +26,586 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0B0E16">
 <style>
-  :root{ --gold:#D8A83B; --teal:#16C77A; --ink:#0B0E16; --card:#161D29; --line:#2A3340; --mut:#9AA6B2; }
-  *{box-sizing:border-box} html,body{margin:0}
-  body{ background:radial-gradient(120% 80% at 50% -10%, #15203022 0%, var(--ink) 60%) , var(--ink);
-        color:#F4F6F8; font-family:-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;
-        min-height:100svh; padding:max(env(safe-area-inset-top),20px) 18px calc(env(safe-area-inset-bottom) + 28px); }
-  .wrap{ max-width:540px; margin:0 auto; }
-  .top{ display:flex; flex-direction:column; align-items:center; text-align:center; margin:14px 0 22px; }
-  .logo{ width:76px; height:76px; border-radius:20px; }
-  h1{ font-size:22px; margin:14px 0 4px; letter-spacing:.04em; }
-  .sub{ color:var(--mut); font-size:13px; margin:0; }
-  .badge{ display:inline-block; margin-top:10px; font-size:11px; font-weight:700; color:var(--ink);
-          background:linear-gradient(135deg,var(--gold),#E9C25E); padding:5px 12px; border-radius:999px; letter-spacing:.06em;}
+  :root{
+    --gold:#D8A83B; --ink:#0B0E16; --card:#161D29; --card2:#1B2331;
+    --line:#2A3340; --line2:#3A4658; --mut:#A8B3C0; --fg:#F4F6F8;
+    --pad-t:max(env(safe-area-inset-top),14px);
+    --pad-b:calc(env(safe-area-inset-bottom) + 28px);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(120% 70% at 50% -8%, #16203022 0%, var(--ink) 58%), var(--ink);
+    color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+    min-height:100svh; -webkit-text-size-adjust:100%;
+  }
+  .wrap{ max-width:680px; margin:0 auto; padding:0 16px var(--pad-b); }
+
+  /* ---------- 施錠画面 ---------- */
+  .lockwrap{ padding-top:calc(var(--pad-t) + 40px); }
+  .lockwrap .top{ text-align:center; margin-bottom:20px; }
+  .logo{ width:72px; height:72px; border-radius:20px; }
   .lock{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:22px; text-align:center; }
-  .lock p{ color:var(--mut); font-size:13px; }
-  .lock input{ width:100%; margin-top:10px; padding:13px 14px; border-radius:12px; border:1px solid var(--line);
-               background:#0E141E; color:#fff; font-size:16px; outline:none; text-align:center; letter-spacing:.1em;}
-  .lock button{ width:100%; margin-top:10px; padding:13px; border:0; border-radius:12px; cursor:pointer;
-                background:linear-gradient(135deg,var(--gold),#E9C25E); color:var(--ink); font-weight:800; font-size:15px;}
-  .err{ color:#F2A2A2; font-size:12px; margin-top:8px; min-height:16px;}
-  .grid{ display:grid; gap:12px; }
-  a.card{ display:flex; align-items:center; gap:14px; text-decoration:none; color:inherit;
-          background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 16px;
-          transition:transform .12s ease, border-color .12s ease; }
-  a.card:active{ transform:scale(.985); }
-  a.card:hover{ border-color:var(--gold); }
-  .ic{ width:54px; height:54px; border-radius:14px; flex:0 0 auto; background:#0A0E16; object-fit:cover; }
-  .nm{ font-size:17px; font-weight:700; }
-  .ds{ font-size:12px; color:var(--mut); margin-top:2px; }
-  .go{ margin-left:auto; color:var(--gold); font-size:20px; }
-  .note{ color:var(--mut); font-size:11px; text-align:center; margin-top:18px; line-height:1.7;}
-  .hidden{ display:none; }
+  .lock p{ color:var(--mut); font-size:13px; margin:0 0 4px; }
+  .lock input{ width:100%; margin-top:10px; padding:14px; border-radius:12px; border:1px solid var(--line2);
+               background:#0E141E; color:#fff; font-size:16px; outline:none; text-align:center; letter-spacing:.1em; }
+  .lock input:focus{ border-color:var(--gold); }
+  .lock button{ width:100%; margin-top:10px; padding:14px; border:0; border-radius:12px; cursor:pointer;
+                background:linear-gradient(135deg,var(--gold),#E9C25E); color:var(--ink); font-weight:800; font-size:15px; }
+  .err{ color:#FFB4B4; font-size:12.5px; margin-top:8px; min-height:16px; }
+
+  /* ---------- ヘッダー（固定） ---------- */
+  header{
+    position:sticky; top:0; z-index:20;
+    padding:var(--pad-t) 16px 10px;
+    background:linear-gradient(180deg, var(--ink) 68%, #0B0E16E0 88%, #0B0E1600 100%);
+  }
+  .hbar{ max-width:680px; margin:0 auto; display:flex; align-items:center; gap:10px; }
+  .hlogo{ width:30px; height:30px; border-radius:9px; flex:0 0 auto; }
+  .htitle{ font-size:15px; font-weight:700; letter-spacing:.02em; }
+  .hbadge{ font-size:10px; font-weight:800; color:var(--ink); letter-spacing:.06em;
+           background:linear-gradient(135deg,var(--gold),#E9C25E); padding:3px 8px; border-radius:999px; }
+  .hcount{ margin-left:auto; font-size:12px; color:var(--mut); font-variant-numeric:tabular-nums; }
+
+  .searchrow{ max-width:680px; margin:10px auto 0; position:relative; }
+  #q{
+    width:100%; padding:13px 40px 13px 40px; border-radius:13px;
+    border:1px solid var(--line2); background:#0E141E; color:#fff; font-size:16px; outline:none;
+  }
+  #q:focus{ border-color:var(--gold); }
+  #q::placeholder{ color:#78838F; }
+  .sicon{ position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#78838F; pointer-events:none; display:flex; }
+  #clearq{
+    position:absolute; right:5px; top:50%; transform:translateY(-50%);
+    width:34px; height:34px; border:0; background:transparent; color:var(--mut); font-size:18px;
+    cursor:pointer; border-radius:9px; display:none; align-items:center; justify-content:center;
+  }
+  #clearq.on{ display:flex; }
+
+  .chips{ max-width:680px; margin:10px auto 0; display:flex; gap:7px; overflow-x:auto; padding-bottom:2px;
+          scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .chips::-webkit-scrollbar{ display:none; }
+  .chip{
+    flex:0 0 auto; padding:8px 13px; min-height:36px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--line2); background:transparent; color:var(--mut); font-size:12.5px; font-weight:600;
+    white-space:nowrap; font-family:inherit;
+  }
+  .chip[aria-pressed="true"]{ background:var(--fg); color:var(--ink); border-color:var(--fg); }
+
+  /* ---------- 一覧 ---------- */
+  main{ padding-top:8px; }
+  .sec{ margin-top:22px; }
+  .sech{ font-size:11.5px; font-weight:700; color:var(--mut); letter-spacing:.1em; margin:0 0 9px 3px; }
+  .grid{ display:grid; gap:9px; }
+  @media (min-width:620px){ .grid{ grid-template-columns:1fr 1fr; } }
+
+  .card{
+    display:flex; align-items:center; gap:12px;
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:11px 12px; position:relative; overflow:hidden;
+  }
+  .card:hover{ border-color:var(--line2); }
+  /* カードのどこを押しても「開く」。上に乗せるボタンだけ z-index を上げる */
+  .stretch{ position:absolute; inset:0; z-index:1; }
+  .stretch:focus-visible{ outline:2px solid var(--gold); outline-offset:-3px; border-radius:16px; }
+  .card > .mark, .card > .body{ position:relative; z-index:0; pointer-events:none; }
+  .card > .acts{ position:relative; z-index:2; }
+  .mark{
+    width:46px; height:46px; border-radius:13px; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:19px; color:#0B0E16; letter-spacing:-.02em;
+  }
+  .mark img{ width:100%; height:100%; border-radius:13px; object-fit:cover; display:block; }
+  .body{ min-width:0; flex:1 1 auto; }
+  .nm{ font-size:15.5px; font-weight:700; line-height:1.3; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .tag{ font-size:9.5px; font-weight:700; letter-spacing:.04em; padding:2px 6px; border-radius:5px;
+        border:1px solid var(--line2); color:var(--mut); }
+  .tag.m{ color:var(--gold); border-color:#5A4A22; }
+  .ds{ font-size:12px; color:var(--mut); margin-top:3px; line-height:1.45;
+       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+  .acts{ display:flex; gap:6px; margin-left:auto; flex:0 0 auto; }
+  .btn{
+    min-width:44px; min-height:44px; padding:0 12px; border-radius:11px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:5px;
+    font-size:12.5px; font-weight:700; text-decoration:none; font-family:inherit;
+    border:1px solid var(--line2); background:var(--card2); color:var(--fg);
+  }
+  .btn.pri{ background:var(--fg); color:var(--ink); border-color:var(--fg); }
+  .btn:active{ transform:scale(.96); }
+  .btn.icon{ padding:0; width:44px; }
+
+  .empty{ text-align:center; color:var(--mut); font-size:13.5px; padding:40px 16px; line-height:1.9; }
+  .empty b{ color:var(--fg); }
+  .note{ color:#8A95A2; font-size:11.5px; text-align:center; margin-top:26px; line-height:1.8; }
+  .note a{ color:var(--mut); }
+
+  #toast{
+    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 22px); transform:translate(-50%,14px);
+    background:#F4F6F8; color:#0B0E16; font-size:13px; font-weight:700;
+    padding:11px 18px; border-radius:999px; opacity:0; pointer-events:none; z-index:60;
+    transition:opacity .16s ease, transform .16s ease; max-width:calc(100vw - 32px); text-align:center;
+  }
+  #toast.on{ opacity:1; transform:translate(-50%,0); }
+
+  .hidden{ display:none !important; }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; animation:none !important; } }
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<!-- 施錠画面 -->
+<div id="lockwrap" class="wrap lockwrap hidden">
   <div class="top">
     <img class="logo" src="/core-512-v2.png" alt="CORE">
-    <h1>CORE マスターハブ</h1>
-    <p class="sub">COREの全サービスを「全機能フル解放（Maxプラン）」で開く、オーナー専用の入口です。</p>
-    <span class="badge">MASTER MODE</span>
+    <h1 style="font-size:21px;margin:14px 0 4px;letter-spacing:.04em;">CORE マスターハブ</h1>
+    <p style="color:var(--mut);font-size:13px;margin:0;">15サービスの入口を、一箇所から。</p>
   </div>
-
-  <div id="lock" class="lock hidden">
+  <div class="lock">
     <p>合言葉を入力してください。</p>
-    <input id="key" type="password" inputmode="text" autocomplete="off" placeholder="合言葉" />
-    <button id="unlock">開く</button>
-    <div class="err" id="err"></div>
-  </div>
-
-  <div id="apps" class="grid hidden">
-    <a class="card" id="lnk-prism">
-      <img class="ic" src="/prism-512.png" alt="">
-      <div><div class="nm">Prism</div><div class="ds">経営のAI役員OS — 全機能開放で開く</div></div>
-      <span class="go">→</span>
-    </a>
-    <a class="card" id="lnk-iris">
-      <img class="ic" src="/iris-512.png" alt="">
-      <div><div class="nm">Iris</div><div class="ds">Instagram運用AI — 全機能開放で開く</div></div>
-      <span class="go">→</span>
-    </a>
-    <a class="card" id="lnk-reso">
-      <img class="ic" src="https://resonancebot-ivory.vercel.app/icon-512.png" alt="">
-      <div><div class="nm">Resonance</div><div class="ds">LINE個別配信AI — 全機能開放で開く</div></div>
-      <span class="go">→</span>
-    </a>
-    <a class="card" id="lnk-lume">
-      <img class="ic" src="https://lume-deploy-five.vercel.app/lume-512.png" alt="">
-      <div><div class="nm">Lume</div><div class="ds">リンクハブ＋解析 — 全機能開放で開く</div></div>
-      <span class="go">→</span>
-    </a>
-    <a class="card" id="lnk-guild">
-      <img class="ic" src="https://guild-hazel.vercel.app/icon.svg" alt="">
-      <div><div class="nm">Guild</div><div class="ds">共創OS（声→採用→謝礼） — 全機能で開く</div></div>
-      <span class="go">→</span>
-    </a>
-    <a class="card" id="lnk-crystal">
-      <img class="ic" src="/crystal-512.png" alt="">
-      <div><div class="nm">Crystal</div><div class="ds">話しかけるだけのAIコンシェルジュ — 開く</div></div>
-      <span class="go">→</span>
-    </a>
-    <a class="card" id="lnk-nexus" style="background:rgba(77,195,255,0.06);border-color:rgba(77,195,255,0.3);">
-      <img class="ic" src="/nexus-512.png" alt="">
-      <div><div class="nm">NEXUS</div><div class="ds">会話するAI中枢 — 声で話す執事エージェント</div></div>
-      <span class="go">→</span>
-    </a>
-    <a class="card" id="lnk-universe" style="background:rgba(129,140,248,0.06);border-color:rgba(129,140,248,0.3);">
-      <img class="ic" src="/universe-mark.png" alt="">
-      <div><div class="nm">Universe</div><div class="ds">会社の頭脳 — ナレッジ星図を開く</div></div>
-      <span class="go">→</span>
-    </a>
-    <a class="card" id="lnk-tools" href="/master/keys" target="_blank" rel="noopener" style="background:rgba(216,168,59,0.07);border-color:rgba(216,168,59,0.3);">
-      <div class="ic" style="display:flex;align-items:center;justify-content:center;font-size:26px;">🔑</div>
-      <div><div class="nm">マスターツール</div><div class="ds">Claude APIキー・KPI・初回ユーザー体験</div></div>
-      <span class="go">→</span>
-    </a>
-    <p class="note">各アプリは新しいタブで開き、マスターモード（課金なしで全機能フル解放＝Maxプラン）になります。<br>このページはオーナー専用です（合言葉が必要・検索エンジンには出ません）。</p>
+    <label for="key" style="position:absolute;left:-9999px;">合言葉</label>
+    <input id="key" type="password" inputmode="text" autocomplete="off" placeholder="合言葉">
+    <button id="unlock" type="button">開く</button>
+    <div class="err" id="err" role="status" aria-live="polite"></div>
   </div>
 </div>
 
+<!-- ハブ本体 -->
+<div id="hub" class="hidden">
+  <header>
+    <div class="hbar">
+      <img class="hlogo" src="/core-192-v2.png" alt="">
+      <span class="htitle">マスターハブ</span>
+      <span class="hbadge">MASTER</span>
+      <span class="hcount" id="count"></span>
+    </div>
+    <div class="searchrow">
+      <span class="sicon" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+      </span>
+      <label for="q" style="position:absolute;left:-9999px;">サービスを探す</label>
+      <input id="q" type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+             placeholder="サービス名・用途で探す（例: 受付、LINE、林業）">
+      <button id="clearq" type="button" aria-label="検索を消す">✕</button>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="絞り込み"></div>
+  </header>
+
+  <main class="wrap">
+    <div id="list"></div>
+    <div id="empty" class="empty hidden"></div>
+    <p class="note">
+      カードを押すと、そのサービスが開きます。<br>
+      「LP」＝お客様に見せる営業ページ。となりの印はURLのコピーです。<br>
+      <span style="color:var(--gold);">MASTER</span> 印のサービスは、課金なしで全機能が開きます。<br>
+      このページはオーナー専用です（合言葉が必要・検索エンジンには出ません）。<br>
+      <a href="#" id="signout">合言葉を忘れさせる</a>
+    </p>
+  </main>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
 <script>
 (function(){
+  "use strict";
   var KEY = "GAUCHE2026";
-  var M = "master=" + KEY;
-  var LINKS = {
-    "lnk-prism": "https://core-prism-app.vercel.app/?" + M,
-    "lnk-iris":  "https://core-prism-app.vercel.app/iris?" + M,
-    "lnk-reso":  "https://resonancebot-ivory.vercel.app/?" + M,
-    "lnk-lume":  "https://lume-deploy-five.vercel.app/app.html?" + M,
-    "lnk-guild": "https://guild-hazel.vercel.app/?" + M,
-    "lnk-crystal": "https://crystal-nine-self.vercel.app/app?" + M,
-    "lnk-nexus": "https://core-nexus-kappa.vercel.app/?" + M,
-    "lnk-universe": "https://core-universe.vercel.app/?" + M
-  };
+  var M = "?master=" + KEY;
+
+  // ---- サービス定義（実測した本番URLのみ。憶測のURLは載せない） ----
+  // app  : 自分が使う画面。null = アプリ本体がまだ無い（LPだけ）
+  // lp   : お客様に見せる営業ページ
+  // mm   : true = ?master= で全機能が開くことを確認済み
+  var SERVICES = [
+    { id:"nexus", nm:"NEXUS", mark:"/nexus-512.png", c:"#4DC3FF", g:"main",
+      ds:"話しかけると、答えながら画面に描くAI秘書",
+      app:"https://core-nexus-kappa.vercel.app/", lp:"https://core-nexus-kappa.vercel.app/lp/", mm:true,
+      kw:"ねくさす nexus 秘書 音声 会話 カレンダー 予定 ai エージェント" },
+
+    { id:"ichi", nm:"イチバンノリ", mark:null, c:"#FF8A5B", g:"main",
+      ds:"問い合わせに60秒で一番乗りで返す",
+      app:null, lp:"https://ichibannori.vercel.app", mm:false,
+      kw:"いちばんのり ichibannori 反響 問い合わせ 初動 sms 追客 不動産 工務店" },
+
+    { id:"prism", nm:"Prism", mark:"/prism-512.png", c:"#9D8BFF", g:"main",
+      ds:"経理・請求書・営業文を引き受けるAI",
+      app:"https://core-prism-app.vercel.app/", lp:"https://core-prism-app.vercel.app/lp", mm:true,
+      kw:"ぷりずむ prism 経理 請求書 見積 経営 ビジネスos 秘書" },
+
+    { id:"crystal", nm:"Crystal", mark:"/crystal-512.png", c:"#3BD9F0", g:"main",
+      ds:"店舗・事務所の受付を、話すだけで済ます",
+      app:"https://crystal-nine-self.vercel.app/app", lp:"https://crystal-nine-self.vercel.app", mm:true,
+      kw:"くりすたる crystal 受付 電話番 予約 歯科 治療院 サロン コンシェルジュ 店舗" },
+
+    { id:"reso", nm:"Resonance", mark:null, c:"#3DDCA0", g:"main",
+      ds:"LINEを、お客様一人ひとりに合わせて配信",
+      app:"https://resonancebot-ivory.vercel.app/", lp:"https://resonancebot-ivory.vercel.app", mm:true,
+      kw:"れぞなんす resonance line ライン 配信 リッチメニュー 顧客 crm メッセージ" },
+
+    { id:"iris", nm:"Iris", mark:"/iris-512.png", c:"#D0A6FF", g:"create",
+      ds:"Instagramの運用をAIに任せる",
+      app:"https://core-prism-app.vercel.app/iris", lp:"https://iris-lp.vercel.app", mm:true,
+      kw:"あいりす iris instagram インスタ リール sns 投稿 発信" },
+
+    { id:"lume", nm:"Lume", mark:null, c:"#FFC24D", g:"create",
+      ds:"1ページのお店ページと予約を、すぐ作る",
+      app:"https://lume-deploy-five.vercel.app/app.html", lp:"https://lume-deploy-five.vercel.app", mm:true,
+      kw:"るめ lume プロフィール リンク ページ 予約 店舗 litlink リンクハブ" },
+
+    { id:"anima", nm:"ANIMA", mark:null, c:"#FF8FA3", g:"vertical",
+      ds:"アニメ制作進行の支払集計を自動化",
+      app:"https://core-anime-os.vercel.app/console", lp:"https://core-anime-os.vercel.app/lp", mm:false,
+      kw:"あにま anima アニメ 制作進行 支払 集計 スタジオ 業界特化" },
+
+    { id:"soma", nm:"SOMA", mark:null, c:"#4BE0A8", g:"vertical",
+      ds:"林業の提出書類を、原本ひとつから作る",
+      app:"https://soma-indol-gamma.vercel.app/dashboard", lp:"https://soma-indol-gamma.vercel.app", mm:false,
+      kw:"そま soma 林業 森林 書類 申請 補助金 森林組合 業界特化" },
+
+    { id:"veritas", nm:"VERITAS", mark:null, c:"#5CC8FF", g:"vertical",
+      ds:"広告費のムダ打ち額を、金額で名指しする",
+      app:"https://veritas-lime.vercel.app/", lp:"https://veritas-lime.vercel.app", mm:false,
+      kw:"べりたす veritas 広告 マーケ 代理店 cpa ltv 計測 アトリビューション" },
+
+    { id:"tabitto", nm:"タビット", mark:null, c:"#FFD166", g:"vertical",
+      ds:"会社専属の、AI出張秘書",
+      app:null, lp:"https://tabitto-lp.vercel.app", mm:false,
+      kw:"たびっと tabitto 出張 旅費 精算 手配 経費 秘書" },
+
+    { id:"guild", nm:"Guild", mark:null, c:"#FF9CC8", g:"internal",
+      ds:"みんなで決めて、決定が消えない記録に残る",
+      app:"https://guild-hazel.vercel.app/", lp:"https://guild-hazel.vercel.app", mm:true,
+      kw:"ぎるど guild コミュニティ 共創 投票 決定 議事録 サークル 運営" },
+
+    { id:"universe", nm:"Universe", mark:"/universe-mark.png", c:"#9BA6FF", g:"internal",
+      ds:"会社の知識を星図にする、社内の頭脳",
+      app:"https://core-universe.vercel.app/", lp:"https://core-universe.vercel.app/lp", mm:true,
+      kw:"ゆにばーす universe 知識 ナレッジ obsidian 星図 保管庫 社内" },
+
+    { id:"takt", nm:"Takt", mark:null, c:"#F2A0F5", g:"internal",
+      ds:"AIも音楽も、自分が指揮者になる講座",
+      app:null, lp:"https://gauche-ai-school.vercel.app/takt.html", mm:false,
+      kw:"たくと takt gauche ガウシュ スクール 講座 教室 音楽 チェロ 学校" },
+
+    { id:"corehp", nm:"CORE（会社サイト）", mark:"/core-512-v2.png", c:"#E3B754", g:"internal",
+      ds:"株式会社COREの会社案内",
+      app:null, lp:"https://core-hp.vercel.app", mm:false,
+      kw:"こあ core 会社 コーポレート 会社概要 採用 事業開発" }
+  ];
+
+  var TOOLS = { id:"keys", nm:"マスターツール", c:"#D8A83B", g:"internal",
+    ds:"APIキー・KPI・初回ユーザー体験の管理",
+    app:"/master/keys", lp:null, mm:false, mark:null,
+    kw:"つーる tools キー api kpi 管理 設定 master keys" };
+
+  var GROUPS = [
+    { k:"all",      label:"すべて" },
+    { k:"main",     label:"主力" },
+    { k:"vertical", label:"業界特化" },
+    { k:"create",   label:"制作・発信" },
+    { k:"internal", label:"社内・会社" }
+  ];
+  var GROUP_TITLE = { main:"主力", vertical:"業界特化", create:"制作・発信", internal:"社内・会社" };
+
+  var ALL = SERVICES.concat([TOOLS]);
+  var state = { q:"", g:"all" };
+
+  // ---- 施錠 ----
+  var lockwrap = document.getElementById("lockwrap");
+  var hub = document.getElementById("hub");
+
+  function saved(){ try{ return localStorage.getItem("core_hub_key"); }catch(e){ return null; } }
+
   function reveal(){
-    Object.keys(LINKS).forEach(function(id){
-      var a=document.getElementById(id); a.href=LINKS[id]; a.target="_blank"; a.rel="noopener";
-    });
-    document.getElementById("apps").classList.remove("hidden");
-    document.getElementById("lock").classList.add("hidden");
+    lockwrap.classList.add("hidden");
+    hub.classList.remove("hidden");
     try{ localStorage.setItem("core_hub_key", KEY); }catch(e){}
+    render();
+    if (!isTouch()) { var q=document.getElementById("q"); if(q) q.focus(); }
   }
   function lock(){
-    document.getElementById("lock").classList.remove("hidden");
-    document.getElementById("apps").classList.add("hidden");
+    hub.classList.add("hidden");
+    lockwrap.classList.remove("hidden");
+    var k = document.getElementById("key");
+    if (k) { k.value = ""; k.focus(); }
   }
-  var q = new URLSearchParams(location.search).get("key");
-  var saved = (function(){try{return localStorage.getItem("core_hub_key");}catch(e){return null;}})();
-  if (q === KEY || saved === KEY) { reveal(); }
-  else { lock(); }
-  document.getElementById("unlock").addEventListener("click", function(){
-    var v=document.getElementById("key").value.trim();
-    if (v === KEY) { reveal(); }
-    else { document.getElementById("err").textContent="合言葉が違います。"; }
+  function isTouch(){
+    return (window.matchMedia && window.matchMedia("(pointer:coarse)").matches) || "ontouchstart" in window;
+  }
+
+  // ---- 最近開いたもの ----
+  function recents(){
+    try{ return JSON.parse(localStorage.getItem("core_hub_recent") || "[]"); }catch(e){ return []; }
+  }
+  function pushRecent(id){
+    try{
+      var r = recents().filter(function(x){ return x !== id; });
+      r.unshift(id);
+      localStorage.setItem("core_hub_recent", JSON.stringify(r.slice(0,4)));
+    }catch(e){}
+  }
+
+  // ---- 表示 ----
+  function withMaster(url, mm){
+    if (!url) return null;
+    if (!mm) return url;
+    return url + (url.indexOf("?") >= 0 ? "&master=" + KEY : M);
+  }
+
+  function matches(s, q){
+    if (!q) return true;
+    var hay = (s.nm + " " + s.ds + " " + s.kw + " " + s.id).toLowerCase();
+    // スペース区切りの語をすべて含むもの
+    return q.toLowerCase().split(/\s+/).filter(Boolean).every(function(t){ return hay.indexOf(t) >= 0; });
+  }
+
+  function el(tag, cls, txt){
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  }
+
+  function card(s){
+    var c = el("div","card");
+
+    var mk = el("div","mark");
+    function monogram(){
+      mk.textContent = s.nm.slice(0,1);
+      mk.style.background = s.c;
+    }
+    if (s.mark){
+      var img = document.createElement("img");
+      img.src = s.mark; img.alt = "";
+      img.addEventListener("error", function(){
+        // 壊れた画像が頭文字の上に残らないよう、必ず取り除いてから差し替える
+        if (img.parentNode) img.parentNode.removeChild(img);
+        monogram();
+      });
+      mk.appendChild(img);
+    } else {
+      monogram();
+    }
+    c.appendChild(mk);
+
+    var body = el("div","body");
+    var nm = el("div","nm");
+    nm.appendChild(document.createTextNode(s.nm));
+    if (s.mm) { var t = el("span","tag m","MASTER"); nm.appendChild(t); }
+    if (!s.app && s.lp) { nm.appendChild(el("span","tag","LPのみ")); }
+    body.appendChild(nm);
+    body.appendChild(el("div","ds", s.ds));
+    c.appendChild(body);
+
+    var acts = el("div","acts");
+
+    // カード全体が主動作。アプリがあれば開く、無ければ営業ページを開く
+    var primaryUrl = s.app ? withMaster(s.app, s.mm) : s.lp;
+    if (primaryUrl){
+      var a = el("a","stretch");
+      a.href = primaryUrl;
+      // 見た目の文字はリンクの外にあるので、読み上げが二重にならないよう
+      // 名前・状態・説明をリンク側の名前にまとめ、見た目側は読み上げ対象から外す
+      a.setAttribute("aria-label",
+        s.nm + "。" + (s.mm ? "マスターモードで開けます。" : "") +
+        (!s.app ? "営業ページのみ。" : "") + s.ds + "。" + (s.app ? "開く" : "見る"));
+      mk.setAttribute("aria-hidden","true");
+      body.setAttribute("aria-hidden","true");
+      if (primaryUrl.charAt(0) !== "/") { a.target = "_blank"; a.rel = "noopener"; }
+      a.addEventListener("click", function(){ pushRecent(s.id); });
+      c.insertBefore(a, c.firstChild);
+    }
+
+    // 副ボタン：営業ページ（アプリとURLが違うときだけ出す）
+    if (s.lp && s.app && s.lp !== s.app){
+      var b = el("a","btn","LP");
+      b.href = s.lp; b.target = "_blank"; b.rel = "noopener";
+      b.title = "お客様に見せる営業ページ";
+      b.setAttribute("aria-label", s.nm + "の営業ページを開く");
+      acts.appendChild(b);
+    }
+
+    // コピー：商談中にLINE・メールへ貼る用
+    if (s.lp){
+      var cp = el("button","btn icon");
+      cp.type = "button";
+      cp.setAttribute("aria-label", s.nm + " の営業ページのURLをコピー");
+      cp.title = "営業ページのURLをコピー";
+      cp.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H16"/></svg>';
+      cp.addEventListener("click", function(){ copy(s.lp, s.nm); });
+      acts.appendChild(cp);
+    }
+
+    c.appendChild(acts);
+    return c;
+  }
+
+  function copy(url, nm){
+    function done(ok){ toast(ok ? nm + " のURLをコピーしました" : "コピーできませんでした： " + url); }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(function(){ done(true); }, function(){ fallback(); });
+    } else { fallback(); }
+    function fallback(){
+      var ta = null;
+      try{
+        ta = document.createElement("textarea");
+        ta.value = url; ta.setAttribute("readonly","");
+        ta.style.position = "fixed"; ta.style.top = "-1000px";
+        document.body.appendChild(ta); ta.select();
+        done(document.execCommand("copy"));
+      }catch(e){
+        done(false);
+      }finally{
+        // 例外が出ても不可視の textarea を DOM に残さない
+        if (ta && ta.parentNode) ta.parentNode.removeChild(ta);
+      }
+    }
+  }
+
+  var toastTimer = null;
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("on");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("on"); }, 2200);
+  }
+
+  function section(title, items){
+    var sec = el("section","sec");
+    var h = el("h2","sech", title);
+    sec.appendChild(h);
+    var g = el("div","grid");
+    items.forEach(function(s){ g.appendChild(card(s)); });
+    sec.appendChild(g);
+    return sec;
+  }
+
+  function render(){
+    var list = document.getElementById("list");
+    var empty = document.getElementById("empty");
+    list.innerHTML = "";
+
+    var hits = ALL.filter(function(s){
+      return (state.g === "all" || s.g === state.g) && matches(s, state.q);
+    });
+
+    document.getElementById("count").textContent = hits.length + " / " + ALL.length;
+
+    if (!hits.length){
+      empty.classList.remove("hidden");
+      empty.innerHTML = "";
+      empty.appendChild(el("div", null, "「" + state.q + "」に当てはまるサービスはありません。"));
+      var hint = el("div", null, "サービス名でも、用途（受付・LINE・林業・広告・出張）でも探せます。");
+      hint.style.cssText = "margin-top:6px;font-size:12.5px;";
+      empty.appendChild(hint);
+      var btn = el("button","btn","絞り込みを解除する");
+      btn.type = "button";
+      btn.style.marginTop = "14px";
+      btn.addEventListener("click", function(){
+        state.q = ""; state.g = "all";
+        document.getElementById("q").value = "";
+        document.getElementById("clearq").classList.remove("on");
+        syncChips(); render();
+      });
+      empty.appendChild(btn);
+      return;
+    }
+    empty.classList.add("hidden");
+
+    // 検索中・絞り込み中は 1 セクションで素直に出す
+    if (state.q || state.g !== "all"){
+      list.appendChild(section(state.q ? "検索結果" : (GROUP_TITLE[state.g] || ""), hits));
+      return;
+    }
+
+    // 通常表示：最近開いたもの → グループ順
+    var rec = recents()
+      .map(function(id){ return ALL.filter(function(s){ return s.id === id; })[0]; })
+      .filter(Boolean);
+    if (rec.length) list.appendChild(section("最近ひらいた", rec));
+
+    ["main","vertical","create","internal"].forEach(function(g){
+      var items = hits.filter(function(s){ return s.g === g; });
+      if (items.length) list.appendChild(section(GROUP_TITLE[g], items));
+    });
+  }
+
+  function syncChips(){
+    var wrap = document.getElementById("chips");
+    Array.prototype.forEach.call(wrap.children, function(b){
+      b.setAttribute("aria-pressed", String(b.dataset.g === state.g));
+    });
+  }
+
+  function buildChips(){
+    var wrap = document.getElementById("chips");
+    GROUPS.forEach(function(g){
+      var b = el("button","chip", g.label);
+      b.type = "button";
+      b.dataset.g = g.k;
+      b.setAttribute("aria-pressed", String(g.k === state.g));
+      b.addEventListener("click", function(){ state.g = g.k; syncChips(); render(); });
+      wrap.appendChild(b);
+    });
+  }
+
+  // ---- 配線 ----
+  buildChips();
+
+  var q = document.getElementById("q");
+  var clearq = document.getElementById("clearq");
+  q.addEventListener("input", function(){
+    state.q = q.value.trim();
+    clearq.classList.toggle("on", q.value.length > 0);
+    render();
   });
-  document.getElementById("key").addEventListener("keydown", function(e){ if(e.key==="Enter") document.getElementById("unlock").click(); });
+  q.addEventListener("keydown", function(e){
+    if (e.key === "Escape"){ q.value=""; state.q=""; clearq.classList.remove("on"); render(); }
+    if (e.key === "Enter"){
+      var first = document.querySelector("#list .card a.stretch");
+      if (first) first.click();
+    }
+  });
+  clearq.addEventListener("click", function(){
+    q.value=""; state.q=""; clearq.classList.remove("on"); render(); q.focus();
+  });
+
+  document.addEventListener("keydown", function(e){
+    if (hub.classList.contains("hidden")) return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"){ e.preventDefault(); q.focus(); q.select(); }
+    else if (e.key === "/" && document.activeElement !== q){ e.preventDefault(); q.focus(); }
+  });
+
+  document.getElementById("signout").addEventListener("click", function(e){
+    e.preventDefault();
+    try{ localStorage.removeItem("core_hub_key"); }catch(err){}
+    // URL に ?key= が残っていると、再読み込みで即また解錠されてしまう
+    try{
+      if (window.history && history.replaceState){
+        var u = new URL(location.href);
+        if (u.searchParams.has("key")){
+          u.searchParams.delete("key");
+          history.replaceState(null, "", u.pathname + (u.search || "") + u.hash);
+        }
+      }
+    }catch(err){}
+    lock();
+  });
+
+  document.getElementById("unlock").addEventListener("click", function(){
+    var v = document.getElementById("key").value.trim();
+    if (v === KEY) reveal();
+    else document.getElementById("err").textContent = "合言葉が違います。";
+  });
+  document.getElementById("key").addEventListener("keydown", function(e){
+    if (e.key === "Enter") document.getElementById("unlock").click();
+  });
+
+  var urlKey = new URLSearchParams(location.search).get("key");
+  if (urlKey === KEY || saved() === KEY) reveal();
+  else lock();
 })();
 </script>
 </body>
