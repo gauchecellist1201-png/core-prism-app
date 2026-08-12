@@ -664,10 +664,18 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                     </button>
                   </div>
                 </div>
+                {/* 「あちらのタブで書いてください」と言うだけにしない。そこへ行くボタンを必ず隣に置く
+                    (文字だけの案内は、初見の人がタブ名を探せず止まる) */}
                 {!ownProduct?.trim() && (
-                  <p className="cp-tiny" style={{ color: '#FBBF24' }}>
-                    まだ自社の商材が未登録です。「自社の商材」タブで一度だけ書いておくと、毎日 AI が自動で合う企業を探します。
-                  </p>
+                  <div className="cp-stack-sm" style={{ gap: 6 }}>
+                    <p className="cp-tiny" style={{ color: '#FBBF24' }}>
+                      まだ自社の商材が未登録です。一度だけ書いておくと、毎日 AI が自動で合う企業を探します。
+                    </p>
+                    <button onClick={() => setTab('product')} className="cp-btn cp-btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' }}>
+                      <Gift size={15} strokeWidth={2.2} /><span>自社の商材を書きに行く</span>
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -835,9 +843,15 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                   </div>
                 </div>
                 {!ownProduct?.trim() && (
-                  <p className="cp-tiny" style={{ color: '#FBBF24' }}>
-                    まだ自社の商材が未登録です。「自社の商材」タブで一度だけ書いておくと、相性を正しく判定できます。
-                  </p>
+                  <div className="cp-stack-sm" style={{ gap: 6 }}>
+                    <p className="cp-tiny" style={{ color: '#FBBF24' }}>
+                      まだ自社の商材が未登録です。一度だけ書いておくと、相性を正しく判定できます。
+                    </p>
+                    <button onClick={() => setTab('product')} className="cp-btn cp-btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' }}>
+                      <Gift size={15} strokeWidth={2.2} /><span>自社の商材を書きに行く</span>
+                    </button>
+                  </div>
                 )}
                 {gmailBusy === 'scan' && gmailStep && (
                   <p className="cp-tiny" style={{ color: persona.accentColor }}>{gmailStep}</p>
@@ -911,7 +925,13 @@ export default function SalesAgentStudio({ persona, settings, knowledge = [], on
                   <div className="cp-empty">
                     <p className="cp-empty-icon"><Inbox size={34} strokeWidth={1.6} color={persona.accentColor} /></p>
                     <p>まだ採用したリードはありません</p>
-                    <p className="cp-meta" style={{ textTransform: 'none' }}>「今日の5社」タブで AI が選んだ企業を「採用」すると、ここと「案件を管理」の両方に追加されます</p>
+                    <p className="cp-meta" style={{ textTransform: 'none' }}>AI が選んだ企業を「採用」すると、ここと「案件を管理」の両方に追加されます。まずは AI に 5 社選ばせるところからです。</p>
+                    <div style={{ marginTop: 12 }}>
+                      <button onClick={() => setTab('today')} className="cp-btn cp-btn-primary"
+                        style={{ ...onAccent(persona.accentColor), display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44 }}>
+                        <Sparkles size={15} strokeWidth={2.4} /><span>「今日の5社」を見に行く</span>
+                      </button>
+                    </div>
                   </div>
                 ) : myLeads.map(l => {
                   const drafts = sa.approaches.filter(a => a.leadId === l.id);

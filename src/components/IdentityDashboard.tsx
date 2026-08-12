@@ -203,11 +203,16 @@ function EditablePersonaTitle({ persona, onRename }: { persona: Persona; onRenam
       </div>
     );
   }
+  // 鉛筆はマウスを乗せた時だけ出していたが、iPhone には「乗せる」操作が無く、
+  // 名前を変えられること自体が伝わらなかった。常に出す (2026-08-12 わかりやすさ回)
   return (
-    <button onClick={() => onRename && setEditing(true)} className="min-w-0 text-left group" title={onRename ? 'クリックで名前を変更' : undefined} style={{ cursor: onRename ? 'text' : 'default' }}>
+    <button onClick={() => onRename && setEditing(true)} className="min-w-0 text-left group"
+      title={onRename ? '押すと名前を変えられます' : undefined}
+      aria-label={onRename ? `${persona.name} の名前を変える` : undefined}
+      style={{ cursor: onRename ? 'text' : 'default' }}>
       <p className="text-fg text-base font-medium truncate leading-tight flex items-center gap-1">
         <span className="truncate">{persona.name}</span>
-        {onRename && <Pencil size={11} strokeWidth={2.2} className="flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity" />}
+        {onRename && <Pencil size={11} strokeWidth={2.2} className="flex-shrink-0 opacity-50 group-hover:opacity-90 transition-opacity" />}
       </p>
       <p className="text-fg-muted text-xs truncate">{persona.subtitle || '＋ 肩書きを追加'}</p>
     </button>

@@ -881,6 +881,19 @@ function PlanBoard(props: {
                 </button>
               </div>
             )}
+            {/* 候補以外の段は、説明だけ読ませて終わりにしない。
+                「候補から動かす」と書いてある以上、その候補へ行けるボタンをここに置く
+                (押せるものが1つも無い画面は、初見の人には壊れて見える) */}
+            {activeStage !== 'candidate' && (
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 14 }}>
+                <button onClick={() => setActiveStage('candidate')} style={btnPrimary(bg)}>
+                  <Sparkles size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
+                  {stageCount.candidate > 0
+                    ? `候補の ${stageCount.candidate} 件を見に行く`
+                    : 'まず候補を作りに行く'}
+                </button>
+              </div>
+            )}
           </div>
         )}
         {plansForStage.map(plan => (
