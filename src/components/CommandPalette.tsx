@@ -372,7 +372,7 @@ export default function CommandPalette({
 
   // 開き直したら「元に戻す」の帯は畳む (古い取り消しが残り続けないように)
   // @の対象も毎回まっさらに戻す (前回の対象が残っていて意図しない範囲で実行される事故を防ぐ)
-  useEffect(() => { if (open) { setUndoSaved(null); setMention(null); setMentionBusy(false); setInlineTaskId(null); } }, [open]);
+  useEffect(() => { if (open) { setUndoSaved(null); setMention(null); setMentionBusy(false); setInlineTaskId(null); setInlineNote(null); } }, [open]);
 
   /** 答えを出している依頼。queue.tasks の実体を毎回引き直す (2 か所で持たない) */
   const inlineTask = useMemo(

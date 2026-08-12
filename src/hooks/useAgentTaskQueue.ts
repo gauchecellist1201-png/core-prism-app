@@ -151,18 +151,33 @@ export function useAgentTaskQueue() {
       contextText: draft.contextText,
       contextLabel: draft.contextLabel,
     };
-    setTasks(prev => [t, ...prev]);
+    // ★localStorage へ「その場で」書く。
+    //   runTask / advance は毎回 loadQueue() から読み直す作りなので、
+    //   React の再描画 (= 下の saveQueue 効果) を待っていると、
+    //   同じ操作の中で propose → approve した依頼が loadQueue() に居らず、
+    //   1 歩目で静かに return して**永久に「実行中」のまま止まる**。
+    //   (⌘K からの依頼がこれに当たっていた = 押しても何も起きない沈黙する失敗)
+    const next = [t, ...loadQueue()];
+    saveQueue(next);
+    setTasks(next);
     return t;
   }, []);
 
   /** ユーザーが承認 → 実行開始 */
   const approve = useCallback((id: string) => {
-    setTasks(prev => prev.map(t => t.id === id ? {
+    // propose と同じ理由で、running への切替も先に localStorage へ確定させる。
+    // (advance は latest.status !== 'running' で降りるため、ここが遅れると走り出さない)
+    const next = loadQueue().map(t => t.id === id ? {
       ...t, status: 'running' as const,
       approvedAt: new Date().toISOString(),
       steps: t.steps.map((s, i) => i === 0 ? { ...s, status: 'working' as const, startedAt: new Date().toISOString() } : s),
-    } : t));
+    } : t);
+    saveQueue(next);
+    setTasks(next);
     runTask(id);
+    // deps は空のまま: runTask は下で定義される const なので、
+    // ここに入れると初期化前参照になる (呼ばれるのは実行時なのでクロージャで足りる)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** ユーザーが却下 */
