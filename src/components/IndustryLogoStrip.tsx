@@ -7,79 +7,94 @@
 //   業界別に 8 社の セットを切替 (slug → array)。
 // ============================================================
 
-interface LogoEntry { name: string; emoji: string; color: string; }
+import {
+  Wrench, Coffee, HardHat, Fish, Newspaper, Palette, Scissors, Citrus,
+  Home, Briefcase, TrendingUp, CloudSun, Gem, Building2, Handshake, Scale,
+  Brain, Rocket, BarChart3, Shuffle, PawPrint, Lightbulb, Target, Waves,
+  Dumbbell, Pill, FileText, HeartHandshake, Flower2, Globe, PenTool,
+  Flower, Utensils, Plane, Cat, Music, Clapperboard, Cog, Keyboard, PenLine,
+  Feather, Eye, Bot, RefreshCw, Trophy, Grape, Footprints, Notebook,
+  type LucideIcon,
+} from 'lucide-react';
+
+import { whiteFaceBg } from '../lib/accentFace';
+
+// アイコンは **線画 (lucide)** で統一する。
+// OS カラー絵文字 (🔧☕🏗…) は端末ごとに絵柄も色も変わり、こちらで決めた
+// ブランド色・コントラストが効かない（[[feedback_no_cheap_emoji]]）。
+interface LogoEntry { name: string; Icon: LucideIcon; color: string; }
 
 // 業界別 サンプル 8 社 (匿名化、実際の取引先ではない)
 const PRESETS: Record<string, LogoEntry[]> = {
   sme: [
-    { name: '田中精機',     emoji: '🔧', color: '#FBBF24' },
-    { name: 'カフェ TANAKA', emoji: '☕', color: '#F472B6' },
-    { name: '佐藤工務店',   emoji: '🏗', color: '#A78BFA' },
-    { name: 'みなと食品',   emoji: '🐟', color: '#34D399' },
-    { name: '青葉印刷',     emoji: '📰', color: '#22D3EE' },
-    { name: '山本クラフト', emoji: '🎨', color: '#FB923C' },
-    { name: '美容室 LIA',   emoji: '💇', color: '#EC4899' },
-    { name: '整骨院 れもん', emoji: '🍋', color: '#84CC16' },
+    { name: '田中精機',     Icon: Wrench,    color: '#FBBF24' },
+    { name: 'カフェ TANAKA', Icon: Coffee,   color: '#F472B6' },
+    { name: '佐藤工務店',   Icon: HardHat,   color: '#A78BFA' },
+    { name: 'みなと食品',   Icon: Fish,      color: '#34D399' },
+    { name: '青葉印刷',     Icon: Newspaper, color: '#22D3EE' },
+    { name: '山本クラフト', Icon: Palette,   color: '#FB923C' },
+    { name: '美容室 LIA',   Icon: Scissors,  color: '#EC4899' },
+    { name: '整骨院 れもん', Icon: Citrus,   color: '#84CC16' },
   ],
   'realestate-finance': [
-    { name: 'プレシス不動産', emoji: '🏠', color: '#10B981' },
-    { name: '東京FP事務所',   emoji: '💼', color: '#0EA5E9' },
-    { name: 'みらい証券',     emoji: '📈', color: '#6366F1' },
-    { name: '青空生命',       emoji: '🌤', color: '#F59E0B' },
-    { name: 'リソル投資',     emoji: '💎', color: '#8B5CF6' },
-    { name: 'シティ仲介',     emoji: '🏢', color: '#3B82F6' },
-    { name: 'IFA OUR',        emoji: '🤝', color: '#EC4899' },
-    { name: '相続士法人 北翼', emoji: '⚖', color: '#EAB308' },
+    { name: 'プレシス不動産', Icon: Home,       color: '#10B981' },
+    { name: '東京FP事務所',   Icon: Briefcase,  color: '#0EA5E9' },
+    { name: 'みらい証券',     Icon: TrendingUp, color: '#6366F1' },
+    { name: '青空生命',       Icon: CloudSun,   color: '#F59E0B' },
+    { name: 'リソル投資',     Icon: Gem,        color: '#8B5CF6' },
+    { name: 'シティ仲介',     Icon: Building2,  color: '#3B82F6' },
+    { name: 'IFA OUR',        Icon: Handshake,  color: '#EC4899' },
+    { name: '相続士法人 北翼', Icon: Scale,     color: '#EAB308' },
   ],
   consulting: [
-    { name: 'ハイドCO',       emoji: '🧠', color: '#6366F1' },
-    { name: 'BOLD Strategy',  emoji: '🚀', color: '#A855F7' },
-    { name: '森本会計',       emoji: '📊', color: '#10B981' },
-    { name: 'リフトM&A',      emoji: '🔀', color: '#0EA5E9' },
-    { name: '虎ノ門コンサル', emoji: '🐯', color: '#F59E0B' },
-    { name: 'Lighthouse Group',emoji: '💡', color: '#EAB308' },
-    { name: 'PRIM 戦略',      emoji: '🎯', color: '#EF4444' },
-    { name: '空海リサーチ',   emoji: '🌊', color: '#22D3EE' },
+    { name: 'ハイドCO',       Icon: Brain,      color: '#6366F1' },
+    { name: 'BOLD Strategy',  Icon: Rocket,     color: '#A855F7' },
+    { name: '森本会計',       Icon: BarChart3,  color: '#10B981' },
+    { name: 'リフトM&A',      Icon: Shuffle,    color: '#0EA5E9' },
+    { name: '虎ノ門コンサル', Icon: PawPrint,   color: '#F59E0B' },
+    { name: 'Lighthouse Group',Icon: Lightbulb, color: '#EAB308' },
+    { name: 'PRIM 戦略',      Icon: Target,     color: '#EF4444' },
+    { name: '空海リサーチ',   Icon: Waves,      color: '#22D3EE' },
   ],
   solo: [
-    { name: '林フィットネス',  emoji: '💪', color: '#22D3EE' },
-    { name: 'ミハシ薬店',      emoji: '💊', color: '#34D399' },
-    { name: '高橋税理士',      emoji: '📑', color: '#F59E0B' },
-    { name: '本間整体',        emoji: '🤲', color: '#EC4899' },
-    { name: '佐藤司法書士',    emoji: '⚖', color: '#6366F1' },
-    { name: 'ヨガ KOI',        emoji: '🧘', color: '#F472B6' },
-    { name: '島田 web',        emoji: '🕸', color: '#A855F7' },
-    { name: 'ふくろう書道塾',  emoji: '✒️', color: '#FBBF24' },
+    { name: '林フィットネス',  Icon: Dumbbell,      color: '#22D3EE' },
+    { name: 'ミハシ薬店',      Icon: Pill,          color: '#34D399' },
+    { name: '高橋税理士',      Icon: FileText,      color: '#F59E0B' },
+    { name: '本間整体',        Icon: HeartHandshake,color: '#EC4899' },
+    { name: '佐藤司法書士',    Icon: Scale,         color: '#6366F1' },
+    { name: 'ヨガ KOI',        Icon: Flower2,       color: '#F472B6' },
+    { name: '島田 web',        Icon: Globe,         color: '#A855F7' },
+    { name: 'ふくろう書道塾',  Icon: PenTool,       color: '#FBBF24' },
   ],
   creator: [
-    { name: '@hina_lifestyle', emoji: '🌸', color: '#F472B6' },
-    { name: '@maru_eats',      emoji: '🍣', color: '#FB923C' },
-    { name: '@itto_design',    emoji: '🎨', color: '#A855F7' },
-    { name: '@aya_fitness',    emoji: '💪', color: '#34D399' },
-    { name: '@yota_travel',    emoji: '✈️', color: '#22D3EE' },
-    { name: '@neko_cafe',      emoji: '🐱', color: '#FBBF24' },
-    { name: '@kiku_music',     emoji: '🎵', color: '#EC4899' },
-    { name: '@ren_anime',      emoji: '🎬', color: '#6366F1' },
+    { name: '@hina_lifestyle', Icon: Flower,       color: '#F472B6' },
+    { name: '@maru_eats',      Icon: Utensils,     color: '#FB923C' },
+    { name: '@itto_design',    Icon: Palette,      color: '#A855F7' },
+    { name: '@aya_fitness',    Icon: Dumbbell,     color: '#34D399' },
+    { name: '@yota_travel',    Icon: Plane,        color: '#22D3EE' },
+    { name: '@neko_cafe',      Icon: Cat,          color: '#FBBF24' },
+    { name: '@kiku_music',     Icon: Music,        color: '#EC4899' },
+    { name: '@ren_anime',      Icon: Clapperboard, color: '#6366F1' },
   ],
   'freelance-pro': [
-    { name: '田川 BE',         emoji: '⚙️', color: '#6366F1' },
-    { name: '山口 UI/UX',      emoji: '🎨', color: '#EC4899' },
-    { name: 'コードリオ',      emoji: '⌨️', color: '#10B981' },
-    { name: '森田 PdM',        emoji: '🎯', color: '#F59E0B' },
-    { name: 'NOTE w/ Akira',   emoji: '✍️', color: '#22D3EE' },
-    { name: '大村 web',        emoji: '🌐', color: '#A855F7' },
-    { name: '葛西 freelance',  emoji: '🦊', color: '#FB923C' },
-    { name: '南条 video',      emoji: '🎬', color: '#EAB308' },
+    { name: '田川 BE',         Icon: Cog,          color: '#6366F1' },
+    { name: '山口 UI/UX',      Icon: Palette,      color: '#EC4899' },
+    { name: 'コードリオ',      Icon: Keyboard,     color: '#10B981' },
+    { name: '森田 PdM',        Icon: Target,       color: '#F59E0B' },
+    { name: 'NOTE w/ Akira',   Icon: PenLine,      color: '#22D3EE' },
+    { name: '大村 web',        Icon: Globe,        color: '#A855F7' },
+    { name: '葛西 freelance',  Icon: Feather,      color: '#FB923C' },
+    { name: '南条 video',      Icon: Clapperboard, color: '#EAB308' },
   ],
   'saas-startup': [
-    { name: 'Glance',          emoji: '👁', color: '#00D4FF' },
-    { name: 'Reon AI',         emoji: '🤖', color: '#A855F7' },
-    { name: 'Loopwell',        emoji: '🔄', color: '#34D399' },
-    { name: 'Vincere CRM',     emoji: '🏆', color: '#F59E0B' },
-    { name: 'Bramble',         emoji: '🍇', color: '#8B5CF6' },
-    { name: 'Stride.dev',      emoji: '🏃', color: '#EC4899' },
-    { name: 'Plumeria',        emoji: '🌺', color: '#F472B6' },
-    { name: 'Mesa Notes',      emoji: '📓', color: '#22D3EE' },
+    { name: 'Glance',          Icon: Eye,        color: '#00D4FF' },
+    { name: 'Reon AI',         Icon: Bot,        color: '#A855F7' },
+    { name: 'Loopwell',        Icon: RefreshCw,  color: '#34D399' },
+    { name: 'Vincere CRM',     Icon: Trophy,     color: '#F59E0B' },
+    { name: 'Bramble',         Icon: Grape,      color: '#8B5CF6' },
+    { name: 'Stride.dev',      Icon: Footprints, color: '#EC4899' },
+    { name: 'Plumeria',        Icon: Flower2,    color: '#F472B6' },
+    { name: 'Mesa Notes',      Icon: Notebook,   color: '#22D3EE' },
   ],
 };
 
@@ -146,13 +161,16 @@ export default function IndustryLogoStrip({ slug }: Props) {
             boxShadow: `0 4px 14px ${l.color}1a`,
             flexShrink: 0,
           }}>
-            <span style={{
+            {/* 白い線画を乗せる面なので、面の側で明るさを保証する
+                （黄 #FBBF24 は白 1.67＝そのままだとアイコンが消える） */}
+            <span aria-hidden="true" style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 26, height: 26, borderRadius: 13,
-              background: `linear-gradient(135deg, ${l.color}, ${l.color}aa)`,
-              fontSize: 14, color: '#fff',
+              background: whiteFaceBg(l.color),
+              color: '#fff',
               boxShadow: `0 2px 8px ${l.color}55`,
-            }}>{l.emoji}</span>
+              flexShrink: 0,
+            }}><l.Icon size={14} strokeWidth={2.2} /></span>
             <span>{l.name}</span>
           </div>
         ))}

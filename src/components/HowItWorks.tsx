@@ -8,12 +8,16 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, CheckCircle2, Plus } from 'lucide-react';
+import { ChevronDown, CheckCircle2, Plus, PenLine, Plug, Bot, Lightbulb, type LucideIcon } from 'lucide-react';
 
-import { accentInkOnDark } from '../lib/accentFace';
+import { accentInkOnDark, whiteSafeGradient } from '../lib/accentFace';
+
+// ステップの絵柄は **線画 (lucide)** で統一する。
+// OS カラー絵文字 (✍️🔌🤖💡) は端末ごとに絵柄も色も変わる＝ブランドの
+// アクセント色が効かず、面のコントラストも保証できない（[[feedback_no_cheap_emoji]]）。
 interface Step {
   num: number;
-  emoji: string;
+  Icon: LucideIcon;
   title: string;
   duration: string;       // 「30 秒」「2 分」「1 分」
   short: string;          // 1 行 サマリ
@@ -24,7 +28,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     num: 1,
-    emoji: '✍️',
+    Icon: PenLine,
     title: '登録 (アカウント作成)',
     duration: '30 秒',
     short: 'メール 1 つ で 完了。クレカ 不要、 3 日間 無料。',
@@ -37,7 +41,7 @@ const STEPS: Step[] = [
   },
   {
     num: 2,
-    emoji: '🔌',
+    Icon: Plug,
     title: '接続 (AI と あなたの データ)',
     duration: '2 分',
     short: 'Claude API キー or デモ モード を 選ぶだけ。',
@@ -50,7 +54,7 @@ const STEPS: Step[] = [
   },
   {
     num: 3,
-    emoji: '🤖',
+    Icon: Bot,
     title: 'AI に任せる (即実行)',
     duration: '1 分',
     short: 'CXO を タップ → 「お願いします」 で 1 分以内 に 結果。',
@@ -147,13 +151,15 @@ export default function HowItWorks({ accentLeft = '#A78BFA', accentRight = '#F47
                     textAlign: 'left',
                   }}
                 >
-                  <div style={{
+                  {/* 白い線画を乗せる面なので、面の側で明るさを保証する
+                      （業界ごとの accentRight は黄 #FBBF24 = 白 1.67 まで明るくなる） */}
+                  <div aria-hidden="true" style={{
                     width: 52, height: 52, borderRadius: 14,
-                    background: `linear-gradient(135deg, ${accentLeft}, ${accentRight})`,
+                    background: whiteSafeGradient([accentLeft, accentRight]),
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 26, color: '#fff', flexShrink: 0,
+                    color: '#fff', flexShrink: 0,
                     boxShadow: `0 8px 20px ${accentLeft}44`,
-                  }}>{s.emoji}</div>
+                  }}><s.Icon size={26} strokeWidth={2} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 11, color: accentInkOnDark(accentRight), fontWeight: 800, letterSpacing: '0.18em' }}>
@@ -215,8 +221,10 @@ export default function HowItWorks({ accentLeft = '#A78BFA', accentRight = '#F47
                             fontSize: '0.82rem',
                             color: 'rgba(255,231,176,0.95)',
                             lineHeight: 1.7,
+                            display: 'flex', alignItems: 'flex-start', gap: 8,
                           }}>
-                            💡 {s.tip}
+                            <Lightbulb size={14} strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 3 }} aria-hidden="true" />
+                            <span>{s.tip}</span>
                           </div>
                         )}
                       </div>
