@@ -1402,7 +1402,13 @@ export default function CommandPalette({
                       {inlineTask.status === 'done' && answerText && (
                         <button
                           onClick={() => {
-                            void navigator.clipboard?.writeText(answerText).then(
+                            // clipboard が無い端末では .then が生えないので、先に有無を見る
+                            const p = navigator.clipboard?.writeText(answerText);
+                            if (!p) {
+                              notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'この端末では文字をコピーできません', duration: 3000 });
+                              return;
+                            }
+                            void p.then(
                               () => notifyInApp({ kind: 'success', title: '答えをコピーしました', body: answerText.slice(0, 40), duration: 2000 }),
                               () => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'この端末では文字をコピーできません', duration: 3000 }),
                             );
