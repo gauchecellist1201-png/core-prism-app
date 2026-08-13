@@ -129,22 +129,17 @@ export const IRIS_TAB_ICONS: Record<string, LucideIcon> = {
 };
 
 /**
- * Prism クイックアクションのアイコン (画像 2)
+ * 【削除済み】PRISM_QUICK_ICONS — 機能アイコンの二枚目の表だった。
+ *
+ * どこからも import されていないのに、台帳 (src/lib/featureIcons.ts) と
+ * 中身が食い違ったまま残っていた:
+ *   スライド … ここでは表計算の絵 / 台帳では投影機
+ *   画像     … ここではパレット   / 台帳では写真
+ * 放っておくと、次に触る人がこちらを正本と思って復活させ、
+ * また「タイルと画面で絵が違う」に戻る。
+ *
+ * 機能の 絵 + 色 は featureIcons.ts の resolveFeatureIcon(id) だけを使う。
  */
-export const PRISM_QUICK_ICONS: Record<string, LucideIcon> = {
-  '契約書 AI': ScrollText,
-  '商談 AI':   Target,
-  'メール AI': Mail,
-  '請求 AI':   Receipt,
-  '画像 AI':   Palette,
-  '音声 AI':   Mic,
-  'スライド AI': FileSpreadsheet,
-  'ヘルス':    HeartPulse,
-  'ナレッジ':  BookOpen,
-  '案件':      Briefcase,
-  '人物':      Users,
-  '設定':      Settings,
-};
 
 /**
  * Prism のプラン記号 (Crown / Star / Sparkles など)

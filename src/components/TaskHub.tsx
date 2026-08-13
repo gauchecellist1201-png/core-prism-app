@@ -12,7 +12,7 @@
 // ============================================================
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ListChecks, Flame, Sunrise, CalendarDays, LayoutList, Timer, Target, ListTodo, Lightbulb, Bot } from 'lucide-react';
+import { Flame, Sunrise, CalendarDays, LayoutList, Timer, Target, ListTodo, Lightbulb, Bot } from 'lucide-react';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
 import type { Persona, KnowledgeItem } from '../types/identity';
 import EmptyState from './EmptyState';
@@ -21,6 +21,7 @@ import { usePersonas } from '../hooks/usePersonas';
 import { useAgentTaskQueue, CXO_META, type CxoRole, type ProposalDraft } from '../hooks/useAgentTaskQueue';
 import { RewardBurst } from './visualFx';
 import StudioBackButton from './StudioBackButton';
+import StudioHeaderIcon from './StudioHeaderIcon';
 import { onAccent, onAccentInk } from '../lib/accentFace';
 
 interface Props {
@@ -405,10 +406,9 @@ export default function TaskHub({ persona, knowledge, onToggleTask, onAcceptActi
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
             <StudioBackButton onClick={onClose} />
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}>
-              <ListChecks size={20} strokeWidth={2.2} />
-            </div>
+            {/* タイル (緑のチェック) と同じ絵・同じ色で開く。台帳 = featureIcons */}
+            <StudioHeaderIcon iconKey="tasks-hub"
+              fallbackColor={persona.accentColor} fallbackBg={persona.accentColorLight} />
             <div className="min-w-0">
               <p className="cp-h2 truncate">タスクハブ</p>
               <p className="cp-meta truncate flex items-center gap-1">

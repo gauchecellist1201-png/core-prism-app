@@ -8,6 +8,7 @@ import { copyText } from '../lib/clipboard';
 import ApiErrorCard from './ApiErrorCard';
 import { StudioIntro } from './StudioIntro';
 import StudioBackButton from './StudioBackButton';
+import StudioHeaderIcon from './StudioHeaderIcon';
 import ThinkingIndicator from './ThinkingIndicator';
 import { onAccent } from '../lib/accentFace';
 
@@ -141,10 +142,9 @@ export default function SlideGeneratorModal({ persona, settings, knowledge, onCl
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
             <StudioBackButton onClick={onClose} />
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}
-            >🎨</div>
+            {/* スライドタイルと同じ絵 (投影機) で開く。🎨 は「画像を作る」と同じ絵で紛らわしかった */}
+            <StudioHeaderIcon iconKey="slides"
+              fallbackColor={persona.accentColor} fallbackBg={persona.accentColorLight} />
             <div className="min-w-0">
               <p className="text-fg text-lg font-semibold leading-tight truncate">スライド生成 AI</p>
               <p className="text-fg-muted text-xs">{persona.name} 視点でデッキを自動設計</p>

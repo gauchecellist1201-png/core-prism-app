@@ -14,6 +14,7 @@ import {
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { StudioIntro } from './StudioIntro';
 import StudioBackButton from './StudioBackButton';
+import StudioHeaderIcon from './StudioHeaderIcon';
 import DelegateToAgentTeamBanner from './DelegateToAgentTeamBanner';
 import ApiErrorCard from './ApiErrorCard';
 import AILoadingState from './AILoadingState';
@@ -677,12 +678,9 @@ export default function MeetingMinutesModal({
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3 min-w-0">
             <StudioBackButton onClick={onClose} />
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}
-            >
-              📅
-            </div>
+            {/* 議事録タイルと同じ絵 (引用符) で開く。📅 だとカレンダー機能と見分けが付かなかった */}
+            <StudioHeaderIcon iconKey="minutes"
+              fallbackColor={persona.accentColor} fallbackBg={persona.accentColorLight} />
             <div className="min-w-0">
               <p className="text-fg text-lg font-semibold leading-tight truncate">議事録 AI</p>
               <p className="text-fg-muted text-xs">{persona.name} の文脈で会議を構造化</p>

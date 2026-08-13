@@ -37,6 +37,7 @@ import { suggestNextAction, heuristicNextAction, priorityScore, daysSinceLastAct
 import { SAMPLE_LEAD_INDUSTRIES, addLeadsToCrm, hasSampleLeads, type LeadIndustry } from '../lib/salesLeadSeed';
 import { SALES_AGENT_SOURCE } from '../lib/salesToCrm';
 import StudioBackButton from './StudioBackButton';
+import StudioHeaderIcon from './StudioHeaderIcon';
 import { onAccent } from '../lib/accentFace';
 
 interface Props {
@@ -211,10 +212,9 @@ export default function CRMStudio({ persona, onClose }: Props) {
         <div className="cp-modal-header">
           <div className="cp-row min-w-0">
             <StudioBackButton onClick={onClose} />
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ background: persona.accentColorLight, color: persona.accentColor }}>
-              <Handshake size={20} strokeWidth={2.2} />
-            </div>
+            {/* 「案件を管理」タイルと同じ絵 (橙のカンバン) で開く。握手は商談 1 件を指す絵で別物だった */}
+            <StudioHeaderIcon iconKey="crm"
+              fallbackColor={persona.accentColor} fallbackBg={persona.accentColorLight} />
             <div className="min-w-0">
               <p className="cp-h2 truncate">CRM パイプライン</p>
               <p className="cp-meta truncate">{persona.name} · ドラッグで遷移 · AI が次の一手を提案</p>

@@ -15,7 +15,12 @@
 // ============================================================
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Send, ChevronDown, ChevronUp, Settings, Plus, FileText, BookOpen, Gem } from 'lucide-react';
+import {
+  Sparkles, Send, ChevronDown, ChevronUp, Settings, Plus, FileText, BookOpen, Gem,
+  Compass, Palette, Mail, UsersRound, TrendingUp, Heart,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { PRISM_SPECS } from '../lib/agentSpecs';
 import CoreCreditsPanel from './CoreCreditsPanel';
 import { getBalance as getCreditBalance, earnDaily as earnCreditDaily, earnOnce as earnCreditOnce } from '../lib/coreCredits';
 import { downloadCurrentChatTxt, downloadAllChatsMd } from '../lib/chatHistoryExport';
@@ -50,48 +55,65 @@ type Msg = {
   ts: number;
 };
 
+type AgentKey = 'ceo' | 'sales' | 'cfo' | 'creative' | 'knowledge' | 'people' | 'life';
+
+type AgentDef = {
+  key: AgentKey; Icon: LucideIcon; color: string;
+  name: string; tagline: string; what: readonly string[];
+};
+
+// 絵 + 色は PC 版のオーブ (AgentsOrbit) と同じ台帳 agentSpecs.ts から引く。
+// これまでこの画面だけ絵文字 (👑💼📊…) で、同じ「CEO 経営」が
+// パソコンでは赤いコンパス / iPhone では王冠 と、別人に見えていた。
+// 台帳に無い key を渡しても四角が白く抜けないよう、灰色のコンパスで受け止める。
+function prismLook(key: AgentKey): { Icon: LucideIcon; color: string } {
+  const spec = PRISM_SPECS.find(s => s.key === key);
+  return { Icon: spec?.Icon ?? Compass, color: spec?.color ?? '#9CA3AF' };
+}
+
 // 各エージェントに「これは何ができる?」の 3 行を持たせる。
 // 初見の人がタップ前に「自分の役に立つか」を 3 秒で判断できるように。
-const AGENTS_PRISM = [
-  { key: 'ceo',       emoji: '👑', name: 'CEO 経営', tagline: '今月どう動く?',
+const AGENTS_PRISM: AgentDef[] = [
+  { key: 'ceo',       ...prismLook('ceo'), name: 'CEO 経営', tagline: '今月どう動く?',
     what: ['今月の売上・利益をどう伸ばすか一緒に考える', '「次に何をやるべきか」を 3 つに絞って提案', '経営の迷いを壁打ちできる'] },
-  { key: 'sales',     emoji: '💼', name: '営業',     tagline: '次の一手は?',
+  { key: 'sales',     ...prismLook('sales'), name: '営業',     tagline: '次の一手は?',
     what: ['今日攻めるべき相手と切り口を教えてくれる', '提案文・営業メールの下書きを作る', '商談の進め方を相談できる'] },
-  { key: 'cfo',       emoji: '📊', name: 'CFO',     tagline: '数字を読む',
+  { key: 'cfo',       ...prismLook('cfo'), name: 'CFO',     tagline: '数字を読む',
     what: ['売上・経費・利益をやさしい言葉で読み解く', 'お金の不安な点を数字で見せてくれる', '資金繰りの改善案を出す'] },
-  { key: 'creative',  emoji: '✨', name: 'クリエ',   tagline: '原稿を書く',
+  { key: 'creative',  ...prismLook('creative'), name: 'クリエ',   tagline: '原稿を書く',
     what: ['記事・SNS 投稿・原稿をゼロから書く', 'スライドや画像のたたき台を作る', '言い回しを何通りも出してくれる'] },
-  { key: 'knowledge', emoji: '📚', name: 'ナレッジ', tagline: '資料を読む',
+  { key: 'knowledge', ...prismLook('knowledge'), name: 'ナレッジ', tagline: '資料を読む',
     what: ['PDF・資料・メモを読ませて記憶させる', '「あれ何だっけ」をすぐ引き出す', '資料の要点を 3 行にまとめる'] },
-  { key: 'people',    emoji: '🌷', name: 'ピープル', tagline: 'チームを見る',
+  { key: 'people',    ...prismLook('people'), name: 'ピープル', tagline: 'チームを見る',
     what: ['チームメンバーの様子を一緒に見る', '1on1 の話し方や声かけを提案', '気になる兆候を先に教えてくれる'] },
-  { key: 'life',      emoji: '🌅', name: 'ライフ',   tagline: '身体を見る',
+  { key: 'life',      ...prismLook('life'), name: 'ライフ',   tagline: '身体を見る',
     what: ['睡眠・活動・体調をやさしく振り返る', '疲れているときは休むよう教えてくれる', '無理しない働き方を一緒に考える'] },
-] as const;
+];
 
-const AGENTS_IRIS = [
-  { key: 'creative',  emoji: '🎬', name: '戦略',     tagline: '今月のテーマ',
+// Iris の 6 人は Prism と役割が違う (同じ 'creative' が 戦略 と 演出 の 2 人に割り当たる) ので
+// key では引けない。絵は Lucide、色は Iris のブランド色 (agentSpecs.ts の IRIS_SPECS と同じ 6 色) で
+// 1 人 1 色ずつ固定する。以後どの画面でも「桃色のメール = 案件」で通す。
+const AGENTS_IRIS: AgentDef[] = [
+  { key: 'creative',  Icon: Compass,    color: '#833AB4', name: '戦略',     tagline: '今月のテーマ',
     what: ['今月伸ばすテーマ・方向性を決める', 'どんな投稿が当たりそうか提案', 'アカウントの伸ばし方を相談'] },
-  { key: 'creative',  emoji: '🎨', name: '演出',     tagline: 'サムネ AB',
+  { key: 'creative',  Icon: Palette,    color: '#C13584', name: '演出',     tagline: 'サムネ AB',
     what: ['サムネ・見せ方の A / B 案を出す', '目を引く構図・言葉を提案', '世界観を統一する手伝い'] },
-  { key: 'sales',     emoji: '💼', name: '案件',     tagline: '交渉 / 単価',
+  { key: 'sales',     Icon: Mail,       color: '#E1306C', name: '案件',     tagline: '交渉 / 単価',
     what: ['案件の単価・交渉のコツを教える', '企業への返信文を下書き', '割に合う仕事か一緒に判断'] },
-  { key: 'people',    emoji: '💖', name: 'ファン',   tagline: '返信文 下書き',
+  { key: 'people',    Icon: UsersRound, color: '#FD7C9B', name: 'ファン',   tagline: '返信文 下書き',
     what: ['コメント・DM の返信文を下書き', 'ファンとの距離の縮め方を提案', '荒れたときの対応も相談できる'] },
-  { key: 'cfo',       emoji: '💰', name: '収益',     tagline: '物販 / 投げ銭',
+  { key: 'cfo',       Icon: TrendingUp, color: '#FBBF24', name: '収益',     tagline: '物販 / 投げ銭',
     what: ['物販・投げ銭・広告の収益を整理', 'どこを伸ばせば稼げるか教える', 'お金まわりの不安を数字で解消'] },
-  { key: 'life',      emoji: '🌙', name: '健康',     tagline: '休む時間',
+  { key: 'life',      Icon: Heart,      color: '#F472B6', name: '健康',     tagline: '休む時間',
     what: ['働きすぎていないか見守る', '休むタイミングを教えてくれる', '長く続けられるペースを提案'] },
-] as const;
+];
 
-type AgentDef = { key: string; emoji: string; name: string; tagline: string; what: readonly string[] };
-
-const CXO_PILLS = [
-  { key: 'CEO', emoji: '👑' }, { key: 'CTO', emoji: '⚙' }, { key: 'CPO', emoji: '🧭' },
-  { key: 'CDO', emoji: '🎨' }, { key: 'CMO', emoji: '📣' }, { key: 'CSO', emoji: '🎯' },
-  { key: 'CFO', emoji: '💰' }, { key: 'COO', emoji: '🗂' }, { key: 'CDS', emoji: '🔬' },
-  { key: 'CLO', emoji: '⚖' }, { key: 'CHR', emoji: '🤝' }, { key: 'UIE', emoji: '✨' },
-  { key: 'UXE', emoji: '👁' }, { key: 'QAE', emoji: '✓' },
+// CXO の絵 + 色も台帳 (CXO_META) 1 本にそろえる。
+// ここに絵文字の別表を持っていたせいで、同じ CEO がピルでは 👑 / 開いたシートでは 🌟 と
+// 2 つの顔を持っていた。順番だけをここで決める。
+const CXO_PILL_ORDER: CxoRole[] = [
+  'CEO', 'CTO', 'CPO', 'CDO', 'CMO', 'CSO', 'CFO',
+  'COO', 'CDS', 'CLO', 'CHR', 'UIE', 'UXE', 'QAE',
 ];
 
 const STORAGE_KEY = 'core_mobile_gemini_v1';
@@ -420,12 +442,13 @@ export default function MobileGeminiDashboard({
                 fontSize: 11,
               }}
             >
+              {/* パソコン版のオーブと同じ 絵 + 同じ色。白いアイコンを載せる前提の濃さ */}
               <div style={{
                 width: 38, height: 38, borderRadius: 12,
-                background: `${accent}30`,
+                background: `linear-gradient(135deg, ${a.color}, ${a.color}cc)`,
+                boxShadow: `0 5px 12px ${a.color}55`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 18,
-              }}>{a.emoji}</div>
+              }}><a.Icon size={19} color="#fff" strokeWidth={2.2} /></div>
               <div style={{ fontWeight: 800, fontSize: 11 }}>{a.name}</div>
               <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.2, textAlign: 'center' }}>
                 {a.tagline}
@@ -474,9 +497,10 @@ export default function MobileGeminiDashboard({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <div style={{
-                  width: 44, height: 44, borderRadius: 13, background: `${accent}30`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-                }}>{infoAgent.emoji}</div>
+                  width: 44, height: 44, borderRadius: 13,
+                  background: `linear-gradient(135deg, ${infoAgent.color}, ${infoAgent.color}cc)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}><infoAgent.Icon size={22} color="#fff" strokeWidth={2.2} /></div>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>{infoAgent.name}</div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>これは何ができる?</div>
@@ -548,25 +572,30 @@ export default function MobileGeminiDashboard({
             }}
             className="hide-scrollbar"
           >
-            {CXO_PILLS.map(c => (
+            {CXO_PILL_ORDER.map(role => {
+              const meta = CXO_META[role];
+              const CxoIcon = meta.Icon;
+              return (
               <button
-                key={c.key}
-                onClick={() => setOpenCxoPicker(c.key as CxoRole)}
+                key={role}
+                onClick={() => setOpenCxoPicker(role)}
                 style={{
                   flex: '0 0 auto',
                   padding: '6px 11px', borderRadius: 999,
-                  background: openCxoPicker === c.key ? `${accent}22` : 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${accent}44`,
+                  background: openCxoPicker === role ? `${meta.color}33` : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${meta.color}66`,
                   color: '#fff', cursor: 'pointer',
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                   fontSize: 11, fontWeight: 700,
                   whiteSpace: 'nowrap',
                 }}
               >
-                <span style={{ fontSize: 14 }}>{c.emoji}</span>
-                {c.key}
+                {/* 開いたシートの見出しと同じ 絵 + 同じ色 */}
+                <CxoIcon size={14} color={meta.color} strokeWidth={2.4} />
+                {role}
               </button>
-            ))}
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
@@ -604,8 +633,9 @@ export default function MobileGeminiDashboard({
                   width: 44, height: 44, borderRadius: 12,
                   background: `linear-gradient(135deg, ${CXO_META[openCxoPicker].color}, ${CXO_META[openCxoPicker].color}99)`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 22,
-                }}>{CXO_META[openCxoPicker].emoji}</div>
+                }}>
+                  {(() => { const CxoIcon = CXO_META[openCxoPicker].Icon; return <CxoIcon size={22} color="#fff" strokeWidth={2.2} />; })()}
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>
                     {cxoDisplayName(openCxoPicker)}
