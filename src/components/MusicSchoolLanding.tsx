@@ -12,8 +12,9 @@
 // ============================================================
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Music, Clock, Calendar, MessageCircle, FileText, TrendingUp, Check, ArrowRight, Printer } from 'lucide-react';
-import { onAccent, darkSafeGradient } from '../lib/accentFace';
+import { Music, Clock, Calendar, MessageCircle, FileText, TrendingUp, Check, ArrowRight, Printer, Receipt, UserMinus, MailOpen, Star } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { onAccent, darkSafeGradient, accentInkOnDark } from '../lib/accentFace';
 
 const FONT_SERIF_JA = '"Noto Serif JP", "Yu Mincho", serif';
 const FONT_SERIF_EN = '"Cinzel", "Cormorant Garamond", serif';
@@ -23,7 +24,12 @@ const ACCENT_PRIMARY = '#9333EA';   // 紫 (Cello / 音楽)
 const ACCENT_GOLD = '#FBBF24';      // 金 (上質感)
 const ACCENT_GREEN = '#34D399';     // 緑 (節約・利益)
 
-interface PainPoint { emoji: string; before: string; after: string }
+// 紫そのものは黒に近い地の上で 3.36〜3.38（2026-08-14 本番実測）＝11px の小見出しには届かない。
+// 面を明るくする逃げ道が無い（地はページ全体）ので、文字のほうを明るくする（色相・彩度は紫のまま）。
+const INK_PRIMARY_BADGE = accentInkOnDark(ACCENT_PRIMARY, '#1C0F2F'); // ヒーローの紫チップの上
+const INK_PRIMARY_ON_DARK = accentInkOnDark(ACCENT_PRIMARY, '#161420'); // 料金カード（淡い白面）の上
+
+interface PainPoint { Icon: LucideIcon; iconColor: string; before: string; after: string }
 interface Feature { icon: React.ReactNode; title: string; body: string; saves: string }
 
 export default function MusicSchoolLanding() {
@@ -77,7 +83,7 @@ function Hero() {
             border: `1px solid ${ACCENT_PRIMARY}55`,
             fontFamily: FONT_SERIF_EN,
             fontSize: 11, letterSpacing: '0.25em',
-            color: ACCENT_PRIMARY, fontWeight: 700,
+            color: INK_PRIMARY_BADGE, fontWeight: 700,
             marginBottom: '2rem',
           }}
         >
@@ -194,6 +200,24 @@ function RoiCalculator() {
 
   return (
     <section id="roi" style={{ padding: '5rem 1.5rem', background: 'linear-gradient(180deg, #0A0A12 0%, #14101F 100%)' }}>
+      {/* このLPの主操作は「3本のスライダーを指で動かす」こと。素の <input type="range"> は
+          iPhone で高さ 16px・つまみも同等＝指では掴めなかった（2026-08-14 本番実測 375px）。
+          見た目の線は細いままで、掴める面だけ 44px にする（線を太くすると数字より目立ってしまう）。 */}
+      <style>{`
+        .ms-range { -webkit-appearance: none; appearance: none; height: 44px; background: transparent; cursor: pointer; }
+        .ms-range:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 8px; }
+        .ms-range::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.16); }
+        .ms-range::-webkit-slider-thumb {
+          -webkit-appearance: none; appearance: none;
+          width: 26px; height: 26px; margin-top: -10px; border-radius: 50%;
+          background: currentColor; border: 2px solid #0A0A12; box-shadow: 0 2px 8px rgba(0,0,0,0.55);
+        }
+        .ms-range::-moz-range-track { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.16); }
+        .ms-range::-moz-range-thumb {
+          width: 26px; height: 26px; border-radius: 50%; border: 2px solid #0A0A12;
+          background: currentColor; box-shadow: 0 2px 8px rgba(0,0,0,0.55);
+        }
+      `}</style>
       <div style={{ maxWidth: 920, margin: '0 auto' }}>
         <h2 style={sectionTitle}>あなたのスクールの数字で試算</h2>
         <p style={sectionLead}>3 つの数字を変えるだけで、毎月いくら・何時間取り戻せるか分かります。</p>
@@ -282,11 +306,14 @@ function SliderInput({ label, value, setValue, min, max, step, suffix, color }: 
         {value.toLocaleString()}<span style={{ fontSize: 11, marginLeft: 4, opacity: 0.6 }}>{suffix}</span>
       </div>
       <input
+        className="ms-range"
         type="range"
         min={min} max={max} step={step}
         value={value}
         onChange={e => setValue(Number(e.target.value))}
-        style={{ width: '100%', accentColor: color }}
+        aria-label={label}
+        // つまみは currentColor で塗る＝色は今までどおりスライダーごとに違う。
+        style={{ width: '100%', accentColor: color, color }}
       />
     </div>
   );
@@ -387,11 +414,11 @@ function Features() {
                 {f.body}
               </p>
               <div style={{
-                display: 'inline-block', padding: '3px 9px', borderRadius: 999,
+                display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 999,
                 background: `${ACCENT_GREEN}18`, border: `1px solid ${ACCENT_GREEN}40`,
                 fontSize: 10.5, fontWeight: 800, color: ACCENT_GREEN, letterSpacing: '0.04em',
               }}>
-                ⏱ {f.saves} 節約
+                <Clock size={11} strokeWidth={2.4} aria-hidden /> {f.saves} 節約
               </div>
             </motion.div>
           ))}
@@ -406,10 +433,10 @@ function Features() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function BeforeAfter() {
   const pains: PainPoint[] = [
-    { emoji: '📅', before: '振替日程は LINE で 1 件ずつ調整', after: 'AI が候補 3 つ出して、ボタン 1 つで送信' },
-    { emoji: '💸', before: '月初は請求書発行で半日つぶれる', after: '「25 名分発行」と言えば 30 秒で全員分 PDF' },
-    { emoji: '😟', before: '退会が出てから、初めて事態に気づく', after: 'AI が兆候を察知して早めにアラート' },
-    { emoji: '🎶', before: '体験予約のメールに 1 件ずつ返信', after: 'DM 一覧から AI が体験予約まで自動誘導' },
+    { Icon: Calendar, iconColor: ACCENT_GOLD, before: '振替日程は LINE で 1 件ずつ調整', after: 'AI が候補 3 つ出して、ボタン 1 つで送信' },
+    { Icon: Receipt, iconColor: ACCENT_GREEN, before: '月初は請求書発行で半日つぶれる', after: '「25 名分発行」と言えば 30 秒で全員分 PDF' },
+    { Icon: UserMinus, iconColor: ACCENT_GOLD, before: '退会が出てから、初めて事態に気づく', after: 'AI が兆候を察知して早めにアラート' },
+    { Icon: MailOpen, iconColor: ACCENT_GREEN, before: '体験予約のメールに 1 件ずつ返信', after: 'DM 一覧から AI が体験予約まで自動誘導' },
   ];
 
   return (
@@ -429,7 +456,7 @@ function BeforeAfter() {
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 12,
             }}>
-              <span style={{ fontSize: 24 }}>{p.emoji}</span>
+              <p.Icon size={22} color={p.iconColor} strokeWidth={1.7} aria-hidden />
               <div>
                 <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#F87171', fontWeight: 700, marginBottom: 2 }}>BEFORE</div>
                 <div style={{ fontFamily: FONT_SERIF_JA, fontSize: 13.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6 }}>{p.before}</div>
@@ -464,8 +491,11 @@ function Pricing() {
           borderRadius: 18,
           marginTop: '2rem',
         }}>
-          <div style={{ fontSize: 11, letterSpacing: '0.25em', color: ACCENT_PRIMARY, fontWeight: 700, marginBottom: 6 }}>
-            ⭐ スタンダード (主力プラン)
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontSize: 11, letterSpacing: '0.25em', color: INK_PRIMARY_ON_DARK, fontWeight: 700, marginBottom: 6,
+          }}>
+            <Star size={12} strokeWidth={2.2} aria-hidden /> スタンダード (主力プラン)
           </div>
           <div style={{ fontFamily: '"SF Mono", monospace', fontSize: '2.6rem', fontWeight: 800, marginBottom: 8 }}>
             ¥9,800<span style={{ fontSize: 14, opacity: 0.6, marginLeft: 4 }}>/月</span>
@@ -496,16 +526,20 @@ function DemoCTA() {
   return (
     <section id="demo" style={{ padding: '5rem 1.5rem', background: '#0A0A12', textAlign: 'center' }}>
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
-        <div style={{ fontSize: 50, marginBottom: 16 }}>🎻</div>
+        <div style={{ marginBottom: 16 }} aria-hidden>
+          <Music size={44} color={ACCENT_GOLD} strokeWidth={1.4} />
+        </div>
         <h2 style={sectionTitle}>まず触ってみる。</h2>
         <p style={sectionLead}>
           架空の音楽スクール「GAUCHE Cello School」のデモデータを使って、
           全機能を 5 分で体験できます。クレジット不要。
         </p>
         <a href="/?demo=music-school" style={{ ...ctaPrimary, marginTop: '1.5rem', display: 'inline-flex' }}>
-          🎻 デモで触ってみる <ArrowRight size={15} />
+          <Music size={15} aria-hidden /> デモで触ってみる <ArrowRight size={15} />
         </a>
-        <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 12 }}>
+        {/* 「登録なし」は買う前の不安を消す注記＝ここが薄いと読まれない。0.45 は 4.51 でギリギリ合格だが
+            11.5px の細い明朝ではアンチエイリアスで実測 3.42 まで落ちるので、フッターのリンクと同じ 0.55(6.26) に。 */}
+        <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)', marginTop: 12 }}>
           ※ メールアドレス不要・登録なし・端末内のみで動きます
         </p>
       </div>
@@ -638,7 +672,8 @@ function ProposalStat({ label, value, sub }: { label: string; value: string; sub
     }}>
       <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>{label}</div>
       <div style={{ fontSize: 18, fontWeight: 800, color: '#9333EA' }}>{value}</div>
-      <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>{sub}</div>
+      {/* 白い提案書の上。#888 は 3.54 で 10px の根拠説明が読めなかった → #6B6B76(5.26)。 */}
+      <div style={{ fontSize: 10, color: '#6B6B76', marginTop: 2 }}>{sub}</div>
     </div>
   );
 }
@@ -661,7 +696,8 @@ function Footer() {
         <a href="/privacy" style={footerLink}>プライバシー</a>
         <a href="/terms" style={footerLink}>利用規約</a>
       </div>
-      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+      {/* 法人表記は「読める」ことが要件。0.4 は地 #0A0A12 の上で 3.77（実測）だったので 0.5(5.33) に。 */}
+      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
         © 2026 CORE（設立準備中） — Music School Edition
       </p>
     </footer>
