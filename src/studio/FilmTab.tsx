@@ -45,7 +45,7 @@ export default function FilmTab() {
         @media (prefers-reduced-motion: reduce) {
           .fm-rv, .fm-rv[data-rv="pending"] { opacity: 1 !important; transform: none !important; transition: none; }
         }
-        .fm-scroller { display: flex; gap: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+        .fm-scroller { display: flex; justify-content: safe center; gap: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch;
           scroll-snap-type: x mandatory; padding: 4px 20px 18px; scrollbar-width: none; }
         .fm-scroller::-webkit-scrollbar { display: none; }
         .fm-shot { flex: 0 0 auto; width: min(74vw, 268px); scroll-snap-align: center; }
