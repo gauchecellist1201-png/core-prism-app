@@ -5,36 +5,26 @@
 // 見出し Noto Serif JP・本文サンセリフ。CTAは濃色ボタン。
 // 文言・価格は plans.ts に集約 (ここにはレイアウトだけを書く)
 // ============================================================
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   STUDIO, STATS, REASONS, PROCESS, PRODUCTION_PLANS, DEV_LEAD, DEV_TIERS,
   CARE_PLANS, WORKS, COMPANY,
   type ProductionPlan, type DevTier,
 } from './plans';
+import { CONTACT } from './plans';
+import { FILM } from './film';
 import { estimate, type EstimateAnswers, type Purpose, type Scale, type Feature, type Timeline, type Budget } from './estimate';
+import { C, D, SERIF, SANS } from './theme';
+import { Band, H2, Note, IconCheck, IconArrow, IconChat, IconCopy } from './ui';
+import { logEvent } from '../lib/onboardingAnalytics';
 
-// ---- palette (白基調・法人トーン) ----
-const C = {
-  bg: '#FFFFFF',
-  alt: '#F7F7F5',                 // 交互セクション
-  ink: '#111827',                 // 見出し・強調
-  body: '#374151',                // 本文
-  mute: '#6B7280',                // 補足
-  line: '#E5E7EB',                // 罫線
-  gold: '#A8823C',                // アクセント (線・面のみ。文字には使わない)
-  // 2026-07-30 巡回で是正: #A8823C は白地で 3.55:1 しかなく、番号やラベルの文字が読めなかった。
-  // 線の金は見た目を保ちたいので変えず、文字用にだけ濃い金を新設する。
-  goldText: '#8f6d2f',            // 白地で 4.78:1 (文字用)
-  goldLine: 'rgba(168,130,60,0.4)',
-  dark: '#111827',                // CTAボタン
-};
-const SERIF = '"Noto Serif JP", "游明朝", "Yu Mincho", serif';
-const SANS = '"Noto Sans JP", "Inter", sans-serif';
+const FilmTab = lazy(() => import('./FilmTab'));
 
 // ---- tabs ----
-type TabId = 'home' | 'plans' | 'dev' | 'care' | 'works' | 'about' | 'contact';
+type TabId = 'home' | 'film' | 'plans' | 'dev' | 'care' | 'works' | 'about' | 'contact';
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'home', label: 'ホーム' },
+  { id: 'film', label: '映像制作' },
   { id: 'plans', label: 'サイト制作' },
   { id: 'dev', label: '受託開発' },
   { id: 'care', label: '運用' },
@@ -43,56 +33,95 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'contact', label: 'お問い合わせ' },
 ];
 
-const readTabFromHash = (): TabId => {
-  const h = (typeof window !== 'undefined' ? window.location.hash : '').replace('#', '');
-  return (TABS.some(t => t.id === h) ? h : 'home') as TabId;
+const isTabId = (v: string): v is TabId => TABS.some(t => t.id === v);
+
+// /studio/film のようなパスと、従来の /studio#film の両方を受ける。
+// ハッシュはサーバーにもクローラーにも届かないので、以後は必ずパス側に正規化する。
+const readTab = (): TabId => {
+  if (typeof window === 'undefined') return 'home';
+  const seg = window.location.pathname.replace(/^\/studio\/?/, '').replace(/\/$/, '');
+  if (isTabId(seg)) return seg;
+  const h = window.location.hash.replace('#', '');
+  return isTabId(h) ? h : 'home';
 };
 
-// ---- 小さなラインアイコン (絵文字禁止・SVGのみ) ----
-const IconCheck = ({ color = C.gold }: { color?: string }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0, marginTop: 4 }}>
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);
-const IconArrow = ({ color = 'currentColor' }: { color?: string }) => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M7 17 17 7M8 7h9v9" />
-  </svg>
-);
-const IconMail = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 6L2 7" />
-  </svg>
-);
-const IconCopy = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-  </svg>
-);
+const pathOf = (t: TabId) => (t === 'home' ? '/studio' : `/studio/${t}`);
+
+// ---- タブごとの title / description (映像は検索の入口が別なので分ける) ----
+// 正本は studio.html / studio-film.html の静的メタ。ここを変えたら向こうも合わせる。
+const SEO = {
+  ogImage: 'https://core-prism-app.vercel.app/og-studio-film-v1.png',
+  default: {
+    title: 'CORE Studio — 成果から逆算する、ウェブ制作と受託開発',
+    description: 'COREは、AIプロダクトを自社で開発・運営する制作スタジオです。戦略設計からデザイン・実装・公開後の運用改善まで一貫体制で、貴社の事業を前に進めるウェブをつくります。',
+  },
+  film: {
+    title: 'AI動画制作・ショートドラマ制作代行 — CORE Studio',
+    description: 'ショートドラマ、ブランドムービー、SNS縦型動画、CMまで。企画・脚本・映像制作・編集・字幕・SNS最適化までを一貫制作するAIクリエイティブスタジオ。初回1本¥29,800、毎月継続は月4本¥198,000から。初期費用0円・最低契約期間なし。',
+  },
+};
 
 // ============================================================
 export default function StudioSite() {
-  const [tab, setTab] = useState<TabId>(readTabFromHash);
+  const [tab, setTab] = useState<TabId>(readTab);
 
   useEffect(() => {
-    document.title = 'CORE Studio — 成果から逆算する、ウェブ制作と受託開発';
     const themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta) themeMeta.setAttribute('content', C.bg);
+    if (themeMeta) themeMeta.setAttribute('content', tab === 'film' ? D.bg : C.bg);
+
     const setMeta = (name: string, content: string) => {
       let m = document.querySelector(`meta[name="${name}"]`);
       if (!m) { m = document.createElement('meta'); m.setAttribute('name', name); document.head.appendChild(m); }
       m.setAttribute('content', content);
     };
-    setMeta('description', 'COREは、AIプロダクトを自社で開発・運営する制作スタジオです。戦略設計からデザイン・実装・公開後の運用改善まで一貫体制で、貴社の事業を前に進めるウェブをつくります。');
-    const onHash = () => setTab(readTabFromHash());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    const setProp = (property: string, content: string) => {
+      let m = document.querySelector(`meta[property="${property}"]`);
+      if (!m) { m = document.createElement('meta'); m.setAttribute('property', property); document.head.appendChild(m); }
+      m.setAttribute('content', content);
+    };
+
+    const seo = tab === 'film' ? SEO.film : SEO.default;
+    // SNSのカードを出すクローラーはJSを実行しないので、本命は studio.html / studio-film.html の
+    // 静的メタ (vercel.json の rewrite で配信) 側。ここは画面遷移した後の表示を合わせるための追従。
+    // 一部だけ書き換えるとPrism本体のOGが混ざるので、SNSタグは一式そろえて差し替える。
+    const url = `https://core-prism-app.vercel.app${pathOf(tab)}`;
+    document.title = seo.title;
+    setMeta('description', seo.description);
+    setProp('og:title', seo.title);
+    setProp('og:description', seo.description);
+    setProp('og:url', url);
+    setProp('og:site_name', 'CORE Studio');
+    setProp('og:image', SEO.ogImage);
+    setProp('og:image:alt', seo.title);
+    setMeta('twitter:title', seo.title);
+    setMeta('twitter:description', seo.description);
+    setMeta('twitter:image', SEO.ogImage);
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.setAttribute('rel', 'canonical'); document.head.appendChild(canonical); }
+    canonical.setAttribute('href', url);
+  }, [tab]);
+
+  // Service の構造化データ (SPAなので実行時に差し込む。離脱時に必ず片付ける)
+  useEffect(() => {
+    const el = document.createElement('script');
+    el.type = 'application/ld+json';
+    el.id = 'studio-jsonld';
+    el.textContent = JSON.stringify(studioJsonLd());
+    document.head.appendChild(el);
+    return () => { el.remove(); };
+  }, []);
+
+  useEffect(() => {
+    const sync = () => setTab(readTab());
+    window.addEventListener('hashchange', sync);
+    window.addEventListener('popstate', sync);
+    return () => { window.removeEventListener('hashchange', sync); window.removeEventListener('popstate', sync); };
   }, []);
 
   const go = (t: TabId) => {
     setTab(t);
     if (typeof window !== 'undefined') {
-      history.replaceState(null, '', t === 'home' ? window.location.pathname : `#${t}`);
+      history.pushState(null, '', pathOf(t));
       window.scrollTo({ top: 0 });
     }
   };
@@ -102,7 +131,8 @@ export default function StudioSite() {
       <style>{`
         .st-inner { max-width: 760px; margin: 0 auto; padding-left: 20px; padding-right: 20px; }
         .st-serif { font-family: ${SERIF}; }
-        .st-label { font-family: ${SANS}; font-size: 11px; font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase; color: ${C.gold}; }
+        /* 金は白地で 3.55:1 しかないので、文字には goldText を使う (暗部では D.gold を上書き指定) */
+        .st-label { font-family: ${SANS}; font-size: 11px; font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase; color: ${C.goldText}; }
         .st-tabbar { display: flex; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 12px; }
         .st-tabbar::-webkit-scrollbar { display: none; }
         .st-tab { flex-shrink: 0; min-height: 46px; padding: 12px 13px; border: none; background: none; cursor: pointer;
@@ -149,18 +179,23 @@ export default function StudioSite() {
 
       <main>
         {tab === 'home' && <HomeTab go={go} />}
+        {tab === 'film' && (
+          <Suspense fallback={<div style={{ background: D.bg, minHeight: '60dvh' }} />}>
+            <FilmTab />
+          </Suspense>
+        )}
         {tab === 'plans' && <PlansTab go={go} />}
         {tab === 'dev' && <DevTab go={go} />}
-        {tab === 'care' && <CareTab go={go} />}
-        {tab === 'works' && <WorksTab go={go} />}
-        {tab === 'about' && <AboutTab go={go} />}
+        {tab === 'care' && <CareTab />}
+        {tab === 'works' && <WorksTab />}
+        {tab === 'about' && <AboutTab />}
         {tab === 'contact' && <ContactTab />}
       </main>
 
       {/* フッター */}
       <footer style={{ borderTop: `1px solid ${C.line}`, background: C.alt, padding: '32px 20px calc(32px + env(safe-area-inset-bottom))', textAlign: 'center' }}>
         <div className="st-serif" style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.2em', color: C.ink, marginBottom: 8 }}>CORE STUDIO</div>
-        <a href={`mailto:${STUDIO.email}`} style={{ fontSize: 12.5, color: C.mute, textDecoration: 'underline' }}>{STUDIO.email}</a>
+        <a href={`mailto:${STUDIO.email}`} style={{ fontSize: 12.5, color: C.mute, textDecoration: 'underline', minHeight: 44, display: 'inline-flex', alignItems: 'center', padding: '0 8px' }}>{STUDIO.email}</a>
         <div style={{ fontSize: 11.5, color: C.mute, marginTop: 10, letterSpacing: '0.04em', lineHeight: 1.9 }}>
           CORE（設立準備中）<br />代表 井出直毅
         </div>
@@ -169,26 +204,52 @@ export default function StudioSite() {
   );
 }
 
-// ---- セクション帯 (白 / #F7F7F5 の交互) ----
-const Band = ({ alt, children, pad = '52px 0' }: { alt?: boolean; children: ReactNode; pad?: string }) => (
-  <section style={{ background: alt ? C.alt : C.bg, padding: pad }}>
-    <div className="st-inner">{children}</div>
-  </section>
+// ---- 相談導線 (どのタブでも入口はLINEに統一する) ----
+const LineCta = ({ label = CONTACT.lineLabel, where }: { label?: string; where: string }) => (
+  <a className="st-btn st-btn-primary" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+    onClick={() => logEvent('studio_line_cta', { where })}>
+    <IconChat /> {label}
+  </a>
 );
 
-// ---- 共通見出し (英字ラベル + 明朝見出し + 補足) ----
-const H2 = ({ children, en, sub }: { children: ReactNode; en?: string; sub?: string }) => (
-  <div style={{ margin: '0 0 26px' }}>
-    {en && <div className="st-label" style={{ marginBottom: 10 }}>{en}</div>}
-    <h2 className="st-serif" style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.5, letterSpacing: '0.03em', color: C.ink, margin: 0 }}>{children}</h2>
-    {sub && <p style={{ fontSize: 14, color: C.body, margin: '10px 0 0', lineHeight: 2 }}>{sub}</p>}
-  </div>
-);
-
-// ---- CTA下の実務的な添え書き ----
-const Note = ({ children }: { children: ReactNode }) => (
-  <p style={{ fontSize: 12.5, color: C.mute, margin: '12px 0 0', textAlign: 'center', letterSpacing: '0.03em' }}>{children}</p>
-);
+// ---- 構造化データ (提供サービスの一覧。価格は film.ts / plans.ts の実値に合わせる) ----
+function studioJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ProfessionalService',
+    name: 'CORE Studio',
+    url: STUDIO.url,
+    email: STUDIO.email,
+    areaServed: 'JP',
+    description: SEO.default.description,
+    makesOffer: [
+      {
+        '@type': 'Offer',
+        name: 'AI動画制作・ショートドラマ制作代行',
+        description: 'ショートドラマ・ブランドムービー・SNS縦型動画・CMの企画から脚本・映像制作・編集・字幕・SNS最適化までの一貫制作。',
+        priceCurrency: 'JPY',
+        price: '29800',
+        url: `${STUDIO.url}#film`,
+      },
+      {
+        '@type': 'Offer',
+        name: 'ウェブサイト制作',
+        description: 'LPからコーポレートサイト、予約・決済を備えた本格サイトまでの制作。',
+        priceCurrency: 'JPY',
+        price: '50000',
+        url: `${STUDIO.url}#plans`,
+      },
+      {
+        '@type': 'Offer',
+        name: 'システム受託開発',
+        description: 'MVPからSaaS・基幹システムまでのアプリケーション開発。',
+        priceCurrency: 'JPY',
+        price: '500000',
+        url: `${STUDIO.url}#dev`,
+      },
+    ],
+  };
+}
 
 // ============================================================
 // ホーム
@@ -207,7 +268,7 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
           戦略設計からデザイン、実装、公開後の運用改善まで一貫体制で、貴社の事業を前に進めるウェブをつくります。
         </p>
         <div style={{ display: 'flex', gap: 12, marginTop: 30, flexWrap: 'wrap' }}>
-          <button className="st-btn st-btn-primary" onClick={() => go('contact')}>制作のご相談はこちら</button>
+          <LineCta where="home-hero" />
           <button className="st-btn st-btn-ghost" onClick={() => go('works')}>実績を見る</button>
         </div>
 
@@ -221,6 +282,24 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
           ))}
         </div>
       </Band>
+
+      {/* 映像制作への入口 — 白基調のサイトの中で、ここだけ暗部に落として章の違いを見せる */}
+      <section style={{ background: D.bg, padding: '48px 0' }}>
+        <div className="st-inner">
+          <div className="st-label" style={{ color: D.gold, marginBottom: 14 }}>{FILM.label}</div>
+          <h2 className="st-serif" style={{ fontSize: 'clamp(23px, 6.2vw, 32px)', fontWeight: 700, lineHeight: 1.55, color: D.ink, margin: 0, whiteSpace: 'pre-line' }}>
+            {FILM.hero}
+          </h2>
+          <p style={{ fontSize: 14.5, lineHeight: 2.05, color: D.body, margin: '18px 0 0', maxWidth: 580 }}>
+            {FILM.heroSub}
+          </p>
+          <div style={{ marginTop: 26 }}>
+            <button className="st-btn" style={{ background: '#FFFFFF', color: C.ink, border: '1px solid #FFFFFF' }} onClick={() => go('film')}>
+              映像制作を見る
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* 選ばれる理由 */}
       <Band alt>
@@ -287,8 +366,11 @@ function HomeTab({ go }: { go: (t: TabId) => void }) {
           <p style={{ fontSize: 13.5, color: C.body, margin: '10px 0 22px', lineHeight: 2 }}>
             6つの質問に答えるだけで、概算のお見積りをその場でご確認いただけます。
           </p>
-          <button className="st-btn st-btn-primary" onClick={() => go('contact')}>制作のご相談はこちら</button>
-          <Note>1営業日以内にご返信します。</Note>
+          <LineCta where="home-bottom" />
+          <div style={{ marginTop: 12 }}>
+            <button className="st-btn st-btn-ghost" onClick={() => go('contact')}>先に概算を知る</button>
+          </div>
+          <Note>{CONTACT.lineNote}</Note>
         </div>
       </Band>
     </div>
@@ -354,8 +436,11 @@ function PlansTab({ go }: { go: (t: TabId) => void }) {
       </div>
       <PlanCard p={p} />
       <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <button className="st-btn st-btn-primary" onClick={() => go('contact')}>このプランについて相談する</button>
-        <Note>1営業日以内にご返信します。</Note>
+        <LineCta label="このプランをLINEで相談する" where="plans" />
+        <div style={{ marginTop: 12 }}>
+          <button className="st-btn st-btn-ghost" onClick={() => go('contact')}>先に概算を知る</button>
+        </div>
+        <Note>{CONTACT.lineNote}</Note>
       </div>
     </Band>
   );
@@ -403,7 +488,10 @@ function DevTab({ go }: { go: (t: TabId) => void }) {
       </div>
       <TierCard t={DEV_TIERS[sel]} />
       <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <button className="st-btn st-btn-primary" onClick={() => go('contact')}>開発について相談する</button>
+        <LineCta label="開発についてLINEで相談する" where="dev" />
+        <div style={{ marginTop: 12 }}>
+          <button className="st-btn st-btn-ghost" onClick={() => go('contact')}>先に概算を知る</button>
+        </div>
         <Note>要件が固まっていない段階からのご相談も承ります。</Note>
       </div>
     </Band>
@@ -413,7 +501,7 @@ function DevTab({ go }: { go: (t: TabId) => void }) {
 // ============================================================
 // 運用プラン
 // ============================================================
-function CareTab({ go }: { go: (t: TabId) => void }) {
+function CareTab() {
   return (
     <Band>
       <H2 en="Maintenance" sub="公開はゴールではなくスタートです。アクセスデータをもとに、貴社サイトの成果を継続的に高めます。">運用 — 月額プラン</H2>
@@ -434,7 +522,7 @@ function CareTab({ go }: { go: (t: TabId) => void }) {
         ))}
       </div>
       <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <button className="st-btn st-btn-primary" onClick={() => go('contact')}>運用について相談する</button>
+        <LineCta label="運用についてLINEで相談する" where="care" />
         <Note>他社で制作されたサイトの運用のみのご依頼も承ります。</Note>
       </div>
     </Band>
@@ -444,7 +532,7 @@ function CareTab({ go }: { go: (t: TabId) => void }) {
 // ============================================================
 // Works
 // ============================================================
-function WorksTab({ go }: { go: (t: TabId) => void }) {
+function WorksTab() {
   const cats = ['企業サイト', 'EC・ブランド', 'アプリ', '個人'] as const;
   return (
     <Band>
@@ -488,7 +576,7 @@ function WorksTab({ go }: { go: (t: TabId) => void }) {
         );
       })}
       <div style={{ marginTop: 8, textAlign: 'center' }}>
-        <button className="st-btn st-btn-primary" onClick={() => go('contact')}>制作のご相談はこちら</button>
+        <LineCta where="works" />
       </div>
     </Band>
   );
@@ -497,7 +585,7 @@ function WorksTab({ go }: { go: (t: TabId) => void }) {
 // ============================================================
 // 会社案内
 // ============================================================
-function AboutTab({ go }: { go: (t: TabId) => void }) {
+function AboutTab() {
   return (
     <Band>
       <H2 en="Company">{COMPANY.title}</H2>
@@ -530,8 +618,8 @@ function AboutTab({ go }: { go: (t: TabId) => void }) {
       </div>
 
       <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <button className="st-btn st-btn-primary" onClick={() => go('contact')}>お問い合わせ</button>
-        <Note>1営業日以内にご返信します。</Note>
+        <LineCta where="about" />
+        <Note>{CONTACT.lineNote}</Note>
       </div>
     </Band>
   );
@@ -606,26 +694,24 @@ function ContactTab() {
       `・予算感: ${labelOf(BUDGETS, answers.budget)}`,
       '',
       `【概算結果】${result.plan} プラン / ¥${result.minPrice}万〜¥${result.maxPrice}万`,
-      '',
-      '(このままご送信ください。1営業日以内にご返信します)',
     ].join('\n');
   }, [answers, result]);
 
-  const mailtoHref = useMemo(() => {
-    const subject = encodeURIComponent('【CORE Studio】制作のご相談');
-    const body = encodeURIComponent(summaryText + '\n\n--- ご自由に追記ください ---\n貴社名・お名前: \n事業内容: \n');
-    return `mailto:${STUDIO.email}?subject=${subject}&body=${body}`;
-  }, [summaryText]);
-
   const copySummary = async () => {
     try {
-      await navigator.clipboard.writeText(`宛先: ${STUDIO.email}\n\n${summaryText}`);
+      await navigator.clipboard.writeText(summaryText);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 2400);
     } catch {
       // clipboard 不許可環境では選択用に prompt
-      window.prompt('以下をコピーしてメールでお送りください', `${STUDIO.email} / ${summaryText.replace(/\n/g, ' ')}`);
+      window.prompt('以下をコピーしてLINEに貼り付けてください', summaryText.replace(/\n/g, ' '));
     }
+  };
+
+  // LINEを開く前に概算結果をコピーしておく。貼るだけで相談が始まる状態にする。
+  const openLine = () => {
+    logEvent('studio_line_cta', { where: 'estimate-result' });
+    void copySummary();
   };
 
   const stepDefs: Array<{ title: string; body: ReactNode }> = [
@@ -689,15 +775,17 @@ function ContactTab() {
           <p style={{ fontSize: 13, lineHeight: 1.9, color: C.body, margin: '16px 0 0', textAlign: 'left', background: C.alt, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '12px 14px' }}>{result.note}</p>
         </div>
         <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
-          <a className="st-btn st-btn-primary" href={mailtoHref} style={{ width: '100%', boxSizing: 'border-box' }}>
-            <IconMail /> この内容で相談する
+          <a className="st-btn st-btn-primary" href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer"
+            style={{ width: '100%', boxSizing: 'border-box' }} onClick={openLine}>
+            <IconChat /> この内容でLINE相談する
           </a>
           <button className="st-btn st-btn-ghost" onClick={copySummary} style={{ width: '100%', boxSizing: 'border-box' }}>
             <IconCopy /> {copied ? 'コピーしました' : '内容をコピーする'}
           </button>
         </div>
         <p style={{ fontSize: 12, color: C.mute, lineHeight: 1.9, marginTop: 14, textAlign: 'center' }}>
-          送信先: {STUDIO.email}<br />メールアプリが開かない場合は「内容をコピーする」で本文をコピーし、お使いのメールからお送りください。
+          LINEを開くと同時に、この内容をコピーします。トークに貼り付けて送信してください。<br />
+          LINEをお使いでない場合は <a href={`mailto:${STUDIO.email}?subject=${encodeURIComponent('【CORE Studio】制作のご相談')}`} style={{ color: C.ink }}>{STUDIO.email}</a> でも承ります。
         </p>
         <div style={{ textAlign: 'center', marginTop: 10 }}>
           <button onClick={() => { setStep(0); setPurpose(null); setScale(null); setCms(null); setFeatures([]); setTimeline(null); setBudget(null); }}
@@ -731,7 +819,7 @@ function ContactTab() {
         )}
       </div>
       <p style={{ fontSize: 12.5, color: C.mute, marginTop: 16, lineHeight: 1.9, textAlign: 'center' }}>
-        メールでの直接のご相談も承ります — <a href={`mailto:${STUDIO.email}?subject=${encodeURIComponent('【CORE Studio】ご相談')}`} style={{ color: C.ink }}>{STUDIO.email}</a>
+        質問に答えず直接ご相談いただいても構いません — <a href={CONTACT.lineUrl} target="_blank" rel="noopener noreferrer" style={{ color: C.ink, fontWeight: 600 }}>LINEで無料相談</a>
       </p>
     </Band>
   );

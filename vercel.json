@@ -243,6 +243,26 @@
       "destination": "/industry-ec.html"
     },
     {
+      "source": "/studio/film",
+      "destination": "/studio-film.html"
+    },
+    {
+      "source": "/studio/film/",
+      "destination": "/studio-film.html"
+    },
+    {
+      "source": "/studio",
+      "destination": "/studio.html"
+    },
+    {
+      "source": "/studio/",
+      "destination": "/studio.html"
+    },
+    {
+      "source": "/studio/(.*)",
+      "destination": "/studio.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

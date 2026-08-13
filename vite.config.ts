@@ -22,6 +22,8 @@ export default defineConfig({
         crystal: resolve(__dirname, 'crystal.html'),
         continuum: resolve(__dirname, 'continuum.html'),
         keynote: resolve(__dirname, 'keynote.html'),
+        studio: resolve(__dirname, 'studio.html'),
+        studioFilm: resolve(__dirname, 'studio-film.html'),
       },
       output: {
         // ──────────────────────────────────────────────────────────────
