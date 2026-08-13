@@ -1135,7 +1135,16 @@ const ctaGhost: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,0.15)',
 };
 
+// 法務リンクは「読めて・押せる」が絶対条件。文字だけだと行の高さ 18px = タップ対象
+// 44px に届かない (指では隣とまとめて押してしまう)。見た目のトーンは変えず、
+// 面の側で 44x44 の床を持たせる (兄弟の LP は CSS の `.lp-tap-link` で同じことをしている)。
 const footerLink: React.CSSProperties = {
   color: 'rgba(255,255,255,0.55)',
   textDecoration: 'none',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: 44,
+  minWidth: 44,
+  padding: '0 2px',
 };
