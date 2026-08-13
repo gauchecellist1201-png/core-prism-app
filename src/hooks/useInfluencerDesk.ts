@@ -65,8 +65,16 @@ export function useInfluencerDesk() {
   const getMediaKit = useCallback((personaId: string): MediaKit | undefined => {
     try { const r = localStorage.getItem(KEY_KIT + personaId); return r ? JSON.parse(r) : undefined; } catch { return undefined; }
   }, []);
-  const setMediaKit = useCallback((personaId: string, kit: MediaKit) => {
-    localStorage.setItem(KEY_KIT + personaId, JSON.stringify({ ...kit, personaId }));
+  // 書けたかどうかを返す。Safari のプライベートモードや容量いっぱいでは
+  // localStorage.setItem は例外を投げる。以前はそのまま外へ飛んでいたので、
+  // 呼び出し側は「保存しました」と言い切るか、画面ごと落ちるかのどちらかだった。
+  const setMediaKit = useCallback((personaId: string, kit: MediaKit): boolean => {
+    try {
+      localStorage.setItem(KEY_KIT + personaId, JSON.stringify({ ...kit, personaId }));
+      return true;
+    } catch {
+      return false;
+    }
   }, []);
 
   // フィルター

@@ -29,6 +29,7 @@ import {
 } from '../types/influencerDeal';
 import { chatBeautyAdvisor, BEAUTY_TOPIC_META, type BeautyTopic, type BeautyMessage } from './beautyAdvisor';
 import { generateMediaKitDoc, mediaKitDocToMarkdown, mediaKitDocToHtml, mediaKitStats, suggestRatesFromKit, ratesToRateCardText, yenLabel, type MediaKitDoc, type RateSuggestion } from './mediaKitDoc';
+import { loadMediaKitDoc, saveMediaKitDoc, isMediaKitDocStale, hasNewerSavedDoc, madeAtLabel, type SavedMediaKitDoc } from './mediaKitStore';
 import { shareToInstagram } from './instagramShare';
 import { notifyInApp } from '../lib/inAppNotify';
 import { copyText } from '../lib/clipboard';
@@ -3287,15 +3288,53 @@ function describeIgAudience(p: IgProfile): string {
 function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk: ReturnType<typeof useInfluencerDesk>; kit?: MediaKit; settings: AppSettings }) {
   const [d, setD] = useState<MediaKit>(kit || { personaId: IRIS_PERSONA_ID });
   const save = () => {
-    desk.setMediaKit(IRIS_PERSONA_ID, { ...d, personaId: IRIS_PERSONA_ID });
-    notifyInApp({ kind: 'success', title: '保存しました' });
+    const ok = desk.setMediaKit(IRIS_PERSONA_ID, { ...d, personaId: IRIS_PERSONA_ID });
+    if (ok) notifyInApp({ kind: 'success', title: '保存しました' });
+    else notifyInApp({ kind: 'warn', title: 'この端末に保存できませんでした', body: 'プライベートモードだと保存できないことがあります。ふつうのウィンドウで開くか、文章をコピーして控えてください。' });
   };
-  void desk;
 
-  const [doc, setDoc] = useState<MediaKitDoc | null>(null);
+  // 打った内容をそのまま残す。
+  //   これまでは「保存」を押さずに別のタブへ移ると、書いたフォロワー数も
+  //   一言も黙って消えていた（別タブに移ると、この画面ごと作り直されるため）。
+  //   打ち終わって少ししたら自動で置いておく。「保存」は念のための確認ボタンにする。
+  //   （desk 自体は毎回作り直される入れ物なので、中の関数だけを見る。
+  //     入れ物を見ると再描画のたびにタイマーが振り出しに戻り、永久に保存されない）
+  const setMediaKit = desk.setMediaKit;
+  const baseline = useRef(JSON.stringify({ ...(kit || {}), personaId: IRIS_PERSONA_ID }));
+  const latest = useRef(d);
+  latest.current = d;
+  const changed = () => JSON.stringify({ ...d, personaId: IRIS_PERSONA_ID }) !== baseline.current;
+  // 自動で置くのに失敗したまま黙っていると、書いたものが消えたことに
+  // 送る直前まで気づけない。失敗している間だけ、静かに一行で伝える。
+  const [keepFailed, setKeepFailed] = useState(false);
+  useEffect(() => {
+    if (!changed()) return; // 何も触っていないのに書き戻さない
+    const id = window.setTimeout(() => {
+      setKeepFailed(!setMediaKit(IRIS_PERSONA_ID, { ...d, personaId: IRIS_PERSONA_ID }));
+    }, 600);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d, setMediaKit]);
+  // 打ち終わって 600ms たつ前に別のタブへ移る人がいる。
+  // 画面を離れるときは、待たずにその場で置いていく。
+  useEffect(() => {
+    const baselineAtMount = baseline.current; // 入ってきたときの中身（以後変わらない）
+    const snapshot = latest;
+    return () => {
+      const now = JSON.stringify({ ...snapshot.current, personaId: IRIS_PERSONA_ID });
+      if (now === baselineAtMount) return;
+      setMediaKit(IRIS_PERSONA_ID, { ...snapshot.current, personaId: IRIS_PERSONA_ID });
+    };
+  }, [setMediaKit]);
+
+  // 作った資料は端末に置いてある。別のタブから戻ってきた人が、
+  // 待たずにそのまま企業へ送れるようにする。
+  const [saved, setSaved] = useState<SavedMediaKitDoc | null>(() => loadMediaKitDoc(IRIS_PERSONA_ID));
+  const [doc, setDoc] = useState<MediaKitDoc | null>(() => saved?.doc ?? null);
   const [genLoading, setGenLoading] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
   const [rate, setRate] = useState<RateSuggestion | null>(null);
+  const stale = isMediaKitDocStale(saved, { ...d, personaId: IRIS_PERSONA_ID });
 
   // フォロワー数と反応率から「いくらで受ければいいか」を決まった式で自動計算し、
   // 料金欄にそのまま入れる（手入力ゼロ・数字は実データのみ = honest）。
@@ -3358,9 +3397,26 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
     setGenLoading(true);
     // 生成前に最新の入力を保存（手入力を取りこぼさない）
     desk.setMediaKit(IRIS_PERSONA_ID, { ...d, personaId: IRIS_PERSONA_ID });
+    // 作り始めた時刻。数十秒かかるので、その間に別の生成が終わっていることがある
+    const startedAt = new Date().toISOString();
     try {
       const result = await generateMediaKitDoc({ settings, mediaKit: { ...d, personaId: IRIS_PERSONA_ID } });
+      // 自分より後に作られた資料がもう置いてあるなら、古い自分で上書きしない
+      if (hasNewerSavedDoc(IRIS_PERSONA_ID, startedAt)) {
+        const newer = loadMediaKitDoc(IRIS_PERSONA_ID);
+        if (newer) { setSaved(newer); setDoc(newer.doc); return; }
+      }
       setDoc(result);
+      // 端末に置けなかった時は、置けたふりをしない（次に来ると消えている）
+      const kept = saveMediaKitDoc(IRIS_PERSONA_ID, result, { ...d, personaId: IRIS_PERSONA_ID });
+      setSaved(kept);
+      if (!kept) {
+        notifyInApp({
+          kind: 'warn',
+          title: 'この端末には残せませんでした',
+          body: '資料はいま画面に出ています。他のタブに移ると消えるので、先に「美しい1枚で書き出す」か「文章をコピー」で手元に取っておいてください。',
+        });
+      }
     } catch (e) {
       setGenError(e instanceof Error ? e.message : 'メディアキットを作れませんでした。少し時間をおいて、もう一度お試しください。');
     } finally {
@@ -3465,6 +3521,14 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
         <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={3} placeholder="希望する金額の目安（上の「自動計算」でも入れられます）" value={d.rateCard || ''} onChange={e => setD({ ...d, rateCard: e.target.value })} />
         <textarea style={{ ...inp(bg), width: '100%', marginTop: '0.5rem' }} rows={2} placeholder="大切にしたいこと・NGなこと" value={d.brandValues || ''} onChange={e => setD({ ...d, brandValues: e.target.value })} />
 
+        {keepFailed && (
+          <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'flex-start', gap: 8, padding: '0.6rem 0.75rem', borderRadius: 12, background: 'rgba(220,53,69,0.08)', border: '1px solid rgba(220,53,69,0.25)' }}>
+            <AlertTriangle size={15} color="#B02030" style={{ flexShrink: 0, marginTop: 2 }} />
+            <span style={{ fontSize: '0.8rem', color: '#B02030', lineHeight: 1.6 }}>
+              この端末に残せていません。プライベートモードだとこうなることがあります。ふつうのウィンドウで開き直すと、書いた内容が残ります。
+            </span>
+          </div>
+        )}
         <button onClick={save} style={{ ...btnPrimary(bg), marginTop: '0.75rem' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Save size={14} /> 保存</span></button>
       </Card>
 
@@ -3501,6 +3565,22 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
 
         {doc && (
           <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.66)', border: `1px solid ${bg.cardBorder}`, borderRadius: 18, padding: '1.2rem 1.3rem', display: 'grid', gap: '1rem' }}>
+            {/* 作った日と、数字が変わったときの声かけ。勝手に消さず、送る前に気づけるようにする */}
+            {(saved?.createdAt || stale) && (
+              <div style={{ display: 'grid', gap: '0.4rem' }}>
+                {saved?.createdAt && madeAtLabel(saved.createdAt) && (
+                  <p style={{ margin: 0, fontSize: '0.76rem', color: bg.inkSoft }}>{madeAtLabel(saved.createdAt)}。この端末に残してあるので、いつでもここから送れます。</p>
+                )}
+                {stale && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '0.6rem 0.75rem', borderRadius: 12, background: 'rgba(225,48,108,0.07)', border: `1px solid ${bg.cardBorder}` }}>
+                    <AlertTriangle size={15} color={bg.accent} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <span style={{ fontSize: '0.8rem', color: bg.ink, lineHeight: 1.6 }}>
+                      作ったあとにプロフィールを直しています。上の「作り直す」を押すと、いまの内容で書き直します。
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               {d.handleName && <p style={{ margin: 0, fontWeight: 700, color: bg.ink, fontSize: '1.05rem' }}>{d.handleName}</p>}
               {doc.tagline && <p style={{ margin: '0.15rem 0 0', fontFamily: IRIS_FONTS.display, fontStyle: 'italic', color: bg.accentText, fontSize: '1.15rem' }}>{doc.tagline}</p>}
