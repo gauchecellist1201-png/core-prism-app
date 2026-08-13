@@ -6,11 +6,12 @@
 // ・展開時: 上方向に会話スレッドが開く（送信すると自動展開）
 // モバイル最優先: full-width / safe-area / 16px入力(自動ズーム防止) / タップ44px。
 // ============================================================
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ChatMessage } from '../types/identity';
 import { onAccentInk } from '../lib/contrast';
 import { useCoveredByModal } from '../hooks/useCoveredByModal';
+import { routeCommand } from '../lib/prismCommandRouter';
 
 interface Props {
   /** アクセント色（persona.accentColor）。 */
@@ -20,11 +21,24 @@ interface Props {
   messages: ChatMessage[];
   onSend: (msg: string) => Promise<void> | void;
   isLoading: boolean;
+  /**
+   * ★2026-08-13 「ルーターを通さずに、ただのAI会話として送る」経路。
+   * これが無いと『タスクって何？』のような“質問”が routeCommand に
+   * 機能起動として横取りされ、質問する手段が画面から消える（下の注記参照）。
+   *
+   * 必須にしてある理由: 省略できるようにすると「機能が開きます」の予告だけが出て
+   * 逃げ道が無い画面を、型が許してしまう。この帯は逃げ道とセットで初めて成立する。
+   *
+   * ★前提: onSend は routeCommand を通す送信であること (App.tsx の handleSendMessage)。
+   *   帯は routeCommand の判定をそのまま出しているので、ここに素の会話送信を
+   *   渡すと「開きます」と出して開かない画面になる。
+   */
+  onSendChat: (msg: string) => Promise<void> | void;
 }
 
 const MINIMIZED_KEY = 'prism-chat-dock-minimized';
 
-export default function BottomChatDock({ accent, name, messages, onSend, isLoading }: Props) {
+export default function BottomChatDock({ accent, name, messages, onSend, isLoading, onSendChat }: Props) {
   const [input, setInput] = useState('');
   const [expanded, setExpanded] = useState(false);
   // 「待機」状態: 帯だけ残して下の画面を広く見せる。次回訪問時も記憶。
@@ -107,8 +121,36 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
     await onSend(msg);
   };
 
+  // ★2026-08-13 「Enter を押すと何が起きるか」を、押す前に見せる。
+  //   これまで routeCommand は送信した“後”に初めて働いていたので、
+  //   ①『請求書を開いて』で請求書スタジオが開くことを誰も知らず(魔法の言葉を
+  //     当てるまで機能に一生たどり着けない = コマンドバーと同じ迷子)、
+  //   ②逆に『タスクって何？』のような短い質問が横取りされてスタジオが開き、
+  //     ただ質問する手段が画面に無かった。
+  //   routeCommand をそのまま使う(同じ判定を2回書かない)。純粋関数なので
+  //   1文字ごとに呼んでも待ち時間は無い。
+  const route = useMemo(() => routeCommand(input), [input]);
+  const showRouteHint = !!input.trim() && !isLoading && route.type !== 'chat';
+
+  // 「AIに聞くだけ」= ルーターを通さない送信。宛先が無い時はボタンを出さない。
+  const askAiInstead = async () => {
+    const msg = input.trim();
+    if (!msg || isLoading || !onSendChat) return;
+    setInput('');
+    setExpanded(true);
+    await onSendChat(msg);
+  };
+
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+    // ★2026-08-13 日本語変換中(IME)の Enter で送ってしまうのを止める。
+    //   「請求書を開いて」と打つには 漢字変換の確定で必ず Enter を押す。
+    //   ガードが無いと、その確定の Enter がそのまま送信になり、
+    //   『せいきゅうしょ』のような変換途中の文が飛んでいた（しかも今は
+    //   ルーターが動くので、意図しないスタジオまで開きうる）。
+    //   同じ書き方が IrisReelStudioMinimal.tsx にあり、そちらに揃えた。
+    //   keyCode 229 は「変換中」を表す古くからの合図で、Safari 対策に併せて見る。
+    const composing = e.nativeEvent.isComposing || e.keyCode === 229;
+    if (e.key === 'Enter' && !e.shiftKey && !composing) { e.preventDefault(); submit(); }
   };
 
   const hasMsgs = messages.length > 0;
@@ -265,6 +307,79 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
         )}
       </AnimatePresence>
 
+      {/* ★2026-08-13 Enter を押す前に「何が起きるか」を出す帯。
+          高さが変わるぶんは rootRef の ResizeObserver が --prism-dock-h に
+          流し直すので、上の固定要素は自動で逃げる（決め打ちの px を足さない）。 */}
+      <AnimatePresence>
+        {showRouteHint && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.14 }}
+            // 帯は打っている途中に現れる。読み上げにも「Enterで何が起きるか」を伝える。
+            role="status"
+            aria-live="polite"
+            style={{
+              pointerEvents: 'auto',
+              marginBottom: 8,
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 8,
+              padding: '8px 10px 8px 12px',
+              background: 'var(--dock-surface-2)',
+              backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)',
+              border: `1px solid ${accent}55`,
+              borderRadius: 14,
+              boxShadow: '0 10px 34px rgba(0,0,0,0.28)',
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flex: '1 1 190px' }}>
+              {/* 線画アイコン（OS依存の絵文字を使わない 恒久ルール） */}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden>
+                {route.type === 'open-modal'
+                  ? <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /></>
+                  : <><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></>}
+              </svg>
+              <span style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--fg)', minWidth: 0 }}>
+                {route.type === 'open-modal' ? (
+                  <>Enter で <strong style={{ color: accent, fontWeight: 800 }}>{route.label}</strong> が開きます</>
+                ) : (
+                  <>Enter で <strong style={{ color: accent, fontWeight: 800 }}>実行</strong> します（計画 → 納品まで）</>
+                )}
+              </span>
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <button
+                onClick={submit}
+                // 「開く」だけでは何が開くのか読み上げに乗らないので、対象名まで入れる
+                aria-label={route.type === 'open-modal' ? `${route.label} を開く` : '実行する'}
+                style={{
+                  height: 44, padding: '0 14px', borderRadius: 11, border: 'none', cursor: 'pointer',
+                  background: accent, color: onAccentInk(accent), fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap',
+                }}
+              >
+                {route.type === 'open-modal' ? '開く' : '実行'}
+              </button>
+              <button
+                onClick={askAiInstead}
+                aria-label="機能を開かず、質問としてAIに送る"
+                title="機能を開かず、そのまま質問として送ります"
+                style={{
+                  height: 44, padding: '0 12px', borderRadius: 11, cursor: 'pointer',
+                  border: '1px solid var(--dock-hairline)', background: 'transparent',
+                  color: 'var(--fg-muted)', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap',
+                }}
+              >
+                AIに聞くだけ
+              </button>
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 入力バー（常時表示） */}
       <div
         style={{
@@ -338,7 +453,12 @@ export default function BottomChatDock({ accent, name, messages, onSend, isLoadi
         <button
           onClick={submit}
           disabled={!input.trim() || isLoading}
-          aria-label="送信"
+          // 押すと起きることを名前にする（機能起動なのに「送信」と読み上げない）
+          aria-label={
+            route.type === 'open-modal' ? `送信して ${route.label} を開く`
+            : route.type === 'execute' ? '送信して実行する'
+            : '送信'
+          }
           style={{
             height: 44,
             minWidth: 44,

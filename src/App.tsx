@@ -890,6 +890,8 @@ function AppRoutes() {
   // チャット指令 (2026-07-19 オーナー指示): 「Prism 〇〇して」で機能起動/AI実行。
   // キーワード即断 → 該当スタジオ起動 or InlineActionExecutor で計画→納品。外れたら従来のAI会話。
   const [executorAction, setExecutorAction] = useState<string | null>(null);
+  // 同じ指示を続けて送っても必ず実行し直すための通し番号 (下の key= で使う)
+  const [executorSeq, setExecutorSeq] = useState(0);
   const pushCommandEcho = useCallback((userText: string, reply: string) => {
     const ts = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
     setChatMessages(prev => [...prev,
@@ -906,11 +908,19 @@ function AppRoutes() {
     }
     if (hit.type === 'execute') {
       setExecutorAction(hit.action);
+      setExecutorSeq(n => n + 1);
       pushCommandEcho(message, `▶ 承知しました。「${hit.action}」を実行します — 右下で計画→実行→納品まで進みます。`);
       return;
     }
     await runSend(message, true);
   }, [runSend, pushCommandEcho]);
+  // ★2026-08-13 ルーター(routeCommand)を意図的に飛ばして、ただのAI会話として送る。
+  //   下部チャットの「AIに聞くだけ」から呼ぶ。routeCommand は短い文だと
+  //   キーワードだけで機能起動に倒れるため(t.length <= 12)、これが無いと
+  //   『タスクって何？』と質問する手段が画面から無くなっていた。
+  const handleAskAi = useCallback(async (message: string) => {
+    await runSend(message, true);
+  }, [runSend]);
   const handleRetryMessage = useCallback(() => {
     if (retryMessage) runSend(retryMessage, false);
   }, [retryMessage, runSend]);
@@ -1098,13 +1108,22 @@ function AppRoutes() {
           messages={chatMessages}
           onSend={handleSendMessage}
           isLoading={isChatLoading}
-        />
+          // ルーターを通さない素のAI会話。『タスクって何？』のような質問が
+          // 機能起動に横取りされたままにならないよう、逃げ道を1つ用意する。
+          onSendChat={handleAskAi}
+          />
       )}
 
       {/* チャット指令の実行パネル — 「Prism 〇〇して」を計画→実行→納品 (2026-07-19) */}
       {executorAction && activePersona && (
         <div className="fixed inset-x-3 bottom-44 md:inset-x-auto md:right-6 md:bottom-28 md:w-[440px] z-[60]">
+          {/* ★2026-08-13 key に通し番号を入れて「同じ指示をもう一度」でも必ず動かす。
+              InlineActionExecutor の実行 effect は [action, ...] に依存しているので、
+              パネルを開いたまま同じ文を送ると setExecutorAction が同値更新になり
+              effect が再発火しない = 何も起きない。それでもチャットには
+              「実行します」と出ていたので、画面が嘘をついていた。 */}
           <InlineActionExecutor
+            key={executorSeq}
             action={executorAction}
             persona={activePersona}
             settings={settings}
