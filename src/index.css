@@ -1754,13 +1754,8 @@ html { scroll-behavior: smooth; }
   button:not(.iris-tabs button):not(.lp-nav-link) {
     min-height: 44px;
   }
-  /* LP のスタンドアロンリンクをタッチ対象 44px に */
-  a.lp-tap-link {
-    min-height: 44px !important;
-    min-width: 44px !important;
-    display: flex !important;
-    align-items: center;
-  }
+  /* LP のスタンドアロンリンクのタッチ対象 44px は下の専用ブロックへ移動
+     （480px 以下限定だと 481〜768px のタブレットに 44px 未満の穴が残るため） */
   /* iPhone Safari の安全な水平スクロール抑制
      ★ hidden は禁止。反対軸が auto 扱いになり (1) iOS でフッターまで届かない
        (2) position: sticky のヘッダー/タブがモバイルだけ追従しなくなる。
@@ -1774,6 +1769,19 @@ html { scroll-behavior: smooth; }
     padding: 1.1rem 1rem !important;
   }
   /* ROI br をモバイルでは表示 (デフォルト動作) */
+}
+
+/* LP のスタンドアロンリンク（フッターの法務リンク等）を 44px のタッチ対象に。
+   ⚠️ 以前は上の `@media (max-width:480px)` の中にあり、481〜768px の
+   タブレット・大型スマホ横向きでは 22px 前後のまま＝法務リンクが指で押せなかった。
+   指で触る幅（〜768px）と、幅に関係なくタッチ主体の端末の両方で床を持たせる。 */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  a.lp-tap-link {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    display: flex !important;
+    align-items: center;
+  }
 }
 
 /* ─── ROI 計算機 (Day 2) ─── */

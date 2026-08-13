@@ -712,7 +712,15 @@ const ctaGhost: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,0.15)',
 };
 
+// 法務リンクは指で押す物。文字の高さ(12px＝行17px前後)ではなく 44px の面を持たせる。
+// 業界LP (IndustryLanding) と同じ形にそろえた（section 30 と同型の取り残し）。
 const footerLink: React.CSSProperties = {
   color: 'rgba(255,255,255,0.55)',
   textDecoration: 'none',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: 44,
+  minWidth: 44,
+  padding: '0 2px',
 };

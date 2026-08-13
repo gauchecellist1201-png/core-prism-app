@@ -2296,9 +2296,10 @@ function PulseHome() {
                     気になる変化が続くときは、早めに信頼できる専門機関へ。からだの記録は、そのときの確かな資料になります。
                   </span>
                 </div>
-                <div style={{ marginTop: 12, display: 'flex', gap: 18 }}>
-                  <a href="/privacy" style={{ color: C.sub }}>プライバシーポリシー</a>
-                  <a href="/tokushoho" style={{ color: C.sub }}>特商法表記</a>
+                {/* 法務リンクはアプリ内でも指で押す物。文字の高さ(約17px)ではなく44pxの面を持たせる */}
+                <div style={{ marginTop: 12, marginLeft: -12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <a href="/privacy" style={LEGAL_LINK}>プライバシーポリシー</a>
+                  <a href="/tokushoho" style={LEGAL_LINK}>特商法表記</a>
                 </div>
               </div>
             </Card>
