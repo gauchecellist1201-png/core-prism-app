@@ -6,6 +6,7 @@
 // ・予定時刻に到達したら notifyDue() で通知
 // ============================================================
 import { useCallback, useEffect, useState } from 'react';
+import { QUEUE_CHANGED_EVENT } from './gridReorder';
 
 const STORAGE_KEY = 'iris_post_queue_v1';
 
@@ -97,6 +98,10 @@ export function usePostQueue() {
       if (e.key === STORAGE_KEY) setPosts(load());
     };
     window.addEventListener('storage', onStorage);
+    // 同じタブの別画面（並びプレビューの入れ替えなど）が予約リストを書き換えた合図。
+    // storage イベントは同じタブでは飛ばないので、これが無いと予約一覧が古い時刻のまま残る。
+    const onSameTabChange = () => setPosts(load());
+    window.addEventListener(QUEUE_CHANGED_EVENT, onSameTabChange);
     const onSaveFail = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.message) setSaveError(detail.message);
@@ -104,6 +109,7 @@ export function usePostQueue() {
     window.addEventListener(SAVE_FAIL_EVENT, onSaveFail);
     return () => {
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener(QUEUE_CHANGED_EVENT, onSameTabChange);
       window.removeEventListener(SAVE_FAIL_EVENT, onSaveFail);
     };
   }, []);
