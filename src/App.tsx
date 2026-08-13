@@ -736,6 +736,22 @@ function AppRoutes() {
     return () => window.removeEventListener('core:open-settings', open as EventListener);
   }, []);
 
+  // 「成果物 / 統合脳 / 役員日報」は、これまで右下の名前の無い「＋」からしか開けなかった
+  // (2026-08-13 iPhone 375px 実測: 入口はその1つだけ・コマンドバーにも ☰ にも無し)。
+  // ＋ を押すまで中身が分からない入口は、あることを忘れられて使われない
+  // (env_disabled_autostart_orphans_feature と同型) ので、名前で探せる場所へ移す。
+  // 状態はここ (App) にあるので、☰ やコマンドバーからはこのイベントで開く。
+  useEffect(() => {
+    const open = (e: Event) => {
+      const tool = (e as CustomEvent)?.detail?.tool;
+      if (tool === 'artifact') setArtifactOpen(true);
+      else if (tool === 'brain') setBrainOpen(true);
+      else if (tool === 'briefings') setBriefingsOpen(true);
+    };
+    window.addEventListener('core:open-tool', open as EventListener);
+    return () => window.removeEventListener('core:open-tool', open as EventListener);
+  }, []);
+
   // 課金フロー: 未 signup なら Checkout モーダルで signup → 入場
   const { user: billingUser, signout } = useBillingUser();
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
@@ -1119,10 +1135,14 @@ function AppRoutes() {
         </Suspense>
       )}
       {/* 右下ツールFAB群 — 3つ(成果物/統合脳/役員日報)を1つのトグルに集約。
-          モバイルで浮遊ボタンが密集・重なる問題を根治。展開時だけ縦に開く。 */}
+          モバイルで浮遊ボタンが密集・重なる問題を根治。展開時だけ縦に開く。
+          ★2026-08-13: この「＋」は残す (押せば2タップで開けるのはここだけ)。
+            ただし押すまで中身が分からないので、同じ3つをコマンドバーにも
+            名前で並べた = 「成果物」と打てば見つかる。 */}
       {view === 'dashboard' && !commandCenterOpen && activePersona && !toolsFabCovered && (
         <div
           ref={toolsFabRef}
+          className="prism-tools-fab"
           style={{
             position: 'fixed',
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 150px)',

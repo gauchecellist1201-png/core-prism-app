@@ -722,6 +722,28 @@ export default function IdentityDashboard({
         {/* cp-side-nav-scroll: 末尾に浮遊ピル帯(メモ/改善提案/フィードバック)ぶんの余白を
             index.css で確保する。無いと固定ピルが最後のメニュー項目に必ず被る。 */}
         <div className="cp-side-nav-scroll flex-1 overflow-y-auto">
+          {/* 探す・操作する — コマンドバー (80件) への入口。
+              ★2026-08-13 iPhone 375px 実測: この入口は iPhone に1つも無かった。
+                下の浮きピルは index.css で display:none にされ (「右端の COMMAND タブと重複」と
+                書かれていたが、COMMAND タブが開くのは別物の コマンドセンター)、
+                上の ⌘K ピルは md:flex。つまりスマホでは ⌘K キーでしか開けず、
+                キーボードの無い iPhone からは 80 件すべてに一生たどり着けなかった。
+                浮きボタンを増やさずに戻すため、いつでも開ける ☰ の先頭に置く。 */}
+          <button
+            onClick={() => { setShowMobileSidebar(false); setShowCmdK(true); }}
+            className="w-full flex items-center gap-2.5 px-2 rounded-lg transition-colors hover:bg-surface-3 text-left mb-3"
+            style={{
+              minHeight: 44,
+              background: 'var(--surface-3)',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <Search size={16} strokeWidth={2.2} className="text-fg-muted flex-shrink-0" />
+            <span className="min-w-0 flex-1">
+              <span className="text-fg text-sm block">探す・操作する</span>
+              <span className="text-fg-muted text-[11px] block">機能・資料・お客さんを、名前で</span>
+            </span>
+          </button>
           {/* ページ — 左タブで画面全体を切替 (オーナー指示 2026-07-19: SaaS標準のサイドバーナビ・PC/モバイル共通) */}
           <div className="mb-4">
             <p className="text-fg-muted text-xs tracking-widest uppercase px-2 mb-1.5">ページ</p>
@@ -756,6 +778,9 @@ export default function IdentityDashboard({
               { label: '決算書 (P/L・B/S)', icon: BarChart3, act: () => { setShowMobileSidebar(false); setShowFinStatements(true); } },
               { label: 'ヘルス（体調の記録）', icon: HeartPulse, act: () => { setShowMobileSidebar(false); setShowHealth(true); } },
               { label: '設定', icon: Settings, act: () => { setShowMobileSidebar(false); onOpenSettings(); } },
+              // 成果物 / 統合脳 / 役員日報 はここには足さない。
+              // この一覧は 375px で既に折返しの外まで伸びており (実測)、3行足すと
+              // 「人格」まで遠くなる。3つは名前で探せる場所 = コマンドバー側に置いた。
             ] as const).map(pg => (
               <button
                 key={pg.label}

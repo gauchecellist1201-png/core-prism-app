@@ -535,6 +535,25 @@ export default function CommandPalette({
       });
     }
 
+    // ナビ — App 側にしか状態が無い3つ (成果物 / 統合脳 / 役員日報)。
+    // 2026-08-13 まで、この3つの入口は右下の名前の無い「＋」ただ1つで、
+    // ここ (コマンドバー) にも ☰ にも載っていなかった＝名前で探しても出てこなかった。
+    // onOpenModal は ModalKey しか受け取れないので、App が購読しているイベントで開く。
+    const APP_TOOLS: { id: string; tool: string; label: string; subtitle: string; emoji: string; iconKey: string }[] = [
+      { id: 'tool-artifact', tool: 'artifact', label: '成果物（AI が作ったもの）', subtitle: '書いた文章・資料をまとめて見る', emoji: '📄', iconKey: 'documents' },
+      { id: 'tool-brain',    tool: 'brain',    label: '統合脳（覚えた資料の全体像）', subtitle: '読ませた資料のつながりを見る', emoji: '🧠', iconKey: 'kb' },
+      { id: 'tool-briefings', tool: 'briefings', label: '役員の日報', subtitle: 'AI 役員が今日やったことの報告', emoji: '📋', iconKey: 'briefing' },
+    ];
+    for (const t of APP_TOOLS) {
+      out.push({
+        category: 'nav',
+        item: {
+          kind: 'custom', id: t.id, label: t.label, subtitle: t.subtitle, emoji: t.emoji, iconKey: t.iconKey,
+          onRun: () => { window.dispatchEvent(new CustomEvent('core:open-tool', { detail: { tool: t.tool } })); },
+        },
+      });
+    }
+
     // 新規作成
     for (const c of QUICK_CREATE) {
       out.push({
@@ -1716,8 +1735,13 @@ export default function CommandPalette({
                 </span>
               </div>
             ) : (
+            <>
+            {/* キーの案内は、そのキーがある人にだけ出す。
+                iPhone には ↑↓ / Tab / ⌘ / Esc が無いので、一番狭い画面で
+                6つの効かない案内が一番下を占領していた (2026-08-13 375px 実測)。
+                件数だけはスマホでも意味があるので、下の1行に残す。 */}
             <div
-              className="px-5 py-2 flex items-center gap-3 flex-wrap text-fg-subtle"
+              className="px-5 py-2 items-center gap-3 flex-wrap text-fg-subtle hidden md:flex"
               style={{ borderTop: '1px solid var(--border)', fontSize: '0.7rem' }}
             >
               <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>↑↓</kbd>選択</span>
@@ -1728,6 +1752,13 @@ export default function CommandPalette({
               <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>Esc</kbd>閉じる</span>
               <span className="ml-auto">{(mentionQuery !== null ? mentionCandidates.length : flatItems.length)} 件</span>
             </div>
+            <div
+              className="px-5 py-1.5 flex md:hidden items-center justify-end text-fg-subtle"
+              style={{ borderTop: '1px solid var(--border)', fontSize: '0.7rem' }}
+            >
+              {(mentionQuery !== null ? mentionCandidates.length : flatItems.length)} 件
+            </div>
+            </>
             )}
           </motion.div>
         </motion.div>
