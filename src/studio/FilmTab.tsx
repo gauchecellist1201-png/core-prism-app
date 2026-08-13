@@ -189,9 +189,17 @@ function ProjectCard({ p }: { p: StudioProject }) {
 
       {/* 実映像が入るまではタイトルフレーム。動画がある時は上に重ねて見出しを残す */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '18px 16px', pointerEvents: 'none', opacity: playing ? 0 : 1, transition: 'opacity 300ms ease', background: p.videoUrl || p.poster ? 'linear-gradient(to top, rgba(11,11,12,0.85) 0%, rgba(11,11,12,0.1) 55%)' : 'none' }}>
-        <div>
-          <div className="st-label" style={{ color: D.gold, fontSize: 10 }}>{p.no}</div>
-          <div style={{ width: 22, height: 1, background: D.goldLine, marginTop: 8 }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div className="st-label" style={{ color: D.gold, fontSize: 10 }}>{p.no}</div>
+            <div style={{ width: 22, height: 1, background: D.goldLine, marginTop: 8 }} />
+          </div>
+          {/* AI生成物と誤認されないための区分バッジ (被写体の掲載許諾は取得済み) */}
+          {p.isReal && (
+            <span style={{ fontSize: 9.5, letterSpacing: '0.1em', color: D.ink, background: 'rgba(255,255,255,0.16)', border: `1px solid ${D.line}`, borderRadius: 999, padding: '4px 9px' }}>
+              実写
+            </span>
+          )}
         </div>
         <div>
           <div style={{ fontSize: 10.5, letterSpacing: '0.24em', color: D.mute, marginBottom: 8 }}>{p.category}</div>

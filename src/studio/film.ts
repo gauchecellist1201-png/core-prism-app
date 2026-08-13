@@ -12,7 +12,7 @@ export const FILM = {
   heroCta: '制作を相談する',
   heroCtaSub: '制作プランを見る',
   /** 実映像の掲載状況を正直に添える一文 (架空の実績を作らないため) */
-  showcaseNote: '掲載しているのは、当社が制作する映像フォーマットです。実際の納品映像は、公開のご許諾をいただいたものから順次掲載します。',
+  showcaseNote: '「実写」バッジのあるものは、被写体の掲載許諾を得たうえで公開している実写の参考映像です。それ以外は当社が制作する映像フォーマットのタイトルカードで、実際の制作映像は許諾をいただいたものから順次掲載します。',
 } as const;
 
 // ------------------------------------------------------------
@@ -34,6 +34,8 @@ export type StudioProject = {
   poster?: string;
   /** 実映像 (mp4 推奨・音声なしループ用。指定すると自動でループ再生に切り替わる) */
   videoUrl?: string;
+  /** true の場合「実写」バッジを表示する。AI生成物と誤認されないための表示区分 (被写体の掲載許諾は取得済み) */
+  isReal?: boolean;
 };
 
 export const studioProjects: StudioProject[] = [
@@ -50,8 +52,11 @@ export const studioProjects: StudioProject[] = [
     no: '02',
     title: 'ブランドフィルム',
     category: 'BRAND FILM',
-    description: '会社の思想と、そこにたどり着くまでの時間。言葉にしづらいものを、映像の温度に置き換えます。',
+    description: '会社の思想と、そこにたどり着くまでの時間。言葉にしづらいものを、映像の温度に置き換えます。実写インタビューの参考例です。',
     aspectRatio: '9 / 16',
+    poster: '/studio/film/brand-film.jpg',
+    videoUrl: '/studio/film/brand-film.mp4',
+    isReal: true,
   },
   {
     id: 'product',
@@ -66,16 +71,22 @@ export const studioProjects: StudioProject[] = [
     no: '04',
     title: 'アーティスト',
     category: 'ARTIST',
-    description: '音楽・作品世界の視覚化。演奏や制作の現場を、その人の世界観のまま映像に伸ばします。',
+    description: '音楽・作品世界の視覚化。演奏や制作の現場を、その人の世界観のまま映像に伸ばします。実写映像の参考例です。',
     aspectRatio: '9 / 16',
+    poster: '/studio/film/artist.jpg',
+    videoUrl: '/studio/film/artist.mp4',
+    isReal: true,
   },
   {
     id: 'social',
     no: '05',
     title: 'ソーシャル',
     category: 'SOCIAL',
-    description: 'TikTok / Reels / Shorts に最適化した縦型。毎月続けられる本数と設計で発信を止めません。',
+    description: 'TikTok / Reels / Shorts に最適化した縦型。毎月続けられる本数と設計で発信を止めません。実写映像の参考例です。',
     aspectRatio: '9 / 16',
+    poster: '/studio/film/social-backstage.jpg',
+    videoUrl: '/studio/film/social-backstage.mp4',
+    isReal: true,
   },
 ];
 
