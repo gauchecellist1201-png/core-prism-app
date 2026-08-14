@@ -92,53 +92,86 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
       // ── オーナー(マスターモード)は全機能が解放済み。決済画面には絶対に飛ばさない ──
       if (isMasterAuth()) { setStep('success'); setBusy(false); return; }
       if (!isFree) {
-        let stripeUrl: string | null = null;
-
-        // ── v2: Plan に stripeUrlEnvKey があれば直接 Payment Link を使う (オーナー指示 2026-06-03) ──
-        const envObj = (import.meta as { env?: Record<string, string> })?.env || {};
-        const envKey = cycle === 'yearly' ? plan.stripeUrlEnvKey_yearly : plan.stripeUrlEnvKey;
-        if (envKey && envObj[envKey]) {
-          stripeUrl = envObj[envKey];
-        }
-
-        // ── 旧 API ルート (v1 互換) ──
-        if (!stripeUrl) {
-          try {
-            const resp = await fetch('/api/stripe/checkout', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                plan: plan.id, brand, email, cycle,
-                // ZZZ (2026-06-04): 検証済 Coupon の Promotion Code ID or Coupon ID を渡す
-                promotionCodeId: coupon?.promotionCodeId,
-                couponId: coupon?.couponId,
-                couponCode: coupon?.code,
-              }),
-            });
-            if (resp.status === 503) {
-              setIsTestMode(true);
-            } else if (resp.ok) {
-              const data = await resp.json() as { url?: string };
-              stripeUrl = data.url ?? null;
-            } else {
-              const err = await resp.json() as { error?: string };
-              throw new Error(err.error || 'Stripe エラーが発生しました');
-            }
-          } catch (fetchErr: any) {
-            if (fetchErr.message?.includes('STRIPE_NOT_CONFIGURED') || fetchErr.message?.includes('503')) {
-              setIsTestMode(true);
-            } else {
-              throw fetchErr;
-            }
+        // ── ① まずサーバーで Checkout Session を作る (2026-08-14 で順番を入れ替えた) ──
+        //   こちらは戻り URL に session_id が付くので、/billing/success の
+        //   syncFromStripe(session_id) が「本当に支払われたか」を Stripe に問い合わせて確認できる。
+        //   支払いを確認できる経路を既定にしておかないと、離脱・キャンセルした人まで
+        //   有料プランのまま残る。
+        let verifiedUrl: string | null = null;
+        let stripeNotConfigured = false;
+        try {
+          const resp = await fetch('/api/stripe/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              plan: plan.id, brand, email, cycle,
+              // ZZZ (2026-06-04): 検証済 Coupon の Promotion Code ID or Coupon ID を渡す
+              promotionCodeId: coupon?.promotionCodeId,
+              couponId: coupon?.couponId,
+              couponCode: coupon?.code,
+            }),
+          });
+          if (resp.status === 503) {
+            stripeNotConfigured = true;
+          } else if (resp.ok) {
+            const data = await resp.json() as { url?: string };
+            verifiedUrl = data.url ?? null;
+          } else {
+            const err = await resp.json() as { error?: string };
+            throw new Error(err.error || 'Stripe エラーが発生しました');
+          }
+        } catch (fetchErr: any) {
+          if (fetchErr.message?.includes('STRIPE_NOT_CONFIGURED') || fetchErr.message?.includes('503')) {
+            stripeNotConfigured = true;
+          } else {
+            throw fetchErr;
           }
         }
 
-        if (stripeUrl) {
-          await signup({ email, password, brand, plan: plan.id });
+        if (verifiedUrl) {
+          // 決済が終わる前に有料プランで登録してはいけない。無料で作り、
+          // 戻ってきた /billing/success が実際に支払われたプランを確定させる。
+          await signup({ email, password, brand, plan: 'free' });
           sendEmail(email, 'welcome', { name: email.split('@')[0], brand });
-          window.location.href = stripeUrl;
+          window.location.href = verifiedUrl;
           return;
         }
+
+        // ── ② サーバーで作れなかったときだけ、静的な Payment Link に退避する ──
+        //   (オーナー指示 2026-06-03 の v2 導線。v2 のプラン ID は checkout.ts の価格表に
+        //    無いので必ず 503 になり、実質この経路で売れている)。
+        //   この URL は Stripe 側で支払いが完結し、戻りに session_id が付かないため、
+        //   こちらでは支払いを確認できない。
+        //
+        //   ここで先にプランを保存するのは、確認できないと分かったうえでの判断:
+        //   webhook (api/stripe/webhook.ts) の checkout.session.completed はログを書くだけで、
+        //   メールから契約を引き当てる保存先が無い。syncSubscriptionState() も subscriptionId
+        //   が要る。つまり**後から自動で救う手立てが 1 つも無い**。
+        //   ここを「支払い確認まで無料のまま」にすると、お金を受け取ったうえで何も渡さない
+        //   状態が誰にも気づかれずに発生する。取り逃しより、そちらの方が害が大きい。
+        //   → 本筋は静的リンクを畳んで①に一本化すること（オーナー作業: Stripe 側の整理）。
+        //     [[env_static_payment_link_makes_checkout_dead_code]] と同じ根。
+        const envObj = (import.meta as { env?: Record<string, string> })?.env || {};
+        const envKey = cycle === 'yearly' ? plan.stripeUrlEnvKey_yearly : plan.stripeUrlEnvKey;
+        const linkUrl = envKey ? envObj[envKey] : undefined;
+        if (linkUrl) {
+          await signup({ email, password, brand, plan: plan.id });
+          sendEmail(email, 'welcome', { name: email.split('@')[0], brand });
+          window.location.href = linkUrl;
+          return;
+        }
+
+        // ── ③ お金を受け取る用意がどこにも無い ──
+        //   ここで plan.id のまま登録すると、1 円も請求せずに有料プランを配ることになる。
+        //   お客様は逃さず、権利だけ無料側に倒す。
+        if (stripeNotConfigured) setIsTestMode(true);
+        await signup({ email, password, brand, plan: 'free' });
+        sendEmail(email, 'welcome', { name: email.split('@')[0], brand });
+        if (await isBiometricAvailable()) {
+          registerBiometric({ email, displayName: email.split('@')[0] }).catch(() => { /* */ });
+        }
+        setStep('success');
+        return;
       }
 
       await signup({ email, password, brand, plan: plan.id });
@@ -634,7 +667,9 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                   <strong>ベータ確認モード</strong><br />
                   {isFree
                     ? 'カード情報は不要です。¥0 で 3 日間トライアル開始。'
-                    : 'Stripe 接続準備中です。今回は ¥0 で登録 → 後日決済画面をご案内します。'}
+                    : 'いまお支払いのお手続きができません。まず無料トライアルとして登録し、'
+                      + '準備ができ次第こちらからお支払い方法をご案内します。'
+                      + '（有料プランの機能は、お支払いのあとで開きます）'}
                   {isMasterAuth() && (
                     <div style={{ marginTop: '0.5rem' }}>
                       <a href="/master/stripe-status" style={{ color: '#7C2D12', textDecoration: 'underline', fontWeight: 700 }}>
@@ -679,7 +714,7 @@ export default function CheckoutModal({ brand: initialBrand, plan: initialPlan, 
                   {busy
                     ? '処理中…'
                     : showingTestMode
-                      ? (isFree ? '✨ 無料トライアル開始 (¥0)' : '✨ 仮登録する (¥0)')
+                      ? '✨ 無料トライアル開始 (¥0)'
                       : `${ctaVariant.emoji || '✨'} ${ctaVariant.label} (本日 ¥0)`}
                 </button>
               </div>

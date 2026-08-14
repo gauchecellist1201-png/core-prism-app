@@ -1,46 +1,123 @@
 // ============================================================
-// CreditModal — プラン切替 + Top-up 購入の単一モーダル
+// CreditModal — プラン変更 + クレジット買い足しの単一モーダル
 //
 // オーナー指示 (2026-05-28): 上限超え → 買い足し、プラン切替もここから。
-// Stripe Checkout 連動は将来 (今は applyTopUp で localStorage に反映 = ベータ価格)。
+//
+// ★2026-08-14 修正: ここには「お金を払わずに有料プランになれる」経路が 2 つ開いていた。
+//   ① handleSwitchPlan が setPlanId() だけでプランを切り替えていた (Stripe を通らない)
+//   ② handleTopUp が applyTopUp() で無料でクレジットを付与し、
+//      「✓ 1,000 クレジット追加しました (¥2,000)」と金額つきで成功を出していた
+//      → お客様は課金されたと思う。実際には 1 円も請求していない。
+//   どちらも「決済を通ってから権利が付く」形に直した。値段は実際に請求する
+//   billing.ts (PRISM_PLANS / IRIS_PLANS) を正本として表示する。
+//   クレジット買い足しは Stripe に単発商品がまだ無いため、買えるふりをやめた。
 // ============================================================
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Sparkles, ArrowRight, Zap } from 'lucide-react';
+import { X, Check, Sparkles, ArrowRight, Zap, Mail } from 'lucide-react';
 import {
-  PLANS, TOP_UPS, getCredits, setPlanId, applyTopUp,
+  PLANS, getCredits,
   type CreditView, type PlanId,
 } from '../lib/credits';
+import {
+  getPlans, useBillingUser, updateSubscriptionPlan,
+  IRIS_PLANS, PRISM_PLANS,
+  type Brand, type PlanId as BillingPlanId,
+} from '../lib/billing';
+
+/** クレジット体系のプラン → 実際に請求する billing.ts のプラン */
+const BILLING_PLAN_OF: Record<Exclude<PlanId, 'master'>, BillingPlanId> = {
+  light: 'lite',
+  standard: 'standard',
+  pro: 'pro',
+  team: 'studio',
+};
+
+const SUPPORT_MAIL = 'core.inc.guild@gmail.com';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   /** 初期タブ: 'topup' (上限超え時) or 'plan' (普段) */
   initialTab?: 'topup' | 'plan';
+  /** 請求に使うブランド (既定: prism) */
+  brand?: Brand;
 }
 
-export default function CreditModal({ open, onClose, initialTab = 'topup' }: Props) {
+export default function CreditModal({ open, onClose, initialTab = 'topup', brand = 'prism' }: Props) {
   const [tab, setTab] = useState<'topup' | 'plan'>(initialTab);
   const [view, setView] = useState<CreditView>(() => getCredits());
   const [thanks, setThanks] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busyPlan, setBusyPlan] = useState<PlanId | null>(null);
+  /** 契約中のお客様に、日割り請求が発生することを伝えて確認を取る対象 */
+  const [confirmPlan, setConfirmPlan] = useState<PlanId | null>(null);
+  const { user } = useBillingUser();
 
-  const handleTopUp = (credits: number, jpy: number) => {
-    // TODO: Stripe Checkout を呼ぶ。今はベータとして即時付与 (オーナー指示
-    // 「無人モードでも動く」の方向性に合わせ、まずは UI と数字の整合性を確保)
-    applyTopUp(credits);
-    setView(getCredits());
-    setThanks(`✓ ${credits.toLocaleString()} クレジット追加しました (¥${jpy.toLocaleString()})`);
-    setTimeout(() => setThanks(null), 2400);
-  };
+  // v2 が有効だと getPlans() は v2-btoC-* 等の別 ID を返し、v1 の ID (lite/standard/...) では
+  // 1 件も引けない。そのまま「値段が引けないプランは出さない」に通すと、プラン変更タブが
+  // 丸ごと空になり、クレジットが足りないお客様が上のプランに移れなくなる (2026-08-14 Codex 指摘)。
+  // → v1 の一覧も必ず併せて見る。
+  const v1Plans = brand === 'iris' ? IRIS_PLANS : PRISM_PLANS;
+  const billingPlans = [...getPlans(brand), ...v1Plans];
+  /** 実際に請求する金額 (画面の値段と請求額をずらさないため billing.ts を正本にする) */
+  const priceOf = (id: Exclude<PlanId, 'master'>): number | null =>
+    billingPlans.find(p => p.id === BILLING_PLAN_OF[id])?.priceJpy ?? null;
 
-  const handleSwitchPlan = (id: Exclude<PlanId, 'master'>) => {
-    setPlanId(id);
-    setView(getCredits());
-    setThanks(`✓ ${PLANS[id].name} プランに切り替えました`);
-    setTimeout(() => setThanks(null), 2400);
+  const handleSwitchPlan = async (id: Exclude<PlanId, 'master'>) => {
+    setError(null);
+    setThanks(null);
+
+    // ★契約中のお客様は、押した瞬間に Stripe のサブスクが書き換わり、
+    //   差額が日割りで即時請求される (api/stripe/update.ts が create_prorations)。
+    //   画面に出ているのは月額だけで、いま引かれる額とは違う。
+    //   金額が動く操作を確認なしで走らせない。
+    if (user?.subscriptionId && confirmPlan !== id) {
+      setConfirmPlan(id);
+      return;
+    }
+    setConfirmPlan(null);
+
+    setBusyPlan(id);
+    const billingPlan = BILLING_PLAN_OF[id];
+    try {
+      // すでに支払い中のお客様 → 既存サブスクの price を差し替える
+      if (user?.subscriptionId) {
+        const r = await updateSubscriptionPlan({ subscriptionId: user.subscriptionId, brand, plan: billingPlan });
+        if (!r.ok) { setError(r.message); return; }
+        setView(getCredits());
+        setThanks(`✓ ${PLANS[id].name} プランに変更しました`);
+        setTimeout(() => setThanks(null), 2400);
+        return;
+      }
+
+      // まだ支払っていないお客様 → Stripe の決済画面へ。戻ってきた /billing/success が
+      // session_id を照会して、実際に支払われたプランだけを有効にする。
+      const resp = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: billingPlan, brand, cycle: 'monthly', email: user?.email }),
+      });
+      if (resp.status === 503) {
+        setError(`いまオンラインでのお手続きができません。${SUPPORT_MAIL} までご連絡ください。`);
+        return;
+      }
+      const data = await resp.json().catch(() => ({})) as { url?: string; error?: string };
+      if (!resp.ok || !data.url) {
+        setError(data.error || 'お手続きの画面を開けませんでした。時間をおいてお試しください。');
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setError('通信できませんでした。電波の良いところで、もう一度お試しください。');
+    } finally {
+      setBusyPlan(null);
+    }
   };
 
   const currentPlan = view.planId !== 'master' ? PLANS[view.planId as Exclude<PlanId, 'master'>] : null;
+  /** 実際にお金を払っている状態か (契約の正本は billing.ts 側の user.plan) */
+  const isPaying = !!user && user.plan !== 'free' && !user.isTestCheckout;
 
   return (
     <AnimatePresence>
@@ -76,7 +153,7 @@ export default function CreditModal({ open, onClose, initialTab = 'topup' }: Pro
                   使う量を選ぶ
                 </h2>
                 <p style={{ fontSize: 12, color: 'var(--fg-muted)', margin: '4px 0 0' }}>
-                  毎月のクレジットでアプリが動きます。足りなければいつでも買い足せます。
+                  毎月のクレジットでアプリが動きます。足りなくなったら、プランを変更すると増えます。
                 </p>
               </div>
               <button onClick={onClose} aria-label="閉じる" style={{
@@ -96,7 +173,12 @@ export default function CreditModal({ open, onClose, initialTab = 'topup' }: Pro
                 flexWrap: 'wrap',
               }}>
                 <span>
-                  いま <strong style={{ color: 'var(--fg)' }}>{currentPlan.emoji} {currentPlan.name}</strong> プラン
+                  {/* お金を払っていない人に有料プラン名を出さない。
+                      クレジット枠 (credits.ts) の既定値は 'standard' だが、それは「使える量」であって
+                      「契約しているプラン」ではない。契約の正本は billing.ts の user.plan。 */}
+                  {isPaying
+                    ? <>いま <strong style={{ color: 'var(--fg)' }}>{currentPlan.emoji} {currentPlan.name}</strong> プラン</>
+                    : <>いま <strong style={{ color: 'var(--fg)' }}>無料でお試し中</strong></>}
                   ・今月 <strong style={{ color: 'var(--fg)' }}>{view.used.toLocaleString()} / {(view.limit + view.addon).toLocaleString()}</strong> 使用
                 </span>
                 <span style={{ fontSize: 11, color: view.warning === 'soft' || view.warning === 'hard' ? '#FBBF24' : '#34D399', fontWeight: 700 }}>
@@ -120,42 +202,45 @@ export default function CreditModal({ open, onClose, initialTab = 'topup' }: Pro
               </button>
             </div>
 
-            {/* Top-up タブ */}
+            {/* 買い足しタブ — 単発購入の商品が Stripe にまだ無いので「買えるふり」をしない */}
             {tab === 'topup' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {TOP_UPS.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => handleTopUp(t.credits, t.jpy)}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      gap: 12, padding: '14px 16px', borderRadius: 12,
-                      background: t.saving ? `linear-gradient(135deg, rgba(52,211,153,0.10), rgba(52,211,153,0.03))` : 'var(--surface-3)',
-                      border: `1px solid ${t.saving ? 'rgba(52,211,153,0.35)' : 'var(--border)'}`,
-                      color: 'var(--fg)', cursor: 'pointer', textAlign: 'left',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 17, fontWeight: 800 }}>
-                        +{t.credits.toLocaleString()} クレジット
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--fg-muted)', marginTop: 3 }}>
-                        1 クレジットあたり ¥{t.perCredit.toFixed(1)}
-                        {t.saving && <span style={{ color: '#34D399', marginLeft: 6, fontWeight: 700 }}>{t.saving}</span>}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 18, fontWeight: 800, fontFamily: '"SF Mono", monospace' }}>
-                        ¥{t.jpy.toLocaleString()}
-                      </span>
-                      <ArrowRight size={16} style={{ opacity: 0.4 }} />
-                    </div>
-                  </button>
-                ))}
-                <p style={{ fontSize: 10.5, color: 'var(--fg-muted)', textAlign: 'center', marginTop: 4 }}>
-                  今月のクレジットに追加されます。翌月への繰越あり。
-                </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{
+                  padding: '16px', borderRadius: 12,
+                  background: 'var(--surface-3)', border: '1px solid var(--border)',
+                }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 6 }}>
+                    クレジットだけの買い足しは準備中です
+                  </div>
+                  <p style={{ fontSize: 12.5, color: 'var(--fg-muted)', lineHeight: 1.8, margin: 0 }}>
+                    いますぐ増やしたいときは、ひとつ上のプランに変更してください。
+                    毎月のクレジットがその場で増えます。
+                  </p>
+                </div>
+                <button
+                  onClick={() => setTab('plan')}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    minHeight: 44, padding: '12px 16px', borderRadius: 12,
+                    background: 'linear-gradient(135deg, #8E5CFF, #6D3BFF)',
+                    color: '#fff', border: 'none', cursor: 'pointer',
+                    fontSize: 13.5, fontWeight: 800, fontFamily: 'inherit',
+                  }}
+                >
+                  プランを見る <ArrowRight size={15} />
+                </button>
+                <a
+                  href={`mailto:${SUPPORT_MAIL}?subject=${encodeURIComponent('クレジットの買い足しについて')}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    minHeight: 44, padding: '12px 16px', borderRadius: 12,
+                    background: 'transparent', border: '1px solid var(--border)',
+                    color: 'var(--fg-muted)', textDecoration: 'none',
+                    fontSize: 12.5, fontWeight: 700,
+                  }}
+                >
+                  <Mail size={14} /> 買い足しについて相談する
+                </a>
               </div>
             )}
 
@@ -163,12 +248,19 @@ export default function CreditModal({ open, onClose, initialTab = 'topup' }: Pro
             {tab === 'plan' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {(Object.values(PLANS) as Array<typeof PLANS[Exclude<PlanId, 'master'>]>).map(p => {
-                  const isCurrent = p.id === view.planId;
+                  // 「現在のプラン」は払っている人にだけ付ける。credits.ts の既定値 'standard' で
+                  // 判定すると、1 円も払っていない人にスタンダードが「契約中」に見え、そのうえ
+                  // 押せなくなる (= 一番売れるプランを買えなくする) ので、契約の正本で見る。
+                  const isCurrent = isPaying && user?.plan === BILLING_PLAN_OF[p.id as Exclude<PlanId, 'master'>];
+                  const jpy = priceOf(p.id as Exclude<PlanId, 'master'>);
+                  const isBusy = busyPlan === p.id;
+                  // 請求できる値段が引けないプランはボタンを出さない (押しても買えない選択肢を見せない)
+                  if (jpy === null) return null;
                   return (
                     <button
                       key={p.id}
-                      onClick={() => !isCurrent && handleSwitchPlan(p.id as Exclude<PlanId, 'master'>)}
-                      disabled={isCurrent}
+                      onClick={() => !isCurrent && !busyPlan && handleSwitchPlan(p.id as Exclude<PlanId, 'master'>)}
+                      disabled={isCurrent || busyPlan !== null}
                       style={{
                         display: 'flex', flexDirection: 'column', gap: 6,
                         padding: '14px 16px', borderRadius: 12,
@@ -185,7 +277,7 @@ export default function CreditModal({ open, onClose, initialTab = 'topup' }: Pro
                           <span style={{ fontSize: 11, color: 'var(--fg-muted)', marginLeft: 8 }}>{p.tagline}</span>
                         </div>
                         <span style={{ fontSize: 17, fontWeight: 800, fontFamily: '"SF Mono", monospace' }}>
-                          ¥{p.jpy.toLocaleString()}<span style={{ fontSize: 11, opacity: 0.6 }}>/月</span>
+                          ¥{jpy.toLocaleString()}<span style={{ fontSize: 11, opacity: 0.6 }}>/月</span>
                         </span>
                       </div>
                       <ul style={{ paddingLeft: 0, margin: 0, listStyle: 'none', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -200,12 +292,75 @@ export default function CreditModal({ open, onClose, initialTab = 'topup' }: Pro
                           ✓ 現在のプラン
                         </div>
                       )}
+                      {isBusy && (
+                        <div style={{ fontSize: 10.5, color: 'var(--fg-muted)', fontWeight: 700, marginTop: 2 }}>
+                          {isPaying ? 'プランを変更しています…' : 'お支払いの画面をひらいています…'}
+                        </div>
+                      )}
                     </button>
                   );
                 })}
-                <p style={{ fontSize: 10.5, color: 'var(--fg-muted)', textAlign: 'center', marginTop: 4 }}>
-                  6/1 リリース記念: 先着 100 名 ¥4,980/月 × 3 ヶ月のベータ価格あり
+
+                {/* 契約中のお客様への確認 — お金が動くことを先に伝える */}
+                {confirmPlan && (
+                  <div style={{
+                    padding: '14px 16px', borderRadius: 12,
+                    background: '#FFFBEB', border: '1px solid #FCD34D', color: '#78350F',
+                  }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, marginBottom: 6 }}>
+                      {PLANS[confirmPlan as Exclude<PlanId, 'master'>].name} プランに変更します
+                    </div>
+                    <p style={{ fontSize: 12, lineHeight: 1.8, margin: '0 0 10px' }}>
+                      次回から毎月 ¥{(priceOf(confirmPlan as Exclude<PlanId, 'master'>) ?? 0).toLocaleString()} になります。
+                      いま契約している分との<strong>差額は日割りで計算され、今回の請求に加わります</strong>。
+                      そのため、いますぐ引き落とされる金額はこの月額とは異なります。
+                      正確な金額は Stripe からの領収書でご確認ください。
+                    </p>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => handleSwitchPlan(confirmPlan as Exclude<PlanId, 'master'>)}
+                        disabled={busyPlan !== null}
+                        style={{
+                          flex: 1, minWidth: 140, minHeight: 44, borderRadius: 10, border: 'none',
+                          background: '#78350F', color: '#fff', fontWeight: 800, fontSize: 13,
+                          cursor: 'pointer', fontFamily: 'inherit',
+                        }}
+                      >
+                        了解しました。変更する
+                      </button>
+                      <button
+                        onClick={() => setConfirmPlan(null)}
+                        style={{
+                          minWidth: 100, minHeight: 44, borderRadius: 10,
+                          background: 'transparent', border: '1px solid #D6A756', color: '#78350F',
+                          fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+                        }}
+                      >
+                        やめる
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <p style={{ fontSize: 10.5, color: 'var(--fg-muted)', textAlign: 'center', marginTop: 4, lineHeight: 1.7 }}>
+                  {isPaying
+                    ? '変更するとその場で切り替わり、差額は日割りで請求されます。'
+                    : '選ぶと、お支払いの画面（Stripe）へ進みます。お支払いが終わってからプランが切り替わります。'}
                 </p>
+              </div>
+            )}
+
+            {/* 失敗の説明 — 自分で面と文字色を持つ (親の明暗に左右されない) */}
+            {error && (
+              <div
+                role="alert"
+                style={{
+                  marginTop: 14, padding: '10px 14px', borderRadius: 10,
+                  background: '#FEF2F2', border: '1px solid #FCA5A5',
+                  color: '#991B1B', fontSize: 12.5, fontWeight: 700, lineHeight: 1.7,
+                }}
+              >
+                {error}
               </div>
             )}
 

@@ -131,20 +131,88 @@ function saveState(s: CreditState): void {
 }
 
 // ─── プラン管理 ────────────────────────
+/**
+ * 契約プラン (billing.ts の PlanId) → クレジット体系のプラン。
+ * billing.ts 側が「実際に請求している契約」の正本なので、使える量もそこから決める。
+ */
+const CREDIT_PLAN_OF_BILLING: Record<string, Exclude<PlanId, 'master'>> = {
+  // v1
+  lite: 'light',
+  standard: 'standard',
+  pro: 'pro',
+  studio: 'team',
+  agency: 'team',
+  // v2 (2026-06-03 オーナー承認の体系。ここに無いと、実際に払った人が
+  //     トライアルの枠まで落ちる — 2026-08-14 の Codex 指摘で発覚)
+  'v2-btoC-light': 'light',
+  'v2-btoC-standard': 'standard',
+  'v2-btoC-pro': 'pro',
+  'v2-btoB-entry': 'standard',
+  'v2-btoB-standard': 'pro',
+  'v2-btoB-pro': 'team',
+  'v2-enterprise': 'team',
+};
+
+/**
+ * 契約しているプランを localStorage から直接読む。
+ * billing.ts を import しないのは、credits.ts が billing.ts から参照される可能性があり、
+ * 循環参照を持ち込みたくないため（形は billing.ts の BillingUser と同じ）。
+ *
+ * ここで isTestCheckout を弾かないのは意図的。billing.ts の enforceFeature() /
+ * getEffectivePlan() は user.plan だけを見て機能を開ける。ここだけ厳しくすると
+ * 「機能は使えるのにクレジットが無い」という、お客様には理由の分からない状態になる。
+ * 「払っていない人に有料の権利を渡さない」のは登録時点 (CheckoutModal) で閉じる。
+ */
+function billingPlanId(): string | null {
+  try {
+    const raw = localStorage.getItem('core_billing_user_v1');
+    if (!raw) return null;
+    const u = JSON.parse(raw) as { plan?: string };
+    if (!u?.plan || u.plan === 'free') return null;
+    return u.plan;
+  } catch { return null; }
+}
+
 export function getPlanId(): PlanId {
   // マスター (オーナー) は無制限
   try {
     if (localStorage.getItem('core_master_key_v1') === 'GAUCHE2026') return 'master';
-    const p = localStorage.getItem(PLAN_KEY) as PlanId | null;
-    if (p && (p in PLANS)) return p;
   } catch { /* */ }
-  return 'standard'; // デフォルト
+
+  // ★支払いが確認できている契約があれば、それを唯一の正本にする。
+  //   PLAN_KEY はクライアントが自由に書ける値で、以前はここだけを見ていたため
+  //   「Lite を買った人が Standard の枠をもらう」「上げても枠が増えない」が起きていた。
+  const billing = billingPlanId();
+  if (billing) {
+    const mapped = CREDIT_PLAN_OF_BILLING[billing];
+    if (mapped) return mapped;
+  }
+
+  // 契約が無い人 (無料トライアル中) の枠。有料の Standard と同額を配らない。
+  // ここを 'standard' に戻すと、1 円も払っていない人が ¥9,800 分の枠を毎月もらう。
+  return TRIAL_PLAN;
 }
 
-export function setPlanId(p: Exclude<PlanId, 'master'>): void {
-  try { localStorage.setItem(PLAN_KEY, p); } catch { /* */ }
-  window.dispatchEvent(new CustomEvent('core:credits-updated'));
+/** 無料トライアル中に使える枠 (オーナーが増減を決める 1 か所) */
+const TRIAL_PLAN: Exclude<PlanId, 'master'> = 'light';
+
+/**
+ * 古い `core_plan_v1` を捨てる。
+ * このキーは以前「Stripe を通らずにプランを切り替える」ボタンが書き込んでいたもので、
+ * 残しておくと、無料で有料の枠をもらった状態がそのまま続いてしまう。
+ * 書き込む側は 2026-08-14 に廃止済み（プランは決済の確認結果からしか決まらない）。
+ */
+export function discardLegacyPlanKey(): void {
+  try {
+    if (localStorage.getItem(PLAN_KEY) !== null) {
+      localStorage.removeItem(PLAN_KEY);
+      window.dispatchEvent(new CustomEvent('core:credits-updated'));
+    }
+  } catch { /* */ }
 }
+
+// 既存のお客様の端末に残っている分を、このモジュールを読み込んだ時点で 1 回だけ捨てる。
+if (typeof window !== 'undefined') discardLegacyPlanKey();
 
 export function getPlanLimit(): number {
   const id = getPlanId();
