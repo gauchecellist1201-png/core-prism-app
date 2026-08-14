@@ -37,6 +37,12 @@ export default function IrisIntro({
   example: string;
 }) {
   const accent = bg.accent;
+  // ラベル側で既に「まずは」「例:」と出しているので、文章の頭に同じ言葉があると
+  // 画面には「まずは まずは…」「例: 例:…」と二重に出てしまう。呼び出し側がどちらの
+  // 書き方をしても正しく読めるよう、ここで頭の重複だけ落とす。
+  // (「まずはじめに」「例文」まで削らないよう、単語の切れ目を必ず確かめてから落とす)
+  const tryThisText = tryThis.replace(/^\s*まずは(?!じめ)[、,]?\s*/, '');
+  const exampleText = example.replace(/^\s*(?:例\s*[:：]|たとえば[、,]?)\s*/, '');
   const storageKey = `iris-intro-dismissed-${id}`;
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -99,13 +105,13 @@ export default function IrisIntro({
                 margin: '3px 0 0',
                 fontSize: '0.8rem', color: bg.inkSoft, lineHeight: 1.5,
               }}>
-                <span style={{ color: accent, fontWeight: 800 }}>まずは</span> {tryThis}
+                <span style={{ color: accent, fontWeight: 800 }}>まずは</span> {tryThisText}
               </p>
               <p style={{
                 margin: '2px 0 0',
                 fontSize: '0.74rem', color: bg.inkSoft, opacity: 0.85, lineHeight: 1.5,
               }}>
-                例: {example}
+                例: {exampleText}
               </p>
             </div>
 

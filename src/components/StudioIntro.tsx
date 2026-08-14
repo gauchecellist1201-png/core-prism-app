@@ -44,6 +44,12 @@ export function StudioIntro({
   const ResolvedIcon: LucideIcon | undefined = Icon || registered?.Icon;
   // アイコンの色は「その機能の色」。タイルと同じ色で出す (無ければペルソナ色)
   const iconColor = registered?.color || accent;
+  // ラベル側で既に「まずは」「例:」と出しているので、文章の頭に同じ言葉があると
+  // 画面には「まずは まずは…」「例: 例:…」と二重に出てしまう。呼び出し側がどちらの
+  // 書き方をしても正しく読めるよう、ここで頭の重複だけ落とす。
+  // (「まずはじめに」「例文」まで削らないよう、単語の切れ目を必ず確かめてから落とす)
+  const tryThisText = tryThis.replace(/^\s*まずは(?!じめ)[、,]?\s*/, '');
+  const exampleText = example.replace(/^\s*(?:例\s*[:：]|たとえば[、,]?)\s*/, '');
   const storageKey = `cp-studio-intro-dismissed-${id}`;
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -110,9 +116,9 @@ export function StudioIntro({
               <div className="cp-stack-sm" style={{ minWidth: 0 }}>
                 <p className="cp-h3" style={{ lineHeight: 1.35 }}>{what}</p>
                 <p className="cp-meta">
-                  <span style={{ color: accent, fontWeight: 700 }}>まずは</span> {tryThis}
+                  <span style={{ color: accent, fontWeight: 700 }}>まずは</span> {tryThisText}
                 </p>
-                <p className="cp-tiny" style={{ opacity: 0.85 }}>例: {example}</p>
+                <p className="cp-tiny" style={{ opacity: 0.85 }}>例: {exampleText}</p>
               </div>
             </div>
 

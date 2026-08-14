@@ -177,6 +177,9 @@ import IrisEarningsHero from './IrisEarningsHero';
 import WellnessTracker from '../components/WellnessTracker';
 import IgConnectModal from './IgConnectModal';
 import IrisConnectFirst from './IrisConnectFirst';
+// 「3 秒でわかる」イントロ。お金の本流 3 画面 (お仕事一覧 / お仕事を見つける / 私のプロフィール)
+// は見出しだけで「まず何を押すか」「押すと何が出るか」が書いていなかったので、ここで置く。
+import IrisIntro from './IrisIntro';
 import IrisFlowHub from './IrisFlowHub';
 import InstagramAgentBrief from './InstagramAgentBrief';
 import Celebrate from '../components/Celebrate';
@@ -2709,6 +2712,15 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
         </p>
       </div>
 
+      <IrisIntro
+        id="deals"
+        bg={bg}
+        icon={Mail}
+        what="いま抱えているお仕事を、報酬・締切・今どの段階かまで 1 か所にまとめておく場所です。"
+        tryThis="まずは一番上の「DM スクショから案件追加」を押して、企業から届いた DM の写真を 1 枚選んでみてください。手で打つ必要はありません。"
+        example="例: DM の写真を入れる → 「〇〇コスメ・報酬 5 万円・締切 8/30」と読み取られて一覧に並ぶ。あとは段階を進めるだけで、もらえるお金の合計が上に出ます"
+      />
+
       {/* DM スクショから案件追加 (中核機能) — 最上段に大きく */}
       <button
         onClick={() => setCaptureOpen(true)}
@@ -2731,7 +2743,8 @@ function DealsView({ bg, desk, myDeals, settings, mediaKit }: { bg: IrisBackgrou
         }}
         aria-label="DM のスクショから案件を追加"
       >
-        <span style={{ fontSize: '1.6rem', lineHeight: 1 }}></span>
+        {/* 絵文字を外したときに空の 1.6rem 箱だけが残っていた。写真を選ぶ操作なので線画のカメラを置く。 */}
+        <Camera size={22} strokeWidth={2.2} style={{ flexShrink: 0 }} />
         <span style={{ flex: 1, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: '1rem' }}>DM スクショから案件追加</span>
           <span style={{ fontSize: '0.78rem', opacity: 0.92, fontWeight: 500 }}>
@@ -3462,6 +3475,15 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
       </h2>
       <p style={{ color: bg.inkSoft }}>ここに書いた内容を、AI がお返事や投稿を書くときに参考にします。下の「メディアキットを作る」で、企業にそのまま送れる自己紹介資料も自動で作れます。</p>
 
+      <IrisIntro
+        id="kit"
+        bg={bg}
+        icon={FileText}
+        what="あなたの数字（フォロワー数・反応率）を 1 度だけ書いておく場所です。ここが空だと、案件探しも応募文も本気を出せません。"
+        tryThis="まずはフォロワー数の欄に、いちばん力を入れているアプリの数字だけ入れて「保存」。全部埋めなくて構いません。"
+        example="例: 数字を入れて保存 → 「お仕事を、見つける」であなたに合う案件が上に並び、「メディアキットを作る」で企業に送れる自己紹介 1 枚ができます"
+      />
+
       <Card bg={bg}>
         {ig && (
           <div style={{ marginBottom: '0.85rem', padding: '0.7rem 0.85rem', borderRadius: 14, background: 'rgba(225,48,108,0.06)', border: `1px solid ${bg.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
@@ -3968,6 +3990,15 @@ function BrandMatchView({ bg, desk, mediaKit, settings, knowledge }: {
           <span style={{ fontSize: '0.8rem' }}>本物の募集とつながると、ここに「今すぐ応募できる案件」が並びます。</span>
         </p>
       </div>
+
+      <IrisIntro
+        id="brands"
+        bg={bg}
+        icon={Handshake}
+        what="待つのではなく、自分から企業に手を挙げる場所です。あなたの数字に合う案件だけを AI が上に並べます。"
+        tryThis="まずは「あなたに最適」と付いた案件を（まだ無ければ一番上の案件を）1 つ開いて、「AI で応募文を作る」を押すだけ。文章はゼロから考えなくて大丈夫です。"
+        example="例: 案件を選ぶ → あなたのフォロワー数と得意分野を入れた応募文が数秒で出る → コピーしてそのまま送れる形になります（今並んでいるのは練習用のサンプル案件です）"
+      />
 
       {/* ── 応募 KPI ストリップ ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
