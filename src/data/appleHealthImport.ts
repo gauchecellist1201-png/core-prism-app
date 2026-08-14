@@ -183,12 +183,19 @@ async function aggregateRecords(
     return b;
   };
 
+  let malformedDates = 0;
   for (const r of records) {
     // 睡眠は記録の終わり日(=朝起きた日)に寄せる、他は開始日
     const isSleep = r.type === APPLE_TYPE.SLEEP;
     const refDateRaw = isSleep ? r.endDate : r.startDate;
     // "YYYY-MM-DD HH:MM:SS +0900" or "YYYY-MM-DDTHH:MM:SS..." どちらも対応
     const dayKey = refDateRaw.slice(0, 10);
+    // 日付として読めない行で「2026-0」のような空バケットを作らない
+    // (作ってしまうと、後の並べ替えで最新日がその行になり、正しい日が全部窓の外へ落ちる)
+    if (!DAY_KEY_RE.test(dayKey)) {
+      malformedDates++;
+      continue;
+    }
     const b = bucketFor(dayKey);
     const v = Number(r.value);
 
@@ -295,10 +302,26 @@ async function aggregateRecords(
     });
   }
 
-  // 直近30日分に絞る
-  const lookback = new Date(today);
-  lookback.setDate(today.getDate() - 90);
-  const filtered = days.filter((d) => new Date(d.date) >= lookback);
+  // 直近 90 日分に絞る。
+  // 起点は「今日」ではなく **その書き出しの中でいちばん新しい日**。
+  // 今日を起点にすると、3 か月前に書き出した ZIP を入れた人は 1 日も残らず、
+  // 画面には「インポート完了 · 0 日分」とだけ出て、理由がどこにも出なかった。
+  // (未来の日付が混じっている書き出しがあるので、起点は「今日以前でいちばん新しい日」を優先する)
+  const todayKey = toDayKey(today);
+  const notFuture = days.filter((d) => d.date <= todayKey);
+  const anchor =
+    (notFuture.length ? notFuture[notFuture.length - 1].date : days[days.length - 1]?.date) ?? todayKey;
+  const cutoff = shiftDayKey(anchor, -(WINDOW_DAYS - 1));
+  const filtered = days.filter((d) => d.date >= cutoff && d.date <= anchor);
+
+  if (filtered.length === 0) {
+    // 記録は読めたのに 1 日も作れなかった = 黙って空を返さない。理由と次の一手を出す。
+    throw new Error(
+      `${count.toLocaleString()} 件の記録は読めましたが、日付として読める行が 1 つもありませんでした` +
+      `${malformedDates > 0 ? ` (日付が読めなかった行: ${malformedDates.toLocaleString()} 件)` : ''}。` +
+      `iPhone「ヘルスケア」アプリの書き出しZIPをそのままお試しください。`,
+    );
+  }
 
   onProgress?.({ phase: 'done', recordsRead: count, daysProduced: filtered.length });
   return filtered;
@@ -345,6 +368,23 @@ function newBucket(): BucketAcc {
     sleepDeepMin: 0,
     sleepRemMin: 0,
   };
+}
+
+/** 取り込む窓の長さ (日)。起点は書き出しの中でいちばん新しい日。 */
+const WINDOW_DAYS = 90;
+const DAY_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Date → "YYYY-MM-DD" (ローカル日付。UTC に変換して日付がずれるのを避ける) */
+function toDayKey(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+/** "YYYY-MM-DD" を n 日ずらす (UTC 固定で計算 = 夏時間で 1 日ずれない) */
+function shiftDayKey(key: string, deltaDays: number): string {
+  const t = Date.parse(`${key}T00:00:00Z`);
+  if (!isFinite(t)) return key;
+  return new Date(t + deltaDays * 86400000).toISOString().slice(0, 10);
 }
 
 function parseAttrs(s: string): Record<string, string> {

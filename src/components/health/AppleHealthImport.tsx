@@ -15,6 +15,9 @@ export function AppleHealthImport({ health }: Props) {
   const [progress, setProgress] = useState<AppleImportProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [completedDays, setCompletedDays] = useState<number | null>(null);
+  // 何日ぶんが「いつからいつまで」入ったのか。3 か月前の書き出しでも、
+  // 入った期間をそのまま出せば「今日のぶんが無い」理由が本人の目で分かる。
+  const [importedRange, setImportedRange] = useState<{ from: string; to: string } | null>(null);
   const [draggingOver, setDraggingOver] = useState(false);
 
   const handleFile = async (file: File) => {
@@ -52,9 +55,18 @@ export function AppleHealthImport({ health }: Props) {
         return;
       }
 
+      // 0 日を「インポート完了」と言わない。増えていないのに緑のチェックを出すと、
+      // 本人は「取り込めた」と思ったまま、いつまでも空のグラフを見ることになる。
+      if (days.length === 0) {
+        setError('このファイルからは 1 日分も取り込めませんでした。ファイルを選び直すか、下の「サンプルデータで試す」で画面の動きを確認してください。');
+        setProgress(null);
+        return;
+      }
+
       health.mergeDays(days);
       health.markAppleHealthImported(days.length);
       setCompletedDays(days.length);
+      setImportedRange({ from: days[0].date, to: days[days.length - 1].date });
       setProgress({ phase: 'done', recordsRead: progress?.recordsRead ?? 0, daysProduced: days.length });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'インポート失敗');
@@ -148,10 +160,16 @@ export function AppleHealthImport({ health }: Props) {
               <div className="mt-3 text-[14px] font-medium text-fg">
                 インポート完了 · {completedDays} 日分の PHR を追加
               </div>
-              <div className="mt-1 text-[12px] text-fg-subtle">既存データとマージしました</div>
+              {/* text-fg-subtle は Iris の明るい画面では 2.43:1 で読めなかった。
+                  「いつからいつまで入ったか」は、今日のぶんが無い理由そのものなので必ず読める濃さで。 */}
+              <div className="mt-1 text-[12.5px] text-fg">
+                {importedRange
+                  ? `${importedRange.from} 〜 ${importedRange.to} のぶんを、既存データとマージしました`
+                  : '既存データとマージしました'}
+              </div>
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); setCompletedDays(null); setProgress(null); }}
+                onClick={(e) => { e.stopPropagation(); setCompletedDays(null); setImportedRange(null); setProgress(null); }}
                 className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[13px] text-fg hover:bg-white/10"
                 style={{ minHeight: 44 }}
               >
@@ -202,9 +220,39 @@ export function AppleHealthImport({ health }: Props) {
       </div>
 
       {error && (
-        <div className="mt-3 flex items-start gap-2 rounded-md bg-rose-500/10 px-3 py-2 text-[13px] text-rose-200">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5" />
-          <span>{error}</span>
+        /* このカードは Prism (暗い画面) と Iris「カラダ管理」(明るいピンクの画面) の
+           両方に出る。text-rose-200 のままだと Iris では 1.21:1 = ほぼ見えない。
+           失敗の理由こそ読めないと意味がないので、面と文字を自分で持つ。 */
+        <div
+          className="mt-3 rounded-md px-3 py-2 text-[13px]"
+          style={{ background: '#FFE4E6', color: '#7F1D1D', border: '1px solid #FDA4AF' }}
+          role="alert"
+        >
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+          {/* 失敗したまま行き止まりにしない。ここから直接やり直せる */}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setError(null); fileRef.current?.click(); }}
+              className="inline-flex items-center justify-center rounded-full px-4 py-2 text-[13px] font-medium"
+              style={{ minHeight: 44, background: '#7F1D1D', color: '#FFF1F2', border: '1px solid #7F1D1D' }}
+            >
+              もう一度ファイルを選ぶ
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); handleSampleData(); }}
+              disabled={!!isParsing}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium disabled:opacity-60"
+              style={{ minHeight: 44, background: '#FFF1F2', color: '#7F1D1D', border: '1px solid #FDA4AF' }}
+            >
+              <Sparkles className="h-3 w-3" style={{ color: PRISM.creative }} />
+              サンプルで試す
+            </button>
+          </div>
         </div>
       )}
 
