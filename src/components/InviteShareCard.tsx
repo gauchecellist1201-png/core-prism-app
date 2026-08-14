@@ -30,8 +30,9 @@ function XIcon({ size = 18 }: { size?: number }) {
     </svg>
   );
 }
-import { type Brand, loadBillingUser, isTrialActive } from '../lib/billing';
+import { type Brand, loadBillingUser, isTrialActive, extendTrial } from '../lib/billing';
 import {
+  applyPendingBonusDays,
   getReferralData, getReferralUrl, REFERRAL_BONUS_DAYS,
   getInviterName, saveInviterName, INVITER_NAME_MAX, sanitizeInviterName,
   getInviterMessage, saveInviterMessage, INVITER_MESSAGE_MAX, sanitizeInviterMessage,
@@ -136,7 +137,8 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
   );
   // 汎用 (Web Share API / Insta / 互換用) のテキスト
   const text = useMemo(() => shareTextGeneric(url, brand, cleanName), [url, brand, cleanName]);
-  const trialDaysLeft = useMemo(() => getTrialDaysLeft(), []);
+  // 残日数は「今のばした分」を足した後の値を出すため state で持つ (mount 時の値で固定しない)
+  const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(() => getTrialDaysLeft());
 
   const [copied, setCopied] = useState<'url' | 'text' | null>(null);
   const [snack, setSnack] = useState<string | null>(null);
@@ -148,6 +150,8 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
   // あなたの紹介の「実績」(登録した友達の人数 / 累計獲得日数) — 開いた瞬間にサーバへ同期して最新化
   const [referredCount, setReferredCount] = useState<number>(() => referral.referredCount);
   const [earnedDays, setEarnedDays] = useState<number>(() => referral.bonusDays);
+  // 今この場でトライアル期限へ足せた日数 (0 なら何も出さない)
+  const [justApplied, setJustApplied] = useState<number>(0);
   useEffect(() => {
     let alive = true;
     syncReferralStatus()
@@ -155,6 +159,14 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
         if (!alive) return;
         setReferredCount(r.referredCount);
         setEarnedDays(r.bonusDays);
+        // ★ここで実際に trialEndsAt をのばす。
+        //   Iris はこのカードしか紹介の入口が無く、以前は日数が画面に出るだけで
+        //   本物のトライアルは 1 日ものびていなかった。
+        const applied = applyPendingBonusDays(extendTrial);
+        if (applied > 0) {
+          setJustApplied(applied);
+          setTrialDaysLeft(getTrialDaysLeft()); // のびた後の残日数へ差し替え
+        }
       })
       .catch(() => { /* オフライン等は現状維持 — 嘘の数字は出さない */ });
     return () => { alive = false; };
@@ -351,6 +363,16 @@ export default function InviteShareCard({ brand, palette, compact = false }: Pro
             <p style={{ margin: '0.1rem 0 0', fontSize: '0.76rem', color: 'rgba(255,255,255,0.92)', lineHeight: 1.4 }}>
               これまでに合計 <strong>+{earnedDays} 日</strong> のトライアル延長を獲得しました。
             </p>
+            {/* 今この場で本当に期限がのびた時だけ出す (のびていない時は黙る) */}
+            {justApplied > 0 && (
+              <p
+                data-testid="referral-just-applied"
+                style={{ margin: '0.3rem 0 0', fontSize: '0.76rem', fontWeight: 800, lineHeight: 1.4 }}
+              >
+                いま <strong>+{justApplied} 日</strong> を無料期間に追加しました
+                {trialDaysLeft !== null && `（残り ${trialDaysLeft} 日）`}
+              </p>
+            )}
           </div>
         </div>
       )}

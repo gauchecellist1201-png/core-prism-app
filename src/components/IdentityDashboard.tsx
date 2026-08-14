@@ -71,7 +71,7 @@ const PeopleStudio = lazy(() => import('./PeopleStudio'));
 const TeamHub = lazy(() => import('./TeamHub'));
 import AcceptInviteModal from './AcceptInviteModal';
 import InviteShareCard from './InviteShareCard';
-import { REFERRAL_BONUS_DAYS, getReferralData, syncReferralStatus, consumePendingBonusDays } from '../lib/referral';
+import { REFERRAL_BONUS_DAYS, getReferralData, syncReferralStatus, applyPendingBonusDays } from '../lib/referral';
 import { Gift, Brain, BarChart3, Search, Menu, HeartPulse, Calendar, BookOpen, MessageSquare, Settings, FileText, StickyNote, Link2, Bot, CheckCircle2, Zap, Pencil, X, Inbox, Sparkles, Gem, Users, Layers, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import CoreCreditsPanel from './CoreCreditsPanel';
@@ -441,8 +441,7 @@ export default function IdentityDashboard({
         setReferralStat({ referredCount: r.referredCount, bonusDays: r.bonusDays });
         if (r.newReferrals > 0) {
           // 未反映の延長日数を実際のトライアル期限へ加算 (招待者への +7 日/人 を本当に適用)
-          const days = consumePendingBonusDays();
-          if (days > 0) extendTrial(days);
+          applyPendingBonusDays(extendTrial);
           setReferralToast(r.newReferrals);
           setTimeout(() => { if (alive) setReferralToast(null); }, 7000);
         }
