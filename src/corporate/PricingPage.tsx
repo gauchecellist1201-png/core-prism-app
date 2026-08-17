@@ -311,8 +311,12 @@ export default function PricingPage() {
     <div style={{ background: '#000', color: '#fff', minHeight: '100dvh', fontFamily: FONT_SANS, overflowX: 'hidden' }}>
       {/* ヘッダ */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="lp-safe" style={{ maxWidth: 1320, margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <a href="/corp" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.2rem', fontWeight: 700, letterSpacing: '0.4em', color: '#fff', textDecoration: 'none' }}>CORE</a>
+        {/* 375px では右のナビ 3 本が display:none（.lp-nav-link）になるので、
+            ヘッダーで押せるのはこの「CORE」だけ。29px しかなく指では狙えなかったので
+            inline-flex で 44px に持ち上げる。上下の余白を 1rem→0.6rem に詰めて
+            ヘッダー全体の高さは元のまま（61px 前後）に保つ（2026-08-18） */}
+        <div className="lp-safe" style={{ maxWidth: 1320, margin: '0 auto', padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <a href="/corp" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.2rem', fontWeight: 700, letterSpacing: '0.4em', color: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}>CORE</a>
           <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
             <a href="/" style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }} className="lp-nav-link">Prism</a>
             <a href="/iris" style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }} className="lp-nav-link">Iris</a>
@@ -807,11 +811,15 @@ export default function PricingPage() {
 
           <div style={{ display: 'grid', gap: '0.75rem' }}>
             {FAQS.map((f, i) => (
-              <details key={i} style={{ padding: '1.25rem 1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, cursor: 'pointer' }}>
-                <summary style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', fontWeight: 700, listStyle: 'none', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+              // 余白を <details> 側に持たせていたので、開閉に反応するのは
+              // 質問文の 23px の帯だけだった（カードに見える部分を押しても開かない）。
+              // 余白を <summary> へ移して、カードの上半分がまるごと押せる面になるようにする。
+              // 高さは指で狙える 44px を下限に（2026-08-18）
+              <details key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, cursor: 'pointer' }}>
+                <summary style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.95rem', fontWeight: 700, listStyle: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', minHeight: 44, padding: '1.1rem 1.5rem' }}>
                   <span style={{ color: '#a78bfa', flexShrink: 0 }}>Q.</span><span>{f.q}</span>
                 </summary>
-                <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 2, marginTop: 12, paddingLeft: '1.4rem' }}>{f.a}</p>
+                <p style={{ fontFamily: FONT_SERIF_JA, fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 2, margin: 0, padding: '0 1.5rem 1.25rem 2.4rem' }}>{f.a}</p>
               </details>
             ))}
           </div>
