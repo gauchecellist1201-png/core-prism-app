@@ -16,11 +16,12 @@
 // ============================================================
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Sparkles, RefreshCw, Search, ClipboardList, CheckCircle2, Copy, Users } from 'lucide-react';
+import { Sparkles, RefreshCw, Search, ClipboardList, CheckCircle2, Copy, Users, AlarmClock } from 'lucide-react';
 import { useStripeRevenue } from '../hooks/useStripeRevenue';
 import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import { useCRM } from '../hooks/useCRM';
 import { realStatsForPersona, CATEGORY_LABEL, type DeliverableCategory } from '../lib/cxoDeliverables';
+import { computeNextMonthForecast, describeForecast } from '../lib/nextMonthForecast';
 import { copyText } from '../lib/clipboard';
 import { readableInk } from '../lib/ink';
 import type { Persona } from '../types/identity';
@@ -234,37 +235,20 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
   const total12mRev = stripe.connected ? (stripe.sumMonths(12).revenueJpy || 0) : 0;
 
   // (2) 来月の見込み
-  //   直近 3 ヶ月平均 + 進行中案件 (won 以外 / lost 以外) の amount × probability/100
-  //   嘘禁止: 過去売上 0 円 + pipeline も極小 (< ¥10,000) の時は「¥600」のような
+  //   「来月の見込み」に入れてよいのは、クローズ予定日が来月の中にある案件だけ。
+  //   以前はここで進行中案件を予定日を見ずに全部足しており、予定日を過ぎた案件も
+  //   今月中に決まる案件も来月に計上していた (2026-08-17 実測でデモの 82% が予定日ぎれ)。
+  //   嘘禁止: 過去売上 0 円 + 来月ぶんも極小 (< ¥10,000) の時は「¥600」のような
   //   誤解を招く数字を出さず null を返す (オーナー報告 2026-05-26)
-  const next3Forecast = useMemo(() => {
-    if (!stripe.connected) return null;
-    const sum3 = stripe.sumMonths(3).revenueJpy;
-    const base = sum3 > 0 ? sum3 / 3 : 0;
-
-    const personaDeals = crm.deals.filter(d =>
-      d.personaId === persona.id &&
-      d.stage !== 'won' &&
-      d.stage !== 'lost'
-    );
-    const pipelineWeighted = personaDeals.reduce(
-      (s, d) => s + (d.amount || 0) * ((d.probability ?? 0) / 100),
-      0
-    );
-
-    const total = base + pipelineWeighted;
-    // 過去 Stripe 売上が 0 で、pipeline の確度加重が 1 万円未満 → 数字としては誤解を招く
-    if (base === 0 && total < 10000) return null;
-    return total > 0 ? total : null;
+  const forecast = useMemo(() => {
+    const sum3 = stripe.connected ? stripe.sumMonths(3).revenueJpy : 0;
+    return computeNextMonthForecast({
+      baseJpy: sum3 > 0 ? sum3 / 3 : 0,
+      deals: crm.deals.filter(d => d.personaId === persona.id),
+    });
   }, [stripe, crm.deals, persona.id]);
 
-  const pipelineDealCount = useMemo(() =>
-    crm.deals.filter(d =>
-      d.personaId === persona.id &&
-      d.stage !== 'won' &&
-      d.stage !== 'lost'
-    ).length
-  , [crm.deals, persona.id]);
+  const next3Forecast = stripe.connected ? forecast.totalJpy : null;
 
   // (3) AI が取り戻した時間
   //   recentDone は表示用に 5 件 cap されているので、count に使うと過少表示になる。
@@ -416,9 +400,7 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
           subtitle={
             !stripe.connected
               ? '案件を入れると、来月の数字が見えます'
-              : pipelineDealCount > 0
-                ? `直近 3 ヶ月の平均 + 進行中 ${pipelineDealCount} 件の確度加重`
-                : '直近 3 ヶ月の平均 (案件を入れるとさらに伸びます)'
+              : describeForecast(forecast)
           }
           delay={0.1}
         />
@@ -437,6 +419,46 @@ export default function EarningsAndTimeHero({ persona, onConnectStripe }: Props)
           delay={0.15}
         />
       </div>
+
+      {/* (3.5) 予定日を過ぎたまま止まっている案件 — 見込みから外したぶんを、黙って消さずに一手に変える。
+              0 件の間は出さない (急かす材料を作らない)。 */}
+      {forecast.overdue.count > 0 && (
+        <motion.button
+          type="button"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.18, ease: 'easeOut' }}
+          onClick={() => {
+            try {
+              window.dispatchEvent(new CustomEvent('core:open-modal', { detail: { modal: 'crm' } }));
+            } catch { /* 画面が無い環境では何もしない */ }
+          }}
+          style={{
+            position: 'relative', zIndex: 1,
+            marginTop: '0.8rem',
+            width: '100%',
+            minHeight: 44,
+            padding: '0.7rem 0.9rem',
+            borderRadius: 14,
+            background: 'rgba(180,83,9,0.10)',
+            border: '1px solid rgba(180,83,9,0.30)',
+            display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+            textAlign: 'left',
+            cursor: 'pointer',
+            font: 'inherit',
+          }}
+        >
+          <AlarmClock size={15} color="#B45309" style={{ flexShrink: 0 }} aria-hidden />
+          <span style={{ fontSize: 12.5, color: readableInk('#B45309'), lineHeight: 1.5, flex: 1, minWidth: 0 }}>
+            クローズ予定日を過ぎたまま動いていない案件が{' '}
+            <b>{forecast.overdue.count} 件</b>（確度加重 {formatJpy(forecast.overdue.weightedJpy)}）あります。
+            来月の見込みには入れていません。
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: readableInk('#B45309'), whiteSpace: 'nowrap' }}>
+            案件を見る →
+          </span>
+        </motion.button>
+      )}
 
       {/* (4) 今週、役員が「あなたのために」動いた量 — 実数のみ (0 件の間は出さない＝嘘ゼロ) */}
       {execWeek.weekCount > 0 && (
