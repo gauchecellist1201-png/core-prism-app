@@ -4,8 +4,8 @@
 // サンプル案件と明確に区別し、「公式ページで応募」ボタンで実在 URL を開く。
 // データは realOpenCalls.ts (HTTP 200 検証済み)。
 // ============================================================
-import { ExternalLink, BadgeCheck, ArrowUpRight, Sparkles } from 'lucide-react';
-import { getRealOpenCalls, rankOpenCalls, inferPreferredCategories, KIND_META } from './realOpenCalls';
+import { ExternalLink, BadgeCheck, ArrowUpRight, Sparkles, Clock } from 'lucide-react';
+import { getRealOpenCalls, rankOpenCalls, inferPreferredCategories, KIND_META, openCallsBadge, verifiedLabel } from './realOpenCalls';
 import { CATEGORY_META } from './brandDeals';
 import type { MediaKit } from '../types/influencerDeal';
 import { warmFaceBg } from './irisStyle';
@@ -23,25 +23,32 @@ export default function IrisRealOpenCalls({ bg, mediaKit }: { bg: Bg; mediaKit?:
   const calls = prefs.length ? rankOpenCalls(prefs) : getRealOpenCalls().map(c => ({ ...c, matched: false }));
   const matchCount = calls.filter(c => c.matched).length;
   const topPref = prefs[0];
+  // 「検証済み」は一度書いたら勝手に古くなる札。何日前に見たのかを毎回言い直す
+  const badge = openCallsBadge(calls);
 
   return (
     <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.25rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <BadgeCheck size={18} color="#10B981" />
+        {badge.fresh
+          ? <BadgeCheck size={18} color="#10B981" />
+          : <Clock size={18} color="#B45309" />}
         <strong style={{ fontSize: 15, color: bg.ink }}>本物の公開募集</strong>
+        {/* 文字色 #0E9F6E は薄緑の面の上で 2.7:1 しかなく AA (4.5) に届いていなかった。
+            面の色（ブランドの緑）は変えず、文字だけ濃くする */}
         <span style={{
           fontSize: 10.5, fontWeight: 800, padding: '2px 8px', borderRadius: 999,
-          background: 'rgba(16,185,129,0.14)', color: '#0E9F6E',
-        }}>実在・検証済み {calls.length} 件</span>
+          background: badge.fresh ? 'rgba(16,185,129,0.14)' : 'rgba(180,83,9,0.14)',
+          color: badge.fresh ? '#076046' : '#7C3D05',
+        }}>{badge.text}</span>
       </div>
       {matchCount > 0 && topPref ? (
         <p style={{ margin: 0, fontSize: 12.5, color: bg.inkSoft, lineHeight: 1.6 }}>
           あなたのプロフィールから<strong style={{ color: CATEGORY_META[topPref].color }}>「{CATEGORY_META[topPref].label}」</strong>と読み取り、
-          合いそうな募集 <strong>{matchCount} 件</strong>を上に並べました。公式ページから<strong>今すぐ応募できます</strong>。
+          合いそうな募集 <strong>{matchCount} 件</strong>を上に並べました。{badge.note}
         </p>
       ) : (
         <p style={{ margin: 0, fontSize: 12.5, color: bg.inkSoft, lineHeight: 1.6 }}>
-          公式ページから<strong>今すぐ応募できる</strong>恒常募集です（応募先 URL は実在を確認済み）。下のサンプル案件は応募文の練習用です。
+          {badge.note}
         </p>
       )}
 
@@ -79,17 +86,19 @@ export default function IrisRealOpenCalls({ bg, mediaKit }: { bg: Bg; mediaKit?:
                 <div style={{ color: bg.inkSoft }}><span style={{ color: bg.ink, fontWeight: 700 }}>報酬:</span> {c.reward}</div>
                 <div style={{ color: bg.inkSoft }}><span style={{ color: bg.ink, fontWeight: 700 }}>条件:</span> {c.requirement}</div>
               </div>
+              {/* この画面で唯一「本当にお金につながる」ボタン。
+                  以前は高さ 37.9px で、指で押す大きさ (44px) に足りていなかった */}
               <a href={c.applyUrl} target="_blank" rel="noopener noreferrer" style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                 marginTop: 2, textDecoration: 'none',
                 background: warmFaceBg(bg.accent), color: '#fff',
-                borderRadius: 999, padding: '0.6rem 1rem', fontSize: 12.5, fontWeight: 800,
+                borderRadius: 999, padding: '0.6rem 1rem', minHeight: 48, fontSize: 12.5, fontWeight: 800,
                 boxShadow: '0 6px 16px rgba(225,48,108,0.28)',
               }}>
                 公式ページで応募 <ExternalLink size={14} />
               </a>
               <span style={{ fontSize: 9.5, color: bg.inkSoft, opacity: 0.8, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                <ArrowUpRight size={11} /> {new URL(c.applyUrl).hostname} ・ {c.verifiedAt} 確認
+                <ArrowUpRight size={11} /> {new URL(c.applyUrl).hostname} ・ {verifiedLabel(c.verifiedAt)}
               </span>
             </div>
           );

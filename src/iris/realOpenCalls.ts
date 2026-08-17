@@ -6,10 +6,19 @@
 //    インフルエンサーが本当に応募できる状態に。」
 //
 // ルール:
-//   - applyUrl は実在し HTTP 200 を確認したもののみ (2026-06-14 検証)。
+//   - applyUrl は実在し、かつ「応募ページとして今も開ける」ことを確認したもののみ。
+//     確認は `node scripts/verifyIrisOpenCalls.mjs` で誰でも再実行できる。
 //   - 報酬は「商品提供」「コミッション」など事実ベースの形のみ記載。
 //     金額を勝手に断定しない (詳細は公式ページが真実)。
 //   - これは "練習用サンプル" ではなく、公式ページへ直接応募できる本物。
+//
+// 2026-08-18 の再確認で分かったこと (この日に 2 件を外した):
+//   - www.brandcosme.com … Cloudflare の Error 1000「DNS points to prohibited IP」。
+//     サイトごと落ちている (curl でもブラウザでも 403)。
+//   - www.dot-st.com/cp/st_ambassador … **HTTP は 200 を返すのに**、中身は
+//     「and ST メンテナンスに伴うサイト一時停止のお知らせ」。
+//     ステータスコードだけを見る確認では「生きている」と誤判定する。
+//     → 確認は必ず本文も読む (verifyIrisOpenCalls.mjs はそうしている)。
 // ============================================================
 import type { BrandCategory } from './brandDeals';
 
@@ -26,21 +35,9 @@ export interface OpenCall {
   verifiedAt: string;      // 検証日 YYYY-MM-DD
 }
 
-const V = '2026-06-14';
+const V = '2026-08-18';
 
 export const REAL_OPEN_CALLS: OpenCall[] = [
-  {
-    id: 'oc-dotst',
-    name: '.st(ドットエスティ)公式アンバサダー',
-    org: 'and ST / アダストリア',
-    category: 'fashion',
-    kind: 'brand',
-    summary: '人気アパレル・コスメを試して SNS で発信する公式アンバサダー。',
-    reward: '商品提供・最新アイテム先行体験',
-    requirement: 'SNS で発信できる方（フォロワー数の細かい指定は公式参照）',
-    applyUrl: 'https://www.dot-st.com/cp/st_ambassador',
-    verifiedAt: V,
-  },
   {
     id: 'oc-shiro',
     name: 'シロノサクラ。 美白ブランドアンバサダー 2026',
@@ -54,15 +51,15 @@ export const REAL_OPEN_CALLS: OpenCall[] = [
     verifiedAt: V,
   },
   {
-    id: 'oc-brandcosme',
-    name: 'ブランドコスメ アンバサダープログラム',
-    org: 'ブランドコスメ',
-    category: 'beauty',
-    kind: 'brand',
-    summary: 'デパコスを体験して Instagram で感想を発信するメンバー募集。',
-    reward: '商品代をブランド負担（商品提供）',
-    requirement: 'Instagram で発信できる方',
-    applyUrl: 'https://www.brandcosme.com/pages/ambassador-program',
+    id: 'oc-monipla',
+    name: 'モニプラ 商品モニター・ファンサイト募集',
+    org: 'モニプラ ファンブログ',
+    category: 'lifestyle',
+    kind: 'aggregator',
+    summary: 'ブランド公式のモニター・体験イベントが常時集まる募集ポータル。',
+    reward: '案件により異なる（商品提供・モニター謝礼 等）',
+    requirement: '各募集ページの条件を参照（フォロワー数不問の募集もあり）',
+    applyUrl: 'https://monipla.jp/',
     verifiedAt: V,
   },
   {
@@ -111,6 +108,70 @@ export const KIND_META: Record<OpenCall['kind'], { label: string; color: string 
 
 export function getRealOpenCalls(): OpenCall[] {
   return REAL_OPEN_CALLS;
+}
+
+// ============================================================
+// 「いつ確かめたのか」を、そのまま出す
+//
+// なぜ要るか:
+//   この画面は緑のチェックで「実在・検証済み」と名乗る。けれど確認は
+//   人が手で1回やっただけで、そのあと勝手に古くなっていく。
+//   2026-06-14 に確認した 6 件を 2026-08-18 に測り直したら、**2 件が落ちていた**
+//   （1 件はサイトごと停止、1 件は 200 を返しながら中身がメンテ告知）。
+//   つまり「検証済み」とだけ書いた札は、65 日たっても同じ顔で嘘をつく。
+//   日付を小さく添えるだけでは足りない（2026-06-14 が古いかどうかは、
+//   その場で引き算できる人にしか分からない）。
+//   ここでは「何日前か」を言葉にして、古くなったら緑の札をやめる。
+// ============================================================
+
+/** 検証済みと名乗ってよい上限。これを超えたら画面の言い方を変える */
+export const OPEN_CALL_FRESH_DAYS = 30;
+
+/** verifiedAt (YYYY-MM-DD) から今日までの日数。壊れた日付は null */
+export function verifiedAgeDays(verifiedAt: string, now: Date = new Date()): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(verifiedAt);
+  if (!m) return null;
+  const then = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.floor((today - then) / 86400000);
+  return days < 0 ? 0 : days; // 未来日付は「今日」に丸める (先の日付で新しく見せない)
+}
+
+/** 「今日 確認」「3日前に確認」…。日付が壊れていれば日付そのものを返す */
+export function verifiedLabel(verifiedAt: string, now: Date = new Date()): string {
+  const d = verifiedAgeDays(verifiedAt, now);
+  if (d === null) return `${verifiedAt} 確認`;
+  if (d === 0) return '今日 確認';
+  if (d === 1) return '昨日 確認';
+  return `${d}日前に確認`;
+}
+
+/** 全件のうち一番古い確認からの日数 (0件なら null) */
+export function oldestVerifiedAgeDays(calls: OpenCall[] = REAL_OPEN_CALLS, now: Date = new Date()): number | null {
+  const ages = calls.map(c => verifiedAgeDays(c.verifiedAt, now)).filter((n): n is number => n !== null);
+  return ages.length ? Math.max(...ages) : null;
+}
+
+/** 一覧の見出しに出す札。古くなったら緑のチェックをやめて、正直に言い直す */
+export function openCallsBadge(
+  calls: OpenCall[] = REAL_OPEN_CALLS,
+  now: Date = new Date(),
+): { fresh: boolean; text: string; note: string } {
+  const oldest = oldestVerifiedAgeDays(calls, now);
+  const n = calls.length;
+  if (oldest !== null && oldest <= OPEN_CALL_FRESH_DAYS) {
+    return {
+      fresh: true,
+      text: `実在・${oldest === 0 ? '今日 確認' : `${oldest}日前に確認`} ${n} 件`,
+      note: '公式ページから今すぐ応募できる恒常募集です。下のサンプル案件は応募文の練習用です。',
+    };
+  }
+  return {
+    fresh: false,
+    // 「検証済み」とは名乗らない。何日前に見たのかだけを言う
+    text: oldest === null ? `${n} 件` : `${oldest}日前に確認 ${n} 件`,
+    note: '前に確かめてから時間がたっています。募集が終わっていることがあるので、開いた先の公式ページで最新の条件をご確認ください。',
+  };
 }
 
 // ============================================================
