@@ -110,12 +110,6 @@ export default function CancelFlowDialog({ open, brand = 'prism', onConfirmCance
     }
   };
 
-  const skipAndCancel = async () => {
-    // 理由を選ばずに解約 (Survey 送信なし)
-    setSubmitting(true);
-    try { await onConfirmCancel(); } finally { setSubmitting(false); }
-  };
-
   return (
     <AnimatePresence>
       {open && (
@@ -126,7 +120,15 @@ export default function CancelFlowDialog({ open, brand = 'prism', onConfirmCance
           exit={{ opacity: 0 }}
           onClick={onClose}
           style={{
-            position: 'fixed', inset: 0, zIndex: 90,
+            // 2026-08-18 P0 根治: ここは長く zIndex:90 だったが、この板を開く親
+            // (BillingDashboard の請求モーダル) が **zIndex:200** で全画面に敷かれている。
+            // つまり有料会員が「解約する」を押すと、この板は**請求画面の裏側に開いていた**。
+            // 375px 実測で「理由なしで解約」の中心を elementFromPoint すると
+            // 請求画面の <p>アカウント</p> が返る＝**1つも押せない**。
+            // handleCancel() へ行く道はこの板しか無いので、
+            // **アプリの中から解約を完了できない状態**だった (LP・入口は「1タップで解約」と約束済み)。
+            // 親より上に出す。CoreDock のオーブ(9998)より下、請求モーダル(200)より上。
+            position: 'fixed', inset: 0, zIndex: 260,
             background: 'rgba(0,0,0,0.5)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '24px 12px',
@@ -164,7 +166,8 @@ export default function CancelFlowDialog({ open, brand = 'prism', onConfirmCance
                 onClick={onClose}
                 aria-label="閉じる"
                 style={{
-                  width: 30, height: 30, borderRadius: 15,
+                  // 30x30 だった＝ドクトリンの 44px 未満。解約画面から逃げる唯一の的なので広げる。
+                  width: 44, height: 44, borderRadius: 22, flexShrink: 0,
                   background: '#f4f4f7', border: 'none',
                   color: '#666', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -185,7 +188,8 @@ export default function CancelFlowDialog({ open, brand = 'prism', onConfirmCance
               ) : (
               <>
               <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: '#444', lineHeight: 1.7 }}>
-                停止する理由を 1 つ選んでもらえると、次のリリースで必ず改善に使います。
+                停止する理由を 1 つ選んでもらえると、次のリリースで必ず改善に使います。<br />
+                <strong style={{ color: '#1F1A2E' }}>選ばなくても、そのまま解約できます。</strong>
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -309,48 +313,41 @@ export default function CancelFlowDialog({ open, brand = 'prism', onConfirmCance
                 </button>
               </div>
             ) : (
+            // 2026-08-18: ここは「理由なしで解約」と、理由未選択のあいだ **押せない**
+            // 「理由を選んでね」(375px 実測 201x46 の disabled) の 2 つ並びだった。
+            // 主導線に見えるほうが押せないので、「理由を選ばないと解約できない」と読める
+            // ＝解約を渋っているように見える。実際は理由なしでも解約できる。
+            // 主ボタン 1 本に統合して**常に押せる**ようにし、handleConfirm 側で
+            // 「選ばれていれば送る、選ばれていなければ送らない」を吸収する。
             <div style={{
               padding: '12px 20px',
               borderTop: '1px solid #f1f1f1',
-              display: 'flex', gap: 8,
+              display: 'flex', flexDirection: 'column', gap: 6,
               background: '#FAFAF8',
             }}>
               <button
-                onClick={skipAndCancel}
+                onClick={handleConfirm}
                 disabled={submitting || cancelBusy}
                 style={{
-                  flex: 1,
-                  padding: '12px 0',
+                  width: '100%',
+                  padding: '13px 0',
+                  minHeight: 44,
                   borderRadius: 12,
-                  background: 'transparent',
-                  color: '#666',
-                  border: '1px solid #e5e5e5',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                  cursor: submitting || cancelBusy ? 'wait' : 'pointer',
-                }}
-              >
-                理由なしで解約
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={submitting || cancelBusy || !selected}
-                style={{
-                  flex: 2,
-                  padding: '12px 0',
-                  borderRadius: 12,
-                  background: submitting || cancelBusy || !selected
+                  background: submitting || cancelBusy
                     ? '#E5E7EB'
                     : 'linear-gradient(135deg, #6B7280, #374151)',
-                  color: '#fff',
+                  color: submitting || cancelBusy ? '#6B7280' : '#fff',
                   border: 'none',
                   fontSize: '0.88rem',
                   fontWeight: 800,
-                  cursor: submitting || cancelBusy || !selected ? 'not-allowed' : 'pointer',
+                  cursor: submitting || cancelBusy ? 'wait' : 'pointer',
                 }}
               >
-                {submitting || cancelBusy ? '処理中…' : selected ? '送信して解約する' : '理由を選んでね'}
+                {submitting || cancelBusy ? '処理中…' : selected ? '理由を送って解約する' : '解約する'}
               </button>
+              <p style={{ margin: 0, textAlign: 'center', fontSize: '0.72rem', color: '#6B7280', lineHeight: 1.6 }}>
+                理由の入力は任意です。期間末まではこのままお使いいただけます。
+              </p>
             </div>
             )}
           </motion.div>

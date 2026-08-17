@@ -1786,7 +1786,8 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ display: 'block' }}>お支払い・解約</span>
                       <span style={{ display: 'block', fontSize: '0.74rem', fontWeight: 500, color: '#5A4570', marginTop: 2, lineHeight: 1.4 }}>
-                        解約はこの中のボタン1つ。電話も、理由の入力も、引き止めもありません
+                        {/* 2026-08-18: 実物は引き止め1枚＋理由選択1枚が出る。言葉を実物に合わせた */}
+                        解約はこの中。理由の入力は任意で、電話も面談もありません
                       </span>
                     </span>
                     <ChevronRight size={18} color="#5A4570" strokeWidth={2.2} />
