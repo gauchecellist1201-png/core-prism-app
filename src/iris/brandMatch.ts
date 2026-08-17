@@ -10,6 +10,7 @@ import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { PLATFORM_META } from '../types/influencerDeal';
 import { aiFetch } from '../lib/aiFetch';
+import { aiErrorMessage } from '../lib/aiErrorMessage';
 
 const PRISM_COMPANIES_KEY = 'core_sales_companies_v1';
 
@@ -99,7 +100,7 @@ ${opts.customNote || '(なし)'}
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `タイアップ打診APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'brandMatch'));
     }
     return res.json();
   });

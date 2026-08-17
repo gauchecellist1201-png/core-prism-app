@@ -11,9 +11,23 @@
 //   ・数字は実測値だけ (件数・使った回数・使用量)。推定や水増しはしない
 // ============================================================
 import React, { useCallback, useEffect, useState } from 'react';
-import { Film, Layers, Check, Trash2, Plus, Loader2, AlertCircle, X } from 'lucide-react';
+import { Film, Layers, Check, Trash2, Plus, Loader2, AlertCircle, X, RefreshCw } from 'lucide-react';
 import type { IrisBackgroundDef } from './irisStyle';
 import { listLibrary, deleteLibraryItems, type LibraryItem } from './reelStore';
+
+/** 棚から素材を出せなかった理由を、人の言葉にする。英語の原文は console にだけ残す。
+ *  返す文は必ず「次に何をすればいいか」で終える。 */
+function humanizeMediaError(e: unknown): string {
+  try { console.warn('[iris/shelf] pick failed:', e); } catch { /* noop */ }
+  const name = (e as { name?: string } | null)?.name;
+  if (name === 'QuotaExceededError')
+    return 'この端末の空きが足りないようです。「整理」から使っていない素材を減らしてから、もう一度おためしください。';
+  if (name === 'NotFoundError')
+    return '棚の中身が見つかりませんでした。ページを開き直すと直ることがあります。';
+  if (name === 'NotReadableError' || name === 'SecurityError')
+    return 'ファイルを読み取れませんでした。もう一度おためしください。';
+  return 'もう一度おためしください。何度も続くときは、別の素材でおためしください。';
+}
 
 /** 読み込み済みのメディア要素から小さなサムネイルを作る (9:16 で切り抜く)。
  *  失敗しても undefined を返すだけ — 棚には名前で残る。 */
@@ -60,6 +74,9 @@ export default function IrisAssetShelf({ bg, activeAssetIds, onPick, onRequestAd
   const [confirmIds, setConfirmIds] = useState<string[] | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
   const [pickErr, setPickErr] = useState('');
+  // 失敗した素材そのものを覚えておく。覚えていないと「もう一度」を出せず、
+  // 横スクロールの棚から同じタイルを目で探し直させることになる。
+  const [pickErrItem, setPickErrItem] = useState<LibraryItem | null>(null);
   /** 端末の空き。取れない環境 (Safari の一部) では出さない — 分からないものは書かない */
   const [space, setSpace] = useState<{ usage: number; quota: number } | null>(null);
 
@@ -100,9 +117,15 @@ export default function IrisAssetShelf({ bg, activeAssetIds, onPick, onRequestAd
 
   const handlePick = async (it: LibraryItem) => {
     setPickErr('');
+    setPickErrItem(null);
     setPicking(it.id);
     try { await onPick(it); }
-    catch (e) { setPickErr(`「${it.name || '素材'}」を読み込めませんでした（${e instanceof Error ? e.message : '原因不明'}）。棚からは消していません。`); }
+    catch (e) {
+      // 以前は e.message を括弧に入れてそのまま出していて、
+      // 「（NotReadableError: The I/O read operation failed）」のような英語が人に見えていた。
+      setPickErr(`「${it.name || '素材'}」を読み込めませんでした。${humanizeMediaError(e)}棚からは消していません。`);
+      setPickErrItem(it);
+    }
     finally { setPicking(null); }
   };
 
@@ -233,15 +256,33 @@ export default function IrisAssetShelf({ bg, activeAssetIds, onPick, onRequestAd
       )}
 
       {pickErr && (
-        <p style={{
+        <div role="alert" style={{
           margin: '0 0 8px', padding: '0.6rem 0.75rem', borderRadius: 12,
           background: 'rgba(220,38,38,0.10)', border: '1px solid rgba(220,38,38,0.42)',
           fontSize: 11.5, lineHeight: 1.6, color: bg.ink,
-          display: 'flex', gap: 6, alignItems: 'flex-start', overflowWrap: 'break-word',
+          overflowWrap: 'break-word',
         }}>
-          <AlertCircle size={13} style={{ color: '#e11d48', flexShrink: 0, marginTop: 2 }} />
-          {pickErr}
-        </p>
+          <p style={{ margin: 0, display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+            <AlertCircle size={13} style={{ color: '#e11d48', flexShrink: 0, marginTop: 2 }} />
+            {pickErr}
+          </p>
+          {/* 失敗した素材が分かっている時は、棚から目で探し直させない */}
+          {pickErrItem && (
+            <button
+              onClick={() => void handlePick(pickErrItem)}
+              disabled={picking === pickErrItem.id}
+              style={{
+                marginTop: 8, minHeight: 44, padding: '0 1rem',
+                background: bg.accentSolid, color: '#fff', border: 'none', borderRadius: 12,
+                fontSize: 12.5, fontWeight: 800,
+                cursor: picking === pickErrItem.id ? 'progress' : 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
+              <RefreshCw size={14} />
+              {picking === pickErrItem.id ? 'もう一度ためしています…' : 'もう一度ためす'}
+            </button>
+          )}
+        </div>
       )}
 
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>

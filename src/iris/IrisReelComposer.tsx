@@ -17,6 +17,7 @@ import { REEL_TEMPLATES, type ReelTemplate } from './reelTemplates';
 import { buildHashtagPlan, splitCaptionAndTags, BAND_META } from './hashtagStrategy';
 import type { IrisBackgroundDef } from './irisStyle';
 import { warmFaceBg, whiteSafeGradient } from './irisStyle';
+import { humanizeAiError, humanizeNonAiError } from '../lib/aiErrorMessage';
 
 const TPL_ICON = { sparkles: Sparkles, list: List, sun: Sun, messageCircle: MessageCircle, alertTriangle: AlertTriangle, gift: Gift } as const;
 
@@ -139,7 +140,7 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSc
       loaded.forEach(({ meta, el }, i) => { elMap.current.set(meta.id, el); fileMap.current.set(meta.id, arr[i]); });
       setClips((prev) => [...prev, ...loaded.map((l) => l.meta)].slice(0, 12));
     } catch (e) {
-      setError(e instanceof Error ? e.message : '素材の読み込みに失敗しました');
+      setError(humanizeNonAiError(e, '素材を読み込めませんでした。対応形式か確かめて、もう一度おためしください。'));
     }
   };
 
@@ -164,7 +165,7 @@ export default function IrisReelComposer({ bg, context, accent = '#E1306C', onSc
       });
       setComp(result);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '構成の生成に失敗しました');
+      setError(humanizeAiError(e));
     } finally {
       setBusy(false);
     }

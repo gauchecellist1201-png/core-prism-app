@@ -11,6 +11,7 @@ import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { logIrisActivity } from './irisActivity';
 import { aiFetch } from '../lib/aiFetch';
+import { aiErrorMessage } from '../lib/aiErrorMessage';
 
 export interface MediaKitDoc {
   /** 一言キャッチ（肩書き的なフレーズ） */
@@ -202,7 +203,7 @@ ${kitFacts(opts.mediaKit)}
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `メディアキット生成APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'mediaKit'));
     }
     return res.json();
   });

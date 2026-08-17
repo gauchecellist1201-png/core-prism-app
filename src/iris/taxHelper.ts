@@ -6,6 +6,7 @@ import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { aiFetch } from '../lib/aiFetch';
+import { aiErrorMessage } from '../lib/aiErrorMessage';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -150,7 +151,7 @@ ${opts.categories.map(c => `- ${c.category}: ¥${c.total.toLocaleString()}`).joi
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `税務APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'tax'));
     }
     return res.json();
   });

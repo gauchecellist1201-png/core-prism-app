@@ -13,6 +13,7 @@ import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { generateHealthAdvice, buildStatBundle, type HealthAdvice } from '../lib/healthAdvisor';
 import { getHealthToken, getLastPullAt, pullIngestedDays } from '../lib/healthIngest';
 import type { DailyHealth } from '../types/health';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -102,7 +103,7 @@ export default function IrisHealthView({ bg, health }: Props) {
       setAdvice(next);
       localStorage.setItem(ADVICE_CACHE_KEY, JSON.stringify(next));
     } catch (e: any) {
-      setAdviceError(e?.message || '取得に失敗しました');
+      setAdviceError(humanizeAiError(e));
     } finally {
       setAdviceBusy(false);
     }

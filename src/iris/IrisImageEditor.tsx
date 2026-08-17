@@ -13,6 +13,7 @@ import { accentFaceBg, accentFaceInk } from './irisStyle';
 import type { AppSettings } from '../types/identity';
 import { shareToInstagram } from './instagramShare';
 import { aiFetch } from '../lib/aiFetch';
+import { humanizeNonAiError, aiFailureWithReason } from '../lib/aiErrorMessage';
 
 type AspectId = '1:1' | '4:5' | '9:16' | '16:9' | 'free';
 type FilterId = 'none' | 'vivid' | 'mono' | 'faded' | 'cinematic' | 'pastel' | 'noir' | 'warm' | 'cool';
@@ -552,7 +553,7 @@ export default function IrisImageEditor({ bg }: Props) {
       });
       setNote(r.message);
     } catch (e: any) {
-      setNote(`シェアできませんでした（${e?.message || '通信エラー'}）`);
+      setNote(`シェアできませんでした。${humanizeNonAiError(e, 'もう一度おためしください。')}`);
       setLastFail('share');
     } finally {
       setBusy(null);
@@ -630,7 +631,7 @@ JSON だけ返し、\`\`\`json は不要。`;
       setFilter(fid as FilterId);
       setNote(`おまかせ完了 — ${j.comment || '画像に合わせて最適化しました'}`);
     } catch (e: any) {
-      setNote(`おまかせできませんでした（${e?.message || '通信エラー'}）`);
+      setNote(aiFailureWithReason('おまかせできませんでした', e));
       setLastFail('omakase');
     } finally {
       setBusy(null);

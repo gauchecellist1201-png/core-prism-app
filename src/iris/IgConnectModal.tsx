@@ -3,7 +3,7 @@
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, ArrowRight, Check, Key, ExternalLink, AlertCircle, Loader2, ImageUp, Sparkles } from 'lucide-react';
+import { X, ArrowRight, Check, Key, ExternalLink, AlertCircle, Loader2, ImageUp, Sparkles, RefreshCw } from 'lucide-react';
 import InstagramGlyph from './InstagramGlyph';
 import { createSelfReportedProfile, saveIgProfile, tryOauthConnect, connectWithToken, connectFromScreenshot } from './instagramConnect';
 import type { IgProfile } from './instagramConnect';
@@ -30,9 +30,14 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
   const previewUrlRef = useRef<string | null>(null);
   const [shotStatus, setShotStatus] = useState<'idle' | 'reading' | 'success' | 'failed'>('idle');
   const [shotRecovery, setShotRecovery] = useState<string | null>(null);
+  // 読み取りに失敗したスクショそのものを覚えておく。
+  // これが無いと、AI が一度こけただけでカメラロールを開き直して同じ写真を
+  // 選び直させることになる (混み合い・電波の一瞬の途切れでも起きる)。
+  const lastShotFileRef = useRef<File | null>(null);
 
   const handleScreenshotFile = async (file: File | null) => {
     if (!file) return;
+    lastShotFileRef.current = file;
     setShotRecovery(null);
     setError(null);
     setShotStatus('reading');
@@ -138,6 +143,20 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
     setSelected(s => s.includes(c) ? s.filter(x => x !== c) : [...s, c]);
   };
 
+  // 失敗の説明とやり直すボタンが、モーダルの折り返しより下に出てしまう問題。
+  // 390x844 の実機幅で測ると、ボタンは y=888 = 画面の外で、モーダルはいちばん上のまま
+  // (scrollTop=0)。スクショを選んだ人には「何も起きなかった」ようにしか見えない。
+  // どの失敗も data-iris-fail の印を持たせ、見えていない時だけ自分から視界に入れる。
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sheetRef.current?.querySelector('[data-iris-fail="1"]') as HTMLElement | null;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > (window.innerHeight || 0)) {
+      try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { /* 古い端末 */ }
+    }
+  }, [shotStatus, tokenStatus, oauthError, error]);
+
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -153,6 +172,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
         initial={{ scale: 0.92, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 30 }}
         transition={{ type: 'spring', damping: 22, stiffness: 260 }}
         onClick={e => e.stopPropagation()}
+        ref={sheetRef}
         style={{
           background: '#fff', borderRadius: 22, padding: '1.5rem',
           maxWidth: 480, width: '100%',
@@ -209,7 +229,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
 
         {/* 本連携のエラー (必ず理由と次の一手を見せる — silent fail 禁止) */}
         {oauthError && (
-          <div style={{
+          <div data-iris-fail="1" role="alert" style={{
             background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.25)',
             padding: '0.6rem 0.85rem', borderRadius: 10, marginBottom: '0.6rem',
             color: '#9B1B30', fontSize: 12, lineHeight: 1.6,
@@ -220,6 +240,25 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
                 <strong>{oauthError.message}</strong>
                 {oauthError.recovery && (
                   <div style={{ marginTop: 4, fontSize: 11, color: '#5A5562', fontWeight: 500 }}>{oauthError.recovery}</div>
+                )}
+                {/* 「開通待ち」以外は、一時的な失敗のことがある。押し直せる場所をここに置く。
+                    開通待ちの時は押しても必ず同じ結果なので出さない (無駄なボタンを出さない) */}
+                {oauthState !== 'unavailable' && (
+                  <button
+                    type="button"
+                    onClick={() => void handleOauth()}
+                    disabled={oauthState === 'trying'}
+                    style={{
+                      marginTop: 8, minHeight: 44, padding: '0 1rem',
+                      background: '#fff', color: '#9B1B30',
+                      border: '1px solid rgba(200,16,46,0.35)', borderRadius: 12,
+                      fontSize: 12.5, fontWeight: 800,
+                      cursor: oauthState === 'trying' ? 'progress' : 'pointer',
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                    }}>
+                    <RefreshCw size={14} />
+                    {oauthState === 'trying' ? 'つないでいます…' : 'もう一度つなぐ'}
+                  </button>
                 )}
               </div>
             </div>
@@ -333,7 +372,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
             )}
 
             {error && shotStatus === 'failed' && (
-              <div style={{
+              <div data-iris-fail="1" role="alert" style={{
                 background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.25)',
                 padding: '0.6rem 0.85rem', borderRadius: 10, marginBottom: '0.75rem',
                 color: '#9B1B30', fontSize: 12, lineHeight: 1.6,
@@ -343,6 +382,21 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
                   <div style={{ flex: 1 }}>
                     <strong>{error}</strong>
                     {shotRecovery && <div style={{ marginTop: 4, fontSize: 11, color: '#5A5562', fontWeight: 500 }}>{shotRecovery}</div>}
+                    {/* 同じ写真をもう一度。カメラロールを開き直させない */}
+                    {lastShotFileRef.current && (
+                      <button
+                        type="button"
+                        onClick={() => void handleScreenshotFile(lastShotFileRef.current)}
+                        style={{
+                          marginTop: 8, minHeight: 44, padding: '0 1rem',
+                          background: '#fff', color: '#9B1B30',
+                          border: '1px solid rgba(200,16,46,0.35)', borderRadius: 12,
+                          fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                        }}>
+                        <RefreshCw size={14} /> 同じスクショでもう一度
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -428,7 +482,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
             </div>
 
             {error && (
-              <div style={{
+              <div data-iris-fail="1" role="alert" style={{
                 background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.25)',
                 padding: '0.6rem 0.85rem', borderRadius: 10, marginBottom: '0.75rem',
                 color: '#9B1B30', fontSize: 12, lineHeight: 1.6,
@@ -521,7 +575,7 @@ export default function IgConnectModal({ onClose, onConnected }: Props) {
         </div>
 
         {error && (
-          <div style={{
+          <div data-iris-fail="1" role="alert" style={{
             background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.25)',
             padding: '0.55rem 0.85rem', borderRadius: 10, marginBottom: '0.75rem',
             color: '#9B1B30', fontSize: 12,

@@ -41,6 +41,7 @@ import {
   notificationAlreadyAsked,
   requestNotificationPermission,
 } from '../lib/pushNotify';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 const STORAGE_KEY = 'core_iris_voicehome_history_v1';
 
@@ -218,7 +219,7 @@ export default function IrisVoiceHome({ bg, settings, myDeals, mediaKit, postQue
       setHistory(prev => [...prev, aiMsg]);
       setErr(null);
     } catch (e: any) {
-      setErr(e.message || '送信失敗');
+      setErr(humanizeAiError(e));
     } finally { setBusy(false); }
   };
 

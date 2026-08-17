@@ -12,6 +12,7 @@
 
 import { logIrisActivity } from './irisActivity';
 import { aiFetch } from '../lib/aiFetch';
+import { humanizeAiError, humanizeNonAiError, aiErrorMessage } from '../lib/aiErrorMessage';
 
 export interface ScriptScene {
   /** シーン番号 (1〜3) */
@@ -109,13 +110,13 @@ export async function generateReelScript(theme: string): Promise<ReelScriptResul
       }),
     });
   } catch (e: any) {
-    throw new Error(`通信に失敗しました: ${e?.message || e}。Wi-Fi / モバイル回線を確認して再試行してください。`);
+    throw new Error(humanizeAiError(e));
   }
 
   if (!res.ok) {
     let errJson: any = {};
     try { errJson = await res.json(); } catch { /* */ }
-    const userMsg = errJson?.userMessage || errJson?.error?.message || `AI エラー: ${res.status}`;
+    const userMsg = errJson?.userMessage || aiErrorMessage(res.status, errJson, 'reelScript');
     const recov = errJson?.recovery || '少し待ってから再試行するか、「手で書く」ボタンで進めてください。';
     throw new Error(`${userMsg} ${recov}`);
   }
@@ -127,7 +128,7 @@ export async function generateReelScript(theme: string): Promise<ReelScriptResul
   let parsed: any;
   try { parsed = extractJson(text); }
   catch (e: any) {
-    throw new Error(`AI 応答を解釈できませんでした: ${e?.message || e}。もう一度お試しください。`);
+    throw new Error(humanizeNonAiError(e, 'AI の返事を読み取れませんでした。もう一度おためしください。'));
   }
 
   // ─── 正規化 ───
@@ -190,12 +191,12 @@ export async function generateReelCaption(themeOrHint: string, existingCaptions:
       }),
     });
   } catch (e: any) {
-    throw new Error(`通信に失敗しました: ${e?.message || e}`);
+    throw new Error(humanizeAiError(e));
   }
   if (!res.ok) {
     let errJson: any = {};
     try { errJson = await res.json(); } catch { /* */ }
-    throw new Error(errJson?.userMessage || errJson?.error?.message || `AI エラー: ${res.status}`);
+    throw new Error(errJson?.userMessage || aiErrorMessage(res.status, errJson, 'reelScript'));
   }
   const data = await res.json();
   const text = data?.content?.[0]?.text ?? '';

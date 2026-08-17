@@ -8,6 +8,7 @@ import { PLATFORM_META, CONTENT_TYPE_META } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { aiFetch } from '../lib/aiFetch';
+import { aiErrorMessage } from '../lib/aiErrorMessage';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -115,7 +116,7 @@ ${opts.ngWords?.join(', ') || '(なし)'}
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `構成生成APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'contentDirector'));
     }
     return res.json();
   });
@@ -215,7 +216,7 @@ ${opts.focus || '(指定なし — クリエイターの強みを活かす方向
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `週次クリエイティブAPIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'contentDirector'));
     }
     return res.json();
   });
@@ -290,7 +291,7 @@ ${opts.contentTopic || '(指定なし)'}
         messages: [{ role: 'user', content: userText }],
       }),
     });
-    if (!res.ok) throw new Error(`ロケ地提案エラー: ${res.status}`);
+    if (!res.ok) throw new Error(aiErrorMessage(res.status, undefined, 'locationIdeas'));
     return res.json();
   });
 
@@ -363,7 +364,7 @@ ${opts.audience || '同年代の女性'}
         messages: [{ role: 'user', content: userText }],
       }),
     });
-    if (!res.ok) throw new Error(`衣装チェックリストエラー: ${res.status}`);
+    if (!res.ok) throw new Error(aiErrorMessage(res.status, undefined, 'wardrobe'));
     return res.json();
   });
 

@@ -24,6 +24,7 @@ import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
 import IrisIntro from './IrisIntro';
 import { Clapperboard } from 'lucide-react';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -184,7 +185,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
         durationSec: duration ? Number(duration) : undefined,
       });
       setResult(r);
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    } catch (e) { setErr(humanizeAiError(e)); } finally { setBusy(false); }
   };
 
   const fullExport = () => {
@@ -249,7 +250,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
       saveWeekly(p);
       notifyInApp({ kind: 'success', title: '今週のクリエイティブができました', body: 'リール 3 / ストーリー 7 / 投稿 4 を提案しました' });
     } catch (e: any) {
-      notifyInApp({ kind: 'warn', title: '生成できませんでした', body: e?.message ?? String(e) });
+      notifyInApp({ kind: 'warn', title: '生成できませんでした', body: humanizeAiError(e) });
     } finally { setWeeklyBusy(false); }
   };
 
@@ -283,7 +284,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
       });
       setLocations(list);
     } catch (e: any) {
-      notifyInApp({ kind: 'warn', title: 'ロケ地提案エラー', body: e?.message ?? String(e) });
+      notifyInApp({ kind: 'warn', title: 'ロケ地を出せませんでした', body: humanizeAiError(e) });
     } finally { setLocBusy(false); }
   };
 
@@ -298,7 +299,7 @@ export default function IrisDirectorView({ bg, settings }: Props) {
       });
       setWardrobeBySlot(prev => ({ ...prev, [slot.id]: w }));
     } catch (e: any) {
-      notifyInApp({ kind: 'warn', title: '衣装メモエラー', body: e?.message ?? String(e) });
+      notifyInApp({ kind: 'warn', title: '衣装メモを出せませんでした', body: humanizeAiError(e) });
     } finally { setWardrobeBusy(null); }
   };
 

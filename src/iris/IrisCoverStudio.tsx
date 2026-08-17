@@ -15,6 +15,7 @@ import { Sparkles, ImagePlus, Download, Wand2, Check, RefreshCw, AlertTriangle }
 import {IRIS_FONTS, IRIS_COLORS, warmFaceBg, whiteSafeGradient} from './irisStyle';
 import { generateCoverProposal, type CoverMood, type CoverLayout, type CoverProposal } from './coverProposal';
 import IrisGridPreview from './IrisGridPreview';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 interface CoverBg {
   accent?: string; ink?: string; inkSoft?: string; card?: string; cardBorder?: string;
@@ -132,7 +133,7 @@ export default function IrisCoverStudio({ bg }: { bg: CoverBg; settings?: unknow
       setLayout(p.layout);
       setAccentCol(p.accent);
     } catch (e: any) {
-      setErr(e?.message || '提案の生成に失敗しました。テーマを変えて再試行してください。');
+      setErr(humanizeAiError(e));
     } finally {
       clearInterval(timer);
       setThinking(false);

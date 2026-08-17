@@ -39,6 +39,7 @@ import { useAgentTaskQueue } from '../hooks/useAgentTaskQueue';
 import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
 import { aiFetch } from '../lib/aiFetch';
 import ThinkingIndicator from '../components/ThinkingIndicator';
+import { humanizeAiError, aiErrorMessage } from '../lib/aiErrorMessage';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -254,7 +255,7 @@ export default function IrisFanEngagement({ bg, settings }: Props) {
       setShotPicked(new Set(r.fans.map((_, i) => i))); // デフォルト全選択
       notifyInApp({ kind: 'success', title: `${r.fans.length} 人を読み取りました`, body: 'チェックを外したい人は外してから「追加」ボタン' });
     } catch (e: any) {
-      setShotErr(e?.message || '読み取り失敗');
+      setShotErr(humanizeAiError(e));
     } finally {
       setShotBusy(false);
     }
@@ -392,7 +393,7 @@ ${toneInstruction()}
             messages: [{ role: 'user', content: `以下のファンリストから高エンゲージメント TOP10 を選んでください:\n${JSON.stringify(fanSummary, null, 2)}` }],
           }),
         });
-        if (!res.ok) throw new Error(`API エラー: ${res.status}`);
+        if (!res.ok) throw new Error(aiErrorMessage(res.status, undefined, 'fanEngagement'));
         return res.json();
       });
       const text = data.content?.[0]?.text ?? '';
@@ -460,7 +461,7 @@ ${toneInstruction()}
             messages: [{ role: 'user', content: `候補:\n${JSON.stringify(candidates, null, 2)}\n\n今週連絡すべき 5 人と「声かけの一言」を選んでください。` }],
           }),
         });
-        if (!res.ok) throw new Error(`API エラー: ${res.status}`);
+        if (!res.ok) throw new Error(aiErrorMessage(res.status, undefined, 'fanEngagement'));
         return res.json();
       });
       const text = data.content?.[0]?.text ?? '';
@@ -511,7 +512,7 @@ ${toneInstruction()}
             messages: [{ role: 'user', content: prompt }],
           }),
         });
-        if (!res.ok) throw new Error(`API エラー: ${res.status}`);
+        if (!res.ok) throw new Error(aiErrorMessage(res.status, undefined, 'fanEngagement'));
         return res.json();
       });
       setReplyTemplate(data.content?.[0]?.text ?? '');
@@ -567,7 +568,7 @@ ${recent}
             messages: [{ role: 'user', content: prompt }],
           }),
         });
-        if (!res.ok) throw new Error(`API エラー: ${res.status}`);
+        if (!res.ok) throw new Error(aiErrorMessage(res.status, undefined, 'fanEngagement'));
         return res.json();
       });
       setThanksDm((data.content?.[0]?.text ?? '').trim());

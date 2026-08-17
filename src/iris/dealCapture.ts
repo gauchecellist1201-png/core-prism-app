@@ -7,6 +7,7 @@
 // ============================================================
 
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
+import { humanizeNonAiError } from '../lib/aiErrorMessage';
 
 export interface CapturedDeal {
   brandName: string | null;
@@ -86,7 +87,7 @@ export async function captureDealFromScreenshots(files: File[]): Promise<Capture
   } catch (e: any) {
     return {
       ok: false, error: 'read_failed',
-      message: e?.message || '画像の読み込みに失敗しました',
+      message: humanizeNonAiError(e, '画像を読み込めませんでした。もう一度おためしください。'),
       recovery: 'もう一度ファイルを選び直してください',
     };
   }

@@ -61,6 +61,7 @@ import {
   REEL_SAFE_TOP, REEL_SAFE_BOTTOM,
   wrapCaptionLines, captionHiddenSide, safeCaptionY,
 } from './reelSafeArea';
+import { humanizeAiError, humanizeNonAiError } from '../lib/aiErrorMessage';
 
 /** キャプションの「最初の1行」を別フックに差し替える（2行目以降は維持） */
 function swapFirstLine(caption: string, newHook: string): string {
@@ -485,7 +486,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
             : { state: 'saved', savedAt: Date.now(), count: metas.length });
         } catch (e) {
           // 想定外の失敗。それでも「保存できた」とは絶対に言わない
-          setPersist({ state: 'failed', message: e instanceof Error ? e.message : '保存できませんでした。' });
+          setPersist({ state: 'failed', message: humanizeNonAiError(e, 'この端末に保存できませんでした。空き容量を確かめて、もう一度おためしください。') });
         }
       })();
     }, 1200);
@@ -580,7 +581,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
     for (const f of vids) {
       const url = URL.createObjectURL(f);
       try { const el = await loadVideo(url); newClips.push({ id: makeId(), kind: 'video', url, duration: Math.min(el.duration || 3, 6), el, blob: f, assetId: makeId(), name: f.name }); }
-      catch (err: any) { failed.push(`${f.name}: ${err?.message || `動画を読めませんでした。${VIDEO_FORMAT_HELP}`}`); URL.revokeObjectURL(url); }
+      catch (err) { failed.push(`${f.name}: ${humanizeNonAiError(err, `動画を読めませんでした。${VIDEO_FORMAT_HELP}`)}`); URL.revokeObjectURL(url); }
     }
     if (!imgs.length && !vids.length && !auds.length && arr.length) {
       failed.push('対応形式: 画像 (jpg/png/webp), 動画 (mp4/mov/webm), 音楽 (mp3/wav/m4a)');
@@ -746,7 +747,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       setStep('subtitle');
       setReward({ label: '字幕ができました！', detail: `${clips.length} カットに反映しました` });
     } catch (e: any) {
-      setAiErr(e?.message || 'AI 処理に失敗しました。少し待ってから再試行してください。');
+      setAiErr(humanizeAiError(e));
     } finally {
       setAiBusy(false);
       setAiPhase('');
@@ -834,7 +835,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       });
       setStep('subtitle');
     } catch (e: any) {
-      setScriptErr(e?.message || 'AI 処理に失敗しました。少し待ってから再試行してください。');
+      setScriptErr(humanizeAiError(e));
     } finally {
       if (scriptTickRef.current) { clearInterval(scriptTickRef.current); scriptTickRef.current = null; }
       setScriptPhase('');
@@ -1227,7 +1228,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       setScheduled(true);
       setScheduledMsg(`${when.getMonth() + 1}/${when.getDate()} ${String(when.getHours()).padStart(2, '0')}:${String(when.getMinutes()).padStart(2, '0')} に予約しました`);
     } catch (e: any) {
-      setScheduledMsg(`予約に失敗しました: ${e?.message || e}`);
+      setScheduledMsg(`予約できませんでした。${humanizeNonAiError(e, 'もう一度おためしください。')}`);
     }
   };
 
@@ -1508,7 +1509,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       setAiCaption(out);
       setReward({ label: '投稿文ができました！', detail: `ハッシュタグ ${out.hashtags.length} 個つき` });
     } catch (e: any) {
-      setCapErr(e?.message || 'キャプション生成に失敗しました');
+      setCapErr(humanizeAiError(e));
     } finally {
       setCapBusy(false);
     }
@@ -1572,7 +1573,7 @@ export default function IrisReelStudioMinimal({ bg, onJumpToSchedule, onOpenAdva
       }
     } catch (e: any) {
       if (e?.name === 'AbortError') { setScheduledMsg('共有をキャンセルしました'); }
-      else setScheduledMsg(`Instagram への共有に失敗: ${e?.message || e}`);
+      else setScheduledMsg(`Instagram へ共有できませんでした。${humanizeNonAiError(e, 'もう一度おためしください。')}`);
     } finally {
       setIgBusy(false);
     }

@@ -44,6 +44,24 @@ import { translateCaptions, type TargetLang } from './reelStudio/Translate';
 import { removeBackgroundFromUrl } from './reelStudio/BgRemove';
 import DelegateToAgentTeamBanner from '../components/DelegateToAgentTeamBanner';
 import ThreadsPostPanel from '../components/ThreadsPostPanel';
+import { humanizeAiError, humanizeNonAiError, aiFailureWithReason } from '../lib/aiErrorMessage';
+
+/** 音声認識が返す符丁を、人の言葉と次の一手に直す */
+function speechErrorMessage(code: unknown): string {
+  switch (code) {
+    case 'no-speech':      return '声を聞き取れませんでした。もう少し大きな声で、もう一度おためしください。';
+    case 'audio-capture':  return 'マイクが見つかりませんでした。端末のマイクを確かめて、もう一度おためしください。';
+    case 'not-allowed':
+    case 'service-not-allowed':
+      return 'マイクの使用が許可されていません。ブラウザの設定でマイクを許可してから、もう一度おためしください。';
+    case 'network':        return '通信が不安定なため聞き取れませんでした。電波の良いところで、もう一度おためしください。';
+    case 'aborted':        return '聞き取りが途中で止まりました。もう一度おためしください。';
+    default:
+      try { if (code) console.warn('[iris/speech] error code:', code); } catch { /* noop */ }
+      return '聞き取れませんでした。もう一度おためしください。';
+  }
+}
+
 
 // ─── 編集テンプレート (型) ─────────────────────
 type ReelTemplate = {
@@ -1744,7 +1762,7 @@ export default function IrisReelStudio({ bg, onJumpToSchedule, initialProject, o
             : { state: 'saved', savedAt: Date.now(), count: metas.length });
         } catch (e) {
           // ここに来るのは想定外の例外。それでも「保存できた」とは絶対に言わない
-          setPersist({ state: 'failed', message: e instanceof Error ? e.message : '保存できませんでした。' });
+          setPersist({ state: 'failed', message: humanizeNonAiError(e, 'この端末に保存できませんでした。空き容量を確かめて、もう一度おためしください。') });
         }
       })();
     }, 1200);
@@ -2086,7 +2104,7 @@ JSON のみで返答。`;
       setScheduleHashtags(Array.isArray(j.hashtags) ? j.hashtags.join(' ') : String(j.hashtags || ''));
       setScheduleCta(String(j.cta || ''));
     } catch (e: any) {
-      setScheduleErr(e?.message || '生成失敗。手動で記入してください。');
+      setScheduleErr(aiFailureWithReason('うまく作れませんでした。手で書くこともできます', e));
     } finally {
       setScheduleGenerating(false);
     }
@@ -2550,7 +2568,7 @@ JSON のみで返答。`;
       setBpm(track.bpm); // BPM はメタデータから既知
       setUploadError('');
     } catch (e: any) {
-      setUploadError(`BGM 取得失敗: ${e?.message || 'ネットワーク'} — 「BGM」ボタンから自分の楽曲を試せます`);
+      setUploadError(`BGM を取ってこられませんでした。${humanizeNonAiError(e, 'もう一度おためしください。')}「BGM」ボタンから自分の楽曲も使えます`);
     } finally {
       setBgmLoading(null);
     }
@@ -2634,7 +2652,7 @@ JSON のみで返答。`;
             onProgress: (phase) => setAutoPhase(phase),
           });
         } catch (e: any) {
-          aiFailMsg = e?.message || 'AI との通信に失敗しました';
+          aiFailMsg = humanizeAiError(e);
         }
       } else {
         aiFailMsg = '一部の素材がまだ読み込み中です';
@@ -2871,7 +2889,9 @@ JSON のみで返答。`;
         }
       };
       rec.onerror = (e: any) => {
-        setTranscribeErr(`認識エラー: ${e.error || 'unknown'}`);
+        // ブラウザが返すのは 'no-speech' 'audio-capture' のような符丁。
+        // そのまま出しても、読んだ人に打つ手が無い
+        setTranscribeErr(speechErrorMessage(e?.error));
       };
 
       // BGM か最初の動画を再生して聞かせる
@@ -2899,7 +2919,7 @@ JSON のみで返答。`;
       }));
       setCaptions(result);
     } catch (e: any) {
-      setTranscribeErr(e?.message || '字幕生成に失敗しました');
+      setTranscribeErr(humanizeAiError(e));
     } finally {
       setTranscribing(false);
     }
@@ -2961,7 +2981,7 @@ JSON のみで返答。`;
       } catch (e: any) {
         console.warn('audio mix failed', e);
         setUploadError(
-          `BGM の合成に失敗しました: ${e?.message || 'AudioContext エラー'} — 音楽なしのまま書き出しを続けます。`
+          `BGM を合わせられませんでした。${humanizeNonAiError(e, 'もう一度おためしください。')}音楽なしのまま書き出しを続けます。`
         );
       }
     }
@@ -3061,7 +3081,9 @@ JSON のみで返答。`;
         setConvertErr(`この環境では MP4 変換ツール (ffmpeg) を読み込めませんでした。${WEBM_HONEST_HELP}`);
       }
     } catch (e) {
-      setConvertErr(`MP4 への変換中にエラーが起きました${e instanceof Error ? ` (${e.message})` : ''}。${WEBM_HONEST_HELP}`);
+      // 原文は console にだけ残す (人には打つ手のある言葉だけ見せる)
+      try { console.warn('[iris/reel] mp4 convert failed:', e); } catch { /* noop */ }
+      setConvertErr(`MP4 への変換ができませんでした。${WEBM_HONEST_HELP}`);
     } finally {
       setConverting(false);
     }
@@ -4093,7 +4115,7 @@ JSON のみで返答。`;
                             };
                             img.src = blobUrl;
                           } catch (err: any) {
-                            const msg = err?.message || '背景除去に失敗しました';
+                            const msg = humanizeNonAiError(err, '背景を切り抜けませんでした。もう一度おためしください。');
                             console.warn('bg removal failed', err);
                             setBgRemoval(prev => ({ ...prev, [c.id]: { error: msg } }));
                           }
@@ -4282,7 +4304,7 @@ JSON のみで返答。`;
                       const translated = await translateCaptions(texts, lng);
                       setCaptions(prev => prev.map((c, i) => ({ ...c, text: translated[i] ?? c.text })));
                     } catch (e: any) {
-                      setTranslateErr(e?.message || '翻訳失敗');
+                      setTranslateErr(humanizeAiError(e));
                     } finally {
                       setTranslating(null);
                     }
@@ -4466,7 +4488,7 @@ JSON のみで返答。`;
                   setClips(prev => prev.map((c, i) => ({ ...c, duration: newDurs[i] ?? c.duration })));
                   setHighlightInfo(`${peaks.length} 個のピークを検出 → カット点に反映 (BGM ${duration.toFixed(1)}s)`);
                 } catch (e: any) {
-                  setHighlightInfo('検出失敗: ' + (e?.message || 'unknown'));
+                  setHighlightInfo('盛り上がりを見つけられませんでした。' + humanizeNonAiError(e, 'もう一度おためしください。'));
                 } finally {
                   setHighlightBusy(false);
                 }

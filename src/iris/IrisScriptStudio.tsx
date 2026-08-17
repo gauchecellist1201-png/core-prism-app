@@ -22,6 +22,7 @@ import {
   buildMonthlySchedule, monthlyPlanToMarkdown, monthlyPlanToHtml, type ScheduledIdea,
   captionBlock, shootingListMarkdown,
 } from './scriptStudio';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -220,7 +221,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
       const list = await generateIdeaPool({ settings, client: activeClient, igProfile, pastPosts, focus: focus || undefined, count });
       setIdeas(list);
       if (!list.length) setErr('ネタを取得できませんでした。もう一度お試しください。');
-    } catch (e: any) { setErr(e?.message || String(e)); }
+    } catch (e) { setErr(humanizeAiError(e)); }
     finally { setIdeaBusy(false); }
   };
 
@@ -248,7 +249,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
       const list = await generateIdeaPool({ settings, client: activeClient, igProfile, pastPosts, focus: focus || undefined, count: total });
       if (!list.length) { setErr('カレンダーを作れませんでした。もう一度お試しください。'); return; }
       setMonthly(buildMonthlySchedule(list, { startISO, perWeek, igProfile }));
-    } catch (e: any) { setErr(e?.message || String(e)); }
+    } catch (e) { setErr(humanizeAiError(e)); }
     finally { setMonthlyBusy(false); }
   };
 
@@ -289,7 +290,7 @@ function ScriptStudioInner({ bg, settings }: { bg: IrisBackgroundDef; settings: 
     try {
       const s = await generateProductionScript({ settings, client: activeClient, igProfile, pastPosts, topic, durationSec: dur });
       setScript(s);
-    } catch (e: any) { setErr(e?.message || String(e)); }
+    } catch (e) { setErr(humanizeAiError(e)); }
     finally { setScriptBusy(false); }
   };
 

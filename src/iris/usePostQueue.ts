@@ -7,6 +7,7 @@
 // ============================================================
 import { useCallback, useEffect, useState } from 'react';
 import { QUEUE_CHANGED_EVENT } from './gridReorder';
+import { humanizeNonAiError } from '../lib/aiErrorMessage';
 
 const STORAGE_KEY = 'iris_post_queue_v1';
 
@@ -79,7 +80,7 @@ function save(list: ScheduledPost[]): boolean {
     return true;
   } catch (e: any) {
     console.warn('usePostQueue: save failed', e);
-    notifySaveFailed(`予約の保存に失敗しました: ${e?.message || 'ストレージ容量'} — 古い投稿を削除して再試行してください。`);
+    notifySaveFailed(`予約を保存できませんでした。${humanizeNonAiError(e, 'この端末の空き容量が足りないのかもしれません。')}古い投稿を消してから、もう一度おためしください。`);
     return false;
   }
 }

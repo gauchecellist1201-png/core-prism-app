@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import type { IgProfile } from './instagramConnect';
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 export interface StrategyItem {
   title: string;
@@ -86,7 +87,7 @@ export function useIgStrategy(profile: IgProfile | null): {
       })
       .catch((e: Error) => {
         if (cancelled) return;
-        setError(e.message);
+        setError(humanizeAiError(e));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

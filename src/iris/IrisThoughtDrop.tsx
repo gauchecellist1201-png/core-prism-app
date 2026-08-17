@@ -20,6 +20,7 @@ import { logIrisActivity } from './irisActivity';
 import { IRIS_FONTS, type IrisBackgroundDef } from './irisStyle';
 import GenerationOrb from '../components/GenerationOrb';
 import { aiFetch } from '../lib/aiFetch';
+import { humanizeAiError, humanizeNonAiError, aiErrorMessage } from '../lib/aiErrorMessage';
 
 // ─── 生成結果の型 (IrisPlatformCards と共有) ─────
 export interface ThoughtDropResult {
@@ -83,7 +84,8 @@ export async function generateThoughtDrop(thought: string, model?: string): Prom
     });
     if (!res.ok) {
       const err: any = await res.json().catch(() => ({}));
-      const msg = err?.userMessage || err?.error?.message || `AIエラー: ${res.status}`;
+      // サーバーが用意した日本語だけ通す。上流 API の英語や番号は人に見せない
+      const msg = err?.userMessage || aiErrorMessage(res.status, err, 'thoughtDrop');
       const recov = err?.recovery || '少し待ってから、もう一度お試しください。';
       throw new Error(`${msg} ${recov}`);
     }
@@ -97,7 +99,7 @@ export async function generateThoughtDrop(thought: string, model?: string): Prom
   try {
     parsed = extractJson(text);
   } catch (e: any) {
-    throw new Error(`AI応答を読み取れませんでした: ${e.message}。もう一度お試しください。`);
+    throw new Error(humanizeNonAiError(e, 'AI の返事を読み取れませんでした。もう一度おためしください。'));
   }
 
   const strOf = (v: any) => String(v ?? '').trim();
@@ -168,7 +170,8 @@ export async function expandNoteArticle(
     });
     if (!res.ok) {
       const err: any = await res.json().catch(() => ({}));
-      const msg = err?.userMessage || err?.error?.message || `AIエラー: ${res.status}`;
+      // サーバーが用意した日本語だけ通す。上流 API の英語や番号は人に見せない
+      const msg = err?.userMessage || aiErrorMessage(res.status, err, 'thoughtDrop');
       const recov = err?.recovery || '少し待ってから、もう一度お試しください。';
       throw new Error(`${msg} ${recov}`);
     }
@@ -292,7 +295,7 @@ export default function IrisThoughtDrop({ bg, model, onResult, hideHeading }: Pr
       onResult(r);
       setText('');
     } catch (e: any) {
-      setErr(e?.message || '生成に失敗しました。もう一度お試しください。');
+      setErr(humanizeAiError(e));
     } finally {
       setBusy(false);
       if (stageTimerRef.current) { window.clearInterval(stageTimerRef.current); stageTimerRef.current = null; }

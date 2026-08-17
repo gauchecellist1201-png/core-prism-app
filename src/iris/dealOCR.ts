@@ -6,6 +6,7 @@ import type { Platform, ContentType, DealStage } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { aiFetch } from '../lib/aiFetch';
+import { aiErrorMessage } from '../lib/aiErrorMessage';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -105,7 +106,7 @@ export async function extractDealFromImages(opts: {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `案件読取APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'dealOcr'));
     }
     return res.json();
   });
@@ -170,7 +171,7 @@ ${toneInstruction()}`;
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `案件抽出APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'dealOcr'));
     }
     return res.json();
   });

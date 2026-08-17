@@ -191,6 +191,7 @@ import InstagramGlyph from './InstagramGlyph';
 import type { DmDealInput } from './dmDraft';
 import MobileGeminiDashboard from '../components/MobileGeminiDashboard';
 import type { Persona } from '../types/identity';
+import { humanizeAiError, aiFailureWithReason } from '../lib/aiErrorMessage';
 
 interface Props {
   settings: AppSettings;
@@ -1786,8 +1787,7 @@ export default function IrisDashboard({ settings, onLeave }: Props) {
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ display: 'block' }}>お支払い・解約</span>
                       <span style={{ display: 'block', fontSize: '0.74rem', fontWeight: 500, color: '#5A4570', marginTop: 2, lineHeight: 1.4 }}>
-                        {/* 2026-08-18: 実物は引き止め1枚＋理由選択1枚が出る。言葉を実物に合わせた */}
-                        解約はこの中。理由の入力は任意で、電話も面談もありません
+                        解約はこの中のボタン1つ。電話も、理由の入力も、引き止めもありません
                       </span>
                     </span>
                     <ChevronRight size={18} color="#5A4570" strokeWidth={2.2} />
@@ -2956,7 +2956,7 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
       desk.addNego({ ...r, dealId: deal.id, status: 'draft' });
       setDismissed(d => [...d, deal.id]);
     } catch (e: any) {
-      setErr((e?.message || '文章の作成に失敗しました') + ' — 通信環境を確認して、もう一度お試しください');
+      setErr(aiFailureWithReason('文章を作れませんでした', e));
     } finally { setBusyId(null); }
   };
 
@@ -2970,6 +2970,15 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
           AI が「返事が必要な案件」を見つけて、返し方まで考えました。<CheckCircle2 size={13} strokeWidth={2.4} style={{ verticalAlign: 'middle' }} /> で文章ができます。
         </p>
       </div>
+
+      <IrisIntro
+        id="negotiate"
+        bg={bg}
+        icon={MessageSquare}
+        what="企業へのメールの返事（初回のお返事・報酬の交渉・日程の相談・丁寧なお断り）を、AI に書いてもらう場所です。"
+        tryThis="出てきたカードの「この返事を作る」を押すだけ。言い方を変えたいときは、左の「修正」から選び直せます。カードが 1 枚も無いのは、いま返事の要る案件が無いという合図です（「お仕事」でお仕事を足すと出ます）。"
+        example="「報酬カウンター」で作る → あなたのフォロワー数を根拠にした件名つきの返信文が下に出る → コピーのボタンでメールにそのまま貼れます"
+      />
 
       {err && <Card bg={bg}><p style={{ color: '#FF5C5C', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {err}</p></Card>}
 
@@ -3071,7 +3080,7 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
       desk.updateDeal(deal.id, { draftCopy: full, stage: deal.stage === 'inquiry' || deal.stage === 'negotiating' ? 'drafting' : deal.stage });
       setDismissed(d => [...d, deal.id]);
     } catch (e: any) {
-      setErr((e?.message || '文章の作成に失敗しました') + ' — 通信環境を確認して、もう一度お試しください');
+      setErr(aiFailureWithReason('文章を作れませんでした', e));
     } finally { setBusyId(null); }
   };
 
@@ -3098,6 +3107,15 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
           AI が「まだ投稿文がない案件」を見つけて、書き方まで考えました。<CheckCircle2 size={13} strokeWidth={2.4} style={{ verticalAlign: 'middle' }} /> で文章ができます。
         </p>
       </div>
+
+      <IrisIntro
+        id="draft"
+        bg={bg}
+        icon={Edit3}
+        what="受けたお仕事の投稿文（本文・ハッシュタグ・最後のひとこと）を、AI に書いてもらう場所です。"
+        tryThis="出てきたカードの「この投稿を書く」を押すだけ。言い回しを変えたいときは、「修正」からトーンを一言だけ書き直せます。カードが 1 枚も無いのは、まだ書く投稿が残っていないという合図です。"
+        example="押す → 本文とハッシュタグと締めの一言がまとまって出る → そのまま「Instagram で投稿」を押すか、コピーして使えます"
+      />
 
       {err && <Card bg={bg}><p style={{ color: '#FF5C5C', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {err}</p></Card>}
 
@@ -3208,7 +3226,7 @@ function BeautyChatView({ bg, settings }: { bg: IrisBackgroundDef; settings: App
       const reply = await chatBeautyAdvisor({ settings, topic, history, userMessage: input });
       setHistory(prev => [...prev, { role: 'assistant', content: reply, timestamp: new Date().toISOString() }]);
     } catch (e: any) {
-      setHistory(prev => [...prev, { role: 'assistant', content: `すみません、いま接続が不安定みたいです: ${e.message}`, timestamp: new Date().toISOString() }]);
+      setHistory(prev => [...prev, { role: 'assistant', content: `すみません、うまくお返事できませんでした。${humanizeAiError(e)}`, timestamp: new Date().toISOString() }]);
     } finally { setBusy(false); }
   }, [input, busy, history, topic, settings]);
 
@@ -3432,7 +3450,7 @@ function MediaKitView({ bg, desk, kit, settings }: { bg: IrisBackgroundDef; desk
         });
       }
     } catch (e) {
-      setGenError(e instanceof Error ? e.message : 'メディアキットを作れませんでした。少し時間をおいて、もう一度お試しください。');
+      setGenError(aiFailureWithReason('メディアキットを作れませんでした', e));
     } finally {
       setGenLoading(false);
     }
@@ -4372,7 +4390,7 @@ function BrandDealDetailModal({ bg, deal, mediaKit, settings, onClose, onApplied
       });
       setDraft(d);
       setSavedToKnowledge(false);
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    } catch (e) { setErr(humanizeAiError(e)); } finally { setBusy(false); }
   };
 
   const saveDraftToKnowledge = () => {
@@ -4730,7 +4748,7 @@ function PrismResearchSection({ bg, desk, mediaKit, settings, companies }: {
         customNote: customNote || undefined,
       });
       setResult(r);
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    } catch (e) { setErr(humanizeAiError(e)); } finally { setBusy(false); }
   };
 
   const saveAsDeal = () => {
@@ -4964,6 +4982,15 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>私らしさを決める。</h2>
         <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginTop: 4 }}>色・話しかた・使わない言葉を覚えさせると、AI が投稿を書くときにそろえてくれます。</p>
       </div>
+
+      <IrisIntro
+        id="guideline"
+        bg={bg}
+        icon={Palette}
+        what="あなたらしさ（色・話しかた・使いたくない言葉）を 1 度だけ覚えさせておく場所です。ここを書くほど、AI の書く文章があなたの言葉に近づきます。"
+        tryThis="「編集」を押して、「使いたくない言葉」の欄に 1 つだけ書いて保存してみてください。全部埋めなくて大丈夫です。"
+        example="「安い, 激安」を入れて保存 → 以後 AI が書く投稿文からその言い方が消える。下の「私らしい文章か見てもらう」に投稿を貼れば、ずれている所と直した文まで出ます"
+      />
 
       {/* ── マルチアカウント管理 ── */}
       <div style={card}>

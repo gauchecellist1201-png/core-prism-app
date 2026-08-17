@@ -63,7 +63,7 @@ export default function FilmTab() {
         @media (min-width: 700px) { .fm-grid3 { grid-template-columns: repeat(3, 1fr); } }
         .fm-tag { display: inline-flex; align-items: center; min-height: 34px; padding: 6px 13px; border-radius: 999px;
           border: 1px solid ${D.goldLine}; color: ${D.gold}; font-size: 12.5px; letter-spacing: 0.06em; }
-        .fm-btn-light { background: #06C755; color: #FFFFFF; border: 1px solid #06C755; }
+        .fm-btn-light { background: #FFFFFF; color: ${C.ink}; border: 1px solid #FFFFFF; }
         .fm-btn-light:hover { opacity: 0.86; }
         .fm-btn-outline { background: transparent; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.5); font-weight: 600; }
         .fm-btn-outline:hover { border-color: ${D.gold}; }

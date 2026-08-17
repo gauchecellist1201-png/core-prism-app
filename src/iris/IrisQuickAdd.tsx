@@ -11,6 +11,7 @@ import { extractDealFromImages, extractDealFromText, type ExtractedDeal } from '
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import { useVoiceInput } from '../hooks/useVoiceInput';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -135,7 +136,7 @@ export default function IrisQuickAdd({ bg, settings, onClose, onSave }: Props) {
       }
       setExtracted(result);
     } catch (e: any) {
-      setErr(e.message || '抽出失敗');
+      setErr(humanizeAiError(e));
     } finally { setBusy(false); }
   };
 

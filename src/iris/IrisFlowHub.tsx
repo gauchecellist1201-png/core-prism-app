@@ -38,6 +38,7 @@ import type { MediaKit } from '../types/influencerDeal';
 import { usePostQueue, type ScheduledPost } from './usePostQueue';
 import { copyText } from './copyText';
 import { warmFaceBg } from './irisStyle';
+import { humanizeAiError, humanizeNonAiError } from '../lib/aiErrorMessage';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -162,7 +163,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
         if (p.scheduledAt !== times[idx]) postQueue.update(p.id, { scheduledAt: times[idx] });
       });
     } catch (e) {
-      setGridError(e instanceof Error ? e.message : '並べ替えの保存に失敗しました');
+      setGridError(humanizeNonAiError(e, '並べ替えを保存できませんでした。もう一度おためしください。'));
     }
   };
   const retryGridReorder = () => { if (gridLastMove) applyGridReorder(gridLastMove.from, gridLastMove.to); };
@@ -206,7 +207,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
       setDraft(d);
       if (!earnDone) { setEarnDone(true); fire('応募文ができました！連携から稼ぐまで一気通貫の完成です'); }
     } catch (e) {
-      setDraftError(e instanceof Error ? e.message : '応募文の生成に失敗しました');
+      setDraftError(humanizeAiError(e));
     } finally {
       setDraftLoading(false);
     }
@@ -244,7 +245,7 @@ export default function IrisFlowHub({ bg, igProfile, settings, mediaKit, onNavig
       setReel(r);
       fire('リール台本ができました！');
     } catch (e) {
-      setReelError(e instanceof Error ? e.message : '台本の生成に失敗しました');
+      setReelError(humanizeAiError(e));
     } finally {
       setReelLoading(false);
     }

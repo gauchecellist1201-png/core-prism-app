@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Platform, MediaKit } from '../types/influencerDeal';
+import { humanizeNonAiError } from '../lib/aiErrorMessage';
 
 const KEY_TEAM = 'core_iris_team_v1';
 
@@ -105,7 +106,7 @@ export function useIrisTeam() {
       setTemplates(prev => [...newTemplates, ...prev]);
       return { added: newMembers.length + newTemplates.length };
     } catch (e: any) {
-      return { added: 0, error: e.message || 'JSON が読み取れませんでした' };
+      return { added: 0, error: humanizeNonAiError(e, '貼り付けた内容を読み取れませんでした。形式を確かめて、もう一度おためしください。') };
     }
   }, [members, templates]);
 

@@ -7,6 +7,7 @@ import type { AppSettings } from '../types/identity';
 import type { Platform, ContentType, PlatformMetrics } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { aiFetch } from '../lib/aiFetch';
+import { aiErrorMessage } from '../lib/aiErrorMessage';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -124,7 +125,7 @@ export async function extractPostsFromScreenshots(opts: {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      const msg = err.error?.message ?? err.userMessage ?? `スクショ解析エラー: ${res.status}`;
+      const msg = err.userMessage ?? aiErrorMessage(res.status, err, 'screenshot');
       throw new Error(msg);
     }
     return res.json();
@@ -415,7 +416,7 @@ ${opts.recentTitles.slice(0, 10).map(t => `- ${t}`).join('\n')}
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `インサイト生成エラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'screenshot'));
     }
     return res.json();
   });

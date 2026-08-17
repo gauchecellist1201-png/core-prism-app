@@ -10,6 +10,7 @@ import type { CustomIrisBackground } from './irisStyle';
 import type { AppSettings } from '../types/identity';
 import { chatWithIris } from './irisAssistant';
 import ApiErrorCard from '../components/ApiErrorCard';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 interface Props {
   bg: IrisBackgroundDef | CustomIrisBackground;
@@ -134,7 +135,7 @@ export default function IrisCommandBar({ bg, settings, onRoute }: Props) {
       onRoute(target, res.intent);
       reset();
     } catch (err: any) {
-      setError(err?.message || 'うまく解釈できなかった。タブから直接探してね');
+      setError(humanizeAiError(err));
     } finally {
       setBusy(false);
     }

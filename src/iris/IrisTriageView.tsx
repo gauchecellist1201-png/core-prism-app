@@ -9,6 +9,8 @@ import { triageOffer, type OfferTriageResult } from './offerTriage';
 import type { IrisBackgroundDef } from './irisStyle';
 import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
 import IrisIntro from './IrisIntro';
+import IrisErrorRecovery from './IrisErrorRecovery';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 interface Props {
   bg: IrisBackgroundDef;
@@ -21,6 +23,9 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
   const [emailText, setEmailText] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // 「貼り忘れ」は押し直しても同じ結果なので、やり直すボタンは出さない。
+  // AI 側の失敗だけ「もう一度ためす」を出す。
+  const [errRetryable, setErrRetryable] = useState(false);
   const [result, setResult] = useState<OfferTriageResult | null>(null);
 
   const inp = {
@@ -51,11 +56,15 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
   } as React.CSSProperties;
 
   const triage = async () => {
-    if (!emailText.trim()) { setErr('案件メールを貼り付けてください'); return; }
+    if (!emailText.trim()) { setErr('案件メールを貼り付けてください'); setErrRetryable(false); return; }
     setBusy(true); setErr(null); setResult(null);
     try {
       setResult(await triageOffer({ settings, emailText, mediaKit }));
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    } catch (e) {
+      // 以前はここで e.message を素通ししていて、画面に "Failed to fetch" が出ていた
+      setErr(humanizeAiError(e));
+      setErrRetryable(true);
+    } finally { setBusy(false); }
   };
 
   const verdictMeta = (v: OfferTriageResult['verdict']) => {
@@ -99,7 +108,16 @@ export default function IrisTriageView({ bg, settings, mediaKit, onSaveAsDeal }:
         </button>
       </div>
 
-      {err && <div style={card}><p style={{ color: '#C8102E' }}>{err}</p></div>}
+      {err && (
+        <IrisErrorRecovery
+          key={err}
+          bg={bg}
+          message={err}
+          marginTop={0}
+          onRetry={errRetryable ? triage : undefined}
+          retryLabel="もう一度 精査する"
+        />
+      )}
 
       {result && (
         <>

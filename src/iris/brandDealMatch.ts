@@ -8,6 +8,7 @@ import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { logIrisActivity } from './irisActivity';
 import { aiFetch } from '../lib/aiFetch';
+import { aiErrorMessage } from '../lib/aiErrorMessage';
 
 // ─── マッチスコア ───────────────────────────────────────────
 export interface MatchScore {
@@ -193,7 +194,7 @@ ${opts.knowledgeContext}
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `応募メール生成エラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'brandDealMatch'));
     }
     return res.json();
   });

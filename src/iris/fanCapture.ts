@@ -11,6 +11,7 @@
 
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { aiFetch } from '../lib/aiFetch';
+import { humanizeAiError, humanizeNonAiError } from '../lib/aiErrorMessage';
 
 export interface CapturedFanCandidate {
   name: string;
@@ -79,7 +80,7 @@ export async function captureFansFromScreenshots(files: File[]): Promise<FanCapt
   try {
     dataUrls = await Promise.all(files.map(fileToDataUrl));
   } catch (e: any) {
-    return { ok: false, error: 'read_failed', message: e?.message || '画像の読み込みに失敗しました', recovery: 'もう一度ファイルを選び直してください' };
+    return { ok: false, error: 'read_failed', message: humanizeNonAiError(e, '画像を読み込めませんでした。'), recovery: 'もう一度ファイルを選び直してください' };
   }
 
   try {
@@ -127,7 +128,7 @@ export async function captureFansFromScreenshots(files: File[]): Promise<FanCapt
     }
     return { ok: true, fans, imageCount: dataUrls.length };
   } catch (e: any) {
-    return { ok: false, error: 'network', message: e?.message || 'ネットワークエラー', recovery: '電波の良いところで再試行してください' };
+    return { ok: false, error: 'network', message: humanizeAiError(e), recovery: '電波の良いところで再試行してください' };
   }
 }
 

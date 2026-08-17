@@ -18,6 +18,7 @@ import { IRIS_FONTS, type IrisBackgroundDef } from './irisStyle';
 import { EASE_OUT_FM } from './motion';
 import GenerationOrb from '../components/GenerationOrb';
 import { expandNoteArticle, type ThoughtDropResult } from './IrisThoughtDrop';
+import { humanizeNonAiError, aiFailureWithReason } from '../lib/aiErrorMessage';
 
 type CardId = 'x' | 'ig' | 'note';
 
@@ -138,7 +139,7 @@ export default function IrisPlatformCards({ bg, result, queue, handle, model }: 
       setReserved(r => ({ ...r, [id]: label }));
       notifyInApp({ kind: 'success', title: 'ベスト枠に予約しました', body: `${label} に投稿予約。投稿タブでいつでも変更できます。` });
     } catch (e: any) {
-      notifyInApp({ kind: 'warn', title: '予約に失敗しました', body: e?.message || 'もう一度お試しください。' });
+      notifyInApp({ kind: 'warn', title: '予約できませんでした', body: humanizeNonAiError(e, 'もう一度おためしください。') });
     }
   };
 
@@ -188,7 +189,7 @@ export default function IrisPlatformCards({ bg, result, queue, handle, model }: 
       setNoteWritten(true);
       notifyInApp({ kind: 'success', title: '本文を書き上げました', body: 'このまま公開できます。コピーして note で仕上げてください。' });
     } catch (e: any) {
-      setNoteWriteErr(e?.message || '本文を書き上げられませんでした。もう一度お試しください。');
+      setNoteWriteErr(aiFailureWithReason('本文を書き上げられませんでした', e));
     } finally {
       setNoteWriting(false);
     }

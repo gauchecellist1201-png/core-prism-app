@@ -7,6 +7,7 @@ import type { MediaKit } from '../types/influencerDeal';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { toneInstruction } from '../lib/aiTone';
 import { aiFetch } from '../lib/aiFetch';
+import { aiErrorMessage } from '../lib/aiErrorMessage';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -139,7 +140,7 @@ ${opts.emailText}
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `案件精査APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'offerTriage'));
     }
     return res.json();
   });

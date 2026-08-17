@@ -16,6 +16,7 @@ import { logIrisActivity } from './irisActivity';
 import type { IgProfile } from './instagramConnect';
 import type { PostHistoryItem } from './strategist';
 import { aiFetch } from '../lib/aiFetch';
+import { humanizeNonAiError, aiErrorMessage } from '../lib/aiErrorMessage';
 
 // ─── クライアント (代行先アカウント) プロフィール ───────────
 export interface IrisClient {
@@ -196,7 +197,7 @@ ${opts.focus || '(指定なし — このアカウントの強みを伸ばす方
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.userMessage || err.error?.message || `企画AIエラー: ${res.status}`);
+      throw new Error(err.userMessage || aiErrorMessage(res.status, err, 'scriptStudio'));
     }
     return res.json();
   });
@@ -205,7 +206,7 @@ ${opts.focus || '(指定なし — このアカウントの強みを伸ばす方
   if (!text) throw new Error('AI から空の応答が返りました。もう一度お試しください。');
   let parsed: any;
   try { parsed = extractJson(text); }
-  catch (e: any) { throw new Error(`AI 応答を解釈できませんでした: ${e?.message || e}`); }
+  catch (e) { throw new Error(humanizeNonAiError(e, 'AI の返事を読み取れませんでした。もう一度おためしください。')); }
 
   const raw = Array.isArray(parsed?.ideas) ? parsed.ideas : Array.isArray(parsed) ? parsed : [];
   const norm = (v: any): IdeaItem => ({
@@ -532,7 +533,7 @@ ${fmt} / ${dur}秒前後
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.userMessage || err.error?.message || `台本AIエラー: ${res.status}`);
+      throw new Error(err.userMessage || aiErrorMessage(res.status, err, 'scriptStudio'));
     }
     return res.json();
   });
@@ -541,7 +542,7 @@ ${fmt} / ${dur}秒前後
   if (!text) throw new Error('AI から空の応答が返りました。もう一度お試しください。');
   let p: any;
   try { p = extractJson(text); }
-  catch (e: any) { throw new Error(`AI 応答を解釈できませんでした: ${e?.message || e}`); }
+  catch (e) { throw new Error(humanizeNonAiError(e, 'AI の返事を読み取れませんでした。もう一度おためしください。')); }
 
   const shots: ScriptShot[] = (Array.isArray(p?.shots) ? p.shots : []).map((s: any, i: number) => ({
     no: typeof s?.no === 'number' ? s.no : i + 1,

@@ -29,6 +29,7 @@ import {
 import { IRIS_TYPE, IRIS_RADIUS, IRIS_SHADOW, IRIS_GRADIENT } from './irisDesign';
 import type { MediaKit } from '../types/influencerDeal';
 import type { BrandGuideline } from './brandGuidelines';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 interface Props {
   igProfile: IgProfile;
@@ -108,7 +109,7 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
         }));
       } catch (e) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : 'DM文案を作れませんでした。もう一度お試しください。');
+        setError(humanizeAiError(e));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -162,7 +163,7 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
         source: r.source,
       }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'トーンを切り替えられませんでした。もう一度お試しください。');
+      setError(humanizeAiError(e));
     } finally {
       setLoading(false);
     }
@@ -192,7 +193,7 @@ export default function IrisDmDraftModal({ igProfile, deal, mediaKit, brandGuide
         source: r.source,
       }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : '作り直せませんでした。もう一度お試しください。');
+      setError(humanizeAiError(e));
     } finally {
       setLoading(false);
     }

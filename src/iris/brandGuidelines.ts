@@ -188,7 +188,7 @@ ${toneInstruction()}`;
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error((err as { error?: { message?: string } }).error?.message ?? `style check error: ${res.status}`);
+        throw new Error(aiErrorMessage(res.status, err, 'styleCheck'));
       }
       return res.json() as Promise<{ content?: { text: string }[] }>;
     });
@@ -230,6 +230,7 @@ export function buildGuidelinePrompt(g: BrandGuideline): string {
 // ─── React Hook ───────────────────────────────────────────────
 
 import { useState, useCallback } from 'react';
+import { aiErrorMessage } from '../lib/aiErrorMessage';
 
 export function useBrandGuidelines() {
   const [guidelines, setGuidelines] = useState<BrandGuideline[]>(load);

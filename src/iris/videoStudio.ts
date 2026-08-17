@@ -5,6 +5,7 @@
 import type { AppSettings } from '../types/identity';
 import { enqueueClaudeCall } from '../lib/apiQueue';
 import { aiFetch } from '../lib/aiFetch';
+import { aiErrorMessage } from '../lib/aiErrorMessage';
 
 // API キーは main.tsx の fetch interceptor が localStorage から自動付与
 
@@ -76,7 +77,7 @@ export async function generateScript(
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `動画脚本APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'videoScript'));
     }
     return res.json();
   });

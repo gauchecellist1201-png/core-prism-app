@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import type { AppSettings } from '../types/identity';
 import type { IgProfile } from './instagramConnect';
 import { analyzeInstagramProfile, type IGAnalysisResult } from './instagramAnalyzer';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 
 const CACHE_KEY = 'core_iris_ig_analysis_v1';
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 日
@@ -98,7 +99,7 @@ export function useIgAnalysis(profile: IgProfile | null, settings: AppSettings):
         saveCache(profile.handle, r);
       })
       .catch((e: Error) => {
-        if (!cancelled) setError(e.message || '分析に失敗しました');
+        if (!cancelled) setError(humanizeAiError(e));
       })
       .finally(() => { if (!cancelled) setLoading(false); });
 

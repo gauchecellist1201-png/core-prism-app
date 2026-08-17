@@ -20,6 +20,7 @@
 /** カット毎の BGM ジャンル候補。アップ/しっとり/ポップ/エモ の 4 種 */
 import { logIrisActivity } from './irisActivity';
 import { aiFetch } from '../lib/aiFetch';
+import { humanizeAiError, humanizeNonAiError, aiErrorMessage } from '../lib/aiErrorMessage';
 
 export type BgmMood = 'up' | 'soft' | 'pop' | 'emo';
 
@@ -173,7 +174,7 @@ export async function generateReelCaptions(
       const f = await extractFrameJpeg(inputs[i]);
       frames.push(f);
     } catch (e: any) {
-      throw new Error(`カット ${i + 1} の読み取りに失敗: ${e.message || e}`);
+      throw new Error(`${i + 1} 本目のカットを読み取れませんでした。${humanizeNonAiError(e, 'もう一度おためしください。')}`);
     }
   }
 
@@ -203,13 +204,13 @@ export async function generateReelCaptions(
       }),
     });
   } catch (e: any) {
-    throw new Error(`通信に失敗しました: ${e.message || e}。Wi-Fi/モバイル回線を確認して再試行してください。`);
+    throw new Error(humanizeAiError(e));
   }
 
   if (!res.ok) {
     let errJson: any = {};
     try { errJson = await res.json(); } catch { /* ignore */ }
-    const userMsg = errJson?.userMessage || errJson?.error?.message || `AI エラー: ${res.status}`;
+    const userMsg = errJson?.userMessage || aiErrorMessage(res.status, errJson, 'reelCaption');
     const recov = errJson?.recovery || '少し待ってから再試行してください。';
     throw new Error(`${userMsg} ${recov}`);
   }
@@ -222,7 +223,7 @@ export async function generateReelCaptions(
   try {
     parsed = extractJson(text);
   } catch (e: any) {
-    throw new Error(`AI 応答を解釈できませんでした: ${e.message}。もう一度お試しください。`);
+    throw new Error(humanizeNonAiError(e, 'AI の返事を読み取れませんでした。もう一度おためしください。'));
   }
 
   // ─── 3) 正規化 + デフォルト埋め ───
@@ -399,7 +400,7 @@ export async function composeReelFromClips(
     try {
       frames.push(await extractFrameJpeg(inputs[i]));
     } catch (e: any) {
-      throw new Error(`素材 ${i + 1} の読み取りに失敗: ${e.message || e}`);
+      throw new Error(`${i + 1} 本目の素材を読み取れませんでした。${humanizeNonAiError(e, 'もう一度おためしください。')}`);
     }
   }
 
@@ -425,12 +426,12 @@ export async function composeReelFromClips(
       }),
     });
   } catch (e: any) {
-    throw new Error(`通信に失敗しました: ${e.message || e}。回線を確認して再試行してください。`);
+    throw new Error(humanizeAiError(e));
   }
   if (!res.ok) {
     let errJson: any = {};
     try { errJson = await res.json(); } catch { /* */ }
-    const msg = errJson?.userMessage || errJson?.error?.message || `AI エラー: ${res.status}`;
+    const msg = errJson?.userMessage || aiErrorMessage(res.status, errJson, 'reelCaption');
     const recov = errJson?.recovery || '少し待って再試行してください。';
     throw new Error(`${msg} ${recov}`);
   }
@@ -441,7 +442,7 @@ export async function composeReelFromClips(
 
   let parsed: any;
   try { parsed = extractJson(text); }
-  catch (e: any) { throw new Error(`AI 応答を解釈できませんでした: ${e.message}。もう一度お試しください。`); }
+  catch (e: any) { throw new Error(humanizeNonAiError(e, 'AI の返事を読み取れませんでした。もう一度おためしください。')); }
 
   // 3) 正規化 + 健全化 (全クリップを 1 回ずつ・order 連番・role 妥当)
   const validRoles: CutRole[] = ['hook', 'build', 'payoff', 'cta'];

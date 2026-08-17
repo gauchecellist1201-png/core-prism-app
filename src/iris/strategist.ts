@@ -139,7 +139,7 @@ ${opts.posts.slice(0, 30).map(formatPost).join('\n\n')}
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `分析APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'strategist'));
     }
     return res.json();
   });
@@ -210,7 +210,7 @@ ${opts.mediaKit ? `平均ER: ${JSON.stringify(opts.mediaKit.avgEngagementRate ||
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `FB APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'strategist'));
     }
     return res.json();
   });
@@ -403,7 +403,7 @@ ${opts.knowledgeContext}
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message ?? `アーク生成APIエラー: ${res.status}`);
+      throw new Error(aiErrorMessage(res.status, err, 'strategist'));
     }
     return res.json();
   });

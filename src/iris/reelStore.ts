@@ -60,6 +60,7 @@ export type SaveResult =
 /** 例外から「なぜ保存できなかったか」を、そのまま画面に出せる日本語にする */
 function toSaveFail(e: unknown): { ok: false; reason: SaveFailReason; message: string } {
   const name = (e as { name?: string } | null)?.name || '';
+  // 原文は判定にだけ使う (人に見せるのは下の日本語だけ)
   const text = e instanceof Error ? e.message : String(e ?? '');
   if (name === 'QuotaExceededError' || /quota|容量/i.test(text)) {
     return {

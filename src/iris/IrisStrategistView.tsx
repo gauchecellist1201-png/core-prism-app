@@ -2,9 +2,11 @@
 // IRIS — Strategist View (戦略スタジオ)
 // 新 UX: 手入力ゼロのホーム + 旧 5 タブを上級者モードに格納
 // ============================================================
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ChevronLeft, X, Brain, BookmarkPlus, CheckCircle2, TrendingUp, Plus, Target } from 'lucide-react';
 import IrisIntro from './IrisIntro';
+import IrisErrorRecovery from './IrisErrorRecovery';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 import { useIrisKnowledge } from './irisKnowledge';
 import EmptyInvite from './EmptyInvite';
 import type { AppSettings } from '../types/identity';
@@ -44,7 +46,15 @@ function AdvancedView({ bg, settings, mediaKit, knowledge, onBack }: Props & { o
   const history = usePostHistory();
   const [sub, setSub] = useState<SubTab>('ig');
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  // 失敗の文言だけでなく「もう一度やる手段」も一緒に持つ。
+  // 文言だけだと、赤い文字が出たあと利用者にできることが何も無くなる。
+  const [err, setErrState] = useState<{ msg: string; retry?: () => void } | null>(null);
+  const setErr = useCallback((msg: string | null, retry?: () => void) => {
+    setErrState(msg ? { msg, retry } : null);
+  }, []);
+  // 別のサブタブの失敗を持ち越さない (Instagram 解析の失敗が 30 日プランの画面に
+  // 出たままだと、押していない機能が壊れているように見える)
+  const goSub = (next: SubTab) => { setErrState(null); setSub(next); };
 
   const inp: React.CSSProperties = {
     background: 'rgba(255,255,255,0.94)',
@@ -139,7 +149,7 @@ function AdvancedView({ bg, settings, mediaKit, knowledge, onBack }: Props & { o
           { id: 'suggest' as SubTab,  e: '', l: '次の提案' },
           { id: 'arc' as SubTab,      e: '', l: '30日プラン' },
         ].map(t => (
-          <button key={t.id} onClick={() => setSub(t.id)} style={{
+          <button key={t.id} onClick={() => goSub(t.id)} style={{
             background: sub === t.id ? accentFaceBg(bg.accent) : 'rgba(255,255,255,0.92)',
             color: sub === t.id ? accentFaceInk(bg.accent) : '#1F1A2E',
             border: sub === t.id ? 'none' : '1px solid rgba(31,26,46,0.08)',
@@ -154,10 +164,10 @@ function AdvancedView({ bg, settings, mediaKit, knowledge, onBack }: Props & { o
         ))}
       </div>
 
-      {err && (
-        <div style={{ ...card, borderColor: '#C8102E' }}>
-          <p style={{ color: '#C8102E' }}>{err}</p>
-        </div>
+      {/* 失敗したら必ず「もう一度ためす」を出す。処理中は復旧パネルを出さない
+          (「再試行中…」と本体のボタンが二重に走っているように見えるため) */}
+      {err && !busy && (
+        <IrisErrorRecovery bg={bg} message={err.msg} onRetry={err.retry} marginTop={0} />
       )}
 
       {sub === 'ig' && (
@@ -334,7 +344,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
     setBusy(true); setErr(null);
     try {
       setResult(await analyzePerformance({ settings, posts: history.posts, mediaKit }));
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    } catch (e: any) { setErr(humanizeAiError(e), run); } finally { setBusy(false); }
   };
 
   const fbOne = async (p: PostHistoryItem) => {
@@ -342,7 +352,7 @@ function AnalyzeTab({ bg, settings, history, mediaKit, card, btnPrimary, btnSeco
     try {
       const r = await feedbackPost({ settings, post: p, mediaKit });
       setSingleFb({ pid: p.id, r });
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    } catch (e: any) { setErr(humanizeAiError(e), () => fbOne(p)); } finally { setBusy(false); }
   };
 
   return (
@@ -500,7 +510,7 @@ function SuggestTab({ bg, settings, history, mediaKit, knowledge, card, btnPrima
         knowledgeContext: knowledge?.getContext?.() || undefined,
       }));
       setSavedIdx(null);
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    } catch (e: any) { setErr(humanizeAiError(e), run); } finally { setBusy(false); }
   };
 
   const saveSuggestion = (s: NextPostSuggestion, i: number) => {
@@ -627,7 +637,7 @@ function ArcTab({ bg, settings, history, mediaKit, knowledge, card, btnPrimary, 
         knowledgeContext: knowledge?.getContext?.() || undefined,
       }));
       setSaved(false);
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    } catch (e: any) { setErr(humanizeAiError(e), run); } finally { setBusy(false); }
   };
 
   const saveArc = () => {
@@ -844,7 +854,7 @@ function IGAnalyzeTab({ bg, settings, card, btnPrimary, inp, busy, setBusy, setE
         goal: goal || undefined,
       });
       setResult(r);
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    } catch (e: any) { setErr(humanizeAiError(e), run); } finally { setBusy(false); }
   };
 
   return (

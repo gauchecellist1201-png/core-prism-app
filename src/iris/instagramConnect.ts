@@ -34,6 +34,7 @@ export interface IgProfile {
 }
 
 import { fetchWithTimeout } from '../lib/fetchWithTimeout';
+import { humanizeAiError, aiErrorMessage } from '../lib/aiErrorMessage';
 
 const STORAGE_KEY = 'core_iris_ig_profile_v1';
 
@@ -123,7 +124,7 @@ export async function connectFromScreenshot(
       return {
         ok: false,
         error: data.error || 'unknown',
-        message: data.message || `読み取りに失敗 (status ${resp.status})`,
+        message: data.message || aiErrorMessage(resp.status, data, 'igScreenshot'),
         recovery: data.recovery,
       };
     }
@@ -134,7 +135,7 @@ export async function connectFromScreenshot(
     return {
       ok: false,
       error: 'network',
-      message: e?.message || '通信エラー',
+      message: humanizeAiError(e),
       recovery: 'ネットワーク接続を確認してもう一度お試しください',
     };
   }
@@ -166,7 +167,7 @@ export async function connectWithToken(
       return {
         ok: false,
         error: data.error || 'unknown',
-        message: data.message || `取得に失敗しました (status ${resp.status})`,
+        message: data.message || aiErrorMessage(resp.status, data, 'igToken'),
         recovery: data.recovery,
       };
     }
@@ -193,7 +194,7 @@ export async function connectWithToken(
     return {
       ok: false,
       error: 'network',
-      message: e?.message || '通信エラー',
+      message: humanizeAiError(e),
       recovery: 'ネットワーク接続を確認してもう一度お試しください',
     };
   }
@@ -249,7 +250,7 @@ export async function tryOauthConnect(): Promise<OauthConnectResult> {
   } catch (e: any) {
     return {
       ok: false, reason: 'network',
-      message: e?.message || '通信エラーが発生しました',
+      message: humanizeAiError(e),
       recovery: '電波の良い場所で、もう一度お試しください',
     };
   }

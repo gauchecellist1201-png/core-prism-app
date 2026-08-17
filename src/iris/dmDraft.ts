@@ -256,8 +256,8 @@ export async function generateDmDraft(
       const err = await res.json().catch(() => ({}));
       return {
         ...fb,
-        recovery: err?.message
-          ? `${err.message}。とりあえずテンプレ下書きを表示しています。`
+        recovery: err?.userMessage
+          ? `${err.userMessage}。とりあえずテンプレ下書きを表示しています。`
           : fb.recovery,
       };
     }
