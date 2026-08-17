@@ -497,18 +497,45 @@ export default function IdentityDashboard({
   const dailyReportExpenses = expensesHook.getForPersona(persona.id);
 
   // ── 夜 20:00 以降に初回 dashboard アクセスで自動表示 (1 日 1 回、localStorage で抑止)
+  //
+  // ★2026-08-17 本番375px実測で分かったこと:
+  //   はじめて「登録せずに、中を見る」で入った人に、22 時台だったというだけで
+  //   全画面の「今日の総括」が勝手にかぶさっていた。しかも中身は
+  //   「AI 会社が完了 —／まだ任せたタスクがありません」「取り戻した時間 —」
+  //   「まだ AI 会社に何も任せていません」＝**その日の中身が1つも無い空っぽの総括**。
+  //   ドクトリンの「登録直後に空っぽの画面を見せない」「自動ポップは邪魔（EveningFeed 廃止と同じ理由）」に反する。
+  //   直し方は、同じ事故を起こした PWA 案内板 (InstallPwaBanner) と同じ考え方に揃える:
+  //     ① はじめて来た日は出さない（翌日また来てくれた人＝続けてくれる人にだけ）
+  //     ② その日の中身が1つも無いなら出さない（空の総括を全画面で見せない）
+  //   どちらの場合も**ヘッダーのボタンからはいつでも開ける**ので、機能は消していない。
   useEffect(() => {
     try {
       const now = new Date();
       if (now.getHours() < 20) return;
-      const key = `core_daily_report_shown_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      // ① 初日は黙る
+      const FIRST_SEEN_KEY = 'core_daily_report_first_seen_v1';
+      const firstSeen = Number(localStorage.getItem(FIRST_SEEN_KEY) || '0');
+      if (!firstSeen) { localStorage.setItem(FIRST_SEEN_KEY, String(Date.now())); return; }
+      if (Date.now() - firstSeen < 24 * 60 * 60 * 1000) return;
+
+      // ② その日の中身が1件も無いなら自動では出さない
+      const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const isToday = (iso?: string) => !!iso && iso.slice(0, 10) === todayIso;
+      const hasSomethingToday =
+        (agentQueueAll.tasks || []).some((t) => t.status === 'done' && isToday(t.completedAt)) ||
+        (persona.tasks || []).some((t) => t.done && isToday(t.completedAt)) ||
+        dailyReportExpenses.some((e) => e.date === todayIso);
+      if (!hasSomethingToday) return;
+
+      const key = `core_daily_report_shown_${todayIso}`;
       if (localStorage.getItem(key)) return;
       localStorage.setItem(key, '1');
       // マウント直後に被らないよう少し遅延
       const t = setTimeout(() => setShowDailyReport(true), 1200);
       return () => clearTimeout(t);
     } catch { /* */ }
-  }, []);
+  }, [agentQueueAll.tasks, persona.tasks, dailyReportExpenses]);
   const [globalDrag, setGlobalDrag] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number; current: string; failed: number } | null>(null);
 

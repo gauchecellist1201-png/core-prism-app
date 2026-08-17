@@ -1235,7 +1235,12 @@ function AppRoutes() {
       {tourBrand && (
         <Suspense fallback={null}>
           <GuidedTourSpotlight
-            steps={tourBrand === 'iris' ? IRIS_TOUR : PRISM_TOUR}
+            /* ★2026-08-17: 運営用KPIパネルを master 限定にしたので、案内も同じ条件で外す。
+               残すと「大事な数字がひと目で分かります」と言ったあと
+               「この機能はいまの画面には出ていません」が出る＝案内が空振りする。 */
+            steps={tourBrand === 'iris'
+              ? IRIS_TOUR
+              : (isMasterAuth() ? PRISM_TOUR : PRISM_TOUR.filter((s) => s.id !== 'kpi-sparkline'))}
             brand={tourBrand}
             onClose={() => setTourBrand(null)}
             onComplete={() => setTourBrand(null)}
@@ -1287,8 +1292,14 @@ function AppRoutes() {
       {/* VVV (2026-06-04): 夜のフィード — 18 時以降 1 日 1 回 */}
       {/* EveningFeed(朝晩の右上カード)はオーナー指示で廃止 (2026-07-26)
           「全然いらない」— 自動ポップは邪魔で、内容も役員日報と重複していた */}
-      {/* UUUUU (2026-06-04): ダッシュ 上端に 3 KPI sparkline */}
-      {view === 'dashboard' && <div data-tour-id="kpi-sparkline" style={{ position: 'sticky', top: 0, zIndex: 30, background: 'rgba(7,7,18,0.78)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}><QuickKpiSparkline /></div>}
+      {/* UUUUU (2026-06-04): ダッシュ 上端に 3 KPI sparkline
+          ★2026-08-17: 運営専用に閉じた。中身は「オンボ完了(全ユーザー)」「DAU」「月次売上」＝
+          CORE の運営指標であって、お客様やデモ体験の方の数字ではない。
+          本番375px実測でデモ入室者の画面に「オンボ 完了 (30 日) 0件 / DAU (30 日) データなし」が
+          出ており、①外の人にオーナー用UIを見せている ②`/api/track/retention` が403で
+          「データなし」＝動かないものを見せている、の2点に当たっていた。
+          月次売上だけ master 限定だったのを、パネルごと master 限定にそろえる。 */}
+      {view === 'dashboard' && isMasterAuth() && <div data-tour-id="kpi-sparkline" style={{ position: 'sticky', top: 0, zIndex: 30, background: 'rgba(7,7,18,0.78)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}><QuickKpiSparkline /></div>}
       {/* KKKKK (2026-06-04): 朝の「今日のひとこと」 (4-12 時 JST 1 日 1 回) */}
       {/* MorningCoach(朝の自動ポップ)も EveningFeed と同時に廃止 (2026-07-26 オーナー指示
           「朝晩で出てくるカードいらない」)。朝の提案はホームの FocusHero に一本化。 */}

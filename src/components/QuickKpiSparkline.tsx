@@ -30,6 +30,23 @@ interface CardProps {
   formatValue?: (n: number) => string;
 }
 
+/**
+ * 運営キーを読む。
+ * ★2026-08-17: ここは `core_master_key` だけを見ていたが、実際に書かれているのは
+ *   `core_master_key_v1`（`MasterEntry.tsx` / `SettingsModal.tsx` / `main.tsx` が書く名前）。
+ *   そのため運営本人が開いても鍵が空のまま送られ、`/api/track/retention` が必ず 403 を返し、
+ *   DAU が永久に「データなし」になっていた（2026-08-17 本番実測でも console に 403）。
+ *   新しい名前を先に見て、古い名前も残して読む。
+ */
+function masterKey(): string {
+  if (typeof localStorage === 'undefined') return '';
+  try {
+    return localStorage.getItem('core_master_key_v1') || localStorage.getItem('core_master_key') || '';
+  } catch {
+    return '';
+  }
+}
+
 function loadOnboardCompleted(days = 30): Promise<number[] | null> {
   return fetch(`/api/track/onboarding-step?days=${days}`)
     .then((r) => r.ok ? r.json() : null)
@@ -41,8 +58,8 @@ function loadOnboardCompleted(days = 30): Promise<number[] | null> {
 }
 
 function loadDau(days = 30): Promise<number[] | null> {
-  const masterKey = (typeof window !== 'undefined' && localStorage.getItem('core_master_key')) || '';
-  return fetch(`/api/track/retention?days=${days}`, { headers: masterKey ? { 'x-master-key': masterKey } : {} })
+  const key = masterKey();
+  return fetch(`/api/track/retention?days=${days}`, { headers: key ? { 'x-master-key': key } : {} })
     .then((r) => r.ok ? r.json() : null)
     .then((j: any) => {
       if (!j || !j.configured) return null;
@@ -52,14 +69,22 @@ function loadDau(days = 30): Promise<number[] | null> {
 }
 
 function loadRevenueMonthly(): Promise<number[] | null> {
-  const masterKey = (typeof window !== 'undefined' && localStorage.getItem('core_master_key')) || 'GAUCHE2026';
-  return fetch('/api/master/revenue-monthly', { headers: { 'x-master-key': masterKey } })
+  return fetch('/api/master/revenue-monthly', { headers: { 'x-master-key': masterKey() || 'GAUCHE2026' } })
     .then((r) => r.ok ? r.json() : null)
     .then((j: any) => {
       if (!j || !Array.isArray(j.months)) return null;
       return j.months.map((m: any) => Number(m?.revenueJpy || 0));
     })
     .catch(() => null);
+}
+
+/**
+ * ★2026-08-17: 中身の無い系列（取得失敗 null / 0 日ぶん）は、カードごと出さない。
+ * これまでは「データなし」と書いたカードを残していたが、
+ * それは「動かないものを画面に出さない」（ドクトリン 不信感ゼロ）に反する。
+ */
+function hasSeries(s: number[] | null): boolean {
+  return Array.isArray(s) && s.length > 0;
 }
 
 export default function QuickKpiSparkline() {
@@ -83,8 +108,8 @@ export default function QuickKpiSparkline() {
       setDau(b);
       setRevenue(c);
       setLoading(false);
-      // 3 つ すべて null なら 静かに 非表示
-      if (a === null && b === null && c === null) setHidden(true);
+      // 3 つ すべて 中身なし なら 静かに 非表示
+      if (!hasSeries(a) && !hasSeries(b) && !hasSeries(c)) setHidden(true);
     });
     return () => { cancelled = true; };
   }, [isMaster]);
@@ -98,7 +123,7 @@ export default function QuickKpiSparkline() {
       gap: 10,
       padding: '12px 14px 8px',
     }}>
-      <SparkCard
+      {(loading || hasSeries(onboard)) && <SparkCard
         title="オンボ 完了 (30 日)"
         Icon={Sprout}
         color="#34D399"
@@ -106,8 +131,8 @@ export default function QuickKpiSparkline() {
         loading={loading}
         series={onboard}
         unit="件"
-      />
-      <SparkCard
+      />}
+      {(loading || hasSeries(dau)) && <SparkCard
         title="DAU (30 日)"
         Icon={Users}
         // ★藍 #6366F1 はこのカードの地(実効 rgb(62,62,81)＝暗い帯の上)で 2.31:1。
@@ -119,8 +144,8 @@ export default function QuickKpiSparkline() {
         loading={loading}
         series={dau}
         unit="人"
-      />
-      {isMaster && (
+      />}
+      {isMaster && (loading || hasSeries(revenue)) && (
         <SparkCard
           title="月次売上 (12 ヶ月)"
           Icon={JapaneseYen}

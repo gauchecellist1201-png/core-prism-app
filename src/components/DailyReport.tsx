@@ -317,11 +317,16 @@ export default function DailyReport({
               <Section title="今日 AI 会社がやったこと" emoji="🤖" accent={accent}>
                 {todayAgentTasks.length === 0 ? (
                   <EmptyHint>
+                    {/* ★2026-08-17: iPhone に Cmd キーは無い。
+                        iPhone の人には画面下の入力欄を、パソコンの人にはショートカットを案内する。 */}
                     まだ AI 会社に何も任せていません。<br />
-                    <kbd style={{
+                    画面下の入力欄に「依頼」と入れると始まります（パソコンでは <kbd style={{
                       background: 'rgba(255,255,255,0.08)',
                       padding: '1px 6px', borderRadius: 4, fontSize: 11,
-                    }}>Cmd+K</kbd> → 「依頼」と入力で始まります。
+                    }}>Cmd+K</kbd> / Windows は <kbd style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      padding: '1px 6px', borderRadius: 4, fontSize: 11,
+                    }}>Ctrl+K</kbd> でも開きます）。
                   </EmptyHint>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
