@@ -9,13 +9,13 @@ import {
   Camera, Sparkles, TrendingUp, Bookmark, Share2, Eye, Heart,
   MessageCircle, Clock, Flame, Loader2,
   Image as ImageIcon, FileText, CheckCircle2, X, Upload, Wand2, BarChart3,
-  Sliders, Plus, Trash2, RefreshCw, FilePlus2, Pencil, Check,
+  Sliders, Plus, Trash2, FilePlus2, Pencil,
 } from 'lucide-react';
 import type { AppSettings } from '../types/identity';
 import type { ContentType, MediaKit } from '../types/influencerDeal';
 import { CONTENT_TYPE_META } from '../types/influencerDeal';
 import { IRIS_FONTS, accentFaceBg, accentFaceInk } from './irisStyle';
-import { BASE_ALL, DUR_BASE, EASE_OUT } from './motion';
+import { BASE_ALL } from './motion';
 import {
   usePostHistory, type PostHistoryItem,
 } from './strategist';
@@ -26,6 +26,8 @@ import {
   type ExtractedPost, type StrategyInsights,
 } from './screenshotExtractor';
 import { usePostQueue } from './usePostQueue';
+import IrisErrorRecovery from './IrisErrorRecovery';
+import { humanizeAiError } from '../lib/aiErrorMessage';
 import IrisBestTime from './IrisBestTime';
 import type { IrisBackgroundDef } from './irisStyle';
 import EmptyInvite from './EmptyInvite';
@@ -118,7 +120,8 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
       }
       setExtracted(result);
     } catch (e: any) {
-      setExtractErr(e?.message || 'スクショ解析に失敗しました');
+      // 英語の原文や 404 のような番号を人に見せない (原文は console に残る)
+      setExtractErr(humanizeAiError(e));
     } finally {
       setExtracting(false);
     }
@@ -164,7 +167,7 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
       }
       setExtracted(result);
     } catch (e: any) {
-      setExtractErr(e.message);
+      setExtractErr(humanizeAiError(e));
     } finally {
       setExtracting(false);
     }
@@ -204,7 +207,7 @@ export default function IrisStrategyHome({ bg, settings, mediaKit: _mediaKit, on
       });
       setInsights(r);
     } catch (e: any) {
-      setInsightErr(e.message);
+      setInsightErr(humanizeAiError(e));
     } finally {
       setInsightBusy(false);
     }
@@ -613,124 +616,18 @@ function CaptureZone({
 
       {/* 失敗時の復旧パネル (もう一度 / 別の画像 / 手で入力) */}
       {extractErr && !extracting && (
-        <ErrorRecovery
+        <IrisErrorRecovery
           bg={bg}
           message={extractErr}
-          canRetry={previewUrls.length > 0}
-          onRetry={onRetry}
-          onPickAgain={openPicker}
-          onManualInput={onManualInput}
+          onRetry={previewUrls.length > 0 ? onRetry : undefined}
+          actions={[
+            { key: 'pick', icon: <FilePlus2 size={14} />, label: '別の画像でやり直す', onClick: openPicker },
+            { key: 'manual', icon: <Pencil size={14} />, label: '手で入力する', onClick: onManualInput },
+          ]}
         />
       )}
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
-}
-
-// 失敗時の復旧 UI: 「もう一度」「別の画像で」「手で入力」
-function ErrorRecovery({
-  bg, message, canRetry, onRetry, onPickAgain, onManualInput,
-}: {
-  bg: IrisBackgroundDef;
-  message: string;
-  canRetry: boolean;
-  onRetry: () => void | Promise<void>;
-  onPickAgain: () => void;
-  onManualInput: () => void;
-}) {
-  type Phase = 'idle' | 'pending' | 'success';
-  const [retryPhase, setRetryPhase] = useState<Phase>('idle');
-  const mounted = useRef(true);
-  useEffect(() => () => { mounted.current = false; }, []);
-
-  const handleRetry = async () => {
-    if (retryPhase !== 'idle') return;
-    setRetryPhase('pending');
-    try { await Promise.resolve(onRetry()); } catch { /* 失敗は親が新しい message を渡してくる */ }
-    if (!mounted.current) return;
-    setRetryPhase('success');
-    setTimeout(() => { if (mounted.current) setRetryPhase('idle'); }, 1000);
-  };
-
-  const btn = (icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean) => (
-    <button
-      onClick={onClick}
-      style={{
-        background: primary ? accentFaceBg(bg.accent) : 'rgba(255,255,255,0.9)',
-        color: primary ? accentFaceInk(bg.accent) : bg.ink,
-        border: primary ? 'none' : `1px solid ${bg.cardBorder}`,
-        borderRadius: 999,
-        padding: '0.5rem 1rem',
-        fontWeight: 700,
-        fontSize: '0.82rem',
-        fontFamily: IRIS_FONTS.body,
-        cursor: 'pointer',
-        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-        boxShadow: primary ? `0 6px 16px ${bg.accent}55` : 'none',
-      }}
-    >
-      {icon} {label}
-    </button>
-  );
-
-  const retryBtn = canRetry && (
-    <button
-      onClick={handleRetry}
-      disabled={retryPhase === 'pending'}
-      aria-live="polite"
-      className={retryPhase === 'success' ? 'cp-phase-success' : undefined}
-      style={{
-        background: retryPhase === 'success'
-          ? 'linear-gradient(135deg, #34D399, #34D399cc)'
-          : accentFaceBg(bg.accent),
-        color: accentFaceInk(bg.accent),
-        border: 'none',
-        borderRadius: 999,
-        padding: '0.5rem 1rem',
-        fontWeight: 700,
-        fontSize: '0.82rem',
-        fontFamily: IRIS_FONTS.body,
-        cursor: retryPhase === 'pending' ? 'progress' : 'pointer',
-        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-        boxShadow: retryPhase === 'success'
-          ? '0 6px 16px rgba(52, 211, 153, 0.55)'
-          : `0 6px 16px ${bg.accent}55`,
-        opacity: retryPhase === 'pending' ? 0.88 : 1,
-        transition: `background ${DUR_BASE}s ${EASE_OUT}, box-shadow ${DUR_BASE}s ${EASE_OUT}, opacity ${DUR_BASE}s ${EASE_OUT}`,
-        minWidth: 144, justifyContent: 'center',
-      }}
-    >
-      {retryPhase === 'pending' ? (
-        <><RefreshCw size={14} className="cp-phase-spin" /> 再試行中…</>
-      ) : retryPhase === 'success' ? (
-        <><Check size={15} strokeWidth={2.8} /> 届きました</>
-      ) : (
-        <><RefreshCw size={14} /> もう一度ためす</>
-      )}
-    </button>
-  );
-
-  return (
-    <div style={{
-      marginTop: '0.9rem',
-      padding: '0.9rem 1rem',
-      background: 'rgba(200,16,46,0.06)',
-      border: '1px solid rgba(200,16,46,0.18)',
-      borderRadius: 14,
-      display: 'grid', gap: '0.6rem',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
-        <X size={16} style={{ color: '#C8102E', marginTop: 2, flexShrink: 0 }} />
-        <p style={{ color: '#9B1024', fontSize: '0.85rem', lineHeight: 1.6 }}>
-          {message}
-        </p>
-      </div>
-      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-        {retryBtn}
-        {btn(<FilePlus2 size={14} />, '別の画像でやり直す', onPickAgain)}
-        {btn(<Pencil size={14} />, '手で入力する', onManualInput)}
-      </div>
     </div>
   );
 }
@@ -1085,8 +982,15 @@ function InsightsHero({
         </p>
       )}
 
-      {error && (
-        <div style={{ marginTop: '0.6rem', color: '#C8102E', fontSize: '0.82rem' }}>{error}</div>
+      {/* 失敗したら赤い 1 行で終わらせない。押せる「もう一度」を必ず出す。
+          投稿が 3 件に届いていない時は押しても同じ結果なので、やり直しは出さない */}
+      {error && !busy && (
+        <IrisErrorRecovery
+          bg={bg}
+          message={error}
+          onRetry={canRun ? onRun : undefined}
+          marginTop="0.6rem"
+        />
       )}
 
       {insights && (
