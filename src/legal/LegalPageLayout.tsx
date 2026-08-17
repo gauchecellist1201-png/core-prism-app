@@ -3,7 +3,8 @@
 // ダーク基調 + 中立アクセント (Prism #A78BFA / Iris #E1306C どちらにも馴染む)
 // 最大幅 700px、章ごとに id でアンカー対応
 // ============================================================
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 export interface TocItem {
   id: string;
@@ -34,7 +35,18 @@ const COLORS = {
   accentSoft: 'rgba(167,139,250,0.12)',
 };
 
+// 目次の行は1行44px（指で押せる高さ）なので、章が多いページでは
+// 読み込み直後の1画面が目次だけで埋まってしまう（/terms・/privacy=16章・/faq=18問）。
+// 10章を超えるページだけ「先頭5行＋のこりを開く」に畳む（2026-08-18）
+const TOC_COLLAPSE_OVER = 10;
+const TOC_PREVIEW_COUNT = 5;
+
 export default function LegalPageLayout({ eyebrow = 'CORE', title, updatedAt, toc, children }: Props) {
+  const collapsible = toc.length > TOC_COLLAPSE_OVER;
+  const [tocOpen, setTocOpen] = useState(false);
+  const shownToc = collapsible && !tocOpen ? toc.slice(0, TOC_PREVIEW_COUNT) : toc;
+  const restCount = toc.length - TOC_PREVIEW_COUNT;
+
   // タブの名前が「CORE Prism — すべての事業家に…」のままだと、
   // 規約・FAQ・特商法をタブで開いた人が、いま何のページを見ているのか分からない。
   // 共通レイアウトで直せば 4 ページまとめて直る（2026-07-31）
@@ -123,6 +135,7 @@ export default function LegalPageLayout({ eyebrow = 'CORE', title, updatedAt, to
             目次
           </div>
           <ol
+            id="legal-toc-list"
             style={{
               listStyle: 'none',
               padding: 0,
@@ -130,7 +143,7 @@ export default function LegalPageLayout({ eyebrow = 'CORE', title, updatedAt, to
               counterReset: 'toc',
             }}
           >
-            {toc.map((item, i) => (
+            {shownToc.map((item, i) => (
               <li
                 key={item.id}
                 style={{
@@ -159,6 +172,43 @@ export default function LegalPageLayout({ eyebrow = 'CORE', title, updatedAt, to
               </li>
             ))}
           </ol>
+
+          {collapsible && (
+            <button
+              type="button"
+              onClick={() => setTocOpen((v) => !v)}
+              aria-expanded={tocOpen}
+              aria-controls="legal-toc-list"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4em',
+                width: '100%',
+                minHeight: 44,
+                marginTop: '0.5rem',
+                padding: '0 0.75rem',
+                background: 'transparent',
+                border: `1px solid ${COLORS.accent}55`,
+                borderRadius: 10,
+                color: COLORS.accent,
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+              }}
+            >
+              {tocOpen ? '目次をとじる' : `のこり${restCount}件を見る`}
+              <ChevronDown
+                size={16}
+                aria-hidden="true"
+                style={{
+                  transform: tocOpen ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.15s ease',
+                }}
+              />
+            </button>
+          )}
         </nav>
 
         {/* 本文 */}
