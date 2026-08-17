@@ -2970,6 +2970,15 @@ function NegotiateView({ bg, desk, myDeals, mediaKit, settings, persona }: any) 
         </p>
       </div>
 
+      <IrisIntro
+        id="negotiate"
+        bg={bg}
+        icon={MessageSquare}
+        what="企業へのメールの返事（初回のお返事・報酬の交渉・日程の相談・丁寧なお断り）を、AI に書いてもらう場所です。"
+        tryThis="出てきたカードの「この返事を作る」を押すだけ。言い方を変えたいときは、左の「修正」から選び直せます。カードが 1 枚も無いのは、いま返事の要る案件が無いという合図です（「お仕事」でお仕事を足すと出ます）。"
+        example="「報酬カウンター」で作る → あなたのフォロワー数を根拠にした件名つきの返信文が下に出る → コピーのボタンでメールにそのまま貼れます"
+      />
+
       {err && <Card bg={bg}><p style={{ color: '#FF5C5C', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {err}</p></Card>}
 
       <AnimatePresence>
@@ -3097,6 +3106,15 @@ function DraftView({ bg, desk, myDeals, mediaKit, settings, persona, knowledge }
           AI が「まだ投稿文がない案件」を見つけて、書き方まで考えました。<CheckCircle2 size={13} strokeWidth={2.4} style={{ verticalAlign: 'middle' }} /> で文章ができます。
         </p>
       </div>
+
+      <IrisIntro
+        id="draft"
+        bg={bg}
+        icon={Edit3}
+        what="受けたお仕事の投稿文（本文・ハッシュタグ・最後のひとこと）を、AI に書いてもらう場所です。"
+        tryThis="出てきたカードの「この投稿を書く」を押すだけ。言い回しを変えたいときは、「修正」からトーンを一言だけ書き直せます。カードが 1 枚も無いのは、まだ書く投稿が残っていないという合図です。"
+        example="押す → 本文とハッシュタグと締めの一言がまとまって出る → そのまま「Instagram で投稿」を押すか、コピーして使えます"
+      />
 
       {err && <Card bg={bg}><p style={{ color: '#FF5C5C', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} /> {err}</p></Card>}
 
@@ -4963,6 +4981,15 @@ function BrandGuidelineView({ bg, multiAccount, brandGuide, settings }: {
         <h2 style={{ fontFamily: IRIS_FONTS.display, fontStyle: 'italic', fontSize: '2rem', color: bg.ink, margin: 0 }}>私らしさを決める。</h2>
         <p style={{ color: bg.inkSoft, fontSize: '0.85rem', marginTop: 4 }}>色・話しかた・使わない言葉を覚えさせると、AI が投稿を書くときにそろえてくれます。</p>
       </div>
+
+      <IrisIntro
+        id="guideline"
+        bg={bg}
+        icon={Palette}
+        what="あなたらしさ（色・話しかた・使いたくない言葉）を 1 度だけ覚えさせておく場所です。ここを書くほど、AI の書く文章があなたの言葉に近づきます。"
+        tryThis="「編集」を押して、「使いたくない言葉」の欄に 1 つだけ書いて保存してみてください。全部埋めなくて大丈夫です。"
+        example="「安い, 激安」を入れて保存 → 以後 AI が書く投稿文からその言い方が消える。下の「私らしい文章か見てもらう」に投稿を貼れば、ずれている所と直した文まで出ます"
+      />
 
       {/* ── マルチアカウント管理 ── */}
       <div style={card}>
