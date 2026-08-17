@@ -5,6 +5,7 @@ import PersonaGlyph from './PersonaGlyph';
 import StudioBackButton from './StudioBackButton';
 import type { KnowledgeItem, Persona, AppSettings } from '../types/identity';
 import { friendlyFileError } from '../lib/fileErrorMessage';
+import { relatedKnowledge, agoLabel } from '../lib/relatedKnowledge';
 
 /** いつもの「PRISM マークが回る」生成演出（脳の絵文字の置き換え） */
 function SpinningPrism({ size = 56 }: { size?: number }) {
@@ -218,8 +219,75 @@ function isSupported(name: string): boolean {
   return SUPPORTED_EXT.has(ext);
 }
 
+/**
+ * 開いた資料の下に「関係のあるもの」を勝手に置く帯。
+ *
+ * 人は「あの時のあれ」を思い出せないから探せない。だから探させずに隣へ置く。
+ * ・AI は呼ばない（`relatedKnowledge` は選ぶだけ）＝待ち時間も料金も増えない
+ * ・0 件のときは帯ごと出さない（空の器を作らない）
+ * ・押すとその場で開く（別画面へ飛ばさない）
+ * ・入りきらなかったぶんは黙って切らず「ほかに◯件」と正直に書く
+ */
+function RelatedStrip({ current, items, accent, onOpen }: {
+  current: KnowledgeItem;
+  items: KnowledgeItem[];
+  accent: string;
+  onOpen: (id: string) => void;
+}) {
+  const now = new Date();
+  const { items: related, moreCount, oldSlotId } = relatedKnowledge(current, items, now);
+  if (related.length === 0) return null;
+
+  return (
+    <div className="pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <p className="text-fg-muted text-[11px] mb-2">
+        関係のあるもの {related.length}件
+      </p>
+      <div className="space-y-1.5">
+        {related.map(r => {
+          const ago = r.id === oldSlotId ? agoLabel(r.createdAt, now) : null;
+          return (
+            <button
+              key={r.id}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onOpen(r.id); }}
+              className="w-full text-left rounded-lg px-3 flex items-center gap-2"
+              // 指で押せる高さ (44px) を必ず確保する
+              style={{ minHeight: 44, paddingTop: 8, paddingBottom: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+            >
+              <span className="flex-1 min-w-0">
+                <span className="block text-fg text-xs truncate">{r.title || '(見出しなし)'}</span>
+                <span className="block text-fg-muted text-[10px] mt-0.5">
+                  {ago
+                    ? ago
+                    : new Date(r.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' })}
+                </span>
+              </span>
+              <span className="text-xs flex-shrink-0" style={{ color: accent }}>›</span>
+            </button>
+          );
+        })}
+      </div>
+      {moreCount > 0 && (
+        <p className="text-fg-muted text-[10px] mt-2">
+          同じ言葉を含むものが、ほかに {moreCount}件あります
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function KnowledgeBase({ persona, settings, items, onAddFile, onAddNote, onDelete, onReanalyze, onClose }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  // 「関係のあるもの」を押したとき。別画面へ飛ばさず、その場でその資料を開く。
+  // 一覧の中で位置が離れていることがあるので、開いた先を必ず画面内へ寄せる
+  // （内蔵ブラウザは smooth を動かさないので behavior は指定しない＝即座に寄る）。
+  const openRelated = useCallback((id: string) => {
+    setExpanded(id);
+    requestAnimationFrame(() => {
+      document.getElementById(`kb-item-${id}`)?.scrollIntoView({ block: 'center' });
+    });
+  }, []);
   // 一括削除（実ユーザー報告 2026-07-17: 1件ずつしか消せずクレーム源）
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -952,6 +1020,7 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                     return (
                       <motion.div
                         key={item.id}
+                        id={`kb-item-${item.id}`}
                         className="rounded-xl group"
                         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
                         initial={{ opacity: 0, y: 5 }}
@@ -1082,6 +1151,12 @@ export default function KnowledgeBase({ persona, settings, items, onAddFile, onA
                                     </button>
                                   )}
                                 </div>
+                                <RelatedStrip
+                                  current={item}
+                                  items={items}
+                                  accent={persona.accentColor}
+                                  onOpen={openRelated}
+                                />
                               </div>
                             </motion.div>
                           )}
