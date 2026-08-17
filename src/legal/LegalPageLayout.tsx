@@ -134,16 +134,19 @@ export default function LegalPageLayout({ eyebrow = 'CORE', title, updatedAt, to
               <li
                 key={item.id}
                 style={{
-                  marginBottom: '0.4rem',
                   fontSize: '0.92rem',
                 }}
               >
+                {/* 目次は「指で押す」ための一覧。1行27pxでは狙いを外すので、
+                    行そのものを44pxの高さにする（2026-08-17） */}
                 <a
                   href={`#${item.id}`}
                   style={{
                     color: COLORS.textSub,
                     textDecoration: 'none',
-                    display: 'inline-block',
+                    display: 'flex',
+                    alignItems: 'center',
+                    minHeight: 44,
                   }}
                   onMouseOver={(e) => (e.currentTarget.style.color = COLORS.accent)}
                   onMouseOut={(e) => (e.currentTarget.style.color = COLORS.textSub)}
@@ -187,7 +190,14 @@ export default function LegalPageLayout({ eyebrow = 'CORE', title, updatedAt, to
           <p style={{ fontSize: '0.95rem', margin: 0 }}>
             <a
               href="mailto:core.inc.guild@gmail.com"
-              style={{ color: COLORS.text, textDecoration: 'underline', textUnderlineOffset: 3 }}
+              style={{
+                color: COLORS.text,
+                textDecoration: 'underline',
+                textUnderlineOffset: 3,
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: 44,
+              }}
             >
               core.inc.guild@gmail.com
             </a>
@@ -252,7 +262,24 @@ export default function LegalPageLayout({ eyebrow = 'CORE', title, updatedAt, to
         }
         .legal-article li { margin-bottom: 0.35rem; }
         .legal-article strong { color: ${COLORS.text}; font-weight: 700; }
-        .legal-article a { color: ${COLORS.accent}; text-decoration: underline; text-underline-offset: 2px; }
+        /*
+         * 文の途中に出てくるリンク（料金ページ / プライバシーポリシー / メール宛先…）は
+         * 高さ 20〜22px しかなく、指では狙えなかった（2026-08-17）。
+         * ただし「面を44pxにする」LP のやり方をそのまま当てると文が割れる。
+         * inline-flex にすると、リンクの箱ではなく **その行の高さ** が44pxに持ち上がるので
+         *   - 文中のままで改行されない（atomic な箱なので文の途中で切れない）
+         *   - 上下の行のリンクと当たり判定が重ならない（行間 >= 44px になるため）
+         * 長いメールアドレスが狭い表の中で外にはみ出さないよう overflow-wrap も添える。
+         */
+        .legal-article a {
+          color: ${COLORS.accent};
+          text-decoration: underline;
+          text-underline-offset: 2px;
+          display: inline-flex;
+          align-items: center;
+          min-height: 44px;
+          overflow-wrap: anywhere;
+        }
         .legal-article code {
           background: ${COLORS.bgSoft};
           border: 1px solid ${COLORS.border};
