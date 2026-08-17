@@ -441,16 +441,25 @@ function BeforeAfter() {
 
   return (
     <section style={{ padding: '5rem 1.5rem', background: '#0A0A12' }}>
+      {/* 4 列 (アイコン / BEFORE / 矢印 / AFTER) は iPhone だと本文の列が 104.5px しか無く、
+          日本語が 1 行 7 文字・3 行に折れていた（2026-08-17 本番実測 375px）。
+          横に並べた比較そのものが読めないので、狭い画面では 2 段に落として 1 列 253px にする。
+          子の並び順が「アイコン→BEFORE→矢印→AFTER」なので、2 列にするだけで
+          左にアイコン／矢印、右に BEFORE／AFTER と自動で積まれる（矢印は下向きに回す）。
+          561px 以上は従来どおり横並びのまま＝無改変。 */}
+      <style>{`
+        .ms-ba-row { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 12px; align-items: center; }
+        @media (max-width: 560px) {
+          .ms-ba-row { grid-template-columns: auto 1fr; row-gap: 10px; }
+          .ms-ba-row .ms-ba-arrow { transform: rotate(90deg); }
+        }
+      `}</style>
       <div style={{ maxWidth: 880, margin: '0 auto' }}>
         <h2 style={sectionTitle}>導入前と導入後</h2>
         <p style={sectionLead}>「先生」が「事務員」になっている時間を取り戻します。</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: '2rem' }}>
           {pains.map((p, i) => (
-            <div key={i} style={{
-              display: 'grid',
-              gridTemplateColumns: 'auto 1fr auto 1fr',
-              gap: 12,
-              alignItems: 'center',
+            <div key={i} className="ms-ba-row" style={{
               padding: '1rem 1.25rem',
               background: 'rgba(255,255,255,0.025)',
               border: '1px solid rgba(255,255,255,0.08)',
@@ -461,7 +470,7 @@ function BeforeAfter() {
                 <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#F87171', fontWeight: 700, marginBottom: 2 }}>BEFORE</div>
                 <div style={{ fontFamily: FONT_SERIF_JA, fontSize: 13.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6 }}>{p.before}</div>
               </div>
-              <ArrowRight size={18} color={ACCENT_GREEN} />
+              <ArrowRight className="ms-ba-arrow" size={18} color={ACCENT_GREEN} />
               <div>
                 <div style={{ fontSize: 10, letterSpacing: '0.2em', color: ACCENT_GREEN, fontWeight: 700, marginBottom: 2 }}>AFTER</div>
                 <div style={{ fontFamily: FONT_SERIF_JA, fontSize: 13.5, color: '#fff', lineHeight: 1.6, fontWeight: 600 }}>{p.after}</div>
