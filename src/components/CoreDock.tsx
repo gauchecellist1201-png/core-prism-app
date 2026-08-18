@@ -20,6 +20,7 @@
 import { useEffect, useRef, useState } from "react";
 import { withCoreHandoff, readCoreHandoff, type CoreAppKey } from "./coreLink";
 import { useCoveredByModal } from "../hooks/useCoveredByModal";
+import { observeContentChange } from "../lib/floatAvoid";
 
 type App = { key: Exclude<CoreAppKey, "core">; name: string; tag: string; color: string; url: string };
 
@@ -146,6 +147,10 @@ function scanBands(): Bands {
 // 測るのは要素の箱ではなく **文字が実際に描かれている行の箱**。要素の箱で数えると
 // カードの余白まで「埋まっている」ことになり、空きがゼロ＝画面の一番上へ逃げてしまう。
 const INK_LIMIT = 1200; // 重い画面でも固まらせない上限
+// 押せるもの(ボタン・リンク・入力)は 1px でも覆ったら失格＝文字より桁違いに重くする。
+// 3 対 10 では「文字を少し避けるために、ボタンの上に乗る」が起きていた(2026-08-18)。
+const TEXT_WEIGHT = 1;
+const CONTROL_WEIGHT = 10000;
 
 type Ink = { r: DOMRect; w: number };
 
@@ -162,14 +167,14 @@ function inkRects(exclude: Element | null): Ink[] {
     if (!parent || (exclude && exclude.contains(parent))) continue;
     range.selectNodeContents(n);
     for (const r of range.getClientRects()) {
-      if (r.width > 2 && r.height > 2 && inView(r)) out.push({ r, w: 3 });
+      if (r.width > 2 && r.height > 2 && inView(r)) out.push({ r, w: TEXT_WEIGHT });
     }
   }
-  for (const el of document.querySelectorAll("a,button,input,textarea,select")) {
+  for (const el of document.querySelectorAll("a,button,input,textarea,select,[role='button']")) {
     if (out.length >= INK_LIMIT) break;
     if (exclude && exclude.contains(el)) continue;
     const r = el.getBoundingClientRect();
-    if (r.width > 8 && r.height > 8 && inView(r)) out.push({ r, w: 10 });
+    if (r.width > 8 && r.height > 8 && inView(r)) out.push({ r, w: CONTROL_WEIGHT });
   }
   return out;
 }
@@ -378,6 +383,22 @@ export function CoreDock({
     const ro = new ResizeObserver(() => reposition());
     targets.forEach((t) => ro.observe(t));
     return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bottomClearance, current]);
+
+  // ★2026-08-18 根治: タブ切替は **スクロールもリサイズも起きない**。
+  //   これまでの測り直しは「最初の数秒・リサイズ・スクロール停止・帯の伸縮」だけだったので、
+  //   前の画面に合わせて選んだ置き場所のまま、新しい画面の見出しに居座っていた。
+  //   実測(本番 390px 2026-08-18)＝Iris「動画おまかせ」でタブを切り替えると、
+  //   丸ボタンが表題「クリエイティブ司令塔 / THE CREATIVE DIRECTOR」を 1,054px^2 覆った。
+  //   中身が入れ替わったら測り直す。自分でドラッグした人には効かせない(既存の約束どおり)。
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.innerWidth >= 768) return; // 本文を避けるのはモバイルだけ
+    return observeContentChange(
+      () => { if (!dragRef.current) { remeasureAutoBase(); reposition(); } },
+      () => [btnRef.current],
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bottomClearance, current]);
 

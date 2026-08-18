@@ -8,6 +8,7 @@ import { Mic, MicOff, Sparkles, X, Calendar, Check, Clock, Loader2, Trash2, Aler
 import { usePrismTaskQueue, parseVoiceCommand, type PrismTask, type TaskKind } from './usePrismTaskQueue';
 import { confirmAction } from '../lib/confirmDialog';
 import { useCoveredByModal } from '../hooks/useCoveredByModal';
+import { useFloatAvoid } from '../hooks/useFloatAvoid';
 
 const KIND_LABEL: Record<TaskKind, string> = {
   flyer: 'チラシ', post: '投稿文', email: 'メール',
@@ -123,6 +124,23 @@ export default function PrismTaskScheduler() {
   // オンボ中に押せてしまっていた(2026-07-29 の ※残)。判定は CoreDock と同じ仕組みを共有。
   const fabRef = useRef<HTMLButtonElement | null>(null);
   const fabCovered = useCoveredByModal(fabRef);
+  // 浮きボタンが「押せるもの」の上に乗らないようにする（スマホだけ・共通ルール lib/floatAvoid）。
+  // 実測(2026-08-18 本番 390px)＝Prism のランディングで、このマイクボタンが
+  // 主ボタン「3日間 無料ではじめる」を 888px^2、「料金を見る」を 1,576px^2 覆っていた。
+  // お金の入口が指の下で別のものになる＝いちばん直さないといけない被り方。
+  const [fabIsPhone, setFabIsPhone] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 900 : false,
+  );
+  useEffect(() => {
+    const onResize = () => setFabIsPhone(window.innerWidth <= 900);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, []);
+  const fabLift = useFloatAvoid(fabRef, { enabled: fabIsPhone && !open && !fabCovered });
 
   // 完了通知 (アプリ内バッジ)
   const [unseenDone, setUnseenDone] = useState(0);
@@ -300,6 +318,8 @@ export default function PrismTaskScheduler() {
           position: 'fixed',
           right: 'calc(env(safe-area-inset-right, 0px) + 16px)',
           bottom: 'calc(env(safe-area-inset-bottom, 0px) + 110px)',
+          marginBottom: fabLift,
+          transition: 'margin-bottom 240ms cubic-bezier(.2,.8,.2,1)',
           zIndex: 9997,
           width: 56, height: 56, borderRadius: 999,
           background: 'linear-gradient(135deg, #0033A0, #1A4FC4)',
