@@ -11,6 +11,7 @@ import { PrismLogo, IrisLogo } from './Logo';
 import { confirmAction } from '../lib/confirmDialog';
 import { Phone } from 'lucide-react';
 import { accentFaceBg, accentFaceInk, whiteFaceBg } from '../lib/accentFace';
+import { useFloatAvoid } from '../hooks/useFloatAvoid';
 
 interface Props {
   brand: 'prism' | 'iris';
@@ -41,6 +42,7 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
   const [voiceCallOpen, setVoiceCallOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fabRef = useRef<HTMLDivElement>(null);
 
   const ctxString = [
     context?.page && `ページ: ${context.page}`,
@@ -101,6 +103,23 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
 
   const unreadAssistant = messages.filter(m => m.role === 'assistant').length;
 
+  // 浮きボタンが本文の「押せるもの」に乗らないようにする（スマホだけ）。
+  // 実測(2026-08-18 本番 390px)では Iris「動画おまかせ」でカードの主ボタン
+  // 「任せる →」を 2,778px^2 覆っていた＝見えているのに押すと別の物が開く。
+  const [isPhone, setIsPhone] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 900 : false,
+  );
+  useEffect(() => {
+    const onResize = () => setIsPhone(window.innerWidth <= 900);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, []);
+  const fabLift = useFloatAvoid(fabRef, { enabled: isPhone && !open });
+
   return (
     <>
       {/* Floating Action Button — デスクトップ: 中央右寄り / モバイル: 中央下で目立つ */}
@@ -108,7 +127,11 @@ export default function SupportChat({ brand, accentColor, context }: Props) {
         {!open && (
           <motion.div
             key="fab-wrap"
+            ref={fabRef}
             className="cp-ai-fab-wrap fixed z-40 flex flex-col items-center"
+            // 押せるものの上に乗ってしまう時だけ、同じ縦の道を静かに上へどく
+            // (2026-08-18・共通ルール lib/floatAvoid)
+            style={{ marginBottom: fabLift, transition: 'margin-bottom 240ms cubic-bezier(.2,.8,.2,1)' }}
             initial={{ scale: 0, opacity: 0, y: 12 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0, opacity: 0, y: 12 }}
