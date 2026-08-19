@@ -1270,10 +1270,22 @@ export default function IdentityDashboard({
               {/* ↑ ページ『ホーム』ここまで */}
 
               {/* ページタブバー (モバイル用・PCは左サイドバーで切替)。
-                  display は className 側で制御 (inline flex だと md:hidden に勝ってPCにも出る罠) */}
+                  display は className 側で制御 (inline flex だと md:hidden に勝ってPCにも出る罠)
+
+                  ★2026-08-20 本番実測の根治: 6枚のタブを 1 行に並べて `overflowX:'auto'` で
+                  横に逃がしていたため、iPhone の幅では最後の『カラダ』が画面の外にいた
+                  (375px 実測 left=381 / right=453 = 幅 375 の外・見えている部分 0px・
+                   elementFromPoint も届かない ＝ 一度も押せない)。『つながる』も 320px では
+                  85px 中 30px しか残らず、しかも 375px では右端ぴったりで終わるので
+                  「この先にもタブがある」と分かる手がかりが 1 つも無かった。
+                  横スクロールは自分から指で払える人にしか届かない＝カラダ(睡眠・回復・
+                  ヘルスケア取り込み)というページ 1 枚が、iPhone の人には存在しないのと同じだった。
+                  ページ全体は はみ出さない (docSW=375) ので、横はみ出しの検査では一生出ない。
+                  直し方は「横に逃がすのをやめて折り返す」。行が 2 段になるが、
+                  どの幅でも 6 枚すべてが画面の中に入り、指で押せる。 */}
               <div className="flex md:hidden" style={{
-                  gap: 6, overflowX: 'auto',
-                  scrollbarWidth: 'none', paddingBottom: 2,
+                  gap: 6, rowGap: 6, flexWrap: 'wrap',
+                  paddingBottom: 2,
                 }}>
                   {([
                     ['home', 'ホーム'],
@@ -1290,8 +1302,11 @@ export default function IdentityDashboard({
                         type="button"
                         onClick={() => goPage(id)}
                         style={{
-                          flexShrink: 0,
-                          padding: '10px 16px', minHeight: 44,
+                          // 1 行につき 3 枚ちょうど = どの幅でも 3 枚 × 2 段。
+                          // 幅を基準(78px 等)で決めると 390px 以上で 4 枚 + 2 枚に割れ、
+                          // 下の段だけ倍の太さのボタンが 2 つ並んで不揃いに見えた。
+                          flex: '1 1 calc(33.333% - 4px)',
+                          padding: '10px 12px', minHeight: 44,
                           borderRadius: 999,
                           background: active
                             // 選ばれているタブは白文字。#8E5CFF の側で 4.10 しか出ておらず
