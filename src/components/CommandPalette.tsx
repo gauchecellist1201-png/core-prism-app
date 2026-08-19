@@ -36,6 +36,13 @@ import PersonaGlyph, { isRoleCode } from './PersonaGlyph';
 // ⌘K の検索結果も、ホームのタイル・からっぽ画面とまったく同じ台帳から絵と色を引く。
 // (これが無い間、同じ「スライドを作る」がタイルでは紫の投影機・⌘K では 🎨 に見えていた)
 import { resolveFeatureIcon } from '../lib/featureIcons';
+// 「答えが 1 つ返るだけ」の用事で、見ていた画面を失わせないための札。
+import {
+  buildKnowledgeResult,
+  buildSuggestionResult,
+  nextSuggestionStatus,
+  type InlineCommandResult,
+} from '../lib/inlineCommandResult';
 
 export type CmdAction =
   // iconKey … 機能アイコン台帳 (lib/featureIcons.ts) の ID。
@@ -47,9 +54,12 @@ export type CmdAction =
   | { kind: 'quick-create'; modal: ModalKey; label: string; emoji: string; iconKey?: string; subtitle: string }
   | { kind: 'cxo'; cxo: CxoRole; label: string; subtitle: string; emoji: string; color: string; actionLabel: string }
   | { kind: 'ai-delegate'; prompt: string; label: string; subtitle: string; emoji: string; mentionId?: string }
-  | { kind: 'data-op'; id: string; label: string; subtitle: string; emoji: string; iconKey?: string; onRun: () => void }
-  | { kind: 'help'; id: string; label: string; subtitle: string; emoji: string; iconKey?: string; onRun: () => void }
-  | { kind: 'custom'; id: string; label: string; subtitle?: string; emoji: string; iconKey?: string; onRun: () => void };
+  // stay … 押してもパレットを閉じない項目。onRun が答えを返したら、その答えを
+  //   このパレットの中の「答えの札」に出す (返さなければリストのまま開けておく)。
+  //   場所へ連れて行く項目 (設定・請求・全機能マップ…) には付けない。
+  | { kind: 'data-op'; id: string; label: string; subtitle: string; emoji: string; iconKey?: string; stay?: true; onRun: () => void | InlineCommandResult }
+  | { kind: 'help'; id: string; label: string; subtitle: string; emoji: string; iconKey?: string; stay?: true; onRun: () => void | InlineCommandResult }
+  | { kind: 'custom'; id: string; label: string; subtitle?: string; emoji: string; iconKey?: string; stay?: true; onRun: () => void | InlineCommandResult };
 
 export type ModalKey =
   | 'knowledge' | 'meeting' | 'health' | 'minutes' | 'slides' | 'nego'
@@ -363,6 +373,19 @@ export default function CommandPalette({
   const [inlineTaskId, setInlineTaskId] = useState<string | null>(null);
   /** 答えの札に出す「AI が実際に何を読んだか」(実測値のまま・盛らない) */
   const [inlineNote, setInlineNote] = useState<string | null>(null);
+  /**
+   * ★2026-08-14: AI に頼まない用事の答えも、ここに出して画面を移らせない。
+   * 資料を 1 件読む / 変更の記録を 1 件読む / 提案の採用を切り替える —— どれも
+   * これまでは `onClose()` で見ていた画面ごと飛ばしていた (資料に至っては全文を
+   * 読むためだけにナレッジ画面へ移動が要った)。場所へ行く用事だけを移動に残す。
+   */
+  const [inlineResult, setInlineResult] = useState<InlineCommandResult | null>(null);
+  /**
+   * 提案の状態を変えた回数。一覧の ✅/⌛ は組み立て時の値を持っているので、
+   * これを増やして引き直さないと、変えた直後に戻った一覧が古い印を出し続ける
+   * (＝押しても変わっていないように見える)。
+   */
+  const [suggestionTick, setSuggestionTick] = useState(0);
   // MMMMMM (2026-06-04): changelog.json から 直近 新機能 5 件
   const [changelogFeats, setChangelogFeats] = useState<Array<{ hash: string; date: string; message: string }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -372,7 +395,7 @@ export default function CommandPalette({
 
   // 開き直したら「元に戻す」の帯は畳む (古い取り消しが残り続けないように)
   // @の対象も毎回まっさらに戻す (前回の対象が残っていて意図しない範囲で実行される事故を防ぐ)
-  useEffect(() => { if (open) { setUndoSaved(null); setMention(null); setMentionBusy(false); setInlineTaskId(null); setInlineNote(null); } }, [open]);
+  useEffect(() => { if (open) { setUndoSaved(null); setMention(null); setMentionBusy(false); setInlineTaskId(null); setInlineNote(null); setInlineResult(null); } }, [open]);
 
   /** 答えを出している依頼。queue.tasks の実体を毎回引き直す (2 か所で持たない) */
   const inlineTask = useMemo(
@@ -597,10 +620,19 @@ export default function CommandPalette({
     });
 
     // データ操作 — 直接ハンドラを実行 (CustomEvent ではリスナがおらず無音になっていた)
-    const handleStripeSync = () => {
+    const handleStripeSync = (): InlineCommandResult => {
       // useStripeRevenue / MyBusinessRevenueCard が購読している接続イベントを再発火
       try { window.dispatchEvent(new CustomEvent('core:stripe-connected')); } catch { /* */ }
       notifyInApp({ kind: 'info', title: '💳 Stripe を再同期しました', body: '最新の取引を取得中…', duration: 2200 });
+      // 取れた件数も金額もここでは分からない。分からないことは分からないと書く
+      // (「◯件 取り込みました」と書けば嘘になる)。
+      return {
+        id: 'data-op:stripe-sync',
+        title: 'Stripe に、新しい取引を取りに行きました',
+        meta: '取り込みは裏で進みます',
+        emptyReason: '取り込めた件数は、この札では分かりません。売上台帳の数字で確かめられます。',
+        open: { label: '売上台帳を開く', run: () => { onClose(); onOpenModal('sales'); } },
+      };
     };
     const handleDemoStart = () => {
       try {
@@ -621,8 +653,8 @@ export default function CommandPalette({
         notifyInApp({ kind: 'warn', title: 'デモ終了に失敗', body: e?.message || 'もう一度お試しください', duration: 3500 });
       }
     };
-    const dataOps: Array<{ id: string; label: string; subtitle: string; emoji: string; onRun: () => void }> = [
-      { id: 'stripe-sync', label: 'Stripe を再同期', subtitle: '今月の売上を最新化', emoji: '💳', onRun: handleStripeSync },
+    const dataOps: Array<{ id: string; label: string; subtitle: string; emoji: string; stay?: true; onRun: () => void | InlineCommandResult }> = [
+      { id: 'stripe-sync', label: 'Stripe を再同期', subtitle: '今月の売上を最新化', emoji: '💳', stay: true, onRun: handleStripeSync },
       { id: 'demo-start', label: 'デモを開始', subtitle: 'デモデータで体験する', emoji: '▶️', onRun: handleDemoStart },
       { id: 'demo-end', label: isDemoActive() ? 'デモを終了' : 'デモを終了 (現在オフ)', subtitle: 'デモデータを片付ける', emoji: '⏹', onRun: handleDemoEnd },
       { id: 'reload', label: 'ページを再読み込み', subtitle: '最新の状態を取得', emoji: '🔁', onRun: () => window.location.reload() },
@@ -711,9 +743,18 @@ export default function CommandPalette({
           kind: 'custom',
           id: `feat-${f.hash}`,
           label: f.message.replace(/^feat(\([^)]*\))?:\s*/, '✨ '),
-          subtitle: `${f.date} · ${f.hash} — タップで /changelog へ`,
+          subtitle: `${f.date} · ${f.hash} — タップで中身を読む`,
           emoji: '✨',
-          onRun: () => { window.location.href = `/changelog#${f.hash}`; },
+          // 2026-08-14: ここは `window.location.href` でページごと読み込み直していた。
+          // 「何が新しくなったか」を 1 行読むためだけに、開いていた画面も入力中の文字も全部失う。
+          // 一覧では長い題が切れて読めないので、その場で全文を出すほうが用は足りる。
+          stay: true,
+          onRun: (): InlineCommandResult => ({
+            id: `changelog:${f.hash}`,
+            title: f.message.replace(/^feat(\([^)]*\))?:\s*/, ''),
+            meta: `${f.date} · ${f.hash}`,
+            open: { label: '変更の記録をぜんぶ見る', run: () => { window.location.href = `/changelog#${f.hash}`; } },
+          }),
         },
       });
     }
@@ -724,10 +765,27 @@ export default function CommandPalette({
       for (const s of recent) {
         const statusEmoji = s.status === 'adopted' ? '✅' : s.status === 'rejected' ? '❌' : s.status === 'held' ? '⏸' : '⌛';
         const subtitle = `${s.cxoName} · ${statusEmoji} ${s.status} · ${new Date(s.ts).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
-        const toggleAdopted = () => {
-          const next = s.status === 'adopted' ? 'pending' : 'adopted';
-          try { setSuggestionStatus(s.id, next); } catch { /* */ }
-          notifyInApp({ kind: 'info', title: `提案を「${next === 'adopted' ? '採用' : '未判定'}」に変更`, duration: 1800 });
+        // 2026-08-14: これは「採用 ⇄ 未判定」を切り替えるだけの用事なのに、
+        // 押すたびにパレットが閉じて見ていた画面を失っていた (行き先がそもそも無い操作)。
+        // 閉じずに、切り替わった結果と提案の詳細をその場に出す。
+        const toggleAdopted = (): InlineCommandResult => {
+          // ★2026-08-19: 一覧を組み立てた時の `s.status` は古いことがある
+          //   (同じ札で 2 回押す・別の画面で先に変えた)。古い値を元に決めると
+          //   2 回目が同じ側へ倒れて、押しても何も起きない札になる。
+          //   だから押した瞬間に、保存されている実際の値を読み直してから決める。
+          const before = listSuggestions().find(x => x.id === s.id);
+          const wanted = nextSuggestionStatus(before?.status ?? s.status);
+          try { setSuggestionStatus(s.id, wanted); } catch { /* 下で読み直して判定する */ }
+          // 書けたかどうかは例外の有無では分からない (setStatus は id が無くても
+          // 入れ物がいっぱいでも、何も言わずに帰る)。もう一度読んで実測する。
+          const after = listSuggestions().find(x => x.id === s.id);
+          setSuggestionTick(t => t + 1); // 一覧の ✅/⌛ も、変わった実際の値へ引き直す
+          return buildSuggestionResult({
+            suggestion: { id: s.id, title: s.title, detail: before?.detail ?? s.detail, cxoName: s.cxoName },
+            wanted,
+            after: after?.status,
+            open: { label: 'AI 提案の履歴を開く', run: () => { onClose(); openAiHistory(); } },
+          });
         };
         out.push({
           category: 'suggestion',
@@ -737,13 +795,14 @@ export default function CommandPalette({
             label: `${s.cxoEmoji} ${s.title}`,
             subtitle,
             emoji: '🕘',
+            stay: true,
             onRun: toggleAdopted,
           },
         });
       }
     } catch { /* */ }
 
-    const helpItems: Array<{ id: string; label: string; subtitle: string; emoji: string; onRun: () => void }> = [
+    const helpItems: Array<{ id: string; label: string; subtitle: string; emoji: string; stay?: true; onRun: () => void | InlineCommandResult }> = [
       // 使い方の案内 (GuidedTourSpotlight)。ここが唯一の入口 —
       // 自動起動は「うざい」とのオーナー指示で廃止済みなので、呼べる場所が無いと
       // 案内そのものが誰にも届かない状態になる (2026-08-04 に発見して復旧)。
@@ -762,14 +821,16 @@ export default function CommandPalette({
       { id: 'history',  label: 'AI 提案 履歴 (7 日)', subtitle: '採用 / 却下 / 採用率 (Cmd+Shift+H)', emoji: '🕘', onRun: openAiHistory },
       { id: 'api-keys', label: 'API キー設定', subtitle: 'OpenAI / Stripe などの接続', emoji: '🔑', onRun: () => onOpenModal('settings') },
       { id: 'settings', label: '設定を開く', subtitle: 'すべての設定 (5 タブ + 検索)', emoji: '⚙️', onRun: () => onOpenModal('settings') },
-      { id: 'theme', label: 'テーマ切替', subtitle: 'ライト / ダーク', emoji: '🌓', onRun: handleThemeToggle },
+      // テーマは切り替えた結果が画面そのものに出る = 札は要らない。閉じないことだけが要る
+      // (これまでは明るさを変えるたびにパレットが閉じて、見比べるのに開き直していた)。
+      { id: 'theme', label: 'テーマ切替', subtitle: 'ライト / ダーク', emoji: '🌓', stay: true, onRun: handleThemeToggle },
     ];
     for (const h of helpItems) {
       out.push({ category: 'help', item: { kind: 'help', ...h, iconKey: h.id } });
     }
 
     return out;
-  }, [personas, personaKnowledge, activePersona, activePersonaId, onOpenModal, changelogFeats]);
+  }, [personas, personaKnowledge, activePersona, activePersonaId, onOpenModal, onClose, changelogFeats, suggestionTick]);
 
   // ────────────────────────────────────────────────────────
   // 最近使った (recent) を解決
@@ -1041,11 +1102,21 @@ export default function CommandPalette({
         onClose();
         onSwitchPersona(item.personaId);
         break;
-      case 'jump-knowledge':
-        onClose();
-        onOpenKnowledgeId?.(item.knowledgeId);
-        onOpenModal('knowledge');
+      case 'jump-knowledge': {
+        // 資料は「読みたいだけ」で選ばれることがほとんど。まずこの場で本文を出し、
+        // 直したい人のためにだけ「ナレッジ画面で開く」を札の中に 1 つ置く。
+        const jumpToKnowledge = () => {
+          onClose();
+          onOpenKnowledgeId?.(item.knowledgeId);
+          onOpenModal('knowledge');
+        };
+        const k = knowledge.find(x => x.id === item.knowledgeId);
+        // 見つからない時だけ、これまで通り画面へ送る (この場で黙って何も出さない、を作らない)
+        if (!k) { jumpToKnowledge(); break; }
+        setInlineResult(buildKnowledgeResult(k, { label: 'ナレッジ画面で開く', run: jumpToKnowledge }));
+        setTimeout(() => inputRef.current?.focus(), 0);
         break;
+      }
       case 'jump-task':
         onClose();
         onOpenModal('tasks');
@@ -1063,10 +1134,19 @@ export default function CommandPalette({
       }
       case 'data-op':
       case 'help':
-      case 'custom':
+      case 'custom': {
+        if (item.stay) {
+          // 閉じないと決めた項目。答えが返ればその場で札に出し、返らなければ
+          // リストのまま開けておく (テーマ切替のように、結果が画面そのものに出る種類)。
+          const res = item.onRun();
+          if (res) setInlineResult(res);
+          setTimeout(() => inputRef.current?.focus(), 0);
+          break;
+        }
         onClose();
         item.onRun();
         break;
+      }
     }
   }, [recent, savedPrompts, knowledge, onClose, onOpenModal, onSwitchPersona, onOpenKnowledgeId, delegateToCxo, delegateToAi]);
 
@@ -1086,6 +1166,7 @@ export default function CommandPalette({
     }
     setInlineTaskId(null);
     setInlineNote(null);
+    setInlineResult(null);
     setTimeout(() => inputRef.current?.focus(), 0);
   }, [inlineTask]);
 
@@ -1122,7 +1203,7 @@ export default function CommandPalette({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // 答えの札を出している間は、そこが主役。上下・決定でリストを触らせない。
     // Esc は「閉じる」ではなく「札を畳んでリストに戻る」= 一気に画面を失わせない。
-    if (inlineTaskId) {
+    if (inlineTaskId || inlineResult) {
       if (e.key === 'Escape') { e.preventDefault(); dismissInline(); return; }
       if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Tab') {
         e.preventDefault();
@@ -1230,7 +1311,15 @@ export default function CommandPalette({
         >
           <motion.div
             className="w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col"
-            style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)', maxHeight: 'calc(100dvh - 4rem)' }}
+            style={{
+              background: 'var(--bg-2)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)',
+              maxHeight: 'calc(100dvh - 4rem)',
+              // 答えの札を出している間だけ、高さを「決まった値」にする。
+              // 普段の一覧は中身なりの高さでよいが、札は中身 (資料の長さ) がいくらでも伸びる。
+              // 高さが中身任せのままだと flex-1 の枠も伸び続け、下に置いた押せるものが
+              // 折り目の外へ出る (2026-08-19 390px 実測: 3 つとも中心を押せなかった)。
+              ...(inlineResult ? { height: 'calc(100dvh - 4rem)' } : null),
+            }}
             initial={{ scale: 0.96, y: -20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: -20 }}
             onClick={e => e.stopPropagation()}
           >
@@ -1246,7 +1335,8 @@ export default function CommandPalette({
                   setSelectedIdx(0);
                   // 答えを見終わった人が次を打ち始めたら、札は自動で畳む。
                   // (まだ動いている途中は畳まない = 進み具合を目の前から消さない)
-                  if (inlineTask && inlineTask.status !== 'running') dismissInline();
+                  if (inlineResult) dismissInline();
+                  else if (inlineTask && inlineTask.status !== 'running') dismissInline();
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder={
@@ -1312,7 +1402,7 @@ export default function CommandPalette({
             )}
 
             {/* カテゴリ タブ (対象を選んでいる最中と、答えを出している間は隠す = 迷わせない) */}
-            {!mentionMode && !inlineTask && (
+            {!mentionMode && !inlineTask && !inlineResult && (
             <div
               className="px-3 py-2 flex items-center gap-1 overflow-x-auto"
               style={{ borderBottom: '1px solid var(--border)' }}
@@ -1346,11 +1436,109 @@ export default function CommandPalette({
             )}
 
             {/* 結果リスト */}
-            <div ref={listRef} className="flex-1 overflow-y-auto py-2">
+            {/* relative … 答えの札 (inlineResult) を inset-0 で「この枠ぴったり」に置くため。
+                これが無いと札の高さが決まらず、押せるものが折り目の下へ落ちる (2026-08-19 実測)。 */}
+            <div ref={listRef} className="flex-1 overflow-y-auto py-2 relative">
               {/* 消した直後だけ出る「元に戻す」。
                   ★リストの外に置くのが要点: 最後の 1 件を消すと「よく使う依頼」の
                   かたまり自体が消えるため、中に入れると取り消しボタンごと消える。 */}
-              {inlineTask ? (
+              {inlineResult ? (
+                /* ── 答えの札 (AI に頼まない用事) ────────────────────
+                   資料 1 件・変更の記録 1 件・提案の採用切替 …… 行き先が要らない用事は
+                   ここで終わらせる。出すのは実データそのままで、要約も補完もしない。 */
+                /* ★2026-08-19 390px 実測: 長い資料だと札そのものが縦に伸び、
+                   「全文をコピー」「ナレッジ画面で開く」がリストの折り目より下へ落ちて
+                   ボタンの中心が押せなくなっていた (elementFromPoint が別物を返した)。
+                   札の高さをこの枠の中に収め、伸び縮みするのは本文だけにする＝
+                   どんなに長い資料でも、押せるものは最初から画面の中にある。 */
+                <div className="absolute inset-0 px-4 py-3 flex flex-col" style={{ minHeight: 0 }}>
+                  <div
+                    className="rounded-xl px-4 py-3.5 flex flex-col"
+                    style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', minHeight: 0 }}
+                  >
+                    <p className="cp-body" style={{ fontWeight: 600, lineHeight: 1.6, flexShrink: 0 }}>{inlineResult.title}</p>
+                    {inlineResult.meta && (
+                      <p className="cp-meta" style={{ marginTop: 4, lineHeight: 1.6, flexShrink: 0 }}>{inlineResult.meta}</p>
+                    )}
+
+                    {inlineResult.body && (
+                      <div
+                        className="mt-3 pt-3"
+                        style={{ borderTop: '1px dashed var(--border)', minHeight: 0, overflowY: 'auto' }}
+                      >
+                        <p
+                          className="cp-body"
+                          style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                        >
+                          {inlineResult.body}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 切ったなら必ず言う。黙って切ると「これで全部」と読まれる */}
+                    {inlineResult.truncated && (
+                      <p className="cp-meta" style={{ marginTop: 8, color: 'var(--fg)', lineHeight: 1.7, flexShrink: 0 }}>
+                        ここまでが先頭部分です。続きは下のボタンから読めます。
+                      </p>
+                    )}
+
+                    {/* 出せる中身が無い / うまくいかなかった時の一行 (それらしい文を作らない) */}
+                    {inlineResult.emptyReason && (
+                      <p className="cp-meta" style={{ marginTop: inlineResult.body ? 8 : 10, lineHeight: 1.7, flexShrink: 0 }}>
+                        {inlineResult.emptyReason}
+                      </p>
+                    )}
+
+                    {/* 押せるものは絶対に縮めない・絶対に折り目の下へ落とさない */}
+                    <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 12, flexShrink: 0 }}>
+                      {inlineResult.copyText && (
+                        <button
+                          onClick={() => {
+                            const text = inlineResult.copyText as string;
+                            const p = navigator.clipboard?.writeText(text);
+                            if (!p) {
+                              notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'この端末では文字をコピーできません', duration: 3000 });
+                              return;
+                            }
+                            void p.then(
+                              () => notifyInApp({ kind: 'success', title: '全文をコピーしました', body: text.slice(0, 40), duration: 2000 }),
+                              () => notifyInApp({ kind: 'warn', title: 'コピーできませんでした', body: 'この端末では文字をコピーできません', duration: 3000 }),
+                            );
+                          }}
+                          className="flex items-center gap-1.5 px-3 rounded-lg"
+                          style={{ minHeight: 44, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.78rem', fontWeight: 600 }}
+                        >
+                          <Copy size={14} />全文をコピー
+                        </button>
+                      )}
+                      <button
+                        onClick={dismissInline}
+                        className="flex items-center gap-1.5 px-3 rounded-lg"
+                        /* ★2026-08-19 実測: --fg-subtle は暗いテーマの面の上で 2.67:1 = 読めない。
+                           押せるものの文字は --fg-muted まで上げる (実測 6.47:1)。 */
+                        style={{ minHeight: 44, border: '1px solid var(--border)', color: 'var(--fg-muted)', fontSize: '0.78rem', fontWeight: 600 }}
+                      >
+                        <CornerUpLeft size={14} />ほかのことをする
+                      </button>
+                      {/* 「行きたい人だけ行ける」逃げ道。右下に小さく 1 つだけ置く */}
+                      {inlineResult.open && (
+                        <button
+                          onClick={inlineResult.open.run}
+                          className="flex items-center gap-1.5 px-3 rounded-lg ml-auto"
+                          style={{ minHeight: 44, border: '1px solid var(--border)', color: 'var(--brief-ink-violet)', fontSize: '0.78rem', fontWeight: 600 }}
+                        >
+                          {inlineResult.open.label}
+                          <ArrowRight size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <p className="cp-tiny" style={{ color: 'var(--fg-muted)', textAlign: 'center', marginTop: 10, lineHeight: 1.7, flexShrink: 0 }}>
+                    さっきまで見ていた画面は、そのまま後ろに残っています。<br />
+                    Esc を押すと札だけ畳んで、元の場所に戻ります。
+                  </p>
+                </div>
+              ) : inlineTask ? (
                 /* ── 答えの札 ────────────────────────────────────
                    ここに答えを出すために、依頼しても閉じない。
                    出すのは実際に返ってきた文だけ。まだ返っていない時は
@@ -1441,7 +1629,9 @@ export default function CommandPalette({
                       <button
                         onClick={dismissInline}
                         className="flex items-center gap-1.5 px-3 rounded-lg"
-                        style={{ minHeight: 44, border: '1px solid var(--border)', color: 'var(--fg-subtle)', fontSize: '0.78rem', fontWeight: 600 }}
+                        /* ★2026-08-19 実測: --fg-subtle は暗いテーマの面の上で 2.67:1 = 読めない。
+                           押せるものの文字は --fg-muted まで上げる (実測 6.47:1)。 */
+                        style={{ minHeight: 44, border: '1px solid var(--border)', color: 'var(--fg-muted)', fontSize: '0.78rem', fontWeight: 600 }}
                       >
                         <CornerUpLeft size={14} />ほかのことをする
                       </button>
@@ -1722,7 +1912,15 @@ export default function CommandPalette({
 
             {/* フッタヒント — 答えを出している間は、そこで効くキーだけを書く
                 (効かない「↑↓ 選択」を並べたままにしない) */}
-            {inlineTask ? (
+            {inlineResult ? (
+              <div
+                className="px-5 py-2 flex items-center gap-3 flex-wrap text-fg-subtle"
+                style={{ borderTop: '1px solid var(--border)', fontSize: '0.7rem' }}
+              >
+                <span className="flex items-center gap-1"><kbd className="cp-pill" style={{ fontSize: '0.6rem' }}>Esc</kbd>札を畳んで戻る</span>
+                <span className="ml-auto">画面は移っていません</span>
+              </div>
+            ) : inlineTask ? (
               <div
                 className="px-5 py-2 flex items-center gap-3 flex-wrap text-fg-subtle"
                 style={{ borderTop: '1px solid var(--border)', fontSize: '0.7rem' }}
