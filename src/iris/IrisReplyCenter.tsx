@@ -27,6 +27,7 @@ import { loadIgProfile } from './instagramConnect';
 import { confirmAction } from '../lib/confirmDialog';
 import { notifyInApp } from '../lib/inAppNotify';
 import { LoaderBlock } from '../components/MicroLoader';
+import IrisIntro from './IrisIntro';
 
 type Bg = IrisBackgroundDef | CustomIrisBackground;
 
@@ -109,6 +110,15 @@ export default function IrisReplyCenter({ bg, account, onConnect }: Props) {
           <span style={{ fontSize: '0.72rem', color: bg.inkSoft }}>{aiQuotaLabel(planId)}</span>
         </div>
       </div>
+
+      <IrisIntro
+        id="replies"
+        bg={bg}
+        icon={MessageSquareReply}
+        what="コメントへの返事と、DM の文面を、AI に下書きしてもらう場所です。コメントはここからそのまま返せます。"
+        tryThis="「コメント返信」で「AI 下書き」を押すだけ。出てきた文は直せます。送る前に、もう一度だけ内容が出ます。"
+        example="押す → 相手と投稿に合った返事が枠に入る → 直して「確認して送信」→「返信済み」に移ります"
+      />
 
       {/* コメント / DM 切り替え — 押す前に「何が起きるか」が分かるよう一言添える */}
       <div style={{ display: 'flex', gap: 8 }}>

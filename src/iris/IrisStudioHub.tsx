@@ -36,7 +36,7 @@ interface StudioTool {
 
 const DESIGN_TOOLS: StudioTool[] = [
   { tab: 'cover',  title: 'カバー・サムネを作る', desc: 'テーマを書くだけ。AI が見出し・配色・写真の方向性を提案し、雑誌の表紙級の1枚に。', icon: LayoutTemplate, badge: 'AI提案' },
-  { tab: 'image',  title: '写真を直す',     desc: '明るさ・色・背景をワンタップで。投稿が映える1枚に。', icon: Camera,    badge: 'ワンタップ' },
+  { tab: 'image',  title: '写真を直す',     desc: '手持ちの写真を 1 枚選ぶところから。明るさ・色・文字入れをその場で仕上げます。', icon: Camera,    badge: '写真が要ります' },
   { tab: 'draft',  title: '投稿を書く',     desc: 'AI がキャプション・ハッシュタグ・文字入れ案を作成。',  icon: Type },
 ];
 
@@ -45,9 +45,30 @@ const VIDEO_TOOLS: StudioTool[] = [
   { tab: 'director', title: '動画おまかせ',   desc: 'テーマを言うだけ。AI が構成・台本・字幕まで設計。',   icon: Clapperboard, badge: 'AIにまかせる' },
 ];
 
+// 「迷ったら、おまかせ」の行き先と言葉。
+// 2026-08-19: デザイン側は「テーマを言うだけで AI が一式つくります」と書きながら
+// 押すと写真エディタ（開口一番「まず写真を選んでください」）に飛んでいた＝約束と行き先が違う。
+// テーマ 1 行から本当に AI が作るのは表紙(cover)なので、そちらへ繋ぎ直し、
+// ボタンの字も「押したら何が起きるか」に書き換える。
+const OMAKASE: Record<Mode, { tab: string; label: string; sub: string }> = {
+  design: {
+    tab: 'cover',
+    label: 'テーマから表紙を作る',
+    sub: 'テーマを 1 行書いて「見出しを提案してもらう」を押すだけ。AI が見出し・配色・写真の方向性を出します。',
+  },
+  video: {
+    tab: 'director',
+    label: 'テーマから動画の構成を作る',
+    // 行き先の「全部おまかせ」は画面 2 つ半ぶん下（週間プランの下）にある。
+    // 「押すだけ」とだけ書くと、開いた人が上の週間プランを本体だと思って迷うので場所まで書く。
+    sub: 'テーマを 1 行書いて「全部おまかせ」を押すだけ。AI が構成・テロップ・投稿文まで下書きします（少し下の「1 本まるごと丸投げ編集」の中にあります）。',
+  },
+};
+
 export default function IrisStudioHub({ bg, onOpen }: { bg: StudioBg; onOpen: (tab: string) => void }) {
   const [mode, setMode] = useState<Mode>('design');
   const tools = mode === 'design' ? DESIGN_TOOLS : VIDEO_TOOLS;
+  const omakase = OMAKASE[mode];
   const accent = bg.accent;
 
   return (
@@ -70,7 +91,7 @@ export default function IrisStudioHub({ bg, onOpen }: { bg: StudioBg; onOpen: (t
           つくるを、ひとつに。
         </h2>
         <p style={{ position: 'relative', fontSize: '0.88rem', lineHeight: 1.6, margin: 0, opacity: 0.95, maxWidth: 520 }}>
-          デザイン（画像）も動画（リール）も、ここから。素材・文字・BGM をまたいで一気通貫で仕上げます。
+          つくる道具（表紙・写真・投稿文・リール動画）の入口を集めた場所です。下のカードを 1 枚押すと、その道具の画面がひらきます。
         </p>
       </div>
 
@@ -148,16 +169,16 @@ export default function IrisStudioHub({ bg, onOpen }: { bg: StudioBg; onOpen: (t
           <Wand2 size={20} color={accent} />
           <div>
             <div style={{ fontSize: 13.5, fontWeight: 800, color: bg.ink }}>迷ったら、おまかせ</div>
-            <div style={{ fontSize: 11.5, color: bg.inkSoft }}>テーマを言うだけで画像も動画も AI が一式つくります。</div>
+            <div style={{ fontSize: 11.5, color: bg.inkSoft }}>{omakase.sub}</div>
           </div>
         </div>
-        <button onClick={() => onOpen(mode === 'design' ? 'image' : 'director')} style={{
+        <button onClick={() => onOpen(omakase.tab)} style={{
           display: 'inline-flex', alignItems: 'center', gap: 7,
           background: warmFaceBg(accent), color: '#fff',
           border: 'none', borderRadius: 999, padding: '0.65rem 1.3rem',
           fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 20px rgba(225,48,108,0.3)',
         }}>
-          <LayoutTemplate size={16} /> はじめる
+          <LayoutTemplate size={16} /> {omakase.label}
         </button>
       </div>
     </div>
