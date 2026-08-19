@@ -3621,3 +3621,27 @@ body[data-prism-chat-dock] [data-tour-id="kpi-sparkline"] {
 @media (max-width: 759px) {
   .lp-section-pad.finder-section { padding-bottom: calc(4rem + 84px) !important; }
 }
+
+/* ── <details> に「押せば開く」と分かる印を足す（2026-08-19 実測） ──
+   /pricing の7件も /faq の18件も list-style:none でマーカーを消したまま
+   何も足しておらず、押せる高さは44px以上になったのに「押せると分からない」
+   ままだった（section 38 の※残・次夜の第一候補）。
+   ⚠️印を「文の流れの中」に置くと質問文の幅を食う。本番375pxで実測すると
+   1行の質問の余りは /faq が最小 3px・/pricing が最小 18px しかなく、
+   16px の印を流れに置くだけで4問が2行に折れてカードが 56→80px に伸びる
+   （section 36・37 で目次を縮めたのと逆行する）。
+   そこで印は summary の「既にある右余白の中」に絶対配置する＝質問文の幅を
+   1px も奪わない。閉じているとき ▸ / 開くと ▾ に回す。 */
+.disclosure-chev {
+  position: absolute;
+  transform: rotate(0deg);
+  transform-origin: 50% 50%;
+  transition: transform 160ms ease;
+  pointer-events: none; /* 印は飾り。押す面は summary 全体のまま */
+}
+details[open] > summary .disclosure-chev {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .disclosure-chev { transition: none; }
+}

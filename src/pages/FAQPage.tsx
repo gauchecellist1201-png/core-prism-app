@@ -420,6 +420,7 @@ export default function FAQPage() {
           >
             <summary
               style={{
+                position: 'relative',
                 cursor: 'pointer',
                 padding: '1rem 1.2rem',
                 fontWeight: 700,
@@ -439,6 +440,10 @@ export default function FAQPage() {
                 Q{String(i + 1).padStart(2, '0')}
               </span>
               <span style={{ flex: 1, minWidth: 0 }}>{f.q}</span>
+              {/* 印は右余白(1.2rem=19.2px)の中に絶対配置する。流れに置くと質問文の
+                  幅を奪う＝本番実測で1行の質問の余りは最小3pxしかなく、3問が
+                  2行に折れて 56→80px に伸びてしまう（section 36・37 と逆行）*/}
+              <svg className="disclosure-chev" style={{ right: 3, top: 21, color: 'rgba(230,233,242,0.75)' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
             </summary>
             <div style={{ padding: '0 1.2rem 1rem 1.2rem' }}>{f.a}</div>
           </details>
