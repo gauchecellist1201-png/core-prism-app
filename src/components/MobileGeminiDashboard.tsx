@@ -18,12 +18,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Send, ChevronDown, ChevronUp, Settings, Plus, FileText, BookOpen, Gem,
   Compass, Palette, Mail, UsersRound, TrendingUp, Heart,
+  Loader2, AlertTriangle, Check, X, RotateCw,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PRISM_SPECS } from '../lib/agentSpecs';
 import CoreCreditsPanel from './CoreCreditsPanel';
 import { getBalance as getCreditBalance, earnDaily as earnCreditDaily, earnOnce as earnCreditOnce } from '../lib/coreCredits';
 import { downloadCurrentChatTxt, downloadAllChatsMd } from '../lib/chatHistoryExport';
+import { useChatCloudSync } from '../hooks/useChatCloudSync';
+import { useBillingUser } from '../lib/billing';
 import type { Persona, AppSettings } from '../types/identity';
 import { useClaude, selectRelevantKnowledge } from '../hooks/useClaude';
 import type { KnowledgeItem } from '../types/identity';
@@ -155,6 +158,16 @@ export default function MobileGeminiDashboard({
     setMsgs(loadMessages(persona.id));
   }, [persona.id]);
 
+  // ★端末引き継ぎ（ロードマップ T1-2c）: 同じメールなら PC で話した続きをこの端末へ持ってくる。
+  //   未ログイン / サーバー未設定なら完全 no-op（今まで通り localStorage だけで動く）。
+  const { user: billingUser } = useBillingUser();
+  const chatSync = useChatCloudSync({
+    email: billingUser?.email,
+    personaId: persona.id,
+    msgs,
+    onMerged: (merged) => setMsgs(merged as Msg[]),
+  });
+
   // 朝のブリーフ自動生成 — その日初めて開いた時 + 履歴が空の時のみ
   // (オーナー指示 2026-06-03: 自律実行 — ユーザーが空のチャットを見るだけで時間が止まらないように)
   useEffect(() => {
@@ -162,6 +175,9 @@ export default function MobileGeminiDashboard({
     const briefKey = `core_mobile_brief_shown:${persona.id}:${today}`;
     const alreadyShownToday = localStorage.getItem(briefKey) === '1';
     if (alreadyShownToday) return;
+    // 引き継ぎの結果が出る前に「空だ」と決めつけない。先にブリーフを書くと、直後に届いた
+    // 前の端末の会話がその下に潜り込んで「続きが消えた」ように見える。
+    if (!chatSync.settled) return;
     if (msgs.length > 0) return;
     // 履歴が空 + 今日まだ表示してない → 自動でブリーフを生成
     const hour = new Date().getHours();
@@ -180,9 +196,9 @@ export default function MobileGeminiDashboard({
       } catch { /* fail silently — 既存 example prompts を表示 */ }
       setBusy(false);
     })();
-    // 依存配列を意図的に [persona.id] のみにして、msgs 更新でループしないように
+    // 依存配列は [persona.id, 引き継ぎが済んだか] のみ。msgs を入れるとループする
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [persona.id]);
+  }, [persona.id, chatSync.settled]);
 
   // 自動保存
   useEffect(() => { saveMessages(persona.id, msgs); }, [persona.id, msgs]);
@@ -690,6 +706,14 @@ export default function MobileGeminiDashboard({
           WebkitOverflowScrolling: 'touch',
         }}
       >
+        {/* ── 端末引き継ぎ (T1-2c): 黙って待たせない・黙って失敗しない ─── */}
+        <ChatHandoverNotice
+          status={chatSync.status}
+          broughtIn={chatSync.broughtIn}
+          onRetry={chatSync.retry}
+          onDismiss={chatSync.dismissBroughtIn}
+        />
+
         {/* Iris ブランド限定: 朝の 3 カードブリーフ (GG) */}
         {brand === 'iris' && <IrisBriefSlot personaId={persona.id} personaName={persona.name} />}
 
@@ -960,4 +984,95 @@ function IrisBriefSlot({ personaId, personaName }: { personaId: string; personaN
   }, []);
   if (!Brief) return null;
   return <Brief personaId={personaId} personaName={personaName} igProfile={igProfile} variant="mobile" />;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ChatHandoverNotice — 端末引き継ぎ (T1-2c) の状態を必ず画面に出す小さな帯
+//
+//   ・さがしている間 … 350ms より長くかかった時だけ出す（一瞬の点滅を作らない）
+//   ・持ってこられた … 「N件」と実数で正直に言う。6秒で自分で消える
+//   ・失敗した      … 黙らせない。44px の「もう一度」で復旧できる
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function ChatHandoverNotice({
+  status, broughtIn, onRetry, onDismiss,
+}: {
+  status: 'idle' | 'pulling' | 'ready' | 'error';
+  broughtIn: number;
+  onRetry: () => void;
+  onDismiss: () => void;
+}) {
+  // 350ms より早く終わったら「さがしています」を一度も出さない（一瞬の点滅を作らない）。
+  // 出す条件は「いま pulling」かつ「待たされた」の両方なので、解除の setState は要らない。
+  const [waited, setWaited] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setWaited(true), 350);
+    return () => clearTimeout(t);
+  }, [status]);
+
+  useEffect(() => {
+    if (broughtIn <= 0) return;
+    const t = setTimeout(onDismiss, 6000);
+    return () => clearTimeout(t);
+  }, [broughtIn, onDismiss]);
+
+  const shell: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '10px 12px', marginBottom: 10,
+    borderRadius: 12, fontSize: 13, fontWeight: 600, lineHeight: 1.5,
+  };
+
+  if (status === 'error') {
+    return (
+      <div style={{ ...shell, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.35)', color: '#FDE68A' }}>
+        <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+        <span style={{ flex: 1 }}>前の端末の会話を持ってこられませんでした。この端末の会話はそのまま使えます。</span>
+        <button
+          type="button"
+          onClick={onRetry}
+          style={{
+            minHeight: 44, minWidth: 88, padding: '0 14px',
+            borderRadius: 10, border: '1px solid rgba(251,191,36,0.5)',
+            background: 'rgba(251,191,36,0.18)', color: '#FDE68A',
+            fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0,
+          }}
+        >
+          <RotateCw size={14} /> もう一度
+        </button>
+      </div>
+    );
+  }
+
+  if (broughtIn > 0) {
+    return (
+      <div style={{ ...shell, background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.3)', color: '#A7F3D0' }}>
+        <Check size={16} style={{ flexShrink: 0 }} />
+        <span style={{ flex: 1 }}>別の端末で話した会話 {broughtIn} 件を引き継ぎました。</span>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="閉じる"
+          style={{
+            minHeight: 44, minWidth: 44, borderRadius: 10,
+            border: 'none', background: 'transparent', color: '#A7F3D0',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}
+        >
+          <X size={16} />
+        </button>
+      </div>
+    );
+  }
+
+  if (status === 'pulling' && waited) {
+    return (
+      <div style={{ ...shell, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.72)' }}>
+        <Loader2 size={16} className="animate-spin" style={{ flexShrink: 0 }} />
+        <span>前の端末で話した続きをさがしています…</span>
+      </div>
+    );
+  }
+
+  return null;
 }

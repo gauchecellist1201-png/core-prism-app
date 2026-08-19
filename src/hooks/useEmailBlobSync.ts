@@ -9,11 +9,17 @@
 // - 以降 value 変化で cloud へ push（debounce）
 // - email が無い／サーバー未設定なら完全 no-op（localStorage が唯一の永続層のまま）
 // ============================================================
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+/**
+ * 引き継ぎの状態。呼び出し側が「黙って失敗」を作らないために公開する。
+ * idle=同期しない(未ログイン等) / pulling=取り寄せ中 / ready=完了 / error=取り寄せ失敗
+ */
+export type BlobSyncStatus = 'idle' | 'pulling' | 'ready' | 'error';
 
 interface Options<T> {
   /** blob API の key（サーバ側 api/account/blob.ts の ALLOWED_KEYS と必ず一致させる） */
-  key: 'knowledge' | 'personas' | 'settings' | 'products' | 'pulse';
+  key: 'knowledge' | 'personas' | 'settings' | 'products' | 'pulse' | 'chats';
   /** ログイン中ユーザーのメール（無ければ同期しない） */
   email: string | null | undefined;
   /** 現在の値 */
@@ -38,37 +44,47 @@ export function useEmailBlobSync<T>({
   isEmpty,
   enabled = true,
   debounceMs = 2000,
-}: Options<T>) {
+}: Options<T>): { status: BlobSyncStatus; retry: () => void } {
   const pulledRef = useRef(false);
   const lastPushedRef = useRef<string>('');
   const valueRef = useRef<T>(value);
   valueRef.current = value;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [status, setStatus] = useState<BlobSyncStatus>('idle');
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt(a => a + 1), []);
 
   // ── 1. ログイン確定時に一度だけ cloud → local を pull（端末引き継ぎ） ──
   useEffect(() => {
-    if (!enabled || !email) return;
+    if (!enabled || !email) { setStatus('idle'); return; }
     pulledRef.current = false;
+    setStatus('pulling');
     let cancelled = false;
     (async () => {
       try {
         const r = await fetch(`/api/account/blob?email=${encodeURIComponent(email)}&key=${key}`);
         const j = await r.json().catch(() => ({}));
         if (cancelled) return;
-        if (r.ok && j?.value != null) {
+        // サーバー未設定（disabled）や「まだ何も無い」(value=null) は失敗ではない＝警告を出さない
+        if (!r.ok) { setStatus('error'); return; }
+        if (j?.value != null) {
           const remote = j.value as T;
           const next = merge ? merge(valueRef.current, remote) : remote;
           onRemote(next);
           lastPushedRef.current = JSON.stringify(next);
         }
-      } catch { /* 失敗してもローカルはそのまま使える */ } finally {
+        setStatus('ready');
+      } catch {
+        // 失敗してもローカルはそのまま使える。ただし黙らない＝呼び出し側が復旧ボタンを出す
+        if (!cancelled) setStatus('error');
+      } finally {
         pulledRef.current = true;
       }
     })();
     return () => { cancelled = true; };
-    // email 変化（ログイン）時のみ再 pull
+    // email 変化（ログイン）/ 再試行時のみ再 pull
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email, key, enabled]);
+  }, [email, key, enabled, attempt]);
 
   // ── 2. 変更を cloud へ push（pull 完了後・debounce・空は送らない） ──
   useEffect(() => {
@@ -88,4 +104,6 @@ export function useEmailBlobSync<T>({
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, email, key, enabled]);
+
+  return { status, retry };
 }
