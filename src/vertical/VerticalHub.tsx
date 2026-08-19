@@ -78,7 +78,8 @@ export default function VerticalHub() {
             </span>
           </a>
           <a href="/corp#platform" style={{
-            display: 'inline-flex', alignItems: 'center', minHeight: 40, padding: '0 0.95rem',
+            // 指で狙える床は 44px。左の CORE ロゴが既に 44px なのでヘッダーの高さは変わらない
+            display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: '0 0.95rem',
             borderRadius: 999, textDecoration: 'none', whiteSpace: 'nowrap',
             border: `1px solid ${C.line}`, color: C.mute, fontSize: '0.75rem', fontWeight: 600,
           }}>

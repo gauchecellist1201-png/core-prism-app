@@ -133,7 +133,8 @@ export default function UltimaLanding() {
             </span>
           </a>
           <a href={CONTACT_HREF} style={{
-            display: 'inline-flex', alignItems: 'center', minHeight: 40, padding: '0 1rem',
+            // 指で狙える床は 44px。左の ULTIMA ロゴが既に 44px なのでヘッダーの高さは変わらない
+            display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: '0 1rem',
             borderRadius: 999, textDecoration: 'none', whiteSpace: 'nowrap',
             background: `linear-gradient(135deg, ${C.goldLite}, ${C.gold})`, color: '#1a1408',
             fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.04em',
