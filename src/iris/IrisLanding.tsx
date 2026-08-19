@@ -27,6 +27,7 @@ import { whiteSafeGradient } from '../lib/accentFace';
 import { IrisLogo } from '../components/Logo';
 import { seedDemoData, setDemoActive, clearDemoData } from '../lib/onboarding';
 import { REFERRAL_BONUS_DAYS, TRIAL_BASE_DAYS } from '../lib/referral';
+import { IRIS_LP_PLANS } from './lpPlans';
 
 interface Props {
   onEnter: () => void;
@@ -147,7 +148,9 @@ const STEPS: { Icon: LucideIcon; n: string; title: string; body: string }[] = [
 
 // ─── やめるときの安心 ────────────────────────────────────────
 const SAFETY: { Icon: LucideIcon; head: string; body: string }[] = [
-  { Icon: Unlock, head: 'クレジットカードは、はじめに要りません', body: `${TRIAL_BASE_DAYS}日間の無料体験はカード登録なしで始まります。体験が終わっても、請求は発生しません。` },
+  // 2026-08-19: 「カードは要りません」と言い切っていたが、それが本当なのは
+  //   「無料ではじめる」から入る場合だけ。プランを選ぶ経路はカードを登録する。
+  { Icon: Unlock, head: 'カードなしで、まず試せます', body: `「${TRIAL_BASE_DAYS}日間 無料ではじめる」から入れば、クレジットカードの登録なしで${TRIAL_BASE_DAYS}日間ためせます。体験が終わっても請求は発生しません（料金表からプランを選ぶ場合は、お申し込み時にカードを登録します）。` },
   // 2026-08-18: ここは「解約は1タップ。引き止めはしません／電話も、理由の入力も、面談もありません」
   // と書いてあったが、実物は**引き止めの画面が1枚と理由を選ぶ画面が1枚**出る。
   // 約束と画面が違うと、それだけで信用が消える（競合6社中5社の★1がこの壊れ方）。
@@ -157,25 +160,8 @@ const SAFETY: { Icon: LucideIcon; head: string; body: string }[] = [
 ];
 
 // ─── 料金 ───────────────────────────────────────────────────
-const PLANS = [
-  {
-    id: 'lite',
-    name: 'Lite',
-    tag: 'まずはリールを作りたい',
-    price: '¥2,980',
-    suffix: '/ 月',
-    features: ['おまかせ3タップのリール作成', '字幕3スタイル・16テーマ', 'AI投稿文・ハッシュタグ', '予約投稿'],
-  },
-  {
-    id: 'standard',
-    name: 'Standard',
-    tag: '毎週ちゃんと伸ばしたい',
-    price: '¥6,980',
-    suffix: '/ 月',
-    features: ['Lite の全機能', 'チャット・音声での編集指示 無制限', 'AI企画・台本スタジオ', 'アカウント分析と改善提案', '優先サポート'],
-    highlight: true,
-  },
-];
+// 中身は ./lpPlans.ts。書いた約束をゲート表(PLAN_LIMITS)と突き合わせるテストが付いている。
+const PLANS = IRIS_LP_PLANS;
 
 // ─── FAQ ───────────────────────────────────────────────────
 const FAQS: { q: string; a: string }[] = [
@@ -193,7 +179,10 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: '無料体験のあと、勝手に課金されませんか？',
-    a: `されません。無料体験（${TRIAL_BASE_DAYS}日間）はクレジットカード登録なしで始まるため、体験が終わっても自動で請求されることはありません。続けたい場合にだけプランをお選びください。`,
+    // 2026-08-19: 以前は「されません」の一択だったが、実際は入口が2つあり、
+    // プランを選んで始めた場合は Stripe でカードを登録し、4日目から自動で始まる。
+    // 片方だけを書くともう片方の人に嘘になるため、2つに分けて書く。
+    a: `入口によって変わります。上の「${TRIAL_BASE_DAYS}日間 無料ではじめる」から始めた場合は、クレジットカードの登録がないので、体験が終わっても請求は発生しません。料金表からプランを選んで始めた場合は、お申し込み時にカードを登録し、${TRIAL_BASE_DAYS}日後から自動で月額が始まります（それまでに解約すれば請求は0円です）。`,
   },
   {
     q: '作ったリールは自分のものになりますか？',
@@ -470,7 +459,10 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
               まず{TRIAL_BASE_DAYS}日間、<span style={{ background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>無料でぜんぶ。</span>
             </h2>
             <p style={leadStyle}>
-              クレジットカードの登録はいりません。気に入ったら、そのとき選べば大丈夫です。
+              {/* 2026-08-19: この行の真下は「カードが要る」有料プランのカード。
+                  「登録はいりません」と書くと、押した先で違う話になる。 */}
+              カードなしで試すだけなら、上の「{TRIAL_BASE_DAYS}日間 無料ではじめる」から。
+              下のプランは、お申し込み時にカードを登録し、{TRIAL_BASE_DAYS}日後から月額が始まります。
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
@@ -513,7 +505,11 @@ export default function IrisLanding({ onEnter, onSelectPlan }: Props) {
                 }}>
                   {p.name} を{TRIAL_BASE_DAYS}日間 無料でためす
                 </button>
-                <p style={{ textAlign: 'center', fontSize: '0.71rem', color: TXT_MUTE, margin: '0.6rem 0 0' }}>クレカ不要 · いつでも解約</p>
+                {/* 2026-08-19: ここは「クレカ不要 · いつでも解約」と書いていたが、
+                    有料プランを選ぶと CheckoutModal が Stripe へ渡すためカード登録が要り、
+                    3日後からは自動で課金が始まる。カードなしで始めたい人の入口は
+                    上部の「3日間 無料ではじめる」の方（こちらは Stripe を通らない）。 */}
+                <p style={{ textAlign: 'center', fontSize: '0.71rem', color: TXT_MUTE, margin: '0.6rem 0 0', lineHeight: 1.6 }}>{p.note}</p>
               </motion.div>
             ))}
           </div>
