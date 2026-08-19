@@ -79,7 +79,7 @@ export default function AuditLog() {
   return (
     <div style={{ minHeight: '100vh', background: '#0A0A12', color: '#fff', padding: '2rem 1.25rem', fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif' }}>
       <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-        <a href="/master" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 24 }}>
+        <a href="/master" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 12 }}>
           <ArrowLeft size={14} /> /master へ戻る
         </a>
 

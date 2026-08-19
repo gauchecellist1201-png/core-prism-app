@@ -103,7 +103,7 @@ export default function OnboardFunnel() {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif',
     }}>
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '28px 18px 80px' }}>
-        <a href="/master" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 24 }}>
+        <a href="/master" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', textDecoration: 'none', marginBottom: 12 }}>
           <ArrowLeft size={14} /> /master へ戻る
         </a>
 
