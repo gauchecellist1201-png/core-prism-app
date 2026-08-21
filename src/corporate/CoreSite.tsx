@@ -2354,7 +2354,15 @@ function HeroVideo({ onAnchor }: { onAnchor?: (e: ReactMouseEvent<HTMLAnchorElem
       */}
       <div
         className="corp-hero-copy"
-        style={{ position: 'relative', zIndex: 3, textAlign: 'center', width: '100%', padding: '0 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3.2rem)' }}
+        /* 動画は流れているので、明るいフレームでは見出しが白い画面に重なる
+           （本番実測: Lume の画面が出るコマで h1 の下段がその上に乗った）。
+           全体の暗幕とは別に、コピーの帯そのものに地を持たせて、
+           どのコマでも同じ読みやすさにする。 */
+        style={{
+          position: 'relative', zIndex: 3, textAlign: 'center', width: '100%',
+          padding: '3.5rem 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3.2rem)',
+          background: 'linear-gradient(180deg, rgba(4,3,2,0) 0%, rgba(4,3,2,0.62) 26%, rgba(4,3,2,0.88) 58%, rgba(4,3,2,0.96) 100%)',
+        }}
       >
         {/* ブランドの刻印 — 動画の上に、金の一行 */}
         <p style={{
