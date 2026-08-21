@@ -837,6 +837,12 @@ function WorkCard({ w }: { w: (typeof FILM_WORKS)[number] }) {
         <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink }}>{w.client}</div>
         <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.body, margin: '6px 0 0' }}>{w.purpose}</p>
         {w.result && <p style={{ fontSize: 12.5, lineHeight: 1.8, color: C.goldText, margin: '4px 0 0', fontWeight: 600 }}>{w.result}</p>}
+        {w.url && (
+          <a href={w.url} target="_blank" rel="noopener noreferrer"
+            style={{ display: 'inline-block', fontSize: 11.5, color: C.body, margin: '6px 0 0', textDecoration: 'underline', textUnderlineOffset: 2 }}>
+            {w.client} 公式サイト ↗
+          </a>
+        )}
       </div>
     </article>
   );
