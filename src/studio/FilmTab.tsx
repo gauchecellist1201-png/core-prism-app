@@ -9,7 +9,8 @@ import { C, D, SERIF, SANS } from './theme';
 import { Band, H2, Note, IconCheck, IconChat, IconCopy } from './ui';
 import { STUDIO, CONTACT } from './plans';
 import {
-  FILM, FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, PRICE_NOTE, PRICE_WHY,
+  FILM, FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, MONTHLY_SPEC,
+  PLAN_LADDER, PRICE_NOTE, PRICE_WHY,
   FILM_WORKS, REVISION, TERMS, AI_TERMS,
   FILM_FAQ, FILM_CTA, INQUIRY_FIELDS,
 } from './film';
@@ -115,6 +116,18 @@ export default function FilmTab() {
         .fm-cmp-val + .fm-cmp-val { border-left: 1px solid ${C.line}; }
         .fm-cmp-cap { display: block; font-size: 10px; letter-spacing: 0.1em; color: ${C.mute};
           margin-bottom: 4px; font-weight: 600; }
+        /* プランの仕様。左に項目・右に中身。375pxでは項目名が折り返すと読めなくなるので
+           左は固定幅にし、長い値だけを折り返させる */
+        .fm-spec { display: grid; gap: 0; border-top: 1px solid ${C.line}; margin-top: 12px; }
+        .fm-spec-row { display: grid; grid-template-columns: 84px 1fr; gap: 10px;
+          padding: 9px 0; border-bottom: 1px solid ${C.line}; align-items: start; }
+        .fm-spec-key { font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; color: ${C.mute}; line-height: 1.7; }
+        .fm-spec-val { font-size: 13px; line-height: 1.75; color: ${C.ink}; font-weight: 600; }
+        /* 「この価格になる理由」。金額の隣で読ませたいので、カード内で色を変えて浮かせる */
+        .fm-why { margin-top: 14px; padding: 13px 14px; border-radius: 4px;
+          background: ${C.alt}; border: 1px solid ${C.goldLine}; }
+        .fm-why-key { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: ${C.goldText}; margin-bottom: 7px; }
+        .fm-why-body { font-size: 12.5px; line-height: 1.95; color: ${C.body}; margin: 0; }
         /* 月額に切り替えた場合の差額。3列 (単発合計 / 月額 / 差額) */
         .fm-save { display: grid; gap: 10px; }
         @media (min-width: 700px) { .fm-save { grid-template-columns: repeat(3, 1fr); } }
@@ -590,6 +603,19 @@ function Pricing() {
     <div>
       <Band pad="56px 0" id="film-pricing">
         <Reveal><H2 en="Pricing" sub="1本ごとの制作と、毎月継続する制作の2通りからお選びいただけます。">料金</H2></Reveal>
+
+        {/* 価格差の理由を、カードを読む前に一度渡す。
+            ¥49,800 → ¥128,000 → ¥298,000 は 2.5倍ずつ上がるので、
+            「何が違うのか」を先に言わないとカードを3枚読んでも差が分からない。 */}
+        <Reveal>
+          <div className="st-card" style={{ background: '#FFFFFF', marginBottom: 18 }}>
+            <h3 className="st-serif" style={{ fontSize: 19, fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6 }}>
+              {PLAN_LADDER.title}
+            </h3>
+            <p style={{ fontSize: 13.5, lineHeight: 2, color: C.body, margin: '10px 0 0' }}>{PLAN_LADDER.body}</p>
+          </div>
+        </Reveal>
+
         <div style={{ display: 'grid', gap: 14 }}>
           {FILM_PLANS.map((p, i) => (
             <Reveal key={p.id} delay={i * 50}>
@@ -606,6 +632,23 @@ function Pricing() {
                 <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, margin: '10px 0 6px', lineHeight: 1.8 }}>{p.lead}</div>
                 {/* どの会社向けかを1行で。プラン選択を読む人に丸投げしない */}
                 <div style={{ fontSize: 12.5, color: C.goldText, lineHeight: 1.8, marginBottom: 12 }}>{p.fit}</div>
+
+                {/* 仕様。プラン間の差は、言葉より数字で並べたほうが早い */}
+                <div className="fm-spec">
+                  {p.spec.map(s => (
+                    <div key={s.label} className="fm-spec-row">
+                      <div className="fm-spec-key">{s.label}</div>
+                      <div className="fm-spec-val">{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* この価格になる理由。書かないと 2.5倍の差が値付けの気分に見える */}
+                <div className="fm-why">
+                  <div className="fm-why-key">この価格になる理由</div>
+                  <p className="fm-why-body">{p.why}</p>
+                </div>
+
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6, borderTop: `1px solid ${C.line}`, paddingTop: 14 }}>
                   {p.includes.map(x => (
                     <li key={x} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.7, color: C.body }}><IconCheck />{x}</li>
@@ -674,6 +717,36 @@ function Pricing() {
             </Reveal>
           ))}
         </div>
+        {/* 月額の1本あたり (¥45,667〜57,000) は単発 STANDARD (¥128,000) の半額以下に見えるため、
+            仕様と「なぜ安いのか」を必ずここに置く。書かないと単発の価格が嘘に見える。 */}
+        <Reveal>
+          <div className="st-card" style={{ marginTop: 18, background: '#FFFFFF' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 10 }}>{MONTHLY_SPEC.title}</div>
+            <div className="fm-spec" style={{ marginTop: 0 }}>
+              {MONTHLY_SPEC.rows.map(s => (
+                <div key={s.label} className="fm-spec-row">
+                  <div className="fm-spec-key">{s.label}</div>
+                  <div className="fm-spec-val">{s.value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="fm-why">
+              <div className="fm-why-key">1本あたりが単発より安い理由</div>
+              <p className="fm-why-body">{MONTHLY_SPEC.why}</p>
+            </div>
+            <div style={{ marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C.line}` }}>
+              <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '0.1em', color: C.mute, marginBottom: 8 }}>含まれないもの</div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 5 }}>
+                {MONTHLY_SPEC.excludes.map(x => (
+                  <li key={x} style={{ display: 'flex', gap: 8, fontSize: 12.5, lineHeight: 1.7, color: C.mute }}>
+                    <span aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>—</span>{x}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Reveal>
+
         <Reveal>
           <div className="st-card" style={{ marginTop: 18, background: '#FFFFFF' }}>
             <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', color: C.mute, marginBottom: 10 }}>継続プランの条件</div>
