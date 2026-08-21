@@ -38,145 +38,11 @@ export const FILM = {
 } as const;
 
 // ------------------------------------------------------------
-// ショーケースと主力商品のあいだに置く、短い情緒のビート。
-//
-// 置いた理由: 情緒の核 (PHILOSOPHY) はページ末尾にあり、そこまで読む人はほとんどいない。
-// 映像を見た直後 = 心が動いている場所に、なぜ物語なのかを一度だけ短く置く。
-// 誇張や断定はせず、読む人が自分で確かめられることだけを書く。
-// ------------------------------------------------------------
-export const BRIDGE = {
-  en: 'Why Story',
-  title: '人は広告を覚えていない。\n人のことだけを覚えている。',
-  body: [
-    '去年ご覧になった広告を、いくつ思い出せるでしょうか。おそらく、ほとんど残っていないはずです。それでも、誰かが本気で何かを語っていた姿は覚えている。',
-    '心が動いた瞬間だけが、記憶に残ります。私たちが映像でつくろうとしているのは、その瞬間です。',
-  ],
-  closing: 'だから、商品の説明から始めません。その人が何を大事にしてきたのか、から始めます。',
-} as const;
-
-// ------------------------------------------------------------
-// なぜ CORE Studio か — AI × STORY × CREATIVE
-// ------------------------------------------------------------
-export const WHY_CORE = {
-  en: 'Capability',
-  title: '生成できることは、\nもう価値ではありません。',
-  lead: '生成AIは誰でも触れます。発注先を分けるのは、何を語るかを決める工程と、最後まで見られる状態に仕上げる工程です。当社が担っているのは、この3つです。',
-  pillars: [
-    { key: 'AI', title: 'AI', body: '生成AIを制作技術として運用します。人物の同一性、カット間の連続性、質感の統一まで作り込んだうえで納品します。' },
-    { key: 'STORY', title: 'STORY', body: '1本で終わらせず、企画・脚本・シリーズ構成を設計します。次が見たくなる構造そのものを設計の対象にします。' },
-    { key: 'CREATIVE', title: 'CREATIVE', body: '編集・音・字幕・カラーまで人の手で仕上げます。配信面ごとの尺と比率で書き出し、そのまま出稿できる状態でお渡しします。' },
-  ],
-} as const;
-
-// ------------------------------------------------------------
-// あなたにはこれ — 用途からサービスを選べる導線
-// ------------------------------------------------------------
-export type AudienceMatch = { id: string; question: string; answer: string; category: StudioProjectCategory | 'SNS VIDEO'; sub: string[] };
-
-export const AUDIENCE_MATCH: AudienceMatch[] = [
-  {
-    id: 'sns',
-    question: 'SNSを伸ばしたい',
-    answer: 'SNS VIDEO',
-    category: 'SNS VIDEO',
-    sub: ['TikTok', 'Instagram Reels', 'YouTube Shorts', '商品・サービス紹介'],
-  },
-  {
-    id: 'drama',
-    question: 'ストーリーで話題を作りたい',
-    answer: 'SHORT DRAMA',
-    category: 'SHORT DRAMA',
-    sub: ['縦型ショートドラマ', 'シリーズ企画', 'ブランドPR', 'SNSドラマ'],
-  },
-  {
-    id: 'brand',
-    question: 'ブランドの世界観を映像にしたい',
-    answer: 'BRAND FILM',
-    category: 'BRAND FILM',
-    sub: ['企業紹介', '採用', 'ブランドムービー', '商品PR'],
-  },
-];
-
-// ------------------------------------------------------------
 // ショーケース
 //   実映像が用意でき次第 videoUrl / poster を足すだけで再生に切り替わる。
 //   videoUrl も poster も無い間は、タイトルフレーム表示になる (壊れたリンクを作らない)。
 // ------------------------------------------------------------
 export type StudioProjectCategory = 'SHORT DRAMA' | 'BRAND FILM' | 'PRODUCT' | 'ARTIST' | 'SOCIAL';
-
-export type StudioProject = {
-  id: string;
-  no: string;
-  title: string;
-  category: StudioProjectCategory;
-  description: string;
-  /** 9:16 が既定。16:9 の案件は '16 / 9' を指定 */
-  aspectRatio: string;
-  /** 静止画 (public/studio/film/ に置く。例: '/studio/film/short-drama.jpg') */
-  poster?: string;
-  /** 実映像 (mp4 推奨・音声なしループ用。指定すると自動でループ再生に切り替わる) */
-  videoUrl?: string;
-  /** true の場合「実写」バッジを表示する。AI生成物と誤認されないための表示区分 (被写体の掲載許諾は取得済み) */
-  isReal?: boolean;
-};
-
-export const studioProjects: StudioProject[] = [
-  {
-    id: 'short-drama',
-    no: '01',
-    title: 'ショートドラマ',
-    category: 'SHORT DRAMA',
-    description: '経営者や専門家を主人公にした、続きが見たくなる連続もの。広告ではなく物語として届けます。実写映像の参考例です。',
-    aspectRatio: '9 / 16',
-    poster: '/studio/film/short-drama.jpg',
-    videoUrl: '/studio/film/short-drama.mp4',
-    isReal: true,
-  },
-  {
-    id: 'brand-film',
-    no: '02',
-    title: 'ブランドフィルム',
-    category: 'BRAND FILM',
-    description: '会社の思想と、そこにたどり着くまでの時間。言葉にしづらいものを、映像の温度に置き換えます。実写インタビューの参考例です。',
-    aspectRatio: '9 / 16',
-    poster: '/studio/film/brand-film.jpg',
-    videoUrl: '/studio/film/brand-film.mp4',
-    isReal: true,
-  },
-  {
-    id: 'product',
-    no: '03',
-    title: 'プロダクト',
-    category: 'PRODUCT',
-    description: '商品を主役に、質感・使う瞬間・置かれる場所まで。現実には組めない画づくりも成立します。実写映像の参考例です。',
-    aspectRatio: '9 / 16',
-    poster: '/studio/film/product.jpg',
-    videoUrl: '/studio/film/product.mp4',
-    isReal: true,
-  },
-  {
-    id: 'artist',
-    no: '04',
-    title: 'アーティスト',
-    category: 'ARTIST',
-    description: '音楽・作品世界の視覚化。演奏や制作の現場を、その人の世界観のまま映像に伸ばします。実写映像の参考例です。',
-    aspectRatio: '9 / 16',
-    poster: '/studio/film/artist.jpg',
-    videoUrl: '/studio/film/artist.mp4',
-    isReal: true,
-  },
-  {
-    id: 'social',
-    no: '05',
-    title: 'ソーシャル',
-    category: 'SOCIAL',
-    description: 'TikTok / Reels / Shorts に最適化した縦型。毎月続けられる本数と設計で発信を止めません。実写映像の参考例です。',
-    aspectRatio: '9 / 16',
-    poster: '/studio/film/social-backstage.jpg',
-    videoUrl: '/studio/film/social-backstage.mp4',
-    isReal: true,
-  },
-];
 
 // ------------------------------------------------------------
 // 制作実績 (/studio/film の「制作実績」セクションで使用)
@@ -242,40 +108,11 @@ export const FILM_WORKS: FilmWork[] = [
 ];
 
 // ------------------------------------------------------------
-// 主力商品 — AI SHORT DRAMA
-// ------------------------------------------------------------
-export const FEATURED = {
-  en: 'Featured — Short Drama',
-  title: 'あなた自身が、\nブランドの主人公になる。',
-  body: [
-    '経営者、医師、士業、アーティスト、店舗オーナー、講師。その人自身を主人公に据えたショートドラマを制作します。',
-    '目指すのは「広告を見てもらうこと」ではなく、「続きが見たくなること」です。単発のPR動画で終わらせず、シリーズとして積み上げます。',
-  ],
-  episodes: [
-    { no: 'EPISODE 01', title: 'その人を知る', body: '主人公の背景と、抱えているものが立ち上がる回。売り込みは一切しません。' },
-    { no: 'EPISODE 02', title: 'その人を好きになる', body: '仕事への向き合い方や葛藤が見える回。人柄が伝わり、視聴者の距離が縮まります。' },
-    { no: 'EPISODE 03', title: 'その仕事を知りたくなる', body: '事業やサービスの輪郭が自然に見えてくる回。ここで初めて「相談したい」が生まれます。' },
-  ],
-  ladder: ['人物への興味', '好感', 'ブランド理解', 'サービスへの関心'],
-  closing: '露骨な広告感を出さないことを、設計の前提に置いています。売り込む映像は最後まで見てもらえません。',
-} as const;
-
-// ------------------------------------------------------------
-// 制作するもの
-// ------------------------------------------------------------
-export type Creation = { id: string; en: string; title: string; body: string };
-
-export const WHAT_WE_CREATE: Creation[] = [
-  { id: 'drama', en: 'AI Short Drama', title: 'ショートドラマ', body: '人物やブランドを主人公にした縦型の連続ドラマ。シリーズ設計から担当します。' },
-  { id: 'brand', en: 'Brand Movie', title: 'ブランドムービー', body: '会社や商品の思想・世界観を映像化。採用・展示会・サイトの顔として使えます。' },
-  { id: 'social', en: 'Social Creative', title: 'ソーシャルクリエイティブ', body: 'TikTok / Instagram Reels / YouTube Shorts 向けの縦型。継続発信を前提に設計します。' },
-  { id: 'product', en: 'Product Film', title: 'プロダクトフィルム', body: '商品を主役にした広告・プロモーション映像。撮影が難しい構図も成立します。' },
-  { id: 'artist', en: 'Artist Visual', title: 'アーティストビジュアル', body: '音楽家・アーティスト・クリエイターのための映像。作品世界をそのまま拡張します。' },
-  { id: 'commercial', en: 'AI Commercial', title: 'コマーシャル', body: '広告配信を前提とした20〜60秒のCM。配信面ごとの尺・比率で書き出します。' },
-];
-
-// ------------------------------------------------------------
-// 制作工程
+// 制作工程 — 「誰が作るか」「どう品質を管理するか」を価格表の直前で開示する。
+// 2026-08-22 復活: 競合(Synthesia/AI25.studio等)調査の結果、AI動画制作への
+// 最大の不信は「AIに丸投げでは」という疑いであり、これを解く工程開示は
+// 動画そのものと重複しない (映像は結果を見せ、これは過程を見せる) ため、
+// 2026-08-21のコピー全面撤去 (動画と重複する情緒章の整理) の対象外として復活させる。
 // ------------------------------------------------------------
 export type FilmStep = { no: string; en: string; title: string; body: string };
 
@@ -291,6 +128,10 @@ export const FILM_PROCESS: FilmStep[] = [
 export const PROCESS_STATEMENT = {
   title: 'プロンプトを渡して終わる会社ではありません。',
   body: '生成の技術そのものは、いずれ誰でも使えるようになります。私たちが担うのは、何を語るかを決め、完成した映像として世に出るところまで責任を持つことです。企画・脚本・ディレクション・仕上げまで、当社が一貫して手を動かします。',
+  // 2026-08-22 Codexレビュー指摘で追加: 下の6ステップは標準工程であり、
+  // TRIAL (料金セクション参照) は「03 書く」にあたる台本・絵コンテを含まない。
+  // 断りなく並べると、TRIALの購入者が台本まで含まれると誤解する。
+  note: '下記はSTANDARD以上・月額プランの標準工程です。TRIAL (初回1本かぎり) は構成のみで、台本・絵コンテの作成は含みません。',
 } as const;
 
 // ------------------------------------------------------------
@@ -534,14 +375,18 @@ export const VALUE = {
     },
   ],
 
-  /** 継続に切り替えたときの実額。数字は monthlySavings() から生成する */
+  /** 継続に切り替えたときの実額。数字は monthlySavings() から生成する。
+      2026-08-22 Codexレビュー指摘で修正: 月額プラン (1本20〜30秒・5〜8カット) と
+      単発STANDARD (1本40秒・8〜12カット) は仕様が異なる別商品であり、同一規格の値引きではない。
+      「お得」と言い切ると、規格の違いを知らない読み手には過大な節約に見える。
+      仕様差を先に明記したうえで、あくまで参考の総額差として示す。 */
   monthly: {
-    title: '毎月続ける場合、1本あたりの単価が下がります。',
-    body: '単発 STANDARD と同じ本数を、月額プランで制作した場合の差額です。',
+    title: '月額プランと単発STANDARDは、仕様が異なります。',
+    body: '月額プランは1本20〜30秒・5〜8カットの規格、単発STANDARDは1本40秒・8〜12カットの規格です。同じ規格同士の値引きではありませんが、この本数を単発STANDARDで発注した場合の総額との差を参考までに示します。',
     note: '月額プランは初期費用0円・最低契約期間なしのため、成果が合わないと判断された月に停止できます。',
-    colOneOff: '単発で同数を制作',
-    colMonthly: '月額プラン',
-    colDiff: '差額 (月)',
+    colOneOff: '単発STANDARD (40秒) でこの本数を発注',
+    colMonthly: '月額プラン (1本20〜30秒)',
+    colDiff: '総額差 (参考・規格が異なる比較です)',
   },
 
   /** 実写を検討している人への正直な線引き。ここで嘘をつくと最初の1本で終わる */
@@ -710,88 +555,6 @@ export const AI_TERMS = {
 } as const;
 
 // ------------------------------------------------------------
-// 迷った人向けの分岐 (料金表の直後に置く簡易ナビ)
-// ------------------------------------------------------------
-export type DecisionBranch = { q: string; a: string; planId?: FilmPlan['id'] | 'monthly' | 'consult' };
-
-export const DECISION_GUIDE: DecisionBranch[] = [
-  { q: 'まず1本を稟議に乗せたい', a: 'TRIAL', planId: 'trial' },
-  { q: '出稿・採用で実際に使う1本が要る', a: 'STANDARD', planId: 'standard' },
-  { q: '毎月のSNS運用を任せたい', a: '月額プラン', planId: 'monthly' },
-  { q: 'ブランドの顔になる映像を作りたい', a: 'PREMIUM', planId: 'premium' },
-];
-
-// ------------------------------------------------------------
-// 象徴商品 — AI SHORT DRAMA BRANDING
-// ------------------------------------------------------------
-export const SIGNATURE = {
-  en: 'Signature',
-  name: 'AI SHORT DRAMA BRANDING',
-  lead: '会社と経営者そのものを、メディアにする。',
-  body: '広告枠を買い続けるのではなく、貴社自身が見られ続ける場所になるための契約です。主人公の設計から全12話の企画、毎月の制作までを一体で担当します。',
-  initial: {
-    label: 'INITIAL DESIGN',
-    price: '¥380,000〜',
-    includes: [
-      'ブランドヒアリング',
-      '主人公キャラクター設計',
-      'Character Bible (人物設定の正本)',
-      'Visual Bible (画づくりの正本)',
-      '世界観設計',
-      'シリーズコンセプト',
-      '全12話の企画',
-      'SNSコンテンツ設計',
-    ],
-  },
-  monthly: {
-    label: 'MONTHLY PRODUCTION',
-    price: '¥598,000〜',
-    volume: '8本 / 月',
-    body: '設計した世界観のまま、毎月8本を制作・納品します。反応の良かった回は次の企画に反映します。',
-  },
-} as const;
-
-// ------------------------------------------------------------
-// 想定顧客
-// ------------------------------------------------------------
-export type Target = { en: string; ja: string; body: string };
-
-export const TARGETS: Target[] = [
-  { en: 'Founder / CEO', ja: '経営者', body: '会社の顔として、自分の言葉と存在を届けたい' },
-  { en: 'Doctor / Clinic', ja: '医師・クリニック', body: '安心して任せられる人だと、来院前に伝えたい' },
-  { en: 'Artist', ja: 'アーティスト', body: '作品世界を、そのままの温度で見せたい' },
-  { en: 'Professional', ja: '士業・専門家', body: '難しい仕事の中身を、伝わる形に翻訳したい' },
-  { en: 'Restaurant', ja: '飲食店', body: '店の空気と料理の力を、写真以上に伝えたい' },
-  { en: 'Hotel', ja: 'ホテル・旅館', body: '滞在の時間そのものを、体験として見せたい' },
-  { en: 'Real Estate', ja: '不動産', body: '物件ではなく、そこで始まる暮らしを見せたい' },
-  { en: 'School', ja: 'スクール・教室', body: '通ったあとの自分を、想像してもらいたい' },
-  { en: 'Beauty', ja: 'ビューティー', body: '仕上がりと世界観を、毎週途切れずに発信したい' },
-  { en: 'Luxury Brand', ja: 'ラグジュアリー', body: 'ブランドの格を落とさずに、SNSへ出ていきたい' },
-];
-
-// ------------------------------------------------------------
-// 従来の制作との違い (他社を貶さない)
-// ------------------------------------------------------------
-export const COMPARISON = {
-  en: 'Before / After',
-  title: '工程が減るのではなく、\n制約が外れる。',
-  traditional: {
-    label: 'Traditional Production',
-    steps: ['企画', 'ロケハン', 'スタジオ', 'キャスティング', '撮影', '編集'],
-    body: '確かな手法です。実写にしか出せない説得力があり、私たちも必要な場面では撮影をおすすめします。ただし、天候・場所・人・日程がそろって初めて成立します。',
-  },
-  core: {
-    label: 'CORE Studio',
-    steps: ['IDEA', 'CREATE', 'DELIVER'],
-    body: '撮影という条件を外すことで、季節も場所も、現実には組めない画も選べるようになります。シリーズとして続けやすく、毎月の発信に乗せられます。',
-  },
-  caution: {
-    title: 'ただし、AIなら何でも簡単、ではありません。',
-    body: '生成そのものは誰でも触れる時代になりました。差が出るのは、何を語るかを決める企画と、最後まで見られる形に整えるディレクションです。価値の中心は今も人間側にあります。',
-  },
-} as const;
-
-// ------------------------------------------------------------
 // FAQ (商談前の不安を解消する。確認できないことは断定しない)
 // ------------------------------------------------------------
 export type FilmFaq = { q: string; a: string };
@@ -812,19 +575,6 @@ export const FILM_FAQ: FilmFaq[] = [
   { q: '料金はいくらからですか', a: '単発は¥49,800（TRIAL・20秒・初めてのお取引にかぎった1本）から、40秒のSTANDARDが¥128,000、60秒のPREMIUMが¥298,000〜です。継続制作は月4本¥228,000（1本20〜30秒）からです。同じ本数を単発で制作した場合との差額は、料金セクションに記載しています。' },
   { q: '納期はどれくらいですか', a: '初稿まで、TRIALは約10営業日、STANDARDは約2〜3週間、PREMIUMは約3〜4週間が目安です。月額プランは毎月の本数を月内に納品します。お急ぎの事情がある場合は、間に合うかどうかを最初にお伝えします。' },
 ];
-
-// ------------------------------------------------------------
-// 思想
-// ------------------------------------------------------------
-export const PHILOSOPHY = {
-  en: 'Core Philosophy',
-  headline: 'Technology changes.\nWhat moves people does not.',
-  body: [
-    '技術が変わっても、人を惹きつける物語、美しさ、ユーモア、驚き、感情は変わりません。',
-    'CORE Studioは、新しい技術を使って、人の心に残るものをつくります。手段が新しいことは、価値ではありません。',
-  ],
-  closing: 'いつの時代も、変わらない核を。',
-} as const;
 
 // ------------------------------------------------------------
 // 最終CTA

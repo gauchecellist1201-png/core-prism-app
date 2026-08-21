@@ -10,8 +10,8 @@ import { Band, H2, Note, IconCheck, IconChat, IconCopy } from './ui';
 import { STUDIO, CONTACT } from './plans';
 import {
   FILM, FILM_PLANS, MONTHLY_LEAD, MONTHLY_PLANS, MONTHLY_TERMS, MONTHLY_SPEC,
-  PLAN_LADDER, PRICE_NOTE, PRICE_WHY,
-  FILM_WORKS, REVISION, TERMS, AI_TERMS,
+  PLAN_LADDER, PRICE_NOTE, PRICE_WHY, VALUE, monthlySavings,
+  FILM_WORKS, FILM_PROCESS, PROCESS_STATEMENT, REVISION, TERMS, AI_TERMS,
   FILM_FAQ, FILM_CTA, INQUIRY_FIELDS,
 } from './film';
 import { logEvent } from '../lib/onboardingAnalytics';
@@ -116,6 +116,15 @@ export default function FilmTab() {
         .fm-cmp-val + .fm-cmp-val { border-left: 1px solid ${C.line}; }
         .fm-cmp-cap { display: block; font-size: 10px; letter-spacing: 0.1em; color: ${C.mute};
           margin-bottom: 4px; font-weight: 600; }
+        /* 工程の6ステップ。長い説明文は書かず、番号+見出しだけの帯にして
+           「丸投げでなく工程を踏んでいる」ことだけを短く示す (詳細は書くと動画と重複する)。 */
+        .fm-process-row { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+          scrollbar-width: none; padding-bottom: 2px; }
+        .fm-process-row::-webkit-scrollbar { display: none; }
+        .fm-process-step { flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+          padding: 9px 13px; border-radius: 999px; border: 1px solid ${D.line}; white-space: nowrap; }
+        .fm-process-no { font-size: 10.5px; font-weight: 700; color: ${D.gold}; letter-spacing: 0.04em; }
+        .fm-process-title { font-size: 12px; color: ${D.body}; letter-spacing: 0.02em; }
         /* プランの仕様。左に項目・右に中身。375pxでは項目名が折り返すと読めなくなるので
            左は固定幅にし、長い値だけを折り返させる */
         .fm-spec { display: grid; gap: 0; border-top: 1px solid ${C.line}; margin-top: 12px; }
@@ -178,13 +187,16 @@ export default function FilmTab() {
         @media (max-width: 767px) { .fm-sticky-cta { display: block; } .fm-sticky-pad { height: 68px; } }
       `}</style>
 
-      {/* 章の並び (2026-08-21 再改編)。
+      {/* 章の並び (2026-08-21 再改編、2026-08-22 一部復活)。
           「情報が多すぎて縦に長く、煩雑」というオーナー指摘を受け、動画1本で伝わる訴求を
-          文章で重複説明していた章 (Showcase/Bridge/WhyCore/Comparison/Process/Featured/
-          ChooseGuide/Philosophy) を撤去。ヒーロー動画 → 実績 → 料金 → 条件・FAQ (折りたたみ)
-          → 相談、の最短構成にした。ShowcaseがWorksと同じ素材を「参考例」として重複表示していた
-          点はオーナー指摘 (「2つが被っていて気持ち悪い」) so 削除して解消している。 */}
+          文章で重複説明していた情緒章 (Showcase/Bridge/WhyCore/Comparison/Featured/
+          ChooseGuide/Philosophy) は撤去したまま。一方で工程開示 (ProcessTrust) と
+          相場比較 (VALUE, Pricing内) は「映像が見せない過程・数字」であり重複ではないため、
+          競合調査 (AI25.studio/Synthesia/Gisteo等が共通して置く信頼要素) を踏まえて追加した。
+          ヒーロー動画 → 誰が作るか → 料金 (相場比較込み) → 実績 → 条件・FAQ (折りたたみ)
+          → 相談、の構成。 */}
       <FilmHero />
+      <ProcessTrust />
       <SectionNav />
       <Pricing />
       <FilmWorks />
@@ -401,11 +413,43 @@ function SectionNav() {
 
 
 // ============================================================
-// 情緒のビート — 映像を見た直後、料金の話に入る前に一度だけ置く
+// 「誰が作るか」— 価格表の直前に置く工程開示 (2026-08-22 新設)。
+//
+// 競合調査 (AI25.studio「AI is the tool. Craft is the foundation.」/
+// Synthesia導入事例の実績数字/動画幹事の工程別内訳) の共通点は、値段を見せる前に
+// 「誰が・どう品質を管理して作るか」を開示していること。映像そのものは結果を見せるが、
+// 過程は見せない。ここでその過程だけを短く補う (工程の詳細は書かず宣言 + 6ステップの見出しのみ)。
 // ============================================================
-// ============================================================
-// なぜ CORE Studio か — AI × STORY × CREATIVE
-// ============================================================
+function ProcessTrust() {
+  return (
+    <section style={{ background: D.bg, paddingBottom: 40 }}>
+      <div className="st-inner">
+        <Reveal>
+          <p className="st-serif" style={{ fontSize: 'clamp(19px, 4.6vw, 24px)', fontWeight: 700, lineHeight: 1.7, color: D.ink, margin: 0 }}>
+            {PROCESS_STATEMENT.title}
+          </p>
+          <p style={{ fontSize: 13, lineHeight: 2, color: D.body, margin: '12px 0 0', maxWidth: 620 }}>
+            {PROCESS_STATEMENT.body}
+          </p>
+        </Reveal>
+        <Reveal delay={60}>
+          <div className="fm-process-row" style={{ marginTop: 22 }}>
+            {FILM_PROCESS.map(s => (
+              <div key={s.no} className="fm-process-step">
+                <span className="fm-process-no">{s.no}</span>
+                <span className="fm-process-title">{s.title}</span>
+              </div>
+            ))}
+          </div>
+          {/* TRIALは「03 書く」にあたる台本・絵コンテを含まないため、標準工程である旨を明記する
+              (Codexレビュー指摘: 断りなく並べるとTRIAL購入者が台本込みと誤解する) */}
+          <p style={{ fontSize: 11, lineHeight: 1.85, color: D.mute, margin: '10px 0 0' }}>{PROCESS_STATEMENT.note}</p>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
 // ============================================================
 // 費用の構造 — 「お得かどうか」を読む人に計算させない章。
 //
@@ -413,6 +457,79 @@ function SectionNav() {
 //   (1) 相場との差 → (2) その差が生まれる理由 → (3) 月額に切り替えた実額
 // の順で通す。理由 (2) を挟まずに安さだけを見せると、品質への不信に変わる。
 // ============================================================
+function ValueTable() {
+  return (
+    <Reveal>
+      <div style={{ marginBottom: 22 }}>
+        <h3 className="st-serif" style={{ fontSize: 19, fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+          {VALUE.title}
+        </h3>
+        <p style={{ fontSize: 13, lineHeight: 1.95, color: C.body, margin: '10px 0 0' }}>{VALUE.lead}</p>
+      </div>
+
+      <div className="fm-cmp">
+        {VALUE.table.map(row => (
+          <div key={row.item} className="fm-cmp-row" data-hl={row.highlight ? '1' : undefined}>
+            <div className="fm-cmp-item">{row.item}</div>
+            <div className="fm-cmp-vals">
+              <div className="fm-cmp-val"><span className="fm-cmp-cap">{VALUE.tableHead.market}</span>{row.market}</div>
+              <div className="fm-cmp-val"><span className="fm-cmp-cap">{VALUE.tableHead.core}</span>{row.core}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: 11.5, lineHeight: 1.85, color: C.mute, margin: '10px 2px 0' }}>{VALUE.tableNote}</p>
+
+      <div style={{ marginTop: 26 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', color: C.mute, marginBottom: 12 }}>{VALUE.reasonsTitle}</div>
+        <div className="fm-grid3">
+          {VALUE.reasons.map(r => (
+            <div key={r.no} style={{ border: `1px solid ${C.line}`, borderRadius: 10, background: '#FFFFFF', padding: '15px 16px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.goldText, marginBottom: 6 }}>{r.no}</div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, marginBottom: 6, lineHeight: 1.6 }}>{r.title}</div>
+              <p style={{ fontSize: 12, lineHeight: 1.85, color: C.body, margin: 0 }}>{r.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 18, background: C.alt, borderLeft: `3px solid ${C.gold}`, borderRadius: 4, padding: '15px 16px' }}>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, marginBottom: 6 }}>{VALUE.honest.title}</div>
+        <p style={{ fontSize: 12.5, lineHeight: 1.9, color: C.body, margin: 0 }}>{VALUE.honest.body}</p>
+      </div>
+    </Reveal>
+  );
+}
+
+// 月額プランに切り替えた場合の実額差。手打ちの数字は価格改定で必ず食い違うため
+// monthlySavings() で FILM_PLANS / MONTHLY_PLANS の実データから計算する。
+function MonthlySavingsTable() {
+  return (
+    <Reveal>
+      <div style={{ marginTop: 18 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, marginBottom: 4 }}>{VALUE.monthly.title}</div>
+        <p style={{ fontSize: 12, lineHeight: 1.85, color: C.mute, margin: '0 0 12px' }}>{VALUE.monthly.body}</p>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {MONTHLY_PLANS.map(m => {
+            const s = monthlySavings(m);
+            return (
+              <div key={m.id} style={{ border: `1px solid ${C.line}`, borderRadius: 10, background: '#FFFFFF', padding: '12px 14px', display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, minWidth: 62 }}>{m.volume}</div>
+                <div style={{ fontSize: 12, color: C.mute }}>{VALUE.monthly.colOneOff} <b style={{ color: C.ink }}>¥{s.oneOffTotal.toLocaleString('ja-JP')}</b></div>
+                <div style={{ fontSize: 12, color: C.mute }}>{VALUE.monthly.colMonthly} <b style={{ color: C.ink }}>{m.price}</b></div>
+                {/* 「%お得」は規格の異なる比較を値引きに見せるため表示しない (Codexレビュー指摘)。
+                    総額差のみを参考として示す。 */}
+                <div style={{ fontSize: 12, color: C.goldText, fontWeight: 700 }}>{VALUE.monthly.colDiff} ¥{s.diff.toLocaleString('ja-JP')}</div>
+              </div>
+            );
+          })}
+        </div>
+        <p style={{ fontSize: 11.5, lineHeight: 1.85, color: C.mute, margin: '10px 0 0' }}>{VALUE.monthly.note}</p>
+      </div>
+    </Reveal>
+  );
+}
+
 // ============================================================
 // お取引の条件 — 修正規定・権利・NDA・支払・納期。
 // 発注前に法人が確認する事項が1章も無かったため新設した。
@@ -616,6 +733,10 @@ function Pricing() {
           </div>
         </Reveal>
 
+        <div style={{ marginBottom: 32 }}>
+          <ValueTable />
+        </div>
+
         <div style={{ display: 'grid', gap: 14 }}>
           {FILM_PLANS.map((p, i) => (
             <Reveal key={p.id} delay={i * 50}>
@@ -746,6 +867,8 @@ function Pricing() {
             </div>
           </div>
         </Reveal>
+
+        <MonthlySavingsTable />
 
         <Reveal>
           <div className="st-card" style={{ marginTop: 18, background: '#FFFFFF' }}>
